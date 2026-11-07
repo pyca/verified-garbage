@@ -26,6 +26,7 @@ pub struct Cast5Ecb {
 impl Cast5Ecb {
     /// Expands a key of 5 to 16 bytes for use in either direction.
     pub fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
+        crate::dit::enter!(dit);
         if !(5..=16).contains(&key.len()) {
             return Err(InvalidKeyLength);
         }
@@ -35,7 +36,7 @@ impl Cast5Ecb {
         // scratch space are separate valid objects of the sizes of the
         // signature.
         unsafe {
-            vg_cast5_expand_key(key.as_ptr(), key.len(), &mut schedule, &mut scratch);
+            vg_cast5_expand_key(dit, key.as_ptr(), key.len(), &mut schedule, &mut scratch);
         }
         // The scratch space holds the intermediate values of key expansion.
         zeroize(&mut scratch);
@@ -48,13 +49,15 @@ impl Cast5Ecb {
     /// Encrypts complete eight-byte blocks in place. Empty input is valid.
     /// Returns an error without changing the buffer if its length is invalid.
     pub fn encrypt(&self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
-        self.crypt(buffer, vg_cast5_ecb_encrypt)
+        crate::dit::enter!(dit);
+        self.crypt(dit, buffer, vg_cast5_ecb_encrypt)
     }
 
     /// Decrypts complete eight-byte blocks in place. Empty input is valid.
     /// Returns an error without changing the buffer if its length is invalid.
     pub fn decrypt(&self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
-        self.crypt(buffer, vg_cast5_ecb_decrypt)
+        crate::dit::enter!(dit);
+        self.crypt(dit, buffer, vg_cast5_ecb_decrypt)
     }
 
     /// The subkeys, for the other modes of CAST5.
@@ -67,7 +70,12 @@ impl Cast5Ecb {
         self.rounds
     }
 
-    fn crypt(&self, buffer: &mut [u8], f: Ecb) -> Result<(), IncompleteBlock> {
+    fn crypt(
+        &self,
+        dit: crate::dit::Dit<'_>,
+        buffer: &mut [u8],
+        f: Ecb,
+    ) -> Result<(), IncompleteBlock> {
         if !buffer.len().is_multiple_of(8) {
             return Err(IncompleteBlock);
         }
@@ -78,6 +86,7 @@ impl Cast5Ecb {
         // valid objects of the sizes of the signature.
         unsafe {
             f(
+                dit,
                 &self.schedule,
                 self.rounds,
                 buffer.as_mut_ptr().cast(),
@@ -94,7 +103,8 @@ impl Cast5Ecb {
 
 /// The signature of `vg_cast5_ecb_encrypt` and `vg_cast5_ecb_decrypt`.
 #[cfg(target_arch = "x86_64")]
-type Ecb = unsafe extern "sysv64" fn(*const [u8; 128], usize, *mut [u8; 8], usize, *mut [u64; 32]);
+type Ecb =
+    unsafe fn(crate::dit::Dit<'_>, *const [u8; 128], usize, *mut [u8; 8], usize, *mut [u64; 32]);
 /// The signature of `vg_cast5_ecb_encrypt` and `vg_cast5_ecb_decrypt`.
 #[cfg(any(
     target_arch = "aarch64",
@@ -103,7 +113,8 @@ type Ecb = unsafe extern "sysv64" fn(*const [u8; 128], usize, *mut [u8; 8], usiz
     all(target_arch = "powerpc64", target_endian = "little"),
     target_arch = "riscv64"
 ))]
-type Ecb = unsafe extern "C" fn(*const [u8; 128], usize, *mut [u8; 8], usize, *mut [u64; 32]);
+type Ecb =
+    unsafe fn(crate::dit::Dit<'_>, *const [u8; 128], usize, *mut [u8; 8], usize, *mut [u64; 32]);
 
 impl Drop for Cast5Ecb {
     fn drop(&mut self) {

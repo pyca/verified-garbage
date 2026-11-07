@@ -15,8 +15,55 @@
 /// * For a key of 16 bytes, the last 64 bytes of `schedule` are unspecified on return.
 /// * `schedule` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `schedule` may overlap the return address on the stack or the 3216 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_camellia_expand_key(_dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, schedule: *mut [u8; 272]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_camellia_expand_key(key, key_len, schedule) }
+}
+
+/// Camellia ECB encryption (RFC 3713 §2.3, SP 800-38A §6.1): replaces each of the `n` 16-byte blocks at `data` with its encryption by Camellia with `rounds` rounds under the subkeys at `schedule`, as `vg_camellia_expand_key` writes them. No padding is added or removed. For `n = 0`, no data is transformed.
+///
+/// Contract: `VG.Spec.Camellia.ecbEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 272 bytes.
+/// * `data` must be valid for reads and writes of `16 * n` bytes.
+/// * `rounds` must be 18 (for a key of 16 bytes) or 24 (for one of 24 or 32).
+/// * `data` must not overlap `schedule` (distinct Rust objects never do).
+/// * Neither `schedule` nor `data` may overlap the return address on the stack or the 3216 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_camellia_ecb_encrypt(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 272], rounds: usize, data: *mut [u8; 16], n: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_camellia_ecb_encrypt(schedule, rounds, data, n) }
+}
+
+/// Camellia ECB decryption (RFC 3713 §2.3.3, SP 800-38A §6.1): replaces each of the `n` 16-byte blocks at `data` with its decryption by Camellia with `rounds` rounds under the subkeys at `schedule`, as `vg_camellia_expand_key` writes them (in the order encryption uses them, which decryption reverses). No padding is added or removed. For `n = 0`, no data is transformed.
+///
+/// Contract: `VG.Spec.Camellia.ecbDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 272 bytes.
+/// * `data` must be valid for reads and writes of `16 * n` bytes.
+/// * `rounds` must be 18 (for a key of 16 bytes) or 24 (for one of 24 or 32).
+/// * `data` must not overlap `schedule` (distinct Rust objects never do).
+/// * Neither `schedule` nor `data` may overlap the return address on the stack or the 3216 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_camellia_ecb_decrypt(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 272], rounds: usize, data: *mut [u8; 16], n: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_camellia_ecb_decrypt(schedule, rounds, data, n) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_camellia_expand_key`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_camellia_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 272]) {
+pub(crate) unsafe extern "sysv64" fn vg_camellia_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 272]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJHDz//9IieFIg8EISYnJSYmZmAsAAEmJqaALAABNiaGoCwAATYmpsAsAAE2JsbgLAABNibnACwAASb7/AP8A/wD/AE2JsYABAABJvgD/AP8A/wD/TYmxiAEAAEm+AAAAAAD//wBNibGQAQAASb4A//8AAAAAAE2JsZgBAABJvgAAAP//AAAATYmxoAEAAEmJsYgLAABMic5IgcYAAwAASLgA/wAAAAD//0iJBki4AP//AP8A//9IiUYISLgAAP///wD/AEiJRhBIuAD///8AAP//SIlGGEi4AP//AAD//wBIiUYgSLj//wAA/wD/AEiJRihIuAAAAP//AP8ASIlGMEi4/wD//wD/AP9IiUY4SIPGQEi4AAAAAAD/AABIiQZIuP8A//8A/wD/SIlGCEi4//8AAAAAAABIiUYQSLgA/////wD/AEiJRhhIuP8A/wAA////SIlGIEi4/wD/////AP9IiUYoSLgA//8A////AEiJRjBIuP8AAP//AAD/SIlGOEiDxkBIuAD/////AP8ASIkGSLj/AP///////0iJRghIuP8A////AP//SIlGEEi4AP///wAA//9IiUYYSLgAAAAA/wAA/0iJRiBIuAD//wD/AP//SIlGKEi4/////wAAAABIiUYwSLj///8AAP8A/0iJRjhIg8ZASLgA////////AEiJBki4AAD/////AABIiUYISLj/AP8AAP///0iJRhBIuAAA/wAA/wD/SIlGGEi4//////8AAP9IiUYgSLgA//8AAP//AEiJRihIuP///////wAASIlGMEi4AP///wAA/wBIiUY4SIPGQEi4AAD/AP//AP9IiQZIuAD/AAD/AP8ASIlGCEi4AP//AP//AP9IiUYQSLgA/wD/AP///0iJRhhIuP//AAAAAP//SIlGIEi4AAD//////wBIiUYoSLgA////AAD/AEiJRjBIuAD//wAAAP8ASIlGOEiDxkBIuAD/AAAA/wD/SIkGSLgA////AAD/AEiJRghIuAAA//8AAAD/SIlGEEi4AAAAAP8AAP9IiUYYSLj///8AAAAA/0iJRiBIuP//AP8AAAD/SIlGKEi4AAD//wD///9IiUYwSLj//wD//////0iJRjhIg8ZASYuxiAsAAEiLB0mJgcgLAABIi0cISYmB0AsAAEiD/hA="
 je 20f
@@ -60,19 +107,9 @@ jmp 210f
     )
 }
 
-/// Camellia ECB encryption (RFC 3713 §2.3, SP 800-38A §6.1): replaces each of the `n` 16-byte blocks at `data` with its encryption by Camellia with `rounds` rounds under the subkeys at `schedule`, as `vg_camellia_expand_key` writes them. No padding is added or removed. For `n = 0`, no data is transformed.
-///
-/// Contract: `VG.Spec.Camellia.ecbEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 272 bytes.
-/// * `data` must be valid for reads and writes of `16 * n` bytes.
-/// * `rounds` must be 18 (for a key of 16 bytes) or 24 (for one of 24 or 32).
-/// * `data` must not overlap `schedule` (distinct Rust objects never do).
-/// * Neither `schedule` nor `data` may overlap the return address on the stack or the 3216 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_camellia_ecb_encrypt`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_camellia_ecb_encrypt(schedule: *const [u8; 272], rounds: usize, data: *mut [u8; 16], n: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_camellia_ecb_encrypt(schedule: *const [u8; 272], rounds: usize, data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJHDz//9JieBJg8AITYnBSYnISYmZmAsAAEmJqaALAABNiaGoCwAATYmpsAsAAE2JsbgLAABNibnACwAASb7/AP8A/wD/AE2JsYABAABJvgD/AP8A/wD/TYmxiAEAAEm+AAAAAAD//wBNibGQAQAASb4A//8AAAAAAE2JsZgBAABJvgAAAP//AAAATYmxoAEAAEiD/hI="
 je 20f
@@ -142,19 +179,9 @@ jmp 25f
     )
 }
 
-/// Camellia ECB decryption (RFC 3713 §2.3.3, SP 800-38A §6.1): replaces each of the `n` 16-byte blocks at `data` with its decryption by Camellia with `rounds` rounds under the subkeys at `schedule`, as `vg_camellia_expand_key` writes them (in the order encryption uses them, which decryption reverses). No padding is added or removed. For `n = 0`, no data is transformed.
-///
-/// Contract: `VG.Spec.Camellia.ecbDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 272 bytes.
-/// * `data` must be valid for reads and writes of `16 * n` bytes.
-/// * `rounds` must be 18 (for a key of 16 bytes) or 24 (for one of 24 or 32).
-/// * `data` must not overlap `schedule` (distinct Rust objects never do).
-/// * Neither `schedule` nor `data` may overlap the return address on the stack or the 3216 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_camellia_ecb_decrypt`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_camellia_ecb_decrypt(schedule: *const [u8; 272], rounds: usize, data: *mut [u8; 16], n: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_camellia_ecb_decrypt(schedule: *const [u8; 272], rounds: usize, data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJHDz//9JieBJg8AITYnBSYnISYmZmAsAAEmJqaALAABNiaGoCwAATYmpsAsAAE2JsbgLAABNibnACwAASb7/AP8A/wD/AE2JsYABAABJvgD/AP8A/wD/TYmxiAEAAEm+AAAAAAD//wBNibGQAQAASb4A//8AAAAAAE2JsZgBAABJvgAAAP//AAAATYmxoAEAAEiD/hI="
 je 20f
@@ -222,6 +249,7 @@ jmp 25f
 .base64 "SYuZmAsAAEmLqaALAABNi6GoCwAATYupsAsAAE2LsbgLAABNi7nACwAAQbsAAAAATIlcJAhMiVwkEEyJXCQYTIlcJCBMiVwkKEyJXCQwTIlcJDhMiVwkQEyJXCRITIlcJFBMiVwkWEyJXCRgTIlcJGhMiVwkcEyJXCR4TImcJIAAAABMiZwkiAAAAEyJnCSQAAAATImcJJgAAABMiZwkoAAAAEyJnCSoAAAATImcJLAAAABMiZwkuAAAAEyJnCTAAAAATImcJMgAAABMiZwk0AAAAEyJnCTYAAAATImcJOAAAABMiZwk6AAAAEyJnCTwAAAATImcJPgAAABMiZwkAAEAAEyJnCQIAQAATImcJBABAABMiZwkGAEAAEyJnCQgAQAATImcJCgBAABMiZwkMAEAAEyJnCQ4AQAATImcJEABAABMiZwkSAEAAEyJnCRQAQAATImcJFgBAABMiZwkYAEAAEyJnCRoAQAATImcJHABAABMiZwkeAEAAEyJnCSAAQAATImcJIgBAABMiZwkkAEAAEyJnCSYAQAATImcJKABAABMiZwkqAEAAEyJnCSwAQAATImcJLgBAABMiZwkwAEAAEyJnCTIAQAATImcJNABAABMiZwk2AEAAEyJnCTgAQAATImcJOgBAABMiZwk8AEAAEyJnCT4AQAATImcJAACAABMiZwkCAIAAEyJnCQQAgAATImcJBgCAABMiZwkIAIAAEyJnCQoAgAATImcJDACAABMiZwkOAIAAEyJnCRAAgAATImcJEgCAABMiZwkUAIAAEyJnCRYAgAATImcJGACAABMiZwkaAIAAEyJnCRwAgAATImcJHgCAABMiZwkgAIAAEyJnCSIAgAATImcJJACAABMiZwkmAIAAEyJnCSgAgAATImcJKgCAABMiZwksAIAAEyJnCS4AgAATImcJMACAABMiZwkyAIAAEyJnCTQAgAATImcJNgCAABMiZwk4AIAAEyJnCToAgAATImcJPACAABMiZwk+AIAAEyJnCQAAwAATImcJAgDAABMiZwkEAMAAEyJnCQYAwAATImcJCADAABMiZwkKAMAAEyJnCQwAwAATImcJDgDAABMiZwkQAMAAEyJnCRIAwAATImcJFADAABMiZwkWAMAAEyJnCRgAwAATImcJGgDAABMiZwkcAMAAEyJnCR4AwAATImcJIADAABMiZwkiAMAAEyJnCSQAwAATImcJJgDAABMiZwkoAMAAEyJnCSoAwAATImcJLADAABMiZwkuAMAAEyJnCTAAwAATImcJMgDAABMiZwk0AMAAEyJnCTYAwAATImcJOADAABMiZwk6AMAAEyJnCTwAwAATImcJPgDAABMiZwkAAQAAEyJnCQIBAAATImcJBAEAABMiZwkGAQAAEyJnCQgBAAATImcJCgEAABMiZwkMAQAAEyJnCQ4BAAATImcJEAEAABMiZwkSAQAAEyJnCRQBAAATImcJFgEAABMiZwkYAQAAEyJnCRoBAAATImcJHAEAABMiZwkeAQAAEyJnCSABAAATImcJIgEAABMiZwkkAQAAEyJnCSYBAAATImcJKAEAABMiZwkqAQAAEyJnCSwBAAATImcJLgEAABMiZwkwAQAAEyJnCTIBAAATImcJNAEAABMiZwk2AQAAEyJnCTgBAAATImcJOgEAABMiZwk8AQAAEyJnCT4BAAATImcJAAFAABMiZwkCAUAAEyJnCQQBQAATImcJBgFAABMiZwkIAUAAEyJnCQoBQAATImcJDAFAABMiZwkOAUAAEyJnCRABQAATImcJEgFAABMiZwkUAUAAEyJnCRYBQAATImcJGAFAABMiZwkaAUAAEyJnCRwBQAATImcJHgFAABMiZwkgAUAAEyJnCSIBQAATImcJJAFAABMiZwkmAUAAEyJnCSgBQAATImcJKgFAABMiZwksAUAAEyJnCS4BQAATImcJMAFAABMiZwkyAUAAEyJnCTQBQAATImcJNgFAABMiZwk4AUAAEyJnCToBQAATImcJPAFAABMiZwk+AUAAEyJnCQABgAATImcJAgGAABMiZwkEAYAAEyJnCQYBgAATImcJCAGAABMiZwkKAYAAEyJnCQwBgAATImcJDgGAABMiZwkQAYAAEyJnCRIBgAATImcJFAGAABMiZwkWAYAAEyJnCRgBgAATImcJGgGAABMiZwkcAYAAEyJnCR4BgAATImcJIAGAABMiZwkiAYAAEyJnCSQBgAATImcJJgGAABMiZwkoAYAAEyJnCSoBgAATImcJLAGAABMiZwkuAYAAEyJnCTABgAATImcJMgGAABMiZwk0AYAAEyJnCTYBgAATImcJOAGAABMiZwk6AYAAEyJnCTwBgAATImcJPgGAABMiZwkAAcAAEyJnCQIBwAATImcJBAHAABMiZwkGAcAAEyJnCQgBwAATImcJCgHAABMiZwkMAcAAEyJnCQ4BwAATImcJEAHAABMiZwkSAcAAEyJnCRQBwAATImcJFgHAABMiZwkYAcAAEyJnCRoBwAATImcJHAHAABMiZwkeAcAAEyJnCSABwAATImcJIgHAABMiZwkkAcAAEyJnCSYBwAATImcJKAHAABMiZwkqAcAAEyJnCSwBwAATImcJLgHAABMiZwkwAcAAEyJnCTIBwAATImcJNAHAABMiZwk2AcAAEyJnCTgBwAATImcJOgHAABMiZwk8AcAAEyJnCT4BwAATImcJAAIAABMiZwkCAgAAEyJnCQQCAAATImcJBgIAABMiZwkIAgAAEyJnCQoCAAATImcJDAIAABMiZwkOAgAAEyJnCRACAAATImcJEgIAABMiZwkUAgAAEyJnCRYCAAATImcJGAIAABMiZwkaAgAAEyJnCRwCAAATImcJHgIAABMiZwkgAgAAEyJnCSICAAATImcJJAIAABMiZwkmAgAAEyJnCSgCAAATImcJKgIAABMiZwksAgAAEyJnCS4CAAATImcJMAIAABMiZwkyAgAAEyJnCTQCAAATImcJNgIAABMiZwk4AgAAEyJnCToCAAATImcJPAIAABMiZwk+AgAAEyJnCQACQAATImcJAgJAABMiZwkEAkAAEyJnCQYCQAATImcJCAJAABMiZwkKAkAAEyJnCQwCQAATImcJDgJAABMiZwkQAkAAEyJnCRICQAATImcJFAJAABMiZwkWAkAAEyJnCRgCQAATImcJGgJAABMiZwkcAkAAEyJnCR4CQAATImcJIAJAABMiZwkiAkAAEyJnCSQCQAATImcJJgJAABMiZwkoAkAAEyJnCSoCQAATImcJLAJAABMiZwkuAkAAEyJnCTACQAATImcJMgJAABMiZwk0AkAAEyJnCTYCQAATImcJOAJAABMiZwk6AkAAEyJnCTwCQAATImcJPgJAABMiZwkAAoAAEyJnCQICgAATImcJBAKAABMiZwkGAoAAEyJnCQgCgAATImcJCgKAABMiZwkMAoAAEyJnCQ4CgAATImcJEAKAABMiZwkSAoAAEyJnCRQCgAATImcJFgKAABMiZwkYAoAAEyJnCRoCgAATImcJHAKAABMiZwkeAoAAEyJnCSACgAATImcJIgKAABMiZwkkAoAAEyJnCSYCgAATImcJKAKAABMiZwkqAoAAEyJnCSwCgAATImcJLgKAABMiZwkwAoAAEyJnCTICgAATImcJNAKAABMiZwk2AoAAEyJnCTgCgAATImcJOgKAABMiZwk8AoAAEyJnCT4CgAATImcJAALAABMiZwkCAsAAEyJnCQQCwAATImcJBgLAABMiZwkIAsAAEyJnCQoCwAATImcJDALAABMiZwkOAsAAEyJnCRACwAATImcJEgLAABMiZwkUAsAAEyJnCRYCwAATImcJGALAABMiZwkaAsAAEyJnCRwCwAATImcJHgLAABMiZwkgAsAAEyJnCSICwAATImcJJALAABMiZwkmAsAAEyJnCSgCwAATImcJKgLAABMiZwksAsAAEyJnCS4CwAATImcJMALAABMiZwkyAsAAEyJnCTQCwAATImcJNgLAABMiZwk4AsAAEyJnCToCwAATImcJPALAABMiZwk+AsAAEyJnCQADAAATImcJAgMAABMiZwkEAwAAEyJnCQYDAAATImcJCAMAABMiZwkKAwAAEyJnCQwDAAATImcJDgMAABMiZwkQAwAAEyJnCRIDAAATImcJFAMAABMiZwkWAwAAEyJnCRgDAAATImcJGgMAABMiZwkcAwAAEyJnCR4DAAATImcJIAMAABMiZwkiAwAAEiNpCSQDAAAww=="
 .p2align 6"#,
     )
+}
 }
 
 #[rustfmt::skip]

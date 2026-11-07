@@ -16,8 +16,243 @@
 /// * The contents of `scratch` on return are unspecified.
 /// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
 /// * None of `state`, `data` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_sha3_224_update(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha3_224_update(state, pos, data, len, scratch) }
+}
+
+/// Finishes a SHA3-224 computation: if the state `*state` represents a message whose length is `pos` modulo 144 (`VG.Spec.Sha3.Repr` with SHA3-224's rate, as `vg_sha3_224_update` leaves it), writes the SHA3-224 digest of that message (28 bytes, `VG.Spec.Sha3.sha3_224`) to `*out`.
+///
+/// Contract: `VG.Spec.Sha3.finalizeContract` for `VG.Spec.Sha3.hashSha3_224`. Constant time: only the pointers and `pos` may affect timing, not the state.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 200 bytes.
+/// * `out` must be valid for reads and writes of 28 bytes.
+/// * `pos` must be less than 144.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
+/// * Neither `state` nor `out` may overlap the 752 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_sha3_224_finalize(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, out: *mut [u8; 28]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha3_224_finalize(state, pos, out) }
+}
+
+/// Absorbs data into a SHA3-256 computation: if the state `*state` represents a message whose length is `pos` modulo 136 (`VG.Spec.Sha3.Repr` with SHA3-256's rate, 136), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 136`. `*scratch` is its working space. A computation starts from the all-zero state, at position 0.
+///
+/// Contract: `VG.Spec.Sha3.updateContract` with the rate 136. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 200 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 640 bytes.
+/// * `pos` must be less than 136.
+/// * The contents of `scratch` on return are unspecified.
+/// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
+/// * None of `state`, `data` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_sha3_256_update(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha3_256_update(state, pos, data, len, scratch) }
+}
+
+/// Finishes a SHA3-256 computation: if the state `*state` represents a message whose length is `pos` modulo 136 (`VG.Spec.Sha3.Repr` with SHA3-256's rate, as `vg_sha3_256_update` leaves it), writes the SHA3-256 digest of that message (32 bytes, `VG.Spec.Sha3.sha3_256`) to `*out`.
+///
+/// Contract: `VG.Spec.Sha3.finalizeContract` for `VG.Spec.Sha3.hashSha3_256`. Constant time: only the pointers and `pos` may affect timing, not the state.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 200 bytes.
+/// * `out` must be valid for reads and writes of 32 bytes.
+/// * `pos` must be less than 136.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
+/// * Neither `state` nor `out` may overlap the 752 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_sha3_256_finalize(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, out: *mut [u8; 32]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha3_256_finalize(state, pos, out) }
+}
+
+/// Absorbs data into a SHA3-384 computation: if the state `*state` represents a message whose length is `pos` modulo 104 (`VG.Spec.Sha3.Repr` with SHA3-384's rate, 104), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 104`. `*scratch` is its working space. A computation starts from the all-zero state, at position 0.
+///
+/// Contract: `VG.Spec.Sha3.updateContract` with the rate 104. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 200 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 640 bytes.
+/// * `pos` must be less than 104.
+/// * The contents of `scratch` on return are unspecified.
+/// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
+/// * None of `state`, `data` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_sha3_384_update(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha3_384_update(state, pos, data, len, scratch) }
+}
+
+/// Finishes a SHA3-384 computation: if the state `*state` represents a message whose length is `pos` modulo 104 (`VG.Spec.Sha3.Repr` with SHA3-384's rate, as `vg_sha3_384_update` leaves it), writes the SHA3-384 digest of that message (48 bytes, `VG.Spec.Sha3.sha3_384`) to `*out`.
+///
+/// Contract: `VG.Spec.Sha3.finalizeContract` for `VG.Spec.Sha3.hashSha3_384`. Constant time: only the pointers and `pos` may affect timing, not the state.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 200 bytes.
+/// * `out` must be valid for reads and writes of 48 bytes.
+/// * `pos` must be less than 104.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
+/// * Neither `state` nor `out` may overlap the 752 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_sha3_384_finalize(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, out: *mut [u8; 48]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha3_384_finalize(state, pos, out) }
+}
+
+/// Absorbs data into a SHA3-512 computation: if the state `*state` represents a message whose length is `pos` modulo 72 (`VG.Spec.Sha3.Repr` with SHA3-512's rate, 72), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 72`. `*scratch` is its working space. A computation starts from the all-zero state, at position 0.
+///
+/// Contract: `VG.Spec.Sha3.updateContract` with the rate 72. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 200 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 640 bytes.
+/// * `pos` must be less than 72.
+/// * The contents of `scratch` on return are unspecified.
+/// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
+/// * None of `state`, `data` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_sha3_512_update(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha3_512_update(state, pos, data, len, scratch) }
+}
+
+/// Finishes a SHA3-512 computation: if the state `*state` represents a message whose length is `pos` modulo 72 (`VG.Spec.Sha3.Repr` with SHA3-512's rate, as `vg_sha3_512_update` leaves it), writes the SHA3-512 digest of that message (64 bytes, `VG.Spec.Sha3.sha3_512`) to `*out`.
+///
+/// Contract: `VG.Spec.Sha3.finalizeContract` for `VG.Spec.Sha3.hashSha3_512`. Constant time: only the pointers and `pos` may affect timing, not the state.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 200 bytes.
+/// * `out` must be valid for reads and writes of 64 bytes.
+/// * `pos` must be less than 72.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
+/// * Neither `state` nor `out` may overlap the 752 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_sha3_512_finalize(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, out: *mut [u8; 64]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha3_512_finalize(state, pos, out) }
+}
+
+/// Absorbs data into a SHAKE128 computation: if the state `*state` represents a message whose length is `pos` modulo 168 (`VG.Spec.Sha3.Repr` with SHAKE128's rate, 168), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 168`. `*scratch` is its working space. A computation starts from the all-zero state, at position 0.
+///
+/// Contract: `VG.Spec.Sha3.updateContract` with the rate 168. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 200 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 640 bytes.
+/// * `pos` must be less than 168.
+/// * The contents of `scratch` on return are unspecified.
+/// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
+/// * None of `state`, `data` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_shake128_update(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_shake128_update(state, pos, data, len, scratch) }
+}
+
+/// Finishes absorbing a SHAKE128 message: if the state `*state` represents a message whose length is `pos` modulo 168 (`VG.Spec.Sha3.Repr` with SHAKE128's rate, as `vg_shake128_update` leaves it), it becomes a state that, squeezed by `vg_shake128_squeeze` from position 0, gives the output of SHAKE128 of that message (`VG.Spec.Sha3.shake128`) from its first byte on (`VG.Spec.Sha3.XofRepr`).
+///
+/// Contract: `VG.Spec.Sha3.xofFinalizeContract` for `VG.Spec.Sha3.xofShake128`. Constant time: only the pointer and `pos` may affect timing, not the state.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 200 bytes.
+/// * `pos` must be less than 168.
+/// * `state` must not overlap the 720 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_shake128_finalize(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_shake128_finalize(state, pos) }
+}
+
+/// Squeezes SHAKE128 output: if the state `*state`, from position `pos`, continues the output of SHAKE128 of a message (`VG.Spec.Sha3.shake128`) after its first `n` bytes (`VG.Spec.Sha3.XofRepr`), writes the next `outlen` bytes of that output to `out`, and leaves in `*state` a state, and returns a position, that continue it after its first `n + outlen` bytes. Start from the state `vg_shake128_finalize` leaves and position 0.
+///
+/// Contract: `VG.Spec.Sha3.xofSqueezeContract` for `VG.Spec.Sha3.xofShake128`. Constant time: only the pointers, `pos` and `outlen` may affect timing, not the state.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 200 bytes.
+/// * `out` must be valid for reads and writes of `outlen` bytes.
+/// * `pos` must be at most 168.
+/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
+/// * Neither `state` nor `out` may overlap the 720 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_shake128_squeeze(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, out: *mut u8, outlen: usize) -> usize {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_shake128_squeeze(state, pos, out, outlen) }
+}
+
+/// Finishes absorbing a SHAKE256 message: if the state `*state` represents a message whose length is `pos` modulo 136 (`VG.Spec.Sha3.Repr` with SHAKE256's rate, as `vg_shake256_update` leaves it), it becomes a state that, squeezed by `vg_shake256_squeeze` from position 0, gives the output of SHAKE256 of that message (`VG.Spec.Sha3.shake256`) from its first byte on (`VG.Spec.Sha3.XofRepr`).
+///
+/// Contract: `VG.Spec.Sha3.xofFinalizeContract` for `VG.Spec.Sha3.xofShake256`. Constant time: only the pointer and `pos` may affect timing, not the state.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 200 bytes.
+/// * `pos` must be less than 136.
+/// * `state` must not overlap the 720 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_shake256_finalize(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_shake256_finalize(state, pos) }
+}
+
+/// Squeezes SHAKE256 output: if the state `*state`, from position `pos`, continues the output of SHAKE256 of a message (`VG.Spec.Sha3.shake256`) after its first `n` bytes (`VG.Spec.Sha3.XofRepr`), writes the next `outlen` bytes of that output to `out`, and leaves in `*state` a state, and returns a position, that continue it after its first `n + outlen` bytes. Start from the state `vg_shake256_finalize` leaves and position 0.
+///
+/// Contract: `VG.Spec.Sha3.xofSqueezeContract` for `VG.Spec.Sha3.xofShake256`. Constant time: only the pointers, `pos` and `outlen` may affect timing, not the state.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 200 bytes.
+/// * `out` must be valid for reads and writes of `outlen` bytes.
+/// * `pos` must be at most 136.
+/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
+/// * Neither `state` nor `out` may overlap the 720 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_shake256_squeeze(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, out: *mut u8, outlen: usize) -> usize {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_shake256_squeeze(state, pos, out, outlen) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_sha3_224_update`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha3_224_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+pub(crate) unsafe extern "C" fn vg_sha3_224_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
     core::arch::naked_asm!(
         r#".base64 "AAAHOQAA5jgAAMU4AACkOJAAgDimAgh80f8h+CAAAfgAAkj7CAJo+xACiPsYAqj7IALI+ygC6PsAAEM7AABoOwAAhDsAAKU7AADGOwAA5zsAAD8o"
 beq %cr0, 20f
@@ -42,50 +277,27 @@ b 21f
 20:
 21:
 .base64 "AAB9OAACW+sQApvrGAK76yAC2+soAvvrCAJ76yAAAegwACE4pgMIfCAAgE4=""#,
-        vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
+        vg_keccak_f1600 = sym crate::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
 }
 
-/// Finishes a SHA3-224 computation: if the state `*state` represents a message whose length is `pos` modulo 144 (`VG.Spec.Sha3.Repr` with SHA3-224's rate, as `vg_sha3_224_update` leaves it), writes the SHA3-224 digest of that message (28 bytes, `VG.Spec.Sha3.sha3_224`) to `*out`.
-///
-/// Contract: `VG.Spec.Sha3.finalizeContract` for `VG.Spec.Sha3.hashSha3_224`. Constant time: only the pointers and `pos` may affect timing, not the state.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 200 bytes.
-/// * `out` must be valid for reads and writes of 28 bytes.
-/// * `pos` must be less than 144.
-/// * The contents of `state` on return are unspecified.
-/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 752 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_sha3_224_finalize`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha3_224_finalize(state: *mut [u64; 25], pos: usize, out: *mut [u8; 28]) {
+pub(crate) unsafe extern "C" fn vg_sha3_224_finalize(state: *mut [u64; 25], pos: usize, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
         r#".base64 "Qf0h+CAAwTimAgh8mAIG+IACpvuIAsb7kALm+wAAozsAAMU7AADmOwAApDiQAIA4BgDAOAAA/zg="
 bl {vg_keccak_pad_scratch}
 .base64 "AAB9OJAAgDgAAKA4AADeOBwA4DgAAB85"
 bl {vg_keccak_squeeze_scratch}
 .base64 "mAIf6KYDCHyAAr/riALf65AC/+vAAiE4IACATg==""#,
-        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+        vg_keccak_pad_scratch = sym crate::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym crate::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
     )
 }
 
-/// Absorbs data into a SHA3-256 computation: if the state `*state` represents a message whose length is `pos` modulo 136 (`VG.Spec.Sha3.Repr` with SHA3-256's rate, 136), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 136`. `*scratch` is its working space. A computation starts from the all-zero state, at position 0.
-///
-/// Contract: `VG.Spec.Sha3.updateContract` with the rate 136. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 200 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 640 bytes.
-/// * `pos` must be less than 136.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
-/// * None of `state`, `data` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_sha3_256_update`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha3_256_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+pub(crate) unsafe extern "C" fn vg_sha3_256_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
     core::arch::naked_asm!(
         r#".base64 "AAAHOQAA5jgAAMU4AACkOIgAgDimAgh80f8h+CAAAfgAAkj7CAJo+xACiPsYAqj7IALI+ygC6PsAAEM7AABoOwAAhDsAAKU7AADGOwAA5zsAAD8o"
 beq %cr0, 20f
@@ -110,50 +322,27 @@ b 21f
 20:
 21:
 .base64 "AAB9OAACW+sQApvrGAK76yAC2+soAvvrCAJ76yAAAegwACE4pgMIfCAAgE4=""#,
-        vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
+        vg_keccak_f1600 = sym crate::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
 }
 
-/// Finishes a SHA3-256 computation: if the state `*state` represents a message whose length is `pos` modulo 136 (`VG.Spec.Sha3.Repr` with SHA3-256's rate, as `vg_sha3_256_update` leaves it), writes the SHA3-256 digest of that message (32 bytes, `VG.Spec.Sha3.sha3_256`) to `*out`.
-///
-/// Contract: `VG.Spec.Sha3.finalizeContract` for `VG.Spec.Sha3.hashSha3_256`. Constant time: only the pointers and `pos` may affect timing, not the state.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 200 bytes.
-/// * `out` must be valid for reads and writes of 32 bytes.
-/// * `pos` must be less than 136.
-/// * The contents of `state` on return are unspecified.
-/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 752 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_sha3_256_finalize`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha3_256_finalize(state: *mut [u64; 25], pos: usize, out: *mut [u8; 32]) {
+pub(crate) unsafe extern "C" fn vg_sha3_256_finalize(state: *mut [u64; 25], pos: usize, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
         r#".base64 "Qf0h+CAAwTimAgh8mAIG+IACpvuIAsb7kALm+wAAozsAAMU7AADmOwAApDiIAIA4BgDAOAAA/zg="
 bl {vg_keccak_pad_scratch}
 .base64 "AAB9OIgAgDgAAKA4AADeOCAA4DgAAB85"
 bl {vg_keccak_squeeze_scratch}
 .base64 "mAIf6KYDCHyAAr/riALf65AC/+vAAiE4IACATg==""#,
-        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+        vg_keccak_pad_scratch = sym crate::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym crate::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
     )
 }
 
-/// Absorbs data into a SHA3-384 computation: if the state `*state` represents a message whose length is `pos` modulo 104 (`VG.Spec.Sha3.Repr` with SHA3-384's rate, 104), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 104`. `*scratch` is its working space. A computation starts from the all-zero state, at position 0.
-///
-/// Contract: `VG.Spec.Sha3.updateContract` with the rate 104. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 200 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 640 bytes.
-/// * `pos` must be less than 104.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
-/// * None of `state`, `data` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_sha3_384_update`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha3_384_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+pub(crate) unsafe extern "C" fn vg_sha3_384_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
     core::arch::naked_asm!(
         r#".base64 "AAAHOQAA5jgAAMU4AACkOGgAgDimAgh80f8h+CAAAfgAAkj7CAJo+xACiPsYAqj7IALI+ygC6PsAAEM7AABoOwAAhDsAAKU7AADGOwAA5zsAAD8o"
 beq %cr0, 20f
@@ -178,50 +367,27 @@ b 21f
 20:
 21:
 .base64 "AAB9OAACW+sQApvrGAK76yAC2+soAvvrCAJ76yAAAegwACE4pgMIfCAAgE4=""#,
-        vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
+        vg_keccak_f1600 = sym crate::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
 }
 
-/// Finishes a SHA3-384 computation: if the state `*state` represents a message whose length is `pos` modulo 104 (`VG.Spec.Sha3.Repr` with SHA3-384's rate, as `vg_sha3_384_update` leaves it), writes the SHA3-384 digest of that message (48 bytes, `VG.Spec.Sha3.sha3_384`) to `*out`.
-///
-/// Contract: `VG.Spec.Sha3.finalizeContract` for `VG.Spec.Sha3.hashSha3_384`. Constant time: only the pointers and `pos` may affect timing, not the state.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 200 bytes.
-/// * `out` must be valid for reads and writes of 48 bytes.
-/// * `pos` must be less than 104.
-/// * The contents of `state` on return are unspecified.
-/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 752 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_sha3_384_finalize`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha3_384_finalize(state: *mut [u64; 25], pos: usize, out: *mut [u8; 48]) {
+pub(crate) unsafe extern "C" fn vg_sha3_384_finalize(state: *mut [u64; 25], pos: usize, out: *mut [u8; 48]) {
     core::arch::naked_asm!(
         r#".base64 "Qf0h+CAAwTimAgh8mAIG+IACpvuIAsb7kALm+wAAozsAAMU7AADmOwAApDhoAIA4BgDAOAAA/zg="
 bl {vg_keccak_pad_scratch}
 .base64 "AAB9OGgAgDgAAKA4AADeODAA4DgAAB85"
 bl {vg_keccak_squeeze_scratch}
 .base64 "mAIf6KYDCHyAAr/riALf65AC/+vAAiE4IACATg==""#,
-        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+        vg_keccak_pad_scratch = sym crate::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym crate::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
     )
 }
 
-/// Absorbs data into a SHA3-512 computation: if the state `*state` represents a message whose length is `pos` modulo 72 (`VG.Spec.Sha3.Repr` with SHA3-512's rate, 72), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 72`. `*scratch` is its working space. A computation starts from the all-zero state, at position 0.
-///
-/// Contract: `VG.Spec.Sha3.updateContract` with the rate 72. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 200 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 640 bytes.
-/// * `pos` must be less than 72.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
-/// * None of `state`, `data` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_sha3_512_update`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha3_512_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+pub(crate) unsafe extern "C" fn vg_sha3_512_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
     core::arch::naked_asm!(
         r#".base64 "AAAHOQAA5jgAAMU4AACkOEgAgDimAgh80f8h+CAAAfgAAkj7CAJo+xACiPsYAqj7IALI+ygC6PsAAEM7AABoOwAAhDsAAKU7AADGOwAA5zsAAD8o"
 beq %cr0, 20f
@@ -246,50 +412,27 @@ b 21f
 20:
 21:
 .base64 "AAB9OAACW+sQApvrGAK76yAC2+soAvvrCAJ76yAAAegwACE4pgMIfCAAgE4=""#,
-        vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
+        vg_keccak_f1600 = sym crate::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
 }
 
-/// Finishes a SHA3-512 computation: if the state `*state` represents a message whose length is `pos` modulo 72 (`VG.Spec.Sha3.Repr` with SHA3-512's rate, as `vg_sha3_512_update` leaves it), writes the SHA3-512 digest of that message (64 bytes, `VG.Spec.Sha3.sha3_512`) to `*out`.
-///
-/// Contract: `VG.Spec.Sha3.finalizeContract` for `VG.Spec.Sha3.hashSha3_512`. Constant time: only the pointers and `pos` may affect timing, not the state.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 200 bytes.
-/// * `out` must be valid for reads and writes of 64 bytes.
-/// * `pos` must be less than 72.
-/// * The contents of `state` on return are unspecified.
-/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 752 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_sha3_512_finalize`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha3_512_finalize(state: *mut [u64; 25], pos: usize, out: *mut [u8; 64]) {
+pub(crate) unsafe extern "C" fn vg_sha3_512_finalize(state: *mut [u64; 25], pos: usize, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
         r#".base64 "Qf0h+CAAwTimAgh8mAIG+IACpvuIAsb7kALm+wAAozsAAMU7AADmOwAApDhIAIA4BgDAOAAA/zg="
 bl {vg_keccak_pad_scratch}
 .base64 "AAB9OEgAgDgAAKA4AADeOEAA4DgAAB85"
 bl {vg_keccak_squeeze_scratch}
 .base64 "mAIf6KYDCHyAAr/riALf65AC/+vAAiE4IACATg==""#,
-        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+        vg_keccak_pad_scratch = sym crate::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym crate::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
     )
 }
 
-/// Absorbs data into a SHAKE128 computation: if the state `*state` represents a message whose length is `pos` modulo 168 (`VG.Spec.Sha3.Repr` with SHAKE128's rate, 168), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 168`. `*scratch` is its working space. A computation starts from the all-zero state, at position 0.
-///
-/// Contract: `VG.Spec.Sha3.updateContract` with the rate 168. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 200 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 640 bytes.
-/// * `pos` must be less than 168.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
-/// * None of `state`, `data` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_shake128_update`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_shake128_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+pub(crate) unsafe extern "C" fn vg_shake128_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
     core::arch::naked_asm!(
         r#".base64 "AAAHOQAA5jgAAMU4AACkOKgAgDimAgh80f8h+CAAAfgAAkj7CAJo+xACiPsYAqj7IALI+ygC6PsAAEM7AABoOwAAhDsAAKU7AADGOwAA5zsAAD8o"
 beq %cr0, 20f
@@ -314,42 +457,24 @@ b 21f
 20:
 21:
 .base64 "AAB9OAACW+sQApvrGAK76yAC2+soAvvrCAJ76yAAAegwACE4pgMIfCAAgE4=""#,
-        vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
+        vg_keccak_f1600 = sym crate::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
 }
 
-/// Finishes absorbing a SHAKE128 message: if the state `*state` represents a message whose length is `pos` modulo 168 (`VG.Spec.Sha3.Repr` with SHAKE128's rate, as `vg_shake128_update` leaves it), it becomes a state that, squeezed by `vg_shake128_squeeze` from position 0, gives the output of SHAKE128 of that message (`VG.Spec.Sha3.shake128`) from its first byte on (`VG.Spec.Sha3.XofRepr`).
-///
-/// Contract: `VG.Spec.Sha3.xofFinalizeContract` for `VG.Spec.Sha3.xofShake128`. Constant time: only the pointer and `pos` may affect timing, not the state.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 200 bytes.
-/// * `pos` must be less than 168.
-/// * `state` must not overlap the 720 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_shake128_finalize`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_shake128_finalize(state: *mut [u64; 25], pos: usize) {
+pub(crate) unsafe extern "C" fn vg_shake128_finalize(state: *mut [u64; 25], pos: usize) {
     core::arch::naked_asm!(
         r#".base64 "Yf0h+CAAoTgAAOU4AACkOKgAgDgfAMA4pgIIfNH/IfggAAH4FCojfQAASYl4Mkp9AABJmRQiI33//yk5AABJiYAAYDl4Wkp9AABJmQAAhzg="
 bl {vg_keccak_f1600}
 .base64 "IAAB6DAAITimAwh8oAIhOCAAgE4=""#,
-        vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
+        vg_keccak_f1600 = sym crate::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
 }
 
-/// Squeezes SHAKE128 output: if the state `*state`, from position `pos`, continues the output of SHAKE128 of a message (`VG.Spec.Sha3.shake128`) after its first `n` bytes (`VG.Spec.Sha3.XofRepr`), writes the next `outlen` bytes of that output to `out`, and leaves in `*state` a state, and returns a position, that continue it after its first `n + outlen` bytes. Start from the state `vg_shake128_finalize` leaves and position 0.
-///
-/// Contract: `VG.Spec.Sha3.xofSqueezeContract` for `VG.Spec.Sha3.xofShake128`. Constant time: only the pointers, `pos` and `outlen` may affect timing, not the state.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 200 bytes.
-/// * `out` must be valid for reads and writes of `outlen` bytes.
-/// * `pos` must be at most 168.
-/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 720 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_shake128_squeeze`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_shake128_squeeze(state: *mut [u64; 25], pos: usize, out: *mut u8, outlen: usize) -> usize {
+pub(crate) unsafe extern "C" fn vg_shake128_squeeze(state: *mut [u64; 25], pos: usize, out: *mut u8, outlen: usize) -> usize {
     core::arch::naked_asm!(
         r#".base64 "Yf0h+CAA4TgAAAc5AADmOAAAxTgAAKQ4qACAOKYCCHzR/yH4IAAB+AACSPsIAmj7EAKI+xgCqPsgAsj7KALo+wAAQzsAAGg7AACEOwAApTsAAMY7AADnOwAAPyg="
 beq %cr0, 20f
@@ -374,42 +499,24 @@ b 21f
 20:
 21:
 .base64 "AAB9OAACW+sQApvrGAK76yAC2+soAvvrCAJ76yAAAegwACE4pgMIfKACITggAIBO""#,
-        vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
+        vg_keccak_f1600 = sym crate::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
 }
 
-/// Finishes absorbing a SHAKE256 message: if the state `*state` represents a message whose length is `pos` modulo 136 (`VG.Spec.Sha3.Repr` with SHAKE256's rate, as `vg_shake256_update` leaves it), it becomes a state that, squeezed by `vg_shake256_squeeze` from position 0, gives the output of SHAKE256 of that message (`VG.Spec.Sha3.shake256`) from its first byte on (`VG.Spec.Sha3.XofRepr`).
-///
-/// Contract: `VG.Spec.Sha3.xofFinalizeContract` for `VG.Spec.Sha3.xofShake256`. Constant time: only the pointer and `pos` may affect timing, not the state.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 200 bytes.
-/// * `pos` must be less than 136.
-/// * `state` must not overlap the 720 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_shake256_finalize`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_shake256_finalize(state: *mut [u64; 25], pos: usize) {
+pub(crate) unsafe extern "C" fn vg_shake256_finalize(state: *mut [u64; 25], pos: usize) {
     core::arch::naked_asm!(
         r#".base64 "Yf0h+CAAoTgAAOU4AACkOIgAgDgfAMA4pgIIfNH/IfggAAH4FCojfQAASYl4Mkp9AABJmRQiI33//yk5AABJiYAAYDl4Wkp9AABJmQAAhzg="
 bl {vg_keccak_f1600}
 .base64 "IAAB6DAAITimAwh8oAIhOCAAgE4=""#,
-        vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
+        vg_keccak_f1600 = sym crate::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
 }
 
-/// Squeezes SHAKE256 output: if the state `*state`, from position `pos`, continues the output of SHAKE256 of a message (`VG.Spec.Sha3.shake256`) after its first `n` bytes (`VG.Spec.Sha3.XofRepr`), writes the next `outlen` bytes of that output to `out`, and leaves in `*state` a state, and returns a position, that continue it after its first `n + outlen` bytes. Start from the state `vg_shake256_finalize` leaves and position 0.
-///
-/// Contract: `VG.Spec.Sha3.xofSqueezeContract` for `VG.Spec.Sha3.xofShake256`. Constant time: only the pointers, `pos` and `outlen` may affect timing, not the state.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 200 bytes.
-/// * `out` must be valid for reads and writes of `outlen` bytes.
-/// * `pos` must be at most 136.
-/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 720 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_shake256_squeeze`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_shake256_squeeze(state: *mut [u64; 25], pos: usize, out: *mut u8, outlen: usize) -> usize {
+pub(crate) unsafe extern "C" fn vg_shake256_squeeze(state: *mut [u64; 25], pos: usize, out: *mut u8, outlen: usize) -> usize {
     core::arch::naked_asm!(
         r#".base64 "Yf0h+CAA4TgAAAc5AADmOAAAxTgAAKQ4iACAOKYCCHzR/yH4IAAB+AACSPsIAmj7EAKI+xgCqPsgAsj7KALo+wAAQzsAAGg7AACEOwAApTsAAMY7AADnOwAAPyg="
 beq %cr0, 20f
@@ -434,6 +541,7 @@ b 21f
 20:
 21:
 .base64 "AAB9OAACW+sQApvrGAK76yAC2+soAvvrCAJ76yAAAegwACE4pgMIfKACITggAIBO""#,
-        vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
+        vg_keccak_f1600 = sym crate::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
+}
 }

@@ -32,7 +32,7 @@ call {vg_sha1_compress_avx_bmi}
 call {vg_sha1_compress_avx_bmi}
 .base64 "SIn7SYnPSYufoAAAAEmLr6gAAABNi6ewAAAATYuvuAAAAE2Lt8AAAABNi7/IAAAAww=="
 .p2align 6"#,
-        vg_sha1_init = sym crate::sha1::vg_sha1_init,
+        vg_sha1_init = sym crate::sha1::raw::vg_sha1_init,
         vg_sha1_compress_avx_bmi = sym crate::sha1::vg_sha1_compress_avx_bmi::vg_sha1_compress_avx_bmi,
     )
 }

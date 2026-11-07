@@ -20,20 +20,20 @@
 /// * None of `seed`, `ek`, `dk` and `scratch` may overlap the 128 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_mlkem768_keygen_auto(seed: *const [u8; 64], ek: *mut [u8; 1184], dk: *mut [u8; 2400], scratch: *mut [u64; 4096]) -> u32 {
+pub unsafe fn vg_mlkem768_keygen_auto(dit: verified_garbage_cpu::Dit<'_>, seed: *const [u8; 64], ek: *mut [u8; 1184], dk: *mut [u8; 2400], scratch: *mut [u64; 4096]) -> u32 {
     let cpu = verified_garbage_cpu::detected();
     if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::mlkem768::VG_MLKEM768_KEYGEN_X2_SHA3_KECCAK_SHA3_FEATURES)) && cpu.contains(crate::mlkem768::VG_MLKEM768_KEYGEN_X2_SHA3_KECCAK_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_mlkem768_keygen_x2_sha3_keccak_sha3`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::mlkem768::vg_mlkem768_keygen_x2_sha3_keccak_sha3(seed, ek, dk, scratch) };
+        return unsafe { crate::mlkem768::vg_mlkem768_keygen_x2_sha3_keccak_sha3(dit, seed, ek, dk, scratch) };
     }
     if cpu.contains(crate::mlkem768::VG_MLKEM768_KEYGEN_X2_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_mlkem768_keygen_x2_sha3`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::mlkem768::vg_mlkem768_keygen_x2_sha3(seed, ek, dk, scratch) };
+        return unsafe { crate::mlkem768::vg_mlkem768_keygen_x2_sha3(dit, seed, ek, dk, scratch) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::mlkem768::vg_mlkem768_keygen(seed, ek, dk, scratch) }
+    unsafe { crate::mlkem768::vg_mlkem768_keygen(dit, seed, ek, dk, scratch) }
 }
 
 /// ML-KEM-768 encapsulation with given randomness, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
@@ -56,20 +56,20 @@ pub unsafe fn vg_mlkem768_keygen_auto(seed: *const [u8; 64], ek: *mut [u8; 1184]
 /// * None of `ek`, `m`, `key`, `ct` and `scratch` may overlap the 128 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_mlkem768_encaps_auto(ek: *const [u8; 1184], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
+pub unsafe fn vg_mlkem768_encaps_auto(dit: verified_garbage_cpu::Dit<'_>, ek: *const [u8; 1184], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
     let cpu = verified_garbage_cpu::detected();
     if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::mlkem768::VG_MLKEM768_ENCAPS_X2_SHA3_KECCAK_SHA3_FEATURES)) && cpu.contains(crate::mlkem768::VG_MLKEM768_ENCAPS_X2_SHA3_KECCAK_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_mlkem768_encaps_x2_sha3_keccak_sha3`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::mlkem768::vg_mlkem768_encaps_x2_sha3_keccak_sha3(ek, m, key, ct, scratch) };
+        return unsafe { crate::mlkem768::vg_mlkem768_encaps_x2_sha3_keccak_sha3(dit, ek, m, key, ct, scratch) };
     }
     if cpu.contains(crate::mlkem768::VG_MLKEM768_ENCAPS_X2_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_mlkem768_encaps_x2_sha3`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::mlkem768::vg_mlkem768_encaps_x2_sha3(ek, m, key, ct, scratch) };
+        return unsafe { crate::mlkem768::vg_mlkem768_encaps_x2_sha3(dit, ek, m, key, ct, scratch) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::mlkem768::vg_mlkem768_encaps(ek, m, key, ct, scratch) }
+    unsafe { crate::mlkem768::vg_mlkem768_encaps(dit, ek, m, key, ct, scratch) }
 }
 
 /// ML-KEM-768 decapsulation, `ML-KEM.Decaps_internal(dk, c)` (FIPS 203 Algorithm 18): with the decapsulation key `*dk` and the ciphertext `*ct`, writes the shared secret key to `*key`, which is the implicit rejection key `J(z ‖ c)` if the ciphertext does not re-encrypt to itself. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
@@ -90,20 +90,20 @@ pub unsafe fn vg_mlkem768_encaps_auto(ek: *const [u8; 1184], m: *const [u8; 32],
 /// * None of `dk`, `ct`, `key` and `scratch` may overlap the 128 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_mlkem768_decaps_auto(dk: *const [u8; 2400], ct: *const [u8; 1088], key: *mut [u8; 32], scratch: *mut [u64; 4096]) -> u32 {
+pub unsafe fn vg_mlkem768_decaps_auto(dit: verified_garbage_cpu::Dit<'_>, dk: *const [u8; 2400], ct: *const [u8; 1088], key: *mut [u8; 32], scratch: *mut [u64; 4096]) -> u32 {
     let cpu = verified_garbage_cpu::detected();
     if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::mlkem768::VG_MLKEM768_DECAPS_X2_SHA3_KECCAK_SHA3_FEATURES)) && cpu.contains(crate::mlkem768::VG_MLKEM768_DECAPS_X2_SHA3_KECCAK_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_mlkem768_decaps_x2_sha3_keccak_sha3`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::mlkem768::vg_mlkem768_decaps_x2_sha3_keccak_sha3(dk, ct, key, scratch) };
+        return unsafe { crate::mlkem768::vg_mlkem768_decaps_x2_sha3_keccak_sha3(dit, dk, ct, key, scratch) };
     }
     if cpu.contains(crate::mlkem768::VG_MLKEM768_DECAPS_X2_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_mlkem768_decaps_x2_sha3`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::mlkem768::vg_mlkem768_decaps_x2_sha3(dk, ct, key, scratch) };
+        return unsafe { crate::mlkem768::vg_mlkem768_decaps_x2_sha3(dit, dk, ct, key, scratch) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::mlkem768::vg_mlkem768_decaps(dk, ct, key, scratch) }
+    unsafe { crate::mlkem768::vg_mlkem768_decaps(dit, dk, ct, key, scratch) }
 }
 
 /// `vg_mlkem768_check_ek`, the only implementation of it on this target, which needs no CPU feature
@@ -134,18 +134,18 @@ pub use crate::mlkem768::vg_mlkem768_check_ek as vg_mlkem768_check_ek_auto;
 /// * None of `ek`, `h`, `m`, `key`, `ct` and `scratch` may overlap the 128 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_mlkem768_encaps_h_auto(ek: *const [u8; 1184], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
+pub unsafe fn vg_mlkem768_encaps_h_auto(dit: verified_garbage_cpu::Dit<'_>, ek: *const [u8; 1184], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
     let cpu = verified_garbage_cpu::detected();
     if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::mlkem768::VG_MLKEM768_ENCAPS_H_X2_SHA3_KECCAK_SHA3_FEATURES)) && cpu.contains(crate::mlkem768::VG_MLKEM768_ENCAPS_H_X2_SHA3_KECCAK_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_mlkem768_encaps_h_x2_sha3_keccak_sha3`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::mlkem768::vg_mlkem768_encaps_h_x2_sha3_keccak_sha3(ek, h, m, key, ct, scratch) };
+        return unsafe { crate::mlkem768::vg_mlkem768_encaps_h_x2_sha3_keccak_sha3(dit, ek, h, m, key, ct, scratch) };
     }
     if cpu.contains(crate::mlkem768::VG_MLKEM768_ENCAPS_H_X2_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_mlkem768_encaps_h_x2_sha3`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::mlkem768::vg_mlkem768_encaps_h_x2_sha3(ek, h, m, key, ct, scratch) };
+        return unsafe { crate::mlkem768::vg_mlkem768_encaps_h_x2_sha3(dit, ek, h, m, key, ct, scratch) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::mlkem768::vg_mlkem768_encaps_h(ek, h, m, key, ct, scratch) }
+    unsafe { crate::mlkem768::vg_mlkem768_encaps_h(dit, ek, h, m, key, ct, scratch) }
 }

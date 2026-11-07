@@ -7,6 +7,6 @@ pub const VG_MD_HASH_SHA1_AVX_BMI_FEATURES: verified_garbage_cpu::Features = ver
 
 /// The table of functions `VG_MD_HASH_SHA1_AVX_BMI` of the interface `MdHash`: `vg_sha1_init`, `vg_sha1_update_scratch_avx_bmi`, `vg_sha1_finalize_scratch_avx_bmi`, `vg_sha1_compress_avx_bmi`, `vg_sha1_state_digest`, then the data 1, 20, 64, 8, 84, 1.
 pub static VG_MD_HASH_SHA1_AVX_BMI: super::MdHash = super::MdHash {
-    fns: [crate::sha1::vg_sha1_init as *const (), crate::sha1::vg_sha1_update_scratch_avx_bmi::vg_sha1_update_scratch_avx_bmi as *const (), crate::sha1::vg_sha1_finalize_scratch_avx_bmi::vg_sha1_finalize_scratch_avx_bmi as *const (), crate::sha1::vg_sha1_compress_avx_bmi::vg_sha1_compress_avx_bmi as *const (), crate::sha1::vg_sha1_state_digest::vg_sha1_state_digest as *const ()],
+    fns: [crate::sha1::raw::vg_sha1_init as *const (), crate::sha1::vg_sha1_update_scratch_avx_bmi::vg_sha1_update_scratch_avx_bmi as *const (), crate::sha1::vg_sha1_finalize_scratch_avx_bmi::vg_sha1_finalize_scratch_avx_bmi as *const (), crate::sha1::vg_sha1_compress_avx_bmi::vg_sha1_compress_avx_bmi as *const (), crate::sha1::vg_sha1_state_digest::vg_sha1_state_digest as *const ()],
     data: [1, 20, 64, 8, 84, 1],
 };

@@ -13,8 +13,770 @@
 /// * `pw` must be valid for reads and writes of 128 bytes.
 /// * `pw` must not overlap `ctx` (distinct Rust objects never do).
 /// * Neither `ctx` nor `pw` may wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_store_powers(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], pw: *mut [u64; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_store_powers(ctx, pw) }
+}
+
+/// The CPU features `vg_aes_gcm_store_powers_aes` requires (`Artifact.features`).
+pub const VG_AES_GCM_STORE_POWERS_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
+
+/// Writes to `*pw` the 8 prepared powers of the hash subkey `H` of the key context `*ctx` of `vg_aes_gcm_init` (its bytes 240 to 255, `VG.Spec.Gcm.ctxH`): at byte `32*k`, for `k` from 0 to 3, `preparedPower(H^(2*k+2))` then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words (`VG.Spec.Gcm.Powers8Repr`, `VG.Spec.Gcm.preparedPower`), as the `*_with_powers` functions require for that key context. It reads only `*ctx` and writes only `*pw`. The key context and the powers are secret: only the pointers may affect timing.
+///
+/// Contract: `VG.Spec.Gcm.storePowersContract`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `pw` must be valid for reads and writes of 128 bytes.
+/// * `pw` must not overlap `ctx` (distinct Rust objects never do).
+/// * Neither `ctx` nor `pw` may wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` target feature.
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_store_powers_aes(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], pw: *mut [u64; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_store_powers_aes(ctx, pw) }
+}
+
+/// The CPU features `vg_aes_gcm_init_aes` requires (`Artifact.features`).
+pub const VG_AES_GCM_INIT_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
+
+/// The AES-GCM key setup: writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255. The other bytes are unspecified. The other `vg_aes_gcm_*` functions read it, with `Nr` as their `rounds`.
+///
+/// Contract: `VG.Spec.Gcm.initContract`. The key context is `VG.Spec.Gcm.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `ctx` must be valid for reads and writes of 256 bytes.
+/// * `key_len` must be 16, 24 or 32.
+/// * `ctx` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `ctx` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` target feature.
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_init_aes(_dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_init_aes(key, key_len, ctx) }
+}
+
+/// The CPU features `vg_aes_gcm_seal_aes` requires (`Artifact.features`).
+pub const VG_AES_GCM_SEAL_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
+
+/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
+///
+/// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
+///
+/// Contract: `VG.Spec.Gcm.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key context, the nonce, the additional data or the data.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 2576 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` target feature.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_seal_aes(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_seal_aes(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag) }
+}
+
+/// The CPU features `vg_aes_gcm_open_aes` requires (`Artifact.features`).
+pub const VG_AES_GCM_OPEN_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
+
+/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
+///
+/// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Gcm.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` target feature.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_open_aes(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_open_aes(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) }
+}
+
+/// The CPU features `vg_aes_gcm_stream_init_aes` requires (`Artifact.features`).
+pub const VG_AES_GCM_STREAM_INIT_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
+
+/// Starts an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7): with the key context `*ctx` that `vg_aes_gcm_init` wrote, makes the streaming state `*state` represent the message with the IV the `nonce_len` bytes at `nonce`, and no additional data or text yet. Continue with `vg_aes_gcm_stream_aad`, then `vg_aes_gcm_stream_encrypt` or `vg_aes_gcm_stream_decrypt`, then `vg_aes_gcm_stream_finish` or `vg_aes_gcm_stream_verify`, with the same key context.
+///
+/// The function checks no length: GCM requires a nonce of 1 to `2^61 - 1` bytes (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Gcm.streamInitContract`. The streaming state is `J₀`, the GHASH accumulator, a partial block, the next counter block and a keystream block (`VG.Spec.Gcm.StreamRepr`). Constant time: only the pointers and `nonce_len` may affect timing, not the key context or the nonce.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
+/// * None of `ctx`, `nonce` and `state` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` target feature.
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_stream_init_aes(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_stream_init_aes(ctx, nonce, nonce_len, state) }
+}
+
+/// The CPU features `vg_aes_gcm_stream_aad_aes` requires (`Artifact.features`).
+pub const VG_AES_GCM_STREAM_AAD_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
+
+/// Absorbs additional data into an incremental AES-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
+///
+/// Contract: `VG.Spec.Gcm.streamAadContract`. Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` target feature.
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_stream_aad_aes(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_stream_aad_aes(ctx, state, aad_len, data, len) }
+}
+
+/// The CPU features `vg_aes_gcm_stream_encrypt_aes` requires (`Artifact.features`).
+pub const VG_AES_GCM_STREAM_ENCRYPT_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
+
+/// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, encrypts the `len` bytes at `data` in place, as the continuation of that plaintext, and the state then represents the message with them appended.
+///
+/// The function checks no length: GCM requires at most `2^36 - 32` bytes of text and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Gcm.streamEncryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` target feature.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_stream_encrypt_aes(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_stream_encrypt_aes(ctx, rounds, state, aad_len, text_len, data, len) }
+}
+
+/// The CPU features `vg_aes_gcm_stream_decrypt_aes` requires (`Artifact.features`).
+pub const VG_AES_GCM_STREAM_DECRYPT_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
+
+/// Decrypts the next piece of the text of an incremental AES-GCM decryption (NIST SP 800-38D §7.2): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext so far, decrypts the `len` bytes of ciphertext at `data` in place, as the continuation of that ciphertext, and the state then represents the message with them appended. The plaintext is not authenticated until `vg_aes_gcm_stream_verify` has returned 1.
+///
+/// The function checks no length: GCM requires at most `2^36 - 32` bytes of text and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Gcm.streamDecryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` target feature.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_stream_decrypt_aes(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_stream_decrypt_aes(ctx, rounds, state, aad_len, text_len, data, len) }
+}
+
+/// The CPU features `vg_aes_gcm_stream_finish_aes` requires (`Artifact.features`).
+pub const VG_AES_GCM_STREAM_FINISH_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
+
+/// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
+///
+/// Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, `aad_len` and `text_len` may affect timing, not the key context or the state.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` target feature.
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_stream_finish_aes(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_stream_finish_aes(ctx, rounds, state, aad_len, text_len, tag) }
+}
+
+/// The CPU features `vg_aes_gcm_stream_verify_aes` requires (`Artifact.features`).
+pub const VG_AES_GCM_STREAM_VERIFY_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
+
+/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
+///
+/// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `state` on return are unspecified.
+/// * `state` must not overlap `ctx` or `tag` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` target feature.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_stream_verify_aes(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_stream_verify_aes(ctx, rounds, state, aad_len, text_len, tag, tag_len) }
+}
+
+/// The CPU features `vg_aes_gcm_seal_gather_aes` requires (`Artifact.features`).
+pub const VG_AES_GCM_SEAL_GATHER_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
+
+/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
+///
+/// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
+///
+/// Contract: `VG.Spec.Gcm.sealGatherContract`. Constant time: only the pointers, `rounds`, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key context, the nonce, the additional data or the data.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
+/// * `dst` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The slices `src` lists must be `len` bytes long in all.
+/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` target feature.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_seal_gather_aes(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_seal_gather_aes(ctx, rounds, nonce, nonce_len, aad, aad_len, src, src_count, dst, len, tag) }
+}
+
+/// The CPU features `vg_aes_gcm_open_to_aes` requires (`Artifact.features`).
+pub const VG_AES_GCM_OPEN_TO_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
+
+/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `src` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then written the plaintext to the `dst_len = len` bytes at `dst`; otherwise returns 0, having written zeros to them: `vg_aes_gcm_open` with the ciphertext read from `src` and the plaintext written to `dst`. `src` is not written, and `dst` is a buffer of its own: it overlaps no other buffer, `src` included. The tags are compared without a branch.
+///
+/// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Gcm.openToContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `len` bytes.
+/// * `dst` must be valid for reads and writes of `dst_len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `dst_len` must equal `len`.
+/// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the 2624 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` target feature.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_open_to_aes(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_open_to_aes(ctx, rounds, nonce, nonce_len, aad, aad_len, src, len, dst, dst_len, tag, tag_len) }
+}
+
+/// The CPU features `vg_aes_gcm_seal_with_powers_aes` requires (`Artifact.features`).
+pub const VG_AES_GCM_SEAL_WITH_POWERS_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
+
+/// `vg_aes_gcm_seal` with the 8 prepared powers of the hash subkey of the key context at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Computes the same result as `vg_aes_gcm_seal`. The powers are secret, as the key context is: they may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealWithPowersContract`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `pw` must be valid for reads of 128 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `*pw` must be what a `*_store_powers` function wrote for the same key context (the contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and its hash subkey).
+/// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `pw` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data`, `tag` and `pw` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` target feature.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_seal_with_powers_aes(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16], pw: *const [u64; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_seal_with_powers_aes(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, pw) }
+}
+
+/// The CPU features `vg_aes_gcm_open_with_powers_aes` requires (`Artifact.features`).
+pub const VG_AES_GCM_OPEN_WITH_POWERS_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
+
+/// `vg_aes_gcm_open` with the 8 prepared powers of the hash subkey of the key context at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Computes the same result as `vg_aes_gcm_open`. The powers are secret, as the key context is: they may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openWithPowersContract`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `pw` must be valid for reads of 128 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `*pw` must be what a `*_store_powers` function wrote for the same key context (the contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and its hash subkey).
+/// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag`, `pw` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data`, `tag` and `pw` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` target feature.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_open_with_powers_aes(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize, pw: *const [u64; 16]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_open_with_powers_aes(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len, pw) }
+}
+
+/// The CPU features `vg_aes_gcm_open_to_with_powers_aes` requires (`Artifact.features`).
+pub const VG_AES_GCM_OPEN_TO_WITH_POWERS_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
+
+/// `vg_aes_gcm_open_to` with the 8 prepared powers of the hash subkey of the key context at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Computes the same result as `vg_aes_gcm_open_to`. The powers are secret, as the key context is: they may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToWithPowersContract`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `len` bytes.
+/// * `dst` must be valid for reads and writes of `dst_len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `pw` must be valid for reads of 128 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `dst_len` must equal `len`.
+/// * `*pw` must be what a `*_store_powers` function wrote for the same key context (the contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and its hash subkey).
+/// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src`, `tag`, `pw` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst`, `tag` and `pw` may overlap the 2624 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` target feature.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_open_to_with_powers_aes(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize, pw: *const [u64; 16]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_open_to_with_powers_aes(ctx, rounds, nonce, nonce_len, aad, aad_len, src, len, dst, dst_len, tag, tag_len, pw) }
+}
+
+/// The CPU features `vg_aes_gcm_seal_with_powers_aes_sha3` requires (`Artifact.features`).
+pub const VG_AES_GCM_SEAL_WITH_POWERS_AES_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::SHA3);
+
+/// `vg_aes_gcm_seal` with the 8 prepared powers of the hash subkey of the key context at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Computes the same result as `vg_aes_gcm_seal`. The powers are secret, as the key context is: they may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealWithPowersContract`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `pw` must be valid for reads of 128 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `*pw` must be what a `*_store_powers` function wrote for the same key context (the contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and its hash subkey).
+/// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `pw` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data`, `tag` and `pw` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` and `sha3` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_seal_with_powers_aes_sha3(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16], pw: *const [u64; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_seal_with_powers_aes_sha3(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, pw) }
+}
+
+/// The CPU features `vg_aes_gcm_open_with_powers_aes_sha3` requires (`Artifact.features`).
+pub const VG_AES_GCM_OPEN_WITH_POWERS_AES_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::SHA3);
+
+/// `vg_aes_gcm_open` with the 8 prepared powers of the hash subkey of the key context at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Computes the same result as `vg_aes_gcm_open`. The powers are secret, as the key context is: they may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openWithPowersContract`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `pw` must be valid for reads of 128 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `*pw` must be what a `*_store_powers` function wrote for the same key context (the contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and its hash subkey).
+/// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag`, `pw` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data`, `tag` and `pw` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` and `sha3` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_open_with_powers_aes_sha3(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize, pw: *const [u64; 16]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_open_with_powers_aes_sha3(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len, pw) }
+}
+
+/// The CPU features `vg_aes_gcm_open_to_with_powers_aes_sha3` requires (`Artifact.features`).
+pub const VG_AES_GCM_OPEN_TO_WITH_POWERS_AES_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::SHA3);
+
+/// `vg_aes_gcm_open_to` with the 8 prepared powers of the hash subkey of the key context at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Computes the same result as `vg_aes_gcm_open_to`. The powers are secret, as the key context is: they may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToWithPowersContract`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `len` bytes.
+/// * `dst` must be valid for reads and writes of `dst_len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `pw` must be valid for reads of 128 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `dst_len` must equal `len`.
+/// * `*pw` must be what a `*_store_powers` function wrote for the same key context (the contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and its hash subkey).
+/// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src`, `tag`, `pw` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst`, `tag` and `pw` may overlap the 2624 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` and `sha3` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_open_to_with_powers_aes_sha3(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize, pw: *const [u64; 16]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_open_to_with_powers_aes_sha3(ctx, rounds, nonce, nonce_len, aad, aad_len, src, len, dst, dst_len, tag, tag_len, pw) }
+}
+
+/// The AES-GCM key setup: writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255. The other bytes are unspecified. The other `vg_aes_gcm_*` functions read it, with `Nr` as their `rounds`.
+///
+/// Contract: `VG.Spec.Gcm.initContract`. The key context is `VG.Spec.Gcm.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `ctx` must be valid for reads and writes of 256 bytes.
+/// * `key_len` must be 16, 24 or 32.
+/// * `ctx` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `ctx` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_init(_dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_init(key, key_len, ctx) }
+}
+
+/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
+///
+/// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
+///
+/// Contract: `VG.Spec.Gcm.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key context, the nonce, the additional data or the data.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 2576 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_seal(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_seal(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag) }
+}
+
+/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
+///
+/// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Gcm.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_open(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_open(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) }
+}
+
+/// Starts an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7): with the key context `*ctx` that `vg_aes_gcm_init` wrote, makes the streaming state `*state` represent the message with the IV the `nonce_len` bytes at `nonce`, and no additional data or text yet. Continue with `vg_aes_gcm_stream_aad`, then `vg_aes_gcm_stream_encrypt` or `vg_aes_gcm_stream_decrypt`, then `vg_aes_gcm_stream_finish` or `vg_aes_gcm_stream_verify`, with the same key context.
+///
+/// The function checks no length: GCM requires a nonce of 1 to `2^61 - 1` bytes (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Gcm.streamInitContract`. The streaming state is `J₀`, the GHASH accumulator, a partial block, the next counter block and a keystream block (`VG.Spec.Gcm.StreamRepr`). Constant time: only the pointers and `nonce_len` may affect timing, not the key context or the nonce.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
+/// * None of `ctx`, `nonce` and `state` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_stream_init(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_stream_init(ctx, nonce, nonce_len, state) }
+}
+
+/// Absorbs additional data into an incremental AES-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
+///
+/// Contract: `VG.Spec.Gcm.streamAadContract`. Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_stream_aad(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_stream_aad(ctx, state, aad_len, data, len) }
+}
+
+/// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, encrypts the `len` bytes at `data` in place, as the continuation of that plaintext, and the state then represents the message with them appended.
+///
+/// The function checks no length: GCM requires at most `2^36 - 32` bytes of text and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Gcm.streamEncryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_stream_encrypt(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_stream_encrypt(ctx, rounds, state, aad_len, text_len, data, len) }
+}
+
+/// Decrypts the next piece of the text of an incremental AES-GCM decryption (NIST SP 800-38D §7.2): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext so far, decrypts the `len` bytes of ciphertext at `data` in place, as the continuation of that ciphertext, and the state then represents the message with them appended. The plaintext is not authenticated until `vg_aes_gcm_stream_verify` has returned 1.
+///
+/// The function checks no length: GCM requires at most `2^36 - 32` bytes of text and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Gcm.streamDecryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_stream_decrypt(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_stream_decrypt(ctx, rounds, state, aad_len, text_len, data, len) }
+}
+
+/// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
+///
+/// Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, `aad_len` and `text_len` may affect timing, not the key context or the state.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_stream_finish(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_stream_finish(ctx, rounds, state, aad_len, text_len, tag) }
+}
+
+/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
+///
+/// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `state` on return are unspecified.
+/// * `state` must not overlap `ctx` or `tag` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_stream_verify(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_stream_verify(ctx, rounds, state, aad_len, text_len, tag, tag_len) }
+}
+
+/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
+///
+/// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
+///
+/// Contract: `VG.Spec.Gcm.sealGatherContract`. Constant time: only the pointers, `rounds`, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key context, the nonce, the additional data or the data.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
+/// * `dst` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The slices `src` lists must be `len` bytes long in all.
+/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_seal_gather(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_seal_gather(ctx, rounds, nonce, nonce_len, aad, aad_len, src, src_count, dst, len, tag) }
+}
+
+/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `src` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then written the plaintext to the `dst_len = len` bytes at `dst`; otherwise returns 0, having written zeros to them: `vg_aes_gcm_open` with the ciphertext read from `src` and the plaintext written to `dst`. `src` is not written, and `dst` is a buffer of its own: it overlaps no other buffer, `src` included. The tags are compared without a branch.
+///
+/// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Gcm.openToContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `len` bytes.
+/// * `dst` must be valid for reads and writes of `dst_len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `dst_len` must equal `len`.
+/// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the 2624 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_open_to(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_open_to(ctx, rounds, nonce, nonce_len, aad, aad_len, src, len, dst, dst_len, tag, tag_len) }
+}
+
+/// `vg_aes_gcm_seal` with the 8 prepared powers of the hash subkey of the key context at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Computes the same result as `vg_aes_gcm_seal`. The powers are secret, as the key context is: they may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealWithPowersContract`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `pw` must be valid for reads of 128 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `*pw` must be what a `*_store_powers` function wrote for the same key context (the contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and its hash subkey).
+/// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `pw` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data`, `tag` and `pw` may overlap the 2576 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_seal_with_powers(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16], pw: *const [u64; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_seal_with_powers(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, pw) }
+}
+
+/// `vg_aes_gcm_open` with the 8 prepared powers of the hash subkey of the key context at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Computes the same result as `vg_aes_gcm_open`. The powers are secret, as the key context is: they may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openWithPowersContract`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `pw` must be valid for reads of 128 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `*pw` must be what a `*_store_powers` function wrote for the same key context (the contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and its hash subkey).
+/// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag`, `pw` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data`, `tag` and `pw` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_open_with_powers(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize, pw: *const [u64; 16]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_open_with_powers(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len, pw) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_aes_gcm_store_powers`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_store_powers(ctx: *const [u64; 32], pw: *mut [u64; 16]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_store_powers(ctx: *const [u64; 32], pw: *mut [u64; 16]) {
     core::arch::naked_asm!(
         r".inst 0xd2fc200d,0xd280000f,0xf9407802,0xdac00c42,0xf9407c03,0xdac00c63,0xaa0f0047,0xaa0f0068
 .inst 0xd37ffcec,0xcb0c01eb,0xd37ff8e4,0xd37ffd0c,0xaa0c0084,0xd2f84009,0x8a0b0129,0xca090084
@@ -198,22 +960,9 @@ cbnz x14, 26b
     )
 }
 
-/// The CPU features `vg_aes_gcm_store_powers_aes` requires (`Artifact.features`).
-pub const VG_AES_GCM_STORE_POWERS_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
-
-/// Writes to `*pw` the 8 prepared powers of the hash subkey `H` of the key context `*ctx` of `vg_aes_gcm_init` (its bytes 240 to 255, `VG.Spec.Gcm.ctxH`): at byte `32*k`, for `k` from 0 to 3, `preparedPower(H^(2*k+2))` then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words (`VG.Spec.Gcm.Powers8Repr`, `VG.Spec.Gcm.preparedPower`), as the `*_with_powers` functions require for that key context. It reads only `*ctx` and writes only `*pw`. The key context and the powers are secret: only the pointers may affect timing.
-///
-/// Contract: `VG.Spec.Gcm.storePowersContract`.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `pw` must be valid for reads and writes of 128 bytes.
-/// * `pw` must not overlap `ctx` (distinct Rust objects never do).
-/// * Neither `ctx` nor `pw` may wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` target feature.
+/// The verified code of [`super::vg_aes_gcm_store_powers_aes`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_store_powers_aes(ctx: *const [u64; 32], pw: *mut [u64; 16]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_store_powers_aes(ctx: *const [u64; 32], pw: *mut [u64; 16]) {
     core::arch::naked_asm!(
         r".inst 0x3dc03c06,0x4e2008c6,0xd2f84005,0x4e080ca1,0x6f4104c7,0x4f4154c3,0x6e0740e4,0x6e241c63
 .inst 0x0ee1e0e5,0x6e251c78,0x6e184310,0x0ef8e305,0x4ef8e303,0x0ee1e067,0x6e034063,0x6e271c64
@@ -233,23 +982,9 @@ pub unsafe extern "C" fn vg_aes_gcm_store_powers_aes(ctx: *const [u64; 32], pw: 
     )
 }
 
-/// The CPU features `vg_aes_gcm_init_aes` requires (`Artifact.features`).
-pub const VG_AES_GCM_INIT_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
-
-/// The AES-GCM key setup: writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255. The other bytes are unspecified. The other `vg_aes_gcm_*` functions read it, with `Nr` as their `rounds`.
-///
-/// Contract: `VG.Spec.Gcm.initContract`. The key context is `VG.Spec.Gcm.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `ctx` must be valid for reads and writes of 256 bytes.
-/// * `key_len` must be 16, 24 or 32.
-/// * `ctx` must not overlap `key` (distinct Rust objects never do).
-/// * Neither `key` nor `ctx` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` target feature.
+/// The verified code of [`super::vg_aes_gcm_init_aes`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_init_aes(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_init_aes(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
         r".inst 0xd12803ff,0x910003e3,0xf9004474,0xf9004875,0xf9004c76,0xf9005077,0xf9005478,0xf9005879
 .inst 0xf9005c7a,0xf900607b,0xf900647c,0xf900687e,0xf9004073,0x91000073,0x91000055,0xd342fc36
@@ -261,33 +996,14 @@ bl {vg_aes_ctr32_aes}
 .inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd65f03c0
 .p2align 6",
-        vg_aes_expand_key_scratch_aes = sym super::aes::vg_aes_expand_key_scratch_aes::vg_aes_expand_key_scratch_aes,
-        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
+        vg_aes_expand_key_scratch_aes = sym crate::aes::vg_aes_expand_key_scratch_aes::vg_aes_expand_key_scratch_aes,
+        vg_aes_ctr32_aes = sym crate::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
     )
 }
 
-/// The CPU features `vg_aes_gcm_seal_aes` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
-
-/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
-///
-/// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
-///
-/// Contract: `VG.Spec.Gcm.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key context, the nonce, the additional data or the data.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 2576 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` target feature.
+/// The verified code of [`super::vg_aes_gcm_seal_aes`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_seal_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r".inst 0xd12843ff,0x910003f0,0xf9450bf1,0xf9000211,0x910043f1,0xf9000611,0xf94007e9,0xf9004534
 .inst 0xf9004935,0xf9004d36,0xf9005137,0xf9005538,0xf9005939,0xf9005d3a,0xf900613b,0xf900653c
@@ -839,34 +1555,15 @@ bl {vg_aes_ctr32_aes}
 27:
 .inst 0x912843ff,0xd65f03c0
 .p2align 6",
-        vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
-        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
-        VG_GCM_TAIL_IDX = sym super::consts::VG_GCM_TAIL_IDX,
+        vg_ghash_aes = sym crate::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
+        vg_aes_ctr32_aes = sym crate::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
+        VG_GCM_TAIL_IDX = sym crate::consts::VG_GCM_TAIL_IDX,
     )
 }
 
-/// The CPU features `vg_aes_gcm_open_aes` requires (`Artifact.features`).
-pub const VG_AES_GCM_OPEN_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
-
-/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
-///
-/// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
-///
-/// Contract: `VG.Spec.Gcm.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of `tag_len` bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` target feature.
+/// The verified code of [`super::vg_aes_gcm_open_aes`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_open_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_open_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd12883ff,0x910003f0,0xf94513f1,0xf9000211,0xf94517f1,0xf9000611,0x910083f1,0xf9000a11
 .inst 0xf9400be9,0xf9004534,0xf9004935,0xf9004d36,0xf9005137,0xf9005538,0xf9005939,0xf9005d3a
@@ -1493,31 +2190,15 @@ b 2131f
 27:
 .inst 0x912883ff,0xd65f03c0
 .p2align 6",
-        vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
-        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
-        VG_GCM_TAIL_IDX = sym super::consts::VG_GCM_TAIL_IDX,
+        vg_ghash_aes = sym crate::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
+        vg_aes_ctr32_aes = sym crate::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
+        VG_GCM_TAIL_IDX = sym crate::consts::VG_GCM_TAIL_IDX,
     )
 }
 
-/// The CPU features `vg_aes_gcm_stream_init_aes` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_INIT_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
-
-/// Starts an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7): with the key context `*ctx` that `vg_aes_gcm_init` wrote, makes the streaming state `*state` represent the message with the IV the `nonce_len` bytes at `nonce`, and no additional data or text yet. Continue with `vg_aes_gcm_stream_aad`, then `vg_aes_gcm_stream_encrypt` or `vg_aes_gcm_stream_decrypt`, then `vg_aes_gcm_stream_finish` or `vg_aes_gcm_stream_verify`, with the same key context.
-///
-/// The function checks no length: GCM requires a nonce of 1 to `2^61 - 1` bytes (§5.2.1.1), which the caller must check.
-///
-/// Contract: `VG.Spec.Gcm.streamInitContract`. The streaming state is `J₀`, the GHASH accumulator, a partial block, the next counter block and a keystream block (`VG.Spec.Gcm.StreamRepr`). Constant time: only the pointers and `nonce_len` may affect timing, not the key context or the nonce.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce` and `state` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` target feature.
+/// The verified code of [`super::vg_aes_gcm_stream_init_aes`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_stream_init_aes(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_init_aes(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
     core::arch::naked_asm!(
         r".inst 0xd12803ff,0x910003e4,0xf9004494,0xf9004895,0xf9004c96,0xf9005097,0xf9005498,0xf9005899
 .inst 0xf9005c9a,0xf900609b,0xf900649c,0xf900689e,0xf9004093,0x91000093,0x91000074,0x91000015
@@ -1580,27 +2261,13 @@ b 21f
 .inst 0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b,0xf940667c,0xf9406a7e
 .inst 0xf9404273,0x912803ff,0xd65f03c0
 .p2align 6",
-        vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
+        vg_ghash_aes = sym crate::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
     )
 }
 
-/// The CPU features `vg_aes_gcm_stream_aad_aes` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_AAD_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
-
-/// Absorbs additional data into an incremental AES-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
-///
-/// Contract: `VG.Spec.Gcm.streamAadContract`. Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `data` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` target feature.
+/// The verified code of [`super::vg_aes_gcm_stream_aad_aes`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_stream_aad_aes(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_aad_aes(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd12803ff,0x910003e5,0xf90044b4,0xf90048b5,0xf9004cb6,0xf90050b7,0xf90054b8,0xf90058b9
 .inst 0xf9005cba,0xf90060bb,0xf90064bc,0xf90068be,0xf90040b3,0x910000b3,0x91000034,0x91000015
@@ -1673,30 +2340,13 @@ b 210f
 .inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd65f03c0
 .p2align 6",
-        vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
+        vg_ghash_aes = sym crate::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
     )
 }
 
-/// The CPU features `vg_aes_gcm_stream_encrypt_aes` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_ENCRYPT_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
-
-/// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, encrypts the `len` bytes at `data` in place, as the continuation of that plaintext, and the state then represents the message with them appended.
-///
-/// The function checks no length: GCM requires at most `2^36 - 32` bytes of text and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
-///
-/// Contract: `VG.Spec.Gcm.streamEncryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `data` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` target feature.
+/// The verified code of [`super::vg_aes_gcm_stream_encrypt_aes`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_stream_encrypt_aes(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_encrypt_aes(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd12803ff,0x910003e7,0xf90044f4,0xf90048f5,0xf9004cf6,0xf90050f7,0xf90054f8,0xf90058f9
 .inst 0xf9005cfa,0xf90060fb,0xf90064fc,0xf90068fe,0xf90040f3,0x910000f3,0x91000054,0x91000015
@@ -1899,31 +2549,14 @@ b 244f
 .inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd65f03c0
 .p2align 6",
-        vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
-        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
+        vg_ghash_aes = sym crate::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
+        vg_aes_ctr32_aes = sym crate::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
     )
 }
 
-/// The CPU features `vg_aes_gcm_stream_decrypt_aes` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_DECRYPT_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
-
-/// Decrypts the next piece of the text of an incremental AES-GCM decryption (NIST SP 800-38D §7.2): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext so far, decrypts the `len` bytes of ciphertext at `data` in place, as the continuation of that ciphertext, and the state then represents the message with them appended. The plaintext is not authenticated until `vg_aes_gcm_stream_verify` has returned 1.
-///
-/// The function checks no length: GCM requires at most `2^36 - 32` bytes of text and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
-///
-/// Contract: `VG.Spec.Gcm.streamDecryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `data` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` target feature.
+/// The verified code of [`super::vg_aes_gcm_stream_decrypt_aes`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_stream_decrypt_aes(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_decrypt_aes(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd12803ff,0x910003e7,0xf90044f4,0xf90048f5,0xf9004cf6,0xf90050f7,0xf90054f8,0xf90058f9
 .inst 0xf9005cfa,0xf90060fb,0xf90064fc,0xf90068fe,0xf90040f3,0x910000f3,0x91000054,0x91000015
@@ -2126,30 +2759,14 @@ b 255f
 .inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd65f03c0
 .p2align 6",
-        vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
-        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
+        vg_ghash_aes = sym crate::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
+        vg_aes_ctr32_aes = sym crate::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
     )
 }
 
-/// The CPU features `vg_aes_gcm_stream_finish_aes` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_FINISH_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
-
-/// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
-///
-/// Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, `aad_len` and `text_len` may affect timing, not the key context or the state.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The contents of `state` on return are unspecified.
-/// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `tag` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` target feature.
+/// The verified code of [`super::vg_aes_gcm_stream_finish_aes`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_stream_finish_aes(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish_aes(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r".inst 0xd12803ff,0x910003e6,0xf90044d4,0xf90048d5,0xf9004cd6,0xf90050d7,0xf90054d8,0xf90058d9
 .inst 0xf9005cda,0xf90060db,0xf90064dc,0xf90068de,0xf90040d3,0x910000d3,0x91000054,0x91000015
@@ -2212,30 +2829,14 @@ bl {vg_aes_ctr32_aes}
 .inst 0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b,0xf940667c,0xf9406a7e,0xf9404273,0x912803ff
 .inst 0xd65f03c0
 .p2align 6",
-        vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
-        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
+        vg_ghash_aes = sym crate::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
+        vg_aes_ctr32_aes = sym crate::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
     )
 }
 
-/// The CPU features `vg_aes_gcm_stream_verify_aes` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_VERIFY_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
-
-/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
-///
-/// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `tag` must be valid for reads of `tag_len` bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The contents of `state` on return are unspecified.
-/// * `state` must not overlap `ctx` or `tag` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `tag` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` target feature.
+/// The verified code of [`super::vg_aes_gcm_stream_verify_aes`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_stream_verify_aes(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify_aes(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd12803ff,0x910003e7,0xf90044f4,0xf90048f5,0xf9004cf6,0xf90050f7,0xf90054f8,0xf90058f9
 .inst 0xf9005cfa,0xf90060fb,0xf90064fc,0xf90068fe,0xf90040f3,0x910000f3,0x91000054,0x91000015
@@ -2343,35 +2944,14 @@ b 21f
 .inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd65f03c0
 .p2align 6",
-        vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
-        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
+        vg_ghash_aes = sym crate::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
+        vg_aes_ctr32_aes = sym crate::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
     )
 }
 
-/// The CPU features `vg_aes_gcm_seal_gather_aes` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_GATHER_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
-
-/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
-///
-/// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
-///
-/// Contract: `VG.Spec.Gcm.sealGatherContract`. Constant time: only the pointers, `rounds`, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key context, the nonce, the additional data or the data.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
-/// * `dst` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The slices `src` lists must be `len` bytes long in all.
-/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` target feature.
+/// The verified code of [`super::vg_aes_gcm_seal_gather_aes`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_seal_gather_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_gather_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r".inst 0xd10043ff,0x910003f0,0xf900061e,0xf94013f1,0xf9000211,0xf9400beb
 cbz x7, 20f
@@ -2419,34 +2999,13 @@ b 21f
 bl {vg_aes_gcm_seal_aes}
 .inst 0xf94007fe,0x910043ff,0xd65f03c0
 .p2align 6",
-        vg_aes_gcm_seal_aes = sym super::gcm::vg_aes_gcm_seal_aes,
+        vg_aes_gcm_seal_aes = sym crate::gcm::raw::vg_aes_gcm_seal_aes,
     )
 }
 
-/// The CPU features `vg_aes_gcm_open_to_aes` requires (`Artifact.features`).
-pub const VG_AES_GCM_OPEN_TO_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
-
-/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `src` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then written the plaintext to the `dst_len = len` bytes at `dst`; otherwise returns 0, having written zeros to them: `vg_aes_gcm_open` with the ciphertext read from `src` and the plaintext written to `dst`. `src` is not written, and `dst` is a buffer of its own: it overlaps no other buffer, `src` included. The tags are compared without a branch.
-///
-/// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
-///
-/// Contract: `VG.Spec.Gcm.openToContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `src` must be valid for reads of `len` bytes.
-/// * `dst` must be valid for reads and writes of `dst_len` bytes.
-/// * `tag` must be valid for reads of `tag_len` bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `dst_len` must equal `len`.
-/// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the 2624 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` target feature.
+/// The verified code of [`super::vg_aes_gcm_open_to_aes`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_open_to_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_open_to_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd10083ff,0x910003f0,0xf9000a1e,0xf9401bf1,0xf9000211,0xf9401ff1,0xf9000611,0xf94013eb
 .inst 0x910000cc,0x910000ed,0xd344fdae
@@ -2499,30 +3058,13 @@ b 216f
 214:
 .inst 0xf9400bfe,0x910083ff,0xd65f03c0
 .p2align 6",
-        vg_aes_gcm_open_aes = sym super::gcm::vg_aes_gcm_open_aes,
+        vg_aes_gcm_open_aes = sym crate::gcm::raw::vg_aes_gcm_open_aes,
     )
 }
 
-/// The CPU features `vg_aes_gcm_seal_with_powers_aes` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_WITH_POWERS_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
-
-/// `vg_aes_gcm_seal` with the 8 prepared powers of the hash subkey of the key context at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Computes the same result as `vg_aes_gcm_seal`. The powers are secret, as the key context is: they may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealWithPowersContract`.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `pw` must be valid for reads of 128 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `*pw` must be what a `*_store_powers` function wrote for the same key context (the contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and its hash subkey).
-/// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `pw` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data`, `tag` and `pw` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` target feature.
+/// The verified code of [`super::vg_aes_gcm_seal_with_powers_aes`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_seal_with_powers_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16], pw: *const [u64; 16]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_with_powers_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16], pw: *const [u64; 16]) {
     core::arch::naked_asm!(
         r".inst 0xd12883ff,0x910003f0,0xf94513f1,0xf9000211,0xf94517f1,0xf9000611,0x910083f1,0xf9000a11
 .inst 0xf9400be9,0xf9004534,0xf9004935,0xf9004d36,0xf9005137,0xf9005538,0xf9005939,0xf9005d3a
@@ -3080,33 +3622,16 @@ bl {vg_aes_ctr32_aes}
 27:
 .inst 0x912883ff,0xd65f03c0
 .p2align 6",
-        vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
-        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
-        vg_ghash_with_powers_aes = sym super::gcm::vg_ghash_with_powers_aes::vg_ghash_with_powers_aes,
-        VG_GCM_TAIL_IDX = sym super::consts::VG_GCM_TAIL_IDX,
+        vg_ghash_aes = sym crate::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
+        vg_aes_ctr32_aes = sym crate::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
+        vg_ghash_with_powers_aes = sym crate::gcm::vg_ghash_with_powers_aes::vg_ghash_with_powers_aes,
+        VG_GCM_TAIL_IDX = sym crate::consts::VG_GCM_TAIL_IDX,
     )
 }
 
-/// The CPU features `vg_aes_gcm_open_with_powers_aes` requires (`Artifact.features`).
-pub const VG_AES_GCM_OPEN_WITH_POWERS_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
-
-/// `vg_aes_gcm_open` with the 8 prepared powers of the hash subkey of the key context at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Computes the same result as `vg_aes_gcm_open`. The powers are secret, as the key context is: they may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openWithPowersContract`.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of `tag_len` bytes.
-/// * `pw` must be valid for reads of 128 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `*pw` must be what a `*_store_powers` function wrote for the same key context (the contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and its hash subkey).
-/// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag`, `pw` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data`, `tag` and `pw` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` target feature.
+/// The verified code of [`super::vg_aes_gcm_open_with_powers_aes`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_open_with_powers_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize, pw: *const [u64; 16]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_open_with_powers_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize, pw: *const [u64; 16]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd12883ff,0x910003f0,0xf94513f1,0xf9000211,0xf94517f1,0xf9000611,0xf9451bf1,0xf9000a11
 .inst 0x910083f1,0xf9000e11,0xf9400fe9,0xf9004534,0xf9004935,0xf9004d36,0xf9005137,0xf9005538
@@ -3739,35 +4264,16 @@ b 2131f
 27:
 .inst 0x912883ff,0xd65f03c0
 .p2align 6",
-        vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
-        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
-        vg_ghash_with_powers_aes = sym super::gcm::vg_ghash_with_powers_aes::vg_ghash_with_powers_aes,
-        VG_GCM_TAIL_IDX = sym super::consts::VG_GCM_TAIL_IDX,
+        vg_ghash_aes = sym crate::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
+        vg_aes_ctr32_aes = sym crate::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
+        vg_ghash_with_powers_aes = sym crate::gcm::vg_ghash_with_powers_aes::vg_ghash_with_powers_aes,
+        VG_GCM_TAIL_IDX = sym crate::consts::VG_GCM_TAIL_IDX,
     )
 }
 
-/// The CPU features `vg_aes_gcm_open_to_with_powers_aes` requires (`Artifact.features`).
-pub const VG_AES_GCM_OPEN_TO_WITH_POWERS_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
-
-/// `vg_aes_gcm_open_to` with the 8 prepared powers of the hash subkey of the key context at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Computes the same result as `vg_aes_gcm_open_to`. The powers are secret, as the key context is: they may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToWithPowersContract`.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `src` must be valid for reads of `len` bytes.
-/// * `dst` must be valid for reads and writes of `dst_len` bytes.
-/// * `tag` must be valid for reads of `tag_len` bytes.
-/// * `pw` must be valid for reads of 128 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `dst_len` must equal `len`.
-/// * `*pw` must be what a `*_store_powers` function wrote for the same key context (the contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and its hash subkey).
-/// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src`, `tag`, `pw` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, `dst`, `tag` and `pw` may overlap the 2624 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` target feature.
+/// The verified code of [`super::vg_aes_gcm_open_to_with_powers_aes`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_open_to_with_powers_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize, pw: *const [u64; 16]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_open_to_with_powers_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize, pw: *const [u64; 16]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd10083ff,0x910003f0,0xf9000e1e,0xf9401bf1,0xf9000211,0xf9401ff1,0xf9000611,0xf94023f1
 .inst 0xf9000a11,0xf94013eb,0x910000cc,0x910000ed,0xd344fdae
@@ -3820,30 +4326,13 @@ b 216f
 214:
 .inst 0xf9400ffe,0x910083ff,0xd65f03c0
 .p2align 6",
-        vg_aes_gcm_open_with_powers_aes = sym super::gcm::vg_aes_gcm_open_with_powers_aes,
+        vg_aes_gcm_open_with_powers_aes = sym crate::gcm::raw::vg_aes_gcm_open_with_powers_aes,
     )
 }
 
-/// The CPU features `vg_aes_gcm_seal_with_powers_aes_sha3` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_WITH_POWERS_AES_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::SHA3);
-
-/// `vg_aes_gcm_seal` with the 8 prepared powers of the hash subkey of the key context at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Computes the same result as `vg_aes_gcm_seal`. The powers are secret, as the key context is: they may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealWithPowersContract`.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `pw` must be valid for reads of 128 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `*pw` must be what a `*_store_powers` function wrote for the same key context (the contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and its hash subkey).
-/// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `pw` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data`, `tag` and `pw` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` and `sha3` target features.
+/// The verified code of [`super::vg_aes_gcm_seal_with_powers_aes_sha3`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_seal_with_powers_aes_sha3(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16], pw: *const [u64; 16]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_with_powers_aes_sha3(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16], pw: *const [u64; 16]) {
     core::arch::naked_asm!(
         r".inst 0xd12883ff,0x910003f0,0xf94513f1,0xf9000211,0xf94517f1,0xf9000611,0x910083f1,0xf9000a11
 .inst 0xf9400be9,0xf9004534,0xf9004935,0xf9004d36,0xf9005137,0xf9005538,0xf9005939,0xf9005d3a
@@ -5339,33 +5828,16 @@ bl {vg_aes_ctr32_aes}
 27:
 .inst 0x912883ff,0xd65f03c0
 .p2align 6",
-        vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
-        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
-        vg_ghash_with_powers_aes = sym super::gcm::vg_ghash_with_powers_aes::vg_ghash_with_powers_aes,
-        VG_GCM_TAIL_IDX = sym super::consts::VG_GCM_TAIL_IDX,
+        vg_ghash_aes = sym crate::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
+        vg_aes_ctr32_aes = sym crate::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
+        vg_ghash_with_powers_aes = sym crate::gcm::vg_ghash_with_powers_aes::vg_ghash_with_powers_aes,
+        VG_GCM_TAIL_IDX = sym crate::consts::VG_GCM_TAIL_IDX,
     )
 }
 
-/// The CPU features `vg_aes_gcm_open_with_powers_aes_sha3` requires (`Artifact.features`).
-pub const VG_AES_GCM_OPEN_WITH_POWERS_AES_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::SHA3);
-
-/// `vg_aes_gcm_open` with the 8 prepared powers of the hash subkey of the key context at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Computes the same result as `vg_aes_gcm_open`. The powers are secret, as the key context is: they may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openWithPowersContract`.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of `tag_len` bytes.
-/// * `pw` must be valid for reads of 128 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `*pw` must be what a `*_store_powers` function wrote for the same key context (the contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and its hash subkey).
-/// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag`, `pw` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data`, `tag` and `pw` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` and `sha3` target features.
+/// The verified code of [`super::vg_aes_gcm_open_with_powers_aes_sha3`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_open_with_powers_aes_sha3(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize, pw: *const [u64; 16]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_open_with_powers_aes_sha3(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize, pw: *const [u64; 16]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd12883ff,0x910003f0,0xf94513f1,0xf9000211,0xf94517f1,0xf9000611,0xf9451bf1,0xf9000a11
 .inst 0x910083f1,0xf9000e11,0xf9400fe9,0xf9004534,0xf9004935,0xf9004d36,0xf9005137,0xf9005538
@@ -7005,35 +7477,16 @@ b 2378f
 27:
 .inst 0x912883ff,0xd65f03c0
 .p2align 6",
-        vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
-        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
-        vg_ghash_with_powers_aes = sym super::gcm::vg_ghash_with_powers_aes::vg_ghash_with_powers_aes,
-        VG_GCM_TAIL_IDX = sym super::consts::VG_GCM_TAIL_IDX,
+        vg_ghash_aes = sym crate::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
+        vg_aes_ctr32_aes = sym crate::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
+        vg_ghash_with_powers_aes = sym crate::gcm::vg_ghash_with_powers_aes::vg_ghash_with_powers_aes,
+        VG_GCM_TAIL_IDX = sym crate::consts::VG_GCM_TAIL_IDX,
     )
 }
 
-/// The CPU features `vg_aes_gcm_open_to_with_powers_aes_sha3` requires (`Artifact.features`).
-pub const VG_AES_GCM_OPEN_TO_WITH_POWERS_AES_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::SHA3);
-
-/// `vg_aes_gcm_open_to` with the 8 prepared powers of the hash subkey of the key context at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Computes the same result as `vg_aes_gcm_open_to`. The powers are secret, as the key context is: they may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToWithPowersContract`.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `src` must be valid for reads of `len` bytes.
-/// * `dst` must be valid for reads and writes of `dst_len` bytes.
-/// * `tag` must be valid for reads of `tag_len` bytes.
-/// * `pw` must be valid for reads of 128 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `dst_len` must equal `len`.
-/// * `*pw` must be what a `*_store_powers` function wrote for the same key context (the contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and its hash subkey).
-/// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src`, `tag`, `pw` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, `dst`, `tag` and `pw` may overlap the 2624 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` and `sha3` target features.
+/// The verified code of [`super::vg_aes_gcm_open_to_with_powers_aes_sha3`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_open_to_with_powers_aes_sha3(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize, pw: *const [u64; 16]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_open_to_with_powers_aes_sha3(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize, pw: *const [u64; 16]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd10083ff,0x910003f0,0xf9000e1e,0xf9401bf1,0xf9000211,0xf9401ff1,0xf9000611,0xf94023f1
 .inst 0xf9000a11,0xf94013eb,0x910000cc,0x910000ed,0xd344fdae
@@ -7086,23 +7539,13 @@ b 216f
 214:
 .inst 0xf9400ffe,0x910083ff,0xd65f03c0
 .p2align 6",
-        vg_aes_gcm_open_with_powers_aes_sha3 = sym super::gcm::vg_aes_gcm_open_with_powers_aes_sha3,
+        vg_aes_gcm_open_with_powers_aes_sha3 = sym crate::gcm::raw::vg_aes_gcm_open_with_powers_aes_sha3,
     )
 }
 
-/// The AES-GCM key setup: writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255. The other bytes are unspecified. The other `vg_aes_gcm_*` functions read it, with `Nr` as their `rounds`.
-///
-/// Contract: `VG.Spec.Gcm.initContract`. The key context is `VG.Spec.Gcm.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `ctx` must be valid for reads and writes of 256 bytes.
-/// * `key_len` must be 16, 24 or 32.
-/// * `ctx` must not overlap `key` (distinct Rust objects never do).
-/// * Neither `key` nor `ctx` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_aes_gcm_init`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_init(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_init(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
         r".inst 0xd12803ff,0x910003e3,0xf9004474,0xf9004875,0xf9004c76,0xf9005077,0xf9005478,0xf9005879
 .inst 0xf9005c7a,0xf900607b,0xf900647c,0xf900687e,0xf9004073,0x91000073,0x91000055,0xd342fc36
@@ -7114,29 +7557,14 @@ bl {vg_aes_ctr32}
 .inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd65f03c0
 .p2align 6",
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_expand_key_scratch = sym crate::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_aes_ctr32 = sym crate::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
 
-/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
-///
-/// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
-///
-/// Contract: `VG.Spec.Gcm.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key context, the nonce, the additional data or the data.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 2576 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_aes_gcm_seal`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_seal(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_seal(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r".inst 0xd12843ff,0x910003f0,0xf9450bf1,0xf9000211,0x910043f1,0xf9000611,0xf94007e9,0xf9004534
 .inst 0xf9004935,0xf9004d36,0xf9005137,0xf9005538,0xf9005939,0xf9005d3a,0xf900613b,0xf900653c
@@ -7490,29 +7918,14 @@ bl {vg_aes_ctr32}
 .inst 0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b,0xf940667c,0xf9406a7e,0xf9404273,0x912843ff
 .inst 0xd65f03c0
 .p2align 6",
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_ghash = sym crate::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_aes_ctr32 = sym crate::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
 
-/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
-///
-/// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
-///
-/// Contract: `VG.Spec.Gcm.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of `tag_len` bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_aes_gcm_open`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_open(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_open(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd12883ff,0x910003f0,0xf94513f1,0xf9000211,0xf94517f1,0xf9000611,0x910083f1,0xf9000a11
 .inst 0xf9400be9,0xf9004534,0xf9004935,0xf9004d36,0xf9005137,0xf9005538,0xf9005939,0xf9005d3a
@@ -7890,26 +8303,14 @@ b 21f
 .inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x912883ff,0xd65f03c0
 .p2align 6",
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_ghash = sym crate::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_aes_ctr32 = sym crate::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
 
-/// Starts an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7): with the key context `*ctx` that `vg_aes_gcm_init` wrote, makes the streaming state `*state` represent the message with the IV the `nonce_len` bytes at `nonce`, and no additional data or text yet. Continue with `vg_aes_gcm_stream_aad`, then `vg_aes_gcm_stream_encrypt` or `vg_aes_gcm_stream_decrypt`, then `vg_aes_gcm_stream_finish` or `vg_aes_gcm_stream_verify`, with the same key context.
-///
-/// The function checks no length: GCM requires a nonce of 1 to `2^61 - 1` bytes (§5.2.1.1), which the caller must check.
-///
-/// Contract: `VG.Spec.Gcm.streamInitContract`. The streaming state is `J₀`, the GHASH accumulator, a partial block, the next counter block and a keystream block (`VG.Spec.Gcm.StreamRepr`). Constant time: only the pointers and `nonce_len` may affect timing, not the key context or the nonce.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce` and `state` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_aes_gcm_stream_init`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_stream_init(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_init(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
     core::arch::naked_asm!(
         r".inst 0xd12803ff,0x910003e4,0xf9004494,0xf9004895,0xf9004c96,0xf9005097,0xf9005498,0xf9005899
 .inst 0xf9005c9a,0xf900609b,0xf900649c,0xf900689e,0xf9004093,0x91000093,0x91000074,0x91000015
@@ -7972,23 +8373,13 @@ b 21f
 .inst 0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b,0xf940667c,0xf9406a7e
 .inst 0xf9404273,0x912803ff,0xd65f03c0
 .p2align 6",
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_ghash = sym crate::aes_gcm_siv::vg_ghash::vg_ghash,
     )
 }
 
-/// Absorbs additional data into an incremental AES-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
-///
-/// Contract: `VG.Spec.Gcm.streamAadContract`. Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `data` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_aes_gcm_stream_aad`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_stream_aad(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_aad(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd12803ff,0x910003e5,0xf90044b4,0xf90048b5,0xf9004cb6,0xf90050b7,0xf90054b8,0xf90058b9
 .inst 0xf9005cba,0xf90060bb,0xf90064bc,0xf90068be,0xf90040b3,0x910000b3,0x91000034,0x91000015
@@ -8061,26 +8452,13 @@ b 210f
 .inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd65f03c0
 .p2align 6",
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_ghash = sym crate::aes_gcm_siv::vg_ghash::vg_ghash,
     )
 }
 
-/// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, encrypts the `len` bytes at `data` in place, as the continuation of that plaintext, and the state then represents the message with them appended.
-///
-/// The function checks no length: GCM requires at most `2^36 - 32` bytes of text and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
-///
-/// Contract: `VG.Spec.Gcm.streamEncryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `data` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_aes_gcm_stream_encrypt`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_stream_encrypt(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_encrypt(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd12803ff,0x910003e7,0xf90044f4,0xf90048f5,0xf9004cf6,0xf90050f7,0xf90054f8,0xf90058f9
 .inst 0xf9005cfa,0xf90060fb,0xf90064fc,0xf90068fe,0xf90040f3,0x910000f3,0x91000054,0x91000015
@@ -8283,27 +8661,14 @@ b 244f
 .inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd65f03c0
 .p2align 6",
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_ghash = sym crate::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_aes_ctr32 = sym crate::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
 
-/// Decrypts the next piece of the text of an incremental AES-GCM decryption (NIST SP 800-38D §7.2): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext so far, decrypts the `len` bytes of ciphertext at `data` in place, as the continuation of that ciphertext, and the state then represents the message with them appended. The plaintext is not authenticated until `vg_aes_gcm_stream_verify` has returned 1.
-///
-/// The function checks no length: GCM requires at most `2^36 - 32` bytes of text and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
-///
-/// Contract: `VG.Spec.Gcm.streamDecryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `data` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_aes_gcm_stream_decrypt`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_stream_decrypt(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_decrypt(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd12803ff,0x910003e7,0xf90044f4,0xf90048f5,0xf9004cf6,0xf90050f7,0xf90054f8,0xf90058f9
 .inst 0xf9005cfa,0xf90060fb,0xf90064fc,0xf90068fe,0xf90040f3,0x910000f3,0x91000054,0x91000015
@@ -8506,26 +8871,14 @@ b 255f
 .inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd65f03c0
 .p2align 6",
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_ghash = sym crate::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_aes_ctr32 = sym crate::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
 
-/// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
-///
-/// Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, `aad_len` and `text_len` may affect timing, not the key context or the state.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The contents of `state` on return are unspecified.
-/// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `tag` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_aes_gcm_stream_finish`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_stream_finish(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r".inst 0xd12803ff,0x910003e6,0xf90044d4,0xf90048d5,0xf9004cd6,0xf90050d7,0xf90054d8,0xf90058d9
 .inst 0xf9005cda,0xf90060db,0xf90064dc,0xf90068de,0xf90040d3,0x910000d3,0x91000054,0x91000015
@@ -8588,26 +8941,14 @@ bl {vg_aes_ctr32}
 .inst 0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b,0xf940667c,0xf9406a7e,0xf9404273,0x912803ff
 .inst 0xd65f03c0
 .p2align 6",
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_ghash = sym crate::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_aes_ctr32 = sym crate::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
 
-/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
-///
-/// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `tag` must be valid for reads of `tag_len` bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The contents of `state` on return are unspecified.
-/// * `state` must not overlap `ctx` or `tag` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `tag` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_aes_gcm_stream_verify`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_stream_verify(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd12803ff,0x910003e7,0xf90044f4,0xf90048f5,0xf9004cf6,0xf90050f7,0xf90054f8,0xf90058f9
 .inst 0xf9005cfa,0xf90060fb,0xf90064fc,0xf90068fe,0xf90040f3,0x910000f3,0x91000054,0x91000015
@@ -8715,31 +9056,14 @@ b 21f
 .inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd65f03c0
 .p2align 6",
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_ghash = sym crate::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_aes_ctr32 = sym crate::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
 
-/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
-///
-/// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
-///
-/// Contract: `VG.Spec.Gcm.sealGatherContract`. Constant time: only the pointers, `rounds`, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key context, the nonce, the additional data or the data.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
-/// * `dst` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The slices `src` lists must be `len` bytes long in all.
-/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_aes_gcm_seal_gather`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_seal_gather(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_gather(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r".inst 0xd10043ff,0x910003f0,0xf900061e,0xf94013f1,0xf9000211,0xf9400beb
 cbz x7, 20f
@@ -8787,30 +9111,13 @@ b 21f
 bl {vg_aes_gcm_seal}
 .inst 0xf94007fe,0x910043ff,0xd65f03c0
 .p2align 6",
-        vg_aes_gcm_seal = sym super::gcm::vg_aes_gcm_seal,
+        vg_aes_gcm_seal = sym crate::gcm::raw::vg_aes_gcm_seal,
     )
 }
 
-/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `src` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then written the plaintext to the `dst_len = len` bytes at `dst`; otherwise returns 0, having written zeros to them: `vg_aes_gcm_open` with the ciphertext read from `src` and the plaintext written to `dst`. `src` is not written, and `dst` is a buffer of its own: it overlaps no other buffer, `src` included. The tags are compared without a branch.
-///
-/// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
-///
-/// Contract: `VG.Spec.Gcm.openToContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `src` must be valid for reads of `len` bytes.
-/// * `dst` must be valid for reads and writes of `dst_len` bytes.
-/// * `tag` must be valid for reads of `tag_len` bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `dst_len` must equal `len`.
-/// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the 2624 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_aes_gcm_open_to`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_open_to(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_open_to(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd10083ff,0x910003f0,0xf9000a1e,0xf9401bf1,0xf9000211,0xf9401ff1,0xf9000611,0xf94013eb
 .inst 0x910000cc,0x910000ed,0xd344fdae
@@ -8863,26 +9170,13 @@ b 216f
 214:
 .inst 0xf9400bfe,0x910083ff,0xd65f03c0
 .p2align 6",
-        vg_aes_gcm_open = sym super::gcm::vg_aes_gcm_open,
+        vg_aes_gcm_open = sym crate::gcm::raw::vg_aes_gcm_open,
     )
 }
 
-/// `vg_aes_gcm_seal` with the 8 prepared powers of the hash subkey of the key context at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Computes the same result as `vg_aes_gcm_seal`. The powers are secret, as the key context is: they may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealWithPowersContract`.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `pw` must be valid for reads of 128 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `*pw` must be what a `*_store_powers` function wrote for the same key context (the contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and its hash subkey).
-/// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `pw` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data`, `tag` and `pw` may overlap the 2576 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_aes_gcm_seal_with_powers`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_seal_with_powers(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16], pw: *const [u64; 16]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_with_powers(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16], pw: *const [u64; 16]) {
     core::arch::naked_asm!(
         r".inst 0xd12843ff,0x910003f0,0xf9450bf1,0xf9000211,0x910043f1,0xf9000611,0xf94007e9,0xf9004534
 .inst 0xf9004935,0xf9004d36,0xf9005137,0xf9005538,0xf9005939,0xf9005d3a,0xf900613b,0xf900653c
@@ -9236,27 +9530,14 @@ bl {vg_aes_ctr32}
 .inst 0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b,0xf940667c,0xf9406a7e,0xf9404273,0x912843ff
 .inst 0xd65f03c0
 .p2align 6",
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_ghash = sym crate::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_aes_ctr32 = sym crate::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
 
-/// `vg_aes_gcm_open` with the 8 prepared powers of the hash subkey of the key context at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Computes the same result as `vg_aes_gcm_open`. The powers are secret, as the key context is: they may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openWithPowersContract`.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of `tag_len` bytes.
-/// * `pw` must be valid for reads of 128 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `*pw` must be what a `*_store_powers` function wrote for the same key context (the contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and its hash subkey).
-/// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag`, `pw` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data`, `tag` and `pw` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_aes_gcm_open_with_powers`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_open_with_powers(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize, pw: *const [u64; 16]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_open_with_powers(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize, pw: *const [u64; 16]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd12883ff,0x910003f0,0xf94513f1,0xf9000211,0xf94517f1,0xf9000611,0x910083f1,0xf9000a11
 .inst 0xf9400be9,0xf9004534,0xf9004935,0xf9004d36,0xf9005137,0xf9005538,0xf9005939,0xf9005d3a
@@ -9634,9 +9915,10 @@ b 21f
 .inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x912883ff,0xd65f03c0
 .p2align 6",
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_ghash = sym crate::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_aes_ctr32 = sym crate::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
+}
 }
 
 #[rustfmt::skip]

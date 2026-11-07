@@ -14,8 +14,37 @@
 /// * `data` must be valid for reads and writes of `8 * n` bytes.
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 184 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_idea_ofb(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 104], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_idea_ofb(schedule, iv, data, n) }
+}
+
+/// IDEA-OFB encryption or decryption (NIST SP 800-38A §6.4, Lai 1992 §3.3) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)`, where `O₀` is the block at `*iv`, a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*iv` with the last output block used, `Oₙ` (leaving it unchanged if `len = 0`): so that a further call continues the message if `len` is a multiple of 8, and otherwise keystream, to be wiped, after which the message must end. `CIPH_K` is IDEA encryption under the encryption subkeys written by `vg_idea_expand_key`.
+///
+/// Contract: `VG.Spec.Idea.ofbFinalContract`. Constant time: only the pointers and `len` may affect timing, not the subkeys, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 104 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 184 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_idea_ofb_final(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 104], iv: *mut [u8; 8], data: *mut u8, len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_idea_ofb_final(schedule, iv, data, len) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_idea_ofb`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_idea_ofb(schedule: *const [u8; 104], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_idea_ofb(schedule: *const [u8; 104], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJEj///9JieBJg8AITYnBSYlZcEmJaXhNiaGAAAAATYmpiAAAAE2JsZAAAABNibmYAAAAZkwPbv5JidRJic1IiwdJiUEISItHCEmJQRBIi0cQSYlBGEiLRxhJiUEgSItHIEmJQShIi0coSYlBMEiLRzBJiUE4SItHOEmJQUBIi0dASYlBSEiLR0hJiUFQSItHUEmJQVhIi0dYSYlBYEiLR2BJiUFoZkwPfvhIiyhJiSlNhe0="
 je 20f
@@ -30,19 +59,9 @@ jmp 21f
     )
 }
 
-/// IDEA-OFB encryption or decryption (NIST SP 800-38A §6.4, Lai 1992 §3.3) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)`, where `O₀` is the block at `*iv`, a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*iv` with the last output block used, `Oₙ` (leaving it unchanged if `len = 0`): so that a further call continues the message if `len` is a multiple of 8, and otherwise keystream, to be wiped, after which the message must end. `CIPH_K` is IDEA encryption under the encryption subkeys written by `vg_idea_expand_key`.
-///
-/// Contract: `VG.Spec.Idea.ofbFinalContract`. Constant time: only the pointers and `len` may affect timing, not the subkeys, the chaining value or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 104 bytes.
-/// * `iv` must be valid for reads and writes of 8 bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 184 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_idea_ofb_final`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_idea_ofb_final(schedule: *const [u8; 104], iv: *mut [u8; 8], data: *mut u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_idea_ofb_final(schedule: *const [u8; 104], iv: *mut [u8; 8], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJEj///9JieBJg8AITYnBSYlZcEmJaXhNiaGAAAAATYmpiAAAAE2JsZAAAABNibmYAAAAZkwPbv5JidRJic1IiwdJiUEISItHCEmJQRBIi0cQSYlBGEiLRxhJiUEgSItHIEmJQShIi0coSYlBMEiLRzBJiUE4SItHOEmJQUBIi0dASYlBSEiLR0hJiUFQSItHUEmJQVhIi0dYSYlBYEiLR2BJiUFoZkwPfvhIiyhJiSlNhe0="
 je 20f
@@ -64,4 +83,5 @@ jmp 21f
 .base64 "ZkwPfvhJiylIiShJi1lwSYtpeE2LoYAAAABNi6mIAAAATYuxkAAAAE2LuZgAAABBuwAAAABMiVwkCEyJXCQQTIlcJBhMiVwkIEyJXCQoTIlcJDBMiVwkOEyJXCRATIlcJEhMiVwkUEyJXCRYTIlcJGBMiVwkaEyJXCRwTIlcJHhMiZwkgAAAAEyJnCSIAAAATImcJJAAAABMiZwkmAAAAEyJnCSgAAAATImcJKgAAABMiZwksAAAAEiNpCS4AAAAww=="
 .p2align 6"#,
     )
+}
 }

@@ -16,8 +16,45 @@
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `d` or `peer` (distinct Rust objects never do).
 /// * None of `out`, `d`, `peer` and `scratch` may wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_ecdh_p224(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 28], d: *const [u8; 28], peer: *const [u8; 57], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ecdh_p224(out, d, peer, scratch) }
+}
+
+/// The CPU features `vg_ecdh_p224_umaal` requires (`Artifact.features`).
+#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+pub const VG_ECDH_P224_UMAAL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::UMAAL);
+
+/// ECDH over P-224 (the ECC CDH primitive of SP 800-56A §5.7.1.2): validates the peer's public key at `peer` (SP 800-56A §5.6.2.3.3: the uncompressed form of SEC 1 §2.3.3, `04` then `x` and `y` in 28 bytes each, most significant first, both below `p`, on the curve), and writes the x-coordinate of `dQ` (28 bytes, most significant first) for the private key `d` at `d` (28 bytes, most significant first) to `*out`, and returns 1; or writes zeros and returns 0 if `peer` is not a valid public key, `d` is not in `[1, n-1]`, or `dQ` is the point at infinity.
+///
+/// Contract: `VG.Spec.Ecdh.Instance.exchangeContract`. Constant time but for the peer's public key: timing may depend on the pointers and the contents of `peer`, not on the private key.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 28 bytes.
+/// * `d` must be valid for reads of 28 bytes.
+/// * `peer` must be valid for reads of 57 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other, `d` or `peer` (distinct Rust objects never do).
+/// * None of `out`, `d`, `peer` and `scratch` may wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `umaal` target feature.
+#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+#[inline(always)]
+pub unsafe fn vg_ecdh_p224_umaal(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 28], d: *const [u8; 28], peer: *const [u8; 57], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ecdh_p224_umaal(out, d, peer, scratch) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_ecdh_p224`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ecdh_p224(out: *mut [u8; 28], d: *const [u8; 28], peer: *const [u8; 57], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ecdh_p224(out: *mut [u8; 28], d: *const [u8; 28], peer: *const [u8; 57], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"mov r12, r3
 str r4, [r12, #0]
@@ -1453,34 +1490,17 @@ ldr r10, [r12, #24]
 ldr r11, [r12, #28]
 ldr lr, [r12, #32]
 bx lr",
-        vg_p224_mul_mod_p = sym super::ec_p224::vg_p224_mul_mod_p::vg_p224_mul_mod_p,
-        vg_p224_add_mod_p = sym super::ec_p224::vg_p224_add_mod_p::vg_p224_add_mod_p,
-        vg_p224_sub_mod_p = sym super::ec_p224::vg_p224_sub_mod_p::vg_p224_sub_mod_p,
-        vg_p224_mul = sym super::ecdh_p224::vg_p224_mul::vg_p224_mul,
+        vg_p224_mul_mod_p = sym crate::ec_p224::vg_p224_mul_mod_p::vg_p224_mul_mod_p,
+        vg_p224_add_mod_p = sym crate::ec_p224::vg_p224_add_mod_p::vg_p224_add_mod_p,
+        vg_p224_sub_mod_p = sym crate::ec_p224::vg_p224_sub_mod_p::vg_p224_sub_mod_p,
+        vg_p224_mul = sym crate::ecdh_p224::vg_p224_mul::vg_p224_mul,
     )
 }
 
-/// The CPU features `vg_ecdh_p224_umaal` requires (`Artifact.features`).
-#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub const VG_ECDH_P224_UMAAL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::UMAAL);
-
-/// ECDH over P-224 (the ECC CDH primitive of SP 800-56A §5.7.1.2): validates the peer's public key at `peer` (SP 800-56A §5.6.2.3.3: the uncompressed form of SEC 1 §2.3.3, `04` then `x` and `y` in 28 bytes each, most significant first, both below `p`, on the curve), and writes the x-coordinate of `dQ` (28 bytes, most significant first) for the private key `d` at `d` (28 bytes, most significant first) to `*out`, and returns 1; or writes zeros and returns 0 if `peer` is not a valid public key, `d` is not in `[1, n-1]`, or `dQ` is the point at infinity.
-///
-/// Contract: `VG.Spec.Ecdh.Instance.exchangeContract`. Constant time but for the peer's public key: timing may depend on the pointers and the contents of `peer`, not on the private key.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 28 bytes.
-/// * `d` must be valid for reads of 28 bytes.
-/// * `peer` must be valid for reads of 57 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other, `d` or `peer` (distinct Rust objects never do).
-/// * None of `out`, `d`, `peer` and `scratch` may wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `umaal` target feature.
+/// The verified code of [`super::vg_ecdh_p224_umaal`], which calls it.
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ecdh_p224_umaal(out: *mut [u8; 28], d: *const [u8; 28], peer: *const [u8; 57], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ecdh_p224_umaal(out: *mut [u8; 28], d: *const [u8; 28], peer: *const [u8; 57], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"mov r12, r3
 str r4, [r12, #0]
@@ -2916,11 +2936,12 @@ ldr r10, [r12, #24]
 ldr r11, [r12, #28]
 ldr lr, [r12, #32]
 bx lr",
-        vg_p224_mul_mod_p_umaal = sym super::ec_p224::vg_p224_mul_mod_p_umaal::vg_p224_mul_mod_p_umaal,
-        vg_p224_add_mod_p = sym super::ec_p224::vg_p224_add_mod_p::vg_p224_add_mod_p,
-        vg_p224_sub_mod_p = sym super::ec_p224::vg_p224_sub_mod_p::vg_p224_sub_mod_p,
-        vg_p224_mul_umaal = sym super::ecdh_p224::vg_p224_mul_umaal::vg_p224_mul_umaal,
+        vg_p224_mul_mod_p_umaal = sym crate::ec_p224::vg_p224_mul_mod_p_umaal::vg_p224_mul_mod_p_umaal,
+        vg_p224_add_mod_p = sym crate::ec_p224::vg_p224_add_mod_p::vg_p224_add_mod_p,
+        vg_p224_sub_mod_p = sym crate::ec_p224::vg_p224_sub_mod_p::vg_p224_sub_mod_p,
+        vg_p224_mul_umaal = sym crate::ecdh_p224::vg_p224_mul_umaal::vg_p224_mul_umaal,
     )
+}
 }
 
 #[rustfmt::skip]

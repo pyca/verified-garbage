@@ -65,13 +65,14 @@ impl Parameters {
         bits: usize,
         random: impl FnMut(&mut [u8]) -> Result<(), Error>,
     ) -> Result<Self, Error> {
+        crate::dit::enter!(dit);
         let (p_len, q_len) = match bits {
             1024 => (128, 20),
             2048 => (256, 32),
             3072 => (384, 32),
             _ => return Err(Error::Length),
         };
-        let packed = search::generate(p_len, q_len, random)?;
+        let packed = search::generate(dit, p_len, q_len, random)?;
         Ok(Self {
             packed,
             p_len,

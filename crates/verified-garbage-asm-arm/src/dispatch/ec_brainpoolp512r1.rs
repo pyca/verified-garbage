@@ -18,14 +18,14 @@
 /// * None of `out`, `d` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_ec_brainpoolp512r1_public_key_auto(out: *mut [u8; 129], d: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe fn vg_ec_brainpoolp512r1_public_key_auto(dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 129], d: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     let cpu = verified_garbage_cpu::detected();
     #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
     if cpu.contains(crate::ec_brainpoolp512r1::VG_EC_BRAINPOOLP512R1_PUBLIC_KEY_UMAAL_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_ec_brainpoolp512r1_public_key_umaal`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::ec_brainpoolp512r1::vg_ec_brainpoolp512r1_public_key_umaal(out, d, scratch) };
+        return unsafe { crate::ec_brainpoolp512r1::vg_ec_brainpoolp512r1_public_key_umaal(dit, out, d, scratch) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::ec_brainpoolp512r1::vg_ec_brainpoolp512r1_public_key(out, d, scratch) }
+    unsafe { crate::ec_brainpoolp512r1::vg_ec_brainpoolp512r1_public_key(dit, out, d, scratch) }
 }

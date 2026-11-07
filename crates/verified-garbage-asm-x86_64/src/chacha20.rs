@@ -14,12 +14,11 @@
 /// * `nonce` must be valid for reads of 16 bytes.
 /// * `state` must not overlap `key` or `nonce` (distinct Rust objects never do).
 /// * None of `state`, `key` and `nonce` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_chacha20_init(state: *mut [u64; 96], key: *const [u8; 32], nonce: *const [u8; 16]) {
-    core::arch::naked_asm!(
-        r#".base64 "SIsGSItOCEyLRhBMi04YSIlHEEiJTxhMiUcgTIlPKEiJ1kiLBkiLTgiLFkiJRzBIiU84SLhleHBhbmQgM0iJB0i4Mi1ieXRlIGtIiUcISLkAAAAAAQAAAEgp0UgByUgByUgByUgByUgByUgByUiJj4AAAADD"
-.p2align 6"#,
-    )
+#[inline(always)]
+pub unsafe fn vg_chacha20_init(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 96], key: *const [u8; 32], nonce: *const [u8; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_chacha20_init(state, key, nonce) }
 }
 
 /// Restarts a ChaCha20 keystream with the same key: makes the streaming state `*state` represent the whole keystream of its key for the 16-byte nonce `*nonce` (as `vg_chacha20_init` does), discarding what was left of the previous one.
@@ -32,12 +31,11 @@ pub unsafe extern "sysv64" fn vg_chacha20_init(state: *mut [u64; 96], key: *cons
 /// * `nonce` must be valid for reads of 16 bytes.
 /// * `state` must not overlap `nonce` (distinct Rust objects never do).
 /// * Neither `state` nor `nonce` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_chacha20_set_nonce(state: *mut [u64; 96], nonce: *const [u8; 16]) {
-    core::arch::naked_asm!(
-        r#".base64 "SIsGSItOCIsWSIlHMEiJTzhIuGV4cGFuZCAzSIkHSLgyLWJ5dGUga0iJRwhIuQAAAAABAAAASCnRSAHJSAHJSAHJSAHJSAHJSAHJSImPgAAAAMM="
-.p2align 6"#,
-    )
+#[inline(always)]
+pub unsafe fn vg_chacha20_set_nonce(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 96], nonce: *const [u8; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_chacha20_set_nonce(state, nonce) }
 }
 
 /// The CPU features `vg_chacha20_apply_avx2` requires (`Artifact.features`).
@@ -54,8 +52,117 @@ pub const VG_CHACHA20_APPLY_AVX2_FEATURES: verified_garbage_cpu::Features = veri
 /// * `state` and `data` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
+#[inline(always)]
+pub unsafe fn vg_chacha20_apply_avx2(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_chacha20_apply_avx2(state, data, len) }
+}
+
+/// The CPU features `vg_chacha20_apply_avx512` requires (`Artifact.features`).
+pub const VG_CHACHA20_APPLY_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F);
+
+/// Applies a ChaCha20 keystream (RFC 8439 §2.4), encrypting or decrypting: if at least `len` bytes are left of the keystream that the streaming state `*state` represents, XORs the next `len` of them into the `len` bytes at `data`, keeps the rest in `*state`, and returns 1. Otherwise (the block counter would pass 2³² − 1) returns 0, and leaves the bytes at `data` and the keystream unchanged.
+///
+/// Contract: `VG.Spec.ChaCha20.applyContract`. Constant time: only the pointers, `len` and the number of bytes of keystream left in `*state` (`VG.Spec.ChaCha20.leftAt`: 64 × (2³² − `c`) for the initial block counter `c`, less the bytes applied since) may affect timing, not the key, the nonce, the keystream or the data. The function may leak that number.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 768 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `state` and `data` must not overlap each other (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx` and `avx512f` target features.
+#[inline(always)]
+pub unsafe fn vg_chacha20_apply_avx512(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_chacha20_apply_avx512(state, data, len) }
+}
+
+/// The CPU features `vg_chacha20_apply_avx512vl` requires (`Artifact.features`).
+pub const VG_CHACHA20_APPLY_AVX512VL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL);
+
+/// Applies a ChaCha20 keystream (RFC 8439 §2.4), encrypting or decrypting: if at least `len` bytes are left of the keystream that the streaming state `*state` represents, XORs the next `len` of them into the `len` bytes at `data`, keeps the rest in `*state`, and returns 1. Otherwise (the block counter would pass 2³² − 1) returns 0, and leaves the bytes at `data` and the keystream unchanged.
+///
+/// Contract: `VG.Spec.ChaCha20.applyContract`. Constant time: only the pointers, `len` and the number of bytes of keystream left in `*state` (`VG.Spec.ChaCha20.leftAt`: 64 × (2³² − `c`) for the initial block counter `c`, less the bytes applied since) may affect timing, not the key, the nonce, the keystream or the data. The function may leak that number.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 768 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `state` and `data` must not overlap each other (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
+#[inline(always)]
+pub unsafe fn vg_chacha20_apply_avx512vl(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_chacha20_apply_avx512vl(state, data, len) }
+}
+
+/// Applies a ChaCha20 keystream (RFC 8439 §2.4), encrypting or decrypting: if at least `len` bytes are left of the keystream that the streaming state `*state` represents, XORs the next `len` of them into the `len` bytes at `data`, keeps the rest in `*state`, and returns 1. Otherwise (the block counter would pass 2³² − 1) returns 0, and leaves the bytes at `data` and the keystream unchanged.
+///
+/// Contract: `VG.Spec.ChaCha20.applyContract`. Constant time: only the pointers, `len` and the number of bytes of keystream left in `*state` (`VG.Spec.ChaCha20.leftAt`: 64 × (2³² − `c`) for the initial block counter `c`, less the bytes applied since) may affect timing, not the key, the nonce, the keystream or the data. The function may leak that number.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 768 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `state` and `data` must not overlap each other (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_chacha20_apply(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_chacha20_apply(state, data, len) }
+}
+
+/// The CPU features `vg_chacha20_apply_ssse3` requires (`Artifact.features`).
+pub const VG_CHACHA20_APPLY_SSSE3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3);
+
+/// Applies a ChaCha20 keystream (RFC 8439 §2.4), encrypting or decrypting: if at least `len` bytes are left of the keystream that the streaming state `*state` represents, XORs the next `len` of them into the `len` bytes at `data`, keeps the rest in `*state`, and returns 1. Otherwise (the block counter would pass 2³² − 1) returns 0, and leaves the bytes at `data` and the keystream unchanged.
+///
+/// Contract: `VG.Spec.ChaCha20.applyContract`. Constant time: only the pointers, `len` and the number of bytes of keystream left in `*state` (`VG.Spec.ChaCha20.leftAt`: 64 × (2³² − `c`) for the initial block counter `c`, less the bytes applied since) may affect timing, not the key, the nonce, the keystream or the data. The function may leak that number.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 768 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `state` and `data` must not overlap each other (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3` target feature.
+#[inline(always)]
+pub unsafe fn vg_chacha20_apply_ssse3(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_chacha20_apply_ssse3(state, data, len) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_chacha20_init`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_chacha20_apply_avx2(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_chacha20_init(state: *mut [u64; 96], key: *const [u8; 32], nonce: *const [u8; 16]) {
+    core::arch::naked_asm!(
+        r#".base64 "SIsGSItOCEyLRhBMi04YSIlHEEiJTxhMiUcgTIlPKEiJ1kiLBkiLTgiLFkiJRzBIiU84SLhleHBhbmQgM0iJB0i4Mi1ieXRlIGtIiUcISLkAAAAAAQAAAEgp0UgByUgByUgByUgByUgByUgByUiJj4AAAADD"
+.p2align 6"#,
+    )
+}
+
+/// The verified code of [`super::vg_chacha20_set_nonce`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_chacha20_set_nonce(state: *mut [u64; 96], nonce: *const [u8; 16]) {
+    core::arch::naked_asm!(
+        r#".base64 "SIsGSItOCIsWSIlHMEiJTzhIuGV4cGFuZCAzSIkHSLgyLWJ5dGUga0iJRwhIuQAAAAABAAAASCnRSAHJSAHJSAHJSAHJSAHJSAHJSImPgAAAAMM="
+.p2align 6"#,
+    )
+}
+
+/// The verified code of [`super::vg_chacha20_apply_avx2`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_chacha20_apply_avx2(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SIuHgAAAAEg50A=="
 jb 20f
@@ -119,27 +226,14 @@ jmp 21f
 21:
 .base64 "ww=="
 .p2align 6"#,
-        vg_chacha20_xor_avx2 = sym super::chacha20::vg_chacha20_xor_avx2::vg_chacha20_xor_avx2,
-        vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
+        vg_chacha20_xor_avx2 = sym crate::chacha20::vg_chacha20_xor_avx2::vg_chacha20_xor_avx2,
+        vg_chacha20_block = sym crate::chacha20::vg_chacha20_block::vg_chacha20_block,
     )
 }
 
-/// The CPU features `vg_chacha20_apply_avx512` requires (`Artifact.features`).
-pub const VG_CHACHA20_APPLY_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F);
-
-/// Applies a ChaCha20 keystream (RFC 8439 §2.4), encrypting or decrypting: if at least `len` bytes are left of the keystream that the streaming state `*state` represents, XORs the next `len` of them into the `len` bytes at `data`, keeps the rest in `*state`, and returns 1. Otherwise (the block counter would pass 2³² − 1) returns 0, and leaves the bytes at `data` and the keystream unchanged.
-///
-/// Contract: `VG.Spec.ChaCha20.applyContract`. Constant time: only the pointers, `len` and the number of bytes of keystream left in `*state` (`VG.Spec.ChaCha20.leftAt`: 64 × (2³² − `c`) for the initial block counter `c`, less the bytes applied since) may affect timing, not the key, the nonce, the keystream or the data. The function may leak that number.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 768 bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `state` and `data` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx` and `avx512f` target features.
+/// The verified code of [`super::vg_chacha20_apply_avx512`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_chacha20_apply_avx512(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_chacha20_apply_avx512(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SIuHgAAAAEg50A=="
 jb 20f
@@ -203,27 +297,14 @@ jmp 21f
 21:
 .base64 "ww=="
 .p2align 6"#,
-        vg_chacha20_xor_avx512 = sym super::chacha20::vg_chacha20_xor_avx512::vg_chacha20_xor_avx512,
-        vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
+        vg_chacha20_xor_avx512 = sym crate::chacha20::vg_chacha20_xor_avx512::vg_chacha20_xor_avx512,
+        vg_chacha20_block = sym crate::chacha20::vg_chacha20_block::vg_chacha20_block,
     )
 }
 
-/// The CPU features `vg_chacha20_apply_avx512vl` requires (`Artifact.features`).
-pub const VG_CHACHA20_APPLY_AVX512VL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL);
-
-/// Applies a ChaCha20 keystream (RFC 8439 §2.4), encrypting or decrypting: if at least `len` bytes are left of the keystream that the streaming state `*state` represents, XORs the next `len` of them into the `len` bytes at `data`, keeps the rest in `*state`, and returns 1. Otherwise (the block counter would pass 2³² − 1) returns 0, and leaves the bytes at `data` and the keystream unchanged.
-///
-/// Contract: `VG.Spec.ChaCha20.applyContract`. Constant time: only the pointers, `len` and the number of bytes of keystream left in `*state` (`VG.Spec.ChaCha20.leftAt`: 64 × (2³² − `c`) for the initial block counter `c`, less the bytes applied since) may affect timing, not the key, the nonce, the keystream or the data. The function may leak that number.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 768 bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `state` and `data` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
+/// The verified code of [`super::vg_chacha20_apply_avx512vl`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_chacha20_apply_avx512vl(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_chacha20_apply_avx512vl(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SIuHgAAAAEg50A=="
 jb 20f
@@ -287,23 +368,14 @@ jmp 21f
 21:
 .base64 "ww=="
 .p2align 6"#,
-        vg_chacha20_xor_avx512vl = sym super::chacha20::vg_chacha20_xor_avx512vl::vg_chacha20_xor_avx512vl,
-        vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
+        vg_chacha20_xor_avx512vl = sym crate::chacha20::vg_chacha20_xor_avx512vl::vg_chacha20_xor_avx512vl,
+        vg_chacha20_block = sym crate::chacha20::vg_chacha20_block::vg_chacha20_block,
     )
 }
 
-/// Applies a ChaCha20 keystream (RFC 8439 §2.4), encrypting or decrypting: if at least `len` bytes are left of the keystream that the streaming state `*state` represents, XORs the next `len` of them into the `len` bytes at `data`, keeps the rest in `*state`, and returns 1. Otherwise (the block counter would pass 2³² − 1) returns 0, and leaves the bytes at `data` and the keystream unchanged.
-///
-/// Contract: `VG.Spec.ChaCha20.applyContract`. Constant time: only the pointers, `len` and the number of bytes of keystream left in `*state` (`VG.Spec.ChaCha20.leftAt`: 64 × (2³² − `c`) for the initial block counter `c`, less the bytes applied since) may affect timing, not the key, the nonce, the keystream or the data. The function may leak that number.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 768 bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `state` and `data` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_chacha20_apply`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_chacha20_apply(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_chacha20_apply(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SIuHgAAAAEg50A=="
 jb 20f
@@ -367,27 +439,14 @@ jmp 21f
 21:
 .base64 "ww=="
 .p2align 6"#,
-        vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor::vg_chacha20_xor,
-        vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
+        vg_chacha20_xor = sym crate::chacha20::vg_chacha20_xor::vg_chacha20_xor,
+        vg_chacha20_block = sym crate::chacha20::vg_chacha20_block::vg_chacha20_block,
     )
 }
 
-/// The CPU features `vg_chacha20_apply_ssse3` requires (`Artifact.features`).
-pub const VG_CHACHA20_APPLY_SSSE3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3);
-
-/// Applies a ChaCha20 keystream (RFC 8439 §2.4), encrypting or decrypting: if at least `len` bytes are left of the keystream that the streaming state `*state` represents, XORs the next `len` of them into the `len` bytes at `data`, keeps the rest in `*state`, and returns 1. Otherwise (the block counter would pass 2³² − 1) returns 0, and leaves the bytes at `data` and the keystream unchanged.
-///
-/// Contract: `VG.Spec.ChaCha20.applyContract`. Constant time: only the pointers, `len` and the number of bytes of keystream left in `*state` (`VG.Spec.ChaCha20.leftAt`: 64 × (2³² − `c`) for the initial block counter `c`, less the bytes applied since) may affect timing, not the key, the nonce, the keystream or the data. The function may leak that number.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 768 bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `state` and `data` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `ssse3` target feature.
+/// The verified code of [`super::vg_chacha20_apply_ssse3`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_chacha20_apply_ssse3(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_chacha20_apply_ssse3(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SIuHgAAAAEg50A=="
 jb 20f
@@ -451,9 +510,10 @@ jmp 21f
 21:
 .base64 "ww=="
 .p2align 6"#,
-        vg_chacha20_xor_ssse3 = sym super::chacha20::vg_chacha20_xor_ssse3::vg_chacha20_xor_ssse3,
-        vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
+        vg_chacha20_xor_ssse3 = sym crate::chacha20::vg_chacha20_xor_ssse3::vg_chacha20_xor_ssse3,
+        vg_chacha20_block = sym crate::chacha20::vg_chacha20_block::vg_chacha20_block,
     )
+}
 }
 
 #[rustfmt::skip]

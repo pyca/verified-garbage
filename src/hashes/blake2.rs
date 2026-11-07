@@ -54,6 +54,9 @@ macro_rules! blake2 {
             /// The length of the data so far (the key block included), in
             /// bytes.
             length: u64,
+            /// Whether the computation is keyed, a MAC, which takes data
+            /// independent timing (see `crate::dit`).
+            keyed: bool,
         }
 
         impl<const N: usize> Drop for $name<N> {
@@ -89,6 +92,13 @@ macro_rules! blake2 {
             ///
             #[doc = concat!("If `key` is longer than ", stringify!($max), " bytes.")]
             pub fn new_keyed(key: &[u8]) -> Self {
+                crate::dit::enter_if!(dit, !key.is_empty(), crate::dit::Why::UnkeyedHash);
+                Self::new_keyed_with(dit, key)
+            }
+
+            /// [`new_keyed`](Self::new_keyed), with the token of the
+            /// operation it is part of (see `crate::dit`).
+            fn new_keyed_with(dit: crate::dit::Dit<'_>, key: &[u8]) -> Self {
                 const { assert!(1 <= N && N <= $max, "unsupported digest size") };
                 assert!(key.len() <= $max, "key too long");
                 let mut state = [0; $state];
@@ -98,10 +108,10 @@ macro_rules! blake2 {
                 // not overlap each other, the return address (on x86-64 and
                 // x86) or the arguments on the stack (on x86), and do not
                 // wrap around the end of the address space.
-                unsafe { $init(&mut state, N, key.as_ptr(), key.len()) };
+                unsafe { $init(dit, &mut state, N, key.as_ptr(), key.len()) };
                 // The key block is the first block of the data.
                 let length = if key.is_empty() { 0 } else { $block };
-                $name { state, length }
+                $name { state, length, keyed: !key.is_empty() }
             }
 
             /// Absorbs `data`.
@@ -110,6 +120,13 @@ macro_rules! blake2 {
             ///
             /// If the data reaches 2⁶⁴ bytes.
             pub fn update(&mut self, data: &[u8]) {
+                crate::dit::enter_if!(dit, self.keyed, crate::dit::Why::UnkeyedHash);
+                self.update_with(dit, data);
+            }
+
+            /// [`update`](Self::update), with the token of the operation it
+            /// is part of (see `crate::dit`).
+            fn update_with(&mut self, dit: crate::dit::Dit<'_>, data: &[u8]) {
                 let length = self
                     .length
                     .checked_add(data.len() as u64)
@@ -124,12 +141,19 @@ macro_rules! blake2 {
                 // `self.state` represents, and adding `data.len()` to it
                 // does not reach 2⁶⁴. The dispatcher calls only an
                 // implementation the CPU has the features of.
-                unsafe { $update(&mut self.state, self.length, data.as_ptr(), data.len()) };
+                unsafe { $update(dit, &mut self.state, self.length, data.as_ptr(), data.len()) };
                 self.length = length;
             }
 
             /// Returns the digest of the data.
-            pub fn finalize(mut self) -> [u8; N] {
+            pub fn finalize(self) -> [u8; N] {
+                crate::dit::enter_if!(dit, self.keyed, crate::dit::Why::UnkeyedHash);
+                self.finalize_with(dit)
+            }
+
+            /// [`finalize`](Self::finalize), with the token of the operation
+            /// it is part of (see `crate::dit`).
+            fn finalize_with(mut self, dit: crate::dit::Dit<'_>) -> [u8; N] {
                 let mut out = [0; $max];
                 // SAFETY: `self.state` is valid for reads and writes of its
                 // size and `out` for writes of its size; they are distinct
@@ -141,7 +165,7 @@ macro_rules! blake2 {
                 // the exact length, less than 2⁶⁴, of the data `self.state`
                 // represents. The dispatcher calls only an implementation
                 // the CPU has the features of.
-                unsafe { $finalize(&mut self.state, self.length, &mut out) };
+                unsafe { $finalize(dit, &mut self.state, self.length, &mut out) };
                 let mut digest = [0; N];
                 digest.copy_from_slice(&out[..N]);
                 digest
@@ -153,7 +177,8 @@ macro_rules! blake2 {
             /// length is public). `mac` must be the whole digest, of `N`
             /// bytes; a truncated one is rejected.
             pub fn verify(self, mac: &[u8]) -> Result<(), $crate::error::InvalidMac> {
-                if $crate::ct::eq(&self.finalize(), mac) {
+                crate::dit::enter_if!(dit, self.keyed, crate::dit::Why::UnkeyedHash);
+                if $crate::ct::eq(dit, &self.finalize_with(dit), mac) {
                     Ok(())
                 } else {
                     Err($crate::error::InvalidMac)
@@ -162,9 +187,7 @@ macro_rules! blake2 {
 
             /// The (unkeyed) digest of `data`.
             pub fn digest(data: &[u8]) -> [u8; N] {
-                let mut h = Self::new();
-                h.update(data);
-                h.finalize()
+                Self::digest_keyed(&[], data)
             }
 
             /// The digest of `data` keyed with `key` (a MAC; RFC 7693 §2.9).
@@ -173,9 +196,10 @@ macro_rules! blake2 {
             ///
             #[doc = concat!("If `key` is longer than ", stringify!($max), " bytes.")]
             pub fn digest_keyed(key: &[u8], data: &[u8]) -> [u8; N] {
-                let mut h = Self::new_keyed(key);
-                h.update(data);
-                h.finalize()
+                crate::dit::enter_if!(dit, !key.is_empty(), crate::dit::Why::UnkeyedHash);
+                let mut h = Self::new_keyed_with(dit, key);
+                h.update_with(dit, data);
+                h.finalize_with(dit)
             }
         }
 

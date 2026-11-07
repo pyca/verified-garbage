@@ -23,20 +23,20 @@ pub use crate::blake2b::vg_blake2b_init as vg_blake2b_init_auto;
 /// * Neither `state` nor `data` may overlap the return address on the stack or the 592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_blake2b_update_auto(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
+pub unsafe fn vg_blake2b_update_auto(dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::blake2b::VG_BLAKE2B_UPDATE_AVX512_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_blake2b_update_avx512`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::blake2b::vg_blake2b_update_avx512(state, count, data, len) };
+        return unsafe { crate::blake2b::vg_blake2b_update_avx512(dit, state, count, data, len) };
     }
     if cpu.contains(crate::blake2b::VG_BLAKE2B_UPDATE_AVX2_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_blake2b_update_avx2`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::blake2b::vg_blake2b_update_avx2(state, count, data, len) };
+        return unsafe { crate::blake2b::vg_blake2b_update_avx2(dit, state, count, data, len) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::blake2b::vg_blake2b_update(state, count, data, len) }
+    unsafe { crate::blake2b::vg_blake2b_update(dit, state, count, data, len) }
 }
 
 /// Finishes a BLAKE2b computation: if the streaming state `*state` represents data of `count` bytes, compresses its last block and writes the final state `h[0..7]` (64 bytes) to `*out`. The digest of `outlen` bytes (`init`'s) is its first `outlen` bytes.
@@ -55,18 +55,18 @@ pub unsafe fn vg_blake2b_update_auto(state: *mut [u8; 192], count: u64, data: *c
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_blake2b_finalize_auto(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
+pub unsafe fn vg_blake2b_finalize_auto(dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::blake2b::VG_BLAKE2B_FINALIZE_AVX512_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_blake2b_finalize_avx512`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::blake2b::vg_blake2b_finalize_avx512(state, count, out) };
+        return unsafe { crate::blake2b::vg_blake2b_finalize_avx512(dit, state, count, out) };
     }
     if cpu.contains(crate::blake2b::VG_BLAKE2B_FINALIZE_AVX2_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_blake2b_finalize_avx2`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::blake2b::vg_blake2b_finalize_avx2(state, count, out) };
+        return unsafe { crate::blake2b::vg_blake2b_finalize_avx2(dit, state, count, out) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::blake2b::vg_blake2b_finalize(state, count, out) }
+    unsafe { crate::blake2b::vg_blake2b_finalize(dit, state, count, out) }
 }

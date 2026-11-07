@@ -19,15 +19,15 @@
 /// * None of `inner`, `outer` and `key` may overlap the arguments on the stack, overlap the return address on the stack or the 1700 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_hmac_sha256_init_auto(inner: *mut [u8; 96], outer: *mut [u8; 96], key: *const u8, key_len: usize) {
+pub unsafe fn vg_hmac_sha256_init_auto(dit: verified_garbage_cpu::Dit<'_>, inner: *mut [u8; 96], outer: *mut [u8; 96], key: *const u8, key_len: usize) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::hmac_sha256::VG_HMAC_SHA256_INIT_SHANI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_hmac_sha256_init_shani`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::hmac_sha256::vg_hmac_sha256_init_shani(inner, outer, key, key_len) };
+        return unsafe { crate::hmac_sha256::vg_hmac_sha256_init_shani(dit, inner, outer, key, key_len) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::hmac_sha256::vg_hmac_sha256_init(inner, outer, key, key_len) }
+    unsafe { crate::hmac_sha256::vg_hmac_sha256_init(dit, inner, outer, key, key_len) }
 }
 
 /// Finishes an HMAC-SHA-256 computation: if, for a 64-byte key `K₀` and a text of fewer than 2⁶⁴ − 64 bytes, the SHA-256 streaming state `*inner` represents `(K₀ ⊕ ipad) ‖ text`, of `count` bytes, and `*outer` represents `K₀ ⊕ opad`, writes the HMAC-SHA-256 of the text under `K₀` (32 bytes) to `*out`.
@@ -48,13 +48,13 @@ pub unsafe fn vg_hmac_sha256_init_auto(inner: *mut [u8; 96], outer: *mut [u8; 96
 /// * None of `inner`, `outer` and `out` may overlap the arguments on the stack, overlap the return address on the stack or the 908 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_hmac_sha256_finalize_auto(inner: *mut [u8; 96], outer: *const [u8; 96], count: u64, out: *mut [u8; 32]) {
+pub unsafe fn vg_hmac_sha256_finalize_auto(dit: verified_garbage_cpu::Dit<'_>, inner: *mut [u8; 96], outer: *const [u8; 96], count: u64, out: *mut [u8; 32]) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::hmac_sha256::VG_HMAC_SHA256_FINALIZE_SHANI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_hmac_sha256_finalize_shani`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::hmac_sha256::vg_hmac_sha256_finalize_shani(inner, outer, count, out) };
+        return unsafe { crate::hmac_sha256::vg_hmac_sha256_finalize_shani(dit, inner, outer, count, out) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::hmac_sha256::vg_hmac_sha256_finalize(inner, outer, count, out) }
+    unsafe { crate::hmac_sha256::vg_hmac_sha256_finalize(dit, inner, outer, count, out) }
 }

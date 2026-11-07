@@ -15,8 +15,38 @@
 /// * `rounds` must be 18 (for a key of 16 bytes) or 24 (for one of 24 or 32).
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 3288 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_camellia_ofb(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_camellia_ofb(schedule, rounds, iv, data, n) }
+}
+
+/// Camellia-OFB encryption or decryption (NIST SP 800-38A §6.4, RFC 3713 §2.3) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)`, where `O₀` is the block at `*iv`, a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*iv` with the last output block used, `Oₙ` (leaving it unchanged if `len = 0`): so that a further call continues the message if `len` is a multiple of 16, and otherwise keystream, to be wiped, after which the message must end. `CIPH_K` is Camellia encryption with `rounds` rounds under the subkeys at `schedule`, as `vg_camellia_expand_key` writes them.
+///
+/// Contract: `VG.Spec.Camellia.ofbFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the subkeys, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 272 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `rounds` must be 18 (for a key of 16 bytes) or 24 (for one of 24 or 32).
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 3288 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_camellia_ofb_final(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_camellia_ofb_final(schedule, rounds, iv, data, len) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_camellia_ofb`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_camellia_ofb(schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_camellia_ofb(schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJDDz//9JieFJg8EITYnJSYmZiAwAAEmJqZAMAABNiaGYDAAATYmpoAwAAE2JsagMAABNibmwDAAAZkwPbvpIicpNicBJvv8A/wD/AP8ATYmxgAEAAEm+AP8A/wD/AP9NibGIAQAASb4AAAAAAP//AE2JsZABAABJvgD//wAAAAAATYmxmAEAAEm+AAAA//8AAABNibGgAQAASIP+Eg=="
 je 20f
@@ -45,24 +75,13 @@ jmp 25f
 25:
 .base64 "ZkwPfvhJi6nICwAASIkoSYup0AsAAEiJaAhJi5mIDAAASYupkAwAAE2LoZgMAABNi6mgDAAATYuxqAwAAE2LubAMAABBuwAAAABMiVwkCEyJXCQQTIlcJBhMiVwkIEyJXCQoTIlcJDBMiVwkOEyJXCRATIlcJEhMiVwkUEyJXCRYTIlcJGBMiVwkaEyJXCRwTIlcJHhMiZwkgAAAAEyJnCSIAAAATImcJJAAAABMiZwkmAAAAEyJnCSgAAAATImcJKgAAABMiZwksAAAAEyJnCS4AAAATImcJMAAAABMiZwkyAAAAEyJnCTQAAAATImcJNgAAABMiZwk4AAAAEyJnCToAAAATImcJPAAAABMiZwk+AAAAEyJnCQAAQAATImcJAgBAABMiZwkEAEAAEyJnCQYAQAATImcJCABAABMiZwkKAEAAEyJnCQwAQAATImcJDgBAABMiZwkQAEAAEyJnCRIAQAATImcJFABAABMiZwkWAEAAEyJnCRgAQAATImcJGgBAABMiZwkcAEAAEyJnCR4AQAATImcJIABAABMiZwkiAEAAEyJnCSQAQAATImcJJgBAABMiZwkoAEAAEyJnCSoAQAATImcJLABAABMiZwkuAEAAEyJnCTAAQAATImcJMgBAABMiZwk0AEAAEyJnCTYAQAATImcJOABAABMiZwk6AEAAEyJnCTwAQAATImcJPgBAABMiZwkAAIAAEyJnCQIAgAATImcJBACAABMiZwkGAIAAEyJnCQgAgAATImcJCgCAABMiZwkMAIAAEyJnCQ4AgAATImcJEACAABMiZwkSAIAAEyJnCRQAgAATImcJFgCAABMiZwkYAIAAEyJnCRoAgAATImcJHACAABMiZwkeAIAAEyJnCSAAgAATImcJIgCAABMiZwkkAIAAEyJnCSYAgAATImcJKACAABMiZwkqAIAAEyJnCSwAgAATImcJLgCAABMiZwkwAIAAEyJnCTIAgAATImcJNACAABMiZwk2AIAAEyJnCTgAgAATImcJOgCAABMiZwk8AIAAEyJnCT4AgAATImcJAADAABMiZwkCAMAAEyJnCQQAwAATImcJBgDAABMiZwkIAMAAEyJnCQoAwAATImcJDADAABMiZwkOAMAAEyJnCRAAwAATImcJEgDAABMiZwkUAMAAEyJnCRYAwAATImcJGADAABMiZwkaAMAAEyJnCRwAwAATImcJHgDAABMiZwkgAMAAEyJnCSIAwAATImcJJADAABMiZwkmAMAAEyJnCSgAwAATImcJKgDAABMiZwksAMAAEyJnCS4AwAATImcJMADAABMiZwkyAMAAEyJnCTQAwAATImcJNgDAABMiZwk4AMAAEyJnCToAwAATImcJPADAABMiZwk+AMAAEyJnCQABAAATImcJAgEAABMiZwkEAQAAEyJnCQYBAAATImcJCAEAABMiZwkKAQAAEyJnCQwBAAATImcJDgEAABMiZwkQAQAAEyJnCRIBAAATImcJFAEAABMiZwkWAQAAEyJnCRgBAAATImcJGgEAABMiZwkcAQAAEyJnCR4BAAATImcJIAEAABMiZwkiAQAAEyJnCSQBAAATImcJJgEAABMiZwkoAQAAEyJnCSoBAAATImcJLAEAABMiZwkuAQAAEyJnCTABAAATImcJMgEAABMiZwk0AQAAEyJnCTYBAAATImcJOAEAABMiZwk6AQAAEyJnCTwBAAATImcJPgEAABMiZwkAAUAAEyJnCQIBQAATImcJBAFAABMiZwkGAUAAEyJnCQgBQAATImcJCgFAABMiZwkMAUAAEyJnCQ4BQAATImcJEAFAABMiZwkSAUAAEyJnCRQBQAATImcJFgFAABMiZwkYAUAAEyJnCRoBQAATImcJHAFAABMiZwkeAUAAEyJnCSABQAATImcJIgFAABMiZwkkAUAAEyJnCSYBQAATImcJKAFAABMiZwkqAUAAEyJnCSwBQAATImcJLgFAABMiZwkwAUAAEyJnCTIBQAATImcJNAFAABMiZwk2AUAAEyJnCTgBQAATImcJOgFAABMiZwk8AUAAEyJnCT4BQAATImcJAAGAABMiZwkCAYAAEyJnCQQBgAATImcJBgGAABMiZwkIAYAAEyJnCQoBgAATImcJDAGAABMiZwkOAYAAEyJnCRABgAATImcJEgGAABMiZwkUAYAAEyJnCRYBgAATImcJGAGAABMiZwkaAYAAEyJnCRwBgAATImcJHgGAABMiZwkgAYAAEyJnCSIBgAATImcJJAGAABMiZwkmAYAAEyJnCSgBgAATImcJKgGAABMiZwksAYAAEyJnCS4BgAATImcJMAGAABMiZwkyAYAAEyJnCTQBgAATImcJNgGAABMiZwk4AYAAEyJnCToBgAATImcJPAGAABMiZwk+AYAAEyJnCQABwAATImcJAgHAABMiZwkEAcAAEyJnCQYBwAATImcJCAHAABMiZwkKAcAAEyJnCQwBwAATImcJDgHAABMiZwkQAcAAEyJnCRIBwAATImcJFAHAABMiZwkWAcAAEyJnCRgBwAATImcJGgHAABMiZwkcAcAAEyJnCR4BwAATImcJIAHAABMiZwkiAcAAEyJnCSQBwAATImcJJgHAABMiZwkoAcAAEyJnCSoBwAATImcJLAHAABMiZwkuAcAAEyJnCTABwAATImcJMgHAABMiZwk0AcAAEyJnCTYBwAATImcJOAHAABMiZwk6AcAAEyJnCTwBwAATImcJPgHAABMiZwkAAgAAEyJnCQICAAATImcJBAIAABMiZwkGAgAAEyJnCQgCAAATImcJCgIAABMiZwkMAgAAEyJnCQ4CAAATImcJEAIAABMiZwkSAgAAEyJnCRQCAAATImcJFgIAABMiZwkYAgAAEyJnCRoCAAATImcJHAIAABMiZwkeAgAAEyJnCSACAAATImcJIgIAABMiZwkkAgAAEyJnCSYCAAATImcJKAIAABMiZwkqAgAAEyJnCSwCAAATImcJLgIAABMiZwkwAgAAEyJnCTICAAATImcJNAIAABMiZwk2AgAAEyJnCTgCAAATImcJOgIAABMiZwk8AgAAEyJnCT4CAAATImcJAAJAABMiZwkCAkAAEyJnCQQCQAATImcJBgJAABMiZwkIAkAAEyJnCQoCQAATImcJDAJAABMiZwkOAkAAEyJnCRACQAATImcJEgJAABMiZwkUAkAAEyJnCRYCQAATImcJGAJAABMiZwkaAkAAEyJnCRwCQAATImcJHgJAABMiZwkgAkAAEyJnCSICQAATImcJJAJAABMiZwkmAkAAEyJnCSgCQAATImcJKgJAABMiZwksAkAAEyJnCS4CQAATImcJMAJAABMiZwkyAkAAEyJnCTQCQAATImcJNgJAABMiZwk4AkAAEyJnCToCQAATImcJPAJAABMiZwk+AkAAEyJnCQACgAATImcJAgKAABMiZwkEAoAAEyJnCQYCgAATImcJCAKAABMiZwkKAoAAEyJnCQwCgAATImcJDgKAABMiZwkQAoAAEyJnCRICgAATImcJFAKAABMiZwkWAoAAEyJnCRgCgAATImcJGgKAABMiZwkcAoAAEyJnCR4CgAATImcJIAKAABMiZwkiAoAAEyJnCSQCgAATImcJJgKAABMiZwkoAoAAEyJnCSoCgAATImcJLAKAABMiZwkuAoAAEyJnCTACgAATImcJMgKAABMiZwk0AoAAEyJnCTYCgAATImcJOAKAABMiZwk6AoAAEyJnCTwCgAATImcJPgKAABMiZwkAAsAAEyJnCQICwAATImcJBALAABMiZwkGAsAAEyJnCQgCwAATImcJCgLAABMiZwkMAsAAEyJnCQ4CwAATImcJEALAABMiZwkSAsAAEyJnCRQCwAATImcJFgLAABMiZwkYAsAAEyJnCRoCwAATImcJHALAABMiZwkeAsAAEyJnCSACwAATImcJIgLAABMiZwkkAsAAEyJnCSYCwAATImcJKALAABMiZwkqAsAAEyJnCSwCwAATImcJLgLAABMiZwkwAsAAEyJnCTICwAATImcJNALAABMiZwk2AsAAEyJnCTgCwAATImcJOgLAABMiZwk8AsAAEyJnCT4CwAATImcJAAMAABMiZwkCAwAAEyJnCQQDAAATImcJBgMAABMiZwkIAwAAEyJnCQoDAAATImcJDAMAABMiZwkOAwAAEyJnCRADAAATImcJEgMAABMiZwkUAwAAEyJnCRYDAAATImcJGAMAABMiZwkaAwAAEyJnCRwDAAATImcJHgMAABMiZwkgAwAAEyJnCSIDAAATImcJJAMAABMiZwkmAwAAEyJnCSgDAAATImcJKgMAABMiZwksAwAAEyJnCS4DAAATImcJMAMAABMiZwkyAwAAEiNpCTQDAAAww=="
 .p2align 6"#,
-        vg_camellia_crypt_prepared = sym super::camellia::vg_camellia_crypt_prepared::vg_camellia_crypt_prepared,
+        vg_camellia_crypt_prepared = sym crate::camellia::vg_camellia_crypt_prepared::vg_camellia_crypt_prepared,
     )
 }
 
-/// Camellia-OFB encryption or decryption (NIST SP 800-38A §6.4, RFC 3713 §2.3) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)`, where `O₀` is the block at `*iv`, a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*iv` with the last output block used, `Oₙ` (leaving it unchanged if `len = 0`): so that a further call continues the message if `len` is a multiple of 16, and otherwise keystream, to be wiped, after which the message must end. `CIPH_K` is Camellia encryption with `rounds` rounds under the subkeys at `schedule`, as `vg_camellia_expand_key` writes them.
-///
-/// Contract: `VG.Spec.Camellia.ofbFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the subkeys, the chaining value or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 272 bytes.
-/// * `iv` must be valid for reads and writes of 16 bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `rounds` must be 18 (for a key of 16 bytes) or 24 (for one of 24 or 32).
-/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 3288 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_camellia_ofb_final`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_camellia_ofb_final(schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_camellia_ofb_final(schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJDDz//9JieFJg8EITYnJSYmZiAwAAEmJqZAMAABNiaGYDAAATYmpoAwAAE2JsagMAABNibmwDAAAZkwPbvpIicpNicBJvv8A/wD/AP8ATYmxgAEAAEm+AP8A/wD/AP9NibGIAQAASb4AAAAAAP//AE2JsZABAABJvgD//wAAAAAATYmxmAEAAEm+AAAA//8AAABNibGgAQAASIP+Eg=="
 je 20f
@@ -100,6 +119,7 @@ jmp 25f
 25:
 .base64 "ZkwPfvhJi6nICwAASIkoSYup0AsAAEiJaAhJi5mIDAAASYupkAwAAE2LoZgMAABNi6mgDAAATYuxqAwAAE2LubAMAABBuwAAAABMiVwkCEyJXCQQTIlcJBhMiVwkIEyJXCQoTIlcJDBMiVwkOEyJXCRATIlcJEhMiVwkUEyJXCRYTIlcJGBMiVwkaEyJXCRwTIlcJHhMiZwkgAAAAEyJnCSIAAAATImcJJAAAABMiZwkmAAAAEyJnCSgAAAATImcJKgAAABMiZwksAAAAEyJnCS4AAAATImcJMAAAABMiZwkyAAAAEyJnCTQAAAATImcJNgAAABMiZwk4AAAAEyJnCToAAAATImcJPAAAABMiZwk+AAAAEyJnCQAAQAATImcJAgBAABMiZwkEAEAAEyJnCQYAQAATImcJCABAABMiZwkKAEAAEyJnCQwAQAATImcJDgBAABMiZwkQAEAAEyJnCRIAQAATImcJFABAABMiZwkWAEAAEyJnCRgAQAATImcJGgBAABMiZwkcAEAAEyJnCR4AQAATImcJIABAABMiZwkiAEAAEyJnCSQAQAATImcJJgBAABMiZwkoAEAAEyJnCSoAQAATImcJLABAABMiZwkuAEAAEyJnCTAAQAATImcJMgBAABMiZwk0AEAAEyJnCTYAQAATImcJOABAABMiZwk6AEAAEyJnCTwAQAATImcJPgBAABMiZwkAAIAAEyJnCQIAgAATImcJBACAABMiZwkGAIAAEyJnCQgAgAATImcJCgCAABMiZwkMAIAAEyJnCQ4AgAATImcJEACAABMiZwkSAIAAEyJnCRQAgAATImcJFgCAABMiZwkYAIAAEyJnCRoAgAATImcJHACAABMiZwkeAIAAEyJnCSAAgAATImcJIgCAABMiZwkkAIAAEyJnCSYAgAATImcJKACAABMiZwkqAIAAEyJnCSwAgAATImcJLgCAABMiZwkwAIAAEyJnCTIAgAATImcJNACAABMiZwk2AIAAEyJnCTgAgAATImcJOgCAABMiZwk8AIAAEyJnCT4AgAATImcJAADAABMiZwkCAMAAEyJnCQQAwAATImcJBgDAABMiZwkIAMAAEyJnCQoAwAATImcJDADAABMiZwkOAMAAEyJnCRAAwAATImcJEgDAABMiZwkUAMAAEyJnCRYAwAATImcJGADAABMiZwkaAMAAEyJnCRwAwAATImcJHgDAABMiZwkgAMAAEyJnCSIAwAATImcJJADAABMiZwkmAMAAEyJnCSgAwAATImcJKgDAABMiZwksAMAAEyJnCS4AwAATImcJMADAABMiZwkyAMAAEyJnCTQAwAATImcJNgDAABMiZwk4AMAAEyJnCToAwAATImcJPADAABMiZwk+AMAAEyJnCQABAAATImcJAgEAABMiZwkEAQAAEyJnCQYBAAATImcJCAEAABMiZwkKAQAAEyJnCQwBAAATImcJDgEAABMiZwkQAQAAEyJnCRIBAAATImcJFAEAABMiZwkWAQAAEyJnCRgBAAATImcJGgEAABMiZwkcAQAAEyJnCR4BAAATImcJIAEAABMiZwkiAQAAEyJnCSQBAAATImcJJgEAABMiZwkoAQAAEyJnCSoBAAATImcJLAEAABMiZwkuAQAAEyJnCTABAAATImcJMgEAABMiZwk0AQAAEyJnCTYBAAATImcJOAEAABMiZwk6AQAAEyJnCTwBAAATImcJPgEAABMiZwkAAUAAEyJnCQIBQAATImcJBAFAABMiZwkGAUAAEyJnCQgBQAATImcJCgFAABMiZwkMAUAAEyJnCQ4BQAATImcJEAFAABMiZwkSAUAAEyJnCRQBQAATImcJFgFAABMiZwkYAUAAEyJnCRoBQAATImcJHAFAABMiZwkeAUAAEyJnCSABQAATImcJIgFAABMiZwkkAUAAEyJnCSYBQAATImcJKAFAABMiZwkqAUAAEyJnCSwBQAATImcJLgFAABMiZwkwAUAAEyJnCTIBQAATImcJNAFAABMiZwk2AUAAEyJnCTgBQAATImcJOgFAABMiZwk8AUAAEyJnCT4BQAATImcJAAGAABMiZwkCAYAAEyJnCQQBgAATImcJBgGAABMiZwkIAYAAEyJnCQoBgAATImcJDAGAABMiZwkOAYAAEyJnCRABgAATImcJEgGAABMiZwkUAYAAEyJnCRYBgAATImcJGAGAABMiZwkaAYAAEyJnCRwBgAATImcJHgGAABMiZwkgAYAAEyJnCSIBgAATImcJJAGAABMiZwkmAYAAEyJnCSgBgAATImcJKgGAABMiZwksAYAAEyJnCS4BgAATImcJMAGAABMiZwkyAYAAEyJnCTQBgAATImcJNgGAABMiZwk4AYAAEyJnCToBgAATImcJPAGAABMiZwk+AYAAEyJnCQABwAATImcJAgHAABMiZwkEAcAAEyJnCQYBwAATImcJCAHAABMiZwkKAcAAEyJnCQwBwAATImcJDgHAABMiZwkQAcAAEyJnCRIBwAATImcJFAHAABMiZwkWAcAAEyJnCRgBwAATImcJGgHAABMiZwkcAcAAEyJnCR4BwAATImcJIAHAABMiZwkiAcAAEyJnCSQBwAATImcJJgHAABMiZwkoAcAAEyJnCSoBwAATImcJLAHAABMiZwkuAcAAEyJnCTABwAATImcJMgHAABMiZwk0AcAAEyJnCTYBwAATImcJOAHAABMiZwk6AcAAEyJnCTwBwAATImcJPgHAABMiZwkAAgAAEyJnCQICAAATImcJBAIAABMiZwkGAgAAEyJnCQgCAAATImcJCgIAABMiZwkMAgAAEyJnCQ4CAAATImcJEAIAABMiZwkSAgAAEyJnCRQCAAATImcJFgIAABMiZwkYAgAAEyJnCRoCAAATImcJHAIAABMiZwkeAgAAEyJnCSACAAATImcJIgIAABMiZwkkAgAAEyJnCSYCAAATImcJKAIAABMiZwkqAgAAEyJnCSwCAAATImcJLgIAABMiZwkwAgAAEyJnCTICAAATImcJNAIAABMiZwk2AgAAEyJnCTgCAAATImcJOgIAABMiZwk8AgAAEyJnCT4CAAATImcJAAJAABMiZwkCAkAAEyJnCQQCQAATImcJBgJAABMiZwkIAkAAEyJnCQoCQAATImcJDAJAABMiZwkOAkAAEyJnCRACQAATImcJEgJAABMiZwkUAkAAEyJnCRYCQAATImcJGAJAABMiZwkaAkAAEyJnCRwCQAATImcJHgJAABMiZwkgAkAAEyJnCSICQAATImcJJAJAABMiZwkmAkAAEyJnCSgCQAATImcJKgJAABMiZwksAkAAEyJnCS4CQAATImcJMAJAABMiZwkyAkAAEyJnCTQCQAATImcJNgJAABMiZwk4AkAAEyJnCToCQAATImcJPAJAABMiZwk+AkAAEyJnCQACgAATImcJAgKAABMiZwkEAoAAEyJnCQYCgAATImcJCAKAABMiZwkKAoAAEyJnCQwCgAATImcJDgKAABMiZwkQAoAAEyJnCRICgAATImcJFAKAABMiZwkWAoAAEyJnCRgCgAATImcJGgKAABMiZwkcAoAAEyJnCR4CgAATImcJIAKAABMiZwkiAoAAEyJnCSQCgAATImcJJgKAABMiZwkoAoAAEyJnCSoCgAATImcJLAKAABMiZwkuAoAAEyJnCTACgAATImcJMgKAABMiZwk0AoAAEyJnCTYCgAATImcJOAKAABMiZwk6AoAAEyJnCTwCgAATImcJPgKAABMiZwkAAsAAEyJnCQICwAATImcJBALAABMiZwkGAsAAEyJnCQgCwAATImcJCgLAABMiZwkMAsAAEyJnCQ4CwAATImcJEALAABMiZwkSAsAAEyJnCRQCwAATImcJFgLAABMiZwkYAsAAEyJnCRoCwAATImcJHALAABMiZwkeAsAAEyJnCSACwAATImcJIgLAABMiZwkkAsAAEyJnCSYCwAATImcJKALAABMiZwkqAsAAEyJnCSwCwAATImcJLgLAABMiZwkwAsAAEyJnCTICwAATImcJNALAABMiZwk2AsAAEyJnCTgCwAATImcJOgLAABMiZwk8AsAAEyJnCT4CwAATImcJAAMAABMiZwkCAwAAEyJnCQQDAAATImcJBgMAABMiZwkIAwAAEyJnCQoDAAATImcJDAMAABMiZwkOAwAAEyJnCRADAAATImcJEgMAABMiZwkUAwAAEyJnCRYDAAATImcJGAMAABMiZwkaAwAAEyJnCRwDAAATImcJHgMAABMiZwkgAwAAEyJnCSIDAAATImcJJAMAABMiZwkmAwAAEyJnCSgDAAATImcJKgMAABMiZwksAwAAEyJnCS4DAAATImcJMAMAABMiZwkyAwAAEiNpCTQDAAAww=="
 .p2align 6"#,
-        vg_camellia_crypt_prepared = sym super::camellia::vg_camellia_crypt_prepared::vg_camellia_crypt_prepared,
+        vg_camellia_crypt_prepared = sym crate::camellia::vg_camellia_crypt_prepared::vg_camellia_crypt_prepared,
     )
+}
 }

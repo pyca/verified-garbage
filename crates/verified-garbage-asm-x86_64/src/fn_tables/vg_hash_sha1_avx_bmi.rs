@@ -7,6 +7,6 @@ pub const VG_HASH_SHA1_AVX_BMI_FEATURES: verified_garbage_cpu::Features = verifi
 
 /// The table of functions `VG_HASH_SHA1_AVX_BMI` of the interface `Hash`: `vg_sha1_init`, `vg_sha1_update_scratch_avx_bmi`, `vg_sha1_finalize_scratch_avx_bmi`, then the data 1, 20.
 pub static VG_HASH_SHA1_AVX_BMI: super::Hash = super::Hash {
-    fns: [crate::sha1::vg_sha1_init as *const (), crate::sha1::vg_sha1_update_scratch_avx_bmi::vg_sha1_update_scratch_avx_bmi as *const (), crate::sha1::vg_sha1_finalize_scratch_avx_bmi::vg_sha1_finalize_scratch_avx_bmi as *const ()],
+    fns: [crate::sha1::raw::vg_sha1_init as *const (), crate::sha1::vg_sha1_update_scratch_avx_bmi::vg_sha1_update_scratch_avx_bmi as *const (), crate::sha1::vg_sha1_finalize_scratch_avx_bmi::vg_sha1_finalize_scratch_avx_bmi as *const ()],
     data: [1, 20],
 };

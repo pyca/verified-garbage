@@ -19,13 +19,13 @@
 /// * None of `out`, `d`, `peer` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_ecdh_p256_auto(out: *mut [u8; 32], d: *const [u8; 32], peer: *const [u8; 65], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe fn vg_ecdh_p256_auto(dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 32], d: *const [u8; 32], peer: *const [u8; 65], scratch: *mut [u64; 1024]) -> u32 {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::ecdh_p256::VG_ECDH_P256_ADX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_ecdh_p256_adx`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::ecdh_p256::vg_ecdh_p256_adx(out, d, peer, scratch) };
+        return unsafe { crate::ecdh_p256::vg_ecdh_p256_adx(dit, out, d, peer, scratch) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::ecdh_p256::vg_ecdh_p256(out, d, peer, scratch) }
+    unsafe { crate::ecdh_p256::vg_ecdh_p256(dit, out, d, peer, scratch) }
 }

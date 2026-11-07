@@ -14,8 +14,83 @@
 /// * `key` must be valid for reads of `key_len` bytes.
 /// * `inner` and `outer` must not overlap each other or `key` (distinct Rust objects never do).
 /// * None of `inner`, `outer` and `key` may overlap the 1136 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_hmac_sha1_init(_dit: verified_garbage_cpu::Dit<'_>, inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_hmac_sha1_init(inner, outer, key, key_len) }
+}
+
+/// Finishes an HMAC-SHA-1 computation: if, for a 64-byte key `K₀` and a text of fewer than 2⁶⁴ − 64 bytes, the SHA-1 streaming state `*inner` represents `(K₀ ⊕ ipad) ‖ text`, of `count` bytes, and `*outer` represents `K₀ ⊕ opad`, writes the HMAC-SHA-1 of the text under `K₀` (20 bytes) to `*out`.
+///
+/// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.sha1I`. Constant time: only the pointers and `count` may affect timing, not the states.
+///
+/// # Safety
+///
+/// * `inner` must be valid for reads and writes of 84 bytes.
+/// * `outer` must be valid for reads of 84 bytes.
+/// * `out` must be valid for reads and writes of 20 bytes.
+/// * The contents of `inner` on return are unspecified.
+/// * `inner` and `out` must not overlap each other or `outer` (distinct Rust objects never do).
+/// * None of `inner`, `outer` and `out` may overlap the 464 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_hmac_sha1_finalize(_dit: verified_garbage_cpu::Dit<'_>, inner: *mut [u8; 84], outer: *const [u8; 84], count: u64, out: *mut [u8; 20]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_hmac_sha1_finalize(inner, outer, count, out) }
+}
+
+/// The CPU features `vg_hmac_sha1_init_sha2` requires (`Artifact.features`).
+pub const VG_HMAC_SHA1_INIT_SHA2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA2);
+
+/// Starts an HMAC-SHA-1 computation with a key of any length: makes the SHA-1 streaming state `*inner` represent `K₀ ⊕ ipad` and `*outer` represent `K₀ ⊕ opad`, where `K₀` is the `key_len` bytes at `key` (or their SHA-1 digest, if there are more than 64) padded with zeros to 64 bytes (FIPS 198-1 §4, steps 1–3). The text is then absorbed with `vg_sha1_update` on `*inner` (its `count` starting at 64), and the MAC computed with `vg_hmac_sha1_finalize`.
+///
+/// Contract: `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.sha1I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
+///
+/// # Safety
+///
+/// * `inner` must be valid for reads and writes of 84 bytes.
+/// * `outer` must be valid for reads and writes of 84 bytes.
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `inner` and `outer` must not overlap each other or `key` (distinct Rust objects never do).
+/// * None of `inner`, `outer` and `key` may overlap the 1136 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha2` target feature.
+#[inline(always)]
+pub unsafe fn vg_hmac_sha1_init_sha2(_dit: verified_garbage_cpu::Dit<'_>, inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_hmac_sha1_init_sha2(inner, outer, key, key_len) }
+}
+
+/// The CPU features `vg_hmac_sha1_finalize_sha2` requires (`Artifact.features`).
+pub const VG_HMAC_SHA1_FINALIZE_SHA2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA2);
+
+/// Finishes an HMAC-SHA-1 computation: if, for a 64-byte key `K₀` and a text of fewer than 2⁶⁴ − 64 bytes, the SHA-1 streaming state `*inner` represents `(K₀ ⊕ ipad) ‖ text`, of `count` bytes, and `*outer` represents `K₀ ⊕ opad`, writes the HMAC-SHA-1 of the text under `K₀` (20 bytes) to `*out`.
+///
+/// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.sha1I`. Constant time: only the pointers and `count` may affect timing, not the states.
+///
+/// # Safety
+///
+/// * `inner` must be valid for reads and writes of 84 bytes.
+/// * `outer` must be valid for reads of 84 bytes.
+/// * `out` must be valid for reads and writes of 20 bytes.
+/// * The contents of `inner` on return are unspecified.
+/// * `inner` and `out` must not overlap each other or `outer` (distinct Rust objects never do).
+/// * None of `inner`, `outer` and `out` may overlap the 464 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha2` target feature.
+#[inline(always)]
+pub unsafe fn vg_hmac_sha1_finalize_sha2(_dit: verified_garbage_cpu::Dit<'_>, inner: *mut [u8; 84], outer: *const [u8; 84], count: u64, out: *mut [u8; 20]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_hmac_sha1_finalize_sha2(inner, outer, count, out) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_hmac_sha1_init`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_hmac_sha1_init(inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize) {
+pub(crate) unsafe extern "C" fn vg_hmac_sha1_init(inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd280080a,0xd280000c,0xeb03014b,0x9a832189
 cbnz x9, 20f
@@ -83,28 +158,17 @@ bl {vg_hmac_sha1_init_scratch}
 .inst 0xa9054611,0x911183ff
 b 21b
 .p2align 6",
-        vg_sha1_init = sym super::sha1::vg_sha1_init,
-        vg_sha1_compress = sym super::sha1::vg_sha1_compress::vg_sha1_compress,
-        vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch::vg_sha1_update_scratch,
-        vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch::vg_sha1_finalize_scratch,
-        vg_hmac_sha1_init_scratch = sym super::hmac_sha1::vg_hmac_sha1_init_scratch::vg_hmac_sha1_init_scratch,
+        vg_sha1_init = sym crate::sha1::raw::vg_sha1_init,
+        vg_sha1_compress = sym crate::sha1::vg_sha1_compress::vg_sha1_compress,
+        vg_sha1_update_scratch = sym crate::sha1::vg_sha1_update_scratch::vg_sha1_update_scratch,
+        vg_sha1_finalize_scratch = sym crate::sha1::vg_sha1_finalize_scratch::vg_sha1_finalize_scratch,
+        vg_hmac_sha1_init_scratch = sym crate::hmac_sha1::vg_hmac_sha1_init_scratch::vg_hmac_sha1_init_scratch,
     )
 }
 
-/// Finishes an HMAC-SHA-1 computation: if, for a 64-byte key `K₀` and a text of fewer than 2⁶⁴ − 64 bytes, the SHA-1 streaming state `*inner` represents `(K₀ ⊕ ipad) ‖ text`, of `count` bytes, and `*outer` represents `K₀ ⊕ opad`, writes the HMAC-SHA-1 of the text under `K₀` (20 bytes) to `*out`.
-///
-/// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.sha1I`. Constant time: only the pointers and `count` may affect timing, not the states.
-///
-/// # Safety
-///
-/// * `inner` must be valid for reads and writes of 84 bytes.
-/// * `outer` must be valid for reads of 84 bytes.
-/// * `out` must be valid for reads and writes of 20 bytes.
-/// * The contents of `inner` on return are unspecified.
-/// * `inner` and `out` must not overlap each other or `outer` (distinct Rust objects never do).
-/// * None of `inner`, `outer` and `out` may overlap the 464 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_hmac_sha1_finalize`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_hmac_sha1_finalize(inner: *mut [u8; 84], outer: *const [u8; 84], count: u64, out: *mut [u8; 20]) {
+pub(crate) unsafe extern "C" fn vg_hmac_sha1_finalize(inner: *mut [u8; 84], outer: *const [u8; 84], count: u64, out: *mut [u8; 20]) {
     core::arch::naked_asm!(
         r".inst 0xd10703ff,0x910003e4,0xf9005093,0xf9005494,0xf9005895,0xf9005c96,0xf9006098,0xf900649e
 .inst 0xf9006897,0x91000013,0x91000034,0x91000075,0x91000097,0x91000041,0x910362e2,0x910002e3
@@ -121,28 +185,14 @@ bl {vg_sha1_compress}
 .inst 0xf94052f3,0xf94056f4,0xf9405af5,0xf9405ef6,0xf94062f8,0xf94066fe,0xf9406af7,0x910703ff
 .inst 0xd65f03c0
 .p2align 6",
-        vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch::vg_sha1_finalize_scratch,
-        vg_sha1_compress = sym super::sha1::vg_sha1_compress::vg_sha1_compress,
+        vg_sha1_finalize_scratch = sym crate::sha1::vg_sha1_finalize_scratch::vg_sha1_finalize_scratch,
+        vg_sha1_compress = sym crate::sha1::vg_sha1_compress::vg_sha1_compress,
     )
 }
 
-/// The CPU features `vg_hmac_sha1_init_sha2` requires (`Artifact.features`).
-pub const VG_HMAC_SHA1_INIT_SHA2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA2);
-
-/// Starts an HMAC-SHA-1 computation with a key of any length: makes the SHA-1 streaming state `*inner` represent `K₀ ⊕ ipad` and `*outer` represent `K₀ ⊕ opad`, where `K₀` is the `key_len` bytes at `key` (or their SHA-1 digest, if there are more than 64) padded with zeros to 64 bytes (FIPS 198-1 §4, steps 1–3). The text is then absorbed with `vg_sha1_update` on `*inner` (its `count` starting at 64), and the MAC computed with `vg_hmac_sha1_finalize`.
-///
-/// Contract: `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.sha1I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
-///
-/// # Safety
-///
-/// * `inner` must be valid for reads and writes of 84 bytes.
-/// * `outer` must be valid for reads and writes of 84 bytes.
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `inner` and `outer` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `inner`, `outer` and `key` may overlap the 1136 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha2` target feature.
+/// The verified code of [`super::vg_hmac_sha1_init_sha2`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_hmac_sha1_init_sha2(inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize) {
+pub(crate) unsafe extern "C" fn vg_hmac_sha1_init_sha2(inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd280080a,0xd280000c,0xeb03014b,0x9a832189
 cbnz x9, 20f
@@ -210,32 +260,17 @@ bl {vg_hmac_sha1_init_scratch_sha2}
 .inst 0xa9054611,0x911183ff
 b 21b
 .p2align 6",
-        vg_sha1_init = sym super::sha1::vg_sha1_init,
-        vg_sha1_compress_sha2 = sym super::sha1::vg_sha1_compress_sha2::vg_sha1_compress_sha2,
-        vg_sha1_update_scratch_sha2 = sym super::sha1::vg_sha1_update_scratch_sha2::vg_sha1_update_scratch_sha2,
-        vg_sha1_finalize_scratch_sha2 = sym super::sha1::vg_sha1_finalize_scratch_sha2::vg_sha1_finalize_scratch_sha2,
-        vg_hmac_sha1_init_scratch_sha2 = sym super::hmac_sha1::vg_hmac_sha1_init_scratch_sha2::vg_hmac_sha1_init_scratch_sha2,
+        vg_sha1_init = sym crate::sha1::raw::vg_sha1_init,
+        vg_sha1_compress_sha2 = sym crate::sha1::vg_sha1_compress_sha2::vg_sha1_compress_sha2,
+        vg_sha1_update_scratch_sha2 = sym crate::sha1::vg_sha1_update_scratch_sha2::vg_sha1_update_scratch_sha2,
+        vg_sha1_finalize_scratch_sha2 = sym crate::sha1::vg_sha1_finalize_scratch_sha2::vg_sha1_finalize_scratch_sha2,
+        vg_hmac_sha1_init_scratch_sha2 = sym crate::hmac_sha1::vg_hmac_sha1_init_scratch_sha2::vg_hmac_sha1_init_scratch_sha2,
     )
 }
 
-/// The CPU features `vg_hmac_sha1_finalize_sha2` requires (`Artifact.features`).
-pub const VG_HMAC_SHA1_FINALIZE_SHA2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA2);
-
-/// Finishes an HMAC-SHA-1 computation: if, for a 64-byte key `K₀` and a text of fewer than 2⁶⁴ − 64 bytes, the SHA-1 streaming state `*inner` represents `(K₀ ⊕ ipad) ‖ text`, of `count` bytes, and `*outer` represents `K₀ ⊕ opad`, writes the HMAC-SHA-1 of the text under `K₀` (20 bytes) to `*out`.
-///
-/// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.sha1I`. Constant time: only the pointers and `count` may affect timing, not the states.
-///
-/// # Safety
-///
-/// * `inner` must be valid for reads and writes of 84 bytes.
-/// * `outer` must be valid for reads of 84 bytes.
-/// * `out` must be valid for reads and writes of 20 bytes.
-/// * The contents of `inner` on return are unspecified.
-/// * `inner` and `out` must not overlap each other or `outer` (distinct Rust objects never do).
-/// * None of `inner`, `outer` and `out` may overlap the 464 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha2` target feature.
+/// The verified code of [`super::vg_hmac_sha1_finalize_sha2`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_hmac_sha1_finalize_sha2(inner: *mut [u8; 84], outer: *const [u8; 84], count: u64, out: *mut [u8; 20]) {
+pub(crate) unsafe extern "C" fn vg_hmac_sha1_finalize_sha2(inner: *mut [u8; 84], outer: *const [u8; 84], count: u64, out: *mut [u8; 20]) {
     core::arch::naked_asm!(
         r".inst 0xd10703ff,0x910003e4,0xf9005093,0xf9005494,0xf9005895,0xf9005c96,0xf9006098,0xf900649e
 .inst 0xf9006897,0x91000013,0x91000034,0x91000075,0x91000097,0x91000041,0x910362e2,0x910002e3
@@ -252,9 +287,10 @@ bl {vg_sha1_compress_sha2}
 .inst 0xf94052f3,0xf94056f4,0xf9405af5,0xf9405ef6,0xf94062f8,0xf94066fe,0xf9406af7,0x910703ff
 .inst 0xd65f03c0
 .p2align 6",
-        vg_sha1_finalize_scratch_sha2 = sym super::sha1::vg_sha1_finalize_scratch_sha2::vg_sha1_finalize_scratch_sha2,
-        vg_sha1_compress_sha2 = sym super::sha1::vg_sha1_compress_sha2::vg_sha1_compress_sha2,
+        vg_sha1_finalize_scratch_sha2 = sym crate::sha1::vg_sha1_finalize_scratch_sha2::vg_sha1_finalize_scratch_sha2,
+        vg_sha1_compress_sha2 = sym crate::sha1::vg_sha1_compress_sha2::vg_sha1_compress_sha2,
     )
+}
 }
 
 #[rustfmt::skip]

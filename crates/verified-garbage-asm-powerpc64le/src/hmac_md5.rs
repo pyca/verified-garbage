@@ -14,8 +14,38 @@
 /// * `key` must be valid for reads of `key_len` bytes.
 /// * `inner` and `outer` must not overlap each other or `key` (distinct Rust objects never do).
 /// * None of `inner`, `outer` and `key` may overlap the 512 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_hmac_md5_init(_dit: verified_garbage_cpu::Dit<'_>, inner: *mut [u8; 80], outer: *mut [u8; 80], key: *const u8, key_len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_hmac_md5_init(inner, outer, key, key_len) }
+}
+
+/// Finishes an HMAC-MD5 computation: if, for a 64-byte key `K₀` and a text of fewer than 2⁶⁴ − 64 bytes, the MD5 streaming state `*inner` represents `(K₀ ⊕ ipad) ‖ text`, of `count` bytes, and `*outer` represents `K₀ ⊕ opad`, writes the HMAC-MD5 of the text under `K₀` (16 bytes) to `*out`.
+///
+/// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.md5I`. Constant time: only the pointers and `count` may affect timing, not the states.
+///
+/// # Safety
+///
+/// * `inner` must be valid for reads and writes of 80 bytes.
+/// * `outer` must be valid for reads of 80 bytes.
+/// * `out` must be valid for reads and writes of 16 bytes.
+/// * The contents of `inner` on return are unspecified.
+/// * `inner` and `out` must not overlap each other or `outer` (distinct Rust objects never do).
+/// * None of `inner`, `outer` and `out` may overlap the 512 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_hmac_md5_finalize(_dit: verified_garbage_cpu::Dit<'_>, inner: *mut [u8; 80], outer: *const [u8; 80], count: u64, out: *mut [u8; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_hmac_md5_finalize(inner, outer, count, out) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_hmac_md5_init`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_hmac_md5_init(inner: *mut [u8; 80], outer: *mut [u8; 80], key: *const u8, key_len: usize) {
+pub(crate) unsafe extern "C" fn vg_hmac_md5_init(inner: *mut [u8; 80], outer: *mut [u8; 80], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "wsnMeH8AYDk4WMt8PwBrOcLJa3kUWox9AAAsKA=="
 bne %cr0, 20f
@@ -73,27 +103,16 @@ bl {vg_md5_finalize_scratch}
 bl {vg_hmac_md5_init_scratch}
 .base64 "IAAB6DAAITimAwh8IACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPl4AGz5gABs+YgAbPmQAGz5mABs+aAAbPmoAGz5sABs+bgAbPnAAGz5yABs+dAAbPnYAGz54ABs+egAbPnwAGz5+ABs+QABbPkIAWz5EAFs+RgBbPkgAWz5KAFs+XABITg="
 b 21b"#,
-        vg_md5_init = sym super::md5::vg_md5_init,
-        vg_md5_update_scratch = sym super::md5::vg_md5_update_scratch::vg_md5_update_scratch,
-        vg_md5_finalize_scratch = sym super::md5::vg_md5_finalize_scratch::vg_md5_finalize_scratch,
-        vg_hmac_md5_init_scratch = sym super::hmac_md5::vg_hmac_md5_init_scratch::vg_hmac_md5_init_scratch,
+        vg_md5_init = sym crate::md5::raw::vg_md5_init,
+        vg_md5_update_scratch = sym crate::md5::vg_md5_update_scratch::vg_md5_update_scratch,
+        vg_md5_finalize_scratch = sym crate::md5::vg_md5_finalize_scratch::vg_md5_finalize_scratch,
+        vg_hmac_md5_init_scratch = sym crate::hmac_md5::vg_hmac_md5_init_scratch::vg_hmac_md5_init_scratch,
     )
 }
 
-/// Finishes an HMAC-MD5 computation: if, for a 64-byte key `K₀` and a text of fewer than 2⁶⁴ − 64 bytes, the MD5 streaming state `*inner` represents `(K₀ ⊕ ipad) ‖ text`, of `count` bytes, and `*outer` represents `K₀ ⊕ opad`, writes the HMAC-MD5 of the text under `K₀` (16 bytes) to `*out`.
-///
-/// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.md5I`. Constant time: only the pointers and `count` may affect timing, not the states.
-///
-/// # Safety
-///
-/// * `inner` must be valid for reads and writes of 80 bytes.
-/// * `outer` must be valid for reads of 80 bytes.
-/// * `out` must be valid for reads and writes of 16 bytes.
-/// * The contents of `inner` on return are unspecified.
-/// * `inner` and `out` must not overlap each other or `outer` (distinct Rust objects never do).
-/// * None of `inner`, `outer` and `out` may overlap the 512 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_hmac_md5_finalize`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_hmac_md5_finalize(inner: *mut [u8; 80], outer: *const [u8; 80], count: u64, out: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_hmac_md5_finalize(inner: *mut [u8; 80], outer: *const [u8; 80], count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "Yf4h+CAA4TimAgh80f8h+CAAAfhwAIf6eACn+oAAx/qIAOf6kAAH+5gAJ/sAAIM6AACnOgAAxDoAAOY6AACFOKAApzgAAMc4"
 bl {vg_md5_finalize_scratch}
@@ -102,9 +121,10 @@ bl {vg_md5_update_scratch}
 .base64 "AAB0OFAAgDigALU4AADVOA=="
 bl {vg_md5_finalize_scratch}
 .base64 "oAAVgQAAF5GkABWBBAAXkagAFYEIABeRrAAVgQwAF5FwAJXqgADV6ogA9eqQABXrmAA163gAteogAAHoMAAhOKYDCHygASE4IACATg==""#,
-        vg_md5_finalize_scratch = sym super::md5::vg_md5_finalize_scratch::vg_md5_finalize_scratch,
-        vg_md5_update_scratch = sym super::md5::vg_md5_update_scratch::vg_md5_update_scratch,
+        vg_md5_finalize_scratch = sym crate::md5::vg_md5_finalize_scratch::vg_md5_finalize_scratch,
+        vg_md5_update_scratch = sym crate::md5::vg_md5_update_scratch::vg_md5_update_scratch,
     )
+}
 }
 
 #[rustfmt::skip]

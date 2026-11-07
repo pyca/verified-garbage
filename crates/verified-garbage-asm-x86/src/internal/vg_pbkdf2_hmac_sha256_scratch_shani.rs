@@ -69,7 +69,7 @@ jmp 24f
 24:
 .base64 "ieiLmEADAACLsEQDAACLuEgDAACLqEwDAADD"
 .p2align 6"#,
-        vg_sha256_init = sym crate::sha256::vg_sha256_init,
+        vg_sha256_init = sym crate::sha256::raw::vg_sha256_init,
         vg_sha256_update_scratch_shani = sym crate::sha256::vg_sha256_update_scratch_shani::vg_sha256_update_scratch_shani,
         vg_sha256_finalize_scratch_shani = sym crate::sha256::vg_sha256_finalize_scratch_shani::vg_sha256_finalize_scratch_shani,
         vg_hmac_sha256_init_scratch_shani = sym crate::hmac_sha256::vg_hmac_sha256_init_scratch_shani::vg_hmac_sha256_init_scratch_shani,

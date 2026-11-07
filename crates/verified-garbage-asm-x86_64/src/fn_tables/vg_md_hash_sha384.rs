@@ -4,6 +4,6 @@
 
 /// The table of functions `VG_MD_HASH_SHA384` of the interface `MdHash`: `vg_sha384_init`, `vg_sha512_update_scratch`, `vg_sha512_finalize_scratch`, `vg_sha512_compress`, `vg_sha512_state_digest`, then the data 4, 48, 128, 16, 192, 1.
 pub static VG_MD_HASH_SHA384: super::MdHash = super::MdHash {
-    fns: [crate::sha512::vg_sha384_init as *const (), crate::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch as *const (), crate::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch as *const (), crate::sha512::vg_sha512_compress::vg_sha512_compress as *const (), crate::sha512::vg_sha512_state_digest::vg_sha512_state_digest as *const ()],
+    fns: [crate::sha512::raw::vg_sha384_init as *const (), crate::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch as *const (), crate::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch as *const (), crate::sha512::vg_sha512_compress::vg_sha512_compress as *const (), crate::sha512::vg_sha512_state_digest::vg_sha512_state_digest as *const ()],
     data: [4, 48, 128, 16, 192, 1],
 };

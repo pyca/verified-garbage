@@ -14,23 +14,11 @@
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 1552 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_seed_cfb128_encrypt(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJPj5//9JieBJg8AITYnBSYmZwAUAAEmJqcgFAABNiaHQBQAATYmp2AUAAE2JseAFAABNibnoBQAAZkwPbv5JidRJic1IiwdJiYFABQAASItHCEmJgUgFAABIi0cQSYmBUAUAAEiLRxhJiYFYBQAASItHIEmJgWAFAABIi0coSYmBaAUAAEiLRzBJiYFwBQAASItHOEmJgXgFAABIi0dASYmBgAUAAEiLR0hJiYGIBQAASItHUEmJgZAFAABIi0dYSYmBmAUAAEiLR2BJiYGgBQAASItHaEmJgagFAABIi0dwSYmBsAUAAEiLR3hJiYG4BQAAZkwPfvhIiyhJialABAAASItoCEmJqUgEAABNhe0="
-je 20f
-22:
-.base64 "Zk0PbuFmTQ9u7GZND271TInPSIHHQAUAAEyJzkiBxkAEAABIuhAAAAAAAAAATInJ"
-call {vg_seed_encrypt_blocks}
-.base64 "Zk0PfuFmTQ9+7GZND371SYsEJEkzgUAEAABJiQQkSYtEJAhJM4FIBAAASYlEJAhJiwQkSYmBQAQAAEmLRCQISYmBSAQAAEmDxBBJg+0B"
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "ZkwPfvhJi6lABAAASIkoSYupSAQAAEiJaAhJi5nABQAASYupyAUAAE2LodAFAABNi6nYBQAATYux4AUAAE2LuegFAABBuwAAAABMiVwkCEyJXCQQTIlcJBhMiVwkIEyJXCQoTIlcJDBMiVwkOEyJXCRATIlcJEhMiVwkUEyJXCRYTIlcJGBMiVwkaEyJXCRwTIlcJHhMiZwkgAAAAEyJnCSIAAAATImcJJAAAABMiZwkmAAAAEyJnCSgAAAATImcJKgAAABMiZwksAAAAEyJnCS4AAAATImcJMAAAABMiZwkyAAAAEyJnCTQAAAATImcJNgAAABMiZwk4AAAAEyJnCToAAAATImcJPAAAABMiZwk+AAAAEyJnCQAAQAATImcJAgBAABMiZwkEAEAAEyJnCQYAQAATImcJCABAABMiZwkKAEAAEyJnCQwAQAATImcJDgBAABMiZwkQAEAAEyJnCRIAQAATImcJFABAABMiZwkWAEAAEyJnCRgAQAATImcJGgBAABMiZwkcAEAAEyJnCR4AQAATImcJIABAABMiZwkiAEAAEyJnCSQAQAATImcJJgBAABMiZwkoAEAAEyJnCSoAQAATImcJLABAABMiZwkuAEAAEyJnCTAAQAATImcJMgBAABMiZwk0AEAAEyJnCTYAQAATImcJOABAABMiZwk6AEAAEyJnCTwAQAATImcJPgBAABMiZwkAAIAAEyJnCQIAgAATImcJBACAABMiZwkGAIAAEyJnCQgAgAATImcJCgCAABMiZwkMAIAAEyJnCQ4AgAATImcJEACAABMiZwkSAIAAEyJnCRQAgAATImcJFgCAABMiZwkYAIAAEyJnCRoAgAATImcJHACAABMiZwkeAIAAEyJnCSAAgAATImcJIgCAABMiZwkkAIAAEyJnCSYAgAATImcJKACAABMiZwkqAIAAEyJnCSwAgAATImcJLgCAABMiZwkwAIAAEyJnCTIAgAATImcJNACAABMiZwk2AIAAEyJnCTgAgAATImcJOgCAABMiZwk8AIAAEyJnCT4AgAATImcJAADAABMiZwkCAMAAEyJnCQQAwAATImcJBgDAABMiZwkIAMAAEyJnCQoAwAATImcJDADAABMiZwkOAMAAEyJnCRAAwAATImcJEgDAABMiZwkUAMAAEyJnCRYAwAATImcJGADAABMiZwkaAMAAEyJnCRwAwAATImcJHgDAABMiZwkgAMAAEyJnCSIAwAATImcJJADAABMiZwkmAMAAEyJnCSgAwAATImcJKgDAABMiZwksAMAAEyJnCS4AwAATImcJMADAABMiZwkyAMAAEyJnCTQAwAATImcJNgDAABMiZwk4AMAAEyJnCToAwAATImcJPADAABMiZwk+AMAAEyJnCQABAAATImcJAgEAABMiZwkEAQAAEyJnCQYBAAATImcJCAEAABMiZwkKAQAAEyJnCQwBAAATImcJDgEAABMiZwkQAQAAEyJnCRIBAAATImcJFAEAABMiZwkWAQAAEyJnCRgBAAATImcJGgEAABMiZwkcAQAAEyJnCR4BAAATImcJIAEAABMiZwkiAQAAEyJnCSQBAAATImcJJgEAABMiZwkoAQAAEyJnCSoBAAATImcJLAEAABMiZwkuAQAAEyJnCTABAAATImcJMgEAABMiZwk0AQAAEyJnCTYBAAATImcJOAEAABMiZwk6AQAAEyJnCTwBAAATImcJPgEAABMiZwkAAUAAEyJnCQIBQAATImcJBAFAABMiZwkGAUAAEyJnCQgBQAATImcJCgFAABMiZwkMAUAAEyJnCQ4BQAATImcJEAFAABMiZwkSAUAAEyJnCRQBQAATImcJFgFAABMiZwkYAUAAEyJnCRoBQAATImcJHAFAABMiZwkeAUAAEyJnCSABQAATImcJIgFAABMiZwkkAUAAEyJnCSYBQAATImcJKAFAABMiZwkqAUAAEyJnCSwBQAATImcJLgFAABMiZwkwAUAAEyJnCTIBQAATImcJNAFAABMiZwk2AUAAEyJnCTgBQAATImcJOgFAABMiZwk8AUAAEyJnCT4BQAATImcJAAGAABIjaQkCAYAAMM="
-.p2align 6"#,
-        vg_seed_encrypt_blocks = sym super::seed::vg_seed_encrypt_blocks::vg_seed_encrypt_blocks,
-    )
+#[inline(always)]
+pub unsafe fn vg_seed_cfb128_encrypt(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_seed_cfb128_encrypt(schedule, iv, data, n) }
 }
 
 /// SEED-CFB128 decryption (NIST SP 800-38A §6.3, with 128-bit segments; RFC 4269 §2) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is SEED encryption (also for decryption) under the schedule written by `vg_seed_expand_key`.
@@ -44,8 +32,75 @@ jmp 21f
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 1552 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_seed_cfb128_decrypt(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_seed_cfb128_decrypt(schedule, iv, data, n) }
+}
+
+/// SEED-CFB128 encryption (NIST SP 800-38A §6.3, with 128-bit segments; RFC 4269 §2) of the last piece of a message, of any length, in place: replaces its whole 16-byte blocks `P₁ … Pₙ₋₁` at `data` with `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Pₙ*` of `u` bytes with `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, so that a further call continues the message, if `len` is a multiple of 16 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is SEED encryption under the schedule written by `vg_seed_expand_key`.
+///
+/// Contract: `VG.Spec.Seed.cfbEncryptFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 1552 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_seed_cfb128_encrypt_final(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut u8, len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_seed_cfb128_encrypt_final(schedule, iv, data, len) }
+}
+
+/// SEED-CFB128 decryption (NIST SP 800-38A §6.3, with 128-bit segments; RFC 4269 §2) of the last piece of a message, of any length, in place: replaces its whole 16-byte blocks `C₁ … Cₙ₋₁` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Cₙ*` of `u` bytes with `Pₙ* = Cₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, the last whole block at `data` on entry, so that a further call continues the message, if `len` is a multiple of 16 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is SEED encryption under the schedule written by `vg_seed_expand_key`.
+///
+/// Contract: `VG.Spec.Seed.cfbDecryptFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 1552 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_seed_cfb128_decrypt_final(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut u8, len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_seed_cfb128_decrypt_final(schedule, iv, data, len) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_seed_cfb128_encrypt`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_seed_cfb128_decrypt(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_seed_cfb128_encrypt(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJPj5//9JieBJg8AITYnBSYmZwAUAAEmJqcgFAABNiaHQBQAATYmp2AUAAE2JseAFAABNibnoBQAAZkwPbv5JidRJic1IiwdJiYFABQAASItHCEmJgUgFAABIi0cQSYmBUAUAAEiLRxhJiYFYBQAASItHIEmJgWAFAABIi0coSYmBaAUAAEiLRzBJiYFwBQAASItHOEmJgXgFAABIi0dASYmBgAUAAEiLR0hJiYGIBQAASItHUEmJgZAFAABIi0dYSYmBmAUAAEiLR2BJiYGgBQAASItHaEmJgagFAABIi0dwSYmBsAUAAEiLR3hJiYG4BQAAZkwPfvhIiyhJialABAAASItoCEmJqUgEAABNhe0="
+je 20f
+22:
+.base64 "Zk0PbuFmTQ9u7GZND271TInPSIHHQAUAAEyJzkiBxkAEAABIuhAAAAAAAAAATInJ"
+call {vg_seed_encrypt_blocks}
+.base64 "Zk0PfuFmTQ9+7GZND371SYsEJEkzgUAEAABJiQQkSYtEJAhJM4FIBAAASYlEJAhJiwQkSYmBQAQAAEmLRCQISYmBSAQAAEmDxBBJg+0B"
+jne 22b
+jmp 21f
+20:
+21:
+.base64 "ZkwPfvhJi6lABAAASIkoSYupSAQAAEiJaAhJi5nABQAASYupyAUAAE2LodAFAABNi6nYBQAATYux4AUAAE2LuegFAABBuwAAAABMiVwkCEyJXCQQTIlcJBhMiVwkIEyJXCQoTIlcJDBMiVwkOEyJXCRATIlcJEhMiVwkUEyJXCRYTIlcJGBMiVwkaEyJXCRwTIlcJHhMiZwkgAAAAEyJnCSIAAAATImcJJAAAABMiZwkmAAAAEyJnCSgAAAATImcJKgAAABMiZwksAAAAEyJnCS4AAAATImcJMAAAABMiZwkyAAAAEyJnCTQAAAATImcJNgAAABMiZwk4AAAAEyJnCToAAAATImcJPAAAABMiZwk+AAAAEyJnCQAAQAATImcJAgBAABMiZwkEAEAAEyJnCQYAQAATImcJCABAABMiZwkKAEAAEyJnCQwAQAATImcJDgBAABMiZwkQAEAAEyJnCRIAQAATImcJFABAABMiZwkWAEAAEyJnCRgAQAATImcJGgBAABMiZwkcAEAAEyJnCR4AQAATImcJIABAABMiZwkiAEAAEyJnCSQAQAATImcJJgBAABMiZwkoAEAAEyJnCSoAQAATImcJLABAABMiZwkuAEAAEyJnCTAAQAATImcJMgBAABMiZwk0AEAAEyJnCTYAQAATImcJOABAABMiZwk6AEAAEyJnCTwAQAATImcJPgBAABMiZwkAAIAAEyJnCQIAgAATImcJBACAABMiZwkGAIAAEyJnCQgAgAATImcJCgCAABMiZwkMAIAAEyJnCQ4AgAATImcJEACAABMiZwkSAIAAEyJnCRQAgAATImcJFgCAABMiZwkYAIAAEyJnCRoAgAATImcJHACAABMiZwkeAIAAEyJnCSAAgAATImcJIgCAABMiZwkkAIAAEyJnCSYAgAATImcJKACAABMiZwkqAIAAEyJnCSwAgAATImcJLgCAABMiZwkwAIAAEyJnCTIAgAATImcJNACAABMiZwk2AIAAEyJnCTgAgAATImcJOgCAABMiZwk8AIAAEyJnCT4AgAATImcJAADAABMiZwkCAMAAEyJnCQQAwAATImcJBgDAABMiZwkIAMAAEyJnCQoAwAATImcJDADAABMiZwkOAMAAEyJnCRAAwAATImcJEgDAABMiZwkUAMAAEyJnCRYAwAATImcJGADAABMiZwkaAMAAEyJnCRwAwAATImcJHgDAABMiZwkgAMAAEyJnCSIAwAATImcJJADAABMiZwkmAMAAEyJnCSgAwAATImcJKgDAABMiZwksAMAAEyJnCS4AwAATImcJMADAABMiZwkyAMAAEyJnCTQAwAATImcJNgDAABMiZwk4AMAAEyJnCToAwAATImcJPADAABMiZwk+AMAAEyJnCQABAAATImcJAgEAABMiZwkEAQAAEyJnCQYBAAATImcJCAEAABMiZwkKAQAAEyJnCQwBAAATImcJDgEAABMiZwkQAQAAEyJnCRIBAAATImcJFAEAABMiZwkWAQAAEyJnCRgBAAATImcJGgEAABMiZwkcAQAAEyJnCR4BAAATImcJIAEAABMiZwkiAQAAEyJnCSQBAAATImcJJgEAABMiZwkoAQAAEyJnCSoBAAATImcJLAEAABMiZwkuAQAAEyJnCTABAAATImcJMgEAABMiZwk0AQAAEyJnCTYBAAATImcJOAEAABMiZwk6AQAAEyJnCTwBAAATImcJPgEAABMiZwkAAUAAEyJnCQIBQAATImcJBAFAABMiZwkGAUAAEyJnCQgBQAATImcJCgFAABMiZwkMAUAAEyJnCQ4BQAATImcJEAFAABMiZwkSAUAAEyJnCRQBQAATImcJFgFAABMiZwkYAUAAEyJnCRoBQAATImcJHAFAABMiZwkeAUAAEyJnCSABQAATImcJIgFAABMiZwkkAUAAEyJnCSYBQAATImcJKAFAABMiZwkqAUAAEyJnCSwBQAATImcJLgFAABMiZwkwAUAAEyJnCTIBQAATImcJNAFAABMiZwk2AUAAEyJnCTgBQAATImcJOgFAABMiZwk8AUAAEyJnCT4BQAATImcJAAGAABIjaQkCAYAAMM="
+.p2align 6"#,
+        vg_seed_encrypt_blocks = sym crate::seed::vg_seed_encrypt_blocks::vg_seed_encrypt_blocks,
+    )
+}
+
+/// The verified code of [`super::vg_seed_cfb128_decrypt`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_seed_cfb128_decrypt(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPj5//9JieBJg8AITYnBSYmZwAUAAEmJqcgFAABNiaHQBQAATYmp2AUAAE2JseAFAABNibnoBQAASIsGSYmB8AUAAEiLRghJiYH4BQAASIXJ"
 je 20f
@@ -89,23 +144,13 @@ jmp 23f
 23:
 .base64 "SYuZwAUAAEmLqcgFAABNi6HQBQAATYup2AUAAE2LseAFAABNi7noBQAAQbsAAAAATIlcJAhMiVwkEEyJXCQYTIlcJCBMiVwkKEyJXCQwTIlcJDhMiVwkQEyJXCRITIlcJFBMiVwkWEyJXCRgTIlcJGhMiVwkcEyJXCR4TImcJIAAAABMiZwkiAAAAEyJnCSQAAAATImcJJgAAABMiZwkoAAAAEyJnCSoAAAATImcJLAAAABMiZwkuAAAAEyJnCTAAAAATImcJMgAAABMiZwk0AAAAEyJnCTYAAAATImcJOAAAABMiZwk6AAAAEyJnCTwAAAATImcJPgAAABMiZwkAAEAAEyJnCQIAQAATImcJBABAABMiZwkGAEAAEyJnCQgAQAATImcJCgBAABMiZwkMAEAAEyJnCQ4AQAATImcJEABAABMiZwkSAEAAEyJnCRQAQAATImcJFgBAABMiZwkYAEAAEyJnCRoAQAATImcJHABAABMiZwkeAEAAEyJnCSAAQAATImcJIgBAABMiZwkkAEAAEyJnCSYAQAATImcJKABAABMiZwkqAEAAEyJnCSwAQAATImcJLgBAABMiZwkwAEAAEyJnCTIAQAATImcJNABAABMiZwk2AEAAEyJnCTgAQAATImcJOgBAABMiZwk8AEAAEyJnCT4AQAATImcJAACAABMiZwkCAIAAEyJnCQQAgAATImcJBgCAABMiZwkIAIAAEyJnCQoAgAATImcJDACAABMiZwkOAIAAEyJnCRAAgAATImcJEgCAABMiZwkUAIAAEyJnCRYAgAATImcJGACAABMiZwkaAIAAEyJnCRwAgAATImcJHgCAABMiZwkgAIAAEyJnCSIAgAATImcJJACAABMiZwkmAIAAEyJnCSgAgAATImcJKgCAABMiZwksAIAAEyJnCS4AgAATImcJMACAABMiZwkyAIAAEyJnCTQAgAATImcJNgCAABMiZwk4AIAAEyJnCToAgAATImcJPACAABMiZwk+AIAAEyJnCQAAwAATImcJAgDAABMiZwkEAMAAEyJnCQYAwAATImcJCADAABMiZwkKAMAAEyJnCQwAwAATImcJDgDAABMiZwkQAMAAEyJnCRIAwAATImcJFADAABMiZwkWAMAAEyJnCRgAwAATImcJGgDAABMiZwkcAMAAEyJnCR4AwAATImcJIADAABMiZwkiAMAAEyJnCSQAwAATImcJJgDAABMiZwkoAMAAEyJnCSoAwAATImcJLADAABMiZwkuAMAAEyJnCTAAwAATImcJMgDAABMiZwk0AMAAEyJnCTYAwAATImcJOADAABMiZwk6AMAAEyJnCTwAwAATImcJPgDAABMiZwkAAQAAEyJnCQIBAAATImcJBAEAABMiZwkGAQAAEyJnCQgBAAATImcJCgEAABMiZwkMAQAAEyJnCQ4BAAATImcJEAEAABMiZwkSAQAAEyJnCRQBAAATImcJFgEAABMiZwkYAQAAEyJnCRoBAAATImcJHAEAABMiZwkeAQAAEyJnCSABAAATImcJIgEAABMiZwkkAQAAEyJnCSYBAAATImcJKAEAABMiZwkqAQAAEyJnCSwBAAATImcJLgEAABMiZwkwAQAAEyJnCTIBAAATImcJNAEAABMiZwk2AQAAEyJnCTgBAAATImcJOgEAABMiZwk8AQAAEyJnCT4BAAATImcJAAFAABMiZwkCAUAAEyJnCQQBQAATImcJBgFAABMiZwkIAUAAEyJnCQoBQAATImcJDAFAABMiZwkOAUAAEyJnCRABQAATImcJEgFAABMiZwkUAUAAEyJnCRYBQAATImcJGAFAABMiZwkaAUAAEyJnCRwBQAATImcJHgFAABMiZwkgAUAAEyJnCSIBQAATImcJJAFAABMiZwkmAUAAEyJnCSgBQAATImcJKgFAABMiZwksAUAAEyJnCS4BQAATImcJMAFAABMiZwkyAUAAEyJnCTQBQAATImcJNgFAABMiZwk4AUAAEyJnCToBQAATImcJPAFAABMiZwk+AUAAEyJnCQABgAASI2kJAgGAADD"
 .p2align 6"#,
-        vg_seed_encrypt_blocks = sym super::seed::vg_seed_encrypt_blocks::vg_seed_encrypt_blocks,
+        vg_seed_encrypt_blocks = sym crate::seed::vg_seed_encrypt_blocks::vg_seed_encrypt_blocks,
     )
 }
 
-/// SEED-CFB128 encryption (NIST SP 800-38A §6.3, with 128-bit segments; RFC 4269 §2) of the last piece of a message, of any length, in place: replaces its whole 16-byte blocks `P₁ … Pₙ₋₁` at `data` with `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Pₙ*` of `u` bytes with `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, so that a further call continues the message, if `len` is a multiple of 16 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is SEED encryption under the schedule written by `vg_seed_expand_key`.
-///
-/// Contract: `VG.Spec.Seed.cfbEncryptFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the chaining value or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 128 bytes.
-/// * `iv` must be valid for reads and writes of 16 bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 1552 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_seed_cfb128_encrypt_final`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_seed_cfb128_encrypt_final(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_seed_cfb128_encrypt_final(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPj5//9JieBJg8AITYnBSYmZwAUAAEmJqcgFAABNiaHQBQAATYmp2AUAAE2JseAFAABNibnoBQAAZkwPbv5JidRJic1IiwdJiYFABQAASItHCEmJgUgFAABIi0cQSYmBUAUAAEiLRxhJiYFYBQAASItHIEmJgWAFAABIi0coSYmBaAUAAEiLRzBJiYFwBQAASItHOEmJgXgFAABIi0dASYmBgAUAAEiLR0hJiYGIBQAASItHUEmJgZAFAABIi0dYSYmBmAUAAEiLR2BJiYGgBQAASItHaEmJgagFAABIi0dwSYmBsAUAAEiLR3hJiYG4BQAAZkwPfvhIiyhJialABAAASItoCEmJqUgEAABNhe0="
 je 20f
@@ -128,23 +173,13 @@ jmp 21f
 21:
 .base64 "ZkwPfvhJi6lABAAASIkoSYupSAQAAEiJaAhJi5nABQAASYupyAUAAE2LodAFAABNi6nYBQAATYux4AUAAE2LuegFAABBuwAAAABMiVwkCEyJXCQQTIlcJBhMiVwkIEyJXCQoTIlcJDBMiVwkOEyJXCRATIlcJEhMiVwkUEyJXCRYTIlcJGBMiVwkaEyJXCRwTIlcJHhMiZwkgAAAAEyJnCSIAAAATImcJJAAAABMiZwkmAAAAEyJnCSgAAAATImcJKgAAABMiZwksAAAAEyJnCS4AAAATImcJMAAAABMiZwkyAAAAEyJnCTQAAAATImcJNgAAABMiZwk4AAAAEyJnCToAAAATImcJPAAAABMiZwk+AAAAEyJnCQAAQAATImcJAgBAABMiZwkEAEAAEyJnCQYAQAATImcJCABAABMiZwkKAEAAEyJnCQwAQAATImcJDgBAABMiZwkQAEAAEyJnCRIAQAATImcJFABAABMiZwkWAEAAEyJnCRgAQAATImcJGgBAABMiZwkcAEAAEyJnCR4AQAATImcJIABAABMiZwkiAEAAEyJnCSQAQAATImcJJgBAABMiZwkoAEAAEyJnCSoAQAATImcJLABAABMiZwkuAEAAEyJnCTAAQAATImcJMgBAABMiZwk0AEAAEyJnCTYAQAATImcJOABAABMiZwk6AEAAEyJnCTwAQAATImcJPgBAABMiZwkAAIAAEyJnCQIAgAATImcJBACAABMiZwkGAIAAEyJnCQgAgAATImcJCgCAABMiZwkMAIAAEyJnCQ4AgAATImcJEACAABMiZwkSAIAAEyJnCRQAgAATImcJFgCAABMiZwkYAIAAEyJnCRoAgAATImcJHACAABMiZwkeAIAAEyJnCSAAgAATImcJIgCAABMiZwkkAIAAEyJnCSYAgAATImcJKACAABMiZwkqAIAAEyJnCSwAgAATImcJLgCAABMiZwkwAIAAEyJnCTIAgAATImcJNACAABMiZwk2AIAAEyJnCTgAgAATImcJOgCAABMiZwk8AIAAEyJnCT4AgAATImcJAADAABMiZwkCAMAAEyJnCQQAwAATImcJBgDAABMiZwkIAMAAEyJnCQoAwAATImcJDADAABMiZwkOAMAAEyJnCRAAwAATImcJEgDAABMiZwkUAMAAEyJnCRYAwAATImcJGADAABMiZwkaAMAAEyJnCRwAwAATImcJHgDAABMiZwkgAMAAEyJnCSIAwAATImcJJADAABMiZwkmAMAAEyJnCSgAwAATImcJKgDAABMiZwksAMAAEyJnCS4AwAATImcJMADAABMiZwkyAMAAEyJnCTQAwAATImcJNgDAABMiZwk4AMAAEyJnCToAwAATImcJPADAABMiZwk+AMAAEyJnCQABAAATImcJAgEAABMiZwkEAQAAEyJnCQYBAAATImcJCAEAABMiZwkKAQAAEyJnCQwBAAATImcJDgEAABMiZwkQAQAAEyJnCRIBAAATImcJFAEAABMiZwkWAQAAEyJnCRgBAAATImcJGgEAABMiZwkcAQAAEyJnCR4BAAATImcJIAEAABMiZwkiAQAAEyJnCSQBAAATImcJJgEAABMiZwkoAQAAEyJnCSoBAAATImcJLAEAABMiZwkuAQAAEyJnCTABAAATImcJMgEAABMiZwk0AQAAEyJnCTYBAAATImcJOAEAABMiZwk6AQAAEyJnCTwBAAATImcJPgEAABMiZwkAAUAAEyJnCQIBQAATImcJBAFAABMiZwkGAUAAEyJnCQgBQAATImcJCgFAABMiZwkMAUAAEyJnCQ4BQAATImcJEAFAABMiZwkSAUAAEyJnCRQBQAATImcJFgFAABMiZwkYAUAAEyJnCRoBQAATImcJHAFAABMiZwkeAUAAEyJnCSABQAATImcJIgFAABMiZwkkAUAAEyJnCSYBQAATImcJKAFAABMiZwkqAUAAEyJnCSwBQAATImcJLgFAABMiZwkwAUAAEyJnCTIBQAATImcJNAFAABMiZwk2AUAAEyJnCTgBQAATImcJOgFAABMiZwk8AUAAEyJnCT4BQAATImcJAAGAABIjaQkCAYAAMM="
 .p2align 6"#,
-        vg_seed_encrypt_blocks = sym super::seed::vg_seed_encrypt_blocks::vg_seed_encrypt_blocks,
+        vg_seed_encrypt_blocks = sym crate::seed::vg_seed_encrypt_blocks::vg_seed_encrypt_blocks,
     )
 }
 
-/// SEED-CFB128 decryption (NIST SP 800-38A §6.3, with 128-bit segments; RFC 4269 §2) of the last piece of a message, of any length, in place: replaces its whole 16-byte blocks `C₁ … Cₙ₋₁` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Cₙ*` of `u` bytes with `Pₙ* = Cₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, the last whole block at `data` on entry, so that a further call continues the message, if `len` is a multiple of 16 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is SEED encryption under the schedule written by `vg_seed_expand_key`.
-///
-/// Contract: `VG.Spec.Seed.cfbDecryptFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the chaining value or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 128 bytes.
-/// * `iv` must be valid for reads and writes of 16 bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 1552 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_seed_cfb128_decrypt_final`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_seed_cfb128_decrypt_final(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_seed_cfb128_decrypt_final(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPj5//9JieBJg8AITYnBSYmZwAUAAEmJqcgFAABNiaHQBQAATYmp2AUAAE2JseAFAABNibnoBQAAZkwPbv5JidRJic1IiwdJiYFABQAASItHCEmJgUgFAABIi0cQSYmBUAUAAEiLRxhJiYFYBQAASItHIEmJgWAFAABIi0coSYmBaAUAAEiLRzBJiYFwBQAASItHOEmJgXgFAABIi0dASYmBgAUAAEiLR0hJiYGIBQAASItHUEmJgZAFAABIi0dYSYmBmAUAAEiLR2BJiYGgBQAASItHaEmJgagFAABIi0dwSYmBsAUAAEiLR3hJiYG4BQAAZkwPfvhIiyhJialABAAASItoCEmJqUgEAABNhe0="
 je 20f
@@ -167,6 +202,7 @@ jmp 21f
 21:
 .base64 "ZkwPfvhJi6lABAAASIkoSYupSAQAAEiJaAhJi5nABQAASYupyAUAAE2LodAFAABNi6nYBQAATYux4AUAAE2LuegFAABBuwAAAABMiVwkCEyJXCQQTIlcJBhMiVwkIEyJXCQoTIlcJDBMiVwkOEyJXCRATIlcJEhMiVwkUEyJXCRYTIlcJGBMiVwkaEyJXCRwTIlcJHhMiZwkgAAAAEyJnCSIAAAATImcJJAAAABMiZwkmAAAAEyJnCSgAAAATImcJKgAAABMiZwksAAAAEyJnCS4AAAATImcJMAAAABMiZwkyAAAAEyJnCTQAAAATImcJNgAAABMiZwk4AAAAEyJnCToAAAATImcJPAAAABMiZwk+AAAAEyJnCQAAQAATImcJAgBAABMiZwkEAEAAEyJnCQYAQAATImcJCABAABMiZwkKAEAAEyJnCQwAQAATImcJDgBAABMiZwkQAEAAEyJnCRIAQAATImcJFABAABMiZwkWAEAAEyJnCRgAQAATImcJGgBAABMiZwkcAEAAEyJnCR4AQAATImcJIABAABMiZwkiAEAAEyJnCSQAQAATImcJJgBAABMiZwkoAEAAEyJnCSoAQAATImcJLABAABMiZwkuAEAAEyJnCTAAQAATImcJMgBAABMiZwk0AEAAEyJnCTYAQAATImcJOABAABMiZwk6AEAAEyJnCTwAQAATImcJPgBAABMiZwkAAIAAEyJnCQIAgAATImcJBACAABMiZwkGAIAAEyJnCQgAgAATImcJCgCAABMiZwkMAIAAEyJnCQ4AgAATImcJEACAABMiZwkSAIAAEyJnCRQAgAATImcJFgCAABMiZwkYAIAAEyJnCRoAgAATImcJHACAABMiZwkeAIAAEyJnCSAAgAATImcJIgCAABMiZwkkAIAAEyJnCSYAgAATImcJKACAABMiZwkqAIAAEyJnCSwAgAATImcJLgCAABMiZwkwAIAAEyJnCTIAgAATImcJNACAABMiZwk2AIAAEyJnCTgAgAATImcJOgCAABMiZwk8AIAAEyJnCT4AgAATImcJAADAABMiZwkCAMAAEyJnCQQAwAATImcJBgDAABMiZwkIAMAAEyJnCQoAwAATImcJDADAABMiZwkOAMAAEyJnCRAAwAATImcJEgDAABMiZwkUAMAAEyJnCRYAwAATImcJGADAABMiZwkaAMAAEyJnCRwAwAATImcJHgDAABMiZwkgAMAAEyJnCSIAwAATImcJJADAABMiZwkmAMAAEyJnCSgAwAATImcJKgDAABMiZwksAMAAEyJnCS4AwAATImcJMADAABMiZwkyAMAAEyJnCTQAwAATImcJNgDAABMiZwk4AMAAEyJnCToAwAATImcJPADAABMiZwk+AMAAEyJnCQABAAATImcJAgEAABMiZwkEAQAAEyJnCQYBAAATImcJCAEAABMiZwkKAQAAEyJnCQwBAAATImcJDgEAABMiZwkQAQAAEyJnCRIBAAATImcJFAEAABMiZwkWAQAAEyJnCRgBAAATImcJGgEAABMiZwkcAQAAEyJnCR4BAAATImcJIAEAABMiZwkiAQAAEyJnCSQBAAATImcJJgEAABMiZwkoAQAAEyJnCSoBAAATImcJLAEAABMiZwkuAQAAEyJnCTABAAATImcJMgEAABMiZwk0AQAAEyJnCTYBAAATImcJOAEAABMiZwk6AQAAEyJnCTwBAAATImcJPgEAABMiZwkAAUAAEyJnCQIBQAATImcJBAFAABMiZwkGAUAAEyJnCQgBQAATImcJCgFAABMiZwkMAUAAEyJnCQ4BQAATImcJEAFAABMiZwkSAUAAEyJnCRQBQAATImcJFgFAABMiZwkYAUAAEyJnCRoBQAATImcJHAFAABMiZwkeAUAAEyJnCSABQAATImcJIgFAABMiZwkkAUAAEyJnCSYBQAATImcJKAFAABMiZwkqAUAAEyJnCSwBQAATImcJLgFAABMiZwkwAUAAEyJnCTIBQAATImcJNAFAABMiZwk2AUAAEyJnCTgBQAATImcJOgFAABMiZwk8AUAAEyJnCT4BQAATImcJAAGAABIjaQkCAYAAMM="
 .p2align 6"#,
-        vg_seed_encrypt_blocks = sym super::seed::vg_seed_encrypt_blocks::vg_seed_encrypt_blocks,
+        vg_seed_encrypt_blocks = sym crate::seed::vg_seed_encrypt_blocks::vg_seed_encrypt_blocks,
     )
+}
 }

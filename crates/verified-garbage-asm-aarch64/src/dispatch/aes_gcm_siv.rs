@@ -22,20 +22,20 @@
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the 3824 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_gcm_siv_seal_auto(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe fn vg_aes_gcm_siv_seal_auto(dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AES_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_seal_aes_sha3`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_seal_aes_sha3(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
+        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_seal_aes_sha3(dit, schedule, rounds, nonce, aad, aad_len, data, len, tag) };
     }
     if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AES_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_seal_aes`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_seal_aes(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
+        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_seal_aes(dit, schedule, rounds, nonce, aad, aad_len, data, len, tag) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_seal(schedule, rounds, nonce, aad, aad_len, data, len, tag) }
+    unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_seal(dit, schedule, rounds, nonce, aad, aad_len, data, len, tag) }
 }
 
 /// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
@@ -58,18 +58,18 @@ pub unsafe fn vg_aes_gcm_siv_seal_auto(schedule: *const [u8; 240], rounds: usize
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the 3824 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_gcm_siv_open_auto(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub unsafe fn vg_aes_gcm_siv_open_auto(dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AES_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_open_aes_sha3`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_open_aes_sha3(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
+        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_open_aes_sha3(dit, schedule, rounds, nonce, aad, aad_len, data, len, tag) };
     }
     if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AES_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_open_aes`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_open_aes(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
+        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_open_aes(dit, schedule, rounds, nonce, aad, aad_len, data, len, tag) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_open(schedule, rounds, nonce, aad, aad_len, data, len, tag) }
+    unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_open(dit, schedule, rounds, nonce, aad, aad_len, data, len, tag) }
 }

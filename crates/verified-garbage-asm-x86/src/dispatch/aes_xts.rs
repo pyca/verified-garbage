@@ -22,15 +22,15 @@
 /// * None of `schedule`, `tweak_schedule`, `i`, `data` and `scratch` may overlap the return address on the stack or the 52 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_xts_encrypt_unit_auto(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
+pub unsafe fn vg_aes_xts_encrypt_unit_auto(dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_AESNI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_xts_encrypt_unit_aesni`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes_xts::vg_aes_xts_encrypt_unit_aesni(schedule, tweak_schedule, rounds, i, data, len, scratch) };
+        return unsafe { crate::aes_xts::vg_aes_xts_encrypt_unit_aesni(dit, schedule, tweak_schedule, rounds, i, data, len, scratch) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::aes_xts::vg_aes_xts_encrypt_unit(schedule, tweak_schedule, rounds, i, data, len, scratch) }
+    unsafe { crate::aes_xts::vg_aes_xts_encrypt_unit(dit, schedule, tweak_schedule, rounds, i, data, len, scratch) }
 }
 
 /// XTS-AES decryption (IEEE Std 1619-2007 §5.4.2, NIST SP 800-38E) of a whole data unit, in place: replaces the `len` bytes at `data`, at least 16 and at most 2²⁰ blocks, with their decryption under the key `Key1 ‖ Key2` with the tweak value `*i`. With `m` whole blocks `C₀ … Cₘ₋₁` and `b` bytes `Cₘ` after them, each `Cⱼ` for `j < m` (`j < m - 1` if `b > 0`) becomes `Pⱼ = AES-dec(Key1, Cⱼ ⊕ Tⱼ) ⊕ Tⱼ`, where `Tⱼ = T ⊗ αʲ` (§5.2) and `T = AES-enc(Key2, i)`. If `b > 0`, ciphertext stealing makes `Pₘ` the first `b` bytes of `PP`, the decryption of `Cₘ₋₁` with `Tₘ`, and `Pₘ₋₁` the decryption with `Tₘ₋₁` of `Cₘ` followed by the other `16 - b` bytes of `PP`. `AES-dec(Key1, ·)` is the AES inverse cipher (FIPS 197 §5.3) and `AES-enc(Key2, ·)` AES, with `rounds` rounds and the key schedules in the first `16 * (rounds + 1)` bytes of `*schedule` and `*tweak_schedule`, as `vg_aes_expand_key` writes them.
@@ -53,13 +53,13 @@ pub unsafe fn vg_aes_xts_encrypt_unit_auto(schedule: *const [u8; 240], tweak_sch
 /// * None of `schedule`, `tweak_schedule`, `i`, `data` and `scratch` may overlap the return address on the stack or the 52 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_xts_decrypt_unit_auto(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
+pub unsafe fn vg_aes_xts_decrypt_unit_auto(dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_AESNI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_xts_decrypt_unit_aesni`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes_xts::vg_aes_xts_decrypt_unit_aesni(schedule, tweak_schedule, rounds, i, data, len, scratch) };
+        return unsafe { crate::aes_xts::vg_aes_xts_decrypt_unit_aesni(dit, schedule, tweak_schedule, rounds, i, data, len, scratch) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::aes_xts::vg_aes_xts_decrypt_unit(schedule, tweak_schedule, rounds, i, data, len, scratch) }
+    unsafe { crate::aes_xts::vg_aes_xts_decrypt_unit(dit, schedule, tweak_schedule, rounds, i, data, len, scratch) }
 }

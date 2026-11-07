@@ -69,7 +69,7 @@ jmp 214f
 214:
 .base64 "SI2kJLgIAADD"
 .p2align 6"#,
-        vg_aes_gcm_stream_encrypt_prepared16_vaes_vpclmul = sym crate::gcm::vg_aes_gcm_stream_encrypt_prepared16_vaes_vpclmul,
+        vg_aes_gcm_stream_encrypt_prepared16_vaes_vpclmul = sym crate::gcm::raw::vg_aes_gcm_stream_encrypt_prepared16_vaes_vpclmul,
         vg_aes_gcm_encrypt_blocks_to_prepared16_vaes_vpclmul = sym crate::aes::vg_aes_gcm_encrypt_blocks_to_prepared16_vaes_vpclmul::vg_aes_gcm_encrypt_blocks_to_prepared16_vaes_vpclmul,
     )
 }

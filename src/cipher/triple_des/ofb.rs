@@ -77,13 +77,14 @@ impl Drop for TripleDesOfb {
 impl Key {
     /// Expands a 16- or 24-byte key.
     fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
+        crate::dit::enter!(dit);
         if !matches!(key.len(), 16 | 24) {
             return Err(InvalidKeyLength);
         }
         let mut schedule = [0; 384];
         // SAFETY: the key has a validated length; key and schedule are separate
         // valid buffers of the required sizes.
-        unsafe { vg_triple_des_expand_key(key.as_ptr(), key.len(), &mut schedule) };
+        unsafe { vg_triple_des_expand_key(dit, key.as_ptr(), key.len(), &mut schedule) };
         Ok(Self { schedule })
     }
 
@@ -91,7 +92,8 @@ impl Key {
     /// `buffer` in place, from the block `iv`, which it replaces with the
     /// last output block (unchanged for empty input).
     fn apply_keystream(&self, iv: &mut [u8; 8], buffer: &mut [u8]) {
-        self.crypt(iv, buffer);
+        crate::dit::enter!(dit);
+        self.crypt(dit, iv, buffer);
     }
 
     /// Encrypts or decrypts (the same operation) the rest of a message, of
@@ -100,24 +102,28 @@ impl Key {
     /// the whole blocks leave in `iv`, which it replaces with the output
     /// block it used.
     fn apply_keystream_final(&self, iv: &mut [u8; 8], buffer: &mut [u8]) {
+        crate::dit::enter!(dit);
         let (blocks, rest) = buffer.split_at_mut(buffer.len() / 8 * 8);
-        self.crypt(iv, blocks);
+        self.crypt(dit, iv, blocks);
         if !rest.is_empty() {
             // SAFETY: `rest` is valid for `len` bytes, and it, the block at
             // `iv` and the schedule are separate valid objects of the sizes of
             // the signature, none of them on the callee's stack.
-            unsafe { vg_triple_des_ofb_final(&self.schedule, iv, rest.as_mut_ptr(), rest.len()) };
+            unsafe {
+                vg_triple_des_ofb_final(dit, &self.schedule, iv, rest.as_mut_ptr(), rest.len())
+            };
         }
     }
 
     /// OFB of whole blocks.
-    fn crypt(&self, iv: &mut [u8; 8], blocks: &mut [u8]) {
+    fn crypt(&self, dit: crate::dit::Dit<'_>, iv: &mut [u8; 8], blocks: &mut [u8]) {
         // SAFETY: `blocks` holds `len / 8` whole blocks (its length is a
         // multiple of 8), and it, the block at `iv` and the schedule are
         // separate valid objects of the sizes of the signature, none of them on
         // the callee's stack.
         unsafe {
             vg_triple_des_ofb(
+                dit,
                 &self.schedule,
                 iv,
                 blocks.as_mut_ptr().cast(),

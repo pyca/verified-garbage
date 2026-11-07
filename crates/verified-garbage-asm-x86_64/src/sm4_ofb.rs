@@ -14,8 +14,37 @@
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 3216 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_sm4_ofb(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sm4_ofb(schedule, iv, data, n) }
+}
+
+/// SM4-OFB encryption or decryption (NIST SP 800-38A §6.4, GB/T 32907-2016 §7.1) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)`, where `O₀` is the block at `*iv`, a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*iv` with the last output block used, `Oₙ` (leaving it unchanged if `len = 0`): so that a further call continues the message if `len` is a multiple of 16, and otherwise keystream, to be wiped, after which the message must end. `CIPH_K` is SM4 encryption under the schedule written by `vg_sm4_expand_key`.
+///
+/// Contract: `VG.Spec.Sm4.ofbFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 3216 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_sm4_ofb_final(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut u8, len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sm4_ofb_final(schedule, iv, data, len) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_sm4_ofb`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_sm4_ofb(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_sm4_ofb(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJHjz//9JieBJg8AITYnBSYmZQAwAAEmJqUgMAABNiaFQDAAATYmpWAwAAE2JsWAMAABNibloDAAAZkwPbv5IidJJichJvv8A/wD/AP8ATYmxgAEAAEm+AP8A/wD/AP9NibGIAQAASb7//wAA//8AAE2JsZABAABMic5IgcYABAAASb8QAAAAAAAAAA=="
 20:
@@ -33,23 +62,13 @@ jmp 22f
 22:
 .base64 "ZkwPfvhJi6kAAwAASIkoSYupCAMAAEiJaAhJi5lADAAASYupSAwAAE2LoVAMAABNi6lYDAAATYuxYAwAAE2LuWgMAABBuwAAAABMiVwkCEyJXCQQTIlcJBhMiVwkIEyJXCQoTIlcJDBMiVwkOEyJXCRATIlcJEhMiVwkUEyJXCRYTIlcJGBMiVwkaEyJXCRwTIlcJHhMiZwkgAAAAEyJnCSIAAAATImcJJAAAABMiZwkmAAAAEyJnCSgAAAATImcJKgAAABMiZwksAAAAEyJnCS4AAAATImcJMAAAABMiZwkyAAAAEyJnCTQAAAATImcJNgAAABMiZwk4AAAAEyJnCToAAAATImcJPAAAABMiZwk+AAAAEyJnCQAAQAATImcJAgBAABMiZwkEAEAAEyJnCQYAQAATImcJCABAABMiZwkKAEAAEyJnCQwAQAATImcJDgBAABMiZwkQAEAAEyJnCRIAQAATImcJFABAABMiZwkWAEAAEyJnCRgAQAATImcJGgBAABMiZwkcAEAAEyJnCR4AQAATImcJIABAABMiZwkiAEAAEyJnCSQAQAATImcJJgBAABMiZwkoAEAAEyJnCSoAQAATImcJLABAABMiZwkuAEAAEyJnCTAAQAATImcJMgBAABMiZwk0AEAAEyJnCTYAQAATImcJOABAABMiZwk6AEAAEyJnCTwAQAATImcJPgBAABMiZwkAAIAAEyJnCQIAgAATImcJBACAABMiZwkGAIAAEyJnCQgAgAATImcJCgCAABMiZwkMAIAAEyJnCQ4AgAATImcJEACAABMiZwkSAIAAEyJnCRQAgAATImcJFgCAABMiZwkYAIAAEyJnCRoAgAATImcJHACAABMiZwkeAIAAEyJnCSAAgAATImcJIgCAABMiZwkkAIAAEyJnCSYAgAATImcJKACAABMiZwkqAIAAEyJnCSwAgAATImcJLgCAABMiZwkwAIAAEyJnCTIAgAATImcJNACAABMiZwk2AIAAEyJnCTgAgAATImcJOgCAABMiZwk8AIAAEyJnCT4AgAATImcJAADAABMiZwkCAMAAEyJnCQQAwAATImcJBgDAABMiZwkIAMAAEyJnCQoAwAATImcJDADAABMiZwkOAMAAEyJnCRAAwAATImcJEgDAABMiZwkUAMAAEyJnCRYAwAATImcJGADAABMiZwkaAMAAEyJnCRwAwAATImcJHgDAABMiZwkgAMAAEyJnCSIAwAATImcJJADAABMiZwkmAMAAEyJnCSgAwAATImcJKgDAABMiZwksAMAAEyJnCS4AwAATImcJMADAABMiZwkyAMAAEyJnCTQAwAATImcJNgDAABMiZwk4AMAAEyJnCToAwAATImcJPADAABMiZwk+AMAAEyJnCQABAAATImcJAgEAABMiZwkEAQAAEyJnCQYBAAATImcJCAEAABMiZwkKAQAAEyJnCQwBAAATImcJDgEAABMiZwkQAQAAEyJnCRIBAAATImcJFAEAABMiZwkWAQAAEyJnCRgBAAATImcJGgEAABMiZwkcAQAAEyJnCR4BAAATImcJIAEAABMiZwkiAQAAEyJnCSQBAAATImcJJgEAABMiZwkoAQAAEyJnCSoBAAATImcJLAEAABMiZwkuAQAAEyJnCTABAAATImcJMgEAABMiZwk0AQAAEyJnCTYBAAATImcJOAEAABMiZwk6AQAAEyJnCTwBAAATImcJPgEAABMiZwkAAUAAEyJnCQIBQAATImcJBAFAABMiZwkGAUAAEyJnCQgBQAATImcJCgFAABMiZwkMAUAAEyJnCQ4BQAATImcJEAFAABMiZwkSAUAAEyJnCRQBQAATImcJFgFAABMiZwkYAUAAEyJnCRoBQAATImcJHAFAABMiZwkeAUAAEyJnCSABQAATImcJIgFAABMiZwkkAUAAEyJnCSYBQAATImcJKAFAABMiZwkqAUAAEyJnCSwBQAATImcJLgFAABMiZwkwAUAAEyJnCTIBQAATImcJNAFAABMiZwk2AUAAEyJnCTgBQAATImcJOgFAABMiZwk8AUAAEyJnCT4BQAATImcJAAGAABMiZwkCAYAAEyJnCQQBgAATImcJBgGAABMiZwkIAYAAEyJnCQoBgAATImcJDAGAABMiZwkOAYAAEyJnCRABgAATImcJEgGAABMiZwkUAYAAEyJnCRYBgAATImcJGAGAABMiZwkaAYAAEyJnCRwBgAATImcJHgGAABMiZwkgAYAAEyJnCSIBgAATImcJJAGAABMiZwkmAYAAEyJnCSgBgAATImcJKgGAABMiZwksAYAAEyJnCS4BgAATImcJMAGAABMiZwkyAYAAEyJnCTQBgAATImcJNgGAABMiZwk4AYAAEyJnCToBgAATImcJPAGAABMiZwk+AYAAEyJnCQABwAATImcJAgHAABMiZwkEAcAAEyJnCQYBwAATImcJCAHAABMiZwkKAcAAEyJnCQwBwAATImcJDgHAABMiZwkQAcAAEyJnCRIBwAATImcJFAHAABMiZwkWAcAAEyJnCRgBwAATImcJGgHAABMiZwkcAcAAEyJnCR4BwAATImcJIAHAABMiZwkiAcAAEyJnCSQBwAATImcJJgHAABMiZwkoAcAAEyJnCSoBwAATImcJLAHAABMiZwkuAcAAEyJnCTABwAATImcJMgHAABMiZwk0AcAAEyJnCTYBwAATImcJOAHAABMiZwk6AcAAEyJnCTwBwAATImcJPgHAABMiZwkAAgAAEyJnCQICAAATImcJBAIAABMiZwkGAgAAEyJnCQgCAAATImcJCgIAABMiZwkMAgAAEyJnCQ4CAAATImcJEAIAABMiZwkSAgAAEyJnCRQCAAATImcJFgIAABMiZwkYAgAAEyJnCRoCAAATImcJHAIAABMiZwkeAgAAEyJnCSACAAATImcJIgIAABMiZwkkAgAAEyJnCSYCAAATImcJKAIAABMiZwkqAgAAEyJnCSwCAAATImcJLgIAABMiZwkwAgAAEyJnCTICAAATImcJNAIAABMiZwk2AgAAEyJnCTgCAAATImcJOgIAABMiZwk8AgAAEyJnCT4CAAATImcJAAJAABMiZwkCAkAAEyJnCQQCQAATImcJBgJAABMiZwkIAkAAEyJnCQoCQAATImcJDAJAABMiZwkOAkAAEyJnCRACQAATImcJEgJAABMiZwkUAkAAEyJnCRYCQAATImcJGAJAABMiZwkaAkAAEyJnCRwCQAATImcJHgJAABMiZwkgAkAAEyJnCSICQAATImcJJAJAABMiZwkmAkAAEyJnCSgCQAATImcJKgJAABMiZwksAkAAEyJnCS4CQAATImcJMAJAABMiZwkyAkAAEyJnCTQCQAATImcJNgJAABMiZwk4AkAAEyJnCToCQAATImcJPAJAABMiZwk+AkAAEyJnCQACgAATImcJAgKAABMiZwkEAoAAEyJnCQYCgAATImcJCAKAABMiZwkKAoAAEyJnCQwCgAATImcJDgKAABMiZwkQAoAAEyJnCRICgAATImcJFAKAABMiZwkWAoAAEyJnCRgCgAATImcJGgKAABMiZwkcAoAAEyJnCR4CgAATImcJIAKAABMiZwkiAoAAEyJnCSQCgAATImcJJgKAABMiZwkoAoAAEyJnCSoCgAATImcJLAKAABMiZwkuAoAAEyJnCTACgAATImcJMgKAABMiZwk0AoAAEyJnCTYCgAATImcJOAKAABMiZwk6AoAAEyJnCTwCgAATImcJPgKAABMiZwkAAsAAEyJnCQICwAATImcJBALAABMiZwkGAsAAEyJnCQgCwAATImcJCgLAABMiZwkMAsAAEyJnCQ4CwAATImcJEALAABMiZwkSAsAAEyJnCRQCwAATImcJFgLAABMiZwkYAsAAEyJnCRoCwAATImcJHALAABMiZwkeAsAAEyJnCSACwAATImcJIgLAABMiZwkkAsAAEyJnCSYCwAATImcJKALAABMiZwkqAsAAEyJnCSwCwAATImcJLgLAABMiZwkwAsAAEyJnCTICwAATImcJNALAABMiZwk2AsAAEyJnCTgCwAATImcJOgLAABMiZwk8AsAAEyJnCT4CwAATImcJAAMAABMiZwkCAwAAEyJnCQQDAAATImcJBgMAABMiZwkIAwAAEyJnCQoDAAATImcJDAMAABMiZwkOAwAAEyJnCRADAAATImcJEgMAABMiZwkUAwAAEyJnCRYDAAATImcJGAMAABMiZwkaAwAAEyJnCRwDAAATImcJHgMAABMiZwkgAwAAEiNpCSIDAAAww=="
 .p2align 6"#,
-        vg_sm4_crypt_prepared = sym super::sm4::vg_sm4_crypt_prepared::vg_sm4_crypt_prepared,
+        vg_sm4_crypt_prepared = sym crate::sm4::vg_sm4_crypt_prepared::vg_sm4_crypt_prepared,
     )
 }
 
-/// SM4-OFB encryption or decryption (NIST SP 800-38A §6.4, GB/T 32907-2016 §7.1) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)`, where `O₀` is the block at `*iv`, a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*iv` with the last output block used, `Oₙ` (leaving it unchanged if `len = 0`): so that a further call continues the message if `len` is a multiple of 16, and otherwise keystream, to be wiped, after which the message must end. `CIPH_K` is SM4 encryption under the schedule written by `vg_sm4_expand_key`.
-///
-/// Contract: `VG.Spec.Sm4.ofbFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the chaining value or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 128 bytes.
-/// * `iv` must be valid for reads and writes of 16 bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 3216 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_sm4_ofb_final`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_sm4_ofb_final(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_sm4_ofb_final(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJHjz//9JieBJg8AITYnBSYmZQAwAAEmJqUgMAABNiaFQDAAATYmpWAwAAE2JsWAMAABNibloDAAAZkwPbv5IidJJichJvv8A/wD/AP8ATYmxgAEAAEm+AP8A/wD/AP9NibGIAQAASb7//wAA//8AAE2JsZABAABMic5IgcYABAAASb8QAAAAAAAAAA=="
 20:
@@ -76,6 +95,7 @@ jmp 22f
 22:
 .base64 "ZkwPfvhJi6kAAwAASIkoSYupCAMAAEiJaAhJi5lADAAASYupSAwAAE2LoVAMAABNi6lYDAAATYuxYAwAAE2LuWgMAABBuwAAAABMiVwkCEyJXCQQTIlcJBhMiVwkIEyJXCQoTIlcJDBMiVwkOEyJXCRATIlcJEhMiVwkUEyJXCRYTIlcJGBMiVwkaEyJXCRwTIlcJHhMiZwkgAAAAEyJnCSIAAAATImcJJAAAABMiZwkmAAAAEyJnCSgAAAATImcJKgAAABMiZwksAAAAEyJnCS4AAAATImcJMAAAABMiZwkyAAAAEyJnCTQAAAATImcJNgAAABMiZwk4AAAAEyJnCToAAAATImcJPAAAABMiZwk+AAAAEyJnCQAAQAATImcJAgBAABMiZwkEAEAAEyJnCQYAQAATImcJCABAABMiZwkKAEAAEyJnCQwAQAATImcJDgBAABMiZwkQAEAAEyJnCRIAQAATImcJFABAABMiZwkWAEAAEyJnCRgAQAATImcJGgBAABMiZwkcAEAAEyJnCR4AQAATImcJIABAABMiZwkiAEAAEyJnCSQAQAATImcJJgBAABMiZwkoAEAAEyJnCSoAQAATImcJLABAABMiZwkuAEAAEyJnCTAAQAATImcJMgBAABMiZwk0AEAAEyJnCTYAQAATImcJOABAABMiZwk6AEAAEyJnCTwAQAATImcJPgBAABMiZwkAAIAAEyJnCQIAgAATImcJBACAABMiZwkGAIAAEyJnCQgAgAATImcJCgCAABMiZwkMAIAAEyJnCQ4AgAATImcJEACAABMiZwkSAIAAEyJnCRQAgAATImcJFgCAABMiZwkYAIAAEyJnCRoAgAATImcJHACAABMiZwkeAIAAEyJnCSAAgAATImcJIgCAABMiZwkkAIAAEyJnCSYAgAATImcJKACAABMiZwkqAIAAEyJnCSwAgAATImcJLgCAABMiZwkwAIAAEyJnCTIAgAATImcJNACAABMiZwk2AIAAEyJnCTgAgAATImcJOgCAABMiZwk8AIAAEyJnCT4AgAATImcJAADAABMiZwkCAMAAEyJnCQQAwAATImcJBgDAABMiZwkIAMAAEyJnCQoAwAATImcJDADAABMiZwkOAMAAEyJnCRAAwAATImcJEgDAABMiZwkUAMAAEyJnCRYAwAATImcJGADAABMiZwkaAMAAEyJnCRwAwAATImcJHgDAABMiZwkgAMAAEyJnCSIAwAATImcJJADAABMiZwkmAMAAEyJnCSgAwAATImcJKgDAABMiZwksAMAAEyJnCS4AwAATImcJMADAABMiZwkyAMAAEyJnCTQAwAATImcJNgDAABMiZwk4AMAAEyJnCToAwAATImcJPADAABMiZwk+AMAAEyJnCQABAAATImcJAgEAABMiZwkEAQAAEyJnCQYBAAATImcJCAEAABMiZwkKAQAAEyJnCQwBAAATImcJDgEAABMiZwkQAQAAEyJnCRIBAAATImcJFAEAABMiZwkWAQAAEyJnCRgBAAATImcJGgEAABMiZwkcAQAAEyJnCR4BAAATImcJIAEAABMiZwkiAQAAEyJnCSQBAAATImcJJgEAABMiZwkoAQAAEyJnCSoBAAATImcJLAEAABMiZwkuAQAAEyJnCTABAAATImcJMgEAABMiZwk0AQAAEyJnCTYBAAATImcJOAEAABMiZwk6AQAAEyJnCTwBAAATImcJPgEAABMiZwkAAUAAEyJnCQIBQAATImcJBAFAABMiZwkGAUAAEyJnCQgBQAATImcJCgFAABMiZwkMAUAAEyJnCQ4BQAATImcJEAFAABMiZwkSAUAAEyJnCRQBQAATImcJFgFAABMiZwkYAUAAEyJnCRoBQAATImcJHAFAABMiZwkeAUAAEyJnCSABQAATImcJIgFAABMiZwkkAUAAEyJnCSYBQAATImcJKAFAABMiZwkqAUAAEyJnCSwBQAATImcJLgFAABMiZwkwAUAAEyJnCTIBQAATImcJNAFAABMiZwk2AUAAEyJnCTgBQAATImcJOgFAABMiZwk8AUAAEyJnCT4BQAATImcJAAGAABMiZwkCAYAAEyJnCQQBgAATImcJBgGAABMiZwkIAYAAEyJnCQoBgAATImcJDAGAABMiZwkOAYAAEyJnCRABgAATImcJEgGAABMiZwkUAYAAEyJnCRYBgAATImcJGAGAABMiZwkaAYAAEyJnCRwBgAATImcJHgGAABMiZwkgAYAAEyJnCSIBgAATImcJJAGAABMiZwkmAYAAEyJnCSgBgAATImcJKgGAABMiZwksAYAAEyJnCS4BgAATImcJMAGAABMiZwkyAYAAEyJnCTQBgAATImcJNgGAABMiZwk4AYAAEyJnCToBgAATImcJPAGAABMiZwk+AYAAEyJnCQABwAATImcJAgHAABMiZwkEAcAAEyJnCQYBwAATImcJCAHAABMiZwkKAcAAEyJnCQwBwAATImcJDgHAABMiZwkQAcAAEyJnCRIBwAATImcJFAHAABMiZwkWAcAAEyJnCRgBwAATImcJGgHAABMiZwkcAcAAEyJnCR4BwAATImcJIAHAABMiZwkiAcAAEyJnCSQBwAATImcJJgHAABMiZwkoAcAAEyJnCSoBwAATImcJLAHAABMiZwkuAcAAEyJnCTABwAATImcJMgHAABMiZwk0AcAAEyJnCTYBwAATImcJOAHAABMiZwk6AcAAEyJnCTwBwAATImcJPgHAABMiZwkAAgAAEyJnCQICAAATImcJBAIAABMiZwkGAgAAEyJnCQgCAAATImcJCgIAABMiZwkMAgAAEyJnCQ4CAAATImcJEAIAABMiZwkSAgAAEyJnCRQCAAATImcJFgIAABMiZwkYAgAAEyJnCRoCAAATImcJHAIAABMiZwkeAgAAEyJnCSACAAATImcJIgIAABMiZwkkAgAAEyJnCSYCAAATImcJKAIAABMiZwkqAgAAEyJnCSwCAAATImcJLgIAABMiZwkwAgAAEyJnCTICAAATImcJNAIAABMiZwk2AgAAEyJnCTgCAAATImcJOgIAABMiZwk8AgAAEyJnCT4CAAATImcJAAJAABMiZwkCAkAAEyJnCQQCQAATImcJBgJAABMiZwkIAkAAEyJnCQoCQAATImcJDAJAABMiZwkOAkAAEyJnCRACQAATImcJEgJAABMiZwkUAkAAEyJnCRYCQAATImcJGAJAABMiZwkaAkAAEyJnCRwCQAATImcJHgJAABMiZwkgAkAAEyJnCSICQAATImcJJAJAABMiZwkmAkAAEyJnCSgCQAATImcJKgJAABMiZwksAkAAEyJnCS4CQAATImcJMAJAABMiZwkyAkAAEyJnCTQCQAATImcJNgJAABMiZwk4AkAAEyJnCToCQAATImcJPAJAABMiZwk+AkAAEyJnCQACgAATImcJAgKAABMiZwkEAoAAEyJnCQYCgAATImcJCAKAABMiZwkKAoAAEyJnCQwCgAATImcJDgKAABMiZwkQAoAAEyJnCRICgAATImcJFAKAABMiZwkWAoAAEyJnCRgCgAATImcJGgKAABMiZwkcAoAAEyJnCR4CgAATImcJIAKAABMiZwkiAoAAEyJnCSQCgAATImcJJgKAABMiZwkoAoAAEyJnCSoCgAATImcJLAKAABMiZwkuAoAAEyJnCTACgAATImcJMgKAABMiZwk0AoAAEyJnCTYCgAATImcJOAKAABMiZwk6AoAAEyJnCTwCgAATImcJPgKAABMiZwkAAsAAEyJnCQICwAATImcJBALAABMiZwkGAsAAEyJnCQgCwAATImcJCgLAABMiZwkMAsAAEyJnCQ4CwAATImcJEALAABMiZwkSAsAAEyJnCRQCwAATImcJFgLAABMiZwkYAsAAEyJnCRoCwAATImcJHALAABMiZwkeAsAAEyJnCSACwAATImcJIgLAABMiZwkkAsAAEyJnCSYCwAATImcJKALAABMiZwkqAsAAEyJnCSwCwAATImcJLgLAABMiZwkwAsAAEyJnCTICwAATImcJNALAABMiZwk2AsAAEyJnCTgCwAATImcJOgLAABMiZwk8AsAAEyJnCT4CwAATImcJAAMAABMiZwkCAwAAEyJnCQQDAAATImcJBgMAABMiZwkIAwAAEyJnCQoDAAATImcJDAMAABMiZwkOAwAAEyJnCRADAAATImcJEgMAABMiZwkUAwAAEyJnCRYDAAATImcJGAMAABMiZwkaAwAAEyJnCRwDAAATImcJHgMAABMiZwkgAwAAEiNpCSIDAAAww=="
 .p2align 6"#,
-        vg_sm4_crypt_prepared = sym super::sm4::vg_sm4_crypt_prepared::vg_sm4_crypt_prepared,
+        vg_sm4_crypt_prepared = sym crate::sm4::vg_sm4_crypt_prepared::vg_sm4_crypt_prepared,
     )
+}
 }

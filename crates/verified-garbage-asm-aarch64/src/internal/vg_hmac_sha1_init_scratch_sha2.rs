@@ -41,7 +41,7 @@ bl {vg_sha1_compress_sha2}
 bl {vg_sha1_compress_sha2}
 .inst 0xf94052f3,0xf94056f4,0xf9405af5,0xf9405ef6,0xf94062f8,0xf94066fe,0xf9406af7,0xd65f03c0
 .p2align 6",
-        vg_sha1_init = sym crate::sha1::vg_sha1_init,
+        vg_sha1_init = sym crate::sha1::raw::vg_sha1_init,
         vg_sha1_compress_sha2 = sym crate::sha1::vg_sha1_compress_sha2::vg_sha1_compress_sha2,
     )
 }

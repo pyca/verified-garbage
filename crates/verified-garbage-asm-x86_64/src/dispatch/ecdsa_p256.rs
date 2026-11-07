@@ -23,15 +23,15 @@
 /// * `hmac` must be the `as_ptr()` of one of the `Hmac` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_ecdsa_p256_sign_auto(out: *mut [u8; 64], d: *const [u8; 32], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32 {
+pub unsafe fn vg_ecdsa_p256_sign_auto(dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 64], d: *const [u8; 32], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32 {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::ecdsa_p256::VG_ECDSA_P256_SIGN_ADX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_ecdsa_p256_sign_adx`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::ecdsa_p256::vg_ecdsa_p256_sign_adx(out, d, digest, digest_len, scratch, hmac) };
+        return unsafe { crate::ecdsa_p256::vg_ecdsa_p256_sign_adx(dit, out, d, digest, digest_len, scratch, hmac) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::ecdsa_p256::vg_ecdsa_p256_sign(out, d, digest, digest_len, scratch, hmac) }
+    unsafe { crate::ecdsa_p256::vg_ecdsa_p256_sign(dit, out, d, digest, digest_len, scratch, hmac) }
 }
 
 /// ECDSA signature verification over P-256 (FIPS 186-5 §6.4.2): whether the signature at `sig` (`r` then `s`, 32 bytes each, most significant first) of the hash at `digest` (`digest_len` bytes, the hash function's output, of any length; `e` is its leftmost 256 bits, or all of it if it is shorter) verifies with the public key at `public`, which must be a valid public key in the uncompressed form of SEC 1 §2.3.3 (`04`, then `x` and `y` in 32 bytes each, most significant first, both below `p`, on the curve; SP 800-56A §5.6.2.3.3). Returns 1 if it does, and 0 if it does not or the public key is not valid.
@@ -51,13 +51,13 @@ pub unsafe fn vg_ecdsa_p256_sign_auto(out: *mut [u8; 64], d: *const [u8; 32], di
 /// * None of `public`, `digest`, `sig` and `scratch` may overlap the return address on the stack or the 96 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_ecdsa_p256_verify_auto(public: *const [u8; 65], digest: *const u8, digest_len: usize, sig: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe fn vg_ecdsa_p256_verify_auto(dit: verified_garbage_cpu::Dit<'_>, public: *const [u8; 65], digest: *const u8, digest_len: usize, sig: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::ecdsa_p256::VG_ECDSA_P256_VERIFY_ADX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_ecdsa_p256_verify_adx`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::ecdsa_p256::vg_ecdsa_p256_verify_adx(public, digest, digest_len, sig, scratch) };
+        return unsafe { crate::ecdsa_p256::vg_ecdsa_p256_verify_adx(dit, public, digest, digest_len, sig, scratch) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::ecdsa_p256::vg_ecdsa_p256_verify(public, digest, digest_len, sig, scratch) }
+    unsafe { crate::ecdsa_p256::vg_ecdsa_p256_verify(dit, public, digest, digest_len, sig, scratch) }
 }

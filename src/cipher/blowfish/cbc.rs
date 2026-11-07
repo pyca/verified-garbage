@@ -86,13 +86,14 @@ impl BlowfishCbcDecryptor {
 impl Key {
     /// Expands a key of 4..=56 bytes (32 to 448 bits). Weak keys are accepted.
     fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
+        crate::dit::enter!(dit);
         if !(4..=56).contains(&key.len()) {
             return Err(InvalidKeyLength);
         }
         let mut schedule = [0; 4168];
         // SAFETY: the key has a length in 4..=56; the key and the schedule
         // are separate valid objects of the lengths passed.
-        unsafe { vg_blowfish_expand_key(key.as_ptr(), key.len(), &mut schedule) };
+        unsafe { vg_blowfish_expand_key(dit, key.as_ptr(), key.len(), &mut schedule) };
         Ok(Self { schedule })
     }
 
@@ -102,6 +103,7 @@ impl Key {
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of eight.
     fn encrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
+        crate::dit::enter!(dit);
         if !buffer.len().is_multiple_of(8) {
             return Err(IncompleteBlock);
         }
@@ -111,6 +113,7 @@ impl Key {
         // the callee's stack.
         unsafe {
             vg_blowfish_cbc_encrypt_chained(
+                dit,
                 &self.schedule,
                 iv,
                 buffer.as_mut_ptr().cast(),
@@ -126,12 +129,14 @@ impl Key {
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of eight.
     fn decrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
+        crate::dit::enter!(dit);
         if !buffer.len().is_multiple_of(8) {
             return Err(IncompleteBlock);
         }
         // SAFETY: as in `encrypt`.
         unsafe {
             vg_blowfish_cbc_decrypt_chained(
+                dit,
                 &self.schedule,
                 iv,
                 buffer.as_mut_ptr().cast(),

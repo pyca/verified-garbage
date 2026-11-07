@@ -14,8 +14,53 @@
 /// * `key_len` must be 16 or 24.
 /// * `schedule` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `schedule` may wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_triple_des_expand_key(_dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, schedule: *mut [u8; 384]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_triple_des_expand_key(key, key_len, schedule) }
+}
+
+/// Triple DES ECB encryption (SP 800-38A §6.1) of `n` complete 8-byte blocks at `data`, in place, under the schedule written by `vg_triple_des_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
+///
+/// Contract: `VG.Spec.TripleDes.ecbEncryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 384 bytes.
+/// * `data` must be valid for reads and writes of `8 * n` bytes.
+/// * `data` must not overlap `schedule` (distinct Rust objects never do).
+/// * Neither `schedule` nor `data` may overlap the 1056 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_triple_des_ecb_encrypt(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_triple_des_ecb_encrypt(schedule, data, n) }
+}
+
+/// Triple DES ECB decryption (SP 800-38A §6.1) of `n` complete 8-byte blocks at `data`, in place, under the schedule written by `vg_triple_des_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
+///
+/// Contract: `VG.Spec.TripleDes.ecbDecryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 384 bytes.
+/// * `data` must be valid for reads and writes of `8 * n` bytes.
+/// * `data` must not overlap `schedule` (distinct Rust objects never do).
+/// * Neither `schedule` nor `data` may overlap the 1056 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_triple_des_ecb_decrypt(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_triple_des_ecb_decrypt(schedule, data, n) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_triple_des_expand_key`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_triple_des_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 384]) {
+pub(crate) unsafe extern "C" fn vg_triple_des_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 384]) {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
@@ -1602,18 +1647,9 @@ bnez t2, 223b
     )
 }
 
-/// Triple DES ECB encryption (SP 800-38A §6.1) of `n` complete 8-byte blocks at `data`, in place, under the schedule written by `vg_triple_des_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
-///
-/// Contract: `VG.Spec.TripleDes.ecbEncryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 384 bytes.
-/// * `data` must be valid for reads and writes of `8 * n` bytes.
-/// * `data` must not overlap `schedule` (distinct Rust objects never do).
-/// * Neither `schedule` nor `data` may overlap the 1056 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_triple_des_ecb_encrypt`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_triple_des_ecb_encrypt(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
+pub(crate) unsafe extern "C" fn vg_triple_des_ecb_encrypt(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
@@ -9274,18 +9310,9 @@ j 21f
     )
 }
 
-/// Triple DES ECB decryption (SP 800-38A §6.1) of `n` complete 8-byte blocks at `data`, in place, under the schedule written by `vg_triple_des_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
-///
-/// Contract: `VG.Spec.TripleDes.ecbDecryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 384 bytes.
-/// * `data` must be valid for reads and writes of `8 * n` bytes.
-/// * `data` must not overlap `schedule` (distinct Rust objects never do).
-/// * Neither `schedule` nor `data` may overlap the 1056 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_triple_des_ecb_decrypt`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_triple_des_ecb_decrypt(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
+pub(crate) unsafe extern "C" fn vg_triple_des_ecb_decrypt(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
@@ -16944,6 +16971,7 @@ j 21f
 .insn 2, 0x8082
 .option pop",
     )
+}
 }
 
 #[rustfmt::skip]

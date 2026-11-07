@@ -7,6 +7,6 @@ pub const VG_HASH_SHA224_SHANI_FEATURES: verified_garbage_cpu::Features = verifi
 
 /// The table of functions `VG_HASH_SHA224_SHANI` of the interface `Hash`: `vg_sha224_init`, `vg_sha256_update_scratch_shani`, `vg_sha256_finalize_scratch_shani`, then the data 2, 28.
 pub static VG_HASH_SHA224_SHANI: super::Hash = super::Hash {
-    fns: [crate::sha256::vg_sha224_init as *const (), crate::sha256::vg_sha256_update_scratch_shani::vg_sha256_update_scratch_shani as *const (), crate::sha256::vg_sha256_finalize_scratch_shani::vg_sha256_finalize_scratch_shani as *const ()],
+    fns: [crate::sha256::raw::vg_sha224_init as *const (), crate::sha256::vg_sha256_update_scratch_shani::vg_sha256_update_scratch_shani as *const (), crate::sha256::vg_sha256_finalize_scratch_shani::vg_sha256_finalize_scratch_shani as *const ()],
     data: [2, 28],
 };

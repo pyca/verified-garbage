@@ -18,16 +18,16 @@
 /// * None of `out`, `public` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_ec_secp256k1_compress_public_key_auto(out: *mut [u8; 33], public: *const [u8; 65], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe fn vg_ec_secp256k1_compress_public_key_auto(dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 33], public: *const [u8; 65], scratch: *mut [u64; 1024]) -> u32 {
     let cpu = verified_garbage_cpu::detected();
     #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
     if cpu.contains(crate::ec_secp256k1_compressed::VG_EC_SECP256K1_COMPRESS_PUBLIC_KEY_UMAAL_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_ec_secp256k1_compress_public_key_umaal`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::ec_secp256k1_compressed::vg_ec_secp256k1_compress_public_key_umaal(out, public, scratch) };
+        return unsafe { crate::ec_secp256k1_compressed::vg_ec_secp256k1_compress_public_key_umaal(dit, out, public, scratch) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::ec_secp256k1_compressed::vg_ec_secp256k1_compress_public_key(out, public, scratch) }
+    unsafe { crate::ec_secp256k1_compressed::vg_ec_secp256k1_compress_public_key(dit, out, public, scratch) }
 }
 
 /// Validate and decompress a secp256k1 public key (SEC 1 §2.3.4, SP 800-56A §5.6.2.3.3): reads `02` or `03` followed by `x` in 32 bytes, most significant first; checks `x` below the field prime and recovers a coordinate `y` satisfying the curve equation with even parity for `02`, odd for `03`. Writes `04` followed by `x` and `y` in 32 bytes each and returns 1. If no such finite point exists, writes 65 zero bytes and returns 0. Rejects infinity and hybrid encodings. The curve has cofactor one, so no subgroup multiplication is required.
@@ -46,14 +46,14 @@ pub unsafe fn vg_ec_secp256k1_compress_public_key_auto(out: *mut [u8; 33], publi
 /// * None of `out`, `public` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_ec_secp256k1_decompress_public_key_auto(out: *mut [u8; 65], public: *const [u8; 33], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe fn vg_ec_secp256k1_decompress_public_key_auto(dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 65], public: *const [u8; 33], scratch: *mut [u64; 1024]) -> u32 {
     let cpu = verified_garbage_cpu::detected();
     #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
     if cpu.contains(crate::ec_secp256k1_compressed::VG_EC_SECP256K1_DECOMPRESS_PUBLIC_KEY_UMAAL_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_ec_secp256k1_decompress_public_key_umaal`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::ec_secp256k1_compressed::vg_ec_secp256k1_decompress_public_key_umaal(out, public, scratch) };
+        return unsafe { crate::ec_secp256k1_compressed::vg_ec_secp256k1_decompress_public_key_umaal(dit, out, public, scratch) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::ec_secp256k1_compressed::vg_ec_secp256k1_decompress_public_key(out, public, scratch) }
+    unsafe { crate::ec_secp256k1_compressed::vg_ec_secp256k1_decompress_public_key(dit, out, public, scratch) }
 }

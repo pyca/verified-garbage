@@ -22,75 +22,75 @@
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_gcm_siv_seal_auto(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe fn vg_aes_gcm_siv_seal_auto(dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_AVX512_AVX2_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_seal_vaes_vpclmul_avx512_avx2`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_seal_vaes_vpclmul_avx512_avx2(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
+        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_seal_vaes_vpclmul_avx512_avx2(dit, schedule, rounds, nonce, aad, aad_len, data, len, tag) };
     }
     if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_VAES_PCLMUL_AVX2_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_seal_vaes_pclmul_avx2`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_seal_vaes_pclmul_avx2(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
+        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_seal_vaes_pclmul_avx2(dit, schedule, rounds, nonce, aad, aad_len, data, len, tag) };
     }
     if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_VPCLMUL_AVX2_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_seal_aesni_vpclmul_avx2`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_seal_aesni_vpclmul_avx2(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
+        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_seal_aesni_vpclmul_avx2(dit, schedule, rounds, nonce, aad, aad_len, data, len, tag) };
     }
     if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_AVX_AVX2_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_seal_aesni_pclmul_avx_avx2`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_seal_aesni_pclmul_avx_avx2(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
+        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_seal_aesni_pclmul_avx_avx2(dit, schedule, rounds, nonce, aad, aad_len, data, len, tag) };
     }
     if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_AVX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_seal_aesni_pclmul_avx`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_seal_aesni_pclmul_avx(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
+        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_seal_aesni_pclmul_avx(dit, schedule, rounds, nonce, aad, aad_len, data, len, tag) };
     }
     if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_seal_aesni_pclmul`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_seal_aesni_pclmul(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
+        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_seal_aesni_pclmul(dit, schedule, rounds, nonce, aad, aad_len, data, len, tag) };
     }
     if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_VAES_AVX2_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_seal_vaes_avx2`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_seal_vaes_avx2(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
+        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_seal_vaes_avx2(dit, schedule, rounds, nonce, aad, aad_len, data, len, tag) };
     }
     if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_AVX2_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_seal_aesni_avx2`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_seal_aesni_avx2(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
+        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_seal_aesni_avx2(dit, schedule, rounds, nonce, aad, aad_len, data, len, tag) };
     }
     if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_seal_aesni`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_seal_aesni(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
+        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_seal_aesni(dit, schedule, rounds, nonce, aad, aad_len, data, len, tag) };
     }
     if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_VPCLMUL_AVX2_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_seal_vpclmul_avx2`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_seal_vpclmul_avx2(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
+        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_seal_vpclmul_avx2(dit, schedule, rounds, nonce, aad, aad_len, data, len, tag) };
     }
     if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_PCLMUL_AVX2_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_seal_pclmul_avx2`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_seal_pclmul_avx2(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
+        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_seal_pclmul_avx2(dit, schedule, rounds, nonce, aad, aad_len, data, len, tag) };
     }
     if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_PCLMUL_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_seal_pclmul`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_seal_pclmul(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
+        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_seal_pclmul(dit, schedule, rounds, nonce, aad, aad_len, data, len, tag) };
     }
     if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AVX2_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_seal_avx2`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_seal_avx2(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
+        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_seal_avx2(dit, schedule, rounds, nonce, aad, aad_len, data, len, tag) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_seal(schedule, rounds, nonce, aad, aad_len, data, len, tag) }
+    unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_seal(dit, schedule, rounds, nonce, aad, aad_len, data, len, tag) }
 }
 
 /// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
@@ -113,73 +113,73 @@ pub unsafe fn vg_aes_gcm_siv_seal_auto(schedule: *const [u8; 240], rounds: usize
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_gcm_siv_open_auto(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub unsafe fn vg_aes_gcm_siv_open_auto(dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_AVX512_AVX2_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_open_vaes_vpclmul_avx512_avx2`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_open_vaes_vpclmul_avx512_avx2(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
+        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_open_vaes_vpclmul_avx512_avx2(dit, schedule, rounds, nonce, aad, aad_len, data, len, tag) };
     }
     if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_VAES_PCLMUL_AVX2_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_open_vaes_pclmul_avx2`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_open_vaes_pclmul_avx2(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
+        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_open_vaes_pclmul_avx2(dit, schedule, rounds, nonce, aad, aad_len, data, len, tag) };
     }
     if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_VPCLMUL_AVX2_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_open_aesni_vpclmul_avx2`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_open_aesni_vpclmul_avx2(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
+        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_open_aesni_vpclmul_avx2(dit, schedule, rounds, nonce, aad, aad_len, data, len, tag) };
     }
     if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX_AVX2_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_open_aesni_pclmul_avx_avx2`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_open_aesni_pclmul_avx_avx2(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
+        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_open_aesni_pclmul_avx_avx2(dit, schedule, rounds, nonce, aad, aad_len, data, len, tag) };
     }
     if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_open_aesni_pclmul_avx`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_open_aesni_pclmul_avx(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
+        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_open_aesni_pclmul_avx(dit, schedule, rounds, nonce, aad, aad_len, data, len, tag) };
     }
     if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_open_aesni_pclmul`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_open_aesni_pclmul(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
+        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_open_aesni_pclmul(dit, schedule, rounds, nonce, aad, aad_len, data, len, tag) };
     }
     if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_VAES_AVX2_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_open_vaes_avx2`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_open_vaes_avx2(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
+        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_open_vaes_avx2(dit, schedule, rounds, nonce, aad, aad_len, data, len, tag) };
     }
     if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_AVX2_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_open_aesni_avx2`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_open_aesni_avx2(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
+        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_open_aesni_avx2(dit, schedule, rounds, nonce, aad, aad_len, data, len, tag) };
     }
     if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_open_aesni`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_open_aesni(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
+        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_open_aesni(dit, schedule, rounds, nonce, aad, aad_len, data, len, tag) };
     }
     if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_VPCLMUL_AVX2_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_open_vpclmul_avx2`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_open_vpclmul_avx2(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
+        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_open_vpclmul_avx2(dit, schedule, rounds, nonce, aad, aad_len, data, len, tag) };
     }
     if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_PCLMUL_AVX2_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_open_pclmul_avx2`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_open_pclmul_avx2(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
+        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_open_pclmul_avx2(dit, schedule, rounds, nonce, aad, aad_len, data, len, tag) };
     }
     if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_PCLMUL_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_open_pclmul`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_open_pclmul(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
+        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_open_pclmul(dit, schedule, rounds, nonce, aad, aad_len, data, len, tag) };
     }
     if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AVX2_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_open_avx2`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_open_avx2(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
+        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_open_avx2(dit, schedule, rounds, nonce, aad, aad_len, data, len, tag) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_open(schedule, rounds, nonce, aad, aad_len, data, len, tag) }
+    unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_open(dit, schedule, rounds, nonce, aad, aad_len, data, len, tag) }
 }

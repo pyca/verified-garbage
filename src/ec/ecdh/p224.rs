@@ -15,7 +15,7 @@ use crate::ec::sealed::Exchange;
 use crate::zeroize::zeroize;
 
 impl Exchange for P224 {
-    fn exchange(d: &[u8; 28], peer: &[u8; 57]) -> Option<[u8; 28]> {
+    fn exchange(dit: crate::dit::Dit<'_>, d: &[u8; 28], peer: &[u8; 57]) -> Option<[u8; 28]> {
         let mut out = [0; 28];
         let mut scratch = [0u64; 1024];
         // SAFETY: `out` is valid for reads and writes of 28 bytes, `d` for
@@ -24,7 +24,7 @@ impl Exchange for P224 {
         // other and the others, so none overlaps another or the call's stack
         // frame, and, as Rust objects, none wraps around the address space. The
         // dispatcher calls only an implementation the CPU has the features of.
-        let ok = unsafe { vg_ecdh_p224_auto(&mut out, d, peer, &mut scratch) };
+        let ok = unsafe { vg_ecdh_p224_auto(dit, &mut out, d, peer, &mut scratch) };
         zeroize(&mut scratch);
         (ok == 1).then_some(out)
     }

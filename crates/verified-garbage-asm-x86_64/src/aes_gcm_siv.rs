@@ -23,176 +23,12 @@ pub const VG_AES_GCM_SIV_SEAL_AESNI_FEATURES: verified_garbage_cpu::Features = v
 /// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` and `aes` target features.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_aesni(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAAC7AAAAAEyJ/0iBx+gBAABJi6/IAAAASNHtSIPtAQ=="
-20:
-.base64 "SYuH0AAAAIsISMHhIEgJ2UiLUARmSA9uwWZID27KZg9swfMPfwdIg8cQSIPDAUg56w=="
-jne 20b
-.base64 "TInvSYu3yAAAAEyJ+kiBwugBAABIielNifhJgcDoBgAA"
-call {vg_aes_encrypt_blocks_aesni}
-.base64 "TIn+SIHG6AEAAEyJ/0iDxxBIiek="
-21:
-.base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
-jne 21b
-.base64 "SYtHEEmLVxhIicFIg+EBQbgAAAAASSnISNHoSInRSIPhAUjRyUgJyEjR6ki5AAAAAAAAAOFMIcFIMcpID8pID8hmSA9uwmZID27IZg9swfNBD39HQGYP78DzQQ9/R1BJi4fgAAAASMHoBEmLl/AAAABIweoESAHQSIP4Pg=="
-jae 22f
-.base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
-je 24f
-.base64 "SYneTInx"
-26:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 26b
-jmp 25f
-24:
-25:
-.base64 "SIXt"
-je 27f
-.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
-29:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 29b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
-jmp 28f
-27:
-28:
-.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0yJ5kiF2w=="
-je 210f
-.base64 "SYneTInx"
-212:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 212b
-jmp 211f
-210:
-211:
-.base64 "SIXt"
-je 213f
-.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
-215:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 215b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
-jmp 214f
-213:
-214:
-.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfMPfwdIiflMKflIwekESIPpHUyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAA="
-call {vg_ghash}
-.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
-jmp 23f
-22:
-.base64 "TYun2AAAAEmLr+AAAABIietIwesESIPlD0iF2w=="
-je 216f
-218:
-.base64 "Qb5AAAAATDnz"
-jb 219f
-jmp 220f
-219:
-.base64 "SYne"
-220:
-.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
-221:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 221b
-.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash}
-.base64 "TInwSAHASAHASAHASAHASQHETCnz"
-jne 218b
-jmp 217f
-216:
-217:
-.base64 "SIXt"
-je 222f
-.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
-224:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 224b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash}
-jmp 223f
-222:
-223:
-.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
-je 225f
-227:
-.base64 "Qb5AAAAATDnz"
-jb 228f
-jmp 229f
-228:
-.base64 "SYne"
-229:
-.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
-230:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 230b
-.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash}
-.base64 "TInwSAHASAHASAHASAHASQHETCnz"
-jne 227b
-jmp 226f
-225:
-226:
-.base64 "SIXt"
-je 231f
-.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
-233:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 233b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash}
-jmp 232f
-231:
-232:
-.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfNBD3+HgAAAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwoAAAAC5AQAAAA=="
-call {vg_ghash}
-.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
-23:
-.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
-call {vg_aes_expand_key_scratch_aesni}
-.base64 "80EPb0dg80EPf0dwZg/vwPNBD38HTIn/SIHH+AAAAEmLt8gAAABMifpIg8JwQbgBAAAATYn5SYHB6AYAAEyJ+UiDwQA="
-call {vg_aes_ctr32_aesni}
-.base64 "SYsHSYtXCEi5AAAAAAAAAIBICcpmSA9uwGZID27KZg9swfNBD39HYE2Lp+gAAABJi6/wAAAASInrSMHrBEiD5Q9Ihds="
-je 234f
-236:
-.base64 "Qb5AAAAATDnz"
-jb 237f
-jmp 238f
-237:
-.base64 "SYne"
-238:
-.base64 "80EPb0dgQbgBAAAAZkkPbshMifFMif9IgcfoAQAA"
-239:
-.base64 "8w9/B2YP/sFIg8cQSIPpAQ=="
-jne 239b
-.base64 "80EPf0dgTIn/SIHH+AAAAEmLt8gAAABMifpIgcLoAQAATInxTYn4SYHA6AYAAA=="
-call {vg_aes_encrypt_blocks_aesni}
-.base64 "TInxTIn+SIHG6AEAAA=="
-240:
-.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
-jne 240b
-.base64 "TCnz"
-jne 236b
-jmp 235f
-234:
-235:
-.base64 "SIXt"
-je 241f
-.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
-call {vg_aes_ctr32_aesni}
-.base64 "TInnTIn+SIHGgAAAAEiJ6UG6AAAAAA=="
-243:
-.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
-jne 243b
-jmp 242f
-241:
-242:
-.base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
-.p2align 6"#,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
-    )
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_siv_seal_aesni(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_siv_seal_aesni(schedule, rounds, nonce, aad, aad_len, data, len, tag) }
 }
 
 /// The CPU features `vg_aes_gcm_siv_open_aesni` requires (`Artifact.features`).
@@ -215,8 +51,1319 @@ pub const VG_AES_GCM_SIV_OPEN_AESNI_FEATURES: verified_garbage_cpu::Features = v
 /// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` and `aes` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_siv_open_aesni(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_siv_open_aesni(schedule, rounds, nonce, aad, aad_len, data, len, tag) }
+}
+
+/// The CPU features `vg_aes_gcm_siv_seal_aesni_avx2` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_SEAL_AESNI_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
+///
+/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3`, `aes`, `avx` and `avx2` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_siv_seal_aesni_avx2(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_siv_seal_aesni_avx2(schedule, rounds, nonce, aad, aad_len, data, len, tag) }
+}
+
+/// The CPU features `vg_aes_gcm_siv_open_aesni_avx2` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_OPEN_AESNI_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
+///
+/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3`, `aes`, `avx` and `avx2` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_siv_open_aesni_avx2(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_siv_open_aesni_avx2(schedule, rounds, nonce, aad, aad_len, data, len, tag) }
+}
+
+/// The CPU features `vg_aes_gcm_siv_seal_aesni_pclmul` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES);
+
+/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
+///
+/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq`, `ssse3` and `aes` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_siv_seal_aesni_pclmul(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_siv_seal_aesni_pclmul(schedule, rounds, nonce, aad, aad_len, data, len, tag) }
+}
+
+/// The CPU features `vg_aes_gcm_siv_open_aesni_pclmul` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES);
+
+/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
+///
+/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq`, `ssse3` and `aes` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_siv_open_aesni_pclmul(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_siv_open_aesni_pclmul(schedule, rounds, nonce, aad, aad_len, data, len, tag) }
+}
+
+/// The CPU features `vg_aes_gcm_siv_seal_aesni_pclmul_avx2` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
+///
+/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq`, `ssse3`, `aes`, `avx` and `avx2` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_siv_seal_aesni_pclmul_avx2(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_siv_seal_aesni_pclmul_avx2(schedule, rounds, nonce, aad, aad_len, data, len, tag) }
+}
+
+/// The CPU features `vg_aes_gcm_siv_open_aesni_pclmul_avx2` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
+///
+/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq`, `ssse3`, `aes`, `avx` and `avx2` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_siv_open_aesni_pclmul_avx2(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_siv_open_aesni_pclmul_avx2(schedule, rounds, nonce, aad, aad_len, data, len, tag) }
+}
+
+/// The CPU features `vg_aes_gcm_siv_seal_aesni_pclmul_avx` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX);
+
+/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
+///
+/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq`, `ssse3`, `aes` and `avx` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_siv_seal_aesni_pclmul_avx(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_siv_seal_aesni_pclmul_avx(schedule, rounds, nonce, aad, aad_len, data, len, tag) }
+}
+
+/// The CPU features `vg_aes_gcm_siv_open_aesni_pclmul_avx` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX);
+
+/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
+///
+/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq`, `ssse3`, `aes` and `avx` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_siv_open_aesni_pclmul_avx(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_siv_open_aesni_pclmul_avx(schedule, rounds, nonce, aad, aad_len, data, len, tag) }
+}
+
+/// The CPU features `vg_aes_gcm_siv_seal_aesni_pclmul_avx_avx2` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_AVX_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
+///
+/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq`, `ssse3`, `aes`, `avx` and `avx2` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_siv_seal_aesni_pclmul_avx_avx2(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_siv_seal_aesni_pclmul_avx_avx2(schedule, rounds, nonce, aad, aad_len, data, len, tag) }
+}
+
+/// The CPU features `vg_aes_gcm_siv_open_aesni_pclmul_avx_avx2` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
+///
+/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq`, `ssse3`, `aes`, `avx` and `avx2` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_siv_open_aesni_pclmul_avx_avx2(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_siv_open_aesni_pclmul_avx_avx2(schedule, rounds, nonce, aad, aad_len, data, len, tag) }
+}
+
+/// The CPU features `vg_aes_gcm_siv_seal_aesni_vpclmul` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_SEAL_AESNI_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
+///
+/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `aes`, `avx` and `avx2` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_siv_seal_aesni_vpclmul(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_siv_seal_aesni_vpclmul(schedule, rounds, nonce, aad, aad_len, data, len, tag) }
+}
+
+/// The CPU features `vg_aes_gcm_siv_open_aesni_vpclmul` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_OPEN_AESNI_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
+///
+/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `aes`, `avx` and `avx2` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_siv_open_aesni_vpclmul(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_siv_open_aesni_vpclmul(schedule, rounds, nonce, aad, aad_len, data, len, tag) }
+}
+
+/// The CPU features `vg_aes_gcm_siv_seal_aesni_vpclmul_avx2` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_SEAL_AESNI_VPCLMUL_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
+///
+/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
+///
+/// The machine code of this function is that of `vg_aes_gcm_siv_seal_aesni_vpclmul`, which is emitted once and named both ways: the two are the same function.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `aes`, `avx` and `avx2` target features.
+#[allow(unused_imports)]
+pub use self::vg_aes_gcm_siv_seal_aesni_vpclmul as vg_aes_gcm_siv_seal_aesni_vpclmul_avx2;
+
+/// The CPU features `vg_aes_gcm_siv_open_aesni_vpclmul_avx2` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_OPEN_AESNI_VPCLMUL_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
+///
+/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
+///
+/// The machine code of this function is that of `vg_aes_gcm_siv_open_aesni_vpclmul`, which is emitted once and named both ways: the two are the same function.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `aes`, `avx` and `avx2` target features.
+#[allow(unused_imports)]
+pub use self::vg_aes_gcm_siv_open_aesni_vpclmul as vg_aes_gcm_siv_open_aesni_vpclmul_avx2;
+
+/// The CPU features `vg_aes_gcm_siv_seal_pclmul` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_SEAL_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
+
+/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
+///
+/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq` and `ssse3` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_siv_seal_pclmul(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_siv_seal_pclmul(schedule, rounds, nonce, aad, aad_len, data, len, tag) }
+}
+
+/// The CPU features `vg_aes_gcm_siv_open_pclmul` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_OPEN_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
+
+/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
+///
+/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq` and `ssse3` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_siv_open_pclmul(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_siv_open_pclmul(schedule, rounds, nonce, aad, aad_len, data, len, tag) }
+}
+
+/// The CPU features `vg_aes_gcm_siv_seal_pclmul_avx2` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_SEAL_PCLMUL_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
+///
+/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq`, `ssse3`, `avx` and `avx2` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_siv_seal_pclmul_avx2(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_siv_seal_pclmul_avx2(schedule, rounds, nonce, aad, aad_len, data, len, tag) }
+}
+
+/// The CPU features `vg_aes_gcm_siv_open_pclmul_avx2` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_OPEN_PCLMUL_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
+///
+/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq`, `ssse3`, `avx` and `avx2` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_siv_open_pclmul_avx2(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_siv_open_pclmul_avx2(schedule, rounds, nonce, aad, aad_len, data, len, tag) }
+}
+
+/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
+///
+/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_siv_seal(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_siv_seal(schedule, rounds, nonce, aad, aad_len, data, len, tag) }
+}
+
+/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
+///
+/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_siv_open(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_siv_open(schedule, rounds, nonce, aad, aad_len, data, len, tag) }
+}
+
+/// The CPU features `vg_aes_gcm_siv_seal_avx2` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_SEAL_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
+///
+/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx` and `avx2` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_siv_seal_avx2(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_siv_seal_avx2(schedule, rounds, nonce, aad, aad_len, data, len, tag) }
+}
+
+/// The CPU features `vg_aes_gcm_siv_open_avx2` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_OPEN_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
+///
+/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx` and `avx2` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_siv_open_avx2(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_siv_open_avx2(schedule, rounds, nonce, aad, aad_len, data, len, tag) }
+}
+
+/// The CPU features `vg_aes_gcm_siv_seal_vaes` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_SEAL_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
+///
+/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3`, `aes`, `vaes`, `avx` and `avx2` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_siv_seal_vaes(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_siv_seal_vaes(schedule, rounds, nonce, aad, aad_len, data, len, tag) }
+}
+
+/// The CPU features `vg_aes_gcm_siv_open_vaes` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_OPEN_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
+///
+/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3`, `aes`, `vaes`, `avx` and `avx2` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_siv_open_vaes(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_siv_open_vaes(schedule, rounds, nonce, aad, aad_len, data, len, tag) }
+}
+
+/// The CPU features `vg_aes_gcm_siv_seal_vaes_avx2` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_SEAL_VAES_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
+///
+/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
+///
+/// The machine code of this function is that of `vg_aes_gcm_siv_seal_vaes`, which is emitted once and named both ways: the two are the same function.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3`, `aes`, `vaes`, `avx` and `avx2` target features.
+#[allow(unused_imports)]
+pub use self::vg_aes_gcm_siv_seal_vaes as vg_aes_gcm_siv_seal_vaes_avx2;
+
+/// The CPU features `vg_aes_gcm_siv_open_vaes_avx2` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_OPEN_VAES_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
+///
+/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
+///
+/// The machine code of this function is that of `vg_aes_gcm_siv_open_vaes`, which is emitted once and named both ways: the two are the same function.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3`, `aes`, `vaes`, `avx` and `avx2` target features.
+#[allow(unused_imports)]
+pub use self::vg_aes_gcm_siv_open_vaes as vg_aes_gcm_siv_open_vaes_avx2;
+
+/// The CPU features `vg_aes_gcm_siv_seal_vaes_pclmul` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_SEAL_VAES_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
+///
+/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq`, `ssse3`, `aes`, `vaes`, `avx` and `avx2` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_siv_seal_vaes_pclmul(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_siv_seal_vaes_pclmul(schedule, rounds, nonce, aad, aad_len, data, len, tag) }
+}
+
+/// The CPU features `vg_aes_gcm_siv_open_vaes_pclmul` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_OPEN_VAES_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
+///
+/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq`, `ssse3`, `aes`, `vaes`, `avx` and `avx2` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_siv_open_vaes_pclmul(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_siv_open_vaes_pclmul(schedule, rounds, nonce, aad, aad_len, data, len, tag) }
+}
+
+/// The CPU features `vg_aes_gcm_siv_seal_vaes_pclmul_avx2` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_SEAL_VAES_PCLMUL_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
+///
+/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
+///
+/// The machine code of this function is that of `vg_aes_gcm_siv_seal_vaes_pclmul`, which is emitted once and named both ways: the two are the same function.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq`, `ssse3`, `aes`, `vaes`, `avx` and `avx2` target features.
+#[allow(unused_imports)]
+pub use self::vg_aes_gcm_siv_seal_vaes_pclmul as vg_aes_gcm_siv_seal_vaes_pclmul_avx2;
+
+/// The CPU features `vg_aes_gcm_siv_open_vaes_pclmul_avx2` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_OPEN_VAES_PCLMUL_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
+///
+/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
+///
+/// The machine code of this function is that of `vg_aes_gcm_siv_open_vaes_pclmul`, which is emitted once and named both ways: the two are the same function.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq`, `ssse3`, `aes`, `vaes`, `avx` and `avx2` target features.
+#[allow(unused_imports)]
+pub use self::vg_aes_gcm_siv_open_vaes_pclmul as vg_aes_gcm_siv_open_vaes_pclmul_avx2;
+
+/// The CPU features `vg_aes_gcm_siv_seal_vaes_vpclmul` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
+///
+/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `aes`, `vaes`, `avx` and `avx2` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_siv_seal_vaes_vpclmul(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_siv_seal_vaes_vpclmul(schedule, rounds, nonce, aad, aad_len, data, len, tag) }
+}
+
+/// The CPU features `vg_aes_gcm_siv_open_vaes_vpclmul` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
+///
+/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `aes`, `vaes`, `avx` and `avx2` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_siv_open_vaes_vpclmul(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_siv_open_vaes_vpclmul(schedule, rounds, nonce, aad, aad_len, data, len, tag) }
+}
+
+/// The CPU features `vg_aes_gcm_siv_seal_vaes_vpclmul_avx2` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
+///
+/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
+///
+/// The machine code of this function is that of `vg_aes_gcm_siv_seal_vaes_vpclmul`, which is emitted once and named both ways: the two are the same function.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `aes`, `vaes`, `avx` and `avx2` target features.
+#[allow(unused_imports)]
+pub use self::vg_aes_gcm_siv_seal_vaes_vpclmul as vg_aes_gcm_siv_seal_vaes_vpclmul_avx2;
+
+/// The CPU features `vg_aes_gcm_siv_open_vaes_vpclmul_avx2` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
+///
+/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
+///
+/// The machine code of this function is that of `vg_aes_gcm_siv_open_vaes_vpclmul`, which is emitted once and named both ways: the two are the same function.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `aes`, `vaes`, `avx` and `avx2` target features.
+#[allow(unused_imports)]
+pub use self::vg_aes_gcm_siv_open_vaes_vpclmul as vg_aes_gcm_siv_open_vaes_vpclmul_avx2;
+
+/// The CPU features `vg_aes_gcm_siv_seal_vaes_vpclmul_avx512` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
+///
+/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
+///
+/// The machine code of this function is that of `vg_aes_gcm_siv_seal_vaes_vpclmul`, which is emitted once and named both ways: the two are the same function.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `aes`, `vaes`, `avx` and `avx2` target features.
+#[allow(unused_imports)]
+pub use self::vg_aes_gcm_siv_seal_vaes_vpclmul as vg_aes_gcm_siv_seal_vaes_vpclmul_avx512;
+
+/// The CPU features `vg_aes_gcm_siv_open_vaes_vpclmul_avx512` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
+///
+/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
+///
+/// The machine code of this function is that of `vg_aes_gcm_siv_open_vaes_vpclmul`, which is emitted once and named both ways: the two are the same function.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `aes`, `vaes`, `avx` and `avx2` target features.
+#[allow(unused_imports)]
+pub use self::vg_aes_gcm_siv_open_vaes_vpclmul as vg_aes_gcm_siv_open_vaes_vpclmul_avx512;
+
+/// The CPU features `vg_aes_gcm_siv_seal_vaes_vpclmul_avx512_avx2` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_AVX512_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
+///
+/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
+///
+/// The machine code of this function is that of `vg_aes_gcm_siv_seal_vaes_vpclmul`, which is emitted once and named both ways: the two are the same function.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `aes`, `vaes`, `avx` and `avx2` target features.
+#[allow(unused_imports)]
+pub use self::vg_aes_gcm_siv_seal_vaes_vpclmul as vg_aes_gcm_siv_seal_vaes_vpclmul_avx512_avx2;
+
+/// The CPU features `vg_aes_gcm_siv_open_vaes_vpclmul_avx512_avx2` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_AVX512_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
+///
+/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
+///
+/// The machine code of this function is that of `vg_aes_gcm_siv_open_vaes_vpclmul`, which is emitted once and named both ways: the two are the same function.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `aes`, `vaes`, `avx` and `avx2` target features.
+#[allow(unused_imports)]
+pub use self::vg_aes_gcm_siv_open_vaes_vpclmul as vg_aes_gcm_siv_open_vaes_vpclmul_avx512_avx2;
+
+/// The CPU features `vg_aes_gcm_siv_seal_vpclmul` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_SEAL_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
+///
+/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx` and `avx2` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_siv_seal_vpclmul(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_siv_seal_vpclmul(schedule, rounds, nonce, aad, aad_len, data, len, tag) }
+}
+
+/// The CPU features `vg_aes_gcm_siv_open_vpclmul` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_OPEN_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
+///
+/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx` and `avx2` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_siv_open_vpclmul(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_siv_open_vpclmul(schedule, rounds, nonce, aad, aad_len, data, len, tag) }
+}
+
+/// The CPU features `vg_aes_gcm_siv_seal_vpclmul_avx2` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_SEAL_VPCLMUL_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
+///
+/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
+///
+/// The machine code of this function is that of `vg_aes_gcm_siv_seal_vpclmul`, which is emitted once and named both ways: the two are the same function.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx` and `avx2` target features.
+#[allow(unused_imports)]
+pub use self::vg_aes_gcm_siv_seal_vpclmul as vg_aes_gcm_siv_seal_vpclmul_avx2;
+
+/// The CPU features `vg_aes_gcm_siv_open_vpclmul_avx2` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_OPEN_VPCLMUL_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
+///
+/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
+///
+/// The machine code of this function is that of `vg_aes_gcm_siv_open_vpclmul`, which is emitted once and named both ways: the two are the same function.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx` and `avx2` target features.
+#[allow(unused_imports)]
+pub use self::vg_aes_gcm_siv_open_vpclmul as vg_aes_gcm_siv_open_vpclmul_avx2;
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_aes_gcm_siv_seal_aesni`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_open_aesni(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_aesni(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAAC7AAAAAEyJ/0iBx+gBAABJi6/IAAAASNHtSIPtAQ=="
+20:
+.base64 "SYuH0AAAAIsISMHhIEgJ2UiLUARmSA9uwWZID27KZg9swfMPfwdIg8cQSIPDAUg56w=="
+jne 20b
+.base64 "TInvSYu3yAAAAEyJ+kiBwugBAABIielNifhJgcDoBgAA"
+call {vg_aes_encrypt_blocks_aesni}
+.base64 "TIn+SIHG6AEAAEyJ/0iDxxBIiek="
+21:
+.base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
+jne 21b
+.base64 "SYtHEEmLVxhIicFIg+EBQbgAAAAASSnISNHoSInRSIPhAUjRyUgJyEjR6ki5AAAAAAAAAOFMIcFIMcpID8pID8hmSA9uwmZID27IZg9swfNBD39HQGYP78DzQQ9/R1BJi4fgAAAASMHoBEmLl/AAAABIweoESAHQSIP4Pg=="
+jae 22f
+.base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
+je 24f
+.base64 "SYneTInx"
+26:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 26b
+jmp 25f
+24:
+25:
+.base64 "SIXt"
+je 27f
+.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
+29:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 29b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
+jmp 28f
+27:
+28:
+.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0yJ5kiF2w=="
+je 210f
+.base64 "SYneTInx"
+212:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 212b
+jmp 211f
+210:
+211:
+.base64 "SIXt"
+je 213f
+.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
+215:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 215b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
+jmp 214f
+213:
+214:
+.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfMPfwdIiflMKflIwekESIPpHUyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAA="
+call {vg_ghash}
+.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
+jmp 23f
+22:
+.base64 "TYun2AAAAEmLr+AAAABIietIwesESIPlD0iF2w=="
+je 216f
+218:
+.base64 "Qb5AAAAATDnz"
+jb 219f
+jmp 220f
+219:
+.base64 "SYne"
+220:
+.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
+221:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 221b
+.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
+call {vg_ghash}
+.base64 "TInwSAHASAHASAHASAHASQHETCnz"
+jne 218b
+jmp 217f
+216:
+217:
+.base64 "SIXt"
+je 222f
+.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
+224:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 224b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
+call {vg_ghash}
+jmp 223f
+222:
+223:
+.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
+je 225f
+227:
+.base64 "Qb5AAAAATDnz"
+jb 228f
+jmp 229f
+228:
+.base64 "SYne"
+229:
+.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
+230:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 230b
+.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
+call {vg_ghash}
+.base64 "TInwSAHASAHASAHASAHASQHETCnz"
+jne 227b
+jmp 226f
+225:
+226:
+.base64 "SIXt"
+je 231f
+.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
+233:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 233b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
+call {vg_ghash}
+jmp 232f
+231:
+232:
+.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfNBD3+HgAAAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwoAAAAC5AQAAAA=="
+call {vg_ghash}
+.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
+23:
+.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
+call {vg_aes_expand_key_scratch_aesni}
+.base64 "80EPb0dg80EPf0dwZg/vwPNBD38HTIn/SIHH+AAAAEmLt8gAAABMifpIg8JwQbgBAAAATYn5SYHB6AYAAEyJ+UiDwQA="
+call {vg_aes_ctr32_aesni}
+.base64 "SYsHSYtXCEi5AAAAAAAAAIBICcpmSA9uwGZID27KZg9swfNBD39HYE2Lp+gAAABJi6/wAAAASInrSMHrBEiD5Q9Ihds="
+je 234f
+236:
+.base64 "Qb5AAAAATDnz"
+jb 237f
+jmp 238f
+237:
+.base64 "SYne"
+238:
+.base64 "80EPb0dgQbgBAAAAZkkPbshMifFMif9IgcfoAQAA"
+239:
+.base64 "8w9/B2YP/sFIg8cQSIPpAQ=="
+jne 239b
+.base64 "80EPf0dgTIn/SIHH+AAAAEmLt8gAAABMifpIgcLoAQAATInxTYn4SYHA6AYAAA=="
+call {vg_aes_encrypt_blocks_aesni}
+.base64 "TInxTIn+SIHG6AEAAA=="
+240:
+.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
+jne 240b
+.base64 "TCnz"
+jne 236b
+jmp 235f
+234:
+235:
+.base64 "SIXt"
+je 241f
+.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
+call {vg_aes_ctr32_aesni}
+.base64 "TInnTIn+SIHGgAAAAEiJ6UG6AAAAAA=="
+243:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 243b
+jmp 242f
+241:
+242:
+.base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
+.p2align 6"#,
+        vg_aes_encrypt_blocks_aesni = sym crate::aes::raw::vg_aes_encrypt_blocks_aesni,
+        vg_ghash = sym crate::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_aes_expand_key_scratch_aesni = sym crate::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_aes_ctr32_aesni = sym crate::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+    )
+}
+
+/// The verified code of [`super::vg_aes_gcm_siv_open_aesni`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_aesni(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcIuwAAAABMif9IgcfoAQAASYuvyAAAAEjR7UiD7QE="
 20:
@@ -397,35 +1544,16 @@ jmp 248f
 248:
 .base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
 .p2align 6"#,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_aes_encrypt_blocks_aesni = sym crate::aes::raw::vg_aes_encrypt_blocks_aesni,
+        vg_aes_expand_key_scratch_aesni = sym crate::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_aes_ctr32_aesni = sym crate::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_ghash = sym crate::aes_gcm_siv::vg_ghash::vg_ghash,
     )
 }
 
-/// The CPU features `vg_aes_gcm_siv_seal_aesni_avx2` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_SEAL_AESNI_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
-///
-/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `ssse3`, `aes`, `avx` and `avx2` target features.
+/// The verified code of [`super::vg_aes_gcm_siv_seal_aesni_avx2`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_aesni_avx2(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_aesni_avx2(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAAC7AAAAAEyJ/0iBx+gBAABJi6/IAAAASNHtSIPtAQ=="
 20:
@@ -672,36 +1800,17 @@ jmp 272f
 272:
 .base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
 .p2align 6"#,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
-        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
+        vg_aes_encrypt_blocks_aesni = sym crate::aes::raw::vg_aes_encrypt_blocks_aesni,
+        vg_ghash = sym crate::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_aes_expand_key_scratch_aesni = sym crate::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_aes_ctr32_aesni = sym crate::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        VG_GCM_CONSTS = sym crate::consts::VG_GCM_CONSTS,
     )
 }
 
-/// The CPU features `vg_aes_gcm_siv_open_aesni_avx2` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_OPEN_AESNI_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
-///
-/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `ssse3`, `aes`, `avx` and `avx2` target features.
+/// The verified code of [`super::vg_aes_gcm_siv_open_aesni_avx2`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_open_aesni_avx2(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_aesni_avx2(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcIuwAAAABMif9IgcfoAQAASYuvyAAAAEjR7UiD7QE="
 20:
@@ -965,36 +2074,17 @@ jmp 278f
 278:
 .base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
 .p2align 6"#,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
+        vg_aes_encrypt_blocks_aesni = sym crate::aes::raw::vg_aes_encrypt_blocks_aesni,
+        vg_aes_expand_key_scratch_aesni = sym crate::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_aes_ctr32_aesni = sym crate::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_ghash = sym crate::aes_gcm_siv::vg_ghash::vg_ghash,
+        VG_GCM_CONSTS = sym crate::consts::VG_GCM_CONSTS,
     )
 }
 
-/// The CPU features `vg_aes_gcm_siv_seal_aesni_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES);
-
-/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
-///
-/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq`, `ssse3` and `aes` target features.
+/// The verified code of [`super::vg_aes_gcm_siv_seal_aesni_pclmul`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_aesni_pclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_aesni_pclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAAC7AAAAAEyJ/0iBx+gBAABJi6/IAAAASNHtSIPtAQ=="
 20:
@@ -1158,35 +2248,16 @@ jmp 242f
 242:
 .base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
 .p2align 6"#,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_encrypt_blocks_aesni = sym crate::aes::raw::vg_aes_encrypt_blocks_aesni,
+        vg_ghash_pclmul = sym crate::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_expand_key_scratch_aesni = sym crate::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_aes_ctr32_aesni = sym crate::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
     )
 }
 
-/// The CPU features `vg_aes_gcm_siv_open_aesni_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES);
-
-/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
-///
-/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq`, `ssse3` and `aes` target features.
+/// The verified code of [`super::vg_aes_gcm_siv_open_aesni_pclmul`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_open_aesni_pclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_aesni_pclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcIuwAAAABMif9IgcfoAQAASYuvyAAAAEjR7UiD7QE="
 20:
@@ -1367,35 +2438,16 @@ jmp 248f
 248:
 .base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
 .p2align 6"#,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_encrypt_blocks_aesni = sym crate::aes::raw::vg_aes_encrypt_blocks_aesni,
+        vg_aes_expand_key_scratch_aesni = sym crate::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_aes_ctr32_aesni = sym crate::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_ghash_pclmul = sym crate::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
     )
 }
 
-/// The CPU features `vg_aes_gcm_siv_seal_aesni_pclmul_avx2` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
-///
-/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq`, `ssse3`, `aes`, `avx` and `avx2` target features.
+/// The verified code of [`super::vg_aes_gcm_siv_seal_aesni_pclmul_avx2`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_aesni_pclmul_avx2(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_aesni_pclmul_avx2(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAAC7AAAAAEyJ/0iBx+gBAABJi6/IAAAASNHtSIPtAQ=="
 20:
@@ -1642,36 +2694,17 @@ jmp 272f
 272:
 .base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
 .p2align 6"#,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
-        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
+        vg_aes_encrypt_blocks_aesni = sym crate::aes::raw::vg_aes_encrypt_blocks_aesni,
+        vg_ghash_pclmul = sym crate::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_expand_key_scratch_aesni = sym crate::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_aes_ctr32_aesni = sym crate::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        VG_GCM_CONSTS = sym crate::consts::VG_GCM_CONSTS,
     )
 }
 
-/// The CPU features `vg_aes_gcm_siv_open_aesni_pclmul_avx2` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
-///
-/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq`, `ssse3`, `aes`, `avx` and `avx2` target features.
+/// The verified code of [`super::vg_aes_gcm_siv_open_aesni_pclmul_avx2`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_open_aesni_pclmul_avx2(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_aesni_pclmul_avx2(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcIuwAAAABMif9IgcfoAQAASYuvyAAAAEjR7UiD7QE="
 20:
@@ -1935,36 +2968,17 @@ jmp 278f
 278:
 .base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
 .p2align 6"#,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
+        vg_aes_encrypt_blocks_aesni = sym crate::aes::raw::vg_aes_encrypt_blocks_aesni,
+        vg_aes_expand_key_scratch_aesni = sym crate::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_aes_ctr32_aesni = sym crate::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_ghash_pclmul = sym crate::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+        VG_GCM_CONSTS = sym crate::consts::VG_GCM_CONSTS,
     )
 }
 
-/// The CPU features `vg_aes_gcm_siv_seal_aesni_pclmul_avx` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX);
-
-/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
-///
-/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq`, `ssse3`, `aes` and `avx` target features.
+/// The verified code of [`super::vg_aes_gcm_siv_seal_aesni_pclmul_avx`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_aesni_pclmul_avx(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_aesni_pclmul_avx(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAAC7AAAAAEyJ/0iBx+gBAABJi6/IAAAASNHtSIPtAQ=="
 20:
@@ -2268,35 +3282,16 @@ jmp 284f
 256:
 .base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
 .p2align 6"#,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_encrypt_blocks_aesni = sym crate::aes::raw::vg_aes_encrypt_blocks_aesni,
+        vg_ghash_pclmul = sym crate::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_expand_key_scratch_aesni = sym crate::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_aes_ctr32_aesni = sym crate::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
     )
 }
 
-/// The CPU features `vg_aes_gcm_siv_open_aesni_pclmul_avx` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX);
-
-/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
-///
-/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq`, `ssse3`, `aes` and `avx` target features.
+/// The verified code of [`super::vg_aes_gcm_siv_open_aesni_pclmul_avx`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_open_aesni_pclmul_avx(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_aesni_pclmul_avx(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcIuwAAAABMif9IgcfoAQAASYuvyAAAAEjR7UiD7QE="
 20:
@@ -2634,35 +3629,16 @@ jmp 297f
 297:
 .base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
 .p2align 6"#,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_encrypt_blocks_aesni = sym crate::aes::raw::vg_aes_encrypt_blocks_aesni,
+        vg_aes_expand_key_scratch_aesni = sym crate::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_ghash_pclmul = sym crate::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_ctr32_aesni = sym crate::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
     )
 }
 
-/// The CPU features `vg_aes_gcm_siv_seal_aesni_pclmul_avx_avx2` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_AVX_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
-///
-/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq`, `ssse3`, `aes`, `avx` and `avx2` target features.
+/// The verified code of [`super::vg_aes_gcm_siv_seal_aesni_pclmul_avx_avx2`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_aesni_pclmul_avx_avx2(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_aesni_pclmul_avx_avx2(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAAC7AAAAAEyJ/0iBx+gBAABJi6/IAAAASNHtSIPtAQ=="
 20:
@@ -3098,36 +4074,17 @@ jmp 2132f
 292:
 .base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
 .p2align 6"#,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
-        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
+        vg_aes_encrypt_blocks_aesni = sym crate::aes::raw::vg_aes_encrypt_blocks_aesni,
+        vg_ghash_pclmul = sym crate::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_expand_key_scratch_aesni = sym crate::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_aes_ctr32_aesni = sym crate::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        VG_GCM_CONSTS = sym crate::consts::VG_GCM_CONSTS,
     )
 }
 
-/// The CPU features `vg_aes_gcm_siv_open_aesni_pclmul_avx_avx2` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
-///
-/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq`, `ssse3`, `aes`, `avx` and `avx2` target features.
+/// The verified code of [`super::vg_aes_gcm_siv_open_aesni_pclmul_avx_avx2`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_open_aesni_pclmul_avx_avx2(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_aesni_pclmul_avx_avx2(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcIuwAAAABMif9IgcfoAQAASYuvyAAAAEjR7UiD7QE="
 20:
@@ -3597,36 +4554,17 @@ jmp 2145f
 2145:
 .base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
 .p2align 6"#,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
-        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
+        vg_aes_encrypt_blocks_aesni = sym crate::aes::raw::vg_aes_encrypt_blocks_aesni,
+        vg_aes_expand_key_scratch_aesni = sym crate::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_ghash_pclmul = sym crate::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_ctr32_aesni = sym crate::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        VG_GCM_CONSTS = sym crate::consts::VG_GCM_CONSTS,
     )
 }
 
-/// The CPU features `vg_aes_gcm_siv_seal_aesni_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_SEAL_AESNI_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
-///
-/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `aes`, `avx` and `avx2` target features.
+/// The verified code of [`super::vg_aes_gcm_siv_seal_aesni_vpclmul`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_aesni_vpclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_aesni_vpclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAAC7AAAAAEyJ/0iBx+gBAABJi6/IAAAASNHtSIPtAQ=="
 20:
@@ -3873,36 +4811,17 @@ jmp 272f
 272:
 .base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
 .p2align 6"#,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
-        vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
-        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
+        vg_aes_encrypt_blocks_aesni = sym crate::aes::raw::vg_aes_encrypt_blocks_aesni,
+        vg_ghash_vpclmul = sym crate::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_aes_expand_key_scratch_aesni = sym crate::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_aes_ctr32_aesni = sym crate::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        VG_GCM_CONSTS = sym crate::consts::VG_GCM_CONSTS,
     )
 }
 
-/// The CPU features `vg_aes_gcm_siv_open_aesni_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_OPEN_AESNI_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
-///
-/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `aes`, `avx` and `avx2` target features.
+/// The verified code of [`super::vg_aes_gcm_siv_open_aesni_vpclmul`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_open_aesni_vpclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_aesni_vpclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcIuwAAAABMif9IgcfoAQAASYuvyAAAAEjR7UiD7QE="
 20:
@@ -4166,86 +5085,23 @@ jmp 278f
 278:
 .base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
 .p2align 6"#,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
-        vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
-        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
+        vg_aes_encrypt_blocks_aesni = sym crate::aes::raw::vg_aes_encrypt_blocks_aesni,
+        vg_aes_expand_key_scratch_aesni = sym crate::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_aes_ctr32_aesni = sym crate::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_ghash_vpclmul = sym crate::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        VG_GCM_CONSTS = sym crate::consts::VG_GCM_CONSTS,
     )
 }
 
-/// The CPU features `vg_aes_gcm_siv_seal_aesni_vpclmul_avx2` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_SEAL_AESNI_VPCLMUL_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
-///
-/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
-///
-/// The machine code of this function is that of `vg_aes_gcm_siv_seal_aesni_vpclmul`, which is emitted once and named both ways: the two are the same function.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `aes`, `avx` and `avx2` target features.
 #[allow(unused_imports)]
-pub use self::vg_aes_gcm_siv_seal_aesni_vpclmul as vg_aes_gcm_siv_seal_aesni_vpclmul_avx2;
+pub(crate) use self::vg_aes_gcm_siv_seal_aesni_vpclmul as vg_aes_gcm_siv_seal_aesni_vpclmul_avx2;
 
-/// The CPU features `vg_aes_gcm_siv_open_aesni_vpclmul_avx2` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_OPEN_AESNI_VPCLMUL_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
-///
-/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
-///
-/// The machine code of this function is that of `vg_aes_gcm_siv_open_aesni_vpclmul`, which is emitted once and named both ways: the two are the same function.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `aes`, `avx` and `avx2` target features.
 #[allow(unused_imports)]
-pub use self::vg_aes_gcm_siv_open_aesni_vpclmul as vg_aes_gcm_siv_open_aesni_vpclmul_avx2;
+pub(crate) use self::vg_aes_gcm_siv_open_aesni_vpclmul as vg_aes_gcm_siv_open_aesni_vpclmul_avx2;
 
-/// The CPU features `vg_aes_gcm_siv_seal_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_SEAL_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
-
-/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
-///
-/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq` and `ssse3` target features.
+/// The verified code of [`super::vg_aes_gcm_siv_seal_pclmul`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_pclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_pclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAAC7AAAAAEyJ/0iBx+gBAABJi6/IAAAASNHtSIPtAQ=="
 20:
@@ -4409,35 +5265,16 @@ jmp 242f
 242:
 .base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
 .p2align 6"#,
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_encrypt_blocks = sym crate::aes::raw::vg_aes_encrypt_blocks,
+        vg_ghash_pclmul = sym crate::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_expand_key_scratch = sym crate::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_aes_ctr32 = sym crate::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
 
-/// The CPU features `vg_aes_gcm_siv_open_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_OPEN_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
-
-/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
-///
-/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq` and `ssse3` target features.
+/// The verified code of [`super::vg_aes_gcm_siv_open_pclmul`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_open_pclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_pclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcIuwAAAABMif9IgcfoAQAASYuvyAAAAEjR7UiD7QE="
 20:
@@ -4618,35 +5455,16 @@ jmp 248f
 248:
 .base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
 .p2align 6"#,
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_encrypt_blocks = sym crate::aes::raw::vg_aes_encrypt_blocks,
+        vg_aes_expand_key_scratch = sym crate::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_aes_ctr32 = sym crate::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_ghash_pclmul = sym crate::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
     )
 }
 
-/// The CPU features `vg_aes_gcm_siv_seal_pclmul_avx2` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_SEAL_PCLMUL_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
-///
-/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq`, `ssse3`, `avx` and `avx2` target features.
+/// The verified code of [`super::vg_aes_gcm_siv_seal_pclmul_avx2`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_pclmul_avx2(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_pclmul_avx2(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAAC7AAAAAEyJ/0iBx+gBAABJi6/IAAAASNHtSIPtAQ=="
 20:
@@ -4893,36 +5711,17 @@ jmp 272f
 272:
 .base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
 .p2align 6"#,
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
-        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
+        vg_aes_encrypt_blocks = sym crate::aes::raw::vg_aes_encrypt_blocks,
+        vg_ghash_pclmul = sym crate::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_expand_key_scratch = sym crate::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_aes_ctr32 = sym crate::aes::vg_aes_ctr32::vg_aes_ctr32,
+        VG_GCM_CONSTS = sym crate::consts::VG_GCM_CONSTS,
     )
 }
 
-/// The CPU features `vg_aes_gcm_siv_open_pclmul_avx2` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_OPEN_PCLMUL_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
-///
-/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq`, `ssse3`, `avx` and `avx2` target features.
+/// The verified code of [`super::vg_aes_gcm_siv_open_pclmul_avx2`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_open_pclmul_avx2(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_pclmul_avx2(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcIuwAAAABMif9IgcfoAQAASYuvyAAAAEjR7UiD7QE="
 20:
@@ -5186,32 +5985,17 @@ jmp 278f
 278:
 .base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
 .p2align 6"#,
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
+        vg_aes_encrypt_blocks = sym crate::aes::raw::vg_aes_encrypt_blocks,
+        vg_aes_expand_key_scratch = sym crate::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_aes_ctr32 = sym crate::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_ghash_pclmul = sym crate::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+        VG_GCM_CONSTS = sym crate::consts::VG_GCM_CONSTS,
     )
 }
 
-/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
-///
-/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_aes_gcm_siv_seal`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_seal(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAAC7AAAAAEyJ/0iBx+gBAABJi6/IAAAASNHtSIPtAQ=="
 20:
@@ -5375,31 +6159,16 @@ jmp 242f
 242:
 .base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
 .p2align 6"#,
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_encrypt_blocks = sym crate::aes::raw::vg_aes_encrypt_blocks,
+        vg_ghash = sym crate::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_aes_expand_key_scratch = sym crate::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_aes_ctr32 = sym crate::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
 
-/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
-///
-/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_aes_gcm_siv_open`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_open(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcIuwAAAABMif9IgcfoAQAASYuvyAAAAEjR7UiD7QE="
 20:
@@ -5580,35 +6349,16 @@ jmp 248f
 248:
 .base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
 .p2align 6"#,
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_aes_encrypt_blocks = sym crate::aes::raw::vg_aes_encrypt_blocks,
+        vg_aes_expand_key_scratch = sym crate::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_aes_ctr32 = sym crate::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_ghash = sym crate::aes_gcm_siv::vg_ghash::vg_ghash,
     )
 }
 
-/// The CPU features `vg_aes_gcm_siv_seal_avx2` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_SEAL_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
-///
-/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx` and `avx2` target features.
+/// The verified code of [`super::vg_aes_gcm_siv_seal_avx2`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_avx2(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_avx2(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAAC7AAAAAEyJ/0iBx+gBAABJi6/IAAAASNHtSIPtAQ=="
 20:
@@ -5855,36 +6605,17 @@ jmp 272f
 272:
 .base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
 .p2align 6"#,
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
-        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
+        vg_aes_encrypt_blocks = sym crate::aes::raw::vg_aes_encrypt_blocks,
+        vg_ghash = sym crate::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_aes_expand_key_scratch = sym crate::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_aes_ctr32 = sym crate::aes::vg_aes_ctr32::vg_aes_ctr32,
+        VG_GCM_CONSTS = sym crate::consts::VG_GCM_CONSTS,
     )
 }
 
-/// The CPU features `vg_aes_gcm_siv_open_avx2` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_OPEN_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
-///
-/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx` and `avx2` target features.
+/// The verified code of [`super::vg_aes_gcm_siv_open_avx2`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_open_avx2(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_avx2(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcIuwAAAABMif9IgcfoAQAASYuvyAAAAEjR7UiD7QE="
 20:
@@ -6148,36 +6879,17 @@ jmp 278f
 278:
 .base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
 .p2align 6"#,
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
+        vg_aes_encrypt_blocks = sym crate::aes::raw::vg_aes_encrypt_blocks,
+        vg_aes_expand_key_scratch = sym crate::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_aes_ctr32 = sym crate::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_ghash = sym crate::aes_gcm_siv::vg_ghash::vg_ghash,
+        VG_GCM_CONSTS = sym crate::consts::VG_GCM_CONSTS,
     )
 }
 
-/// The CPU features `vg_aes_gcm_siv_seal_vaes` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_SEAL_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
-///
-/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `ssse3`, `aes`, `vaes`, `avx` and `avx2` target features.
+/// The verified code of [`super::vg_aes_gcm_siv_seal_vaes`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_vaes(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_vaes(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAAC7AAAAAEyJ/0iBx+gBAABJi6/IAAAASNHtSIPtAQ=="
 20:
@@ -6424,36 +7136,17 @@ jmp 272f
 272:
 .base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
 .p2align 6"#,
-        vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
-        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
+        vg_aes_encrypt_blocks_vaes = sym crate::aes::raw::vg_aes_encrypt_blocks_vaes,
+        vg_ghash = sym crate::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_aes_expand_key_scratch_aesni = sym crate::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_aes_ctr32_vaes = sym crate::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
+        VG_GCM_CONSTS = sym crate::consts::VG_GCM_CONSTS,
     )
 }
 
-/// The CPU features `vg_aes_gcm_siv_open_vaes` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_OPEN_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
-///
-/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `ssse3`, `aes`, `vaes`, `avx` and `avx2` target features.
+/// The verified code of [`super::vg_aes_gcm_siv_open_vaes`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_open_vaes(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_vaes(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcIuwAAAABMif9IgcfoAQAASYuvyAAAAEjR7UiD7QE="
 20:
@@ -6717,86 +7410,23 @@ jmp 278f
 278:
 .base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
 .p2align 6"#,
-        vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
+        vg_aes_encrypt_blocks_vaes = sym crate::aes::raw::vg_aes_encrypt_blocks_vaes,
+        vg_aes_expand_key_scratch_aesni = sym crate::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_aes_ctr32_vaes = sym crate::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
+        vg_ghash = sym crate::aes_gcm_siv::vg_ghash::vg_ghash,
+        VG_GCM_CONSTS = sym crate::consts::VG_GCM_CONSTS,
     )
 }
 
-/// The CPU features `vg_aes_gcm_siv_seal_vaes_avx2` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_SEAL_VAES_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
-///
-/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
-///
-/// The machine code of this function is that of `vg_aes_gcm_siv_seal_vaes`, which is emitted once and named both ways: the two are the same function.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `ssse3`, `aes`, `vaes`, `avx` and `avx2` target features.
 #[allow(unused_imports)]
-pub use self::vg_aes_gcm_siv_seal_vaes as vg_aes_gcm_siv_seal_vaes_avx2;
+pub(crate) use self::vg_aes_gcm_siv_seal_vaes as vg_aes_gcm_siv_seal_vaes_avx2;
 
-/// The CPU features `vg_aes_gcm_siv_open_vaes_avx2` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_OPEN_VAES_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
-///
-/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
-///
-/// The machine code of this function is that of `vg_aes_gcm_siv_open_vaes`, which is emitted once and named both ways: the two are the same function.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `ssse3`, `aes`, `vaes`, `avx` and `avx2` target features.
 #[allow(unused_imports)]
-pub use self::vg_aes_gcm_siv_open_vaes as vg_aes_gcm_siv_open_vaes_avx2;
+pub(crate) use self::vg_aes_gcm_siv_open_vaes as vg_aes_gcm_siv_open_vaes_avx2;
 
-/// The CPU features `vg_aes_gcm_siv_seal_vaes_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_SEAL_VAES_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
-///
-/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq`, `ssse3`, `aes`, `vaes`, `avx` and `avx2` target features.
+/// The verified code of [`super::vg_aes_gcm_siv_seal_vaes_pclmul`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_vaes_pclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_vaes_pclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAAC7AAAAAEyJ/0iBx+gBAABJi6/IAAAASNHtSIPtAQ=="
 20:
@@ -7043,36 +7673,17 @@ jmp 272f
 272:
 .base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
 .p2align 6"#,
-        vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
-        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
+        vg_aes_encrypt_blocks_vaes = sym crate::aes::raw::vg_aes_encrypt_blocks_vaes,
+        vg_ghash_pclmul = sym crate::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_expand_key_scratch_aesni = sym crate::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_aes_ctr32_vaes = sym crate::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
+        VG_GCM_CONSTS = sym crate::consts::VG_GCM_CONSTS,
     )
 }
 
-/// The CPU features `vg_aes_gcm_siv_open_vaes_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_OPEN_VAES_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
-///
-/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq`, `ssse3`, `aes`, `vaes`, `avx` and `avx2` target features.
+/// The verified code of [`super::vg_aes_gcm_siv_open_vaes_pclmul`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_open_vaes_pclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_vaes_pclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcIuwAAAABMif9IgcfoAQAASYuvyAAAAEjR7UiD7QE="
 20:
@@ -7336,86 +7947,23 @@ jmp 278f
 278:
 .base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
 .p2align 6"#,
-        vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
+        vg_aes_encrypt_blocks_vaes = sym crate::aes::raw::vg_aes_encrypt_blocks_vaes,
+        vg_aes_expand_key_scratch_aesni = sym crate::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_aes_ctr32_vaes = sym crate::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
+        vg_ghash_pclmul = sym crate::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+        VG_GCM_CONSTS = sym crate::consts::VG_GCM_CONSTS,
     )
 }
 
-/// The CPU features `vg_aes_gcm_siv_seal_vaes_pclmul_avx2` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_SEAL_VAES_PCLMUL_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
-///
-/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
-///
-/// The machine code of this function is that of `vg_aes_gcm_siv_seal_vaes_pclmul`, which is emitted once and named both ways: the two are the same function.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq`, `ssse3`, `aes`, `vaes`, `avx` and `avx2` target features.
 #[allow(unused_imports)]
-pub use self::vg_aes_gcm_siv_seal_vaes_pclmul as vg_aes_gcm_siv_seal_vaes_pclmul_avx2;
+pub(crate) use self::vg_aes_gcm_siv_seal_vaes_pclmul as vg_aes_gcm_siv_seal_vaes_pclmul_avx2;
 
-/// The CPU features `vg_aes_gcm_siv_open_vaes_pclmul_avx2` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_OPEN_VAES_PCLMUL_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
-///
-/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
-///
-/// The machine code of this function is that of `vg_aes_gcm_siv_open_vaes_pclmul`, which is emitted once and named both ways: the two are the same function.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq`, `ssse3`, `aes`, `vaes`, `avx` and `avx2` target features.
 #[allow(unused_imports)]
-pub use self::vg_aes_gcm_siv_open_vaes_pclmul as vg_aes_gcm_siv_open_vaes_pclmul_avx2;
+pub(crate) use self::vg_aes_gcm_siv_open_vaes_pclmul as vg_aes_gcm_siv_open_vaes_pclmul_avx2;
 
-/// The CPU features `vg_aes_gcm_siv_seal_vaes_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
-///
-/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `aes`, `vaes`, `avx` and `avx2` target features.
+/// The verified code of [`super::vg_aes_gcm_siv_seal_vaes_vpclmul`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_vaes_vpclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_vaes_vpclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAAC7AAAAAEyJ/0iBx+gBAABJi6/IAAAASNHtSIPtAQ=="
 20:
@@ -7859,36 +8407,17 @@ jmp 2132f
 292:
 .base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
 .p2align 6"#,
-        vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes,
-        vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
-        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
+        vg_aes_encrypt_blocks_vaes = sym crate::aes::raw::vg_aes_encrypt_blocks_vaes,
+        vg_ghash_vpclmul = sym crate::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_aes_expand_key_scratch_aesni = sym crate::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_aes_ctr32_vaes = sym crate::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
+        VG_GCM_CONSTS = sym crate::consts::VG_GCM_CONSTS,
     )
 }
 
-/// The CPU features `vg_aes_gcm_siv_open_vaes_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
-///
-/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `aes`, `vaes`, `avx` and `avx2` target features.
+/// The verified code of [`super::vg_aes_gcm_siv_open_vaes_vpclmul`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_open_vaes_vpclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_vaes_vpclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcIuwAAAABMif9IgcfoAQAASYuvyAAAAEjR7UiD7QE="
 20:
@@ -8364,186 +8893,35 @@ jmp 2145f
 2145:
 .base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
 .p2align 6"#,
-        vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
-        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
-        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
+        vg_aes_encrypt_blocks_vaes = sym crate::aes::raw::vg_aes_encrypt_blocks_vaes,
+        vg_aes_expand_key_scratch_aesni = sym crate::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_ghash_vpclmul = sym crate::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_aes_ctr32_vaes = sym crate::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
+        VG_GCM_CONSTS = sym crate::consts::VG_GCM_CONSTS,
     )
 }
 
-/// The CPU features `vg_aes_gcm_siv_seal_vaes_vpclmul_avx2` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
-///
-/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
-///
-/// The machine code of this function is that of `vg_aes_gcm_siv_seal_vaes_vpclmul`, which is emitted once and named both ways: the two are the same function.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `aes`, `vaes`, `avx` and `avx2` target features.
 #[allow(unused_imports)]
-pub use self::vg_aes_gcm_siv_seal_vaes_vpclmul as vg_aes_gcm_siv_seal_vaes_vpclmul_avx2;
+pub(crate) use self::vg_aes_gcm_siv_seal_vaes_vpclmul as vg_aes_gcm_siv_seal_vaes_vpclmul_avx2;
 
-/// The CPU features `vg_aes_gcm_siv_open_vaes_vpclmul_avx2` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
-///
-/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
-///
-/// The machine code of this function is that of `vg_aes_gcm_siv_open_vaes_vpclmul`, which is emitted once and named both ways: the two are the same function.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `aes`, `vaes`, `avx` and `avx2` target features.
 #[allow(unused_imports)]
-pub use self::vg_aes_gcm_siv_open_vaes_vpclmul as vg_aes_gcm_siv_open_vaes_vpclmul_avx2;
+pub(crate) use self::vg_aes_gcm_siv_open_vaes_vpclmul as vg_aes_gcm_siv_open_vaes_vpclmul_avx2;
 
-/// The CPU features `vg_aes_gcm_siv_seal_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
-///
-/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
-///
-/// The machine code of this function is that of `vg_aes_gcm_siv_seal_vaes_vpclmul`, which is emitted once and named both ways: the two are the same function.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `aes`, `vaes`, `avx` and `avx2` target features.
 #[allow(unused_imports)]
-pub use self::vg_aes_gcm_siv_seal_vaes_vpclmul as vg_aes_gcm_siv_seal_vaes_vpclmul_avx512;
+pub(crate) use self::vg_aes_gcm_siv_seal_vaes_vpclmul as vg_aes_gcm_siv_seal_vaes_vpclmul_avx512;
 
-/// The CPU features `vg_aes_gcm_siv_open_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
-///
-/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
-///
-/// The machine code of this function is that of `vg_aes_gcm_siv_open_vaes_vpclmul`, which is emitted once and named both ways: the two are the same function.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `aes`, `vaes`, `avx` and `avx2` target features.
 #[allow(unused_imports)]
-pub use self::vg_aes_gcm_siv_open_vaes_vpclmul as vg_aes_gcm_siv_open_vaes_vpclmul_avx512;
+pub(crate) use self::vg_aes_gcm_siv_open_vaes_vpclmul as vg_aes_gcm_siv_open_vaes_vpclmul_avx512;
 
-/// The CPU features `vg_aes_gcm_siv_seal_vaes_vpclmul_avx512_avx2` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_AVX512_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
-///
-/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
-///
-/// The machine code of this function is that of `vg_aes_gcm_siv_seal_vaes_vpclmul`, which is emitted once and named both ways: the two are the same function.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `aes`, `vaes`, `avx` and `avx2` target features.
 #[allow(unused_imports)]
-pub use self::vg_aes_gcm_siv_seal_vaes_vpclmul as vg_aes_gcm_siv_seal_vaes_vpclmul_avx512_avx2;
+pub(crate) use self::vg_aes_gcm_siv_seal_vaes_vpclmul as vg_aes_gcm_siv_seal_vaes_vpclmul_avx512_avx2;
 
-/// The CPU features `vg_aes_gcm_siv_open_vaes_vpclmul_avx512_avx2` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_AVX512_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
-///
-/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
-///
-/// The machine code of this function is that of `vg_aes_gcm_siv_open_vaes_vpclmul`, which is emitted once and named both ways: the two are the same function.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `aes`, `vaes`, `avx` and `avx2` target features.
 #[allow(unused_imports)]
-pub use self::vg_aes_gcm_siv_open_vaes_vpclmul as vg_aes_gcm_siv_open_vaes_vpclmul_avx512_avx2;
+pub(crate) use self::vg_aes_gcm_siv_open_vaes_vpclmul as vg_aes_gcm_siv_open_vaes_vpclmul_avx512_avx2;
 
-/// The CPU features `vg_aes_gcm_siv_seal_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_SEAL_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
-///
-/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx` and `avx2` target features.
+/// The verified code of [`super::vg_aes_gcm_siv_seal_vpclmul`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_vpclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_vpclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAAC7AAAAAEyJ/0iBx+gBAABJi6/IAAAASNHtSIPtAQ=="
 20:
@@ -8790,36 +9168,17 @@ jmp 272f
 272:
 .base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
 .p2align 6"#,
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
-        vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
-        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
+        vg_aes_encrypt_blocks = sym crate::aes::raw::vg_aes_encrypt_blocks,
+        vg_ghash_vpclmul = sym crate::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_aes_expand_key_scratch = sym crate::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_aes_ctr32 = sym crate::aes::vg_aes_ctr32::vg_aes_ctr32,
+        VG_GCM_CONSTS = sym crate::consts::VG_GCM_CONSTS,
     )
 }
 
-/// The CPU features `vg_aes_gcm_siv_open_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_OPEN_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
-///
-/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx` and `avx2` target features.
+/// The verified code of [`super::vg_aes_gcm_siv_open_vpclmul`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_open_vpclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_vpclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcIuwAAAABMif9IgcfoAQAASYuvyAAAAEjR7UiD7QE="
 20:
@@ -9083,63 +9442,20 @@ jmp 278f
 278:
 .base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
 .p2align 6"#,
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
-        vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
-        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
+        vg_aes_encrypt_blocks = sym crate::aes::raw::vg_aes_encrypt_blocks,
+        vg_aes_expand_key_scratch = sym crate::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_aes_ctr32 = sym crate::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_ghash_vpclmul = sym crate::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        VG_GCM_CONSTS = sym crate::consts::VG_GCM_CONSTS,
     )
 }
 
-/// The CPU features `vg_aes_gcm_siv_seal_vpclmul_avx2` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_SEAL_VPCLMUL_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
-///
-/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
-///
-/// The machine code of this function is that of `vg_aes_gcm_siv_seal_vpclmul`, which is emitted once and named both ways: the two are the same function.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx` and `avx2` target features.
 #[allow(unused_imports)]
-pub use self::vg_aes_gcm_siv_seal_vpclmul as vg_aes_gcm_siv_seal_vpclmul_avx2;
+pub(crate) use self::vg_aes_gcm_siv_seal_vpclmul as vg_aes_gcm_siv_seal_vpclmul_avx2;
 
-/// The CPU features `vg_aes_gcm_siv_open_vpclmul_avx2` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_OPEN_VPCLMUL_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
-///
-/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
-///
-/// The machine code of this function is that of `vg_aes_gcm_siv_open_vpclmul`, which is emitted once and named both ways: the two are the same function.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx` and `avx2` target features.
 #[allow(unused_imports)]
-pub use self::vg_aes_gcm_siv_open_vpclmul as vg_aes_gcm_siv_open_vpclmul_avx2;
+pub(crate) use self::vg_aes_gcm_siv_open_vpclmul as vg_aes_gcm_siv_open_vpclmul_avx2;
+}
 
 #[rustfmt::skip]
 #[path = "internal/vg_ghash.rs"]

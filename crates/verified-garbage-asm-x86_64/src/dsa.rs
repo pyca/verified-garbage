@@ -11,8 +11,559 @@
 ///
 /// * `state` must be valid for reads and writes of 32 bytes.
 /// * `state` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_dsa_parameter_search_init(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 4], p_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_dsa_parameter_search_init(state, p_len) }
+}
+
+/// The CPU features `vg_dsa_sign_random_prevalidated_adx` requires (`Artifact.features`).
+pub const VG_DSA_SIGN_RANDOM_PREVALIDATED_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// Randomized DSA signing of a prehashed digest, for an already validated packed private key (big-endian p||q||g||y||x; vg_dsa_validate_private_key validates it). Up to eight signing attempts, each with 128 nonce draws. Returns 1 with fixed-width r||s, 0 for retry exhaustion, or 2 for insufficient random bytes; out is zero on failure and used counts consumed complete draws on every return. Timing may depend on public p,q,g,y, sampling decisions, signing success bits and consumption, not otherwise on secrets. Contract: `VG.Spec.Dsa.randomSignPrevalidatedContract`.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `used` must be valid for reads and writes of 8 bytes.
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `digest` must be valid for reads of `digest_len` bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
+/// * key_len must be 3*p_len + 2*q_len; out_len must be 2*q_len.
+/// * scratch_len must be at least 16*p_len + 64 words; destroy scratch after use.
+/// * The exact key bytes must satisfy validatePrivateKeyBytes p_len q_len key = true. A successful vg_dsa_validate_private_key call establishes this only while the key bytes remain unchanged. Primality remains the caller's responsibility.
+/// * Provide fresh independent random octets; never reuse a completed signing tape for another signature.
+/// * `out`, `used` and `scratch` must not overlap each other, `key`, `digest`, `rand` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `used`, `key`, `digest`, `rand` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `bmi2` and `adx` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_dsa_sign_random_prevalidated_adx(_dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, used: *mut [u64; 1], key: *const u8, key_len: usize, p_len: usize, q_len: usize, digest: *const u8, digest_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_dsa_sign_random_prevalidated_adx(out, out_len, used, key, key_len, p_len, q_len, digest, digest_len, rand, rand_len, scratch, scratch_len) }
+}
+
+/// The CPU features `vg_dsa_validate_private_key_adx` requires (`Artifact.features`).
+pub const VG_DSA_VALIDATE_PRIVATE_KEY_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// Validate packed DSA p||q||g||y||x as signing checks it: domain consistency, including g^q mod p = 1, 1 < y < p, 0 < x < q and g^x mod p = y. Returns 1 exactly when validation succeeds, otherwise 0. Does not test primality. Timing may depend on p,q,g,y and the result, not otherwise on x. Scratch contents are unspecified on return and may hold secrets. Contract: `VG.Spec.Dsa.validatePrivateKeyContract`.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
+/// * key_len must be 3*p_len + 2*q_len; scratch_len must be at least 16*p_len words; destroy scratch after use.
+/// * `scratch` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `bmi2` and `adx` target features.
+#[inline(always)]
+pub unsafe fn vg_dsa_validate_private_key_adx(_dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_dsa_validate_private_key_adx(key, key_len, p_len, q_len, scratch, scratch_len) }
+}
+
+/// The CPU features `vg_dsa_validate_public_key_adx` requires (`Artifact.features`).
+pub const VG_DSA_VALIDATE_PUBLIC_KEY_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// Validate packed DSA p||q||g||y, including domain consistency and both subgroup memberships. Returns 1 exactly when validation succeeds, otherwise 0. Does not test primality. The key is public; scratch contents are unspecified on return. Contract: `VG.Spec.Dsa.validatePublicKeyContract`.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
+/// * key_len must be 3*p_len + q_len; scratch_len must be at least 16*p_len words.
+/// * `scratch` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `bmi2` and `adx` target features.
+#[inline(always)]
+pub unsafe fn vg_dsa_validate_public_key_adx(_dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_dsa_validate_public_key_adx(key, key_len, p_len, q_len, scratch, scratch_len) }
+}
+
+/// The CPU features `vg_dsa_verify_prevalidated_adx` requires (`Artifact.features`).
+pub const VG_DSA_VERIFY_PREVALIDATED_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// DSA verification of a prehashed digest, for an already validated packed public key (big-endian p||q||g||y with widths p_len, q_len, p_len, p_len; vg_dsa_validate_public_key validates it). The signature is r||s with q_len bytes each. Returns 1 if verification succeeds, otherwise 0: the result of fully checked verification (`VG.Spec.Dsa.verifyContract`), whose checks of the signature scalars and digest handling it keeps. Timing may depend on p,q,g,y and the result, not otherwise on signature or digest. Contract: `VG.Spec.Dsa.verifyPrevalidatedContract`.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `signature` must be valid for reads of `signature_len` bytes.
+/// * `digest` must be valid for reads of `digest_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
+/// * key_len must be 3*p_len + q_len; signature_len must be 2*q_len.
+/// * scratch_len must be at least 16*p_len words. Scratch contents are unspecified on return.
+/// * The exact key bytes must satisfy validatePublicKeyBytes p_len q_len key = true. A successful vg_dsa_validate_public_key call establishes this only while the key bytes remain unchanged. Primality remains the caller's responsibility.
+/// * `scratch` must not overlap `key`, `signature`, `digest` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `key`, `signature`, `digest` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `bmi2` and `adx` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_dsa_verify_prevalidated_adx(_dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, p_len: usize, q_len: usize, signature: *const u8, signature_len: usize, digest: *const u8, digest_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_dsa_verify_prevalidated_adx(key, key_len, p_len, q_len, signature, signature_len, digest, digest_len, scratch, scratch_len) }
+}
+
+/// The CPU features `vg_dsa_generate_key_adx` requires (`Artifact.features`).
+pub const VG_DSA_GENERATE_KEY_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// Generate a DSA private key from p||q||g and fresh independent random bytes. Uses at most 128 rejection-sampling draws, computes y=g^x mod p, and checks algebraic consistency, not primality. Returns 1 with p||q||g||y||x, 0 for invalid input/draw limit, or 2 for insufficient randomness. Failure zeros out; used counts consumed complete draws on every return. Timing may depend on public parameters, sampling decisions, consumption and success, not otherwise on x or randomness. Contract: `VG.Spec.Dsa.generateKeyContract`.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `used` must be valid for reads and writes of 8 bytes.
+/// * `params` must be valid for reads of `params_len` bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
+/// * params_len must be 2*p_len + q_len; out_len must be 3*p_len + 2*q_len.
+/// * scratch_len must be at least 64*p_len + 1024 words; destroy scratch after use.
+/// * Caller must assure domain validity and supply fresh independent random bytes.
+/// * `out`, `used` and `scratch` must not overlap each other, `params`, `rand` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `used`, `params`, `rand` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `bmi2` and `adx` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_dsa_generate_key_adx(_dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, used: *mut [u64; 1], params: *const u8, params_len: usize, p_len: usize, q_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_dsa_generate_key_adx(out, out_len, used, params, params_len, p_len, q_len, rand, rand_len, scratch, scratch_len) }
+}
+
+/// The CPU features `vg_dsa_derive_key_adx` requires (`Artifact.features`).
+pub const VG_DSA_DERIVE_KEY_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// Derive a DSA private key from big-endian p||q||g and a supplied q_len-byte scalar x, as key generation does after sampling x: checks the domain and 0 < x < q, computes y = g^x mod p and checks the key. Returns 1 with p||q||g||y||x, or 0 and zero output. Checks algebraic consistency, not primality. x must be a fresh uniform scalar the caller sampled. Timing may depend on p, q, g and success, not otherwise on x. Contract: `VG.Spec.Dsa.deriveKeyContract`.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `params` must be valid for reads of `params_len` bytes.
+/// * `x` must be valid for reads of `q_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
+/// * params_len must be 2*p_len + q_len; out_len must be 3*p_len + 2*q_len.
+/// * scratch_len must be at least 16*p_len words. Scratch may contain secrets on return.
+/// * `out` and `scratch` must not overlap each other, `params`, `x` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `params`, `x` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `bmi2` and `adx` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_dsa_derive_key_adx(_dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, params: *const u8, params_len: usize, p_len: usize, x: *const u8, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_dsa_derive_key_adx(out, out_len, params, params_len, p_len, x, q_len, scratch, scratch_len) }
+}
+
+/// Randomized DSA signing of a prehashed digest, for an already validated packed private key (big-endian p||q||g||y||x; vg_dsa_validate_private_key validates it). Up to eight signing attempts, each with 128 nonce draws. Returns 1 with fixed-width r||s, 0 for retry exhaustion, or 2 for insufficient random bytes; out is zero on failure and used counts consumed complete draws on every return. Timing may depend on public p,q,g,y, sampling decisions, signing success bits and consumption, not otherwise on secrets. Contract: `VG.Spec.Dsa.randomSignPrevalidatedContract`.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `used` must be valid for reads and writes of 8 bytes.
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `digest` must be valid for reads of `digest_len` bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
+/// * key_len must be 3*p_len + 2*q_len; out_len must be 2*q_len.
+/// * scratch_len must be at least 16*p_len + 64 words; destroy scratch after use.
+/// * The exact key bytes must satisfy validatePrivateKeyBytes p_len q_len key = true. A successful vg_dsa_validate_private_key call establishes this only while the key bytes remain unchanged. Primality remains the caller's responsibility.
+/// * Provide fresh independent random octets; never reuse a completed signing tape for another signature.
+/// * `out`, `used` and `scratch` must not overlap each other, `key`, `digest`, `rand` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `used`, `key`, `digest`, `rand` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_dsa_sign_random_prevalidated(_dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, used: *mut [u64; 1], key: *const u8, key_len: usize, p_len: usize, q_len: usize, digest: *const u8, digest_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_dsa_sign_random_prevalidated(out, out_len, used, key, key_len, p_len, q_len, digest, digest_len, rand, rand_len, scratch, scratch_len) }
+}
+
+/// Validate packed DSA p||q||g||y||x as signing checks it: domain consistency, including g^q mod p = 1, 1 < y < p, 0 < x < q and g^x mod p = y. Returns 1 exactly when validation succeeds, otherwise 0. Does not test primality. Timing may depend on p,q,g,y and the result, not otherwise on x. Scratch contents are unspecified on return and may hold secrets. Contract: `VG.Spec.Dsa.validatePrivateKeyContract`.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
+/// * key_len must be 3*p_len + 2*q_len; scratch_len must be at least 16*p_len words; destroy scratch after use.
+/// * `scratch` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_dsa_validate_private_key(_dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_dsa_validate_private_key(key, key_len, p_len, q_len, scratch, scratch_len) }
+}
+
+/// Validate packed DSA p||q||g||y, including domain consistency and both subgroup memberships. Returns 1 exactly when validation succeeds, otherwise 0. Does not test primality. The key is public; scratch contents are unspecified on return. Contract: `VG.Spec.Dsa.validatePublicKeyContract`.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
+/// * key_len must be 3*p_len + q_len; scratch_len must be at least 16*p_len words.
+/// * `scratch` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_dsa_validate_public_key(_dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_dsa_validate_public_key(key, key_len, p_len, q_len, scratch, scratch_len) }
+}
+
+/// DSA verification of a prehashed digest, for an already validated packed public key (big-endian p||q||g||y with widths p_len, q_len, p_len, p_len; vg_dsa_validate_public_key validates it). The signature is r||s with q_len bytes each. Returns 1 if verification succeeds, otherwise 0: the result of fully checked verification (`VG.Spec.Dsa.verifyContract`), whose checks of the signature scalars and digest handling it keeps. Timing may depend on p,q,g,y and the result, not otherwise on signature or digest. Contract: `VG.Spec.Dsa.verifyPrevalidatedContract`.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `signature` must be valid for reads of `signature_len` bytes.
+/// * `digest` must be valid for reads of `digest_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
+/// * key_len must be 3*p_len + q_len; signature_len must be 2*q_len.
+/// * scratch_len must be at least 16*p_len words. Scratch contents are unspecified on return.
+/// * The exact key bytes must satisfy validatePublicKeyBytes p_len q_len key = true. A successful vg_dsa_validate_public_key call establishes this only while the key bytes remain unchanged. Primality remains the caller's responsibility.
+/// * `scratch` must not overlap `key`, `signature`, `digest` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `key`, `signature`, `digest` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_dsa_verify_prevalidated(_dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, p_len: usize, q_len: usize, signature: *const u8, signature_len: usize, digest: *const u8, digest_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_dsa_verify_prevalidated(key, key_len, p_len, q_len, signature, signature_len, digest, digest_len, scratch, scratch_len) }
+}
+
+/// Generate a DSA private key from p||q||g and fresh independent random bytes. Uses at most 128 rejection-sampling draws, computes y=g^x mod p, and checks algebraic consistency, not primality. Returns 1 with p||q||g||y||x, 0 for invalid input/draw limit, or 2 for insufficient randomness. Failure zeros out; used counts consumed complete draws on every return. Timing may depend on public parameters, sampling decisions, consumption and success, not otherwise on x or randomness. Contract: `VG.Spec.Dsa.generateKeyContract`.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `used` must be valid for reads and writes of 8 bytes.
+/// * `params` must be valid for reads of `params_len` bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
+/// * params_len must be 2*p_len + q_len; out_len must be 3*p_len + 2*q_len.
+/// * scratch_len must be at least 64*p_len + 1024 words; destroy scratch after use.
+/// * Caller must assure domain validity and supply fresh independent random bytes.
+/// * `out`, `used` and `scratch` must not overlap each other, `params`, `rand` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `used`, `params`, `rand` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_dsa_generate_key(_dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, used: *mut [u64; 1], params: *const u8, params_len: usize, p_len: usize, q_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_dsa_generate_key(out, out_len, used, params, params_len, p_len, q_len, rand, rand_len, scratch, scratch_len) }
+}
+
+/// Derive a DSA private key from big-endian p||q||g and a supplied q_len-byte scalar x, as key generation does after sampling x: checks the domain and 0 < x < q, computes y = g^x mod p and checks the key. Returns 1 with p||q||g||y||x, or 0 and zero output. Checks algebraic consistency, not primality. x must be a fresh uniform scalar the caller sampled. Timing may depend on p, q, g and success, not otherwise on x. Contract: `VG.Spec.Dsa.deriveKeyContract`.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `params` must be valid for reads of `params_len` bytes.
+/// * `x` must be valid for reads of `q_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
+/// * params_len must be 2*p_len + q_len; out_len must be 3*p_len + 2*q_len.
+/// * scratch_len must be at least 16*p_len words. Scratch may contain secrets on return.
+/// * `out` and `scratch` must not overlap each other, `params`, `x` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `params`, `x` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_dsa_derive_key(_dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, params: *const u8, params_len: usize, p_len: usize, x: *const u8, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_dsa_derive_key(out, out_len, params, params_len, p_len, x, q_len, scratch, scratch_len) }
+}
+
+/// The CPU features `vg_dsa_parameter_search_mr_adx` requires (`Artifact.features`).
+pub const VG_DSA_PARAMETER_SEARCH_MR_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// Search for DSA domain parameters (FIPS 186-4 A.1.1.2 and A.2.1) over the random tape `rand`, for the modulus width in `state`: each seed, its `q`, the `p` candidates from it and the generator's `h` candidates are read from `rand` in turn, with the rejected seeds counted in `state`. Returns 1 and writes `p || q || g` to `out` once parameters are found; 3 if the search is exhausted, by too many rejected seeds or by one seed needing more than the entropy budget; or 0 if the tape ran out inside a seed. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose last word is, for 0, the length of the next tape, more than the octets of `rand` after the first `used` and at most the entropy budget: keep those octets, in order, and append fresh random octets up to that length. `out` is zeros but for 1. Accepted parameters pass probable-prime tests, not primality certification.
+///
+/// Contract: `VG.Spec.Dsa.parameterSearchContract`. Timing may depend on everything, `rand` included: these are public domain parameters.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `used` must be valid for reads and writes of 8 bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `state` must be valid for reads and writes of 32 bytes.
+/// * `state` must come from `vg_dsa_parameter_search_init`, or from the last call of this function that returned 0.
+/// * `out_len` must be `2 * state[1]` plus 20 if `state[1]` is 128, else plus 32.
+/// * `rand_len` must be at most the entropy budget, `state[2]`.
+/// * `scratch_len` must be at least `64 * state[1] + 1024` words.
+/// * `rand` must hold independent uniform random octets. They are public under this contract and must never be used for private scalars or nonces.
+/// * `out`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `bmi2` and `adx` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_dsa_parameter_search_mr_adx(_dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_dsa_parameter_search_mr_adx(out, out_len, used, rand, rand_len, scratch, scratch_len, state) }
+}
+
+/// Search for DSA domain parameters (FIPS 186-4 A.1.1.2 and A.2.1) over the random tape `rand`, for the modulus width in `state`: each seed, its `q`, the `p` candidates from it and the generator's `h` candidates are read from `rand` in turn, with the rejected seeds counted in `state`. Returns 1 and writes `p || q || g` to `out` once parameters are found; 3 if the search is exhausted, by too many rejected seeds or by one seed needing more than the entropy budget; or 0 if the tape ran out inside a seed. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose last word is, for 0, the length of the next tape, more than the octets of `rand` after the first `used` and at most the entropy budget: keep those octets, in order, and append fresh random octets up to that length. `out` is zeros but for 1. Accepted parameters pass probable-prime tests, not primality certification.
+///
+/// Contract: `VG.Spec.Dsa.parameterSearchContract`. Timing may depend on everything, `rand` included: these are public domain parameters.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `used` must be valid for reads and writes of 8 bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `state` must be valid for reads and writes of 32 bytes.
+/// * `state` must come from `vg_dsa_parameter_search_init`, or from the last call of this function that returned 0.
+/// * `out_len` must be `2 * state[1]` plus 20 if `state[1]` is 128, else plus 32.
+/// * `rand_len` must be at most the entropy budget, `state[2]`.
+/// * `scratch_len` must be at least `64 * state[1] + 1024` words.
+/// * `rand` must hold independent uniform random octets. They are public under this contract and must never be used for private scalars or nonces.
+/// * `out`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_dsa_parameter_search(_dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_dsa_parameter_search(out, out_len, used, rand, rand_len, scratch, scratch_len, state) }
+}
+
+/// The CPU features `vg_dsa_parameter_search_mr_ifma` requires (`Artifact.features`).
+pub const VG_DSA_PARAMETER_SEARCH_MR_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// Search for DSA domain parameters (FIPS 186-4 A.1.1.2 and A.2.1) over the random tape `rand`, for the modulus width in `state`: each seed, its `q`, the `p` candidates from it and the generator's `h` candidates are read from `rand` in turn, with the rejected seeds counted in `state`. Returns 1 and writes `p || q || g` to `out` once parameters are found; 3 if the search is exhausted, by too many rejected seeds or by one seed needing more than the entropy budget; or 0 if the tape ran out inside a seed. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose last word is, for 0, the length of the next tape, more than the octets of `rand` after the first `used` and at most the entropy budget: keep those octets, in order, and append fresh random octets up to that length. `out` is zeros but for 1. Accepted parameters pass probable-prime tests, not primality certification.
+///
+/// Contract: `VG.Spec.Dsa.parameterSearchContract`. Timing may depend on everything, `rand` included: these are public domain parameters.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `used` must be valid for reads and writes of 8 bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `state` must be valid for reads and writes of 32 bytes.
+/// * `state` must come from `vg_dsa_parameter_search_init`, or from the last call of this function that returned 0.
+/// * `out_len` must be `2 * state[1]` plus 20 if `state[1]` is 128, else plus 32.
+/// * `rand_len` must be at most the entropy budget, `state[2]`.
+/// * `scratch_len` must be at least `64 * state[1] + 1024` words.
+/// * `rand` must hold independent uniform random octets. They are public under this contract and must never be used for private scalars or nonces.
+/// * `out`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_dsa_parameter_search_mr_ifma(_dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_dsa_parameter_search_mr_ifma(out, out_len, used, rand, rand_len, scratch, scratch_len, state) }
+}
+
+/// The CPU features `vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_adx` requires (`Artifact.features`).
+pub const VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_MR_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::ADX);
+
+/// Search for DSA domain parameters (FIPS 186-4 A.1.1.2 and A.2.1) over the random tape `rand`, for the modulus width in `state`: each seed, its `q`, the `p` candidates from it and the generator's `h` candidates are read from `rand` in turn, with the rejected seeds counted in `state`. Returns 1 and writes `p || q || g` to `out` once parameters are found; 3 if the search is exhausted, by too many rejected seeds or by one seed needing more than the entropy budget; or 0 if the tape ran out inside a seed. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose last word is, for 0, the length of the next tape, more than the octets of `rand` after the first `used` and at most the entropy budget: keep those octets, in order, and append fresh random octets up to that length. `out` is zeros but for 1. Accepted parameters pass probable-prime tests, not primality certification.
+///
+/// Contract: `VG.Spec.Dsa.parameterSearchContract`. Timing may depend on everything, `rand` included: these are public domain parameters.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `used` must be valid for reads and writes of 8 bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `state` must be valid for reads and writes of 32 bytes.
+/// * `state` must come from `vg_dsa_parameter_search_init`, or from the last call of this function that returned 0.
+/// * `out_len` must be `2 * state[1]` plus 20 if `state[1]` is 128, else plus 32.
+/// * `rand_len` must be at most the entropy budget, `state[2]`.
+/// * `scratch_len` must be at least `64 * state[1] + 1024` words.
+/// * `rand` must hold independent uniform random octets. They are public under this contract and must never be used for private scalars or nonces.
+/// * `out`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `bmi1`, `bmi2`, `avx2` and `adx` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_adx(_dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_adx(out, out_len, used, rand, rand_len, scratch, scratch_len, state) }
+}
+
+/// The CPU features `vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2` requires (`Artifact.features`).
+pub const VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::AVX2);
+
+/// Search for DSA domain parameters (FIPS 186-4 A.1.1.2 and A.2.1) over the random tape `rand`, for the modulus width in `state`: each seed, its `q`, the `p` candidates from it and the generator's `h` candidates are read from `rand` in turn, with the rejected seeds counted in `state`. Returns 1 and writes `p || q || g` to `out` once parameters are found; 3 if the search is exhausted, by too many rejected seeds or by one seed needing more than the entropy budget; or 0 if the tape ran out inside a seed. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose last word is, for 0, the length of the next tape, more than the octets of `rand` after the first `used` and at most the entropy budget: keep those octets, in order, and append fresh random octets up to that length. `out` is zeros but for 1. Accepted parameters pass probable-prime tests, not primality certification.
+///
+/// Contract: `VG.Spec.Dsa.parameterSearchContract`. Timing may depend on everything, `rand` included: these are public domain parameters.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `used` must be valid for reads and writes of 8 bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `state` must be valid for reads and writes of 32 bytes.
+/// * `state` must come from `vg_dsa_parameter_search_init`, or from the last call of this function that returned 0.
+/// * `out_len` must be `2 * state[1]` plus 20 if `state[1]` is 128, else plus 32.
+/// * `rand_len` must be at most the entropy budget, `state[2]`.
+/// * `scratch_len` must be at least `64 * state[1] + 1024` words.
+/// * `rand` must hold independent uniform random octets. They are public under this contract and must never be used for private scalars or nonces.
+/// * `out`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `bmi1`, `bmi2` and `avx2` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2(_dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2(out, out_len, used, rand, rand_len, scratch, scratch_len, state) }
+}
+
+/// The CPU features `vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_ifma` requires (`Artifact.features`).
+pub const VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_MR_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::ADX);
+
+/// Search for DSA domain parameters (FIPS 186-4 A.1.1.2 and A.2.1) over the random tape `rand`, for the modulus width in `state`: each seed, its `q`, the `p` candidates from it and the generator's `h` candidates are read from `rand` in turn, with the rejected seeds counted in `state`. Returns 1 and writes `p || q || g` to `out` once parameters are found; 3 if the search is exhausted, by too many rejected seeds or by one seed needing more than the entropy budget; or 0 if the tape ran out inside a seed. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose last word is, for 0, the length of the next tape, more than the octets of `rand` after the first `used` and at most the entropy budget: keep those octets, in order, and append fresh random octets up to that length. `out` is zeros but for 1. Accepted parameters pass probable-prime tests, not primality certification.
+///
+/// Contract: `VG.Spec.Dsa.parameterSearchContract`. Timing may depend on everything, `rand` included: these are public domain parameters.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `used` must be valid for reads and writes of 8 bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `state` must be valid for reads and writes of 32 bytes.
+/// * `state` must come from `vg_dsa_parameter_search_init`, or from the last call of this function that returned 0.
+/// * `out_len` must be `2 * state[1]` plus 20 if `state[1]` is 128, else plus 32.
+/// * `rand_len` must be at most the entropy budget, `state[2]`.
+/// * `scratch_len` must be at least `64 * state[1] + 1024` words.
+/// * `rand` must hold independent uniform random octets. They are public under this contract and must never be used for private scalars or nonces.
+/// * `out`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `bmi1`, `bmi2`, `avx2`, `avx512f`, `avx512ifma`, `avx512vl` and `adx` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_ifma(_dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_ifma(out, out_len, used, rand, rand_len, scratch, scratch_len, state) }
+}
+
+/// The CPU features `vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_adx` requires (`Artifact.features`).
+pub const VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_MR_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// Search for DSA domain parameters (FIPS 186-4 A.1.1.2 and A.2.1) over the random tape `rand`, for the modulus width in `state`: each seed, its `q`, the `p` candidates from it and the generator's `h` candidates are read from `rand` in turn, with the rejected seeds counted in `state`. Returns 1 and writes `p || q || g` to `out` once parameters are found; 3 if the search is exhausted, by too many rejected seeds or by one seed needing more than the entropy budget; or 0 if the tape ran out inside a seed. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose last word is, for 0, the length of the next tape, more than the octets of `rand` after the first `used` and at most the entropy budget: keep those octets, in order, and append fresh random octets up to that length. `out` is zeros but for 1. Accepted parameters pass probable-prime tests, not primality certification.
+///
+/// Contract: `VG.Spec.Dsa.parameterSearchContract`. Timing may depend on everything, `rand` included: these are public domain parameters.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `used` must be valid for reads and writes of 8 bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `state` must be valid for reads and writes of 32 bytes.
+/// * `state` must come from `vg_dsa_parameter_search_init`, or from the last call of this function that returned 0.
+/// * `out_len` must be `2 * state[1]` plus 20 if `state[1]` is 128, else plus 32.
+/// * `rand_len` must be at most the entropy budget, `state[2]`.
+/// * `scratch_len` must be at least `64 * state[1] + 1024` words.
+/// * `rand` must hold independent uniform random octets. They are public under this contract and must never be used for private scalars or nonces.
+/// * `out`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha`, `ssse3`, `bmi2` and `adx` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_adx(_dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_adx(out, out_len, used, rand, rand_len, scratch, scratch_len, state) }
+}
+
+/// The CPU features `vg_dsa_parameter_search_sha1_shani_sha256_shani` requires (`Artifact.features`).
+pub const VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
+
+/// Search for DSA domain parameters (FIPS 186-4 A.1.1.2 and A.2.1) over the random tape `rand`, for the modulus width in `state`: each seed, its `q`, the `p` candidates from it and the generator's `h` candidates are read from `rand` in turn, with the rejected seeds counted in `state`. Returns 1 and writes `p || q || g` to `out` once parameters are found; 3 if the search is exhausted, by too many rejected seeds or by one seed needing more than the entropy budget; or 0 if the tape ran out inside a seed. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose last word is, for 0, the length of the next tape, more than the octets of `rand` after the first `used` and at most the entropy budget: keep those octets, in order, and append fresh random octets up to that length. `out` is zeros but for 1. Accepted parameters pass probable-prime tests, not primality certification.
+///
+/// Contract: `VG.Spec.Dsa.parameterSearchContract`. Timing may depend on everything, `rand` included: these are public domain parameters.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `used` must be valid for reads and writes of 8 bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `state` must be valid for reads and writes of 32 bytes.
+/// * `state` must come from `vg_dsa_parameter_search_init`, or from the last call of this function that returned 0.
+/// * `out_len` must be `2 * state[1]` plus 20 if `state[1]` is 128, else plus 32.
+/// * `rand_len` must be at most the entropy budget, `state[2]`.
+/// * `scratch_len` must be at least `64 * state[1] + 1024` words.
+/// * `rand` must hold independent uniform random octets. They are public under this contract and must never be used for private scalars or nonces.
+/// * `out`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha` and `ssse3` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_dsa_parameter_search_sha1_shani_sha256_shani(_dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_dsa_parameter_search_sha1_shani_sha256_shani(out, out_len, used, rand, rand_len, scratch, scratch_len, state) }
+}
+
+/// The CPU features `vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_ifma` requires (`Artifact.features`).
+pub const VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_MR_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// Search for DSA domain parameters (FIPS 186-4 A.1.1.2 and A.2.1) over the random tape `rand`, for the modulus width in `state`: each seed, its `q`, the `p` candidates from it and the generator's `h` candidates are read from `rand` in turn, with the rejected seeds counted in `state`. Returns 1 and writes `p || q || g` to `out` once parameters are found; 3 if the search is exhausted, by too many rejected seeds or by one seed needing more than the entropy budget; or 0 if the tape ran out inside a seed. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose last word is, for 0, the length of the next tape, more than the octets of `rand` after the first `used` and at most the entropy budget: keep those octets, in order, and append fresh random octets up to that length. `out` is zeros but for 1. Accepted parameters pass probable-prime tests, not primality certification.
+///
+/// Contract: `VG.Spec.Dsa.parameterSearchContract`. Timing may depend on everything, `rand` included: these are public domain parameters.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `used` must be valid for reads and writes of 8 bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `state` must be valid for reads and writes of 32 bytes.
+/// * `state` must come from `vg_dsa_parameter_search_init`, or from the last call of this function that returned 0.
+/// * `out_len` must be `2 * state[1]` plus 20 if `state[1]` is 128, else plus 32.
+/// * `rand_len` must be at most the entropy budget, `state[2]`.
+/// * `scratch_len` must be at least `64 * state[1] + 1024` words.
+/// * `rand` must hold independent uniform random octets. They are public under this contract and must never be used for private scalars or nonces.
+/// * `out`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha`, `ssse3`, `avx`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_ifma(_dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_ifma(out, out_len, used, rand, rand_len, scratch, scratch_len, state) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_dsa_parameter_search_init`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_dsa_parameter_search_init(state: *mut [u64; 4], p_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_dsa_parameter_search_init(state: *mut [u64; 4], p_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SIH+gAAAAA=="
 je 20f
@@ -38,29 +589,9 @@ jmp 21f
     )
 }
 
-/// The CPU features `vg_dsa_sign_random_prevalidated_adx` requires (`Artifact.features`).
-pub const VG_DSA_SIGN_RANDOM_PREVALIDATED_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
-
-/// Randomized DSA signing of a prehashed digest, for an already validated packed private key (big-endian p||q||g||y||x; vg_dsa_validate_private_key validates it). Up to eight signing attempts, each with 128 nonce draws. Returns 1 with fixed-width r||s, 0 for retry exhaustion, or 2 for insufficient random bytes; out is zero on failure and used counts consumed complete draws on every return. Timing may depend on public p,q,g,y, sampling decisions, signing success bits and consumption, not otherwise on secrets. Contract: `VG.Spec.Dsa.randomSignPrevalidatedContract`.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `used` must be valid for reads and writes of 8 bytes.
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `digest` must be valid for reads of `digest_len` bytes.
-/// * `rand` must be valid for reads of `rand_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
-/// * key_len must be 3*p_len + 2*q_len; out_len must be 2*q_len.
-/// * scratch_len must be at least 16*p_len + 64 words; destroy scratch after use.
-/// * The exact key bytes must satisfy validatePrivateKeyBytes p_len q_len key = true. A successful vg_dsa_validate_private_key call establishes this only while the key bytes remain unchanged. Primality remains the caller's responsibility.
-/// * Provide fresh independent random octets; never reuse a completed signing tape for another signature.
-/// * `out`, `used` and `scratch` must not overlap each other, `key`, `digest`, `rand` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `used`, `key`, `digest`, `rand` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `bmi2` and `adx` target features.
+/// The verified code of [`super::vg_dsa_sign_random_prevalidated_adx`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_dsa_sign_random_prevalidated_adx(out: *mut u8, out_len: usize, used: *mut [u64; 1], key: *const u8, key_len: usize, p_len: usize, q_len: usize, digest: *const u8, digest_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_dsa_sign_random_prevalidated_adx(out: *mut u8, out_len: usize, used: *mut [u64; 1], key: *const u8, key_len: usize, p_len: usize, q_len: usize, digest: *const u8, digest_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJAj///9IiXwkKEiJdCQwSIlUJDhIiUwkQEyJRCRITIlMJFBMAclIiYwkqAAAAEjHwAAAAABIiYQkkAAAAEjHwAgAAABIiYQkmAAAAEiLhCQAAQAASIlEJFhIi4QkCAEAAEiJRCRgSIuEJBABAABIiUQkaEiLhCQYAQAASIlEJHBIi4QkIAEAAEiJRCR4SIuEJCgBAABIiYQkgAAAAEiLhCQwAQAASImEJIgAAABIx8AAAAAASImEJMgAAABIiYQk0AAAAEiJhCTYAAAASImEJOAAAABMi5QkqAAAAEyLXCRYTInWTInZQbgAAAAAQbkAAAAA"
 20:
@@ -149,26 +680,13 @@ jne 227b
 226:
 .base64 "SMfAAAAAAEiJhCTIAAAASImEJNAAAABIiYQk2AAAAEiJhCTgAAAASItUJDhIi4QkkAAAAEiJAkiLhCTAAAAASI2kJPgAAADD"
 .p2align 6"#,
-        vg_dsa_sign_prevalidated_adx = sym super::dsa::vg_dsa_sign_prevalidated_adx::vg_dsa_sign_prevalidated_adx,
+        vg_dsa_sign_prevalidated_adx = sym crate::dsa::vg_dsa_sign_prevalidated_adx::vg_dsa_sign_prevalidated_adx,
     )
 }
 
-/// The CPU features `vg_dsa_validate_private_key_adx` requires (`Artifact.features`).
-pub const VG_DSA_VALIDATE_PRIVATE_KEY_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
-
-/// Validate packed DSA p||q||g||y||x as signing checks it: domain consistency, including g^q mod p = 1, 1 < y < p, 0 < x < q and g^x mod p = y. Returns 1 exactly when validation succeeds, otherwise 0. Does not test primality. Timing may depend on p,q,g,y and the result, not otherwise on x. Scratch contents are unspecified on return and may hold secrets. Contract: `VG.Spec.Dsa.validatePrivateKeyContract`.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
-/// * key_len must be 3*p_len + 2*q_len; scratch_len must be at least 16*p_len words; destroy scratch after use.
-/// * `scratch` must not overlap `key` (distinct Rust objects never do).
-/// * Neither `key` nor `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `bmi2` and `adx` target features.
+/// The verified code of [`super::vg_dsa_validate_private_key_adx`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_dsa_validate_private_key_adx(key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_dsa_validate_private_key_adx(key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "TYnDSYkbSYlrCE2JYxBNiWsYTYlzIE2Jeyi4AAAAAEmJgygBAABJiYNAAQAASYmDMAEAAEmJgzgBAABJiYNYAQAASYm7AAEAAEmJk0gBAABJiYtQAQAASYuDAAEAAEkDg0gBAABJiYMIAQAASQODUAEAAEmJgxABAABJA4NIAQAASYmDGAEAAEkDg0gBAABJiYMgAQAATInfSYuDIAEAAEmJgzABAABIi7cAAQAASIuPSAEAAEG4AAAAAEG5AAAAAA=="
 20:
@@ -923,27 +1441,14 @@ jmp 217f
 217:
 .base64 "ww=="
 .p2align 6"#,
-        vg_rsa_mont_mul_adx = sym super::rsa::vg_rsa_mont_mul_adx::vg_rsa_mont_mul_adx,
-        vg_rsa_lazy_mont_mul_adx = sym super::rsa::vg_rsa_lazy_mont_mul_adx::vg_rsa_lazy_mont_mul_adx,
+        vg_rsa_mont_mul_adx = sym crate::rsa::vg_rsa_mont_mul_adx::vg_rsa_mont_mul_adx,
+        vg_rsa_lazy_mont_mul_adx = sym crate::rsa::vg_rsa_lazy_mont_mul_adx::vg_rsa_lazy_mont_mul_adx,
     )
 }
 
-/// The CPU features `vg_dsa_validate_public_key_adx` requires (`Artifact.features`).
-pub const VG_DSA_VALIDATE_PUBLIC_KEY_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
-
-/// Validate packed DSA p||q||g||y, including domain consistency and both subgroup memberships. Returns 1 exactly when validation succeeds, otherwise 0. Does not test primality. The key is public; scratch contents are unspecified on return. Contract: `VG.Spec.Dsa.validatePublicKeyContract`.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
-/// * key_len must be 3*p_len + q_len; scratch_len must be at least 16*p_len words.
-/// * `scratch` must not overlap `key` (distinct Rust objects never do).
-/// * Neither `key` nor `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `bmi2` and `adx` target features.
+/// The verified code of [`super::vg_dsa_validate_public_key_adx`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_dsa_validate_public_key_adx(key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_dsa_validate_public_key_adx(key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "TYnDSYkbSYlrCE2JYxBNiWsYTYlzIE2Jeyi4AAAAAEmJg0ABAABJiYMwAQAASYm7AAEAAEmJk0gBAABJiYtQAQAATYmDKAEAAEmJgzgBAABJiYNYAQAASYuDAAEAAEkDg0gBAABJiYMIAQAASQODUAEAAEmJgxABAABJA4NIAQAASYmDGAEAAEkDg0gBAABJiYMgAQAATInfSIu3AAEAAEiLj0gBAABBuAAAAABBuQAAAAA="
 20:
@@ -1667,31 +2172,14 @@ jmp 217f
 217:
 .base64 "ww=="
 .p2align 6"#,
-        vg_rsa_mont_mul_adx = sym super::rsa::vg_rsa_mont_mul_adx::vg_rsa_mont_mul_adx,
-        vg_rsa_lazy_mont_mul_adx = sym super::rsa::vg_rsa_lazy_mont_mul_adx::vg_rsa_lazy_mont_mul_adx,
+        vg_rsa_mont_mul_adx = sym crate::rsa::vg_rsa_mont_mul_adx::vg_rsa_mont_mul_adx,
+        vg_rsa_lazy_mont_mul_adx = sym crate::rsa::vg_rsa_lazy_mont_mul_adx::vg_rsa_lazy_mont_mul_adx,
     )
 }
 
-/// The CPU features `vg_dsa_verify_prevalidated_adx` requires (`Artifact.features`).
-pub const VG_DSA_VERIFY_PREVALIDATED_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
-
-/// DSA verification of a prehashed digest, for an already validated packed public key (big-endian p||q||g||y with widths p_len, q_len, p_len, p_len; vg_dsa_validate_public_key validates it). The signature is r||s with q_len bytes each. Returns 1 if verification succeeds, otherwise 0: the result of fully checked verification (`VG.Spec.Dsa.verifyContract`), whose checks of the signature scalars and digest handling it keeps. Timing may depend on p,q,g,y and the result, not otherwise on signature or digest. Contract: `VG.Spec.Dsa.verifyPrevalidatedContract`.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `signature` must be valid for reads of `signature_len` bytes.
-/// * `digest` must be valid for reads of `digest_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
-/// * key_len must be 3*p_len + q_len; signature_len must be 2*q_len.
-/// * scratch_len must be at least 16*p_len words. Scratch contents are unspecified on return.
-/// * The exact key bytes must satisfy validatePublicKeyBytes p_len q_len key = true. A successful vg_dsa_validate_public_key call establishes this only while the key bytes remain unchanged. Primality remains the caller's responsibility.
-/// * `scratch` must not overlap `key`, `signature`, `digest` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `key`, `signature`, `digest` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `bmi2` and `adx` target features.
+/// The verified code of [`super::vg_dsa_verify_prevalidated_adx`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_dsa_verify_prevalidated_adx(key: *const u8, key_len: usize, p_len: usize, q_len: usize, signature: *const u8, signature_len: usize, digest: *const u8, digest_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_dsa_verify_prevalidated_adx(key: *const u8, key_len: usize, p_len: usize, q_len: usize, signature: *const u8, signature_len: usize, digest: *const u8, digest_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "TItcJBhJiRtJiWsITYljEE2JaxhNiXMgTYl7KLgAAAAASYmDQAEAAEmJgzABAABJibsAAQAASYmTSAEAAEmJi1ABAABNiYMoAQAASItEJAhJiYM4AQAASItEJBBJiYNYAQAASYuDAAEAAEkDg0gBAABJiYMIAQAASQODUAEAAEmJgxABAABJA4NIAQAASYmDGAEAAEkDg0gBAABJiYMgAQAATInfSIu3AAEAAEiLj0gBAABBuAAAAABBuQAAAAA="
 20:
@@ -2942,32 +3430,14 @@ jmp 217f
 217:
 .base64 "ww=="
 .p2align 6"#,
-        vg_rsa_mont_mul_adx = sym super::rsa::vg_rsa_mont_mul_adx::vg_rsa_mont_mul_adx,
-        vg_rsa_lazy_mont_mul_adx = sym super::rsa::vg_rsa_lazy_mont_mul_adx::vg_rsa_lazy_mont_mul_adx,
+        vg_rsa_mont_mul_adx = sym crate::rsa::vg_rsa_mont_mul_adx::vg_rsa_mont_mul_adx,
+        vg_rsa_lazy_mont_mul_adx = sym crate::rsa::vg_rsa_lazy_mont_mul_adx::vg_rsa_lazy_mont_mul_adx,
     )
 }
 
-/// The CPU features `vg_dsa_generate_key_adx` requires (`Artifact.features`).
-pub const VG_DSA_GENERATE_KEY_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
-
-/// Generate a DSA private key from p||q||g and fresh independent random bytes. Uses at most 128 rejection-sampling draws, computes y=g^x mod p, and checks algebraic consistency, not primality. Returns 1 with p||q||g||y||x, 0 for invalid input/draw limit, or 2 for insufficient randomness. Failure zeros out; used counts consumed complete draws on every return. Timing may depend on public parameters, sampling decisions, consumption and success, not otherwise on x or randomness. Contract: `VG.Spec.Dsa.generateKeyContract`.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `used` must be valid for reads and writes of 8 bytes.
-/// * `params` must be valid for reads of `params_len` bytes.
-/// * `rand` must be valid for reads of `rand_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
-/// * params_len must be 2*p_len + q_len; out_len must be 3*p_len + 2*q_len.
-/// * scratch_len must be at least 64*p_len + 1024 words; destroy scratch after use.
-/// * Caller must assure domain validity and supply fresh independent random bytes.
-/// * `out`, `used` and `scratch` must not overlap each other, `params`, `rand` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `used`, `params`, `rand` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `bmi2` and `adx` target features.
+/// The verified code of [`super::vg_dsa_generate_key_adx`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_dsa_generate_key_adx(out: *mut u8, out_len: usize, used: *mut [u64; 1], params: *const u8, params_len: usize, p_len: usize, q_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_dsa_generate_key_adx(out: *mut u8, out_len: usize, used: *mut [u64; 1], params: *const u8, params_len: usize, p_len: usize, q_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJAj///9IiXwkKEiJdCQwSIlUJDhIiUwkQEyJRCRITIlMJFBMAclIiYwkqAAAAEjHwAAAAABIiYQkkAAAAEiJhCTAAAAASIuEJAABAABIiUQkWEiLhCQIAQAASIlEJHBIi4QkEAEAAEiJRCR4SIuEJBgBAABIiYQkgAAAAEiLhCQgAQAASImEJIgAAABIi3wkQEiLdCRISItUJFBIi0wkWEyLhCSAAAAATIuMJIgAAAA="
 call {vg_dsa_check_parameters_adx}
@@ -3050,30 +3520,14 @@ jne 224b
 223:
 .base64 "SMfAAAAAAEiJhCTIAAAASImEJNAAAABIiYQk2AAAAEiJhCTgAAAASItUJDhIi4QkkAAAAEiJAkiLhCTAAAAASI2kJPgAAADD"
 .p2align 6"#,
-        vg_dsa_check_parameters_adx = sym super::dsa::vg_dsa_check_parameters_adx::vg_dsa_check_parameters_adx,
-        vg_dsa_derive_key_checked_adx = sym super::dsa::vg_dsa_derive_key_checked_adx::vg_dsa_derive_key_checked_adx,
+        vg_dsa_check_parameters_adx = sym crate::dsa::vg_dsa_check_parameters_adx::vg_dsa_check_parameters_adx,
+        vg_dsa_derive_key_checked_adx = sym crate::dsa::vg_dsa_derive_key_checked_adx::vg_dsa_derive_key_checked_adx,
     )
 }
 
-/// The CPU features `vg_dsa_derive_key_adx` requires (`Artifact.features`).
-pub const VG_DSA_DERIVE_KEY_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
-
-/// Derive a DSA private key from big-endian p||q||g and a supplied q_len-byte scalar x, as key generation does after sampling x: checks the domain and 0 < x < q, computes y = g^x mod p and checks the key. Returns 1 with p||q||g||y||x, or 0 and zero output. Checks algebraic consistency, not primality. x must be a fresh uniform scalar the caller sampled. Timing may depend on p, q, g and success, not otherwise on x. Contract: `VG.Spec.Dsa.deriveKeyContract`.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `params` must be valid for reads of `params_len` bytes.
-/// * `x` must be valid for reads of `q_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
-/// * params_len must be 2*p_len + q_len; out_len must be 3*p_len + 2*q_len.
-/// * scratch_len must be at least 16*p_len words. Scratch may contain secrets on return.
-/// * `out` and `scratch` must not overlap each other, `params`, `x` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `params`, `x` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `bmi2` and `adx` target features.
+/// The verified code of [`super::vg_dsa_derive_key_adx`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_dsa_derive_key_adx(out: *mut u8, out_len: usize, params: *const u8, params_len: usize, p_len: usize, x: *const u8, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_dsa_derive_key_adx(out: *mut u8, out_len: usize, params: *const u8, params_len: usize, p_len: usize, x: *const u8, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "TItcJBBJiRtJiWsITYljEE2JaxhNiXMgTYl7KLgAAAAASYmDKAEAAEmJgzABAABJiYM4AQAASYmDWAEAAEmJu0ABAABJiZMAAQAATYmDSAEAAEiLRCQISYmDUAEAAEmLgwABAABJA4NIAQAASYmDCAEAAEkDg1ABAABJiYMQAQAASQODSAEAAEmJgxgBAABJA4NIAQAASYmDIAEAAEyJ302JiyABAABMidhIBWA9AABJiYMYAQAASIu3AAEAAEiLj0gBAABBuAAAAABBuQAAAAA="
 20:
@@ -3822,30 +4276,14 @@ jne 2194b
 217:
 .base64 "ww=="
 .p2align 6"#,
-        vg_rsa_mont_mul_adx = sym super::rsa::vg_rsa_mont_mul_adx::vg_rsa_mont_mul_adx,
-        vg_rsa_lazy_mont_mul_adx = sym super::rsa::vg_rsa_lazy_mont_mul_adx::vg_rsa_lazy_mont_mul_adx,
+        vg_rsa_mont_mul_adx = sym crate::rsa::vg_rsa_mont_mul_adx::vg_rsa_mont_mul_adx,
+        vg_rsa_lazy_mont_mul_adx = sym crate::rsa::vg_rsa_lazy_mont_mul_adx::vg_rsa_lazy_mont_mul_adx,
     )
 }
 
-/// Randomized DSA signing of a prehashed digest, for an already validated packed private key (big-endian p||q||g||y||x; vg_dsa_validate_private_key validates it). Up to eight signing attempts, each with 128 nonce draws. Returns 1 with fixed-width r||s, 0 for retry exhaustion, or 2 for insufficient random bytes; out is zero on failure and used counts consumed complete draws on every return. Timing may depend on public p,q,g,y, sampling decisions, signing success bits and consumption, not otherwise on secrets. Contract: `VG.Spec.Dsa.randomSignPrevalidatedContract`.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `used` must be valid for reads and writes of 8 bytes.
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `digest` must be valid for reads of `digest_len` bytes.
-/// * `rand` must be valid for reads of `rand_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
-/// * key_len must be 3*p_len + 2*q_len; out_len must be 2*q_len.
-/// * scratch_len must be at least 16*p_len + 64 words; destroy scratch after use.
-/// * The exact key bytes must satisfy validatePrivateKeyBytes p_len q_len key = true. A successful vg_dsa_validate_private_key call establishes this only while the key bytes remain unchanged. Primality remains the caller's responsibility.
-/// * Provide fresh independent random octets; never reuse a completed signing tape for another signature.
-/// * `out`, `used` and `scratch` must not overlap each other, `key`, `digest`, `rand` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `used`, `key`, `digest`, `rand` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_dsa_sign_random_prevalidated`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_dsa_sign_random_prevalidated(out: *mut u8, out_len: usize, used: *mut [u64; 1], key: *const u8, key_len: usize, p_len: usize, q_len: usize, digest: *const u8, digest_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_dsa_sign_random_prevalidated(out: *mut u8, out_len: usize, used: *mut [u64; 1], key: *const u8, key_len: usize, p_len: usize, q_len: usize, digest: *const u8, digest_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJAj///9IiXwkKEiJdCQwSIlUJDhIiUwkQEyJRCRITIlMJFBMAclIiYwkqAAAAEjHwAAAAABIiYQkkAAAAEjHwAgAAABIiYQkmAAAAEiLhCQAAQAASIlEJFhIi4QkCAEAAEiJRCRgSIuEJBABAABIiUQkaEiLhCQYAQAASIlEJHBIi4QkIAEAAEiJRCR4SIuEJCgBAABIiYQkgAAAAEiLhCQwAQAASImEJIgAAABIx8AAAAAASImEJMgAAABIiYQk0AAAAEiJhCTYAAAASImEJOAAAABMi5QkqAAAAEyLXCRYTInWTInZQbgAAAAAQbkAAAAA"
 20:
@@ -3934,22 +4372,13 @@ jne 227b
 226:
 .base64 "SMfAAAAAAEiJhCTIAAAASImEJNAAAABIiYQk2AAAAEiJhCTgAAAASItUJDhIi4QkkAAAAEiJAkiLhCTAAAAASI2kJPgAAADD"
 .p2align 6"#,
-        vg_dsa_sign_prevalidated = sym super::dsa::vg_dsa_sign_prevalidated::vg_dsa_sign_prevalidated,
+        vg_dsa_sign_prevalidated = sym crate::dsa::vg_dsa_sign_prevalidated::vg_dsa_sign_prevalidated,
     )
 }
 
-/// Validate packed DSA p||q||g||y||x as signing checks it: domain consistency, including g^q mod p = 1, 1 < y < p, 0 < x < q and g^x mod p = y. Returns 1 exactly when validation succeeds, otherwise 0. Does not test primality. Timing may depend on p,q,g,y and the result, not otherwise on x. Scratch contents are unspecified on return and may hold secrets. Contract: `VG.Spec.Dsa.validatePrivateKeyContract`.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
-/// * key_len must be 3*p_len + 2*q_len; scratch_len must be at least 16*p_len words; destroy scratch after use.
-/// * `scratch` must not overlap `key` (distinct Rust objects never do).
-/// * Neither `key` nor `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_dsa_validate_private_key`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_dsa_validate_private_key(key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_dsa_validate_private_key(key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "TYnDSYkbSYlrCE2JYxBNiWsYTYlzIE2Jeyi4AAAAAEmJgygBAABJiYNAAQAASYmDMAEAAEmJgzgBAABJiYNYAQAASYm7AAEAAEmJk0gBAABJiYtQAQAASYuDAAEAAEkDg0gBAABJiYMIAQAASQODUAEAAEmJgxABAABJA4NIAQAASYmDGAEAAEkDg0gBAABJiYMgAQAATInfSYuDIAEAAEmJgzABAABIi7cAAQAASIuPSAEAAEG4AAAAAEG5AAAAAA=="
 20:
@@ -4704,23 +5133,14 @@ jmp 217f
 217:
 .base64 "ww=="
 .p2align 6"#,
-        vg_rsa_mont_mul = sym super::rsa::vg_rsa_mont_mul::vg_rsa_mont_mul,
-        vg_rsa_lazy_mont_mul = sym super::rsa::vg_rsa_lazy_mont_mul::vg_rsa_lazy_mont_mul,
+        vg_rsa_mont_mul = sym crate::rsa::vg_rsa_mont_mul::vg_rsa_mont_mul,
+        vg_rsa_lazy_mont_mul = sym crate::rsa::vg_rsa_lazy_mont_mul::vg_rsa_lazy_mont_mul,
     )
 }
 
-/// Validate packed DSA p||q||g||y, including domain consistency and both subgroup memberships. Returns 1 exactly when validation succeeds, otherwise 0. Does not test primality. The key is public; scratch contents are unspecified on return. Contract: `VG.Spec.Dsa.validatePublicKeyContract`.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
-/// * key_len must be 3*p_len + q_len; scratch_len must be at least 16*p_len words.
-/// * `scratch` must not overlap `key` (distinct Rust objects never do).
-/// * Neither `key` nor `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_dsa_validate_public_key`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_dsa_validate_public_key(key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_dsa_validate_public_key(key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "TYnDSYkbSYlrCE2JYxBNiWsYTYlzIE2Jeyi4AAAAAEmJg0ABAABJiYMwAQAASYm7AAEAAEmJk0gBAABJiYtQAQAATYmDKAEAAEmJgzgBAABJiYNYAQAASYuDAAEAAEkDg0gBAABJiYMIAQAASQODUAEAAEmJgxABAABJA4NIAQAASYmDGAEAAEkDg0gBAABJiYMgAQAATInfSIu3AAEAAEiLj0gBAABBuAAAAABBuQAAAAA="
 20:
@@ -5444,27 +5864,14 @@ jmp 217f
 217:
 .base64 "ww=="
 .p2align 6"#,
-        vg_rsa_mont_mul = sym super::rsa::vg_rsa_mont_mul::vg_rsa_mont_mul,
-        vg_rsa_lazy_mont_mul = sym super::rsa::vg_rsa_lazy_mont_mul::vg_rsa_lazy_mont_mul,
+        vg_rsa_mont_mul = sym crate::rsa::vg_rsa_mont_mul::vg_rsa_mont_mul,
+        vg_rsa_lazy_mont_mul = sym crate::rsa::vg_rsa_lazy_mont_mul::vg_rsa_lazy_mont_mul,
     )
 }
 
-/// DSA verification of a prehashed digest, for an already validated packed public key (big-endian p||q||g||y with widths p_len, q_len, p_len, p_len; vg_dsa_validate_public_key validates it). The signature is r||s with q_len bytes each. Returns 1 if verification succeeds, otherwise 0: the result of fully checked verification (`VG.Spec.Dsa.verifyContract`), whose checks of the signature scalars and digest handling it keeps. Timing may depend on p,q,g,y and the result, not otherwise on signature or digest. Contract: `VG.Spec.Dsa.verifyPrevalidatedContract`.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `signature` must be valid for reads of `signature_len` bytes.
-/// * `digest` must be valid for reads of `digest_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
-/// * key_len must be 3*p_len + q_len; signature_len must be 2*q_len.
-/// * scratch_len must be at least 16*p_len words. Scratch contents are unspecified on return.
-/// * The exact key bytes must satisfy validatePublicKeyBytes p_len q_len key = true. A successful vg_dsa_validate_public_key call establishes this only while the key bytes remain unchanged. Primality remains the caller's responsibility.
-/// * `scratch` must not overlap `key`, `signature`, `digest` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `key`, `signature`, `digest` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_dsa_verify_prevalidated`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_dsa_verify_prevalidated(key: *const u8, key_len: usize, p_len: usize, q_len: usize, signature: *const u8, signature_len: usize, digest: *const u8, digest_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_dsa_verify_prevalidated(key: *const u8, key_len: usize, p_len: usize, q_len: usize, signature: *const u8, signature_len: usize, digest: *const u8, digest_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "TItcJBhJiRtJiWsITYljEE2JaxhNiXMgTYl7KLgAAAAASYmDQAEAAEmJgzABAABJibsAAQAASYmTSAEAAEmJi1ABAABNiYMoAQAASItEJAhJiYM4AQAASItEJBBJiYNYAQAASYuDAAEAAEkDg0gBAABJiYMIAQAASQODUAEAAEmJgxABAABJA4NIAQAASYmDGAEAAEkDg0gBAABJiYMgAQAATInfSIu3AAEAAEiLj0gBAABBuAAAAABBuQAAAAA="
 20:
@@ -6715,28 +7122,14 @@ jmp 217f
 217:
 .base64 "ww=="
 .p2align 6"#,
-        vg_rsa_mont_mul = sym super::rsa::vg_rsa_mont_mul::vg_rsa_mont_mul,
-        vg_rsa_lazy_mont_mul = sym super::rsa::vg_rsa_lazy_mont_mul::vg_rsa_lazy_mont_mul,
+        vg_rsa_mont_mul = sym crate::rsa::vg_rsa_mont_mul::vg_rsa_mont_mul,
+        vg_rsa_lazy_mont_mul = sym crate::rsa::vg_rsa_lazy_mont_mul::vg_rsa_lazy_mont_mul,
     )
 }
 
-/// Generate a DSA private key from p||q||g and fresh independent random bytes. Uses at most 128 rejection-sampling draws, computes y=g^x mod p, and checks algebraic consistency, not primality. Returns 1 with p||q||g||y||x, 0 for invalid input/draw limit, or 2 for insufficient randomness. Failure zeros out; used counts consumed complete draws on every return. Timing may depend on public parameters, sampling decisions, consumption and success, not otherwise on x or randomness. Contract: `VG.Spec.Dsa.generateKeyContract`.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `used` must be valid for reads and writes of 8 bytes.
-/// * `params` must be valid for reads of `params_len` bytes.
-/// * `rand` must be valid for reads of `rand_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
-/// * params_len must be 2*p_len + q_len; out_len must be 3*p_len + 2*q_len.
-/// * scratch_len must be at least 64*p_len + 1024 words; destroy scratch after use.
-/// * Caller must assure domain validity and supply fresh independent random bytes.
-/// * `out`, `used` and `scratch` must not overlap each other, `params`, `rand` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `used`, `params`, `rand` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_dsa_generate_key`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_dsa_generate_key(out: *mut u8, out_len: usize, used: *mut [u64; 1], params: *const u8, params_len: usize, p_len: usize, q_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_dsa_generate_key(out: *mut u8, out_len: usize, used: *mut [u64; 1], params: *const u8, params_len: usize, p_len: usize, q_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJAj///9IiXwkKEiJdCQwSIlUJDhIiUwkQEyJRCRITIlMJFBMAclIiYwkqAAAAEjHwAAAAABIiYQkkAAAAEiJhCTAAAAASIuEJAABAABIiUQkWEiLhCQIAQAASIlEJHBIi4QkEAEAAEiJRCR4SIuEJBgBAABIiYQkgAAAAEiLhCQgAQAASImEJIgAAABIi3wkQEiLdCRISItUJFBIi0wkWEyLhCSAAAAATIuMJIgAAAA="
 call {vg_dsa_check_parameters}
@@ -6819,26 +7212,14 @@ jne 224b
 223:
 .base64 "SMfAAAAAAEiJhCTIAAAASImEJNAAAABIiYQk2AAAAEiJhCTgAAAASItUJDhIi4QkkAAAAEiJAkiLhCTAAAAASI2kJPgAAADD"
 .p2align 6"#,
-        vg_dsa_check_parameters = sym super::dsa::vg_dsa_check_parameters::vg_dsa_check_parameters,
-        vg_dsa_derive_key_checked = sym super::dsa::vg_dsa_derive_key_checked::vg_dsa_derive_key_checked,
+        vg_dsa_check_parameters = sym crate::dsa::vg_dsa_check_parameters::vg_dsa_check_parameters,
+        vg_dsa_derive_key_checked = sym crate::dsa::vg_dsa_derive_key_checked::vg_dsa_derive_key_checked,
     )
 }
 
-/// Derive a DSA private key from big-endian p||q||g and a supplied q_len-byte scalar x, as key generation does after sampling x: checks the domain and 0 < x < q, computes y = g^x mod p and checks the key. Returns 1 with p||q||g||y||x, or 0 and zero output. Checks algebraic consistency, not primality. x must be a fresh uniform scalar the caller sampled. Timing may depend on p, q, g and success, not otherwise on x. Contract: `VG.Spec.Dsa.deriveKeyContract`.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `params` must be valid for reads of `params_len` bytes.
-/// * `x` must be valid for reads of `q_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
-/// * params_len must be 2*p_len + q_len; out_len must be 3*p_len + 2*q_len.
-/// * scratch_len must be at least 16*p_len words. Scratch may contain secrets on return.
-/// * `out` and `scratch` must not overlap each other, `params`, `x` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `params`, `x` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_dsa_derive_key`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_dsa_derive_key(out: *mut u8, out_len: usize, params: *const u8, params_len: usize, p_len: usize, x: *const u8, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_dsa_derive_key(out: *mut u8, out_len: usize, params: *const u8, params_len: usize, p_len: usize, x: *const u8, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "TItcJBBJiRtJiWsITYljEE2JaxhNiXMgTYl7KLgAAAAASYmDKAEAAEmJgzABAABJiYM4AQAASYmDWAEAAEmJu0ABAABJiZMAAQAATYmDSAEAAEiLRCQISYmDUAEAAEmLgwABAABJA4NIAQAASYmDCAEAAEkDg1ABAABJiYMQAQAASQODSAEAAEmJgxgBAABJA4NIAQAASYmDIAEAAEyJ302JiyABAABMidhIBWA9AABJiYMYAQAASIu3AAEAAEiLj0gBAABBuAAAAABBuQAAAAA="
 20:
@@ -7587,35 +7968,14 @@ jne 2194b
 217:
 .base64 "ww=="
 .p2align 6"#,
-        vg_rsa_mont_mul = sym super::rsa::vg_rsa_mont_mul::vg_rsa_mont_mul,
-        vg_rsa_lazy_mont_mul = sym super::rsa::vg_rsa_lazy_mont_mul::vg_rsa_lazy_mont_mul,
+        vg_rsa_mont_mul = sym crate::rsa::vg_rsa_mont_mul::vg_rsa_mont_mul,
+        vg_rsa_lazy_mont_mul = sym crate::rsa::vg_rsa_lazy_mont_mul::vg_rsa_lazy_mont_mul,
     )
 }
 
-/// The CPU features `vg_dsa_parameter_search_mr_adx` requires (`Artifact.features`).
-pub const VG_DSA_PARAMETER_SEARCH_MR_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
-
-/// Search for DSA domain parameters (FIPS 186-4 A.1.1.2 and A.2.1) over the random tape `rand`, for the modulus width in `state`: each seed, its `q`, the `p` candidates from it and the generator's `h` candidates are read from `rand` in turn, with the rejected seeds counted in `state`. Returns 1 and writes `p || q || g` to `out` once parameters are found; 3 if the search is exhausted, by too many rejected seeds or by one seed needing more than the entropy budget; or 0 if the tape ran out inside a seed. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose last word is, for 0, the length of the next tape, more than the octets of `rand` after the first `used` and at most the entropy budget: keep those octets, in order, and append fresh random octets up to that length. `out` is zeros but for 1. Accepted parameters pass probable-prime tests, not primality certification.
-///
-/// Contract: `VG.Spec.Dsa.parameterSearchContract`. Timing may depend on everything, `rand` included: these are public domain parameters.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `used` must be valid for reads and writes of 8 bytes.
-/// * `rand` must be valid for reads of `rand_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `state` must be valid for reads and writes of 32 bytes.
-/// * `state` must come from `vg_dsa_parameter_search_init`, or from the last call of this function that returned 0.
-/// * `out_len` must be `2 * state[1]` plus 20 if `state[1]` is 128, else plus 32.
-/// * `rand_len` must be at most the entropy budget, `state[2]`.
-/// * `scratch_len` must be at least `64 * state[1] + 1024` words.
-/// * `rand` must hold independent uniform random octets. They are public under this contract and must never be used for private scalars or nonces.
-/// * `out`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `bmi2` and `adx` target features.
+/// The verified code of [`super::vg_dsa_parameter_search_mr_adx`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_dsa_parameter_search_mr_adx(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_dsa_parameter_search_mr_adx(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJBBIi0AISD2AAAAA"
 je 20f
@@ -7638,32 +7998,15 @@ call {vg_dsa_parameter_search_1024_mr_adx}
 .base64 "SI1kJDg="
 jmp 21b
 .p2align 6"#,
-        vg_dsa_parameter_search_3072_mr_adx = sym super::dsa::vg_dsa_parameter_search_3072_mr_adx::vg_dsa_parameter_search_3072_mr_adx,
-        vg_dsa_parameter_search_2048_mr_adx = sym super::dsa::vg_dsa_parameter_search_2048_mr_adx::vg_dsa_parameter_search_2048_mr_adx,
-        vg_dsa_parameter_search_1024_mr_adx = sym super::dsa::vg_dsa_parameter_search_1024_mr_adx::vg_dsa_parameter_search_1024_mr_adx,
+        vg_dsa_parameter_search_3072_mr_adx = sym crate::dsa::vg_dsa_parameter_search_3072_mr_adx::vg_dsa_parameter_search_3072_mr_adx,
+        vg_dsa_parameter_search_2048_mr_adx = sym crate::dsa::vg_dsa_parameter_search_2048_mr_adx::vg_dsa_parameter_search_2048_mr_adx,
+        vg_dsa_parameter_search_1024_mr_adx = sym crate::dsa::vg_dsa_parameter_search_1024_mr_adx::vg_dsa_parameter_search_1024_mr_adx,
     )
 }
 
-/// Search for DSA domain parameters (FIPS 186-4 A.1.1.2 and A.2.1) over the random tape `rand`, for the modulus width in `state`: each seed, its `q`, the `p` candidates from it and the generator's `h` candidates are read from `rand` in turn, with the rejected seeds counted in `state`. Returns 1 and writes `p || q || g` to `out` once parameters are found; 3 if the search is exhausted, by too many rejected seeds or by one seed needing more than the entropy budget; or 0 if the tape ran out inside a seed. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose last word is, for 0, the length of the next tape, more than the octets of `rand` after the first `used` and at most the entropy budget: keep those octets, in order, and append fresh random octets up to that length. `out` is zeros but for 1. Accepted parameters pass probable-prime tests, not primality certification.
-///
-/// Contract: `VG.Spec.Dsa.parameterSearchContract`. Timing may depend on everything, `rand` included: these are public domain parameters.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `used` must be valid for reads and writes of 8 bytes.
-/// * `rand` must be valid for reads of `rand_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `state` must be valid for reads and writes of 32 bytes.
-/// * `state` must come from `vg_dsa_parameter_search_init`, or from the last call of this function that returned 0.
-/// * `out_len` must be `2 * state[1]` plus 20 if `state[1]` is 128, else plus 32.
-/// * `rand_len` must be at most the entropy budget, `state[2]`.
-/// * `scratch_len` must be at least `64 * state[1] + 1024` words.
-/// * `rand` must hold independent uniform random octets. They are public under this contract and must never be used for private scalars or nonces.
-/// * `out`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_dsa_parameter_search`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_dsa_parameter_search(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_dsa_parameter_search(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJBBIi0AISD2AAAAA"
 je 20f
@@ -7686,36 +8029,15 @@ call {vg_dsa_parameter_search_1024}
 .base64 "SI1kJDg="
 jmp 21b
 .p2align 6"#,
-        vg_dsa_parameter_search_3072 = sym super::dsa::vg_dsa_parameter_search_3072::vg_dsa_parameter_search_3072,
-        vg_dsa_parameter_search_2048 = sym super::dsa::vg_dsa_parameter_search_2048::vg_dsa_parameter_search_2048,
-        vg_dsa_parameter_search_1024 = sym super::dsa::vg_dsa_parameter_search_1024::vg_dsa_parameter_search_1024,
+        vg_dsa_parameter_search_3072 = sym crate::dsa::vg_dsa_parameter_search_3072::vg_dsa_parameter_search_3072,
+        vg_dsa_parameter_search_2048 = sym crate::dsa::vg_dsa_parameter_search_2048::vg_dsa_parameter_search_2048,
+        vg_dsa_parameter_search_1024 = sym crate::dsa::vg_dsa_parameter_search_1024::vg_dsa_parameter_search_1024,
     )
 }
 
-/// The CPU features `vg_dsa_parameter_search_mr_ifma` requires (`Artifact.features`).
-pub const VG_DSA_PARAMETER_SEARCH_MR_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
-
-/// Search for DSA domain parameters (FIPS 186-4 A.1.1.2 and A.2.1) over the random tape `rand`, for the modulus width in `state`: each seed, its `q`, the `p` candidates from it and the generator's `h` candidates are read from `rand` in turn, with the rejected seeds counted in `state`. Returns 1 and writes `p || q || g` to `out` once parameters are found; 3 if the search is exhausted, by too many rejected seeds or by one seed needing more than the entropy budget; or 0 if the tape ran out inside a seed. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose last word is, for 0, the length of the next tape, more than the octets of `rand` after the first `used` and at most the entropy budget: keep those octets, in order, and append fresh random octets up to that length. `out` is zeros but for 1. Accepted parameters pass probable-prime tests, not primality certification.
-///
-/// Contract: `VG.Spec.Dsa.parameterSearchContract`. Timing may depend on everything, `rand` included: these are public domain parameters.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `used` must be valid for reads and writes of 8 bytes.
-/// * `rand` must be valid for reads of `rand_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `state` must be valid for reads and writes of 32 bytes.
-/// * `state` must come from `vg_dsa_parameter_search_init`, or from the last call of this function that returned 0.
-/// * `out_len` must be `2 * state[1]` plus 20 if `state[1]` is 128, else plus 32.
-/// * `rand_len` must be at most the entropy budget, `state[2]`.
-/// * `scratch_len` must be at least `64 * state[1] + 1024` words.
-/// * `rand` must hold independent uniform random octets. They are public under this contract and must never be used for private scalars or nonces.
-/// * `out`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
+/// The verified code of [`super::vg_dsa_parameter_search_mr_ifma`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_dsa_parameter_search_mr_ifma(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_dsa_parameter_search_mr_ifma(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJBBIi0AISD2AAAAA"
 je 20f
@@ -7738,36 +8060,15 @@ call {vg_dsa_parameter_search_1024_mr_ifma}
 .base64 "SI1kJDg="
 jmp 21b
 .p2align 6"#,
-        vg_dsa_parameter_search_3072_mr_ifma = sym super::dsa::vg_dsa_parameter_search_3072_mr_ifma::vg_dsa_parameter_search_3072_mr_ifma,
-        vg_dsa_parameter_search_2048_mr_ifma = sym super::dsa::vg_dsa_parameter_search_2048_mr_ifma::vg_dsa_parameter_search_2048_mr_ifma,
-        vg_dsa_parameter_search_1024_mr_ifma = sym super::dsa::vg_dsa_parameter_search_1024_mr_ifma::vg_dsa_parameter_search_1024_mr_ifma,
+        vg_dsa_parameter_search_3072_mr_ifma = sym crate::dsa::vg_dsa_parameter_search_3072_mr_ifma::vg_dsa_parameter_search_3072_mr_ifma,
+        vg_dsa_parameter_search_2048_mr_ifma = sym crate::dsa::vg_dsa_parameter_search_2048_mr_ifma::vg_dsa_parameter_search_2048_mr_ifma,
+        vg_dsa_parameter_search_1024_mr_ifma = sym crate::dsa::vg_dsa_parameter_search_1024_mr_ifma::vg_dsa_parameter_search_1024_mr_ifma,
     )
 }
 
-/// The CPU features `vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_adx` requires (`Artifact.features`).
-pub const VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_MR_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::ADX);
-
-/// Search for DSA domain parameters (FIPS 186-4 A.1.1.2 and A.2.1) over the random tape `rand`, for the modulus width in `state`: each seed, its `q`, the `p` candidates from it and the generator's `h` candidates are read from `rand` in turn, with the rejected seeds counted in `state`. Returns 1 and writes `p || q || g` to `out` once parameters are found; 3 if the search is exhausted, by too many rejected seeds or by one seed needing more than the entropy budget; or 0 if the tape ran out inside a seed. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose last word is, for 0, the length of the next tape, more than the octets of `rand` after the first `used` and at most the entropy budget: keep those octets, in order, and append fresh random octets up to that length. `out` is zeros but for 1. Accepted parameters pass probable-prime tests, not primality certification.
-///
-/// Contract: `VG.Spec.Dsa.parameterSearchContract`. Timing may depend on everything, `rand` included: these are public domain parameters.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `used` must be valid for reads and writes of 8 bytes.
-/// * `rand` must be valid for reads of `rand_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `state` must be valid for reads and writes of 32 bytes.
-/// * `state` must come from `vg_dsa_parameter_search_init`, or from the last call of this function that returned 0.
-/// * `out_len` must be `2 * state[1]` plus 20 if `state[1]` is 128, else plus 32.
-/// * `rand_len` must be at most the entropy budget, `state[2]`.
-/// * `scratch_len` must be at least `64 * state[1] + 1024` words.
-/// * `rand` must hold independent uniform random octets. They are public under this contract and must never be used for private scalars or nonces.
-/// * `out`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `bmi1`, `bmi2`, `avx2` and `adx` target features.
+/// The verified code of [`super::vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_adx`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_adx(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_adx(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJBBIi0AISD2AAAAA"
 je 20f
@@ -7790,36 +8091,15 @@ call {vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_adx}
 .base64 "SI1kJDg="
 jmp 21b
 .p2align 6"#,
-        vg_dsa_parameter_search_3072_sha256_avx2_mr_adx = sym super::dsa::vg_dsa_parameter_search_3072_sha256_avx2_mr_adx::vg_dsa_parameter_search_3072_sha256_avx2_mr_adx,
-        vg_dsa_parameter_search_2048_sha256_avx2_mr_adx = sym super::dsa::vg_dsa_parameter_search_2048_sha256_avx2_mr_adx::vg_dsa_parameter_search_2048_sha256_avx2_mr_adx,
-        vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_adx = sym super::dsa::vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_adx::vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_adx,
+        vg_dsa_parameter_search_3072_sha256_avx2_mr_adx = sym crate::dsa::vg_dsa_parameter_search_3072_sha256_avx2_mr_adx::vg_dsa_parameter_search_3072_sha256_avx2_mr_adx,
+        vg_dsa_parameter_search_2048_sha256_avx2_mr_adx = sym crate::dsa::vg_dsa_parameter_search_2048_sha256_avx2_mr_adx::vg_dsa_parameter_search_2048_sha256_avx2_mr_adx,
+        vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_adx = sym crate::dsa::vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_adx::vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_adx,
     )
 }
 
-/// The CPU features `vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2` requires (`Artifact.features`).
-pub const VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::AVX2);
-
-/// Search for DSA domain parameters (FIPS 186-4 A.1.1.2 and A.2.1) over the random tape `rand`, for the modulus width in `state`: each seed, its `q`, the `p` candidates from it and the generator's `h` candidates are read from `rand` in turn, with the rejected seeds counted in `state`. Returns 1 and writes `p || q || g` to `out` once parameters are found; 3 if the search is exhausted, by too many rejected seeds or by one seed needing more than the entropy budget; or 0 if the tape ran out inside a seed. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose last word is, for 0, the length of the next tape, more than the octets of `rand` after the first `used` and at most the entropy budget: keep those octets, in order, and append fresh random octets up to that length. `out` is zeros but for 1. Accepted parameters pass probable-prime tests, not primality certification.
-///
-/// Contract: `VG.Spec.Dsa.parameterSearchContract`. Timing may depend on everything, `rand` included: these are public domain parameters.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `used` must be valid for reads and writes of 8 bytes.
-/// * `rand` must be valid for reads of `rand_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `state` must be valid for reads and writes of 32 bytes.
-/// * `state` must come from `vg_dsa_parameter_search_init`, or from the last call of this function that returned 0.
-/// * `out_len` must be `2 * state[1]` plus 20 if `state[1]` is 128, else plus 32.
-/// * `rand_len` must be at most the entropy budget, `state[2]`.
-/// * `scratch_len` must be at least `64 * state[1] + 1024` words.
-/// * `rand` must hold independent uniform random octets. They are public under this contract and must never be used for private scalars or nonces.
-/// * `out`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `bmi1`, `bmi2` and `avx2` target features.
+/// The verified code of [`super::vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJBBIi0AISD2AAAAA"
 je 20f
@@ -7842,36 +8122,15 @@ call {vg_dsa_parameter_search_1024_sha1_avx_bmi}
 .base64 "SI1kJDg="
 jmp 21b
 .p2align 6"#,
-        vg_dsa_parameter_search_3072_sha256_avx2 = sym super::dsa::vg_dsa_parameter_search_3072_sha256_avx2::vg_dsa_parameter_search_3072_sha256_avx2,
-        vg_dsa_parameter_search_2048_sha256_avx2 = sym super::dsa::vg_dsa_parameter_search_2048_sha256_avx2::vg_dsa_parameter_search_2048_sha256_avx2,
-        vg_dsa_parameter_search_1024_sha1_avx_bmi = sym super::dsa::vg_dsa_parameter_search_1024_sha1_avx_bmi::vg_dsa_parameter_search_1024_sha1_avx_bmi,
+        vg_dsa_parameter_search_3072_sha256_avx2 = sym crate::dsa::vg_dsa_parameter_search_3072_sha256_avx2::vg_dsa_parameter_search_3072_sha256_avx2,
+        vg_dsa_parameter_search_2048_sha256_avx2 = sym crate::dsa::vg_dsa_parameter_search_2048_sha256_avx2::vg_dsa_parameter_search_2048_sha256_avx2,
+        vg_dsa_parameter_search_1024_sha1_avx_bmi = sym crate::dsa::vg_dsa_parameter_search_1024_sha1_avx_bmi::vg_dsa_parameter_search_1024_sha1_avx_bmi,
     )
 }
 
-/// The CPU features `vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_ifma` requires (`Artifact.features`).
-pub const VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_MR_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::ADX);
-
-/// Search for DSA domain parameters (FIPS 186-4 A.1.1.2 and A.2.1) over the random tape `rand`, for the modulus width in `state`: each seed, its `q`, the `p` candidates from it and the generator's `h` candidates are read from `rand` in turn, with the rejected seeds counted in `state`. Returns 1 and writes `p || q || g` to `out` once parameters are found; 3 if the search is exhausted, by too many rejected seeds or by one seed needing more than the entropy budget; or 0 if the tape ran out inside a seed. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose last word is, for 0, the length of the next tape, more than the octets of `rand` after the first `used` and at most the entropy budget: keep those octets, in order, and append fresh random octets up to that length. `out` is zeros but for 1. Accepted parameters pass probable-prime tests, not primality certification.
-///
-/// Contract: `VG.Spec.Dsa.parameterSearchContract`. Timing may depend on everything, `rand` included: these are public domain parameters.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `used` must be valid for reads and writes of 8 bytes.
-/// * `rand` must be valid for reads of `rand_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `state` must be valid for reads and writes of 32 bytes.
-/// * `state` must come from `vg_dsa_parameter_search_init`, or from the last call of this function that returned 0.
-/// * `out_len` must be `2 * state[1]` plus 20 if `state[1]` is 128, else plus 32.
-/// * `rand_len` must be at most the entropy budget, `state[2]`.
-/// * `scratch_len` must be at least `64 * state[1] + 1024` words.
-/// * `rand` must hold independent uniform random octets. They are public under this contract and must never be used for private scalars or nonces.
-/// * `out`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `bmi1`, `bmi2`, `avx2`, `avx512f`, `avx512ifma`, `avx512vl` and `adx` target features.
+/// The verified code of [`super::vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_ifma`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_ifma(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_ifma(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJBBIi0AISD2AAAAA"
 je 20f
@@ -7894,36 +8153,15 @@ call {vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_ifma}
 .base64 "SI1kJDg="
 jmp 21b
 .p2align 6"#,
-        vg_dsa_parameter_search_3072_sha256_avx2_mr_ifma = sym super::dsa::vg_dsa_parameter_search_3072_sha256_avx2_mr_ifma::vg_dsa_parameter_search_3072_sha256_avx2_mr_ifma,
-        vg_dsa_parameter_search_2048_sha256_avx2_mr_ifma = sym super::dsa::vg_dsa_parameter_search_2048_sha256_avx2_mr_ifma::vg_dsa_parameter_search_2048_sha256_avx2_mr_ifma,
-        vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_ifma = sym super::dsa::vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_ifma::vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_ifma,
+        vg_dsa_parameter_search_3072_sha256_avx2_mr_ifma = sym crate::dsa::vg_dsa_parameter_search_3072_sha256_avx2_mr_ifma::vg_dsa_parameter_search_3072_sha256_avx2_mr_ifma,
+        vg_dsa_parameter_search_2048_sha256_avx2_mr_ifma = sym crate::dsa::vg_dsa_parameter_search_2048_sha256_avx2_mr_ifma::vg_dsa_parameter_search_2048_sha256_avx2_mr_ifma,
+        vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_ifma = sym crate::dsa::vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_ifma::vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_ifma,
     )
 }
 
-/// The CPU features `vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_adx` requires (`Artifact.features`).
-pub const VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_MR_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
-
-/// Search for DSA domain parameters (FIPS 186-4 A.1.1.2 and A.2.1) over the random tape `rand`, for the modulus width in `state`: each seed, its `q`, the `p` candidates from it and the generator's `h` candidates are read from `rand` in turn, with the rejected seeds counted in `state`. Returns 1 and writes `p || q || g` to `out` once parameters are found; 3 if the search is exhausted, by too many rejected seeds or by one seed needing more than the entropy budget; or 0 if the tape ran out inside a seed. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose last word is, for 0, the length of the next tape, more than the octets of `rand` after the first `used` and at most the entropy budget: keep those octets, in order, and append fresh random octets up to that length. `out` is zeros but for 1. Accepted parameters pass probable-prime tests, not primality certification.
-///
-/// Contract: `VG.Spec.Dsa.parameterSearchContract`. Timing may depend on everything, `rand` included: these are public domain parameters.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `used` must be valid for reads and writes of 8 bytes.
-/// * `rand` must be valid for reads of `rand_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `state` must be valid for reads and writes of 32 bytes.
-/// * `state` must come from `vg_dsa_parameter_search_init`, or from the last call of this function that returned 0.
-/// * `out_len` must be `2 * state[1]` plus 20 if `state[1]` is 128, else plus 32.
-/// * `rand_len` must be at most the entropy budget, `state[2]`.
-/// * `scratch_len` must be at least `64 * state[1] + 1024` words.
-/// * `rand` must hold independent uniform random octets. They are public under this contract and must never be used for private scalars or nonces.
-/// * `out`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha`, `ssse3`, `bmi2` and `adx` target features.
+/// The verified code of [`super::vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_adx`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_adx(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_adx(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJBBIi0AISD2AAAAA"
 je 20f
@@ -7946,36 +8184,15 @@ call {vg_dsa_parameter_search_1024_sha1_shani_mr_adx}
 .base64 "SI1kJDg="
 jmp 21b
 .p2align 6"#,
-        vg_dsa_parameter_search_3072_sha256_shani_mr_adx = sym super::dsa::vg_dsa_parameter_search_3072_sha256_shani_mr_adx::vg_dsa_parameter_search_3072_sha256_shani_mr_adx,
-        vg_dsa_parameter_search_2048_sha256_shani_mr_adx = sym super::dsa::vg_dsa_parameter_search_2048_sha256_shani_mr_adx::vg_dsa_parameter_search_2048_sha256_shani_mr_adx,
-        vg_dsa_parameter_search_1024_sha1_shani_mr_adx = sym super::dsa::vg_dsa_parameter_search_1024_sha1_shani_mr_adx::vg_dsa_parameter_search_1024_sha1_shani_mr_adx,
+        vg_dsa_parameter_search_3072_sha256_shani_mr_adx = sym crate::dsa::vg_dsa_parameter_search_3072_sha256_shani_mr_adx::vg_dsa_parameter_search_3072_sha256_shani_mr_adx,
+        vg_dsa_parameter_search_2048_sha256_shani_mr_adx = sym crate::dsa::vg_dsa_parameter_search_2048_sha256_shani_mr_adx::vg_dsa_parameter_search_2048_sha256_shani_mr_adx,
+        vg_dsa_parameter_search_1024_sha1_shani_mr_adx = sym crate::dsa::vg_dsa_parameter_search_1024_sha1_shani_mr_adx::vg_dsa_parameter_search_1024_sha1_shani_mr_adx,
     )
 }
 
-/// The CPU features `vg_dsa_parameter_search_sha1_shani_sha256_shani` requires (`Artifact.features`).
-pub const VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
-
-/// Search for DSA domain parameters (FIPS 186-4 A.1.1.2 and A.2.1) over the random tape `rand`, for the modulus width in `state`: each seed, its `q`, the `p` candidates from it and the generator's `h` candidates are read from `rand` in turn, with the rejected seeds counted in `state`. Returns 1 and writes `p || q || g` to `out` once parameters are found; 3 if the search is exhausted, by too many rejected seeds or by one seed needing more than the entropy budget; or 0 if the tape ran out inside a seed. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose last word is, for 0, the length of the next tape, more than the octets of `rand` after the first `used` and at most the entropy budget: keep those octets, in order, and append fresh random octets up to that length. `out` is zeros but for 1. Accepted parameters pass probable-prime tests, not primality certification.
-///
-/// Contract: `VG.Spec.Dsa.parameterSearchContract`. Timing may depend on everything, `rand` included: these are public domain parameters.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `used` must be valid for reads and writes of 8 bytes.
-/// * `rand` must be valid for reads of `rand_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `state` must be valid for reads and writes of 32 bytes.
-/// * `state` must come from `vg_dsa_parameter_search_init`, or from the last call of this function that returned 0.
-/// * `out_len` must be `2 * state[1]` plus 20 if `state[1]` is 128, else plus 32.
-/// * `rand_len` must be at most the entropy budget, `state[2]`.
-/// * `scratch_len` must be at least `64 * state[1] + 1024` words.
-/// * `rand` must hold independent uniform random octets. They are public under this contract and must never be used for private scalars or nonces.
-/// * `out`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha` and `ssse3` target features.
+/// The verified code of [`super::vg_dsa_parameter_search_sha1_shani_sha256_shani`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_dsa_parameter_search_sha1_shani_sha256_shani(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_dsa_parameter_search_sha1_shani_sha256_shani(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJBBIi0AISD2AAAAA"
 je 20f
@@ -7998,36 +8215,15 @@ call {vg_dsa_parameter_search_1024_sha1_shani}
 .base64 "SI1kJDg="
 jmp 21b
 .p2align 6"#,
-        vg_dsa_parameter_search_3072_sha256_shani = sym super::dsa::vg_dsa_parameter_search_3072_sha256_shani::vg_dsa_parameter_search_3072_sha256_shani,
-        vg_dsa_parameter_search_2048_sha256_shani = sym super::dsa::vg_dsa_parameter_search_2048_sha256_shani::vg_dsa_parameter_search_2048_sha256_shani,
-        vg_dsa_parameter_search_1024_sha1_shani = sym super::dsa::vg_dsa_parameter_search_1024_sha1_shani::vg_dsa_parameter_search_1024_sha1_shani,
+        vg_dsa_parameter_search_3072_sha256_shani = sym crate::dsa::vg_dsa_parameter_search_3072_sha256_shani::vg_dsa_parameter_search_3072_sha256_shani,
+        vg_dsa_parameter_search_2048_sha256_shani = sym crate::dsa::vg_dsa_parameter_search_2048_sha256_shani::vg_dsa_parameter_search_2048_sha256_shani,
+        vg_dsa_parameter_search_1024_sha1_shani = sym crate::dsa::vg_dsa_parameter_search_1024_sha1_shani::vg_dsa_parameter_search_1024_sha1_shani,
     )
 }
 
-/// The CPU features `vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_ifma` requires (`Artifact.features`).
-pub const VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_MR_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
-
-/// Search for DSA domain parameters (FIPS 186-4 A.1.1.2 and A.2.1) over the random tape `rand`, for the modulus width in `state`: each seed, its `q`, the `p` candidates from it and the generator's `h` candidates are read from `rand` in turn, with the rejected seeds counted in `state`. Returns 1 and writes `p || q || g` to `out` once parameters are found; 3 if the search is exhausted, by too many rejected seeds or by one seed needing more than the entropy budget; or 0 if the tape ran out inside a seed. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose last word is, for 0, the length of the next tape, more than the octets of `rand` after the first `used` and at most the entropy budget: keep those octets, in order, and append fresh random octets up to that length. `out` is zeros but for 1. Accepted parameters pass probable-prime tests, not primality certification.
-///
-/// Contract: `VG.Spec.Dsa.parameterSearchContract`. Timing may depend on everything, `rand` included: these are public domain parameters.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `used` must be valid for reads and writes of 8 bytes.
-/// * `rand` must be valid for reads of `rand_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `state` must be valid for reads and writes of 32 bytes.
-/// * `state` must come from `vg_dsa_parameter_search_init`, or from the last call of this function that returned 0.
-/// * `out_len` must be `2 * state[1]` plus 20 if `state[1]` is 128, else plus 32.
-/// * `rand_len` must be at most the entropy budget, `state[2]`.
-/// * `scratch_len` must be at least `64 * state[1] + 1024` words.
-/// * `rand` must hold independent uniform random octets. They are public under this contract and must never be used for private scalars or nonces.
-/// * `out`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha`, `ssse3`, `avx`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
+/// The verified code of [`super::vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_ifma`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_ifma(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_ifma(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJBBIi0AISD2AAAAA"
 je 20f
@@ -8050,10 +8246,11 @@ call {vg_dsa_parameter_search_1024_sha1_shani_mr_ifma}
 .base64 "SI1kJDg="
 jmp 21b
 .p2align 6"#,
-        vg_dsa_parameter_search_3072_sha256_shani_mr_ifma = sym super::dsa::vg_dsa_parameter_search_3072_sha256_shani_mr_ifma::vg_dsa_parameter_search_3072_sha256_shani_mr_ifma,
-        vg_dsa_parameter_search_2048_sha256_shani_mr_ifma = sym super::dsa::vg_dsa_parameter_search_2048_sha256_shani_mr_ifma::vg_dsa_parameter_search_2048_sha256_shani_mr_ifma,
-        vg_dsa_parameter_search_1024_sha1_shani_mr_ifma = sym super::dsa::vg_dsa_parameter_search_1024_sha1_shani_mr_ifma::vg_dsa_parameter_search_1024_sha1_shani_mr_ifma,
+        vg_dsa_parameter_search_3072_sha256_shani_mr_ifma = sym crate::dsa::vg_dsa_parameter_search_3072_sha256_shani_mr_ifma::vg_dsa_parameter_search_3072_sha256_shani_mr_ifma,
+        vg_dsa_parameter_search_2048_sha256_shani_mr_ifma = sym crate::dsa::vg_dsa_parameter_search_2048_sha256_shani_mr_ifma::vg_dsa_parameter_search_2048_sha256_shani_mr_ifma,
+        vg_dsa_parameter_search_1024_sha1_shani_mr_ifma = sym crate::dsa::vg_dsa_parameter_search_1024_sha1_shani_mr_ifma::vg_dsa_parameter_search_1024_sha1_shani_mr_ifma,
     )
+}
 }
 
 #[rustfmt::skip]

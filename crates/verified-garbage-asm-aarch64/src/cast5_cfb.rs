@@ -15,8 +15,76 @@
 /// * `rounds` must be 12 (for a key of up to 10 bytes) or 16 (for a longer one).
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the 112 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_cast5_cfb64_encrypt(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_cast5_cfb64_encrypt(schedule, rounds, iv, data, n) }
+}
+
+/// CAST5-CFB64 decryption (NIST SP 800-38A §6.3, with 64-bit segments; RFC 2144 §2) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is CAST-128 encryption (also for decryption) with `rounds` rounds under the subkeys written by `vg_cast5_expand_key`.
+///
+/// Contract: `VG.Spec.Cast5.cfbDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
+/// * `data` must be valid for reads and writes of `8 * n` bytes.
+/// * `rounds` must be 12 (for a key of up to 10 bytes) or 16 (for a longer one).
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the 112 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_cast5_cfb64_decrypt(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_cast5_cfb64_decrypt(schedule, rounds, iv, data, n) }
+}
+
+/// CAST5-CFB64 encryption (NIST SP 800-38A §6.3, with 64-bit segments; RFC 2144 §2) of the last piece of a message, of any length, in place: replaces its whole 8-byte blocks `P₁ … Pₙ₋₁` at `data` with `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Pₙ*` of `u` bytes with `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, so that a further call continues the message, if `len` is a multiple of 8 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is CAST5 encryption with `rounds` rounds under the subkeys at `schedule`, as `vg_cast5_expand_key` writes them.
+///
+/// Contract: `VG.Spec.Cast5.cfbEncryptFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the subkeys, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `rounds` must be 12 (for a key of up to 10 bytes) or 16 (for a longer one).
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the 112 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_cast5_cfb64_encrypt_final(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut u8, len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_cast5_cfb64_encrypt_final(schedule, rounds, iv, data, len) }
+}
+
+/// CAST5-CFB64 decryption (NIST SP 800-38A §6.3, with 64-bit segments; RFC 2144 §2) of the last piece of a message, of any length, in place: replaces its whole 8-byte blocks `C₁ … Cₙ₋₁` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Cₙ*` of `u` bytes with `Pₙ* = Cₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, the last whole block at `data` on entry, so that a further call continues the message, if `len` is a multiple of 8 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is CAST5 encryption with `rounds` rounds under the subkeys at `schedule`, as `vg_cast5_expand_key` writes them.
+///
+/// Contract: `VG.Spec.Cast5.cfbDecryptFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the subkeys, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `rounds` must be 12 (for a key of up to 10 bytes) or 16 (for a longer one).
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the 112 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_cast5_cfb64_decrypt_final(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut u8, len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_cast5_cfb64_decrypt_final(schedule, rounds, iv, data, len) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_cast5_cfb64_encrypt`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_cast5_cfb64_encrypt(schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+pub(crate) unsafe extern "C" fn vg_cast5_cfb64_encrypt(schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r".inst 0xd101c3ff,0x910003e5,0x910000a5,0xf90004b3,0xf90008b4,0xf9000cb5,0xf90010b6,0xf90014b7
 .inst 0xf90018b8,0xf9001cb9,0xf90020ba,0xf90024bb,0xf90028bc,0x91000059,0x91000077,0x91000098
@@ -101,24 +169,13 @@ b 21f
 .inst 0xf9401cb9,0xf94020ba,0xf94024bb,0xf94028bc,0xd2800011,0x910003f0,0xa9004611,0xa9014611
 .inst 0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xf90033f1,0x9101c3ff,0xd65f03c0
 .p2align 6",
-        VG_CAST5_S1234 = sym super::consts::VG_CAST5_S1234,
+        VG_CAST5_S1234 = sym crate::consts::VG_CAST5_S1234,
     )
 }
 
-/// CAST5-CFB64 decryption (NIST SP 800-38A §6.3, with 64-bit segments; RFC 2144 §2) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is CAST-128 encryption (also for decryption) with `rounds` rounds under the subkeys written by `vg_cast5_expand_key`.
-///
-/// Contract: `VG.Spec.Cast5.cfbDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 128 bytes.
-/// * `iv` must be valid for reads and writes of 8 bytes.
-/// * `data` must be valid for reads and writes of `8 * n` bytes.
-/// * `rounds` must be 12 (for a key of up to 10 bytes) or 16 (for a longer one).
-/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv` and `data` may overlap the 112 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_cast5_cfb64_decrypt`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_cast5_cfb64_decrypt(schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+pub(crate) unsafe extern "C" fn vg_cast5_cfb64_decrypt(schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r".inst 0xd101c3ff,0x910003e5,0x910000a5,0xf90004b3,0xf90008b4,0xf9000cb5,0xf90010b6,0xf90014b7
 .inst 0xf90018b8,0xf9001cb9,0xf90020ba,0xf90024bb,0xf90028bc,0x91000059,0x91000077,0x91000098
@@ -204,24 +261,13 @@ b 21f
 .inst 0xf9401cb9,0xf94020ba,0xf94024bb,0xf94028bc,0xd2800011,0x910003f0,0xa9004611,0xa9014611
 .inst 0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xf90033f1,0x9101c3ff,0xd65f03c0
 .p2align 6",
-        VG_CAST5_S1234 = sym super::consts::VG_CAST5_S1234,
+        VG_CAST5_S1234 = sym crate::consts::VG_CAST5_S1234,
     )
 }
 
-/// CAST5-CFB64 encryption (NIST SP 800-38A §6.3, with 64-bit segments; RFC 2144 §2) of the last piece of a message, of any length, in place: replaces its whole 8-byte blocks `P₁ … Pₙ₋₁` at `data` with `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Pₙ*` of `u` bytes with `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, so that a further call continues the message, if `len` is a multiple of 8 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is CAST5 encryption with `rounds` rounds under the subkeys at `schedule`, as `vg_cast5_expand_key` writes them.
-///
-/// Contract: `VG.Spec.Cast5.cfbEncryptFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the subkeys, the chaining value or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 128 bytes.
-/// * `iv` must be valid for reads and writes of 8 bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `rounds` must be 12 (for a key of up to 10 bytes) or 16 (for a longer one).
-/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv` and `data` may overlap the 112 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_cast5_cfb64_encrypt_final`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_cast5_cfb64_encrypt_final(schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_cast5_cfb64_encrypt_final(schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd101c3ff,0x910003e5,0x910000a5,0xf90004b3,0xf90008b4,0xf9000cb5,0xf90010b6,0xf90014b7
 .inst 0xf90018b8,0xf9001cb9,0xf90020ba,0xf90024bb,0xf90028bc,0x91000059,0x91000077,0x91000098
@@ -314,24 +360,13 @@ b 21f
 .inst 0xf9401cb9,0xf94020ba,0xf94024bb,0xf94028bc,0xd2800011,0x910003f0,0xa9004611,0xa9014611
 .inst 0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xf90033f1,0x9101c3ff,0xd65f03c0
 .p2align 6",
-        VG_CAST5_S1234 = sym super::consts::VG_CAST5_S1234,
+        VG_CAST5_S1234 = sym crate::consts::VG_CAST5_S1234,
     )
 }
 
-/// CAST5-CFB64 decryption (NIST SP 800-38A §6.3, with 64-bit segments; RFC 2144 §2) of the last piece of a message, of any length, in place: replaces its whole 8-byte blocks `C₁ … Cₙ₋₁` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Cₙ*` of `u` bytes with `Pₙ* = Cₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, the last whole block at `data` on entry, so that a further call continues the message, if `len` is a multiple of 8 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is CAST5 encryption with `rounds` rounds under the subkeys at `schedule`, as `vg_cast5_expand_key` writes them.
-///
-/// Contract: `VG.Spec.Cast5.cfbDecryptFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the subkeys, the chaining value or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 128 bytes.
-/// * `iv` must be valid for reads and writes of 8 bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `rounds` must be 12 (for a key of up to 10 bytes) or 16 (for a longer one).
-/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv` and `data` may overlap the 112 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_cast5_cfb64_decrypt_final`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_cast5_cfb64_decrypt_final(schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_cast5_cfb64_decrypt_final(schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd101c3ff,0x910003e5,0x910000a5,0xf90004b3,0xf90008b4,0xf9000cb5,0xf90010b6,0xf90014b7
 .inst 0xf90018b8,0xf9001cb9,0xf90020ba,0xf90024bb,0xf90028bc,0x91000059,0x91000077,0x91000098
@@ -425,6 +460,7 @@ b 21f
 .inst 0xf9401cb9,0xf94020ba,0xf94024bb,0xf94028bc,0xd2800011,0x910003f0,0xa9004611,0xa9014611
 .inst 0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xf90033f1,0x9101c3ff,0xd65f03c0
 .p2align 6",
-        VG_CAST5_S1234 = sym super::consts::VG_CAST5_S1234,
+        VG_CAST5_S1234 = sym crate::consts::VG_CAST5_S1234,
     )
+}
 }

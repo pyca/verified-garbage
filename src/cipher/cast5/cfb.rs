@@ -140,30 +140,12 @@ impl Drop for Cast5Cfb64Decryptor {
 }
 
 /// The signature of `vg_cast5_cfb64_encrypt` and `vg_cast5_cfb64_decrypt`.
-#[cfg(target_arch = "x86_64")]
-type Cfb = unsafe extern "sysv64" fn(*const [u8; 128], usize, *mut [u8; 8], *mut [u8; 8], usize);
-/// The signature of `vg_cast5_cfb64_encrypt` and `vg_cast5_cfb64_decrypt`.
-#[cfg(any(
-    target_arch = "x86",
-    target_arch = "aarch64",
-    target_arch = "arm",
-    all(target_arch = "powerpc64", target_endian = "little"),
-    target_arch = "riscv64"
-))]
-type Cfb = unsafe extern "C" fn(*const [u8; 128], usize, *mut [u8; 8], *mut [u8; 8], usize);
+type Cfb =
+    unsafe fn(crate::dit::Dit<'_>, *const [u8; 128], usize, *mut [u8; 8], *mut [u8; 8], usize);
 
 /// The signature of `vg_cast5_cfb64_encrypt_final` and `vg_cast5_cfb64_decrypt_final`.
-#[cfg(target_arch = "x86_64")]
-type CfbFinal = unsafe extern "sysv64" fn(*const [u8; 128], usize, *mut [u8; 8], *mut u8, usize);
-/// The signature of `vg_cast5_cfb64_encrypt_final` and `vg_cast5_cfb64_decrypt_final`.
-#[cfg(any(
-    target_arch = "x86",
-    target_arch = "aarch64",
-    target_arch = "arm",
-    all(target_arch = "powerpc64", target_endian = "little"),
-    target_arch = "riscv64"
-))]
-type CfbFinal = unsafe extern "C" fn(*const [u8; 128], usize, *mut [u8; 8], *mut u8, usize);
+type CfbFinal =
+    unsafe fn(crate::dit::Dit<'_>, *const [u8; 128], usize, *mut [u8; 8], *mut u8, usize);
 
 impl Key {
     /// Expands a key of 5 to 16 bytes.
@@ -177,18 +159,20 @@ impl Key {
     /// which it replaces with the last ciphertext block (unchanged for empty
     /// input).
     fn encrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) {
-        self.blocks(iv, buffer, vg_cast5_cfb64_encrypt);
+        crate::dit::enter!(dit);
+        self.blocks(dit, iv, buffer, vg_cast5_cfb64_encrypt);
     }
 
     /// Decrypts the whole blocks of `buffer` in place, from the block `iv`,
     /// which it replaces with the last ciphertext block (unchanged for empty
     /// input).
     fn decrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) {
-        self.blocks(iv, buffer, vg_cast5_cfb64_decrypt);
+        crate::dit::enter!(dit);
+        self.blocks(dit, iv, buffer, vg_cast5_cfb64_decrypt);
     }
 
     /// `f` on whole blocks.
-    fn blocks(&self, iv: &mut [u8; 8], blocks: &mut [u8], f: Cfb) {
+    fn blocks(&self, dit: crate::dit::Dit<'_>, iv: &mut [u8; 8], blocks: &mut [u8], f: Cfb) {
         // SAFETY: `rounds` is 12 or 16, as `Cast5Ecb::new` chose for the key
         // the schedule was expanded from; `blocks` holds `len / 8` whole
         // blocks, and it, the block at `iv` and the schedule are separate valid
@@ -196,6 +180,7 @@ impl Key {
         // stack.
         unsafe {
             f(
+                dit,
                 self.key.schedule(),
                 self.key.rounds(),
                 iv,
@@ -210,17 +195,18 @@ impl Key {
     /// once), then the bytes after them, fewer than 8, with `f`, the final
     /// function of the same direction, from the IV the whole blocks leave.
     fn last(&self, iv: &mut [u8; 8], buffer: &mut [u8], whole: Cfb, f: CfbFinal) {
+        crate::dit::enter!(dit);
         let (blocks, rest) = buffer.split_at_mut(buffer.len() / 8 * 8);
-        self.blocks(iv, blocks, whole);
+        self.blocks(dit, iv, blocks, whole);
         if !rest.is_empty() {
-            self.final_(iv, rest, f);
+            self.final_(dit, iv, rest, f);
         }
     }
 
     /// `f`, a final function, on the rest of a message, of any length: it
     /// replaces `iv` with the last ciphertext block, or, after a partial last
     /// segment, with keystream, which the caller wipes.
-    fn final_(&self, iv: &mut [u8; 8], buffer: &mut [u8], f: CfbFinal) {
+    fn final_(&self, dit: crate::dit::Dit<'_>, iv: &mut [u8; 8], buffer: &mut [u8], f: CfbFinal) {
         // SAFETY: `rounds` is 12 or 16, as `Cast5Ecb::new` chose for the key
         // the schedule was expanded from; `buffer` is valid for `len` bytes,
         // and it, the block at `iv` and the schedule are separate valid
@@ -228,6 +214,7 @@ impl Key {
         // stack.
         unsafe {
             f(
+                dit,
                 self.key.schedule(),
                 self.key.rounds(),
                 iv,

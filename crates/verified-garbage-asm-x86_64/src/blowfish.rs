@@ -14,8 +14,53 @@
 /// * `key_len` must be in 4..=56.
 /// * `schedule` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `schedule` may overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_blowfish_expand_key(_dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, schedule: *mut [u8; 4168]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_blowfish_expand_key(key, key_len, schedule) }
+}
+
+/// Blowfish ECB encryption (SP 800-38A §6.1's construction) of `n` complete 8-byte blocks at `data`, in place, under the schedule written by `vg_blowfish_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
+///
+/// Contract: `VG.Spec.Blowfish.ecbEncryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including the S-box indices.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 4168 bytes.
+/// * `data` must be valid for reads and writes of `8 * n` bytes.
+/// * `data` must not overlap `schedule` (distinct Rust objects never do).
+/// * Neither `schedule` nor `data` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_blowfish_ecb_encrypt(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 4168], data: *mut [u8; 8], n: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_blowfish_ecb_encrypt(schedule, data, n) }
+}
+
+/// Blowfish ECB decryption (SP 800-38A §6.1's construction) of `n` complete 8-byte blocks at `data`, in place, under the schedule written by `vg_blowfish_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
+///
+/// Contract: `VG.Spec.Blowfish.ecbDecryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including the S-box indices.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 4168 bytes.
+/// * `data` must be valid for reads and writes of `8 * n` bytes.
+/// * `data` must not overlap `schedule` (distinct Rust objects never do).
+/// * Neither `schedule` nor `data` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_blowfish_ecb_decrypt(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 4168], data: *mut [u8; 8], n: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_blowfish_ecb_decrypt(schedule, data, n) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_blowfish_expand_key`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_blowfish_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 4168]) {
+pub(crate) unsafe extern "sysv64" fn vg_blowfish_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 4168]) {
     core::arch::naked_asm!(
         r#".base64 "SI1kJNhIieFIg8EISbumrNu37ZZFmUyJGkm7R/fiFthpo35MiVoISbuPWFjuHbU5E0yJWhBJuyPwGO+wDos+TIlaGEm7wSfaYPOUYkBMiVogSbtqtjTOr5MRKkyJWihJu132Fh4zXIF3TIlaMEm7mK8bk8yRYDJMiVo4SbtdsQKIgcXzOUyJWkBJu4IESl5CmmHwTIlaSEm70mgoo2zkUJhMiVpQSbsddj6IGbTDvkyJWlhJu9hzn6ZiBnI9TIlaYEm7JEjTm8l72PdMiVpoSbsaO726tsTCY0yJWnBJu6+1628fLEQJTIlaeEm7BP0Hs1cPOdtMiZqAAAAASbu9CsZ5/sz4+EyJmogAAABJu98VyKv6YEiCTImakAAAAEm7u6Au2/bDxnNMiZqYAAAASbuwyF2gmLhsW0yJmqAAAABJu3llvJDaM0HoTImaqAAAAEm72gH+tE2YcaBMiZqwAAAASbvQ4C+3+2QSHEyJmrgAAABJu6Acka0Yd/6hTImawAAAAEm7D+jWmeC3gdlMiZrIAAAASbtmBRR3ZYb1z0yJmtAAAABJuwyg00ktXruvTIma2AAAAEm7mx4dqol/osVMiZrgAAAASbt2qWhBykpSFUyJmugAAABJuz/kdgC1H2sVTIma8AAAAEm7IbYuZF2hmWpMiZr4AAAASbsLtXLfr36Qf0yJmgABAABJu5ls8vwgTv49TImaCAEAAEm7dLbNSqRZ1WBMiZoQAQAASbuwhXk43BgOikyJmhgBAABJu3dLL1wlq5gUTImaIAEAAEm7ORBc6IbpFLxMiZooAQAASbvFMT6Tus9ThkyJmjABAABJu0i56CEJqayATImaOAEAAEm7XXUjGz6sb0JMiZpAAQAASbtEIPCbaGyciEyJmkgBAABJu6AvpzMLO/AqTImaUAEAAEm7ZQFZDoafpV5MiZpYAQAASbt1IERqqnffAkyJmmABAABJu9cS6sByG3neTImaaAEAAEm7UEzgBk9gniRMiZpwAQAASbtvU7LsUZVFvUyJmngBAABJu9BKKEuodF/7TImagAEAAEm7wDIAciWj6SJMiZqIAQAASbsWax5StYd730yJmpABAABJu1eMVmmo/zJVTImamAEAAEm7J1ijET2DtdNMiZqgAQAASbvkRUmX8n4TxkyJmqgBAABJu8pMnh/akY7VTImasAEAAEm70SVblOIruPBMiZq4AQAASbtew/HBIhctH0yJmsABAABJu8x08+JP4DuoTImayAEAAEm7ondzFCD6QjVMiZrQAQAASbuviRt+DrMA4EyJmtgBAABJuza5kaZDU1u5TIma4AEAAEm7A88ZSi2pAClMiZroAQAASbtXxqR0b+ns2UyJmvABAABJu2X5BVYtj0cHTIma+AEAAEm7Md/9GuEmfCxMiZoAAgAASbuhkQGOaVdYk0yJmggCAABJu5WOixVUWjDyTImaEAIAAEm70WBB23k6nh5MiZoYAgAASbsVMa9gVVVI6EyJmiACAABJu8qrzEFUcu5vTImaKAIAAEm7qRhch9YkMpVMiZowAgAASbuPS78o2CF87EyJmjgCAABJu4SFJmWJlm30TImaQAIAAEm7C4TIH8bpDNNMiZpIAgAASbtRVA9R73o7+0yJmlACAABJu/GvykPub4SLTImaWAIAAEm7b8EawdM//ptMiZpgAgAASbvQCg/xU5nU6EyJmmgCAABJu/55bMCpn1xqTImacAIAAEm7+2w5UvwwgV5MiZp4AgAASbvjMw8uy8gL00yJmoACAABJu3lgoSyfH6UyTImaiAIAAEm7dWFQBT0jMQBMiZqQAgAASbtcb4cXQn5nT0yJmpgCAABJu1vK//D6IfzRTImaoAIAAEm7U/iO+93L++RMiZqoAgAASbsgd37x25Ctk0yJmrACAABJu47HPHX2EogNTImauAIAAEm7rY/PqC8OdQJMiZrAAgAASbugb6yJqBPErUyJmsgCAABJu1+VzBqttVSdTIma0AIAAEm7zT5BHiVxaLhMiZrYAgAASbtkCWPfwVp95UyJmuACAABJuyaVyHNHFFFTTIma6AIAAEm7D5tg5roblg1MiZrwAgAASbtjuTSFsJ+6hUyJmvgCAABJu9GYL9C4arrxTImaAAMAAEm7JLMIhWNxpPRMiZoIAwAASbsNcnGCe8KcKkyJmhADAABJu8UoyriOYGywTImaGAMAAEm71714VeaqV2NMiZogAwAASbtVKrQRoXyzY0yJmigDAABJuyt0zpuvbHooTImaMAMAAEm7O2vEZmH7SF1MiZo4AwAASbvv6dzrI9MPg0yJmkADAABJuy6kaZ4h9merTImaSAMAAEm7atiWq24Tun5MiZpQAwAASbuhOWaCjEV9O0yJmlgDAABJ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"
 20:
@@ -104,18 +149,9 @@ jne 215b
     )
 }
 
-/// Blowfish ECB encryption (SP 800-38A §6.1's construction) of `n` complete 8-byte blocks at `data`, in place, under the schedule written by `vg_blowfish_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
-///
-/// Contract: `VG.Spec.Blowfish.ecbEncryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including the S-box indices.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 4168 bytes.
-/// * `data` must be valid for reads and writes of `8 * n` bytes.
-/// * `data` must not overlap `schedule` (distinct Rust objects never do).
-/// * Neither `schedule` nor `data` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_blowfish_ecb_encrypt`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_blowfish_ecb_encrypt(schedule: *const [u8; 4168], data: *mut [u8; 8], n: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_blowfish_ecb_encrypt(schedule: *const [u8; 4168], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPj+//9IieFIg8EISbsBAAEAAQABAGZND27rSbsBAAEAAQABAGZND27jZkUPbOxJuxAAEAAQABAAZk0PbvNJuxAAEAAQABAAZk0PbuNmRQ9s9Em7/wD/AP8A/wBmTQ9u+0m7/wD/AP8A/wBmTQ9u42ZFD2z8SIXS"
 je 20f
@@ -150,18 +186,9 @@ jmp 21f
     )
 }
 
-/// Blowfish ECB decryption (SP 800-38A §6.1's construction) of `n` complete 8-byte blocks at `data`, in place, under the schedule written by `vg_blowfish_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
-///
-/// Contract: `VG.Spec.Blowfish.ecbDecryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including the S-box indices.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 4168 bytes.
-/// * `data` must be valid for reads and writes of `8 * n` bytes.
-/// * `data` must not overlap `schedule` (distinct Rust objects never do).
-/// * Neither `schedule` nor `data` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_blowfish_ecb_decrypt`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_blowfish_ecb_decrypt(schedule: *const [u8; 4168], data: *mut [u8; 8], n: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_blowfish_ecb_decrypt(schedule: *const [u8; 4168], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPj+//9IieFIg8EISbsBAAEAAQABAGZND27rSbsBAAEAAQABAGZND27jZkUPbOxJuxAAEAAQABAAZk0PbvNJuxAAEAAQABAAZk0PbuNmRQ9s9Em7/wD/AP8A/wBmTQ9u+0m7/wD/AP8A/wBmTQ9u42ZFD2z8SIXS"
 je 20f
@@ -194,4 +221,5 @@ jmp 21f
 .base64 "QbsAAAAATIlcJAhMiVwkEEiNpCQIAQAAww=="
 .p2align 6"#,
     )
+}
 }

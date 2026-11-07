@@ -94,8 +94,11 @@ constant of its file, as an artifact's.
 
 A function the emitter renders as another name of an identical function of
 its module (`pub use self::<f> as <name>;`, `Rust.alias` in
-`lean/VerifiedGarbage/TCB/Rust.lean`) is that function's code: it has its
-signature and callees, and a use of it is a use of that function.
+`lean/VerifiedGarbage/TCB/Rust.lean`, and the same in its `raw` module) is
+that function's code: it has its signature and callees, and a use of it is a
+use of that function. The naked functions are in a module's `raw` module, and
+the public function of each name only calls the naked one of that name, so
+the naked functions are what this reads.
 
 A *dispatcher* (`<f>_auto` in `dispatch/<module>.rs`, `Rust.dispatcher`: an
 ordinary Rust function, `pub unsafe fn`, or for a function with one
@@ -742,7 +745,9 @@ def unread(srcs):
     for target, text in srcs:
         for what, total, read in [
             ("naked functions", text.count("#[unsafe(naked)]"), sum(1 for _ in bodies(text))),
-            ("other names", text.count(" use self::vg_"), len(aliases(text))),
+            # Each other name is given twice, to the public function and to
+            # the naked one in `raw`, both naming their function of the module.
+            ("other names", len(set(re.findall(r" use self::vg_\w+ as (vg_\w+);", text))), len(aliases(text))),
             ("dispatchers' other names", text.count(" use crate::"), len(SOLE.findall(text))),
             ("dispatchers", text.count("\npub unsafe fn vg_"), len(DISPATCHER.findall(text))),
             ("_FEATURES constants", text.count("_FEATURES: "), len(FEATURES.findall(text))),

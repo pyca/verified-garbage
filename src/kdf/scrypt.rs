@@ -64,7 +64,8 @@ pub fn derive(
     max_memory: usize,
     out: &mut [u8],
 ) -> Result<(), PasswordHashError> {
-    Memory::new(n, r, p, max_memory, out.len())?.derive(password, salt, out);
+    crate::dit::enter!(dit);
+    Memory::new(n, r, p, max_memory, out.len())?.derive(dit, password, salt, out);
     Ok(())
 }
 
@@ -101,11 +102,12 @@ pub fn verify<const N: usize>(
     max_memory: usize,
     expected: &[u8; N],
 ) -> Result<(), PasswordHashError> {
+    crate::dit::enter!(dit);
     crate::ct::assert_verify_len!(N);
     let mut memory = Memory::new(n, r, p, max_memory, N)?;
     let mut key = [0u8; N];
-    memory.derive(password, salt, &mut key);
-    let matches = crate::ct::eq(&key, expected);
+    memory.derive(dit, password, salt, &mut key);
+    let matches = crate::ct::eq(dit, &key, expected);
     crate::zeroize::zeroize(&mut key);
     if matches {
         Ok(())
@@ -171,9 +173,10 @@ impl Memory {
 
     /// Fills `out`, of the length the memory was allocated for, with the
     /// key derived from `password` and `salt`.
-    fn derive(&mut self, password: &[u8], salt: &[u8], out: &mut [u8]) {
+    fn derive(&mut self, dit: crate::dit::Dit<'_>, password: &[u8], salt: &[u8], out: &mut [u8]) {
         assert_eq!(out.len(), self.len);
         derive_by(
+            dit,
             password,
             salt,
             self.r,
@@ -198,6 +201,7 @@ impl Drop for Memory {
 /// [`Memory::new`] checked, with `r + 16` chunks of `scratch`.
 #[allow(clippy::too_many_arguments)]
 fn derive_by(
+    dit: crate::dit::Dit<'_>,
     password: &[u8],
     salt: &[u8],
     r: usize,
@@ -219,6 +223,7 @@ fn derive_by(
     // has the features of.
     unsafe {
         vg_scrypt_auto(
+            dit,
             password.as_ptr(),
             password.len(),
             salt.as_ptr(),

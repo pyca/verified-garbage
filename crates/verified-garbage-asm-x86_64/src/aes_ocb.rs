@@ -18,18 +18,11 @@ pub const VG_AES_OCB_INIT_AESNI_FEATURES: verified_garbage_cpu::Features = verif
 /// * `ctx` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_ocb_init_aesni(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJPj1//9IieFIg8EISIkZSIlpCEyJYRBIidNIifVIwe0CSIPFBkmJzEiBwQACAAA="
-call {vg_aes_expand_key_scratch_aesni}
-.base64 "SDHASImD8AAAAEiJg/gAAABIid9Iie5IidpIgcLwAAAASMfBAQAAAE2J4EmBwAACAAA="
-call {vg_aes_encrypt_blocks_aesni}
-.base64 "SYscJEmLbCQITYtkJBBIjaQkCAoAAMM="
-.p2align 6"#,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
-    )
+#[inline(always)]
+pub unsafe fn vg_aes_ocb_init_aesni(_dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_ocb_init_aesni(key, key_len, ctx) }
 }
 
 /// The CPU features `vg_aes_ocb_seal_aesni` requires (`Artifact.features`).
@@ -51,8 +44,202 @@ pub const VG_AES_OCB_SEAL_AESNI_FEATURES: verified_garbage_cpu::Features = verif
 /// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3640 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_ocb_seal_aesni(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_ocb_seal_aesni(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) }
+}
+
+/// The CPU features `vg_aes_ocb_open_aesni` requires (`Artifact.features`).
+pub const VG_AES_OCB_OPEN_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
+
+/// AES-OCB authenticated decryption (RFC 7253 §4.3, `OCB-DECRYPT`, with `TAGLEN = 8 * tag_len`): with the key context `*ctx` that `vg_aes_ocb_init` wrote for `rounds` rounds and the received tag (the last `tag_len` bytes of the RFC's ciphertext) the `tag_len` bytes at `tag`, decrypts the `len` bytes of encrypted data at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and returns 1 if the tag is that of the data and the `aad_len` bytes of associated data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
+///
+/// Contract: `VG.Spec.Ocb.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the associated data, the data or the tag.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `tag_len` must be from 1 to 16, and `nonce_len` from 1 to 15 (RFC 7253 §3.1).
+/// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3640 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` target feature.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_ocb_open_aesni(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_ocb_open_aesni(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) }
+}
+
+/// The AES-OCB key setup (RFC 7253 §4.1): writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and `L_* = ENCIPHER(K, zeros(128))` in bytes 240–255. The other bytes are unspecified. The other `vg_aes_ocb_*` functions read it, with `Nr` as their `rounds`.
+///
+/// Contract: `VG.Spec.Ocb.initContract`. The key context is `VG.Spec.Ocb.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `ctx` must be valid for reads and writes of 256 bytes.
+/// * `key_len` must be 16, 24 or 32.
+/// * `ctx` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_aes_ocb_init(_dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_ocb_init(key, key_len, ctx) }
+}
+
+/// AES-OCB authenticated encryption (RFC 7253 §4.2, `OCB-ENCRYPT`, with `TAGLEN = 8 * tag_len`): with the key context `*ctx` that `vg_aes_ocb_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and writes the tag of `tag_len` bytes, of the data and the `aad_len` bytes of associated data at `aad`, to the `tag_len` bytes at `tag`. The RFC's ciphertext is the encrypted data followed by the tag. A nonce must never be used twice with the same key.
+///
+/// Contract: `VG.Spec.Ocb.sealContract`. Constant time: only the pointers, `rounds`, the lengths and `tag_len` may affect timing, not the key context, the nonce, the associated data or the data.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of `tag_len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `tag_len` must be from 1 to 16, and `nonce_len` from 1 to 15 (RFC 7253 §3.1).
+/// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3640 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_ocb_seal(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_ocb_seal(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) }
+}
+
+/// AES-OCB authenticated decryption (RFC 7253 §4.3, `OCB-DECRYPT`, with `TAGLEN = 8 * tag_len`): with the key context `*ctx` that `vg_aes_ocb_init` wrote for `rounds` rounds and the received tag (the last `tag_len` bytes of the RFC's ciphertext) the `tag_len` bytes at `tag`, decrypts the `len` bytes of encrypted data at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and returns 1 if the tag is that of the data and the `aad_len` bytes of associated data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
+///
+/// Contract: `VG.Spec.Ocb.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the associated data, the data or the tag.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `tag_len` must be from 1 to 16, and `nonce_len` from 1 to 15 (RFC 7253 §3.1).
+/// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3640 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_ocb_open(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_ocb_open(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) }
+}
+
+/// The CPU features `vg_aes_ocb_init_vaes` requires (`Artifact.features`).
+pub const VG_AES_OCB_INIT_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES);
+
+/// The AES-OCB key setup (RFC 7253 §4.1): writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and `L_* = ENCIPHER(K, zeros(128))` in bytes 240–255. The other bytes are unspecified. The other `vg_aes_ocb_*` functions read it, with `Nr` as their `rounds`.
+///
+/// Contract: `VG.Spec.Ocb.initContract`. The key context is `VG.Spec.Ocb.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `ctx` must be valid for reads and writes of 256 bytes.
+/// * `key_len` must be 16, 24 or 32.
+/// * `ctx` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes`, `avx`, `avx2` and `vaes` target features.
+#[inline(always)]
+pub unsafe fn vg_aes_ocb_init_vaes(_dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_ocb_init_vaes(key, key_len, ctx) }
+}
+
+/// The CPU features `vg_aes_ocb_seal_vaes` requires (`Artifact.features`).
+pub const VG_AES_OCB_SEAL_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES);
+
+/// AES-OCB authenticated encryption (RFC 7253 §4.2, `OCB-ENCRYPT`, with `TAGLEN = 8 * tag_len`): with the key context `*ctx` that `vg_aes_ocb_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and writes the tag of `tag_len` bytes, of the data and the `aad_len` bytes of associated data at `aad`, to the `tag_len` bytes at `tag`. The RFC's ciphertext is the encrypted data followed by the tag. A nonce must never be used twice with the same key.
+///
+/// Contract: `VG.Spec.Ocb.sealContract`. Constant time: only the pointers, `rounds`, the lengths and `tag_len` may affect timing, not the key context, the nonce, the associated data or the data.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of `tag_len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `tag_len` must be from 1 to 16, and `nonce_len` from 1 to 15 (RFC 7253 §3.1).
+/// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3640 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes`, `avx`, `avx2` and `vaes` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_ocb_seal_vaes(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_ocb_seal_vaes(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) }
+}
+
+/// The CPU features `vg_aes_ocb_open_vaes` requires (`Artifact.features`).
+pub const VG_AES_OCB_OPEN_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES);
+
+/// AES-OCB authenticated decryption (RFC 7253 §4.3, `OCB-DECRYPT`, with `TAGLEN = 8 * tag_len`): with the key context `*ctx` that `vg_aes_ocb_init` wrote for `rounds` rounds and the received tag (the last `tag_len` bytes of the RFC's ciphertext) the `tag_len` bytes at `tag`, decrypts the `len` bytes of encrypted data at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and returns 1 if the tag is that of the data and the `aad_len` bytes of associated data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
+///
+/// Contract: `VG.Spec.Ocb.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the associated data, the data or the tag.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `tag_len` must be from 1 to 16, and `nonce_len` from 1 to 15 (RFC 7253 §3.1).
+/// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3640 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes`, `avx`, `avx2` and `vaes` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_ocb_open_vaes(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_ocb_open_vaes(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_aes_ocb_init_aesni`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_ocb_seal_aesni(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_init_aesni(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJPj1//9IieFIg8EISIkZSIlpCEyJYRBIidNIifVIwe0CSIPFBkmJzEiBwQACAAA="
+call {vg_aes_expand_key_scratch_aesni}
+.base64 "SDHASImD8AAAAEiJg/gAAABIid9Iie5IidpIgcLwAAAASMfBAQAAAE2J4EmBwAACAAA="
+call {vg_aes_encrypt_blocks_aesni}
+.base64 "SYscJEmLbCQITYtkJBBIjaQkCAoAAMM="
+.p2align 6"#,
+        vg_aes_expand_key_scratch_aesni = sym crate::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_aes_encrypt_blocks_aesni = sym crate::aes::raw::vg_aes_encrypt_blocks_aesni,
+    )
+}
+
+/// The verified code of [`super::vg_aes_ocb_seal_aesni`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_seal_aesni(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJNDx//9Ii4QkOA4AAEiJRCQISIuEJEAOAABIiUQkEEiLhCRIDgAASIlEJBhIi4QkUA4AAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZigAAAASImoqAAAAEyJoLAAAABMiai4AAAATImwwAAAAEyJuMgAAABJicdJif5JibfoAAAASYmXIAEAAEmJjygBAABNiYfwAAAATYmP+AAAAEiLRCQISYmH0AAAAEiLRCQQSYmH2AAAAEiLRCQgSYmH4AAAAEiLRCQYSYmHMAEAAEmLhvAAAABID8hJi5b4AAAASA/KSInBSMHpP00xwEkpyEmB4IcAAABIidFIwek/SAHASAnISAHSTDHCSA/ISYlHQEgPykmJV0hJi0dASA/ISYtXSEgPykiJwUjB6T9NMcBJKchJgeCHAAAASInRSMHpP0gBwEgJyEgB0kwxwkgPyEmJR1BID8pJiVdYSDHASYlHIEmJRyhJi0dQSYtXWEmJhwAKAABJiZcICgAATYuP2AAAAEmLh/gAAABJCcFJwekFTYn6SYHCAAoAAEnHwwEAAABIvm04lcxj3S8CTYXJ"
 je 20f
@@ -167,31 +354,13 @@ call {vg_aes_encrypt_blocks_aesni}
 jne 232b
 .base64 "SYufoAAAAEmLr6gAAABNi6ewAAAATYuvuAAAAE2Lt8AAAABNi7/IAAAASI2kJDAOAADD"
 .p2align 6"#,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
+        vg_aes_encrypt_blocks_aesni = sym crate::aes::raw::vg_aes_encrypt_blocks_aesni,
     )
 }
 
-/// The CPU features `vg_aes_ocb_open_aesni` requires (`Artifact.features`).
-pub const VG_AES_OCB_OPEN_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
-
-/// AES-OCB authenticated decryption (RFC 7253 §4.3, `OCB-DECRYPT`, with `TAGLEN = 8 * tag_len`): with the key context `*ctx` that `vg_aes_ocb_init` wrote for `rounds` rounds and the received tag (the last `tag_len` bytes of the RFC's ciphertext) the `tag_len` bytes at `tag`, decrypts the `len` bytes of encrypted data at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and returns 1 if the tag is that of the data and the `aad_len` bytes of associated data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
-///
-/// Contract: `VG.Spec.Ocb.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the associated data, the data or the tag.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of `tag_len` bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `tag_len` must be from 1 to 16, and `nonce_len` from 1 to 15 (RFC 7253 §3.1).
-/// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3640 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` target feature.
+/// The verified code of [`super::vg_aes_ocb_open_aesni`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_ocb_open_aesni(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_open_aesni(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJNDx//9Ii4QkOA4AAEiJRCQISIuEJEAOAABIiUQkEEiLhCRIDgAASIlEJBhIi4QkUA4AAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZigAAAASImoqAAAAEyJoLAAAABMiai4AAAATImwwAAAAEyJuMgAAABJicdJif5JibfoAAAASYmXIAEAAEmJjygBAABNiYfwAAAATYmP+AAAAEiLRCQISYmH0AAAAEiLRCQQSYmH2AAAAEiLRCQgSYmH4AAAAEiLRCQYSYmHMAEAAEmLhvAAAABID8hJi5b4AAAASA/KSInBSMHpP00xwEkpyEmB4IcAAABIidFIwek/SAHASAnISAHSTDHCSA/ISYlHQEgPykmJV0hJi0dASA/ISYtXSEgPykiJwUjB6T9NMcBJKchJgeCHAAAASInRSMHpP0gBwEgJyEgB0kwxwkgPyEmJR1BID8pJiVdYSDHASYlHIEmJRyhJi0dQSYtXWEmJhwAKAABJiZcICgAATYuP2AAAAEmLh/gAAABJCcFJwekFTYn6SYHCAAoAAEnHwwEAAABIvm04lcxj3S8CTYXJ"
 je 20f
@@ -327,24 +496,14 @@ jmp 238f
 238:
 .base64 "SYsHSYufoAAAAEmLr6gAAABNi6ewAAAATYuvuAAAAE2Lt8AAAABNi7/IAAAASI2kJDAOAADD"
 .p2align 6"#,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
-        vg_aes_decrypt_blocks_aesni = sym super::aes::vg_aes_decrypt_blocks_aesni,
+        vg_aes_encrypt_blocks_aesni = sym crate::aes::raw::vg_aes_encrypt_blocks_aesni,
+        vg_aes_decrypt_blocks_aesni = sym crate::aes::raw::vg_aes_decrypt_blocks_aesni,
     )
 }
 
-/// The AES-OCB key setup (RFC 7253 §4.1): writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and `L_* = ENCIPHER(K, zeros(128))` in bytes 240–255. The other bytes are unspecified. The other `vg_aes_ocb_*` functions read it, with `Nr` as their `rounds`.
-///
-/// Contract: `VG.Spec.Ocb.initContract`. The key context is `VG.Spec.Ocb.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `ctx` must be valid for reads and writes of 256 bytes.
-/// * `key_len` must be 16, 24 or 32.
-/// * `ctx` must not overlap `key` (distinct Rust objects never do).
-/// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_aes_ocb_init`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_ocb_init(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_init(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPj1//9IieFIg8EISIkZSIlpCEyJYRBIidNIifVIwe0CSIPFBkmJzEiBwQACAAA="
 call {vg_aes_expand_key_scratch}
@@ -352,28 +511,14 @@ call {vg_aes_expand_key_scratch}
 call {vg_aes_encrypt_blocks}
 .base64 "SYscJEmLbCQITYtkJBBIjaQkCAoAAMM="
 .p2align 6"#,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
+        vg_aes_expand_key_scratch = sym crate::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_aes_encrypt_blocks = sym crate::aes::raw::vg_aes_encrypt_blocks,
     )
 }
 
-/// AES-OCB authenticated encryption (RFC 7253 §4.2, `OCB-ENCRYPT`, with `TAGLEN = 8 * tag_len`): with the key context `*ctx` that `vg_aes_ocb_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and writes the tag of `tag_len` bytes, of the data and the `aad_len` bytes of associated data at `aad`, to the `tag_len` bytes at `tag`. The RFC's ciphertext is the encrypted data followed by the tag. A nonce must never be used twice with the same key.
-///
-/// Contract: `VG.Spec.Ocb.sealContract`. Constant time: only the pointers, `rounds`, the lengths and `tag_len` may affect timing, not the key context, the nonce, the associated data or the data.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of `tag_len` bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `tag_len` must be from 1 to 16, and `nonce_len` from 1 to 15 (RFC 7253 §3.1).
-/// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3640 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_aes_ocb_seal`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_ocb_seal(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_seal(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJNDx//9Ii4QkOA4AAEiJRCQISIuEJEAOAABIiUQkEEiLhCRIDgAASIlEJBhIi4QkUA4AAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZigAAAASImoqAAAAEyJoLAAAABMiai4AAAATImwwAAAAEyJuMgAAABJicdJif5JibfoAAAASYmXIAEAAEmJjygBAABNiYfwAAAATYmP+AAAAEiLRCQISYmH0AAAAEiLRCQQSYmH2AAAAEiLRCQgSYmH4AAAAEiLRCQYSYmHMAEAAEmLhvAAAABID8hJi5b4AAAASA/KSInBSMHpP00xwEkpyEmB4IcAAABIidFIwek/SAHASAnISAHSTDHCSA/ISYlHQEgPykmJV0hJi0dASA/ISYtXSEgPykiJwUjB6T9NMcBJKchJgeCHAAAASInRSMHpP0gBwEgJyEgB0kwxwkgPyEmJR1BID8pJiVdYSDHASYlHIEmJRyhJi0dQSYtXWEmJhwAKAABJiZcICgAATYuP2AAAAEmLh/gAAABJCcFJwekFTYn6SYHCAAoAAEnHwwEAAABIvm04lcxj3S8CTYXJ"
 je 20f
@@ -488,27 +633,13 @@ call {vg_aes_encrypt_blocks}
 jne 232b
 .base64 "SYufoAAAAEmLr6gAAABNi6ewAAAATYuvuAAAAE2Lt8AAAABNi7/IAAAASI2kJDAOAADD"
 .p2align 6"#,
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
+        vg_aes_encrypt_blocks = sym crate::aes::raw::vg_aes_encrypt_blocks,
     )
 }
 
-/// AES-OCB authenticated decryption (RFC 7253 §4.3, `OCB-DECRYPT`, with `TAGLEN = 8 * tag_len`): with the key context `*ctx` that `vg_aes_ocb_init` wrote for `rounds` rounds and the received tag (the last `tag_len` bytes of the RFC's ciphertext) the `tag_len` bytes at `tag`, decrypts the `len` bytes of encrypted data at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and returns 1 if the tag is that of the data and the `aad_len` bytes of associated data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
-///
-/// Contract: `VG.Spec.Ocb.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the associated data, the data or the tag.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of `tag_len` bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `tag_len` must be from 1 to 16, and `nonce_len` from 1 to 15 (RFC 7253 §3.1).
-/// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3640 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_aes_ocb_open`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_ocb_open(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_open(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJNDx//9Ii4QkOA4AAEiJRCQISIuEJEAOAABIiUQkEEiLhCRIDgAASIlEJBhIi4QkUA4AAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZigAAAASImoqAAAAEyJoLAAAABMiai4AAAATImwwAAAAEyJuMgAAABJicdJif5JibfoAAAASYmXIAEAAEmJjygBAABNiYfwAAAATYmP+AAAAEiLRCQISYmH0AAAAEiLRCQQSYmH2AAAAEiLRCQgSYmH4AAAAEiLRCQYSYmHMAEAAEmLhvAAAABID8hJi5b4AAAASA/KSInBSMHpP00xwEkpyEmB4IcAAABIidFIwek/SAHASAnISAHSTDHCSA/ISYlHQEgPykmJV0hJi0dASA/ISYtXSEgPykiJwUjB6T9NMcBJKchJgeCHAAAASInRSMHpP0gBwEgJyEgB0kwxwkgPyEmJR1BID8pJiVdYSDHASYlHIEmJRyhJi0dQSYtXWEmJhwAKAABJiZcICgAATYuP2AAAAEmLh/gAAABJCcFJwekFTYn6SYHCAAoAAEnHwwEAAABIvm04lcxj3S8CTYXJ"
 je 20f
@@ -644,28 +775,14 @@ jmp 238f
 238:
 .base64 "SYsHSYufoAAAAEmLr6gAAABNi6ewAAAATYuvuAAAAE2Lt8AAAABNi7/IAAAASI2kJDAOAADD"
 .p2align 6"#,
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
-        vg_aes_decrypt_blocks = sym super::aes::vg_aes_decrypt_blocks,
+        vg_aes_encrypt_blocks = sym crate::aes::raw::vg_aes_encrypt_blocks,
+        vg_aes_decrypt_blocks = sym crate::aes::raw::vg_aes_decrypt_blocks,
     )
 }
 
-/// The CPU features `vg_aes_ocb_init_vaes` requires (`Artifact.features`).
-pub const VG_AES_OCB_INIT_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES);
-
-/// The AES-OCB key setup (RFC 7253 §4.1): writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and `L_* = ENCIPHER(K, zeros(128))` in bytes 240–255. The other bytes are unspecified. The other `vg_aes_ocb_*` functions read it, with `Nr` as their `rounds`.
-///
-/// Contract: `VG.Spec.Ocb.initContract`. The key context is `VG.Spec.Ocb.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `ctx` must be valid for reads and writes of 256 bytes.
-/// * `key_len` must be 16, 24 or 32.
-/// * `ctx` must not overlap `key` (distinct Rust objects never do).
-/// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes`, `avx`, `avx2` and `vaes` target features.
+/// The verified code of [`super::vg_aes_ocb_init_vaes`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_ocb_init_vaes(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_init_vaes(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPj1//9IieFIg8EISIkZSIlpCEyJYRBIidNIifVIwe0CSIPFBkmJzEiBwQACAAA="
 call {vg_aes_expand_key_scratch_aesni}
@@ -673,32 +790,14 @@ call {vg_aes_expand_key_scratch_aesni}
 call {vg_aes_encrypt_blocks_vaes}
 .base64 "SYscJEmLbCQITYtkJBBIjaQkCAoAAMM="
 .p2align 6"#,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes,
+        vg_aes_expand_key_scratch_aesni = sym crate::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_aes_encrypt_blocks_vaes = sym crate::aes::raw::vg_aes_encrypt_blocks_vaes,
     )
 }
 
-/// The CPU features `vg_aes_ocb_seal_vaes` requires (`Artifact.features`).
-pub const VG_AES_OCB_SEAL_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES);
-
-/// AES-OCB authenticated encryption (RFC 7253 §4.2, `OCB-ENCRYPT`, with `TAGLEN = 8 * tag_len`): with the key context `*ctx` that `vg_aes_ocb_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and writes the tag of `tag_len` bytes, of the data and the `aad_len` bytes of associated data at `aad`, to the `tag_len` bytes at `tag`. The RFC's ciphertext is the encrypted data followed by the tag. A nonce must never be used twice with the same key.
-///
-/// Contract: `VG.Spec.Ocb.sealContract`. Constant time: only the pointers, `rounds`, the lengths and `tag_len` may affect timing, not the key context, the nonce, the associated data or the data.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of `tag_len` bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `tag_len` must be from 1 to 16, and `nonce_len` from 1 to 15 (RFC 7253 §3.1).
-/// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3640 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes`, `avx`, `avx2` and `vaes` target features.
+/// The verified code of [`super::vg_aes_ocb_seal_vaes`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_ocb_seal_vaes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_seal_vaes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJNDx//9Ii4QkOA4AAEiJRCQISIuEJEAOAABIiUQkEEiLhCRIDgAASIlEJBhIi4QkUA4AAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZigAAAASImoqAAAAEyJoLAAAABMiai4AAAATImwwAAAAEyJuMgAAABJicdJif5JibfoAAAASYmXIAEAAEmJjygBAABNiYfwAAAATYmP+AAAAEiLRCQISYmH0AAAAEiLRCQQSYmH2AAAAEiLRCQgSYmH4AAAAEiLRCQYSYmHMAEAAEmLhvAAAABID8hJi5b4AAAASA/KSInBSMHpP00xwEkpyEmB4IcAAABIidFIwek/SAHASAnISAHSTDHCSA/ISYlHQEgPykmJV0hJi0dASA/ISYtXSEgPykiJwUjB6T9NMcBJKchJgeCHAAAASInRSMHpP0gBwEgJyEgB0kwxwkgPyEmJR1BID8pJiVdYSDHASYlHIEmJRyhJi0dQSYtXWEmJhwAKAABJiZcICgAATYuP2AAAAEmLh/gAAABJCcFJwekFTYn6SYHCAAoAAEnHwwEAAABIvm04lcxj3S8CTYXJ"
 je 20f
@@ -813,31 +912,13 @@ call {vg_aes_encrypt_blocks_vaes}
 jne 232b
 .base64 "SYufoAAAAEmLr6gAAABNi6ewAAAATYuvuAAAAE2Lt8AAAABNi7/IAAAASI2kJDAOAADD"
 .p2align 6"#,
-        vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes,
+        vg_aes_encrypt_blocks_vaes = sym crate::aes::raw::vg_aes_encrypt_blocks_vaes,
     )
 }
 
-/// The CPU features `vg_aes_ocb_open_vaes` requires (`Artifact.features`).
-pub const VG_AES_OCB_OPEN_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES);
-
-/// AES-OCB authenticated decryption (RFC 7253 §4.3, `OCB-DECRYPT`, with `TAGLEN = 8 * tag_len`): with the key context `*ctx` that `vg_aes_ocb_init` wrote for `rounds` rounds and the received tag (the last `tag_len` bytes of the RFC's ciphertext) the `tag_len` bytes at `tag`, decrypts the `len` bytes of encrypted data at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and returns 1 if the tag is that of the data and the `aad_len` bytes of associated data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
-///
-/// Contract: `VG.Spec.Ocb.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the associated data, the data or the tag.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of `tag_len` bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `tag_len` must be from 1 to 16, and `nonce_len` from 1 to 15 (RFC 7253 §3.1).
-/// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3640 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes`, `avx`, `avx2` and `vaes` target features.
+/// The verified code of [`super::vg_aes_ocb_open_vaes`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_ocb_open_vaes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_open_vaes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJNDx//9Ii4QkOA4AAEiJRCQISIuEJEAOAABIiUQkEEiLhCRIDgAASIlEJBhIi4QkUA4AAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZigAAAASImoqAAAAEyJoLAAAABMiai4AAAATImwwAAAAEyJuMgAAABJicdJif5JibfoAAAASYmXIAEAAEmJjygBAABNiYfwAAAATYmP+AAAAEiLRCQISYmH0AAAAEiLRCQQSYmH2AAAAEiLRCQgSYmH4AAAAEiLRCQYSYmHMAEAAEmLhvAAAABID8hJi5b4AAAASA/KSInBSMHpP00xwEkpyEmB4IcAAABIidFIwek/SAHASAnISAHSTDHCSA/ISYlHQEgPykmJV0hJi0dASA/ISYtXSEgPykiJwUjB6T9NMcBJKchJgeCHAAAASInRSMHpP0gBwEgJyEgB0kwxwkgPyEmJR1BID8pJiVdYSDHASYlHIEmJRyhJi0dQSYtXWEmJhwAKAABJiZcICgAATYuP2AAAAEmLh/gAAABJCcFJwekFTYn6SYHCAAoAAEnHwwEAAABIvm04lcxj3S8CTYXJ"
 je 20f
@@ -973,7 +1054,8 @@ jmp 238f
 238:
 .base64 "SYsHSYufoAAAAEmLr6gAAABNi6ewAAAATYuvuAAAAE2Lt8AAAABNi7/IAAAASI2kJDAOAADD"
 .p2align 6"#,
-        vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes,
-        vg_aes_decrypt_blocks_vaes = sym super::aes::vg_aes_decrypt_blocks_vaes,
+        vg_aes_encrypt_blocks_vaes = sym crate::aes::raw::vg_aes_encrypt_blocks_vaes,
+        vg_aes_decrypt_blocks_vaes = sym crate::aes::raw::vg_aes_decrypt_blocks_vaes,
     )
+}
 }

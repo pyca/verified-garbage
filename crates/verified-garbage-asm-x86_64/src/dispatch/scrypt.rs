@@ -22,18 +22,18 @@
 /// * None of `password`, `salt`, `b`, `v`, `scratch` and `out` may overlap the return address on the stack or the 88 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_scrypt_auto(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
+pub unsafe fn vg_scrypt_auto(dit: verified_garbage_cpu::Dit<'_>, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::scrypt::VG_SCRYPT_SHANI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_scrypt_shani`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::scrypt::vg_scrypt_shani(password, password_len, salt, salt_len, r, b, blen, v, vlen, scratch, slen, out, out_len) };
+        return unsafe { crate::scrypt::vg_scrypt_shani(dit, password, password_len, salt, salt_len, r, b, blen, v, vlen, scratch, slen, out, out_len) };
     }
     if cpu.contains(crate::scrypt::VG_SCRYPT_AVX2_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_scrypt_avx2`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::scrypt::vg_scrypt_avx2(password, password_len, salt, salt_len, r, b, blen, v, vlen, scratch, slen, out, out_len) };
+        return unsafe { crate::scrypt::vg_scrypt_avx2(dit, password, password_len, salt, salt_len, r, b, blen, v, vlen, scratch, slen, out, out_len) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::scrypt::vg_scrypt(password, password_len, salt, salt_len, r, b, blen, v, vlen, scratch, slen, out, out_len) }
+    unsafe { crate::scrypt::vg_scrypt(dit, password, password_len, salt, salt_len, r, b, blen, v, vlen, scratch, slen, out, out_len) }
 }

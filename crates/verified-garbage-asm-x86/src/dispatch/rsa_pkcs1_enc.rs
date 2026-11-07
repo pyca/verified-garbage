@@ -35,15 +35,15 @@
 /// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 3568 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_rsa_pkcs1_decrypt_auto(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe fn vg_rsa_pkcs1_decrypt_auto(dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_SHA256_SHANI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_rsa_pkcs1_decrypt_sha256_shani`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_sha256_shani(out, out_len, msg_len, n, n_len, e, e_len, d, d_len, input, input_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, scratch, scratch_len) };
+        return unsafe { crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_sha256_shani(dit, out, out_len, msg_len, n, n_len, e, e_len, d, d_len, input, input_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, scratch, scratch_len) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt(out, out_len, msg_len, n, n_len, e, e_len, d, d_len, input, input_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, scratch, scratch_len) }
+    unsafe { crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt(dit, out, out_len, msg_len, n, n_len, e, e_len, d, d_len, input, input_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, scratch, scratch_len) }
 }
 
 /// `vg_rsa_pkcs1_encrypt_random`, the only implementation of it on this target, which needs no CPU feature

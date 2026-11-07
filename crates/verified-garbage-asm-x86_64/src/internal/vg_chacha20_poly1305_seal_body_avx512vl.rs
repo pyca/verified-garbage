@@ -519,7 +519,7 @@ call {vg_poly1305_blocks_avx2}
 jmp 2166b
 .p2align 6"#,
         vg_chacha20_xor_avx512vl = sym crate::chacha20::vg_chacha20_xor_avx512vl::vg_chacha20_xor_avx512vl,
-        vg_poly1305_init = sym crate::poly1305::vg_poly1305_init,
+        vg_poly1305_init = sym crate::poly1305::raw::vg_poly1305_init,
         vg_poly1305_blocks_avx2 = sym crate::poly1305::vg_poly1305_blocks_avx2::vg_poly1305_blocks_avx2,
         vg_poly1305_finalize_scratch = sym crate::poly1305::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
     )

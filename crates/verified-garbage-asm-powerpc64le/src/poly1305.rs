@@ -13,11 +13,11 @@
 /// * `key` must be valid for reads of 32 bytes.
 /// * `state` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `state` nor `key` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_poly1305_init(state: *mut [u64; 16], key: *const [u8; 32]) {
-    core::arch::naked_asm!(
-        r#".base64 "AACk6AgAxOgQAOToGAAE6RgAo/ggAMP4KADj+DAAA/kAAKA4AACj+AgAo/gQAKP4IACATg==""#,
-    )
+#[inline(always)]
+pub unsafe fn vg_poly1305_init(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 16], key: *const [u8; 32]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_poly1305_init(state, key) }
 }
 
 /// Absorbs data into a Poly1305 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴) under a key, it then represents that message followed by the `len` bytes at `data`, under the same key.
@@ -30,8 +30,45 @@ pub unsafe extern "C" fn vg_poly1305_init(state: *mut [u64; 16], key: *const [u8
 /// * `data` must be valid for reads of `len` bytes.
 /// * `state` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the 160 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_poly1305_update(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_poly1305_update(state, count, data, len) }
+}
+
+/// Finishes a Poly1305 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴) under a key, writes the tag of that message, under that key, to `*out`.
+///
+/// Contract: `VG.Spec.Poly1305.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 128 bytes.
+/// * `out` must be valid for reads and writes of 16 bytes.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
+/// * Neither `state` nor `out` may overlap the 160 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_poly1305_finalize(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 16], count: u64, out: *mut [u8; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_poly1305_finalize(state, count, out) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_poly1305_init`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_poly1305_update(state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_poly1305_init(state: *mut [u64; 16], key: *const [u8; 32]) {
+    core::arch::naked_asm!(
+        r#".base64 "AACk6AgAxOgQAOToGAAE6RgAo/ggAMP4KADj+DAAA/kAAKA4AACj+AgAo/gQAKP4IACATg==""#,
+    )
+}
+
+/// The verified code of [`super::vg_poly1305_update`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_poly1305_update(state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "Yf8h+CAA4TgAAMf5CADn+RAAB/oYACf6IABH+igAZ/owAIf6OACn+gAApzr/A4A+//+UYhgAQ+ogAGPq/w8APPz/AGDGBwB4/w8AZP//AGA4AFJ+/w8APPz/AGDGBwB4/w8AZPz/AGA4AHN+OKBMfoI2Tno4oM59IGVPeuRkYHoUAu99OKDvfYKTcHo4oBB+IMJxemQXx3kUcud8ZBfoeRR6CH1kFwl6FIIpfWQXKnoUikp9SACDkUwAw5FQAOORVAADklgAI5JcAOOQYAADkWQAI5FoAEORAABD6ggAY+o4oEx+gjZOejigzn0gZU965GRgehQC7304oO99gpNwejigEH4gwnF6EAAD6OTBAHgAAOw4AAAOOQAALzkAAFA5FAJxfQ8AgDk4YIx8AAAsKA=="
 beq %cr0, 20f
@@ -84,19 +121,9 @@ b 215f
     )
 }
 
-/// Finishes a Poly1305 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴) under a key, writes the tag of that message, under that key, to `*out`.
-///
-/// Contract: `VG.Spec.Poly1305.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 128 bytes.
-/// * `out` must be valid for reads and writes of 16 bytes.
-/// * The contents of `state` on return are unspecified.
-/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 160 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_poly1305_finalize`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_poly1305_finalize(state: *mut [u64; 16], count: u64, out: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_poly1305_finalize(state: *mut [u64; 16], count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "Yf8h+CAAwTgAAMb5CADm+RAABvoYACb6IABG+igAZvowAIb6OACm+gAApjoAAMU4DwCgODgohXz/A4A+//+UYhgAQ+ogAGPq/w8APPz/AGDGBwB4/w8AZP//AGA4AFJ+/w8APPz/AGDGBwB4/w8AZPz/AGA4AHN+OKBMfoI2Tno4oM59IGVPeuRkYHoUAu99OKDvfYKTcHo4oBB+IMJxemQXx3kUcud8ZBfoeRR6CH1kFwl6FIIpfWQXKnoUikp9SACDkUwAw5FQAOORVAADklgAI5JcAOOQYAADkWQAI5FoAEORAABD6ggAY+o4oEx+gjZOejigzn0gZU965GRgehQC7304oO99gpNwejigEH4gwnF6EAAD6OTBAHgAAOw4AAAOOQAALzkAAFA5FAJxfQAAJSg="
 beq %cr0, 20f
@@ -110,6 +137,7 @@ b 21f
 21:
 .base64 "gjYSeTigCH0Ukil9gjYyeTigKX0Ukkp9gjZSeTigSn0Ukmt9BQCHOYI2knk4oIx9FJLIfYI20nk4oM59FJLpfYI28nk4oO99FJIKfoI2Eno4oBB+FJIrfoI2Mno4oDF+//9SOnhi83w4kHN+eJqHfXhyE304kHN+eJrIfXh6M304kHN+eJrpfXiCU304kHN+eJoKfniKc304kHN+eJorfigAQ+owAGPqOKBMfoI2Tno4oM59IGVPeuRkYHoUAu99OKDvfYKTcHo4oBB+IMJxehRi53wUcgh9FHopfRSCSn0Uimt9gjbyeDig53wUkgh9gjYSeTigCH0Ukil9gjYyeTigKX0Ukkp9gjZSeTigSn0Ukmt9ZNEMeRRiR37Goix5FGJSfgKjM3lkdEx5FGJzfsZFbHkUYnN+AkZgeQAARvoIAGb6AADV6QgA9ekQABXqGAA16iAAVeooAHXqMACV6jgAteqgACE4IACATg==""#,
     )
+}
 }
 
 #[rustfmt::skip]

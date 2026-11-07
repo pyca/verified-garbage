@@ -96,13 +96,15 @@ impl PublicKey {
         plaintext: &[u8],
         random: impl FnMut(&mut [u8]) -> Result<(), Error>,
     ) -> Result<Vec<u8>, Error> {
+        // The plaintext and the padding string are secret.
+        crate::dit::enter!(dit);
         let k = self.modulus_len();
         if plaintext.len() + 11 > k {
             return Err(Error::MessageTooLong);
         }
         let mut out = vec![0u8; k];
         let mut scratch = vec![0u64; public_scratch_words(k)];
-        let pre = self.pre(&mut scratch);
+        let pre = self.pre(dit, &mut scratch);
         let mut status = 0;
         // The padding string needs at least as many random bytes as it has;
         // 32 more make a tape too short for it (more than 32 of at most 1045
@@ -122,6 +124,7 @@ impl PublicKey {
             // has the features of.
             status = unsafe {
                 vg_rsa_pkcs1_encrypt_random_auto(
+                    dit,
                     out.as_mut_ptr(),
                     k,
                     &mut counts,
@@ -181,6 +184,7 @@ impl PrivateKey {
     ///
     /// RSAES-PKCS1-v1_5 is deprecated (see the [module](self) documentation).
     pub fn decrypt_pkcs1v15(&self, ciphertext: &[u8]) -> Result<Vec<u8>, Error> {
+        crate::dit::enter!(dit);
         let k = self.modulus_len();
         if ciphertext.len() != k {
             return Err(Error::InvalidLength);
@@ -201,6 +205,7 @@ impl PrivateKey {
         // implementation the CPU has the features of.
         let r = unsafe {
             vg_rsa_pkcs1_decrypt_auto(
+                dit,
                 out.as_mut_ptr(),
                 k,
                 &mut len,

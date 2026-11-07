@@ -14,23 +14,11 @@
 /// * `data` must be valid for reads and writes of `8 * n` bytes.
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 984 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_triple_des_ofb(schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJDD8//9JieBJg8AITYnBSYmZiAMAAEmJqZADAABNiaGYAwAATYmpoAMAAE2JsagDAABNibmwAwAAZkwPbv5JidRJic1IiwdJiYEIAgAASItHCEmJgRACAABIi0cQSYmBGAIAAEiLRxhJiYEgAgAASItHIEmJgSgCAABIi0coSYmBMAIAAEiLRzBJiYE4AgAASItHOEmJgUACAABIi0dASYmBSAIAAEiLR0hJiYFQAgAASItHUEmJgVgCAABIi0dYSYmBYAIAAEiLR2BJiYFoAgAASItHaEmJgXACAABIi0dwSYmBeAIAAEiLR3hJiYGAAgAASIuHgAAAAEmJgYgCAABIi4eIAAAASYmBkAIAAEiLh5AAAABJiYGYAgAASIuHmAAAAEmJgaACAABIi4egAAAASYmBqAIAAEiLh6gAAABJiYGwAgAASIuHsAAAAEmJgbgCAABIi4e4AAAASYmBwAIAAEiLh8AAAABJiYHIAgAASIuHyAAAAEmJgdACAABIi4fQAAAASYmB2AIAAEiLh9gAAABJiYHgAgAASIuH4AAAAEmJgegCAABIi4foAAAASYmB8AIAAEiLh/AAAABJiYH4AgAASIuH+AAAAEmJgQADAABIi4cAAQAASYmBCAMAAEiLhwgBAABJiYEQAwAASIuHEAEAAEmJgRgDAABIi4cYAQAASYmBIAMAAEiLhyABAABJiYEoAwAASIuHKAEAAEmJgTADAABIi4cwAQAASYmBOAMAAEiLhzgBAABJiYFAAwAASIuHQAEAAEmJgUgDAABIi4dIAQAASYmBUAMAAEiLh1ABAABJiYFYAwAASIuHWAEAAEmJgWADAABIi4dgAQAASYmBaAMAAEiLh2gBAABJiYFwAwAASIuHcAEAAEmJgXgDAABIi4d4AQAASYmBgAMAAGZMD374SIsoSYmpAAIAAE2F7Q=="
-je 20f
-22:
-.base64 "TInPSIHHCAIAAEyJzkiBxgACAABMico="
-call {vg_triple_des_encrypt_block}
-.base64 "SYnRSYsEJEkzgQACAABJiQQkSYPECEmD7QE="
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "ZkwPfvhJi6kAAgAASIkoSYuZiAMAAEmLqZADAABNi6GYAwAATYupoAMAAE2LsagDAABNi7mwAwAAQbsAAAAATIlcJAhMiVwkEEyJXCQYTIlcJCBMiVwkKEyJXCQwTIlcJDhMiVwkQEyJXCRITIlcJFBMiVwkWEyJXCRgTIlcJGhMiVwkcEyJXCR4TImcJIAAAABMiZwkiAAAAEyJnCSQAAAATImcJJgAAABMiZwkoAAAAEyJnCSoAAAATImcJLAAAABMiZwkuAAAAEyJnCTAAAAATImcJMgAAABMiZwk0AAAAEyJnCTYAAAATImcJOAAAABMiZwk6AAAAEyJnCTwAAAATImcJPgAAABMiZwkAAEAAEyJnCQIAQAATImcJBABAABMiZwkGAEAAEyJnCQgAQAATImcJCgBAABMiZwkMAEAAEyJnCQ4AQAATImcJEABAABMiZwkSAEAAEyJnCRQAQAATImcJFgBAABMiZwkYAEAAEyJnCRoAQAATImcJHABAABMiZwkeAEAAEyJnCSAAQAATImcJIgBAABMiZwkkAEAAEyJnCSYAQAATImcJKABAABMiZwkqAEAAEyJnCSwAQAATImcJLgBAABMiZwkwAEAAEyJnCTIAQAATImcJNABAABMiZwk2AEAAEyJnCTgAQAATImcJOgBAABMiZwk8AEAAEyJnCT4AQAATImcJAACAABMiZwkCAIAAEyJnCQQAgAATImcJBgCAABMiZwkIAIAAEyJnCQoAgAATImcJDACAABMiZwkOAIAAEyJnCRAAgAATImcJEgCAABMiZwkUAIAAEyJnCRYAgAATImcJGACAABMiZwkaAIAAEyJnCRwAgAATImcJHgCAABMiZwkgAIAAEyJnCSIAgAATImcJJACAABMiZwkmAIAAEyJnCSgAgAATImcJKgCAABMiZwksAIAAEyJnCS4AgAATImcJMACAABMiZwkyAIAAEyJnCTQAgAATImcJNgCAABMiZwk4AIAAEyJnCToAgAATImcJPACAABMiZwk+AIAAEyJnCQAAwAATImcJAgDAABMiZwkEAMAAEyJnCQYAwAATImcJCADAABMiZwkKAMAAEyJnCQwAwAATImcJDgDAABMiZwkQAMAAEyJnCRIAwAATImcJFADAABMiZwkWAMAAEyJnCRgAwAATImcJGgDAABMiZwkcAMAAEyJnCR4AwAATImcJIADAABMiZwkiAMAAEyJnCSQAwAATImcJJgDAABMiZwkoAMAAEyJnCSoAwAATImcJLADAABMiZwkuAMAAEyJnCTAAwAATImcJMgDAABIjaQk0AMAAMM="
-.p2align 6"#,
-        vg_triple_des_encrypt_block = sym super::triple_des::vg_triple_des_encrypt_block::vg_triple_des_encrypt_block,
-    )
+#[inline(always)]
+pub unsafe fn vg_triple_des_ofb(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_triple_des_ofb(schedule, iv, data, n) }
 }
 
 /// Triple DES-OFB encryption or decryption (NIST SP 800-38A §6.4, FIPS 46-3) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)`, where `O₀` is the block at `*iv`, a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*iv` with the last output block used, `Oₙ` (leaving it unchanged if `len = 0`): so that a further call continues the message if `len` is a multiple of 8, and otherwise keystream, to be wiped, after which the message must end. `CIPH_K` is Triple DES encryption under the schedule written by `vg_triple_des_expand_key`.
@@ -44,8 +32,39 @@ jmp 21f
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 984 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_triple_des_ofb_final(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut u8, len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_triple_des_ofb_final(schedule, iv, data, len) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_triple_des_ofb`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_triple_des_ofb_final(schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_triple_des_ofb(schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJDD8//9JieBJg8AITYnBSYmZiAMAAEmJqZADAABNiaGYAwAATYmpoAMAAE2JsagDAABNibmwAwAAZkwPbv5JidRJic1IiwdJiYEIAgAASItHCEmJgRACAABIi0cQSYmBGAIAAEiLRxhJiYEgAgAASItHIEmJgSgCAABIi0coSYmBMAIAAEiLRzBJiYE4AgAASItHOEmJgUACAABIi0dASYmBSAIAAEiLR0hJiYFQAgAASItHUEmJgVgCAABIi0dYSYmBYAIAAEiLR2BJiYFoAgAASItHaEmJgXACAABIi0dwSYmBeAIAAEiLR3hJiYGAAgAASIuHgAAAAEmJgYgCAABIi4eIAAAASYmBkAIAAEiLh5AAAABJiYGYAgAASIuHmAAAAEmJgaACAABIi4egAAAASYmBqAIAAEiLh6gAAABJiYGwAgAASIuHsAAAAEmJgbgCAABIi4e4AAAASYmBwAIAAEiLh8AAAABJiYHIAgAASIuHyAAAAEmJgdACAABIi4fQAAAASYmB2AIAAEiLh9gAAABJiYHgAgAASIuH4AAAAEmJgegCAABIi4foAAAASYmB8AIAAEiLh/AAAABJiYH4AgAASIuH+AAAAEmJgQADAABIi4cAAQAASYmBCAMAAEiLhwgBAABJiYEQAwAASIuHEAEAAEmJgRgDAABIi4cYAQAASYmBIAMAAEiLhyABAABJiYEoAwAASIuHKAEAAEmJgTADAABIi4cwAQAASYmBOAMAAEiLhzgBAABJiYFAAwAASIuHQAEAAEmJgUgDAABIi4dIAQAASYmBUAMAAEiLh1ABAABJiYFYAwAASIuHWAEAAEmJgWADAABIi4dgAQAASYmBaAMAAEiLh2gBAABJiYFwAwAASIuHcAEAAEmJgXgDAABIi4d4AQAASYmBgAMAAGZMD374SIsoSYmpAAIAAE2F7Q=="
+je 20f
+22:
+.base64 "TInPSIHHCAIAAEyJzkiBxgACAABMico="
+call {vg_triple_des_encrypt_block}
+.base64 "SYnRSYsEJEkzgQACAABJiQQkSYPECEmD7QE="
+jne 22b
+jmp 21f
+20:
+21:
+.base64 "ZkwPfvhJi6kAAgAASIkoSYuZiAMAAEmLqZADAABNi6GYAwAATYupoAMAAE2LsagDAABNi7mwAwAAQbsAAAAATIlcJAhMiVwkEEyJXCQYTIlcJCBMiVwkKEyJXCQwTIlcJDhMiVwkQEyJXCRITIlcJFBMiVwkWEyJXCRgTIlcJGhMiVwkcEyJXCR4TImcJIAAAABMiZwkiAAAAEyJnCSQAAAATImcJJgAAABMiZwkoAAAAEyJnCSoAAAATImcJLAAAABMiZwkuAAAAEyJnCTAAAAATImcJMgAAABMiZwk0AAAAEyJnCTYAAAATImcJOAAAABMiZwk6AAAAEyJnCTwAAAATImcJPgAAABMiZwkAAEAAEyJnCQIAQAATImcJBABAABMiZwkGAEAAEyJnCQgAQAATImcJCgBAABMiZwkMAEAAEyJnCQ4AQAATImcJEABAABMiZwkSAEAAEyJnCRQAQAATImcJFgBAABMiZwkYAEAAEyJnCRoAQAATImcJHABAABMiZwkeAEAAEyJnCSAAQAATImcJIgBAABMiZwkkAEAAEyJnCSYAQAATImcJKABAABMiZwkqAEAAEyJnCSwAQAATImcJLgBAABMiZwkwAEAAEyJnCTIAQAATImcJNABAABMiZwk2AEAAEyJnCTgAQAATImcJOgBAABMiZwk8AEAAEyJnCT4AQAATImcJAACAABMiZwkCAIAAEyJnCQQAgAATImcJBgCAABMiZwkIAIAAEyJnCQoAgAATImcJDACAABMiZwkOAIAAEyJnCRAAgAATImcJEgCAABMiZwkUAIAAEyJnCRYAgAATImcJGACAABMiZwkaAIAAEyJnCRwAgAATImcJHgCAABMiZwkgAIAAEyJnCSIAgAATImcJJACAABMiZwkmAIAAEyJnCSgAgAATImcJKgCAABMiZwksAIAAEyJnCS4AgAATImcJMACAABMiZwkyAIAAEyJnCTQAgAATImcJNgCAABMiZwk4AIAAEyJnCToAgAATImcJPACAABMiZwk+AIAAEyJnCQAAwAATImcJAgDAABMiZwkEAMAAEyJnCQYAwAATImcJCADAABMiZwkKAMAAEyJnCQwAwAATImcJDgDAABMiZwkQAMAAEyJnCRIAwAATImcJFADAABMiZwkWAMAAEyJnCRgAwAATImcJGgDAABMiZwkcAMAAEyJnCR4AwAATImcJIADAABMiZwkiAMAAEyJnCSQAwAATImcJJgDAABMiZwkoAMAAEyJnCSoAwAATImcJLADAABMiZwkuAMAAEyJnCTAAwAATImcJMgDAABIjaQk0AMAAMM="
+.p2align 6"#,
+        vg_triple_des_encrypt_block = sym crate::triple_des::vg_triple_des_encrypt_block::vg_triple_des_encrypt_block,
+    )
+}
+
+/// The verified code of [`super::vg_triple_des_ofb_final`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_triple_des_ofb_final(schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJDD8//9JieBJg8AITYnBSYmZiAMAAEmJqZADAABNiaGYAwAATYmpoAMAAE2JsagDAABNibmwAwAAZkwPbv5JidRJic1IiwdJiYEIAgAASItHCEmJgRACAABIi0cQSYmBGAIAAEiLRxhJiYEgAgAASItHIEmJgSgCAABIi0coSYmBMAIAAEiLRzBJiYE4AgAASItHOEmJgUACAABIi0dASYmBSAIAAEiLR0hJiYFQAgAASItHUEmJgVgCAABIi0dYSYmBYAIAAEiLR2BJiYFoAgAASItHaEmJgXACAABIi0dwSYmBeAIAAEiLR3hJiYGAAgAASIuHgAAAAEmJgYgCAABIi4eIAAAASYmBkAIAAEiLh5AAAABJiYGYAgAASIuHmAAAAEmJgaACAABIi4egAAAASYmBqAIAAEiLh6gAAABJiYGwAgAASIuHsAAAAEmJgbgCAABIi4e4AAAASYmBwAIAAEiLh8AAAABJiYHIAgAASIuHyAAAAEmJgdACAABIi4fQAAAASYmB2AIAAEiLh9gAAABJiYHgAgAASIuH4AAAAEmJgegCAABIi4foAAAASYmB8AIAAEiLh/AAAABJiYH4AgAASIuH+AAAAEmJgQADAABIi4cAAQAASYmBCAMAAEiLhwgBAABJiYEQAwAASIuHEAEAAEmJgRgDAABIi4cYAQAASYmBIAMAAEiLhyABAABJiYEoAwAASIuHKAEAAEmJgTADAABIi4cwAQAASYmBOAMAAEiLhzgBAABJiYFAAwAASIuHQAEAAEmJgUgDAABIi4dIAQAASYmBUAMAAEiLh1ABAABJiYFYAwAASIuHWAEAAEmJgWADAABIi4dgAQAASYmBaAMAAEiLh2gBAABJiYFwAwAASIuHcAEAAEmJgXgDAABIi4d4AQAASYmBgAMAAGZMD374SIsoSYmpAAIAAE2F7Q=="
 je 20f
@@ -68,6 +87,7 @@ jmp 21f
 21:
 .base64 "ZkwPfvhJi6kAAgAASIkoSYuZiAMAAEmLqZADAABNi6GYAwAATYupoAMAAE2LsagDAABNi7mwAwAAQbsAAAAATIlcJAhMiVwkEEyJXCQYTIlcJCBMiVwkKEyJXCQwTIlcJDhMiVwkQEyJXCRITIlcJFBMiVwkWEyJXCRgTIlcJGhMiVwkcEyJXCR4TImcJIAAAABMiZwkiAAAAEyJnCSQAAAATImcJJgAAABMiZwkoAAAAEyJnCSoAAAATImcJLAAAABMiZwkuAAAAEyJnCTAAAAATImcJMgAAABMiZwk0AAAAEyJnCTYAAAATImcJOAAAABMiZwk6AAAAEyJnCTwAAAATImcJPgAAABMiZwkAAEAAEyJnCQIAQAATImcJBABAABMiZwkGAEAAEyJnCQgAQAATImcJCgBAABMiZwkMAEAAEyJnCQ4AQAATImcJEABAABMiZwkSAEAAEyJnCRQAQAATImcJFgBAABMiZwkYAEAAEyJnCRoAQAATImcJHABAABMiZwkeAEAAEyJnCSAAQAATImcJIgBAABMiZwkkAEAAEyJnCSYAQAATImcJKABAABMiZwkqAEAAEyJnCSwAQAATImcJLgBAABMiZwkwAEAAEyJnCTIAQAATImcJNABAABMiZwk2AEAAEyJnCTgAQAATImcJOgBAABMiZwk8AEAAEyJnCT4AQAATImcJAACAABMiZwkCAIAAEyJnCQQAgAATImcJBgCAABMiZwkIAIAAEyJnCQoAgAATImcJDACAABMiZwkOAIAAEyJnCRAAgAATImcJEgCAABMiZwkUAIAAEyJnCRYAgAATImcJGACAABMiZwkaAIAAEyJnCRwAgAATImcJHgCAABMiZwkgAIAAEyJnCSIAgAATImcJJACAABMiZwkmAIAAEyJnCSgAgAATImcJKgCAABMiZwksAIAAEyJnCS4AgAATImcJMACAABMiZwkyAIAAEyJnCTQAgAATImcJNgCAABMiZwk4AIAAEyJnCToAgAATImcJPACAABMiZwk+AIAAEyJnCQAAwAATImcJAgDAABMiZwkEAMAAEyJnCQYAwAATImcJCADAABMiZwkKAMAAEyJnCQwAwAATImcJDgDAABMiZwkQAMAAEyJnCRIAwAATImcJFADAABMiZwkWAMAAEyJnCRgAwAATImcJGgDAABMiZwkcAMAAEyJnCR4AwAATImcJIADAABMiZwkiAMAAEyJnCSQAwAATImcJJgDAABMiZwkoAMAAEyJnCSoAwAATImcJLADAABMiZwkuAMAAEyJnCTAAwAATImcJMgDAABIjaQk0AMAAMM="
 .p2align 6"#,
-        vg_triple_des_encrypt_block = sym super::triple_des::vg_triple_des_encrypt_block::vg_triple_des_encrypt_block,
+        vg_triple_des_encrypt_block = sym crate::triple_des::vg_triple_des_encrypt_block::vg_triple_des_encrypt_block,
     )
+}
 }

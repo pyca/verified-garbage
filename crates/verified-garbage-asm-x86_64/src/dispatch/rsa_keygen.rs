@@ -24,20 +24,20 @@
 /// * None of `key`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 552 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_rsa_generate_auto(key: *mut u8, key_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 7]) -> u32 {
+pub unsafe fn vg_rsa_generate_auto(dit: verified_garbage_cpu::Dit<'_>, key: *mut u8, key_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 7]) -> u32 {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::rsa_keygen::VG_RSA_GENERATE_IFMA_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_rsa_generate_ifma`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::rsa_keygen::vg_rsa_generate_ifma(key, key_len, used, rand, rand_len, scratch, scratch_len, state) };
+        return unsafe { crate::rsa_keygen::vg_rsa_generate_ifma(dit, key, key_len, used, rand, rand_len, scratch, scratch_len, state) };
     }
     if cpu.contains(crate::rsa_keygen::VG_RSA_GENERATE_ADX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_rsa_generate_adx`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::rsa_keygen::vg_rsa_generate_adx(key, key_len, used, rand, rand_len, scratch, scratch_len, state) };
+        return unsafe { crate::rsa_keygen::vg_rsa_generate_adx(dit, key, key_len, used, rand, rand_len, scratch, scratch_len, state) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::rsa_keygen::vg_rsa_generate(key, key_len, used, rand, rand_len, scratch, scratch_len, state) }
+    unsafe { crate::rsa_keygen::vg_rsa_generate(dit, key, key_len, used, rand, rand_len, scratch, scratch_len, state) }
 }
 
 /// `vg_rsa_generate_init`, the only implementation of it on this target, which needs no CPU feature

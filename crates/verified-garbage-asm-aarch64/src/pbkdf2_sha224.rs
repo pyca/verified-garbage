@@ -15,8 +15,44 @@
 /// * `c` must be positive, and `out_len` at most `(2^32 - 1) * 28`.
 /// * `out` must not overlap `password` or `salt` (distinct Rust objects never do).
 /// * None of `password`, `salt` and `out` may overlap the 1616 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_pbkdf2_hmac_sha224(_dit: verified_garbage_cpu::Dit<'_>, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_pbkdf2_hmac_sha224(password, password_len, salt, salt_len, c, out, out_len) }
+}
+
+/// The CPU features `vg_pbkdf2_hmac_sha224_sha2` requires (`Artifact.features`).
+pub const VG_PBKDF2_HMAC_SHA224_SHA2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA2);
+
+/// PBKDF2-HMAC-SHA-224 (RFC 8018 §5.2, with HMAC-SHA-224 as the pseudorandom function): writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` with `c` iterations to `out`. Calls the verified SHA-224 and HMAC-SHA-224 functions.
+///
+/// Contract: `VG.Spec.Hmac.Instance.pbkdf2Contract` of `VG.Spec.Hmac.sha224I`. Constant time: only the pointers, the lengths and `c` may affect timing, not the password, the salt or the key.
+///
+/// # Safety
+///
+/// * `password` must be valid for reads of `password_len` bytes.
+/// * `salt` must be valid for reads of `salt_len` bytes.
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `c` must be positive, and `out_len` at most `(2^32 - 1) * 28`.
+/// * `out` must not overlap `password` or `salt` (distinct Rust objects never do).
+/// * None of `password`, `salt` and `out` may overlap the 1616 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha2` target feature.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_pbkdf2_hmac_sha224_sha2(_dit: verified_garbage_cpu::Dit<'_>, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_pbkdf2_hmac_sha224_sha2(password, password_len, salt, salt_len, c, out, out_len) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_pbkdf2_hmac_sha224`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_pbkdf2_hmac_sha224(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
+pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha224(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd11903ff,0x910003e7,0x9100008a,0x910000e4,0xf901a093,0xf901a494,0xf901a895,0xf901ac96
 .inst 0xf901b098,0xf901b49e,0xf901b897,0x91000097,0xf901bee5,0x51000549,0xf901c2e9,0xf901c6e6
@@ -84,33 +120,18 @@ b 25f
 .inst 0xf941a2f3,0xf941a6f4,0xf941aaf5,0xf941aef6,0xf941b2f8,0xf941b6fe,0xf941baf7,0x911903ff
 .inst 0xd65f03c0
 .p2align 6",
-        vg_sha224_init = sym super::sha256::vg_sha224_init,
-        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
-        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
-        vg_hmac_sha224_init_scratch = sym super::hmac_sha224::vg_hmac_sha224_init_scratch::vg_hmac_sha224_init_scratch,
-        vg_hmac_sha224_finalize_scratch = sym super::hmac_sha224::vg_hmac_sha224_finalize_scratch::vg_hmac_sha224_finalize_scratch,
-        vg_pbkdf2_hmac_sha224_iterate = sym super::pbkdf2_sha224::vg_pbkdf2_hmac_sha224_iterate::vg_pbkdf2_hmac_sha224_iterate,
+        vg_sha224_init = sym crate::sha256::raw::vg_sha224_init,
+        vg_sha256_update_scratch = sym crate::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
+        vg_sha256_finalize_scratch = sym crate::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
+        vg_hmac_sha224_init_scratch = sym crate::hmac_sha224::vg_hmac_sha224_init_scratch::vg_hmac_sha224_init_scratch,
+        vg_hmac_sha224_finalize_scratch = sym crate::hmac_sha224::vg_hmac_sha224_finalize_scratch::vg_hmac_sha224_finalize_scratch,
+        vg_pbkdf2_hmac_sha224_iterate = sym crate::pbkdf2_sha224::vg_pbkdf2_hmac_sha224_iterate::vg_pbkdf2_hmac_sha224_iterate,
     )
 }
 
-/// The CPU features `vg_pbkdf2_hmac_sha224_sha2` requires (`Artifact.features`).
-pub const VG_PBKDF2_HMAC_SHA224_SHA2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA2);
-
-/// PBKDF2-HMAC-SHA-224 (RFC 8018 §5.2, with HMAC-SHA-224 as the pseudorandom function): writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` with `c` iterations to `out`. Calls the verified SHA-224 and HMAC-SHA-224 functions.
-///
-/// Contract: `VG.Spec.Hmac.Instance.pbkdf2Contract` of `VG.Spec.Hmac.sha224I`. Constant time: only the pointers, the lengths and `c` may affect timing, not the password, the salt or the key.
-///
-/// # Safety
-///
-/// * `password` must be valid for reads of `password_len` bytes.
-/// * `salt` must be valid for reads of `salt_len` bytes.
-/// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `c` must be positive, and `out_len` at most `(2^32 - 1) * 28`.
-/// * `out` must not overlap `password` or `salt` (distinct Rust objects never do).
-/// * None of `password`, `salt` and `out` may overlap the 1616 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha2` target feature.
+/// The verified code of [`super::vg_pbkdf2_hmac_sha224_sha2`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_pbkdf2_hmac_sha224_sha2(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
+pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha224_sha2(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd11903ff,0x910003e7,0x9100008a,0x910000e4,0xf901a093,0xf901a494,0xf901a895,0xf901ac96
 .inst 0xf901b098,0xf901b49e,0xf901b897,0x91000097,0xf901bee5,0x51000549,0xf901c2e9,0xf901c6e6
@@ -178,13 +199,14 @@ b 25f
 .inst 0xf941a2f3,0xf941a6f4,0xf941aaf5,0xf941aef6,0xf941b2f8,0xf941b6fe,0xf941baf7,0x911903ff
 .inst 0xd65f03c0
 .p2align 6",
-        vg_sha224_init = sym super::sha256::vg_sha224_init,
-        vg_sha256_update_scratch_sha2 = sym super::sha256::vg_sha256_update_scratch_sha2::vg_sha256_update_scratch_sha2,
-        vg_sha256_finalize_scratch_sha2 = sym super::sha256::vg_sha256_finalize_scratch_sha2::vg_sha256_finalize_scratch_sha2,
-        vg_hmac_sha224_init_scratch_sha2 = sym super::hmac_sha224::vg_hmac_sha224_init_scratch_sha2::vg_hmac_sha224_init_scratch_sha2,
-        vg_hmac_sha224_finalize_scratch_sha2 = sym super::hmac_sha224::vg_hmac_sha224_finalize_scratch_sha2::vg_hmac_sha224_finalize_scratch_sha2,
-        vg_pbkdf2_hmac_sha224_iterate_sha2 = sym super::pbkdf2_sha224::vg_pbkdf2_hmac_sha224_iterate_sha2::vg_pbkdf2_hmac_sha224_iterate_sha2,
+        vg_sha224_init = sym crate::sha256::raw::vg_sha224_init,
+        vg_sha256_update_scratch_sha2 = sym crate::sha256::vg_sha256_update_scratch_sha2::vg_sha256_update_scratch_sha2,
+        vg_sha256_finalize_scratch_sha2 = sym crate::sha256::vg_sha256_finalize_scratch_sha2::vg_sha256_finalize_scratch_sha2,
+        vg_hmac_sha224_init_scratch_sha2 = sym crate::hmac_sha224::vg_hmac_sha224_init_scratch_sha2::vg_hmac_sha224_init_scratch_sha2,
+        vg_hmac_sha224_finalize_scratch_sha2 = sym crate::hmac_sha224::vg_hmac_sha224_finalize_scratch_sha2::vg_hmac_sha224_finalize_scratch_sha2,
+        vg_pbkdf2_hmac_sha224_iterate_sha2 = sym crate::pbkdf2_sha224::vg_pbkdf2_hmac_sha224_iterate_sha2::vg_pbkdf2_hmac_sha224_iterate_sha2,
     )
+}
 }
 
 #[rustfmt::skip]

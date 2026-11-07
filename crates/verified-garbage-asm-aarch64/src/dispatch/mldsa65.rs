@@ -22,15 +22,15 @@
 /// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_mldsa65_sign_auto(sk: *const [u8; 4032], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 3309], scratch: *mut [u64; 12928]) -> u32 {
+pub unsafe fn vg_mldsa65_sign_auto(dit: verified_garbage_cpu::Dit<'_>, sk: *const [u8; 4032], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 3309], scratch: *mut [u64; 12928]) -> u32 {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::mldsa65::VG_MLDSA65_SIGN_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_mldsa65_sign_sha3`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::mldsa65::vg_mldsa65_sign_sha3(sk, mu, rnd, sig, scratch) };
+        return unsafe { crate::mldsa65::vg_mldsa65_sign_sha3(dit, sk, mu, rnd, sig, scratch) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::mldsa65::vg_mldsa65_sign(sk, mu, rnd, sig, scratch) }
+    unsafe { crate::mldsa65::vg_mldsa65_sign(dit, sk, mu, rnd, sig, scratch) }
 }
 
 /// ML-DSA-65 public-key hash: writes `tr = H(pk, 64)` (FIPS 204 Algorithm 8, line 6), SHAKE256 of the public key `*pk` to 64 bytes, to `*tr`, the digest `vg_mldsa65_verify_message_cached` takes.
@@ -49,15 +49,15 @@ pub unsafe fn vg_mldsa65_sign_auto(sk: *const [u8; 4032], mu: *const [u8; 64], r
 /// * None of `pk`, `tr` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_mldsa65_pk_tr_auto(pk: *const [u8; 1952], tr: *mut [u8; 64], scratch: *mut [u64; 12928]) {
+pub unsafe fn vg_mldsa65_pk_tr_auto(dit: verified_garbage_cpu::Dit<'_>, pk: *const [u8; 1952], tr: *mut [u8; 64], scratch: *mut [u64; 12928]) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::mldsa65::VG_MLDSA65_PK_TR_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_mldsa65_pk_tr_sha3`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::mldsa65::vg_mldsa65_pk_tr_sha3(pk, tr, scratch) };
+        return unsafe { crate::mldsa65::vg_mldsa65_pk_tr_sha3(dit, pk, tr, scratch) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::mldsa65::vg_mldsa65_pk_tr(pk, tr, scratch) }
+    unsafe { crate::mldsa65::vg_mldsa65_pk_tr(dit, pk, tr, scratch) }
 }
 
 /// ML-DSA-65 key generation from a seed, `ML-DSA.KeyGen_internal(ξ)` (FIPS 204 Algorithm 6): with the 32-byte seed `ξ` at `seed`, writes the public key to `*pk` and the private key to `*sk`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
@@ -78,15 +78,15 @@ pub unsafe fn vg_mldsa65_pk_tr_auto(pk: *const [u8; 1952], tr: *mut [u8; 64], sc
 /// * None of `seed`, `pk`, `sk` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_mldsa65_keygen_auto(seed: *const [u8; 32], pk: *mut [u8; 1952], sk: *mut [u8; 4032], scratch: *mut [u64; 12928]) -> u32 {
+pub unsafe fn vg_mldsa65_keygen_auto(dit: verified_garbage_cpu::Dit<'_>, seed: *const [u8; 32], pk: *mut [u8; 1952], sk: *mut [u8; 4032], scratch: *mut [u64; 12928]) -> u32 {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::mldsa65::VG_MLDSA65_KEYGEN_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_mldsa65_keygen_sha3`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::mldsa65::vg_mldsa65_keygen_sha3(seed, pk, sk, scratch) };
+        return unsafe { crate::mldsa65::vg_mldsa65_keygen_sha3(dit, seed, pk, sk, scratch) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::mldsa65::vg_mldsa65_keygen(seed, pk, sk, scratch) }
+    unsafe { crate::mldsa65::vg_mldsa65_keygen(dit, seed, pk, sk, scratch) }
 }
 
 /// ML-DSA-65 verification of a signature of a message representative, `ML-DSA.Verify_internal(pk, M′, σ)` (FIPS 204 Algorithm 8) with `μ` computed by the caller: with the public key `*pk`, the 64-byte message representative `μ = H(H(pk, 64) ‖ M′, 64)` at `mu` and the signature `*sig`, returns 1 if the signature is valid, and 0 if it is not or if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less).
@@ -106,15 +106,15 @@ pub unsafe fn vg_mldsa65_keygen_auto(seed: *const [u8; 32], pk: *mut [u8; 1952],
 /// * None of `pk`, `mu`, `sig` and `scratch` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_mldsa65_verify_auto(pk: *const [u8; 1952], mu: *const [u8; 64], sig: *const [u8; 3309], scratch: *mut [u64; 12928]) -> u32 {
+pub unsafe fn vg_mldsa65_verify_auto(dit: verified_garbage_cpu::Dit<'_>, pk: *const [u8; 1952], mu: *const [u8; 64], sig: *const [u8; 3309], scratch: *mut [u64; 12928]) -> u32 {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::mldsa65::VG_MLDSA65_VERIFY_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_mldsa65_verify_sha3`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::mldsa65::vg_mldsa65_verify_sha3(pk, mu, sig, scratch) };
+        return unsafe { crate::mldsa65::vg_mldsa65_verify_sha3(dit, pk, mu, sig, scratch) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::mldsa65::vg_mldsa65_verify(pk, mu, sig, scratch) }
+    unsafe { crate::mldsa65::vg_mldsa65_verify(dit, pk, mu, sig, scratch) }
 }
 
 /// ML-DSA-65 signing, `ML-DSA.Sign(sk, M, ctx)` (FIPS 204 Algorithm 2) on the randomness `*rnd` (line 5): with the private key `*sk`, the `msg_len` bytes of the message at `msg` and the `ctx_len` bytes of the context string at `ctx`, writes the signature of the formatted message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 10), `ML-DSA.Sign_internal(sk, M′, rnd)` (Algorithm 7), to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed. Returns 2 if `ctx_len` is greater than 255 (FIPS 204 returns the error indication `⊥`): `*sig` is then unspecified.
@@ -138,15 +138,15 @@ pub unsafe fn vg_mldsa65_verify_auto(pk: *const [u8; 1952], mu: *const [u8; 64],
 /// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_mldsa65_sign_message_auto(sk: *const [u8; 4032], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 3309], scratch: *mut [u64; 13056]) -> u32 {
+pub unsafe fn vg_mldsa65_sign_message_auto(dit: verified_garbage_cpu::Dit<'_>, sk: *const [u8; 4032], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 3309], scratch: *mut [u64; 13056]) -> u32 {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::mldsa65::VG_MLDSA65_SIGN_MESSAGE_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_mldsa65_sign_message_sha3`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::mldsa65::vg_mldsa65_sign_message_sha3(sk, msg, msg_len, ctx, ctx_len, rnd, sig, scratch) };
+        return unsafe { crate::mldsa65::vg_mldsa65_sign_message_sha3(dit, sk, msg, msg_len, ctx, ctx_len, rnd, sig, scratch) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::mldsa65::vg_mldsa65_sign_message(sk, msg, msg_len, ctx, ctx_len, rnd, sig, scratch) }
+    unsafe { crate::mldsa65::vg_mldsa65_sign_message(dit, sk, msg, msg_len, ctx, ctx_len, rnd, sig, scratch) }
 }
 
 /// `vg_mldsa65_prepare_signing_key`, the only implementation of it on this target, which needs no CPU feature
@@ -183,15 +183,15 @@ pub use crate::mldsa65::vg_mldsa65_prepare_verifying_key as vg_mldsa65_prepare_v
 /// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_mldsa65_sign_message_prepared_auto(sk: *const [u8; 21440], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 3309], scratch: *mut [u64; 13056]) -> u32 {
+pub unsafe fn vg_mldsa65_sign_message_prepared_auto(dit: verified_garbage_cpu::Dit<'_>, sk: *const [u8; 21440], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 3309], scratch: *mut [u64; 13056]) -> u32 {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::mldsa65::VG_MLDSA65_SIGN_MESSAGE_PREPARED_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_mldsa65_sign_message_prepared_sha3`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::mldsa65::vg_mldsa65_sign_message_prepared_sha3(sk, msg, msg_len, ctx, ctx_len, rnd, sig, scratch) };
+        return unsafe { crate::mldsa65::vg_mldsa65_sign_message_prepared_sha3(dit, sk, msg, msg_len, ctx, ctx_len, rnd, sig, scratch) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::mldsa65::vg_mldsa65_sign_message_prepared(sk, msg, msg_len, ctx, ctx_len, rnd, sig, scratch) }
+    unsafe { crate::mldsa65::vg_mldsa65_sign_message_prepared(dit, sk, msg, msg_len, ctx, ctx_len, rnd, sig, scratch) }
 }
 
 /// ML-DSA-65 message verification with a cached public-key digest. Returns 1 for a valid signature, 0 for an invalid signature or exhausted sampling bound, and 2 if the context exceeds 255 bytes. It is `ML-DSA.Verify(pk, M, σ, ctx)` (FIPS 204 Algorithm 3) with `H(pk, 64)` read from `*tr`: with the public key `*pk`, the `msg_len` bytes of the message at `msg`, the `ctx_len` bytes of the context string at `ctx` and the signature `*sig`, it formats the message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 5), computes `μ = H(tr ‖ M′, 64)`, and verifies `*sig` on `μ` with `*pk`, `ML-DSA.Verify_internal(pk, M′, σ)` (Algorithm 8).
@@ -214,15 +214,15 @@ pub unsafe fn vg_mldsa65_sign_message_prepared_auto(sk: *const [u8; 21440], msg:
 /// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_mldsa65_verify_message_cached_auto(pk: *const [u8; 1952], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 3309], scratch: *mut [u64; 13056], tr: *const [u8; 64]) -> u32 {
+pub unsafe fn vg_mldsa65_verify_message_cached_auto(dit: verified_garbage_cpu::Dit<'_>, pk: *const [u8; 1952], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 3309], scratch: *mut [u64; 13056], tr: *const [u8; 64]) -> u32 {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::mldsa65::VG_MLDSA65_VERIFY_MESSAGE_CACHED_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_mldsa65_verify_message_cached_sha3`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::mldsa65::vg_mldsa65_verify_message_cached_sha3(pk, msg, msg_len, ctx, ctx_len, sig, scratch, tr) };
+        return unsafe { crate::mldsa65::vg_mldsa65_verify_message_cached_sha3(dit, pk, msg, msg_len, ctx, ctx_len, sig, scratch, tr) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::mldsa65::vg_mldsa65_verify_message_cached(pk, msg, msg_len, ctx, ctx_len, sig, scratch, tr) }
+    unsafe { crate::mldsa65::vg_mldsa65_verify_message_cached(dit, pk, msg, msg_len, ctx, ctx_len, sig, scratch, tr) }
 }
 
 /// ML-DSA-65 verification with a prepared public key: `vg_mldsa65_verify_message_cached` (with its results, timing and leakage) of the public key that `*pk` begins with.
@@ -246,13 +246,13 @@ pub unsafe fn vg_mldsa65_verify_message_cached_auto(pk: *const [u8; 1952], msg: 
 /// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_mldsa65_verify_message_prepared_auto(pk: *const [u8; 8096], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 3309], scratch: *mut [u64; 13056], tr: *const [u8; 64]) -> u32 {
+pub unsafe fn vg_mldsa65_verify_message_prepared_auto(dit: verified_garbage_cpu::Dit<'_>, pk: *const [u8; 8096], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 3309], scratch: *mut [u64; 13056], tr: *const [u8; 64]) -> u32 {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::mldsa65::VG_MLDSA65_VERIFY_MESSAGE_PREPARED_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_mldsa65_verify_message_prepared_sha3`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::mldsa65::vg_mldsa65_verify_message_prepared_sha3(pk, msg, msg_len, ctx, ctx_len, sig, scratch, tr) };
+        return unsafe { crate::mldsa65::vg_mldsa65_verify_message_prepared_sha3(dit, pk, msg, msg_len, ctx, ctx_len, sig, scratch, tr) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::mldsa65::vg_mldsa65_verify_message_prepared(pk, msg, msg_len, ctx, ctx_len, sig, scratch, tr) }
+    unsafe { crate::mldsa65::vg_mldsa65_verify_message_prepared(dit, pk, msg, msg_len, ctx, ctx_len, sig, scratch, tr) }
 }

@@ -18,15 +18,15 @@
 /// * None of `pk`, `context`, `message`, `signature` and `scratch` may overlap the return address on the stack or the 272 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_ed448_verify_auto(pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, signature: *const [u8; 114], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe fn vg_ed448_verify_auto(dit: verified_garbage_cpu::Dit<'_>, pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, signature: *const [u8; 114], scratch: *mut [u64; 1024]) -> u32 {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::ed448::VG_ED448_VERIFY_ADX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_ed448_verify_adx`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::ed448::vg_ed448_verify_adx(pk, context, ctxlen, message, len, signature, scratch) };
+        return unsafe { crate::ed448::vg_ed448_verify_adx(dit, pk, context, ctxlen, message, len, signature, scratch) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::ed448::vg_ed448_verify(pk, context, ctxlen, message, len, signature, scratch) }
+    unsafe { crate::ed448::vg_ed448_verify(dit, pk, context, ctxlen, message, len, signature, scratch) }
 }
 
 /// Ed448 public-key derivation (RFC 8032 §5.2.5): writes the 57-byte public key to `*out`, from the 57-byte private key at `seed`, including SHAKE256 and pruning. Contract: `VG.Spec.Ed448.publicKeyContract`. Constant time: only pointers may affect timing.
@@ -44,15 +44,15 @@ pub unsafe fn vg_ed448_verify_auto(pk: *const [u8; 57], context: *const u8, ctxl
 /// * None of `out`, `seed` and `scratch` may overlap the return address on the stack or the 104 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_ed448_public_key_auto(out: *mut [u8; 57], seed: *const [u8; 57], scratch: *mut [u64; 1024]) {
+pub unsafe fn vg_ed448_public_key_auto(dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 57], seed: *const [u8; 57], scratch: *mut [u64; 1024]) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::ed448::VG_ED448_PUBLIC_KEY_ADX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_ed448_public_key_adx`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::ed448::vg_ed448_public_key_adx(out, seed, scratch) };
+        return unsafe { crate::ed448::vg_ed448_public_key_adx(dit, out, seed, scratch) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::ed448::vg_ed448_public_key(out, seed, scratch) }
+    unsafe { crate::ed448::vg_ed448_public_key(dit, out, seed, scratch) }
 }
 
 /// Ed448 signing (RFC 8032 §5.2.6): writes the 114-byte signature to `*out`, for the `len` bytes at `message`, the `ctxlen` bytes of context at `context` and the 57-byte private key at `seed`, using its cached public key at `pk`. Includes all hashing, pruning and scalar/group operations. Uses Ed448 with a context, not Ed448ph (no prehash); the context is empty for plain Ed448. Contract: `VG.Spec.Ed448.signCachedContract`. Constant time: only pointers and the context and message lengths may affect timing, not any buffer contents.
@@ -75,13 +75,13 @@ pub unsafe fn vg_ed448_public_key_auto(out: *mut [u8; 57], seed: *const [u8; 57]
 /// * None of `out`, `seed`, `pk`, `context`, `message` and `scratch` may overlap the return address on the stack or the 464 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_ed448_sign_cached_auto(out: *mut [u8; 114], seed: *const [u8; 57], pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+pub unsafe fn vg_ed448_sign_cached_auto(dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 114], seed: *const [u8; 57], pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::ed448::VG_ED448_SIGN_CACHED_ADX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_ed448_sign_cached_adx`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::ed448::vg_ed448_sign_cached_adx(out, seed, pk, context, ctxlen, message, len, scratch) };
+        return unsafe { crate::ed448::vg_ed448_sign_cached_adx(dit, out, seed, pk, context, ctxlen, message, len, scratch) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::ed448::vg_ed448_sign_cached(out, seed, pk, context, ctxlen, message, len, scratch) }
+    unsafe { crate::ed448::vg_ed448_sign_cached(dit, out, seed, pk, context, ctxlen, message, len, scratch) }
 }

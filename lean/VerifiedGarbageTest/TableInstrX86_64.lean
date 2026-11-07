@@ -112,13 +112,21 @@ def artifact : Artifact := artifactOf "vg_test_alutbl" 42
 /-- The rendering: the table read through a register, as any memory operand. -/
 def expected : String := "/// Returns 1 plus word 1 of its table.
 #[allow(clippy::missing_safety_doc)]
+#[inline(always)]
+pub unsafe fn vg_test_alutbl(_dit: verified_garbage_cpu::Dit<'_>) -> u64 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_test_alutbl() }
+}
+
+/// The verified code of [`super::vg_test_alutbl`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern \"sysv64\" fn vg_test_alutbl() -> u64 {
+pub(crate) unsafe extern \"sysv64\" fn vg_test_alutbl() -> u64 {
     core::arch::naked_asm!(
         r#\"lea rdx, [rip + {VG_TEST_ALUTBL}]
 .base64 \"SLgBAAAAAAAAAEgDQgjD\"
 .p2align 6\"#,
-        VG_TEST_ALUTBL = sym super::consts::VG_TEST_ALUTBL,
+        VG_TEST_ALUTBL = sym crate::consts::VG_TEST_ALUTBL,
     )
 }
 "

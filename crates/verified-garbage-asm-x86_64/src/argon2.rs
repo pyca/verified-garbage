@@ -28,8 +28,82 @@ pub const VG_ARGON2_BLAKE2B_AVX2_G_AVX2_FEATURES: verified_garbage_cpu::Features
 /// * `memory`, `scratch` and `out` must not overlap each other, `password`, `salt`, `secret`, `associated_data` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `password`, `salt`, `secret`, `associated_data`, `memory`, `scratch` and `out` may overlap the return address on the stack or the 344 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_argon2_blake2b_avx2_g_avx2(_dit: verified_garbage_cpu::Dit<'_>, kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_argon2_blake2b_avx2_g_avx2(kind, password, password_len, salt, salt_len, iterations, memory_cost, lanes, threads, secret, secret_len, associated_data, ad_len, memory, blocks, scratch, out, out_len) }
+}
+
+/// The CPU features `vg_argon2_blake2b_avx512_g_avx512` requires (`Artifact.features`).
+pub const VG_ARGON2_BLAKE2B_AVX512_G_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL);
+
+/// Argon2 version 1.3 (RFC 9106): derives `out_len` bytes at `out` from the password, salt, optional secret and associated data. `kind` selects Argon2d (0), Argon2i (1) or Argon2id (2). Performs the entire derivation: H₀, H′, initialization, all memory-filling passes, the final lane XOR and H′ of that block.
+///
+/// `iterations` is the pass count, `memory_cost` is the requested KiB count, and `lanes` is the algorithm's parallelism parameter. `threads` limits execution workers and does not change the result; serial execution is permitted.
+///
+/// Contract: `VG.Spec.Argon2.deriveContract`. Argon2i is constant time in all input contents. Argon2d/id additionally permit timing to depend on the sequence of data-dependent reference block indices (`VG.Spec.Argon2.references`), as required by their addressing rules, but on nothing else secret. Pointers, lengths and numeric parameters are public.
+///
+/// # Safety
+///
+/// * `password` must be valid for reads of `password_len` bytes.
+/// * `salt` must be valid for reads of `salt_len` bytes.
+/// * `secret` must be valid for reads of `secret_len` bytes.
+/// * `associated_data` must be valid for reads of `ad_len` bytes.
+/// * `memory` must be valid for reads and writes of `1024 * blocks` bytes.
+/// * `scratch` must be valid for reads and writes of 16384 bytes.
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `kind` must be 0, 1 or 2; `iterations` must be positive; `lanes` and `threads` must be in 1..2^24-1; `memory_cost` must be at least `8 * lanes`.
+/// * All input lengths must be less than 2^32; `out_len` must be in 4..2^32-1.
+/// * `blocks` must equal `4 * lanes * floor(memory_cost / (4 * lanes))`.
+/// * `memory` and `scratch` are working space: their initial contents are arbitrary and their contents on return are unspecified.
+/// * `memory`, `scratch` and `out` must not overlap each other, `password`, `salt`, `secret`, `associated_data` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `password`, `salt`, `secret`, `associated_data`, `memory`, `scratch` and `out` may overlap the return address on the stack or the 344 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_argon2_blake2b_avx512_g_avx512(_dit: verified_garbage_cpu::Dit<'_>, kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_argon2_blake2b_avx512_g_avx512(kind, password, password_len, salt, salt_len, iterations, memory_cost, lanes, threads, secret, secret_len, associated_data, ad_len, memory, blocks, scratch, out, out_len) }
+}
+
+/// Argon2 version 1.3 (RFC 9106): derives `out_len` bytes at `out` from the password, salt, optional secret and associated data. `kind` selects Argon2d (0), Argon2i (1) or Argon2id (2). Performs the entire derivation: H₀, H′, initialization, all memory-filling passes, the final lane XOR and H′ of that block.
+///
+/// `iterations` is the pass count, `memory_cost` is the requested KiB count, and `lanes` is the algorithm's parallelism parameter. `threads` limits execution workers and does not change the result; serial execution is permitted.
+///
+/// Contract: `VG.Spec.Argon2.deriveContract`. Argon2i is constant time in all input contents. Argon2d/id additionally permit timing to depend on the sequence of data-dependent reference block indices (`VG.Spec.Argon2.references`), as required by their addressing rules, but on nothing else secret. Pointers, lengths and numeric parameters are public.
+///
+/// # Safety
+///
+/// * `password` must be valid for reads of `password_len` bytes.
+/// * `salt` must be valid for reads of `salt_len` bytes.
+/// * `secret` must be valid for reads of `secret_len` bytes.
+/// * `associated_data` must be valid for reads of `ad_len` bytes.
+/// * `memory` must be valid for reads and writes of `1024 * blocks` bytes.
+/// * `scratch` must be valid for reads and writes of 16384 bytes.
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `kind` must be 0, 1 or 2; `iterations` must be positive; `lanes` and `threads` must be in 1..2^24-1; `memory_cost` must be at least `8 * lanes`.
+/// * All input lengths must be less than 2^32; `out_len` must be in 4..2^32-1.
+/// * `blocks` must equal `4 * lanes * floor(memory_cost / (4 * lanes))`.
+/// * `memory` and `scratch` are working space: their initial contents are arbitrary and their contents on return are unspecified.
+/// * `memory`, `scratch` and `out` must not overlap each other, `password`, `salt`, `secret`, `associated_data` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `password`, `salt`, `secret`, `associated_data`, `memory`, `scratch` and `out` may overlap the return address on the stack or the 344 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_argon2(_dit: verified_garbage_cpu::Dit<'_>, kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_argon2(kind, password, password_len, salt, salt_len, iterations, memory_cost, lanes, threads, secret, secret_len, associated_data, ad_len, memory, blocks, scratch, out, out_len) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_argon2_blake2b_avx2_g_avx2`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_argon2_blake2b_avx2_g_avx2(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_argon2_blake2b_avx2_g_avx2(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "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"
 call {vg_blake2b_init}
@@ -168,41 +242,17 @@ jb 229b
 call {vg_argon2_hprime_avx2}
 .base64 "WFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEFfQV5BXUFcXVvD"
 .p2align 6"#,
-        vg_blake2b_init = sym super::blake2b::vg_blake2b_init,
-        vg_blake2b_update_scratch_avx2 = sym super::blake2b::vg_blake2b_update_scratch_avx2::vg_blake2b_update_scratch_avx2,
-        vg_blake2b_finalize_scratch_avx2 = sym super::blake2b::vg_blake2b_finalize_scratch_avx2::vg_blake2b_finalize_scratch_avx2,
-        vg_argon2_hprime_avx2 = sym super::argon2::vg_argon2_hprime_avx2::vg_argon2_hprime_avx2,
-        vg_argon2_compress_avx2 = sym super::argon2::vg_argon2_compress_avx2::vg_argon2_compress_avx2,
+        vg_blake2b_init = sym crate::blake2b::raw::vg_blake2b_init,
+        vg_blake2b_update_scratch_avx2 = sym crate::blake2b::vg_blake2b_update_scratch_avx2::vg_blake2b_update_scratch_avx2,
+        vg_blake2b_finalize_scratch_avx2 = sym crate::blake2b::vg_blake2b_finalize_scratch_avx2::vg_blake2b_finalize_scratch_avx2,
+        vg_argon2_hprime_avx2 = sym crate::argon2::vg_argon2_hprime_avx2::vg_argon2_hprime_avx2,
+        vg_argon2_compress_avx2 = sym crate::argon2::vg_argon2_compress_avx2::vg_argon2_compress_avx2,
     )
 }
 
-/// The CPU features `vg_argon2_blake2b_avx512_g_avx512` requires (`Artifact.features`).
-pub const VG_ARGON2_BLAKE2B_AVX512_G_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL);
-
-/// Argon2 version 1.3 (RFC 9106): derives `out_len` bytes at `out` from the password, salt, optional secret and associated data. `kind` selects Argon2d (0), Argon2i (1) or Argon2id (2). Performs the entire derivation: H₀, H′, initialization, all memory-filling passes, the final lane XOR and H′ of that block.
-///
-/// `iterations` is the pass count, `memory_cost` is the requested KiB count, and `lanes` is the algorithm's parallelism parameter. `threads` limits execution workers and does not change the result; serial execution is permitted.
-///
-/// Contract: `VG.Spec.Argon2.deriveContract`. Argon2i is constant time in all input contents. Argon2d/id additionally permit timing to depend on the sequence of data-dependent reference block indices (`VG.Spec.Argon2.references`), as required by their addressing rules, but on nothing else secret. Pointers, lengths and numeric parameters are public.
-///
-/// # Safety
-///
-/// * `password` must be valid for reads of `password_len` bytes.
-/// * `salt` must be valid for reads of `salt_len` bytes.
-/// * `secret` must be valid for reads of `secret_len` bytes.
-/// * `associated_data` must be valid for reads of `ad_len` bytes.
-/// * `memory` must be valid for reads and writes of `1024 * blocks` bytes.
-/// * `scratch` must be valid for reads and writes of 16384 bytes.
-/// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `kind` must be 0, 1 or 2; `iterations` must be positive; `lanes` and `threads` must be in 1..2^24-1; `memory_cost` must be at least `8 * lanes`.
-/// * All input lengths must be less than 2^32; `out_len` must be in 4..2^32-1.
-/// * `blocks` must equal `4 * lanes * floor(memory_cost / (4 * lanes))`.
-/// * `memory` and `scratch` are working space: their initial contents are arbitrary and their contents on return are unspecified.
-/// * `memory`, `scratch` and `out` must not overlap each other, `password`, `salt`, `secret`, `associated_data` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `password`, `salt`, `secret`, `associated_data`, `memory`, `scratch` and `out` may overlap the return address on the stack or the 344 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
+/// The verified code of [`super::vg_argon2_blake2b_avx512_g_avx512`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_argon2_blake2b_avx512_g_avx512(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_argon2_blake2b_avx512_g_avx512(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "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"
 call {vg_blake2b_init}
@@ -341,37 +391,17 @@ jb 229b
 call {vg_argon2_hprime_avx512}
 .base64 "WFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEFfQV5BXUFcXVvD"
 .p2align 6"#,
-        vg_blake2b_init = sym super::blake2b::vg_blake2b_init,
-        vg_blake2b_update_scratch_avx512 = sym super::blake2b::vg_blake2b_update_scratch_avx512::vg_blake2b_update_scratch_avx512,
-        vg_blake2b_finalize_scratch_avx512 = sym super::blake2b::vg_blake2b_finalize_scratch_avx512::vg_blake2b_finalize_scratch_avx512,
-        vg_argon2_hprime_avx512 = sym super::argon2::vg_argon2_hprime_avx512::vg_argon2_hprime_avx512,
-        vg_argon2_compress_avx512 = sym super::argon2::vg_argon2_compress_avx512::vg_argon2_compress_avx512,
+        vg_blake2b_init = sym crate::blake2b::raw::vg_blake2b_init,
+        vg_blake2b_update_scratch_avx512 = sym crate::blake2b::vg_blake2b_update_scratch_avx512::vg_blake2b_update_scratch_avx512,
+        vg_blake2b_finalize_scratch_avx512 = sym crate::blake2b::vg_blake2b_finalize_scratch_avx512::vg_blake2b_finalize_scratch_avx512,
+        vg_argon2_hprime_avx512 = sym crate::argon2::vg_argon2_hprime_avx512::vg_argon2_hprime_avx512,
+        vg_argon2_compress_avx512 = sym crate::argon2::vg_argon2_compress_avx512::vg_argon2_compress_avx512,
     )
 }
 
-/// Argon2 version 1.3 (RFC 9106): derives `out_len` bytes at `out` from the password, salt, optional secret and associated data. `kind` selects Argon2d (0), Argon2i (1) or Argon2id (2). Performs the entire derivation: H₀, H′, initialization, all memory-filling passes, the final lane XOR and H′ of that block.
-///
-/// `iterations` is the pass count, `memory_cost` is the requested KiB count, and `lanes` is the algorithm's parallelism parameter. `threads` limits execution workers and does not change the result; serial execution is permitted.
-///
-/// Contract: `VG.Spec.Argon2.deriveContract`. Argon2i is constant time in all input contents. Argon2d/id additionally permit timing to depend on the sequence of data-dependent reference block indices (`VG.Spec.Argon2.references`), as required by their addressing rules, but on nothing else secret. Pointers, lengths and numeric parameters are public.
-///
-/// # Safety
-///
-/// * `password` must be valid for reads of `password_len` bytes.
-/// * `salt` must be valid for reads of `salt_len` bytes.
-/// * `secret` must be valid for reads of `secret_len` bytes.
-/// * `associated_data` must be valid for reads of `ad_len` bytes.
-/// * `memory` must be valid for reads and writes of `1024 * blocks` bytes.
-/// * `scratch` must be valid for reads and writes of 16384 bytes.
-/// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `kind` must be 0, 1 or 2; `iterations` must be positive; `lanes` and `threads` must be in 1..2^24-1; `memory_cost` must be at least `8 * lanes`.
-/// * All input lengths must be less than 2^32; `out_len` must be in 4..2^32-1.
-/// * `blocks` must equal `4 * lanes * floor(memory_cost / (4 * lanes))`.
-/// * `memory` and `scratch` are working space: their initial contents are arbitrary and their contents on return are unspecified.
-/// * `memory`, `scratch` and `out` must not overlap each other, `password`, `salt`, `secret`, `associated_data` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `password`, `salt`, `secret`, `associated_data`, `memory`, `scratch` and `out` may overlap the return address on the stack or the 344 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_argon2`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_argon2(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_argon2(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "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"
 call {vg_blake2b_init}
@@ -510,12 +540,13 @@ jb 229b
 call {vg_argon2_hprime}
 .base64 "WFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEFfQV5BXUFcXVvD"
 .p2align 6"#,
-        vg_blake2b_init = sym super::blake2b::vg_blake2b_init,
-        vg_blake2b_update_scratch = sym super::blake2b::vg_blake2b_update_scratch::vg_blake2b_update_scratch,
-        vg_blake2b_finalize_scratch = sym super::blake2b::vg_blake2b_finalize_scratch::vg_blake2b_finalize_scratch,
-        vg_argon2_hprime = sym super::argon2::vg_argon2_hprime::vg_argon2_hprime,
-        vg_argon2_compress = sym super::argon2::vg_argon2_compress::vg_argon2_compress,
+        vg_blake2b_init = sym crate::blake2b::raw::vg_blake2b_init,
+        vg_blake2b_update_scratch = sym crate::blake2b::vg_blake2b_update_scratch::vg_blake2b_update_scratch,
+        vg_blake2b_finalize_scratch = sym crate::blake2b::vg_blake2b_finalize_scratch::vg_blake2b_finalize_scratch,
+        vg_argon2_hprime = sym crate::argon2::vg_argon2_hprime::vg_argon2_hprime,
+        vg_argon2_compress = sym crate::argon2::vg_argon2_compress::vg_argon2_compress,
     )
+}
 }
 
 #[rustfmt::skip]

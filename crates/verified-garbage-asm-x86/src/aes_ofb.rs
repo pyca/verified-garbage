@@ -21,23 +21,11 @@ pub const VG_AES_OFB_AESNI_FEATURES: verified_garbage_cpu::Features = verified_g
 /// * `iv`, `data` and `scratch` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `iv`, `data` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_ofb_aesni(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
-    core::arch::naked_asm!(
-        r#".base64 "i0QkGImYEAgAAImwFAgAAIm4GAgAAImoHAgAAIt0JBCLRCQUhcA="
-je 20f
-22:
-.base64 "i0QkBItMJAiLXCQMvwEAAACLbCQYVVdTUVA="
-call {vg_aes_encrypt_blocks_aesni}
-.base64 "WFhYWFiLXCQMiwaLCzHIiQaLRgSLSwQxyIlGBItGCItLCDHIiUYIi0YMi0sMMciJRgyDxhCLRCQUAcABwAHAAcADRCQQOcY="
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "i0QkGIuYEAgAAIuwFAgAAIu4GAgAAIuoHAgAAMM="
-.p2align 6"#,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
-    )
+#[inline(always)]
+pub unsafe fn vg_aes_ofb_aesni(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_ofb_aesni(schedule, rounds, iv, data, n, scratch) }
 }
 
 /// The CPU features `vg_aes_ofb_final_aesni` requires (`Artifact.features`).
@@ -58,27 +46,11 @@ pub const VG_AES_OFB_FINAL_AESNI_FEATURES: verified_garbage_cpu::Features = veri
 /// * `iv`, `data` and `scratch` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `iv`, `data` and `scratch` may overlap the return address on the stack or the 100 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_ofb_final_aesni(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
-    core::arch::naked_asm!(
-        r#".base64 "jWQk0ItEJDSJRCQEi0QkOIlEJAiLRCQ8iUQkDItEJECJRCQQi0QkRIlEJBSLRCRIiUQkGIngg8AgiUQkHItEJByJGIlwBIl4CIloDItEJASLTCQIi1QkDItcJBCLdCQUwe4Ei3wkGFdWU1JRUA=="
-call {vg_aes_ofb_aesni}
-.base64 "WFhYWFhYi0QkFIPgD4XA"
-je 20f
-.base64 "i0QkBItMJAiLXCQMvwEAAACLbCQYVVdTUVA="
-call {vg_aes_encrypt_blocks_aesni}
-.base64 "WFhYWFiLXCQMi3QkEItsJBSJ6IPlDynoAcY="
-22:
-.base64 "D7YDD7YOMcGIDoPDAYPGAYPtAQ=="
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "i0QkHIsYi3AEi3gIi2gMuQAAAACJTCQgiUwkJIlMJCiJTCQsjWQkMMM="
-.p2align 6"#,
-        vg_aes_ofb_aesni = sym super::aes_ofb::vg_aes_ofb_aesni,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
-    )
+#[inline(always)]
+pub unsafe fn vg_aes_ofb_final_aesni(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_ofb_final_aesni(schedule, rounds, iv, data, len, scratch) }
 }
 
 /// AES-OFB encryption or decryption (NIST SP 800-38A §6.4) of whole blocks, in place: XORs the `n` 16-byte blocks at `data` with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)`, where `O₀` is the block at `*iv`, and replaces `*iv` with `Oₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
@@ -95,23 +67,11 @@ jmp 21f
 /// * The contents of `scratch` on return are unspecified.
 /// * `iv`, `data` and `scratch` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `iv`, `data` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_ofb(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
-    core::arch::naked_asm!(
-        r#".base64 "i0QkGImYEAgAAImwFAgAAIm4GAgAAImoHAgAAIt0JBCLRCQUhcA="
-je 20f
-22:
-.base64 "i0QkBItMJAiLXCQMvwEAAACLbCQYVVdTUVA="
-call {vg_aes_encrypt_blocks}
-.base64 "WFhYWFiLXCQMiwaLCzHIiQaLRgSLSwQxyIlGBItGCItLCDHIiUYIi0YMi0sMMciJRgyDxhCLRCQUAcABwAHAAcADRCQQOcY="
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "i0QkGIuYEAgAAIuwFAgAAIu4GAgAAIuoHAgAAMM="
-.p2align 6"#,
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
-    )
+#[inline(always)]
+pub unsafe fn vg_aes_ofb(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_ofb(schedule, rounds, iv, data, n, scratch) }
 }
 
 /// AES-OFB encryption or decryption (NIST SP 800-38A §6.4) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)`, where `O₀` is the block at `*iv`, a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*iv` with the last output block used, `Oₙ` (leaving it unchanged if `len = 0`): so that a further call continues the message if `len` is a multiple of 16, and otherwise keystream, to be wiped, after which the message must end. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
@@ -128,8 +88,83 @@ jmp 21f
 /// * The contents of `scratch` on return are unspecified.
 /// * `iv`, `data` and `scratch` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `iv`, `data` and `scratch` may overlap the return address on the stack or the 100 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_aes_ofb_final(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_ofb_final(schedule, rounds, iv, data, len, scratch) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_aes_ofb_aesni`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_ofb_final(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
+pub(crate) unsafe extern "C" fn vg_aes_ofb_aesni(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
+    core::arch::naked_asm!(
+        r#".base64 "i0QkGImYEAgAAImwFAgAAIm4GAgAAImoHAgAAIt0JBCLRCQUhcA="
+je 20f
+22:
+.base64 "i0QkBItMJAiLXCQMvwEAAACLbCQYVVdTUVA="
+call {vg_aes_encrypt_blocks_aesni}
+.base64 "WFhYWFiLXCQMiwaLCzHIiQaLRgSLSwQxyIlGBItGCItLCDHIiUYIi0YMi0sMMciJRgyDxhCLRCQUAcABwAHAAcADRCQQOcY="
+jne 22b
+jmp 21f
+20:
+21:
+.base64 "i0QkGIuYEAgAAIuwFAgAAIu4GAgAAIuoHAgAAMM="
+.p2align 6"#,
+        vg_aes_encrypt_blocks_aesni = sym crate::aes::raw::vg_aes_encrypt_blocks_aesni,
+    )
+}
+
+/// The verified code of [`super::vg_aes_ofb_final_aesni`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_ofb_final_aesni(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
+    core::arch::naked_asm!(
+        r#".base64 "jWQk0ItEJDSJRCQEi0QkOIlEJAiLRCQ8iUQkDItEJECJRCQQi0QkRIlEJBSLRCRIiUQkGIngg8AgiUQkHItEJByJGIlwBIl4CIloDItEJASLTCQIi1QkDItcJBCLdCQUwe4Ei3wkGFdWU1JRUA=="
+call {vg_aes_ofb_aesni}
+.base64 "WFhYWFhYi0QkFIPgD4XA"
+je 20f
+.base64 "i0QkBItMJAiLXCQMvwEAAACLbCQYVVdTUVA="
+call {vg_aes_encrypt_blocks_aesni}
+.base64 "WFhYWFiLXCQMi3QkEItsJBSJ6IPlDynoAcY="
+22:
+.base64 "D7YDD7YOMcGIDoPDAYPGAYPtAQ=="
+jne 22b
+jmp 21f
+20:
+21:
+.base64 "i0QkHIsYi3AEi3gIi2gMuQAAAACJTCQgiUwkJIlMJCiJTCQsjWQkMMM="
+.p2align 6"#,
+        vg_aes_ofb_aesni = sym crate::aes_ofb::raw::vg_aes_ofb_aesni,
+        vg_aes_encrypt_blocks_aesni = sym crate::aes::raw::vg_aes_encrypt_blocks_aesni,
+    )
+}
+
+/// The verified code of [`super::vg_aes_ofb`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_ofb(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
+    core::arch::naked_asm!(
+        r#".base64 "i0QkGImYEAgAAImwFAgAAIm4GAgAAImoHAgAAIt0JBCLRCQUhcA="
+je 20f
+22:
+.base64 "i0QkBItMJAiLXCQMvwEAAACLbCQYVVdTUVA="
+call {vg_aes_encrypt_blocks}
+.base64 "WFhYWFiLXCQMiwaLCzHIiQaLRgSLSwQxyIlGBItGCItLCDHIiUYIi0YMi0sMMciJRgyDxhCLRCQUAcABwAHAAcADRCQQOcY="
+jne 22b
+jmp 21f
+20:
+21:
+.base64 "i0QkGIuYEAgAAIuwFAgAAIu4GAgAAIuoHAgAAMM="
+.p2align 6"#,
+        vg_aes_encrypt_blocks = sym crate::aes::raw::vg_aes_encrypt_blocks,
+    )
+}
+
+/// The verified code of [`super::vg_aes_ofb_final`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_ofb_final(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
         r#".base64 "jWQk0ItEJDSJRCQEi0QkOIlEJAiLRCQ8iUQkDItEJECJRCQQi0QkRIlEJBSLRCRIiUQkGIngg8AgiUQkHItEJByJGIlwBIl4CIloDItEJASLTCQIi1QkDItcJBCLdCQUwe4Ei3wkGFdWU1JRUA=="
 call {vg_aes_ofb}
@@ -146,7 +181,8 @@ jmp 21f
 21:
 .base64 "i0QkHIsYi3AEi3gIi2gMuQAAAACJTCQgiUwkJIlMJCiJTCQsjWQkMMM="
 .p2align 6"#,
-        vg_aes_ofb = sym super::aes_ofb::vg_aes_ofb,
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
+        vg_aes_ofb = sym crate::aes_ofb::raw::vg_aes_ofb,
+        vg_aes_encrypt_blocks = sym crate::aes::raw::vg_aes_encrypt_blocks,
     )
+}
 }

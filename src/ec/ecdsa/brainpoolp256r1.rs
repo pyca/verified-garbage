@@ -21,7 +21,12 @@ use crate::ec::brainpoolp256r1::Mul;
 use crate::error::{InvalidKey, InvalidSignature};
 
 /// Whether `signature` verifies with `q` for the hash `digest`.
-fn verify_with(q: &[u8; 65], digest: &[u8], signature: &[u8; 64]) -> Result<(), InvalidSignature> {
+fn verify_with(
+    dit: crate::dit::Dit<'_>,
+    q: &[u8; 65],
+    digest: &[u8],
+    signature: &[u8; 64],
+) -> Result<(), InvalidSignature> {
     let mut scratch = [0u64; 1024];
     // SAFETY: `q` is valid for reads of 65 bytes, `digest` of `digest.len()`,
     // `signature` of 64 and `scratch` for reads and writes of 8192; `scratch`
@@ -31,6 +36,7 @@ fn verify_with(q: &[u8; 65], digest: &[u8], signature: &[u8; 64]) -> Result<(), 
     // features of.
     let ok = unsafe {
         vg_ecdsa_brainpoolp256r1_verify_auto(
+            dit,
             q,
             digest.as_ptr(),
             digest.len(),
@@ -46,7 +52,11 @@ fn verify_with(q: &[u8; 65], digest: &[u8], signature: &[u8; 64]) -> Result<(), 
 }
 
 impl<H: HmacHash> sealed::Functions<BrainpoolP256r1> for H {
-    fn sign(d: &[u8; 32], digest: &H::Output) -> Result<[u8; 64], InvalidKey> {
+    fn sign(
+        dit: crate::dit::Dit<'_>,
+        d: &[u8; 32],
+        digest: &H::Output,
+    ) -> Result<[u8; 64], InvalidKey> {
         let f = detected();
         let sign: SignFn<32, 64> = match Mul::select(f) {
             Mul::Baseline => vg_ecdsa_brainpoolp256r1_sign,
@@ -55,17 +65,18 @@ impl<H: HmacHash> sealed::Functions<BrainpoolP256r1> for H {
         };
         // SAFETY: `sign` needs no CPU feature that the multiplications
         // selected for this CPU do not.
-        unsafe { sign_with::<H, 32, 64>(sign, d, digest) }
+        unsafe { sign_with::<H, 32, 64>(dit, sign, d, digest) }
     }
 
     /// The verified function takes the hash itself, of any length, and
     /// uses as many of its leftmost bits as the order has (FIPS 186-5 §6.4.2).
     fn verify(
+        dit: crate::dit::Dit<'_>,
         q: &[u8; 65],
         digest: &H::Output,
         signature: &[u8; 64],
     ) -> Result<(), InvalidSignature> {
-        verify_with(q, digest.as_ref(), signature)
+        verify_with(dit, q, digest.as_ref(), signature)
     }
 }
 

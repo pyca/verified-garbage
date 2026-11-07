@@ -14,8 +14,37 @@
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `ctr` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `ctr` and `data` may overlap the 3264 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_sm4_ctr(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 128], ctr: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sm4_ctr(schedule, ctr, data, n) }
+}
+
+/// SM4-CTR encryption or decryption (NIST SP 800-38A §6.5, draft-ribose-cfrg-sm4-10 §7.1) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Tⱼ)`, where `T₁` is the block at `*ctr` and `Tⱼ₊₁ = Tⱼ + 1 mod 2¹²⁸` (Appendix B.1's standard incrementing function on the whole block, read as a big-endian integer), a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*ctr` with `Tₙ₊₁` (leaving it unchanged if `len = 0`), so that a further call continues the message if `len` is a multiple of 16; after a partial last block the message must end. `CIPH_K` is SM4 encryption under the schedule written by `vg_sm4_expand_key`.
+///
+/// Contract: `VG.Spec.Sm4.ctrFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the counter block or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `ctr` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `ctr` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `ctr` and `data` may overlap the 3344 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_sm4_ctr_final(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 128], ctr: *mut [u8; 16], data: *mut u8, len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sm4_ctr_final(schedule, ctr, data, len) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_sm4_ctr`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm4_ctr(schedule: *const [u8; 128], ctr: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
+pub(crate) unsafe extern "C" fn vg_sm4_ctr(schedule: *const [u8; 128], ctr: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r".inst 0xd13303ff,0x910003e4,0x91000085,0xf90630b3,0xf90634b4,0xf90638b5,0xf9063cb6,0xf90640b7
 .inst 0xf90644b8,0xf90648b9,0xf9064cba,0xf90650bb,0xf90654bc,0xf9400026,0xdac00cc6,0xf9400427
@@ -87,24 +116,14 @@ b 21f
 .inst 0xa91f4611,0x913003f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611
 .inst 0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0x913303ff,0xd65f03c0
 .p2align 6",
-        vg_sm4_prepare_keys = sym super::sm4::vg_sm4_prepare_keys::vg_sm4_prepare_keys,
-        vg_sm4_crypt_prepared = sym super::sm4::vg_sm4_crypt_prepared::vg_sm4_crypt_prepared,
+        vg_sm4_prepare_keys = sym crate::sm4::vg_sm4_prepare_keys::vg_sm4_prepare_keys,
+        vg_sm4_crypt_prepared = sym crate::sm4::vg_sm4_crypt_prepared::vg_sm4_crypt_prepared,
     )
 }
 
-/// SM4-CTR encryption or decryption (NIST SP 800-38A §6.5, draft-ribose-cfrg-sm4-10 §7.1) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Tⱼ)`, where `T₁` is the block at `*ctr` and `Tⱼ₊₁ = Tⱼ + 1 mod 2¹²⁸` (Appendix B.1's standard incrementing function on the whole block, read as a big-endian integer), a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*ctr` with `Tₙ₊₁` (leaving it unchanged if `len = 0`), so that a further call continues the message if `len` is a multiple of 16; after a partial last block the message must end. `CIPH_K` is SM4 encryption under the schedule written by `vg_sm4_expand_key`.
-///
-/// Contract: `VG.Spec.Sm4.ctrFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the counter block or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 128 bytes.
-/// * `ctr` must be valid for reads and writes of 16 bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `ctr` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `ctr` and `data` may overlap the 3344 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_sm4_ctr_final`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm4_ctr_final(schedule: *const [u8; 128], ctr: *mut [u8; 16], data: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_sm4_ctr_final(schedule: *const [u8; 128], ctr: *mut [u8; 16], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd10143ff,0x910003e4,0xf9000093,0xf9000494,0xf9000895,0xf9000c96,0xf9001097,0xf9001498
 .inst 0xf900189e,0xf9001c99,0x91000013,0x91000035,0x91000099,0xd344fc69,0xd37ced2a,0x8b0a0056
@@ -124,6 +143,7 @@ b 21f
 .inst 0xd2800011,0x910003f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0x910143ff
 .inst 0xd65f03c0
 .p2align 6",
-        vg_sm4_ctr = sym super::sm4_ctr::vg_sm4_ctr,
+        vg_sm4_ctr = sym crate::sm4_ctr::raw::vg_sm4_ctr,
     )
+}
 }

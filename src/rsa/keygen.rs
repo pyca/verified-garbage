@@ -103,11 +103,13 @@ fn generate_counted(
     public_exponent: &[u8],
     random: impl FnMut(&mut [u8]) -> Result<(), Error>,
 ) -> (Result<PrivateKey, Error>, usize) {
+    crate::dit::enter!(dit);
     let mut state = [0u64; 7];
     // SAFETY: `state` is valid for writes and `public_exponent` for reads of
     // its length.
     let init = unsafe {
         vg_rsa_generate_init(
+            dit,
             &mut state,
             bits,
             public_exponent.as_ptr(),
@@ -135,6 +137,7 @@ fn generate_counted(
         // an implementation the CPU has the features of.
         status = unsafe {
             vg_rsa_generate_auto(
+                dit,
                 key.as_mut_ptr(),
                 key.len(),
                 &mut used,

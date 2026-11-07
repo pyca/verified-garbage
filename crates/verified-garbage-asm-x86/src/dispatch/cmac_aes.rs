@@ -17,15 +17,15 @@
 /// * Neither `state` nor `key` may overlap the return address on the stack or the 2372 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_cmac_aes_init_auto(state: *mut [u64; 38], key: *const u8, key_len: usize) {
+pub unsafe fn vg_cmac_aes_init_auto(dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 38], key: *const u8, key_len: usize) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::cmac_aes::VG_CMAC_AES_INIT_AESNI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_cmac_aes_init_aesni`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::cmac_aes::vg_cmac_aes_init_aesni(state, key, key_len) };
+        return unsafe { crate::cmac_aes::vg_cmac_aes_init_aesni(dit, state, key, key_len) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::cmac_aes::vg_cmac_aes_init(state, key, key_len) }
+    unsafe { crate::cmac_aes::vg_cmac_aes_init(dit, state, key, key_len) }
 }
 
 /// Absorbs data into an AES-CMAC computation (NIST SP 800-38B §6.2): if the streaming state `*state` represents a message of `count` bytes under an AES key with `rounds` rounds (as `vg_cmac_aes_init` set it up), it then represents that message followed by the `len` bytes at `data`, under the same key, provided that the two together are shorter than 2⁶⁴ bytes. It chains (step 6) every block of the message but its last bytes `Mₙ*` (step 3), which it holds back in the state, since only `vg_cmac_aes_finish` knows they are the last.
@@ -43,15 +43,15 @@ pub unsafe fn vg_cmac_aes_init_auto(state: *mut [u64; 38], key: *const u8, key_l
 /// * Neither `state` nor `data` may overlap the return address on the stack or the 2392 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_cmac_aes_absorb_auto(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
+pub unsafe fn vg_cmac_aes_absorb_auto(dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::cmac_aes::VG_CMAC_AES_ABSORB_AESNI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_cmac_aes_absorb_aesni`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::cmac_aes::vg_cmac_aes_absorb_aesni(state, rounds, count, data, len) };
+        return unsafe { crate::cmac_aes::vg_cmac_aes_absorb_aesni(dit, state, rounds, count, data, len) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::cmac_aes::vg_cmac_aes_absorb(state, rounds, count, data, len) }
+    unsafe { crate::cmac_aes::vg_cmac_aes_absorb(dit, state, rounds, count, data, len) }
 }
 
 /// Finishes an AES-CMAC computation (NIST SP 800-38B §6.2, with `Tlen = 128`): if the streaming state `*state` represents a message of `count` bytes, shorter than 2⁶⁴ bytes, under an AES key with `rounds` rounds (as `vg_cmac_aes_init` and `vg_cmac_aes_absorb` set it up), writes the MAC of that message under that key to `*out`: `Cₙ = CIPH_K(Cₙ₋₁ ⊕ Mₙ)`, where `Mₙ = K1 ⊕ Mₙ*` if the message's last bytes `Mₙ*` are a complete block, and `Mₙ = K2 ⊕ (Mₙ* ‖ 10ʲ)` otherwise (step 4). The caller truncates it (step 7) and compares it (§6.3).
@@ -70,13 +70,13 @@ pub unsafe fn vg_cmac_aes_absorb_auto(state: *mut [u64; 38], rounds: usize, coun
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 2388 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_cmac_aes_finish_auto(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
+pub unsafe fn vg_cmac_aes_finish_auto(dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::cmac_aes::VG_CMAC_AES_FINISH_AESNI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_cmac_aes_finish_aesni`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::cmac_aes::vg_cmac_aes_finish_aesni(state, rounds, count, out) };
+        return unsafe { crate::cmac_aes::vg_cmac_aes_finish_aesni(dit, state, rounds, count, out) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::cmac_aes::vg_cmac_aes_finish(state, rounds, count, out) }
+    unsafe { crate::cmac_aes::vg_cmac_aes_finish(dit, state, rounds, count, out) }
 }

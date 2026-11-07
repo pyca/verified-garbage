@@ -229,6 +229,7 @@ macro_rules! ml_kem {
             /// key check of FIPS 203 §7.2 (every integer it encodes is less
             /// than `q`); [`InvalidKey`] otherwise.
             pub fn from_bytes(bytes: &[u8; $ek]) -> Result<Self, InvalidKey> {
+                let dit = $crate::dit::public($crate::dit::Why::PublicKey);
                 // SAFETY: `bytes` is valid for reads of its size, and a Rust
                 // object, so it does not overlap the stack or wrap around the
                 // end of the address space. The CPU has the features of
@@ -236,13 +237,13 @@ macro_rules! ml_kem {
                 #[cfg(target_arch = "x86_64")]
                 let r = unsafe {
                     match backend() {
-                        Backend::Scalar => $check_ek(bytes),
-                        Backend::Avx2 | Backend::Avx512 => $check_ek_avx2(bytes),
+                        Backend::Scalar => $check_ek(dit, bytes),
+                        Backend::Avx2 | Backend::Avx512 => $check_ek_avx2(dit, bytes),
                     }
                 };
                 // SAFETY: as above.
                 #[cfg(not(target_arch = "x86_64"))]
-                let r = unsafe { $check_ek(bytes) };
+                let r = unsafe { $check_ek(dit, bytes) };
                 if r == 1 {
                     Ok($EncapsulationKey { bytes: *bytes, h: None })
                 } else {
@@ -286,6 +287,7 @@ macro_rules! ml_kem {
             unsafe fn encapsulate_with(
                 &self, m: &[u8; 32], backend: Backend,
             ) -> Result<([u8; 32], [u8; $ct]), MlKemError> {
+                $crate::dit::enter!(dit);
                 let mut key = [0u8; 32];
                 let mut ct = [0u8; $ct];
                 // The verified contract accepts arbitrary initial scratch bytes.
@@ -302,26 +304,26 @@ macro_rules! ml_kem {
                 let r = unsafe {
                     let (ek, s) = (&self.bytes, scratch.as_mut_ptr());
                     match (backend, &self.h) {
-                        (Backend::Scalar, Some(h)) => $encaps_h(ek, h, m, &mut key, &mut ct, s),
-                        (Backend::Scalar, None) => $encaps(ek, m, &mut key, &mut ct, s),
+                        (Backend::Scalar, Some(h)) => $encaps_h(dit, ek, h, m, &mut key, &mut ct, s),
+                        (Backend::Scalar, None) => $encaps(dit, ek, m, &mut key, &mut ct, s),
                         #[cfg(target_arch = "aarch64")]
-                        (Backend::X2Sha3, Some(h)) => $encaps_h_x2_sha3(ek, h, m, &mut key, &mut ct, s),
+                        (Backend::X2Sha3, Some(h)) => $encaps_h_x2_sha3(dit, ek, h, m, &mut key, &mut ct, s),
                         #[cfg(target_arch = "aarch64")]
-                        (Backend::X2Sha3, None) => $encaps_x2_sha3(ek, m, &mut key, &mut ct, s),
+                        (Backend::X2Sha3, None) => $encaps_x2_sha3(dit, ek, m, &mut key, &mut ct, s),
                         #[cfg(target_arch = "aarch64")]
                         (Backend::X2Sha3KeccakSha3, Some(h)) => {
-                            $encaps_h_x2_sha3_keccak_sha3(ek, h, m, &mut key, &mut ct, s)
+                            $encaps_h_x2_sha3_keccak_sha3(dit, ek, h, m, &mut key, &mut ct, s)
                         }
                         #[cfg(target_arch = "aarch64")]
-                        (Backend::X2Sha3KeccakSha3, None) => $encaps_x2_sha3_keccak_sha3(ek, m, &mut key, &mut ct, s),
+                        (Backend::X2Sha3KeccakSha3, None) => $encaps_x2_sha3_keccak_sha3(dit, ek, m, &mut key, &mut ct, s),
                         #[cfg(target_arch = "x86_64")]
-                        (Backend::Avx2, Some(h)) => $encaps_h_avx2(ek, h, m, &mut key, &mut ct, s),
+                        (Backend::Avx2, Some(h)) => $encaps_h_avx2(dit, ek, h, m, &mut key, &mut ct, s),
                         #[cfg(target_arch = "x86_64")]
-                        (Backend::Avx2, None) => $encaps_avx2(ek, m, &mut key, &mut ct, s),
+                        (Backend::Avx2, None) => $encaps_avx2(dit, ek, m, &mut key, &mut ct, s),
                         #[cfg(target_arch = "x86_64")]
-                        (Backend::Avx512, Some(h)) => $encaps_h_avx512(ek, h, m, &mut key, &mut ct, s),
+                        (Backend::Avx512, Some(h)) => $encaps_h_avx512(dit, ek, h, m, &mut key, &mut ct, s),
                         #[cfg(target_arch = "x86_64")]
-                        (Backend::Avx512, None) => $encaps_avx512(ek, m, &mut key, &mut ct, s),
+                        (Backend::Avx512, None) => $encaps_avx512(dit, ek, m, &mut key, &mut ct, s),
                     }
                 };
                 // The bytes of `scratch` the operation may have written: on
@@ -396,6 +398,7 @@ macro_rules! ml_kem {
             ///
             /// The CPU has the features of `backend`'s instances.
             unsafe fn from_seed_with(seed: &[u8; 64], backend: Backend) -> Result<Self, MlKemError> {
+                $crate::dit::enter!(dit);
                 let mut key = $DecapsulationKey {
                     seed: *seed,
                     ek: $EncapsulationKey { bytes: [0; $ek], h: None },
@@ -411,17 +414,17 @@ macro_rules! ml_kem {
                 // features of `backend`.
                 let r = unsafe {
                     match backend {
-                        Backend::Scalar => $keygen(seed, &mut key.ek.bytes, &mut key.dk, scratch.as_mut_ptr()),
+                        Backend::Scalar => $keygen(dit, seed, &mut key.ek.bytes, &mut key.dk, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "aarch64")]
-                        Backend::X2Sha3 => $keygen_x2_sha3(seed, &mut key.ek.bytes, &mut key.dk, scratch.as_mut_ptr()),
+                        Backend::X2Sha3 => $keygen_x2_sha3(dit, seed, &mut key.ek.bytes, &mut key.dk, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "aarch64")]
                         Backend::X2Sha3KeccakSha3 => {
-                            $keygen_x2_sha3_keccak_sha3(seed, &mut key.ek.bytes, &mut key.dk, scratch.as_mut_ptr())
+                            $keygen_x2_sha3_keccak_sha3(dit, seed, &mut key.ek.bytes, &mut key.dk, scratch.as_mut_ptr())
                         }
                         #[cfg(target_arch = "x86_64")]
-                        Backend::Avx2 => $keygen_avx2(seed, &mut key.ek.bytes, &mut key.dk, scratch.as_mut_ptr()),
+                        Backend::Avx2 => $keygen_avx2(dit, seed, &mut key.ek.bytes, &mut key.dk, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "x86_64")]
-                        Backend::Avx512 => $keygen_avx512(seed, &mut key.ek.bytes, &mut key.dk, scratch.as_mut_ptr()),
+                        Backend::Avx512 => $keygen_avx512(dit, seed, &mut key.ek.bytes, &mut key.dk, scratch.as_mut_ptr()),
                     }
                 };
                 // The bytes of `scratch` the operation may have written: on
@@ -480,6 +483,7 @@ macro_rules! ml_kem {
             ///
             /// The CPU has the features of `backend`'s instances.
             unsafe fn decapsulate_with(&self, ct: &[u8; $ct], backend: Backend) -> Result<[u8; 32], MlKemError> {
+                $crate::dit::enter!(dit);
                 let mut key = [0u8; 32];
                 // The verified contract accepts arbitrary initial scratch bytes.
                 let mut scratch = core::mem::MaybeUninit::<Scratch>::uninit();
@@ -491,17 +495,17 @@ macro_rules! ml_kem {
                 // caller ensures the CPU has the features of `backend`.
                 let r = unsafe {
                     match backend {
-                        Backend::Scalar => $decaps(&self.dk, ct, &mut key, scratch.as_mut_ptr()),
+                        Backend::Scalar => $decaps(dit, &self.dk, ct, &mut key, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "aarch64")]
-                        Backend::X2Sha3 => $decaps_x2_sha3(&self.dk, ct, &mut key, scratch.as_mut_ptr()),
+                        Backend::X2Sha3 => $decaps_x2_sha3(dit, &self.dk, ct, &mut key, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "aarch64")]
                         Backend::X2Sha3KeccakSha3 => {
-                            $decaps_x2_sha3_keccak_sha3(&self.dk, ct, &mut key, scratch.as_mut_ptr())
+                            $decaps_x2_sha3_keccak_sha3(dit, &self.dk, ct, &mut key, scratch.as_mut_ptr())
                         }
                         #[cfg(target_arch = "x86_64")]
-                        Backend::Avx2 => $decaps_avx2(&self.dk, ct, &mut key, scratch.as_mut_ptr()),
+                        Backend::Avx2 => $decaps_avx2(dit, &self.dk, ct, &mut key, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "x86_64")]
-                        Backend::Avx512 => $decaps_avx512(&self.dk, ct, &mut key, scratch.as_mut_ptr()),
+                        Backend::Avx512 => $decaps_avx512(dit, &self.dk, ct, &mut key, scratch.as_mut_ptr()),
                     }
                 };
                 // The bytes of `scratch` the operation may have written: on

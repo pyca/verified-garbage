@@ -14,13 +14,13 @@
 /// * `p` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_zeroize_auto(p: *mut u8, len: usize) {
+pub unsafe fn vg_zeroize_auto(dit: verified_garbage_cpu::Dit<'_>, p: *mut u8, len: usize) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::zeroize::VG_ZEROIZE_AVX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_zeroize_avx`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::zeroize::vg_zeroize_avx(p, len) };
+        return unsafe { crate::zeroize::vg_zeroize_avx(dit, p, len) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::zeroize::vg_zeroize(p, len) }
+    unsafe { crate::zeroize::vg_zeroize(dit, p, len) }
 }

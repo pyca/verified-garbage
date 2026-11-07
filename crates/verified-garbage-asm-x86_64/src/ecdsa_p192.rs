@@ -16,8 +16,43 @@
 /// * The contents of `scratch` on return are unspecified; the caller may reuse or destroy them.
 /// * `scratch` must not overlap `public`, `digest` or `sig` (distinct Rust objects never do).
 /// * None of `public`, `digest`, `sig` and `scratch` may overlap the return address on the stack or the 96 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_ecdsa_p192_verify(_dit: verified_garbage_cpu::Dit<'_>, public: *const [u8; 49], digest: *const u8, digest_len: usize, sig: *const [u8; 48], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ecdsa_p192_verify(public, digest, digest_len, sig, scratch) }
+}
+
+/// Deterministic ECDSA signature generation over P-192 with HMAC over the hash function of the table `hmac` (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (24 bytes, most significant first), signs the hash at `digest` (`digest_len` bytes, the hash function's output), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (24 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 8 candidates for `k` is suitable (which does not happen in practice).
+///
+/// Contract: `VG.Spec.Ecdsa.Rfc6979.TableInstance.signContract`. Constant time but for the number of candidates for `k` tried (almost always 1) and which table `hmac` is: timing may depend on the pointers, that number and the table, not otherwise on the key or the hash.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 48 bytes.
+/// * `d` must be valid for reads of 24 bytes.
+/// * `digest` must be valid for reads of `digest_len` bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * `hmac` must be valid for reads of `6 * size_of::<usize>()` bytes.
+/// * `digest_len` must be the digest length of the hash function `hmac` names.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `hmac` is a table of HMAC over the hash function of the digest, which RFC 6979 uses: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the HMAC tables of this crate, `fn_tables`, say which they name).
+/// * `out` and `scratch` must not overlap each other, `d`, `digest` or `hmac` (distinct Rust objects never do).
+/// * None of `out`, `d`, `digest`, `scratch` and `hmac` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `hmac` must be the `as_ptr()` of one of the `Hmac` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+#[inline(always)]
+pub unsafe fn vg_ecdsa_p192_sign(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 48], d: *const [u8; 24], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ecdsa_p192_sign(out, d, digest, digest_len, scratch, hmac) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_ecdsa_p192_verify`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ecdsa_p192_verify(public: *const [u8; 49], digest: *const u8, digest_len: usize, sig: *const [u8; 48], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p192_verify(public: *const [u8; 49], digest: *const u8, digest_len: usize, sig: *const [u8; 48], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI1kJKhJieFJg8EISIP6GA=="
 jb 20f
@@ -57,32 +92,16 @@ call {vg_p192_mul}
 call {vg_p192_inv_mod_p}
 .base64 "QbgAAAAAQbkAAAAAQboAAAAAQbsAAAAAQbwAAAAAQb0AAAAASIuPAAIAAL0AAAAASIuH4AMAAEj34UgB6EiD0gBJAcBIg9IASInVSIuH6AMAAEj34UgB6EiD0gBJAcFIg9IASInVSIuH8AMAAEj34UgB6EiD0gBJAcJIg9IASInVSIuH+AMAAEj34UgB6EiD0gBJAcNIg9IASInVSQHsSYPVAEi4//////////9J9+BJAcFJEdJJg9MASYPUAEmD1QBIuP//////////SffgSQHCSRHTSYPUAEmD1QBBuAAAAABIi48IAgAAvQAAAABIi4fgAwAASPfhSAHoSIPSAEkBwUiD0gBIidVIi4foAwAASPfhSAHoSIPSAEkBwkiD0gBIidVIi4fwAwAASPfhSAHoSIPSAEkBw0iD0gBIidVIi4f4AwAASPfhSAHoSIPSAEkBxEiD0gBIidVJAe1Jg9AASLj//////////0n34UkBwkkR00mD1ABJg9UASYPQAEi4//////////9J9+FJAcNJEdRJg9UASYPQAEG5AAAAAEiLjxACAAC9AAAAAEiLh+ADAABI9+FIAehIg9IASQHCSIPSAEiJ1UiLh+gDAABI9+FIAehIg9IASQHDSIPSAEiJ1UiLh/ADAABI9+FIAehIg9IASQHESIPSAEiJ1UiLh/gDAABI9+FIAehIg9IASQHFSIPSAEiJ1UkB6EmD0QBIuP//////////SffiSQHDSRHUSYPVAEmD0ABJg9EASLj//////////0n34kkBxEkR1UmD0ABJg9EAQboAAAAASIuPGAIAAL0AAAAASIuH4AMAAEj34UgB6EiD0gBJAcNIg9IASInVSIuH6AMAAEj34UgB6EiD0gBJAcRIg9IASInVSIuH8AMAAEj34UgB6EiD0gBJAcVIg9IASInVSIuH+AMAAEj34UgB6EiD0gBJAcBIg9IASInVSQHpSYPSAEi4//////////9J9+NJAcRJEdVJg9AASYPRAEmD0gBIuP//////////SffjSQHFSRHQSYPRAEmD0gBBuwAAAABMieBIK0dATInpSBtPSEyJwkgbV1BMic1IG29YSYPaAEwPQ+BMD0PpTA9DwkwPQ81MiaeABAAATImviAQAAEyJh5AEAABMiY+YBAAAQbgAAAAAQbkAAAAAQboAAAAAQbsAAAAAQbwAAAAAQb0AAAAASIuPgAQAAL0AAAAASIuHwAAAAEj34UgB6EiD0gBJAcBIg9IASInVSIuHyAAAAEj34UgB6EiD0gBJAcFIg9IASInVSIuH0AAAAEj34UgB6EiD0gBJAcJIg9IASInVSIuH2AAAAEj34UgB6EiD0gBJAcNIg9IASInVSQHsSYPVAEi4//////////9J9+BJAcFJEdJJg9MASYPUAEmD1QBIuP//////////SffgSQHCSRHTSYPUAEmD1QBBuAAAAABIi4+IBAAAvQAAAABIi4fAAAAASPfhSAHoSIPSAEkBwUiD0gBIidVIi4fIAAAASPfhSAHoSIPSAEkBwkiD0gBIidVIi4fQAAAASPfhSAHoSIPSAEkBw0iD0gBIidVIi4fYAAAASPfhSAHoSIPSAEkBxEiD0gBIidVJAe1Jg9AASLj//////////0n34UkBwkkR00mD1ABJg9UASYPQAEi4//////////9J9+FJAcNJEdRJg9UASYPQAEG5AAAAAEiLj5AEAAC9AAAAAEiLh8AAAABI9+FIAehIg9IASQHCSIPSAEiJ1UiLh8gAAABI9+FIAehIg9IASQHDSIPSAEiJ1UiLh9AAAABI9+FIAehIg9IASQHESIPSAEiJ1UiLh9gAAABI9+FIAehIg9IASQHFSIPSAEiJ1UkB6EmD0QBIuP//////////SffiSQHDSRHUSYPVAEmD0ABJg9EASLj//////////0n34kkBxEkR1UmD0ABJg9EAQboAAAAASIuPmAQAAL0AAAAASIuHwAAAAEj34UgB6EiD0gBJAcNIg9IASInVSIuHyAAAAEj34UgB6EiD0gBJAcRIg9IASInVSIuH0AAAAEj34UgB6EiD0gBJAcVIg9IASInVSIuH2AAAAEj34UgB6EiD0gBJAcBIg9IASInVSQHpSYPSAEi4//////////9J9+NJAcRJEdVJg9AASYPRAEmD0gBIuP//////////SffjSQHFSRHQSYPRAEmD0gBBuwAAAABMieBIK0dATInpSBtPSEyJwkgbV1BMic1IG29YSYPaAEwPQ+BMD0PpTA9DwkwPQ81MiaegBAAATImvqAQAAEyJh7AEAABMiY+4BAAAQbgAAAAAQbkAAAAAQboAAAAAQbsAAAAAQbwAAAAAQb0AAAAASIuPoAQAAL0AAAAASIuHgAEAAEj34UkBwEiD0gBJAehIg9IASInVSIuHiAEAAEj34UkBwUiD0gBJAelIg9IASInVSIuHkAEAAEj34UkBwkiD0gBJAepIg9IASInVSIuHmAEAAEj34UkBw0iD0gBJAetIg9IASInVSQHsSYPVAEyJwEi5L8/bDQdyJohI9+FIicG9AAAAAEiLR2BI9+FJAcBIg9IASQHoSIPSAEiJ1UiLR2hI9+FJAcFIg9IASQHpSIPSAEiJ1UiLR3BI9+FJAcJIg9IASQHqSIPSAEiJ1UiLR3hI9+FJAcNIg9IASQHrSIPSAEiJ1UkB7EmD1QBIi4+oBAAAvQAAAABIi4eAAQAASPfhSQHBSIPSAEkB6UiD0gBIidVIi4eIAQAASPfhSQHCSIPSAEkB6kiD0gBIidVIi4eQAQAASPfhSQHDSIPSAEkB60iD0gBIidVIi4eYAQAASPfhSQHESIPSAEkB7EiD0gBIidVJAe1Jg9AATInISLkvz9sNB3ImiEj34UiJwb0AAAAASItHYEj34UkBwUiD0gBJAelIg9IASInVSItHaEj34UkBwkiD0gBJAepIg9IASInVSItHcEj34UkBw0iD0gBJAetIg9IASInVSItHeEj34UkBxEiD0gBJAexIg9IASInVSQHtSYPQAEiLj7AEAAC9AAAAAEiLh4ABAABI9+FJAcJIg9IASQHqSIPSAEiJ1UiLh4gBAABI9+FJAcNIg9IASQHrSIPSAEiJ1UiLh5ABAABI9+FJAcRIg9IASQHsSIPSAEiJ1UiLh5gBAABI9+FJAcVIg9IASQHtSIPSAEiJ1UkB6EmD0QBMidBIuS/P2w0HciaISPfhSInBvQAAAABIi0dgSPfhSQHCSIPSAEkB6kiD0gBIidVIi0doSPfhSQHDSIPSAEkB60iD0gBIidVIi0dwSPfhSQHESIPSAEkB7EiD0gBIidVIi0d4SPfhSQHFSIPSAEkB7UiD0gBIidVJAehJg9EASIuPuAQAAL0AAAAASIuHgAEAAEj34UkBw0iD0gBJAetIg9IASInVSIuHiAEAAEj34UkBxEiD0gBJAexIg9IASInVSIuHkAEAAEj34UkBxUiD0gBJAe1Ig9IASInVSIuHmAEAAEj34UkBwEiD0gBJAehIg9IASInVSQHpSYPSAEyJ2Ei5L8/bDQdyJohI9+FIicG9AAAAAEiLR2BI9+FJAcNIg9IASQHrSIPSAEiJ1UiLR2hI9+FJAcRIg9IASQHsSIPSAEiJ1UiLR3BI9+FJAcVIg9IASQHtSIPSAEiJ1UiLR3hI9+FJAcBIg9IASQHoSIPSAEiJ1UkB6UmD0gBMieBIK0dgTInpSBtPaEyJwkgbV3BMic1IG294SYPaAEwPQ+BMD0PpTA9DwkwPQ81MiacABQAATImvCAUAAEyJhxAFAABMiY8YBQAATIuHAAUAAEyLjwgFAABMi5cQBQAATIufGAUAAEwrhyAFAABMG48oBQAATBuXMAUAAEwbnzgFAABIGcBIi1dgSCHCSImXgAAAAEiLV2hIIcJIiZeIAAAASItXcEghwkiJl5AAAABIi1d4SCHCSImXmAAAAEwDh4AAAABME4+IAAAATBOXkAAAAEwTn5gAAABMiYdABQAATImPSAUAAEyJl1AFAABMiZ9YBQAASIuXQAIAAEgLl0gCAABIC5dQAgAASAuXWAIAALkAAAAASCnRSBnSSIuHwAUAAEgh0EiJh8AFAABIi5dABQAASAuXSAUAAEgLl1AFAABIC5dYBQAASIP6AUgZ0kiLh8AFAABIIdBIiYfABQAASIuHwAUAAEiD4AFIix9Ii28ITItnEEyLbxhMi3cgTIt/KEiNZCRYww=="
 .p2align 6"#,
-        vg_p192_check_point = sym super::ec_p192_compressed::vg_p192_check_point::vg_p192_check_point,
-        vg_p192_inv_mod_n = sym super::ecdsa_p192::vg_p192_inv_mod_n::vg_p192_inv_mod_n,
-        vg_p192_mul = sym super::ec_p192::vg_p192_mul::vg_p192_mul,
-        vg_p192_inv_mod_p = sym super::ec_p192::vg_p192_inv_mod_p::vg_p192_inv_mod_p,
+        vg_p192_check_point = sym crate::ec_p192_compressed::vg_p192_check_point::vg_p192_check_point,
+        vg_p192_inv_mod_n = sym crate::ecdsa_p192::vg_p192_inv_mod_n::vg_p192_inv_mod_n,
+        vg_p192_mul = sym crate::ec_p192::vg_p192_mul::vg_p192_mul,
+        vg_p192_inv_mod_p = sym crate::ec_p192::vg_p192_inv_mod_p::vg_p192_inv_mod_p,
     )
 }
 
-/// Deterministic ECDSA signature generation over P-192 with HMAC over the hash function of the table `hmac` (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (24 bytes, most significant first), signs the hash at `digest` (`digest_len` bytes, the hash function's output), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (24 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 8 candidates for `k` is suitable (which does not happen in practice).
-///
-/// Contract: `VG.Spec.Ecdsa.Rfc6979.TableInstance.signContract`. Constant time but for the number of candidates for `k` tried (almost always 1) and which table `hmac` is: timing may depend on the pointers, that number and the table, not otherwise on the key or the hash.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 48 bytes.
-/// * `d` must be valid for reads of 24 bytes.
-/// * `digest` must be valid for reads of `digest_len` bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * `hmac` must be valid for reads of `6 * size_of::<usize>()` bytes.
-/// * `digest_len` must be the digest length of the hash function `hmac` names.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `hmac` is a table of HMAC over the hash function of the digest, which RFC 6979 uses: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the HMAC tables of this crate, `fn_tables`, say which they name).
-/// * `out` and `scratch` must not overlap each other, `d`, `digest` or `hmac` (distinct Rust objects never do).
-/// * None of `out`, `d`, `digest`, `scratch` and `hmac` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * `hmac` must be the `as_ptr()` of one of the `Hmac` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// The verified code of [`super::vg_ecdsa_p192_sign`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ecdsa_p192_sign(out: *mut [u8; 48], d: *const [u8; 24], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p192_sign(out: *mut [u8; 48], d: *const [u8; 24], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "TInBTYtRIE2LWShBUVBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBBU0FSV1ZSUVBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQMcBIiYQkQAEAADHASImEJEgBAAAxwEiJhCRQAQAAMcBIiYQkWAEAADHASImEJGABAAAxwEiJhCRoAQAAMcBIiYQkcAEAADHASImEJHgBAAAxwEiJhCSAAQAASIuMJNgAAAC4GAAAAEg5wUgPQ8hIiedIgcdYAQAASCnPSIu0JMAAAABFMcA="
 20:
@@ -110,8 +129,9 @@ jmp 25f
 jne 21b
 .base64 "MclIiQwkSIlMJAhIiUwkEEiJTCQYSIlMJCBIiUwkKEiJTCQwSIlMJDhIiUwkQEiJTCRISIlMJFBIiUwkWEiJTCRgSIlMJGhIiUwkcEiJTCR4SImMJOgAAABIiYwk8AAAAEiJjCT4AAAASImMJAABAABIiYwkCAEAAEiJjCQQAQAASImMJBgBAABIiYwkIAEAAEiJjCQoAQAASImMJDABAABIiYwkOAEAAEiJjCRAAQAASImMJEgBAABIiYwkUAEAAEiJjCRYAQAASImMJGABAABIiYwkaAEAAEiJjCRwAQAASImMJHgBAABIiYwkgAEAAEiJjCSIAQAASImMJJABAABIiYwkmAEAAEiJjCSgAQAASImMJKgBAABIiYwksAEAAEiJjCS4AQAASImMJMABAABIiYwkyAEAAEiJjCTQAQAASImMJNgBAABIiYwk4AEAAEiJjCToAQAASImMJPABAABIiYwk+AEAAEiJjCQAAgAASImMJAgCAABIiYwkEAIAAEiJjCQYAgAASImMJCACAABIiYwkKAIAAEiJjCQwAgAASImMJDgCAABIiYwkQAIAAEiJjCRIAgAASImMJFACAABZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZww=="
 .p2align 6"#,
-        vg_ecdsa_p192_sign_k = sym super::ecdsa_p192::vg_ecdsa_p192_sign_k::vg_ecdsa_p192_sign_k,
+        vg_ecdsa_p192_sign_k = sym crate::ecdsa_p192::vg_ecdsa_p192_sign_k::vg_ecdsa_p192_sign_k,
     )
+}
 }
 
 #[rustfmt::skip]

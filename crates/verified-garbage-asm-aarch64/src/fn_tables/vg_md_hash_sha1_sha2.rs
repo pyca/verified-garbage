@@ -7,6 +7,6 @@ pub const VG_MD_HASH_SHA1_SHA2_FEATURES: verified_garbage_cpu::Features = verifi
 
 /// The table of functions `VG_MD_HASH_SHA1_SHA2` of the interface `MdHash`: `vg_sha1_init`, `vg_sha1_update_scratch_sha2`, `vg_sha1_finalize_scratch_sha2`, `vg_sha1_compress_sha2`, `vg_sha1_state_digest`, then the data 1, 20, 64, 8, 84, 1.
 pub static VG_MD_HASH_SHA1_SHA2: super::MdHash = super::MdHash {
-    fns: [crate::sha1::vg_sha1_init as *const (), crate::sha1::vg_sha1_update_scratch_sha2::vg_sha1_update_scratch_sha2 as *const (), crate::sha1::vg_sha1_finalize_scratch_sha2::vg_sha1_finalize_scratch_sha2 as *const (), crate::sha1::vg_sha1_compress_sha2::vg_sha1_compress_sha2 as *const (), crate::sha1::vg_sha1_state_digest::vg_sha1_state_digest as *const ()],
+    fns: [crate::sha1::raw::vg_sha1_init as *const (), crate::sha1::vg_sha1_update_scratch_sha2::vg_sha1_update_scratch_sha2 as *const (), crate::sha1::vg_sha1_finalize_scratch_sha2::vg_sha1_finalize_scratch_sha2 as *const (), crate::sha1::vg_sha1_compress_sha2::vg_sha1_compress_sha2 as *const (), crate::sha1::vg_sha1_state_digest::vg_sha1_state_digest as *const ()],
     data: [1, 20, 64, 8, 84, 1],
 };

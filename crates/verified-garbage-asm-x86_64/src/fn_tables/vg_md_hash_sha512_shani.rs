@@ -7,6 +7,6 @@ pub const VG_MD_HASH_SHA512_SHANI_FEATURES: verified_garbage_cpu::Features = ver
 
 /// The table of functions `VG_MD_HASH_SHA512_SHANI` of the interface `MdHash`: `vg_sha512_init`, `vg_sha512_update_scratch_shani`, `vg_sha512_finalize_scratch_shani`, `vg_sha512_compress_shani`, `vg_sha512_state_digest`, then the data 5, 64, 128, 16, 192, 1.
 pub static VG_MD_HASH_SHA512_SHANI: super::MdHash = super::MdHash {
-    fns: [crate::sha512::vg_sha512_init as *const (), crate::sha512::vg_sha512_update_scratch_shani::vg_sha512_update_scratch_shani as *const (), crate::sha512::vg_sha512_finalize_scratch_shani::vg_sha512_finalize_scratch_shani as *const (), crate::sha512::vg_sha512_compress_shani::vg_sha512_compress_shani as *const (), crate::sha512::vg_sha512_state_digest::vg_sha512_state_digest as *const ()],
+    fns: [crate::sha512::raw::vg_sha512_init as *const (), crate::sha512::vg_sha512_update_scratch_shani::vg_sha512_update_scratch_shani as *const (), crate::sha512::vg_sha512_finalize_scratch_shani::vg_sha512_finalize_scratch_shani as *const (), crate::sha512::vg_sha512_compress_shani::vg_sha512_compress_shani as *const (), crate::sha512::vg_sha512_state_digest::vg_sha512_state_digest as *const ()],
     data: [5, 64, 128, 16, 192, 1],
 };

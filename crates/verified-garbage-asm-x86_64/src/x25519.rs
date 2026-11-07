@@ -16,15 +16,11 @@
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `scalar` or `point` (distinct Rust objects never do).
 /// * None of `out`, `scalar`, `point` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_x25519_exchange(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "Vw=="
-call {vg_x25519}
-.base64 "WkjHwQAAAAAPtgJICcEPtkIBSAnBD7ZCAkgJwQ+2QgNICcEPtkIESAnBD7ZCBUgJwQ+2QgZICcEPtkIHSAnBD7ZCCEgJwQ+2QglICcEPtkIKSAnBD7ZCC0gJwQ+2QgxICcEPtkINSAnBD7ZCDkgJwQ+2Qg9ICcEPtkIQSAnBD7ZCEUgJwQ+2QhJICcEPtkITSAnBD7ZCFEgJwQ+2QhVICcEPtkIWSAnBD7ZCF0gJwQ+2QhhICcEPtkIZSAnBD7ZCGkgJwQ+2QhtICcEPtkIcSAnBD7ZCHUgJwQ+2Qh5ICcEPtkIfSAnBSIPpAUjB6T9Ig/EBSInIww=="
-.p2align 6"#,
-        vg_x25519 = sym super::x25519::vg_x25519::vg_x25519,
-    )
+#[inline(always)]
+pub unsafe fn vg_x25519_exchange(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_x25519_exchange(out, scalar, point, scratch) }
 }
 
 /// The CPU features `vg_x25519_exchange_adx` requires (`Artifact.features`).
@@ -44,15 +40,11 @@ pub const VG_X25519_EXCHANGE_ADX_FEATURES: verified_garbage_cpu::Features = veri
 /// * `out` and `scratch` must not overlap each other, `scalar` or `point` (distinct Rust objects never do).
 /// * None of `out`, `scalar`, `point` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_x25519_exchange_adx(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "Vw=="
-call {vg_x25519_adx}
-.base64 "WkjHwQAAAAAPtgJICcEPtkIBSAnBD7ZCAkgJwQ+2QgNICcEPtkIESAnBD7ZCBUgJwQ+2QgZICcEPtkIHSAnBD7ZCCEgJwQ+2QglICcEPtkIKSAnBD7ZCC0gJwQ+2QgxICcEPtkINSAnBD7ZCDkgJwQ+2Qg9ICcEPtkIQSAnBD7ZCEUgJwQ+2QhJICcEPtkITSAnBD7ZCFEgJwQ+2QhVICcEPtkIWSAnBD7ZCF0gJwQ+2QhhICcEPtkIZSAnBD7ZCGkgJwQ+2QhtICcEPtkIcSAnBD7ZCHUgJwQ+2Qh5ICcEPtkIfSAnBSIPpAUjB6T9Ig/EBSInIww=="
-.p2align 6"#,
-        vg_x25519_adx = sym super::x25519::vg_x25519_adx::vg_x25519_adx,
-    )
+#[inline(always)]
+pub unsafe fn vg_x25519_exchange_adx(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_x25519_exchange_adx(out, scalar, point, scratch) }
 }
 
 /// The CPU features `vg_x25519_exchange_ifma` requires (`Artifact.features`).
@@ -72,15 +64,11 @@ pub const VG_X25519_EXCHANGE_IFMA_FEATURES: verified_garbage_cpu::Features = ver
 /// * `out` and `scratch` must not overlap each other, `scalar` or `point` (distinct Rust objects never do).
 /// * None of `out`, `scalar`, `point` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi2`, `adx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_x25519_exchange_ifma(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "Vw=="
-call {vg_x25519_ifma}
-.base64 "WkjHwQAAAAAPtgJICcEPtkIBSAnBD7ZCAkgJwQ+2QgNICcEPtkIESAnBD7ZCBUgJwQ+2QgZICcEPtkIHSAnBD7ZCCEgJwQ+2QglICcEPtkIKSAnBD7ZCC0gJwQ+2QgxICcEPtkINSAnBD7ZCDkgJwQ+2Qg9ICcEPtkIQSAnBD7ZCEUgJwQ+2QhJICcEPtkITSAnBD7ZCFEgJwQ+2QhVICcEPtkIWSAnBD7ZCF0gJwQ+2QhhICcEPtkIZSAnBD7ZCGkgJwQ+2QhtICcEPtkIcSAnBD7ZCHUgJwQ+2Qh5ICcEPtkIfSAnBSIPpAUjB6T9Ig/EBSInIww=="
-.p2align 6"#,
-        vg_x25519_ifma = sym super::x25519::vg_x25519_ifma::vg_x25519_ifma,
-    )
+#[inline(always)]
+pub unsafe fn vg_x25519_exchange_ifma(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_x25519_exchange_ifma(out, scalar, point, scratch) }
 }
 
 /// Computes an X25519 public key (RFC 7748 §6.1): writes `X25519(k, 9)`, the X25519 function of the 32-byte scalar `k` at `scalar` and the base point's u-coordinate 9, to `*out`. The scalar is decoded (clamped).
@@ -95,8 +83,101 @@ call {vg_x25519_ifma}
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other or `scalar` (distinct Rust objects never do).
 /// * None of `out`, `scalar` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_x25519_base(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_x25519_base(out, scalar, scratch) }
+}
+
+/// The CPU features `vg_x25519_base_adx` requires (`Artifact.features`).
+pub const VG_X25519_BASE_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// Computes an X25519 public key (RFC 7748 §6.1): writes `X25519(k, 9)`, the X25519 function of the 32-byte scalar `k` at `scalar` and the base point's u-coordinate 9, to `*out`. The scalar is decoded (clamped).
+///
+/// Contract: `VG.Spec.X25519.x25519BaseContract`. Constant time: only the pointers may affect timing, not the scalar.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 32 bytes.
+/// * `scalar` must be valid for reads of 32 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other or `scalar` (distinct Rust objects never do).
+/// * None of `out`, `scalar` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `bmi2` and `adx` target features.
+#[inline(always)]
+pub unsafe fn vg_x25519_base_adx(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_x25519_base_adx(out, scalar, scratch) }
+}
+
+/// The CPU features `vg_x25519_base_ifma` requires (`Artifact.features`).
+pub const VG_X25519_BASE_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
+
+/// Computes an X25519 public key (RFC 7748 §6.1): writes `X25519(k, 9)`, the X25519 function of the 32-byte scalar `k` at `scalar` and the base point's u-coordinate 9, to `*out`. The scalar is decoded (clamped).
+///
+/// Contract: `VG.Spec.X25519.x25519BaseContract`. Constant time: only the pointers may affect timing, not the scalar.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 32 bytes.
+/// * `scalar` must be valid for reads of 32 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other or `scalar` (distinct Rust objects never do).
+/// * None of `out`, `scalar` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `bmi2`, `adx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
+#[inline(always)]
+pub unsafe fn vg_x25519_base_ifma(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_x25519_base_ifma(out, scalar, scratch) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_x25519_exchange`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_x25519_base(out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "sysv64" fn vg_x25519_exchange(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "Vw=="
+call {vg_x25519}
+.base64 "WkjHwQAAAAAPtgJICcEPtkIBSAnBD7ZCAkgJwQ+2QgNICcEPtkIESAnBD7ZCBUgJwQ+2QgZICcEPtkIHSAnBD7ZCCEgJwQ+2QglICcEPtkIKSAnBD7ZCC0gJwQ+2QgxICcEPtkINSAnBD7ZCDkgJwQ+2Qg9ICcEPtkIQSAnBD7ZCEUgJwQ+2QhJICcEPtkITSAnBD7ZCFEgJwQ+2QhVICcEPtkIWSAnBD7ZCF0gJwQ+2QhhICcEPtkIZSAnBD7ZCGkgJwQ+2QhtICcEPtkIcSAnBD7ZCHUgJwQ+2Qh5ICcEPtkIfSAnBSIPpAUjB6T9Ig/EBSInIww=="
+.p2align 6"#,
+        vg_x25519 = sym crate::x25519::vg_x25519::vg_x25519,
+    )
+}
+
+/// The verified code of [`super::vg_x25519_exchange_adx`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_x25519_exchange_adx(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "Vw=="
+call {vg_x25519_adx}
+.base64 "WkjHwQAAAAAPtgJICcEPtkIBSAnBD7ZCAkgJwQ+2QgNICcEPtkIESAnBD7ZCBUgJwQ+2QgZICcEPtkIHSAnBD7ZCCEgJwQ+2QglICcEPtkIKSAnBD7ZCC0gJwQ+2QgxICcEPtkINSAnBD7ZCDkgJwQ+2Qg9ICcEPtkIQSAnBD7ZCEUgJwQ+2QhJICcEPtkITSAnBD7ZCFEgJwQ+2QhVICcEPtkIWSAnBD7ZCF0gJwQ+2QhhICcEPtkIZSAnBD7ZCGkgJwQ+2QhtICcEPtkIcSAnBD7ZCHUgJwQ+2Qh5ICcEPtkIfSAnBSIPpAUjB6T9Ig/EBSInIww=="
+.p2align 6"#,
+        vg_x25519_adx = sym crate::x25519::vg_x25519_adx::vg_x25519_adx,
+    )
+}
+
+/// The verified code of [`super::vg_x25519_exchange_ifma`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_x25519_exchange_ifma(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "Vw=="
+call {vg_x25519_ifma}
+.base64 "WkjHwQAAAAAPtgJICcEPtkIBSAnBD7ZCAkgJwQ+2QgNICcEPtkIESAnBD7ZCBUgJwQ+2QgZICcEPtkIHSAnBD7ZCCEgJwQ+2QglICcEPtkIKSAnBD7ZCC0gJwQ+2QgxICcEPtkINSAnBD7ZCDkgJwQ+2Qg9ICcEPtkIQSAnBD7ZCEUgJwQ+2QhJICcEPtkITSAnBD7ZCFEgJwQ+2QhVICcEPtkIWSAnBD7ZCF0gJwQ+2QhhICcEPtkIZSAnBD7ZCGkgJwQ+2QhtICcEPtkIcSAnBD7ZCHUgJwQ+2Qh5ICcEPtkIfSAnBSIPpAUjB6T9Ig/EBSInIww=="
+.p2align 6"#,
+        vg_x25519_ifma = sym crate::x25519::vg_x25519_ifma::vg_x25519_ifma,
+    )
+}
+
+/// The verified code of [`super::vg_x25519_base`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_x25519_base(out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "SIkaSIlqCEyJYhBMiWoYTIlyIEyJeihIiXowSInXuwAAAAA="
 20:
@@ -136,31 +217,16 @@ jne 21b
 call {vg_gf25519_r64_invert}
 .base64 "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"
 .p2align 6"#,
-        vg_ed25519_r64_double_ext = sym super::ed25519::vg_ed25519_r64_double_ext::vg_ed25519_r64_double_ext,
-        vg_ed25519_r64_add_affine_ext = sym super::ed25519::vg_ed25519_r64_add_affine_ext::vg_ed25519_r64_add_affine_ext,
-        vg_gf25519_r64_invert = sym super::ed25519::vg_gf25519_r64_invert::vg_gf25519_r64_invert,
-        VG_ED25519_COMB = sym super::consts::VG_ED25519_COMB,
+        vg_ed25519_r64_double_ext = sym crate::ed25519::vg_ed25519_r64_double_ext::vg_ed25519_r64_double_ext,
+        vg_ed25519_r64_add_affine_ext = sym crate::ed25519::vg_ed25519_r64_add_affine_ext::vg_ed25519_r64_add_affine_ext,
+        vg_gf25519_r64_invert = sym crate::ed25519::vg_gf25519_r64_invert::vg_gf25519_r64_invert,
+        VG_ED25519_COMB = sym crate::consts::VG_ED25519_COMB,
     )
 }
 
-/// The CPU features `vg_x25519_base_adx` requires (`Artifact.features`).
-pub const VG_X25519_BASE_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
-
-/// Computes an X25519 public key (RFC 7748 §6.1): writes `X25519(k, 9)`, the X25519 function of the 32-byte scalar `k` at `scalar` and the base point's u-coordinate 9, to `*out`. The scalar is decoded (clamped).
-///
-/// Contract: `VG.Spec.X25519.x25519BaseContract`. Constant time: only the pointers may affect timing, not the scalar.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 32 bytes.
-/// * `scalar` must be valid for reads of 32 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other or `scalar` (distinct Rust objects never do).
-/// * None of `out`, `scalar` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `bmi2` and `adx` target features.
+/// The verified code of [`super::vg_x25519_base_adx`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_x25519_base_adx(out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "sysv64" fn vg_x25519_base_adx(out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "SIkaSIlqCEyJYhBMiWoYTIlyIEyJeihIiXowSInXuwAAAAA="
 20:
@@ -202,31 +268,16 @@ jne 21b
 call {vg_gf25519_r64_invert}
 .base64 "SIuXIAIAADHtxGK79k9AxGL79ldIZkwPOPbIxGL79l9QZkwPOPbQxGL79mdYZkwPOPbYZkwPOPblSIuXKAIAADHtxOL79k9A80wPOPbIZkwPOPbRxOL79k9I80wPOPbQZkwPOPbZxOL79k9Q80wPOPbYZkwPOPbhxGL79m9Y80wPOPbgZkwPOPbt80wPOPbtSIuXMAIAADHtxOL79k9A80wPOPbQZkwPOPbZxOL79k9I80wPOPbYZkwPOPbhxOL79k9Q80wPOPbgZkwPOPbpxGL79ndY80wPOPboZkwPOPb180wPOPb1SIuXOAIAADHtxOL79k9A80wPOPbYZkwPOPbhxOL79k9I80wPOPbgZkwPOPbpxOL79k9Q80wPOPboZkwPOPbxxGL79n9Y80wPOPbwZkwPOPb980wPOPb9uiYAAAAx7cTC+/bM80wPOPbAZkwPOPbJxML79s3zTA849shmTA849tHEwvv2zvNMDzj20GZMDzj22cRC+/bn80wPOPbYZkwPOPbl80wPOPblSdHjTRHkSdHrSWvEE0kBwEmD0QBJg9IASYPTAEyJR0BMiU9ITIlXUEyJX1hIi5cgAgAAMe3EYrv2T2DEYvv2V2hmTA849sjEYvv2X3BmTA849tDEYvv2Z3hmTA849thmTA849uVIi5coAgAAMe3E4vv2T2DzTA849shmTA849tHE4vv2T2jzTA849tBmTA849tnE4vv2T3DzTA849thmTA849uHEYvv2b3jzTA849uBmTA849u3zTA849u1Ii5cwAgAAMe3E4vv2T2DzTA849tBmTA849tnE4vv2T2jzTA849thmTA849uHE4vv2T3DzTA849uBmTA849unEYvv2d3jzTA849uhmTA849vXzTA849vVIi5c4AgAAMe3E4vv2T2DzTA849thmTA849uHE4vv2T2jzTA849uBmTA849unE4vv2T3DzTA849uhmTA849vHEYvv2f3jzTA849vBmTA849v3zTA849v26JgAAADHtxML79szzTA849sBmTA849snEwvv2zfNMDzj2yGZMDzj20cTC+/bO80wPOPbQZkwPOPbZxEL79ufzTA849thmTA849uXzTA849uVJ0eNNEeRJ0etJa8QTSQHASYPRAEmD0gBJg9MATIlHYEyJT2hMiVdwTIlfeEyLR0BMi09ITItXUEyLX1hMidhIweg/SLr/////////f0kh07kAAAAASCnBSIPhE0kByEmD0QBJg9IASYPTAE2JxEmDxBNNic1Jg9UATYnWSYPWAE2J30mD1wBMifhIweg/SSHXuQAAAABIKcFNMcRJIcxNMeBNMc1JIc1NMelNMdZJIc5NMfJNMd9JIc9NMftIifpIi38wSIsaSItqCEyLYhBMi2oYTItyIEyLeihMiQdMiU8ITIlXEEyJXxjD"
 .p2align 6"#,
-        vg_ed25519_r64_double_ext_adx = sym super::ed25519::vg_ed25519_r64_double_ext_adx::vg_ed25519_r64_double_ext_adx,
-        vg_ed25519_r64_add_affine_ext_adx = sym super::ed25519::vg_ed25519_r64_add_affine_ext_adx::vg_ed25519_r64_add_affine_ext_adx,
-        vg_gf25519_r64_invert = sym super::ed25519::vg_gf25519_r64_invert::vg_gf25519_r64_invert,
-        VG_ED25519_COMB = sym super::consts::VG_ED25519_COMB,
+        vg_ed25519_r64_double_ext_adx = sym crate::ed25519::vg_ed25519_r64_double_ext_adx::vg_ed25519_r64_double_ext_adx,
+        vg_ed25519_r64_add_affine_ext_adx = sym crate::ed25519::vg_ed25519_r64_add_affine_ext_adx::vg_ed25519_r64_add_affine_ext_adx,
+        vg_gf25519_r64_invert = sym crate::ed25519::vg_gf25519_r64_invert::vg_gf25519_r64_invert,
+        VG_ED25519_COMB = sym crate::consts::VG_ED25519_COMB,
     )
 }
 
-/// The CPU features `vg_x25519_base_ifma` requires (`Artifact.features`).
-pub const VG_X25519_BASE_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
-
-/// Computes an X25519 public key (RFC 7748 §6.1): writes `X25519(k, 9)`, the X25519 function of the 32-byte scalar `k` at `scalar` and the base point's u-coordinate 9, to `*out`. The scalar is decoded (clamped).
-///
-/// Contract: `VG.Spec.X25519.x25519BaseContract`. Constant time: only the pointers may affect timing, not the scalar.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 32 bytes.
-/// * `scalar` must be valid for reads of 32 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other or `scalar` (distinct Rust objects never do).
-/// * None of `out`, `scalar` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `bmi2`, `adx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
+/// The verified code of [`super::vg_x25519_base_ifma`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_x25519_base_ifma(out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "sysv64" fn vg_x25519_base_ifma(out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "SIkaSIlqCEyJYhBMiWoYTIlyIEyJeihIiXowSInXuwAAAAA="
 20:
@@ -274,9 +325,10 @@ jne 210b
 call {vg_gf25519_r64_invert}
 .base64 "SIuXIAIAADHtxGK79k9AxGL79ldIZkwPOPbIxGL79l9QZkwPOPbQxGL79mdYZkwPOPbYZkwPOPblSIuXKAIAADHtxOL79k9A80wPOPbIZkwPOPbRxOL79k9I80wPOPbQZkwPOPbZxOL79k9Q80wPOPbYZkwPOPbhxGL79m9Y80wPOPbgZkwPOPbt80wPOPbtSIuXMAIAADHtxOL79k9A80wPOPbQZkwPOPbZxOL79k9I80wPOPbYZkwPOPbhxOL79k9Q80wPOPbgZkwPOPbpxGL79ndY80wPOPboZkwPOPb180wPOPb1SIuXOAIAADHtxOL79k9A80wPOPbYZkwPOPbhxOL79k9I80wPOPbgZkwPOPbpxOL79k9Q80wPOPboZkwPOPbxxGL79n9Y80wPOPbwZkwPOPb980wPOPb9uiYAAAAx7cTC+/bM80wPOPbAZkwPOPbJxML79s3zTA849shmTA849tHEwvv2zvNMDzj20GZMDzj22cRC+/bn80wPOPbYZkwPOPbl80wPOPblSdHjTRHkSdHrSWvEE0kBwEmD0QBJg9IASYPTAEyJR0BMiU9ITIlXUEyJX1hIi5cgAgAAMe3EYrv2T2DEYvv2V2hmTA849sjEYvv2X3BmTA849tDEYvv2Z3hmTA849thmTA849uVIi5coAgAAMe3E4vv2T2DzTA849shmTA849tHE4vv2T2jzTA849tBmTA849tnE4vv2T3DzTA849thmTA849uHEYvv2b3jzTA849uBmTA849u3zTA849u1Ii5cwAgAAMe3E4vv2T2DzTA849tBmTA849tnE4vv2T2jzTA849thmTA849uHE4vv2T3DzTA849uBmTA849unEYvv2d3jzTA849uhmTA849vXzTA849vVIi5c4AgAAMe3E4vv2T2DzTA849thmTA849uHE4vv2T2jzTA849uBmTA849unE4vv2T3DzTA849uhmTA849vHEYvv2f3jzTA849vBmTA849v3zTA849v26JgAAADHtxML79szzTA849sBmTA849snEwvv2zfNMDzj2yGZMDzj20cTC+/bO80wPOPbQZkwPOPbZxEL79ufzTA849thmTA849uXzTA849uVJ0eNNEeRJ0etJa8QTSQHASYPRAEmD0gBJg9MATIlHYEyJT2hMiVdwTIlfeEyLR0BMi09ITItXUEyLX1hMidhIweg/SLr/////////f0kh07kAAAAASCnBSIPhE0kByEmD0QBJg9IASYPTAE2JxEmDxBNNic1Jg9UATYnWSYPWAE2J30mD1wBMifhIweg/SSHXuQAAAABIKcFNMcRJIcxNMeBNMc1JIc1NMelNMdZJIc5NMfJNMd9JIc9NMftIifpIi38wSIsaSItqCEyLYhBMi2oYTItyIEyLeihMiQdMiU8ITIlXEEyJXxjD"
 .p2align 6"#,
-        vg_gf25519_r64_invert = sym super::ed25519::vg_gf25519_r64_invert::vg_gf25519_r64_invert,
-        VG_ED25519_COMB = sym super::consts::VG_ED25519_COMB,
+        vg_gf25519_r64_invert = sym crate::ed25519::vg_gf25519_r64_invert::vg_gf25519_r64_invert,
+        VG_ED25519_COMB = sym crate::consts::VG_ED25519_COMB,
     )
+}
 }
 
 #[rustfmt::skip]

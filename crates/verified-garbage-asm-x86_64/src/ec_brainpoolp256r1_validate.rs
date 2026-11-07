@@ -14,13 +14,25 @@
 /// * The contents of `scratch` on return are unspecified; the caller may reuse or destroy them.
 /// * `scratch` must not overlap `public` (distinct Rust objects never do).
 /// * Neither `public` nor `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_ec_brainpoolp256r1_validate_public_key(_dit: verified_garbage_cpu::Dit<'_>, public: *const [u8; 65], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ec_brainpoolp256r1_validate_public_key(public, scratch) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_ec_brainpoolp256r1_validate_public_key`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ec_brainpoolp256r1_validate_public_key(public: *const [u8; 65], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ec_brainpoolp256r1_validate_public_key(public: *const [u8; 65], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "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"
 call {vg_brainpoolp256r1_check_point}
 .base64 "SIuPwAUAAEiJyEiD4AFIix9Ii28ITItnEEyLbxhMi3cgTIt/KMM="
 .p2align 6"#,
-        vg_brainpoolp256r1_check_point = sym super::ec_brainpoolp256r1_compressed::vg_brainpoolp256r1_check_point::vg_brainpoolp256r1_check_point,
+        vg_brainpoolp256r1_check_point = sym crate::ec_brainpoolp256r1_compressed::vg_brainpoolp256r1_check_point::vg_brainpoolp256r1_check_point,
     )
+}
 }

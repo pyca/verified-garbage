@@ -21,7 +21,12 @@ use crate::ec::p224::Mul;
 use crate::error::{InvalidKey, InvalidSignature};
 
 /// Whether `signature` verifies with `q` for the hash `digest`.
-fn verify_with(q: &[u8; 57], digest: &[u8], signature: &[u8; 56]) -> Result<(), InvalidSignature> {
+fn verify_with(
+    dit: crate::dit::Dit<'_>,
+    q: &[u8; 57],
+    digest: &[u8],
+    signature: &[u8; 56],
+) -> Result<(), InvalidSignature> {
     let mut scratch = [0u64; 1024];
     // SAFETY: `q` is valid for reads of 57 bytes, `digest` of `digest.len()`,
     // `signature` of 56 and `scratch` for reads and writes of 8192; `scratch`
@@ -30,7 +35,14 @@ fn verify_with(q: &[u8; 57], digest: &[u8], signature: &[u8; 56]) -> Result<(), 
     // space. The dispatcher calls only an implementation the CPU has the
     // features of.
     let ok = unsafe {
-        vg_ecdsa_p224_verify_auto(q, digest.as_ptr(), digest.len(), signature, &mut scratch)
+        vg_ecdsa_p224_verify_auto(
+            dit,
+            q,
+            digest.as_ptr(),
+            digest.len(),
+            signature,
+            &mut scratch,
+        )
     };
     if ok == 1 {
         Ok(())
@@ -40,7 +52,11 @@ fn verify_with(q: &[u8; 57], digest: &[u8], signature: &[u8; 56]) -> Result<(), 
 }
 
 impl<H: HmacHash> sealed::Functions<P224> for H {
-    fn sign(d: &[u8; 28], digest: &H::Output) -> Result<[u8; 56], InvalidKey> {
+    fn sign(
+        dit: crate::dit::Dit<'_>,
+        d: &[u8; 28],
+        digest: &H::Output,
+    ) -> Result<[u8; 56], InvalidKey> {
         let f = detected();
         let sign: SignFn<28, 56> = match Mul::select(f) {
             Mul::Baseline => vg_ecdsa_p224_sign,
@@ -49,17 +65,18 @@ impl<H: HmacHash> sealed::Functions<P224> for H {
         };
         // SAFETY: `sign` needs no CPU feature that the multiplications
         // selected for this CPU do not.
-        unsafe { sign_with::<H, 28, 56>(sign, d, digest) }
+        unsafe { sign_with::<H, 28, 56>(dit, sign, d, digest) }
     }
 
     /// The verified function takes the hash itself, of any length, and
     /// uses as many of its leftmost bits as the order has (FIPS 186-5 §6.4.2).
     fn verify(
+        dit: crate::dit::Dit<'_>,
         q: &[u8; 57],
         digest: &H::Output,
         signature: &[u8; 56],
     ) -> Result<(), InvalidSignature> {
-        verify_with(q, digest.as_ref(), signature)
+        verify_with(dit, q, digest.as_ref(), signature)
     }
 }
 

@@ -66,3 +66,35 @@ impl Features {
         self.0 & other.0 == other.0
     }
 }
+
+/// Proof, for the lifetime `'a`, that the current thread has seen to data
+/// independent timing: on AArch64, that PSTATE.DIT is on wherever the CPU
+/// has it (FEAT_DIT), under which Arm guarantees the timing of the
+/// data-independent-time instructions that the proofs' leakage model
+/// assumes; or that what it is passed to handles only public data, whose
+/// timing may depend on it.
+///
+/// Every verified function takes one first, so the compiler checks that
+/// every path into the verified code, through a function pointer too,
+/// starts from code that made one. It is a zero-sized value: passing it
+/// costs nothing, and the verified functions do not read it.
+///
+/// It is neither `Send` nor `Sync`, as PSTATE.DIT is a thread's own.
+#[derive(Clone, Copy, Debug)]
+pub struct Dit<'a>(core::marker::PhantomData<(&'a (), *const ())>);
+
+impl Dit<'_> {
+    /// A token, by the caller's word.
+    ///
+    /// # Safety
+    ///
+    /// For as long as the token lives, the current thread must have data
+    /// independent timing on wherever the CPU has it (on AArch64,
+    /// PSTATE.DIT, FEAT_DIT), or every input of the verified functions it
+    /// is passed to must be public.
+    #[doc(hidden)]
+    #[inline(always)]
+    pub const unsafe fn assume() -> Self {
+        Dit(core::marker::PhantomData)
+    }
+}

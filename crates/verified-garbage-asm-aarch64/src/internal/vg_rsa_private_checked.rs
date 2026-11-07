@@ -37,7 +37,7 @@ cbnz x15, 21b
 .inst 0x910001a0,0x913283ff,0xf84107fe,0xd65f03c0
 .p2align 6",
         vg_rsa_private_crt = sym crate::rsa::vg_rsa_private_crt::vg_rsa_private_crt,
-        vg_rsa_public_precompute = sym crate::rsa::vg_rsa_public_precompute,
+        vg_rsa_public_precompute = sym crate::rsa::raw::vg_rsa_public_precompute,
         vg_rsa_public_precomputed_checked = sym crate::rsa::vg_rsa_public_precomputed_checked::vg_rsa_public_precomputed_checked,
     )
 }

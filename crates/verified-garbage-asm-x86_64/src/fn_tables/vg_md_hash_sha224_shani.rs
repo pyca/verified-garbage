@@ -7,6 +7,6 @@ pub const VG_MD_HASH_SHA224_SHANI_FEATURES: verified_garbage_cpu::Features = ver
 
 /// The table of functions `VG_MD_HASH_SHA224_SHANI` of the interface `MdHash`: `vg_sha224_init`, `vg_sha256_update_scratch_shani`, `vg_sha256_finalize_scratch_shani`, `vg_sha256_compress_shani`, `vg_sha256_state_digest`, then the data 2, 28, 64, 8, 96, 1.
 pub static VG_MD_HASH_SHA224_SHANI: super::MdHash = super::MdHash {
-    fns: [crate::sha256::vg_sha224_init as *const (), crate::sha256::vg_sha256_update_scratch_shani::vg_sha256_update_scratch_shani as *const (), crate::sha256::vg_sha256_finalize_scratch_shani::vg_sha256_finalize_scratch_shani as *const (), crate::sha256::vg_sha256_compress_shani::vg_sha256_compress_shani as *const (), crate::sha256::vg_sha256_state_digest::vg_sha256_state_digest as *const ()],
+    fns: [crate::sha256::raw::vg_sha224_init as *const (), crate::sha256::vg_sha256_update_scratch_shani::vg_sha256_update_scratch_shani as *const (), crate::sha256::vg_sha256_finalize_scratch_shani::vg_sha256_finalize_scratch_shani as *const (), crate::sha256::vg_sha256_compress_shani::vg_sha256_compress_shani as *const (), crate::sha256::vg_sha256_state_digest::vg_sha256_state_digest as *const ()],
     data: [2, 28, 64, 8, 96, 1],
 };

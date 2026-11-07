@@ -15,8 +15,20 @@
 /// * `c` must be positive, and `out_len` at most `(2^32 - 1) * 64`.
 /// * `out` must not overlap `password` or `salt` (distinct Rust objects never do).
 /// * None of `password`, `salt` and `out` may overlap the 5488 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_pbkdf2_hmac_sha512(_dit: verified_garbage_cpu::Dit<'_>, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_pbkdf2_hmac_sha512(password, password_len, salt, salt_len, c, out, out_len) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_pbkdf2_hmac_sha512`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_pbkdf2_hmac_sha512(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
+pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha512(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "kfIh+CAAQTmmAgh80f8h+CAAAfgAAIr6CACq+hAAyvoYAOr6IAAK+ygAKvsAAKo6AACGOgAAxzoAAOg6AAAJOwAAJTsAAKM4AADEOIAHdThACJU4"
 bl {vg_hmac_sha512_init}
@@ -47,11 +59,12 @@ b 21f
 20:
 21:
 .base64 "AACV6hAA1eoYAPXqIAAV6ygANesIALXqIAAB6DAAITimAwh8cA0hOCAAgE4=""#,
-        vg_hmac_sha512_init = sym super::hmac_sha512::vg_hmac_sha512_init,
-        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
-        vg_hmac_sha512_finalize_scratch = sym super::hmac_sha512::vg_hmac_sha512_finalize_scratch::vg_hmac_sha512_finalize_scratch,
-        vg_pbkdf2_hmac_sha512_iterate = sym super::pbkdf2_sha512::vg_pbkdf2_hmac_sha512_iterate::vg_pbkdf2_hmac_sha512_iterate,
+        vg_hmac_sha512_init = sym crate::hmac_sha512::raw::vg_hmac_sha512_init,
+        vg_sha512_update_scratch = sym crate::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
+        vg_hmac_sha512_finalize_scratch = sym crate::hmac_sha512::vg_hmac_sha512_finalize_scratch::vg_hmac_sha512_finalize_scratch,
+        vg_pbkdf2_hmac_sha512_iterate = sym crate::pbkdf2_sha512::vg_pbkdf2_hmac_sha512_iterate::vg_pbkdf2_hmac_sha512_iterate,
     )
+}
 }
 
 #[rustfmt::skip]

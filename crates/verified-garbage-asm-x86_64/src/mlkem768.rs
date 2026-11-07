@@ -11,16 +11,11 @@
 ///
 /// * `ek` must be valid for reads of 1184 bytes.
 /// * `ek` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mlkem768_check_ek(ek: *const [u8; 1184]) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "QbgAAAAAuYABAAA="
-20:
-.base64 "D7YHD7ZXAcHKGAHQD7ZXAsHKEAHQicIl/w8AAMHqDD0BDQAASYPQAIH6AQ0AAEmD0ABIg8cDSIPpAQ=="
-jne 20b
-.base64 "SYH4AAMAAEgZwEiDwAHD"
-.p2align 6"#,
-    )
+#[inline(always)]
+pub unsafe fn vg_mlkem768_check_ek(_dit: verified_garbage_cpu::Dit<'_>, ek: *const [u8; 1184]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_mlkem768_check_ek(ek) }
 }
 
 /// The CPU features `vg_mlkem768_check_ek_avx2` requires (`Artifact.features`).
@@ -35,20 +30,11 @@ pub const VG_MLKEM768_CHECK_EK_AVX2_FEATURES: verified_garbage_cpu::Features = v
 /// * `ek` must be valid for reads of 1184 bytes.
 /// * `ek` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mlkem768_check_ek_avx2(ek: *const [u8; 1184]) -> u32 {
-    core::arch::naked_asm!(
-        r#"lea rax, [rip + {VG_MLKEM_YCONSTS}]
-.base64 "xX5vgKAEAAA="
-lea rax, [rip + {VG_MLKEM_YCONSTS}]
-.base64 "xX5voMAEAABIuAAAAAAEAAAAxGH5bsjEQn1Zybj/DwAAxGH5btDEQn1Y0rgBDQAAxGH5btjEQn1Y27j/////xOH5btDE4n1Y0rlgAAAA"
-20:
-.base64 "xOJ9WgfEwn0AwMTCfUXBxa3bwMTBffrDxe3b0EiDxwxIg+kB"
-jne 20b
-.base64 "xe1y4h/F/dfCSIPAAUjB6CDF+HfD"
-.p2align 6"#,
-        VG_MLKEM_YCONSTS = sym super::consts::VG_MLKEM_YCONSTS,
-    )
+#[inline(always)]
+pub unsafe fn vg_mlkem768_check_ek_avx2(_dit: verified_garbage_cpu::Dit<'_>, ek: *const [u8; 1184]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_mlkem768_check_ek_avx2(ek) }
 }
 
 /// The CPU features `vg_mlkem768_keygen_avx2` requires (`Artifact.features`).
@@ -69,8 +55,326 @@ pub const VG_MLKEM768_KEYGEN_AVX2_FEATURES: verified_garbage_cpu::Features = ver
 /// * `ek`, `dk` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
 /// * None of `seed`, `ek`, `dk` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
+#[inline(always)]
+pub unsafe fn vg_mlkem768_keygen_avx2(_dit: verified_garbage_cpu::Dit<'_>, seed: *const [u8; 64], ek: *mut [u8; 1184], dk: *mut [u8; 2400], scratch: *mut [u64; 4096]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_mlkem768_keygen_avx2(seed, ek, dk, scratch) }
+}
+
+/// The CPU features `vg_mlkem768_encaps_h_avx2` requires (`Artifact.features`).
+pub const VG_MLKEM768_ENCAPS_H_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// ML-KEM-768 encapsulation with given randomness and the hash of the key, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek`, its hash `H(ek)` in `*h` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`, as `vg_mlkem768_encaps` does, using `*h` instead of hashing `*ek`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
+///
+/// Contract: `VG.Spec.MlKem.encapsHContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on its hash, on the randomness or on the outputs.
+///
+/// # Safety
+///
+/// * `ek` must be valid for reads of 1184 bytes.
+/// * `h` must be valid for reads of 32 bytes.
+/// * `m` must be valid for reads of 32 bytes.
+/// * `key` must be valid for reads and writes of 32 bytes.
+/// * `ct` must be valid for reads and writes of 1088 bytes.
+/// * `scratch` must be valid for reads and writes of 32768 bytes.
+/// * `ek` must have passed `vg_mlkem768_check_ek` (FIPS 203 §7.2).
+/// * `h` must hold `H(ek)`, the SHA3-256 hash of the bytes of `*ek` (FIPS 203 §4.1).
+/// * `m` must be fresh random bytes from an approved RBG (FIPS 203 §3.3).
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
+/// * `key`, `ct` and `scratch` must not overlap each other, `ek`, `h` or `m` (distinct Rust objects never do).
+/// * None of `ek`, `h`, `m`, `key`, `ct` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx` and `avx2` target features.
+#[inline(always)]
+pub unsafe fn vg_mlkem768_encaps_h_avx2(_dit: verified_garbage_cpu::Dit<'_>, ek: *const [u8; 1184], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_mlkem768_encaps_h_avx2(ek, h, m, key, ct, scratch) }
+}
+
+/// The CPU features `vg_mlkem768_encaps_avx2` requires (`Artifact.features`).
+pub const VG_MLKEM768_ENCAPS_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// ML-KEM-768 encapsulation with given randomness, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
+///
+/// Contract: `VG.Spec.MlKem.encapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on the randomness or on the outputs.
+///
+/// # Safety
+///
+/// * `ek` must be valid for reads of 1184 bytes.
+/// * `m` must be valid for reads of 32 bytes.
+/// * `key` must be valid for reads and writes of 32 bytes.
+/// * `ct` must be valid for reads and writes of 1088 bytes.
+/// * `scratch` must be valid for reads and writes of 32768 bytes.
+/// * `ek` must have passed `vg_mlkem768_check_ek` (FIPS 203 §7.2).
+/// * `m` must be fresh random bytes from an approved RBG (FIPS 203 §3.3).
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
+/// * `key`, `ct` and `scratch` must not overlap each other, `ek` or `m` (distinct Rust objects never do).
+/// * None of `ek`, `m`, `key`, `ct` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx` and `avx2` target features.
+#[inline(always)]
+pub unsafe fn vg_mlkem768_encaps_avx2(_dit: verified_garbage_cpu::Dit<'_>, ek: *const [u8; 1184], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_mlkem768_encaps_avx2(ek, m, key, ct, scratch) }
+}
+
+/// The CPU features `vg_mlkem768_decaps_avx2` requires (`Artifact.features`).
+pub const VG_MLKEM768_DECAPS_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// ML-KEM-768 decapsulation, `ML-KEM.Decaps_internal(dk, c)` (FIPS 203 Algorithm 18): with the decapsulation key `*dk` and the ciphertext `*ct`, writes the shared secret key to `*key`, which is the implicit rejection key `J(z ‖ c)` if the ciphertext does not re-encrypt to itself. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
+///
+/// Contract: `VG.Spec.MlKem.decapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (bytes 2304–2335 of `*dk`), but not on anything else of the key, on the ciphertext, or on whether it was rejected.
+///
+/// # Safety
+///
+/// * `dk` must be valid for reads of 2400 bytes.
+/// * `ct` must be valid for reads of 1088 bytes.
+/// * `key` must be valid for reads and writes of 32 bytes.
+/// * `scratch` must be valid for reads and writes of 32768 bytes.
+/// * `dk` must have been written by `vg_mlkem768_keygen` (so that it passes the checks of FIPS 203 §7.3).
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
+/// * `key` and `scratch` must not overlap each other, `dk` or `ct` (distinct Rust objects never do).
+/// * None of `dk`, `ct`, `key` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx` and `avx2` target features.
+#[inline(always)]
+pub unsafe fn vg_mlkem768_decaps_avx2(_dit: verified_garbage_cpu::Dit<'_>, dk: *const [u8; 2400], ct: *const [u8; 1088], key: *mut [u8; 32], scratch: *mut [u64; 4096]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_mlkem768_decaps_avx2(dk, ct, key, scratch) }
+}
+
+/// The CPU features `vg_mlkem768_keygen_avx512` requires (`Artifact.features`).
+pub const VG_MLKEM768_KEYGEN_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::AVX512BW);
+
+/// ML-KEM-768 key generation from a seed, `ML-KEM.KeyGen_internal(d, z)` (FIPS 203 Algorithm 16): with `d` in bytes 0–31 of `*seed` and `z` in bytes 32–63, writes the encapsulation key to `*ek` and the decapsulation key to `*dk`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
+///
+/// Contract: `VG.Spec.MlKem.keyGenContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of the encapsulation key), but not on anything else of the seed or the keys.
+///
+/// # Safety
+///
+/// * `seed` must be valid for reads of 64 bytes.
+/// * `ek` must be valid for reads and writes of 1184 bytes.
+/// * `dk` must be valid for reads and writes of 2400 bytes.
+/// * `scratch` must be valid for reads and writes of 32768 bytes.
+/// * `seed` must be random bytes from an approved RBG (FIPS 203 §3.3), or a seed so generated before.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
+/// * `ek`, `dk` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
+/// * None of `seed`, `ek`, `dk` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `avx512f`, `avx512vl` and `avx512bw` target features.
+#[inline(always)]
+pub unsafe fn vg_mlkem768_keygen_avx512(_dit: verified_garbage_cpu::Dit<'_>, seed: *const [u8; 64], ek: *mut [u8; 1184], dk: *mut [u8; 2400], scratch: *mut [u64; 4096]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_mlkem768_keygen_avx512(seed, ek, dk, scratch) }
+}
+
+/// The CPU features `vg_mlkem768_encaps_h_avx512` requires (`Artifact.features`).
+pub const VG_MLKEM768_ENCAPS_H_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::AVX512BW);
+
+/// ML-KEM-768 encapsulation with given randomness and the hash of the key, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek`, its hash `H(ek)` in `*h` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`, as `vg_mlkem768_encaps` does, using `*h` instead of hashing `*ek`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
+///
+/// Contract: `VG.Spec.MlKem.encapsHContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on its hash, on the randomness or on the outputs.
+///
+/// # Safety
+///
+/// * `ek` must be valid for reads of 1184 bytes.
+/// * `h` must be valid for reads of 32 bytes.
+/// * `m` must be valid for reads of 32 bytes.
+/// * `key` must be valid for reads and writes of 32 bytes.
+/// * `ct` must be valid for reads and writes of 1088 bytes.
+/// * `scratch` must be valid for reads and writes of 32768 bytes.
+/// * `ek` must have passed `vg_mlkem768_check_ek` (FIPS 203 §7.2).
+/// * `h` must hold `H(ek)`, the SHA3-256 hash of the bytes of `*ek` (FIPS 203 §4.1).
+/// * `m` must be fresh random bytes from an approved RBG (FIPS 203 §3.3).
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
+/// * `key`, `ct` and `scratch` must not overlap each other, `ek`, `h` or `m` (distinct Rust objects never do).
+/// * None of `ek`, `h`, `m`, `key`, `ct` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `avx512f`, `avx512vl` and `avx512bw` target features.
+#[inline(always)]
+pub unsafe fn vg_mlkem768_encaps_h_avx512(_dit: verified_garbage_cpu::Dit<'_>, ek: *const [u8; 1184], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_mlkem768_encaps_h_avx512(ek, h, m, key, ct, scratch) }
+}
+
+/// The CPU features `vg_mlkem768_encaps_avx512` requires (`Artifact.features`).
+pub const VG_MLKEM768_ENCAPS_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::AVX512BW);
+
+/// ML-KEM-768 encapsulation with given randomness, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
+///
+/// Contract: `VG.Spec.MlKem.encapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on the randomness or on the outputs.
+///
+/// # Safety
+///
+/// * `ek` must be valid for reads of 1184 bytes.
+/// * `m` must be valid for reads of 32 bytes.
+/// * `key` must be valid for reads and writes of 32 bytes.
+/// * `ct` must be valid for reads and writes of 1088 bytes.
+/// * `scratch` must be valid for reads and writes of 32768 bytes.
+/// * `ek` must have passed `vg_mlkem768_check_ek` (FIPS 203 §7.2).
+/// * `m` must be fresh random bytes from an approved RBG (FIPS 203 §3.3).
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
+/// * `key`, `ct` and `scratch` must not overlap each other, `ek` or `m` (distinct Rust objects never do).
+/// * None of `ek`, `m`, `key`, `ct` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `avx512f`, `avx512vl` and `avx512bw` target features.
+#[inline(always)]
+pub unsafe fn vg_mlkem768_encaps_avx512(_dit: verified_garbage_cpu::Dit<'_>, ek: *const [u8; 1184], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_mlkem768_encaps_avx512(ek, m, key, ct, scratch) }
+}
+
+/// The CPU features `vg_mlkem768_decaps_avx512` requires (`Artifact.features`).
+pub const VG_MLKEM768_DECAPS_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::AVX512BW);
+
+/// ML-KEM-768 decapsulation, `ML-KEM.Decaps_internal(dk, c)` (FIPS 203 Algorithm 18): with the decapsulation key `*dk` and the ciphertext `*ct`, writes the shared secret key to `*key`, which is the implicit rejection key `J(z ‖ c)` if the ciphertext does not re-encrypt to itself. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
+///
+/// Contract: `VG.Spec.MlKem.decapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (bytes 2304–2335 of `*dk`), but not on anything else of the key, on the ciphertext, or on whether it was rejected.
+///
+/// # Safety
+///
+/// * `dk` must be valid for reads of 2400 bytes.
+/// * `ct` must be valid for reads of 1088 bytes.
+/// * `key` must be valid for reads and writes of 32 bytes.
+/// * `scratch` must be valid for reads and writes of 32768 bytes.
+/// * `dk` must have been written by `vg_mlkem768_keygen` (so that it passes the checks of FIPS 203 §7.3).
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
+/// * `key` and `scratch` must not overlap each other, `dk` or `ct` (distinct Rust objects never do).
+/// * None of `dk`, `ct`, `key` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `avx512f`, `avx512vl` and `avx512bw` target features.
+#[inline(always)]
+pub unsafe fn vg_mlkem768_decaps_avx512(_dit: verified_garbage_cpu::Dit<'_>, dk: *const [u8; 2400], ct: *const [u8; 1088], key: *mut [u8; 32], scratch: *mut [u64; 4096]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_mlkem768_decaps_avx512(dk, ct, key, scratch) }
+}
+
+/// ML-KEM-768 key generation from a seed, `ML-KEM.KeyGen_internal(d, z)` (FIPS 203 Algorithm 16): with `d` in bytes 0–31 of `*seed` and `z` in bytes 32–63, writes the encapsulation key to `*ek` and the decapsulation key to `*dk`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
+///
+/// Contract: `VG.Spec.MlKem.keyGenContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of the encapsulation key), but not on anything else of the seed or the keys.
+///
+/// # Safety
+///
+/// * `seed` must be valid for reads of 64 bytes.
+/// * `ek` must be valid for reads and writes of 1184 bytes.
+/// * `dk` must be valid for reads and writes of 2400 bytes.
+/// * `scratch` must be valid for reads and writes of 32768 bytes.
+/// * `seed` must be random bytes from an approved RBG (FIPS 203 §3.3), or a seed so generated before.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
+/// * `ek`, `dk` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
+/// * None of `seed`, `ek`, `dk` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_mlkem768_keygen(_dit: verified_garbage_cpu::Dit<'_>, seed: *const [u8; 64], ek: *mut [u8; 1184], dk: *mut [u8; 2400], scratch: *mut [u64; 4096]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_mlkem768_keygen(seed, ek, dk, scratch) }
+}
+
+/// ML-KEM-768 encapsulation with given randomness and the hash of the key, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek`, its hash `H(ek)` in `*h` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`, as `vg_mlkem768_encaps` does, using `*h` instead of hashing `*ek`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
+///
+/// Contract: `VG.Spec.MlKem.encapsHContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on its hash, on the randomness or on the outputs.
+///
+/// # Safety
+///
+/// * `ek` must be valid for reads of 1184 bytes.
+/// * `h` must be valid for reads of 32 bytes.
+/// * `m` must be valid for reads of 32 bytes.
+/// * `key` must be valid for reads and writes of 32 bytes.
+/// * `ct` must be valid for reads and writes of 1088 bytes.
+/// * `scratch` must be valid for reads and writes of 32768 bytes.
+/// * `ek` must have passed `vg_mlkem768_check_ek` (FIPS 203 §7.2).
+/// * `h` must hold `H(ek)`, the SHA3-256 hash of the bytes of `*ek` (FIPS 203 §4.1).
+/// * `m` must be fresh random bytes from an approved RBG (FIPS 203 §3.3).
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
+/// * `key`, `ct` and `scratch` must not overlap each other, `ek`, `h` or `m` (distinct Rust objects never do).
+/// * None of `ek`, `h`, `m`, `key`, `ct` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_mlkem768_encaps_h(_dit: verified_garbage_cpu::Dit<'_>, ek: *const [u8; 1184], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_mlkem768_encaps_h(ek, h, m, key, ct, scratch) }
+}
+
+/// ML-KEM-768 encapsulation with given randomness, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
+///
+/// Contract: `VG.Spec.MlKem.encapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on the randomness or on the outputs.
+///
+/// # Safety
+///
+/// * `ek` must be valid for reads of 1184 bytes.
+/// * `m` must be valid for reads of 32 bytes.
+/// * `key` must be valid for reads and writes of 32 bytes.
+/// * `ct` must be valid for reads and writes of 1088 bytes.
+/// * `scratch` must be valid for reads and writes of 32768 bytes.
+/// * `ek` must have passed `vg_mlkem768_check_ek` (FIPS 203 §7.2).
+/// * `m` must be fresh random bytes from an approved RBG (FIPS 203 §3.3).
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
+/// * `key`, `ct` and `scratch` must not overlap each other, `ek` or `m` (distinct Rust objects never do).
+/// * None of `ek`, `m`, `key`, `ct` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_mlkem768_encaps(_dit: verified_garbage_cpu::Dit<'_>, ek: *const [u8; 1184], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_mlkem768_encaps(ek, m, key, ct, scratch) }
+}
+
+/// ML-KEM-768 decapsulation, `ML-KEM.Decaps_internal(dk, c)` (FIPS 203 Algorithm 18): with the decapsulation key `*dk` and the ciphertext `*ct`, writes the shared secret key to `*key`, which is the implicit rejection key `J(z ‖ c)` if the ciphertext does not re-encrypt to itself. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
+///
+/// Contract: `VG.Spec.MlKem.decapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (bytes 2304–2335 of `*dk`), but not on anything else of the key, on the ciphertext, or on whether it was rejected.
+///
+/// # Safety
+///
+/// * `dk` must be valid for reads of 2400 bytes.
+/// * `ct` must be valid for reads of 1088 bytes.
+/// * `key` must be valid for reads and writes of 32 bytes.
+/// * `scratch` must be valid for reads and writes of 32768 bytes.
+/// * `dk` must have been written by `vg_mlkem768_keygen` (so that it passes the checks of FIPS 203 §7.3).
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
+/// * `key` and `scratch` must not overlap each other, `dk` or `ct` (distinct Rust objects never do).
+/// * None of `dk`, `ct`, `key` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_mlkem768_decaps(_dit: verified_garbage_cpu::Dit<'_>, dk: *const [u8; 2400], ct: *const [u8; 1088], key: *mut [u8; 32], scratch: *mut [u64; 4096]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_mlkem768_decaps(dk, ct, key, scratch) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_mlkem768_check_ek`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mlkem768_keygen_avx2(seed: *const [u8; 64], ek: *mut [u8; 1184], dk: *mut [u8; 2400], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mlkem768_check_ek(ek: *const [u8; 1184]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "QbgAAAAAuYABAAA="
+20:
+.base64 "D7YHD7ZXAcHKGAHQD7ZXAsHKEAHQicIl/w8AAMHqDD0BDQAASYPQAIH6AQ0AAEmD0ABIg8cDSIPpAQ=="
+jne 20b
+.base64 "SYH4AAMAAEgZwEiDwAHD"
+.p2align 6"#,
+    )
+}
+
+/// The verified code of [`super::vg_mlkem768_check_ek_avx2`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_mlkem768_check_ek_avx2(ek: *const [u8; 1184]) -> u32 {
+    core::arch::naked_asm!(
+        r#"lea rax, [rip + {VG_MLKEM_YCONSTS}]
+.base64 "xX5vgKAEAAA="
+lea rax, [rip + {VG_MLKEM_YCONSTS}]
+.base64 "xX5voMAEAABIuAAAAAAEAAAAxGH5bsjEQn1Zybj/DwAAxGH5btDEQn1Y0rgBDQAAxGH5btjEQn1Y27j/////xOH5btDE4n1Y0rlgAAAA"
+20:
+.base64 "xOJ9WgfEwn0AwMTCfUXBxa3bwMTBffrDxe3b0EiDxwxIg+kB"
+jne 20b
+.base64 "xe1y4h/F/dfCSIPAAUjB6CDF+HfD"
+.p2align 6"#,
+        VG_MLKEM_YCONSTS = sym crate::consts::VG_MLKEM_YCONSTS,
+    )
+}
+
+/// The verified code of [`super::vg_mlkem768_keygen_avx2`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_mlkem768_keygen_avx2(seed: *const [u8; 64], ek: *mut [u8; 1184], dk: *mut [u8; 2400], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SImZSAMAAEiJqVADAABMiaFYAwAATImpYAMAAEyJsWgDAABMiblwAwAASInLSIn9SYn0SYnVQb8BAAAAuAMAAACIg4ADAAC4AAAAAEiJA0iJQwhIiUMQSIlDGEiJQyBIiUMoSIlDMEiJQzhIiUNASIlDSEiJQ1BIiUNYSIlDYEiJQ2hIiUNwSIlDeEiJg4AAAABIiYOIAAAASImDkAAAAEiJg5gAAABIiYOgAAAASImDqAAAAEiJg7AAAABIiYO4AAAASImDwAAAAEiJ30iDxwC+SAAAALoAAAAASInpSIPBAEG4IAAAAEmJ2UmBwcgAAAA="
 call {vg_keccak_absorb_scratch}
@@ -858,40 +1162,19 @@ jne 2229b
 2225:
 .base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAww=="
 .p2align 6"#,
-        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mlkem16_cbd2_avx2 = sym super::mlkem1024::vg_mlkem16_cbd2_avx2::vg_mlkem16_cbd2_avx2,
-        vg_mlkem768_kpke_keygen_ntt = sym super::mlkem768::vg_mlkem768_kpke_keygen_ntt::vg_mlkem768_kpke_keygen_ntt,
-        vg_mlkem768_kpke_keygen_row = sym super::mlkem768::vg_mlkem768_kpke_keygen_row::vg_mlkem768_kpke_keygen_row,
-        VG_MLKEM_SAMPLE_TBL = sym super::consts::VG_MLKEM_SAMPLE_TBL,
+        vg_keccak_absorb_scratch = sym crate::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
+        vg_keccak_pad_scratch = sym crate::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym crate::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+        vg_mlkem16_cbd2_avx2 = sym crate::mlkem1024::vg_mlkem16_cbd2_avx2::vg_mlkem16_cbd2_avx2,
+        vg_mlkem768_kpke_keygen_ntt = sym crate::mlkem768::vg_mlkem768_kpke_keygen_ntt::vg_mlkem768_kpke_keygen_ntt,
+        vg_mlkem768_kpke_keygen_row = sym crate::mlkem768::vg_mlkem768_kpke_keygen_row::vg_mlkem768_kpke_keygen_row,
+        VG_MLKEM_SAMPLE_TBL = sym crate::consts::VG_MLKEM_SAMPLE_TBL,
     )
 }
 
-/// The CPU features `vg_mlkem768_encaps_h_avx2` requires (`Artifact.features`).
-pub const VG_MLKEM768_ENCAPS_H_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// ML-KEM-768 encapsulation with given randomness and the hash of the key, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek`, its hash `H(ek)` in `*h` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`, as `vg_mlkem768_encaps` does, using `*h` instead of hashing `*ek`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
-///
-/// Contract: `VG.Spec.MlKem.encapsHContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on its hash, on the randomness or on the outputs.
-///
-/// # Safety
-///
-/// * `ek` must be valid for reads of 1184 bytes.
-/// * `h` must be valid for reads of 32 bytes.
-/// * `m` must be valid for reads of 32 bytes.
-/// * `key` must be valid for reads and writes of 32 bytes.
-/// * `ct` must be valid for reads and writes of 1088 bytes.
-/// * `scratch` must be valid for reads and writes of 32768 bytes.
-/// * `ek` must have passed `vg_mlkem768_check_ek` (FIPS 203 §7.2).
-/// * `h` must hold `H(ek)`, the SHA3-256 hash of the bytes of `*ek` (FIPS 203 §4.1).
-/// * `m` must be fresh random bytes from an approved RBG (FIPS 203 §3.3).
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
-/// * `key`, `ct` and `scratch` must not overlap each other, `ek`, `h` or `m` (distinct Rust objects never do).
-/// * None of `ek`, `h`, `m`, `key`, `ct` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx` and `avx2` target features.
+/// The verified code of [`super::vg_mlkem768_encaps_h_avx2`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mlkem768_encaps_h_avx2(ek: *const [u8; 1184], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mlkem768_encaps_h_avx2(ek: *const [u8; 1184], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SYmZSAMAAEmJqVADAABNiaFYAwAATYmpYAMAAE2JsWgDAABNiblwAwAATInLSInVSYnMTYnFSYn+Qb8BAAAASInfSIHHQAQAAEiJ9kiDxgC5BAAAAA=="
 20:
@@ -1638,37 +1921,18 @@ call {vg_mlkem768_kpke_encrypt}
 jne 2220b
 .base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAww=="
 .p2align 6"#,
-        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mlkem16_cbd2_avx2 = sym super::mlkem1024::vg_mlkem16_cbd2_avx2::vg_mlkem16_cbd2_avx2,
-        vg_mlkem768_kpke_encrypt = sym super::mlkem768::vg_mlkem768_kpke_encrypt::vg_mlkem768_kpke_encrypt,
-        VG_MLKEM_SAMPLE_TBL = sym super::consts::VG_MLKEM_SAMPLE_TBL,
+        vg_keccak_absorb_scratch = sym crate::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
+        vg_keccak_pad_scratch = sym crate::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym crate::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+        vg_mlkem16_cbd2_avx2 = sym crate::mlkem1024::vg_mlkem16_cbd2_avx2::vg_mlkem16_cbd2_avx2,
+        vg_mlkem768_kpke_encrypt = sym crate::mlkem768::vg_mlkem768_kpke_encrypt::vg_mlkem768_kpke_encrypt,
+        VG_MLKEM_SAMPLE_TBL = sym crate::consts::VG_MLKEM_SAMPLE_TBL,
     )
 }
 
-/// The CPU features `vg_mlkem768_encaps_avx2` requires (`Artifact.features`).
-pub const VG_MLKEM768_ENCAPS_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// ML-KEM-768 encapsulation with given randomness, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
-///
-/// Contract: `VG.Spec.MlKem.encapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on the randomness or on the outputs.
-///
-/// # Safety
-///
-/// * `ek` must be valid for reads of 1184 bytes.
-/// * `m` must be valid for reads of 32 bytes.
-/// * `key` must be valid for reads and writes of 32 bytes.
-/// * `ct` must be valid for reads and writes of 1088 bytes.
-/// * `scratch` must be valid for reads and writes of 32768 bytes.
-/// * `ek` must have passed `vg_mlkem768_check_ek` (FIPS 203 §7.2).
-/// * `m` must be fresh random bytes from an approved RBG (FIPS 203 §3.3).
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
-/// * `key`, `ct` and `scratch` must not overlap each other, `ek` or `m` (distinct Rust objects never do).
-/// * None of `ek`, `m`, `key`, `ct` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx` and `avx2` target features.
+/// The verified code of [`super::vg_mlkem768_encaps_avx2`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mlkem768_encaps_avx2(ek: *const [u8; 1184], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mlkem768_encaps_avx2(ek: *const [u8; 1184], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SYmYSAMAAEmJqFADAABNiaBYAwAATYmoYAMAAE2JsGgDAABNibhwAwAATInDSIn1SYnUSYnNSYn+Qb8BAAAASInfSIHHiAMAAEyJ9kiBxoAEAAC5BAAAAA=="
 20:
@@ -2422,35 +2686,18 @@ call {vg_mlkem768_kpke_encrypt}
 jne 2221b
 .base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAww=="
 .p2align 6"#,
-        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mlkem16_cbd2_avx2 = sym super::mlkem1024::vg_mlkem16_cbd2_avx2::vg_mlkem16_cbd2_avx2,
-        vg_mlkem768_kpke_encrypt = sym super::mlkem768::vg_mlkem768_kpke_encrypt::vg_mlkem768_kpke_encrypt,
-        VG_MLKEM_SAMPLE_TBL = sym super::consts::VG_MLKEM_SAMPLE_TBL,
+        vg_keccak_absorb_scratch = sym crate::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
+        vg_keccak_pad_scratch = sym crate::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym crate::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+        vg_mlkem16_cbd2_avx2 = sym crate::mlkem1024::vg_mlkem16_cbd2_avx2::vg_mlkem16_cbd2_avx2,
+        vg_mlkem768_kpke_encrypt = sym crate::mlkem768::vg_mlkem768_kpke_encrypt::vg_mlkem768_kpke_encrypt,
+        VG_MLKEM_SAMPLE_TBL = sym crate::consts::VG_MLKEM_SAMPLE_TBL,
     )
 }
 
-/// The CPU features `vg_mlkem768_decaps_avx2` requires (`Artifact.features`).
-pub const VG_MLKEM768_DECAPS_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// ML-KEM-768 decapsulation, `ML-KEM.Decaps_internal(dk, c)` (FIPS 203 Algorithm 18): with the decapsulation key `*dk` and the ciphertext `*ct`, writes the shared secret key to `*key`, which is the implicit rejection key `J(z ‖ c)` if the ciphertext does not re-encrypt to itself. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
-///
-/// Contract: `VG.Spec.MlKem.decapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (bytes 2304–2335 of `*dk`), but not on anything else of the key, on the ciphertext, or on whether it was rejected.
-///
-/// # Safety
-///
-/// * `dk` must be valid for reads of 2400 bytes.
-/// * `ct` must be valid for reads of 1088 bytes.
-/// * `key` must be valid for reads and writes of 32 bytes.
-/// * `scratch` must be valid for reads and writes of 32768 bytes.
-/// * `dk` must have been written by `vg_mlkem768_keygen` (so that it passes the checks of FIPS 203 §7.3).
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
-/// * `key` and `scratch` must not overlap each other, `dk` or `ct` (distinct Rust objects never do).
-/// * None of `dk`, `ct`, `key` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx` and `avx2` target features.
+/// The verified code of [`super::vg_mlkem768_decaps_avx2`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mlkem768_decaps_avx2(dk: *const [u8; 2400], ct: *const [u8; 1088], key: *mut [u8; 32], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mlkem768_decaps_avx2(dk: *const [u8; 2400], ct: *const [u8; 1088], key: *mut [u8; 32], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SImZSAMAAEiJqVADAABMiaFYAwAATImpYAMAAEyJsWgDAABMiblwAwAASInLSIn9SYn2SYnUQb8BAAAASInfSIHH4AQAAEiJ7kiDxgBMifJIg8IASInZSIHBADAAAA=="
 call {vg_mlkem768_kpke_decrypt}
@@ -3210,36 +3457,19 @@ jne 2221b
 jne 2222b
 .base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAww=="
 .p2align 6"#,
-        vg_mlkem768_kpke_decrypt = sym super::mlkem768::vg_mlkem768_kpke_decrypt::vg_mlkem768_kpke_decrypt,
-        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mlkem16_cbd2_avx2 = sym super::mlkem1024::vg_mlkem16_cbd2_avx2::vg_mlkem16_cbd2_avx2,
-        vg_mlkem768_kpke_encrypt = sym super::mlkem768::vg_mlkem768_kpke_encrypt::vg_mlkem768_kpke_encrypt,
-        VG_MLKEM_SAMPLE_TBL = sym super::consts::VG_MLKEM_SAMPLE_TBL,
+        vg_mlkem768_kpke_decrypt = sym crate::mlkem768::vg_mlkem768_kpke_decrypt::vg_mlkem768_kpke_decrypt,
+        vg_keccak_absorb_scratch = sym crate::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
+        vg_keccak_pad_scratch = sym crate::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym crate::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+        vg_mlkem16_cbd2_avx2 = sym crate::mlkem1024::vg_mlkem16_cbd2_avx2::vg_mlkem16_cbd2_avx2,
+        vg_mlkem768_kpke_encrypt = sym crate::mlkem768::vg_mlkem768_kpke_encrypt::vg_mlkem768_kpke_encrypt,
+        VG_MLKEM_SAMPLE_TBL = sym crate::consts::VG_MLKEM_SAMPLE_TBL,
     )
 }
 
-/// The CPU features `vg_mlkem768_keygen_avx512` requires (`Artifact.features`).
-pub const VG_MLKEM768_KEYGEN_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::AVX512BW);
-
-/// ML-KEM-768 key generation from a seed, `ML-KEM.KeyGen_internal(d, z)` (FIPS 203 Algorithm 16): with `d` in bytes 0–31 of `*seed` and `z` in bytes 32–63, writes the encapsulation key to `*ek` and the decapsulation key to `*dk`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
-///
-/// Contract: `VG.Spec.MlKem.keyGenContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of the encapsulation key), but not on anything else of the seed or the keys.
-///
-/// # Safety
-///
-/// * `seed` must be valid for reads of 64 bytes.
-/// * `ek` must be valid for reads and writes of 1184 bytes.
-/// * `dk` must be valid for reads and writes of 2400 bytes.
-/// * `scratch` must be valid for reads and writes of 32768 bytes.
-/// * `seed` must be random bytes from an approved RBG (FIPS 203 §3.3), or a seed so generated before.
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
-/// * `ek`, `dk` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
-/// * None of `seed`, `ek`, `dk` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `avx512f`, `avx512vl` and `avx512bw` target features.
+/// The verified code of [`super::vg_mlkem768_keygen_avx512`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mlkem768_keygen_avx512(seed: *const [u8; 64], ek: *mut [u8; 1184], dk: *mut [u8; 2400], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mlkem768_keygen_avx512(seed: *const [u8; 64], ek: *mut [u8; 1184], dk: *mut [u8; 2400], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SImZSAMAAEiJqVADAABMiaFYAwAATImpYAMAAEyJsWgDAABMiblwAwAASInLSIn9SYn0SYnVQb8BAAAAuAMAAACIg4ADAAC4AAAAAEiJA0iJQwhIiUMQSIlDGEiJQyBIiUMoSIlDMEiJQzhIiUNASIlDSEiJQ1BIiUNYSIlDYEiJQ2hIiUNwSIlDeEiJg4AAAABIiYOIAAAASImDkAAAAEiJg5gAAABIiYOgAAAASImDqAAAAEiJg7AAAABIiYO4AAAASImDwAAAAEiJ30iDxwC+SAAAALoAAAAASInpSIPBAEG4IAAAAEmJ2UmBwcgAAAA="
 call {vg_keccak_absorb_scratch}
@@ -4864,40 +5094,19 @@ jne 2508b
 2504:
 .base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAww=="
 .p2align 6"#,
-        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mlkem16_cbd2_avx2 = sym super::mlkem1024::vg_mlkem16_cbd2_avx2::vg_mlkem16_cbd2_avx2,
-        vg_mlkem768_kpke_keygen_ntt = sym super::mlkem768::vg_mlkem768_kpke_keygen_ntt::vg_mlkem768_kpke_keygen_ntt,
-        vg_mlkem768_kpke_keygen_row = sym super::mlkem768::vg_mlkem768_kpke_keygen_row::vg_mlkem768_kpke_keygen_row,
-        VG_MLKEM_SAMPLE_TBL = sym super::consts::VG_MLKEM_SAMPLE_TBL,
+        vg_keccak_absorb_scratch = sym crate::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
+        vg_keccak_pad_scratch = sym crate::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym crate::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+        vg_mlkem16_cbd2_avx2 = sym crate::mlkem1024::vg_mlkem16_cbd2_avx2::vg_mlkem16_cbd2_avx2,
+        vg_mlkem768_kpke_keygen_ntt = sym crate::mlkem768::vg_mlkem768_kpke_keygen_ntt::vg_mlkem768_kpke_keygen_ntt,
+        vg_mlkem768_kpke_keygen_row = sym crate::mlkem768::vg_mlkem768_kpke_keygen_row::vg_mlkem768_kpke_keygen_row,
+        VG_MLKEM_SAMPLE_TBL = sym crate::consts::VG_MLKEM_SAMPLE_TBL,
     )
 }
 
-/// The CPU features `vg_mlkem768_encaps_h_avx512` requires (`Artifact.features`).
-pub const VG_MLKEM768_ENCAPS_H_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::AVX512BW);
-
-/// ML-KEM-768 encapsulation with given randomness and the hash of the key, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek`, its hash `H(ek)` in `*h` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`, as `vg_mlkem768_encaps` does, using `*h` instead of hashing `*ek`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
-///
-/// Contract: `VG.Spec.MlKem.encapsHContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on its hash, on the randomness or on the outputs.
-///
-/// # Safety
-///
-/// * `ek` must be valid for reads of 1184 bytes.
-/// * `h` must be valid for reads of 32 bytes.
-/// * `m` must be valid for reads of 32 bytes.
-/// * `key` must be valid for reads and writes of 32 bytes.
-/// * `ct` must be valid for reads and writes of 1088 bytes.
-/// * `scratch` must be valid for reads and writes of 32768 bytes.
-/// * `ek` must have passed `vg_mlkem768_check_ek` (FIPS 203 §7.2).
-/// * `h` must hold `H(ek)`, the SHA3-256 hash of the bytes of `*ek` (FIPS 203 §4.1).
-/// * `m` must be fresh random bytes from an approved RBG (FIPS 203 §3.3).
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
-/// * `key`, `ct` and `scratch` must not overlap each other, `ek`, `h` or `m` (distinct Rust objects never do).
-/// * None of `ek`, `h`, `m`, `key`, `ct` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `avx512f`, `avx512vl` and `avx512bw` target features.
+/// The verified code of [`super::vg_mlkem768_encaps_h_avx512`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mlkem768_encaps_h_avx512(ek: *const [u8; 1184], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mlkem768_encaps_h_avx512(ek: *const [u8; 1184], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SYmZSAMAAEmJqVADAABNiaFYAwAATYmpYAMAAE2JsWgDAABNiblwAwAATInLSInVSYnMTYnFSYn+Qb8BAAAASInfSIHHQAQAAEiJ9kiDxgC5BAAAAA=="
 20:
@@ -6481,37 +6690,18 @@ call {vg_mlkem768_kpke_encrypt}
 jne 2499b
 .base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAww=="
 .p2align 6"#,
-        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mlkem16_cbd2_avx2 = sym super::mlkem1024::vg_mlkem16_cbd2_avx2::vg_mlkem16_cbd2_avx2,
-        vg_mlkem768_kpke_encrypt = sym super::mlkem768::vg_mlkem768_kpke_encrypt::vg_mlkem768_kpke_encrypt,
-        VG_MLKEM_SAMPLE_TBL = sym super::consts::VG_MLKEM_SAMPLE_TBL,
+        vg_keccak_absorb_scratch = sym crate::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
+        vg_keccak_pad_scratch = sym crate::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym crate::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+        vg_mlkem16_cbd2_avx2 = sym crate::mlkem1024::vg_mlkem16_cbd2_avx2::vg_mlkem16_cbd2_avx2,
+        vg_mlkem768_kpke_encrypt = sym crate::mlkem768::vg_mlkem768_kpke_encrypt::vg_mlkem768_kpke_encrypt,
+        VG_MLKEM_SAMPLE_TBL = sym crate::consts::VG_MLKEM_SAMPLE_TBL,
     )
 }
 
-/// The CPU features `vg_mlkem768_encaps_avx512` requires (`Artifact.features`).
-pub const VG_MLKEM768_ENCAPS_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::AVX512BW);
-
-/// ML-KEM-768 encapsulation with given randomness, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
-///
-/// Contract: `VG.Spec.MlKem.encapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on the randomness or on the outputs.
-///
-/// # Safety
-///
-/// * `ek` must be valid for reads of 1184 bytes.
-/// * `m` must be valid for reads of 32 bytes.
-/// * `key` must be valid for reads and writes of 32 bytes.
-/// * `ct` must be valid for reads and writes of 1088 bytes.
-/// * `scratch` must be valid for reads and writes of 32768 bytes.
-/// * `ek` must have passed `vg_mlkem768_check_ek` (FIPS 203 §7.2).
-/// * `m` must be fresh random bytes from an approved RBG (FIPS 203 §3.3).
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
-/// * `key`, `ct` and `scratch` must not overlap each other, `ek` or `m` (distinct Rust objects never do).
-/// * None of `ek`, `m`, `key`, `ct` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `avx512f`, `avx512vl` and `avx512bw` target features.
+/// The verified code of [`super::vg_mlkem768_encaps_avx512`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mlkem768_encaps_avx512(ek: *const [u8; 1184], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mlkem768_encaps_avx512(ek: *const [u8; 1184], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SYmYSAMAAEmJqFADAABNiaBYAwAATYmoYAMAAE2JsGgDAABNibhwAwAATInDSIn1SYnUSYnNSYn+Qb8BAAAASInfSIHHiAMAAEyJ9kiBxoAEAAC5BAAAAA=="
 20:
@@ -8102,35 +8292,18 @@ call {vg_mlkem768_kpke_encrypt}
 jne 2500b
 .base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAww=="
 .p2align 6"#,
-        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mlkem16_cbd2_avx2 = sym super::mlkem1024::vg_mlkem16_cbd2_avx2::vg_mlkem16_cbd2_avx2,
-        vg_mlkem768_kpke_encrypt = sym super::mlkem768::vg_mlkem768_kpke_encrypt::vg_mlkem768_kpke_encrypt,
-        VG_MLKEM_SAMPLE_TBL = sym super::consts::VG_MLKEM_SAMPLE_TBL,
+        vg_keccak_absorb_scratch = sym crate::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
+        vg_keccak_pad_scratch = sym crate::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym crate::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+        vg_mlkem16_cbd2_avx2 = sym crate::mlkem1024::vg_mlkem16_cbd2_avx2::vg_mlkem16_cbd2_avx2,
+        vg_mlkem768_kpke_encrypt = sym crate::mlkem768::vg_mlkem768_kpke_encrypt::vg_mlkem768_kpke_encrypt,
+        VG_MLKEM_SAMPLE_TBL = sym crate::consts::VG_MLKEM_SAMPLE_TBL,
     )
 }
 
-/// The CPU features `vg_mlkem768_decaps_avx512` requires (`Artifact.features`).
-pub const VG_MLKEM768_DECAPS_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::AVX512BW);
-
-/// ML-KEM-768 decapsulation, `ML-KEM.Decaps_internal(dk, c)` (FIPS 203 Algorithm 18): with the decapsulation key `*dk` and the ciphertext `*ct`, writes the shared secret key to `*key`, which is the implicit rejection key `J(z ‖ c)` if the ciphertext does not re-encrypt to itself. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
-///
-/// Contract: `VG.Spec.MlKem.decapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (bytes 2304–2335 of `*dk`), but not on anything else of the key, on the ciphertext, or on whether it was rejected.
-///
-/// # Safety
-///
-/// * `dk` must be valid for reads of 2400 bytes.
-/// * `ct` must be valid for reads of 1088 bytes.
-/// * `key` must be valid for reads and writes of 32 bytes.
-/// * `scratch` must be valid for reads and writes of 32768 bytes.
-/// * `dk` must have been written by `vg_mlkem768_keygen` (so that it passes the checks of FIPS 203 §7.3).
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
-/// * `key` and `scratch` must not overlap each other, `dk` or `ct` (distinct Rust objects never do).
-/// * None of `dk`, `ct`, `key` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `avx512f`, `avx512vl` and `avx512bw` target features.
+/// The verified code of [`super::vg_mlkem768_decaps_avx512`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mlkem768_decaps_avx512(dk: *const [u8; 2400], ct: *const [u8; 1088], key: *mut [u8; 32], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mlkem768_decaps_avx512(dk: *const [u8; 2400], ct: *const [u8; 1088], key: *mut [u8; 32], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SImZSAMAAEiJqVADAABMiaFYAwAATImpYAMAAEyJsWgDAABMiblwAwAASInLSIn9SYn2SYnUQb8BAAAASInfSIHH4AQAAEiJ7kiDxgBMifJIg8IASInZSIHBADAAAA=="
 call {vg_mlkem768_kpke_decrypt}
@@ -9727,32 +9900,19 @@ jne 2500b
 jne 2501b
 .base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAww=="
 .p2align 6"#,
-        vg_mlkem768_kpke_decrypt = sym super::mlkem768::vg_mlkem768_kpke_decrypt::vg_mlkem768_kpke_decrypt,
-        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mlkem16_cbd2_avx2 = sym super::mlkem1024::vg_mlkem16_cbd2_avx2::vg_mlkem16_cbd2_avx2,
-        vg_mlkem768_kpke_encrypt = sym super::mlkem768::vg_mlkem768_kpke_encrypt::vg_mlkem768_kpke_encrypt,
-        VG_MLKEM_SAMPLE_TBL = sym super::consts::VG_MLKEM_SAMPLE_TBL,
+        vg_mlkem768_kpke_decrypt = sym crate::mlkem768::vg_mlkem768_kpke_decrypt::vg_mlkem768_kpke_decrypt,
+        vg_keccak_absorb_scratch = sym crate::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
+        vg_keccak_pad_scratch = sym crate::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym crate::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+        vg_mlkem16_cbd2_avx2 = sym crate::mlkem1024::vg_mlkem16_cbd2_avx2::vg_mlkem16_cbd2_avx2,
+        vg_mlkem768_kpke_encrypt = sym crate::mlkem768::vg_mlkem768_kpke_encrypt::vg_mlkem768_kpke_encrypt,
+        VG_MLKEM_SAMPLE_TBL = sym crate::consts::VG_MLKEM_SAMPLE_TBL,
     )
 }
 
-/// ML-KEM-768 key generation from a seed, `ML-KEM.KeyGen_internal(d, z)` (FIPS 203 Algorithm 16): with `d` in bytes 0–31 of `*seed` and `z` in bytes 32–63, writes the encapsulation key to `*ek` and the decapsulation key to `*dk`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
-///
-/// Contract: `VG.Spec.MlKem.keyGenContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of the encapsulation key), but not on anything else of the seed or the keys.
-///
-/// # Safety
-///
-/// * `seed` must be valid for reads of 64 bytes.
-/// * `ek` must be valid for reads and writes of 1184 bytes.
-/// * `dk` must be valid for reads and writes of 2400 bytes.
-/// * `scratch` must be valid for reads and writes of 32768 bytes.
-/// * `seed` must be random bytes from an approved RBG (FIPS 203 §3.3), or a seed so generated before.
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
-/// * `ek`, `dk` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
-/// * None of `seed`, `ek`, `dk` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_mlkem768_keygen`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mlkem768_keygen(seed: *const [u8; 64], ek: *mut [u8; 1184], dk: *mut [u8; 2400], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mlkem768_keygen(seed: *const [u8; 64], ek: *mut [u8; 1184], dk: *mut [u8; 2400], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SImZSAMAAEiJqVADAABMiaFYAwAATImpYAMAAEyJsWgDAABMiblwAwAASInLSIn9SYn0SYnVQb8BAAAAuAMAAACIg4ADAAC4AAAAAEiJA0iJQwhIiUMQSIlDGEiJQyBIiUMoSIlDMEiJQzhIiUNASIlDSEiJQ1BIiUNYSIlDYEiJQ2hIiUNwSIlDeEiJg4AAAABIiYOIAAAASImDkAAAAEiJg5gAAABIiYOgAAAASImDqAAAAEiJg7AAAABIiYO4AAAASImDwAAAAEiJ30iDxwC+SAAAALoAAAAASInpSIPBAEG4IAAAAEmJ2UmBwcgAAAA="
 call {vg_keccak_absorb_scratch}
@@ -9903,37 +10063,20 @@ jne 213b
 210:
 .base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAww=="
 .p2align 6"#,
-        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mlkem_sample_ntt4 = sym super::mlkem1024::vg_mlkem_sample_ntt4::vg_mlkem_sample_ntt4,
-        vg_mlkem_sample_ntt = sym super::mlkem1024::vg_mlkem_sample_ntt::vg_mlkem_sample_ntt,
-        vg_mlkem_cbd2 = sym super::mlkem1024::vg_mlkem_cbd2::vg_mlkem_cbd2,
-        vg_mlkem768_keygen_mul = sym super::mlkem768::vg_mlkem768_keygen_mul::vg_mlkem768_keygen_mul,
-        vg_mlkem_encode12 = sym super::mlkem1024::vg_mlkem_encode12::vg_mlkem_encode12,
+        vg_keccak_absorb_scratch = sym crate::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
+        vg_keccak_pad_scratch = sym crate::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym crate::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+        vg_mlkem_sample_ntt4 = sym crate::mlkem1024::vg_mlkem_sample_ntt4::vg_mlkem_sample_ntt4,
+        vg_mlkem_sample_ntt = sym crate::mlkem1024::vg_mlkem_sample_ntt::vg_mlkem_sample_ntt,
+        vg_mlkem_cbd2 = sym crate::mlkem1024::vg_mlkem_cbd2::vg_mlkem_cbd2,
+        vg_mlkem768_keygen_mul = sym crate::mlkem768::vg_mlkem768_keygen_mul::vg_mlkem768_keygen_mul,
+        vg_mlkem_encode12 = sym crate::mlkem1024::vg_mlkem_encode12::vg_mlkem_encode12,
     )
 }
 
-/// ML-KEM-768 encapsulation with given randomness and the hash of the key, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek`, its hash `H(ek)` in `*h` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`, as `vg_mlkem768_encaps` does, using `*h` instead of hashing `*ek`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
-///
-/// Contract: `VG.Spec.MlKem.encapsHContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on its hash, on the randomness or on the outputs.
-///
-/// # Safety
-///
-/// * `ek` must be valid for reads of 1184 bytes.
-/// * `h` must be valid for reads of 32 bytes.
-/// * `m` must be valid for reads of 32 bytes.
-/// * `key` must be valid for reads and writes of 32 bytes.
-/// * `ct` must be valid for reads and writes of 1088 bytes.
-/// * `scratch` must be valid for reads and writes of 32768 bytes.
-/// * `ek` must have passed `vg_mlkem768_check_ek` (FIPS 203 §7.2).
-/// * `h` must hold `H(ek)`, the SHA3-256 hash of the bytes of `*ek` (FIPS 203 §4.1).
-/// * `m` must be fresh random bytes from an approved RBG (FIPS 203 §3.3).
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
-/// * `key`, `ct` and `scratch` must not overlap each other, `ek`, `h` or `m` (distinct Rust objects never do).
-/// * None of `ek`, `h`, `m`, `key`, `ct` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_mlkem768_encaps_h`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mlkem768_encaps_h(ek: *const [u8; 1184], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mlkem768_encaps_h(ek: *const [u8; 1184], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SYmZSAMAAEmJqVADAABNiaFYAwAATYmpYAMAAE2JsWgDAABNiblwAwAATInLSInVSYnMTYnFSYn+Qb8BAAAASInfSIHHQAQAAEiJ9kiDxgC5BAAAAA=="
 20:
@@ -10106,38 +10249,23 @@ jne 213b
 jne 214b
 .base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAww=="
 .p2align 6"#,
-        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mlkem_sample_ntt4 = sym super::mlkem1024::vg_mlkem_sample_ntt4::vg_mlkem_sample_ntt4,
-        vg_mlkem_sample_ntt = sym super::mlkem1024::vg_mlkem_sample_ntt::vg_mlkem_sample_ntt,
-        vg_mlkem_cbd2 = sym super::mlkem1024::vg_mlkem_cbd2::vg_mlkem_cbd2,
-        vg_mlkem_decode12 = sym super::mlkem1024::vg_mlkem_decode12::vg_mlkem_decode12,
-        vg_mlkem768_encrypt_mul = sym super::mlkem768::vg_mlkem768_encrypt_mul::vg_mlkem768_encrypt_mul,
-        vg_mlkem_add = sym super::mlkem1024::vg_mlkem_add::vg_mlkem_add,
-        vg_mlkem_compress_encode = sym super::mlkem1024::vg_mlkem_compress_encode::vg_mlkem_compress_encode,
-        vg_mlkem_decode_decompress = sym super::mlkem1024::vg_mlkem_decode_decompress::vg_mlkem_decode_decompress,
+        vg_keccak_absorb_scratch = sym crate::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
+        vg_keccak_pad_scratch = sym crate::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym crate::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+        vg_mlkem_sample_ntt4 = sym crate::mlkem1024::vg_mlkem_sample_ntt4::vg_mlkem_sample_ntt4,
+        vg_mlkem_sample_ntt = sym crate::mlkem1024::vg_mlkem_sample_ntt::vg_mlkem_sample_ntt,
+        vg_mlkem_cbd2 = sym crate::mlkem1024::vg_mlkem_cbd2::vg_mlkem_cbd2,
+        vg_mlkem_decode12 = sym crate::mlkem1024::vg_mlkem_decode12::vg_mlkem_decode12,
+        vg_mlkem768_encrypt_mul = sym crate::mlkem768::vg_mlkem768_encrypt_mul::vg_mlkem768_encrypt_mul,
+        vg_mlkem_add = sym crate::mlkem1024::vg_mlkem_add::vg_mlkem_add,
+        vg_mlkem_compress_encode = sym crate::mlkem1024::vg_mlkem_compress_encode::vg_mlkem_compress_encode,
+        vg_mlkem_decode_decompress = sym crate::mlkem1024::vg_mlkem_decode_decompress::vg_mlkem_decode_decompress,
     )
 }
 
-/// ML-KEM-768 encapsulation with given randomness, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
-///
-/// Contract: `VG.Spec.MlKem.encapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on the randomness or on the outputs.
-///
-/// # Safety
-///
-/// * `ek` must be valid for reads of 1184 bytes.
-/// * `m` must be valid for reads of 32 bytes.
-/// * `key` must be valid for reads and writes of 32 bytes.
-/// * `ct` must be valid for reads and writes of 1088 bytes.
-/// * `scratch` must be valid for reads and writes of 32768 bytes.
-/// * `ek` must have passed `vg_mlkem768_check_ek` (FIPS 203 §7.2).
-/// * `m` must be fresh random bytes from an approved RBG (FIPS 203 §3.3).
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
-/// * `key`, `ct` and `scratch` must not overlap each other, `ek` or `m` (distinct Rust objects never do).
-/// * None of `ek`, `m`, `key`, `ct` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_mlkem768_encaps`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mlkem768_encaps(ek: *const [u8; 1184], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mlkem768_encaps(ek: *const [u8; 1184], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SYmYSAMAAEmJqFADAABNiaBYAwAATYmoYAMAAE2JsGgDAABNibhwAwAATInDSIn1SYnUSYnNSYn+Qb8BAAAAuAAAAABIiQNIiUMISIlDEEiJQxhIiUMgSIlDKEiJQzBIiUM4SIlDQEiJQ0hIiUNQSIlDWEiJQ2BIiUNoSIlDcEiJQ3hIiYOAAAAASImDiAAAAEiJg5AAAABIiYOYAAAASImDoAAAAEiJg6gAAABIiYOwAAAASImDuAAAAEiJg8AAAABIid9Ig8cAvogAAAC6AAAAAEyJ8UiDwQBBuKAEAABJidlJgcHIAAAA"
 call {vg_keccak_absorb_scratch}
@@ -10312,36 +10440,23 @@ jne 212b
 jne 213b
 .base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAww=="
 .p2align 6"#,
-        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mlkem_sample_ntt4 = sym super::mlkem1024::vg_mlkem_sample_ntt4::vg_mlkem_sample_ntt4,
-        vg_mlkem_sample_ntt = sym super::mlkem1024::vg_mlkem_sample_ntt::vg_mlkem_sample_ntt,
-        vg_mlkem_cbd2 = sym super::mlkem1024::vg_mlkem_cbd2::vg_mlkem_cbd2,
-        vg_mlkem_decode12 = sym super::mlkem1024::vg_mlkem_decode12::vg_mlkem_decode12,
-        vg_mlkem768_encrypt_mul = sym super::mlkem768::vg_mlkem768_encrypt_mul::vg_mlkem768_encrypt_mul,
-        vg_mlkem_add = sym super::mlkem1024::vg_mlkem_add::vg_mlkem_add,
-        vg_mlkem_compress_encode = sym super::mlkem1024::vg_mlkem_compress_encode::vg_mlkem_compress_encode,
-        vg_mlkem_decode_decompress = sym super::mlkem1024::vg_mlkem_decode_decompress::vg_mlkem_decode_decompress,
+        vg_keccak_absorb_scratch = sym crate::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
+        vg_keccak_pad_scratch = sym crate::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym crate::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+        vg_mlkem_sample_ntt4 = sym crate::mlkem1024::vg_mlkem_sample_ntt4::vg_mlkem_sample_ntt4,
+        vg_mlkem_sample_ntt = sym crate::mlkem1024::vg_mlkem_sample_ntt::vg_mlkem_sample_ntt,
+        vg_mlkem_cbd2 = sym crate::mlkem1024::vg_mlkem_cbd2::vg_mlkem_cbd2,
+        vg_mlkem_decode12 = sym crate::mlkem1024::vg_mlkem_decode12::vg_mlkem_decode12,
+        vg_mlkem768_encrypt_mul = sym crate::mlkem768::vg_mlkem768_encrypt_mul::vg_mlkem768_encrypt_mul,
+        vg_mlkem_add = sym crate::mlkem1024::vg_mlkem_add::vg_mlkem_add,
+        vg_mlkem_compress_encode = sym crate::mlkem1024::vg_mlkem_compress_encode::vg_mlkem_compress_encode,
+        vg_mlkem_decode_decompress = sym crate::mlkem1024::vg_mlkem_decode_decompress::vg_mlkem_decode_decompress,
     )
 }
 
-/// ML-KEM-768 decapsulation, `ML-KEM.Decaps_internal(dk, c)` (FIPS 203 Algorithm 18): with the decapsulation key `*dk` and the ciphertext `*ct`, writes the shared secret key to `*key`, which is the implicit rejection key `J(z ‖ c)` if the ciphertext does not re-encrypt to itself. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
-///
-/// Contract: `VG.Spec.MlKem.decapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (bytes 2304–2335 of `*dk`), but not on anything else of the key, on the ciphertext, or on whether it was rejected.
-///
-/// # Safety
-///
-/// * `dk` must be valid for reads of 2400 bytes.
-/// * `ct` must be valid for reads of 1088 bytes.
-/// * `key` must be valid for reads and writes of 32 bytes.
-/// * `scratch` must be valid for reads and writes of 32768 bytes.
-/// * `dk` must have been written by `vg_mlkem768_keygen` (so that it passes the checks of FIPS 203 §7.3).
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
-/// * `key` and `scratch` must not overlap each other, `dk` or `ct` (distinct Rust objects never do).
-/// * None of `dk`, `ct`, `key` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_mlkem768_decaps`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mlkem768_decaps(dk: *const [u8; 2400], ct: *const [u8; 1088], key: *mut [u8; 32], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mlkem768_decaps(dk: *const [u8; 2400], ct: *const [u8; 1088], key: *mut [u8; 32], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SImZSAMAAEiJqVADAABMiaFYAwAATImpYAMAAEyJsWgDAABMiblwAwAASInLSIn9SYn2SYnUQb8BAAAATIn3SIPHAL5AAQAAugoAAABIidlIgcEAEAAA"
 call {vg_mlkem_decode_decompress}
@@ -10534,20 +10649,21 @@ jne 211b
 jne 212b
 .base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAww=="
 .p2align 6"#,
-        vg_mlkem_decode_decompress = sym super::mlkem1024::vg_mlkem_decode_decompress::vg_mlkem_decode_decompress,
-        vg_mlkem_decode12 = sym super::mlkem1024::vg_mlkem_decode12::vg_mlkem_decode12,
-        vg_mlkem768_decrypt_mul = sym super::mlkem768::vg_mlkem768_decrypt_mul::vg_mlkem768_decrypt_mul,
-        vg_mlkem_sub = sym super::mlkem1024::vg_mlkem_sub::vg_mlkem_sub,
-        vg_mlkem_compress_encode = sym super::mlkem1024::vg_mlkem_compress_encode::vg_mlkem_compress_encode,
-        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mlkem_sample_ntt4 = sym super::mlkem1024::vg_mlkem_sample_ntt4::vg_mlkem_sample_ntt4,
-        vg_mlkem_sample_ntt = sym super::mlkem1024::vg_mlkem_sample_ntt::vg_mlkem_sample_ntt,
-        vg_mlkem_cbd2 = sym super::mlkem1024::vg_mlkem_cbd2::vg_mlkem_cbd2,
-        vg_mlkem768_encrypt_mul = sym super::mlkem768::vg_mlkem768_encrypt_mul::vg_mlkem768_encrypt_mul,
-        vg_mlkem_add = sym super::mlkem1024::vg_mlkem_add::vg_mlkem_add,
+        vg_mlkem_decode_decompress = sym crate::mlkem1024::vg_mlkem_decode_decompress::vg_mlkem_decode_decompress,
+        vg_mlkem_decode12 = sym crate::mlkem1024::vg_mlkem_decode12::vg_mlkem_decode12,
+        vg_mlkem768_decrypt_mul = sym crate::mlkem768::vg_mlkem768_decrypt_mul::vg_mlkem768_decrypt_mul,
+        vg_mlkem_sub = sym crate::mlkem1024::vg_mlkem_sub::vg_mlkem_sub,
+        vg_mlkem_compress_encode = sym crate::mlkem1024::vg_mlkem_compress_encode::vg_mlkem_compress_encode,
+        vg_keccak_absorb_scratch = sym crate::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
+        vg_keccak_pad_scratch = sym crate::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym crate::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+        vg_mlkem_sample_ntt4 = sym crate::mlkem1024::vg_mlkem_sample_ntt4::vg_mlkem_sample_ntt4,
+        vg_mlkem_sample_ntt = sym crate::mlkem1024::vg_mlkem_sample_ntt::vg_mlkem_sample_ntt,
+        vg_mlkem_cbd2 = sym crate::mlkem1024::vg_mlkem_cbd2::vg_mlkem_cbd2,
+        vg_mlkem768_encrypt_mul = sym crate::mlkem768::vg_mlkem768_encrypt_mul::vg_mlkem768_encrypt_mul,
+        vg_mlkem_add = sym crate::mlkem1024::vg_mlkem_add::vg_mlkem_add,
     )
+}
 }
 
 #[rustfmt::skip]

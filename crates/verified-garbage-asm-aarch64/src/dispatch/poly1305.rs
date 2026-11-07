@@ -22,15 +22,15 @@ pub use crate::poly1305::vg_poly1305_init as vg_poly1305_init_auto;
 /// * Neither `state` nor `data` may overlap the 128 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_poly1305_update_auto(state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
+pub unsafe fn vg_poly1305_update_auto(dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
     let cpu = verified_garbage_cpu::detected();
     if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(verified_garbage_cpu::Features(verified_garbage_cpu::feature::NEON))) && cpu.contains(verified_garbage_cpu::Features(verified_garbage_cpu::feature::NEON)) {
         // SAFETY: the caller's obligations, which are `vg_poly1305_update_neon`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::poly1305::vg_poly1305_update_neon(state, count, data, len) };
+        return unsafe { crate::poly1305::vg_poly1305_update_neon(dit, state, count, data, len) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::poly1305::vg_poly1305_update(state, count, data, len) }
+    unsafe { crate::poly1305::vg_poly1305_update(dit, state, count, data, len) }
 }
 
 /// `vg_poly1305_finalize`, the only implementation of it on this target, which needs no CPU feature

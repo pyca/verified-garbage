@@ -115,13 +115,21 @@ def artifact : Artifact where
 /-- The rendering: the static's symbol in a RIP-relative operand. -/
 def expected : String := "/// Returns word 1 of its table.
 #[allow(clippy::missing_safety_doc)]
+#[inline(always)]
+pub unsafe fn vg_test_consts(_dit: verified_garbage_cpu::Dit<'_>) -> u64 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_test_consts() }
+}
+
+/// The verified code of [`super::vg_test_consts`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern \"sysv64\" fn vg_test_consts() -> u64 {
+pub(crate) unsafe extern \"sysv64\" fn vg_test_consts() -> u64 {
     core::arch::naked_asm!(
         r#\"lea rax, [rip + {VG_TEST_TABLE}]
 .base64 \"SItACMM=\"
 .p2align 6\"#,
-        VG_TEST_TABLE = sym super::consts::VG_TEST_TABLE,
+        VG_TEST_TABLE = sym crate::consts::VG_TEST_TABLE,
     )
 }
 "

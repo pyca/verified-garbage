@@ -13,19 +13,11 @@
 /// * `e` must be valid for reads of `e_len` bytes.
 /// * `state` must not overlap `e` (distinct Rust objects never do).
 /// * Neither `state` nor `e` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_rsa_generate_init(state: *mut [u64; 7], bits: usize, e: *const u8, e_len: usize) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "AAAgOQAAQDkAACYo"
-beq %cr0, 20f
-22:
-.base64 "AABlieRFKXkUWil9IgAneXg7Sn0+AClVAQClOP//xjgAACYo"
-bne %cr0, 22b
-b 21f
-20:
-21:
-.base64 "AQCAOVBQ7HzgD+d4AQAAOThAKH04QOd8AwCAOVBIDH3gDwh5AQCAOVBgCH04QOd8gpOIeAEAgDlQQAx94A8Ief8/gDk4YIt8ASCAOVBYDHzgDwB4AAKAOVBYbH3gD2t5UAALfNIBCH0CAIA5UGCIfdI5jH3SQWd9wsmEeCQfhHgDAEA5eFIgfQEAQDlQAAp84A8AeCQfhXikLoZ4FDKlfOQmhngkH4d4FDrGfNIBxnwUMqV80lmlfAAAo/jSWcR8CADD+CR8hngUIsZ80lnGfBAAw/ikLoZ40lnGfBgAw/gAAMA4IADD+GQXZnkoAMP40lnJfDAA4DgoPcN8AABsOCAAgE4=""#,
-    )
+#[inline(always)]
+pub unsafe fn vg_rsa_generate_init(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 7], bits: usize, e: *const u8, e_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_rsa_generate_init(state, bits, e, e_len) }
 }
 
 /// Generate an RSA key, as BoringSSL's `RSA_generate_key_ex` (FIPS 186-5 Appendix A.1.3), over the random tape `rand`, from the state `state` that `vg_rsa_generate_init` started: the search for `p`, then for `q` not too close to `p`, each over candidates of `p_len` octets with their top two bits and bottom bit set, rejected by trial division, a common factor of `p − 1` and `e` or Miller–Rabin, up to BoringSSL's limit of rejected candidates; then the key, `d = e⁻¹ mod lcm(p − 1, q − 1)`, `dP`, `dQ` and `qInv`, with `p` the larger prime, checked as BoringSSL's `RSA_check_key` checks it, drawing both primes again if `d` is too small; a generation whose prime's search is exhausted is started again, up to four in all. Returns 1 and writes the key to `key` (`key_len` is `9 p_len`, for the primes' length `p_len = state[1]`): `n` and `d` (`2 p_len` octets each), then `p`, `q`, `dP`, `dQ` and `qInv` (`p_len` each), all most significant first; 2 if the key failed a check; 3 if every generation was exhausted; or 0 if the tape ran out inside a candidate. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose fourth word is, for 0, the length of the next tape, more than the octets of `rand` after the first `used` and at most the entropy budget: keep those octets, in order, and append fresh random octets up to that length. For 0, `key` holds the search's `p` once it is found, which the next call reads: pass it back unchanged. `key` is otherwise zeros but for 1.
@@ -46,8 +38,36 @@ b 21f
 /// * The contents of `scratch` on return are unspecified and may contain secrets, and `rand` and `key` hold secrets; the caller must destroy them after use.
 /// * `key`, `used`, `scratch` and `state` must not overlap each other or `rand` (distinct Rust objects never do).
 /// * None of `key`, `used`, `rand`, `scratch` and `state` may overlap the 1088 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_rsa_generate(_dit: verified_garbage_cpu::Dit<'_>, key: *mut u8, key_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 7]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_rsa_generate(key, key_len, used, rand, rand_len, scratch, scratch_len, state) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_rsa_generate_init`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_rsa_generate(key: *mut u8, key_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 7]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_generate_init(state: *mut [u64; 7], bits: usize, e: *const u8, e_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "AAAgOQAAQDkAACYo"
+beq %cr0, 20f
+22:
+.base64 "AABlieRFKXkUWil9IgAneXg7Sn0+AClVAQClOP//xjgAACYo"
+bne %cr0, 22b
+b 21f
+20:
+21:
+.base64 "AQCAOVBQ7HzgD+d4AQAAOThAKH04QOd8AwCAOVBIDH3gDwh5AQCAOVBgCH04QOd8gpOIeAEAgDlQQAx94A8Ief8/gDk4YIt8ASCAOVBYDHzgDwB4AAKAOVBYbH3gD2t5UAALfNIBCH0CAIA5UGCIfdI5jH3SQWd9wsmEeCQfhHgDAEA5eFIgfQEAQDlQAAp84A8AeCQfhXikLoZ4FDKlfOQmhngkH4d4FDrGfNIBxnwUMqV80lmlfAAAo/jSWcR8CADD+CR8hngUIsZ80lnGfBAAw/ikLoZ40lnGfBgAw/gAAMA4IADD+GQXZnkoAMP40lnJfDAA4DgoPcN8AABsOCAAgE4=""#,
+    )
+}
+
+/// The verified code of [`super::vg_rsa_generate`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_rsa_generate(key: *mut u8, key_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 7]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "cf8h+CAAYTlIAOv7AADrOwAAf/gQAL/4GADf+CAA//goAB/5MAA/+TgAX/kIAIroMAAq6QgAn/gAAAA4QAAf+CQfhXikLoZ4FDKlfOQmhngkH4d4FDrGfAMA4DjGwed4eDoofSIAB3k+AAhVeEPnfAEAADlQOOh84A/neNI5xnwUMqV8WAC/+KYCCHzR/yH4IAAB+AAAf+hgAH/4CACf6GQXhHhoAJ/4YAB/6GgAn+gAAKA4"
 20:
@@ -120,9 +140,10 @@ b 24f
 .base64 "UAA/6fz/KTkAACko"
 beq %cr0, 22b
 .base64 "IAAB6DAAITimAwh8EAC/6EAA3+gAAMX4UAB/6EgA/+uQACE4IACATg==""#,
-        vg_rsa_prime_search = sym super::rsa::vg_rsa_prime_search::vg_rsa_prime_search,
-        vg_rsa_keygen_key = sym super::rsa_keygen::vg_rsa_keygen_key::vg_rsa_keygen_key,
+        vg_rsa_prime_search = sym crate::rsa::vg_rsa_prime_search::vg_rsa_prime_search,
+        vg_rsa_keygen_key = sym crate::rsa_keygen::vg_rsa_keygen_key::vg_rsa_keygen_key,
     )
+}
 }
 
 #[rustfmt::skip]

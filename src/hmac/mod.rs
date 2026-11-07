@@ -32,16 +32,16 @@ pub trait HmacHash: HashFunction + sealed::Sealed {
     type State: Clone;
     /// Starts an HMAC computation with a key of any length.
     #[doc(hidden)]
-    fn hmac_init(key: &[u8]) -> Self::State;
+    fn hmac_init(dit: crate::dit::Dit<'_>, key: &[u8]) -> Self::State;
     /// Absorbs `data`.
     #[doc(hidden)]
-    fn hmac_update(state: &mut Self::State, data: &[u8]);
+    fn hmac_update(dit: crate::dit::Dit<'_>, state: &mut Self::State, data: &[u8]);
     /// Returns the MAC.
     #[doc(hidden)]
-    fn hmac_finalize(state: Self::State) -> Self::Output;
+    fn hmac_finalize(dit: crate::dit::Dit<'_>, state: Self::State) -> Self::Output;
     /// The MAC of `data` with `key`, with the states on the stack.
     #[doc(hidden)]
-    fn hmac_mac(key: &[u8], data: &[u8]) -> Self::Output;
+    fn hmac_mac(dit: crate::dit::Dit<'_>, key: &[u8], data: &[u8]) -> Self::Output;
 }
 
 use crate::error::InvalidMac;
@@ -56,19 +56,22 @@ impl<H: HmacHash> Hmac<H> {
     /// Starts an HMAC computation with `key`, of any length (a key longer
     /// than the block size is hashed first).
     pub fn new(key: &[u8]) -> Self {
+        crate::dit::enter!(dit);
         Hmac {
-            state: H::hmac_init(key),
+            state: H::hmac_init(dit, key),
         }
     }
 
     /// Absorbs `data`.
     pub fn update(&mut self, data: &[u8]) {
-        H::hmac_update(&mut self.state, data);
+        crate::dit::enter!(dit);
+        H::hmac_update(dit, &mut self.state, data);
     }
 
     /// Returns the MAC of everything absorbed.
     pub fn finalize(self) -> H::Output {
-        H::hmac_finalize(self.state)
+        crate::dit::enter!(dit);
+        H::hmac_finalize(dit, self.state)
     }
 
     /// Checks that `mac` is the MAC of everything absorbed, in constant
@@ -76,7 +79,8 @@ impl<H: HmacHash> Hmac<H> {
     /// differs from it (its length is public). `mac` must be the whole MAC,
     /// of `H::OUTPUT_SIZE` bytes; a truncated one is rejected.
     pub fn verify(self, mac: &[u8]) -> Result<(), InvalidMac> {
-        if crate::ct::eq(self.finalize().as_ref(), mac) {
+        crate::dit::enter!(dit);
+        if crate::ct::eq(dit, H::hmac_finalize(dit, self.state).as_ref(), mac) {
             Ok(())
         } else {
             Err(InvalidMac)
@@ -86,7 +90,21 @@ impl<H: HmacHash> Hmac<H> {
     /// The MAC of `data` with `key`: as `new`, `update` and `finalize`,
     /// without the intermediate computations.
     pub fn mac(key: &[u8], data: &[u8]) -> H::Output {
-        H::hmac_mac(key, data)
+        crate::dit::enter!(dit);
+        H::hmac_mac(dit, key, data)
+    }
+
+    /// Checks that `mac` is the MAC of `data` with `key`, in constant time,
+    /// as `new`, `update` and `verify` do, without the intermediate
+    /// computations: data independent timing is turned on once rather than
+    /// for each of them.
+    pub fn verify_mac(key: &[u8], data: &[u8], mac: &[u8]) -> Result<(), InvalidMac> {
+        crate::dit::enter!(dit);
+        if crate::ct::eq(dit, H::hmac_mac(dit, key, data).as_ref(), mac) {
+            Ok(())
+        } else {
+            Err(InvalidMac)
+        }
     }
 }
 
@@ -130,7 +148,7 @@ macro_rules! streaming_hmac {
         impl super::HmacHash for $hash {
             type State = super::StreamingHmacState<$hash, $state>;
 
-            fn hmac_init(key: &[u8]) -> Self::State {
+            fn hmac_init(dit: $crate::dit::Dit<'_>, key: &[u8]) -> Self::State {
                 // The states are written in place, where they are wiped when
                 // the computation is dropped. Once `init` has run, the inner
                 // one represents `K₀ ⊕ ipad`, of a block.
@@ -146,15 +164,15 @@ macro_rules! streaming_hmac {
                 // call's stack frame, nor wrap around the address space. The
                 // dispatcher calls only an implementation the CPU has the
                 // features of.
-                unsafe { $init(inner, &mut state.outer, key.as_ptr(), key.len()) };
+                unsafe { $init(dit, inner, &mut state.outer, key.as_ptr(), key.len()) };
                 state
             }
 
-            fn hmac_update(state: &mut Self::State, data: &[u8]) {
-                state.inner.update(data);
+            fn hmac_update(dit: $crate::dit::Dit<'_>, state: &mut Self::State, data: &[u8]) {
+                state.inner.update_with(dit, data);
             }
 
-            fn hmac_finalize(mut state: Self::State) -> [u8; $output] {
+            fn hmac_finalize(dit: $crate::dit::Dit<'_>, mut state: Self::State) -> [u8; $output] {
                 // The inner state is finalized in place, and wiped with the
                 // computation.
                 let (inner, count) = state.inner.state_mut();
@@ -168,24 +186,24 @@ macro_rules! streaming_hmac {
                 // below 2⁶⁴, so the text is shorter than 2⁶⁴ − B bytes), and
                 // `state.outer` represents `K₀ ⊕ opad`. The dispatcher calls
                 // only an implementation the CPU has the features of.
-                unsafe { $finalize(inner, &state.outer, count, &mut mac) };
+                unsafe { $finalize(dit, inner, &state.outer, count, &mut mac) };
                 mac
             }
 
-            fn hmac_mac(key: &[u8], data: &[u8]) -> [u8; $output] {
+            fn hmac_mac(dit: $crate::dit::Dit<'_>, key: &[u8], data: &[u8]) -> [u8; $output] {
                 // As in `hmac_init` and `hmac_finalize`, with the states on
                 // the stack: `inner` is wiped when dropped, `outer` below.
                 let mut inner = $hash::from_state([0; $state], Self::BLOCK_SIZE as u64);
                 let mut outer = [0; $state];
                 let (st, _) = inner.state_mut();
                 // SAFETY: as in `hmac_init`.
-                unsafe { $init(st, &mut outer, key.as_ptr(), key.len()) };
-                inner.update(data);
+                unsafe { $init(dit, st, &mut outer, key.as_ptr(), key.len()) };
+                inner.update_with(dit, data);
                 let (st, count) = inner.state_mut();
                 let mut mac = [0; $output];
                 // SAFETY: as in `hmac_finalize`: `st` represents `(K₀ ⊕
                 // ipad) ‖ data`, of `count` bytes, and `outer` `K₀ ⊕ opad`.
-                unsafe { $finalize(st, &outer, count, &mut mac) };
+                unsafe { $finalize(dit, st, &outer, count, &mut mac) };
                 $crate::zeroize::zeroize(&mut outer);
                 mac
             }

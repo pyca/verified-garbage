@@ -20,15 +20,15 @@
 /// * None of `schedule`, `iv`, `data` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_ofb_auto(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
+pub unsafe fn vg_aes_ofb_auto(dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::aes_ofb::VG_AES_OFB_AESNI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_ofb_aesni`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes_ofb::vg_aes_ofb_aesni(schedule, rounds, iv, data, n, scratch) };
+        return unsafe { crate::aes_ofb::vg_aes_ofb_aesni(dit, schedule, rounds, iv, data, n, scratch) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::aes_ofb::vg_aes_ofb(schedule, rounds, iv, data, n, scratch) }
+    unsafe { crate::aes_ofb::vg_aes_ofb(dit, schedule, rounds, iv, data, n, scratch) }
 }
 
 /// AES-OFB encryption or decryption (NIST SP 800-38A §6.4) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)`, where `O₀` is the block at `*iv`, a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*iv` with the last output block used, `Oₙ` (leaving it unchanged if `len = 0`): so that a further call continues the message if `len` is a multiple of 16, and otherwise keystream, to be wiped, after which the message must end. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
@@ -49,13 +49,13 @@ pub unsafe fn vg_aes_ofb_auto(schedule: *const [u8; 240], rounds: usize, iv: *mu
 /// * None of `schedule`, `iv`, `data` and `scratch` may overlap the return address on the stack or the 100 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_ofb_final_auto(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
+pub unsafe fn vg_aes_ofb_final_auto(dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::aes_ofb::VG_AES_OFB_FINAL_AESNI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_ofb_final_aesni`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes_ofb::vg_aes_ofb_final_aesni(schedule, rounds, iv, data, len, scratch) };
+        return unsafe { crate::aes_ofb::vg_aes_ofb_final_aesni(dit, schedule, rounds, iv, data, len, scratch) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::aes_ofb::vg_aes_ofb_final(schedule, rounds, iv, data, len, scratch) }
+    unsafe { crate::aes_ofb::vg_aes_ofb_final(dit, schedule, rounds, iv, data, len, scratch) }
 }

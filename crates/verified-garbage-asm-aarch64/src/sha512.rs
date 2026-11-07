@@ -11,17 +11,11 @@
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
 /// * `state` must not wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha384_init(state: *mut [u8; 192]) {
-    core::arch::naked_asm!(
-        r".inst 0xd293db09,0xf2b820a9,0xf2d3aba9,0xf2f97769,0xf9000009,0xd29aa0e9,0xf2a6cf89,0xf2c52549
-.inst 0xf2ec5349,0xf9000409,0xd29ba2e9,0xf2a60e09,0xf2c02b49,0xf2f22b29,0xf9000809,0xd28b2729
-.inst 0xf2bee1c9,0xf2dd9b09,0xf2e2a5e9,0xf9000c09,0xd2816629,0xf2bff809,0xf2c4cce9,0xf2ece669
-.inst 0xf9001009,0xd282a229,0xf2ad0b09,0xf2c950e9,0xf2f1d689,0xf9001409,0xd291f4e9,0xf2ac9f29
-.inst 0xf2c5c1a9,0xf2fb6189,0xf9001809,0xd289f489,0xf2b7df49,0xf2c903a9,0xf2e8f6a9,0xf9001c09
-.inst 0xd65f03c0
-.p2align 6",
-    )
+#[inline(always)]
+pub unsafe fn vg_sha384_init(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 192]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha384_init(state) }
 }
 
 /// Starts a SHA-512 computation: makes the SHA-512 streaming state `*state` represent the empty message, hashed from the initial hash value of SHA-512 (`VG.Spec.Sha512.H0_512`). Continue with `vg_sha512_update` and `vg_sha512_finalize`.
@@ -32,17 +26,11 @@ pub unsafe extern "C" fn vg_sha384_init(state: *mut [u8; 192]) {
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
 /// * `state` must not wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha512_init(state: *mut [u8; 192]) {
-    core::arch::naked_asm!(
-        r".inst 0xd2992109,0xf2be7789,0xf2dccce9,0xf2ed4129,0xf9000009,0xd294e769,0xf2b09949,0xf2d5d0a9
-.inst 0xf2f76ce9,0xf9000409,0xd29f0569,0xf2bfd289,0xf2de6e49,0xf2e78dc9,0xf9000809,0xd286de29
-.inst 0xf2abe3a9,0xf2dea749,0xf2f4a9e9,0xf9000c09,0xd2905a29,0xf2b5bcc9,0xf2ca4fe9,0xf2ea21c9
-.inst 0xf9001009,0xd28d83e9,0xf2a567c9,0xf2cd1189,0xf2f360a9,0xf9001409,0xd297ad69,0xf2bf6829
-.inst 0xf2db3569,0xf2e3f069,0xf9001809,0xd2842f29,0xf2a26fc9,0xf2d9a329,0xf2eb7c09,0xf9001c09
-.inst 0xd65f03c0
-.p2align 6",
-    )
+#[inline(always)]
+pub unsafe fn vg_sha512_init(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 192]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha512_init(state) }
 }
 
 /// Starts a SHA-512/224 computation: makes the SHA-512 streaming state `*state` represent the empty message, hashed from the initial hash value of SHA-512/224 (`VG.Spec.Sha512.H0_512_224`). Continue with `vg_sha512_update` and `vg_sha512_finalize`.
@@ -53,17 +41,11 @@ pub unsafe extern "C" fn vg_sha512_init(state: *mut [u8; 192]) {
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
 /// * `state` must not wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha512_224_init(state: *mut [u8; 192]) {
-    core::arch::naked_asm!(
-        r".inst 0xd289b449,0xf2a32a89,0xf2c6f909,0xf2f187a9,0xf9000009,0xd29a9ac9,0xf2b13b89,0xf2d32cc9
-.inst 0xf2ee7c29,0xf9000409,0xd2939049,0xf2a65fe9,0xf2d6f5c9,0xf2e3bf49,0xf9000809,0xd293f9e9
-.inst 0xf2ab05e9,0xf2daa289,0xf2ecf3a9,0xf9000c09,0xd289b509,0xf2af7a89,0xf2c56d29,0xf2e1eda9
-.inst 0xf9001009,0xd2912849,0xf2a09889,0xf2cdee69,0xf2eefc69,0xf9001409,0xd286d909,0xf2ad43a9
-.inst 0xf2d0b509,0xf2e7f3a9,0xf9001809,0xd2925429,0xf2b23ac9,0xf2dcd5a9,0xf2e22249,0xf9001c09
-.inst 0xd65f03c0
-.p2align 6",
-    )
+#[inline(always)]
+pub unsafe fn vg_sha512_224_init(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 192]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha512_224_init(state) }
 }
 
 /// Starts a SHA-512/256 computation: makes the SHA-512 streaming state `*state` represent the empty message, hashed from the initial hash value of SHA-512/256 (`VG.Spec.Sha512.H0_512_256`). Continue with `vg_sha512_update` and `vg_sha512_finalize`.
@@ -74,17 +56,11 @@ pub unsafe extern "C" fn vg_sha512_224_init(state: *mut [u8; 192]) {
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
 /// * `state` must not wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha512_256_init(state: *mut [u8; 192]) {
-    core::arch::naked_asm!(
-        r".inst 0xd29ee589,0xf2bf8569,0xf2c43289,0xf2e44629,0xf9000009,0xd28c9849,0xf2b90989,0xf2cbf469
-.inst 0xf2f3eaa9,0xf9000409,0xd2962a29,0xf2adea69,0xf2d70d69,0xf2e47269,0xf9000809,0xd29d57a9
-.inst 0xf2ab2809,0xf2cee329,0xf2f2c709,0xf9000c09,0xd29ffc69,0xf2b511c9,0xf2c7dc49,0xf2f2c509
-.inst 0xf9001009,0xd2873249,0xf2aa70c9,0xf2c3c4a9,0xf2f7cbc9,0xf9001409,0xd2971549,0xf2a590a9
-.inst 0xf2d33f89,0xf2e56029,0xf9001809,0xd2859449,0xf2b038a9,0xf2c5bb89,0xf2e1d6e9,0xf9001c09
-.inst 0xd65f03c0
-.p2align 6",
-    )
+#[inline(always)]
+pub unsafe fn vg_sha512_256_init(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 192]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha512_256_init(state) }
 }
 
 /// Finishes a SHA-384 computation: if the streaming state `*state` represents a message of `count` bytes, hashed from the initial hash value of SHA-384 (as `vg_sha384_init` starts it), writes the SHA-384 digest of that message (48 bytes, `VG.Spec.Sha512.sha384`) to `*out`.
@@ -99,50 +75,11 @@ pub unsafe extern "C" fn vg_sha512_256_init(state: *mut [u8; 192]) {
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha384_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 48]) {
-    core::arch::naked_asm!(
-        r".inst 0xd11583ff,0x910003e3,0xf81f0ffe,0xf9014073,0xf9014474,0xf9014875,0xf9014c76,0xf9015077
-.inst 0xf9015478,0x91000013,0x91000074,0x91000055,0x91000036,0xd2800fe9,0x8a0902d7,0xd2801009
-.inst 0x8b17026c,0x39010189,0x910006f7,0x91003ef8,0xd347ff18
-20:
-.inst 0xd280100b
-cbz x24, 21f
-b 22f
-21:
-.inst 0xd2800e0b
-22:
-.inst 0xd2800009,0xcb17016b,0xd343fd6d
-cbz x13, 23f
-25:
-.inst 0x8b17026c,0xf9002189,0x910022f7,0xd100216b,0xd343fd6d
-cbnz x13, 25b
-b 24f
-23:
-24:
-cbz x11, 26f
-28:
-.inst 0x8b17026c,0x39010189,0x910006f7,0xd100056b
-cbnz x11, 28b
-b 27f
-26:
-27:
-cbz x24, 29f
-b 210f
-29:
-.inst 0xd37dfec9,0xdac00d29,0xf9005a69,0x8b1602c9,0x8b090129,0x8b090129,0xdac00d29,0xf9005e69
-210:
-.inst 0x91010261,0x91000260,0xd2800022,0x91000283
-bl {vg_sha512_compress}
-.inst 0xd2800017,0xd1000718
-cbz x24, 20b
-.inst 0xf9400269,0xdac00d29,0xf90002a9,0xf9400669,0xdac00d29,0xf90006a9,0xf9400a69,0xdac00d29
-.inst 0xf9000aa9,0xf9400e69,0xdac00d29,0xf9000ea9,0xf9401269,0xdac00d29,0xf90012a9,0xf9401669
-.inst 0xdac00d29,0xf90016a9,0xf9414293,0xf9414a95,0xf9414e96,0xf9415297,0xf9415698,0xf9414694
-.inst 0xf84107fe,0x911583ff,0xd65f03c0
-.p2align 6",
-        vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
-    )
+#[inline(always)]
+pub unsafe fn vg_sha384_finalize(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 192], count: u64, out: *mut [u8; 48]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha384_finalize(state, count, out) }
 }
 
 /// Computes the SHA-384 digest of the `len` bytes at `data` (48 bytes, `VG.Spec.Sha512.sha384`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-384 computation with that message.
@@ -155,71 +92,11 @@ cbz x24, 20b
 /// * `out` must be valid for reads and writes of 48 bytes.
 /// * `out` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `data` nor `out` may overlap the 896 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha384_digest(data: *const u8, len: usize, out: *mut [u8; 48]) {
-    core::arch::naked_asm!(
-        r".inst 0xd10e03ff,0x910d03ea,0xa9005553,0xa9016556,0xa9026d5a,0xa903795c,0x91000039,0x9100005a
-.inst 0x9100001b,0x910003e0,0xd293db09,0xf2b820a9,0xf2d3aba9,0xf2f97769,0xd29aa0ea,0xf2a6cf8a
-.inst 0xf2c5254a,0xf2ec534a,0xa9002809,0xd29ba2e9,0xf2a60e09,0xf2c02b49,0xf2f22b29,0xd28b272a
-.inst 0xf2bee1ca,0xf2dd9b0a,0xf2e2a5ea,0xa9012809,0xd2816629,0xf2bff809,0xf2c4cce9,0xf2ece669
-.inst 0xd282a22a,0xf2ad0b0a,0xf2c950ea,0xf2f1d68a,0xa9022809,0xd291f4e9,0xf2ac9f29,0xf2c5c1a9
-.inst 0xf2fb6189,0xd289f48a,0xf2b7df4a,0xf2c903aa,0xf2e8f6aa,0xa9032809,0xd347ff3c
-cbz x28, 20f
-.inst 0x910003e0,0x91000361,0x91000382,0x910303e3
-bl {vg_sha512_compress}
-.inst 0xd379e389,0x8b09037b
-b 21f
-20:
-21:
-.inst 0xd2800009,0x910103ec,0xa9002589,0xa9012589,0xa9022589,0xa9032589,0xa9042589,0xa9052589
-.inst 0xa9062589,0xa9072589,0xd2800fe9,0x8a09033c,0xd344ff8d
-cbz x13, 22f
-24:
-.inst 0xa9402b69,0xa9002989,0x9100437b,0x9100418c,0xd10005ad
-cbnz x13, 24b
-b 23f
-22:
-23:
-.inst 0xd28001e9,0x8a09038b
-cbz x11, 25f
-.inst 0xd344ff29
-cbz x9, 27f
-.inst 0x8b0b036d,0xd10041ad,0xd2801009,0x3dc001a0,0x6f00e401,0x4e081d21,0xd2822206,0xf2a26246
-.inst 0xf2c2a286,0xf2e2e2c6,0xd2832307,0xf2a36347,0xf2c3a387,0xf2e3e3c7,0x4e081cc2,0x4e181ce2
-.inst 0x4e010d63,0x6e238442,0x4e022004,0x3d800184
-b 28f
-27:
-29:
-.inst 0x39400369,0x39000189,0x9100077b,0x9100058c,0xd100056b
-cbnz x11, 29b
-.inst 0xd2801009,0x39000189
-28:
-b 26f
-25:
-.inst 0xd2801009,0xd280000a,0xa9002989
-26:
-.inst 0x91004389,0xd347fd29
-cbz x9, 210f
-.inst 0x910003e0,0x910103e1,0xd2800022,0x910303e3
-bl {vg_sha512_compress}
-.inst 0xd2800009,0x910103ec,0xa9002589,0xa9012589,0xa9022589,0xa9032589,0xa9042589,0xa9052589
-.inst 0xa9062589,0xa9072589
-b 211f
-210:
-211:
-.inst 0x910003f3,0x91000336,0xd37dfec9,0xdac00d29,0xf9005a69,0x8b1602c9,0x8b090129,0x8b090129
-.inst 0xdac00d29,0xf9005e69,0x9102c3ec,0xf9400189,0xf940058a,0xa9002989,0x910003e0,0x910103e1
-.inst 0xd2800022,0x910303e3
-bl {vg_sha512_compress}
-.inst 0x910003f3,0x91000355,0xf9400269,0xdac00d29,0xf90002a9,0xf9400669,0xdac00d29,0xf90006a9
-.inst 0xf9400a69,0xdac00d29,0xf9000aa9,0xf9400e69,0xdac00d29,0xf9000ea9,0xf9401269,0xdac00d29
-.inst 0xf90012a9,0xf9401669,0xdac00d29,0xf90016a9,0x910003f0,0xd2800011,0xa9004611,0xa9014611
-.inst 0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611
-.inst 0xa90a4611,0xa90b4611,0x910d03f0,0xa9405613,0xa9416616,0xa9426e1a,0xa9437a1c,0x910e03ff
-.inst 0xd65f03c0
-.p2align 6",
-        vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
-    )
+#[inline(always)]
+pub unsafe fn vg_sha384_digest(_dit: verified_garbage_cpu::Dit<'_>, data: *const u8, len: usize, out: *mut [u8; 48]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha384_digest(data, len, out) }
 }
 
 /// The CPU features `vg_sha384_finalize_sha3` requires (`Artifact.features`).
@@ -238,8 +115,489 @@ pub const VG_SHA384_FINALIZE_SHA3_FEATURES: verified_garbage_cpu::Features = ver
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
+#[inline(always)]
+pub unsafe fn vg_sha384_finalize_sha3(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 192], count: u64, out: *mut [u8; 48]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha384_finalize_sha3(state, count, out) }
+}
+
+/// The CPU features `vg_sha384_digest_sha3` requires (`Artifact.features`).
+pub const VG_SHA384_DIGEST_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
+
+/// Computes the SHA-384 digest of the `len` bytes at `data` (48 bytes, `VG.Spec.Sha512.sha384`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-384 computation with that message.
+///
+/// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha384`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// # Safety
+///
+/// * `data` must be valid for reads of `len` bytes.
+/// * `out` must be valid for reads and writes of 48 bytes.
+/// * `out` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `data` nor `out` may overlap the 896 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha3` target feature.
+#[inline(always)]
+pub unsafe fn vg_sha384_digest_sha3(_dit: verified_garbage_cpu::Dit<'_>, data: *const u8, len: usize, out: *mut [u8; 48]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha384_digest_sha3(data, len, out) }
+}
+
+/// Absorbs data into a SHA-384, SHA-512, SHA-512/224 or SHA-512/256 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), it then represents that message followed by the `len` bytes at `data`.
+///
+/// Contract: `VG.Spec.Sha512.updateContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 192 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `state` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_sha512_update(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha512_update(state, count, data, len) }
+}
+
+/// Finishes a SHA-384, SHA-512, SHA-512/224 or SHA-512/256 computation: if the streaming state `*state` represents a message of `count` bytes, hashed from an initial hash value, writes the final hash value `H⁽ᴺ⁾` of that message (64 bytes) to `*out`. The SHA-512 digest is all of it; the SHA-384, SHA-512/224 and SHA-512/256 digests are its first 48, 28 and 32 bytes.
+///
+/// Contract: `VG.Spec.Sha512.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 192 bytes.
+/// * `out` must be valid for reads and writes of 64 bytes.
+/// * `count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not supported.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
+/// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_sha512_finalize(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha512_finalize(state, count, out) }
+}
+
+/// Computes the SHA-512 digest of the `len` bytes at `data` (64 bytes, `VG.Spec.Sha512.sha512`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-512 computation with that message.
+///
+/// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha512`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// # Safety
+///
+/// * `data` must be valid for reads of `len` bytes.
+/// * `out` must be valid for reads and writes of 64 bytes.
+/// * `out` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `data` nor `out` may overlap the 896 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_sha512_digest(_dit: verified_garbage_cpu::Dit<'_>, data: *const u8, len: usize, out: *mut [u8; 64]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha512_digest(data, len, out) }
+}
+
+/// The CPU features `vg_sha512_update_sha3` requires (`Artifact.features`).
+pub const VG_SHA512_UPDATE_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
+
+/// Absorbs data into a SHA-384, SHA-512, SHA-512/224 or SHA-512/256 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), it then represents that message followed by the `len` bytes at `data`.
+///
+/// Contract: `VG.Spec.Sha512.updateContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 192 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `state` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha3` target feature.
+#[inline(always)]
+pub unsafe fn vg_sha512_update_sha3(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha512_update_sha3(state, count, data, len) }
+}
+
+/// The CPU features `vg_sha512_finalize_sha3` requires (`Artifact.features`).
+pub const VG_SHA512_FINALIZE_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
+
+/// Finishes a SHA-384, SHA-512, SHA-512/224 or SHA-512/256 computation: if the streaming state `*state` represents a message of `count` bytes, hashed from an initial hash value, writes the final hash value `H⁽ᴺ⁾` of that message (64 bytes) to `*out`. The SHA-512 digest is all of it; the SHA-384, SHA-512/224 and SHA-512/256 digests are its first 48, 28 and 32 bytes.
+///
+/// Contract: `VG.Spec.Sha512.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 192 bytes.
+/// * `out` must be valid for reads and writes of 64 bytes.
+/// * `count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not supported.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
+/// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha3` target feature.
+#[inline(always)]
+pub unsafe fn vg_sha512_finalize_sha3(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha512_finalize_sha3(state, count, out) }
+}
+
+/// The CPU features `vg_sha512_digest_sha3` requires (`Artifact.features`).
+pub const VG_SHA512_DIGEST_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
+
+/// Computes the SHA-512 digest of the `len` bytes at `data` (64 bytes, `VG.Spec.Sha512.sha512`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-512 computation with that message.
+///
+/// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha512`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// # Safety
+///
+/// * `data` must be valid for reads of `len` bytes.
+/// * `out` must be valid for reads and writes of 64 bytes.
+/// * `out` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `data` nor `out` may overlap the 896 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha3` target feature.
+#[inline(always)]
+pub unsafe fn vg_sha512_digest_sha3(_dit: verified_garbage_cpu::Dit<'_>, data: *const u8, len: usize, out: *mut [u8; 64]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha512_digest_sha3(data, len, out) }
+}
+
+/// Finishes a SHA-512/224 computation: if the streaming state `*state` represents a message of `count` bytes, hashed from the initial hash value of SHA-512/224 (as `vg_sha512_224_init` starts it), writes the SHA-512/224 digest of that message (28 bytes, `VG.Spec.Sha512.sha512_224`) to `*out`.
+///
+/// Contract: `VG.Spec.Sha512.finalizeDigestContract` for `VG.Spec.Sha512.H0_512_224` and `VG.Spec.Sha512.sha512_224`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 192 bytes.
+/// * `out` must be valid for reads and writes of 28 bytes.
+/// * `count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not supported.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
+/// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_sha512_224_finalize(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 192], count: u64, out: *mut [u8; 28]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha512_224_finalize(state, count, out) }
+}
+
+/// Computes the SHA-512/224 digest of the `len` bytes at `data` (28 bytes, `VG.Spec.Sha512.sha512_224`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-512/224 computation with that message.
+///
+/// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha512_224`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// # Safety
+///
+/// * `data` must be valid for reads of `len` bytes.
+/// * `out` must be valid for reads and writes of 28 bytes.
+/// * `out` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `data` nor `out` may overlap the 896 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_sha512_224_digest(_dit: verified_garbage_cpu::Dit<'_>, data: *const u8, len: usize, out: *mut [u8; 28]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha512_224_digest(data, len, out) }
+}
+
+/// The CPU features `vg_sha512_224_finalize_sha3` requires (`Artifact.features`).
+pub const VG_SHA512_224_FINALIZE_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
+
+/// Finishes a SHA-512/224 computation: if the streaming state `*state` represents a message of `count` bytes, hashed from the initial hash value of SHA-512/224 (as `vg_sha512_224_init` starts it), writes the SHA-512/224 digest of that message (28 bytes, `VG.Spec.Sha512.sha512_224`) to `*out`.
+///
+/// Contract: `VG.Spec.Sha512.finalizeDigestContract` for `VG.Spec.Sha512.H0_512_224` and `VG.Spec.Sha512.sha512_224`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 192 bytes.
+/// * `out` must be valid for reads and writes of 28 bytes.
+/// * `count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not supported.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
+/// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha3` target feature.
+#[inline(always)]
+pub unsafe fn vg_sha512_224_finalize_sha3(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 192], count: u64, out: *mut [u8; 28]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha512_224_finalize_sha3(state, count, out) }
+}
+
+/// The CPU features `vg_sha512_224_digest_sha3` requires (`Artifact.features`).
+pub const VG_SHA512_224_DIGEST_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
+
+/// Computes the SHA-512/224 digest of the `len` bytes at `data` (28 bytes, `VG.Spec.Sha512.sha512_224`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-512/224 computation with that message.
+///
+/// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha512_224`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// # Safety
+///
+/// * `data` must be valid for reads of `len` bytes.
+/// * `out` must be valid for reads and writes of 28 bytes.
+/// * `out` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `data` nor `out` may overlap the 896 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha3` target feature.
+#[inline(always)]
+pub unsafe fn vg_sha512_224_digest_sha3(_dit: verified_garbage_cpu::Dit<'_>, data: *const u8, len: usize, out: *mut [u8; 28]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha512_224_digest_sha3(data, len, out) }
+}
+
+/// Finishes a SHA-512/256 computation: if the streaming state `*state` represents a message of `count` bytes, hashed from the initial hash value of SHA-512/256 (as `vg_sha512_256_init` starts it), writes the SHA-512/256 digest of that message (32 bytes, `VG.Spec.Sha512.sha512_256`) to `*out`.
+///
+/// Contract: `VG.Spec.Sha512.finalizeDigestContract` for `VG.Spec.Sha512.H0_512_256` and `VG.Spec.Sha512.sha512_256`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 192 bytes.
+/// * `out` must be valid for reads and writes of 32 bytes.
+/// * `count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not supported.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
+/// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_sha512_256_finalize(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 192], count: u64, out: *mut [u8; 32]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha512_256_finalize(state, count, out) }
+}
+
+/// Computes the SHA-512/256 digest of the `len` bytes at `data` (32 bytes, `VG.Spec.Sha512.sha512_256`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-512/256 computation with that message.
+///
+/// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha512_256`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// # Safety
+///
+/// * `data` must be valid for reads of `len` bytes.
+/// * `out` must be valid for reads and writes of 32 bytes.
+/// * `out` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `data` nor `out` may overlap the 896 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_sha512_256_digest(_dit: verified_garbage_cpu::Dit<'_>, data: *const u8, len: usize, out: *mut [u8; 32]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha512_256_digest(data, len, out) }
+}
+
+/// The CPU features `vg_sha512_256_finalize_sha3` requires (`Artifact.features`).
+pub const VG_SHA512_256_FINALIZE_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
+
+/// Finishes a SHA-512/256 computation: if the streaming state `*state` represents a message of `count` bytes, hashed from the initial hash value of SHA-512/256 (as `vg_sha512_256_init` starts it), writes the SHA-512/256 digest of that message (32 bytes, `VG.Spec.Sha512.sha512_256`) to `*out`.
+///
+/// Contract: `VG.Spec.Sha512.finalizeDigestContract` for `VG.Spec.Sha512.H0_512_256` and `VG.Spec.Sha512.sha512_256`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 192 bytes.
+/// * `out` must be valid for reads and writes of 32 bytes.
+/// * `count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not supported.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
+/// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha3` target feature.
+#[inline(always)]
+pub unsafe fn vg_sha512_256_finalize_sha3(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 192], count: u64, out: *mut [u8; 32]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha512_256_finalize_sha3(state, count, out) }
+}
+
+/// The CPU features `vg_sha512_256_digest_sha3` requires (`Artifact.features`).
+pub const VG_SHA512_256_DIGEST_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
+
+/// Computes the SHA-512/256 digest of the `len` bytes at `data` (32 bytes, `VG.Spec.Sha512.sha512_256`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-512/256 computation with that message.
+///
+/// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha512_256`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// # Safety
+///
+/// * `data` must be valid for reads of `len` bytes.
+/// * `out` must be valid for reads and writes of 32 bytes.
+/// * `out` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `data` nor `out` may overlap the 896 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha3` target feature.
+#[inline(always)]
+pub unsafe fn vg_sha512_256_digest_sha3(_dit: verified_garbage_cpu::Dit<'_>, data: *const u8, len: usize, out: *mut [u8; 32]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha512_256_digest_sha3(data, len, out) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_sha384_init`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha384_finalize_sha3(state: *mut [u8; 192], count: u64, out: *mut [u8; 48]) {
+pub(crate) unsafe extern "C" fn vg_sha384_init(state: *mut [u8; 192]) {
+    core::arch::naked_asm!(
+        r".inst 0xd293db09,0xf2b820a9,0xf2d3aba9,0xf2f97769,0xf9000009,0xd29aa0e9,0xf2a6cf89,0xf2c52549
+.inst 0xf2ec5349,0xf9000409,0xd29ba2e9,0xf2a60e09,0xf2c02b49,0xf2f22b29,0xf9000809,0xd28b2729
+.inst 0xf2bee1c9,0xf2dd9b09,0xf2e2a5e9,0xf9000c09,0xd2816629,0xf2bff809,0xf2c4cce9,0xf2ece669
+.inst 0xf9001009,0xd282a229,0xf2ad0b09,0xf2c950e9,0xf2f1d689,0xf9001409,0xd291f4e9,0xf2ac9f29
+.inst 0xf2c5c1a9,0xf2fb6189,0xf9001809,0xd289f489,0xf2b7df49,0xf2c903a9,0xf2e8f6a9,0xf9001c09
+.inst 0xd65f03c0
+.p2align 6",
+    )
+}
+
+/// The verified code of [`super::vg_sha512_init`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha512_init(state: *mut [u8; 192]) {
+    core::arch::naked_asm!(
+        r".inst 0xd2992109,0xf2be7789,0xf2dccce9,0xf2ed4129,0xf9000009,0xd294e769,0xf2b09949,0xf2d5d0a9
+.inst 0xf2f76ce9,0xf9000409,0xd29f0569,0xf2bfd289,0xf2de6e49,0xf2e78dc9,0xf9000809,0xd286de29
+.inst 0xf2abe3a9,0xf2dea749,0xf2f4a9e9,0xf9000c09,0xd2905a29,0xf2b5bcc9,0xf2ca4fe9,0xf2ea21c9
+.inst 0xf9001009,0xd28d83e9,0xf2a567c9,0xf2cd1189,0xf2f360a9,0xf9001409,0xd297ad69,0xf2bf6829
+.inst 0xf2db3569,0xf2e3f069,0xf9001809,0xd2842f29,0xf2a26fc9,0xf2d9a329,0xf2eb7c09,0xf9001c09
+.inst 0xd65f03c0
+.p2align 6",
+    )
+}
+
+/// The verified code of [`super::vg_sha512_224_init`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha512_224_init(state: *mut [u8; 192]) {
+    core::arch::naked_asm!(
+        r".inst 0xd289b449,0xf2a32a89,0xf2c6f909,0xf2f187a9,0xf9000009,0xd29a9ac9,0xf2b13b89,0xf2d32cc9
+.inst 0xf2ee7c29,0xf9000409,0xd2939049,0xf2a65fe9,0xf2d6f5c9,0xf2e3bf49,0xf9000809,0xd293f9e9
+.inst 0xf2ab05e9,0xf2daa289,0xf2ecf3a9,0xf9000c09,0xd289b509,0xf2af7a89,0xf2c56d29,0xf2e1eda9
+.inst 0xf9001009,0xd2912849,0xf2a09889,0xf2cdee69,0xf2eefc69,0xf9001409,0xd286d909,0xf2ad43a9
+.inst 0xf2d0b509,0xf2e7f3a9,0xf9001809,0xd2925429,0xf2b23ac9,0xf2dcd5a9,0xf2e22249,0xf9001c09
+.inst 0xd65f03c0
+.p2align 6",
+    )
+}
+
+/// The verified code of [`super::vg_sha512_256_init`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha512_256_init(state: *mut [u8; 192]) {
+    core::arch::naked_asm!(
+        r".inst 0xd29ee589,0xf2bf8569,0xf2c43289,0xf2e44629,0xf9000009,0xd28c9849,0xf2b90989,0xf2cbf469
+.inst 0xf2f3eaa9,0xf9000409,0xd2962a29,0xf2adea69,0xf2d70d69,0xf2e47269,0xf9000809,0xd29d57a9
+.inst 0xf2ab2809,0xf2cee329,0xf2f2c709,0xf9000c09,0xd29ffc69,0xf2b511c9,0xf2c7dc49,0xf2f2c509
+.inst 0xf9001009,0xd2873249,0xf2aa70c9,0xf2c3c4a9,0xf2f7cbc9,0xf9001409,0xd2971549,0xf2a590a9
+.inst 0xf2d33f89,0xf2e56029,0xf9001809,0xd2859449,0xf2b038a9,0xf2c5bb89,0xf2e1d6e9,0xf9001c09
+.inst 0xd65f03c0
+.p2align 6",
+    )
+}
+
+/// The verified code of [`super::vg_sha384_finalize`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha384_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 48]) {
+    core::arch::naked_asm!(
+        r".inst 0xd11583ff,0x910003e3,0xf81f0ffe,0xf9014073,0xf9014474,0xf9014875,0xf9014c76,0xf9015077
+.inst 0xf9015478,0x91000013,0x91000074,0x91000055,0x91000036,0xd2800fe9,0x8a0902d7,0xd2801009
+.inst 0x8b17026c,0x39010189,0x910006f7,0x91003ef8,0xd347ff18
+20:
+.inst 0xd280100b
+cbz x24, 21f
+b 22f
+21:
+.inst 0xd2800e0b
+22:
+.inst 0xd2800009,0xcb17016b,0xd343fd6d
+cbz x13, 23f
+25:
+.inst 0x8b17026c,0xf9002189,0x910022f7,0xd100216b,0xd343fd6d
+cbnz x13, 25b
+b 24f
+23:
+24:
+cbz x11, 26f
+28:
+.inst 0x8b17026c,0x39010189,0x910006f7,0xd100056b
+cbnz x11, 28b
+b 27f
+26:
+27:
+cbz x24, 29f
+b 210f
+29:
+.inst 0xd37dfec9,0xdac00d29,0xf9005a69,0x8b1602c9,0x8b090129,0x8b090129,0xdac00d29,0xf9005e69
+210:
+.inst 0x91010261,0x91000260,0xd2800022,0x91000283
+bl {vg_sha512_compress}
+.inst 0xd2800017,0xd1000718
+cbz x24, 20b
+.inst 0xf9400269,0xdac00d29,0xf90002a9,0xf9400669,0xdac00d29,0xf90006a9,0xf9400a69,0xdac00d29
+.inst 0xf9000aa9,0xf9400e69,0xdac00d29,0xf9000ea9,0xf9401269,0xdac00d29,0xf90012a9,0xf9401669
+.inst 0xdac00d29,0xf90016a9,0xf9414293,0xf9414a95,0xf9414e96,0xf9415297,0xf9415698,0xf9414694
+.inst 0xf84107fe,0x911583ff,0xd65f03c0
+.p2align 6",
+        vg_sha512_compress = sym crate::sha512::vg_sha512_compress::vg_sha512_compress,
+    )
+}
+
+/// The verified code of [`super::vg_sha384_digest`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha384_digest(data: *const u8, len: usize, out: *mut [u8; 48]) {
+    core::arch::naked_asm!(
+        r".inst 0xd10e03ff,0x910d03ea,0xa9005553,0xa9016556,0xa9026d5a,0xa903795c,0x91000039,0x9100005a
+.inst 0x9100001b,0x910003e0,0xd293db09,0xf2b820a9,0xf2d3aba9,0xf2f97769,0xd29aa0ea,0xf2a6cf8a
+.inst 0xf2c5254a,0xf2ec534a,0xa9002809,0xd29ba2e9,0xf2a60e09,0xf2c02b49,0xf2f22b29,0xd28b272a
+.inst 0xf2bee1ca,0xf2dd9b0a,0xf2e2a5ea,0xa9012809,0xd2816629,0xf2bff809,0xf2c4cce9,0xf2ece669
+.inst 0xd282a22a,0xf2ad0b0a,0xf2c950ea,0xf2f1d68a,0xa9022809,0xd291f4e9,0xf2ac9f29,0xf2c5c1a9
+.inst 0xf2fb6189,0xd289f48a,0xf2b7df4a,0xf2c903aa,0xf2e8f6aa,0xa9032809,0xd347ff3c
+cbz x28, 20f
+.inst 0x910003e0,0x91000361,0x91000382,0x910303e3
+bl {vg_sha512_compress}
+.inst 0xd379e389,0x8b09037b
+b 21f
+20:
+21:
+.inst 0xd2800009,0x910103ec,0xa9002589,0xa9012589,0xa9022589,0xa9032589,0xa9042589,0xa9052589
+.inst 0xa9062589,0xa9072589,0xd2800fe9,0x8a09033c,0xd344ff8d
+cbz x13, 22f
+24:
+.inst 0xa9402b69,0xa9002989,0x9100437b,0x9100418c,0xd10005ad
+cbnz x13, 24b
+b 23f
+22:
+23:
+.inst 0xd28001e9,0x8a09038b
+cbz x11, 25f
+.inst 0xd344ff29
+cbz x9, 27f
+.inst 0x8b0b036d,0xd10041ad,0xd2801009,0x3dc001a0,0x6f00e401,0x4e081d21,0xd2822206,0xf2a26246
+.inst 0xf2c2a286,0xf2e2e2c6,0xd2832307,0xf2a36347,0xf2c3a387,0xf2e3e3c7,0x4e081cc2,0x4e181ce2
+.inst 0x4e010d63,0x6e238442,0x4e022004,0x3d800184
+b 28f
+27:
+29:
+.inst 0x39400369,0x39000189,0x9100077b,0x9100058c,0xd100056b
+cbnz x11, 29b
+.inst 0xd2801009,0x39000189
+28:
+b 26f
+25:
+.inst 0xd2801009,0xd280000a,0xa9002989
+26:
+.inst 0x91004389,0xd347fd29
+cbz x9, 210f
+.inst 0x910003e0,0x910103e1,0xd2800022,0x910303e3
+bl {vg_sha512_compress}
+.inst 0xd2800009,0x910103ec,0xa9002589,0xa9012589,0xa9022589,0xa9032589,0xa9042589,0xa9052589
+.inst 0xa9062589,0xa9072589
+b 211f
+210:
+211:
+.inst 0x910003f3,0x91000336,0xd37dfec9,0xdac00d29,0xf9005a69,0x8b1602c9,0x8b090129,0x8b090129
+.inst 0xdac00d29,0xf9005e69,0x9102c3ec,0xf9400189,0xf940058a,0xa9002989,0x910003e0,0x910103e1
+.inst 0xd2800022,0x910303e3
+bl {vg_sha512_compress}
+.inst 0x910003f3,0x91000355,0xf9400269,0xdac00d29,0xf90002a9,0xf9400669,0xdac00d29,0xf90006a9
+.inst 0xf9400a69,0xdac00d29,0xf9000aa9,0xf9400e69,0xdac00d29,0xf9000ea9,0xf9401269,0xdac00d29
+.inst 0xf90012a9,0xf9401669,0xdac00d29,0xf90016a9,0x910003f0,0xd2800011,0xa9004611,0xa9014611
+.inst 0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611
+.inst 0xa90a4611,0xa90b4611,0x910d03f0,0xa9405613,0xa9416616,0xa9426e1a,0xa9437a1c,0x910e03ff
+.inst 0xd65f03c0
+.p2align 6",
+        vg_sha512_compress = sym crate::sha512::vg_sha512_compress::vg_sha512_compress,
+    )
+}
+
+/// The verified code of [`super::vg_sha384_finalize_sha3`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha384_finalize_sha3(state: *mut [u8; 192], count: u64, out: *mut [u8; 48]) {
     core::arch::naked_asm!(
         r".inst 0xd11583ff,0x910003e3,0xf81f0ffe,0xf9014073,0xf9014474,0xf9014875,0xf9014c76,0xf9015077
 .inst 0xf9015478,0x91000013,0x91000074,0x91000055,0x91000036,0xd2800fe9,0x8a0902d7,0xd2801009
@@ -280,26 +638,13 @@ cbz x24, 20b
 .inst 0xdac00d29,0xf90016a9,0xf9414293,0xf9414a95,0xf9414e96,0xf9415297,0xf9415698,0xf9414694
 .inst 0xf84107fe,0x911583ff,0xd65f03c0
 .p2align 6",
-        vg_sha512_compress_sha3 = sym super::sha512::vg_sha512_compress_sha3::vg_sha512_compress_sha3,
+        vg_sha512_compress_sha3 = sym crate::sha512::vg_sha512_compress_sha3::vg_sha512_compress_sha3,
     )
 }
 
-/// The CPU features `vg_sha384_digest_sha3` requires (`Artifact.features`).
-pub const VG_SHA384_DIGEST_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
-
-/// Computes the SHA-384 digest of the `len` bytes at `data` (48 bytes, `VG.Spec.Sha512.sha384`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-384 computation with that message.
-///
-/// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha384`. Constant time: only the pointers and `len` may affect timing, not the data.
-///
-/// # Safety
-///
-/// * `data` must be valid for reads of `len` bytes.
-/// * `out` must be valid for reads and writes of 48 bytes.
-/// * `out` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `data` nor `out` may overlap the 896 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha3` target feature.
+/// The verified code of [`super::vg_sha384_digest_sha3`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha384_digest_sha3(data: *const u8, len: usize, out: *mut [u8; 48]) {
+pub(crate) unsafe extern "C" fn vg_sha384_digest_sha3(data: *const u8, len: usize, out: *mut [u8; 48]) {
     core::arch::naked_asm!(
         r".inst 0xd10e03ff,0x910d03ea,0xa9005553,0xa9016556,0xa9026d5a,0xa903795c,0x91000039,0x9100005a
 .inst 0x9100001b,0x910003e0,0xd293db09,0xf2b820a9,0xf2d3aba9,0xf2f97769,0xd29aa0ea,0xf2a6cf8a
@@ -361,22 +706,13 @@ bl {vg_sha512_compress_sha3}
 .inst 0xa90a4611,0xa90b4611,0x910d03f0,0xa9405613,0xa9416616,0xa9426e1a,0xa9437a1c,0x910e03ff
 .inst 0xd65f03c0
 .p2align 6",
-        vg_sha512_compress_sha3 = sym super::sha512::vg_sha512_compress_sha3::vg_sha512_compress_sha3,
+        vg_sha512_compress_sha3 = sym crate::sha512::vg_sha512_compress_sha3::vg_sha512_compress_sha3,
     )
 }
 
-/// Absorbs data into a SHA-384, SHA-512, SHA-512/224 or SHA-512/256 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), it then represents that message followed by the `len` bytes at `data`.
-///
-/// Contract: `VG.Spec.Sha512.updateContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 192 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `state` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_sha512_update`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha512_update(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_sha512_update(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd11583ff,0x910003e4,0xf81f0ffe,0xf9014093,0xf9014494,0xf9014895,0xf9014c96,0xf9015097
 .inst 0xf9015498,0x91000013,0x91000094,0x91000055,0x91000076,0xd2800fe9,0x8a090037
@@ -470,24 +806,13 @@ b 21f
 .inst 0xf9414293,0xf9414a95,0xf9414e96,0xf9415297,0xf9415698,0xf9414694,0xf84107fe,0x911583ff
 .inst 0xd65f03c0
 .p2align 6",
-        vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
+        vg_sha512_compress = sym crate::sha512::vg_sha512_compress::vg_sha512_compress,
     )
 }
 
-/// Finishes a SHA-384, SHA-512, SHA-512/224 or SHA-512/256 computation: if the streaming state `*state` represents a message of `count` bytes, hashed from an initial hash value, writes the final hash value `H⁽ᴺ⁾` of that message (64 bytes) to `*out`. The SHA-512 digest is all of it; the SHA-384, SHA-512/224 and SHA-512/256 digests are its first 48, 28 and 32 bytes.
-///
-/// Contract: `VG.Spec.Sha512.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 192 bytes.
-/// * `out` must be valid for reads and writes of 64 bytes.
-/// * `count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not supported.
-/// * The contents of `state` on return are unspecified.
-/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_sha512_finalize`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha512_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
+pub(crate) unsafe extern "C" fn vg_sha512_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
         r".inst 0xd11583ff,0x910003e3,0xf81f0ffe,0xf9014073,0xf9014474,0xf9014875,0xf9014c76,0xf9015077
 .inst 0xf9015478,0x91000013,0x91000074,0x91000055,0x91000036,0xd2800fe9,0x8a0902d7,0xd2801009
@@ -529,22 +854,13 @@ cbz x24, 20b
 .inst 0xf9414293,0xf9414a95,0xf9414e96,0xf9415297,0xf9415698,0xf9414694,0xf84107fe,0x911583ff
 .inst 0xd65f03c0
 .p2align 6",
-        vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
+        vg_sha512_compress = sym crate::sha512::vg_sha512_compress::vg_sha512_compress,
     )
 }
 
-/// Computes the SHA-512 digest of the `len` bytes at `data` (64 bytes, `VG.Spec.Sha512.sha512`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-512 computation with that message.
-///
-/// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha512`. Constant time: only the pointers and `len` may affect timing, not the data.
-///
-/// # Safety
-///
-/// * `data` must be valid for reads of `len` bytes.
-/// * `out` must be valid for reads and writes of 64 bytes.
-/// * `out` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `data` nor `out` may overlap the 896 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_sha512_digest`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha512_digest(data: *const u8, len: usize, out: *mut [u8; 64]) {
+pub(crate) unsafe extern "C" fn vg_sha512_digest(data: *const u8, len: usize, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
         r".inst 0xd10e03ff,0x910d03ea,0xa9005553,0xa9016556,0xa9026d5a,0xa903795c,0x91000039,0x9100005a
 .inst 0x9100001b,0x910003e0,0xd2992109,0xf2be7789,0xf2dccce9,0xf2ed4129,0xd294e76a,0xf2b0994a
@@ -606,26 +922,13 @@ bl {vg_sha512_compress}
 .inst 0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611
 .inst 0x910d03f0,0xa9405613,0xa9416616,0xa9426e1a,0xa9437a1c,0x910e03ff,0xd65f03c0
 .p2align 6",
-        vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
+        vg_sha512_compress = sym crate::sha512::vg_sha512_compress::vg_sha512_compress,
     )
 }
 
-/// The CPU features `vg_sha512_update_sha3` requires (`Artifact.features`).
-pub const VG_SHA512_UPDATE_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
-
-/// Absorbs data into a SHA-384, SHA-512, SHA-512/224 or SHA-512/256 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), it then represents that message followed by the `len` bytes at `data`.
-///
-/// Contract: `VG.Spec.Sha512.updateContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 192 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `state` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha3` target feature.
+/// The verified code of [`super::vg_sha512_update_sha3`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha512_update_sha3(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_sha512_update_sha3(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd11583ff,0x910003e4,0xf81f0ffe,0xf9014093,0xf9014494,0xf9014895,0xf9014c96,0xf9015097
 .inst 0xf9015498,0x91000013,0x91000094,0x91000055,0x91000076,0xd2800fe9,0x8a090037
@@ -719,28 +1022,13 @@ b 21f
 .inst 0xf9414293,0xf9414a95,0xf9414e96,0xf9415297,0xf9415698,0xf9414694,0xf84107fe,0x911583ff
 .inst 0xd65f03c0
 .p2align 6",
-        vg_sha512_compress_sha3 = sym super::sha512::vg_sha512_compress_sha3::vg_sha512_compress_sha3,
+        vg_sha512_compress_sha3 = sym crate::sha512::vg_sha512_compress_sha3::vg_sha512_compress_sha3,
     )
 }
 
-/// The CPU features `vg_sha512_finalize_sha3` requires (`Artifact.features`).
-pub const VG_SHA512_FINALIZE_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
-
-/// Finishes a SHA-384, SHA-512, SHA-512/224 or SHA-512/256 computation: if the streaming state `*state` represents a message of `count` bytes, hashed from an initial hash value, writes the final hash value `H⁽ᴺ⁾` of that message (64 bytes) to `*out`. The SHA-512 digest is all of it; the SHA-384, SHA-512/224 and SHA-512/256 digests are its first 48, 28 and 32 bytes.
-///
-/// Contract: `VG.Spec.Sha512.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 192 bytes.
-/// * `out` must be valid for reads and writes of 64 bytes.
-/// * `count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not supported.
-/// * The contents of `state` on return are unspecified.
-/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha3` target feature.
+/// The verified code of [`super::vg_sha512_finalize_sha3`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha512_finalize_sha3(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
+pub(crate) unsafe extern "C" fn vg_sha512_finalize_sha3(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
         r".inst 0xd11583ff,0x910003e3,0xf81f0ffe,0xf9014073,0xf9014474,0xf9014875,0xf9014c76,0xf9015077
 .inst 0xf9015478,0x91000013,0x91000074,0x91000055,0x91000036,0xd2800fe9,0x8a0902d7,0xd2801009
@@ -782,26 +1070,13 @@ cbz x24, 20b
 .inst 0xf9414293,0xf9414a95,0xf9414e96,0xf9415297,0xf9415698,0xf9414694,0xf84107fe,0x911583ff
 .inst 0xd65f03c0
 .p2align 6",
-        vg_sha512_compress_sha3 = sym super::sha512::vg_sha512_compress_sha3::vg_sha512_compress_sha3,
+        vg_sha512_compress_sha3 = sym crate::sha512::vg_sha512_compress_sha3::vg_sha512_compress_sha3,
     )
 }
 
-/// The CPU features `vg_sha512_digest_sha3` requires (`Artifact.features`).
-pub const VG_SHA512_DIGEST_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
-
-/// Computes the SHA-512 digest of the `len` bytes at `data` (64 bytes, `VG.Spec.Sha512.sha512`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-512 computation with that message.
-///
-/// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha512`. Constant time: only the pointers and `len` may affect timing, not the data.
-///
-/// # Safety
-///
-/// * `data` must be valid for reads of `len` bytes.
-/// * `out` must be valid for reads and writes of 64 bytes.
-/// * `out` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `data` nor `out` may overlap the 896 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha3` target feature.
+/// The verified code of [`super::vg_sha512_digest_sha3`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha512_digest_sha3(data: *const u8, len: usize, out: *mut [u8; 64]) {
+pub(crate) unsafe extern "C" fn vg_sha512_digest_sha3(data: *const u8, len: usize, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
         r".inst 0xd10e03ff,0x910d03ea,0xa9005553,0xa9016556,0xa9026d5a,0xa903795c,0x91000039,0x9100005a
 .inst 0x9100001b,0x910003e0,0xd2992109,0xf2be7789,0xf2dccce9,0xf2ed4129,0xd294e76a,0xf2b0994a
@@ -863,24 +1138,13 @@ bl {vg_sha512_compress_sha3}
 .inst 0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611
 .inst 0x910d03f0,0xa9405613,0xa9416616,0xa9426e1a,0xa9437a1c,0x910e03ff,0xd65f03c0
 .p2align 6",
-        vg_sha512_compress_sha3 = sym super::sha512::vg_sha512_compress_sha3::vg_sha512_compress_sha3,
+        vg_sha512_compress_sha3 = sym crate::sha512::vg_sha512_compress_sha3::vg_sha512_compress_sha3,
     )
 }
 
-/// Finishes a SHA-512/224 computation: if the streaming state `*state` represents a message of `count` bytes, hashed from the initial hash value of SHA-512/224 (as `vg_sha512_224_init` starts it), writes the SHA-512/224 digest of that message (28 bytes, `VG.Spec.Sha512.sha512_224`) to `*out`.
-///
-/// Contract: `VG.Spec.Sha512.finalizeDigestContract` for `VG.Spec.Sha512.H0_512_224` and `VG.Spec.Sha512.sha512_224`. Constant time: only the pointers and `count` may affect timing, not the state.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 192 bytes.
-/// * `out` must be valid for reads and writes of 28 bytes.
-/// * `count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not supported.
-/// * The contents of `state` on return are unspecified.
-/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_sha512_224_finalize`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha512_224_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 28]) {
+pub(crate) unsafe extern "C" fn vg_sha512_224_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
         r".inst 0xd11583ff,0x910003e3,0xf81f0ffe,0xf9014073,0xf9014474,0xf9014875,0xf9014c76,0xf9015077
 .inst 0xf9015478,0x91000013,0x91000074,0x91000055,0x91000036,0xd2800fe9,0x8a0902d7,0xd2801009
@@ -920,22 +1184,13 @@ cbz x24, 20b
 .inst 0xf9000aa9,0xb9401e69,0x5ac00929,0xb9001aa9,0xf9414293,0xf9414a95,0xf9414e96,0xf9415297
 .inst 0xf9415698,0xf9414694,0xf84107fe,0x911583ff,0xd65f03c0
 .p2align 6",
-        vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
+        vg_sha512_compress = sym crate::sha512::vg_sha512_compress::vg_sha512_compress,
     )
 }
 
-/// Computes the SHA-512/224 digest of the `len` bytes at `data` (28 bytes, `VG.Spec.Sha512.sha512_224`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-512/224 computation with that message.
-///
-/// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha512_224`. Constant time: only the pointers and `len` may affect timing, not the data.
-///
-/// # Safety
-///
-/// * `data` must be valid for reads of `len` bytes.
-/// * `out` must be valid for reads and writes of 28 bytes.
-/// * `out` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `data` nor `out` may overlap the 896 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_sha512_224_digest`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha512_224_digest(data: *const u8, len: usize, out: *mut [u8; 28]) {
+pub(crate) unsafe extern "C" fn vg_sha512_224_digest(data: *const u8, len: usize, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
         r".inst 0xd10e03ff,0x910d03ea,0xa9005553,0xa9016556,0xa9026d5a,0xa903795c,0x91000039,0x9100005a
 .inst 0x9100001b,0x910003e0,0xd289b449,0xf2a32a89,0xf2c6f909,0xf2f187a9,0xd29a9aca,0xf2b13b8a
@@ -996,28 +1251,13 @@ bl {vg_sha512_compress}
 .inst 0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0x910d03f0,0xa9405613,0xa9416616,0xa9426e1a
 .inst 0xa9437a1c,0x910e03ff,0xd65f03c0
 .p2align 6",
-        vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
+        vg_sha512_compress = sym crate::sha512::vg_sha512_compress::vg_sha512_compress,
     )
 }
 
-/// The CPU features `vg_sha512_224_finalize_sha3` requires (`Artifact.features`).
-pub const VG_SHA512_224_FINALIZE_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
-
-/// Finishes a SHA-512/224 computation: if the streaming state `*state` represents a message of `count` bytes, hashed from the initial hash value of SHA-512/224 (as `vg_sha512_224_init` starts it), writes the SHA-512/224 digest of that message (28 bytes, `VG.Spec.Sha512.sha512_224`) to `*out`.
-///
-/// Contract: `VG.Spec.Sha512.finalizeDigestContract` for `VG.Spec.Sha512.H0_512_224` and `VG.Spec.Sha512.sha512_224`. Constant time: only the pointers and `count` may affect timing, not the state.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 192 bytes.
-/// * `out` must be valid for reads and writes of 28 bytes.
-/// * `count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not supported.
-/// * The contents of `state` on return are unspecified.
-/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha3` target feature.
+/// The verified code of [`super::vg_sha512_224_finalize_sha3`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha512_224_finalize_sha3(state: *mut [u8; 192], count: u64, out: *mut [u8; 28]) {
+pub(crate) unsafe extern "C" fn vg_sha512_224_finalize_sha3(state: *mut [u8; 192], count: u64, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
         r".inst 0xd11583ff,0x910003e3,0xf81f0ffe,0xf9014073,0xf9014474,0xf9014875,0xf9014c76,0xf9015077
 .inst 0xf9015478,0x91000013,0x91000074,0x91000055,0x91000036,0xd2800fe9,0x8a0902d7,0xd2801009
@@ -1057,26 +1297,13 @@ cbz x24, 20b
 .inst 0xf9000aa9,0xb9401e69,0x5ac00929,0xb9001aa9,0xf9414293,0xf9414a95,0xf9414e96,0xf9415297
 .inst 0xf9415698,0xf9414694,0xf84107fe,0x911583ff,0xd65f03c0
 .p2align 6",
-        vg_sha512_compress_sha3 = sym super::sha512::vg_sha512_compress_sha3::vg_sha512_compress_sha3,
+        vg_sha512_compress_sha3 = sym crate::sha512::vg_sha512_compress_sha3::vg_sha512_compress_sha3,
     )
 }
 
-/// The CPU features `vg_sha512_224_digest_sha3` requires (`Artifact.features`).
-pub const VG_SHA512_224_DIGEST_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
-
-/// Computes the SHA-512/224 digest of the `len` bytes at `data` (28 bytes, `VG.Spec.Sha512.sha512_224`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-512/224 computation with that message.
-///
-/// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha512_224`. Constant time: only the pointers and `len` may affect timing, not the data.
-///
-/// # Safety
-///
-/// * `data` must be valid for reads of `len` bytes.
-/// * `out` must be valid for reads and writes of 28 bytes.
-/// * `out` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `data` nor `out` may overlap the 896 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha3` target feature.
+/// The verified code of [`super::vg_sha512_224_digest_sha3`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha512_224_digest_sha3(data: *const u8, len: usize, out: *mut [u8; 28]) {
+pub(crate) unsafe extern "C" fn vg_sha512_224_digest_sha3(data: *const u8, len: usize, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
         r".inst 0xd10e03ff,0x910d03ea,0xa9005553,0xa9016556,0xa9026d5a,0xa903795c,0x91000039,0x9100005a
 .inst 0x9100001b,0x910003e0,0xd289b449,0xf2a32a89,0xf2c6f909,0xf2f187a9,0xd29a9aca,0xf2b13b8a
@@ -1137,24 +1364,13 @@ bl {vg_sha512_compress_sha3}
 .inst 0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0x910d03f0,0xa9405613,0xa9416616,0xa9426e1a
 .inst 0xa9437a1c,0x910e03ff,0xd65f03c0
 .p2align 6",
-        vg_sha512_compress_sha3 = sym super::sha512::vg_sha512_compress_sha3::vg_sha512_compress_sha3,
+        vg_sha512_compress_sha3 = sym crate::sha512::vg_sha512_compress_sha3::vg_sha512_compress_sha3,
     )
 }
 
-/// Finishes a SHA-512/256 computation: if the streaming state `*state` represents a message of `count` bytes, hashed from the initial hash value of SHA-512/256 (as `vg_sha512_256_init` starts it), writes the SHA-512/256 digest of that message (32 bytes, `VG.Spec.Sha512.sha512_256`) to `*out`.
-///
-/// Contract: `VG.Spec.Sha512.finalizeDigestContract` for `VG.Spec.Sha512.H0_512_256` and `VG.Spec.Sha512.sha512_256`. Constant time: only the pointers and `count` may affect timing, not the state.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 192 bytes.
-/// * `out` must be valid for reads and writes of 32 bytes.
-/// * `count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not supported.
-/// * The contents of `state` on return are unspecified.
-/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_sha512_256_finalize`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha512_256_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 32]) {
+pub(crate) unsafe extern "C" fn vg_sha512_256_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
         r".inst 0xd11583ff,0x910003e3,0xf81f0ffe,0xf9014073,0xf9014474,0xf9014875,0xf9014c76,0xf9015077
 .inst 0xf9015478,0x91000013,0x91000074,0x91000055,0x91000036,0xd2800fe9,0x8a0902d7,0xd2801009
@@ -1194,22 +1410,13 @@ cbz x24, 20b
 .inst 0xf9000aa9,0xf9400e69,0xdac00d29,0xf9000ea9,0xf9414293,0xf9414a95,0xf9414e96,0xf9415297
 .inst 0xf9415698,0xf9414694,0xf84107fe,0x911583ff,0xd65f03c0
 .p2align 6",
-        vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
+        vg_sha512_compress = sym crate::sha512::vg_sha512_compress::vg_sha512_compress,
     )
 }
 
-/// Computes the SHA-512/256 digest of the `len` bytes at `data` (32 bytes, `VG.Spec.Sha512.sha512_256`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-512/256 computation with that message.
-///
-/// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha512_256`. Constant time: only the pointers and `len` may affect timing, not the data.
-///
-/// # Safety
-///
-/// * `data` must be valid for reads of `len` bytes.
-/// * `out` must be valid for reads and writes of 32 bytes.
-/// * `out` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `data` nor `out` may overlap the 896 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_sha512_256_digest`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha512_256_digest(data: *const u8, len: usize, out: *mut [u8; 32]) {
+pub(crate) unsafe extern "C" fn vg_sha512_256_digest(data: *const u8, len: usize, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
         r".inst 0xd10e03ff,0x910d03ea,0xa9005553,0xa9016556,0xa9026d5a,0xa903795c,0x91000039,0x9100005a
 .inst 0x9100001b,0x910003e0,0xd29ee589,0xf2bf8569,0xf2c43289,0xf2e44629,0xd28c984a,0xf2b9098a
@@ -1270,28 +1477,13 @@ bl {vg_sha512_compress}
 .inst 0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0x910d03f0,0xa9405613,0xa9416616,0xa9426e1a
 .inst 0xa9437a1c,0x910e03ff,0xd65f03c0
 .p2align 6",
-        vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
+        vg_sha512_compress = sym crate::sha512::vg_sha512_compress::vg_sha512_compress,
     )
 }
 
-/// The CPU features `vg_sha512_256_finalize_sha3` requires (`Artifact.features`).
-pub const VG_SHA512_256_FINALIZE_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
-
-/// Finishes a SHA-512/256 computation: if the streaming state `*state` represents a message of `count` bytes, hashed from the initial hash value of SHA-512/256 (as `vg_sha512_256_init` starts it), writes the SHA-512/256 digest of that message (32 bytes, `VG.Spec.Sha512.sha512_256`) to `*out`.
-///
-/// Contract: `VG.Spec.Sha512.finalizeDigestContract` for `VG.Spec.Sha512.H0_512_256` and `VG.Spec.Sha512.sha512_256`. Constant time: only the pointers and `count` may affect timing, not the state.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 192 bytes.
-/// * `out` must be valid for reads and writes of 32 bytes.
-/// * `count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not supported.
-/// * The contents of `state` on return are unspecified.
-/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha3` target feature.
+/// The verified code of [`super::vg_sha512_256_finalize_sha3`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha512_256_finalize_sha3(state: *mut [u8; 192], count: u64, out: *mut [u8; 32]) {
+pub(crate) unsafe extern "C" fn vg_sha512_256_finalize_sha3(state: *mut [u8; 192], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
         r".inst 0xd11583ff,0x910003e3,0xf81f0ffe,0xf9014073,0xf9014474,0xf9014875,0xf9014c76,0xf9015077
 .inst 0xf9015478,0x91000013,0x91000074,0x91000055,0x91000036,0xd2800fe9,0x8a0902d7,0xd2801009
@@ -1331,26 +1523,13 @@ cbz x24, 20b
 .inst 0xf9000aa9,0xf9400e69,0xdac00d29,0xf9000ea9,0xf9414293,0xf9414a95,0xf9414e96,0xf9415297
 .inst 0xf9415698,0xf9414694,0xf84107fe,0x911583ff,0xd65f03c0
 .p2align 6",
-        vg_sha512_compress_sha3 = sym super::sha512::vg_sha512_compress_sha3::vg_sha512_compress_sha3,
+        vg_sha512_compress_sha3 = sym crate::sha512::vg_sha512_compress_sha3::vg_sha512_compress_sha3,
     )
 }
 
-/// The CPU features `vg_sha512_256_digest_sha3` requires (`Artifact.features`).
-pub const VG_SHA512_256_DIGEST_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
-
-/// Computes the SHA-512/256 digest of the `len` bytes at `data` (32 bytes, `VG.Spec.Sha512.sha512_256`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-512/256 computation with that message.
-///
-/// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha512_256`. Constant time: only the pointers and `len` may affect timing, not the data.
-///
-/// # Safety
-///
-/// * `data` must be valid for reads of `len` bytes.
-/// * `out` must be valid for reads and writes of 32 bytes.
-/// * `out` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `data` nor `out` may overlap the 896 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha3` target feature.
+/// The verified code of [`super::vg_sha512_256_digest_sha3`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha512_256_digest_sha3(data: *const u8, len: usize, out: *mut [u8; 32]) {
+pub(crate) unsafe extern "C" fn vg_sha512_256_digest_sha3(data: *const u8, len: usize, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
         r".inst 0xd10e03ff,0x910d03ea,0xa9005553,0xa9016556,0xa9026d5a,0xa903795c,0x91000039,0x9100005a
 .inst 0x9100001b,0x910003e0,0xd29ee589,0xf2bf8569,0xf2c43289,0xf2e44629,0xd28c984a,0xf2b9098a
@@ -1411,8 +1590,9 @@ bl {vg_sha512_compress_sha3}
 .inst 0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0x910d03f0,0xa9405613,0xa9416616,0xa9426e1a
 .inst 0xa9437a1c,0x910e03ff,0xd65f03c0
 .p2align 6",
-        vg_sha512_compress_sha3 = sym super::sha512::vg_sha512_compress_sha3::vg_sha512_compress_sha3,
+        vg_sha512_compress_sha3 = sym crate::sha512::vg_sha512_compress_sha3::vg_sha512_compress_sha3,
     )
+}
 }
 
 #[rustfmt::skip]

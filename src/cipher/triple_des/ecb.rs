@@ -31,6 +31,7 @@ pub struct TripleDesEcb {
 impl TripleDesEcb {
     /// Expands a 16- or 24-byte key for use in either direction.
     pub fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
+        crate::dit::enter!(dit);
         if !matches!(key.len(), 16 | 24) {
             return Err(InvalidKeyLength);
         }
@@ -38,7 +39,7 @@ impl TripleDesEcb {
         // SAFETY: the key has a validated length; key and schedule are separate
         // valid buffers of the required sizes.
         unsafe {
-            vg_triple_des_expand_key(key.as_ptr(), key.len(), &mut schedule);
+            vg_triple_des_expand_key(dit, key.as_ptr(), key.len(), &mut schedule);
         }
         Ok(Self { schedule })
     }
@@ -46,16 +47,23 @@ impl TripleDesEcb {
     /// Encrypts complete eight-byte blocks in place. Empty input is valid.
     /// Returns an error without changing the buffer if its length is invalid.
     pub fn encrypt(&self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
-        self.crypt(buffer, true)
+        crate::dit::enter!(dit);
+        self.crypt(dit, buffer, true)
     }
 
     /// Decrypts complete eight-byte blocks in place. Empty input is valid.
     /// Returns an error without changing the buffer if its length is invalid.
     pub fn decrypt(&self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
-        self.crypt(buffer, false)
+        crate::dit::enter!(dit);
+        self.crypt(dit, buffer, false)
     }
 
-    fn crypt(&self, buffer: &mut [u8], encrypt: bool) -> Result<(), IncompleteBlock> {
+    fn crypt(
+        &self,
+        dit: crate::dit::Dit<'_>,
+        buffer: &mut [u8],
+        encrypt: bool,
+    ) -> Result<(), IncompleteBlock> {
         if !buffer.len().is_multiple_of(8) {
             return Err(IncompleteBlock);
         }
@@ -69,7 +77,12 @@ impl TripleDesEcb {
         // overlap the callee's stack. The dispatcher calls only an implementation
         // the CPU has the features of.
         unsafe {
-            f(&self.schedule, buffer.as_mut_ptr().cast(), buffer.len() / 8);
+            f(
+                dit,
+                &self.schedule,
+                buffer.as_mut_ptr().cast(),
+                buffer.len() / 8,
+            );
         }
         Ok(())
     }

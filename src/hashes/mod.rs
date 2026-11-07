@@ -1,5 +1,13 @@
 //! Hash functions, one module each: MD5, SHA-1, the SHA-2 and SHA-3 families,
 //! BLAKE2 and SM3.
+//!
+//! Hashing treats its input as public: on AArch64 it does not turn on data
+//! independent timing (PSTATE.DIT), which Arm needs for the timing of its
+//! instructions to be guaranteed independent of their data. To compute a
+//! function of a secret, use a keyed function, which does: HMAC
+//! (`crate::hmac`), a KDF (`crate::kdf`), or keyed BLAKE2 (`new_keyed`).
+//! The library's own operations on secrets that hash (HMAC, the KDFs,
+//! signing) hash with the mode on.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -80,6 +88,13 @@ macro_rules! streaming_hash {
     (@digest $backend:ident, $output:literal, { $($dvariant:ident)* }) => {
         /// The digest of `data`, in one call.
         pub fn digest(data: &[u8]) -> [u8; $output] {
+            Self::digest_with($crate::dit::public($crate::dit::Why::UnkeyedHash), data)
+        }
+
+        /// [`digest`](Self::digest), with the token of the operation it is
+        /// part of (see `crate::dit`).
+        #[allow(dead_code)]
+        pub(crate) fn digest_with(dit: $crate::dit::Dit<'_>, data: &[u8]) -> [u8; $output] {
             let mut out = [0; $output];
             // SAFETY: `data` is valid for reads of `data.len()` bytes and
             // `out` for writes of its size; they are distinct objects, so
@@ -88,7 +103,7 @@ macro_rules! streaming_hash {
             // address space. The backend is selected for this CPU's
             // features.
             unsafe {
-                $backend::select($crate::cpu::detected()).digest(data.as_ptr(), data.len(), &mut out)
+                $backend::select($crate::cpu::detected()).digest(dit, data.as_ptr(), data.len(), &mut out)
             };
             out
         }
@@ -97,9 +112,16 @@ macro_rules! streaming_hash {
     (@digest $backend:ident, $output:literal) => {
         /// The digest of `data`.
         pub fn digest(data: &[u8]) -> [u8; $output] {
-            let mut h = Self::new();
-            h.update(data);
-            h.finalize()
+            Self::digest_with($crate::dit::public($crate::dit::Why::UnkeyedHash), data)
+        }
+
+        /// [`digest`](Self::digest), with the token of the operation it is
+        /// part of (see `crate::dit`).
+        #[allow(dead_code)]
+        pub(crate) fn digest_with(dit: $crate::dit::Dit<'_>, data: &[u8]) -> [u8; $output] {
+            let mut h = Self::new_with(dit);
+            h.update_with(dit, data);
+            h.finalize_with(dit)
         }
     };
     (
@@ -169,6 +191,7 @@ macro_rules! streaming_hash {
             #[inline(always)]
             pub(crate) unsafe fn update(
                 self,
+                dit: $crate::dit::Dit<'_>,
                 state: &mut [u8; $state],
                 count: u64,
                 data: *const u8,
@@ -177,8 +200,8 @@ macro_rules! streaming_hash {
                 // SAFETY: the caller's obligations.
                 unsafe {
                     match self {
-                        Self::$base => $update(state, count, data, len),
-                        $($(#[$attr])* Self::$variant => $vupdate(state, count, data, len),)*
+                        Self::$base => $update(dit, state, count, data, len),
+                        $($(#[$attr])* Self::$variant => $vupdate(dit, state, count, data, len),)*
                     }
                 }
             }
@@ -192,6 +215,7 @@ macro_rules! streaming_hash {
             #[inline(always)]
             pub(crate) unsafe fn finalize(
                 self,
+                dit: $crate::dit::Dit<'_>,
                 state: &mut [u8; $state],
                 count: u64,
                 out: &mut [u8; $output],
@@ -199,8 +223,8 @@ macro_rules! streaming_hash {
                 // SAFETY: the caller's obligations.
                 unsafe {
                     match self {
-                        Self::$base => $finalize(state, count, out),
-                        $($(#[$attr])* Self::$variant => $vfinalize(state, count, out),)*
+                        Self::$base => $finalize(dit, state, count, out),
+                        $($(#[$attr])* Self::$variant => $vfinalize(dit, state, count, out),)*
                     }
                 }
             }
@@ -212,11 +236,17 @@ macro_rules! streaming_hash {
             ///
             /// As for the artifacts; the CPU must have the features of the
             /// implementation (as `select` guarantees).
-            pub(crate) unsafe fn digest(self, data: *const u8, len: usize, out: &mut [u8; $output]) {
+            pub(crate) unsafe fn digest(
+                self,
+                dit: $crate::dit::Dit<'_>,
+                data: *const u8,
+                len: usize,
+                out: &mut [u8; $output],
+            ) {
                 // SAFETY: the caller's obligations.
                 unsafe {
                     match self {
-                        $($(#[$dattr])* Self::$dvariant => $digest(data, len, out),)*
+                        $($(#[$dattr])* Self::$dvariant => $digest(dit, data, len, out),)*
                     }
                 }
             }
@@ -258,12 +288,19 @@ macro_rules! streaming_hash {
 
             /// Starts a new computation.
             pub fn new() -> Self {
+                Self::new_with($crate::dit::public($crate::dit::Why::UnkeyedHash))
+            }
+
+            /// [`new`](Self::new), with the token of the operation it is
+            /// part of (see `crate::dit`).
+            #[allow(dead_code)]
+            pub(crate) fn new_with(dit: $crate::dit::Dit<'_>) -> Self {
                 let mut state = [0; $state];
                 // SAFETY: `state` is valid for writes of its size, and is a
                 // distinct object from the return address (on x86-64 and x86)
                 // and the argument on the stack (on x86); as a Rust object, it
                 // does not wrap around the end of the address space.
-                unsafe { $init(&mut state) };
+                unsafe { $init(dit, &mut state) };
                 let backend = $backend::select($crate::cpu::detected());
                 $name { state, length: 0, backend }
             }
@@ -274,6 +311,16 @@ macro_rules! streaming_hash {
             ///
             /// If the message reaches 2⁶⁴ bytes.
             pub fn update(&mut self, data: &[u8]) {
+                self.update_with($crate::dit::public($crate::dit::Why::UnkeyedHash), data)
+            }
+
+            /// [`update`](Self::update), with the token of the operation it
+            /// is part of (see `crate::dit`).
+            ///
+            /// # Panics
+            ///
+            /// If the message reaches 2⁶⁴ bytes.
+            pub(crate) fn update_with(&mut self, dit: $crate::dit::Dit<'_>, data: &[u8]) {
                 let (length, overflow) = self.length.overflowing_add(data.len() as u64);
                 assert!(!overflow, "message too long");
                 // SAFETY: `self.state` is valid for reads and writes of its
@@ -286,6 +333,7 @@ macro_rules! streaming_hash {
                 // selected for this CPU's features.
                 unsafe {
                     self.backend.update(
+                        dit,
                         &mut self.state,
                         self.length,
                         data.as_ptr(),
@@ -296,7 +344,13 @@ macro_rules! streaming_hash {
             }
 
             /// Pads the message and returns its digest.
-            pub fn finalize(mut self) -> [u8; $output] {
+            pub fn finalize(self) -> [u8; $output] {
+                self.finalize_with($crate::dit::public($crate::dit::Why::UnkeyedHash))
+            }
+
+            /// [`finalize`](Self::finalize), with the token of the operation
+            /// it is part of (see `crate::dit`).
+            pub(crate) fn finalize_with(mut self, dit: $crate::dit::Dit<'_>) -> [u8; $output] {
                 let mut out = [0; $output];
                 // SAFETY: `self.state` is valid for reads and writes of its
                 // size and `out` for writes of its size; they are distinct
@@ -309,7 +363,7 @@ macro_rules! streaming_hash {
                 // this CPU's features.
                 unsafe {
                     self.backend
-                        .finalize(&mut self.state, self.length, &mut out)
+                        .finalize(dit, &mut self.state, self.length, &mut out)
                 };
                 out
             }

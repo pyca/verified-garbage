@@ -15,8 +15,19 @@
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other or `d` (distinct Rust objects never do).
 /// * None of `out`, `d` and `scratch` may wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_ec_p256_public_key(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 65], d: *const [u8; 32], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ec_p256_public_key(out, d, scratch) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_ec_p256_public_key`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ec_p256_public_key(out: *mut [u8; 65], d: *const [u8; 32], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ec_p256_public_key(out: *mut [u8; 65], d: *const [u8; 32], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "AADF+QgA5fumAgh8EAAF+Hgbbnx4K6N8GAAgOShMBH0gBAP5EAAgOShMBH0oBAP5CAAgOShMBH0wBAP5AAAgOShMBH04BAP5GAAgOShMBH1ABAP5EAAgOShMBH1IBAP5CAAgOShMBH1QBAP5AAAgOShMBH1YBAP5GAAgOShMBH1gBAP5EAAgOShMBH1oBAP5CAAgOShMBH1wBAP5AAAgOShMBH14BAP5//9gPf//a2FAAGOR//9gPf//a2FEAGOR//9gPf//a2FIAGORAABgPQAAa2FMAGORAABgPQAAa2FQAGORAABgPQAAa2FUAGORAABgPQEAa2FYAGOR//9gPf//a2FcAGORY/xgPVEla2FgAGORufNgPcLKa2FkAGORF6dgPYSea2FoAGOR5rxgPa36a2FsAGOR//9gPf//a2FwAGOR//9gPf//a2F0AGORAABgPQAAa2F4AGOR//9gPf//a2F8AGORAABgPQAAa2GgAGORAABgPQAAa2GkAGORAABgPQAAa2GoAGORAABgPQAAa2GsAGORAABgPQAAa2GwAGORAABgPQAAa2G0AGORAABgPQAAa2G4AGORAABgPQAAa2G8AGORAABgPQEAa2HAAGORAABgPQAAa2HEAGORAABgPQAAa2HIAGORAABgPQAAa2HMAGORAABgPQAAa2HQAGORAABgPQAAa2HUAGORAABgPQAAa2HYAGORAABgPQAAa2HcAGORAABgPQEAa2HgAGORAABgPQAAa2HkAGORAABgPQAAa2HoAGOR//9gPf//a2HsAGOR//9gPf//a2HwAGOR//9gPf//a2H0AGOR//9gPf7/a2H4AGORAABgPQAAa2H8AGOR//9gPfz/a2EAAWOR//9gPf//a2EEAWOR//9gPf//a2EIAWORAABgPQMAa2EMAWORAABgPQAAa2EQAWORAABgPQAAa2EUAWORAABgPQQAa2EYAWOR//9gPfz/a2EcAWORTn1gPZ85a2EgAWOR1olgPSaea2EkAWORjGlgPbKRa2EoAWOR0AZgPWYRa2EsAWORY+VgPYSMa2EwAWOR5rBgPQNia2E0AWORlQ1gPZzYa2E4AWORkJRgPVkSa2E8AWORqRhgPTwUa2FAAWOR53lgPdQwa2FEAWOR7V9gPQG2a2FIAWORunVgPfyVa2FMAWORYndgPRAla2FQAWOR+3lgPStza2FUAWORN6VgPcZVa2FYAWORkBhgPXZfa2FcAWORlc5gPQpWa2FgAWOR8t1gPVdTa2FkAWORGbpgPVzka2FoAWORSotgPeS4a2FsAWORId1gPSXza2FwAWOR6NJgPYiGa2F0AWORiCVgPYVda2F4AWORcYVgPRj/a2F8AWOReb5gPaLua2GAAWORJINgPZVMa2GEAWORvUlgPaZva2GIAWORmUZgPZx5a2GMAWORaytgPVnsa2GQAWORRShgPTmya2GUAWOR2fNgPSBWa2GYAWOR4WZgPZQta2GcAWORnANgPa/aa2GgAWORRgxgPT01a2GkAWOR6FhgPXtha2GoAWORGUNgPVIFa2GsAWORAABgPQAAa2GwAWORAABgPQAAa2G0AWOR//9gPf//a2G4AWORAABgPQAAa2G8AWOR//9gPf3/a2HAAWOR//9gPf//a2HEAWOR//9gPf//a2HIAWORAABgPQAAa2HMAWORAABgPQAAa2HQAWORAABgPQAAa2HUAWORAABgPQEAa2HYAWOR//9gPf//a2HcAWORY/xgPU8la2HgAWORufNgPcLKa2HkAWORF6dgPYSea2HoAWOR5rxgPa36a2HsAWOR//9gPf//a2HwAWOR//9gPf//a2H0AWORAABgPQAAa2H4AWOR//9gPf//a2H8AWORAABgPQAAa2EAAmORAABgPQAAa2EEAmORAABgPQAAa2EIAmORAABgPQAAa2EMAmORAABgPQAAa2EQAmORAABgPQAAa2EUAmORAABgPQAAa2EYAmORAABgPQAAa2EcAmORAABgPQEAa2EgAmORAABgPQAAa2EkAmORAABgPQAAa2EoAmOR//9gPf//a2EsAmOR//9gPf//a2EwAmOR//9gPf//a2E0AmOR//9gPf7/a2E4AmORAABgPQAAa2E8AmORAABgPQAAa2FAAmORAABgPQAAa2FEAmORAABgPQAAa2FIAmORAABgPQAAa2FMAmORAABgPQAAa2FQAmORAABgPQAAa2FUAmORAABgPQAAa2FYAmORAABgPQAAa2FcAmORAACAOP//hDjABYP4IADgOw=="
 20:
@@ -49,9 +60,10 @@ bl {vg_p256_mul_mod_p}
 .base64 "oAWAOAAFoDjAAMA4"
 bl {vg_p256_mul_mod_p}
 .base64 "AAAAOP//AGD//wBkAQDAOEAE44BgAAOBFALnfFA46HwUMud8IgDmeEQE44BkAAOBFALnfFA46HwUMud8IgDmeEgE44BoAAOBFALnfFA46HwUMud8IgDmeEwE44BsAAOBFALnfFA46HwUMud8IgDmeFAE44BwAAOBFALnfFA46HwUMud8IgDmeFQE44B0AAOBFALnfFA46HwUMud8IgDmeFgE44B4AAOBFALnfFA46HwUMud8IgDmeFwE44B8AAOBFALnfFA46HwUMud8IgDmeP//pjh4K6l8QASj6EgEg+h4I6V8UASD6HgjpXxYBIPoeCOlfAAAgDhQIIV8eCuEfOAPhHgAAKA4UCikfDhIpXzABYPoOCiEfMAFg/hAAqPoSAKD6HgjpXxQAoPoeCOlfFgCg+h4I6V8AACAOFAghXx4K4R84A+EeAAAoDhQKKR8wAWD6DgohHzABYP4wAVD6QQAgDg4UIR8AACOmKAEg+g4UIR8GQDAOCg1jnyoBIPoOFCEfBEAwDgoNY58sASD6DhQhHwJAMA4KDWOfLgEg+g4UIR8AQDAOCg1jnygBYPoOFCEfDkAwDgoNY58qAWD6DhQhHwxAMA4KDWOfLAFg+g4UIR8KQDAOCg1jny4BYPoOFCEfCEAwDgoNY58AQCAODggRH0QAAPopgMIfAAAw+kIAOPreCODfCAAgE4=""#,
-        vg_p256_mul = sym super::ec_p256::vg_p256_mul::vg_p256_mul,
-        vg_p256_mul_mod_p = sym super::ec_p256::vg_p256_mul_mod_p::vg_p256_mul_mod_p,
+        vg_p256_mul = sym crate::ec_p256::vg_p256_mul::vg_p256_mul,
+        vg_p256_mul_mod_p = sym crate::ec_p256::vg_p256_mul_mod_p::vg_p256_mul_mod_p,
     )
+}
 }
 
 #[rustfmt::skip]

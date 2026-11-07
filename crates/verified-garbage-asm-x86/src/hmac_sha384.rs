@@ -16,8 +16,40 @@
 /// * `key` must be valid for reads of `key_len` bytes.
 /// * `inner` and `outer` must not overlap each other or `key` (distinct Rust objects never do).
 /// * None of `inner`, `outer` and `key` may overlap the arguments on the stack, overlap the return address on the stack or the 3508 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_hmac_sha384_init(_dit: verified_garbage_cpu::Dit<'_>, inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_hmac_sha384_init(inner, outer, key, key_len) }
+}
+
+/// Finishes an HMAC-SHA-384 computation: if, for a 128-byte key `K₀` and a text of fewer than 2⁶⁴ − 128 bytes, the SHA-384 streaming state `*inner` represents `(K₀ ⊕ ipad) ‖ text`, of `count` bytes, and `*outer` represents `K₀ ⊕ opad`, writes the HMAC-SHA-384 of the text under `K₀` (48 bytes) to `*out`.
+///
+/// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.sha384I`. Constant time: only the pointers and `count` may affect timing, not the states.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `inner` must be valid for reads and writes of 192 bytes.
+/// * `outer` must be valid for reads of 192 bytes.
+/// * `out` must be valid for reads and writes of 48 bytes.
+/// * The contents of `inner` on return are unspecified.
+/// * `inner` and `out` must not overlap each other or `outer` (distinct Rust objects never do).
+/// * None of `inner`, `outer` and `out` may overlap the arguments on the stack, overlap the return address on the stack or the 1948 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_hmac_sha384_finalize(_dit: verified_garbage_cpu::Dit<'_>, inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 48]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_hmac_sha384_finalize(inner, outer, count, out) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_hmac_sha384_init`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_hmac_sha384_init(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize) {
+pub(crate) unsafe extern "C" fn vg_hmac_sha384_init(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "i0QkED2BAAAA"
 jae 20f
@@ -59,30 +91,17 @@ call {vg_hmac_sha384_init_scratch}
 .base64 "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"
 jmp 21b
 .p2align 6"#,
-        vg_sha384_init = sym super::sha512::vg_sha384_init,
-        vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
-        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
-        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
-        vg_hmac_sha384_init_scratch = sym super::hmac_sha384::vg_hmac_sha384_init_scratch::vg_hmac_sha384_init_scratch,
+        vg_sha384_init = sym crate::sha512::raw::vg_sha384_init,
+        vg_sha512_compress = sym crate::sha512::vg_sha512_compress::vg_sha512_compress,
+        vg_sha512_update_scratch = sym crate::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
+        vg_sha512_finalize_scratch = sym crate::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
+        vg_hmac_sha384_init_scratch = sym crate::hmac_sha384::vg_hmac_sha384_init_scratch::vg_hmac_sha384_init_scratch,
     )
 }
 
-/// Finishes an HMAC-SHA-384 computation: if, for a 128-byte key `K₀` and a text of fewer than 2⁶⁴ − 128 bytes, the SHA-384 streaming state `*inner` represents `(K₀ ⊕ ipad) ‖ text`, of `count` bytes, and `*outer` represents `K₀ ⊕ opad`, writes the HMAC-SHA-384 of the text under `K₀` (48 bytes) to `*out`.
-///
-/// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.sha384I`. Constant time: only the pointers and `count` may affect timing, not the states.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `inner` must be valid for reads and writes of 192 bytes.
-/// * `outer` must be valid for reads of 192 bytes.
-/// * `out` must be valid for reads and writes of 48 bytes.
-/// * The contents of `inner` on return are unspecified.
-/// * `inner` and `out` must not overlap each other or `outer` (distinct Rust objects never do).
-/// * None of `inner`, `outer` and `out` may overlap the arguments on the stack, overlap the return address on the stack or the 1948 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_hmac_sha384_finalize`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_hmac_sha384_finalize(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 48]) {
+pub(crate) unsafe extern "C" fn vg_hmac_sha384_finalize(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 48]) {
     core::arch::naked_asm!(
         r#".base64 "jaQklPj//4uEJHAHAACJRCQEi4QkdAcAAIlEJAiLhCR4BwAAiUQkDIuEJHwHAACJRCQQi4QkgAcAAIlEJBSJ4IPAHIlEJBiLRCQYiZgQAQAAibAUAQAAibgYAQAAiagcAQAAicWLXCQEi3QkCIt8JBSLRCQMi0wkEInqgcIgAQAAVVJRUFM="
 call {vg_sha512_finalize_scratch}
@@ -90,9 +109,10 @@ call {vg_sha512_finalize_scratch}
 call {vg_sha512_compress}
 .base64 "WFhYWInYg8BAi0sED8mJCIsLD8mJSASLSwwPyYlICItLCA/JiUgMi0sUD8mJSBCLSxAPyYlIFItLHA/JiUgYi0sYD8mJSByLSyQPyYlIIItLIA/JiUgki0ssD8mJSCiLSygPyYlILItLNA/JiUgwi0swD8mJSDSLSzwPyYlIOItLOA/JiUg8i0tAiQ+LS0SJTwSLS0iJTwiLS0yJTwyLS1CJTxCLS1SJTxSLS1iJTxiLS1yJTxyLS2CJTyCLS2SJTySLS2iJTyiLS2yJTyyJ6IuYEAEAAIuwFAEAAIu4GAEAAIuoHAEAAI2kJGwHAADD"
 .p2align 6"#,
-        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
-        vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
+        vg_sha512_finalize_scratch = sym crate::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
+        vg_sha512_compress = sym crate::sha512::vg_sha512_compress::vg_sha512_compress,
     )
+}
 }
 
 #[rustfmt::skip]

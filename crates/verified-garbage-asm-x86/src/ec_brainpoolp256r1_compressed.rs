@@ -17,8 +17,40 @@
 /// * The contents of `scratch` on return are unspecified; the caller may reuse or destroy them.
 /// * `out` and `scratch` must not overlap each other or `public` (distinct Rust objects never do).
 /// * None of `out`, `public` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 28 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_ec_brainpoolp256r1_compress_public_key(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 33], public: *const [u8; 65], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ec_brainpoolp256r1_compress_public_key(out, public, scratch) }
+}
+
+/// Validate and decompress a brainpoolP256r1 public key (SEC 1 §2.3.4, SP 800-56A §5.6.2.3.3): reads `02` or `03` followed by `x` in 32 bytes, most significant first; checks `x` below the field prime and recovers a coordinate `y` satisfying the curve equation with even parity for `02`, odd for `03`. Writes `04` followed by `x` and `y` in 32 bytes each and returns 1. If no such finite point exists, writes 65 zero bytes and returns 0. Rejects infinity and hybrid encodings. The curve has cofactor one, so no subgroup multiplication is required.
+///
+/// Contract: `VG.Spec.EcKey.Instance.decompressPublicKeyContract`. The input is public: timing may depend on the pointers and the contents of `public`.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 65 bytes.
+/// * `public` must be valid for reads of 33 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The contents of `scratch` on return are unspecified; the caller may reuse or destroy them.
+/// * `out` and `scratch` must not overlap each other or `public` (distinct Rust objects never do).
+/// * None of `out`, `public` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 28 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_ec_brainpoolp256r1_decompress_public_key(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 65], public: *const [u8; 33], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ec_brainpoolp256r1_decompress_public_key(out, public, scratch) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_ec_brainpoolp256r1_compress_public_key`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ec_brainpoolp256r1_compress_public_key(out: *mut [u8; 33], public: *const [u8; 65], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ec_brainpoolp256r1_compress_public_key(out: *mut [u8; 33], public: *const [u8; 65], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "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"
 call {vg_brainpoolp256r1_mul_mod_p}
@@ -40,28 +72,15 @@ call {vg_brainpoolp256r1_add_mod_p}
 call {vg_brainpoolp256r1_sub_mod_p}
 .base64 "WFhYWIuXYAUAAAuXZAUAAAuXaAUAAAuXbAUAAAuXcAUAAAuXdAUAAAuXeAUAAAuXfAUAALkAAAAAKdEZ0oPy/4uHwAUAACHQiYfABQAAi4/ABQAAi4dAAQAAi5eABAAAMcIhyjHQiYcABQAAi4dEAQAAi5eEBAAAMcIhyjHQiYcEBQAAi4dIAQAAi5eIBAAAMcIhyjHQiYcIBQAAi4dMAQAAi5eMBAAAMcIhyjHQiYcMBQAAi4dQAQAAi5eQBAAAMcIhyjHQiYcQBQAAi4dUAQAAi5eUBAAAMcIhyjHQiYcUBQAAi4dYAQAAi5eYBAAAMcIhyjHQiYcYBQAAi4dcAQAAi5ecBAAAMcIhyjHQiYccBQAAi4dgAQAAi5egBAAAMcIhyjHQiYegBQAAi4dkAQAAi5ekBAAAMcIhyjHQiYekBQAAi4doAQAAi5eoBAAAMcIhyjHQiYeoBQAAi4dsAQAAi5esBAAAMcIhyjHQiYesBQAAi4dwAQAAi5ewBAAAMcIhyjHQiYewBQAAi4d0AQAAi5e0BAAAMcIhyjHQiYe0BQAAi4d4AQAAi5e4BAAAMcIhyjHQiYe4BQAAi4d8AQAAi5e8BAAAMcIhyjHQiYe8BQAAi4/ABQAAi1wkBIuHwAQAAIPgAYPIAiHIiAOLh2AEAAAhyA/IiUMdi4dkBAAAIcgPyIlDGYuHaAQAACHID8iJQxWLh2wEAAAhyA/IiUMRi4dwBAAAIcgPyIlDDYuHdAQAACHID8iJQwmLh3gEAAAhyA/IiUMFi4d8BAAAIcgPyIlDAYnIg+ABifqLGotyBItqDIt6CMM="
 .p2align 6"#,
-        vg_brainpoolp256r1_mul_mod_p = sym super::ec_brainpoolp256r1::vg_brainpoolp256r1_mul_mod_p::vg_brainpoolp256r1_mul_mod_p,
-        vg_brainpoolp256r1_add_mod_p = sym super::ec_brainpoolp256r1::vg_brainpoolp256r1_add_mod_p::vg_brainpoolp256r1_add_mod_p,
-        vg_brainpoolp256r1_sub_mod_p = sym super::ec_brainpoolp256r1::vg_brainpoolp256r1_sub_mod_p::vg_brainpoolp256r1_sub_mod_p,
+        vg_brainpoolp256r1_mul_mod_p = sym crate::ec_brainpoolp256r1::vg_brainpoolp256r1_mul_mod_p::vg_brainpoolp256r1_mul_mod_p,
+        vg_brainpoolp256r1_add_mod_p = sym crate::ec_brainpoolp256r1::vg_brainpoolp256r1_add_mod_p::vg_brainpoolp256r1_add_mod_p,
+        vg_brainpoolp256r1_sub_mod_p = sym crate::ec_brainpoolp256r1::vg_brainpoolp256r1_sub_mod_p::vg_brainpoolp256r1_sub_mod_p,
     )
 }
 
-/// Validate and decompress a brainpoolP256r1 public key (SEC 1 §2.3.4, SP 800-56A §5.6.2.3.3): reads `02` or `03` followed by `x` in 32 bytes, most significant first; checks `x` below the field prime and recovers a coordinate `y` satisfying the curve equation with even parity for `02`, odd for `03`. Writes `04` followed by `x` and `y` in 32 bytes each and returns 1. If no such finite point exists, writes 65 zero bytes and returns 0. Rejects infinity and hybrid encodings. The curve has cofactor one, so no subgroup multiplication is required.
-///
-/// Contract: `VG.Spec.EcKey.Instance.decompressPublicKeyContract`. The input is public: timing may depend on the pointers and the contents of `public`.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 65 bytes.
-/// * `public` must be valid for reads of 33 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The contents of `scratch` on return are unspecified; the caller may reuse or destroy them.
-/// * `out` and `scratch` must not overlap each other or `public` (distinct Rust objects never do).
-/// * None of `out`, `public` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 28 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_ec_brainpoolp256r1_decompress_public_key`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ec_brainpoolp256r1_decompress_public_key(out: *mut [u8; 65], public: *const [u8; 33], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ec_brainpoolp256r1_decompress_public_key(out: *mut [u8; 65], public: *const [u8; 33], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "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"
 call {vg_brainpoolp256r1_mul_mod_p}
@@ -99,8 +118,9 @@ call {vg_brainpoolp256r1_mul_mod_p}
 call {vg_brainpoolp256r1_sub_mod_p}
 .base64 "WFhYWIuXAAUAAAuXBAUAAAuXCAUAAAuXDAUAAAuXEAUAAAuXFAUAAAuXGAUAAAuXHAUAALkAAAAAKdEZ0oPy/4uHwAUAACHQiYfABQAAi4fABAAAi49ABAAAMcGD4QG6AAAAACnKidGJyoPCAbgAAAAAKdCJwouHwAUAACHQiYfABQAAi4/ABQAAi1wkBLgEAAAAIciIA4uHYAQAACHID8iJQx2Lh2QEAAAhyA/IiUMZi4doBAAAIcgPyIlDFYuHbAQAACHID8iJQxGLh3AEAAAhyA/IiUMNi4d0BAAAIcgPyIlDCYuHeAQAACHID8iJQwWLh3wEAAAhyA/IiUMBi4fABAAAIcgPyIlDPYuHxAQAACHID8iJQzmLh8gEAAAhyA/IiUM1i4fMBAAAIcgPyIlDMYuH0AQAACHID8iJQy2Lh9QEAAAhyA/IiUMpi4fYBAAAIcgPyIlDJYuH3AQAACHID8iJQyGJyIPgAYn6ixqLcgSLagyLegjD"
 .p2align 6"#,
-        vg_brainpoolp256r1_mul_mod_p = sym super::ec_brainpoolp256r1::vg_brainpoolp256r1_mul_mod_p::vg_brainpoolp256r1_mul_mod_p,
-        vg_brainpoolp256r1_add_mod_p = sym super::ec_brainpoolp256r1::vg_brainpoolp256r1_add_mod_p::vg_brainpoolp256r1_add_mod_p,
-        vg_brainpoolp256r1_sub_mod_p = sym super::ec_brainpoolp256r1::vg_brainpoolp256r1_sub_mod_p::vg_brainpoolp256r1_sub_mod_p,
+        vg_brainpoolp256r1_mul_mod_p = sym crate::ec_brainpoolp256r1::vg_brainpoolp256r1_mul_mod_p::vg_brainpoolp256r1_mul_mod_p,
+        vg_brainpoolp256r1_add_mod_p = sym crate::ec_brainpoolp256r1::vg_brainpoolp256r1_add_mod_p::vg_brainpoolp256r1_add_mod_p,
+        vg_brainpoolp256r1_sub_mod_p = sym crate::ec_brainpoolp256r1::vg_brainpoolp256r1_sub_mod_p::vg_brainpoolp256r1_sub_mod_p,
     )
+}
 }

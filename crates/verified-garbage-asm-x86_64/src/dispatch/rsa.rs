@@ -33,15 +33,15 @@ pub use crate::rsa::vg_rsa_crt_values as vg_rsa_crt_values_auto;
 /// * None of `pre`, `n` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_rsa_public_precompute_auto(pre: *mut u64, pre_len: usize, n: *const u8, n_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe fn vg_rsa_public_precompute_auto(dit: verified_garbage_cpu::Dit<'_>, pre: *mut u64, pre_len: usize, n: *const u8, n_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::rsa::VG_RSA_PUBLIC_PRECOMPUTE_ADX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_rsa_public_precompute_adx`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::rsa::vg_rsa_public_precompute_adx(pre, pre_len, n, n_len, scratch, scratch_len) };
+        return unsafe { crate::rsa::vg_rsa_public_precompute_adx(dit, pre, pre_len, n, n_len, scratch, scratch_len) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::rsa::vg_rsa_public_precompute(pre, pre_len, n, n_len, scratch, scratch_len) }
+    unsafe { crate::rsa::vg_rsa_public_precompute(dit, pre, pre_len, n, n_len, scratch, scratch_len) }
 }
 
 /// `vg_rsa_recover_primes_det`, the only implementation of it on this target, which needs no CPU feature

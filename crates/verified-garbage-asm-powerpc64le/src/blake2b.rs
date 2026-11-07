@@ -14,8 +14,56 @@
 /// * `outlen` must be between 1 and 64, and `keylen` at most 64.
 /// * `state` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `state` nor `key` may wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_blake2b_init(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 192], outlen: usize, key: *const u8, keylen: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_blake2b_init(state, outlen, key, keylen) }
+}
+
+/// Absorbs data into a BLAKE2b computation: if the streaming state `*state` represents data of `count` bytes, it then represents that data followed by the `len` bytes at `data`.
+///
+/// Contract: `VG.Spec.Blake2.updateBContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 192 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `count` must be the exact length of the data so far (the key block included), and `count + len` less than 2⁶⁴.
+/// * `state` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the 656 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_blake2b_update(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_blake2b_update(state, count, data, len) }
+}
+
+/// Finishes a BLAKE2b computation: if the streaming state `*state` represents data of `count` bytes, compresses its last block and writes the final state `h[0..7]` (64 bytes) to `*out`. The digest of `outlen` bytes (`init`'s) is its first `outlen` bytes.
+///
+/// Contract: `VG.Spec.Blake2.finalizeBContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 192 bytes.
+/// * `out` must be valid for reads and writes of 64 bytes.
+/// * `count` must be the exact length of the data (the key block included), less than 2⁶⁴.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
+/// * Neither `state` nor `out` may overlap the 656 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_blake2b_finalize(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_blake2b_finalize(state, count, out) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_blake2b_init`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_blake2b_init(state: *mut [u8; 192], outlen: usize, key: *const u8, keylen: usize) {
+pub(crate) unsafe extern "C" fn vg_blake2b_init(state: *mut [u8; 192], outlen: usize, key: *const u8, keylen: usize) {
     core::arch::naked_asm!(
         r#".base64 "Z7sgPYWuKWHGByl5yoQpZTunKWEIACP5bjwgPXLzKWHGByl5lP4pZSv4KWEQACP5T6UgPTr1KWHGByl5HV8pZfE2KWEYACP5DlEgPX9SKWHGByl55q0pZdGCKWEgACP5BZsgPYxoKWHGByl5PispZR9sKWEoACP5gx8gPavZKWHGByl5QfspZWu9KWEwACP54FsgPRnNKWHGByl5fhMpZXkhKWE4ACP5CWogPWfmKWHGByl5vfIpZQjJKWHkRcp4eFIpfXgiKX0AACP5AAAmKA=="
 beq %cr0, 20f
@@ -30,19 +78,9 @@ b 21f
     )
 }
 
-/// Absorbs data into a BLAKE2b computation: if the streaming state `*state` represents data of `count` bytes, it then represents that data followed by the `len` bytes at `data`.
-///
-/// Contract: `VG.Spec.Blake2.updateBContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 192 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `count` must be the exact length of the data so far (the key block included), and `count + len` less than 2⁶⁴.
-/// * `state` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the 656 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_blake2b_update`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_blake2b_update(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_blake2b_update(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "of0h+CAA4TimAgh80f8h+CAAAfgAAkf7CAJn+xACh/sYAqf7IALH+ygC5/sAAEM7AABnOwAAhTsAAKY7AADkO///3zt/ACA5OEjefwEA3jsAAD8o"
 beq %cr0, 20f
@@ -105,24 +143,13 @@ b 23f
 22:
 23:
 .base64 "AAJb6xACm+sYArvrIALb6ygC++sIAnvrIAAB6DAAITimAwh8YAIhOCAAgE4=""#,
-        vg_blake2b_compress = sym super::blake2b::vg_blake2b_compress::vg_blake2b_compress,
+        vg_blake2b_compress = sym crate::blake2b::vg_blake2b_compress::vg_blake2b_compress,
     )
 }
 
-/// Finishes a BLAKE2b computation: if the streaming state `*state` represents data of `count` bytes, compresses its last block and writes the final state `h[0..7]` (64 bytes) to `*out`. The digest of `outlen` bytes (`init`'s) is its first `outlen` bytes.
-///
-/// Contract: `VG.Spec.Blake2.finalizeBContract`. Constant time: only the pointers and `count` may affect timing, not the state.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 192 bytes.
-/// * `out` must be valid for reads and writes of 64 bytes.
-/// * `count` must be the exact length of the data (the key block included), less than 2⁶⁴.
-/// * The contents of `state` on return are unspecified.
-/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 656 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_blake2b_finalize`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_blake2b_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
+pub(crate) unsafe extern "C" fn vg_blake2b_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
         r#".base64 "of0h+CAAwTimAgh80f8h+CAAAfgAAkb7CAJm+xAChvsYAqb7IALG+ygC5vsAAEM7AABmOwAAhTsAAOQ7///fO38AIDk4SN5/AQDeOwAAPyg="
 beq %cr0, 20f
@@ -141,8 +168,9 @@ b 23f
 .base64 "AAB6OEAAmjgBAKA4AADfOAEA4DgAABs5"
 bl {vg_blake2b_compress}
 .base64 "AAA66QAAPPkIADrpCAA8+RAAOukQADz5GAA66RgAPPkgADrpIAA8+SgAOukoADz5MAA66TAAPPk4ADrpOAA8+QACW+sQApvrGAK76yAC2+soAvvrCAJ76yAAAegwACE4pgMIfGACITggAIBO""#,
-        vg_blake2b_compress = sym super::blake2b::vg_blake2b_compress::vg_blake2b_compress,
+        vg_blake2b_compress = sym crate::blake2b::vg_blake2b_compress::vg_blake2b_compress,
     )
+}
 }
 
 #[rustfmt::skip]

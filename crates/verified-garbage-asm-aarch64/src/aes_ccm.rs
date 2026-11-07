@@ -23,132 +23,12 @@ pub const VG_AES_CCM_SEAL_AES_FEATURES: verified_garbage_cpu::Features = verifie
 /// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_ccm_seal_aes(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
-    core::arch::naked_asm!(
-        r".inst 0xd12883ff,0x910003f0,0xf94513f1,0xf9000211,0xf94517f1,0xf9000611,0x910083f1,0xf9000a11
-.inst 0xf9400be9,0xf94007ea,0xf94003eb,0xf9004534,0xf9004935,0xf9004d36,0xf9005137,0xf9005538
-.inst 0xf9005939,0xf9005d3a,0xf900613b,0xf900653c,0xf900693e,0xf9004133,0x91000133,0x91000154
-.inst 0x91000015,0x91000036,0xf9006e64,0xf9007265,0xf9007663,0xf9007a6b,0x910000db,0x910000fc
-.inst 0xd2800009,0xf9001a69,0xf9001e69,0xd28001c9,0xcb030129,0x3900c269,0x9100c66b,0x9100004c
-.inst 0x9100006d
-20:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 20b
-.inst 0xf9406e77,0xf9407278,0xd1000a89,0xd37ef529,0xf940766a,0xd28001cb,0xcb0a016b,0x8b0b0129
-cbz x24, 21f
-.inst 0x91010129
-b 22f
-21:
-22:
-.inst 0xf9401a6a,0xf9401e6b,0xf900126a,0x39008269,0xdac00f8c,0xaa0c016b,0xf900166b,0xd2800009
-.inst 0xf9000269,0xf9000669,0x910002a0,0x910002c1,0x91000262,0x91060265,0x91008263,0xd2800024
-bl {vg_cmac_aes_update_aes}
-cbz x24, 23f
-.inst 0xd2800009,0xf9001269,0xf9001669,0xd360ff09
-cbz x9, 25f
-.inst 0xd29fffe9,0xf9001269,0xdac00f09,0x91008a6a,0xf9000149,0xd2800159
-b 26f
-25:
-.inst 0xd348ff09,0xd103fd29,0xd37ffd29
-cbz x9, 27f
-.inst 0xdac00f09,0xd370fd29,0xf9001269,0xd2800059
-b 28f
-27:
-.inst 0xdac00f09,0xd350fd29,0xd29fdfea,0xaa0a0129,0xf9001269,0xd28000d9
-28:
-26:
-.inst 0xd2800209,0xcb190129,0xd344ff0a
-cbnz x10, 29f
-.inst 0xcb18012b,0xd37ffd6b
-cbz x11, 211f
-.inst 0x9100012a
-b 212f
-211:
-.inst 0x9100030a
-212:
-b 210f
-29:
-.inst 0x9100012a
-210:
-.inst 0x8b19026b,0x9100816b,0x910002ec,0x9100014d
-213:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 213b
-.inst 0x8b0a02f7,0xcb0a0318,0x910002a0,0x910002c1,0x91000262,0x91060265,0x91008263,0xd2800024
-bl {vg_cmac_aes_update_aes}
-.inst 0x910002a0,0x910002c1,0x91000262,0x91060265,0x910002e3,0xd344ff04
-bl {vg_cmac_aes_update_aes}
-.inst 0xd28001e9,0x8a09030d
-cbz x13, 214f
-.inst 0xd2800009,0xf9001269,0xf9001669,0xd344ff0a,0xd37ced4a,0x8b0a02ec,0x9100826b
-216:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 216b
-.inst 0x910002a0,0x910002c1,0x91000262,0x91060265,0x91008263,0xd2800024
-bl {vg_cmac_aes_update_aes}
-b 215f
-214:
-215:
-b 24f
-23:
-24:
-.inst 0x91000377,0x91000398,0x910002a0,0x910002c1,0x91000262,0x91060265,0x910002e3,0xd344ff04
-bl {vg_cmac_aes_update_aes}
-.inst 0xd28001e9,0x8a09030d
-cbz x13, 217f
-.inst 0xd2800009,0xf9001269,0xf9001669,0xd344ff0a,0xd37ced4a,0x8b0a02ec,0x9100826b
-219:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 219b
-.inst 0x910002a0,0x910002c1,0x91000262,0x91060265,0x91008263,0xd2800024
-bl {vg_cmac_aes_update_aes}
-b 218f
-217:
-218:
-.inst 0xd2800009,0xf9401a6a,0xf9401e6b,0xf900226a,0xdac00d29,0xaa09016b,0xf900266b,0x910002a0
-.inst 0x910002c1,0x91010262,0x91060265,0x91000263,0xd2800024
-bl {vg_aes_ctr32_aes}
-.inst 0x91000377,0xd344ff98,0xd2800039
-cbz x24, 220f
-222:
-.inst 0x11000329,0xd2c0002a,0xcb09014a,0xcb0a030b,0xd37ffd6b
-cbz x11, 223f
-.inst 0x9100031a
-b 224f
-223:
-.inst 0x9100015a
-224:
-.inst 0x91000329,0xf9401a6a,0xf9401e6b,0xf900226a,0xdac00d29,0xaa09016b,0xf900266b,0x910002a0
-.inst 0x910002c1,0x91010262,0x91060265,0x910002e3,0x91000344
-bl {vg_aes_ctr32_aes}
-.inst 0xcb1a0318,0x8b1a0339,0xd37cef49,0x8b0902f7
-cbnz x24, 222b
-b 221f
-220:
-221:
-.inst 0xd28001e9,0x8a09039a
-cbz x26, 225f
-.inst 0x91000329,0xf9401a6a,0xf9401e6b,0xf900226a,0xdac00d29,0xaa09016b,0xf900266b,0xd2800009
-.inst 0xf9002a69,0xf9002e69,0x910002a0,0x910002c1,0x91010262,0x91060265,0x91014263,0xd2800024
-bl {vg_aes_ctr32_aes}
-.inst 0x9101426b,0x910002ec,0x9100034d
-227:
-.inst 0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 227b
-b 226f
-225:
-226:
-.inst 0xf9407a6b,0x9100026c,0x9100028d
-228:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 228b
-.inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
-.inst 0xf940667c,0xf9406a7e,0xf9404273,0x912883ff,0xd65f03c0
-.p2align 6",
-        vg_cmac_aes_update_aes = sym super::cmac_aes::vg_cmac_aes_update_aes::vg_cmac_aes_update_aes,
-        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
-    )
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_ccm_seal_aes(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_ccm_seal_aes(schedule, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) }
 }
 
 /// The CPU features `vg_aes_ccm_open_aes` requires (`Artifact.features`).
@@ -171,153 +51,12 @@ pub const VG_AES_CCM_OPEN_AES_FEATURES: verified_garbage_cpu::Features = verifie
 /// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_ccm_open_aes(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
-    core::arch::naked_asm!(
-        r".inst 0xd12883ff,0x910003f0,0xf94513f1,0xf9000211,0xf94517f1,0xf9000611,0x910083f1,0xf9000a11
-.inst 0xf9400be9,0xf94007ea,0xf94003eb,0xf9004534,0xf9004935,0xf9004d36,0xf9005137,0xf9005538
-.inst 0xf9005939,0xf9005d3a,0xf900613b,0xf900653c,0xf900693e,0xf9004133,0x91000133,0x91000154
-.inst 0x91000015,0x91000036,0xf9006e64,0xf9007265,0xf9007663,0xf9007a6b,0x910000db,0x910000fc
-.inst 0xd2800009,0xf9001a69,0xf9001e69,0xd28001c9,0xcb030129,0x3900c269,0x9100c66b,0x9100004c
-.inst 0x9100006d
-20:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 20b
-.inst 0x91000377,0xd344ff98,0xd2800039
-cbz x24, 21f
-23:
-.inst 0x11000329,0xd2c0002a,0xcb09014a,0xcb0a030b,0xd37ffd6b
-cbz x11, 24f
-.inst 0x9100031a
-b 25f
-24:
-.inst 0x9100015a
-25:
-.inst 0x91000329,0xf9401a6a,0xf9401e6b,0xf900226a,0xdac00d29,0xaa09016b,0xf900266b,0x910002a0
-.inst 0x910002c1,0x91010262,0x91060265,0x910002e3,0x91000344
-bl {vg_aes_ctr32_aes}
-.inst 0xcb1a0318,0x8b1a0339,0xd37cef49,0x8b0902f7
-cbnz x24, 23b
-b 22f
-21:
-22:
-.inst 0xd28001e9,0x8a09039a
-cbz x26, 26f
-.inst 0x91000329,0xf9401a6a,0xf9401e6b,0xf900226a,0xdac00d29,0xaa09016b,0xf900266b,0xd2800009
-.inst 0xf9002a69,0xf9002e69,0x910002a0,0x910002c1,0x91010262,0x91060265,0x91014263,0xd2800024
-bl {vg_aes_ctr32_aes}
-.inst 0x9101426b,0x910002ec,0x9100034d
-28:
-.inst 0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 28b
-b 27f
-26:
-27:
-.inst 0xf9406e77,0xf9407278,0xd1000a89,0xd37ef529,0xf940766a,0xd28001cb,0xcb0a016b,0x8b0b0129
-cbz x24, 29f
-.inst 0x91010129
-b 210f
-29:
-210:
-.inst 0xf9401a6a,0xf9401e6b,0xf900126a,0x39008269,0xdac00f8c,0xaa0c016b,0xf900166b,0xd2800009
-.inst 0xf9003269,0xf9003669,0x910002a0,0x910002c1,0x91018262,0x91060265,0x91008263,0xd2800024
-bl {vg_cmac_aes_update_aes}
-cbz x24, 211f
-.inst 0xd2800009,0xf9001269,0xf9001669,0xd360ff09
-cbz x9, 213f
-.inst 0xd29fffe9,0xf9001269,0xdac00f09,0x91008a6a,0xf9000149,0xd2800159
-b 214f
-213:
-.inst 0xd348ff09,0xd103fd29,0xd37ffd29
-cbz x9, 215f
-.inst 0xdac00f09,0xd370fd29,0xf9001269,0xd2800059
-b 216f
-215:
-.inst 0xdac00f09,0xd350fd29,0xd29fdfea,0xaa0a0129,0xf9001269,0xd28000d9
-216:
-214:
-.inst 0xd2800209,0xcb190129,0xd344ff0a
-cbnz x10, 217f
-.inst 0xcb18012b,0xd37ffd6b
-cbz x11, 219f
-.inst 0x9100012a
-b 220f
-219:
-.inst 0x9100030a
-220:
-b 218f
-217:
-.inst 0x9100012a
-218:
-.inst 0x8b19026b,0x9100816b,0x910002ec,0x9100014d
-221:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 221b
-.inst 0x8b0a02f7,0xcb0a0318,0x910002a0,0x910002c1,0x91018262,0x91060265,0x91008263,0xd2800024
-bl {vg_cmac_aes_update_aes}
-.inst 0x910002a0,0x910002c1,0x91018262,0x91060265,0x910002e3,0xd344ff04
-bl {vg_cmac_aes_update_aes}
-.inst 0xd28001e9,0x8a09030d
-cbz x13, 222f
-.inst 0xd2800009,0xf9001269,0xf9001669,0xd344ff0a,0xd37ced4a,0x8b0a02ec,0x9100826b
-224:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 224b
-.inst 0x910002a0,0x910002c1,0x91018262,0x91060265,0x91008263,0xd2800024
-bl {vg_cmac_aes_update_aes}
-b 223f
-222:
-223:
-b 212f
-211:
-212:
-.inst 0x91000377,0x91000398,0x910002a0,0x910002c1,0x91018262,0x91060265,0x910002e3,0xd344ff04
-bl {vg_cmac_aes_update_aes}
-.inst 0xd28001e9,0x8a09030d
-cbz x13, 225f
-.inst 0xd2800009,0xf9001269,0xf9001669,0xd344ff0a,0xd37ced4a,0x8b0a02ec,0x9100826b
-227:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 227b
-.inst 0x910002a0,0x910002c1,0x91018262,0x91060265,0x91008263,0xd2800024
-bl {vg_cmac_aes_update_aes}
-b 226f
-225:
-226:
-.inst 0xd2800009,0xf9401a6a,0xf9401e6b,0xf900226a,0xdac00d29,0xaa09016b,0xf900266b,0x910002a0
-.inst 0x910002c1,0x91010262,0x91060265,0x91018263,0xd2800024
-bl {vg_aes_ctr32_aes}
-.inst 0xf9407a6c,0xd2800009,0xf9008269,0xf9008669,0xf9008a69,0xf9008e69,0x9104426b,0x9100028d
-228:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 228b
-.inst 0x9104026b,0x9101826c,0x9100028d
-229:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 229b
-.inst 0xf9408269,0xf9408a6a,0xca0a0129,0xf940866a,0xf9408e6b,0xca0b014a,0xaa0a0129,0xd280000b
-.inst 0xd100056c,0xab0c0129,0xba0b016a,0xd2800020,0xcb0a0000,0xd100054b,0x9100036c,0x4e010d70
-.inst 0xd344ff8e,0xd37cedcd,0xcb0d038d
-cbz x14, 230f
-232:
-.inst 0x3dc00191,0x4e301e31,0x3d800191,0x9100418c,0xd10005ce
-cbnz x14, 232b
-b 231f
-230:
-231:
-cbz x13, 233f
-235:
-.inst 0x3940018e,0x0a0b01ce,0x3900018e,0x9100058c,0xd10005ad
-cbnz x13, 235b
-b 234f
-233:
-234:
-.inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
-.inst 0xf940667c,0xf9406a7e,0xf9404273,0x912883ff,0xd65f03c0
-.p2align 6",
-        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
-        vg_cmac_aes_update_aes = sym super::cmac_aes::vg_cmac_aes_update_aes::vg_cmac_aes_update_aes,
-    )
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_ccm_open_aes(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_ccm_open_aes(schedule, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) }
 }
 
 /// The CPU features `vg_aes_ccm_seal_aes_cbc` requires (`Artifact.features`).
@@ -340,132 +79,12 @@ pub const VG_AES_CCM_SEAL_AES_CBC_FEATURES: verified_garbage_cpu::Features = ver
 /// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_ccm_seal_aes_cbc(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
-    core::arch::naked_asm!(
-        r".inst 0xd12883ff,0x910003f0,0xf94513f1,0xf9000211,0xf94517f1,0xf9000611,0x910083f1,0xf9000a11
-.inst 0xf9400be9,0xf94007ea,0xf94003eb,0xf9004534,0xf9004935,0xf9004d36,0xf9005137,0xf9005538
-.inst 0xf9005939,0xf9005d3a,0xf900613b,0xf900653c,0xf900693e,0xf9004133,0x91000133,0x91000154
-.inst 0x91000015,0x91000036,0xf9006e64,0xf9007265,0xf9007663,0xf9007a6b,0x910000db,0x910000fc
-.inst 0xd2800009,0xf9001a69,0xf9001e69,0xd28001c9,0xcb030129,0x3900c269,0x9100c66b,0x9100004c
-.inst 0x9100006d
-20:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 20b
-.inst 0xf9406e77,0xf9407278,0xd1000a89,0xd37ef529,0xf940766a,0xd28001cb,0xcb0a016b,0x8b0b0129
-cbz x24, 21f
-.inst 0x91010129
-b 22f
-21:
-22:
-.inst 0xf9401a6a,0xf9401e6b,0xf900126a,0x39008269,0xdac00f8c,0xaa0c016b,0xf900166b,0xd2800009
-.inst 0xf9000269,0xf9000669,0x910002a0,0x910002c1,0x91000262,0x91060265,0x91008263,0xd2800024
-bl {vg_cmac_aes_update_aes_cbc}
-cbz x24, 23f
-.inst 0xd2800009,0xf9001269,0xf9001669,0xd360ff09
-cbz x9, 25f
-.inst 0xd29fffe9,0xf9001269,0xdac00f09,0x91008a6a,0xf9000149,0xd2800159
-b 26f
-25:
-.inst 0xd348ff09,0xd103fd29,0xd37ffd29
-cbz x9, 27f
-.inst 0xdac00f09,0xd370fd29,0xf9001269,0xd2800059
-b 28f
-27:
-.inst 0xdac00f09,0xd350fd29,0xd29fdfea,0xaa0a0129,0xf9001269,0xd28000d9
-28:
-26:
-.inst 0xd2800209,0xcb190129,0xd344ff0a
-cbnz x10, 29f
-.inst 0xcb18012b,0xd37ffd6b
-cbz x11, 211f
-.inst 0x9100012a
-b 212f
-211:
-.inst 0x9100030a
-212:
-b 210f
-29:
-.inst 0x9100012a
-210:
-.inst 0x8b19026b,0x9100816b,0x910002ec,0x9100014d
-213:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 213b
-.inst 0x8b0a02f7,0xcb0a0318,0x910002a0,0x910002c1,0x91000262,0x91060265,0x91008263,0xd2800024
-bl {vg_cmac_aes_update_aes_cbc}
-.inst 0x910002a0,0x910002c1,0x91000262,0x91060265,0x910002e3,0xd344ff04
-bl {vg_cmac_aes_update_aes_cbc}
-.inst 0xd28001e9,0x8a09030d
-cbz x13, 214f
-.inst 0xd2800009,0xf9001269,0xf9001669,0xd344ff0a,0xd37ced4a,0x8b0a02ec,0x9100826b
-216:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 216b
-.inst 0x910002a0,0x910002c1,0x91000262,0x91060265,0x91008263,0xd2800024
-bl {vg_cmac_aes_update_aes_cbc}
-b 215f
-214:
-215:
-b 24f
-23:
-24:
-.inst 0x91000377,0x91000398,0x910002a0,0x910002c1,0x91000262,0x91060265,0x910002e3,0xd344ff04
-bl {vg_cmac_aes_update_aes_cbc}
-.inst 0xd28001e9,0x8a09030d
-cbz x13, 217f
-.inst 0xd2800009,0xf9001269,0xf9001669,0xd344ff0a,0xd37ced4a,0x8b0a02ec,0x9100826b
-219:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 219b
-.inst 0x910002a0,0x910002c1,0x91000262,0x91060265,0x91008263,0xd2800024
-bl {vg_cmac_aes_update_aes_cbc}
-b 218f
-217:
-218:
-.inst 0xd2800009,0xf9401a6a,0xf9401e6b,0xf900226a,0xdac00d29,0xaa09016b,0xf900266b,0x910002a0
-.inst 0x910002c1,0x91010262,0x91060265,0x91000263,0xd2800024
-bl {vg_aes_ctr32_aes}
-.inst 0x91000377,0xd344ff98,0xd2800039
-cbz x24, 220f
-222:
-.inst 0x11000329,0xd2c0002a,0xcb09014a,0xcb0a030b,0xd37ffd6b
-cbz x11, 223f
-.inst 0x9100031a
-b 224f
-223:
-.inst 0x9100015a
-224:
-.inst 0x91000329,0xf9401a6a,0xf9401e6b,0xf900226a,0xdac00d29,0xaa09016b,0xf900266b,0x910002a0
-.inst 0x910002c1,0x91010262,0x91060265,0x910002e3,0x91000344
-bl {vg_aes_ctr32_aes}
-.inst 0xcb1a0318,0x8b1a0339,0xd37cef49,0x8b0902f7
-cbnz x24, 222b
-b 221f
-220:
-221:
-.inst 0xd28001e9,0x8a09039a
-cbz x26, 225f
-.inst 0x91000329,0xf9401a6a,0xf9401e6b,0xf900226a,0xdac00d29,0xaa09016b,0xf900266b,0xd2800009
-.inst 0xf9002a69,0xf9002e69,0x910002a0,0x910002c1,0x91010262,0x91060265,0x91014263,0xd2800024
-bl {vg_aes_ctr32_aes}
-.inst 0x9101426b,0x910002ec,0x9100034d
-227:
-.inst 0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 227b
-b 226f
-225:
-226:
-.inst 0xf9407a6b,0x9100026c,0x9100028d
-228:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 228b
-.inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
-.inst 0xf940667c,0xf9406a7e,0xf9404273,0x912883ff,0xd65f03c0
-.p2align 6",
-        vg_cmac_aes_update_aes_cbc = sym super::cmac_aes::vg_cmac_aes_update_aes_cbc::vg_cmac_aes_update_aes_cbc,
-        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
-    )
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_ccm_seal_aes_cbc(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_ccm_seal_aes_cbc(schedule, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) }
 }
 
 /// The CPU features `vg_aes_ccm_open_aes_cbc` requires (`Artifact.features`).
@@ -488,8 +107,476 @@ pub const VG_AES_CCM_OPEN_AES_CBC_FEATURES: verified_garbage_cpu::Features = ver
 /// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_ccm_open_aes_cbc(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_ccm_open_aes_cbc(schedule, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) }
+}
+
+/// AES-CCM generation-encryption (NIST SP 800-38C §6.1, with the formatting and counter generation of its Appendix A): with the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it, encrypts the `len` bytes of payload at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and writes the encrypted MAC (`T ⊕ MSB_Tlen(S₀)`) of `tag_len` bytes, of the payload and the `aad_len` bytes of associated data at `aad`, to the `tag_len` bytes at `tag`. The ciphertext of §6.1 is the encrypted payload followed by it.
+///
+/// Contract: `VG.Spec.Ccm.sealContract`. Constant time: only the pointers, `rounds`, the lengths and `tag_len` may affect timing, not the key schedule, the nonce, the associated data or the payload.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of `tag_len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `tag_len` must be 4, 6, 8, 10, 12, 14 or 16, and `nonce_len` from 7 to 13 (Appendix A.1).
+/// * `len` must be less than `2^(8 * (15 - nonce_len))` (Appendix A.1).
+/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_ccm_seal(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_ccm_seal(schedule, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) }
+}
+
+/// AES-CCM decryption-verification (NIST SP 800-38C §6.2, with the formatting and counter generation of its Appendix A): with the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it, and the received encrypted MAC (the last `tag_len` bytes of the ciphertext) the `tag_len` bytes at `tag`, decrypts the `len` bytes of encrypted payload at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and returns 1 if the MAC is that of the payload and the `aad_len` bytes of associated data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The MACs are compared without a branch.
+///
+/// Contract: `VG.Spec.Ccm.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the associated data, the data or the tag.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `tag_len` must be 4, 6, 8, 10, 12, 14 or 16, and `nonce_len` from 7 to 13 (Appendix A.1).
+/// * `len` must be less than `2^(8 * (15 - nonce_len))` (Appendix A.1).
+/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_ccm_open(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_ccm_open(schedule, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_aes_ccm_seal_aes`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_ccm_open_aes_cbc(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_ccm_seal_aes(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
+    core::arch::naked_asm!(
+        r".inst 0xd12883ff,0x910003f0,0xf94513f1,0xf9000211,0xf94517f1,0xf9000611,0x910083f1,0xf9000a11
+.inst 0xf9400be9,0xf94007ea,0xf94003eb,0xf9004534,0xf9004935,0xf9004d36,0xf9005137,0xf9005538
+.inst 0xf9005939,0xf9005d3a,0xf900613b,0xf900653c,0xf900693e,0xf9004133,0x91000133,0x91000154
+.inst 0x91000015,0x91000036,0xf9006e64,0xf9007265,0xf9007663,0xf9007a6b,0x910000db,0x910000fc
+.inst 0xd2800009,0xf9001a69,0xf9001e69,0xd28001c9,0xcb030129,0x3900c269,0x9100c66b,0x9100004c
+.inst 0x9100006d
+20:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 20b
+.inst 0xf9406e77,0xf9407278,0xd1000a89,0xd37ef529,0xf940766a,0xd28001cb,0xcb0a016b,0x8b0b0129
+cbz x24, 21f
+.inst 0x91010129
+b 22f
+21:
+22:
+.inst 0xf9401a6a,0xf9401e6b,0xf900126a,0x39008269,0xdac00f8c,0xaa0c016b,0xf900166b,0xd2800009
+.inst 0xf9000269,0xf9000669,0x910002a0,0x910002c1,0x91000262,0x91060265,0x91008263,0xd2800024
+bl {vg_cmac_aes_update_aes}
+cbz x24, 23f
+.inst 0xd2800009,0xf9001269,0xf9001669,0xd360ff09
+cbz x9, 25f
+.inst 0xd29fffe9,0xf9001269,0xdac00f09,0x91008a6a,0xf9000149,0xd2800159
+b 26f
+25:
+.inst 0xd348ff09,0xd103fd29,0xd37ffd29
+cbz x9, 27f
+.inst 0xdac00f09,0xd370fd29,0xf9001269,0xd2800059
+b 28f
+27:
+.inst 0xdac00f09,0xd350fd29,0xd29fdfea,0xaa0a0129,0xf9001269,0xd28000d9
+28:
+26:
+.inst 0xd2800209,0xcb190129,0xd344ff0a
+cbnz x10, 29f
+.inst 0xcb18012b,0xd37ffd6b
+cbz x11, 211f
+.inst 0x9100012a
+b 212f
+211:
+.inst 0x9100030a
+212:
+b 210f
+29:
+.inst 0x9100012a
+210:
+.inst 0x8b19026b,0x9100816b,0x910002ec,0x9100014d
+213:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 213b
+.inst 0x8b0a02f7,0xcb0a0318,0x910002a0,0x910002c1,0x91000262,0x91060265,0x91008263,0xd2800024
+bl {vg_cmac_aes_update_aes}
+.inst 0x910002a0,0x910002c1,0x91000262,0x91060265,0x910002e3,0xd344ff04
+bl {vg_cmac_aes_update_aes}
+.inst 0xd28001e9,0x8a09030d
+cbz x13, 214f
+.inst 0xd2800009,0xf9001269,0xf9001669,0xd344ff0a,0xd37ced4a,0x8b0a02ec,0x9100826b
+216:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 216b
+.inst 0x910002a0,0x910002c1,0x91000262,0x91060265,0x91008263,0xd2800024
+bl {vg_cmac_aes_update_aes}
+b 215f
+214:
+215:
+b 24f
+23:
+24:
+.inst 0x91000377,0x91000398,0x910002a0,0x910002c1,0x91000262,0x91060265,0x910002e3,0xd344ff04
+bl {vg_cmac_aes_update_aes}
+.inst 0xd28001e9,0x8a09030d
+cbz x13, 217f
+.inst 0xd2800009,0xf9001269,0xf9001669,0xd344ff0a,0xd37ced4a,0x8b0a02ec,0x9100826b
+219:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 219b
+.inst 0x910002a0,0x910002c1,0x91000262,0x91060265,0x91008263,0xd2800024
+bl {vg_cmac_aes_update_aes}
+b 218f
+217:
+218:
+.inst 0xd2800009,0xf9401a6a,0xf9401e6b,0xf900226a,0xdac00d29,0xaa09016b,0xf900266b,0x910002a0
+.inst 0x910002c1,0x91010262,0x91060265,0x91000263,0xd2800024
+bl {vg_aes_ctr32_aes}
+.inst 0x91000377,0xd344ff98,0xd2800039
+cbz x24, 220f
+222:
+.inst 0x11000329,0xd2c0002a,0xcb09014a,0xcb0a030b,0xd37ffd6b
+cbz x11, 223f
+.inst 0x9100031a
+b 224f
+223:
+.inst 0x9100015a
+224:
+.inst 0x91000329,0xf9401a6a,0xf9401e6b,0xf900226a,0xdac00d29,0xaa09016b,0xf900266b,0x910002a0
+.inst 0x910002c1,0x91010262,0x91060265,0x910002e3,0x91000344
+bl {vg_aes_ctr32_aes}
+.inst 0xcb1a0318,0x8b1a0339,0xd37cef49,0x8b0902f7
+cbnz x24, 222b
+b 221f
+220:
+221:
+.inst 0xd28001e9,0x8a09039a
+cbz x26, 225f
+.inst 0x91000329,0xf9401a6a,0xf9401e6b,0xf900226a,0xdac00d29,0xaa09016b,0xf900266b,0xd2800009
+.inst 0xf9002a69,0xf9002e69,0x910002a0,0x910002c1,0x91010262,0x91060265,0x91014263,0xd2800024
+bl {vg_aes_ctr32_aes}
+.inst 0x9101426b,0x910002ec,0x9100034d
+227:
+.inst 0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 227b
+b 226f
+225:
+226:
+.inst 0xf9407a6b,0x9100026c,0x9100028d
+228:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 228b
+.inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
+.inst 0xf940667c,0xf9406a7e,0xf9404273,0x912883ff,0xd65f03c0
+.p2align 6",
+        vg_cmac_aes_update_aes = sym crate::cmac_aes::vg_cmac_aes_update_aes::vg_cmac_aes_update_aes,
+        vg_aes_ctr32_aes = sym crate::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
+    )
+}
+
+/// The verified code of [`super::vg_aes_ccm_open_aes`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_ccm_open_aes(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r".inst 0xd12883ff,0x910003f0,0xf94513f1,0xf9000211,0xf94517f1,0xf9000611,0x910083f1,0xf9000a11
+.inst 0xf9400be9,0xf94007ea,0xf94003eb,0xf9004534,0xf9004935,0xf9004d36,0xf9005137,0xf9005538
+.inst 0xf9005939,0xf9005d3a,0xf900613b,0xf900653c,0xf900693e,0xf9004133,0x91000133,0x91000154
+.inst 0x91000015,0x91000036,0xf9006e64,0xf9007265,0xf9007663,0xf9007a6b,0x910000db,0x910000fc
+.inst 0xd2800009,0xf9001a69,0xf9001e69,0xd28001c9,0xcb030129,0x3900c269,0x9100c66b,0x9100004c
+.inst 0x9100006d
+20:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 20b
+.inst 0x91000377,0xd344ff98,0xd2800039
+cbz x24, 21f
+23:
+.inst 0x11000329,0xd2c0002a,0xcb09014a,0xcb0a030b,0xd37ffd6b
+cbz x11, 24f
+.inst 0x9100031a
+b 25f
+24:
+.inst 0x9100015a
+25:
+.inst 0x91000329,0xf9401a6a,0xf9401e6b,0xf900226a,0xdac00d29,0xaa09016b,0xf900266b,0x910002a0
+.inst 0x910002c1,0x91010262,0x91060265,0x910002e3,0x91000344
+bl {vg_aes_ctr32_aes}
+.inst 0xcb1a0318,0x8b1a0339,0xd37cef49,0x8b0902f7
+cbnz x24, 23b
+b 22f
+21:
+22:
+.inst 0xd28001e9,0x8a09039a
+cbz x26, 26f
+.inst 0x91000329,0xf9401a6a,0xf9401e6b,0xf900226a,0xdac00d29,0xaa09016b,0xf900266b,0xd2800009
+.inst 0xf9002a69,0xf9002e69,0x910002a0,0x910002c1,0x91010262,0x91060265,0x91014263,0xd2800024
+bl {vg_aes_ctr32_aes}
+.inst 0x9101426b,0x910002ec,0x9100034d
+28:
+.inst 0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 28b
+b 27f
+26:
+27:
+.inst 0xf9406e77,0xf9407278,0xd1000a89,0xd37ef529,0xf940766a,0xd28001cb,0xcb0a016b,0x8b0b0129
+cbz x24, 29f
+.inst 0x91010129
+b 210f
+29:
+210:
+.inst 0xf9401a6a,0xf9401e6b,0xf900126a,0x39008269,0xdac00f8c,0xaa0c016b,0xf900166b,0xd2800009
+.inst 0xf9003269,0xf9003669,0x910002a0,0x910002c1,0x91018262,0x91060265,0x91008263,0xd2800024
+bl {vg_cmac_aes_update_aes}
+cbz x24, 211f
+.inst 0xd2800009,0xf9001269,0xf9001669,0xd360ff09
+cbz x9, 213f
+.inst 0xd29fffe9,0xf9001269,0xdac00f09,0x91008a6a,0xf9000149,0xd2800159
+b 214f
+213:
+.inst 0xd348ff09,0xd103fd29,0xd37ffd29
+cbz x9, 215f
+.inst 0xdac00f09,0xd370fd29,0xf9001269,0xd2800059
+b 216f
+215:
+.inst 0xdac00f09,0xd350fd29,0xd29fdfea,0xaa0a0129,0xf9001269,0xd28000d9
+216:
+214:
+.inst 0xd2800209,0xcb190129,0xd344ff0a
+cbnz x10, 217f
+.inst 0xcb18012b,0xd37ffd6b
+cbz x11, 219f
+.inst 0x9100012a
+b 220f
+219:
+.inst 0x9100030a
+220:
+b 218f
+217:
+.inst 0x9100012a
+218:
+.inst 0x8b19026b,0x9100816b,0x910002ec,0x9100014d
+221:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 221b
+.inst 0x8b0a02f7,0xcb0a0318,0x910002a0,0x910002c1,0x91018262,0x91060265,0x91008263,0xd2800024
+bl {vg_cmac_aes_update_aes}
+.inst 0x910002a0,0x910002c1,0x91018262,0x91060265,0x910002e3,0xd344ff04
+bl {vg_cmac_aes_update_aes}
+.inst 0xd28001e9,0x8a09030d
+cbz x13, 222f
+.inst 0xd2800009,0xf9001269,0xf9001669,0xd344ff0a,0xd37ced4a,0x8b0a02ec,0x9100826b
+224:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 224b
+.inst 0x910002a0,0x910002c1,0x91018262,0x91060265,0x91008263,0xd2800024
+bl {vg_cmac_aes_update_aes}
+b 223f
+222:
+223:
+b 212f
+211:
+212:
+.inst 0x91000377,0x91000398,0x910002a0,0x910002c1,0x91018262,0x91060265,0x910002e3,0xd344ff04
+bl {vg_cmac_aes_update_aes}
+.inst 0xd28001e9,0x8a09030d
+cbz x13, 225f
+.inst 0xd2800009,0xf9001269,0xf9001669,0xd344ff0a,0xd37ced4a,0x8b0a02ec,0x9100826b
+227:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 227b
+.inst 0x910002a0,0x910002c1,0x91018262,0x91060265,0x91008263,0xd2800024
+bl {vg_cmac_aes_update_aes}
+b 226f
+225:
+226:
+.inst 0xd2800009,0xf9401a6a,0xf9401e6b,0xf900226a,0xdac00d29,0xaa09016b,0xf900266b,0x910002a0
+.inst 0x910002c1,0x91010262,0x91060265,0x91018263,0xd2800024
+bl {vg_aes_ctr32_aes}
+.inst 0xf9407a6c,0xd2800009,0xf9008269,0xf9008669,0xf9008a69,0xf9008e69,0x9104426b,0x9100028d
+228:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 228b
+.inst 0x9104026b,0x9101826c,0x9100028d
+229:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 229b
+.inst 0xf9408269,0xf9408a6a,0xca0a0129,0xf940866a,0xf9408e6b,0xca0b014a,0xaa0a0129,0xd280000b
+.inst 0xd100056c,0xab0c0129,0xba0b016a,0xd2800020,0xcb0a0000,0xd100054b,0x9100036c,0x4e010d70
+.inst 0xd344ff8e,0xd37cedcd,0xcb0d038d
+cbz x14, 230f
+232:
+.inst 0x3dc00191,0x4e301e31,0x3d800191,0x9100418c,0xd10005ce
+cbnz x14, 232b
+b 231f
+230:
+231:
+cbz x13, 233f
+235:
+.inst 0x3940018e,0x0a0b01ce,0x3900018e,0x9100058c,0xd10005ad
+cbnz x13, 235b
+b 234f
+233:
+234:
+.inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
+.inst 0xf940667c,0xf9406a7e,0xf9404273,0x912883ff,0xd65f03c0
+.p2align 6",
+        vg_aes_ctr32_aes = sym crate::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
+        vg_cmac_aes_update_aes = sym crate::cmac_aes::vg_cmac_aes_update_aes::vg_cmac_aes_update_aes,
+    )
+}
+
+/// The verified code of [`super::vg_aes_ccm_seal_aes_cbc`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_ccm_seal_aes_cbc(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
+    core::arch::naked_asm!(
+        r".inst 0xd12883ff,0x910003f0,0xf94513f1,0xf9000211,0xf94517f1,0xf9000611,0x910083f1,0xf9000a11
+.inst 0xf9400be9,0xf94007ea,0xf94003eb,0xf9004534,0xf9004935,0xf9004d36,0xf9005137,0xf9005538
+.inst 0xf9005939,0xf9005d3a,0xf900613b,0xf900653c,0xf900693e,0xf9004133,0x91000133,0x91000154
+.inst 0x91000015,0x91000036,0xf9006e64,0xf9007265,0xf9007663,0xf9007a6b,0x910000db,0x910000fc
+.inst 0xd2800009,0xf9001a69,0xf9001e69,0xd28001c9,0xcb030129,0x3900c269,0x9100c66b,0x9100004c
+.inst 0x9100006d
+20:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 20b
+.inst 0xf9406e77,0xf9407278,0xd1000a89,0xd37ef529,0xf940766a,0xd28001cb,0xcb0a016b,0x8b0b0129
+cbz x24, 21f
+.inst 0x91010129
+b 22f
+21:
+22:
+.inst 0xf9401a6a,0xf9401e6b,0xf900126a,0x39008269,0xdac00f8c,0xaa0c016b,0xf900166b,0xd2800009
+.inst 0xf9000269,0xf9000669,0x910002a0,0x910002c1,0x91000262,0x91060265,0x91008263,0xd2800024
+bl {vg_cmac_aes_update_aes_cbc}
+cbz x24, 23f
+.inst 0xd2800009,0xf9001269,0xf9001669,0xd360ff09
+cbz x9, 25f
+.inst 0xd29fffe9,0xf9001269,0xdac00f09,0x91008a6a,0xf9000149,0xd2800159
+b 26f
+25:
+.inst 0xd348ff09,0xd103fd29,0xd37ffd29
+cbz x9, 27f
+.inst 0xdac00f09,0xd370fd29,0xf9001269,0xd2800059
+b 28f
+27:
+.inst 0xdac00f09,0xd350fd29,0xd29fdfea,0xaa0a0129,0xf9001269,0xd28000d9
+28:
+26:
+.inst 0xd2800209,0xcb190129,0xd344ff0a
+cbnz x10, 29f
+.inst 0xcb18012b,0xd37ffd6b
+cbz x11, 211f
+.inst 0x9100012a
+b 212f
+211:
+.inst 0x9100030a
+212:
+b 210f
+29:
+.inst 0x9100012a
+210:
+.inst 0x8b19026b,0x9100816b,0x910002ec,0x9100014d
+213:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 213b
+.inst 0x8b0a02f7,0xcb0a0318,0x910002a0,0x910002c1,0x91000262,0x91060265,0x91008263,0xd2800024
+bl {vg_cmac_aes_update_aes_cbc}
+.inst 0x910002a0,0x910002c1,0x91000262,0x91060265,0x910002e3,0xd344ff04
+bl {vg_cmac_aes_update_aes_cbc}
+.inst 0xd28001e9,0x8a09030d
+cbz x13, 214f
+.inst 0xd2800009,0xf9001269,0xf9001669,0xd344ff0a,0xd37ced4a,0x8b0a02ec,0x9100826b
+216:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 216b
+.inst 0x910002a0,0x910002c1,0x91000262,0x91060265,0x91008263,0xd2800024
+bl {vg_cmac_aes_update_aes_cbc}
+b 215f
+214:
+215:
+b 24f
+23:
+24:
+.inst 0x91000377,0x91000398,0x910002a0,0x910002c1,0x91000262,0x91060265,0x910002e3,0xd344ff04
+bl {vg_cmac_aes_update_aes_cbc}
+.inst 0xd28001e9,0x8a09030d
+cbz x13, 217f
+.inst 0xd2800009,0xf9001269,0xf9001669,0xd344ff0a,0xd37ced4a,0x8b0a02ec,0x9100826b
+219:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 219b
+.inst 0x910002a0,0x910002c1,0x91000262,0x91060265,0x91008263,0xd2800024
+bl {vg_cmac_aes_update_aes_cbc}
+b 218f
+217:
+218:
+.inst 0xd2800009,0xf9401a6a,0xf9401e6b,0xf900226a,0xdac00d29,0xaa09016b,0xf900266b,0x910002a0
+.inst 0x910002c1,0x91010262,0x91060265,0x91000263,0xd2800024
+bl {vg_aes_ctr32_aes}
+.inst 0x91000377,0xd344ff98,0xd2800039
+cbz x24, 220f
+222:
+.inst 0x11000329,0xd2c0002a,0xcb09014a,0xcb0a030b,0xd37ffd6b
+cbz x11, 223f
+.inst 0x9100031a
+b 224f
+223:
+.inst 0x9100015a
+224:
+.inst 0x91000329,0xf9401a6a,0xf9401e6b,0xf900226a,0xdac00d29,0xaa09016b,0xf900266b,0x910002a0
+.inst 0x910002c1,0x91010262,0x91060265,0x910002e3,0x91000344
+bl {vg_aes_ctr32_aes}
+.inst 0xcb1a0318,0x8b1a0339,0xd37cef49,0x8b0902f7
+cbnz x24, 222b
+b 221f
+220:
+221:
+.inst 0xd28001e9,0x8a09039a
+cbz x26, 225f
+.inst 0x91000329,0xf9401a6a,0xf9401e6b,0xf900226a,0xdac00d29,0xaa09016b,0xf900266b,0xd2800009
+.inst 0xf9002a69,0xf9002e69,0x910002a0,0x910002c1,0x91010262,0x91060265,0x91014263,0xd2800024
+bl {vg_aes_ctr32_aes}
+.inst 0x9101426b,0x910002ec,0x9100034d
+227:
+.inst 0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 227b
+b 226f
+225:
+226:
+.inst 0xf9407a6b,0x9100026c,0x9100028d
+228:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 228b
+.inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
+.inst 0xf940667c,0xf9406a7e,0xf9404273,0x912883ff,0xd65f03c0
+.p2align 6",
+        vg_cmac_aes_update_aes_cbc = sym crate::cmac_aes::vg_cmac_aes_update_aes_cbc::vg_cmac_aes_update_aes_cbc,
+        vg_aes_ctr32_aes = sym crate::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
+    )
+}
+
+/// The verified code of [`super::vg_aes_ccm_open_aes_cbc`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_ccm_open_aes_cbc(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd12883ff,0x910003f0,0xf94513f1,0xf9000211,0xf94517f1,0xf9000611,0x910083f1,0xf9000a11
 .inst 0xf9400be9,0xf94007ea,0xf94003eb,0xf9004534,0xf9004935,0xf9004d36,0xf9005137,0xf9005538
@@ -632,29 +719,14 @@ b 234f
 .inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x912883ff,0xd65f03c0
 .p2align 6",
-        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
-        vg_cmac_aes_update_aes_cbc = sym super::cmac_aes::vg_cmac_aes_update_aes_cbc::vg_cmac_aes_update_aes_cbc,
+        vg_aes_ctr32_aes = sym crate::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
+        vg_cmac_aes_update_aes_cbc = sym crate::cmac_aes::vg_cmac_aes_update_aes_cbc::vg_cmac_aes_update_aes_cbc,
     )
 }
 
-/// AES-CCM generation-encryption (NIST SP 800-38C §6.1, with the formatting and counter generation of its Appendix A): with the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it, encrypts the `len` bytes of payload at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and writes the encrypted MAC (`T ⊕ MSB_Tlen(S₀)`) of `tag_len` bytes, of the payload and the `aad_len` bytes of associated data at `aad`, to the `tag_len` bytes at `tag`. The ciphertext of §6.1 is the encrypted payload followed by it.
-///
-/// Contract: `VG.Spec.Ccm.sealContract`. Constant time: only the pointers, `rounds`, the lengths and `tag_len` may affect timing, not the key schedule, the nonce, the associated data or the payload.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of `tag_len` bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `tag_len` must be 4, 6, 8, 10, 12, 14 or 16, and `nonce_len` from 7 to 13 (Appendix A.1).
-/// * `len` must be less than `2^(8 * (15 - nonce_len))` (Appendix A.1).
-/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_aes_ccm_seal`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_ccm_seal(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
+pub(crate) unsafe extern "C" fn vg_aes_ccm_seal(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd12883ff,0x910003f0,0xf94513f1,0xf9000211,0xf94517f1,0xf9000611,0x910083f1,0xf9000a11
 .inst 0xf9400be9,0xf94007ea,0xf94003eb,0xf9004534,0xf9004935,0xf9004d36,0xf9005137,0xf9005538
@@ -776,29 +848,14 @@ cbnz x13, 228b
 .inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x912883ff,0xd65f03c0
 .p2align 6",
-        vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_cmac_aes_update = sym crate::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,
+        vg_aes_ctr32 = sym crate::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
 
-/// AES-CCM decryption-verification (NIST SP 800-38C §6.2, with the formatting and counter generation of its Appendix A): with the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it, and the received encrypted MAC (the last `tag_len` bytes of the ciphertext) the `tag_len` bytes at `tag`, decrypts the `len` bytes of encrypted payload at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and returns 1 if the MAC is that of the payload and the `aad_len` bytes of associated data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The MACs are compared without a branch.
-///
-/// Contract: `VG.Spec.Ccm.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the associated data, the data or the tag.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of `tag_len` bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `tag_len` must be 4, 6, 8, 10, 12, 14 or 16, and `nonce_len` from 7 to 13 (Appendix A.1).
-/// * `len` must be less than `2^(8 * (15 - nonce_len))` (Appendix A.1).
-/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_aes_ccm_open`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_ccm_open(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_ccm_open(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd12883ff,0x910003f0,0xf94513f1,0xf9000211,0xf94517f1,0xf9000611,0x910083f1,0xf9000a11
 .inst 0xf9400be9,0xf94007ea,0xf94003eb,0xf9004534,0xf9004935,0xf9004d36,0xf9005137,0xf9005538
@@ -941,7 +998,8 @@ b 234f
 .inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x912883ff,0xd65f03c0
 .p2align 6",
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
-        vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,
+        vg_aes_ctr32 = sym crate::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_cmac_aes_update = sym crate::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,
     )
+}
 }

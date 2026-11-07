@@ -17,15 +17,15 @@
 /// * Neither `key` nor `ctx` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_ocb_init_auto(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
+pub unsafe fn vg_aes_ocb_init_auto(dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::aes_ocb::VG_AES_OCB_INIT_AES_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_ocb_init_aes`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes_ocb::vg_aes_ocb_init_aes(key, key_len, ctx) };
+        return unsafe { crate::aes_ocb::vg_aes_ocb_init_aes(dit, key, key_len, ctx) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::aes_ocb::vg_aes_ocb_init(key, key_len, ctx) }
+    unsafe { crate::aes_ocb::vg_aes_ocb_init(dit, key, key_len, ctx) }
 }
 
 /// AES-OCB authenticated encryption (RFC 7253 §4.2, `OCB-ENCRYPT`, with `TAGLEN = 8 * tag_len`): with the key context `*ctx` that `vg_aes_ocb_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and writes the tag of `tag_len` bytes, of the data and the `aad_len` bytes of associated data at `aad`, to the `tag_len` bytes at `tag`. The RFC's ciphertext is the encrypted data followed by the tag. A nonce must never be used twice with the same key.
@@ -47,15 +47,15 @@ pub unsafe fn vg_aes_ocb_init_auto(key: *const u8, key_len: usize, ctx: *mut [u6
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_ocb_seal_auto(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
+pub unsafe fn vg_aes_ocb_seal_auto(dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::aes_ocb::VG_AES_OCB_SEAL_AES_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_ocb_seal_aes`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes_ocb::vg_aes_ocb_seal_aes(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) };
+        return unsafe { crate::aes_ocb::vg_aes_ocb_seal_aes(dit, ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::aes_ocb::vg_aes_ocb_seal(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) }
+    unsafe { crate::aes_ocb::vg_aes_ocb_seal(dit, ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) }
 }
 
 /// AES-OCB authenticated decryption (RFC 7253 §4.3, `OCB-DECRYPT`, with `TAGLEN = 8 * tag_len`): with the key context `*ctx` that `vg_aes_ocb_init` wrote for `rounds` rounds and the received tag (the last `tag_len` bytes of the RFC's ciphertext) the `tag_len` bytes at `tag`, decrypts the `len` bytes of encrypted data at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and returns 1 if the tag is that of the data and the `aad_len` bytes of associated data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
@@ -77,13 +77,13 @@ pub unsafe fn vg_aes_ocb_seal_auto(ctx: *const [u64; 32], rounds: usize, nonce: 
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_ocb_open_auto(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe fn vg_aes_ocb_open_auto(dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::aes_ocb::VG_AES_OCB_OPEN_AES_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_ocb_open_aes`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes_ocb::vg_aes_ocb_open_aes(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) };
+        return unsafe { crate::aes_ocb::vg_aes_ocb_open_aes(dit, ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::aes_ocb::vg_aes_ocb_open(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) }
+    unsafe { crate::aes_ocb::vg_aes_ocb_open(dit, ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) }
 }

@@ -22,20 +22,20 @@ pub use crate::triple_des::vg_triple_des_expand_key as vg_triple_des_expand_key_
 /// * Neither `schedule` nor `data` may overlap the return address on the stack or the 1040 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_triple_des_ecb_encrypt_auto(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
+pub unsafe fn vg_triple_des_ecb_encrypt_auto(dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::triple_des::VG_TRIPLE_DES_ECB_ENCRYPT_AVX512_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_triple_des_ecb_encrypt_avx512`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::triple_des::vg_triple_des_ecb_encrypt_avx512(schedule, data, n) };
+        return unsafe { crate::triple_des::vg_triple_des_ecb_encrypt_avx512(dit, schedule, data, n) };
     }
     if cpu.contains(crate::triple_des::VG_TRIPLE_DES_ECB_ENCRYPT_AVX2_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_triple_des_ecb_encrypt_avx2`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::triple_des::vg_triple_des_ecb_encrypt_avx2(schedule, data, n) };
+        return unsafe { crate::triple_des::vg_triple_des_ecb_encrypt_avx2(dit, schedule, data, n) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::triple_des::vg_triple_des_ecb_encrypt(schedule, data, n) }
+    unsafe { crate::triple_des::vg_triple_des_ecb_encrypt(dit, schedule, data, n) }
 }
 
 /// Triple DES ECB decryption (SP 800-38A §6.1) of `n` complete 8-byte blocks at `data`, in place, under the schedule written by `vg_triple_des_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
@@ -52,18 +52,18 @@ pub unsafe fn vg_triple_des_ecb_encrypt_auto(schedule: *const [u8; 384], data: *
 /// * Neither `schedule` nor `data` may overlap the return address on the stack or the 1040 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_triple_des_ecb_decrypt_auto(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
+pub unsafe fn vg_triple_des_ecb_decrypt_auto(dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::triple_des::VG_TRIPLE_DES_ECB_DECRYPT_AVX512_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_triple_des_ecb_decrypt_avx512`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::triple_des::vg_triple_des_ecb_decrypt_avx512(schedule, data, n) };
+        return unsafe { crate::triple_des::vg_triple_des_ecb_decrypt_avx512(dit, schedule, data, n) };
     }
     if cpu.contains(crate::triple_des::VG_TRIPLE_DES_ECB_DECRYPT_AVX2_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_triple_des_ecb_decrypt_avx2`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::triple_des::vg_triple_des_ecb_decrypt_avx2(schedule, data, n) };
+        return unsafe { crate::triple_des::vg_triple_des_ecb_decrypt_avx2(dit, schedule, data, n) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::triple_des::vg_triple_des_ecb_decrypt(schedule, data, n) }
+    unsafe { crate::triple_des::vg_triple_des_ecb_decrypt(dit, schedule, data, n) }
 }

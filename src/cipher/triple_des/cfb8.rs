@@ -84,13 +84,14 @@ impl TripleDesCfb8Decryptor {
 impl Key {
     /// Expands a 16- or 24-byte key.
     fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
+        crate::dit::enter!(dit);
         if !matches!(key.len(), 16 | 24) {
             return Err(InvalidKeyLength);
         }
         let mut schedule = [0; 384];
         // SAFETY: the key has a validated length; key and schedule are separate
         // valid buffers of the required sizes.
-        unsafe { vg_triple_des_expand_key(key.as_ptr(), key.len(), &mut schedule) };
+        unsafe { vg_triple_des_expand_key(dit, key.as_ptr(), key.len(), &mut schedule) };
         Ok(Self { schedule })
     }
 
@@ -98,11 +99,12 @@ impl Key {
     /// replaces with the one to continue from: its last `8 - n` bytes
     /// followed by the last `n` (up to 8) ciphertext bytes.
     fn encrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) {
+        crate::dit::enter!(dit);
         // SAFETY: `buffer`, the block at `iv` and the schedule are separate
         // valid objects of the sizes of the signature, none of them on the
         // callee's stack.
         unsafe {
-            vg_triple_des_cfb8_encrypt(&self.schedule, iv, buffer.as_mut_ptr(), buffer.len())
+            vg_triple_des_cfb8_encrypt(dit, &self.schedule, iv, buffer.as_mut_ptr(), buffer.len())
         };
     }
 
@@ -110,9 +112,10 @@ impl Key {
     /// replaces with the one to continue from: its last `8 - n` bytes
     /// followed by the last `n` (up to 8) ciphertext bytes.
     fn decrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) {
+        crate::dit::enter!(dit);
         // SAFETY: as in `encrypt`.
         unsafe {
-            vg_triple_des_cfb8_decrypt(&self.schedule, iv, buffer.as_mut_ptr(), buffer.len())
+            vg_triple_des_cfb8_decrypt(dit, &self.schedule, iv, buffer.as_mut_ptr(), buffer.len())
         };
     }
 }

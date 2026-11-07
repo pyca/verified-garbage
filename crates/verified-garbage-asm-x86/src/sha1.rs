@@ -12,12 +12,11 @@
 /// * `state` must be valid for reads and writes of 84 bytes.
 /// * `state` must not overlap the arguments on the stack (distinct Rust objects never do).
 /// * `state` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha1_init(state: *mut [u8; 84]) {
-    core::arch::naked_asm!(
-        r#".base64 "i0QkBLkBI0VniQi5iavN74lIBLn+3LqYiUgIuXZUMhCJSAy58OHSw4lIEMM="
-.p2align 6"#,
-    )
+#[inline(always)]
+pub unsafe fn vg_sha1_init(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 84]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha1_init(state) }
 }
 
 /// Computes the SHA-1 digest of the `len` bytes at `data` (20 bytes, `VG.Spec.Sha1.hash`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-1 computation with that message.
@@ -30,25 +29,11 @@ pub unsafe extern "C" fn vg_sha1_init(state: *mut [u8; 84]) {
 /// * `out` must be valid for reads and writes of 20 bytes.
 /// * `out` must not overlap `data` or the arguments on the stack (distinct Rust objects never do).
 /// * Neither `data` nor `out` may overlap the return address on the stack or the 348 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha1_digest(data: *const u8, len: usize, out: *mut [u8; 20]) {
-    core::arch::naked_asm!(
-        r#".base64 "jaQk1P7//4uEJDABAACJRCQEi4QkNAEAAIlEJAiLhCQ4AQAAiUQkDIngg8AUiUQkEItEJBCJmKAAAACJsKQAAACJuKgAAACJqKwAAACJxYnvgcewAAAAVw=="
-call {vg_sha1_init}
-.base64 "WLgAAAAAvgAAAACLTCQIi1QkBFVRUlBWVw=="
-call {vg_sha1_update_scratch}
-.base64 "WFhYWFhYi0QkCLkAAAAAieqBwgQBAABVUlFQVw=="
-call {vg_sha1_finalize_scratch}
-.base64 "WFhYWFiLdCQMuQAAAAA="
-20:
-.base64 "iegByA+2kAQBAACJ8AHIiBCDwQGD+RQ="
-jne 20b
-.base64 "ieiLmKAAAACLsKQAAACLuKgAAACLqKwAAAC5AAAAAIlMJBSJTCQYiUwkHIlMJCCJTCQkiUwkKIlMJCyJTCQwiUwkNIlMJDiJTCQ8iUwkQIlMJESJTCRIiUwkTIlMJFCJTCRUiUwkWIlMJFyJTCRgiUwkZIlMJGiJTCRsiUwkcIlMJHSJTCR4iUwkfImMJIAAAACJjCSEAAAAiYwkiAAAAImMJIwAAACJjCSQAAAAiYwklAAAAImMJJgAAACJjCScAAAAiYwkoAAAAImMJKQAAACJjCSoAAAAiYwkrAAAAImMJLAAAACJjCS0AAAAiYwkuAAAAImMJLwAAACJjCTAAAAAiYwkxAAAAImMJMgAAACJjCTMAAAAiYwk0AAAAImMJNQAAACJjCTYAAAAiYwk3AAAAImMJOAAAACJjCTkAAAAiYwk6AAAAImMJOwAAACJjCTwAAAAiYwk9AAAAImMJPgAAACJjCT8AAAAiYwkAAEAAImMJAQBAACJjCQIAQAAiYwkDAEAAImMJBABAACJjCQUAQAAiYwkGAEAAImMJBwBAACJjCQgAQAAiYwkJAEAAImMJCgBAACNpCQsAQAAww=="
-.p2align 6"#,
-        vg_sha1_init = sym super::sha1::vg_sha1_init,
-        vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch::vg_sha1_update_scratch,
-        vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch::vg_sha1_finalize_scratch,
-    )
+#[inline(always)]
+pub unsafe fn vg_sha1_digest(_dit: verified_garbage_cpu::Dit<'_>, data: *const u8, len: usize, out: *mut [u8; 20]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha1_digest(data, len, out) }
 }
 
 /// Absorbs data into a SHA-1 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), it then represents that message followed by the `len` bytes at `data`.
@@ -63,75 +48,11 @@ jne 20b
 /// * `data` must be valid for reads of `len` bytes.
 /// * `state` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the arguments on the stack, overlap the return address on the stack or the 208 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha1_update(state: *mut [u8; 84], count: u64, data: *const u8, len: usize) {
-    core::arch::naked_asm!(
-        r#".base64 "jaQkRP///4uEJMAAAACJRCQEi4QkxAAAAIlEJAiLhCTIAAAAiUQkDIuEJMwAAACJRCQQi4Qk0AAAAIlEJBSJ4IPAHIlEJBiLRCQYiVhwiXB0iXh4iWh8i1wkBItsJBCLdCQUi3wkCIPnPw=="
-20:
-.base64 "hf8="
-je 21f
-.base64 "uEAAAAAp+DnG"
-jb 23f
-jmp 24f
-23:
-.base64 "ifA="
-24:
-.base64 "KcYB34XA"
-je 25f
-27:
-.base64 "D7ZNAIhPFIPFAYPHAYPoAQ=="
-jne 27b
-jmp 26f
-25:
-26:
-.base64 "Kd+5AAAAAIP/QA=="
-je 28f
-jmp 29f
-28:
-.base64 "idiDwBS/AAAAALkBAAAA"
-29:
-jmp 22f
-21:
-.base64 "g/5A"
-jae 210f
-.base64 "uEAAAAAp+DnG"
-jb 212f
-jmp 213f
-212:
-.base64 "ifA="
-213:
-.base64 "KcYB34XA"
-je 214f
-216:
-.base64 "D7ZNAIhPFIPFAYPHAYPoAQ=="
-jne 216b
-jmp 215f
-214:
-215:
-.base64 "Kd+5AAAAAIP/QA=="
-je 217f
-jmp 218f
-217:
-.base64 "idiDwBS/AAAAALkBAAAA"
-218:
-jmp 211f
-210:
-.base64 "ieiJ8YPhP4nyKcoB1YnOidHB6QY="
-211:
-22:
-.base64 "hck="
-jne 219f
-jmp 220f
-219:
-.base64 "i1QkGFJRUFM="
-call {vg_sha1_compress}
-.base64 "WFhYWLkBAAAAhck="
-220:
-jne 20b
-.base64 "i0QkGItYcItwdIt4eItofI2kJLwAAADD"
-.p2align 6"#,
-        vg_sha1_compress = sym super::sha1::vg_sha1_compress::vg_sha1_compress,
-    )
+#[inline(always)]
+pub unsafe fn vg_sha1_update(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 84], count: u64, data: *const u8, len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha1_update(state, count, data, len) }
 }
 
 /// Finishes a SHA-1 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), writes the SHA-1 digest of that message to `*out`.
@@ -147,44 +68,11 @@ jne 20b
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the arguments on the stack, overlap the return address on the stack or the 204 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha1_finalize(state: *mut [u8; 84], count: u64, out: *mut [u8; 20]) {
-    core::arch::naked_asm!(
-        r#".base64 "jaQkSP///4uEJLwAAACJRCQEi4QkwAAAAIlEJAiLhCTEAAAAiUQkDIuEJMgAAACJRCQQieCDwBiJRCQUi0QkFIlYcIlwdIl4eIlofInFi1wkBItMJAiJjYAAAACLTCQMiY2EAAAAi0wkEImNiAAAAIt8JAiD5z+J2gH6uYAAAACIShSDxwG+AAAAAIP/OQ=="
-jae 20f
-jmp 21f
-20:
-.base64 "vgEAAAA="
-21:
-22:
-.base64 "uEAAAACF9g=="
-je 23f
-jmp 24f
-23:
-.base64 "uDgAAAA="
-24:
-.base64 "uQAAAAAp+A=="
-je 25f
-27:
-.base64 "idoB+ohKFIPHAYPoAQ=="
-jne 27b
-jmp 26f
-25:
-26:
-.base64 "hfY="
-je 28f
-jmp 29f
-28:
-.base64 "i4WAAAAAi42EAAAAAckByQHJicLB6h0J0QHAAcABwA/JiUtMD8iJQ1A="
-29:
-.base64 "idiDwBS5AQAAAFVRUFM="
-call {vg_sha1_compress}
-.base64 "WFhYWL8AAAAAg+4B"
-je 22b
-.base64 "i4WIAAAAiwsPyYkIi0sED8mJSASLSwgPyYlICItLDA/JiUgMi0sQD8mJSBCLXXCLdXSLfXiLbXyNpCS4AAAAww=="
-.p2align 6"#,
-        vg_sha1_compress = sym super::sha1::vg_sha1_compress::vg_sha1_compress,
-    )
+#[inline(always)]
+pub unsafe fn vg_sha1_finalize(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 84], count: u64, out: *mut [u8; 20]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha1_finalize(state, count, out) }
 }
 
 /// The CPU features `vg_sha1_digest_shani` requires (`Artifact.features`).
@@ -201,25 +89,11 @@ pub const VG_SHA1_DIGEST_SHANI_FEATURES: verified_garbage_cpu::Features = verifi
 /// * `out` must not overlap `data` or the arguments on the stack (distinct Rust objects never do).
 /// * Neither `data` nor `out` may overlap the return address on the stack or the 348 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha` and `ssse3` target features.
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha1_digest_shani(data: *const u8, len: usize, out: *mut [u8; 20]) {
-    core::arch::naked_asm!(
-        r#".base64 "jaQk1P7//4uEJDABAACJRCQEi4QkNAEAAIlEJAiLhCQ4AQAAiUQkDIngg8AUiUQkEItEJBCJmKAAAACJsKQAAACJuKgAAACJqKwAAACJxYnvgcewAAAAVw=="
-call {vg_sha1_init}
-.base64 "WLgAAAAAvgAAAACLTCQIi1QkBFVRUlBWVw=="
-call {vg_sha1_update_scratch_shani}
-.base64 "WFhYWFhYi0QkCLkAAAAAieqBwgQBAABVUlFQVw=="
-call {vg_sha1_finalize_scratch_shani}
-.base64 "WFhYWFiLdCQMuQAAAAA="
-20:
-.base64 "iegByA+2kAQBAACJ8AHIiBCDwQGD+RQ="
-jne 20b
-.base64 "ieiLmKAAAACLsKQAAACLuKgAAACLqKwAAAC5AAAAAIlMJBSJTCQYiUwkHIlMJCCJTCQkiUwkKIlMJCyJTCQwiUwkNIlMJDiJTCQ8iUwkQIlMJESJTCRIiUwkTIlMJFCJTCRUiUwkWIlMJFyJTCRgiUwkZIlMJGiJTCRsiUwkcIlMJHSJTCR4iUwkfImMJIAAAACJjCSEAAAAiYwkiAAAAImMJIwAAACJjCSQAAAAiYwklAAAAImMJJgAAACJjCScAAAAiYwkoAAAAImMJKQAAACJjCSoAAAAiYwkrAAAAImMJLAAAACJjCS0AAAAiYwkuAAAAImMJLwAAACJjCTAAAAAiYwkxAAAAImMJMgAAACJjCTMAAAAiYwk0AAAAImMJNQAAACJjCTYAAAAiYwk3AAAAImMJOAAAACJjCTkAAAAiYwk6AAAAImMJOwAAACJjCTwAAAAiYwk9AAAAImMJPgAAACJjCT8AAAAiYwkAAEAAImMJAQBAACJjCQIAQAAiYwkDAEAAImMJBABAACJjCQUAQAAiYwkGAEAAImMJBwBAACJjCQgAQAAiYwkJAEAAImMJCgBAACNpCQsAQAAww=="
-.p2align 6"#,
-        vg_sha1_init = sym super::sha1::vg_sha1_init,
-        vg_sha1_update_scratch_shani = sym super::sha1::vg_sha1_update_scratch_shani::vg_sha1_update_scratch_shani,
-        vg_sha1_finalize_scratch_shani = sym super::sha1::vg_sha1_finalize_scratch_shani::vg_sha1_finalize_scratch_shani,
-    )
+#[inline(always)]
+pub unsafe fn vg_sha1_digest_shani(_dit: verified_garbage_cpu::Dit<'_>, data: *const u8, len: usize, out: *mut [u8; 20]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha1_digest_shani(data, len, out) }
 }
 
 /// The CPU features `vg_sha1_update_shani` requires (`Artifact.features`).
@@ -238,75 +112,11 @@ pub const VG_SHA1_UPDATE_SHANI_FEATURES: verified_garbage_cpu::Features = verifi
 /// * `state` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the arguments on the stack, overlap the return address on the stack or the 208 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha` and `ssse3` target features.
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha1_update_shani(state: *mut [u8; 84], count: u64, data: *const u8, len: usize) {
-    core::arch::naked_asm!(
-        r#".base64 "jaQkRP///4uEJMAAAACJRCQEi4QkxAAAAIlEJAiLhCTIAAAAiUQkDIuEJMwAAACJRCQQi4Qk0AAAAIlEJBSJ4IPAHIlEJBiLRCQYiVhwiXB0iXh4iWh8i1wkBItsJBCLdCQUi3wkCIPnPw=="
-20:
-.base64 "hf8="
-je 21f
-.base64 "uEAAAAAp+DnG"
-jb 23f
-jmp 24f
-23:
-.base64 "ifA="
-24:
-.base64 "KcYB34XA"
-je 25f
-27:
-.base64 "D7ZNAIhPFIPFAYPHAYPoAQ=="
-jne 27b
-jmp 26f
-25:
-26:
-.base64 "Kd+5AAAAAIP/QA=="
-je 28f
-jmp 29f
-28:
-.base64 "idiDwBS/AAAAALkBAAAA"
-29:
-jmp 22f
-21:
-.base64 "g/5A"
-jae 210f
-.base64 "uEAAAAAp+DnG"
-jb 212f
-jmp 213f
-212:
-.base64 "ifA="
-213:
-.base64 "KcYB34XA"
-je 214f
-216:
-.base64 "D7ZNAIhPFIPFAYPHAYPoAQ=="
-jne 216b
-jmp 215f
-214:
-215:
-.base64 "Kd+5AAAAAIP/QA=="
-je 217f
-jmp 218f
-217:
-.base64 "idiDwBS/AAAAALkBAAAA"
-218:
-jmp 211f
-210:
-.base64 "ieiJ8YPhP4nyKcoB1YnOidHB6QY="
-211:
-22:
-.base64 "hck="
-jne 219f
-jmp 220f
-219:
-.base64 "i1QkGFJRUFM="
-call {vg_sha1_compress_shani}
-.base64 "WFhYWLkBAAAAhck="
-220:
-jne 20b
-.base64 "i0QkGItYcItwdIt4eItofI2kJLwAAADD"
-.p2align 6"#,
-        vg_sha1_compress_shani = sym super::sha1::vg_sha1_compress_shani::vg_sha1_compress_shani,
-    )
+#[inline(always)]
+pub unsafe fn vg_sha1_update_shani(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 84], count: u64, data: *const u8, len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha1_update_shani(state, count, data, len) }
 }
 
 /// The CPU features `vg_sha1_finalize_shani` requires (`Artifact.features`).
@@ -326,8 +136,257 @@ pub const VG_SHA1_FINALIZE_SHANI_FEATURES: verified_garbage_cpu::Features = veri
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the arguments on the stack, overlap the return address on the stack or the 204 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha` and `ssse3` target features.
+#[inline(always)]
+pub unsafe fn vg_sha1_finalize_shani(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 84], count: u64, out: *mut [u8; 20]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha1_finalize_shani(state, count, out) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_sha1_init`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha1_finalize_shani(state: *mut [u8; 84], count: u64, out: *mut [u8; 20]) {
+pub(crate) unsafe extern "C" fn vg_sha1_init(state: *mut [u8; 84]) {
+    core::arch::naked_asm!(
+        r#".base64 "i0QkBLkBI0VniQi5iavN74lIBLn+3LqYiUgIuXZUMhCJSAy58OHSw4lIEMM="
+.p2align 6"#,
+    )
+}
+
+/// The verified code of [`super::vg_sha1_digest`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha1_digest(data: *const u8, len: usize, out: *mut [u8; 20]) {
+    core::arch::naked_asm!(
+        r#".base64 "jaQk1P7//4uEJDABAACJRCQEi4QkNAEAAIlEJAiLhCQ4AQAAiUQkDIngg8AUiUQkEItEJBCJmKAAAACJsKQAAACJuKgAAACJqKwAAACJxYnvgcewAAAAVw=="
+call {vg_sha1_init}
+.base64 "WLgAAAAAvgAAAACLTCQIi1QkBFVRUlBWVw=="
+call {vg_sha1_update_scratch}
+.base64 "WFhYWFhYi0QkCLkAAAAAieqBwgQBAABVUlFQVw=="
+call {vg_sha1_finalize_scratch}
+.base64 "WFhYWFiLdCQMuQAAAAA="
+20:
+.base64 "iegByA+2kAQBAACJ8AHIiBCDwQGD+RQ="
+jne 20b
+.base64 "ieiLmKAAAACLsKQAAACLuKgAAACLqKwAAAC5AAAAAIlMJBSJTCQYiUwkHIlMJCCJTCQkiUwkKIlMJCyJTCQwiUwkNIlMJDiJTCQ8iUwkQIlMJESJTCRIiUwkTIlMJFCJTCRUiUwkWIlMJFyJTCRgiUwkZIlMJGiJTCRsiUwkcIlMJHSJTCR4iUwkfImMJIAAAACJjCSEAAAAiYwkiAAAAImMJIwAAACJjCSQAAAAiYwklAAAAImMJJgAAACJjCScAAAAiYwkoAAAAImMJKQAAACJjCSoAAAAiYwkrAAAAImMJLAAAACJjCS0AAAAiYwkuAAAAImMJLwAAACJjCTAAAAAiYwkxAAAAImMJMgAAACJjCTMAAAAiYwk0AAAAImMJNQAAACJjCTYAAAAiYwk3AAAAImMJOAAAACJjCTkAAAAiYwk6AAAAImMJOwAAACJjCTwAAAAiYwk9AAAAImMJPgAAACJjCT8AAAAiYwkAAEAAImMJAQBAACJjCQIAQAAiYwkDAEAAImMJBABAACJjCQUAQAAiYwkGAEAAImMJBwBAACJjCQgAQAAiYwkJAEAAImMJCgBAACNpCQsAQAAww=="
+.p2align 6"#,
+        vg_sha1_init = sym crate::sha1::raw::vg_sha1_init,
+        vg_sha1_update_scratch = sym crate::sha1::vg_sha1_update_scratch::vg_sha1_update_scratch,
+        vg_sha1_finalize_scratch = sym crate::sha1::vg_sha1_finalize_scratch::vg_sha1_finalize_scratch,
+    )
+}
+
+/// The verified code of [`super::vg_sha1_update`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha1_update(state: *mut [u8; 84], count: u64, data: *const u8, len: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "jaQkRP///4uEJMAAAACJRCQEi4QkxAAAAIlEJAiLhCTIAAAAiUQkDIuEJMwAAACJRCQQi4Qk0AAAAIlEJBSJ4IPAHIlEJBiLRCQYiVhwiXB0iXh4iWh8i1wkBItsJBCLdCQUi3wkCIPnPw=="
+20:
+.base64 "hf8="
+je 21f
+.base64 "uEAAAAAp+DnG"
+jb 23f
+jmp 24f
+23:
+.base64 "ifA="
+24:
+.base64 "KcYB34XA"
+je 25f
+27:
+.base64 "D7ZNAIhPFIPFAYPHAYPoAQ=="
+jne 27b
+jmp 26f
+25:
+26:
+.base64 "Kd+5AAAAAIP/QA=="
+je 28f
+jmp 29f
+28:
+.base64 "idiDwBS/AAAAALkBAAAA"
+29:
+jmp 22f
+21:
+.base64 "g/5A"
+jae 210f
+.base64 "uEAAAAAp+DnG"
+jb 212f
+jmp 213f
+212:
+.base64 "ifA="
+213:
+.base64 "KcYB34XA"
+je 214f
+216:
+.base64 "D7ZNAIhPFIPFAYPHAYPoAQ=="
+jne 216b
+jmp 215f
+214:
+215:
+.base64 "Kd+5AAAAAIP/QA=="
+je 217f
+jmp 218f
+217:
+.base64 "idiDwBS/AAAAALkBAAAA"
+218:
+jmp 211f
+210:
+.base64 "ieiJ8YPhP4nyKcoB1YnOidHB6QY="
+211:
+22:
+.base64 "hck="
+jne 219f
+jmp 220f
+219:
+.base64 "i1QkGFJRUFM="
+call {vg_sha1_compress}
+.base64 "WFhYWLkBAAAAhck="
+220:
+jne 20b
+.base64 "i0QkGItYcItwdIt4eItofI2kJLwAAADD"
+.p2align 6"#,
+        vg_sha1_compress = sym crate::sha1::vg_sha1_compress::vg_sha1_compress,
+    )
+}
+
+/// The verified code of [`super::vg_sha1_finalize`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha1_finalize(state: *mut [u8; 84], count: u64, out: *mut [u8; 20]) {
+    core::arch::naked_asm!(
+        r#".base64 "jaQkSP///4uEJLwAAACJRCQEi4QkwAAAAIlEJAiLhCTEAAAAiUQkDIuEJMgAAACJRCQQieCDwBiJRCQUi0QkFIlYcIlwdIl4eIlofInFi1wkBItMJAiJjYAAAACLTCQMiY2EAAAAi0wkEImNiAAAAIt8JAiD5z+J2gH6uYAAAACIShSDxwG+AAAAAIP/OQ=="
+jae 20f
+jmp 21f
+20:
+.base64 "vgEAAAA="
+21:
+22:
+.base64 "uEAAAACF9g=="
+je 23f
+jmp 24f
+23:
+.base64 "uDgAAAA="
+24:
+.base64 "uQAAAAAp+A=="
+je 25f
+27:
+.base64 "idoB+ohKFIPHAYPoAQ=="
+jne 27b
+jmp 26f
+25:
+26:
+.base64 "hfY="
+je 28f
+jmp 29f
+28:
+.base64 "i4WAAAAAi42EAAAAAckByQHJicLB6h0J0QHAAcABwA/JiUtMD8iJQ1A="
+29:
+.base64 "idiDwBS5AQAAAFVRUFM="
+call {vg_sha1_compress}
+.base64 "WFhYWL8AAAAAg+4B"
+je 22b
+.base64 "i4WIAAAAiwsPyYkIi0sED8mJSASLSwgPyYlICItLDA/JiUgMi0sQD8mJSBCLXXCLdXSLfXiLbXyNpCS4AAAAww=="
+.p2align 6"#,
+        vg_sha1_compress = sym crate::sha1::vg_sha1_compress::vg_sha1_compress,
+    )
+}
+
+/// The verified code of [`super::vg_sha1_digest_shani`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha1_digest_shani(data: *const u8, len: usize, out: *mut [u8; 20]) {
+    core::arch::naked_asm!(
+        r#".base64 "jaQk1P7//4uEJDABAACJRCQEi4QkNAEAAIlEJAiLhCQ4AQAAiUQkDIngg8AUiUQkEItEJBCJmKAAAACJsKQAAACJuKgAAACJqKwAAACJxYnvgcewAAAAVw=="
+call {vg_sha1_init}
+.base64 "WLgAAAAAvgAAAACLTCQIi1QkBFVRUlBWVw=="
+call {vg_sha1_update_scratch_shani}
+.base64 "WFhYWFhYi0QkCLkAAAAAieqBwgQBAABVUlFQVw=="
+call {vg_sha1_finalize_scratch_shani}
+.base64 "WFhYWFiLdCQMuQAAAAA="
+20:
+.base64 "iegByA+2kAQBAACJ8AHIiBCDwQGD+RQ="
+jne 20b
+.base64 "ieiLmKAAAACLsKQAAACLuKgAAACLqKwAAAC5AAAAAIlMJBSJTCQYiUwkHIlMJCCJTCQkiUwkKIlMJCyJTCQwiUwkNIlMJDiJTCQ8iUwkQIlMJESJTCRIiUwkTIlMJFCJTCRUiUwkWIlMJFyJTCRgiUwkZIlMJGiJTCRsiUwkcIlMJHSJTCR4iUwkfImMJIAAAACJjCSEAAAAiYwkiAAAAImMJIwAAACJjCSQAAAAiYwklAAAAImMJJgAAACJjCScAAAAiYwkoAAAAImMJKQAAACJjCSoAAAAiYwkrAAAAImMJLAAAACJjCS0AAAAiYwkuAAAAImMJLwAAACJjCTAAAAAiYwkxAAAAImMJMgAAACJjCTMAAAAiYwk0AAAAImMJNQAAACJjCTYAAAAiYwk3AAAAImMJOAAAACJjCTkAAAAiYwk6AAAAImMJOwAAACJjCTwAAAAiYwk9AAAAImMJPgAAACJjCT8AAAAiYwkAAEAAImMJAQBAACJjCQIAQAAiYwkDAEAAImMJBABAACJjCQUAQAAiYwkGAEAAImMJBwBAACJjCQgAQAAiYwkJAEAAImMJCgBAACNpCQsAQAAww=="
+.p2align 6"#,
+        vg_sha1_init = sym crate::sha1::raw::vg_sha1_init,
+        vg_sha1_update_scratch_shani = sym crate::sha1::vg_sha1_update_scratch_shani::vg_sha1_update_scratch_shani,
+        vg_sha1_finalize_scratch_shani = sym crate::sha1::vg_sha1_finalize_scratch_shani::vg_sha1_finalize_scratch_shani,
+    )
+}
+
+/// The verified code of [`super::vg_sha1_update_shani`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha1_update_shani(state: *mut [u8; 84], count: u64, data: *const u8, len: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "jaQkRP///4uEJMAAAACJRCQEi4QkxAAAAIlEJAiLhCTIAAAAiUQkDIuEJMwAAACJRCQQi4Qk0AAAAIlEJBSJ4IPAHIlEJBiLRCQYiVhwiXB0iXh4iWh8i1wkBItsJBCLdCQUi3wkCIPnPw=="
+20:
+.base64 "hf8="
+je 21f
+.base64 "uEAAAAAp+DnG"
+jb 23f
+jmp 24f
+23:
+.base64 "ifA="
+24:
+.base64 "KcYB34XA"
+je 25f
+27:
+.base64 "D7ZNAIhPFIPFAYPHAYPoAQ=="
+jne 27b
+jmp 26f
+25:
+26:
+.base64 "Kd+5AAAAAIP/QA=="
+je 28f
+jmp 29f
+28:
+.base64 "idiDwBS/AAAAALkBAAAA"
+29:
+jmp 22f
+21:
+.base64 "g/5A"
+jae 210f
+.base64 "uEAAAAAp+DnG"
+jb 212f
+jmp 213f
+212:
+.base64 "ifA="
+213:
+.base64 "KcYB34XA"
+je 214f
+216:
+.base64 "D7ZNAIhPFIPFAYPHAYPoAQ=="
+jne 216b
+jmp 215f
+214:
+215:
+.base64 "Kd+5AAAAAIP/QA=="
+je 217f
+jmp 218f
+217:
+.base64 "idiDwBS/AAAAALkBAAAA"
+218:
+jmp 211f
+210:
+.base64 "ieiJ8YPhP4nyKcoB1YnOidHB6QY="
+211:
+22:
+.base64 "hck="
+jne 219f
+jmp 220f
+219:
+.base64 "i1QkGFJRUFM="
+call {vg_sha1_compress_shani}
+.base64 "WFhYWLkBAAAAhck="
+220:
+jne 20b
+.base64 "i0QkGItYcItwdIt4eItofI2kJLwAAADD"
+.p2align 6"#,
+        vg_sha1_compress_shani = sym crate::sha1::vg_sha1_compress_shani::vg_sha1_compress_shani,
+    )
+}
+
+/// The verified code of [`super::vg_sha1_finalize_shani`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha1_finalize_shani(state: *mut [u8; 84], count: u64, out: *mut [u8; 20]) {
     core::arch::naked_asm!(
         r#".base64 "jaQkSP///4uEJLwAAACJRCQEi4QkwAAAAIlEJAiLhCTEAAAAiUQkDIuEJMgAAACJRCQQieCDwBiJRCQUi0QkFIlYcIlwdIl4eIlofInFi1wkBItMJAiJjYAAAACLTCQMiY2EAAAAi0wkEImNiAAAAIt8JAiD5z+J2gH6uYAAAACIShSDxwG+AAAAAIP/OQ=="
 jae 20f
@@ -362,8 +421,9 @@ call {vg_sha1_compress_shani}
 je 22b
 .base64 "i4WIAAAAiwsPyYkIi0sED8mJSASLSwgPyYlICItLDA/JiUgMi0sQD8mJSBCLXXCLdXSLfXiLbXyNpCS4AAAAww=="
 .p2align 6"#,
-        vg_sha1_compress_shani = sym super::sha1::vg_sha1_compress_shani::vg_sha1_compress_shani,
+        vg_sha1_compress_shani = sym crate::sha1::vg_sha1_compress_shani::vg_sha1_compress_shani,
     )
+}
 }
 
 #[rustfmt::skip]

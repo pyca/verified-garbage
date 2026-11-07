@@ -1124,7 +1124,7 @@ jmp 2290f
 2290:
 .base64 "SI2kJCgBAABIjWQkIEiLHCRIi2wkCEyLZCQQTItsJBhMi3QkIEyLfCQoSI1kJDDD"
 .p2align 6"#,
-        vg_sha1_init = sym crate::sha1::vg_sha1_init,
+        vg_sha1_init = sym crate::sha1::raw::vg_sha1_init,
         vg_sha1_update_scratch_shani = sym crate::sha1::vg_sha1_update_scratch_shani::vg_sha1_update_scratch_shani,
         vg_sha1_finalize_scratch_shani = sym crate::sha1::vg_sha1_finalize_scratch_shani::vg_sha1_finalize_scratch_shani,
         vg_dsa_probable_prime_adx = sym crate::dsa::vg_dsa_probable_prime_adx::vg_dsa_probable_prime_adx,

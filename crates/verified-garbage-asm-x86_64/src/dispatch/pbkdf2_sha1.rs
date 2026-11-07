@@ -18,18 +18,18 @@
 /// * None of `password`, `salt` and `out` may overlap the return address on the stack or the 1168 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_pbkdf2_hmac_sha1_auto(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
+pub unsafe fn vg_pbkdf2_hmac_sha1_auto(dit: verified_garbage_cpu::Dit<'_>, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::pbkdf2_sha1::VG_PBKDF2_HMAC_SHA1_SHANI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_pbkdf2_hmac_sha1_shani`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::pbkdf2_sha1::vg_pbkdf2_hmac_sha1_shani(password, password_len, salt, salt_len, c, out, out_len) };
+        return unsafe { crate::pbkdf2_sha1::vg_pbkdf2_hmac_sha1_shani(dit, password, password_len, salt, salt_len, c, out, out_len) };
     }
     if cpu.contains(crate::pbkdf2_sha1::VG_PBKDF2_HMAC_SHA1_AVX_BMI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_pbkdf2_hmac_sha1_avx_bmi`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::pbkdf2_sha1::vg_pbkdf2_hmac_sha1_avx_bmi(password, password_len, salt, salt_len, c, out, out_len) };
+        return unsafe { crate::pbkdf2_sha1::vg_pbkdf2_hmac_sha1_avx_bmi(dit, password, password_len, salt, salt_len, c, out, out_len) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::pbkdf2_sha1::vg_pbkdf2_hmac_sha1(password, password_len, salt, salt_len, c, out, out_len) }
+    unsafe { crate::pbkdf2_sha1::vg_pbkdf2_hmac_sha1(dit, password, password_len, salt, salt_len, c, out, out_len) }
 }

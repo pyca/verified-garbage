@@ -15,7 +15,7 @@ use crate::ec::sealed::Exchange;
 use crate::zeroize::zeroize;
 
 impl Exchange for BrainpoolP512r1 {
-    fn exchange(d: &[u8; 64], peer: &[u8; 129]) -> Option<[u8; 64]> {
+    fn exchange(dit: crate::dit::Dit<'_>, d: &[u8; 64], peer: &[u8; 129]) -> Option<[u8; 64]> {
         let mut out = [0; 64];
         let mut scratch = [0u64; 1024];
         // SAFETY: `out` is valid for reads and writes of 64 bytes, `d` for
@@ -24,7 +24,7 @@ impl Exchange for BrainpoolP512r1 {
         // other and the others, so none overlaps another or the call's stack
         // frame, and, as Rust objects, none wraps around the address space. The
         // dispatcher calls only an implementation the CPU has the features of.
-        let ok = unsafe { vg_ecdh_brainpoolp512r1_auto(&mut out, d, peer, &mut scratch) };
+        let ok = unsafe { vg_ecdh_brainpoolp512r1_auto(dit, &mut out, d, peer, &mut scratch) };
         zeroize(&mut scratch);
         (ok == 1).then_some(out)
     }

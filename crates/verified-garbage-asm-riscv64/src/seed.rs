@@ -13,8 +13,53 @@
 /// * `schedule` must be valid for reads and writes of 128 bytes.
 /// * `schedule` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `schedule` may overlap the 1040 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_seed_expand_key(_dit: verified_garbage_cpu::Dit<'_>, key: *const [u8; 16], schedule: *mut [u8; 128]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_seed_expand_key(key, schedule) }
+}
+
+/// SEED ECB encryption (RFC 4269 §2, SP 800-38A §6.1) of `n` complete 16-byte blocks at `data`, in place, under the schedule written by `vg_seed_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
+///
+/// Contract: `VG.Spec.Seed.ecbEncryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including S-box inputs.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `data` must be valid for reads and writes of `16 * n` bytes.
+/// * `data` must not overlap `schedule` (distinct Rust objects never do).
+/// * Neither `schedule` nor `data` may overlap the 1040 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_seed_ecb_encrypt(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_seed_ecb_encrypt(schedule, data, n) }
+}
+
+/// SEED ECB decryption (RFC 4269 §2.4, SP 800-38A §6.1) of `n` complete 16-byte blocks at `data`, in place, under the schedule written by `vg_seed_expand_key`: the encryption procedure with the round keys in reverse order. No padding is added or removed. For `n = 0`, no data is transformed.
+///
+/// Contract: `VG.Spec.Seed.ecbDecryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including S-box inputs.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `data` must be valid for reads and writes of `16 * n` bytes.
+/// * `data` must not overlap `schedule` (distinct Rust objects never do).
+/// * Neither `schedule` nor `data` may overlap the 1040 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_seed_ecb_decrypt(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_seed_ecb_decrypt(schedule, data, n) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_seed_expand_key`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_seed_expand_key(key: *const [u8; 16], schedule: *mut [u8; 128]) {
+pub(crate) unsafe extern "C" fn vg_seed_expand_key(key: *const [u8; 16], schedule: *mut [u8; 128]) {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
@@ -1316,18 +1361,9 @@ bnez a4, 20b
     )
 }
 
-/// SEED ECB encryption (RFC 4269 §2, SP 800-38A §6.1) of `n` complete 16-byte blocks at `data`, in place, under the schedule written by `vg_seed_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
-///
-/// Contract: `VG.Spec.Seed.ecbEncryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including S-box inputs.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 128 bytes.
-/// * `data` must be valid for reads and writes of `16 * n` bytes.
-/// * `data` must not overlap `schedule` (distinct Rust objects never do).
-/// * Neither `schedule` nor `data` may overlap the 1040 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_seed_ecb_encrypt`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_seed_ecb_encrypt(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {
+pub(crate) unsafe extern "C" fn vg_seed_ecb_encrypt(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
@@ -4028,18 +4064,9 @@ j 21f
     )
 }
 
-/// SEED ECB decryption (RFC 4269 §2.4, SP 800-38A §6.1) of `n` complete 16-byte blocks at `data`, in place, under the schedule written by `vg_seed_expand_key`: the encryption procedure with the round keys in reverse order. No padding is added or removed. For `n = 0`, no data is transformed.
-///
-/// Contract: `VG.Spec.Seed.ecbDecryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including S-box inputs.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 128 bytes.
-/// * `data` must be valid for reads and writes of `16 * n` bytes.
-/// * `data` must not overlap `schedule` (distinct Rust objects never do).
-/// * Neither `schedule` nor `data` may overlap the 1040 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_seed_ecb_decrypt`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_seed_ecb_decrypt(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {
+pub(crate) unsafe extern "C" fn vg_seed_ecb_decrypt(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
@@ -6738,6 +6765,7 @@ j 21f
 .insn 2, 0x8082
 .option pop",
     )
+}
 }
 
 #[rustfmt::skip]

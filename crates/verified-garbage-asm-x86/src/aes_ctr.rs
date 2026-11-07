@@ -21,23 +21,11 @@ pub const VG_AES_CTR_AESNI_FEATURES: verified_garbage_cpu::Features = verified_g
 /// * `ctr`, `data` and `scratch` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `ctr`, `data` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_ctr_aesni(schedule: *const [u8; 240], rounds: usize, ctr: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
-    core::arch::naked_asm!(
-        r#".base64 "i0QkGImYEAgAAImwFAgAAIm4GAgAAImoHAgAAIt0JBCLRCQUhcA="
-je 20f
-22:
-.base64 "i2wkGItcJAy4AAAAAImFAAgAAImFBAgAAImFCAgAAImFDAgAAIuFAAgAAIsLMciJhQAIAACLhQQIAACLSwQxyImFBAgAAIuFCAgAAItLCDHIiYUICAAAi4UMCAAAi0sMMciJhQwIAACLRCQEi0wkCInrgcMACAAAvwEAAABVV1NRUA=="
-call {vg_aes_encrypt_blocks_aesni}
-.base64 "WFhYWFiLbCQYiwaLjQAIAAAxyIkGi0YEi40ECAAAMciJRgSLRgiLjQgIAAAxyIlGCItGDIuNDAgAADHIiUYMi1wkDItDDA/Ig8ABi0sID8mD0QCLUwQPyoPSAIs7D8+D1wAPyIlDDA/JiUsID8qJUwQPz4k7g8YQi0QkFAHAAcABwAHAA0QkEDnG"
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "i0QkGIuYEAgAAIuwFAgAAIu4GAgAAIuoHAgAAMM="
-.p2align 6"#,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
-    )
+#[inline(always)]
+pub unsafe fn vg_aes_ctr_aesni(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, ctr: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_ctr_aesni(schedule, rounds, ctr, data, n, scratch) }
 }
 
 /// The CPU features `vg_aes_ctr_final_aesni` requires (`Artifact.features`).
@@ -58,26 +46,11 @@ pub const VG_AES_CTR_FINAL_AESNI_FEATURES: verified_garbage_cpu::Features = veri
 /// * `ctr`, `data` and `scratch` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `ctr`, `data` and `scratch` may overlap the return address on the stack or the 116 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_ctr_final_aesni(schedule: *const [u8; 240], rounds: usize, ctr: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
-    core::arch::naked_asm!(
-        r#".base64 "jWQkwItEJESJRCQEi0QkSIlEJAiLRCRMiUQkDItEJFCJRCQQi0QkVIlEJBSLRCRYiUQkGIngg8AgiUQkHItEJByJGIlwBIl4CIloDItEJASLTCQIi1QkDItcJBCLdCQUwe4Ei3wkGFdWU1JRUA=="
-call {vg_aes_ctr_aesni}
-.base64 "WFhYWFhYi0QkFIPgD4XA"
-je 20f
-.base64 "i0QkHLkAAAAAiUgQiUgUiUgYiUgcicODwxCLRCQEi0wkCItUJAy+AQAAAIt8JBhXVlNSUVA="
-call {vg_aes_ctr_aesni}
-.base64 "WFhYWFhYi1wkHIPDEIt0JBCLbCQUieiD5Q8p6AHG"
-22:
-.base64 "D7YDD7YOMcGIDoPDAYPGAYPtAQ=="
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "i0QkHIsYi3AEi3gIi2gMuQAAAACJTCQgiUwkJIlMJCiJTCQsiUwkMIlMJDSJTCQ4iUwkPI1kJEDD"
-.p2align 6"#,
-        vg_aes_ctr_aesni = sym super::aes_ctr::vg_aes_ctr_aesni,
-    )
+#[inline(always)]
+pub unsafe fn vg_aes_ctr_final_aesni(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, ctr: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_ctr_final_aesni(schedule, rounds, ctr, data, len, scratch) }
 }
 
 /// AES-CTR encryption or decryption (NIST SP 800-38A §6.5) of whole blocks, in place: XORs the `n` 16-byte blocks at `data` with the output blocks `Oⱼ = CIPH_K(Tⱼ)`, where `T₁` is the block at `*ctr` and `Tⱼ₊₁ = Tⱼ + 1 mod 2¹²⁸` (Appendix B.1's standard incrementing function on the whole block, read as a big-endian integer), and replaces `*ctr` with `Tₙ₊₁` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
@@ -94,23 +67,11 @@ jmp 21f
 /// * The contents of `scratch` on return are unspecified.
 /// * `ctr`, `data` and `scratch` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `ctr`, `data` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_ctr(schedule: *const [u8; 240], rounds: usize, ctr: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
-    core::arch::naked_asm!(
-        r#".base64 "i0QkGImYEAgAAImwFAgAAIm4GAgAAImoHAgAAIt0JBCLRCQUhcA="
-je 20f
-22:
-.base64 "i2wkGItcJAy4AAAAAImFAAgAAImFBAgAAImFCAgAAImFDAgAAIuFAAgAAIsLMciJhQAIAACLhQQIAACLSwQxyImFBAgAAIuFCAgAAItLCDHIiYUICAAAi4UMCAAAi0sMMciJhQwIAACLRCQEi0wkCInrgcMACAAAvwEAAABVV1NRUA=="
-call {vg_aes_encrypt_blocks}
-.base64 "WFhYWFiLbCQYiwaLjQAIAAAxyIkGi0YEi40ECAAAMciJRgSLRgiLjQgIAAAxyIlGCItGDIuNDAgAADHIiUYMi1wkDItDDA/Ig8ABi0sID8mD0QCLUwQPyoPSAIs7D8+D1wAPyIlDDA/JiUsID8qJUwQPz4k7g8YQi0QkFAHAAcABwAHAA0QkEDnG"
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "i0QkGIuYEAgAAIuwFAgAAIu4GAgAAIuoHAgAAMM="
-.p2align 6"#,
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
-    )
+#[inline(always)]
+pub unsafe fn vg_aes_ctr(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, ctr: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_ctr(schedule, rounds, ctr, data, n, scratch) }
 }
 
 /// AES-CTR encryption or decryption (NIST SP 800-38A §6.5) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Tⱼ)`, where `T₁` is the block at `*ctr` and `Tⱼ₊₁ = Tⱼ + 1 mod 2¹²⁸` (Appendix B.1's standard incrementing function on the whole block, read as a big-endian integer), a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*ctr` with `Tₙ₊₁` (leaving it unchanged if `len = 0`), so that a further call continues the message if `len` is a multiple of 16; after a partial last block the message must end. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
@@ -127,8 +88,82 @@ jmp 21f
 /// * The contents of `scratch` on return are unspecified.
 /// * `ctr`, `data` and `scratch` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `ctr`, `data` and `scratch` may overlap the return address on the stack or the 116 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_aes_ctr_final(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, ctr: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_ctr_final(schedule, rounds, ctr, data, len, scratch) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_aes_ctr_aesni`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_ctr_final(schedule: *const [u8; 240], rounds: usize, ctr: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
+pub(crate) unsafe extern "C" fn vg_aes_ctr_aesni(schedule: *const [u8; 240], rounds: usize, ctr: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
+    core::arch::naked_asm!(
+        r#".base64 "i0QkGImYEAgAAImwFAgAAIm4GAgAAImoHAgAAIt0JBCLRCQUhcA="
+je 20f
+22:
+.base64 "i2wkGItcJAy4AAAAAImFAAgAAImFBAgAAImFCAgAAImFDAgAAIuFAAgAAIsLMciJhQAIAACLhQQIAACLSwQxyImFBAgAAIuFCAgAAItLCDHIiYUICAAAi4UMCAAAi0sMMciJhQwIAACLRCQEi0wkCInrgcMACAAAvwEAAABVV1NRUA=="
+call {vg_aes_encrypt_blocks_aesni}
+.base64 "WFhYWFiLbCQYiwaLjQAIAAAxyIkGi0YEi40ECAAAMciJRgSLRgiLjQgIAAAxyIlGCItGDIuNDAgAADHIiUYMi1wkDItDDA/Ig8ABi0sID8mD0QCLUwQPyoPSAIs7D8+D1wAPyIlDDA/JiUsID8qJUwQPz4k7g8YQi0QkFAHAAcABwAHAA0QkEDnG"
+jne 22b
+jmp 21f
+20:
+21:
+.base64 "i0QkGIuYEAgAAIuwFAgAAIu4GAgAAIuoHAgAAMM="
+.p2align 6"#,
+        vg_aes_encrypt_blocks_aesni = sym crate::aes::raw::vg_aes_encrypt_blocks_aesni,
+    )
+}
+
+/// The verified code of [`super::vg_aes_ctr_final_aesni`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_ctr_final_aesni(schedule: *const [u8; 240], rounds: usize, ctr: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
+    core::arch::naked_asm!(
+        r#".base64 "jWQkwItEJESJRCQEi0QkSIlEJAiLRCRMiUQkDItEJFCJRCQQi0QkVIlEJBSLRCRYiUQkGIngg8AgiUQkHItEJByJGIlwBIl4CIloDItEJASLTCQIi1QkDItcJBCLdCQUwe4Ei3wkGFdWU1JRUA=="
+call {vg_aes_ctr_aesni}
+.base64 "WFhYWFhYi0QkFIPgD4XA"
+je 20f
+.base64 "i0QkHLkAAAAAiUgQiUgUiUgYiUgcicODwxCLRCQEi0wkCItUJAy+AQAAAIt8JBhXVlNSUVA="
+call {vg_aes_ctr_aesni}
+.base64 "WFhYWFhYi1wkHIPDEIt0JBCLbCQUieiD5Q8p6AHG"
+22:
+.base64 "D7YDD7YOMcGIDoPDAYPGAYPtAQ=="
+jne 22b
+jmp 21f
+20:
+21:
+.base64 "i0QkHIsYi3AEi3gIi2gMuQAAAACJTCQgiUwkJIlMJCiJTCQsiUwkMIlMJDSJTCQ4iUwkPI1kJEDD"
+.p2align 6"#,
+        vg_aes_ctr_aesni = sym crate::aes_ctr::raw::vg_aes_ctr_aesni,
+    )
+}
+
+/// The verified code of [`super::vg_aes_ctr`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_ctr(schedule: *const [u8; 240], rounds: usize, ctr: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
+    core::arch::naked_asm!(
+        r#".base64 "i0QkGImYEAgAAImwFAgAAIm4GAgAAImoHAgAAIt0JBCLRCQUhcA="
+je 20f
+22:
+.base64 "i2wkGItcJAy4AAAAAImFAAgAAImFBAgAAImFCAgAAImFDAgAAIuFAAgAAIsLMciJhQAIAACLhQQIAACLSwQxyImFBAgAAIuFCAgAAItLCDHIiYUICAAAi4UMCAAAi0sMMciJhQwIAACLRCQEi0wkCInrgcMACAAAvwEAAABVV1NRUA=="
+call {vg_aes_encrypt_blocks}
+.base64 "WFhYWFiLbCQYiwaLjQAIAAAxyIkGi0YEi40ECAAAMciJRgSLRgiLjQgIAAAxyIlGCItGDIuNDAgAADHIiUYMi1wkDItDDA/Ig8ABi0sID8mD0QCLUwQPyoPSAIs7D8+D1wAPyIlDDA/JiUsID8qJUwQPz4k7g8YQi0QkFAHAAcABwAHAA0QkEDnG"
+jne 22b
+jmp 21f
+20:
+21:
+.base64 "i0QkGIuYEAgAAIuwFAgAAIu4GAgAAIuoHAgAAMM="
+.p2align 6"#,
+        vg_aes_encrypt_blocks = sym crate::aes::raw::vg_aes_encrypt_blocks,
+    )
+}
+
+/// The verified code of [`super::vg_aes_ctr_final`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_ctr_final(schedule: *const [u8; 240], rounds: usize, ctr: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
         r#".base64 "jWQkwItEJESJRCQEi0QkSIlEJAiLRCRMiUQkDItEJFCJRCQQi0QkVIlEJBSLRCRYiUQkGIngg8AgiUQkHItEJByJGIlwBIl4CIloDItEJASLTCQIi1QkDItcJBCLdCQUwe4Ei3wkGFdWU1JRUA=="
 call {vg_aes_ctr}
@@ -145,6 +180,7 @@ jmp 21f
 21:
 .base64 "i0QkHIsYi3AEi3gIi2gMuQAAAACJTCQgiUwkJIlMJCiJTCQsiUwkMIlMJDSJTCQ4iUwkPI1kJEDD"
 .p2align 6"#,
-        vg_aes_ctr = sym super::aes_ctr::vg_aes_ctr,
+        vg_aes_ctr = sym crate::aes_ctr::raw::vg_aes_ctr,
     )
+}
 }

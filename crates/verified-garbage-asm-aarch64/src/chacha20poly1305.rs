@@ -16,8 +16,285 @@
 /// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `data` and `tag` must not overlap each other, `key`, `nonce` or `aad` (distinct Rust objects never do).
 /// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the 1280 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_chacha20_poly1305_seal_neon(_dit: verified_garbage_cpu::Dit<'_>, key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_chacha20_poly1305_seal_neon(key, nonce, aad, aad_len, data, len, tag) }
+}
+
+/// ChaCha20-Poly1305 decryption (RFC 8439 §2.8): with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, having decrypted the ciphertext in place; otherwise returns 0, and the `len` bytes at `data` are zeros. The tags are compared without a branch.
+///
+/// Contract: `VG.Spec.ChaCha20Poly1305.openZeroContract`. Constant time but for the result: only the pointers, the lengths and whether the function returns 1 or 0 may affect timing, not the key, the nonce, the additional data, the tag or the data.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of 32 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of 16 bytes.
+/// * `data` must not overlap `key`, `nonce`, `aad` or `tag` (distinct Rust objects never do).
+/// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the 1312 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_chacha20_poly1305_open_neon(_dit: verified_garbage_cpu::Dit<'_>, key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_chacha20_poly1305_open_neon(key, nonce, aad, aad_len, data, len, tag) }
+}
+
+/// ChaCha20-Poly1305 decryption (RFC 8439 §2.8), out of place: with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `src` and the `aad_len` bytes of additional data at `aad`, having then written the plaintext to the `dst_len = len` bytes at `dst`; otherwise returns 0, having written zeros to them: `vg_chacha20_poly1305_open` with the ciphertext read from `src` and the plaintext written to `dst`. `src` is not written, and `dst` is a buffer of its own: it overlaps no other buffer, `src` included. The tags are compared without a branch.
+///
+/// Contract: `VG.Spec.ChaCha20Poly1305.openToContract`. Constant time but for the result: only the pointers, the lengths and whether the function returns 1 or 0 may affect timing, not the key, the nonce, the additional data, the tag or the data.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of 32 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `len` bytes.
+/// * `dst` must be valid for reads and writes of `dst_len` bytes.
+/// * `tag` must be valid for reads of 16 bytes.
+/// * `dst_len` must equal `len`.
+/// * `len` must be at most `P_MAX`, 2³² − 1 blocks of 64 bytes (RFC 8439 §2.8).
+/// * `dst` must not overlap `key`, `nonce`, `aad`, `src`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `key`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the 1328 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_chacha20_poly1305_open_to_neon(_dit: verified_garbage_cpu::Dit<'_>, key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_chacha20_poly1305_open_to_neon(key, nonce, aad, aad_len, src, len, dst, dst_len, tag) }
+}
+
+/// ChaCha20-Poly1305 encryption (RFC 8439 §2.8), out of place, of a plaintext in pieces: with the key `*key` and the nonce `*nonce`, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_chacha20_poly1305_seal` with the plaintext gathered from `src`.
+///
+/// Contract: `VG.Spec.ChaCha20Poly1305.sealGatherContract`. Constant time: only the pointers, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key, the nonce, the additional data or the data.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of 32 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
+/// * `dst` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * The slices `src` lists must be `len` bytes long in all.
+/// * `len` must be at most `P_MAX`, 2³² − 1 blocks of 64 bytes (RFC 8439 §2.8).
+/// * `dst` and `tag` must not overlap each other, `key`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
+/// * None of `key`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the 1296 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_chacha20_poly1305_seal_gather_neon(_dit: verified_garbage_cpu::Dit<'_>, key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_chacha20_poly1305_seal_gather_neon(key, nonce, aad, aad_len, src, src_count, dst, len, tag) }
+}
+
+/// ChaCha20-Poly1305 encryption (RFC 8439 §2.8): with the key `*key` and the nonce `*nonce`, encrypts the `len` bytes at `data` in place and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`.
+///
+/// Contract: `VG.Spec.ChaCha20Poly1305.sealContract`. Constant time: only the pointers and the lengths may affect timing, not the key, the nonce or the data. The block counter wraps around beyond 2³²-1 blocks of data (RFC 8439's `P_MAX`), which the caller must not exceed for the construction to be secure.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of 32 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `data` and `tag` must not overlap each other, `key`, `nonce` or `aad` (distinct Rust objects never do).
+/// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the 1280 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_chacha20_poly1305_seal(_dit: verified_garbage_cpu::Dit<'_>, key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_chacha20_poly1305_seal(key, nonce, aad, aad_len, data, len, tag) }
+}
+
+/// ChaCha20-Poly1305 decryption (RFC 8439 §2.8): with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, having decrypted the ciphertext in place; otherwise returns 0, and the `len` bytes at `data` are zeros. The tags are compared without a branch.
+///
+/// Contract: `VG.Spec.ChaCha20Poly1305.openZeroContract`. Constant time but for the result: only the pointers, the lengths and whether the function returns 1 or 0 may affect timing, not the key, the nonce, the additional data, the tag or the data.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of 32 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of 16 bytes.
+/// * `data` must not overlap `key`, `nonce`, `aad` or `tag` (distinct Rust objects never do).
+/// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the 1312 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_chacha20_poly1305_open(_dit: verified_garbage_cpu::Dit<'_>, key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_chacha20_poly1305_open(key, nonce, aad, aad_len, data, len, tag) }
+}
+
+/// ChaCha20-Poly1305 decryption (RFC 8439 §2.8), out of place: with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `src` and the `aad_len` bytes of additional data at `aad`, having then written the plaintext to the `dst_len = len` bytes at `dst`; otherwise returns 0, having written zeros to them: `vg_chacha20_poly1305_open` with the ciphertext read from `src` and the plaintext written to `dst`. `src` is not written, and `dst` is a buffer of its own: it overlaps no other buffer, `src` included. The tags are compared without a branch.
+///
+/// Contract: `VG.Spec.ChaCha20Poly1305.openToContract`. Constant time but for the result: only the pointers, the lengths and whether the function returns 1 or 0 may affect timing, not the key, the nonce, the additional data, the tag or the data.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of 32 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `len` bytes.
+/// * `dst` must be valid for reads and writes of `dst_len` bytes.
+/// * `tag` must be valid for reads of 16 bytes.
+/// * `dst_len` must equal `len`.
+/// * `len` must be at most `P_MAX`, 2³² − 1 blocks of 64 bytes (RFC 8439 §2.8).
+/// * `dst` must not overlap `key`, `nonce`, `aad`, `src`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `key`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the 1328 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_chacha20_poly1305_open_to(_dit: verified_garbage_cpu::Dit<'_>, key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_chacha20_poly1305_open_to(key, nonce, aad, aad_len, src, len, dst, dst_len, tag) }
+}
+
+/// ChaCha20-Poly1305 encryption (RFC 8439 §2.8), out of place, of a plaintext in pieces: with the key `*key` and the nonce `*nonce`, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_chacha20_poly1305_seal` with the plaintext gathered from `src`.
+///
+/// Contract: `VG.Spec.ChaCha20Poly1305.sealGatherContract`. Constant time: only the pointers, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key, the nonce, the additional data or the data.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of 32 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
+/// * `dst` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * The slices `src` lists must be `len` bytes long in all.
+/// * `len` must be at most `P_MAX`, 2³² − 1 blocks of 64 bytes (RFC 8439 §2.8).
+/// * `dst` and `tag` must not overlap each other, `key`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
+/// * None of `key`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the 1296 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_chacha20_poly1305_seal_gather(_dit: verified_garbage_cpu::Dit<'_>, key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_chacha20_poly1305_seal_gather(key, nonce, aad, aad_len, src, src_count, dst, len, tag) }
+}
+
+/// The CPU features `vg_chacha20_poly1305_seal_sve2` requires (`Artifact.features`).
+pub const VG_CHACHA20_POLY1305_SEAL_SVE2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SVE2);
+
+/// ChaCha20-Poly1305 encryption (RFC 8439 §2.8): with the key `*key` and the nonce `*nonce`, encrypts the `len` bytes at `data` in place and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`.
+///
+/// Contract: `VG.Spec.ChaCha20Poly1305.sealContract`. Constant time: only the pointers and the lengths may affect timing, not the key, the nonce or the data. The block counter wraps around beyond 2³²-1 blocks of data (RFC 8439's `P_MAX`), which the caller must not exceed for the construction to be secure.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of 32 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `data` and `tag` must not overlap each other, `key`, `nonce` or `aad` (distinct Rust objects never do).
+/// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the 1280 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sve2` target feature.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_chacha20_poly1305_seal_sve2(_dit: verified_garbage_cpu::Dit<'_>, key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_chacha20_poly1305_seal_sve2(key, nonce, aad, aad_len, data, len, tag) }
+}
+
+/// The CPU features `vg_chacha20_poly1305_open_sve2` requires (`Artifact.features`).
+pub const VG_CHACHA20_POLY1305_OPEN_SVE2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SVE2);
+
+/// ChaCha20-Poly1305 decryption (RFC 8439 §2.8): with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, having decrypted the ciphertext in place; otherwise returns 0, and the `len` bytes at `data` are zeros. The tags are compared without a branch.
+///
+/// Contract: `VG.Spec.ChaCha20Poly1305.openZeroContract`. Constant time but for the result: only the pointers, the lengths and whether the function returns 1 or 0 may affect timing, not the key, the nonce, the additional data, the tag or the data.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of 32 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of 16 bytes.
+/// * `data` must not overlap `key`, `nonce`, `aad` or `tag` (distinct Rust objects never do).
+/// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the 1312 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sve2` target feature.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_chacha20_poly1305_open_sve2(_dit: verified_garbage_cpu::Dit<'_>, key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_chacha20_poly1305_open_sve2(key, nonce, aad, aad_len, data, len, tag) }
+}
+
+/// The CPU features `vg_chacha20_poly1305_open_to_sve2` requires (`Artifact.features`).
+pub const VG_CHACHA20_POLY1305_OPEN_TO_SVE2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SVE2);
+
+/// ChaCha20-Poly1305 decryption (RFC 8439 §2.8), out of place: with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `src` and the `aad_len` bytes of additional data at `aad`, having then written the plaintext to the `dst_len = len` bytes at `dst`; otherwise returns 0, having written zeros to them: `vg_chacha20_poly1305_open` with the ciphertext read from `src` and the plaintext written to `dst`. `src` is not written, and `dst` is a buffer of its own: it overlaps no other buffer, `src` included. The tags are compared without a branch.
+///
+/// Contract: `VG.Spec.ChaCha20Poly1305.openToContract`. Constant time but for the result: only the pointers, the lengths and whether the function returns 1 or 0 may affect timing, not the key, the nonce, the additional data, the tag or the data.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of 32 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `len` bytes.
+/// * `dst` must be valid for reads and writes of `dst_len` bytes.
+/// * `tag` must be valid for reads of 16 bytes.
+/// * `dst_len` must equal `len`.
+/// * `len` must be at most `P_MAX`, 2³² − 1 blocks of 64 bytes (RFC 8439 §2.8).
+/// * `dst` must not overlap `key`, `nonce`, `aad`, `src`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `key`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the 1328 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sve2` target feature.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_chacha20_poly1305_open_to_sve2(_dit: verified_garbage_cpu::Dit<'_>, key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_chacha20_poly1305_open_to_sve2(key, nonce, aad, aad_len, src, len, dst, dst_len, tag) }
+}
+
+/// The CPU features `vg_chacha20_poly1305_seal_gather_sve2` requires (`Artifact.features`).
+pub const VG_CHACHA20_POLY1305_SEAL_GATHER_SVE2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SVE2);
+
+/// ChaCha20-Poly1305 encryption (RFC 8439 §2.8), out of place, of a plaintext in pieces: with the key `*key` and the nonce `*nonce`, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_chacha20_poly1305_seal` with the plaintext gathered from `src`.
+///
+/// Contract: `VG.Spec.ChaCha20Poly1305.sealGatherContract`. Constant time: only the pointers, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key, the nonce, the additional data or the data.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of 32 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
+/// * `dst` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * The slices `src` lists must be `len` bytes long in all.
+/// * `len` must be at most `P_MAX`, 2³² − 1 blocks of 64 bytes (RFC 8439 §2.8).
+/// * `dst` and `tag` must not overlap each other, `key`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
+/// * None of `key`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the 1296 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sve2` target feature.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_chacha20_poly1305_seal_gather_sve2(_dit: verified_garbage_cpu::Dit<'_>, key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_chacha20_poly1305_seal_gather_sve2(key, nonce, aad, aad_len, src, src_count, dst, len, tag) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_chacha20_poly1305_seal_neon`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_chacha20_poly1305_seal_neon(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal_neon(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r".inst 0xd11403ff,0x910003e7,0xd10004a9,0xd10100aa,0xaa0a0129,0xaa050129,0xd349fd29
 cbz x9, 20f
@@ -2036,29 +2313,17 @@ bl {vg_poly1305_blocks}
 .inst 0x3d813ea0
 b 25b
 .p2align 6",
-        vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
-        vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
-        vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
-        vg_chacha20_xor_neon = sym super::chacha20::vg_chacha20_xor_neon::vg_chacha20_xor_neon,
-        vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
+        vg_chacha20_block = sym crate::chacha20::vg_chacha20_block::vg_chacha20_block,
+        vg_poly1305_init = sym crate::poly1305::raw::vg_poly1305_init,
+        vg_poly1305_blocks = sym crate::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
+        vg_chacha20_xor_neon = sym crate::chacha20::vg_chacha20_xor_neon::vg_chacha20_xor_neon,
+        vg_poly1305_finalize_scratch = sym crate::poly1305::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
     )
 }
 
-/// ChaCha20-Poly1305 decryption (RFC 8439 §2.8): with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, having decrypted the ciphertext in place; otherwise returns 0, and the `len` bytes at `data` are zeros. The tags are compared without a branch.
-///
-/// Contract: `VG.Spec.ChaCha20Poly1305.openZeroContract`. Constant time but for the result: only the pointers, the lengths and whether the function returns 1 or 0 may affect timing, not the key, the nonce, the additional data, the tag or the data.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of 32 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of 16 bytes.
-/// * `data` must not overlap `key`, `nonce`, `aad` or `tag` (distinct Rust objects never do).
-/// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the 1312 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_chacha20_poly1305_open_neon`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_chacha20_poly1305_open_neon(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_open_neon(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd11483ff,0x910003e7,0x91000088,0xf90280e8,0xf90284e5,0xf90288fc,0xcb04011c,0xd10004a9
 .inst 0xd10100aa,0xaa0a0129,0xaa050129,0xd349fd29
@@ -4128,32 +4393,17 @@ bl {vg_poly1305_blocks}
 bl {vg_poly1305_finalize_scratch}
 b 25b
 .p2align 6",
-        vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
-        vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
-        vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
-        vg_chacha20_xor_neon = sym super::chacha20::vg_chacha20_xor_neon::vg_chacha20_xor_neon,
-        vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
+        vg_chacha20_block = sym crate::chacha20::vg_chacha20_block::vg_chacha20_block,
+        vg_poly1305_init = sym crate::poly1305::raw::vg_poly1305_init,
+        vg_poly1305_blocks = sym crate::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
+        vg_chacha20_xor_neon = sym crate::chacha20::vg_chacha20_xor_neon::vg_chacha20_xor_neon,
+        vg_poly1305_finalize_scratch = sym crate::poly1305::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
     )
 }
 
-/// ChaCha20-Poly1305 decryption (RFC 8439 §2.8), out of place: with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `src` and the `aad_len` bytes of additional data at `aad`, having then written the plaintext to the `dst_len = len` bytes at `dst`; otherwise returns 0, having written zeros to them: `vg_chacha20_poly1305_open` with the ciphertext read from `src` and the plaintext written to `dst`. `src` is not written, and `dst` is a buffer of its own: it overlaps no other buffer, `src` included. The tags are compared without a branch.
-///
-/// Contract: `VG.Spec.ChaCha20Poly1305.openToContract`. Constant time but for the result: only the pointers, the lengths and whether the function returns 1 or 0 may affect timing, not the key, the nonce, the additional data, the tag or the data.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of 32 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `src` must be valid for reads of `len` bytes.
-/// * `dst` must be valid for reads and writes of `dst_len` bytes.
-/// * `tag` must be valid for reads of 16 bytes.
-/// * `dst_len` must equal `len`.
-/// * `len` must be at most `P_MAX`, 2³² − 1 blocks of 64 bytes (RFC 8439 §2.8).
-/// * `dst` must not overlap `key`, `nonce`, `aad`, `src`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `key`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the 1328 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_chacha20_poly1305_open_to_neon`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_chacha20_poly1305_open_to_neon(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_open_to_neon(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd114c3ff,0x910003f0,0xf9429bf1,0xf9000211,0x910043f1,0xf9000611,0x910000c8,0xf94003e6
 .inst 0xf94007e7,0xf90280e8,0xf90284e5,0xf90288fc,0xcb04011c,0xd10004a9,0xd10100aa,0xaa0a0129
@@ -6224,32 +6474,17 @@ bl {vg_poly1305_blocks}
 bl {vg_poly1305_finalize_scratch}
 b 25b
 .p2align 6",
-        vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
-        vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
-        vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
-        vg_chacha20_xor_neon = sym super::chacha20::vg_chacha20_xor_neon::vg_chacha20_xor_neon,
-        vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
+        vg_chacha20_block = sym crate::chacha20::vg_chacha20_block::vg_chacha20_block,
+        vg_poly1305_init = sym crate::poly1305::raw::vg_poly1305_init,
+        vg_poly1305_blocks = sym crate::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
+        vg_chacha20_xor_neon = sym crate::chacha20::vg_chacha20_xor_neon::vg_chacha20_xor_neon,
+        vg_poly1305_finalize_scratch = sym crate::poly1305::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
     )
 }
 
-/// ChaCha20-Poly1305 encryption (RFC 8439 §2.8), out of place, of a plaintext in pieces: with the key `*key` and the nonce `*nonce`, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_chacha20_poly1305_seal` with the plaintext gathered from `src`.
-///
-/// Contract: `VG.Spec.ChaCha20Poly1305.sealGatherContract`. Constant time: only the pointers, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key, the nonce, the additional data or the data.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of 32 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
-/// * `dst` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * The slices `src` lists must be `len` bytes long in all.
-/// * `len` must be at most `P_MAX`, 2³² − 1 blocks of 64 bytes (RFC 8439 §2.8).
-/// * `dst` and `tag` must not overlap each other, `key`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
-/// * None of `key`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the 1296 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_chacha20_poly1305_seal_gather_neon`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_chacha20_poly1305_seal_gather_neon(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal_gather_neon(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r".inst 0xd10043ff,0x910003f0,0xf900061e,0xf9400bea,0x910000c8,0x910000e9,0x910000cb,0x91000086
 .inst 0x910000a7
@@ -6298,25 +6533,13 @@ b 21f
 bl {vg_chacha20_poly1305_seal_neon}
 .inst 0xf94007fe,0x910043ff,0xd65f03c0
 .p2align 6",
-        vg_chacha20_poly1305_seal_neon = sym super::chacha20poly1305::vg_chacha20_poly1305_seal_neon,
+        vg_chacha20_poly1305_seal_neon = sym crate::chacha20poly1305::raw::vg_chacha20_poly1305_seal_neon,
     )
 }
 
-/// ChaCha20-Poly1305 encryption (RFC 8439 §2.8): with the key `*key` and the nonce `*nonce`, encrypts the `len` bytes at `data` in place and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`.
-///
-/// Contract: `VG.Spec.ChaCha20Poly1305.sealContract`. Constant time: only the pointers and the lengths may affect timing, not the key, the nonce or the data. The block counter wraps around beyond 2³²-1 blocks of data (RFC 8439's `P_MAX`), which the caller must not exceed for the construction to be secure.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of 32 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `data` and `tag` must not overlap each other, `key`, `nonce` or `aad` (distinct Rust objects never do).
-/// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the 1280 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_chacha20_poly1305_seal`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_chacha20_poly1305_seal(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r".inst 0xd11403ff,0x910003e7,0xd10004a9,0xd10100aa,0xaa0a0129,0xaa050129,0xd349fd29
 cbz x9, 20f
@@ -6884,29 +7107,17 @@ bl {vg_poly1305_finalize_scratch}
 .inst 0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611
 .inst 0xa90e4611,0xa90f4611,0x911403ff,0xd65f03c0
 .p2align 6",
-        vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
-        vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
-        vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
-        vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor::vg_chacha20_xor,
-        vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
+        vg_chacha20_block = sym crate::chacha20::vg_chacha20_block::vg_chacha20_block,
+        vg_poly1305_init = sym crate::poly1305::raw::vg_poly1305_init,
+        vg_poly1305_blocks = sym crate::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
+        vg_chacha20_xor = sym crate::chacha20::vg_chacha20_xor::vg_chacha20_xor,
+        vg_poly1305_finalize_scratch = sym crate::poly1305::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
     )
 }
 
-/// ChaCha20-Poly1305 decryption (RFC 8439 §2.8): with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, having decrypted the ciphertext in place; otherwise returns 0, and the `len` bytes at `data` are zeros. The tags are compared without a branch.
-///
-/// Contract: `VG.Spec.ChaCha20Poly1305.openZeroContract`. Constant time but for the result: only the pointers, the lengths and whether the function returns 1 or 0 may affect timing, not the key, the nonce, the additional data, the tag or the data.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of 32 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of 16 bytes.
-/// * `data` must not overlap `key`, `nonce`, `aad` or `tag` (distinct Rust objects never do).
-/// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the 1312 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_chacha20_poly1305_open`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_chacha20_poly1305_open(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_open(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd11483ff,0x910003e7,0x91000088,0xf90280e8,0xf90284e5,0xf90288fc,0xcb04011c,0xd10004a9
 .inst 0xd10100aa,0xaa0a0129,0xaa050129,0xd349fd29
@@ -7690,32 +7901,17 @@ b 259f
 .inst 0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611
 .inst 0xa90d4611,0xa90e4611,0xa90f4611,0x911483ff,0xd65f03c0
 .p2align 6",
-        vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
-        vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
-        vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
-        vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor::vg_chacha20_xor,
-        vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
+        vg_chacha20_block = sym crate::chacha20::vg_chacha20_block::vg_chacha20_block,
+        vg_poly1305_init = sym crate::poly1305::raw::vg_poly1305_init,
+        vg_poly1305_blocks = sym crate::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
+        vg_chacha20_xor = sym crate::chacha20::vg_chacha20_xor::vg_chacha20_xor,
+        vg_poly1305_finalize_scratch = sym crate::poly1305::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
     )
 }
 
-/// ChaCha20-Poly1305 decryption (RFC 8439 §2.8), out of place: with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `src` and the `aad_len` bytes of additional data at `aad`, having then written the plaintext to the `dst_len = len` bytes at `dst`; otherwise returns 0, having written zeros to them: `vg_chacha20_poly1305_open` with the ciphertext read from `src` and the plaintext written to `dst`. `src` is not written, and `dst` is a buffer of its own: it overlaps no other buffer, `src` included. The tags are compared without a branch.
-///
-/// Contract: `VG.Spec.ChaCha20Poly1305.openToContract`. Constant time but for the result: only the pointers, the lengths and whether the function returns 1 or 0 may affect timing, not the key, the nonce, the additional data, the tag or the data.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of 32 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `src` must be valid for reads of `len` bytes.
-/// * `dst` must be valid for reads and writes of `dst_len` bytes.
-/// * `tag` must be valid for reads of 16 bytes.
-/// * `dst_len` must equal `len`.
-/// * `len` must be at most `P_MAX`, 2³² − 1 blocks of 64 bytes (RFC 8439 §2.8).
-/// * `dst` must not overlap `key`, `nonce`, `aad`, `src`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `key`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the 1328 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_chacha20_poly1305_open_to`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_chacha20_poly1305_open_to(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_open_to(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd114c3ff,0x910003f0,0xf9429bf1,0xf9000211,0x910043f1,0xf9000611,0x910000c8,0xf94003e6
 .inst 0xf94007e7,0xf90280e8,0xf90284e5,0xf90288fc,0xcb04011c,0xd10004a9,0xd10100aa,0xaa0a0129
@@ -8500,32 +8696,17 @@ b 259f
 .inst 0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611
 .inst 0xa90d4611,0xa90e4611,0xa90f4611,0x9114c3ff,0xd65f03c0
 .p2align 6",
-        vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
-        vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
-        vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
-        vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor::vg_chacha20_xor,
-        vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
+        vg_chacha20_block = sym crate::chacha20::vg_chacha20_block::vg_chacha20_block,
+        vg_poly1305_init = sym crate::poly1305::raw::vg_poly1305_init,
+        vg_poly1305_blocks = sym crate::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
+        vg_chacha20_xor = sym crate::chacha20::vg_chacha20_xor::vg_chacha20_xor,
+        vg_poly1305_finalize_scratch = sym crate::poly1305::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
     )
 }
 
-/// ChaCha20-Poly1305 encryption (RFC 8439 §2.8), out of place, of a plaintext in pieces: with the key `*key` and the nonce `*nonce`, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_chacha20_poly1305_seal` with the plaintext gathered from `src`.
-///
-/// Contract: `VG.Spec.ChaCha20Poly1305.sealGatherContract`. Constant time: only the pointers, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key, the nonce, the additional data or the data.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of 32 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
-/// * `dst` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * The slices `src` lists must be `len` bytes long in all.
-/// * `len` must be at most `P_MAX`, 2³² − 1 blocks of 64 bytes (RFC 8439 §2.8).
-/// * `dst` and `tag` must not overlap each other, `key`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
-/// * None of `key`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the 1296 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_chacha20_poly1305_seal_gather`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_chacha20_poly1305_seal_gather(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal_gather(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r".inst 0xd10043ff,0x910003f0,0xf900061e,0xf9400bea,0x910000c8,0x910000e9,0x910000cb,0x91000086
 .inst 0x910000a7
@@ -8574,29 +8755,13 @@ b 21f
 bl {vg_chacha20_poly1305_seal}
 .inst 0xf94007fe,0x910043ff,0xd65f03c0
 .p2align 6",
-        vg_chacha20_poly1305_seal = sym super::chacha20poly1305::vg_chacha20_poly1305_seal,
+        vg_chacha20_poly1305_seal = sym crate::chacha20poly1305::raw::vg_chacha20_poly1305_seal,
     )
 }
 
-/// The CPU features `vg_chacha20_poly1305_seal_sve2` requires (`Artifact.features`).
-pub const VG_CHACHA20_POLY1305_SEAL_SVE2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SVE2);
-
-/// ChaCha20-Poly1305 encryption (RFC 8439 §2.8): with the key `*key` and the nonce `*nonce`, encrypts the `len` bytes at `data` in place and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`.
-///
-/// Contract: `VG.Spec.ChaCha20Poly1305.sealContract`. Constant time: only the pointers and the lengths may affect timing, not the key, the nonce or the data. The block counter wraps around beyond 2³²-1 blocks of data (RFC 8439's `P_MAX`), which the caller must not exceed for the construction to be secure.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of 32 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `data` and `tag` must not overlap each other, `key`, `nonce` or `aad` (distinct Rust objects never do).
-/// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the 1280 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sve2` target feature.
+/// The verified code of [`super::vg_chacha20_poly1305_seal_sve2`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_chacha20_poly1305_seal_sve2(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal_sve2(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r".inst 0xd11403ff,0x910003e7,0xd10004a9,0xd10004aa,0xaa0a0129,0xaa050129,0xd349fd29
 cbz x9, 20f
@@ -10405,33 +10570,17 @@ bl {vg_poly1305_blocks}
 .inst 0x3d813ea0
 b 25b
 .p2align 6",
-        vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
-        vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
-        vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
-        vg_chacha20_xor_sve2 = sym super::chacha20::vg_chacha20_xor_sve2::vg_chacha20_xor_sve2,
-        vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
+        vg_chacha20_block = sym crate::chacha20::vg_chacha20_block::vg_chacha20_block,
+        vg_poly1305_init = sym crate::poly1305::raw::vg_poly1305_init,
+        vg_poly1305_blocks = sym crate::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
+        vg_chacha20_xor_sve2 = sym crate::chacha20::vg_chacha20_xor_sve2::vg_chacha20_xor_sve2,
+        vg_poly1305_finalize_scratch = sym crate::poly1305::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
     )
 }
 
-/// The CPU features `vg_chacha20_poly1305_open_sve2` requires (`Artifact.features`).
-pub const VG_CHACHA20_POLY1305_OPEN_SVE2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SVE2);
-
-/// ChaCha20-Poly1305 decryption (RFC 8439 §2.8): with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, having decrypted the ciphertext in place; otherwise returns 0, and the `len` bytes at `data` are zeros. The tags are compared without a branch.
-///
-/// Contract: `VG.Spec.ChaCha20Poly1305.openZeroContract`. Constant time but for the result: only the pointers, the lengths and whether the function returns 1 or 0 may affect timing, not the key, the nonce, the additional data, the tag or the data.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of 32 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of 16 bytes.
-/// * `data` must not overlap `key`, `nonce`, `aad` or `tag` (distinct Rust objects never do).
-/// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the 1312 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sve2` target feature.
+/// The verified code of [`super::vg_chacha20_poly1305_open_sve2`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_chacha20_poly1305_open_sve2(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_open_sve2(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd11483ff,0x910003e7,0x91000088,0xf90280e8,0xf90284e5,0xf90288fc,0xcb04011c,0xd10004a9
 .inst 0xd10004aa,0xaa0a0129,0xaa050129,0xd349fd29
@@ -12386,36 +12535,17 @@ bl {vg_poly1305_blocks}
 bl {vg_poly1305_finalize_scratch}
 b 25b
 .p2align 6",
-        vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
-        vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
-        vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
-        vg_chacha20_xor_sve2 = sym super::chacha20::vg_chacha20_xor_sve2::vg_chacha20_xor_sve2,
-        vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
+        vg_chacha20_block = sym crate::chacha20::vg_chacha20_block::vg_chacha20_block,
+        vg_poly1305_init = sym crate::poly1305::raw::vg_poly1305_init,
+        vg_poly1305_blocks = sym crate::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
+        vg_chacha20_xor_sve2 = sym crate::chacha20::vg_chacha20_xor_sve2::vg_chacha20_xor_sve2,
+        vg_poly1305_finalize_scratch = sym crate::poly1305::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
     )
 }
 
-/// The CPU features `vg_chacha20_poly1305_open_to_sve2` requires (`Artifact.features`).
-pub const VG_CHACHA20_POLY1305_OPEN_TO_SVE2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SVE2);
-
-/// ChaCha20-Poly1305 decryption (RFC 8439 §2.8), out of place: with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `src` and the `aad_len` bytes of additional data at `aad`, having then written the plaintext to the `dst_len = len` bytes at `dst`; otherwise returns 0, having written zeros to them: `vg_chacha20_poly1305_open` with the ciphertext read from `src` and the plaintext written to `dst`. `src` is not written, and `dst` is a buffer of its own: it overlaps no other buffer, `src` included. The tags are compared without a branch.
-///
-/// Contract: `VG.Spec.ChaCha20Poly1305.openToContract`. Constant time but for the result: only the pointers, the lengths and whether the function returns 1 or 0 may affect timing, not the key, the nonce, the additional data, the tag or the data.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of 32 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `src` must be valid for reads of `len` bytes.
-/// * `dst` must be valid for reads and writes of `dst_len` bytes.
-/// * `tag` must be valid for reads of 16 bytes.
-/// * `dst_len` must equal `len`.
-/// * `len` must be at most `P_MAX`, 2³² − 1 blocks of 64 bytes (RFC 8439 §2.8).
-/// * `dst` must not overlap `key`, `nonce`, `aad`, `src`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `key`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the 1328 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sve2` target feature.
+/// The verified code of [`super::vg_chacha20_poly1305_open_to_sve2`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_chacha20_poly1305_open_to_sve2(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_open_to_sve2(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd114c3ff,0x910003f0,0xf9429bf1,0xf9000211,0x910043f1,0xf9000611,0x910000c8,0xf94003e6
 .inst 0xf94007e7,0xf90280e8,0xf90284e5,0xf90288fc,0xcb04011c,0xd10004a9,0xd10004aa,0xaa0a0129
@@ -14371,36 +14501,17 @@ bl {vg_poly1305_blocks}
 bl {vg_poly1305_finalize_scratch}
 b 25b
 .p2align 6",
-        vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
-        vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
-        vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
-        vg_chacha20_xor_sve2 = sym super::chacha20::vg_chacha20_xor_sve2::vg_chacha20_xor_sve2,
-        vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
+        vg_chacha20_block = sym crate::chacha20::vg_chacha20_block::vg_chacha20_block,
+        vg_poly1305_init = sym crate::poly1305::raw::vg_poly1305_init,
+        vg_poly1305_blocks = sym crate::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
+        vg_chacha20_xor_sve2 = sym crate::chacha20::vg_chacha20_xor_sve2::vg_chacha20_xor_sve2,
+        vg_poly1305_finalize_scratch = sym crate::poly1305::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
     )
 }
 
-/// The CPU features `vg_chacha20_poly1305_seal_gather_sve2` requires (`Artifact.features`).
-pub const VG_CHACHA20_POLY1305_SEAL_GATHER_SVE2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SVE2);
-
-/// ChaCha20-Poly1305 encryption (RFC 8439 §2.8), out of place, of a plaintext in pieces: with the key `*key` and the nonce `*nonce`, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_chacha20_poly1305_seal` with the plaintext gathered from `src`.
-///
-/// Contract: `VG.Spec.ChaCha20Poly1305.sealGatherContract`. Constant time: only the pointers, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key, the nonce, the additional data or the data.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of 32 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
-/// * `dst` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * The slices `src` lists must be `len` bytes long in all.
-/// * `len` must be at most `P_MAX`, 2³² − 1 blocks of 64 bytes (RFC 8439 §2.8).
-/// * `dst` and `tag` must not overlap each other, `key`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
-/// * None of `key`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the 1296 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sve2` target feature.
+/// The verified code of [`super::vg_chacha20_poly1305_seal_gather_sve2`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_chacha20_poly1305_seal_gather_sve2(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal_gather_sve2(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r".inst 0xd10043ff,0x910003f0,0xf900061e,0xf9400bea,0x910000c8,0x910000e9,0x910000cb,0x91000086
 .inst 0x910000a7
@@ -14449,6 +14560,7 @@ b 21f
 bl {vg_chacha20_poly1305_seal_sve2}
 .inst 0xf94007fe,0x910043ff,0xd65f03c0
 .p2align 6",
-        vg_chacha20_poly1305_seal_sve2 = sym super::chacha20poly1305::vg_chacha20_poly1305_seal_sve2,
+        vg_chacha20_poly1305_seal_sve2 = sym crate::chacha20poly1305::raw::vg_chacha20_poly1305_seal_sve2,
     )
+}
 }

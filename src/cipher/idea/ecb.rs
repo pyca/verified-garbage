@@ -26,14 +26,15 @@ pub struct IdeaEcb {
 impl IdeaEcb {
     /// Expands a 16-byte key for use in either direction.
     pub fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
+        crate::dit::enter!(dit);
         let key: &[u8; 16] = key.try_into().map_err(|_| InvalidKeyLength)?;
         let mut encrypt = [0; 104];
         let mut decrypt = [0; 104];
         // SAFETY: the key and both schedules are separate valid buffers of
         // the required sizes.
         unsafe {
-            vg_idea_expand_key(key, &mut encrypt);
-            vg_idea_invert_key(&encrypt, &mut decrypt);
+            vg_idea_expand_key(dit, key, &mut encrypt);
+            vg_idea_invert_key(dit, &encrypt, &mut decrypt);
         }
         Ok(Self { encrypt, decrypt })
     }
@@ -52,6 +53,7 @@ impl IdeaEcb {
 }
 
 fn crypt(schedule: &[u8; 104], buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
+    crate::dit::enter!(dit);
     if !buffer.len().is_multiple_of(8) {
         return Err(IncompleteBlock);
     }
@@ -59,7 +61,7 @@ fn crypt(schedule: &[u8; 104], buffer: &mut [u8]) -> Result<(), IncompleteBlock>
     // blocks. The buffer and schedule are separate valid objects and do not
     // overlap the callee's stack.
     unsafe {
-        vg_idea_ecb(schedule, buffer.as_mut_ptr().cast(), buffer.len() / 8);
+        vg_idea_ecb(dit, schedule, buffer.as_mut_ptr().cast(), buffer.len() / 8);
     }
     Ok(())
 }

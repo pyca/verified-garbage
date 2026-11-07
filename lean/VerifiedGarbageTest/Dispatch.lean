@@ -57,15 +57,15 @@ def has (text part : String) : Bool := (text.splitOn part).length > 1
 
 -- `vg_poly1305_update`: `_neon` where the ranking chooses it, else the base.
 #guard has file
-  "pub unsafe fn vg_poly1305_update_auto(state: *mut [u64; 16], count: u64, data: *const u8, \
-    len: usize) {\n    \
+  "pub unsafe fn vg_poly1305_update_auto(dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 16], \
+    count: u64, data: *const u8, len: usize) {\n    \
     let cpu = verified_garbage_cpu::detected();\n    \
     if (cfg!(target_vendor = \"apple\") || verified_garbage_cpu::requested(\
     verified_garbage_cpu::Features(verified_garbage_cpu::feature::NEON))) && \
     cpu.contains(verified_garbage_cpu::Features(verified_garbage_cpu::feature::NEON)) {\n"
 #guard has file
-  "        return unsafe { crate::poly1305::vg_poly1305_update_neon(state, count, data, len) };\n    }\n"
-#guard has file "    unsafe { crate::poly1305::vg_poly1305_update(state, count, data, len) }\n}\n"
+  "        return unsafe { crate::poly1305::vg_poly1305_update_neon(dit, state, count, data, len) };\n    }\n"
+#guard has file "    unsafe { crate::poly1305::vg_poly1305_update(dit, state, count, data, len) }\n}\n"
 
 -- They are a module of their own, not in the module of the functions.
 #guard ((out.find? (·.1 == "verified-garbage-asm-aarch64/src/poly1305.rs")).map

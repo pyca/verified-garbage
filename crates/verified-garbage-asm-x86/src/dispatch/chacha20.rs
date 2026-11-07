@@ -24,15 +24,15 @@ pub use crate::chacha20::vg_chacha20_init as vg_chacha20_init_auto;
 /// * Neither `state` nor `data` may overlap the arguments on the stack, overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_chacha20_apply_auto(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
+pub unsafe fn vg_chacha20_apply_auto(dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::chacha20::VG_CHACHA20_APPLY_SSSE3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_chacha20_apply_ssse3`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::chacha20::vg_chacha20_apply_ssse3(state, data, len) };
+        return unsafe { crate::chacha20::vg_chacha20_apply_ssse3(dit, state, data, len) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::chacha20::vg_chacha20_apply(state, data, len) }
+    unsafe { crate::chacha20::vg_chacha20_apply(dit, state, data, len) }
 }
 
 /// `vg_chacha20_set_nonce`, the only implementation of it on this target, which needs no CPU feature

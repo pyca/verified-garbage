@@ -36,15 +36,15 @@ pub use crate::dsa::vg_dsa_generate_key as vg_dsa_generate_key_auto;
 /// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the 768 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_dsa_parameter_search_auto(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
+pub unsafe fn vg_dsa_parameter_search_auto(dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_SHA1_SHA2_SHA256_SHA2_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_dsa_parameter_search_sha1_sha2_sha256_sha2`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::dsa::vg_dsa_parameter_search_sha1_sha2_sha256_sha2(out, out_len, used, rand, rand_len, scratch, scratch_len, state) };
+        return unsafe { crate::dsa::vg_dsa_parameter_search_sha1_sha2_sha256_sha2(dit, out, out_len, used, rand, rand_len, scratch, scratch_len, state) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::dsa::vg_dsa_parameter_search(out, out_len, used, rand, rand_len, scratch, scratch_len, state) }
+    unsafe { crate::dsa::vg_dsa_parameter_search(dit, out, out_len, used, rand, rand_len, scratch, scratch_len, state) }
 }
 
 /// `vg_dsa_validate_public_key`, the only implementation of it on this target, which needs no CPU feature

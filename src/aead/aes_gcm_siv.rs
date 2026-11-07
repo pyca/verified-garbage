@@ -152,6 +152,7 @@ impl AesGcmSiv {
     /// Prepares the key-generating key `key`, which must be 16 or 32 bytes
     /// long (AEAD_AES_128_GCM_SIV, AEAD_AES_256_GCM_SIV).
     pub fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
+        crate::dit::enter!(dit);
         if !matches!(key.len(), 16 | 32) {
             return Err(InvalidKeyLength);
         }
@@ -180,7 +181,7 @@ impl AesGcmSiv {
             // overlap the return address on the stack or the stack below it,
             // and neither wraps around the end of the address space. The CPU
             // has the features of the implementation selected.
-            unsafe { expand(key.as_ptr(), key.len(), &mut k.schedule) };
+            unsafe { expand(dit, key.as_ptr(), key.len(), &mut k.schedule) };
         }
         k
     }
@@ -196,6 +197,7 @@ impl AesGcmSiv {
         aad: &[u8],
         data: &mut [u8],
     ) -> Result<[u8; 16], Error> {
+        crate::dit::enter!(dit);
         check(aad.len() as u64, data.len() as u64)?;
         let backend = self.backend;
         #[cfg(target_arch = "x86_64")]
@@ -230,6 +232,7 @@ impl AesGcmSiv {
         // (see `features_cover_instances`).
         unsafe {
             seal(
+                dit,
                 &self.schedule,
                 self.rounds,
                 nonce,
@@ -253,6 +256,7 @@ impl AesGcmSiv {
         data: &mut [u8],
         tag: &[u8; 16],
     ) -> Result<(), Error> {
+        crate::dit::enter!(dit);
         check(aad.len() as u64, data.len() as u64)?;
         let backend = self.backend;
         #[cfg(target_arch = "x86_64")]
@@ -279,6 +283,7 @@ impl AesGcmSiv {
         // overlap.
         let ok = unsafe {
             open(
+                dit,
                 &self.schedule,
                 self.rounds,
                 nonce,

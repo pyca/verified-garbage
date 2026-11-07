@@ -325,11 +325,11 @@ pub(crate) fn select(f: Features) -> Backend {
 /// in the ABI the target's functions are emitted in.
 #[cfg(target_arch = "x86_64")]
 macro_rules! asm_fn {
-    ($($a:ty),* $(=> $r:ty)?) => { unsafe extern "sysv64" fn($($a),*) $(-> $r)? };
+    ($($a:ty),* $(=> $r:ty)?) => { unsafe fn(crate::dit::Dit<'_>, $($a),*) $(-> $r)? };
 }
 #[cfg(not(target_arch = "x86_64"))]
 macro_rules! asm_fn {
-    ($($a:ty),* $(=> $r:ty)?) => { unsafe extern "C" fn($($a),*) $(-> $r)? };
+    ($($a:ty),* $(=> $r:ty)?) => { unsafe fn(crate::dit::Dit<'_>, $($a),*) $(-> $r)? };
 }
 
 /// `vg_aes_gcm_init`.
@@ -719,14 +719,15 @@ struct Prepared {
 
 /// `vg_aes_gcm_prepare`.
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-type Prepare = unsafe extern "sysv64" fn(*mut Ctx);
+type Prepare = unsafe fn(crate::dit::Dit<'_>, *mut Ctx);
 
 /// The types of the `_prepared` instances on x86-64, on the key context
 /// with the powers, `Ctx`.
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 mod prepared_types {
     use super::Ctx;
-    pub(super) type SealPrepared = unsafe extern "sysv64" fn(
+    pub(super) type SealPrepared = unsafe fn(
+        crate::dit::Dit<'_>,
         *const Ctx,
         usize,
         *const u8,
@@ -737,7 +738,8 @@ mod prepared_types {
         usize,
         *mut [u8; 16],
     );
-    pub(super) type OpenPrepared = unsafe extern "sysv64" fn(
+    pub(super) type OpenPrepared = unsafe fn(
+        crate::dit::Dit<'_>,
         *const Ctx,
         usize,
         *const u8,
@@ -749,7 +751,8 @@ mod prepared_types {
         *const u8,
         usize,
     ) -> u32;
-    pub(super) type OpenToPrepared = unsafe extern "sysv64" fn(
+    pub(super) type OpenToPrepared = unsafe fn(
+        crate::dit::Dit<'_>,
         *const Ctx,
         usize,
         *const u8,
@@ -763,7 +766,8 @@ mod prepared_types {
         *const u8,
         usize,
     ) -> u32;
-    pub(super) type SealGatherPrepared = unsafe extern "sysv64" fn(
+    pub(super) type SealGatherPrepared = unsafe fn(
+        crate::dit::Dit<'_>,
         *const Ctx,
         usize,
         *const u8,
@@ -793,7 +797,8 @@ type Ctx = [u64; 16];
 /// `vg_aes_gcm_seal`'s, `vg_aes_gcm_open`'s and `vg_aes_gcm_open_to`'s
 /// arguments, then the powers.
 #[cfg(target_arch = "aarch64")]
-type SealPrepared = unsafe extern "C" fn(
+type SealPrepared = unsafe fn(
+    crate::dit::Dit<'_>,
     *const [u64; 32],
     usize,
     *const u8,
@@ -806,7 +811,8 @@ type SealPrepared = unsafe extern "C" fn(
     *const Ctx,
 );
 #[cfg(target_arch = "aarch64")]
-type OpenPrepared = unsafe extern "C" fn(
+type OpenPrepared = unsafe fn(
+    crate::dit::Dit<'_>,
     *const [u64; 32],
     usize,
     *const u8,
@@ -820,7 +826,8 @@ type OpenPrepared = unsafe extern "C" fn(
     *const Ctx,
 ) -> u32;
 #[cfg(target_arch = "aarch64")]
-type OpenToPrepared = unsafe extern "C" fn(
+type OpenToPrepared = unsafe fn(
+    crate::dit::Dit<'_>,
     *const [u64; 32],
     usize,
     *const u8,
@@ -837,8 +844,16 @@ type OpenToPrepared = unsafe extern "C" fn(
 ) -> u32;
 
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-type StreamPrepared =
-    unsafe extern "sysv64" fn(*const [u64; 128], usize, *mut [u64; 10], u64, u64, *mut u8, usize);
+type StreamPrepared = unsafe fn(
+    crate::dit::Dit<'_>,
+    *const [u64; 128],
+    usize,
+    *mut [u64; 10],
+    u64,
+    u64,
+    *mut u8,
+    usize,
+);
 
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 static PREPARED_VAES_VPCLMUL_AVX512: Prepared = Prepared {
@@ -1031,6 +1046,7 @@ impl AesGcm {
     /// Prepares `key`, which must be 16, 24 or 32 bytes long (AES-128,
     /// AES-192 or AES-256).
     pub fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
+        crate::dit::enter!(dit);
         if !matches!(key.len(), 16 | 24 | 32) {
             return Err(InvalidKeyLength);
         }
@@ -1057,14 +1073,14 @@ impl AesGcm {
         // are distinct objects, so they do not overlap each other or anything
         // on the stack, or wrap around the end of the address space. The CPU
         // has the features of the implementation selected.
-        unsafe { init(key.as_ptr(), key.len(), k.ctx.as_mut_ptr().cast()) };
+        unsafe { init(dit, key.as_ptr(), key.len(), k.ctx.as_mut_ptr().cast()) };
         #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
         if let Some(prepare) = k.fns.prepare {
-            k.prepare(prepare);
+            k.prepare(dit, prepare);
         }
         #[cfg(target_arch = "aarch64")]
         if k.fns.powers.is_some() {
-            k.store_powers();
+            k.store_powers(dit);
         }
         Ok(k)
     }
@@ -1088,13 +1104,13 @@ impl AesGcm {
     /// Computes the powers of the hash subkey into `self.ctx`, after its key
     /// context, with `fns.prepare`.
     #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-    fn prepare(&mut self, prepare: Prepare) {
+    fn prepare(&mut self, dit: crate::dit::Dit<'_>, prepare: Prepare) {
         // SAFETY: `self.ctx` is valid for reads and writes of 1024 bytes,
         // and overlaps nothing on the stack; its first 256 bytes are the key
         // context of `vg_aes_gcm_init` (`VG.Spec.Gcm.KeyRepr`), which
         // `vg_aes_gcm_prepare` keeps. The CPU has its features
         // (`Backend::prepared`).
-        unsafe { prepare(self.ctx.as_mut_ptr()) };
+        unsafe { prepare(dit, self.ctx.as_mut_ptr()) };
     }
 
     /// Computes the powers of the hash subkey of the key context into
@@ -1102,7 +1118,7 @@ impl AesGcm {
     /// (`VG.Spec.Gcm.storePowersContract`: `Powers8Repr` of the context's
     /// `ctxH`, which the `_with_powers` instances require).
     #[cfg(target_arch = "aarch64")]
-    fn store_powers(&mut self) {
+    fn store_powers(&mut self, dit: crate::dit::Dit<'_>) {
         let ctx: *const [u64; 32] = self.key();
         // SAFETY: `ctx`, the key context, is valid for reads of 256 bytes
         // (`new` wrote them before calling this), and `self.powers` for
@@ -1111,7 +1127,7 @@ impl AesGcm {
         // address space. The CPU has the features of the key's backend,
         // which has `_with_powers` instances, whose features include
         // `vg_aes_gcm_store_powers_aes`'s (see the tests).
-        unsafe { vg_aes_gcm_store_powers_aes(ctx, &mut self.powers) };
+        unsafe { vg_aes_gcm_store_powers_aes(dit, ctx, &mut self.powers) };
     }
 
     /// GCM-AE (§7.1): encrypts `data` in place under `nonce`, and returns
@@ -1127,6 +1143,7 @@ impl AesGcm {
         aad: &[u8],
         data: &mut [u8],
     ) -> Result<Block, Error> {
+        crate::dit::enter!(dit);
         // Check the lengths before encrypting anything.
         check_nonce(nonce)?;
         add_len(0, data.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
@@ -1134,7 +1151,7 @@ impl AesGcm {
         // On AArch64, the powers, through `seal_prepared`.
         #[cfg(target_arch = "aarch64")]
         match &self.fns.powers {
-            Some(p) => return Ok(self.seal_prepared(p, nonce, aad, data)),
+            Some(p) => return Ok(self.seal_prepared(dit, p, nonce, aad, data)),
             None => no_powers(),
         }
         let seal = self.fns.seal;
@@ -1153,6 +1170,7 @@ impl AesGcm {
         // the implementation selected.
         unsafe {
             seal(
+                dit,
                 self.ctx.as_ptr(),
                 self.rounds,
                 nonce.as_ptr(),
@@ -1201,24 +1219,32 @@ impl AesGcm {
         data: &mut [u8],
         tag: &[u8; N],
     ) -> Result<(), Error> {
+        crate::dit::enter!(dit);
         assert_tag_length!(N);
-        self.open(nonce, aad, data, tag)
+        self.open(dit, nonce, aad, data, tag)
     }
 
     /// GCM-AD (§7.2) with `tag`, of a length between 4 and 16 (which the
     /// callers check at compile time; `vg_aes_gcm_open` rejects any other).
-    fn open(&self, nonce: &[u8], aad: &[u8], data: &mut [u8], tag: &[u8]) -> Result<(), Error> {
+    fn open(
+        &self,
+        dit: crate::dit::Dit<'_>,
+        nonce: &[u8],
+        aad: &[u8],
+        data: &mut [u8],
+        tag: &[u8],
+    ) -> Result<(), Error> {
         check_nonce(nonce)?;
         add_len(0, data.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
         // On x86-64, through `open_with`: on Emerald Rapids, an inline call
         // as in `encrypt_in_place` made every open about 5 ns slower.
         #[cfg(target_arch = "x86_64")]
-        return self.open_with(data, tag, nonce, aad);
+        return self.open_with(dit, data, tag, nonce, aad);
         // On AArch64, as `encrypt_in_place` there.
         #[cfg(target_arch = "aarch64")]
         if let Some(p) = &self.fns.powers {
-            return self.open_prepared(p, nonce, aad, data, tag);
+            return self.open_prepared(dit, p, nonce, aad, data, tag);
         }
         #[cfg(not(target_arch = "x86_64"))]
         {
@@ -1227,6 +1253,7 @@ impl AesGcm {
             // valid for reads of its length.
             let ok = unsafe {
                 open(
+                    dit,
                     self.ctx.as_ptr(),
                     self.rounds,
                     nonce.as_ptr(),
@@ -1260,6 +1287,7 @@ impl AesGcm {
     #[inline(never)]
     fn open_with(
         &self,
+        dit: crate::dit::Dit<'_>,
         data: &mut [u8],
         tag: &[u8],
         nonce: &[u8],
@@ -1270,6 +1298,7 @@ impl AesGcm {
         // valid for reads of its length.
         let ok = unsafe {
             open(
+                dit,
                 self.ctx.as_ptr(),
                 self.rounds,
                 nonce.as_ptr(),
@@ -1320,6 +1349,7 @@ impl AesGcm {
         tag: &[u8; N],
         out: &mut [u8],
     ) -> Result<(), Error> {
+        crate::dit::enter!(dit);
         assert_tag_length!(N);
         if out.len() != ciphertext.len() {
             return Err(Error::InvalidOutputLength);
@@ -1327,7 +1357,7 @@ impl AesGcm {
         check_nonce(nonce)?;
         add_len(0, out.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
-        self.open_to(nonce, aad, ciphertext, out, tag)
+        self.open_to(dit, nonce, aad, ciphertext, out, tag)
     }
 
     /// `vg_aes_gcm_open_to`, which writes zeros to `out` if the tag is wrong,
@@ -1336,6 +1366,7 @@ impl AesGcm {
     /// (`open_to_prepared`).
     fn open_to(
         &self,
+        dit: crate::dit::Dit<'_>,
         nonce: &[u8],
         aad: &[u8],
         src: &[u8],
@@ -1344,7 +1375,7 @@ impl AesGcm {
     ) -> Result<(), Error> {
         #[cfg(target_arch = "aarch64")]
         if let Some(p) = &self.fns.powers {
-            return self.open_to_prepared(p, nonce, aad, src, out, tag);
+            return self.open_to_prepared(dit, p, nonce, aad, src, out, tag);
         }
         let open_to = self.fns.open_to;
         // SAFETY: as in `encrypt_in_place`, with `src` and the received tag
@@ -1353,6 +1384,7 @@ impl AesGcm {
         // overlaps neither `src` nor any other argument.
         let ok = unsafe {
             open_to(
+                dit,
                 self.ctx.as_ptr(),
                 self.rounds,
                 nonce.as_ptr(),
@@ -1391,6 +1423,7 @@ impl AesGcm {
         plaintext: &[&[u8]],
         out: &mut [u8],
     ) -> Result<Block, Error> {
+        crate::dit::enter!(dit);
         if plaintext.len() > Self::MAX_PIECES {
             return Err(Error::TooManyPieces);
         }
@@ -1405,7 +1438,7 @@ impl AesGcm {
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
         #[cfg(target_arch = "aarch64")]
         if let Some(p) = &self.fns.powers {
-            return Ok(self.seal_pieces_prepared(p, nonce, aad, plaintext, out));
+            return Ok(self.seal_pieces_prepared(dit, p, nonce, aad, plaintext, out));
         }
         // The descriptors of the pieces, as `vg_aes_gcm_seal_gather` takes
         // them: each its address and its length. Only the first
@@ -1427,6 +1460,7 @@ impl AesGcm {
         // the stack the function uses.
         unsafe {
             f(
+                dit,
                 self.ctx.as_ptr(),
                 self.rounds,
                 nonce.as_ptr(),
@@ -1447,8 +1481,9 @@ impl AesGcm {
     /// nonzero length; 12 bytes is the recommended one). A nonce must never
     /// be used twice with the same key.
     pub fn encryptor(&self, nonce: &[u8]) -> Result<AesGcmEncryptor<'_>, Error> {
+        crate::dit::enter!(dit);
         Ok(AesGcmEncryptor {
-            stream: Stream::new(self, nonce)?,
+            stream: Stream::new(dit, self, nonce)?,
         })
     }
 
@@ -1457,8 +1492,9 @@ impl AesGcm {
     /// been authenticated until its [`finalize`](AesGcmDecryptor::finalize)
     /// succeeds.
     pub fn decryptor(&self, nonce: &[u8]) -> Result<AesGcmDecryptor<'_>, Error> {
+        crate::dit::enter!(dit);
         Ok(AesGcmDecryptor {
-            stream: Stream::new(self, nonce)?,
+            stream: Stream::new(dit, self, nonce)?,
         })
     }
 }
@@ -1477,7 +1513,14 @@ impl AesGcm {
     /// `encrypt_in_place` with the `_with_powers` instances `p` and the
     /// powers.
     #[inline]
-    fn seal_prepared(&self, p: &Prepared, nonce: &[u8], aad: &[u8], data: &mut [u8]) -> Block {
+    fn seal_prepared(
+        &self,
+        dit: crate::dit::Dit<'_>,
+        p: &Prepared,
+        nonce: &[u8],
+        aad: &[u8],
+        data: &mut [u8],
+    ) -> Block {
         let mut tag: Block = [0; 16];
         let seal = p.seal;
         // SAFETY: as in `encrypt_in_place`, with the powers of the same key,
@@ -1487,6 +1530,7 @@ impl AesGcm {
         // is.
         unsafe {
             seal(
+                dit,
                 self.key(),
                 self.rounds,
                 nonce.as_ptr(),
@@ -1506,6 +1550,7 @@ impl AesGcm {
     #[inline]
     fn open_prepared(
         &self,
+        dit: crate::dit::Dit<'_>,
         p: &Prepared,
         nonce: &[u8],
         aad: &[u8],
@@ -1517,6 +1562,7 @@ impl AesGcm {
         // for reads of its length.
         let ok = unsafe {
             open(
+                dit,
                 self.key(),
                 self.rounds,
                 nonce.as_ptr(),
@@ -1539,9 +1585,12 @@ impl AesGcm {
     }
 
     /// `open_to` with the `_with_powers` instances `p` and the powers.
+    // The token (`Dit`) makes an eighth argument.
+    #[allow(clippy::too_many_arguments)]
     #[inline]
     fn open_to_prepared(
         &self,
+        dit: crate::dit::Dit<'_>,
         p: &Prepared,
         nonce: &[u8],
         aad: &[u8],
@@ -1553,6 +1602,7 @@ impl AesGcm {
         // SAFETY: as in `open_to`, with the powers as in `seal_prepared`.
         let ok = unsafe {
             open_to(
+                dit,
                 self.key(),
                 self.rounds,
                 nonce.as_ptr(),
@@ -1584,6 +1634,7 @@ impl AesGcm {
     #[inline(never)]
     fn seal_pieces_prepared(
         &self,
+        dit: crate::dit::Dit<'_>,
         p: &Prepared,
         nonce: &[u8],
         aad: &[u8],
@@ -1596,7 +1647,7 @@ impl AesGcm {
             dst.copy_from_slice(piece);
             rest = tail;
         }
-        self.seal_prepared(p, nonce, aad, out)
+        self.seal_prepared(dit, p, nonce, aad, out)
     }
 }
 
@@ -1624,7 +1675,7 @@ impl<const DECRYPT: bool> Drop for Stream<'_, DECRYPT> {
 
 impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
     /// Starts a message under `key` and `nonce`.
-    fn new(key: &'a AesGcm, nonce: &[u8]) -> Result<Self, Error> {
+    fn new(dit: crate::dit::Dit<'_>, key: &'a AesGcm, nonce: &[u8]) -> Result<Self, Error> {
         check_nonce(nonce)?;
         let mut s = Stream {
             key,
@@ -1640,12 +1691,12 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
         // 80. They are distinct objects, so the writable one overlaps nothing
         // else, nor anything on the stack, and none wraps around. The CPU has
         // the features of the implementation selected.
-        unsafe { init(key.key(), nonce.as_ptr(), nonce.len(), &mut s.state) };
+        unsafe { init(dit, key.key(), nonce.as_ptr(), nonce.len(), &mut s.state) };
         Ok(s)
     }
 
     /// Absorbs more additional data, which must all come before the text.
-    fn update_aad(&mut self, aad: &[u8]) -> Result<(), Error> {
+    fn update_aad(&mut self, dit: crate::dit::Dit<'_>, aad: &[u8]) -> Result<(), Error> {
         if self.in_text {
             return Err(Error::AadAfterText);
         }
@@ -1656,6 +1707,7 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
         // `self.aad_len` bytes of additional data and no text yet.
         unsafe {
             f(
+                dit,
                 self.key.key(),
                 &mut self.state,
                 self.aad_len,
@@ -1669,7 +1721,7 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
 
     /// Encrypts (or, if `DECRYPT`, decrypts) the next `data.len()` bytes of
     /// the text in place.
-    fn update(&mut self, data: &mut [u8]) -> Result<(), Error> {
+    fn update(&mut self, dit: crate::dit::Dit<'_>, data: &mut [u8]) -> Result<(), Error> {
         let text_len =
             add_len(self.text_len, data.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
         self.in_text = true;
@@ -1685,6 +1737,7 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
         // additional data and `self.text_len` of text.
         unsafe {
             f(
+                dit,
                 self.key.ctx.as_ptr(),
                 self.key.rounds,
                 &mut self.state,
@@ -1701,7 +1754,7 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
 
 impl Stream<'_, false> {
     /// Finishes the message and returns its 16-byte tag.
-    fn finish(mut self) -> Block {
+    fn finish(mut self, dit: crate::dit::Dit<'_>) -> Block {
         let f = self.key.fns.stream_finish;
         let mut tag: Block = [0; 16];
         // SAFETY: as in `update`, with `tag` (a local) valid for reads and
@@ -1709,6 +1762,7 @@ impl Stream<'_, false> {
         // (§5.2.1.1).
         unsafe {
             f(
+                dit,
                 self.key.key(),
                 self.key.rounds,
                 &mut self.state,
@@ -1724,12 +1778,13 @@ impl Stream<'_, false> {
 impl Stream<'_, true> {
     /// Finishes the message and checks the received prefix in constant time.
     /// Callers check at compile time that its length is between 4 and 16.
-    fn verify(mut self, tag: &[u8]) -> Result<(), Error> {
+    fn verify(mut self, dit: crate::dit::Dit<'_>, tag: &[u8]) -> Result<(), Error> {
         let f = self.key.fns.stream_verify;
         // SAFETY: as in `finish`, with the received tag `tag` valid for
         // reads of its length.
         let ok = unsafe {
             f(
+                dit,
                 self.key.key(),
                 self.key.rounds,
                 &mut self.state,
@@ -1763,19 +1818,22 @@ impl AesGcmEncryptor<'_> {
     /// Absorbs more additional data. All of it must come before the
     /// plaintext.
     pub fn update_aad(&mut self, aad: &[u8]) -> Result<(), Error> {
-        self.stream.update_aad(aad)
+        crate::dit::enter!(dit);
+        self.stream.update_aad(dit, aad)
     }
 
     /// Encrypts the next `data.len()` bytes of the plaintext in place.
     pub fn update(&mut self, data: &mut [u8]) -> Result<(), Error> {
-        self.stream.update(data)
+        crate::dit::enter!(dit);
+        self.stream.update(dit, data)
     }
 
     /// Finishes the message and returns its full 16-byte tag. A protocol
     /// that sends a shorter tag sends its first bytes. GCM leaves no
     /// buffered text to return.
     pub fn finalize(self) -> Block {
-        self.stream.finish()
+        crate::dit::enter!(dit);
+        self.stream.finish(dit)
     }
 }
 
@@ -1801,14 +1859,16 @@ impl AesGcmDecryptor<'_> {
     /// Absorbs more additional data. All of it must come before the
     /// ciphertext.
     pub fn update_aad(&mut self, aad: &[u8]) -> Result<(), Error> {
-        self.stream.update_aad(aad)
+        crate::dit::enter!(dit);
+        self.stream.update_aad(dit, aad)
     }
 
     /// Decrypts the next `data.len()` bytes of the ciphertext in place. The
     /// result is not authenticated until [`finalize`](Self::finalize) (or
     /// [`finalize_truncated`](Self::finalize_truncated)) succeeds.
     pub fn update(&mut self, data: &mut [u8]) -> Result<(), Error> {
-        self.stream.update(data)
+        crate::dit::enter!(dit);
+        self.stream.update(dit, data)
     }
 
     /// Finishes the message and checks that `tag` is its 16-byte tag. If
@@ -1832,8 +1892,9 @@ impl AesGcmDecryptor<'_> {
     /// Appendix C restricts 4- and 8-byte tags to applications that bound the
     /// length of the messages and the number of decryptions under one key.
     pub fn finalize_truncated<const N: usize>(self, tag: &[u8; N]) -> Result<(), Error> {
+        crate::dit::enter!(dit);
         assert_tag_length!(N);
-        self.stream.verify(tag)
+        self.stream.verify(dit, tag)
     }
 }
 
@@ -2439,7 +2500,9 @@ mod tests {
 
     impl AesGcm {
         /// The same key, with `backend`'s instances.
-        fn with_backend(&self, backend: Backend) -> AesGcm {
+        fn with_backend(&self, dit: crate::dit::Dit<'_>, backend: Backend) -> AesGcm {
+            #[cfg(not(all(target_arch = "x86_64", feature = "alloc")))]
+            let _ = dit;
             let mut k = self.clone();
             k.fns = backend.fns(detected());
             // On x86-64, the powers `backend` computes, if the backend `new`
@@ -2464,7 +2527,7 @@ mod tests {
                     );
                 }
                 if let Some(prepare) = k.fns.prepare {
-                    k.prepare(prepare);
+                    k.prepare(dit, prepare);
                 }
             }
             // On AArch64, the powers if `backend` reads them (as `new`
@@ -2473,7 +2536,7 @@ mod tests {
             {
                 k.powers = [0; 16];
                 if k.fns.powers.is_some() {
-                    k.store_powers();
+                    k.store_powers(dit);
                 }
             }
             k
@@ -2493,17 +2556,18 @@ mod tests {
     /// place.
     #[test]
     fn backends_agree() {
+        let dit = crate::dit::public(crate::dit::Why::Test);
         let msg: [u8; 3100] = core::array::from_fn(|i| (i * 13 + 1) as u8);
         let aad = [9u8; 7];
         let nonce = [2u8; 12];
         for key_len in [16, 24, 32] {
             let k = AesGcm::new(&[0x5a; 32][..key_len]).unwrap();
-            let base = k.with_backend(Backend::Scalar);
+            let base = k.with_backend(dit, Backend::Scalar);
             for &(b, _) in Backend::ALL
                 .iter()
                 .filter(|(_, need)| detected().contains(*need))
             {
-                let k = k.with_backend(b);
+                let k = k.with_backend(dit, b);
                 for len in [256, 300, 512, 767, 768, 769, 1024, 1300, 3072] {
                     let mut want = msg;
                     let want_tag = base
@@ -2553,17 +2617,18 @@ mod tests {
     /// baseline does on every backend the CPU can run.
     #[test]
     fn long_tails_agree() {
+        let dit = crate::dit::public(crate::dit::Why::Test);
         let msg: [u8; 1040] = core::array::from_fn(|i| (i * 7 + 3) as u8);
         let aad = [0x33u8; 16];
         let nonce = [4u8; 12];
         for key_len in [16, 32] {
             let k = AesGcm::new(&[0x6b; 32][..key_len]).unwrap();
-            let base = k.with_backend(Backend::Scalar);
+            let base = k.with_backend(dit, Backend::Scalar);
             for &(b, _) in Backend::ALL
                 .iter()
                 .filter(|(_, need)| detected().contains(*need))
             {
-                let k = k.with_backend(b);
+                let k = k.with_backend(dit, b);
                 for al in [0, 13, 16] {
                     for len in 1024..=1040 {
                         let mut want = msg;
@@ -2586,16 +2651,17 @@ mod tests {
     /// CPU can run, for each key size.
     #[test]
     fn block_counts_agree() {
+        let dit = crate::dit::public(crate::dit::Why::Test);
         let msg: [u8; 661] = core::array::from_fn(|i| (i * 11 + 5) as u8);
         let nonce = [6u8; 12];
         for key_len in [16, 24, 32] {
             let k = AesGcm::new(&[0x2d; 32][..key_len]).unwrap();
-            let base = k.with_backend(Backend::Scalar);
+            let base = k.with_backend(dit, Backend::Scalar);
             for &(b, _) in Backend::ALL
                 .iter()
                 .filter(|(_, need)| detected().contains(*need))
             {
-                let k = k.with_backend(b);
+                let k = k.with_backend(dit, b);
                 for len in (256..=656).step_by(16).flat_map(|l| [l, l + 5]) {
                     let mut want = msg;
                     let want_tag = base
@@ -2617,6 +2683,7 @@ mod tests {
     ))]
     #[test]
     fn prepared_gather_tails() {
+        let dit = crate::dit::public(crate::dit::Why::Test);
         for key_len in [16, 24, 32] {
             let key = &[0x39; 32][..key_len];
             let reference = AesGcm::new(key).unwrap();
@@ -2624,7 +2691,7 @@ mod tests {
                 if !detected().contains(features) {
                     continue;
                 }
-                let cipher = AesGcm::new(key).unwrap().with_backend(backend);
+                let cipher = AesGcm::new(key).unwrap().with_backend(dit, backend);
                 let nonce = [0x71; 12];
                 for len in [15, 16, 17, 31, 32, 47, 48, 63, 64]
                     .into_iter()
@@ -2686,14 +2753,15 @@ mod tests {
     ))]
     #[test]
     fn prepared_boundaries() {
+        let dit = crate::dit::public(crate::dit::Why::Test);
         for &b in PREPARED {
             if !runs_prepared(b) {
                 continue;
             }
             for key_len in [16, 24, 32] {
                 let key = &[0x63; 32][..key_len];
-                let warm = AesGcm::new(key).unwrap().with_backend(b);
-                let base = AesGcm::new(key).unwrap().with_backend(Backend::Scalar);
+                let warm = AesGcm::new(key).unwrap().with_backend(dit, b);
+                let base = AesGcm::new(key).unwrap().with_backend(dit, Backend::Scalar);
                 for len in [
                     0, 1, 15, 16, 17, 100, 255, 256, 257, 288, 481, 511, 512, 513, 767, 768, 769,
                     1024, 1535, 1536, 2048, 2303, 2304, 2305, 3071, 3072, 3073, 4097, 10000,
@@ -2781,6 +2849,7 @@ mod tests {
     ))]
     #[test]
     fn eager_powers() {
+        let dit = crate::dit::public(crate::dit::Why::Test);
         let msg: [u8; 700] = core::array::from_fn(|i| (i * 11 + 5) as u8);
         let aad = [3u8; 5];
         let nonce = [7u8; 12];
@@ -2802,7 +2871,7 @@ mod tests {
                 fresh.powers.iter().all(|&w| w == 0),
                 fresh.fns.powers.is_none()
             );
-            let base = fresh.with_backend(Backend::Scalar);
+            let base = fresh.with_backend(dit, Backend::Scalar);
             #[cfg(target_arch = "x86_64")]
             assert!(base.fns.prepare.is_none());
             #[cfg(target_arch = "aarch64")]
@@ -2811,7 +2880,7 @@ mod tests {
                 if !runs_prepared(b) {
                     continue;
                 }
-                let k = AesGcm::new(key).unwrap().with_backend(b);
+                let k = AesGcm::new(key).unwrap().with_backend(dit, b);
                 assert_eq!(k.key(), base.key());
                 #[cfg(target_arch = "x86_64")]
                 {
@@ -2820,7 +2889,7 @@ mod tests {
                     let mut want_powers = [0; 128];
                     want_powers[..32].copy_from_slice(base.key());
                     // SAFETY: as in `AesGcm::prepare`.
-                    unsafe { (b.prepared(detected()).unwrap().prepare)(&mut want_powers) };
+                    unsafe { (b.prepared(detected()).unwrap().prepare)(dit, &mut want_powers) };
                     assert_eq!(k.written_ctx(), &want_powers[..k.written() / 8]);
                 }
                 // On AArch64, the powers are those `new` stores for the

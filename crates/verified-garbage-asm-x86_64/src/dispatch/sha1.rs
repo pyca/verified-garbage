@@ -22,20 +22,20 @@ pub use crate::sha1::vg_sha1_init as vg_sha1_init_auto;
 /// * Neither `state` nor `data` may overlap the return address on the stack or the 176 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_sha1_update_auto(state: *mut [u8; 84], count: u64, data: *const u8, len: usize) {
+pub unsafe fn vg_sha1_update_auto(dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 84], count: u64, data: *const u8, len: usize) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::sha1::VG_SHA1_UPDATE_SHANI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha1_update_shani`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::sha1::vg_sha1_update_shani(state, count, data, len) };
+        return unsafe { crate::sha1::vg_sha1_update_shani(dit, state, count, data, len) };
     }
     if cpu.contains(crate::sha1::VG_SHA1_UPDATE_AVX_BMI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha1_update_avx_bmi`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::sha1::vg_sha1_update_avx_bmi(state, count, data, len) };
+        return unsafe { crate::sha1::vg_sha1_update_avx_bmi(dit, state, count, data, len) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::sha1::vg_sha1_update(state, count, data, len) }
+    unsafe { crate::sha1::vg_sha1_update(dit, state, count, data, len) }
 }
 
 /// Computes the SHA-1 digest of the `len` bytes at `data` (20 bytes, `VG.Spec.Sha1.hash`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-1 computation with that message.
@@ -52,20 +52,20 @@ pub unsafe fn vg_sha1_update_auto(state: *mut [u8; 84], count: u64, data: *const
 /// * Neither `data` nor `out` may overlap the return address on the stack or the 288 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_sha1_digest_auto(data: *const u8, len: usize, out: *mut [u8; 20]) {
+pub unsafe fn vg_sha1_digest_auto(dit: verified_garbage_cpu::Dit<'_>, data: *const u8, len: usize, out: *mut [u8; 20]) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::sha1::VG_SHA1_DIGEST_SHANI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha1_digest_shani`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::sha1::vg_sha1_digest_shani(data, len, out) };
+        return unsafe { crate::sha1::vg_sha1_digest_shani(dit, data, len, out) };
     }
     if cpu.contains(crate::sha1::VG_SHA1_DIGEST_AVX_BMI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha1_digest_avx_bmi`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::sha1::vg_sha1_digest_avx_bmi(data, len, out) };
+        return unsafe { crate::sha1::vg_sha1_digest_avx_bmi(dit, data, len, out) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::sha1::vg_sha1_digest(data, len, out) }
+    unsafe { crate::sha1::vg_sha1_digest(dit, data, len, out) }
 }
 
 /// Finishes a SHA-1 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), writes the SHA-1 digest of that message to `*out`.
@@ -83,18 +83,18 @@ pub unsafe fn vg_sha1_digest_auto(data: *const u8, len: usize, out: *mut [u8; 20
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 176 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_sha1_finalize_auto(state: *mut [u8; 84], count: u64, out: *mut [u8; 20]) {
+pub unsafe fn vg_sha1_finalize_auto(dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 84], count: u64, out: *mut [u8; 20]) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::sha1::VG_SHA1_FINALIZE_SHANI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha1_finalize_shani`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::sha1::vg_sha1_finalize_shani(state, count, out) };
+        return unsafe { crate::sha1::vg_sha1_finalize_shani(dit, state, count, out) };
     }
     if cpu.contains(crate::sha1::VG_SHA1_FINALIZE_AVX_BMI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha1_finalize_avx_bmi`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::sha1::vg_sha1_finalize_avx_bmi(state, count, out) };
+        return unsafe { crate::sha1::vg_sha1_finalize_avx_bmi(dit, state, count, out) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::sha1::vg_sha1_finalize(state, count, out) }
+    unsafe { crate::sha1::vg_sha1_finalize(dit, state, count, out) }
 }

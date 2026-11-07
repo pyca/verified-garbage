@@ -17,15 +17,15 @@
 /// * None of `pk`, `message`, `signature` and `scratch` may overlap the 352 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_ed25519_verify_auto(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe fn vg_ed25519_verify_auto(dit: verified_garbage_cpu::Dit<'_>, pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::ed25519::VG_ED25519_VERIFY_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_ed25519_verify_sha3`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::ed25519::vg_ed25519_verify_sha3(pk, message, len, signature, scratch) };
+        return unsafe { crate::ed25519::vg_ed25519_verify_sha3(dit, pk, message, len, signature, scratch) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::ed25519::vg_ed25519_verify(pk, message, len, signature, scratch) }
+    unsafe { crate::ed25519::vg_ed25519_verify(dit, pk, message, len, signature, scratch) }
 }
 
 /// Ed25519 key-pair derivation (RFC 8032 §5.1.5): for the 32-byte private seed at `seed`, writes its 64-byte SHA-512 digest (§5.1.5, step 1) to `*expanded` and its 32-byte public key to `*out`, including pruning: the digest and public key that `vg_ed25519_sign_expanded` takes. Contract: `VG.Spec.Ed25519.keyPairContract`. Constant time: only pointers may affect timing.
@@ -45,15 +45,15 @@ pub unsafe fn vg_ed25519_verify_auto(pk: *const [u8; 32], message: *const u8, le
 /// * None of `out`, `expanded`, `seed` and `scratch` may overlap the 944 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_ed25519_key_pair_auto(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
+pub unsafe fn vg_ed25519_key_pair_auto(dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::ed25519::VG_ED25519_KEY_PAIR_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_ed25519_key_pair_sha3`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::ed25519::vg_ed25519_key_pair_sha3(out, expanded, seed, scratch) };
+        return unsafe { crate::ed25519::vg_ed25519_key_pair_sha3(dit, out, expanded, seed, scratch) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::ed25519::vg_ed25519_key_pair(out, expanded, seed, scratch) }
+    unsafe { crate::ed25519::vg_ed25519_key_pair(dit, out, expanded, seed, scratch) }
 }
 
 /// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
@@ -74,13 +74,13 @@ pub unsafe fn vg_ed25519_key_pair_auto(out: *mut [u8; 32], expanded: *mut [u8; 6
 /// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the 352 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_ed25519_sign_expanded_auto(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+pub unsafe fn vg_ed25519_sign_expanded_auto(dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_ed25519_sign_expanded_sha3`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::ed25519::vg_ed25519_sign_expanded_sha3(out, expanded, pk, message, len, scratch) };
+        return unsafe { crate::ed25519::vg_ed25519_sign_expanded_sha3(dit, out, expanded, pk, message, len, scratch) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::ed25519::vg_ed25519_sign_expanded(out, expanded, pk, message, len, scratch) }
+    unsafe { crate::ed25519::vg_ed25519_sign_expanded(dit, out, expanded, pk, message, len, scratch) }
 }

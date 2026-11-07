@@ -84,11 +84,12 @@ impl SeedCbcDecryptor {
 impl Key {
     /// Expands a 16-byte key.
     fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
+        crate::dit::enter!(dit);
         let key: &[u8; 16] = key.try_into().map_err(|_| InvalidKeyLength)?;
         let mut schedule = [0; 128];
         // SAFETY: key and schedule are separate valid buffers of the required
         // sizes.
-        unsafe { vg_seed_expand_key(key, &mut schedule) };
+        unsafe { vg_seed_expand_key(dit, key, &mut schedule) };
         Ok(Self { schedule })
     }
 
@@ -98,6 +99,7 @@ impl Key {
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of 16.
     fn encrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
+        crate::dit::enter!(dit);
         if !buffer.len().is_multiple_of(16) {
             return Err(IncompleteBlock);
         }
@@ -107,6 +109,7 @@ impl Key {
         // none of them on the callee's stack.
         unsafe {
             vg_seed_cbc_encrypt_chained(
+                dit,
                 &self.schedule,
                 iv,
                 buffer.as_mut_ptr().cast(),
@@ -122,12 +125,14 @@ impl Key {
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of 16.
     fn decrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
+        crate::dit::enter!(dit);
         if !buffer.len().is_multiple_of(16) {
             return Err(IncompleteBlock);
         }
         // SAFETY: as in `encrypt`.
         unsafe {
             vg_seed_cbc_decrypt_chained(
+                dit,
                 &self.schedule,
                 iv,
                 buffer.as_mut_ptr().cast(),

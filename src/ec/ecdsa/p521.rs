@@ -22,6 +22,7 @@ use crate::error::{InvalidKey, InvalidSignature};
 
 /// Whether `signature` verifies with `q` for the hash `digest`.
 fn verify_with(
+    dit: crate::dit::Dit<'_>,
     q: &[u8; 133],
     digest: &[u8],
     signature: &[u8; 132],
@@ -34,7 +35,14 @@ fn verify_with(
     // space. The dispatcher calls only an implementation the CPU has the
     // features of.
     let ok = unsafe {
-        vg_ecdsa_p521_verify_auto(q, digest.as_ptr(), digest.len(), signature, &mut scratch)
+        vg_ecdsa_p521_verify_auto(
+            dit,
+            q,
+            digest.as_ptr(),
+            digest.len(),
+            signature,
+            &mut scratch,
+        )
     };
     if ok == 1 {
         Ok(())
@@ -44,7 +52,11 @@ fn verify_with(
 }
 
 impl<H: HmacHash> sealed::Functions<P521> for H {
-    fn sign(d: &[u8; 66], digest: &H::Output) -> Result<[u8; 132], InvalidKey> {
+    fn sign(
+        dit: crate::dit::Dit<'_>,
+        d: &[u8; 66],
+        digest: &H::Output,
+    ) -> Result<[u8; 132], InvalidKey> {
         let f = detected();
         let sign: SignFn<66, 132> = match Mul::select(f) {
             Mul::Baseline => vg_ecdsa_p521_sign,
@@ -53,17 +65,18 @@ impl<H: HmacHash> sealed::Functions<P521> for H {
         };
         // SAFETY: `sign` needs no CPU feature that the multiplications
         // selected for this CPU do not.
-        unsafe { sign_with::<H, 66, 132>(sign, d, digest) }
+        unsafe { sign_with::<H, 66, 132>(dit, sign, d, digest) }
     }
 
     /// The verified function takes the hash itself, of any length, and
     /// uses as many of its leftmost bits as the order has (FIPS 186-5 §6.4.2).
     fn verify(
+        dit: crate::dit::Dit<'_>,
         q: &[u8; 133],
         digest: &H::Output,
         signature: &[u8; 132],
     ) -> Result<(), InvalidSignature> {
-        verify_with(q, digest.as_ref(), signature)
+        verify_with(dit, q, digest.as_ref(), signature)
     }
 }
 

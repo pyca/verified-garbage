@@ -19,7 +19,7 @@ use crate::zeroize::zeroize;
 
 /// `X448(scalar, u)` (RFC 7748 §5), by `vg_x448_exchange`, which also checks
 /// it: `None` if it is all zero (§6.2).
-fn exchange(scalar: &[u8; 56], u: &[u8; 56]) -> Option<[u8; 56]> {
+fn exchange(dit: crate::dit::Dit<'_>, scalar: &[u8; 56], u: &[u8; 56]) -> Option<[u8; 56]> {
     let mut out = [0u8; 56];
     let mut scratch = [0u64; 1024];
     // SAFETY: `out` and `scratch` are valid for reads and writes of 56 and
@@ -27,7 +27,7 @@ fn exchange(scalar: &[u8; 56], u: &[u8; 56]) -> Option<[u8; 56]> {
     // buffers are disjoint from each other and from the inputs.
     // No buffer overlaps the callee's stack or wraps around the address space.
     // The dispatcher calls only an implementation the CPU has the features of.
-    let nonzero = unsafe { vg_x448_exchange_auto(&mut out, scalar, u, &mut scratch) };
+    let nonzero = unsafe { vg_x448_exchange_auto(dit, &mut out, scalar, u, &mut scratch) };
     zeroize(&mut scratch);
     // The contract: 0 if and only if `out` is all zero, so there is no
     // secret in it to destroy.
@@ -35,7 +35,7 @@ fn exchange(scalar: &[u8; 56], u: &[u8; 56]) -> Option<[u8; 56]> {
 }
 
 /// `X448(scalar, 5)`, by `vg_x448_base`.
-fn base(scalar: &[u8; 56]) -> [u8; 56] {
+fn base(dit: crate::dit::Dit<'_>, scalar: &[u8; 56]) -> [u8; 56] {
     let mut out = [0u8; 56];
     let mut scratch = [0u64; 1024];
     // SAFETY: `out` and `scratch` are valid for reads and writes of 56 and
@@ -43,7 +43,7 @@ fn base(scalar: &[u8; 56]) -> [u8; 56] {
     // disjoint from each other and from the input. No buffer overlaps the
     // callee's stack or wraps around the address space. The dispatcher calls
     // only an implementation the CPU has the features of.
-    unsafe { vg_x448_base_auto(&mut out, scalar, &mut scratch) };
+    unsafe { vg_x448_base_auto(dit, &mut out, scalar, &mut scratch) };
     zeroize(&mut scratch);
     out
 }
@@ -89,8 +89,9 @@ impl PrivateKey {
 
     /// The public key, `X448(k, 5)` (RFC 7748 §6.2).
     pub fn public_key(&self) -> PublicKey {
+        crate::dit::enter!(dit);
         PublicKey {
-            bytes: base(&self.bytes),
+            bytes: base(dit, &self.bytes),
         }
     }
 
@@ -99,7 +100,8 @@ impl PrivateKey {
     /// is all zero, which the verified code checks without revealing
     /// anything else about it.
     pub fn exchange(&self, peer: &PublicKey) -> Result<[u8; 56], XdhError> {
-        exchange(&self.bytes, &peer.bytes).ok_or(XdhError::ZeroSharedSecret)
+        crate::dit::enter!(dit);
+        exchange(dit, &self.bytes, &peer.bytes).ok_or(XdhError::ZeroSharedSecret)
     }
 }
 

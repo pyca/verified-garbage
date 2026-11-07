@@ -78,13 +78,14 @@ impl Key {
     /// Expands a key of 4..=56 bytes (32 to 448 bits). Weak keys are
     /// accepted.
     fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
+        crate::dit::enter!(dit);
         if !(4..=56).contains(&key.len()) {
             return Err(InvalidKeyLength);
         }
         let mut schedule = [0; 4168];
         // SAFETY: the key has a length in 4..=56; the key and the schedule
         // are separate valid objects of the lengths passed.
-        unsafe { vg_blowfish_expand_key(key.as_ptr(), key.len(), &mut schedule) };
+        unsafe { vg_blowfish_expand_key(dit, key.as_ptr(), key.len(), &mut schedule) };
         Ok(Self { schedule })
     }
 
@@ -92,7 +93,8 @@ impl Key {
     /// `buffer` in place, from the block `iv`, which it replaces with the
     /// last output block (unchanged for empty input).
     fn apply_keystream(&self, iv: &mut [u8; 8], buffer: &mut [u8]) {
-        self.crypt(iv, buffer);
+        crate::dit::enter!(dit);
+        self.crypt(dit, iv, buffer);
     }
 
     /// Encrypts or decrypts (the same operation) the rest of a message, of
@@ -101,24 +103,28 @@ impl Key {
     /// the whole blocks leave in `iv`, which it replaces with the output
     /// block it used.
     fn apply_keystream_final(&self, iv: &mut [u8; 8], buffer: &mut [u8]) {
+        crate::dit::enter!(dit);
         let (blocks, rest) = buffer.split_at_mut(buffer.len() / 8 * 8);
-        self.crypt(iv, blocks);
+        self.crypt(dit, iv, blocks);
         if !rest.is_empty() {
             // SAFETY: `rest` is valid for `len` bytes, and it, the block at
             // `iv` and the schedule are separate valid objects of the sizes of
             // the signature, none of them on the callee's stack.
-            unsafe { vg_blowfish_ofb_final(&self.schedule, iv, rest.as_mut_ptr(), rest.len()) };
+            unsafe {
+                vg_blowfish_ofb_final(dit, &self.schedule, iv, rest.as_mut_ptr(), rest.len())
+            };
         }
     }
 
     /// OFB of whole blocks.
-    fn crypt(&self, iv: &mut [u8; 8], blocks: &mut [u8]) {
+    fn crypt(&self, dit: crate::dit::Dit<'_>, iv: &mut [u8; 8], blocks: &mut [u8]) {
         // SAFETY: `blocks` holds `len / 8` whole blocks (its length is a
         // multiple of 8), and it, the block at `iv` and the schedule are
         // separate valid objects of the sizes of the signature, none of them on
         // the callee's stack.
         unsafe {
             vg_blowfish_ofb(
+                dit,
                 &self.schedule,
                 iv,
                 blocks.as_mut_ptr().cast(),

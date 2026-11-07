@@ -39,20 +39,20 @@
 /// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_rsa_pss_sign_auto(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const u8, digest_len: usize, salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 5]) -> u32 {
+pub unsafe fn vg_rsa_pss_sign_auto(dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const u8, digest_len: usize, salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 5]) -> u32 {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::rsa_pss::VG_RSA_PSS_SIGN_CRT_IFMA_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_rsa_pss_sign_crt_ifma`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::rsa_pss::vg_rsa_pss_sign_crt_ifma(out, out_len, n, n_len, e, e_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, digest, digest_len, salt, salt_len, scratch, scratch_len, hash, mgf1) };
+        return unsafe { crate::rsa_pss::vg_rsa_pss_sign_crt_ifma(dit, out, out_len, n, n_len, e, e_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, digest, digest_len, salt, salt_len, scratch, scratch_len, hash, mgf1) };
     }
     if cpu.contains(crate::rsa_pss::VG_RSA_PSS_SIGN_CRT_ADX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_rsa_pss_sign_crt_adx`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::rsa_pss::vg_rsa_pss_sign_crt_adx(out, out_len, n, n_len, e, e_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, digest, digest_len, salt, salt_len, scratch, scratch_len, hash, mgf1) };
+        return unsafe { crate::rsa_pss::vg_rsa_pss_sign_crt_adx(dit, out, out_len, n, n_len, e, e_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, digest, digest_len, salt, salt_len, scratch, scratch_len, hash, mgf1) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::rsa_pss::vg_rsa_pss_sign(out, out_len, n, n_len, e, e_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, digest, digest_len, salt, salt_len, scratch, scratch_len, hash, mgf1) }
+    unsafe { crate::rsa_pss::vg_rsa_pss_sign(dit, out, out_len, n, n_len, e, e_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, digest, digest_len, salt, salt_len, scratch, scratch_len, hash, mgf1) }
 }
 
 /// RSASSA-PSS signature verification (RFC 8017 §8.1.2) with the hash function of the table `hash` and MGF1 with that of the table `mgf1`, of a signature of a digest of the former. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits) and `pre`, the `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1), returns 1 if `sig` (`n_len` bytes, most significant first) is an RSASSA-PSS signature of the `digest_len`-byte digest `digest` with a salt of `salt_len` bytes, or of any length if `any_salt_len` is not zero (BoringSSL's `RSA_PSS_SALTLEN_AUTO`); and 0 if it is not, or if `n` is not such a modulus, `e` is not such a number, or `sig` is not below `n`. If `pre` does not hold those values, the result is unspecified; memory safety and the timing guarantee still apply.
@@ -87,18 +87,18 @@ pub unsafe fn vg_rsa_pss_sign_auto(out: *mut u8, out_len: usize, n: *const u8, n
 /// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_rsa_pss_verify_precomputed_auto(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const u8, digest_len: usize, sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 5]) -> u32 {
+pub unsafe fn vg_rsa_pss_verify_precomputed_auto(dit: verified_garbage_cpu::Dit<'_>, n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const u8, digest_len: usize, sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 5]) -> u32 {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::rsa_pss::VG_RSA_PSS_VERIFY_PRECOMPUTED_RSA_IFMA_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_rsa_pss_verify_precomputed_rsa_ifma`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::rsa_pss::vg_rsa_pss_verify_precomputed_rsa_ifma(n, n_len, e, e_len, digest, digest_len, sig, sig_len, salt_len, any_salt_len, scratch, scratch_len, pre, pre_len, hash, mgf1) };
+        return unsafe { crate::rsa_pss::vg_rsa_pss_verify_precomputed_rsa_ifma(dit, n, n_len, e, e_len, digest, digest_len, sig, sig_len, salt_len, any_salt_len, scratch, scratch_len, pre, pre_len, hash, mgf1) };
     }
     if cpu.contains(crate::rsa_pss::VG_RSA_PSS_VERIFY_PRECOMPUTED_RSA_ADX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_rsa_pss_verify_precomputed_rsa_adx`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::rsa_pss::vg_rsa_pss_verify_precomputed_rsa_adx(n, n_len, e, e_len, digest, digest_len, sig, sig_len, salt_len, any_salt_len, scratch, scratch_len, pre, pre_len, hash, mgf1) };
+        return unsafe { crate::rsa_pss::vg_rsa_pss_verify_precomputed_rsa_adx(dit, n, n_len, e, e_len, digest, digest_len, sig, sig_len, salt_len, any_salt_len, scratch, scratch_len, pre, pre_len, hash, mgf1) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::rsa_pss::vg_rsa_pss_verify_precomputed(n, n_len, e, e_len, digest, digest_len, sig, sig_len, salt_len, any_salt_len, scratch, scratch_len, pre, pre_len, hash, mgf1) }
+    unsafe { crate::rsa_pss::vg_rsa_pss_verify_precomputed(dit, n, n_len, e, e_len, digest, digest_len, sig, sig_len, salt_len, any_salt_len, scratch, scratch_len, pre, pre_len, hash, mgf1) }
 }

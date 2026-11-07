@@ -17,15 +17,15 @@
 /// * Neither `key` nor `ctx` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_siv_init_auto(key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
+pub unsafe fn vg_aes_siv_init_auto(dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::aes_siv::VG_AES_SIV_INIT_AES_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_siv_init_aes`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes_siv::vg_aes_siv_init_aes(key, key_len, ctx) };
+        return unsafe { crate::aes_siv::vg_aes_siv_init_aes(dit, key, key_len, ctx) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::aes_siv::vg_aes_siv_init(key, key_len, ctx) }
+    unsafe { crate::aes_siv::vg_aes_siv_init(dit, key, key_len, ctx) }
 }
 
 /// AES-SIV encryption, `SIV-ENCRYPT` (RFC 5297 §2.6): with the key context `*ctx` that `vg_aes_siv_init` wrote for `rounds` rounds, computes the synthetic IV `V = S2V(K1, AD1, …, ADn, P)` of the `ads_count` components of associated data that `ads` lists (each an address and a length, in bytes; for nonce-based encryption, §3, the nonce is the last) and the `len` bytes of plaintext `P` at `data`, writes it to `*siv`, and encrypts the plaintext in place with AES-CTR under `K2` from `V` with bits 31 and 63 cleared. The RFC's output is `V` followed by the encrypted data.
@@ -45,15 +45,15 @@ pub unsafe fn vg_aes_siv_init_auto(key: *const u8, key_len: usize, ctx: *mut [u6
 /// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the 2576 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_siv_encrypt_auto(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
+pub unsafe fn vg_aes_siv_encrypt_auto(dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::aes_siv::VG_AES_SIV_ENCRYPT_AES_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_siv_encrypt_aes`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes_siv::vg_aes_siv_encrypt_aes(ctx, rounds, ads, ads_count, data, len, siv) };
+        return unsafe { crate::aes_siv::vg_aes_siv_encrypt_aes(dit, ctx, rounds, ads, ads_count, data, len, siv) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::aes_siv::vg_aes_siv_encrypt(ctx, rounds, ads, ads_count, data, len, siv) }
+    unsafe { crate::aes_siv::vg_aes_siv_encrypt(dit, ctx, rounds, ads, ads_count, data, len, siv) }
 }
 
 /// AES-SIV decryption, `SIV-DECRYPT` (RFC 5297 §2.7): with the key context `*ctx` that `vg_aes_siv_init` wrote for `rounds` rounds and the received synthetic IV `V` at `siv`, decrypts the `len` bytes of ciphertext at `data` in place with AES-CTR under `K2` from `V` with bits 31 and 63 cleared, computes `S2V(K1, AD1, …, ADn, P)` of the `ads_count` components of associated data that `ads` lists (each an address and a length, in bytes) and the plaintext `P`, and returns 1 if it is `V`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The IVs are compared without a branch.
@@ -73,13 +73,13 @@ pub unsafe fn vg_aes_siv_encrypt_auto(ctx: *const [u64; 64], rounds: usize, ads:
 /// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the 2576 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_siv_decrypt_auto(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {
+pub unsafe fn vg_aes_siv_decrypt_auto(dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::aes_siv::VG_AES_SIV_DECRYPT_AES_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_siv_decrypt_aes`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes_siv::vg_aes_siv_decrypt_aes(ctx, rounds, ads, ads_count, data, len, siv) };
+        return unsafe { crate::aes_siv::vg_aes_siv_decrypt_aes(dit, ctx, rounds, ads, ads_count, data, len, siv) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::aes_siv::vg_aes_siv_decrypt(ctx, rounds, ads, ads_count, data, len, siv) }
+    unsafe { crate::aes_siv::vg_aes_siv_decrypt(dit, ctx, rounds, ads, ads_count, data, len, siv) }
 }

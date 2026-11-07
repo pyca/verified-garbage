@@ -45,7 +45,10 @@ pub(crate) mod sealed {
     pub trait Sealed {
         /// The public key `Q = dG` of `d`, or `None` if `d` is not in
         /// `[1, n − 1]`.
-        fn public_key(d: &<Self as Curve>::PrivateKey) -> Option<<Self as Curve>::PublicKey>
+        fn public_key(
+            dit: crate::dit::Dit<'_>,
+            d: &<Self as Curve>::PrivateKey,
+        ) -> Option<<Self as Curve>::PublicKey>
         where
             Self: Curve;
     }
@@ -56,6 +59,7 @@ pub(crate) mod sealed {
         /// The x-coordinate of `dQ`, or `None` if `d` is not in `[1, n − 1]`
         /// or `q` is not a valid public key.
         fn exchange(
+            dit: crate::dit::Dit<'_>,
             d: &<Self as Curve>::PrivateKey,
             q: &<Self as Curve>::PublicKey,
         ) -> Option<<Self as Curve>::SharedSecret>
@@ -110,8 +114,8 @@ impl<C: Curve> PublicKey<C> {
 
     /// The public key `Q = dG` of the private key `d`, or `None` if `d` is
     /// not in `[1, n − 1]`.
-    pub(crate) fn derive(d: &C::PrivateKey) -> Option<Self> {
-        C::public_key(d).map(|q| Self { q })
+    pub(crate) fn derive(dit: crate::dit::Dit<'_>, d: &C::PrivateKey) -> Option<Self> {
+        C::public_key(dit, d).map(|q| Self { q })
     }
 }
 
@@ -137,7 +141,8 @@ impl<C: Curve> PrivateKey<C> {
     ///
     /// [`InvalidKey`] if the key is not in `[1, n − 1]`.
     pub fn public_key(&self) -> Result<PublicKey<C>, InvalidKey> {
-        PublicKey::derive(&self.d).ok_or(InvalidKey)
+        crate::dit::enter!(dit);
+        PublicKey::derive(dit, &self.d).ok_or(InvalidKey)
     }
 }
 
@@ -164,8 +169,8 @@ impl<C: Curve> Drop for PrivateKey<C> {
 pub enum P224 {}
 
 impl sealed::Sealed for P224 {
-    fn public_key(d: &[u8; 28]) -> Option<[u8; 57]> {
-        p224::public_key(d)
+    fn public_key(dit: crate::dit::Dit<'_>, d: &[u8; 28]) -> Option<[u8; 57]> {
+        p224::public_key(dit, d)
     }
 }
 
@@ -181,8 +186,8 @@ impl Curve for P224 {
 pub enum P256 {}
 
 impl sealed::Sealed for P256 {
-    fn public_key(d: &[u8; 32]) -> Option<[u8; 65]> {
-        p256::public_key(d)
+    fn public_key(dit: crate::dit::Dit<'_>, d: &[u8; 32]) -> Option<[u8; 65]> {
+        p256::public_key(dit, d)
     }
 }
 
@@ -198,8 +203,8 @@ impl Curve for P256 {
 pub enum P384 {}
 
 impl sealed::Sealed for P384 {
-    fn public_key(d: &[u8; 48]) -> Option<[u8; 97]> {
-        p384::public_key(d)
+    fn public_key(dit: crate::dit::Dit<'_>, d: &[u8; 48]) -> Option<[u8; 97]> {
+        p384::public_key(dit, d)
     }
 }
 
@@ -215,8 +220,8 @@ impl Curve for P384 {
 pub enum P521 {}
 
 impl sealed::Sealed for P521 {
-    fn public_key(d: &[u8; 66]) -> Option<[u8; 133]> {
-        p521::public_key(d)
+    fn public_key(dit: crate::dit::Dit<'_>, d: &[u8; 66]) -> Option<[u8; 133]> {
+        p521::public_key(dit, d)
     }
 }
 
@@ -232,8 +237,8 @@ impl Curve for P521 {
 pub enum Secp256k1 {}
 
 impl sealed::Sealed for Secp256k1 {
-    fn public_key(d: &[u8; 32]) -> Option<[u8; 65]> {
-        secp256k1::public_key(d)
+    fn public_key(dit: crate::dit::Dit<'_>, d: &[u8; 32]) -> Option<[u8; 65]> {
+        secp256k1::public_key(dit, d)
     }
 }
 
@@ -249,8 +254,8 @@ impl Curve for Secp256k1 {
 pub enum BrainpoolP256r1 {}
 
 impl sealed::Sealed for BrainpoolP256r1 {
-    fn public_key(d: &[u8; 32]) -> Option<[u8; 65]> {
-        brainpoolp256r1::public_key(d)
+    fn public_key(dit: crate::dit::Dit<'_>, d: &[u8; 32]) -> Option<[u8; 65]> {
+        brainpoolp256r1::public_key(dit, d)
     }
 }
 
@@ -266,8 +271,8 @@ impl Curve for BrainpoolP256r1 {
 pub enum BrainpoolP384r1 {}
 
 impl sealed::Sealed for BrainpoolP384r1 {
-    fn public_key(d: &[u8; 48]) -> Option<[u8; 97]> {
-        brainpoolp384r1::public_key(d)
+    fn public_key(dit: crate::dit::Dit<'_>, d: &[u8; 48]) -> Option<[u8; 97]> {
+        brainpoolp384r1::public_key(dit, d)
     }
 }
 
@@ -283,8 +288,8 @@ impl Curve for BrainpoolP384r1 {
 pub enum BrainpoolP512r1 {}
 
 impl sealed::Sealed for BrainpoolP512r1 {
-    fn public_key(d: &[u8; 64]) -> Option<[u8; 129]> {
-        brainpoolp512r1::public_key(d)
+    fn public_key(dit: crate::dit::Dit<'_>, d: &[u8; 64]) -> Option<[u8; 129]> {
+        brainpoolp512r1::public_key(dit, d)
     }
 }
 
@@ -300,8 +305,8 @@ impl Curve for BrainpoolP512r1 {
 pub enum P192 {}
 
 impl sealed::Sealed for P192 {
-    fn public_key(d: &[u8; 24]) -> Option<[u8; 49]> {
-        p192::public_key(d)
+    fn public_key(dit: crate::dit::Dit<'_>, d: &[u8; 24]) -> Option<[u8; 49]> {
+        p192::public_key(dit, d)
     }
 }
 

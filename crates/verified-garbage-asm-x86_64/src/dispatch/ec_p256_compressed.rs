@@ -18,15 +18,15 @@
 /// * None of `out`, `public` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_ec_p256_compress_public_key_auto(out: *mut [u8; 33], public: *const [u8; 65], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe fn vg_ec_p256_compress_public_key_auto(dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 33], public: *const [u8; 65], scratch: *mut [u64; 1024]) -> u32 {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::ec_p256_compressed::VG_EC_P256_COMPRESS_PUBLIC_KEY_ADX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_ec_p256_compress_public_key_adx`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::ec_p256_compressed::vg_ec_p256_compress_public_key_adx(out, public, scratch) };
+        return unsafe { crate::ec_p256_compressed::vg_ec_p256_compress_public_key_adx(dit, out, public, scratch) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::ec_p256_compressed::vg_ec_p256_compress_public_key(out, public, scratch) }
+    unsafe { crate::ec_p256_compressed::vg_ec_p256_compress_public_key(dit, out, public, scratch) }
 }
 
 /// Validate and decompress a P-256 public key (SEC 1 §2.3.4, SP 800-56A §5.6.2.3.3): reads `02` or `03` followed by `x` in 32 bytes, most significant first; checks `x` below the field prime and recovers a coordinate `y` satisfying the curve equation with even parity for `02`, odd for `03`. Writes `04` followed by `x` and `y` in 32 bytes each and returns 1. If no such finite point exists, writes 65 zero bytes and returns 0. Rejects infinity and hybrid encodings. The curve has cofactor one, so no subgroup multiplication is required.
@@ -45,13 +45,13 @@ pub unsafe fn vg_ec_p256_compress_public_key_auto(out: *mut [u8; 33], public: *c
 /// * None of `out`, `public` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_ec_p256_decompress_public_key_auto(out: *mut [u8; 65], public: *const [u8; 33], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe fn vg_ec_p256_decompress_public_key_auto(dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 65], public: *const [u8; 33], scratch: *mut [u64; 1024]) -> u32 {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::ec_p256_compressed::VG_EC_P256_DECOMPRESS_PUBLIC_KEY_ADX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_ec_p256_decompress_public_key_adx`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::ec_p256_compressed::vg_ec_p256_decompress_public_key_adx(out, public, scratch) };
+        return unsafe { crate::ec_p256_compressed::vg_ec_p256_decompress_public_key_adx(dit, out, public, scratch) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::ec_p256_compressed::vg_ec_p256_decompress_public_key(out, public, scratch) }
+    unsafe { crate::ec_p256_compressed::vg_ec_p256_decompress_public_key(dit, out, public, scratch) }
 }

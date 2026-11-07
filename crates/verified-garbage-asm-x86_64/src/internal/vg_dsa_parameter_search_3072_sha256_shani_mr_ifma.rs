@@ -1222,7 +1222,7 @@ jmp 2307f
 2307:
 .base64 "SI2kJCgBAABIjWQkIEiLHCRIi2wkCEyLZCQQTItsJBhMi3QkIEyLfCQoSI1kJDDD"
 .p2align 6"#,
-        vg_sha256_init = sym crate::sha256::vg_sha256_init,
+        vg_sha256_init = sym crate::sha256::raw::vg_sha256_init,
         vg_sha256_update_scratch_shani = sym crate::sha256::vg_sha256_update_scratch_shani::vg_sha256_update_scratch_shani,
         vg_sha256_finalize_scratch_shani = sym crate::sha256::vg_sha256_finalize_scratch_shani::vg_sha256_finalize_scratch_shani,
         vg_dsa_probable_prime_ifma = sym crate::dsa::vg_dsa_probable_prime_ifma::vg_dsa_probable_prime_ifma,

@@ -15,8 +15,188 @@
 /// * The bytes of `schedule` after the key schedule are unspecified on return.
 /// * `schedule` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `schedule` may overlap the return address on the stack or the 520 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_aes_expand_key(_dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, schedule: *mut [u8; 240]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_expand_key(key, key_len, schedule) }
+}
+
+/// The CPU features `vg_aes_expand_key_aesni` requires (`Artifact.features`).
+pub const VG_AES_EXPAND_KEY_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
+
+/// The AES key expansion (FIPS 197 §5.2, `KEYEXPANSION`): writes the key schedule of the `key_len`-byte key at `key`, the words `w[0] … w[4 * Nr + 3]` for `Nr = key_len / 4 + 6` rounds, each as its 4 bytes (`16 * (Nr + 1)` bytes in all), to the start of `*schedule`.
+///
+/// Contract: `VG.Spec.Aes.expandKeyContract`. Constant time: only the pointers and `key_len` may affect timing, not the key.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `schedule` must be valid for reads and writes of 240 bytes.
+/// * `key_len` must be 16, 24 or 32.
+/// * The bytes of `schedule` after the key schedule are unspecified on return.
+/// * `schedule` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `schedule` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` target feature.
+#[inline(always)]
+pub unsafe fn vg_aes_expand_key_aesni(_dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, schedule: *mut [u8; 240]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_expand_key_aesni(key, key_len, schedule) }
+}
+
+/// AES encryption of whole blocks (FIPS 197 §5.1, `CIPHER`): replaces each of the `n` 16-byte blocks at `data` with its encryption by AES with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
+///
+/// Contract: `VG.Spec.Aes.encryptBlocksContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `data` must be valid for reads and writes of `16 * n` bytes.
+/// * `scratch` must be valid for reads and writes of 2048 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `scratch` on return are unspecified.
+/// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_aes_encrypt_blocks(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_encrypt_blocks(schedule, rounds, data, n, scratch) }
+}
+
+/// AES decryption of whole blocks (FIPS 197 §5.3, `INVCIPHER`): replaces each of the `n` 16-byte blocks at `data` with its decryption by AES with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (the forward cipher's schedule, which the inverse cipher uses in the reverse order).
+///
+/// Contract: `VG.Spec.Aes.decryptBlocksContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `data` must be valid for reads and writes of `16 * n` bytes.
+/// * `scratch` must be valid for reads and writes of 2048 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `scratch` on return are unspecified.
+/// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_aes_decrypt_blocks(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_decrypt_blocks(schedule, rounds, data, n, scratch) }
+}
+
+/// The CPU features `vg_aes_encrypt_blocks_aesni` requires (`Artifact.features`).
+pub const VG_AES_ENCRYPT_BLOCKS_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
+
+/// The bytes of `scratch` that `vg_aes_encrypt_blocks_aesni` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
+pub const VG_AES_ENCRYPT_BLOCKS_AESNI_SCRATCH_WRITTEN: usize = 0;
+
+/// AES encryption of whole blocks (FIPS 197 §5.1, `CIPHER`): replaces each of the `n` 16-byte blocks at `data` with its encryption by AES with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
+///
+/// Contract: `VG.Spec.Aes.encryptBlocksContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
+///
+/// It writes at most the first 0 bytes of `scratch` (`VG_AES_ENCRYPT_BLOCKS_AESNI_SCRATCH_WRITTEN`): no byte of `scratch` beyond them changes.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `data` must be valid for reads and writes of `16 * n` bytes.
+/// * `scratch` must be valid for reads and writes of 2048 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `scratch` on return are unspecified.
+/// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` target feature.
+#[inline(always)]
+pub unsafe fn vg_aes_encrypt_blocks_aesni(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_encrypt_blocks_aesni(schedule, rounds, data, n, scratch) }
+}
+
+/// The CPU features `vg_aes_decrypt_blocks_aesni` requires (`Artifact.features`).
+pub const VG_AES_DECRYPT_BLOCKS_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
+
+/// AES decryption of whole blocks (FIPS 197 §5.3, `INVCIPHER`): replaces each of the `n` 16-byte blocks at `data` with its decryption by AES with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (the forward cipher's schedule, which the inverse cipher uses in the reverse order).
+///
+/// Contract: `VG.Spec.Aes.decryptBlocksContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `data` must be valid for reads and writes of `16 * n` bytes.
+/// * `scratch` must be valid for reads and writes of 2048 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `scratch` on return are unspecified.
+/// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` target feature.
+#[inline(always)]
+pub unsafe fn vg_aes_decrypt_blocks_aesni(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_decrypt_blocks_aesni(schedule, rounds, data, n, scratch) }
+}
+
+/// The CPU features `vg_aes_encrypt_blocks_vaes` requires (`Artifact.features`).
+pub const VG_AES_ENCRYPT_BLOCKS_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES);
+
+/// The bytes of `scratch` that `vg_aes_encrypt_blocks_vaes` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
+pub const VG_AES_ENCRYPT_BLOCKS_VAES_SCRATCH_WRITTEN: usize = 0;
+
+/// AES encryption of whole blocks (FIPS 197 §5.1, `CIPHER`): replaces each of the `n` 16-byte blocks at `data` with its encryption by AES with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
+///
+/// Contract: `VG.Spec.Aes.encryptBlocksContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
+///
+/// It writes at most the first 0 bytes of `scratch` (`VG_AES_ENCRYPT_BLOCKS_VAES_SCRATCH_WRITTEN`): no byte of `scratch` beyond them changes.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `data` must be valid for reads and writes of `16 * n` bytes.
+/// * `scratch` must be valid for reads and writes of 2048 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `scratch` on return are unspecified.
+/// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes`, `avx`, `avx2` and `vaes` target features.
+#[inline(always)]
+pub unsafe fn vg_aes_encrypt_blocks_vaes(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_encrypt_blocks_vaes(schedule, rounds, data, n, scratch) }
+}
+
+/// The CPU features `vg_aes_decrypt_blocks_vaes` requires (`Artifact.features`).
+pub const VG_AES_DECRYPT_BLOCKS_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES);
+
+/// AES decryption of whole blocks (FIPS 197 §5.3, `INVCIPHER`): replaces each of the `n` 16-byte blocks at `data` with its decryption by AES with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (the forward cipher's schedule, which the inverse cipher uses in the reverse order).
+///
+/// Contract: `VG.Spec.Aes.decryptBlocksContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `data` must be valid for reads and writes of `16 * n` bytes.
+/// * `scratch` must be valid for reads and writes of 2048 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `scratch` on return are unspecified.
+/// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes`, `avx`, `avx2` and `vaes` target features.
+#[inline(always)]
+pub unsafe fn vg_aes_decrypt_blocks_vaes(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_decrypt_blocks_vaes(schedule, rounds, data, n, scratch) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_aes_expand_key`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 240]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 240]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPj9//9IieFIg8EISYnJSYmZgAEAAEmJqYgBAABNiaGQAQAATYmpmAEAAE2JsaABAABNibmoAQAASYnw"
 20:
@@ -54,24 +234,9 @@ jne 21b
     )
 }
 
-/// The CPU features `vg_aes_expand_key_aesni` requires (`Artifact.features`).
-pub const VG_AES_EXPAND_KEY_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
-
-/// The AES key expansion (FIPS 197 §5.2, `KEYEXPANSION`): writes the key schedule of the `key_len`-byte key at `key`, the words `w[0] … w[4 * Nr + 3]` for `Nr = key_len / 4 + 6` rounds, each as its 4 bytes (`16 * (Nr + 1)` bytes in all), to the start of `*schedule`.
-///
-/// Contract: `VG.Spec.Aes.expandKeyContract`. Constant time: only the pointers and `key_len` may affect timing, not the key.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `schedule` must be valid for reads and writes of 240 bytes.
-/// * `key_len` must be 16, 24 or 32.
-/// * The bytes of `schedule` after the key schedule are unspecified on return.
-/// * `schedule` must not overlap `key` (distinct Rust objects never do).
-/// * Neither `key` nor `schedule` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` target feature.
+/// The verified code of [`super::vg_aes_expand_key_aesni`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_expand_key_aesni(key: *const u8, key_len: usize, schedule: *mut [u8; 240]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_expand_key_aesni(key: *const u8, key_len: usize, schedule: *mut [u8; 240]) {
     core::arch::naked_asm!(
         r#".base64 "Zg927WYPctUfZg9v9WYP/vZmD2/+Zg/+/2ZED2/HZkUP/sBmRQ9vyGZFD/7JZkUPb9FmRQ/+0mZFD2/aZkUP/ttmRQ9v42ZFD/7kSIP+GA=="
 je 20f
@@ -91,21 +256,9 @@ jmp 21f
     )
 }
 
-/// AES encryption of whole blocks (FIPS 197 §5.1, `CIPHER`): replaces each of the `n` 16-byte blocks at `data` with its encryption by AES with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
-///
-/// Contract: `VG.Spec.Aes.encryptBlocksContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `data` must be valid for reads and writes of `16 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 2048 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
-/// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_aes_encrypt_blocks`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_encrypt_blocks(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_encrypt_blocks(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
         r#".base64 "TYnBSYnISYmZgAEAAEmJqYgBAABNiaGQAQAATYmpmAEAAE2JsaABAABNibmoAQAASYn3SAH2SAH2SAH2SAH2SAH3TInOSIHGgAcAAA=="
 20:
@@ -162,21 +315,9 @@ jmp 22f
     )
 }
 
-/// AES decryption of whole blocks (FIPS 197 §5.3, `INVCIPHER`): replaces each of the `n` 16-byte blocks at `data` with its decryption by AES with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (the forward cipher's schedule, which the inverse cipher uses in the reverse order).
-///
-/// Contract: `VG.Spec.Aes.decryptBlocksContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `data` must be valid for reads and writes of `16 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 2048 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
-/// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_aes_decrypt_blocks`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_decrypt_blocks(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_decrypt_blocks(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
         r#".base64 "TYnBSYnISYmZgAEAAEmJqYgBAABNiaGQAQAATYmpmAEAAE2JsaABAABNibmoAQAASYn3SAH2SAH2SAH2SAH2SAH3TInOSIHGgAcAAA=="
 20:
@@ -233,30 +374,9 @@ jmp 22f
     )
 }
 
-/// The CPU features `vg_aes_encrypt_blocks_aesni` requires (`Artifact.features`).
-pub const VG_AES_ENCRYPT_BLOCKS_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
-
-/// The bytes of `scratch` that `vg_aes_encrypt_blocks_aesni` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
-pub const VG_AES_ENCRYPT_BLOCKS_AESNI_SCRATCH_WRITTEN: usize = 0;
-
-/// AES encryption of whole blocks (FIPS 197 §5.1, `CIPHER`): replaces each of the `n` 16-byte blocks at `data` with its encryption by AES with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
-///
-/// Contract: `VG.Spec.Aes.encryptBlocksContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
-///
-/// It writes at most the first 0 bytes of `scratch` (`VG_AES_ENCRYPT_BLOCKS_AESNI_SCRATCH_WRITTEN`): no byte of `scratch` beyond them changes.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `data` must be valid for reads and writes of `16 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 2048 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
-/// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` target feature.
+/// The verified code of [`super::vg_aes_encrypt_blocks_aesni`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_encrypt_blocks_aesni(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_encrypt_blocks_aesni(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
         r#".base64 "SYnyTQHSTQHSTQHSTQHSSQH6SIP5CA=="
 jb 20f
@@ -301,25 +421,9 @@ jmp 28f
     )
 }
 
-/// The CPU features `vg_aes_decrypt_blocks_aesni` requires (`Artifact.features`).
-pub const VG_AES_DECRYPT_BLOCKS_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
-
-/// AES decryption of whole blocks (FIPS 197 §5.3, `INVCIPHER`): replaces each of the `n` 16-byte blocks at `data` with its decryption by AES with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (the forward cipher's schedule, which the inverse cipher uses in the reverse order).
-///
-/// Contract: `VG.Spec.Aes.decryptBlocksContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `data` must be valid for reads and writes of `16 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 2048 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
-/// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` target feature.
+/// The verified code of [`super::vg_aes_decrypt_blocks_aesni`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_decrypt_blocks_aesni(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_decrypt_blocks_aesni(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
         r#".base64 "80QPb0cQZkUPONvA80UPf0AQ80QPb0cgZkUPONvA80UPf0Ag80QPb0cwZkUPONvA80UPf0Aw80QPb0dAZkUPONvA80UPf0BA80QPb0dQZkUPONvA80UPf0BQ80QPb0dgZkUPONvA80UPf0Bg80QPb0dwZkUPONvA80UPf0Bw80QPb4eAAAAAZkUPONvA80UPf4CAAAAA80QPb4eQAAAAZkUPONvA80UPf4CQAAAASIP+Cg=="
 je 20f
@@ -377,30 +481,9 @@ jmp 212f
     )
 }
 
-/// The CPU features `vg_aes_encrypt_blocks_vaes` requires (`Artifact.features`).
-pub const VG_AES_ENCRYPT_BLOCKS_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES);
-
-/// The bytes of `scratch` that `vg_aes_encrypt_blocks_vaes` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
-pub const VG_AES_ENCRYPT_BLOCKS_VAES_SCRATCH_WRITTEN: usize = 0;
-
-/// AES encryption of whole blocks (FIPS 197 §5.1, `CIPHER`): replaces each of the `n` 16-byte blocks at `data` with its encryption by AES with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
-///
-/// Contract: `VG.Spec.Aes.encryptBlocksContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
-///
-/// It writes at most the first 0 bytes of `scratch` (`VG_AES_ENCRYPT_BLOCKS_VAES_SCRATCH_WRITTEN`): no byte of `scratch` beyond them changes.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `data` must be valid for reads and writes of `16 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 2048 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
-/// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes`, `avx`, `avx2` and `vaes` target features.
+/// The verified code of [`super::vg_aes_encrypt_blocks_vaes`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_encrypt_blocks_vaes(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_encrypt_blocks_vaes(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
         r#".base64 "SYnyTQHSTQHSTQHSTQHSSQH6SIP5EA=="
 jb 20f
@@ -464,25 +547,9 @@ jmp 215f
     )
 }
 
-/// The CPU features `vg_aes_decrypt_blocks_vaes` requires (`Artifact.features`).
-pub const VG_AES_DECRYPT_BLOCKS_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES);
-
-/// AES decryption of whole blocks (FIPS 197 §5.3, `INVCIPHER`): replaces each of the `n` 16-byte blocks at `data` with its decryption by AES with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (the forward cipher's schedule, which the inverse cipher uses in the reverse order).
-///
-/// Contract: `VG.Spec.Aes.decryptBlocksContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `data` must be valid for reads and writes of `16 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 2048 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
-/// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes`, `avx`, `avx2` and `vaes` target features.
+/// The verified code of [`super::vg_aes_decrypt_blocks_vaes`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_decrypt_blocks_vaes(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_decrypt_blocks_vaes(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
         r#".base64 "80QPb0cQZkUPONvA80UPf0AQ80QPb0cgZkUPONvA80UPf0Ag80QPb0cwZkUPONvA80UPf0Aw80QPb0dAZkUPONvA80UPf0BA80QPb0dQZkUPONvA80UPf0BQ80QPb0dgZkUPONvA80UPf0Bg80QPb0dwZkUPONvA80UPf0Bw80QPb4eAAAAAZkUPONvA80UPf4CAAAAA80QPb4eQAAAAZkUPONvA80UPf4CQAAAASIP+Cg=="
 je 20f
@@ -558,6 +625,7 @@ jmp 219f
 .base64 "ww=="
 .p2align 6"#,
     )
+}
 }
 
 #[rustfmt::skip]

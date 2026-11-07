@@ -17,22 +17,11 @@
 /// * The contents of `scratch` on return are unspecified.
 /// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_cfb128_encrypt(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
-    core::arch::naked_asm!(
-        r#".base64 "pgIIfEAICPgQCMj5GAjo+SAICPooCCj6MAhI+jgIaPp4G258eCOPfHgrsHx4M9F8eDvyfHhDE30AADIo"
-beq %cr0, 20f
-22:
-.base64 "eHPDfXh75H14gwV+AQDAOHibZ34="
-bl {vg_aes_encrypt_blocks}
-.base64 "AAAx6QAAUOl4Uil9AAAx+QgAMekIAFDpeFIpfQgAMfkAADHpAAAw+QgAMekIADD5EAAxOv//UjoAADIo"
-bne %cr0, 22b
-b 21f
-20:
-21:
-.base64 "QAgT6BAI0+kYCPPpIAgT6igIM+owCFPqOAhz6qYDCHwgAIBO""#,
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
-    )
+#[inline(always)]
+pub unsafe fn vg_aes_cfb128_encrypt(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_cfb128_encrypt(schedule, rounds, iv, data, n, scratch) }
 }
 
 /// AES-CFB128 decryption (NIST SP 800-38A §6.3, with 128-bit segments) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
@@ -49,22 +38,11 @@ b 21f
 /// * The contents of `scratch` on return are unspecified.
 /// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_cfb128_decrypt(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
-    core::arch::naked_asm!(
-        r#".base64 "pgIIfEAICPgQCMj5GAjo+SAICPooCCj6MAhI+jgIaPp4G258eCOPfHgrsHx4M9F8eDvyfHhDE30AADIo"
-beq %cr0, 20f
-22:
-.base64 "eHPDfXh75H14gwV+AQDAOHibZ34="
-bl {vg_aes_encrypt_blocks}
-.base64 "AAAx6QAAUOl4Uil9AAAx+QgAMekIAFDpeFIpfQgAMfkAADDpAABR6XhSKX0AADD5CAAw6QgAUel4Uil9CAAw+RAAMTr//1I6AAAyKA=="
-bne %cr0, 22b
-b 21f
-20:
-21:
-.base64 "QAgT6BAI0+kYCPPpIAgT6igIM+owCFPqOAhz6qYDCHwgAIBO""#,
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
-    )
+#[inline(always)]
+pub unsafe fn vg_aes_cfb128_decrypt(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_cfb128_decrypt(schedule, rounds, iv, data, n, scratch) }
 }
 
 /// AES-CFB128 encryption (NIST SP 800-38A §6.3, with 128-bit segments) of the last piece of a message, of any length, in place: replaces its whole 16-byte blocks `P₁ … Pₙ₋₁` at `data` with `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Pₙ*` of `u` bytes with `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, so that a further call continues the message, if `len` is a multiple of 16 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
@@ -81,26 +59,11 @@ b 21f
 /// * The contents of `scratch` on return are unspecified.
 /// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv`, `data` and `scratch` may overlap the 96 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_cfb128_encrypt_final(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
-    core::arch::naked_asm!(
-        r#".base64 "of8h+CAAITmmAgh8AAAJ+AgAyfkQAOn5GAAJ+iAAafooAMn7MADp+zgAifp4G258eCOPfHgrsHx4QxN9eEs0fQLh6njkJkt5FFrmf1A4y394U0d9"
-bl {vg_aes_cfb128_encrypt}
-.base64 "AAA+KA=="
-beq %cr0, 20f
-.base64 "eHPDfXh75H14gwV+AQDAOHibZ34="
-bl {vg_aes_encrypt_blocks}
-.base64 "eIMIfg=="
-22:
-.base64 "AAA/iQAASIl4Uil9AAA/mQEACDkBAP87///eOwAAPig="
-bne %cr0, 22b
-b 21f
-20:
-21:
-.base64 "AAAU6AgA1OkQAPTpGAAU6iAAdOooANTrMAD06zgAlOqmAwh8IACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+WAAITggAIBO""#,
-        vg_aes_cfb128_encrypt = sym super::aes_cfb::vg_aes_cfb128_encrypt,
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
-    )
+#[inline(always)]
+pub unsafe fn vg_aes_cfb128_encrypt_final(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_cfb128_encrypt_final(schedule, rounds, iv, data, len, scratch) }
 }
 
 /// AES-CFB128 decryption (NIST SP 800-38A §6.3, with 128-bit segments) of the last piece of a message, of any length, in place: replaces its whole 16-byte blocks `C₁ … Cₙ₋₁` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Cₙ*` of `u` bytes with `Pₙ* = Cₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, the last whole block at `data` on entry, so that a further call continues the message, if `len` is a multiple of 16 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
@@ -117,8 +80,80 @@ b 21f
 /// * The contents of `scratch` on return are unspecified.
 /// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv`, `data` and `scratch` may overlap the 96 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_aes_cfb128_decrypt_final(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_cfb128_decrypt_final(schedule, rounds, iv, data, len, scratch) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_aes_cfb128_encrypt`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_cfb128_decrypt_final(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
+pub(crate) unsafe extern "C" fn vg_aes_cfb128_encrypt(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
+    core::arch::naked_asm!(
+        r#".base64 "pgIIfEAICPgQCMj5GAjo+SAICPooCCj6MAhI+jgIaPp4G258eCOPfHgrsHx4M9F8eDvyfHhDE30AADIo"
+beq %cr0, 20f
+22:
+.base64 "eHPDfXh75H14gwV+AQDAOHibZ34="
+bl {vg_aes_encrypt_blocks}
+.base64 "AAAx6QAAUOl4Uil9AAAx+QgAMekIAFDpeFIpfQgAMfkAADHpAAAw+QgAMekIADD5EAAxOv//UjoAADIo"
+bne %cr0, 22b
+b 21f
+20:
+21:
+.base64 "QAgT6BAI0+kYCPPpIAgT6igIM+owCFPqOAhz6qYDCHwgAIBO""#,
+        vg_aes_encrypt_blocks = sym crate::aes::raw::vg_aes_encrypt_blocks,
+    )
+}
+
+/// The verified code of [`super::vg_aes_cfb128_decrypt`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_cfb128_decrypt(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
+    core::arch::naked_asm!(
+        r#".base64 "pgIIfEAICPgQCMj5GAjo+SAICPooCCj6MAhI+jgIaPp4G258eCOPfHgrsHx4M9F8eDvyfHhDE30AADIo"
+beq %cr0, 20f
+22:
+.base64 "eHPDfXh75H14gwV+AQDAOHibZ34="
+bl {vg_aes_encrypt_blocks}
+.base64 "AAAx6QAAUOl4Uil9AAAx+QgAMekIAFDpeFIpfQgAMfkAADDpAABR6XhSKX0AADD5CAAw6QgAUel4Uil9CAAw+RAAMTr//1I6AAAyKA=="
+bne %cr0, 22b
+b 21f
+20:
+21:
+.base64 "QAgT6BAI0+kYCPPpIAgT6igIM+owCFPqOAhz6qYDCHwgAIBO""#,
+        vg_aes_encrypt_blocks = sym crate::aes::raw::vg_aes_encrypt_blocks,
+    )
+}
+
+/// The verified code of [`super::vg_aes_cfb128_encrypt_final`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_cfb128_encrypt_final(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
+    core::arch::naked_asm!(
+        r#".base64 "of8h+CAAITmmAgh8AAAJ+AgAyfkQAOn5GAAJ+iAAafooAMn7MADp+zgAifp4G258eCOPfHgrsHx4QxN9eEs0fQLh6njkJkt5FFrmf1A4y394U0d9"
+bl {vg_aes_cfb128_encrypt}
+.base64 "AAA+KA=="
+beq %cr0, 20f
+.base64 "eHPDfXh75H14gwV+AQDAOHibZ34="
+bl {vg_aes_encrypt_blocks}
+.base64 "eIMIfg=="
+22:
+.base64 "AAA/iQAASIl4Uil9AAA/mQEACDkBAP87///eOwAAPig="
+bne %cr0, 22b
+b 21f
+20:
+21:
+.base64 "AAAU6AgA1OkQAPTpGAAU6iAAdOooANTrMAD06zgAlOqmAwh8IACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+WAAITggAIBO""#,
+        vg_aes_cfb128_encrypt = sym crate::aes_cfb::raw::vg_aes_cfb128_encrypt,
+        vg_aes_encrypt_blocks = sym crate::aes::raw::vg_aes_encrypt_blocks,
+    )
+}
+
+/// The verified code of [`super::vg_aes_cfb128_decrypt_final`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_cfb128_decrypt_final(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
         r#".base64 "of8h+CAAITmmAgh8AAAJ+AgAyfkQAOn5GAAJ+iAAafooAMn7MADp+zgAifp4G258eCOPfHgrsHx4QxN9eEs0fQLh6njkJkt5FFrmf1A4y394U0d9"
 bl {vg_aes_cfb128_decrypt}
@@ -134,7 +169,8 @@ b 21f
 20:
 21:
 .base64 "AAAU6AgA1OkQAPTpGAAU6iAAdOooANTrMAD06zgAlOqmAwh8IACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+WAAITggAIBO""#,
-        vg_aes_cfb128_decrypt = sym super::aes_cfb::vg_aes_cfb128_decrypt,
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
+        vg_aes_cfb128_decrypt = sym crate::aes_cfb::raw::vg_aes_cfb128_decrypt,
+        vg_aes_encrypt_blocks = sym crate::aes::raw::vg_aes_encrypt_blocks,
     )
+}
 }

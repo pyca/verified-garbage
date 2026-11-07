@@ -20,15 +20,15 @@
 /// * None of `schedule`, `ctr`, `data` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_ctr_auto(schedule: *const [u8; 240], rounds: usize, ctr: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
+pub unsafe fn vg_aes_ctr_auto(dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, ctr: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::aes_ctr::VG_AES_CTR_AESNI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_ctr_aesni`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes_ctr::vg_aes_ctr_aesni(schedule, rounds, ctr, data, n, scratch) };
+        return unsafe { crate::aes_ctr::vg_aes_ctr_aesni(dit, schedule, rounds, ctr, data, n, scratch) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::aes_ctr::vg_aes_ctr(schedule, rounds, ctr, data, n, scratch) }
+    unsafe { crate::aes_ctr::vg_aes_ctr(dit, schedule, rounds, ctr, data, n, scratch) }
 }
 
 /// AES-CTR encryption or decryption (NIST SP 800-38A §6.5) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Tⱼ)`, where `T₁` is the block at `*ctr` and `Tⱼ₊₁ = Tⱼ + 1 mod 2¹²⁸` (Appendix B.1's standard incrementing function on the whole block, read as a big-endian integer), a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*ctr` with `Tₙ₊₁` (leaving it unchanged if `len = 0`), so that a further call continues the message if `len` is a multiple of 16; after a partial last block the message must end. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
@@ -49,13 +49,13 @@ pub unsafe fn vg_aes_ctr_auto(schedule: *const [u8; 240], rounds: usize, ctr: *m
 /// * None of `schedule`, `ctr`, `data` and `scratch` may overlap the return address on the stack or the 116 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_ctr_final_auto(schedule: *const [u8; 240], rounds: usize, ctr: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
+pub unsafe fn vg_aes_ctr_final_auto(dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, ctr: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::aes_ctr::VG_AES_CTR_FINAL_AESNI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_ctr_final_aesni`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes_ctr::vg_aes_ctr_final_aesni(schedule, rounds, ctr, data, len, scratch) };
+        return unsafe { crate::aes_ctr::vg_aes_ctr_final_aesni(dit, schedule, rounds, ctr, data, len, scratch) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::aes_ctr::vg_aes_ctr_final(schedule, rounds, ctr, data, len, scratch) }
+    unsafe { crate::aes_ctr::vg_aes_ctr_final(dit, schedule, rounds, ctr, data, len, scratch) }
 }

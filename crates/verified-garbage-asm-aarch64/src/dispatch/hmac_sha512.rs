@@ -17,15 +17,15 @@
 /// * None of `inner`, `outer` and `key` may overlap the 3424 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_hmac_sha512_init_auto(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize) {
+pub unsafe fn vg_hmac_sha512_init_auto(dit: verified_garbage_cpu::Dit<'_>, inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::hmac_sha512::VG_HMAC_SHA512_INIT_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_hmac_sha512_init_sha3`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::hmac_sha512::vg_hmac_sha512_init_sha3(inner, outer, key, key_len) };
+        return unsafe { crate::hmac_sha512::vg_hmac_sha512_init_sha3(dit, inner, outer, key, key_len) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::hmac_sha512::vg_hmac_sha512_init(inner, outer, key, key_len) }
+    unsafe { crate::hmac_sha512::vg_hmac_sha512_init(dit, inner, outer, key, key_len) }
 }
 
 /// Finishes an HMAC-SHA-512 computation: if, for a 128-byte key `K₀` and a text of fewer than 2⁶⁴ − 128 bytes, the SHA-512 streaming state `*inner` represents `(K₀ ⊕ ipad) ‖ text`, of `count` bytes, and `*outer` represents `K₀ ⊕ opad`, writes the HMAC-SHA-512 of the text under `K₀` (64 bytes) to `*out`.
@@ -44,13 +44,13 @@ pub unsafe fn vg_hmac_sha512_init_auto(inner: *mut [u8; 192], outer: *mut [u8; 1
 /// * None of `inner`, `outer` and `out` may overlap the 1888 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_hmac_sha512_finalize_auto(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 64]) {
+pub unsafe fn vg_hmac_sha512_finalize_auto(dit: verified_garbage_cpu::Dit<'_>, inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 64]) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::hmac_sha512::VG_HMAC_SHA512_FINALIZE_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_hmac_sha512_finalize_sha3`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::hmac_sha512::vg_hmac_sha512_finalize_sha3(inner, outer, count, out) };
+        return unsafe { crate::hmac_sha512::vg_hmac_sha512_finalize_sha3(dit, inner, outer, count, out) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::hmac_sha512::vg_hmac_sha512_finalize(inner, outer, count, out) }
+    unsafe { crate::hmac_sha512::vg_hmac_sha512_finalize(dit, inner, outer, count, out) }
 }

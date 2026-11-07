@@ -9,8 +9,857 @@
 ///
 /// * `state` must be valid for reads and writes of 128 bytes.
 /// * `state` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_ffdh_parameter_generation_init(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 16], bits: usize, generator: u32) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ffdh_parameter_generation_init(state, bits, generator) }
+}
+
+/// Initialize native finite-field Diffie–Hellman key generation. Returns 1 for a domain width in 64..=1024 bytes, initializing the rejection budgets and first entropy request; returns 0 and clears the first four state words otherwise. The remaining state words are private workspace. Contract: `VG.Spec.Ffdh.keyInitContract`.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 128 bytes.
+/// * `state` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_ffdh_key_generation_init(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 16], p_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ffdh_key_generation_init(state, p_len) }
+}
+
+/// The CPU features `vg_ffdh_generate_key_precompute_adx` requires (`Artifact.features`).
+pub const VG_FFDH_GENERATE_KEY_PRECOMPUTE_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// Initialize a reusable public fixed-base context for finite-field Diffie–Hellman key generation. The checked domain is p, g and optional q, each p_len bytes. Writes generationPrecompute: three public metadata words followed by RSA's modulus/R-squared values and 32 five-tooth comb entries. Returns 1. Word 0 is generationScalarBits, word 1 is its byte length and word 2 is the comb row count. The context has no pointers and is independent of the arithmetic backend. Contract: VG.Spec.Ffdh.generationPrecomputeContract. Timing may depend on the public domain, pointers and lengths.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads and writes of `8 * ctx_len` bytes.
+/// * `domain` must be valid for reads of `domain_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `p_len` must be in 64..=1024.
+/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
+/// * domain must be one that vg_ffdh_check_domain accepted.
+/// * ctx_len must be generationPrecomputedWords(p_len), namely 3 + 34 * ceil(p_len / 8).
+/// * `scratch_len` must be at least `16 * p_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `ctx` and `scratch` must not overlap each other, `domain` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `domain` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `bmi2` and `adx` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_ffdh_generate_key_precompute_adx(_dit: verified_garbage_cpu::Dit<'_>, ctx: *mut u64, ctx_len: usize, domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ffdh_generate_key_precompute_adx(ctx, ctx_len, domain, domain_len, p_len, scratch, scratch_len) }
+}
+
+/// The CPU features `vg_ffdh_generate_key_cached_adx` requires (`Artifact.features`).
+pub const VG_FFDH_GENERATE_KEY_CACHED_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// One native finite-field Diffie–Hellman key-generation attempt using a reusable public five-tooth comb context. Takes p_len random bytes and implements the same vettedScalarOfOctets, keyStatus and output conventions as vg_ffdh_generate_key_vetted for checked parameters. The context's public maximum width fixes the schedule, including secret leading zeros. Contract: VG.Spec.Ffdh.cachedGenerateKeyContract. Timing may depend on the public domain, pointers, lengths and returned status, not otherwise on the random bytes or private scalar.
+///
+/// # Safety
+///
+/// * `x` must be valid for reads and writes of `x_len` bytes.
+/// * `y` must be valid for reads and writes of `y_len` bytes.
+/// * `domain` must be valid for reads of `domain_len` bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `ctx` must be valid for reads of `8 * ctx_len` bytes.
+/// * `p_len` must be in 64..=1024.
+/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
+/// * domain must be one that vg_ffdh_check_domain accepted.
+/// * ctx_len must be generationPrecomputedWords(p_len). ctx must contain the unchanged words written by vg_ffdh_generate_key_precompute for these parameters.
+/// * x_len, y_len and rand_len must be p_len.
+/// * `scratch_len` must be at least `16 * p_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `x`, `y` and `scratch` must not overlap each other, `domain`, `rand`, `ctx` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `x`, `y`, `domain`, `rand`, `scratch` and `ctx` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `bmi2` and `adx` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_ffdh_generate_key_cached_adx(_dit: verified_garbage_cpu::Dit<'_>, x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, ctx: *const u64, ctx_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ffdh_generate_key_cached_adx(x, x_len, y, y_len, domain, domain_len, p_len, rand, rand_len, scratch, scratch_len, ctx, ctx_len) }
+}
+
+/// The CPU features `vg_ffdh_generate_key_search_cached_adx` requires (`Artifact.features`).
+pub const VG_FFDH_GENERATE_KEY_SEARCH_CACHED_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// Generate a finite-field Diffie–Hellman key pair using a reusable public five-tooth comb context and the existing vettedKeySearch rejection policy. Returns 1 with a key pair, 3 when a budget is exhausted, or 0 to request entropy. On 0, discard used bytes, preserve the suffix and extend it to state[3] bytes before calling again. On 0 and 3 both outputs are zero. Entropy consumption, retry budgets and statuses are unchanged. Contract: VG.Spec.Ffdh.cachedKeySearchContract. Timing may depend on the public domain, pointers, lengths, controller policy and sequence of attempt statuses, not otherwise on private scalar bytes.
+///
+/// # Safety
+///
+/// * `x` must be valid for reads and writes of `x_len` bytes.
+/// * `y` must be valid for reads and writes of `y_len` bytes.
+/// * `used` must be valid for reads and writes of 8 bytes.
+/// * `domain` must be valid for reads of `domain_len` bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `state` must be valid for reads and writes of 128 bytes.
+/// * `ctx` must be valid for reads of `8 * ctx_len` bytes.
+/// * `p_len` must be in 64..=1024.
+/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
+/// * domain must be one that vg_ffdh_check_domain accepted.
+/// * ctx_len must be generationPrecomputedWords(p_len). ctx must contain the unchanged words written by vg_ffdh_generate_key_precompute for these parameters.
+/// * state must be initialized by vg_ffdh_key_generation_init for p_len, or be the state returned by this routine.
+/// * x_len and y_len must be p_len.
+/// * `scratch_len` must be at least `16 * p_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `x`, `y`, `used`, `scratch` and `state` must not overlap each other, `domain`, `rand`, `ctx` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `x`, `y`, `used`, `domain`, `rand`, `scratch`, `state` and `ctx` may overlap the return address on the stack or the 72 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `bmi2` and `adx` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_ffdh_generate_key_search_cached_adx(_dit: verified_garbage_cpu::Dit<'_>, x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, used: *mut [u64; 1], domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16], ctx: *const u64, ctx_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ffdh_generate_key_search_cached_adx(x, x_len, y, y_len, used, domain, domain_len, p_len, rand, rand_len, scratch, scratch_len, state, ctx, ctx_len) }
+}
+
+/// The CPU features `vg_ffdh_generate_parameters_adx` requires (`Artifact.features`).
+pub const VG_FFDH_GENERATE_PARAMETERS_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// Run native finite-field Diffie–Hellman parameter generation, with RSA's trial-division sieve. The routine owns candidate retries, attempt limits, witness selection, primality rounds and entropy budgets. Initialize with `vg_ffdh_parameter_generation_init`. Returns 1 with the probable safe prime in `out`, 3 when a bound is exhausted, or 0 only when it needs more entropy. On 0, discard `used` bytes of `rand`, preserve its remaining suffix and extend that suffix to at least `state[3]` bytes before calling again. `state[1]` is the output width and `state[2]` the maximum tape length. The output is zero for 0 and 3. Accepted p and q pass the full 64/128 independent witness counts. Contract: `VG.Spec.Ffdh.sievedParameterSearchContract`. Timing may depend on the public tape and the first four controller words.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `used` must be valid for reads and writes of 8 bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `state` must be valid for reads and writes of 128 bytes.
+/// * `state` must be initialized by `vg_ffdh_parameter_generation_init` for the supplied `bits` and `generator`, or be the state returned by this routine.
+/// * `out_len` must equal `state[1]`, and `rand_len` must not exceed `state[2]`.
+/// * `scratch_len` must be at least `16 * out_len + 32`.
+/// * The last twelve controller words and the scratch contents are private workspace.
+/// * `out`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 160 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `bmi2` and `adx` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_ffdh_generate_parameters_adx(_dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, used: *mut [u64; 1], bits: usize, generator: u32, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ffdh_generate_parameters_adx(out, out_len, used, bits, generator, rand, rand_len, scratch, scratch_len, state) }
+}
+
+/// Initialize a reusable public fixed-base context for finite-field Diffie–Hellman key generation. The checked domain is p, g and optional q, each p_len bytes. Writes generationPrecompute: three public metadata words followed by RSA's modulus/R-squared values and 32 five-tooth comb entries. Returns 1. Word 0 is generationScalarBits, word 1 is its byte length and word 2 is the comb row count. The context has no pointers and is independent of the arithmetic backend. Contract: VG.Spec.Ffdh.generationPrecomputeContract. Timing may depend on the public domain, pointers and lengths.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads and writes of `8 * ctx_len` bytes.
+/// * `domain` must be valid for reads of `domain_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `p_len` must be in 64..=1024.
+/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
+/// * domain must be one that vg_ffdh_check_domain accepted.
+/// * ctx_len must be generationPrecomputedWords(p_len), namely 3 + 34 * ceil(p_len / 8).
+/// * `scratch_len` must be at least `16 * p_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `ctx` and `scratch` must not overlap each other, `domain` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `domain` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_ffdh_generate_key_precompute(_dit: verified_garbage_cpu::Dit<'_>, ctx: *mut u64, ctx_len: usize, domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ffdh_generate_key_precompute(ctx, ctx_len, domain, domain_len, p_len, scratch, scratch_len) }
+}
+
+/// One native finite-field Diffie–Hellman key-generation attempt using a reusable public five-tooth comb context. Takes p_len random bytes and implements the same vettedScalarOfOctets, keyStatus and output conventions as vg_ffdh_generate_key_vetted for checked parameters. The context's public maximum width fixes the schedule, including secret leading zeros. Contract: VG.Spec.Ffdh.cachedGenerateKeyContract. Timing may depend on the public domain, pointers, lengths and returned status, not otherwise on the random bytes or private scalar.
+///
+/// # Safety
+///
+/// * `x` must be valid for reads and writes of `x_len` bytes.
+/// * `y` must be valid for reads and writes of `y_len` bytes.
+/// * `domain` must be valid for reads of `domain_len` bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `ctx` must be valid for reads of `8 * ctx_len` bytes.
+/// * `p_len` must be in 64..=1024.
+/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
+/// * domain must be one that vg_ffdh_check_domain accepted.
+/// * ctx_len must be generationPrecomputedWords(p_len). ctx must contain the unchanged words written by vg_ffdh_generate_key_precompute for these parameters.
+/// * x_len, y_len and rand_len must be p_len.
+/// * `scratch_len` must be at least `16 * p_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `x`, `y` and `scratch` must not overlap each other, `domain`, `rand`, `ctx` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `x`, `y`, `domain`, `rand`, `scratch` and `ctx` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_ffdh_generate_key_cached(_dit: verified_garbage_cpu::Dit<'_>, x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, ctx: *const u64, ctx_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ffdh_generate_key_cached(x, x_len, y, y_len, domain, domain_len, p_len, rand, rand_len, scratch, scratch_len, ctx, ctx_len) }
+}
+
+/// Generate a finite-field Diffie–Hellman key pair using a reusable public five-tooth comb context and the existing vettedKeySearch rejection policy. Returns 1 with a key pair, 3 when a budget is exhausted, or 0 to request entropy. On 0, discard used bytes, preserve the suffix and extend it to state[3] bytes before calling again. On 0 and 3 both outputs are zero. Entropy consumption, retry budgets and statuses are unchanged. Contract: VG.Spec.Ffdh.cachedKeySearchContract. Timing may depend on the public domain, pointers, lengths, controller policy and sequence of attempt statuses, not otherwise on private scalar bytes.
+///
+/// # Safety
+///
+/// * `x` must be valid for reads and writes of `x_len` bytes.
+/// * `y` must be valid for reads and writes of `y_len` bytes.
+/// * `used` must be valid for reads and writes of 8 bytes.
+/// * `domain` must be valid for reads of `domain_len` bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `state` must be valid for reads and writes of 128 bytes.
+/// * `ctx` must be valid for reads of `8 * ctx_len` bytes.
+/// * `p_len` must be in 64..=1024.
+/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
+/// * domain must be one that vg_ffdh_check_domain accepted.
+/// * ctx_len must be generationPrecomputedWords(p_len). ctx must contain the unchanged words written by vg_ffdh_generate_key_precompute for these parameters.
+/// * state must be initialized by vg_ffdh_key_generation_init for p_len, or be the state returned by this routine.
+/// * x_len and y_len must be p_len.
+/// * `scratch_len` must be at least `16 * p_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `x`, `y`, `used`, `scratch` and `state` must not overlap each other, `domain`, `rand`, `ctx` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `x`, `y`, `used`, `domain`, `rand`, `scratch`, `state` and `ctx` may overlap the return address on the stack or the 72 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_ffdh_generate_key_search_cached(_dit: verified_garbage_cpu::Dit<'_>, x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, used: *mut [u64; 1], domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16], ctx: *const u64, ctx_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ffdh_generate_key_search_cached(x, x_len, y, y_len, used, domain, domain_len, p_len, rand, rand_len, scratch, scratch_len, state, ctx, ctx_len) }
+}
+
+/// Run native finite-field Diffie–Hellman parameter generation, with RSA's trial-division sieve. The routine owns candidate retries, attempt limits, witness selection, primality rounds and entropy budgets. Initialize with `vg_ffdh_parameter_generation_init`. Returns 1 with the probable safe prime in `out`, 3 when a bound is exhausted, or 0 only when it needs more entropy. On 0, discard `used` bytes of `rand`, preserve its remaining suffix and extend that suffix to at least `state[3]` bytes before calling again. `state[1]` is the output width and `state[2]` the maximum tape length. The output is zero for 0 and 3. Accepted p and q pass the full 64/128 independent witness counts. Contract: `VG.Spec.Ffdh.sievedParameterSearchContract`. Timing may depend on the public tape and the first four controller words.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `used` must be valid for reads and writes of 8 bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `state` must be valid for reads and writes of 128 bytes.
+/// * `state` must be initialized by `vg_ffdh_parameter_generation_init` for the supplied `bits` and `generator`, or be the state returned by this routine.
+/// * `out_len` must equal `state[1]`, and `rand_len` must not exceed `state[2]`.
+/// * `scratch_len` must be at least `16 * out_len + 32`.
+/// * The last twelve controller words and the scratch contents are private workspace.
+/// * `out`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 160 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_ffdh_generate_parameters(_dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, used: *mut [u64; 1], bits: usize, generator: u32, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ffdh_generate_parameters(out, out_len, used, bits, generator, rand, rand_len, scratch, scratch_len, state) }
+}
+
+/// The CPU features `vg_ffdh_generate_parameters_ifma` requires (`Artifact.features`).
+pub const VG_FFDH_GENERATE_PARAMETERS_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// Run native finite-field Diffie–Hellman parameter generation, with RSA's trial-division sieve. The routine owns candidate retries, attempt limits, witness selection, primality rounds and entropy budgets. Initialize with `vg_ffdh_parameter_generation_init`. Returns 1 with the probable safe prime in `out`, 3 when a bound is exhausted, or 0 only when it needs more entropy. On 0, discard `used` bytes of `rand`, preserve its remaining suffix and extend that suffix to at least `state[3]` bytes before calling again. `state[1]` is the output width and `state[2]` the maximum tape length. The output is zero for 0 and 3. Accepted p and q pass the full 64/128 independent witness counts. Contract: `VG.Spec.Ffdh.sievedParameterSearchContract`. Timing may depend on the public tape and the first four controller words.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `used` must be valid for reads and writes of 8 bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `state` must be valid for reads and writes of 128 bytes.
+/// * `state` must be initialized by `vg_ffdh_parameter_generation_init` for the supplied `bits` and `generator`, or be the state returned by this routine.
+/// * `out_len` must equal `state[1]`, and `rand_len` must not exceed `state[2]`.
+/// * `scratch_len` must be at least `16 * out_len + 32`.
+/// * The last twelve controller words and the scratch contents are private workspace.
+/// * `out`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 160 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_ffdh_generate_parameters_ifma(_dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, used: *mut [u64; 1], bits: usize, generator: u32, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ffdh_generate_parameters_ifma(out, out_len, used, bits, generator, rand, rand_len, scratch, scratch_len, state) }
+}
+
+/// The CPU features `vg_ffdh_check_public_mr_adx` requires (`Artifact.features`).
+pub const VG_FFDH_CHECK_PUBLIC_MR_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// Checks an imported finite-field Diffie–Hellman public value (SP 800-56A Rev. 3 §5.6.2.3.1, and §5.6.2.3.2 with q). With `domain` as `vg_ffdh_check_domain` takes it and y (`p_len` bytes, most significant first), returns 1 if `1 < y < p − 1` and, with q, `y^q mod p = 1`; otherwise 0.
+///
+/// Contract: `VG.Spec.Ffdh.checkPublicContract`. Timing may depend on the pointers, the lengths, the domain and y.
+///
+/// # Safety
+///
+/// * `domain` must be valid for reads of `domain_len` bytes.
+/// * `y` must be valid for reads of `y_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `p_len` must be in 64..=1024.
+/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
+/// * `y_len` must be `p_len`.
+/// * For the result to be specified, `domain` must be one that `vg_ffdh_check_domain` accepted (returned 1 for); otherwise it is unspecified.
+/// * `scratch_len` must be at least `16 * p_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `scratch` must not overlap `domain`, `y` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `domain`, `y` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `bmi2` and `adx` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_ffdh_check_public_mr_adx(_dit: verified_garbage_cpu::Dit<'_>, domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ffdh_check_public_mr_adx(domain, domain_len, p_len, y, y_len, scratch, scratch_len) }
+}
+
+/// The CPU features `vg_ffdh_exchange_mr_adx` requires (`Artifact.features`).
+pub const VG_FFDH_EXCHANGE_MR_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// Finite-field Diffie–Hellman (SP 800-56A Rev. 3 §5.7.1.1, PKCS #3 §8). With `domain` as `vg_ffdh_check_domain` takes it, the private scalar x (`x_len` bytes) and the peer's public value y (`p_len` bytes), most significant first, computes `z = y^x mod p`; returns 0 and writes zeros if z is 0, 1 or `p − 1`, and otherwise returns 1 and writes z (`p_len` bytes, most significant first) to `out`. Applies no KDF.
+///
+/// Contract: `VG.Spec.Ffdh.exchangeContract`. Timing may depend on the pointers, the lengths, the domain, y and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `domain` must be valid for reads of `domain_len` bytes.
+/// * `x` must be valid for reads of `x_len` bytes.
+/// * `peer` must be valid for reads of `peer_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `p_len` must be in 64..=1024.
+/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
+/// * `out_len` and `peer_len` must be `p_len`.
+/// * `x_len` must be in 1..=`p_len`.
+/// * For the result to be specified, `domain` must be one that `vg_ffdh_check_domain` accepted (returned 1 for); otherwise it is unspecified.
+/// * For the result to be specified, `peer` must also be a value that `vg_ffdh_check_public` accepted for this domain.
+/// * `scratch_len` must be at least `16 * p_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other, `domain`, `x`, `peer` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `domain`, `x`, `peer` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `bmi2` and `adx` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_ffdh_exchange_mr_adx(_dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, peer: *const u8, peer_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ffdh_exchange_mr_adx(out, out_len, domain, domain_len, p_len, x, x_len, peer, peer_len, scratch, scratch_len) }
+}
+
+/// The CPU features `vg_ffdh_check_private_mr_adx` requires (`Artifact.features`).
+pub const VG_FFDH_CHECK_PRIVATE_MR_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// Checks an imported finite-field Diffie–Hellman key pair (SP 800-56A Rev. 3 §5.6.2.1.2 and §5.6.2.1.4). With `domain` as `vg_ffdh_check_domain` takes it, y (`p_len` bytes) and x (`x_len` bytes), most significant first: returns 2 if x is not in `1..q` (`1..p − 1` without q); 1 if y is a valid public value (as `vg_ffdh_check_public` checks it) and `y = g^x mod p`; 0 otherwise.
+///
+/// Contract: `VG.Spec.Ffdh.checkPrivateContract`. Timing may depend on the pointers, the lengths, the domain, y and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
+///
+/// # Safety
+///
+/// * `domain` must be valid for reads of `domain_len` bytes.
+/// * `y` must be valid for reads of `y_len` bytes.
+/// * `x` must be valid for reads of `x_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `p_len` must be in 64..=1024.
+/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
+/// * `y_len` must be `p_len`.
+/// * `x_len` must be in 1..=`p_len`.
+/// * For the result to be specified, `domain` must be one that `vg_ffdh_check_domain` accepted (returned 1 for); otherwise it is unspecified.
+/// * `scratch_len` must be at least `16 * p_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `scratch` must not overlap `domain`, `y`, `x` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `domain`, `y`, `x` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `bmi2` and `adx` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_ffdh_check_private_mr_adx(_dit: verified_garbage_cpu::Dit<'_>, domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ffdh_check_private_mr_adx(domain, domain_len, p_len, y, y_len, x, x_len, scratch, scratch_len) }
+}
+
+/// The CPU features `vg_ffdh_derive_public_mr_adx` requires (`Artifact.features`).
+pub const VG_FFDH_DERIVE_PUBLIC_MR_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// Derives the public value of an imported finite-field Diffie–Hellman private key (SP 800-56A Rev. 3 §5.6.2.1.2 for x's range, §5.6.1.1 for `y = g^x mod p`). With `domain` as `vg_ffdh_check_domain` takes it and x (`x_len` bytes, most significant first): returns 2 if x is not in `1..q` (`1..p − 1` without q); 1 if `y = g^x mod p` is a valid public value (as `vg_ffdh_check_public` checks it), writing y (`p_len` bytes, most significant first) to `y`; 3 otherwise. Writes zeros to `y` unless it returns 1.
+///
+/// Contract: `VG.Spec.Ffdh.derivePublicContract`. Timing may depend on the pointers, the lengths, the domain and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
+///
+/// # Safety
+///
+/// * `y` must be valid for reads and writes of `y_len` bytes.
+/// * `domain` must be valid for reads of `domain_len` bytes.
+/// * `x` must be valid for reads of `x_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `p_len` must be in 64..=1024.
+/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
+/// * `y_len` must be `p_len`.
+/// * `x_len` must be in 1..=`p_len`.
+/// * For the result to be specified, `domain` must be one that `vg_ffdh_check_domain` accepted (returned 1 for); otherwise it is unspecified.
+/// * `scratch_len` must be at least `16 * p_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `y` and `scratch` must not overlap each other, `domain`, `x` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `y`, `domain`, `x` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `bmi2` and `adx` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_ffdh_derive_public_mr_adx(_dit: verified_garbage_cpu::Dit<'_>, y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ffdh_derive_public_mr_adx(y, y_len, domain, domain_len, p_len, x, x_len, scratch, scratch_len) }
+}
+
+/// The CPU features `vg_ffdh_check_domain_mr_adx` requires (`Artifact.features`).
+pub const VG_FFDH_CHECK_DOMAIN_MR_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// Checks imported finite-field Diffie–Hellman parameters (SP 800-56A Rev. 3 §5.5.2, without primality tests). `domain` is p, g and, if `domain_len` is `3 * p_len`, q, each `p_len` bytes, most significant first. Returns 1 if p has 512 to 8192 bits, its first byte is not zero and it is odd, `1 < g < p − 1`, and, with q, q is odd, `2 < q < p − 1`, q divides `p − 1` and `g^q mod p = 1`; otherwise 0. Does not test p or q for primality: the caller must establish their provenance.
+///
+/// Contract: `VG.Spec.Ffdh.checkDomainContract`. Timing may depend on the pointers, the lengths and the domain.
+///
+/// # Safety
+///
+/// * `domain` must be valid for reads of `domain_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `p_len` must be in 64..=1024.
+/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
+/// * `scratch_len` must be at least `16 * p_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `scratch` must not overlap `domain` (distinct Rust objects never do).
+/// * Neither `domain` nor `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `bmi2` and `adx` target features.
+#[inline(always)]
+pub unsafe fn vg_ffdh_check_domain_mr_adx(_dit: verified_garbage_cpu::Dit<'_>, domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ffdh_check_domain_mr_adx(domain, domain_len, p_len, scratch, scratch_len) }
+}
+
+/// The CPU features `vg_ffdh_check_public_mr_adx_exp_ifma` requires (`Artifact.features`).
+pub const VG_FFDH_CHECK_PUBLIC_MR_ADX_EXP_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
+
+/// Checks an imported finite-field Diffie–Hellman public value (SP 800-56A Rev. 3 §5.6.2.3.1, and §5.6.2.3.2 with q). With `domain` as `vg_ffdh_check_domain` takes it and y (`p_len` bytes, most significant first), returns 1 if `1 < y < p − 1` and, with q, `y^q mod p = 1`; otherwise 0.
+///
+/// Contract: `VG.Spec.Ffdh.checkPublicContract`. Timing may depend on the pointers, the lengths, the domain and y.
+///
+/// # Safety
+///
+/// * `domain` must be valid for reads of `domain_len` bytes.
+/// * `y` must be valid for reads of `y_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `p_len` must be in 64..=1024.
+/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
+/// * `y_len` must be `p_len`.
+/// * For the result to be specified, `domain` must be one that `vg_ffdh_check_domain` accepted (returned 1 for); otherwise it is unspecified.
+/// * `scratch_len` must be at least `16 * p_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `scratch` must not overlap `domain`, `y` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `domain`, `y` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `bmi2`, `adx`, `avx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_ffdh_check_public_mr_adx_exp_ifma(_dit: verified_garbage_cpu::Dit<'_>, domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ffdh_check_public_mr_adx_exp_ifma(domain, domain_len, p_len, y, y_len, scratch, scratch_len) }
+}
+
+/// The CPU features `vg_ffdh_exchange_mr_adx_exp_ifma` requires (`Artifact.features`).
+pub const VG_FFDH_EXCHANGE_MR_ADX_EXP_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
+
+/// Finite-field Diffie–Hellman (SP 800-56A Rev. 3 §5.7.1.1, PKCS #3 §8). With `domain` as `vg_ffdh_check_domain` takes it, the private scalar x (`x_len` bytes) and the peer's public value y (`p_len` bytes), most significant first, computes `z = y^x mod p`; returns 0 and writes zeros if z is 0, 1 or `p − 1`, and otherwise returns 1 and writes z (`p_len` bytes, most significant first) to `out`. Applies no KDF.
+///
+/// Contract: `VG.Spec.Ffdh.exchangeContract`. Timing may depend on the pointers, the lengths, the domain, y and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `domain` must be valid for reads of `domain_len` bytes.
+/// * `x` must be valid for reads of `x_len` bytes.
+/// * `peer` must be valid for reads of `peer_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `p_len` must be in 64..=1024.
+/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
+/// * `out_len` and `peer_len` must be `p_len`.
+/// * `x_len` must be in 1..=`p_len`.
+/// * For the result to be specified, `domain` must be one that `vg_ffdh_check_domain` accepted (returned 1 for); otherwise it is unspecified.
+/// * For the result to be specified, `peer` must also be a value that `vg_ffdh_check_public` accepted for this domain.
+/// * `scratch_len` must be at least `16 * p_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other, `domain`, `x`, `peer` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `domain`, `x`, `peer` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `bmi2`, `adx`, `avx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_ffdh_exchange_mr_adx_exp_ifma(_dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, peer: *const u8, peer_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ffdh_exchange_mr_adx_exp_ifma(out, out_len, domain, domain_len, p_len, x, x_len, peer, peer_len, scratch, scratch_len) }
+}
+
+/// The CPU features `vg_ffdh_check_private_mr_adx_exp_ifma` requires (`Artifact.features`).
+pub const VG_FFDH_CHECK_PRIVATE_MR_ADX_EXP_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
+
+/// Checks an imported finite-field Diffie–Hellman key pair (SP 800-56A Rev. 3 §5.6.2.1.2 and §5.6.2.1.4). With `domain` as `vg_ffdh_check_domain` takes it, y (`p_len` bytes) and x (`x_len` bytes), most significant first: returns 2 if x is not in `1..q` (`1..p − 1` without q); 1 if y is a valid public value (as `vg_ffdh_check_public` checks it) and `y = g^x mod p`; 0 otherwise.
+///
+/// Contract: `VG.Spec.Ffdh.checkPrivateContract`. Timing may depend on the pointers, the lengths, the domain, y and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
+///
+/// # Safety
+///
+/// * `domain` must be valid for reads of `domain_len` bytes.
+/// * `y` must be valid for reads of `y_len` bytes.
+/// * `x` must be valid for reads of `x_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `p_len` must be in 64..=1024.
+/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
+/// * `y_len` must be `p_len`.
+/// * `x_len` must be in 1..=`p_len`.
+/// * For the result to be specified, `domain` must be one that `vg_ffdh_check_domain` accepted (returned 1 for); otherwise it is unspecified.
+/// * `scratch_len` must be at least `16 * p_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `scratch` must not overlap `domain`, `y`, `x` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `domain`, `y`, `x` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `bmi2`, `adx`, `avx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_ffdh_check_private_mr_adx_exp_ifma(_dit: verified_garbage_cpu::Dit<'_>, domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ffdh_check_private_mr_adx_exp_ifma(domain, domain_len, p_len, y, y_len, x, x_len, scratch, scratch_len) }
+}
+
+/// The CPU features `vg_ffdh_derive_public_mr_adx_exp_ifma` requires (`Artifact.features`).
+pub const VG_FFDH_DERIVE_PUBLIC_MR_ADX_EXP_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
+
+/// Derives the public value of an imported finite-field Diffie–Hellman private key (SP 800-56A Rev. 3 §5.6.2.1.2 for x's range, §5.6.1.1 for `y = g^x mod p`). With `domain` as `vg_ffdh_check_domain` takes it and x (`x_len` bytes, most significant first): returns 2 if x is not in `1..q` (`1..p − 1` without q); 1 if `y = g^x mod p` is a valid public value (as `vg_ffdh_check_public` checks it), writing y (`p_len` bytes, most significant first) to `y`; 3 otherwise. Writes zeros to `y` unless it returns 1.
+///
+/// Contract: `VG.Spec.Ffdh.derivePublicContract`. Timing may depend on the pointers, the lengths, the domain and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
+///
+/// # Safety
+///
+/// * `y` must be valid for reads and writes of `y_len` bytes.
+/// * `domain` must be valid for reads of `domain_len` bytes.
+/// * `x` must be valid for reads of `x_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `p_len` must be in 64..=1024.
+/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
+/// * `y_len` must be `p_len`.
+/// * `x_len` must be in 1..=`p_len`.
+/// * For the result to be specified, `domain` must be one that `vg_ffdh_check_domain` accepted (returned 1 for); otherwise it is unspecified.
+/// * `scratch_len` must be at least `16 * p_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `y` and `scratch` must not overlap each other, `domain`, `x` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `y`, `domain`, `x` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `bmi2`, `adx`, `avx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_ffdh_derive_public_mr_adx_exp_ifma(_dit: verified_garbage_cpu::Dit<'_>, y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ffdh_derive_public_mr_adx_exp_ifma(y, y_len, domain, domain_len, p_len, x, x_len, scratch, scratch_len) }
+}
+
+/// The CPU features `vg_ffdh_check_domain_mr_adx_exp_ifma` requires (`Artifact.features`).
+pub const VG_FFDH_CHECK_DOMAIN_MR_ADX_EXP_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
+
+/// Checks imported finite-field Diffie–Hellman parameters (SP 800-56A Rev. 3 §5.5.2, without primality tests). `domain` is p, g and, if `domain_len` is `3 * p_len`, q, each `p_len` bytes, most significant first. Returns 1 if p has 512 to 8192 bits, its first byte is not zero and it is odd, `1 < g < p − 1`, and, with q, q is odd, `2 < q < p − 1`, q divides `p − 1` and `g^q mod p = 1`; otherwise 0. Does not test p or q for primality: the caller must establish their provenance.
+///
+/// Contract: `VG.Spec.Ffdh.checkDomainContract`. Timing may depend on the pointers, the lengths and the domain.
+///
+/// # Safety
+///
+/// * `domain` must be valid for reads of `domain_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `p_len` must be in 64..=1024.
+/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
+/// * `scratch_len` must be at least `16 * p_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `scratch` must not overlap `domain` (distinct Rust objects never do).
+/// * Neither `domain` nor `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `bmi2`, `adx`, `avx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
+#[inline(always)]
+pub unsafe fn vg_ffdh_check_domain_mr_adx_exp_ifma(_dit: verified_garbage_cpu::Dit<'_>, domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ffdh_check_domain_mr_adx_exp_ifma(domain, domain_len, p_len, scratch, scratch_len) }
+}
+
+/// Checks an imported finite-field Diffie–Hellman public value (SP 800-56A Rev. 3 §5.6.2.3.1, and §5.6.2.3.2 with q). With `domain` as `vg_ffdh_check_domain` takes it and y (`p_len` bytes, most significant first), returns 1 if `1 < y < p − 1` and, with q, `y^q mod p = 1`; otherwise 0.
+///
+/// Contract: `VG.Spec.Ffdh.checkPublicContract`. Timing may depend on the pointers, the lengths, the domain and y.
+///
+/// # Safety
+///
+/// * `domain` must be valid for reads of `domain_len` bytes.
+/// * `y` must be valid for reads of `y_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `p_len` must be in 64..=1024.
+/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
+/// * `y_len` must be `p_len`.
+/// * For the result to be specified, `domain` must be one that `vg_ffdh_check_domain` accepted (returned 1 for); otherwise it is unspecified.
+/// * `scratch_len` must be at least `16 * p_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `scratch` must not overlap `domain`, `y` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `domain`, `y` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_ffdh_check_public(_dit: verified_garbage_cpu::Dit<'_>, domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ffdh_check_public(domain, domain_len, p_len, y, y_len, scratch, scratch_len) }
+}
+
+/// Finite-field Diffie–Hellman (SP 800-56A Rev. 3 §5.7.1.1, PKCS #3 §8). With `domain` as `vg_ffdh_check_domain` takes it, the private scalar x (`x_len` bytes) and the peer's public value y (`p_len` bytes), most significant first, computes `z = y^x mod p`; returns 0 and writes zeros if z is 0, 1 or `p − 1`, and otherwise returns 1 and writes z (`p_len` bytes, most significant first) to `out`. Applies no KDF.
+///
+/// Contract: `VG.Spec.Ffdh.exchangeContract`. Timing may depend on the pointers, the lengths, the domain, y and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `domain` must be valid for reads of `domain_len` bytes.
+/// * `x` must be valid for reads of `x_len` bytes.
+/// * `peer` must be valid for reads of `peer_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `p_len` must be in 64..=1024.
+/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
+/// * `out_len` and `peer_len` must be `p_len`.
+/// * `x_len` must be in 1..=`p_len`.
+/// * For the result to be specified, `domain` must be one that `vg_ffdh_check_domain` accepted (returned 1 for); otherwise it is unspecified.
+/// * For the result to be specified, `peer` must also be a value that `vg_ffdh_check_public` accepted for this domain.
+/// * `scratch_len` must be at least `16 * p_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other, `domain`, `x`, `peer` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `domain`, `x`, `peer` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_ffdh_exchange(_dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, peer: *const u8, peer_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ffdh_exchange(out, out_len, domain, domain_len, p_len, x, x_len, peer, peer_len, scratch, scratch_len) }
+}
+
+/// Checks an imported finite-field Diffie–Hellman key pair (SP 800-56A Rev. 3 §5.6.2.1.2 and §5.6.2.1.4). With `domain` as `vg_ffdh_check_domain` takes it, y (`p_len` bytes) and x (`x_len` bytes), most significant first: returns 2 if x is not in `1..q` (`1..p − 1` without q); 1 if y is a valid public value (as `vg_ffdh_check_public` checks it) and `y = g^x mod p`; 0 otherwise.
+///
+/// Contract: `VG.Spec.Ffdh.checkPrivateContract`. Timing may depend on the pointers, the lengths, the domain, y and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
+///
+/// # Safety
+///
+/// * `domain` must be valid for reads of `domain_len` bytes.
+/// * `y` must be valid for reads of `y_len` bytes.
+/// * `x` must be valid for reads of `x_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `p_len` must be in 64..=1024.
+/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
+/// * `y_len` must be `p_len`.
+/// * `x_len` must be in 1..=`p_len`.
+/// * For the result to be specified, `domain` must be one that `vg_ffdh_check_domain` accepted (returned 1 for); otherwise it is unspecified.
+/// * `scratch_len` must be at least `16 * p_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `scratch` must not overlap `domain`, `y`, `x` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `domain`, `y`, `x` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_ffdh_check_private(_dit: verified_garbage_cpu::Dit<'_>, domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ffdh_check_private(domain, domain_len, p_len, y, y_len, x, x_len, scratch, scratch_len) }
+}
+
+/// Derives the public value of an imported finite-field Diffie–Hellman private key (SP 800-56A Rev. 3 §5.6.2.1.2 for x's range, §5.6.1.1 for `y = g^x mod p`). With `domain` as `vg_ffdh_check_domain` takes it and x (`x_len` bytes, most significant first): returns 2 if x is not in `1..q` (`1..p − 1` without q); 1 if `y = g^x mod p` is a valid public value (as `vg_ffdh_check_public` checks it), writing y (`p_len` bytes, most significant first) to `y`; 3 otherwise. Writes zeros to `y` unless it returns 1.
+///
+/// Contract: `VG.Spec.Ffdh.derivePublicContract`. Timing may depend on the pointers, the lengths, the domain and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
+///
+/// # Safety
+///
+/// * `y` must be valid for reads and writes of `y_len` bytes.
+/// * `domain` must be valid for reads of `domain_len` bytes.
+/// * `x` must be valid for reads of `x_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `p_len` must be in 64..=1024.
+/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
+/// * `y_len` must be `p_len`.
+/// * `x_len` must be in 1..=`p_len`.
+/// * For the result to be specified, `domain` must be one that `vg_ffdh_check_domain` accepted (returned 1 for); otherwise it is unspecified.
+/// * `scratch_len` must be at least `16 * p_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `y` and `scratch` must not overlap each other, `domain`, `x` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `y`, `domain`, `x` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_ffdh_derive_public(_dit: verified_garbage_cpu::Dit<'_>, y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ffdh_derive_public(y, y_len, domain, domain_len, p_len, x, x_len, scratch, scratch_len) }
+}
+
+/// Checks imported finite-field Diffie–Hellman parameters (SP 800-56A Rev. 3 §5.5.2, without primality tests). `domain` is p, g and, if `domain_len` is `3 * p_len`, q, each `p_len` bytes, most significant first. Returns 1 if p has 512 to 8192 bits, its first byte is not zero and it is odd, `1 < g < p − 1`, and, with q, q is odd, `2 < q < p − 1`, q divides `p − 1` and `g^q mod p = 1`; otherwise 0. Does not test p or q for primality: the caller must establish their provenance.
+///
+/// Contract: `VG.Spec.Ffdh.checkDomainContract`. Timing may depend on the pointers, the lengths and the domain.
+///
+/// # Safety
+///
+/// * `domain` must be valid for reads of `domain_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `p_len` must be in 64..=1024.
+/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
+/// * `scratch_len` must be at least `16 * p_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `scratch` must not overlap `domain` (distinct Rust objects never do).
+/// * Neither `domain` nor `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_ffdh_check_domain(_dit: verified_garbage_cpu::Dit<'_>, domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ffdh_check_domain(domain, domain_len, p_len, scratch, scratch_len) }
+}
+
+/// The CPU features `vg_ffdh_check_public_exp_ifma` requires (`Artifact.features`).
+pub const VG_FFDH_CHECK_PUBLIC_EXP_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
+
+/// Checks an imported finite-field Diffie–Hellman public value (SP 800-56A Rev. 3 §5.6.2.3.1, and §5.6.2.3.2 with q). With `domain` as `vg_ffdh_check_domain` takes it and y (`p_len` bytes, most significant first), returns 1 if `1 < y < p − 1` and, with q, `y^q mod p = 1`; otherwise 0.
+///
+/// Contract: `VG.Spec.Ffdh.checkPublicContract`. Timing may depend on the pointers, the lengths, the domain and y.
+///
+/// # Safety
+///
+/// * `domain` must be valid for reads of `domain_len` bytes.
+/// * `y` must be valid for reads of `y_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `p_len` must be in 64..=1024.
+/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
+/// * `y_len` must be `p_len`.
+/// * For the result to be specified, `domain` must be one that `vg_ffdh_check_domain` accepted (returned 1 for); otherwise it is unspecified.
+/// * `scratch_len` must be at least `16 * p_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `scratch` must not overlap `domain`, `y` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `domain`, `y` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_ffdh_check_public_exp_ifma(_dit: verified_garbage_cpu::Dit<'_>, domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ffdh_check_public_exp_ifma(domain, domain_len, p_len, y, y_len, scratch, scratch_len) }
+}
+
+/// The CPU features `vg_ffdh_exchange_exp_ifma` requires (`Artifact.features`).
+pub const VG_FFDH_EXCHANGE_EXP_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
+
+/// Finite-field Diffie–Hellman (SP 800-56A Rev. 3 §5.7.1.1, PKCS #3 §8). With `domain` as `vg_ffdh_check_domain` takes it, the private scalar x (`x_len` bytes) and the peer's public value y (`p_len` bytes), most significant first, computes `z = y^x mod p`; returns 0 and writes zeros if z is 0, 1 or `p − 1`, and otherwise returns 1 and writes z (`p_len` bytes, most significant first) to `out`. Applies no KDF.
+///
+/// Contract: `VG.Spec.Ffdh.exchangeContract`. Timing may depend on the pointers, the lengths, the domain, y and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `domain` must be valid for reads of `domain_len` bytes.
+/// * `x` must be valid for reads of `x_len` bytes.
+/// * `peer` must be valid for reads of `peer_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `p_len` must be in 64..=1024.
+/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
+/// * `out_len` and `peer_len` must be `p_len`.
+/// * `x_len` must be in 1..=`p_len`.
+/// * For the result to be specified, `domain` must be one that `vg_ffdh_check_domain` accepted (returned 1 for); otherwise it is unspecified.
+/// * For the result to be specified, `peer` must also be a value that `vg_ffdh_check_public` accepted for this domain.
+/// * `scratch_len` must be at least `16 * p_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other, `domain`, `x`, `peer` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `domain`, `x`, `peer` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_ffdh_exchange_exp_ifma(_dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, peer: *const u8, peer_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ffdh_exchange_exp_ifma(out, out_len, domain, domain_len, p_len, x, x_len, peer, peer_len, scratch, scratch_len) }
+}
+
+/// The CPU features `vg_ffdh_check_private_exp_ifma` requires (`Artifact.features`).
+pub const VG_FFDH_CHECK_PRIVATE_EXP_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
+
+/// Checks an imported finite-field Diffie–Hellman key pair (SP 800-56A Rev. 3 §5.6.2.1.2 and §5.6.2.1.4). With `domain` as `vg_ffdh_check_domain` takes it, y (`p_len` bytes) and x (`x_len` bytes), most significant first: returns 2 if x is not in `1..q` (`1..p − 1` without q); 1 if y is a valid public value (as `vg_ffdh_check_public` checks it) and `y = g^x mod p`; 0 otherwise.
+///
+/// Contract: `VG.Spec.Ffdh.checkPrivateContract`. Timing may depend on the pointers, the lengths, the domain, y and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
+///
+/// # Safety
+///
+/// * `domain` must be valid for reads of `domain_len` bytes.
+/// * `y` must be valid for reads of `y_len` bytes.
+/// * `x` must be valid for reads of `x_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `p_len` must be in 64..=1024.
+/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
+/// * `y_len` must be `p_len`.
+/// * `x_len` must be in 1..=`p_len`.
+/// * For the result to be specified, `domain` must be one that `vg_ffdh_check_domain` accepted (returned 1 for); otherwise it is unspecified.
+/// * `scratch_len` must be at least `16 * p_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `scratch` must not overlap `domain`, `y`, `x` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `domain`, `y`, `x` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_ffdh_check_private_exp_ifma(_dit: verified_garbage_cpu::Dit<'_>, domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ffdh_check_private_exp_ifma(domain, domain_len, p_len, y, y_len, x, x_len, scratch, scratch_len) }
+}
+
+/// The CPU features `vg_ffdh_derive_public_exp_ifma` requires (`Artifact.features`).
+pub const VG_FFDH_DERIVE_PUBLIC_EXP_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
+
+/// Derives the public value of an imported finite-field Diffie–Hellman private key (SP 800-56A Rev. 3 §5.6.2.1.2 for x's range, §5.6.1.1 for `y = g^x mod p`). With `domain` as `vg_ffdh_check_domain` takes it and x (`x_len` bytes, most significant first): returns 2 if x is not in `1..q` (`1..p − 1` without q); 1 if `y = g^x mod p` is a valid public value (as `vg_ffdh_check_public` checks it), writing y (`p_len` bytes, most significant first) to `y`; 3 otherwise. Writes zeros to `y` unless it returns 1.
+///
+/// Contract: `VG.Spec.Ffdh.derivePublicContract`. Timing may depend on the pointers, the lengths, the domain and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
+///
+/// # Safety
+///
+/// * `y` must be valid for reads and writes of `y_len` bytes.
+/// * `domain` must be valid for reads of `domain_len` bytes.
+/// * `x` must be valid for reads of `x_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `p_len` must be in 64..=1024.
+/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
+/// * `y_len` must be `p_len`.
+/// * `x_len` must be in 1..=`p_len`.
+/// * For the result to be specified, `domain` must be one that `vg_ffdh_check_domain` accepted (returned 1 for); otherwise it is unspecified.
+/// * `scratch_len` must be at least `16 * p_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `y` and `scratch` must not overlap each other, `domain`, `x` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `y`, `domain`, `x` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_ffdh_derive_public_exp_ifma(_dit: verified_garbage_cpu::Dit<'_>, y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ffdh_derive_public_exp_ifma(y, y_len, domain, domain_len, p_len, x, x_len, scratch, scratch_len) }
+}
+
+/// The CPU features `vg_ffdh_check_domain_exp_ifma` requires (`Artifact.features`).
+pub const VG_FFDH_CHECK_DOMAIN_EXP_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
+
+/// Checks imported finite-field Diffie–Hellman parameters (SP 800-56A Rev. 3 §5.5.2, without primality tests). `domain` is p, g and, if `domain_len` is `3 * p_len`, q, each `p_len` bytes, most significant first. Returns 1 if p has 512 to 8192 bits, its first byte is not zero and it is odd, `1 < g < p − 1`, and, with q, q is odd, `2 < q < p − 1`, q divides `p − 1` and `g^q mod p = 1`; otherwise 0. Does not test p or q for primality: the caller must establish their provenance.
+///
+/// Contract: `VG.Spec.Ffdh.checkDomainContract`. Timing may depend on the pointers, the lengths and the domain.
+///
+/// # Safety
+///
+/// * `domain` must be valid for reads of `domain_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `p_len` must be in 64..=1024.
+/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
+/// * `scratch_len` must be at least `16 * p_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `scratch` must not overlap `domain` (distinct Rust objects never do).
+/// * Neither `domain` nor `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
+#[inline(always)]
+pub unsafe fn vg_ffdh_check_domain_exp_ifma(_dit: verified_garbage_cpu::Dit<'_>, domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ffdh_check_domain_exp_ifma(domain, domain_len, p_len, scratch, scratch_len) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_ffdh_parameter_generation_init`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_parameter_generation_init(state: *mut [u64; 16], bits: usize, generator: u32) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_parameter_generation_init(state: *mut [u64; 16], bits: usize, generator: u32) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "idJIgf4AAgAA"
 jb 20f
@@ -42,14 +891,9 @@ jmp 21f
     )
 }
 
-/// Initialize native finite-field Diffie–Hellman key generation. Returns 1 for a domain width in 64..=1024 bytes, initializing the rejection budgets and first entropy request; returns 0 and clears the first four state words otherwise. The remaining state words are private workspace. Contract: `VG.Spec.Ffdh.keyInitContract`.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 128 bytes.
-/// * `state` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_ffdh_key_generation_init`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_key_generation_init(state: *mut [u64; 16], p_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_key_generation_init(state: *mut [u64; 16], p_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SIP+QA=="
 jb 20f
@@ -69,27 +913,9 @@ jmp 21f
     )
 }
 
-/// The CPU features `vg_ffdh_generate_key_precompute_adx` requires (`Artifact.features`).
-pub const VG_FFDH_GENERATE_KEY_PRECOMPUTE_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
-
-/// Initialize a reusable public fixed-base context for finite-field Diffie–Hellman key generation. The checked domain is p, g and optional q, each p_len bytes. Writes generationPrecompute: three public metadata words followed by RSA's modulus/R-squared values and 32 five-tooth comb entries. Returns 1. Word 0 is generationScalarBits, word 1 is its byte length and word 2 is the comb row count. The context has no pointers and is independent of the arithmetic backend. Contract: VG.Spec.Ffdh.generationPrecomputeContract. Timing may depend on the public domain, pointers and lengths.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads and writes of `8 * ctx_len` bytes.
-/// * `domain` must be valid for reads of `domain_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `p_len` must be in 64..=1024.
-/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
-/// * domain must be one that vg_ffdh_check_domain accepted.
-/// * ctx_len must be generationPrecomputedWords(p_len), namely 3 + 34 * ceil(p_len / 8).
-/// * `scratch_len` must be at least `16 * p_len + 32`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `ctx` and `scratch` must not overlap each other, `domain` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `domain` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `bmi2` and `adx` target features.
+/// The verified code of [`super::vg_ffdh_generate_key_precompute_adx`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_generate_key_precompute_adx(ctx: *mut u64, ctx_len: usize, domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_generate_key_precompute_adx(ctx: *mut u64, ctx_len: usize, domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SYkZSYlpCE2JYRBNiWkYTYlxIE2JeShJibnQAAAASYmJgAAAAE2JgYgAAABIiddJi4GIAAAASD0AAQAAugEAAAA="
 je 20f
@@ -513,36 +1339,14 @@ jmp 281f
 281:
 .base64 "SIsfSItvCEyLZxBMi28YTIt3IEyLfyjD"
 .p2align 6"#,
-        vg_rsa_mont_mul_adx = sym super::rsa::vg_rsa_mont_mul_adx::vg_rsa_mont_mul_adx,
-        VG_FFDH_VETTED_GROUPS_X64 = sym super::consts::VG_FFDH_VETTED_GROUPS_X64,
+        vg_rsa_mont_mul_adx = sym crate::rsa::vg_rsa_mont_mul_adx::vg_rsa_mont_mul_adx,
+        VG_FFDH_VETTED_GROUPS_X64 = sym crate::consts::VG_FFDH_VETTED_GROUPS_X64,
     )
 }
 
-/// The CPU features `vg_ffdh_generate_key_cached_adx` requires (`Artifact.features`).
-pub const VG_FFDH_GENERATE_KEY_CACHED_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
-
-/// One native finite-field Diffie–Hellman key-generation attempt using a reusable public five-tooth comb context. Takes p_len random bytes and implements the same vettedScalarOfOctets, keyStatus and output conventions as vg_ffdh_generate_key_vetted for checked parameters. The context's public maximum width fixes the schedule, including secret leading zeros. Contract: VG.Spec.Ffdh.cachedGenerateKeyContract. Timing may depend on the public domain, pointers, lengths and returned status, not otherwise on the random bytes or private scalar.
-///
-/// # Safety
-///
-/// * `x` must be valid for reads and writes of `x_len` bytes.
-/// * `y` must be valid for reads and writes of `y_len` bytes.
-/// * `domain` must be valid for reads of `domain_len` bytes.
-/// * `rand` must be valid for reads of `rand_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `ctx` must be valid for reads of `8 * ctx_len` bytes.
-/// * `p_len` must be in 64..=1024.
-/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
-/// * domain must be one that vg_ffdh_check_domain accepted.
-/// * ctx_len must be generationPrecomputedWords(p_len). ctx must contain the unchanged words written by vg_ffdh_generate_key_precompute for these parameters.
-/// * x_len, y_len and rand_len must be p_len.
-/// * `scratch_len` must be at least `16 * p_len + 32`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `x`, `y` and `scratch` must not overlap each other, `domain`, `rand`, `ctx` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `x`, `y`, `domain`, `rand`, `scratch` and `ctx` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `bmi2` and `adx` target features.
+/// The verified code of [`super::vg_ffdh_generate_key_cached_adx`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_generate_key_cached_adx(x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, ctx: *const u64, ctx_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_generate_key_cached_adx(x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, ctx: *const u64, ctx_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJCBMi1QkCEyLXCQQSIkYSIloCEyJYBBMiWgYTIlwIEyJeChIibigAAAASImQmAAAAEyJgIAAAABMiYiIAAAATImQkAAAAEyJmMgAAABIicdIi5eAAAAASIuPkAAAAEiJ0EgByEiJh9gAAABIAchIiYfgAAAAD7YCSIP4AUgZ7Q+2RAr/SIPgAUiD+AFIGfZICfVIic5Ig+5ASMHOOA+2AkgBxkiB/oAAAABIGfZICfVIhe0="
 jne 20f
@@ -804,38 +1608,13 @@ jmp 21f
 21:
 .base64 "SIsfSItvCEyLZxBMi28YTIt3IEyLfyjD"
 .p2align 6"#,
-        vg_rsa_mont_mul_adx = sym super::rsa::vg_rsa_mont_mul_adx::vg_rsa_mont_mul_adx,
+        vg_rsa_mont_mul_adx = sym crate::rsa::vg_rsa_mont_mul_adx::vg_rsa_mont_mul_adx,
     )
 }
 
-/// The CPU features `vg_ffdh_generate_key_search_cached_adx` requires (`Artifact.features`).
-pub const VG_FFDH_GENERATE_KEY_SEARCH_CACHED_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
-
-/// Generate a finite-field Diffie–Hellman key pair using a reusable public five-tooth comb context and the existing vettedKeySearch rejection policy. Returns 1 with a key pair, 3 when a budget is exhausted, or 0 to request entropy. On 0, discard used bytes, preserve the suffix and extend it to state[3] bytes before calling again. On 0 and 3 both outputs are zero. Entropy consumption, retry budgets and statuses are unchanged. Contract: VG.Spec.Ffdh.cachedKeySearchContract. Timing may depend on the public domain, pointers, lengths, controller policy and sequence of attempt statuses, not otherwise on private scalar bytes.
-///
-/// # Safety
-///
-/// * `x` must be valid for reads and writes of `x_len` bytes.
-/// * `y` must be valid for reads and writes of `y_len` bytes.
-/// * `used` must be valid for reads and writes of 8 bytes.
-/// * `domain` must be valid for reads of `domain_len` bytes.
-/// * `rand` must be valid for reads of `rand_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `state` must be valid for reads and writes of 128 bytes.
-/// * `ctx` must be valid for reads of `8 * ctx_len` bytes.
-/// * `p_len` must be in 64..=1024.
-/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
-/// * domain must be one that vg_ffdh_check_domain accepted.
-/// * ctx_len must be generationPrecomputedWords(p_len). ctx must contain the unchanged words written by vg_ffdh_generate_key_precompute for these parameters.
-/// * state must be initialized by vg_ffdh_key_generation_init for p_len, or be the state returned by this routine.
-/// * x_len and y_len must be p_len.
-/// * `scratch_len` must be at least `16 * p_len + 32`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `x`, `y`, `used`, `scratch` and `state` must not overlap each other, `domain`, `rand`, `ctx` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `x`, `y`, `used`, `domain`, `rand`, `scratch`, `state` and `ctx` may overlap the return address on the stack or the 72 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `bmi2` and `adx` target features.
+/// The verified code of [`super::vg_ffdh_generate_key_search_cached_adx`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_generate_key_search_cached_adx(x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, used: *mut [u64; 1], domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16], ctx: *const u64, ctx_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_generate_key_search_cached_adx(x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, used: *mut [u64; 1], domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16], ctx: *const u64, ctx_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJDhMiWAgSYnESYl8JChJiVQkME2JRCR4TYlMJDhMi1QkCEyLXCQYSItEJCBIi0wkKEiLdCQwTYlUJEBNiVwkSEmJRCRQSYlMJGBJiXQkaLgAAAAASYlEJFg="
 20:
@@ -910,31 +1689,13 @@ jne 220b
 je 20b
 .base64 "SYtUJHhJi0wkWEmLRCRwTYtkJCBIiQrD"
 .p2align 6"#,
-        vg_ffdh_generate_key_cached_adx = sym super::ffdh::vg_ffdh_generate_key_cached_adx,
+        vg_ffdh_generate_key_cached_adx = sym crate::ffdh::raw::vg_ffdh_generate_key_cached_adx,
     )
 }
 
-/// The CPU features `vg_ffdh_generate_parameters_adx` requires (`Artifact.features`).
-pub const VG_FFDH_GENERATE_PARAMETERS_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
-
-/// Run native finite-field Diffie–Hellman parameter generation, with RSA's trial-division sieve. The routine owns candidate retries, attempt limits, witness selection, primality rounds and entropy budgets. Initialize with `vg_ffdh_parameter_generation_init`. Returns 1 with the probable safe prime in `out`, 3 when a bound is exhausted, or 0 only when it needs more entropy. On 0, discard `used` bytes of `rand`, preserve its remaining suffix and extend that suffix to at least `state[3]` bytes before calling again. `state[1]` is the output width and `state[2]` the maximum tape length. The output is zero for 0 and 3. Accepted p and q pass the full 64/128 independent witness counts. Contract: `VG.Spec.Ffdh.sievedParameterSearchContract`. Timing may depend on the public tape and the first four controller words.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `used` must be valid for reads and writes of 8 bytes.
-/// * `rand` must be valid for reads of `rand_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `state` must be valid for reads and writes of 128 bytes.
-/// * `state` must be initialized by `vg_ffdh_parameter_generation_init` for the supplied `bits` and `generator`, or be the state returned by this routine.
-/// * `out_len` must equal `state[1]`, and `rand_len` must not exceed `state[2]`.
-/// * `scratch_len` must be at least `16 * out_len + 32`.
-/// * The last twelve controller words and the scratch contents are private workspace.
-/// * `out`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 160 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `bmi2` and `adx` target features.
+/// The verified code of [`super::vg_ffdh_generate_parameters_adx`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_generate_parameters_adx(out: *mut u8, out_len: usize, used: *mut [u64; 1], bits: usize, generator: u32, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_generate_parameters_adx(out: *mut u8, out_len: usize, used: *mut [u64; 1], bits: usize, generator: u32, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "RYnASItEJCBMiWAgSYnESYl8JChJiXQkMEmJVCQ4SYlMJEBNiUQkSE2JTCRQTItUJAhMi1wkEEiLRCQYTYlUJFhNiVwkaEmJRCR4uAAAAABJiUQkYA=="
 20:
@@ -3358,27 +4119,13 @@ jne 2723b
 je 20b
 .base64 "SYtUJDhJi0wkYEmLRCRwTYtkJCBIiQrD"
 .p2align 6"#,
-        vg_miller_rabin_round_adx = sym super::dsa::vg_miller_rabin_round_adx::vg_miller_rabin_round_adx,
+        vg_miller_rabin_round_adx = sym crate::dsa::vg_miller_rabin_round_adx::vg_miller_rabin_round_adx,
     )
 }
 
-/// Initialize a reusable public fixed-base context for finite-field Diffie–Hellman key generation. The checked domain is p, g and optional q, each p_len bytes. Writes generationPrecompute: three public metadata words followed by RSA's modulus/R-squared values and 32 five-tooth comb entries. Returns 1. Word 0 is generationScalarBits, word 1 is its byte length and word 2 is the comb row count. The context has no pointers and is independent of the arithmetic backend. Contract: VG.Spec.Ffdh.generationPrecomputeContract. Timing may depend on the public domain, pointers and lengths.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads and writes of `8 * ctx_len` bytes.
-/// * `domain` must be valid for reads of `domain_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `p_len` must be in 64..=1024.
-/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
-/// * domain must be one that vg_ffdh_check_domain accepted.
-/// * ctx_len must be generationPrecomputedWords(p_len), namely 3 + 34 * ceil(p_len / 8).
-/// * `scratch_len` must be at least `16 * p_len + 32`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `ctx` and `scratch` must not overlap each other, `domain` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `domain` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_ffdh_generate_key_precompute`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_generate_key_precompute(ctx: *mut u64, ctx_len: usize, domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_generate_key_precompute(ctx: *mut u64, ctx_len: usize, domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SYkZSYlpCE2JYRBNiWkYTYlxIE2JeShJibnQAAAASYmJgAAAAE2JgYgAAABIiddJi4GIAAAASD0AAQAAugEAAAA="
 je 20f
@@ -4156,31 +4903,13 @@ jmp 281f
 281:
 .base64 "SIsfSItvCEyLZxBMi28YTIt3IEyLfyjD"
 .p2align 6"#,
-        VG_FFDH_VETTED_GROUPS_X64 = sym super::consts::VG_FFDH_VETTED_GROUPS_X64,
+        VG_FFDH_VETTED_GROUPS_X64 = sym crate::consts::VG_FFDH_VETTED_GROUPS_X64,
     )
 }
 
-/// One native finite-field Diffie–Hellman key-generation attempt using a reusable public five-tooth comb context. Takes p_len random bytes and implements the same vettedScalarOfOctets, keyStatus and output conventions as vg_ffdh_generate_key_vetted for checked parameters. The context's public maximum width fixes the schedule, including secret leading zeros. Contract: VG.Spec.Ffdh.cachedGenerateKeyContract. Timing may depend on the public domain, pointers, lengths and returned status, not otherwise on the random bytes or private scalar.
-///
-/// # Safety
-///
-/// * `x` must be valid for reads and writes of `x_len` bytes.
-/// * `y` must be valid for reads and writes of `y_len` bytes.
-/// * `domain` must be valid for reads of `domain_len` bytes.
-/// * `rand` must be valid for reads of `rand_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `ctx` must be valid for reads of `8 * ctx_len` bytes.
-/// * `p_len` must be in 64..=1024.
-/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
-/// * domain must be one that vg_ffdh_check_domain accepted.
-/// * ctx_len must be generationPrecomputedWords(p_len). ctx must contain the unchanged words written by vg_ffdh_generate_key_precompute for these parameters.
-/// * x_len, y_len and rand_len must be p_len.
-/// * `scratch_len` must be at least `16 * p_len + 32`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `x`, `y` and `scratch` must not overlap each other, `domain`, `rand`, `ctx` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `x`, `y`, `domain`, `rand`, `scratch` and `ctx` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_ffdh_generate_key_cached`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_generate_key_cached(x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, ctx: *const u64, ctx_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_generate_key_cached(x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, ctx: *const u64, ctx_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJCBMi1QkCEyLXCQQSIkYSIloCEyJYBBMiWgYTIlwIEyJeChIibigAAAASImQmAAAAEyJgIAAAABMiYiIAAAATImQkAAAAEyJmMgAAABIicdIi5eAAAAASIuPkAAAAEiJ0EgByEiJh9gAAABIAchIiYfgAAAAD7YCSIP4AUgZ7Q+2RAr/SIPgAUiD+AFIGfZICfVIic5Ig+5ASMHOOA+2AkgBxkiB/oAAAABIGfZICfVIhe0="
 jne 20f
@@ -4799,30 +5528,9 @@ jmp 21f
     )
 }
 
-/// Generate a finite-field Diffie–Hellman key pair using a reusable public five-tooth comb context and the existing vettedKeySearch rejection policy. Returns 1 with a key pair, 3 when a budget is exhausted, or 0 to request entropy. On 0, discard used bytes, preserve the suffix and extend it to state[3] bytes before calling again. On 0 and 3 both outputs are zero. Entropy consumption, retry budgets and statuses are unchanged. Contract: VG.Spec.Ffdh.cachedKeySearchContract. Timing may depend on the public domain, pointers, lengths, controller policy and sequence of attempt statuses, not otherwise on private scalar bytes.
-///
-/// # Safety
-///
-/// * `x` must be valid for reads and writes of `x_len` bytes.
-/// * `y` must be valid for reads and writes of `y_len` bytes.
-/// * `used` must be valid for reads and writes of 8 bytes.
-/// * `domain` must be valid for reads of `domain_len` bytes.
-/// * `rand` must be valid for reads of `rand_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `state` must be valid for reads and writes of 128 bytes.
-/// * `ctx` must be valid for reads of `8 * ctx_len` bytes.
-/// * `p_len` must be in 64..=1024.
-/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
-/// * domain must be one that vg_ffdh_check_domain accepted.
-/// * ctx_len must be generationPrecomputedWords(p_len). ctx must contain the unchanged words written by vg_ffdh_generate_key_precompute for these parameters.
-/// * state must be initialized by vg_ffdh_key_generation_init for p_len, or be the state returned by this routine.
-/// * x_len and y_len must be p_len.
-/// * `scratch_len` must be at least `16 * p_len + 32`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `x`, `y`, `used`, `scratch` and `state` must not overlap each other, `domain`, `rand`, `ctx` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `x`, `y`, `used`, `domain`, `rand`, `scratch`, `state` and `ctx` may overlap the return address on the stack or the 72 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_ffdh_generate_key_search_cached`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_generate_key_search_cached(x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, used: *mut [u64; 1], domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16], ctx: *const u64, ctx_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_generate_key_search_cached(x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, used: *mut [u64; 1], domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16], ctx: *const u64, ctx_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJDhMiWAgSYnESYl8JChJiVQkME2JRCR4TYlMJDhMi1QkCEyLXCQYSItEJCBIi0wkKEiLdCQwTYlUJEBNiVwkSEmJRCRQSYlMJGBJiXQkaLgAAAAASYlEJFg="
 20:
@@ -4897,27 +5605,13 @@ jne 220b
 je 20b
 .base64 "SYtUJHhJi0wkWEmLRCRwTYtkJCBIiQrD"
 .p2align 6"#,
-        vg_ffdh_generate_key_cached = sym super::ffdh::vg_ffdh_generate_key_cached,
+        vg_ffdh_generate_key_cached = sym crate::ffdh::raw::vg_ffdh_generate_key_cached,
     )
 }
 
-/// Run native finite-field Diffie–Hellman parameter generation, with RSA's trial-division sieve. The routine owns candidate retries, attempt limits, witness selection, primality rounds and entropy budgets. Initialize with `vg_ffdh_parameter_generation_init`. Returns 1 with the probable safe prime in `out`, 3 when a bound is exhausted, or 0 only when it needs more entropy. On 0, discard `used` bytes of `rand`, preserve its remaining suffix and extend that suffix to at least `state[3]` bytes before calling again. `state[1]` is the output width and `state[2]` the maximum tape length. The output is zero for 0 and 3. Accepted p and q pass the full 64/128 independent witness counts. Contract: `VG.Spec.Ffdh.sievedParameterSearchContract`. Timing may depend on the public tape and the first four controller words.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `used` must be valid for reads and writes of 8 bytes.
-/// * `rand` must be valid for reads of `rand_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `state` must be valid for reads and writes of 128 bytes.
-/// * `state` must be initialized by `vg_ffdh_parameter_generation_init` for the supplied `bits` and `generator`, or be the state returned by this routine.
-/// * `out_len` must equal `state[1]`, and `rand_len` must not exceed `state[2]`.
-/// * `scratch_len` must be at least `16 * out_len + 32`.
-/// * The last twelve controller words and the scratch contents are private workspace.
-/// * `out`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 160 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_ffdh_generate_parameters`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_generate_parameters(out: *mut u8, out_len: usize, used: *mut [u64; 1], bits: usize, generator: u32, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_generate_parameters(out: *mut u8, out_len: usize, used: *mut [u64; 1], bits: usize, generator: u32, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "RYnASItEJCBMiWAgSYnESYl8JChJiXQkMEmJVCQ4SYlMJEBNiUQkSE2JTCRQTItUJAhMi1wkEEiLRCQYTYlUJFhNiVwkaEmJRCR4uAAAAABJiUQkYA=="
 20:
@@ -6417,31 +7111,13 @@ jne 2411b
 je 20b
 .base64 "SYtUJDhJi0wkYEmLRCRwTYtkJCBIiQrD"
 .p2align 6"#,
-        vg_miller_rabin_round = sym super::dsa::vg_miller_rabin_round::vg_miller_rabin_round,
+        vg_miller_rabin_round = sym crate::dsa::vg_miller_rabin_round::vg_miller_rabin_round,
     )
 }
 
-/// The CPU features `vg_ffdh_generate_parameters_ifma` requires (`Artifact.features`).
-pub const VG_FFDH_GENERATE_PARAMETERS_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
-
-/// Run native finite-field Diffie–Hellman parameter generation, with RSA's trial-division sieve. The routine owns candidate retries, attempt limits, witness selection, primality rounds and entropy budgets. Initialize with `vg_ffdh_parameter_generation_init`. Returns 1 with the probable safe prime in `out`, 3 when a bound is exhausted, or 0 only when it needs more entropy. On 0, discard `used` bytes of `rand`, preserve its remaining suffix and extend that suffix to at least `state[3]` bytes before calling again. `state[1]` is the output width and `state[2]` the maximum tape length. The output is zero for 0 and 3. Accepted p and q pass the full 64/128 independent witness counts. Contract: `VG.Spec.Ffdh.sievedParameterSearchContract`. Timing may depend on the public tape and the first four controller words.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `used` must be valid for reads and writes of 8 bytes.
-/// * `rand` must be valid for reads of `rand_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `state` must be valid for reads and writes of 128 bytes.
-/// * `state` must be initialized by `vg_ffdh_parameter_generation_init` for the supplied `bits` and `generator`, or be the state returned by this routine.
-/// * `out_len` must equal `state[1]`, and `rand_len` must not exceed `state[2]`.
-/// * `scratch_len` must be at least `16 * out_len + 32`.
-/// * The last twelve controller words and the scratch contents are private workspace.
-/// * `out`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 160 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
+/// The verified code of [`super::vg_ffdh_generate_parameters_ifma`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_generate_parameters_ifma(out: *mut u8, out_len: usize, used: *mut [u64; 1], bits: usize, generator: u32, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_generate_parameters_ifma(out: *mut u8, out_len: usize, used: *mut [u64; 1], bits: usize, generator: u32, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "RYnASItEJCBMiWAgSYnESYl8JChJiXQkMEmJVCQ4SYlMJEBNiUQkSE2JTCRQTItUJAhMi1wkEEiLRCQYTYlUJFhNiVwkaEmJRCR4uAAAAABJiUQkYA=="
 20:
@@ -8865,33 +9541,13 @@ jne 2723b
 je 20b
 .base64 "SYtUJDhJi0wkYEmLRCRwTYtkJCBIiQrD"
 .p2align 6"#,
-        vg_miller_rabin_round_ifma = sym super::dsa::vg_miller_rabin_round_ifma::vg_miller_rabin_round_ifma,
+        vg_miller_rabin_round_ifma = sym crate::dsa::vg_miller_rabin_round_ifma::vg_miller_rabin_round_ifma,
     )
 }
 
-/// The CPU features `vg_ffdh_check_public_mr_adx` requires (`Artifact.features`).
-pub const VG_FFDH_CHECK_PUBLIC_MR_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
-
-/// Checks an imported finite-field Diffie–Hellman public value (SP 800-56A Rev. 3 §5.6.2.3.1, and §5.6.2.3.2 with q). With `domain` as `vg_ffdh_check_domain` takes it and y (`p_len` bytes, most significant first), returns 1 if `1 < y < p − 1` and, with q, `y^q mod p = 1`; otherwise 0.
-///
-/// Contract: `VG.Spec.Ffdh.checkPublicContract`. Timing may depend on the pointers, the lengths, the domain and y.
-///
-/// # Safety
-///
-/// * `domain` must be valid for reads of `domain_len` bytes.
-/// * `y` must be valid for reads of `y_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `p_len` must be in 64..=1024.
-/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
-/// * `y_len` must be `p_len`.
-/// * For the result to be specified, `domain` must be one that `vg_ffdh_check_domain` accepted (returned 1 for); otherwise it is unspecified.
-/// * `scratch_len` must be at least `16 * p_len + 32`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `scratch` must not overlap `domain`, `y` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `domain`, `y` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `bmi2` and `adx` target features.
+/// The verified code of [`super::vg_ffdh_check_public_mr_adx`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_check_public_mr_adx(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_check_public_mr_adx(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SYkZSYlpCE2JYRBNiWkYTYlxIE2JeShJibmAAAAASYmxiAAAAEmJkZAAAABJiYmYAAAATInPSIuXgAAAAEiLj5AAAABIidBIAchIiYfYAAAASAHISImH4AAAAA+2AkiD+AFIGe0PtkQK/0iD4AFIg/gBSBn2SAn1SInOSIPuQEjBzjgPtgJIAcZIgf6AAAAASBn2SAn1SIXt"
 jne 20f
@@ -9124,37 +9780,13 @@ jmp 21f
 21:
 .base64 "SIsfSItvCEyLZxBMi28YTIt3IEyLfyjD"
 .p2align 6"#,
-        vg_rsa_mont_mul_adx = sym super::rsa::vg_rsa_mont_mul_adx::vg_rsa_mont_mul_adx,
+        vg_rsa_mont_mul_adx = sym crate::rsa::vg_rsa_mont_mul_adx::vg_rsa_mont_mul_adx,
     )
 }
 
-/// The CPU features `vg_ffdh_exchange_mr_adx` requires (`Artifact.features`).
-pub const VG_FFDH_EXCHANGE_MR_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
-
-/// Finite-field Diffie–Hellman (SP 800-56A Rev. 3 §5.7.1.1, PKCS #3 §8). With `domain` as `vg_ffdh_check_domain` takes it, the private scalar x (`x_len` bytes) and the peer's public value y (`p_len` bytes), most significant first, computes `z = y^x mod p`; returns 0 and writes zeros if z is 0, 1 or `p − 1`, and otherwise returns 1 and writes z (`p_len` bytes, most significant first) to `out`. Applies no KDF.
-///
-/// Contract: `VG.Spec.Ffdh.exchangeContract`. Timing may depend on the pointers, the lengths, the domain, y and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `domain` must be valid for reads of `domain_len` bytes.
-/// * `x` must be valid for reads of `x_len` bytes.
-/// * `peer` must be valid for reads of `peer_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `p_len` must be in 64..=1024.
-/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
-/// * `out_len` and `peer_len` must be `p_len`.
-/// * `x_len` must be in 1..=`p_len`.
-/// * For the result to be specified, `domain` must be one that `vg_ffdh_check_domain` accepted (returned 1 for); otherwise it is unspecified.
-/// * For the result to be specified, `peer` must also be a value that `vg_ffdh_check_public` accepted for this domain.
-/// * `scratch_len` must be at least `16 * p_len + 32`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other, `domain`, `x`, `peer` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `domain`, `x`, `peer` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `bmi2` and `adx` target features.
+/// The verified code of [`super::vg_ffdh_exchange_mr_adx`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_exchange_mr_adx(out: *mut u8, out_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, peer: *const u8, peer_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_exchange_mr_adx(out: *mut u8, out_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, peer: *const u8, peer_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJCBMi1QkCEyLXCQQSIkYSIloCEyJYBBMiWgYTIlwIEyJeChIibiwAAAASImQgAAAAEiJiIgAAABMiYCQAAAATImIoAAAAEyJkKgAAABMiZiYAAAASInHSIuXgAAAAEiLj5AAAABIidBIAchIiYfYAAAASAHISImH4AAAAA+2AkiD+AFIGe0PtkQK/0iD4AFIg/gBSBn2SAn1SInOSIPuQEjBzjgPtgJIAcZIgf6AAAAASBn2SAn1SIXt"
 jne 20f
@@ -9363,35 +9995,13 @@ jmp 21f
 21:
 .base64 "SIsfSItvCEyLZxBMi28YTIt3IEyLfyjD"
 .p2align 6"#,
-        vg_rsa_mont_mul_adx = sym super::rsa::vg_rsa_mont_mul_adx::vg_rsa_mont_mul_adx,
+        vg_rsa_mont_mul_adx = sym crate::rsa::vg_rsa_mont_mul_adx::vg_rsa_mont_mul_adx,
     )
 }
 
-/// The CPU features `vg_ffdh_check_private_mr_adx` requires (`Artifact.features`).
-pub const VG_FFDH_CHECK_PRIVATE_MR_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
-
-/// Checks an imported finite-field Diffie–Hellman key pair (SP 800-56A Rev. 3 §5.6.2.1.2 and §5.6.2.1.4). With `domain` as `vg_ffdh_check_domain` takes it, y (`p_len` bytes) and x (`x_len` bytes), most significant first: returns 2 if x is not in `1..q` (`1..p − 1` without q); 1 if y is a valid public value (as `vg_ffdh_check_public` checks it) and `y = g^x mod p`; 0 otherwise.
-///
-/// Contract: `VG.Spec.Ffdh.checkPrivateContract`. Timing may depend on the pointers, the lengths, the domain, y and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
-///
-/// # Safety
-///
-/// * `domain` must be valid for reads of `domain_len` bytes.
-/// * `y` must be valid for reads of `y_len` bytes.
-/// * `x` must be valid for reads of `x_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `p_len` must be in 64..=1024.
-/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
-/// * `y_len` must be `p_len`.
-/// * `x_len` must be in 1..=`p_len`.
-/// * For the result to be specified, `domain` must be one that `vg_ffdh_check_domain` accepted (returned 1 for); otherwise it is unspecified.
-/// * `scratch_len` must be at least `16 * p_len + 32`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `scratch` must not overlap `domain`, `y`, `x` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `domain`, `y`, `x` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `bmi2` and `adx` target features.
+/// The verified code of [`super::vg_ffdh_check_private_mr_adx`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_check_private_mr_adx(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_check_private_mr_adx(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJBBMi1QkCEiJGEiJaAhMiWAQTIloGEyJcCBMiXgoSIm4gAAAAEiJsIgAAABIiZCQAAAASImImAAAAEyJiKAAAABMiZCoAAAASInHSIuXgAAAAEiLj5AAAABIidBIAchIiYfYAAAASAHISImH4AAAAA+2AkiD+AFIGe0PtkQK/0iD4AFIg/gBSBn2SAn1SInOSIPuQEjBzjgPtgJIAcZIgf6AAAAASBn2SAn1SIXt"
 jne 20f
@@ -9665,35 +10275,13 @@ jmp 21f
 21:
 .base64 "SIsfSItvCEyLZxBMi28YTIt3IEyLfyjD"
 .p2align 6"#,
-        vg_rsa_mont_mul_adx = sym super::rsa::vg_rsa_mont_mul_adx::vg_rsa_mont_mul_adx,
+        vg_rsa_mont_mul_adx = sym crate::rsa::vg_rsa_mont_mul_adx::vg_rsa_mont_mul_adx,
     )
 }
 
-/// The CPU features `vg_ffdh_derive_public_mr_adx` requires (`Artifact.features`).
-pub const VG_FFDH_DERIVE_PUBLIC_MR_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
-
-/// Derives the public value of an imported finite-field Diffie–Hellman private key (SP 800-56A Rev. 3 §5.6.2.1.2 for x's range, §5.6.1.1 for `y = g^x mod p`). With `domain` as `vg_ffdh_check_domain` takes it and x (`x_len` bytes, most significant first): returns 2 if x is not in `1..q` (`1..p − 1` without q); 1 if `y = g^x mod p` is a valid public value (as `vg_ffdh_check_public` checks it), writing y (`p_len` bytes, most significant first) to `y`; 3 otherwise. Writes zeros to `y` unless it returns 1.
-///
-/// Contract: `VG.Spec.Ffdh.derivePublicContract`. Timing may depend on the pointers, the lengths, the domain and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
-///
-/// # Safety
-///
-/// * `y` must be valid for reads and writes of `y_len` bytes.
-/// * `domain` must be valid for reads of `domain_len` bytes.
-/// * `x` must be valid for reads of `x_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `p_len` must be in 64..=1024.
-/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
-/// * `y_len` must be `p_len`.
-/// * `x_len` must be in 1..=`p_len`.
-/// * For the result to be specified, `domain` must be one that `vg_ffdh_check_domain` accepted (returned 1 for); otherwise it is unspecified.
-/// * `scratch_len` must be at least `16 * p_len + 32`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `y` and `scratch` must not overlap each other, `domain`, `x` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `y`, `domain`, `x` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `bmi2` and `adx` target features.
+/// The verified code of [`super::vg_ffdh_derive_public_mr_adx`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_derive_public_mr_adx(y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_derive_public_mr_adx(y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJBBMi1QkCEiJGEiJaAhMiWAQTIloGEyJcCBMiXgoSImQgAAAAEiJiIgAAABMiYCQAAAASIm4mAAAAEyJiKAAAABMiZCoAAAASInHSIu3mAAAAEiLj5AAAAC4AAAAAA=="
 20:
@@ -9963,30 +10551,13 @@ jmp 22f
 22:
 .base64 "SIsfSItvCEyLZxBMi28YTIt3IEyLfyjD"
 .p2align 6"#,
-        vg_rsa_mont_mul_adx = sym super::rsa::vg_rsa_mont_mul_adx::vg_rsa_mont_mul_adx,
+        vg_rsa_mont_mul_adx = sym crate::rsa::vg_rsa_mont_mul_adx::vg_rsa_mont_mul_adx,
     )
 }
 
-/// The CPU features `vg_ffdh_check_domain_mr_adx` requires (`Artifact.features`).
-pub const VG_FFDH_CHECK_DOMAIN_MR_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
-
-/// Checks imported finite-field Diffie–Hellman parameters (SP 800-56A Rev. 3 §5.5.2, without primality tests). `domain` is p, g and, if `domain_len` is `3 * p_len`, q, each `p_len` bytes, most significant first. Returns 1 if p has 512 to 8192 bits, its first byte is not zero and it is odd, `1 < g < p − 1`, and, with q, q is odd, `2 < q < p − 1`, q divides `p − 1` and `g^q mod p = 1`; otherwise 0. Does not test p or q for primality: the caller must establish their provenance.
-///
-/// Contract: `VG.Spec.Ffdh.checkDomainContract`. Timing may depend on the pointers, the lengths and the domain.
-///
-/// # Safety
-///
-/// * `domain` must be valid for reads of `domain_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `p_len` must be in 64..=1024.
-/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
-/// * `scratch_len` must be at least `16 * p_len + 32`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `scratch` must not overlap `domain` (distinct Rust objects never do).
-/// * Neither `domain` nor `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `bmi2` and `adx` target features.
+/// The verified code of [`super::vg_ffdh_check_domain_mr_adx`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_check_domain_mr_adx(domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_check_domain_mr_adx(domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SYnJSYmxgAAAAEmJkYgAAABJi4GIAAAASD0AAQAAugEAAAA="
 je 20f
@@ -10599,34 +11170,14 @@ jmp 281f
 281:
 .base64 "ww=="
 .p2align 6"#,
-        vg_rsa_mont_mul_adx = sym super::rsa::vg_rsa_mont_mul_adx::vg_rsa_mont_mul_adx,
-        VG_FFDH_VETTED_GROUPS_X64 = sym super::consts::VG_FFDH_VETTED_GROUPS_X64,
+        vg_rsa_mont_mul_adx = sym crate::rsa::vg_rsa_mont_mul_adx::vg_rsa_mont_mul_adx,
+        VG_FFDH_VETTED_GROUPS_X64 = sym crate::consts::VG_FFDH_VETTED_GROUPS_X64,
     )
 }
 
-/// The CPU features `vg_ffdh_check_public_mr_adx_exp_ifma` requires (`Artifact.features`).
-pub const VG_FFDH_CHECK_PUBLIC_MR_ADX_EXP_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
-
-/// Checks an imported finite-field Diffie–Hellman public value (SP 800-56A Rev. 3 §5.6.2.3.1, and §5.6.2.3.2 with q). With `domain` as `vg_ffdh_check_domain` takes it and y (`p_len` bytes, most significant first), returns 1 if `1 < y < p − 1` and, with q, `y^q mod p = 1`; otherwise 0.
-///
-/// Contract: `VG.Spec.Ffdh.checkPublicContract`. Timing may depend on the pointers, the lengths, the domain and y.
-///
-/// # Safety
-///
-/// * `domain` must be valid for reads of `domain_len` bytes.
-/// * `y` must be valid for reads of `y_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `p_len` must be in 64..=1024.
-/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
-/// * `y_len` must be `p_len`.
-/// * For the result to be specified, `domain` must be one that `vg_ffdh_check_domain` accepted (returned 1 for); otherwise it is unspecified.
-/// * `scratch_len` must be at least `16 * p_len + 32`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `scratch` must not overlap `domain`, `y` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `domain`, `y` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `bmi2`, `adx`, `avx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
+/// The verified code of [`super::vg_ffdh_check_public_mr_adx_exp_ifma`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_check_public_mr_adx_exp_ifma(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_check_public_mr_adx_exp_ifma(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SYkZSYlpCE2JYRBNiWkYTYlxIE2JeShJibmAAAAASYmxiAAAAEmJkZAAAABJiYmYAAAATInPSIuXgAAAAEiLj5AAAABIidBIAchIiYfYAAAASAHISImH4AAAAA+2AkiD+AFIGe0PtkQK/0iD4AFIg/gBSBn2SAn1SInOSIPuQEjBzjgPtgJIAcZIgf6AAAAASBn2SAn1SIXt"
 jne 20f
@@ -11202,37 +11753,13 @@ jmp 21f
 21:
 .base64 "SIsfSItvCEyLZxBMi28YTIt3IEyLfyjD"
 .p2align 6"#,
-        vg_rsa_mont_mul_adx = sym super::rsa::vg_rsa_mont_mul_adx::vg_rsa_mont_mul_adx,
+        vg_rsa_mont_mul_adx = sym crate::rsa::vg_rsa_mont_mul_adx::vg_rsa_mont_mul_adx,
     )
 }
 
-/// The CPU features `vg_ffdh_exchange_mr_adx_exp_ifma` requires (`Artifact.features`).
-pub const VG_FFDH_EXCHANGE_MR_ADX_EXP_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
-
-/// Finite-field Diffie–Hellman (SP 800-56A Rev. 3 §5.7.1.1, PKCS #3 §8). With `domain` as `vg_ffdh_check_domain` takes it, the private scalar x (`x_len` bytes) and the peer's public value y (`p_len` bytes), most significant first, computes `z = y^x mod p`; returns 0 and writes zeros if z is 0, 1 or `p − 1`, and otherwise returns 1 and writes z (`p_len` bytes, most significant first) to `out`. Applies no KDF.
-///
-/// Contract: `VG.Spec.Ffdh.exchangeContract`. Timing may depend on the pointers, the lengths, the domain, y and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `domain` must be valid for reads of `domain_len` bytes.
-/// * `x` must be valid for reads of `x_len` bytes.
-/// * `peer` must be valid for reads of `peer_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `p_len` must be in 64..=1024.
-/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
-/// * `out_len` and `peer_len` must be `p_len`.
-/// * `x_len` must be in 1..=`p_len`.
-/// * For the result to be specified, `domain` must be one that `vg_ffdh_check_domain` accepted (returned 1 for); otherwise it is unspecified.
-/// * For the result to be specified, `peer` must also be a value that `vg_ffdh_check_public` accepted for this domain.
-/// * `scratch_len` must be at least `16 * p_len + 32`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other, `domain`, `x`, `peer` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `domain`, `x`, `peer` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `bmi2`, `adx`, `avx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
+/// The verified code of [`super::vg_ffdh_exchange_mr_adx_exp_ifma`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_exchange_mr_adx_exp_ifma(out: *mut u8, out_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, peer: *const u8, peer_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_exchange_mr_adx_exp_ifma(out: *mut u8, out_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, peer: *const u8, peer_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJCBMi1QkCEyLXCQQSIkYSIloCEyJYBBMiWgYTIlwIEyJeChIibiwAAAASImQgAAAAEiJiIgAAABMiYCQAAAATImIoAAAAEyJkKgAAABMiZiYAAAASInHSIuXgAAAAEiLj5AAAABIidBIAchIiYfYAAAASAHISImH4AAAAA+2AkiD+AFIGe0PtkQK/0iD4AFIg/gBSBn2SAn1SInOSIPuQEjBzjgPtgJIAcZIgf6AAAAASBn2SAn1SIXt"
 jne 20f
@@ -11784,35 +12311,13 @@ jmp 21f
 21:
 .base64 "SIsfSItvCEyLZxBMi28YTIt3IEyLfyjD"
 .p2align 6"#,
-        vg_rsa_mont_mul_adx = sym super::rsa::vg_rsa_mont_mul_adx::vg_rsa_mont_mul_adx,
+        vg_rsa_mont_mul_adx = sym crate::rsa::vg_rsa_mont_mul_adx::vg_rsa_mont_mul_adx,
     )
 }
 
-/// The CPU features `vg_ffdh_check_private_mr_adx_exp_ifma` requires (`Artifact.features`).
-pub const VG_FFDH_CHECK_PRIVATE_MR_ADX_EXP_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
-
-/// Checks an imported finite-field Diffie–Hellman key pair (SP 800-56A Rev. 3 §5.6.2.1.2 and §5.6.2.1.4). With `domain` as `vg_ffdh_check_domain` takes it, y (`p_len` bytes) and x (`x_len` bytes), most significant first: returns 2 if x is not in `1..q` (`1..p − 1` without q); 1 if y is a valid public value (as `vg_ffdh_check_public` checks it) and `y = g^x mod p`; 0 otherwise.
-///
-/// Contract: `VG.Spec.Ffdh.checkPrivateContract`. Timing may depend on the pointers, the lengths, the domain, y and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
-///
-/// # Safety
-///
-/// * `domain` must be valid for reads of `domain_len` bytes.
-/// * `y` must be valid for reads of `y_len` bytes.
-/// * `x` must be valid for reads of `x_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `p_len` must be in 64..=1024.
-/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
-/// * `y_len` must be `p_len`.
-/// * `x_len` must be in 1..=`p_len`.
-/// * For the result to be specified, `domain` must be one that `vg_ffdh_check_domain` accepted (returned 1 for); otherwise it is unspecified.
-/// * `scratch_len` must be at least `16 * p_len + 32`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `scratch` must not overlap `domain`, `y`, `x` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `domain`, `y`, `x` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `bmi2`, `adx`, `avx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
+/// The verified code of [`super::vg_ffdh_check_private_mr_adx_exp_ifma`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_check_private_mr_adx_exp_ifma(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_check_private_mr_adx_exp_ifma(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJBBMi1QkCEiJGEiJaAhMiWAQTIloGEyJcCBMiXgoSIm4gAAAAEiJsIgAAABIiZCQAAAASImImAAAAEyJiKAAAABMiZCoAAAASInHSIuXgAAAAEiLj5AAAABIidBIAchIiYfYAAAASAHISImH4AAAAA+2AkiD+AFIGe0PtkQK/0iD4AFIg/gBSBn2SAn1SInOSIPuQEjBzjgPtgJIAcZIgf6AAAAASBn2SAn1SIXt"
 jne 20f
@@ -12429,35 +12934,13 @@ jmp 21f
 21:
 .base64 "SIsfSItvCEyLZxBMi28YTIt3IEyLfyjD"
 .p2align 6"#,
-        vg_rsa_mont_mul_adx = sym super::rsa::vg_rsa_mont_mul_adx::vg_rsa_mont_mul_adx,
+        vg_rsa_mont_mul_adx = sym crate::rsa::vg_rsa_mont_mul_adx::vg_rsa_mont_mul_adx,
     )
 }
 
-/// The CPU features `vg_ffdh_derive_public_mr_adx_exp_ifma` requires (`Artifact.features`).
-pub const VG_FFDH_DERIVE_PUBLIC_MR_ADX_EXP_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
-
-/// Derives the public value of an imported finite-field Diffie–Hellman private key (SP 800-56A Rev. 3 §5.6.2.1.2 for x's range, §5.6.1.1 for `y = g^x mod p`). With `domain` as `vg_ffdh_check_domain` takes it and x (`x_len` bytes, most significant first): returns 2 if x is not in `1..q` (`1..p − 1` without q); 1 if `y = g^x mod p` is a valid public value (as `vg_ffdh_check_public` checks it), writing y (`p_len` bytes, most significant first) to `y`; 3 otherwise. Writes zeros to `y` unless it returns 1.
-///
-/// Contract: `VG.Spec.Ffdh.derivePublicContract`. Timing may depend on the pointers, the lengths, the domain and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
-///
-/// # Safety
-///
-/// * `y` must be valid for reads and writes of `y_len` bytes.
-/// * `domain` must be valid for reads of `domain_len` bytes.
-/// * `x` must be valid for reads of `x_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `p_len` must be in 64..=1024.
-/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
-/// * `y_len` must be `p_len`.
-/// * `x_len` must be in 1..=`p_len`.
-/// * For the result to be specified, `domain` must be one that `vg_ffdh_check_domain` accepted (returned 1 for); otherwise it is unspecified.
-/// * `scratch_len` must be at least `16 * p_len + 32`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `y` and `scratch` must not overlap each other, `domain`, `x` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `y`, `domain`, `x` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `bmi2`, `adx`, `avx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
+/// The verified code of [`super::vg_ffdh_derive_public_mr_adx_exp_ifma`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_derive_public_mr_adx_exp_ifma(y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_derive_public_mr_adx_exp_ifma(y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJBBMi1QkCEiJGEiJaAhMiWAQTIloGEyJcCBMiXgoSImQgAAAAEiJiIgAAABMiYCQAAAASIm4mAAAAEyJiKAAAABMiZCoAAAASInHSIu3mAAAAEiLj5AAAAC4AAAAAA=="
 20:
@@ -13070,30 +13553,13 @@ jmp 22f
 22:
 .base64 "SIsfSItvCEyLZxBMi28YTIt3IEyLfyjD"
 .p2align 6"#,
-        vg_rsa_mont_mul_adx = sym super::rsa::vg_rsa_mont_mul_adx::vg_rsa_mont_mul_adx,
+        vg_rsa_mont_mul_adx = sym crate::rsa::vg_rsa_mont_mul_adx::vg_rsa_mont_mul_adx,
     )
 }
 
-/// The CPU features `vg_ffdh_check_domain_mr_adx_exp_ifma` requires (`Artifact.features`).
-pub const VG_FFDH_CHECK_DOMAIN_MR_ADX_EXP_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
-
-/// Checks imported finite-field Diffie–Hellman parameters (SP 800-56A Rev. 3 §5.5.2, without primality tests). `domain` is p, g and, if `domain_len` is `3 * p_len`, q, each `p_len` bytes, most significant first. Returns 1 if p has 512 to 8192 bits, its first byte is not zero and it is odd, `1 < g < p − 1`, and, with q, q is odd, `2 < q < p − 1`, q divides `p − 1` and `g^q mod p = 1`; otherwise 0. Does not test p or q for primality: the caller must establish their provenance.
-///
-/// Contract: `VG.Spec.Ffdh.checkDomainContract`. Timing may depend on the pointers, the lengths and the domain.
-///
-/// # Safety
-///
-/// * `domain` must be valid for reads of `domain_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `p_len` must be in 64..=1024.
-/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
-/// * `scratch_len` must be at least `16 * p_len + 32`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `scratch` must not overlap `domain` (distinct Rust objects never do).
-/// * Neither `domain` nor `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `bmi2`, `adx`, `avx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
+/// The verified code of [`super::vg_ffdh_check_domain_mr_adx_exp_ifma`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_check_domain_mr_adx_exp_ifma(domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_check_domain_mr_adx_exp_ifma(domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SYnJSYmxgAAAAEmJkYgAAABJi4GIAAAASD0AAQAAugEAAAA="
 je 20f
@@ -14049,30 +14515,14 @@ jmp 281f
 281:
 .base64 "ww=="
 .p2align 6"#,
-        vg_rsa_mont_mul_adx = sym super::rsa::vg_rsa_mont_mul_adx::vg_rsa_mont_mul_adx,
-        VG_FFDH_VETTED_GROUPS_X64 = sym super::consts::VG_FFDH_VETTED_GROUPS_X64,
+        vg_rsa_mont_mul_adx = sym crate::rsa::vg_rsa_mont_mul_adx::vg_rsa_mont_mul_adx,
+        VG_FFDH_VETTED_GROUPS_X64 = sym crate::consts::VG_FFDH_VETTED_GROUPS_X64,
     )
 }
 
-/// Checks an imported finite-field Diffie–Hellman public value (SP 800-56A Rev. 3 §5.6.2.3.1, and §5.6.2.3.2 with q). With `domain` as `vg_ffdh_check_domain` takes it and y (`p_len` bytes, most significant first), returns 1 if `1 < y < p − 1` and, with q, `y^q mod p = 1`; otherwise 0.
-///
-/// Contract: `VG.Spec.Ffdh.checkPublicContract`. Timing may depend on the pointers, the lengths, the domain and y.
-///
-/// # Safety
-///
-/// * `domain` must be valid for reads of `domain_len` bytes.
-/// * `y` must be valid for reads of `y_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `p_len` must be in 64..=1024.
-/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
-/// * `y_len` must be `p_len`.
-/// * For the result to be specified, `domain` must be one that `vg_ffdh_check_domain` accepted (returned 1 for); otherwise it is unspecified.
-/// * `scratch_len` must be at least `16 * p_len + 32`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `scratch` must not overlap `domain`, `y` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `domain`, `y` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_ffdh_check_public`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_check_public(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_check_public(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SYkZSYlpCE2JYRBNiWkYTYlxIE2JeShJibmAAAAASYmxiAAAAEmJkZAAAABJiYmYAAAATInPSIuXgAAAAEiLj5AAAABIidBIAchIiYfYAAAASAHISImH4AAAAA+2AkiD+AFIGe0PtkQK/0iD4AFIg/gBSBn2SAn1SInOSIPuQEjBzjgPtgJIAcZIgf6AAAAASBn2SAn1SIXt"
 jne 20f
@@ -14957,29 +15407,9 @@ jmp 21f
     )
 }
 
-/// Finite-field Diffie–Hellman (SP 800-56A Rev. 3 §5.7.1.1, PKCS #3 §8). With `domain` as `vg_ffdh_check_domain` takes it, the private scalar x (`x_len` bytes) and the peer's public value y (`p_len` bytes), most significant first, computes `z = y^x mod p`; returns 0 and writes zeros if z is 0, 1 or `p − 1`, and otherwise returns 1 and writes z (`p_len` bytes, most significant first) to `out`. Applies no KDF.
-///
-/// Contract: `VG.Spec.Ffdh.exchangeContract`. Timing may depend on the pointers, the lengths, the domain, y and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `domain` must be valid for reads of `domain_len` bytes.
-/// * `x` must be valid for reads of `x_len` bytes.
-/// * `peer` must be valid for reads of `peer_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `p_len` must be in 64..=1024.
-/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
-/// * `out_len` and `peer_len` must be `p_len`.
-/// * `x_len` must be in 1..=`p_len`.
-/// * For the result to be specified, `domain` must be one that `vg_ffdh_check_domain` accepted (returned 1 for); otherwise it is unspecified.
-/// * For the result to be specified, `peer` must also be a value that `vg_ffdh_check_public` accepted for this domain.
-/// * `scratch_len` must be at least `16 * p_len + 32`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other, `domain`, `x`, `peer` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `domain`, `x`, `peer` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_ffdh_exchange`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_exchange(out: *mut u8, out_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, peer: *const u8, peer_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_exchange(out: *mut u8, out_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, peer: *const u8, peer_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJCBMi1QkCEyLXCQQSIkYSIloCEyJYBBMiWgYTIlwIEyJeChIibiwAAAASImQgAAAAEiJiIgAAABMiYCQAAAATImIoAAAAEyJkKgAAABMiZiYAAAASInHSIuXgAAAAEiLj5AAAABIidBIAchIiYfYAAAASAHISImH4AAAAA+2AkiD+AFIGe0PtkQK/0iD4AFIg/gBSBn2SAn1SInOSIPuQEjBzjgPtgJIAcZIgf6AAAAASBn2SAn1SIXt"
 jne 20f
@@ -15840,27 +16270,9 @@ jmp 21f
     )
 }
 
-/// Checks an imported finite-field Diffie–Hellman key pair (SP 800-56A Rev. 3 §5.6.2.1.2 and §5.6.2.1.4). With `domain` as `vg_ffdh_check_domain` takes it, y (`p_len` bytes) and x (`x_len` bytes), most significant first: returns 2 if x is not in `1..q` (`1..p − 1` without q); 1 if y is a valid public value (as `vg_ffdh_check_public` checks it) and `y = g^x mod p`; 0 otherwise.
-///
-/// Contract: `VG.Spec.Ffdh.checkPrivateContract`. Timing may depend on the pointers, the lengths, the domain, y and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
-///
-/// # Safety
-///
-/// * `domain` must be valid for reads of `domain_len` bytes.
-/// * `y` must be valid for reads of `y_len` bytes.
-/// * `x` must be valid for reads of `x_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `p_len` must be in 64..=1024.
-/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
-/// * `y_len` must be `p_len`.
-/// * `x_len` must be in 1..=`p_len`.
-/// * For the result to be specified, `domain` must be one that `vg_ffdh_check_domain` accepted (returned 1 for); otherwise it is unspecified.
-/// * `scratch_len` must be at least `16 * p_len + 32`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `scratch` must not overlap `domain`, `y`, `x` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `domain`, `y`, `x` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_ffdh_check_private`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_check_private(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_check_private(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJBBMi1QkCEiJGEiJaAhMiWAQTIloGEyJcCBMiXgoSIm4gAAAAEiJsIgAAABIiZCQAAAASImImAAAAEyJiKAAAABMiZCoAAAASInHSIuXgAAAAEiLj5AAAABIidBIAchIiYfYAAAASAHISImH4AAAAA+2AkiD+AFIGe0PtkQK/0iD4AFIg/gBSBn2SAn1SInOSIPuQEjBzjgPtgJIAcZIgf6AAAAASBn2SAn1SIXt"
 jne 20f
@@ -16786,27 +17198,9 @@ jmp 21f
     )
 }
 
-/// Derives the public value of an imported finite-field Diffie–Hellman private key (SP 800-56A Rev. 3 §5.6.2.1.2 for x's range, §5.6.1.1 for `y = g^x mod p`). With `domain` as `vg_ffdh_check_domain` takes it and x (`x_len` bytes, most significant first): returns 2 if x is not in `1..q` (`1..p − 1` without q); 1 if `y = g^x mod p` is a valid public value (as `vg_ffdh_check_public` checks it), writing y (`p_len` bytes, most significant first) to `y`; 3 otherwise. Writes zeros to `y` unless it returns 1.
-///
-/// Contract: `VG.Spec.Ffdh.derivePublicContract`. Timing may depend on the pointers, the lengths, the domain and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
-///
-/// # Safety
-///
-/// * `y` must be valid for reads and writes of `y_len` bytes.
-/// * `domain` must be valid for reads of `domain_len` bytes.
-/// * `x` must be valid for reads of `x_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `p_len` must be in 64..=1024.
-/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
-/// * `y_len` must be `p_len`.
-/// * `x_len` must be in 1..=`p_len`.
-/// * For the result to be specified, `domain` must be one that `vg_ffdh_check_domain` accepted (returned 1 for); otherwise it is unspecified.
-/// * `scratch_len` must be at least `16 * p_len + 32`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `y` and `scratch` must not overlap each other, `domain`, `x` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `y`, `domain`, `x` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_ffdh_derive_public`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_derive_public(y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_derive_public(y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJBBMi1QkCEiJGEiJaAhMiWAQTIloGEyJcCBMiXgoSImQgAAAAEiJiIgAAABMiYCQAAAASIm4mAAAAEyJiKAAAABMiZCoAAAASInHSIu3mAAAAEiLj5AAAAC4AAAAAA=="
 20:
@@ -17728,22 +18122,9 @@ jmp 22f
     )
 }
 
-/// Checks imported finite-field Diffie–Hellman parameters (SP 800-56A Rev. 3 §5.5.2, without primality tests). `domain` is p, g and, if `domain_len` is `3 * p_len`, q, each `p_len` bytes, most significant first. Returns 1 if p has 512 to 8192 bits, its first byte is not zero and it is odd, `1 < g < p − 1`, and, with q, q is odd, `2 < q < p − 1`, q divides `p − 1` and `g^q mod p = 1`; otherwise 0. Does not test p or q for primality: the caller must establish their provenance.
-///
-/// Contract: `VG.Spec.Ffdh.checkDomainContract`. Timing may depend on the pointers, the lengths and the domain.
-///
-/// # Safety
-///
-/// * `domain` must be valid for reads of `domain_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `p_len` must be in 64..=1024.
-/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
-/// * `scratch_len` must be at least `16 * p_len + 32`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `scratch` must not overlap `domain` (distinct Rust objects never do).
-/// * Neither `domain` nor `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_ffdh_check_domain`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_check_domain(domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_check_domain(domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SYnJSYmxgAAAAEmJkYgAAABJi4GIAAAASD0AAQAAugEAAAA="
 je 20f
@@ -19123,33 +19504,13 @@ jmp 281f
 281:
 .base64 "ww=="
 .p2align 6"#,
-        VG_FFDH_VETTED_GROUPS_X64 = sym super::consts::VG_FFDH_VETTED_GROUPS_X64,
+        VG_FFDH_VETTED_GROUPS_X64 = sym crate::consts::VG_FFDH_VETTED_GROUPS_X64,
     )
 }
 
-/// The CPU features `vg_ffdh_check_public_exp_ifma` requires (`Artifact.features`).
-pub const VG_FFDH_CHECK_PUBLIC_EXP_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
-
-/// Checks an imported finite-field Diffie–Hellman public value (SP 800-56A Rev. 3 §5.6.2.3.1, and §5.6.2.3.2 with q). With `domain` as `vg_ffdh_check_domain` takes it and y (`p_len` bytes, most significant first), returns 1 if `1 < y < p − 1` and, with q, `y^q mod p = 1`; otherwise 0.
-///
-/// Contract: `VG.Spec.Ffdh.checkPublicContract`. Timing may depend on the pointers, the lengths, the domain and y.
-///
-/// # Safety
-///
-/// * `domain` must be valid for reads of `domain_len` bytes.
-/// * `y` must be valid for reads of `y_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `p_len` must be in 64..=1024.
-/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
-/// * `y_len` must be `p_len`.
-/// * For the result to be specified, `domain` must be one that `vg_ffdh_check_domain` accepted (returned 1 for); otherwise it is unspecified.
-/// * `scratch_len` must be at least `16 * p_len + 32`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `scratch` must not overlap `domain`, `y` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `domain`, `y` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
+/// The verified code of [`super::vg_ffdh_check_public_exp_ifma`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_check_public_exp_ifma(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_check_public_exp_ifma(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SYkZSYlpCE2JYRBNiWkYTYlxIE2JeShJibmAAAAASYmxiAAAAEmJkZAAAABJiYmYAAAATInPSIuXgAAAAEiLj5AAAABIidBIAchIiYfYAAAASAHISImH4AAAAA+2AkiD+AFIGe0PtkQK/0iD4AFIg/gBSBn2SAn1SInOSIPuQEjBzjgPtgJIAcZIgf6AAAAASBn2SAn1SIXt"
 jne 20f
@@ -20377,33 +20738,9 @@ jmp 21f
     )
 }
 
-/// The CPU features `vg_ffdh_exchange_exp_ifma` requires (`Artifact.features`).
-pub const VG_FFDH_EXCHANGE_EXP_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
-
-/// Finite-field Diffie–Hellman (SP 800-56A Rev. 3 §5.7.1.1, PKCS #3 §8). With `domain` as `vg_ffdh_check_domain` takes it, the private scalar x (`x_len` bytes) and the peer's public value y (`p_len` bytes), most significant first, computes `z = y^x mod p`; returns 0 and writes zeros if z is 0, 1 or `p − 1`, and otherwise returns 1 and writes z (`p_len` bytes, most significant first) to `out`. Applies no KDF.
-///
-/// Contract: `VG.Spec.Ffdh.exchangeContract`. Timing may depend on the pointers, the lengths, the domain, y and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `domain` must be valid for reads of `domain_len` bytes.
-/// * `x` must be valid for reads of `x_len` bytes.
-/// * `peer` must be valid for reads of `peer_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `p_len` must be in 64..=1024.
-/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
-/// * `out_len` and `peer_len` must be `p_len`.
-/// * `x_len` must be in 1..=`p_len`.
-/// * For the result to be specified, `domain` must be one that `vg_ffdh_check_domain` accepted (returned 1 for); otherwise it is unspecified.
-/// * For the result to be specified, `peer` must also be a value that `vg_ffdh_check_public` accepted for this domain.
-/// * `scratch_len` must be at least `16 * p_len + 32`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other, `domain`, `x`, `peer` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `domain`, `x`, `peer` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
+/// The verified code of [`super::vg_ffdh_exchange_exp_ifma`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_exchange_exp_ifma(out: *mut u8, out_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, peer: *const u8, peer_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_exchange_exp_ifma(out: *mut u8, out_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, peer: *const u8, peer_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJCBMi1QkCEyLXCQQSIkYSIloCEyJYBBMiWgYTIlwIEyJeChIibiwAAAASImQgAAAAEiJiIgAAABMiYCQAAAATImIoAAAAEyJkKgAAABMiZiYAAAASInHSIuXgAAAAEiLj5AAAABIidBIAchIiYfYAAAASAHISImH4AAAAA+2AkiD+AFIGe0PtkQK/0iD4AFIg/gBSBn2SAn1SInOSIPuQEjBzjgPtgJIAcZIgf6AAAAASBn2SAn1SIXt"
 jne 20f
@@ -21607,31 +21944,9 @@ jmp 21f
     )
 }
 
-/// The CPU features `vg_ffdh_check_private_exp_ifma` requires (`Artifact.features`).
-pub const VG_FFDH_CHECK_PRIVATE_EXP_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
-
-/// Checks an imported finite-field Diffie–Hellman key pair (SP 800-56A Rev. 3 §5.6.2.1.2 and §5.6.2.1.4). With `domain` as `vg_ffdh_check_domain` takes it, y (`p_len` bytes) and x (`x_len` bytes), most significant first: returns 2 if x is not in `1..q` (`1..p − 1` without q); 1 if y is a valid public value (as `vg_ffdh_check_public` checks it) and `y = g^x mod p`; 0 otherwise.
-///
-/// Contract: `VG.Spec.Ffdh.checkPrivateContract`. Timing may depend on the pointers, the lengths, the domain, y and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
-///
-/// # Safety
-///
-/// * `domain` must be valid for reads of `domain_len` bytes.
-/// * `y` must be valid for reads of `y_len` bytes.
-/// * `x` must be valid for reads of `x_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `p_len` must be in 64..=1024.
-/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
-/// * `y_len` must be `p_len`.
-/// * `x_len` must be in 1..=`p_len`.
-/// * For the result to be specified, `domain` must be one that `vg_ffdh_check_domain` accepted (returned 1 for); otherwise it is unspecified.
-/// * `scratch_len` must be at least `16 * p_len + 32`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `scratch` must not overlap `domain`, `y`, `x` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `domain`, `y`, `x` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
+/// The verified code of [`super::vg_ffdh_check_private_exp_ifma`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_check_private_exp_ifma(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_check_private_exp_ifma(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJBBMi1QkCEiJGEiJaAhMiWAQTIloGEyJcCBMiXgoSIm4gAAAAEiJsIgAAABIiZCQAAAASImImAAAAEyJiKAAAABMiZCoAAAASInHSIuXgAAAAEiLj5AAAABIidBIAchIiYfYAAAASAHISImH4AAAAA+2AkiD+AFIGe0PtkQK/0iD4AFIg/gBSBn2SAn1SInOSIPuQEjBzjgPtgJIAcZIgf6AAAAASBn2SAn1SIXt"
 jne 20f
@@ -22900,31 +23215,9 @@ jmp 21f
     )
 }
 
-/// The CPU features `vg_ffdh_derive_public_exp_ifma` requires (`Artifact.features`).
-pub const VG_FFDH_DERIVE_PUBLIC_EXP_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
-
-/// Derives the public value of an imported finite-field Diffie–Hellman private key (SP 800-56A Rev. 3 §5.6.2.1.2 for x's range, §5.6.1.1 for `y = g^x mod p`). With `domain` as `vg_ffdh_check_domain` takes it and x (`x_len` bytes, most significant first): returns 2 if x is not in `1..q` (`1..p − 1` without q); 1 if `y = g^x mod p` is a valid public value (as `vg_ffdh_check_public` checks it), writing y (`p_len` bytes, most significant first) to `y`; 3 otherwise. Writes zeros to `y` unless it returns 1.
-///
-/// Contract: `VG.Spec.Ffdh.derivePublicContract`. Timing may depend on the pointers, the lengths, the domain and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
-///
-/// # Safety
-///
-/// * `y` must be valid for reads and writes of `y_len` bytes.
-/// * `domain` must be valid for reads of `domain_len` bytes.
-/// * `x` must be valid for reads of `x_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `p_len` must be in 64..=1024.
-/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
-/// * `y_len` must be `p_len`.
-/// * `x_len` must be in 1..=`p_len`.
-/// * For the result to be specified, `domain` must be one that `vg_ffdh_check_domain` accepted (returned 1 for); otherwise it is unspecified.
-/// * `scratch_len` must be at least `16 * p_len + 32`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `y` and `scratch` must not overlap each other, `domain`, `x` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `y`, `domain`, `x` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
+/// The verified code of [`super::vg_ffdh_derive_public_exp_ifma`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_derive_public_exp_ifma(y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_derive_public_exp_ifma(y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJBBMi1QkCEiJGEiJaAhMiWAQTIloGEyJcCBMiXgoSImQgAAAAEiJiIgAAABMiYCQAAAASIm4mAAAAEyJiKAAAABMiZCoAAAASInHSIu3mAAAAEiLj5AAAAC4AAAAAA=="
 20:
@@ -24189,26 +24482,9 @@ jmp 22f
     )
 }
 
-/// The CPU features `vg_ffdh_check_domain_exp_ifma` requires (`Artifact.features`).
-pub const VG_FFDH_CHECK_DOMAIN_EXP_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
-
-/// Checks imported finite-field Diffie–Hellman parameters (SP 800-56A Rev. 3 §5.5.2, without primality tests). `domain` is p, g and, if `domain_len` is `3 * p_len`, q, each `p_len` bytes, most significant first. Returns 1 if p has 512 to 8192 bits, its first byte is not zero and it is odd, `1 < g < p − 1`, and, with q, q is odd, `2 < q < p − 1`, q divides `p − 1` and `g^q mod p = 1`; otherwise 0. Does not test p or q for primality: the caller must establish their provenance.
-///
-/// Contract: `VG.Spec.Ffdh.checkDomainContract`. Timing may depend on the pointers, the lengths and the domain.
-///
-/// # Safety
-///
-/// * `domain` must be valid for reads of `domain_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `p_len` must be in 64..=1024.
-/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
-/// * `scratch_len` must be at least `16 * p_len + 32`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `scratch` must not overlap `domain` (distinct Rust objects never do).
-/// * Neither `domain` nor `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
+/// The verified code of [`super::vg_ffdh_check_domain_exp_ifma`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_check_domain_exp_ifma(domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_check_domain_exp_ifma(domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SYnJSYmxgAAAAEmJkYgAAABJi4GIAAAASD0AAQAAugEAAAA="
 je 20f
@@ -25931,6 +26207,7 @@ jmp 281f
 281:
 .base64 "ww=="
 .p2align 6"#,
-        VG_FFDH_VETTED_GROUPS_X64 = sym super::consts::VG_FFDH_VETTED_GROUPS_X64,
+        VG_FFDH_VETTED_GROUPS_X64 = sym crate::consts::VG_FFDH_VETTED_GROUPS_X64,
     )
+}
 }

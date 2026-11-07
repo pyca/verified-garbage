@@ -30,6 +30,7 @@ pub struct CamelliaEcb {
 impl CamelliaEcb {
     /// Expands a 16-, 24- or 32-byte key for use in either direction.
     pub fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
+        crate::dit::enter!(dit);
         let rounds = match key.len() {
             16 => 18,
             24 | 32 => 24,
@@ -39,7 +40,7 @@ impl CamelliaEcb {
         // SAFETY: the key has a validated length; key and schedule are separate
         // valid buffers of the required sizes.
         unsafe {
-            vg_camellia_expand_key(key.as_ptr(), key.len(), &mut schedule);
+            vg_camellia_expand_key(dit, key.as_ptr(), key.len(), &mut schedule);
         }
         Ok(Self { schedule, rounds })
     }
@@ -47,16 +48,23 @@ impl CamelliaEcb {
     /// Encrypts complete 16-byte blocks in place. Empty input is valid.
     /// Returns an error without changing the buffer if its length is invalid.
     pub fn encrypt(&self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
-        self.crypt(buffer, true)
+        crate::dit::enter!(dit);
+        self.crypt(dit, buffer, true)
     }
 
     /// Decrypts complete 16-byte blocks in place. Empty input is valid.
     /// Returns an error without changing the buffer if its length is invalid.
     pub fn decrypt(&self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
-        self.crypt(buffer, false)
+        crate::dit::enter!(dit);
+        self.crypt(dit, buffer, false)
     }
 
-    fn crypt(&self, buffer: &mut [u8], encrypt: bool) -> Result<(), IncompleteBlock> {
+    fn crypt(
+        &self,
+        dit: crate::dit::Dit<'_>,
+        buffer: &mut [u8],
+        encrypt: bool,
+    ) -> Result<(), IncompleteBlock> {
         if !buffer.len().is_multiple_of(16) {
             return Err(IncompleteBlock);
         }
@@ -71,6 +79,7 @@ impl CamelliaEcb {
         // valid objects and do not overlap the callee's stack.
         unsafe {
             f(
+                dit,
                 &self.schedule,
                 self.rounds,
                 buffer.as_mut_ptr().cast(),

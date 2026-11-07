@@ -141,29 +141,21 @@ impl Drop for IdeaCfb64Decryptor {
 }
 
 /// The signature of `vg_idea_cfb64_encrypt` and `vg_idea_cfb64_decrypt`.
-#[cfg(target_arch = "x86_64")]
-type Cfb = unsafe extern "sysv64" fn(*const [u8; 104], *mut [u8; 8], *mut [u8; 8], usize);
-/// The signature of `vg_idea_cfb64_encrypt` and `vg_idea_cfb64_decrypt`.
-#[cfg(not(target_arch = "x86_64"))]
-type Cfb = unsafe extern "C" fn(*const [u8; 104], *mut [u8; 8], *mut [u8; 8], usize);
+type Cfb = unsafe fn(crate::dit::Dit<'_>, *const [u8; 104], *mut [u8; 8], *mut [u8; 8], usize);
 
 /// The signature of `vg_idea_cfb64_encrypt_final` and
 /// `vg_idea_cfb64_decrypt_final`.
-#[cfg(target_arch = "x86_64")]
-type CfbFinal = unsafe extern "sysv64" fn(*const [u8; 104], *mut [u8; 8], *mut u8, usize);
-/// The signature of `vg_idea_cfb64_encrypt_final` and
-/// `vg_idea_cfb64_decrypt_final`.
-#[cfg(not(target_arch = "x86_64"))]
-type CfbFinal = unsafe extern "C" fn(*const [u8; 104], *mut [u8; 8], *mut u8, usize);
+type CfbFinal = unsafe fn(crate::dit::Dit<'_>, *const [u8; 104], *mut [u8; 8], *mut u8, usize);
 
 impl Key {
     /// Expands a 16-byte key.
     fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
+        crate::dit::enter!(dit);
         let key: &[u8; 16] = key.try_into().map_err(|_| InvalidKeyLength)?;
         let mut schedule = [0; 104];
         // SAFETY: the key and the schedule are separate valid buffers of the
         // required sizes.
-        unsafe { vg_idea_expand_key(key, &mut schedule) };
+        unsafe { vg_idea_expand_key(dit, key, &mut schedule) };
         Ok(Self { schedule })
     }
 
@@ -171,24 +163,27 @@ impl Key {
     /// which it replaces with the last ciphertext block (unchanged for empty
     /// input).
     fn encrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) {
-        self.blocks(iv, buffer, vg_idea_cfb64_encrypt);
+        crate::dit::enter!(dit);
+        self.blocks(dit, iv, buffer, vg_idea_cfb64_encrypt);
     }
 
     /// Decrypts the whole blocks of `buffer` in place, from the block `iv`,
     /// which it replaces with the last ciphertext block (unchanged for empty
     /// input).
     fn decrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) {
-        self.blocks(iv, buffer, vg_idea_cfb64_decrypt);
+        crate::dit::enter!(dit);
+        self.blocks(dit, iv, buffer, vg_idea_cfb64_decrypt);
     }
 
     /// `f` on whole blocks.
-    fn blocks(&self, iv: &mut [u8; 8], blocks: &mut [u8], f: Cfb) {
+    fn blocks(&self, dit: crate::dit::Dit<'_>, iv: &mut [u8; 8], blocks: &mut [u8], f: Cfb) {
         // SAFETY: `blocks` holds `len / 8` whole blocks (its length is a
         // multiple of 8), and it, the block at `iv` and the schedule are
         // separate valid objects of the sizes of the signature, none of them on
         // the callee's stack.
         unsafe {
             f(
+                dit,
                 &self.schedule,
                 iv,
                 blocks.as_mut_ptr().cast(),
@@ -202,21 +197,22 @@ impl Key {
     /// once), then the bytes after them, fewer than 8, with `f`, the final
     /// function of the same direction, from the IV the whole blocks leave.
     fn last(&self, iv: &mut [u8; 8], buffer: &mut [u8], whole: Cfb, f: CfbFinal) {
+        crate::dit::enter!(dit);
         let (blocks, rest) = buffer.split_at_mut(buffer.len() / 8 * 8);
-        self.blocks(iv, blocks, whole);
+        self.blocks(dit, iv, blocks, whole);
         if !rest.is_empty() {
-            self.final_(iv, rest, f);
+            self.final_(dit, iv, rest, f);
         }
     }
 
     /// `f`, a final function, on the rest of a message, of any length: it
     /// replaces `iv` with the last ciphertext block, or, after a partial last
     /// segment, with keystream, which the caller wipes.
-    fn final_(&self, iv: &mut [u8; 8], buffer: &mut [u8], f: CfbFinal) {
+    fn final_(&self, dit: crate::dit::Dit<'_>, iv: &mut [u8; 8], buffer: &mut [u8], f: CfbFinal) {
         // SAFETY: `buffer` is valid for `len` bytes, and it, the block at `iv`
         // and the schedule are separate valid objects of the sizes of the
         // signature, none of them on the callee's stack.
-        unsafe { f(&self.schedule, iv, buffer.as_mut_ptr(), buffer.len()) };
+        unsafe { f(dit, &self.schedule, iv, buffer.as_mut_ptr(), buffer.len()) };
     }
 }
 

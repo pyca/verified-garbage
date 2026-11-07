@@ -19,14 +19,14 @@
 /// * None of `out`, `d`, `peer` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_ecdh_secp256k1_auto(out: *mut [u8; 32], d: *const [u8; 32], peer: *const [u8; 65], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe fn vg_ecdh_secp256k1_auto(dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 32], d: *const [u8; 32], peer: *const [u8; 65], scratch: *mut [u64; 1024]) -> u32 {
     let cpu = verified_garbage_cpu::detected();
     #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
     if cpu.contains(crate::ecdh_secp256k1::VG_ECDH_SECP256K1_UMAAL_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_ecdh_secp256k1_umaal`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::ecdh_secp256k1::vg_ecdh_secp256k1_umaal(out, d, peer, scratch) };
+        return unsafe { crate::ecdh_secp256k1::vg_ecdh_secp256k1_umaal(dit, out, d, peer, scratch) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::ecdh_secp256k1::vg_ecdh_secp256k1(out, d, peer, scratch) }
+    unsafe { crate::ecdh_secp256k1::vg_ecdh_secp256k1(dit, out, d, peer, scratch) }
 }

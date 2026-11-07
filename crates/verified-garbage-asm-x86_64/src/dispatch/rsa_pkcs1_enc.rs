@@ -33,50 +33,50 @@
 /// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the return address on the stack or the 3480 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_rsa_pkcs1_decrypt_auto(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe fn vg_rsa_pkcs1_decrypt_auto(dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_SHA256_SHANI_CRT_IFMA_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_rsa_pkcs1_decrypt_sha256_shani_crt_ifma`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_sha256_shani_crt_ifma(out, out_len, msg_len, n, n_len, e, e_len, d, d_len, input, input_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, scratch, scratch_len) };
+        return unsafe { crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_sha256_shani_crt_ifma(dit, out, out_len, msg_len, n, n_len, e, e_len, d, d_len, input, input_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, scratch, scratch_len) };
     }
     if cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_SHA256_SHANI_CRT_ADX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_rsa_pkcs1_decrypt_sha256_shani_crt_adx`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_sha256_shani_crt_adx(out, out_len, msg_len, n, n_len, e, e_len, d, d_len, input, input_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, scratch, scratch_len) };
+        return unsafe { crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_sha256_shani_crt_adx(dit, out, out_len, msg_len, n, n_len, e, e_len, d, d_len, input, input_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, scratch, scratch_len) };
     }
     if cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_SHA256_SHANI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_rsa_pkcs1_decrypt_sha256_shani`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_sha256_shani(out, out_len, msg_len, n, n_len, e, e_len, d, d_len, input, input_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, scratch, scratch_len) };
+        return unsafe { crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_sha256_shani(dit, out, out_len, msg_len, n, n_len, e, e_len, d, d_len, input, input_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, scratch, scratch_len) };
     }
     if cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_SHA256_AVX2_CRT_IFMA_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_rsa_pkcs1_decrypt_sha256_avx2_crt_ifma`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_sha256_avx2_crt_ifma(out, out_len, msg_len, n, n_len, e, e_len, d, d_len, input, input_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, scratch, scratch_len) };
+        return unsafe { crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_sha256_avx2_crt_ifma(dit, out, out_len, msg_len, n, n_len, e, e_len, d, d_len, input, input_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, scratch, scratch_len) };
     }
     if cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_SHA256_AVX2_CRT_ADX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_rsa_pkcs1_decrypt_sha256_avx2_crt_adx`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_sha256_avx2_crt_adx(out, out_len, msg_len, n, n_len, e, e_len, d, d_len, input, input_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, scratch, scratch_len) };
+        return unsafe { crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_sha256_avx2_crt_adx(dit, out, out_len, msg_len, n, n_len, e, e_len, d, d_len, input, input_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, scratch, scratch_len) };
     }
     if cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_SHA256_AVX2_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_rsa_pkcs1_decrypt_sha256_avx2`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_sha256_avx2(out, out_len, msg_len, n, n_len, e, e_len, d, d_len, input, input_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, scratch, scratch_len) };
+        return unsafe { crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_sha256_avx2(dit, out, out_len, msg_len, n, n_len, e, e_len, d, d_len, input, input_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, scratch, scratch_len) };
     }
     if cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_CRT_IFMA_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_rsa_pkcs1_decrypt_crt_ifma`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_crt_ifma(out, out_len, msg_len, n, n_len, e, e_len, d, d_len, input, input_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, scratch, scratch_len) };
+        return unsafe { crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_crt_ifma(dit, out, out_len, msg_len, n, n_len, e, e_len, d, d_len, input, input_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, scratch, scratch_len) };
     }
     if cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_CRT_ADX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_rsa_pkcs1_decrypt_crt_adx`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_crt_adx(out, out_len, msg_len, n, n_len, e, e_len, d, d_len, input, input_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, scratch, scratch_len) };
+        return unsafe { crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_crt_adx(dit, out, out_len, msg_len, n, n_len, e, e_len, d, d_len, input, input_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, scratch, scratch_len) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt(out, out_len, msg_len, n, n_len, e, e_len, d, d_len, input, input_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, scratch, scratch_len) }
+    unsafe { crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt(dit, out, out_len, msg_len, n, n_len, e, e_len, d, d_len, input, input_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, scratch, scratch_len) }
 }
 
 /// RSAES-PKCS1-v1_5 encryption: RSAES-PKCS1-V1_5-ENCRYPT (RFC 8017 §7.2.1), with the padding string drawn from the random tape `rand` (`rand_len` bytes). With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), and `pre`, the `pre_len` words `vg_rsa_public_precompute` wrote for `n`, takes as the padding string `PS` the first `n_len - msg_len - 3` nonzero bytes of `rand`, encrypts the encoded message `0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M`, for the message `M` (`msg_len` bytes), with RSAEP, writes the ciphertext (`n_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 2 if `n` or `e` is not such a number. Writes to `tape[0]` the bytes of `rand` it consumed, up to the last byte of `PS`. If `rand` has fewer nonzero bytes, writes zeros to `out` and: if `rand_len` is the entropy budget, `n_len - msg_len + 125` bytes, returns 3 (which only a broken random number generator makes likely); otherwise consumes none of `rand`, writes to `tape[1]` the length of the next tape, more than `rand_len` and at most the budget, and returns 0: keep `rand`, append fresh random bytes up to that length, and call again. `tape[1]` is 0 but for 0. If `pre` does not hold the values for `n`, what it writes to `out` and returns once it has drawn `PS` is unspecified; memory safety, `tape` and the timing guarantee still apply.
@@ -109,18 +109,18 @@ pub unsafe fn vg_rsa_pkcs1_decrypt_auto(out: *mut u8, out_len: usize, msg_len: *
 /// * None of `out`, `tape`, `n`, `e`, `msg`, `rand`, `scratch` and `pre` may overlap the return address on the stack or the 2288 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_rsa_pkcs1_encrypt_random_auto(out: *mut u8, out_len: usize, tape: *mut [u64; 2], n: *const u8, n_len: usize, e: *const u8, e_len: usize, msg: *const u8, msg_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
+pub unsafe fn vg_rsa_pkcs1_encrypt_random_auto(dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, tape: *mut [u64; 2], n: *const u8, n_len: usize, e: *const u8, e_len: usize, msg: *const u8, msg_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_ENCRYPT_RANDOM_IFMA_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_rsa_pkcs1_encrypt_random_ifma`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::rsa_pkcs1_enc::vg_rsa_pkcs1_encrypt_random_ifma(out, out_len, tape, n, n_len, e, e_len, msg, msg_len, rand, rand_len, scratch, scratch_len, pre, pre_len) };
+        return unsafe { crate::rsa_pkcs1_enc::vg_rsa_pkcs1_encrypt_random_ifma(dit, out, out_len, tape, n, n_len, e, e_len, msg, msg_len, rand, rand_len, scratch, scratch_len, pre, pre_len) };
     }
     if cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_ENCRYPT_RANDOM_ADX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_rsa_pkcs1_encrypt_random_adx`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::rsa_pkcs1_enc::vg_rsa_pkcs1_encrypt_random_adx(out, out_len, tape, n, n_len, e, e_len, msg, msg_len, rand, rand_len, scratch, scratch_len, pre, pre_len) };
+        return unsafe { crate::rsa_pkcs1_enc::vg_rsa_pkcs1_encrypt_random_adx(dit, out, out_len, tape, n, n_len, e, e_len, msg, msg_len, rand, rand_len, scratch, scratch_len, pre, pre_len) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::rsa_pkcs1_enc::vg_rsa_pkcs1_encrypt_random(out, out_len, tape, n, n_len, e, e_len, msg, msg_len, rand, rand_len, scratch, scratch_len, pre, pre_len) }
+    unsafe { crate::rsa_pkcs1_enc::vg_rsa_pkcs1_encrypt_random(dit, out, out_len, tape, n, n_len, e, e_len, msg, msg_len, rand, rand_len, scratch, scratch_len, pre, pre_len) }
 }

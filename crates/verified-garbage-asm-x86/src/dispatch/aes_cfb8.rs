@@ -20,15 +20,15 @@
 /// * None of `schedule`, `iv`, `data` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_cfb8_encrypt_auto(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
+pub unsafe fn vg_aes_cfb8_encrypt_auto(dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::aes_cfb8::VG_AES_CFB8_ENCRYPT_AESNI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_cfb8_encrypt_aesni`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes_cfb8::vg_aes_cfb8_encrypt_aesni(schedule, rounds, iv, data, len, scratch) };
+        return unsafe { crate::aes_cfb8::vg_aes_cfb8_encrypt_aesni(dit, schedule, rounds, iv, data, len, scratch) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::aes_cfb8::vg_aes_cfb8_encrypt(schedule, rounds, iv, data, len, scratch) }
+    unsafe { crate::aes_cfb8::vg_aes_cfb8_encrypt(dit, schedule, rounds, iv, data, len, scratch) }
 }
 
 /// AES-CFB8 decryption (NIST SP 800-38A §6.3, with 8-bit segments), in place: replaces the `len` bytes `C#₁ … C#ₙ` at `data` with `P#ⱼ = C#ⱼ ⊕ MSB₈(CIPH_K(Iⱼ))`, where `I₁` is the block at `*iv` and `Iⱼ₊₁` is `Iⱼ` without its first byte, followed by `C#ⱼ`, and `*iv` with `Iₙ₊₁` (leaving it unchanged if `len = 0`), so that a further call continues the message. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
@@ -49,13 +49,13 @@ pub unsafe fn vg_aes_cfb8_encrypt_auto(schedule: *const [u8; 240], rounds: usize
 /// * None of `schedule`, `iv`, `data` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_cfb8_decrypt_auto(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
+pub unsafe fn vg_aes_cfb8_decrypt_auto(dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::aes_cfb8::VG_AES_CFB8_DECRYPT_AESNI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_cfb8_decrypt_aesni`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes_cfb8::vg_aes_cfb8_decrypt_aesni(schedule, rounds, iv, data, len, scratch) };
+        return unsafe { crate::aes_cfb8::vg_aes_cfb8_decrypt_aesni(dit, schedule, rounds, iv, data, len, scratch) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::aes_cfb8::vg_aes_cfb8_decrypt(schedule, rounds, iv, data, len, scratch) }
+    unsafe { crate::aes_cfb8::vg_aes_cfb8_decrypt(dit, schedule, rounds, iv, data, len, scratch) }
 }

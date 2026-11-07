@@ -66,7 +66,7 @@ jmp 214f
 214:
 .base64 "SI2kJLgIAADD"
 .p2align 6"#,
-        vg_aes_gcm_stream_encrypt = sym crate::gcm::vg_aes_gcm_stream_encrypt,
+        vg_aes_gcm_stream_encrypt = sym crate::gcm::raw::vg_aes_gcm_stream_encrypt,
         vg_aes_gcm_encrypt_blocks_to = sym crate::aes::vg_aes_gcm_encrypt_blocks_to::vg_aes_gcm_encrypt_blocks_to,
     )
 }

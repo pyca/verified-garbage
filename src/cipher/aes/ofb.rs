@@ -77,6 +77,7 @@ impl Drop for AesOfb {
 impl Key {
     /// Expands a 16-, 24- or 32-byte key.
     fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
+        crate::dit::enter!(dit);
         if !matches!(key.len(), 16 | 24 | 32) {
             return Err(InvalidKeyLength);
         }
@@ -84,7 +85,7 @@ impl Key {
         // SAFETY: the key is 16, 24 or 32 bytes long; the key and the schedule
         // are separate valid buffers of the sizes of the signature. The
         // dispatcher calls only an implementation the CPU has the features of.
-        unsafe { vg_aes_expand_key_auto(key.as_ptr(), key.len(), &mut schedule) };
+        unsafe { vg_aes_expand_key_auto(dit, key.as_ptr(), key.len(), &mut schedule) };
         Ok(Self {
             schedule,
             rounds: key.len() / 4 + 6,
@@ -95,7 +96,8 @@ impl Key {
     /// `buffer` in place, from the block `iv`, which it replaces with the
     /// last output block (unchanged for empty input).
     fn apply_keystream(&self, iv: &mut [u8; 16], buffer: &mut [u8]) {
-        self.crypt(iv, buffer);
+        crate::dit::enter!(dit);
+        self.crypt(dit, iv, buffer);
     }
 
     /// Encrypts or decrypts (the same operation) the rest of a message, of
@@ -104,8 +106,9 @@ impl Key {
     /// the whole blocks leave in `iv`, which it replaces with the output
     /// block it used.
     fn apply_keystream_final(&self, iv: &mut [u8; 16], buffer: &mut [u8]) {
+        crate::dit::enter!(dit);
         let (blocks, rest) = buffer.split_at_mut(buffer.len() / 16 * 16);
-        self.crypt(iv, blocks);
+        self.crypt(dit, iv, blocks);
         if !rest.is_empty() {
             let mut scratch = [0; 272];
             // SAFETY: `rounds` is 10, 12 or 14 and the schedule holds its key
@@ -115,6 +118,7 @@ impl Key {
             // an implementation the CPU has the features of.
             unsafe {
                 vg_aes_ofb_final_auto(
+                    dit,
                     &self.schedule,
                     self.rounds,
                     iv,
@@ -130,7 +134,7 @@ impl Key {
     }
 
     /// OFB of whole blocks.
-    fn crypt(&self, iv: &mut [u8; 16], blocks: &mut [u8]) {
+    fn crypt(&self, dit: crate::dit::Dit<'_>, iv: &mut [u8; 16], blocks: &mut [u8]) {
         let mut scratch = [0; 272];
         // SAFETY: `rounds` is 10, 12 or 14 and the schedule holds its key
         // schedule; `blocks` holds `len / 16` whole blocks (its length is a
@@ -140,6 +144,7 @@ impl Key {
         // the features of.
         unsafe {
             vg_aes_ofb_auto(
+                dit,
                 &self.schedule,
                 self.rounds,
                 iv,

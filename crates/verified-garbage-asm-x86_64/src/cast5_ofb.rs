@@ -15,8 +15,38 @@
 /// * `rounds` must be 12 (for a key of up to 10 bytes) or 16 (for a longer one).
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 240 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_cast5_ofb(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_cast5_ofb(schedule, rounds, iv, data, n) }
+}
+
+/// CAST5-OFB encryption or decryption (NIST SP 800-38A §6.4, RFC 2144 §2) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)`, where `O₀` is the block at `*iv`, a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*iv` with the last output block used, `Oₙ` (leaving it unchanged if `len = 0`): so that a further call continues the message if `len` is a multiple of 8, and otherwise keystream, to be wiped, after which the message must end. `CIPH_K` is CAST5 encryption with `rounds` rounds under the subkeys at `schedule`, as `vg_cast5_expand_key` writes them.
+///
+/// Contract: `VG.Spec.Cast5.ofbFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the subkeys, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `rounds` must be 12 (for a key of up to 10 bytes) or 16 (for a longer one).
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 240 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_cast5_ofb_final(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut u8, len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_cast5_ofb_final(schedule, rounds, iv, data, len) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_cast5_ofb`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_cast5_ofb(schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_cast5_ofb(schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJBD///9JieFJg8EITYnJSYmZqAAAAEmJqbAAAABNiaG4AAAATYmpwAAAAE2JscgAAABNibnQAAAAZkwPbvpJicxNicVIiwdJiUEoSItHCEmJQTBIi0cQSYlBOEiLRxhJiUFASItHIEmJQUhIi0coSYlBUEiLRzBJiUFYSItHOEmJQWBIi0dASYlBaEiLR0hJiUFwSItHUEmJQXhIi0dYSYmBgAAAAEiLR2BJiYGIAAAASItHaEmJgZAAAABIi0dwSYmBmAAAAEiLR3hJiYGgAAAAZkwPfvhIiyhJiWkQTYXt"
 je 20f
@@ -62,24 +92,13 @@ jmp 21f
 21:
 .base64 "ZkwPfvhJi2kQSIkoSYuZqAAAAEmLqbAAAABNi6G4AAAATYupwAAAAE2LscgAAABNi7nQAAAAQbsAAAAATIlcJAhMiVwkEEyJXCQYTIlcJCBMiVwkKEyJXCQwTIlcJDhMiVwkQEyJXCRITIlcJFBMiVwkWEyJXCRgTIlcJGhMiVwkcEyJXCR4TImcJIAAAABMiZwkiAAAAEyJnCSQAAAATImcJJgAAABMiZwkoAAAAEyJnCSoAAAATImcJLAAAABMiZwkuAAAAEyJnCTAAAAATImcJMgAAABMiZwk0AAAAEyJnCTYAAAATImcJOAAAABMiZwk6AAAAEiNpCTwAAAAww=="
 .p2align 6"#,
-        VG_CAST5_S1234 = sym super::consts::VG_CAST5_S1234,
+        VG_CAST5_S1234 = sym crate::consts::VG_CAST5_S1234,
     )
 }
 
-/// CAST5-OFB encryption or decryption (NIST SP 800-38A §6.4, RFC 2144 §2) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)`, where `O₀` is the block at `*iv`, a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*iv` with the last output block used, `Oₙ` (leaving it unchanged if `len = 0`): so that a further call continues the message if `len` is a multiple of 8, and otherwise keystream, to be wiped, after which the message must end. `CIPH_K` is CAST5 encryption with `rounds` rounds under the subkeys at `schedule`, as `vg_cast5_expand_key` writes them.
-///
-/// Contract: `VG.Spec.Cast5.ofbFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the subkeys, the chaining value or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 128 bytes.
-/// * `iv` must be valid for reads and writes of 8 bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `rounds` must be 12 (for a key of up to 10 bytes) or 16 (for a longer one).
-/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 240 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_cast5_ofb_final`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_cast5_ofb_final(schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_cast5_ofb_final(schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJBD///9JieFJg8EITYnJSYmZqAAAAEmJqbAAAABNiaG4AAAATYmpwAAAAE2JscgAAABNibnQAAAAZkwPbvpJicxNicVIiwdJiUEoSItHCEmJQTBIi0cQSYlBOEiLRxhJiUFASItHIEmJQUhIi0coSYlBUEiLRzBJiUFYSItHOEmJQWBIi0dASYlBaEiLR0hJiUFwSItHUEmJQXhIi0dYSYmBgAAAAEiLR2BJiYGIAAAASItHaEmJgZAAAABIi0dwSYmBmAAAAEiLR3hJiYGgAAAAZkwPfvhIiyhJiWkQTYXt"
 je 20f
@@ -134,6 +153,7 @@ jmp 21f
 21:
 .base64 "ZkwPfvhJi2kQSIkoSYuZqAAAAEmLqbAAAABNi6G4AAAATYupwAAAAE2LscgAAABNi7nQAAAAQbsAAAAATIlcJAhMiVwkEEyJXCQYTIlcJCBMiVwkKEyJXCQwTIlcJDhMiVwkQEyJXCRITIlcJFBMiVwkWEyJXCRgTIlcJGhMiVwkcEyJXCR4TImcJIAAAABMiZwkiAAAAEyJnCSQAAAATImcJJgAAABMiZwkoAAAAEyJnCSoAAAATImcJLAAAABMiZwkuAAAAEyJnCTAAAAATImcJMgAAABMiZwk0AAAAEyJnCTYAAAATImcJOAAAABMiZwk6AAAAEiNpCTwAAAAww=="
 .p2align 6"#,
-        VG_CAST5_S1234 = sym super::consts::VG_CAST5_S1234,
+        VG_CAST5_S1234 = sym crate::consts::VG_CAST5_S1234,
     )
+}
 }

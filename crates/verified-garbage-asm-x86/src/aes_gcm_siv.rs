@@ -25,142 +25,12 @@ pub const VG_AES_GCM_SIV_SEAL_AESNI_FEATURES: verified_garbage_cpu::Features = v
 /// * `data` and `tag` must not overlap each other, `schedule`, `nonce` or `aad` (distinct Rust objects never do).
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2884 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_siv_seal_aesni(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
-    core::arch::naked_asm!(
-        r#".base64 "jaQk2PT//4uEJCwLAACJRCQEi4QkMAsAAIlEJAiLhCQ0CwAAiUQkDIuEJDgLAACJRCQQi4QkPAsAAIlEJBSLhCRACwAAiUQkGIuEJEQLAACJRCQci4QkSAsAAIlEJCCJ4IPAKIlEJCSLRCQkiZiAAAAAibCEAAAAibiIAAAAiaiMAAAAicWLRCQEiYWQAAAAi0QkCImFlAAAAItEJAyJhZgAAACLRCQQiYWcAAAAi0QkFImFoAAAAItEJBiJhaQAAACLRCQciYWoAAAAi0QkIImFrAAAALgAAAAAiYW0AAAA"
-20:
-.base64 "i4WYAAAAiwiLUASLWAiJTXSJVXiJXXyLhbQAAACJRXC4AAAAAImF4AAAAImF5AAAAImF6AAAAImF7AAAAIuFkAAAAIuNlAAAAInqg8JwieuBw+AAAAC/AQAAAIHFAAMAAFVXU1JRUA=="
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge0AAwAAi5W0AAAAAdIB0gHSAeqLheAAAACJQhCLheQAAACJQhSLhbQAAACDwAGJhbQAAACLjZQAAADR6YPpATnI"
-jne 20b
-.base64 "ieiDwCCLjZQAAACD6QYByQHJieqBwgACAACBxQADAABVUlFQ"
-call {vg_aes_expand_key_scratch_aesni}
-.base64 "WFhYWIHtAAMAAItFENHoi00Ug+EB0ckJyA/IiUVMi0UU0eiLTRiD4QHRyQnID8iJRUiLRRjR6ItNHIPhAdHJCcgPyIlFRItFHNHoi00Qg+EBugAAAAApyoHiAAAA4THQD8iJRUC4AAAAAIlFUIlFVIlFWIlFXIu1nAAAAIuFoAAAAImFsAAAAIuNsAAAAMHpBIXJ"
-je 21f
-23:
-.base64 "i42wAAAAwekEg/lA"
-jb 24f
-.base64 "uUAAAAA="
-jmp 25f
-24:
-25:
-.base64 "iY20AAAAieqBwgADAAA="
-26:
-.base64 "i0YMD8iJAotGCA/IiUIEi0YED8iJQgiLBg/IiUIMg8YQg8IQg+kB"
-jne 26b
-.base64 "i720AAAAifgBwAHAAcABwIuNsAAAACnBiY2wAAAAieiDwECJ6oPCUInrgcMAAwAAgcUABwAAVVdTUlA="
-call {vg_ghash}
-.base64 "WFhYWFiB7QAHAACLjbAAAADB6QSFyQ=="
-jne 23b
-jmp 22f
-21:
-22:
-.base64 "i42wAAAAhck="
-je 27f
-.base64 "uAAAAACJheAAAACJheQAAACJhegAAACJhewAAACJ94nqgcLgAAAAi42wAAAA"
-29:
-.base64 "D7YHiAKDxwGDwgGD6QE="
-jne 29b
-.base64 "ie6BxuAAAAC4EAAAAImFsAAAAIuNsAAAAMHpBIP5QA=="
-jb 210f
-.base64 "uUAAAAA="
-jmp 211f
-210:
-211:
-.base64 "iY20AAAAieqBwgADAAA="
-212:
-.base64 "i0YMD8iJAotGCA/IiUIEi0YED8iJQgiLBg/IiUIMg8YQg8IQg+kB"
-jne 212b
-.base64 "i720AAAAifgBwAHAAcABwIuNsAAAACnBiY2wAAAAieiDwECJ6oPCUInrgcMAAwAAgcUABwAAVVdTUlA="
-call {vg_ghash}
-.base64 "WFhYWFiB7QAHAACLjbAAAADB6QSFyQ=="
-jmp 28f
-27:
-28:
-.base64 "i7WkAAAAi4WoAAAAiYWwAAAAi42wAAAAwekEhck="
-je 213f
-215:
-.base64 "i42wAAAAwekEg/lA"
-jb 216f
-.base64 "uUAAAAA="
-jmp 217f
-216:
-217:
-.base64 "iY20AAAAieqBwgADAAA="
-218:
-.base64 "i0YMD8iJAotGCA/IiUIEi0YED8iJQgiLBg/IiUIMg8YQg8IQg+kB"
-jne 218b
-.base64 "i720AAAAifgBwAHAAcABwIuNsAAAACnBiY2wAAAAieiDwECJ6oPCUInrgcMAAwAAgcUABwAAVVdTUlA="
-call {vg_ghash}
-.base64 "WFhYWFiB7QAHAACLjbAAAADB6QSFyQ=="
-jne 215b
-jmp 214f
-213:
-214:
-.base64 "i42wAAAAhck="
-je 219f
-.base64 "uAAAAACJheAAAACJheQAAACJhegAAACJhewAAACJ94nqgcLgAAAAi42wAAAA"
-221:
-.base64 "D7YHiAKDxwGDwgGD6QE="
-jne 221b
-.base64 "ie6BxuAAAAC4EAAAAImFsAAAAIuNsAAAAMHpBIP5QA=="
-jb 222f
-.base64 "uUAAAAA="
-jmp 223f
-222:
-223:
-.base64 "iY20AAAAieqBwgADAAA="
-224:
-.base64 "i0YMD8iJAotGCA/IiUIEi0YED8iJQgiLBg/IiUIMg8YQg8IQg+kB"
-jne 224b
-.base64 "i720AAAAifgBwAHAAcABwIuNsAAAACnBiY2wAAAAieiDwECJ6oPCUInrgcMAAwAAgcUABwAAVVdTUlA="
-call {vg_ghash}
-.base64 "WFhYWFiB7QAHAACLjbAAAADB6QSFyQ=="
-jmp 220f
-219:
-220:
-.base64 "i4WgAAAAAcABwAHAiYXgAAAAi4WgAAAAwegdiYXkAAAAi4WoAAAAAcABwAHAiYXoAAAAi4WoAAAAwegdiYXsAAAAie6BxuAAAAC4EAAAAImFsAAAAIuNsAAAAMHpBIP5QA=="
-jb 225f
-.base64 "uUAAAAA="
-jmp 226f
-225:
-226:
-.base64 "iY20AAAAieqBwgADAAA="
-227:
-.base64 "i0YMD8iJAotGCA/IiUIEi0YED8iJQgiLBg/IiUIMg8YQg8IQg+kB"
-jne 227b
-.base64 "i720AAAAifgBwAHAAcABwIuNsAAAACnBiY2wAAAAieiDwECJ6oPCUInrgcMAAwAAgcUABwAAVVdTUlA="
-call {vg_ghash}
-.base64 "WFhYWFiB7QAHAACLjbAAAADB6QSFyYuNmAAAAIsRi1kEi3kIi0VcD8gx0IlFYItFWA/IMdiJRWSLRVQPyDH4iUVoi0VQD8gl////f4lFbItFYIlFcItFZIlFdItFaIlFeItFbIlFfLgAAAAAiUUAiUUEiUUIiUUMiegFAAIAAIuNlAAAAInqg8JwieuDwwC/AQAAAIHFAAMAAFVXU1JRUA=="
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge0AAwAAi0UAiUVgi0UEiUVki0UIiUVoi0UMDQAAAICJRWyLtaQAAACLhagAAACJhbAAAACLjbAAAADB6QSFyQ=="
-je 228f
-230:
-.base64 "i0VgiUVwi0VkiUV0i0VoiUV4i0VsiUV8iegFAAIAAIuNlAAAAInqg8JwifO/AQAAAIHFAAMAAFVXU1JRUA=="
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge0AAwAAi0Vgg8ABiUVgg8YQi4WwAAAAg+gQiYWwAAAAi42wAAAAwekEhck="
-jne 230b
-jmp 229f
-228:
-229:
-.base64 "i42wAAAAhck="
-je 231f
-.base64 "i0VgiUVwi0VkiUV0i0VoiUV4i0VsiUV8uAAAAACJheAAAACJheQAAACJhegAAACJhewAAACJ6AUAAgAAi42UAAAAieqDwnCJ64HD4AAAAL8BAAAAgcUAAwAAVVdTUlFQ"
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge0AAwAAieqBwuAAAACJ94uNsAAAAA=="
-233:
-.base64 "D7YCD7YfMdiIB4PHAYPCAYPpAQ=="
-jne 233b
-jmp 232f
-231:
-232:
-.base64 "i0UAi00Ei1UIi10Mi72sAAAAiQeJTwSJVwiJXwyLnYAAAACLtYQAAACLvYgAAACLrYwAAACNpCQoCwAAww=="
-.p2align 6"#,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-    )
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_siv_seal_aesni(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_siv_seal_aesni(schedule, rounds, nonce, aad, aad_len, data, len, tag) }
 }
 
 /// The CPU features `vg_aes_gcm_siv_open_aesni` requires (`Artifact.features`).
@@ -185,151 +55,12 @@ pub const VG_AES_GCM_SIV_OPEN_AESNI_FEATURES: verified_garbage_cpu::Features = v
 /// * `data` must not overlap `schedule`, `nonce`, `aad` or `tag` (distinct Rust objects never do).
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2884 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_siv_open_aesni(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "jaQk2PT//4uEJCwLAACJRCQEi4QkMAsAAIlEJAiLhCQ0CwAAiUQkDIuEJDgLAACJRCQQi4QkPAsAAIlEJBSLhCRACwAAiUQkGIuEJEQLAACJRCQci4QkSAsAAIlEJCCJ4IPAKIlEJCSLRCQkiZiAAAAAibCEAAAAibiIAAAAiaiMAAAAicWLRCQEiYWQAAAAi0QkCImFlAAAAItEJAyJhZgAAACLRCQQiYWcAAAAi0QkFImFoAAAAItEJBiJhaQAAACLRCQciYWoAAAAi0QkIImFrAAAAIu9rAAAAIsHi08Ei1cIi18MiUUAiU0EiVUIiV0MuAAAAACJhbQAAAA="
-20:
-.base64 "i4WYAAAAiwiLUASLWAiJTXSJVXiJXXyLhbQAAACJRXC4AAAAAImF4AAAAImF5AAAAImF6AAAAImF7AAAAIuFkAAAAIuNlAAAAInqg8JwieuBw+AAAAC/AQAAAIHFAAMAAFVXU1JRUA=="
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge0AAwAAi5W0AAAAAdIB0gHSAeqLheAAAACJQhCLheQAAACJQhSLhbQAAACDwAGJhbQAAACLjZQAAADR6YPpATnI"
-jne 20b
-.base64 "ieiDwCCLjZQAAACD6QYByQHJieqBwgACAACBxQADAABVUlFQ"
-call {vg_aes_expand_key_scratch_aesni}
-.base64 "WFhYWIHtAAMAAItFENHoi00Ug+EB0ckJyA/IiUVMi0UU0eiLTRiD4QHRyQnID8iJRUiLRRjR6ItNHIPhAdHJCcgPyIlFRItFHNHoi00Qg+EBugAAAAApyoHiAAAA4THQD8iJRUC4AAAAAIlFUIlFVIlFWIlFXItFAIlFYItFBIlFZItFCIlFaItFDA0AAACAiUVsi7WkAAAAi4WoAAAAiYWwAAAAi42wAAAAwekEhck="
-je 21f
-23:
-.base64 "i0VgiUVwi0VkiUV0i0VoiUV4i0VsiUV8iegFAAIAAIuNlAAAAInqg8JwifO/AQAAAIHFAAMAAFVXU1JRUA=="
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge0AAwAAi0Vgg8ABiUVgg8YQi4WwAAAAg+gQiYWwAAAAi42wAAAAwekEhck="
-jne 23b
-jmp 22f
-21:
-22:
-.base64 "i42wAAAAhck="
-je 24f
-.base64 "i0VgiUVwi0VkiUV0i0VoiUV4i0VsiUV8uAAAAACJheAAAACJheQAAACJhegAAACJhewAAACJ6AUAAgAAi42UAAAAieqDwnCJ64HD4AAAAL8BAAAAgcUAAwAAVVdTUlFQ"
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge0AAwAAieqBwuAAAACJ94uNsAAAAA=="
-26:
-.base64 "D7YCD7YfMdiIB4PHAYPCAYPpAQ=="
-jne 26b
-jmp 25f
-24:
-25:
-.base64 "i7WcAAAAi4WgAAAAiYWwAAAAi42wAAAAwekEhck="
-je 27f
-29:
-.base64 "i42wAAAAwekEg/lA"
-jb 210f
-.base64 "uUAAAAA="
-jmp 211f
-210:
-211:
-.base64 "iY20AAAAieqBwgADAAA="
-212:
-.base64 "i0YMD8iJAotGCA/IiUIEi0YED8iJQgiLBg/IiUIMg8YQg8IQg+kB"
-jne 212b
-.base64 "i720AAAAifgBwAHAAcABwIuNsAAAACnBiY2wAAAAieiDwECJ6oPCUInrgcMAAwAAgcUABwAAVVdTUlA="
-call {vg_ghash}
-.base64 "WFhYWFiB7QAHAACLjbAAAADB6QSFyQ=="
-jne 29b
-jmp 28f
-27:
-28:
-.base64 "i42wAAAAhck="
-je 213f
-.base64 "uAAAAACJheAAAACJheQAAACJhegAAACJhewAAACJ94nqgcLgAAAAi42wAAAA"
-215:
-.base64 "D7YHiAKDxwGDwgGD6QE="
-jne 215b
-.base64 "ie6BxuAAAAC4EAAAAImFsAAAAIuNsAAAAMHpBIP5QA=="
-jb 216f
-.base64 "uUAAAAA="
-jmp 217f
-216:
-217:
-.base64 "iY20AAAAieqBwgADAAA="
-218:
-.base64 "i0YMD8iJAotGCA/IiUIEi0YED8iJQgiLBg/IiUIMg8YQg8IQg+kB"
-jne 218b
-.base64 "i720AAAAifgBwAHAAcABwIuNsAAAACnBiY2wAAAAieiDwECJ6oPCUInrgcMAAwAAgcUABwAAVVdTUlA="
-call {vg_ghash}
-.base64 "WFhYWFiB7QAHAACLjbAAAADB6QSFyQ=="
-jmp 214f
-213:
-214:
-.base64 "i7WkAAAAi4WoAAAAiYWwAAAAi42wAAAAwekEhck="
-je 219f
-221:
-.base64 "i42wAAAAwekEg/lA"
-jb 222f
-.base64 "uUAAAAA="
-jmp 223f
-222:
-223:
-.base64 "iY20AAAAieqBwgADAAA="
-224:
-.base64 "i0YMD8iJAotGCA/IiUIEi0YED8iJQgiLBg/IiUIMg8YQg8IQg+kB"
-jne 224b
-.base64 "i720AAAAifgBwAHAAcABwIuNsAAAACnBiY2wAAAAieiDwECJ6oPCUInrgcMAAwAAgcUABwAAVVdTUlA="
-call {vg_ghash}
-.base64 "WFhYWFiB7QAHAACLjbAAAADB6QSFyQ=="
-jne 221b
-jmp 220f
-219:
-220:
-.base64 "i42wAAAAhck="
-je 225f
-.base64 "uAAAAACJheAAAACJheQAAACJhegAAACJhewAAACJ94nqgcLgAAAAi42wAAAA"
-227:
-.base64 "D7YHiAKDxwGDwgGD6QE="
-jne 227b
-.base64 "ie6BxuAAAAC4EAAAAImFsAAAAIuNsAAAAMHpBIP5QA=="
-jb 228f
-.base64 "uUAAAAA="
-jmp 229f
-228:
-229:
-.base64 "iY20AAAAieqBwgADAAA="
-230:
-.base64 "i0YMD8iJAotGCA/IiUIEi0YED8iJQgiLBg/IiUIMg8YQg8IQg+kB"
-jne 230b
-.base64 "i720AAAAifgBwAHAAcABwIuNsAAAACnBiY2wAAAAieiDwECJ6oPCUInrgcMAAwAAgcUABwAAVVdTUlA="
-call {vg_ghash}
-.base64 "WFhYWFiB7QAHAACLjbAAAADB6QSFyQ=="
-jmp 226f
-225:
-226:
-.base64 "i4WgAAAAAcABwAHAiYXgAAAAi4WgAAAAwegdiYXkAAAAi4WoAAAAAcABwAHAiYXoAAAAi4WoAAAAwegdiYXsAAAAie6BxuAAAAC4EAAAAImFsAAAAIuNsAAAAMHpBIP5QA=="
-jb 231f
-.base64 "uUAAAAA="
-jmp 232f
-231:
-232:
-.base64 "iY20AAAAieqBwgADAAA="
-233:
-.base64 "i0YMD8iJAotGCA/IiUIEi0YED8iJQgiLBg/IiUIMg8YQg8IQg+kB"
-jne 233b
-.base64 "i720AAAAifgBwAHAAcABwIuNsAAAACnBiY2wAAAAieiDwECJ6oPCUInrgcMAAwAAgcUABwAAVVdTUlA="
-call {vg_ghash}
-.base64 "WFhYWFiB7QAHAACLjbAAAADB6QSFyYuNmAAAAIsRi1kEi3kIi0VcD8gx0IlFYItFWA/IMdiJRWSLRVQPyDH4iUVoi0VQD8gl////f4lFbItFYIlFcItFZIlFdItFaIlFeItFbIlFfLgAAAAAiYXwAAAAiYX0AAAAiYX4AAAAiYX8AAAAiegFAAIAAIuNlAAAAInqg8JwieuBw/AAAAC/AQAAAIHFAAMAAFVXU1JRUA=="
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge0AAwAAi0UAM4XwAAAAi00EM430AAAACciLTQgzjfgAAAAJyItNDDON/AAAAAnIg/gBuAAAAACD0AC7AAAAACnDi42oAAAAhck="
-je 234f
-.base64 "i72kAAAA"
-236:
-.base64 "D7YXIdqIF4PHAYPpAQ=="
-jne 236b
-jmp 235f
-234:
-235:
-.base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkKAsAAMM="
-.p2align 6"#,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-    )
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_siv_open_aesni(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_siv_open_aesni(schedule, rounds, nonce, aad, aad_len, data, len, tag) }
 }
 
 /// The CPU features `vg_aes_gcm_siv_seal_aesni_pclmul` requires (`Artifact.features`).
@@ -354,142 +85,12 @@ pub const VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Featu
 /// * `data` and `tag` must not overlap each other, `schedule`, `nonce` or `aad` (distinct Rust objects never do).
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2884 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_siv_seal_aesni_pclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
-    core::arch::naked_asm!(
-        r#".base64 "jaQk2PT//4uEJCwLAACJRCQEi4QkMAsAAIlEJAiLhCQ0CwAAiUQkDIuEJDgLAACJRCQQi4QkPAsAAIlEJBSLhCRACwAAiUQkGIuEJEQLAACJRCQci4QkSAsAAIlEJCCJ4IPAKIlEJCSLRCQkiZiAAAAAibCEAAAAibiIAAAAiaiMAAAAicWLRCQEiYWQAAAAi0QkCImFlAAAAItEJAyJhZgAAACLRCQQiYWcAAAAi0QkFImFoAAAAItEJBiJhaQAAACLRCQciYWoAAAAi0QkIImFrAAAALgAAAAAiYW0AAAA"
-20:
-.base64 "i4WYAAAAiwiLUASLWAiJTXSJVXiJXXyLhbQAAACJRXC4AAAAAImF4AAAAImF5AAAAImF6AAAAImF7AAAAIuFkAAAAIuNlAAAAInqg8JwieuBw+AAAAC/AQAAAIHFAAMAAFVXU1JRUA=="
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge0AAwAAi5W0AAAAAdIB0gHSAeqLheAAAACJQhCLheQAAACJQhSLhbQAAACDwAGJhbQAAACLjZQAAADR6YPpATnI"
-jne 20b
-.base64 "ieiDwCCLjZQAAACD6QYByQHJieqBwgACAACBxQADAABVUlFQ"
-call {vg_aes_expand_key_scratch_aesni}
-.base64 "WFhYWIHtAAMAAItFENHoi00Ug+EB0ckJyA/IiUVMi0UU0eiLTRiD4QHRyQnID8iJRUiLRRjR6ItNHIPhAdHJCcgPyIlFRItFHNHoi00Qg+EBugAAAAApyoHiAAAA4THQD8iJRUC4AAAAAIlFUIlFVIlFWIlFXIu1nAAAAIuFoAAAAImFsAAAAIuNsAAAAMHpBIXJ"
-je 21f
-23:
-.base64 "i42wAAAAwekEg/lA"
-jb 24f
-.base64 "uUAAAAA="
-jmp 25f
-24:
-25:
-.base64 "iY20AAAAieqBwgADAAA="
-26:
-.base64 "i0YMD8iJAotGCA/IiUIEi0YED8iJQgiLBg/IiUIMg8YQg8IQg+kB"
-jne 26b
-.base64 "i720AAAAifgBwAHAAcABwIuNsAAAACnBiY2wAAAAieiDwECJ6oPCUInrgcMAAwAAgcUABwAAVVdTUlA="
-call {vg_ghash_pclmul}
-.base64 "WFhYWFiB7QAHAACLjbAAAADB6QSFyQ=="
-jne 23b
-jmp 22f
-21:
-22:
-.base64 "i42wAAAAhck="
-je 27f
-.base64 "uAAAAACJheAAAACJheQAAACJhegAAACJhewAAACJ94nqgcLgAAAAi42wAAAA"
-29:
-.base64 "D7YHiAKDxwGDwgGD6QE="
-jne 29b
-.base64 "ie6BxuAAAAC4EAAAAImFsAAAAIuNsAAAAMHpBIP5QA=="
-jb 210f
-.base64 "uUAAAAA="
-jmp 211f
-210:
-211:
-.base64 "iY20AAAAieqBwgADAAA="
-212:
-.base64 "i0YMD8iJAotGCA/IiUIEi0YED8iJQgiLBg/IiUIMg8YQg8IQg+kB"
-jne 212b
-.base64 "i720AAAAifgBwAHAAcABwIuNsAAAACnBiY2wAAAAieiDwECJ6oPCUInrgcMAAwAAgcUABwAAVVdTUlA="
-call {vg_ghash_pclmul}
-.base64 "WFhYWFiB7QAHAACLjbAAAADB6QSFyQ=="
-jmp 28f
-27:
-28:
-.base64 "i7WkAAAAi4WoAAAAiYWwAAAAi42wAAAAwekEhck="
-je 213f
-215:
-.base64 "i42wAAAAwekEg/lA"
-jb 216f
-.base64 "uUAAAAA="
-jmp 217f
-216:
-217:
-.base64 "iY20AAAAieqBwgADAAA="
-218:
-.base64 "i0YMD8iJAotGCA/IiUIEi0YED8iJQgiLBg/IiUIMg8YQg8IQg+kB"
-jne 218b
-.base64 "i720AAAAifgBwAHAAcABwIuNsAAAACnBiY2wAAAAieiDwECJ6oPCUInrgcMAAwAAgcUABwAAVVdTUlA="
-call {vg_ghash_pclmul}
-.base64 "WFhYWFiB7QAHAACLjbAAAADB6QSFyQ=="
-jne 215b
-jmp 214f
-213:
-214:
-.base64 "i42wAAAAhck="
-je 219f
-.base64 "uAAAAACJheAAAACJheQAAACJhegAAACJhewAAACJ94nqgcLgAAAAi42wAAAA"
-221:
-.base64 "D7YHiAKDxwGDwgGD6QE="
-jne 221b
-.base64 "ie6BxuAAAAC4EAAAAImFsAAAAIuNsAAAAMHpBIP5QA=="
-jb 222f
-.base64 "uUAAAAA="
-jmp 223f
-222:
-223:
-.base64 "iY20AAAAieqBwgADAAA="
-224:
-.base64 "i0YMD8iJAotGCA/IiUIEi0YED8iJQgiLBg/IiUIMg8YQg8IQg+kB"
-jne 224b
-.base64 "i720AAAAifgBwAHAAcABwIuNsAAAACnBiY2wAAAAieiDwECJ6oPCUInrgcMAAwAAgcUABwAAVVdTUlA="
-call {vg_ghash_pclmul}
-.base64 "WFhYWFiB7QAHAACLjbAAAADB6QSFyQ=="
-jmp 220f
-219:
-220:
-.base64 "i4WgAAAAAcABwAHAiYXgAAAAi4WgAAAAwegdiYXkAAAAi4WoAAAAAcABwAHAiYXoAAAAi4WoAAAAwegdiYXsAAAAie6BxuAAAAC4EAAAAImFsAAAAIuNsAAAAMHpBIP5QA=="
-jb 225f
-.base64 "uUAAAAA="
-jmp 226f
-225:
-226:
-.base64 "iY20AAAAieqBwgADAAA="
-227:
-.base64 "i0YMD8iJAotGCA/IiUIEi0YED8iJQgiLBg/IiUIMg8YQg8IQg+kB"
-jne 227b
-.base64 "i720AAAAifgBwAHAAcABwIuNsAAAACnBiY2wAAAAieiDwECJ6oPCUInrgcMAAwAAgcUABwAAVVdTUlA="
-call {vg_ghash_pclmul}
-.base64 "WFhYWFiB7QAHAACLjbAAAADB6QSFyYuNmAAAAIsRi1kEi3kIi0VcD8gx0IlFYItFWA/IMdiJRWSLRVQPyDH4iUVoi0VQD8gl////f4lFbItFYIlFcItFZIlFdItFaIlFeItFbIlFfLgAAAAAiUUAiUUEiUUIiUUMiegFAAIAAIuNlAAAAInqg8JwieuDwwC/AQAAAIHFAAMAAFVXU1JRUA=="
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge0AAwAAi0UAiUVgi0UEiUVki0UIiUVoi0UMDQAAAICJRWyLtaQAAACLhagAAACJhbAAAACLjbAAAADB6QSFyQ=="
-je 228f
-230:
-.base64 "i0VgiUVwi0VkiUV0i0VoiUV4i0VsiUV8iegFAAIAAIuNlAAAAInqg8JwifO/AQAAAIHFAAMAAFVXU1JRUA=="
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge0AAwAAi0Vgg8ABiUVgg8YQi4WwAAAAg+gQiYWwAAAAi42wAAAAwekEhck="
-jne 230b
-jmp 229f
-228:
-229:
-.base64 "i42wAAAAhck="
-je 231f
-.base64 "i0VgiUVwi0VkiUV0i0VoiUV4i0VsiUV8uAAAAACJheAAAACJheQAAACJhegAAACJhewAAACJ6AUAAgAAi42UAAAAieqDwnCJ64HD4AAAAL8BAAAAgcUAAwAAVVdTUlFQ"
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge0AAwAAieqBwuAAAACJ94uNsAAAAA=="
-233:
-.base64 "D7YCD7YfMdiIB4PHAYPCAYPpAQ=="
-jne 233b
-jmp 232f
-231:
-232:
-.base64 "i0UAi00Ei1UIi10Mi72sAAAAiQeJTwSJVwiJXwyLnYAAAACLtYQAAACLvYgAAACLrYwAAACNpCQoCwAAww=="
-.p2align 6"#,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-    )
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_siv_seal_aesni_pclmul(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_siv_seal_aesni_pclmul(schedule, rounds, nonce, aad, aad_len, data, len, tag) }
 }
 
 /// The CPU features `vg_aes_gcm_siv_open_aesni_pclmul` requires (`Artifact.features`).
@@ -514,8 +115,558 @@ pub const VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Featu
 /// * `data` must not overlap `schedule`, `nonce`, `aad` or `tag` (distinct Rust objects never do).
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2884 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_siv_open_aesni_pclmul(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_siv_open_aesni_pclmul(schedule, rounds, nonce, aad, aad_len, data, len, tag) }
+}
+
+/// The CPU features `vg_aes_gcm_siv_seal_pclmul` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_SEAL_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
+
+/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
+///
+/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` and `tag` must not overlap each other, `schedule`, `nonce` or `aad` (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2884 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq` and `ssse3` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_siv_seal_pclmul(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_siv_seal_pclmul(schedule, rounds, nonce, aad, aad_len, data, len, tag) }
+}
+
+/// The CPU features `vg_aes_gcm_siv_open_pclmul` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_OPEN_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
+
+/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
+///
+/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` must not overlap `schedule`, `nonce`, `aad` or `tag` (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2884 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq` and `ssse3` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_siv_open_pclmul(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_siv_open_pclmul(schedule, rounds, nonce, aad, aad_len, data, len, tag) }
+}
+
+/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
+///
+/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` and `tag` must not overlap each other, `schedule`, `nonce` or `aad` (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2884 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_siv_seal(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_siv_seal(schedule, rounds, nonce, aad, aad_len, data, len, tag) }
+}
+
+/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
+///
+/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` must not overlap `schedule`, `nonce`, `aad` or `tag` (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2884 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_gcm_siv_open(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_gcm_siv_open(schedule, rounds, nonce, aad, aad_len, data, len, tag) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_aes_gcm_siv_seal_aesni`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_siv_open_aesni_pclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_siv_seal_aesni(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r#".base64 "jaQk2PT//4uEJCwLAACJRCQEi4QkMAsAAIlEJAiLhCQ0CwAAiUQkDIuEJDgLAACJRCQQi4QkPAsAAIlEJBSLhCRACwAAiUQkGIuEJEQLAACJRCQci4QkSAsAAIlEJCCJ4IPAKIlEJCSLRCQkiZiAAAAAibCEAAAAibiIAAAAiaiMAAAAicWLRCQEiYWQAAAAi0QkCImFlAAAAItEJAyJhZgAAACLRCQQiYWcAAAAi0QkFImFoAAAAItEJBiJhaQAAACLRCQciYWoAAAAi0QkIImFrAAAALgAAAAAiYW0AAAA"
+20:
+.base64 "i4WYAAAAiwiLUASLWAiJTXSJVXiJXXyLhbQAAACJRXC4AAAAAImF4AAAAImF5AAAAImF6AAAAImF7AAAAIuFkAAAAIuNlAAAAInqg8JwieuBw+AAAAC/AQAAAIHFAAMAAFVXU1JRUA=="
+call {vg_aes_ctr32_aesni}
+.base64 "WFhYWFhYge0AAwAAi5W0AAAAAdIB0gHSAeqLheAAAACJQhCLheQAAACJQhSLhbQAAACDwAGJhbQAAACLjZQAAADR6YPpATnI"
+jne 20b
+.base64 "ieiDwCCLjZQAAACD6QYByQHJieqBwgACAACBxQADAABVUlFQ"
+call {vg_aes_expand_key_scratch_aesni}
+.base64 "WFhYWIHtAAMAAItFENHoi00Ug+EB0ckJyA/IiUVMi0UU0eiLTRiD4QHRyQnID8iJRUiLRRjR6ItNHIPhAdHJCcgPyIlFRItFHNHoi00Qg+EBugAAAAApyoHiAAAA4THQD8iJRUC4AAAAAIlFUIlFVIlFWIlFXIu1nAAAAIuFoAAAAImFsAAAAIuNsAAAAMHpBIXJ"
+je 21f
+23:
+.base64 "i42wAAAAwekEg/lA"
+jb 24f
+.base64 "uUAAAAA="
+jmp 25f
+24:
+25:
+.base64 "iY20AAAAieqBwgADAAA="
+26:
+.base64 "i0YMD8iJAotGCA/IiUIEi0YED8iJQgiLBg/IiUIMg8YQg8IQg+kB"
+jne 26b
+.base64 "i720AAAAifgBwAHAAcABwIuNsAAAACnBiY2wAAAAieiDwECJ6oPCUInrgcMAAwAAgcUABwAAVVdTUlA="
+call {vg_ghash}
+.base64 "WFhYWFiB7QAHAACLjbAAAADB6QSFyQ=="
+jne 23b
+jmp 22f
+21:
+22:
+.base64 "i42wAAAAhck="
+je 27f
+.base64 "uAAAAACJheAAAACJheQAAACJhegAAACJhewAAACJ94nqgcLgAAAAi42wAAAA"
+29:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 29b
+.base64 "ie6BxuAAAAC4EAAAAImFsAAAAIuNsAAAAMHpBIP5QA=="
+jb 210f
+.base64 "uUAAAAA="
+jmp 211f
+210:
+211:
+.base64 "iY20AAAAieqBwgADAAA="
+212:
+.base64 "i0YMD8iJAotGCA/IiUIEi0YED8iJQgiLBg/IiUIMg8YQg8IQg+kB"
+jne 212b
+.base64 "i720AAAAifgBwAHAAcABwIuNsAAAACnBiY2wAAAAieiDwECJ6oPCUInrgcMAAwAAgcUABwAAVVdTUlA="
+call {vg_ghash}
+.base64 "WFhYWFiB7QAHAACLjbAAAADB6QSFyQ=="
+jmp 28f
+27:
+28:
+.base64 "i7WkAAAAi4WoAAAAiYWwAAAAi42wAAAAwekEhck="
+je 213f
+215:
+.base64 "i42wAAAAwekEg/lA"
+jb 216f
+.base64 "uUAAAAA="
+jmp 217f
+216:
+217:
+.base64 "iY20AAAAieqBwgADAAA="
+218:
+.base64 "i0YMD8iJAotGCA/IiUIEi0YED8iJQgiLBg/IiUIMg8YQg8IQg+kB"
+jne 218b
+.base64 "i720AAAAifgBwAHAAcABwIuNsAAAACnBiY2wAAAAieiDwECJ6oPCUInrgcMAAwAAgcUABwAAVVdTUlA="
+call {vg_ghash}
+.base64 "WFhYWFiB7QAHAACLjbAAAADB6QSFyQ=="
+jne 215b
+jmp 214f
+213:
+214:
+.base64 "i42wAAAAhck="
+je 219f
+.base64 "uAAAAACJheAAAACJheQAAACJhegAAACJhewAAACJ94nqgcLgAAAAi42wAAAA"
+221:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 221b
+.base64 "ie6BxuAAAAC4EAAAAImFsAAAAIuNsAAAAMHpBIP5QA=="
+jb 222f
+.base64 "uUAAAAA="
+jmp 223f
+222:
+223:
+.base64 "iY20AAAAieqBwgADAAA="
+224:
+.base64 "i0YMD8iJAotGCA/IiUIEi0YED8iJQgiLBg/IiUIMg8YQg8IQg+kB"
+jne 224b
+.base64 "i720AAAAifgBwAHAAcABwIuNsAAAACnBiY2wAAAAieiDwECJ6oPCUInrgcMAAwAAgcUABwAAVVdTUlA="
+call {vg_ghash}
+.base64 "WFhYWFiB7QAHAACLjbAAAADB6QSFyQ=="
+jmp 220f
+219:
+220:
+.base64 "i4WgAAAAAcABwAHAiYXgAAAAi4WgAAAAwegdiYXkAAAAi4WoAAAAAcABwAHAiYXoAAAAi4WoAAAAwegdiYXsAAAAie6BxuAAAAC4EAAAAImFsAAAAIuNsAAAAMHpBIP5QA=="
+jb 225f
+.base64 "uUAAAAA="
+jmp 226f
+225:
+226:
+.base64 "iY20AAAAieqBwgADAAA="
+227:
+.base64 "i0YMD8iJAotGCA/IiUIEi0YED8iJQgiLBg/IiUIMg8YQg8IQg+kB"
+jne 227b
+.base64 "i720AAAAifgBwAHAAcABwIuNsAAAACnBiY2wAAAAieiDwECJ6oPCUInrgcMAAwAAgcUABwAAVVdTUlA="
+call {vg_ghash}
+.base64 "WFhYWFiB7QAHAACLjbAAAADB6QSFyYuNmAAAAIsRi1kEi3kIi0VcD8gx0IlFYItFWA/IMdiJRWSLRVQPyDH4iUVoi0VQD8gl////f4lFbItFYIlFcItFZIlFdItFaIlFeItFbIlFfLgAAAAAiUUAiUUEiUUIiUUMiegFAAIAAIuNlAAAAInqg8JwieuDwwC/AQAAAIHFAAMAAFVXU1JRUA=="
+call {vg_aes_ctr32_aesni}
+.base64 "WFhYWFhYge0AAwAAi0UAiUVgi0UEiUVki0UIiUVoi0UMDQAAAICJRWyLtaQAAACLhagAAACJhbAAAACLjbAAAADB6QSFyQ=="
+je 228f
+230:
+.base64 "i0VgiUVwi0VkiUV0i0VoiUV4i0VsiUV8iegFAAIAAIuNlAAAAInqg8JwifO/AQAAAIHFAAMAAFVXU1JRUA=="
+call {vg_aes_ctr32_aesni}
+.base64 "WFhYWFhYge0AAwAAi0Vgg8ABiUVgg8YQi4WwAAAAg+gQiYWwAAAAi42wAAAAwekEhck="
+jne 230b
+jmp 229f
+228:
+229:
+.base64 "i42wAAAAhck="
+je 231f
+.base64 "i0VgiUVwi0VkiUV0i0VoiUV4i0VsiUV8uAAAAACJheAAAACJheQAAACJhegAAACJhewAAACJ6AUAAgAAi42UAAAAieqDwnCJ64HD4AAAAL8BAAAAgcUAAwAAVVdTUlFQ"
+call {vg_aes_ctr32_aesni}
+.base64 "WFhYWFhYge0AAwAAieqBwuAAAACJ94uNsAAAAA=="
+233:
+.base64 "D7YCD7YfMdiIB4PHAYPCAYPpAQ=="
+jne 233b
+jmp 232f
+231:
+232:
+.base64 "i0UAi00Ei1UIi10Mi72sAAAAiQeJTwSJVwiJXwyLnYAAAACLtYQAAACLvYgAAACLrYwAAACNpCQoCwAAww=="
+.p2align 6"#,
+        vg_aes_ctr32_aesni = sym crate::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_expand_key_scratch_aesni = sym crate::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_ghash = sym crate::aes_gcm_siv::vg_ghash::vg_ghash,
+    )
+}
+
+/// The verified code of [`super::vg_aes_gcm_siv_open_aesni`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_siv_open_aesni(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "jaQk2PT//4uEJCwLAACJRCQEi4QkMAsAAIlEJAiLhCQ0CwAAiUQkDIuEJDgLAACJRCQQi4QkPAsAAIlEJBSLhCRACwAAiUQkGIuEJEQLAACJRCQci4QkSAsAAIlEJCCJ4IPAKIlEJCSLRCQkiZiAAAAAibCEAAAAibiIAAAAiaiMAAAAicWLRCQEiYWQAAAAi0QkCImFlAAAAItEJAyJhZgAAACLRCQQiYWcAAAAi0QkFImFoAAAAItEJBiJhaQAAACLRCQciYWoAAAAi0QkIImFrAAAAIu9rAAAAIsHi08Ei1cIi18MiUUAiU0EiVUIiV0MuAAAAACJhbQAAAA="
+20:
+.base64 "i4WYAAAAiwiLUASLWAiJTXSJVXiJXXyLhbQAAACJRXC4AAAAAImF4AAAAImF5AAAAImF6AAAAImF7AAAAIuFkAAAAIuNlAAAAInqg8JwieuBw+AAAAC/AQAAAIHFAAMAAFVXU1JRUA=="
+call {vg_aes_ctr32_aesni}
+.base64 "WFhYWFhYge0AAwAAi5W0AAAAAdIB0gHSAeqLheAAAACJQhCLheQAAACJQhSLhbQAAACDwAGJhbQAAACLjZQAAADR6YPpATnI"
+jne 20b
+.base64 "ieiDwCCLjZQAAACD6QYByQHJieqBwgACAACBxQADAABVUlFQ"
+call {vg_aes_expand_key_scratch_aesni}
+.base64 "WFhYWIHtAAMAAItFENHoi00Ug+EB0ckJyA/IiUVMi0UU0eiLTRiD4QHRyQnID8iJRUiLRRjR6ItNHIPhAdHJCcgPyIlFRItFHNHoi00Qg+EBugAAAAApyoHiAAAA4THQD8iJRUC4AAAAAIlFUIlFVIlFWIlFXItFAIlFYItFBIlFZItFCIlFaItFDA0AAACAiUVsi7WkAAAAi4WoAAAAiYWwAAAAi42wAAAAwekEhck="
+je 21f
+23:
+.base64 "i0VgiUVwi0VkiUV0i0VoiUV4i0VsiUV8iegFAAIAAIuNlAAAAInqg8JwifO/AQAAAIHFAAMAAFVXU1JRUA=="
+call {vg_aes_ctr32_aesni}
+.base64 "WFhYWFhYge0AAwAAi0Vgg8ABiUVgg8YQi4WwAAAAg+gQiYWwAAAAi42wAAAAwekEhck="
+jne 23b
+jmp 22f
+21:
+22:
+.base64 "i42wAAAAhck="
+je 24f
+.base64 "i0VgiUVwi0VkiUV0i0VoiUV4i0VsiUV8uAAAAACJheAAAACJheQAAACJhegAAACJhewAAACJ6AUAAgAAi42UAAAAieqDwnCJ64HD4AAAAL8BAAAAgcUAAwAAVVdTUlFQ"
+call {vg_aes_ctr32_aesni}
+.base64 "WFhYWFhYge0AAwAAieqBwuAAAACJ94uNsAAAAA=="
+26:
+.base64 "D7YCD7YfMdiIB4PHAYPCAYPpAQ=="
+jne 26b
+jmp 25f
+24:
+25:
+.base64 "i7WcAAAAi4WgAAAAiYWwAAAAi42wAAAAwekEhck="
+je 27f
+29:
+.base64 "i42wAAAAwekEg/lA"
+jb 210f
+.base64 "uUAAAAA="
+jmp 211f
+210:
+211:
+.base64 "iY20AAAAieqBwgADAAA="
+212:
+.base64 "i0YMD8iJAotGCA/IiUIEi0YED8iJQgiLBg/IiUIMg8YQg8IQg+kB"
+jne 212b
+.base64 "i720AAAAifgBwAHAAcABwIuNsAAAACnBiY2wAAAAieiDwECJ6oPCUInrgcMAAwAAgcUABwAAVVdTUlA="
+call {vg_ghash}
+.base64 "WFhYWFiB7QAHAACLjbAAAADB6QSFyQ=="
+jne 29b
+jmp 28f
+27:
+28:
+.base64 "i42wAAAAhck="
+je 213f
+.base64 "uAAAAACJheAAAACJheQAAACJhegAAACJhewAAACJ94nqgcLgAAAAi42wAAAA"
+215:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 215b
+.base64 "ie6BxuAAAAC4EAAAAImFsAAAAIuNsAAAAMHpBIP5QA=="
+jb 216f
+.base64 "uUAAAAA="
+jmp 217f
+216:
+217:
+.base64 "iY20AAAAieqBwgADAAA="
+218:
+.base64 "i0YMD8iJAotGCA/IiUIEi0YED8iJQgiLBg/IiUIMg8YQg8IQg+kB"
+jne 218b
+.base64 "i720AAAAifgBwAHAAcABwIuNsAAAACnBiY2wAAAAieiDwECJ6oPCUInrgcMAAwAAgcUABwAAVVdTUlA="
+call {vg_ghash}
+.base64 "WFhYWFiB7QAHAACLjbAAAADB6QSFyQ=="
+jmp 214f
+213:
+214:
+.base64 "i7WkAAAAi4WoAAAAiYWwAAAAi42wAAAAwekEhck="
+je 219f
+221:
+.base64 "i42wAAAAwekEg/lA"
+jb 222f
+.base64 "uUAAAAA="
+jmp 223f
+222:
+223:
+.base64 "iY20AAAAieqBwgADAAA="
+224:
+.base64 "i0YMD8iJAotGCA/IiUIEi0YED8iJQgiLBg/IiUIMg8YQg8IQg+kB"
+jne 224b
+.base64 "i720AAAAifgBwAHAAcABwIuNsAAAACnBiY2wAAAAieiDwECJ6oPCUInrgcMAAwAAgcUABwAAVVdTUlA="
+call {vg_ghash}
+.base64 "WFhYWFiB7QAHAACLjbAAAADB6QSFyQ=="
+jne 221b
+jmp 220f
+219:
+220:
+.base64 "i42wAAAAhck="
+je 225f
+.base64 "uAAAAACJheAAAACJheQAAACJhegAAACJhewAAACJ94nqgcLgAAAAi42wAAAA"
+227:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 227b
+.base64 "ie6BxuAAAAC4EAAAAImFsAAAAIuNsAAAAMHpBIP5QA=="
+jb 228f
+.base64 "uUAAAAA="
+jmp 229f
+228:
+229:
+.base64 "iY20AAAAieqBwgADAAA="
+230:
+.base64 "i0YMD8iJAotGCA/IiUIEi0YED8iJQgiLBg/IiUIMg8YQg8IQg+kB"
+jne 230b
+.base64 "i720AAAAifgBwAHAAcABwIuNsAAAACnBiY2wAAAAieiDwECJ6oPCUInrgcMAAwAAgcUABwAAVVdTUlA="
+call {vg_ghash}
+.base64 "WFhYWFiB7QAHAACLjbAAAADB6QSFyQ=="
+jmp 226f
+225:
+226:
+.base64 "i4WgAAAAAcABwAHAiYXgAAAAi4WgAAAAwegdiYXkAAAAi4WoAAAAAcABwAHAiYXoAAAAi4WoAAAAwegdiYXsAAAAie6BxuAAAAC4EAAAAImFsAAAAIuNsAAAAMHpBIP5QA=="
+jb 231f
+.base64 "uUAAAAA="
+jmp 232f
+231:
+232:
+.base64 "iY20AAAAieqBwgADAAA="
+233:
+.base64 "i0YMD8iJAotGCA/IiUIEi0YED8iJQgiLBg/IiUIMg8YQg8IQg+kB"
+jne 233b
+.base64 "i720AAAAifgBwAHAAcABwIuNsAAAACnBiY2wAAAAieiDwECJ6oPCUInrgcMAAwAAgcUABwAAVVdTUlA="
+call {vg_ghash}
+.base64 "WFhYWFiB7QAHAACLjbAAAADB6QSFyYuNmAAAAIsRi1kEi3kIi0VcD8gx0IlFYItFWA/IMdiJRWSLRVQPyDH4iUVoi0VQD8gl////f4lFbItFYIlFcItFZIlFdItFaIlFeItFbIlFfLgAAAAAiYXwAAAAiYX0AAAAiYX4AAAAiYX8AAAAiegFAAIAAIuNlAAAAInqg8JwieuBw/AAAAC/AQAAAIHFAAMAAFVXU1JRUA=="
+call {vg_aes_ctr32_aesni}
+.base64 "WFhYWFhYge0AAwAAi0UAM4XwAAAAi00EM430AAAACciLTQgzjfgAAAAJyItNDDON/AAAAAnIg/gBuAAAAACD0AC7AAAAACnDi42oAAAAhck="
+je 234f
+.base64 "i72kAAAA"
+236:
+.base64 "D7YXIdqIF4PHAYPpAQ=="
+jne 236b
+jmp 235f
+234:
+235:
+.base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkKAsAAMM="
+.p2align 6"#,
+        vg_aes_ctr32_aesni = sym crate::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_expand_key_scratch_aesni = sym crate::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_ghash = sym crate::aes_gcm_siv::vg_ghash::vg_ghash,
+    )
+}
+
+/// The verified code of [`super::vg_aes_gcm_siv_seal_aesni_pclmul`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_siv_seal_aesni_pclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r#".base64 "jaQk2PT//4uEJCwLAACJRCQEi4QkMAsAAIlEJAiLhCQ0CwAAiUQkDIuEJDgLAACJRCQQi4QkPAsAAIlEJBSLhCRACwAAiUQkGIuEJEQLAACJRCQci4QkSAsAAIlEJCCJ4IPAKIlEJCSLRCQkiZiAAAAAibCEAAAAibiIAAAAiaiMAAAAicWLRCQEiYWQAAAAi0QkCImFlAAAAItEJAyJhZgAAACLRCQQiYWcAAAAi0QkFImFoAAAAItEJBiJhaQAAACLRCQciYWoAAAAi0QkIImFrAAAALgAAAAAiYW0AAAA"
+20:
+.base64 "i4WYAAAAiwiLUASLWAiJTXSJVXiJXXyLhbQAAACJRXC4AAAAAImF4AAAAImF5AAAAImF6AAAAImF7AAAAIuFkAAAAIuNlAAAAInqg8JwieuBw+AAAAC/AQAAAIHFAAMAAFVXU1JRUA=="
+call {vg_aes_ctr32_aesni}
+.base64 "WFhYWFhYge0AAwAAi5W0AAAAAdIB0gHSAeqLheAAAACJQhCLheQAAACJQhSLhbQAAACDwAGJhbQAAACLjZQAAADR6YPpATnI"
+jne 20b
+.base64 "ieiDwCCLjZQAAACD6QYByQHJieqBwgACAACBxQADAABVUlFQ"
+call {vg_aes_expand_key_scratch_aesni}
+.base64 "WFhYWIHtAAMAAItFENHoi00Ug+EB0ckJyA/IiUVMi0UU0eiLTRiD4QHRyQnID8iJRUiLRRjR6ItNHIPhAdHJCcgPyIlFRItFHNHoi00Qg+EBugAAAAApyoHiAAAA4THQD8iJRUC4AAAAAIlFUIlFVIlFWIlFXIu1nAAAAIuFoAAAAImFsAAAAIuNsAAAAMHpBIXJ"
+je 21f
+23:
+.base64 "i42wAAAAwekEg/lA"
+jb 24f
+.base64 "uUAAAAA="
+jmp 25f
+24:
+25:
+.base64 "iY20AAAAieqBwgADAAA="
+26:
+.base64 "i0YMD8iJAotGCA/IiUIEi0YED8iJQgiLBg/IiUIMg8YQg8IQg+kB"
+jne 26b
+.base64 "i720AAAAifgBwAHAAcABwIuNsAAAACnBiY2wAAAAieiDwECJ6oPCUInrgcMAAwAAgcUABwAAVVdTUlA="
+call {vg_ghash_pclmul}
+.base64 "WFhYWFiB7QAHAACLjbAAAADB6QSFyQ=="
+jne 23b
+jmp 22f
+21:
+22:
+.base64 "i42wAAAAhck="
+je 27f
+.base64 "uAAAAACJheAAAACJheQAAACJhegAAACJhewAAACJ94nqgcLgAAAAi42wAAAA"
+29:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 29b
+.base64 "ie6BxuAAAAC4EAAAAImFsAAAAIuNsAAAAMHpBIP5QA=="
+jb 210f
+.base64 "uUAAAAA="
+jmp 211f
+210:
+211:
+.base64 "iY20AAAAieqBwgADAAA="
+212:
+.base64 "i0YMD8iJAotGCA/IiUIEi0YED8iJQgiLBg/IiUIMg8YQg8IQg+kB"
+jne 212b
+.base64 "i720AAAAifgBwAHAAcABwIuNsAAAACnBiY2wAAAAieiDwECJ6oPCUInrgcMAAwAAgcUABwAAVVdTUlA="
+call {vg_ghash_pclmul}
+.base64 "WFhYWFiB7QAHAACLjbAAAADB6QSFyQ=="
+jmp 28f
+27:
+28:
+.base64 "i7WkAAAAi4WoAAAAiYWwAAAAi42wAAAAwekEhck="
+je 213f
+215:
+.base64 "i42wAAAAwekEg/lA"
+jb 216f
+.base64 "uUAAAAA="
+jmp 217f
+216:
+217:
+.base64 "iY20AAAAieqBwgADAAA="
+218:
+.base64 "i0YMD8iJAotGCA/IiUIEi0YED8iJQgiLBg/IiUIMg8YQg8IQg+kB"
+jne 218b
+.base64 "i720AAAAifgBwAHAAcABwIuNsAAAACnBiY2wAAAAieiDwECJ6oPCUInrgcMAAwAAgcUABwAAVVdTUlA="
+call {vg_ghash_pclmul}
+.base64 "WFhYWFiB7QAHAACLjbAAAADB6QSFyQ=="
+jne 215b
+jmp 214f
+213:
+214:
+.base64 "i42wAAAAhck="
+je 219f
+.base64 "uAAAAACJheAAAACJheQAAACJhegAAACJhewAAACJ94nqgcLgAAAAi42wAAAA"
+221:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 221b
+.base64 "ie6BxuAAAAC4EAAAAImFsAAAAIuNsAAAAMHpBIP5QA=="
+jb 222f
+.base64 "uUAAAAA="
+jmp 223f
+222:
+223:
+.base64 "iY20AAAAieqBwgADAAA="
+224:
+.base64 "i0YMD8iJAotGCA/IiUIEi0YED8iJQgiLBg/IiUIMg8YQg8IQg+kB"
+jne 224b
+.base64 "i720AAAAifgBwAHAAcABwIuNsAAAACnBiY2wAAAAieiDwECJ6oPCUInrgcMAAwAAgcUABwAAVVdTUlA="
+call {vg_ghash_pclmul}
+.base64 "WFhYWFiB7QAHAACLjbAAAADB6QSFyQ=="
+jmp 220f
+219:
+220:
+.base64 "i4WgAAAAAcABwAHAiYXgAAAAi4WgAAAAwegdiYXkAAAAi4WoAAAAAcABwAHAiYXoAAAAi4WoAAAAwegdiYXsAAAAie6BxuAAAAC4EAAAAImFsAAAAIuNsAAAAMHpBIP5QA=="
+jb 225f
+.base64 "uUAAAAA="
+jmp 226f
+225:
+226:
+.base64 "iY20AAAAieqBwgADAAA="
+227:
+.base64 "i0YMD8iJAotGCA/IiUIEi0YED8iJQgiLBg/IiUIMg8YQg8IQg+kB"
+jne 227b
+.base64 "i720AAAAifgBwAHAAcABwIuNsAAAACnBiY2wAAAAieiDwECJ6oPCUInrgcMAAwAAgcUABwAAVVdTUlA="
+call {vg_ghash_pclmul}
+.base64 "WFhYWFiB7QAHAACLjbAAAADB6QSFyYuNmAAAAIsRi1kEi3kIi0VcD8gx0IlFYItFWA/IMdiJRWSLRVQPyDH4iUVoi0VQD8gl////f4lFbItFYIlFcItFZIlFdItFaIlFeItFbIlFfLgAAAAAiUUAiUUEiUUIiUUMiegFAAIAAIuNlAAAAInqg8JwieuDwwC/AQAAAIHFAAMAAFVXU1JRUA=="
+call {vg_aes_ctr32_aesni}
+.base64 "WFhYWFhYge0AAwAAi0UAiUVgi0UEiUVki0UIiUVoi0UMDQAAAICJRWyLtaQAAACLhagAAACJhbAAAACLjbAAAADB6QSFyQ=="
+je 228f
+230:
+.base64 "i0VgiUVwi0VkiUV0i0VoiUV4i0VsiUV8iegFAAIAAIuNlAAAAInqg8JwifO/AQAAAIHFAAMAAFVXU1JRUA=="
+call {vg_aes_ctr32_aesni}
+.base64 "WFhYWFhYge0AAwAAi0Vgg8ABiUVgg8YQi4WwAAAAg+gQiYWwAAAAi42wAAAAwekEhck="
+jne 230b
+jmp 229f
+228:
+229:
+.base64 "i42wAAAAhck="
+je 231f
+.base64 "i0VgiUVwi0VkiUV0i0VoiUV4i0VsiUV8uAAAAACJheAAAACJheQAAACJhegAAACJhewAAACJ6AUAAgAAi42UAAAAieqDwnCJ64HD4AAAAL8BAAAAgcUAAwAAVVdTUlFQ"
+call {vg_aes_ctr32_aesni}
+.base64 "WFhYWFhYge0AAwAAieqBwuAAAACJ94uNsAAAAA=="
+233:
+.base64 "D7YCD7YfMdiIB4PHAYPCAYPpAQ=="
+jne 233b
+jmp 232f
+231:
+232:
+.base64 "i0UAi00Ei1UIi10Mi72sAAAAiQeJTwSJVwiJXwyLnYAAAACLtYQAAACLvYgAAACLrYwAAACNpCQoCwAAww=="
+.p2align 6"#,
+        vg_aes_ctr32_aesni = sym crate::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_expand_key_scratch_aesni = sym crate::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_ghash_pclmul = sym crate::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+    )
+}
+
+/// The verified code of [`super::vg_aes_gcm_siv_open_aesni_pclmul`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_siv_open_aesni_pclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "jaQk2PT//4uEJCwLAACJRCQEi4QkMAsAAIlEJAiLhCQ0CwAAiUQkDIuEJDgLAACJRCQQi4QkPAsAAIlEJBSLhCRACwAAiUQkGIuEJEQLAACJRCQci4QkSAsAAIlEJCCJ4IPAKIlEJCSLRCQkiZiAAAAAibCEAAAAibiIAAAAiaiMAAAAicWLRCQEiYWQAAAAi0QkCImFlAAAAItEJAyJhZgAAACLRCQQiYWcAAAAi0QkFImFoAAAAItEJBiJhaQAAACLRCQciYWoAAAAi0QkIImFrAAAAIu9rAAAAIsHi08Ei1cIi18MiUUAiU0EiVUIiV0MuAAAAACJhbQAAAA="
 20:
@@ -655,36 +806,15 @@ jmp 235f
 235:
 .base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkKAsAAMM="
 .p2align 6"#,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_ctr32_aesni = sym crate::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_expand_key_scratch_aesni = sym crate::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_ghash_pclmul = sym crate::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
     )
 }
 
-/// The CPU features `vg_aes_gcm_siv_seal_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_SEAL_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
-
-/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
-///
-/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` and `tag` must not overlap each other, `schedule`, `nonce` or `aad` (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2884 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq` and `ssse3` target features.
+/// The verified code of [`super::vg_aes_gcm_siv_seal_pclmul`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_siv_seal_pclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_siv_seal_pclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "jaQk2PT//4uEJCwLAACJRCQEi4QkMAsAAIlEJAiLhCQ0CwAAiUQkDIuEJDgLAACJRCQQi4QkPAsAAIlEJBSLhCRACwAAiUQkGIuEJEQLAACJRCQci4QkSAsAAIlEJCCJ4IPAKIlEJCSLRCQkiZiAAAAAibCEAAAAibiIAAAAiaiMAAAAicWLRCQEiYWQAAAAi0QkCImFlAAAAItEJAyJhZgAAACLRCQQiYWcAAAAi0QkFImFoAAAAItEJBiJhaQAAACLRCQciYWoAAAAi0QkIImFrAAAALgAAAAAiYW0AAAA"
 20:
@@ -815,36 +945,15 @@ jmp 232f
 232:
 .base64 "i0UAi00Ei1UIi10Mi72sAAAAiQeJTwSJVwiJXwyLnYAAAACLtYQAAACLvYgAAACLrYwAAACNpCQoCwAAww=="
 .p2align 6"#,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_ctr32 = sym crate::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_expand_key_scratch = sym crate::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_ghash_pclmul = sym crate::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
     )
 }
 
-/// The CPU features `vg_aes_gcm_siv_open_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_OPEN_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
-
-/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
-///
-/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` must not overlap `schedule`, `nonce`, `aad` or `tag` (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2884 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq` and `ssse3` target features.
+/// The verified code of [`super::vg_aes_gcm_siv_open_pclmul`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_siv_open_pclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_siv_open_pclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "jaQk2PT//4uEJCwLAACJRCQEi4QkMAsAAIlEJAiLhCQ0CwAAiUQkDIuEJDgLAACJRCQQi4QkPAsAAIlEJBSLhCRACwAAiUQkGIuEJEQLAACJRCQci4QkSAsAAIlEJCCJ4IPAKIlEJCSLRCQkiZiAAAAAibCEAAAAibiIAAAAiaiMAAAAicWLRCQEiYWQAAAAi0QkCImFlAAAAItEJAyJhZgAAACLRCQQiYWcAAAAi0QkFImFoAAAAItEJBiJhaQAAACLRCQciYWoAAAAi0QkIImFrAAAAIu9rAAAAIsHi08Ei1cIi18MiUUAiU0EiVUIiV0MuAAAAACJhbQAAAA="
 20:
@@ -984,32 +1093,15 @@ jmp 235f
 235:
 .base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkKAsAAMM="
 .p2align 6"#,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_ctr32 = sym crate::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_expand_key_scratch = sym crate::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_ghash_pclmul = sym crate::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
     )
 }
 
-/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
-///
-/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` and `tag` must not overlap each other, `schedule`, `nonce` or `aad` (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2884 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_aes_gcm_siv_seal`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_siv_seal(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_siv_seal(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "jaQk2PT//4uEJCwLAACJRCQEi4QkMAsAAIlEJAiLhCQ0CwAAiUQkDIuEJDgLAACJRCQQi4QkPAsAAIlEJBSLhCRACwAAiUQkGIuEJEQLAACJRCQci4QkSAsAAIlEJCCJ4IPAKIlEJCSLRCQkiZiAAAAAibCEAAAAibiIAAAAiaiMAAAAicWLRCQEiYWQAAAAi0QkCImFlAAAAItEJAyJhZgAAACLRCQQiYWcAAAAi0QkFImFoAAAAItEJBiJhaQAAACLRCQciYWoAAAAi0QkIImFrAAAALgAAAAAiYW0AAAA"
 20:
@@ -1140,32 +1232,15 @@ jmp 232f
 232:
 .base64 "i0UAi00Ei1UIi10Mi72sAAAAiQeJTwSJVwiJXwyLnYAAAACLtYQAAACLvYgAAACLrYwAAACNpCQoCwAAww=="
 .p2align 6"#,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_aes_ctr32 = sym crate::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_expand_key_scratch = sym crate::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_ghash = sym crate::aes_gcm_siv::vg_ghash::vg_ghash,
     )
 }
 
-/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
-///
-/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` must not overlap `schedule`, `nonce`, `aad` or `tag` (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2884 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_aes_gcm_siv_open`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_siv_open(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_siv_open(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "jaQk2PT//4uEJCwLAACJRCQEi4QkMAsAAIlEJAiLhCQ0CwAAiUQkDIuEJDgLAACJRCQQi4QkPAsAAIlEJBSLhCRACwAAiUQkGIuEJEQLAACJRCQci4QkSAsAAIlEJCCJ4IPAKIlEJCSLRCQkiZiAAAAAibCEAAAAibiIAAAAiaiMAAAAicWLRCQEiYWQAAAAi0QkCImFlAAAAItEJAyJhZgAAACLRCQQiYWcAAAAi0QkFImFoAAAAItEJBiJhaQAAACLRCQciYWoAAAAi0QkIImFrAAAAIu9rAAAAIsHi08Ei1cIi18MiUUAiU0EiVUIiV0MuAAAAACJhbQAAAA="
 20:
@@ -1305,10 +1380,11 @@ jmp 235f
 235:
 .base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkKAsAAMM="
 .p2align 6"#,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_aes_ctr32 = sym crate::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_expand_key_scratch = sym crate::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_ghash = sym crate::aes_gcm_siv::vg_ghash::vg_ghash,
     )
+}
 }
 
 #[rustfmt::skip]

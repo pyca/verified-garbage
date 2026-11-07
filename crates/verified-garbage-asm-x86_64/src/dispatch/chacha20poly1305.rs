@@ -19,35 +19,35 @@
 /// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 1768 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_chacha20_poly1305_seal_auto(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe fn vg_chacha20_poly1305_seal_auto(dit: verified_garbage_cpu::Dit<'_>, key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_SEAL_IFMA_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_chacha20_poly1305_seal_ifma`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::chacha20poly1305::vg_chacha20_poly1305_seal_ifma(key, nonce, aad, aad_len, data, len, tag) };
+        return unsafe { crate::chacha20poly1305::vg_chacha20_poly1305_seal_ifma(dit, key, nonce, aad, aad_len, data, len, tag) };
     }
     if cpu.contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_SEAL_AVX512VL_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_chacha20_poly1305_seal_avx512vl`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::chacha20poly1305::vg_chacha20_poly1305_seal_avx512vl(key, nonce, aad, aad_len, data, len, tag) };
+        return unsafe { crate::chacha20poly1305::vg_chacha20_poly1305_seal_avx512vl(dit, key, nonce, aad, aad_len, data, len, tag) };
     }
     if cpu.contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_SEAL_AVX512_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_chacha20_poly1305_seal_avx512`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::chacha20poly1305::vg_chacha20_poly1305_seal_avx512(key, nonce, aad, aad_len, data, len, tag) };
+        return unsafe { crate::chacha20poly1305::vg_chacha20_poly1305_seal_avx512(dit, key, nonce, aad, aad_len, data, len, tag) };
     }
     if cpu.contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_SEAL_AVX2_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_chacha20_poly1305_seal_avx2`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::chacha20poly1305::vg_chacha20_poly1305_seal_avx2(key, nonce, aad, aad_len, data, len, tag) };
+        return unsafe { crate::chacha20poly1305::vg_chacha20_poly1305_seal_avx2(dit, key, nonce, aad, aad_len, data, len, tag) };
     }
     if cpu.contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_SEAL_SSSE3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_chacha20_poly1305_seal_ssse3`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::chacha20poly1305::vg_chacha20_poly1305_seal_ssse3(key, nonce, aad, aad_len, data, len, tag) };
+        return unsafe { crate::chacha20poly1305::vg_chacha20_poly1305_seal_ssse3(dit, key, nonce, aad, aad_len, data, len, tag) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::chacha20poly1305::vg_chacha20_poly1305_seal(key, nonce, aad, aad_len, data, len, tag) }
+    unsafe { crate::chacha20poly1305::vg_chacha20_poly1305_seal(dit, key, nonce, aad, aad_len, data, len, tag) }
 }
 
 /// ChaCha20-Poly1305 decryption (RFC 8439 §2.8): with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, having decrypted the ciphertext in place; otherwise returns 0, and the `len` bytes at `data` are zeros. The tags are compared without a branch.
@@ -67,35 +67,35 @@ pub unsafe fn vg_chacha20_poly1305_seal_auto(key: *const [u8; 32], nonce: *const
 /// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 1768 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_chacha20_poly1305_open_auto(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub unsafe fn vg_chacha20_poly1305_open_auto(dit: verified_garbage_cpu::Dit<'_>, key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_OPEN_IFMA_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_chacha20_poly1305_open_ifma`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::chacha20poly1305::vg_chacha20_poly1305_open_ifma(key, nonce, aad, aad_len, data, len, tag) };
+        return unsafe { crate::chacha20poly1305::vg_chacha20_poly1305_open_ifma(dit, key, nonce, aad, aad_len, data, len, tag) };
     }
     if cpu.contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_OPEN_AVX512VL_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_chacha20_poly1305_open_avx512vl`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::chacha20poly1305::vg_chacha20_poly1305_open_avx512vl(key, nonce, aad, aad_len, data, len, tag) };
+        return unsafe { crate::chacha20poly1305::vg_chacha20_poly1305_open_avx512vl(dit, key, nonce, aad, aad_len, data, len, tag) };
     }
     if cpu.contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_OPEN_AVX512_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_chacha20_poly1305_open_avx512`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::chacha20poly1305::vg_chacha20_poly1305_open_avx512(key, nonce, aad, aad_len, data, len, tag) };
+        return unsafe { crate::chacha20poly1305::vg_chacha20_poly1305_open_avx512(dit, key, nonce, aad, aad_len, data, len, tag) };
     }
     if cpu.contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_OPEN_AVX2_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_chacha20_poly1305_open_avx2`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::chacha20poly1305::vg_chacha20_poly1305_open_avx2(key, nonce, aad, aad_len, data, len, tag) };
+        return unsafe { crate::chacha20poly1305::vg_chacha20_poly1305_open_avx2(dit, key, nonce, aad, aad_len, data, len, tag) };
     }
     if cpu.contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_OPEN_SSSE3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_chacha20_poly1305_open_ssse3`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::chacha20poly1305::vg_chacha20_poly1305_open_ssse3(key, nonce, aad, aad_len, data, len, tag) };
+        return unsafe { crate::chacha20poly1305::vg_chacha20_poly1305_open_ssse3(dit, key, nonce, aad, aad_len, data, len, tag) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::chacha20poly1305::vg_chacha20_poly1305_open(key, nonce, aad, aad_len, data, len, tag) }
+    unsafe { crate::chacha20poly1305::vg_chacha20_poly1305_open(dit, key, nonce, aad, aad_len, data, len, tag) }
 }
 
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8), out of place, of a plaintext in pieces: with the key `*key` and the nonce `*nonce`, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_chacha20_poly1305_seal` with the plaintext gathered from `src`.
@@ -118,33 +118,33 @@ pub unsafe fn vg_chacha20_poly1305_open_auto(key: *const [u8; 32], nonce: *const
 /// * None of `key`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 1880 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_chacha20_poly1305_seal_gather_auto(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe fn vg_chacha20_poly1305_seal_gather_auto(dit: verified_garbage_cpu::Dit<'_>, key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_SEAL_GATHER_IFMA_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_chacha20_poly1305_seal_gather_ifma`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::chacha20poly1305::vg_chacha20_poly1305_seal_gather_ifma(key, nonce, aad, aad_len, src, src_count, dst, len, tag) };
+        return unsafe { crate::chacha20poly1305::vg_chacha20_poly1305_seal_gather_ifma(dit, key, nonce, aad, aad_len, src, src_count, dst, len, tag) };
     }
     if cpu.contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_SEAL_GATHER_AVX512VL_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_chacha20_poly1305_seal_gather_avx512vl`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::chacha20poly1305::vg_chacha20_poly1305_seal_gather_avx512vl(key, nonce, aad, aad_len, src, src_count, dst, len, tag) };
+        return unsafe { crate::chacha20poly1305::vg_chacha20_poly1305_seal_gather_avx512vl(dit, key, nonce, aad, aad_len, src, src_count, dst, len, tag) };
     }
     if cpu.contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_SEAL_GATHER_AVX512_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_chacha20_poly1305_seal_gather_avx512`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::chacha20poly1305::vg_chacha20_poly1305_seal_gather_avx512(key, nonce, aad, aad_len, src, src_count, dst, len, tag) };
+        return unsafe { crate::chacha20poly1305::vg_chacha20_poly1305_seal_gather_avx512(dit, key, nonce, aad, aad_len, src, src_count, dst, len, tag) };
     }
     if cpu.contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_SEAL_GATHER_AVX2_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_chacha20_poly1305_seal_gather_avx2`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::chacha20poly1305::vg_chacha20_poly1305_seal_gather_avx2(key, nonce, aad, aad_len, src, src_count, dst, len, tag) };
+        return unsafe { crate::chacha20poly1305::vg_chacha20_poly1305_seal_gather_avx2(dit, key, nonce, aad, aad_len, src, src_count, dst, len, tag) };
     }
     if cpu.contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_SEAL_GATHER_SSSE3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_chacha20_poly1305_seal_gather_ssse3`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::chacha20poly1305::vg_chacha20_poly1305_seal_gather_ssse3(key, nonce, aad, aad_len, src, src_count, dst, len, tag) };
+        return unsafe { crate::chacha20poly1305::vg_chacha20_poly1305_seal_gather_ssse3(dit, key, nonce, aad, aad_len, src, src_count, dst, len, tag) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::chacha20poly1305::vg_chacha20_poly1305_seal_gather(key, nonce, aad, aad_len, src, src_count, dst, len, tag) }
+    unsafe { crate::chacha20poly1305::vg_chacha20_poly1305_seal_gather(dit, key, nonce, aad, aad_len, src, src_count, dst, len, tag) }
 }

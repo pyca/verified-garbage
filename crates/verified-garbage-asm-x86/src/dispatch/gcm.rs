@@ -19,15 +19,15 @@
 /// * Neither `key` nor `ctx` may overlap the arguments on the stack, overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_gcm_init_auto(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
+pub unsafe fn vg_aes_gcm_init_auto(dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::gcm::VG_AES_GCM_INIT_AESNI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_init_aesni`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::gcm::vg_aes_gcm_init_aesni(key, key_len, ctx) };
+        return unsafe { crate::gcm::vg_aes_gcm_init_aesni(dit, key, key_len, ctx) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::gcm::vg_aes_gcm_init(key, key_len, ctx) }
+    unsafe { crate::gcm::vg_aes_gcm_init(dit, key, key_len, ctx) }
 }
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
@@ -52,25 +52,25 @@ pub unsafe fn vg_aes_gcm_init_auto(key: *const u8, key_len: usize, ctx: *mut [u6
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_gcm_seal_auto(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe fn vg_aes_gcm_seal_auto(dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::gcm::VG_AES_GCM_SEAL_AESNI_PCLMUL_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_seal_aesni_pclmul`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::gcm::vg_aes_gcm_seal_aesni_pclmul(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag) };
+        return unsafe { crate::gcm::vg_aes_gcm_seal_aesni_pclmul(dit, ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag) };
     }
     if cpu.contains(crate::gcm::VG_AES_GCM_SEAL_AESNI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_seal_aesni`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::gcm::vg_aes_gcm_seal_aesni(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag) };
+        return unsafe { crate::gcm::vg_aes_gcm_seal_aesni(dit, ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag) };
     }
     if cpu.contains(crate::gcm::VG_AES_GCM_SEAL_PCLMUL_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_seal_pclmul`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::gcm::vg_aes_gcm_seal_pclmul(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag) };
+        return unsafe { crate::gcm::vg_aes_gcm_seal_pclmul(dit, ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::gcm::vg_aes_gcm_seal(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag) }
+    unsafe { crate::gcm::vg_aes_gcm_seal(dit, ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag) }
 }
 
 /// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
@@ -95,25 +95,25 @@ pub unsafe fn vg_aes_gcm_seal_auto(ctx: *const [u64; 32], rounds: usize, nonce: 
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2636 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_gcm_open_auto(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe fn vg_aes_gcm_open_auto(dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::gcm::VG_AES_GCM_OPEN_AESNI_PCLMUL_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_open_aesni_pclmul`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::gcm::vg_aes_gcm_open_aesni_pclmul(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) };
+        return unsafe { crate::gcm::vg_aes_gcm_open_aesni_pclmul(dit, ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) };
     }
     if cpu.contains(crate::gcm::VG_AES_GCM_OPEN_AESNI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_open_aesni`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::gcm::vg_aes_gcm_open_aesni(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) };
+        return unsafe { crate::gcm::vg_aes_gcm_open_aesni(dit, ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) };
     }
     if cpu.contains(crate::gcm::VG_AES_GCM_OPEN_PCLMUL_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_open_pclmul`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::gcm::vg_aes_gcm_open_pclmul(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) };
+        return unsafe { crate::gcm::vg_aes_gcm_open_pclmul(dit, ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::gcm::vg_aes_gcm_open(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) }
+    unsafe { crate::gcm::vg_aes_gcm_open(dit, ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) }
 }
 
 /// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `src` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then written the plaintext to the `dst_len = len` bytes at `dst`; otherwise returns 0, having written zeros to them: `vg_aes_gcm_open` with the ciphertext read from `src` and the plaintext written to `dst`. `src` is not written, and `dst` is a buffer of its own: it overlaps no other buffer, `src` included. The tags are compared without a branch.
@@ -140,25 +140,25 @@ pub unsafe fn vg_aes_gcm_open_auto(ctx: *const [u64; 32], rounds: usize, nonce: 
 /// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2688 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_gcm_open_to_auto(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe fn vg_aes_gcm_open_to_auto(dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::gcm::VG_AES_GCM_OPEN_TO_AESNI_PCLMUL_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_open_to_aesni_pclmul`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::gcm::vg_aes_gcm_open_to_aesni_pclmul(ctx, rounds, nonce, nonce_len, aad, aad_len, src, len, dst, dst_len, tag, tag_len) };
+        return unsafe { crate::gcm::vg_aes_gcm_open_to_aesni_pclmul(dit, ctx, rounds, nonce, nonce_len, aad, aad_len, src, len, dst, dst_len, tag, tag_len) };
     }
     if cpu.contains(crate::gcm::VG_AES_GCM_OPEN_TO_AESNI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_open_to_aesni`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::gcm::vg_aes_gcm_open_to_aesni(ctx, rounds, nonce, nonce_len, aad, aad_len, src, len, dst, dst_len, tag, tag_len) };
+        return unsafe { crate::gcm::vg_aes_gcm_open_to_aesni(dit, ctx, rounds, nonce, nonce_len, aad, aad_len, src, len, dst, dst_len, tag, tag_len) };
     }
     if cpu.contains(crate::gcm::VG_AES_GCM_OPEN_TO_PCLMUL_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_open_to_pclmul`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::gcm::vg_aes_gcm_open_to_pclmul(ctx, rounds, nonce, nonce_len, aad, aad_len, src, len, dst, dst_len, tag, tag_len) };
+        return unsafe { crate::gcm::vg_aes_gcm_open_to_pclmul(dit, ctx, rounds, nonce, nonce_len, aad, aad_len, src, len, dst, dst_len, tag, tag_len) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::gcm::vg_aes_gcm_open_to(ctx, rounds, nonce, nonce_len, aad, aad_len, src, len, dst, dst_len, tag, tag_len) }
+    unsafe { crate::gcm::vg_aes_gcm_open_to(dit, ctx, rounds, nonce, nonce_len, aad, aad_len, src, len, dst, dst_len, tag, tag_len) }
 }
 
 /// Absorbs additional data into an incremental AES-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
@@ -178,15 +178,15 @@ pub unsafe fn vg_aes_gcm_open_to_auto(ctx: *const [u64; 32], rounds: usize, nonc
 /// * None of `ctx`, `state` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 2616 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_gcm_stream_aad_auto(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
+pub unsafe fn vg_aes_gcm_stream_aad_auto(dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_AAD_PCLMUL_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_stream_aad_pclmul`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::gcm::vg_aes_gcm_stream_aad_pclmul(ctx, state, aad_len, data, len) };
+        return unsafe { crate::gcm::vg_aes_gcm_stream_aad_pclmul(dit, ctx, state, aad_len, data, len) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::gcm::vg_aes_gcm_stream_aad(ctx, state, aad_len, data, len) }
+    unsafe { crate::gcm::vg_aes_gcm_stream_aad(dit, ctx, state, aad_len, data, len) }
 }
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
@@ -213,25 +213,25 @@ pub unsafe fn vg_aes_gcm_stream_aad_auto(ctx: *const [u64; 32], state: *mut [u64
 /// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2684 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_gcm_seal_gather_auto(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe fn vg_aes_gcm_seal_gather_auto(dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::gcm::VG_AES_GCM_SEAL_GATHER_AESNI_PCLMUL_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_seal_gather_aesni_pclmul`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::gcm::vg_aes_gcm_seal_gather_aesni_pclmul(ctx, rounds, nonce, nonce_len, aad, aad_len, src, src_count, dst, len, tag) };
+        return unsafe { crate::gcm::vg_aes_gcm_seal_gather_aesni_pclmul(dit, ctx, rounds, nonce, nonce_len, aad, aad_len, src, src_count, dst, len, tag) };
     }
     if cpu.contains(crate::gcm::VG_AES_GCM_SEAL_GATHER_AESNI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_seal_gather_aesni`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::gcm::vg_aes_gcm_seal_gather_aesni(ctx, rounds, nonce, nonce_len, aad, aad_len, src, src_count, dst, len, tag) };
+        return unsafe { crate::gcm::vg_aes_gcm_seal_gather_aesni(dit, ctx, rounds, nonce, nonce_len, aad, aad_len, src, src_count, dst, len, tag) };
     }
     if cpu.contains(crate::gcm::VG_AES_GCM_SEAL_GATHER_PCLMUL_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_seal_gather_pclmul`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::gcm::vg_aes_gcm_seal_gather_pclmul(ctx, rounds, nonce, nonce_len, aad, aad_len, src, src_count, dst, len, tag) };
+        return unsafe { crate::gcm::vg_aes_gcm_seal_gather_pclmul(dit, ctx, rounds, nonce, nonce_len, aad, aad_len, src, src_count, dst, len, tag) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::gcm::vg_aes_gcm_seal_gather(ctx, rounds, nonce, nonce_len, aad, aad_len, src, src_count, dst, len, tag) }
+    unsafe { crate::gcm::vg_aes_gcm_seal_gather(dit, ctx, rounds, nonce, nonce_len, aad, aad_len, src, src_count, dst, len, tag) }
 }
 
 /// Starts an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7): with the key context `*ctx` that `vg_aes_gcm_init` wrote, makes the streaming state `*state` represent the message with the IV the `nonce_len` bytes at `nonce`, and no additional data or text yet. Continue with `vg_aes_gcm_stream_aad`, then `vg_aes_gcm_stream_encrypt` or `vg_aes_gcm_stream_decrypt`, then `vg_aes_gcm_stream_finish` or `vg_aes_gcm_stream_verify`, with the same key context.
@@ -253,15 +253,15 @@ pub unsafe fn vg_aes_gcm_seal_gather_auto(ctx: *const [u64; 32], rounds: usize, 
 /// * None of `ctx`, `nonce` and `state` may overlap the arguments on the stack, overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_gcm_stream_init_auto(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
+pub unsafe fn vg_aes_gcm_stream_init_auto(dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_INIT_PCLMUL_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_stream_init_pclmul`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::gcm::vg_aes_gcm_stream_init_pclmul(ctx, nonce, nonce_len, state) };
+        return unsafe { crate::gcm::vg_aes_gcm_stream_init_pclmul(dit, ctx, nonce, nonce_len, state) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::gcm::vg_aes_gcm_stream_init(ctx, nonce, nonce_len, state) }
+    unsafe { crate::gcm::vg_aes_gcm_stream_init(dit, ctx, nonce, nonce_len, state) }
 }
 
 /// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
@@ -283,25 +283,25 @@ pub unsafe fn vg_aes_gcm_stream_init_auto(ctx: *const [u64; 32], nonce: *const u
 /// * None of `ctx`, `state` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2628 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_gcm_stream_finish_auto(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
+pub unsafe fn vg_aes_gcm_stream_finish_auto(dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_FINISH_AESNI_PCLMUL_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_stream_finish_aesni_pclmul`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::gcm::vg_aes_gcm_stream_finish_aesni_pclmul(ctx, rounds, state, aad_len, text_len, tag) };
+        return unsafe { crate::gcm::vg_aes_gcm_stream_finish_aesni_pclmul(dit, ctx, rounds, state, aad_len, text_len, tag) };
     }
     if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_FINISH_AESNI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_stream_finish_aesni`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::gcm::vg_aes_gcm_stream_finish_aesni(ctx, rounds, state, aad_len, text_len, tag) };
+        return unsafe { crate::gcm::vg_aes_gcm_stream_finish_aesni(dit, ctx, rounds, state, aad_len, text_len, tag) };
     }
     if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_FINISH_PCLMUL_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_stream_finish_pclmul`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::gcm::vg_aes_gcm_stream_finish_pclmul(ctx, rounds, state, aad_len, text_len, tag) };
+        return unsafe { crate::gcm::vg_aes_gcm_stream_finish_pclmul(dit, ctx, rounds, state, aad_len, text_len, tag) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::gcm::vg_aes_gcm_stream_finish(ctx, rounds, state, aad_len, text_len, tag) }
+    unsafe { crate::gcm::vg_aes_gcm_stream_finish(dit, ctx, rounds, state, aad_len, text_len, tag) }
 }
 
 /// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
@@ -323,25 +323,25 @@ pub unsafe fn vg_aes_gcm_stream_finish_auto(ctx: *const [u64; 32], rounds: usize
 /// * None of `ctx`, `state` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_gcm_stream_verify_auto(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe fn vg_aes_gcm_stream_verify_auto(dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_stream_verify_aesni_pclmul`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::gcm::vg_aes_gcm_stream_verify_aesni_pclmul(ctx, rounds, state, aad_len, text_len, tag, tag_len) };
+        return unsafe { crate::gcm::vg_aes_gcm_stream_verify_aesni_pclmul(dit, ctx, rounds, state, aad_len, text_len, tag, tag_len) };
     }
     if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_VERIFY_AESNI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_stream_verify_aesni`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::gcm::vg_aes_gcm_stream_verify_aesni(ctx, rounds, state, aad_len, text_len, tag, tag_len) };
+        return unsafe { crate::gcm::vg_aes_gcm_stream_verify_aesni(dit, ctx, rounds, state, aad_len, text_len, tag, tag_len) };
     }
     if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_VERIFY_PCLMUL_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_stream_verify_pclmul`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::gcm::vg_aes_gcm_stream_verify_pclmul(ctx, rounds, state, aad_len, text_len, tag, tag_len) };
+        return unsafe { crate::gcm::vg_aes_gcm_stream_verify_pclmul(dit, ctx, rounds, state, aad_len, text_len, tag, tag_len) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::gcm::vg_aes_gcm_stream_verify(ctx, rounds, state, aad_len, text_len, tag, tag_len) }
+    unsafe { crate::gcm::vg_aes_gcm_stream_verify(dit, ctx, rounds, state, aad_len, text_len, tag, tag_len) }
 }
 
 /// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, encrypts the `len` bytes at `data` in place, as the continuation of that plaintext, and the state then represents the message with them appended.
@@ -364,25 +364,25 @@ pub unsafe fn vg_aes_gcm_stream_verify_auto(ctx: *const [u64; 32], rounds: usize
 /// * None of `ctx`, `state` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_gcm_stream_encrypt_auto(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe fn vg_aes_gcm_stream_encrypt_auto(dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_ENCRYPT_AESNI_PCLMUL_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_stream_encrypt_aesni_pclmul`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::gcm::vg_aes_gcm_stream_encrypt_aesni_pclmul(ctx, rounds, state, aad_len, text_len, data, len) };
+        return unsafe { crate::gcm::vg_aes_gcm_stream_encrypt_aesni_pclmul(dit, ctx, rounds, state, aad_len, text_len, data, len) };
     }
     if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_ENCRYPT_AESNI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_stream_encrypt_aesni`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::gcm::vg_aes_gcm_stream_encrypt_aesni(ctx, rounds, state, aad_len, text_len, data, len) };
+        return unsafe { crate::gcm::vg_aes_gcm_stream_encrypt_aesni(dit, ctx, rounds, state, aad_len, text_len, data, len) };
     }
     if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_ENCRYPT_PCLMUL_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_stream_encrypt_pclmul`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::gcm::vg_aes_gcm_stream_encrypt_pclmul(ctx, rounds, state, aad_len, text_len, data, len) };
+        return unsafe { crate::gcm::vg_aes_gcm_stream_encrypt_pclmul(dit, ctx, rounds, state, aad_len, text_len, data, len) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::gcm::vg_aes_gcm_stream_encrypt(ctx, rounds, state, aad_len, text_len, data, len) }
+    unsafe { crate::gcm::vg_aes_gcm_stream_encrypt(dit, ctx, rounds, state, aad_len, text_len, data, len) }
 }
 
 /// Decrypts the next piece of the text of an incremental AES-GCM decryption (NIST SP 800-38D §7.2): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext so far, decrypts the `len` bytes of ciphertext at `data` in place, as the continuation of that ciphertext, and the state then represents the message with them appended. The plaintext is not authenticated until `vg_aes_gcm_stream_verify` has returned 1.
@@ -405,23 +405,23 @@ pub unsafe fn vg_aes_gcm_stream_encrypt_auto(ctx: *const [u64; 32], rounds: usiz
 /// * None of `ctx`, `state` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_gcm_stream_decrypt_auto(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe fn vg_aes_gcm_stream_decrypt_auto(dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_DECRYPT_AESNI_PCLMUL_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_stream_decrypt_aesni_pclmul`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::gcm::vg_aes_gcm_stream_decrypt_aesni_pclmul(ctx, rounds, state, aad_len, text_len, data, len) };
+        return unsafe { crate::gcm::vg_aes_gcm_stream_decrypt_aesni_pclmul(dit, ctx, rounds, state, aad_len, text_len, data, len) };
     }
     if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_DECRYPT_AESNI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_stream_decrypt_aesni`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::gcm::vg_aes_gcm_stream_decrypt_aesni(ctx, rounds, state, aad_len, text_len, data, len) };
+        return unsafe { crate::gcm::vg_aes_gcm_stream_decrypt_aesni(dit, ctx, rounds, state, aad_len, text_len, data, len) };
     }
     if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_DECRYPT_PCLMUL_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_stream_decrypt_pclmul`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::gcm::vg_aes_gcm_stream_decrypt_pclmul(ctx, rounds, state, aad_len, text_len, data, len) };
+        return unsafe { crate::gcm::vg_aes_gcm_stream_decrypt_pclmul(dit, ctx, rounds, state, aad_len, text_len, data, len) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::gcm::vg_aes_gcm_stream_decrypt(ctx, rounds, state, aad_len, text_len, data, len) }
+    unsafe { crate::gcm::vg_aes_gcm_stream_decrypt(dit, ctx, rounds, state, aad_len, text_len, data, len) }
 }

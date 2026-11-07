@@ -15,8 +15,38 @@
 /// * `rounds` must be 18 (for a key of 16 bytes) or 24 (for one of 24 or 32).
 /// * `ctr` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `ctr` and `data` may overlap the 3344 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_camellia_ctr(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 272], rounds: usize, ctr: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_camellia_ctr(schedule, rounds, ctr, data, n) }
+}
+
+/// Camellia-CTR encryption or decryption (NIST SP 800-38A §6.5, RFC 3713 §2.3) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Tⱼ)`, where `T₁` is the block at `*ctr` and `Tⱼ₊₁ = Tⱼ + 1 mod 2¹²⁸` (Appendix B.1's standard incrementing function on the whole block, read as a big-endian integer), a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*ctr` with `Tₙ₊₁` (leaving it unchanged if `len = 0`), so that a further call continues the message if `len` is a multiple of 16; after a partial last block the message must end. `CIPH_K` is Camellia encryption with `rounds` rounds under the subkeys at `schedule`, as `vg_camellia_expand_key` writes them.
+///
+/// Contract: `VG.Spec.Camellia.ctrFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the subkeys, the counter block or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 272 bytes.
+/// * `ctr` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `rounds` must be 18 (for a key of 16 bytes) or 24 (for one of 24 or 32).
+/// * `ctr` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `ctr` and `data` may overlap the 3424 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_camellia_ctr_final(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 272], rounds: usize, ctr: *mut [u8; 16], data: *mut u8, len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_camellia_ctr_final(schedule, rounds, ctr, data, len) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_camellia_ctr`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_camellia_ctr(schedule: *const [u8; 272], rounds: usize, ctr: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
+pub(crate) unsafe extern "C" fn vg_camellia_ctr(schedule: *const [u8; 272], rounds: usize, ctr: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r".inst 0xd13443ff,0x910003e5,0x910000a5,0xf90658b3,0xf9065cb4,0xf90660b5,0xf90664b6,0xf90668b7
 .inst 0xf9066cb8,0xf90670b9,0xf90674ba,0xf90678bb,0xf9067cbc,0xf9400046,0xdac00cc6,0xf9400447
@@ -83,25 +113,14 @@ b 21f
 .inst 0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611
 .inst 0xa90e4611,0xa90f4611,0xa9104611,0x913443ff,0xd65f03c0
 .p2align 6",
-        vg_camellia_prepare_keys = sym super::camellia::vg_camellia_prepare_keys::vg_camellia_prepare_keys,
-        vg_camellia_crypt_prepared = sym super::camellia::vg_camellia_crypt_prepared::vg_camellia_crypt_prepared,
+        vg_camellia_prepare_keys = sym crate::camellia::vg_camellia_prepare_keys::vg_camellia_prepare_keys,
+        vg_camellia_crypt_prepared = sym crate::camellia::vg_camellia_crypt_prepared::vg_camellia_crypt_prepared,
     )
 }
 
-/// Camellia-CTR encryption or decryption (NIST SP 800-38A §6.5, RFC 3713 §2.3) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Tⱼ)`, where `T₁` is the block at `*ctr` and `Tⱼ₊₁ = Tⱼ + 1 mod 2¹²⁸` (Appendix B.1's standard incrementing function on the whole block, read as a big-endian integer), a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*ctr` with `Tₙ₊₁` (leaving it unchanged if `len = 0`), so that a further call continues the message if `len` is a multiple of 16; after a partial last block the message must end. `CIPH_K` is Camellia encryption with `rounds` rounds under the subkeys at `schedule`, as `vg_camellia_expand_key` writes them.
-///
-/// Contract: `VG.Spec.Camellia.ctrFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the subkeys, the counter block or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 272 bytes.
-/// * `ctr` must be valid for reads and writes of 16 bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `rounds` must be 18 (for a key of 16 bytes) or 24 (for one of 24 or 32).
-/// * `ctr` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `ctr` and `data` may overlap the 3424 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_camellia_ctr_final`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_camellia_ctr_final(schedule: *const [u8; 272], rounds: usize, ctr: *mut [u8; 16], data: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_camellia_ctr_final(schedule: *const [u8; 272], rounds: usize, ctr: *mut [u8; 16], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd10143ff,0x910003e5,0xf90000b3,0xf90004b4,0xf90008b5,0xf9000cb6,0xf90010b7,0xf90014b8
 .inst 0xf90018be,0xf9001cb9,0x91000013,0x91000034,0x91000055,0x910000b9,0xd344fc89,0xd37ced2a
@@ -121,6 +140,7 @@ b 21f
 .inst 0xd2800011,0x910003f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0x910143ff
 .inst 0xd65f03c0
 .p2align 6",
-        vg_camellia_ctr = sym super::camellia_ctr::vg_camellia_ctr,
+        vg_camellia_ctr = sym crate::camellia_ctr::raw::vg_camellia_ctr,
     )
+}
 }

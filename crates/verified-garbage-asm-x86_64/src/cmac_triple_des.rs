@@ -14,8 +14,54 @@
 /// * `key_len` must be 16 or 24.
 /// * `state` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `state` nor `key` may overlap the return address on the stack or the 648 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_cmac_triple_des_stream_init(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 52], key: *const u8, key_len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_cmac_triple_des_stream_init(state, key, key_len) }
+}
+
+/// Absorbs data into a TDEA-CMAC computation (NIST SP 800-38B §6.2): if the streaming state `*state` represents a message of `count` bytes under a TDEA key (as `vg_cmac_triple_des_stream_init` set it up), it then represents that message followed by the `len` bytes at `data`, under the same key, provided that the two together are shorter than 2⁶⁴ bytes. It chains (step 6) every block of the message but its last bytes `Mₙ*` (step 3), which it holds back in the state, since only `vg_cmac_triple_des_finish` knows they are the last.
+///
+/// Contract: `VG.Spec.Cmac.tdesAbsorbContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 416 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `state` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the return address on the stack or the 696 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_cmac_triple_des_absorb(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 52], count: u64, data: *const u8, len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_cmac_triple_des_absorb(state, count, data, len) }
+}
+
+/// Finishes a TDEA-CMAC computation (NIST SP 800-38B §6.2, with `Tlen = 64`): if the streaming state `*state` represents a message of `count` bytes, shorter than 2⁶⁴ bytes, under a TDEA key (as `vg_cmac_triple_des_stream_init` and `vg_cmac_triple_des_absorb` set it up), writes the MAC of that message under that key to `*out`: `Cₙ = CIPH_K(Cₙ₋₁ ⊕ Mₙ)`, where `Mₙ = K1 ⊕ Mₙ*` if the message's last bytes `Mₙ*` are a complete block, and `Mₙ = K2 ⊕ (Mₙ* ‖ 10ʲ)` otherwise (step 4). The caller truncates it (step 7) and compares it (§6.3).
+///
+/// Contract: `VG.Spec.Cmac.tdesFinishContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 416 bytes.
+/// * `out` must be valid for reads and writes of 8 bytes.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
+/// * Neither `state` nor `out` may overlap the return address on the stack or the 648 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_cmac_triple_des_finish(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 52], count: u64, out: *mut [u8; 8]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_cmac_triple_des_finish(state, count, out) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_cmac_triple_des_stream_init`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_cmac_triple_des_stream_init(state: *mut [u64; 52], key: *const u8, key_len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_cmac_triple_des_stream_init(state: *mut [u64; 52], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJHj9//9IieFIg8EIuAAAAABIiYeQAQAASIn4SIn3SInWSInCSIlZMEiJaThMiWFATIlpSEyJcVBMiXlYSYnPSInVSIsHSA/ISYlHYEiLRwhID8hJiUdoSIP+EA=="
 je 20f
@@ -41,18 +87,9 @@ jne 23b
     )
 }
 
-/// Absorbs data into a TDEA-CMAC computation (NIST SP 800-38B §6.2): if the streaming state `*state` represents a message of `count` bytes under a TDEA key (as `vg_cmac_triple_des_stream_init` set it up), it then represents that message followed by the `len` bytes at `data`, under the same key, provided that the two together are shorter than 2⁶⁴ bytes. It chains (step 6) every block of the message but its last bytes `Mₙ*` (step 3), which it holds back in the state, since only `vg_cmac_triple_des_finish` knows they are the last.
-///
-/// Contract: `VG.Spec.Cmac.tdesAbsorbContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 416 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `state` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the return address on the stack or the 696 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_cmac_triple_des_absorb`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_cmac_triple_des_absorb(state: *mut [u64; 52], count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_cmac_triple_des_absorb(state: *mut [u64; 52], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJEj9//9JieBJg8AISYmYgAIAAE2JoIgCAABNiaiQAgAATYmwmAIAAE2JuKACAABIiftJidVJic5NicdIhfY="
 je 20f
@@ -132,19 +169,9 @@ jmp 222f
     )
 }
 
-/// Finishes a TDEA-CMAC computation (NIST SP 800-38B §6.2, with `Tlen = 64`): if the streaming state `*state` represents a message of `count` bytes, shorter than 2⁶⁴ bytes, under a TDEA key (as `vg_cmac_triple_des_stream_init` and `vg_cmac_triple_des_absorb` set it up), writes the MAC of that message under that key to `*out`: `Cₙ = CIPH_K(Cₙ₋₁ ⊕ Mₙ)`, where `Mₙ = K1 ⊕ Mₙ*` if the message's last bytes `Mₙ*` are a complete block, and `Mₙ = K2 ⊕ (Mₙ* ‖ 10ʲ)` otherwise (step 4). The caller truncates it (step 7) and compares it (§6.3).
-///
-/// Contract: `VG.Spec.Cmac.tdesFinishContract`. Constant time: only the pointers and `count` may affect timing, not the state.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 416 bytes.
-/// * `out` must be valid for reads and writes of 8 bytes.
-/// * The contents of `state` on return are unspecified.
-/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the return address on the stack or the 648 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_cmac_triple_des_finish`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_cmac_triple_des_finish(state: *mut [u64; 52], count: u64, out: *mut [u8; 8]) {
+pub(crate) unsafe extern "sysv64" fn vg_cmac_triple_des_finish(state: *mut [u64; 52], count: u64, out: *mut [u8; 8]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJHj9//9IieFIg8EISIuHkAEAAEiJAkmJyEiJ8UiJ1kiJ+kiBwpgBAABIhck="
 je 20f
@@ -179,4 +206,5 @@ jne 27b
 .base64 "SYHu+AEAAEyJ4EjRyEm5AAAQAAAAAABMIchMieFIwckESbkABAAAAAAAAEwhyUgxyEyJ4UjByQdJuQEAQAAAAAAATCHJSDHITInhSMHJCEm5AAAAAAAAAAFMIclIMchMieFIwckKSbkAEAAAAAAAAEwhyUgxyEyJ4UjByQ1JuQQAAAAAAAAATCHJSDHITInhSMHJDkm5AAAAAAAAAARMIclIMchMieFIwckQSbkAQAAAAAAAAEwhyUgxyEyJ4UjByRFJuQAAAAAAAAEATCHJSDHITInhSMHJE0m5EAAAAAAAAABMIclIMchMieFIwckUSbkAAAAAAAAAEEwhyUgxyEyJ4UjByRdJuQAAAAAAAAQATCHJSDHITInhSMHJGUm5QAAAAAAAAABMIclIMchMieFIwckaSbkAAAAAAAEAQEwhyUgxyEyJ4UjByR1JuQAAAAAAABAATCHJSDHITInhSMHJIEm5AAAAAAAEAABMIclIMchMieFIwckjSbkAAAAAAQBAAEwhyUgxyEyJ4UjBySZJuQAAAAAAEAAATCHJSDHITInhSMHJKUm5AAAAAAQAAABMIclIMchMieFIwcksSbkAAAABAEAAAEwhyUgxyEyJ4UjByS9JuQAAAAAQAAAATCHJSDHITInhSMHJMkm5AAAABAAAAABMIclIMchMieFIwck1SbkAAAEAQAAAAEwhyUgxyEyJ4UjByThJuQAAABAAAAAATCHJSDHITInhSMHJO0m5AAAEAAAAAABMIclIMchMieFIwck+SbkAAQBAAAAAAEwhyUgxyEyJ6Um5AAAgAAAAAABMIclIMchMielIwckDSbkACAAAAAAAAEwhyUgxyEyJ6UjByQZJuQIAgAAAAAAATCHJSDHITInpSMHJB0m5AAAAAAAAAAJMIclIMchMielIwckJSbkAIAAAAAAAAEwhyUgxyEyJ6UjByQxJuQgAAAAAAAAATCHJSDHITInpSMHJDUm5AAAAAAAAAAhMIclIMchMielIwckPSbkAgAAAAAAAAEwhyUgxyEyJ6UjByRBJuQAAAAAAAAIATCHJSDHITInpSMHJEkm5IAAAAAAAAABMIclIMchMielIwckTSbkAAAAAAAAAIEwhyUgxyEyJ6UjByRZJuQAAAAAAAAgATCHJSDHITInpSMHJGEm5gAAAAAAAAABMIclIMchMielIwckZSbkAAAAAAAIAgEwhyUgxyEyJ6UjByRxJuQAAAAAAACAATCHJSDHITInpSMHJH0m5AAAAAAAIAABMIclIMchMielIwckiSbkAAAAAAgCAAEwhyUgxyEyJ6UjBySVJuQAAAAAAIAAATCHJSDHITInpSMHJKEm5AAAAAAgAAABMIclIMchMielIwckrSbkAAAACAIAAAEwhyUgxyEyJ6UjByS5JuQAAAAAgAAAATCHJSDHITInpSMHJMUm5AAAACAAAAABMIclIMchMielIwck0SbkAAAIAgAAAAEwhyUgxyEyJ6UjByTdJuQAAACAAAAAATCHJSDHITInpSMHJOkm5AAAIAAAAAABMIclIMchMielIwck9SbkAAgCAAAAAAEwhyUgxyEgPyEiJRQBJi18wSYtvOE2LZ0BNi29ITYt3UE2Lf1hIjaQkiAIAAMM="
 .p2align 6"#,
     )
+}
 }

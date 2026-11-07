@@ -17,8 +17,19 @@
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other or `d` (distinct Rust objects never do).
 /// * None of `out`, `d` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 28 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_ec_p224_public_key(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 57], d: *const [u8; 28], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ec_p224_public_key(out, d, scratch) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_ec_p224_public_key`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ec_p224_public_key(out: *mut [u8; 57], d: *const [u8; 28], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ec_p224_public_key(out: *mut [u8; 57], d: *const [u8; 28], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "i0QkDIkYiXAEiXgIiWgMiceLXCQIi0MYD8iJhyAEAACLQxQPyImHJAQAAItDEA/IiYcoBAAAi0MMD8iJhywEAACLQwgPyImHMAQAAItDBA/IiYc0BAAAiwMPyImHOAQAALgAAAAAiYc8BAAAi1wkCItDGA/IiYdABAAAi0MUD8iJh0QEAACLQxAPyImHSAQAAItDDA/IiYdMBAAAi0MID8iJh1AEAACLQwQPyImHVAQAAIsDD8iJh1gEAAC4AAAAAImHXAQAAItcJAiLQxgPyImHYAQAAItDFA/IiYdkBAAAi0MQD8iJh2gEAACLQwwPyImHbAQAAItDCA/IiYdwBAAAi0MED8iJh3QEAACLAw/IiYd4BAAAuAAAAACJh3wEAAC4AQAAAIlHQLgAAAAAiUdEuAAAAACJR0i4/////4lHTLj/////iUdQuP////+JR1S4/////4lHWLgAAAAAiUdcuD0qXFyJR2C4RSndE4lHZLg+8LjgiUdouKIW//+JR2y4/////4lHcLj/////iUd0uP////+JR3i4AAAAAIlHfLgAAAAAiYegAAAAuAAAAACJh6QAAAC4AAAAAImHqAAAALgAAAAAiYesAAAAuAAAAACJh7AAAAC4AAAAAImHtAAAALgAAAAAiYe4AAAAuAAAAACJh7wAAAC4AQAAAImHwAAAALgAAAAAiYfEAAAAuAAAAACJh8gAAAC4AAAAAImHzAAAALgAAAAAiYfQAAAAuAAAAACJh9QAAAC4AAAAAImH2AAAALgAAAAAiYfcAAAAuAAAAACJh+AAAAC4/////4mH5AAAALj/////iYfoAAAAuP////+Jh+wAAAC4AAAAAImH8AAAALgAAAAAiYf0AAAAuAAAAACJh/gAAAC4AAAAAImH/AAAALgBAAAAiYcAAQAAuAMAAACJhwQBAAC4AAAAAImHCAEAALj/////iYcMAQAAuPz///+JhxABAAC4/////4mHFAEAALj/////iYcYAQAAuAAAAACJhxwBAAC4Zg1BK4mHIAEAALjjaTq2iYckAQAAuDI50GaJhygBAAC43EhwMYmHLAEAALjzg/dYiYcwAQAAuMovbLmJhzQBAAC4uY5Af4mHOAEAALgAAAAAiYc8AQAAuOpKCm2Jh0ABAAC4JlKQvImHRAEAALiqvxhgiYdIAQAAuDaXJYWJh0wBAAC4Bexr+YmHUAEAALibr9NtiYdUAQAAuGBeG6KJh1gBAAC4AAAAAImHXAEAALjo7fPviYdgAQAAuOWh3C6Jh2QBAAC4a1ozBYmHaAEAALgrZ834iYdsAQAAuHjo3wOJh3ABAAC4rsWpromHdAEAALjxhkdhiYd4AQAAuAAAAACJh3wBAAC4FX1RX4mHgAEAALhpepQpiYeEAQAAuEs/1jGJh4gBAAC4Wf/Iq4mHjAEAALhWSHHZiYeQAQAAuHxf0WqJh5QBAAC4YXnpsYmHmAEAALgAAAAAiYecAQAAuAAAAACJh6ABAAC4w9Wjo4mHpAEAALi61iLsiYeoAQAAuMEPRx+Jh6wBAAC4XekAAImHsAEAALgAAAAAiYe0AQAAuAAAAACJh7gBAAC4AAAAAImHvAEAALj/////iYfAAQAAuP////+Jh8QBAAC4/////4mHyAEAALj+////iYfMAQAAuP////+Jh9ABAAC4/////4mH1AEAALj/////iYfYAQAAuAAAAACJh9wBAAC4OypcXImH4AEAALhFKd0TiYfkAQAAuD7wuOCJh+gBAAC4ohb//4mH7AEAALj/////iYfwAQAAuP////+Jh/QBAAC4/////4mH+AEAALgAAAAAiYf8AQAAuAAAAACJhwACAAC4AAAAAImHBAIAALgAAAAAiYcIAgAAuAAAAACJhwwCAAC4AAAAAImHEAIAALgAAAAAiYcUAgAAuAAAAACJhxgCAAC4AAAAAImHHAIAALgAAAAAiYcgAgAAuP////+JhyQCAAC4/////4mHKAIAALj/////iYcsAgAAuAAAAACJhzACAAC4AAAAAImHNAIAALgAAAAAiYc4AgAAuAAAAACJhzwCAAC4AAAAAImHQAIAALgAAAAAiYdEAgAAuAAAAACJh0gCAAC4AAAAAImHTAIAALgAAAAAiYdQAgAAuAAAAACJh1QCAAC4AAAAAImHWAIAALgAAAAAiYdcAgAAuP////+Jh8AFAAC+IAAAAA=="
 20:
@@ -52,9 +63,10 @@ call {vg_p224_mul_mod_p}
 call {vg_p224_mul_mod_p}
 .base64 "WFhYWIuXQAQAACtXYIuXRAQAABtXZIuXSAQAABtXaIuXTAQAABtXbIuXUAQAABtXcIuXVAQAABtXdIuXWAQAABtXeIuXXAQAABtXfBnAicOLl0AEAAALl0QEAAALl0gEAAALl0wEAAALl1AEAAALl1QEAAALl1gEAAALl1wEAAC5AAAAACnRGdIh2ouHwAUAACHQiYfABQAAi5dAAgAAC5dEAgAAC5dIAgAAC5dMAgAAC5dQAgAAC5dUAgAAC5dYAgAAC5dcAgAAuQAAAAAp0RnSi4fABQAAIdCJh8AFAACLj8AFAACLXCQEuAQAAAAhyIgDi4egBAAAIcgPyIlDGYuHpAQAACHID8iJQxWLh6gEAAAhyA/IiUMRi4esBAAAIcgPyIlDDYuHsAQAACHID8iJQwmLh7QEAAAhyA/IiUMFi4e4BAAAIcgPyIlDAYuHoAUAACHID8iJQzWLh6QFAAAhyA/IiUMxi4eoBQAAIcgPyIlDLYuHrAUAACHID8iJQymLh7AFAAAhyA/IiUMli4e0BQAAIcgPyIlDIYuHuAUAACHID8iJQx2JyIPgAYn6ixqLcgSLagyLegjD"
 .p2align 6"#,
-        vg_p224_mul = sym super::ec_p224::vg_p224_mul::vg_p224_mul,
-        vg_p224_mul_mod_p = sym super::ec_p224::vg_p224_mul_mod_p::vg_p224_mul_mod_p,
+        vg_p224_mul = sym crate::ec_p224::vg_p224_mul::vg_p224_mul,
+        vg_p224_mul_mod_p = sym crate::ec_p224::vg_p224_mul_mod_p::vg_p224_mul_mod_p,
     )
+}
 }
 
 #[rustfmt::skip]

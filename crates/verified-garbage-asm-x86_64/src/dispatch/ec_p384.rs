@@ -18,13 +18,13 @@
 /// * None of `out`, `d` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_ec_p384_public_key_auto(out: *mut [u8; 97], d: *const [u8; 48], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe fn vg_ec_p384_public_key_auto(dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 97], d: *const [u8; 48], scratch: *mut [u64; 1024]) -> u32 {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::ec_p384::VG_EC_P384_PUBLIC_KEY_ADX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_ec_p384_public_key_adx`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::ec_p384::vg_ec_p384_public_key_adx(out, d, scratch) };
+        return unsafe { crate::ec_p384::vg_ec_p384_public_key_adx(dit, out, d, scratch) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::ec_p384::vg_ec_p384_public_key(out, d, scratch) }
+    unsafe { crate::ec_p384::vg_ec_p384_public_key(dit, out, d, scratch) }
 }

@@ -14,11 +14,11 @@
 /// * `nonce` must be valid for reads of 16 bytes.
 /// * `state` must not overlap `key` or `nonce` (distinct Rust objects never do).
 /// * None of `state`, `key` and `nonce` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_chacha20_init(state: *mut [u64; 96], key: *const [u8; 32], nonce: *const [u8; 16]) {
-    core::arch::naked_asm!(
-        r#".base64 "AAAk6QgAROkQAGTpGACE6RAAI/kYAEP5IABj+SgAg/kAAIU4AAAkgQQARIEIAGSBDACEgTAAI5E0AEOROABjkTwAg5FwYUA9ZXhKYQAAQ5EgM0A9bmRKYQQAQ5FieUA9Mi1KYQgAQ5Ega0A9dGVKYQwAQ5EBAIA5xgeMeVBgiX1kNox5gACD+SAAgE4=""#,
-    )
+#[inline(always)]
+pub unsafe fn vg_chacha20_init(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 96], key: *const [u8; 32], nonce: *const [u8; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_chacha20_init(state, key, nonce) }
 }
 
 /// Restarts a ChaCha20 keystream with the same key: makes the streaming state `*state` represent the whole keystream of its key for the 16-byte nonce `*nonce` (as `vg_chacha20_init` does), discarding what was left of the previous one.
@@ -31,11 +31,11 @@ pub unsafe extern "C" fn vg_chacha20_init(state: *mut [u64; 96], key: *const [u8
 /// * `nonce` must be valid for reads of 16 bytes.
 /// * `state` must not overlap `nonce` (distinct Rust objects never do).
 /// * Neither `state` nor `nonce` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_chacha20_set_nonce(state: *mut [u64; 96], nonce: *const [u8; 16]) {
-    core::arch::naked_asm!(
-        r#".base64 "AAAkgQQARIEIAGSBDACEgTAAI5E0AEOROABjkTwAg5FwYUA9ZXhKYQAAQ5EgM0A9bmRKYQQAQ5FieUA9Mi1KYQgAQ5Ega0A9dGVKYQwAQ5EBAIA5xgeMeVBgiX1kNox5gACD+SAAgE4=""#,
-    )
+#[inline(always)]
+pub unsafe fn vg_chacha20_set_nonce(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 96], nonce: *const [u8; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_chacha20_set_nonce(state, nonce) }
 }
 
 /// Applies a ChaCha20 keystream (RFC 8439 §2.4), encrypting or decrypting: if at least `len` bytes are left of the keystream that the streaming state `*state` represents, XORs the next `len` of them into the `len` bytes at `data`, keeps the rest in `*state`, and returns 1. Otherwise (the block counter would pass 2³² − 1) returns 0, and leaves the bytes at `data` and the keystream unchanged.
@@ -48,8 +48,35 @@ pub unsafe extern "C" fn vg_chacha20_set_nonce(state: *mut [u64; 96], nonce: *co
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `state` and `data` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `data` may wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_chacha20_apply(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_chacha20_apply(state, data, len) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_chacha20_init`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_chacha20_apply(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_chacha20_init(state: *mut [u64; 96], key: *const [u8; 32], nonce: *const [u8; 16]) {
+    core::arch::naked_asm!(
+        r#".base64 "AAAk6QgAROkQAGTpGACE6RAAI/kYAEP5IABj+SgAg/kAAIU4AAAkgQQARIEIAGSBDACEgTAAI5E0AEOROABjkTwAg5FwYUA9ZXhKYQAAQ5EgM0A9bmRKYQQAQ5FieUA9Mi1KYQgAQ5Ega0A9dGVKYQwAQ5EBAIA5xgeMeVBgiX1kNox5gACD+SAAgE4=""#,
+    )
+}
+
+/// The verified code of [`super::vg_chacha20_set_nonce`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_chacha20_set_nonce(state: *mut [u64; 96], nonce: *const [u8; 16]) {
+    core::arch::naked_asm!(
+        r#".base64 "AAAkgQQARIEIAGSBDACEgTAAI5E0AEOROABjkTwAg5FwYUA9ZXhKYQAAQ5EgM0A9bmRKYQQAQ5FieUA9Mi1KYQgAQ5Ega0A9dGVKYQwAQ5EBAIA5xgeMeVBgiX1kNox5gACD+SAAgE4=""#,
+    )
+}
+
+/// The verified code of [`super::vg_chacha20_apply`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_chacha20_apply(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "gAAj6QEAgDk/AOA4ODgnfUL4KnlC+Kt4UFBLfThgK304YKZ8UFhmfeAPa3lQUEt94A9KeUL46HhC+Kt4UEALfThg63w4YKZ8UFhmfeAPa3lQQAt94A8IeQAAKig="
 bne %cr0, 20f
@@ -95,9 +122,10 @@ b 21f
 .base64 "AABgOA=="
 21:
 .base64 "IACATg==""#,
-        vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor::vg_chacha20_xor,
-        vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
+        vg_chacha20_xor = sym crate::chacha20::vg_chacha20_xor::vg_chacha20_xor,
+        vg_chacha20_block = sym crate::chacha20::vg_chacha20_block::vg_chacha20_block,
     )
+}
 }
 
 #[rustfmt::skip]

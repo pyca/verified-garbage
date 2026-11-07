@@ -58,7 +58,7 @@ def internal : List String := ["vg_rc2_cbc_decrypt", "vg_rc2_cbc_encrypt", "vg_r
 -- Callers name them in their modules, from the crate's modules and from
 -- another internal function's.
 #guard has (file "src/rc2.rs")
-  "vg_rc2_cbc_encrypt = sym super::rc2::vg_rc2_cbc_encrypt::vg_rc2_cbc_encrypt,\n"
+  "vg_rc2_cbc_encrypt = sym crate::rc2::vg_rc2_cbc_encrypt::vg_rc2_cbc_encrypt,\n"
 #guard has (file "src/internal/vg_rc2_cbc_encrypt.rs")
   "vg_rc2_encrypt_block = sym crate::rc2::vg_rc2_encrypt_block::vg_rc2_encrypt_block,\n"
 #guard has (file "src/internal/vg_rc2_encrypt_block.rs")

@@ -82,6 +82,7 @@ impl AesCfb8Decryptor {
 impl Key {
     /// Expands a 16-, 24- or 32-byte key.
     fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
+        crate::dit::enter!(dit);
         if !matches!(key.len(), 16 | 24 | 32) {
             return Err(InvalidKeyLength);
         }
@@ -89,7 +90,7 @@ impl Key {
         // SAFETY: the key is 16, 24 or 32 bytes long; the key and the schedule
         // are separate valid buffers of the sizes of the signature. The
         // dispatcher calls only an implementation the CPU has the features of.
-        unsafe { vg_aes_expand_key_auto(key.as_ptr(), key.len(), &mut schedule) };
+        unsafe { vg_aes_expand_key_auto(dit, key.as_ptr(), key.len(), &mut schedule) };
         Ok(Self {
             schedule,
             rounds: key.len() / 4 + 6,
@@ -100,17 +101,19 @@ impl Key {
     /// replaces with the one to continue from: its last `16 - n` bytes
     /// followed by the last `n` (up to 16) ciphertext bytes.
     fn encrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) {
-        self.crypt(iv, buffer, true);
+        crate::dit::enter!(dit);
+        self.crypt(dit, iv, buffer, true);
     }
 
     /// Decrypts `buffer` in place, from the input block `iv`, which it
     /// replaces with the one to continue from: its last `16 - n` bytes
     /// followed by the last `n` (up to 16) ciphertext bytes.
     fn decrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) {
-        self.crypt(iv, buffer, false);
+        crate::dit::enter!(dit);
+        self.crypt(dit, iv, buffer, false);
     }
 
-    fn crypt(&self, iv: &mut [u8; 16], buffer: &mut [u8], encrypt: bool) {
+    fn crypt(&self, dit: crate::dit::Dit<'_>, iv: &mut [u8; 16], buffer: &mut [u8], encrypt: bool) {
         let mut scratch = [0; 272];
         // SAFETY: `rounds` is 10, 12 or 14 and the schedule holds its key
         // schedule; `buffer`, the block at `iv`, the schedule and the scratch
@@ -119,6 +122,7 @@ impl Key {
         unsafe {
             if encrypt {
                 vg_aes_cfb8_encrypt_auto(
+                    dit,
                     &self.schedule,
                     self.rounds,
                     iv,
@@ -128,6 +132,7 @@ impl Key {
                 );
             } else {
                 vg_aes_cfb8_decrypt_auto(
+                    dit,
                     &self.schedule,
                     self.rounds,
                     iv,

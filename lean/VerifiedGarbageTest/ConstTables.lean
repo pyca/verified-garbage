@@ -109,14 +109,22 @@ def artifact : Artifact where
 format (`vg_sym_page!`, `vg_sym_pageoff!`), and its symbol. -/
 def expected : String := "/// Returns word 1 of its table.
 #[allow(clippy::missing_safety_doc)]
+#[inline(always)]
+pub unsafe fn vg_test_consts(_dit: verified_garbage_cpu::Dit<'_>) -> u64 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_test_consts() }
+}
+
+/// The verified code of [`super::vg_test_consts`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern \"C\" fn vg_test_consts() -> u64 {
+pub(crate) unsafe extern \"C\" fn vg_test_consts() -> u64 {
     core::arch::naked_asm!(
         concat!(\"adrp x0, \", vg_sym_page!(\"{VG_TEST_TABLE}\")),
         concat!(\"add x0, x0, \", vg_sym_pageoff!(\"{VG_TEST_TABLE}\")),
         r\".inst 0xf9400400,0xd65f03c0
 .p2align 6\",
-        VG_TEST_TABLE = sym super::consts::VG_TEST_TABLE,
+        VG_TEST_TABLE = sym crate::consts::VG_TEST_TABLE,
     )
 }
 "

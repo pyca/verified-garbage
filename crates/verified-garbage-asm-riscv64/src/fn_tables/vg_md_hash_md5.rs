@@ -4,6 +4,6 @@
 
 /// The table of functions `VG_MD_HASH_MD5` of the interface `MdHash`: `vg_md5_init`, `vg_md5_update`, `vg_md5_finalize`, `vg_md5_compress`, `vg_md5_state_digest`, then the data 0, 16, 64, 8, 80, 0.
 pub static VG_MD_HASH_MD5: super::MdHash = super::MdHash {
-    fns: [crate::md5::vg_md5_init as *const (), crate::md5::vg_md5_update as *const (), crate::md5::vg_md5_finalize as *const (), crate::md5::vg_md5_compress::vg_md5_compress as *const (), crate::md5::vg_md5_state_digest::vg_md5_state_digest as *const ()],
+    fns: [crate::md5::raw::vg_md5_init as *const (), crate::md5::raw::vg_md5_update as *const (), crate::md5::raw::vg_md5_finalize as *const (), crate::md5::vg_md5_compress::vg_md5_compress as *const (), crate::md5::vg_md5_state_digest::vg_md5_state_digest as *const ()],
     data: [0, 16, 64, 8, 80, 0],
 };

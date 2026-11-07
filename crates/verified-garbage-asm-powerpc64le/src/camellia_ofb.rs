@@ -15,8 +15,38 @@
 /// * `rounds` must be 18 (for a key of 16 bytes) or 24 (for one of 24 or 32).
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the 3408 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_camellia_ofb(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_camellia_ofb(schedule, rounds, iv, data, n) }
+}
+
+/// Camellia-OFB encryption or decryption (NIST SP 800-38A §6.4, RFC 3713 §2.3) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)`, where `O₀` is the block at `*iv`, a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*iv` with the last output block used, `Oₙ` (leaving it unchanged if `len = 0`): so that a further call continues the message if `len` is a multiple of 16, and otherwise keystream, to be wiped, after which the message must end. `CIPH_K` is Camellia encryption with `rounds` rounds under the subkeys at `schedule`, as `vg_camellia_expand_key` writes them.
+///
+/// Contract: `VG.Spec.Camellia.ofbFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the subkeys, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 272 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `rounds` must be 18 (for a key of 16 bytes) or 24 (for one of 24 or 32).
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the 3408 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_camellia_ofb_final(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_camellia_ofb_final(schedule, rounds, iv, data, len) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_camellia_ofb`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_camellia_ofb(schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
+pub(crate) unsafe extern "C" fn vg_camellia_ofb(schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r#".base64 "sfIh+CAAATkgDYj7eCOcfHgrpHx4M8V8eDvmfHhDB32mAgh8CA0H+PAMp/v4DMf7AA3n+3gjnXx4M958eCOffHgrpnx4O+V8AAAfgRANBZEEAB+BFA0FkQgAH4EYDQWRDAAfgRwNBZF4M998eCumfHjjhH8AAKA4eOupf3jzyn94++t/eBtsfHjjgH94M8h8gAvI+YgL6PmQCwj6mAso+qALSPqoC2j6sAuI+rgLqPrAC8j6yAvo+tALCPvYCyj74AtI++gLaPvwC4j7+Auo+wAMyPsIDOj7/wDAPv8A1mLGB9Z6/wDWZv8A1mKAAcj6AP/APgD/1mLGB9Z6AP/WZgD/1mKIAcj6/wDAPgD/1mLGB9Z6AADWZgAA1mKQAcj6AADAPgAA1mLGB9Z6/wDWZgD/1mKYAcj6AADAPv8A1mLGB9Z6AP/WZgAA1mKgAcj67v/EOgAAJSg="
 beq %cr0, 20f
@@ -57,24 +87,13 @@ b 29f
 28:
 29:
 .base64 "eOu/fxANBYEAAB+RFA0FgQQAH5EYDQWBCAAfkRwNBYEMAB+R8Ayl6/gMxesADeXrCA0F6KYDCHwgDYXrIACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPl4AGz5gABs+YgAbPmQAGz5mABs+aAAbPmoAGz5sABs+bgAbPnAAGz5yABs+dAAbPnYAGz54ABs+egAbPnwAGz5+ABs+QABbPkIAWz5EAFs+RgBbPkgAWz5KAFs+TABbPk4AWz5QAFs+UgBbPlQAWz5WAFs+WABbPloAWz5cAFs+XgBbPmAAWz5iAFs+ZABbPmYAWz5oAFs+agBbPmwAWz5uAFs+cABbPnIAWz50AFs+dgBbPngAWz56AFs+fABbPn4AWz5AAJs+QgCbPkQAmz5GAJs+SACbPkoAmz5MAJs+TgCbPlAAmz5SAJs+VACbPlYAmz5YAJs+WgCbPlwAmz5eAJs+YACbPmIAmz5kAJs+ZgCbPmgAmz5qAJs+bACbPm4Amz5wAJs+cgCbPnQAmz52AJs+eACbPnoAmz58AJs+fgCbPkAA2z5CANs+RADbPkYA2z5IANs+SgDbPkwA2z5OANs+UADbPlIA2z5UANs+VgDbPlgA2z5aANs+XADbPl4A2z5gANs+YgDbPmQA2z5mANs+aADbPmoA2z5sANs+bgDbPnAA2z5yANs+dADbPnYA2z54ANs+egDbPnwA2z5+ANs+QAEbPkIBGz5EARs+RgEbPkgBGz5KARs+TAEbPk4BGz5QARs+UgEbPlQBGz5WARs+WAEbPloBGz5cARs+XgEbPmABGz5iARs+ZAEbPmYBGz5oARs+agEbPmwBGz5uARs+cAEbPnIBGz50ARs+dgEbPngBGz56ARs+fAEbPn4BGz5AAVs+QgFbPkQBWz5GAVs+SAFbPkoBWz5MAVs+TgFbPlABWz5SAVs+VAFbPlYBWz5YAVs+WgFbPlwBWz5eAVs+YAFbPmIBWz5kAVs+ZgFbPmgBWz5qAVs+bAFbPm4BWz5wAVs+cgFbPnQBWz52AVs+eAFbPnoBWz58AVs+fgFbPkABmz5CAZs+RAGbPkYBmz5IAZs+SgGbPkwBmz5OAZs+UAGbPlIBmz5UAZs+VgGbPlgBmz5aAZs+XAGbPl4Bmz5gAZs+YgGbPmQBmz5mAZs+aAGbPmoBmz5sAZs+bgGbPnABmz5yAZs+dAGbPnYBmz54AZs+egGbPnwBmz5+AZs+QAHbPkIB2z5EAds+RgHbPkgB2z5KAds+TAHbPk4B2z5QAds+UgHbPlQB2z5WAds+WAHbPloB2z5cAds+XgHbPmAB2z5iAds+ZAHbPmYB2z5oAds+agHbPmwB2z5uAds+cAHbPnIB2z50Ads+dgHbPngB2z56Ads+fAHbPn4B2z5AAhs+QgIbPkQCGz5GAhs+SAIbPkoCGz5MAhs+TgIbPlACGz5SAhs+VAIbPlYCGz5YAhs+WgIbPlwCGz5eAhs+YAIbPmICGz5kAhs+ZgIbPmgCGz5qAhs+bAIbPm4CGz5wAhs+cgIbPnQCGz52Ahs+eAIbPnoCGz58Ahs+fgIbPkACWz5CAls+RAJbPkYCWz5IAls+SgJbPkwCWz5OAls+UAJbPlICWz5UAls+VgJbPlgCWz5aAls+XAJbPl4CWz5gAls+YgJbPmQCWz5mAls+aAJbPmoCWz5sAls+bgJbPnACWz5yAls+dAJbPnYCWz54Als+egJbPnwCWz5+Als+QAKbPkICmz5EAps+RgKbPkgCmz5KAps+TAKbPk4Cmz5QAps+UgKbPlQCmz5WAps+WAKbPloCmz5cAps+XgKbPmACmz5iAps+ZAKbPmYCmz5oAps+agKbPmwCmz5uAps+cAKbPnICmz50Aps+dgKbPngCmz56Aps+fAKbPn4Cmz5AAts+QgLbPkQC2z5GAts+SALbPkoC2z5MAts+TgLbPlAC2z5SAts+VALbPlYC2z5YAts+WgLbPlwC2z5eAts+YALbPmIC2z5kAts+ZgLbPmgC2z5qAts+bALbPm4C2z5wAts+cgLbPnQC2z52Ats+eALbPnoC2z58Ats+fgLbPkADGz5CAxs+RAMbPkYDGz5IAxs+SgMbPkwDGz5OAxs+UAMbPlIDGz5UAxs+VgMbPlgDGz5aAxs+XAMbPl4DGz5gAxs+YgMbPmQDGz5mAxs+aAMbPmoDGz5sAxs+bgMbPnADGz5yAxs+dAMbPnYDGz54Axs+egMbPnwDGz5+Axs+QANbPkIDWz5EA1s+RgNbPkgDWz5KA1s+VANITggAIBO""#,
-        vg_camellia_crypt_prepared = sym super::camellia::vg_camellia_crypt_prepared::vg_camellia_crypt_prepared,
+        vg_camellia_crypt_prepared = sym crate::camellia::vg_camellia_crypt_prepared::vg_camellia_crypt_prepared,
     )
 }
 
-/// Camellia-OFB encryption or decryption (NIST SP 800-38A §6.4, RFC 3713 §2.3) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)`, where `O₀` is the block at `*iv`, a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*iv` with the last output block used, `Oₙ` (leaving it unchanged if `len = 0`): so that a further call continues the message if `len` is a multiple of 16, and otherwise keystream, to be wiped, after which the message must end. `CIPH_K` is Camellia encryption with `rounds` rounds under the subkeys at `schedule`, as `vg_camellia_expand_key` writes them.
-///
-/// Contract: `VG.Spec.Camellia.ofbFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the subkeys, the chaining value or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 272 bytes.
-/// * `iv` must be valid for reads and writes of 16 bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `rounds` must be 18 (for a key of 16 bytes) or 24 (for one of 24 or 32).
-/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv` and `data` may overlap the 3408 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_camellia_ofb_final`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_camellia_ofb_final(schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_camellia_ofb_final(schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "sfIh+CAAATkgDYj7eCOcfHgrpHx4M8V8eDvmfHhDB32mAgh8CA0H+PAMp/v4DMf7AA3n+3gjnXx4M958eCOffHgrpnx4O+V8AAAfgRANBZEEAB+BFA0FkQgAH4EYDQWRDAAfgRwNBZF4M998eCumfHjjhH8AAKA4eOupf3jzyn94++t/eBtsfHjjgH94M8h8gAvI+YgL6PmQCwj6mAso+qALSPqoC2j6sAuI+rgLqPrAC8j6yAvo+tALCPvYCyj74AtI++gLaPvwC4j7+Auo+wAMyPsIDOj7/wDAPv8A1mLGB9Z6/wDWZv8A1mKAAcj6AP/APgD/1mLGB9Z6AP/WZgD/1mKIAcj6/wDAPgD/1mLGB9Z6AADWZgAA1mKQAcj6AADAPgAA1mLGB9Z6/wDWZgD/1mKYAcj6AADAPv8A1mLGB9Z6AP/WZgAA1mKgAcj67v/EOgAAJSg="
 beq %cr0, 20f
@@ -125,6 +144,7 @@ b 29f
 28:
 29:
 .base64 "eOu/fxANBYEAAB+RFA0FgQQAH5EYDQWBCAAfkRwNBYEMAB+R8Ayl6/gMxesADeXrCA0F6KYDCHwgDYXrIACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPl4AGz5gABs+YgAbPmQAGz5mABs+aAAbPmoAGz5sABs+bgAbPnAAGz5yABs+dAAbPnYAGz54ABs+egAbPnwAGz5+ABs+QABbPkIAWz5EAFs+RgBbPkgAWz5KAFs+TABbPk4AWz5QAFs+UgBbPlQAWz5WAFs+WABbPloAWz5cAFs+XgBbPmAAWz5iAFs+ZABbPmYAWz5oAFs+agBbPmwAWz5uAFs+cABbPnIAWz50AFs+dgBbPngAWz56AFs+fABbPn4AWz5AAJs+QgCbPkQAmz5GAJs+SACbPkoAmz5MAJs+TgCbPlAAmz5SAJs+VACbPlYAmz5YAJs+WgCbPlwAmz5eAJs+YACbPmIAmz5kAJs+ZgCbPmgAmz5qAJs+bACbPm4Amz5wAJs+cgCbPnQAmz52AJs+eACbPnoAmz58AJs+fgCbPkAA2z5CANs+RADbPkYA2z5IANs+SgDbPkwA2z5OANs+UADbPlIA2z5UANs+VgDbPlgA2z5aANs+XADbPl4A2z5gANs+YgDbPmQA2z5mANs+aADbPmoA2z5sANs+bgDbPnAA2z5yANs+dADbPnYA2z54ANs+egDbPnwA2z5+ANs+QAEbPkIBGz5EARs+RgEbPkgBGz5KARs+TAEbPk4BGz5QARs+UgEbPlQBGz5WARs+WAEbPloBGz5cARs+XgEbPmABGz5iARs+ZAEbPmYBGz5oARs+agEbPmwBGz5uARs+cAEbPnIBGz50ARs+dgEbPngBGz56ARs+fAEbPn4BGz5AAVs+QgFbPkQBWz5GAVs+SAFbPkoBWz5MAVs+TgFbPlABWz5SAVs+VAFbPlYBWz5YAVs+WgFbPlwBWz5eAVs+YAFbPmIBWz5kAVs+ZgFbPmgBWz5qAVs+bAFbPm4BWz5wAVs+cgFbPnQBWz52AVs+eAFbPnoBWz58AVs+fgFbPkABmz5CAZs+RAGbPkYBmz5IAZs+SgGbPkwBmz5OAZs+UAGbPlIBmz5UAZs+VgGbPlgBmz5aAZs+XAGbPl4Bmz5gAZs+YgGbPmQBmz5mAZs+aAGbPmoBmz5sAZs+bgGbPnABmz5yAZs+dAGbPnYBmz54AZs+egGbPnwBmz5+AZs+QAHbPkIB2z5EAds+RgHbPkgB2z5KAds+TAHbPk4B2z5QAds+UgHbPlQB2z5WAds+WAHbPloB2z5cAds+XgHbPmAB2z5iAds+ZAHbPmYB2z5oAds+agHbPmwB2z5uAds+cAHbPnIB2z50Ads+dgHbPngB2z56Ads+fAHbPn4B2z5AAhs+QgIbPkQCGz5GAhs+SAIbPkoCGz5MAhs+TgIbPlACGz5SAhs+VAIbPlYCGz5YAhs+WgIbPlwCGz5eAhs+YAIbPmICGz5kAhs+ZgIbPmgCGz5qAhs+bAIbPm4CGz5wAhs+cgIbPnQCGz52Ahs+eAIbPnoCGz58Ahs+fgIbPkACWz5CAls+RAJbPkYCWz5IAls+SgJbPkwCWz5OAls+UAJbPlICWz5UAls+VgJbPlgCWz5aAls+XAJbPl4CWz5gAls+YgJbPmQCWz5mAls+aAJbPmoCWz5sAls+bgJbPnACWz5yAls+dAJbPnYCWz54Als+egJbPnwCWz5+Als+QAKbPkICmz5EAps+RgKbPkgCmz5KAps+TAKbPk4Cmz5QAps+UgKbPlQCmz5WAps+WAKbPloCmz5cAps+XgKbPmACmz5iAps+ZAKbPmYCmz5oAps+agKbPmwCmz5uAps+cAKbPnICmz50Aps+dgKbPngCmz56Aps+fAKbPn4Cmz5AAts+QgLbPkQC2z5GAts+SALbPkoC2z5MAts+TgLbPlAC2z5SAts+VALbPlYC2z5YAts+WgLbPlwC2z5eAts+YALbPmIC2z5kAts+ZgLbPmgC2z5qAts+bALbPm4C2z5wAts+cgLbPnQC2z52Ats+eALbPnoC2z58Ats+fgLbPkADGz5CAxs+RAMbPkYDGz5IAxs+SgMbPkwDGz5OAxs+UAMbPlIDGz5UAxs+VgMbPlgDGz5aAxs+XAMbPl4DGz5gAxs+YgMbPmQDGz5mAxs+aAMbPmoDGz5sAxs+bgMbPnADGz5yAxs+dAMbPnYDGz54Axs+egMbPnwDGz5+Axs+QANbPkIDWz5EA1s+RgNbPkgDWz5KA1s+VANITggAIBO""#,
-        vg_camellia_crypt_prepared = sym super::camellia::vg_camellia_crypt_prepared::vg_camellia_crypt_prepared,
+        vg_camellia_crypt_prepared = sym crate::camellia::vg_camellia_crypt_prepared::vg_camellia_crypt_prepared,
     )
+}
 }

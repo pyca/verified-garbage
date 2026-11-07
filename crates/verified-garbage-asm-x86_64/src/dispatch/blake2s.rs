@@ -23,15 +23,15 @@ pub use crate::blake2s::vg_blake2s_init as vg_blake2s_init_auto;
 /// * Neither `state` nor `data` may overlap the return address on the stack or the 592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_blake2s_update_auto(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
+pub unsafe fn vg_blake2s_update_auto(dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::blake2s::VG_BLAKE2S_UPDATE_AVX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_blake2s_update_avx`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::blake2s::vg_blake2s_update_avx(state, count, data, len) };
+        return unsafe { crate::blake2s::vg_blake2s_update_avx(dit, state, count, data, len) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::blake2s::vg_blake2s_update(state, count, data, len) }
+    unsafe { crate::blake2s::vg_blake2s_update(dit, state, count, data, len) }
 }
 
 /// Finishes a BLAKE2s computation: if the streaming state `*state` represents data of `count` bytes, compresses its last block and writes the final state `h[0..7]` (32 bytes) to `*out`. The digest of `outlen` bytes (`init`'s) is its first `outlen` bytes.
@@ -50,13 +50,13 @@ pub unsafe fn vg_blake2s_update_auto(state: *mut [u8; 96], count: u64, data: *co
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_blake2s_finalize_auto(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
+pub unsafe fn vg_blake2s_finalize_auto(dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::blake2s::VG_BLAKE2S_FINALIZE_AVX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_blake2s_finalize_avx`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::blake2s::vg_blake2s_finalize_avx(state, count, out) };
+        return unsafe { crate::blake2s::vg_blake2s_finalize_avx(dit, state, count, out) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::blake2s::vg_blake2s_finalize(state, count, out) }
+    unsafe { crate::blake2s::vg_blake2s_finalize(dit, state, count, out) }
 }

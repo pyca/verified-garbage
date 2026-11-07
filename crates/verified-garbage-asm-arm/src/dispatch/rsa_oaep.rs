@@ -39,16 +39,16 @@
 /// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_rsa_oaep_decrypt_auto(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 5], mgf1: *const [usize; 5]) -> u32 {
+pub unsafe fn vg_rsa_oaep_decrypt_auto(dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 5], mgf1: *const [usize; 5]) -> u32 {
     let cpu = verified_garbage_cpu::detected();
     #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
     if cpu.contains(crate::rsa_oaep::VG_RSA_OAEP_DECRYPT_UMAAL_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_rsa_oaep_decrypt_umaal`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::rsa_oaep::vg_rsa_oaep_decrypt_umaal(out, out_len, msg_len, n, n_len, e, e_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, label, label_len, ct, ct_len, scratch, scratch_len, hash, mgf1) };
+        return unsafe { crate::rsa_oaep::vg_rsa_oaep_decrypt_umaal(dit, out, out_len, msg_len, n, n_len, e, e_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, label, label_len, ct, ct_len, scratch, scratch_len, hash, mgf1) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::rsa_oaep::vg_rsa_oaep_decrypt(out, out_len, msg_len, n, n_len, e, e_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, label, label_len, ct, ct_len, scratch, scratch_len, hash, mgf1) }
+    unsafe { crate::rsa_oaep::vg_rsa_oaep_decrypt(dit, out, out_len, msg_len, n, n_len, e, e_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, label, label_len, ct, ct_len, scratch, scratch_len, hash, mgf1) }
 }
 
 /// RSAES-OAEP encryption (RFC 8017 §7.1.1) with the hash function of the table `hash` and MGF1 with that of the table `mgf1`. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), the public exponent `e` (`e_len` bytes, most significant first) and `pre`, the `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1), writes the encryption of the message `msg` with the label `label` and the `seed_len`-byte seed `seed` (`n_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 0 if `n` is not such a modulus or the message is longer than `n_len - 2 seed_len - 2` bytes. The seed must be fresh random bytes for each encryption. If `pre` does not hold those values, what it writes and returns is unspecified; memory safety and the timing guarantee still apply.
@@ -85,14 +85,14 @@ pub unsafe fn vg_rsa_oaep_decrypt_auto(out: *mut u8, out_len: usize, msg_len: *m
 /// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_rsa_oaep_encrypt_precomputed_auto(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const u8, seed_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, hash: *const [usize; 5], mgf1: *const [usize; 5]) -> u32 {
+pub unsafe fn vg_rsa_oaep_encrypt_precomputed_auto(dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const u8, seed_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, hash: *const [usize; 5], mgf1: *const [usize; 5]) -> u32 {
     let cpu = verified_garbage_cpu::detected();
     #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
     if cpu.contains(crate::rsa_oaep::VG_RSA_OAEP_ENCRYPT_PRECOMPUTED_UMAAL_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_rsa_oaep_encrypt_precomputed_umaal`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::rsa_oaep::vg_rsa_oaep_encrypt_precomputed_umaal(out, out_len, n, n_len, e, e_len, label, label_len, msg, msg_len, seed, seed_len, scratch, scratch_len, pre, pre_len, hash, mgf1) };
+        return unsafe { crate::rsa_oaep::vg_rsa_oaep_encrypt_precomputed_umaal(dit, out, out_len, n, n_len, e, e_len, label, label_len, msg, msg_len, seed, seed_len, scratch, scratch_len, pre, pre_len, hash, mgf1) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::rsa_oaep::vg_rsa_oaep_encrypt_precomputed(out, out_len, n, n_len, e, e_len, label, label_len, msg, msg_len, seed, seed_len, scratch, scratch_len, pre, pre_len, hash, mgf1) }
+    unsafe { crate::rsa_oaep::vg_rsa_oaep_encrypt_precomputed(dit, out, out_len, n, n_len, e, e_len, label, label_len, msg, msg_len, seed, seed_len, scratch, scratch_len, pre, pre_len, hash, mgf1) }
 }

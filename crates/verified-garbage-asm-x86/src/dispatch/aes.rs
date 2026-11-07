@@ -18,15 +18,15 @@
 /// * Neither `key` nor `schedule` may overlap the return address on the stack or the 532 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_expand_key_auto(key: *const u8, key_len: usize, schedule: *mut [u8; 240]) {
+pub unsafe fn vg_aes_expand_key_auto(dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, schedule: *mut [u8; 240]) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::aes::VG_AES_EXPAND_KEY_AESNI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_expand_key_aesni`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes::vg_aes_expand_key_aesni(key, key_len, schedule) };
+        return unsafe { crate::aes::vg_aes_expand_key_aesni(dit, key, key_len, schedule) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::aes::vg_aes_expand_key(key, key_len, schedule) }
+    unsafe { crate::aes::vg_aes_expand_key(dit, key, key_len, schedule) }
 }
 
 /// AES encryption of whole blocks (FIPS 197 §5.1, `CIPHER`): replaces each of the `n` 16-byte blocks at `data` with its encryption by AES with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
@@ -46,15 +46,15 @@ pub unsafe fn vg_aes_expand_key_auto(key: *const u8, key_len: usize, schedule: *
 /// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_encrypt_blocks_auto(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+pub unsafe fn vg_aes_encrypt_blocks_auto(dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::aes::VG_AES_ENCRYPT_BLOCKS_AESNI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_encrypt_blocks_aesni`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes::vg_aes_encrypt_blocks_aesni(schedule, rounds, data, n, scratch) };
+        return unsafe { crate::aes::vg_aes_encrypt_blocks_aesni(dit, schedule, rounds, data, n, scratch) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::aes::vg_aes_encrypt_blocks(schedule, rounds, data, n, scratch) }
+    unsafe { crate::aes::vg_aes_encrypt_blocks(dit, schedule, rounds, data, n, scratch) }
 }
 
 /// AES decryption of whole blocks (FIPS 197 §5.3, `INVCIPHER`): replaces each of the `n` 16-byte blocks at `data` with its decryption by AES with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (the forward cipher's schedule, which the inverse cipher uses in the reverse order).
@@ -74,13 +74,13 @@ pub unsafe fn vg_aes_encrypt_blocks_auto(schedule: *const [u8; 240], rounds: usi
 /// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_decrypt_blocks_auto(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+pub unsafe fn vg_aes_decrypt_blocks_auto(dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::aes::VG_AES_DECRYPT_BLOCKS_AESNI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_decrypt_blocks_aesni`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes::vg_aes_decrypt_blocks_aesni(schedule, rounds, data, n, scratch) };
+        return unsafe { crate::aes::vg_aes_decrypt_blocks_aesni(dit, schedule, rounds, data, n, scratch) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::aes::vg_aes_decrypt_blocks(schedule, rounds, data, n, scratch) }
+    unsafe { crate::aes::vg_aes_decrypt_blocks(dit, schedule, rounds, data, n, scratch) }
 }

@@ -14,8 +14,37 @@
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the 3248 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_sm4_ofb(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sm4_ofb(schedule, iv, data, n) }
+}
+
+/// SM4-OFB encryption or decryption (NIST SP 800-38A §6.4, GB/T 32907-2016 §7.1) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)`, where `O₀` is the block at `*iv`, a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*iv` with the last output block used, `Oₙ` (leaving it unchanged if `len = 0`): so that a further call continues the message if `len` is a multiple of 16, and otherwise keystream, to be wiped, after which the message must end. `CIPH_K` is SM4 encryption under the schedule written by `vg_sm4_expand_key`.
+///
+/// Contract: `VG.Spec.Sm4.ofbFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the 3248 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_sm4_ofb_final(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut u8, len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sm4_ofb_final(schedule, iv, data, len) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_sm4_ofb`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm4_ofb(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
+pub(crate) unsafe extern "C" fn vg_sm4_ofb(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
@@ -291,24 +320,14 @@ bnez t2, 28b
 .insn 4, 0x7f010113
 .insn 2, 0x8082
 .option pop",
-        vg_sm4_modes_prepare_encrypt = sym super::sm4::vg_sm4_modes_prepare_encrypt::vg_sm4_modes_prepare_encrypt,
-        vg_sm4_modes_crypt = sym super::sm4::vg_sm4_modes_crypt::vg_sm4_modes_crypt,
+        vg_sm4_modes_prepare_encrypt = sym crate::sm4::vg_sm4_modes_prepare_encrypt::vg_sm4_modes_prepare_encrypt,
+        vg_sm4_modes_crypt = sym crate::sm4::vg_sm4_modes_crypt::vg_sm4_modes_crypt,
     )
 }
 
-/// SM4-OFB encryption or decryption (NIST SP 800-38A §6.4, GB/T 32907-2016 §7.1) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)`, where `O₀` is the block at `*iv`, a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*iv` with the last output block used, `Oₙ` (leaving it unchanged if `len = 0`): so that a further call continues the message if `len` is a multiple of 16, and otherwise keystream, to be wiped, after which the message must end. `CIPH_K` is SM4 encryption under the schedule written by `vg_sm4_expand_key`.
-///
-/// Contract: `VG.Spec.Sm4.ofbFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the chaining value or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 128 bytes.
-/// * `iv` must be valid for reads and writes of 16 bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv` and `data` may overlap the 3248 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_sm4_ofb_final`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm4_ofb_final(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_sm4_ofb_final(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
@@ -630,7 +649,8 @@ bnez t2, 214b
 .insn 4, 0x7f010113
 .insn 2, 0x8082
 .option pop",
-        vg_sm4_modes_prepare_encrypt = sym super::sm4::vg_sm4_modes_prepare_encrypt::vg_sm4_modes_prepare_encrypt,
-        vg_sm4_modes_crypt = sym super::sm4::vg_sm4_modes_crypt::vg_sm4_modes_crypt,
+        vg_sm4_modes_prepare_encrypt = sym crate::sm4::vg_sm4_modes_prepare_encrypt::vg_sm4_modes_prepare_encrypt,
+        vg_sm4_modes_crypt = sym crate::sm4::vg_sm4_modes_crypt::vg_sm4_modes_crypt,
     )
+}
 }

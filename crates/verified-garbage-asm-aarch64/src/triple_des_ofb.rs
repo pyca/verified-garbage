@@ -14,8 +14,37 @@
 /// * `data` must be valid for reads and writes of `8 * n` bytes.
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the 1008 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_triple_des_ofb(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_triple_des_ofb(schedule, iv, data, n) }
+}
+
+/// Triple DES-OFB encryption or decryption (NIST SP 800-38A §6.4, FIPS 46-3) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)`, where `O₀` is the block at `*iv`, a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*iv` with the last output block used, `Oₙ` (leaving it unchanged if `len = 0`): so that a further call continues the message if `len` is a multiple of 8, and otherwise keystream, to be wiped, after which the message must end. `CIPH_K` is Triple DES encryption under the schedule written by `vg_triple_des_expand_key`.
+///
+/// Contract: `VG.Spec.TripleDes.ofbFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 384 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the 1008 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_triple_des_ofb_final(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut u8, len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_triple_des_ofb_final(schedule, iv, data, len) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_triple_des_ofb`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_triple_des_ofb(schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+pub(crate) unsafe extern "C" fn vg_triple_des_ofb(schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r".inst 0xd10fc3ff,0x910003e4,0x91000085,0xf901c4b3,0xf901c8b4,0xf901ccb5,0xf901d0b6,0xf901d4b7
 .inst 0xf901d8b8,0xf901dcb9,0xf901e0ba,0xf901e4bb,0xf901e8bc,0x91000039,0x91000057,0x91000078
@@ -52,23 +81,13 @@ b 21f
 .inst 0xa9114611,0xa9124611,0xa9134611,0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611
 .inst 0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611,0xf901f3f1,0x910fc3ff,0xd65f03c0
 .p2align 6",
-        vg_triple_des_encrypt_block = sym super::triple_des::vg_triple_des_encrypt_block::vg_triple_des_encrypt_block,
+        vg_triple_des_encrypt_block = sym crate::triple_des::vg_triple_des_encrypt_block::vg_triple_des_encrypt_block,
     )
 }
 
-/// Triple DES-OFB encryption or decryption (NIST SP 800-38A §6.4, FIPS 46-3) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)`, where `O₀` is the block at `*iv`, a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*iv` with the last output block used, `Oₙ` (leaving it unchanged if `len = 0`): so that a further call continues the message if `len` is a multiple of 8, and otherwise keystream, to be wiped, after which the message must end. `CIPH_K` is Triple DES encryption under the schedule written by `vg_triple_des_expand_key`.
-///
-/// Contract: `VG.Spec.TripleDes.ofbFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the chaining value or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 384 bytes.
-/// * `iv` must be valid for reads and writes of 8 bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv` and `data` may overlap the 1008 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_triple_des_ofb_final`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_triple_des_ofb_final(schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_triple_des_ofb_final(schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd10fc3ff,0x910003e4,0x91000085,0xf901c4b3,0xf901c8b4,0xf901ccb5,0xf901d0b6,0xf901d4b7
 .inst 0xf901d8b8,0xf901dcb9,0xf901e0ba,0xf901e4bb,0xf901e8bc,0x91000039,0x91000057,0x91000078
@@ -114,6 +133,7 @@ b 21f
 .inst 0xa9114611,0xa9124611,0xa9134611,0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611
 .inst 0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611,0xf901f3f1,0x910fc3ff,0xd65f03c0
 .p2align 6",
-        vg_triple_des_encrypt_block = sym super::triple_des::vg_triple_des_encrypt_block::vg_triple_des_encrypt_block,
+        vg_triple_des_encrypt_block = sym crate::triple_des::vg_triple_des_encrypt_block::vg_triple_des_encrypt_block,
     )
+}
 }

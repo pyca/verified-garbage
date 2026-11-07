@@ -45,6 +45,7 @@ struct Cbc<const DECRYPT: bool> {
 impl<const DECRYPT: bool> Cbc<DECRYPT> {
     /// Initializes CBC with an effective key size of `effective_bits`.
     fn new(key: &[u8], iv: &[u8], effective_bits: usize) -> Result<Self, Error> {
+        crate::dit::enter!(dit);
         let mut ctx = Self {
             ctx: [0; 144],
             pending_len: 0,
@@ -53,6 +54,7 @@ impl<const DECRYPT: bool> Cbc<DECRYPT> {
         // lengths passed; the primitive checks the lengths.
         let code = unsafe {
             vg_rc2_cbc_init(
+                dit,
                 key.as_ptr(),
                 key.len(),
                 effective_bits,
@@ -81,6 +83,7 @@ impl<const DECRYPT: bool> Cbc<DECRYPT> {
     /// first bytes of `output`, keeps the rest pending, and returns how many
     /// bytes it wrote; changes nothing if `output` is too short.
     fn update(&mut self, input: &[u8], output: &mut [u8]) -> Result<usize, OutputTooSmall> {
+        crate::dit::enter!(dit);
         // No slice is `usize::MAX` bytes long, so an overflowing length
         // (`output_len` saturates) is too long for any `output`.
         let written = self.output_len(input.len());
@@ -98,6 +101,7 @@ impl<const DECRYPT: bool> Cbc<DECRYPT> {
         // overlap).
         unsafe {
             update(
+                dit,
                 &mut self.ctx,
                 self.pending_len,
                 input.as_ptr(),

@@ -13,20 +13,11 @@
 /// * `e` must be valid for reads of `e_len` bytes.
 /// * `state` must not overlap `e` (distinct Rust objects never do).
 /// * Neither `state` nor `e` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rsa_generate_init(state: *mut [u64; 7], bits: usize, e: *const u8, e_len: usize) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "QbkAAAAAQboAAAAASIXJ"
-je 20f
-22:
-.base64 "D7YCScHhCEkBwUyJyEjB6CBJCcJFiclIg8IBSIPpAQ=="
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "uAEAAABBuAIAAABIgf4AAgAASQ9CwEiB/gEgAABJD0PAQbgAAAAATYXSSQ9FwE2Jy0mD4wFJD0TASYP5AUkPRMBIifFIwekHSMHhA0iJykjB4gNJidNIweICTAHaSYnLScHjBkmD+QNJD0TTSInOSMHmD0gBzkmJyEnB4AVBugQAAABJD8lBuwAAAABIg/gBSQ9Fy0kPRdNJD0XzTQ9Fw00PRdNND0XLSIkXSIlPCEiJdxBMiUcYTIlfIEyJVyhMiU8www=="
-.p2align 6"#,
-    )
+#[inline(always)]
+pub unsafe fn vg_rsa_generate_init(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 7], bits: usize, e: *const u8, e_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_rsa_generate_init(state, bits, e, e_len) }
 }
 
 /// The CPU features `vg_rsa_generate_adx` requires (`Artifact.features`).
@@ -51,8 +42,93 @@ pub const VG_RSA_GENERATE_ADX_FEATURES: verified_garbage_cpu::Features = verifie
 /// * `key`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `key`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 552 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_rsa_generate_adx(_dit: verified_garbage_cpu::Dit<'_>, key: *mut u8, key_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 7]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_rsa_generate_adx(key, key_len, used, rand, rand_len, scratch, scratch_len, state) }
+}
+
+/// Generate an RSA key, as BoringSSL's `RSA_generate_key_ex` (FIPS 186-5 Appendix A.1.3), over the random tape `rand`, from the state `state` that `vg_rsa_generate_init` started: the search for `p`, then for `q` not too close to `p`, each over candidates of `p_len` octets with their top two bits and bottom bit set, rejected by trial division, a common factor of `p − 1` and `e` or Miller–Rabin, up to BoringSSL's limit of rejected candidates; then the key, `d = e⁻¹ mod lcm(p − 1, q − 1)`, `dP`, `dQ` and `qInv`, with `p` the larger prime, checked as BoringSSL's `RSA_check_key` checks it, drawing both primes again if `d` is too small; a generation whose prime's search is exhausted is started again, up to four in all. Returns 1 and writes the key to `key` (`key_len` is `9 p_len`, for the primes' length `p_len = state[1]`): `n` and `d` (`2 p_len` octets each), then `p`, `q`, `dP`, `dQ` and `qInv` (`p_len` each), all most significant first; 2 if the key failed a check; 3 if every generation was exhausted; or 0 if the tape ran out inside a candidate. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose fourth word is, for 0, the length of the next tape, more than the octets of `rand` after the first `used` and at most the entropy budget: keep those octets, in order, and append fresh random octets up to that length. For 0, `key` holds the search's `p` once it is found, which the next call reads: pass it back unchanged. `key` is otherwise zeros but for 1.
+///
+/// Contract: `VG.Spec.RsaKeyGen.keySearchContract`. Timing may depend on the pointers, the lengths, `state`, the status and consumption it returns, and, for each prime's search, its rejected candidates and the octets its accepted candidate's tests read, and each key's status. Not on the primes or the key.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads and writes of `key_len` bytes.
+/// * `used` must be valid for reads and writes of 8 bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `state` must be valid for reads and writes of 56 bytes.
+/// * `state` must come from `vg_rsa_generate_init`, or from the last call of this function, with the same `key`, that returned 0.
+/// * `key_len` must be `9 * state[1]`.
+/// * `rand_len` must be at most the entropy budget, `state[2]`.
+/// * `scratch_len` must be at least `32 * state[1] + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets, and `rand` and `key` hold secrets; the caller must destroy them after use.
+/// * `key`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `key`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 552 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_rsa_generate(_dit: verified_garbage_cpu::Dit<'_>, key: *mut u8, key_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 7]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_rsa_generate(key, key_len, used, rand, rand_len, scratch, scratch_len, state) }
+}
+
+/// The CPU features `vg_rsa_generate_ifma` requires (`Artifact.features`).
+pub const VG_RSA_GENERATE_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// Generate an RSA key, as BoringSSL's `RSA_generate_key_ex` (FIPS 186-5 Appendix A.1.3), over the random tape `rand`, from the state `state` that `vg_rsa_generate_init` started: the search for `p`, then for `q` not too close to `p`, each over candidates of `p_len` octets with their top two bits and bottom bit set, rejected by trial division, a common factor of `p − 1` and `e` or Miller–Rabin, up to BoringSSL's limit of rejected candidates; then the key, `d = e⁻¹ mod lcm(p − 1, q − 1)`, `dP`, `dQ` and `qInv`, with `p` the larger prime, checked as BoringSSL's `RSA_check_key` checks it, drawing both primes again if `d` is too small; a generation whose prime's search is exhausted is started again, up to four in all. Returns 1 and writes the key to `key` (`key_len` is `9 p_len`, for the primes' length `p_len = state[1]`): `n` and `d` (`2 p_len` octets each), then `p`, `q`, `dP`, `dQ` and `qInv` (`p_len` each), all most significant first; 2 if the key failed a check; 3 if every generation was exhausted; or 0 if the tape ran out inside a candidate. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose fourth word is, for 0, the length of the next tape, more than the octets of `rand` after the first `used` and at most the entropy budget: keep those octets, in order, and append fresh random octets up to that length. For 0, `key` holds the search's `p` once it is found, which the next call reads: pass it back unchanged. `key` is otherwise zeros but for 1.
+///
+/// Contract: `VG.Spec.RsaKeyGen.keySearchContract`. Timing may depend on the pointers, the lengths, `state`, the status and consumption it returns, and, for each prime's search, its rejected candidates and the octets its accepted candidate's tests read, and each key's status. Not on the primes or the key.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads and writes of `key_len` bytes.
+/// * `used` must be valid for reads and writes of 8 bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `state` must be valid for reads and writes of 56 bytes.
+/// * `state` must come from `vg_rsa_generate_init`, or from the last call of this function, with the same `key`, that returned 0.
+/// * `key_len` must be `9 * state[1]`.
+/// * `rand_len` must be at most the entropy budget, `state[2]`.
+/// * `scratch_len` must be at least `32 * state[1] + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets, and `rand` and `key` hold secrets; the caller must destroy them after use.
+/// * `key`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `key`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 552 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_rsa_generate_ifma(_dit: verified_garbage_cpu::Dit<'_>, key: *mut u8, key_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 7]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_rsa_generate_ifma(key, key_len, used, rand, rand_len, scratch, scratch_len, state) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_rsa_generate_init`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rsa_generate_adx(key: *mut u8, key_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 7]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_rsa_generate_init(state: *mut [u64; 7], bits: usize, e: *const u8, e_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "QbkAAAAAQboAAAAASIXJ"
+je 20f
+22:
+.base64 "D7YCScHhCEkBwUyJyEjB6CBJCcJFiclIg8IBSIPpAQ=="
+jne 22b
+jmp 21f
+20:
+21:
+.base64 "uAEAAABBuAIAAABIgf4AAgAASQ9CwEiB/gEgAABJD0PAQbgAAAAATYXSSQ9FwE2Jy0mD4wFJD0TASYP5AUkPRMBIifFIwekHSMHhA0iJykjB4gNJidNIweICTAHaSYnLScHjBkmD+QNJD0TTSInOSMHmD0gBzkmJyEnB4AVBugQAAABJD8lBuwAAAABIg/gBSQ9Fy0kPRdNJD0XzTQ9Fw00PRdNND0XLSIkXSIlPCEiJdxBMiUcYTIlfIEyJVyhMiU8www=="
+.p2align 6"#,
+    )
+}
+
+/// The verified code of [`super::vg_rsa_generate_adx`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_rsa_generate_adx(key: *mut u8, key_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 7]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJGD///9MiWQkSEmJ5EmJPCRJiVQkEEmJTCQYTYlEJCBNiUwkKEiLhCSoAAAASYlEJDBIi4QksAAAAEmJRCQ4SItICEyLSDBJiUwkCLoAAAAASYlUJEBIicpIweIDSYnTSMHiAkwB2kmJy0nB4wZJuAAAAAAAAAADTTnBSQ9E00mJVCRYSYsEJEmJRCRgSYtMJAhIweECSYlMJGhMiedIi3dgSItPaLgAAAAA"
 20:
@@ -126,31 +202,14 @@ jmp 24f
 je 22b
 .base64 "SYtEJBBJi0wkQEiJCEmLRCRQTYtkJEhIjaQkoAAAAMM="
 .p2align 6"#,
-        vg_rsa_prime_search_adx = sym super::rsa::vg_rsa_prime_search_adx::vg_rsa_prime_search_adx,
-        vg_rsa_keygen_key = sym super::rsa_keygen::vg_rsa_keygen_key::vg_rsa_keygen_key,
+        vg_rsa_prime_search_adx = sym crate::rsa::vg_rsa_prime_search_adx::vg_rsa_prime_search_adx,
+        vg_rsa_keygen_key = sym crate::rsa_keygen::vg_rsa_keygen_key::vg_rsa_keygen_key,
     )
 }
 
-/// Generate an RSA key, as BoringSSL's `RSA_generate_key_ex` (FIPS 186-5 Appendix A.1.3), over the random tape `rand`, from the state `state` that `vg_rsa_generate_init` started: the search for `p`, then for `q` not too close to `p`, each over candidates of `p_len` octets with their top two bits and bottom bit set, rejected by trial division, a common factor of `p − 1` and `e` or Miller–Rabin, up to BoringSSL's limit of rejected candidates; then the key, `d = e⁻¹ mod lcm(p − 1, q − 1)`, `dP`, `dQ` and `qInv`, with `p` the larger prime, checked as BoringSSL's `RSA_check_key` checks it, drawing both primes again if `d` is too small; a generation whose prime's search is exhausted is started again, up to four in all. Returns 1 and writes the key to `key` (`key_len` is `9 p_len`, for the primes' length `p_len = state[1]`): `n` and `d` (`2 p_len` octets each), then `p`, `q`, `dP`, `dQ` and `qInv` (`p_len` each), all most significant first; 2 if the key failed a check; 3 if every generation was exhausted; or 0 if the tape ran out inside a candidate. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose fourth word is, for 0, the length of the next tape, more than the octets of `rand` after the first `used` and at most the entropy budget: keep those octets, in order, and append fresh random octets up to that length. For 0, `key` holds the search's `p` once it is found, which the next call reads: pass it back unchanged. `key` is otherwise zeros but for 1.
-///
-/// Contract: `VG.Spec.RsaKeyGen.keySearchContract`. Timing may depend on the pointers, the lengths, `state`, the status and consumption it returns, and, for each prime's search, its rejected candidates and the octets its accepted candidate's tests read, and each key's status. Not on the primes or the key.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads and writes of `key_len` bytes.
-/// * `used` must be valid for reads and writes of 8 bytes.
-/// * `rand` must be valid for reads of `rand_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `state` must be valid for reads and writes of 56 bytes.
-/// * `state` must come from `vg_rsa_generate_init`, or from the last call of this function, with the same `key`, that returned 0.
-/// * `key_len` must be `9 * state[1]`.
-/// * `rand_len` must be at most the entropy budget, `state[2]`.
-/// * `scratch_len` must be at least `32 * state[1] + 32`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets, and `rand` and `key` hold secrets; the caller must destroy them after use.
-/// * `key`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `key`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 552 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_rsa_generate`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rsa_generate(key: *mut u8, key_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 7]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_rsa_generate(key: *mut u8, key_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 7]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJGD///9MiWQkSEmJ5EmJPCRJiVQkEEmJTCQYTYlEJCBNiUwkKEiLhCSoAAAASYlEJDBIi4QksAAAAEmJRCQ4SItICEyLSDBJiUwkCLoAAAAASYlUJEBIicpIweIDSYnTSMHiAkwB2kmJy0nB4wZJuAAAAAAAAAADTTnBSQ9E00mJVCRYSYsEJEmJRCRgSYtMJAhIweECSYlMJGhMiedIi3dgSItPaLgAAAAA"
 20:
@@ -224,35 +283,14 @@ jmp 24f
 je 22b
 .base64 "SYtEJBBJi0wkQEiJCEmLRCRQTYtkJEhIjaQkoAAAAMM="
 .p2align 6"#,
-        vg_rsa_prime_search = sym super::rsa::vg_rsa_prime_search::vg_rsa_prime_search,
-        vg_rsa_keygen_key = sym super::rsa_keygen::vg_rsa_keygen_key::vg_rsa_keygen_key,
+        vg_rsa_prime_search = sym crate::rsa::vg_rsa_prime_search::vg_rsa_prime_search,
+        vg_rsa_keygen_key = sym crate::rsa_keygen::vg_rsa_keygen_key::vg_rsa_keygen_key,
     )
 }
 
-/// The CPU features `vg_rsa_generate_ifma` requires (`Artifact.features`).
-pub const VG_RSA_GENERATE_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
-
-/// Generate an RSA key, as BoringSSL's `RSA_generate_key_ex` (FIPS 186-5 Appendix A.1.3), over the random tape `rand`, from the state `state` that `vg_rsa_generate_init` started: the search for `p`, then for `q` not too close to `p`, each over candidates of `p_len` octets with their top two bits and bottom bit set, rejected by trial division, a common factor of `p − 1` and `e` or Miller–Rabin, up to BoringSSL's limit of rejected candidates; then the key, `d = e⁻¹ mod lcm(p − 1, q − 1)`, `dP`, `dQ` and `qInv`, with `p` the larger prime, checked as BoringSSL's `RSA_check_key` checks it, drawing both primes again if `d` is too small; a generation whose prime's search is exhausted is started again, up to four in all. Returns 1 and writes the key to `key` (`key_len` is `9 p_len`, for the primes' length `p_len = state[1]`): `n` and `d` (`2 p_len` octets each), then `p`, `q`, `dP`, `dQ` and `qInv` (`p_len` each), all most significant first; 2 if the key failed a check; 3 if every generation was exhausted; or 0 if the tape ran out inside a candidate. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose fourth word is, for 0, the length of the next tape, more than the octets of `rand` after the first `used` and at most the entropy budget: keep those octets, in order, and append fresh random octets up to that length. For 0, `key` holds the search's `p` once it is found, which the next call reads: pass it back unchanged. `key` is otherwise zeros but for 1.
-///
-/// Contract: `VG.Spec.RsaKeyGen.keySearchContract`. Timing may depend on the pointers, the lengths, `state`, the status and consumption it returns, and, for each prime's search, its rejected candidates and the octets its accepted candidate's tests read, and each key's status. Not on the primes or the key.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads and writes of `key_len` bytes.
-/// * `used` must be valid for reads and writes of 8 bytes.
-/// * `rand` must be valid for reads of `rand_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `state` must be valid for reads and writes of 56 bytes.
-/// * `state` must come from `vg_rsa_generate_init`, or from the last call of this function, with the same `key`, that returned 0.
-/// * `key_len` must be `9 * state[1]`.
-/// * `rand_len` must be at most the entropy budget, `state[2]`.
-/// * `scratch_len` must be at least `32 * state[1] + 32`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets, and `rand` and `key` hold secrets; the caller must destroy them after use.
-/// * `key`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `key`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 552 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
+/// The verified code of [`super::vg_rsa_generate_ifma`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rsa_generate_ifma(key: *mut u8, key_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 7]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_rsa_generate_ifma(key: *mut u8, key_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 7]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJGD///9MiWQkSEmJ5EmJPCRJiVQkEEmJTCQYTYlEJCBNiUwkKEiLhCSoAAAASYlEJDBIi4QksAAAAEmJRCQ4SItICEyLSDBJiUwkCLoAAAAASYlUJEBIicpIweIDSYnTSMHiAkwB2kmJy0nB4wZJuAAAAAAAAAADTTnBSQ9E00mJVCRYSYsEJEmJRCRgSYtMJAhIweECSYlMJGhMiedIi3dgSItPaLgAAAAA"
 20:
@@ -326,9 +364,10 @@ jmp 24f
 je 22b
 .base64 "SYtEJBBJi0wkQEiJCEmLRCRQTYtkJEhIjaQkoAAAAMM="
 .p2align 6"#,
-        vg_rsa_prime_search_ifma = sym super::rsa::vg_rsa_prime_search_ifma::vg_rsa_prime_search_ifma,
-        vg_rsa_keygen_key = sym super::rsa_keygen::vg_rsa_keygen_key::vg_rsa_keygen_key,
+        vg_rsa_prime_search_ifma = sym crate::rsa::vg_rsa_prime_search_ifma::vg_rsa_prime_search_ifma,
+        vg_rsa_keygen_key = sym crate::rsa_keygen::vg_rsa_keygen_key::vg_rsa_keygen_key,
     )
+}
 }
 
 #[rustfmt::skip]

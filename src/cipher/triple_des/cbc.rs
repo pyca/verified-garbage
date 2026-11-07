@@ -89,6 +89,7 @@ impl TripleDesCbcDecryptor {
 impl Key {
     /// Expands a 16- or 24-byte key.
     fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
+        crate::dit::enter!(dit);
         if !matches!(key.len(), 16 | 24) {
             return Err(InvalidKeyLength);
         }
@@ -96,7 +97,7 @@ impl Key {
         // SAFETY: the key has a validated length; key and schedule are separate
         // valid buffers of the required sizes.
         unsafe {
-            vg_triple_des_expand_key(key.as_ptr(), key.len(), &mut schedule);
+            vg_triple_des_expand_key(dit, key.as_ptr(), key.len(), &mut schedule);
         }
         Ok(Self { schedule })
     }
@@ -107,6 +108,7 @@ impl Key {
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of eight.
     fn encrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
+        crate::dit::enter!(dit);
         if !buffer.len().is_multiple_of(8) {
             return Err(IncompleteBlock);
         }
@@ -116,6 +118,7 @@ impl Key {
         // the callee's stack.
         unsafe {
             vg_triple_des_cbc_encrypt_chained(
+                dit,
                 &self.schedule,
                 iv,
                 buffer.as_mut_ptr().cast(),
@@ -131,6 +134,7 @@ impl Key {
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of eight.
     fn decrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
+        crate::dit::enter!(dit);
         if !buffer.len().is_multiple_of(8) {
             return Err(IncompleteBlock);
         }
@@ -138,6 +142,7 @@ impl Key {
         // the CPU has the features of.
         unsafe {
             vg_triple_des_cbc_decrypt_chained_auto(
+                dit,
                 &self.schedule,
                 iv,
                 buffer.as_mut_ptr().cast(),

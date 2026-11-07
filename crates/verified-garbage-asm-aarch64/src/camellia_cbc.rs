@@ -15,8 +15,38 @@
 /// * `rounds` must be 18 (for a key of 16 bytes) or 24 (for one of 24 or 32).
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the 3344 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_camellia_cbc_encrypt_chained(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_camellia_cbc_encrypt_chained(schedule, rounds, iv, data, n) }
+}
+
+/// Camellia-CBC decryption (NIST SP 800-38A §6.2, RFC 3713 §2.3) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is Camellia's decryption with `rounds` rounds under the subkeys at `schedule`, as `vg_camellia_expand_key` writes them. No padding is removed.
+///
+/// Contract: `VG.Spec.Camellia.cbcDecryptChainedContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 272 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `16 * n` bytes.
+/// * `rounds` must be 18 (for a key of 16 bytes) or 24 (for one of 24 or 32).
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the 3344 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_camellia_cbc_decrypt_chained(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_camellia_cbc_decrypt_chained(schedule, rounds, iv, data, n) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_camellia_cbc_encrypt_chained`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_camellia_cbc_encrypt_chained(schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
+pub(crate) unsafe extern "C" fn vg_camellia_cbc_encrypt_chained(schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r".inst 0xd13443ff,0x910003e5,0x910000a5,0xf90628b3,0xf9062cb4,0xf90630b5,0xf90634b6,0xf90638b7
 .inst 0xf9063cb8,0xf90640b9,0xf90644ba,0xf90648bb,0xf9064cbc,0x91000053
@@ -74,25 +104,14 @@ b 23f
 .inst 0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611
 .inst 0xa90e4611,0xa90f4611,0xa9104611,0x913443ff,0xd65f03c0
 .p2align 6",
-        vg_camellia_prepare_encrypt_keys = sym super::camellia::vg_camellia_prepare_encrypt_keys::vg_camellia_prepare_encrypt_keys,
-        vg_camellia_encrypt_prepared = sym super::camellia::vg_camellia_encrypt_prepared::vg_camellia_encrypt_prepared,
+        vg_camellia_prepare_encrypt_keys = sym crate::camellia::vg_camellia_prepare_encrypt_keys::vg_camellia_prepare_encrypt_keys,
+        vg_camellia_encrypt_prepared = sym crate::camellia::vg_camellia_encrypt_prepared::vg_camellia_encrypt_prepared,
     )
 }
 
-/// Camellia-CBC decryption (NIST SP 800-38A §6.2, RFC 3713 §2.3) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is Camellia's decryption with `rounds` rounds under the subkeys at `schedule`, as `vg_camellia_expand_key` writes them. No padding is removed.
-///
-/// Contract: `VG.Spec.Camellia.cbcDecryptChainedContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 272 bytes.
-/// * `iv` must be valid for reads and writes of 16 bytes.
-/// * `data` must be valid for reads and writes of `16 * n` bytes.
-/// * `rounds` must be 18 (for a key of 16 bytes) or 24 (for one of 24 or 32).
-/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv` and `data` may overlap the 3344 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_camellia_cbc_decrypt_chained`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_camellia_cbc_decrypt_chained(schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
+pub(crate) unsafe extern "C" fn vg_camellia_cbc_decrypt_chained(schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r".inst 0xd13443ff,0x910003e5,0x910000a5,0xf90658b3,0xf9065cb4,0xf90660b5,0xf90664b6,0xf90668b7
 .inst 0xf9066cb8,0xf90670b9,0xf90674ba,0xf90678bb,0xf9067cbc,0xf9400046,0xf90680a6,0xf9400446
@@ -169,7 +188,8 @@ b 23f
 .inst 0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611
 .inst 0xa90e4611,0xa90f4611,0xa9104611,0x913443ff,0xd65f03c0
 .p2align 6",
-        vg_camellia_prepare_keys = sym super::camellia::vg_camellia_prepare_keys::vg_camellia_prepare_keys,
-        vg_camellia_crypt_prepared = sym super::camellia::vg_camellia_crypt_prepared::vg_camellia_crypt_prepared,
+        vg_camellia_prepare_keys = sym crate::camellia::vg_camellia_prepare_keys::vg_camellia_prepare_keys,
+        vg_camellia_crypt_prepared = sym crate::camellia::vg_camellia_crypt_prepared::vg_camellia_crypt_prepared,
     )
+}
 }

@@ -28,15 +28,15 @@ pub use crate::sha256::vg_sha256_init as vg_sha256_init_auto;
 /// * Neither `data` nor `out` may overlap the return address on the stack or the 372 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_sha256_digest_auto(data: *const u8, len: usize, out: *mut [u8; 32]) {
+pub unsafe fn vg_sha256_digest_auto(dit: verified_garbage_cpu::Dit<'_>, data: *const u8, len: usize, out: *mut [u8; 32]) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::sha256::VG_SHA256_DIGEST_SHANI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha256_digest_shani`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::sha256::vg_sha256_digest_shani(data, len, out) };
+        return unsafe { crate::sha256::vg_sha256_digest_shani(dit, data, len, out) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::sha256::vg_sha256_digest(data, len, out) }
+    unsafe { crate::sha256::vg_sha256_digest(dit, data, len, out) }
 }
 
 /// Computes the SHA-224 digest of the `len` bytes at `data` (28 bytes, `VG.Spec.Sha256.sha224`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-224 computation with that message.
@@ -53,15 +53,15 @@ pub unsafe fn vg_sha256_digest_auto(data: *const u8, len: usize, out: *mut [u8; 
 /// * Neither `data` nor `out` may overlap the return address on the stack or the 372 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_sha224_digest_auto(data: *const u8, len: usize, out: *mut [u8; 28]) {
+pub unsafe fn vg_sha224_digest_auto(dit: verified_garbage_cpu::Dit<'_>, data: *const u8, len: usize, out: *mut [u8; 28]) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::sha256::VG_SHA224_DIGEST_SHANI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha224_digest_shani`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::sha256::vg_sha224_digest_shani(data, len, out) };
+        return unsafe { crate::sha256::vg_sha224_digest_shani(dit, data, len, out) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::sha256::vg_sha224_digest(data, len, out) }
+    unsafe { crate::sha256::vg_sha224_digest(dit, data, len, out) }
 }
 
 /// Absorbs data into a SHA-224 or SHA-256 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), it then represents that message followed by the `len` bytes at `data`.
@@ -80,15 +80,15 @@ pub unsafe fn vg_sha224_digest_auto(data: *const u8, len: usize, out: *mut [u8; 
 /// * Neither `state` nor `data` may overlap the arguments on the stack, overlap the return address on the stack or the 656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_sha256_update_auto(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
+pub unsafe fn vg_sha256_update_auto(dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::sha256::VG_SHA256_UPDATE_SHANI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha256_update_shani`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::sha256::vg_sha256_update_shani(state, count, data, len) };
+        return unsafe { crate::sha256::vg_sha256_update_shani(dit, state, count, data, len) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::sha256::vg_sha256_update(state, count, data, len) }
+    unsafe { crate::sha256::vg_sha256_update(dit, state, count, data, len) }
 }
 
 /// Finishes a SHA-224 or SHA-256 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), hashed from an initial hash value, writes the final hash value `H⁽ᴺ⁾` of that message (32 bytes) to `*out`. The SHA-256 digest is all of it; the SHA-224 digest is its first 28 bytes.
@@ -108,15 +108,15 @@ pub unsafe fn vg_sha256_update_auto(state: *mut [u8; 96], count: u64, data: *con
 /// * Neither `state` nor `out` may overlap the arguments on the stack, overlap the return address on the stack or the 652 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_sha256_finalize_auto(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
+pub unsafe fn vg_sha256_finalize_auto(dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::sha256::VG_SHA256_FINALIZE_SHANI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha256_finalize_shani`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::sha256::vg_sha256_finalize_shani(state, count, out) };
+        return unsafe { crate::sha256::vg_sha256_finalize_shani(dit, state, count, out) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::sha256::vg_sha256_finalize(state, count, out) }
+    unsafe { crate::sha256::vg_sha256_finalize(dit, state, count, out) }
 }
 
 /// Finishes a SHA-224 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), hashed from the initial hash value of SHA-224 (as `vg_sha224_init` starts it), writes the SHA-224 digest of that message (28 bytes, `VG.Spec.Sha256.sha224`) to `*out`.
@@ -134,13 +134,13 @@ pub unsafe fn vg_sha256_finalize_auto(state: *mut [u8; 96], count: u64, out: *mu
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 652 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_sha224_finalize_auto(state: *mut [u8; 96], count: u64, out: *mut [u8; 28]) {
+pub unsafe fn vg_sha224_finalize_auto(dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 96], count: u64, out: *mut [u8; 28]) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::sha256::VG_SHA224_FINALIZE_SHANI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha224_finalize_shani`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::sha256::vg_sha224_finalize_shani(state, count, out) };
+        return unsafe { crate::sha256::vg_sha224_finalize_shani(dit, state, count, out) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::sha256::vg_sha224_finalize(state, count, out) }
+    unsafe { crate::sha256::vg_sha224_finalize(dit, state, count, out) }
 }

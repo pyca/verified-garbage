@@ -22,15 +22,15 @@ pub use crate::sha1::vg_sha1_init as vg_sha1_init_auto;
 /// * Neither `data` nor `out` may overlap the return address on the stack or the 348 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_sha1_digest_auto(data: *const u8, len: usize, out: *mut [u8; 20]) {
+pub unsafe fn vg_sha1_digest_auto(dit: verified_garbage_cpu::Dit<'_>, data: *const u8, len: usize, out: *mut [u8; 20]) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::sha1::VG_SHA1_DIGEST_SHANI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha1_digest_shani`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::sha1::vg_sha1_digest_shani(data, len, out) };
+        return unsafe { crate::sha1::vg_sha1_digest_shani(dit, data, len, out) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::sha1::vg_sha1_digest(data, len, out) }
+    unsafe { crate::sha1::vg_sha1_digest(dit, data, len, out) }
 }
 
 /// Absorbs data into a SHA-1 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), it then represents that message followed by the `len` bytes at `data`.
@@ -49,15 +49,15 @@ pub unsafe fn vg_sha1_digest_auto(data: *const u8, len: usize, out: *mut [u8; 20
 /// * Neither `state` nor `data` may overlap the arguments on the stack, overlap the return address on the stack or the 208 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_sha1_update_auto(state: *mut [u8; 84], count: u64, data: *const u8, len: usize) {
+pub unsafe fn vg_sha1_update_auto(dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 84], count: u64, data: *const u8, len: usize) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::sha1::VG_SHA1_UPDATE_SHANI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha1_update_shani`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::sha1::vg_sha1_update_shani(state, count, data, len) };
+        return unsafe { crate::sha1::vg_sha1_update_shani(dit, state, count, data, len) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::sha1::vg_sha1_update(state, count, data, len) }
+    unsafe { crate::sha1::vg_sha1_update(dit, state, count, data, len) }
 }
 
 /// Finishes a SHA-1 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), writes the SHA-1 digest of that message to `*out`.
@@ -77,13 +77,13 @@ pub unsafe fn vg_sha1_update_auto(state: *mut [u8; 84], count: u64, data: *const
 /// * Neither `state` nor `out` may overlap the arguments on the stack, overlap the return address on the stack or the 204 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_sha1_finalize_auto(state: *mut [u8; 84], count: u64, out: *mut [u8; 20]) {
+pub unsafe fn vg_sha1_finalize_auto(dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 84], count: u64, out: *mut [u8; 20]) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::sha1::VG_SHA1_FINALIZE_SHANI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha1_finalize_shani`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::sha1::vg_sha1_finalize_shani(state, count, out) };
+        return unsafe { crate::sha1::vg_sha1_finalize_shani(dit, state, count, out) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::sha1::vg_sha1_finalize(state, count, out) }
+    unsafe { crate::sha1::vg_sha1_finalize(dit, state, count, out) }
 }

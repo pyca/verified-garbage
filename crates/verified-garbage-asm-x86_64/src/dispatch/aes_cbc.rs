@@ -20,15 +20,15 @@
 /// * None of `schedule`, `iv`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_cbc_encrypt_auto(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
+pub unsafe fn vg_aes_cbc_encrypt_auto(dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::aes_cbc::VG_AES_CBC_ENCRYPT_AESNI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_cbc_encrypt_aesni`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes_cbc::vg_aes_cbc_encrypt_aesni(schedule, rounds, iv, data, n, scratch) };
+        return unsafe { crate::aes_cbc::vg_aes_cbc_encrypt_aesni(dit, schedule, rounds, iv, data, n, scratch) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::aes_cbc::vg_aes_cbc_encrypt(schedule, rounds, iv, data, n, scratch) }
+    unsafe { crate::aes_cbc::vg_aes_cbc_encrypt(dit, schedule, rounds, iv, data, n, scratch) }
 }
 
 /// AES-CBC decryption (NIST SP 800-38A §6.2) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is the AES inverse cipher (FIPS 197 §5.3) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it. No padding is removed.
@@ -49,23 +49,23 @@ pub unsafe fn vg_aes_cbc_encrypt_auto(schedule: *const [u8; 240], rounds: usize,
 /// * None of `schedule`, `iv`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_cbc_decrypt_auto(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
+pub unsafe fn vg_aes_cbc_decrypt_auto(dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::aes_cbc::VG_AES_CBC_DECRYPT_VAES_AVX512_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_cbc_decrypt_vaes_avx512`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes_cbc::vg_aes_cbc_decrypt_vaes_avx512(schedule, rounds, iv, data, n, scratch) };
+        return unsafe { crate::aes_cbc::vg_aes_cbc_decrypt_vaes_avx512(dit, schedule, rounds, iv, data, n, scratch) };
     }
     if cpu.contains(crate::aes_cbc::VG_AES_CBC_DECRYPT_VAES_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_cbc_decrypt_vaes`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes_cbc::vg_aes_cbc_decrypt_vaes(schedule, rounds, iv, data, n, scratch) };
+        return unsafe { crate::aes_cbc::vg_aes_cbc_decrypt_vaes(dit, schedule, rounds, iv, data, n, scratch) };
     }
     if cpu.contains(crate::aes_cbc::VG_AES_CBC_DECRYPT_AESNI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_cbc_decrypt_aesni`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes_cbc::vg_aes_cbc_decrypt_aesni(schedule, rounds, iv, data, n, scratch) };
+        return unsafe { crate::aes_cbc::vg_aes_cbc_decrypt_aesni(dit, schedule, rounds, iv, data, n, scratch) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::aes_cbc::vg_aes_cbc_decrypt(schedule, rounds, iv, data, n, scratch) }
+    unsafe { crate::aes_cbc::vg_aes_cbc_decrypt(dit, schedule, rounds, iv, data, n, scratch) }
 }

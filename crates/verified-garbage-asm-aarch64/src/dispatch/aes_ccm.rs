@@ -22,15 +22,15 @@
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_ccm_seal_auto(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
+pub unsafe fn vg_aes_ccm_seal_auto(dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::aes_ccm::VG_AES_CCM_SEAL_AES_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_ccm_seal_aes`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes_ccm::vg_aes_ccm_seal_aes(schedule, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) };
+        return unsafe { crate::aes_ccm::vg_aes_ccm_seal_aes(dit, schedule, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::aes_ccm::vg_aes_ccm_seal(schedule, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) }
+    unsafe { crate::aes_ccm::vg_aes_ccm_seal(dit, schedule, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) }
 }
 
 /// AES-CCM decryption-verification (NIST SP 800-38C §6.2, with the formatting and counter generation of its Appendix A): with the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it, and the received encrypted MAC (the last `tag_len` bytes of the ciphertext) the `tag_len` bytes at `tag`, decrypts the `len` bytes of encrypted payload at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and returns 1 if the MAC is that of the payload and the `aad_len` bytes of associated data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The MACs are compared without a branch.
@@ -53,13 +53,13 @@ pub unsafe fn vg_aes_ccm_seal_auto(schedule: *const [u8; 240], rounds: usize, no
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_ccm_open_auto(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe fn vg_aes_ccm_open_auto(dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::aes_ccm::VG_AES_CCM_OPEN_AES_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_ccm_open_aes`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes_ccm::vg_aes_ccm_open_aes(schedule, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) };
+        return unsafe { crate::aes_ccm::vg_aes_ccm_open_aes(dit, schedule, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::aes_ccm::vg_aes_ccm_open(schedule, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) }
+    unsafe { crate::aes_ccm::vg_aes_ccm_open(dit, schedule, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) }
 }

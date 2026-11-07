@@ -19,27 +19,12 @@
 /// * The contents of `scratch` on return are unspecified.
 /// * `data` and `scratch` must not overlap each other, `schedule`, `tweak_schedule` or `i` (distinct Rust objects never do).
 /// * None of `schedule`, `tweak_schedule`, `i`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_xts_encrypt_unit(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
-    core::arch::naked_asm!(
-        r#".base64 "pgIIfNAICfigCMn5qAjp+bAICfq4CCn6wAhJ+sgIafp4G258eCuvfHg78Xx4QxJ9eEszfQAAJumACDP5CAAm6YgIM/kAACA5kAgz+ZgIM/l4I4N8eHvkfZAIsziACNM4AQDgOHibaH4="
-bl {vg_aes_xts_encrypt}
-.base64 "eHPDfXh75H2ACLM4eIsmfgLhR3p4m2h+"
-bl {vg_aes_xts_encrypt}
-.base64 "AuFKeuQmSnlQkGp9AAArKA=="
-beq %cr0, 20f
-.base64 "FFKRffD/jDk="
-22:
-.base64 "AAAMiRAALIkAACyZEAAMmQEAjDn//2s5AAArKA=="
-bne %cr0, 22b
-.base64 "FFLRfPD/xjh4c8N9eHvkfYAIszgBAOA4eJtofg=="
-bl {vg_aes_xts_encrypt}
-b 21f
-20:
-21:
-.base64 "0AgT6KAI0+moCPPpsAgT6rgIM+rACFPqyAhz6qYDCHwgAIBO""#,
-        vg_aes_xts_encrypt = sym super::aes_xts::vg_aes_xts_encrypt::vg_aes_xts_encrypt,
-    )
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_xts_encrypt_unit(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_xts_encrypt_unit(schedule, tweak_schedule, rounds, i, data, len, scratch) }
 }
 
 /// XTS-AES decryption (IEEE Std 1619-2007 §5.4.2, NIST SP 800-38E) of a whole data unit, in place: replaces the `len` bytes at `data`, at least 16 and at most 2²⁰ blocks, with their decryption under the key `Key1 ‖ Key2` with the tweak value `*i`. With `m` whole blocks `C₀ … Cₘ₋₁` and `b` bytes `Cₘ` after them, each `Cⱼ` for `j < m` (`j < m - 1` if `b > 0`) becomes `Pⱼ = AES-dec(Key1, Cⱼ ⊕ Tⱼ) ⊕ Tⱼ`, where `Tⱼ = T ⊗ αʲ` (§5.2) and `T = AES-enc(Key2, i)`. If `b > 0`, ciphertext stealing makes `Pₘ` the first `b` bytes of `PP`, the decryption of `Cₘ₋₁` with `Tₘ`, and `Pₘ₋₁` the decryption with `Tₘ₋₁` of `Cₘ` followed by the other `16 - b` bytes of `PP`. `AES-dec(Key1, ·)` is the AES inverse cipher (FIPS 197 §5.3) and `AES-enc(Key2, ·)` AES, with `rounds` rounds and the key schedules in the first `16 * (rounds + 1)` bytes of `*schedule` and `*tweak_schedule`, as `vg_aes_expand_key` writes them.
@@ -58,8 +43,44 @@ b 21f
 /// * The contents of `scratch` on return are unspecified.
 /// * `data` and `scratch` must not overlap each other, `schedule`, `tweak_schedule` or `i` (distinct Rust objects never do).
 /// * None of `schedule`, `tweak_schedule`, `i`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_xts_decrypt_unit(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_xts_decrypt_unit(schedule, tweak_schedule, rounds, i, data, len, scratch) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_aes_xts_encrypt_unit`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_xts_decrypt_unit(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
+pub(crate) unsafe extern "C" fn vg_aes_xts_encrypt_unit(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
+    core::arch::naked_asm!(
+        r#".base64 "pgIIfNAICfigCMn5qAjp+bAICfq4CCn6wAhJ+sgIafp4G258eCuvfHg78Xx4QxJ9eEszfQAAJumACDP5CAAm6YgIM/kAACA5kAgz+ZgIM/l4I4N8eHvkfZAIsziACNM4AQDgOHibaH4="
+bl {vg_aes_xts_encrypt}
+.base64 "eHPDfXh75H2ACLM4eIsmfgLhR3p4m2h+"
+bl {vg_aes_xts_encrypt}
+.base64 "AuFKeuQmSnlQkGp9AAArKA=="
+beq %cr0, 20f
+.base64 "FFKRffD/jDk="
+22:
+.base64 "AAAMiRAALIkAACyZEAAMmQEAjDn//2s5AAArKA=="
+bne %cr0, 22b
+.base64 "FFLRfPD/xjh4c8N9eHvkfYAIszgBAOA4eJtofg=="
+bl {vg_aes_xts_encrypt}
+b 21f
+20:
+21:
+.base64 "0AgT6KAI0+moCPPpsAgT6rgIM+rACFPqyAhz6qYDCHwgAIBO""#,
+        vg_aes_xts_encrypt = sym crate::aes_xts::vg_aes_xts_encrypt::vg_aes_xts_encrypt,
+    )
+}
+
+/// The verified code of [`super::vg_aes_xts_decrypt_unit`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_xts_decrypt_unit(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
     core::arch::naked_asm!(
         r#".base64 "pgIIfNAICfigCMn5qAjp+bAICfq4CCn6wAhJ+sgIafp4G258eCuvfHg78Xx4QxJ9eEszfQAAJumACDP5CAAm6YgIM/kAACA5kAgz+ZgIM/l4I4N8eHvkfZAIsziACNM4AQDgOHibaH4="
 bl {vg_aes_xts_encrypt}
@@ -81,9 +102,10 @@ b 21f
 bl {vg_aes_xts_decrypt}
 21:
 .base64 "0AgT6KAI0+moCPPpsAgT6rgIM+rACFPqyAhz6qYDCHwgAIBO""#,
-        vg_aes_xts_encrypt = sym super::aes_xts::vg_aes_xts_encrypt::vg_aes_xts_encrypt,
-        vg_aes_xts_decrypt = sym super::aes_xts::vg_aes_xts_decrypt::vg_aes_xts_decrypt,
+        vg_aes_xts_encrypt = sym crate::aes_xts::vg_aes_xts_encrypt::vg_aes_xts_encrypt,
+        vg_aes_xts_decrypt = sym crate::aes_xts::vg_aes_xts_decrypt::vg_aes_xts_decrypt,
     )
+}
 }
 
 #[rustfmt::skip]

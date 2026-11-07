@@ -15,8 +15,38 @@
 /// * `rounds` must be 18 (for a key of 16 bytes) or 24 (for one of 24 or 32).
 /// * `ctr` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `ctr` and `data` may overlap the 3264 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_camellia_ctr(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 272], rounds: usize, ctr: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_camellia_ctr(schedule, rounds, ctr, data, n) }
+}
+
+/// Camellia-CTR encryption or decryption (NIST SP 800-38A §6.5, RFC 3713 §2.3) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Tⱼ)`, where `T₁` is the block at `*ctr` and `Tⱼ₊₁ = Tⱼ + 1 mod 2¹²⁸` (Appendix B.1's standard incrementing function on the whole block, read as a big-endian integer), a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*ctr` with `Tₙ₊₁` (leaving it unchanged if `len = 0`), so that a further call continues the message if `len` is a multiple of 16; after a partial last block the message must end. `CIPH_K` is Camellia encryption with `rounds` rounds under the subkeys at `schedule`, as `vg_camellia_expand_key` writes them.
+///
+/// Contract: `VG.Spec.Camellia.ctrFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the subkeys, the counter block or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 272 bytes.
+/// * `ctr` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `rounds` must be 18 (for a key of 16 bytes) or 24 (for one of 24 or 32).
+/// * `ctr` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `ctr` and `data` may overlap the 3344 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_camellia_ctr_final(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 272], rounds: usize, ctr: *mut [u8; 16], data: *mut u8, len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_camellia_ctr_final(schedule, rounds, ctr, data, len) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_camellia_ctr`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_camellia_ctr(schedule: *const [u8; 272], rounds: usize, ctr: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
+pub(crate) unsafe extern "C" fn vg_camellia_ctr(schedule: *const [u8; 272], rounds: usize, ctr: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
@@ -4675,27 +4705,16 @@ bnez t2, 231b
 21:
 .insn 2, 0x8082
 .option pop",
-        vg_camellia_modes_prepare_encrypt_24 = sym super::camellia::vg_camellia_modes_prepare_encrypt_24::vg_camellia_modes_prepare_encrypt_24,
-        vg_camellia_modes_crypt_24 = sym super::camellia::vg_camellia_modes_crypt_24::vg_camellia_modes_crypt_24,
-        vg_camellia_modes_prepare_encrypt_18 = sym super::camellia::vg_camellia_modes_prepare_encrypt_18::vg_camellia_modes_prepare_encrypt_18,
-        vg_camellia_modes_crypt_18 = sym super::camellia::vg_camellia_modes_crypt_18::vg_camellia_modes_crypt_18,
+        vg_camellia_modes_prepare_encrypt_24 = sym crate::camellia::vg_camellia_modes_prepare_encrypt_24::vg_camellia_modes_prepare_encrypt_24,
+        vg_camellia_modes_crypt_24 = sym crate::camellia::vg_camellia_modes_crypt_24::vg_camellia_modes_crypt_24,
+        vg_camellia_modes_prepare_encrypt_18 = sym crate::camellia::vg_camellia_modes_prepare_encrypt_18::vg_camellia_modes_prepare_encrypt_18,
+        vg_camellia_modes_crypt_18 = sym crate::camellia::vg_camellia_modes_crypt_18::vg_camellia_modes_crypt_18,
     )
 }
 
-/// Camellia-CTR encryption or decryption (NIST SP 800-38A §6.5, RFC 3713 §2.3) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Tⱼ)`, where `T₁` is the block at `*ctr` and `Tⱼ₊₁ = Tⱼ + 1 mod 2¹²⁸` (Appendix B.1's standard incrementing function on the whole block, read as a big-endian integer), a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*ctr` with `Tₙ₊₁` (leaving it unchanged if `len = 0`), so that a further call continues the message if `len` is a multiple of 16; after a partial last block the message must end. `CIPH_K` is Camellia encryption with `rounds` rounds under the subkeys at `schedule`, as `vg_camellia_expand_key` writes them.
-///
-/// Contract: `VG.Spec.Camellia.ctrFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the subkeys, the counter block or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 272 bytes.
-/// * `ctr` must be valid for reads and writes of 16 bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `rounds` must be 18 (for a key of 16 bytes) or 24 (for one of 24 or 32).
-/// * `ctr` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `ctr` and `data` may overlap the 3344 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_camellia_ctr_final`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_camellia_ctr_final(schedule: *const [u8; 272], rounds: usize, ctr: *mut [u8; 16], data: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_camellia_ctr_final(schedule: *const [u8; 272], rounds: usize, ctr: *mut [u8; 16], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
@@ -4765,6 +4784,7 @@ j 21f
 .insn 2, 0x6161
 .insn 2, 0x8082
 .option pop",
-        vg_camellia_ctr = sym super::camellia_ctr::vg_camellia_ctr,
+        vg_camellia_ctr = sym crate::camellia_ctr::raw::vg_camellia_ctr,
     )
+}
 }

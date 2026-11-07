@@ -22,25 +22,25 @@ pub use crate::poly1305::vg_poly1305_init as vg_poly1305_init_auto;
 /// * Neither `state` nor `data` may overlap the return address on the stack or the 160 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_poly1305_update_auto(state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
+pub unsafe fn vg_poly1305_update_auto(dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::poly1305::VG_POLY1305_UPDATE_IFMA_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_poly1305_update_ifma`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::poly1305::vg_poly1305_update_ifma(state, count, data, len) };
+        return unsafe { crate::poly1305::vg_poly1305_update_ifma(dit, state, count, data, len) };
     }
     if cpu.contains(crate::poly1305::VG_POLY1305_UPDATE_AVX512_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_poly1305_update_avx512`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::poly1305::vg_poly1305_update_avx512(state, count, data, len) };
+        return unsafe { crate::poly1305::vg_poly1305_update_avx512(dit, state, count, data, len) };
     }
     if cpu.contains(crate::poly1305::VG_POLY1305_UPDATE_AVX2_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_poly1305_update_avx2`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::poly1305::vg_poly1305_update_avx2(state, count, data, len) };
+        return unsafe { crate::poly1305::vg_poly1305_update_avx2(dit, state, count, data, len) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::poly1305::vg_poly1305_update(state, count, data, len) }
+    unsafe { crate::poly1305::vg_poly1305_update(dit, state, count, data, len) }
 }
 
 /// `vg_poly1305_finalize`, the only implementation of it on this target, which needs no CPU feature

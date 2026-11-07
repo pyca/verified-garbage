@@ -18,15 +18,15 @@
 /// * None of `out`, `scalar` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_x448_base_auto(out: *mut [u8; 56], scalar: *const [u8; 56], scratch: *mut [u64; 1024]) {
+pub unsafe fn vg_x448_base_auto(dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 56], scalar: *const [u8; 56], scratch: *mut [u64; 1024]) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::x448::VG_X448_BASE_ADX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_x448_base_adx`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::x448::vg_x448_base_adx(out, scalar, scratch) };
+        return unsafe { crate::x448::vg_x448_base_adx(dit, out, scalar, scratch) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::x448::vg_x448_base(out, scalar, scratch) }
+    unsafe { crate::x448::vg_x448_base(dit, out, scalar, scratch) }
 }
 
 /// Computes an X448 shared secret (RFC 7748 §6.2): writes `X448(k, u)` to `*out`, for the 56-byte scalar `k` at `scalar` and the 56-byte u-coordinate `u` at `point`, and returns 0 if it is all zero (for a `u` of small order), 1 otherwise. The scalar is decoded (clamped); all 448 bits of `u` are used and noncanonical coordinates are reduced modulo the field prime (§5).
@@ -46,13 +46,13 @@ pub unsafe fn vg_x448_base_auto(out: *mut [u8; 56], scalar: *const [u8; 56], scr
 /// * None of `out`, `scalar`, `point` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_x448_exchange_auto(out: *mut [u8; 56], scalar: *const [u8; 56], point: *const [u8; 56], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe fn vg_x448_exchange_auto(dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 56], scalar: *const [u8; 56], point: *const [u8; 56], scratch: *mut [u64; 1024]) -> u32 {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::x448::VG_X448_EXCHANGE_ADX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_x448_exchange_adx`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::x448::vg_x448_exchange_adx(out, scalar, point, scratch) };
+        return unsafe { crate::x448::vg_x448_exchange_adx(dit, out, scalar, point, scratch) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::x448::vg_x448_exchange(out, scalar, point, scratch) }
+    unsafe { crate::x448::vg_x448_exchange(dit, out, scalar, point, scratch) }
 }

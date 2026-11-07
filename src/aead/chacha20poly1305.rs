@@ -103,6 +103,7 @@ impl ChaCha20Poly1305 {
         aad: &[u8],
         data: &mut [u8],
     ) -> Result<[u8; 16], Error> {
+        crate::dit::enter!(dit);
         // Check the length before encrypting anything.
         check_len(data.len())?;
         let mut tag = [0; 16];
@@ -118,6 +119,7 @@ impl ChaCha20Poly1305 {
         // implementation the CPU has the features of.
         unsafe {
             vg_chacha20_poly1305_seal_auto(
+                dit,
                 &self.key,
                 nonce,
                 aad.as_ptr(),
@@ -145,6 +147,7 @@ impl ChaCha20Poly1305 {
         plaintext: &[&[u8]],
         out: &mut [u8],
     ) -> Result<[u8; 16], Error> {
+        crate::dit::enter!(dit);
         if plaintext.len() > Self::MAX_PIECES {
             return Err(Error::TooManyPieces);
         }
@@ -172,6 +175,7 @@ impl ChaCha20Poly1305 {
         // the stack the function uses.
         unsafe {
             vg_chacha20_poly1305_seal_gather_auto(
+                dit,
                 &self.key,
                 nonce,
                 aad.as_ptr(),
@@ -196,6 +200,7 @@ impl ChaCha20Poly1305 {
         data: &mut [u8],
         tag: &[u8; 16],
     ) -> Result<(), Error> {
+        crate::dit::enter!(dit);
         check_len(data.len())?;
         // SAFETY: as in `encrypt_in_place`, with `tag` valid for reads of 16
         // bytes: `data` is the only buffer written, a unique borrow, which
@@ -203,6 +208,7 @@ impl ChaCha20Poly1305 {
         // `tag`.
         let ok = unsafe {
             vg_chacha20_poly1305_open_auto(
+                dit,
                 &self.key,
                 nonce,
                 aad.as_ptr(),
@@ -241,6 +247,7 @@ impl ChaCha20Poly1305 {
         tag: &[u8; 16],
         out: &mut [u8],
     ) -> Result<(), Error> {
+        crate::dit::enter!(dit);
         check_len(ciphertext.len())?;
         if out.len() != ciphertext.len() {
             return Err(Error::InvalidOutputLength);
@@ -253,6 +260,7 @@ impl ChaCha20Poly1305 {
         // `ciphertext` and `tag`.
         let ok = unsafe {
             vg_chacha20_poly1305_open_to_auto(
+                dit,
                 &self.key,
                 nonce,
                 aad.as_ptr(),

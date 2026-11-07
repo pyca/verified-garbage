@@ -14,23 +14,11 @@
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
 /// * None of `out`, `seed` and `scratch` may overlap the 240 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_ed448_public_key(out: *mut [u8; 57], seed: *const [u8; 57], scratch: *mut [u64; 1024]) {
-    core::arch::naked_asm!(
-        r#".base64 "Qf8h+CAAwTimAgh8eACm+oAAxvqIAOb6kAAG+5gABvgAAKM6AADEOgAA5ToAAAY7AAAAOAAAF/gIABf4EAAX+BgAF/ggABf4KAAX+DAAF/g4ABf4QAAX+EgAF/hQABf4WAAX+GAAF/hoABf4cAAX+HgAF/iAABf4iAAX+JAAF/iYABf4oAAX+KgAF/iwABf4uAAX+MAAF/gAAKA4AAB3OIgAgDgAANY4OQDgOMgAFzk="
-bl {vg_keccak_absorb_scratch}
-.base64 "AACjOAAAdziIAIA4HwDAOMgA9zg="
-bl {vg_keccak_pad_scratch}
-.base64 "AAB3OIgAgDgAAKA4AADYOHIA4DjIABc5"
-bl {vg_keccak_squeeze_scratch}
-.base64 "AAAYiYLwCHlkFwh5AAAYmTcAGImAAAhhNwAYmQAAADk4ABiZAAB1OAAAmDgAALc4"
-bl {vg_ed448_scalar_base}
-.base64 "mAAY6HgAuOqAANjqiAD46pAAGOumAwh8IACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPnAACE4IACATg==""#,
-        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_ed448_scalar_base = sym super::ed448::vg_ed448_scalar_base::vg_ed448_scalar_base,
-    )
+#[inline(always)]
+pub unsafe fn vg_ed448_public_key(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 57], seed: *const [u8; 57], scratch: *mut [u64; 1024]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ed448_public_key(out, seed, scratch) }
 }
 
 /// Ed448 signing (RFC 8032 §5.2.6): writes the 114-byte signature to `*out`, for the `len` bytes at `message`, the `ctxlen` bytes of context at `context` and the 57-byte private key at `seed`, using its cached public key at `pk`. Includes all hashing, pruning and scalar/group operations. Uses Ed448 with a context, not Ed448ph (no prehash); the context is empty for plain Ed448. Contract: `VG.Spec.Ed448.signCachedContract`. Constant time: only pointers and the context and message lengths may affect timing, not any buffer contents.
@@ -49,8 +37,60 @@ bl {vg_ed448_scalar_base}
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `seed`, `pk`, `context` or `message` (distinct Rust objects never do).
 /// * None of `out`, `seed`, `pk`, `context`, `message` and `scratch` may overlap the 624 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_ed448_sign_cached(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 114], seed: *const [u8; 57], pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ed448_sign_cached(out, seed, pk, context, ctxlen, message, len, scratch) }
+}
+
+/// Ed448 verification (RFC 8032 §5.2.7): returns 1 if the 114-byte signature at `signature` verifies for the 57-byte public key at `pk`, the `ctxlen` bytes of context at `context` and the `len` bytes at `message`, and 0 otherwise (always 0 for a context longer than 255 bytes). Uses Ed448 with a context, not Ed448ph (no prehash). Checks canonical point encodings, S < L, and the cofactored equation `[4][S]B = [4]R + [4][k]A` with the challenge k = SHAKE256(dom4(0, C) || R || A || M, 114) reduced modulo L. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed448.verifyContract`. Not constant time: timing may depend on the public key, context, message and signature.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 57 bytes.
+/// * `context` must be valid for reads of `ctxlen` bytes.
+/// * `message` must be valid for reads of `len` bytes.
+/// * `signature` must be valid for reads of 114 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `scratch` must not overlap `pk`, `context`, `message` or `signature` (distinct Rust objects never do).
+/// * None of `pk`, `context`, `message`, `signature` and `scratch` may overlap the 352 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_ed448_verify(_dit: verified_garbage_cpu::Dit<'_>, pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, signature: *const [u8; 114], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ed448_verify(pk, context, ctxlen, message, len, signature, scratch) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_ed448_public_key`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ed448_sign_cached(out: *mut [u8; 114], seed: *const [u8; 57], pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "C" fn vg_ed448_public_key(out: *mut [u8; 57], seed: *const [u8; 57], scratch: *mut [u64; 1024]) {
+    core::arch::naked_asm!(
+        r#".base64 "Qf8h+CAAwTimAgh8eACm+oAAxvqIAOb6kAAG+5gABvgAAKM6AADEOgAA5ToAAAY7AAAAOAAAF/gIABf4EAAX+BgAF/ggABf4KAAX+DAAF/g4ABf4QAAX+EgAF/hQABf4WAAX+GAAF/hoABf4cAAX+HgAF/iAABf4iAAX+JAAF/iYABf4oAAX+KgAF/iwABf4uAAX+MAAF/gAAKA4AAB3OIgAgDgAANY4OQDgOMgAFzk="
+bl {vg_keccak_absorb_scratch}
+.base64 "AACjOAAAdziIAIA4HwDAOMgA9zg="
+bl {vg_keccak_pad_scratch}
+.base64 "AAB3OIgAgDgAAKA4AADYOHIA4DjIABc5"
+bl {vg_keccak_squeeze_scratch}
+.base64 "AAAYiYLwCHlkFwh5AAAYmTcAGImAAAhhNwAYmQAAADk4ABiZAAB1OAAAmDgAALc4"
+bl {vg_ed448_scalar_base}
+.base64 "mAAY6HgAuOqAANjqiAD46pAAGOumAwh8IACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPnAACE4IACATg==""#,
+        vg_keccak_absorb_scratch = sym crate::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
+        vg_keccak_pad_scratch = sym crate::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym crate::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+        vg_ed448_scalar_base = sym crate::ed448::vg_ed448_scalar_base::vg_ed448_scalar_base,
+    )
+}
+
+/// The verified code of [`super::vg_ed448_sign_cached`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_ed448_sign_cached(out: *mut [u8; 114], seed: *const [u8; 57], pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "wf0h+AAAgTloAAw4YAAM+AAAgTlgAIzppgIIfIABjPqIAcz6kAHs+pgBDPugASz7qAGM+7ABrPu4Acz7wAGs+sgBDPgAAIM6AADKOgAA5DoAAAU7AAAmOwAAhzsAAKg7AADJOwAArDo0OAA9ZDQIYcYHCHlnRQhlU2kIYQAAFfkAAAA5CAAVmQkAlZsAAAA4AAAW+AgAFvgQABb4GAAW+CAAFvgoABb4MAAW+DgAFvhAABb4SAAW+FAAFvhYABb4YAAW+GgAFvhwABb4eAAW+IAAFviIABb4kAAW+JgAFvigABb4qAAW+LAAFvi4ABb4wAAW+AAAoDgAAHY4iACAOAAA1zg5AOA4yAAWOQ=="
 bl {vg_keccak_absorb_scratch}
@@ -93,29 +133,18 @@ bl {vg_ed448_scalar_reduce}
 .base64 "OQB0OAABlThAAbU4iADVOAAA9jg="
 bl {vg_ed448_scalar_mul_add}
 .base64 "AAAAORAAFfkYABX5IAAV+SgAFfkwABX5OAAV+UAAFflIABX5UAAV+VgAFflgABX5aAAV+XAAFfl4ABX5gAAV+YgAFfmQABX5mAAV+aAAFfmoABX5sAAV+bgAFfnAABX5yAAV+dAAFfnYABX54AAV+egAFfnwABX5+AAV+QABFfkIARX5EAEV+RgBFfkgARX5KAEV+TABFfk4ARX5QAEV+UgBFflQARX5WAEV+WABFfloARX5cAEV+XgBFfnIARXogAGV6ogB1eqQAfXqmAEV66ABNeuoAZXrsAG167gB1evAAbXqpgMIfEACITggAIBO""#,
-        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_ed448_scalar_reduce = sym super::ed448::vg_ed448_scalar_reduce::vg_ed448_scalar_reduce,
-        vg_ed448_scalar_base = sym super::ed448::vg_ed448_scalar_base::vg_ed448_scalar_base,
-        vg_ed448_scalar_mul_add = sym super::ed448::vg_ed448_scalar_mul_add::vg_ed448_scalar_mul_add,
+        vg_keccak_absorb_scratch = sym crate::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
+        vg_keccak_pad_scratch = sym crate::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym crate::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+        vg_ed448_scalar_reduce = sym crate::ed448::vg_ed448_scalar_reduce::vg_ed448_scalar_reduce,
+        vg_ed448_scalar_base = sym crate::ed448::vg_ed448_scalar_base::vg_ed448_scalar_base,
+        vg_ed448_scalar_mul_add = sym crate::ed448::vg_ed448_scalar_mul_add::vg_ed448_scalar_mul_add,
     )
 }
 
-/// Ed448 verification (RFC 8032 §5.2.7): returns 1 if the 114-byte signature at `signature` verifies for the 57-byte public key at `pk`, the `ctxlen` bytes of context at `context` and the `len` bytes at `message`, and 0 otherwise (always 0 for a context longer than 255 bytes). Uses Ed448 with a context, not Ed448ph (no prehash). Checks canonical point encodings, S < L, and the cofactored equation `[4][S]B = [4]R + [4][k]A` with the challenge k = SHAKE256(dom4(0, C) || R || A || M, 114) reduced modulo L. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed448.verifyContract`. Not constant time: timing may depend on the public key, context, message and signature.
-///
-/// # Safety
-///
-/// * `pk` must be valid for reads of 57 bytes.
-/// * `context` must be valid for reads of `ctxlen` bytes.
-/// * `message` must be valid for reads of `len` bytes.
-/// * `signature` must be valid for reads of 114 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `scratch` must not overlap `pk`, `context`, `message` or `signature` (distinct Rust objects never do).
-/// * None of `pk`, `context`, `message`, `signature` and `scratch` may overlap the 352 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_ed448_verify`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ed448_verify(pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, signature: *const [u8; 114], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ed448_verify(pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, signature: *const [u8; 114], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "0f4h+CAAQTkCwqt4AAArKA=="
 beq %cr0, 20f
@@ -143,12 +172,13 @@ bl {vg_ed448_verify_equation}
 .base64 "CAEX6MgAl+rQALfq2ADX6uAAF+voADfr8ACX6/gAt+sAAffqpgMIfA=="
 21:
 .base64 "MAEhOCAAgE4=""#,
-        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_ed448_scalar_reduce = sym super::ed448::vg_ed448_scalar_reduce::vg_ed448_scalar_reduce,
-        vg_ed448_verify_equation = sym super::ed448::vg_ed448_verify_equation::vg_ed448_verify_equation,
+        vg_keccak_absorb_scratch = sym crate::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
+        vg_keccak_pad_scratch = sym crate::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym crate::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+        vg_ed448_scalar_reduce = sym crate::ed448::vg_ed448_scalar_reduce::vg_ed448_scalar_reduce,
+        vg_ed448_verify_equation = sym crate::ed448::vg_ed448_verify_equation::vg_ed448_verify_equation,
     )
+}
 }
 
 #[rustfmt::skip]
