@@ -14993,8 +14993,6 @@ vg_shake128_squeeze:
 	ret
 	.p2align 6
 
-// vg_shake256_update: the function `vg_sha3_256_update`
-
 vg_shake256_finalize:
 	sub sp, sp, #640
 	add x2, sp, #0
@@ -25267,8 +25265,6 @@ vg_shake128_squeeze_sha3:
 	add sp, sp, #640
 	ret
 	.p2align 6
-
-// vg_shake256_update_sha3: the function `vg_sha3_256_update_sha3`
 
 vg_shake256_finalize_sha3:
 	sub sp, sp, #640

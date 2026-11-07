@@ -212,8 +212,6 @@ vg_shake128_squeeze:
 	add sp, sp, #656
 	bx lr
 
-// vg_shake256_update: the function `vg_sha3_256_update`
-
 vg_shake256_finalize:
 	sub sp, sp, #648
 	add r12, sp, #0

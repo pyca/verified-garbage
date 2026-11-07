@@ -56,10 +56,6 @@ def artifacts : List Artifact := [
     code := Impl.Sha3.X86.Instances.xofSqueeze Spec.Sha3.xofShake128.rate
     stack := 680
     verified := Proof.Sha3.X86.Instances.squeeze_shake128 },
-  Spec.Sha3.updateShake256Api.artifact X86.target {
-    code := Impl.Sha3.X86.Instances.update Spec.Sha3.xofShake256.rate
-    stack := 40
-    verified := Proof.Sha3.X86.Instances.update_shake256 },
   Spec.Sha3.finalizeShake256Api.artifact X86.target {
     code := Impl.Sha3.X86.Instances.xofFinalize Spec.Sha3.xofShake256.rate
     stack := 676
