@@ -11,8 +11,7 @@
 
 use super::table::{HmacHash, sign_with};
 use super::{SignatureHash, sealed};
-use crate::arch::ecdsa_p192::vg_ecdsa_p192_sign;
-use crate::arch::ecdsa_p192::vg_ecdsa_p192_verify;
+use crate::arch::dispatch::ecdsa_p192::{vg_ecdsa_p192_sign_auto, vg_ecdsa_p192_verify_auto};
 use crate::ec::P192;
 use crate::error::{InvalidKey, InvalidSignature};
 
@@ -24,8 +23,9 @@ fn verify_with(q: &[u8; 49], digest: &[u8], signature: &[u8; 48]) -> Result<(), 
     // is a distinct object from the others, so it overlaps neither them nor the
     // call's stack frame, and, as Rust objects, none wraps around the address
     // space.
-    let ok =
-        unsafe { vg_ecdsa_p192_verify(q, digest.as_ptr(), digest.len(), signature, &mut scratch) };
+    let ok = unsafe {
+        vg_ecdsa_p192_verify_auto(q, digest.as_ptr(), digest.len(), signature, &mut scratch)
+    };
     if ok == 1 {
         Ok(())
     } else {
@@ -35,8 +35,17 @@ fn verify_with(q: &[u8; 49], digest: &[u8], signature: &[u8; 48]) -> Result<(), 
 
 impl<H: HmacHash> sealed::Functions<P192> for H {
     fn sign(d: &[u8; 24], digest: &H::Output) -> Result<[u8; 48], InvalidKey> {
-        // SAFETY: `vg_ecdsa_p192_sign` needs no CPU feature.
-        unsafe { sign_with::<H, 24, 48>(vg_ecdsa_p192_sign, d, digest) }
+        sign_with::<H, 24, 48>(
+            |out, d, digest, scratch, table| {
+                // SAFETY: as `sign_with` says of its arguments; the dispatcher
+                // calls only an implementation the CPU has the features of.
+                unsafe {
+                    vg_ecdsa_p192_sign_auto(out, d, digest.as_ptr(), digest.len(), scratch, table)
+                }
+            },
+            d,
+            digest,
+        )
     }
 
     /// The verified function takes the hash itself, of any length, and

@@ -11,55 +11,7 @@
 ))]
 
 use crate::arch::dispatch::ec_brainpoolp256r1::vg_ec_brainpoolp256r1_public_key_auto;
-#[cfg(target_arch = "arm")]
-use crate::arch::ec_brainpoolp256r1::VG_EC_BRAINPOOLP256R1_PUBLIC_KEY_UMAAL_FEATURES;
-#[cfg(target_arch = "arm")]
-use crate::arch::ecdh_brainpoolp256r1::VG_ECDH_BRAINPOOLP256R1_UMAAL_FEATURES;
-#[cfg(target_arch = "arm")]
-use crate::arch::ecdsa_brainpoolp256r1::VG_ECDSA_BRAINPOOLP256R1_SIGN_UMAAL_FEATURES;
-#[cfg(target_arch = "arm")]
-use crate::arch::ecdsa_brainpoolp256r1::VG_ECDSA_BRAINPOOLP256R1_VERIFY_UMAAL_FEATURES;
 use crate::zeroize::zeroize;
-use verified_garbage_cpu::Features;
-
-/// The multiplications of brainpoolp256r1's field elements.
-///
-/// Only ECDSA signing still chooses by it: it passes its function, with the
-/// HMAC table, to `ecdsa::table::sign_with`. The other operations call their
-/// generated dispatchers (`crate::arch::dispatch`).
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum Mul {
-    /// The baseline implementation.
-    Baseline,
-    /// `_umaal`.
-    #[cfg(target_arch = "arm")]
-    Umaal,
-}
-
-impl Mul {
-    /// The fastest multiplications a CPU with the features `f` can run.
-    #[cfg(target_arch = "arm")]
-    pub(crate) fn select(f: Features) -> Mul {
-        let umaal = f.contains(
-            const {
-                Features::all(&[
-                    VG_EC_BRAINPOOLP256R1_PUBLIC_KEY_UMAAL_FEATURES,
-                    VG_ECDH_BRAINPOOLP256R1_UMAAL_FEATURES,
-                    VG_ECDSA_BRAINPOOLP256R1_SIGN_UMAAL_FEATURES,
-                    VG_ECDSA_BRAINPOOLP256R1_VERIFY_UMAAL_FEATURES,
-                ])
-            },
-        );
-        if umaal { Mul::Umaal } else { Mul::Baseline }
-    }
-
-    /// The multiplications a CPU with the features `f` can run: there is
-    /// only one here.
-    #[cfg(not(target_arch = "arm"))]
-    pub(crate) fn select(_: Features) -> Mul {
-        Mul::Baseline
-    }
-}
 
 /// The public key `Q = dG` of the key `d`, in the uncompressed form of
 /// SEC 1 §2.3.3, or `None` if `d` is not in `[1, n − 1]`.
@@ -75,17 +27,4 @@ pub(crate) fn public_key(d: &[u8; 32]) -> Option<[u8; 65]> {
     let ok = unsafe { vg_ec_brainpoolp256r1_public_key_auto(&mut out, d, &mut scratch) };
     zeroize(&mut scratch);
     (ok == 1).then_some(out)
-}
-
-#[cfg(all(test, target_arch = "arm"))]
-mod tests {
-    use super::{Features, Mul};
-    use verified_garbage_cpu::feature;
-
-    /// The multiplications chosen with `umaal`, or without it.
-    #[test]
-    fn select() {
-        assert_eq!(Mul::select(Features(0)), Mul::Baseline);
-        assert_eq!(Mul::select(Features(feature::UMAAL)), Mul::Umaal);
-    }
 }
