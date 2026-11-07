@@ -15,7 +15,8 @@ import VerifiedGarbage.Proof.Framework.Lit
 first `e - 1` hashed into `Y` (in `xmm2`), the powers `P` in the working
 space; `rdx` points to group `e - 1`, the next to hash. `body_ok`: a body
 encrypts group `e` (two batches, `batch_ok`) while it hashes group `e - 1`
-between their rounds (`gq_ok`), which they do not write (`QG.data`). It is
+between their rounds (`gq_ok`), which they do not write (`QG.data`, the
+in-place case of `QG.keepM`). It is
 proven for any powers whose products add up to `GHASH` (`FinOk`), without
 the field, which only `Stitch/Ok.lean` imports.
 -/
@@ -34,14 +35,16 @@ open VG.Spec.Gcm (Block blockAt ghashFrom inc32)
 
 /-! ## The GHASH state, kept by the data written -/
 
-theorem QG.data {s₀ : State} (hp : SPre s₀) {lo : Nat → Nat} {a : Addr} {X : Nat → Block}
-    {P : Nat → Nat → Block} {yl : Nat → Block} {ord : Nat → Nat} {base : Nat} {fin : Bool} {j c g : Nat}
-    (hc : c + 8 ≤ nb s₀) (hg : 16 * g + 16 ≤ nb s₀) (ha : a.toNat = (dp s₀).toNat + 256 * g)
-    (hsep : ∀ i, lo j ≤ i → i < 16 → ¬ (c ≤ 16 * g + i ∧ 16 * g + i < c + 8))
+/-- The GHASH state is kept by a write apart from the blocks still to read
+and from the working space. -/
+theorem QG.keepW {s₀ : State} {lo : Nat → Nat} {a : Addr} {X : Nat → Block}
+    {P : Nat → Nat → Block} {yl : Nat → Block} {ord : Nat → Nat} {base : Nat} {fin : Bool} {j g : Nat}
+    {R : Region} (ha : a.toNat = (dp s₀).toNat + 256 * g)
+    (hsep : ∀ i, lo j ≤ i → i < 16 → Region.Disjoint ⟨bAddr s₀ (16 * g + i), 16⟩ R)
+    (hP : (pR s₀).Disjoint R)
     {t t' : State} (h : QG s₀ lo a X P yl ord base fin j t) (hgpr : t'.gpr = t.gpr) (hrd : t'.rd = t.rd)
     (hwr : t'.wr = t.wr) (hlane : ∀ r, r ≠ .xmm13 → r ∉ aregs → ∀ l < 2, t'.lane r l = t.lane r l)
-    (hf : Frame [⟨bAddr s₀ c, 128⟩] t.mem t'.mem) : QG s₀ lo a X P yl ord base fin j t' := by
-  have hw := hp.wrap_d
+    (hf : Frame [R] t.mem t'.mem) : QG s₀ lo a X P yl ord base fin j t' := by
   obtain ⟨hE, h1, h2⟩ := h
   have kp : ∀ l < 2, prod (t'.proj l) = prod (t.proj l) := fun l hl => by
     simp only [prod, State.proj_xmm, hlane .xmm8 (by decide) (by decide) l hl, hlane .xmm9 (by decide) (by decide) l hl,
@@ -54,14 +57,13 @@ theorem QG.data {s₀ : State} (hp : SPre s₀) {lo : Nat → Nat} {a : Addr} {X
     rw [e, blockAt_frame hf fun r hr => by
       simp only [List.mem_singleton] at hr
       subst hr
-      intro x h₁ h₂
-      exact run_sep hw (by omega) hc (hsep i hi hi') h₁ h₂]
+      exact hsep i hi hi']
     have := hE.xs i hi hi'
     rwa [e] at this
   · rw [hf.readW (r := pR s₀) (Offset.contains_base _ (by omega) (by omega))
       (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact hp.d_p.symm.sub_right (Offset.sub_base _ (by omega))) (by decide)]
+        exact hP) (by decide)]
     exact hE.pv k hk l hl
   · split
     · rw [ite_t (by assumption)] at h2
@@ -70,6 +72,34 @@ theorem QG.data {s₀ : State} (hp : SPre s₀) {lo : Nat → Nat} {a : Addr} {X
     · rw [ite_f (by assumption)] at h2
       exact ⟨fun l hl => by rw [kp l hl]; exact h2.1 l hl,
         fun l hl => by rw [hlane _ (by decide) (by decide) l hl]; exact h2.2 l hl⟩
+
+/-- The GHASH state is kept by the output written, `QG.keepW`: in place,
+blocks `c … c + 7` of the data, which the GHASH loads still to come do not
+read; out of place, the output, apart from the data. -/
+theorem QG.keepM {ix : Bool} {s₀ : State} (hp : LPre ix s₀) {lo : Nat → Nat} {a : Addr} {X : Nat → Block}
+    {P : Nat → Nat → Block} {yl : Nat → Block} {ord : Nat → Nat} {base : Nat} {fin : Bool} {j c g : Nat}
+    (hc : c + 8 ≤ nb s₀) (hg : 16 * g + 16 ≤ nb s₀) (ha : a.toNat = (dp s₀).toNat + 256 * g)
+    (hsep : ix = false → ∀ i, lo j ≤ i → i < 16 → ¬ (c ≤ 16 * g + i ∧ 16 * g + i < c + 8))
+    {t t' : State} (h : QG s₀ lo a X P yl ord base fin j t) (hgpr : t'.gpr = t.gpr) (hrd : t'.rd = t.rd)
+    (hwr : t'.wr = t.wr) (hlane : ∀ r, r ≠ .xmm13 → r ∉ aregs → ∀ l < 2, t'.lane r l = t.lane r l)
+    (hf : Frame [⟨wAddr ix s₀ c, 128⟩] t.mem t'.mem) : QG s₀ lo a X P yl ord base fin j t' := by
+  have hw := hp.wrap_d
+  have hww := hp.wrap_w
+  refine QG.keepW ha (fun i hi hi' => ?_) (hp.w_p.symm.sub_right (Offset.sub_base _ (by omega))) h hgpr hrd hwr
+    hlane hf
+  cases ix
+  · intro x h₁ h₂
+    exact run_sep hw (by omega) hc (hsep rfl i hi hi') h₁ h₂
+  · exact ((hp.d_w rfl).sub_left (Offset.sub_base _ (by omega))).sub_right (Offset.sub_base _ (by omega))
+
+theorem QG.data {s₀ : State} (hp : SPre s₀) {lo : Nat → Nat} {a : Addr} {X : Nat → Block}
+    {P : Nat → Nat → Block} {yl : Nat → Block} {ord : Nat → Nat} {base : Nat} {fin : Bool} {j c g : Nat}
+    (hc : c + 8 ≤ nb s₀) (hg : 16 * g + 16 ≤ nb s₀) (ha : a.toNat = (dp s₀).toNat + 256 * g)
+    (hsep : ∀ i, lo j ≤ i → i < 16 → ¬ (c ≤ 16 * g + i ∧ 16 * g + i < c + 8))
+    {t t' : State} (h : QG s₀ lo a X P yl ord base fin j t) (hgpr : t'.gpr = t.gpr) (hrd : t'.rd = t.rd)
+    (hwr : t'.wr = t.wr) (hlane : ∀ r, r ≠ .xmm13 → r ∉ aregs → ∀ l < 2, t'.lane r l = t.lane r l)
+    (hf : Frame [⟨bAddr s₀ c, 128⟩] t.mem t'.mem) : QG s₀ lo a X P yl ord base fin j t' :=
+  QG.keepM hp.toM hc hg ha (fun _ => hsep) h hgpr hrd hwr hlane hf
 
 /-! ## The encryption loop -/
 
