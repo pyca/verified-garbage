@@ -38,11 +38,20 @@ def ranking : Rust.Ranking := [
     -- ChaCha20-Poly1305's `_ifma` is, and `_avx512vl` on the other CPUs with
     -- AVX512VL.
     { suffix := "_ifma", modules := ["chacha20"], extra := ["avx512ifma"] },
-    -- FFDH's `_ifma` key generation from a context and `_mr_ifma` domain
-    -- operations are the ADX code of the Miller–Rabin round's IFMA instance
-    -- (`_mr_ifma` another name of `_mr_adx`), needing only BMI2 and ADX: they
-    -- are chosen where the round's IFMA is, and `_adx` on the other CPUs.
-    { suffix := "_ifma", modules := ["ffdh"], extra := ["avx512ifma"] },
+    -- FFDH's `_ifma` key generation from a context is the ADX code of the
+    -- Miller–Rabin round's IFMA instance, needing only BMI2 and ADX: it is
+    -- chosen where the round's IFMA code can run (AVX, AVX512F, AVX512_IFMA
+    -- and AVX512VL), and `_adx` on the other CPUs.
+    { suffix := "_ifma", modules := ["ffdh"],
+      extra := ["avx", "avx512f", "avx512ifma", "avx512vl"] },
+    -- FFDH's domain operations, ranked by their whole suffixes so that the
+    -- entry above does not apply to their parts: `_mr_ifma` is another name
+    -- of `_mr_adx`, chosen with BMI2 and ADX.
+    { suffix := "_mr_ifma_exp_ifma", modules := ["ffdh"] },
+    { suffix := "_mr_adx_exp_ifma", modules := ["ffdh"] },
+    { suffix := "_exp_ifma", modules := ["ffdh"] },
+    { suffix := "_mr_ifma", modules := ["ffdh"] },
+    { suffix := "_mr_adx", modules := ["ffdh"] },
     { suffix := "_ifma" },
     { suffix := "_avx512vl" },
     { suffix := "_avx512" },
