@@ -41,7 +41,7 @@ vg_mldsa44_verify_with_cache_avx512:
 	mov rdi, rbx
 	add rdi, 16384
 	mov esi, 130994
-	call {vg_mldsa_norm_lt_avx512}
+	call {vg_mldsa_norm_lt_avx2}
 	and r15d, eax
 	mov rdi, r13
 	add rdi, 608
@@ -54,7 +54,7 @@ vg_mldsa44_verify_with_cache_avx512:
 	mov rdi, rbx
 	add rdi, 17408
 	mov esi, 130994
-	call {vg_mldsa_norm_lt_avx512}
+	call {vg_mldsa_norm_lt_avx2}
 	and r15d, eax
 	mov rdi, r13
 	add rdi, 1184
@@ -67,7 +67,7 @@ vg_mldsa44_verify_with_cache_avx512:
 	mov rdi, rbx
 	add rdi, 18432
 	mov esi, 130994
-	call {vg_mldsa_norm_lt_avx512}
+	call {vg_mldsa_norm_lt_avx2}
 	and r15d, eax
 	mov rdi, r13
 	add rdi, 1760
@@ -80,7 +80,7 @@ vg_mldsa44_verify_with_cache_avx512:
 	mov rdi, rbx
 	add rdi, 19456
 	mov esi, 130994
-	call {vg_mldsa_norm_lt_avx512}
+	call {vg_mldsa_norm_lt_avx2}
 	and r15d, eax
 	test r15d, r15d
 	jne 22f
@@ -326,55 +326,55 @@ vg_mldsa44_verify_with_cache_avx512:
 	add rdi, 16384
 	mov rsi, rbx
 	add rsi, 4096
-	call {vg_mldsa_ntt_avx512}
+	call {vg_mldsa_ntt_avx2}
 	mov rdi, rbx
 	add rdi, 17408
 	mov rsi, rbx
 	add rsi, 4096
-	call {vg_mldsa_ntt_avx512}
+	call {vg_mldsa_ntt_avx2}
 	mov rdi, rbx
 	add rdi, 18432
 	mov rsi, rbx
 	add rsi, 4096
-	call {vg_mldsa_ntt_avx512}
+	call {vg_mldsa_ntt_avx2}
 	mov rdi, rbx
 	add rdi, 19456
 	mov rsi, rbx
 	add rsi, 4096
-	call {vg_mldsa_ntt_avx512}
+	call {vg_mldsa_ntt_avx2}
 	mov rdi, rbx
 	add rdi, 23552
 	mov rsi, rbx
 	add rsi, 4096
-	call {vg_mldsa_ntt_avx512}
+	call {vg_mldsa_ntt_avx2}
 	mov rdi, rbx
 	add rdi, 26624
 	mov rsi, rbx
 	add rsi, 28672
 	mov rdx, rbx
 	add rdx, 16384
-	call {vg_mldsa_montgomery_multiply_ntt_avx512}
+	call {vg_mldsa_montgomery_multiply_ntt_avx2}
 	mov rdi, rbx
 	add rdi, 26624
 	mov rsi, rbx
 	add rsi, 29696
 	mov rdx, rbx
 	add rdx, 17408
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
+	call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
 	mov rdi, rbx
 	add rdi, 26624
 	mov rsi, rbx
 	add rsi, 30720
 	mov rdx, rbx
 	add rdx, 18432
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
+	call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
 	mov rdi, rbx
 	add rdi, 26624
 	mov rsi, rbx
 	add rsi, 31744
 	mov rdx, rbx
 	add rdx, 19456
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
+	call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
 	mov rax, QWORD PTR [rbx+888]
 	test rax, rax
 	jne 214f
@@ -387,7 +387,7 @@ vg_mldsa44_verify_with_cache_avx512:
 	add rdi, 24576
 	mov rsi, rbx
 	add rsi, 4096
-	call {vg_mldsa_ntt_avx512}
+	call {vg_mldsa_ntt_avx2}
 	jmp 215f
 214:
 	mov rdi, rbx
@@ -409,17 +409,17 @@ vg_mldsa44_verify_with_cache_avx512:
 	add rsi, 23552
 	mov rdx, rbx
 	add rdx, 24576
-	call {vg_mldsa_montgomery_multiply_ntt_avx512}
+	call {vg_mldsa_montgomery_multiply_ntt_avx2}
 	mov rdi, rbx
 	add rdi, 26624
 	mov rsi, rbx
 	add rsi, 25600
-	call {vg_mldsa_sub_avx512}
+	call {vg_mldsa_sub_avx2}
 	mov rdi, rbx
 	add rdi, 26624
 	mov rsi, rbx
 	add rsi, 4096
-	call {vg_mldsa_montgomery_inv_ntt_avx512}
+	call {vg_mldsa_montgomery_inv_ntt_avx2}
 	mov rdi, rbx
 	add rdi, 8192
 	mov rsi, rbx
@@ -427,7 +427,7 @@ vg_mldsa44_verify_with_cache_avx512:
 	mov edx, 95232
 	mov rcx, rbx
 	add rcx, 27648
-	call {vg_mldsa_use_hint_avx512}
+	call {vg_mldsa_use_hint_avx2}
 	mov rdi, rbx
 	add rdi, 27648
 	mov esi, 43
@@ -441,28 +441,28 @@ vg_mldsa44_verify_with_cache_avx512:
 	add rsi, 32768
 	mov rdx, rbx
 	add rdx, 16384
-	call {vg_mldsa_montgomery_multiply_ntt_avx512}
+	call {vg_mldsa_montgomery_multiply_ntt_avx2}
 	mov rdi, rbx
 	add rdi, 26624
 	mov rsi, rbx
 	add rsi, 33792
 	mov rdx, rbx
 	add rdx, 17408
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
+	call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
 	mov rdi, rbx
 	add rdi, 26624
 	mov rsi, rbx
 	add rsi, 34816
 	mov rdx, rbx
 	add rdx, 18432
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
+	call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
 	mov rdi, rbx
 	add rdi, 26624
 	mov rsi, rbx
 	add rsi, 35840
 	mov rdx, rbx
 	add rdx, 19456
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
+	call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
 	mov rax, QWORD PTR [rbx+888]
 	test rax, rax
 	jne 217f
@@ -475,7 +475,7 @@ vg_mldsa44_verify_with_cache_avx512:
 	add rdi, 24576
 	mov rsi, rbx
 	add rsi, 4096
-	call {vg_mldsa_ntt_avx512}
+	call {vg_mldsa_ntt_avx2}
 	jmp 218f
 217:
 	mov rdi, rbx
@@ -497,17 +497,17 @@ vg_mldsa44_verify_with_cache_avx512:
 	add rsi, 23552
 	mov rdx, rbx
 	add rdx, 24576
-	call {vg_mldsa_montgomery_multiply_ntt_avx512}
+	call {vg_mldsa_montgomery_multiply_ntt_avx2}
 	mov rdi, rbx
 	add rdi, 26624
 	mov rsi, rbx
 	add rsi, 25600
-	call {vg_mldsa_sub_avx512}
+	call {vg_mldsa_sub_avx2}
 	mov rdi, rbx
 	add rdi, 26624
 	mov rsi, rbx
 	add rsi, 4096
-	call {vg_mldsa_montgomery_inv_ntt_avx512}
+	call {vg_mldsa_montgomery_inv_ntt_avx2}
 	mov rdi, rbx
 	add rdi, 9216
 	mov rsi, rbx
@@ -515,7 +515,7 @@ vg_mldsa44_verify_with_cache_avx512:
 	mov edx, 95232
 	mov rcx, rbx
 	add rcx, 27648
-	call {vg_mldsa_use_hint_avx512}
+	call {vg_mldsa_use_hint_avx2}
 	mov rdi, rbx
 	add rdi, 27648
 	mov esi, 43
@@ -529,28 +529,28 @@ vg_mldsa44_verify_with_cache_avx512:
 	add rsi, 36864
 	mov rdx, rbx
 	add rdx, 16384
-	call {vg_mldsa_montgomery_multiply_ntt_avx512}
+	call {vg_mldsa_montgomery_multiply_ntt_avx2}
 	mov rdi, rbx
 	add rdi, 26624
 	mov rsi, rbx
 	add rsi, 37888
 	mov rdx, rbx
 	add rdx, 17408
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
+	call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
 	mov rdi, rbx
 	add rdi, 26624
 	mov rsi, rbx
 	add rsi, 38912
 	mov rdx, rbx
 	add rdx, 18432
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
+	call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
 	mov rdi, rbx
 	add rdi, 26624
 	mov rsi, rbx
 	add rsi, 39936
 	mov rdx, rbx
 	add rdx, 19456
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
+	call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
 	mov rax, QWORD PTR [rbx+888]
 	test rax, rax
 	jne 220f
@@ -563,7 +563,7 @@ vg_mldsa44_verify_with_cache_avx512:
 	add rdi, 24576
 	mov rsi, rbx
 	add rsi, 4096
-	call {vg_mldsa_ntt_avx512}
+	call {vg_mldsa_ntt_avx2}
 	jmp 221f
 220:
 	mov rdi, rbx
@@ -585,17 +585,17 @@ vg_mldsa44_verify_with_cache_avx512:
 	add rsi, 23552
 	mov rdx, rbx
 	add rdx, 24576
-	call {vg_mldsa_montgomery_multiply_ntt_avx512}
+	call {vg_mldsa_montgomery_multiply_ntt_avx2}
 	mov rdi, rbx
 	add rdi, 26624
 	mov rsi, rbx
 	add rsi, 25600
-	call {vg_mldsa_sub_avx512}
+	call {vg_mldsa_sub_avx2}
 	mov rdi, rbx
 	add rdi, 26624
 	mov rsi, rbx
 	add rsi, 4096
-	call {vg_mldsa_montgomery_inv_ntt_avx512}
+	call {vg_mldsa_montgomery_inv_ntt_avx2}
 	mov rdi, rbx
 	add rdi, 10240
 	mov rsi, rbx
@@ -603,7 +603,7 @@ vg_mldsa44_verify_with_cache_avx512:
 	mov edx, 95232
 	mov rcx, rbx
 	add rcx, 27648
-	call {vg_mldsa_use_hint_avx512}
+	call {vg_mldsa_use_hint_avx2}
 	mov rdi, rbx
 	add rdi, 27648
 	mov esi, 43
@@ -617,28 +617,28 @@ vg_mldsa44_verify_with_cache_avx512:
 	add rsi, 40960
 	mov rdx, rbx
 	add rdx, 16384
-	call {vg_mldsa_montgomery_multiply_ntt_avx512}
+	call {vg_mldsa_montgomery_multiply_ntt_avx2}
 	mov rdi, rbx
 	add rdi, 26624
 	mov rsi, rbx
 	add rsi, 41984
 	mov rdx, rbx
 	add rdx, 17408
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
+	call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
 	mov rdi, rbx
 	add rdi, 26624
 	mov rsi, rbx
 	add rsi, 43008
 	mov rdx, rbx
 	add rdx, 18432
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
+	call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
 	mov rdi, rbx
 	add rdi, 26624
 	mov rsi, rbx
 	add rsi, 44032
 	mov rdx, rbx
 	add rdx, 19456
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
+	call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
 	mov rax, QWORD PTR [rbx+888]
 	test rax, rax
 	jne 223f
@@ -651,7 +651,7 @@ vg_mldsa44_verify_with_cache_avx512:
 	add rdi, 24576
 	mov rsi, rbx
 	add rsi, 4096
-	call {vg_mldsa_ntt_avx512}
+	call {vg_mldsa_ntt_avx2}
 	jmp 224f
 223:
 	mov rdi, rbx
@@ -673,17 +673,17 @@ vg_mldsa44_verify_with_cache_avx512:
 	add rsi, 23552
 	mov rdx, rbx
 	add rdx, 24576
-	call {vg_mldsa_montgomery_multiply_ntt_avx512}
+	call {vg_mldsa_montgomery_multiply_ntt_avx2}
 	mov rdi, rbx
 	add rdi, 26624
 	mov rsi, rbx
 	add rsi, 25600
-	call {vg_mldsa_sub_avx512}
+	call {vg_mldsa_sub_avx2}
 	mov rdi, rbx
 	add rdi, 26624
 	mov rsi, rbx
 	add rsi, 4096
-	call {vg_mldsa_montgomery_inv_ntt_avx512}
+	call {vg_mldsa_montgomery_inv_ntt_avx2}
 	mov rdi, rbx
 	add rdi, 11264
 	mov rsi, rbx
@@ -691,7 +691,7 @@ vg_mldsa44_verify_with_cache_avx512:
 	mov edx, 95232
 	mov rcx, rbx
 	add rcx, 27648
-	call {vg_mldsa_use_hint_avx512}
+	call {vg_mldsa_use_hint_avx2}
 	mov rdi, rbx
 	add rdi, 27648
 	mov esi, 43

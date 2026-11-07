@@ -53,8 +53,6 @@ byte at the same offset of `R`, and changes memory only there.
 
 /-- What the loop works on. -/
 structure XPre (s₀ : State) (K R : Addr) (r : Nat) : Prop where
-  pos : 0 < r
-  fitK : K.toNat + r ≤ 2 ^ 64
   fitR : R.toNat + r ≤ 2 ^ 64
   disj : Region.Disjoint ⟨K, r⟩ ⟨R, r⟩
   rdK : ∀ q < r, InRegions (s₀.rd ++ s₀.wr) (K + BitVec.ofNat 64 q) 1
@@ -730,9 +728,7 @@ theorem part_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {B D : 
   have sT : Region.Sub ⟨Dt, rr⟩ (dataRegion D 1 len) := by
     rw [eDt]; exact VG.Offset.sub_base _ (by omega_using [hdm, hrr])
   have hxp : XPre s₅ (slotA B c.buf) Dt rr :=
-    { pos := hr
-      fitK := by rw [tK]; omega_arith
-      fitR := by rw [tDt]; omega_using [hD, hdm, hrr]
+    { fitR := by rw [tDt]; omega_using [hD, hdm, hrr]
       disj := ((hp.dataScr.sub_left sT).sub_right (VG.Offset.sub_base _ (by omega_arith))).symm
       rdK := fun q hq => by
         rw [rd₅, wr₅]

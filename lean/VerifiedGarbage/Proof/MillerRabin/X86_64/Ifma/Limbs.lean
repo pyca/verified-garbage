@@ -30,7 +30,7 @@ open VG VG.X86_64 VG.Proof.Bignum.Amm52
 open VG.Proof.Bignum (off word ofs Outside mask Frm)
 open VG.Proof.Bignum.X86_64 (Scr)
 open VG.Proof.Bignum.X86_64.Ifma (limb val52)
-open VG.Proof.Bignum.X86_64.Ifma.Pub (PubOk Mod)
+open VG.Proof.Bignum.X86_64.Ifma.Pub (Mod)
 open VG.Impl.Rsa.X86_64.CrtIfma (mask52)
 open VG.Impl.MillerRabin.X86_64.Ifma
 open VG.Impl.Rsa.X86_64.CrtIfma (at_)
@@ -39,6 +39,22 @@ open VG.Proof.Bignum (writeW_outside word_writeW_self)
 open VG.Proof.Bignum.X86_64.Ifma (off_ltN off_sepN eaG' and_mask')
 
 variable {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay}
+
+open VG.Impl.Rsa.X86_64.PubIfma (pay1024 pay1536 pay2048 pay3072 pay4096) in
+/-- The round's layouts: one lane, a candidate of 16, 24, 32, 48 or 64
+words. -/
+def MrOk (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : Prop :=
+  l = pay1024 ∨ l = pay1536 ∨ l = pay2048 ∨ l = pay3072 ∨ l = pay4096
+
+theorem MrOk.amm (hl : MrOk l) : VG.Proof.Bignum.X86_64.Ifma.AmmOk l := by
+  rcases hl with h | h | h | h | h
+  · exact .inr (.inr (.inr (.inr (.inl h))))
+  · exact .inr (.inr (.inr (.inr (.inr h))))
+  · exact .inr (.inl h)
+  · exact .inr (.inr (.inl h))
+  · exact .inr (.inr (.inr (.inl h)))
+
+theorem MrOk.nl (hl : MrOk l) : l.nl = 1 := by rcases hl with rfl | rfl | rfl | rfl | rfl <;> rfl
 
 /-- The limbs of the number at offset `o` are below `2⁵²`. -/
 def Canon (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (m : Mem) (B : Addr) (o : Nat) : Prop :=
@@ -51,7 +67,7 @@ def Sep (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (o a : Nat) : Prop := o + l.NB ≤ 
 /-! ## Limbs through stores -/
 
 /-- A word of the number at `a`, through a change outside the number at `o`. -/
-theorem word_out (hl : PubOk l) {m m' : Mem} {B : Addr} {o a j : Nat} (f : Outside B o l.NB m m')
+theorem word_out (hl : MrOk l) {m m' : Mem} {B : Addr} {o a j : Nat} (f : Outside B o l.NB m m')
     (sep : Sep l o a) (ha : a + l.NB ≤ 2 ^ 63) (hj : j < l.L) :
     word m' B (a + l.off j) = word m B (a + l.off j) := by
   have := off_ltN hl.amm hj
@@ -59,13 +75,13 @@ theorem word_out (hl : PubOk l) {m m' : Mem} {B : Addr} {o a j : Nat} (f : Outsi
   exact f.word (by omega_arith) (by omega_arith)
 
 /-- A store of limb `n` of the number at `o` changes only that number. -/
-theorem out_wr (hl : PubOk l) (m : Mem) (B : Addr) {o n : Nat} (v : BitVec 64) (hn : n < l.L)
+theorem out_wr (hl : MrOk l) (m : Mem) (B : Addr) {o n : Nat} (v : BitVec 64) (hn : n < l.L)
     (ho : o + l.NB ≤ 2 ^ 63) : Outside B o l.NB m (m.writeW (off B (o + l.off n)) v) := by
   have := off_ltN hl.amm hn
   exact (writeW_outside m B v (by omega_arith)).mono (by omega_arith) (by omega_arith)
 
 /-- ... and none of its other limbs. -/
-theorem word_wr_ne (hl : PubOk l) (m : Mem) (B : Addr) {o n j : Nat} (v : BitVec 64) (hn : n < l.L)
+theorem word_wr_ne (hl : MrOk l) (m : Mem) (B : Addr) {o n j : Nat} (v : BitVec 64) (hn : n < l.L)
     (hj : j < l.L) (h : j ≠ n) (ho : o + l.NB ≤ 2 ^ 63) :
     word (m.writeW (off B (o + l.off n)) v) B (o + l.off j) = word m B (o + l.off j) := by
   have := off_ltN hl.amm hn
@@ -152,7 +168,7 @@ theorem add_step {X Ya Yb c la lb P : Nat} (hv : X + c * P = Ya + Yb) :
 
 
 /-- `[o] := [a] + [b]` (no overlap of `o` with `a` or `b`). -/
-theorem addN_ok (hl : PubOk l) {s : State} {B : Addr} {Z o a b : Nat}
+theorem addN_ok (hl : MrOk l) {s : State} {B : Addr} {Z o a b : Nat}
     (hB : s.gpr .rbx = B) (h12 : s.gpr .r12 = mask52) (hs : Scr s B Z)
     (ho : o + l.NB ≤ Z) (ha : a + l.NB ≤ Z) (hb : b + l.NB ≤ Z) (hZ : Z < 2 ^ 31)
     (soa : Sep l o a) (sob : Sep l o b)
@@ -261,7 +277,7 @@ theorem sub_step {X Ya Yb c la lb S P : Nat} (hv : X + Yb + c * P = Ya + P) (hS 
 
 /-- `[o] := [a] − [b] mod 2^(52 L)`; `rdx` is 1 if `[a] ≥ [b]`, else 0 (no
 overlap of `o` with `a` or `b`). -/
-theorem subN_ok (hl : PubOk l) {s : State} {B : Addr} {Z o a b : Nat}
+theorem subN_ok (hl : MrOk l) {s : State} {B : Addr} {Z o a b : Nat}
     (hB : s.gpr .rbx = B) (h12 : s.gpr .r12 = mask52) (hs : Scr s B Z)
     (ho : o + l.NB ≤ Z) (ha : a + l.NB ≤ Z) (hb : b + l.NB ≤ Z) (hZ : Z < 2 ^ 31)
     (soa : Sep l o a) (sob : Sep l o b)
@@ -414,7 +430,7 @@ theorem cmpSbb_rdx {s : State} :
 
 /-- `[o] := p ? [t] : [o]`, limb by limb, for `rdx = mask p` (`o` and `t`
 not overlapping). -/
-theorem selN_ok (hl : PubOk l) {s : State} {B : Addr} {Z o t : Nat} {p : Bool}
+theorem selN_ok (hl : MrOk l) {s : State} {B : Addr} {Z o t : Nat} {p : Bool}
     (hB : s.gpr .rbx = B) (hd : s.gpr .rdx = mask p) (hs : Scr s B Z)
     (ho : o + l.NB ≤ Z) (ht : t + l.NB ≤ Z) (hZ : Z < 2 ^ 31) (sot : Sep l o t) :
     WP isa (.block (selN l o t)) s fun s' =>
@@ -453,7 +469,7 @@ theorem selN_ok (hl : PubOk l) {s : State} {B : Addr} {Z o t : Nat} {p : Bool}
     · rw [hm]; exact f.trans (out_wr hl _ _ _ hn (by omega_arith))
 
 /-- `rcx := mask (Y = [k] limb by limb)`. -/
-theorem eqN_ok (hl : PubOk l) {s : State} {B : Addr} {Z k : Nat}
+theorem eqN_ok (hl : MrOk l) {s : State} {B : Addr} {Z k : Nat}
     (hB : s.gpr .rbx = B) (hs : Scr s B Z)
     (hy : oY l + l.NB ≤ Z) (hk : k + l.NB ≤ Z) (hZ : Z < 2 ^ 31) :
     WP isa (.block (eqN l k)) s fun t =>
@@ -490,11 +506,11 @@ theorem eqN_ok (hl : PubOk l) {s : State} {B : Addr} {Z k : Nat}
 
 /-! ## Doublings -/
 
-theorem pub_pos (hl : PubOk l) : 0 < l.L ∧ 8 ≤ l.NB ∧ l.S = l.L := by
-  rcases hl with rfl | rfl | rfl <;> decide
+theorem pub_pos (hl : MrOk l) : 0 < l.L ∧ 8 ≤ l.NB ∧ l.S = l.L := by
+  rcases hl with rfl | rfl | rfl | rfl | rfl <;> decide
 
 /-- The limbs at 0, through changes of `x` and `tmp` only. -/
-theorem frm_word0 (hl : PubOk l) {m m' : Mem} {B : Addr} {x tmp : Nat}
+theorem frm_word0 (hl : MrOk l) {m m' : Mem} {B : Addr} {x tmp : Nat}
     (h : Frm B [(x, l.NB), (tmp, l.NB)] m m') (sx0 : Sep l x 0) (st0 : Sep l tmp 0) (hN : l.NB < 2 ^ 63)
     {j : Nat} (hj : j < l.L) : word m' B (0 + l.off j) = word m B (0 + l.off j) := by
   have := off_ltN hl.amm hj
@@ -504,7 +520,7 @@ theorem frm_word0 (hl : PubOk l) {m m' : Mem} {B : Addr} {x tmp : Nat}
   rcases hr with rfl | rfl <;> (try dsimp only) <;> omega_arith
 
 /-- `dbl1`, the modulus given by its limbs at 0. -/
-theorem dbl1_core (hl : PubOk l) {s : State} {B : Addr} {Z x tmp c : Nat}
+theorem dbl1_core (hl : MrOk l) {s : State} {B : Addr} {Z x tmp c : Nat}
     (hB : s.gpr .rbx = B) (h12 : s.gpr .r12 = mask52) (hs : Scr s B Z)
     (h0c : Canon l s.mem B 0) (h0v : val52 l s.mem B 0 = c) (hbig : 4 * c ≤ 2 ^ (52 * l.S))
     (hx : x + l.NB ≤ Z) (ht : tmp + l.NB ≤ Z) (hZ : Z < 2 ^ 31)
@@ -600,7 +616,7 @@ theorem sub13_ok {s : State} {k : Nat} (h : s.gpr .r13 = BitVec.ofNat 64 k) (hk 
   rfl
 
 /-- `[x] := 2 [x] mod c`, the modulus `c` at 0, through `tmp`. -/
-theorem dbl1_ok (hl : PubOk l) {s : State} {B : Addr} {Z x tmp c k : Nat}
+theorem dbl1_ok (hl : MrOk l) {s : State} {B : Addr} {Z x tmp c k : Nat}
     (hB : s.gpr .rbx = B) (h12 : s.gpr .r12 = mask52) (hs : Scr s B Z) (hm : Mod l s.mem B c k)
     (hx : x + l.NB ≤ Z) (ht : tmp + l.NB ≤ Z) (hZ : Z < 2 ^ 31)
     (sxt : Sep l x tmp) (sx0 : Sep l x 0) (st0 : Sep l tmp 0)
@@ -612,7 +628,7 @@ theorem dbl1_ok (hl : PubOk l) {s : State} {B : Addr} {Z x tmp c k : Nat}
   exact dbl1_core hl hB h12 hs hm.lt hm.val hm.big hx ht hZ sxt sx0 st0 hcx hlt
 
 /-- `[x] := 2^n [x] mod c`, through `tmp`, `r13` counting. -/
-theorem dbls_ok (hl : PubOk l) {s : State} {B : Addr} {Z x tmp c k n : Nat}
+theorem dbls_ok (hl : MrOk l) {s : State} {B : Addr} {Z x tmp c k n : Nat}
     (hB : s.gpr .rbx = B) (h12 : s.gpr .r12 = mask52) (hs : Scr s B Z) (hm : Mod l s.mem B c k)
     (hx : x + l.NB ≤ Z) (ht : tmp + l.NB ≤ Z) (hZ : Z < 2 ^ 31)
     (sxt : Sep l x tmp) (sx0 : Sep l x 0) (st0 : Sep l tmp 0) (hn : 1 ≤ n) (hn' : n < 2 ^ 31)

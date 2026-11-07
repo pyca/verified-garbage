@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Dsa.X86.RandomFinish
+public import VerifiedGarbage.Proof.Dsa.SignContractWith
 
 import VerifiedGarbage.Proof.Dsa.X86.RandomBody
 import VerifiedGarbage.Proof.Framework.X86.CallWith
@@ -60,10 +61,10 @@ theorem freed_esp_eq {s₀ u : State} (A : RandomSignABI s₀) (h : Ready s₀ u
   rw [e, BitVec.sub_add_cancel]
 
 /-- `vg_dsa_sign_random` meets its contract. -/
-theorem randomSign_correct (F : SignFn) (s : State) (hpre : (Spec.Dsa.randomSignContract abi 232).pre s)
+theorem randomSign_correct (F : SignFn) (s : State) (hpre : (randomSignCheckedContract abi 232).pre s)
     (hval : KeyValid F.valid s) :
     ∃ t s', Exec isa (code F.name F.code) s t s' ∧ abiPreserved s s' ∧
-      (Spec.Dsa.randomSignContract abi 232).post s s' := by
+      (randomSignCheckedContract abi 232).post s s' := by
   have A := randomSignABI_of hpre
   obtain ⟨t, s', he, u, hF, rfl⟩ := code_ok F A hval
   refine ⟨t, _, he, ⟨fun r hr => ?_, ?_⟩, ?_⟩
@@ -86,7 +87,7 @@ theorem randomSign_correct (F : SignFn) (s : State) (hpre : (Spec.Dsa.randomSign
     · exact A.retOut
     · exact A.retScratch
     · exact A.retUsed
-  · sig_post [Spec.Dsa.randomSignContract, Spec.Dsa.randomSignSig, abi, argSlots, argVal, argBytes, stackBelow]
+  · sig_post [randomSignCheckedContract, Spec.Dsa.randomSignSig, abi, argSlots, argVal, argBytes, stackBelow]
     have hle := rResult_status_le A
     have hul : (rResult s).used < 2 ^ 32 := by
       have := rResult_used_le (s₀ := s)

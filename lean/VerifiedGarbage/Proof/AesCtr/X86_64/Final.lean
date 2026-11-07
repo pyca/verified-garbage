@@ -193,15 +193,11 @@ abbrev cSv : Region := ⟨fV s₀, 64⟩
 /-- The block after the registers in `save`. -/
 abbrev cBk : Addr := fV s₀ + BitVec.ofNat 64 48
 abbrev cBlk : Region := ⟨cBk s₀, 16⟩
-/-- The counter block on entry. -/
-abbrev cT : List Byte := bytesAt s₀.mem (fIv s₀) 16
 
 end
 
 /-- The precondition, by name. -/
 structure CPre (s₀ : State) : Prop where
-  sp_lo : 16 ≤ (fSp s₀).toNat
-  sp_hi : (fSp s₀).toNat + 16 ≤ 2 ^ 64
   rd : s₀.rd = [fSch s₀, fArg s₀]
   wr : s₀.wr = [fIvR s₀, fData s₀, fScr s₀, cSv s₀]
   sch_iv : (fSch s₀).Disjoint (fIvR s₀)
@@ -218,19 +214,16 @@ structure CPre (s₀ : State) : Prop where
   scr_sv : (fScr s₀).Disjoint (cSv s₀)
   scr_arg : (fScr s₀).Disjoint (fArg s₀)
   sv_arg : (cSv s₀).Disjoint (fArg s₀)
-  ret_sch : (⟨fSp s₀, 8⟩ : Region).Disjoint (fSch s₀)
   ret_iv : (⟨fSp s₀, 8⟩ : Region).Disjoint (fIvR s₀)
   ret_data : (⟨fSp s₀, 8⟩ : Region).Disjoint (fData s₀)
   ret_scr : (⟨fSp s₀, 8⟩ : Region).Disjoint (fScr s₀)
   ret_sv : (⟨fSp s₀, 8⟩ : Region).Disjoint (cSv s₀)
-  ret_arg : (⟨fSp s₀, 8⟩ : Region).Disjoint (fArg s₀)
   stk_sch : (fStk s₀).Disjoint (fSch s₀)
   stk_iv : (fStk s₀).Disjoint (fIvR s₀)
   stk_data : (fStk s₀).Disjoint (fData s₀)
   stk_scr : (fStk s₀).Disjoint (fScr s₀)
   stk_sv : (fStk s₀).Disjoint (cSv s₀)
   stk_arg : (fStk s₀).Disjoint (fArg s₀)
-  sch_wrap : (fW s₀).toNat + 240 ≤ 2 ^ 64
   iv_wrap : (fIv s₀).toNat + 16 ≤ 2 ^ 64
   data_wrap : (fD s₀).toNat + fL s₀ ≤ 2 ^ 64
   scr_wrap : (fS s₀).toNat + 2176 ≤ 2 ^ 64
@@ -238,10 +231,10 @@ structure CPre (s₀ : State) : Prop where
   rounds : fR s₀ = 10 ∨ fR s₀ = 12 ∨ fR s₀ = 14
 
 theorem CPre.of {s₀ : State} (h : ctrFinalX86_64.pre s₀) : CPre s₀ :=
-  let ⟨a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22,
-    a23, a24, a25, a26, a27, a28, a29, a30, a31, a32, a33, a34, a35, a36⟩ := h
-  ⟨a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22,
-    a23, a24, a25, a26, a27, a28, a29, a30, a31, a32, a33, a34, a35, a36⟩
+  let ⟨_, _, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, _, a20, a21, a22,
+    a23, _, a25, a26, a27, a28, a29, a30, _, a32, a33, a34, a35, a36⟩ := h
+  ⟨a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18,
+    a20, a21, a22, a23, a25, a26, a27, a28, a29, a30, a32, a33, a34, a35, a36⟩
 
 /-! ## Regions -/
 
@@ -748,10 +741,7 @@ theorem tail_xor_wp {s₀ : State} (hp : CPre s₀) {s : State} (h : TCall s₀ 
       Nat.mod_eq_of_lt (by omega)]
   have hB := cBk_toNat hp
   have xp : Modes.X86_64.XPre s₁ (cBk s₀) (fT s₀) (fU s₀) .r13 .r14 := {
-    pos := by omega
     small := by omega
-    fitK := by omega
-    fitR := by rw [hT]; omega
     disj := (((hp.data_sv.sub_left (AesCfb.X86_64.tail_sub s₀)).sub_right (blk_sv_sub s₀)).sub_right
       (Region.sub_prefix (by omega))).symm
     rdK := fun q hq => by

@@ -171,12 +171,12 @@ def packS (P : Prims) (p : Params) (r : Nat) : Prog isa :=
   bitPackAt P.bitPack (sP p r) p.η p.η (.r13, 128 + lenS p * r) (lenS p)
 
 /-- `ŝ₁[j] = NTT(s₁[j])`. -/
-def nttS (P : Prims) (p : Params) (j : Nat) : Prog isa := nttAt P.sfx P.ntt (sP p j)
+def nttS (P : Prims) (p : Params) (j : Nat) : Prog isa := nttAt P.asfx P.ntt (sP p j)
 
 /-- Row `i`: `t = NTT⁻¹(Σⱼ Â[i, j] ŝ₁[j]) + s₂[i]`, and its `t₁` to `pk` and `t₀` to `sk`. -/
 def row (P : Prims) (p : Params) (i : Nat) : Prog isa :=
-  .seq (dotInvAt P.sfx (P.dotInv p.ℓ) p.ℓ (tP p) (aP (p.ℓ * i)) (sP p 0))
-    (.seq (addAt P.sfx P.add (tP p) (sP p (p.ℓ + i)))
+  .seq (dotInvAt P.asfx (P.dotInv p.ℓ) p.ℓ (tP p) (aP (p.ℓ * i)) (sP p 0))
+    (.seq (addAt P.asfx P.add (tP p) (sP p (p.ℓ + i)))
     (.seq (power2RoundAt P.power2Round (tP p) (t1P p) (t0P p))
     (.seq (simpleBitPackAt P.simpleBitPack (t1P p) 1023 (.r12, 32 + 320 * i) 320)
       (bitPackAt P.bitPack (t0P p) 4095 4096 (.r13, oT0 p + 416 * i) 416))))

@@ -64,7 +64,10 @@ def ArithImpl.avx2 : ArithImpl where
         · exact FnOk.of Arith.YDot.verified7 (by lit_decide) (by lit_decide) (by lit_decide) (by lit_decide) }
   features := ["avx", "avx2"]
 
-/-- AVX2 arithmetic with the AVX-512VL four-state permutation in both samplers. -/
+/-- AVX2 arithmetic with the AVX-512VL four-state permutation in both samplers: its other
+functions are the AVX2 code's, which it calls by their names (`asfx`, `_avx2`), so that they
+are emitted once, and the callers that call no sampler are not instantiated for it
+(`samplersOnly`). -/
 def ArithImpl.avx512 : ArithImpl where
   code := { Backend.avx2Combined with
     rej4 := Impl.MlDsa.X86_64.Sample.Rej5.rejNTT4Avx2 true
@@ -76,6 +79,6 @@ def ArithImpl.avx512 : ArithImpl where
     expandMask4 := ⟨Mask4.expandMask4Avx2_verified, Proof.MlKem.X86_64.nosp_of (by lit_decide),
       by lit_decide, by lit_decide, Code.all_of_allInstrs (by lit_decide)⟩ }
   features := ["avx", "avx2", "avx512f", "avx512vl"]
-  prepareFeatures := ["avx", "avx2"]
+  samplersOnly := true
 
 end VG.Proof.MlDsa.X86_64

@@ -13,6 +13,7 @@ public import VerifiedGarbage.Proof.Dsa.PrivateKeyWitness
 public import VerifiedGarbage.Impl.Dsa.RISCV64.RandomSign
 public import VerifiedGarbage.Impl.Dsa.RISCV64.PrevalidatedSign
 public import VerifiedGarbage.Spec.Dsa.PrevalidatedSign
+public import VerifiedGarbage.Proof.Dsa.SignContractWith
 meta import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
@@ -54,7 +55,7 @@ def preSigner : Signer where
 
 /-- `vg_dsa_sign_random`. -/
 theorem randomSign_verified :
-    Verified RISCV64.target RandomSign.code (Spec.Dsa.randomSignContract RISCV64.abi RS.rsStack) :=
+    Verified RISCV64.target RandomSign.code (randomSignCheckedContract RISCV64.abi RS.rsStack) :=
   show Verified RISCV64.target (RandomSign.codeWith fullSigner.name fullSigner.code) _ from
   Verified.of_correct (k := rsContract) (fun s h => randomSignWith_correct fullSigner s h rfl)
     (fun s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ => randomSignWith_ct fullSigner s₁ s₂ t₁ t₂ u₁ u₂ ⟨h₁, rfl⟩ ⟨h₂, rfl⟩)
@@ -67,22 +68,22 @@ def rspContract : Contract isa where
   pub := rsContract.pub
 
 theorem prev_pre {s : State} (h : (Spec.Dsa.randomSignPrevalidatedContract RISCV64.abi RS.rsStack).pre s) :
-    (Spec.Dsa.randomSignContract RISCV64.abi RS.rsStack).pre s ∧
+    (randomSignCheckedContract RISCV64.abi RS.rsStack).pre s ∧
       Spec.Dsa.validatePrivateKeyBytes (s.gpr .a5).toNat (s.gpr .a6).toNat
         (Spec.Rsa.bytesAt s.mem (s.gpr .a3) (s.gpr .a4).toNat) = true := by
   sig_pre [Spec.Dsa.randomSignPrevalidatedContract, Spec.Dsa.randomSignSig, RISCV64.abi, RISCV64.argRegs,
     rsStackArgs_five, stackBelow] at h
   sig_split h
   refine ⟨?_, by with_reducible assumption⟩
-  sig_pre [Spec.Dsa.randomSignContract, Spec.Dsa.randomSignSig, RISCV64.abi, RISCV64.argRegs, rsStackArgs_five,
+  sig_pre [randomSignCheckedContract, Spec.Dsa.randomSignSig, RISCV64.abi, RISCV64.argRegs, rsStackArgs_five,
     stackBelow]
   sig_and_intros <;> with_reducible assumption
 
-theorem prev_of_pre {s : State} (h : (Spec.Dsa.randomSignContract RISCV64.abi RS.rsStack).pre s)
+theorem prev_of_pre {s : State} (h : (randomSignCheckedContract RISCV64.abi RS.rsStack).pre s)
     (hv : Spec.Dsa.validatePrivateKeyBytes (s.gpr .a5).toNat (s.gpr .a6).toNat
       (Spec.Rsa.bytesAt s.mem (s.gpr .a3) (s.gpr .a4).toNat) = true) :
     (Spec.Dsa.randomSignPrevalidatedContract RISCV64.abi RS.rsStack).pre s := by
-  sig_pre [Spec.Dsa.randomSignContract, Spec.Dsa.randomSignSig, RISCV64.abi, RISCV64.argRegs, rsStackArgs_five,
+  sig_pre [randomSignCheckedContract, Spec.Dsa.randomSignSig, RISCV64.abi, RISCV64.argRegs, rsStackArgs_five,
     stackBelow] at h
   sig_pre [Spec.Dsa.randomSignPrevalidatedContract, Spec.Dsa.randomSignSig, RISCV64.abi, RISCV64.argRegs,
     rsStackArgs_five, stackBelow]
@@ -107,8 +108,8 @@ theorem rspSat_valid : Spec.Dsa.validatePrivateKeyBytes 128 20 (Spec.Rsa.bytesAt
   rw [rspSat_key]; exact VG.Proof.Dsa.validPrivateKeyWitness_valid
 
 theorem rspSatisfiable : ∃ s, (Spec.Dsa.randomSignPrevalidatedContract RISCV64.abi RS.rsStack).pre s := by
-  have ho : ∃ s, (Spec.Dsa.randomSignContract RISCV64.abi RS.rsStack).pre s ∧ s = rspSatState := by
-    sig_implies_sat [Spec.Dsa.randomSignContract, Spec.Dsa.randomSignSig, RISCV64.abi, RISCV64.argRegs, rsContract,
+  have ho : ∃ s, (randomSignCheckedContract RISCV64.abi RS.rsStack).pre s ∧ s = rspSatState := by
+    sig_implies_sat [randomSignCheckedContract, Spec.Dsa.randomSignSig, RISCV64.abi, RISCV64.argRegs, rsContract,
       rsStackArgs_five, List.append_eq, List.getD_cons_succ, List.getD_cons_zero, Sig.pairFacts,
       List.filterMap_cons, List.filterMap_nil, Bool.cond_true, Bool.cond_false, Bool.or_true, Bool.or_false,
       List.cons_append, List.nil_append, List.append_nil, Sig.conj_cons, Sig.conj_append, stackBelow]

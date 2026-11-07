@@ -90,9 +90,10 @@ structure ArithImpl where
   ok : BackendOk code
   /-- The CPU features its code requires, which its callers require too. -/
   features : List String
-  /-- The CPU features of its NTT and unpacking functions, which require no more than
-  `features`: all that the preparation of keys calls. -/
-  prepareFeatures : List String := features
+  /-- Whether it differs from another only in its samplers (`rej4`, `expandMask4`), and
+  shares that other's other functions (`Backend.asfx`): the callers that call no sampler
+  (the preparation of keys) are not instantiated for it, as they would be that other's. -/
+  samplersOnly : Bool := false
 
 /-- `FnOk` of code verified without stack, from evaluating it. -/
 theorem FnOk.of {k : Nat → Contract isa} {c : Prog isa} (h : Verified X86_64.target c (k 0))

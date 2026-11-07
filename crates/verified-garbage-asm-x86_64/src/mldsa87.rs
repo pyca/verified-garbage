@@ -1147,23 +1147,23 @@ call {vg_mldsa_bit_pack}
 .base64 "SInfSIHHACgBAL4CAAAAugIAAABMielIgcHABQAAQbhgAAAA"
 call {vg_mldsa_bit_pack}
 .base64 "SInfSIHHAPAAAEiJ3kiBxgAIAAA="
-call {vg_mldsa_ntt_avx512}
+call {vg_mldsa_ntt_avx2}
 .base64 "SInfSIHHAPQAAEiJ3kiBxgAIAAA="
-call {vg_mldsa_ntt_avx512}
+call {vg_mldsa_ntt_avx2}
 .base64 "SInfSIHHAPgAAEiJ3kiBxgAIAAA="
-call {vg_mldsa_ntt_avx512}
+call {vg_mldsa_ntt_avx2}
 .base64 "SInfSIHHAPwAAEiJ3kiBxgAIAAA="
-call {vg_mldsa_ntt_avx512}
+call {vg_mldsa_ntt_avx2}
 .base64 "SInfSIHHAAABAEiJ3kiBxgAIAAA="
-call {vg_mldsa_ntt_avx512}
+call {vg_mldsa_ntt_avx2}
 .base64 "SInfSIHHAAQBAEiJ3kiBxgAIAAA="
-call {vg_mldsa_ntt_avx512}
+call {vg_mldsa_ntt_avx2}
 .base64 "SInfSIHHAAgBAEiJ3kiBxgAIAAA="
-call {vg_mldsa_ntt_avx512}
+call {vg_mldsa_ntt_avx2}
 .base64 "SInfSIHHACwBAEiJ3kiBxgAQAABIidpIgcIA8AAASInZSIHBAAgAAA=="
-call {vg_mldsa_dot_inverse7_avx512}
+call {vg_mldsa_dot_inverse7_avx2}
 .base64 "SInfSIHHACwBAEiJ3kiBxgAMAQA="
-call {vg_mldsa_add_avx512}
+call {vg_mldsa_add_avx2}
 .base64 "SInfSIHHACwBAEiJ3kiBxgAwAQBIidpIgcIANAEA"
 call {vg_mldsa_power2round}
 .base64 "SInfSIHHADABAL7/AwAATIniSIPCILlAAQAA"
@@ -1171,9 +1171,9 @@ call {vg_mldsa_simple_bit_pack}
 .base64 "SInfSIHHADQBAL7/DwAAugAQAABMielIgcEgBgAAQbigAQAA"
 call {vg_mldsa_bit_pack}
 .base64 "SInfSIHHACwBAEiJ3kiBxgAsAABIidpIgcIA8AAASInZSIHBAAgAAA=="
-call {vg_mldsa_dot_inverse7_avx512}
+call {vg_mldsa_dot_inverse7_avx2}
 .base64 "SInfSIHHACwBAEiJ3kiBxgAQAQA="
-call {vg_mldsa_add_avx512}
+call {vg_mldsa_add_avx2}
 .base64 "SInfSIHHACwBAEiJ3kiBxgAwAQBIidpIgcIANAEA"
 call {vg_mldsa_power2round}
 .base64 "SInfSIHHADABAL7/AwAATIniSIHCYAEAALlAAQAA"
@@ -1181,9 +1181,9 @@ call {vg_mldsa_simple_bit_pack}
 .base64 "SInfSIHHADQBAL7/DwAAugAQAABMielIgcHABwAAQbigAQAA"
 call {vg_mldsa_bit_pack}
 .base64 "SInfSIHHACwBAEiJ3kiBxgBIAABIidpIgcIA8AAASInZSIHBAAgAAA=="
-call {vg_mldsa_dot_inverse7_avx512}
+call {vg_mldsa_dot_inverse7_avx2}
 .base64 "SInfSIHHACwBAEiJ3kiBxgAUAQA="
-call {vg_mldsa_add_avx512}
+call {vg_mldsa_add_avx2}
 .base64 "SInfSIHHACwBAEiJ3kiBxgAwAQBIidpIgcIANAEA"
 call {vg_mldsa_power2round}
 .base64 "SInfSIHHADABAL7/AwAATIniSIHCoAIAALlAAQAA"
@@ -1191,9 +1191,9 @@ call {vg_mldsa_simple_bit_pack}
 .base64 "SInfSIHHADQBAL7/DwAAugAQAABMielIgcFgCQAAQbigAQAA"
 call {vg_mldsa_bit_pack}
 .base64 "SInfSIHHACwBAEiJ3kiBxgBkAABIidpIgcIA8AAASInZSIHBAAgAAA=="
-call {vg_mldsa_dot_inverse7_avx512}
+call {vg_mldsa_dot_inverse7_avx2}
 .base64 "SInfSIHHACwBAEiJ3kiBxgAYAQA="
-call {vg_mldsa_add_avx512}
+call {vg_mldsa_add_avx2}
 .base64 "SInfSIHHACwBAEiJ3kiBxgAwAQBIidpIgcIANAEA"
 call {vg_mldsa_power2round}
 .base64 "SInfSIHHADABAL7/AwAATIniSIHC4AMAALlAAQAA"
@@ -1201,9 +1201,9 @@ call {vg_mldsa_simple_bit_pack}
 .base64 "SInfSIHHADQBAL7/DwAAugAQAABMielIgcEACwAAQbigAQAA"
 call {vg_mldsa_bit_pack}
 .base64 "SInfSIHHACwBAEiJ3kiBxgCAAABIidpIgcIA8AAASInZSIHBAAgAAA=="
-call {vg_mldsa_dot_inverse7_avx512}
+call {vg_mldsa_dot_inverse7_avx2}
 .base64 "SInfSIHHACwBAEiJ3kiBxgAcAQA="
-call {vg_mldsa_add_avx512}
+call {vg_mldsa_add_avx2}
 .base64 "SInfSIHHACwBAEiJ3kiBxgAwAQBIidpIgcIANAEA"
 call {vg_mldsa_power2round}
 .base64 "SInfSIHHADABAL7/AwAATIniSIHCIAUAALlAAQAA"
@@ -1211,9 +1211,9 @@ call {vg_mldsa_simple_bit_pack}
 .base64 "SInfSIHHADQBAL7/DwAAugAQAABMielIgcGgDAAAQbigAQAA"
 call {vg_mldsa_bit_pack}
 .base64 "SInfSIHHACwBAEiJ3kiBxgCcAABIidpIgcIA8AAASInZSIHBAAgAAA=="
-call {vg_mldsa_dot_inverse7_avx512}
+call {vg_mldsa_dot_inverse7_avx2}
 .base64 "SInfSIHHACwBAEiJ3kiBxgAgAQA="
-call {vg_mldsa_add_avx512}
+call {vg_mldsa_add_avx2}
 .base64 "SInfSIHHACwBAEiJ3kiBxgAwAQBIidpIgcIANAEA"
 call {vg_mldsa_power2round}
 .base64 "SInfSIHHADABAL7/AwAATIniSIHCYAYAALlAAQAA"
@@ -1221,9 +1221,9 @@ call {vg_mldsa_simple_bit_pack}
 .base64 "SInfSIHHADQBAL7/DwAAugAQAABMielIgcFADgAAQbigAQAA"
 call {vg_mldsa_bit_pack}
 .base64 "SInfSIHHACwBAEiJ3kiBxgC4AABIidpIgcIA8AAASInZSIHBAAgAAA=="
-call {vg_mldsa_dot_inverse7_avx512}
+call {vg_mldsa_dot_inverse7_avx2}
 .base64 "SInfSIHHACwBAEiJ3kiBxgAkAQA="
-call {vg_mldsa_add_avx512}
+call {vg_mldsa_add_avx2}
 .base64 "SInfSIHHACwBAEiJ3kiBxgAwAQBIidpIgcIANAEA"
 call {vg_mldsa_power2round}
 .base64 "SInfSIHHADABAL7/AwAATIniSIHCoAcAALlAAQAA"
@@ -1231,9 +1231,9 @@ call {vg_mldsa_simple_bit_pack}
 .base64 "SInfSIHHADQBAL7/DwAAugAQAABMielIgcHgDwAAQbigAQAA"
 call {vg_mldsa_bit_pack}
 .base64 "SInfSIHHACwBAEiJ3kiBxgDUAABIidpIgcIA8AAASInZSIHBAAgAAA=="
-call {vg_mldsa_dot_inverse7_avx512}
+call {vg_mldsa_dot_inverse7_avx2}
 .base64 "SInfSIHHACwBAEiJ3kiBxgAoAQA="
-call {vg_mldsa_add_avx512}
+call {vg_mldsa_add_avx2}
 .base64 "SInfSIHHACwBAEiJ3kiBxgAwAQBIidpIgcIANAEA"
 call {vg_mldsa_power2round}
 .base64 "SInfSIHHADABAL7/AwAATIniSIHC4AgAALlAAQAA"
@@ -1254,196 +1254,11 @@ call {vg_keccak_squeeze_scratch}
         vg_mldsa_rej_ntt_poly4_avx512 = sym super::mldsa44::vg_mldsa_rej_ntt_poly4_avx512::vg_mldsa_rej_ntt_poly4_avx512,
         vg_mldsa_rej_bounded_poly = sym super::mldsa44::vg_mldsa_rej_bounded_poly::vg_mldsa_rej_bounded_poly,
         vg_mldsa_bit_pack = sym super::mldsa44::vg_mldsa_bit_pack::vg_mldsa_bit_pack,
-        vg_mldsa_ntt_avx512 = sym super::mldsa44::vg_mldsa_ntt_avx512::vg_mldsa_ntt_avx512,
-        vg_mldsa_dot_inverse7_avx512 = sym super::mldsa87::vg_mldsa_dot_inverse7_avx512::vg_mldsa_dot_inverse7_avx512,
-        vg_mldsa_add_avx512 = sym super::mldsa44::vg_mldsa_add_avx512::vg_mldsa_add_avx512,
+        vg_mldsa_ntt_avx2 = sym super::mldsa44::vg_mldsa_ntt_avx2::vg_mldsa_ntt_avx2,
+        vg_mldsa_dot_inverse7_avx2 = sym super::mldsa87::vg_mldsa_dot_inverse7_avx2::vg_mldsa_dot_inverse7_avx2,
+        vg_mldsa_add_avx2 = sym super::mldsa44::vg_mldsa_add_avx2::vg_mldsa_add_avx2,
         vg_mldsa_power2round = sym super::mldsa44::vg_mldsa_power2round::vg_mldsa_power2round,
         vg_mldsa_simple_bit_pack = sym super::mldsa44::vg_mldsa_simple_bit_pack::vg_mldsa_simple_bit_pack,
-    )
-}
-
-/// The CPU features `vg_mldsa87_prepare_verifying_key_avx512` requires (`Artifact.features`).
-pub const VG_MLDSA87_PREPARE_VERIFYING_KEY_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// ML-DSA-87 public-key preparation: with the public key `*pk`, writes to `*prepared` the key, followed by the `k` polynomials `NTT(t₁ · 2^d)` that verification (FIPS 204 Algorithm 8, line 9) computes from it, for `vg_mldsa87_verify_message_prepared`.
-///
-/// Contract: `VG.Spec.MlDsa.preparePublicKeyContract`. Constant time.
-///
-/// # Safety
-///
-/// * `pk` must be valid for reads of 2592 bytes.
-/// * `prepared` must be valid for reads and writes of 10784 bytes.
-/// * `scratch` must be valid for reads and writes of 1024 bytes.
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
-/// * `prepared` and `scratch` must not overlap each other or `pk` (distinct Rust objects never do).
-/// * None of `pk`, `prepared` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx` and `avx2` target features.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mldsa87_prepare_verifying_key_avx512(pk: *const [u8; 2592], prepared: *mut [u8; 10784], scratch: *mut [u64; 128]) {
-    core::arch::naked_asm!(
-        r#".base64 "SImaSAMAAEiJqlADAABMiaJYAwAATImqYAMAAEyJsmgDAABMibpwAwAASInzSIn9SYnUSYnVSInvSIPHIEiJ3kiBxiAKAAA="
-call {vg_mldsa_unpack_t1}
-.base64 "SInfSIHHIAoAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx512}
-.base64 "SInvSIHHYAEAAEiJ3kiBxiAOAAA="
-call {vg_mldsa_unpack_t1}
-.base64 "SInfSIHHIA4AAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx512}
-.base64 "SInvSIHHoAIAAEiJ3kiBxiASAAA="
-call {vg_mldsa_unpack_t1}
-.base64 "SInfSIHHIBIAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx512}
-.base64 "SInvSIHH4AMAAEiJ3kiBxiAWAAA="
-call {vg_mldsa_unpack_t1}
-.base64 "SInfSIHHIBYAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx512}
-.base64 "SInvSIHHIAUAAEiJ3kiBxiAaAAA="
-call {vg_mldsa_unpack_t1}
-.base64 "SInfSIHHIBoAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx512}
-.base64 "SInvSIHHYAYAAEiJ3kiBxiAeAAA="
-call {vg_mldsa_unpack_t1}
-.base64 "SInfSIHHIB4AAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx512}
-.base64 "SInvSIHHoAcAAEiJ3kiBxiAiAAA="
-call {vg_mldsa_unpack_t1}
-.base64 "SInfSIHHICIAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx512}
-.base64 "SInvSIHH4AgAAEiJ3kiBxiAmAAA="
-call {vg_mldsa_unpack_t1}
-.base64 "SInfSIHHICYAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx512}
-.base64 "SInfSIPHAEiJ7kiDxgC5RAEAAA=="
-20:
-.base64 "SIsGSIkHSIPHCEiDxghIg+kB"
-jne 20b
-.base64 "SYucJEgDAABJi6wkUAMAAE2LrCRgAwAATYu0JGgDAABNi7wkcAMAAE2LpCRYAwAAww=="
-.p2align 6"#,
-        vg_mldsa_unpack_t1 = sym super::mldsa44::vg_mldsa_unpack_t1::vg_mldsa_unpack_t1,
-        vg_mldsa_ntt_avx512 = sym super::mldsa44::vg_mldsa_ntt_avx512::vg_mldsa_ntt_avx512,
-    )
-}
-
-/// The CPU features `vg_mldsa87_prepare_signing_key_avx512` requires (`Artifact.features`).
-pub const VG_MLDSA87_PREPARE_SIGNING_KEY_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// ML-DSA-87 private-key preparation: with the private key `*sk`, writes to `*prepared` the key, followed by the `ℓ + 2k` polynomials `NTT(s₁)`, `NTT(s₂)` and `NTT(t₀)` that signing (FIPS 204 Algorithm 7, lines 2–4) computes from it, for `vg_mldsa87_sign_message_prepared`.
-///
-/// Contract: `VG.Spec.MlDsa.prepareSecretKeyContract`. Constant time.
-///
-/// # Safety
-///
-/// * `sk` must be valid for reads of 4896 bytes.
-/// * `prepared` must be valid for reads and writes of 28448 bytes.
-/// * `scratch` must be valid for reads and writes of 1024 bytes.
-/// * `*prepared` holds private key material, which the caller must destroy (FIPS 204 §3.6.3).
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
-/// * `prepared` and `scratch` must not overlap each other or `sk` (distinct Rust objects never do).
-/// * None of `sk`, `prepared` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx` and `avx2` target features.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mldsa87_prepare_signing_key_avx512(sk: *const [u8; 4896], prepared: *mut [u8; 28448], scratch: *mut [u64; 128]) {
-    core::arch::naked_asm!(
-        r#".base64 "SImaSAMAAEiJqlADAABMiaJYAwAATImqYAMAAEyJsmgDAABMibpwAwAASInzSIn9SYnUSYnVSInvSIHHgAAAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwCATAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIBMAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx512}
-.base64 "SInvSIHH4AAAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwCAXAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIBcAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx512}
-.base64 "SInvSIHHQAEAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwCAbAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIBsAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx512}
-.base64 "SInvSIHHoAEAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwCAfAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIB8AAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx512}
-.base64 "SInvSIHHAAIAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwCAjAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHICMAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx512}
-.base64 "SInvSIHHYAIAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwCAnAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHICcAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx512}
-.base64 "SInvSIHHwAIAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwCArAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHICsAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx512}
-.base64 "SInvSIHHIAMAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwCAvAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIC8AAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx512}
-.base64 "SInvSIHHgAMAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwCAzAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIDMAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx512}
-.base64 "SInvSIHH4AMAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwCA3AAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIDcAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx512}
-.base64 "SInvSIHHQAQAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwCA7AAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIDsAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx512}
-.base64 "SInvSIHHoAQAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwCA/AAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHID8AAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx512}
-.base64 "SInvSIHHAAUAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwCBDAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIEMAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx512}
-.base64 "SInvSIHHYAUAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwCBHAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIEcAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx512}
-.base64 "SInvSIHHwAUAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwCBLAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIEsAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx512}
-.base64 "SInvSIHHIAYAAL6gAQAAuv8PAAC5ABAAAEmJ2EmBwCBPAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIE8AAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx512}
-.base64 "SInvSIHHwAcAAL6gAQAAuv8PAAC5ABAAAEmJ2EmBwCBTAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIFMAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx512}
-.base64 "SInvSIHHYAkAAL6gAQAAuv8PAAC5ABAAAEmJ2EmBwCBXAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIFcAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx512}
-.base64 "SInvSIHHAAsAAL6gAQAAuv8PAAC5ABAAAEmJ2EmBwCBbAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIFsAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx512}
-.base64 "SInvSIHHoAwAAL6gAQAAuv8PAAC5ABAAAEmJ2EmBwCBfAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIF8AAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx512}
-.base64 "SInvSIHHQA4AAL6gAQAAuv8PAAC5ABAAAEmJ2EmBwCBjAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIGMAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx512}
-.base64 "SInvSIHH4A8AAL6gAQAAuv8PAAC5ABAAAEmJ2EmBwCBnAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIGcAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx512}
-.base64 "SInvSIHHgBEAAL6gAQAAuv8PAAC5ABAAAEmJ2EmBwCBrAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIGsAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx512}
-.base64 "SInfSIPHAEiJ7kiDxgC5ZAIAAA=="
-20:
-.base64 "SIsGSIkHSIPHCEiDxghIg+kB"
-jne 20b
-.base64 "SYucJEgDAABJi6wkUAMAAE2LrCRgAwAATYu0JGgDAABNi7wkcAMAAE2LpCRYAwAAww=="
-.p2align 6"#,
-        vg_mldsa_bit_unpack = sym super::mldsa44::vg_mldsa_bit_unpack::vg_mldsa_bit_unpack,
-        vg_mldsa_ntt_avx512 = sym super::mldsa44::vg_mldsa_ntt_avx512::vg_mldsa_ntt_avx512,
     )
 }
 
@@ -2562,7 +2377,3 @@ pub(crate) mod vg_mldsa_dot_inverse7;
 #[rustfmt::skip]
 #[path = "internal/vg_mldsa_dot_inverse7_avx2.rs"]
 pub(crate) mod vg_mldsa_dot_inverse7_avx2;
-
-#[rustfmt::skip]
-#[path = "internal/vg_mldsa_dot_inverse7_avx512.rs"]
-pub(crate) mod vg_mldsa_dot_inverse7_avx512;

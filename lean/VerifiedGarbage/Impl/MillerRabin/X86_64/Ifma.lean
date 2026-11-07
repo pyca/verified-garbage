@@ -6,8 +6,8 @@ public import VerifiedGarbage.Impl.Rsa.X86_64.PubIfma
 /-!
 # The shared Miller–Rabin round with AVX512_IFMA on x86-64
 
-`code mul`: for a candidate of 32, 48 or 64 words (`PubIfma`'s layouts
-`pay2048`, `pay3072`, `pay4096`), the round of `Round.lean` in radix `2⁵²`
+`code mul`: for a candidate of 16, 24, 32, 48 or 64 words (`PubIfma`'s
+layouts `pay1024`, `pay1536`, `pay2048`, `pay3072`, `pay4096`), the round of `Round.lean` in radix `2⁵²`
 with `CrtIfma`'s one-lane multiplication (`ammMul`), whose Montgomery radix
 is `R' = 2^(52 S)`; otherwise `round mul`.
 
@@ -256,8 +256,10 @@ def isW (n : Nat) : List Instr := [.mov .rax (.mem (hdr sW)), .alu .cmp .rax (.i
 
 /-- The round of the layout of the candidate's size, `round mul` otherwise. -/
 def code (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  .seq (.block (isW 32)) (.ite .e (ifma pay2048)
-    (.seq (.block (isW 48)) (.ite .e (ifma pay3072)
-      (.seq (.block (isW 64)) (.ite .e (ifma pay4096) (round mul))))))
+  .seq (.block (isW 16)) (.ite .e (ifma pay1024)
+    (.seq (.block (isW 24)) (.ite .e (ifma pay1536)
+      (.seq (.block (isW 32)) (.ite .e (ifma pay2048)
+        (.seq (.block (isW 48)) (.ite .e (ifma pay3072)
+          (.seq (.block (isW 64)) (.ite .e (ifma pay4096) (round mul))))))))))
 
 end VG.Impl.MillerRabin.X86_64.Ifma
