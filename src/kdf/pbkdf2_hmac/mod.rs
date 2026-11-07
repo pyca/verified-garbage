@@ -103,40 +103,13 @@ fn check_len(len: usize, block: usize) {
     u32::try_from(len.div_ceil(block)).expect("PBKDF2 derived key too long");
 }
 
-/// Makes a hash function a [`Pbkdf2Hash`] with its verified
-/// `vg_pbkdf2_hmac_<hash>` (contract `VG.Spec.Hmac.Instance.pbkdf2Contract`
-/// of the hash's `Instance`), which derives the whole key, given the
-/// function's working space (in 64-bit words) and the digest size.
-///
-/// `pbkdf2` is listed for each implementation of the hash (its backend
-/// enum's variants, with the CPU features it needs), and a derivation runs
-/// the one of the implementation selected for this CPU, as the hash and its
-/// HMAC do: the `match` on the backend is exhaustive, so a new
-/// implementation of the hash does not compile until it is listed here too
-/// (see "Variants and generic callers" in
-/// `lean/VerifiedGarbage/TCB/Emit.lean`), and it does not compile if it
-/// needs a CPU feature that the hash's `select` does not require to choose
-/// its implementation.
+/// Makes a hash function a [`Pbkdf2Hash`] with the dispatcher of its
+/// verified `vg_pbkdf2_hmac_<hash>` (contract
+/// `VG.Spec.Hmac.Instance.pbkdf2Contract` of the hash's `Instance`),
+/// `vg_pbkdf2_hmac_<hash>_auto`, which derives the whole key with the best
+/// implementation this CPU runs, given the digest size.
 macro_rules! whole_pbkdf2 {
-    (
-        $hash:ident ($backend:ident) {
-            $base:ident => $pbkdf2:path
-            $(, $(#[$attr:meta])* $variant:ident if [$($req:ident),*] => $vpbkdf2:path)*
-            $(,)?
-        },
-        output: $output:literal $(,)?
-    ) => {
-        // Each implementation's `pbkdf2` needs no CPU feature that the
-        // hash's `select` does not require to choose its implementation.
-        $(
-            $(#[$attr])*
-            const _: () = assert!(
-                $backend::REQUIRES[$backend::$variant as usize]
-                    .contains(verified_garbage_cpu::Features::all(&[$($req),*])),
-                "a function needs a CPU feature its implementation is not chosen for"
-            );
-        )*
-
+    ($hash:ident, pbkdf2: $pbkdf2:path, output: $output:literal $(,)?) => {
         impl super::Pbkdf2Hash for $hash {
             fn pbkdf2_derive(
                 password: &[u8],
@@ -145,21 +118,17 @@ macro_rules! whole_pbkdf2 {
                 out: &mut [u8],
             ) {
                 super::check_len(out.len(), $output);
-                let pbkdf2 = match $backend::select($crate::cpu::detected()) {
-                    $backend::$base => $pbkdf2,
-                    $($(#[$attr])* $backend::$variant => $vpbkdf2,)*
-                };
                 // SAFETY: `iterations` is positive and `out.len()` at most
                 // (2³² − 1) times the digest size; `password` and `salt` are
                 // valid for reads of their lengths and `out` for reads and
                 // writes of its length; `out` is a distinct object from the
                 // others (`password` and `salt` are only read), so it
                 // overlaps neither of them nor the call's stack frame, and,
-                // as Rust objects, none wraps around the address space. `pbkdf2` needs no CPU feature
-                // that the implementation was not selected for
-                // (checked when it compiles).
+                // as Rust objects, none wraps around the address space. The
+                // dispatcher calls only an implementation the CPU has the
+                // features of.
                 unsafe {
-                    pbkdf2(
+                    $pbkdf2(
                         password.as_ptr(),
                         password.len(),
                         salt.as_ptr(),
