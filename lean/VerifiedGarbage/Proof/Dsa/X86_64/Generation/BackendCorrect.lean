@@ -56,7 +56,8 @@ open VG VG.X86_64 VG.Proof.Pbkdf2.Md.X86_64
 theorem generationSafe_of_noSp {c : Prog isa} (hs : NoSp c)
     (hm : c.allInstrs (fun i => !loadsMxcsr i) = true) : generationSafe c := by
   have sp := VG.Proof.RsaOaep.X86_64.SpSafe.of_noSp hs
-  rw [generationSafe, Code.allInstrs_eq]
+  apply generationSafe_of_allInstrs
+  rw [Code.allInstrs_eq]
   rw [Code.allInstrs_eq] at hm
   apply List.all_eq_true.mpr
   intro i hi
@@ -149,13 +150,13 @@ open VG.Impl.Pbkdf2.Md.X86_64 (Stream)
 theorem pSearch_safe {body : Prog isa} (hb : generationSafe body) (limit stride : Nat) :
     generationSafe (pSearch body limit stride) := by
   unfold generationSafe at hb ⊢
-  simp only [pSearch, pSearchIteration, seqs, Code.allInstrs, hb]
+  simp only [pSearch, pSearchIteration, seqs, generationOk, hb]
   rfl
 
 theorem tapeLoop_safe {body : Prog isa} (hb : generationSafe body) (slots : TapeSlots) (width : Nat) :
     generationSafe (tapeLoop slots width body) := by
   unfold generationSafe at hb ⊢
-  simp only [tapeLoop, tapeIteration, Code.allInstrs, hb]
+  simp only [tapeLoop, tapeIteration, generationOk, hb]
   rfl
 
 theorem primeSearch_safe {H1 H256 : Stream} (h1 : HashSafety H1) (h256 : HashSafety H256)

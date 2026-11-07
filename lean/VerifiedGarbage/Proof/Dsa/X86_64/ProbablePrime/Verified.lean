@@ -66,7 +66,7 @@ abbrev testCode (v : RoundImpl) : Prog isa :=
 
 theorem testCode_safe (v : RoundImpl) :
     VG.Proof.Dsa.X86_64.Generation.generationSafe (testCode v) :=
-  code_safe _ _ v.inlineSafe (VG.Proof.Dsa.X86_64.Generation.roundCode_safe v)
+  code_safe _ _ (fun o a b => VG.Proof.Dsa.X86_64.Generation.generationSafe_of_allInstrs (v.inlineSafe o a b)) (VG.Proof.Dsa.X86_64.Generation.roundCode_safe v)
 
 theorem verified (v : RoundImpl) : Verified target (testCode v) contract :=
   ⟨correct v.inlineMont (Kernel.called v) (testCode_safe v).mx, code_ct _ _, satisfiable⟩

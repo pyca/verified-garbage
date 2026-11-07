@@ -131,7 +131,7 @@ private theorem ret_frame {c : Prog isa} {s t : State} {tr : List Leak}
 theorem pc_correct (M : Mont) (R : R2Impl M) (K : Kernel)
     (hs : SpSafe (VG.Impl.Ffdh.X86_64.ParameterCandidate.code M.mm R.code K.run))
     (hd : (VG.Impl.Ffdh.X86_64.ParameterCandidate.code M.mm R.code K.run).x86_64Depth ≤ 128)
-    (hmx : (VG.Impl.Ffdh.X86_64.ParameterCandidate.code M.mm R.code K.run).allInstrs (fun i => !loadsMxcsr i) = true)
+    (hmx : ctlOk (VG.Impl.Ffdh.X86_64.ParameterCandidate.code M.mm R.code K.run) = true)
     (s : State) (h : pcContract.pre s) :
     ∃ tr t, Exec isa (VG.Impl.Ffdh.X86_64.ParameterCandidate.code M.mm R.code K.run) s tr t ∧
       abiPreserved s t ∧ pcContract.post s t := by
@@ -148,6 +148,6 @@ theorem pc_correct (M : Mont) (R : R2Impl M) (K : Kernel)
     · exact hregs _ (by decide)
     · exact hregs _ (by decide)
     · exact hregs _ (by decide)
-  exact ⟨tr, t, he, abiPreserved_of_exec hmx he hg, hp⟩
+  exact ⟨tr, t, he, abiPreserved_of_ctl hmx he hg, hp⟩
 
 end VG.Proof.Ffdh.X86_64.ParameterCandidate

@@ -34,8 +34,8 @@ theorem checkParameters_safe (sq : Prog isa) (mul : Nat → Nat → Nat → Prog
     Crt.tabBuild Crt.tabBuildN R2Words.choice R2Words.fast R2Words.old VG.Impl.Bignum.X86_64.Public.R2Squares.run
     VG.Impl.Bignum.X86_64.Public.R2Squares.init VG.Impl.Bignum.X86_64.Public.R2Squares.next
   repeat' first
-    | rw [generation_instrs_seqs]
-    | rw [Code.allInstrs]
+    | rw [generationOk_seqs]
+    | rw [generationOk]
     | rw [List.all_append]
     | rw [List.all_cons]
   simp only [hs, hm]
