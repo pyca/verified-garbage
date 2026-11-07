@@ -95,7 +95,24 @@ def main():
     variants['montpair']=MONT.sub(lambda m:pairs(m[0])[0],alltext)
     variants['pipeline']=SQR.sub(lambda m:pipeline_square(m[0]),alltext)
     variants['select']=SELECT.sub(select_words,alltext)
-    variants['combined']=MONT.sub(lambda m:pairs(m[0])[0],variants['select'])
+    square_body=SQR.search(crt)[0]
+    square_body=re.sub(r'^(\d+):',lambda m:str(int(m[1])+10000)+':',square_body,flags=re.M)
+    square_body=re.sub(r'\b(\d+)([bf])\b',lambda m:str(int(m[1])+10000)+m[2],square_body)
+    replacements=0
+    def public_square(m):
+        nonlocal replacements
+        before=pubchecked[:m.start()]
+        args=re.findall(r'\taddi a3, a7, 0\n((?:\tadd a3, a3, s5\n)*)\taddi a4, a7, 0\n((?:\tadd a4, a4, s5\n)*)',before)
+        if args and args[-1][0].count('\n')==5 and args[-1][1].count('\n')==5:
+            replacements+=1
+            return '\tadd a6, a7, s5\n'+square_body
+        return m[0]
+    fast_public=MONT.sub(public_square,pubchecked)
+    assert replacements==2,replacements
+    variants['pubsquare']=alltext.replace(pubchecked,fast_public)
+    combined=SQR.sub(lambda m:pipeline_square(m[0]),variants['pubsquare'])
+    combined=SELECT.sub(select_words,combined)
+    variants['combined']=MONT.sub(lambda m:pairs(m[0])[0],combined)
     assert len(SELECT.findall(alltext))==4
     report={'mont_sites':nm,'square_sites':ns,'reordered_pairs':pairs(alltext)[1]}
     (OUT/'transforms.json').write_text(json.dumps(report,indent=2));print(report)

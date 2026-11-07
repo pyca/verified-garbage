@@ -10,7 +10,7 @@ print('Seven alternating-order rounds; elapsed time per operation. Positive delt
 print('| Workload | Variant | Bits | Threads | Median µs/op | Paired time reduction, median [min, max] |')
 print('|---|---|---:|---:|---:|---:|')
 for (work,v,bits,threads),samples in sorted(groups.items()):
-    base='base' if work=='rsa' else 'base_square' if 'square' in v else 'base_mont'
+    base='base' if work in ('rsa','public') else 'base_square' if 'square' in v else 'base_mont'
     bs=groups[work,base,bits,threads]
     deltas=[100*(bs[r]-s)/bs[r] for r,s in samples.items()]
     print(f'| {work} | {v} | {bits} | {threads} | {statistics.median(samples.values())*1e6:.2f} | {statistics.median(deltas):+.2f}% [{min(deltas):+.2f}, {max(deltas):+.2f}] |')
