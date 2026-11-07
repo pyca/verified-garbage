@@ -2814,12 +2814,12 @@ theorem finish_ok {C : ICfg} (hC : C.Ok) {s₀ s : State} (hI : LInv C s₀ (3 *
         wv t.mem C.B (slot C.w C.iX₂) C.n < C.p) := by
   have hn' := hI.scr.nowrap
   have hn1 := hC.n1; have hnw := hC.nw; have hw := hC.w24; have hZ := hC.hZ
-  have hZ' : slot C.w 16 + C.B.toNat ≤ 2 ^ 64 := by omega
+  have hZ' : slot C.w 16 + C.B.toNat ≤ 2 ^ 64 := by omega_arith
   have sl : ∀ j < 16, slot C.w j + 8 * (C.w + 2) ≤ C.Z := fun j hj => Nat.le_trans (slot_lt (w := C.w) hj) hZ
   have sV := sl _ hC.hV; have sX₂ := sl _ hC.hX₂; have sM := sl _ hC.hM
   have rg : ∀ {j : Nat} {len : Nat}, (slot C.w j, 8 * (C.w + 2)) ∈ C.ranges → len ≤ 8 * (C.w + 2) →
       ∀ {m m' : Mem}, Outside C.B (slot C.w j) len m m' → Frm C.B C.ranges m m' := fun {j len} hr hl {m m'} o =>
-    Frm.of_outside (Outside.mono (o' := slot C.w j) (n' := 8 * (C.w + 2)) o (Nat.le_refl _) (by omega)) hr
+    Frm.of_outside (Outside.mono (o' := slot C.w j) (n' := 8 * (C.w + 2)) o (Nat.le_refl _) (by omega_arith)) hr
   have rV : (slot C.w C.iV, 8 * (C.w + 2)) ∈ C.ranges := by simp [ICfg.ranges]
   have rX₂ : (slot C.w C.iX₂, 8 * (C.w + 2)) ∈ C.ranges := by simp [ICfg.ranges]
   have rT : (slot C.w C.iT, 8 * (C.w + 2)) ∈ C.ranges := by simp [ICfg.ranges]
@@ -2873,17 +2873,17 @@ theorem finish_ok {C : ICfg} (hC : C.Ok) {s₀ s : State} (hI : LInv C s₀ (3 *
       t.gpr .x15 = BitVec.ofNat 64 (15 * C.n + 10) ∧ t.mem = s₆.mem)
       (by
         unfold dblCount
-        brun [(k06.gpr .x12 (by decide)).trans hI.x12, shl_ofNat (show C.n * 2 ^ 4 < 2 ^ 64 by omega)]
+        brun [(k06.gpr .x12 (by decide)).trans hI.x12, shl_ofNat (show C.n * 2 ^ 4 < 2 ^ 64 by omega_arith)]
         apply BitVec.eq_of_toNat_eq
         have := hC.n21
         simp only [BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_ofNat]
-        omega)
+        omega_arith)
       (by decide) (by decide) (by decide +kernel)) (by decide +kernel))
     fun s₇ ⟨⟨⟨h15₇, m₇⟩, k₇⟩, v₇⟩ => WP.mono (dblLoop_ok (K := 15 * C.n + 10) (sc₆.congr k₇.wr)
       ((k₇.gpr .x0 (by decide)).trans ((k06.gpr .x0 (by decide)).trans hI.x0))
       ((k₇.gpr .x11 (by decide)).trans ((k06.gpr .x11 (by decide)).trans hI.x11))
       ((k₇.gpr .x12 (by decide)).trans ((k06.gpr .x12 (by decide)).trans hI.x12)) hn1 hnw hw hZ hC.hX₂ hC.hM hC.hT
-      hC.hU hC.dX₂M hC.dX₂T hC.dUX₂.symm hC.dMT hC.dUM.symm hC.dUT.symm (by omega) (by omega) h15₇)
+      hC.hU hC.dX₂M hC.dX₂T hC.dUX₂.symm hC.dMT hC.dUM.symm hC.dUT.symm (by omega_arith) (by omega_arith) h15₇)
     fun s₈ hD => ?_))
   have k07 := k06.trans k₇
   have k08 := k07.trans hD.keep
@@ -2901,25 +2901,25 @@ theorem finish_ok {C : ICfg} (hC : C.Ok) {s₀ s : State} (hI : LInv C s₀ (3 *
   · have w6 : Frm C.B C.ranges s₅.mem s₆.mem := Frm.widen f₆ fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact ⟨_, rX₂, Nat.le_refl _, by dsimp only; omega⟩
-      · exact ⟨_, rT, Nat.le_refl _, by dsimp only; omega⟩
+      · exact ⟨_, rX₂, Nat.le_refl _, by dsimp only; omega_arith⟩
+      · exact ⟨_, rT, Nat.le_refl _, by dsimp only; omega_arith⟩
     have w8 : Frm C.B C.ranges s₇.mem s₈.mem := Frm.widen hD.frm fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
-      · exact ⟨_, rX₂, Nat.le_refl _, by dsimp only; omega⟩
-      · exact ⟨_, rT, Nat.le_refl _, by dsimp only; omega⟩
-      · exact ⟨_, rU, Nat.le_refl _, by dsimp only; omega⟩
+      · exact ⟨_, rX₂, Nat.le_refl _, by dsimp only; omega_arith⟩
+      · exact ⟨_, rT, Nat.le_refl _, by dsimp only; omega_arith⟩
+      · exact ⟨_, rU, Nat.le_refl _, by dsimp only; omega_arith⟩
     rw [mt]
     refine hI.frm.trans ?_
     rw [m₁] at o₂
     rw [m₇] at w8
-    exact (((((rg rV (by omega) o₂).trans (rg rX₂ (by omega) o₃)).trans (rg rX₂ (by omega) o₄)).trans
-      (rg rX₂ (by omega) o₅)).trans w6).trans w8
+    exact (((((rg rV (by omega_arith) o₂).trans (rg rX₂ (by omega_arith) o₃)).trans (rg rX₂ (by omega_arith) o₄)).trans
+      (rg rX₂ (by omega_arith) o₅)).trans w6).trans w8
   · intro G a ha hx
-    have hL : 1 ≤ C.n + 1 := by omega
-    have hpf : C.pf = C.p := by unfold ICfg.pf; have := G.1; omega
+    have hL : 1 ≤ C.n + 1 := by omega_arith
+    have hpf : C.pf = C.p := by unfold ICfg.pf; have := G.1; omega_arith
     have hm' : ((C.p : Int) * C.mi.toNat + 1) % 2 ^ 64 = 0 := by
-      have := hC.hm; rw [show C.p + (1 - C.p % 2) = C.p by have := G.1; omega] at this; exact this
+      have := hC.hm; rw [show C.p + (1 - C.p % 2) = C.p by have := G.1; omega_arith] at this; exact this
     have hp1 : (1 : Int) < C.p := by exact_mod_cast G.2
     have est : C.st (3 * C.n + 2) =
         Divstep.invRunS 59 C.p C.mi.toNat (Rsa.Divstep.oddInput C.p a) (3 * C.n + 2) := by
@@ -2932,75 +2932,75 @@ theorem finish_ok {C : ICfg} (hC : C.Ok) {s₀ s : State} (hI : LInv C s₀ (3 *
     have hav := hI.a G
     set f := (C.st (3 * C.n + 2)).f with hfdef
     set av := (C.st (3 * C.n + 2)).a with hadef
-    have gp : Nat.gcd C.p a ≤ C.p := Nat.gcd_le_left _ (by omega)
+    have gp : Nat.gcd C.p a ≤ C.p := Nat.gcd_le_left _ (by omega_arith)
     have pC := hC.pC
     have half : (2 : Int) ^ (64 * C.n) * 2 ≤ 2 ^ (64 * (C.n + 1) - 1) := by
       have : 2 ^ (64 * C.n) * 2 ≤ 2 ^ (64 * (C.n + 1) - 1) := by
-        rw [← Nat.pow_succ]; exact Nat.pow_le_pow_right (by decide) (by omega)
+        rw [← Nat.pow_succ]; exact Nat.pow_le_pow_right (by decide) (by omega_arith)
       exact_mod_cast this
     have pC' : (C.p : Int) < 2 ^ (64 * C.n) := by exact_mod_cast pC
     have fabs : |f| = (Nat.gcd C.p a : Int) := by rw [← Int.natCast_natAbs, rf0]
-    have fabs' : |f| < 2 ^ (64 * C.n) := by rw [fabs]; omega
+    have fabs' : |f| < 2 ^ (64 * C.n) := by rw [fabs]; omega_arith
     -- Memory between the stages.
     have M₀ := hI.m
     have wsucc : ∀ (m : Mem) (j : Nat), wv m C.B (slot C.w j) (C.n + 1) =
         wv m C.B (slot C.w j) C.n + 2 ^ (64 * C.n) * (word m C.B (slot C.w j + 8 * C.n)).toNat := fun m j => by
       rw [wv]
     have M₃ : wv s₃.mem C.B (slot C.w C.iM) C.n = C.p := by
-      rw [wv_out o₃ hC.dX₂M (by omega) (by omega) hZ' hC.hM, wv_out o₂ hC.dVM (by omega) (by omega) hZ' hC.hM, m₁, M₀]
+      rw [wv_out o₃ hC.dX₂M (by omega_arith) (by omega_arith) hZ' hC.hM, wv_out o₂ hC.dVM (by omega_arith) (by omega_arith) hZ' hC.hM, m₁, M₀]
     have M₄ : wv s₄.mem C.B (slot C.w C.iM) C.n = C.p := by
-      rw [wv_out o₄ hC.dX₂M (by omega) (by omega) hZ' hC.hM, M₃]
+      rw [wv_out o₄ hC.dX₂M (by omega_arith) (by omega_arith) hZ' hC.hM, M₃]
     have M₅ : wv s₅.mem C.B (slot C.w C.iM) C.n = C.p := by
-      rw [wv_out o₅ hC.dX₂M (by omega) (by omega) hZ' hC.hM, M₄]
+      rw [wv_out o₅ hC.dX₂M (by omega_arith) (by omega_arith) hZ' hC.hM, M₄]
     have apM6 : ∀ r ∈ [(slot C.w C.iX₂, 8 * (C.n + 1)), (slot C.w C.iT, 8 * C.n)],
         slot C.w C.iM + 8 * C.n ≤ r.1 ∨ r.1 + r.2 ≤ slot C.w C.iM := by
       intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact slot_apart (w := C.w) hC.dX₂M.symm (by omega) (by omega)
-      · exact slot_apart (w := C.w) hC.dMT (by omega) (by omega)
+      · exact slot_apart (w := C.w) hC.dX₂M.symm (by omega_arith) (by omega_arith)
+      · exact slot_apart (w := C.w) hC.dMT (by omega_arith) (by omega_arith)
     have M₇ : wv s₇.mem C.B (slot C.w C.iM) C.n = C.p := by
-      rw [m₇, f₆.wv_eq apM6 (by omega), M₅]
+      rw [m₇, f₆.wv_eq apM6 (by omega_arith), M₅]
     -- `|f|` in `v`.
     have hneg : (2 ^ 63 ≤ (word s.mem C.B (slot C.w C.iV + 8 * C.n)).toNat) ↔ f < 0 := by
       rw [← hf, wsucc]
       exact (Divstep.sgn_neg_iff (wv_lt _ _ _ _) (BitVec.isLt _)).symm
     rw [m₁] at e₂
-    have V₂ := Divstep.sgn_cneg hL (wv_lt _ _ _ _) (wv_lt _ _ _ _) (by rw [hf]; omega) e₂
+    have V₂ := Divstep.sgn_cneg hL (wv_lt _ _ _ _) (wv_lt _ _ _ _) (by rw [hf]; omega_arith) e₂
     rw [hf] at V₂
     have V₂' : sgn (C.n + 1) (wv s₂.mem C.B (slot C.w C.iV) (C.n + 1)) = |f| := by
       rw [V₂]
       by_cases h : f < 0
       · rw [ite_eq_left (decide_eq_true (hneg.mpr h)), abs_of_neg h]
-      · rw [ite_eq_right (by simp only [decide_eq_true_eq]; exact fun h' => h (hneg.mp h')), abs_of_nonneg (by omega)]
+      · rw [ite_eq_right (by simp only [decide_eq_true_eq]; exact fun h' => h (hneg.mp h')), abs_of_nonneg (by omega_arith)]
     obtain ⟨-, V₂n⟩ := small_of_sgn (wsucc _ _) (wv_lt _ _ _ _) (BitVec.isLt _) V₂' (abs_nonneg _) fabs'
     have apV6 : ∀ r ∈ [(slot C.w C.iX₂, 8 * (C.n + 1)), (slot C.w C.iT, 8 * C.n)],
         slot C.w C.iV + 8 * C.n ≤ r.1 ∨ r.1 + r.2 ≤ slot C.w C.iV := by
       intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact slot_apart (w := C.w) hC.dVX₂ (by omega) (by omega)
-      · exact slot_apart (w := C.w) hC.dVT (by omega) (by omega)
+      · exact slot_apart (w := C.w) hC.dVX₂ (by omega_arith) (by omega_arith)
+      · exact slot_apart (w := C.w) hC.dVT (by omega_arith) (by omega_arith)
     have apV8 : ∀ r ∈ [(slot C.w C.iX₂, 8 * C.n), (slot C.w C.iT, 8 * (C.n + 1)), (slot C.w C.iU, 8 * C.n)],
         slot C.w C.iV + 8 * C.n ≤ r.1 ∨ r.1 + r.2 ≤ slot C.w C.iV := by
       intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
-      · exact slot_apart (w := C.w) hC.dVX₂ (by omega) (by omega)
-      · exact slot_apart (w := C.w) hC.dVT (by omega) (by omega)
-      · exact slot_apart (w := C.w) hC.dUV.symm (by omega) (by omega)
+      · exact slot_apart (w := C.w) hC.dVX₂ (by omega_arith) (by omega_arith)
+      · exact slot_apart (w := C.w) hC.dVT (by omega_arith) (by omega_arith)
+      · exact slot_apart (w := C.w) hC.dUV.symm (by omega_arith) (by omega_arith)
     have Vt : wv t.mem C.B (slot C.w C.iV) C.n = Nat.gcd C.p a := by
-      rw [mt, hD.frm.wv_eq apV8 (by omega), m₇, f₆.wv_eq apV6 (by omega),
-        wv_out o₅ hC.dVX₂.symm (by omega) (by omega) hZ' hC.hV, wv_out o₄ hC.dVX₂.symm (by omega) (by omega) hZ' hC.hV,
-        wv_out o₃ hC.dVX₂.symm (by omega) (by omega) hZ' hC.hV]
+      rw [mt, hD.frm.wv_eq apV8 (by omega_arith), m₇, f₆.wv_eq apV6 (by omega_arith),
+        wv_out o₅ hC.dVX₂.symm (by omega_arith) (by omega_arith) hZ' hC.hV, wv_out o₄ hC.dVX₂.symm (by omega_arith) (by omega_arith) hZ' hC.hV,
+        wv_out o₃ hC.dVX₂.symm (by omega_arith) (by omega_arith) hZ' hC.hV]
       have := V₂n.trans fabs
       exact_mod_cast this
     refine ⟨Vt, ?_⟩
     -- `±a` in `x₂`.
     have A₂ : wv s₂.mem C.B (slot C.w C.iX₂) (C.n + 1) = wv s.mem C.B (slot C.w C.iX₂) (C.n + 1) := by
-      rw [wv_out o₂ hC.dVX₂ (by omega) (by omega) hZ' hC.hX₂, m₁]
+      rw [wv_out o₂ hC.dVX₂ (by omega_arith) (by omega_arith) hZ' hC.hX₂, m₁]
     rw [A₂] at e₃
-    have A₃ := Divstep.sgn_cneg hL (wv_lt _ _ _ _) (wv_lt _ _ _ _) (by rw [hav]; omega) e₃
+    have A₃ := Divstep.sgn_cneg hL (wv_lt _ _ _ _) (wv_lt _ _ _ _) (by rw [hav]; omega_arith) e₃
     rw [hav] at A₃
     set b0 := if f < 0 then -av else av with hb0
     have A₃' : sgn (C.n + 1) (wv s₃.mem C.B (slot C.w C.iX₂) (C.n + 1)) = b0 := by
@@ -3009,20 +3009,20 @@ theorem finish_ok {C : ICfg} (hC : C.Ok) {s₀ s : State} (hI : LInv C s₀ (3 *
       · rw [ite_eq_left (decide_eq_true (hneg.mpr h)), hb0, ite_eq_left h]
       · rw [ite_eq_right (by simp only [decide_eq_true_eq]; exact fun h' => h (hneg.mp h')), hb0, ite_eq_right h]
     have b0r : -2 * (C.p : Int) < b0 ∧ b0 < 2 * C.p := by
-      rw [hb0]; split <;> omega
+      rw [hb0]; split <;> omega_arith
     -- `p` added if negative, twice.
     rw [M₃] at e₄
-    have A₄ := addIfNeg_step (wsucc _ _) (wv_lt _ _ _ _) (BitVec.isLt _) e₄ (by rw [A₃']; split <;> omega)
-      (by rw [A₃']; split <;> omega)
+    have A₄ := addIfNeg_step (wsucc _ _) (wv_lt _ _ _ _) (BitVec.isLt _) e₄ (by rw [A₃']; split <;> omega_arith)
+      (by rw [A₃']; split <;> omega_arith)
     rw [A₃'] at A₄
     set b1 := b0 + if b0 < 0 then (C.p : Int) else 0 with hb1
-    have b1r : -(C.p : Int) < b1 ∧ b1 < 2 * C.p := by rw [hb1]; split <;> omega
+    have b1r : -(C.p : Int) < b1 ∧ b1 < 2 * C.p := by rw [hb1]; split <;> omega_arith
     rw [M₄] at e₅
-    have A₅ := addIfNeg_step (wsucc _ _) (wv_lt _ _ _ _) (BitVec.isLt _) e₅ (by rw [A₄]; split <;> omega)
-      (by rw [A₄]; split <;> omega)
+    have A₅ := addIfNeg_step (wsucc _ _) (wv_lt _ _ _ _) (BitVec.isLt _) e₅ (by rw [A₄]; split <;> omega_arith)
+      (by rw [A₄]; split <;> omega_arith)
     rw [A₄] at A₅
     set b2 := b1 + if b1 < 0 then (C.p : Int) else 0 with hb2
-    have b2r : 0 ≤ b2 ∧ b2 < 2 * C.p := by rw [hb2]; split <;> omega
+    have b2r : 0 ≤ b2 ∧ b2 < 2 * C.p := by rw [hb2]; split <;> omega_arith
     -- `a mod p`.
     have A₅v : (wv s₅.mem C.B (slot C.w C.iX₂) (C.n + 1) : Int) = b2 := by
       unfold sgn at A₅
@@ -3031,13 +3031,13 @@ theorem finish_ok {C : ICfg} (hC : C.Ok) {s₀ s : State} (hI : LInv C s₀ (3 *
       · have := wv_lt s₅.mem C.B (slot C.w C.iX₂) (C.n + 1)
         have : ((wv s₅.mem C.B (slot C.w C.iX₂) (C.n + 1) : Nat) : Int) < 2 ^ (64 * (C.n + 1)) := by
           exact_mod_cast this
-        omega
+        omega_arith
     have hlt5 : wv s₅.mem C.B (slot C.w C.iX₂) (C.n + 1) < 2 * wv s₅.mem C.B (slot C.w C.iM) C.n := by
       rw [M₅]; have := b2r.2; rw [← A₅v] at this; exact_mod_cast this
     have e₆' := e₆ hlt5
     rw [M₅] at e₆'
     set r := wv s₅.mem C.B (slot C.w C.iX₂) (C.n + 1) % C.p with hr
-    have rp : r < C.p := Nat.mod_lt _ (by omega)
+    have rp : r < C.p := Nat.mod_lt _ (by omega_arith)
     have r6 : wv s₆.mem C.B (slot C.w C.iX₂) C.n = r := by
       have h6 := wsucc s₆.mem C.iX₂
       rw [e₆'] at h6
@@ -3045,14 +3045,14 @@ theorem finish_ok {C : ICfg} (hC : C.Ok) {s₀ s : State} (hI : LInv C s₀ (3 *
       have : 2 ^ (64 * C.n) * (word s₆.mem C.B (slot C.w C.iX₂ + 8 * C.n)).toNat = 0 := by
         rcases Nat.eq_zero_or_pos (word s₆.mem C.B (slot C.w C.iX₂ + 8 * C.n)).toNat with h | h
         · rw [h, Nat.mul_zero]
-        · have := Nat.mul_le_mul_left (2 ^ (64 * C.n)) h; omega
-      omega
+        · have := Nat.mul_le_mul_left (2 ^ (64 * C.n)) h; omega_arith
+      omega_arith
     -- The doublings.
     have r7 : wv s₇.mem C.B (slot C.w C.iX₂) C.n = r := by rw [m₇, r6]
     have x₂t : wv t.mem C.B (slot C.w C.iX₂) C.n = r * 2 ^ (15 * C.n + 10) % C.p := by
       rw [mt, hD.val (by rw [r7, M₇]; exact rp), r7, M₇]
-    rw [x₂t, show 15 * C.n + 10 = 5 * (3 * C.n + 2) by omega]
-    refine ⟨rr r ?_, Nat.mod_lt _ (by omega)⟩
+    rw [x₂t, show 15 * C.n + 10 = 5 * (3 * C.n + 2) by omega_arith]
+    refine ⟨rr r ?_, Nat.mod_lt _ (by omega_arith)⟩
     -- `r ≡ ±a (mod p)`.
     have : (r : Int) = b2 % C.p := by rw [hr, Int.natCast_emod, A₅v]
     rw [this]
