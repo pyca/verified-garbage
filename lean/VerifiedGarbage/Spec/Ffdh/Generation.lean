@@ -53,10 +53,6 @@ def ParameterSearchResult.remaining : ParameterSearchResult → Nat
   | .entropy remaining _ _ => remaining
   | _ => 0
 
-def ParameterSearchResult.available : ParameterSearchResult → Nat
-  | .entropy _ available _ => available
-  | _ => 0
-
 /-- The length `requested` the host is asked for after the result `r`: one
 `Entropy.RequestValid` allows for more entropy, and 0 otherwise. -/
 def ParameterSearchResult.Requests (cap : Nat) (r : ParameterSearchResult) (requested : Nat) :

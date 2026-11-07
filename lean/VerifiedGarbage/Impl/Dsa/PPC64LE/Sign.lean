@@ -5,15 +5,18 @@ public import VerifiedGarbage.Impl.Dsa.PPC64LE.Verify
 /-!
 # DSA signing on PPC64LE
 
-`vg_dsa_sign(out = r3, out_len = r4, key = r5, key_len = r6, p_len = r7,
-nonce = r8, q_len = r9, digest = r10, digest_len, scratch, scratch_len)`, the
-last three on the stack. The entry keeps the key, the nonce and the digest
-in `r27`, `r28` and `r26`, the lengths in `r2` and `out` in the header's word
-`hOut`, as verification does (`Verify.lean`). After `checkKey`
-(`Common.lean`), which branches on the public key only:
+The signing of `vg_dsa_sign_prevalidated(out = r3, out_len = r4, key = r5,
+key_len = r6, p_len = r7, nonce = r8, q_len = r9, digest = r10, digest_len,
+scratch, scratch_len)`, the last three on the stack
+(`PrevalidatedSign.lean`), for a key known to pass validation. The entry
+keeps the key, the nonce and the digest in `r27`, `r28` and `r26`, the
+lengths in `r2` and `out` in the header's word `hOut`, as verification does
+(`Verify.lean`). After the working spaces are set up as `checkKey`
+(`Common.lean`) leaves them, `body`:
 
-* in the P space, the mask of `g^x mod p = y` (`powSecret` over x's octets,
-  compared with `eqMask`), and `g^k mod p` to the buffer;
+* the mask in the header's word `hMask` all ones: validation checked
+  `g^x mod p = y` (`keyPair`, the mask of it, which validation runs);
+* in the P space, `g^k mod p` to the buffer;
 * in the Q space, `r = (g^k mod p) mod q` (`reduce`) into array 9, the masks of
   `0 < k < q`, `0 < x < q` and `r ≠ 0`, `R² mod q`, `q − 2` to the buffer,
   `w = k^(q − 2) mod q`, then `s = w (z + x r) mod q` for the digest's scalar
@@ -21,8 +24,8 @@ in `r27`, `r28` and `r26`, the lengths in `r2` and `out` in the header's word
 * r and s, selected with 0 by the mask, to `out`; the result is the mask's
   low bit.
 
-A key that fails the checks zeroes `out` and returns 0. Nothing branches on
-x, the nonce or the digest, only on their lengths and on the public key.
+Nothing branches on x, the nonce or the digest, only on their lengths and on
+the public key.
 -/
 
 @[expose] public section
@@ -52,6 +55,10 @@ def ptrX : List Instr := ptrY ++ [.add .r12 .r12 .r6] ++ getQ .r6
 def keyPair : Prog isa :=
   .seq (.block (ptrX ++ [.addi .r24 .r12 0] ++ ptrG)) (.seq Verify.powP
     (.seq (.block ptrY) (.seq (loadArr 5) (.seq (eqMask .r3 4 5) (.block [.store .d .r3 .r21 hMask])))))
+
+/-- The mask of `g^x mod p = y` for a key known to pass validation: all ones
+into `hMask`. -/
+def markValid : List Instr := [.li .r3 0, .subi .r3 .r3 1, .store .d .r3 .r21 hMask]
 
 /-- In the P space: `g^k mod p` to the buffer's first `p_len` octets. -/
 def gk : Prog isa :=
@@ -109,18 +116,15 @@ def output : Prog isa :=
       (.seq (.block ([.load .d .r12 .r21 hOut] ++ getQ .r6)) (.seq (storeBE 1)
         (.seq (.block [.add .r12 .r12 .r6]) (.seq (storeBE 2) (.block [.li .r0 1, .logic .and .r3 .r22 .r0]))))))))))
 
-/-- The signing, after the check of the key. -/
+/-- The signing, for a key known to pass validation, after the setup of the
+working spaces. -/
 def body : Prog isa :=
-  .seq keyPair (.seq gk (.seq rRanges (.seq Verify.rrQ (.seq Verify.qMinus2 (.seq inverseK
+  .seq (.block markValid) (.seq gk (.seq rRanges (.seq Verify.rrQ (.seq Verify.qMinus2 (.seq inverseK
     (.seq sValue output))))))
 
 /-- `out`'s `2 q_len` octets := 0, and `r3 := 0`. -/
 def zeroOut : Prog isa :=
   .seq (.block ([.load .d .r16 .r21 hOut] ++ getQ .r17 ++ [.add .r17 .r17 .r17, .li .r0 0]))
     (.seq (Precompute.countLoop .r17 [.stb .r0 .r16 0, .addi .r16 .r16 1]) (.block [.li .r3 0]))
-
-/-- `vg_dsa_sign`. -/
-def sign : Prog isa :=
-  .seq (.block entry) (.seq (checkKey body zeroOut) (.block restore))
 
 end VG.Impl.Dsa.PPC64LE.Sign

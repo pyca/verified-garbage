@@ -25,12 +25,12 @@ variable {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay}
 
 /-- The facts of both regions about their moduli. -/
 structure Ar (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (m : Mem) (B : Addr) (M k : Nat → Nat) : Prop where
-  mlt : ∀ p < 2, ∀ j < l.L, limb l m B (l.D * p + oM) j < 2 ^ 52
-  mv : ∀ p < 2, val52 l m B (l.D * p + oM) = M p
-  kw : ∀ p < 2, ∀ t < 4, word m B (l.D * p + l.oK0 + 8 * t) = BitVec.ofNat 64 (k p)
-  klt : ∀ p < 2, k p < 2 ^ 52
-  k0 : ∀ p < 2, (limb l m B (l.D * p + oM) 0 * k p + 1) % 2 ^ 52 = 0
-  bnd : ∀ p < 2, 4 * M p ≤ 2 ^ (52 * l.S)
+  mlt : ∀ p < l.nl, ∀ j < l.L, limb l m B (l.D * p + oM) j < 2 ^ 52
+  mv : ∀ p < l.nl, val52 l m B (l.D * p + oM) = M p
+  kw : ∀ p < l.nl, ∀ t < 4, word m B (l.D * p + l.oK0 + 8 * t) = BitVec.ofNat 64 (k p)
+  klt : ∀ p < l.nl, k p < 2 ^ 52
+  k0 : ∀ p < l.nl, (limb l m B (l.D * p + oM) 0 * k p + 1) % 2 ^ 52 = 0
+  bnd : ∀ p < l.nl, 4 * M p ≤ 2 ^ (52 * l.S)
 
 /-- The number at offset `c` of prime `p`'s region: limbs of 52 bits, below `2 M p`. -/
 structure Good (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (m : Mem) (B : Addr) (M : Nat → Nat) (c p : Nat) : Prop where
@@ -41,28 +41,28 @@ theorem D_mul {p : Nat} (hp : p < 2) : l.D * p = 0 ∨ l.D * p = l.D := by
   rcases (by omega : p = 0 ∨ p = 1) with rfl | rfl <;> simp
 
 /-- A word of a region outside the windows. -/
-theorem Out2.word_at (hl : LayOk l) {B : Addr} {o n : Nat} {m m' : Mem} (h : Out2 l B o n m m') {p c : Nat}
-    (hp : p < 2) (hc : c + 8 ≤ o ∨ o + n ≤ c) (hcD : c + 8 ≤ l.D) (hoD : o + n ≤ l.D) :
+theorem Out2.word_at (hl : AmmOk l) {B : Addr} {o n : Nat} {m m' : Mem} (h : Out2 l B o n m m') {p c : Nat}
+    (hp : p < l.nl) (hc : c + 8 ≤ o ∨ o + n ≤ c) (hcD : c + 8 ≤ l.D) (hoD : o + n ≤ l.D) :
     word m' B (l.D * p + c) = word m B (l.D * p + c) := by
   have hD := hl.D_bounds
   refine (Mem.readW_congr fun i hi => (h _ fun p' hp' => ?_).symm).symm
-  rw [ofs_off B (by rcases D_mul (l := l) hp with h | h <;> omega)]
+  rw [ofs_off B (by rcases D_mulN hl hp with h | h <;> omega)]
   have : i < 8 := hi
-  rcases D_mul (l := l) hp with h1 | h1 <;> rcases D_mul (l := l) hp' with h2 | h2 <;> omega
+  rcases D_mulN hl hp with h1 | h1 <;> rcases D_mulN hl hp' with h2 | h2 <;> omega
 
-theorem Out2.limb (hl : LayOk l) {B : Addr} {o n : Nat} {m m' : Mem} (h : Out2 l B o n m m') {p c : Nat}
-    (hp : p < 2) (hc : c + l.NB ≤ o ∨ o + n ≤ c) (hcD : c + l.NB ≤ l.D) (hoD : o + n ≤ l.D) {j : Nat}
+theorem Out2.limb (hl : AmmOk l) {B : Addr} {o n : Nat} {m m' : Mem} (h : Out2 l B o n m m') {p c : Nat}
+    (hp : p < l.nl) (hc : c + l.NB ≤ o ∨ o + n ≤ c) (hcD : c + l.NB ≤ l.D) (hoD : o + n ≤ l.D) {j : Nat}
     (hj : j < l.L) : limb l m' B (l.D * p + c) j = limb l m B (l.D * p + c) j := by
-  have := off_lt hl hj
+  have := off_ltN hl hj
   show (word m' B _).toNat = (word m B _).toNat
   rw [Nat.add_assoc, h.word_at hl hp (by omega) (by omega) hoD]
 
-theorem Out2.val (hl : LayOk l) {B : Addr} {o n : Nat} {m m' : Mem} (h : Out2 l B o n m m') {p c : Nat}
-    (hp : p < 2) (hc : c + l.NB ≤ o ∨ o + n ≤ c) (hcD : c + l.NB ≤ l.D) (hoD : o + n ≤ l.D) :
+theorem Out2.val (hl : AmmOk l) {B : Addr} {o n : Nat} {m m' : Mem} (h : Out2 l B o n m m') {p c : Nat}
+    (hp : p < l.nl) (hc : c + l.NB ≤ o ∨ o + n ≤ c) (hcD : c + l.NB ≤ l.D) (hoD : o + n ≤ l.D) :
     val52 l m' B (l.D * p + c) = val52 l m B (l.D * p + c) := by
   unfold val52; exact lval_congr fun j hj => h.limb hl hp hc hcD hoD hj
 
-theorem Ar.of_out2 (hl : LayOk l) {m m' : Mem} {B : Addr} {M k : Nat → Nat} (a : Ar l m B M k) {o n : Nat}
+theorem Ar.of_out2 (hl : AmmOk l) {m m' : Mem} {B : Addr} {M k : Nat → Nat} (a : Ar l m B M k) {o n : Nat}
     (h : Out2 l B o n m m') (ho : l.oY ≤ o) (hoD : o + n ≤ l.D) : Ar l m' B M k := by
   have hD' := hl.D_ge
   have hc : ∀ c, c + l.NB ≤ l.NB → c + l.NB ≤ o ∨ o + n ≤ c := fun c hc => .inl (by simp only [Lay.oY] at ho; omega)
@@ -76,18 +76,18 @@ theorem Ar.of_out2 (hl : LayOk l) {m m' : Mem} {B : Addr} {M k : Nat → Nat} (a
       (by have := hl.bounds; simp only [Lay.L]; omega)]
     exact a.k0 p hp
 
-theorem Good.of_out2 (hl : LayOk l) {m m' : Mem} {B : Addr} {M : Nat → Nat} {c p : Nat} (g : Good l m B M c p)
-    (hp : p < 2) {o n : Nat} (h : Out2 l B o n m m') (hc : c + l.NB ≤ o ∨ o + n ≤ c) (hcD : c + l.NB ≤ l.D)
+theorem Good.of_out2 (hl : AmmOk l) {m m' : Mem} {B : Addr} {M : Nat → Nat} {c p : Nat} (g : Good l m B M c p)
+    (hp : p < l.nl) {o n : Nat} (h : Out2 l B o n m m') (hc : c + l.NB ≤ o ∨ o + n ≤ c) (hcD : c + l.NB ≤ l.D)
     (hoD : o + n ≤ l.D) : Good l m' B M c p :=
   ⟨fun j hj => by rw [h.limb hl hp hc hcD hoD hj]; exact g.lt j hj, by rw [h.val hl hp hc hcD hoD]; exact g.v⟩
 
 /-- `amm o a b` on good numbers. -/
-theorem amm2_ok (hl : LayOk l) {s : State} {B : Addr} {o a b : Nat} {M k : Nat → Nat}
-    (hB : s.gpr .rbx = B) (hs : Scr s B (2 * l.D)) (ar : Ar l s.mem B M k)
+theorem amm2_ok (hl : AmmOk l) {s : State} {B : Addr} {o a b : Nat} {M k : Nat → Nat}
+    (hB : s.gpr .rbx = B) (hs : Scr s B (l.nl * l.D)) (ar : Ar l s.mem B M k)
     (ho : o + l.NB ≤ l.D) (ho' : l.oY ≤ o) (ha : a + l.NB ≤ l.D) (hb : b + l.NB ≤ l.D)
-    (ga : ∀ p < 2, Good l s.mem B M a p) (gb : ∀ p < 2, Good l s.mem B M b p) :
+    (ga : ∀ p < l.nl, Good l s.mem B M a p) (gb : ∀ p < l.nl, Good l s.mem B M b p) :
     WP isa (amm l o a b) s fun s' =>
-      (∀ p < 2, Good l s'.mem B M o p ∧
+      (∀ p < l.nl, Good l s'.mem B M o p ∧
         val52 l s'.mem B (l.D * p + o) * 2 ^ (52 * l.S) % M p =
           val52 l s.mem B (l.D * p + a) * val52 l s.mem B (l.D * p + b) % M p) ∧
       Out2 l B o l.NB s.mem s'.mem ∧ Ar l s'.mem B M k ∧
@@ -104,13 +104,13 @@ theorem amm2_ok (hl : LayOk l) {s : State} {B : Addr} {o a b : Nat} {M k : Nat �
   exact ⟨⟨lt, v⟩, e⟩
 
 /-- The layout's multiplication on good numbers, `r8`, `r9`, `r11` at `a`, `b`, `o`. -/
-theorem ammCore2_ok (hl : LayOk l) {s : State} {B : Addr} {o a b : Nat} {M k : Nat → Nat}
+theorem ammCore2_ok (hl : AmmOk l) {s : State} {B : Addr} {o a b : Nat} {M k : Nat → Nat}
     (hB : s.gpr .rbx = B) (h8 : s.gpr .r8 = off B a) (h9 : s.gpr .r9 = off B b) (h11 : s.gpr .r11 = off B o)
-    (hs : Scr s B (2 * l.D)) (ar : Ar l s.mem B M k)
+    (hs : Scr s B (l.nl * l.D)) (ar : Ar l s.mem B M k)
     (ho : o + l.NB ≤ l.D) (ho' : l.oY ≤ o) (ha : a + l.NB ≤ l.D) (hb : b + l.NB ≤ l.D)
-    (ga : ∀ p < 2, Good l s.mem B M a p) (gb : ∀ p < 2, Good l s.mem B M b p) :
+    (ga : ∀ p < l.nl, Good l s.mem B M a p) (gb : ∀ p < l.nl, Good l s.mem B M b p) :
     WP isa (ammMul l) s fun s' =>
-      (∀ p < 2, Good l s'.mem B M o p ∧
+      (∀ p < l.nl, Good l s'.mem B M o p ∧
         val52 l s'.mem B (l.D * p + o) * 2 ^ (52 * l.S) % M p =
           val52 l s.mem B (l.D * p + a) * val52 l s.mem B (l.D * p + b) % M p) ∧
       Out2 l B o l.NB s.mem s'.mem ∧ Ar l s'.mem B M k ∧

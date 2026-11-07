@@ -31,24 +31,24 @@ meta import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 
 namespace VG.Proof.Ffdh.X86_64.DerivePublic
 
-open VG VG.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.MillerRabin.X86_64
+open VG VG.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.MillerRabin.X86_64 VG.Proof.Ffdh.X86_64
 
-theorem deriveInline_verified (v : RoundImpl) : Verified target (deriveInline v)
+theorem deriveInline_verified (v : RoundImpl) (e : ExpImpl) : Verified target (deriveInline v e)
     (Spec.Ffdh.derivePublicContract abi) := by
-  apply dv_verified v.mont (CrtExpL.w4 v.mont) (R2Impl.words v.mont) _ (deriveInline_mx v)
-  exact two_map id (fun _ _ h => h.1)
-    (crtExpLoop_ct v.mont CrtSel.sse CrtSel.sse_ct (by taint_decide))
+  have h := dv_verified v.mont (e.E v.mont) (R2Impl.words v.mont) (e.ctX v.mont)
+  rw [e.code_eq] at h
+  exact h (deriveInline_ctl v e)
 
 theorem dvSatisfiable8 : ∃ s, (Spec.Ffdh.derivePublicContract abi 8).pre s := by
   sig_implies_sat [Spec.Ffdh.derivePublicContract, Spec.Ffdh.derivePublicSig, abi, argRegs, stackArgs_three, List.append_eq, Spec.Ffdh.pLenValid, Spec.Ffdh.domainLenValid]
     [dvSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using dvSat
 
 /-- With calls of `v.mm`, which need 8 bytes of stack for the return address. -/
-theorem deriveCode_verified (v : RoundImpl) : Verified target (deriveCode v)
+theorem deriveCode_verified (v : RoundImpl) (e : ExpImpl) : Verified target (deriveCode v e)
     (Spec.Ffdh.derivePublicContract abi 8) := by
-  have hv := deriveInline_verified v
-  rw [← deriveCode_inline] at hv
-  refine Verified.of_inline_verified (deriveCode_inlineOk v) hv
+  have hv := deriveInline_verified v e
+  rw [← deriveCode_inline v e] at hv
+  refine Verified.of_inline_verified (deriveCode_inlineOk v e) hv
     ((Contract.Implies.refl hv.2.2).stack8_abi dvSatisfiable8) (fun _ h => Sig.clear_of_pre h)
     (fun s b hv u hs hp => ?_) (fun _ _ _ _ h => Sig.rsp_of_pub h)
   obtain ⟨-, -, hw, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hyl, -, -, -⟩ :=

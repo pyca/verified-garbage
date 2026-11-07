@@ -257,8 +257,7 @@ that read a key context compute with the hash subkey stored in it (`ctxH`)
 and, those that need the cipher, with the cipher it stores for the number of
 rounds `Nr` they take as an argument, which is public (`ctxCiph`), whatever
 the context holds: for a context that
-`vg_aes_gcm_init` wrote for `key` (`KeyRepr`), that is AES-GCM with `key`
-(`encryptWith_ctx`, `decryptWith_ctx`). -/
+`vg_aes_gcm_init` wrote for `key` (`KeyRepr`), that is AES-GCM with `key`. -/
 
 /-- The cipher of the key context at `p` for `nr` rounds: AES with `nr`
 rounds and the key schedule in its first `16 (nr + 1)` bytes. -/
@@ -273,29 +272,6 @@ schedule of `key` and the hash subkey `CIPH_K(0¹²⁸)`. -/
 def KeyRepr (m : Mem) (p : Addr) (key : List Byte) : Prop :=
   Aes.bytesAt m p (16 * (Aes.rounds (key.length / 4) + 1)) = Aes.expandKey key ∧
     ctxH m p = aes key 0
-
-/-- GCM-AE with the key context of `key`, for its number of rounds, is
-AES-GCM's with `key`. -/
-theorem encryptWith_ctx {m : Mem} {p : Addr} {key : List Byte} (hk : KeyRepr m p key)
-    (t : Nat) (iv pt a : List Byte) :
-    encryptWith (ctxCiph m p (Aes.rounds (key.length / 4))) (ctxH m p) t iv pt a =
-      aesGcmEncrypt key t iv pt a := by
-  unfold ctxCiph
-  rw [hk.1, hk.2]
-  rfl
-
-/-- GCM-AD with the key context of `key`, for its number of rounds, is
-AES-GCM's with `key`, for lengths that step 1 accepts. -/
-theorem decryptWith_ctx {m : Mem} {p : Addr} {key : List Byte} (hk : KeyRepr m p key)
-    (t : Nat) (iv c a tag : List Byte)
-    (hs : supported iv.length c.length a.length = true) (ht : tag.length = t) :
-    decryptWith (ctxCiph m p (Aes.rounds (key.length / 4))) (ctxH m p) t iv c a tag =
-      aesGcmDecrypt key t iv c a tag := by
-  unfold ctxCiph
-  rw [hk.1, hk.2, aesGcmDecrypt, decrypt_eq, hs, ht]
-  simp only [Bool.not_true, Bool.false_or, ne_eq, not_true_eq_false, decide_false,
-    Bool.false_eq_true, ↓reduceIte]
-  rfl
 
 /-! ## Streaming
 

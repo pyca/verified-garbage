@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZR
-public import VerifiedGarbage.Impl.Gcm.X86_64.StitchFrom
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchToDec
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx
 public import VerifiedGarbage.Impl.Aes.X86_64.VaesZH
 
@@ -251,14 +251,14 @@ def decR : Prog isa :=
 /-! ## Out of place -/
 
 /-- `StitchZR.setupP` out of place: `src` in `rdx` and `dst - src` in `r8`
-(`StitchFrom.setupCFrom`). -/
-def setupPFrom : List Instr :=
-  StitchZR.setupGP ++ Stitch.storesK .r11 Stitch.pregs 0 ++ StitchFrom.setupCFrom ++ StitchZ.setupZ
+(`StitchToDec.setupCToDec`). -/
+def setupPToDec : List Instr :=
+  StitchZR.setupGP ++ Stitch.storesK .r11 Stitch.pregs 0 ++ StitchToDec.setupCToDec ++ StitchZ.setupZ
 
-/-- `decR`'s loops, out of place (`StitchFrom.decR`'s arguments): `n` blocks,
+/-- `decR`'s loops, out of place (`StitchToDec.decToR`'s arguments): `n` blocks,
 a multiple of 16, from 16 on, read at `src` and written to `dst`. -/
-def decFromR : Prog isa :=
-  .seq (.seq (.block setupPFrom) Aes.X86_64.VaesZH.loadKeys)
+def decToR : Prog isa :=
+  .seq (.seq (.block setupPToDec) Aes.X86_64.VaesZH.loadKeys)
     (.seq (.block [.alu .cmp .r9 (.imm bigMinP)])
       (.seq (.ite .b (.block []) (bigDP true))
         (.seq (.block [.alu .cmp .r9 (.imm 16)])

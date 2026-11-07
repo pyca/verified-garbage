@@ -174,7 +174,6 @@ structure Kept (rs : List Region) (s s' : State) : Prop where
   frame : Frame rs s.mem s'.mem
 
 theorem block_noCalls : Impl.ChaCha20.Arm.block.noCalls = true := by lit_decide
-theorem xor_noFrames : Impl.ChaCha20.Arm.Xor.xor.noFrames = true := by lit_decide
 
 theorem block_call {s : State} {S B : BitVec 32} (h0 : s.gpr .r0 = S) (h1 : s.gpr .r1 = B)
     (hdj : (⟨State.addr B, 256⟩ : Region).Disjoint ⟨State.addr S, 64⟩)
@@ -196,14 +195,10 @@ theorem block_call {s : State} {S B : BitVec 32} (h0 : s.gpr .r0 = S) (h1 : s.gp
       State.callEntry_mem, State.callEntry_gpr s (by decide : Reg.r0 ∉ linkRegs),
       State.callEntry_gpr s (by decide : Reg.r1 ∉ linkRegs), h0, h1] using hpost
 
-/-- `vg_chacha20_xor`'s contract, with what its proof shows of `r0` and `r1`
-on return. -/
-def xorK : Contract isa :=
-  { Proof.ChaCha20.xorArm with
-    post := fun s s' => Proof.ChaCha20.xorArm.post s s' ∧ s'.gpr .r0 = s.gpr .r0 ∧ s'.gpr .r1 = s.gpr .r3 }
-
+/-- A call of `vg_chacha20_xor` in place (`dst = src` in `r5`), through
+`Xor.xor_call`. -/
 theorem xor_call {s : State} {S D B : BitVec 32} {n : Nat} (h0 : s.gpr .r0 = S) (h1 : s.gpr .r1 = D)
-    (h2 : s.gpr .r2 = BitVec.ofNat 32 n) (h3 : s.gpr .r3 = B) (hn : n < 2 ^ 32)
+    (h2 : s.gpr .r2 = BitVec.ofNat 32 n) (h3 : s.gpr .r3 = B) (h5 : s.gpr .r5 = D) (hn : n < 2 ^ 32)
     (hSD : (⟨State.addr S, 64⟩ : Region).Disjoint ⟨State.addr D, n⟩)
     (hSB : (⟨State.addr S, 64⟩ : Region).Disjoint ⟨State.addr B, 320⟩)
     (hDB : (⟨State.addr D, n⟩ : Region).Disjoint ⟨State.addr B, 320⟩)
@@ -215,23 +210,9 @@ theorem xor_call {s : State} {S D B : BitVec 32} {n : Nat} (h0 : s.gpr .r0 = S) 
       bytesAt s'.mem (State.addr D) n =
         List.zipWith (· ^^^ ·) (bytesAt s.mem (State.addr D) n) (keystream (stateAt s.mem (State.addr S)) n) →
       Q s') :
-    WP isa (.call "vg_chacha20_xor" Impl.ChaCha20.Arm.Xor.xor) s Q := by
-  have hn' : (BitVec.ofNat 32 n).toNat = n := by
-    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt hn
-  refine WP.callCalls (k := xorK) (fun s hs => Proof.ChaCha20.Arm.Xor.xor_regs s hs)
-    (rd := []) (wr := [⟨State.addr S, 64⟩, ⟨State.addr D, n⟩, ⟨State.addr B, 320⟩]) ?_ hc hw ?_
-    xor_noFrames
-  · simp only [xorK, Proof.ChaCha20.xorArm, State.withRegions_gpr, State.withRegions_rd,
-      State.withRegions_wr, State.callEntry_gpr s (by decide : Reg.r0 ∉ linkRegs),
-      State.callEntry_gpr s (by decide : Reg.r1 ∉ linkRegs), State.callEntry_gpr s (by decide : Reg.r2 ∉ linkRegs),
-      State.callEntry_gpr s (by decide : Reg.r3 ∉ linkRegs), h0, h1, h2, h3, hn']
-    exact ⟨trivial, trivial, hSD, hSB, hDB, hS, hD, hB⟩
-  · intro s' hrd hwr hsp hf hcs _ hpost
-    simp only [xorK, Proof.ChaCha20.xorArm, State.withRegions_gpr, State.withRegions_mem,
-      State.callEntry_mem, State.callEntry_gpr s (by decide : Reg.r0 ∉ linkRegs),
-      State.callEntry_gpr s (by decide : Reg.r1 ∉ linkRegs), State.callEntry_gpr s (by decide : Reg.r2 ∉ linkRegs),
-      h0, h1, h2, hn'] at hpost
-    exact hQ s' ⟨hcs, hsp, hrd, hwr, hf⟩ hpost.1
+    WP isa (.call "vg_chacha20_xor" Impl.ChaCha20.Arm.Xor.xor) s Q :=
+  Proof.ChaCha20.Arm.Xor.xor_call h0 h1 h2 h3 h5 hn hSD hSB hDB hS hD hB hc hw
+    fun s' hrd hwr hsp hf hcs _ hpost => hQ s' ⟨hcs, hsp, hrd, hwr, hf⟩ hpost
 
 /-- The regions of the call of `vg_chacha20_xor`: the copy of the state,
 the data and the working space. -/

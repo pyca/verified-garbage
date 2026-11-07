@@ -2127,7 +2127,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ BMI2, ADX</td>
+<td>✅ AVX-512F, AVX-512 IFMA, AVX-512VL, AVX, BMI2, ADX</td>
 
 <td>✅</td>
 

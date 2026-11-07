@@ -57,11 +57,11 @@ theorem bv_congr {m m' : Mem} {F : Addr} {o : Nat} :
     rw [bv, bv, bv_congr n fun i hi => h i (by omega_arith), h n (by omega_arith)]
 
 /-- The layouts' groups: `P = w G`, `ND = 8 G`. -/
-theorem lay_groups (hl : LayOk l) : l.P = l.w * (l.P / l.w) ∧ l.ND = 8 * (l.P / l.w) := by
-  rcases hl with rfl | rfl | rfl <;> decide
+theorem lay_groups (hl : AmmOk l) : l.P = l.w * (l.P / l.w) ∧ l.ND = 8 * (l.P / l.w) := by
+  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide
 
 /-- Digit `8 g + t` of the padded exponent is digit `t` of group `g`'s value. -/
-theorem digit_group (hl : LayOk l) {m : Mem} {F : Addr} {o g t : Nat} (hg : g < l.P / l.w) (ht : t < 8) :
+theorem digit_group (hl : AmmOk l) {m : Mem} {F : Addr} {o g t : Nat} (hg : g < l.P / l.w) (ht : t < 8) :
     digit l (bv m F o l.P) (8 * g + t) = bv m F (o + l.w * g) l.w / l.T ^ (7 - t) % l.T := by
   obtain ⟨hP, hN⟩ := lay_groups hl
   generalize hG : l.P / l.w = G at hP hN hg
@@ -103,7 +103,7 @@ theorem bv_byte (m : Mem) (F : Addr) (o : Nat) {n j : Nat} (hj : j < n) :
 
 /-- With windows of 4 bits, digit `i` of the padded exponent's value is a
 nibble of byte `i / 2` (`nibOf`), as the windows read it without `recode`. -/
-theorem digit_nib (hl : LayOk l) (hw : l.w = 4) {m : Mem} {F : Addr} {o i : Nat} (hi : i < l.ND) :
+theorem digit_nib (hl : AmmOk l) (hw : l.w = 4) {m : Mem} {F : Addr} {o i : Nat} (hi : i < l.ND) :
     digit l (bv m F o l.P) i = nibOf l i (m (off F (o + i / 2))).toNat := by
   obtain ⟨hP, hN⟩ := lay_groups hl
   have hg : i / 8 < l.P / l.w := by omega_arith
@@ -178,7 +178,7 @@ def dgtCode (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (t : Nat) : List Instr :=
   [.mov .rdx (.reg .rax)] ++ (if t = 7 then [] else [.shift .shr .rdx (l.w * (7 - t))]) ++
     [.alu .and .rdx (.imm (BitVec.ofNat 32 (l.T - 1))), .store8 (at_ .r9 t) .rdx]
 
-theorem digit_byte (hl : LayOk l) {v k : Nat} (hv : v < 2 ^ 64) :
+theorem digit_byte (hl : AmmOk l) {v k : Nat} (hv : v < 2 ^ 64) :
     ((BitVec.ofNat 64 v >>> k &&& (BitVec.ofNat 32 (l.T - 1)).signExtend 64).setWidth 8) =
       BitVec.ofNat 8 (v / 2 ^ k % l.T) := by
   have hT := hl.T_bounds
@@ -190,7 +190,7 @@ theorem digit_byte (hl : LayOk l) {v k : Nat} (hv : v < 2 ^ 64) :
     Nat.shiftRight_eq_div_pow, show l.T - 1 = 2 ^ l.w - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
   rfl
 
-theorem digStep_ok (hl : LayOk l) {s : State} {Y : Addr} {v t : Nat} (hv : v < 2 ^ 64) (ht : t < 8)
+theorem digStep_ok (hl : AmmOk l) {s : State} {Y : Addr} {v t : Nat} (hv : v < 2 ^ 64) (ht : t < 8)
     (h9 : s.gpr .r9 = Y) (hra : s.gpr .rax = BitVec.ofNat 64 v) (hwr : InRegions s.wr (Y + BitVec.ofNat 64 t) 1) :
     WP isa (.block (dgtCode l t)) s fun s' =>
       s'.mem = s.mem.writeW (Y + BitVec.ofNat 64 t) (BitVec.ofNat 8 (v / l.T ^ (7 - t) % l.T)) ∧
@@ -223,7 +223,7 @@ theorem digStep_ok (hl : LayOk l) {s : State} {Y : Addr} {v t : Nat} (hv : v < 2
       all_goals rfl) rfl) fun s' ⟨⟨a, b⟩, k⟩ => ⟨a, k, b⟩
 
 /-- The first `n ≤ 8` digits of the group's value `v` (in `rax`) to `off F o` (`r9`). -/
-theorem digits_ok (hl : LayOk l) {F : Addr} {o v : Nat} (hv : v < 2 ^ 64) (hF : o + 8 < 2 ^ 64) :
+theorem digits_ok (hl : AmmOk l) {F : Addr} {o v : Nat} (hv : v < 2 ^ 64) (hF : o + 8 < 2 ^ 64) :
     ∀ {n : Nat} {s : State}, n ≤ 8 → s.gpr .r9 = off F o → s.gpr .rax = BitVec.ofNat 64 v →
       (∀ t < n, InRegions s.wr (off F (o + t)) 1) →
       WP isa (.block ((List.range n).flatMap (dgtCode l))) s fun s' =>
@@ -269,7 +269,7 @@ theorem recodeBody_eq : recodeBody l = ([.mov32 .rax (.imm 0)] : List Instr) ++ 
   rw [recodeBody, List.append_assoc, List.append_assoc]; rfl
 
 /-- Group `g`. -/
-theorem recIter_ok (hl : LayOk l) {s₀ t : State} {F : Addr} {e d g : Nat} (hg : g < l.P / l.w)
+theorem recIter_ok (hl : AmmOk l) {s₀ t : State} {F : Addr} {e d g : Nat} (hg : g < l.P / l.w)
     (hed : e + l.P ≤ d) (hd : d + l.ND < 2 ^ 63)
     (hrd : ∀ i < l.P, InRegions (s₀.rd ++ s₀.wr) (off F (e + i)) 1)
     (hwr : ∀ i < l.ND, InRegions s₀.wr (off F (d + i)) 1) (h : RecInv l s₀ F e d g t) :
@@ -303,7 +303,7 @@ theorem recIter_ok (hl : LayOk l) {s₀ t : State} {F : Addr} {e d g : Nat} (hg 
   have h9₂ : u₂.gpr .r9 = off F (d + 8 * g) := by rw [k₂.gpr (by decide)]; exact h9
   have hc₂ : u₂.gpr .rcx = BitVec.ofNat 64 (l.P / l.w - g) := by
     rw [k₂.gpr (by decide), k₁.gpr (by decide), k.gpr (by decide)]; exact h.rcx
-  have hG : l.P / l.w < 2 ^ 31 := by rcases hl with rfl | rfl | rfl <;> decide
+  have hG : l.P / l.w < 2 ^ 31 := by rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide
   refine WP.mono (VG.Proof.MlKem.X86_64.WP.keep [.rcx, .r8, .r9] (Q := fun u' =>
     u'.gpr .r8 = off F (e + l.w * (g + 1)) ∧ u'.gpr .r9 = off F (d + 8 * (g + 1)) ∧
       u'.gpr .rcx = BitVec.ofNat 64 (l.P / l.w - (g + 1)) ∧ u'.zf = some (decide (g + 1 = l.P / l.w)) ∧
@@ -342,19 +342,19 @@ theorem recIter_ok (hl : LayOk l) {s₀ t : State} {F : Addr} {e d g : Nat} (hg 
     exact (h.out.mono (Nat.le_refl _) (by omega_arith)).trans (o₂'.mono (by omega_arith) (by omega_arith))
 
 /-- The loop over the groups. -/
-theorem recLoop_ok (hl : LayOk l) {s₀ : State} {F : Addr} {e d : Nat}
+theorem recLoop_ok (hl : AmmOk l) {s₀ : State} {F : Addr} {e d : Nat}
     (hed : e + l.P ≤ d) (hd : d + l.ND < 2 ^ 63)
     (hrd : ∀ i < l.P, InRegions (s₀.rd ++ s₀.wr) (off F (e + i)) 1)
     (hwr : ∀ i < l.ND, InRegions s₀.wr (off F (d + i)) 1) (h : RecInv l s₀ F e d 0 s₀) :
     WP isa (.loop (.block (recodeBody l)) .ne) s₀ (RecInv l s₀ F e d (l.P / l.w)) :=
-  wp_upto (a := 0) (N := l.P / l.w) (by rcases hl with rfl | rfl | rfl <;> decide) (fun g t => RecInv l s₀ F e d g t)
+  wp_upto (a := 0) (N := l.P / l.w) (by rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide) (fun g t => RecInv l s₀ F e d g t)
     (fun _ _ hg t hI => recIter_ok hl hg hed hd hrd hwr hI) (fun _ hI => hI) h
 
 /-! ## A region's digits -/
 
 /-- `recode l p`: the digits of the padded exponent of region `p` of the
 area `F` (in the header's slot `sIfma`, `rdi = W`). -/
-theorem recode_ok (hl : LayOk l) (hw : l.w ≠ 4) {s : State} {W F : Addr} {p : Nat} (hp : p < 2) (hdi : s.gpr .rdi = W)
+theorem recode_ok (hl : AmmOk l) (hw : l.w ≠ 4) {s : State} {W F : Addr} {p : Nat} (hp : p < l.nl) (hdi : s.gpr .rdi = W)
     (hia : InRegions (s.rd ++ s.wr) (off W (8 * sIfma)) 8) (hiv : word s.mem W (8 * sIfma) = F)
     (hn : l.D * p + l.oK1 < 2 ^ 63)
     (hrd : ∀ i < l.P, InRegions (s.rd ++ s.wr) (off F (l.D * p + l.oE + i)) 1)
@@ -366,13 +366,13 @@ theorem recode_ok (hl : LayOk l) (hw : l.w ≠ 4) {s : State} {W F : Addr} {p : 
   obtain ⟨hP, hN⟩ := lay_groups hl
   obtain ⟨d1, d2⟩ := lay_oD l hw
   have hD := hl.D_bounds
-  have hG : l.P / l.w < 2 ^ 31 := by rcases hl with rfl | rfl | rfl <;> decide
+  have hG : l.P / l.w < 2 ^ 31 := by rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide
   have he : l.D * p + l.oE < 2 ^ 31 := by
     obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
-    rcases D_mul (l := l) hp with h | h <;> omega_using [h, hD, o6, o10]
+    rcases D_mulN hl hp with h | h <;> omega_using [h, hD, o6, o10]
   have hd : l.D * p + l.oD < 2 ^ 31 := by
     obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
-    rcases D_mul (l := l) hp with h | h <;> omega_using [h, hD, d2, o7, o10]
+    rcases D_mulN hl hp with h | h <;> omega_using [h, hD, d2, o7, o10]
   refine WP.seq (WP.mono (VG.Proof.MlKem.X86_64.WP.keep [.rcx, .r8, .r9] (Q := fun t =>
     t.gpr .r8 = off F (l.D * p + l.oE) ∧ t.gpr .r9 = off F (l.D * p + l.oD) ∧
       t.gpr .rcx = BitVec.ofNat 64 (l.P / l.w) ∧ t.mem = s.mem ∧ t.mxcsr = s.mxcsr) (by
