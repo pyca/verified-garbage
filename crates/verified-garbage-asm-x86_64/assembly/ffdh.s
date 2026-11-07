@@ -2703,23 +2703,28 @@ vg_ffdh_generate_parameters_adx:
 	cmp r14, r12
 	jne 213b
 	mov rdx, rsi
-	mov esi, 0
-	mov ebx, 255
-	mov r13d, 64
-214:
-	add rdx, rdx
-	adc rsi, rsi
-	sbb rcx, rcx
-	mov rax, rsi
-	sub rax, rbx
-	sbb rbp, rbp
-	xor rbp, -1
-	or rcx, rbp
-	xor rax, rsi
-	and rax, rcx
-	xor rsi, rax
-	sub r13, 1
-	jne 214b
+	shl rdx, 32
+	shr rdx, 32
+	shr rsi, 32
+	add rsi, rdx
+	mov rdx, rsi
+	shl rdx, 48
+	shr rdx, 48
+	shr rsi, 16
+	add rsi, rdx
+	mov rdx, rsi
+	shl rdx, 56
+	shr rdx, 56
+	shr rsi, 8
+	add rsi, rdx
+	mov rdx, rsi
+	shl rdx, 56
+	shr rdx, 56
+	shr rsi, 8
+	add rsi, rdx
+	mov rdx, rsi
+	sub rdx, 255
+	cmovae rsi, rdx
 	mov eax, 0
 	mov ecx, 1
 	cmp rsi, 2
@@ -2794,7 +2799,7 @@ vg_ffdh_generate_parameters_adx:
 	mov r8, QWORD PTR [rdi+64]
 	mov esi, 0
 	mov r14d, 0
-215:
+214:
 	mov rax, r12
 	sub rax, 1
 	sub rax, r14
@@ -2802,25 +2807,30 @@ vg_ffdh_generate_parameters_adx:
 	adc rsi, 0
 	add r14, 1
 	cmp r14, r12
-	jne 215b
+	jne 214b
 	mov rdx, rsi
-	mov esi, 0
-	mov ebx, 255
-	mov r13d, 64
-216:
-	add rdx, rdx
-	adc rsi, rsi
-	sbb rcx, rcx
-	mov rax, rsi
-	sub rax, rbx
-	sbb rbp, rbp
-	xor rbp, -1
-	or rcx, rbp
-	xor rax, rsi
-	and rax, rcx
-	xor rsi, rax
-	sub r13, 1
-	jne 216b
+	shl rdx, 32
+	shr rdx, 32
+	shr rsi, 32
+	add rsi, rdx
+	mov rdx, rsi
+	shl rdx, 48
+	shr rdx, 48
+	shr rsi, 16
+	add rsi, rdx
+	mov rdx, rsi
+	shl rdx, 56
+	shr rdx, 56
+	shr rsi, 8
+	add rsi, rdx
+	mov rdx, rsi
+	shl rdx, 56
+	shr rdx, 56
+	shr rsi, 8
+	add rsi, rdx
+	mov rdx, rsi
+	sub rdx, 255
+	cmovae rsi, rdx
 	mov eax, 0
 	mov ecx, 1
 	cmp rsi, 2
@@ -2920,19 +2930,19 @@ vg_ffdh_generate_parameters_adx:
 	cmovne rax, rcx
 	cmp rax, 1
 212:
-	je 217f
+	je 215f
 	mov rdi, QWORD PTR [rdi+128]
 	mov eax, 2
 	mov QWORD PTR [rdi+152], rax
-	jmp 218f
-217:
+	jmp 216f
+215:
 	mov rax, QWORD PTR [rdi+64]
 	mov rax, QWORD PTR [rax]
 	and rax, 1
 	cmp rax, 1
-	je 219f
-	jmp 220f
-219:
+	je 217f
+	jmp 218f
+217:
 	mov rax, QWORD PTR [rdi+128]
 	mov rdx, QWORD PTR [rax+72]
 	mov rax, QWORD PTR [rdi+48]
@@ -3459,16 +3469,16 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rbx+2040], rax
 	mov eax, 128
 	cmp rdx, 1025
-	jb 221f
+	jb 219f
 	mov eax, 256
-	jmp 222f
-221:
-222:
+	jmp 220f
+219:
+220:
 	mov QWORD PTR [rdi+208], rax
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
 	mov r13d, 0
-223:
+221:
 	mov rax, QWORD PTR [rdi+48]
 	add rax, 2
 	add rax, rax
@@ -3482,6 +3492,162 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rbx+r13*8]
 	mov QWORD PTR [rdi+216], rax
 	mov rbx, QWORD PTR [rdi+216]
+	and rbx, 65535
+	mov rcx, rbx
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov r15d, 0
+	sub r15, rcx
+	mov r12, QWORD PTR [rdi+48]
+	mov r8, QWORD PTR [rdi+64]
+	mov ebp, 0
+	mov r14, 0
+222:
+	mov rsi, QWORD PTR [r8+r14*8]
+	mov eax, esi
+	add rax, rbp
+	mov rcx, rax
+	mul r15
+	mov eax, eax
+	mul rbx
+	add rax, rcx
+	shr rax, 32
+	mov rbp, rax
+	mov rax, rsi
+	shr rax, 32
+	add rax, rbp
+	mov rcx, rax
+	mul r15
+	mov eax, eax
+	mul rbx
+	add rax, rcx
+	shr rax, 32
+	mov rbp, rax
+	add r14, 1
+	cmp r14, r12
+	jne 222b
+	mov rax, rbp
+	cmp rax, 1
+	sbb rdx, rdx
+	xor rax, rbx
+	cmp rax, 1
+	sbb rcx, rcx
+	or rdx, rcx
+	or rdx, QWORD PTR [rdi+224]
+	mov QWORD PTR [rdi+224], rdx
+	mov rbx, QWORD PTR [rdi+216]
+	shr rbx, 16
+	and rbx, 65535
+	mov rcx, rbx
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov r15d, 0
+	sub r15, rcx
+	mov r12, QWORD PTR [rdi+48]
+	mov r8, QWORD PTR [rdi+64]
+	mov ebp, 0
+	mov r14, 0
+223:
+	mov rsi, QWORD PTR [r8+r14*8]
+	mov eax, esi
+	add rax, rbp
+	mov rcx, rax
+	mul r15
+	mov eax, eax
+	mul rbx
+	add rax, rcx
+	shr rax, 32
+	mov rbp, rax
+	mov rax, rsi
+	shr rax, 32
+	add rax, rbp
+	mov rcx, rax
+	mul r15
+	mov eax, eax
+	mul rbx
+	add rax, rcx
+	shr rax, 32
+	mov rbp, rax
+	add r14, 1
+	cmp r14, r12
+	jne 223b
+	mov rax, rbp
+	cmp rax, 1
+	sbb rdx, rdx
+	xor rax, rbx
+	cmp rax, 1
+	sbb rcx, rcx
+	or rdx, rcx
+	or rdx, QWORD PTR [rdi+224]
+	mov QWORD PTR [rdi+224], rdx
+	mov rbx, QWORD PTR [rdi+216]
+	shr rbx, 32
 	and rbx, 65535
 	mov rcx, rbx
 	mov rax, rbx
@@ -3559,7 +3725,7 @@ vg_ffdh_generate_parameters_adx:
 	or rdx, QWORD PTR [rdi+224]
 	mov QWORD PTR [rdi+224], rdx
 	mov rbx, QWORD PTR [rdi+216]
-	shr rbx, 16
+	shr rbx, 48
 	and rbx, 65535
 	mov rcx, rbx
 	mov rax, rbx
@@ -3636,175 +3802,19 @@ vg_ffdh_generate_parameters_adx:
 	or rdx, rcx
 	or rdx, QWORD PTR [rdi+224]
 	mov QWORD PTR [rdi+224], rdx
-	mov rbx, QWORD PTR [rdi+216]
-	shr rbx, 32
-	and rbx, 65535
-	mov rcx, rbx
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov r15d, 0
-	sub r15, rcx
-	mov r12, QWORD PTR [rdi+48]
-	mov r8, QWORD PTR [rdi+64]
-	mov ebp, 0
-	mov r14, 0
-226:
-	mov rsi, QWORD PTR [r8+r14*8]
-	mov eax, esi
-	add rax, rbp
-	mov rcx, rax
-	mul r15
-	mov eax, eax
-	mul rbx
-	add rax, rcx
-	shr rax, 32
-	mov rbp, rax
-	mov rax, rsi
-	shr rax, 32
-	add rax, rbp
-	mov rcx, rax
-	mul r15
-	mov eax, eax
-	mul rbx
-	add rax, rcx
-	shr rax, 32
-	mov rbp, rax
-	add r14, 1
-	cmp r14, r12
-	jne 226b
-	mov rax, rbp
-	cmp rax, 1
-	sbb rdx, rdx
-	xor rax, rbx
-	cmp rax, 1
-	sbb rcx, rcx
-	or rdx, rcx
-	or rdx, QWORD PTR [rdi+224]
-	mov QWORD PTR [rdi+224], rdx
-	mov rbx, QWORD PTR [rdi+216]
-	shr rbx, 48
-	and rbx, 65535
-	mov rcx, rbx
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov r15d, 0
-	sub r15, rcx
-	mov r12, QWORD PTR [rdi+48]
-	mov r8, QWORD PTR [rdi+64]
-	mov ebp, 0
-	mov r14, 0
-227:
-	mov rsi, QWORD PTR [r8+r14*8]
-	mov eax, esi
-	add rax, rbp
-	mov rcx, rax
-	mul r15
-	mov eax, eax
-	mul rbx
-	add rax, rcx
-	shr rax, 32
-	mov rbp, rax
-	mov rax, rsi
-	shr rax, 32
-	add rax, rbp
-	mov rcx, rax
-	mul r15
-	mov eax, eax
-	mul rbx
-	add rax, rcx
-	shr rax, 32
-	mov rbp, rax
-	add r14, 1
-	cmp r14, r12
-	jne 227b
-	mov rax, rbp
-	cmp rax, 1
-	sbb rdx, rdx
-	xor rax, rbx
-	cmp rax, 1
-	sbb rcx, rcx
-	or rdx, rcx
-	or rdx, QWORD PTR [rdi+224]
-	mov QWORD PTR [rdi+224], rdx
 	add r13, 1
 	mov rax, QWORD PTR [rdi+208]
 	cmp r13, rax
-	jne 223b
+	jne 221b
 	mov rax, QWORD PTR [rdi+224]
 	test rax, rax
-220:
-	je 228f
+218:
+	je 226f
 	mov rdi, QWORD PTR [rdi+128]
 	mov eax, 2
 	mov QWORD PTR [rdi+152], rax
-	jmp 229f
-228:
+	jmp 227f
+226:
 	mov rdi, QWORD PTR [rdi+128]
 	mov rbp, rdi
 	mov rax, QWORD PTR [rdi+48]
@@ -3812,7 +3822,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rdi, rax
 	mov r10, rdi
 	mov r8d, 0
-230:
+228:
 	movzx eax, BYTE PTR [r10]
 	mov rdx, rax
 	shr rax, 1
@@ -3823,7 +3833,7 @@ vg_ffdh_generate_parameters_adx:
 	mov r8, rdx
 	add r10, 1
 	sub rcx, 1
-	jne 230b
+	jne 228b
 	mov rdi, rbp
 	mov rdx, QWORD PTR [rdi+72]
 	sub rdx, 1
@@ -3844,11 +3854,11 @@ vg_ffdh_generate_parameters_adx:
 	add r12, 7
 	shr r12, 3
 	cmp r12, 2
-	jb 231f
-	jmp 232f
-231:
+	jb 229f
+	jmp 230f
+229:
 	mov r12d, 2
-232:
+230:
 	mov rsi, rdi
 	mov rdi, rax
 	mov QWORD PTR [rdi+128], rsi
@@ -3885,7 +3895,7 @@ vg_ffdh_generate_parameters_adx:
 	mov eax, 0
 	mov rdx, rcx
 	mov r14, rsi
-233:
+231:
 	sub rdx, 1
 	ror rax, 56
 	movzx ebp, BYTE PTR [r14]
@@ -3893,23 +3903,23 @@ vg_ffdh_generate_parameters_adx:
 	add r14, 1
 	mov rbp, rdx
 	and rbp, 7
-	je 234f
-	jmp 235f
-234:
+	je 232f
+	jmp 233f
+232:
 	mov rbp, rdx
 	shr rbp, 3
 	mov QWORD PTR [rbx+rbp*8], rax
 	mov eax, 0
-235:
+233:
 	test rdx, rdx
-	jne 233b
+	jne 231b
 	mov rax, QWORD PTR [rdi+64]
 	mov rax, QWORD PTR [rax]
 	and rax, 1
 	cmp rax, 1
-	je 236f
-	jmp 237f
-236:
+	je 234f
+	jmp 235f
+234:
 	mov rax, QWORD PTR [rdi+128]
 	mov rdx, QWORD PTR [rax+72]
 	mov rax, QWORD PTR [rdi+48]
@@ -4436,16 +4446,16 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rbx+2040], rax
 	mov eax, 128
 	cmp rdx, 1025
-	jb 238f
+	jb 236f
 	mov eax, 256
-	jmp 239f
-238:
-239:
+	jmp 237f
+236:
+237:
 	mov QWORD PTR [rdi+208], rax
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
 	mov r13d, 0
-240:
+238:
 	mov rax, QWORD PTR [rdi+48]
 	add rax, 2
 	add rax, rax
@@ -4459,6 +4469,162 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rbx+r13*8]
 	mov QWORD PTR [rdi+216], rax
 	mov rbx, QWORD PTR [rdi+216]
+	and rbx, 65535
+	mov rcx, rbx
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov r15d, 0
+	sub r15, rcx
+	mov r12, QWORD PTR [rdi+48]
+	mov r8, QWORD PTR [rdi+64]
+	mov ebp, 0
+	mov r14, 0
+239:
+	mov rsi, QWORD PTR [r8+r14*8]
+	mov eax, esi
+	add rax, rbp
+	mov rcx, rax
+	mul r15
+	mov eax, eax
+	mul rbx
+	add rax, rcx
+	shr rax, 32
+	mov rbp, rax
+	mov rax, rsi
+	shr rax, 32
+	add rax, rbp
+	mov rcx, rax
+	mul r15
+	mov eax, eax
+	mul rbx
+	add rax, rcx
+	shr rax, 32
+	mov rbp, rax
+	add r14, 1
+	cmp r14, r12
+	jne 239b
+	mov rax, rbp
+	cmp rax, 1
+	sbb rdx, rdx
+	xor rax, rbx
+	cmp rax, 1
+	sbb rcx, rcx
+	or rdx, rcx
+	or rdx, QWORD PTR [rdi+224]
+	mov QWORD PTR [rdi+224], rdx
+	mov rbx, QWORD PTR [rdi+216]
+	shr rbx, 16
+	and rbx, 65535
+	mov rcx, rbx
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov r15d, 0
+	sub r15, rcx
+	mov r12, QWORD PTR [rdi+48]
+	mov r8, QWORD PTR [rdi+64]
+	mov ebp, 0
+	mov r14, 0
+240:
+	mov rsi, QWORD PTR [r8+r14*8]
+	mov eax, esi
+	add rax, rbp
+	mov rcx, rax
+	mul r15
+	mov eax, eax
+	mul rbx
+	add rax, rcx
+	shr rax, 32
+	mov rbp, rax
+	mov rax, rsi
+	shr rax, 32
+	add rax, rbp
+	mov rcx, rax
+	mul r15
+	mov eax, eax
+	mul rbx
+	add rax, rcx
+	shr rax, 32
+	mov rbp, rax
+	add r14, 1
+	cmp r14, r12
+	jne 240b
+	mov rax, rbp
+	cmp rax, 1
+	sbb rdx, rdx
+	xor rax, rbx
+	cmp rax, 1
+	sbb rcx, rcx
+	or rdx, rcx
+	or rdx, QWORD PTR [rdi+224]
+	mov QWORD PTR [rdi+224], rdx
+	mov rbx, QWORD PTR [rdi+216]
+	shr rbx, 32
 	and rbx, 65535
 	mov rcx, rbx
 	mov rax, rbx
@@ -4536,7 +4702,7 @@ vg_ffdh_generate_parameters_adx:
 	or rdx, QWORD PTR [rdi+224]
 	mov QWORD PTR [rdi+224], rdx
 	mov rbx, QWORD PTR [rdi+216]
-	shr rbx, 16
+	shr rbx, 48
 	and rbx, 65535
 	mov rcx, rbx
 	mov rax, rbx
@@ -4613,175 +4779,19 @@ vg_ffdh_generate_parameters_adx:
 	or rdx, rcx
 	or rdx, QWORD PTR [rdi+224]
 	mov QWORD PTR [rdi+224], rdx
-	mov rbx, QWORD PTR [rdi+216]
-	shr rbx, 32
-	and rbx, 65535
-	mov rcx, rbx
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov r15d, 0
-	sub r15, rcx
-	mov r12, QWORD PTR [rdi+48]
-	mov r8, QWORD PTR [rdi+64]
-	mov ebp, 0
-	mov r14, 0
-243:
-	mov rsi, QWORD PTR [r8+r14*8]
-	mov eax, esi
-	add rax, rbp
-	mov rcx, rax
-	mul r15
-	mov eax, eax
-	mul rbx
-	add rax, rcx
-	shr rax, 32
-	mov rbp, rax
-	mov rax, rsi
-	shr rax, 32
-	add rax, rbp
-	mov rcx, rax
-	mul r15
-	mov eax, eax
-	mul rbx
-	add rax, rcx
-	shr rax, 32
-	mov rbp, rax
-	add r14, 1
-	cmp r14, r12
-	jne 243b
-	mov rax, rbp
-	cmp rax, 1
-	sbb rdx, rdx
-	xor rax, rbx
-	cmp rax, 1
-	sbb rcx, rcx
-	or rdx, rcx
-	or rdx, QWORD PTR [rdi+224]
-	mov QWORD PTR [rdi+224], rdx
-	mov rbx, QWORD PTR [rdi+216]
-	shr rbx, 48
-	and rbx, 65535
-	mov rcx, rbx
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov r15d, 0
-	sub r15, rcx
-	mov r12, QWORD PTR [rdi+48]
-	mov r8, QWORD PTR [rdi+64]
-	mov ebp, 0
-	mov r14, 0
-244:
-	mov rsi, QWORD PTR [r8+r14*8]
-	mov eax, esi
-	add rax, rbp
-	mov rcx, rax
-	mul r15
-	mov eax, eax
-	mul rbx
-	add rax, rcx
-	shr rax, 32
-	mov rbp, rax
-	mov rax, rsi
-	shr rax, 32
-	add rax, rbp
-	mov rcx, rax
-	mul r15
-	mov eax, eax
-	mul rbx
-	add rax, rcx
-	shr rax, 32
-	mov rbp, rax
-	add r14, 1
-	cmp r14, r12
-	jne 244b
-	mov rax, rbp
-	cmp rax, 1
-	sbb rdx, rdx
-	xor rax, rbx
-	cmp rax, 1
-	sbb rcx, rcx
-	or rdx, rcx
-	or rdx, QWORD PTR [rdi+224]
-	mov QWORD PTR [rdi+224], rdx
 	add r13, 1
 	mov rax, QWORD PTR [rdi+208]
 	cmp r13, rax
-	jne 240b
+	jne 238b
 	mov rax, QWORD PTR [rdi+224]
 	test rax, rax
-237:
-	je 245f
+235:
+	je 243f
 	mov rdi, QWORD PTR [rdi+128]
 	mov eax, 2
 	mov QWORD PTR [rdi+152], rax
-	jmp 246f
-245:
+	jmp 244f
+243:
 	mov rdi, QWORD PTR [rdi+128]
 	mov rbp, rdi
 	mov rax, QWORD PTR [rdi+48]
@@ -4837,13 +4847,13 @@ vg_ffdh_generate_parameters_adx:
 	add r10, 1
 	add r11, 1
 	sub rcx, 1
-247:
+245:
 	movzx eax, BYTE PTR [r10]
 	mov BYTE PTR [r11], al
 	add r10, 1
 	add r11, 1
 	sub rcx, 1
-	jne 247b
+	jne 245b
 	movzx eax, BYTE PTR [r11-1]
 	or rax, 1
 	mov BYTE PTR [r11-1], al
@@ -4867,11 +4877,11 @@ vg_ffdh_generate_parameters_adx:
 	add r12, 7
 	shr r12, 3
 	cmp r12, 2
-	jb 248f
-	jmp 249f
-248:
+	jb 246f
+	jmp 247f
+246:
 	mov r12d, 2
-249:
+247:
 	mov rsi, rdi
 	mov rdi, rax
 	mov QWORD PTR [rdi+128], rsi
@@ -4908,7 +4918,7 @@ vg_ffdh_generate_parameters_adx:
 	mov eax, 0
 	mov rdx, rcx
 	mov r14, rsi
-250:
+248:
 	sub rdx, 1
 	ror rax, 56
 	movzx ebp, BYTE PTR [r14]
@@ -4916,16 +4926,16 @@ vg_ffdh_generate_parameters_adx:
 	add r14, 1
 	mov rbp, rdx
 	and rbp, 7
-	je 251f
-	jmp 252f
-251:
+	je 249f
+	jmp 250f
+249:
 	mov rbp, rdx
 	shr rbp, 3
 	mov QWORD PTR [rbx+rbp*8], rax
 	mov eax, 0
-252:
+250:
 	test rdx, rdx
-	jne 250b
+	jne 248b
 	mov r10, QWORD PTR [rdi+64]
 	mov r12, QWORD PTR [rdi+48]
 	mov rbx, QWORD PTR [r10]
@@ -4973,11 +4983,11 @@ vg_ffdh_generate_parameters_adx:
 	mov r8, QWORD PTR [rdi+120]
 	mov eax, 0
 	mov r14, 0
-253:
+251:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 253b
+	jne 251b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov QWORD PTR [r8+rcx*8], rdx
@@ -4988,39 +4998,39 @@ vg_ffdh_generate_parameters_adx:
 	mov rcx, r12
 	and rcx, 3
 	or rax, rcx
-	je 254f
+	je 252f
 	mov rax, QWORD PTR [r10+r12*8-8]
 	mov edx, 1
 	mov ecx, 64
 	cmp rax, 1
-	je 256f
-258:
+	je 254f
+256:
 	shr rax, 1
 	add rdx, rdx
 	sub rcx, 1
 	cmp rax, 1
-	jne 258b
-	jmp 257f
-256:
-257:
+	jne 256b
+	jmp 255f
+254:
+255:
 	mov QWORD PTR [rdi+208], rcx
 	mov rcx, r12
 	sub rcx, 1
 	mov r8, QWORD PTR [rdi+96]
 	mov eax, 0
 	mov r14, 0
-259:
+257:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 259b
+	jne 257b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov QWORD PTR [r8+rcx*8], rdx
 	mov rcx, QWORD PTR [rdi+208]
 	add rcx, QWORD PTR [rdi+48]
 	mov QWORD PTR [rdi+208], rcx
-260:
+258:
 	mov rbx, QWORD PTR [rdi+96]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -5028,7 +5038,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rsi, QWORD PTR [rdi+88]
 	mov ebp, 0
 	mov r14, 0
-261:
+259:
 	add rbp, rbp
 	mov rax, QWORD PTR [rbx+r14*8]
 	adc rax, rax
@@ -5036,14 +5046,14 @@ vg_ffdh_generate_parameters_adx:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 261b
+	jne 259b
 	mov eax, 0
 	add rbp, rbp
 	adc rax, 0
 	mov QWORD PTR [r8+r12*8], rax
 	mov ebp, 0
 	mov r14, 0
-262:
+260:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -5051,13 +5061,13 @@ vg_ffdh_generate_parameters_adx:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 262b
+	jne 260b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-263:
+261:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -5066,14 +5076,14 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 263b
+	jne 261b
 	mov rcx, QWORD PTR [rdi+208]
 	sub rcx, 1
 	mov QWORD PTR [rdi+208], rcx
-	jne 260b
+	jne 258b
 	mov eax, 6
 	mov QWORD PTR [rdi+208], rax
-264:
+262:
 	mov edx, 4
 	mov ecx, 4
 	mov r8d, 4
@@ -5101,7 +5111,7 @@ vg_ffdh_generate_parameters_adx:
 	sub rax, 8
 	ror rax, 3
 	shr rax, 27
-	je 265f
+	je 263f
 	mov rbx, QWORD PTR [rdi+rdx*8+64]
 	mov r11, QWORD PTR [rdi+rcx*8+64]
 	mov r9, QWORD PTR [rdi+r8*8+64]
@@ -5112,19 +5122,19 @@ vg_ffdh_generate_parameters_adx:
 	mov rsi, QWORD PTR [rdi+88]
 	mov eax, 0
 	mov r14, 0
-267:
+265:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 267b
+	jne 265b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r13, 0
-268:
+266:
 	mov rcx, QWORD PTR [r11+r13*8]
 	mov ebp, 0
 	mov r14, 0
-269:
+267:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -5135,7 +5145,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 269b
+	jne 267b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8], rax
@@ -5151,7 +5161,7 @@ vg_ffdh_generate_parameters_adx:
 	adc rdx, 0
 	mov rbp, rdx
 	mov r14, 1
-270:
+268:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -5162,7 +5172,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 270b
+	jne 268b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8-8], rax
@@ -5173,10 +5183,10 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [r8+r12*8+8], rax
 	add r13, 1
 	cmp r13, r12
-	jne 268b
+	jne 266b
 	mov ebp, 0
 	mov r14, 0
-271:
+269:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -5184,13 +5194,13 @@ vg_ffdh_generate_parameters_adx:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 271b
+	jne 269b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-272:
+270:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -5199,11 +5209,11 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 272b
-	jmp 266f
-265:
+	jne 270b
+	jmp 264f
+263:
 	cmp rcx, r8
-	je 273f
+	je 271f
 	mov r9, QWORD PTR [rdi+144]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -5213,7 +5223,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rcx, rbx
 	add rcx, rcx
 	mov r14d, 0
-275:
+273:
 	mov QWORD PTR [r8+r14*8], rax
 	mov QWORD PTR [r8+r14*8+8], rax
 	mov QWORD PTR [r8+r14*8+16], rax
@@ -5224,12 +5234,12 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [r8+r14*8+56], rax
 	add r14, 8
 	cmp r14, rcx
-	jne 275b
+	jne 273b
 	mov QWORD PTR [r8+r14*8], rax
 	mov QWORD PTR [r8+r14*8+8], rax
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-276:
+274:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov QWORD PTR [rdi+232], rax
@@ -5253,7 +5263,7 @@ vg_ffdh_generate_parameters_adx:
 	mov r13, QWORD PTR [rsi+40]
 	mov r14, QWORD PTR [rsi+48]
 	mov r15, QWORD PTR [rsi+56]
-277:
+275:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -5522,7 +5532,7 @@ vg_ffdh_generate_parameters_adx:
 	add rax, 8
 	mov QWORD PTR [rdi+232], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 277b
+	jne 275b
 	mov QWORD PTR [rsi], r8
 	mov QWORD PTR [rsi+8], r9
 	mov QWORD PTR [rsi+16], r10
@@ -5534,7 +5544,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 278f
+	je 276f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -5542,7 +5552,7 @@ vg_ffdh_generate_parameters_adx:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-280:
+278:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -5572,15 +5582,15 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 280b
-	jmp 279f
-278:
-279:
+	jne 278b
+	jmp 277f
+276:
+277:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 276b
+	jne 274b
 	mov r8, QWORD PTR [rdi+80]
 	mov r9, QWORD PTR [rdi+48]
 	shl r9, 4
@@ -5589,8 +5599,8 @@ vg_ffdh_generate_parameters_adx:
 	mov eax, 0
 	mov QWORD PTR [r9], rax
 	mov QWORD PTR [r9+8], rax
-	jmp 274f
-273:
+	jmp 272f
+271:
 	mov r9, QWORD PTR [rdi+136]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -5598,7 +5608,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rbx, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-281:
+279:
 	mov rax, QWORD PTR [rdi+224]
 	shl rax, 3
 	mov rbp, QWORD PTR [rdi+136]
@@ -5726,17 +5736,17 @@ vg_ffdh_generate_parameters_adx:
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 281b
+	jne 279b
 	mov rax, QWORD PTR [rdi+48]
 	cmp rax, 8
-	je 282f
+	je 280f
 	mov rax, QWORD PTR [rdi+48]
 	cmp rax, 16
-	je 284f
+	je 282f
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
 	mov QWORD PTR [rdi+248], rax
-286:
+284:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov rax, QWORD PTR [rdi+224]
@@ -5765,8 +5775,8 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+232]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 287f
-289:
+	je 285f
+287:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -6036,10 +6046,10 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rdi+232], rax
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	jne 289b
-	jmp 288f
-287:
-288:
+	jne 287b
+	jmp 286f
+285:
+286:
 	mov rax, QWORD PTR [rdi+248]
 	add rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+240], rax
@@ -6322,15 +6332,15 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 16
 	cmp rax, QWORD PTR [rdi+48]
-	je 290f
+	je 288f
 	mov rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+248], rax
-	jmp 291f
-290:
+	jmp 289f
+288:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 292f
+	je 290f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -6338,7 +6348,7 @@ vg_ffdh_generate_parameters_adx:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-294:
+292:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -6368,23 +6378,23 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 294b
-	jmp 293f
-292:
-293:
+	jne 292b
+	jmp 291f
+290:
 291:
+289:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	mov rcx, QWORD PTR [rdi+48]
 	sub rcx, 8
 	cmp rax, rcx
-	jne 286b
-	jmp 285f
-284:
+	jne 284b
+	jmp 283f
+282:
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-295:
+293:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov rax, QWORD PTR [rdi+224]
@@ -6410,7 +6420,7 @@ vg_ffdh_generate_parameters_adx:
 	mov r13, QWORD PTR [rsi+40]
 	mov r14, QWORD PTR [rsi+48]
 	mov r15, QWORD PTR [rsi+56]
-296:
+294:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -6679,7 +6689,7 @@ vg_ffdh_generate_parameters_adx:
 	add rax, 8
 	mov QWORD PTR [rdi+232], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 296b
+	jne 294b
 	mov QWORD PTR [rsi], r8
 	mov QWORD PTR [rsi+8], r9
 	mov QWORD PTR [rsi+16], r10
@@ -6691,7 +6701,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 297f
+	je 295f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -6699,7 +6709,7 @@ vg_ffdh_generate_parameters_adx:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-299:
+297:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -6729,21 +6739,21 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 299b
-	jmp 298f
-297:
-298:
+	jne 297b
+	jmp 296f
+295:
+296:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	mov rcx, QWORD PTR [rdi+48]
 	sub rcx, 8
 	cmp rax, rcx
-	jne 295b
-285:
-	jmp 283f
-282:
+	jne 293b
 283:
+	jmp 281f
+280:
+281:
 	mov r8, QWORD PTR [rdi+80]
 	mov r9, QWORD PTR [rdi+48]
 	shl r9, 4
@@ -6761,7 +6771,7 @@ vg_ffdh_generate_parameters_adx:
 	mov r15d, 0
 	mov ebp, 0
 	mov r14d, 0
-2100:
+298:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r11, QWORD PTR [r8+r14*8]
 	mov r12, QWORD PTR [r8+r14*8+8]
@@ -6851,13 +6861,13 @@ vg_ffdh_generate_parameters_adx:
 	add rbp, 8
 	add r14, 16
 	cmp rbp, r10
-	jne 2100b
-274:
+	jne 298b
+272:
 	mov rcx, QWORD PTR [rdi+80]
 	add rcx, 16
 	mov eax, 0
 	mov QWORD PTR [rcx-16], rax
-2101:
+299:
 	mov rsi, rcx
 	mov rbp, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rsi]
@@ -7126,10 +7136,10 @@ vg_ffdh_generate_parameters_adx:
 	add rax, rax
 	add rax, QWORD PTR [rdi+64]
 	cmp rbp, rax
-	jne 2102f
-	jmp 2103f
+	jne 2100f
+	jmp 2101f
+2100:
 2102:
-2104:
 	mov rdx, QWORD PTR [rcx-8]
 	add rdx, -1
 	adcx r8, QWORD PTR [rsi]
@@ -7391,8 +7401,8 @@ vg_ffdh_generate_parameters_adx:
 	add rax, rax
 	add rax, QWORD PTR [rdi+64]
 	cmp rbp, rax
-	jne 2104b
-2103:
+	jne 2102b
+2101:
 	mov rdx, QWORD PTR [rcx-8]
 	add rdx, -1
 	mov eax, 0
@@ -7427,7 +7437,7 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rcx+48], rax
 	add rcx, 64
 	cmp rcx, QWORD PTR [rdi+88]
-	jne 2101b
+	jne 299b
 	mov r8, rcx
 	mov rbp, QWORD PTR [rdi+48]
 	mov r10, QWORD PTR [rcx-16]
@@ -7441,7 +7451,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rbx, QWORD PTR [rdi+128]
 	mov ebp, 0
 	mov r14, 0
-2105:
+2103:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -7470,13 +7480,13 @@ vg_ffdh_generate_parameters_adx:
 	sbb rbp, rbp
 	add r14, 8
 	cmp r14, r12
-	jne 2105b
+	jne 2103b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2106:
+2104:
 	add rbp, rbp
 	mov rax, QWORD PTR [rsi+r14*8]
 	cmovb rax, QWORD PTR [r8+r14*8]
@@ -7505,8 +7515,8 @@ vg_ffdh_generate_parameters_adx:
 	sbb rbp, rbp
 	add r14, 8
 	cmp r14, r12
-	jne 2106b
-266:
+	jne 2104b
+264:
 	movq rbx, xmm8
 	movq rbp, xmm9
 	movq r12, xmm10
@@ -7521,16 +7531,16 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+208]
 	sub rax, 1
 	mov QWORD PTR [rdi+208], rax
-	jne 264b
-	jmp 255f
-254:
+	jne 262b
+	jmp 253f
+252:
 	mov rbx, QWORD PTR [rdi+96]
 	mov r10, QWORD PTR [rdi+64]
 	mov r12, QWORD PTR [rdi+48]
 	mov r8, QWORD PTR [rdi+88]
 	mov ebp, 0
 	mov r14, 0
-2107:
+2105:
 	mov eax, 0
 	add rbp, rbp
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -7538,14 +7548,14 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2107b
+	jne 2105b
 	mov rsi, QWORD PTR [r10+r12*8-8]
 	mov rdx, rsi
 	xor rdx, -1
 	mov rax, -1
 	mov ecx, 0
 	mov r13d, 64
-2108:
+2106:
 	add rax, rax
 	adc rdx, rdx
 	sbb r11, r11
@@ -7559,12 +7569,12 @@ vg_ffdh_generate_parameters_adx:
 	add rcx, rcx
 	sub rcx, r15
 	sub r13, 1
-	jne 2108b
+	jne 2106b
 	mov QWORD PTR [r8], rcx
 	mov rcx, QWORD PTR [rdi+48]
 	shr rcx, 2
 	mov QWORD PTR [rdi+208], rcx
-2109:
+2107:
 	mov rbx, QWORD PTR [rdi+96]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -7610,7 +7620,7 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [r8], rdx
 	sbb rbp, rbp
 	mov r14, 1
-2110:
+2108:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, r9
@@ -7623,7 +7633,7 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [r8+r14*8], rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2110b
+	jne 2108b
 	mov rdx, QWORD PTR [rbx+r12*8-8]
 	add rbp, rbp
 	sbb rdx, r9
@@ -7633,7 +7643,7 @@ vg_ffdh_generate_parameters_adx:
 	sbb r11, r11
 	mov ebp, 0
 	mov r14, 0
-2111:
+2109:
 	mov rax, QWORD PTR [r10+r14*8]
 	and rax, r11
 	add rbp, rbp
@@ -7642,7 +7652,7 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2111b
+	jne 2109b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	adc rax, 0
@@ -7652,7 +7662,7 @@ vg_ffdh_generate_parameters_adx:
 	sbb r11, r11
 	mov ebp, 0
 	mov r14, 0
-2112:
+2110:
 	mov rax, QWORD PTR [r10+r14*8]
 	and rax, r11
 	add rbp, rbp
@@ -7661,26 +7671,26 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2112b
+	jne 2110b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	adc rax, 0
 	mov QWORD PTR [r8+r12*8], rax
 	mov rsi, r8
 	mov r14, 0
-2113:
+2111:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2113b
+	jne 2111b
 	mov rcx, QWORD PTR [rdi+208]
 	sub rcx, 1
 	mov QWORD PTR [rdi+208], rcx
-	jne 2109b
+	jne 2107b
 	mov eax, 2
 	mov QWORD PTR [rdi+208], rax
-2114:
+2112:
 	mov edx, 4
 	mov ecx, 4
 	mov r8d, 4
@@ -7708,7 +7718,7 @@ vg_ffdh_generate_parameters_adx:
 	sub rax, 8
 	ror rax, 3
 	shr rax, 27
-	je 2115f
+	je 2113f
 	mov rbx, QWORD PTR [rdi+rdx*8+64]
 	mov r11, QWORD PTR [rdi+rcx*8+64]
 	mov r9, QWORD PTR [rdi+r8*8+64]
@@ -7719,19 +7729,19 @@ vg_ffdh_generate_parameters_adx:
 	mov rsi, QWORD PTR [rdi+88]
 	mov eax, 0
 	mov r14, 0
-2117:
+2115:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2117b
+	jne 2115b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r13, 0
-2118:
+2116:
 	mov rcx, QWORD PTR [r11+r13*8]
 	mov ebp, 0
 	mov r14, 0
-2119:
+2117:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -7742,7 +7752,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2119b
+	jne 2117b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8], rax
@@ -7758,7 +7768,7 @@ vg_ffdh_generate_parameters_adx:
 	adc rdx, 0
 	mov rbp, rdx
 	mov r14, 1
-2120:
+2118:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -7769,7 +7779,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2120b
+	jne 2118b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8-8], rax
@@ -7780,10 +7790,10 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [r8+r12*8+8], rax
 	add r13, 1
 	cmp r13, r12
-	jne 2118b
+	jne 2116b
 	mov ebp, 0
 	mov r14, 0
-2121:
+2119:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -7791,13 +7801,13 @@ vg_ffdh_generate_parameters_adx:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2121b
+	jne 2119b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2122:
+2120:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -7806,11 +7816,11 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2122b
-	jmp 2116f
-2115:
+	jne 2120b
+	jmp 2114f
+2113:
 	cmp rcx, r8
-	je 2123f
+	je 2121f
 	mov r9, QWORD PTR [rdi+144]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -7820,7 +7830,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rcx, rbx
 	add rcx, rcx
 	mov r14d, 0
-2125:
+2123:
 	mov QWORD PTR [r8+r14*8], rax
 	mov QWORD PTR [r8+r14*8+8], rax
 	mov QWORD PTR [r8+r14*8+16], rax
@@ -7831,12 +7841,12 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [r8+r14*8+56], rax
 	add r14, 8
 	cmp r14, rcx
-	jne 2125b
+	jne 2123b
 	mov QWORD PTR [r8+r14*8], rax
 	mov QWORD PTR [r8+r14*8+8], rax
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2126:
+2124:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov QWORD PTR [rdi+232], rax
@@ -7860,7 +7870,7 @@ vg_ffdh_generate_parameters_adx:
 	mov r13, QWORD PTR [rsi+40]
 	mov r14, QWORD PTR [rsi+48]
 	mov r15, QWORD PTR [rsi+56]
-2127:
+2125:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -8129,7 +8139,7 @@ vg_ffdh_generate_parameters_adx:
 	add rax, 8
 	mov QWORD PTR [rdi+232], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2127b
+	jne 2125b
 	mov QWORD PTR [rsi], r8
 	mov QWORD PTR [rsi+8], r9
 	mov QWORD PTR [rsi+16], r10
@@ -8141,7 +8151,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2128f
+	je 2126f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -8149,7 +8159,7 @@ vg_ffdh_generate_parameters_adx:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2130:
+2128:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -8179,15 +8189,15 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2130b
-	jmp 2129f
-2128:
-2129:
+	jne 2128b
+	jmp 2127f
+2126:
+2127:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2126b
+	jne 2124b
 	mov r8, QWORD PTR [rdi+80]
 	mov r9, QWORD PTR [rdi+48]
 	shl r9, 4
@@ -8196,8 +8206,8 @@ vg_ffdh_generate_parameters_adx:
 	mov eax, 0
 	mov QWORD PTR [r9], rax
 	mov QWORD PTR [r9+8], rax
-	jmp 2124f
-2123:
+	jmp 2122f
+2121:
 	mov r9, QWORD PTR [rdi+136]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -8205,7 +8215,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rbx, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2131:
+2129:
 	mov rax, QWORD PTR [rdi+224]
 	shl rax, 3
 	mov rbp, QWORD PTR [rdi+136]
@@ -8333,17 +8343,17 @@ vg_ffdh_generate_parameters_adx:
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2131b
+	jne 2129b
 	mov rax, QWORD PTR [rdi+48]
 	cmp rax, 8
-	je 2132f
+	je 2130f
 	mov rax, QWORD PTR [rdi+48]
 	cmp rax, 16
-	je 2134f
+	je 2132f
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
 	mov QWORD PTR [rdi+248], rax
-2136:
+2134:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov rax, QWORD PTR [rdi+224]
@@ -8372,8 +8382,8 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+232]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2137f
-2139:
+	je 2135f
+2137:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -8643,10 +8653,10 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rdi+232], rax
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2139b
-	jmp 2138f
-2137:
-2138:
+	jne 2137b
+	jmp 2136f
+2135:
+2136:
 	mov rax, QWORD PTR [rdi+248]
 	add rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+240], rax
@@ -8929,15 +8939,15 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 16
 	cmp rax, QWORD PTR [rdi+48]
-	je 2140f
+	je 2138f
 	mov rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+248], rax
-	jmp 2141f
-2140:
+	jmp 2139f
+2138:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2142f
+	je 2140f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -8945,7 +8955,7 @@ vg_ffdh_generate_parameters_adx:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2144:
+2142:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -8975,23 +8985,23 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2144b
-	jmp 2143f
-2142:
-2143:
+	jne 2142b
+	jmp 2141f
+2140:
 2141:
+2139:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	mov rcx, QWORD PTR [rdi+48]
 	sub rcx, 8
 	cmp rax, rcx
-	jne 2136b
-	jmp 2135f
-2134:
+	jne 2134b
+	jmp 2133f
+2132:
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2145:
+2143:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov rax, QWORD PTR [rdi+224]
@@ -9017,7 +9027,7 @@ vg_ffdh_generate_parameters_adx:
 	mov r13, QWORD PTR [rsi+40]
 	mov r14, QWORD PTR [rsi+48]
 	mov r15, QWORD PTR [rsi+56]
-2146:
+2144:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -9286,7 +9296,7 @@ vg_ffdh_generate_parameters_adx:
 	add rax, 8
 	mov QWORD PTR [rdi+232], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2146b
+	jne 2144b
 	mov QWORD PTR [rsi], r8
 	mov QWORD PTR [rsi+8], r9
 	mov QWORD PTR [rsi+16], r10
@@ -9298,7 +9308,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2147f
+	je 2145f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -9306,7 +9316,7 @@ vg_ffdh_generate_parameters_adx:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2149:
+2147:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -9336,21 +9346,21 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2149b
-	jmp 2148f
-2147:
-2148:
+	jne 2147b
+	jmp 2146f
+2145:
+2146:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	mov rcx, QWORD PTR [rdi+48]
 	sub rcx, 8
 	cmp rax, rcx
-	jne 2145b
-2135:
-	jmp 2133f
-2132:
+	jne 2143b
 2133:
+	jmp 2131f
+2130:
+2131:
 	mov r8, QWORD PTR [rdi+80]
 	mov r9, QWORD PTR [rdi+48]
 	shl r9, 4
@@ -9368,7 +9378,7 @@ vg_ffdh_generate_parameters_adx:
 	mov r15d, 0
 	mov ebp, 0
 	mov r14d, 0
-2150:
+2148:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r11, QWORD PTR [r8+r14*8]
 	mov r12, QWORD PTR [r8+r14*8+8]
@@ -9458,13 +9468,13 @@ vg_ffdh_generate_parameters_adx:
 	add rbp, 8
 	add r14, 16
 	cmp rbp, r10
-	jne 2150b
-2124:
+	jne 2148b
+2122:
 	mov rcx, QWORD PTR [rdi+80]
 	add rcx, 16
 	mov eax, 0
 	mov QWORD PTR [rcx-16], rax
-2151:
+2149:
 	mov rsi, rcx
 	mov rbp, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rsi]
@@ -9733,10 +9743,10 @@ vg_ffdh_generate_parameters_adx:
 	add rax, rax
 	add rax, QWORD PTR [rdi+64]
 	cmp rbp, rax
-	jne 2152f
-	jmp 2153f
+	jne 2150f
+	jmp 2151f
+2150:
 2152:
-2154:
 	mov rdx, QWORD PTR [rcx-8]
 	add rdx, -1
 	adcx r8, QWORD PTR [rsi]
@@ -9998,8 +10008,8 @@ vg_ffdh_generate_parameters_adx:
 	add rax, rax
 	add rax, QWORD PTR [rdi+64]
 	cmp rbp, rax
-	jne 2154b
-2153:
+	jne 2152b
+2151:
 	mov rdx, QWORD PTR [rcx-8]
 	add rdx, -1
 	mov eax, 0
@@ -10034,7 +10044,7 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rcx+48], rax
 	add rcx, 64
 	cmp rcx, QWORD PTR [rdi+88]
-	jne 2151b
+	jne 2149b
 	mov r8, rcx
 	mov rbp, QWORD PTR [rdi+48]
 	mov r10, QWORD PTR [rcx-16]
@@ -10048,7 +10058,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rbx, QWORD PTR [rdi+128]
 	mov ebp, 0
 	mov r14, 0
-2155:
+2153:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -10077,13 +10087,13 @@ vg_ffdh_generate_parameters_adx:
 	sbb rbp, rbp
 	add r14, 8
 	cmp r14, r12
-	jne 2155b
+	jne 2153b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2156:
+2154:
 	add rbp, rbp
 	mov rax, QWORD PTR [rsi+r14*8]
 	cmovb rax, QWORD PTR [r8+r14*8]
@@ -10112,8 +10122,8 @@ vg_ffdh_generate_parameters_adx:
 	sbb rbp, rbp
 	add r14, 8
 	cmp r14, r12
-	jne 2156b
-2116:
+	jne 2154b
+2114:
 	movq rbx, xmm8
 	movq rbp, xmm9
 	movq r12, xmm10
@@ -10128,8 +10138,8 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+208]
 	sub rax, 1
 	mov QWORD PTR [rdi+208], rax
-	jne 2114b
-255:
+	jne 2112b
+253:
 	mov edx, 6
 	mov ecx, 4
 	mov r8d, 7
@@ -10157,7 +10167,7 @@ vg_ffdh_generate_parameters_adx:
 	sub rax, 8
 	ror rax, 3
 	shr rax, 27
-	je 2157f
+	je 2155f
 	mov rbx, QWORD PTR [rdi+rdx*8+64]
 	mov r11, QWORD PTR [rdi+rcx*8+64]
 	mov r9, QWORD PTR [rdi+r8*8+64]
@@ -10168,19 +10178,19 @@ vg_ffdh_generate_parameters_adx:
 	mov rsi, QWORD PTR [rdi+88]
 	mov eax, 0
 	mov r14, 0
-2159:
+2157:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2159b
+	jne 2157b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r13, 0
-2160:
+2158:
 	mov rcx, QWORD PTR [r11+r13*8]
 	mov ebp, 0
 	mov r14, 0
-2161:
+2159:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -10191,7 +10201,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2161b
+	jne 2159b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8], rax
@@ -10207,7 +10217,7 @@ vg_ffdh_generate_parameters_adx:
 	adc rdx, 0
 	mov rbp, rdx
 	mov r14, 1
-2162:
+2160:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -10218,7 +10228,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2162b
+	jne 2160b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8-8], rax
@@ -10229,10 +10239,10 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [r8+r12*8+8], rax
 	add r13, 1
 	cmp r13, r12
-	jne 2160b
+	jne 2158b
 	mov ebp, 0
 	mov r14, 0
-2163:
+2161:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -10240,13 +10250,13 @@ vg_ffdh_generate_parameters_adx:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2163b
+	jne 2161b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2164:
+2162:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -10255,11 +10265,11 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2164b
-	jmp 2158f
-2157:
+	jne 2162b
+	jmp 2156f
+2155:
 	cmp rcx, r8
-	je 2165f
+	je 2163f
 	mov r9, QWORD PTR [rdi+144]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -10269,7 +10279,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rcx, rbx
 	add rcx, rcx
 	mov r14d, 0
-2167:
+2165:
 	mov QWORD PTR [r8+r14*8], rax
 	mov QWORD PTR [r8+r14*8+8], rax
 	mov QWORD PTR [r8+r14*8+16], rax
@@ -10280,12 +10290,12 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [r8+r14*8+56], rax
 	add r14, 8
 	cmp r14, rcx
-	jne 2167b
+	jne 2165b
 	mov QWORD PTR [r8+r14*8], rax
 	mov QWORD PTR [r8+r14*8+8], rax
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2168:
+2166:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov QWORD PTR [rdi+232], rax
@@ -10309,7 +10319,7 @@ vg_ffdh_generate_parameters_adx:
 	mov r13, QWORD PTR [rsi+40]
 	mov r14, QWORD PTR [rsi+48]
 	mov r15, QWORD PTR [rsi+56]
-2169:
+2167:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -10578,7 +10588,7 @@ vg_ffdh_generate_parameters_adx:
 	add rax, 8
 	mov QWORD PTR [rdi+232], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2169b
+	jne 2167b
 	mov QWORD PTR [rsi], r8
 	mov QWORD PTR [rsi+8], r9
 	mov QWORD PTR [rsi+16], r10
@@ -10590,7 +10600,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2170f
+	je 2168f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -10598,7 +10608,7 @@ vg_ffdh_generate_parameters_adx:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2172:
+2170:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -10628,15 +10638,15 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2172b
-	jmp 2171f
-2170:
-2171:
+	jne 2170b
+	jmp 2169f
+2168:
+2169:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2168b
+	jne 2166b
 	mov r8, QWORD PTR [rdi+80]
 	mov r9, QWORD PTR [rdi+48]
 	shl r9, 4
@@ -10645,8 +10655,8 @@ vg_ffdh_generate_parameters_adx:
 	mov eax, 0
 	mov QWORD PTR [r9], rax
 	mov QWORD PTR [r9+8], rax
-	jmp 2166f
-2165:
+	jmp 2164f
+2163:
 	mov r9, QWORD PTR [rdi+136]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -10654,7 +10664,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rbx, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2173:
+2171:
 	mov rax, QWORD PTR [rdi+224]
 	shl rax, 3
 	mov rbp, QWORD PTR [rdi+136]
@@ -10782,17 +10792,17 @@ vg_ffdh_generate_parameters_adx:
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2173b
+	jne 2171b
 	mov rax, QWORD PTR [rdi+48]
 	cmp rax, 8
-	je 2174f
+	je 2172f
 	mov rax, QWORD PTR [rdi+48]
 	cmp rax, 16
-	je 2176f
+	je 2174f
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
 	mov QWORD PTR [rdi+248], rax
-2178:
+2176:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov rax, QWORD PTR [rdi+224]
@@ -10821,8 +10831,8 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+232]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2179f
-2181:
+	je 2177f
+2179:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -11092,10 +11102,10 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rdi+232], rax
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2181b
-	jmp 2180f
-2179:
-2180:
+	jne 2179b
+	jmp 2178f
+2177:
+2178:
 	mov rax, QWORD PTR [rdi+248]
 	add rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+240], rax
@@ -11378,15 +11388,15 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 16
 	cmp rax, QWORD PTR [rdi+48]
-	je 2182f
+	je 2180f
 	mov rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+248], rax
-	jmp 2183f
-2182:
+	jmp 2181f
+2180:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2184f
+	je 2182f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -11394,7 +11404,7 @@ vg_ffdh_generate_parameters_adx:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2186:
+2184:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -11424,23 +11434,23 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2186b
-	jmp 2185f
-2184:
-2185:
+	jne 2184b
+	jmp 2183f
+2182:
 2183:
+2181:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	mov rcx, QWORD PTR [rdi+48]
 	sub rcx, 8
 	cmp rax, rcx
-	jne 2178b
-	jmp 2177f
-2176:
+	jne 2176b
+	jmp 2175f
+2174:
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2187:
+2185:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov rax, QWORD PTR [rdi+224]
@@ -11466,7 +11476,7 @@ vg_ffdh_generate_parameters_adx:
 	mov r13, QWORD PTR [rsi+40]
 	mov r14, QWORD PTR [rsi+48]
 	mov r15, QWORD PTR [rsi+56]
-2188:
+2186:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -11735,7 +11745,7 @@ vg_ffdh_generate_parameters_adx:
 	add rax, 8
 	mov QWORD PTR [rdi+232], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2188b
+	jne 2186b
 	mov QWORD PTR [rsi], r8
 	mov QWORD PTR [rsi+8], r9
 	mov QWORD PTR [rsi+16], r10
@@ -11747,7 +11757,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2189f
+	je 2187f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -11755,7 +11765,7 @@ vg_ffdh_generate_parameters_adx:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2191:
+2189:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -11785,21 +11795,21 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2191b
-	jmp 2190f
-2189:
-2190:
+	jne 2189b
+	jmp 2188f
+2187:
+2188:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	mov rcx, QWORD PTR [rdi+48]
 	sub rcx, 8
 	cmp rax, rcx
-	jne 2187b
-2177:
-	jmp 2175f
-2174:
+	jne 2185b
 2175:
+	jmp 2173f
+2172:
+2173:
 	mov r8, QWORD PTR [rdi+80]
 	mov r9, QWORD PTR [rdi+48]
 	shl r9, 4
@@ -11817,7 +11827,7 @@ vg_ffdh_generate_parameters_adx:
 	mov r15d, 0
 	mov ebp, 0
 	mov r14d, 0
-2192:
+2190:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r11, QWORD PTR [r8+r14*8]
 	mov r12, QWORD PTR [r8+r14*8+8]
@@ -11907,13 +11917,13 @@ vg_ffdh_generate_parameters_adx:
 	add rbp, 8
 	add r14, 16
 	cmp rbp, r10
-	jne 2192b
-2166:
+	jne 2190b
+2164:
 	mov rcx, QWORD PTR [rdi+80]
 	add rcx, 16
 	mov eax, 0
 	mov QWORD PTR [rcx-16], rax
-2193:
+2191:
 	mov rsi, rcx
 	mov rbp, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rsi]
@@ -12182,10 +12192,10 @@ vg_ffdh_generate_parameters_adx:
 	add rax, rax
 	add rax, QWORD PTR [rdi+64]
 	cmp rbp, rax
-	jne 2194f
-	jmp 2195f
+	jne 2192f
+	jmp 2193f
+2192:
 2194:
-2196:
 	mov rdx, QWORD PTR [rcx-8]
 	add rdx, -1
 	adcx r8, QWORD PTR [rsi]
@@ -12447,8 +12457,8 @@ vg_ffdh_generate_parameters_adx:
 	add rax, rax
 	add rax, QWORD PTR [rdi+64]
 	cmp rbp, rax
-	jne 2196b
-2195:
+	jne 2194b
+2193:
 	mov rdx, QWORD PTR [rcx-8]
 	add rdx, -1
 	mov eax, 0
@@ -12483,7 +12493,7 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rcx+48], rax
 	add rcx, 64
 	cmp rcx, QWORD PTR [rdi+88]
-	jne 2193b
+	jne 2191b
 	mov r8, rcx
 	mov rbp, QWORD PTR [rdi+48]
 	mov r10, QWORD PTR [rcx-16]
@@ -12497,7 +12507,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rbx, QWORD PTR [rdi+128]
 	mov ebp, 0
 	mov r14, 0
-2197:
+2195:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -12526,13 +12536,13 @@ vg_ffdh_generate_parameters_adx:
 	sbb rbp, rbp
 	add r14, 8
 	cmp r14, r12
-	jne 2197b
+	jne 2195b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2198:
+2196:
 	add rbp, rbp
 	mov rax, QWORD PTR [rsi+r14*8]
 	cmovb rax, QWORD PTR [r8+r14*8]
@@ -12561,8 +12571,8 @@ vg_ffdh_generate_parameters_adx:
 	sbb rbp, rbp
 	add r14, 8
 	cmp r14, r12
-	jne 2198b
-2158:
+	jne 2196b
+2156:
 	movq rbx, xmm8
 	movq rbp, xmm9
 	movq r12, xmm10
@@ -12601,12 +12611,12 @@ vg_ffdh_generate_parameters_adx:
 	add rbx, rax
 	add rbx, rax
 	mov r14, 0
-2199:
+2197:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2199b
+	jne 2197b
 	mov r12, QWORD PTR [rdi+48]
 	mov r8, QWORD PTR [rdi+64]
 	mov rax, QWORD PTR [rdi+48]
@@ -12660,7 +12670,7 @@ vg_ffdh_generate_parameters_adx:
 	add rsi, rax
 	mov ebp, 0
 	mov r14, 0
-2200:
+2198:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -12668,13 +12678,13 @@ vg_ffdh_generate_parameters_adx:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2200b
+	jne 2198b
 	mov r12, QWORD PTR [rdi+48]
 	mov r8, QWORD PTR [rdi+64]
 	mov rbp, QWORD PTR [r8]
 	and rbp, -2
 	mov r14, 1
-2201:
+2199:
 	mov rax, QWORD PTR [r8+r14*8]
 	cmp rbp, 1
 	sbb rdx, rdx
@@ -12682,7 +12692,7 @@ vg_ffdh_generate_parameters_adx:
 	or rbp, rax
 	add r14, 1
 	cmp r14, r12
-	jne 2201b
+	jne 2199b
 	mov rax, QWORD PTR [rdi+48]
 	add rax, 2
 	add rax, rax
@@ -12715,6 +12725,64 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rbx+r12*8], rax
 	mov rbp, QWORD PTR [rsi]
 	mov r14, 1
+2200:
+	mov rax, QWORD PTR [rsi+r14*8]
+	mov rdx, rax
+	shl rdx, 63
+	mov rcx, rbp
+	shr rcx, 1
+	or rcx, rdx
+	xor rcx, rbp
+	and rcx, r15
+	xor rcx, rbp
+	mov QWORD PTR [rbx+r14*8-8], rcx
+	mov rbp, rax
+	add r14, 1
+	cmp r14, r12
+	jne 2200b
+	mov rcx, rbp
+	shr rcx, 1
+	xor rcx, rbp
+	and rcx, r15
+	xor rcx, rbp
+	mov QWORD PTR [rbx+r12*8-8], rcx
+	mov rsi, rbx
+	movabs r15, -2459565876494606883
+	and r15, QWORD PTR [rbx+r12*8]
+	cmp r15, 1
+	sbb r15, r15
+	xor r15, -1
+	mov rbp, QWORD PTR [rsi]
+	mov r14, 1
+2201:
+	mov rax, QWORD PTR [rsi+r14*8]
+	mov rdx, rax
+	shl rdx, 63
+	mov rcx, rbp
+	shr rcx, 1
+	or rcx, rdx
+	xor rcx, rbp
+	and rcx, r15
+	xor rcx, rbp
+	mov QWORD PTR [rbx+r14*8-8], rcx
+	mov rbp, rax
+	add r14, 1
+	cmp r14, r12
+	jne 2201b
+	mov rcx, rbp
+	shr rcx, 1
+	xor rcx, rbp
+	and rcx, r15
+	xor rcx, rbp
+	mov QWORD PTR [rbx+r12*8-8], rcx
+	mov rsi, rbx
+	movabs r15, -7378697629483820647
+	and r15, QWORD PTR [rbx+r12*8]
+	cmp r15, 1
+	sbb r15, r15
+	xor r15, -1
+	mov rbp, QWORD PTR [rsi]
+	mov r14, 1
 2202:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov rdx, rax
@@ -12737,7 +12805,7 @@ vg_ffdh_generate_parameters_adx:
 	xor rcx, rbp
 	mov QWORD PTR [rbx+r12*8-8], rcx
 	mov rsi, rbx
-	movabs r15, -2459565876494606883
+	movabs r15, 1229782938247303441
 	and r15, QWORD PTR [rbx+r12*8]
 	cmp r15, 1
 	sbb r15, r15
@@ -12765,73 +12833,15 @@ vg_ffdh_generate_parameters_adx:
 	and rcx, r15
 	xor rcx, rbp
 	mov QWORD PTR [rbx+r12*8-8], rcx
-	mov rsi, rbx
-	movabs r15, -7378697629483820647
-	and r15, QWORD PTR [rbx+r12*8]
-	cmp r15, 1
-	sbb r15, r15
-	xor r15, -1
-	mov rbp, QWORD PTR [rsi]
-	mov r14, 1
-2204:
-	mov rax, QWORD PTR [rsi+r14*8]
-	mov rdx, rax
-	shl rdx, 63
-	mov rcx, rbp
-	shr rcx, 1
-	or rcx, rdx
-	xor rcx, rbp
-	and rcx, r15
-	xor rcx, rbp
-	mov QWORD PTR [rbx+r14*8-8], rcx
-	mov rbp, rax
-	add r14, 1
-	cmp r14, r12
-	jne 2204b
-	mov rcx, rbp
-	shr rcx, 1
-	xor rcx, rbp
-	and rcx, r15
-	xor rcx, rbp
-	mov QWORD PTR [rbx+r12*8-8], rcx
-	mov rsi, rbx
-	movabs r15, 1229782938247303441
-	and r15, QWORD PTR [rbx+r12*8]
-	cmp r15, 1
-	sbb r15, r15
-	xor r15, -1
-	mov rbp, QWORD PTR [rsi]
-	mov r14, 1
-2205:
-	mov rax, QWORD PTR [rsi+r14*8]
-	mov rdx, rax
-	shl rdx, 63
-	mov rcx, rbp
-	shr rcx, 1
-	or rcx, rdx
-	xor rcx, rbp
-	and rcx, r15
-	xor rcx, rbp
-	mov QWORD PTR [rbx+r14*8-8], rcx
-	mov rbp, rax
-	add r14, 1
-	cmp r14, r12
-	jne 2205b
-	mov rcx, rbp
-	shr rcx, 1
-	xor rcx, rbp
-	and rcx, r15
-	xor rcx, rbp
-	mov QWORD PTR [rbx+r12*8-8], rcx
 	mov rax, QWORD PTR [rdi+128]
 	mov ecx, 0
 	mov QWORD PTR [rax+144], rcx
-2206:
-2207:
+2204:
+2205:
 	mov rax, QWORD PTR [rdi+128]
 	mov rcx, QWORD PTR [rax+104]
 	cmp rcx, QWORD PTR [rax+128]
-	jb 2208f
+	jb 2206f
 	mov rax, QWORD PTR [rdi+128]
 	mov rsi, QWORD PTR [rax+96]
 	mov rcx, QWORD PTR [rax+128]
@@ -12897,13 +12907,13 @@ vg_ffdh_generate_parameters_adx:
 	add r10, 1
 	add r11, 1
 	sub rcx, 1
-2210:
+2208:
 	movzx eax, BYTE PTR [r10]
 	mov BYTE PTR [r11], al
 	add r10, 1
 	add r11, 1
 	sub rcx, 1
-	jne 2210b
+	jne 2208b
 	mov rdi, rbp
 	mov rax, QWORD PTR [rdi+128]
 	mov rsi, QWORD PTR [rax+48]
@@ -12912,7 +12922,7 @@ vg_ffdh_generate_parameters_adx:
 	mov eax, 0
 	mov rdx, rcx
 	mov r14, rsi
-2211:
+2209:
 	sub rdx, 1
 	ror rax, 56
 	movzx ebp, BYTE PTR [r14]
@@ -12920,19 +12930,49 @@ vg_ffdh_generate_parameters_adx:
 	add r14, 1
 	mov rbp, rdx
 	and rbp, 7
-	je 2212f
-	jmp 2213f
-2212:
+	je 2210f
+	jmp 2211f
+2210:
 	mov rbp, rdx
 	shr rbp, 3
 	mov QWORD PTR [rbx+rbp*8], rax
 	mov eax, 0
-2213:
+2211:
 	test rdx, rdx
-	jne 2211b
+	jne 2209b
 	mov r12, QWORD PTR [rdi+48]
 	mov rbx, QWORD PTR [rdi+120]
 	mov r10, QWORD PTR [rdi+104]
+	mov ebp, 0
+	mov r14, 0
+2212:
+	add rbp, rbp
+	mov rax, QWORD PTR [rbx+r14*8]
+	sbb rax, QWORD PTR [r10+r14*8]
+	sbb rbp, rbp
+	add r14, 1
+	cmp r14, r12
+	jne 2212b
+	mov rax, rbp
+	and rax, 1
+	mov QWORD PTR [rdi+240], rax
+	mov r12, QWORD PTR [rdi+48]
+	mov rsi, QWORD PTR [rdi+104]
+	mov rbx, QWORD PTR [rdi+88]
+	mov r14, 0
+2213:
+	mov rax, QWORD PTR [rsi+r14*8]
+	mov QWORD PTR [rbx+r14*8], rax
+	add r14, 1
+	cmp r14, r12
+	jne 2213b
+	mov rbx, QWORD PTR [rdi+88]
+	mov rax, QWORD PTR [rbx]
+	or rax, 1
+	mov QWORD PTR [rbx], rax
+	mov r12, QWORD PTR [rdi+48]
+	mov rbx, QWORD PTR [rdi+88]
+	mov r10, QWORD PTR [rdi+64]
 	mov ebp, 0
 	mov r14, 0
 2214:
@@ -12945,54 +12985,24 @@ vg_ffdh_generate_parameters_adx:
 	jne 2214b
 	mov rax, rbp
 	and rax, 1
-	mov QWORD PTR [rdi+240], rax
-	mov r12, QWORD PTR [rdi+48]
-	mov rsi, QWORD PTR [rdi+104]
-	mov rbx, QWORD PTR [rdi+88]
-	mov r14, 0
-2215:
-	mov rax, QWORD PTR [rsi+r14*8]
-	mov QWORD PTR [rbx+r14*8], rax
-	add r14, 1
-	cmp r14, r12
-	jne 2215b
-	mov rbx, QWORD PTR [rdi+88]
-	mov rax, QWORD PTR [rbx]
-	or rax, 1
-	mov QWORD PTR [rbx], rax
-	mov r12, QWORD PTR [rdi+48]
-	mov rbx, QWORD PTR [rdi+88]
-	mov r10, QWORD PTR [rdi+64]
-	mov ebp, 0
-	mov r14, 0
-2216:
-	add rbp, rbp
-	mov rax, QWORD PTR [rbx+r14*8]
-	sbb rax, QWORD PTR [r10+r14*8]
-	sbb rbp, rbp
-	add r14, 1
-	cmp r14, r12
-	jne 2216b
-	mov rax, rbp
-	and rax, 1
 	and rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+240], rax
 	test rax, rax
 	mov rax, QWORD PTR [rdi+128]
 	mov edx, 1
 	mov QWORD PTR [rax+152], rdx
-	jmp 2209f
-2208:
+	jmp 2207f
+2206:
 	mov rax, QWORD PTR [rdi+128]
 	mov edx, 0
 	mov QWORD PTR [rax+152], rdx
 	cmp rdx, 1
-2209:
-	je 2207b
+2207:
+	je 2205b
 	mov rax, QWORD PTR [rdi+128]
 	mov rcx, QWORD PTR [rax+152]
 	test rcx, rcx
-	je 2217f
+	je 2215f
 	mov edx, 5
 	mov ecx, 5
 	mov r8d, 4
@@ -13020,7 +13030,7 @@ vg_ffdh_generate_parameters_adx:
 	sub rax, 8
 	ror rax, 3
 	shr rax, 27
-	je 2219f
+	je 2217f
 	mov rbx, QWORD PTR [rdi+rdx*8+64]
 	mov r11, QWORD PTR [rdi+rcx*8+64]
 	mov r9, QWORD PTR [rdi+r8*8+64]
@@ -13031,19 +13041,19 @@ vg_ffdh_generate_parameters_adx:
 	mov rsi, QWORD PTR [rdi+88]
 	mov eax, 0
 	mov r14, 0
-2221:
+2219:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2221b
+	jne 2219b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r13, 0
-2222:
+2220:
 	mov rcx, QWORD PTR [r11+r13*8]
 	mov ebp, 0
 	mov r14, 0
-2223:
+2221:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -13054,7 +13064,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2223b
+	jne 2221b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8], rax
@@ -13070,7 +13080,7 @@ vg_ffdh_generate_parameters_adx:
 	adc rdx, 0
 	mov rbp, rdx
 	mov r14, 1
-2224:
+2222:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -13081,7 +13091,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2224b
+	jne 2222b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8-8], rax
@@ -13092,10 +13102,10 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [r8+r12*8+8], rax
 	add r13, 1
 	cmp r13, r12
-	jne 2222b
+	jne 2220b
 	mov ebp, 0
 	mov r14, 0
-2225:
+2223:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -13103,13 +13113,13 @@ vg_ffdh_generate_parameters_adx:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2225b
+	jne 2223b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2226:
+2224:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -13118,11 +13128,11 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2226b
-	jmp 2220f
-2219:
+	jne 2224b
+	jmp 2218f
+2217:
 	cmp rcx, r8
-	je 2227f
+	je 2225f
 	mov r9, QWORD PTR [rdi+144]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -13132,7 +13142,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rcx, rbx
 	add rcx, rcx
 	mov r14d, 0
-2229:
+2227:
 	mov QWORD PTR [r8+r14*8], rax
 	mov QWORD PTR [r8+r14*8+8], rax
 	mov QWORD PTR [r8+r14*8+16], rax
@@ -13143,12 +13153,12 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [r8+r14*8+56], rax
 	add r14, 8
 	cmp r14, rcx
-	jne 2229b
+	jne 2227b
 	mov QWORD PTR [r8+r14*8], rax
 	mov QWORD PTR [r8+r14*8+8], rax
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2230:
+2228:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov QWORD PTR [rdi+232], rax
@@ -13172,7 +13182,7 @@ vg_ffdh_generate_parameters_adx:
 	mov r13, QWORD PTR [rsi+40]
 	mov r14, QWORD PTR [rsi+48]
 	mov r15, QWORD PTR [rsi+56]
-2231:
+2229:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -13441,7 +13451,7 @@ vg_ffdh_generate_parameters_adx:
 	add rax, 8
 	mov QWORD PTR [rdi+232], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2231b
+	jne 2229b
 	mov QWORD PTR [rsi], r8
 	mov QWORD PTR [rsi+8], r9
 	mov QWORD PTR [rsi+16], r10
@@ -13453,7 +13463,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2232f
+	je 2230f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -13461,7 +13471,7 @@ vg_ffdh_generate_parameters_adx:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2234:
+2232:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -13491,15 +13501,15 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2234b
-	jmp 2233f
-2232:
-2233:
+	jne 2232b
+	jmp 2231f
+2230:
+2231:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2230b
+	jne 2228b
 	mov r8, QWORD PTR [rdi+80]
 	mov r9, QWORD PTR [rdi+48]
 	shl r9, 4
@@ -13508,8 +13518,8 @@ vg_ffdh_generate_parameters_adx:
 	mov eax, 0
 	mov QWORD PTR [r9], rax
 	mov QWORD PTR [r9+8], rax
-	jmp 2228f
-2227:
+	jmp 2226f
+2225:
 	mov r9, QWORD PTR [rdi+136]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -13517,7 +13527,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rbx, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2235:
+2233:
 	mov rax, QWORD PTR [rdi+224]
 	shl rax, 3
 	mov rbp, QWORD PTR [rdi+136]
@@ -13645,17 +13655,17 @@ vg_ffdh_generate_parameters_adx:
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2235b
+	jne 2233b
 	mov rax, QWORD PTR [rdi+48]
 	cmp rax, 8
-	je 2236f
+	je 2234f
 	mov rax, QWORD PTR [rdi+48]
 	cmp rax, 16
-	je 2238f
+	je 2236f
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
 	mov QWORD PTR [rdi+248], rax
-2240:
+2238:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov rax, QWORD PTR [rdi+224]
@@ -13684,8 +13694,8 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+232]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2241f
-2243:
+	je 2239f
+2241:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -13955,10 +13965,10 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rdi+232], rax
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2243b
-	jmp 2242f
-2241:
-2242:
+	jne 2241b
+	jmp 2240f
+2239:
+2240:
 	mov rax, QWORD PTR [rdi+248]
 	add rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+240], rax
@@ -14241,15 +14251,15 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 16
 	cmp rax, QWORD PTR [rdi+48]
-	je 2244f
+	je 2242f
 	mov rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+248], rax
-	jmp 2245f
-2244:
+	jmp 2243f
+2242:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2246f
+	je 2244f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -14257,7 +14267,7 @@ vg_ffdh_generate_parameters_adx:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2248:
+2246:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -14287,23 +14297,23 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2248b
-	jmp 2247f
-2246:
-2247:
+	jne 2246b
+	jmp 2245f
+2244:
 2245:
+2243:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	mov rcx, QWORD PTR [rdi+48]
 	sub rcx, 8
 	cmp rax, rcx
-	jne 2240b
-	jmp 2239f
-2238:
+	jne 2238b
+	jmp 2237f
+2236:
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2249:
+2247:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov rax, QWORD PTR [rdi+224]
@@ -14329,7 +14339,7 @@ vg_ffdh_generate_parameters_adx:
 	mov r13, QWORD PTR [rsi+40]
 	mov r14, QWORD PTR [rsi+48]
 	mov r15, QWORD PTR [rsi+56]
-2250:
+2248:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -14598,7 +14608,7 @@ vg_ffdh_generate_parameters_adx:
 	add rax, 8
 	mov QWORD PTR [rdi+232], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2250b
+	jne 2248b
 	mov QWORD PTR [rsi], r8
 	mov QWORD PTR [rsi+8], r9
 	mov QWORD PTR [rsi+16], r10
@@ -14610,7 +14620,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2251f
+	je 2249f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -14618,7 +14628,7 @@ vg_ffdh_generate_parameters_adx:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2253:
+2251:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -14648,21 +14658,21 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2253b
-	jmp 2252f
-2251:
-2252:
+	jne 2251b
+	jmp 2250f
+2249:
+2250:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	mov rcx, QWORD PTR [rdi+48]
 	sub rcx, 8
 	cmp rax, rcx
-	jne 2249b
-2239:
-	jmp 2237f
-2236:
+	jne 2247b
 2237:
+	jmp 2235f
+2234:
+2235:
 	mov r8, QWORD PTR [rdi+80]
 	mov r9, QWORD PTR [rdi+48]
 	shl r9, 4
@@ -14680,7 +14690,7 @@ vg_ffdh_generate_parameters_adx:
 	mov r15d, 0
 	mov ebp, 0
 	mov r14d, 0
-2254:
+2252:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r11, QWORD PTR [r8+r14*8]
 	mov r12, QWORD PTR [r8+r14*8+8]
@@ -14770,13 +14780,13 @@ vg_ffdh_generate_parameters_adx:
 	add rbp, 8
 	add r14, 16
 	cmp rbp, r10
-	jne 2254b
-2228:
+	jne 2252b
+2226:
 	mov rcx, QWORD PTR [rdi+80]
 	add rcx, 16
 	mov eax, 0
 	mov QWORD PTR [rcx-16], rax
-2255:
+2253:
 	mov rsi, rcx
 	mov rbp, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rsi]
@@ -15045,10 +15055,10 @@ vg_ffdh_generate_parameters_adx:
 	add rax, rax
 	add rax, QWORD PTR [rdi+64]
 	cmp rbp, rax
-	jne 2256f
-	jmp 2257f
+	jne 2254f
+	jmp 2255f
+2254:
 2256:
-2258:
 	mov rdx, QWORD PTR [rcx-8]
 	add rdx, -1
 	adcx r8, QWORD PTR [rsi]
@@ -15310,8 +15320,8 @@ vg_ffdh_generate_parameters_adx:
 	add rax, rax
 	add rax, QWORD PTR [rdi+64]
 	cmp rbp, rax
-	jne 2258b
-2257:
+	jne 2256b
+2255:
 	mov rdx, QWORD PTR [rcx-8]
 	add rdx, -1
 	mov eax, 0
@@ -15346,7 +15356,7 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rcx+48], rax
 	add rcx, 64
 	cmp rcx, QWORD PTR [rdi+88]
-	jne 2255b
+	jne 2253b
 	mov r8, rcx
 	mov rbp, QWORD PTR [rdi+48]
 	mov r10, QWORD PTR [rcx-16]
@@ -15360,7 +15370,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rbx, QWORD PTR [rdi+128]
 	mov ebp, 0
 	mov r14, 0
-2259:
+2257:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -15389,13 +15399,13 @@ vg_ffdh_generate_parameters_adx:
 	sbb rbp, rbp
 	add r14, 8
 	cmp r14, r12
-	jne 2259b
+	jne 2257b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2260:
+2258:
 	add rbp, rbp
 	mov rax, QWORD PTR [rsi+r14*8]
 	cmovb rax, QWORD PTR [r8+r14*8]
@@ -15424,8 +15434,8 @@ vg_ffdh_generate_parameters_adx:
 	sbb rbp, rbp
 	add r14, 8
 	cmp r14, r12
-	jne 2260b
-2220:
+	jne 2258b
+2218:
 	movq rbx, xmm8
 	movq rbp, xmm9
 	movq r12, xmm10
@@ -15462,7 +15472,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rbx, QWORD PTR [rcx]
 	mov rax, QWORD PTR [rdi+176]
 	test rax, rax
-	je 2261f
+	je 2259f
 	mov r9, QWORD PTR [rdi+128]
 	mov rcx, QWORD PTR [r9+144]
 	add rcx, 1
@@ -15472,25 +15482,25 @@ vg_ffdh_generate_parameters_adx:
 	mov edx, 1
 	cmovae rax, rdx
 	mov QWORD PTR [r9+152], rax
-	jmp 2262f
-2261:
+	jmp 2260f
+2259:
 	mov rax, QWORD PTR [rdi+128]
 	mov edx, 2
 	mov QWORD PTR [rax+152], rdx
-2262:
-	jmp 2218f
-2217:
-2218:
+2260:
+	jmp 2216f
+2215:
+2216:
 	mov rax, QWORD PTR [rdi+128]
 	mov rcx, QWORD PTR [rax+152]
 	cmp rcx, 4
-	je 2206b
+	je 2204b
 	mov rdi, QWORD PTR [rdi+128]
 	mov rax, QWORD PTR [rdi+152]
 	cmp rax, 1
-	je 2263f
-	jmp 2264f
-2263:
+	je 2261f
+	jmp 2262f
+2261:
 	mov rbp, rdi
 	mov rax, QWORD PTR [rdi+48]
 	mov rsi, QWORD PTR [rdi+88]
@@ -15545,13 +15555,13 @@ vg_ffdh_generate_parameters_adx:
 	add r10, 1
 	add r11, 1
 	sub rcx, 1
-2265:
+2263:
 	movzx eax, BYTE PTR [r10]
 	mov BYTE PTR [r11], al
 	add r10, 1
 	add r11, 1
 	sub rcx, 1
-	jne 2265b
+	jne 2263b
 	movzx eax, BYTE PTR [r11-1]
 	or rax, 1
 	mov BYTE PTR [r11-1], al
@@ -15562,7 +15572,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rdi, rax
 	mov r10, rdi
 	mov r8d, 0
-2266:
+2264:
 	movzx eax, BYTE PTR [r10]
 	mov rdx, rax
 	shr rax, 1
@@ -15573,7 +15583,7 @@ vg_ffdh_generate_parameters_adx:
 	mov r8, rdx
 	add r10, 1
 	sub rcx, 1
-	jne 2266b
+	jne 2264b
 	mov rdi, rbp
 	mov rdx, QWORD PTR [rdi+72]
 	sub rdx, 1
@@ -15594,11 +15604,11 @@ vg_ffdh_generate_parameters_adx:
 	add r12, 7
 	shr r12, 3
 	cmp r12, 2
-	jb 2267f
-	jmp 2268f
-2267:
+	jb 2265f
+	jmp 2266f
+2265:
 	mov r12d, 2
-2268:
+2266:
 	mov rsi, rdi
 	mov rdi, rax
 	mov QWORD PTR [rdi+128], rsi
@@ -15635,7 +15645,7 @@ vg_ffdh_generate_parameters_adx:
 	mov eax, 0
 	mov rdx, rcx
 	mov r14, rsi
-2269:
+2267:
 	sub rdx, 1
 	ror rax, 56
 	movzx ebp, BYTE PTR [r14]
@@ -15643,16 +15653,16 @@ vg_ffdh_generate_parameters_adx:
 	add r14, 1
 	mov rbp, rdx
 	and rbp, 7
-	je 2270f
-	jmp 2271f
-2270:
+	je 2268f
+	jmp 2269f
+2268:
 	mov rbp, rdx
 	shr rbp, 3
 	mov QWORD PTR [rbx+rbp*8], rax
 	mov eax, 0
-2271:
+2269:
 	test rdx, rdx
-	jne 2269b
+	jne 2267b
 	mov r10, QWORD PTR [rdi+64]
 	mov r12, QWORD PTR [rdi+48]
 	mov rbx, QWORD PTR [r10]
@@ -15700,11 +15710,11 @@ vg_ffdh_generate_parameters_adx:
 	mov r8, QWORD PTR [rdi+120]
 	mov eax, 0
 	mov r14, 0
-2272:
+2270:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2272b
+	jne 2270b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov QWORD PTR [r8+rcx*8], rdx
@@ -15715,39 +15725,39 @@ vg_ffdh_generate_parameters_adx:
 	mov rcx, r12
 	and rcx, 3
 	or rax, rcx
-	je 2273f
+	je 2271f
 	mov rax, QWORD PTR [r10+r12*8-8]
 	mov edx, 1
 	mov ecx, 64
 	cmp rax, 1
-	je 2275f
-2277:
+	je 2273f
+2275:
 	shr rax, 1
 	add rdx, rdx
 	sub rcx, 1
 	cmp rax, 1
-	jne 2277b
-	jmp 2276f
-2275:
-2276:
+	jne 2275b
+	jmp 2274f
+2273:
+2274:
 	mov QWORD PTR [rdi+208], rcx
 	mov rcx, r12
 	sub rcx, 1
 	mov r8, QWORD PTR [rdi+96]
 	mov eax, 0
 	mov r14, 0
-2278:
+2276:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2278b
+	jne 2276b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov QWORD PTR [r8+rcx*8], rdx
 	mov rcx, QWORD PTR [rdi+208]
 	add rcx, QWORD PTR [rdi+48]
 	mov QWORD PTR [rdi+208], rcx
-2279:
+2277:
 	mov rbx, QWORD PTR [rdi+96]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -15755,7 +15765,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rsi, QWORD PTR [rdi+88]
 	mov ebp, 0
 	mov r14, 0
-2280:
+2278:
 	add rbp, rbp
 	mov rax, QWORD PTR [rbx+r14*8]
 	adc rax, rax
@@ -15763,14 +15773,14 @@ vg_ffdh_generate_parameters_adx:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2280b
+	jne 2278b
 	mov eax, 0
 	add rbp, rbp
 	adc rax, 0
 	mov QWORD PTR [r8+r12*8], rax
 	mov ebp, 0
 	mov r14, 0
-2281:
+2279:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -15778,13 +15788,13 @@ vg_ffdh_generate_parameters_adx:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2281b
+	jne 2279b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2282:
+2280:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -15793,14 +15803,14 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2282b
+	jne 2280b
 	mov rcx, QWORD PTR [rdi+208]
 	sub rcx, 1
 	mov QWORD PTR [rdi+208], rcx
-	jne 2279b
+	jne 2277b
 	mov eax, 6
 	mov QWORD PTR [rdi+208], rax
-2283:
+2281:
 	mov edx, 4
 	mov ecx, 4
 	mov r8d, 4
@@ -15828,7 +15838,7 @@ vg_ffdh_generate_parameters_adx:
 	sub rax, 8
 	ror rax, 3
 	shr rax, 27
-	je 2284f
+	je 2282f
 	mov rbx, QWORD PTR [rdi+rdx*8+64]
 	mov r11, QWORD PTR [rdi+rcx*8+64]
 	mov r9, QWORD PTR [rdi+r8*8+64]
@@ -15839,19 +15849,19 @@ vg_ffdh_generate_parameters_adx:
 	mov rsi, QWORD PTR [rdi+88]
 	mov eax, 0
 	mov r14, 0
-2286:
+2284:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2286b
+	jne 2284b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r13, 0
-2287:
+2285:
 	mov rcx, QWORD PTR [r11+r13*8]
 	mov ebp, 0
 	mov r14, 0
-2288:
+2286:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -15862,7 +15872,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2288b
+	jne 2286b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8], rax
@@ -15878,7 +15888,7 @@ vg_ffdh_generate_parameters_adx:
 	adc rdx, 0
 	mov rbp, rdx
 	mov r14, 1
-2289:
+2287:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -15889,7 +15899,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2289b
+	jne 2287b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8-8], rax
@@ -15900,10 +15910,10 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [r8+r12*8+8], rax
 	add r13, 1
 	cmp r13, r12
-	jne 2287b
+	jne 2285b
 	mov ebp, 0
 	mov r14, 0
-2290:
+2288:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -15911,13 +15921,13 @@ vg_ffdh_generate_parameters_adx:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2290b
+	jne 2288b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2291:
+2289:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -15926,11 +15936,11 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2291b
-	jmp 2285f
-2284:
+	jne 2289b
+	jmp 2283f
+2282:
 	cmp rcx, r8
-	je 2292f
+	je 2290f
 	mov r9, QWORD PTR [rdi+144]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -15940,7 +15950,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rcx, rbx
 	add rcx, rcx
 	mov r14d, 0
-2294:
+2292:
 	mov QWORD PTR [r8+r14*8], rax
 	mov QWORD PTR [r8+r14*8+8], rax
 	mov QWORD PTR [r8+r14*8+16], rax
@@ -15951,12 +15961,12 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [r8+r14*8+56], rax
 	add r14, 8
 	cmp r14, rcx
-	jne 2294b
+	jne 2292b
 	mov QWORD PTR [r8+r14*8], rax
 	mov QWORD PTR [r8+r14*8+8], rax
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2295:
+2293:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov QWORD PTR [rdi+232], rax
@@ -15980,7 +15990,7 @@ vg_ffdh_generate_parameters_adx:
 	mov r13, QWORD PTR [rsi+40]
 	mov r14, QWORD PTR [rsi+48]
 	mov r15, QWORD PTR [rsi+56]
-2296:
+2294:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -16249,7 +16259,7 @@ vg_ffdh_generate_parameters_adx:
 	add rax, 8
 	mov QWORD PTR [rdi+232], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2296b
+	jne 2294b
 	mov QWORD PTR [rsi], r8
 	mov QWORD PTR [rsi+8], r9
 	mov QWORD PTR [rsi+16], r10
@@ -16261,7 +16271,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2297f
+	je 2295f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -16269,7 +16279,7 @@ vg_ffdh_generate_parameters_adx:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2299:
+2297:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -16299,15 +16309,15 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2299b
-	jmp 2298f
-2297:
-2298:
+	jne 2297b
+	jmp 2296f
+2295:
+2296:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2295b
+	jne 2293b
 	mov r8, QWORD PTR [rdi+80]
 	mov r9, QWORD PTR [rdi+48]
 	shl r9, 4
@@ -16316,8 +16326,8 @@ vg_ffdh_generate_parameters_adx:
 	mov eax, 0
 	mov QWORD PTR [r9], rax
 	mov QWORD PTR [r9+8], rax
-	jmp 2293f
-2292:
+	jmp 2291f
+2290:
 	mov r9, QWORD PTR [rdi+136]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -16325,7 +16335,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rbx, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2300:
+2298:
 	mov rax, QWORD PTR [rdi+224]
 	shl rax, 3
 	mov rbp, QWORD PTR [rdi+136]
@@ -16453,17 +16463,17 @@ vg_ffdh_generate_parameters_adx:
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2300b
+	jne 2298b
 	mov rax, QWORD PTR [rdi+48]
 	cmp rax, 8
-	je 2301f
+	je 2299f
 	mov rax, QWORD PTR [rdi+48]
 	cmp rax, 16
-	je 2303f
+	je 2301f
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
 	mov QWORD PTR [rdi+248], rax
-2305:
+2303:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov rax, QWORD PTR [rdi+224]
@@ -16492,8 +16502,8 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+232]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2306f
-2308:
+	je 2304f
+2306:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -16763,10 +16773,10 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rdi+232], rax
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2308b
-	jmp 2307f
-2306:
-2307:
+	jne 2306b
+	jmp 2305f
+2304:
+2305:
 	mov rax, QWORD PTR [rdi+248]
 	add rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+240], rax
@@ -17049,15 +17059,15 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 16
 	cmp rax, QWORD PTR [rdi+48]
-	je 2309f
+	je 2307f
 	mov rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+248], rax
-	jmp 2310f
-2309:
+	jmp 2308f
+2307:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2311f
+	je 2309f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -17065,7 +17075,7 @@ vg_ffdh_generate_parameters_adx:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2313:
+2311:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -17095,23 +17105,23 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2313b
-	jmp 2312f
-2311:
-2312:
+	jne 2311b
+	jmp 2310f
+2309:
 2310:
+2308:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	mov rcx, QWORD PTR [rdi+48]
 	sub rcx, 8
 	cmp rax, rcx
-	jne 2305b
-	jmp 2304f
-2303:
+	jne 2303b
+	jmp 2302f
+2301:
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2314:
+2312:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov rax, QWORD PTR [rdi+224]
@@ -17137,7 +17147,7 @@ vg_ffdh_generate_parameters_adx:
 	mov r13, QWORD PTR [rsi+40]
 	mov r14, QWORD PTR [rsi+48]
 	mov r15, QWORD PTR [rsi+56]
-2315:
+2313:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -17406,7 +17416,7 @@ vg_ffdh_generate_parameters_adx:
 	add rax, 8
 	mov QWORD PTR [rdi+232], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2315b
+	jne 2313b
 	mov QWORD PTR [rsi], r8
 	mov QWORD PTR [rsi+8], r9
 	mov QWORD PTR [rsi+16], r10
@@ -17418,7 +17428,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2316f
+	je 2314f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -17426,7 +17436,7 @@ vg_ffdh_generate_parameters_adx:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2318:
+2316:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -17456,21 +17466,21 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2318b
-	jmp 2317f
-2316:
-2317:
+	jne 2316b
+	jmp 2315f
+2314:
+2315:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	mov rcx, QWORD PTR [rdi+48]
 	sub rcx, 8
 	cmp rax, rcx
-	jne 2314b
-2304:
-	jmp 2302f
-2301:
+	jne 2312b
 2302:
+	jmp 2300f
+2299:
+2300:
 	mov r8, QWORD PTR [rdi+80]
 	mov r9, QWORD PTR [rdi+48]
 	shl r9, 4
@@ -17488,7 +17498,7 @@ vg_ffdh_generate_parameters_adx:
 	mov r15d, 0
 	mov ebp, 0
 	mov r14d, 0
-2319:
+2317:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r11, QWORD PTR [r8+r14*8]
 	mov r12, QWORD PTR [r8+r14*8+8]
@@ -17578,13 +17588,13 @@ vg_ffdh_generate_parameters_adx:
 	add rbp, 8
 	add r14, 16
 	cmp rbp, r10
-	jne 2319b
-2293:
+	jne 2317b
+2291:
 	mov rcx, QWORD PTR [rdi+80]
 	add rcx, 16
 	mov eax, 0
 	mov QWORD PTR [rcx-16], rax
-2320:
+2318:
 	mov rsi, rcx
 	mov rbp, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rsi]
@@ -17853,10 +17863,10 @@ vg_ffdh_generate_parameters_adx:
 	add rax, rax
 	add rax, QWORD PTR [rdi+64]
 	cmp rbp, rax
-	jne 2321f
-	jmp 2322f
+	jne 2319f
+	jmp 2320f
+2319:
 2321:
-2323:
 	mov rdx, QWORD PTR [rcx-8]
 	add rdx, -1
 	adcx r8, QWORD PTR [rsi]
@@ -18118,8 +18128,8 @@ vg_ffdh_generate_parameters_adx:
 	add rax, rax
 	add rax, QWORD PTR [rdi+64]
 	cmp rbp, rax
-	jne 2323b
-2322:
+	jne 2321b
+2320:
 	mov rdx, QWORD PTR [rcx-8]
 	add rdx, -1
 	mov eax, 0
@@ -18154,7 +18164,7 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rcx+48], rax
 	add rcx, 64
 	cmp rcx, QWORD PTR [rdi+88]
-	jne 2320b
+	jne 2318b
 	mov r8, rcx
 	mov rbp, QWORD PTR [rdi+48]
 	mov r10, QWORD PTR [rcx-16]
@@ -18168,7 +18178,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rbx, QWORD PTR [rdi+128]
 	mov ebp, 0
 	mov r14, 0
-2324:
+2322:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -18197,13 +18207,13 @@ vg_ffdh_generate_parameters_adx:
 	sbb rbp, rbp
 	add r14, 8
 	cmp r14, r12
-	jne 2324b
+	jne 2322b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2325:
+2323:
 	add rbp, rbp
 	mov rax, QWORD PTR [rsi+r14*8]
 	cmovb rax, QWORD PTR [r8+r14*8]
@@ -18232,8 +18242,8 @@ vg_ffdh_generate_parameters_adx:
 	sbb rbp, rbp
 	add r14, 8
 	cmp r14, r12
-	jne 2325b
-2285:
+	jne 2323b
+2283:
 	movq rbx, xmm8
 	movq rbp, xmm9
 	movq r12, xmm10
@@ -18248,16 +18258,16 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+208]
 	sub rax, 1
 	mov QWORD PTR [rdi+208], rax
-	jne 2283b
-	jmp 2274f
-2273:
+	jne 2281b
+	jmp 2272f
+2271:
 	mov rbx, QWORD PTR [rdi+96]
 	mov r10, QWORD PTR [rdi+64]
 	mov r12, QWORD PTR [rdi+48]
 	mov r8, QWORD PTR [rdi+88]
 	mov ebp, 0
 	mov r14, 0
-2326:
+2324:
 	mov eax, 0
 	add rbp, rbp
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -18265,14 +18275,14 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2326b
+	jne 2324b
 	mov rsi, QWORD PTR [r10+r12*8-8]
 	mov rdx, rsi
 	xor rdx, -1
 	mov rax, -1
 	mov ecx, 0
 	mov r13d, 64
-2327:
+2325:
 	add rax, rax
 	adc rdx, rdx
 	sbb r11, r11
@@ -18286,12 +18296,12 @@ vg_ffdh_generate_parameters_adx:
 	add rcx, rcx
 	sub rcx, r15
 	sub r13, 1
-	jne 2327b
+	jne 2325b
 	mov QWORD PTR [r8], rcx
 	mov rcx, QWORD PTR [rdi+48]
 	shr rcx, 2
 	mov QWORD PTR [rdi+208], rcx
-2328:
+2326:
 	mov rbx, QWORD PTR [rdi+96]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -18337,7 +18347,7 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [r8], rdx
 	sbb rbp, rbp
 	mov r14, 1
-2329:
+2327:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, r9
@@ -18350,7 +18360,7 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [r8+r14*8], rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2329b
+	jne 2327b
 	mov rdx, QWORD PTR [rbx+r12*8-8]
 	add rbp, rbp
 	sbb rdx, r9
@@ -18360,7 +18370,7 @@ vg_ffdh_generate_parameters_adx:
 	sbb r11, r11
 	mov ebp, 0
 	mov r14, 0
-2330:
+2328:
 	mov rax, QWORD PTR [r10+r14*8]
 	and rax, r11
 	add rbp, rbp
@@ -18369,7 +18379,7 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2330b
+	jne 2328b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	adc rax, 0
@@ -18379,7 +18389,7 @@ vg_ffdh_generate_parameters_adx:
 	sbb r11, r11
 	mov ebp, 0
 	mov r14, 0
-2331:
+2329:
 	mov rax, QWORD PTR [r10+r14*8]
 	and rax, r11
 	add rbp, rbp
@@ -18388,26 +18398,26 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2331b
+	jne 2329b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	adc rax, 0
 	mov QWORD PTR [r8+r12*8], rax
 	mov rsi, r8
 	mov r14, 0
-2332:
+2330:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2332b
+	jne 2330b
 	mov rcx, QWORD PTR [rdi+208]
 	sub rcx, 1
 	mov QWORD PTR [rdi+208], rcx
-	jne 2328b
+	jne 2326b
 	mov eax, 2
 	mov QWORD PTR [rdi+208], rax
-2333:
+2331:
 	mov edx, 4
 	mov ecx, 4
 	mov r8d, 4
@@ -18435,7 +18445,7 @@ vg_ffdh_generate_parameters_adx:
 	sub rax, 8
 	ror rax, 3
 	shr rax, 27
-	je 2334f
+	je 2332f
 	mov rbx, QWORD PTR [rdi+rdx*8+64]
 	mov r11, QWORD PTR [rdi+rcx*8+64]
 	mov r9, QWORD PTR [rdi+r8*8+64]
@@ -18446,19 +18456,19 @@ vg_ffdh_generate_parameters_adx:
 	mov rsi, QWORD PTR [rdi+88]
 	mov eax, 0
 	mov r14, 0
-2336:
+2334:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2336b
+	jne 2334b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r13, 0
-2337:
+2335:
 	mov rcx, QWORD PTR [r11+r13*8]
 	mov ebp, 0
 	mov r14, 0
-2338:
+2336:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -18469,7 +18479,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2338b
+	jne 2336b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8], rax
@@ -18485,7 +18495,7 @@ vg_ffdh_generate_parameters_adx:
 	adc rdx, 0
 	mov rbp, rdx
 	mov r14, 1
-2339:
+2337:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -18496,7 +18506,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2339b
+	jne 2337b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8-8], rax
@@ -18507,10 +18517,10 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [r8+r12*8+8], rax
 	add r13, 1
 	cmp r13, r12
-	jne 2337b
+	jne 2335b
 	mov ebp, 0
 	mov r14, 0
-2340:
+2338:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -18518,13 +18528,13 @@ vg_ffdh_generate_parameters_adx:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2340b
+	jne 2338b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2341:
+2339:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -18533,11 +18543,11 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2341b
-	jmp 2335f
-2334:
+	jne 2339b
+	jmp 2333f
+2332:
 	cmp rcx, r8
-	je 2342f
+	je 2340f
 	mov r9, QWORD PTR [rdi+144]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -18547,7 +18557,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rcx, rbx
 	add rcx, rcx
 	mov r14d, 0
-2344:
+2342:
 	mov QWORD PTR [r8+r14*8], rax
 	mov QWORD PTR [r8+r14*8+8], rax
 	mov QWORD PTR [r8+r14*8+16], rax
@@ -18558,12 +18568,12 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [r8+r14*8+56], rax
 	add r14, 8
 	cmp r14, rcx
-	jne 2344b
+	jne 2342b
 	mov QWORD PTR [r8+r14*8], rax
 	mov QWORD PTR [r8+r14*8+8], rax
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2345:
+2343:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov QWORD PTR [rdi+232], rax
@@ -18587,7 +18597,7 @@ vg_ffdh_generate_parameters_adx:
 	mov r13, QWORD PTR [rsi+40]
 	mov r14, QWORD PTR [rsi+48]
 	mov r15, QWORD PTR [rsi+56]
-2346:
+2344:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -18856,7 +18866,7 @@ vg_ffdh_generate_parameters_adx:
 	add rax, 8
 	mov QWORD PTR [rdi+232], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2346b
+	jne 2344b
 	mov QWORD PTR [rsi], r8
 	mov QWORD PTR [rsi+8], r9
 	mov QWORD PTR [rsi+16], r10
@@ -18868,7 +18878,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2347f
+	je 2345f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -18876,7 +18886,7 @@ vg_ffdh_generate_parameters_adx:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2349:
+2347:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -18906,15 +18916,15 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2349b
-	jmp 2348f
-2347:
-2348:
+	jne 2347b
+	jmp 2346f
+2345:
+2346:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2345b
+	jne 2343b
 	mov r8, QWORD PTR [rdi+80]
 	mov r9, QWORD PTR [rdi+48]
 	shl r9, 4
@@ -18923,8 +18933,8 @@ vg_ffdh_generate_parameters_adx:
 	mov eax, 0
 	mov QWORD PTR [r9], rax
 	mov QWORD PTR [r9+8], rax
-	jmp 2343f
-2342:
+	jmp 2341f
+2340:
 	mov r9, QWORD PTR [rdi+136]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -18932,7 +18942,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rbx, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2350:
+2348:
 	mov rax, QWORD PTR [rdi+224]
 	shl rax, 3
 	mov rbp, QWORD PTR [rdi+136]
@@ -19060,17 +19070,17 @@ vg_ffdh_generate_parameters_adx:
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2350b
+	jne 2348b
 	mov rax, QWORD PTR [rdi+48]
 	cmp rax, 8
-	je 2351f
+	je 2349f
 	mov rax, QWORD PTR [rdi+48]
 	cmp rax, 16
-	je 2353f
+	je 2351f
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
 	mov QWORD PTR [rdi+248], rax
-2355:
+2353:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov rax, QWORD PTR [rdi+224]
@@ -19099,8 +19109,8 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+232]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2356f
-2358:
+	je 2354f
+2356:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -19370,10 +19380,10 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rdi+232], rax
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2358b
-	jmp 2357f
-2356:
-2357:
+	jne 2356b
+	jmp 2355f
+2354:
+2355:
 	mov rax, QWORD PTR [rdi+248]
 	add rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+240], rax
@@ -19656,15 +19666,15 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 16
 	cmp rax, QWORD PTR [rdi+48]
-	je 2359f
+	je 2357f
 	mov rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+248], rax
-	jmp 2360f
-2359:
+	jmp 2358f
+2357:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2361f
+	je 2359f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -19672,7 +19682,7 @@ vg_ffdh_generate_parameters_adx:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2363:
+2361:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -19702,23 +19712,23 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2363b
-	jmp 2362f
-2361:
-2362:
+	jne 2361b
+	jmp 2360f
+2359:
 2360:
+2358:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	mov rcx, QWORD PTR [rdi+48]
 	sub rcx, 8
 	cmp rax, rcx
-	jne 2355b
-	jmp 2354f
-2353:
+	jne 2353b
+	jmp 2352f
+2351:
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2364:
+2362:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov rax, QWORD PTR [rdi+224]
@@ -19744,7 +19754,7 @@ vg_ffdh_generate_parameters_adx:
 	mov r13, QWORD PTR [rsi+40]
 	mov r14, QWORD PTR [rsi+48]
 	mov r15, QWORD PTR [rsi+56]
-2365:
+2363:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -20013,7 +20023,7 @@ vg_ffdh_generate_parameters_adx:
 	add rax, 8
 	mov QWORD PTR [rdi+232], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2365b
+	jne 2363b
 	mov QWORD PTR [rsi], r8
 	mov QWORD PTR [rsi+8], r9
 	mov QWORD PTR [rsi+16], r10
@@ -20025,7 +20035,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2366f
+	je 2364f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -20033,7 +20043,7 @@ vg_ffdh_generate_parameters_adx:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2368:
+2366:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -20063,21 +20073,21 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2368b
-	jmp 2367f
-2366:
-2367:
+	jne 2366b
+	jmp 2365f
+2364:
+2365:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	mov rcx, QWORD PTR [rdi+48]
 	sub rcx, 8
 	cmp rax, rcx
-	jne 2364b
-2354:
-	jmp 2352f
-2351:
+	jne 2362b
 2352:
+	jmp 2350f
+2349:
+2350:
 	mov r8, QWORD PTR [rdi+80]
 	mov r9, QWORD PTR [rdi+48]
 	shl r9, 4
@@ -20095,7 +20105,7 @@ vg_ffdh_generate_parameters_adx:
 	mov r15d, 0
 	mov ebp, 0
 	mov r14d, 0
-2369:
+2367:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r11, QWORD PTR [r8+r14*8]
 	mov r12, QWORD PTR [r8+r14*8+8]
@@ -20185,13 +20195,13 @@ vg_ffdh_generate_parameters_adx:
 	add rbp, 8
 	add r14, 16
 	cmp rbp, r10
-	jne 2369b
-2343:
+	jne 2367b
+2341:
 	mov rcx, QWORD PTR [rdi+80]
 	add rcx, 16
 	mov eax, 0
 	mov QWORD PTR [rcx-16], rax
-2370:
+2368:
 	mov rsi, rcx
 	mov rbp, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rsi]
@@ -20460,10 +20470,10 @@ vg_ffdh_generate_parameters_adx:
 	add rax, rax
 	add rax, QWORD PTR [rdi+64]
 	cmp rbp, rax
-	jne 2371f
-	jmp 2372f
+	jne 2369f
+	jmp 2370f
+2369:
 2371:
-2373:
 	mov rdx, QWORD PTR [rcx-8]
 	add rdx, -1
 	adcx r8, QWORD PTR [rsi]
@@ -20725,8 +20735,8 @@ vg_ffdh_generate_parameters_adx:
 	add rax, rax
 	add rax, QWORD PTR [rdi+64]
 	cmp rbp, rax
-	jne 2373b
-2372:
+	jne 2371b
+2370:
 	mov rdx, QWORD PTR [rcx-8]
 	add rdx, -1
 	mov eax, 0
@@ -20761,7 +20771,7 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rcx+48], rax
 	add rcx, 64
 	cmp rcx, QWORD PTR [rdi+88]
-	jne 2370b
+	jne 2368b
 	mov r8, rcx
 	mov rbp, QWORD PTR [rdi+48]
 	mov r10, QWORD PTR [rcx-16]
@@ -20775,7 +20785,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rbx, QWORD PTR [rdi+128]
 	mov ebp, 0
 	mov r14, 0
-2374:
+2372:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -20804,13 +20814,13 @@ vg_ffdh_generate_parameters_adx:
 	sbb rbp, rbp
 	add r14, 8
 	cmp r14, r12
-	jne 2374b
+	jne 2372b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2375:
+2373:
 	add rbp, rbp
 	mov rax, QWORD PTR [rsi+r14*8]
 	cmovb rax, QWORD PTR [r8+r14*8]
@@ -20839,8 +20849,8 @@ vg_ffdh_generate_parameters_adx:
 	sbb rbp, rbp
 	add r14, 8
 	cmp r14, r12
-	jne 2375b
-2335:
+	jne 2373b
+2333:
 	movq rbx, xmm8
 	movq rbp, xmm9
 	movq r12, xmm10
@@ -20855,8 +20865,8 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+208]
 	sub rax, 1
 	mov QWORD PTR [rdi+208], rax
-	jne 2333b
-2274:
+	jne 2331b
+2272:
 	mov edx, 6
 	mov ecx, 4
 	mov r8d, 7
@@ -20884,7 +20894,7 @@ vg_ffdh_generate_parameters_adx:
 	sub rax, 8
 	ror rax, 3
 	shr rax, 27
-	je 2376f
+	je 2374f
 	mov rbx, QWORD PTR [rdi+rdx*8+64]
 	mov r11, QWORD PTR [rdi+rcx*8+64]
 	mov r9, QWORD PTR [rdi+r8*8+64]
@@ -20895,19 +20905,19 @@ vg_ffdh_generate_parameters_adx:
 	mov rsi, QWORD PTR [rdi+88]
 	mov eax, 0
 	mov r14, 0
-2378:
+2376:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2378b
+	jne 2376b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r13, 0
-2379:
+2377:
 	mov rcx, QWORD PTR [r11+r13*8]
 	mov ebp, 0
 	mov r14, 0
-2380:
+2378:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -20918,7 +20928,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2380b
+	jne 2378b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8], rax
@@ -20934,7 +20944,7 @@ vg_ffdh_generate_parameters_adx:
 	adc rdx, 0
 	mov rbp, rdx
 	mov r14, 1
-2381:
+2379:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -20945,7 +20955,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2381b
+	jne 2379b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8-8], rax
@@ -20956,10 +20966,10 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [r8+r12*8+8], rax
 	add r13, 1
 	cmp r13, r12
-	jne 2379b
+	jne 2377b
 	mov ebp, 0
 	mov r14, 0
-2382:
+2380:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -20967,13 +20977,13 @@ vg_ffdh_generate_parameters_adx:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2382b
+	jne 2380b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2383:
+2381:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -20982,11 +20992,11 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2383b
-	jmp 2377f
-2376:
+	jne 2381b
+	jmp 2375f
+2374:
 	cmp rcx, r8
-	je 2384f
+	je 2382f
 	mov r9, QWORD PTR [rdi+144]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -20996,7 +21006,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rcx, rbx
 	add rcx, rcx
 	mov r14d, 0
-2386:
+2384:
 	mov QWORD PTR [r8+r14*8], rax
 	mov QWORD PTR [r8+r14*8+8], rax
 	mov QWORD PTR [r8+r14*8+16], rax
@@ -21007,12 +21017,12 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [r8+r14*8+56], rax
 	add r14, 8
 	cmp r14, rcx
-	jne 2386b
+	jne 2384b
 	mov QWORD PTR [r8+r14*8], rax
 	mov QWORD PTR [r8+r14*8+8], rax
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2387:
+2385:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov QWORD PTR [rdi+232], rax
@@ -21036,7 +21046,7 @@ vg_ffdh_generate_parameters_adx:
 	mov r13, QWORD PTR [rsi+40]
 	mov r14, QWORD PTR [rsi+48]
 	mov r15, QWORD PTR [rsi+56]
-2388:
+2386:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -21305,7 +21315,7 @@ vg_ffdh_generate_parameters_adx:
 	add rax, 8
 	mov QWORD PTR [rdi+232], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2388b
+	jne 2386b
 	mov QWORD PTR [rsi], r8
 	mov QWORD PTR [rsi+8], r9
 	mov QWORD PTR [rsi+16], r10
@@ -21317,7 +21327,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2389f
+	je 2387f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -21325,7 +21335,7 @@ vg_ffdh_generate_parameters_adx:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2391:
+2389:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -21355,15 +21365,15 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2391b
-	jmp 2390f
-2389:
-2390:
+	jne 2389b
+	jmp 2388f
+2387:
+2388:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2387b
+	jne 2385b
 	mov r8, QWORD PTR [rdi+80]
 	mov r9, QWORD PTR [rdi+48]
 	shl r9, 4
@@ -21372,8 +21382,8 @@ vg_ffdh_generate_parameters_adx:
 	mov eax, 0
 	mov QWORD PTR [r9], rax
 	mov QWORD PTR [r9+8], rax
-	jmp 2385f
-2384:
+	jmp 2383f
+2382:
 	mov r9, QWORD PTR [rdi+136]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -21381,7 +21391,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rbx, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2392:
+2390:
 	mov rax, QWORD PTR [rdi+224]
 	shl rax, 3
 	mov rbp, QWORD PTR [rdi+136]
@@ -21509,17 +21519,17 @@ vg_ffdh_generate_parameters_adx:
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2392b
+	jne 2390b
 	mov rax, QWORD PTR [rdi+48]
 	cmp rax, 8
-	je 2393f
+	je 2391f
 	mov rax, QWORD PTR [rdi+48]
 	cmp rax, 16
-	je 2395f
+	je 2393f
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
 	mov QWORD PTR [rdi+248], rax
-2397:
+2395:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov rax, QWORD PTR [rdi+224]
@@ -21548,8 +21558,8 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+232]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2398f
-2400:
+	je 2396f
+2398:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -21819,10 +21829,10 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rdi+232], rax
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2400b
-	jmp 2399f
-2398:
-2399:
+	jne 2398b
+	jmp 2397f
+2396:
+2397:
 	mov rax, QWORD PTR [rdi+248]
 	add rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+240], rax
@@ -22105,15 +22115,15 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 16
 	cmp rax, QWORD PTR [rdi+48]
-	je 2401f
+	je 2399f
 	mov rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+248], rax
-	jmp 2402f
-2401:
+	jmp 2400f
+2399:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2403f
+	je 2401f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -22121,7 +22131,7 @@ vg_ffdh_generate_parameters_adx:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2405:
+2403:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -22151,23 +22161,23 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2405b
-	jmp 2404f
-2403:
-2404:
+	jne 2403b
+	jmp 2402f
+2401:
 2402:
+2400:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	mov rcx, QWORD PTR [rdi+48]
 	sub rcx, 8
 	cmp rax, rcx
-	jne 2397b
-	jmp 2396f
-2395:
+	jne 2395b
+	jmp 2394f
+2393:
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2406:
+2404:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov rax, QWORD PTR [rdi+224]
@@ -22193,7 +22203,7 @@ vg_ffdh_generate_parameters_adx:
 	mov r13, QWORD PTR [rsi+40]
 	mov r14, QWORD PTR [rsi+48]
 	mov r15, QWORD PTR [rsi+56]
-2407:
+2405:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -22462,7 +22472,7 @@ vg_ffdh_generate_parameters_adx:
 	add rax, 8
 	mov QWORD PTR [rdi+232], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2407b
+	jne 2405b
 	mov QWORD PTR [rsi], r8
 	mov QWORD PTR [rsi+8], r9
 	mov QWORD PTR [rsi+16], r10
@@ -22474,7 +22484,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2408f
+	je 2406f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -22482,7 +22492,7 @@ vg_ffdh_generate_parameters_adx:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2410:
+2408:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -22512,21 +22522,21 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2410b
-	jmp 2409f
-2408:
-2409:
+	jne 2408b
+	jmp 2407f
+2406:
+2407:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	mov rcx, QWORD PTR [rdi+48]
 	sub rcx, 8
 	cmp rax, rcx
-	jne 2406b
-2396:
-	jmp 2394f
-2393:
+	jne 2404b
 2394:
+	jmp 2392f
+2391:
+2392:
 	mov r8, QWORD PTR [rdi+80]
 	mov r9, QWORD PTR [rdi+48]
 	shl r9, 4
@@ -22544,7 +22554,7 @@ vg_ffdh_generate_parameters_adx:
 	mov r15d, 0
 	mov ebp, 0
 	mov r14d, 0
-2411:
+2409:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r11, QWORD PTR [r8+r14*8]
 	mov r12, QWORD PTR [r8+r14*8+8]
@@ -22634,13 +22644,13 @@ vg_ffdh_generate_parameters_adx:
 	add rbp, 8
 	add r14, 16
 	cmp rbp, r10
-	jne 2411b
-2385:
+	jne 2409b
+2383:
 	mov rcx, QWORD PTR [rdi+80]
 	add rcx, 16
 	mov eax, 0
 	mov QWORD PTR [rcx-16], rax
-2412:
+2410:
 	mov rsi, rcx
 	mov rbp, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rsi]
@@ -22909,10 +22919,10 @@ vg_ffdh_generate_parameters_adx:
 	add rax, rax
 	add rax, QWORD PTR [rdi+64]
 	cmp rbp, rax
-	jne 2413f
-	jmp 2414f
+	jne 2411f
+	jmp 2412f
+2411:
 2413:
-2415:
 	mov rdx, QWORD PTR [rcx-8]
 	add rdx, -1
 	adcx r8, QWORD PTR [rsi]
@@ -23174,8 +23184,8 @@ vg_ffdh_generate_parameters_adx:
 	add rax, rax
 	add rax, QWORD PTR [rdi+64]
 	cmp rbp, rax
-	jne 2415b
-2414:
+	jne 2413b
+2412:
 	mov rdx, QWORD PTR [rcx-8]
 	add rdx, -1
 	mov eax, 0
@@ -23210,7 +23220,7 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rcx+48], rax
 	add rcx, 64
 	cmp rcx, QWORD PTR [rdi+88]
-	jne 2412b
+	jne 2410b
 	mov r8, rcx
 	mov rbp, QWORD PTR [rdi+48]
 	mov r10, QWORD PTR [rcx-16]
@@ -23224,7 +23234,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rbx, QWORD PTR [rdi+128]
 	mov ebp, 0
 	mov r14, 0
-2416:
+2414:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -23253,13 +23263,13 @@ vg_ffdh_generate_parameters_adx:
 	sbb rbp, rbp
 	add r14, 8
 	cmp r14, r12
-	jne 2416b
+	jne 2414b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2417:
+2415:
 	add rbp, rbp
 	mov rax, QWORD PTR [rsi+r14*8]
 	cmovb rax, QWORD PTR [r8+r14*8]
@@ -23288,8 +23298,8 @@ vg_ffdh_generate_parameters_adx:
 	sbb rbp, rbp
 	add r14, 8
 	cmp r14, r12
-	jne 2417b
-2377:
+	jne 2415b
+2375:
 	movq rbx, xmm8
 	movq rbp, xmm9
 	movq r12, xmm10
@@ -23328,12 +23338,12 @@ vg_ffdh_generate_parameters_adx:
 	add rbx, rax
 	add rbx, rax
 	mov r14, 0
-2418:
+2416:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2418b
+	jne 2416b
 	mov r12, QWORD PTR [rdi+48]
 	mov r8, QWORD PTR [rdi+64]
 	mov rax, QWORD PTR [rdi+48]
@@ -23387,7 +23397,7 @@ vg_ffdh_generate_parameters_adx:
 	add rsi, rax
 	mov ebp, 0
 	mov r14, 0
-2419:
+2417:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -23395,13 +23405,13 @@ vg_ffdh_generate_parameters_adx:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2419b
+	jne 2417b
 	mov r12, QWORD PTR [rdi+48]
 	mov r8, QWORD PTR [rdi+64]
 	mov rbp, QWORD PTR [r8]
 	and rbp, -2
 	mov r14, 1
-2420:
+2418:
 	mov rax, QWORD PTR [r8+r14*8]
 	cmp rbp, 1
 	sbb rdx, rdx
@@ -23409,7 +23419,7 @@ vg_ffdh_generate_parameters_adx:
 	or rbp, rax
 	add r14, 1
 	cmp r14, r12
-	jne 2420b
+	jne 2418b
 	mov rax, QWORD PTR [rdi+48]
 	add rax, 2
 	add rax, rax
@@ -23442,6 +23452,64 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rbx+r12*8], rax
 	mov rbp, QWORD PTR [rsi]
 	mov r14, 1
+2419:
+	mov rax, QWORD PTR [rsi+r14*8]
+	mov rdx, rax
+	shl rdx, 63
+	mov rcx, rbp
+	shr rcx, 1
+	or rcx, rdx
+	xor rcx, rbp
+	and rcx, r15
+	xor rcx, rbp
+	mov QWORD PTR [rbx+r14*8-8], rcx
+	mov rbp, rax
+	add r14, 1
+	cmp r14, r12
+	jne 2419b
+	mov rcx, rbp
+	shr rcx, 1
+	xor rcx, rbp
+	and rcx, r15
+	xor rcx, rbp
+	mov QWORD PTR [rbx+r12*8-8], rcx
+	mov rsi, rbx
+	movabs r15, -2459565876494606883
+	and r15, QWORD PTR [rbx+r12*8]
+	cmp r15, 1
+	sbb r15, r15
+	xor r15, -1
+	mov rbp, QWORD PTR [rsi]
+	mov r14, 1
+2420:
+	mov rax, QWORD PTR [rsi+r14*8]
+	mov rdx, rax
+	shl rdx, 63
+	mov rcx, rbp
+	shr rcx, 1
+	or rcx, rdx
+	xor rcx, rbp
+	and rcx, r15
+	xor rcx, rbp
+	mov QWORD PTR [rbx+r14*8-8], rcx
+	mov rbp, rax
+	add r14, 1
+	cmp r14, r12
+	jne 2420b
+	mov rcx, rbp
+	shr rcx, 1
+	xor rcx, rbp
+	and rcx, r15
+	xor rcx, rbp
+	mov QWORD PTR [rbx+r12*8-8], rcx
+	mov rsi, rbx
+	movabs r15, -7378697629483820647
+	and r15, QWORD PTR [rbx+r12*8]
+	cmp r15, 1
+	sbb r15, r15
+	xor r15, -1
+	mov rbp, QWORD PTR [rsi]
+	mov r14, 1
 2421:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov rdx, rax
@@ -23464,7 +23532,7 @@ vg_ffdh_generate_parameters_adx:
 	xor rcx, rbp
 	mov QWORD PTR [rbx+r12*8-8], rcx
 	mov rsi, rbx
-	movabs r15, -2459565876494606883
+	movabs r15, 1229782938247303441
 	and r15, QWORD PTR [rbx+r12*8]
 	cmp r15, 1
 	sbb r15, r15
@@ -23492,73 +23560,15 @@ vg_ffdh_generate_parameters_adx:
 	and rcx, r15
 	xor rcx, rbp
 	mov QWORD PTR [rbx+r12*8-8], rcx
-	mov rsi, rbx
-	movabs r15, -7378697629483820647
-	and r15, QWORD PTR [rbx+r12*8]
-	cmp r15, 1
-	sbb r15, r15
-	xor r15, -1
-	mov rbp, QWORD PTR [rsi]
-	mov r14, 1
-2423:
-	mov rax, QWORD PTR [rsi+r14*8]
-	mov rdx, rax
-	shl rdx, 63
-	mov rcx, rbp
-	shr rcx, 1
-	or rcx, rdx
-	xor rcx, rbp
-	and rcx, r15
-	xor rcx, rbp
-	mov QWORD PTR [rbx+r14*8-8], rcx
-	mov rbp, rax
-	add r14, 1
-	cmp r14, r12
-	jne 2423b
-	mov rcx, rbp
-	shr rcx, 1
-	xor rcx, rbp
-	and rcx, r15
-	xor rcx, rbp
-	mov QWORD PTR [rbx+r12*8-8], rcx
-	mov rsi, rbx
-	movabs r15, 1229782938247303441
-	and r15, QWORD PTR [rbx+r12*8]
-	cmp r15, 1
-	sbb r15, r15
-	xor r15, -1
-	mov rbp, QWORD PTR [rsi]
-	mov r14, 1
-2424:
-	mov rax, QWORD PTR [rsi+r14*8]
-	mov rdx, rax
-	shl rdx, 63
-	mov rcx, rbp
-	shr rcx, 1
-	or rcx, rdx
-	xor rcx, rbp
-	and rcx, r15
-	xor rcx, rbp
-	mov QWORD PTR [rbx+r14*8-8], rcx
-	mov rbp, rax
-	add r14, 1
-	cmp r14, r12
-	jne 2424b
-	mov rcx, rbp
-	shr rcx, 1
-	xor rcx, rbp
-	and rcx, r15
-	xor rcx, rbp
-	mov QWORD PTR [rbx+r12*8-8], rcx
 	mov rax, QWORD PTR [rdi+128]
 	mov ecx, 0
 	mov QWORD PTR [rax+144], rcx
-2425:
-2426:
+2423:
+2424:
 	mov rax, QWORD PTR [rdi+128]
 	mov rcx, QWORD PTR [rax+104]
 	cmp rcx, QWORD PTR [rax+128]
-	jb 2427f
+	jb 2425f
 	mov rax, QWORD PTR [rdi+128]
 	mov rsi, QWORD PTR [rax+96]
 	mov rcx, QWORD PTR [rax+128]
@@ -23624,13 +23634,13 @@ vg_ffdh_generate_parameters_adx:
 	add r10, 1
 	add r11, 1
 	sub rcx, 1
-2429:
+2427:
 	movzx eax, BYTE PTR [r10]
 	mov BYTE PTR [r11], al
 	add r10, 1
 	add r11, 1
 	sub rcx, 1
-	jne 2429b
+	jne 2427b
 	mov rdi, rbp
 	mov rax, QWORD PTR [rdi+128]
 	mov rsi, QWORD PTR [rax+48]
@@ -23639,7 +23649,7 @@ vg_ffdh_generate_parameters_adx:
 	mov eax, 0
 	mov rdx, rcx
 	mov r14, rsi
-2430:
+2428:
 	sub rdx, 1
 	ror rax, 56
 	movzx ebp, BYTE PTR [r14]
@@ -23647,19 +23657,49 @@ vg_ffdh_generate_parameters_adx:
 	add r14, 1
 	mov rbp, rdx
 	and rbp, 7
-	je 2431f
-	jmp 2432f
-2431:
+	je 2429f
+	jmp 2430f
+2429:
 	mov rbp, rdx
 	shr rbp, 3
 	mov QWORD PTR [rbx+rbp*8], rax
 	mov eax, 0
-2432:
+2430:
 	test rdx, rdx
-	jne 2430b
+	jne 2428b
 	mov r12, QWORD PTR [rdi+48]
 	mov rbx, QWORD PTR [rdi+120]
 	mov r10, QWORD PTR [rdi+104]
+	mov ebp, 0
+	mov r14, 0
+2431:
+	add rbp, rbp
+	mov rax, QWORD PTR [rbx+r14*8]
+	sbb rax, QWORD PTR [r10+r14*8]
+	sbb rbp, rbp
+	add r14, 1
+	cmp r14, r12
+	jne 2431b
+	mov rax, rbp
+	and rax, 1
+	mov QWORD PTR [rdi+240], rax
+	mov r12, QWORD PTR [rdi+48]
+	mov rsi, QWORD PTR [rdi+104]
+	mov rbx, QWORD PTR [rdi+88]
+	mov r14, 0
+2432:
+	mov rax, QWORD PTR [rsi+r14*8]
+	mov QWORD PTR [rbx+r14*8], rax
+	add r14, 1
+	cmp r14, r12
+	jne 2432b
+	mov rbx, QWORD PTR [rdi+88]
+	mov rax, QWORD PTR [rbx]
+	or rax, 1
+	mov QWORD PTR [rbx], rax
+	mov r12, QWORD PTR [rdi+48]
+	mov rbx, QWORD PTR [rdi+88]
+	mov r10, QWORD PTR [rdi+64]
 	mov ebp, 0
 	mov r14, 0
 2433:
@@ -23672,54 +23712,24 @@ vg_ffdh_generate_parameters_adx:
 	jne 2433b
 	mov rax, rbp
 	and rax, 1
-	mov QWORD PTR [rdi+240], rax
-	mov r12, QWORD PTR [rdi+48]
-	mov rsi, QWORD PTR [rdi+104]
-	mov rbx, QWORD PTR [rdi+88]
-	mov r14, 0
-2434:
-	mov rax, QWORD PTR [rsi+r14*8]
-	mov QWORD PTR [rbx+r14*8], rax
-	add r14, 1
-	cmp r14, r12
-	jne 2434b
-	mov rbx, QWORD PTR [rdi+88]
-	mov rax, QWORD PTR [rbx]
-	or rax, 1
-	mov QWORD PTR [rbx], rax
-	mov r12, QWORD PTR [rdi+48]
-	mov rbx, QWORD PTR [rdi+88]
-	mov r10, QWORD PTR [rdi+64]
-	mov ebp, 0
-	mov r14, 0
-2435:
-	add rbp, rbp
-	mov rax, QWORD PTR [rbx+r14*8]
-	sbb rax, QWORD PTR [r10+r14*8]
-	sbb rbp, rbp
-	add r14, 1
-	cmp r14, r12
-	jne 2435b
-	mov rax, rbp
-	and rax, 1
 	and rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+240], rax
 	test rax, rax
 	mov rax, QWORD PTR [rdi+128]
 	mov edx, 1
 	mov QWORD PTR [rax+152], rdx
-	jmp 2428f
-2427:
+	jmp 2426f
+2425:
 	mov rax, QWORD PTR [rdi+128]
 	mov edx, 0
 	mov QWORD PTR [rax+152], rdx
 	cmp rdx, 1
-2428:
-	je 2426b
+2426:
+	je 2424b
 	mov rax, QWORD PTR [rdi+128]
 	mov rcx, QWORD PTR [rax+152]
 	test rcx, rcx
-	je 2436f
+	je 2434f
 	mov edx, 5
 	mov ecx, 5
 	mov r8d, 4
@@ -23747,7 +23757,7 @@ vg_ffdh_generate_parameters_adx:
 	sub rax, 8
 	ror rax, 3
 	shr rax, 27
-	je 2438f
+	je 2436f
 	mov rbx, QWORD PTR [rdi+rdx*8+64]
 	mov r11, QWORD PTR [rdi+rcx*8+64]
 	mov r9, QWORD PTR [rdi+r8*8+64]
@@ -23758,19 +23768,19 @@ vg_ffdh_generate_parameters_adx:
 	mov rsi, QWORD PTR [rdi+88]
 	mov eax, 0
 	mov r14, 0
-2440:
+2438:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2440b
+	jne 2438b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r13, 0
-2441:
+2439:
 	mov rcx, QWORD PTR [r11+r13*8]
 	mov ebp, 0
 	mov r14, 0
-2442:
+2440:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -23781,7 +23791,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2442b
+	jne 2440b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8], rax
@@ -23797,7 +23807,7 @@ vg_ffdh_generate_parameters_adx:
 	adc rdx, 0
 	mov rbp, rdx
 	mov r14, 1
-2443:
+2441:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -23808,7 +23818,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2443b
+	jne 2441b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8-8], rax
@@ -23819,10 +23829,10 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [r8+r12*8+8], rax
 	add r13, 1
 	cmp r13, r12
-	jne 2441b
+	jne 2439b
 	mov ebp, 0
 	mov r14, 0
-2444:
+2442:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -23830,13 +23840,13 @@ vg_ffdh_generate_parameters_adx:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2444b
+	jne 2442b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2445:
+2443:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -23845,11 +23855,11 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2445b
-	jmp 2439f
-2438:
+	jne 2443b
+	jmp 2437f
+2436:
 	cmp rcx, r8
-	je 2446f
+	je 2444f
 	mov r9, QWORD PTR [rdi+144]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -23859,7 +23869,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rcx, rbx
 	add rcx, rcx
 	mov r14d, 0
-2448:
+2446:
 	mov QWORD PTR [r8+r14*8], rax
 	mov QWORD PTR [r8+r14*8+8], rax
 	mov QWORD PTR [r8+r14*8+16], rax
@@ -23870,12 +23880,12 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [r8+r14*8+56], rax
 	add r14, 8
 	cmp r14, rcx
-	jne 2448b
+	jne 2446b
 	mov QWORD PTR [r8+r14*8], rax
 	mov QWORD PTR [r8+r14*8+8], rax
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2449:
+2447:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov QWORD PTR [rdi+232], rax
@@ -23899,7 +23909,7 @@ vg_ffdh_generate_parameters_adx:
 	mov r13, QWORD PTR [rsi+40]
 	mov r14, QWORD PTR [rsi+48]
 	mov r15, QWORD PTR [rsi+56]
-2450:
+2448:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -24168,7 +24178,7 @@ vg_ffdh_generate_parameters_adx:
 	add rax, 8
 	mov QWORD PTR [rdi+232], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2450b
+	jne 2448b
 	mov QWORD PTR [rsi], r8
 	mov QWORD PTR [rsi+8], r9
 	mov QWORD PTR [rsi+16], r10
@@ -24180,7 +24190,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2451f
+	je 2449f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -24188,7 +24198,7 @@ vg_ffdh_generate_parameters_adx:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2453:
+2451:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -24218,15 +24228,15 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2453b
-	jmp 2452f
-2451:
-2452:
+	jne 2451b
+	jmp 2450f
+2449:
+2450:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2449b
+	jne 2447b
 	mov r8, QWORD PTR [rdi+80]
 	mov r9, QWORD PTR [rdi+48]
 	shl r9, 4
@@ -24235,8 +24245,8 @@ vg_ffdh_generate_parameters_adx:
 	mov eax, 0
 	mov QWORD PTR [r9], rax
 	mov QWORD PTR [r9+8], rax
-	jmp 2447f
-2446:
+	jmp 2445f
+2444:
 	mov r9, QWORD PTR [rdi+136]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -24244,7 +24254,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rbx, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2454:
+2452:
 	mov rax, QWORD PTR [rdi+224]
 	shl rax, 3
 	mov rbp, QWORD PTR [rdi+136]
@@ -24372,17 +24382,17 @@ vg_ffdh_generate_parameters_adx:
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2454b
+	jne 2452b
 	mov rax, QWORD PTR [rdi+48]
 	cmp rax, 8
-	je 2455f
+	je 2453f
 	mov rax, QWORD PTR [rdi+48]
 	cmp rax, 16
-	je 2457f
+	je 2455f
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
 	mov QWORD PTR [rdi+248], rax
-2459:
+2457:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov rax, QWORD PTR [rdi+224]
@@ -24411,8 +24421,8 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+232]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2460f
-2462:
+	je 2458f
+2460:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -24682,10 +24692,10 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rdi+232], rax
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2462b
-	jmp 2461f
-2460:
-2461:
+	jne 2460b
+	jmp 2459f
+2458:
+2459:
 	mov rax, QWORD PTR [rdi+248]
 	add rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+240], rax
@@ -24968,15 +24978,15 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 16
 	cmp rax, QWORD PTR [rdi+48]
-	je 2463f
+	je 2461f
 	mov rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+248], rax
-	jmp 2464f
-2463:
+	jmp 2462f
+2461:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2465f
+	je 2463f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -24984,7 +24994,7 @@ vg_ffdh_generate_parameters_adx:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2467:
+2465:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -25014,23 +25024,23 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2467b
-	jmp 2466f
-2465:
-2466:
+	jne 2465b
+	jmp 2464f
+2463:
 2464:
+2462:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	mov rcx, QWORD PTR [rdi+48]
 	sub rcx, 8
 	cmp rax, rcx
-	jne 2459b
-	jmp 2458f
-2457:
+	jne 2457b
+	jmp 2456f
+2455:
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2468:
+2466:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov rax, QWORD PTR [rdi+224]
@@ -25056,7 +25066,7 @@ vg_ffdh_generate_parameters_adx:
 	mov r13, QWORD PTR [rsi+40]
 	mov r14, QWORD PTR [rsi+48]
 	mov r15, QWORD PTR [rsi+56]
-2469:
+2467:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -25325,7 +25335,7 @@ vg_ffdh_generate_parameters_adx:
 	add rax, 8
 	mov QWORD PTR [rdi+232], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2469b
+	jne 2467b
 	mov QWORD PTR [rsi], r8
 	mov QWORD PTR [rsi+8], r9
 	mov QWORD PTR [rsi+16], r10
@@ -25337,7 +25347,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2470f
+	je 2468f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -25345,7 +25355,7 @@ vg_ffdh_generate_parameters_adx:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2472:
+2470:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -25375,21 +25385,21 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2472b
-	jmp 2471f
-2470:
-2471:
+	jne 2470b
+	jmp 2469f
+2468:
+2469:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	mov rcx, QWORD PTR [rdi+48]
 	sub rcx, 8
 	cmp rax, rcx
-	jne 2468b
-2458:
-	jmp 2456f
-2455:
+	jne 2466b
 2456:
+	jmp 2454f
+2453:
+2454:
 	mov r8, QWORD PTR [rdi+80]
 	mov r9, QWORD PTR [rdi+48]
 	shl r9, 4
@@ -25407,7 +25417,7 @@ vg_ffdh_generate_parameters_adx:
 	mov r15d, 0
 	mov ebp, 0
 	mov r14d, 0
-2473:
+2471:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r11, QWORD PTR [r8+r14*8]
 	mov r12, QWORD PTR [r8+r14*8+8]
@@ -25497,13 +25507,13 @@ vg_ffdh_generate_parameters_adx:
 	add rbp, 8
 	add r14, 16
 	cmp rbp, r10
-	jne 2473b
-2447:
+	jne 2471b
+2445:
 	mov rcx, QWORD PTR [rdi+80]
 	add rcx, 16
 	mov eax, 0
 	mov QWORD PTR [rcx-16], rax
-2474:
+2472:
 	mov rsi, rcx
 	mov rbp, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rsi]
@@ -25772,10 +25782,10 @@ vg_ffdh_generate_parameters_adx:
 	add rax, rax
 	add rax, QWORD PTR [rdi+64]
 	cmp rbp, rax
-	jne 2475f
-	jmp 2476f
+	jne 2473f
+	jmp 2474f
+2473:
 2475:
-2477:
 	mov rdx, QWORD PTR [rcx-8]
 	add rdx, -1
 	adcx r8, QWORD PTR [rsi]
@@ -26037,8 +26047,8 @@ vg_ffdh_generate_parameters_adx:
 	add rax, rax
 	add rax, QWORD PTR [rdi+64]
 	cmp rbp, rax
-	jne 2477b
-2476:
+	jne 2475b
+2474:
 	mov rdx, QWORD PTR [rcx-8]
 	add rdx, -1
 	mov eax, 0
@@ -26073,7 +26083,7 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rcx+48], rax
 	add rcx, 64
 	cmp rcx, QWORD PTR [rdi+88]
-	jne 2474b
+	jne 2472b
 	mov r8, rcx
 	mov rbp, QWORD PTR [rdi+48]
 	mov r10, QWORD PTR [rcx-16]
@@ -26087,7 +26097,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rbx, QWORD PTR [rdi+128]
 	mov ebp, 0
 	mov r14, 0
-2478:
+2476:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -26116,13 +26126,13 @@ vg_ffdh_generate_parameters_adx:
 	sbb rbp, rbp
 	add r14, 8
 	cmp r14, r12
-	jne 2478b
+	jne 2476b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2479:
+2477:
 	add rbp, rbp
 	mov rax, QWORD PTR [rsi+r14*8]
 	cmovb rax, QWORD PTR [r8+r14*8]
@@ -26151,8 +26161,8 @@ vg_ffdh_generate_parameters_adx:
 	sbb rbp, rbp
 	add r14, 8
 	cmp r14, r12
-	jne 2479b
-2439:
+	jne 2477b
+2437:
 	movq rbx, xmm8
 	movq rbp, xmm9
 	movq r12, xmm10
@@ -26189,7 +26199,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rbx, QWORD PTR [rcx]
 	mov rax, QWORD PTR [rdi+176]
 	test rax, rax
-	je 2480f
+	je 2478f
 	mov r9, QWORD PTR [rdi+128]
 	mov rcx, QWORD PTR [r9+144]
 	add rcx, 1
@@ -26199,25 +26209,25 @@ vg_ffdh_generate_parameters_adx:
 	mov edx, 1
 	cmovae rax, rdx
 	mov QWORD PTR [r9+152], rax
-	jmp 2481f
-2480:
+	jmp 2479f
+2478:
 	mov rax, QWORD PTR [rdi+128]
 	mov edx, 2
 	mov QWORD PTR [rax+152], rdx
-2481:
-	jmp 2437f
-2436:
-2437:
+2479:
+	jmp 2435f
+2434:
+2435:
 	mov rax, QWORD PTR [rdi+128]
 	mov rcx, QWORD PTR [rax+152]
 	cmp rcx, 4
-	je 2425b
+	je 2423b
 	mov rdi, QWORD PTR [rdi+128]
 	mov rax, QWORD PTR [rdi+152]
 	cmp rax, 1
-	je 2482f
-	jmp 2483f
-2482:
+	je 2480f
+	jmp 2481f
+2480:
 	mov rbp, rdi
 	mov rax, QWORD PTR [rdi+48]
 	mov rsi, QWORD PTR [rdi+88]
@@ -26272,13 +26282,13 @@ vg_ffdh_generate_parameters_adx:
 	add r10, 1
 	add r11, 1
 	sub rcx, 1
-2484:
+2482:
 	movzx eax, BYTE PTR [r10]
 	mov BYTE PTR [r11], al
 	add r10, 1
 	add r11, 1
 	sub rcx, 1
-	jne 2484b
+	jne 2482b
 	movzx eax, BYTE PTR [r11-1]
 	or rax, 1
 	mov BYTE PTR [r11-1], al
@@ -26302,11 +26312,11 @@ vg_ffdh_generate_parameters_adx:
 	add r12, 7
 	shr r12, 3
 	cmp r12, 2
-	jb 2485f
-	jmp 2486f
-2485:
+	jb 2483f
+	jmp 2484f
+2483:
 	mov r12d, 2
-2486:
+2484:
 	mov rsi, rdi
 	mov rdi, rax
 	mov QWORD PTR [rdi+128], rsi
@@ -26343,7 +26353,7 @@ vg_ffdh_generate_parameters_adx:
 	mov eax, 0
 	mov rdx, rcx
 	mov r14, rsi
-2487:
+2485:
 	sub rdx, 1
 	ror rax, 56
 	movzx ebp, BYTE PTR [r14]
@@ -26351,16 +26361,16 @@ vg_ffdh_generate_parameters_adx:
 	add r14, 1
 	mov rbp, rdx
 	and rbp, 7
-	je 2488f
-	jmp 2489f
-2488:
+	je 2486f
+	jmp 2487f
+2486:
 	mov rbp, rdx
 	shr rbp, 3
 	mov QWORD PTR [rbx+rbp*8], rax
 	mov eax, 0
-2489:
+2487:
 	test rdx, rdx
-	jne 2487b
+	jne 2485b
 	mov r10, QWORD PTR [rdi+64]
 	mov r12, QWORD PTR [rdi+48]
 	mov rbx, QWORD PTR [r10]
@@ -26408,11 +26418,11 @@ vg_ffdh_generate_parameters_adx:
 	mov r8, QWORD PTR [rdi+120]
 	mov eax, 0
 	mov r14, 0
-2490:
+2488:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2490b
+	jne 2488b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov QWORD PTR [r8+rcx*8], rdx
@@ -26423,39 +26433,39 @@ vg_ffdh_generate_parameters_adx:
 	mov rcx, r12
 	and rcx, 3
 	or rax, rcx
-	je 2491f
+	je 2489f
 	mov rax, QWORD PTR [r10+r12*8-8]
 	mov edx, 1
 	mov ecx, 64
 	cmp rax, 1
-	je 2493f
-2495:
+	je 2491f
+2493:
 	shr rax, 1
 	add rdx, rdx
 	sub rcx, 1
 	cmp rax, 1
-	jne 2495b
-	jmp 2494f
-2493:
-2494:
+	jne 2493b
+	jmp 2492f
+2491:
+2492:
 	mov QWORD PTR [rdi+208], rcx
 	mov rcx, r12
 	sub rcx, 1
 	mov r8, QWORD PTR [rdi+96]
 	mov eax, 0
 	mov r14, 0
-2496:
+2494:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2496b
+	jne 2494b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov QWORD PTR [r8+rcx*8], rdx
 	mov rcx, QWORD PTR [rdi+208]
 	add rcx, QWORD PTR [rdi+48]
 	mov QWORD PTR [rdi+208], rcx
-2497:
+2495:
 	mov rbx, QWORD PTR [rdi+96]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -26463,7 +26473,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rsi, QWORD PTR [rdi+88]
 	mov ebp, 0
 	mov r14, 0
-2498:
+2496:
 	add rbp, rbp
 	mov rax, QWORD PTR [rbx+r14*8]
 	adc rax, rax
@@ -26471,14 +26481,14 @@ vg_ffdh_generate_parameters_adx:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2498b
+	jne 2496b
 	mov eax, 0
 	add rbp, rbp
 	adc rax, 0
 	mov QWORD PTR [r8+r12*8], rax
 	mov ebp, 0
 	mov r14, 0
-2499:
+2497:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -26486,13 +26496,13 @@ vg_ffdh_generate_parameters_adx:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2499b
+	jne 2497b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2500:
+2498:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -26501,14 +26511,14 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2500b
+	jne 2498b
 	mov rcx, QWORD PTR [rdi+208]
 	sub rcx, 1
 	mov QWORD PTR [rdi+208], rcx
-	jne 2497b
+	jne 2495b
 	mov eax, 6
 	mov QWORD PTR [rdi+208], rax
-2501:
+2499:
 	mov edx, 4
 	mov ecx, 4
 	mov r8d, 4
@@ -26536,7 +26546,7 @@ vg_ffdh_generate_parameters_adx:
 	sub rax, 8
 	ror rax, 3
 	shr rax, 27
-	je 2502f
+	je 2500f
 	mov rbx, QWORD PTR [rdi+rdx*8+64]
 	mov r11, QWORD PTR [rdi+rcx*8+64]
 	mov r9, QWORD PTR [rdi+r8*8+64]
@@ -26547,19 +26557,19 @@ vg_ffdh_generate_parameters_adx:
 	mov rsi, QWORD PTR [rdi+88]
 	mov eax, 0
 	mov r14, 0
-2504:
+2502:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2504b
+	jne 2502b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r13, 0
-2505:
+2503:
 	mov rcx, QWORD PTR [r11+r13*8]
 	mov ebp, 0
 	mov r14, 0
-2506:
+2504:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -26570,7 +26580,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2506b
+	jne 2504b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8], rax
@@ -26586,7 +26596,7 @@ vg_ffdh_generate_parameters_adx:
 	adc rdx, 0
 	mov rbp, rdx
 	mov r14, 1
-2507:
+2505:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -26597,7 +26607,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2507b
+	jne 2505b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8-8], rax
@@ -26608,10 +26618,10 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [r8+r12*8+8], rax
 	add r13, 1
 	cmp r13, r12
-	jne 2505b
+	jne 2503b
 	mov ebp, 0
 	mov r14, 0
-2508:
+2506:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -26619,13 +26629,13 @@ vg_ffdh_generate_parameters_adx:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2508b
+	jne 2506b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2509:
+2507:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -26634,11 +26644,11 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2509b
-	jmp 2503f
-2502:
+	jne 2507b
+	jmp 2501f
+2500:
 	cmp rcx, r8
-	je 2510f
+	je 2508f
 	mov r9, QWORD PTR [rdi+144]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -26648,7 +26658,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rcx, rbx
 	add rcx, rcx
 	mov r14d, 0
-2512:
+2510:
 	mov QWORD PTR [r8+r14*8], rax
 	mov QWORD PTR [r8+r14*8+8], rax
 	mov QWORD PTR [r8+r14*8+16], rax
@@ -26659,12 +26669,12 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [r8+r14*8+56], rax
 	add r14, 8
 	cmp r14, rcx
-	jne 2512b
+	jne 2510b
 	mov QWORD PTR [r8+r14*8], rax
 	mov QWORD PTR [r8+r14*8+8], rax
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2513:
+2511:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov QWORD PTR [rdi+232], rax
@@ -26688,7 +26698,7 @@ vg_ffdh_generate_parameters_adx:
 	mov r13, QWORD PTR [rsi+40]
 	mov r14, QWORD PTR [rsi+48]
 	mov r15, QWORD PTR [rsi+56]
-2514:
+2512:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -26957,7 +26967,7 @@ vg_ffdh_generate_parameters_adx:
 	add rax, 8
 	mov QWORD PTR [rdi+232], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2514b
+	jne 2512b
 	mov QWORD PTR [rsi], r8
 	mov QWORD PTR [rsi+8], r9
 	mov QWORD PTR [rsi+16], r10
@@ -26969,7 +26979,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2515f
+	je 2513f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -26977,7 +26987,7 @@ vg_ffdh_generate_parameters_adx:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2517:
+2515:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -27007,15 +27017,15 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2517b
-	jmp 2516f
-2515:
-2516:
+	jne 2515b
+	jmp 2514f
+2513:
+2514:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2513b
+	jne 2511b
 	mov r8, QWORD PTR [rdi+80]
 	mov r9, QWORD PTR [rdi+48]
 	shl r9, 4
@@ -27024,8 +27034,8 @@ vg_ffdh_generate_parameters_adx:
 	mov eax, 0
 	mov QWORD PTR [r9], rax
 	mov QWORD PTR [r9+8], rax
-	jmp 2511f
-2510:
+	jmp 2509f
+2508:
 	mov r9, QWORD PTR [rdi+136]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -27033,7 +27043,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rbx, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2518:
+2516:
 	mov rax, QWORD PTR [rdi+224]
 	shl rax, 3
 	mov rbp, QWORD PTR [rdi+136]
@@ -27161,17 +27171,17 @@ vg_ffdh_generate_parameters_adx:
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2518b
+	jne 2516b
 	mov rax, QWORD PTR [rdi+48]
 	cmp rax, 8
-	je 2519f
+	je 2517f
 	mov rax, QWORD PTR [rdi+48]
 	cmp rax, 16
-	je 2521f
+	je 2519f
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
 	mov QWORD PTR [rdi+248], rax
-2523:
+2521:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov rax, QWORD PTR [rdi+224]
@@ -27200,8 +27210,8 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+232]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2524f
-2526:
+	je 2522f
+2524:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -27471,10 +27481,10 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rdi+232], rax
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2526b
-	jmp 2525f
-2524:
-2525:
+	jne 2524b
+	jmp 2523f
+2522:
+2523:
 	mov rax, QWORD PTR [rdi+248]
 	add rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+240], rax
@@ -27757,15 +27767,15 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 16
 	cmp rax, QWORD PTR [rdi+48]
-	je 2527f
+	je 2525f
 	mov rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+248], rax
-	jmp 2528f
-2527:
+	jmp 2526f
+2525:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2529f
+	je 2527f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -27773,7 +27783,7 @@ vg_ffdh_generate_parameters_adx:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2531:
+2529:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -27803,23 +27813,23 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2531b
-	jmp 2530f
-2529:
-2530:
+	jne 2529b
+	jmp 2528f
+2527:
 2528:
+2526:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	mov rcx, QWORD PTR [rdi+48]
 	sub rcx, 8
 	cmp rax, rcx
-	jne 2523b
-	jmp 2522f
-2521:
+	jne 2521b
+	jmp 2520f
+2519:
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2532:
+2530:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov rax, QWORD PTR [rdi+224]
@@ -27845,7 +27855,7 @@ vg_ffdh_generate_parameters_adx:
 	mov r13, QWORD PTR [rsi+40]
 	mov r14, QWORD PTR [rsi+48]
 	mov r15, QWORD PTR [rsi+56]
-2533:
+2531:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -28114,7 +28124,7 @@ vg_ffdh_generate_parameters_adx:
 	add rax, 8
 	mov QWORD PTR [rdi+232], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2533b
+	jne 2531b
 	mov QWORD PTR [rsi], r8
 	mov QWORD PTR [rsi+8], r9
 	mov QWORD PTR [rsi+16], r10
@@ -28126,7 +28136,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2534f
+	je 2532f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -28134,7 +28144,7 @@ vg_ffdh_generate_parameters_adx:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2536:
+2534:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -28164,21 +28174,21 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2536b
-	jmp 2535f
-2534:
-2535:
+	jne 2534b
+	jmp 2533f
+2532:
+2533:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	mov rcx, QWORD PTR [rdi+48]
 	sub rcx, 8
 	cmp rax, rcx
-	jne 2532b
-2522:
-	jmp 2520f
-2519:
+	jne 2530b
 2520:
+	jmp 2518f
+2517:
+2518:
 	mov r8, QWORD PTR [rdi+80]
 	mov r9, QWORD PTR [rdi+48]
 	shl r9, 4
@@ -28196,7 +28206,7 @@ vg_ffdh_generate_parameters_adx:
 	mov r15d, 0
 	mov ebp, 0
 	mov r14d, 0
-2537:
+2535:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r11, QWORD PTR [r8+r14*8]
 	mov r12, QWORD PTR [r8+r14*8+8]
@@ -28286,13 +28296,13 @@ vg_ffdh_generate_parameters_adx:
 	add rbp, 8
 	add r14, 16
 	cmp rbp, r10
-	jne 2537b
-2511:
+	jne 2535b
+2509:
 	mov rcx, QWORD PTR [rdi+80]
 	add rcx, 16
 	mov eax, 0
 	mov QWORD PTR [rcx-16], rax
-2538:
+2536:
 	mov rsi, rcx
 	mov rbp, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rsi]
@@ -28561,10 +28571,10 @@ vg_ffdh_generate_parameters_adx:
 	add rax, rax
 	add rax, QWORD PTR [rdi+64]
 	cmp rbp, rax
-	jne 2539f
-	jmp 2540f
+	jne 2537f
+	jmp 2538f
+2537:
 2539:
-2541:
 	mov rdx, QWORD PTR [rcx-8]
 	add rdx, -1
 	adcx r8, QWORD PTR [rsi]
@@ -28826,8 +28836,8 @@ vg_ffdh_generate_parameters_adx:
 	add rax, rax
 	add rax, QWORD PTR [rdi+64]
 	cmp rbp, rax
-	jne 2541b
-2540:
+	jne 2539b
+2538:
 	mov rdx, QWORD PTR [rcx-8]
 	add rdx, -1
 	mov eax, 0
@@ -28862,7 +28872,7 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rcx+48], rax
 	add rcx, 64
 	cmp rcx, QWORD PTR [rdi+88]
-	jne 2538b
+	jne 2536b
 	mov r8, rcx
 	mov rbp, QWORD PTR [rdi+48]
 	mov r10, QWORD PTR [rcx-16]
@@ -28876,7 +28886,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rbx, QWORD PTR [rdi+128]
 	mov ebp, 0
 	mov r14, 0
-2542:
+2540:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -28905,13 +28915,13 @@ vg_ffdh_generate_parameters_adx:
 	sbb rbp, rbp
 	add r14, 8
 	cmp r14, r12
-	jne 2542b
+	jne 2540b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2543:
+2541:
 	add rbp, rbp
 	mov rax, QWORD PTR [rsi+r14*8]
 	cmovb rax, QWORD PTR [r8+r14*8]
@@ -28940,8 +28950,8 @@ vg_ffdh_generate_parameters_adx:
 	sbb rbp, rbp
 	add r14, 8
 	cmp r14, r12
-	jne 2543b
-2503:
+	jne 2541b
+2501:
 	movq rbx, xmm8
 	movq rbp, xmm9
 	movq r12, xmm10
@@ -28956,16 +28966,16 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+208]
 	sub rax, 1
 	mov QWORD PTR [rdi+208], rax
-	jne 2501b
-	jmp 2492f
-2491:
+	jne 2499b
+	jmp 2490f
+2489:
 	mov rbx, QWORD PTR [rdi+96]
 	mov r10, QWORD PTR [rdi+64]
 	mov r12, QWORD PTR [rdi+48]
 	mov r8, QWORD PTR [rdi+88]
 	mov ebp, 0
 	mov r14, 0
-2544:
+2542:
 	mov eax, 0
 	add rbp, rbp
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -28973,14 +28983,14 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2544b
+	jne 2542b
 	mov rsi, QWORD PTR [r10+r12*8-8]
 	mov rdx, rsi
 	xor rdx, -1
 	mov rax, -1
 	mov ecx, 0
 	mov r13d, 64
-2545:
+2543:
 	add rax, rax
 	adc rdx, rdx
 	sbb r11, r11
@@ -28994,12 +29004,12 @@ vg_ffdh_generate_parameters_adx:
 	add rcx, rcx
 	sub rcx, r15
 	sub r13, 1
-	jne 2545b
+	jne 2543b
 	mov QWORD PTR [r8], rcx
 	mov rcx, QWORD PTR [rdi+48]
 	shr rcx, 2
 	mov QWORD PTR [rdi+208], rcx
-2546:
+2544:
 	mov rbx, QWORD PTR [rdi+96]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -29045,7 +29055,7 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [r8], rdx
 	sbb rbp, rbp
 	mov r14, 1
-2547:
+2545:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, r9
@@ -29058,7 +29068,7 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [r8+r14*8], rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2547b
+	jne 2545b
 	mov rdx, QWORD PTR [rbx+r12*8-8]
 	add rbp, rbp
 	sbb rdx, r9
@@ -29068,7 +29078,7 @@ vg_ffdh_generate_parameters_adx:
 	sbb r11, r11
 	mov ebp, 0
 	mov r14, 0
-2548:
+2546:
 	mov rax, QWORD PTR [r10+r14*8]
 	and rax, r11
 	add rbp, rbp
@@ -29077,7 +29087,7 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2548b
+	jne 2546b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	adc rax, 0
@@ -29087,7 +29097,7 @@ vg_ffdh_generate_parameters_adx:
 	sbb r11, r11
 	mov ebp, 0
 	mov r14, 0
-2549:
+2547:
 	mov rax, QWORD PTR [r10+r14*8]
 	and rax, r11
 	add rbp, rbp
@@ -29096,26 +29106,26 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2549b
+	jne 2547b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	adc rax, 0
 	mov QWORD PTR [r8+r12*8], rax
 	mov rsi, r8
 	mov r14, 0
-2550:
+2548:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2550b
+	jne 2548b
 	mov rcx, QWORD PTR [rdi+208]
 	sub rcx, 1
 	mov QWORD PTR [rdi+208], rcx
-	jne 2546b
+	jne 2544b
 	mov eax, 2
 	mov QWORD PTR [rdi+208], rax
-2551:
+2549:
 	mov edx, 4
 	mov ecx, 4
 	mov r8d, 4
@@ -29143,7 +29153,7 @@ vg_ffdh_generate_parameters_adx:
 	sub rax, 8
 	ror rax, 3
 	shr rax, 27
-	je 2552f
+	je 2550f
 	mov rbx, QWORD PTR [rdi+rdx*8+64]
 	mov r11, QWORD PTR [rdi+rcx*8+64]
 	mov r9, QWORD PTR [rdi+r8*8+64]
@@ -29154,19 +29164,19 @@ vg_ffdh_generate_parameters_adx:
 	mov rsi, QWORD PTR [rdi+88]
 	mov eax, 0
 	mov r14, 0
-2554:
+2552:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2554b
+	jne 2552b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r13, 0
-2555:
+2553:
 	mov rcx, QWORD PTR [r11+r13*8]
 	mov ebp, 0
 	mov r14, 0
-2556:
+2554:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -29177,7 +29187,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2556b
+	jne 2554b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8], rax
@@ -29193,7 +29203,7 @@ vg_ffdh_generate_parameters_adx:
 	adc rdx, 0
 	mov rbp, rdx
 	mov r14, 1
-2557:
+2555:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -29204,7 +29214,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2557b
+	jne 2555b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8-8], rax
@@ -29215,10 +29225,10 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [r8+r12*8+8], rax
 	add r13, 1
 	cmp r13, r12
-	jne 2555b
+	jne 2553b
 	mov ebp, 0
 	mov r14, 0
-2558:
+2556:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -29226,13 +29236,13 @@ vg_ffdh_generate_parameters_adx:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2558b
+	jne 2556b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2559:
+2557:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -29241,11 +29251,11 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2559b
-	jmp 2553f
-2552:
+	jne 2557b
+	jmp 2551f
+2550:
 	cmp rcx, r8
-	je 2560f
+	je 2558f
 	mov r9, QWORD PTR [rdi+144]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -29255,7 +29265,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rcx, rbx
 	add rcx, rcx
 	mov r14d, 0
-2562:
+2560:
 	mov QWORD PTR [r8+r14*8], rax
 	mov QWORD PTR [r8+r14*8+8], rax
 	mov QWORD PTR [r8+r14*8+16], rax
@@ -29266,12 +29276,12 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [r8+r14*8+56], rax
 	add r14, 8
 	cmp r14, rcx
-	jne 2562b
+	jne 2560b
 	mov QWORD PTR [r8+r14*8], rax
 	mov QWORD PTR [r8+r14*8+8], rax
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2563:
+2561:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov QWORD PTR [rdi+232], rax
@@ -29295,7 +29305,7 @@ vg_ffdh_generate_parameters_adx:
 	mov r13, QWORD PTR [rsi+40]
 	mov r14, QWORD PTR [rsi+48]
 	mov r15, QWORD PTR [rsi+56]
-2564:
+2562:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -29564,7 +29574,7 @@ vg_ffdh_generate_parameters_adx:
 	add rax, 8
 	mov QWORD PTR [rdi+232], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2564b
+	jne 2562b
 	mov QWORD PTR [rsi], r8
 	mov QWORD PTR [rsi+8], r9
 	mov QWORD PTR [rsi+16], r10
@@ -29576,7 +29586,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2565f
+	je 2563f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -29584,7 +29594,7 @@ vg_ffdh_generate_parameters_adx:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2567:
+2565:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -29614,15 +29624,15 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2567b
-	jmp 2566f
-2565:
-2566:
+	jne 2565b
+	jmp 2564f
+2563:
+2564:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2563b
+	jne 2561b
 	mov r8, QWORD PTR [rdi+80]
 	mov r9, QWORD PTR [rdi+48]
 	shl r9, 4
@@ -29631,8 +29641,8 @@ vg_ffdh_generate_parameters_adx:
 	mov eax, 0
 	mov QWORD PTR [r9], rax
 	mov QWORD PTR [r9+8], rax
-	jmp 2561f
-2560:
+	jmp 2559f
+2558:
 	mov r9, QWORD PTR [rdi+136]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -29640,7 +29650,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rbx, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2568:
+2566:
 	mov rax, QWORD PTR [rdi+224]
 	shl rax, 3
 	mov rbp, QWORD PTR [rdi+136]
@@ -29768,17 +29778,17 @@ vg_ffdh_generate_parameters_adx:
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2568b
+	jne 2566b
 	mov rax, QWORD PTR [rdi+48]
 	cmp rax, 8
-	je 2569f
+	je 2567f
 	mov rax, QWORD PTR [rdi+48]
 	cmp rax, 16
-	je 2571f
+	je 2569f
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
 	mov QWORD PTR [rdi+248], rax
-2573:
+2571:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov rax, QWORD PTR [rdi+224]
@@ -29807,8 +29817,8 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+232]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2574f
-2576:
+	je 2572f
+2574:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -30078,10 +30088,10 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rdi+232], rax
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2576b
-	jmp 2575f
-2574:
-2575:
+	jne 2574b
+	jmp 2573f
+2572:
+2573:
 	mov rax, QWORD PTR [rdi+248]
 	add rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+240], rax
@@ -30364,15 +30374,15 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 16
 	cmp rax, QWORD PTR [rdi+48]
-	je 2577f
+	je 2575f
 	mov rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+248], rax
-	jmp 2578f
-2577:
+	jmp 2576f
+2575:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2579f
+	je 2577f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -30380,7 +30390,7 @@ vg_ffdh_generate_parameters_adx:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2581:
+2579:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -30410,23 +30420,23 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2581b
-	jmp 2580f
-2579:
-2580:
+	jne 2579b
+	jmp 2578f
+2577:
 2578:
+2576:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	mov rcx, QWORD PTR [rdi+48]
 	sub rcx, 8
 	cmp rax, rcx
-	jne 2573b
-	jmp 2572f
-2571:
+	jne 2571b
+	jmp 2570f
+2569:
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2582:
+2580:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov rax, QWORD PTR [rdi+224]
@@ -30452,7 +30462,7 @@ vg_ffdh_generate_parameters_adx:
 	mov r13, QWORD PTR [rsi+40]
 	mov r14, QWORD PTR [rsi+48]
 	mov r15, QWORD PTR [rsi+56]
-2583:
+2581:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -30721,7 +30731,7 @@ vg_ffdh_generate_parameters_adx:
 	add rax, 8
 	mov QWORD PTR [rdi+232], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2583b
+	jne 2581b
 	mov QWORD PTR [rsi], r8
 	mov QWORD PTR [rsi+8], r9
 	mov QWORD PTR [rsi+16], r10
@@ -30733,7 +30743,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2584f
+	je 2582f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -30741,7 +30751,7 @@ vg_ffdh_generate_parameters_adx:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2586:
+2584:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -30771,21 +30781,21 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2586b
-	jmp 2585f
-2584:
-2585:
+	jne 2584b
+	jmp 2583f
+2582:
+2583:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	mov rcx, QWORD PTR [rdi+48]
 	sub rcx, 8
 	cmp rax, rcx
-	jne 2582b
-2572:
-	jmp 2570f
-2569:
+	jne 2580b
 2570:
+	jmp 2568f
+2567:
+2568:
 	mov r8, QWORD PTR [rdi+80]
 	mov r9, QWORD PTR [rdi+48]
 	shl r9, 4
@@ -30803,7 +30813,7 @@ vg_ffdh_generate_parameters_adx:
 	mov r15d, 0
 	mov ebp, 0
 	mov r14d, 0
-2587:
+2585:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r11, QWORD PTR [r8+r14*8]
 	mov r12, QWORD PTR [r8+r14*8+8]
@@ -30893,13 +30903,13 @@ vg_ffdh_generate_parameters_adx:
 	add rbp, 8
 	add r14, 16
 	cmp rbp, r10
-	jne 2587b
-2561:
+	jne 2585b
+2559:
 	mov rcx, QWORD PTR [rdi+80]
 	add rcx, 16
 	mov eax, 0
 	mov QWORD PTR [rcx-16], rax
-2588:
+2586:
 	mov rsi, rcx
 	mov rbp, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rsi]
@@ -31168,10 +31178,10 @@ vg_ffdh_generate_parameters_adx:
 	add rax, rax
 	add rax, QWORD PTR [rdi+64]
 	cmp rbp, rax
-	jne 2589f
-	jmp 2590f
+	jne 2587f
+	jmp 2588f
+2587:
 2589:
-2591:
 	mov rdx, QWORD PTR [rcx-8]
 	add rdx, -1
 	adcx r8, QWORD PTR [rsi]
@@ -31433,8 +31443,8 @@ vg_ffdh_generate_parameters_adx:
 	add rax, rax
 	add rax, QWORD PTR [rdi+64]
 	cmp rbp, rax
-	jne 2591b
-2590:
+	jne 2589b
+2588:
 	mov rdx, QWORD PTR [rcx-8]
 	add rdx, -1
 	mov eax, 0
@@ -31469,7 +31479,7 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rcx+48], rax
 	add rcx, 64
 	cmp rcx, QWORD PTR [rdi+88]
-	jne 2588b
+	jne 2586b
 	mov r8, rcx
 	mov rbp, QWORD PTR [rdi+48]
 	mov r10, QWORD PTR [rcx-16]
@@ -31483,7 +31493,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rbx, QWORD PTR [rdi+128]
 	mov ebp, 0
 	mov r14, 0
-2592:
+2590:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -31512,13 +31522,13 @@ vg_ffdh_generate_parameters_adx:
 	sbb rbp, rbp
 	add r14, 8
 	cmp r14, r12
-	jne 2592b
+	jne 2590b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2593:
+2591:
 	add rbp, rbp
 	mov rax, QWORD PTR [rsi+r14*8]
 	cmovb rax, QWORD PTR [r8+r14*8]
@@ -31547,8 +31557,8 @@ vg_ffdh_generate_parameters_adx:
 	sbb rbp, rbp
 	add r14, 8
 	cmp r14, r12
-	jne 2593b
-2553:
+	jne 2591b
+2551:
 	movq rbx, xmm8
 	movq rbp, xmm9
 	movq r12, xmm10
@@ -31563,8 +31573,8 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+208]
 	sub rax, 1
 	mov QWORD PTR [rdi+208], rax
-	jne 2551b
-2492:
+	jne 2549b
+2490:
 	mov edx, 6
 	mov ecx, 4
 	mov r8d, 7
@@ -31592,7 +31602,7 @@ vg_ffdh_generate_parameters_adx:
 	sub rax, 8
 	ror rax, 3
 	shr rax, 27
-	je 2594f
+	je 2592f
 	mov rbx, QWORD PTR [rdi+rdx*8+64]
 	mov r11, QWORD PTR [rdi+rcx*8+64]
 	mov r9, QWORD PTR [rdi+r8*8+64]
@@ -31603,19 +31613,19 @@ vg_ffdh_generate_parameters_adx:
 	mov rsi, QWORD PTR [rdi+88]
 	mov eax, 0
 	mov r14, 0
-2596:
+2594:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2596b
+	jne 2594b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r13, 0
-2597:
+2595:
 	mov rcx, QWORD PTR [r11+r13*8]
 	mov ebp, 0
 	mov r14, 0
-2598:
+2596:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -31626,7 +31636,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2598b
+	jne 2596b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8], rax
@@ -31642,7 +31652,7 @@ vg_ffdh_generate_parameters_adx:
 	adc rdx, 0
 	mov rbp, rdx
 	mov r14, 1
-2599:
+2597:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -31653,7 +31663,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2599b
+	jne 2597b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8-8], rax
@@ -31664,10 +31674,10 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [r8+r12*8+8], rax
 	add r13, 1
 	cmp r13, r12
-	jne 2597b
+	jne 2595b
 	mov ebp, 0
 	mov r14, 0
-2600:
+2598:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -31675,13 +31685,13 @@ vg_ffdh_generate_parameters_adx:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2600b
+	jne 2598b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2601:
+2599:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -31690,11 +31700,11 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2601b
-	jmp 2595f
-2594:
+	jne 2599b
+	jmp 2593f
+2592:
 	cmp rcx, r8
-	je 2602f
+	je 2600f
 	mov r9, QWORD PTR [rdi+144]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -31704,7 +31714,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rcx, rbx
 	add rcx, rcx
 	mov r14d, 0
-2604:
+2602:
 	mov QWORD PTR [r8+r14*8], rax
 	mov QWORD PTR [r8+r14*8+8], rax
 	mov QWORD PTR [r8+r14*8+16], rax
@@ -31715,12 +31725,12 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [r8+r14*8+56], rax
 	add r14, 8
 	cmp r14, rcx
-	jne 2604b
+	jne 2602b
 	mov QWORD PTR [r8+r14*8], rax
 	mov QWORD PTR [r8+r14*8+8], rax
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2605:
+2603:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov QWORD PTR [rdi+232], rax
@@ -31744,7 +31754,7 @@ vg_ffdh_generate_parameters_adx:
 	mov r13, QWORD PTR [rsi+40]
 	mov r14, QWORD PTR [rsi+48]
 	mov r15, QWORD PTR [rsi+56]
-2606:
+2604:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -32013,7 +32023,7 @@ vg_ffdh_generate_parameters_adx:
 	add rax, 8
 	mov QWORD PTR [rdi+232], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2606b
+	jne 2604b
 	mov QWORD PTR [rsi], r8
 	mov QWORD PTR [rsi+8], r9
 	mov QWORD PTR [rsi+16], r10
@@ -32025,7 +32035,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2607f
+	je 2605f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -32033,7 +32043,7 @@ vg_ffdh_generate_parameters_adx:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2609:
+2607:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -32063,15 +32073,15 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2609b
-	jmp 2608f
-2607:
-2608:
+	jne 2607b
+	jmp 2606f
+2605:
+2606:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2605b
+	jne 2603b
 	mov r8, QWORD PTR [rdi+80]
 	mov r9, QWORD PTR [rdi+48]
 	shl r9, 4
@@ -32080,8 +32090,8 @@ vg_ffdh_generate_parameters_adx:
 	mov eax, 0
 	mov QWORD PTR [r9], rax
 	mov QWORD PTR [r9+8], rax
-	jmp 2603f
-2602:
+	jmp 2601f
+2600:
 	mov r9, QWORD PTR [rdi+136]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -32089,7 +32099,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rbx, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2610:
+2608:
 	mov rax, QWORD PTR [rdi+224]
 	shl rax, 3
 	mov rbp, QWORD PTR [rdi+136]
@@ -32217,17 +32227,17 @@ vg_ffdh_generate_parameters_adx:
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2610b
+	jne 2608b
 	mov rax, QWORD PTR [rdi+48]
 	cmp rax, 8
-	je 2611f
+	je 2609f
 	mov rax, QWORD PTR [rdi+48]
 	cmp rax, 16
-	je 2613f
+	je 2611f
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
 	mov QWORD PTR [rdi+248], rax
-2615:
+2613:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov rax, QWORD PTR [rdi+224]
@@ -32256,8 +32266,8 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+232]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2616f
-2618:
+	je 2614f
+2616:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -32527,10 +32537,10 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rdi+232], rax
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2618b
-	jmp 2617f
-2616:
-2617:
+	jne 2616b
+	jmp 2615f
+2614:
+2615:
 	mov rax, QWORD PTR [rdi+248]
 	add rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+240], rax
@@ -32813,15 +32823,15 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 16
 	cmp rax, QWORD PTR [rdi+48]
-	je 2619f
+	je 2617f
 	mov rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+248], rax
-	jmp 2620f
-2619:
+	jmp 2618f
+2617:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2621f
+	je 2619f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -32829,7 +32839,7 @@ vg_ffdh_generate_parameters_adx:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2623:
+2621:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -32859,23 +32869,23 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2623b
-	jmp 2622f
-2621:
-2622:
+	jne 2621b
+	jmp 2620f
+2619:
 2620:
+2618:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	mov rcx, QWORD PTR [rdi+48]
 	sub rcx, 8
 	cmp rax, rcx
-	jne 2615b
-	jmp 2614f
-2613:
+	jne 2613b
+	jmp 2612f
+2611:
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2624:
+2622:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov rax, QWORD PTR [rdi+224]
@@ -32901,7 +32911,7 @@ vg_ffdh_generate_parameters_adx:
 	mov r13, QWORD PTR [rsi+40]
 	mov r14, QWORD PTR [rsi+48]
 	mov r15, QWORD PTR [rsi+56]
-2625:
+2623:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -33170,7 +33180,7 @@ vg_ffdh_generate_parameters_adx:
 	add rax, 8
 	mov QWORD PTR [rdi+232], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2625b
+	jne 2623b
 	mov QWORD PTR [rsi], r8
 	mov QWORD PTR [rsi+8], r9
 	mov QWORD PTR [rsi+16], r10
@@ -33182,7 +33192,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2626f
+	je 2624f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -33190,7 +33200,7 @@ vg_ffdh_generate_parameters_adx:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2628:
+2626:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -33220,21 +33230,21 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2628b
-	jmp 2627f
-2626:
-2627:
+	jne 2626b
+	jmp 2625f
+2624:
+2625:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	mov rcx, QWORD PTR [rdi+48]
 	sub rcx, 8
 	cmp rax, rcx
-	jne 2624b
-2614:
-	jmp 2612f
-2611:
+	jne 2622b
 2612:
+	jmp 2610f
+2609:
+2610:
 	mov r8, QWORD PTR [rdi+80]
 	mov r9, QWORD PTR [rdi+48]
 	shl r9, 4
@@ -33252,7 +33262,7 @@ vg_ffdh_generate_parameters_adx:
 	mov r15d, 0
 	mov ebp, 0
 	mov r14d, 0
-2629:
+2627:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r11, QWORD PTR [r8+r14*8]
 	mov r12, QWORD PTR [r8+r14*8+8]
@@ -33342,13 +33352,13 @@ vg_ffdh_generate_parameters_adx:
 	add rbp, 8
 	add r14, 16
 	cmp rbp, r10
-	jne 2629b
-2603:
+	jne 2627b
+2601:
 	mov rcx, QWORD PTR [rdi+80]
 	add rcx, 16
 	mov eax, 0
 	mov QWORD PTR [rcx-16], rax
-2630:
+2628:
 	mov rsi, rcx
 	mov rbp, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rsi]
@@ -33617,10 +33627,10 @@ vg_ffdh_generate_parameters_adx:
 	add rax, rax
 	add rax, QWORD PTR [rdi+64]
 	cmp rbp, rax
-	jne 2631f
-	jmp 2632f
+	jne 2629f
+	jmp 2630f
+2629:
 2631:
-2633:
 	mov rdx, QWORD PTR [rcx-8]
 	add rdx, -1
 	adcx r8, QWORD PTR [rsi]
@@ -33882,8 +33892,8 @@ vg_ffdh_generate_parameters_adx:
 	add rax, rax
 	add rax, QWORD PTR [rdi+64]
 	cmp rbp, rax
-	jne 2633b
-2632:
+	jne 2631b
+2630:
 	mov rdx, QWORD PTR [rcx-8]
 	add rdx, -1
 	mov eax, 0
@@ -33918,7 +33928,7 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rcx+48], rax
 	add rcx, 64
 	cmp rcx, QWORD PTR [rdi+88]
-	jne 2630b
+	jne 2628b
 	mov r8, rcx
 	mov rbp, QWORD PTR [rdi+48]
 	mov r10, QWORD PTR [rcx-16]
@@ -33932,7 +33942,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rbx, QWORD PTR [rdi+128]
 	mov ebp, 0
 	mov r14, 0
-2634:
+2632:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -33961,13 +33971,13 @@ vg_ffdh_generate_parameters_adx:
 	sbb rbp, rbp
 	add r14, 8
 	cmp r14, r12
-	jne 2634b
+	jne 2632b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2635:
+2633:
 	add rbp, rbp
 	mov rax, QWORD PTR [rsi+r14*8]
 	cmovb rax, QWORD PTR [r8+r14*8]
@@ -33996,8 +34006,8 @@ vg_ffdh_generate_parameters_adx:
 	sbb rbp, rbp
 	add r14, 8
 	cmp r14, r12
-	jne 2635b
-2595:
+	jne 2633b
+2593:
 	movq rbx, xmm8
 	movq rbp, xmm9
 	movq r12, xmm10
@@ -34036,12 +34046,12 @@ vg_ffdh_generate_parameters_adx:
 	add rbx, rax
 	add rbx, rax
 	mov r14, 0
-2636:
+2634:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2636b
+	jne 2634b
 	mov r12, QWORD PTR [rdi+48]
 	mov r8, QWORD PTR [rdi+64]
 	mov rax, QWORD PTR [rdi+48]
@@ -34095,7 +34105,7 @@ vg_ffdh_generate_parameters_adx:
 	add rsi, rax
 	mov ebp, 0
 	mov r14, 0
-2637:
+2635:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -34103,13 +34113,13 @@ vg_ffdh_generate_parameters_adx:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2637b
+	jne 2635b
 	mov r12, QWORD PTR [rdi+48]
 	mov r8, QWORD PTR [rdi+64]
 	mov rbp, QWORD PTR [r8]
 	and rbp, -2
 	mov r14, 1
-2638:
+2636:
 	mov rax, QWORD PTR [r8+r14*8]
 	cmp rbp, 1
 	sbb rdx, rdx
@@ -34117,7 +34127,7 @@ vg_ffdh_generate_parameters_adx:
 	or rbp, rax
 	add r14, 1
 	cmp r14, r12
-	jne 2638b
+	jne 2636b
 	mov rax, QWORD PTR [rdi+48]
 	add rax, 2
 	add rax, rax
@@ -34150,6 +34160,64 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rbx+r12*8], rax
 	mov rbp, QWORD PTR [rsi]
 	mov r14, 1
+2637:
+	mov rax, QWORD PTR [rsi+r14*8]
+	mov rdx, rax
+	shl rdx, 63
+	mov rcx, rbp
+	shr rcx, 1
+	or rcx, rdx
+	xor rcx, rbp
+	and rcx, r15
+	xor rcx, rbp
+	mov QWORD PTR [rbx+r14*8-8], rcx
+	mov rbp, rax
+	add r14, 1
+	cmp r14, r12
+	jne 2637b
+	mov rcx, rbp
+	shr rcx, 1
+	xor rcx, rbp
+	and rcx, r15
+	xor rcx, rbp
+	mov QWORD PTR [rbx+r12*8-8], rcx
+	mov rsi, rbx
+	movabs r15, -2459565876494606883
+	and r15, QWORD PTR [rbx+r12*8]
+	cmp r15, 1
+	sbb r15, r15
+	xor r15, -1
+	mov rbp, QWORD PTR [rsi]
+	mov r14, 1
+2638:
+	mov rax, QWORD PTR [rsi+r14*8]
+	mov rdx, rax
+	shl rdx, 63
+	mov rcx, rbp
+	shr rcx, 1
+	or rcx, rdx
+	xor rcx, rbp
+	and rcx, r15
+	xor rcx, rbp
+	mov QWORD PTR [rbx+r14*8-8], rcx
+	mov rbp, rax
+	add r14, 1
+	cmp r14, r12
+	jne 2638b
+	mov rcx, rbp
+	shr rcx, 1
+	xor rcx, rbp
+	and rcx, r15
+	xor rcx, rbp
+	mov QWORD PTR [rbx+r12*8-8], rcx
+	mov rsi, rbx
+	movabs r15, -7378697629483820647
+	and r15, QWORD PTR [rbx+r12*8]
+	cmp r15, 1
+	sbb r15, r15
+	xor r15, -1
+	mov rbp, QWORD PTR [rsi]
+	mov r14, 1
 2639:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov rdx, rax
@@ -34172,7 +34240,7 @@ vg_ffdh_generate_parameters_adx:
 	xor rcx, rbp
 	mov QWORD PTR [rbx+r12*8-8], rcx
 	mov rsi, rbx
-	movabs r15, -2459565876494606883
+	movabs r15, 1229782938247303441
 	and r15, QWORD PTR [rbx+r12*8]
 	cmp r15, 1
 	sbb r15, r15
@@ -34200,73 +34268,15 @@ vg_ffdh_generate_parameters_adx:
 	and rcx, r15
 	xor rcx, rbp
 	mov QWORD PTR [rbx+r12*8-8], rcx
-	mov rsi, rbx
-	movabs r15, -7378697629483820647
-	and r15, QWORD PTR [rbx+r12*8]
-	cmp r15, 1
-	sbb r15, r15
-	xor r15, -1
-	mov rbp, QWORD PTR [rsi]
-	mov r14, 1
-2641:
-	mov rax, QWORD PTR [rsi+r14*8]
-	mov rdx, rax
-	shl rdx, 63
-	mov rcx, rbp
-	shr rcx, 1
-	or rcx, rdx
-	xor rcx, rbp
-	and rcx, r15
-	xor rcx, rbp
-	mov QWORD PTR [rbx+r14*8-8], rcx
-	mov rbp, rax
-	add r14, 1
-	cmp r14, r12
-	jne 2641b
-	mov rcx, rbp
-	shr rcx, 1
-	xor rcx, rbp
-	and rcx, r15
-	xor rcx, rbp
-	mov QWORD PTR [rbx+r12*8-8], rcx
-	mov rsi, rbx
-	movabs r15, 1229782938247303441
-	and r15, QWORD PTR [rbx+r12*8]
-	cmp r15, 1
-	sbb r15, r15
-	xor r15, -1
-	mov rbp, QWORD PTR [rsi]
-	mov r14, 1
-2642:
-	mov rax, QWORD PTR [rsi+r14*8]
-	mov rdx, rax
-	shl rdx, 63
-	mov rcx, rbp
-	shr rcx, 1
-	or rcx, rdx
-	xor rcx, rbp
-	and rcx, r15
-	xor rcx, rbp
-	mov QWORD PTR [rbx+r14*8-8], rcx
-	mov rbp, rax
-	add r14, 1
-	cmp r14, r12
-	jne 2642b
-	mov rcx, rbp
-	shr rcx, 1
-	xor rcx, rbp
-	and rcx, r15
-	xor rcx, rbp
-	mov QWORD PTR [rbx+r12*8-8], rcx
 	mov rax, QWORD PTR [rdi+128]
 	mov ecx, 0
 	mov QWORD PTR [rax+144], rcx
-2643:
-2644:
+2641:
+2642:
 	mov rax, QWORD PTR [rdi+128]
 	mov rcx, QWORD PTR [rax+104]
 	cmp rcx, QWORD PTR [rax+128]
-	jb 2645f
+	jb 2643f
 	mov rax, QWORD PTR [rdi+128]
 	mov rsi, QWORD PTR [rax+96]
 	mov rcx, QWORD PTR [rax+128]
@@ -34332,13 +34342,13 @@ vg_ffdh_generate_parameters_adx:
 	add r10, 1
 	add r11, 1
 	sub rcx, 1
-2647:
+2645:
 	movzx eax, BYTE PTR [r10]
 	mov BYTE PTR [r11], al
 	add r10, 1
 	add r11, 1
 	sub rcx, 1
-	jne 2647b
+	jne 2645b
 	mov rdi, rbp
 	mov rax, QWORD PTR [rdi+128]
 	mov rsi, QWORD PTR [rax+48]
@@ -34347,7 +34357,7 @@ vg_ffdh_generate_parameters_adx:
 	mov eax, 0
 	mov rdx, rcx
 	mov r14, rsi
-2648:
+2646:
 	sub rdx, 1
 	ror rax, 56
 	movzx ebp, BYTE PTR [r14]
@@ -34355,19 +34365,49 @@ vg_ffdh_generate_parameters_adx:
 	add r14, 1
 	mov rbp, rdx
 	and rbp, 7
-	je 2649f
-	jmp 2650f
-2649:
+	je 2647f
+	jmp 2648f
+2647:
 	mov rbp, rdx
 	shr rbp, 3
 	mov QWORD PTR [rbx+rbp*8], rax
 	mov eax, 0
-2650:
+2648:
 	test rdx, rdx
-	jne 2648b
+	jne 2646b
 	mov r12, QWORD PTR [rdi+48]
 	mov rbx, QWORD PTR [rdi+120]
 	mov r10, QWORD PTR [rdi+104]
+	mov ebp, 0
+	mov r14, 0
+2649:
+	add rbp, rbp
+	mov rax, QWORD PTR [rbx+r14*8]
+	sbb rax, QWORD PTR [r10+r14*8]
+	sbb rbp, rbp
+	add r14, 1
+	cmp r14, r12
+	jne 2649b
+	mov rax, rbp
+	and rax, 1
+	mov QWORD PTR [rdi+240], rax
+	mov r12, QWORD PTR [rdi+48]
+	mov rsi, QWORD PTR [rdi+104]
+	mov rbx, QWORD PTR [rdi+88]
+	mov r14, 0
+2650:
+	mov rax, QWORD PTR [rsi+r14*8]
+	mov QWORD PTR [rbx+r14*8], rax
+	add r14, 1
+	cmp r14, r12
+	jne 2650b
+	mov rbx, QWORD PTR [rdi+88]
+	mov rax, QWORD PTR [rbx]
+	or rax, 1
+	mov QWORD PTR [rbx], rax
+	mov r12, QWORD PTR [rdi+48]
+	mov rbx, QWORD PTR [rdi+88]
+	mov r10, QWORD PTR [rdi+64]
 	mov ebp, 0
 	mov r14, 0
 2651:
@@ -34380,54 +34420,24 @@ vg_ffdh_generate_parameters_adx:
 	jne 2651b
 	mov rax, rbp
 	and rax, 1
-	mov QWORD PTR [rdi+240], rax
-	mov r12, QWORD PTR [rdi+48]
-	mov rsi, QWORD PTR [rdi+104]
-	mov rbx, QWORD PTR [rdi+88]
-	mov r14, 0
-2652:
-	mov rax, QWORD PTR [rsi+r14*8]
-	mov QWORD PTR [rbx+r14*8], rax
-	add r14, 1
-	cmp r14, r12
-	jne 2652b
-	mov rbx, QWORD PTR [rdi+88]
-	mov rax, QWORD PTR [rbx]
-	or rax, 1
-	mov QWORD PTR [rbx], rax
-	mov r12, QWORD PTR [rdi+48]
-	mov rbx, QWORD PTR [rdi+88]
-	mov r10, QWORD PTR [rdi+64]
-	mov ebp, 0
-	mov r14, 0
-2653:
-	add rbp, rbp
-	mov rax, QWORD PTR [rbx+r14*8]
-	sbb rax, QWORD PTR [r10+r14*8]
-	sbb rbp, rbp
-	add r14, 1
-	cmp r14, r12
-	jne 2653b
-	mov rax, rbp
-	and rax, 1
 	and rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+240], rax
 	test rax, rax
 	mov rax, QWORD PTR [rdi+128]
 	mov edx, 1
 	mov QWORD PTR [rax+152], rdx
-	jmp 2646f
-2645:
+	jmp 2644f
+2643:
 	mov rax, QWORD PTR [rdi+128]
 	mov edx, 0
 	mov QWORD PTR [rax+152], rdx
 	cmp rdx, 1
-2646:
-	je 2644b
+2644:
+	je 2642b
 	mov rax, QWORD PTR [rdi+128]
 	mov rcx, QWORD PTR [rax+152]
 	test rcx, rcx
-	je 2654f
+	je 2652f
 	mov edx, 5
 	mov ecx, 5
 	mov r8d, 4
@@ -34455,7 +34465,7 @@ vg_ffdh_generate_parameters_adx:
 	sub rax, 8
 	ror rax, 3
 	shr rax, 27
-	je 2656f
+	je 2654f
 	mov rbx, QWORD PTR [rdi+rdx*8+64]
 	mov r11, QWORD PTR [rdi+rcx*8+64]
 	mov r9, QWORD PTR [rdi+r8*8+64]
@@ -34466,19 +34476,19 @@ vg_ffdh_generate_parameters_adx:
 	mov rsi, QWORD PTR [rdi+88]
 	mov eax, 0
 	mov r14, 0
-2658:
+2656:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2658b
+	jne 2656b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r13, 0
-2659:
+2657:
 	mov rcx, QWORD PTR [r11+r13*8]
 	mov ebp, 0
 	mov r14, 0
-2660:
+2658:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -34489,7 +34499,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2660b
+	jne 2658b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8], rax
@@ -34505,7 +34515,7 @@ vg_ffdh_generate_parameters_adx:
 	adc rdx, 0
 	mov rbp, rdx
 	mov r14, 1
-2661:
+2659:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -34516,7 +34526,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2661b
+	jne 2659b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8-8], rax
@@ -34527,10 +34537,10 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [r8+r12*8+8], rax
 	add r13, 1
 	cmp r13, r12
-	jne 2659b
+	jne 2657b
 	mov ebp, 0
 	mov r14, 0
-2662:
+2660:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -34538,13 +34548,13 @@ vg_ffdh_generate_parameters_adx:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2662b
+	jne 2660b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2663:
+2661:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -34553,11 +34563,11 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2663b
-	jmp 2657f
-2656:
+	jne 2661b
+	jmp 2655f
+2654:
 	cmp rcx, r8
-	je 2664f
+	je 2662f
 	mov r9, QWORD PTR [rdi+144]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -34567,7 +34577,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rcx, rbx
 	add rcx, rcx
 	mov r14d, 0
-2666:
+2664:
 	mov QWORD PTR [r8+r14*8], rax
 	mov QWORD PTR [r8+r14*8+8], rax
 	mov QWORD PTR [r8+r14*8+16], rax
@@ -34578,12 +34588,12 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [r8+r14*8+56], rax
 	add r14, 8
 	cmp r14, rcx
-	jne 2666b
+	jne 2664b
 	mov QWORD PTR [r8+r14*8], rax
 	mov QWORD PTR [r8+r14*8+8], rax
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2667:
+2665:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov QWORD PTR [rdi+232], rax
@@ -34607,7 +34617,7 @@ vg_ffdh_generate_parameters_adx:
 	mov r13, QWORD PTR [rsi+40]
 	mov r14, QWORD PTR [rsi+48]
 	mov r15, QWORD PTR [rsi+56]
-2668:
+2666:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -34876,7 +34886,7 @@ vg_ffdh_generate_parameters_adx:
 	add rax, 8
 	mov QWORD PTR [rdi+232], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2668b
+	jne 2666b
 	mov QWORD PTR [rsi], r8
 	mov QWORD PTR [rsi+8], r9
 	mov QWORD PTR [rsi+16], r10
@@ -34888,7 +34898,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2669f
+	je 2667f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -34896,7 +34906,7 @@ vg_ffdh_generate_parameters_adx:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2671:
+2669:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -34926,15 +34936,15 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2671b
-	jmp 2670f
-2669:
-2670:
+	jne 2669b
+	jmp 2668f
+2667:
+2668:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2667b
+	jne 2665b
 	mov r8, QWORD PTR [rdi+80]
 	mov r9, QWORD PTR [rdi+48]
 	shl r9, 4
@@ -34943,8 +34953,8 @@ vg_ffdh_generate_parameters_adx:
 	mov eax, 0
 	mov QWORD PTR [r9], rax
 	mov QWORD PTR [r9+8], rax
-	jmp 2665f
-2664:
+	jmp 2663f
+2662:
 	mov r9, QWORD PTR [rdi+136]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -34952,7 +34962,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rbx, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2672:
+2670:
 	mov rax, QWORD PTR [rdi+224]
 	shl rax, 3
 	mov rbp, QWORD PTR [rdi+136]
@@ -35080,17 +35090,17 @@ vg_ffdh_generate_parameters_adx:
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2672b
+	jne 2670b
 	mov rax, QWORD PTR [rdi+48]
 	cmp rax, 8
-	je 2673f
+	je 2671f
 	mov rax, QWORD PTR [rdi+48]
 	cmp rax, 16
-	je 2675f
+	je 2673f
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
 	mov QWORD PTR [rdi+248], rax
-2677:
+2675:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov rax, QWORD PTR [rdi+224]
@@ -35119,8 +35129,8 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+232]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2678f
-2680:
+	je 2676f
+2678:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -35390,10 +35400,10 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rdi+232], rax
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2680b
-	jmp 2679f
-2678:
-2679:
+	jne 2678b
+	jmp 2677f
+2676:
+2677:
 	mov rax, QWORD PTR [rdi+248]
 	add rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+240], rax
@@ -35676,15 +35686,15 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 16
 	cmp rax, QWORD PTR [rdi+48]
-	je 2681f
+	je 2679f
 	mov rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+248], rax
-	jmp 2682f
-2681:
+	jmp 2680f
+2679:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2683f
+	je 2681f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -35692,7 +35702,7 @@ vg_ffdh_generate_parameters_adx:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2685:
+2683:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -35722,23 +35732,23 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2685b
-	jmp 2684f
-2683:
-2684:
+	jne 2683b
+	jmp 2682f
+2681:
 2682:
+2680:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	mov rcx, QWORD PTR [rdi+48]
 	sub rcx, 8
 	cmp rax, rcx
-	jne 2677b
-	jmp 2676f
-2675:
+	jne 2675b
+	jmp 2674f
+2673:
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2686:
+2684:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov rax, QWORD PTR [rdi+224]
@@ -35764,7 +35774,7 @@ vg_ffdh_generate_parameters_adx:
 	mov r13, QWORD PTR [rsi+40]
 	mov r14, QWORD PTR [rsi+48]
 	mov r15, QWORD PTR [rsi+56]
-2687:
+2685:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -36033,7 +36043,7 @@ vg_ffdh_generate_parameters_adx:
 	add rax, 8
 	mov QWORD PTR [rdi+232], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2687b
+	jne 2685b
 	mov QWORD PTR [rsi], r8
 	mov QWORD PTR [rsi+8], r9
 	mov QWORD PTR [rsi+16], r10
@@ -36045,7 +36055,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2688f
+	je 2686f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -36053,7 +36063,7 @@ vg_ffdh_generate_parameters_adx:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2690:
+2688:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -36083,21 +36093,21 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2690b
-	jmp 2689f
-2688:
-2689:
+	jne 2688b
+	jmp 2687f
+2686:
+2687:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	mov rcx, QWORD PTR [rdi+48]
 	sub rcx, 8
 	cmp rax, rcx
-	jne 2686b
-2676:
-	jmp 2674f
-2673:
+	jne 2684b
 2674:
+	jmp 2672f
+2671:
+2672:
 	mov r8, QWORD PTR [rdi+80]
 	mov r9, QWORD PTR [rdi+48]
 	shl r9, 4
@@ -36115,7 +36125,7 @@ vg_ffdh_generate_parameters_adx:
 	mov r15d, 0
 	mov ebp, 0
 	mov r14d, 0
-2691:
+2689:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r11, QWORD PTR [r8+r14*8]
 	mov r12, QWORD PTR [r8+r14*8+8]
@@ -36205,13 +36215,13 @@ vg_ffdh_generate_parameters_adx:
 	add rbp, 8
 	add r14, 16
 	cmp rbp, r10
-	jne 2691b
-2665:
+	jne 2689b
+2663:
 	mov rcx, QWORD PTR [rdi+80]
 	add rcx, 16
 	mov eax, 0
 	mov QWORD PTR [rcx-16], rax
-2692:
+2690:
 	mov rsi, rcx
 	mov rbp, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rsi]
@@ -36480,10 +36490,10 @@ vg_ffdh_generate_parameters_adx:
 	add rax, rax
 	add rax, QWORD PTR [rdi+64]
 	cmp rbp, rax
-	jne 2693f
-	jmp 2694f
+	jne 2691f
+	jmp 2692f
+2691:
 2693:
-2695:
 	mov rdx, QWORD PTR [rcx-8]
 	add rdx, -1
 	adcx r8, QWORD PTR [rsi]
@@ -36745,8 +36755,8 @@ vg_ffdh_generate_parameters_adx:
 	add rax, rax
 	add rax, QWORD PTR [rdi+64]
 	cmp rbp, rax
-	jne 2695b
-2694:
+	jne 2693b
+2692:
 	mov rdx, QWORD PTR [rcx-8]
 	add rdx, -1
 	mov eax, 0
@@ -36781,7 +36791,7 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [rcx+48], rax
 	add rcx, 64
 	cmp rcx, QWORD PTR [rdi+88]
-	jne 2692b
+	jne 2690b
 	mov r8, rcx
 	mov rbp, QWORD PTR [rdi+48]
 	mov r10, QWORD PTR [rcx-16]
@@ -36795,7 +36805,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rbx, QWORD PTR [rdi+128]
 	mov ebp, 0
 	mov r14, 0
-2696:
+2694:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -36824,13 +36834,13 @@ vg_ffdh_generate_parameters_adx:
 	sbb rbp, rbp
 	add r14, 8
 	cmp r14, r12
-	jne 2696b
+	jne 2694b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2697:
+2695:
 	add rbp, rbp
 	mov rax, QWORD PTR [rsi+r14*8]
 	cmovb rax, QWORD PTR [r8+r14*8]
@@ -36859,8 +36869,8 @@ vg_ffdh_generate_parameters_adx:
 	sbb rbp, rbp
 	add r14, 8
 	cmp r14, r12
-	jne 2697b
-2657:
+	jne 2695b
+2655:
 	movq rbx, xmm8
 	movq rbp, xmm9
 	movq r12, xmm10
@@ -36897,7 +36907,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rbx, QWORD PTR [rcx]
 	mov rax, QWORD PTR [rdi+176]
 	test rax, rax
-	je 2698f
+	je 2696f
 	mov r9, QWORD PTR [rdi+128]
 	mov rcx, QWORD PTR [r9+144]
 	add rcx, 1
@@ -36907,25 +36917,25 @@ vg_ffdh_generate_parameters_adx:
 	mov edx, 1
 	cmovae rax, rdx
 	mov QWORD PTR [r9+152], rax
-	jmp 2699f
-2698:
+	jmp 2697f
+2696:
 	mov rax, QWORD PTR [rdi+128]
 	mov edx, 2
 	mov QWORD PTR [rax+152], rdx
-2699:
-	jmp 2655f
-2654:
-2655:
+2697:
+	jmp 2653f
+2652:
+2653:
 	mov rax, QWORD PTR [rdi+128]
 	mov rcx, QWORD PTR [rax+152]
 	cmp rcx, 4
-	je 2643b
+	je 2641b
 	mov rdi, QWORD PTR [rdi+128]
 	mov rax, QWORD PTR [rdi+152]
 	cmp rax, 1
-	je 2700f
-	jmp 2701f
-2700:
+	je 2698f
+	jmp 2699f
+2698:
 	mov rbp, rdi
 	mov rax, QWORD PTR [rdi+48]
 	mov rsi, QWORD PTR [rdi+88]
@@ -36980,40 +36990,40 @@ vg_ffdh_generate_parameters_adx:
 	add r10, 1
 	add r11, 1
 	sub rcx, 1
-2702:
+2700:
 	movzx eax, BYTE PTR [r10]
 	mov BYTE PTR [r11], al
 	add r10, 1
 	add r11, 1
 	sub rcx, 1
-	jne 2702b
+	jne 2700b
 	movzx eax, BYTE PTR [r11-1]
 	or rax, 1
 	mov BYTE PTR [r11-1], al
 	mov rdi, rbp
-2701:
-2483:
-2264:
-246:
-229:
-218:
+2699:
+2481:
+2262:
+244:
+227:
+216:
 	jmp 24f
 23:
 24:
 	mov rax, QWORD PTR [rdi+152]
 	cmp rax, 1
-	je 2703f
+	je 2701f
 	mov rsi, QWORD PTR [rdi+48]
 	mov rcx, QWORD PTR [rdi+56]
 	mov eax, 0
-2705:
+2703:
 	mov BYTE PTR [rsi], al
 	add rsi, 1
 	sub rcx, 1
-	jne 2705b
-	jmp 2704f
-2703:
-2704:
+	jne 2703b
+	jmp 2702f
+2701:
+2702:
 	mov rax, QWORD PTR [rdi+152]
 	mov rdx, QWORD PTR [rdi+64]
 	mov rcx, QWORD PTR [rdi+112]
@@ -37029,12 +37039,12 @@ vg_ffdh_generate_parameters_adx:
 	lea rsp, [rsp+32]
 	mov eax, eax
 	cmp rax, 1
-	je 2706f
+	je 2704f
 	cmp rax, 2
-	je 2708f
+	je 2706f
 	mov rax, QWORD PTR [r12+88]
 	cmp rax, QWORD PTR [r12+16]
-	jae 2710f
+	jae 2708f
 	mov rcx, QWORD PTR [r12+8]
 	shl rcx, 8
 	cmp rax, rcx
@@ -37046,8 +37056,8 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [r12+24], rax
 	mov eax, 0
 	mov QWORD PTR [r12+112], rax
-	jmp 2711f
-2710:
+	jmp 2709f
+2708:
 	mov eax, 0
 	mov QWORD PTR [r12], rax
 	mov QWORD PTR [r12+24], rax
@@ -37057,14 +37067,14 @@ vg_ffdh_generate_parameters_adx:
 	mov rsi, QWORD PTR [rdi+40]
 	mov rcx, QWORD PTR [rdi+48]
 	mov eax, 0
-2712:
+2710:
 	mov BYTE PTR [rsi], al
 	add rsi, 1
 	sub rcx, 1
-	jne 2712b
-2711:
-	jmp 2709f
-2708:
+	jne 2710b
+2709:
+	jmp 2707f
+2706:
 	mov rax, QWORD PTR [r12+56]
 	mov rcx, QWORD PTR [rax]
 	mov rax, QWORD PTR [r12+96]
@@ -37081,9 +37091,9 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [r12], rax
 	mov eax, 4
 	mov QWORD PTR [r12+112], rax
-2709:
-	jmp 2707f
-2706:
+2707:
+	jmp 2705f
+2704:
 	mov rax, QWORD PTR [r12+56]
 	mov rcx, QWORD PTR [rax]
 	mov rax, QWORD PTR [r12+96]
@@ -37094,7 +37104,7 @@ vg_ffdh_generate_parameters_adx:
 	mov QWORD PTR [r12+24], rax
 	mov eax, 1
 	mov QWORD PTR [r12+112], rax
-2707:
+2705:
 	jmp 22f
 21:
 	mov eax, 0
@@ -37106,11 +37116,11 @@ vg_ffdh_generate_parameters_adx:
 	mov rsi, QWORD PTR [rdi+40]
 	mov rcx, QWORD PTR [rdi+48]
 	mov eax, 0
-2713:
+2711:
 	mov BYTE PTR [rsi], al
 	add rsi, 1
 	sub rcx, 1
-	jne 2713b
+	jne 2711b
 22:
 	mov rax, QWORD PTR [r12+112]
 	cmp rax, 4
@@ -42842,23 +42852,28 @@ vg_ffdh_generate_parameters:
 	cmp r14, r12
 	jne 213b
 	mov rdx, rsi
-	mov esi, 0
-	mov ebx, 255
-	mov r13d, 64
-214:
-	add rdx, rdx
-	adc rsi, rsi
-	sbb rcx, rcx
-	mov rax, rsi
-	sub rax, rbx
-	sbb rbp, rbp
-	xor rbp, -1
-	or rcx, rbp
-	xor rax, rsi
-	and rax, rcx
-	xor rsi, rax
-	sub r13, 1
-	jne 214b
+	shl rdx, 32
+	shr rdx, 32
+	shr rsi, 32
+	add rsi, rdx
+	mov rdx, rsi
+	shl rdx, 48
+	shr rdx, 48
+	shr rsi, 16
+	add rsi, rdx
+	mov rdx, rsi
+	shl rdx, 56
+	shr rdx, 56
+	shr rsi, 8
+	add rsi, rdx
+	mov rdx, rsi
+	shl rdx, 56
+	shr rdx, 56
+	shr rsi, 8
+	add rsi, rdx
+	mov rdx, rsi
+	sub rdx, 255
+	cmovae rsi, rdx
 	mov eax, 0
 	mov ecx, 1
 	cmp rsi, 2
@@ -42933,7 +42948,7 @@ vg_ffdh_generate_parameters:
 	mov r8, QWORD PTR [rdi+64]
 	mov esi, 0
 	mov r14d, 0
-215:
+214:
 	mov rax, r12
 	sub rax, 1
 	sub rax, r14
@@ -42941,25 +42956,30 @@ vg_ffdh_generate_parameters:
 	adc rsi, 0
 	add r14, 1
 	cmp r14, r12
-	jne 215b
+	jne 214b
 	mov rdx, rsi
-	mov esi, 0
-	mov ebx, 255
-	mov r13d, 64
-216:
-	add rdx, rdx
-	adc rsi, rsi
-	sbb rcx, rcx
-	mov rax, rsi
-	sub rax, rbx
-	sbb rbp, rbp
-	xor rbp, -1
-	or rcx, rbp
-	xor rax, rsi
-	and rax, rcx
-	xor rsi, rax
-	sub r13, 1
-	jne 216b
+	shl rdx, 32
+	shr rdx, 32
+	shr rsi, 32
+	add rsi, rdx
+	mov rdx, rsi
+	shl rdx, 48
+	shr rdx, 48
+	shr rsi, 16
+	add rsi, rdx
+	mov rdx, rsi
+	shl rdx, 56
+	shr rdx, 56
+	shr rsi, 8
+	add rsi, rdx
+	mov rdx, rsi
+	shl rdx, 56
+	shr rdx, 56
+	shr rsi, 8
+	add rsi, rdx
+	mov rdx, rsi
+	sub rdx, 255
+	cmovae rsi, rdx
 	mov eax, 0
 	mov ecx, 1
 	cmp rsi, 2
@@ -43059,19 +43079,19 @@ vg_ffdh_generate_parameters:
 	cmovne rax, rcx
 	cmp rax, 1
 212:
-	je 217f
+	je 215f
 	mov rdi, QWORD PTR [rdi+128]
 	mov eax, 2
 	mov QWORD PTR [rdi+152], rax
-	jmp 218f
-217:
+	jmp 216f
+215:
 	mov rax, QWORD PTR [rdi+64]
 	mov rax, QWORD PTR [rax]
 	and rax, 1
 	cmp rax, 1
-	je 219f
-	jmp 220f
-219:
+	je 217f
+	jmp 218f
+217:
 	mov rax, QWORD PTR [rdi+128]
 	mov rdx, QWORD PTR [rax+72]
 	mov rax, QWORD PTR [rdi+48]
@@ -43598,16 +43618,16 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [rbx+2040], rax
 	mov eax, 128
 	cmp rdx, 1025
-	jb 221f
+	jb 219f
 	mov eax, 256
-	jmp 222f
-221:
-222:
+	jmp 220f
+219:
+220:
 	mov QWORD PTR [rdi+208], rax
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
 	mov r13d, 0
-223:
+221:
 	mov rax, QWORD PTR [rdi+48]
 	add rax, 2
 	add rax, rax
@@ -43621,6 +43641,162 @@ vg_ffdh_generate_parameters:
 	mov rax, QWORD PTR [rbx+r13*8]
 	mov QWORD PTR [rdi+216], rax
 	mov rbx, QWORD PTR [rdi+216]
+	and rbx, 65535
+	mov rcx, rbx
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov r15d, 0
+	sub r15, rcx
+	mov r12, QWORD PTR [rdi+48]
+	mov r8, QWORD PTR [rdi+64]
+	mov ebp, 0
+	mov r14, 0
+222:
+	mov rsi, QWORD PTR [r8+r14*8]
+	mov eax, esi
+	add rax, rbp
+	mov rcx, rax
+	mul r15
+	mov eax, eax
+	mul rbx
+	add rax, rcx
+	shr rax, 32
+	mov rbp, rax
+	mov rax, rsi
+	shr rax, 32
+	add rax, rbp
+	mov rcx, rax
+	mul r15
+	mov eax, eax
+	mul rbx
+	add rax, rcx
+	shr rax, 32
+	mov rbp, rax
+	add r14, 1
+	cmp r14, r12
+	jne 222b
+	mov rax, rbp
+	cmp rax, 1
+	sbb rdx, rdx
+	xor rax, rbx
+	cmp rax, 1
+	sbb rcx, rcx
+	or rdx, rcx
+	or rdx, QWORD PTR [rdi+224]
+	mov QWORD PTR [rdi+224], rdx
+	mov rbx, QWORD PTR [rdi+216]
+	shr rbx, 16
+	and rbx, 65535
+	mov rcx, rbx
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov r15d, 0
+	sub r15, rcx
+	mov r12, QWORD PTR [rdi+48]
+	mov r8, QWORD PTR [rdi+64]
+	mov ebp, 0
+	mov r14, 0
+223:
+	mov rsi, QWORD PTR [r8+r14*8]
+	mov eax, esi
+	add rax, rbp
+	mov rcx, rax
+	mul r15
+	mov eax, eax
+	mul rbx
+	add rax, rcx
+	shr rax, 32
+	mov rbp, rax
+	mov rax, rsi
+	shr rax, 32
+	add rax, rbp
+	mov rcx, rax
+	mul r15
+	mov eax, eax
+	mul rbx
+	add rax, rcx
+	shr rax, 32
+	mov rbp, rax
+	add r14, 1
+	cmp r14, r12
+	jne 223b
+	mov rax, rbp
+	cmp rax, 1
+	sbb rdx, rdx
+	xor rax, rbx
+	cmp rax, 1
+	sbb rcx, rcx
+	or rdx, rcx
+	or rdx, QWORD PTR [rdi+224]
+	mov QWORD PTR [rdi+224], rdx
+	mov rbx, QWORD PTR [rdi+216]
+	shr rbx, 32
 	and rbx, 65535
 	mov rcx, rbx
 	mov rax, rbx
@@ -43698,7 +43874,7 @@ vg_ffdh_generate_parameters:
 	or rdx, QWORD PTR [rdi+224]
 	mov QWORD PTR [rdi+224], rdx
 	mov rbx, QWORD PTR [rdi+216]
-	shr rbx, 16
+	shr rbx, 48
 	and rbx, 65535
 	mov rcx, rbx
 	mov rax, rbx
@@ -43775,175 +43951,19 @@ vg_ffdh_generate_parameters:
 	or rdx, rcx
 	or rdx, QWORD PTR [rdi+224]
 	mov QWORD PTR [rdi+224], rdx
-	mov rbx, QWORD PTR [rdi+216]
-	shr rbx, 32
-	and rbx, 65535
-	mov rcx, rbx
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov r15d, 0
-	sub r15, rcx
-	mov r12, QWORD PTR [rdi+48]
-	mov r8, QWORD PTR [rdi+64]
-	mov ebp, 0
-	mov r14, 0
-226:
-	mov rsi, QWORD PTR [r8+r14*8]
-	mov eax, esi
-	add rax, rbp
-	mov rcx, rax
-	mul r15
-	mov eax, eax
-	mul rbx
-	add rax, rcx
-	shr rax, 32
-	mov rbp, rax
-	mov rax, rsi
-	shr rax, 32
-	add rax, rbp
-	mov rcx, rax
-	mul r15
-	mov eax, eax
-	mul rbx
-	add rax, rcx
-	shr rax, 32
-	mov rbp, rax
-	add r14, 1
-	cmp r14, r12
-	jne 226b
-	mov rax, rbp
-	cmp rax, 1
-	sbb rdx, rdx
-	xor rax, rbx
-	cmp rax, 1
-	sbb rcx, rcx
-	or rdx, rcx
-	or rdx, QWORD PTR [rdi+224]
-	mov QWORD PTR [rdi+224], rdx
-	mov rbx, QWORD PTR [rdi+216]
-	shr rbx, 48
-	and rbx, 65535
-	mov rcx, rbx
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov r15d, 0
-	sub r15, rcx
-	mov r12, QWORD PTR [rdi+48]
-	mov r8, QWORD PTR [rdi+64]
-	mov ebp, 0
-	mov r14, 0
-227:
-	mov rsi, QWORD PTR [r8+r14*8]
-	mov eax, esi
-	add rax, rbp
-	mov rcx, rax
-	mul r15
-	mov eax, eax
-	mul rbx
-	add rax, rcx
-	shr rax, 32
-	mov rbp, rax
-	mov rax, rsi
-	shr rax, 32
-	add rax, rbp
-	mov rcx, rax
-	mul r15
-	mov eax, eax
-	mul rbx
-	add rax, rcx
-	shr rax, 32
-	mov rbp, rax
-	add r14, 1
-	cmp r14, r12
-	jne 227b
-	mov rax, rbp
-	cmp rax, 1
-	sbb rdx, rdx
-	xor rax, rbx
-	cmp rax, 1
-	sbb rcx, rcx
-	or rdx, rcx
-	or rdx, QWORD PTR [rdi+224]
-	mov QWORD PTR [rdi+224], rdx
 	add r13, 1
 	mov rax, QWORD PTR [rdi+208]
 	cmp r13, rax
-	jne 223b
+	jne 221b
 	mov rax, QWORD PTR [rdi+224]
 	test rax, rax
-220:
-	je 228f
+218:
+	je 226f
 	mov rdi, QWORD PTR [rdi+128]
 	mov eax, 2
 	mov QWORD PTR [rdi+152], rax
-	jmp 229f
-228:
+	jmp 227f
+226:
 	mov rdi, QWORD PTR [rdi+128]
 	mov rbp, rdi
 	mov rax, QWORD PTR [rdi+48]
@@ -43951,7 +43971,7 @@ vg_ffdh_generate_parameters:
 	mov rdi, rax
 	mov r10, rdi
 	mov r8d, 0
-230:
+228:
 	movzx eax, BYTE PTR [r10]
 	mov rdx, rax
 	shr rax, 1
@@ -43962,7 +43982,7 @@ vg_ffdh_generate_parameters:
 	mov r8, rdx
 	add r10, 1
 	sub rcx, 1
-	jne 230b
+	jne 228b
 	mov rdi, rbp
 	mov rdx, QWORD PTR [rdi+72]
 	sub rdx, 1
@@ -43983,11 +44003,11 @@ vg_ffdh_generate_parameters:
 	add r12, 7
 	shr r12, 3
 	cmp r12, 2
-	jb 231f
-	jmp 232f
-231:
+	jb 229f
+	jmp 230f
+229:
 	mov r12d, 2
-232:
+230:
 	mov rsi, rdi
 	mov rdi, rax
 	mov QWORD PTR [rdi+128], rsi
@@ -44024,7 +44044,7 @@ vg_ffdh_generate_parameters:
 	mov eax, 0
 	mov rdx, rcx
 	mov r14, rsi
-233:
+231:
 	sub rdx, 1
 	ror rax, 56
 	movzx ebp, BYTE PTR [r14]
@@ -44032,23 +44052,23 @@ vg_ffdh_generate_parameters:
 	add r14, 1
 	mov rbp, rdx
 	and rbp, 7
-	je 234f
-	jmp 235f
-234:
+	je 232f
+	jmp 233f
+232:
 	mov rbp, rdx
 	shr rbp, 3
 	mov QWORD PTR [rbx+rbp*8], rax
 	mov eax, 0
-235:
+233:
 	test rdx, rdx
-	jne 233b
+	jne 231b
 	mov rax, QWORD PTR [rdi+64]
 	mov rax, QWORD PTR [rax]
 	and rax, 1
 	cmp rax, 1
-	je 236f
-	jmp 237f
-236:
+	je 234f
+	jmp 235f
+234:
 	mov rax, QWORD PTR [rdi+128]
 	mov rdx, QWORD PTR [rax+72]
 	mov rax, QWORD PTR [rdi+48]
@@ -44575,16 +44595,16 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [rbx+2040], rax
 	mov eax, 128
 	cmp rdx, 1025
-	jb 238f
+	jb 236f
 	mov eax, 256
-	jmp 239f
-238:
-239:
+	jmp 237f
+236:
+237:
 	mov QWORD PTR [rdi+208], rax
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
 	mov r13d, 0
-240:
+238:
 	mov rax, QWORD PTR [rdi+48]
 	add rax, 2
 	add rax, rax
@@ -44598,6 +44618,162 @@ vg_ffdh_generate_parameters:
 	mov rax, QWORD PTR [rbx+r13*8]
 	mov QWORD PTR [rdi+216], rax
 	mov rbx, QWORD PTR [rdi+216]
+	and rbx, 65535
+	mov rcx, rbx
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov r15d, 0
+	sub r15, rcx
+	mov r12, QWORD PTR [rdi+48]
+	mov r8, QWORD PTR [rdi+64]
+	mov ebp, 0
+	mov r14, 0
+239:
+	mov rsi, QWORD PTR [r8+r14*8]
+	mov eax, esi
+	add rax, rbp
+	mov rcx, rax
+	mul r15
+	mov eax, eax
+	mul rbx
+	add rax, rcx
+	shr rax, 32
+	mov rbp, rax
+	mov rax, rsi
+	shr rax, 32
+	add rax, rbp
+	mov rcx, rax
+	mul r15
+	mov eax, eax
+	mul rbx
+	add rax, rcx
+	shr rax, 32
+	mov rbp, rax
+	add r14, 1
+	cmp r14, r12
+	jne 239b
+	mov rax, rbp
+	cmp rax, 1
+	sbb rdx, rdx
+	xor rax, rbx
+	cmp rax, 1
+	sbb rcx, rcx
+	or rdx, rcx
+	or rdx, QWORD PTR [rdi+224]
+	mov QWORD PTR [rdi+224], rdx
+	mov rbx, QWORD PTR [rdi+216]
+	shr rbx, 16
+	and rbx, 65535
+	mov rcx, rbx
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov r15d, 0
+	sub r15, rcx
+	mov r12, QWORD PTR [rdi+48]
+	mov r8, QWORD PTR [rdi+64]
+	mov ebp, 0
+	mov r14, 0
+240:
+	mov rsi, QWORD PTR [r8+r14*8]
+	mov eax, esi
+	add rax, rbp
+	mov rcx, rax
+	mul r15
+	mov eax, eax
+	mul rbx
+	add rax, rcx
+	shr rax, 32
+	mov rbp, rax
+	mov rax, rsi
+	shr rax, 32
+	add rax, rbp
+	mov rcx, rax
+	mul r15
+	mov eax, eax
+	mul rbx
+	add rax, rcx
+	shr rax, 32
+	mov rbp, rax
+	add r14, 1
+	cmp r14, r12
+	jne 240b
+	mov rax, rbp
+	cmp rax, 1
+	sbb rdx, rdx
+	xor rax, rbx
+	cmp rax, 1
+	sbb rcx, rcx
+	or rdx, rcx
+	or rdx, QWORD PTR [rdi+224]
+	mov QWORD PTR [rdi+224], rdx
+	mov rbx, QWORD PTR [rdi+216]
+	shr rbx, 32
 	and rbx, 65535
 	mov rcx, rbx
 	mov rax, rbx
@@ -44675,7 +44851,7 @@ vg_ffdh_generate_parameters:
 	or rdx, QWORD PTR [rdi+224]
 	mov QWORD PTR [rdi+224], rdx
 	mov rbx, QWORD PTR [rdi+216]
-	shr rbx, 16
+	shr rbx, 48
 	and rbx, 65535
 	mov rcx, rbx
 	mov rax, rbx
@@ -44752,175 +44928,19 @@ vg_ffdh_generate_parameters:
 	or rdx, rcx
 	or rdx, QWORD PTR [rdi+224]
 	mov QWORD PTR [rdi+224], rdx
-	mov rbx, QWORD PTR [rdi+216]
-	shr rbx, 32
-	and rbx, 65535
-	mov rcx, rbx
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov r15d, 0
-	sub r15, rcx
-	mov r12, QWORD PTR [rdi+48]
-	mov r8, QWORD PTR [rdi+64]
-	mov ebp, 0
-	mov r14, 0
-243:
-	mov rsi, QWORD PTR [r8+r14*8]
-	mov eax, esi
-	add rax, rbp
-	mov rcx, rax
-	mul r15
-	mov eax, eax
-	mul rbx
-	add rax, rcx
-	shr rax, 32
-	mov rbp, rax
-	mov rax, rsi
-	shr rax, 32
-	add rax, rbp
-	mov rcx, rax
-	mul r15
-	mov eax, eax
-	mul rbx
-	add rax, rcx
-	shr rax, 32
-	mov rbp, rax
-	add r14, 1
-	cmp r14, r12
-	jne 243b
-	mov rax, rbp
-	cmp rax, 1
-	sbb rdx, rdx
-	xor rax, rbx
-	cmp rax, 1
-	sbb rcx, rcx
-	or rdx, rcx
-	or rdx, QWORD PTR [rdi+224]
-	mov QWORD PTR [rdi+224], rdx
-	mov rbx, QWORD PTR [rdi+216]
-	shr rbx, 48
-	and rbx, 65535
-	mov rcx, rbx
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov r15d, 0
-	sub r15, rcx
-	mov r12, QWORD PTR [rdi+48]
-	mov r8, QWORD PTR [rdi+64]
-	mov ebp, 0
-	mov r14, 0
-244:
-	mov rsi, QWORD PTR [r8+r14*8]
-	mov eax, esi
-	add rax, rbp
-	mov rcx, rax
-	mul r15
-	mov eax, eax
-	mul rbx
-	add rax, rcx
-	shr rax, 32
-	mov rbp, rax
-	mov rax, rsi
-	shr rax, 32
-	add rax, rbp
-	mov rcx, rax
-	mul r15
-	mov eax, eax
-	mul rbx
-	add rax, rcx
-	shr rax, 32
-	mov rbp, rax
-	add r14, 1
-	cmp r14, r12
-	jne 244b
-	mov rax, rbp
-	cmp rax, 1
-	sbb rdx, rdx
-	xor rax, rbx
-	cmp rax, 1
-	sbb rcx, rcx
-	or rdx, rcx
-	or rdx, QWORD PTR [rdi+224]
-	mov QWORD PTR [rdi+224], rdx
 	add r13, 1
 	mov rax, QWORD PTR [rdi+208]
 	cmp r13, rax
-	jne 240b
+	jne 238b
 	mov rax, QWORD PTR [rdi+224]
 	test rax, rax
-237:
-	je 245f
+235:
+	je 243f
 	mov rdi, QWORD PTR [rdi+128]
 	mov eax, 2
 	mov QWORD PTR [rdi+152], rax
-	jmp 246f
-245:
+	jmp 244f
+243:
 	mov rdi, QWORD PTR [rdi+128]
 	mov rbp, rdi
 	mov rax, QWORD PTR [rdi+48]
@@ -44976,13 +44996,13 @@ vg_ffdh_generate_parameters:
 	add r10, 1
 	add r11, 1
 	sub rcx, 1
-247:
+245:
 	movzx eax, BYTE PTR [r10]
 	mov BYTE PTR [r11], al
 	add r10, 1
 	add r11, 1
 	sub rcx, 1
-	jne 247b
+	jne 245b
 	movzx eax, BYTE PTR [r11-1]
 	or rax, 1
 	mov BYTE PTR [r11-1], al
@@ -45006,11 +45026,11 @@ vg_ffdh_generate_parameters:
 	add r12, 7
 	shr r12, 3
 	cmp r12, 2
-	jb 248f
-	jmp 249f
-248:
+	jb 246f
+	jmp 247f
+246:
 	mov r12d, 2
-249:
+247:
 	mov rsi, rdi
 	mov rdi, rax
 	mov QWORD PTR [rdi+128], rsi
@@ -45047,7 +45067,7 @@ vg_ffdh_generate_parameters:
 	mov eax, 0
 	mov rdx, rcx
 	mov r14, rsi
-250:
+248:
 	sub rdx, 1
 	ror rax, 56
 	movzx ebp, BYTE PTR [r14]
@@ -45055,16 +45075,16 @@ vg_ffdh_generate_parameters:
 	add r14, 1
 	mov rbp, rdx
 	and rbp, 7
-	je 251f
-	jmp 252f
-251:
+	je 249f
+	jmp 250f
+249:
 	mov rbp, rdx
 	shr rbp, 3
 	mov QWORD PTR [rbx+rbp*8], rax
 	mov eax, 0
-252:
+250:
 	test rdx, rdx
-	jne 250b
+	jne 248b
 	mov r10, QWORD PTR [rdi+64]
 	mov r12, QWORD PTR [rdi+48]
 	mov rbx, QWORD PTR [r10]
@@ -45112,11 +45132,11 @@ vg_ffdh_generate_parameters:
 	mov r8, QWORD PTR [rdi+120]
 	mov eax, 0
 	mov r14, 0
-253:
+251:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 253b
+	jne 251b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov QWORD PTR [r8+rcx*8], rdx
@@ -45127,39 +45147,39 @@ vg_ffdh_generate_parameters:
 	mov rcx, r12
 	and rcx, 3
 	or rax, rcx
-	je 254f
+	je 252f
 	mov rax, QWORD PTR [r10+r12*8-8]
 	mov edx, 1
 	mov ecx, 64
 	cmp rax, 1
-	je 256f
-258:
+	je 254f
+256:
 	shr rax, 1
 	add rdx, rdx
 	sub rcx, 1
 	cmp rax, 1
-	jne 258b
-	jmp 257f
-256:
-257:
+	jne 256b
+	jmp 255f
+254:
+255:
 	mov QWORD PTR [rdi+208], rcx
 	mov rcx, r12
 	sub rcx, 1
 	mov r8, QWORD PTR [rdi+96]
 	mov eax, 0
 	mov r14, 0
-259:
+257:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 259b
+	jne 257b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov QWORD PTR [r8+rcx*8], rdx
 	mov rcx, QWORD PTR [rdi+208]
 	add rcx, QWORD PTR [rdi+48]
 	mov QWORD PTR [rdi+208], rcx
-260:
+258:
 	mov rbx, QWORD PTR [rdi+96]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -45167,7 +45187,7 @@ vg_ffdh_generate_parameters:
 	mov rsi, QWORD PTR [rdi+88]
 	mov ebp, 0
 	mov r14, 0
-261:
+259:
 	add rbp, rbp
 	mov rax, QWORD PTR [rbx+r14*8]
 	adc rax, rax
@@ -45175,14 +45195,14 @@ vg_ffdh_generate_parameters:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 261b
+	jne 259b
 	mov eax, 0
 	add rbp, rbp
 	adc rax, 0
 	mov QWORD PTR [r8+r12*8], rax
 	mov ebp, 0
 	mov r14, 0
-262:
+260:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -45190,13 +45210,13 @@ vg_ffdh_generate_parameters:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 262b
+	jne 260b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-263:
+261:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -45205,14 +45225,14 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 263b
+	jne 261b
 	mov rcx, QWORD PTR [rdi+208]
 	sub rcx, 1
 	mov QWORD PTR [rdi+208], rcx
-	jne 260b
+	jne 258b
 	mov eax, 6
 	mov QWORD PTR [rdi+208], rax
-264:
+262:
 	mov edx, 4
 	mov ecx, 4
 	mov r8d, 4
@@ -45234,22 +45254,22 @@ vg_ffdh_generate_parameters:
 	mov r15, QWORD PTR [rdi+56]
 	mov rsi, QWORD PTR [rdi+88]
 	cmp r11, r9
-	je 265f
+	je 263f
 	mov eax, 0
 	mov r14, 0
-267:
+265:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 267b
+	jne 265b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r13, 0
-268:
+266:
 	mov rcx, QWORD PTR [r11+r13*8]
 	mov ebp, 0
 	mov r14, 0
-269:
+267:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -45260,7 +45280,7 @@ vg_ffdh_generate_parameters:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 269b
+	jne 267b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8], rax
@@ -45276,7 +45296,7 @@ vg_ffdh_generate_parameters:
 	adc rdx, 0
 	mov rbp, rdx
 	mov r14, 1
-270:
+268:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -45287,7 +45307,7 @@ vg_ffdh_generate_parameters:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 270b
+	jne 268b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8-8], rax
@@ -45298,10 +45318,10 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [r8+r12*8+8], rax
 	add r13, 1
 	cmp r13, r12
-	jne 268b
+	jne 266b
 	mov ebp, 0
 	mov r14, 0
-271:
+269:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -45309,13 +45329,13 @@ vg_ffdh_generate_parameters:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 271b
+	jne 269b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-272:
+270:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -45324,9 +45344,9 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 272b
-	jmp 266f
-265:
+	jne 270b
+	jmp 264f
+263:
 	movq xmm14, rbx
 	movq xmm15, r15
 	movq xmm0, r12
@@ -45340,20 +45360,20 @@ vg_ffdh_generate_parameters:
 	add rcx, rcx
 	add rcx, 2
 	mov r14d, 0
-273:
+271:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, rcx
-	jne 273b
+	jne 271b
 	mov r10, rbx
 	mov ebp, 1
 	add r8, 8
-274:
+272:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r13, rdx
 	mov ecx, 0
 	mov r14d, 0
-275:
+273:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul r13
 	add rax, QWORD PTR [r8+r14*8]
@@ -45364,20 +45384,20 @@ vg_ffdh_generate_parameters:
 	mov rcx, rdx
 	add r14, 1
 	cmp r14, rbp
-	jne 275b
+	jne 273b
 	mov rdx, r13
 	mov QWORD PTR [r8+r14*8], rcx
 	add r8, 8
 	add rbp, 1
 	cmp rbp, r10
-	jne 274b
+	jne 272b
 	movq r8, xmm1
 	add r8, 16
 	movq r10, xmm0
 	mov r15d, 0
 	mov ebp, 0
 	mov r14d, 0
-276:
+274:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r11, QWORD PTR [r8+r14*8]
 	mov r12, QWORD PTR [r8+r14*8+8]
@@ -45401,18 +45421,18 @@ vg_ffdh_generate_parameters:
 	add rbp, 1
 	add r14, 2
 	cmp rbp, r10
-	jne 276b
+	jne 274b
 	movq r9, xmm2
 	movq rbp, xmm0
 	mov r10d, 0
-277:
+275:
 	movq rax, xmm15
 	mov rdx, QWORD PTR [r8]
 	imul rdx, rax
 	mov r13, rdx
 	mov ecx, 0
 	mov r14d, 0
-278:
+276:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul r13
 	add rax, QWORD PTR [r8+r14*8]
@@ -45423,7 +45443,7 @@ vg_ffdh_generate_parameters:
 	mov rcx, rdx
 	add r14, 1
 	cmp r14, rbp
-	jne 278b
+	jne 276b
 	mov rdx, r13
 	mov rax, QWORD PTR [r8+r14*8]
 	mov esi, 0
@@ -45436,7 +45456,7 @@ vg_ffdh_generate_parameters:
 	add r8, 8
 	movq rax, xmm3
 	cmp r8, rax
-	jne 277b
+	jne 275b
 	mov QWORD PTR [r8+rbp*8], r10
 	mov eax, 0
 	mov QWORD PTR [r8+rbp*8+8], rax
@@ -45446,7 +45466,7 @@ vg_ffdh_generate_parameters:
 	movq rbx, xmm14
 	mov ebp, 0
 	mov r14, 0
-279:
+277:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -45454,13 +45474,13 @@ vg_ffdh_generate_parameters:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 279b
+	jne 277b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-280:
+278:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -45469,8 +45489,8 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 280b
-266:
+	jne 278b
+264:
 	movq rbx, xmm8
 	movq rbp, xmm9
 	movq r12, xmm10
@@ -45480,16 +45500,16 @@ vg_ffdh_generate_parameters:
 	mov rax, QWORD PTR [rdi+208]
 	sub rax, 1
 	mov QWORD PTR [rdi+208], rax
-	jne 264b
-	jmp 255f
-254:
+	jne 262b
+	jmp 253f
+252:
 	mov rbx, QWORD PTR [rdi+96]
 	mov r10, QWORD PTR [rdi+64]
 	mov r12, QWORD PTR [rdi+48]
 	mov r8, QWORD PTR [rdi+88]
 	mov ebp, 0
 	mov r14, 0
-281:
+279:
 	mov eax, 0
 	add rbp, rbp
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -45497,14 +45517,14 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 281b
+	jne 279b
 	mov rsi, QWORD PTR [r10+r12*8-8]
 	mov rdx, rsi
 	xor rdx, -1
 	mov rax, -1
 	mov ecx, 0
 	mov r13d, 64
-282:
+280:
 	add rax, rax
 	adc rdx, rdx
 	sbb r11, r11
@@ -45518,12 +45538,12 @@ vg_ffdh_generate_parameters:
 	add rcx, rcx
 	sub rcx, r15
 	sub r13, 1
-	jne 282b
+	jne 280b
 	mov QWORD PTR [r8], rcx
 	mov rcx, QWORD PTR [rdi+48]
 	shr rcx, 2
 	mov QWORD PTR [rdi+208], rcx
-283:
+281:
 	mov rbx, QWORD PTR [rdi+96]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -45569,7 +45589,7 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [r8], rdx
 	sbb rbp, rbp
 	mov r14, 1
-284:
+282:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, r9
@@ -45582,7 +45602,7 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [r8+r14*8], rdx
 	add r14, 1
 	cmp r14, r12
-	jne 284b
+	jne 282b
 	mov rdx, QWORD PTR [rbx+r12*8-8]
 	add rbp, rbp
 	sbb rdx, r9
@@ -45592,7 +45612,7 @@ vg_ffdh_generate_parameters:
 	sbb r11, r11
 	mov ebp, 0
 	mov r14, 0
-285:
+283:
 	mov rax, QWORD PTR [r10+r14*8]
 	and rax, r11
 	add rbp, rbp
@@ -45601,7 +45621,7 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 285b
+	jne 283b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	adc rax, 0
@@ -45611,7 +45631,7 @@ vg_ffdh_generate_parameters:
 	sbb r11, r11
 	mov ebp, 0
 	mov r14, 0
-286:
+284:
 	mov rax, QWORD PTR [r10+r14*8]
 	and rax, r11
 	add rbp, rbp
@@ -45620,26 +45640,26 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 286b
+	jne 284b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	adc rax, 0
 	mov QWORD PTR [r8+r12*8], rax
 	mov rsi, r8
 	mov r14, 0
-287:
+285:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 287b
+	jne 285b
 	mov rcx, QWORD PTR [rdi+208]
 	sub rcx, 1
 	mov QWORD PTR [rdi+208], rcx
-	jne 283b
+	jne 281b
 	mov eax, 2
 	mov QWORD PTR [rdi+208], rax
-288:
+286:
 	mov edx, 4
 	mov ecx, 4
 	mov r8d, 4
@@ -45661,22 +45681,22 @@ vg_ffdh_generate_parameters:
 	mov r15, QWORD PTR [rdi+56]
 	mov rsi, QWORD PTR [rdi+88]
 	cmp r11, r9
-	je 289f
+	je 287f
 	mov eax, 0
 	mov r14, 0
-291:
+289:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 291b
+	jne 289b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r13, 0
-292:
+290:
 	mov rcx, QWORD PTR [r11+r13*8]
 	mov ebp, 0
 	mov r14, 0
-293:
+291:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -45687,7 +45707,7 @@ vg_ffdh_generate_parameters:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 293b
+	jne 291b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8], rax
@@ -45703,7 +45723,7 @@ vg_ffdh_generate_parameters:
 	adc rdx, 0
 	mov rbp, rdx
 	mov r14, 1
-294:
+292:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -45714,7 +45734,7 @@ vg_ffdh_generate_parameters:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 294b
+	jne 292b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8-8], rax
@@ -45725,10 +45745,10 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [r8+r12*8+8], rax
 	add r13, 1
 	cmp r13, r12
-	jne 292b
+	jne 290b
 	mov ebp, 0
 	mov r14, 0
-295:
+293:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -45736,13 +45756,13 @@ vg_ffdh_generate_parameters:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 295b
+	jne 293b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-296:
+294:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -45751,9 +45771,9 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 296b
-	jmp 290f
-289:
+	jne 294b
+	jmp 288f
+287:
 	movq xmm14, rbx
 	movq xmm15, r15
 	movq xmm0, r12
@@ -45767,20 +45787,20 @@ vg_ffdh_generate_parameters:
 	add rcx, rcx
 	add rcx, 2
 	mov r14d, 0
-297:
+295:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, rcx
-	jne 297b
+	jne 295b
 	mov r10, rbx
 	mov ebp, 1
 	add r8, 8
-298:
+296:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r13, rdx
 	mov ecx, 0
 	mov r14d, 0
-299:
+297:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul r13
 	add rax, QWORD PTR [r8+r14*8]
@@ -45791,20 +45811,20 @@ vg_ffdh_generate_parameters:
 	mov rcx, rdx
 	add r14, 1
 	cmp r14, rbp
-	jne 299b
+	jne 297b
 	mov rdx, r13
 	mov QWORD PTR [r8+r14*8], rcx
 	add r8, 8
 	add rbp, 1
 	cmp rbp, r10
-	jne 298b
+	jne 296b
 	movq r8, xmm1
 	add r8, 16
 	movq r10, xmm0
 	mov r15d, 0
 	mov ebp, 0
 	mov r14d, 0
-2100:
+298:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r11, QWORD PTR [r8+r14*8]
 	mov r12, QWORD PTR [r8+r14*8+8]
@@ -45828,18 +45848,18 @@ vg_ffdh_generate_parameters:
 	add rbp, 1
 	add r14, 2
 	cmp rbp, r10
-	jne 2100b
+	jne 298b
 	movq r9, xmm2
 	movq rbp, xmm0
 	mov r10d, 0
-2101:
+299:
 	movq rax, xmm15
 	mov rdx, QWORD PTR [r8]
 	imul rdx, rax
 	mov r13, rdx
 	mov ecx, 0
 	mov r14d, 0
-2102:
+2100:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul r13
 	add rax, QWORD PTR [r8+r14*8]
@@ -45850,7 +45870,7 @@ vg_ffdh_generate_parameters:
 	mov rcx, rdx
 	add r14, 1
 	cmp r14, rbp
-	jne 2102b
+	jne 2100b
 	mov rdx, r13
 	mov rax, QWORD PTR [r8+r14*8]
 	mov esi, 0
@@ -45863,7 +45883,7 @@ vg_ffdh_generate_parameters:
 	add r8, 8
 	movq rax, xmm3
 	cmp r8, rax
-	jne 2101b
+	jne 299b
 	mov QWORD PTR [r8+rbp*8], r10
 	mov eax, 0
 	mov QWORD PTR [r8+rbp*8+8], rax
@@ -45873,7 +45893,7 @@ vg_ffdh_generate_parameters:
 	movq rbx, xmm14
 	mov ebp, 0
 	mov r14, 0
-2103:
+2101:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -45881,13 +45901,13 @@ vg_ffdh_generate_parameters:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2103b
+	jne 2101b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2104:
+2102:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -45896,8 +45916,8 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2104b
-290:
+	jne 2102b
+288:
 	movq rbx, xmm8
 	movq rbp, xmm9
 	movq r12, xmm10
@@ -45907,8 +45927,8 @@ vg_ffdh_generate_parameters:
 	mov rax, QWORD PTR [rdi+208]
 	sub rax, 1
 	mov QWORD PTR [rdi+208], rax
-	jne 288b
-255:
+	jne 286b
+253:
 	mov edx, 6
 	mov ecx, 4
 	mov r8d, 7
@@ -45930,22 +45950,22 @@ vg_ffdh_generate_parameters:
 	mov r15, QWORD PTR [rdi+56]
 	mov rsi, QWORD PTR [rdi+88]
 	cmp r11, r9
-	je 2105f
+	je 2103f
 	mov eax, 0
 	mov r14, 0
-2107:
+2105:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2107b
+	jne 2105b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r13, 0
-2108:
+2106:
 	mov rcx, QWORD PTR [r11+r13*8]
 	mov ebp, 0
 	mov r14, 0
-2109:
+2107:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -45956,7 +45976,7 @@ vg_ffdh_generate_parameters:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2109b
+	jne 2107b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8], rax
@@ -45972,7 +45992,7 @@ vg_ffdh_generate_parameters:
 	adc rdx, 0
 	mov rbp, rdx
 	mov r14, 1
-2110:
+2108:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -45983,7 +46003,7 @@ vg_ffdh_generate_parameters:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2110b
+	jne 2108b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8-8], rax
@@ -45994,10 +46014,10 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [r8+r12*8+8], rax
 	add r13, 1
 	cmp r13, r12
-	jne 2108b
+	jne 2106b
 	mov ebp, 0
 	mov r14, 0
-2111:
+2109:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -46005,13 +46025,13 @@ vg_ffdh_generate_parameters:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2111b
+	jne 2109b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2112:
+2110:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -46020,9 +46040,9 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2112b
-	jmp 2106f
-2105:
+	jne 2110b
+	jmp 2104f
+2103:
 	movq xmm14, rbx
 	movq xmm15, r15
 	movq xmm0, r12
@@ -46036,20 +46056,20 @@ vg_ffdh_generate_parameters:
 	add rcx, rcx
 	add rcx, 2
 	mov r14d, 0
-2113:
+2111:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, rcx
-	jne 2113b
+	jne 2111b
 	mov r10, rbx
 	mov ebp, 1
 	add r8, 8
-2114:
+2112:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r13, rdx
 	mov ecx, 0
 	mov r14d, 0
-2115:
+2113:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul r13
 	add rax, QWORD PTR [r8+r14*8]
@@ -46060,20 +46080,20 @@ vg_ffdh_generate_parameters:
 	mov rcx, rdx
 	add r14, 1
 	cmp r14, rbp
-	jne 2115b
+	jne 2113b
 	mov rdx, r13
 	mov QWORD PTR [r8+r14*8], rcx
 	add r8, 8
 	add rbp, 1
 	cmp rbp, r10
-	jne 2114b
+	jne 2112b
 	movq r8, xmm1
 	add r8, 16
 	movq r10, xmm0
 	mov r15d, 0
 	mov ebp, 0
 	mov r14d, 0
-2116:
+2114:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r11, QWORD PTR [r8+r14*8]
 	mov r12, QWORD PTR [r8+r14*8+8]
@@ -46097,18 +46117,18 @@ vg_ffdh_generate_parameters:
 	add rbp, 1
 	add r14, 2
 	cmp rbp, r10
-	jne 2116b
+	jne 2114b
 	movq r9, xmm2
 	movq rbp, xmm0
 	mov r10d, 0
-2117:
+2115:
 	movq rax, xmm15
 	mov rdx, QWORD PTR [r8]
 	imul rdx, rax
 	mov r13, rdx
 	mov ecx, 0
 	mov r14d, 0
-2118:
+2116:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul r13
 	add rax, QWORD PTR [r8+r14*8]
@@ -46119,7 +46139,7 @@ vg_ffdh_generate_parameters:
 	mov rcx, rdx
 	add r14, 1
 	cmp r14, rbp
-	jne 2118b
+	jne 2116b
 	mov rdx, r13
 	mov rax, QWORD PTR [r8+r14*8]
 	mov esi, 0
@@ -46132,7 +46152,7 @@ vg_ffdh_generate_parameters:
 	add r8, 8
 	movq rax, xmm3
 	cmp r8, rax
-	jne 2117b
+	jne 2115b
 	mov QWORD PTR [r8+rbp*8], r10
 	mov eax, 0
 	mov QWORD PTR [r8+rbp*8+8], rax
@@ -46142,7 +46162,7 @@ vg_ffdh_generate_parameters:
 	movq rbx, xmm14
 	mov ebp, 0
 	mov r14, 0
-2119:
+2117:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -46150,13 +46170,13 @@ vg_ffdh_generate_parameters:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2119b
+	jne 2117b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2120:
+2118:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -46165,8 +46185,8 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2120b
-2106:
+	jne 2118b
+2104:
 	movq rbx, xmm8
 	movq rbp, xmm9
 	movq r12, xmm10
@@ -46200,12 +46220,12 @@ vg_ffdh_generate_parameters:
 	add rbx, rax
 	add rbx, rax
 	mov r14, 0
-2121:
+2119:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2121b
+	jne 2119b
 	mov r12, QWORD PTR [rdi+48]
 	mov r8, QWORD PTR [rdi+64]
 	mov rax, QWORD PTR [rdi+48]
@@ -46259,7 +46279,7 @@ vg_ffdh_generate_parameters:
 	add rsi, rax
 	mov ebp, 0
 	mov r14, 0
-2122:
+2120:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -46267,13 +46287,13 @@ vg_ffdh_generate_parameters:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2122b
+	jne 2120b
 	mov r12, QWORD PTR [rdi+48]
 	mov r8, QWORD PTR [rdi+64]
 	mov rbp, QWORD PTR [r8]
 	and rbp, -2
 	mov r14, 1
-2123:
+2121:
 	mov rax, QWORD PTR [r8+r14*8]
 	cmp rbp, 1
 	sbb rdx, rdx
@@ -46281,7 +46301,7 @@ vg_ffdh_generate_parameters:
 	or rbp, rax
 	add r14, 1
 	cmp r14, r12
-	jne 2123b
+	jne 2121b
 	mov rax, QWORD PTR [rdi+48]
 	add rax, 2
 	add rax, rax
@@ -46314,6 +46334,64 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [rbx+r12*8], rax
 	mov rbp, QWORD PTR [rsi]
 	mov r14, 1
+2122:
+	mov rax, QWORD PTR [rsi+r14*8]
+	mov rdx, rax
+	shl rdx, 63
+	mov rcx, rbp
+	shr rcx, 1
+	or rcx, rdx
+	xor rcx, rbp
+	and rcx, r15
+	xor rcx, rbp
+	mov QWORD PTR [rbx+r14*8-8], rcx
+	mov rbp, rax
+	add r14, 1
+	cmp r14, r12
+	jne 2122b
+	mov rcx, rbp
+	shr rcx, 1
+	xor rcx, rbp
+	and rcx, r15
+	xor rcx, rbp
+	mov QWORD PTR [rbx+r12*8-8], rcx
+	mov rsi, rbx
+	movabs r15, -2459565876494606883
+	and r15, QWORD PTR [rbx+r12*8]
+	cmp r15, 1
+	sbb r15, r15
+	xor r15, -1
+	mov rbp, QWORD PTR [rsi]
+	mov r14, 1
+2123:
+	mov rax, QWORD PTR [rsi+r14*8]
+	mov rdx, rax
+	shl rdx, 63
+	mov rcx, rbp
+	shr rcx, 1
+	or rcx, rdx
+	xor rcx, rbp
+	and rcx, r15
+	xor rcx, rbp
+	mov QWORD PTR [rbx+r14*8-8], rcx
+	mov rbp, rax
+	add r14, 1
+	cmp r14, r12
+	jne 2123b
+	mov rcx, rbp
+	shr rcx, 1
+	xor rcx, rbp
+	and rcx, r15
+	xor rcx, rbp
+	mov QWORD PTR [rbx+r12*8-8], rcx
+	mov rsi, rbx
+	movabs r15, -7378697629483820647
+	and r15, QWORD PTR [rbx+r12*8]
+	cmp r15, 1
+	sbb r15, r15
+	xor r15, -1
+	mov rbp, QWORD PTR [rsi]
+	mov r14, 1
 2124:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov rdx, rax
@@ -46336,7 +46414,7 @@ vg_ffdh_generate_parameters:
 	xor rcx, rbp
 	mov QWORD PTR [rbx+r12*8-8], rcx
 	mov rsi, rbx
-	movabs r15, -2459565876494606883
+	movabs r15, 1229782938247303441
 	and r15, QWORD PTR [rbx+r12*8]
 	cmp r15, 1
 	sbb r15, r15
@@ -46364,73 +46442,15 @@ vg_ffdh_generate_parameters:
 	and rcx, r15
 	xor rcx, rbp
 	mov QWORD PTR [rbx+r12*8-8], rcx
-	mov rsi, rbx
-	movabs r15, -7378697629483820647
-	and r15, QWORD PTR [rbx+r12*8]
-	cmp r15, 1
-	sbb r15, r15
-	xor r15, -1
-	mov rbp, QWORD PTR [rsi]
-	mov r14, 1
-2126:
-	mov rax, QWORD PTR [rsi+r14*8]
-	mov rdx, rax
-	shl rdx, 63
-	mov rcx, rbp
-	shr rcx, 1
-	or rcx, rdx
-	xor rcx, rbp
-	and rcx, r15
-	xor rcx, rbp
-	mov QWORD PTR [rbx+r14*8-8], rcx
-	mov rbp, rax
-	add r14, 1
-	cmp r14, r12
-	jne 2126b
-	mov rcx, rbp
-	shr rcx, 1
-	xor rcx, rbp
-	and rcx, r15
-	xor rcx, rbp
-	mov QWORD PTR [rbx+r12*8-8], rcx
-	mov rsi, rbx
-	movabs r15, 1229782938247303441
-	and r15, QWORD PTR [rbx+r12*8]
-	cmp r15, 1
-	sbb r15, r15
-	xor r15, -1
-	mov rbp, QWORD PTR [rsi]
-	mov r14, 1
-2127:
-	mov rax, QWORD PTR [rsi+r14*8]
-	mov rdx, rax
-	shl rdx, 63
-	mov rcx, rbp
-	shr rcx, 1
-	or rcx, rdx
-	xor rcx, rbp
-	and rcx, r15
-	xor rcx, rbp
-	mov QWORD PTR [rbx+r14*8-8], rcx
-	mov rbp, rax
-	add r14, 1
-	cmp r14, r12
-	jne 2127b
-	mov rcx, rbp
-	shr rcx, 1
-	xor rcx, rbp
-	and rcx, r15
-	xor rcx, rbp
-	mov QWORD PTR [rbx+r12*8-8], rcx
 	mov rax, QWORD PTR [rdi+128]
 	mov ecx, 0
 	mov QWORD PTR [rax+144], rcx
-2128:
-2129:
+2126:
+2127:
 	mov rax, QWORD PTR [rdi+128]
 	mov rcx, QWORD PTR [rax+104]
 	cmp rcx, QWORD PTR [rax+128]
-	jb 2130f
+	jb 2128f
 	mov rax, QWORD PTR [rdi+128]
 	mov rsi, QWORD PTR [rax+96]
 	mov rcx, QWORD PTR [rax+128]
@@ -46496,13 +46516,13 @@ vg_ffdh_generate_parameters:
 	add r10, 1
 	add r11, 1
 	sub rcx, 1
-2132:
+2130:
 	movzx eax, BYTE PTR [r10]
 	mov BYTE PTR [r11], al
 	add r10, 1
 	add r11, 1
 	sub rcx, 1
-	jne 2132b
+	jne 2130b
 	mov rdi, rbp
 	mov rax, QWORD PTR [rdi+128]
 	mov rsi, QWORD PTR [rax+48]
@@ -46511,7 +46531,7 @@ vg_ffdh_generate_parameters:
 	mov eax, 0
 	mov rdx, rcx
 	mov r14, rsi
-2133:
+2131:
 	sub rdx, 1
 	ror rax, 56
 	movzx ebp, BYTE PTR [r14]
@@ -46519,19 +46539,49 @@ vg_ffdh_generate_parameters:
 	add r14, 1
 	mov rbp, rdx
 	and rbp, 7
-	je 2134f
-	jmp 2135f
-2134:
+	je 2132f
+	jmp 2133f
+2132:
 	mov rbp, rdx
 	shr rbp, 3
 	mov QWORD PTR [rbx+rbp*8], rax
 	mov eax, 0
-2135:
+2133:
 	test rdx, rdx
-	jne 2133b
+	jne 2131b
 	mov r12, QWORD PTR [rdi+48]
 	mov rbx, QWORD PTR [rdi+120]
 	mov r10, QWORD PTR [rdi+104]
+	mov ebp, 0
+	mov r14, 0
+2134:
+	add rbp, rbp
+	mov rax, QWORD PTR [rbx+r14*8]
+	sbb rax, QWORD PTR [r10+r14*8]
+	sbb rbp, rbp
+	add r14, 1
+	cmp r14, r12
+	jne 2134b
+	mov rax, rbp
+	and rax, 1
+	mov QWORD PTR [rdi+240], rax
+	mov r12, QWORD PTR [rdi+48]
+	mov rsi, QWORD PTR [rdi+104]
+	mov rbx, QWORD PTR [rdi+88]
+	mov r14, 0
+2135:
+	mov rax, QWORD PTR [rsi+r14*8]
+	mov QWORD PTR [rbx+r14*8], rax
+	add r14, 1
+	cmp r14, r12
+	jne 2135b
+	mov rbx, QWORD PTR [rdi+88]
+	mov rax, QWORD PTR [rbx]
+	or rax, 1
+	mov QWORD PTR [rbx], rax
+	mov r12, QWORD PTR [rdi+48]
+	mov rbx, QWORD PTR [rdi+88]
+	mov r10, QWORD PTR [rdi+64]
 	mov ebp, 0
 	mov r14, 0
 2136:
@@ -46544,54 +46594,24 @@ vg_ffdh_generate_parameters:
 	jne 2136b
 	mov rax, rbp
 	and rax, 1
-	mov QWORD PTR [rdi+240], rax
-	mov r12, QWORD PTR [rdi+48]
-	mov rsi, QWORD PTR [rdi+104]
-	mov rbx, QWORD PTR [rdi+88]
-	mov r14, 0
-2137:
-	mov rax, QWORD PTR [rsi+r14*8]
-	mov QWORD PTR [rbx+r14*8], rax
-	add r14, 1
-	cmp r14, r12
-	jne 2137b
-	mov rbx, QWORD PTR [rdi+88]
-	mov rax, QWORD PTR [rbx]
-	or rax, 1
-	mov QWORD PTR [rbx], rax
-	mov r12, QWORD PTR [rdi+48]
-	mov rbx, QWORD PTR [rdi+88]
-	mov r10, QWORD PTR [rdi+64]
-	mov ebp, 0
-	mov r14, 0
-2138:
-	add rbp, rbp
-	mov rax, QWORD PTR [rbx+r14*8]
-	sbb rax, QWORD PTR [r10+r14*8]
-	sbb rbp, rbp
-	add r14, 1
-	cmp r14, r12
-	jne 2138b
-	mov rax, rbp
-	and rax, 1
 	and rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+240], rax
 	test rax, rax
 	mov rax, QWORD PTR [rdi+128]
 	mov edx, 1
 	mov QWORD PTR [rax+152], rdx
-	jmp 2131f
-2130:
+	jmp 2129f
+2128:
 	mov rax, QWORD PTR [rdi+128]
 	mov edx, 0
 	mov QWORD PTR [rax+152], rdx
 	cmp rdx, 1
-2131:
-	je 2129b
+2129:
+	je 2127b
 	mov rax, QWORD PTR [rdi+128]
 	mov rcx, QWORD PTR [rax+152]
 	test rcx, rcx
-	je 2139f
+	je 2137f
 	mov edx, 5
 	mov ecx, 5
 	mov r8d, 4
@@ -46613,22 +46633,22 @@ vg_ffdh_generate_parameters:
 	mov r15, QWORD PTR [rdi+56]
 	mov rsi, QWORD PTR [rdi+88]
 	cmp r11, r9
-	je 2141f
+	je 2139f
 	mov eax, 0
 	mov r14, 0
-2143:
+2141:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2143b
+	jne 2141b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r13, 0
-2144:
+2142:
 	mov rcx, QWORD PTR [r11+r13*8]
 	mov ebp, 0
 	mov r14, 0
-2145:
+2143:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -46639,7 +46659,7 @@ vg_ffdh_generate_parameters:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2145b
+	jne 2143b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8], rax
@@ -46655,7 +46675,7 @@ vg_ffdh_generate_parameters:
 	adc rdx, 0
 	mov rbp, rdx
 	mov r14, 1
-2146:
+2144:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -46666,7 +46686,7 @@ vg_ffdh_generate_parameters:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2146b
+	jne 2144b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8-8], rax
@@ -46677,10 +46697,10 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [r8+r12*8+8], rax
 	add r13, 1
 	cmp r13, r12
-	jne 2144b
+	jne 2142b
 	mov ebp, 0
 	mov r14, 0
-2147:
+2145:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -46688,13 +46708,13 @@ vg_ffdh_generate_parameters:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2147b
+	jne 2145b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2148:
+2146:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -46703,9 +46723,9 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2148b
-	jmp 2142f
-2141:
+	jne 2146b
+	jmp 2140f
+2139:
 	movq xmm14, rbx
 	movq xmm15, r15
 	movq xmm0, r12
@@ -46719,20 +46739,20 @@ vg_ffdh_generate_parameters:
 	add rcx, rcx
 	add rcx, 2
 	mov r14d, 0
-2149:
+2147:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, rcx
-	jne 2149b
+	jne 2147b
 	mov r10, rbx
 	mov ebp, 1
 	add r8, 8
-2150:
+2148:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r13, rdx
 	mov ecx, 0
 	mov r14d, 0
-2151:
+2149:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul r13
 	add rax, QWORD PTR [r8+r14*8]
@@ -46743,20 +46763,20 @@ vg_ffdh_generate_parameters:
 	mov rcx, rdx
 	add r14, 1
 	cmp r14, rbp
-	jne 2151b
+	jne 2149b
 	mov rdx, r13
 	mov QWORD PTR [r8+r14*8], rcx
 	add r8, 8
 	add rbp, 1
 	cmp rbp, r10
-	jne 2150b
+	jne 2148b
 	movq r8, xmm1
 	add r8, 16
 	movq r10, xmm0
 	mov r15d, 0
 	mov ebp, 0
 	mov r14d, 0
-2152:
+2150:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r11, QWORD PTR [r8+r14*8]
 	mov r12, QWORD PTR [r8+r14*8+8]
@@ -46780,18 +46800,18 @@ vg_ffdh_generate_parameters:
 	add rbp, 1
 	add r14, 2
 	cmp rbp, r10
-	jne 2152b
+	jne 2150b
 	movq r9, xmm2
 	movq rbp, xmm0
 	mov r10d, 0
-2153:
+2151:
 	movq rax, xmm15
 	mov rdx, QWORD PTR [r8]
 	imul rdx, rax
 	mov r13, rdx
 	mov ecx, 0
 	mov r14d, 0
-2154:
+2152:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul r13
 	add rax, QWORD PTR [r8+r14*8]
@@ -46802,7 +46822,7 @@ vg_ffdh_generate_parameters:
 	mov rcx, rdx
 	add r14, 1
 	cmp r14, rbp
-	jne 2154b
+	jne 2152b
 	mov rdx, r13
 	mov rax, QWORD PTR [r8+r14*8]
 	mov esi, 0
@@ -46815,7 +46835,7 @@ vg_ffdh_generate_parameters:
 	add r8, 8
 	movq rax, xmm3
 	cmp r8, rax
-	jne 2153b
+	jne 2151b
 	mov QWORD PTR [r8+rbp*8], r10
 	mov eax, 0
 	mov QWORD PTR [r8+rbp*8+8], rax
@@ -46825,7 +46845,7 @@ vg_ffdh_generate_parameters:
 	movq rbx, xmm14
 	mov ebp, 0
 	mov r14, 0
-2155:
+2153:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -46833,13 +46853,13 @@ vg_ffdh_generate_parameters:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2155b
+	jne 2153b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2156:
+2154:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -46848,8 +46868,8 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2156b
-2142:
+	jne 2154b
+2140:
 	movq rbx, xmm8
 	movq rbp, xmm9
 	movq r12, xmm10
@@ -46881,7 +46901,7 @@ vg_ffdh_generate_parameters:
 	mov rbx, QWORD PTR [rcx]
 	mov rax, QWORD PTR [rdi+176]
 	test rax, rax
-	je 2157f
+	je 2155f
 	mov r9, QWORD PTR [rdi+128]
 	mov rcx, QWORD PTR [r9+144]
 	add rcx, 1
@@ -46891,25 +46911,25 @@ vg_ffdh_generate_parameters:
 	mov edx, 1
 	cmovae rax, rdx
 	mov QWORD PTR [r9+152], rax
-	jmp 2158f
-2157:
+	jmp 2156f
+2155:
 	mov rax, QWORD PTR [rdi+128]
 	mov edx, 2
 	mov QWORD PTR [rax+152], rdx
-2158:
-	jmp 2140f
-2139:
-2140:
+2156:
+	jmp 2138f
+2137:
+2138:
 	mov rax, QWORD PTR [rdi+128]
 	mov rcx, QWORD PTR [rax+152]
 	cmp rcx, 4
-	je 2128b
+	je 2126b
 	mov rdi, QWORD PTR [rdi+128]
 	mov rax, QWORD PTR [rdi+152]
 	cmp rax, 1
-	je 2159f
-	jmp 2160f
-2159:
+	je 2157f
+	jmp 2158f
+2157:
 	mov rbp, rdi
 	mov rax, QWORD PTR [rdi+48]
 	mov rsi, QWORD PTR [rdi+88]
@@ -46964,13 +46984,13 @@ vg_ffdh_generate_parameters:
 	add r10, 1
 	add r11, 1
 	sub rcx, 1
-2161:
+2159:
 	movzx eax, BYTE PTR [r10]
 	mov BYTE PTR [r11], al
 	add r10, 1
 	add r11, 1
 	sub rcx, 1
-	jne 2161b
+	jne 2159b
 	movzx eax, BYTE PTR [r11-1]
 	or rax, 1
 	mov BYTE PTR [r11-1], al
@@ -46981,7 +47001,7 @@ vg_ffdh_generate_parameters:
 	mov rdi, rax
 	mov r10, rdi
 	mov r8d, 0
-2162:
+2160:
 	movzx eax, BYTE PTR [r10]
 	mov rdx, rax
 	shr rax, 1
@@ -46992,7 +47012,7 @@ vg_ffdh_generate_parameters:
 	mov r8, rdx
 	add r10, 1
 	sub rcx, 1
-	jne 2162b
+	jne 2160b
 	mov rdi, rbp
 	mov rdx, QWORD PTR [rdi+72]
 	sub rdx, 1
@@ -47013,11 +47033,11 @@ vg_ffdh_generate_parameters:
 	add r12, 7
 	shr r12, 3
 	cmp r12, 2
-	jb 2163f
-	jmp 2164f
-2163:
+	jb 2161f
+	jmp 2162f
+2161:
 	mov r12d, 2
-2164:
+2162:
 	mov rsi, rdi
 	mov rdi, rax
 	mov QWORD PTR [rdi+128], rsi
@@ -47054,7 +47074,7 @@ vg_ffdh_generate_parameters:
 	mov eax, 0
 	mov rdx, rcx
 	mov r14, rsi
-2165:
+2163:
 	sub rdx, 1
 	ror rax, 56
 	movzx ebp, BYTE PTR [r14]
@@ -47062,16 +47082,16 @@ vg_ffdh_generate_parameters:
 	add r14, 1
 	mov rbp, rdx
 	and rbp, 7
-	je 2166f
-	jmp 2167f
-2166:
+	je 2164f
+	jmp 2165f
+2164:
 	mov rbp, rdx
 	shr rbp, 3
 	mov QWORD PTR [rbx+rbp*8], rax
 	mov eax, 0
-2167:
+2165:
 	test rdx, rdx
-	jne 2165b
+	jne 2163b
 	mov r10, QWORD PTR [rdi+64]
 	mov r12, QWORD PTR [rdi+48]
 	mov rbx, QWORD PTR [r10]
@@ -47119,11 +47139,11 @@ vg_ffdh_generate_parameters:
 	mov r8, QWORD PTR [rdi+120]
 	mov eax, 0
 	mov r14, 0
-2168:
+2166:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2168b
+	jne 2166b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov QWORD PTR [r8+rcx*8], rdx
@@ -47134,39 +47154,39 @@ vg_ffdh_generate_parameters:
 	mov rcx, r12
 	and rcx, 3
 	or rax, rcx
-	je 2169f
+	je 2167f
 	mov rax, QWORD PTR [r10+r12*8-8]
 	mov edx, 1
 	mov ecx, 64
 	cmp rax, 1
-	je 2171f
-2173:
+	je 2169f
+2171:
 	shr rax, 1
 	add rdx, rdx
 	sub rcx, 1
 	cmp rax, 1
-	jne 2173b
-	jmp 2172f
-2171:
-2172:
+	jne 2171b
+	jmp 2170f
+2169:
+2170:
 	mov QWORD PTR [rdi+208], rcx
 	mov rcx, r12
 	sub rcx, 1
 	mov r8, QWORD PTR [rdi+96]
 	mov eax, 0
 	mov r14, 0
-2174:
+2172:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2174b
+	jne 2172b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov QWORD PTR [r8+rcx*8], rdx
 	mov rcx, QWORD PTR [rdi+208]
 	add rcx, QWORD PTR [rdi+48]
 	mov QWORD PTR [rdi+208], rcx
-2175:
+2173:
 	mov rbx, QWORD PTR [rdi+96]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -47174,7 +47194,7 @@ vg_ffdh_generate_parameters:
 	mov rsi, QWORD PTR [rdi+88]
 	mov ebp, 0
 	mov r14, 0
-2176:
+2174:
 	add rbp, rbp
 	mov rax, QWORD PTR [rbx+r14*8]
 	adc rax, rax
@@ -47182,14 +47202,14 @@ vg_ffdh_generate_parameters:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2176b
+	jne 2174b
 	mov eax, 0
 	add rbp, rbp
 	adc rax, 0
 	mov QWORD PTR [r8+r12*8], rax
 	mov ebp, 0
 	mov r14, 0
-2177:
+2175:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -47197,13 +47217,13 @@ vg_ffdh_generate_parameters:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2177b
+	jne 2175b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2178:
+2176:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -47212,14 +47232,14 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2178b
+	jne 2176b
 	mov rcx, QWORD PTR [rdi+208]
 	sub rcx, 1
 	mov QWORD PTR [rdi+208], rcx
-	jne 2175b
+	jne 2173b
 	mov eax, 6
 	mov QWORD PTR [rdi+208], rax
-2179:
+2177:
 	mov edx, 4
 	mov ecx, 4
 	mov r8d, 4
@@ -47241,22 +47261,22 @@ vg_ffdh_generate_parameters:
 	mov r15, QWORD PTR [rdi+56]
 	mov rsi, QWORD PTR [rdi+88]
 	cmp r11, r9
-	je 2180f
+	je 2178f
 	mov eax, 0
 	mov r14, 0
-2182:
+2180:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2182b
+	jne 2180b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r13, 0
-2183:
+2181:
 	mov rcx, QWORD PTR [r11+r13*8]
 	mov ebp, 0
 	mov r14, 0
-2184:
+2182:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -47267,7 +47287,7 @@ vg_ffdh_generate_parameters:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2184b
+	jne 2182b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8], rax
@@ -47283,7 +47303,7 @@ vg_ffdh_generate_parameters:
 	adc rdx, 0
 	mov rbp, rdx
 	mov r14, 1
-2185:
+2183:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -47294,7 +47314,7 @@ vg_ffdh_generate_parameters:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2185b
+	jne 2183b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8-8], rax
@@ -47305,10 +47325,10 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [r8+r12*8+8], rax
 	add r13, 1
 	cmp r13, r12
-	jne 2183b
+	jne 2181b
 	mov ebp, 0
 	mov r14, 0
-2186:
+2184:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -47316,13 +47336,13 @@ vg_ffdh_generate_parameters:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2186b
+	jne 2184b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2187:
+2185:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -47331,9 +47351,9 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2187b
-	jmp 2181f
-2180:
+	jne 2185b
+	jmp 2179f
+2178:
 	movq xmm14, rbx
 	movq xmm15, r15
 	movq xmm0, r12
@@ -47347,20 +47367,20 @@ vg_ffdh_generate_parameters:
 	add rcx, rcx
 	add rcx, 2
 	mov r14d, 0
-2188:
+2186:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, rcx
-	jne 2188b
+	jne 2186b
 	mov r10, rbx
 	mov ebp, 1
 	add r8, 8
-2189:
+2187:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r13, rdx
 	mov ecx, 0
 	mov r14d, 0
-2190:
+2188:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul r13
 	add rax, QWORD PTR [r8+r14*8]
@@ -47371,20 +47391,20 @@ vg_ffdh_generate_parameters:
 	mov rcx, rdx
 	add r14, 1
 	cmp r14, rbp
-	jne 2190b
+	jne 2188b
 	mov rdx, r13
 	mov QWORD PTR [r8+r14*8], rcx
 	add r8, 8
 	add rbp, 1
 	cmp rbp, r10
-	jne 2189b
+	jne 2187b
 	movq r8, xmm1
 	add r8, 16
 	movq r10, xmm0
 	mov r15d, 0
 	mov ebp, 0
 	mov r14d, 0
-2191:
+2189:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r11, QWORD PTR [r8+r14*8]
 	mov r12, QWORD PTR [r8+r14*8+8]
@@ -47408,18 +47428,18 @@ vg_ffdh_generate_parameters:
 	add rbp, 1
 	add r14, 2
 	cmp rbp, r10
-	jne 2191b
+	jne 2189b
 	movq r9, xmm2
 	movq rbp, xmm0
 	mov r10d, 0
-2192:
+2190:
 	movq rax, xmm15
 	mov rdx, QWORD PTR [r8]
 	imul rdx, rax
 	mov r13, rdx
 	mov ecx, 0
 	mov r14d, 0
-2193:
+2191:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul r13
 	add rax, QWORD PTR [r8+r14*8]
@@ -47430,7 +47450,7 @@ vg_ffdh_generate_parameters:
 	mov rcx, rdx
 	add r14, 1
 	cmp r14, rbp
-	jne 2193b
+	jne 2191b
 	mov rdx, r13
 	mov rax, QWORD PTR [r8+r14*8]
 	mov esi, 0
@@ -47443,7 +47463,7 @@ vg_ffdh_generate_parameters:
 	add r8, 8
 	movq rax, xmm3
 	cmp r8, rax
-	jne 2192b
+	jne 2190b
 	mov QWORD PTR [r8+rbp*8], r10
 	mov eax, 0
 	mov QWORD PTR [r8+rbp*8+8], rax
@@ -47453,7 +47473,7 @@ vg_ffdh_generate_parameters:
 	movq rbx, xmm14
 	mov ebp, 0
 	mov r14, 0
-2194:
+2192:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -47461,13 +47481,13 @@ vg_ffdh_generate_parameters:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2194b
+	jne 2192b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2195:
+2193:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -47476,8 +47496,8 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2195b
-2181:
+	jne 2193b
+2179:
 	movq rbx, xmm8
 	movq rbp, xmm9
 	movq r12, xmm10
@@ -47487,16 +47507,16 @@ vg_ffdh_generate_parameters:
 	mov rax, QWORD PTR [rdi+208]
 	sub rax, 1
 	mov QWORD PTR [rdi+208], rax
-	jne 2179b
-	jmp 2170f
-2169:
+	jne 2177b
+	jmp 2168f
+2167:
 	mov rbx, QWORD PTR [rdi+96]
 	mov r10, QWORD PTR [rdi+64]
 	mov r12, QWORD PTR [rdi+48]
 	mov r8, QWORD PTR [rdi+88]
 	mov ebp, 0
 	mov r14, 0
-2196:
+2194:
 	mov eax, 0
 	add rbp, rbp
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -47504,14 +47524,14 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2196b
+	jne 2194b
 	mov rsi, QWORD PTR [r10+r12*8-8]
 	mov rdx, rsi
 	xor rdx, -1
 	mov rax, -1
 	mov ecx, 0
 	mov r13d, 64
-2197:
+2195:
 	add rax, rax
 	adc rdx, rdx
 	sbb r11, r11
@@ -47525,12 +47545,12 @@ vg_ffdh_generate_parameters:
 	add rcx, rcx
 	sub rcx, r15
 	sub r13, 1
-	jne 2197b
+	jne 2195b
 	mov QWORD PTR [r8], rcx
 	mov rcx, QWORD PTR [rdi+48]
 	shr rcx, 2
 	mov QWORD PTR [rdi+208], rcx
-2198:
+2196:
 	mov rbx, QWORD PTR [rdi+96]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -47576,7 +47596,7 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [r8], rdx
 	sbb rbp, rbp
 	mov r14, 1
-2199:
+2197:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, r9
@@ -47589,7 +47609,7 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [r8+r14*8], rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2199b
+	jne 2197b
 	mov rdx, QWORD PTR [rbx+r12*8-8]
 	add rbp, rbp
 	sbb rdx, r9
@@ -47599,7 +47619,7 @@ vg_ffdh_generate_parameters:
 	sbb r11, r11
 	mov ebp, 0
 	mov r14, 0
-2200:
+2198:
 	mov rax, QWORD PTR [r10+r14*8]
 	and rax, r11
 	add rbp, rbp
@@ -47608,7 +47628,7 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2200b
+	jne 2198b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	adc rax, 0
@@ -47618,7 +47638,7 @@ vg_ffdh_generate_parameters:
 	sbb r11, r11
 	mov ebp, 0
 	mov r14, 0
-2201:
+2199:
 	mov rax, QWORD PTR [r10+r14*8]
 	and rax, r11
 	add rbp, rbp
@@ -47627,26 +47647,26 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2201b
+	jne 2199b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	adc rax, 0
 	mov QWORD PTR [r8+r12*8], rax
 	mov rsi, r8
 	mov r14, 0
-2202:
+2200:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2202b
+	jne 2200b
 	mov rcx, QWORD PTR [rdi+208]
 	sub rcx, 1
 	mov QWORD PTR [rdi+208], rcx
-	jne 2198b
+	jne 2196b
 	mov eax, 2
 	mov QWORD PTR [rdi+208], rax
-2203:
+2201:
 	mov edx, 4
 	mov ecx, 4
 	mov r8d, 4
@@ -47668,22 +47688,22 @@ vg_ffdh_generate_parameters:
 	mov r15, QWORD PTR [rdi+56]
 	mov rsi, QWORD PTR [rdi+88]
 	cmp r11, r9
-	je 2204f
+	je 2202f
 	mov eax, 0
 	mov r14, 0
-2206:
+2204:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2206b
+	jne 2204b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r13, 0
-2207:
+2205:
 	mov rcx, QWORD PTR [r11+r13*8]
 	mov ebp, 0
 	mov r14, 0
-2208:
+2206:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -47694,7 +47714,7 @@ vg_ffdh_generate_parameters:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2208b
+	jne 2206b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8], rax
@@ -47710,7 +47730,7 @@ vg_ffdh_generate_parameters:
 	adc rdx, 0
 	mov rbp, rdx
 	mov r14, 1
-2209:
+2207:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -47721,7 +47741,7 @@ vg_ffdh_generate_parameters:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2209b
+	jne 2207b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8-8], rax
@@ -47732,10 +47752,10 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [r8+r12*8+8], rax
 	add r13, 1
 	cmp r13, r12
-	jne 2207b
+	jne 2205b
 	mov ebp, 0
 	mov r14, 0
-2210:
+2208:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -47743,13 +47763,13 @@ vg_ffdh_generate_parameters:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2210b
+	jne 2208b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2211:
+2209:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -47758,9 +47778,9 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2211b
-	jmp 2205f
-2204:
+	jne 2209b
+	jmp 2203f
+2202:
 	movq xmm14, rbx
 	movq xmm15, r15
 	movq xmm0, r12
@@ -47774,20 +47794,20 @@ vg_ffdh_generate_parameters:
 	add rcx, rcx
 	add rcx, 2
 	mov r14d, 0
-2212:
+2210:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, rcx
-	jne 2212b
+	jne 2210b
 	mov r10, rbx
 	mov ebp, 1
 	add r8, 8
-2213:
+2211:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r13, rdx
 	mov ecx, 0
 	mov r14d, 0
-2214:
+2212:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul r13
 	add rax, QWORD PTR [r8+r14*8]
@@ -47798,20 +47818,20 @@ vg_ffdh_generate_parameters:
 	mov rcx, rdx
 	add r14, 1
 	cmp r14, rbp
-	jne 2214b
+	jne 2212b
 	mov rdx, r13
 	mov QWORD PTR [r8+r14*8], rcx
 	add r8, 8
 	add rbp, 1
 	cmp rbp, r10
-	jne 2213b
+	jne 2211b
 	movq r8, xmm1
 	add r8, 16
 	movq r10, xmm0
 	mov r15d, 0
 	mov ebp, 0
 	mov r14d, 0
-2215:
+2213:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r11, QWORD PTR [r8+r14*8]
 	mov r12, QWORD PTR [r8+r14*8+8]
@@ -47835,18 +47855,18 @@ vg_ffdh_generate_parameters:
 	add rbp, 1
 	add r14, 2
 	cmp rbp, r10
-	jne 2215b
+	jne 2213b
 	movq r9, xmm2
 	movq rbp, xmm0
 	mov r10d, 0
-2216:
+2214:
 	movq rax, xmm15
 	mov rdx, QWORD PTR [r8]
 	imul rdx, rax
 	mov r13, rdx
 	mov ecx, 0
 	mov r14d, 0
-2217:
+2215:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul r13
 	add rax, QWORD PTR [r8+r14*8]
@@ -47857,7 +47877,7 @@ vg_ffdh_generate_parameters:
 	mov rcx, rdx
 	add r14, 1
 	cmp r14, rbp
-	jne 2217b
+	jne 2215b
 	mov rdx, r13
 	mov rax, QWORD PTR [r8+r14*8]
 	mov esi, 0
@@ -47870,7 +47890,7 @@ vg_ffdh_generate_parameters:
 	add r8, 8
 	movq rax, xmm3
 	cmp r8, rax
-	jne 2216b
+	jne 2214b
 	mov QWORD PTR [r8+rbp*8], r10
 	mov eax, 0
 	mov QWORD PTR [r8+rbp*8+8], rax
@@ -47880,7 +47900,7 @@ vg_ffdh_generate_parameters:
 	movq rbx, xmm14
 	mov ebp, 0
 	mov r14, 0
-2218:
+2216:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -47888,13 +47908,13 @@ vg_ffdh_generate_parameters:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2218b
+	jne 2216b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2219:
+2217:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -47903,8 +47923,8 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2219b
-2205:
+	jne 2217b
+2203:
 	movq rbx, xmm8
 	movq rbp, xmm9
 	movq r12, xmm10
@@ -47914,8 +47934,8 @@ vg_ffdh_generate_parameters:
 	mov rax, QWORD PTR [rdi+208]
 	sub rax, 1
 	mov QWORD PTR [rdi+208], rax
-	jne 2203b
-2170:
+	jne 2201b
+2168:
 	mov edx, 6
 	mov ecx, 4
 	mov r8d, 7
@@ -47937,22 +47957,22 @@ vg_ffdh_generate_parameters:
 	mov r15, QWORD PTR [rdi+56]
 	mov rsi, QWORD PTR [rdi+88]
 	cmp r11, r9
-	je 2220f
+	je 2218f
 	mov eax, 0
 	mov r14, 0
-2222:
+2220:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2222b
+	jne 2220b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r13, 0
-2223:
+2221:
 	mov rcx, QWORD PTR [r11+r13*8]
 	mov ebp, 0
 	mov r14, 0
-2224:
+2222:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -47963,7 +47983,7 @@ vg_ffdh_generate_parameters:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2224b
+	jne 2222b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8], rax
@@ -47979,7 +47999,7 @@ vg_ffdh_generate_parameters:
 	adc rdx, 0
 	mov rbp, rdx
 	mov r14, 1
-2225:
+2223:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -47990,7 +48010,7 @@ vg_ffdh_generate_parameters:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2225b
+	jne 2223b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8-8], rax
@@ -48001,10 +48021,10 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [r8+r12*8+8], rax
 	add r13, 1
 	cmp r13, r12
-	jne 2223b
+	jne 2221b
 	mov ebp, 0
 	mov r14, 0
-2226:
+2224:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -48012,13 +48032,13 @@ vg_ffdh_generate_parameters:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2226b
+	jne 2224b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2227:
+2225:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -48027,9 +48047,9 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2227b
-	jmp 2221f
-2220:
+	jne 2225b
+	jmp 2219f
+2218:
 	movq xmm14, rbx
 	movq xmm15, r15
 	movq xmm0, r12
@@ -48043,20 +48063,20 @@ vg_ffdh_generate_parameters:
 	add rcx, rcx
 	add rcx, 2
 	mov r14d, 0
-2228:
+2226:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, rcx
-	jne 2228b
+	jne 2226b
 	mov r10, rbx
 	mov ebp, 1
 	add r8, 8
-2229:
+2227:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r13, rdx
 	mov ecx, 0
 	mov r14d, 0
-2230:
+2228:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul r13
 	add rax, QWORD PTR [r8+r14*8]
@@ -48067,20 +48087,20 @@ vg_ffdh_generate_parameters:
 	mov rcx, rdx
 	add r14, 1
 	cmp r14, rbp
-	jne 2230b
+	jne 2228b
 	mov rdx, r13
 	mov QWORD PTR [r8+r14*8], rcx
 	add r8, 8
 	add rbp, 1
 	cmp rbp, r10
-	jne 2229b
+	jne 2227b
 	movq r8, xmm1
 	add r8, 16
 	movq r10, xmm0
 	mov r15d, 0
 	mov ebp, 0
 	mov r14d, 0
-2231:
+2229:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r11, QWORD PTR [r8+r14*8]
 	mov r12, QWORD PTR [r8+r14*8+8]
@@ -48104,18 +48124,18 @@ vg_ffdh_generate_parameters:
 	add rbp, 1
 	add r14, 2
 	cmp rbp, r10
-	jne 2231b
+	jne 2229b
 	movq r9, xmm2
 	movq rbp, xmm0
 	mov r10d, 0
-2232:
+2230:
 	movq rax, xmm15
 	mov rdx, QWORD PTR [r8]
 	imul rdx, rax
 	mov r13, rdx
 	mov ecx, 0
 	mov r14d, 0
-2233:
+2231:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul r13
 	add rax, QWORD PTR [r8+r14*8]
@@ -48126,7 +48146,7 @@ vg_ffdh_generate_parameters:
 	mov rcx, rdx
 	add r14, 1
 	cmp r14, rbp
-	jne 2233b
+	jne 2231b
 	mov rdx, r13
 	mov rax, QWORD PTR [r8+r14*8]
 	mov esi, 0
@@ -48139,7 +48159,7 @@ vg_ffdh_generate_parameters:
 	add r8, 8
 	movq rax, xmm3
 	cmp r8, rax
-	jne 2232b
+	jne 2230b
 	mov QWORD PTR [r8+rbp*8], r10
 	mov eax, 0
 	mov QWORD PTR [r8+rbp*8+8], rax
@@ -48149,7 +48169,7 @@ vg_ffdh_generate_parameters:
 	movq rbx, xmm14
 	mov ebp, 0
 	mov r14, 0
-2234:
+2232:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -48157,13 +48177,13 @@ vg_ffdh_generate_parameters:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2234b
+	jne 2232b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2235:
+2233:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -48172,8 +48192,8 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2235b
-2221:
+	jne 2233b
+2219:
 	movq rbx, xmm8
 	movq rbp, xmm9
 	movq r12, xmm10
@@ -48207,12 +48227,12 @@ vg_ffdh_generate_parameters:
 	add rbx, rax
 	add rbx, rax
 	mov r14, 0
-2236:
+2234:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2236b
+	jne 2234b
 	mov r12, QWORD PTR [rdi+48]
 	mov r8, QWORD PTR [rdi+64]
 	mov rax, QWORD PTR [rdi+48]
@@ -48266,7 +48286,7 @@ vg_ffdh_generate_parameters:
 	add rsi, rax
 	mov ebp, 0
 	mov r14, 0
-2237:
+2235:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -48274,13 +48294,13 @@ vg_ffdh_generate_parameters:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2237b
+	jne 2235b
 	mov r12, QWORD PTR [rdi+48]
 	mov r8, QWORD PTR [rdi+64]
 	mov rbp, QWORD PTR [r8]
 	and rbp, -2
 	mov r14, 1
-2238:
+2236:
 	mov rax, QWORD PTR [r8+r14*8]
 	cmp rbp, 1
 	sbb rdx, rdx
@@ -48288,7 +48308,7 @@ vg_ffdh_generate_parameters:
 	or rbp, rax
 	add r14, 1
 	cmp r14, r12
-	jne 2238b
+	jne 2236b
 	mov rax, QWORD PTR [rdi+48]
 	add rax, 2
 	add rax, rax
@@ -48321,6 +48341,64 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [rbx+r12*8], rax
 	mov rbp, QWORD PTR [rsi]
 	mov r14, 1
+2237:
+	mov rax, QWORD PTR [rsi+r14*8]
+	mov rdx, rax
+	shl rdx, 63
+	mov rcx, rbp
+	shr rcx, 1
+	or rcx, rdx
+	xor rcx, rbp
+	and rcx, r15
+	xor rcx, rbp
+	mov QWORD PTR [rbx+r14*8-8], rcx
+	mov rbp, rax
+	add r14, 1
+	cmp r14, r12
+	jne 2237b
+	mov rcx, rbp
+	shr rcx, 1
+	xor rcx, rbp
+	and rcx, r15
+	xor rcx, rbp
+	mov QWORD PTR [rbx+r12*8-8], rcx
+	mov rsi, rbx
+	movabs r15, -2459565876494606883
+	and r15, QWORD PTR [rbx+r12*8]
+	cmp r15, 1
+	sbb r15, r15
+	xor r15, -1
+	mov rbp, QWORD PTR [rsi]
+	mov r14, 1
+2238:
+	mov rax, QWORD PTR [rsi+r14*8]
+	mov rdx, rax
+	shl rdx, 63
+	mov rcx, rbp
+	shr rcx, 1
+	or rcx, rdx
+	xor rcx, rbp
+	and rcx, r15
+	xor rcx, rbp
+	mov QWORD PTR [rbx+r14*8-8], rcx
+	mov rbp, rax
+	add r14, 1
+	cmp r14, r12
+	jne 2238b
+	mov rcx, rbp
+	shr rcx, 1
+	xor rcx, rbp
+	and rcx, r15
+	xor rcx, rbp
+	mov QWORD PTR [rbx+r12*8-8], rcx
+	mov rsi, rbx
+	movabs r15, -7378697629483820647
+	and r15, QWORD PTR [rbx+r12*8]
+	cmp r15, 1
+	sbb r15, r15
+	xor r15, -1
+	mov rbp, QWORD PTR [rsi]
+	mov r14, 1
 2239:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov rdx, rax
@@ -48343,7 +48421,7 @@ vg_ffdh_generate_parameters:
 	xor rcx, rbp
 	mov QWORD PTR [rbx+r12*8-8], rcx
 	mov rsi, rbx
-	movabs r15, -2459565876494606883
+	movabs r15, 1229782938247303441
 	and r15, QWORD PTR [rbx+r12*8]
 	cmp r15, 1
 	sbb r15, r15
@@ -48371,73 +48449,15 @@ vg_ffdh_generate_parameters:
 	and rcx, r15
 	xor rcx, rbp
 	mov QWORD PTR [rbx+r12*8-8], rcx
-	mov rsi, rbx
-	movabs r15, -7378697629483820647
-	and r15, QWORD PTR [rbx+r12*8]
-	cmp r15, 1
-	sbb r15, r15
-	xor r15, -1
-	mov rbp, QWORD PTR [rsi]
-	mov r14, 1
-2241:
-	mov rax, QWORD PTR [rsi+r14*8]
-	mov rdx, rax
-	shl rdx, 63
-	mov rcx, rbp
-	shr rcx, 1
-	or rcx, rdx
-	xor rcx, rbp
-	and rcx, r15
-	xor rcx, rbp
-	mov QWORD PTR [rbx+r14*8-8], rcx
-	mov rbp, rax
-	add r14, 1
-	cmp r14, r12
-	jne 2241b
-	mov rcx, rbp
-	shr rcx, 1
-	xor rcx, rbp
-	and rcx, r15
-	xor rcx, rbp
-	mov QWORD PTR [rbx+r12*8-8], rcx
-	mov rsi, rbx
-	movabs r15, 1229782938247303441
-	and r15, QWORD PTR [rbx+r12*8]
-	cmp r15, 1
-	sbb r15, r15
-	xor r15, -1
-	mov rbp, QWORD PTR [rsi]
-	mov r14, 1
-2242:
-	mov rax, QWORD PTR [rsi+r14*8]
-	mov rdx, rax
-	shl rdx, 63
-	mov rcx, rbp
-	shr rcx, 1
-	or rcx, rdx
-	xor rcx, rbp
-	and rcx, r15
-	xor rcx, rbp
-	mov QWORD PTR [rbx+r14*8-8], rcx
-	mov rbp, rax
-	add r14, 1
-	cmp r14, r12
-	jne 2242b
-	mov rcx, rbp
-	shr rcx, 1
-	xor rcx, rbp
-	and rcx, r15
-	xor rcx, rbp
-	mov QWORD PTR [rbx+r12*8-8], rcx
 	mov rax, QWORD PTR [rdi+128]
 	mov ecx, 0
 	mov QWORD PTR [rax+144], rcx
-2243:
-2244:
+2241:
+2242:
 	mov rax, QWORD PTR [rdi+128]
 	mov rcx, QWORD PTR [rax+104]
 	cmp rcx, QWORD PTR [rax+128]
-	jb 2245f
+	jb 2243f
 	mov rax, QWORD PTR [rdi+128]
 	mov rsi, QWORD PTR [rax+96]
 	mov rcx, QWORD PTR [rax+128]
@@ -48503,13 +48523,13 @@ vg_ffdh_generate_parameters:
 	add r10, 1
 	add r11, 1
 	sub rcx, 1
-2247:
+2245:
 	movzx eax, BYTE PTR [r10]
 	mov BYTE PTR [r11], al
 	add r10, 1
 	add r11, 1
 	sub rcx, 1
-	jne 2247b
+	jne 2245b
 	mov rdi, rbp
 	mov rax, QWORD PTR [rdi+128]
 	mov rsi, QWORD PTR [rax+48]
@@ -48518,7 +48538,7 @@ vg_ffdh_generate_parameters:
 	mov eax, 0
 	mov rdx, rcx
 	mov r14, rsi
-2248:
+2246:
 	sub rdx, 1
 	ror rax, 56
 	movzx ebp, BYTE PTR [r14]
@@ -48526,19 +48546,49 @@ vg_ffdh_generate_parameters:
 	add r14, 1
 	mov rbp, rdx
 	and rbp, 7
-	je 2249f
-	jmp 2250f
-2249:
+	je 2247f
+	jmp 2248f
+2247:
 	mov rbp, rdx
 	shr rbp, 3
 	mov QWORD PTR [rbx+rbp*8], rax
 	mov eax, 0
-2250:
+2248:
 	test rdx, rdx
-	jne 2248b
+	jne 2246b
 	mov r12, QWORD PTR [rdi+48]
 	mov rbx, QWORD PTR [rdi+120]
 	mov r10, QWORD PTR [rdi+104]
+	mov ebp, 0
+	mov r14, 0
+2249:
+	add rbp, rbp
+	mov rax, QWORD PTR [rbx+r14*8]
+	sbb rax, QWORD PTR [r10+r14*8]
+	sbb rbp, rbp
+	add r14, 1
+	cmp r14, r12
+	jne 2249b
+	mov rax, rbp
+	and rax, 1
+	mov QWORD PTR [rdi+240], rax
+	mov r12, QWORD PTR [rdi+48]
+	mov rsi, QWORD PTR [rdi+104]
+	mov rbx, QWORD PTR [rdi+88]
+	mov r14, 0
+2250:
+	mov rax, QWORD PTR [rsi+r14*8]
+	mov QWORD PTR [rbx+r14*8], rax
+	add r14, 1
+	cmp r14, r12
+	jne 2250b
+	mov rbx, QWORD PTR [rdi+88]
+	mov rax, QWORD PTR [rbx]
+	or rax, 1
+	mov QWORD PTR [rbx], rax
+	mov r12, QWORD PTR [rdi+48]
+	mov rbx, QWORD PTR [rdi+88]
+	mov r10, QWORD PTR [rdi+64]
 	mov ebp, 0
 	mov r14, 0
 2251:
@@ -48551,54 +48601,24 @@ vg_ffdh_generate_parameters:
 	jne 2251b
 	mov rax, rbp
 	and rax, 1
-	mov QWORD PTR [rdi+240], rax
-	mov r12, QWORD PTR [rdi+48]
-	mov rsi, QWORD PTR [rdi+104]
-	mov rbx, QWORD PTR [rdi+88]
-	mov r14, 0
-2252:
-	mov rax, QWORD PTR [rsi+r14*8]
-	mov QWORD PTR [rbx+r14*8], rax
-	add r14, 1
-	cmp r14, r12
-	jne 2252b
-	mov rbx, QWORD PTR [rdi+88]
-	mov rax, QWORD PTR [rbx]
-	or rax, 1
-	mov QWORD PTR [rbx], rax
-	mov r12, QWORD PTR [rdi+48]
-	mov rbx, QWORD PTR [rdi+88]
-	mov r10, QWORD PTR [rdi+64]
-	mov ebp, 0
-	mov r14, 0
-2253:
-	add rbp, rbp
-	mov rax, QWORD PTR [rbx+r14*8]
-	sbb rax, QWORD PTR [r10+r14*8]
-	sbb rbp, rbp
-	add r14, 1
-	cmp r14, r12
-	jne 2253b
-	mov rax, rbp
-	and rax, 1
 	and rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+240], rax
 	test rax, rax
 	mov rax, QWORD PTR [rdi+128]
 	mov edx, 1
 	mov QWORD PTR [rax+152], rdx
-	jmp 2246f
-2245:
+	jmp 2244f
+2243:
 	mov rax, QWORD PTR [rdi+128]
 	mov edx, 0
 	mov QWORD PTR [rax+152], rdx
 	cmp rdx, 1
-2246:
-	je 2244b
+2244:
+	je 2242b
 	mov rax, QWORD PTR [rdi+128]
 	mov rcx, QWORD PTR [rax+152]
 	test rcx, rcx
-	je 2254f
+	je 2252f
 	mov edx, 5
 	mov ecx, 5
 	mov r8d, 4
@@ -48620,22 +48640,22 @@ vg_ffdh_generate_parameters:
 	mov r15, QWORD PTR [rdi+56]
 	mov rsi, QWORD PTR [rdi+88]
 	cmp r11, r9
-	je 2256f
+	je 2254f
 	mov eax, 0
 	mov r14, 0
-2258:
+2256:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2258b
+	jne 2256b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r13, 0
-2259:
+2257:
 	mov rcx, QWORD PTR [r11+r13*8]
 	mov ebp, 0
 	mov r14, 0
-2260:
+2258:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -48646,7 +48666,7 @@ vg_ffdh_generate_parameters:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2260b
+	jne 2258b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8], rax
@@ -48662,7 +48682,7 @@ vg_ffdh_generate_parameters:
 	adc rdx, 0
 	mov rbp, rdx
 	mov r14, 1
-2261:
+2259:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -48673,7 +48693,7 @@ vg_ffdh_generate_parameters:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2261b
+	jne 2259b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8-8], rax
@@ -48684,10 +48704,10 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [r8+r12*8+8], rax
 	add r13, 1
 	cmp r13, r12
-	jne 2259b
+	jne 2257b
 	mov ebp, 0
 	mov r14, 0
-2262:
+2260:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -48695,13 +48715,13 @@ vg_ffdh_generate_parameters:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2262b
+	jne 2260b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2263:
+2261:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -48710,9 +48730,9 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2263b
-	jmp 2257f
-2256:
+	jne 2261b
+	jmp 2255f
+2254:
 	movq xmm14, rbx
 	movq xmm15, r15
 	movq xmm0, r12
@@ -48726,20 +48746,20 @@ vg_ffdh_generate_parameters:
 	add rcx, rcx
 	add rcx, 2
 	mov r14d, 0
-2264:
+2262:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, rcx
-	jne 2264b
+	jne 2262b
 	mov r10, rbx
 	mov ebp, 1
 	add r8, 8
-2265:
+2263:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r13, rdx
 	mov ecx, 0
 	mov r14d, 0
-2266:
+2264:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul r13
 	add rax, QWORD PTR [r8+r14*8]
@@ -48750,20 +48770,20 @@ vg_ffdh_generate_parameters:
 	mov rcx, rdx
 	add r14, 1
 	cmp r14, rbp
-	jne 2266b
+	jne 2264b
 	mov rdx, r13
 	mov QWORD PTR [r8+r14*8], rcx
 	add r8, 8
 	add rbp, 1
 	cmp rbp, r10
-	jne 2265b
+	jne 2263b
 	movq r8, xmm1
 	add r8, 16
 	movq r10, xmm0
 	mov r15d, 0
 	mov ebp, 0
 	mov r14d, 0
-2267:
+2265:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r11, QWORD PTR [r8+r14*8]
 	mov r12, QWORD PTR [r8+r14*8+8]
@@ -48787,18 +48807,18 @@ vg_ffdh_generate_parameters:
 	add rbp, 1
 	add r14, 2
 	cmp rbp, r10
-	jne 2267b
+	jne 2265b
 	movq r9, xmm2
 	movq rbp, xmm0
 	mov r10d, 0
-2268:
+2266:
 	movq rax, xmm15
 	mov rdx, QWORD PTR [r8]
 	imul rdx, rax
 	mov r13, rdx
 	mov ecx, 0
 	mov r14d, 0
-2269:
+2267:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul r13
 	add rax, QWORD PTR [r8+r14*8]
@@ -48809,7 +48829,7 @@ vg_ffdh_generate_parameters:
 	mov rcx, rdx
 	add r14, 1
 	cmp r14, rbp
-	jne 2269b
+	jne 2267b
 	mov rdx, r13
 	mov rax, QWORD PTR [r8+r14*8]
 	mov esi, 0
@@ -48822,7 +48842,7 @@ vg_ffdh_generate_parameters:
 	add r8, 8
 	movq rax, xmm3
 	cmp r8, rax
-	jne 2268b
+	jne 2266b
 	mov QWORD PTR [r8+rbp*8], r10
 	mov eax, 0
 	mov QWORD PTR [r8+rbp*8+8], rax
@@ -48832,7 +48852,7 @@ vg_ffdh_generate_parameters:
 	movq rbx, xmm14
 	mov ebp, 0
 	mov r14, 0
-2270:
+2268:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -48840,13 +48860,13 @@ vg_ffdh_generate_parameters:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2270b
+	jne 2268b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2271:
+2269:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -48855,8 +48875,8 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2271b
-2257:
+	jne 2269b
+2255:
 	movq rbx, xmm8
 	movq rbp, xmm9
 	movq r12, xmm10
@@ -48888,7 +48908,7 @@ vg_ffdh_generate_parameters:
 	mov rbx, QWORD PTR [rcx]
 	mov rax, QWORD PTR [rdi+176]
 	test rax, rax
-	je 2272f
+	je 2270f
 	mov r9, QWORD PTR [rdi+128]
 	mov rcx, QWORD PTR [r9+144]
 	add rcx, 1
@@ -48898,25 +48918,25 @@ vg_ffdh_generate_parameters:
 	mov edx, 1
 	cmovae rax, rdx
 	mov QWORD PTR [r9+152], rax
-	jmp 2273f
-2272:
+	jmp 2271f
+2270:
 	mov rax, QWORD PTR [rdi+128]
 	mov edx, 2
 	mov QWORD PTR [rax+152], rdx
-2273:
-	jmp 2255f
-2254:
-2255:
+2271:
+	jmp 2253f
+2252:
+2253:
 	mov rax, QWORD PTR [rdi+128]
 	mov rcx, QWORD PTR [rax+152]
 	cmp rcx, 4
-	je 2243b
+	je 2241b
 	mov rdi, QWORD PTR [rdi+128]
 	mov rax, QWORD PTR [rdi+152]
 	cmp rax, 1
-	je 2274f
-	jmp 2275f
-2274:
+	je 2272f
+	jmp 2273f
+2272:
 	mov rbp, rdi
 	mov rax, QWORD PTR [rdi+48]
 	mov rsi, QWORD PTR [rdi+88]
@@ -48971,13 +48991,13 @@ vg_ffdh_generate_parameters:
 	add r10, 1
 	add r11, 1
 	sub rcx, 1
-2276:
+2274:
 	movzx eax, BYTE PTR [r10]
 	mov BYTE PTR [r11], al
 	add r10, 1
 	add r11, 1
 	sub rcx, 1
-	jne 2276b
+	jne 2274b
 	movzx eax, BYTE PTR [r11-1]
 	or rax, 1
 	mov BYTE PTR [r11-1], al
@@ -49001,11 +49021,11 @@ vg_ffdh_generate_parameters:
 	add r12, 7
 	shr r12, 3
 	cmp r12, 2
-	jb 2277f
-	jmp 2278f
-2277:
+	jb 2275f
+	jmp 2276f
+2275:
 	mov r12d, 2
-2278:
+2276:
 	mov rsi, rdi
 	mov rdi, rax
 	mov QWORD PTR [rdi+128], rsi
@@ -49042,7 +49062,7 @@ vg_ffdh_generate_parameters:
 	mov eax, 0
 	mov rdx, rcx
 	mov r14, rsi
-2279:
+2277:
 	sub rdx, 1
 	ror rax, 56
 	movzx ebp, BYTE PTR [r14]
@@ -49050,16 +49070,16 @@ vg_ffdh_generate_parameters:
 	add r14, 1
 	mov rbp, rdx
 	and rbp, 7
-	je 2280f
-	jmp 2281f
-2280:
+	je 2278f
+	jmp 2279f
+2278:
 	mov rbp, rdx
 	shr rbp, 3
 	mov QWORD PTR [rbx+rbp*8], rax
 	mov eax, 0
-2281:
+2279:
 	test rdx, rdx
-	jne 2279b
+	jne 2277b
 	mov r10, QWORD PTR [rdi+64]
 	mov r12, QWORD PTR [rdi+48]
 	mov rbx, QWORD PTR [r10]
@@ -49107,11 +49127,11 @@ vg_ffdh_generate_parameters:
 	mov r8, QWORD PTR [rdi+120]
 	mov eax, 0
 	mov r14, 0
-2282:
+2280:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2282b
+	jne 2280b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov QWORD PTR [r8+rcx*8], rdx
@@ -49122,39 +49142,39 @@ vg_ffdh_generate_parameters:
 	mov rcx, r12
 	and rcx, 3
 	or rax, rcx
-	je 2283f
+	je 2281f
 	mov rax, QWORD PTR [r10+r12*8-8]
 	mov edx, 1
 	mov ecx, 64
 	cmp rax, 1
-	je 2285f
-2287:
+	je 2283f
+2285:
 	shr rax, 1
 	add rdx, rdx
 	sub rcx, 1
 	cmp rax, 1
-	jne 2287b
-	jmp 2286f
-2285:
-2286:
+	jne 2285b
+	jmp 2284f
+2283:
+2284:
 	mov QWORD PTR [rdi+208], rcx
 	mov rcx, r12
 	sub rcx, 1
 	mov r8, QWORD PTR [rdi+96]
 	mov eax, 0
 	mov r14, 0
-2288:
+2286:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2288b
+	jne 2286b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov QWORD PTR [r8+rcx*8], rdx
 	mov rcx, QWORD PTR [rdi+208]
 	add rcx, QWORD PTR [rdi+48]
 	mov QWORD PTR [rdi+208], rcx
-2289:
+2287:
 	mov rbx, QWORD PTR [rdi+96]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -49162,7 +49182,7 @@ vg_ffdh_generate_parameters:
 	mov rsi, QWORD PTR [rdi+88]
 	mov ebp, 0
 	mov r14, 0
-2290:
+2288:
 	add rbp, rbp
 	mov rax, QWORD PTR [rbx+r14*8]
 	adc rax, rax
@@ -49170,14 +49190,14 @@ vg_ffdh_generate_parameters:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2290b
+	jne 2288b
 	mov eax, 0
 	add rbp, rbp
 	adc rax, 0
 	mov QWORD PTR [r8+r12*8], rax
 	mov ebp, 0
 	mov r14, 0
-2291:
+2289:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -49185,13 +49205,13 @@ vg_ffdh_generate_parameters:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2291b
+	jne 2289b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2292:
+2290:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -49200,14 +49220,14 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2292b
+	jne 2290b
 	mov rcx, QWORD PTR [rdi+208]
 	sub rcx, 1
 	mov QWORD PTR [rdi+208], rcx
-	jne 2289b
+	jne 2287b
 	mov eax, 6
 	mov QWORD PTR [rdi+208], rax
-2293:
+2291:
 	mov edx, 4
 	mov ecx, 4
 	mov r8d, 4
@@ -49229,22 +49249,22 @@ vg_ffdh_generate_parameters:
 	mov r15, QWORD PTR [rdi+56]
 	mov rsi, QWORD PTR [rdi+88]
 	cmp r11, r9
-	je 2294f
+	je 2292f
 	mov eax, 0
 	mov r14, 0
-2296:
+2294:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2296b
+	jne 2294b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r13, 0
-2297:
+2295:
 	mov rcx, QWORD PTR [r11+r13*8]
 	mov ebp, 0
 	mov r14, 0
-2298:
+2296:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -49255,7 +49275,7 @@ vg_ffdh_generate_parameters:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2298b
+	jne 2296b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8], rax
@@ -49271,7 +49291,7 @@ vg_ffdh_generate_parameters:
 	adc rdx, 0
 	mov rbp, rdx
 	mov r14, 1
-2299:
+2297:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -49282,7 +49302,7 @@ vg_ffdh_generate_parameters:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2299b
+	jne 2297b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8-8], rax
@@ -49293,10 +49313,10 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [r8+r12*8+8], rax
 	add r13, 1
 	cmp r13, r12
-	jne 2297b
+	jne 2295b
 	mov ebp, 0
 	mov r14, 0
-2300:
+2298:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -49304,13 +49324,13 @@ vg_ffdh_generate_parameters:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2300b
+	jne 2298b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2301:
+2299:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -49319,9 +49339,9 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2301b
-	jmp 2295f
-2294:
+	jne 2299b
+	jmp 2293f
+2292:
 	movq xmm14, rbx
 	movq xmm15, r15
 	movq xmm0, r12
@@ -49335,20 +49355,20 @@ vg_ffdh_generate_parameters:
 	add rcx, rcx
 	add rcx, 2
 	mov r14d, 0
-2302:
+2300:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, rcx
-	jne 2302b
+	jne 2300b
 	mov r10, rbx
 	mov ebp, 1
 	add r8, 8
-2303:
+2301:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r13, rdx
 	mov ecx, 0
 	mov r14d, 0
-2304:
+2302:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul r13
 	add rax, QWORD PTR [r8+r14*8]
@@ -49359,20 +49379,20 @@ vg_ffdh_generate_parameters:
 	mov rcx, rdx
 	add r14, 1
 	cmp r14, rbp
-	jne 2304b
+	jne 2302b
 	mov rdx, r13
 	mov QWORD PTR [r8+r14*8], rcx
 	add r8, 8
 	add rbp, 1
 	cmp rbp, r10
-	jne 2303b
+	jne 2301b
 	movq r8, xmm1
 	add r8, 16
 	movq r10, xmm0
 	mov r15d, 0
 	mov ebp, 0
 	mov r14d, 0
-2305:
+2303:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r11, QWORD PTR [r8+r14*8]
 	mov r12, QWORD PTR [r8+r14*8+8]
@@ -49396,18 +49416,18 @@ vg_ffdh_generate_parameters:
 	add rbp, 1
 	add r14, 2
 	cmp rbp, r10
-	jne 2305b
+	jne 2303b
 	movq r9, xmm2
 	movq rbp, xmm0
 	mov r10d, 0
-2306:
+2304:
 	movq rax, xmm15
 	mov rdx, QWORD PTR [r8]
 	imul rdx, rax
 	mov r13, rdx
 	mov ecx, 0
 	mov r14d, 0
-2307:
+2305:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul r13
 	add rax, QWORD PTR [r8+r14*8]
@@ -49418,7 +49438,7 @@ vg_ffdh_generate_parameters:
 	mov rcx, rdx
 	add r14, 1
 	cmp r14, rbp
-	jne 2307b
+	jne 2305b
 	mov rdx, r13
 	mov rax, QWORD PTR [r8+r14*8]
 	mov esi, 0
@@ -49431,7 +49451,7 @@ vg_ffdh_generate_parameters:
 	add r8, 8
 	movq rax, xmm3
 	cmp r8, rax
-	jne 2306b
+	jne 2304b
 	mov QWORD PTR [r8+rbp*8], r10
 	mov eax, 0
 	mov QWORD PTR [r8+rbp*8+8], rax
@@ -49441,7 +49461,7 @@ vg_ffdh_generate_parameters:
 	movq rbx, xmm14
 	mov ebp, 0
 	mov r14, 0
-2308:
+2306:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -49449,13 +49469,13 @@ vg_ffdh_generate_parameters:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2308b
+	jne 2306b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2309:
+2307:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -49464,8 +49484,8 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2309b
-2295:
+	jne 2307b
+2293:
 	movq rbx, xmm8
 	movq rbp, xmm9
 	movq r12, xmm10
@@ -49475,16 +49495,16 @@ vg_ffdh_generate_parameters:
 	mov rax, QWORD PTR [rdi+208]
 	sub rax, 1
 	mov QWORD PTR [rdi+208], rax
-	jne 2293b
-	jmp 2284f
-2283:
+	jne 2291b
+	jmp 2282f
+2281:
 	mov rbx, QWORD PTR [rdi+96]
 	mov r10, QWORD PTR [rdi+64]
 	mov r12, QWORD PTR [rdi+48]
 	mov r8, QWORD PTR [rdi+88]
 	mov ebp, 0
 	mov r14, 0
-2310:
+2308:
 	mov eax, 0
 	add rbp, rbp
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -49492,14 +49512,14 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2310b
+	jne 2308b
 	mov rsi, QWORD PTR [r10+r12*8-8]
 	mov rdx, rsi
 	xor rdx, -1
 	mov rax, -1
 	mov ecx, 0
 	mov r13d, 64
-2311:
+2309:
 	add rax, rax
 	adc rdx, rdx
 	sbb r11, r11
@@ -49513,12 +49533,12 @@ vg_ffdh_generate_parameters:
 	add rcx, rcx
 	sub rcx, r15
 	sub r13, 1
-	jne 2311b
+	jne 2309b
 	mov QWORD PTR [r8], rcx
 	mov rcx, QWORD PTR [rdi+48]
 	shr rcx, 2
 	mov QWORD PTR [rdi+208], rcx
-2312:
+2310:
 	mov rbx, QWORD PTR [rdi+96]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -49564,7 +49584,7 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [r8], rdx
 	sbb rbp, rbp
 	mov r14, 1
-2313:
+2311:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, r9
@@ -49577,7 +49597,7 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [r8+r14*8], rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2313b
+	jne 2311b
 	mov rdx, QWORD PTR [rbx+r12*8-8]
 	add rbp, rbp
 	sbb rdx, r9
@@ -49587,7 +49607,7 @@ vg_ffdh_generate_parameters:
 	sbb r11, r11
 	mov ebp, 0
 	mov r14, 0
-2314:
+2312:
 	mov rax, QWORD PTR [r10+r14*8]
 	and rax, r11
 	add rbp, rbp
@@ -49596,7 +49616,7 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2314b
+	jne 2312b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	adc rax, 0
@@ -49606,7 +49626,7 @@ vg_ffdh_generate_parameters:
 	sbb r11, r11
 	mov ebp, 0
 	mov r14, 0
-2315:
+2313:
 	mov rax, QWORD PTR [r10+r14*8]
 	and rax, r11
 	add rbp, rbp
@@ -49615,26 +49635,26 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2315b
+	jne 2313b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	adc rax, 0
 	mov QWORD PTR [r8+r12*8], rax
 	mov rsi, r8
 	mov r14, 0
-2316:
+2314:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2316b
+	jne 2314b
 	mov rcx, QWORD PTR [rdi+208]
 	sub rcx, 1
 	mov QWORD PTR [rdi+208], rcx
-	jne 2312b
+	jne 2310b
 	mov eax, 2
 	mov QWORD PTR [rdi+208], rax
-2317:
+2315:
 	mov edx, 4
 	mov ecx, 4
 	mov r8d, 4
@@ -49656,22 +49676,22 @@ vg_ffdh_generate_parameters:
 	mov r15, QWORD PTR [rdi+56]
 	mov rsi, QWORD PTR [rdi+88]
 	cmp r11, r9
-	je 2318f
+	je 2316f
 	mov eax, 0
 	mov r14, 0
-2320:
+2318:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2320b
+	jne 2318b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r13, 0
-2321:
+2319:
 	mov rcx, QWORD PTR [r11+r13*8]
 	mov ebp, 0
 	mov r14, 0
-2322:
+2320:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -49682,7 +49702,7 @@ vg_ffdh_generate_parameters:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2322b
+	jne 2320b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8], rax
@@ -49698,7 +49718,7 @@ vg_ffdh_generate_parameters:
 	adc rdx, 0
 	mov rbp, rdx
 	mov r14, 1
-2323:
+2321:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -49709,7 +49729,7 @@ vg_ffdh_generate_parameters:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2323b
+	jne 2321b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8-8], rax
@@ -49720,10 +49740,10 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [r8+r12*8+8], rax
 	add r13, 1
 	cmp r13, r12
-	jne 2321b
+	jne 2319b
 	mov ebp, 0
 	mov r14, 0
-2324:
+2322:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -49731,13 +49751,13 @@ vg_ffdh_generate_parameters:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2324b
+	jne 2322b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2325:
+2323:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -49746,9 +49766,9 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2325b
-	jmp 2319f
-2318:
+	jne 2323b
+	jmp 2317f
+2316:
 	movq xmm14, rbx
 	movq xmm15, r15
 	movq xmm0, r12
@@ -49762,20 +49782,20 @@ vg_ffdh_generate_parameters:
 	add rcx, rcx
 	add rcx, 2
 	mov r14d, 0
-2326:
+2324:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, rcx
-	jne 2326b
+	jne 2324b
 	mov r10, rbx
 	mov ebp, 1
 	add r8, 8
-2327:
+2325:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r13, rdx
 	mov ecx, 0
 	mov r14d, 0
-2328:
+2326:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul r13
 	add rax, QWORD PTR [r8+r14*8]
@@ -49786,20 +49806,20 @@ vg_ffdh_generate_parameters:
 	mov rcx, rdx
 	add r14, 1
 	cmp r14, rbp
-	jne 2328b
+	jne 2326b
 	mov rdx, r13
 	mov QWORD PTR [r8+r14*8], rcx
 	add r8, 8
 	add rbp, 1
 	cmp rbp, r10
-	jne 2327b
+	jne 2325b
 	movq r8, xmm1
 	add r8, 16
 	movq r10, xmm0
 	mov r15d, 0
 	mov ebp, 0
 	mov r14d, 0
-2329:
+2327:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r11, QWORD PTR [r8+r14*8]
 	mov r12, QWORD PTR [r8+r14*8+8]
@@ -49823,18 +49843,18 @@ vg_ffdh_generate_parameters:
 	add rbp, 1
 	add r14, 2
 	cmp rbp, r10
-	jne 2329b
+	jne 2327b
 	movq r9, xmm2
 	movq rbp, xmm0
 	mov r10d, 0
-2330:
+2328:
 	movq rax, xmm15
 	mov rdx, QWORD PTR [r8]
 	imul rdx, rax
 	mov r13, rdx
 	mov ecx, 0
 	mov r14d, 0
-2331:
+2329:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul r13
 	add rax, QWORD PTR [r8+r14*8]
@@ -49845,7 +49865,7 @@ vg_ffdh_generate_parameters:
 	mov rcx, rdx
 	add r14, 1
 	cmp r14, rbp
-	jne 2331b
+	jne 2329b
 	mov rdx, r13
 	mov rax, QWORD PTR [r8+r14*8]
 	mov esi, 0
@@ -49858,7 +49878,7 @@ vg_ffdh_generate_parameters:
 	add r8, 8
 	movq rax, xmm3
 	cmp r8, rax
-	jne 2330b
+	jne 2328b
 	mov QWORD PTR [r8+rbp*8], r10
 	mov eax, 0
 	mov QWORD PTR [r8+rbp*8+8], rax
@@ -49868,7 +49888,7 @@ vg_ffdh_generate_parameters:
 	movq rbx, xmm14
 	mov ebp, 0
 	mov r14, 0
-2332:
+2330:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -49876,13 +49896,13 @@ vg_ffdh_generate_parameters:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2332b
+	jne 2330b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2333:
+2331:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -49891,8 +49911,8 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2333b
-2319:
+	jne 2331b
+2317:
 	movq rbx, xmm8
 	movq rbp, xmm9
 	movq r12, xmm10
@@ -49902,8 +49922,8 @@ vg_ffdh_generate_parameters:
 	mov rax, QWORD PTR [rdi+208]
 	sub rax, 1
 	mov QWORD PTR [rdi+208], rax
-	jne 2317b
-2284:
+	jne 2315b
+2282:
 	mov edx, 6
 	mov ecx, 4
 	mov r8d, 7
@@ -49925,22 +49945,22 @@ vg_ffdh_generate_parameters:
 	mov r15, QWORD PTR [rdi+56]
 	mov rsi, QWORD PTR [rdi+88]
 	cmp r11, r9
-	je 2334f
+	je 2332f
 	mov eax, 0
 	mov r14, 0
-2336:
+2334:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2336b
+	jne 2334b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r13, 0
-2337:
+2335:
 	mov rcx, QWORD PTR [r11+r13*8]
 	mov ebp, 0
 	mov r14, 0
-2338:
+2336:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -49951,7 +49971,7 @@ vg_ffdh_generate_parameters:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2338b
+	jne 2336b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8], rax
@@ -49967,7 +49987,7 @@ vg_ffdh_generate_parameters:
 	adc rdx, 0
 	mov rbp, rdx
 	mov r14, 1
-2339:
+2337:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -49978,7 +49998,7 @@ vg_ffdh_generate_parameters:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2339b
+	jne 2337b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8-8], rax
@@ -49989,10 +50009,10 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [r8+r12*8+8], rax
 	add r13, 1
 	cmp r13, r12
-	jne 2337b
+	jne 2335b
 	mov ebp, 0
 	mov r14, 0
-2340:
+2338:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -50000,13 +50020,13 @@ vg_ffdh_generate_parameters:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2340b
+	jne 2338b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2341:
+2339:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -50015,9 +50035,9 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2341b
-	jmp 2335f
-2334:
+	jne 2339b
+	jmp 2333f
+2332:
 	movq xmm14, rbx
 	movq xmm15, r15
 	movq xmm0, r12
@@ -50031,20 +50051,20 @@ vg_ffdh_generate_parameters:
 	add rcx, rcx
 	add rcx, 2
 	mov r14d, 0
-2342:
+2340:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, rcx
-	jne 2342b
+	jne 2340b
 	mov r10, rbx
 	mov ebp, 1
 	add r8, 8
-2343:
+2341:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r13, rdx
 	mov ecx, 0
 	mov r14d, 0
-2344:
+2342:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul r13
 	add rax, QWORD PTR [r8+r14*8]
@@ -50055,20 +50075,20 @@ vg_ffdh_generate_parameters:
 	mov rcx, rdx
 	add r14, 1
 	cmp r14, rbp
-	jne 2344b
+	jne 2342b
 	mov rdx, r13
 	mov QWORD PTR [r8+r14*8], rcx
 	add r8, 8
 	add rbp, 1
 	cmp rbp, r10
-	jne 2343b
+	jne 2341b
 	movq r8, xmm1
 	add r8, 16
 	movq r10, xmm0
 	mov r15d, 0
 	mov ebp, 0
 	mov r14d, 0
-2345:
+2343:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r11, QWORD PTR [r8+r14*8]
 	mov r12, QWORD PTR [r8+r14*8+8]
@@ -50092,18 +50112,18 @@ vg_ffdh_generate_parameters:
 	add rbp, 1
 	add r14, 2
 	cmp rbp, r10
-	jne 2345b
+	jne 2343b
 	movq r9, xmm2
 	movq rbp, xmm0
 	mov r10d, 0
-2346:
+2344:
 	movq rax, xmm15
 	mov rdx, QWORD PTR [r8]
 	imul rdx, rax
 	mov r13, rdx
 	mov ecx, 0
 	mov r14d, 0
-2347:
+2345:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul r13
 	add rax, QWORD PTR [r8+r14*8]
@@ -50114,7 +50134,7 @@ vg_ffdh_generate_parameters:
 	mov rcx, rdx
 	add r14, 1
 	cmp r14, rbp
-	jne 2347b
+	jne 2345b
 	mov rdx, r13
 	mov rax, QWORD PTR [r8+r14*8]
 	mov esi, 0
@@ -50127,7 +50147,7 @@ vg_ffdh_generate_parameters:
 	add r8, 8
 	movq rax, xmm3
 	cmp r8, rax
-	jne 2346b
+	jne 2344b
 	mov QWORD PTR [r8+rbp*8], r10
 	mov eax, 0
 	mov QWORD PTR [r8+rbp*8+8], rax
@@ -50137,7 +50157,7 @@ vg_ffdh_generate_parameters:
 	movq rbx, xmm14
 	mov ebp, 0
 	mov r14, 0
-2348:
+2346:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -50145,13 +50165,13 @@ vg_ffdh_generate_parameters:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2348b
+	jne 2346b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2349:
+2347:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -50160,8 +50180,8 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2349b
-2335:
+	jne 2347b
+2333:
 	movq rbx, xmm8
 	movq rbp, xmm9
 	movq r12, xmm10
@@ -50195,12 +50215,12 @@ vg_ffdh_generate_parameters:
 	add rbx, rax
 	add rbx, rax
 	mov r14, 0
-2350:
+2348:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2350b
+	jne 2348b
 	mov r12, QWORD PTR [rdi+48]
 	mov r8, QWORD PTR [rdi+64]
 	mov rax, QWORD PTR [rdi+48]
@@ -50254,7 +50274,7 @@ vg_ffdh_generate_parameters:
 	add rsi, rax
 	mov ebp, 0
 	mov r14, 0
-2351:
+2349:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -50262,13 +50282,13 @@ vg_ffdh_generate_parameters:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2351b
+	jne 2349b
 	mov r12, QWORD PTR [rdi+48]
 	mov r8, QWORD PTR [rdi+64]
 	mov rbp, QWORD PTR [r8]
 	and rbp, -2
 	mov r14, 1
-2352:
+2350:
 	mov rax, QWORD PTR [r8+r14*8]
 	cmp rbp, 1
 	sbb rdx, rdx
@@ -50276,7 +50296,7 @@ vg_ffdh_generate_parameters:
 	or rbp, rax
 	add r14, 1
 	cmp r14, r12
-	jne 2352b
+	jne 2350b
 	mov rax, QWORD PTR [rdi+48]
 	add rax, 2
 	add rax, rax
@@ -50309,6 +50329,64 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [rbx+r12*8], rax
 	mov rbp, QWORD PTR [rsi]
 	mov r14, 1
+2351:
+	mov rax, QWORD PTR [rsi+r14*8]
+	mov rdx, rax
+	shl rdx, 63
+	mov rcx, rbp
+	shr rcx, 1
+	or rcx, rdx
+	xor rcx, rbp
+	and rcx, r15
+	xor rcx, rbp
+	mov QWORD PTR [rbx+r14*8-8], rcx
+	mov rbp, rax
+	add r14, 1
+	cmp r14, r12
+	jne 2351b
+	mov rcx, rbp
+	shr rcx, 1
+	xor rcx, rbp
+	and rcx, r15
+	xor rcx, rbp
+	mov QWORD PTR [rbx+r12*8-8], rcx
+	mov rsi, rbx
+	movabs r15, -2459565876494606883
+	and r15, QWORD PTR [rbx+r12*8]
+	cmp r15, 1
+	sbb r15, r15
+	xor r15, -1
+	mov rbp, QWORD PTR [rsi]
+	mov r14, 1
+2352:
+	mov rax, QWORD PTR [rsi+r14*8]
+	mov rdx, rax
+	shl rdx, 63
+	mov rcx, rbp
+	shr rcx, 1
+	or rcx, rdx
+	xor rcx, rbp
+	and rcx, r15
+	xor rcx, rbp
+	mov QWORD PTR [rbx+r14*8-8], rcx
+	mov rbp, rax
+	add r14, 1
+	cmp r14, r12
+	jne 2352b
+	mov rcx, rbp
+	shr rcx, 1
+	xor rcx, rbp
+	and rcx, r15
+	xor rcx, rbp
+	mov QWORD PTR [rbx+r12*8-8], rcx
+	mov rsi, rbx
+	movabs r15, -7378697629483820647
+	and r15, QWORD PTR [rbx+r12*8]
+	cmp r15, 1
+	sbb r15, r15
+	xor r15, -1
+	mov rbp, QWORD PTR [rsi]
+	mov r14, 1
 2353:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov rdx, rax
@@ -50331,7 +50409,7 @@ vg_ffdh_generate_parameters:
 	xor rcx, rbp
 	mov QWORD PTR [rbx+r12*8-8], rcx
 	mov rsi, rbx
-	movabs r15, -2459565876494606883
+	movabs r15, 1229782938247303441
 	and r15, QWORD PTR [rbx+r12*8]
 	cmp r15, 1
 	sbb r15, r15
@@ -50359,73 +50437,15 @@ vg_ffdh_generate_parameters:
 	and rcx, r15
 	xor rcx, rbp
 	mov QWORD PTR [rbx+r12*8-8], rcx
-	mov rsi, rbx
-	movabs r15, -7378697629483820647
-	and r15, QWORD PTR [rbx+r12*8]
-	cmp r15, 1
-	sbb r15, r15
-	xor r15, -1
-	mov rbp, QWORD PTR [rsi]
-	mov r14, 1
-2355:
-	mov rax, QWORD PTR [rsi+r14*8]
-	mov rdx, rax
-	shl rdx, 63
-	mov rcx, rbp
-	shr rcx, 1
-	or rcx, rdx
-	xor rcx, rbp
-	and rcx, r15
-	xor rcx, rbp
-	mov QWORD PTR [rbx+r14*8-8], rcx
-	mov rbp, rax
-	add r14, 1
-	cmp r14, r12
-	jne 2355b
-	mov rcx, rbp
-	shr rcx, 1
-	xor rcx, rbp
-	and rcx, r15
-	xor rcx, rbp
-	mov QWORD PTR [rbx+r12*8-8], rcx
-	mov rsi, rbx
-	movabs r15, 1229782938247303441
-	and r15, QWORD PTR [rbx+r12*8]
-	cmp r15, 1
-	sbb r15, r15
-	xor r15, -1
-	mov rbp, QWORD PTR [rsi]
-	mov r14, 1
-2356:
-	mov rax, QWORD PTR [rsi+r14*8]
-	mov rdx, rax
-	shl rdx, 63
-	mov rcx, rbp
-	shr rcx, 1
-	or rcx, rdx
-	xor rcx, rbp
-	and rcx, r15
-	xor rcx, rbp
-	mov QWORD PTR [rbx+r14*8-8], rcx
-	mov rbp, rax
-	add r14, 1
-	cmp r14, r12
-	jne 2356b
-	mov rcx, rbp
-	shr rcx, 1
-	xor rcx, rbp
-	and rcx, r15
-	xor rcx, rbp
-	mov QWORD PTR [rbx+r12*8-8], rcx
 	mov rax, QWORD PTR [rdi+128]
 	mov ecx, 0
 	mov QWORD PTR [rax+144], rcx
-2357:
-2358:
+2355:
+2356:
 	mov rax, QWORD PTR [rdi+128]
 	mov rcx, QWORD PTR [rax+104]
 	cmp rcx, QWORD PTR [rax+128]
-	jb 2359f
+	jb 2357f
 	mov rax, QWORD PTR [rdi+128]
 	mov rsi, QWORD PTR [rax+96]
 	mov rcx, QWORD PTR [rax+128]
@@ -50491,13 +50511,13 @@ vg_ffdh_generate_parameters:
 	add r10, 1
 	add r11, 1
 	sub rcx, 1
-2361:
+2359:
 	movzx eax, BYTE PTR [r10]
 	mov BYTE PTR [r11], al
 	add r10, 1
 	add r11, 1
 	sub rcx, 1
-	jne 2361b
+	jne 2359b
 	mov rdi, rbp
 	mov rax, QWORD PTR [rdi+128]
 	mov rsi, QWORD PTR [rax+48]
@@ -50506,7 +50526,7 @@ vg_ffdh_generate_parameters:
 	mov eax, 0
 	mov rdx, rcx
 	mov r14, rsi
-2362:
+2360:
 	sub rdx, 1
 	ror rax, 56
 	movzx ebp, BYTE PTR [r14]
@@ -50514,19 +50534,49 @@ vg_ffdh_generate_parameters:
 	add r14, 1
 	mov rbp, rdx
 	and rbp, 7
-	je 2363f
-	jmp 2364f
-2363:
+	je 2361f
+	jmp 2362f
+2361:
 	mov rbp, rdx
 	shr rbp, 3
 	mov QWORD PTR [rbx+rbp*8], rax
 	mov eax, 0
-2364:
+2362:
 	test rdx, rdx
-	jne 2362b
+	jne 2360b
 	mov r12, QWORD PTR [rdi+48]
 	mov rbx, QWORD PTR [rdi+120]
 	mov r10, QWORD PTR [rdi+104]
+	mov ebp, 0
+	mov r14, 0
+2363:
+	add rbp, rbp
+	mov rax, QWORD PTR [rbx+r14*8]
+	sbb rax, QWORD PTR [r10+r14*8]
+	sbb rbp, rbp
+	add r14, 1
+	cmp r14, r12
+	jne 2363b
+	mov rax, rbp
+	and rax, 1
+	mov QWORD PTR [rdi+240], rax
+	mov r12, QWORD PTR [rdi+48]
+	mov rsi, QWORD PTR [rdi+104]
+	mov rbx, QWORD PTR [rdi+88]
+	mov r14, 0
+2364:
+	mov rax, QWORD PTR [rsi+r14*8]
+	mov QWORD PTR [rbx+r14*8], rax
+	add r14, 1
+	cmp r14, r12
+	jne 2364b
+	mov rbx, QWORD PTR [rdi+88]
+	mov rax, QWORD PTR [rbx]
+	or rax, 1
+	mov QWORD PTR [rbx], rax
+	mov r12, QWORD PTR [rdi+48]
+	mov rbx, QWORD PTR [rdi+88]
+	mov r10, QWORD PTR [rdi+64]
 	mov ebp, 0
 	mov r14, 0
 2365:
@@ -50539,54 +50589,24 @@ vg_ffdh_generate_parameters:
 	jne 2365b
 	mov rax, rbp
 	and rax, 1
-	mov QWORD PTR [rdi+240], rax
-	mov r12, QWORD PTR [rdi+48]
-	mov rsi, QWORD PTR [rdi+104]
-	mov rbx, QWORD PTR [rdi+88]
-	mov r14, 0
-2366:
-	mov rax, QWORD PTR [rsi+r14*8]
-	mov QWORD PTR [rbx+r14*8], rax
-	add r14, 1
-	cmp r14, r12
-	jne 2366b
-	mov rbx, QWORD PTR [rdi+88]
-	mov rax, QWORD PTR [rbx]
-	or rax, 1
-	mov QWORD PTR [rbx], rax
-	mov r12, QWORD PTR [rdi+48]
-	mov rbx, QWORD PTR [rdi+88]
-	mov r10, QWORD PTR [rdi+64]
-	mov ebp, 0
-	mov r14, 0
-2367:
-	add rbp, rbp
-	mov rax, QWORD PTR [rbx+r14*8]
-	sbb rax, QWORD PTR [r10+r14*8]
-	sbb rbp, rbp
-	add r14, 1
-	cmp r14, r12
-	jne 2367b
-	mov rax, rbp
-	and rax, 1
 	and rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+240], rax
 	test rax, rax
 	mov rax, QWORD PTR [rdi+128]
 	mov edx, 1
 	mov QWORD PTR [rax+152], rdx
-	jmp 2360f
-2359:
+	jmp 2358f
+2357:
 	mov rax, QWORD PTR [rdi+128]
 	mov edx, 0
 	mov QWORD PTR [rax+152], rdx
 	cmp rdx, 1
-2360:
-	je 2358b
+2358:
+	je 2356b
 	mov rax, QWORD PTR [rdi+128]
 	mov rcx, QWORD PTR [rax+152]
 	test rcx, rcx
-	je 2368f
+	je 2366f
 	mov edx, 5
 	mov ecx, 5
 	mov r8d, 4
@@ -50608,22 +50628,22 @@ vg_ffdh_generate_parameters:
 	mov r15, QWORD PTR [rdi+56]
 	mov rsi, QWORD PTR [rdi+88]
 	cmp r11, r9
-	je 2370f
+	je 2368f
 	mov eax, 0
 	mov r14, 0
-2372:
+2370:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2372b
+	jne 2370b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r13, 0
-2373:
+2371:
 	mov rcx, QWORD PTR [r11+r13*8]
 	mov ebp, 0
 	mov r14, 0
-2374:
+2372:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -50634,7 +50654,7 @@ vg_ffdh_generate_parameters:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2374b
+	jne 2372b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8], rax
@@ -50650,7 +50670,7 @@ vg_ffdh_generate_parameters:
 	adc rdx, 0
 	mov rbp, rdx
 	mov r14, 1
-2375:
+2373:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -50661,7 +50681,7 @@ vg_ffdh_generate_parameters:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2375b
+	jne 2373b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8-8], rax
@@ -50672,10 +50692,10 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [r8+r12*8+8], rax
 	add r13, 1
 	cmp r13, r12
-	jne 2373b
+	jne 2371b
 	mov ebp, 0
 	mov r14, 0
-2376:
+2374:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -50683,13 +50703,13 @@ vg_ffdh_generate_parameters:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2376b
+	jne 2374b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2377:
+2375:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -50698,9 +50718,9 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2377b
-	jmp 2371f
-2370:
+	jne 2375b
+	jmp 2369f
+2368:
 	movq xmm14, rbx
 	movq xmm15, r15
 	movq xmm0, r12
@@ -50714,20 +50734,20 @@ vg_ffdh_generate_parameters:
 	add rcx, rcx
 	add rcx, 2
 	mov r14d, 0
-2378:
+2376:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, rcx
-	jne 2378b
+	jne 2376b
 	mov r10, rbx
 	mov ebp, 1
 	add r8, 8
-2379:
+2377:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r13, rdx
 	mov ecx, 0
 	mov r14d, 0
-2380:
+2378:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul r13
 	add rax, QWORD PTR [r8+r14*8]
@@ -50738,20 +50758,20 @@ vg_ffdh_generate_parameters:
 	mov rcx, rdx
 	add r14, 1
 	cmp r14, rbp
-	jne 2380b
+	jne 2378b
 	mov rdx, r13
 	mov QWORD PTR [r8+r14*8], rcx
 	add r8, 8
 	add rbp, 1
 	cmp rbp, r10
-	jne 2379b
+	jne 2377b
 	movq r8, xmm1
 	add r8, 16
 	movq r10, xmm0
 	mov r15d, 0
 	mov ebp, 0
 	mov r14d, 0
-2381:
+2379:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r11, QWORD PTR [r8+r14*8]
 	mov r12, QWORD PTR [r8+r14*8+8]
@@ -50775,18 +50795,18 @@ vg_ffdh_generate_parameters:
 	add rbp, 1
 	add r14, 2
 	cmp rbp, r10
-	jne 2381b
+	jne 2379b
 	movq r9, xmm2
 	movq rbp, xmm0
 	mov r10d, 0
-2382:
+2380:
 	movq rax, xmm15
 	mov rdx, QWORD PTR [r8]
 	imul rdx, rax
 	mov r13, rdx
 	mov ecx, 0
 	mov r14d, 0
-2383:
+2381:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul r13
 	add rax, QWORD PTR [r8+r14*8]
@@ -50797,7 +50817,7 @@ vg_ffdh_generate_parameters:
 	mov rcx, rdx
 	add r14, 1
 	cmp r14, rbp
-	jne 2383b
+	jne 2381b
 	mov rdx, r13
 	mov rax, QWORD PTR [r8+r14*8]
 	mov esi, 0
@@ -50810,7 +50830,7 @@ vg_ffdh_generate_parameters:
 	add r8, 8
 	movq rax, xmm3
 	cmp r8, rax
-	jne 2382b
+	jne 2380b
 	mov QWORD PTR [r8+rbp*8], r10
 	mov eax, 0
 	mov QWORD PTR [r8+rbp*8+8], rax
@@ -50820,7 +50840,7 @@ vg_ffdh_generate_parameters:
 	movq rbx, xmm14
 	mov ebp, 0
 	mov r14, 0
-2384:
+2382:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -50828,13 +50848,13 @@ vg_ffdh_generate_parameters:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2384b
+	jne 2382b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2385:
+2383:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -50843,8 +50863,8 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2385b
-2371:
+	jne 2383b
+2369:
 	movq rbx, xmm8
 	movq rbp, xmm9
 	movq r12, xmm10
@@ -50876,7 +50896,7 @@ vg_ffdh_generate_parameters:
 	mov rbx, QWORD PTR [rcx]
 	mov rax, QWORD PTR [rdi+176]
 	test rax, rax
-	je 2386f
+	je 2384f
 	mov r9, QWORD PTR [rdi+128]
 	mov rcx, QWORD PTR [r9+144]
 	add rcx, 1
@@ -50886,25 +50906,25 @@ vg_ffdh_generate_parameters:
 	mov edx, 1
 	cmovae rax, rdx
 	mov QWORD PTR [r9+152], rax
-	jmp 2387f
-2386:
+	jmp 2385f
+2384:
 	mov rax, QWORD PTR [rdi+128]
 	mov edx, 2
 	mov QWORD PTR [rax+152], rdx
-2387:
-	jmp 2369f
-2368:
-2369:
+2385:
+	jmp 2367f
+2366:
+2367:
 	mov rax, QWORD PTR [rdi+128]
 	mov rcx, QWORD PTR [rax+152]
 	cmp rcx, 4
-	je 2357b
+	je 2355b
 	mov rdi, QWORD PTR [rdi+128]
 	mov rax, QWORD PTR [rdi+152]
 	cmp rax, 1
-	je 2388f
-	jmp 2389f
-2388:
+	je 2386f
+	jmp 2387f
+2386:
 	mov rbp, rdi
 	mov rax, QWORD PTR [rdi+48]
 	mov rsi, QWORD PTR [rdi+88]
@@ -50959,40 +50979,40 @@ vg_ffdh_generate_parameters:
 	add r10, 1
 	add r11, 1
 	sub rcx, 1
-2390:
+2388:
 	movzx eax, BYTE PTR [r10]
 	mov BYTE PTR [r11], al
 	add r10, 1
 	add r11, 1
 	sub rcx, 1
-	jne 2390b
+	jne 2388b
 	movzx eax, BYTE PTR [r11-1]
 	or rax, 1
 	mov BYTE PTR [r11-1], al
 	mov rdi, rbp
-2389:
-2275:
-2160:
-246:
-229:
-218:
+2387:
+2273:
+2158:
+244:
+227:
+216:
 	jmp 24f
 23:
 24:
 	mov rax, QWORD PTR [rdi+152]
 	cmp rax, 1
-	je 2391f
+	je 2389f
 	mov rsi, QWORD PTR [rdi+48]
 	mov rcx, QWORD PTR [rdi+56]
 	mov eax, 0
-2393:
+2391:
 	mov BYTE PTR [rsi], al
 	add rsi, 1
 	sub rcx, 1
-	jne 2393b
-	jmp 2392f
-2391:
-2392:
+	jne 2391b
+	jmp 2390f
+2389:
+2390:
 	mov rax, QWORD PTR [rdi+152]
 	mov rdx, QWORD PTR [rdi+64]
 	mov rcx, QWORD PTR [rdi+112]
@@ -51008,12 +51028,12 @@ vg_ffdh_generate_parameters:
 	lea rsp, [rsp+32]
 	mov eax, eax
 	cmp rax, 1
-	je 2394f
+	je 2392f
 	cmp rax, 2
-	je 2396f
+	je 2394f
 	mov rax, QWORD PTR [r12+88]
 	cmp rax, QWORD PTR [r12+16]
-	jae 2398f
+	jae 2396f
 	mov rcx, QWORD PTR [r12+8]
 	shl rcx, 8
 	cmp rax, rcx
@@ -51025,8 +51045,8 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [r12+24], rax
 	mov eax, 0
 	mov QWORD PTR [r12+112], rax
-	jmp 2399f
-2398:
+	jmp 2397f
+2396:
 	mov eax, 0
 	mov QWORD PTR [r12], rax
 	mov QWORD PTR [r12+24], rax
@@ -51036,14 +51056,14 @@ vg_ffdh_generate_parameters:
 	mov rsi, QWORD PTR [rdi+40]
 	mov rcx, QWORD PTR [rdi+48]
 	mov eax, 0
-2400:
+2398:
 	mov BYTE PTR [rsi], al
 	add rsi, 1
 	sub rcx, 1
-	jne 2400b
-2399:
-	jmp 2397f
-2396:
+	jne 2398b
+2397:
+	jmp 2395f
+2394:
 	mov rax, QWORD PTR [r12+56]
 	mov rcx, QWORD PTR [rax]
 	mov rax, QWORD PTR [r12+96]
@@ -51060,9 +51080,9 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [r12], rax
 	mov eax, 4
 	mov QWORD PTR [r12+112], rax
-2397:
-	jmp 2395f
-2394:
+2395:
+	jmp 2393f
+2392:
 	mov rax, QWORD PTR [r12+56]
 	mov rcx, QWORD PTR [rax]
 	mov rax, QWORD PTR [r12+96]
@@ -51073,7 +51093,7 @@ vg_ffdh_generate_parameters:
 	mov QWORD PTR [r12+24], rax
 	mov eax, 1
 	mov QWORD PTR [r12+112], rax
-2395:
+2393:
 	jmp 22f
 21:
 	mov eax, 0
@@ -51085,11 +51105,11 @@ vg_ffdh_generate_parameters:
 	mov rsi, QWORD PTR [rdi+40]
 	mov rcx, QWORD PTR [rdi+48]
 	mov eax, 0
-2401:
+2399:
 	mov BYTE PTR [rsi], al
 	add rsi, 1
 	sub rcx, 1
-	jne 2401b
+	jne 2399b
 22:
 	mov rax, QWORD PTR [r12+112]
 	cmp rax, 4
@@ -51539,23 +51559,28 @@ vg_ffdh_generate_parameters_ifma:
 	cmp r14, r12
 	jne 213b
 	mov rdx, rsi
-	mov esi, 0
-	mov ebx, 255
-	mov r13d, 64
-214:
-	add rdx, rdx
-	adc rsi, rsi
-	sbb rcx, rcx
-	mov rax, rsi
-	sub rax, rbx
-	sbb rbp, rbp
-	xor rbp, -1
-	or rcx, rbp
-	xor rax, rsi
-	and rax, rcx
-	xor rsi, rax
-	sub r13, 1
-	jne 214b
+	shl rdx, 32
+	shr rdx, 32
+	shr rsi, 32
+	add rsi, rdx
+	mov rdx, rsi
+	shl rdx, 48
+	shr rdx, 48
+	shr rsi, 16
+	add rsi, rdx
+	mov rdx, rsi
+	shl rdx, 56
+	shr rdx, 56
+	shr rsi, 8
+	add rsi, rdx
+	mov rdx, rsi
+	shl rdx, 56
+	shr rdx, 56
+	shr rsi, 8
+	add rsi, rdx
+	mov rdx, rsi
+	sub rdx, 255
+	cmovae rsi, rdx
 	mov eax, 0
 	mov ecx, 1
 	cmp rsi, 2
@@ -51630,7 +51655,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov r8, QWORD PTR [rdi+64]
 	mov esi, 0
 	mov r14d, 0
-215:
+214:
 	mov rax, r12
 	sub rax, 1
 	sub rax, r14
@@ -51638,25 +51663,30 @@ vg_ffdh_generate_parameters_ifma:
 	adc rsi, 0
 	add r14, 1
 	cmp r14, r12
-	jne 215b
+	jne 214b
 	mov rdx, rsi
-	mov esi, 0
-	mov ebx, 255
-	mov r13d, 64
-216:
-	add rdx, rdx
-	adc rsi, rsi
-	sbb rcx, rcx
-	mov rax, rsi
-	sub rax, rbx
-	sbb rbp, rbp
-	xor rbp, -1
-	or rcx, rbp
-	xor rax, rsi
-	and rax, rcx
-	xor rsi, rax
-	sub r13, 1
-	jne 216b
+	shl rdx, 32
+	shr rdx, 32
+	shr rsi, 32
+	add rsi, rdx
+	mov rdx, rsi
+	shl rdx, 48
+	shr rdx, 48
+	shr rsi, 16
+	add rsi, rdx
+	mov rdx, rsi
+	shl rdx, 56
+	shr rdx, 56
+	shr rsi, 8
+	add rsi, rdx
+	mov rdx, rsi
+	shl rdx, 56
+	shr rdx, 56
+	shr rsi, 8
+	add rsi, rdx
+	mov rdx, rsi
+	sub rdx, 255
+	cmovae rsi, rdx
 	mov eax, 0
 	mov ecx, 1
 	cmp rsi, 2
@@ -51756,19 +51786,19 @@ vg_ffdh_generate_parameters_ifma:
 	cmovne rax, rcx
 	cmp rax, 1
 212:
-	je 217f
+	je 215f
 	mov rdi, QWORD PTR [rdi+128]
 	mov eax, 2
 	mov QWORD PTR [rdi+152], rax
-	jmp 218f
-217:
+	jmp 216f
+215:
 	mov rax, QWORD PTR [rdi+64]
 	mov rax, QWORD PTR [rax]
 	and rax, 1
 	cmp rax, 1
-	je 219f
-	jmp 220f
-219:
+	je 217f
+	jmp 218f
+217:
 	mov rax, QWORD PTR [rdi+128]
 	mov rdx, QWORD PTR [rax+72]
 	mov rax, QWORD PTR [rdi+48]
@@ -52295,16 +52325,16 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rbx+2040], rax
 	mov eax, 128
 	cmp rdx, 1025
-	jb 221f
+	jb 219f
 	mov eax, 256
-	jmp 222f
-221:
-222:
+	jmp 220f
+219:
+220:
 	mov QWORD PTR [rdi+208], rax
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
 	mov r13d, 0
-223:
+221:
 	mov rax, QWORD PTR [rdi+48]
 	add rax, 2
 	add rax, rax
@@ -52318,6 +52348,162 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rbx+r13*8]
 	mov QWORD PTR [rdi+216], rax
 	mov rbx, QWORD PTR [rdi+216]
+	and rbx, 65535
+	mov rcx, rbx
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov r15d, 0
+	sub r15, rcx
+	mov r12, QWORD PTR [rdi+48]
+	mov r8, QWORD PTR [rdi+64]
+	mov ebp, 0
+	mov r14, 0
+222:
+	mov rsi, QWORD PTR [r8+r14*8]
+	mov eax, esi
+	add rax, rbp
+	mov rcx, rax
+	mul r15
+	mov eax, eax
+	mul rbx
+	add rax, rcx
+	shr rax, 32
+	mov rbp, rax
+	mov rax, rsi
+	shr rax, 32
+	add rax, rbp
+	mov rcx, rax
+	mul r15
+	mov eax, eax
+	mul rbx
+	add rax, rcx
+	shr rax, 32
+	mov rbp, rax
+	add r14, 1
+	cmp r14, r12
+	jne 222b
+	mov rax, rbp
+	cmp rax, 1
+	sbb rdx, rdx
+	xor rax, rbx
+	cmp rax, 1
+	sbb rcx, rcx
+	or rdx, rcx
+	or rdx, QWORD PTR [rdi+224]
+	mov QWORD PTR [rdi+224], rdx
+	mov rbx, QWORD PTR [rdi+216]
+	shr rbx, 16
+	and rbx, 65535
+	mov rcx, rbx
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov r15d, 0
+	sub r15, rcx
+	mov r12, QWORD PTR [rdi+48]
+	mov r8, QWORD PTR [rdi+64]
+	mov ebp, 0
+	mov r14, 0
+223:
+	mov rsi, QWORD PTR [r8+r14*8]
+	mov eax, esi
+	add rax, rbp
+	mov rcx, rax
+	mul r15
+	mov eax, eax
+	mul rbx
+	add rax, rcx
+	shr rax, 32
+	mov rbp, rax
+	mov rax, rsi
+	shr rax, 32
+	add rax, rbp
+	mov rcx, rax
+	mul r15
+	mov eax, eax
+	mul rbx
+	add rax, rcx
+	shr rax, 32
+	mov rbp, rax
+	add r14, 1
+	cmp r14, r12
+	jne 223b
+	mov rax, rbp
+	cmp rax, 1
+	sbb rdx, rdx
+	xor rax, rbx
+	cmp rax, 1
+	sbb rcx, rcx
+	or rdx, rcx
+	or rdx, QWORD PTR [rdi+224]
+	mov QWORD PTR [rdi+224], rdx
+	mov rbx, QWORD PTR [rdi+216]
+	shr rbx, 32
 	and rbx, 65535
 	mov rcx, rbx
 	mov rax, rbx
@@ -52395,7 +52581,7 @@ vg_ffdh_generate_parameters_ifma:
 	or rdx, QWORD PTR [rdi+224]
 	mov QWORD PTR [rdi+224], rdx
 	mov rbx, QWORD PTR [rdi+216]
-	shr rbx, 16
+	shr rbx, 48
 	and rbx, 65535
 	mov rcx, rbx
 	mov rax, rbx
@@ -52472,175 +52658,19 @@ vg_ffdh_generate_parameters_ifma:
 	or rdx, rcx
 	or rdx, QWORD PTR [rdi+224]
 	mov QWORD PTR [rdi+224], rdx
-	mov rbx, QWORD PTR [rdi+216]
-	shr rbx, 32
-	and rbx, 65535
-	mov rcx, rbx
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov r15d, 0
-	sub r15, rcx
-	mov r12, QWORD PTR [rdi+48]
-	mov r8, QWORD PTR [rdi+64]
-	mov ebp, 0
-	mov r14, 0
-226:
-	mov rsi, QWORD PTR [r8+r14*8]
-	mov eax, esi
-	add rax, rbp
-	mov rcx, rax
-	mul r15
-	mov eax, eax
-	mul rbx
-	add rax, rcx
-	shr rax, 32
-	mov rbp, rax
-	mov rax, rsi
-	shr rax, 32
-	add rax, rbp
-	mov rcx, rax
-	mul r15
-	mov eax, eax
-	mul rbx
-	add rax, rcx
-	shr rax, 32
-	mov rbp, rax
-	add r14, 1
-	cmp r14, r12
-	jne 226b
-	mov rax, rbp
-	cmp rax, 1
-	sbb rdx, rdx
-	xor rax, rbx
-	cmp rax, 1
-	sbb rcx, rcx
-	or rdx, rcx
-	or rdx, QWORD PTR [rdi+224]
-	mov QWORD PTR [rdi+224], rdx
-	mov rbx, QWORD PTR [rdi+216]
-	shr rbx, 48
-	and rbx, 65535
-	mov rcx, rbx
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov r15d, 0
-	sub r15, rcx
-	mov r12, QWORD PTR [rdi+48]
-	mov r8, QWORD PTR [rdi+64]
-	mov ebp, 0
-	mov r14, 0
-227:
-	mov rsi, QWORD PTR [r8+r14*8]
-	mov eax, esi
-	add rax, rbp
-	mov rcx, rax
-	mul r15
-	mov eax, eax
-	mul rbx
-	add rax, rcx
-	shr rax, 32
-	mov rbp, rax
-	mov rax, rsi
-	shr rax, 32
-	add rax, rbp
-	mov rcx, rax
-	mul r15
-	mov eax, eax
-	mul rbx
-	add rax, rcx
-	shr rax, 32
-	mov rbp, rax
-	add r14, 1
-	cmp r14, r12
-	jne 227b
-	mov rax, rbp
-	cmp rax, 1
-	sbb rdx, rdx
-	xor rax, rbx
-	cmp rax, 1
-	sbb rcx, rcx
-	or rdx, rcx
-	or rdx, QWORD PTR [rdi+224]
-	mov QWORD PTR [rdi+224], rdx
 	add r13, 1
 	mov rax, QWORD PTR [rdi+208]
 	cmp r13, rax
-	jne 223b
+	jne 221b
 	mov rax, QWORD PTR [rdi+224]
 	test rax, rax
-220:
-	je 228f
+218:
+	je 226f
 	mov rdi, QWORD PTR [rdi+128]
 	mov eax, 2
 	mov QWORD PTR [rdi+152], rax
-	jmp 229f
-228:
+	jmp 227f
+226:
 	mov rdi, QWORD PTR [rdi+128]
 	mov rbp, rdi
 	mov rax, QWORD PTR [rdi+48]
@@ -52648,7 +52678,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rdi, rax
 	mov r10, rdi
 	mov r8d, 0
-230:
+228:
 	movzx eax, BYTE PTR [r10]
 	mov rdx, rax
 	shr rax, 1
@@ -52659,7 +52689,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov r8, rdx
 	add r10, 1
 	sub rcx, 1
-	jne 230b
+	jne 228b
 	mov rdi, rbp
 	mov rdx, QWORD PTR [rdi+72]
 	sub rdx, 1
@@ -52680,11 +52710,11 @@ vg_ffdh_generate_parameters_ifma:
 	add r12, 7
 	shr r12, 3
 	cmp r12, 2
-	jb 231f
-	jmp 232f
-231:
+	jb 229f
+	jmp 230f
+229:
 	mov r12d, 2
-232:
+230:
 	mov rsi, rdi
 	mov rdi, rax
 	mov QWORD PTR [rdi+128], rsi
@@ -52721,7 +52751,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov eax, 0
 	mov rdx, rcx
 	mov r14, rsi
-233:
+231:
 	sub rdx, 1
 	ror rax, 56
 	movzx ebp, BYTE PTR [r14]
@@ -52729,23 +52759,23 @@ vg_ffdh_generate_parameters_ifma:
 	add r14, 1
 	mov rbp, rdx
 	and rbp, 7
-	je 234f
-	jmp 235f
-234:
+	je 232f
+	jmp 233f
+232:
 	mov rbp, rdx
 	shr rbp, 3
 	mov QWORD PTR [rbx+rbp*8], rax
 	mov eax, 0
-235:
+233:
 	test rdx, rdx
-	jne 233b
+	jne 231b
 	mov rax, QWORD PTR [rdi+64]
 	mov rax, QWORD PTR [rax]
 	and rax, 1
 	cmp rax, 1
-	je 236f
-	jmp 237f
-236:
+	je 234f
+	jmp 235f
+234:
 	mov rax, QWORD PTR [rdi+128]
 	mov rdx, QWORD PTR [rax+72]
 	mov rax, QWORD PTR [rdi+48]
@@ -53272,16 +53302,16 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rbx+2040], rax
 	mov eax, 128
 	cmp rdx, 1025
-	jb 238f
+	jb 236f
 	mov eax, 256
-	jmp 239f
-238:
-239:
+	jmp 237f
+236:
+237:
 	mov QWORD PTR [rdi+208], rax
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
 	mov r13d, 0
-240:
+238:
 	mov rax, QWORD PTR [rdi+48]
 	add rax, 2
 	add rax, rax
@@ -53295,6 +53325,162 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rbx+r13*8]
 	mov QWORD PTR [rdi+216], rax
 	mov rbx, QWORD PTR [rdi+216]
+	and rbx, 65535
+	mov rcx, rbx
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov r15d, 0
+	sub r15, rcx
+	mov r12, QWORD PTR [rdi+48]
+	mov r8, QWORD PTR [rdi+64]
+	mov ebp, 0
+	mov r14, 0
+239:
+	mov rsi, QWORD PTR [r8+r14*8]
+	mov eax, esi
+	add rax, rbp
+	mov rcx, rax
+	mul r15
+	mov eax, eax
+	mul rbx
+	add rax, rcx
+	shr rax, 32
+	mov rbp, rax
+	mov rax, rsi
+	shr rax, 32
+	add rax, rbp
+	mov rcx, rax
+	mul r15
+	mov eax, eax
+	mul rbx
+	add rax, rcx
+	shr rax, 32
+	mov rbp, rax
+	add r14, 1
+	cmp r14, r12
+	jne 239b
+	mov rax, rbp
+	cmp rax, 1
+	sbb rdx, rdx
+	xor rax, rbx
+	cmp rax, 1
+	sbb rcx, rcx
+	or rdx, rcx
+	or rdx, QWORD PTR [rdi+224]
+	mov QWORD PTR [rdi+224], rdx
+	mov rbx, QWORD PTR [rdi+216]
+	shr rbx, 16
+	and rbx, 65535
+	mov rcx, rbx
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov rax, rbx
+	mul rcx
+	mov esi, 2
+	sub rsi, rax
+	mov rax, rcx
+	mul rsi
+	mov rcx, rax
+	mov r15d, 0
+	sub r15, rcx
+	mov r12, QWORD PTR [rdi+48]
+	mov r8, QWORD PTR [rdi+64]
+	mov ebp, 0
+	mov r14, 0
+240:
+	mov rsi, QWORD PTR [r8+r14*8]
+	mov eax, esi
+	add rax, rbp
+	mov rcx, rax
+	mul r15
+	mov eax, eax
+	mul rbx
+	add rax, rcx
+	shr rax, 32
+	mov rbp, rax
+	mov rax, rsi
+	shr rax, 32
+	add rax, rbp
+	mov rcx, rax
+	mul r15
+	mov eax, eax
+	mul rbx
+	add rax, rcx
+	shr rax, 32
+	mov rbp, rax
+	add r14, 1
+	cmp r14, r12
+	jne 240b
+	mov rax, rbp
+	cmp rax, 1
+	sbb rdx, rdx
+	xor rax, rbx
+	cmp rax, 1
+	sbb rcx, rcx
+	or rdx, rcx
+	or rdx, QWORD PTR [rdi+224]
+	mov QWORD PTR [rdi+224], rdx
+	mov rbx, QWORD PTR [rdi+216]
+	shr rbx, 32
 	and rbx, 65535
 	mov rcx, rbx
 	mov rax, rbx
@@ -53372,7 +53558,7 @@ vg_ffdh_generate_parameters_ifma:
 	or rdx, QWORD PTR [rdi+224]
 	mov QWORD PTR [rdi+224], rdx
 	mov rbx, QWORD PTR [rdi+216]
-	shr rbx, 16
+	shr rbx, 48
 	and rbx, 65535
 	mov rcx, rbx
 	mov rax, rbx
@@ -53449,175 +53635,19 @@ vg_ffdh_generate_parameters_ifma:
 	or rdx, rcx
 	or rdx, QWORD PTR [rdi+224]
 	mov QWORD PTR [rdi+224], rdx
-	mov rbx, QWORD PTR [rdi+216]
-	shr rbx, 32
-	and rbx, 65535
-	mov rcx, rbx
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov r15d, 0
-	sub r15, rcx
-	mov r12, QWORD PTR [rdi+48]
-	mov r8, QWORD PTR [rdi+64]
-	mov ebp, 0
-	mov r14, 0
-243:
-	mov rsi, QWORD PTR [r8+r14*8]
-	mov eax, esi
-	add rax, rbp
-	mov rcx, rax
-	mul r15
-	mov eax, eax
-	mul rbx
-	add rax, rcx
-	shr rax, 32
-	mov rbp, rax
-	mov rax, rsi
-	shr rax, 32
-	add rax, rbp
-	mov rcx, rax
-	mul r15
-	mov eax, eax
-	mul rbx
-	add rax, rcx
-	shr rax, 32
-	mov rbp, rax
-	add r14, 1
-	cmp r14, r12
-	jne 243b
-	mov rax, rbp
-	cmp rax, 1
-	sbb rdx, rdx
-	xor rax, rbx
-	cmp rax, 1
-	sbb rcx, rcx
-	or rdx, rcx
-	or rdx, QWORD PTR [rdi+224]
-	mov QWORD PTR [rdi+224], rdx
-	mov rbx, QWORD PTR [rdi+216]
-	shr rbx, 48
-	and rbx, 65535
-	mov rcx, rbx
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov rax, rbx
-	mul rcx
-	mov esi, 2
-	sub rsi, rax
-	mov rax, rcx
-	mul rsi
-	mov rcx, rax
-	mov r15d, 0
-	sub r15, rcx
-	mov r12, QWORD PTR [rdi+48]
-	mov r8, QWORD PTR [rdi+64]
-	mov ebp, 0
-	mov r14, 0
-244:
-	mov rsi, QWORD PTR [r8+r14*8]
-	mov eax, esi
-	add rax, rbp
-	mov rcx, rax
-	mul r15
-	mov eax, eax
-	mul rbx
-	add rax, rcx
-	shr rax, 32
-	mov rbp, rax
-	mov rax, rsi
-	shr rax, 32
-	add rax, rbp
-	mov rcx, rax
-	mul r15
-	mov eax, eax
-	mul rbx
-	add rax, rcx
-	shr rax, 32
-	mov rbp, rax
-	add r14, 1
-	cmp r14, r12
-	jne 244b
-	mov rax, rbp
-	cmp rax, 1
-	sbb rdx, rdx
-	xor rax, rbx
-	cmp rax, 1
-	sbb rcx, rcx
-	or rdx, rcx
-	or rdx, QWORD PTR [rdi+224]
-	mov QWORD PTR [rdi+224], rdx
 	add r13, 1
 	mov rax, QWORD PTR [rdi+208]
 	cmp r13, rax
-	jne 240b
+	jne 238b
 	mov rax, QWORD PTR [rdi+224]
 	test rax, rax
-237:
-	je 245f
+235:
+	je 243f
 	mov rdi, QWORD PTR [rdi+128]
 	mov eax, 2
 	mov QWORD PTR [rdi+152], rax
-	jmp 246f
-245:
+	jmp 244f
+243:
 	mov rdi, QWORD PTR [rdi+128]
 	mov rbp, rdi
 	mov rax, QWORD PTR [rdi+48]
@@ -53673,13 +53703,13 @@ vg_ffdh_generate_parameters_ifma:
 	add r10, 1
 	add r11, 1
 	sub rcx, 1
-247:
+245:
 	movzx eax, BYTE PTR [r10]
 	mov BYTE PTR [r11], al
 	add r10, 1
 	add r11, 1
 	sub rcx, 1
-	jne 247b
+	jne 245b
 	movzx eax, BYTE PTR [r11-1]
 	or rax, 1
 	mov BYTE PTR [r11-1], al
@@ -53703,11 +53733,11 @@ vg_ffdh_generate_parameters_ifma:
 	add r12, 7
 	shr r12, 3
 	cmp r12, 2
-	jb 248f
-	jmp 249f
-248:
+	jb 246f
+	jmp 247f
+246:
 	mov r12d, 2
-249:
+247:
 	mov rsi, rdi
 	mov rdi, rax
 	mov QWORD PTR [rdi+128], rsi
@@ -53744,7 +53774,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov eax, 0
 	mov rdx, rcx
 	mov r14, rsi
-250:
+248:
 	sub rdx, 1
 	ror rax, 56
 	movzx ebp, BYTE PTR [r14]
@@ -53752,16 +53782,16 @@ vg_ffdh_generate_parameters_ifma:
 	add r14, 1
 	mov rbp, rdx
 	and rbp, 7
-	je 251f
-	jmp 252f
-251:
+	je 249f
+	jmp 250f
+249:
 	mov rbp, rdx
 	shr rbp, 3
 	mov QWORD PTR [rbx+rbp*8], rax
 	mov eax, 0
-252:
+250:
 	test rdx, rdx
-	jne 250b
+	jne 248b
 	mov r10, QWORD PTR [rdi+64]
 	mov r12, QWORD PTR [rdi+48]
 	mov rbx, QWORD PTR [r10]
@@ -53809,11 +53839,11 @@ vg_ffdh_generate_parameters_ifma:
 	mov r8, QWORD PTR [rdi+120]
 	mov eax, 0
 	mov r14, 0
-253:
+251:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 253b
+	jne 251b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov QWORD PTR [r8+rcx*8], rdx
@@ -53824,39 +53854,39 @@ vg_ffdh_generate_parameters_ifma:
 	mov rcx, r12
 	and rcx, 3
 	or rax, rcx
-	je 254f
+	je 252f
 	mov rax, QWORD PTR [r10+r12*8-8]
 	mov edx, 1
 	mov ecx, 64
 	cmp rax, 1
-	je 256f
-258:
+	je 254f
+256:
 	shr rax, 1
 	add rdx, rdx
 	sub rcx, 1
 	cmp rax, 1
-	jne 258b
-	jmp 257f
-256:
-257:
+	jne 256b
+	jmp 255f
+254:
+255:
 	mov QWORD PTR [rdi+208], rcx
 	mov rcx, r12
 	sub rcx, 1
 	mov r8, QWORD PTR [rdi+96]
 	mov eax, 0
 	mov r14, 0
-259:
+257:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 259b
+	jne 257b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov QWORD PTR [r8+rcx*8], rdx
 	mov rcx, QWORD PTR [rdi+208]
 	add rcx, QWORD PTR [rdi+48]
 	mov QWORD PTR [rdi+208], rcx
-260:
+258:
 	mov rbx, QWORD PTR [rdi+96]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -53864,7 +53894,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rsi, QWORD PTR [rdi+88]
 	mov ebp, 0
 	mov r14, 0
-261:
+259:
 	add rbp, rbp
 	mov rax, QWORD PTR [rbx+r14*8]
 	adc rax, rax
@@ -53872,14 +53902,14 @@ vg_ffdh_generate_parameters_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 261b
+	jne 259b
 	mov eax, 0
 	add rbp, rbp
 	adc rax, 0
 	mov QWORD PTR [r8+r12*8], rax
 	mov ebp, 0
 	mov r14, 0
-262:
+260:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -53887,13 +53917,13 @@ vg_ffdh_generate_parameters_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 262b
+	jne 260b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-263:
+261:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -53902,14 +53932,14 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 263b
+	jne 261b
 	mov rcx, QWORD PTR [rdi+208]
 	sub rcx, 1
 	mov QWORD PTR [rdi+208], rcx
-	jne 260b
+	jne 258b
 	mov eax, 6
 	mov QWORD PTR [rdi+208], rax
-264:
+262:
 	mov edx, 4
 	mov ecx, 4
 	mov r8d, 4
@@ -53937,7 +53967,7 @@ vg_ffdh_generate_parameters_ifma:
 	sub rax, 8
 	ror rax, 3
 	shr rax, 27
-	je 265f
+	je 263f
 	mov rbx, QWORD PTR [rdi+rdx*8+64]
 	mov r11, QWORD PTR [rdi+rcx*8+64]
 	mov r9, QWORD PTR [rdi+r8*8+64]
@@ -53948,19 +53978,19 @@ vg_ffdh_generate_parameters_ifma:
 	mov rsi, QWORD PTR [rdi+88]
 	mov eax, 0
 	mov r14, 0
-267:
+265:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 267b
+	jne 265b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r13, 0
-268:
+266:
 	mov rcx, QWORD PTR [r11+r13*8]
 	mov ebp, 0
 	mov r14, 0
-269:
+267:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -53971,7 +54001,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 269b
+	jne 267b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8], rax
@@ -53987,7 +54017,7 @@ vg_ffdh_generate_parameters_ifma:
 	adc rdx, 0
 	mov rbp, rdx
 	mov r14, 1
-270:
+268:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -53998,7 +54028,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 270b
+	jne 268b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8-8], rax
@@ -54009,10 +54039,10 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [r8+r12*8+8], rax
 	add r13, 1
 	cmp r13, r12
-	jne 268b
+	jne 266b
 	mov ebp, 0
 	mov r14, 0
-271:
+269:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -54020,13 +54050,13 @@ vg_ffdh_generate_parameters_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 271b
+	jne 269b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-272:
+270:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -54035,11 +54065,11 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 272b
-	jmp 266f
-265:
+	jne 270b
+	jmp 264f
+263:
 	cmp rcx, r8
-	je 273f
+	je 271f
 	mov r9, QWORD PTR [rdi+144]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -54049,7 +54079,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rcx, rbx
 	add rcx, rcx
 	mov r14d, 0
-275:
+273:
 	mov QWORD PTR [r8+r14*8], rax
 	mov QWORD PTR [r8+r14*8+8], rax
 	mov QWORD PTR [r8+r14*8+16], rax
@@ -54060,12 +54090,12 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [r8+r14*8+56], rax
 	add r14, 8
 	cmp r14, rcx
-	jne 275b
+	jne 273b
 	mov QWORD PTR [r8+r14*8], rax
 	mov QWORD PTR [r8+r14*8+8], rax
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-276:
+274:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov QWORD PTR [rdi+232], rax
@@ -54089,7 +54119,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov r13, QWORD PTR [rsi+40]
 	mov r14, QWORD PTR [rsi+48]
 	mov r15, QWORD PTR [rsi+56]
-277:
+275:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -54358,7 +54388,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, 8
 	mov QWORD PTR [rdi+232], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 277b
+	jne 275b
 	mov QWORD PTR [rsi], r8
 	mov QWORD PTR [rsi+8], r9
 	mov QWORD PTR [rsi+16], r10
@@ -54370,7 +54400,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 278f
+	je 276f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -54378,7 +54408,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-280:
+278:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -54408,15 +54438,15 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 280b
-	jmp 279f
-278:
-279:
+	jne 278b
+	jmp 277f
+276:
+277:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 276b
+	jne 274b
 	mov r8, QWORD PTR [rdi+80]
 	mov r9, QWORD PTR [rdi+48]
 	shl r9, 4
@@ -54425,8 +54455,8 @@ vg_ffdh_generate_parameters_ifma:
 	mov eax, 0
 	mov QWORD PTR [r9], rax
 	mov QWORD PTR [r9+8], rax
-	jmp 274f
-273:
+	jmp 272f
+271:
 	mov r9, QWORD PTR [rdi+136]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -54434,7 +54464,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rbx, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-281:
+279:
 	mov rax, QWORD PTR [rdi+224]
 	shl rax, 3
 	mov rbp, QWORD PTR [rdi+136]
@@ -54562,17 +54592,17 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 281b
+	jne 279b
 	mov rax, QWORD PTR [rdi+48]
 	cmp rax, 8
-	je 282f
+	je 280f
 	mov rax, QWORD PTR [rdi+48]
 	cmp rax, 16
-	je 284f
+	je 282f
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
 	mov QWORD PTR [rdi+248], rax
-286:
+284:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov rax, QWORD PTR [rdi+224]
@@ -54601,8 +54631,8 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+232]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 287f
-289:
+	je 285f
+287:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -54872,10 +54902,10 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rdi+232], rax
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	jne 289b
-	jmp 288f
-287:
-288:
+	jne 287b
+	jmp 286f
+285:
+286:
 	mov rax, QWORD PTR [rdi+248]
 	add rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+240], rax
@@ -55158,15 +55188,15 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 16
 	cmp rax, QWORD PTR [rdi+48]
-	je 290f
+	je 288f
 	mov rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+248], rax
-	jmp 291f
-290:
+	jmp 289f
+288:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 292f
+	je 290f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -55174,7 +55204,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-294:
+292:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -55204,23 +55234,23 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 294b
-	jmp 293f
-292:
-293:
+	jne 292b
+	jmp 291f
+290:
 291:
+289:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	mov rcx, QWORD PTR [rdi+48]
 	sub rcx, 8
 	cmp rax, rcx
-	jne 286b
-	jmp 285f
-284:
+	jne 284b
+	jmp 283f
+282:
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-295:
+293:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov rax, QWORD PTR [rdi+224]
@@ -55246,7 +55276,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov r13, QWORD PTR [rsi+40]
 	mov r14, QWORD PTR [rsi+48]
 	mov r15, QWORD PTR [rsi+56]
-296:
+294:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -55515,7 +55545,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, 8
 	mov QWORD PTR [rdi+232], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 296b
+	jne 294b
 	mov QWORD PTR [rsi], r8
 	mov QWORD PTR [rsi+8], r9
 	mov QWORD PTR [rsi+16], r10
@@ -55527,7 +55557,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 297f
+	je 295f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -55535,7 +55565,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-299:
+297:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -55565,21 +55595,21 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 299b
-	jmp 298f
-297:
-298:
+	jne 297b
+	jmp 296f
+295:
+296:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	mov rcx, QWORD PTR [rdi+48]
 	sub rcx, 8
 	cmp rax, rcx
-	jne 295b
-285:
-	jmp 283f
-282:
+	jne 293b
 283:
+	jmp 281f
+280:
+281:
 	mov r8, QWORD PTR [rdi+80]
 	mov r9, QWORD PTR [rdi+48]
 	shl r9, 4
@@ -55597,7 +55627,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov r15d, 0
 	mov ebp, 0
 	mov r14d, 0
-2100:
+298:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r11, QWORD PTR [r8+r14*8]
 	mov r12, QWORD PTR [r8+r14*8+8]
@@ -55687,13 +55717,13 @@ vg_ffdh_generate_parameters_ifma:
 	add rbp, 8
 	add r14, 16
 	cmp rbp, r10
-	jne 2100b
-274:
+	jne 298b
+272:
 	mov rcx, QWORD PTR [rdi+80]
 	add rcx, 16
 	mov eax, 0
 	mov QWORD PTR [rcx-16], rax
-2101:
+299:
 	mov rsi, rcx
 	mov rbp, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rsi]
@@ -55962,10 +55992,10 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, rax
 	add rax, QWORD PTR [rdi+64]
 	cmp rbp, rax
-	jne 2102f
-	jmp 2103f
+	jne 2100f
+	jmp 2101f
+2100:
 2102:
-2104:
 	mov rdx, QWORD PTR [rcx-8]
 	add rdx, -1
 	adcx r8, QWORD PTR [rsi]
@@ -56227,8 +56257,8 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, rax
 	add rax, QWORD PTR [rdi+64]
 	cmp rbp, rax
-	jne 2104b
-2103:
+	jne 2102b
+2101:
 	mov rdx, QWORD PTR [rcx-8]
 	add rdx, -1
 	mov eax, 0
@@ -56263,7 +56293,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rcx+48], rax
 	add rcx, 64
 	cmp rcx, QWORD PTR [rdi+88]
-	jne 2101b
+	jne 299b
 	mov r8, rcx
 	mov rbp, QWORD PTR [rdi+48]
 	mov r10, QWORD PTR [rcx-16]
@@ -56277,7 +56307,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rbx, QWORD PTR [rdi+128]
 	mov ebp, 0
 	mov r14, 0
-2105:
+2103:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -56306,13 +56336,13 @@ vg_ffdh_generate_parameters_ifma:
 	sbb rbp, rbp
 	add r14, 8
 	cmp r14, r12
-	jne 2105b
+	jne 2103b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2106:
+2104:
 	add rbp, rbp
 	mov rax, QWORD PTR [rsi+r14*8]
 	cmovb rax, QWORD PTR [r8+r14*8]
@@ -56341,8 +56371,8 @@ vg_ffdh_generate_parameters_ifma:
 	sbb rbp, rbp
 	add r14, 8
 	cmp r14, r12
-	jne 2106b
-266:
+	jne 2104b
+264:
 	movq rbx, xmm8
 	movq rbp, xmm9
 	movq r12, xmm10
@@ -56357,16 +56387,16 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+208]
 	sub rax, 1
 	mov QWORD PTR [rdi+208], rax
-	jne 264b
-	jmp 255f
-254:
+	jne 262b
+	jmp 253f
+252:
 	mov rbx, QWORD PTR [rdi+96]
 	mov r10, QWORD PTR [rdi+64]
 	mov r12, QWORD PTR [rdi+48]
 	mov r8, QWORD PTR [rdi+88]
 	mov ebp, 0
 	mov r14, 0
-2107:
+2105:
 	mov eax, 0
 	add rbp, rbp
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -56374,14 +56404,14 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2107b
+	jne 2105b
 	mov rsi, QWORD PTR [r10+r12*8-8]
 	mov rdx, rsi
 	xor rdx, -1
 	mov rax, -1
 	mov ecx, 0
 	mov r13d, 64
-2108:
+2106:
 	add rax, rax
 	adc rdx, rdx
 	sbb r11, r11
@@ -56395,12 +56425,12 @@ vg_ffdh_generate_parameters_ifma:
 	add rcx, rcx
 	sub rcx, r15
 	sub r13, 1
-	jne 2108b
+	jne 2106b
 	mov QWORD PTR [r8], rcx
 	mov rcx, QWORD PTR [rdi+48]
 	shr rcx, 2
 	mov QWORD PTR [rdi+208], rcx
-2109:
+2107:
 	mov rbx, QWORD PTR [rdi+96]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -56446,7 +56476,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [r8], rdx
 	sbb rbp, rbp
 	mov r14, 1
-2110:
+2108:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, r9
@@ -56459,7 +56489,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [r8+r14*8], rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2110b
+	jne 2108b
 	mov rdx, QWORD PTR [rbx+r12*8-8]
 	add rbp, rbp
 	sbb rdx, r9
@@ -56469,7 +56499,7 @@ vg_ffdh_generate_parameters_ifma:
 	sbb r11, r11
 	mov ebp, 0
 	mov r14, 0
-2111:
+2109:
 	mov rax, QWORD PTR [r10+r14*8]
 	and rax, r11
 	add rbp, rbp
@@ -56478,7 +56508,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2111b
+	jne 2109b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	adc rax, 0
@@ -56488,7 +56518,7 @@ vg_ffdh_generate_parameters_ifma:
 	sbb r11, r11
 	mov ebp, 0
 	mov r14, 0
-2112:
+2110:
 	mov rax, QWORD PTR [r10+r14*8]
 	and rax, r11
 	add rbp, rbp
@@ -56497,26 +56527,26 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2112b
+	jne 2110b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	adc rax, 0
 	mov QWORD PTR [r8+r12*8], rax
 	mov rsi, r8
 	mov r14, 0
-2113:
+2111:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2113b
+	jne 2111b
 	mov rcx, QWORD PTR [rdi+208]
 	sub rcx, 1
 	mov QWORD PTR [rdi+208], rcx
-	jne 2109b
+	jne 2107b
 	mov eax, 2
 	mov QWORD PTR [rdi+208], rax
-2114:
+2112:
 	mov edx, 4
 	mov ecx, 4
 	mov r8d, 4
@@ -56544,7 +56574,7 @@ vg_ffdh_generate_parameters_ifma:
 	sub rax, 8
 	ror rax, 3
 	shr rax, 27
-	je 2115f
+	je 2113f
 	mov rbx, QWORD PTR [rdi+rdx*8+64]
 	mov r11, QWORD PTR [rdi+rcx*8+64]
 	mov r9, QWORD PTR [rdi+r8*8+64]
@@ -56555,19 +56585,19 @@ vg_ffdh_generate_parameters_ifma:
 	mov rsi, QWORD PTR [rdi+88]
 	mov eax, 0
 	mov r14, 0
-2117:
+2115:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2117b
+	jne 2115b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r13, 0
-2118:
+2116:
 	mov rcx, QWORD PTR [r11+r13*8]
 	mov ebp, 0
 	mov r14, 0
-2119:
+2117:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -56578,7 +56608,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2119b
+	jne 2117b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8], rax
@@ -56594,7 +56624,7 @@ vg_ffdh_generate_parameters_ifma:
 	adc rdx, 0
 	mov rbp, rdx
 	mov r14, 1
-2120:
+2118:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -56605,7 +56635,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2120b
+	jne 2118b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8-8], rax
@@ -56616,10 +56646,10 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [r8+r12*8+8], rax
 	add r13, 1
 	cmp r13, r12
-	jne 2118b
+	jne 2116b
 	mov ebp, 0
 	mov r14, 0
-2121:
+2119:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -56627,13 +56657,13 @@ vg_ffdh_generate_parameters_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2121b
+	jne 2119b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2122:
+2120:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -56642,11 +56672,11 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2122b
-	jmp 2116f
-2115:
+	jne 2120b
+	jmp 2114f
+2113:
 	cmp rcx, r8
-	je 2123f
+	je 2121f
 	mov r9, QWORD PTR [rdi+144]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -56656,7 +56686,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rcx, rbx
 	add rcx, rcx
 	mov r14d, 0
-2125:
+2123:
 	mov QWORD PTR [r8+r14*8], rax
 	mov QWORD PTR [r8+r14*8+8], rax
 	mov QWORD PTR [r8+r14*8+16], rax
@@ -56667,12 +56697,12 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [r8+r14*8+56], rax
 	add r14, 8
 	cmp r14, rcx
-	jne 2125b
+	jne 2123b
 	mov QWORD PTR [r8+r14*8], rax
 	mov QWORD PTR [r8+r14*8+8], rax
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2126:
+2124:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov QWORD PTR [rdi+232], rax
@@ -56696,7 +56726,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov r13, QWORD PTR [rsi+40]
 	mov r14, QWORD PTR [rsi+48]
 	mov r15, QWORD PTR [rsi+56]
-2127:
+2125:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -56965,7 +56995,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, 8
 	mov QWORD PTR [rdi+232], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2127b
+	jne 2125b
 	mov QWORD PTR [rsi], r8
 	mov QWORD PTR [rsi+8], r9
 	mov QWORD PTR [rsi+16], r10
@@ -56977,7 +57007,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2128f
+	je 2126f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -56985,7 +57015,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2130:
+2128:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -57015,15 +57045,15 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2130b
-	jmp 2129f
-2128:
-2129:
+	jne 2128b
+	jmp 2127f
+2126:
+2127:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2126b
+	jne 2124b
 	mov r8, QWORD PTR [rdi+80]
 	mov r9, QWORD PTR [rdi+48]
 	shl r9, 4
@@ -57032,8 +57062,8 @@ vg_ffdh_generate_parameters_ifma:
 	mov eax, 0
 	mov QWORD PTR [r9], rax
 	mov QWORD PTR [r9+8], rax
-	jmp 2124f
-2123:
+	jmp 2122f
+2121:
 	mov r9, QWORD PTR [rdi+136]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -57041,7 +57071,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rbx, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2131:
+2129:
 	mov rax, QWORD PTR [rdi+224]
 	shl rax, 3
 	mov rbp, QWORD PTR [rdi+136]
@@ -57169,17 +57199,17 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2131b
+	jne 2129b
 	mov rax, QWORD PTR [rdi+48]
 	cmp rax, 8
-	je 2132f
+	je 2130f
 	mov rax, QWORD PTR [rdi+48]
 	cmp rax, 16
-	je 2134f
+	je 2132f
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
 	mov QWORD PTR [rdi+248], rax
-2136:
+2134:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov rax, QWORD PTR [rdi+224]
@@ -57208,8 +57238,8 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+232]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2137f
-2139:
+	je 2135f
+2137:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -57479,10 +57509,10 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rdi+232], rax
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2139b
-	jmp 2138f
-2137:
-2138:
+	jne 2137b
+	jmp 2136f
+2135:
+2136:
 	mov rax, QWORD PTR [rdi+248]
 	add rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+240], rax
@@ -57765,15 +57795,15 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 16
 	cmp rax, QWORD PTR [rdi+48]
-	je 2140f
+	je 2138f
 	mov rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+248], rax
-	jmp 2141f
-2140:
+	jmp 2139f
+2138:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2142f
+	je 2140f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -57781,7 +57811,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2144:
+2142:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -57811,23 +57841,23 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2144b
-	jmp 2143f
-2142:
-2143:
+	jne 2142b
+	jmp 2141f
+2140:
 2141:
+2139:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	mov rcx, QWORD PTR [rdi+48]
 	sub rcx, 8
 	cmp rax, rcx
-	jne 2136b
-	jmp 2135f
-2134:
+	jne 2134b
+	jmp 2133f
+2132:
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2145:
+2143:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov rax, QWORD PTR [rdi+224]
@@ -57853,7 +57883,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov r13, QWORD PTR [rsi+40]
 	mov r14, QWORD PTR [rsi+48]
 	mov r15, QWORD PTR [rsi+56]
-2146:
+2144:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -58122,7 +58152,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, 8
 	mov QWORD PTR [rdi+232], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2146b
+	jne 2144b
 	mov QWORD PTR [rsi], r8
 	mov QWORD PTR [rsi+8], r9
 	mov QWORD PTR [rsi+16], r10
@@ -58134,7 +58164,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2147f
+	je 2145f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -58142,7 +58172,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2149:
+2147:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -58172,21 +58202,21 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2149b
-	jmp 2148f
-2147:
-2148:
+	jne 2147b
+	jmp 2146f
+2145:
+2146:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	mov rcx, QWORD PTR [rdi+48]
 	sub rcx, 8
 	cmp rax, rcx
-	jne 2145b
-2135:
-	jmp 2133f
-2132:
+	jne 2143b
 2133:
+	jmp 2131f
+2130:
+2131:
 	mov r8, QWORD PTR [rdi+80]
 	mov r9, QWORD PTR [rdi+48]
 	shl r9, 4
@@ -58204,7 +58234,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov r15d, 0
 	mov ebp, 0
 	mov r14d, 0
-2150:
+2148:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r11, QWORD PTR [r8+r14*8]
 	mov r12, QWORD PTR [r8+r14*8+8]
@@ -58294,13 +58324,13 @@ vg_ffdh_generate_parameters_ifma:
 	add rbp, 8
 	add r14, 16
 	cmp rbp, r10
-	jne 2150b
-2124:
+	jne 2148b
+2122:
 	mov rcx, QWORD PTR [rdi+80]
 	add rcx, 16
 	mov eax, 0
 	mov QWORD PTR [rcx-16], rax
-2151:
+2149:
 	mov rsi, rcx
 	mov rbp, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rsi]
@@ -58569,10 +58599,10 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, rax
 	add rax, QWORD PTR [rdi+64]
 	cmp rbp, rax
-	jne 2152f
-	jmp 2153f
+	jne 2150f
+	jmp 2151f
+2150:
 2152:
-2154:
 	mov rdx, QWORD PTR [rcx-8]
 	add rdx, -1
 	adcx r8, QWORD PTR [rsi]
@@ -58834,8 +58864,8 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, rax
 	add rax, QWORD PTR [rdi+64]
 	cmp rbp, rax
-	jne 2154b
-2153:
+	jne 2152b
+2151:
 	mov rdx, QWORD PTR [rcx-8]
 	add rdx, -1
 	mov eax, 0
@@ -58870,7 +58900,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rcx+48], rax
 	add rcx, 64
 	cmp rcx, QWORD PTR [rdi+88]
-	jne 2151b
+	jne 2149b
 	mov r8, rcx
 	mov rbp, QWORD PTR [rdi+48]
 	mov r10, QWORD PTR [rcx-16]
@@ -58884,7 +58914,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rbx, QWORD PTR [rdi+128]
 	mov ebp, 0
 	mov r14, 0
-2155:
+2153:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -58913,13 +58943,13 @@ vg_ffdh_generate_parameters_ifma:
 	sbb rbp, rbp
 	add r14, 8
 	cmp r14, r12
-	jne 2155b
+	jne 2153b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2156:
+2154:
 	add rbp, rbp
 	mov rax, QWORD PTR [rsi+r14*8]
 	cmovb rax, QWORD PTR [r8+r14*8]
@@ -58948,8 +58978,8 @@ vg_ffdh_generate_parameters_ifma:
 	sbb rbp, rbp
 	add r14, 8
 	cmp r14, r12
-	jne 2156b
-2116:
+	jne 2154b
+2114:
 	movq rbx, xmm8
 	movq rbp, xmm9
 	movq r12, xmm10
@@ -58964,8 +58994,8 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+208]
 	sub rax, 1
 	mov QWORD PTR [rdi+208], rax
-	jne 2114b
-255:
+	jne 2112b
+253:
 	mov edx, 6
 	mov ecx, 4
 	mov r8d, 7
@@ -58993,7 +59023,7 @@ vg_ffdh_generate_parameters_ifma:
 	sub rax, 8
 	ror rax, 3
 	shr rax, 27
-	je 2157f
+	je 2155f
 	mov rbx, QWORD PTR [rdi+rdx*8+64]
 	mov r11, QWORD PTR [rdi+rcx*8+64]
 	mov r9, QWORD PTR [rdi+r8*8+64]
@@ -59004,19 +59034,19 @@ vg_ffdh_generate_parameters_ifma:
 	mov rsi, QWORD PTR [rdi+88]
 	mov eax, 0
 	mov r14, 0
-2159:
+2157:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2159b
+	jne 2157b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r13, 0
-2160:
+2158:
 	mov rcx, QWORD PTR [r11+r13*8]
 	mov ebp, 0
 	mov r14, 0
-2161:
+2159:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -59027,7 +59057,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2161b
+	jne 2159b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8], rax
@@ -59043,7 +59073,7 @@ vg_ffdh_generate_parameters_ifma:
 	adc rdx, 0
 	mov rbp, rdx
 	mov r14, 1
-2162:
+2160:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -59054,7 +59084,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2162b
+	jne 2160b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8-8], rax
@@ -59065,10 +59095,10 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [r8+r12*8+8], rax
 	add r13, 1
 	cmp r13, r12
-	jne 2160b
+	jne 2158b
 	mov ebp, 0
 	mov r14, 0
-2163:
+2161:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -59076,13 +59106,13 @@ vg_ffdh_generate_parameters_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2163b
+	jne 2161b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2164:
+2162:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -59091,11 +59121,11 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2164b
-	jmp 2158f
-2157:
+	jne 2162b
+	jmp 2156f
+2155:
 	cmp rcx, r8
-	je 2165f
+	je 2163f
 	mov r9, QWORD PTR [rdi+144]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -59105,7 +59135,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rcx, rbx
 	add rcx, rcx
 	mov r14d, 0
-2167:
+2165:
 	mov QWORD PTR [r8+r14*8], rax
 	mov QWORD PTR [r8+r14*8+8], rax
 	mov QWORD PTR [r8+r14*8+16], rax
@@ -59116,12 +59146,12 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [r8+r14*8+56], rax
 	add r14, 8
 	cmp r14, rcx
-	jne 2167b
+	jne 2165b
 	mov QWORD PTR [r8+r14*8], rax
 	mov QWORD PTR [r8+r14*8+8], rax
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2168:
+2166:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov QWORD PTR [rdi+232], rax
@@ -59145,7 +59175,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov r13, QWORD PTR [rsi+40]
 	mov r14, QWORD PTR [rsi+48]
 	mov r15, QWORD PTR [rsi+56]
-2169:
+2167:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -59414,7 +59444,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, 8
 	mov QWORD PTR [rdi+232], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2169b
+	jne 2167b
 	mov QWORD PTR [rsi], r8
 	mov QWORD PTR [rsi+8], r9
 	mov QWORD PTR [rsi+16], r10
@@ -59426,7 +59456,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2170f
+	je 2168f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -59434,7 +59464,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2172:
+2170:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -59464,15 +59494,15 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2172b
-	jmp 2171f
-2170:
-2171:
+	jne 2170b
+	jmp 2169f
+2168:
+2169:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2168b
+	jne 2166b
 	mov r8, QWORD PTR [rdi+80]
 	mov r9, QWORD PTR [rdi+48]
 	shl r9, 4
@@ -59481,8 +59511,8 @@ vg_ffdh_generate_parameters_ifma:
 	mov eax, 0
 	mov QWORD PTR [r9], rax
 	mov QWORD PTR [r9+8], rax
-	jmp 2166f
-2165:
+	jmp 2164f
+2163:
 	mov r9, QWORD PTR [rdi+136]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -59490,7 +59520,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rbx, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2173:
+2171:
 	mov rax, QWORD PTR [rdi+224]
 	shl rax, 3
 	mov rbp, QWORD PTR [rdi+136]
@@ -59618,17 +59648,17 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2173b
+	jne 2171b
 	mov rax, QWORD PTR [rdi+48]
 	cmp rax, 8
-	je 2174f
+	je 2172f
 	mov rax, QWORD PTR [rdi+48]
 	cmp rax, 16
-	je 2176f
+	je 2174f
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
 	mov QWORD PTR [rdi+248], rax
-2178:
+2176:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov rax, QWORD PTR [rdi+224]
@@ -59657,8 +59687,8 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+232]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2179f
-2181:
+	je 2177f
+2179:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -59928,10 +59958,10 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rdi+232], rax
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2181b
-	jmp 2180f
-2179:
-2180:
+	jne 2179b
+	jmp 2178f
+2177:
+2178:
 	mov rax, QWORD PTR [rdi+248]
 	add rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+240], rax
@@ -60214,15 +60244,15 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 16
 	cmp rax, QWORD PTR [rdi+48]
-	je 2182f
+	je 2180f
 	mov rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+248], rax
-	jmp 2183f
-2182:
+	jmp 2181f
+2180:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2184f
+	je 2182f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -60230,7 +60260,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2186:
+2184:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -60260,23 +60290,23 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2186b
-	jmp 2185f
-2184:
-2185:
+	jne 2184b
+	jmp 2183f
+2182:
 2183:
+2181:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	mov rcx, QWORD PTR [rdi+48]
 	sub rcx, 8
 	cmp rax, rcx
-	jne 2178b
-	jmp 2177f
-2176:
+	jne 2176b
+	jmp 2175f
+2174:
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2187:
+2185:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov rax, QWORD PTR [rdi+224]
@@ -60302,7 +60332,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov r13, QWORD PTR [rsi+40]
 	mov r14, QWORD PTR [rsi+48]
 	mov r15, QWORD PTR [rsi+56]
-2188:
+2186:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -60571,7 +60601,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, 8
 	mov QWORD PTR [rdi+232], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2188b
+	jne 2186b
 	mov QWORD PTR [rsi], r8
 	mov QWORD PTR [rsi+8], r9
 	mov QWORD PTR [rsi+16], r10
@@ -60583,7 +60613,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2189f
+	je 2187f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -60591,7 +60621,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2191:
+2189:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -60621,21 +60651,21 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2191b
-	jmp 2190f
-2189:
-2190:
+	jne 2189b
+	jmp 2188f
+2187:
+2188:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	mov rcx, QWORD PTR [rdi+48]
 	sub rcx, 8
 	cmp rax, rcx
-	jne 2187b
-2177:
-	jmp 2175f
-2174:
+	jne 2185b
 2175:
+	jmp 2173f
+2172:
+2173:
 	mov r8, QWORD PTR [rdi+80]
 	mov r9, QWORD PTR [rdi+48]
 	shl r9, 4
@@ -60653,7 +60683,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov r15d, 0
 	mov ebp, 0
 	mov r14d, 0
-2192:
+2190:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r11, QWORD PTR [r8+r14*8]
 	mov r12, QWORD PTR [r8+r14*8+8]
@@ -60743,13 +60773,13 @@ vg_ffdh_generate_parameters_ifma:
 	add rbp, 8
 	add r14, 16
 	cmp rbp, r10
-	jne 2192b
-2166:
+	jne 2190b
+2164:
 	mov rcx, QWORD PTR [rdi+80]
 	add rcx, 16
 	mov eax, 0
 	mov QWORD PTR [rcx-16], rax
-2193:
+2191:
 	mov rsi, rcx
 	mov rbp, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rsi]
@@ -61018,10 +61048,10 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, rax
 	add rax, QWORD PTR [rdi+64]
 	cmp rbp, rax
-	jne 2194f
-	jmp 2195f
+	jne 2192f
+	jmp 2193f
+2192:
 2194:
-2196:
 	mov rdx, QWORD PTR [rcx-8]
 	add rdx, -1
 	adcx r8, QWORD PTR [rsi]
@@ -61283,8 +61313,8 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, rax
 	add rax, QWORD PTR [rdi+64]
 	cmp rbp, rax
-	jne 2196b
-2195:
+	jne 2194b
+2193:
 	mov rdx, QWORD PTR [rcx-8]
 	add rdx, -1
 	mov eax, 0
@@ -61319,7 +61349,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rcx+48], rax
 	add rcx, 64
 	cmp rcx, QWORD PTR [rdi+88]
-	jne 2193b
+	jne 2191b
 	mov r8, rcx
 	mov rbp, QWORD PTR [rdi+48]
 	mov r10, QWORD PTR [rcx-16]
@@ -61333,7 +61363,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rbx, QWORD PTR [rdi+128]
 	mov ebp, 0
 	mov r14, 0
-2197:
+2195:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -61362,13 +61392,13 @@ vg_ffdh_generate_parameters_ifma:
 	sbb rbp, rbp
 	add r14, 8
 	cmp r14, r12
-	jne 2197b
+	jne 2195b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2198:
+2196:
 	add rbp, rbp
 	mov rax, QWORD PTR [rsi+r14*8]
 	cmovb rax, QWORD PTR [r8+r14*8]
@@ -61397,8 +61427,8 @@ vg_ffdh_generate_parameters_ifma:
 	sbb rbp, rbp
 	add r14, 8
 	cmp r14, r12
-	jne 2198b
-2158:
+	jne 2196b
+2156:
 	movq rbx, xmm8
 	movq rbp, xmm9
 	movq r12, xmm10
@@ -61437,12 +61467,12 @@ vg_ffdh_generate_parameters_ifma:
 	add rbx, rax
 	add rbx, rax
 	mov r14, 0
-2199:
+2197:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2199b
+	jne 2197b
 	mov r12, QWORD PTR [rdi+48]
 	mov r8, QWORD PTR [rdi+64]
 	mov rax, QWORD PTR [rdi+48]
@@ -61496,7 +61526,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rsi, rax
 	mov ebp, 0
 	mov r14, 0
-2200:
+2198:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -61504,13 +61534,13 @@ vg_ffdh_generate_parameters_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2200b
+	jne 2198b
 	mov r12, QWORD PTR [rdi+48]
 	mov r8, QWORD PTR [rdi+64]
 	mov rbp, QWORD PTR [r8]
 	and rbp, -2
 	mov r14, 1
-2201:
+2199:
 	mov rax, QWORD PTR [r8+r14*8]
 	cmp rbp, 1
 	sbb rdx, rdx
@@ -61518,7 +61548,7 @@ vg_ffdh_generate_parameters_ifma:
 	or rbp, rax
 	add r14, 1
 	cmp r14, r12
-	jne 2201b
+	jne 2199b
 	mov rax, QWORD PTR [rdi+48]
 	add rax, 2
 	add rax, rax
@@ -61551,6 +61581,64 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rbx+r12*8], rax
 	mov rbp, QWORD PTR [rsi]
 	mov r14, 1
+2200:
+	mov rax, QWORD PTR [rsi+r14*8]
+	mov rdx, rax
+	shl rdx, 63
+	mov rcx, rbp
+	shr rcx, 1
+	or rcx, rdx
+	xor rcx, rbp
+	and rcx, r15
+	xor rcx, rbp
+	mov QWORD PTR [rbx+r14*8-8], rcx
+	mov rbp, rax
+	add r14, 1
+	cmp r14, r12
+	jne 2200b
+	mov rcx, rbp
+	shr rcx, 1
+	xor rcx, rbp
+	and rcx, r15
+	xor rcx, rbp
+	mov QWORD PTR [rbx+r12*8-8], rcx
+	mov rsi, rbx
+	movabs r15, -2459565876494606883
+	and r15, QWORD PTR [rbx+r12*8]
+	cmp r15, 1
+	sbb r15, r15
+	xor r15, -1
+	mov rbp, QWORD PTR [rsi]
+	mov r14, 1
+2201:
+	mov rax, QWORD PTR [rsi+r14*8]
+	mov rdx, rax
+	shl rdx, 63
+	mov rcx, rbp
+	shr rcx, 1
+	or rcx, rdx
+	xor rcx, rbp
+	and rcx, r15
+	xor rcx, rbp
+	mov QWORD PTR [rbx+r14*8-8], rcx
+	mov rbp, rax
+	add r14, 1
+	cmp r14, r12
+	jne 2201b
+	mov rcx, rbp
+	shr rcx, 1
+	xor rcx, rbp
+	and rcx, r15
+	xor rcx, rbp
+	mov QWORD PTR [rbx+r12*8-8], rcx
+	mov rsi, rbx
+	movabs r15, -7378697629483820647
+	and r15, QWORD PTR [rbx+r12*8]
+	cmp r15, 1
+	sbb r15, r15
+	xor r15, -1
+	mov rbp, QWORD PTR [rsi]
+	mov r14, 1
 2202:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov rdx, rax
@@ -61573,7 +61661,7 @@ vg_ffdh_generate_parameters_ifma:
 	xor rcx, rbp
 	mov QWORD PTR [rbx+r12*8-8], rcx
 	mov rsi, rbx
-	movabs r15, -2459565876494606883
+	movabs r15, 1229782938247303441
 	and r15, QWORD PTR [rbx+r12*8]
 	cmp r15, 1
 	sbb r15, r15
@@ -61601,73 +61689,15 @@ vg_ffdh_generate_parameters_ifma:
 	and rcx, r15
 	xor rcx, rbp
 	mov QWORD PTR [rbx+r12*8-8], rcx
-	mov rsi, rbx
-	movabs r15, -7378697629483820647
-	and r15, QWORD PTR [rbx+r12*8]
-	cmp r15, 1
-	sbb r15, r15
-	xor r15, -1
-	mov rbp, QWORD PTR [rsi]
-	mov r14, 1
-2204:
-	mov rax, QWORD PTR [rsi+r14*8]
-	mov rdx, rax
-	shl rdx, 63
-	mov rcx, rbp
-	shr rcx, 1
-	or rcx, rdx
-	xor rcx, rbp
-	and rcx, r15
-	xor rcx, rbp
-	mov QWORD PTR [rbx+r14*8-8], rcx
-	mov rbp, rax
-	add r14, 1
-	cmp r14, r12
-	jne 2204b
-	mov rcx, rbp
-	shr rcx, 1
-	xor rcx, rbp
-	and rcx, r15
-	xor rcx, rbp
-	mov QWORD PTR [rbx+r12*8-8], rcx
-	mov rsi, rbx
-	movabs r15, 1229782938247303441
-	and r15, QWORD PTR [rbx+r12*8]
-	cmp r15, 1
-	sbb r15, r15
-	xor r15, -1
-	mov rbp, QWORD PTR [rsi]
-	mov r14, 1
-2205:
-	mov rax, QWORD PTR [rsi+r14*8]
-	mov rdx, rax
-	shl rdx, 63
-	mov rcx, rbp
-	shr rcx, 1
-	or rcx, rdx
-	xor rcx, rbp
-	and rcx, r15
-	xor rcx, rbp
-	mov QWORD PTR [rbx+r14*8-8], rcx
-	mov rbp, rax
-	add r14, 1
-	cmp r14, r12
-	jne 2205b
-	mov rcx, rbp
-	shr rcx, 1
-	xor rcx, rbp
-	and rcx, r15
-	xor rcx, rbp
-	mov QWORD PTR [rbx+r12*8-8], rcx
 	mov rax, QWORD PTR [rdi+128]
 	mov ecx, 0
 	mov QWORD PTR [rax+144], rcx
-2206:
-2207:
+2204:
+2205:
 	mov rax, QWORD PTR [rdi+128]
 	mov rcx, QWORD PTR [rax+104]
 	cmp rcx, QWORD PTR [rax+128]
-	jb 2208f
+	jb 2206f
 	mov rax, QWORD PTR [rdi+128]
 	mov rsi, QWORD PTR [rax+96]
 	mov rcx, QWORD PTR [rax+128]
@@ -61733,13 +61763,13 @@ vg_ffdh_generate_parameters_ifma:
 	add r10, 1
 	add r11, 1
 	sub rcx, 1
-2210:
+2208:
 	movzx eax, BYTE PTR [r10]
 	mov BYTE PTR [r11], al
 	add r10, 1
 	add r11, 1
 	sub rcx, 1
-	jne 2210b
+	jne 2208b
 	mov rdi, rbp
 	mov rax, QWORD PTR [rdi+128]
 	mov rsi, QWORD PTR [rax+48]
@@ -61748,7 +61778,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov eax, 0
 	mov rdx, rcx
 	mov r14, rsi
-2211:
+2209:
 	sub rdx, 1
 	ror rax, 56
 	movzx ebp, BYTE PTR [r14]
@@ -61756,19 +61786,49 @@ vg_ffdh_generate_parameters_ifma:
 	add r14, 1
 	mov rbp, rdx
 	and rbp, 7
-	je 2212f
-	jmp 2213f
-2212:
+	je 2210f
+	jmp 2211f
+2210:
 	mov rbp, rdx
 	shr rbp, 3
 	mov QWORD PTR [rbx+rbp*8], rax
 	mov eax, 0
-2213:
+2211:
 	test rdx, rdx
-	jne 2211b
+	jne 2209b
 	mov r12, QWORD PTR [rdi+48]
 	mov rbx, QWORD PTR [rdi+120]
 	mov r10, QWORD PTR [rdi+104]
+	mov ebp, 0
+	mov r14, 0
+2212:
+	add rbp, rbp
+	mov rax, QWORD PTR [rbx+r14*8]
+	sbb rax, QWORD PTR [r10+r14*8]
+	sbb rbp, rbp
+	add r14, 1
+	cmp r14, r12
+	jne 2212b
+	mov rax, rbp
+	and rax, 1
+	mov QWORD PTR [rdi+240], rax
+	mov r12, QWORD PTR [rdi+48]
+	mov rsi, QWORD PTR [rdi+104]
+	mov rbx, QWORD PTR [rdi+88]
+	mov r14, 0
+2213:
+	mov rax, QWORD PTR [rsi+r14*8]
+	mov QWORD PTR [rbx+r14*8], rax
+	add r14, 1
+	cmp r14, r12
+	jne 2213b
+	mov rbx, QWORD PTR [rdi+88]
+	mov rax, QWORD PTR [rbx]
+	or rax, 1
+	mov QWORD PTR [rbx], rax
+	mov r12, QWORD PTR [rdi+48]
+	mov rbx, QWORD PTR [rdi+88]
+	mov r10, QWORD PTR [rdi+64]
 	mov ebp, 0
 	mov r14, 0
 2214:
@@ -61781,54 +61841,24 @@ vg_ffdh_generate_parameters_ifma:
 	jne 2214b
 	mov rax, rbp
 	and rax, 1
-	mov QWORD PTR [rdi+240], rax
-	mov r12, QWORD PTR [rdi+48]
-	mov rsi, QWORD PTR [rdi+104]
-	mov rbx, QWORD PTR [rdi+88]
-	mov r14, 0
-2215:
-	mov rax, QWORD PTR [rsi+r14*8]
-	mov QWORD PTR [rbx+r14*8], rax
-	add r14, 1
-	cmp r14, r12
-	jne 2215b
-	mov rbx, QWORD PTR [rdi+88]
-	mov rax, QWORD PTR [rbx]
-	or rax, 1
-	mov QWORD PTR [rbx], rax
-	mov r12, QWORD PTR [rdi+48]
-	mov rbx, QWORD PTR [rdi+88]
-	mov r10, QWORD PTR [rdi+64]
-	mov ebp, 0
-	mov r14, 0
-2216:
-	add rbp, rbp
-	mov rax, QWORD PTR [rbx+r14*8]
-	sbb rax, QWORD PTR [r10+r14*8]
-	sbb rbp, rbp
-	add r14, 1
-	cmp r14, r12
-	jne 2216b
-	mov rax, rbp
-	and rax, 1
 	and rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+240], rax
 	test rax, rax
 	mov rax, QWORD PTR [rdi+128]
 	mov edx, 1
 	mov QWORD PTR [rax+152], rdx
-	jmp 2209f
-2208:
+	jmp 2207f
+2206:
 	mov rax, QWORD PTR [rdi+128]
 	mov edx, 0
 	mov QWORD PTR [rax+152], rdx
 	cmp rdx, 1
-2209:
-	je 2207b
+2207:
+	je 2205b
 	mov rax, QWORD PTR [rdi+128]
 	mov rcx, QWORD PTR [rax+152]
 	test rcx, rcx
-	je 2217f
+	je 2215f
 	mov edx, 5
 	mov ecx, 5
 	mov r8d, 4
@@ -61856,7 +61886,7 @@ vg_ffdh_generate_parameters_ifma:
 	sub rax, 8
 	ror rax, 3
 	shr rax, 27
-	je 2219f
+	je 2217f
 	mov rbx, QWORD PTR [rdi+rdx*8+64]
 	mov r11, QWORD PTR [rdi+rcx*8+64]
 	mov r9, QWORD PTR [rdi+r8*8+64]
@@ -61867,19 +61897,19 @@ vg_ffdh_generate_parameters_ifma:
 	mov rsi, QWORD PTR [rdi+88]
 	mov eax, 0
 	mov r14, 0
-2221:
+2219:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2221b
+	jne 2219b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r13, 0
-2222:
+2220:
 	mov rcx, QWORD PTR [r11+r13*8]
 	mov ebp, 0
 	mov r14, 0
-2223:
+2221:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -61890,7 +61920,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2223b
+	jne 2221b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8], rax
@@ -61906,7 +61936,7 @@ vg_ffdh_generate_parameters_ifma:
 	adc rdx, 0
 	mov rbp, rdx
 	mov r14, 1
-2224:
+2222:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -61917,7 +61947,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2224b
+	jne 2222b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8-8], rax
@@ -61928,10 +61958,10 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [r8+r12*8+8], rax
 	add r13, 1
 	cmp r13, r12
-	jne 2222b
+	jne 2220b
 	mov ebp, 0
 	mov r14, 0
-2225:
+2223:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -61939,13 +61969,13 @@ vg_ffdh_generate_parameters_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2225b
+	jne 2223b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2226:
+2224:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -61954,11 +61984,11 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2226b
-	jmp 2220f
-2219:
+	jne 2224b
+	jmp 2218f
+2217:
 	cmp rcx, r8
-	je 2227f
+	je 2225f
 	mov r9, QWORD PTR [rdi+144]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -61968,7 +61998,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rcx, rbx
 	add rcx, rcx
 	mov r14d, 0
-2229:
+2227:
 	mov QWORD PTR [r8+r14*8], rax
 	mov QWORD PTR [r8+r14*8+8], rax
 	mov QWORD PTR [r8+r14*8+16], rax
@@ -61979,12 +62009,12 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [r8+r14*8+56], rax
 	add r14, 8
 	cmp r14, rcx
-	jne 2229b
+	jne 2227b
 	mov QWORD PTR [r8+r14*8], rax
 	mov QWORD PTR [r8+r14*8+8], rax
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2230:
+2228:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov QWORD PTR [rdi+232], rax
@@ -62008,7 +62038,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov r13, QWORD PTR [rsi+40]
 	mov r14, QWORD PTR [rsi+48]
 	mov r15, QWORD PTR [rsi+56]
-2231:
+2229:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -62277,7 +62307,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, 8
 	mov QWORD PTR [rdi+232], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2231b
+	jne 2229b
 	mov QWORD PTR [rsi], r8
 	mov QWORD PTR [rsi+8], r9
 	mov QWORD PTR [rsi+16], r10
@@ -62289,7 +62319,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2232f
+	je 2230f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -62297,7 +62327,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2234:
+2232:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -62327,15 +62357,15 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2234b
-	jmp 2233f
-2232:
-2233:
+	jne 2232b
+	jmp 2231f
+2230:
+2231:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2230b
+	jne 2228b
 	mov r8, QWORD PTR [rdi+80]
 	mov r9, QWORD PTR [rdi+48]
 	shl r9, 4
@@ -62344,8 +62374,8 @@ vg_ffdh_generate_parameters_ifma:
 	mov eax, 0
 	mov QWORD PTR [r9], rax
 	mov QWORD PTR [r9+8], rax
-	jmp 2228f
-2227:
+	jmp 2226f
+2225:
 	mov r9, QWORD PTR [rdi+136]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -62353,7 +62383,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rbx, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2235:
+2233:
 	mov rax, QWORD PTR [rdi+224]
 	shl rax, 3
 	mov rbp, QWORD PTR [rdi+136]
@@ -62481,17 +62511,17 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2235b
+	jne 2233b
 	mov rax, QWORD PTR [rdi+48]
 	cmp rax, 8
-	je 2236f
+	je 2234f
 	mov rax, QWORD PTR [rdi+48]
 	cmp rax, 16
-	je 2238f
+	je 2236f
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
 	mov QWORD PTR [rdi+248], rax
-2240:
+2238:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov rax, QWORD PTR [rdi+224]
@@ -62520,8 +62550,8 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+232]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2241f
-2243:
+	je 2239f
+2241:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -62791,10 +62821,10 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rdi+232], rax
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2243b
-	jmp 2242f
-2241:
-2242:
+	jne 2241b
+	jmp 2240f
+2239:
+2240:
 	mov rax, QWORD PTR [rdi+248]
 	add rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+240], rax
@@ -63077,15 +63107,15 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 16
 	cmp rax, QWORD PTR [rdi+48]
-	je 2244f
+	je 2242f
 	mov rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+248], rax
-	jmp 2245f
-2244:
+	jmp 2243f
+2242:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2246f
+	je 2244f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -63093,7 +63123,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2248:
+2246:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -63123,23 +63153,23 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2248b
-	jmp 2247f
-2246:
-2247:
+	jne 2246b
+	jmp 2245f
+2244:
 2245:
+2243:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	mov rcx, QWORD PTR [rdi+48]
 	sub rcx, 8
 	cmp rax, rcx
-	jne 2240b
-	jmp 2239f
-2238:
+	jne 2238b
+	jmp 2237f
+2236:
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2249:
+2247:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov rax, QWORD PTR [rdi+224]
@@ -63165,7 +63195,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov r13, QWORD PTR [rsi+40]
 	mov r14, QWORD PTR [rsi+48]
 	mov r15, QWORD PTR [rsi+56]
-2250:
+2248:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -63434,7 +63464,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, 8
 	mov QWORD PTR [rdi+232], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2250b
+	jne 2248b
 	mov QWORD PTR [rsi], r8
 	mov QWORD PTR [rsi+8], r9
 	mov QWORD PTR [rsi+16], r10
@@ -63446,7 +63476,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2251f
+	je 2249f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -63454,7 +63484,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2253:
+2251:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -63484,21 +63514,21 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2253b
-	jmp 2252f
-2251:
-2252:
+	jne 2251b
+	jmp 2250f
+2249:
+2250:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	mov rcx, QWORD PTR [rdi+48]
 	sub rcx, 8
 	cmp rax, rcx
-	jne 2249b
-2239:
-	jmp 2237f
-2236:
+	jne 2247b
 2237:
+	jmp 2235f
+2234:
+2235:
 	mov r8, QWORD PTR [rdi+80]
 	mov r9, QWORD PTR [rdi+48]
 	shl r9, 4
@@ -63516,7 +63546,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov r15d, 0
 	mov ebp, 0
 	mov r14d, 0
-2254:
+2252:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r11, QWORD PTR [r8+r14*8]
 	mov r12, QWORD PTR [r8+r14*8+8]
@@ -63606,13 +63636,13 @@ vg_ffdh_generate_parameters_ifma:
 	add rbp, 8
 	add r14, 16
 	cmp rbp, r10
-	jne 2254b
-2228:
+	jne 2252b
+2226:
 	mov rcx, QWORD PTR [rdi+80]
 	add rcx, 16
 	mov eax, 0
 	mov QWORD PTR [rcx-16], rax
-2255:
+2253:
 	mov rsi, rcx
 	mov rbp, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rsi]
@@ -63881,10 +63911,10 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, rax
 	add rax, QWORD PTR [rdi+64]
 	cmp rbp, rax
-	jne 2256f
-	jmp 2257f
+	jne 2254f
+	jmp 2255f
+2254:
 2256:
-2258:
 	mov rdx, QWORD PTR [rcx-8]
 	add rdx, -1
 	adcx r8, QWORD PTR [rsi]
@@ -64146,8 +64176,8 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, rax
 	add rax, QWORD PTR [rdi+64]
 	cmp rbp, rax
-	jne 2258b
-2257:
+	jne 2256b
+2255:
 	mov rdx, QWORD PTR [rcx-8]
 	add rdx, -1
 	mov eax, 0
@@ -64182,7 +64212,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rcx+48], rax
 	add rcx, 64
 	cmp rcx, QWORD PTR [rdi+88]
-	jne 2255b
+	jne 2253b
 	mov r8, rcx
 	mov rbp, QWORD PTR [rdi+48]
 	mov r10, QWORD PTR [rcx-16]
@@ -64196,7 +64226,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rbx, QWORD PTR [rdi+128]
 	mov ebp, 0
 	mov r14, 0
-2259:
+2257:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -64225,13 +64255,13 @@ vg_ffdh_generate_parameters_ifma:
 	sbb rbp, rbp
 	add r14, 8
 	cmp r14, r12
-	jne 2259b
+	jne 2257b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2260:
+2258:
 	add rbp, rbp
 	mov rax, QWORD PTR [rsi+r14*8]
 	cmovb rax, QWORD PTR [r8+r14*8]
@@ -64260,8 +64290,8 @@ vg_ffdh_generate_parameters_ifma:
 	sbb rbp, rbp
 	add r14, 8
 	cmp r14, r12
-	jne 2260b
-2220:
+	jne 2258b
+2218:
 	movq rbx, xmm8
 	movq rbp, xmm9
 	movq r12, xmm10
@@ -64298,7 +64328,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rbx, QWORD PTR [rcx]
 	mov rax, QWORD PTR [rdi+176]
 	test rax, rax
-	je 2261f
+	je 2259f
 	mov r9, QWORD PTR [rdi+128]
 	mov rcx, QWORD PTR [r9+144]
 	add rcx, 1
@@ -64308,25 +64338,25 @@ vg_ffdh_generate_parameters_ifma:
 	mov edx, 1
 	cmovae rax, rdx
 	mov QWORD PTR [r9+152], rax
-	jmp 2262f
-2261:
+	jmp 2260f
+2259:
 	mov rax, QWORD PTR [rdi+128]
 	mov edx, 2
 	mov QWORD PTR [rax+152], rdx
-2262:
-	jmp 2218f
-2217:
-2218:
+2260:
+	jmp 2216f
+2215:
+2216:
 	mov rax, QWORD PTR [rdi+128]
 	mov rcx, QWORD PTR [rax+152]
 	cmp rcx, 4
-	je 2206b
+	je 2204b
 	mov rdi, QWORD PTR [rdi+128]
 	mov rax, QWORD PTR [rdi+152]
 	cmp rax, 1
-	je 2263f
-	jmp 2264f
-2263:
+	je 2261f
+	jmp 2262f
+2261:
 	mov rbp, rdi
 	mov rax, QWORD PTR [rdi+48]
 	mov rsi, QWORD PTR [rdi+88]
@@ -64381,13 +64411,13 @@ vg_ffdh_generate_parameters_ifma:
 	add r10, 1
 	add r11, 1
 	sub rcx, 1
-2265:
+2263:
 	movzx eax, BYTE PTR [r10]
 	mov BYTE PTR [r11], al
 	add r10, 1
 	add r11, 1
 	sub rcx, 1
-	jne 2265b
+	jne 2263b
 	movzx eax, BYTE PTR [r11-1]
 	or rax, 1
 	mov BYTE PTR [r11-1], al
@@ -64398,7 +64428,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rdi, rax
 	mov r10, rdi
 	mov r8d, 0
-2266:
+2264:
 	movzx eax, BYTE PTR [r10]
 	mov rdx, rax
 	shr rax, 1
@@ -64409,7 +64439,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov r8, rdx
 	add r10, 1
 	sub rcx, 1
-	jne 2266b
+	jne 2264b
 	mov rdi, rbp
 	mov rdx, QWORD PTR [rdi+72]
 	sub rdx, 1
@@ -64430,11 +64460,11 @@ vg_ffdh_generate_parameters_ifma:
 	add r12, 7
 	shr r12, 3
 	cmp r12, 2
-	jb 2267f
-	jmp 2268f
-2267:
+	jb 2265f
+	jmp 2266f
+2265:
 	mov r12d, 2
-2268:
+2266:
 	mov rsi, rdi
 	mov rdi, rax
 	mov QWORD PTR [rdi+128], rsi
@@ -64471,7 +64501,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov eax, 0
 	mov rdx, rcx
 	mov r14, rsi
-2269:
+2267:
 	sub rdx, 1
 	ror rax, 56
 	movzx ebp, BYTE PTR [r14]
@@ -64479,16 +64509,16 @@ vg_ffdh_generate_parameters_ifma:
 	add r14, 1
 	mov rbp, rdx
 	and rbp, 7
-	je 2270f
-	jmp 2271f
-2270:
+	je 2268f
+	jmp 2269f
+2268:
 	mov rbp, rdx
 	shr rbp, 3
 	mov QWORD PTR [rbx+rbp*8], rax
 	mov eax, 0
-2271:
+2269:
 	test rdx, rdx
-	jne 2269b
+	jne 2267b
 	mov r10, QWORD PTR [rdi+64]
 	mov r12, QWORD PTR [rdi+48]
 	mov rbx, QWORD PTR [r10]
@@ -64536,11 +64566,11 @@ vg_ffdh_generate_parameters_ifma:
 	mov r8, QWORD PTR [rdi+120]
 	mov eax, 0
 	mov r14, 0
-2272:
+2270:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2272b
+	jne 2270b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov QWORD PTR [r8+rcx*8], rdx
@@ -64551,39 +64581,39 @@ vg_ffdh_generate_parameters_ifma:
 	mov rcx, r12
 	and rcx, 3
 	or rax, rcx
-	je 2273f
+	je 2271f
 	mov rax, QWORD PTR [r10+r12*8-8]
 	mov edx, 1
 	mov ecx, 64
 	cmp rax, 1
-	je 2275f
-2277:
+	je 2273f
+2275:
 	shr rax, 1
 	add rdx, rdx
 	sub rcx, 1
 	cmp rax, 1
-	jne 2277b
-	jmp 2276f
-2275:
-2276:
+	jne 2275b
+	jmp 2274f
+2273:
+2274:
 	mov QWORD PTR [rdi+208], rcx
 	mov rcx, r12
 	sub rcx, 1
 	mov r8, QWORD PTR [rdi+96]
 	mov eax, 0
 	mov r14, 0
-2278:
+2276:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2278b
+	jne 2276b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov QWORD PTR [r8+rcx*8], rdx
 	mov rcx, QWORD PTR [rdi+208]
 	add rcx, QWORD PTR [rdi+48]
 	mov QWORD PTR [rdi+208], rcx
-2279:
+2277:
 	mov rbx, QWORD PTR [rdi+96]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -64591,7 +64621,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rsi, QWORD PTR [rdi+88]
 	mov ebp, 0
 	mov r14, 0
-2280:
+2278:
 	add rbp, rbp
 	mov rax, QWORD PTR [rbx+r14*8]
 	adc rax, rax
@@ -64599,14 +64629,14 @@ vg_ffdh_generate_parameters_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2280b
+	jne 2278b
 	mov eax, 0
 	add rbp, rbp
 	adc rax, 0
 	mov QWORD PTR [r8+r12*8], rax
 	mov ebp, 0
 	mov r14, 0
-2281:
+2279:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -64614,13 +64644,13 @@ vg_ffdh_generate_parameters_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2281b
+	jne 2279b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2282:
+2280:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -64629,14 +64659,14 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2282b
+	jne 2280b
 	mov rcx, QWORD PTR [rdi+208]
 	sub rcx, 1
 	mov QWORD PTR [rdi+208], rcx
-	jne 2279b
+	jne 2277b
 	mov eax, 6
 	mov QWORD PTR [rdi+208], rax
-2283:
+2281:
 	mov edx, 4
 	mov ecx, 4
 	mov r8d, 4
@@ -64664,7 +64694,7 @@ vg_ffdh_generate_parameters_ifma:
 	sub rax, 8
 	ror rax, 3
 	shr rax, 27
-	je 2284f
+	je 2282f
 	mov rbx, QWORD PTR [rdi+rdx*8+64]
 	mov r11, QWORD PTR [rdi+rcx*8+64]
 	mov r9, QWORD PTR [rdi+r8*8+64]
@@ -64675,19 +64705,19 @@ vg_ffdh_generate_parameters_ifma:
 	mov rsi, QWORD PTR [rdi+88]
 	mov eax, 0
 	mov r14, 0
-2286:
+2284:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2286b
+	jne 2284b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r13, 0
-2287:
+2285:
 	mov rcx, QWORD PTR [r11+r13*8]
 	mov ebp, 0
 	mov r14, 0
-2288:
+2286:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -64698,7 +64728,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2288b
+	jne 2286b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8], rax
@@ -64714,7 +64744,7 @@ vg_ffdh_generate_parameters_ifma:
 	adc rdx, 0
 	mov rbp, rdx
 	mov r14, 1
-2289:
+2287:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -64725,7 +64755,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2289b
+	jne 2287b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8-8], rax
@@ -64736,10 +64766,10 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [r8+r12*8+8], rax
 	add r13, 1
 	cmp r13, r12
-	jne 2287b
+	jne 2285b
 	mov ebp, 0
 	mov r14, 0
-2290:
+2288:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -64747,13 +64777,13 @@ vg_ffdh_generate_parameters_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2290b
+	jne 2288b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2291:
+2289:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -64762,11 +64792,11 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2291b
-	jmp 2285f
-2284:
+	jne 2289b
+	jmp 2283f
+2282:
 	cmp rcx, r8
-	je 2292f
+	je 2290f
 	mov r9, QWORD PTR [rdi+144]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -64776,7 +64806,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rcx, rbx
 	add rcx, rcx
 	mov r14d, 0
-2294:
+2292:
 	mov QWORD PTR [r8+r14*8], rax
 	mov QWORD PTR [r8+r14*8+8], rax
 	mov QWORD PTR [r8+r14*8+16], rax
@@ -64787,12 +64817,12 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [r8+r14*8+56], rax
 	add r14, 8
 	cmp r14, rcx
-	jne 2294b
+	jne 2292b
 	mov QWORD PTR [r8+r14*8], rax
 	mov QWORD PTR [r8+r14*8+8], rax
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2295:
+2293:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov QWORD PTR [rdi+232], rax
@@ -64816,7 +64846,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov r13, QWORD PTR [rsi+40]
 	mov r14, QWORD PTR [rsi+48]
 	mov r15, QWORD PTR [rsi+56]
-2296:
+2294:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -65085,7 +65115,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, 8
 	mov QWORD PTR [rdi+232], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2296b
+	jne 2294b
 	mov QWORD PTR [rsi], r8
 	mov QWORD PTR [rsi+8], r9
 	mov QWORD PTR [rsi+16], r10
@@ -65097,7 +65127,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2297f
+	je 2295f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -65105,7 +65135,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2299:
+2297:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -65135,15 +65165,15 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2299b
-	jmp 2298f
-2297:
-2298:
+	jne 2297b
+	jmp 2296f
+2295:
+2296:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2295b
+	jne 2293b
 	mov r8, QWORD PTR [rdi+80]
 	mov r9, QWORD PTR [rdi+48]
 	shl r9, 4
@@ -65152,8 +65182,8 @@ vg_ffdh_generate_parameters_ifma:
 	mov eax, 0
 	mov QWORD PTR [r9], rax
 	mov QWORD PTR [r9+8], rax
-	jmp 2293f
-2292:
+	jmp 2291f
+2290:
 	mov r9, QWORD PTR [rdi+136]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -65161,7 +65191,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rbx, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2300:
+2298:
 	mov rax, QWORD PTR [rdi+224]
 	shl rax, 3
 	mov rbp, QWORD PTR [rdi+136]
@@ -65289,17 +65319,17 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2300b
+	jne 2298b
 	mov rax, QWORD PTR [rdi+48]
 	cmp rax, 8
-	je 2301f
+	je 2299f
 	mov rax, QWORD PTR [rdi+48]
 	cmp rax, 16
-	je 2303f
+	je 2301f
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
 	mov QWORD PTR [rdi+248], rax
-2305:
+2303:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov rax, QWORD PTR [rdi+224]
@@ -65328,8 +65358,8 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+232]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2306f
-2308:
+	je 2304f
+2306:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -65599,10 +65629,10 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rdi+232], rax
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2308b
-	jmp 2307f
-2306:
-2307:
+	jne 2306b
+	jmp 2305f
+2304:
+2305:
 	mov rax, QWORD PTR [rdi+248]
 	add rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+240], rax
@@ -65885,15 +65915,15 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 16
 	cmp rax, QWORD PTR [rdi+48]
-	je 2309f
+	je 2307f
 	mov rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+248], rax
-	jmp 2310f
-2309:
+	jmp 2308f
+2307:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2311f
+	je 2309f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -65901,7 +65931,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2313:
+2311:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -65931,23 +65961,23 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2313b
-	jmp 2312f
-2311:
-2312:
+	jne 2311b
+	jmp 2310f
+2309:
 2310:
+2308:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	mov rcx, QWORD PTR [rdi+48]
 	sub rcx, 8
 	cmp rax, rcx
-	jne 2305b
-	jmp 2304f
-2303:
+	jne 2303b
+	jmp 2302f
+2301:
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2314:
+2312:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov rax, QWORD PTR [rdi+224]
@@ -65973,7 +66003,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov r13, QWORD PTR [rsi+40]
 	mov r14, QWORD PTR [rsi+48]
 	mov r15, QWORD PTR [rsi+56]
-2315:
+2313:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -66242,7 +66272,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, 8
 	mov QWORD PTR [rdi+232], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2315b
+	jne 2313b
 	mov QWORD PTR [rsi], r8
 	mov QWORD PTR [rsi+8], r9
 	mov QWORD PTR [rsi+16], r10
@@ -66254,7 +66284,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2316f
+	je 2314f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -66262,7 +66292,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2318:
+2316:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -66292,21 +66322,21 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2318b
-	jmp 2317f
-2316:
-2317:
+	jne 2316b
+	jmp 2315f
+2314:
+2315:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	mov rcx, QWORD PTR [rdi+48]
 	sub rcx, 8
 	cmp rax, rcx
-	jne 2314b
-2304:
-	jmp 2302f
-2301:
+	jne 2312b
 2302:
+	jmp 2300f
+2299:
+2300:
 	mov r8, QWORD PTR [rdi+80]
 	mov r9, QWORD PTR [rdi+48]
 	shl r9, 4
@@ -66324,7 +66354,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov r15d, 0
 	mov ebp, 0
 	mov r14d, 0
-2319:
+2317:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r11, QWORD PTR [r8+r14*8]
 	mov r12, QWORD PTR [r8+r14*8+8]
@@ -66414,13 +66444,13 @@ vg_ffdh_generate_parameters_ifma:
 	add rbp, 8
 	add r14, 16
 	cmp rbp, r10
-	jne 2319b
-2293:
+	jne 2317b
+2291:
 	mov rcx, QWORD PTR [rdi+80]
 	add rcx, 16
 	mov eax, 0
 	mov QWORD PTR [rcx-16], rax
-2320:
+2318:
 	mov rsi, rcx
 	mov rbp, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rsi]
@@ -66689,10 +66719,10 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, rax
 	add rax, QWORD PTR [rdi+64]
 	cmp rbp, rax
-	jne 2321f
-	jmp 2322f
+	jne 2319f
+	jmp 2320f
+2319:
 2321:
-2323:
 	mov rdx, QWORD PTR [rcx-8]
 	add rdx, -1
 	adcx r8, QWORD PTR [rsi]
@@ -66954,8 +66984,8 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, rax
 	add rax, QWORD PTR [rdi+64]
 	cmp rbp, rax
-	jne 2323b
-2322:
+	jne 2321b
+2320:
 	mov rdx, QWORD PTR [rcx-8]
 	add rdx, -1
 	mov eax, 0
@@ -66990,7 +67020,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rcx+48], rax
 	add rcx, 64
 	cmp rcx, QWORD PTR [rdi+88]
-	jne 2320b
+	jne 2318b
 	mov r8, rcx
 	mov rbp, QWORD PTR [rdi+48]
 	mov r10, QWORD PTR [rcx-16]
@@ -67004,7 +67034,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rbx, QWORD PTR [rdi+128]
 	mov ebp, 0
 	mov r14, 0
-2324:
+2322:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -67033,13 +67063,13 @@ vg_ffdh_generate_parameters_ifma:
 	sbb rbp, rbp
 	add r14, 8
 	cmp r14, r12
-	jne 2324b
+	jne 2322b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2325:
+2323:
 	add rbp, rbp
 	mov rax, QWORD PTR [rsi+r14*8]
 	cmovb rax, QWORD PTR [r8+r14*8]
@@ -67068,8 +67098,8 @@ vg_ffdh_generate_parameters_ifma:
 	sbb rbp, rbp
 	add r14, 8
 	cmp r14, r12
-	jne 2325b
-2285:
+	jne 2323b
+2283:
 	movq rbx, xmm8
 	movq rbp, xmm9
 	movq r12, xmm10
@@ -67084,16 +67114,16 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+208]
 	sub rax, 1
 	mov QWORD PTR [rdi+208], rax
-	jne 2283b
-	jmp 2274f
-2273:
+	jne 2281b
+	jmp 2272f
+2271:
 	mov rbx, QWORD PTR [rdi+96]
 	mov r10, QWORD PTR [rdi+64]
 	mov r12, QWORD PTR [rdi+48]
 	mov r8, QWORD PTR [rdi+88]
 	mov ebp, 0
 	mov r14, 0
-2326:
+2324:
 	mov eax, 0
 	add rbp, rbp
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -67101,14 +67131,14 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2326b
+	jne 2324b
 	mov rsi, QWORD PTR [r10+r12*8-8]
 	mov rdx, rsi
 	xor rdx, -1
 	mov rax, -1
 	mov ecx, 0
 	mov r13d, 64
-2327:
+2325:
 	add rax, rax
 	adc rdx, rdx
 	sbb r11, r11
@@ -67122,12 +67152,12 @@ vg_ffdh_generate_parameters_ifma:
 	add rcx, rcx
 	sub rcx, r15
 	sub r13, 1
-	jne 2327b
+	jne 2325b
 	mov QWORD PTR [r8], rcx
 	mov rcx, QWORD PTR [rdi+48]
 	shr rcx, 2
 	mov QWORD PTR [rdi+208], rcx
-2328:
+2326:
 	mov rbx, QWORD PTR [rdi+96]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -67173,7 +67203,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [r8], rdx
 	sbb rbp, rbp
 	mov r14, 1
-2329:
+2327:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, r9
@@ -67186,7 +67216,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [r8+r14*8], rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2329b
+	jne 2327b
 	mov rdx, QWORD PTR [rbx+r12*8-8]
 	add rbp, rbp
 	sbb rdx, r9
@@ -67196,7 +67226,7 @@ vg_ffdh_generate_parameters_ifma:
 	sbb r11, r11
 	mov ebp, 0
 	mov r14, 0
-2330:
+2328:
 	mov rax, QWORD PTR [r10+r14*8]
 	and rax, r11
 	add rbp, rbp
@@ -67205,7 +67235,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2330b
+	jne 2328b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	adc rax, 0
@@ -67215,7 +67245,7 @@ vg_ffdh_generate_parameters_ifma:
 	sbb r11, r11
 	mov ebp, 0
 	mov r14, 0
-2331:
+2329:
 	mov rax, QWORD PTR [r10+r14*8]
 	and rax, r11
 	add rbp, rbp
@@ -67224,26 +67254,26 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2331b
+	jne 2329b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	adc rax, 0
 	mov QWORD PTR [r8+r12*8], rax
 	mov rsi, r8
 	mov r14, 0
-2332:
+2330:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2332b
+	jne 2330b
 	mov rcx, QWORD PTR [rdi+208]
 	sub rcx, 1
 	mov QWORD PTR [rdi+208], rcx
-	jne 2328b
+	jne 2326b
 	mov eax, 2
 	mov QWORD PTR [rdi+208], rax
-2333:
+2331:
 	mov edx, 4
 	mov ecx, 4
 	mov r8d, 4
@@ -67271,7 +67301,7 @@ vg_ffdh_generate_parameters_ifma:
 	sub rax, 8
 	ror rax, 3
 	shr rax, 27
-	je 2334f
+	je 2332f
 	mov rbx, QWORD PTR [rdi+rdx*8+64]
 	mov r11, QWORD PTR [rdi+rcx*8+64]
 	mov r9, QWORD PTR [rdi+r8*8+64]
@@ -67282,19 +67312,19 @@ vg_ffdh_generate_parameters_ifma:
 	mov rsi, QWORD PTR [rdi+88]
 	mov eax, 0
 	mov r14, 0
-2336:
+2334:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2336b
+	jne 2334b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r13, 0
-2337:
+2335:
 	mov rcx, QWORD PTR [r11+r13*8]
 	mov ebp, 0
 	mov r14, 0
-2338:
+2336:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -67305,7 +67335,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2338b
+	jne 2336b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8], rax
@@ -67321,7 +67351,7 @@ vg_ffdh_generate_parameters_ifma:
 	adc rdx, 0
 	mov rbp, rdx
 	mov r14, 1
-2339:
+2337:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -67332,7 +67362,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2339b
+	jne 2337b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8-8], rax
@@ -67343,10 +67373,10 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [r8+r12*8+8], rax
 	add r13, 1
 	cmp r13, r12
-	jne 2337b
+	jne 2335b
 	mov ebp, 0
 	mov r14, 0
-2340:
+2338:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -67354,13 +67384,13 @@ vg_ffdh_generate_parameters_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2340b
+	jne 2338b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2341:
+2339:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -67369,11 +67399,11 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2341b
-	jmp 2335f
-2334:
+	jne 2339b
+	jmp 2333f
+2332:
 	cmp rcx, r8
-	je 2342f
+	je 2340f
 	mov r9, QWORD PTR [rdi+144]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -67383,7 +67413,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rcx, rbx
 	add rcx, rcx
 	mov r14d, 0
-2344:
+2342:
 	mov QWORD PTR [r8+r14*8], rax
 	mov QWORD PTR [r8+r14*8+8], rax
 	mov QWORD PTR [r8+r14*8+16], rax
@@ -67394,12 +67424,12 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [r8+r14*8+56], rax
 	add r14, 8
 	cmp r14, rcx
-	jne 2344b
+	jne 2342b
 	mov QWORD PTR [r8+r14*8], rax
 	mov QWORD PTR [r8+r14*8+8], rax
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2345:
+2343:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov QWORD PTR [rdi+232], rax
@@ -67423,7 +67453,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov r13, QWORD PTR [rsi+40]
 	mov r14, QWORD PTR [rsi+48]
 	mov r15, QWORD PTR [rsi+56]
-2346:
+2344:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -67692,7 +67722,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, 8
 	mov QWORD PTR [rdi+232], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2346b
+	jne 2344b
 	mov QWORD PTR [rsi], r8
 	mov QWORD PTR [rsi+8], r9
 	mov QWORD PTR [rsi+16], r10
@@ -67704,7 +67734,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2347f
+	je 2345f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -67712,7 +67742,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2349:
+2347:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -67742,15 +67772,15 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2349b
-	jmp 2348f
-2347:
-2348:
+	jne 2347b
+	jmp 2346f
+2345:
+2346:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2345b
+	jne 2343b
 	mov r8, QWORD PTR [rdi+80]
 	mov r9, QWORD PTR [rdi+48]
 	shl r9, 4
@@ -67759,8 +67789,8 @@ vg_ffdh_generate_parameters_ifma:
 	mov eax, 0
 	mov QWORD PTR [r9], rax
 	mov QWORD PTR [r9+8], rax
-	jmp 2343f
-2342:
+	jmp 2341f
+2340:
 	mov r9, QWORD PTR [rdi+136]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -67768,7 +67798,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rbx, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2350:
+2348:
 	mov rax, QWORD PTR [rdi+224]
 	shl rax, 3
 	mov rbp, QWORD PTR [rdi+136]
@@ -67896,17 +67926,17 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2350b
+	jne 2348b
 	mov rax, QWORD PTR [rdi+48]
 	cmp rax, 8
-	je 2351f
+	je 2349f
 	mov rax, QWORD PTR [rdi+48]
 	cmp rax, 16
-	je 2353f
+	je 2351f
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
 	mov QWORD PTR [rdi+248], rax
-2355:
+2353:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov rax, QWORD PTR [rdi+224]
@@ -67935,8 +67965,8 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+232]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2356f
-2358:
+	je 2354f
+2356:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -68206,10 +68236,10 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rdi+232], rax
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2358b
-	jmp 2357f
-2356:
-2357:
+	jne 2356b
+	jmp 2355f
+2354:
+2355:
 	mov rax, QWORD PTR [rdi+248]
 	add rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+240], rax
@@ -68492,15 +68522,15 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 16
 	cmp rax, QWORD PTR [rdi+48]
-	je 2359f
+	je 2357f
 	mov rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+248], rax
-	jmp 2360f
-2359:
+	jmp 2358f
+2357:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2361f
+	je 2359f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -68508,7 +68538,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2363:
+2361:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -68538,23 +68568,23 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2363b
-	jmp 2362f
-2361:
-2362:
+	jne 2361b
+	jmp 2360f
+2359:
 2360:
+2358:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	mov rcx, QWORD PTR [rdi+48]
 	sub rcx, 8
 	cmp rax, rcx
-	jne 2355b
-	jmp 2354f
-2353:
+	jne 2353b
+	jmp 2352f
+2351:
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2364:
+2362:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov rax, QWORD PTR [rdi+224]
@@ -68580,7 +68610,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov r13, QWORD PTR [rsi+40]
 	mov r14, QWORD PTR [rsi+48]
 	mov r15, QWORD PTR [rsi+56]
-2365:
+2363:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -68849,7 +68879,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, 8
 	mov QWORD PTR [rdi+232], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2365b
+	jne 2363b
 	mov QWORD PTR [rsi], r8
 	mov QWORD PTR [rsi+8], r9
 	mov QWORD PTR [rsi+16], r10
@@ -68861,7 +68891,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2366f
+	je 2364f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -68869,7 +68899,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2368:
+2366:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -68899,21 +68929,21 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2368b
-	jmp 2367f
-2366:
-2367:
+	jne 2366b
+	jmp 2365f
+2364:
+2365:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	mov rcx, QWORD PTR [rdi+48]
 	sub rcx, 8
 	cmp rax, rcx
-	jne 2364b
-2354:
-	jmp 2352f
-2351:
+	jne 2362b
 2352:
+	jmp 2350f
+2349:
+2350:
 	mov r8, QWORD PTR [rdi+80]
 	mov r9, QWORD PTR [rdi+48]
 	shl r9, 4
@@ -68931,7 +68961,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov r15d, 0
 	mov ebp, 0
 	mov r14d, 0
-2369:
+2367:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r11, QWORD PTR [r8+r14*8]
 	mov r12, QWORD PTR [r8+r14*8+8]
@@ -69021,13 +69051,13 @@ vg_ffdh_generate_parameters_ifma:
 	add rbp, 8
 	add r14, 16
 	cmp rbp, r10
-	jne 2369b
-2343:
+	jne 2367b
+2341:
 	mov rcx, QWORD PTR [rdi+80]
 	add rcx, 16
 	mov eax, 0
 	mov QWORD PTR [rcx-16], rax
-2370:
+2368:
 	mov rsi, rcx
 	mov rbp, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rsi]
@@ -69296,10 +69326,10 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, rax
 	add rax, QWORD PTR [rdi+64]
 	cmp rbp, rax
-	jne 2371f
-	jmp 2372f
+	jne 2369f
+	jmp 2370f
+2369:
 2371:
-2373:
 	mov rdx, QWORD PTR [rcx-8]
 	add rdx, -1
 	adcx r8, QWORD PTR [rsi]
@@ -69561,8 +69591,8 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, rax
 	add rax, QWORD PTR [rdi+64]
 	cmp rbp, rax
-	jne 2373b
-2372:
+	jne 2371b
+2370:
 	mov rdx, QWORD PTR [rcx-8]
 	add rdx, -1
 	mov eax, 0
@@ -69597,7 +69627,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rcx+48], rax
 	add rcx, 64
 	cmp rcx, QWORD PTR [rdi+88]
-	jne 2370b
+	jne 2368b
 	mov r8, rcx
 	mov rbp, QWORD PTR [rdi+48]
 	mov r10, QWORD PTR [rcx-16]
@@ -69611,7 +69641,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rbx, QWORD PTR [rdi+128]
 	mov ebp, 0
 	mov r14, 0
-2374:
+2372:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -69640,13 +69670,13 @@ vg_ffdh_generate_parameters_ifma:
 	sbb rbp, rbp
 	add r14, 8
 	cmp r14, r12
-	jne 2374b
+	jne 2372b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2375:
+2373:
 	add rbp, rbp
 	mov rax, QWORD PTR [rsi+r14*8]
 	cmovb rax, QWORD PTR [r8+r14*8]
@@ -69675,8 +69705,8 @@ vg_ffdh_generate_parameters_ifma:
 	sbb rbp, rbp
 	add r14, 8
 	cmp r14, r12
-	jne 2375b
-2335:
+	jne 2373b
+2333:
 	movq rbx, xmm8
 	movq rbp, xmm9
 	movq r12, xmm10
@@ -69691,8 +69721,8 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+208]
 	sub rax, 1
 	mov QWORD PTR [rdi+208], rax
-	jne 2333b
-2274:
+	jne 2331b
+2272:
 	mov edx, 6
 	mov ecx, 4
 	mov r8d, 7
@@ -69720,7 +69750,7 @@ vg_ffdh_generate_parameters_ifma:
 	sub rax, 8
 	ror rax, 3
 	shr rax, 27
-	je 2376f
+	je 2374f
 	mov rbx, QWORD PTR [rdi+rdx*8+64]
 	mov r11, QWORD PTR [rdi+rcx*8+64]
 	mov r9, QWORD PTR [rdi+r8*8+64]
@@ -69731,19 +69761,19 @@ vg_ffdh_generate_parameters_ifma:
 	mov rsi, QWORD PTR [rdi+88]
 	mov eax, 0
 	mov r14, 0
-2378:
+2376:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2378b
+	jne 2376b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r13, 0
-2379:
+2377:
 	mov rcx, QWORD PTR [r11+r13*8]
 	mov ebp, 0
 	mov r14, 0
-2380:
+2378:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -69754,7 +69784,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2380b
+	jne 2378b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8], rax
@@ -69770,7 +69800,7 @@ vg_ffdh_generate_parameters_ifma:
 	adc rdx, 0
 	mov rbp, rdx
 	mov r14, 1
-2381:
+2379:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -69781,7 +69811,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2381b
+	jne 2379b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8-8], rax
@@ -69792,10 +69822,10 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [r8+r12*8+8], rax
 	add r13, 1
 	cmp r13, r12
-	jne 2379b
+	jne 2377b
 	mov ebp, 0
 	mov r14, 0
-2382:
+2380:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -69803,13 +69833,13 @@ vg_ffdh_generate_parameters_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2382b
+	jne 2380b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2383:
+2381:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -69818,11 +69848,11 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2383b
-	jmp 2377f
-2376:
+	jne 2381b
+	jmp 2375f
+2374:
 	cmp rcx, r8
-	je 2384f
+	je 2382f
 	mov r9, QWORD PTR [rdi+144]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -69832,7 +69862,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rcx, rbx
 	add rcx, rcx
 	mov r14d, 0
-2386:
+2384:
 	mov QWORD PTR [r8+r14*8], rax
 	mov QWORD PTR [r8+r14*8+8], rax
 	mov QWORD PTR [r8+r14*8+16], rax
@@ -69843,12 +69873,12 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [r8+r14*8+56], rax
 	add r14, 8
 	cmp r14, rcx
-	jne 2386b
+	jne 2384b
 	mov QWORD PTR [r8+r14*8], rax
 	mov QWORD PTR [r8+r14*8+8], rax
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2387:
+2385:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov QWORD PTR [rdi+232], rax
@@ -69872,7 +69902,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov r13, QWORD PTR [rsi+40]
 	mov r14, QWORD PTR [rsi+48]
 	mov r15, QWORD PTR [rsi+56]
-2388:
+2386:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -70141,7 +70171,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, 8
 	mov QWORD PTR [rdi+232], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2388b
+	jne 2386b
 	mov QWORD PTR [rsi], r8
 	mov QWORD PTR [rsi+8], r9
 	mov QWORD PTR [rsi+16], r10
@@ -70153,7 +70183,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2389f
+	je 2387f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -70161,7 +70191,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2391:
+2389:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -70191,15 +70221,15 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2391b
-	jmp 2390f
-2389:
-2390:
+	jne 2389b
+	jmp 2388f
+2387:
+2388:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2387b
+	jne 2385b
 	mov r8, QWORD PTR [rdi+80]
 	mov r9, QWORD PTR [rdi+48]
 	shl r9, 4
@@ -70208,8 +70238,8 @@ vg_ffdh_generate_parameters_ifma:
 	mov eax, 0
 	mov QWORD PTR [r9], rax
 	mov QWORD PTR [r9+8], rax
-	jmp 2385f
-2384:
+	jmp 2383f
+2382:
 	mov r9, QWORD PTR [rdi+136]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -70217,7 +70247,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rbx, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2392:
+2390:
 	mov rax, QWORD PTR [rdi+224]
 	shl rax, 3
 	mov rbp, QWORD PTR [rdi+136]
@@ -70345,17 +70375,17 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2392b
+	jne 2390b
 	mov rax, QWORD PTR [rdi+48]
 	cmp rax, 8
-	je 2393f
+	je 2391f
 	mov rax, QWORD PTR [rdi+48]
 	cmp rax, 16
-	je 2395f
+	je 2393f
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
 	mov QWORD PTR [rdi+248], rax
-2397:
+2395:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov rax, QWORD PTR [rdi+224]
@@ -70384,8 +70414,8 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+232]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2398f
-2400:
+	je 2396f
+2398:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -70655,10 +70685,10 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rdi+232], rax
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2400b
-	jmp 2399f
-2398:
-2399:
+	jne 2398b
+	jmp 2397f
+2396:
+2397:
 	mov rax, QWORD PTR [rdi+248]
 	add rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+240], rax
@@ -70941,15 +70971,15 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 16
 	cmp rax, QWORD PTR [rdi+48]
-	je 2401f
+	je 2399f
 	mov rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+248], rax
-	jmp 2402f
-2401:
+	jmp 2400f
+2399:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2403f
+	je 2401f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -70957,7 +70987,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2405:
+2403:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -70987,23 +71017,23 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2405b
-	jmp 2404f
-2403:
-2404:
+	jne 2403b
+	jmp 2402f
+2401:
 2402:
+2400:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	mov rcx, QWORD PTR [rdi+48]
 	sub rcx, 8
 	cmp rax, rcx
-	jne 2397b
-	jmp 2396f
-2395:
+	jne 2395b
+	jmp 2394f
+2393:
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2406:
+2404:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov rax, QWORD PTR [rdi+224]
@@ -71029,7 +71059,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov r13, QWORD PTR [rsi+40]
 	mov r14, QWORD PTR [rsi+48]
 	mov r15, QWORD PTR [rsi+56]
-2407:
+2405:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -71298,7 +71328,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, 8
 	mov QWORD PTR [rdi+232], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2407b
+	jne 2405b
 	mov QWORD PTR [rsi], r8
 	mov QWORD PTR [rsi+8], r9
 	mov QWORD PTR [rsi+16], r10
@@ -71310,7 +71340,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2408f
+	je 2406f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -71318,7 +71348,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2410:
+2408:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -71348,21 +71378,21 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2410b
-	jmp 2409f
-2408:
-2409:
+	jne 2408b
+	jmp 2407f
+2406:
+2407:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	mov rcx, QWORD PTR [rdi+48]
 	sub rcx, 8
 	cmp rax, rcx
-	jne 2406b
-2396:
-	jmp 2394f
-2393:
+	jne 2404b
 2394:
+	jmp 2392f
+2391:
+2392:
 	mov r8, QWORD PTR [rdi+80]
 	mov r9, QWORD PTR [rdi+48]
 	shl r9, 4
@@ -71380,7 +71410,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov r15d, 0
 	mov ebp, 0
 	mov r14d, 0
-2411:
+2409:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r11, QWORD PTR [r8+r14*8]
 	mov r12, QWORD PTR [r8+r14*8+8]
@@ -71470,13 +71500,13 @@ vg_ffdh_generate_parameters_ifma:
 	add rbp, 8
 	add r14, 16
 	cmp rbp, r10
-	jne 2411b
-2385:
+	jne 2409b
+2383:
 	mov rcx, QWORD PTR [rdi+80]
 	add rcx, 16
 	mov eax, 0
 	mov QWORD PTR [rcx-16], rax
-2412:
+2410:
 	mov rsi, rcx
 	mov rbp, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rsi]
@@ -71745,10 +71775,10 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, rax
 	add rax, QWORD PTR [rdi+64]
 	cmp rbp, rax
-	jne 2413f
-	jmp 2414f
+	jne 2411f
+	jmp 2412f
+2411:
 2413:
-2415:
 	mov rdx, QWORD PTR [rcx-8]
 	add rdx, -1
 	adcx r8, QWORD PTR [rsi]
@@ -72010,8 +72040,8 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, rax
 	add rax, QWORD PTR [rdi+64]
 	cmp rbp, rax
-	jne 2415b
-2414:
+	jne 2413b
+2412:
 	mov rdx, QWORD PTR [rcx-8]
 	add rdx, -1
 	mov eax, 0
@@ -72046,7 +72076,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rcx+48], rax
 	add rcx, 64
 	cmp rcx, QWORD PTR [rdi+88]
-	jne 2412b
+	jne 2410b
 	mov r8, rcx
 	mov rbp, QWORD PTR [rdi+48]
 	mov r10, QWORD PTR [rcx-16]
@@ -72060,7 +72090,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rbx, QWORD PTR [rdi+128]
 	mov ebp, 0
 	mov r14, 0
-2416:
+2414:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -72089,13 +72119,13 @@ vg_ffdh_generate_parameters_ifma:
 	sbb rbp, rbp
 	add r14, 8
 	cmp r14, r12
-	jne 2416b
+	jne 2414b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2417:
+2415:
 	add rbp, rbp
 	mov rax, QWORD PTR [rsi+r14*8]
 	cmovb rax, QWORD PTR [r8+r14*8]
@@ -72124,8 +72154,8 @@ vg_ffdh_generate_parameters_ifma:
 	sbb rbp, rbp
 	add r14, 8
 	cmp r14, r12
-	jne 2417b
-2377:
+	jne 2415b
+2375:
 	movq rbx, xmm8
 	movq rbp, xmm9
 	movq r12, xmm10
@@ -72164,12 +72194,12 @@ vg_ffdh_generate_parameters_ifma:
 	add rbx, rax
 	add rbx, rax
 	mov r14, 0
-2418:
+2416:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2418b
+	jne 2416b
 	mov r12, QWORD PTR [rdi+48]
 	mov r8, QWORD PTR [rdi+64]
 	mov rax, QWORD PTR [rdi+48]
@@ -72223,7 +72253,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rsi, rax
 	mov ebp, 0
 	mov r14, 0
-2419:
+2417:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -72231,13 +72261,13 @@ vg_ffdh_generate_parameters_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2419b
+	jne 2417b
 	mov r12, QWORD PTR [rdi+48]
 	mov r8, QWORD PTR [rdi+64]
 	mov rbp, QWORD PTR [r8]
 	and rbp, -2
 	mov r14, 1
-2420:
+2418:
 	mov rax, QWORD PTR [r8+r14*8]
 	cmp rbp, 1
 	sbb rdx, rdx
@@ -72245,7 +72275,7 @@ vg_ffdh_generate_parameters_ifma:
 	or rbp, rax
 	add r14, 1
 	cmp r14, r12
-	jne 2420b
+	jne 2418b
 	mov rax, QWORD PTR [rdi+48]
 	add rax, 2
 	add rax, rax
@@ -72278,6 +72308,64 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rbx+r12*8], rax
 	mov rbp, QWORD PTR [rsi]
 	mov r14, 1
+2419:
+	mov rax, QWORD PTR [rsi+r14*8]
+	mov rdx, rax
+	shl rdx, 63
+	mov rcx, rbp
+	shr rcx, 1
+	or rcx, rdx
+	xor rcx, rbp
+	and rcx, r15
+	xor rcx, rbp
+	mov QWORD PTR [rbx+r14*8-8], rcx
+	mov rbp, rax
+	add r14, 1
+	cmp r14, r12
+	jne 2419b
+	mov rcx, rbp
+	shr rcx, 1
+	xor rcx, rbp
+	and rcx, r15
+	xor rcx, rbp
+	mov QWORD PTR [rbx+r12*8-8], rcx
+	mov rsi, rbx
+	movabs r15, -2459565876494606883
+	and r15, QWORD PTR [rbx+r12*8]
+	cmp r15, 1
+	sbb r15, r15
+	xor r15, -1
+	mov rbp, QWORD PTR [rsi]
+	mov r14, 1
+2420:
+	mov rax, QWORD PTR [rsi+r14*8]
+	mov rdx, rax
+	shl rdx, 63
+	mov rcx, rbp
+	shr rcx, 1
+	or rcx, rdx
+	xor rcx, rbp
+	and rcx, r15
+	xor rcx, rbp
+	mov QWORD PTR [rbx+r14*8-8], rcx
+	mov rbp, rax
+	add r14, 1
+	cmp r14, r12
+	jne 2420b
+	mov rcx, rbp
+	shr rcx, 1
+	xor rcx, rbp
+	and rcx, r15
+	xor rcx, rbp
+	mov QWORD PTR [rbx+r12*8-8], rcx
+	mov rsi, rbx
+	movabs r15, -7378697629483820647
+	and r15, QWORD PTR [rbx+r12*8]
+	cmp r15, 1
+	sbb r15, r15
+	xor r15, -1
+	mov rbp, QWORD PTR [rsi]
+	mov r14, 1
 2421:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov rdx, rax
@@ -72300,7 +72388,7 @@ vg_ffdh_generate_parameters_ifma:
 	xor rcx, rbp
 	mov QWORD PTR [rbx+r12*8-8], rcx
 	mov rsi, rbx
-	movabs r15, -2459565876494606883
+	movabs r15, 1229782938247303441
 	and r15, QWORD PTR [rbx+r12*8]
 	cmp r15, 1
 	sbb r15, r15
@@ -72328,73 +72416,15 @@ vg_ffdh_generate_parameters_ifma:
 	and rcx, r15
 	xor rcx, rbp
 	mov QWORD PTR [rbx+r12*8-8], rcx
-	mov rsi, rbx
-	movabs r15, -7378697629483820647
-	and r15, QWORD PTR [rbx+r12*8]
-	cmp r15, 1
-	sbb r15, r15
-	xor r15, -1
-	mov rbp, QWORD PTR [rsi]
-	mov r14, 1
-2423:
-	mov rax, QWORD PTR [rsi+r14*8]
-	mov rdx, rax
-	shl rdx, 63
-	mov rcx, rbp
-	shr rcx, 1
-	or rcx, rdx
-	xor rcx, rbp
-	and rcx, r15
-	xor rcx, rbp
-	mov QWORD PTR [rbx+r14*8-8], rcx
-	mov rbp, rax
-	add r14, 1
-	cmp r14, r12
-	jne 2423b
-	mov rcx, rbp
-	shr rcx, 1
-	xor rcx, rbp
-	and rcx, r15
-	xor rcx, rbp
-	mov QWORD PTR [rbx+r12*8-8], rcx
-	mov rsi, rbx
-	movabs r15, 1229782938247303441
-	and r15, QWORD PTR [rbx+r12*8]
-	cmp r15, 1
-	sbb r15, r15
-	xor r15, -1
-	mov rbp, QWORD PTR [rsi]
-	mov r14, 1
-2424:
-	mov rax, QWORD PTR [rsi+r14*8]
-	mov rdx, rax
-	shl rdx, 63
-	mov rcx, rbp
-	shr rcx, 1
-	or rcx, rdx
-	xor rcx, rbp
-	and rcx, r15
-	xor rcx, rbp
-	mov QWORD PTR [rbx+r14*8-8], rcx
-	mov rbp, rax
-	add r14, 1
-	cmp r14, r12
-	jne 2424b
-	mov rcx, rbp
-	shr rcx, 1
-	xor rcx, rbp
-	and rcx, r15
-	xor rcx, rbp
-	mov QWORD PTR [rbx+r12*8-8], rcx
 	mov rax, QWORD PTR [rdi+128]
 	mov ecx, 0
 	mov QWORD PTR [rax+144], rcx
-2425:
-2426:
+2423:
+2424:
 	mov rax, QWORD PTR [rdi+128]
 	mov rcx, QWORD PTR [rax+104]
 	cmp rcx, QWORD PTR [rax+128]
-	jb 2427f
+	jb 2425f
 	mov rax, QWORD PTR [rdi+128]
 	mov rsi, QWORD PTR [rax+96]
 	mov rcx, QWORD PTR [rax+128]
@@ -72460,13 +72490,13 @@ vg_ffdh_generate_parameters_ifma:
 	add r10, 1
 	add r11, 1
 	sub rcx, 1
-2429:
+2427:
 	movzx eax, BYTE PTR [r10]
 	mov BYTE PTR [r11], al
 	add r10, 1
 	add r11, 1
 	sub rcx, 1
-	jne 2429b
+	jne 2427b
 	mov rdi, rbp
 	mov rax, QWORD PTR [rdi+128]
 	mov rsi, QWORD PTR [rax+48]
@@ -72475,7 +72505,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov eax, 0
 	mov rdx, rcx
 	mov r14, rsi
-2430:
+2428:
 	sub rdx, 1
 	ror rax, 56
 	movzx ebp, BYTE PTR [r14]
@@ -72483,19 +72513,49 @@ vg_ffdh_generate_parameters_ifma:
 	add r14, 1
 	mov rbp, rdx
 	and rbp, 7
-	je 2431f
-	jmp 2432f
-2431:
+	je 2429f
+	jmp 2430f
+2429:
 	mov rbp, rdx
 	shr rbp, 3
 	mov QWORD PTR [rbx+rbp*8], rax
 	mov eax, 0
-2432:
+2430:
 	test rdx, rdx
-	jne 2430b
+	jne 2428b
 	mov r12, QWORD PTR [rdi+48]
 	mov rbx, QWORD PTR [rdi+120]
 	mov r10, QWORD PTR [rdi+104]
+	mov ebp, 0
+	mov r14, 0
+2431:
+	add rbp, rbp
+	mov rax, QWORD PTR [rbx+r14*8]
+	sbb rax, QWORD PTR [r10+r14*8]
+	sbb rbp, rbp
+	add r14, 1
+	cmp r14, r12
+	jne 2431b
+	mov rax, rbp
+	and rax, 1
+	mov QWORD PTR [rdi+240], rax
+	mov r12, QWORD PTR [rdi+48]
+	mov rsi, QWORD PTR [rdi+104]
+	mov rbx, QWORD PTR [rdi+88]
+	mov r14, 0
+2432:
+	mov rax, QWORD PTR [rsi+r14*8]
+	mov QWORD PTR [rbx+r14*8], rax
+	add r14, 1
+	cmp r14, r12
+	jne 2432b
+	mov rbx, QWORD PTR [rdi+88]
+	mov rax, QWORD PTR [rbx]
+	or rax, 1
+	mov QWORD PTR [rbx], rax
+	mov r12, QWORD PTR [rdi+48]
+	mov rbx, QWORD PTR [rdi+88]
+	mov r10, QWORD PTR [rdi+64]
 	mov ebp, 0
 	mov r14, 0
 2433:
@@ -72508,54 +72568,24 @@ vg_ffdh_generate_parameters_ifma:
 	jne 2433b
 	mov rax, rbp
 	and rax, 1
-	mov QWORD PTR [rdi+240], rax
-	mov r12, QWORD PTR [rdi+48]
-	mov rsi, QWORD PTR [rdi+104]
-	mov rbx, QWORD PTR [rdi+88]
-	mov r14, 0
-2434:
-	mov rax, QWORD PTR [rsi+r14*8]
-	mov QWORD PTR [rbx+r14*8], rax
-	add r14, 1
-	cmp r14, r12
-	jne 2434b
-	mov rbx, QWORD PTR [rdi+88]
-	mov rax, QWORD PTR [rbx]
-	or rax, 1
-	mov QWORD PTR [rbx], rax
-	mov r12, QWORD PTR [rdi+48]
-	mov rbx, QWORD PTR [rdi+88]
-	mov r10, QWORD PTR [rdi+64]
-	mov ebp, 0
-	mov r14, 0
-2435:
-	add rbp, rbp
-	mov rax, QWORD PTR [rbx+r14*8]
-	sbb rax, QWORD PTR [r10+r14*8]
-	sbb rbp, rbp
-	add r14, 1
-	cmp r14, r12
-	jne 2435b
-	mov rax, rbp
-	and rax, 1
 	and rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+240], rax
 	test rax, rax
 	mov rax, QWORD PTR [rdi+128]
 	mov edx, 1
 	mov QWORD PTR [rax+152], rdx
-	jmp 2428f
-2427:
+	jmp 2426f
+2425:
 	mov rax, QWORD PTR [rdi+128]
 	mov edx, 0
 	mov QWORD PTR [rax+152], rdx
 	cmp rdx, 1
-2428:
-	je 2426b
+2426:
+	je 2424b
 	mov rax, QWORD PTR [rdi+128]
 	mov rcx, QWORD PTR [rax+152]
 	test rcx, rcx
-	je 2436f
+	je 2434f
 	mov edx, 5
 	mov ecx, 5
 	mov r8d, 4
@@ -72583,7 +72613,7 @@ vg_ffdh_generate_parameters_ifma:
 	sub rax, 8
 	ror rax, 3
 	shr rax, 27
-	je 2438f
+	je 2436f
 	mov rbx, QWORD PTR [rdi+rdx*8+64]
 	mov r11, QWORD PTR [rdi+rcx*8+64]
 	mov r9, QWORD PTR [rdi+r8*8+64]
@@ -72594,19 +72624,19 @@ vg_ffdh_generate_parameters_ifma:
 	mov rsi, QWORD PTR [rdi+88]
 	mov eax, 0
 	mov r14, 0
-2440:
+2438:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2440b
+	jne 2438b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r13, 0
-2441:
+2439:
 	mov rcx, QWORD PTR [r11+r13*8]
 	mov ebp, 0
 	mov r14, 0
-2442:
+2440:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -72617,7 +72647,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2442b
+	jne 2440b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8], rax
@@ -72633,7 +72663,7 @@ vg_ffdh_generate_parameters_ifma:
 	adc rdx, 0
 	mov rbp, rdx
 	mov r14, 1
-2443:
+2441:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -72644,7 +72674,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2443b
+	jne 2441b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8-8], rax
@@ -72655,10 +72685,10 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [r8+r12*8+8], rax
 	add r13, 1
 	cmp r13, r12
-	jne 2441b
+	jne 2439b
 	mov ebp, 0
 	mov r14, 0
-2444:
+2442:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -72666,13 +72696,13 @@ vg_ffdh_generate_parameters_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2444b
+	jne 2442b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2445:
+2443:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -72681,11 +72711,11 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2445b
-	jmp 2439f
-2438:
+	jne 2443b
+	jmp 2437f
+2436:
 	cmp rcx, r8
-	je 2446f
+	je 2444f
 	mov r9, QWORD PTR [rdi+144]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -72695,7 +72725,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rcx, rbx
 	add rcx, rcx
 	mov r14d, 0
-2448:
+2446:
 	mov QWORD PTR [r8+r14*8], rax
 	mov QWORD PTR [r8+r14*8+8], rax
 	mov QWORD PTR [r8+r14*8+16], rax
@@ -72706,12 +72736,12 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [r8+r14*8+56], rax
 	add r14, 8
 	cmp r14, rcx
-	jne 2448b
+	jne 2446b
 	mov QWORD PTR [r8+r14*8], rax
 	mov QWORD PTR [r8+r14*8+8], rax
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2449:
+2447:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov QWORD PTR [rdi+232], rax
@@ -72735,7 +72765,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov r13, QWORD PTR [rsi+40]
 	mov r14, QWORD PTR [rsi+48]
 	mov r15, QWORD PTR [rsi+56]
-2450:
+2448:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -73004,7 +73034,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, 8
 	mov QWORD PTR [rdi+232], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2450b
+	jne 2448b
 	mov QWORD PTR [rsi], r8
 	mov QWORD PTR [rsi+8], r9
 	mov QWORD PTR [rsi+16], r10
@@ -73016,7 +73046,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2451f
+	je 2449f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -73024,7 +73054,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2453:
+2451:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -73054,15 +73084,15 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2453b
-	jmp 2452f
-2451:
-2452:
+	jne 2451b
+	jmp 2450f
+2449:
+2450:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2449b
+	jne 2447b
 	mov r8, QWORD PTR [rdi+80]
 	mov r9, QWORD PTR [rdi+48]
 	shl r9, 4
@@ -73071,8 +73101,8 @@ vg_ffdh_generate_parameters_ifma:
 	mov eax, 0
 	mov QWORD PTR [r9], rax
 	mov QWORD PTR [r9+8], rax
-	jmp 2447f
-2446:
+	jmp 2445f
+2444:
 	mov r9, QWORD PTR [rdi+136]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -73080,7 +73110,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rbx, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2454:
+2452:
 	mov rax, QWORD PTR [rdi+224]
 	shl rax, 3
 	mov rbp, QWORD PTR [rdi+136]
@@ -73208,17 +73238,17 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2454b
+	jne 2452b
 	mov rax, QWORD PTR [rdi+48]
 	cmp rax, 8
-	je 2455f
+	je 2453f
 	mov rax, QWORD PTR [rdi+48]
 	cmp rax, 16
-	je 2457f
+	je 2455f
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
 	mov QWORD PTR [rdi+248], rax
-2459:
+2457:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov rax, QWORD PTR [rdi+224]
@@ -73247,8 +73277,8 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+232]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2460f
-2462:
+	je 2458f
+2460:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -73518,10 +73548,10 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rdi+232], rax
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2462b
-	jmp 2461f
-2460:
-2461:
+	jne 2460b
+	jmp 2459f
+2458:
+2459:
 	mov rax, QWORD PTR [rdi+248]
 	add rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+240], rax
@@ -73804,15 +73834,15 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 16
 	cmp rax, QWORD PTR [rdi+48]
-	je 2463f
+	je 2461f
 	mov rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+248], rax
-	jmp 2464f
-2463:
+	jmp 2462f
+2461:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2465f
+	je 2463f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -73820,7 +73850,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2467:
+2465:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -73850,23 +73880,23 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2467b
-	jmp 2466f
-2465:
-2466:
+	jne 2465b
+	jmp 2464f
+2463:
 2464:
+2462:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	mov rcx, QWORD PTR [rdi+48]
 	sub rcx, 8
 	cmp rax, rcx
-	jne 2459b
-	jmp 2458f
-2457:
+	jne 2457b
+	jmp 2456f
+2455:
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2468:
+2466:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov rax, QWORD PTR [rdi+224]
@@ -73892,7 +73922,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov r13, QWORD PTR [rsi+40]
 	mov r14, QWORD PTR [rsi+48]
 	mov r15, QWORD PTR [rsi+56]
-2469:
+2467:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -74161,7 +74191,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, 8
 	mov QWORD PTR [rdi+232], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2469b
+	jne 2467b
 	mov QWORD PTR [rsi], r8
 	mov QWORD PTR [rsi+8], r9
 	mov QWORD PTR [rsi+16], r10
@@ -74173,7 +74203,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2470f
+	je 2468f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -74181,7 +74211,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2472:
+2470:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -74211,21 +74241,21 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2472b
-	jmp 2471f
-2470:
-2471:
+	jne 2470b
+	jmp 2469f
+2468:
+2469:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	mov rcx, QWORD PTR [rdi+48]
 	sub rcx, 8
 	cmp rax, rcx
-	jne 2468b
-2458:
-	jmp 2456f
-2455:
+	jne 2466b
 2456:
+	jmp 2454f
+2453:
+2454:
 	mov r8, QWORD PTR [rdi+80]
 	mov r9, QWORD PTR [rdi+48]
 	shl r9, 4
@@ -74243,7 +74273,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov r15d, 0
 	mov ebp, 0
 	mov r14d, 0
-2473:
+2471:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r11, QWORD PTR [r8+r14*8]
 	mov r12, QWORD PTR [r8+r14*8+8]
@@ -74333,13 +74363,13 @@ vg_ffdh_generate_parameters_ifma:
 	add rbp, 8
 	add r14, 16
 	cmp rbp, r10
-	jne 2473b
-2447:
+	jne 2471b
+2445:
 	mov rcx, QWORD PTR [rdi+80]
 	add rcx, 16
 	mov eax, 0
 	mov QWORD PTR [rcx-16], rax
-2474:
+2472:
 	mov rsi, rcx
 	mov rbp, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rsi]
@@ -74608,10 +74638,10 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, rax
 	add rax, QWORD PTR [rdi+64]
 	cmp rbp, rax
-	jne 2475f
-	jmp 2476f
+	jne 2473f
+	jmp 2474f
+2473:
 2475:
-2477:
 	mov rdx, QWORD PTR [rcx-8]
 	add rdx, -1
 	adcx r8, QWORD PTR [rsi]
@@ -74873,8 +74903,8 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, rax
 	add rax, QWORD PTR [rdi+64]
 	cmp rbp, rax
-	jne 2477b
-2476:
+	jne 2475b
+2474:
 	mov rdx, QWORD PTR [rcx-8]
 	add rdx, -1
 	mov eax, 0
@@ -74909,7 +74939,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rcx+48], rax
 	add rcx, 64
 	cmp rcx, QWORD PTR [rdi+88]
-	jne 2474b
+	jne 2472b
 	mov r8, rcx
 	mov rbp, QWORD PTR [rdi+48]
 	mov r10, QWORD PTR [rcx-16]
@@ -74923,7 +74953,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rbx, QWORD PTR [rdi+128]
 	mov ebp, 0
 	mov r14, 0
-2478:
+2476:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -74952,13 +74982,13 @@ vg_ffdh_generate_parameters_ifma:
 	sbb rbp, rbp
 	add r14, 8
 	cmp r14, r12
-	jne 2478b
+	jne 2476b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2479:
+2477:
 	add rbp, rbp
 	mov rax, QWORD PTR [rsi+r14*8]
 	cmovb rax, QWORD PTR [r8+r14*8]
@@ -74987,8 +75017,8 @@ vg_ffdh_generate_parameters_ifma:
 	sbb rbp, rbp
 	add r14, 8
 	cmp r14, r12
-	jne 2479b
-2439:
+	jne 2477b
+2437:
 	movq rbx, xmm8
 	movq rbp, xmm9
 	movq r12, xmm10
@@ -75025,7 +75055,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rbx, QWORD PTR [rcx]
 	mov rax, QWORD PTR [rdi+176]
 	test rax, rax
-	je 2480f
+	je 2478f
 	mov r9, QWORD PTR [rdi+128]
 	mov rcx, QWORD PTR [r9+144]
 	add rcx, 1
@@ -75035,25 +75065,25 @@ vg_ffdh_generate_parameters_ifma:
 	mov edx, 1
 	cmovae rax, rdx
 	mov QWORD PTR [r9+152], rax
-	jmp 2481f
-2480:
+	jmp 2479f
+2478:
 	mov rax, QWORD PTR [rdi+128]
 	mov edx, 2
 	mov QWORD PTR [rax+152], rdx
-2481:
-	jmp 2437f
-2436:
-2437:
+2479:
+	jmp 2435f
+2434:
+2435:
 	mov rax, QWORD PTR [rdi+128]
 	mov rcx, QWORD PTR [rax+152]
 	cmp rcx, 4
-	je 2425b
+	je 2423b
 	mov rdi, QWORD PTR [rdi+128]
 	mov rax, QWORD PTR [rdi+152]
 	cmp rax, 1
-	je 2482f
-	jmp 2483f
-2482:
+	je 2480f
+	jmp 2481f
+2480:
 	mov rbp, rdi
 	mov rax, QWORD PTR [rdi+48]
 	mov rsi, QWORD PTR [rdi+88]
@@ -75108,13 +75138,13 @@ vg_ffdh_generate_parameters_ifma:
 	add r10, 1
 	add r11, 1
 	sub rcx, 1
-2484:
+2482:
 	movzx eax, BYTE PTR [r10]
 	mov BYTE PTR [r11], al
 	add r10, 1
 	add r11, 1
 	sub rcx, 1
-	jne 2484b
+	jne 2482b
 	movzx eax, BYTE PTR [r11-1]
 	or rax, 1
 	mov BYTE PTR [r11-1], al
@@ -75138,11 +75168,11 @@ vg_ffdh_generate_parameters_ifma:
 	add r12, 7
 	shr r12, 3
 	cmp r12, 2
-	jb 2485f
-	jmp 2486f
-2485:
+	jb 2483f
+	jmp 2484f
+2483:
 	mov r12d, 2
-2486:
+2484:
 	mov rsi, rdi
 	mov rdi, rax
 	mov QWORD PTR [rdi+128], rsi
@@ -75179,7 +75209,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov eax, 0
 	mov rdx, rcx
 	mov r14, rsi
-2487:
+2485:
 	sub rdx, 1
 	ror rax, 56
 	movzx ebp, BYTE PTR [r14]
@@ -75187,16 +75217,16 @@ vg_ffdh_generate_parameters_ifma:
 	add r14, 1
 	mov rbp, rdx
 	and rbp, 7
-	je 2488f
-	jmp 2489f
-2488:
+	je 2486f
+	jmp 2487f
+2486:
 	mov rbp, rdx
 	shr rbp, 3
 	mov QWORD PTR [rbx+rbp*8], rax
 	mov eax, 0
-2489:
+2487:
 	test rdx, rdx
-	jne 2487b
+	jne 2485b
 	mov r10, QWORD PTR [rdi+64]
 	mov r12, QWORD PTR [rdi+48]
 	mov rbx, QWORD PTR [r10]
@@ -75244,11 +75274,11 @@ vg_ffdh_generate_parameters_ifma:
 	mov r8, QWORD PTR [rdi+120]
 	mov eax, 0
 	mov r14, 0
-2490:
+2488:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2490b
+	jne 2488b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov QWORD PTR [r8+rcx*8], rdx
@@ -75259,39 +75289,39 @@ vg_ffdh_generate_parameters_ifma:
 	mov rcx, r12
 	and rcx, 3
 	or rax, rcx
-	je 2491f
+	je 2489f
 	mov rax, QWORD PTR [r10+r12*8-8]
 	mov edx, 1
 	mov ecx, 64
 	cmp rax, 1
-	je 2493f
-2495:
+	je 2491f
+2493:
 	shr rax, 1
 	add rdx, rdx
 	sub rcx, 1
 	cmp rax, 1
-	jne 2495b
-	jmp 2494f
-2493:
-2494:
+	jne 2493b
+	jmp 2492f
+2491:
+2492:
 	mov QWORD PTR [rdi+208], rcx
 	mov rcx, r12
 	sub rcx, 1
 	mov r8, QWORD PTR [rdi+96]
 	mov eax, 0
 	mov r14, 0
-2496:
+2494:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2496b
+	jne 2494b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov QWORD PTR [r8+rcx*8], rdx
 	mov rcx, QWORD PTR [rdi+208]
 	add rcx, QWORD PTR [rdi+48]
 	mov QWORD PTR [rdi+208], rcx
-2497:
+2495:
 	mov rbx, QWORD PTR [rdi+96]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -75299,7 +75329,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rsi, QWORD PTR [rdi+88]
 	mov ebp, 0
 	mov r14, 0
-2498:
+2496:
 	add rbp, rbp
 	mov rax, QWORD PTR [rbx+r14*8]
 	adc rax, rax
@@ -75307,14 +75337,14 @@ vg_ffdh_generate_parameters_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2498b
+	jne 2496b
 	mov eax, 0
 	add rbp, rbp
 	adc rax, 0
 	mov QWORD PTR [r8+r12*8], rax
 	mov ebp, 0
 	mov r14, 0
-2499:
+2497:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -75322,13 +75352,13 @@ vg_ffdh_generate_parameters_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2499b
+	jne 2497b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2500:
+2498:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -75337,14 +75367,14 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2500b
+	jne 2498b
 	mov rcx, QWORD PTR [rdi+208]
 	sub rcx, 1
 	mov QWORD PTR [rdi+208], rcx
-	jne 2497b
+	jne 2495b
 	mov eax, 6
 	mov QWORD PTR [rdi+208], rax
-2501:
+2499:
 	mov edx, 4
 	mov ecx, 4
 	mov r8d, 4
@@ -75372,7 +75402,7 @@ vg_ffdh_generate_parameters_ifma:
 	sub rax, 8
 	ror rax, 3
 	shr rax, 27
-	je 2502f
+	je 2500f
 	mov rbx, QWORD PTR [rdi+rdx*8+64]
 	mov r11, QWORD PTR [rdi+rcx*8+64]
 	mov r9, QWORD PTR [rdi+r8*8+64]
@@ -75383,19 +75413,19 @@ vg_ffdh_generate_parameters_ifma:
 	mov rsi, QWORD PTR [rdi+88]
 	mov eax, 0
 	mov r14, 0
-2504:
+2502:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2504b
+	jne 2502b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r13, 0
-2505:
+2503:
 	mov rcx, QWORD PTR [r11+r13*8]
 	mov ebp, 0
 	mov r14, 0
-2506:
+2504:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -75406,7 +75436,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2506b
+	jne 2504b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8], rax
@@ -75422,7 +75452,7 @@ vg_ffdh_generate_parameters_ifma:
 	adc rdx, 0
 	mov rbp, rdx
 	mov r14, 1
-2507:
+2505:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -75433,7 +75463,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2507b
+	jne 2505b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8-8], rax
@@ -75444,10 +75474,10 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [r8+r12*8+8], rax
 	add r13, 1
 	cmp r13, r12
-	jne 2505b
+	jne 2503b
 	mov ebp, 0
 	mov r14, 0
-2508:
+2506:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -75455,13 +75485,13 @@ vg_ffdh_generate_parameters_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2508b
+	jne 2506b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2509:
+2507:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -75470,11 +75500,11 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2509b
-	jmp 2503f
-2502:
+	jne 2507b
+	jmp 2501f
+2500:
 	cmp rcx, r8
-	je 2510f
+	je 2508f
 	mov r9, QWORD PTR [rdi+144]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -75484,7 +75514,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rcx, rbx
 	add rcx, rcx
 	mov r14d, 0
-2512:
+2510:
 	mov QWORD PTR [r8+r14*8], rax
 	mov QWORD PTR [r8+r14*8+8], rax
 	mov QWORD PTR [r8+r14*8+16], rax
@@ -75495,12 +75525,12 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [r8+r14*8+56], rax
 	add r14, 8
 	cmp r14, rcx
-	jne 2512b
+	jne 2510b
 	mov QWORD PTR [r8+r14*8], rax
 	mov QWORD PTR [r8+r14*8+8], rax
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2513:
+2511:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov QWORD PTR [rdi+232], rax
@@ -75524,7 +75554,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov r13, QWORD PTR [rsi+40]
 	mov r14, QWORD PTR [rsi+48]
 	mov r15, QWORD PTR [rsi+56]
-2514:
+2512:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -75793,7 +75823,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, 8
 	mov QWORD PTR [rdi+232], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2514b
+	jne 2512b
 	mov QWORD PTR [rsi], r8
 	mov QWORD PTR [rsi+8], r9
 	mov QWORD PTR [rsi+16], r10
@@ -75805,7 +75835,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2515f
+	je 2513f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -75813,7 +75843,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2517:
+2515:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -75843,15 +75873,15 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2517b
-	jmp 2516f
-2515:
-2516:
+	jne 2515b
+	jmp 2514f
+2513:
+2514:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2513b
+	jne 2511b
 	mov r8, QWORD PTR [rdi+80]
 	mov r9, QWORD PTR [rdi+48]
 	shl r9, 4
@@ -75860,8 +75890,8 @@ vg_ffdh_generate_parameters_ifma:
 	mov eax, 0
 	mov QWORD PTR [r9], rax
 	mov QWORD PTR [r9+8], rax
-	jmp 2511f
-2510:
+	jmp 2509f
+2508:
 	mov r9, QWORD PTR [rdi+136]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -75869,7 +75899,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rbx, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2518:
+2516:
 	mov rax, QWORD PTR [rdi+224]
 	shl rax, 3
 	mov rbp, QWORD PTR [rdi+136]
@@ -75997,17 +76027,17 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2518b
+	jne 2516b
 	mov rax, QWORD PTR [rdi+48]
 	cmp rax, 8
-	je 2519f
+	je 2517f
 	mov rax, QWORD PTR [rdi+48]
 	cmp rax, 16
-	je 2521f
+	je 2519f
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
 	mov QWORD PTR [rdi+248], rax
-2523:
+2521:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov rax, QWORD PTR [rdi+224]
@@ -76036,8 +76066,8 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+232]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2524f
-2526:
+	je 2522f
+2524:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -76307,10 +76337,10 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rdi+232], rax
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2526b
-	jmp 2525f
-2524:
-2525:
+	jne 2524b
+	jmp 2523f
+2522:
+2523:
 	mov rax, QWORD PTR [rdi+248]
 	add rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+240], rax
@@ -76593,15 +76623,15 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 16
 	cmp rax, QWORD PTR [rdi+48]
-	je 2527f
+	je 2525f
 	mov rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+248], rax
-	jmp 2528f
-2527:
+	jmp 2526f
+2525:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2529f
+	je 2527f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -76609,7 +76639,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2531:
+2529:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -76639,23 +76669,23 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2531b
-	jmp 2530f
-2529:
-2530:
+	jne 2529b
+	jmp 2528f
+2527:
 2528:
+2526:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	mov rcx, QWORD PTR [rdi+48]
 	sub rcx, 8
 	cmp rax, rcx
-	jne 2523b
-	jmp 2522f
-2521:
+	jne 2521b
+	jmp 2520f
+2519:
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2532:
+2530:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov rax, QWORD PTR [rdi+224]
@@ -76681,7 +76711,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov r13, QWORD PTR [rsi+40]
 	mov r14, QWORD PTR [rsi+48]
 	mov r15, QWORD PTR [rsi+56]
-2533:
+2531:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -76950,7 +76980,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, 8
 	mov QWORD PTR [rdi+232], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2533b
+	jne 2531b
 	mov QWORD PTR [rsi], r8
 	mov QWORD PTR [rsi+8], r9
 	mov QWORD PTR [rsi+16], r10
@@ -76962,7 +76992,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2534f
+	je 2532f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -76970,7 +77000,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2536:
+2534:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -77000,21 +77030,21 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2536b
-	jmp 2535f
-2534:
-2535:
+	jne 2534b
+	jmp 2533f
+2532:
+2533:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	mov rcx, QWORD PTR [rdi+48]
 	sub rcx, 8
 	cmp rax, rcx
-	jne 2532b
-2522:
-	jmp 2520f
-2519:
+	jne 2530b
 2520:
+	jmp 2518f
+2517:
+2518:
 	mov r8, QWORD PTR [rdi+80]
 	mov r9, QWORD PTR [rdi+48]
 	shl r9, 4
@@ -77032,7 +77062,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov r15d, 0
 	mov ebp, 0
 	mov r14d, 0
-2537:
+2535:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r11, QWORD PTR [r8+r14*8]
 	mov r12, QWORD PTR [r8+r14*8+8]
@@ -77122,13 +77152,13 @@ vg_ffdh_generate_parameters_ifma:
 	add rbp, 8
 	add r14, 16
 	cmp rbp, r10
-	jne 2537b
-2511:
+	jne 2535b
+2509:
 	mov rcx, QWORD PTR [rdi+80]
 	add rcx, 16
 	mov eax, 0
 	mov QWORD PTR [rcx-16], rax
-2538:
+2536:
 	mov rsi, rcx
 	mov rbp, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rsi]
@@ -77397,10 +77427,10 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, rax
 	add rax, QWORD PTR [rdi+64]
 	cmp rbp, rax
-	jne 2539f
-	jmp 2540f
+	jne 2537f
+	jmp 2538f
+2537:
 2539:
-2541:
 	mov rdx, QWORD PTR [rcx-8]
 	add rdx, -1
 	adcx r8, QWORD PTR [rsi]
@@ -77662,8 +77692,8 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, rax
 	add rax, QWORD PTR [rdi+64]
 	cmp rbp, rax
-	jne 2541b
-2540:
+	jne 2539b
+2538:
 	mov rdx, QWORD PTR [rcx-8]
 	add rdx, -1
 	mov eax, 0
@@ -77698,7 +77728,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rcx+48], rax
 	add rcx, 64
 	cmp rcx, QWORD PTR [rdi+88]
-	jne 2538b
+	jne 2536b
 	mov r8, rcx
 	mov rbp, QWORD PTR [rdi+48]
 	mov r10, QWORD PTR [rcx-16]
@@ -77712,7 +77742,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rbx, QWORD PTR [rdi+128]
 	mov ebp, 0
 	mov r14, 0
-2542:
+2540:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -77741,13 +77771,13 @@ vg_ffdh_generate_parameters_ifma:
 	sbb rbp, rbp
 	add r14, 8
 	cmp r14, r12
-	jne 2542b
+	jne 2540b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2543:
+2541:
 	add rbp, rbp
 	mov rax, QWORD PTR [rsi+r14*8]
 	cmovb rax, QWORD PTR [r8+r14*8]
@@ -77776,8 +77806,8 @@ vg_ffdh_generate_parameters_ifma:
 	sbb rbp, rbp
 	add r14, 8
 	cmp r14, r12
-	jne 2543b
-2503:
+	jne 2541b
+2501:
 	movq rbx, xmm8
 	movq rbp, xmm9
 	movq r12, xmm10
@@ -77792,16 +77822,16 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+208]
 	sub rax, 1
 	mov QWORD PTR [rdi+208], rax
-	jne 2501b
-	jmp 2492f
-2491:
+	jne 2499b
+	jmp 2490f
+2489:
 	mov rbx, QWORD PTR [rdi+96]
 	mov r10, QWORD PTR [rdi+64]
 	mov r12, QWORD PTR [rdi+48]
 	mov r8, QWORD PTR [rdi+88]
 	mov ebp, 0
 	mov r14, 0
-2544:
+2542:
 	mov eax, 0
 	add rbp, rbp
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -77809,14 +77839,14 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2544b
+	jne 2542b
 	mov rsi, QWORD PTR [r10+r12*8-8]
 	mov rdx, rsi
 	xor rdx, -1
 	mov rax, -1
 	mov ecx, 0
 	mov r13d, 64
-2545:
+2543:
 	add rax, rax
 	adc rdx, rdx
 	sbb r11, r11
@@ -77830,12 +77860,12 @@ vg_ffdh_generate_parameters_ifma:
 	add rcx, rcx
 	sub rcx, r15
 	sub r13, 1
-	jne 2545b
+	jne 2543b
 	mov QWORD PTR [r8], rcx
 	mov rcx, QWORD PTR [rdi+48]
 	shr rcx, 2
 	mov QWORD PTR [rdi+208], rcx
-2546:
+2544:
 	mov rbx, QWORD PTR [rdi+96]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -77881,7 +77911,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [r8], rdx
 	sbb rbp, rbp
 	mov r14, 1
-2547:
+2545:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, r9
@@ -77894,7 +77924,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [r8+r14*8], rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2547b
+	jne 2545b
 	mov rdx, QWORD PTR [rbx+r12*8-8]
 	add rbp, rbp
 	sbb rdx, r9
@@ -77904,7 +77934,7 @@ vg_ffdh_generate_parameters_ifma:
 	sbb r11, r11
 	mov ebp, 0
 	mov r14, 0
-2548:
+2546:
 	mov rax, QWORD PTR [r10+r14*8]
 	and rax, r11
 	add rbp, rbp
@@ -77913,7 +77943,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2548b
+	jne 2546b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	adc rax, 0
@@ -77923,7 +77953,7 @@ vg_ffdh_generate_parameters_ifma:
 	sbb r11, r11
 	mov ebp, 0
 	mov r14, 0
-2549:
+2547:
 	mov rax, QWORD PTR [r10+r14*8]
 	and rax, r11
 	add rbp, rbp
@@ -77932,26 +77962,26 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2549b
+	jne 2547b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	adc rax, 0
 	mov QWORD PTR [r8+r12*8], rax
 	mov rsi, r8
 	mov r14, 0
-2550:
+2548:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2550b
+	jne 2548b
 	mov rcx, QWORD PTR [rdi+208]
 	sub rcx, 1
 	mov QWORD PTR [rdi+208], rcx
-	jne 2546b
+	jne 2544b
 	mov eax, 2
 	mov QWORD PTR [rdi+208], rax
-2551:
+2549:
 	mov edx, 4
 	mov ecx, 4
 	mov r8d, 4
@@ -77979,7 +78009,7 @@ vg_ffdh_generate_parameters_ifma:
 	sub rax, 8
 	ror rax, 3
 	shr rax, 27
-	je 2552f
+	je 2550f
 	mov rbx, QWORD PTR [rdi+rdx*8+64]
 	mov r11, QWORD PTR [rdi+rcx*8+64]
 	mov r9, QWORD PTR [rdi+r8*8+64]
@@ -77990,19 +78020,19 @@ vg_ffdh_generate_parameters_ifma:
 	mov rsi, QWORD PTR [rdi+88]
 	mov eax, 0
 	mov r14, 0
-2554:
+2552:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2554b
+	jne 2552b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r13, 0
-2555:
+2553:
 	mov rcx, QWORD PTR [r11+r13*8]
 	mov ebp, 0
 	mov r14, 0
-2556:
+2554:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -78013,7 +78043,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2556b
+	jne 2554b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8], rax
@@ -78029,7 +78059,7 @@ vg_ffdh_generate_parameters_ifma:
 	adc rdx, 0
 	mov rbp, rdx
 	mov r14, 1
-2557:
+2555:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -78040,7 +78070,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2557b
+	jne 2555b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8-8], rax
@@ -78051,10 +78081,10 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [r8+r12*8+8], rax
 	add r13, 1
 	cmp r13, r12
-	jne 2555b
+	jne 2553b
 	mov ebp, 0
 	mov r14, 0
-2558:
+2556:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -78062,13 +78092,13 @@ vg_ffdh_generate_parameters_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2558b
+	jne 2556b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2559:
+2557:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -78077,11 +78107,11 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2559b
-	jmp 2553f
-2552:
+	jne 2557b
+	jmp 2551f
+2550:
 	cmp rcx, r8
-	je 2560f
+	je 2558f
 	mov r9, QWORD PTR [rdi+144]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -78091,7 +78121,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rcx, rbx
 	add rcx, rcx
 	mov r14d, 0
-2562:
+2560:
 	mov QWORD PTR [r8+r14*8], rax
 	mov QWORD PTR [r8+r14*8+8], rax
 	mov QWORD PTR [r8+r14*8+16], rax
@@ -78102,12 +78132,12 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [r8+r14*8+56], rax
 	add r14, 8
 	cmp r14, rcx
-	jne 2562b
+	jne 2560b
 	mov QWORD PTR [r8+r14*8], rax
 	mov QWORD PTR [r8+r14*8+8], rax
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2563:
+2561:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov QWORD PTR [rdi+232], rax
@@ -78131,7 +78161,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov r13, QWORD PTR [rsi+40]
 	mov r14, QWORD PTR [rsi+48]
 	mov r15, QWORD PTR [rsi+56]
-2564:
+2562:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -78400,7 +78430,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, 8
 	mov QWORD PTR [rdi+232], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2564b
+	jne 2562b
 	mov QWORD PTR [rsi], r8
 	mov QWORD PTR [rsi+8], r9
 	mov QWORD PTR [rsi+16], r10
@@ -78412,7 +78442,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2565f
+	je 2563f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -78420,7 +78450,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2567:
+2565:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -78450,15 +78480,15 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2567b
-	jmp 2566f
-2565:
-2566:
+	jne 2565b
+	jmp 2564f
+2563:
+2564:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2563b
+	jne 2561b
 	mov r8, QWORD PTR [rdi+80]
 	mov r9, QWORD PTR [rdi+48]
 	shl r9, 4
@@ -78467,8 +78497,8 @@ vg_ffdh_generate_parameters_ifma:
 	mov eax, 0
 	mov QWORD PTR [r9], rax
 	mov QWORD PTR [r9+8], rax
-	jmp 2561f
-2560:
+	jmp 2559f
+2558:
 	mov r9, QWORD PTR [rdi+136]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -78476,7 +78506,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rbx, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2568:
+2566:
 	mov rax, QWORD PTR [rdi+224]
 	shl rax, 3
 	mov rbp, QWORD PTR [rdi+136]
@@ -78604,17 +78634,17 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2568b
+	jne 2566b
 	mov rax, QWORD PTR [rdi+48]
 	cmp rax, 8
-	je 2569f
+	je 2567f
 	mov rax, QWORD PTR [rdi+48]
 	cmp rax, 16
-	je 2571f
+	je 2569f
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
 	mov QWORD PTR [rdi+248], rax
-2573:
+2571:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov rax, QWORD PTR [rdi+224]
@@ -78643,8 +78673,8 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+232]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2574f
-2576:
+	je 2572f
+2574:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -78914,10 +78944,10 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rdi+232], rax
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2576b
-	jmp 2575f
-2574:
-2575:
+	jne 2574b
+	jmp 2573f
+2572:
+2573:
 	mov rax, QWORD PTR [rdi+248]
 	add rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+240], rax
@@ -79200,15 +79230,15 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 16
 	cmp rax, QWORD PTR [rdi+48]
-	je 2577f
+	je 2575f
 	mov rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+248], rax
-	jmp 2578f
-2577:
+	jmp 2576f
+2575:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2579f
+	je 2577f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -79216,7 +79246,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2581:
+2579:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -79246,23 +79276,23 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2581b
-	jmp 2580f
-2579:
-2580:
+	jne 2579b
+	jmp 2578f
+2577:
 2578:
+2576:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	mov rcx, QWORD PTR [rdi+48]
 	sub rcx, 8
 	cmp rax, rcx
-	jne 2573b
-	jmp 2572f
-2571:
+	jne 2571b
+	jmp 2570f
+2569:
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2582:
+2580:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov rax, QWORD PTR [rdi+224]
@@ -79288,7 +79318,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov r13, QWORD PTR [rsi+40]
 	mov r14, QWORD PTR [rsi+48]
 	mov r15, QWORD PTR [rsi+56]
-2583:
+2581:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -79557,7 +79587,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, 8
 	mov QWORD PTR [rdi+232], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2583b
+	jne 2581b
 	mov QWORD PTR [rsi], r8
 	mov QWORD PTR [rsi+8], r9
 	mov QWORD PTR [rsi+16], r10
@@ -79569,7 +79599,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2584f
+	je 2582f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -79577,7 +79607,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2586:
+2584:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -79607,21 +79637,21 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2586b
-	jmp 2585f
-2584:
-2585:
+	jne 2584b
+	jmp 2583f
+2582:
+2583:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	mov rcx, QWORD PTR [rdi+48]
 	sub rcx, 8
 	cmp rax, rcx
-	jne 2582b
-2572:
-	jmp 2570f
-2569:
+	jne 2580b
 2570:
+	jmp 2568f
+2567:
+2568:
 	mov r8, QWORD PTR [rdi+80]
 	mov r9, QWORD PTR [rdi+48]
 	shl r9, 4
@@ -79639,7 +79669,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov r15d, 0
 	mov ebp, 0
 	mov r14d, 0
-2587:
+2585:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r11, QWORD PTR [r8+r14*8]
 	mov r12, QWORD PTR [r8+r14*8+8]
@@ -79729,13 +79759,13 @@ vg_ffdh_generate_parameters_ifma:
 	add rbp, 8
 	add r14, 16
 	cmp rbp, r10
-	jne 2587b
-2561:
+	jne 2585b
+2559:
 	mov rcx, QWORD PTR [rdi+80]
 	add rcx, 16
 	mov eax, 0
 	mov QWORD PTR [rcx-16], rax
-2588:
+2586:
 	mov rsi, rcx
 	mov rbp, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rsi]
@@ -80004,10 +80034,10 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, rax
 	add rax, QWORD PTR [rdi+64]
 	cmp rbp, rax
-	jne 2589f
-	jmp 2590f
+	jne 2587f
+	jmp 2588f
+2587:
 2589:
-2591:
 	mov rdx, QWORD PTR [rcx-8]
 	add rdx, -1
 	adcx r8, QWORD PTR [rsi]
@@ -80269,8 +80299,8 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, rax
 	add rax, QWORD PTR [rdi+64]
 	cmp rbp, rax
-	jne 2591b
-2590:
+	jne 2589b
+2588:
 	mov rdx, QWORD PTR [rcx-8]
 	add rdx, -1
 	mov eax, 0
@@ -80305,7 +80335,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rcx+48], rax
 	add rcx, 64
 	cmp rcx, QWORD PTR [rdi+88]
-	jne 2588b
+	jne 2586b
 	mov r8, rcx
 	mov rbp, QWORD PTR [rdi+48]
 	mov r10, QWORD PTR [rcx-16]
@@ -80319,7 +80349,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rbx, QWORD PTR [rdi+128]
 	mov ebp, 0
 	mov r14, 0
-2592:
+2590:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -80348,13 +80378,13 @@ vg_ffdh_generate_parameters_ifma:
 	sbb rbp, rbp
 	add r14, 8
 	cmp r14, r12
-	jne 2592b
+	jne 2590b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2593:
+2591:
 	add rbp, rbp
 	mov rax, QWORD PTR [rsi+r14*8]
 	cmovb rax, QWORD PTR [r8+r14*8]
@@ -80383,8 +80413,8 @@ vg_ffdh_generate_parameters_ifma:
 	sbb rbp, rbp
 	add r14, 8
 	cmp r14, r12
-	jne 2593b
-2553:
+	jne 2591b
+2551:
 	movq rbx, xmm8
 	movq rbp, xmm9
 	movq r12, xmm10
@@ -80399,8 +80429,8 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+208]
 	sub rax, 1
 	mov QWORD PTR [rdi+208], rax
-	jne 2551b
-2492:
+	jne 2549b
+2490:
 	mov edx, 6
 	mov ecx, 4
 	mov r8d, 7
@@ -80428,7 +80458,7 @@ vg_ffdh_generate_parameters_ifma:
 	sub rax, 8
 	ror rax, 3
 	shr rax, 27
-	je 2594f
+	je 2592f
 	mov rbx, QWORD PTR [rdi+rdx*8+64]
 	mov r11, QWORD PTR [rdi+rcx*8+64]
 	mov r9, QWORD PTR [rdi+r8*8+64]
@@ -80439,19 +80469,19 @@ vg_ffdh_generate_parameters_ifma:
 	mov rsi, QWORD PTR [rdi+88]
 	mov eax, 0
 	mov r14, 0
-2596:
+2594:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2596b
+	jne 2594b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r13, 0
-2597:
+2595:
 	mov rcx, QWORD PTR [r11+r13*8]
 	mov ebp, 0
 	mov r14, 0
-2598:
+2596:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -80462,7 +80492,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2598b
+	jne 2596b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8], rax
@@ -80478,7 +80508,7 @@ vg_ffdh_generate_parameters_ifma:
 	adc rdx, 0
 	mov rbp, rdx
 	mov r14, 1
-2599:
+2597:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -80489,7 +80519,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2599b
+	jne 2597b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8-8], rax
@@ -80500,10 +80530,10 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [r8+r12*8+8], rax
 	add r13, 1
 	cmp r13, r12
-	jne 2597b
+	jne 2595b
 	mov ebp, 0
 	mov r14, 0
-2600:
+2598:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -80511,13 +80541,13 @@ vg_ffdh_generate_parameters_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2600b
+	jne 2598b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2601:
+2599:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -80526,11 +80556,11 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2601b
-	jmp 2595f
-2594:
+	jne 2599b
+	jmp 2593f
+2592:
 	cmp rcx, r8
-	je 2602f
+	je 2600f
 	mov r9, QWORD PTR [rdi+144]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -80540,7 +80570,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rcx, rbx
 	add rcx, rcx
 	mov r14d, 0
-2604:
+2602:
 	mov QWORD PTR [r8+r14*8], rax
 	mov QWORD PTR [r8+r14*8+8], rax
 	mov QWORD PTR [r8+r14*8+16], rax
@@ -80551,12 +80581,12 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [r8+r14*8+56], rax
 	add r14, 8
 	cmp r14, rcx
-	jne 2604b
+	jne 2602b
 	mov QWORD PTR [r8+r14*8], rax
 	mov QWORD PTR [r8+r14*8+8], rax
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2605:
+2603:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov QWORD PTR [rdi+232], rax
@@ -80580,7 +80610,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov r13, QWORD PTR [rsi+40]
 	mov r14, QWORD PTR [rsi+48]
 	mov r15, QWORD PTR [rsi+56]
-2606:
+2604:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -80849,7 +80879,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, 8
 	mov QWORD PTR [rdi+232], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2606b
+	jne 2604b
 	mov QWORD PTR [rsi], r8
 	mov QWORD PTR [rsi+8], r9
 	mov QWORD PTR [rsi+16], r10
@@ -80861,7 +80891,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2607f
+	je 2605f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -80869,7 +80899,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2609:
+2607:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -80899,15 +80929,15 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2609b
-	jmp 2608f
-2607:
-2608:
+	jne 2607b
+	jmp 2606f
+2605:
+2606:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2605b
+	jne 2603b
 	mov r8, QWORD PTR [rdi+80]
 	mov r9, QWORD PTR [rdi+48]
 	shl r9, 4
@@ -80916,8 +80946,8 @@ vg_ffdh_generate_parameters_ifma:
 	mov eax, 0
 	mov QWORD PTR [r9], rax
 	mov QWORD PTR [r9+8], rax
-	jmp 2603f
-2602:
+	jmp 2601f
+2600:
 	mov r9, QWORD PTR [rdi+136]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -80925,7 +80955,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rbx, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2610:
+2608:
 	mov rax, QWORD PTR [rdi+224]
 	shl rax, 3
 	mov rbp, QWORD PTR [rdi+136]
@@ -81053,17 +81083,17 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2610b
+	jne 2608b
 	mov rax, QWORD PTR [rdi+48]
 	cmp rax, 8
-	je 2611f
+	je 2609f
 	mov rax, QWORD PTR [rdi+48]
 	cmp rax, 16
-	je 2613f
+	je 2611f
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
 	mov QWORD PTR [rdi+248], rax
-2615:
+2613:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov rax, QWORD PTR [rdi+224]
@@ -81092,8 +81122,8 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+232]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2616f
-2618:
+	je 2614f
+2616:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -81363,10 +81393,10 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rdi+232], rax
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2618b
-	jmp 2617f
-2616:
-2617:
+	jne 2616b
+	jmp 2615f
+2614:
+2615:
 	mov rax, QWORD PTR [rdi+248]
 	add rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+240], rax
@@ -81649,15 +81679,15 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 16
 	cmp rax, QWORD PTR [rdi+48]
-	je 2619f
+	je 2617f
 	mov rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+248], rax
-	jmp 2620f
-2619:
+	jmp 2618f
+2617:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2621f
+	je 2619f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -81665,7 +81695,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2623:
+2621:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -81695,23 +81725,23 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2623b
-	jmp 2622f
-2621:
-2622:
+	jne 2621b
+	jmp 2620f
+2619:
 2620:
+2618:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	mov rcx, QWORD PTR [rdi+48]
 	sub rcx, 8
 	cmp rax, rcx
-	jne 2615b
-	jmp 2614f
-2613:
+	jne 2613b
+	jmp 2612f
+2611:
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2624:
+2622:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov rax, QWORD PTR [rdi+224]
@@ -81737,7 +81767,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov r13, QWORD PTR [rsi+40]
 	mov r14, QWORD PTR [rsi+48]
 	mov r15, QWORD PTR [rsi+56]
-2625:
+2623:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -82006,7 +82036,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, 8
 	mov QWORD PTR [rdi+232], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2625b
+	jne 2623b
 	mov QWORD PTR [rsi], r8
 	mov QWORD PTR [rsi+8], r9
 	mov QWORD PTR [rsi+16], r10
@@ -82018,7 +82048,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2626f
+	je 2624f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -82026,7 +82056,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2628:
+2626:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -82056,21 +82086,21 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2628b
-	jmp 2627f
-2626:
-2627:
+	jne 2626b
+	jmp 2625f
+2624:
+2625:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	mov rcx, QWORD PTR [rdi+48]
 	sub rcx, 8
 	cmp rax, rcx
-	jne 2624b
-2614:
-	jmp 2612f
-2611:
+	jne 2622b
 2612:
+	jmp 2610f
+2609:
+2610:
 	mov r8, QWORD PTR [rdi+80]
 	mov r9, QWORD PTR [rdi+48]
 	shl r9, 4
@@ -82088,7 +82118,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov r15d, 0
 	mov ebp, 0
 	mov r14d, 0
-2629:
+2627:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r11, QWORD PTR [r8+r14*8]
 	mov r12, QWORD PTR [r8+r14*8+8]
@@ -82178,13 +82208,13 @@ vg_ffdh_generate_parameters_ifma:
 	add rbp, 8
 	add r14, 16
 	cmp rbp, r10
-	jne 2629b
-2603:
+	jne 2627b
+2601:
 	mov rcx, QWORD PTR [rdi+80]
 	add rcx, 16
 	mov eax, 0
 	mov QWORD PTR [rcx-16], rax
-2630:
+2628:
 	mov rsi, rcx
 	mov rbp, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rsi]
@@ -82453,10 +82483,10 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, rax
 	add rax, QWORD PTR [rdi+64]
 	cmp rbp, rax
-	jne 2631f
-	jmp 2632f
+	jne 2629f
+	jmp 2630f
+2629:
 2631:
-2633:
 	mov rdx, QWORD PTR [rcx-8]
 	add rdx, -1
 	adcx r8, QWORD PTR [rsi]
@@ -82718,8 +82748,8 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, rax
 	add rax, QWORD PTR [rdi+64]
 	cmp rbp, rax
-	jne 2633b
-2632:
+	jne 2631b
+2630:
 	mov rdx, QWORD PTR [rcx-8]
 	add rdx, -1
 	mov eax, 0
@@ -82754,7 +82784,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rcx+48], rax
 	add rcx, 64
 	cmp rcx, QWORD PTR [rdi+88]
-	jne 2630b
+	jne 2628b
 	mov r8, rcx
 	mov rbp, QWORD PTR [rdi+48]
 	mov r10, QWORD PTR [rcx-16]
@@ -82768,7 +82798,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rbx, QWORD PTR [rdi+128]
 	mov ebp, 0
 	mov r14, 0
-2634:
+2632:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -82797,13 +82827,13 @@ vg_ffdh_generate_parameters_ifma:
 	sbb rbp, rbp
 	add r14, 8
 	cmp r14, r12
-	jne 2634b
+	jne 2632b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2635:
+2633:
 	add rbp, rbp
 	mov rax, QWORD PTR [rsi+r14*8]
 	cmovb rax, QWORD PTR [r8+r14*8]
@@ -82832,8 +82862,8 @@ vg_ffdh_generate_parameters_ifma:
 	sbb rbp, rbp
 	add r14, 8
 	cmp r14, r12
-	jne 2635b
-2595:
+	jne 2633b
+2593:
 	movq rbx, xmm8
 	movq rbp, xmm9
 	movq r12, xmm10
@@ -82872,12 +82902,12 @@ vg_ffdh_generate_parameters_ifma:
 	add rbx, rax
 	add rbx, rax
 	mov r14, 0
-2636:
+2634:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2636b
+	jne 2634b
 	mov r12, QWORD PTR [rdi+48]
 	mov r8, QWORD PTR [rdi+64]
 	mov rax, QWORD PTR [rdi+48]
@@ -82931,7 +82961,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rsi, rax
 	mov ebp, 0
 	mov r14, 0
-2637:
+2635:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -82939,13 +82969,13 @@ vg_ffdh_generate_parameters_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2637b
+	jne 2635b
 	mov r12, QWORD PTR [rdi+48]
 	mov r8, QWORD PTR [rdi+64]
 	mov rbp, QWORD PTR [r8]
 	and rbp, -2
 	mov r14, 1
-2638:
+2636:
 	mov rax, QWORD PTR [r8+r14*8]
 	cmp rbp, 1
 	sbb rdx, rdx
@@ -82953,7 +82983,7 @@ vg_ffdh_generate_parameters_ifma:
 	or rbp, rax
 	add r14, 1
 	cmp r14, r12
-	jne 2638b
+	jne 2636b
 	mov rax, QWORD PTR [rdi+48]
 	add rax, 2
 	add rax, rax
@@ -82986,6 +83016,64 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rbx+r12*8], rax
 	mov rbp, QWORD PTR [rsi]
 	mov r14, 1
+2637:
+	mov rax, QWORD PTR [rsi+r14*8]
+	mov rdx, rax
+	shl rdx, 63
+	mov rcx, rbp
+	shr rcx, 1
+	or rcx, rdx
+	xor rcx, rbp
+	and rcx, r15
+	xor rcx, rbp
+	mov QWORD PTR [rbx+r14*8-8], rcx
+	mov rbp, rax
+	add r14, 1
+	cmp r14, r12
+	jne 2637b
+	mov rcx, rbp
+	shr rcx, 1
+	xor rcx, rbp
+	and rcx, r15
+	xor rcx, rbp
+	mov QWORD PTR [rbx+r12*8-8], rcx
+	mov rsi, rbx
+	movabs r15, -2459565876494606883
+	and r15, QWORD PTR [rbx+r12*8]
+	cmp r15, 1
+	sbb r15, r15
+	xor r15, -1
+	mov rbp, QWORD PTR [rsi]
+	mov r14, 1
+2638:
+	mov rax, QWORD PTR [rsi+r14*8]
+	mov rdx, rax
+	shl rdx, 63
+	mov rcx, rbp
+	shr rcx, 1
+	or rcx, rdx
+	xor rcx, rbp
+	and rcx, r15
+	xor rcx, rbp
+	mov QWORD PTR [rbx+r14*8-8], rcx
+	mov rbp, rax
+	add r14, 1
+	cmp r14, r12
+	jne 2638b
+	mov rcx, rbp
+	shr rcx, 1
+	xor rcx, rbp
+	and rcx, r15
+	xor rcx, rbp
+	mov QWORD PTR [rbx+r12*8-8], rcx
+	mov rsi, rbx
+	movabs r15, -7378697629483820647
+	and r15, QWORD PTR [rbx+r12*8]
+	cmp r15, 1
+	sbb r15, r15
+	xor r15, -1
+	mov rbp, QWORD PTR [rsi]
+	mov r14, 1
 2639:
 	mov rax, QWORD PTR [rsi+r14*8]
 	mov rdx, rax
@@ -83008,7 +83096,7 @@ vg_ffdh_generate_parameters_ifma:
 	xor rcx, rbp
 	mov QWORD PTR [rbx+r12*8-8], rcx
 	mov rsi, rbx
-	movabs r15, -2459565876494606883
+	movabs r15, 1229782938247303441
 	and r15, QWORD PTR [rbx+r12*8]
 	cmp r15, 1
 	sbb r15, r15
@@ -83036,73 +83124,15 @@ vg_ffdh_generate_parameters_ifma:
 	and rcx, r15
 	xor rcx, rbp
 	mov QWORD PTR [rbx+r12*8-8], rcx
-	mov rsi, rbx
-	movabs r15, -7378697629483820647
-	and r15, QWORD PTR [rbx+r12*8]
-	cmp r15, 1
-	sbb r15, r15
-	xor r15, -1
-	mov rbp, QWORD PTR [rsi]
-	mov r14, 1
-2641:
-	mov rax, QWORD PTR [rsi+r14*8]
-	mov rdx, rax
-	shl rdx, 63
-	mov rcx, rbp
-	shr rcx, 1
-	or rcx, rdx
-	xor rcx, rbp
-	and rcx, r15
-	xor rcx, rbp
-	mov QWORD PTR [rbx+r14*8-8], rcx
-	mov rbp, rax
-	add r14, 1
-	cmp r14, r12
-	jne 2641b
-	mov rcx, rbp
-	shr rcx, 1
-	xor rcx, rbp
-	and rcx, r15
-	xor rcx, rbp
-	mov QWORD PTR [rbx+r12*8-8], rcx
-	mov rsi, rbx
-	movabs r15, 1229782938247303441
-	and r15, QWORD PTR [rbx+r12*8]
-	cmp r15, 1
-	sbb r15, r15
-	xor r15, -1
-	mov rbp, QWORD PTR [rsi]
-	mov r14, 1
-2642:
-	mov rax, QWORD PTR [rsi+r14*8]
-	mov rdx, rax
-	shl rdx, 63
-	mov rcx, rbp
-	shr rcx, 1
-	or rcx, rdx
-	xor rcx, rbp
-	and rcx, r15
-	xor rcx, rbp
-	mov QWORD PTR [rbx+r14*8-8], rcx
-	mov rbp, rax
-	add r14, 1
-	cmp r14, r12
-	jne 2642b
-	mov rcx, rbp
-	shr rcx, 1
-	xor rcx, rbp
-	and rcx, r15
-	xor rcx, rbp
-	mov QWORD PTR [rbx+r12*8-8], rcx
 	mov rax, QWORD PTR [rdi+128]
 	mov ecx, 0
 	mov QWORD PTR [rax+144], rcx
-2643:
-2644:
+2641:
+2642:
 	mov rax, QWORD PTR [rdi+128]
 	mov rcx, QWORD PTR [rax+104]
 	cmp rcx, QWORD PTR [rax+128]
-	jb 2645f
+	jb 2643f
 	mov rax, QWORD PTR [rdi+128]
 	mov rsi, QWORD PTR [rax+96]
 	mov rcx, QWORD PTR [rax+128]
@@ -83168,13 +83198,13 @@ vg_ffdh_generate_parameters_ifma:
 	add r10, 1
 	add r11, 1
 	sub rcx, 1
-2647:
+2645:
 	movzx eax, BYTE PTR [r10]
 	mov BYTE PTR [r11], al
 	add r10, 1
 	add r11, 1
 	sub rcx, 1
-	jne 2647b
+	jne 2645b
 	mov rdi, rbp
 	mov rax, QWORD PTR [rdi+128]
 	mov rsi, QWORD PTR [rax+48]
@@ -83183,7 +83213,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov eax, 0
 	mov rdx, rcx
 	mov r14, rsi
-2648:
+2646:
 	sub rdx, 1
 	ror rax, 56
 	movzx ebp, BYTE PTR [r14]
@@ -83191,19 +83221,49 @@ vg_ffdh_generate_parameters_ifma:
 	add r14, 1
 	mov rbp, rdx
 	and rbp, 7
-	je 2649f
-	jmp 2650f
-2649:
+	je 2647f
+	jmp 2648f
+2647:
 	mov rbp, rdx
 	shr rbp, 3
 	mov QWORD PTR [rbx+rbp*8], rax
 	mov eax, 0
-2650:
+2648:
 	test rdx, rdx
-	jne 2648b
+	jne 2646b
 	mov r12, QWORD PTR [rdi+48]
 	mov rbx, QWORD PTR [rdi+120]
 	mov r10, QWORD PTR [rdi+104]
+	mov ebp, 0
+	mov r14, 0
+2649:
+	add rbp, rbp
+	mov rax, QWORD PTR [rbx+r14*8]
+	sbb rax, QWORD PTR [r10+r14*8]
+	sbb rbp, rbp
+	add r14, 1
+	cmp r14, r12
+	jne 2649b
+	mov rax, rbp
+	and rax, 1
+	mov QWORD PTR [rdi+240], rax
+	mov r12, QWORD PTR [rdi+48]
+	mov rsi, QWORD PTR [rdi+104]
+	mov rbx, QWORD PTR [rdi+88]
+	mov r14, 0
+2650:
+	mov rax, QWORD PTR [rsi+r14*8]
+	mov QWORD PTR [rbx+r14*8], rax
+	add r14, 1
+	cmp r14, r12
+	jne 2650b
+	mov rbx, QWORD PTR [rdi+88]
+	mov rax, QWORD PTR [rbx]
+	or rax, 1
+	mov QWORD PTR [rbx], rax
+	mov r12, QWORD PTR [rdi+48]
+	mov rbx, QWORD PTR [rdi+88]
+	mov r10, QWORD PTR [rdi+64]
 	mov ebp, 0
 	mov r14, 0
 2651:
@@ -83216,54 +83276,24 @@ vg_ffdh_generate_parameters_ifma:
 	jne 2651b
 	mov rax, rbp
 	and rax, 1
-	mov QWORD PTR [rdi+240], rax
-	mov r12, QWORD PTR [rdi+48]
-	mov rsi, QWORD PTR [rdi+104]
-	mov rbx, QWORD PTR [rdi+88]
-	mov r14, 0
-2652:
-	mov rax, QWORD PTR [rsi+r14*8]
-	mov QWORD PTR [rbx+r14*8], rax
-	add r14, 1
-	cmp r14, r12
-	jne 2652b
-	mov rbx, QWORD PTR [rdi+88]
-	mov rax, QWORD PTR [rbx]
-	or rax, 1
-	mov QWORD PTR [rbx], rax
-	mov r12, QWORD PTR [rdi+48]
-	mov rbx, QWORD PTR [rdi+88]
-	mov r10, QWORD PTR [rdi+64]
-	mov ebp, 0
-	mov r14, 0
-2653:
-	add rbp, rbp
-	mov rax, QWORD PTR [rbx+r14*8]
-	sbb rax, QWORD PTR [r10+r14*8]
-	sbb rbp, rbp
-	add r14, 1
-	cmp r14, r12
-	jne 2653b
-	mov rax, rbp
-	and rax, 1
 	and rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+240], rax
 	test rax, rax
 	mov rax, QWORD PTR [rdi+128]
 	mov edx, 1
 	mov QWORD PTR [rax+152], rdx
-	jmp 2646f
-2645:
+	jmp 2644f
+2643:
 	mov rax, QWORD PTR [rdi+128]
 	mov edx, 0
 	mov QWORD PTR [rax+152], rdx
 	cmp rdx, 1
-2646:
-	je 2644b
+2644:
+	je 2642b
 	mov rax, QWORD PTR [rdi+128]
 	mov rcx, QWORD PTR [rax+152]
 	test rcx, rcx
-	je 2654f
+	je 2652f
 	mov edx, 5
 	mov ecx, 5
 	mov r8d, 4
@@ -83291,7 +83321,7 @@ vg_ffdh_generate_parameters_ifma:
 	sub rax, 8
 	ror rax, 3
 	shr rax, 27
-	je 2656f
+	je 2654f
 	mov rbx, QWORD PTR [rdi+rdx*8+64]
 	mov r11, QWORD PTR [rdi+rcx*8+64]
 	mov r9, QWORD PTR [rdi+r8*8+64]
@@ -83302,19 +83332,19 @@ vg_ffdh_generate_parameters_ifma:
 	mov rsi, QWORD PTR [rdi+88]
 	mov eax, 0
 	mov r14, 0
-2658:
+2656:
 	mov QWORD PTR [r8+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2658b
+	jne 2656b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
 	mov r13, 0
-2659:
+2657:
 	mov rcx, QWORD PTR [r11+r13*8]
 	mov ebp, 0
 	mov r14, 0
-2660:
+2658:
 	mov rax, QWORD PTR [r9+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -83325,7 +83355,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2660b
+	jne 2658b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8], rax
@@ -83341,7 +83371,7 @@ vg_ffdh_generate_parameters_ifma:
 	adc rdx, 0
 	mov rbp, rdx
 	mov r14, 1
-2661:
+2659:
 	mov rax, QWORD PTR [r10+r14*8]
 	mul rcx
 	add rax, QWORD PTR [r8+r14*8]
@@ -83352,7 +83382,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rbp, rdx
 	add r14, 1
 	cmp r14, r12
-	jne 2661b
+	jne 2659b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rax, rbp
 	mov QWORD PTR [r8+r12*8-8], rax
@@ -83363,10 +83393,10 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [r8+r12*8+8], rax
 	add r13, 1
 	cmp r13, r12
-	jne 2659b
+	jne 2657b
 	mov ebp, 0
 	mov r14, 0
-2662:
+2660:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -83374,13 +83404,13 @@ vg_ffdh_generate_parameters_ifma:
 	sbb rbp, rbp
 	add r14, 1
 	cmp r14, r12
-	jne 2662b
+	jne 2660b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2663:
+2661:
 	mov rax, QWORD PTR [r8+r14*8]
 	mov rdx, QWORD PTR [rsi+r14*8]
 	xor rax, rdx
@@ -83389,11 +83419,11 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
-	jne 2663b
-	jmp 2657f
-2656:
+	jne 2661b
+	jmp 2655f
+2654:
 	cmp rcx, r8
-	je 2664f
+	je 2662f
 	mov r9, QWORD PTR [rdi+144]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -83403,7 +83433,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rcx, rbx
 	add rcx, rcx
 	mov r14d, 0
-2666:
+2664:
 	mov QWORD PTR [r8+r14*8], rax
 	mov QWORD PTR [r8+r14*8+8], rax
 	mov QWORD PTR [r8+r14*8+16], rax
@@ -83414,12 +83444,12 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [r8+r14*8+56], rax
 	add r14, 8
 	cmp r14, rcx
-	jne 2666b
+	jne 2664b
 	mov QWORD PTR [r8+r14*8], rax
 	mov QWORD PTR [r8+r14*8+8], rax
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2667:
+2665:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov QWORD PTR [rdi+232], rax
@@ -83443,7 +83473,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov r13, QWORD PTR [rsi+40]
 	mov r14, QWORD PTR [rsi+48]
 	mov r15, QWORD PTR [rsi+56]
-2668:
+2666:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -83712,7 +83742,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, 8
 	mov QWORD PTR [rdi+232], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2668b
+	jne 2666b
 	mov QWORD PTR [rsi], r8
 	mov QWORD PTR [rsi+8], r9
 	mov QWORD PTR [rsi+16], r10
@@ -83724,7 +83754,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2669f
+	je 2667f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -83732,7 +83762,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2671:
+2669:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -83762,15 +83792,15 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2671b
-	jmp 2670f
-2669:
-2670:
+	jne 2669b
+	jmp 2668f
+2667:
+2668:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2667b
+	jne 2665b
 	mov r8, QWORD PTR [rdi+80]
 	mov r9, QWORD PTR [rdi+48]
 	shl r9, 4
@@ -83779,8 +83809,8 @@ vg_ffdh_generate_parameters_ifma:
 	mov eax, 0
 	mov QWORD PTR [r9], rax
 	mov QWORD PTR [r9+8], rax
-	jmp 2665f
-2664:
+	jmp 2663f
+2662:
 	mov r9, QWORD PTR [rdi+136]
 	mov r10, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rdi+80]
@@ -83788,7 +83818,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rbx, QWORD PTR [rdi+48]
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2672:
+2670:
 	mov rax, QWORD PTR [rdi+224]
 	shl rax, 3
 	mov rbp, QWORD PTR [rdi+136]
@@ -83916,17 +83946,17 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2672b
+	jne 2670b
 	mov rax, QWORD PTR [rdi+48]
 	cmp rax, 8
-	je 2673f
+	je 2671f
 	mov rax, QWORD PTR [rdi+48]
 	cmp rax, 16
-	je 2675f
+	je 2673f
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
 	mov QWORD PTR [rdi+248], rax
-2677:
+2675:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov rax, QWORD PTR [rdi+224]
@@ -83955,8 +83985,8 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+232]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2678f
-2680:
+	je 2676f
+2678:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -84226,10 +84256,10 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rdi+232], rax
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2680b
-	jmp 2679f
-2678:
-2679:
+	jne 2678b
+	jmp 2677f
+2676:
+2677:
 	mov rax, QWORD PTR [rdi+248]
 	add rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+240], rax
@@ -84512,15 +84542,15 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 16
 	cmp rax, QWORD PTR [rdi+48]
-	je 2681f
+	je 2679f
 	mov rax, QWORD PTR [rdi+240]
 	mov QWORD PTR [rdi+248], rax
-	jmp 2682f
-2681:
+	jmp 2680f
+2679:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2683f
+	je 2681f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -84528,7 +84558,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2685:
+2683:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -84558,23 +84588,23 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2685b
-	jmp 2684f
-2683:
-2684:
+	jne 2683b
+	jmp 2682f
+2681:
 2682:
+2680:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	mov rcx, QWORD PTR [rdi+48]
 	sub rcx, 8
 	cmp rax, rcx
-	jne 2677b
-	jmp 2676f
-2675:
+	jne 2675b
+	jmp 2674f
+2673:
 	mov eax, 0
 	mov QWORD PTR [rdi+224], rax
-2686:
+2684:
 	mov eax, 0
 	mov QWORD PTR [rdi+240], rax
 	mov rax, QWORD PTR [rdi+224]
@@ -84600,7 +84630,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov r13, QWORD PTR [rsi+40]
 	mov r14, QWORD PTR [rsi+48]
 	mov r15, QWORD PTR [rsi+56]
-2687:
+2685:
 	mov rdx, QWORD PTR [rcx]
 	mov rbx, r8
 	xor eax, eax
@@ -84869,7 +84899,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, 8
 	mov QWORD PTR [rdi+232], rax
 	cmp rax, QWORD PTR [rdi+48]
-	jne 2687b
+	jne 2685b
 	mov QWORD PTR [rsi], r8
 	mov QWORD PTR [rsi+8], r9
 	mov QWORD PTR [rsi+16], r10
@@ -84881,7 +84911,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	cmp rax, QWORD PTR [rdi+48]
-	je 2688f
+	je 2686f
 	mov rbp, QWORD PTR [rdi+240]
 	add rsi, 64
 	mov rdx, QWORD PTR [rdi+48]
@@ -84889,7 +84919,7 @@ vg_ffdh_generate_parameters_ifma:
 	add rdx, QWORD PTR [rdi+80]
 	add rdx, 16
 	mov ecx, 0
-2690:
+2688:
 	mov r8, QWORD PTR [rsi]
 	mov r9, QWORD PTR [rsi+8]
 	mov r10, QWORD PTR [rsi+16]
@@ -84919,21 +84949,21 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rsi+56], r15
 	add rsi, 64
 	cmp rsi, rdx
-	jne 2690b
-	jmp 2689f
-2688:
-2689:
+	jne 2688b
+	jmp 2687f
+2686:
+2687:
 	mov rax, QWORD PTR [rdi+224]
 	add rax, 8
 	mov QWORD PTR [rdi+224], rax
 	mov rcx, QWORD PTR [rdi+48]
 	sub rcx, 8
 	cmp rax, rcx
-	jne 2686b
-2676:
-	jmp 2674f
-2673:
+	jne 2684b
 2674:
+	jmp 2672f
+2671:
+2672:
 	mov r8, QWORD PTR [rdi+80]
 	mov r9, QWORD PTR [rdi+48]
 	shl r9, 4
@@ -84951,7 +84981,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov r15d, 0
 	mov ebp, 0
 	mov r14d, 0
-2691:
+2689:
 	mov rdx, QWORD PTR [r9+rbp*8]
 	mov r11, QWORD PTR [r8+r14*8]
 	mov r12, QWORD PTR [r8+r14*8+8]
@@ -85041,13 +85071,13 @@ vg_ffdh_generate_parameters_ifma:
 	add rbp, 8
 	add r14, 16
 	cmp rbp, r10
-	jne 2691b
-2665:
+	jne 2689b
+2663:
 	mov rcx, QWORD PTR [rdi+80]
 	add rcx, 16
 	mov eax, 0
 	mov QWORD PTR [rcx-16], rax
-2692:
+2690:
 	mov rsi, rcx
 	mov rbp, QWORD PTR [rdi+64]
 	mov r8, QWORD PTR [rsi]
@@ -85316,10 +85346,10 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, rax
 	add rax, QWORD PTR [rdi+64]
 	cmp rbp, rax
-	jne 2693f
-	jmp 2694f
+	jne 2691f
+	jmp 2692f
+2691:
 2693:
-2695:
 	mov rdx, QWORD PTR [rcx-8]
 	add rdx, -1
 	adcx r8, QWORD PTR [rsi]
@@ -85581,8 +85611,8 @@ vg_ffdh_generate_parameters_ifma:
 	add rax, rax
 	add rax, QWORD PTR [rdi+64]
 	cmp rbp, rax
-	jne 2695b
-2694:
+	jne 2693b
+2692:
 	mov rdx, QWORD PTR [rcx-8]
 	add rdx, -1
 	mov eax, 0
@@ -85617,7 +85647,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [rcx+48], rax
 	add rcx, 64
 	cmp rcx, QWORD PTR [rdi+88]
-	jne 2692b
+	jne 2690b
 	mov r8, rcx
 	mov rbp, QWORD PTR [rdi+48]
 	mov r10, QWORD PTR [rcx-16]
@@ -85631,7 +85661,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rbx, QWORD PTR [rdi+128]
 	mov ebp, 0
 	mov r14, 0
-2696:
+2694:
 	add rbp, rbp
 	mov rax, QWORD PTR [r8+r14*8]
 	sbb rax, QWORD PTR [r10+r14*8]
@@ -85660,13 +85690,13 @@ vg_ffdh_generate_parameters_ifma:
 	sbb rbp, rbp
 	add r14, 8
 	cmp r14, r12
-	jne 2696b
+	jne 2694b
 	mov rax, QWORD PTR [r8+r12*8]
 	add rbp, rbp
 	sbb rax, 0
 	sbb rbp, rbp
 	mov r14, 0
-2697:
+2695:
 	add rbp, rbp
 	mov rax, QWORD PTR [rsi+r14*8]
 	cmovb rax, QWORD PTR [r8+r14*8]
@@ -85695,8 +85725,8 @@ vg_ffdh_generate_parameters_ifma:
 	sbb rbp, rbp
 	add r14, 8
 	cmp r14, r12
-	jne 2697b
-2657:
+	jne 2695b
+2655:
 	movq rbx, xmm8
 	movq rbp, xmm9
 	movq r12, xmm10
@@ -85733,7 +85763,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov rbx, QWORD PTR [rcx]
 	mov rax, QWORD PTR [rdi+176]
 	test rax, rax
-	je 2698f
+	je 2696f
 	mov r9, QWORD PTR [rdi+128]
 	mov rcx, QWORD PTR [r9+144]
 	add rcx, 1
@@ -85743,25 +85773,25 @@ vg_ffdh_generate_parameters_ifma:
 	mov edx, 1
 	cmovae rax, rdx
 	mov QWORD PTR [r9+152], rax
-	jmp 2699f
-2698:
+	jmp 2697f
+2696:
 	mov rax, QWORD PTR [rdi+128]
 	mov edx, 2
 	mov QWORD PTR [rax+152], rdx
-2699:
-	jmp 2655f
-2654:
-2655:
+2697:
+	jmp 2653f
+2652:
+2653:
 	mov rax, QWORD PTR [rdi+128]
 	mov rcx, QWORD PTR [rax+152]
 	cmp rcx, 4
-	je 2643b
+	je 2641b
 	mov rdi, QWORD PTR [rdi+128]
 	mov rax, QWORD PTR [rdi+152]
 	cmp rax, 1
-	je 2700f
-	jmp 2701f
-2700:
+	je 2698f
+	jmp 2699f
+2698:
 	mov rbp, rdi
 	mov rax, QWORD PTR [rdi+48]
 	mov rsi, QWORD PTR [rdi+88]
@@ -85816,40 +85846,40 @@ vg_ffdh_generate_parameters_ifma:
 	add r10, 1
 	add r11, 1
 	sub rcx, 1
-2702:
+2700:
 	movzx eax, BYTE PTR [r10]
 	mov BYTE PTR [r11], al
 	add r10, 1
 	add r11, 1
 	sub rcx, 1
-	jne 2702b
+	jne 2700b
 	movzx eax, BYTE PTR [r11-1]
 	or rax, 1
 	mov BYTE PTR [r11-1], al
 	mov rdi, rbp
-2701:
-2483:
-2264:
-246:
-229:
-218:
+2699:
+2481:
+2262:
+244:
+227:
+216:
 	jmp 24f
 23:
 24:
 	mov rax, QWORD PTR [rdi+152]
 	cmp rax, 1
-	je 2703f
+	je 2701f
 	mov rsi, QWORD PTR [rdi+48]
 	mov rcx, QWORD PTR [rdi+56]
 	mov eax, 0
-2705:
+2703:
 	mov BYTE PTR [rsi], al
 	add rsi, 1
 	sub rcx, 1
-	jne 2705b
-	jmp 2704f
-2703:
-2704:
+	jne 2703b
+	jmp 2702f
+2701:
+2702:
 	mov rax, QWORD PTR [rdi+152]
 	mov rdx, QWORD PTR [rdi+64]
 	mov rcx, QWORD PTR [rdi+112]
@@ -85865,12 +85895,12 @@ vg_ffdh_generate_parameters_ifma:
 	lea rsp, [rsp+32]
 	mov eax, eax
 	cmp rax, 1
-	je 2706f
+	je 2704f
 	cmp rax, 2
-	je 2708f
+	je 2706f
 	mov rax, QWORD PTR [r12+88]
 	cmp rax, QWORD PTR [r12+16]
-	jae 2710f
+	jae 2708f
 	mov rcx, QWORD PTR [r12+8]
 	shl rcx, 8
 	cmp rax, rcx
@@ -85882,8 +85912,8 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [r12+24], rax
 	mov eax, 0
 	mov QWORD PTR [r12+112], rax
-	jmp 2711f
-2710:
+	jmp 2709f
+2708:
 	mov eax, 0
 	mov QWORD PTR [r12], rax
 	mov QWORD PTR [r12+24], rax
@@ -85893,14 +85923,14 @@ vg_ffdh_generate_parameters_ifma:
 	mov rsi, QWORD PTR [rdi+40]
 	mov rcx, QWORD PTR [rdi+48]
 	mov eax, 0
-2712:
+2710:
 	mov BYTE PTR [rsi], al
 	add rsi, 1
 	sub rcx, 1
-	jne 2712b
-2711:
-	jmp 2709f
-2708:
+	jne 2710b
+2709:
+	jmp 2707f
+2706:
 	mov rax, QWORD PTR [r12+56]
 	mov rcx, QWORD PTR [rax]
 	mov rax, QWORD PTR [r12+96]
@@ -85917,9 +85947,9 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [r12], rax
 	mov eax, 4
 	mov QWORD PTR [r12+112], rax
-2709:
-	jmp 2707f
-2706:
+2707:
+	jmp 2705f
+2704:
 	mov rax, QWORD PTR [r12+56]
 	mov rcx, QWORD PTR [rax]
 	mov rax, QWORD PTR [r12+96]
@@ -85930,7 +85960,7 @@ vg_ffdh_generate_parameters_ifma:
 	mov QWORD PTR [r12+24], rax
 	mov eax, 1
 	mov QWORD PTR [r12+112], rax
-2707:
+2705:
 	jmp 22f
 21:
 	mov eax, 0
@@ -85942,11 +85972,11 @@ vg_ffdh_generate_parameters_ifma:
 	mov rsi, QWORD PTR [rdi+40]
 	mov rcx, QWORD PTR [rdi+48]
 	mov eax, 0
-2713:
+2711:
 	mov BYTE PTR [rsi], al
 	add rsi, 1
 	sub rcx, 1
-	jne 2713b
+	jne 2711b
 22:
 	mov rax, QWORD PTR [r12+112]
 	cmp rax, 4
