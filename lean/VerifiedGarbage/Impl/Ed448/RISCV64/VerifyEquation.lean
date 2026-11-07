@@ -92,6 +92,8 @@ def BAD : Nat := 1696
 def SIGN : Nat := 1704
 /-- The output of `freeze`, at `a0`. -/
 def OUT : Nat := 2048
+/-- Return address of the shared decode core, outside its field and check regions. -/
+def DECODE_RA : Nat := 1712
 /-- The slots decoding uses. -/
 def DY : Nat := 168
 def DON : Nat := 224
@@ -163,6 +165,15 @@ def decodeCheck : Prog isa :=
   .block (sub X2 DTMP DU ++ freeze ++ outZero ++ copy X2 DXX ++ freeze ++ outOr ++
     [.addi .a7 .a7 (-1), .shift .srl .d .a7 .a7 63, .load .b .a4 .a3 SIGN, .logic .and .a5 .a7 .a4] ++ orBad .a5)
 
+/-- The parameter-independent arithmetic and checks shared by both point decodes. -/
+def decodeCore : Prog isa := .seq decodeX decodeCheck
+
+/-- The core calls the shared power chain, so retain its caller's return address
+in an unused doubleword of the existing scratch area. -/
+def decodeCoreCall : Prog isa :=
+  .seq (.block [.store .d .ra .a3 DECODE_RA])
+    (.seq (.call "vg_ed448_decode_core" decodeCore) (.block [.load .d .ra .a3 DECODE_RA]))
+
 /-- `-x'` into `xo` and `y` into `yo`: `-x = (x - x) - x` if the low bit of
 `x` (at `OUT`) is the sign, else `x`. -/
 def decodeNeg (xo yo : Nat) : List Instr :=
@@ -172,7 +183,7 @@ def decodeNeg (xo yo : Nat) : List Instr :=
 
 /-- The negation of the point at `p` into `xo` and `yo`. -/
 def decode (p xo yo : Nat) : Prog isa :=
-  .seq (.block (decodeY p)) <| .seq decodeX <| .seq decodeCheck (.block (decodeNeg xo yo))
+  .seq (.block (decodeY p)) (.seq decodeCoreCall (.block (decodeNeg xo yo)))
 
 /-! ## `S < L` -/
 

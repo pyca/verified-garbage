@@ -139,9 +139,10 @@ theorem disj_decW {d n xo yo : Nat} (h1 : 1064 ≤ d) (h2 : d + n ≤ 1696) (hxo
     (hyo : d + n ≤ yo ∨ yo + 56 ≤ d) (hx : xo + 56 ≤ 2048) (hy : yo + 56 ≤ 2048) :
     ∀ r ∈ decW b xo yo, Region.Disjoint ⟨b + BitVec.ofNat 64 d, n⟩ r := by
   obtain ⟨o1, o2, o3, o4⟩ := offs
+  have hRA : DECODE_RA = 1712 := rfl
   intro r hr
   simp only [decW, yW, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · exact Offset.disjoint_base _ (by omega_arith) (by omega_arith)
   all_goals exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
 
