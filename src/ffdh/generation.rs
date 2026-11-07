@@ -1,14 +1,8 @@
 //! Safe-prime parameter generation.
 use super::Error;
 use super::Parameters;
-use super::arithmetic::Backend;
-use crate::arch::ffdh::vg_ffdh_generate_parameters;
-#[cfg(target_arch = "arm")]
-use crate::arch::ffdh::vg_ffdh_generate_parameters_umaal;
+use crate::arch::dispatch::ffdh::vg_ffdh_generate_parameters_auto;
 use crate::arch::ffdh::vg_ffdh_parameter_generation_init;
-#[cfg(target_arch = "x86_64")]
-use crate::arch::ffdh::{vg_ffdh_generate_parameters_adx, vg_ffdh_generate_parameters_ifma};
-use crate::cpu::detected;
 use crate::entropy::{self, Step, Stop};
 use crate::rsa::Scratch;
 use alloc::vec;
@@ -70,24 +64,15 @@ impl Controller {
     ) -> (u32, usize, usize) {
         assert!(p.len() == self.0[1] as usize && ws.len() >= 16 * p.len() + 32);
         assert!(tape.len() <= self.0[2] as usize);
-        let f = match Backend::ffdh(detected()) {
-            Backend::Baseline => vg_ffdh_generate_parameters,
-            #[cfg(target_arch = "x86_64")]
-            Backend::Adx => vg_ffdh_generate_parameters_adx,
-            #[cfg(target_arch = "x86_64")]
-            Backend::Ifma => vg_ffdh_generate_parameters_ifma,
-            #[cfg(target_arch = "arm")]
-            Backend::Umaal => vg_ffdh_generate_parameters_umaal,
-        };
         let mut used = [0u64; 1];
         // SAFETY: `self` was initialized for `bits` and `generator` and has
         // only been passed to this function since, which keeps its words
         // as the contract's precondition needs; `p` is its width, `ws` at
         // least `16 * p.len() + 32` words and the tape at most its cap. All
-        // are distinct Rust objects. A variant is selected only when the CPU
-        // has its generated feature set.
+        // are distinct Rust objects. The dispatcher calls only an
+        // implementation the CPU has the features of.
         let status = unsafe {
-            f(
+            vg_ffdh_generate_parameters_auto(
                 p.as_mut_ptr(),
                 p.len(),
                 &mut used,
