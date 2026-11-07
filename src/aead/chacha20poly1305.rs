@@ -13,10 +13,10 @@
 
 use core::mem::MaybeUninit;
 
-#[cfg(target_arch = "riscv64")]
-use crate::arch::chacha20poly1305::vg_chacha20_poly1305_open_to;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::chacha20poly1305::VG_CHACHA20_POLY1305_SEAL_SSSE3_FEATURES;
+#[cfg(target_arch = "riscv64")]
+use crate::arch::chacha20poly1305::vg_chacha20_poly1305_open_to;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::chacha20poly1305::{
     VG_CHACHA20_POLY1305_OPEN_IFMA_FEATURES, VG_CHACHA20_POLY1305_SEAL_AVX2_FEATURES,
