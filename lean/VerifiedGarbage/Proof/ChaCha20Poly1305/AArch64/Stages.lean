@@ -442,6 +442,36 @@ theorem APre.ctx_wr {s₀ : State} (hp : APre e s₀) : ctxR s₀ ∈ s₀.wr :=
 theorem APre.d_wr {s₀ : State} (hp : APre e s₀) : dR s₀ ∈ s₀.wr := by
   rw [hp.wr]; cases e <;> simp
 
+/-- The data may be read. -/
+theorem APre.d_in {s₀ : State} (hp : APre e s₀) : dR s₀ ∈ s₀.rd ++ s₀.wr :=
+  List.mem_append_right _ hp.d_wr
+
+/-- A destination for the data's output, `L s₀` bytes at `Q`: writable, apart
+from the context and the other arguments, and the data itself or apart from
+it. -/
+structure DstR (s₀ : State) (Q : Addr) : Prop where
+  wr : (⟨Q, L s₀⟩ : Region) ∈ s₀.wr
+  wrap : Q.toNat + L s₀ ≤ 2 ^ 64
+  ctx : (ctxR s₀).Disjoint ⟨Q, L s₀⟩
+  k : (kR s₀).Disjoint ⟨Q, L s₀⟩
+  n : (nR s₀).Disjoint ⟨Q, L s₀⟩
+  a : (aR s₀).Disjoint ⟨Q, L s₀⟩
+  t : (tR s₀).Disjoint ⟨Q, L s₀⟩
+  same : Q = dp s₀ ∨ (dR s₀).Disjoint ⟨Q, L s₀⟩
+
+/-- The data itself, in place. -/
+theorem APre.dstSelf {s₀ : State} (hp : APre e s₀) : DstR s₀ (dp s₀) :=
+  ⟨hp.d_wr, hp.wrap_d, hp.c_d, hp.d_k.symm, hp.d_n.symm, hp.d_a.symm, hp.d_t.symm, .inl rfl⟩
+
+/-- The bytes from `a` to `b` of the destination are apart from those from `c`
+of the data, if `b ≤ c`. -/
+theorem DstR.sep {s₀ : State} {Q : Addr} (hq : DstR s₀ Q) {a n c m : Nat} (hb : a + n ≤ c)
+    (hc : c + m ≤ L s₀) :
+    (⟨Q + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨dp s₀ + BitVec.ofNat 64 c, m⟩ := by
+  rcases hq.same with rfl | hd
+  · exact Offset.disjoint _ (.inl hb) (by have := hq.wrap; omega_arith) (by have := hq.wrap; omega_arith)
+  · exact (hd.symm.sub_left (Offset.sub_base _ (by omega_arith))).sub_right (Offset.sub_base _ (by omega_arith))
+
 theorem APre.a_rd {s₀ : State} (hp : APre e s₀) : aR s₀ ∈ s₀.rd := by
   rw [hp.rd]; cases e <;> simp
 
@@ -1500,7 +1530,7 @@ theorem hL (s₀ : State) : s₀.gpr .x5 = BitVec.ofNat 64 (L s₀) := by simp [
 /-- The data encrypted (or decrypted) from block counter 1. -/
 theorem crypt_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s)
     (hst : stateAt s.mem (off (cx s₀) 64) = Spec.ChaCha20.initState (K s₀) 0 (N s₀)) :
-    WP isa (cryptWith v.callee) s fun s' =>
+    WP isa (cryptWith v.callee false) s fun s' =>
       (∀ r ∈ preservedV, (s'.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64) ∧ Inv s₀ s' ∧ Kept [sub s₀ 64 384, dR s₀] s s' ∧
       bytesAt s'.mem (dp s₀) (L s₀) = Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (bytesAt s.mem (dp s₀) (L s₀)) := by
   refine WP.seq (WP.mono (WP.preservedV (cryptA_ok hp h) (by lit_decide)) fun s₁ ⟨⟨m₁, x0₁, x1₁, x2₁, x3₁, k₁⟩, v₁⟩ => ?_)

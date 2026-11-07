@@ -195,9 +195,10 @@ theorem iter_ok {blocks v R a W lead k len s₀ s} {i : Nat} (hi : i < 5)
 
 theorem write_v (s : State) (sz : Size) (d : Reg) (x : BitVec sz.bits) : (s.write sz d x).v = s.v := rfl
 
-/-- After the phase, which absorbed the `n` bytes from `W`. -/
+/-- After the phase, which absorbed the `n` bytes from `W` and set `x27` to
+`X`. -/
 structure Done (blocks : Nat → VG.Spec.ChaCha20.State) (v : VG.Spec.ChaCha20.State)
-    (R a : Nat) (W : Addr) (n : Nat) (restore : Reg) (s u : State) : Prop where
+    (R a : Nat) (W : Addr) (n : Nat) (restore : Reg) (X : Addr) (s u : State) : Prop where
   vec : N (VG.Proof.ChaCha20.AArch64.Rows6.pack
     (fun b => Nat.repeat innerBlock 5 (blocks b))) u
   scalar : C (Nat.repeat innerBlock 10 v) u
@@ -209,17 +210,20 @@ structure Done (blocks : Nat → VG.Spec.ChaCha20.State) (v : VG.Spec.ChaCha20.S
   keep : ∀ r, ¬ Words r → r ≠ .x1 → r ∉ Poly.regs → u.gpr r = s.gpr r
   x20 : u.gpr .x20 = s.gpr .x0 + 64#64
   x1 : u.gpr .x1 = u.gpr restore
+  x27 : u.gpr .x27 = X
   acc : Acc R (absorbAll R a (bytesAt s.mem W n)) u
 
 theorem phaseWith_ok {blocks : Nat → VG.Spec.ChaCha20.State} {v : VG.Spec.ChaCha20.State}
-    {R a : Nat} {W : Addr} {start : Instr} {restore : Reg} {lead k len : Nat} {s : State}
+    {R a : Nat} {W : Addr} {start back : Instr} {restore : Reg} {lead k len : Nat} {X : Addr} {s : State}
     (hlen : 16 * (lead + 5 * k) ≤ len)
     (hn : N (VG.Proof.ChaCha20.AArch64.Rows6.pack blocks) s) (hc : C v s)
     (ht : s.v .v30 = VG.Impl.ChaCha20.AArch64.Neon4.rol8Table)
     (hstart : exec start s = some (s.write .x .x20 W))
+    (hback : ∀ w : State, w.gpr .x20 = W + BitVec.ofNat 64 (16 * (lead + 5 * k)) →
+      w.gpr .x26 = s.gpr .x26 → exec back w = some (w.write .x .x27 X))
     (ha : Acc R a s) (hr : Readable W len s) :
-    WP isa (phaseWith sve start restore lead k) s
-      (Done blocks v R a W (16 * (lead + 5 * k)) restore s) := by
+    WP isa (phaseWith sve start restore lead k back) s
+      (Done blocks v R a W (16 * (lead + 5 * k)) restore X s) := by
   unfold phaseWith
   apply WP.seq
   -- `x20` set, the first blocks, and the counter.
@@ -287,38 +291,51 @@ theorem phaseWith_ok {blocks : Nat → VG.Spec.ChaCha20.State} {v : VG.Spec.ChaC
           omega
         exact .inr ⟨by rw [he]; simpa using hn0, 5 - (i + 1), by omega, i + 1, by omega, rfl, hw, hwc⟩
     refine (WP.loop (M := isa) Inv hstep 5 s₃ ⟨0, by decide, rfl, h0, rfl⟩).mono fun w hw => ?_
-    -- `x20` and `x1` restored.
-    let t := w.write .x .x20 (w.gpr .x0 + BitVec.ofNat 64 64)
+    -- `x27` set back, and `x20` and `x1` restored.
     have hx0 : w.gpr .x0 = s.gpr .x0 := hw.keep _ not_words_x0 (by decide) (by decide)
+    have hx20 : w.gpr .x20 = W + BitVec.ofNat 64 (16 * (lead + 5 * k)) := by
+      rw [hw.ptr, Nat.mul_comm k 5]
+    have hx26 : w.gpr .x26 = s.gpr .x26 :=
+      hw.keep _ (VG.Proof.ChaCha20.AArch64.not_words_preserved (by decide)) (by decide) (by decide)
+    let w' := w.write .x .x27 X
+    apply WP.block_cons_iff.mpr
+    refine ⟨w', hback w hx20 hx26, ?_⟩
+    let t := w'.write .x .x20 (w'.gpr .x0 + BitVec.ofNat 64 64)
     apply WP.block_cons_iff.mpr
     refine ⟨t, ?_, ?_⟩
     · simpa only [State.read, BitVec.setWidth_eq] using
-        exec_addImm_x (s := w) (d := .x20) (n := .x0) (imm := 64) (by decide)
+        exec_addImm_x (s := w') (d := .x20) (n := .x0) (imm := 64) (by decide)
     apply WP.block_cons_iff.mpr
     refine ⟨t.write .x .x1 (t.gpr restore), ?_, WP.block_nil ?_⟩
     · simpa only [State.read, BitVec.setWidth_eq, BitVec.add_zero] using
         exec_addImm_x (s := t) (d := .x1) (n := restore) (imm := 0) (by decide)
-    have g (r : Reg) (h1 : r ≠ .x1) (h20 : r ≠ .x20) :
+    have g (r : Reg) (h1 : r ≠ .x1) (h20 : r ≠ .x20) (h27 : r ≠ .x27) :
         (t.write .x .x1 (t.gpr restore)).gpr r = w.gpr r := by
-      rw [RegUpd.gpr_write_of_ne t .x _ h1, RegUpd.gpr_write_of_ne w .x _ h20]
-    refine ⟨fun k j hj => hw.vec k j hj, ?_, hw.mem, hw.rd, hw.wr, hw.sp, hw.table, ?_, ?_, ?_, ?_⟩
+      rw [RegUpd.gpr_write_of_ne t .x _ h1, RegUpd.gpr_write_of_ne w' .x _ h20,
+        RegUpd.gpr_write_of_ne w .x _ h27]
+    have nx27 : ∀ r, r ∉ Poly.regs → r ≠ .x27 := fun r h he => h (he ▸ by decide)
+    refine ⟨fun k j hj => hw.vec k j hj, ?_, hw.mem, hw.rd, hw.wr, hw.sp, hw.table, ?_, ?_, ?_, ?_, ?_⟩
     · intro k hk
       rw [g _ (by intro he; exact not_words_x1 ⟨k, hk, he.symm⟩)
-        (nx20 _ (words_not_poly ⟨k, hk, rfl⟩))]
+        (nx20 _ (words_not_poly ⟨k, hk, rfl⟩)) (nx27 _ (words_not_poly ⟨k, hk, rfl⟩))]
       have he (f : VG.Spec.ChaCha20.State → VG.Spec.ChaCha20.State) (x : VG.Spec.ChaCha20.State) :
           Nat.repeat (fun x => f (f x)) 5 x = Nat.repeat f 10 x := rfl
       have hs := hw.scalar k hk
       rw [he innerBlock v] at hs
       exact hs
-    · intro r hw' h1 hp; rw [g r h1 (nx20 r hp)]; exact hw.keep r hw' h1 hp
-    · rw [RegUpd.gpr_write_of_ne t .x _ (by decide), RegUpd.gpr_write_self, BitVec.setWidth_eq, hx0]
+    · intro r hw' h1 hp; rw [g r h1 (nx20 r hp) (nx27 r hp)]; exact hw.keep r hw' h1 hp
+    · rw [RegUpd.gpr_write_of_ne t .x _ (by decide), RegUpd.gpr_write_self, BitVec.setWidth_eq,
+        RegUpd.gpr_write_of_ne w .x _ (by decide), hx0]
     · rw [RegUpd.gpr_write_self, BitVec.setWidth_eq]
       by_cases h1 : restore = .x1
       · subst h1; rw [RegUpd.gpr_write_self, BitVec.setWidth_eq]
       · rw [RegUpd.gpr_write_of_ne t .x _ h1]
+    · rw [RegUpd.gpr_write_of_ne t .x _ (by decide), RegUpd.gpr_write_of_ne w' .x _ (by decide),
+        RegUpd.gpr_write_self, BitVec.setWidth_eq]
     · have ha' := hw.acc
       rw [Nat.mul_comm k 5] at ha'
       exact ha'.of (fun r hr' => g r (by intro he; rw [he] at hr'; exact absurd hr' (by decide))
+        (by intro he; rw [he] at hr'; exact absurd hr' (by decide))
         (by intro he; rw [he] at hr'; exact absurd hr' (by decide))) rfl
 
 end VG.Proof.ChaCha20Poly1305.AArch64.Stitch
