@@ -3410,6 +3410,10 @@ bne %cr0, 2424b
 }
 
 #[rustfmt::skip]
+#[path = "internal/vg_rsa_prime_search.rs"]
+pub(crate) mod vg_rsa_prime_search;
+
+#[rustfmt::skip]
 #[path = "internal/vg_rsa_private_checked.rs"]
 pub(crate) mod vg_rsa_private_checked;
 

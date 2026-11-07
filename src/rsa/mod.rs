@@ -59,7 +59,7 @@ use crate::arch::rsa_pkcs1_sig::{
     )
 ))]
 use crate::arch::{
-    rsa_keygen::VG_RSA_PRIME_SEARCH_UMAAL_FEATURES, rsa_pkcs1_sig::VG_RSA_PKCS1_SIGN_UMAAL_FEATURES,
+    rsa_keygen::VG_RSA_GENERATE_UMAAL_FEATURES, rsa_pkcs1_sig::VG_RSA_PKCS1_SIGN_UMAAL_FEATURES,
 };
 use verified_garbage_cpu::Features;
 
@@ -67,8 +67,7 @@ use verified_garbage_cpu::Features;
 /// built on the verified code's own RSA operations,
 /// `vg_rsa_public_precomputed_checked` and `vg_rsa_private_checked` (which
 /// only verified code calls): the padding schemes' (`vg_rsa_pkcs1_sign`,
-/// `crate::rsa::pkcs1_sig`, …) and key generation's (`crate::rsa::keygen`):
-/// `vg_rsa_generate` on x86-64, `vg_rsa_prime_search` elsewhere.
+/// `crate::rsa::pkcs1_sig`, …) and `vg_rsa_generate` (`crate::rsa::keygen`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Backend {
     /// The baseline implementation.
@@ -187,7 +186,7 @@ impl Backend {
         Features(0),
         Features::all(&[
             VG_RSA_PKCS1_SIGN_UMAAL_FEATURES,
-            VG_RSA_PRIME_SEARCH_UMAAL_FEATURES,
+            VG_RSA_GENERATE_UMAAL_FEATURES,
         ]),
     ];
 
