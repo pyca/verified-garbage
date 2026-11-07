@@ -36,8 +36,8 @@ theorem candidateFilter_ct (M : Mont) (R : R2Impl M) (K : Kernel) :
     (two_map (fun d : CandidatePublic => d) (fun _ _ h => h.1) generatorPolicy_ct) generator_initial) ?_
   refine two_ite (fun _ _ _ h₁ h₂ => by simp [eval, h₁.2, h₂.2]) ?_ ?_
   · refine RelCT.seq (two_post
-      (two_map (fun d : CandidatePublic => d) (fun _ _ h => h.1.1.1) (primeCheck_ct false .all))
-      (fun d s h => prime_initial d s h.1.1)) ?_
+      (two_map (fun d : CandidatePublic => d) (fun _ _ h => h.1.1.1) (earlyCheck_ct false .all))
+      (fun d s h => early_initial d s h.1.1)) ?_
     refine two_ite (fun _ _ _ h₁ h₂ => by simp [eval, h₁.2, h₂.2]) ?_ ?_
     · exact RelCT.seq (two_post
         (two_map (fun d : CandidatePublic => (⟨d.p.B, d.wr⟩ : LinkPublic)) (fun _ _ h => h.1.1.1.link) leave_ct)

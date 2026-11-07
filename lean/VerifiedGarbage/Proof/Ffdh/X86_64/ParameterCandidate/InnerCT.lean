@@ -65,6 +65,11 @@ theorem inner_sievePrefix_ct : RelCT isa (Two fun (a : InnerPublic × BitVec 64)
     (fun _ _ _ h₁ h₂ r hr => by simp only [List.mem_singleton] at hr; subst hr; exact h₁.2.trans h₂.2.symm)
     (by taint_decide)
 
+/-- The table, and a count of `firstWords` of its words. -/
+theorem inner_sievePrefixN_ct : RelCT isa (Two InnerHeader) (sievePrefixN firstWords) fun _ _ => True :=
+  inner_ct InnerPublic.B InnerPublic.wr gS (fun p => gvs (off p.B 256) p.w) [] (by decide)
+    (fun p => gvs_fst _ _) (fun _ _ h => h) (pins_nil _) (by taint_decide)
+
 /-- One word of the sieve's table, its index in R13. -/
 theorem inner_sieveWord_ct : RelCT isa (Two fun (a : InnerPublic × Nat) s => InnerHeader a.1 s ∧
     s.gpr .r13 = BitVec.ofNat 64 a.2) (VG.Impl.Bignum.X86_64.seqs sieveWord) fun _ _ => True :=

@@ -55,6 +55,10 @@ def sieveBits : List Instr := [.mov .rax (.mem (hdr sLink)), .mov .rdx (.mem (ws
 /-- Oddness, then the sieve: ZF means acceptance. -/
 def primeCheck : Prog isa := .seq (.block oddTest) (.ite .e (.seq (.block sieveBits) sieve) (.block []))
 
+/-- Oddness, then the table's first words (`sieveFirst`): ZF means neither
+rejects the candidate. -/
+def earlyCheck : Prog isa := .seq (.block oddTest) (.ite .e sieveFirst (.block []))
+
 /-- Save the ABI arguments and callee-saved registers in the outer header. -/
 def entry : List Instr :=
   [.mov .rax (.mem (stk 2)), .mov .r10 (.mem (stk 1))] ++ Domain.save .rax ++
@@ -211,17 +215,23 @@ def testQ : Prog isa := phaseTest mul r2 round (.seq shapeOriginal halveOutput) 
 /-- p's first witness, before q's. -/
 def testFirst : Prog isa := phaseTest mul r2 round shapeOriginal false .first (testQ mul r2 round)
 
-/-- q's trial division, at its own width, then the witnesses. -/
-def sieveQ : Prog isa := seqs [halveOutput, phaseSetup true .all, loadOutput, primeCheck,
+/-- p's whole trial division, once q has passed its own, then the witnesses. -/
+def sieveP : Prog isa := seqs [shapeOriginal, phaseSetup false .all, loadOutput, primeCheck,
   .ite .e (.seq (.block [leave]) (testFirst mul r2 round)) (innerStatus 2)]
+
+/-- q's trial division, at its own width, then p's (`sieveP`). -/
+def sieveQ : Prog isa := seqs [halveOutput, phaseSetup true .all, loadOutput, primeCheck,
+  .ite .e (.seq (.block [leave]) (sieveP mul r2 round)) (innerStatus 2)]
 
 /-- Apply the requested generator's candidate congruence policy. -/
 def generatorPolicy : Prog isa := .seq
   (.block [.mov .rax (.mem (hdr sLink)), .mov .rdx (.mem (ws .rax oGen))]) generatorCheck
 
-/-- Trial checks of p and q before any witness. -/
+/-- Trial checks of p and q before any witness: p's first words, q's whole
+sieve, then p's (`sieveQ`), so that a q with a small factor is rejected
+before p's whole sieve. -/
 def candidateFilter : Prog isa := seqs [phaseSetup false .all, loadOutput, generatorPolicy,
-  .ite .e (.seq primeCheck (.ite .e (.seq (.block [leave]) (sieveQ mul r2 round)) (innerStatus 2))) (innerStatus 2)]
+  .ite .e (.seq earlyCheck (.ite .e (.seq (.block [leave]) (sieveQ mul r2 round)) (innerStatus 2))) (innerStatus 2)]
 
 /-- One byte of p's octets (at R10) added into RSI. -/
 def sumByte : List Instr :=

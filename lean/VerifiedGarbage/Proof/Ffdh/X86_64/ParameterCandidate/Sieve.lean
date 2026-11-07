@@ -148,6 +148,51 @@ structure SieveStart (s : State) (B : Addr) (Z w N : Nat) (minv : BitVec 64) (t 
   frm : Frm B [(slot w aTab, 2048), (8 * kT0, 8), (8 * kT2, 8)] s.mem t.mem
   keep : Keep [.rax, .rbx, .rcx, .rdx, .rsi, .rbp, .r8, .r12, .r13, .r14, .r15] s t
 
+/-- `sieveStart`: the count `N` from RAX, the flag cleared, `r13 = 0`. -/
+theorem sieveStart_ok {s s₃ t : State} {B : Addr} {Z w N : Nat} {minv : BitVec 64}
+    (hTZ : slot w aTab + 2048 ≤ Z) (hg₃ : Good s₃ B Z w minv)
+    (hc₃ : wv s₃.mem B (slot w aN) w = wv s.mem B (slot w aN) w)
+    (ho₃ : Outside B (slot w aTab) 2048 s.mem s₃.mem)
+    (htab₃ : ∀ i < 256, word s₃.mem B (slot w aTab + 8 * i) = BitVec.ofNat 64 (tabWord i))
+    (k₀ : Keep [.rax, .rbx, .rcx, .rdx, .rsi, .rbp, .r8, .r12, .r13, .r14, .r15] s s₃)
+    (hax : t.gpr .rax = BitVec.ofNat 64 N) (hmt : t.mem = s₃.mem) (kt : Keep [.rax] s₃ t) :
+    WP isa (.block sieveStart) t (SieveStart s B Z w N minv) := by
+  have hn := hg₃.scr.nowrap
+  have hT2 : 8 * kT2 + 8 ≤ slot w aN := hdr_lt_slot w aN (by decide)
+  have hTa : slot w aN + 8 * (w + 2) ≤ slot w aTab := by unfold slot aN aTab; omega_arith
+  have hTa' : 8 * kT2 + 8 ≤ slot w aTab := hdr_lt_slot w aTab (by decide)
+  unfold sieveStart
+  have hgt : Good t B Z w minv := ⟨hg₃.scr.congr kt.2.2, (kt.gpr (by decide)).trans hg₃.rdi, by rw [hmt]; exact hg₃.hdr⟩
+  have hst : ∀ i < 32, InRegions t.wr (off B (8 * i)) 8 := fun i hi => hgt.scr.st (by have := hdr_lt_slot w 8 hi; omega_arith)
+  refine WP.mono (WP.keep [.rax, .r13] (Q := fun t' => t'.mem = (t.mem.writeW (off B (8 * kT0))
+      (BitVec.ofNat 64 N)).writeW (off B (8 * kT2)) (0 : BitVec 64) ∧ t'.gpr .r13 = BitVec.ofNat 64 0) (by
+    xrun [State.ea, hdr, hgt.rdi, hdrOff, hst kT0 (by decide), hst kT2 (by decide), hax, sx_ofNat]
+    rfl) rfl) fun t₄ ⟨⟨hm₄, h13₄⟩, k₄⟩ => ?_
+  have hoA : Outside B (8 * kT0) 8 t.mem (t.mem.writeW (off B (8 * kT0)) (BitVec.ofNat 64 N)) :=
+    writeW_outside _ _ _ (by unfold kT0 sFn; omega_arith)
+  have hoB : ∀ m : Mem, Outside B (8 * kT2) 8 m (m.writeW (off B (8 * kT2)) (0 : BitVec 64)) :=
+    fun m => writeW_outside _ _ _ (by unfold kT2 sFn; omega_arith)
+  have hg₄ : Good t₄ B Z w minv := ⟨hgt.scr.congr k₄.2.2, (k₄.gpr (by decide)).trans hgt.rdi,
+    by rw [hm₄]; exact (hgt.hdr.store (by decide) (by decide) _).store (by decide) (by decide) _⟩
+  have hc₄ : wv t₄.mem B (slot w aN) w = wv s.mem B (slot w aN) w := by
+    rw [hm₄, (hoB _).wv (Or.inr hT2) (by omega_arith),
+      hoA.wv (Or.inr (by unfold kT0 kT2 sFn at *; omega_arith)) (by omega_arith), hmt, hc₃]
+  have hN₄ : word t₄.mem B (8 * kT0) = BitVec.ofNat 64 N := by
+    rw [hm₄, (hoB _).word (Or.inl (by unfold kT0 kT2 sFn; omega_arith)) (by unfold kT0 sFn; omega_arith),
+      word_writeW_self]
+  have htab₄ : ∀ i < 256, word t₄.mem B (slot w aTab + 8 * i) = BitVec.ofNat 64 (tabWord i) := fun i hi => by
+    rw [hm₄, (hoB _).word (Or.inr (by omega_arith)) (by omega_arith),
+      hoA.word (Or.inr (by have := hdr_lt_slot w aTab (show kT0 < 32 by decide); omega_arith)) (by omega_arith),
+      hmt]; exact htab₃ i hi
+  have hf₄ : word t₄.mem B (8 * kT2) = mask (anyPre (wv t₄.mem B (slot w aN) w) (4 * 0)) := by
+    rw [hm₄, word_writeW_self]; unfold anyPre
+    rw [Nat.mul_zero, show List.range 0 = [] from rfl, List.any_nil, mask_false]
+  refine ⟨⟨hg₄, h13₄, hN₄, htab₄, rfl, Frm.refl _ _ _, Keep.refl _ _⟩, hf₄, hc₄, ?_,
+    ((k₀.trans kt).trans k₄).mono (by decide)⟩
+  intro x hx
+  rw [hm₄, hoB _ x (hx (8 * kT2, 8) (by simp)), hoA x (hx (8 * kT0, 8) (by simp)), hmt,
+    ho₃ x (hx (slot w aTab, 2048) (by simp))]
+
 /-- `sievePrefix`: the table, the count for `bits` in RDX, and the flag. -/
 theorem sievePrefix_ok {s : State} {B : Addr} {Z w bits : Nat} {minv : BitVec 64} (hg : Good s B Z w minv)
     (hZ : slot w 8 ≤ Z) (hTZ : slot w aTab + 2048 ≤ Z) (hw' : w < 2 ^ 31)
@@ -185,60 +230,28 @@ theorem sievePrefix_ok {s : State} {B : Addr} {Z w bits : Nat} {minv : BitVec 64
   have hN : N ≤ 256 ∧ 1 ≤ N := by rw [← hNdef]; unfold sieveCount; split <;> omega_arith
   have hN128 : bits < 1025 → N = 128 := fun h => by rw [← hNdef]; unfold sieveCount; split <;> omega_arith
   have hN256 : ¬ bits < 1025 → N = 256 := fun h => by rw [← hNdef]; unfold sieveCount; split <;> omega_arith
-  -- From `rax = N`: the counts, the loop and ZF.
+  have htab₃ : ∀ i < 256, word s₃.mem B (slot w aTab + 8 * i) = BitVec.ofNat 64 (tabWord i) := fun i hi => by
+    rw [hm₃]; exact htab₂ i hi
+  have k₀ : Keep [.rax, .rbx, .rcx, .rdx, .rsi, .rbp, .r8, .r12, .r13, .r14, .r15] s s₃ :=
+    ((k₁.trans k₂).trans k₃).mono (by decide)
   have cont : ∀ t : State, t.gpr .rax = BitVec.ofNat 64 N → t.mem = s₃.mem → Keep [.rax] s₃ t →
-      WP isa (.block [.store (hdr kT0) .rax, .mov32 .rax (.imm 0), .store (hdr kT2) .rax, .mov32 .r13 (.imm 0)])
-        t (SieveStart s B Z w N minv) := by
-    intro t hax hmt kt
-    have hgt : Good t B Z w minv := ⟨hg₃.scr.congr kt.2.2, (kt.gpr (by decide)).trans hg₃.rdi, by rw [hmt]; exact hg₃.hdr⟩
-    have hst : ∀ i < 32, InRegions t.wr (off B (8 * i)) 8 := fun i hi => hgt.scr.st (by have := hdr_lt_slot w 8 hi; omega_arith)
-    refine WP.mono (WP.keep [.rax, .r13] (Q := fun t' => t'.mem = (t.mem.writeW (off B (8 * kT0))
-        (BitVec.ofNat 64 N)).writeW (off B (8 * kT2)) (0 : BitVec 64) ∧ t'.gpr .r13 = BitVec.ofNat 64 0) (by
-      xrun [State.ea, hdr, hgt.rdi, hdrOff, hst kT0 (by decide), hst kT2 (by decide), hax, sx_ofNat]
-      rfl) rfl) fun t₄ ⟨⟨hm₄, h13₄⟩, k₄⟩ => ?_
-    have hoA : Outside B (8 * kT0) 8 t.mem (t.mem.writeW (off B (8 * kT0)) (BitVec.ofNat 64 N)) :=
-      writeW_outside _ _ _ (by unfold kT0 sFn; omega_arith)
-    have hoB : ∀ m : Mem, Outside B (8 * kT2) 8 m (m.writeW (off B (8 * kT2)) (0 : BitVec 64)) :=
-      fun m => writeW_outside _ _ _ (by unfold kT2 sFn; omega_arith)
-    have hg₄ : Good t₄ B Z w minv := ⟨hgt.scr.congr k₄.2.2, (k₄.gpr (by decide)).trans hgt.rdi,
-      by rw [hm₄]; exact (hgt.hdr.store (by decide) (by decide) _).store (by decide) (by decide) _⟩
-    have hc₄ : wv t₄.mem B (slot w aN) w = wv s.mem B (slot w aN) w := by
-      rw [hm₄, (hoB _).wv (Or.inr hT2) (by omega_arith),
-        hoA.wv (Or.inr (by unfold kT0 kT2 sFn at *; omega_arith)) (by omega_arith), hmt, hc₃]
-    have hN₄ : word t₄.mem B (8 * kT0) = BitVec.ofNat 64 N := by
-      rw [hm₄, (hoB _).word (Or.inl (by unfold kT0 kT2 sFn; omega_arith)) (by unfold kT0 sFn; omega_arith),
-        word_writeW_self]
-    have htab₄ : ∀ i < 256, word t₄.mem B (slot w aTab + 8 * i) = BitVec.ofNat 64 (tabWord i) := fun i hi => by
-      rw [hm₄, (hoB _).word (Or.inr (by omega_arith)) (by omega_arith),
-        hoA.word (Or.inr (by have := hdr_lt_slot w aTab (show kT0 < 32 by decide); omega_arith)) (by omega_arith),
-        hmt, hm₃]; exact htab₂ i hi
-    have hf₄ : word t₄.mem B (8 * kT2) = mask (anyPre (wv t₄.mem B (slot w aN) w) (4 * 0)) := by
-      rw [hm₄, word_writeW_self]; unfold anyPre
-      rw [Nat.mul_zero, show List.range 0 = [] from rfl, List.any_nil, mask_false]
-    refine ⟨⟨hg₄, h13₄, hN₄, htab₄, rfl, Frm.refl _ _ _, Keep.refl _ _⟩, hf₄, hc₄, ?_,
-      ((((k₁.trans k₂).trans k₃).trans kt).trans k₄).mono (by decide)⟩
-    intro x hx
-    rw [hm₄, hoB _ x (hx (8 * kT2, 8) (by simp)), hoA x (hx (8 * kT0, 8) (by simp)), hmt,
-      ho₃ x (hx (slot w aTab, 2048) (by simp))]
+      WP isa (.block sieveStart) t (SieveStart s B Z w N minv) := fun t hax hmt kt =>
+    sieveStart_ok hTZ hg₃ hc₃ ho₃ htab₃ k₀ hax hmt kt
   refine WP.seq (WP.ite (decide (bits < 1025)) (by simp [eval, hcf₃])
     (fun h => WP.block_nil (cont s₃ ?_ rfl (Keep.refl _ _)))
     (fun h => WP.mono (WP.keep [.rax] (Q := fun t => t.gpr .rax = BitVec.ofNat 64 N ∧ t.mem = s₃.mem) (by
       xrun [sx_ofNat]; rw [hN256 (by simpa using h)]; rfl) rfl) fun t ⟨⟨h1, h2⟩, k⟩ => cont t h1 h2 k))
   rw [hax₃, hN128 (by simpa using h)]
 
-/-- `sieve`: ZF set iff none of the table's first `4 (sieveCount bits)`
-entries divides the candidate in `aN`, `bits` in RDX. -/
-theorem sieve_ok {s : State} {B : Addr} {Z w bits : Nat} {minv : BitVec 64} (hg : Good s B Z w minv)
+/-- The sieve's loop and its result, from where its prefix leaves it: ZF set
+iff none of the table's first `4 N` entries divides the candidate. -/
+theorem sieveRest_ok {s t₄ : State} {B : Addr} {Z w N : Nat} {minv : BitVec 64}
     (hZ : slot w 8 ≤ Z) (hTZ : slot w aTab + 2048 ≤ Z) (hw : 1 ≤ w) (hw' : w < 2 ^ 31)
-    (hb : bits < 2 ^ 32) (hdx : s.gpr .rdx = BitVec.ofNat 64 bits) :
-    WP isa sieve s fun t =>
-      t.zf = some (!(anyPre (wv s.mem B (slot w aN) w) (4 * sieveCount bits))) ∧ Good t B Z w minv ∧
+    (hN : N ≤ 256 ∧ 1 ≤ N) (hS : SieveStart s B Z w N minv t₄) :
+    WP isa (.seq (.loop (seqs sieveWord) .ne) (.block sieveTail)) t₄ fun t =>
+      t.zf = some (!(anyPre (wv s.mem B (slot w aN) w) (4 * N))) ∧ Good t B Z w minv ∧
       Frm B [(slot w aTab, 2048), (8 * kT0, 8), (8 * kT1, 8), (8 * kT2, 8)] s.mem t.mem ∧
       Keep [.rax, .rbx, .rcx, .rdx, .rsi, .rbp, .r8, .r12, .r13, .r14, .r15] s t := by
-  have hN : sieveCount bits ≤ 256 ∧ 1 ≤ sieveCount bits := by unfold sieveCount; split <;> omega_arith
-  unfold sieve
-  refine WP.seq (WP.mono (sievePrefix_ok hg hZ hTZ hw' hb hdx) fun t₄ hS => ?_)
-  generalize sieveCount bits = N at hS hN ⊢
   obtain ⟨hI₀, hf₄, hc₄, hfrm₄, k₄⟩ := hS
   have hF := firstHit_le (wv t₄.mem B (slot w aN) w) N
   refine WP.seq (WP.mono (wp_upto (a := 0) (N := firstHit (wv t₄.mem B (slot w aN) w) N)
@@ -263,6 +276,55 @@ theorem sieve_ok {s : State} {B : Addr} {Z w bits : Nat} {minv : BitVec 64} (hg 
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with h | h <;> simp [h])),
     hfrm₄ x (fun r hr => hx r (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with h | h | h <;> simp [h]))]
+
+/-- `sieve`: ZF set iff none of the table's first `4 (sieveCount bits)`
+entries divides the candidate in `aN`, `bits` in RDX. -/
+theorem sieve_ok {s : State} {B : Addr} {Z w bits : Nat} {minv : BitVec 64} (hg : Good s B Z w minv)
+    (hZ : slot w 8 ≤ Z) (hTZ : slot w aTab + 2048 ≤ Z) (hw : 1 ≤ w) (hw' : w < 2 ^ 31)
+    (hb : bits < 2 ^ 32) (hdx : s.gpr .rdx = BitVec.ofNat 64 bits) :
+    WP isa sieve s fun t =>
+      t.zf = some (!(anyPre (wv s.mem B (slot w aN) w) (4 * sieveCount bits))) ∧ Good t B Z w minv ∧
+      Frm B [(slot w aTab, 2048), (8 * kT0, 8), (8 * kT1, 8), (8 * kT2, 8)] s.mem t.mem ∧
+      Keep [.rax, .rbx, .rcx, .rdx, .rsi, .rbp, .r8, .r12, .r13, .r14, .r15] s t := by
+  have hN : sieveCount bits ≤ 256 ∧ 1 ≤ sieveCount bits := by unfold sieveCount; split <;> omega_arith
+  unfold sieve
+  exact WP.seq (WP.mono (sievePrefix_ok hg hZ hTZ hw' hb hdx) fun t₄ hS => sieveRest_ok hZ hTZ hw hw' hN hS)
+
+/-- `sievePrefixN n`: the table, the count `n`, and the flag. -/
+theorem sievePrefixN_ok {s : State} {B : Addr} {Z w n : Nat} {minv : BitVec 64} (hg : Good s B Z w minv)
+    (hZ : slot w 8 ≤ Z) (hTZ : slot w aTab + 2048 ≤ Z) (hw' : w < 2 ^ 31) (hn : n < 2 ^ 31) :
+    WP isa (sievePrefixN n) s (SieveStart s B Z w n minv) := by
+  have hTa : slot w aN + 8 * (w + 2) ≤ slot w aTab := by unfold slot aN aTab; omega_arith
+  unfold sievePrefixN
+  rw [WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
+  refine WP.mono (extBase_ok hg hZ hw' (j := aTab) (by decide) (r := .rbx) (by decide) rfl rfl)
+    fun s₁ ⟨hbx₁, hm₁, k₁⟩ => ?_
+  refine WP.mono (tabWrites_ok (hg.scr.congr k₁.2.2) hTZ hbx₁ 256 (Nat.le_refl _)) fun s₂ ⟨htab₂, ho₂, k₂⟩ => ?_
+  have hn := hg.scr.nowrap
+  have hm₂ : ∀ i < 32, word s₂.mem B (8 * i) = word s.mem B (8 * i) := fun i hi => by
+    rw [ho₂.word (Or.inl (by have := hdr_lt_slot w aTab hi; omega_arith)) (by omega_arith), hm₁]
+  have hg₂ : Good s₂ B Z w minv := ⟨hg.scr.congr (k₂.2.2.trans k₁.2.2),
+    (k₂.gpr (by decide)).trans ((k₁.gpr (by decide)).trans hg.rdi),
+    ⟨by rw [hm₂ sW (by decide)]; exact hg.hdr.hw, by rw [hm₂ sMinv (by decide)]; exact hg.hdr.hminv,
+      fun j hj => by rw [hm₂ (sArr j) (by unfold sArr; omega_arith)]; exact hg.hdr.harr j hj⟩⟩
+  have hc₂ : wv s₂.mem B (slot w aN) w = wv s.mem B (slot w aN) w := by
+    rw [ho₂.wv (k := w) (Or.inl (by omega_arith)) (by omega_arith), hm₁]
+  have ho₂' : Outside B (slot w aTab) 2048 s.mem s₂.mem := by rw [← hm₁]; exact ho₂
+  refine WP.mono (WP.keep [.rax] (Q := fun t => t.gpr .rax = BitVec.ofNat 64 n ∧ t.mem = s₂.mem)
+    (by xrun; apply BitVec.eq_of_toNat_eq; simp; omega) rfl)
+    fun t ⟨⟨hax, hmt⟩, kt⟩ => sieveStart_ok hTZ hg₂ hc₂ ho₂' htab₂ ((k₁.trans k₂).mono (by decide)) hax hmt kt
+
+/-- `sieveFirst`: ZF set iff none of the table's first `4 firstWords` entries
+divides the candidate in `aN`. -/
+theorem sieveFirst_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg : Good s B Z w minv)
+    (hZ : slot w 8 ≤ Z) (hTZ : slot w aTab + 2048 ≤ Z) (hw : 1 ≤ w) (hw' : w < 2 ^ 31) :
+    WP isa sieveFirst s fun t =>
+      t.zf = some (!(anyPre (wv s.mem B (slot w aN) w) (4 * firstWords))) ∧ Good t B Z w minv ∧
+      Frm B [(slot w aTab, 2048), (8 * kT0, 8), (8 * kT1, 8), (8 * kT2, 8)] s.mem t.mem ∧
+      Keep [.rax, .rbx, .rcx, .rdx, .rsi, .rbp, .r8, .r12, .r13, .r14, .r15] s t := by
+  unfold sieveFirst
+  exact WP.seq (WP.mono (sievePrefixN_ok hg hZ hTZ hw' (by decide)) fun t₄ hS =>
+    sieveRest_ok hZ hTZ hw hw' (by decide) hS)
 
 /-- Above the table's largest prime, an odd candidate passes the sieve iff
 it has `primeShape` and is not `obviouslyComposite` for the requested width. -/
