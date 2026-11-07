@@ -81,7 +81,7 @@ structure RegT (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : Prop where
   rl : TOk [.r8, .r9, .rcx] (.loop (.block (recodeBody l)) .ne)
 
 theorem regT (hl : AmmOk l) : RegT l := by
-  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;>
+  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;>
     exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
       ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
       ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
@@ -317,7 +317,7 @@ theorem recBlk_ok (hl : AmmOk l) (hw : l.w ≠ 4) {p sp sl : Nat} {q : RegPub} {
   obtain ⟨d1, d2⟩ := lay_oD l hw
   obtain ⟨hDb1, hDb2⟩ := hl.D_bounds
   have hDp : l.D * p ≤ l.D ∧ l.D * p + l.D ≤ l.nl * l.D ∧ l.nl * l.D ≤ 2 * l.D := ⟨D_le hl hp, lane_end hl hp, (nlD_le hl).2⟩
-  have hG : l.P / l.w < 2 ^ 31 := by rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide
+  have hG : l.P / l.w < 2 ^ 31 := by rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> decide
   refine WP.mono (WP.keep [.rcx, .r8, .r9] (Q := fun t =>
     t.gpr .r8 = off (off q.B q.a) (l.D * p + l.oE) ∧ t.gpr .r9 = off (off q.B q.a) (l.D * p + l.oD) ∧
       t.gpr .rcx = BitVec.ofNat 64 (l.P / l.w)) (by
@@ -383,7 +383,7 @@ theorem k1_chain (hl : AmmOk l) {p sp sl : Nat} {q : RegPub} {s : State} (h : Re
   have lT := slot_le (w := l.W) (show aT < 8 by decide)
   have lN := slot_le (w := l.W) (show Public.aN < 8 by decide)
   have sTN := slot_sep (w := l.W) (show aT ≠ Public.aN by decide)
-  have hdb : 1 ≤ l.dbls ∧ l.dbls < 2 ^ 31 := by rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide
+  have hdb : 1 ≤ l.dbls ∧ l.dbls < 2 ^ 31 := by rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> decide
   have hk1 : ∀ r ∈ k1Ranges l.W, r.1 + r.2 ≤ slot l.W 8 := by
     have := slot_le (w := l.W) (show Public.aAcc < 8 by decide)
     have := slot_le (w := l.W) (show Public.aTmp < 8 by decide)
