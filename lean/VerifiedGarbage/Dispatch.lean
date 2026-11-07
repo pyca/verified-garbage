@@ -33,7 +33,9 @@ def ranking : Rust.Ranking := [
       [{ suffix := g ++ "_avx2", modules := ["aes_gcm_siv"] }] ++
         if g.isEmpty then [] else [{ suffix := g, modules := ["aes_gcm_siv"] }]) ++
     { suffix := "_vaes_avx512" } ::
-    gcmX86_64.map (fun g => { suffix := g }) ++ [
+    (gcmX86_64.flatMap fun g => { suffix := g } ::
+      -- `vg_aes_gcm_prepare`'s 128-bit AVX code, after its 256-bit code.
+      if g == "_vpclmul" then [{ suffix := "_pclmul_avx", modules := ["gcm"] }] else []) ++ [
     -- ChaCha20's 512-bit code (`_avx512`) is chosen where ChaCha20-Poly1305's
     -- `_ifma` is, on CPUs with AVX512_IFMA, and `_avx512vl` on the other CPUs
     -- with AVX512VL.
