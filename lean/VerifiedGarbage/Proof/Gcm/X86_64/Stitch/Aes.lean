@@ -390,7 +390,7 @@ theorem batchM_ok {ix st ld : Bool} {s₀ : State} (hp : LPre ix s₀) (hst : st
       Frame [⟨wAddr ix s₀ c, 128⟩] s.mem s'.mem → Q 10 s')
     (hc : c + 8 ≤ nb s₀) {s : State} (hI : AInvM ix s₀ c s)
     (hr8 : ix = true → s.gpr .r8 = if ld then dp s₀ - op s₀ else op s₀ - dp s₀)
-    (hrdx : (s.gpr .rdx).toNat + 32 * j = (if ld then op s₀ else dp s₀).toNat + 16 * c) (hQ : Q 1 s) :
+    (hrdx : (s.gpr .rdx).toNat + 32 * j = (wp ld s₀).toNat + 16 * c) (hQ : Q 1 s) :
     WP isa (batch j g st ld) s fun s' => AInvM ix s₀ (c + 8) s' ∧ Q 10 s' ∧ s'.gpr = s.gpr ∧
       (∀ r, r ≠ .xmm13 → r ≠ .xmm14 → r ∉ aregs → r ∉ G → ∀ l < 2, s'.lane r l = s.lane r l) ∧
       Frame [⟨wAddr ix s₀ c, 128⟩] s.mem s'.mem := by
@@ -413,13 +413,13 @@ theorem batchM_ok {ix st ld : Bool} {s₀ : State} (hp : LPre ix s₀) (hst : st
       ciph s₀ (Nat.repeat inc32 (c + 2 * k + l) (cb s₀)) := fun k h l hl =>
     (aesWith_eq _ _ _ _ (by rw [e₂ _ (List.getElem_mem h) l hl, e₁ k h l hl])).symm
   have hg₂ : s₂.gpr = s.gpr := by rw [f₂.gpr, f₁.gpr]
-  have hwr : (if ld then op s₀ else dp s₀).toNat + 16 * nb s₀ ≤ 2 ^ 64 := by
+  have hwr : (wp ld s₀).toNat + 16 * nb s₀ ≤ 2 ^ 64 := by
     cases ld
     · exact hwd
     · obtain rfl := hld rfl; exact hw
   -- Where `rdx` points: at the data, or, out of place (`ld`), at the output.
   have raddr : ∀ i, s.gpr .rdx + BitVec.ofNat 64 (32 * j + 16 * i) =
-      (if ld then op s₀ else dp s₀) + BitVec.ofNat 64 (16 * (c + i)) := fun i => addr_eq (by omega)
+      (wp ld s₀) + BitVec.ofNat 64 (16 * (c + i)) := fun i => addr_eq (by omega)
   -- Where the pairs are read from.
   have addr : ∀ i, oA s ld + BitVec.ofNat 64 (32 * j + 16 * i) = bAddr s₀ (c + i) := fun i => by
     cases ld
