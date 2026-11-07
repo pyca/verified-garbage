@@ -272,6 +272,23 @@ theorem tail_ok {s₀ : State} (hp : APre false s₀) {t : Addr} {s : State} (h 
     WP isa openTail s fun s' => abiPreserved s₀ s' ∧ openSPost s₀ s' :=
   WP.seq (WP.mono (tagLoad_ok hp h) fun _ h => tailT_ok hp h)
 
+/-- `APre` of a state that may read more. -/
+theorem APre.of_more {e : Bool} {u : State} {rd wr more : List Region} (h : preX86_64 e (u.withRegions rd wr)) :
+    APre e (u.withRegions (rd ++ more) wr) := by
+  have h' := APre.of _ h
+  obtain ⟨m', hm'⟩ := h'.rd
+  have hrd : rd = (if e then [kR u, nR u, aR u, argR u] else [kR u, nR u, aR u, tR u, argR u]) ++ m' := hm'
+  exact { h' with rd := ⟨m' ++ more, by simp only [State.withRegions_rd, hrd, List.append_assoc]; rfl⟩ }
+
+/-- What the code `open` and `open_to` share (`openShared`, and the stitched
+`Stitch.openStitchedShared`) starts from: `open`'s precondition, with the
+ciphertext at `r11` (`sp`), which is the data or apart from it. -/
+def SPreO (s₀ : State) : Prop := APre false s₀ ∧ SrcIO s₀ (sp s₀)
+
+theorem shared_correct (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : SPreO s₀) :
+    WP isa (openShared v.callee v.poly) s₀ fun s' => abiPreserved s₀ s' ∧ openSPost s₀ s' :=
+  WP.seq (WP.mono (body_ok v hp.1 hp.2) fun _ h => tail_ok hp.1 h)
+
 /-- The state after `srcIn`: the ciphertext's address, the data's, in `r11`. -/
 abbrev inS (s₀ : State) : State := s₀.setReg .r11 (s₀.gpr .r8)
 
@@ -286,8 +303,8 @@ theorem open_correct (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : AP
     WP isa («open» v.callee v.poly) s₀ fun s' => abiPreserved s₀ s' ∧ openX86_64.post s₀ s' := by
   refine WP.seq (WP.mono_mx (by decide) (srcIn_ok s₀) fun s₁ e₁ mx₁ => ?_)
   subst e₁
-  refine WP.seq (WP.mono (body_ok v (inS_pre hp) (srcIO_dp (inS_pre hp))) fun _ h => WP.mono (tail_ok (inS_pre hp) h)
-    fun s' ⟨ab, hpost⟩ => ⟨⟨fun r hr => ?_, ab.2.1, ab.2.2⟩, hpost⟩)
+  refine WP.mono (shared_correct v ⟨inS_pre hp, srcIO_dp (inS_pre hp)⟩)
+    fun s' ⟨ab, hpost⟩ => ⟨⟨fun r hr => ?_, ab.2.1, ab.2.2⟩, hpost⟩
   rw [ab.1 r hr]
   exact RegUpd.gpr_setReg_of_ne _ _ (by
     simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -411,6 +428,32 @@ theorem tail_rel {t t' : Addr} :
 
 end
 
+/-- The public data of the shared code's entry: `open`'s, the ciphertext's
+address, and whether the tag is right (what `open` may leak). -/
+def sharedPub (s₁ s₂ : State) : Prop := pubX86_64 s₁ s₂ ∧ sp s₁ = sp s₂ ∧ openSLeak s₁ = openSLeak s₂
+
+/-- The contract of the shared code, as `open_to` runs it inline. -/
+def sharedK : Contract isa where
+  pre := SPreO
+  post := openSPost
+  pub := sharedPub
+
+theorem shared_rel (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ s₀' : State} (hp : SPreO s₀) (hp' : SPreO s₀')
+    (hq : sharedPub s₀ s₀') :
+    RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (openShared v.callee v.poly) fun _ _ => True :=
+  RelCT.seq (R := fun x y => TailIn s₀ (sp s₀) x ∧ TailIn s₀' (sp s₀') y)
+    (RelCT.mono ((body_rel v hp.1 hp'.1 hq.1 hq.2.1 hp.2 hp'.2).wp fun x y ⟨ex, ey⟩ => by
+      subst ex; subst ey; exact ⟨body_ok v hp.1 hp.2, body_ok v hp'.1 hp'.2⟩) (fun _ _ h => h) fun _ _ h => h.2)
+    (tail_rel hp.1 hp'.1 hq.1 hq.2.2)
+
+theorem shared_ok (v : Proof.ChaCha20.X86_64.XorImpl) (s : State) (hs : sharedK.pre s) :
+    ∃ t s', Exec isa (openShared v.callee v.poly) s t s' ∧ abiPreserved s s' ∧ sharedK.post s s' :=
+  let ⟨t, s', e, a, p⟩ := shared_correct v hs; ⟨t, s', e, a, p⟩
+
+theorem shared_ct (v : Proof.ChaCha20.X86_64.XorImpl) :
+    ConstantTime isa sharedK.pre sharedK.pub (openShared v.callee v.poly) :=
+  fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (shared_rel v h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
+
 theorem open_rel (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ s₀' : State} (h₀ : preX86_64 false s₀)
     (h₀' : preX86_64 false s₀') (hq : pubX86_64 s₀ s₀') (hl : openLeakX86_64 s₀ = openLeakX86_64 s₀') :
     RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') («open» v.callee v.poly) fun _ _ => True := by
@@ -421,9 +464,6 @@ theorem open_rel (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ s₀' : State} (h₀ 
   refine RelCT.seq (R := fun x y => x = inS s₀ ∧ y = inS s₀')
     (RelCT.mono ((taintRel [] (fun _ _ _ r hr => by simp at hr) (by taint_decide)).wp fun x y h =>
       ⟨by rw [h.1]; exact srcIn_ok s₀, by rw [h.2]; exact srcIn_ok s₀'⟩) (fun _ _ h => h) fun _ _ h => h.2) ?_
-  refine RelCT.seq (R := fun x y => TailIn (inS s₀) (sp (inS s₀)) x ∧ TailIn (inS s₀') (sp (inS s₀')) y)
-    (RelCT.mono ((body_rel v hp hp' hq' hs (srcIO_dp hp) (srcIO_dp hp')).wp fun x y ⟨ex, ey⟩ => by
-      subst ex; subst ey; exact ⟨body_ok v hp (srcIO_dp hp), body_ok v hp' (srcIO_dp hp')⟩) (fun _ _ h => h) fun _ _ h => h.2)
-    (tail_rel hp hp' hq' hl)
+  exact shared_rel v ⟨hp, srcIO_dp hp⟩ ⟨hp', srcIO_dp hp'⟩ ⟨hq', hs, hl⟩
 
 end VG.Proof.ChaCha20Poly1305.X86_64
