@@ -49,6 +49,16 @@ structure BlocksImpl where
   decCt : ConstantTime isa (Proof.Aes.blocksAArch64 Spec.Aes.invCipher).pre
     (Proof.Aes.blocksAArch64 Spec.Aes.invCipher).pub dec.code
   decKeepsV : dec.code.allInstrs keepsV = true
+  /-- Whether both functions write nothing in `scratch` (`encFree`,
+  `decFree`), so that a caller that leaves nothing written there need not
+  wipe it. -/
+  free : Bool
+  encFree : free = true → ∀ s t s', (Proof.Aes.encryptBlocksRoundsContract AArch64.abi).pre s →
+    Exec isa enc.code s t s' →
+      Sig.writtenWithin (AArch64.abi.withConsts []) Spec.Aes.blocksSig [("scratch", 0)] s s'
+  decFree : free = true → ∀ s t s', (Proof.Aes.decryptBlocksRoundsContract AArch64.abi).pre s →
+    Exec isa dec.code s t s' →
+      Sig.writtenWithin (AArch64.abi.withConsts []) Spec.Aes.blocksSig [("scratch", 0)] s s'
   /-- What the names of its callers' instances end with (e.g. `_aes`;
   nothing for the baseline implementation). -/
   suffix : String
@@ -78,6 +88,9 @@ def scalar : BlocksImpl where
   decOk := decryptBlocks_correct
   decCt := decryptBlocks_ct
   decKeepsV := by lit_decide
+  free := false
+  encFree := nofun
+  decFree := nofun
   suffix := ""
   features := []
   expand := .scalar
@@ -100,6 +113,9 @@ def aese : BlocksImpl where
   decOk := Aese.decryptBlocks_correct
   decCt := Aese.decryptBlocks_ct
   decKeepsV := by lit_decide
+  free := true
+  encFree := fun _ => Aese.encryptBlocks_written
+  decFree := fun _ => Aese.decryptBlocks_written
   suffix := "_aes"
   features := ["aes"]
   expand := .aese
