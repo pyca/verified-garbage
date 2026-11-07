@@ -23,9 +23,4 @@ def jacWinPrep (c : Impl.Ecdsa.AArch64.Cfg) : Prog isa :=
   .seq (.block (WinCfg.addConst 4 (c.sl V) c.winK jacOffset))
     (bits c.winK c.winBits 40)
 
-
-/-- A public scalar is recoded into 257 signed NAF bytes. -/
-def nafWinPrep (c : Impl.Ecdsa.AArch64.Cfg) : Prog isa :=
-  Naf.prep (jacWinCfg c) (c.sl V)
-
 end VG.Impl.Ecdsa.Verify.AArch64.Cfg

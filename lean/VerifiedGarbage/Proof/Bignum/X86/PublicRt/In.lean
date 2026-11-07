@@ -1,15 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.PublicInputs
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedInputs
 public import VerifiedGarbage.Spec.Rsa.Contract
 
 /-! # What the pieces of public RSA at a run-time width need of their inputs
 
 The working space, the arguments on the stack, the output and the input:
-what `PublicInputs` and `PrecomputedInputs` share (`RtIn`). The width of
-the numbers is read from `out_len` (argument 1), which is the modulus's
-length in both.
+what `PrecomputedInputs` needs of them (`RtIn`). The width of the numbers
+is read from `out_len` (argument 1), which is the modulus's length.
 -/
 
 @[expose] public section
@@ -36,11 +34,6 @@ structure RtIn (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) (s : S
 
 section
 variable {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32} {s t : State}
-
-theorem _root_.VG.Proof.Bignum.X86.PublicInputs.rt (h : PublicInputs base bytes len args s) :
-    RtIn base bytes len args s :=
-  ⟨h.scratch, h.lower, h.upper, h.space, h.stack, h.outLen, h.inLen, h.outFit, h.inFit, h.outWrite,
-    h.inRead, h.outApart, h.inApart⟩
 
 theorem _root_.VG.Proof.Bignum.X86.PrecomputedInputs.rt (h : PrecomputedInputs base bytes len args s) :
     RtIn base bytes len args s :=

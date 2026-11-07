@@ -65,11 +65,4 @@ theorem PublicData.after_acceptance {base dst ep xp : BitVec 32} {len k eLen : N
     (by intro r hr; simp only [List.mem_singleton] at hr; subst r
         exact h.stackInput.sub_right (Offset.sub_base _ (by decide)))
 
-theorem PublicBuffers.data {base dst np ep xp : BitVec 32} {len k eLen : Nat}
-    {nb eb xb : List Byte} {s : State} (h : PublicBuffers base dst np ep xp len k eLen nb eb xb s) :
-    PublicData base dst ep xp len k eLen eb xb s :=
-  ⟨h.workspace, h.minLength, h.maxLength, h.space, h.exponentPositive, h.exponentFits,
-    h.exponent, h.input, h.outputFit, h.write, h.exponentSeparate,
-    h.inputSeparate, h.outputSeparate, h.stackExponent, h.stackInput, h.stackOutput⟩
-
 end VG.Proof.Bignum.Arm

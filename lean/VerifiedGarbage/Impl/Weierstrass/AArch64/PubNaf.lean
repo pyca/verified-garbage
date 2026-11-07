@@ -11,7 +11,7 @@ public import VerifiedGarbage.Impl.Weierstrass.CachedJac
 fields whose products may be calls (`Mont.callOf`): the signed digits of `k`
 (width five, `64 n + 1` bytes, `prep`), a table of the eight odd multiples
 `[1]P, [3]P, …, [15]P` (`table`), and one doubling per digit, adding the
-table's entry for each nonzero digit (`window`). The table holds no operand
+table's entry for each nonzero digit (`step`, `stepD`). The table holds no operand
 of a product: `2P` is kept in `E` while the table is built, and an entry is
 copied to `E` before it is added, so the table may lie above the products'
 offsets. The table is built by co-Z arithmetic, for a `P` whose `z` is one,

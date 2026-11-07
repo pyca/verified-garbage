@@ -10,7 +10,7 @@ import Mathlib.Logic.Function.Basic
 /-!
 # The Jacobian window method: where it keeps its numbers
 
-The slots of `JacWinCfg.window` (`Impl/Weierstrass/X86_64/WinJac.lean`): the
+The slots of the Jacobian window method (`Impl/Weierstrass/X86_64/WinJac.lean`): the
 ones it reads only (`jwRo`: the curve's `a` and `3b`, which the renamed
 formulas name but do not read, zero and `P`), the others it writes
 (`jwOther`: `R`, `D`, `-y` and the temporaries), and a grid of `85` slots

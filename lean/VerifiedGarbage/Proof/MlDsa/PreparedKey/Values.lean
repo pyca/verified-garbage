@@ -26,12 +26,6 @@ theorem secretPolys_eq (p : Params) (sk : List Byte) :
   rcases e : skDecode p sk with ⟨rho, key, tr, s1, s2, t0⟩
   simp only [preparedSecretPolys, e, List.map_append]
 
-theorem secretPolys_length (p : Params) (sk : List Byte) :
-    (preparedSecretPolys p sk).length = p.ℓ + 2 * p.k := by
-  rw [secretPolys_eq]
-  simp only [List.length_append, List.length_map, List.length_range]
-  omega
-
 theorem secret_s1 (p : Params) (sk : List Byte) {i : Nat} (hi : i < p.ℓ) :
     (preparedSecretPolys p sk)[i]! = Sign.s1F p sk i := by
   rw [secretPolys_eq]

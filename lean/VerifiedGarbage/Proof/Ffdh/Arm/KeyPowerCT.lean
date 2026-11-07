@@ -8,20 +8,36 @@ import VerifiedGarbage.Proof.Bignum.Arm.ExpControlsCT
 import VerifiedGarbage.Proof.Bignum.Arm.ImportOperandCT
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 import VerifiedGarbage.Proof.Bignum.Arm.TwoExpStep
-import VerifiedGarbage.Impl.Bignum.Arm.TwoExp
-import VerifiedGarbage.Proof.Bignum.Arm.TwoExpCT
-import VerifiedGarbage.Proof.Bignum.Arm.TwoExpByteState
-import VerifiedGarbage.Proof.Bignum.Arm.TwoExpByteHead
 import VerifiedGarbage.Proof.Bignum.Arm.ExpByteHeadCT
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
-import VerifiedGarbage.Proof.Bignum.Arm.TwoExpPhase
-import VerifiedGarbage.Proof.Bignum.Arm.TwoExpBytes
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConstCT
 import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Ffdh.Arm.EqualCT
 import VerifiedGarbage.Proof.Ffdh.Arm.FlagCT
+import VerifiedGarbage.Impl.Bignum.Arm.DoubleFnBody
+import VerifiedGarbage.Impl.Bignum.Arm.Exp
+import VerifiedGarbage.Impl.Bignum.Arm.SelectArray
+import VerifiedGarbage.Proof.Bignum.Layout
+import VerifiedGarbage.Proof.Bignum.Arm.ExpControl
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Bignum.Arm.SelectArrayCT
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Bignum.Words
+import VerifiedGarbage.TCB.Arm.Isa
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderStore
+import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
+import VerifiedGarbage.Proof.Bignum.Arm.ExpByteLoad
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Spec.Rsa
+import VerifiedGarbage.Proof.Bignum.Arm.TwoExpMontgomery
+import VerifiedGarbage.Proof.Bignum.Arm.ExpPhaseInput
+import VerifiedGarbage.Proof.Bignum.FoldedPublic
+import VerifiedGarbage.Proof.Bignum.Math
 /-! # Imported public-generator dispatch retains private-scalar timing -/
 
 @[expose] public section

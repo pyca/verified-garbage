@@ -7,9 +7,10 @@ import VerifiedGarbage.Proof.Framework.AArch64.Call
 /-!
 # Jacobian addition and doubling whose products may be calls
 
-`ofN_partialB_ok` is `ofN_partial_ok` for products that are calls of a
-function (the slots of the formulas below the function's working space,
-`Low`). For a modulus other than P-256's measured layouts, the exceptional
+`ofN_partialB_ok` runs a numbered field program renamed to the formulas'
+slots (`ofN`), for products that are calls of a function (the slots of the
+formulas below the function's working space, `Low`). For a modulus other
+than P-256's measured layouts, the exceptional
 doubling is `dblJMul` (`VerifyDouble.double`, `verifyDouble_eq`). `dblB_ok`
 is a doubling `dblJ` or `dblJMul`.
 -/
@@ -30,7 +31,7 @@ theorem verifyDouble_eq {m : Mod} (hn : m.n ≠ 4) (S : RcbSlots) (p o : Pt) :
   obtain ⟨rfl, -⟩ := h
   rfl
 
-/-- `ofN_partial_ok` for products that may be calls. -/
+/-- A numbered field program renamed to the formulas' slots (`ofN`), for products that may be calls. -/
 theorem ofN_partialB_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     {Sl : Nat → Prop} (hL : Lay M size Sl) (hAl : Aligned M Sl)
     (hm : UnitMod m (2 ^ (64 * M.n))) {N : List FOp}

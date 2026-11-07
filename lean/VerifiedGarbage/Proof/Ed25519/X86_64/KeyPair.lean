@@ -48,10 +48,6 @@ open VG VG.X86_64 VG.Impl.Ed25519.X86_64 VG.Impl.Ed25519.X86_64.KeyPair
 open VG.Proof.Ed25519.X86_64 (combRegion CombHeld)
 open VG.Proof.Ed25519.X86_64.PublicKey (ea_stk add_add)
 
-/-- The stack the function uses: its frame, the return address of a call and the
-digest's 1600 bytes. -/
-abbrev stack : Nat := 1632
-
 /-- The contract. -/
 abbrev spec : Contract isa :=
   Spec.Ed25519.keyPairContract (X86_64.abi.withConsts combConsts) 1632
@@ -143,8 +139,6 @@ theorem kT (h : Pre s) {d n : Nat} (hd : d + n ≤ 1632) : Region.Disjoint (TBL 
 theorem tO (h : Pre s) : (TBL s).Disjoint (OUT s) := h.held.2.2 _ (by simp)
 theorem tE (h : Pre s) : (TBL s).Disjoint (EXP s) := h.held.2.2 _ (by simp)
 theorem tC (h : Pre s) : (TBL s).Disjoint (SCR s) := h.held.2.2 _ (by simp)
-theorem tR (h : Pre s) : (TBL s).Disjoint ⟨s.gpr .rsp, 8⟩ := h.held.2.2 _ (by simp)
-
 end Pre
 
 /-! ## Between the frame's push and pop -/

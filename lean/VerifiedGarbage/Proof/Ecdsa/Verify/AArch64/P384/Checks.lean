@@ -71,7 +71,6 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowState
 import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall
 import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall521
 import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFn384
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafCore
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafDigit
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafPrep
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafSum
@@ -155,7 +154,6 @@ meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowState
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall521
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFn384
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.NafCore
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.NafDigit
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.NafPrep
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.NafSum

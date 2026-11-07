@@ -20,7 +20,6 @@ public import VerifiedGarbage.Proof.Ecdh.X86.JacMul
 public import VerifiedGarbage.Proof.Ecdh.X86.JacPow
 public import VerifiedGarbage.Proof.Ecdh.X86.Peer
 public import VerifiedGarbage.Proof.Ecdsa.Sign
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.WindowPrep
 public import VerifiedGarbage.Proof.Ecdsa.X86.Finish
 public import VerifiedGarbage.Proof.Ecdsa.X86.Inv
 public import VerifiedGarbage.Proof.Ecdsa.X86.Middle
@@ -55,11 +54,8 @@ public import VerifiedGarbage.Proof.Weierstrass.X86.Rep
 public import VerifiedGarbage.Proof.Weierstrass.X86.ScalarPower
 public import VerifiedGarbage.Proof.Weierstrass.X86.TComb
 public import VerifiedGarbage.Proof.Weierstrass.X86.TCombOne
-public import VerifiedGarbage.Proof.Weierstrass.X86.WinEntry
 public import VerifiedGarbage.Proof.Weierstrass.X86.WinFinish
 public import VerifiedGarbage.Proof.Weierstrass.X86.WinJacLoop
-public import VerifiedGarbage.Proof.Weierstrass.X86.WinLoop
-public import VerifiedGarbage.Proof.Weierstrass.X86.WinSelect
 public import VerifiedGarbage.Proof.X25519.Field
 public import VerifiedGarbage.Proof.X25519.X86.Arith
 public import VerifiedGarbage.Proof.X25519.X86.Fold
@@ -72,7 +68,6 @@ import VerifiedGarbage.Proof.Ecdh.X86.JacMul
 import VerifiedGarbage.Proof.Ecdh.X86.JacPow
 import VerifiedGarbage.Proof.Ecdh.X86.Peer
 import VerifiedGarbage.Proof.Ecdsa.Sign
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.WindowPrep
 import VerifiedGarbage.Proof.Ecdsa.X86.Finish
 import VerifiedGarbage.Proof.Ecdsa.X86.Inv
 import VerifiedGarbage.Proof.Ecdsa.X86.Middle
@@ -106,11 +101,8 @@ import VerifiedGarbage.Proof.Weierstrass.X86.Rep
 import VerifiedGarbage.Proof.Weierstrass.X86.ScalarPower
 import VerifiedGarbage.Proof.Weierstrass.X86.TComb
 import VerifiedGarbage.Proof.Weierstrass.X86.TCombOne
-import VerifiedGarbage.Proof.Weierstrass.X86.WinEntry
 import VerifiedGarbage.Proof.Weierstrass.X86.WinFinish
 import VerifiedGarbage.Proof.Weierstrass.X86.WinJacLoop
-import VerifiedGarbage.Proof.Weierstrass.X86.WinLoop
-import VerifiedGarbage.Proof.Weierstrass.X86.WinSelect
 import VerifiedGarbage.Proof.X25519.Field
 import VerifiedGarbage.Proof.X25519.X86.Arith
 import VerifiedGarbage.Proof.X25519.X86.Fold

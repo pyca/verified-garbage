@@ -182,14 +182,6 @@ theorem saved_keep {s : State} {r : Region} (hr : (frR s).Disjoint r) {x : Addr}
     rw [List.mem_singleton.mp hr'] at hc
     exact hr x hc hx
 
-theorem bytesAt_keep {m m' : Mem} {rs : List Region} (hf : Frame rs m m') {p : Addr} {n : Nat}
-    (hd : ∀ r ∈ rs, Region.Disjoint ⟨p, n⟩ r) (hn : p.toNat + n ≤ 2 ^ 64) :
-    bytesAt m' p n = bytesAt m p n := by
-  simp only [bytesAt]
-  refine List.map_congr_left fun i hi => ?_
-  have hi := List.mem_range.mp hi
-  exact hf _ fun r hr hc => hd r hr _ (Offset.contains_base _ (by omega) (by omega)) hc
-
 /-- After the call: `f` of the arguments at `out`, and the frame as it was. -/
 structure Called (n w : Nat) (f : List Byte → List Byte → List Byte) (s z : State) : Prop where
   out : bytesAt z.mem (s.gpr .a0) n = f (bytesAt s.mem (s.gpr .a1) n) (bytesAt s.mem (s.gpr .a2) n)

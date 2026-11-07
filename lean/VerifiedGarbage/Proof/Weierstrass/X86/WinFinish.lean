@@ -1,6 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86.WinQuad
+public import VerifiedGarbage.TCB.X86.State
+public import VerifiedGarbage.Proof.Mont.X86.Words
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Weierstrass.Words32
 import VerifiedGarbage.Proof.Weierstrass.X86.Copy
 import VerifiedGarbage.Proof.Mont.X86.Instr
@@ -17,8 +21,6 @@ namespace VG.Proof.Weierstrass.X86
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Mont VG.Impl.Weierstrass.X86 VG.Impl.Weierstrass
 open VG.Proof.Mont.X86 VG.Proof.Mont VG.Proof.Weierstrass
 open Spec.Weierstrass
-
-abbrev winMask32 (p : Prop) [Decidable p] : BitVec 32 := if p then BitVec.allOnes 32 else 0
 
 /-- The `or`s of `nonzero`. -/
 theorem winOrs_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {a : Nat} :
@@ -49,217 +51,9 @@ theorem winOrs_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
     · intro ⟨h₀, h⟩
       exact ⟨⟨h₀, fun j hj => h j (by omega_arith)⟩, h k (by omega_arith)⟩
 
-
-/-- Compare the accumulated OR with zero. -/
-theorem zeroFinish_ok (s : State) :
-    WP isa (.block [.alu .cmp .edx (.imm 1), .alu .sbb .edx (.reg .edx)]) s fun t =>
-      t.gpr .edx = winMask32 (s.gpr .edx = 0) ∧ CKeeps [.edx] s t := by
-  crun []
-  refine ⟨?_, fun r hr => ?_, rfl, rfl, rfl⟩
-  · have h1 : (1 : BitVec 32).toNat = 1 := rfl
-    have hz : decide ((s.gpr .edx).toNat < 1) = decide (s.gpr .edx = 0) := by
-      apply decide_eq_decide.mpr
-      rw [Nat.lt_one_iff]
-      exact ⟨fun h => BitVec.eq_of_toNat_eq h, fun h => by rw [h]; rfl⟩
-    rw [BitVec.sub_self, h1, hz]
-    unfold winMask32
-    split <;> rename_i h <;> simp only [h, decide_true, decide_false] <;> rfl
-  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, ite_false]
-
-theorem winZeroMask_ok (K : WinCfg) {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
-    (hn : 0 < K.M.n) (ha : K.E.z + 8 * K.M.n ≤ size) :
-    WP isa (.block (WinCfg.zeroMask K)) s fun t =>
-      t.gpr .edx = winMask32 (wordsVal s.mem base K.E.z K.M.n = 0) ∧
-      Keeps [.edx] s t ∧ t.mem = s.mem := by
-  simp only [WinCfg.zeroMask, List.cons_append, List.nil_append]
-  refine wp_movS (readSrc_sc hs (d := K.E.z) (by omega_arith)) fun s₁ u₁ _ => ?_
-  refine WP.block_append (WP.mono (winOrs_ok (hs.of_keeps u₁.keeps (by decide)) (2 * K.M.n - 1) (by omega_arith))
-    fun s₂ ⟨e₂,k₂,m₂⟩ => ?_)
-  rw [u₁.gpr, u₁.mem] at e₂
-  have hz : s₂.gpr .edx = 0 ↔ wordsVal s.mem base K.E.z K.M.n = 0 := by
-    rw [e₂, wordsVal_eq_val32, val32_eq_zero_iff]
-    have hw : (s.mem.readW (off base K.E.z) 32 = 0) ↔ w32 s.mem base K.E.z = 0 :=
-      ⟨fun h => by simp [w32, h], fun h => BitVec.eq_of_toNat_eq h⟩
-    rw [hw]
-    constructor
-    · intro ⟨h₀,h⟩ j hj
-      cases j with
-      | zero => simpa using h₀
-      | succ j => exact h j (by omega_arith)
-    · intro h
-      exact ⟨by simpa using h 0 (by omega_arith), fun j hj => h (j + 1) (by omega_arith)⟩
-  refine WP.mono (zeroFinish_ok s₂) fun t ⟨e,k⟩ => ?_
-  exact ⟨by simpa only [winMask32, hz] using e, (u₁.keeps.trans k₂).trans k.keeps,
-    k.2.1.trans (m₂.trans u₁.mem)⟩
-
-theorem selectMask32 (a b : BitVec 32) (p : Prop) [Decidable p] :
-    a ^^^ ((b ^^^ a) &&& winMask32 p) = if p then b else a := by
-  by_cases h : p
-  · simp only [winMask32, h, ite_true, BitVec.and_allOnes]
-    rw [BitVec.xor_comm b a, ← BitVec.xor_assoc, BitVec.xor_self, BitVec.zero_xor]
-  · simp [winMask32, h]
-
-/-- One word of the corrected projective Y coordinate. -/
-theorem ySelWord_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) (K : WinCfg)
-    (p : Prop) [Decidable p] (hd : s.gpr .edx = winMask32 p) {w : Nat} (ho : K.R.y + 4 * w + 4 ≤ size) :
-    WP isa (.block (WinCfg.ySelWord K w)) s fun t =>
-      t.mem = s.mem.writeW (off base (K.R.y + 4 * w))
-        (if p then BitVec.ofNat 32 (K.one / 2 ^ (32 * w)) else s.mem.readW (off base (K.R.y + 4 * w)) 32) ∧
-      Keeps [.eax, .ebx] s t := by
-  simp only [WinCfg.ySelWord]
-  refine wp_movS (readSrc_sc hs (d := K.R.y + 4 * w) (by omega_arith)) fun s₁ u₁ _ => ?_
-  refine wp_movS rfl fun s₂ u₂ _ => ?_
-  refine wp_logicS (.inr rfl) rfl fun s₃ u₃ => ?_
-  refine wp_logicS (.inl rfl) rfl fun s₄ u₄ => ?_
-  refine wp_logicS (.inr rfl) rfl fun s₅ u₅ => ?_
-  have keep : Keeps [.eax, .ebx] s s₅ :=
-    ((((u₁.keeps.mono (by decide)).widen u₂.keeps).widen u₃.keeps).widen u₄.keeps).widen u₅.keeps
-  have hs₅ := hs.of_keeps keep (by decide)
-  refine wp_storeS (hs₅.ea (by omega_arith)) (hs₅.write (n := 4) ho) fun t u₆ => WP.block_nil ⟨?_,keep.trans (u₆.keeps _)⟩
-  simp only [u₆.mem, u₅.gpr, u₄.gpr, u₃.gpr, u₂.gpr, u₁.gpr,
-    u₄.other .eax (by decide), u₃.other .eax (by decide), u₂.other .eax (by decide),
-    u₃.other .edx (by decide), u₂.other .edx (by decide), u₁.other .edx (by decide), hd,
-    u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem, reduceCtorEq, ite_false, ite_true, selectMask32]
-
-/-- Correct the first k 32-bit words of Y. -/
-theorem ySelWords_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) (K : WinCfg)
-    (p : Prop) [Decidable p] (hd : s.gpr .edx = winMask32 p) :
-    ∀ k, K.R.y + 4 * k ≤ size →
-    WP isa (.block ((List.range k).flatMap (WinCfg.ySelWord K))) s fun t =>
-      (∀ j < k, w32 t.mem base (K.R.y + 4 * j) =
-        if p then (K.one / 2 ^ (32 * j)) % 2 ^ 32 else w32 s.mem base (K.R.y + 4 * j)) ∧
-      Keeps [.eax, .ebx] s t ∧ Outside base K.R.y (4 * k) s.mem t.mem
-  | 0, _ => WP.block_nil ⟨fun _ h => absurd h (Nat.not_lt_zero _), Keeps.refl _ _, Outside.refl _ _ _ _⟩
-  | k + 1, hk => by
-    have hn := hs.nowrap
-    rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (ySelWords_ok hs K p hd k (by omega_arith)) fun s₁ ⟨e₁,k₁,O₁⟩ => ?_
-    refine WP.mono (ySelWord_ok (hs.of_keeps k₁ (by decide)) K p ((k₁.1 _ (by decide)).trans hd)
-      (w := k) (by omega_arith)) fun s₂ ⟨m₂,k₂⟩ => ?_
-    have O₂ : Outside base (K.R.y + 4 * k) 4 s₁.mem s₂.mem := by
-      rw [m₂]; exact writeW32_outside _ _ _ (by omega_arith)
-    refine ⟨fun j hj => ?_, k₁.trans k₂,
-      (O₁.mono (Nat.le_refl _) (by omega_arith)).trans (O₂.mono (by omega_arith) (by omega_arith))⟩
-    rcases Nat.lt_or_ge j k with h | h
-    · rw [O₂.w32 (by omega_arith) (by omega_arith), e₁ j h]
-    · obtain rfl : j = k := by omega_arith
-      unfold w32
-      rw [m₂, Mem.readW_writeW_self32]
-      split
-      · rfl
-      · exact O₁.w32 (by omega_arith) (by omega_arith)
-
-/-- Restore canonical infinity after the Jacobian doublings. -/
-theorem ySel_ok {K : WinCfg} {base : Addr} {size : Nat} (hL : WinLay K size)
-    {s : State} (hs : Scr s base size) (h1 : K.one < 2 ^ (64 * K.M.n)) :
-    WP isa (.block (WinCfg.ySel K)) s fun t =>
-      wordsVal t.mem base K.R.y K.M.n = (if wordsVal s.mem base K.E.z K.M.n = 0 then K.one
-        else wordsVal s.mem base K.R.y K.M.n) ∧
-      Keeps [.eax, .edx, .ebx] s t ∧ Unch base [(K.R.y, 8 * K.M.n)] s.mem t.mem := by
-  have hy : K.R.y ∈ winSlots K := by win_mem
-  have hz : K.E.z ∈ winSlots K := by win_mem
-  rw [WinCfg.ySel, WP.block_append_iff]
-  refine WP.mono (winZeroMask_ok K hs hL.n0 (hL.lay.le _ hz)) fun s₁ ⟨m₁,k₁,mem₁⟩ => ?_
-  refine WP.mono (ySelWords_ok (hs.of_keeps k₁ (by decide)) K _ m₁ (2 * K.M.n)
-    (by have := hL.lay.le _ hy; omega_arith)) fun t ⟨e,k,O⟩ => ⟨?_,?_,?_⟩
-  · by_cases h : wordsVal s.mem base K.E.z K.M.n = 0
-    · rw [ite_eq_left_of_eq_true _ _ (eq_true h), wordsVal_eq_val32]
-      exact val32_of_shifts _ _ _ _ _ (by rw [show 32 * (2 * K.M.n) = 64 * K.M.n by omega_arith]; exact h1) fun j hj => by
-        simp only [e j hj, h, ↓reduceIte, Nat.shiftRight_eq_div_pow]
-    · rw [ite_eq_right_of_eq_false _ _ (eq_false h), wordsVal_eq_val32, wordsVal_eq_val32]
-      exact val32_congr (fun j hj => by simp only [e j hj, h, ↓reduceIte, mem₁])
-
-  · exact (k₁.mono (by decide)).trans (k.mono (by decide))
-  · rw [← mem₁]
-    simpa only [show 4 * (2 * K.M.n) = 8 * K.M.n by omega_arith] using O.unch
-
 end VG.Proof.Weierstrass.X86
 
 end
 
 /-! ## `WinFinish` -/
 
-section
-
-namespace VG.Proof.Weierstrass.X86
-open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Mont VG.Impl.Weierstrass.X86 VG.Impl.Weierstrass
-open VG.Proof.Mont.X86 VG.Proof.Mont VG.Proof.Weierstrass
-open Spec.Weierstrass
-
-variable {F : Impl.Weierstrass.Mont.Modulus}
-
-/-- `R = 16 R`: `[e]P` to `[16 e]P`. -/
-theorem quad_ok {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat} (hL : WinLay K size) (hAcc : WinWk K F C.p size wk)
-    (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (hC : Law C) (hM3 : AM3 C) {P : Point C}
-    (hP : onCurve C P = true) (hpn : C.p < 2 ^ (64 * K.M.n)) (hone_lt : K.one < C.p)
-    (hone : toM C.p (2 ^ (64 * K.M.n)) K.one = 1) {s₀ s : State} (hF : WinFixed K C base s₀ P k)
-    (hS : WinSt K wk C base size P s₀ s) {e : Nat}
-    (hlt : ∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s.mem base x K.M.n < C.p)
-    (hR : Rep C (tmv C K.M.n base s K.R.x) (tmv C K.M.n base s K.R.y) (tmv C K.M.n base s K.R.z)
-      (mul e P)) :
-    WP isa (WinCfg.quad K F) s fun s' =>
-      WinSt K wk C base size P s₀ s' ∧ s'.gpr .esi = s.gpr .esi ∧
-      (∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s'.mem base x K.M.n < C.p) ∧
-      Rep C (tmv C K.M.n base s' K.R.x) (tmv C K.M.n base s' K.R.y) (tmv C K.M.n base s' K.R.z)
-        (mul (16 * e) P) := by
-  rw [WinCfg.quad]
-  refine WP.seq (WP.mono (jac_ok hL hAcc hp hC hM3 hP hF hS hlt hR)
-    fun s₁ ⟨S₁, x₁, l₁, X, Y, Z, hJ, ex, ey, ez, eE⟩ => ?_)
-  have hn := S₁.scr.nowrap
-  refine WP.mono (ySel_ok hL S₁.scr (Nat.lt_trans hone_lt hpn)) fun s₂ ⟨v₂, k₂, U₂⟩ => ?_
-  have hRy : K.R.y ∈ winOther K := by win_mem
-  have c₂ : ∀ r ∈ [Reg.eax, .edx, .ebx], r ∈ powClob := by
-    intro r hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
-    · simp [powClob, clob]
-    · simp [powClob, clob]
-    · simp [powClob, clob]
-  have S₂ := S₁.next hL hAcc (S₁.scr.of_keepRegs k₂ (by decide)) (k₂.mono c₂)
-    (U₂.mono fun w hw => by
-      rw [List.mem_singleton.mp hw]
-      exact List.mem_append_left _ (List.mem_map_of_mem hRy))
-  obtain ⟨rxy, -, ryz, -⟩ := hL.other_ne
-  have hws : ∀ x ∈ [K.R.x, K.R.y, K.R.z], x ∈ winWs K := fun x hx => winOther_ws K x (by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-    rcases hx with rfl | rfl | rfl <;> win_mem)
-  have eR : ∀ x ∈ [K.R.x, K.R.z], x ≠ K.R.y →
-      wordsVal s₂.mem base x K.M.n = wordsVal s₁.mem base x K.M.n := by
-    intro x hx hne
-    have hxw : x ∈ winWs K := hws x (by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hx ⊢
-      rcases hx with h | h <;> simp [h])
-    refine U₂.wordsVal (fun w hw => ?_) (by have := hL.lay.le x (winWs_slots K x hxw); omega_arith)
-    rw [List.mem_singleton.mp hw]
-    exact hL.apart₂ hxw (hws _ (by simp)) hne
-  have ex₂ := eR K.R.x (by simp) rxy
-  have ez₂ := eR K.R.z (by simp) (Ne.symm ryz)
-  have tm : ∀ {x}, wordsVal s₂.mem base x K.M.n = wordsVal s₁.mem base x K.M.n →
-      tmv C K.M.n base s₂ x = tmv C K.M.n base s₁ x := fun h => by
-    show toM _ _ _ = toM _ _ _; rw [h]
-  have hZ : (wordsVal s₁.mem base K.E.z K.M.n = 0) ↔ Z = 0 := by
-    rw [← toM_eq_zero_iff hp (l₁ _ (by simp)), ← eE]
-  have ey₂ : tmv C K.M.n base s₂ K.R.y = if Z = 0 then 1 else Y := by
-    by_cases h : wordsVal s₁.mem base K.E.z K.M.n = 0
-    · have e₂ : wordsVal s₂.mem base K.R.y K.M.n = K.one := by rw [v₂]; simp only [h, ↓reduceIte]
-      show toM _ _ _ = _
-      rw [e₂, hone]; simp only [hZ.mp h, ↓reduceIte]
-    · have e₂ : wordsVal s₂.mem base K.R.y K.M.n = wordsVal s₁.mem base K.R.y K.M.n := by
-        rw [v₂]; simp only [h, ↓reduceIte]
-      rw [tm e₂, ey]
-      exact (ite_eq_right_iff.mpr fun h' => absurd (hZ.mpr h') h).symm
-  refine ⟨S₂, (k₂.gpr _ (by decide)).trans x₁, fun x hx => ?_, ?_⟩
-  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-    rcases hx with rfl | rfl | rfl
-    · rw [ex₂]; exact l₁ _ (by simp)
-    · rw [v₂]; split
-      · exact hone_lt
-      · exact l₁ _ (by simp)
-    · rw [ez₂]; exact l₁ _ (by simp)
-  · rw [tm ex₂, ey₂, tm ez₂, ex, ez]
-    exact InvJ.out hC hJ
-
-end VG.Proof.Weierstrass.X86
-
-end

@@ -168,17 +168,6 @@ structure JointLayout (c : Joint.Cfg) (size : Nat) : Prop where
 theorem jointLive_R (c : Joint.Cfg) : ∀ x∈[c.K.R.x,c.K.R.y,c.K.R.z],x∈jointLive c :=
   fun x hx => List.mem_append_left _ (nafLive_R c.K x hx)
 
-theorem JointCore.next {c : Joint.Cfg} {C : Curve} {base : Addr} {size u v : Nat}
-    {Q A B : Point C} {External : State → Prop} {s t : State} {E : Nat → Fe C}
-    (h : JointCore c C base size Q u v External A s) (hL : JointLayout c size)
-    (hk : ProgKeep c.K.M base (jointWork c) s t)
-    (hi : Inv c.K.M base size C.p (·∈jointSlots c) (jointLive c) E t)
-    (hp : InvJ C (E c.K.R.x) (E c.K.R.y) (E c.K.R.z) B) (ht : External t) :
-    JointCore c C base size Q u v External B t :=
-  ⟨hi.to_tmv,h.stable.keep hk (fun r hr => by
-    have := hL.stableBounds r hr; have := h.field.scr.nowrap; omega) hL.stableSep,
-    ht,hi.point_tmv (jointLive_R c) hp⟩
-
 theorem JointCore.of_write {c : Joint.Cfg} {C : Curve} {base : Addr} {size u v : Nat}
     {Q A : Point C} {External : State → Prop} {s t : State} {E : Nat → Fe C} {W : List Nat}
     (h : JointCore c C base size Q u v External A s) (hL : JointLayout c size)

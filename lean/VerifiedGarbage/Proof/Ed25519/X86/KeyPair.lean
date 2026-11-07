@@ -187,15 +187,11 @@ theorem kS (h : Pre s) {d n : Nat} (hd : d + n ≤ 628) : Region.Disjoint ⟨K s
   h.ks.sub_left (stk_sub s hd)
 theorem kC (h : Pre s) {d n : Nat} (hd : d + n ≤ 628) : Region.Disjoint ⟨K s + BitVec.ofNat 64 d, n⟩ (SCR s) :=
   h.kc.sub_left (stk_sub s hd)
-theorem kA (h : Pre s) {d n : Nat} (hd : d + n ≤ 628) : Region.Disjoint ⟨K s + BitVec.ofNat 64 d, n⟩ (ARGS s) :=
-  h.ka.sub_left (stk_sub s hd)
 theorem kT (h : Pre s) {d n : Nat} (hd : d + n ≤ 628) : Region.Disjoint (TB s) ⟨K s + BitVec.ofNat 64 d, n⟩ :=
   h.tK.sub_right (stk_sub s hd)
 theorem tO (h : Pre s) : (TB s).Disjoint (OUT s) := h.tw _ (by rw [h.wr]; simp)
 theorem tE (h : Pre s) : (TB s).Disjoint (EXP s) := h.tw _ (by rw [h.wr]; simp)
 theorem tC (h : Pre s) : (TB s).Disjoint (SCR s) := h.tw _ (by rw [h.wr]; simp)
-theorem tA (h : Pre s) : (TB s).Disjoint (ARGS s) := h.tw _ (by rw [h.wr]; simp)
-
 end Pre
 
 /-! ## Between the calls -/

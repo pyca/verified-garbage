@@ -10,7 +10,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 `PubNaf.addC p q o` is `jacAdd` whose head reads `q`'s `Z²` and `Z³` from
 `o.y` and `o.z`, which only the tail writes (`CachedJac.headAt`): on the
 slots `rcbσ` numbers, `jacHeadCN` reads `7` and `8` (`jacAddCN_run`), and
-`addCB_ok` is `jacAdd_ok` for it, for products that may be calls.
+`addCB_ok` is its correctness, for products that may be calls.
 -/
 
 @[expose] public section
@@ -153,7 +153,7 @@ theorem jacTailCB_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     exact (congrArg₂ Prod.mk (congrFun key 6) (congrArg₂ Prod.mk (congrFun key 7) (congrFun key 8))).trans
       (jacAddCN_run (fun i => E (rcbσ S p q o i)) h2 h3)
 
-/-- `jacAdd_ok` for the cached addition, for products that may be calls: `q`'s `Z²` and `Z³` in `o.y` and `o.z`. -/
+/-- The cached addition, for products that may be calls: `q`'s `Z²` and `Z³` in `o.y` and `o.z`. -/
 theorem addCB_ok {K : WinCfg} {base : Addr} {size : Nat} {C : Curve}
     {Sl : Nat → Prop} (hL : Lay K.M size Sl) (hAl : Aligned K.M Sl) (hn4 : K.M.n ≠ 4)
     (hm : UnitMod C.p (2^(64*K.M.n))) (hC : Law C) (ha : AM3 C)

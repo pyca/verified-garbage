@@ -754,22 +754,6 @@ theorem frame_rM : Frame [dR s, stkR s] s.mem (rM s) :=
   frame_wFr (frame_wFr (frame_wFr (frame_wFr h.frame_cM 0 (by decide) (Dst s)) 8 (by decide) (arg s 1)) 16
     (by decide) (Tg s)) 24 (by decide) (arg s 5)
 
-/-- The words of our frame below the ones `rM` writes, once they are written. -/
-theorem rFrame (d : Nat) (h₁ : 32 ≤ d) (hd : d + 8 ≤ 88) :
-    (rM s).readW (P s + BitVec.ofNat 64 d) 64 = (cM s).readW (P s + BitVec.ofNat 64 d) 64 := by
-  have hBn := h.hBn
-  have ex (m : Mem) (e : Nat) (he : e + 8 ≤ 32) (v : BitVec 64) :
-      (m.writeW (P s + BitVec.ofNat 64 e) v).readW (P s + BitVec.ofNat 64 d) 64 =
-        m.readW (P s + BitVec.ofNat 64 d) 64 := by
-    refine Frame.readW ((Frame.refl _ _).writeW (List.mem_singleton_self ⟨P s + BitVec.ofNat 64 e, 8⟩) v
-      (Region.contains_self _ _)) (r := ⟨P s + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (fun r hr => ?_)
-      (by decide)
-    simp only [List.mem_singleton] at hr; subst hr
-    rw [Offset.add_ofNat_add_ofNat, Offset.add_ofNat_add_ofNat]
-    exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
-  unfold rM
-  rw [ex _ 24 (by decide), ex _ 16 (by decide), ex _ 8 (by decide), ex _ 0 (by decide)]
-
 /-- A word of our frame, read through a write of another. -/
 theorem rApart (m : Mem) (e k : Nat) (hek : e + 8 ≤ k ∨ k + 8 ≤ e) (he : e + 8 ≤ 88) (hk : k + 8 ≤ 88)
     (w : BitVec 64) :

@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Dsa.X86.Arithmetic
 import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 import VerifiedGarbage.Proof.Dsa.X86.Layout
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Mont.X86.ExponentProduct
 
 /-! # Persistent operands across arithmetic-context updates -/
 

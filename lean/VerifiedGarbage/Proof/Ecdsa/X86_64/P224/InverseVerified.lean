@@ -1,7 +1,6 @@
 module
 
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Verified
-import VerifiedGarbage.Proof.Ecdsa.X86_64.InvFnX
 public import VerifiedGarbage.Proof.Framework.Pratt
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.Inv
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
@@ -14,7 +13,6 @@ import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
 import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Verified
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.InvFnX
 meta import VerifiedGarbage.Proof.Framework.Pratt
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Inv
 meta import VerifiedGarbage.Proof.Framework.X86_64.Abi

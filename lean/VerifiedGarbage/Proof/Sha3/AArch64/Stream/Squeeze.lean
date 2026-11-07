@@ -517,12 +517,4 @@ theorem squeeze_ct (v : Permutation) : ConstantTime isa Proof.Sha3.squeezeAArch6
   exact VectorTaint.constantTime (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4, .x5])
     (fun _ _ _ _ hp => agree₀ hp) hhint
 
-theorem squeeze_verified (v : Permutation) :
-    Verified AArch64.target (Impl.Sha3.AArch64.Stream.squeezeWith v.callee) (Proof.Sha3.squeezeScratchContract AArch64.abi
-      16) :=
-  Verified.of_correct (squeeze_correct v) (squeeze_ct v) (by
-    sig_implies [Proof.Sha3.squeezeScratchContract, Proof.Sha3.squeezeScratchSig, Proof.Sha3.squeezePre, Proof.Sha3.squeezePost, Proof.Sha3.squeezeAArch64,
-      AArch64.abi, AArch64.argRegs] [Proof.Sha3.AArch64.Stream.Squeeze.sat] using
-      Proof.Sha3.AArch64.Stream.Squeeze.sat)
-
 end VG.Proof.Sha3.AArch64.Stream.Squeeze
