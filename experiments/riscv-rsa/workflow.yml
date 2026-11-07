@@ -1,0 +1,36 @@
+name: Unproven RISC-V RSA experiments
+on:
+  workflow_dispatch:
+    inputs:
+      diagnostic:
+        type: boolean
+        default: false
+permissions:
+  contents: read
+jobs:
+  experiment:
+    name: Native RISC-V RSA experiments
+    runs-on: ubuntu-24.04-riscv
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /experiments/riscv-rsa/
+            /crates/verified-garbage-asm-riscv64/assembly/
+      - name: Correctness checks and interleaved native measurements
+        env:
+          RSA_DIAGNOSTIC: ${{ inputs.diagnostic && '1' || '' }}
+        run: experiments/riscv-rsa/run.sh
+      - name: Results
+        if: always()
+        run: |
+          if [ -f experiments/riscv-rsa/out/checks.txt ]; then cat experiments/riscv-rsa/out/checks.txt; fi
+          if [ -f experiments/riscv-rsa/out/summary.md ]; then cat experiments/riscv-rsa/out/summary.md >> "$GITHUB_STEP_SUMMARY"; fi
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: riscv-rsa-experiments
+          path: experiments/riscv-rsa/out/

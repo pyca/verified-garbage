@@ -9,6 +9,11 @@ out=experiments/riscv-rsa/out
   gcc --version
   openssl version -a
   cat /proc/cpuinfo
+  nproc
+  cat /proc/self/cgroup
+  for path in /sys/fs/cgroup/cpu.max /sys/fs/cgroup/cpu.stat /sys/fs/cgroup/cpu/cpu.cfs_quota_us /sys/fs/cgroup/cpu/cpu.cfs_period_us; do
+    if [ -f "$path" ]; then echo "$path"; cat "$path"; fi
+  done
 } > "$out/machine.txt"
 head -n 30 "$out/machine.txt"
 python3 experiments/riscv-rsa/prepare.py

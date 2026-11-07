@@ -20,6 +20,7 @@ KDECL(base_mont) KDECL(pair_mont) KDECL(base_square) KDECL(pair_square) KDECL(pi
 static U rng=0x1a2b3c4d5e6f7081ULL;
 static U rnd(void){rng^=rng<<13;rng^=rng>>7;rng^=rng<<17;return rng;}
 static U inverse(U m){U x=1;for(int i=0;i<6;i++)x*=2-m*x;return -x;}
+static double cpu_now(void){struct timespec t;CHECK(clock_gettime(CLOCK_THREAD_CPUTIME_ID,&t)==0);return t.tv_sec+t.tv_nsec*1e-9;}
 static double now(void){struct timespec t;CHECK(clock_gettime(CLOCK_MONOTONIC,&t)==0);return t.tv_sec+t.tv_nsec*1e-9;}
 static volatile U sink;
 static const char *names[]={"base","pair","one","two","column","montpair","pipeline","select","combined","pubsquare"};
@@ -129,23 +130,24 @@ static void public_bench(void){
         for(int r=0;r<7;r++)for(int step=0;step<3;step++){
             const size_t active[]={0,9,8};size_t v=active[r%2?2-step:step];size_t iters=k->bits==2048?1000:k->bits==3072?500:250;
             double start=now();for(size_t i=0;i<iters;i++){CHECK(public_op(v,k,w,pre)==1);CHECK(!memcmp(w->out,expected,k->nl));}
-            printf("public,%s,%d,1,%d,%zu,%.9f\n",names[v],k->bits,r,iters,now()-start);fflush(stdout);
+            printf("public,%s,%d,1,%d,%zu,%.9f,0\n",names[v],k->bits,r,iters,now()-start);fflush(stdout);
         }
     }free(w);
 }
-struct threaded{size_t v;const struct key*k;size_t count;unsigned char expected[1024];};
-static void*worker(void*arg){struct threaded*s=arg;struct work*w=calloc(1,sizeof(*w));memset(w->input,0x42,s->k->nl);w->input[0]=0;for(size_t i=0;i<s->count;i++){CHECK(operate(s->v,s->k,w)==1);CHECK(!memcmp(w->out,s->expected,s->k->nl));}free(w);return NULL;}
+struct threaded{size_t v;const struct key*k;size_t count;double cpu;unsigned char expected[1024];};
+static void*worker(void*arg){struct threaded*s=arg;struct work*w=calloc(1,sizeof(*w));memset(w->input,0x42,s->k->nl);w->input[0]=0;double start_cpu=cpu_now();for(size_t i=0;i<s->count;i++){CHECK(operate(s->v,s->k,w)==1);CHECK(!memcmp(w->out,s->expected,s->k->nl));}s->cpu=cpu_now()-start_cpu;free(w);return NULL;}
 static void rsa_bench(void){
+    int diagnostic=getenv("RSA_DIAGNOSTIC") && *getenv("RSA_DIAGNOSTIC");
     for(size_t ki=0;ki<sizeof(keys)/sizeof(*keys);ki++){
-        const struct key*k=keys+ki;struct work*w=calloc(1,sizeof(*w));memset(w->input,0x42,k->nl);w->input[0]=0;CHECK(operate(0,k,w)==1);
+        const struct key*k=keys+ki;if(diagnostic && k->bits!=4096)continue;struct work*w=calloc(1,sizeof(*w));memset(w->input,0x42,k->nl);w->input[0]=0;CHECK(operate(0,k,w)==1);
         unsigned char expected[1024];memcpy(expected,w->out,k->nl);
         for(int threads=1;threads<=4;threads*=4){
-            size_t iters=k->bits==2048?64:k->bits==3072?24:12;
-            for(int round=0;round<7;round++)for(size_t step=0;step<5;step++){
-                static const size_t active[]={0,6,7,9,8};size_t v=active[round%2?4-step:step];double start=now();
-                if(threads==1)for(size_t i=0;i<iters;i++){CHECK(operate(v,k,w)==1);CHECK(!memcmp(w->out,expected,k->nl));}
-                else {pthread_t ids[4];struct threaded args[4];for(int t=0;t<4;t++){args[t]=(struct threaded){.v=v,.k=k,.count=iters};memcpy(args[t].expected,expected,k->nl);CHECK(!pthread_create(ids+t,NULL,worker,args+t));}for(int t=0;t<4;t++)CHECK(!pthread_join(ids[t],NULL));}
-                double elapsed=now()-start;printf("rsa,%s,%d,%d,%d,%zu,%.9f\n",names[v],k->bits,threads,round,iters*threads,elapsed);fflush(stdout);
+            size_t iters=diagnostic?(threads==1?32:128):k->bits==2048?64:k->bits==3072?24:12;
+            for(int round=0;round<7;round++)for(size_t step=0;step<(diagnostic?3:5);step++){
+                static const size_t active[]={0,6,7,9,8},diag[]={0,9,8};size_t v=diagnostic?diag[round%2?2-step:step]:active[round%2?4-step:step];double start=now(),start_cpu=cpu_now(),cpu=0;
+                if(threads==1){for(size_t i=0;i<iters;i++){CHECK(operate(v,k,w)==1);CHECK(!memcmp(w->out,expected,k->nl));}cpu=cpu_now()-start_cpu;}
+                else {pthread_t ids[4];struct threaded args[4];for(int t=0;t<4;t++){args[t]=(struct threaded){.v=v,.k=k,.count=iters};memcpy(args[t].expected,expected,k->nl);CHECK(!pthread_create(ids+t,NULL,worker,args+t));}for(int t=0;t<4;t++){CHECK(!pthread_join(ids[t],NULL));cpu+=args[t].cpu;}}
+                double elapsed=now()-start;printf("rsa,%s,%d,%d,%d,%zu,%.9f,%.9f\n",names[v],k->bits,threads,round,iters*threads,elapsed,cpu);fflush(stdout);
             }
         }free(w);
     }
@@ -168,6 +170,6 @@ static __attribute__((unused)) void micro_bench(void){
 #endif
 int main(void){fprintf(stderr,"OpenSSL %s\n",OpenSSL_version(OPENSSL_VERSION));arithmetic_check();
 #ifndef PORTABLE
-rsa_check();public_check();puts("workload,variant,bits,threads,round,iterations,seconds");rsa_bench();public_bench();
+rsa_check();public_check();puts("workload,variant,bits,threads,round,iterations,seconds,cpu_seconds");rsa_bench();if(!getenv("RSA_DIAGNOSTIC") || !*getenv("RSA_DIAGNOSTIC"))public_bench();
 #endif
 return 0;}

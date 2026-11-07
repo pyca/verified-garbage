@@ -1,0 +1,1 @@
+{"run_url":"https://github.com/pyca/verified-garbage/actions/runs/42394121117","revision":"5ecb99556ea54c9c2e494a8c75d1c571b2a12915","baseline_revision":"44db4d9cafe88709715eb344d84fd76dfe3f7341","scope_note":"Short screening samples; four-thread samples show substantial scheduling variation. Confirmation uses longer batches."}

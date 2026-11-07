@@ -1,6 +1,10 @@
 name: Unproven RISC-V RSA experiments
 on:
   workflow_dispatch:
+    inputs:
+      diagnostic:
+        type: boolean
+        default: false
 permissions:
   contents: read
 jobs:
@@ -17,6 +21,8 @@ jobs:
             /experiments/riscv-rsa/
             /crates/verified-garbage-asm-riscv64/assembly/
       - name: Correctness checks and interleaved native measurements
+        env:
+          RSA_DIAGNOSTIC: ${{ inputs.diagnostic && '1' || '' }}
         run: experiments/riscv-rsa/run.sh
       - name: Results
         if: always()
