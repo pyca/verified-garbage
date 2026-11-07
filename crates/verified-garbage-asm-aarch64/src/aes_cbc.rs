@@ -315,27 +315,19 @@ pub const VG_AES_CBC_DECRYPT_AES_FEATURES: verified_garbage_cpu::Features = veri
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `scratch` on return are unspecified.
 /// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the 32 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_cbc_decrypt_aes(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".inst 0xf90408b3,0xf9040cb4,0xf90410b5,0xf90414b6,0xf90418b7,0xf9041cbe,0xf90420b8,0x91000013
-.inst 0x91000034,0x91000055,0x91000076,0x91000097,0x910000b8
-cbz x23, 20f
-22:
-.inst 0xf94002c9,0xf9040309,0xf94006c9,0xf9040709,0x91000260,0x91000281,0x910002c2,0xd2800023
-.inst 0x91000304
-bl {vg_aes_decrypt_blocks_aes}
-.inst 0xf94002c9,0xf94002aa,0xca0a0129,0xf90002c9,0xf94006c9,0xf94006aa,0xca0a0129,0xf90006c9
-.inst 0xf9440309,0xf90002a9,0xf9440709,0xf90006a9,0x910042d6,0xd10006f7
-cbnz x23, 22b
-b 21f
-20:
-21:
-.inst 0xf9440b13,0xf9440f14,0xf9441315,0xf9441716,0xf9441b17,0xf9441f1e,0xf9442318,0xd65f03c0
+        r".inst 0xd10083ff,0xf90003fe,0xf90007e5
+bl {vg_aes_cbc_decrypt_unwiped_aes}
+.inst 0xf9000be0,0xf94007e0,0xd2811001
+bl {vg_zeroize}
+.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd65f03c0
 .p2align 6",
-        vg_aes_decrypt_blocks_aes = sym super::aes::vg_aes_decrypt_blocks_aes,
+        vg_aes_cbc_decrypt_unwiped_aes = sym super::aes_cbc::vg_aes_cbc_decrypt_unwiped_aes::vg_aes_cbc_decrypt_unwiped_aes,
+        vg_zeroize = sym super::zeroize::vg_zeroize,
     )
 }
 
@@ -352,25 +344,18 @@ b 21f
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `scratch` on return are unspecified.
 /// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the 32 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_cbc_encrypt(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".inst 0xf90408b3,0xf9040cb4,0xf90410b5,0xf90414b6,0xf90418b7,0xf9041cbe,0xf90420b8,0x91000013
-.inst 0x91000034,0x91000055,0x91000076,0x91000097,0x910000b8
-cbz x23, 20f
-22:
-.inst 0xf94002c9,0xf94002aa,0xca0a0129,0xf90002c9,0xf94006c9,0xf94006aa,0xca0a0129,0xf90006c9
-.inst 0x91000260,0x91000281,0x910002c2,0xd2800023,0x91000304
-bl {vg_aes_encrypt_blocks}
-.inst 0xf94002c9,0xf90002a9,0xf94006c9,0xf90006a9,0x910042d6,0xd10006f7
-cbnz x23, 22b
-b 21f
-20:
-21:
-.inst 0xf9440b13,0xf9440f14,0xf9441315,0xf9441716,0xf9441b17,0xf9441f1e,0xf9442318,0xd65f03c0
+        r".inst 0xd10083ff,0xf90003fe,0xf90007e5
+bl {vg_aes_cbc_encrypt_unwiped}
+.inst 0xf9000be0,0xf94007e0,0xd2811001
+bl {vg_zeroize}
+.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd65f03c0
 .p2align 6",
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
+        vg_aes_cbc_encrypt_unwiped = sym super::aes_cbc::vg_aes_cbc_encrypt_unwiped::vg_aes_cbc_encrypt_unwiped,
+        vg_zeroize = sym super::zeroize::vg_zeroize,
     )
 }
 
@@ -387,25 +372,29 @@ b 21f
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `scratch` on return are unspecified.
 /// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the 32 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_cbc_decrypt(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".inst 0xf90408b3,0xf9040cb4,0xf90410b5,0xf90414b6,0xf90418b7,0xf9041cbe,0xf90420b8,0x91000013
-.inst 0x91000034,0x91000055,0x91000076,0x91000097,0x910000b8
-cbz x23, 20f
-22:
-.inst 0xf94002c9,0xf9040309,0xf94006c9,0xf9040709,0x91000260,0x91000281,0x910002c2,0xd2800023
-.inst 0x91000304
-bl {vg_aes_decrypt_blocks}
-.inst 0xf94002c9,0xf94002aa,0xca0a0129,0xf90002c9,0xf94006c9,0xf94006aa,0xca0a0129,0xf90006c9
-.inst 0xf9440309,0xf90002a9,0xf9440709,0xf90006a9,0x910042d6,0xd10006f7
-cbnz x23, 22b
-b 21f
-20:
-21:
-.inst 0xf9440b13,0xf9440f14,0xf9441315,0xf9441716,0xf9441b17,0xf9441f1e,0xf9442318,0xd65f03c0
+        r".inst 0xd10083ff,0xf90003fe,0xf90007e5
+bl {vg_aes_cbc_decrypt_unwiped}
+.inst 0xf9000be0,0xf94007e0,0xd2811001
+bl {vg_zeroize}
+.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd65f03c0
 .p2align 6",
-        vg_aes_decrypt_blocks = sym super::aes::vg_aes_decrypt_blocks,
+        vg_aes_cbc_decrypt_unwiped = sym super::aes_cbc::vg_aes_cbc_decrypt_unwiped::vg_aes_cbc_decrypt_unwiped,
+        vg_zeroize = sym super::zeroize::vg_zeroize,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_cbc_decrypt_unwiped.rs"]
+pub(crate) mod vg_aes_cbc_decrypt_unwiped;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_cbc_decrypt_unwiped_aes.rs"]
+pub(crate) mod vg_aes_cbc_decrypt_unwiped_aes;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_cbc_encrypt_unwiped.rs"]
+pub(crate) mod vg_aes_cbc_encrypt_unwiped;
