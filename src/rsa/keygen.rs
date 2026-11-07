@@ -24,7 +24,7 @@ use alloc::vec;
 use core::fmt;
 
 #[cfg(target_arch = "x86_64")]
-use crate::arch::rsa_keygen::vg_rsa_generate_adx;
+use crate::arch::rsa_keygen::{vg_rsa_generate_adx, vg_rsa_generate_ifma};
 #[cfg(all(
     target_arch = "arm",
     any(
@@ -136,7 +136,9 @@ fn generate_counted(
         Backend::Baseline => vg_rsa_generate,
         // `select` chose it because the CPU has the features it needs.
         #[cfg(target_arch = "x86_64")]
-        Backend::Adx | Backend::Ifma => vg_rsa_generate_adx,
+        Backend::Adx => vg_rsa_generate_adx,
+        #[cfg(target_arch = "x86_64")]
+        Backend::Ifma => vg_rsa_generate_ifma,
         #[cfg(all(
             target_arch = "arm",
             any(
