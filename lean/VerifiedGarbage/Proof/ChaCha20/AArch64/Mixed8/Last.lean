@@ -40,7 +40,7 @@ theorem xorScalarRowFrom_ok (s : State) (r : Reg) (k : Fin 8)
     Option.bind_some,Option.map_some,isa,runStep_some,Option.some.injEq,exists_eq_left']
   exact ⟨rfl,rfl,rfl,rfl,rfl⟩
 
-/-- `xorScalarRow` writes only the destination's last 128 bytes. -/
+/-- `xorScalarRowFrom` writes only the destination's last 128 bytes. -/
 theorem data_frame128 {m₀ m : Mem} {q p : Addr} {out : Nat → BitVec 128} {done : List Nat}
     (h : DataTo m₀ m q p 128 out done) : Frame [⟨p,128⟩] m₀ m := h.frame
 

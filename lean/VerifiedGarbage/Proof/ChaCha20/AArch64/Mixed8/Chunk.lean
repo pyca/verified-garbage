@@ -37,8 +37,6 @@ structure ChunkedFrom (r : Reg) (s₀ s : State) : Prop where
       (serialize (block (ctr (source s₀) (k / 64)))).getD (k % 64) 0
   frame : Frame [sr s₀,scalarBuf s₀,dr s₀] s₀.mem s.mem
 
-abbrev Chunked (s₀ s : State) : Prop := ChunkedFrom .x1 s₀ s
-
 theorem lastFrom_ok (r : Reg) {s₀ s : State} (hp : CP s₀) (hsr : SrcOK r s₀) (h : FinishedFrom r s₀ s) :
     WP isa (.block ((List.finRange 8).flatMap (xorScalarRowFrom r))) s (ChunkedFrom r s₀) := by
   have hr : s.gpr r = s₀.gpr r := by
@@ -129,10 +127,6 @@ theorem lastFrom_ok (r : Reg) {s₀ s : State} (hp : CP s₀) (hsr : SrcOK r s�
       intro r hr; have he := List.mem_singleton.mp hr; subst r
       exact ⟨dr s₀,by simp,Offset.sub_base _ (by decide : 384 + 128 ≤ 512)⟩))
 
-theorem last_ok {s₀ s : State} (hp : CP s₀) (h : Finished s₀ s) :
-    WP isa (.block ((List.finRange 8).flatMap xorScalarRow)) s (Chunked s₀) :=
-  lastFrom_ok .x1 hp hp.src h
-
 theorem chunkFrom_ok (r : Reg) (s : State) (hp : CP s) (hs : SrcOK r s) :
     WP isa (chunkFrom sve r) s (ChunkedFrom r s) := by
   apply WP.seq
@@ -157,8 +151,5 @@ theorem chunkFrom_ok (r : Reg) (s : State) (hp : CP s) (hs : SrcOK r s) :
   refine (spill2_ok hp hd).mono fun e he => ?_
   apply WP.seq
   exact (finishFrom_ok r hp hs he).mono fun f hf => lastFrom_ok r hp hs hf
-
-theorem chunk_ok (s : State) (hp : CP s) : WP isa (chunk sve) s (Chunked s) :=
-  chunkFrom_ok .x1 s hp hp.src
 
 end VG.Proof.ChaCha20.AArch64.Mixed8

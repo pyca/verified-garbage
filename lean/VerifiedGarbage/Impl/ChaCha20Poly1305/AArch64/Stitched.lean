@@ -156,7 +156,7 @@ def args : List Instr :=
 /-- The rest after the chunks, from `polyOut true`'s state. -/
 def rest (sve : Bool) : Prog isa :=
   .seq (.block load)
-    (.seq (kernel sve) (.seq (.block out) (.seq take (.seq Short.xorKs (.block args)))))
+    (.seq (kernel sve) (.seq (.block out) (.seq take (.seq (Short.xorKs false) (.block args)))))
 
 end Tail
 
@@ -167,26 +167,30 @@ def afterBulk (sve enc : Bool) : Prog isa :=
   if enc then .seq (.block (polyOut true)) (.ite (.zero .x .x2) (.block []) (Tail.rest sve))
   else .block (polyOut enc)
 
-/-- The whole chunks. -/
-def cryptStitched (sve enc : Bool) : Prog isa :=
+/-- The bulk's destination (`x4`) set from its source (`x1`): to `x1 + x28` if
+`to` (`open`), else to `x1` (in place). -/
+def bulkDst (to : Bool) : Instr := if to then .add .x .x4 .x1 .x28 else mov .x4 .x1
+
+/-- The whole chunks, into their destination (`bulkDst to`). -/
+def cryptStitched (sve enc to : Bool) : Prog isa :=
   .seq (.block cryptSetup)
     (.ite (.nonzero .x .x5) (.block [])
-      (.seq (.block polyIn) (.seq (Stitch.bulk sve enc) (afterBulk sve enc))))
+      (.seq (.block (polyIn ++ [bulkDst to])) (.seq (Stitch.bulk sve enc) (afterBulk sve enc))))
 
-/-- The data from `x22` (`x23` bytes) encrypted or decrypted, continuing the
-stream's counter. -/
-def cryptRest (c : XorCallee) : Prog isa :=
+/-- The data from `x22` (`x23` bytes) decrypted into its destination
+(`XorCallee.callWith to`), continuing the stream's counter. -/
+def cryptRest (c : XorCallee) (to : Bool) : Prog isa :=
   .seq (.block [.addImm .x .x0 .x21 64, mov .x1 .x22, mov .x2 .x23, .addImm .x .x3 .x21 128])
-    c.inPlace
+    (c.callWith to)
 
 /-- The keystream of `n` bytes (256: four blocks; 512: eight) from the
 stream's counter at `ctx[768, 768 + n)`, the data XORed with it, and
 `ctx[768, 1280)` zeroed before and after (as `Pad.cryptPad`, but from the
 counter the chunks left). -/
-def padRest (c : XorCallee) (n : Nat) : Prog isa :=
+def padRest (c : XorCallee) (to : Bool) (n : Nat) : Prog isa :=
   .seq (.block (Pad.zero ++ [.addImm .x .x0 .x21 64, .addImm .x .x1 .x21 768, .movz .x .x2 (BitVec.ofNat 16 n) 0,
       .addImm .x .x3 .x21 128]))
-    (.seq c.inPlace (.seq (Short.xorKsFrom 768) (.block Pad.zero)))
+    (.seq c.inPlace (.seq (Short.xorKsFrom to 768) (.block Pad.zero)))
 
 /-- `x9 = 0` iff `1 ≤ x23 ≤ 2^k`: `(x23 - 1) >> k`. -/
 def atMost (k : Nat) : List Instr := [.subImm .x .x9 .x23 1, .lsr .x .x9 .x9 k]
@@ -206,14 +210,14 @@ def openRest (c : XorCallee) : Prog isa :=
   .seq (.block [.addImm .x .x9 .x23 (511 - Pad.threshold c.sve), .lsr .x .x9 .x9 9])
     (.ite (.zero .x .x9)
       (.seq (.block [.lsl .x .x9 .x23 58])
-        (.ite (.zero .x .x9) (cryptRest c)
+        (.ite (.zero .x .x9) (cryptRest c false)
           (.seq (.block (atMost 6))
-            (.ite (.zero .x .x9) (cryptRest c)
+            (.ite (.zero .x .x9) (cryptRest c false)
               (.seq (.block (atMost 8))
-                (.ite (.zero .x .x9) (padRest c 256)
+                (.ite (.zero .x .x9) (padRest c false 256)
                   (.seq (.block above320)
-                    (.ite (.zero .x .x9) (padRest c 512) (cryptRest c)))))))))
-      (padRest c 512))
+                    (.ite (.zero .x .x9) (padRest c false 512) (cryptRest c false)))))))))
+      (padRest c false 512))
 
 /-! ## The rest after the chunks when decrypting
 
@@ -285,7 +289,7 @@ def rest (sve : Bool) : Prog isa :=
   (.seq (.block out)
   (.seq (macPad .x22 .x23)
   (.seq (.block [mov .x22 .x24, mov .x23 .x25])
-    Short.xorKs))))
+    (Short.xorKs false)))))
 
 end TailO
 
@@ -338,10 +342,11 @@ def pre : List Instr :=
   [.movz .w .x9 8 0, .str .w .x9 .x21 112, .addImm .x .x0 .x21 64, .addImm .x .x3 .x21 128,
     mov .x2 .x23]
 
-/-- The data's first 448 bytes XORed with their keystream at `ctx + 832`. -/
-def xorFirst : Prog isa :=
+/-- The data's first 448 bytes XORed with their keystream at `ctx + 832`, into
+their destination (`Short.dstOf to`). -/
+def xorFirst (to : Bool) : Prog isa :=
   .seq (.block [mov .x14 .x23, .movz .x .x23 448 0])
-    (.seq (Short.xorKsFrom 832) (.block [mov .x23 .x14]))
+    (.seq (Short.xorKsFrom to 832) (.block [mov .x23 .x14]))
 
 /-- The rest of the data, after 448 bytes. -/
 def skip : List Instr := [.addImm .x .x22 .x22 448, .subImm .x .x23 .x23 448]
@@ -360,9 +365,9 @@ def openMain (c : XorCallee) : Prog isa :=
   (.seq (.block TailO.out)
   (.seq (macPad .x22 .x23)
   (.seq (.block [mov .x22 .x24, mov .x23 .x25])
-  (.seq xorFirst
+  (.seq (xorFirst false)
   (.seq (.block skip)
-  (.seq Short.xorKs
+  (.seq (Short.xorKs false)
   (.seq absorbLengths
   (.seq (.block Pad.zero)
     (finalizeTo 48)))))))))))))))))
@@ -400,11 +405,11 @@ def sealMain (c : XorCallee) : Prog isa :=
   (.seq (.call "vg_poly1305_init" Impl.Poly1305.AArch64.init)
   (.seq (macPad .x24 .x25)
   (.seq (.block lengths)
-  (.seq OpenKey.xorFirst
+  (.seq (OpenKey.xorFirst false)
   (.seq (.block (pre ++ TailO.load))
   (.seq (TailO.kernel c.sve 3)
   (.seq (.block TailO.out)
-  (.seq Short.xorKs
+  (.seq (Short.xorKs false)
   (.seq (macPad .x22 .x23)
   (.seq absorbLengths
     (.block Pad.zero))))))))))))))
@@ -418,7 +423,7 @@ def sealStitchedMain (c : XorCallee) : Prog isa :=
   (.seq (macPad .x24 .x25)
   (.seq (.block lengths)
   (.seq (.block counterOne)
-  (.seq (cryptStitched c.sve true)
+  (.seq (cryptStitched c.sve true false)
   (.seq c.inPlace
   (.seq (macPad .x22 .x23)
     absorbLengths))))))
@@ -431,7 +436,7 @@ def openStitchedMain (c : XorCallee) : Prog isa :=
   (.seq (macPad .x24 .x25)
   (.seq (.block lengths)
   (.seq (.block counterOne)
-  (.seq (cryptStitched c.sve false)
+  (.seq (cryptStitched c.sve false false)
   (.seq (.block TailO.test)
   (.seq (Code.iteCold (.zero .x .x9) (TailO.rest c.sve) (.seq (macPad .x22 .x23) (openRest c)))
   (.seq absorbLengths
@@ -462,10 +467,10 @@ def sealWideMain (c : XorCallee) : Prog isa :=
   (.seq (.block ShortRest.stash)
   (.seq (macPad .x24 .x25)
   (.seq (.block lengths)
-  (.seq ShortRest.first
+  (.seq (ShortRest.first false)
   (.seq absorbFirst
   (.seq (.block skipFirst)
-  (.seq (cryptStitched c.sve true)
+  (.seq (cryptStitched c.sve true false)
   (.seq c.inPlace
   (.seq (macPad .x22 .x23)
     absorbLengths)))))))))
@@ -476,10 +481,10 @@ def openWideMain (c : XorCallee) : Prog isa :=
   (.seq (.block ShortRest.stash)
   (.seq (macPad .x24 .x25)
   (.seq absorbFirst
-  (.seq ShortRest.first
+  (.seq (ShortRest.first false)
   (.seq (.block lengths)
   (.seq (.block skipFirst)
-  (.seq (cryptStitched c.sve false)
+  (.seq (cryptStitched c.sve false false)
   (.seq (macPad .x22 .x23)
   (.seq (openRest c)
   (.seq absorbLengths
@@ -495,9 +500,9 @@ context, but in one chunk with Poly1305 absorbing the data's first 448 bytes
 * after the lengths, `ctx[704, 1280)` is zeroed, and the stream's arguments
   set: the counter to 1, the keystream's buffer of 512 bytes at
   `ctx + 256 + len` (`ctx[705, 1279)`), and the data's address in `x2`,
-  which the chunk keeps in `x19`, where its phases read it; then, as
-  before the chunks, the clamped key is stored and the accumulator loaded
-  (`polyIn`);
+  which the chunk keeps in `x19`; then, as before the chunks, the clamped
+  key is stored and the accumulator loaded (`polyIn`), and the data's
+  address put in `x27` too, where the chunk's phases read it;
 * the chunk (`Stitch.bulkPad`), and the accumulator stored (`polyOut`); the
   analysis knows registers only, so the length is recovered from the
   buffer's address (`recover`), and the data's from `x2`;
@@ -527,21 +532,23 @@ def recover : List Instr :=
   [.sub .x .x25 .x22 .x21, .subImm .x .x25 .x25 704, mov .x22 .x23, .addImm .x .x24 .x22 448,
    .addImm .x .x23 .x25 448]
 
-/-- The data XORed with the keystream at `ctx + 256 + len`. -/
-def xorKs : Prog isa :=
-  Short.xorKsWith [mov .x9 .x22, .add .x .x10 .x21 .x23, .addImm .x .x10 .x10 256, .lsr .x .x11 .x23 4]
+/-- The data XORed with the keystream at `ctx + 256 + len`, into its
+destination (`Short.dstOf to`). -/
+def xorKs (to : Bool) : Prog isa :=
+  Short.xorKsWith [mov .x9 .x22, Short.dstOf to, .add .x .x10 .x21 .x23, .addImm .x .x10 .x10 256,
+    .lsr .x .x11 .x23 4]
 
 /-- `open` up to the tag computed, for 449 to 511 bytes. -/
 def openMain (sve : Bool) : Prog isa :=
   .seq prologue
   (.seq (macPad .x24 .x25)
   (.seq (.block lengths)
-  (.seq (.block (zero ++ args ++ polyIn))
+  (.seq (.block (zero ++ args ++ polyIn ++ [mov .x27 .x2]))
   (.seq (Stitch.bulkPad sve)
   (.seq (.block (polyOut false ++ recover))
   (.seq (macPad .x24 .x25)
   (.seq absorbLengths
-  (.seq xorKs
+  (.seq (xorKs false)
   (.seq (.block zero)
     (finalizeTo 48))))))))))
 

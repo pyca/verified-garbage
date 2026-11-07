@@ -53,8 +53,6 @@ structure FinishedFrom (r : Reg) (s₀ s : State) : Prop where
       (serialize (block (ctr (source s₀) (k / 64)))).getD (k % 64) 0
   frame : Frame [sr s₀,scalarBuf s₀,firstR s₀] s₀.mem s.mem
 
-abbrev Finished (s₀ s : State) : Prop := FinishedFrom .x1 s₀ s
-
 theorem finishFrom_ok (r : Reg) {s₀ s : State} (hp : CP s₀) (hs : SrcOK r s₀) (h : Spilled2 s₀ s) :
     WP isa (vectorFinishFrom r) s (FinishedFrom r s₀) := by
   have nx20 : ¬ VG.Proof.ChaCha20.AArch64.Words .x20 := by
@@ -173,9 +171,5 @@ theorem finishFrom_ok (r : Reg) {s₀ s : State} (hp : CP s₀) (hs : SrcOK r s�
       · exact hs.st_s.symm
       · exact hs.s_b.sub_right (Region.sub_prefix (by decide : 128 ≤ 320)))
       (by change 512 ≤ 2 ^ 64; decide) (by change k < 512; omega)]
-
-theorem finish_ok {s₀ s : State} (hp : CP s₀) (h : Spilled2 s₀ s) :
-    WP isa vectorFinish s (Finished s₀) :=
-  finishFrom_ok .x1 hp hp.src h
 
 end VG.Proof.ChaCha20.AArch64.Mixed8

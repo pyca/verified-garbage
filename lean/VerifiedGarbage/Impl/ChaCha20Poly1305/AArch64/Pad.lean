@@ -60,15 +60,15 @@ def args : List Instr :=
    .movz .x .x2 512 0, .addImm .x .x3 .x21 128]
 
 /-- The keystream of counters 1 to 8 at `ctx[768, 1280)`, and the data XORed
-with it. -/
-def cryptPad (c : XorCallee) : Prog isa :=
+with it into its destination (`Short.dstOf to`). -/
+def cryptPad (c : XorCallee) (to : Bool) : Prog isa :=
   .seq (.block (zero ++ args))
     (.seq c.inPlace
-      (.seq (Short.xorKsFrom 768) (.block zero)))
+      (.seq (Short.xorKsFrom to 768) (.block zero)))
 
-def sealMain (c : XorCallee) : Prog isa := sealMainWith (cryptPad c)
+def sealMain (c : XorCallee) : Prog isa := sealMainWith (cryptPad c false)
 
-def openMain (c : XorCallee) : Prog isa := openMainWith (cryptPad c)
+def openMain (c : XorCallee) : Prog isa := openMainWith (cryptPad c false)
 
 /-- From `lo` to 511 bytes when encrypting: `ShortRest.lean`'s code up to
 `threshold`, then this file's. -/
