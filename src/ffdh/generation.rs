@@ -3,11 +3,11 @@ use super::Error;
 use super::Parameters;
 use super::arithmetic::Backend;
 use crate::arch::ffdh::vg_ffdh_generate_parameters;
-#[cfg(target_arch = "x86_64")]
-use crate::arch::ffdh::vg_ffdh_generate_parameters_adx;
 #[cfg(target_arch = "arm")]
 use crate::arch::ffdh::vg_ffdh_generate_parameters_umaal;
 use crate::arch::ffdh::vg_ffdh_parameter_generation_init;
+#[cfg(target_arch = "x86_64")]
+use crate::arch::ffdh::{vg_ffdh_generate_parameters_adx, vg_ffdh_generate_parameters_ifma};
 use crate::cpu::detected;
 use crate::entropy::{self, Step, Stop};
 use crate::rsa::Scratch;
@@ -74,6 +74,8 @@ impl Controller {
             Backend::Baseline => vg_ffdh_generate_parameters,
             #[cfg(target_arch = "x86_64")]
             Backend::Adx => vg_ffdh_generate_parameters_adx,
+            #[cfg(target_arch = "x86_64")]
+            Backend::Ifma => vg_ffdh_generate_parameters_ifma,
             #[cfg(target_arch = "arm")]
             Backend::Umaal => vg_ffdh_generate_parameters_umaal,
         };

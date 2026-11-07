@@ -22,7 +22,7 @@ theorem primeSetup_safe (mul : Nat → Nat → Nat → Prog isa)
   simp only [primeSetup, primeR2, Impl.Dsa.X86_64.Arithmetic.constants,
     Impl.Ffdh.X86_64.ParameterCandidate.prepareConstants,
     R2Words.choice, R2Words.fast, R2Words.old, VG.Impl.Bignum.X86_64.Public.R2Squares.run,
-    VG.Impl.Bignum.X86_64.Public.R2Squares.init, VG.Impl.Bignum.X86_64.Public.R2Squares.next, seqs, Code.allInstrs, hm]
+    VG.Impl.Bignum.X86_64.Public.R2Squares.init, VG.Impl.Bignum.X86_64.Public.R2Squares.next, seqs, generationOk, hm]
   rfl
 
 theorem millerRabin_safe (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
@@ -30,7 +30,7 @@ theorem millerRabin_safe (mul : Nat → Nat → Nat → Prog isa) (round : Prog 
     generationSafe (millerRabin mul round) := by
   unfold generationSafe at hm hr ⊢
   simp only [millerRabin, primeIteration, drawRound, sampleRound,
-    Impl.Ffdh.X86_64.ParameterCandidate.witnessRound, seqs, Code.allInstrs, hm, hr]
+    Impl.Ffdh.X86_64.ParameterCandidate.witnessRound, seqs, generationOk, hm, hr]
   rfl
 
 theorem probablePrime_safe (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)

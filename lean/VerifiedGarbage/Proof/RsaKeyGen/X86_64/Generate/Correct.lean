@@ -178,14 +178,21 @@ private theorem code_instrs (q : Instr → Bool) (a b : Prog isa)
   simp only [VG.Impl.Bignum.X86_64.seqs, Code.allInstrs, ha, hb, Bool.and_true] at hp ⊢
   exact hp
 
+private theorem code_ctlC (a b : Prog isa) (hp : ctlC (code (.block []) (.block [])) = true)
+    (ha : ctlC a = true) (hb : ctlC b = true) : ctlC (code a b) = true := by
+  unfold code iteration searchRun classify accepted keyRun at hp ⊢
+  simp only [VG.Impl.Bignum.X86_64.seqs, ctlC, ha, hb, Bool.and_true] at hp ⊢
+  exact hp
+
 theorem keyCode_sp : VG.Impl.RsaKeyGen.X86_64.Key.code.all (fun i => !isa.writesSp i) = true := by
   decide +kernel
 
 theorem genCode_sp (v : RoundImpl) : (genCode v).all (fun i => !isa.writesSp i) = true :=
   code_all _ _ _ (by decide +kernel) (Search.searchCode_sp v) keyCode_sp
 
-theorem genCode_mx (v : RoundImpl) : (genCode v).allInstrs (fun i => !loadsMxcsr i) = true :=
-  code_instrs _ _ _ (by decide +kernel) (Search.searchCode_mx v) keyCode_mx
+/-- Key generation loads MXCSR only where the round restores it. -/
+theorem genCode_ctlC (v : RoundImpl) : ctlC (genCode v) = true :=
+  code_ctlC _ _ (by decide +kernel) (ctlOk_of_ctlC (Search.searchCode_ctlC v)) (ctlOk_of_noLoad keyCode_mx)
 
 theorem keyCode_x86_64Depth : VG.Impl.RsaKeyGen.X86_64.Key.code.x86_64Depth = 0 :=
   x86_64Depth_zero keyCode_noSp keyCode_depth
@@ -219,6 +226,6 @@ theorem gen_return_address (v : RoundImpl) {s t : State} {tr : List Leak}
 theorem gen_correct [Key.KeyProof] (v : RoundImpl) (s : State) (h : genContract.pre s) :
     ∃ tr t, Exec isa (genCode v) s tr t ∧ abiPreserved s t ∧ genContract.post s t := by
   obtain ⟨tr, t, he, hp, hg, _, _⟩ := gen_correct_ok v h
-  exact ⟨tr, t, he, abiPreserved_of_exec (genCode_mx v) he ⟨hg, gen_return_address v h he⟩, hp⟩
+  exact ⟨tr, t, he, abiPreserved_of_ctl (ctlOk_of_ctlC (genCode_ctlC v)) he ⟨hg, gen_return_address v h he⟩, hp⟩
 
 end VG.Proof.RsaKeyGen.X86_64.Generate

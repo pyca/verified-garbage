@@ -174,7 +174,8 @@ abbrev backendCode (G1 G256 : Stream) (v : RoundImpl) (pBytes : Nat) : Prog isa 
 theorem backend_safe (v1 v256 : MdHash) (v : RoundImpl) (pBytes : Nat) :
     generationSafe (backendCode (checkName := checkName) v1.H.stream v256.H.stream v pBytes) :=
   code_safe (checkName := checkName) (hashCode_safe v1) (hashCode_safe v256) _ _ _
-    (arith.inlineSafe _ _ _) arith.inlineSafe ((ProbablePrime.testCode_safe v).call _) _ _
+    (generationSafe_of_allInstrs (arith.inlineSafe _ _ _))
+    (fun o a b => generationSafe_of_allInstrs (arith.inlineSafe o a b)) ((ProbablePrime.testCode_safe v).call _) _ _
 
 theorem backend_depth (v1 v256 : MdHash) (v : RoundImpl) (pBytes : Nat) :
     (backendCode (checkName := checkName) v1.H.stream v256.H.stream v pBytes).x86_64Depth ≤ 568 :=
