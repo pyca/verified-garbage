@@ -72,6 +72,7 @@ import VerifiedGarbage.Proof.Dsa.X86_64.PrevalidatedVerified
 public import VerifiedGarbage.Proof.Dsa.X86_64.PrevalidatedVerified
 public import VerifiedGarbage.Proof.Dsa.X86_64.PrevalidatedSignVerified
 public import VerifiedGarbage.Proof.Dsa.X86_64.ValidatePrivateVerified
+public import VerifiedGarbage.Proof.Dsa.X86_64.DeriveCheckedVerified
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 public import VerifiedGarbage.Proof.Framework.X86_64.Frame
 public import VerifiedGarbage.Proof.Mont.Read
@@ -189,6 +190,9 @@ def variant : Backend where
   prevalidatedSignDepth := by decide +kernel
   validatePrivateVerified := validating_private_call_verified Mont.fnBase MontS.fnLazy (by decide +kernel) rfl (by decide +kernel)
   validatePrivateSp := Code.all_of_allInstrs (by decide +kernel)
+  deriveCheckedVerified := derive_checked_call_verified Mont.fnBase MontS.fnLazy (by decide +kernel) rfl (by decide +kernel)
+  deriveCheckedSp := Code.all_of_allInstrs (by decide +kernel)
+  deriveCheckedDepth := by decide +kernel
   stackBound := by decide
 
 end VG.Proof.Variants.DsaArithmetic.X86_64.Base

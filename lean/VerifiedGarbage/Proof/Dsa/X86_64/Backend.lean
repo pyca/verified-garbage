@@ -7,6 +7,7 @@ public import VerifiedGarbage.Spec.Dsa.Prevalidated
 public import VerifiedGarbage.Impl.Dsa.X86_64.Prevalidated
 public import VerifiedGarbage.Impl.Dsa.X86_64.PrevalidatedSign
 public import VerifiedGarbage.Spec.Dsa.PrevalidatedSign
+public import VerifiedGarbage.Spec.Dsa.DomainChecked
 public import VerifiedGarbage.Proof.Dsa.Contract
 public import Aesop.BuiltinRules
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
@@ -76,6 +77,10 @@ structure Backend where
   validatePrivateVerified : Verified target (PrevalidatedSign.validate sq mul)
     (Spec.Dsa.validatePrivateKeyContract abi stack)
   validatePrivateSp : (PrevalidatedSign.validate sq mul).all (fun i => !isa.writesSp i) = true
+  deriveCheckedVerified : Verified target (Generate.deriveChecked sq mul)
+    (Spec.Dsa.deriveKeyDomainCheckedContract abi stack)
+  deriveCheckedSp : (Generate.deriveChecked sq mul).all (fun i => !isa.writesSp i) = true
+  deriveCheckedDepth : (Generate.deriveChecked sq mul).x86_64Depth ≤ stack
   stackBound : stack < 2 ^ 32
 
 end VG.Proof.Dsa.X86_64
