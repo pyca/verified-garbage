@@ -61,7 +61,7 @@ namespace VG.Impl.ChaCha20Poly1305.X86_64.Stitch
 
 open VG.X86_64
 open VG.Impl.ChaCha20.X86_64 (at_)
-open VG.Impl.ChaCha20.X86_64.XorBuf (xData xBody xorBufX)
+open VG.Impl.ChaCha20.X86_64.XorBuf (xData xBody xorBufX xorBufXTo)
 
 /-- Offsets in `buf` (`ctx + 128`), in the Poly1305 state's working space
 (`ctx + 520 …`): `r12`, `r13`, `r14` stashed, and the bytes left. -/
@@ -617,22 +617,35 @@ def sealFor (x : ChaCha20.X86_64.Callee) : Poly1305.X86_64.Blocks → Prog isa
 /-! ## `open`
 
 `open` absorbs the ciphertext before it decrypts it, so each chunk absorbs
-its own 512 bytes during its rounds, before the kernel's `finish` XORs the
-keystream into them: no chunk is special. `bulkO` runs them while at least
+its own 512 bytes during its rounds, before the kernel's `finishTo` XORs the
+keystream with them into the destination: no chunk is special. The
+ciphertext (`r12` on entry to `cryptO`) is the destination itself (`r14`), or
+apart from it. `bulkO` runs them while at least
 512 bytes remain; `leaveO` leaves `rbx`, `rbp` and `rsi`, `rdx` at the rest,
 which `cryptO` absorbs (with the lengths block) before the call of
 `vg_chacha20_xor` decrypts it. Below 512 bytes (449 to 511, past `fold`),
 `wholeO` runs the kernel once, absorbing the first 448 bytes while it stores
 the keystream of all of them at `ctx + 736`. -/
 
-/-- A chunk of `open` but for `next`: the 512 bytes at `rsi` absorbed during
-the rounds, then decrypted, and `rsi` advanced past them. -/
-def chunkMainO (vl : Bool) : Prog isa :=
-  .seq (.block ChaCha20.X86_64.Avx2.setup)
-    (.seq (sroundsFor vl false)
-      (.block (ChaCha20.X86_64.Avx2.finish ++ ([.alu .add .rsi (.imm 512)] : List Instr))))
+/-- The destination's distance from the source (`r12`, `r14` as `enter`
+stashed them) in `r11`, whose part of the accumulator `r12` keeps meanwhile:
+after the rounds, `rax`, `rdx` and `r12`–`r15` hold only Poly1305's
+products. -/
+def toDst : List Instr :=
+  [.mov .r12 (.reg .r11), .mov .r11 (.mem (at_ .rcx r14Off)), .alu .sub .r11 (.mem (at_ .rcx r12Off))]
 
-def chunkO (vl : Bool) : Prog isa := .seq (chunkMainO vl) (.block next)
+/-- A chunk of `open` up to its keystream: the 512 bytes of ciphertext at
+`rsi` absorbed during the rounds, then `toDst`. -/
+def chunkAO (vl : Bool) : Prog isa :=
+  .seq (.block ChaCha20.X86_64.Avx2.setup) (.seq (sroundsFor vl false) (.block toDst))
+
+/-- The rest of a chunk of `open`: the keystream XORed with the ciphertext
+at `rsi` into the destination (`rsi + r11`), the accumulator restored, `rsi`
+advanced past the chunk, and `next`. -/
+def chunkBO : List Instr :=
+  ChaCha20.X86_64.Avx2.finishTo true ++ ([.mov .r11 (.reg .r12), .alu .add .rsi (.imm 512)] : List Instr) ++ next
+
+def chunkO (vl : Bool) : Prog isa := .seq (chunkAO vl) (.block chunkBO)
 
 /-- As `leave`, with the rest of the data both the ciphertext not yet
 absorbed (`rbx`, `rbp`) and the data not yet decrypted (`rsi`, `rdx`). -/
@@ -786,9 +799,12 @@ line and `leaveO` falls through at its offset before them: the first test
 (193 to 511 left) has the length of the one it replaced, and the padding of
 `tailKO` (longer with `vprold`, whose rounds are shorter) keeps the code
 after the tails at its offset modulo 64 (Zen 3 and Zen 4 ran the chunks'
-code up to 2% slower when it moved). -/
+code up to 2% slower when it moved). The padding before the tests is 44 bytes
+longer than it was when each chunk decrypted in place, 84 bytes shorter
+(`toDst`, and `finishTo`'s stores through `r11`), so that what follows the
+chunks keeps its offset modulo 64. -/
 def restO (vl : Bool) : Prog isa :=
-  .seq (.block (padIns .rdx 5 ++
+  .seq (.block (padIns .rdx 49 ++
     ([.mov .rdx (.mem (at_ .rcx lenOff)), .alu .sub .rdx (.imm 193), .alu .cmp .rdx (.imm 319)] : List Instr)))
   (.ite .b
     (.seq (.block [.alu .cmp .rdx (.imm 64)])
@@ -804,16 +820,20 @@ def bulkO (vl : Bool) : Prog isa :=
   .seq (.block enter) (.seq (.loop (chunkO vl) .ae) (restO vl))
 
 /-- The arguments of the call on the rest of the data (`rbx`, `rbp`), from
-the counter the chunks left. -/
+the counter the chunks left, to the destination (`r11` its distance from the
+ciphertext). -/
 def restArgs : List Instr :=
-  ptr .rdi .r15 64 ++ [.mov .rsi (.reg .rbx), .mov .rdx (.reg .rbp)] ++ ptr .rcx .r15 128
+  ptr .rdi .r15 64 ++ [.mov .rsi (.reg .rbx), .mov .rdx (.reg .rbp)] ++ ptr .rcx .r15 128 ++
+    [.mov .r11 (.reg .r14), .alu .sub .r11 (.reg .r12)]
 
 /-- The rest decrypted from its keystream at `ctx + o`: the `len mod 512`
-bytes after the whole chunks; `rsi` then at `buf`. -/
+bytes after the whole chunks, from the ciphertext's (at `r11`) to the
+destination's (at `r10`); `rsi` then at `buf`. -/
 def xorTail (w o : Nat) : Prog isa :=
   .seq (.block ([.mov .rdx (.reg .r13), .alu .and .rdx (.imm 511), .mov .r10 (.reg .r14),
-    .alu .add .r10 (.reg .r13), .alu .sub .r10 (.reg .rdx)] ++ ptr .rsi .r15 o))
-    (.seq (xorBufX w .r10) (.block (ptr .rsi .r15 128)))
+    .alu .add .r10 (.reg .r13), .alu .sub .r10 (.reg .rdx), .mov .r11 (.reg .r12),
+    .alu .add .r11 (.reg .r13), .alu .sub .r11 (.reg .rdx)] ++ ptr .rsi .r15 o))
+    (.seq (xorBufXTo w .r10 .r11) (.block (ptr .rsi .r15 128)))
 
 /-- `CF` set if `len mod 512` (`r13`) is from `lo` to `lo + n - 1`. -/
 def restTest (lo n : Nat) : List Instr :=
@@ -829,7 +849,8 @@ after them) or `tail3O` or `tailKO` (257 to 511, then wiped), otherwise (none)
 by the implementation `x` of `vg_chacha20_xor` from the counter the chunks
 left. The call falls through at its offset before the tails were added, and
 the padding of the wipe keeps the code after the branches at its offset
-modulo 64. -/
+modulo 64; the last padding is 16 bytes longer than it was when the rest was
+decrypted in place, 48 bytes shorter, for the same reason. -/
 def decRest (x : ChaCha20.X86_64.Callee) : Prog isa :=
   .seq (.block [.alu .cmp .r13 (.imm 512)])
   (.ite .b (.seq (xorTail x.wide 736) (.seq (.block [.mov32 .rdx (.imm 576)]) (zeroKs x.wide)))
@@ -840,8 +861,13 @@ def decRest (x : ChaCha20.X86_64.Callee) : Prog isa :=
             (.seq (xorTail x.wide 736) (.seq (.block (restTest 257 255))
               (.ite .b (.seq (.block [.mov32 .rdx (.imm 576)])
                 (.seq (zeroKs x.wide) (.block (padIns .rax 3)))) (.block []))))
-            (.seq (.block restArgs) x.inPlace)))))
-      (.block (padIns .rax 20))))
+            (.seq (.block restArgs) (callX x true))))))
+      (.block (padIns .rax 36))))
+
+/-- `cryptArgs` with the ciphertext (`r12`) as the data. -/
+def cryptArgsO : List Instr :=
+  ([.mov32 .rax (.imm 1), .store32 (at_ .r15 112) .rax] : List Instr) ++ ptr .rdi .r15 64 ++
+    ([.mov .rsi (.reg .r12), .mov .rdx (.reg .r13)] : List Instr) ++ ptr .rcx .r15 128
 
 /-- `open`'s `macPadLengths` and `crypt`: if the data is at most `fold`
 bytes, as `open` does; otherwise the whole chunks decrypted and absorbed by
@@ -852,10 +878,10 @@ bytes too (`wipeL`). -/
 def cryptO (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Prog isa :=
   .seq (.block [.alu .cmp .r13 (.imm (BitVec.ofNat 32 (x.fold + 1)))])
   (.seq (.ite .b
-    (.seq (macPadLengths b .r14 .r13)
+    (.seq (macPadLengths b .r12 .r13)
       (.seq (.block (ptr .rsi .r15 736 ++ [.mov .rdx (.reg .r13)]))
-        (.seq (xorBufX x.wide .r14) (.block (ptr .rsi .r15 128)))))
-    (.seq (.block (cryptArgs ++ [.alu .cmp .rdx (.imm 512)]))
+        (.seq (xorKs x.wide true) (.block (ptr .rsi .r15 128)))))
+    (.seq (.block (cryptArgsO ++ [.alu .cmp .rdx (.imm 512)]))
       (.seq (.ite .b (wholeO x.vl) (bulkO x.vl))
       (.seq (.block (padIns .rax 18))
       (.seq (macPadLengths b .rbx .rbp)
@@ -866,16 +892,20 @@ def cryptO (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Prog isa 
 
 /-- `openStitched` up to the tag computed. -/
 def openStitchedBody (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Prog isa :=
-  .seq (.block entry)
+  .seq (.block entryO)
   (.seq (prologueX x)
   (.seq (macPad b .rbx .rbp)
   (.seq (.block lengths)
   (.seq (cryptO x b)
     (finalizeTo 48)))))
 
-/-- `open`, with Poly1305 inside the kernel for the whole chunks. -/
+/-- `open`, with Poly1305 inside the kernel for the whole chunks. After
+`srcIn`, 5 bytes of padding (in `rax`, which `entryO` then loads): `entryO`
+is 5 bytes shorter than `entry`, which took the tag's address when the
+chunks decrypted in place, and the padding keeps the code after it at its
+offset. -/
 def openStitched (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Prog isa :=
-  .seq (.block srcIn) (.seq (openStitchedBody x b) openTail)
+  .seq (.block (srcIn ++ padIns .rax 5)) (.seq (openStitchedBody x b) openTail)
 
 /-- `openSmall`'s limit, as `smallLim` is `sealSmall`'s: on Cascade Lake,
 `open`'s AVX2 code with AVX-512VL's rounds (`vl`) is the faster below 768

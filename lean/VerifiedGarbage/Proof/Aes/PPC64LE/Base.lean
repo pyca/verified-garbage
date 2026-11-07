@@ -79,6 +79,41 @@ def ctr32PPC64LE : Contract PPC64LE.isa where
     s₁.gpr .r6 = s₂.gpr .r6 ∧ s₁.gpr .r7 = s₂.gpr .r7 ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧
     s₁.sp = s₂.sp
 
+open VG.PPC64LE in
+/-- PPC64LE contract for `vg_aes_ctr32_to(schedule: *const [u8; 240],
+rounds: usize, counter: *mut [u8; 16], src: *const [u8; 16], n: usize,
+dst: *mut [u8; 16])`: `vg_aes_ctr32` out of place, writing the `n` blocks at
+`src` XORed with the counter-mode keystream to `dst`, and advancing the
+counter block by `n`.
+
+The code may read `schedule` (240 bytes) and `src` (`16 n` bytes), and read
+and write `counter` (16 bytes) and `dst` (`16 n` bytes). `dst` may not
+overlap `schedule`, `counter` or `src`, and neither `src` nor `dst` may wrap
+around the end of the address space. `rounds` is 10, 12 or 14. The pointers,
+`rounds` and `n` are public; the key schedule, the counter block and the data
+are secret. -/
+def ctr32ToPPC64LE : Contract PPC64LE.isa where
+  pre s :=
+    let sched : Region := ⟨s.gpr .r3, 240⟩
+    let counter : Region := ⟨s.gpr .r5, 16⟩
+    let src : Region := ⟨s.gpr .r6, 16 * (s.gpr .r7).toNat⟩
+    let dst : Region := ⟨s.gpr .r8, 16 * (s.gpr .r7).toNat⟩
+    s.rd = [sched, src] ∧ s.wr = [counter, dst] ∧
+    sched.Disjoint dst ∧ counter.Disjoint dst ∧ src.Disjoint dst ∧
+    (s.gpr .r6).toNat + 16 * (s.gpr .r7).toNat ≤ 2 ^ 64 ∧
+    (s.gpr .r8).toNat + 16 * (s.gpr .r7).toNat ≤ 2 ^ 64 ∧
+    ((s.gpr .r4).toNat = 10 ∨ (s.gpr .r4).toNat = 12 ∨ (s.gpr .r4).toNat = 14)
+  post s s' :=
+    let ciph := aesWith (s.gpr .r4).toNat
+      (Spec.Aes.bytesAt s.mem (s.gpr .r3) (16 * ((s.gpr .r4).toNat + 1)))
+    blocksAt s'.mem (s.gpr .r8) (s.gpr .r7).toNat =
+        ctr32 ciph (blockAt s.mem (s.gpr .r5)) (blocksAt s.mem (s.gpr .r6) (s.gpr .r7).toNat) ∧
+      blockAt s'.mem (s.gpr .r5) = Nat.repeat inc32 (s.gpr .r7).toNat (blockAt s.mem (s.gpr .r5))
+  pub s₁ s₂ :=
+    s₁.gpr .r3 = s₂.gpr .r3 ∧ s₁.gpr .r4 = s₂.gpr .r4 ∧ s₁.gpr .r5 = s₂.gpr .r5 ∧
+    s₁.gpr .r6 = s₂.gpr .r6 ∧ s₁.gpr .r7 = s₂.gpr .r7 ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧
+    s₁.sp = s₂.sp
+
 end VG.Proof.Aes
 
 namespace VG.Proof.Aes

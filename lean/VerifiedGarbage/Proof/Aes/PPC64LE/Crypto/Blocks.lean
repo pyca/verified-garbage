@@ -37,8 +37,9 @@ theorem blocks_ok (inverse : Bool) (s : State)
   · refine WP.ite false (by simpa only [eval, State.read, Size.bits, BitVec.setWidth_eq, Option.some.injEq, beq_eq_false_iff_ne] using hz)
       (by simp) (fun _ => ?_)
     refine WP.seq (WP.mono (blocks_setup_ok s) fun base ⟨hp, hl, hzero, hm, he⟩ => ?_)
-    have hc : LoopConfig inverse false base nr n D := by
-      refine ⟨⟨hzero, hm, ?_, hnrmin, hnrlt, ?_⟩, hsize, ?_, ?_, by simp⟩
+    have hc : LoopConfig inverse false .r0 base nr n D D := by
+      refine ⟨⟨hzero, hm, ?_, hnrmin, hnrlt, ?_⟩, hsize, ?_, ?_, by simp, ?_,
+        by rw [hzero, BitVec.sub_self]; rfl, by decide, Or.inl rfl⟩
       · rw [he.keep.gpr (by decide)]
         simp only [nr, BitVec.ofNat_toNat, BitVec.setWidth_eq]
       · intro j hj
@@ -49,7 +50,9 @@ theorem blocks_ok (inverse : Bool) (s : State)
         exact List.mem_cons_self
       · rw [he.keep.gpr (by decide)]
         exact hsep
-    have hi : LoopInv inverse false base nr n D 0 0 base := by
+      · rw [he.keep.2.2, hwr]
+        exact List.mem_append_right _ List.mem_cons_self
+    have hi : LoopInv inverse false base nr n D D 0 0 base := by
       refine ⟨by omega, Keep.refl _ _, ?_, ?_, Processed.refl _ _ _ _, Frame.refl _ _, hm,
         by simp, by simp, by simp⟩
       · simpa only [Nat.mul_zero, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using hp

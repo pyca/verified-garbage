@@ -223,11 +223,12 @@ theorem call_mid (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre e
     · exact (hp.stk_sub (by lit_omega)).symm
 
 /-- After `cryptArgs` (and the comparison with 512): the counter set to 1
-and the arguments of `vg_chacha20_xor`. -/
-structure Args (s₀ s : State) (s₂ : State) : Prop where
+and the arguments of `vg_chacha20_xor`, the data at `t` (or, `cryptArgsO`,
+the ciphertext). -/
+structure ArgsT (s₀ s : State) (t : Addr) (s₂ : State) : Prop where
   mem : s₂.mem = s.mem.writeW (off (cx s₀) 112) (1 : BitVec 32)
   rdi : s₂.gpr .rdi = off (cx s₀) 64
-  rsi : s₂.gpr .rsi = dp s₀
+  rsi : s₂.gpr .rsi = t
   rdx : s₂.gpr .rdx = BitVec.ofNat 64 (L s₀)
   rcx : s₂.gpr .rcx = off (cx s₀) 128
   r13 : s₂.gpr .r13 = BitVec.ofNat 64 (L s₀)
@@ -235,6 +236,9 @@ structure Args (s₀ s : State) (s₂ : State) : Prop where
   keep : ∀ r, r = .r12 ∨ r = .r13 ∨ r = .r14 ∨ r = .rsp → s₂.gpr r = s.gpr r
   rd : s₂.rd = s.rd
   wr : s₂.wr = s.wr
+
+/-- `ArgsT` of the data, as `cryptArgs` leaves. -/
+abbrev Args (s₀ s : State) : State → Prop := ArgsT s₀ s (dp s₀)
 
 theorem args_frame (s₀ : State) (m : Mem) :
     Frame [sub s₀ 112 4] m (m.writeW (off (cx s₀) 112) (1 : BitVec 32)) :=
@@ -589,11 +593,11 @@ theorem callIf_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre 
     rw [gg r (by rcases hr with rfl | rfl | rfl | rfl <;> decide), hd.keep r hr]
 
 /-- `Inv.step`, for a part that may change `rbx` and `rbp`. -/
-theorem Inv.step' {s₀ s s' : State} (h : Inv s₀ s)
+theorem Inv.step' {s₀ s s' : State} {t : Addr} (h : InvT s₀ t s)
     (cs : ∀ r, r = .r12 ∨ r = .r13 ∨ r = .r14 ∨ r = .r15 ∨ r = .rsp → s'.gpr r = s.gpr r)
     (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) {rs : List Region} (hf : Frame rs s.mem s'.mem)
     (hsub : ∀ r ∈ rs, ∃ r' ∈ [workR s₀, dR s₀, stkR s₀], Region.Sub r r')
-    (hsv : ∀ r ∈ rs, (sub s₀ 0 48).Disjoint r) : Inv s₀ s' where
+    (hsv : ∀ r ∈ rs, (sub s₀ 0 48).Disjoint r) : InvT s₀ t s' where
   r15 := by rw [cs _ (by simp), h.r15]
   r14 := by rw [cs _ (by simp), h.r14]
   r13 := by rw [cs _ (by simp), h.r13]

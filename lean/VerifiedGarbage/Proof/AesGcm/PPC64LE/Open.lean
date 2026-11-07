@@ -116,6 +116,40 @@ theorem bytes_W {m m' : Mem} {W p : Addr} {n : Nat} (hf : Frame [(⟨W, 2560⟩ 
     (hd : (⟨p, n⟩ : Region).Disjoint ⟨W, 2560⟩) (hn : n ≤ 2 ^ 64) : bytesAt m' p n = bytesAt m p n :=
   bytesAt_frame hf (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hd) hn
 
+/-- What `open`'s entry and the computation and comparison of the tags need of
+the state, as `openPre` gives it but with the data only read: the buffers
+read (the data among them) and `W` written, `W` apart from them. Both `open`
+(`HeadPre.of_open`) and `vg_aes_gcm_open_split`, whose data is the source,
+satisfy it. -/
+structure HeadPre (s : State) : Prop where
+  ctx : Covers [⟨s.gpr .r3, 256⟩] (s.rd ++ s.wr)
+  nonce : Covers [⟨s.gpr .r5, (s.gpr .r6).toNat⟩] (s.rd ++ s.wr)
+  aad : Covers [⟨s.gpr .r7, (s.gpr .r8).toNat⟩] (s.rd ++ s.wr)
+  data : Covers [⟨s.gpr .r9, (s.gpr .r10).toNat⟩] (s.rd ++ s.wr)
+  tag : Covers [⟨stackArg s 0, (stackArg s 1).toNat⟩] (s.rd ++ s.wr)
+  stk : Covers [VG.Proof.AesGcm.PPC64LE.args s 3] (s.rd ++ s.wr)
+  w : Covers [⟨stackArg s 2, 2560⟩] s.wr
+  dcW : (⟨s.gpr .r3, 256⟩ : Region).Disjoint ⟨stackArg s 2, 2560⟩
+  dnW : (⟨s.gpr .r5, (s.gpr .r6).toNat⟩ : Region).Disjoint ⟨stackArg s 2, 2560⟩
+  daW : (⟨s.gpr .r7, (s.gpr .r8).toNat⟩ : Region).Disjoint ⟨stackArg s 2, 2560⟩
+  ddW : (⟨s.gpr .r9, (s.gpr .r10).toNat⟩ : Region).Disjoint ⟨stackArg s 2, 2560⟩
+  dtW : (⟨stackArg s 0, (stackArg s 1).toNat⟩ : Region).Disjoint ⟨stackArg s 2, 2560⟩
+  dWA : (⟨stackArg s 2, 2560⟩ : Region).Disjoint (VG.Proof.AesGcm.PPC64LE.args s 3)
+  fc : (s.gpr .r3).toNat + 256 ≤ 2 ^ 64
+  fn : (s.gpr .r5).toNat + (s.gpr .r6).toNat ≤ 2 ^ 64
+  fa : (s.gpr .r7).toNat + (s.gpr .r8).toNat ≤ 2 ^ 64
+  fd : (s.gpr .r9).toNat + (s.gpr .r10).toNat ≤ 2 ^ 64
+  ft : (stackArg s 0).toNat + (stackArg s 1).toNat ≤ 2 ^ 64
+  fW : (stackArg s 2).toNat + 2560 ≤ 2 ^ 64
+  hR : rounds (s.gpr .r4)
+
+theorem HeadPre.of_open {s : State} (h : openPre s) : HeadPre s := by
+  obtain ⟨hrd, hwr, _, dcW, _, dnW, _, daW, _, ddW, _, dtW, dWA, fc, fn, fa, fd, ft, fW, _, hR⟩ := h
+  have r : ∀ x, x ∈ s.rd → Covers [x] (s.rd ++ s.wr) := fun x hx => covers_mem (List.mem_append_left _ hx)
+  refine ⟨r _ (by rw [hrd]; simp), r _ (by rw [hrd]; simp), r _ (by rw [hrd]; simp),
+    covers_mem (List.mem_append_right _ (by rw [hwr]; simp)), r _ (by rw [hrd]; simp), r _ (by rw [hrd]; simp),
+    by rw [hwr]; exact covers_mem (by simp), dcW, dnW, daW, ddW, dtW, dWA, fc, fn, fa, fd, ft, fW, hR⟩
+
 /-- Whether the computed tag, cut to the tag length, is the received one. -/
 abbrev openTagOk (s₀ : State) : Prop :=
   (fullTag (ctxCiph s₀.mem (s₀.gpr .r3) (s₀.gpr .r4).toNat) (ctxH s₀.mem (s₀.gpr .r3))
@@ -138,16 +172,16 @@ structure OpenMid (s₀ s₄ s : State) : Prop where
 
 /-- `open`, once the tag length is allowed, up to the comparison of the tags,
 followed by any `T`. -/
-theorem open_head [VG.Proof.Gcm.PPC64LE.GhashLaw] {s₀ s₄ : State} (h : openPre s₀) (h4 : SO1 (stackArg s₀ 2) (stackArg s₀ 0) s₀ s₄)
+theorem open_head [VG.Proof.Gcm.PPC64LE.GhashLaw] {s₀ s₄ : State} (h : HeadPre s₀) (h4 : SO1 (stackArg s₀ 2) (stackArg s₀ 0) s₀ s₄)
     (h19 : s₄.gpr .r19 = stackArg s₀ 1) (hok : Spec.Gcm.tagLenOk (stackArg s₀ 1).toNat = true) {T : Prog isa}
     {Q : State → Prop} (k : ∀ s₉, OpenMid s₀ s₄ s₉ → WP isa T s₉ Q) :
     WP isa (.seq oneAad (.seq (oneTag 112) (.seq recv (.seq (cmp 112) (.seq (.block [mov .r19 .r3]) T))))) s₄ Q := by
-  have hh := h
-  obtain ⟨hrd, hwr, dcd, dcW, dnd, dnW, dad, daW, ddt, ddW, ddA, dtW, dWA, fc, fn, fa, fd, ft, fW, fsp, hR⟩ := hh
+  have dcW := h.dcW; have dnW := h.dnW; have daW := h.daW; have ddW := h.ddW; have dtW := h.dtW
+  have fn := h.fn; have fa := h.fa; have fd := h.fd; have hR := h.hR
   obtain ⟨t1, t16⟩ := tagLenOk_bounds hok
-  have L₀ := oneLay fc fW dcW
-  have hC : Covers [⟨s₀.gpr .r3, 256⟩] (s₀.rd ++ s₀.wr) := covers_mem (List.mem_append_left _ (by rw [hrd]; simp))
-  have hW : Covers [⟨stackArg s₀ 2, 2560⟩] s₀.wr := by rw [hwr]; exact covers_mem (by simp)
+  have L₀ := oneLay h.fc h.fW dcW
+  have hC := h.ctx
+  have hW := h.w
   have he₄ := one_env h4 hC hW
   have L := L₀.v h4.r29 h4.r30 h4.r31
   have hk₄ := h4.en.keeps
@@ -158,11 +192,11 @@ theorem open_head [VG.Proof.Gcm.PPC64LE.GhashLaw] {s₀ s₄ : State} (h : openP
   -- `oneAad`
   have hN : DataOk (s₄.gpr .r30) (s₄.gpr .r31) s₄ (s₀.gpr .r5) (s₀.gpr .r6).toNat := by
     rw [h4.r30, h4.r31]
-    exact ⟨by rw [hk₄.rd, hk₄.wr]; exact covers_mem (List.mem_append_left _ (by rw [hrd]; simp)),
+    exact ⟨by rw [hk₄.rd, hk₄.wr]; exact h.nonce,
       (s₀.gpr .r6).isLt, fn, dnW.sub_right (Lay.wSub (by decide)), dnW⟩
   have hAd : DataOk (s₄.gpr .r30) (s₄.gpr .r31) s₄ (s₄.gpr .r21) (s₄.gpr .r22).toNat := by
     rw [h4.r30, h4.r31, h4.r21, h4.r22]
-    exact ⟨by rw [hk₄.rd, hk₄.wr]; exact covers_mem (List.mem_append_left _ (by rw [hrd]; simp)),
+    exact ⟨by rw [hk₄.rd, hk₄.wr]; exact h.aad,
       (s₀.gpr .r8).isLt, fa, daW.sub_right (Lay.wSub (by decide)), daW⟩
   refine WP.seq (WP.mono (WP.with_rdwr (oneAad_ok L he₄ rfl h4.r24 (by rw [h4.r25]; exact toN)
     (by rw [h4.r18]; exact toN) hN hAd)) fun s₅ ⟨oa, rd₅, wr₅, _⟩ => ?_)
@@ -170,14 +204,12 @@ theorem open_head [VG.Proof.Gcm.PPC64LE.GhashLaw] {s₀ s₄ : State} (h : openP
   rw [h4.r30, h4.r31] at f₅
   have F₅ : Frame [(⟨stackArg s₀ 2, 2560⟩ : Region)] s₀.mem s₅.mem := F₄.trans (f₅.sub inW_j0)
   -- `oneTag 112`
-  have hDw₄ : Covers [⟨s₀.gpr .r9, (s₀.gpr .r10).toNat⟩] s₄.wr := by
-    rw [hk₄.wr, hwr]; exact covers_mem (by simp)
-  have hd₄ : DataW (s₄.gpr .r29) (s₄.gpr .r30) (s₄.gpr .r31) s₄ (s₄.gpr .r27) (s₄.gpr .r23).toNat := by
-    rw [h4.r29, h4.r30, h4.r31, h4.r27, h4.r23]
-    exact ⟨⟨covers_left hDw₄, (s₀.gpr .r10).isLt, fd, ddW.sub_right (Lay.wSub (by decide)), ddW⟩, hDw₄, dcd⟩
+  have hd₄ : DataOk (s₄.gpr .r30) (s₄.gpr .r31) s₄ (s₄.gpr .r27) (s₄.gpr .r23).toNat := by
+    rw [h4.r30, h4.r31, h4.r27, h4.r23]
+    exact ⟨by rw [hk₄.rd, hk₄.wr]; exact h.data, (s₀.gpr .r10).isLt, fd, ddW.sub_right (Lay.wSub (by decide)), ddW⟩
   have h28 : s₄.gpr .r28 = BitVec.ofNat 64 (s₀.gpr .r4).toNat := by rw [h4.r28]; exact toN
   refine WP.seq (WP.mono (WP.with_rdwr (oneTag_ok L (o := 112) (.inr rfl) oa.env h28 hR oa.hH
-    (length_bytesAt _ _ _).symm oa.abs (hd₄.ok.of_eq rd₅ wr₅))) fun s₆ ⟨ot, rd₆, wr₆, _⟩ => ?_)
+    (length_bytesAt _ _ _).symm oa.abs (hd₄.of_eq rd₅ wr₅))) fun s₆ ⟨ot, rd₆, wr₆, _⟩ => ?_)
   have f₆ := ot.frame
   rw [h4.r30, h4.r31] at f₆
   have F₆ : Frame [(⟨stackArg s₀ 2, 2560⟩ : Region)] s₀.mem s₆.mem := F₅.trans (f₆.sub inW_ot)
@@ -185,7 +217,7 @@ theorem open_head [VG.Proof.Gcm.PPC64LE.GhashLaw] {s₀ s₄ : State} (h : openP
   have h19' : s₄.gpr .r19 = BitVec.ofNat 64 (stackArg s₀ 1).toNat := by rw [h19]; exact toN
   have hTr : Covers [⟨s₄.gpr .r20, (stackArg s₀ 1).toNat⟩] (s₆.rd ++ s₆.wr) := by
     rw [rd₆, wr₆, rd₅, wr₅, hk₄.rd, hk₄.wr, h4.r20]
-    exact covers_mem (List.mem_append_left _ (by rw [hrd]; simp))
+    exact h.tag
   have hTd : (⟨s₄.gpr .r20, (stackArg s₀ 1).toNat⟩ : Region).Disjoint ⟨s₄.gpr .r31 + BitVec.ofNat 64 256, 16⟩ := by
     rw [h4.r20, h4.r31]; exact dtW.sub_right (Lay.wSub (by decide))
   refine WP.seq (WP.mono (recv_ok ot.env h19' t1 t16 hTr hTd) fun s₇ ⟨hb₇, hf₇, g₇, k₇⟩ => ?_)
@@ -357,7 +389,7 @@ theorem open_good [VG.Proof.Gcm.PPC64LE.GhashLaw] {s₀ s₄ : State} (h : openP
     (h19 : s₄.gpr .r19 = stackArg s₀ 1) (hok : Spec.Gcm.tagLenOk (stackArg s₀ 1).toNat = true) :
     WP isa (.seq oneAad (.seq (oneTag 112) (.seq recv (.seq (cmp 112) (.seq (.block [mov .r19 .r3])
       (.seq (.ite (.zero .d .r19) (.block []) oneCrypt) (.block [mov .r3 .r19]))))))) s₄ (OpenOut s₀) :=
-  open_head h h4 h19 hok fun _ om => open_tail h h4 hok om
+  open_head (HeadPre.of_open h) h4 h19 hok fun _ om => open_tail h h4 hok om
 
 /-- The contract's postcondition, from `OpenPost`, through `restore`. -/
 theorem openPost_out {s₀ s s' : State} (op : OpenPost s₀ s) (hm : s'.mem = s.mem) (h3 : s'.gpr .r3 = s.gpr .r3) :
@@ -369,15 +401,13 @@ theorem openPost_out {s₀ s s' : State} (op : OpenPost s₀ s) (hm : s'.mem = s
   split <;> rename_i heq <;> rw [heq] at op <;> exact ⟨by rw [op.1]; rfl, op.2⟩
 
 /-- The entry of `open`, and `tag_len` in `r19`. -/
-theorem openEntry_wp {s₀ : State} (h : openPre s₀) :
+theorem openEntry_wp {s₀ : State} (h : HeadPre s₀) :
     WP isa (.block openEntry) s₀ fun s₂ =>
       SO1 (stackArg s₀ 2) (stackArg s₀ 0) s₀ s₂ ∧ s₂.gpr .r19 = stackArg s₀ 1 := by
-  have hh := h
-  obtain ⟨hrd, hwr, dcd, dcW, dnd, dnW, dad, daW, ddt, ddW, ddA, dtW, dWA, fc, fn, fa, fd, ft, fW, fsp, hR⟩ := hh
-  have hW : Covers [⟨stackArg s₀ 2, 2560⟩] s₀.wr := by rw [hwr]; exact covers_mem (by simp)
-  have hA : Covers [args s₀ 3] (s₀.rd ++ s₀.wr) := covers_mem (List.mem_append_left _ (by rw [hrd]; simp))
+  have hW := h.w
+  have hA := h.stk
   have dA : (args s₀ 3).Disjoint (savedR (stackArg s₀ 2)) :=
-    (dWA.sub_left (Lay.wSub (d := 128) (n := 120) (by decide))).symm
+    (h.dWA.sub_left (Lay.wSub (d := 128) (n := 120) (by decide))).symm
   have hTd : (⟨s₀.sp + BitVec.ofNat 64 96, 8⟩ : Region).Disjoint (savedR (stackArg s₀ 2)) :=
     dA.sub_left (Region.sub_prefix (show 8 ≤ 8 * 3 by decide))
   have hLd : (⟨s₀.sp + BitVec.ofNat 64 104, 8⟩ : Region).Disjoint (savedR (stackArg s₀ 2)) := by
@@ -404,8 +434,8 @@ theorem open_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {s₀ : State} (h : openPPC64LE.
   have hh := h'
   obtain ⟨hrd, hwr, dcd, dcW, dnd, dnW, dad, daW, ddt, ddW, ddA, dtW, dWA, fc, fn, fa, fd, ft, fW, fsp, hR⟩ := hh
   have hW : Covers [⟨stackArg s₀ 2, 2560⟩] s₀.wr := by rw [hwr]; exact covers_mem (by simp)
-  unfold «open»
-  refine WP.seq (WP.mono (openEntry_wp h') fun s₂ ⟨h2, h19⟩ => ?_)
+  unfold «open» openWith
+  refine WP.seq (WP.mono (openEntry_wp (HeadPre.of_open h')) fun s₂ ⟨h2, h19⟩ => ?_)
   -- the tag length
   have h19' : s₂.gpr .r19 = BitVec.ofNat 64 (stackArg s₀ 1).toNat := by rw [h19]; simp
   refine WP.seq (WP.mono (tagLenOk_ok h19' (stackArg s₀ 1).isLt) fun s₃ ⟨h25, g₃, k₃⟩ => ?_)
