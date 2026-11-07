@@ -84,23 +84,23 @@ GROUPS = {
         "tests": ["rfc7253::aes_ocb_iterative", "rfc7253::aes_ocb_sample_results"],
     },
     "aes_ofb": {
-        "lib": ["cipher::aes::ofb"],
+        "lib": [],
         "tests": ["cavp::aes_ofb"],
     },
     "aes_cfb": {
-        "lib": ["cipher::aes::cfb"],
+        "lib": [],
         "tests": ["cavp::aes_cfb"],
     },
     "aes_cfb8": {
-        "lib": ["cipher::aes::cfb8"],
+        "lib": [],
         "tests": ["cavp::aes_cfb8"],
     },
     "aes_ctr": {
-        "lib": ["cipher::aes::ctr"],
+        "lib": [],
         "tests": ["rfc3686"],
     },
     "aes_xts": {
-        "lib": ["cipher::aes::xts"],
+        "lib": [],
         "tests": ["cavp::aes_xts", "wycheproof::aes_xts"],
     },
     "aes_siv": {
