@@ -78,9 +78,7 @@ def powP48 : List Instr :=
   ([.vmovdqu32Store (at_ .r11 832) .xmm1] : List Instr)
 
 /-- `StitchZ.big` with the tables loaded. -/
-def bigP : Prog isa :=
-  .seq (.block powP48) (.seq (batch 4 fun _ => []) (.seq (batch 8 fun _ => [])
-    (.seq (.loop body48 .ae) (.block (.vmovdqu32Load .xmm1 (at_ .r11 832) :: (lastG ++ adv ++ lastG ++ adv))))))
+def bigP (ld : Bool := false) : Prog isa := .seq (.block powP48) (StitchZ.bigRest ld)
 
 /-- `StitchZ.bigD` with the tables loaded. -/
 def bigDP : Prog isa :=
