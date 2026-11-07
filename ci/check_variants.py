@@ -64,6 +64,15 @@ with the same Rust signature (`_shani`, `_avx2`, …).
   among them. A variant calling the function it is a variant of is exempt,
   as above.
 
+Where the caller's function has a dispatcher, a variant of `g` for `f_<s>`
+need not have a name of its own: it is enough that the dispatcher, on a CPU
+with `g`'s features and `f_<s>`'s (and AVX2, where they include BMI2 or ADX,
+which CPU detection reports only with it), runs an implementation that calls
+`f_<s>`, one `f`'s dispatcher tries before it, or none of `f`'s
+implementations (AES-GCM-SIV's `vg_aes_gcm_siv_seal_vaes_pclmul_avx2` for
+`vg_aes_gcm_siv_seal_pclmul` and `vg_aes_ctr32_vaes`). An arm whose
+condition depends on the compilation target (`cfg!`) is not counted.
+
 A combination no CPU can choose is not required. When the Rust code never
 chooses an implementation `c` on a CPU with all of the features of a set
 `X` (it chooses another implementation of the same function there:
@@ -199,6 +208,41 @@ def dispatchers(srcs):
     targets = {}
     for target, text in srcs:
         targets.setdefault(target, {}).update(file_dispatchers(text))
+    return targets
+
+
+# An arm of a dispatcher: its condition and the function it returns.
+ARM = re.compile(
+    r"if (?P<cond>[^\n]*cpu\.contains\([^\n]*\)) \{\n(?:\s*//[^\n]*\n)*"
+    r"\s*return unsafe \{ crate::\w+::(?P<fn>vg_\w+)\(")
+BASE_CALL = re.compile(r"\n    unsafe \{ crate::\w+::(vg_\w+)\(")
+
+
+def file_arms(text):
+    """Each dispatcher of a generated file (`Rust.dispatcher`) as the
+    implementations it tries, in order, each with the CPU features its
+    condition names (its `_FEATURES` constant's, read from `features`, and
+    any others it names) and whether the condition also depends on the
+    compilation target (`cfg!`), then its base: `{name: ([(function,
+    {constant, …}, {feature, …}, by_target), …], base)}`."""
+    out = {}
+    for m in DISPATCHER.finditer(text):
+        body = m.group(0)
+        arms = [(a.group("fn"),
+                 {c.lower() for c in re.findall(r"(VG_\w+)_FEATURES", a.group("cond"))},
+                 {f.lower() for f in re.findall(r"feature::(\w+)", a.group("cond"))},
+                 "cfg!(" in a.group("cond"))
+                for a in ARM.finditer(body)]
+        base = BASE_CALL.findall(body)
+        out[m.group(1)] = (arms, base[-1] if base else None)
+    return out
+
+
+def all_arms(srcs):
+    """For each target, `file_arms` of its files together."""
+    targets = {}
+    for target, text in srcs:
+        targets.setdefault(target, {}).update(file_arms(text))
     return targets
 
 
@@ -559,12 +603,13 @@ def never_with_errors(targets, feats, never_with):
     return errors
 
 
-def check(targets, rust, feats=None, names=None, never_with=None, disp=None):
+def check(targets, rust, feats=None, names=None, never_with=None, disp=None, arms=None):
     """The errors of the generated functions `targets`, given the production
     Rust code `rust`, the features of each function `feats` (`features`),
     the other names of functions `names` (`all_aliases`), the
     implementations never chosen with some features (`never_with`, for the
-    generated code `NEVER_WITH`) and the dispatchers `disp` (`dispatchers`)."""
+    generated code `NEVER_WITH`) and the dispatchers `disp` (`dispatchers`),
+    with their arms `arms` (`all_arms`)."""
     feats = feats or {}
     never_with = never_with or {}
     errors = never_with_errors(targets, feats, never_with)
@@ -621,6 +666,46 @@ def check(targets, rust, feats=None, names=None, never_with=None, disp=None):
             ]
             return bool(runs) and all(not impls & fns[n][1] for n in runs)
 
+        tarms = (arms or {}).get(target, {})
+        # BMI2 and ADX are detected only with AVX2 (crates/verified-garbage-cpu).
+        implied = {"bmi2": {"avx2"}, "adx": {"avx2"}} if target in ("x86", "x86_64") else {}
+
+        def detected(fs):
+            """The features a CPU reported to have `fs` has."""
+            return frozenset(fs) | frozenset().union(*(implied.get(f, set()) for f in fs))
+
+        def chosen(dispatcher, fs):
+            """What `dispatcher` runs on a CPU with exactly the features `fs`
+            (and not the target an arm's `cfg!` names)."""
+            tried, base = tarms[dispatcher]
+            for fn, consts, extra, by_target in tried:
+                needs = frozenset().union(*(tfeats.get(c, frozenset()) for c in consts)) | extra
+                if not by_target and needs <= fs:
+                    return fn
+            return base
+
+        def dispatched(name, callee, variant):
+            """Whether the dispatcher of `name`'s function, on a CPU with
+            `name`'s features and `variant`'s, runs an implementation that
+            calls `variant`, one ranked before it, or none of `callee`'s
+            implementations: what a variant of `name` for `variant` is for."""
+            auto = chain(var, name)[0] + "_auto"
+            if auto not in tarms:
+                return False
+            fs = detected(tfeats.get(name, frozenset()) | tfeats.get(variant, frozenset()))
+            run = chosen(auto, fs)
+            if run is None or run not in fns:
+                return False
+            impls = {callee} | {f"{callee}_{s}" for s in by_base.get(callee, [])}
+            calls = impls & fns[run][1]
+            if not calls or variant in calls:
+                return True
+            if callee + "_auto" in tarms:
+                order = [fn for fn, *_ in tarms[callee + "_auto"][0]]
+                return all(c in order and variant in order and order.index(c) <= order.index(variant)
+                           for c in calls)
+            return False
+
         def variants_for(name, suffix):
             """`name`'s variants for an implementation with `suffix`: the one
             adding `_<suffix>`, or those adding it qualified by a tag."""
@@ -665,6 +750,7 @@ def check(targets, rust, feats=None, names=None, never_with=None, disp=None):
                             unneeded(caller, suffix)
                             or unchosen(caller, variant)
                             or avoided(caller, callee, variant)
+                            or dispatched(caller, callee, variant)
                         ):
                             continue
                         errors.append(
@@ -756,7 +842,7 @@ def main():
     srcs = sources()
     errors = unread(srcs) + check(
         functions(srcs), production_rust(ROOT / "src"), features(srcs), all_aliases(srcs), NEVER_WITH,
-        disp=dispatchers(srcs)
+        disp=dispatchers(srcs), arms=all_arms(srcs)
     )
     for e in errors:
         print(e, file=sys.stderr)

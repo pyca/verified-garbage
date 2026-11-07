@@ -508,3 +508,46 @@ class Avoided(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class Dispatched(unittest.TestCase):
+    # `g` calls `f`, which has `f_b` (feature `b`); `g`'s variant `g_a`
+    # (feature `a`) calls `f`, and the variant for both is named `g_x`, so no
+    # name says it is `g_a`'s for `f_b`; `g`'s dispatcher tries `g_x` first.
+    CALLS = {"vg_f": [], "vg_f_b": [], "vg_g": ["vg_f"], "vg_g_a": ["vg_f"],
+             "vg_g_x": ["vg_f_b"]}
+    FEATS = {"x": {"vg_f_b": frozenset({"b"}), "vg_g_a": frozenset({"a"}),
+                   "vg_g_x": frozenset({"a", "b"})}}
+    RUST = "vg_g_auto"
+
+    def check(self, order):
+        arms = {"x": {"vg_g_auto": ([(n, {n}, set(), False) for n in order], "vg_g"),
+                      "vg_f_auto": ([("vg_f_b", {"vg_f_b"}, set(), False)], "vg_f")}}
+        disp = {"x": {"vg_g_auto": set(order) | {"vg_g"}}}
+        return check_variants.check(fns(self.CALLS), self.RUST, self.FEATS, disp=disp, arms=arms)
+
+    def test_dispatcher_runs_a_caller_of_the_variant(self):
+        errors = self.check(["vg_g_x", "vg_g_a"])
+        self.assertFalse([e for e in errors if "vg_g_a calls vg_f" in e], errors)
+
+    def test_dispatcher_runs_the_baseline_callee(self):
+        errors = self.check(["vg_g_a", "vg_g_x"])
+        self.assertTrue([e for e in errors if "vg_g_a calls vg_f" in e], errors)
+
+    def test_arms(self):
+        text = """pub unsafe fn vg_g_auto(x: u32) -> u32 {
+    let cpu = verified_garbage_cpu::detected();
+    if cpu.contains(verified_garbage_cpu::Features(crate::m::VG_G_X_FEATURES.0 | verified_garbage_cpu::feature::AVX512IFMA)) {
+        // SAFETY: …
+        return unsafe { crate::m::vg_g_x(x) };
+    }
+    if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::m::VG_G_A_FEATURES)) && cpu.contains(crate::m::VG_G_A_FEATURES) {
+        return unsafe { crate::m::vg_g_a(x) };
+    }
+    // SAFETY: …
+    unsafe { crate::m::vg_g(x) }
+}
+"""
+        self.assertEqual(check_variants.file_arms(text), {"vg_g_auto": (
+            [("vg_g_x", {"vg_g_x"}, {"avx512ifma"}, False), ("vg_g_a", {"vg_g_a"}, set(), True)],
+            "vg_g")})
