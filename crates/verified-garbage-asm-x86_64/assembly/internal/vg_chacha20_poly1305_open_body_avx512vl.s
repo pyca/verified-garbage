@@ -11,6 +11,7 @@ vg_chacha20_poly1305_open_body_avx512vl:
 	mov rax, rsp
 	add rax, 24
 	mov QWORD PTR [rsp+16], rax
+	mov r11, r8
 	mov rax, QWORD PTR [rsp+16]
 	mov r11, QWORD PTR [rsp+8]
 	mov QWORD PTR [rax], rbx
@@ -8676,6 +8677,7 @@ vg_chacha20_poly1305_open_body_avx512vl:
 	mov rdx, r15
 	add rdx, 48
 	call {vg_poly1305_finalize_scratch}
+	mov r12, QWORD PTR [rsp+8]
 	mov rax, QWORD PTR [rcx]
 	xor rax, QWORD PTR [r12]
 	mov rdx, QWORD PTR [rcx+8]

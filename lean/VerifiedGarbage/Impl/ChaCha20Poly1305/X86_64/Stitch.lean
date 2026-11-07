@@ -425,7 +425,7 @@ prologue computed: those by `cryptPre`, then the whole chunks after them by
 `bulkP`, or, if there are none (at most 512 bytes after them), the rest by
 `tailP`, which absorbs the first 448. -/
 def preS (x : ChaCha20.X86_64.Callee) : Prog isa :=
-  .seq (cryptPre x.fold x.pass x.wide)
+  .seq (cryptPre x.fold x.pass x.wide false)
   (.seq (.block [.mov .rsi (.reg .r14), .alu .cmp .rdx (.imm 513)])
     (.ite .b (.seq (.block enter) (tailP x.vl)) (bulkP x.vl)))
 
@@ -875,7 +875,7 @@ def openStitchedBody (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) :
 
 /-- `open`, with Poly1305 inside the kernel for the whole chunks. -/
 def openStitched (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Prog isa :=
-  .seq (openStitchedBody x b) openTail
+  .seq (.block srcIn) (.seq (openStitchedBody x b) openTail)
 
 /-- `openSmall`'s limit, as `smallLim` is `sealSmall`'s: on Cascade Lake,
 `open`'s AVX2 code with AVX-512VL's rounds (`vl`) is the faster below 768

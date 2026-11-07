@@ -445,6 +445,40 @@ theorem xor_call (v : Proof.ChaCha20.X86_64.XorImpl) {s : State} {S D B : Addr} 
       stateAt_frame (callEntry_frame s) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact (hsS.sub_left h8).symm)]
 
+/-- The precondition of the implementation `v` of `vg_chacha20_xor`, called
+from the source at `rsi` to the destination at `rsi + r11` (`Xor.callTo`),
+with 24 bytes of stack below `rsp`, as `xor_pre`. -/
+theorem xorTo_pre (v : Proof.ChaCha20.X86_64.XorImpl) {s : State} {S P Q B : Addr} {n : Nat}
+    (hrdi : s.gpr .rdi = S) (hrsi : s.gpr .rsi = P) (hr8 : s.gpr .r11 + s.gpr .rsi = Q)
+    (hrdx : s.gpr .rdx = BitVec.ofNat 64 n) (hrcx : s.gpr .rcx = B) (hn : n < 2 ^ 64)
+    (hSP : (⟨S, 64⟩ : Region).Disjoint ⟨P, n⟩) (hSQ : (⟨S, 64⟩ : Region).Disjoint ⟨Q, n⟩)
+    (hSB : (⟨S, 64⟩ : Region).Disjoint ⟨B, 320⟩) (hPB : (⟨P, n⟩ : Region).Disjoint ⟨B, 320⟩)
+    (hQB : (⟨Q, n⟩ : Region).Disjoint ⟨B, 320⟩) (hio : Q = P ∨ (⟨P, n⟩ : Region).Disjoint ⟨Q, n⟩)
+    (hwP : P.toNat + n ≤ 2 ^ 64) (hwQ : Q.toNat + n ≤ 2 ^ 64)
+    (hsS : (below (s.gpr .rsp) 24).Disjoint ⟨S, 64⟩) (hsP : (below (s.gpr .rsp) 24).Disjoint ⟨P, n⟩)
+    (hsQ : (below (s.gpr .rsp) 24).Disjoint ⟨Q, n⟩) (hsB : (below (s.gpr .rsp) 24).Disjoint ⟨B, 320⟩) :
+    (Proof.ChaCha20.xorTo v.stack).pre
+      ((Proof.ChaCha20.toR8 s).callEntry.withRegions [⟨P, n⟩] [⟨S, 64⟩, ⟨Q, n⟩, ⟨B, 320⟩]) := by
+  have hn' : (BitVec.ofNat 64 n).toNat = n := by
+    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt hn
+  have hk := v.stack_le
+  have h8 := below8_24 s
+  have hk' : Region.Sub ⟨s.gpr .rsp - 8 - BitVec.ofNat 64 v.stack, v.stack⟩ (below (s.gpr .rsp) 24) := by
+    rw [show s.gpr .rsp - 8 - BitVec.ofNat 64 v.stack = s.gpr .rsp - BitVec.ofNat 64 (8 + v.stack) by
+      rw [BitVec.sub_sub, BitVec.ofNat_add]; rfl]
+    exact Offset.sub_below _ (by lit_omega) (by lit_omega)
+  have g : ∀ r, r ≠ .r8 → r ≠ .rsp → ((Proof.ChaCha20.toR8 s).callEntry).gpr r = s.gpr r :=
+    fun r h1 h2 => by rw [callEntry_gpr' _ h2]; exact RegUpd.gpr_setReg_of_ne _ _ h1
+  have g8 : ((Proof.ChaCha20.toR8 s).callEntry).gpr .r8 = Q := by
+    rw [callEntry_gpr' _ (by decide)]; exact (RegUpd.gpr_setReg_self _ _ _).trans hr8
+  have grsp : ((Proof.ChaCha20.toR8 s).callEntry).gpr .rsp = s.gpr .rsp - 8 := by
+    rw [State.callEntry_rsp]; rfl
+  simp only [Proof.ChaCha20.xorTo, State.withRegions_gpr, State.withRegions_rd,
+    State.withRegions_wr, grsp, g .rdi (by decide) (by decide), g .rsi (by decide) (by decide),
+    g .rdx (by decide) (by decide), g .rcx (by decide) (by decide), g8, hrdi, hrsi, hrdx, hrcx, hn']
+  exact ⟨trivial, trivial, hSP, hSQ, hSB, hPB, hQB, hio, hsS.sub_left h8, hsQ.sub_left h8, hsB.sub_left h8,
+    hsS.sub_left hk', hsP.sub_left hk', hsQ.sub_left hk', hsB.sub_left hk', hwP, hwQ⟩
+
 end VG.Proof.ChaCha20Poly1305.X86_64
 
 /-!
@@ -585,6 +619,11 @@ abbrev N : List Byte := bytesAt s₀.mem (np s₀) 12
 abbrev A : List Byte := bytesAt s₀.mem (ad s₀) (AL s₀)
 abbrev D : List Byte := bytesAt s₀.mem (dp s₀) (L s₀)
 abbrev T0 : List Byte := bytesAt s₀.mem (tp s₀) 16
+/-- The ciphertext's address in `open`'s body, `r11` (`srcIn`, `open_to`'s
+entry), which `moves` keeps in `r12`; the destination is `dp`. -/
+abbrev sp : Addr := s₀.gpr .r11
+/-- The ciphertext on entry to `open`'s body. -/
+abbrev C : List Byte := bytesAt s₀.mem (sp s₀) (L s₀)
 /-- The one-time Poly1305 key. -/
 abbrev otk : List Byte := Spec.ChaCha20Poly1305.polyKeyGen (K s₀) (N s₀)
 abbrev ctxR : Region := ⟨cx s₀, 1696⟩
@@ -642,7 +681,15 @@ theorem APre.of {enc : Bool} (s₀ : State) (h : preX86_64 enc s₀) : APre enc 
 
 theorem APre.a_d {enc : Bool} {s₀ : State} (hp : APre enc s₀) : (aR s₀).Disjoint (dR s₀) := hp.d_a.symm
 
-variable {e : Bool}
+/-- `APre` does not depend on `r11`. -/
+theorem APre.setR11 {enc : Bool} {s₀ : State} (hp : APre enc s₀) (v : BitVec 64) :
+    APre enc (s₀.setReg .r11 v) := by
+  obtain ⟨⟨more, h1⟩, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20,
+    h21, h22, h23, h24, h25, h26, h27, h28, h29⟩ := hp
+  exact ⟨⟨more, h1⟩, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20,
+    h21, h22, h23, h24, h25, h26, h27, h28, h29⟩
+
+variable {e : Bool} {t₁₂ : Addr}
 
 theorem APre.ctx_wr {s₀ : State} (hp : APre e s₀) : ctxR s₀ ∈ s₀.wr := by
   rw [hp.wr]; cases e <;> simp
@@ -733,16 +780,20 @@ theorem Saved.frame {s₀ : State} {rs : List Region} {m m' : Mem} (h : Saved s�
 abbrev workR (s₀ : State) : Region := sub s₀ 0 1696
 
 /-- What holds between the parts of the code. -/
-structure Inv (s₀ : State) (s : State) : Prop where
+structure InvT (s₀ : State) (t : Addr) (s : State) : Prop where
   r15 : s.gpr .r15 = cx s₀
   r14 : s.gpr .r14 = dp s₀
   r13 : s.gpr .r13 = s₀.gpr .r9
-  r12 : s.gpr .r12 = tp s₀
+  /-- The received tag (`tp`) or, in `open`, the ciphertext's address (`sp`). -/
+  r12 : s.gpr .r12 = t
   rsp : s.gpr .rsp = s₀.gpr .rsp
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   saved : Saved s₀ s.mem
   frame : Frame [workR s₀, dR s₀, stkR s₀] s₀.mem s.mem
+
+/-- `InvT` with the tag in `r12`, as in `seal`. -/
+abbrev Inv (s₀ : State) : State → Prop := InvT s₀ (tp s₀)
 
 /-! ## Pointers -/
 
@@ -789,7 +840,10 @@ theorem covers_sub {s₀ s : State} (hp : APre e s₀) (hwr : s.wr = s₀.wr) (r
 /-! ## The entry -/
 
 /-- The state after `entry`: `work` in `rax` and `tag` in `r11`. -/
-def entryS (s₀ : State) : State := (s₀.setReg .rax (cx s₀)).setReg .r11 (tp s₀)
+def entryT (s₀ : State) (t : Addr) : State := (s₀.setReg .rax (cx s₀)).setReg .r11 t
+
+/-- The state after `entry`: `work` in `rax` and `tag` in `r11`. -/
+abbrev entryS (s₀ : State) : State := entryT s₀ (tp s₀)
 
 theorem entry_run {s₀ : State} (hp : APre e s₀) :
     execBlock isa entry s₀ = some (entryS s₀,
@@ -829,7 +883,7 @@ open VG.Impl.ChaCha20.X86_64 (at_)
 open VG.Spec.Poly1305 (Repr bytesAt mac)
 open VG.Spec.ChaCha20 (stateAt keystream)
 
-variable {e : Bool}
+variable {e : Bool} {t₁₂ : Addr}
 
 /-! ## Saving the registers -/
 
@@ -845,9 +899,9 @@ theorem readW64_off (m : Mem) (p : Addr) (v : BitVec 64) {d e : Nat} (hd : d < 2
   Mem.readW_writeW_sep (VG.Proof.ChaCha20.X86_64.off_sep p hd he (by lit_omega) (by lit_omega) h) (by decide)
 
 set_option simprocs false in
-theorem saveMoves_ok {s₀ : State} (hp : APre e s₀) :
-    WP isa (.block (save ++ moves)) (entryS s₀) fun s =>
-      s.gpr .r15 = cx s₀ ∧ s.gpr .r12 = tp s₀ ∧ s.gpr .rbx = ad s₀ ∧ s.gpr .rbp = s₀.gpr .rcx ∧
+theorem saveMoves_ok {s₀ : State} (hp : APre e s₀) (t : Addr) :
+    WP isa (.block (save ++ moves)) (entryT s₀ t) fun s =>
+      s.gpr .r15 = cx s₀ ∧ s.gpr .r12 = t ∧ s.gpr .rbx = ad s₀ ∧ s.gpr .rbp = s₀.gpr .rcx ∧
       s.gpr .r14 = dp s₀ ∧ s.gpr .r13 = s₀.gpr .r9 ∧
       (∀ r, r ≠ .r15 → r ≠ .r12 → r ≠ .rbx → r ≠ .rbp → r ≠ .r14 → r ≠ .r13 → r ≠ .rax → r ≠ .r11 →
         s.gpr r = s₀.gpr r) ∧ s.rd = s₀.rd ∧ s.wr = s₀.wr ∧
@@ -861,7 +915,7 @@ theorem saveMoves_ok {s₀ : State} (hp : APre e s₀) :
   simp only [off] at o0 o1 o2 o3 o4 o5
   apply WP.of_runBlock
   rw [saveMoves_eq]
-  simp (config := {decide := true}) only [entryS, runBlock_cons, runStep_some, runBlock_nil, exec, ea_at,
+  simp (config := {decide := true}) only [entryT, runBlock_cons, runStep_some, runBlock_nil, exec, ea_at,
     readSrc, State.store64, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
     RegUpd.xmm_setReg, RegUpd.cf_setReg, RegUpd.zf_setReg, o0, o1, o2, o3, o4, o5, ite_true, ite_false,
     Option.map_some,
@@ -1660,8 +1714,35 @@ theorem zeroKs_ok {w : Nat} (hw : w = 4 ∨ w = 5 ∨ w = 6) {s₀ : State} (hp 
 theorem entry_ok {s₀ : State} (hp : APre e s₀) : WP isa (.block entry) s₀ fun s => s = entryS s₀ :=
   ⟨_, _, Exec.block (entry_run hp), rfl⟩
 
+theorem setReg_gpr_self (s : State) (r : Reg) : s.setReg r (s.gpr r) = s := by
+  simp only [State.setReg]
+  congr 1; funext r'; split <;> simp_all
+
+/-- `entryO`: `work` into `rax`, with the ciphertext's address kept in
+`r11`. -/
+theorem entryO_run {s₀ : State} (hp : APre e s₀) :
+    execBlock isa entryO s₀ = some (entryT s₀ (sp s₀), [.addr (off (s₀.gpr .rsp) 16)]) := by
+  have h16 : InRegions (s₀.rd ++ s₀.wr) (off (s₀.gpr .rsp) 16) 8 := by
+    refine ⟨argR s₀, by simp [hp.g_rd], ?_⟩
+    rw [off_eq, show s₀.gpr .rsp + BitVec.ofNat 64 16 = stackArgAddr s₀ 0 + BitVec.ofNat 64 8 by
+      simp only [stackArgAddr, BitVec.add_assoc]; rfl]
+    exact Offset.contains_base _ (by omega_using []) (by lit_omega)
+  have e16 : s₀.mem.readW (off (s₀.gpr .rsp) 16) 64 = cx s₀ := by
+    simp only [cx, stackArg, stackArgAddr, off_eq]
+  have e : entryT s₀ (sp s₀) = s₀.setReg .rax (cx s₀) := by
+    rw [entryT, show sp s₀ = (s₀.setReg .rax (cx s₀)).gpr .r11 from
+      (RegUpd.gpr_setReg_of_ne _ _ (by decide)).symm, setReg_gpr_self]
+  rw [e]
+  simp only [entryO, execBlock, isa, exec, readSrc, State.load64, ea_at, h16, ite_true, Option.map_some,
+    e16, addrs, srcAddrs]
+  rfl
+
+theorem entryO_ok {s₀ : State} (hp : APre e s₀) :
+    WP isa (.block entryO) s₀ fun s => s = entryT s₀ (sp s₀) :=
+  ⟨_, _, Exec.block (entryO_run hp), rfl⟩
+
 /-- At the call of `vg_chacha20_xor` in the prologue, for `m = mOf fold len`. -/
-structure FArgs (fold pass : Nat) (s₀ : State) (s : State) : Prop where
+structure FArgsT (fold pass : Nat) (s₀ : State) (t : Addr) (s : State) : Prop where
   rdi : s.gpr .rdi = off (cx s₀) 608
   rsi : s.gpr .rsi = off (cx s₀) 672
   rdx : s.gpr .rdx = BitVec.ofNat 64 (64 + mOf fold pass (L s₀))
@@ -1669,7 +1750,7 @@ structure FArgs (fold pass : Nat) (s₀ : State) (s : State) : Prop where
   r15 : s.gpr .r15 = cx s₀
   r14 : s.gpr .r14 = dp s₀
   r13 : s.gpr .r13 = s₀.gpr .r9
-  r12 : s.gpr .r12 = tp s₀
+  r12 : s.gpr .r12 = t
   rbx : s.gpr .rbx = ad s₀
   rbp : s.gpr .rbp = s₀.gpr .rcx
   rsp : s.gpr .rsp = s₀.gpr .rsp
@@ -1682,6 +1763,8 @@ structure FArgs (fold pass : Nat) (s₀ : State) (s : State) : Prop where
   zero : ∀ k < 64 + mOf fold pass (L s₀), s.mem (off (cx s₀) (672 + k)) = 0
   /-- For a pass of 512, `m` at `ctx + 48` (`mStore`). -/
   mslot : pass = 512 → s.mem.readW (off (cx s₀) 48) 64 = BitVec.ofNat 64 (mOf fold pass (L s₀))
+
+abbrev FArgs (fold pass : Nat) (s₀ : State) : State → Prop := FArgsT fold pass s₀ (tp s₀)
 
 theorem B1_eq : save ++ moves ++ initStateQ 64 ++ initStateQ 608 =
     (save ++ moves) ++ (initStateQ 64 ++ initStateQ 608) := by
@@ -1702,13 +1785,13 @@ theorem wide_of (v : Proof.ChaCha20.X86_64.XorImpl) :
 
 theorem prologueA_ok {fold pass w : Nat} (hf : fold ≤ 960) (hpass : PassOk fold pass)
     (hw : w = 4 ∨ w = 5 ∨ w = 6) {s₀ : State} (hp : APre e s₀) :
-    WP isa (prologueA fold pass w) (entryS s₀) (FArgs fold pass s₀) := by
+    WP isa (prologueA fold pass w) (entryT s₀ t₁₂) (FArgsT fold pass s₀ t₁₂) := by
   have hL9 := (s₀.gpr .r9).isLt
   have hm := mOf_le fold pass (L s₀)
   unfold prologueA
   rw [B1_eq]
   -- The registers, the saved ones and the two ChaCha20 states.
-  refine WP.seq (WP.block_append (WP.mono (saveMoves_ok hp)
+  refine WP.seq (WP.block_append (WP.mono (saveMoves_ok hp t₁₂)
     fun s₁ ⟨e15, e12, ebx, ebp, e14, e13, g₁, rd₁, wr₁, f₁, sv₁⟩ => ?_))
   have edi : s₁.gpr .rdi = kp s₀ := g₁ _ (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide)
@@ -1813,11 +1896,11 @@ theorem prologueA_ok {fold pass w : Nat} (hf : fold ≤ 960) (hpass : PassOk fol
     exact ms₅ hps
 
 /-- After the call of `vg_chacha20_xor` in the prologue. -/
-structure AfterF (fold pass : Nat) (s₀ : State) (s : State) : Prop where
+structure AfterFT (fold pass : Nat) (s₀ : State) (t : Addr) (s : State) : Prop where
   rsi : s.gpr .rsi = off (cx s₀) 128
   r14 : s.gpr .r14 = dp s₀
   r13 : s.gpr .r13 = s₀.gpr .r9
-  r12 : s.gpr .r12 = tp s₀
+  r12 : s.gpr .r12 = t
   rbx : s.gpr .rbx = ad s₀
   rbp : s.gpr .rbp = s₀.gpr .rcx
   rsp : s.gpr .rsp = s₀.gpr .rsp
@@ -1830,10 +1913,12 @@ structure AfterF (fold pass : Nat) (s₀ : State) (s : State) : Prop where
     (keystream (Spec.ChaCha20.initState (K s₀) 0 (N s₀)) (64 + mOf fold pass (L s₀))).getD k 0
   mslot : pass = 512 → s.mem.readW (off (cx s₀) 48) 64 = BitVec.ofNat 64 (mOf fold pass (L s₀))
 
+abbrev AfterF (fold pass : Nat) (s₀ : State) : State → Prop := AfterFT fold pass s₀ (tp s₀)
+
 /-- The call of the implementation `v` of `vg_chacha20_xor` in the prologue. -/
 theorem foldCall_ok (v : Proof.ChaCha20.X86_64.XorImpl) {pass : Nat} {s₀ : State} (hp : APre e s₀) {s : State}
-    (h : FArgs v.callee.fold pass s₀ s) :
-    WP isa v.callee.inPlace s (AfterF v.callee.fold pass s₀) := by
+    (h : FArgsT v.callee.fold pass s₀ t₁₂ s) :
+    WP isa v.callee.inPlace s (AfterFT v.callee.fold pass s₀ t₁₂) := by
   have hm := mOf_le v.callee.fold pass (L s₀)
   have hfl := v.fold_le
   have hn : 64 + mOf v.callee.fold pass (L s₀) ≤ 1024 := by omega_using [hm, hfl]
@@ -1905,8 +1990,8 @@ theorem foldCall_ok (v : Proof.ChaCha20.X86_64.XorImpl) {pass : Nat} {s₀ : Sta
   rw [this, h.zero k hk]; simp
 
 /-- After the prologue. -/
-structure PostP (fold pass : Nat) (s₀ : State) (s : State) : Prop where
-  inv : Inv s₀ s
+structure PostPT (fold pass : Nat) (s₀ : State) (t : Addr) (s : State) : Prop where
+  inv : InvT s₀ t s
   rbx : s.gpr .rbx = ad s₀
   rbp : s.gpr .rbp = s₀.gpr .rcx
   fine : Frame [workR s₀, stkR s₀] s₀.mem s.mem
@@ -1916,13 +2001,15 @@ structure PostP (fold pass : Nat) (s₀ : State) (s : State) : Prop where
     (keystream (Spec.ChaCha20.initState (K s₀) 1 (N s₀)) (L s₀)).getD k 0
   mslot : pass = 512 → s.mem.readW (off (cx s₀) 48) 64 = BitVec.ofNat 64 (mOf fold pass (L s₀))
 
+abbrev PostP (fold pass : Nat) (s₀ : State) : State → Prop := PostPT fold pass s₀ (tp s₀)
+
 theorem B3_eq : anchor .rsi 128 ++ ptr .rdi .r15 448 ++ ptr .rsi .r15 672 =
     anchor .rsi 128 ++ (ptr .rdi .r15 448 ++ ptr .rsi .r15 672) := by
   simp only [List.append_assoc]
 
 theorem prologueBF_ok {fold pass : Nat} (hf : fold ≤ 960) {s₀ : State} (hp : APre e s₀) {s : State}
-    (h : AfterF fold pass s₀ s) : WP isa prologueB s fun s' =>
-      PostP fold pass s₀ s' ∧ Frame [sub s₀ 448 128, stkR s₀] s.mem s'.mem := by
+    (h : AfterFT fold pass s₀ t₁₂ s) : WP isa prologueB s fun s' =>
+      PostPT fold pass s₀ t₁₂ s' ∧ Frame [sub s₀ 448 128, stkR s₀] s.mem s'.mem := by
   have hm := mOf_le fold pass (L s₀)
   have hml := mOf_le_len fold pass (L s₀)
   unfold prologueB
@@ -2028,19 +2115,19 @@ theorem prologueBF_ok {fold pass : Nat} (hf : fold ≤ 960) {s₀ : State} (hp :
     exact h.mslot hps
 
 theorem prologueB_ok {fold pass : Nat} (hf : fold ≤ 960) {s₀ : State} (hp : APre e s₀) {s : State}
-    (h : AfterF fold pass s₀ s) : WP isa prologueB s (PostP fold pass s₀) :=
+    (h : AfterFT fold pass s₀ t₁₂ s) : WP isa prologueB s (PostPT fold pass s₀ t₁₂) :=
   WP.mono (prologueBF_ok hf hp h) fun _ h => h.1
 
 /-- The prologue, for the implementation `v` of `vg_chacha20_xor` and the
 `pass` of `splitM`. -/
 theorem prologueP_ok (v : Proof.ChaCha20.X86_64.XorImpl) {pass : Nat} (hpass : PassOk v.callee.fold pass)
     {s₀ : State} (hp : APre e s₀) :
-    WP isa (prologue { v.callee with pass := pass }) (entryS s₀) (PostP v.callee.fold pass s₀) :=
+    WP isa (prologue { v.callee with pass := pass }) (entryT s₀ t₁₂) (PostPT v.callee.fold pass s₀ t₁₂) :=
   WP.seq (WP.mono (prologueA_ok v.fold_le hpass (wide_of v) hp) fun _ h =>
     WP.seq (WP.mono (foldCall_ok v hp h) fun _ h' => prologueB_ok v.fold_le hp h'))
 
 theorem prologue_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre e s₀) :
-    WP isa (prologue v.callee) (entryS s₀) (PostP v.callee.fold v.callee.pass s₀) :=
+    WP isa (prologue v.callee) (entryT s₀ t₁₂) (PostPT v.callee.fold v.callee.pass s₀ t₁₂) :=
   WP.seq (WP.mono (prologueA_ok v.fold_le (pass_of v) (wide_of v) hp) fun _ h =>
     WP.seq (WP.mono (foldCall_ok v hp h) fun _ h' => prologueB_ok v.fold_le hp h'))
 
@@ -2061,10 +2148,10 @@ open VG.Impl.ChaCha20.X86_64 (at_)
 open VG.Spec.Poly1305 (Repr bytesAt mac)
 open VG.Spec.ChaCha20Poly1305 (pad16)
 
-variable {e : Bool}
+variable {e : Bool} {t₁₂ : Addr}
 
 /-- The registers `macPad` may take its arguments in. -/
-def MacRegs (p n : Reg) : Prop := (p = .rbx ∨ p = .r14) ∧ (n = .rbp ∨ n = .r13)
+def MacRegs (p n : Reg) : Prop := (p = .rbx ∨ p = .r14 ∨ p = .r12) ∧ (n = .rbp ∨ n = .r13)
 
 /-- What `macPad` needs of the bytes it absorbs. -/
 structure Src (s₀ : State) (P : Addr) (len : Nat) : Prop where
@@ -2106,13 +2193,13 @@ theorem macA_ok {p n : Reg} (hr : MacRegs p n) (s : State) :
   obtain ⟨hp, hn⟩ := hr
   refine WP.block_append (WP.mono (ptr_ok .rdi .r15 (k := 448) (by lit_omega) s)
     fun s₁ ⟨e1, g₁, rd₁, wr₁, m₁⟩ => ?_)
-  have hp₁ : s₁.gpr p = s.gpr p := g₁ p (by rcases hp with rfl | rfl <;> decide)
+  have hp₁ : s₁.gpr p = s.gpr p := g₁ p (by rcases hp with rfl | rfl | rfl <;> decide)
   have hn₁ : s₁.gpr n = s.gpr n := g₁ n (by rcases hn with rfl | rfl <;> decide)
   apply WP.of_runBlock
   simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
     execShift, State.setReg, State.setFlags, Option.map_some, Option.some.injEq, exists_eq_left',
     ite_true, ite_false]
-  have hpd : p ≠ .rdx := by rcases hp with rfl | rfl <;> decide
+  have hpd : p ≠ .rdx := by rcases hp with rfl | rfl | rfl <;> decide
   have hnd : n ≠ .rsi := by rcases hn with rfl | rfl <;> decide
   refine ⟨by simp [e1], by simp [hp₁], by simp [hnd, hn₁], by simp [hnd, hn₁],
     fun q h₁ h₂ h₃ => by simp [h₂, h₃, g₁ q h₁], rd₁, wr₁, m₁⟩
@@ -2138,7 +2225,7 @@ theorem macD_ok {p n : Reg} (hr : MacRegs p n) (s : State) :
       fun s' => s'.gpr .rsi = s.gpr n - s.gpr .rdx + s.gpr p ∧
         (∀ q, q ≠ .rsi → s'.gpr q = s.gpr q) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mem = s.mem := by
   obtain ⟨hp, hn⟩ := hr
-  have hps : p ≠ .rsi := by rcases hp with rfl | rfl <;> decide
+  have hps : p ≠ .rsi := by rcases hp with rfl | rfl | rfl <;> decide
   apply WP.of_runBlock
   simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
     execAlu, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags,
@@ -2907,7 +2994,7 @@ theorem wholeBlocks_ok (b : Impl.Poly1305.X86_64.Blocks) {s₀ : State} (hp : AP
   have hcP : (ctxR s₀).Disjoint ⟨P, len⟩ := hs.ctx
   have hlt := hs.lt
   rw [wholeBlocks_eq]
-  refine WP.seq (WP.mono_mx (by rcases hr with ⟨rfl | rfl, rfl | rfl⟩ <;> decide +kernel) (macA_ok hr s)
+  refine WP.seq (WP.mono_mx (by rcases hr with ⟨rfl | rfl | rfl, rfl | rfl⟩ <;> decide +kernel) (macA_ok hr s)
     fun s₁ ⟨rdi₁, rsi₁, rdx₁, zf₁, g₁, rd₁, wr₁, m₁⟩ mx₁ => ?_)
   have g₁' : ∀ r ∈ calleeSaved, s₁.gpr r = s.gpr r := fun r h =>
     g₁ r (calleeSaved_ne h).2.2.2.2 (calleeSaved_ne h).2.2.2.1 (calleeSaved_ne h).2.2.1
@@ -2982,8 +3069,8 @@ theorem macRest_ok (copy : Bool) (b : Impl.Poly1305.X86_64.Blocks) {k : Nat} (hk
         List.replicate (16 - len % 16) 0) ++ bytesAt s.mem (off (cx s₀) 592) (16 * k - 16))) := by
   have hcP : (ctxR s₀).Disjoint ⟨P, len⟩ := hs.ctx
   have hlt := hs.lt
-  have hp15 : p ≠ .r15 := by rcases hr.1 with rfl | rfl <;> decide
-  refine WP.seq (WP.mono_mx (by rcases hr with ⟨rfl | rfl, rfl | rfl⟩ <;> decide +kernel) (macD_ok hr s)
+  have hp15 : p ≠ .r15 := by rcases hr.1 with rfl | rfl | rfl <;> decide
+  refine WP.seq (WP.mono_mx (by rcases hr with ⟨rfl | rfl | rfl, rfl | rfl⟩ <;> decide +kernel) (macD_ok hr s)
     fun s₄ ⟨rsi₄, g₄, rd₄, wr₄, m₄⟩ mx₄ => ?_)
   have g₄' : ∀ r ∈ calleeSaved, s₄.gpr r = s.gpr r := fun r h => by
     rw [g₄ r (calleeSaved_ne h).2.2.2.1]
@@ -3040,13 +3127,13 @@ theorem macPad_ok (b : Impl.Poly1305.X86_64.Blocks) {s₀ : State} (hp : APre e 
       Frame (macR s₀) s.mem s'.mem ∧ s'.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10 ∧
       ∀ key msg, Repr s.mem (off (cx s₀) 448) key msg →
         Repr s'.mem (off (cx s₀) 448) key (msg ++ (bytesAt s.mem P len ++ pad16 (bytesAt s.mem P len))) := by
-  have hpc : p ∈ calleeSaved := by rcases hr.1 with rfl | rfl <;> simp [calleeSaved]
+  have hpc : p ∈ calleeSaved := by rcases hr.1 with rfl | rfl | rfl <;> simp [calleeSaved]
   have hnc : n ∈ calleeSaved := by rcases hr.2 with rfl | rfl <;> simp [calleeSaved]
   have hcP : (ctxR s₀).Disjoint ⟨P, len⟩ := hs.ctx
   have hlt := hs.lt
   refine WP.seq (WP.mono (wholeBlocks_ok b hp hr hs hr15 hrsp hrd hwr hP hn)
     fun s₂ ⟨cs₂, rd₂, wr₂, f₂, mx₂, repr₂⟩ => ?_)
-  refine WP.seq (WP.mono_mx (by rcases hr with ⟨rfl | rfl, rfl | rfl⟩ <;> decide +kernel)
+  refine WP.seq (WP.mono_mx (by rcases hr with ⟨rfl | rfl | rfl, rfl | rfl⟩ <;> decide +kernel)
     (macTail_ok hr hlt (by rw [cs₂ n hnc, hn]))
     fun s₃ ⟨rdx₃, zf₃, g₃, rd₃, wr₃, m₃⟩ mx₃ => ?_)
   have cs₃ : ∀ r ∈ calleeSaved, s₃.gpr r = s.gpr r := fun r h => by
@@ -3135,16 +3222,16 @@ open VG.Impl.ChaCha20.X86_64 (at_)
 open VG.Spec.Poly1305 (Repr bytesAt mac leBytes)
 open VG.Spec.ChaCha20 (stateAt keystream)
 
-variable {e : Bool}
+variable {e : Bool} {t₁₂ : Addr}
 
 theorem calleeSaved_rsp : Reg.rsp ∈ calleeSaved := by decide
 
 /-- The invariant survives a part that keeps the callee-saved registers and
 writes only the working space, the data and the stack. -/
-theorem Inv.step {s₀ s s' : State} (h : Inv s₀ s) (cs : ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r)
+theorem InvT.step {s₀ s s' : State} (h : InvT s₀ t₁₂ s) (cs : ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r)
     (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) {rs : List Region} (hf : Frame rs s.mem s'.mem)
     (hsub : ∀ r ∈ rs, ∃ r' ∈ [workR s₀, dR s₀, stkR s₀], Region.Sub r r')
-    (hsv : ∀ r ∈ rs, (sub s₀ 0 48).Disjoint r) : Inv s₀ s' where
+    (hsv : ∀ r ∈ rs, (sub s₀ 0 48).Disjoint r) : InvT s₀ t₁₂ s' where
   r15 := by rw [cs _ (by decide), h.r15]
   r14 := by rw [cs _ (by decide), h.r14]
   r13 := by rw [cs _ (by decide), h.r13]
@@ -3163,8 +3250,8 @@ theorem sub_work (s₀ : State) {k n : Nat} (h₁ : 0 ≤ k) (h₂ : k + n ≤ 1
 theorem stk_work (s₀ : State) : ∃ r' ∈ [workR s₀, dR s₀, stkR s₀], Region.Sub (stkR s₀) r' :=
   ⟨stkR s₀, by simp, fun _ h => h⟩
 
-theorem mac_inv {s₀ s s' : State} (hp : APre e s₀) (h : Inv s₀ s) (cs : ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r)
-    (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) (hf : Frame (macR s₀) s.mem s'.mem) : Inv s₀ s' :=
+theorem mac_inv {s₀ s s' : State} (hp : APre e s₀) (h : InvT s₀ t₁₂ s) (cs : ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r)
+    (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) (hf : Frame (macR s₀) s.mem s'.mem) : InvT s₀ t₁₂ s' :=
   h.step cs hrd hwr hf (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
@@ -3184,8 +3271,8 @@ theorem bytesAt_16 (m : Mem) (p : Addr) :
     VG.Proof.Poly1305.bytesAt_leBytes_64, off_eq]
 
 set_option simprocs false in
-theorem lengths_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s) (hrbp : s.gpr .rbp = s₀.gpr .rcx) :
-    WP isa (.block lengths) s fun s' => Inv s₀ s' ∧ (∀ r, s'.gpr r = s.gpr r) ∧
+theorem lengths_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : InvT s₀ t₁₂ s) (hrbp : s.gpr .rbp = s₀.gpr .rcx) :
+    WP isa (.block lengths) s fun s' => InvT s₀ t₁₂ s' ∧ (∀ r, s'.gpr r = s.gpr r) ∧
       Frame [sub s₀ 592 16] s.mem s'.mem ∧
       bytesAt s'.mem (off (cx s₀) 592) 16 = leBytes 8 (AL s₀) ++ leBytes 8 (L s₀) := by
   have o0 := hp.in_ctx (a := 592) (w := 8) (by lit_omega)
@@ -3320,7 +3407,7 @@ theorem stateAt_ctr (m : Mem) (c : Addr) :
     exact readW32_off m c 1 (by lit_omega) (by lit_omega) (by lit_omega)
 
 set_option simprocs false in
-theorem cryptA_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s) :
+theorem cryptA_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : InvT s₀ t₁₂ s) :
     WP isa (.block cryptArgs) s fun s' =>
       s'.mem = s.mem.writeW (off (cx s₀) 112) (1 : BitVec 32) ∧ s'.gpr .rdi = off (cx s₀) 64 ∧
       s'.gpr .rsi = dp s₀ ∧ s'.gpr .rdx = s₀.gpr .r9 ∧ s'.gpr .rcx = off (cx s₀) 128 ∧
@@ -3384,16 +3471,39 @@ theorem wipeL_ok {fold extra : Nat} (hf : fold + 1 < 2 ^ 31) (he : extra < 2 ^ 3
       fun q hq => by simp [hq, g₁], rd₁, wr₁, m₁⟩
 
 /-- After the data is encrypted (or decrypted), before the keystream is wiped. -/
-structure Crypted (s₀ s : State) (s' : State) : Prop where
+structure CryptedT (s₀ : State) (P : Addr) (s : State) (s' : State) : Prop where
   rsi : s'.gpr .rsi = off (cx s₀) 128
   cs : ∀ r ∈ calleeSaved, r ≠ .r15 → s'.gpr r = s.gpr r
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
   frame : Frame [sub s₀ 64 384, dR s₀, stkR s₀] s.mem s'.mem
-  data : bytesAt s'.mem (dp s₀) (L s₀) = Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (bytesAt s.mem (dp s₀) (L s₀))
+  data : bytesAt s'.mem (dp s₀) (L s₀) = Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (bytesAt s.mem P (L s₀))
+
+/-- The data encrypted or decrypted in place. -/
+abbrev Crypted (s₀ : State) : State → State → Prop := CryptedT s₀ (dp s₀)
+
+/-- The ciphertext `open` decrypts from (at `t`, in `r12`): readable, apart
+from the working space and the stack, and the destination itself or apart
+from it. -/
+def SrcIO (s₀ : State) (t : Addr) : Prop :=
+  Src s₀ t (L s₀) ∧ (t = dp s₀ ∨ (dR s₀).Disjoint ⟨t, L s₀⟩)
+
+theorem SrcIO.d_sub {s₀ : State} {t : Addr} (hs : SrcIO s₀ t) {a n : Nat} (h : a + n ≤ 1696) :
+    (⟨t, L s₀⟩ : Region).Disjoint (sub s₀ a n) := (hs.1.ctx.sub_left (sub_ctx s₀ h)).symm
+
+theorem SrcIO.d_stk {s₀ : State} {t : Addr} (hs : SrcIO s₀ t) : (⟨t, L s₀⟩ : Region).Disjoint (stkR s₀) :=
+  hs.1.stk.symm
+
+theorem movR10_ok (s : State) : WP isa (.block [.mov .r10 (.reg .r12)]) s fun s' =>
+    s'.gpr .r10 = s.gpr .r12 ∧ (∀ q, q ≠ .r10 → s'.gpr q = s.gpr q) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      s'.mem = s.mem := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, State.setReg, Option.map_some,
+    Option.some.injEq, exists_eq_left', ite_true]
+  exact ⟨trivial, fun q hq => by simp [hq], trivial, trivial, trivial⟩
 
 /-- At most `fold` bytes: the keystream from the prologue XORed into them. -/
-theorem cryptSmall_ok {fold pass w : Nat} (hf : fold ≤ 960) (hw : w = 4 ∨ w = 5 ∨ w = 6) {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s)
+theorem cryptSmall_ok {fold pass w : Nat} (hf : fold ≤ 960) (hw : w = 4 ∨ w = 5 ∨ w = 6) {s₀ : State} (hp : APre e s₀) {s : State} (h : InvT s₀ t₁₂ s)
     (hle : L s₀ ≤ fold)
     (hks : ∀ k < mOf fold pass (L s₀), s.mem (off (cx s₀) (736 + k)) =
       (Spec.ChaCha20.keystream (Spec.ChaCha20.initState (K s₀) 1 (N s₀)) (L s₀)).getD k 0) :
@@ -3439,6 +3549,63 @@ theorem cryptSmall_ok {fold pass w : Nat} (hf : fold ≤ 960) (hw : w = 4 ∨ w 
     apply VG.Proof.ChaCha20.bytesAt_xor (VG.Proof.ChaCha20.length_keystream _ _)
     intro k hk
     rw [h₃.data k hk, m₂, m₁, show off (cx s₀) 736 + BitVec.ofNat 64 k = off (cx s₀) (736 + k) by
+      rw [off_eq, off_eq, BitVec.ofNat_add, BitVec.add_assoc], hks k (by rw [hm]; exact hk)]
+
+/-- At most `fold` bytes, from the ciphertext at `r12` to the destination:
+the keystream from the prologue XORed into them. -/
+theorem cryptSmallTo_ok {fold pass w : Nat} (hf : fold ≤ 960) (hw : w = 4 ∨ w = 5 ∨ w = 6) {s₀ : State}
+    (hp : APre e s₀) {s : State} (h : InvT s₀ t₁₂ s) (hs : SrcIO s₀ t₁₂) (hle : L s₀ ≤ fold)
+    (hks : ∀ k < mOf fold pass (L s₀), s.mem (off (cx s₀) (736 + k)) =
+      (Spec.ChaCha20.keystream (Spec.ChaCha20.initState (K s₀) 1 (N s₀)) (L s₀)).getD k 0) :
+    WP isa (.seq (.block (ptr .rsi .r15 736 ++ ([.mov .rdx (.reg .r13)] : List Instr)))
+      (.seq (xorKs w true) (.block (ptr .rsi .r15 128)))) s (CryptedT s₀ t₁₂ s) := by
+  have hL9 := (s₀.gpr .r9).isLt
+  have hm : mOf fold pass (L s₀) = L s₀ := by simp only [mOf, hle, ite_true]
+  refine WP.seq (WP.block_append (WP.mono (ptr_ok .rsi .r15 (k := 736) (by lit_omega) s)
+    fun s₁ ⟨e1, g₁, rd₁, wr₁, m₁⟩ => ?_))
+  refine WP.mono (Q := fun (s' : State) => s'.gpr .rdx = s₀.gpr .r9 ∧ (∀ q, q ≠ .rdx → s'.gpr q = s₁.gpr q) ∧
+      s'.rd = s₁.rd ∧ s'.wr = s₁.wr ∧ s'.mem = s₁.mem) ?_ fun s₂ ⟨d₂, g₂, rd₂, wr₂, m₂⟩ => ?_
+  · apply WP.of_runBlock
+    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, State.setReg, Option.map_some,
+      Option.some.injEq, exists_eq_left', ite_true]
+    exact ⟨by rw [g₁ _ (by decide), h.r13], fun q hq => by simp [hq], trivial, trivial, trivial⟩
+  simp only [xorKs, Bool.cond_true]
+  have wr₂' : s₂.wr = s₀.wr := by rw [wr₂, wr₁, h.wr]
+  have rd₂' : s₂.rd = s₀.rd := by rw [rd₂, rd₁, h.rd]
+  refine WP.seq (WP.seq (WP.mono (movR10_ok s₂) fun s₃ ⟨r10₃, g₃, rd₃, wr₃, m₃⟩ => ?_))
+  have rsi₃ : s₃.gpr .rsi = off (cx s₀) 736 := by rw [g₃ _ (by decide), g₂ _ (by decide), e1, h.r15]
+  have r14₃ : s₃.gpr .r14 = dp s₀ := by rw [g₃ _ (by decide), g₂ _ (by decide), g₁ _ (by decide), h.r14]
+  have r10₃' : s₃.gpr .r10 = t₁₂ := by rw [r10₃, g₂ _ (by decide), g₁ _ (by decide), h.r12]
+  have rdx₃ : s₃.gpr .rdx = BitVec.ofNat 64 (L s₀) := by rw [g₃ _ (by decide), d₂]; exact hL s₀
+  have dB : (dR s₀).Disjoint ⟨off (cx s₀) 736, L s₀⟩ :=
+    hp.c_d.symm.sub_right (sub_ctx s₀ (k := 736) (n := L s₀) (by lit_omega))
+  have sep : ChaCha20.X86_64.XorBuf.Sep (dp s₀) t₁₂ (off (cx s₀) 736) (L s₀) :=
+    ⟨dB, hs.2.elim (fun e => .inl e.symm) fun d => .inr d.symm, hL9⟩
+  refine WP.mono (ChaCha20.X86_64.XorBufX.xorBufXTo_ok hw (d := .r14) (sr := .r10) (by decide) (by decide)
+    r14₃ r10₃' rsi₃ rdx₃ sep
+    ⟨dR s₀, by rw [wr₃, wr₂']; exact hp.d_wr, Region.contains_self _ _⟩
+    (by rw [rd₃, wr₃, rd₂', wr₂']; exact hs.1.cov _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩)
+    ⟨ctxR s₀, by rw [rd₃, wr₃, rd₂', wr₂']; simp [hp.ctx_wr], by
+      rw [off_eq]; exact Offset.contains_base _ (show 736 + L s₀ ≤ 1696 by omega_using [hf, hle]) (by lit_omega)⟩)
+    fun s₄ h₄ => ?_
+  refine WP.mono (ptr_ok .rsi .r15 (k := 128) (by lit_omega) s₄) fun s₅ ⟨e5, g₅, rd₅, wr₅, m₅⟩ => ?_
+  have k₄ : ∀ r, r ≠ .rax → r ≠ .r8 → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .rdi → r ≠ .r10 →
+      s₄.gpr r = s.gpr r := fun r a b c d e f g => by
+    rw [h₄.keep r a b c d e f g, g₃ r g, g₂ r d, g₁ r e]
+  refine ⟨by rw [e5, k₄ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide),
+      h.r15], fun r hr h15 => ?_, by rw [rd₅, h₄.rd, rd₃, rd₂, rd₁], by rw [wr₅, h₄.wr, wr₃, wr₂, wr₁], ?_, ?_⟩
+  · have h' := calleeSaved_ne hr
+    have h8 : r ≠ .r8 ∧ r ≠ .r10 := by
+      simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+    rw [g₅ r h'.2.2.2.1, k₄ r h'.1 h8.1 h'.2.1 h'.2.2.1 h'.2.2.2.1 h'.2.2.2.2 h8.2]
+  · rw [m₅, ← m₁, ← m₂, ← m₃]
+    exact h₄.frame.sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact ⟨dR s₀, by simp, fun _ h => h⟩
+  · rw [m₅, encrypt_eq, VG.Proof.Poly1305.length_bytesAt]
+    apply VG.Proof.ChaCha20.bytesAt_xor_to (VG.Proof.ChaCha20.length_keystream _ _)
+    intro k hk
+    rw [h₄.data k hk, m₃, m₂, m₁, show off (cx s₀) 736 + BitVec.ofNat 64 k = off (cx s₀) (736 + k) by
       rw [off_eq, off_eq, BitVec.ofNat_add, BitVec.add_assoc], hks k (by rw [hm]; exact hk)]
 
 /-! ### More than `fold` bytes -/
@@ -3489,6 +3656,14 @@ theorem bytesAt_xor_get {m m' : Mem} {p : Addr} {n : Nat} {ks : List Byte} (hks 
   simp only [Spec.ChaCha20.bytesAt, List.getElem_map, List.getElem_range, List.getElem_zipWith] at e
   rw [e, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by rw [hks]; exact hk), Option.getD_some]
 
+theorem bytesAt_xor_getTo {m m' : Mem} {p q : Addr} {n : Nat} {ks : List Byte} (hks : ks.length = n)
+    (h : Spec.ChaCha20.bytesAt m' q n = List.zipWith (· ^^^ ·) (Spec.ChaCha20.bytesAt m p n) ks) {k : Nat}
+    (hk : k < n) : m' (q + BitVec.ofNat 64 k) = m (p + BitVec.ofNat 64 k) ^^^ ks.getD k 0 := by
+  have hk1 : k < (Spec.ChaCha20.bytesAt m' q n).length := by simp [Spec.ChaCha20.bytesAt, hk]
+  have e := List.getElem_of_eq h hk1
+  simp only [Spec.ChaCha20.bytesAt, List.getElem_map, List.getElem_range, List.getElem_zipWith] at e
+  rw [e, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by rw [hks]; exact hk), Option.getD_some]
+
 /-- The data after its first `m` bytes. -/
 abbrev dRm (s₀ : State) (m : Nat) : Region := ⟨off (dp s₀) m, L s₀ - m⟩
 
@@ -3507,7 +3682,7 @@ theorem APre.wrap_dm {s₀ : State} (hp : APre e s₀) {m : Nat} (hm : m ≤ L s
 
 /-- The arguments of `vg_chacha20_xor` for the data after its first `m`
 bytes, as `cryptArgsM` sets them up. -/
-structure XArgsM (s₀ : State) (m : Nat) (s : State) : Prop where
+structure XArgsMT (s₀ : State) (t : Addr) (m : Nat) (s : State) : Prop where
   rdi : s.gpr .rdi = off (cx s₀) 64
   rsi : s.gpr .rsi = off (dp s₀) m
   rdx : s.gpr .rdx = BitVec.ofNat 64 (L s₀ - m)
@@ -3515,15 +3690,17 @@ structure XArgsM (s₀ : State) (m : Nat) (s : State) : Prop where
   rsp : s.gpr .rsp = s₀.gpr .rsp
   r13 : s.gpr .r13 = s₀.gpr .r9
   r14 : s.gpr .r14 = dp s₀
-  r12 : s.gpr .r12 = tp s₀
+  r12 : s.gpr .r12 = t
   wr : s.wr = s₀.wr
   le : m ≤ L s₀
 
+abbrev XArgsM (s₀ : State) : Nat → State → Prop := XArgsMT s₀ (tp s₀)
+
 section
-variable {s₀ : State} (hp : APre e s₀) {m : Nat} {s : State} (h : XArgsM s₀ m s)
+variable {s₀ : State} (hp : APre e s₀) {m : Nat} {s : State} (h : XArgsMT s₀ t₁₂ m s)
 include hp h
 
-theorem XArgsM.hw : Covers [⟨off (cx s₀) 64, 64⟩, dRm s₀ m, ⟨off (cx s₀) 128, 320⟩] s.wr := by
+theorem XArgsMT.hw : Covers [⟨off (cx s₀) 64, 64⟩, dRm s₀ m, ⟨off (cx s₀) 128, 320⟩] s.wr := by
   refine Covers.of_sub fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
@@ -3532,7 +3709,7 @@ theorem XArgsM.hw : Covers [⟨off (cx s₀) 64, 64⟩, dRm s₀ m, ⟨off (cx s
   · exact ⟨ctxR s₀, by rw [h.wr]; exact hp.ctx_wr, 128, by simp [off_eq], by show 128 + 320 ≤ 1696; omega_using []⟩
 
 /-- The precondition of the implementation `v` of `vg_chacha20_xor`. -/
-theorem XArgsM.pre (v : Proof.ChaCha20.X86_64.XorImpl) :
+theorem XArgsMT.pre (v : Proof.ChaCha20.X86_64.XorImpl) :
     (Proof.ChaCha20.xorStack v.stack).pre
       (s.callEntry.withRegions [] [⟨off (cx s₀) 64, 64⟩, dRm s₀ m, ⟨off (cx s₀) 128, 320⟩]) :=
   xor_pre v h.rdi h.rsi h.rdx h.rcx (by have := (s₀.gpr .r9).isLt; simp only [L]; omega_arith)
@@ -3544,7 +3721,7 @@ theorem XArgsM.pre (v : Proof.ChaCha20.X86_64.XorImpl) :
     (by rw [h.rsp]; exact hp.stk_sub (by lit_omega))
 
 /-- The call of the implementation `v` of `vg_chacha20_xor`. -/
-theorem XArgsM.call (v : Proof.ChaCha20.X86_64.XorImpl) {Q : State → Prop}
+theorem XArgsMT.call (v : Proof.ChaCha20.X86_64.XorImpl) {Q : State → Prop}
     (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) →
       Frame [⟨off (cx s₀) 64, 64⟩, dRm s₀ m, ⟨off (cx s₀) 128, 320⟩, stkR s₀] s.mem s'.mem →
       s'.gpr .rsi = off (cx s₀) 128 →
@@ -3582,6 +3759,11 @@ theorem cryptArgsM_eq : cryptArgsM = ([.mov .rax (.reg .rdx), .shift .shr .rax 6
       .mov .rax (.reg .r13), .alu .sub .rax (.reg .rdx), .mov .rdx (.reg .rax)] : List Instr) ++
       ptr .rdi .r15 64 ++ ptr .rcx .r15 128) := rfl
 
+theorem cryptArgsMTo_eq : cryptArgsMTo true = ([.mov .rax (.reg .rdx), .shift .shr .rax 6] : List Instr) ++
+    ((([.alu .add .rax (.imm 1), .store32 (at_ .r15 112) .rax, .mov .rsi (.reg .r12), .alu .add .rsi (.reg .rdx),
+      .mov .rax (.reg .r13), .alu .sub .rax (.reg .rdx), .mov .rdx (.reg .rax)] : List Instr) ++
+      ptr .rdi .r15 64 ++ ptr .rcx .r15 128) ++ ([.mov .r11 (.reg .r14), .alu .sub .r11 (.reg .r12)] : List Instr)) := rfl
+
 theorem shrA_ok {m : Nat} (hm : m < 2 ^ 64) {s : State} (hrdx : s.gpr .rdx = BitVec.ofNat 64 m) :
     WP isa (.block ([.mov .rax (.reg .rdx), .shift .shr .rax 6] : List Instr)) s fun s' =>
       s'.gpr .rax = BitVec.ofNat 64 (m / 64) ∧ (∀ q, q ≠ .rax → s'.gpr q = s.gpr q) ∧ s'.rd = s.rd ∧
@@ -3594,32 +3776,35 @@ theorem shrA_ok {m : Nat} (hm : m < 2 ^ 64) {s : State} (hrdx : s.gpr .rdx = Bit
 
 /-- `cryptArgsM` after the shift. -/
 theorem cryptB_ok {s₀ : State} (hp : APre e s₀) {s : State} {m : Nat} (hm : m ≤ L s₀) (hm9 : m ≤ 960)
+    {sr : Reg} (hsr : sr = .r14 ∨ sr = .r12) {P : Addr}
     (hrax : s.gpr .rax = BitVec.ofNat 64 (m / 64))
-    (hrdx : s.gpr .rdx = BitVec.ofNat 64 m) (hr15 : s.gpr .r15 = cx s₀) (hr14 : s.gpr .r14 = dp s₀)
+    (hrdx : s.gpr .rdx = BitVec.ofNat 64 m) (hr15 : s.gpr .r15 = cx s₀) (hr14 : s.gpr sr = P)
     (hr13 : s.gpr .r13 = s₀.gpr .r9) (hwr : s.wr = s₀.wr) :
-    WP isa (.block (([.alu .add .rax (.imm 1), .store32 (at_ .r15 112) .rax, .mov .rsi (.reg .r14),
+    WP isa (.block (([.alu .add .rax (.imm 1), .store32 (at_ .r15 112) .rax, .mov .rsi (.reg sr),
       .alu .add .rsi (.reg .rdx), .mov .rax (.reg .r13), .alu .sub .rax (.reg .rdx), .mov .rdx (.reg .rax)] :
       List Instr) ++ ptr .rdi .r15 64 ++ ptr .rcx .r15 128)) s fun s' =>
       s'.mem = s.mem.writeW (off (cx s₀) 112) (BitVec.ofNat 32 (m / 64 + 1)) ∧
-      s'.gpr .rdi = off (cx s₀) 64 ∧ s'.gpr .rsi = off (dp s₀) m ∧
+      s'.gpr .rdi = off (cx s₀) 64 ∧ s'.gpr .rsi = off P m ∧
       s'.gpr .rdx = BitVec.ofNat 64 (L s₀ - m) ∧ s'.gpr .rcx = off (cx s₀) 128 ∧
       (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   have o := hp.in_ctx (a := 112) (w := 4) (by lit_omega)
   rw [← hwr] at o
   simp only [off] at o
   have hL9 := (s₀.gpr .r9).isLt
-  apply WP.of_runBlock
-  simp only [ptr, List.cons_append, List.nil_append, runBlock_cons,
-    runStep_some, runBlock_nil, exec, ea_at, readSrc, execAlu, RegUpd.gpr_arithFlags,
-    RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, State.store32, RegUpd.gpr_setReg,
-    RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, hr15, hr14, hr13, hrdx, hrax, o, reduceCtorEq,
-    ↓reduceIte, Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left',
-    se_ofNat (show 64 < 2 ^ 31 by omega_using []), se_ofNat (show 128 < 2 ^ 31 by omega_using []),
-    ctrWord hm9]
-  refine ⟨trivial, by rw [off_eq], by rw [off_eq], ?_, by rw [off_eq], fun r hr => ?_, trivial, trivial⟩
-  · rw [hL s₀]; exact Offset.ofNat_sub_ofNat hm
-  · have := calleeSaved_ne hr
-    simp [this.1, this.2.1, this.2.2.1, this.2.2.2.1, this.2.2.2.2]
+  rcases hsr with rfl | rfl
+  all_goals
+    apply WP.of_runBlock
+    simp only [ptr, List.cons_append, List.nil_append, runBlock_cons,
+      runStep_some, runBlock_nil, exec, ea_at, readSrc, execAlu, RegUpd.gpr_arithFlags,
+      RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, State.store32, RegUpd.gpr_setReg,
+      RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, hr15, hr14, hr13, hrdx, hrax, o, reduceCtorEq,
+      ↓reduceIte, Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left',
+      se_ofNat (show 64 < 2 ^ 31 by omega_using []), se_ofNat (show 128 < 2 ^ 31 by omega_using []),
+      ctrWord hm9]
+    refine ⟨trivial, by rw [off_eq], by rw [off_eq], ?_, by rw [off_eq], fun r hr => ?_, trivial, trivial⟩
+    · rw [hL s₀]; exact Offset.ofNat_sub_ofNat hm
+    · have := calleeSaved_ne hr
+      simp [this.1, this.2.1, this.2.2.1, this.2.2.2.1, this.2.2.2.2]
 
 
 theorem testRdx_ok {m : Nat} (hm : m < 2 ^ 64) {s : State} (hrdx : s.gpr .rdx = BitVec.ofNat 64 m) :
@@ -3650,9 +3835,9 @@ theorem rdx_ne_r8 {r : Reg} (hr : r ∈ calleeSaved) : r ≠ .r8 := by
 the prologue, and the arguments of the call for the rest. -/
 theorem cryptPre_ok (v : Proof.ChaCha20.X86_64.XorImpl) {pass : Nat} (hpass : PassOk v.callee.fold pass)
     {s₀ : State} (hp : APre e s₀) {s : State}
-    (h : Inv s₀ s) :
-    WP isa (cryptPre v.callee.fold pass v.callee.wide) s fun s' =>
-      XArgsM s₀ (mOf v.callee.fold pass (L s₀)) s' ∧ (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
+    (h : InvT s₀ t₁₂ s) :
+    WP isa (cryptPre v.callee.fold pass v.callee.wide false) s fun s' =>
+      XArgsMT s₀ t₁₂ (mOf v.callee.fold pass (L s₀)) s' ∧ (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ ∃ mx : Mem, Frame [⟨dp s₀, mOf v.callee.fold pass (L s₀)⟩] s.mem mx ∧
         (∀ k < mOf v.callee.fold pass (L s₀), mx (dp s₀ + BitVec.ofNat 64 k) =
           s.mem (dp s₀ + BitVec.ofNat 64 k) ^^^ s.mem (off (cx s₀) (736 + k))) ∧
@@ -3663,6 +3848,7 @@ theorem cryptPre_ok (v : Proof.ChaCha20.X86_64.XorImpl) {pass : Nat} (hpass : Pa
   have hM := mOf_le v.callee.fold pass (L s₀)
   have hML := mOf_le_len v.callee.fold pass (L s₀)
   unfold cryptPre
+  simp only [xorKs, cryptArgsMTo, Bool.cond_false]
   refine WP.seq (WP.mono (foldM_ok (fold := v.callee.fold) (pass := pass) (len := L s₀)
     (by lit_omega) hpass hL9 (by rw [h.r13]; exact hL s₀)) fun s₁ ⟨d₁, g₁, rd₁, wr₁, m₁⟩ => ?_)
   refine WP.seq (WP.mono (testRdx_ok (m := mOf v.callee.fold pass (L s₀)) (by lit_omega) d₁)
@@ -3701,7 +3887,7 @@ theorem cryptPre_ok (v : Proof.ChaCha20.X86_64.XorImpl) {pass : Nat} (hpass : Pa
       fun s₅ ⟨a₅, g₅, rd₅, wr₅, m₅⟩ => ?_)
     have k₅ : ∀ r, r ≠ .rax → r ≠ .r8 → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .rdi → s₅.gpr r = s.gpr r :=
       fun r a b c d e f => by rw [g₅ r a, g₄ r d, f₃.keep r a b c d e f]
-    refine WP.mono (cryptB_ok hp hML (by omega_using [hM, hfl]) a₅ (by rw [g₅ _ (by decide), d₄])
+    refine WP.mono (cryptB_ok hp hML (by omega_using [hM, hfl]) (.inl rfl) (P := dp s₀) a₅ (by rw [g₅ _ (by decide), d₄])
       (by rw [k₅ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h.r15])
       (by rw [k₅ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h.r14])
       (by rw [k₅ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h.r13])
@@ -3714,18 +3900,140 @@ theorem cryptPre_ok (v : Proof.ChaCha20.X86_64.XorImpl) {pass : Nat} (hpass : Pa
       by rw [cs _ (by decide), h.r12], by rw [wr₆, wr₅, wr₄, f₃.wr, h.wr], hML⟩, cs,
       by rw [rd₆, rd₅, rd₄, f₃.rd], s₃.mem, f₃.frame, f₃.data, by rw [m₆, m₅, m₄]⟩
 
+/-- The arguments of the call for the rest, from the ciphertext at `t` to
+the destination (`Xor.callTo`: `r11` is the distance). -/
+structure XArgsTo (s₀ : State) (t : Addr) (m : Nat) (s : State) : Prop where
+  rdi : s.gpr .rdi = off (cx s₀) 64
+  rsi : s.gpr .rsi = off t m
+  rdx : s.gpr .rdx = BitVec.ofNat 64 (L s₀ - m)
+  rcx : s.gpr .rcx = off (cx s₀) 128
+  r11 : s.gpr .r11 = dp s₀ - t
+  rsp : s.gpr .rsp = s₀.gpr .rsp
+  r13 : s.gpr .r13 = s₀.gpr .r9
+  r14 : s.gpr .r14 = dp s₀
+  r12 : s.gpr .r12 = t
+  wr : s.wr = s₀.wr
+  rd : s.rd = s₀.rd
+  le : m ≤ L s₀
+
+theorem delta_ok (s : State) : WP isa (.block [.mov .r11 (.reg .r14), .alu .sub .r11 (.reg .r12)]) s fun s' =>
+    s'.gpr .r11 = s.gpr .r14 - s.gpr .r12 ∧ (∀ q, q ≠ .r11 → s'.gpr q = s.gpr q) ∧ s'.rd = s.rd ∧
+      s'.wr = s.wr ∧ s'.mem = s.mem := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, RegUpd.gpr_arithFlags,
+    RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, RegUpd.gpr_setReg,
+    RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, Option.map_some, Option.bind_some,
+    Option.some.injEq, exists_eq_left', reduceCtorEq, ↓reduceIte]
+  exact ⟨trivial, fun q hq => by simp [hq], trivial, trivial, trivial⟩
+
+/-- `cryptPre` from the ciphertext at `t` (`r12`) to the destination: the
+first `m` bytes decrypted from the keystream of the prologue, and the
+arguments of the call for the rest. -/
+theorem cryptPreTo_ok (v : Proof.ChaCha20.X86_64.XorImpl) {pass : Nat} (hpass : PassOk v.callee.fold pass)
+    {s₀ : State} (hp : APre e s₀) {s : State} (h : InvT s₀ t₁₂ s) (hs : SrcIO s₀ t₁₂) :
+    WP isa (cryptPre v.callee.fold pass v.callee.wide true) s fun s' =>
+      XArgsTo s₀ t₁₂ (mOf v.callee.fold pass (L s₀)) s' ∧ (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
+      ∃ mx : Mem, Frame [⟨dp s₀, mOf v.callee.fold pass (L s₀)⟩] s.mem mx ∧
+        (∀ k < mOf v.callee.fold pass (L s₀), mx (dp s₀ + BitVec.ofNat 64 k) =
+          s.mem (t₁₂ + BitVec.ofNat 64 k) ^^^ s.mem (off (cx s₀) (736 + k))) ∧
+        s'.mem = mx.writeW (off (cx s₀) 112)
+          (BitVec.ofNat 32 (mOf v.callee.fold pass (L s₀) / 64 + 1)) := by
+  have hL9 := (s₀.gpr .r9).isLt
+  have hfl := v.fold_le
+  have hM := mOf_le v.callee.fold pass (L s₀)
+  have hML := mOf_le_len v.callee.fold pass (L s₀)
+  unfold cryptPre
+  simp only [xorKs, Bool.cond_true]
+  refine WP.seq (WP.mono (foldM_ok (fold := v.callee.fold) (pass := pass) (len := L s₀)
+    (by lit_omega) hpass hL9 (by rw [h.r13]; exact hL s₀)) fun s₁ ⟨d₁, g₁, rd₁, wr₁, m₁⟩ => ?_)
+  refine WP.seq (WP.mono (testRdx_ok (m := mOf v.callee.fold pass (L s₀)) (by lit_omega) d₁)
+    fun s₂ ⟨g₂, rd₂, wr₂, m₂, z₂⟩ => ?_)
+  -- What the first `m` bytes leave.
+  refine WP.seq (WP.mono (Q := fun (s' : State) => (∀ r, r ≠ .rax → r ≠ .r8 → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .rdi →
+      r ≠ .r10 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      Frame [⟨dp s₀, mOf v.callee.fold pass (L s₀)⟩] s.mem s'.mem ∧
+      ∀ k < mOf v.callee.fold pass (L s₀), s'.mem (dp s₀ + BitVec.ofNat 64 k) =
+        s.mem (t₁₂ + BitVec.ofNat 64 k) ^^^ s.mem (off (cx s₀) (736 + k))) ?_ fun s₃ f₃ => ?_)
+  · refine WP.ite (decide (mOf v.callee.fold pass (L s₀) = 0)) (by simp [eval, z₂])
+      (fun hz => ?_) (fun hz => ?_)
+    · simp only [decide_eq_true_eq] at hz
+      exact WP.block_nil (M := isa) ⟨fun r _ _ _ h₄ _ _ _ => by rw [g₂, g₁ r h₄], by rw [rd₂, rd₁],
+        by rw [wr₂, wr₁], by rw [m₂, m₁]; exact Frame.refl _ _, fun k hk => by omega_arith⟩
+    · simp only [decide_eq_false_iff_not] at hz
+      refine WP.seq (WP.mono (ptr_ok .rsi .r15 (k := 736) (by lit_omega) s₂) fun s₃ ⟨e3, g₃, rd₃, wr₃, m₃⟩ => ?_)
+      refine WP.seq (WP.mono (movR10_ok s₃) fun s₄ ⟨r10₄, g₄, rd₄, wr₄, m₄⟩ => ?_)
+      have hwr₄ : s₄.wr = s₀.wr := by rw [wr₄, wr₃, wr₂, wr₁, h.wr]
+      have hrd₄ : s₄.rd = s₀.rd := by rw [rd₄, rd₃, rd₂, rd₁, h.rd]
+      have sep : ChaCha20.X86_64.XorBuf.Sep (dp s₀) t₁₂ (off (cx s₀) 736) (mOf v.callee.fold pass (L s₀)) :=
+        ⟨(hp.c_d.symm.sub_right (sub_ctx s₀ (k := 736) (n := mOf v.callee.fold pass (L s₀))
+          (by lit_omega))).sub_left (Region.sub_prefix hML),
+         hs.2.elim (fun e => .inl e.symm) fun d => .inr ((d.symm.sub_left (Region.sub_prefix hML)).sub_right
+           (Region.sub_prefix hML)), by lit_omega⟩
+      refine WP.mono (ChaCha20.X86_64.XorBufX.xorBufXTo_ok (wide_of v) (d := .r14) (sr := .r10) (by decide)
+        (by decide) (D := dp s₀) (S := t₁₂) (B := off (cx s₀) 736) (n := mOf v.callee.fold pass (L s₀))
+        (by rw [g₄ _ (by decide), g₃ _ (by decide), g₂, g₁ _ (by decide), h.r14])
+        (by rw [r10₄, g₃ _ (by decide), g₂, g₁ _ (by decide), h.r12])
+        (by rw [g₄ _ (by decide), e3, g₂, g₁ _ (by decide), h.r15])
+        (by rw [g₄ _ (by decide), g₃ _ (by decide), g₂, d₁]) sep
+        ⟨dR s₀, by rw [hwr₄]; exact hp.d_wr, by
+          simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero, Nat.zero_add]; exact hML⟩
+        (by rw [hrd₄, hwr₄]; exact hs.1.cov _ _ ⟨_, List.mem_singleton_self _, by
+          simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero, Nat.zero_add]; exact hML⟩)
+        ⟨ctxR s₀, by rw [hrd₄, hwr₄]; simp [hp.ctx_wr], by
+          rw [off_eq]; exact Offset.contains_base _ (show 736 + mOf v.callee.fold pass (L s₀) ≤ 1696 by
+            omega_using [hM, hfl]) (by lit_omega)⟩) fun s₅ x₅ => ?_
+      have ms : s₄.mem = s.mem := by rw [m₄, m₃, m₂, m₁]
+      refine ⟨fun r a b c d e f g => by rw [x₅.keep r a b c d e f g, g₄ r g, g₃ r e, g₂, g₁ r d],
+        by rw [x₅.rd, rd₄, rd₃, rd₂, rd₁], by rw [x₅.wr, wr₄, wr₃, wr₂, wr₁], by rw [← ms]; exact x₅.frame,
+        fun k hk => ?_⟩
+      rw [x₅.data k hk, ms, show off (cx s₀) 736 + BitVec.ofNat 64 k = off (cx s₀) (736 + k) by
+        rw [off_eq, off_eq, BitVec.ofNat_add, BitVec.add_assoc]]
+  · obtain ⟨k₃, rd₃, wr₃, fr₃, dt₃⟩ := f₃
+    refine WP.seq (WP.mono (foldM_ok (fold := v.callee.fold) (pass := pass) (len := L s₀)
+      (by lit_omega) hpass hL9 (by rw [k₃ .r13 (by decide) (by decide) (by decide) (by decide)
+        (by decide) (by decide) (by decide), h.r13]; exact hL s₀)) fun s₄ ⟨d₄, g₄, rd₄, wr₄, m₄⟩ => ?_)
+    rw [cryptArgsMTo_eq]
+    refine WP.block_append (WP.mono (shrA_ok (m := mOf v.callee.fold pass (L s₀)) (by lit_omega) d₄)
+      fun s₅ ⟨a₅, g₅, rd₅, wr₅, m₅⟩ => ?_)
+    have k₅ : ∀ r, r ≠ .rax → r ≠ .r8 → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .rdi → r ≠ .r10 →
+        s₅.gpr r = s.gpr r := fun r a b c d e f g => by rw [g₅ r a, g₄ r d, k₃ r a b c d e f g]
+    refine WP.block_append (WP.mono (cryptB_ok hp hML (by omega_using [hM, hfl]) (.inr rfl) (P := t₁₂) a₅
+      (by rw [g₅ _ (by decide), d₄])
+      (by rw [k₅ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h.r15])
+      (by rw [k₅ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h.r12])
+      (by rw [k₅ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h.r13])
+      (by rw [wr₅, wr₄, wr₃, h.wr])) fun s₆ ⟨m₆, rdi₆, rsi₆, rdx₆, rcx₆, cs₆, rd₆, wr₆⟩ => ?_)
+    refine WP.mono (delta_ok s₆) fun s₇ ⟨r11₇, g₇, rd₇, wr₇, m₇⟩ => ?_
+    have cs : ∀ r ∈ calleeSaved, s₆.gpr r = s.gpr r := fun r hr => by
+      have := calleeSaved_ne hr
+      have h8 : r ≠ .r8 ∧ r ≠ .r10 := by
+        simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+      rw [cs₆ r hr, k₅ r this.1 h8.1 this.2.1 this.2.2.1 this.2.2.2.1 this.2.2.2.2 h8.2]
+    have cs' : ∀ r ∈ calleeSaved, s₇.gpr r = s.gpr r := fun r hr => by
+      rw [g₇ r (by
+        simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide), cs r hr]
+    refine ⟨⟨by rw [g₇ _ (by decide), rdi₆], by rw [g₇ _ (by decide), rsi₆], by rw [g₇ _ (by decide), rdx₆],
+      by rw [g₇ _ (by decide), rcx₆],
+      by rw [r11₇, cs _ (by decide), cs _ (by decide), h.r14, h.r12],
+      by rw [cs' _ calleeSaved_rsp, h.rsp],
+      by rw [cs' _ (by decide), h.r13], by rw [cs' _ (by decide), h.r14],
+      by rw [cs' _ (by decide), h.r12], by rw [wr₇, wr₆, wr₅, wr₄, wr₃, h.wr],
+      by rw [rd₇, rd₆, rd₅, rd₄, rd₃, h.rd], hML⟩, cs', s₃.mem, fr₃, dt₃, by rw [m₇, m₆, m₅, m₄]⟩
+
 theorem byte_dR {s₀ : State} {k : Nat} (hk : k < L s₀) : (dR s₀).Contains (dp s₀ + BitVec.ofNat 64 k) 1 :=
   Offset.contains_base _ (by omega_using [hk]) (by have := (s₀.gpr .r9).isLt; simp only [L] at hk; omega_arith)
 
 /-- More than `fold` bytes: the first `m` from the keystream of the prologue,
 the rest from counter `1 + m / 64`, by the implementation `v` of
 `vg_chacha20_xor`. -/
-theorem cryptBig_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s)
+theorem cryptBig_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre e s₀) {s : State} (h : InvT s₀ t₁₂ s)
     (hbig : ¬ L s₀ ≤ v.callee.fold)
     (hst : stateAt s.mem (off (cx s₀) 64) = Spec.ChaCha20.initState (K s₀) 0 (N s₀))
     (hks : ∀ k < mOf v.callee.fold v.callee.pass (L s₀), s.mem (off (cx s₀) (736 + k)) =
       (keystream (Spec.ChaCha20.initState (K s₀) 1 (N s₀)) (L s₀)).getD k 0) :
-    WP isa (cryptBig v.callee) s (Crypted s₀ s) := by
+    WP isa (cryptBig v.callee false) s (Crypted s₀ s) := by
   have hL9 := (s₀.gpr .r9).isLt
   have hfl := v.fold_le
   have hM := mOf_le v.callee.fold v.callee.pass (L s₀)
@@ -3791,35 +4099,230 @@ theorem cryptBig_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APr
         exact fun hc => Offset.disjoint_base (dp s₀) (d := k) (n := 1) (by omega_using [hkM])
           (by simp only [L] at hk; omega_arith) _ (Region.contains_self _ _) hc
 
-/-- The data encrypted (or decrypted), by any implementation `v` of
-`vg_chacha20_xor`, and the keystream wiped. -/
-theorem crypt_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s)
+theorem wrap_off {P : Addr} {n m : Nat} (hw : P.toNat + n ≤ 2 ^ 64) (hn : n < 2 ^ 64) (hm : m ≤ n) :
+    (off P m).toNat + (n - m) ≤ 2 ^ 64 := by
+  have hd := P.isLt
+  rw [off_eq, BitVec.toNat_add, toNat_ofNat_lt (show m < 2 ^ 64 by omega_using [hn, hm])]
+  by_cases hc : P.toNat + m < 2 ^ 64
+  · rw [Nat.mod_eq_of_lt hc]; omega_arith
+  · rw [show P.toNat + m = 2 ^ 64 by omega_arith, Nat.mod_self]; omega_arith
+
+theorem off_sub_ofNat (P : Addr) {n m : Nat} (hm : m ≤ n) :
+    Region.Sub ⟨off P m, n - m⟩ ⟨P, n⟩ := by
+  simp only [off_eq]; exact Offset.sub_base _ (by omega_using [hm])
+
+section
+variable {s₀ : State} (hp : APre e s₀) {t : Addr} (hs : SrcIO s₀ t) {m : Nat} {s : State} (h : XArgsTo s₀ t m s)
+include hp h
+
+/-- The regions the call from the source to the destination writes. -/
+theorem XArgsTo.hw : Covers [⟨off (cx s₀) 64, 64⟩, dRm s₀ m, ⟨off (cx s₀) 128, 320⟩] s.wr := by
+  rw [h.wr]
+  refine Covers.of_sub fun r hr => ?_
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl
+  · exact ⟨ctxR s₀, hp.ctx_wr, 64, by simp [off_eq], by show 64 + 64 ≤ 1696; omega_using []⟩
+  · exact ⟨dR s₀, hp.d_wr, m, by simp [off_eq], by show m + (L s₀ - m) ≤ L s₀; omega_using [h.le]⟩
+  · exact ⟨ctxR s₀, hp.ctx_wr, 128, by simp [off_eq], by show 128 + 320 ≤ 1696; omega_using []⟩
+
+include hs in
+theorem XArgsTo.hcov : Covers ([⟨off t m, L s₀ - m⟩] ++ [⟨off (cx s₀) 64, 64⟩, dRm s₀ m, ⟨off (cx s₀) 128, 320⟩])
+    (s.rd ++ s.wr) := by
+  refine Covers.cons (Covers.trans (Covers.of_sub fun r hr => ?_) (by rw [h.rd, h.wr]; exact hs.1.cov))
+    (Covers.right (h.hw hp))
+  simp only [List.mem_singleton] at hr; subst hr
+  exact ⟨⟨t, L s₀⟩, List.mem_singleton_self _, m, by simp [off_eq], by
+    show m + (L s₀ - m) ≤ L s₀; omega_using [h.le]⟩
+
+include hs in
+/-- The precondition of the implementation `v` of `vg_chacha20_xor`, from
+the source to the destination. -/
+theorem XArgsTo.pre (v : Proof.ChaCha20.X86_64.XorImpl) :
+    (Proof.ChaCha20.xorTo v.stack).pre ((Proof.ChaCha20.toR8 s).callEntry.withRegions [⟨off t m, L s₀ - m⟩]
+      [⟨off (cx s₀) 64, 64⟩, dRm s₀ m, ⟨off (cx s₀) 128, 320⟩]) := by
+  have hLlt : L s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
+  have hsub : Region.Sub ⟨off t m, L s₀ - m⟩ ⟨t, L s₀⟩ := off_sub_ofNat t h.le
+  have hQ : s.gpr .r11 + s.gpr .rsi = off (dp s₀) m := by
+    rw [h.r11, h.rsi, off_eq, off_eq, ← BitVec.add_assoc, BitVec.sub_add_cancel]
+  exact xorTo_pre v h.rdi h.rsi hQ h.rdx h.rcx (by lit_omega)
+    ((hs.1.ctx.sub_left (sub_ctx s₀ (by lit_omega))).sub_right hsub)
+    ((hp.c_d.sub_left (sub_ctx s₀ (by lit_omega))).sub_right (dRm_sub s₀ h.le))
+    (sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega))
+    ((hs.1.ctx.sub_left (sub_ctx s₀ (by lit_omega))).sub_right hsub).symm
+    ((hp.c_d.sub_left (sub_ctx s₀ (by lit_omega))).sub_right (dRm_sub s₀ h.le)).symm
+    (hs.2.elim (fun e => .inl (by rw [e])) fun d => .inr ((d.symm.sub_left hsub).sub_right (dRm_sub s₀ h.le)))
+    (wrap_off hs.1.wrap hLlt h.le) (hp.wrap_dm h.le)
+    (by rw [h.rsp]; exact hp.stk_sub (by lit_omega)) (by rw [h.rsp]; exact hs.1.stk.sub_right hsub)
+    (by rw [h.rsp]; exact hp.stk_d.sub_right (dRm_sub s₀ h.le)) (by rw [h.rsp]; exact hp.stk_sub (by lit_omega))
+
+end
+
+/-- More than `fold` bytes, from the ciphertext at `t` (`r12`) to the
+destination: the first `m` from the keystream of the prologue, the rest from
+counter `1 + m / 64`, by the implementation `v` of `vg_chacha20_xor` from the
+source to the destination (`Xor.callTo`). -/
+theorem cryptBigTo_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre e s₀) {s : State}
+    (h : InvT s₀ t₁₂ s) (hs : SrcIO s₀ t₁₂) (hbig : ¬ L s₀ ≤ v.callee.fold)
     (hst : stateAt s.mem (off (cx s₀) 64) = Spec.ChaCha20.initState (K s₀) 0 (N s₀))
     (hks : ∀ k < mOf v.callee.fold v.callee.pass (L s₀), s.mem (off (cx s₀) (736 + k)) =
       (keystream (Spec.ChaCha20.initState (K s₀) 1 (N s₀)) (L s₀)).getD k 0) :
-    WP isa (crypt v.callee) s fun s' => Inv s₀ s' ∧ (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
+    WP isa (cryptBig v.callee true) s (CryptedT s₀ t₁₂ s) := by
+  have hL9 := (s₀.gpr .r9).isLt
+  have hfl := v.fold_le
+  have hd := v.depth_le
+  have hM := mOf_le v.callee.fold v.callee.pass (L s₀)
+  have hML := mOf_le_len v.callee.fold v.callee.pass (L s₀)
+  have hdvd : 64 ∣ mOf v.callee.fold v.callee.pass (L s₀) := by
+    rw [mOf_big hbig]; exact splitOf_dvd (pass_of v) _
+  generalize hm : mOf v.callee.fold v.callee.pass (L s₀) = m at hM hML hdvd hks
+  have hLlt : L s₀ < 2 ^ 64 := hL9
+  have sS := hs.1
+  refine WP.seq (WP.mono (cryptPreTo_ok v (pass_of v) hp h hs) fun s₁ ⟨a₁, cs₁, mx, fx, dx, m₁⟩ => ?_)
+  rw [hm] at a₁ fx dx m₁
+  -- The regions of the call.
+  have hsub : Region.Sub ⟨off t₁₂ m, L s₀ - m⟩ ⟨t₁₂, L s₀⟩ := off_sub_ofNat t₁₂ hML
+  have hQ : s₁.gpr .r11 + s₁.gpr .rsi = off (dp s₀) m := by
+    rw [a₁.r11, a₁.rsi, off_eq, off_eq, ← BitVec.add_assoc, BitVec.sub_add_cancel]
+  have hrsp : s₁.gpr .rsp = s₀.gpr .rsp := a₁.rsp
+  have pre := a₁.pre hp hs v
+  have hw := a₁.hw hp
+  have hcov := a₁.hcov hp hs
+  refine v.wpTo pre hcov hw fun s₂ rd₂ wr₂ cs₂ f₂ _ ⟨s₃, hm₃, hg₃, hp1, hrsi₃⟩ => ?_
+  have hE : ∀ r, r ≠ .r8 → r ≠ .rsp →
+      ((Proof.ChaCha20.toR8 s₁).callEntry.withRegions [⟨off t₁₂ m, L s₀ - m⟩]
+        [⟨off (cx s₀) 64, 64⟩, dRm s₀ m, ⟨off (cx s₀) 128, 320⟩]).gpr r = s₁.gpr r := fun r h1 h2 => by
+    rw [State.withRegions_gpr, callEntry_gpr' _ h2]; exact RegUpd.gpr_setReg_of_ne _ _ h1
+  have hE8 : ((Proof.ChaCha20.toR8 s₁).callEntry.withRegions [⟨off t₁₂ m, L s₀ - m⟩]
+        [⟨off (cx s₀) 64, 64⟩, dRm s₀ m, ⟨off (cx s₀) 128, 320⟩]).gpr .r8 = off (dp s₀) m := by
+    rw [State.withRegions_gpr, callEntry_gpr' _ (by decide)]; exact (RegUpd.gpr_setReg_self _ _ _).trans hQ
+  have h8 := below8_24 s₁
+  have hEm : ((Proof.ChaCha20.toR8 s₁).callEntry.withRegions [⟨off t₁₂ m, L s₀ - m⟩]
+        [⟨off (cx s₀) 64, 64⟩, dRm s₀ m, ⟨off (cx s₀) 128, 320⟩]).mem = (Proof.ChaCha20.toR8 s₁).callEntry.mem := rfl
+  have data₂ : Spec.ChaCha20.bytesAt s₂.mem (off (dp s₀) m) (L s₀ - m) = List.zipWith (· ^^^ ·)
+      (Spec.ChaCha20.bytesAt s₁.mem (off t₁₂ m) (L s₀ - m))
+      (keystream (stateAt s₁.mem (off (cx s₀) 64)) (L s₀ - m)) := by
+    simp only [hE8, hE .rsi (by decide) (by decide), hE .rdi (by decide) (by decide),
+      hE .rdx (by decide) (by decide), a₁.rsi, a₁.rdi, a₁.rdx, hEm, hm₃,
+      toNat_ofNat_lt (show L s₀ - m < 2 ^ 64 by omega_arith)] at hp1
+    have fT : Frame [below (s₁.gpr .rsp) 8] s₁.mem (Proof.ChaCha20.toR8 s₁).callEntry.mem := callEntry_frame _
+    rw [hp1, bytesAt_eq, bytesAt_frame fT (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact ((sS.stk.sub_right hsub).sub_left (by rw [hrsp]; exact below8_24' _)).symm) (by lit_omega),
+      stateAt_frame fT (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact ((hp.stk_sub (k := 64) (n := 64) (by lit_omega)).sub_left (by rw [hrsp]; exact below8_24' _)).symm)]
+  have fw : Frame [sub s₀ 64 64] mx s₁.mem := by
+    rw [m₁]
+    exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
+      (contains_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega))
+  have dpre : ∀ r ∈ [(⟨dp s₀, m⟩ : Region)], (sub s₀ 64 64).Disjoint r := fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr
+    exact (hp.c_d.sub_left (sub_ctx s₀ (by lit_omega))).sub_right (Region.sub_prefix hML)
+  have st₁ : stateAt s₁.mem (off (cx s₀) 64) =
+      VG.Proof.ChaCha20.ctr (Spec.ChaCha20.initState (K s₀) 1 (N s₀)) (m / 64) := by
+    rw [m₁, stateAt_ctrW, stateAt_frame fx dpre, hst, set12_ctr]
+  have f₂' : Frame [⟨off (cx s₀) 64, 64⟩, dRm s₀ m, ⟨off (cx s₀) 128, 320⟩, stkR s₀] s₁.mem s₂.mem := by
+    refine f₂.sub fun r hr => ?_
+    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · exact ⟨_, by simp, fun _ h => h⟩
+    · exact ⟨_, by simp, fun _ h => h⟩
+    · exact ⟨_, by simp, fun _ h => h⟩
+    · exact ⟨stkR s₀, by simp, by rw [hrsp]; exact below_sub (by omega_using [hd]) (by lit_omega)⟩
+  -- A byte of the destination or the source is in none of the context's regions or the stack.
+  have nctx : ∀ {k a n : Nat}, k < L s₀ → a + n ≤ 1696 → ¬ (sub s₀ a n).Contains (dp s₀ + BitVec.ofNat 64 k) 1 :=
+    fun hk ha hc => hp.c_d _ (sub_ctx s₀ ha _ hc) (byte_dR hk)
+  have nstk : ∀ {k : Nat}, k < L s₀ → ¬ (stkR s₀).Contains (dp s₀ + BitVec.ofNat 64 k) 1 :=
+    fun hk hc => hp.stk_d _ hc (byte_dR hk)
+  have sctx : ∀ {k a n : Nat}, k < L s₀ → a + n ≤ 1696 → ¬ (sub s₀ a n).Contains (t₁₂ + BitVec.ofNat 64 k) 1 :=
+    fun hk ha hc => sS.ctx _ (sub_ctx s₀ ha _ hc)
+      (Offset.contains_base _ (by omega_using [hk]) (by omega_arith))
+  have sstk : ∀ {k : Nat}, k < L s₀ → ¬ (stkR s₀).Contains (t₁₂ + BitVec.ofNat 64 k) 1 :=
+    fun hk hc => sS.stk _ hc (Offset.contains_base _ (by omega_using [hk]) (by omega_arith))
+  -- The source's bytes from `m` on, as on entry.
+  have src₁ : ∀ k, m ≤ k → k < L s₀ → s₁.mem (t₁₂ + BitVec.ofNat 64 k) = s.mem (t₁₂ + BitVec.ofNat 64 k) := by
+    intro k hk hkL
+    rw [fw _ fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact sctx hkL (by lit_omega)]
+    refine fx _ fun r hr => ?_
+    simp only [List.mem_singleton] at hr; subst hr
+    rcases hs.2 with e | d
+    · rw [e]
+      exact fun hc => Offset.disjoint_base (dp s₀) (d := k) (n := 1) (by omega_using [hk])
+        (by simp only [L] at hkL; omega_arith) _ (Region.contains_self _ _) hc
+    · exact fun hc => d _ (Region.sub_prefix hML _ hc) (Offset.contains_base _ (by omega_using [hkL]) (by omega_arith))
+  refine ⟨by rw [← hg₃ .rsi (by decide), hrsi₃, hE .rcx (by decide) (by decide), a₁.rcx],
+    fun r hr _ => by rw [cs₂ r hr, cs₁ r hr], by rw [rd₂, a₁.rd, h.rd], by rw [wr₂, a₁.wr, h.wr], ?_, ?_⟩
+  · refine (fx.sub fun r hr => ?_).trans ((fw.sub fun r hr => ?_).trans (f₂'.sub fun r hr => ?_))
+    · simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨dR s₀, by simp, Region.sub_prefix hML⟩
+    · simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨sub s₀ 64 384, by simp, sub_sub s₀ (Nat.le_refl _) (by lit_omega) (by lit_omega)⟩
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl
+      · exact ⟨sub s₀ 64 384, by simp, sub_sub s₀ (Nat.le_refl _) (by lit_omega) (by lit_omega)⟩
+      · exact ⟨dR s₀, by simp, dRm_sub s₀ hML⟩
+      · exact ⟨sub s₀ 64 384, by simp, sub_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega)⟩
+      · exact ⟨stkR s₀, by simp, fun _ h => h⟩
+  · rw [encrypt_eq, VG.Proof.Poly1305.length_bytesAt]
+    apply VG.Proof.ChaCha20.bytesAt_xor_to (VG.Proof.ChaCha20.length_keystream _ _)
+    intro k hk
+    have m₁k : s₁.mem (dp s₀ + BitVec.ofNat 64 k) = mx (dp s₀ + BitVec.ofNat 64 k) :=
+      fw _ fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact nctx hk (by lit_omega)
+    by_cases hkM : k < m
+    · rw [f₂' _ fun r hr => ?_, m₁k, dx k hkM, hks k hkM]
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl
+      · exact nctx hk (by lit_omega)
+      · exact fun hc => Offset.disjoint (dp s₀) (d := k) (n := 1) (e := m)
+          (k := L s₀ - m) (Or.inl (by omega_using [hkM]))
+          (by simp only [L] at hk; omega_arith) (by simp only [L] at hML ⊢; omega_arith) _ (Region.contains_self _ _)
+          (by simpa only [dRm, off_eq] using hc)
+      · exact nctx hk (by lit_omega)
+      · exact nstk hk
+    · have e₂ := bytesAt_xor_getTo (VG.Proof.ChaCha20.length_keystream _ _) data₂
+        (k := k - m) (by omega_using [hk, hkM])
+      have ea : ∀ P : Addr, off P m + BitVec.ofNat 64 (k - m) = P + BitVec.ofNat 64 k := fun P => by
+        rw [off_eq, BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_sub_cancel' (by omega_using [hkM])]
+      rw [ea, ea, src₁ k (by omega_using [hkM]) hk, st₁] at e₂
+      rw [e₂]
+      obtain ⟨a, ha⟩ := hdvd
+      rw [ha, Nat.mul_div_cancel_left _ (by decide), keystream_skip _ (by omega_using [hkM, ha]) hk]
+
+/-- The data encrypted (or decrypted), by any implementation `v` of
+`vg_chacha20_xor`, and the keystream wiped. -/
+theorem crypt_ok (v : Proof.ChaCha20.X86_64.XorImpl) {tb : Bool} {s₀ : State} (hp : APre e s₀) {s : State}
+    (h : InvT s₀ t₁₂ s) (hs : tb = true → SrcIO s₀ t₁₂)
+    (hst : stateAt s.mem (off (cx s₀) 64) = Spec.ChaCha20.initState (K s₀) 0 (N s₀))
+    (hks : ∀ k < mOf v.callee.fold v.callee.pass (L s₀), s.mem (off (cx s₀) (736 + k)) =
+      (keystream (Spec.ChaCha20.initState (K s₀) 1 (N s₀)) (L s₀)).getD k 0) :
+    WP isa (crypt v.callee tb) s fun s' => InvT s₀ t₁₂ s' ∧ (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
       Frame [sub s₀ 64 384, sub s₀ 672 1024, dR s₀, stkR s₀] s.mem s'.mem ∧
-      bytesAt s'.mem (dp s₀) (L s₀) = Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (bytesAt s.mem (dp s₀) (L s₀)) := by
+      bytesAt s'.mem (dp s₀) (L s₀) =
+        Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (bytesAt s.mem (bif tb then t₁₂ else dp s₀) (L s₀)) := by
   have hfl := v.fold_le
   have hL9 := (s₀.gpr .r9).isLt
   have hm := mOf_le v.callee.fold v.callee.pass (L s₀)
   unfold crypt
   refine WP.seq (WP.mono (cmpFold_ok (fold := v.callee.fold) (by lit_omega) h.r13)
     fun s₁ ⟨g₁, rd₁, wr₁, m₁, c₁⟩ => ?_)
-  have h₁ : Inv s₀ s₁ := h.step (fun r _ => by rw [g₁]) rd₁ wr₁ (rs := []) (by rw [m₁]; exact Frame.refl _ _)
+  have h₁ : InvT s₀ t₁₂ s₁ := h.step (fun r _ => by rw [g₁]) rd₁ wr₁ (rs := []) (by rw [m₁]; exact Frame.refl _ _)
     (fun _ h => by simp at h) (fun _ h => by simp at h)
-  refine WP.seq (WP.mono (Q := Crypted s₀ s₁) ?_ fun s₂ c₂ => ?_)
+  refine WP.seq (WP.mono (Q := CryptedT s₀ (bif tb then t₁₂ else dp s₀) s₁) ?_ fun s₂ c₂ => ?_)
   · refine WP.ite (decide (L s₀ < v.callee.fold + 1)) (by simp [eval, c₁]) (fun hc => ?_) (fun hc => ?_)
     · simp only [decide_eq_true_eq] at hc
-      exact cryptSmall_ok hfl (wide_of v) hp h₁ (by omega_using [hc]) (by rw [m₁]; exact hks)
+      cases tb
+      · exact cryptSmall_ok hfl (wide_of v) hp h₁ (by omega_using [hc]) (by rw [m₁]; exact hks)
+      · exact cryptSmallTo_ok hfl (wide_of v) hp h₁ (hs rfl) (by omega_using [hc]) (by rw [m₁]; exact hks)
     · simp only [decide_eq_false_iff_not] at hc
-      exact cryptBig_ok v hp h₁ (by omega_using [hc]) (by rw [m₁]; exact hst) (by rw [m₁]; exact hks)
+      cases tb
+      · exact cryptBig_ok v hp h₁ (by omega_using [hc]) (by rw [m₁]; exact hst) (by rw [m₁]; exact hks)
+      · exact cryptBigTo_ok v hp h₁ (hs rfl) (by omega_using [hc]) (by rw [m₁]; exact hst) (by rw [m₁]; exact hks)
   refine WP.seq (WP.mono (anchor_ok .rsi (k := 128) (by lit_omega) s₂) fun s₃ ⟨e3, g₃, rd₃, wr₃, m₃⟩ => ?_)
   have cs₃ : ∀ r ∈ calleeSaved, s₃.gpr r = s.gpr r := fun r hr => by
     by_cases h15 : r = .r15
     · subst h15; rw [e3, c₂.rsi, off_sub, h.r15]
     · rw [g₃ r h15, c₂.cs r hr h15, g₁]
-  have i₃ : Inv s₀ s₃ := h.step cs₃ (by rw [rd₃, c₂.rd, rd₁]) (by rw [wr₃, c₂.wr, wr₁])
+  have i₃ : InvT s₀ t₁₂ s₃ := h.step cs₃ (by rw [rd₃, c₂.rd, rd₁]) (by rw [wr₃, c₂.wr, wr₁])
     (by rw [m₃, ← m₁]; exact c₂.frame) (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
@@ -3881,8 +4384,8 @@ theorem absorbLengths_eq (b : Impl.Poly1305.X86_64.Blocks) : absorbLengths b =
 
 /-- The lengths block absorbed. -/
 theorem absorbLengths_ok (b : Impl.Poly1305.X86_64.Blocks) {s₀ : State} (hp : APre e s₀) {s : State}
-    (h : Inv s₀ s) :
-    WP isa (absorbLengths b) s fun s' => Inv s₀ s' ∧ (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
+    (h : InvT s₀ t₁₂ s) :
+    WP isa (absorbLengths b) s fun s' => InvT s₀ t₁₂ s' ∧ (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
       Frame (macR s₀) s.mem s'.mem ∧ s'.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10 ∧
       ∀ key msg, Repr s.mem (off (cx s₀) 448) key msg →
         Repr s'.mem (off (cx s₀) 448) key (msg ++ bytesAt s.mem (off (cx s₀) 592) 16) := by
@@ -3936,7 +4439,7 @@ theorem finalizeTo_eq (out : Nat) : finalizeTo out =
       (.call "vg_poly1305_finalize_scratch" Impl.Poly1305.X86_64.finalize) := rfl
 
 /-- The tag written to `ctx[out, out + 16)`. -/
-theorem finalizeTo_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s) {out : Nat}
+theorem finalizeTo_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : InvT s₀ t₁₂ s) {out : Nat}
     (hout : out + 16 ≤ 448 ∨ (576 ≤ out ∧ out + 16 ≤ 592)) :
     WP isa (finalizeTo out) s fun s' => (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧
       s'.wr = s.wr ∧ s'.gpr .rdi = off (cx s₀) 448 ∧ s'.gpr .rcx = off (cx s₀) out ∧
@@ -4035,7 +4538,7 @@ open VG.Spec.Poly1305 (Repr bytesAt mac leBytes)
 open VG.Spec.ChaCha20 (stateAt)
 open VG.Spec.ChaCha20Poly1305 (pad16 macData polyKeyGen)
 
-variable {e : Bool}
+variable {e : Bool} {t₁₂ : Addr}
 
 theorem ret_stk (s₀ : State) : (retR s₀).Disjoint (stkR s₀) := by
   have := Offset.disjoint_base (s₀.gpr .rsp - BitVec.ofNat 64 24) (d := 24) (n := 8) (k := 24) (by decide) (by decide)
@@ -4091,6 +4594,9 @@ theorem srcD {s₀ : State} (hp : APre e s₀) : Src s₀ (dp s₀) (L s₀) :=
   ⟨(s₀.gpr .r9).isLt, hp.wrap_d, hp.c_d, hp.stk_d, fun a n ⟨r, hr, hc⟩ => ⟨r, by
     simp only [List.mem_singleton] at hr; subst hr; simp [hp.d_wr], hc⟩⟩
 
+/-- In place, the data is the ciphertext. -/
+theorem srcIO_dp {s₀ : State} (hp : APre e s₀) : SrcIO s₀ (dp s₀) := ⟨srcD hp, .inl rfl⟩
+
 theorem length_encrypt (key nonce m : List Byte) : (Spec.ChaCha20.encrypt key 1 nonce m).length = m.length := by
   rw [encrypt_eq, List.length_zipWith, VG.Proof.ChaCha20.length_keystream, Nat.min_self]
 
@@ -4098,26 +4604,26 @@ theorem length_encrypt (key nonce m : List Byte) : (Spec.ChaCha20.encrypt key 1 
 lengths block at `ctx + 592`, absorbed: the padded last block with it, in
 one call. -/
 theorem macPadLengths_ok (b : Impl.Poly1305.X86_64.Blocks) {s₀ : State} (hp : APre e s₀) {p n : Reg}
-    (hr : MacRegs p n) {P : Addr} {len : Nat} (hs : Src s₀ P len) {s : State} (h : Inv s₀ s)
+    (hr : MacRegs p n) {P : Addr} {len : Nat} (hs : Src s₀ P len) {s : State} (h : InvT s₀ t₁₂ s)
     (hP : s.gpr p = P) (hn : s.gpr n = BitVec.ofNat 64 len) :
-    WP isa (macPadLengths b p n) s fun s' => Inv s₀ s' ∧ (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
+    WP isa (macPadLengths b p n) s fun s' => InvT s₀ t₁₂ s' ∧ (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
       Frame (macR s₀) s.mem s'.mem ∧ s'.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10 ∧
       ∀ key msg, Repr s.mem (off (cx s₀) 448) key msg →
         Repr s'.mem (off (cx s₀) 448) key
           (msg ++ (bytesAt s.mem P len ++ pad16 (bytesAt s.mem P len)) ++ bytesAt s.mem (off (cx s₀) 592) 16) := by
-  have hpc : p ∈ calleeSaved := by rcases hr.1 with rfl | rfl <;> simp [calleeSaved]
+  have hpc : p ∈ calleeSaved := by rcases hr.1 with rfl | rfl | rfl <;> simp [calleeSaved]
   have hnc : n ∈ calleeSaved := by rcases hr.2 with rfl | rfl <;> simp [calleeSaved]
   have hcP : (ctxR s₀).Disjoint ⟨P, len⟩ := hs.ctx
   have hlt := hs.lt
   refine WP.seq (WP.mono (wholeBlocks_ok b hp hr hs h.r15 h.rsp h.rd h.wr hP hn)
     fun s₂ ⟨cs₂, rd₂, wr₂, f₂, mx₂, repr₂⟩ => ?_)
   have i₂ := mac_inv hp h cs₂ rd₂ wr₂ f₂
-  refine WP.seq (WP.mono_mx (by rcases hr with ⟨rfl | rfl, rfl | rfl⟩ <;> decide +kernel)
+  refine WP.seq (WP.mono_mx (by rcases hr with ⟨rfl | rfl | rfl, rfl | rfl⟩ <;> decide +kernel)
     (macTail_ok hr hlt (by rw [cs₂ n hnc, hn]))
     fun s₃ ⟨rdx₃, zf₃, g₃, rd₃, wr₃, m₃⟩ mx₃ => ?_)
   have cs₃ : ∀ r ∈ calleeSaved, s₃.gpr r = s.gpr r := fun r h => by
     rw [g₃ r (calleeSaved_ne h).2.2.1, cs₂ r h]
-  have i₃ : Inv s₀ s₃ := i₂.step (fun r h => g₃ r (calleeSaved_ne h).2.2.1) rd₃ wr₃ (rs := [])
+  have i₃ : InvT s₀ t₁₂ s₃ := i₂.step (fun r h => g₃ r (calleeSaved_ne h).2.2.1) rd₃ wr₃ (rs := [])
     (by rw [m₃]; exact Frame.refl _ _) (fun _ h => by simp at h) (fun _ h => by simp at h)
   have hdisjP : ∀ r ∈ macR s₀, (⟨P, len⟩ : Region).Disjoint r := by
     intro r hr
@@ -4177,10 +4683,12 @@ theorem ks_frame {s₀ : State} {rs : List Region} {m m' : Mem} (hf : Frame rs m
   rw [← h k hk]
   exact hf _ fun r hr hc => hd r hr _ (contains_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega)) hc
 
-theorem crypt_mx (v : Proof.ChaCha20.X86_64.XorImpl) :
-    (crypt v.callee).allInstrs (fun i => !loadsMxcsr i) = true := by
+theorem crypt_mx (v : Proof.ChaCha20.X86_64.XorImpl) {tb : Bool} :
+    (crypt v.callee tb).allInstrs (fun i => !loadsMxcsr i) = true := by
+  cases tb <;>
   rcases v.fold_poly with ⟨hf, hpass, hw, -⟩ | ⟨hf, hpass, hw, -⟩ | ⟨hf, hpass, hw, -⟩ <;>
-    (simp only [crypt, cryptBig, Impl.ChaCha20.X86_64.Callee.inPlace, Code.allInstrs, v.mxcsr, hf, hpass, hw];
+    (simp only [crypt, cryptBig, callX, xorKs, Bool.cond_false, Bool.cond_true,
+      Impl.ChaCha20.X86_64.Callee.inPlace, Code.allInstrs, v.mxcsr, hf, hpass, hw];
       rfl)
 
 theorem seal_correct (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre true s₀) :
@@ -4204,9 +4712,10 @@ theorem seal_correct (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : AP
       bytesAt_frame h₁.fine (by rdisj_all) hL']
   have hM := Nat.le_trans (mOf_le v.callee.fold v.callee.pass (L s₀)) v.fold_le
   have ks₃ := ks_frame f₃ (by rdisj_all) hM (ks_frame f₂ (by rdisj_all) hM h₁.ks)
-  refine WP.seq (WP.mono_mx (crypt_mx v) (crypt_ok v hp i₃ st₃ ks₃) fun s₄ ⟨i₄, _, f₄, ct₄⟩ mx₄ => ?_)
+  refine WP.seq (WP.mono_mx (crypt_mx v) (crypt_ok v (tb := false) hp i₃ (fun h => nomatch h) st₃ ks₃) fun s₄ ⟨i₄, _, f₄, ct₄⟩ mx₄ => ?_)
+  simp only [Bool.cond_false] at ct₄
   rw [D₃] at ct₄
-  refine WP.seq (WP.mono (macPadLengths_ok v.poly hp (p := .r14) (n := .r13) ⟨.inr rfl, .inr rfl⟩ (srcD hp) i₄
+  refine WP.seq (WP.mono (macPadLengths_ok v.poly hp (p := .r14) (n := .r13) ⟨.inr (.inl rfl), .inr rfl⟩ (srcD hp) i₄
     i₄.r14 (by rw [i₄.r13]; exact hL s₀))
     fun s₆ ⟨i₆, _, f₆, mx₆, r₆⟩ => ?_)
   refine WP.seq (WP.mono_mx (by decide +kernel) (finalizeTag_ok hp i₆)
@@ -4232,18 +4741,22 @@ theorem seal_correct (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : AP
 /-- What holds when `open`'s tag is computed (`openBody`, and the stitched
 code's `openStitchedBody`), from which `openTail` compares the tags, zeroes
 the data if they differ, and restores the registers. -/
-structure TailIn (s₀ s : State) : Prop where
-  inv : Inv s₀ s
+structure TailIn (s₀ : State) (t : Addr) (s : State) : Prop where
+  inv : InvT s₀ t s
   rcx : s.gpr .rcx = off (cx s₀) 48
   rdi : s.gpr .rdi = off (cx s₀) 448
-  tag : bytesAt s.mem (off (cx s₀) 48) 16 = mac (otk s₀) (macData (A s₀) (D s₀))
-  pt : bytesAt s.mem (dp s₀) (L s₀) = Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (D s₀)
+  tag : bytesAt s.mem (off (cx s₀) 48) 16 = mac (otk s₀) (macData (A s₀) (C s₀))
+  pt : bytesAt s.mem (dp s₀) (L s₀) = Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (C s₀)
   mx : s.mxcsr.extractLsb' 6 10 = s₀.mxcsr.extractLsb' 6 10
 
-theorem body_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre false s₀) :
-    WP isa (openBody v.callee v.poly) s₀ (TailIn s₀) := by
+theorem body_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre false s₀) (hs : SrcIO s₀ (sp s₀)) :
+    WP isa (openBody v.callee v.poly) s₀ (TailIn s₀ (sp s₀)) := by
   have hL' := (Nat.le_of_lt (s₀.gpr .r9).isLt)
-  refine WP.seq (WP.mono_mx (by decide +kernel) (entry_ok hp) fun s₀' e₀ mx₀ => ?_)
+  -- The ciphertext is in none of the regions the parts before the decryption write.
+  have sd : ∀ {rs : List Region} {m m' : Mem}, Frame rs m m' →
+      (∀ r ∈ rs, (⟨sp s₀, L s₀⟩ : Region).Disjoint r) →
+      bytesAt m' (sp s₀) (L s₀) = bytesAt m (sp s₀) (L s₀) := fun hf hd => bytesAt_frame hf hd hL'
+  refine WP.seq (WP.mono_mx (by decide +kernel) (entryO_ok hp) fun s₀' e₀ mx₀ => ?_)
   subst e₀
   refine WP.seq (WP.mono_mx (prologue_mx v) (prologue_ok v hp) fun s₁ h₁ mx₁ => ?_)
   have hA : bytesAt s₁.mem (ad s₀) (AL s₀) = A s₀ :=
@@ -4252,28 +4765,45 @@ theorem body_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre fa
     h₁.inv.r15 h₁.inv.rsp h₁.inv.rd h₁.inv.wr h₁.rbx (by rw [h₁.rbp]; exact hRDX s₀))
     fun s₂ ⟨cs₂, rd₂, wr₂, f₂, mx₂, r₂⟩ => ?_)
   have i₂ := mac_inv hp h₁.inv cs₂ rd₂ wr₂ f₂
-  have D₂ : bytesAt s₂.mem (dp s₀) (L s₀) = D s₀ := by
-    rw [bytesAt_frame f₂ (by rdisj_all) hL', bytesAt_frame h₁.fine (by rdisj_all) hL']
   refine WP.seq (WP.mono_mx (by decide +kernel) (lengths_ok hp i₂ (by rw [cs₂ _ (by decide),
     h₁.rbp])) fun s₃ ⟨i₃, _, f₃, len₃⟩ mx₃ => ?_)
-  have D₃ : bytesAt s₃.mem (dp s₀) (L s₀) = D s₀ := by rw [bytesAt_frame f₃ (by rdisj_all) hL', D₂]
-  refine WP.seq (WP.mono (macPadLengths_ok v.poly hp (p := .r14) (n := .r13) ⟨.inr rfl, .inr rfl⟩ (srcD hp) i₃
-    i₃.r14 (by rw [i₃.r13]; exact hL s₀)) fun s₅ ⟨i₅, _, f₅, mx₅, r₅⟩ => ?_)
+  have C₃ : bytesAt s₃.mem (sp s₀) (L s₀) = C s₀ := by
+    rw [sd f₃ (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hs.d_sub (by lit_omega)),
+      sd f₂ (fun r hr => by
+        simp only [macR, List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · exact hs.d_sub (by lit_omega)
+        · exact hs.d_stk),
+      sd h₁.fine (fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · exact hs.d_sub (by lit_omega)
+        · exact hs.d_stk)]
+  refine WP.seq (WP.mono (macPadLengths_ok v.poly hp (p := .r12) (n := .r13) ⟨.inr (.inr rfl), .inr rfl⟩
+    hs.1 i₃ i₃.r12 (by rw [i₃.r13]; exact hL s₀)) fun s₅ ⟨i₅, _, f₅, mx₅, r₅⟩ => ?_)
+  have C₅ : bytesAt s₅.mem (sp s₀) (L s₀) = C s₀ := by
+    rw [sd f₅ (fun r hr => by
+        simp only [macR, List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · exact hs.d_sub (by lit_omega)
+        · exact hs.d_stk), C₃]
   have st₅ : stateAt s₅.mem (off (cx s₀) 64) = Spec.ChaCha20.initState (K s₀) 0 (N s₀) := by
     rw [stateAt_frame f₅ (by rdisj_all), stateAt_frame f₃ (by rdisj_all),
       stateAt_frame f₂ (by rdisj_all), h₁.st]
   have hM := Nat.le_trans (mOf_le v.callee.fold v.callee.pass (L s₀)) v.fold_le
   have ks₅ := ks_frame f₅ (by rdisj_all) hM (ks_frame f₃ (by rdisj_all) hM (ks_frame f₂ (by rdisj_all) hM h₁.ks))
-  refine WP.seq (WP.mono_mx (crypt_mx v) (crypt_ok v hp i₅ st₅ ks₅) fun s₆ ⟨i₆, _, f₆, pt₆⟩ mx₆ => ?_)
+  refine WP.seq (WP.mono_mx (crypt_mx v) (crypt_ok v (tb := true) hp i₅ (fun _ => hs) st₅ ks₅)
+    fun s₆ ⟨i₆, _, f₆, pt₆⟩ mx₆ => ?_)
+  simp only [Bool.cond_true] at pt₆
   refine WP.mono_mx (by decide +kernel) (finalizeTo_ok hp i₆ (out := 48) (.inl (by omega_using [])))
     fun s₇ ⟨cs₇, rd₇, wr₇, rdi₇, rcx₇, f₇, tag₇⟩ mx₇ => ?_
   -- The tag computed.
   have R₂ := r₂ (otk s₀) [] h₁.poly
   have T₇ := tag₇ _ _ (Repr.frame f₆ (by rdisj_all) (r₅ _ _ (Repr.frame f₃ (by rdisj_all) R₂)))
   have L₃ : bytesAt s₃.mem (off (cx s₀) 592) 16 = leBytes 8 (AL s₀) ++ leBytes 8 (L s₀) := len₃
-  have P₇ : bytesAt s₇.mem (dp s₀) (L s₀) = Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (D s₀) := by
-    rw [bytesAt_frame f₇ (by rdisj_all) hL', pt₆, bytesAt_frame f₅ (by rdisj_all) hL', D₃]
-  rw [L₃, D₃, hA] at T₇
+  have P₇ : bytesAt s₇.mem (dp s₀) (L s₀) = Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (C s₀) := by
+    rw [bytesAt_frame f₇ (by rdisj_all) hL', pt₆, C₅]
+  rw [L₃, C₃, hA] at T₇
   refine ⟨i₆.step cs₇ rd₇ wr₇ f₇ (fun r hr => ?_) (by rdisj_all), rcx₇, rdi₇, ?_, P₇,
     by rw [mx₇, mx₆, mx₅, mx₃, mx₂, mx₁, mx₀]⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -4307,7 +4837,7 @@ namespace VG.Proof.ChaCha20Poly1305.X86_64
 open VG VG.X86_64 VG.Impl.ChaCha20Poly1305.X86_64
 open VG.Impl.ChaCha20.X86_64.XorBuf (xData xBody xorBufX)
 
-variable {e : Bool}
+variable {e : Bool} {t₁₂ t₁₂' : Addr}
 
 /-- The index of the working space among the writable regions:
 `[data, tag, work]` for `seal`, `[data, work]` for `open`. -/
@@ -4334,11 +4864,11 @@ theorem pub_regs {s₁ s₂ : State} (hq : pubX86_64 s₁ s₂) :
   obtain ⟨-, -, -, -, p5, p6, -, p8, p9⟩ := hq
   simp only [ctxR, dR, tR, cx, dp, L, tp, p5, p6, p8, p9, and_self]
 
-theorem wf₀ {s₀ : State} (hp : APre e s₀) : X86_64.Taint.Wf (τ₀ e) (entryS s₀) := by
+theorem wf₀ {s₀ : State} (hp : APre e s₀) (t : Addr) : X86_64.Taint.Wf (τ₀ e) (entryT s₀ t) := by
   have hl := (Nat.le_of_lt (s₀.gpr .r9).isLt)
   have hw := hp.wr_eq
-  have g : ∀ r, (entryS s₀).gpr r = if r = .r11 then tp s₀ else if r = .rax then cx s₀ else s₀.gpr r := by
-    intro r; simp [entryS, State.setReg]
+  have g : ∀ r, (entryT s₀ t).gpr r = if r = .r11 then t else if r = .rax then cx s₀ else s₀.gpr r := by
+    intro r; simp [entryT, State.setReg]
   refine ⟨fun _ => ⟨?_, ?_, ?_⟩, fun p hm => ?_⟩
   · show List.Forall₂ _ s₀.wr _
     rw [hw]; cases e <;> simp [τ₀]
@@ -4349,16 +4879,16 @@ theorem wf₀ {s₀ : State} (hp : APre e s₀) : X86_64.Taint.Wf (τ₀ e) (ent
     rw [hw]; cases e <;> simp [hl]
   · simp only [τ₀, List.mem_cons, List.not_mem_nil, or_false] at hm
     rcases hm with rfl | rfl <;>
-      simp [X86_64.Taint.region, show (entryS s₀).wr = s₀.wr from rfl, hw, g] <;> cases e <;> simp
+      simp [X86_64.Taint.region, show (entryT s₀ t).wr = s₀.wr from rfl, hw, g] <;> cases e <;> simp
 
-theorem agree₀ {s₁ s₂ : State} (h₁ : APre e s₁) (h₂ : APre e s₂) (hq : pubX86_64 s₁ s₂) :
-    X86_64.Taint.Agree (τ₀ e) (entryS s₁) (entryS s₂) := by
+theorem agree₀ {s₁ s₂ : State} (h₁ : APre e s₁) (h₂ : APre e s₂) (hq : pubX86_64 s₁ s₂) {t₁ t₂ : Addr}
+    (ht : t₁ = t₂) : X86_64.Taint.Agree (τ₀ e) (entryT s₁ t₁) (entryT s₂ t₂) := by
   have hq' := hq
   obtain ⟨p1, p2, p3, p4, p5, p6, p7, p8, p9⟩ := hq'
   obtain ⟨c, d, t⟩ := pub_regs hq
-  have g : ∀ s r, (entryS s).gpr r = if r = .r11 then tp s else if r = .rax then cx s else s.gpr r := by
-    intro s r; simp [entryS, State.setReg]
-  refine ⟨⟨fun r hr => ?_, fun h => by cases h⟩, fun _ => ?_, wf₀ h₁, wf₀ h₂, ?_, ?_,
+  have g : ∀ s t r, (entryT s t).gpr r = if r = .r11 then t else if r = .rax then cx s else s.gpr r := by
+    intro s t r; simp [entryT, State.setReg]
+  refine ⟨⟨fun r hr => ?_, fun h => by cases h⟩, fun _ => ?_, wf₀ h₁ t₁, wf₀ h₂ t₂, ?_, ?_,
     X86_64.Taint.noLo, X86_64.Taint.noXr⟩
   · simp only [τ₀, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     rw [g, g]
@@ -4383,6 +4913,20 @@ theorem entry_rel {s₀ s₀' : State} (hp : APre e s₀) (hp' : APre e s₀') (
   obtain ⟨rfl, rfl⟩ := h₂
   exact ⟨by rw [hq.2.2.2.2.2.2.1], rfl, rfl⟩
 
+theorem entryO_rel {s₀ s₀' : State} (hp : APre e s₀) (hp' : APre e s₀') (hq : pubX86_64 s₀ s₀') :
+    RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (.block entryO)
+      fun s₁ s₂ => s₁ = entryT s₀ (sp s₀) ∧ s₂ = entryT s₀' (sp s₀') := by
+  rintro s₁ s₂ t₁ t₂ s₁' s₂' ⟨rfl, rfl⟩ e₁ e₂
+  cases e₁ with | block h₁ => cases e₂ with | block h₂ =>
+  rw [entryO_run hp] at h₁
+  rw [entryO_run hp'] at h₂
+  simp only [Option.some.injEq, Prod.mk.injEq] at h₁ h₂
+  obtain ⟨rfl, rfl⟩ := h₁
+  obtain ⟨rfl, rfl⟩ := h₂
+  exact ⟨by rw [hq.2.2.2.2.2.2.1], rfl, rfl⟩
+
+theorem tp_pub {s₁ s₂ : State} (hq : pubX86_64 s₁ s₂) : tp s₁ = tp s₂ := hq.2.2.2.2.2.2.2.1
+
 /-! ## The parts of the code -/
 
 /-- From the call of `vg_chacha20_xor` in the prologue to the branch on the
@@ -4393,17 +4937,17 @@ def sealMid (fold : Nat) (b : Impl.Poly1305.X86_64.Blocks) : Prog isa :=
 
 /-- `open`'s. -/
 def openMid (fold : Nat) (b : Impl.Poly1305.X86_64.Blocks) : Prog isa :=
-  .seq prologueB (.seq (macPad b .rbx .rbp) (.seq (.block lengths) (.seq (macPadLengths b .r14 .r13)
+  .seq prologueB (.seq (macPad b .rbx .rbp) (.seq (.block lengths) (.seq (macPadLengths b .r12 .r13)
     (.block [.alu .cmp .r13 (.imm (BitVec.ofNat 32 (fold + 1)))]))))
 
 /-- The branch for at most `fold` bytes. -/
-def cryptSmall (w : Nat) : Prog isa :=
+def cryptSmall (w : Nat) (tb : Bool) : Prog isa :=
   .seq (.block (ptr .rsi .r15 736 ++ ([.mov .rdx (.reg .r13)] : List Instr)))
-    (.seq (xorBufX w .r14) (.block (ptr .rsi .r15 128)))
+    (.seq (xorKs w tb) (.block (ptr .rsi .r15 128)))
 
 /-- The branch on the length. -/
-def cryptIte (x : Impl.ChaCha20.X86_64.Callee) : Prog isa :=
-  .ite .b (cryptSmall x.wide) (cryptBig x)
+def cryptIte (x : Impl.ChaCha20.X86_64.Callee) (tb : Bool) : Prog isa :=
+  .ite .b (cryptSmall x.wide tb) (cryptBig x tb)
 
 /-- The keystream wiped. -/
 def wipe (fold pass w : Nat) : Prog isa :=
@@ -4420,7 +4964,7 @@ def openPost (fold pass w : Nat) : Prog isa :=
 theorem seal_exec {x : Impl.ChaCha20.X86_64.Callee} {b : Impl.Poly1305.X86_64.Blocks} {s s' : State}
     {t : List Leak} (h : Exec isa («seal» x b) s t s') :
     Exec isa (.seq (.block entry) (.seq (prologueA x.fold x.pass x.wide) (.seq x.inPlace
-      (.seq (sealMid x.fold b) (.seq (cryptIte x) (sealPost x.fold x.pass x.wide b)))))) s t s' := by
+      (.seq (sealMid x.fold b) (.seq (cryptIte x false) (sealPost x.fold x.pass x.wide b)))))) s t s' := by
   cases h with | seq e₀ h => cases h with | seq hP h => cases hP with | seq ePA hP => cases hP with
   | seq eC ePB => cases h with | seq eMA h => cases h with | seq eLEN h => cases h with | seq hC h =>
   cases hC with | seq eCMP hC => cases hC with | seq eITE hC => cases hC with | seq eANC hC =>
@@ -4434,8 +4978,8 @@ theorem seal_exec {x : Impl.ChaCha20.X86_64.Callee} {b : Impl.Poly1305.X86_64.Bl
 
 theorem open_exec {x : Impl.ChaCha20.X86_64.Callee} {b : Impl.Poly1305.X86_64.Blocks} {s s' : State}
     {t : List Leak} (h : Exec isa (openBody x b) s t s') :
-    Exec isa (.seq (.block entry) (.seq (prologueA x.fold x.pass x.wide) (.seq x.inPlace
-      (.seq (openMid x.fold b) (.seq (cryptIte x) (openPost x.fold x.pass x.wide)))))) s t s' := by
+    Exec isa (.seq (.block entryO) (.seq (prologueA x.fold x.pass x.wide) (.seq x.inPlace
+      (.seq (openMid x.fold b) (.seq (cryptIte x true) (openPost x.fold x.pass x.wide)))))) s t s' := by
   cases h with | seq e₀ h => cases h with | seq hP h => cases hP with | seq ePA hP => cases hP with
   | seq eC ePB => cases h with | seq eMA h => cases h with | seq eLEN h => cases h with | seq eMC h =>
   cases h with | seq hC eFIN =>
@@ -4452,22 +4996,24 @@ theorem RelCT.of_exec {P Q : State → State → Prop} {c c' : Prog isa}
   fun _ _ _ _ _ _ hp e₁ e₂ => h _ _ _ _ _ _ hp (he e₁) (he e₂)
 
 /-- At the branch on the length. -/
-structure AtIte (fold pass : Nat) (s₀ s : State) : Prop where
-  inv : Inv s₀ s
+structure AtIteT (fold pass : Nat) (s₀ : State) (t : Addr) (s : State) : Prop where
+  inv : InvT s₀ t s
   cf : s.cf = some (decide (L s₀ < fold + 1))
   ks : ∀ k < mOf fold pass (L s₀), s.mem (off (cx s₀) (736 + k)) =
     (Spec.ChaCha20.keystream (Spec.ChaCha20.initState (K s₀) 1 (N s₀)) (L s₀)).getD k 0
 
-theorem cmpIte_ok {fold pass : Nat} (hf : fold ≤ 960) {s₀ : State} {s : State} (h : Inv s₀ s)
+abbrev AtIte (fold pass : Nat) (s₀ : State) : State → Prop := AtIteT fold pass s₀ (tp s₀)
+
+theorem cmpIte_ok {fold pass : Nat} (hf : fold ≤ 960) {s₀ : State} {s : State} (h : InvT s₀ t₁₂ s)
     (hks : ∀ k < mOf fold pass (L s₀), s.mem (off (cx s₀) (736 + k)) =
       (Spec.ChaCha20.keystream (Spec.ChaCha20.initState (K s₀) 1 (N s₀)) (L s₀)).getD k 0) :
-    WP isa (.block [.alu .cmp .r13 (.imm (BitVec.ofNat 32 (fold + 1)))]) s (AtIte fold pass s₀) :=
+    WP isa (.block [.alu .cmp .r13 (.imm (BitVec.ofNat 32 (fold + 1)))]) s (AtIteT fold pass s₀ t₁₂) :=
   WP.mono (cmpFold_ok (by lit_omega) h.r13) fun _ ⟨g₁, rd₁, wr₁, m₁, c₁⟩ =>
     ⟨h.step (fun r _ => by rw [g₁]) rd₁ wr₁ (rs := []) (by rw [m₁]; exact Frame.refl _ _)
       (fun _ h => by simp at h) (fun _ h => by simp at h), c₁, by rw [m₁]; exact hks⟩
 
 theorem sealMid_ok {fold pass : Nat} (hf : fold ≤ 960) (b : Impl.Poly1305.X86_64.Blocks) {s₀ : State}
-    (hp : APre e s₀) {s : State} (h : AfterF fold pass s₀ s) : WP isa (sealMid fold b) s (AtIte fold pass s₀) := by
+    (hp : APre e s₀) {s : State} (h : AfterFT fold pass s₀ t₁₂ s) : WP isa (sealMid fold b) s (AtIteT fold pass s₀ t₁₂) := by
   have hM := Nat.le_trans (mOf_le fold pass (L s₀)) hf
   refine WP.seq (WP.mono (prologueB_ok hf hp h) fun s₁ h₁ => ?_)
   refine WP.seq (WP.mono (macPad_ok b hp (p := .rbx) (n := .rbp) ⟨.inl rfl, .inl rfl⟩ (srcA hp) h₁.inv.r15
@@ -4479,7 +5025,8 @@ theorem sealMid_ok {fold pass : Nat} (hf : fold ≤ 960) (b : Impl.Poly1305.X86_
   exact cmpIte_ok hf i₃ (ks_frame f₃ (by rdisj_all) hM (ks_frame f₂ (by rdisj_all) hM h₁.ks))
 
 theorem openMid_ok {fold pass : Nat} (hf : fold ≤ 960) (b : Impl.Poly1305.X86_64.Blocks) {s₀ : State}
-    (hp : APre e s₀) {s : State} (h : AfterF fold pass s₀ s) : WP isa (openMid fold b) s (AtIte fold pass s₀) := by
+    (hp : APre e s₀) (hs : Src s₀ t₁₂ (L s₀)) {s : State} (h : AfterFT fold pass s₀ t₁₂ s) :
+    WP isa (openMid fold b) s (AtIteT fold pass s₀ t₁₂) := by
   have hM := Nat.le_trans (mOf_le fold pass (L s₀)) hf
   refine WP.seq (WP.mono (prologueB_ok hf hp h) fun s₁ h₁ => ?_)
   refine WP.seq (WP.mono (macPad_ok b hp (p := .rbx) (n := .rbp) ⟨.inl rfl, .inl rfl⟩ (srcA hp) h₁.inv.r15
@@ -4488,21 +5035,23 @@ theorem openMid_ok {fold pass : Nat} (hf : fold ≤ 960) (b : Impl.Poly1305.X86_
   have i₂ := mac_inv hp h₁.inv cs₂ rd₂ wr₂ f₂
   refine WP.seq (WP.mono (lengths_ok hp i₂ (by rw [cs₂ _ (by decide), h₁.rbp]))
     fun s₃ ⟨i₃, _, f₃, _⟩ => ?_)
-  refine WP.seq (WP.mono (macPadLengths_ok b hp (p := .r14) (n := .r13) ⟨.inr rfl, .inr rfl⟩ (srcD hp) i₃
-    i₃.r14 (by rw [i₃.r13]; exact hL s₀)) fun s₄ ⟨i₄, _, f₄, _⟩ => ?_)
+  refine WP.seq (WP.mono (macPadLengths_ok b hp (p := .r12) (n := .r13) ⟨.inr (.inr rfl), .inr rfl⟩ hs i₃
+    i₃.r12 (by rw [i₃.r13]; exact hL s₀)) fun s₄ ⟨i₄, _, f₄, _⟩ => ?_)
   exact cmpIte_ok hf i₄ (ks_frame f₄ (by rdisj_all) hM (ks_frame f₃ (by rdisj_all) hM
     (ks_frame f₂ (by rdisj_all) hM h₁.ks)))
 
 /-! ## After the call -/
 
 /-- What is known after the call of `vg_chacha20_xor`, in one run. -/
-structure After (s₀ s : State) : Prop where
+structure AfterT (s₀ : State) (t : Addr) (s : State) : Prop where
   rsi : s.gpr .rsi = off (cx s₀) 128
   rsp : s.gpr .rsp = s₀.gpr .rsp
   r13 : s.gpr .r13 = s₀.gpr .r9
   r14 : s.gpr .r14 = dp s₀
-  r12 : s.gpr .r12 = tp s₀
+  r12 : s.gpr .r12 = t
   wr : s.wr = s₀.wr
+
+abbrev After (s₀ : State) : State → Prop := AfterT s₀ (tp s₀)
 
 /-- The taint after the call: `rsi` points at `ctx + 128`, and the lengths of
 the regions are those on entry. -/
@@ -4511,11 +5060,11 @@ def τ₁ (enc : Bool) : X86_64.Taint.T :=
     bases := [(.rsi, ci enc, 128)] }
 
 section
-variable {s₀ s₀' : State} (hp : APre e s₀) (hp' : APre e s₀') (hq : pubX86_64 s₀ s₀')
+variable {s₀ s₀' : State} (hp : APre e s₀) (hp' : APre e s₀') (hq : pubX86_64 s₀ s₀') (ht : t₁₂ = t₁₂')
 
 omit hp' in
 include hp in
-theorem After.wf {s : State} (h : After s₀ s) : X86_64.Taint.Wf (τ₁ e) s := by
+theorem AfterT.wf {s : State} (h : AfterT s₀ t₁₂ s) : X86_64.Taint.Wf (τ₁ e) s := by
   have hl := (Nat.le_of_lt (s₀.gpr .r9).isLt)
   have hw : s.wr = bif e then [dR s₀, tR s₀, ctxR s₀] else [dR s₀, ctxR s₀] := by rw [h.wr, hp.wr_eq]
   refine ⟨fun _ => ⟨?_, ?_, ?_⟩, fun p hm => ?_⟩
@@ -4527,8 +5076,8 @@ theorem After.wf {s : State} (h : After s₀ s) : X86_64.Taint.Wf (τ₁ e) s :=
     simp only [X86_64.Taint.region, hw, h.rsi, off_eq]
     cases e <;> simp
 
-include hp hp' hq in
-theorem agree₁ {s₁ s₂ : State} (h₁ : After s₀ s₁) (h₂ : After s₀' s₂) : X86_64.Taint.Agree (τ₁ e) s₁ s₂ := by
+include hp hp' hq ht in
+theorem agree₁ {s₁ s₂ : State} (h₁ : AfterT s₀ t₁₂ s₁) (h₂ : AfterT s₀' t₁₂' s₂) : X86_64.Taint.Agree (τ₁ e) s₁ s₂ := by
   have hq' := hq
   obtain ⟨-, -, -, -, p5, p6, p7, p8, p9⟩ := hq'
   obtain ⟨c, d, t⟩ := pub_regs hq
@@ -4539,7 +5088,7 @@ theorem agree₁ {s₁ s₂ : State} (h₁ : After s₀ s₁) (h₂ : After s₀
     · rw [h₁.rsp, h₂.rsp, p7]
     · rw [h₁.r13, h₂.r13, p6]
     · rw [h₁.r14, h₂.r14, dp, dp, p5]
-    · rw [h₁.r12, h₂.r12, tp, tp, p8]
+    · rw [h₁.r12, h₂.r12, ht]
   · rw [h₁.wr, h₂.wr, hp.wr_eq, hp'.wr_eq, c, d, t]
   · intro sl h; simp [τ₁] at h
   · intro sl h; simp [τ₁] at h
@@ -4548,10 +5097,10 @@ include hp hp' hq in
 /-- The call of any implementation `v` of `vg_chacha20_xor` for the data
 after its first `m` bytes. -/
 theorem callM_rel (v : Proof.ChaCha20.X86_64.XorImpl) (m : Nat) :
-    RelCT isa (fun s₁ s₂ => XArgsM s₀ m s₁ ∧ XArgsM s₀' m s₂) v.callee.inPlace
-      fun s₁ s₂ => After s₀ s₁ ∧ After s₀' s₂ := by
+    RelCT isa (fun s₁ s₂ => XArgsMT s₀ t₁₂ m s₁ ∧ XArgsMT s₀' t₁₂' m s₂) v.callee.inPlace
+      fun s₁ s₂ => AfterT s₀ t₁₂ s₁ ∧ AfterT s₀' t₁₂' s₂ := by
   obtain ⟨-, -, -, -, p5, p6, p7, -, p9⟩ := hq
-  have ct := v.relIn (P := fun s₁ s₂ => XArgsM s₀ m s₁ ∧ XArgsM s₀' m s₂)
+  have ct := v.relIn (P := fun s₁ s₂ => XArgsMT s₀ t₁₂ m s₁ ∧ XArgsMT s₀' t₁₂' m s₂)
     fun s₁ s₂ ⟨a₁, a₂⟩ =>
     ⟨[], _, [], _, a₁.pre hp v, a₂.pre hp' v, by
       simp only [Proof.ChaCha20.xorStack, Proof.ChaCha20.xorX86_64, State.withRegions_gpr,
@@ -4564,13 +5113,53 @@ theorem callM_rel (v : Proof.ChaCha20.X86_64.XorImpl) (m : Nat) :
       exact ⟨trivial, trivial, trivial, trivial, trivial⟩,
       (Covers.right (a₁.hw hp)), a₁.hw hp, (Covers.right (a₂.hw hp')),
       a₂.hw hp', by rw [a₁.rsp, a₂.rsp, p7]⟩
-  have after : ∀ {σ₀ s : State}, APre e σ₀ → XArgsM σ₀ m s →
-      WP isa v.callee.inPlace s (After σ₀) := fun hp a =>
+  have after : ∀ {σ₀ s : State} {tt : Addr}, APre e σ₀ → XArgsMT σ₀ tt m s →
+      WP isa v.callee.inPlace s (AfterT σ₀ tt) := fun hp a =>
     a.call hp v fun _ _ wr cs _ rsi _ =>
       ⟨rsi, by rw [cs _ calleeSaved_rsp, a.rsp], by rw [cs _ (by decide), a.r13],
         by rw [cs _ (by decide), a.r14], by rw [cs _ (by decide), a.r12],
         by rw [wr, a.wr]⟩
   exact (ct.wp fun _ _ h => ⟨after hp h.1, after hp' h.2⟩).mono (fun _ _ h => h) fun _ _ h => h.2
+
+
+theorem toR8E_gpr {s : State} {rd wr : List Region} {r : Reg} (h1 : r ≠ .r8) (h2 : r ≠ .rsp) :
+    ((Proof.ChaCha20.toR8 s).callEntry.withRegions rd wr).gpr r = s.gpr r := by
+  rw [State.withRegions_gpr, callEntry_gpr' _ h2]; exact RegUpd.gpr_setReg_of_ne _ _ h1
+
+theorem toR8E_r8 {s : State} {rd wr : List Region} :
+    ((Proof.ChaCha20.toR8 s).callEntry.withRegions rd wr).gpr .r8 = s.gpr .r11 + s.gpr .rsi := by
+  rw [State.withRegions_gpr, callEntry_gpr' _ (by decide)]; exact RegUpd.gpr_setReg_self _ _ _
+
+theorem toR8E_rsp {s : State} {rd wr : List Region} :
+    ((Proof.ChaCha20.toR8 s).callEntry.withRegions rd wr).gpr .rsp = s.gpr .rsp - 8 := by
+  rw [State.withRegions_gpr, State.callEntry_rsp]; rfl
+
+include hp hp' hq in
+/-- The call of any implementation `v` of `vg_chacha20_xor` from the source
+to the destination, for the bytes after the first `m`. -/
+theorem callTo_rel (v : Proof.ChaCha20.X86_64.XorImpl) (m : Nat) (hs : SrcIO s₀ t₁₂) (hs' : SrcIO s₀' t₁₂')
+    (ht : t₁₂ = t₁₂') :
+    RelCT isa (fun s₁ s₂ => XArgsTo s₀ t₁₂ m s₁ ∧ XArgsTo s₀' t₁₂' m s₂) (callX v.callee true)
+      fun s₁ s₂ => AfterT s₀ t₁₂ s₁ ∧ AfterT s₀' t₁₂' s₂ := by
+  obtain ⟨-, -, -, -, p5, p6, p7, -, p9⟩ := hq
+  have ct := v.relTo (P := fun s₁ s₂ => XArgsTo s₀ t₁₂ m s₁ ∧ XArgsTo s₀' t₁₂' m s₂)
+    fun s₁ s₂ ⟨a₁, a₂⟩ =>
+    ⟨_, _, _, _, a₁.pre hp hs v, a₂.pre hp' hs' v, by
+      simp only [Proof.ChaCha20.xorTo, toR8E_gpr (by decide : Reg.rdi ≠ .r8) (by decide : Reg.rdi ≠ .rsp),
+        toR8E_gpr (by decide : Reg.rsi ≠ .r8) (by decide : Reg.rsi ≠ .rsp),
+        toR8E_gpr (by decide : Reg.rdx ≠ .r8) (by decide : Reg.rdx ≠ .rsp),
+        toR8E_gpr (by decide : Reg.rcx ≠ .r8) (by decide : Reg.rcx ≠ .rsp), toR8E_r8, toR8E_rsp,
+        a₁.rdi, a₁.rsi, a₁.rdx, a₁.rcx, a₁.r11, a₁.rsp, a₂.rdi, a₂.rsi, a₂.rdx, a₂.rcx, a₂.r11, a₂.rsp,
+        cx, dp, L, p5, p6, p7, p9, ht]
+      exact ⟨trivial, trivial, trivial, trivial, trivial, trivial⟩,
+      a₁.hcov hp hs, a₁.hw hp, a₂.hcov hp' hs', a₂.hw hp', by rw [a₁.rsp, a₂.rsp, p7]⟩
+  have after : ∀ {σ₀ s : State} {tt : Addr}, APre e σ₀ → SrcIO σ₀ tt → XArgsTo σ₀ tt m s →
+      WP isa (callX v.callee true) s (AfterT σ₀ tt) := fun hp hs a =>
+    v.wpTo (a.pre hp hs v) (a.hcov hp hs) (a.hw hp) fun _ _ wr cs _ _ ⟨_, _, hg₃, _, hrsi₃⟩ =>
+      ⟨by rw [← hg₃ .rsi (by decide), hrsi₃, toR8E_gpr (by decide) (by decide), a.rcx],
+        by rw [cs _ calleeSaved_rsp, a.rsp], by rw [cs _ (by decide), a.r13],
+        by rw [cs _ (by decide), a.r14], by rw [cs _ (by decide), a.r12], by rw [wr, a.wr]⟩
+  exact (ct.wp fun _ _ h => ⟨after hp hs h.1, after hp' hs' h.2⟩).mono (fun _ _ h => h) fun _ _ h => h.2
 
 end
 
@@ -4588,7 +5177,7 @@ def τS (enc : Bool) : X86_64.Taint.T :=
     bases := [(.r15, ci enc, 0), (.r14, 0, 0)] }
 
 section
-variable {s₀ s₀' : State} (hp : APre e s₀) (hp' : APre e s₀') (hq : pubX86_64 s₀ s₀')
+variable {s₀ s₀' : State} (hp : APre e s₀) (hp' : APre e s₀') (hq : pubX86_64 s₀ s₀') (ht : t₁₂ = t₁₂')
 
 omit hp' in
 include hp in
@@ -4604,7 +5193,7 @@ theorem regions_wf {s : State} (hw : s.wr = s₀.wr) :
 
 include hp in
 omit hp' in
-theorem AfterF.wf {fold pass : Nat} {s : State} (h : AfterF fold pass s₀ s) : X86_64.Taint.Wf (τA e) s := by
+theorem AfterFT.wf {fold pass : Nat} {s : State} (h : AfterFT fold pass s₀ t₁₂ s) : X86_64.Taint.Wf (τA e) s := by
   have hw : s.wr = bif e then [dR s₀, tR s₀, ctxR s₀] else [dR s₀, ctxR s₀] := by rw [h.wr, hp.wr_eq]
   refine ⟨fun _ => regions_wf hp h.wr, fun p hm => ?_⟩
   simp only [τA, List.mem_singleton] at hm
@@ -4612,8 +5201,8 @@ theorem AfterF.wf {fold pass : Nat} {s : State} (h : AfterF fold pass s₀ s) : 
   simp only [X86_64.Taint.region, hw, h.rsi, off_eq]
   cases e <;> simp
 
-include hp hp' hq in
-theorem agreeA {fold pass : Nat} {s₁ s₂ : State} (h₁ : AfterF fold pass s₀ s₁) (h₂ : AfterF fold pass s₀' s₂) :
+include hp hp' hq ht in
+theorem agreeA {fold pass : Nat} {s₁ s₂ : State} (h₁ : AfterFT fold pass s₀ t₁₂ s₁) (h₂ : AfterFT fold pass s₀' t₁₂' s₂) :
     X86_64.Taint.Agree (τA e) s₁ s₂ := by
   have hq' := hq
   obtain ⟨-, -, p3, p4, p5, p6, p7, p8, p9⟩ := hq'
@@ -4625,7 +5214,7 @@ theorem agreeA {fold pass : Nat} {s₁ s₂ : State} (h₁ : AfterF fold pass s�
     · rw [h₁.rsp, h₂.rsp, p7]
     · rw [h₁.r13, h₂.r13, p6]
     · rw [h₁.r14, h₂.r14, dp, dp, p5]
-    · rw [h₁.r12, h₂.r12, tp, tp, p8]
+    · rw [h₁.r12, h₂.r12, ht]
     · rw [h₁.rbx, h₂.rbx, ad, ad, p3]
     · rw [h₁.rbp, h₂.rbp, p4]
   · rw [h₁.wr, h₂.wr, hp.wr_eq, hp'.wr_eq, c, d, t]
@@ -4634,15 +5223,15 @@ theorem agreeA {fold pass : Nat} {s₁ s₂ : State} (h₁ : AfterF fold pass s�
 
 include hp in
 omit hp' in
-theorem AtIte.wf {fold pass : Nat} {s : State} (h : AtIte fold pass s₀ s) : X86_64.Taint.Wf (τS e) s := by
+theorem AtIteT.wf {fold pass : Nat} {s : State} (h : AtIteT fold pass s₀ t₁₂ s) : X86_64.Taint.Wf (τS e) s := by
   have hw : s.wr = bif e then [dR s₀, tR s₀, ctxR s₀] else [dR s₀, ctxR s₀] := by rw [h.inv.wr, hp.wr_eq]
   refine ⟨fun _ => regions_wf hp h.inv.wr, fun p hm => ?_⟩
   simp only [τS, List.mem_cons, List.not_mem_nil, or_false] at hm
   rcases hm with rfl | rfl <;>
     simp only [X86_64.Taint.region, hw, h.inv.r15, h.inv.r14] <;> cases e <;> simp
 
-include hp hp' hq in
-theorem agreeS {fold pass : Nat} {s₁ s₂ : State} (h₁ : AtIte fold pass s₀ s₁) (h₂ : AtIte fold pass s₀' s₂) :
+include hp hp' hq ht in
+theorem agreeS {fold pass : Nat} {s₁ s₂ : State} (h₁ : AtIteT fold pass s₀ t₁₂ s₁) (h₂ : AtIteT fold pass s₀' t₁₂' s₂) :
     X86_64.Taint.Agree (τS e) s₁ s₂ := by
   have hq' := hq
   obtain ⟨-, -, -, -, p5, p6, p7, p8, p9⟩ := hq'
@@ -4654,23 +5243,23 @@ theorem agreeS {fold pass : Nat} {s₁ s₂ : State} (h₁ : AtIte fold pass s�
     · rw [h₁.inv.rsp, h₂.inv.rsp, p7]
     · rw [h₁.inv.r13, h₂.inv.r13, p6]
     · rw [h₁.inv.r14, h₂.inv.r14, dp, dp, p5]
-    · rw [h₁.inv.r12, h₂.inv.r12, tp, tp, p8]
+    · rw [h₁.inv.r12, h₂.inv.r12, ht]
   · rw [h₁.inv.wr, h₂.inv.wr, hp.wr_eq, hp'.wr_eq, c, d, t]
   · intro sl h; simp [τS] at h
   · intro sl h; simp [τS] at h
 
-omit hp' hq in
+omit hp' hq ht in
 include hp in
-theorem Inv.wfS {s : State} (h : Inv s₀ s) : X86_64.Taint.Wf (τS e) s := by
+theorem InvT.wfS {s : State} (h : InvT s₀ t₁₂ s) : X86_64.Taint.Wf (τS e) s := by
   have hw : s.wr = bif e then [dR s₀, tR s₀, ctxR s₀] else [dR s₀, ctxR s₀] := by rw [h.wr, hp.wr_eq]
   refine ⟨fun _ => regions_wf hp h.wr, fun p hm => ?_⟩
   simp only [τS, List.mem_cons, List.not_mem_nil, or_false] at hm
   rcases hm with rfl | rfl <;>
     simp only [X86_64.Taint.region, hw, h.r15, h.r14] <;> cases e <;> simp
 
-include hp hp' hq in
+include hp hp' hq ht in
 /-- As `agreeS`, from the invariant alone. -/
-theorem agreeI {s₁ s₂ : State} (h₁ : Inv s₀ s₁) (h₂ : Inv s₀' s₂) : X86_64.Taint.Agree (τS e) s₁ s₂ := by
+theorem agreeI {s₁ s₂ : State} (h₁ : InvT s₀ t₁₂ s₁) (h₂ : InvT s₀' t₁₂' s₂) : X86_64.Taint.Agree (τS e) s₁ s₂ := by
   have hq' := hq
   obtain ⟨-, -, -, -, p5, p6, p7, p8, p9⟩ := hq'
   obtain ⟨c, d, t⟩ := pub_regs hq
@@ -4682,14 +5271,14 @@ theorem agreeI {s₁ s₂ : State} (h₁ : Inv s₀ s₁) (h₂ : Inv s₀' s₂
     · rw [h₁.rsp, h₂.rsp, p7]
     · rw [h₁.r13, h₂.r13, p6]
     · rw [h₁.r14, h₂.r14, dp, dp, p5]
-    · rw [h₁.r12, h₂.r12, tp, tp, p8]
+    · rw [h₁.r12, h₂.r12, ht]
   · rw [h₁.wr, h₂.wr, hp.wr_eq, hp'.wr_eq, c, d, t]
   · intro sl h; simp [τS] at h
   · intro sl h; simp [τS] at h
 
-omit hp' hq in
+omit hp' hq ht in
 include hp in
-theorem FArgs.hw {fold pass : Nat} (hf : fold ≤ 960) {s : State} (h : FArgs fold pass s₀ s) :
+theorem FArgsT.hw {fold pass : Nat} (hf : fold ≤ 960) {s : State} (h : FArgsT fold pass s₀ t₁₂ s) :
     Covers [⟨off (cx s₀) 608, 64⟩, ⟨off (cx s₀) 672, 64 + mOf fold pass (L s₀)⟩, ⟨off (cx s₀) 128, 320⟩] s.wr := by
   have hm := mOf_le fold pass (L s₀)
   refine covers_sub hp h.wr _ fun r hr => ?_
@@ -4699,9 +5288,9 @@ theorem FArgs.hw {fold pass : Nat} (hf : fold ≤ 960) {s : State} (h : FArgs fo
   · exact ⟨672, rfl, show 672 + (64 + mOf fold pass (L s₀)) ≤ 1696 by omega_using [hf, hm]⟩
   · exact ⟨128, rfl, show 128 + 320 ≤ 1696 by omega_using []⟩
 
-omit hp' hq in
+omit hp' hq ht in
 include hp in
-theorem FArgs.pre (v : Proof.ChaCha20.X86_64.XorImpl) {pass : Nat} {s : State} (h : FArgs v.callee.fold pass s₀ s) :
+theorem FArgsT.pre (v : Proof.ChaCha20.X86_64.XorImpl) {pass : Nat} {s : State} (h : FArgsT v.callee.fold pass s₀ t₁₂ s) :
     (Proof.ChaCha20.xorStack v.stack).pre (s.callEntry.withRegions []
       [⟨off (cx s₀) 608, 64⟩, ⟨off (cx s₀) 672, 64 + mOf v.callee.fold pass (L s₀)⟩, ⟨off (cx s₀) 128, 320⟩]) := by
   have hm := mOf_le v.callee.fold pass (L s₀)
@@ -4717,13 +5306,13 @@ theorem FArgs.pre (v : Proof.ChaCha20.X86_64.XorImpl) {pass : Nat} {s : State} (
 include hp hp' hq in
 /-- The call in the prologue, of any implementation `v` of `vg_chacha20_xor`. -/
 theorem call1_rel (v : Proof.ChaCha20.X86_64.XorImpl) {pass : Nat} :
-    RelCT isa (fun s₁ s₂ => FArgs v.callee.fold pass s₀ s₁ ∧ FArgs v.callee.fold pass s₀' s₂)
+    RelCT isa (fun s₁ s₂ => FArgsT v.callee.fold pass s₀ t₁₂ s₁ ∧ FArgsT v.callee.fold pass s₀' t₁₂' s₂)
       v.callee.inPlace
-      fun s₁ s₂ => AfterF v.callee.fold pass s₀ s₁ ∧ AfterF v.callee.fold pass s₀' s₂ := by
+      fun s₁ s₂ => AfterFT v.callee.fold pass s₀ t₁₂ s₁ ∧ AfterFT v.callee.fold pass s₀' t₁₂' s₂ := by
   obtain ⟨-, -, -, -, p5, p6, p7, -, p9⟩ := hq
   have hfl := v.fold_le
   have ct := v.relIn
-    (P := fun s₁ s₂ => FArgs v.callee.fold pass s₀ s₁ ∧ FArgs v.callee.fold pass s₀' s₂) fun s₁ s₂ ⟨a₁, a₂⟩ =>
+    (P := fun s₁ s₂ => FArgsT v.callee.fold pass s₀ t₁₂ s₁ ∧ FArgsT v.callee.fold pass s₀' t₁₂' s₂) fun s₁ s₂ ⟨a₁, a₂⟩ =>
     ⟨[], _, [], _, a₁.pre hp v, a₂.pre hp' v, by
       simp only [Proof.ChaCha20.xorStack, Proof.ChaCha20.xorX86_64, State.withRegions_gpr,
         State.callEntry_rsp, callEntry_gpr' s₁ (by decide : Reg.rdi ≠ .rsp),
@@ -4738,12 +5327,15 @@ theorem call1_rel (v : Proof.ChaCha20.X86_64.XorImpl) {pass : Nat} :
   exact (ct.wp fun _ _ h => ⟨foldCall_ok v hp h.1, foldCall_ok v hp' h.2⟩).mono (fun _ _ h => h)
     fun _ _ h => h.2
 
-omit hp' hq in
+omit hp' hq ht in
 include hp in
-theorem small_ok {fold pass w : Nat} (hf : fold ≤ 960) (hw : w = 4 ∨ w = 5 ∨ w = 6) {s : State}
-    (h : AtIte fold pass s₀ s) (hle : L s₀ ≤ fold) :
-    WP isa (cryptSmall w) s (After s₀) :=
-  WP.mono (cryptSmall_ok hf hw hp h.inv hle h.ks) fun _ c =>
+theorem small_ok {fold pass w : Nat} (hf : fold ≤ 960) (hw : w = 4 ∨ w = 5 ∨ w = 6) {tb : Bool} {s : State}
+    (h : AtIteT fold pass s₀ t₁₂ s) (hs : tb = true → SrcIO s₀ t₁₂) (hle : L s₀ ≤ fold) :
+    WP isa (cryptSmall w tb) s (AfterT s₀ t₁₂) :=
+  WP.mono (Q := CryptedT s₀ (bif tb then t₁₂ else dp s₀) s) (by
+    cases tb
+    · exact cryptSmall_ok hf hw hp h.inv hle h.ks
+    · exact cryptSmallTo_ok hf hw hp h.inv (hs rfl) hle h.ks) fun _ c =>
     ⟨c.rsi, by rw [c.cs _ calleeSaved_rsp (by decide), h.inv.rsp],
       by rw [c.cs _ (by decide) (by decide), h.inv.r13],
       by rw [c.cs _ (by decide) (by decide), h.inv.r14],
@@ -4805,13 +5397,15 @@ theorem prologueA_taint (enc : Bool) {fold pass wide : Nat} {b : Impl.Poly1305.X
     ∃ h, (taintS.check (τ₀ enc) (prologueA fold pass wide) h).isSome = true := by
   rcases h with ⟨rfl, rfl, rfl, -⟩ | ⟨rfl, rfl, rfl, -⟩ | ⟨rfl, rfl, rfl, -⟩ <;> cases enc <;> taint_decide_sum []
 
-theorem cryptSmall_taint (enc : Bool) {fold pass wide : Nat} {b : Impl.Poly1305.X86_64.Blocks}
-    (h : FoldPoly fold pass wide b) : ∃ h, (taintS.check (τS enc) (cryptSmall wide) h).isSome = true := by
-  rcases h with ⟨-, -, rfl, -⟩ | ⟨-, -, rfl, -⟩ | ⟨-, -, rfl, -⟩ <;> cases enc <;> taint_decide_sum []
+theorem cryptSmall_taint (enc tb : Bool) {fold pass wide : Nat} {b : Impl.Poly1305.X86_64.Blocks}
+    (h : FoldPoly fold pass wide b) : ∃ h, (taintS.check (τS enc) (cryptSmall wide tb) h).isSome = true := by
+  rcases h with ⟨-, -, rfl, -⟩ | ⟨-, -, rfl, -⟩ | ⟨-, -, rfl, -⟩ <;> cases enc <;> cases tb <;>
+    taint_decide_sum []
 
-theorem cryptPre_taint (enc : Bool) {fold pass wide : Nat} {b : Impl.Poly1305.X86_64.Blocks}
-    (h : FoldPoly fold pass wide b) : ∃ h, (taintS.check (τS enc) (cryptPre fold pass wide) h).isSome = true := by
-  rcases h with ⟨rfl, rfl, rfl, -⟩ | ⟨rfl, rfl, rfl, -⟩ | ⟨rfl, rfl, rfl, -⟩ <;> cases enc <;> taint_decide_sum []
+theorem cryptPre_taint (enc tb : Bool) {fold pass wide : Nat} {b : Impl.Poly1305.X86_64.Blocks}
+    (h : FoldPoly fold pass wide b) : ∃ h, (taintS.check (τS enc) (cryptPre fold pass wide tb) h).isSome = true := by
+  rcases h with ⟨rfl, rfl, rfl, -⟩ | ⟨rfl, rfl, rfl, -⟩ | ⟨rfl, rfl, rfl, -⟩ <;> cases enc <;> cases tb <;>
+    taint_decide_sum []
 
 theorem sealMid_taint {fold pass wide : Nat} {b : Impl.Poly1305.X86_64.Blocks} (h : FoldPoly fold pass wide b) :
     ∃ h, (taintS.check (τA true) (sealMid fold b) h).isSome = true := by
@@ -4839,46 +5433,64 @@ variable (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ s₀' : State}
 /-- The code from the entry to the end of the branch on the length, the same
 for `seal` and `open` but for the code between the calls (`mid`). -/
 theorem toPost_rel {enc : Bool} (hp : APre enc s₀) (hp' : APre enc s₀') (hq : pubX86_64 s₀ s₀')
-    {mid : Prog isa} (hmid : RelCT isa (fun s₁ s₂ => AfterF v.callee.fold v.callee.pass s₀ s₁ ∧ AfterF v.callee.fold v.callee.pass s₀' s₂) mid
-      (fun s₁ s₂ => AtIte v.callee.fold v.callee.pass s₀ s₁ ∧ AtIte v.callee.fold v.callee.pass s₀' s₂)) :
+    {t₁ t₂ : Addr} (ht : t₁ = t₂) {tb : Bool} (hs : tb = true → SrcIO s₀ t₁ ∧ SrcIO s₀' t₂) {ent : List Instr}
+    (hent : RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (.block ent)
+      fun s₁ s₂ => s₁ = entryT s₀ t₁ ∧ s₂ = entryT s₀' t₂)
+    {mid : Prog isa} (hmid : RelCT isa (fun s₁ s₂ => AfterFT v.callee.fold v.callee.pass s₀ t₁ s₁ ∧
+        AfterFT v.callee.fold v.callee.pass s₀' t₂ s₂) mid
+      (fun s₁ s₂ => AtIteT v.callee.fold v.callee.pass s₀ t₁ s₁ ∧ AtIteT v.callee.fold v.callee.pass s₀' t₂ s₂)) :
     RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀')
-      (.seq (.block entry) (.seq (prologueA v.callee.fold v.callee.pass v.callee.wide) (.seq v.callee.inPlace
-        (.seq mid (cryptIte v.callee)))))
-      fun s₁ s₂ => After s₀ s₁ ∧ After s₀' s₂ := by
+      (.seq (.block ent) (.seq (prologueA v.callee.fold v.callee.pass v.callee.wide) (.seq v.callee.inPlace
+        (.seq mid (cryptIte v.callee tb)))))
+      fun s₁ s₂ => AfterT s₀ t₁ s₁ ∧ AfterT s₀' t₂ s₂ := by
   have hfl := v.fold_le
   obtain ⟨_, hA⟩ := prologueA_taint enc v.fold_poly
-  have pA := ((RelCT.taint (A := taintS) (P := fun s₁ s₂ => s₁ = entryS s₀ ∧ s₂ = entryS s₀') (τ₀ enc)
-    (fun _ _ h => by rw [h.1, h.2]; exact agree₀ hp hp' hq) hA).wp
-    (F₁ := FArgs v.callee.fold v.callee.pass s₀) (F₂ := FArgs v.callee.fold v.callee.pass s₀') fun _ _ h =>
+  have pA := ((RelCT.taint (A := taintS) (P := fun s₁ s₂ => s₁ = entryT s₀ t₁ ∧ s₂ = entryT s₀' t₂) (τ₀ enc)
+    (fun _ _ h => by rw [h.1, h.2]; exact agree₀ hp hp' hq ht) hA).wp
+    (F₁ := FArgsT v.callee.fold v.callee.pass s₀ t₁) (F₂ := FArgsT v.callee.fold v.callee.pass s₀' t₂) fun _ _ h =>
     ⟨by rw [h.1]; exact prologueA_ok hfl (pass_of v) (wide_of v) hp, by rw [h.2]; exact prologueA_ok hfl (pass_of v) (wide_of v) hp'⟩).mono
     (fun _ _ h => h) fun _ _ h => h.2
-  have hc : ∀ s₁ s₂, (AtIte v.callee.fold v.callee.pass s₀ s₁ ∧ AtIte v.callee.fold v.callee.pass s₀' s₂) →
+  have hc : ∀ s₁ s₂, (AtIteT v.callee.fold v.callee.pass s₀ t₁ s₁ ∧ AtIteT v.callee.fold v.callee.pass s₀' t₂ s₂) →
       isa.eval .b s₁ = isa.eval .b s₂ := fun s₁ s₂ h => by
     have : L s₀ = L s₀' := by simp only [L, hq.2.2.2.2.2.1]
     simp [eval, h.1.cf, h.2.cf, this]
-  obtain ⟨_, hS⟩ := cryptSmall_taint enc v.fold_poly
-  obtain ⟨_, hX⟩ := cryptPre_taint enc v.fold_poly
+  obtain ⟨_, hS⟩ := cryptSmall_taint enc tb v.fold_poly
+  obtain ⟨_, hX⟩ := cryptPre_taint enc tb v.fold_poly
   have small := (RelCT.taint (A := taintS)
-    (P := fun s₁ s₂ => (AtIte v.callee.fold v.callee.pass s₀ s₁ ∧ AtIte v.callee.fold v.callee.pass s₀' s₂) ∧
+    (P := fun s₁ s₂ => (AtIteT v.callee.fold v.callee.pass s₀ t₁ s₁ ∧ AtIteT v.callee.fold v.callee.pass s₀' t₂ s₂) ∧
       isa.eval .b s₁ = some true)
-    (τS enc) (fun _ _ h => agreeS hp hp' hq h.1.1 h.1.2) hS).wp (F₁ := After s₀) (F₂ := After s₀')
+    (τS enc) (fun _ _ h => agreeS hp hp' hq ht h.1.1 h.1.2) hS).wp (F₁ := AfterT s₀ t₁) (F₂ := AfterT s₀' t₂)
     fun s₁ s₂ h => by
       have e₁ := h.2
       have e₂ := (hc _ _ h.1).symm.trans h.2
       simp only [eval, h.1.1.cf, h.1.2.cf, Option.some.injEq, decide_eq_true_eq] at e₁ e₂
-      exact ⟨small_ok hp hfl (wide_of v) h.1.1 (by omega_using [e₁]), small_ok hp' hfl (wide_of v) h.1.2 (by omega_using [e₂])⟩
+      exact ⟨small_ok hp hfl (wide_of v) h.1.1 (fun e => (hs e).1) (by omega_using [e₁]),
+        small_ok hp' hfl (wide_of v) h.1.2 (fun e => (hs e).2) (by omega_using [e₂])⟩
   have hLL : L s₀' = L s₀ := by simp only [L, hq.2.2.2.2.2.1]
-  have args := (RelCT.taint (A := taintS)
-    (P := fun s₁ s₂ => (AtIte v.callee.fold v.callee.pass s₀ s₁ ∧ AtIte v.callee.fold v.callee.pass s₀' s₂) ∧
-      isa.eval .b s₁ = some false)
-    (τS enc) (fun _ _ h => agreeS hp hp' hq h.1.1 h.1.2) hX).wp
-    (F₁ := XArgsM s₀ (mOf v.callee.fold v.callee.pass (L s₀)))
-    (F₂ := XArgsM s₀' (mOf v.callee.fold v.callee.pass (L s₀)))
-    fun s₁ s₂ h => ⟨WP.mono (cryptPre_ok v (pass_of v) hp h.1.1.inv) fun _ h => h.1,
-      WP.mono (cryptPre_ok v (pass_of v) hp' h.1.2.inv) fun _ h => by rw [← hLL]; exact h.1⟩
-  have ite := RelCT.ite hc (small.mono (fun _ _ h => h) fun _ _ h => h.2)
-    ((args.mono (fun _ _ h => h) fun _ _ h => h.2).seq (callM_rel hp hp' hq v _))
-  exact (entry_rel hp hp' hq).seq (pA.seq ((call1_rel hp hp' hq v).seq (hmid.seq ite)))
+  have big : RelCT isa (fun s₁ s₂ => (AtIteT v.callee.fold v.callee.pass s₀ t₁ s₁ ∧
+      AtIteT v.callee.fold v.callee.pass s₀' t₂ s₂) ∧ isa.eval .b s₁ = some false) (cryptBig v.callee tb)
+      fun s₁ s₂ => AfterT s₀ t₁ s₁ ∧ AfterT s₀' t₂ s₂ := by
+    cases tb
+    · exact ((RelCT.taint (A := taintS)
+        (P := fun s₁ s₂ => (AtIteT v.callee.fold v.callee.pass s₀ t₁ s₁ ∧
+          AtIteT v.callee.fold v.callee.pass s₀' t₂ s₂) ∧ isa.eval .b s₁ = some false)
+        (τS enc) (fun _ _ h => agreeS hp hp' hq ht h.1.1 h.1.2) hX).wp
+        (F₁ := XArgsMT s₀ t₁ (mOf v.callee.fold v.callee.pass (L s₀)))
+        (F₂ := XArgsMT s₀' t₂ (mOf v.callee.fold v.callee.pass (L s₀)))
+        fun s₁ s₂ h => ⟨WP.mono (cryptPre_ok v (pass_of v) hp h.1.1.inv) fun _ h => h.1,
+          WP.mono (cryptPre_ok v (pass_of v) hp' h.1.2.inv) fun _ h => by rw [← hLL]; exact h.1⟩).mono
+        (fun _ _ h => h) (fun _ _ h => h.2) |>.seq (callM_rel hp hp' hq v _)
+    · exact ((RelCT.taint (A := taintS)
+        (P := fun s₁ s₂ => (AtIteT v.callee.fold v.callee.pass s₀ t₁ s₁ ∧
+          AtIteT v.callee.fold v.callee.pass s₀' t₂ s₂) ∧ isa.eval .b s₁ = some false)
+        (τS enc) (fun _ _ h => agreeS hp hp' hq ht h.1.1 h.1.2) hX).wp
+        (F₁ := XArgsTo s₀ t₁ (mOf v.callee.fold v.callee.pass (L s₀)))
+        (F₂ := XArgsTo s₀' t₂ (mOf v.callee.fold v.callee.pass (L s₀)))
+        fun s₁ s₂ h => ⟨WP.mono (cryptPreTo_ok v (pass_of v) hp h.1.1.inv (hs rfl).1) fun _ h => h.1,
+          WP.mono (cryptPreTo_ok v (pass_of v) hp' h.1.2.inv (hs rfl).2) fun _ h => by rw [← hLL]; exact h.1⟩).mono
+        (fun _ _ h => h) (fun _ _ h => h.2) |>.seq (callTo_rel hp hp' hq v _ (hs rfl).1 (hs rfl).2 ht)
+  have ite := RelCT.ite hc (small.mono (fun _ _ h => h) fun _ _ h => h.2) big
+  exact hent.seq (pA.seq ((call1_rel hp hp' hq v).seq (hmid.seq ite)))
 
 theorem seal_rel (h₀ : preX86_64 true s₀) (h₀' : preX86_64 true s₀') (hq : pubX86_64 s₀ s₀') :
     RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') («seal» v.callee v.poly) fun _ _ => True := by
@@ -4888,13 +5500,13 @@ theorem seal_rel (h₀ : preX86_64 true s₀) (h₀' : preX86_64 true s₀') (hq
   obtain ⟨_, hmid⟩ := sealMid_taint v.fold_poly
   obtain ⟨_, hpost⟩ := sealPost_taint v.fold_poly
   have mid := ((RelCT.taint (A := taintS)
-    (P := fun s₁ s₂ => AfterF v.callee.fold v.callee.pass s₀ s₁ ∧ AfterF v.callee.fold v.callee.pass s₀' s₂) (τA true)
-    (fun _ _ h => agreeA hp hp' hq h.1 h.2) hmid).wp (F₁ := AtIte v.callee.fold v.callee.pass s₀)
-    (F₂ := AtIte v.callee.fold v.callee.pass s₀') fun _ _ h =>
+    (P := fun s₁ s₂ => AfterFT v.callee.fold v.callee.pass s₀ (tp s₀) s₁ ∧ AfterFT v.callee.fold v.callee.pass s₀' (tp s₀') s₂) (τA true)
+    (fun _ _ h => agreeA hp hp' hq (tp_pub hq) h.1 h.2) hmid).wp (F₁ := AtIteT v.callee.fold v.callee.pass s₀ (tp s₀))
+    (F₂ := AtIteT v.callee.fold v.callee.pass s₀' (tp s₀')) fun _ _ h =>
       ⟨sealMid_ok hfl v.poly hp h.1, sealMid_ok hfl v.poly hp' h.2⟩).mono (fun _ _ h => h) fun _ _ h => h.2
-  have post := RelCT.taint (A := taintS) (P := fun s₁ s₂ => After s₀ s₁ ∧ After s₀' s₂) (τ₁ true)
-    (fun _ _ h => agree₁ hp hp' hq h.1 h.2) hpost
-  have := (toPost_rel v hp hp' hq mid).seq post
+  have post := RelCT.taint (A := taintS) (P := fun s₁ s₂ => AfterT s₀ (tp s₀) s₁ ∧ AfterT s₀' (tp s₀') s₂) (τ₁ true)
+    (fun _ _ h => agree₁ hp hp' hq (tp_pub hq) h.1 h.2) hpost
+  have := (toPost_rel v hp hp' hq (tp_pub hq) (tb := false) (fun h => nomatch h) (entry_rel hp hp' hq) mid).seq post
   refine RelCT.of_exec seal_exec ?_
   exact RelCT.of_exec (fun e => by
     cases e with | seq e₀ e => cases e with | seq eA e => cases e with | seq eC e => cases e with
@@ -4903,21 +5515,21 @@ theorem seal_rel (h₀ : preX86_64 true s₀) (h₀' : preX86_64 true s₀') (hq
     simp only [List.append_assoc] at this ⊢
     exact this) this
 
-theorem body_rel (h₀ : preX86_64 false s₀) (h₀' : preX86_64 false s₀') (hq : pubX86_64 s₀ s₀') :
+theorem body_rel (hp : APre false s₀) (hp' : APre false s₀') (hq : pubX86_64 s₀ s₀') (hs : sp s₀ = sp s₀')
+    (hsrc : SrcIO s₀ (sp s₀)) (hsrc' : SrcIO s₀' (sp s₀')) :
     RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (openBody v.callee v.poly) fun _ _ => True := by
-  have hp := APre.of _ h₀
-  have hp' := APre.of _ h₀'
   have hfl := v.fold_le
   obtain ⟨_, hmid⟩ := openMid_taint v.fold_poly
   obtain ⟨_, hpost⟩ := openPost_taint v.fold_poly
   have mid := ((RelCT.taint (A := taintS)
-    (P := fun s₁ s₂ => AfterF v.callee.fold v.callee.pass s₀ s₁ ∧ AfterF v.callee.fold v.callee.pass s₀' s₂) (τA false)
-    (fun _ _ h => agreeA hp hp' hq h.1 h.2) hmid).wp (F₁ := AtIte v.callee.fold v.callee.pass s₀)
-    (F₂ := AtIte v.callee.fold v.callee.pass s₀') fun _ _ h =>
-      ⟨openMid_ok hfl v.poly hp h.1, openMid_ok hfl v.poly hp' h.2⟩).mono (fun _ _ h => h) fun _ _ h => h.2
-  have post := RelCT.taint (A := taintS) (P := fun s₁ s₂ => After s₀ s₁ ∧ After s₀' s₂) (τ₁ false)
-    (fun _ _ h => agree₁ hp hp' hq h.1 h.2) hpost
-  have := (toPost_rel v hp hp' hq mid).seq post
+    (P := fun s₁ s₂ => AfterFT v.callee.fold v.callee.pass s₀ (sp s₀) s₁ ∧
+      AfterFT v.callee.fold v.callee.pass s₀' (sp s₀') s₂) (τA false)
+    (fun _ _ h => agreeA hp hp' hq hs h.1 h.2) hmid).wp (F₁ := AtIteT v.callee.fold v.callee.pass s₀ (sp s₀))
+    (F₂ := AtIteT v.callee.fold v.callee.pass s₀' (sp s₀')) fun _ _ h =>
+      ⟨openMid_ok hfl v.poly hp hsrc.1 h.1, openMid_ok hfl v.poly hp' hsrc'.1 h.2⟩).mono (fun _ _ h => h) fun _ _ h => h.2
+  have post := RelCT.taint (A := taintS) (P := fun s₁ s₂ => AfterT s₀ (sp s₀) s₁ ∧ AfterT s₀' (sp s₀') s₂)
+    (τ₁ false) (fun _ _ h => agree₁ hp hp' hq hs h.1 h.2) hpost
+  have := (toPost_rel v hp hp' hq hs (tb := true) (fun _ => ⟨hsrc, hsrc'⟩) (entryO_rel hp hp' hq) mid).seq post
   refine RelCT.of_exec open_exec ?_
   exact RelCT.of_exec (fun e => by
     cases e with | seq e₀ e => cases e with | seq eA e => cases e with | seq eC e => cases e with
