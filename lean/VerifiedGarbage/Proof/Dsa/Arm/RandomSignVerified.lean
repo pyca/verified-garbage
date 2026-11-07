@@ -20,6 +20,7 @@ public import VerifiedGarbage.Proof.Dsa.Arm.SignCorrect
 public import VerifiedGarbage.Proof.Dsa.Arm.SignCT
 public import VerifiedGarbage.Proof.Dsa.Arm.PrevalidatedSign
 public import VerifiedGarbage.Proof.Dsa.Arm.PrevalidatedSignCT
+public import VerifiedGarbage.Proof.Dsa.SignContractWith
 import VerifiedGarbage.Proof.Dsa.Arm.PrevalidatedVerified
 
 /-! # The 32-bit ARM randomized signers meet their contracts
@@ -49,8 +50,8 @@ def randomSignSat : State where
   rd := [⟨0x2000, 424⟩, ⟨0x5000, 0⟩, ⟨0x6000, 0⟩, ⟨0x20000, 36⟩]
   wr := [⟨0x1000, 40⟩, ⟨0x7000, 8⟩, ⟨0x8000, 16896⟩]
 
-theorem randomSign_satisfiable : ∃ s, (Spec.Dsa.randomSignContract Arm.abi 144).pre s := by
-  sig_implies_sat [Spec.Dsa.randomSignContract, Spec.Dsa.randomSignSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+theorem randomSign_satisfiable : ∃ s, (randomSignCheckedContract Arm.abi 144).pre s := by
+  sig_implies_sat [randomSignCheckedContract, Spec.Dsa.randomSignSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val, Arm.State.addr, Arm.stackArgAddr, BitVec.add_zero]
     [randomSignSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using randomSignSat
 
@@ -71,23 +72,23 @@ def prevalidatedSigner : Signer where
   stack := by decide +kernel
 
 theorem randomSign_verified (name : String) :
-    Verified Arm.target (code name (Entry.operation true)) (Spec.Dsa.randomSignContract Arm.abi 144) :=
+    Verified Arm.target (code name (Entry.operation true)) (randomSignCheckedContract Arm.abi 144) :=
   ⟨fun s h => randomSign_correct checkedSigner name s h rfl,
     fun s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ => randomSign_constantTime checkedSigner name s₁ s₂ t₁ t₂ u₁ u₂ ⟨h₁, rfl⟩ ⟨h₂, rfl⟩,
     randomSign_satisfiable⟩
 
 /-- The randomized signer, calling the registered `vg_dsa_sign`. -/
 theorem randomSigning_verified : Verified Arm.target (code "vg_dsa_sign" (Entry.operation true))
-    (Spec.Dsa.randomSignContract Arm.abi 144) :=
+    (randomSignCheckedContract Arm.abi 144) :=
   randomSign_verified _
 
 theorem randomPrevalidated_pre {s : State} (h : (Spec.Dsa.randomSignPrevalidatedContract Arm.abi 144).pre s) :
-    (Spec.Dsa.randomSignContract Arm.abi 144).pre s ∧ RValid prevalidatedSigner s := by
+    (randomSignCheckedContract Arm.abi 144).pre s ∧ RValid prevalidatedSigner s := by
   sig_pre [Spec.Dsa.randomSignPrevalidatedContract, Spec.Dsa.randomSignSig, Arm.abi, Arm.argRegs,
     Arm.reduceClassify, Arm.Loc.val, Arm.State.addr, Arm.stackArgAddr, BitVec.add_zero] at h
   sig_split h
   refine ⟨?_, by assumption⟩
-  sig_pre [Spec.Dsa.randomSignContract, Spec.Dsa.randomSignSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+  sig_pre [randomSignCheckedContract, Spec.Dsa.randomSignSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val, Arm.State.addr, Arm.stackArgAddr, BitVec.add_zero]
   sig_and_intros <;> with_reducible assumption
 

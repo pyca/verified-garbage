@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Dsa.X86.RandomFrame
 public import VerifiedGarbage.Proof.Framework.X86.Call
 public import VerifiedGarbage.Spec.Dsa.RandomSign
 public import VerifiedGarbage.Proof.Dsa.X86.VerifyingABI
+public import VerifiedGarbage.Proof.Dsa.SignContractWith
 
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
@@ -90,9 +91,9 @@ structure RandomSignABI (s : State) : Prop where
   keyLength : (arg s 4).toNat = 3 * (arg s 5).toNat + 2 * (arg s 6).toNat
   scratchLength : Spec.Dsa.randomSignScratchWords (arg s 5).toNat ≤ (arg s 12).toNat
 
-theorem randomSignABI_of {s : State} (h : (Spec.Dsa.randomSignContract abi 232).pre s) :
+theorem randomSignABI_of {s : State} (h : (randomSignCheckedContract abi 232).pre s) :
     RandomSignABI s := by
-  sig_pre [Spec.Dsa.randomSignContract, Spec.Dsa.randomSignSig, abi, argSlots, argVal, argBytes,
+  sig_pre [randomSignCheckedContract, Spec.Dsa.randomSignSig, abi, argSlots, argVal, argBytes,
     stackBelow] at h
   sig_split h
   constructor <;> with_reducible assumption
