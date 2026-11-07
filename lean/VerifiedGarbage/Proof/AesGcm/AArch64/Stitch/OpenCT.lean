@@ -101,7 +101,7 @@ theorem openBlk_ok {H : Block} {s₀ t s₂ s₂c s₂' : State} {x : List Byte}
     (g₂c : s₂c.gpr = s₂.gpr) (rd₂c : s₂c.rd = s₂.rd) (wr₂c : s₂c.wr = s₂.wr)
     (F₂c : Frame [workR W, ⟨D, n⟩] t.mem s₂c.mem) (key₂c : KeyAt H s₂c.mem W)
     (hH₂c : blockAt s₂c.mem (Ctx + BitVec.ofNat 64 240) = H)
-    (hm : Stitch.SMid Ctx (W + BitVec.ofNat 64 16) W SP H x icb R D n c s₂c s₂') :
+    (hm : Stitch.SMid Ctx (W + BitVec.ofNat 64 16) W SP H x icb R D D n c s₂c s₂') :
     WP isa (.block (Impl.AesGcm.AArch64.Stitch.whole ++ ([.add .x .x23 .x23 .x9, .sub .x .x24 .x26 .x9, imm .x25 0] : List Instr) ++
         absSeg2 16)) s₂' fun s₆ => ∃ s₃ : State, ∃ X : Addr,
       Mid Ctx W SP H R n D (BitVec.ofNat 64 tl) X t s₃ ∧

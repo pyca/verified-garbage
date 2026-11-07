@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Gcm.StreamTo
 
 /-!
 # AES-GCM on AArch64, interleaved: the first bytes
@@ -34,7 +35,7 @@ open VG.Proof.Gcm (Ctr xorKs)
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt blocksAt ghash blocks)
 open VG.Proof.Gcm (blocks_append)
-open VG.Proof.Gcm.AArch64.Stitch (KPre EPost DPost TblOk Gh8Ok)
+open VG.Proof.Gcm.AArch64.Stitch (KPre KPreM EPost DPost TblOk Gh8Ok)
 
 /-- The bytes the interleaved loop takes. -/
 abbrev pre (n : Nat) : Nat := 128 * (n / 128)
@@ -67,53 +68,108 @@ def TbOk (Ctx St W SP : Addr) (H : Block) (tb : List Instr) (s : State) : Prop :
     WP isa (.block tb) u fun t => TblOk t.mem W H ∧ Frame [tblR W] u.mem t.mem ∧
       (∀ r, r ≠ .x5 → t.gpr r = u.gpr r) ∧ t.sp = u.sp ∧ t.rd = u.rd ∧ t.wr = u.wr
 
-/-- After the interleaved loop, from `s`: the first `pre n` bytes encrypted
-(or decrypted), the counter past them, and `Y` continued over `c`. -/
-structure SMid (Ctx St W SP : Addr) (H : Block) (x : List Byte) (icb : Block) (R : Nat) (D : Addr)
+/-- `SIn` for the decryption from the `n` bytes at `D` to `O`: over them
+(`to` false, `O = D`), or out of place (`to`), to `O` in `x15`, apart from
+them. -/
+structure SInM (Ctx St W SP : Addr) (H : Block) (x : List Byte) (icb : Block) (R : Nat) (D O : Addr)
+    (n : Nat) (to : Bool) (s : State) : Prop where
+  env : Env Ctx St W SP s
+  x22 : s.gpr .x22 = BitVec.ofNat 64 R
+  rounds : R = 10 ∨ R = 12 ∨ R = 14
+  x23 : s.gpr .x23 = D
+  x26 : s.gpr .x26 = BitVec.ofNat 64 n
+  src : DataOk St W s D n
+  sctx : (⟨Ctx, 256⟩ : Region).Disjoint ⟨D, n⟩
+  out : DataW Ctx St W s O n
+  mode : cond to (s.gpr .x15 = O ∧ (⟨D, n⟩ : Region).Disjoint ⟨O, n⟩) (O = D)
+  hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H
+  cb : blockAt s.mem (St + BitVec.ofNat 64 48) = icb
+  y : blockAt s.mem (St + BitVec.ofNat 64 16) = ghash H (blocks x)
+  xm : x.length % 16 = 0
+
+theorem SIn.toM {Ctx St W SP : Addr} {H : Block} {x : List Byte} {icb : Block} {R : Nat} {D : Addr} {n : Nat}
+    {s : State} (h : SIn Ctx St W SP H x icb R D n s) : SInM Ctx St W SP H x icb R D D n false s :=
+  ⟨h.env, h.x22, h.rounds, h.x23, h.x26, h.data.ok, h.data.ctx, h.data, rfl, h.hH, h.cb, h.y, h.xm⟩
+
+/-- After the interleaved loop, from `s`: the first `pre n` bytes at `D`
+encrypted (or decrypted) to `O`, the counter past them, and `Y` continued
+over `c`. -/
+structure SMid (Ctx St W SP : Addr) (H : Block) (x : List Byte) (icb : Block) (R : Nat) (D O : Addr)
     (n : Nat) (c : Mem → List Byte) (s t : State) : Prop where
   env : Env Ctx St W SP t
-  gpr : ∀ r, r ∉ [Reg.x5, .x9, .x10, .x11, .x12, .x13, .x14] → t.gpr r = s.gpr r
-  data : bytesAt t.mem D (pre n) = xorKs (ciphOf s.mem Ctx R) icb 0 (bytesAt s.mem D (pre n))
+  gpr : ∀ r, r ∉ [Reg.x5, .x9, .x10, .x11, .x12, .x13, .x14, .x15] → t.gpr r = s.gpr r
+  data : bytesAt t.mem O (pre n) = xorKs (ciphOf s.mem Ctx R) icb 0 (bytesAt s.mem D (pre n))
   ctr : Ctr t.mem (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf s.mem Ctx R) icb (pre n)
   y : blockAt t.mem (St + BitVec.ofNat 64 16) = ghash H (blocks (x ++ c t.mem))
-  frame : Frame (sFrame St W D n) s.mem t.mem
+  frame : Frame (sFrame St W O n) s.mem t.mem
   sp : t.sp = s.sp
   rd : t.rd = s.rd
   wr : t.wr = s.wr
+
+theorem notMem_k15 {r : Reg} (h : r ∉ [Reg.x5, .x9, .x10, .x11, .x12, .x13, .x14, .x15]) :
+    r ∉ Reg.x15 :: Gcm.AArch64.Stitch.kRegs := by
+  simp only [Gcm.AArch64.Stitch.kRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at h ⊢
+  exact ⟨h.2.2.2.2.2.2.2, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2.1, h.2.2.2.2.2.1, h.2.2.2.2.2.2.1⟩
 
 section
 variable {Ctx St W SP : Addr} (L : Lay Ctx St W)
 include L
 
 /-- The loops' precondition, from the environment and the table. -/
-theorem kpre_of {t : State} {R : Nat} {D : Addr} {n : Nat} (he : Env Ctx St W SP t)
+theorem kpre_of {t : State} {R : Nat} {D O : Addr} {n : Nat} {to : Bool} (he : Env Ctx St W SP t)
     (h22 : t.gpr .x22 = BitVec.ofNat 64 R) (hR : R = 10 ∨ R = 12 ∨ R = 14) (h23 : t.gpr .x23 = D)
-    (h26 : t.gpr .x26 = BitVec.ofNat 64 n) (hd : DataW Ctx St W t D n) (h1 : 128 ≤ n)
-    (tok : TblOk t.mem W (blockAt t.mem (Ctx + BitVec.ofNat 64 240))) : KPre t := by
-  have hn := hd.ok.lt
+    (h26 : t.gpr .x26 = BitVec.ofNat 64 n) (hd : DataOk St W t D n) (hc : (⟨Ctx, 256⟩ : Region).Disjoint ⟨D, n⟩)
+    (ho : DataW Ctx St W t O n) (hm : cond to (t.gpr .x15 = O ∧ (⟨D, n⟩ : Region).Disjoint ⟨O, n⟩) (O = D))
+    (h1 : 128 ≤ n) (tok : TblOk t.mem W (blockAt t.mem (Ctx + BitVec.ofNat 64 240))) : KPreM t to := by
+  have hn := hd.lt
   have hnb : Gcm.AArch64.Stitch.nb t = n / 128 := by
     simp only [Gcm.AArch64.Stitch.nb, h26, toNat_ofNat_of_lt hn]
   have hp : 128 * (n / 128) ≤ n := Nat.mul_div_le n 128
+  have hop : Gcm.AArch64.Stitch.op t to = O := by
+    cases to with
+    | false => exact h23.trans hm.symm
+    | true => exact hm.1
   obtain ⟨e19, e20, e21, -, perm⟩ := he
   subst e19 e20 e21 h23
-  refine ⟨by simp only [Gcm.AArch64.Stitch.rounds, h22, toNat_ofNat_of_lt (show R < 2 ^ 64 by omega_arith)]; exact hR,
-    by rw [hnb]; omega_arith,
-    perm.ctx _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩,
-    perm.stW (d := 16) (n := 16) (by decide), perm.stW (d := 48) (n := 16) (by decide),
-    by rw [hnb]; exact covers_prefix hd.wr hp _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩,
-    perm.wR (d := 512) (n := 192) (by decide), ?_, ?_, ?_, ?_,
-    Offset.disjoint _ (.inl (by decide)) (by decide) (by decide),
-    by rw [hnb]; change (t.gpr .x23).toNat + 128 * (n / 128) ≤ 2 ^ 64; have := hd.ok.wrap; omega_arith, L.cw,
-    by change (t.gpr .x19).toNat + 704 ≤ 2 ^ 64; have := L.ww; omega_arith,
-    by change (t.gpr .x20).toNat + 64 ≤ 2 ^ 64; have := L.sw; omega_arith, tok⟩
-  · simp only [Gcm.AArch64.Stitch.dR, Gcm.AArch64.Stitch.kR, hnb]
-    exact hd.ctx.symm.sub_left (Region.sub_prefix hp)
-  · simp only [Gcm.AArch64.Stitch.dR, Gcm.AArch64.Stitch.yR, hnb]
-    exact (hd.ok.st.sub_left (Region.sub_prefix hp)).sub_right (Lay.stSub (by decide))
-  · simp only [Gcm.AArch64.Stitch.dR, Gcm.AArch64.Stitch.cR, hnb]
-    exact (hd.ok.st.sub_left (Region.sub_prefix hp)).sub_right (Lay.stSub (by decide))
-  · simp only [Gcm.AArch64.Stitch.dR, Gcm.AArch64.Stitch.tR, hnb]
-    exact (hd.ok.w.sub_left (Region.sub_prefix hp)).sub_right (Lay.wSub (by decide))
+  have hR' : Gcm.AArch64.Stitch.rounds t = R := by
+    simp only [Gcm.AArch64.Stitch.rounds, h22, toNat_ofNat_of_lt (show R < 2 ^ 64 by omega_arith)]
+  exact {
+    rounds := hR' ▸ hR
+    nb1 := by rw [hnb]; omega_arith
+    k_in := perm.ctx _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
+    y_in := perm.stW (d := 16) (n := 16) (by decide)
+    c_in := perm.stW (d := 48) (n := 16) (by decide)
+    d_in := by rw [hnb]; exact covers_prefix hd.rd hp _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
+    o_in := by
+      rw [hnb, hop]; exact covers_prefix ho.wr hp _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
+    t_in := perm.wR (d := 512) (n := 192) (by decide)
+    d_k := by
+      simp only [Gcm.AArch64.Stitch.dR, Gcm.AArch64.Stitch.kR, hnb]
+      exact hc.symm.sub_left (Region.sub_prefix hp)
+    o_k := by
+      simp only [Gcm.AArch64.Stitch.oR, Gcm.AArch64.Stitch.kR, hnb, hop]
+      exact ho.ctx.symm.sub_left (Region.sub_prefix hp)
+    o_y := by
+      simp only [Gcm.AArch64.Stitch.oR, Gcm.AArch64.Stitch.yR, hnb, hop]
+      exact (ho.ok.st.sub_left (Region.sub_prefix hp)).sub_right (Lay.stSub (by decide))
+    o_c := by
+      simp only [Gcm.AArch64.Stitch.oR, Gcm.AArch64.Stitch.cR, hnb, hop]
+      exact (ho.ok.st.sub_left (Region.sub_prefix hp)).sub_right (Lay.stSub (by decide))
+    o_t := by
+      simp only [Gcm.AArch64.Stitch.oR, Gcm.AArch64.Stitch.tR, hnb, hop]
+      exact (ho.ok.w.sub_left (Region.sub_prefix hp)).sub_right (Lay.wSub (by decide))
+    d_o := fun h => by
+      subst h
+      obtain ⟨-, hdo⟩ := hm
+      simp only [Gcm.AArch64.Stitch.dR, Gcm.AArch64.Stitch.oR, hnb, hop]
+      exact (hdo.sub_left (Region.sub_prefix hp)).sub_right (Region.sub_prefix hp)
+    y_c := Offset.disjoint _ (.inl (by decide)) (by decide) (by decide)
+    wrap_d := by rw [hnb]; change (t.gpr .x23).toNat + 128 * (n / 128) ≤ 2 ^ 64; have := hd.wrap; omega_arith
+    wrap_o := by rw [hnb, hop]; have := ho.ok.wrap; omega_arith
+    wrap_k := L.cw
+    wrap_t := by change (t.gpr .x19).toNat + 704 ≤ 2 ^ 64; have := L.ww; omega_arith
+    wrap_s := by change (t.gpr .x20).toNat + 64 ≤ 2 ^ 64; have := L.sw; omega_arith
+    tbl := tok }
 
 /-- The table is apart from the context, the state and the data. -/
 theorem tbl_ctx : ∀ r ∈ [tblR W], (⟨Ctx, 256⟩ : Region).Disjoint r := by
@@ -125,15 +181,15 @@ theorem tbl_st {d k : Nat} (h : d + k ≤ 80) : ∀ r ∈ [tblR W], (⟨St + Bit
   exact (L.sb.sub_left (Lay.stSub h)).sub_right (Offset.sub W (by decide) (by decide))
 
 /-- The interleaved loop `k`, the table written first if there are any
-batches of eight blocks, given what `k` leaves from a state of `KPre`. -/
-theorem stitch_core {H : Block} {x : List Byte} {icb : Block} {R : Nat} {D : Addr} {n : Nat} {s : State}
-    {tb : List Instr} (htb : TbOk Ctx St W SP H tb s) (hs : SIn Ctx St W SP H x icb R D n s)
+batches of eight blocks, given what `k` leaves from a state of `KPreM`. -/
+theorem stitch_core {H : Block} {x : List Byte} {icb : Block} {R : Nat} {D O : Addr} {n : Nat} {to : Bool}
+    {s : State} {tb : List Instr} (htb : TbOk Ctx St W SP H tb s) (hs : SInM Ctx St W SP H x icb R D O n to s)
     {k : Prog isa} {c : Mem → List Byte} (h0 : n / 128 = 0 → ∀ m, c m = [])
-    (hk : ∀ t, KPre t → Env Ctx St W SP t → Frame [tblR W] s.mem t.mem →
+    (hk : ∀ t, KPreM t to → Env Ctx St W SP t → Frame [tblR W] s.mem t.mem →
       (∀ r, r ≠ .x5 → r ≠ .x9 → t.gpr r = s.gpr r) → t.sp = s.sp → t.rd = s.rd → t.wr = s.wr →
-      WP isa k t (SMid Ctx St W SP H x icb R D n c s)) :
-    WP isa (Impl.AesGcm.AArch64.Stitch.stitched [] tb k) s (SMid Ctx St W SP H x icb R D n c s) := by
-  have hn := hs.data.ok.lt
+      WP isa k t (SMid Ctx St W SP H x icb R D O n c s)) :
+    WP isa (Impl.AesGcm.AArch64.Stitch.stitched [] tb k) s (SMid Ctx St W SP H x icb R D O n c s) := by
+  have hn := hs.src.lt
   rw [Impl.AesGcm.AArch64.Stitch.stitched, WP.seq_iff, WP.block_cons_iff]
   refine ⟨_, exec_lsr_x (sh := 7) (by decide), WP.block_nil ?_⟩
   generalize hs₁ : s.write .x .x9 (s.read .x .x26 >>> 7) = s₁
@@ -171,26 +227,32 @@ theorem stitch_core {H : Block} {x : List Byte} {icb : Block} {R : Nat} {D : Add
       rcases hr with rfl | rfl | rfl <;> decide)) (by rw [spt, sp₁]) (by rw [rdt, rd₁]) (by rw [wrt, wr₁])
     have hH : blockAt t.mem (Ctx + BitVec.ofNat 64 240) = H := by
       rw [blockAt_frame ft fun r hr => (tbl_ctx L r hr).sub_left (Lay.ctxSub (by decide)), hs.hH]
+    have hm : cond to (t.gpr .x15 = O ∧ (⟨D, n⟩ : Region).Disjoint ⟨O, n⟩) (O = D) := by
+      have := hs.mode
+      cases to with
+      | false => exact this
+      | true => exact ⟨by rw [gts _ (by decide) (by decide)]; exact this.1, this.2⟩
     refine hk t (kpre_of L het (by rw [gts _ (by decide) (by decide), hs.x22]) hs.rounds
       (by rw [gts _ (by decide) (by decide), hs.x23]) (by rw [gts _ (by decide) (by decide), hs.x26])
-      (hs.data.of_eq (by rw [rdt, rd₁]) (by rw [wrt, wr₁])) h1 (hH ▸ tok)) het ft gts (by rw [spt, sp₁])
-      (by rw [rdt, rd₁]) (by rw [wrt, wr₁])
+      (hs.src.of_eq (by rw [rdt, rd₁]) (by rw [wrt, wr₁])) hs.sctx (hs.out.of_eq (by rw [rdt, rd₁]) (by rw [wrt, wr₁]))
+      hm h1 (hH ▸ tok)) het ft gts (by rw [spt, sp₁]) (by rw [rdt, rd₁]) (by rw [wrt, wr₁])
 
 /-- `SMid`, from what the loops leave. -/
-theorem smid_of {H : Block} {x : List Byte} {icb : Block} {R : Nat} {D : Addr} {n : Nat} {s t t' : State}
-    {c : Mem → List Byte} (hs : SIn Ctx St W SP H x icb R D n s) (het : Env Ctx St W SP t)
+theorem smid_of {H : Block} {x : List Byte} {icb : Block} {R : Nat} {D O : Addr} {n : Nat} {to : Bool}
+    {s t t' : State} {c : Mem → List Byte} (hs : SInM Ctx St W SP H x icb R D O n to s)
+    (het : Env Ctx St W SP t)
     (ft : Frame [tblR W] s.mem t.mem) (gt : ∀ r, r ≠ .x5 → r ≠ .x9 → t.gpr r = s.gpr r)
     (spt : t.sp = s.sp) (rdt : t.rd = s.rd) (wrt : t.wr = s.wr)
-    (pd : blocksAt t'.mem (Gcm.AArch64.Stitch.dp t) (8 * Gcm.AArch64.Stitch.nb t) =
+    (pd : blocksAt t'.mem (Gcm.AArch64.Stitch.op t to) (8 * Gcm.AArch64.Stitch.nb t) =
         Spec.Gcm.ctr32 (Gcm.AArch64.Stitch.ciph t) (Gcm.AArch64.Stitch.icb t)
           (blocksAt t.mem (Gcm.AArch64.Stitch.dp t) (8 * Gcm.AArch64.Stitch.nb t)))
     (pc : blockAt t'.mem (Gcm.AArch64.Stitch.stp t + BitVec.ofNat 64 48) =
         Nat.repeat Spec.Gcm.inc32 (8 * Gcm.AArch64.Stitch.nb t) (Gcm.AArch64.Stitch.icb t))
-    (pf : Frame [Gcm.AArch64.Stitch.yR t, Gcm.AArch64.Stitch.cR t, Gcm.AArch64.Stitch.dR t] t.mem t'.mem)
-    (pg : ∀ r, r ∉ Gcm.AArch64.Stitch.kRegs → t'.gpr r = t.gpr r) (psp : t'.sp = t.sp) (prd : t'.rd = t.rd)
+    (pf : Frame [Gcm.AArch64.Stitch.yR t, Gcm.AArch64.Stitch.cR t, Gcm.AArch64.Stitch.oR t to] t.mem t'.mem)
+    (pg : ∀ r, r ∉ Gcm.AArch64.Stitch.kRegsT to → t'.gpr r = t.gpr r) (psp : t'.sp = t.sp) (prd : t'.rd = t.rd)
     (pwr : t'.wr = t.wr) (hy : blockAt t'.mem (St + BitVec.ofNat 64 16) = ghash H (blocks (x ++ c t'.mem))) :
-    SMid Ctx St W SP H x icb R D n c s t' := by
-  have hn := hs.data.ok.lt
+    SMid Ctx St W SP H x icb R D O n c s t' := by
+  have hn := hs.src.lt
   have hR := hs.rounds
   have hRb : 16 * (R + 1) ≤ 256 := by omega_arith
   have e20 : t.gpr .x20 = St := het.x20
@@ -198,30 +260,37 @@ theorem smid_of {H : Block} {x : List Byte} {icb : Block} {R : Nat} {D : Addr} {
   have e22 : t.gpr .x22 = BitVec.ofNat 64 R := by rw [gt _ (by decide) (by decide), hs.x22]
   have e23 : t.gpr .x23 = D := by rw [gt _ (by decide) (by decide), hs.x23]
   have e26 : t.gpr .x26 = BitVec.ofNat 64 n := by rw [gt _ (by decide) (by decide), hs.x26]
+  have hop : Gcm.AArch64.Stitch.op t to = O := by
+    have := hs.mode
+    cases to with
+    | false => exact e23.trans this.symm
+    | true => exact (gt _ (by decide) (by decide)).trans this.1
+  rw [hop] at pd
+  simp only [Gcm.AArch64.Stitch.oR, hop] at pf
   simp only [Gcm.AArch64.Stitch.stp, Gcm.AArch64.Stitch.dp, Gcm.AArch64.Stitch.nb, Gcm.AArch64.Stitch.kc,
     Gcm.AArch64.Stitch.rounds, Gcm.AArch64.Stitch.icb, Gcm.AArch64.Stitch.ciph, Gcm.AArch64.Stitch.ksch,
-    Gcm.AArch64.Stitch.yR, Gcm.AArch64.Stitch.cR, Gcm.AArch64.Stitch.dR, e20, e21, e22, e23, e26,
+    Gcm.AArch64.Stitch.yR, Gcm.AArch64.Stitch.cR, e20, e21, e22, e23, e26,
     toNat_ofNat_of_lt hn, toNat_ofNat_of_lt (show R < 2 ^ 64 by omega_arith)] at pd pc pf
   have hk : bytesAt t.mem Ctx (16 * (R + 1)) = bytesAt s.mem Ctx (16 * (R + 1)) :=
     bytesAt_frame ft (fun r hr => (tbl_ctx L r hr).sub_left (Region.sub_prefix hRb)) (by omega_arith)
   have hpn : pre n ≤ n := Nat.mul_div_le n 128
   have hD : ∀ r ∈ [tblR W], (⟨D, pre n⟩ : Region).Disjoint r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact (hs.data.ok.w.sub_left (Region.sub_prefix hpn)).sub_right (Lay.wSub (by decide))
+    exact (hs.src.w.sub_left (Region.sub_prefix hpn)).sub_right (Lay.wSub (by decide))
   have hcb : blockAt t.mem (St + BitVec.ofNat 64 48) = icb := by
     rw [blockAt_frame ft (tbl_st L (by decide)), hs.cb]
   rw [hk] at pd
-  obtain ⟨hd, hc⟩ := Proof.Gcm.ctr_whole (ks := St + BitVec.ofNat 64 64) (ciph := ciphOf s.mem Ctx R) (icb := icb)
+  obtain ⟨hd, hc⟩ := Proof.Gcm.ctr_wholeTo (ks := St + BitVec.ofNat 64 64) (ciph := ciphOf s.mem Ctx R) (icb := icb)
     (Proof.Gcm.ctr_zero _ _ _ _ hcb) (by decide) pd pc
   rw [show 16 * (8 * (n / 128)) = pre n by simp only [pre]; omega_arith] at hd hc
   rw [Nat.zero_add] at hc
-  have g' : ∀ r, r ∉ [Reg.x5, .x9, .x10, .x11, .x12, .x13, .x14] → t'.gpr r = s.gpr r := fun r hr => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    rw [pg r (by simp [Gcm.AArch64.Stitch.kRegs, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.1, hr.2.2.2.2.2.1,
-      hr.2.2.2.2.2.2]), gt r hr.1 hr.2.1]
-  refine ⟨het.keep (fun r hr => pg r (by
+  have g' : ∀ r, r ∉ [Reg.x5, .x9, .x10, .x11, .x12, .x13, .x14, .x15] → t'.gpr r = s.gpr r := fun r hr => by
+    have h59 : r ≠ .x5 ∧ r ≠ .x9 := by
+      simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr; exact ⟨hr.1, hr.2.1⟩
+    rw [pg r (Gcm.AArch64.Stitch.notMem_kRegsT _ (notMem_k15 hr)), gt r h59.1 h59.2]
+  refine ⟨het.keep (fun r hr => pg r (Gcm.AArch64.Stitch.notMem_kRegsT _ (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl <;> decide)) psp prd pwr, g', ?_, hc, hy, ?_,
+      rcases hr with rfl | rfl | rfl <;> decide))) psp prd pwr, g', ?_, hc, hy, ?_,
     by rw [psp, spt], by rw [prd, rdt], by rw [pwr, wrt]⟩
   · rw [hd, bytesAt_frame ft hD (by omega_arith)]
   · refine (ft.mono fun r hr => ?_).trans (pf.mono fun r hr => ?_)
@@ -233,9 +302,9 @@ theorem smid_of {H : Block} {x : List Byte} {icb : Block} {R : Nat} {D : Addr} {
 theorem stitchE_ok (gh : Gh8Ok) {H : Block} {x : List Byte} {icb : Block} {R : Nat} {D : Addr} {n : Nat}
     {s : State} {tb : List Instr} (htb : TbOk Ctx St W SP H tb s) (hs : SIn Ctx St W SP H x icb R D n s) :
     WP isa (Impl.AesGcm.AArch64.Stitch.stitched [] tb Impl.Gcm.AArch64.Stitch.enc) s
-      (SMid Ctx St W SP H x icb R D n (fun m => bytesAt m D (pre n)) s) := by
-  refine stitch_core L htb hs (fun hz m => by simp only [pre, hz]; rfl)
-    fun t hp het ft gt spt rdt wrt => WP.mono (Gcm.AArch64.Stitch.enc_ok hp gh) fun t' q => ?_
+      (SMid Ctx St W SP H x icb R D D n (fun m => bytesAt m D (pre n)) s) := by
+  refine stitch_core L htb hs.toM (fun hz m => by simp only [pre, hz]; rfl)
+    fun t hp het ft gt spt rdt wrt => WP.mono (Gcm.AArch64.Stitch.enc_ok hp.toKPre gh) fun t' q => ?_
   have hn := hs.data.ok.lt
   have py := q.y
   have hH : blockAt t.mem (Ctx + BitVec.ofNat 64 240) = H := by
@@ -245,18 +314,20 @@ theorem stitchE_ok (gh : Gh8Ok) {H : Block} {x : List Byte} {icb : Block} {R : N
   simp only [Gcm.AArch64.Stitch.stp, Gcm.AArch64.Stitch.dp, Gcm.AArch64.Stitch.nb, Gcm.AArch64.Stitch.kc,
     Gcm.AArch64.Stitch.hk, Gcm.AArch64.Stitch.y₀, het.x20, het.x21, gt .x23 (by decide) (by decide),
     gt .x26 (by decide) (by decide), hs.x23, hs.x26, toNat_ofNat_of_lt hn, hH, hY] at py
-  refine smid_of L hs het ft gt spt rdt wrt q.data q.ctr q.frame q.gpr q.sp q.rd q.wr ?_
+  refine smid_of L hs.toM het ft gt spt rdt wrt q.data q.ctr q.frame q.gpr q.sp q.rd q.wr ?_
   rw [py, Proof.Gcm.blocksAt_eq, show 16 * (8 * (n / 128)) = pre n by simp only [pre]; omega_arith, Spec.Gcm.ghash,
     Spec.Gcm.ghash, blocks_append hs.xm, Proof.Gcm.ghashFrom_append]
 
-/-- `open`'s interleaved loop. -/
-theorem stitchD_ok (gh : Gh8Ok) {H : Block} {x : List Byte} {icb : Block} {R : Nat} {D : Addr} {n : Nat}
-    {s : State} {tb : List Instr} (htb : TbOk Ctx St W SP H tb s) (hs : SIn Ctx St W SP H x icb R D n s) :
-    WP isa (Impl.AesGcm.AArch64.Stitch.stitched [] tb Impl.Gcm.AArch64.Stitch.dec) s
-      (SMid Ctx St W SP H x icb R D n (fun _ => bytesAt s.mem D (pre n)) s) := by
+/-- `open`'s interleaved loop, from the text at `D` to `O`: over it, or out of
+place. -/
+theorem stitchDM_ok (gh : Gh8Ok) {H : Block} {x : List Byte} {icb : Block} {R : Nat} {D O : Addr} {n : Nat}
+    {to : Bool} {s : State} {tb : List Instr} (htb : TbOk Ctx St W SP H tb s)
+    (hs : SInM Ctx St W SP H x icb R D O n to s) :
+    WP isa (Impl.AesGcm.AArch64.Stitch.stitched [] tb (Impl.Gcm.AArch64.Stitch.dec to)) s
+      (SMid Ctx St W SP H x icb R D O n (fun _ => bytesAt s.mem D (pre n)) s) := by
   refine stitch_core L htb hs (fun hz m => by simp only [pre, hz]; rfl)
-    fun t hp het ft gt spt rdt wrt => WP.mono (Gcm.AArch64.Stitch.dec_ok hp gh) fun t' q => ?_
-  have hn := hs.data.ok.lt
+    fun t hp het ft gt spt rdt wrt => WP.mono (Gcm.AArch64.Stitch.decM_ok hp gh) fun t' q => ?_
+  have hn := hs.src.lt
   have py := q.y
   have hH : blockAt t.mem (Ctx + BitVec.ofNat 64 240) = H := by
     rw [blockAt_frame ft fun r hr => (tbl_ctx L r hr).sub_left (Lay.ctxSub (by decide)), hs.hH]
@@ -265,13 +336,20 @@ theorem stitchD_ok (gh : Gh8Ok) {H : Block} {x : List Byte} {icb : Block} {R : N
   have hpn : pre n ≤ n := Nat.mul_div_le n 128
   have hD : bytesAt t.mem D (pre n) = bytesAt s.mem D (pre n) := bytesAt_frame ft (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact (hs.data.ok.w.sub_left (Region.sub_prefix hpn)).sub_right (Lay.wSub (by decide))) (by omega_arith)
+    exact (hs.src.w.sub_left (Region.sub_prefix hpn)).sub_right (Lay.wSub (by decide))) (by omega_arith)
   simp only [Gcm.AArch64.Stitch.stp, Gcm.AArch64.Stitch.dp, Gcm.AArch64.Stitch.nb, Gcm.AArch64.Stitch.kc,
     Gcm.AArch64.Stitch.hk, Gcm.AArch64.Stitch.y₀, het.x20, het.x21, gt .x23 (by decide) (by decide),
     gt .x26 (by decide) (by decide), hs.x23, hs.x26, toNat_ofNat_of_lt hn, hH, hY] at py
   refine smid_of L hs het ft gt spt rdt wrt q.data q.ctr q.frame q.gpr q.sp q.rd q.wr ?_
   rw [py, Proof.Gcm.blocksAt_eq, show 16 * (8 * (n / 128)) = pre n by simp only [pre]; omega_arith, hD, Spec.Gcm.ghash,
     Spec.Gcm.ghash, blocks_append hs.xm, Proof.Gcm.ghashFrom_append]
+
+/-- `open`'s interleaved loop, in place. -/
+theorem stitchD_ok (gh : Gh8Ok) {H : Block} {x : List Byte} {icb : Block} {R : Nat} {D : Addr} {n : Nat}
+    {s : State} {tb : List Instr} (htb : TbOk Ctx St W SP H tb s) (hs : SIn Ctx St W SP H x icb R D n s) :
+    WP isa (Impl.AesGcm.AArch64.Stitch.stitched [] tb Impl.Gcm.AArch64.Stitch.dec) s
+      (SMid Ctx St W SP H x icb R D D n (fun _ => bytesAt s.mem D (pre n)) s) :=
+  stitchDM_ok L gh htb hs.toM
 
 end
 

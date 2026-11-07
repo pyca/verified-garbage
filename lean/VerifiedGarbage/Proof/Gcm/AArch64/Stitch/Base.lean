@@ -130,6 +130,26 @@ theorem KPre.toM {s₀ : State} (hp : KPre s₀) : KPreM s₀ false where
   wrap_s := hp.wrap_s
   tbl := hp.tbl
 
+/-- The decryption's precondition over the text is `KPre`. -/
+theorem KPreM.toKPre {s₀ : State} (hp : KPreM s₀ false) : KPre s₀ where
+  rounds := hp.rounds
+  nb1 := hp.nb1
+  k_in := hp.k_in
+  y_in := hp.y_in
+  c_in := hp.c_in
+  d_in := hp.o_in
+  t_in := hp.t_in
+  d_k := hp.d_k
+  d_y := hp.o_y
+  d_c := hp.o_c
+  d_t := hp.o_t
+  y_c := hp.y_c
+  wrap_d := hp.wrap_d
+  wrap_k := hp.wrap_k
+  wrap_t := hp.wrap_t
+  wrap_s := hp.wrap_s
+  tbl := hp.tbl
+
 namespace KPreM
 variable {s₀ : State} {to : Bool} (hp : KPreM s₀ to)
 include hp

@@ -133,7 +133,7 @@ theorem openRunASX_ok (v : GcmImpl) (hMK : MulKey) (gh : Gh8Ok) {tb : List Instr
   generalize hD' : D + BitVec.ofNat 64 P = D'
   have hsubD : Region.Sub ⟨D', n - P⟩ ⟨D, n⟩ := hD' ▸ Offset.sub_base D (by omega_arith)
   have hsubP' : Region.Sub ⟨D, Stitch.pre n⟩ ⟨D, n⟩ := Region.sub_prefix (Nat.mul_div_le n 128)
-  have g₂' : ∀ r, r ∉ [Reg.x5, .x9, .x10, .x11, .x12, .x13, .x14] → s₂'.gpr r = s₂.gpr r :=
+  have g₂' : ∀ r, r ∉ [Reg.x5, .x9, .x10, .x11, .x12, .x13, .x14, .x15] → s₂'.gpr r = s₂.gpr r :=
     fun r hr => by rw [hm₂.gpr r hr, g₂c]
   -- The rest's whole blocks, by `gh`.
   rw [WP.seq_iff, WP.block_append_iff]
