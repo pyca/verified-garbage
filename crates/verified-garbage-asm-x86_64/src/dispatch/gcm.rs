@@ -265,7 +265,7 @@ pub unsafe fn vg_aes_gcm_open_to_auto(ctx: *const [u64; 32], rounds: usize, nonc
 
 /// Makes the 1024-byte `*ctx`, whose first 256 bytes are a key context of `vg_aes_gcm_init`, the prepared key context of the same key, in place: keeps its first 256 bytes and, at byte `256 + 32*k`, for `k` from 0 to 23, stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words, `H` being the hash subkey in its bytes 240–255. Use only the `*_prepared` APIs, or APIs that read the first 256 bytes, with this format. Contract: `VG.Spec.Gcm.prepareContract`: the first 256 bytes are kept and the context satisfies `PreparedPowersRepr`. Constant time: only the pointer may affect timing, not the hash subkey.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_gcm_prepare_vpclmul_avx512` if the CPU supports its features (`VG_AES_GCM_PREPARE_VPCLMUL_AVX512_FEATURES`); `vg_aes_gcm_prepare_vpclmul` if the CPU supports its features (`VG_AES_GCM_PREPARE_VPCLMUL_FEATURES`); `vg_aes_gcm_prepare_pclmul_avx` if the CPU supports its features (`VG_AES_GCM_PREPARE_PCLMUL_AVX_FEATURES`); or else `vg_aes_gcm_prepare`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_gcm_prepare_vpclmul_avx512` if the CPU supports its features (`VG_AES_GCM_PREPARE_VPCLMUL_AVX512_FEATURES`); `vg_aes_gcm_prepare_vpclmul` if the CPU supports its features (`VG_AES_GCM_PREPARE_VPCLMUL_FEATURES`); `vg_aes_gcm_prepare_pclmul_avx` if the CPU supports its features (`VG_AES_GCM_PREPARE_PCLMUL_AVX_FEATURES`); `vg_aes_gcm_prepare_pclmul` if the CPU supports its features (`VG_AES_GCM_PREPARE_PCLMUL_FEATURES`); or else `vg_aes_gcm_prepare`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -289,6 +289,11 @@ pub unsafe fn vg_aes_gcm_prepare_auto(ctx: *mut [u64; 128]) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_prepare_pclmul_avx`'s, and the CPU
         // has the features it needs.
         return unsafe { crate::gcm::vg_aes_gcm_prepare_pclmul_avx(ctx) };
+    }
+    if cpu.contains(crate::gcm::VG_AES_GCM_PREPARE_PCLMUL_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_aes_gcm_prepare_pclmul`'s, and the CPU
+        // has the features it needs.
+        return unsafe { crate::gcm::vg_aes_gcm_prepare_pclmul(ctx) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { crate::gcm::vg_aes_gcm_prepare(ctx) }

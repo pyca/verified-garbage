@@ -99,4 +99,45 @@ context at `rdi`, from its hash subkey. -/
 def prepare : Prog isa :=
   .block (setup ++ plan48.flatMap step)
 
+/-! ## The SSE code
+
+What the steps run on the lower lanes, on which they are proven, and the
+code of `vg_aes_gcm_prepare` for CPUs without AVX (`prepareSse`). -/
+
+/-- The SSE code of `PrepareAvx.sq d a`. -/
+def sqS (d a : XReg) : List Instr :=
+  [.xop (.bin .movdqa .xmm8 a), .xop (.pclmulqdq .xmm8 a 0x00),
+   .xop (.bin .movdqa .xmm10 a), .xop (.pclmulqdq .xmm10 a 0x11)] ++
+  Impl.Gcm.X86_64.Pclmul.fold ++ Impl.Gcm.X86_64.Pclmul.fold ++
+  [.xop (.bin .movdqa d .xmm10), .xop (.bin .pxor d .xmm8)]
+
+/-- The SSE code of `PrepareAvx.mulD d a b`. -/
+def mulDS (d a b : XReg) : List Instr :=
+  [.xop (.bin .movdqa .xmm8 a), .xop (.pclmulqdq .xmm8 b 0x00),
+   .xop (.bin .movdqa .xmm10 a), .xop (.pclmulqdq .xmm10 b 0x11),
+   .xop (.bin .movdqa .xmm9 a), .xop (.pclmulqdq .xmm9 b 0x01),
+   .xop (.bin .movdqa .xmm11 a), .xop (.pclmulqdq .xmm11 b 0x10),
+   .xop (.bin .pxor .xmm9 .xmm11)] ++
+  Impl.Gcm.X86_64.Pclmul.fold ++
+  [.xop (.bin .pxor .xmm9 .xmm8),
+   .xop (.bin .movdqa .xmm11 .xmm9), .xop (.pclmulqdq .xmm11 .xmm1 0x10),
+   .xop (.pshufd .xmm9 .xmm9 0x4e), .xop (.bin .pxor .xmm9 .xmm11),
+   .xop (.bin .movdqa d .xmm10), .xop (.bin .pxor d .xmm9)]
+
+/-- The SSE code of `PrepareAvx.step p`. -/
+def stepS (p : XReg × XReg × XReg × Nat) : List Instr :=
+  (if p.2.1 = p.2.2.1 then sqS p.1 p.2.1 else mulDS p.1 p.2.1 p.2.2.1) ++
+  [.movdquStore (at_ .rdi (prepOff p.2.2.2)) p.1]
+
+/-- The SSE code of `PrepareAvx.setup`. -/
+def setupS : List Instr :=
+  Impl.Gcm.X86_64.Pclmul.constImm .xmm0 Impl.Gcm.X86_64.Pclmul.revMask ++
+  Impl.Gcm.X86_64.Pclmul.constImm .xmm1 poly ++
+  [.movdquLoad .xmm7 (at_ .rdi 240), .xop (.bin .pshufb .xmm7 .xmm0)] ++ Impl.Gcm.X86_64.Pclmul.hInvImm ++
+  [.movdquStore (at_ .rdi (prepOff 1)) .xmm3]
+
+/-- `vg_aes_gcm_prepare` on SSE registers: `prepare`'s SSE code. -/
+def prepareSse : Prog isa :=
+  .block (setupS ++ plan48.flatMap stepS)
+
 end VG.Impl.Gcm.X86_64.PrepareAvx
