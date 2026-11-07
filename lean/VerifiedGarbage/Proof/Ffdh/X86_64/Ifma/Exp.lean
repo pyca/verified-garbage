@@ -304,7 +304,12 @@ def resP (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (p : BPub) : ResPub := ⟨p.x.B, p
 /-- What `head` reads. -/
 def HPre (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (p : BPub) (s : State) : Prop :=
   Scr s p.x.B p.x.Z ∧ s.gpr .rdi = off p.x.B p.x.o ∧ word s.mem (off p.x.B p.x.o) (8 * sLink) = p.x.B ∧
-    p.x.o + slot l.W 8 ≤ p.x.Z
+    8 * 32 ≤ p.x.o ∧ p.x.o + slot l.W 8 ≤ p.x.Z
+
+/-- What `bases` and the vector code read: as `CrtIfma`'s, and the first digit. -/
+def VPreF (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (p : BPub) (s : State) : Prop :=
+  VPre (vP l p) s ∧ word s.mem p.x.B (p.x.o + oArea l + oSt l) = BitVec.ofNat 64 (2 * (l.P - p.len)) ∧
+    p.x.o + oArea l + oSt l + 8 ≤ p.x.Z
 
 /-- What `tail` reads. -/
 def TPre (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (p : BPub) (s : State) : Prop :=
@@ -331,7 +336,7 @@ def C3 (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (p : BPub) (g : Gh) (t : State) : Pr
 
 /-- Before the vector code. -/
 def C2 (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (p : BPub) (g : Gh) (t : State) : Prop :=
-  VPre (vP l p) t ∧ WP isa (seqs [.block [.mov .rbx (.mem (hdr sIfma))], Impl.Ffdh.X86_64.Ifma.vec l]) t (C3 l p g)
+  VPreF l p t ∧ WP isa (seqs [.block (Impl.Ffdh.X86_64.Ifma.bases l), Impl.Ffdh.X86_64.Ifma.vec l]) t (C3 l p g)
 
 /-- Before the region. -/
 def C1 (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (sp sl : Nat) (p : BPub) (g : Gh) (t : State) : Prop :=
@@ -342,7 +347,7 @@ def C0 (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (sp sl : Nat) (p : BPub) (g : Gh) (t
   HPre l p t ∧ WP isa (.block (head l sl)) t (C1 l sp sl p g)
 
 theorem exp_eq (sp sl : Nat) : exp l sp sl = [.block (head l sl)] ++ (region l 0 sp sl ++
-    ([.block [.mov .rbx (.mem (hdr sIfma))], Impl.Ffdh.X86_64.Ifma.vec l] ++ (result l 0 ++ [.block (tail l)]))) := by
+    ([.block (Impl.Ffdh.X86_64.Ifma.bases l), Impl.Ffdh.X86_64.Ifma.vec l] ++ (result l 0 ++ [.block (tail l)]))) := by
   simp only [exp, List.append_assoc]
 
 /-- The chain runs the exponentiation. -/
@@ -384,7 +389,8 @@ theorem expW_chain (hl : PubOk l) {s : State} {B : Addr} {Z o w : Nat} {minv : B
   have hoZ : o < 2 ^ 64 := by omega_using [hnw, hT, hS8]
   have hER := expRanges_ok l.W
   dsimp only [C0, HPre]
-  refine ⟨⟨hs, hc.rdi, hc.link, by omega_using [hT]⟩, WP.mono (head_mid hl hc hT hsp hsl hel hLW he)
+  refine ⟨⟨hs, hc.rdi, hc.link, by have := hdr_lt_slot w 8 (show 31 < 32 by decide); omega_using [this, hlo],
+    by omega_using [hT]⟩, WP.mono (head_mid hl hc hT hsp hsl hel hLW he)
     fun s₁ ⟨mi₁, k₁⟩ => ?_⟩
   have hN₁ : wv s₁.mem (off B o) (slot l.W Public.aN) l.W = X := by rw [mi₁.arr _ (by decide)]; exact hn
   have hY₁ : wv s₁.mem (off B o) (slot l.W Public.aY) l.W = wv s.mem (off B o) (slot l.W Public.aY) l.W :=
@@ -451,10 +457,19 @@ theorem expW_chain (hl : PubOk l) {s : State} {B : Addr} {Z o w : Nat} {minv : B
   have hs₂ := sub₂.scr
   have hld₂ : InRegions (s₂.rd ++ s₂.wr) (off (off B o) (8 * sIfma)) 8 := by
     rw [off_off]; exact hs₂.ld (by unfold sIfma sFn; omega_using [hT, hS8, hT'])
-  dsimp only [C2, vP]
-  refine ⟨vPre_of hs₂ sub₂.rdi ia₂ (by omega_using [hT, hS8]), WP.seq (WP.mono (WP.keep [.rbx] (Q := fun u =>
-    u.gpr .rbx = off B (o + oArea l) ∧ u.mem = s₂.mem ∧ u.mxcsr = s₂.mxcsr) (by
-      xrun [State.ea, hdr, sub₂.rdi, hdrOff, hld₂, ia₂]; rfl) rfl) fun s₃ ⟨⟨bx₃, me₃, mx₃⟩, k₃⟩ => ?_)⟩
+  have eS : off B (o + oArea l) + BitVec.ofNat 64 (oSt l) = off B (o + oArea l + oSt l) := off_off B _ _
+  have hldS : InRegions (s₂.rd ++ s₂.wr) (off B (o + oArea l) + BitVec.ofNat 64 (oSt l)) 8 := by
+    rw [eS]; exact hs₂.ld (by omega_using [hA, hv, hSt, hSv, hT])
+  have sS := AmmSym.se_ofNat (show oSt l < 2 ^ 31 by omega_using [hSt, hD31])
+  dsimp only [C2, VPreF, vP]
+  refine ⟨⟨vPre_of hs₂ sub₂.rdi ia₂ (by omega_using [hT, hS8]), st₂, by omega_using [hA, hv, hSt, hSv, hT]⟩,
+    WP.seq (WP.mono (WP.keep [.rbx, .rbp] (Q := fun u =>
+    u.gpr .rbx = off B (o + oArea l) ∧ u.gpr .rbp = BitVec.ofNat 64 (2 * (l.P - eb.length)) ∧ u.mem = s₂.mem ∧
+      u.mxcsr = s₂.mxcsr) (by
+      unfold Impl.Ffdh.X86_64.Ifma.bases
+      xrun [State.ea, hdr, at_, eaG', BitVec.ofInt_natCast, sub₂.rdi, hdrOff, hld₂, ia₂, hldS]
+      rw [eS, show s₂.mem.readW (off B (o + oArea l + oSt l)) 64 = word s₂.mem B (o + oArea l + oSt l) from rfl, st₂]
+      exact ⟨rfl, rfl⟩) rfl) fun s₃ ⟨⟨bx₃, bp₃, me₃, mx₃⟩, k₃⟩ => ?_)⟩
   have hs₃ : Scr s₃ B Z := hs₂.congr k₃.2.2
   have h0 : ∀ p < l.nl, p = 0 := fun p hp => by omega_using [hp, hn1]
   have hXp : 0 < X := by omega_using [hodd]
@@ -477,7 +492,7 @@ theorem expW_chain (hl : PubOk l) {s : State} {B : Addr} {Z o w : Nat} {minv : B
     (fun _ _ => by rw [hY₁]; exact hyl) (fun _ _ => by rw [hY₁]; omega_using [hyl])
     (fun q _ _ => by rw [hX₁]; exact hxc q) (fun q _ _ => by rw [hY₁]; exact hyc q)
     (fun q _ _ => by rw [Nat.mod_mod, Nat.mul_mod, hY₁, hyc q, ← Nat.mul_mod])
-    (by omega_using [hND]) (by rw [me₃, word_off]; exact st₂)
+    (by omega_using [hND]) bp₃
     (fun _ _ => Nat.div_eq_of_lt (by
       rw [hT16, show l.ND - 2 * (l.P - eb.length) = 2 * eb.length by omega_using [hND, hLW, hE, hP],
         Nat.pow_mul, show (16 : Nat) ^ 2 = 256 from rfl]

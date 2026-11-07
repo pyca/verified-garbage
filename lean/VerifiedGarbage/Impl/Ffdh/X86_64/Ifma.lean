@@ -51,8 +51,12 @@ def withMx (c : Prog isa) : Prog isa :=
         (.block [.store32 (at_ .rbx l.oMx) .r14, .ldmxcsr (at_ .rbx l.oMx)])))
     (.block [.vop .vzeroupper])
 
-/-- The vector code: `CrtIfma.expLoop` for one lane, from the digit at `oSt`. -/
-def vec : Prog isa := withMx l (seqs (expLoop l [.mov .r13 (.mem (at_ .rbx (oSt l)))]))
+/-- The vector code: `CrtIfma.expLoop` for one lane, from the digit in `rbp`
+(which it does not write, so that the loop's count is a register's). -/
+def vec : Prog isa := withMx l (seqs (expLoop l [.mov .r13 (.reg .rbp)]))
+
+/-- The area's base into `rbx`, the first digit into `rbp`. -/
+def bases : List Instr := [.mov .rbx (.mem (hdr sIfma)), .mov .rbp (.mem (at_ .rbx (oSt l)))]
 
 /-- The area's base into `sIfma`, the first digit with a bit of the
 exponent, `2 (P - len)`, at `oSt`, and `sCtr` at `oSv`. -/
@@ -68,7 +72,7 @@ def tail : List Instr :=
 
 /-- The exponentiation of a layout: the region, the vector code, the result. -/
 def exp (sp sl : Nat) : List (Prog isa) :=
-  [.block (head l sl)] ++ region l 0 sp sl ++ [.block [.mov .rbx (.mem (hdr sIfma))], vec l] ++ result l 0 ++
+  [.block (head l sl)] ++ region l 0 sp sl ++ [.block (bases l), vec l] ++ result l 0 ++
     [.block (tail l)]
 
 /-- ZF: whether the workspace has `W` words and the exponent at most `8 W` bytes. -/

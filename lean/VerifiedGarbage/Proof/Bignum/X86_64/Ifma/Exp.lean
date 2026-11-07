@@ -246,7 +246,7 @@ theorem expLoopFrom_ok (hl : AmmOk l) {st : List Instr} {i₀ : Nat} {s : State}
     (hc : ConvPre l s B M k x Q) (gf : ∀ p < l.nl, Good l s.mem B M l.oFin p)
     (hi₀ : i₀ ≤ l.ND) (hz : ∀ p < l.nl, e p / l.T ^ (l.ND - i₀) = 0)
     (hd : ∀ p < l.nl, ∀ i < l.ND, dig l s.mem B p i = digit l (e p) i)
-    (hst : ∀ t : State, t.gpr .rbx = B → t.rd = s.rd → t.wr = s.wr →
+    (hst : ∀ t : State, t.gpr .rbx = B → t.gpr .rbp = s.gpr .rbp → t.rd = s.rd → t.wr = s.wr →
       Out2 l B l.oY (l.oTab + l.T * l.NB - l.oY) s.mem t.mem →
       WP isa (.block st) t fun u => u.mem = t.mem ∧ u.rd = t.rd ∧ u.wr = t.wr ∧ u.mxcsr = t.mxcsr ∧
         u.gpr .r13 = BitVec.ofNat 64 i₀ ∧ ∀ r, r ≠ .r13 → u.gpr r = t.gpr r) :
@@ -262,7 +262,9 @@ theorem expLoopFrom_ok (hl : AmmOk l) {st : List Instr} {i₀ : Nat} {s : State}
   have hD := hl.D_bounds
   refine wp_seqs_app (by simp [convTab]) (by simp)
     (WP.mono (convTab_ok hl hc) fun s₁ t₁ => ?_)
-  refine WP.seq (WP.mono (hst s₁ t₁.rbx t₁.rd t₁.wr t₁.frame) fun u ⟨mu, rdu, wru, xu, r13u, gu⟩ => ?_)
+  refine WP.seq (WP.mono (hst s₁ t₁.rbx (t₁.gpr _ (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by decide)) t₁.rd t₁.wr t₁.frame)
+    fun u ⟨mu, rdu, wru, xu, r13u, gu⟩ => ?_)
   have hBu : u.gpr .rbx = B := by rw [gu _ (by decide)]; exact t₁.rbx
   have hsu : Scr u B (l.nl * l.D) := hs.congr (by rw [wru, t₁.wr])
   have gfu : ∀ p < l.nl, Good l u.mem B M l.oFin p ∧
@@ -308,7 +310,7 @@ theorem expLoop_ok (hl : AmmOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {
         r ≠ .r13 → r ≠ .r15 → s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr := by
   have hk32 : l.k0 < 2 ^ 32 := by rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide
-  refine expLoopFrom_ok hl hc gf (k0_le hl) (fun p hp => pref_k0 hl (he p hp)) hd fun t _ _ _ _ => ?_
+  refine expLoopFrom_ok hl hc gf (k0_le hl) (fun p hp => pref_k0 hl (he p hp)) hd fun t _ _ _ _ _ => ?_
   rw [WP.block_cons_iff]
   refine ⟨t.setReg32 .r13 (BitVec.ofNat 32 l.k0), rfl, WP.block_nil ⟨rfl, rfl, rfl, rfl, ?_,
     fun r hr => by rw [State.setReg32, RegUpd.gpr_setReg_of_ne _ _ hr]⟩⟩
