@@ -29,34 +29,11 @@ use alloc::vec;
 use alloc::vec::Vec;
 use core::fmt;
 
-use crate::arch::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt;
-#[cfg(target_arch = "aarch64")]
-use crate::arch::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_sha256_sha2;
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-use crate::arch::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_sha256_shani;
-use crate::arch::rsa_pkcs1_enc::vg_rsa_pkcs1_encrypt_random;
-#[cfg(target_arch = "x86_64")]
-use crate::arch::rsa_pkcs1_enc::{
-    vg_rsa_pkcs1_decrypt_crt_adx, vg_rsa_pkcs1_decrypt_crt_ifma, vg_rsa_pkcs1_decrypt_sha256_avx2,
-    vg_rsa_pkcs1_decrypt_sha256_avx2_crt_adx, vg_rsa_pkcs1_decrypt_sha256_avx2_crt_ifma,
-    vg_rsa_pkcs1_decrypt_sha256_shani_crt_adx, vg_rsa_pkcs1_decrypt_sha256_shani_crt_ifma,
-    vg_rsa_pkcs1_encrypt_random_adx, vg_rsa_pkcs1_encrypt_random_ifma,
+use crate::arch::dispatch::rsa_pkcs1_enc::{
+    vg_rsa_pkcs1_decrypt_auto, vg_rsa_pkcs1_encrypt_random_auto,
 };
-#[cfg(all(
-    target_arch = "arm",
-    any(
-        target_os = "linux",
-        target_os = "android",
-        target_os = "freebsd",
-        target_os = "netbsd",
-        target_os = "openbsd"
-    )
-))]
-use crate::arch::rsa_pkcs1_enc::{vg_rsa_pkcs1_decrypt_umaal, vg_rsa_pkcs1_encrypt_random_umaal};
-use crate::cpu::detected;
 use crate::entropy::{self, Step, Stop};
-use crate::hashes::sha256::Sha256Backend;
-use crate::rsa::{Backend, PrivateKey, PublicKey, public_scratch_words, scratch_words};
+use crate::rsa::{PrivateKey, PublicKey, public_scratch_words, scratch_words};
 use crate::zeroize::zeroize;
 
 /// Why an encryption or a decryption was refused. An invalid padding is
@@ -126,66 +103,41 @@ impl PublicKey {
         let mut out = vec![0u8; k];
         let mut scratch = vec![0u64; public_scratch_words(k)];
         let pre = self.pre(&mut scratch);
-        let backend = Backend::select(detected());
         let mut status = 0;
         // The padding string needs at least as many random bytes as it has;
         // 32 more make a tape too short for it (more than 32 of at most 1045
         // uniform bytes zero) all but impossible, sparing a second step.
         let drawn = entropy::serve(k - plaintext.len() - 3 + 32, random, |tape| {
             let mut counts = [0u64; 2];
-            macro_rules! encrypt {
-                ($function:path) => {
-                    // SAFETY: each pointer is valid for its length (`out`,
-                    // `counts` and `scratch` for writes), and none overlaps
-                    // another or wraps around, as they are distinct Rust
-                    // allocations; `PublicKey::new` and the check above give
-                    // `64 ≤ n_len ≤ 1024`, `out_len = n_len`,
-                    // `1 ≤ e_len ≤ 5 ≤ n_len`, `msg_len + 11 ≤ n_len` and
-                    // `scratch_len = 8 ⌈n_len / 8⌉ + 48`; `entropy::serve`
-                    // gives a tape of fresh random bytes, extended only as
-                    // the function asks, so of at most its budget,
-                    // `n_len - msg_len + 125` bytes; `pre` holds the verified
-                    // precomputation for `self.n`, with `2 ⌈n_len / 8⌉`
-                    // words; and the CPU has the features of the function
-                    // `Backend::select` chose.
-                    unsafe {
-                        $function(
-                            out.as_mut_ptr(),
-                            k,
-                            &mut counts,
-                            self.n.as_ptr(),
-                            k,
-                            self.e.as_ptr(),
-                            self.e.len(),
-                            plaintext.as_ptr(),
-                            plaintext.len(),
-                            tape.as_ptr(),
-                            tape.len(),
-                            scratch.as_mut_ptr(),
-                            scratch.len(),
-                            pre.as_ptr(),
-                            pre.len(),
-                        )
-                    }
-                };
-            }
-            status = match backend {
-                Backend::Baseline => encrypt!(vg_rsa_pkcs1_encrypt_random),
-                #[cfg(target_arch = "x86_64")]
-                Backend::Adx => encrypt!(vg_rsa_pkcs1_encrypt_random_adx),
-                #[cfg(target_arch = "x86_64")]
-                Backend::Ifma => encrypt!(vg_rsa_pkcs1_encrypt_random_ifma),
-                #[cfg(all(
-                    target_arch = "arm",
-                    any(
-                        target_os = "linux",
-                        target_os = "android",
-                        target_os = "freebsd",
-                        target_os = "netbsd",
-                        target_os = "openbsd"
-                    )
-                ))]
-                Backend::Umaal => encrypt!(vg_rsa_pkcs1_encrypt_random_umaal),
+            // SAFETY: each pointer is valid for its length (`out`, `counts`
+            // and `scratch` for writes), and none overlaps another or wraps
+            // around, as they are distinct Rust allocations; `PublicKey::new`
+            // and the check above give `64 ≤ n_len ≤ 1024`, `out_len = n_len`,
+            // `1 ≤ e_len ≤ 5 ≤ n_len`, `msg_len + 11 ≤ n_len` and
+            // `scratch_len = 8 ⌈n_len / 8⌉ + 48`; `entropy::serve` gives a tape
+            // of fresh random bytes, extended only as the function asks, so of
+            // at most its budget, `n_len - msg_len + 125` bytes; `pre` holds
+            // the verified precomputation for `self.n`, with `2 ⌈n_len / 8⌉`
+            // words; and the dispatcher calls only an implementation the CPU
+            // has the features of.
+            status = unsafe {
+                vg_rsa_pkcs1_encrypt_random_auto(
+                    out.as_mut_ptr(),
+                    k,
+                    &mut counts,
+                    self.n.as_ptr(),
+                    k,
+                    self.e.as_ptr(),
+                    self.e.len(),
+                    plaintext.as_ptr(),
+                    plaintext.len(),
+                    tape.as_ptr(),
+                    tape.len(),
+                    scratch.as_mut_ptr(),
+                    scratch.len(),
+                    pre.as_ptr(),
+                    pre.len(),
+                )
             };
             match status {
                 // The tape has too few nonzero bytes: it consumed none of
@@ -213,104 +165,6 @@ impl PublicKey {
     }
 }
 
-/// The type of the implementations of `vg_rsa_pkcs1_decrypt`.
-#[cfg(target_arch = "x86_64")]
-type DecryptFn = unsafe extern "sysv64" fn(
-    *mut u8,
-    usize,
-    *mut [u64; 1],
-    *const u8,
-    usize,
-    *const u8,
-    usize,
-    *const u8,
-    usize,
-    *const u8,
-    usize,
-    *const u8,
-    usize,
-    *const u8,
-    usize,
-    *const u8,
-    usize,
-    *const u8,
-    usize,
-    *const u8,
-    usize,
-    *mut u64,
-    usize,
-) -> u32;
-/// The type of the implementations of `vg_rsa_pkcs1_decrypt`.
-#[cfg(any(
-    target_arch = "x86",
-    target_arch = "aarch64",
-    target_arch = "arm",
-    target_arch = "powerpc64",
-    target_arch = "riscv64"
-))]
-type DecryptFn = unsafe extern "C" fn(
-    *mut u8,
-    usize,
-    *mut [u64; 1],
-    *const u8,
-    usize,
-    *const u8,
-    usize,
-    *const u8,
-    usize,
-    *const u8,
-    usize,
-    *const u8,
-    usize,
-    *const u8,
-    usize,
-    *const u8,
-    usize,
-    *const u8,
-    usize,
-    *const u8,
-    usize,
-    *mut u64,
-    usize,
-) -> u32;
-
-/// The implementation of `vg_rsa_pkcs1_decrypt` for the implementations of
-/// SHA-256 and of the private-key operation chosen.
-fn decrypt_fn(sha: Sha256Backend, crt: Backend) -> DecryptFn {
-    match (sha, crt) {
-        (Sha256Backend::Scalar, Backend::Baseline) => vg_rsa_pkcs1_decrypt,
-        #[cfg(target_arch = "x86_64")]
-        (Sha256Backend::Scalar, Backend::Adx) => vg_rsa_pkcs1_decrypt_crt_adx,
-        #[cfg(target_arch = "x86_64")]
-        (Sha256Backend::Scalar, Backend::Ifma) => vg_rsa_pkcs1_decrypt_crt_ifma,
-        #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-        (Sha256Backend::ShaNi, Backend::Baseline) => vg_rsa_pkcs1_decrypt_sha256_shani,
-        #[cfg(target_arch = "x86_64")]
-        (Sha256Backend::ShaNi, Backend::Adx) => vg_rsa_pkcs1_decrypt_sha256_shani_crt_adx,
-        #[cfg(target_arch = "x86_64")]
-        (Sha256Backend::ShaNi, Backend::Ifma) => vg_rsa_pkcs1_decrypt_sha256_shani_crt_ifma,
-        #[cfg(target_arch = "x86_64")]
-        (Sha256Backend::Avx2, Backend::Baseline) => vg_rsa_pkcs1_decrypt_sha256_avx2,
-        #[cfg(target_arch = "x86_64")]
-        (Sha256Backend::Avx2, Backend::Adx) => vg_rsa_pkcs1_decrypt_sha256_avx2_crt_adx,
-        #[cfg(target_arch = "x86_64")]
-        (Sha256Backend::Avx2, Backend::Ifma) => vg_rsa_pkcs1_decrypt_sha256_avx2_crt_ifma,
-        #[cfg(target_arch = "aarch64")]
-        (Sha256Backend::Sha2, Backend::Baseline) => vg_rsa_pkcs1_decrypt_sha256_sha2,
-        #[cfg(all(
-            target_arch = "arm",
-            any(
-                target_os = "linux",
-                target_os = "android",
-                target_os = "freebsd",
-                target_os = "netbsd",
-                target_os = "openbsd"
-            )
-        ))]
-        (Sha256Backend::Scalar, Backend::Umaal) => vg_rsa_pkcs1_decrypt_umaal,
-    }
-}
-
 impl PrivateKey {
     /// RSAES-PKCS1-V1_5-DECRYPT (RFC 8017 §7.2.2) with implicit rejection
     /// (draft-irtf-cfrg-rsa-guidance-10 §7.2): decrypts `ciphertext`
@@ -334,10 +188,6 @@ impl PrivateKey {
         // Loading the key checked that `0 < d < n` (`RSA_check_key`), and
         // holds it in `n_len` bytes.
         let d = &self.d;
-        let f = decrypt_fn(
-            Sha256Backend::select(detected()),
-            Backend::select(detected()),
-        );
         let mut out = vec![0u8; k];
         let mut len = [0u64; 1];
         let mut scratch = crate::rsa::Scratch::new(scratch_words(k));
@@ -347,12 +197,10 @@ impl PrivateKey {
         // above give `64 ≤ n_len ≤ 1024`, `out_len = input_len = n_len`,
         // `1 ≤ e_len ≤ 5 ≤ n_len`, `d_len = n_len`, `1 ≤ p_len < n_len`,
         // `1 ≤ q_len < n_len`, `dp_len = qinv_len = p_len`, `dq_len = q_len`
-        // and `scratch_len = 16 n_len + 32`; and the CPU has the features of the
-        // implementations of SHA-256 and of the private-key operation that
-        // `Sha256Backend::select` and `Backend::select` chose, which are those
-        // of `f`.
+        // and `scratch_len = 16 n_len + 32`; and the dispatcher calls only an
+        // implementation the CPU has the features of.
         let r = unsafe {
-            f(
+            vg_rsa_pkcs1_decrypt_auto(
                 out.as_mut_ptr(),
                 k,
                 &mut len,
@@ -395,7 +243,7 @@ impl PrivateKey {
 
 #[cfg(test)]
 mod tests {
-    use super::{Backend, Error, Sha256Backend, Vec, decrypt_fn, os_random, vec};
+    use super::{Error, Vec, os_random, vec};
     use crate::rsa::tests::composite_key;
     use alloc::string::ToString;
 
@@ -475,60 +323,6 @@ mod tests {
         );
         let mut ps = [0u8; 64];
         os_random(&mut ps).unwrap();
-    }
-
-    /// Every pair of implementations has its instance (each is tested end
-    /// to end on a CPU that chooses it).
-    #[test]
-    fn rsa_pkcs1_backends() {
-        #[cfg(target_arch = "x86_64")]
-        let (shas, crts) = (
-            [
-                Sha256Backend::Scalar,
-                Sha256Backend::ShaNi,
-                Sha256Backend::Avx2,
-            ]
-            .as_slice(),
-            [Backend::Baseline, Backend::Adx, Backend::Ifma].as_slice(),
-        );
-        #[cfg(target_arch = "x86")]
-        let (shas, crts) = (
-            [Sha256Backend::Scalar, Sha256Backend::ShaNi].as_slice(),
-            [Backend::Baseline].as_slice(),
-        );
-        #[cfg(target_arch = "aarch64")]
-        let (shas, crts) = (
-            [Sha256Backend::Scalar, Sha256Backend::Sha2].as_slice(),
-            [Backend::Baseline].as_slice(),
-        );
-        #[cfg(any(target_arch = "powerpc64", target_arch = "riscv64"))]
-        let (shas, crts) = (
-            [Sha256Backend::Scalar].as_slice(),
-            [Backend::Baseline].as_slice(),
-        );
-        #[cfg(all(
-            target_arch = "arm",
-            any(
-                target_os = "linux",
-                target_os = "android",
-                target_os = "freebsd",
-                target_os = "netbsd",
-                target_os = "openbsd"
-            )
-        ))]
-        let (shas, crts) = (
-            [Sha256Backend::Scalar].as_slice(),
-            [Backend::Baseline, Backend::Umaal].as_slice(),
-        );
-        let mut fns = Vec::new();
-        for &sha in shas {
-            for &crt in crts {
-                fns.push(decrypt_fn(sha, crt) as usize);
-            }
-        }
-        fns.sort_unstable();
-        fns.dedup();
-        assert_eq!(fns.len(), shas.len() * crts.len());
     }
 
     #[test]
