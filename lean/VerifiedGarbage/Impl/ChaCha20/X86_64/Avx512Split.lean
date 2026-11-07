@@ -191,6 +191,6 @@ def xorSplit : Prog isa :=
   (.seq (ChaCha20Poly1305.X86_64.SealGather.copyBytes .z64)
   (.seq (.block (loopArgs ++ Avx512Tail.consts ++ consts ++ ([.alu .cmp .rdx (.imm 1024)] : List Instr)))
   (.seq (.ite .b (.block []) (.loop bodySel .ae))
-  (.seq (.block [.alu .cmp .rdx (.imm 513)]) (.ite .b (.call "vg_chacha20_xor_avx512" xor) last16Sel))))))
+  (.seq (.block [.alu .cmp .rdx (.imm 513)]) (.ite .b (.seq (.block [.mov .r8 (.reg .rsi)]) (.call "vg_chacha20_xor_avx512" xor)) last16Sel))))))
 
 end VG.Impl.ChaCha20.X86_64.Avx512

@@ -56,14 +56,14 @@ theorem inT_evalC (hi : IncsC s.mem (s.gpr .r9) c) {i l : Nat} (hi16 : i < 16) (
   have e := hi (4 * l + i % 4) (by omega_arith)
   rw [show 56 + 8 * 0 + 4 * l + i % 4 = 56 + (4 * l + i % 4) by omega_arith]
   split
-  · simp only [T.eval, regn, baseR, e, stateAt_get _ _ hi16]
+  · simp only [T.eval, memBase_0, memBase_1, e, stateAt_get _ _ hi16]
     by_cases h12 : i = 12
     · subst h12
       rcases (by omega_arith : l = 0 ∨ l = 1) with rfl | rfl
       · simp [cOf]
       · simp [cOf]
     · rw [ite_eq_right (by omega_arith), ite_eq_right h12]; exact BitVec.add_zero _
-  · simp only [T.eval, regn, baseR, stateAt_get _ _ hi16]
+  · simp only [T.eval, memBase_0, stateAt_get _ _ hi16]
     rw [ite_eq_right (by omega_arith)]
 
 /-- The block of lane `l` of the first set: the rounds' words `vs l` plus its
@@ -189,11 +189,11 @@ theorem inT_evalC4 (hi : IncsC4 s.mem (s.gpr .r9) c) {k i l : Nat} (hk : k < 2) 
   rw [show 56 + 8 * k + (4 * l + i % 4) = 56 + 8 * k + 4 * l + i % 4 by omega_arith,
     show (4 * l + i % 4) / 4 = l by omega_arith, show (4 * l + i % 4) % 4 = i % 4 by omega_arith] at e
   split
-  · simp only [T.eval, regn, baseR, e, stateAt_get _ _ hi16]
+  · simp only [T.eval, memBase_0, memBase_1, e, stateAt_get _ _ hi16]
     by_cases h12 : i = 12
     · subst h12; simp
     · rw [ite_eq_right (by omega_arith), ite_eq_right h12]; exact BitVec.add_zero _
-  · simp only [T.eval, regn, baseR, stateAt_get _ _ hi16]
+  · simp only [T.eval, memBase_0, stateAt_get _ _ hi16]
     rw [ite_eq_right (by omega_arith)]
 
 /-- Block `j` of the two sets: the rounds' words `vs j` plus its input state. -/

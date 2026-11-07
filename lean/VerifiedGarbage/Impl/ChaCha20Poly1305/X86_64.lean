@@ -231,7 +231,7 @@ def prologueB : Prog isa :=
 bytes by the implementation `x` of `vg_chacha20_xor`, and the Poly1305 state
 for the one-time key. -/
 def prologue (x : ChaCha20.X86_64.Callee) : Prog isa :=
-  .seq (prologueA x.fold x.pass x.wide) (.seq (.call x.name x.code) prologueB)
+  .seq (prologueA x.fold x.pass x.wide) (.seq x.inPlace prologueB)
 
 /-- `[rsi + rcx]` and `[r15 + rcx + 576]`. -/
 def copyByte : MemOp := { base := .rsi, index := some .rcx }
@@ -381,7 +381,7 @@ def cryptPre (fold pass w : Nat) : Prog isa :=
 /-- More than `fold` bytes: `cryptPre`, then the rest by the implementation
 `x` of `vg_chacha20_xor`, from counter `1 + m / 64`. -/
 def cryptBig (x : ChaCha20.X86_64.Callee) : Prog isa :=
-  .seq (cryptPre x.fold x.pass x.wide) (.call x.name x.code)
+  .seq (cryptPre x.fold x.pass x.wide) x.inPlace
 
 /-- The data encrypted or decrypted, then the keystream wiped. If its length
 is at most `fold`, by XORing the keystream in `ctx[736, 736 + len)` into it;

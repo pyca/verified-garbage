@@ -35,6 +35,7 @@ jmp 26f
 26:
 jmp 24f
 23:
+.base64 "SYnw"
 call {vg_chacha20_xor_avx2}
 24:
 .base64 "SYn3SYHvgAAAAEyJ/0iBx8ABAABMif5IgcagAgAA"
@@ -120,7 +121,7 @@ jb 246f
 jb 248f
 .base64 "TInoSCX/AQAASIPoAUg9/wEAAA=="
 jb 250f
-.base64 "TIn/SIPHQEiJ3kiJ6kyJ+UiBwYAAAAA="
+.base64 "TIn/SIPHQEiJ3kiJ6kyJ+UiBwYAAAABJifA="
 call {vg_chacha20_xor_avx2}
 jmp 251f
 250:

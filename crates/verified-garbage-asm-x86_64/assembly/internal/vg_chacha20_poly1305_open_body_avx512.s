@@ -91,6 +91,7 @@ vg_chacha20_poly1305_open_body_avx512:
 	add rsi, 672
 	mov rcx, r15
 	add rcx, 128
+	mov r8, rsi
 	call {vg_chacha20_xor_avx512}
 	mov r15, rsi
 	sub r15, 128
@@ -259,6 +260,7 @@ vg_chacha20_poly1305_open_body_avx512:
 	add rdi, 64
 	mov rcx, r15
 	add rcx, 128
+	mov r8, rsi
 	call {vg_chacha20_xor_avx512}
 	jmp 230f
 229:

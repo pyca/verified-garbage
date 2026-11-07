@@ -42,17 +42,17 @@ def masks3Ok (σ : Sym) : Bool :=
   (List.range 8).all fun p => σ.reg 14 p == .mem 1 (32 + p) && σ.reg 15 p == .mem 1 (40 + p)
 
 def setup3Check : Bool :=
-  match run 64 Sym.init setup3 with
+  match run 0 Sym.init setup3 with
   | some σ => !σ.dirty && masks3Ok σ && (List.range 3).all fun k => (List.range 4).all fun r =>
       (List.range 8).all fun p => σ.reg (4 * k + r) p == inT3 k (4 * r + p % 4) (p / 4)
   | none => false
 
 def last3Check : Bool :=
-  match run 64 Sym.init (addIn3 ++ xorSetT .xmm0 .xmm1 .xmm2 .xmm3 0 ++ xorSetT .xmm4 .xmm5 .xmm6 .xmm7 128 ++
+  match runT true 64 Sym.init (addIn3 ++ xorSetT .xmm0 .xmm1 .xmm2 .xmm3 0 ++ xorSetT .xmm4 .xmm5 .xmm6 .xmm7 128 ++
       storeSetT .xmm8 .xmm9 .xmm10 .xmm11 0) with
   | some σ =>
     ((List.range 4).all fun j => (List.range 16).all fun i =>
-      σ.mem 2 (16 * j + i) == .xor (.mem 2 (16 * j + i)) (outT3 (j / 2) i (j % 2))) &&
+      σ.mem 3 (16 * j + i) == .xor (.mem 2 (16 * j + i)) (outT3 (j / 2) i (j % 2))) &&
     (List.range 2).all fun l => (List.range 16).all fun i => σ.mem 1 (16 * l + i) == outT3 2 i l
   | none => false
 
@@ -77,7 +77,7 @@ theorem inT3_eval (hi : Incs s.mem (s.gpr .r9)) {k i l : Nat} (hk : k < 3) (hi16
   rw [show 56 + 8 * 1 + (4 * l + i % 4) = 64 + 4 * l + i % 4 by omega_arith,
     show (4 * l + i % 4) / 4 = l by omega_arith, show (4 * l + i % 4) % 4 = i % 4 by omega_arith] at e₂
   split
-  · simp only [T.eval, regn, baseR, e₁, e₂, stateAt_get _ _ hi16]
+  · simp only [T.eval, memBase_0, memBase_1, e₁, e₂, stateAt_get _ _ hi16]
     by_cases h12 : i = 12
     · subst h12
       simp only [ite_true]
@@ -85,7 +85,7 @@ theorem inT3_eval (hi : Incs s.mem (s.gpr .r9)) {k i l : Nat} (hk : k < 3) (hi16
       apply BitVec.eq_of_toNat_eq; simp; omega_arith
     · rw [ite_eq_right (by omega_arith), ite_eq_right (by omega_arith), ite_eq_right h12]
       simp
-  · simp only [T.eval, regn, baseR, stateAt_get _ _ hi16]
+  · simp only [T.eval, memBase_0, stateAt_get _ _ hi16]
     rw [ite_eq_right (by omega_arith)]
 
 theorem outT3_eval {vs : Nat → CState} (hz : HB 3 vs s) (hi : Incs s.mem (s.gpr .r9)) {k i l : Nat}
@@ -107,7 +107,7 @@ theorem ym3_of {D : Nat} {σ : Sym} {s s' : State} (h : SRel D σ s s') (hm : ma
 
 /-! ## The instructions -/
 
-theorem setup3_ok {s : State} (hc : Ctx 64 s) (hm : Consts s.mem (s.gpr .r9)) (hi : Incs s.mem (s.gpr .r9)) :
+theorem setup3_ok {s : State} (hc : Ctx 0 s) (hm : Consts s.mem (s.gpr .r9)) (hi : Incs s.mem (s.gpr .r9)) :
     WP isa (.block setup3) s fun s' =>
       HB 3 (fun j => ctr (S0 s) j) s' ∧ YM3 s' ∧ s'.mem = s.mem ∧ s'.gpr = s.gpr ∧ s'.rd = s.rd ∧
         s'.wr = s.wr := by
@@ -116,7 +116,7 @@ theorem setup3_ok {s : State} (hc : Ctx 64 s) (hm : Consts s.mem (s.gpr .r9)) (h
   split at e
   · rename_i σ hr
     simp only [Bool.and_eq_true, Bool.not_eq_true', List.all_eq_true, List.mem_range, beq_iff_eq] at e
-    refine WP.mono (srun_ok hc setup3 (SRel.init 64 s) hr) fun s' h => ⟨fun k hk l hl i hi16 => ?_,
+    refine WP.mono (srun_ok hc setup3 (SRel.init 0 s) hr) fun s' h => ⟨fun k hk l hl i hi16 => ?_,
       ym3_of h e.1.2 hm, h.clean e.1.1, h.gpr, h.rd, h.wr⟩
     have r := h.reg (zreg (4 * k + i / 4)) (4 * l + i % 4) (by omega_arith)
     rw [xidx_zreg _ (by omega_arith), e.2 k hk _ (by omega_arith) _ (by omega_arith)] at r
@@ -125,32 +125,34 @@ theorem setup3_ok {s : State} (hc : Ctx 64 s) (hm : Consts s.mem (s.gpr .r9)) (h
     rw [r, inT3_eval hi hk hi16 hl]
   · cases e
 
-theorem last3_ok {s : State} (hc : Ctx 64 s) (hi : Incs s.mem (s.gpr .r9)) {vs : Nat → CState}
+/-- The last three sets: the first two XORed with the source at `rsi` into
+the destination at `rsi + r11` (`dstR`), the third into `buf`. -/
+theorem last3_ok {s : State} (hc : Ctx 0 s ∧ Ctx3 64 s) (hi : Incs s.mem (s.gpr .r9)) {vs : Nat → CState}
     (hz : HB 3 vs s) :
     WP isa (.block (addIn3 ++ xorSetT .xmm0 .xmm1 .xmm2 .xmm3 0 ++ xorSetT .xmm4 .xmm5 .xmm6 .xmm7 128 ++
       storeSetT .xmm8 .xmm9 .xmm10 .xmm11 0)) s fun s' =>
-      (∀ k < 256, s'.mem (s.gpr .rsi + BitVec.ofNat 64 k) = s.mem (s.gpr .rsi + BitVec.ofNat 64 k) ^^^
+      (∀ k < 256, s'.mem ((dstR 64 s).base + BitVec.ofNat 64 k) = s.mem (s.gpr .rsi + BitVec.ofNat 64 k) ^^^
         (serialize (plus vs (S0 s) (k / 64))).getD (k % 64) 0) ∧
       (∀ k < 128, s'.mem (s.gpr .r9 + BitVec.ofNat 64 k) =
         (serialize (plus vs (S0 s) (4 + k / 64))).getD (k % 64) 0) ∧
-      Frame (wregs 64 s) s.mem s'.mem ∧ s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+      Frame (wregsT true 64 s) s.mem s'.mem ∧ s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   have e := last3Check_eq
   unfold last3Check at e
   split at e
   · rename_i σ hr
     simp only [Bool.and_eq_true, List.all_eq_true, List.mem_range, beq_iff_eq] at e
-    refine WP.mono (srun_ok hc _ (SRel.init 64 s) hr) fun s' h => ⟨fun k hk => ?_, fun k hk => ?_,
-      h.frame, h.gpr, h.rd, h.wr⟩
-    · have d := h.mem 2 (k / 4) (by decide) (by simp only [bsize]; omega_arith)
+    refine WP.mono (srunT_ok (to := true) hc _ (SRelT.init true 64 s) hr) fun s' h => ⟨fun k hk => ?_,
+      fun k hk => ?_, h.frame, h.gpr, h.rd, h.wr⟩
+    · have d := h.mem3 rfl (k / 4) (by omega_arith)
       rw [show k / 4 = 16 * (k / 64) + k % 64 / 4 by omega_arith, e.1 _ (by omega_arith) _ (by omega_arith)] at d
-      simp only [T.eval, regn, baseR] at d
+      simp only [T.eval, memBase_2] at d
       rw [outT3_eval hz hi (by omega_arith) (by omega_arith) (by omega_arith),
         show 2 * (k / 64 / 2) + k / 64 % 2 = k / 64 by omega_arith,
         show 4 * (16 * (k / 64) + k % 64 / 4) = 4 * (k / 4) by omega_arith] at d
       rw [byte_dword s'.mem, byte_dword s.mem, d, BitVec.extractLsb'_xor,
         serialize_getD _ (Nat.mod_lt _ (by decide)), show k % 64 % 4 = k % 4 by omega_arith]
     · refine byte_out (f := fun j => plus vs (S0 s) (4 + j)) ?_
-      have d := h.mem 1 (k / 4) (by decide) (by simp only [bsize]; omega_arith)
+      have d := h.mem 1 (k / 4) (by decide) (by simp only [bsize]; omega_arith) (fun _ e => nomatch e)
       rw [show k / 4 = 16 * (k / 64) + k % 64 / 4 by omega_arith, e.2 _ (by omega_arith) _ (by omega_arith),
         outT3_eval hz hi (by decide) (by omega_arith) (by omega_arith), show 2 * 2 + k / 64 = 4 + k / 64 by omega_arith] at d
       simp only [regn, baseR] at d
