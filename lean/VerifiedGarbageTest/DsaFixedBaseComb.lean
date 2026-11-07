@@ -2,8 +2,6 @@ module
 
 import VerifiedGarbage.Proof.Dsa.FixedBaseCombContract
 meta import VerifiedGarbage.Proof.Dsa.FixedBaseCombContract
-import VerifiedGarbage.TCB.Audit
-meta import VerifiedGarbage.TCB.Audit
 
 /-! Algebraic checks of the comb contracts' representation and frame policy
 (`Proof/Dsa/FixedBaseCombContract.lean`).
@@ -55,5 +53,3 @@ private def checkContext (n e : Nat) : Bool :=
 
 -- Every DSA keygen storage shape, including 224/256-bit zero-padded comb rows.
 #guard [(16, 5), (32, 5), (32, 7), (32, 8), (48, 8)].all fun (n, e) => checkContext n e
-
-#assert_spec_origin

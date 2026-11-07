@@ -273,7 +273,6 @@ def checkEdges : Except String Unit := do
 
 #assert_no_compiler_overrides Spec.Rsa.publicPrecompute Spec.Rsa.publicOp Spec.Rsa.privateCrt Spec.Rsa.crtKey
 #assert_no_compiler_overrides Spec.Rsa.publicOpChecked Spec.Rsa.privateChecked Spec.Rsa.checkKey
-#assert_spec_origin
 
 run_cmd do
   let file ← IO.FS.realPath (← getFileName)

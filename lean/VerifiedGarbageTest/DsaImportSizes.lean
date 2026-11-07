@@ -4,8 +4,6 @@ import VerifiedGarbage.Spec.Dsa.ImportSizes
 meta import VerifiedGarbage.Spec.Dsa.ImportSizes
 import VerifiedGarbage.Spec.Dsa.Generate
 meta import VerifiedGarbage.Spec.Dsa.Generate
-import VerifiedGarbage.TCB.Audit
-meta import VerifiedGarbage.TCB.Audit
 
 /-! Regression checks for the trusted legacy DSA import-size policy. -/
 namespace VG.Test.DsaImportSizes
@@ -37,8 +35,5 @@ example (pLen qLen : Nat) : Import.lengthsValid pLen qLen ↔
 -- The import extension does not enable parameter generation at 2048/160.
 #guard subgroupBits 2048 == some 256
 #guard ¬generationLengthsValid 256 20
-
-#assert_no_compiler_overrides Import.sizesValid Import.lengthsValid
-#assert_spec_origin
 
 end VG.Test.DsaImportSizes

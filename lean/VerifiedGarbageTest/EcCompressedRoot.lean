@@ -2,16 +2,6 @@ module
 
 import VerifiedGarbage.Impl.EcKey.Compressed.Root
 meta import VerifiedGarbage.Impl.EcKey.Compressed.Root
-import VerifiedGarbage.Proof.EcKey.Compressed.Root
-meta import VerifiedGarbage.Proof.EcKey.Compressed.Root
-import VerifiedGarbage.Proof.Weierstrass.Sqrt
-meta import VerifiedGarbage.Proof.Weierstrass.Sqrt
-import VerifiedGarbage.Proof.P224.Sqrt
-meta import VerifiedGarbage.Proof.P224.Sqrt
-import VerifiedGarbage.Proof.EcKey.Compressed.Decode
-meta import VerifiedGarbage.Proof.EcKey.Compressed.Decode
-import VerifiedGarbage.Proof.Weierstrass.RootTonelli
-meta import VerifiedGarbage.Proof.Weierstrass.RootTonelli
 
 /-! Exhaustive algebraic checks over a small synthetic prime field.
 These exercise both square-root paths and checked parity selection, rather

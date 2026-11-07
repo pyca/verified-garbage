@@ -4,8 +4,6 @@ import VerifiedGarbage.TCB.AArch64.Print
 meta import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 meta import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
-meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
 
 /-! Golden tests for contiguous stack buffers and SP-relative addresses. -/
 namespace VG.Test.AArch64Stack

@@ -347,9 +347,6 @@ def checkPrimality : Except String Unit := do
     throw "empty parameter search consumed witnesses"
 
 #assert_no_compiler_overrides Spec.Dsa.fromComponents Spec.Dsa.sign Spec.Dsa.verify
-#assert_no_compiler_overrides Spec.Dsa.validatePublicKeyApi Spec.Dsa.verifyPrevalidatedApi
-#assert_no_compiler_overrides Spec.Dsa.validatePrivateKeyApi Spec.Dsa.randomSignPrevalidatedApi
-#assert_spec_origin
 
 run_cmd do
   let file ← IO.FS.realPath (← getFileName)

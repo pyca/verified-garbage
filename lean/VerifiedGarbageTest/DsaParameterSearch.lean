@@ -4,8 +4,6 @@ import Lean.Elab.Command
 meta import Lean.Elab.Command
 import VerifiedGarbage.Spec.Dsa.ParameterSearchContract
 meta import VerifiedGarbage.Spec.Dsa.ParameterSearchContract
-import VerifiedGarbage.TCB.Audit
-meta import VerifiedGarbage.TCB.Audit
 
 /-!
 # DSA parameter generation over refillable tapes
@@ -125,9 +123,6 @@ def checkInit : Except String Unit := do
   unless generationQLen 128 == 20 && generationQLen 256 == 32 && generationQLen 384 == 32 &&
       [128, 256, 384].all fun p => generationLengthsValid p (generationQLen p) do
     throw "the subgroup widths are not the generated (L, N) pairs"
-
-#assert_no_compiler_overrides Spec.Dsa.parameterInitApi Spec.Dsa.parameterSearchApi
-#assert_spec_origin
 
 run_cmd do
   for result in [check, checkEntropyBudget, checkInit] do

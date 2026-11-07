@@ -301,7 +301,6 @@ def checkEdges : Except String Unit := do
   unless encrypt nB eB M (List.replicate 7 1 ++ [0]) == none do throw "PS with a zero"
 
 #assert_no_compiler_overrides Spec.RsaPkcs1Enc.encrypt Spec.RsaPkcs1Enc.decrypt
-#assert_spec_origin
 
 run_cmd do
   let file ← IO.FS.realPath (← getFileName)

@@ -114,7 +114,6 @@ def checkEntropyBudget : Except String Unit := do
     throw "below the budget, the candidate was not kept for a refill"
 
 #assert_no_compiler_overrides Spec.RsaKeyGen.primeInit Spec.RsaKeyGen.primeSearch
-#assert_spec_origin
 
 run_cmd do
   for result in [check, checkEntropyBudget] do

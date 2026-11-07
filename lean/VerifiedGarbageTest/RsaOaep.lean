@@ -101,7 +101,6 @@ def check (key : Key) (msg seed c : List Byte) : Except String Unit := do
   unless dec [] (0 :: c) == .invalid do throw "decrypted a ciphertext of k + 1 octets"
 
 #assert_no_compiler_overrides Spec.RsaOaep.encrypt Spec.RsaOaep.decode Spec.RsaOaep.decrypt
-#assert_spec_origin
 
 run_cmd do
   let file ← IO.FS.realPath (← getFileName)

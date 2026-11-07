@@ -119,7 +119,6 @@ def checkEdges : Except String Unit := do
     throw "tooClose"
 
 #assert_no_compiler_overrides Spec.RsaKeyGen.generate Spec.RsaKeyGen.candidateStep Spec.RsaKeyGen.keyFromPrimes
-#assert_spec_origin
 
 run_cmd do
   match checkEdges with

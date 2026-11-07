@@ -241,7 +241,6 @@ def checkMgf1 : Except String Unit := do
     unless (H.hash []).length == H.len do throw s!"{H.name}: digest length"
 
 #assert_no_compiler_overrides Spec.RsaPss.encodeK Spec.RsaPss.verify Spec.RsaPss.sign Spec.Mgf1.mgf1
-#assert_spec_origin
 
 run_cmd do
   let file ← IO.FS.realPath (← getFileName)

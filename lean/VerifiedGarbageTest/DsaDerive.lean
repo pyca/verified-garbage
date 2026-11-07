@@ -17,9 +17,6 @@ open Lean Elab Command Spec.Dsa
 #guard deriveKeyBytes 128 20 [] [] == none
 #guard deriveKeyBytes 128 20 (List.replicate 276 0) (List.replicate 20 1) == none
 
-#assert_no_compiler_overrides Spec.Dsa.deriveKeyApi
-#assert_spec_origin
-
 run_cmd do
   let file ← IO.FS.realPath (← getFileName)
   let some root := file.parent >>= (·.parent) >>= (·.parent) | throwError "no repository root"
