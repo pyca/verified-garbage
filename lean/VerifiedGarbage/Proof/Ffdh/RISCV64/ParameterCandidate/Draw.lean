@@ -20,6 +20,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Ffdh.RISCV64.Search
 
 -- separate module: a witness's draw and round, whose symbolic executions the witness loop's changes need not re-check
 
@@ -52,9 +53,10 @@ variable {C : Nat}
 open VG VG.RISCV64 VG.RISCV64.RegUpd VG.Impl.Bignum VG.Impl.Bignum.RISCV64 VG.Impl.Ffdh.RISCV64.ParameterCandidate
 open VG.Proof.Bignum VG.Proof.Bignum.RISCV64
 open VG.RISCV64.Steps (eval_zero eval_zero_ofNat)
-open VG.Impl.MillerRabin.RISCV64 VG.Impl.MillerRabin.RISCV64.Search
+open VG.Impl.MillerRabin.RISCV64 VG.Impl.MillerRabin.RISCV64.Search VG.Impl.Ffdh.RISCV64.Search
 open VG.Proof.MillerRabin.RISCV64 (Env A MCtx RoundImpl)
-open VG.Proof.MillerRabin.RISCV64.Search (rw_self frm_writeW geFlag_ok)
+open VG.Proof.MillerRabin.RISCV64.Search (geFlag_ok)
+open VG.Proof.Ffdh.RISCV64.Search (rw_self frm_writeW)
 open VG.Proof.RsaKeyGen (mrE mrA)
 open VG.Proof.Bignum.RISCV64.Pre (Two)
 
@@ -399,13 +401,13 @@ theorem roundCount_ok {R : RoundImpl} (hR : RoundCall R) {s : State} {B : Addr} 
     (h : RC ⟨B, L, w, c, a⟩ s)
     (hI : word s.mem B 176 = BitVec.ofNat 64 i) (hK : word s.mem B 168 = BitVec.ofNat 64 K)
     (hi : i < 2 ^ 62) (hK' : K < 2 ^ 62) :
-    WP isa (Search.round R.name R.code) s (RdPost s B L w c a i K) := by
+    WP isa (VG.Impl.Ffdh.RISCV64.Search.round R.name R.code) s (RdPost s B L w c a i K) := by
   have hp : Prep s B L w c := h.1
   have hZ := hp.ctx.hZ
   have hnw := hp.ctx.scr.nowrap
   have es : ∀ j, VG.Proof.Bignum.slot w j = 256 + j * (8 * (w + 2)) := fun _ => rfl
   have hZ' : 256 + 28 * (8 * (w + 2)) ≤ 8 * L := by rw [← es]; exact hZ
-  unfold Search.round
+  unfold VG.Impl.Ffdh.RISCV64.Search.round
   refine WP.seq (WP.mono (hR.ok ⟨B, L, w, c, a⟩ s h) fun u (hu : RcPost s B L w c a u) => ?_)
   have hs : Scr u B (8 * L) := hu.prep.ctx.scr
   have h6 : u.gpr .s6 = B := hu.prep.s6
@@ -587,7 +589,7 @@ theorem dCut_ok {p : PP} {mb : Nat} {s : State} (h : St p s) (hm1 : 511 ≤ mb) 
     fun t ⟨⟨e0, kt⟩, _, _, tsp⟩ => ?_
   · simp only [ldh, hTop]
     brun [v3, (kv.gpr (by decide)).trans h0, (kv.gpr (by decide)).trans h.s6,
-      VG.Proof.MillerRabin.RISCV64.Search.shl3_ofNat, e3, sT, lT, aT, l192, a192, tv, BitVec.add_zero,
+      VG.Proof.Ffdh.RISCV64.Search.shl3_ofNat, e3, sT, lT, aT, l192, a192, tv, BitVec.add_zero,
       add_ofNat_zero, vm, show s.mem.readW (p.B + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 (2 ^ k - 1) from htop]
   refine ⟨⟨⟨?_, ?_⟩, (kv.trans kt).mono (by decide)⟩, by rw [tsp, vsp]⟩
   · rw [← hb]
@@ -750,7 +752,7 @@ theorem dRange_ok {s : State} {B : Addr} {Z w N x : Nat} (hs : Scr s B Z) (h7 : 
       (s₄.mem.writeW (off B (slot w 3)) (s₄.mem.readW (off B (slot w 3)) 64 ||| 1#64)).writeW
         (off B (slot w 3 + 8 * w)) 0#64) ?_ (by rfl) (by rfl)) fun s₅ ⟨m₅, k₅⟩ => ?_
   · brun [b3, BitVec.add_zero, add_ofNat_zero, l3, st3, st3w, al3, al3w, (k14.gpr (by decide)).trans h0,
-      VG.Proof.MillerRabin.RISCV64.Search.shl3_ofNat, exec_li (show imm12 0 by decide)]
+      VG.Proof.Ffdh.RISCV64.Search.shl3_ofNat, exec_li (show imm12 0 by decide)]
   have k15 := k14.trans k₅
   rw [WP.block_append_iff]
   refine WP.mono (Pub.base_ok (rd := .a5) (by decide) ((k15.gpr (by decide)).trans h7)
@@ -831,7 +833,7 @@ abbrev cutB : List Instr :=
 
 /-- The draw's branches: on the witness below 2, on its range, and the round. -/
 def drawBranch (name : String) (roundCode : Prog isa) : Prog isa :=
-  .ite (.zero .a3) (.block []) (.ite (.zero .s4) (.block []) (Search.round name roundCode))
+  .ite (.zero .a3) (.block []) (.ite (.zero .s4) (.block []) (VG.Impl.Ffdh.RISCV64.Search.round name roundCode))
 
 theorem draw_eq (name : String) (roundCode : Prog isa) :
     draw name roundCode = .seq (.seq (.block dHeadB) (.seq loadN (.block [.addi .a7 .s6 hdrBytes])))

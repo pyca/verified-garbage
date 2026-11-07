@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
 import VerifiedGarbage.Proof.Mont.RangeCover
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Ffdh.RISCV64.Search
 
 /-!
 # An FFDH parameter candidate on RISC-V: the tests
@@ -36,9 +37,9 @@ variable {C : Nat}
 open VG VG.RISCV64 VG.RISCV64.RegUpd VG.Impl.Bignum VG.Impl.Bignum.RISCV64 VG.Impl.Ffdh.RISCV64.ParameterCandidate
 open VG.Proof.Bignum VG.Proof.Bignum.RISCV64
 open VG.RISCV64.Steps (eval_zero eval_nonzero eval_zero_ofNat eval_nonzero_ofNat)
-open VG.Impl.MillerRabin.RISCV64 VG.Impl.MillerRabin.RISCV64.Search
+open VG.Impl.MillerRabin.RISCV64 VG.Impl.MillerRabin.RISCV64.Search VG.Impl.Ffdh.RISCV64.Search
 open VG.Proof.MillerRabin.RISCV64 (Env A MCtx RoundImpl)
-open VG.Proof.MillerRabin.RISCV64.Search (rw_self frm_writeW)
+open VG.Proof.Ffdh.RISCV64.Search (rw_self frm_writeW)
 open VG.Proof.Ffdh.ParameterCandidate (checkWitnesses drawWitness_eq onPass sievedTests)
 
 /-! ## The witnesses, one draw at a time -/
@@ -350,7 +351,7 @@ theorem montPrep_mst {p : PP} {mb N : Nat} {s : State} (h : St p s) (hp : Ph p m
   have env : Env s p.B (8 * p.n) (wOf mb) := ⟨h.scr, hp.a7, hp.s5, hp.t0, h.s6, by omega_arith, hw128,
     by simp only [PP.Z] at hZ; omega_arith⟩
   have harr : A s.mem p.B (wOf mb) 0 = N := by rw [A, Pre.wordsVal_eq_wv]; exact hn
-  refine WP.mono (WP.rdwr (VG.Proof.MillerRabin.RISCV64.Search.montPrep_ok env harr hodd hN3))
+  refine WP.mono (WP.rdwr (VG.Proof.Ffdh.RISCV64.Search.montPrep_ok env harr hodd hN3))
     fun t ⟨⟨⟨envt, nt, inv, it1, r1, r9, r10, e, l, outs⟩, k⟩, _, _, tsp⟩ => ?_
   have fo : Frm p.B (VG.Proof.MillerRabin.RISCV64.Search.mpRanges (wOf mb)) s.mem t.mem := outs
   have hf : Frm p.B (mutR p.n) s.mem t.mem := Frm.toMut fo fun r hr => by

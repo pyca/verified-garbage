@@ -19,6 +19,7 @@ import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Ffdh.Domain
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.RISCV64.Li
 
 /-!
 # `vg_ffdh_derive_public` on RISC-V: constant time

@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.Bignum.RISCV64.MontFinish64
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Ffdh.RISCV64.Li
 
 /-! # The cached key-generation controller's contract, public data, loop states and writes (RISC-V)
 

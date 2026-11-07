@@ -14,7 +14,6 @@ def artifacts (v : Proof.MillerRabin.RISCV64.RoundImpl) : List Artifact := [
   Spec.Ffdh.sievedParameterSearchApi.artifact RISCV64.target {
     suffix := v.suffix
     stack := 128
-    consts := Impl.RsaKeyGen.TrialTable32.consts
     code := Proof.Ffdh.RISCV64.Generation.searchCode v
     verified := Proof.Ffdh.RISCV64.Generation.search_verified v
     features := v.features }]

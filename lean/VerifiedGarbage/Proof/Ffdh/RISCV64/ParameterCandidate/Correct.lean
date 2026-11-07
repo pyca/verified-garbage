@@ -31,7 +31,7 @@ namespace VG.Proof.Ffdh.RISCV64.ParameterCandidate
 open VG VG.RISCV64 VG.RISCV64.RegUpd VG.Impl.Bignum VG.Impl.Bignum.RISCV64 VG.Impl.Ffdh.RISCV64.ParameterCandidate
 open VG.Proof.Bignum VG.Proof.Bignum.RISCV64
 open VG.RISCV64.Steps (eval_zero eval_zero_ofNat)
-open VG.Impl.MillerRabin.RISCV64.Search
+open VG.Impl.MillerRabin.RISCV64.Search VG.Impl.Ffdh.RISCV64.Search
 open VG.Proof.MillerRabin.RISCV64 (RoundImpl)
 open VG.Proof.MillerRabin.RISCV64.Search (geFlag_ok)
 open VG.Proof.Ffdh.ParameterCandidate (sievedTests sieved_eq)

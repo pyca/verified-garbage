@@ -19,6 +19,7 @@ meta import VerifiedGarbage.TCB.RISCV64.Target
 import VerifiedGarbage.Proof.Bignum.RISCV64.PreLoad
 import VerifiedGarbage.Proof.EntropyRequest
 import VerifiedGarbage.Proof.Bignum.RISCV64.MontFinish64
+import VerifiedGarbage.Proof.Ffdh.RISCV64.Li
 
 /-! # Native FFDH parameter-generation initialization on RISC-V: correctness, constant time
 
@@ -37,7 +38,7 @@ namespace VG.Proof.Ffdh.RISCV64.Generation
 
 open VG VG.RISCV64 VG.RISCV64.Taint VG.Proof.Bignum VG.Impl.Ffdh.RISCV64.Generation
 open VG.Proof.Ffdh.RISCV64.KeyGeneration (initWritten initWritten_words StateWr st al st0 al0)
-open VG.Proof.Bignum.RISCV64 (add_ofNat_zero fin64_exec_li_lit fin64_exec_li_zero)
+open VG.Proof.Bignum.RISCV64 (add_ofNat_zero fin64_exec_li_zero)
 
 /-- Whether `init` accepts `bits` and the generator. -/
 def initValid (bits g : Nat) : Prop := 512 ≤ bits ∧ bits ≤ 8192 ∧ (g = 2 ∨ g = 5)

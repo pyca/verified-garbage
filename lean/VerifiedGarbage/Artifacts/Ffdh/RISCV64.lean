@@ -30,7 +30,6 @@ def artifacts : List Artifact := [
     code := Impl.Ffdh.RISCV64.Domain.checkPublic
     verified := Proof.Ffdh.RISCV64.Domain.checkPublic_verified },
   Spec.Ffdh.checkDomainApi.artifact RISCV64.target {
-    consts := Impl.Ffdh.RISCV64.VettedValidation.tableConsts
     code := Impl.Ffdh.RISCV64.VettedValidation.code
     verified := Proof.Ffdh.RISCV64.VettedValidation.verified },
   Spec.Ffdh.exchangeApi.artifact RISCV64.target {
@@ -43,7 +42,6 @@ def artifacts : List Artifact := [
     code := Impl.Ffdh.RISCV64.CheckPrivate.checkPrivate
     verified := Proof.Ffdh.RISCV64.CheckPrivate.checkPrivate_verified },
   Spec.Ffdh.generationPrecomputeApi.artifact RISCV64.target {
-    consts := Impl.Ffdh.RISCV64.VettedValidation.tableConsts
     code := Impl.Ffdh.RISCV64.Cached.Precompute.code
     verified := Proof.Ffdh.RISCV64.Cached.pc_verified },
   Spec.Ffdh.cachedGenerateKeyApi.artifact RISCV64.target {

@@ -19,6 +19,7 @@ import VerifiedGarbage.Proof.Bignum.RISCV64.PreLoad
 import VerifiedGarbage.Proof.Bignum.RISCV64.MontFinish64
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.RISCV64.Li
 
 /-! # Native FFDH key-generation initialization on RISC-V: correctness, constant time
 
@@ -33,7 +34,7 @@ the result. The code branches on `p_len` alone, which is public
 namespace VG.Proof.Ffdh.RISCV64.KeyGeneration
 
 open VG VG.RISCV64 VG.RISCV64.Taint VG.Proof.Bignum VG.Impl.Ffdh.RISCV64.KeyGeneration
-open VG.Proof.Bignum.RISCV64 (add_ofNat_zero fin64_exec_li_lit fin64_exec_li_zero)
+open VG.Proof.Bignum.RISCV64 (add_ofNat_zero fin64_exec_li_zero)
 
 /-- The four public words written. -/
 def initWritten (m : Mem) (B : Addr) (a b c d : BitVec 64) : Mem :=

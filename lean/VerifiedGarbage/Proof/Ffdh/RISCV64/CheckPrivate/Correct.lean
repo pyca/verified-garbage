@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Ffdh.Domain
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.RISCV64.Li
 
 /-!
 # `vg_ffdh_check_private` on RISC-V: correctness

@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.RISCV64.Search
 
 /-!
 # An FFDH parameter candidate on RISC-V: RSA's trial division
@@ -31,8 +32,8 @@ namespace VG.Proof.Ffdh.RISCV64.ParameterCandidate
 
 open VG VG.RISCV64 VG.RISCV64.RegUpd VG.Impl.Bignum VG.Impl.Bignum.RISCV64 VG.Impl.Ffdh.RISCV64.ParameterCandidate
 open VG.Proof.Bignum VG.Proof.Bignum.RISCV64
-open VG.Impl.MillerRabin.RISCV64.Search
-open VG.Proof.MillerRabin.RISCV64.Search (rw_self frm_writeW)
+open VG.Impl.MillerRabin.RISCV64.Search VG.Impl.Ffdh.RISCV64.Search
+open VG.Proof.Ffdh.RISCV64.Search (rw_self frm_writeW)
 open VG.Impl.RsaKeyGen (TrialTable32.symbol TrialTable32.entry)
 
 /-! ## The entries tried -/

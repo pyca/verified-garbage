@@ -18,6 +18,7 @@ import VerifiedGarbage.Proof.Ffdh.Domain
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.RISCV64.Search
 
 /-!
 # An FFDH parameter candidate on RISC-V: the contract, the invariant and a modulus's working space
@@ -44,8 +45,8 @@ namespace VG.Proof.Ffdh.RISCV64.ParameterCandidate
 
 open VG VG.RISCV64 VG.RISCV64.RegUpd VG.Impl.Bignum VG.Impl.Bignum.RISCV64 VG.Impl.Ffdh.RISCV64.ParameterCandidate
 open VG.Proof.Bignum VG.Proof.Bignum.RISCV64
-open VG.Impl.MillerRabin.RISCV64.Search
-open VG.Proof.MillerRabin.RISCV64.Search (rw_self frm_writeW)
+open VG.Impl.MillerRabin.RISCV64.Search VG.Impl.Ffdh.RISCV64.Search
+open VG.Proof.Ffdh.RISCV64.Search (rw_self frm_writeW)
 open VG.Spec.Ffdh
 open VG.Spec.Rsa (bytesAt wordsAt i2osp)
 
@@ -428,7 +429,7 @@ theorem phaseTail_ok {p : PP} {s : State} (h : St p s) {mb : Nat} (h3 : s.gpr .t
   have ek : (BitVec.ofNat 64 mb + BitVec.ofNat 64 7) >>> 3 = BitVec.ofNat 64 ((mb + 7) / 8) :=
     add_shr _ _ _ (by omega_arith)
   have e5 : BitVec.ofNat 64 (wOf mb) <<< 3 + BitVec.ofNat 64 16 = BitVec.ofNat 64 (8 * (wOf mb + 2)) := by
-    rw [VG.Proof.MillerRabin.RISCV64.Search.shl3_ofNat, BitVec.ofNat_add_ofNat]; congr 1
+    rw [VG.Proof.Ffdh.RISCV64.Search.shl3_ofNat, BitVec.ofNat_add_ofNat]; congr 1
   brun [h.s6, h3, BitVec.add_zero,
     h.st (d := 248) (by decide), h.al (d := 248) (by decide) (by decide),
     h.st (d := 216) (by decide), h.al (d := 216) (by decide) (by decide),
