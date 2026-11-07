@@ -89,6 +89,36 @@ theorem ctlOk_of_ctlC {c : Prog isa} (h : ctlC c = true) : ctlOk c = true := by
     simp only [ctlC, Bool.and_eq_true] at h
     simp only [ctlOk, h.1.1, h.1.2, ihn h.2, Bool.and_self]
 
+/-- Code that never loads MXCSR satisfies `ctlOk`. -/
+theorem ctlOk_of_allInstrs {c : Prog isa} (h : c.allInstrs (fun i => !loadsMxcsr i) = true) : ctlOk c = true := by
+  induction c with
+  | block is =>
+    rw [Code.allInstrs_eq] at h
+    exact (KList.all_eq _ _).trans h
+  | seq _ _ iha ihb =>
+    simp only [Code.allInstrs, Bool.and_eq_true] at h
+    simp only [ctlOk, iha h.1, ihb h.2, Bool.and_self, Bool.or_true]
+  | ite _ _ _ iht ihe =>
+    simp only [Code.allInstrs, Bool.and_eq_true] at h
+    simp only [ctlOk, iht h.1, ihe h.2, Bool.and_self]
+  | loop _ _ ih => exact ih h
+  | call _ _ ih => exact ih h
+  | frame _ _ _ ih =>
+    simp only [Code.allInstrs, Bool.and_eq_true] at h
+    simp only [ctlOk, h.1.1, h.2, ih h.1.2, Bool.and_self]
+  | icall _ _ _ _ ihb ihn =>
+    simp only [Code.allInstrs, Bool.and_eq_true] at h
+    simp only [ctlOk, h.1.1, ihb h.1.2, ihn h.2, Bool.and_self]
+
+theorem ctlOk_seq_of {a b : Prog isa} (ha : ctlOk a = true) (hb : ctlOk b = true) : ctlOk (.seq a b) = true := by
+  simp only [ctlOk, ha, hb, Bool.and_self, Bool.or_true]
+
+theorem ctlOk_ite_of {c : Cond} {a b : Prog isa} (ha : ctlOk a = true) (hb : ctlOk b = true) :
+    ctlOk (.ite c a b) = true := by
+  simp only [ctlOk, ha, hb, Bool.and_self]
+
+theorem ctlOk_loop_of {c : Cond} {a : Prog isa} (ha : ctlOk a = true) : ctlOk (.loop a c) = true := ha
+
 /-- MXCSR's control bits, which the calling convention preserves. -/
 abbrev ctl (v : BitVec 32) : BitVec 10 := v.extractLsb' 6 10
 
