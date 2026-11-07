@@ -142,9 +142,10 @@ vg_chacha20_poly1305_seal:
 	add eax, 64
 	mov ecx, DWORD PTR [esp+20]
 	mov edx, DWORD PTR [esp+24]
-	mov esi, edi
-	add esi, 128
-	push esi
+	mov ebx, edi
+	add ebx, 128
+	mov esi, ecx
+	push ebx
 	push edx
 	push ecx
 	push eax
@@ -613,9 +614,10 @@ vg_chacha20_poly1305_open:
 	add eax, 64
 	mov ecx, DWORD PTR [esp+20]
 	mov edx, DWORD PTR [esp+24]
-	mov esi, edi
-	add esi, 128
-	push esi
+	mov ebx, edi
+	add ebx, 128
+	mov esi, ecx
+	push ebx
 	push edx
 	push ecx
 	push eax
@@ -1064,9 +1066,10 @@ vg_chacha20_poly1305_seal_ssse3:
 	add eax, 64
 	mov ecx, DWORD PTR [esp+20]
 	mov edx, DWORD PTR [esp+24]
-	mov esi, edi
-	add esi, 128
-	push esi
+	mov ebx, edi
+	add ebx, 128
+	mov esi, ecx
+	push ebx
 	push edx
 	push ecx
 	push eax
@@ -1535,9 +1538,10 @@ vg_chacha20_poly1305_open_ssse3:
 	add eax, 64
 	mov ecx, DWORD PTR [esp+20]
 	mov edx, DWORD PTR [esp+24]
-	mov esi, edi
-	add esi, 128
-	push esi
+	mov ebx, edi
+	add ebx, 128
+	mov esi, ecx
+	push ebx
 	push edx
 	push ecx
 	push eax
