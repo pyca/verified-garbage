@@ -4,6 +4,7 @@ public import VerifiedGarbage.Spec.Cast5.CfbFinal
 public import VerifiedGarbage.Proof.Framework.Scratch
 public import VerifiedGarbage.Proof.Framework.PostMono
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Cast5.ModeScratch
 
 /-!
 # CAST5-CFB64 of a message's last piece on the subkeys at `schedule`
@@ -12,7 +13,9 @@ import VerifiedGarbage.Proof.Framework.Offset
 the subkeys at `schedule` and `rounds` rounds, which read the memory on
 return only within the functions' buffers (`cfbEncFinalPostOut_local`, …),
 as the frame that keeps a scratch buffer on the stack needs
-(`Verified.stackScratchWiped`); `cfbEncryptFinal_keyed`, … give the
+(`Verified.stackScratchWiped`), and, where that frame also moves the memory
+on entry (ARMv7), the precondition and the postconditions the memory on
+entry only within them too (`cfbFinalPre_local`, `cfbEncFinalPost_local`, …); `cfbEncryptFinal_keyed`, … give the
 specification's contracts, on every key whose subkeys those are.
 -/
 
@@ -56,6 +59,50 @@ theorem cfbEncryptFinal_keyed {T : Target} {c : Prog T.isa} {A : Abi T.isa} {sta
     unfold cfbEncFinalPost at hp
     rw [hw, hr] at hp
     exact hp
+
+/-- `cfbFinalPre` reads no memory. -/
+theorem cfbFinalPre_local (pb : Nat) : ∀ vs m₁ m₂, vs.length = (cfbFinalSig.words pb).length →
+    Curry.apply (cfbFinalSig.words pb) (cfbFinalPre pb) vs m₁ → Curry.apply (cfbFinalSig.words pb) (cfbFinalPre pb) vs m₂ := by
+  intro vs _ _ hlen h
+  obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 4) hlen
+  replace hlen := Nat.succ.inj hlen
+  iterate 4
+    obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  exact h
+
+/-- `cfbEncFinalPost` reads the memory on entry only within the functions'
+buffers. -/
+theorem cfbEncFinalPost_local (pb : Nat) : ∀ vs m₁ m₂ m' r, vs.length = (cfbFinalSig.words pb).length →
+    (∀ b ∈ Sig.bufs cfbFinalSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (cfbFinalSig.words pb) (cfbEncFinalPost pb) vs m₁ m' r →
+      Curry.apply (cfbFinalSig.words pb) (cfbEncFinalPost pb) vs m₂ m' r := by
+  intro vs m₁ m₂ m' r hlen hb h
+  obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 4) hlen
+  replace hlen := Nat.succ.inj hlen
+  iterate 2
+    obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+  obtain ⟨data, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨n, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [cfbFinalSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq, Elem.size, Nat.mul_one] at hb
+  have hs := agree_of hb.1
+  have hv := agree_of hb.2.1
+  have hd := agree_of hb.2.2
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.addr, ArgWord.int pb]
+    (cfbEncFinalPost pb) _ m₁ m' r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.addr, ArgWord.int pb]
+    (cfbEncFinalPost pb) _ m₂ m' r
+  dsimp only [Curry.apply, cfbEncFinalPost, ArgWord.ofRaw, Spec.Cfb.EncryptFinal] at h ⊢
+  have := Nat.mod_le n.toNat (2 ^ pb)
+  rw [scheduleAt_congr hs, bytesAt_congr' (k := (n.setWidth pb).toNat) fun i hi => hd i (by
+    rw [BitVec.toNat_setWidth] at hi; omega), bytesAt_congr' hv]
+  exact h
 
 theorem cfbEncFinalPostOut_local (pb : Nat) : ∀ vs m m₁ m₂ r, vs.length = (cfbFinalSig.words pb).length →
     (∀ b ∈ Sig.bufs cfbFinalSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
@@ -104,6 +151,38 @@ theorem cfbDecryptFinal_keyed {T : Target} {c : Prog T.isa} {A : Abi T.isa} {sta
     unfold cfbDecFinalPost at hp
     rw [hw, hr] at hp
     exact hp
+
+/-- `cfbDecFinalPost` reads the memory on entry only within the functions'
+buffers. -/
+theorem cfbDecFinalPost_local (pb : Nat) : ∀ vs m₁ m₂ m' r, vs.length = (cfbFinalSig.words pb).length →
+    (∀ b ∈ Sig.bufs cfbFinalSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (cfbFinalSig.words pb) (cfbDecFinalPost pb) vs m₁ m' r →
+      Curry.apply (cfbFinalSig.words pb) (cfbDecFinalPost pb) vs m₂ m' r := by
+  intro vs m₁ m₂ m' r hlen hb h
+  obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 4) hlen
+  replace hlen := Nat.succ.inj hlen
+  iterate 2
+    obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+  obtain ⟨data, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨n, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [cfbFinalSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq, Elem.size, Nat.mul_one] at hb
+  have hs := agree_of hb.1
+  have hv := agree_of hb.2.1
+  have hd := agree_of hb.2.2
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.addr, ArgWord.int pb]
+    (cfbDecFinalPost pb) _ m₁ m' r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.addr, ArgWord.int pb]
+    (cfbDecFinalPost pb) _ m₂ m' r
+  dsimp only [Curry.apply, cfbDecFinalPost, ArgWord.ofRaw, Spec.Cfb.DecryptFinal] at h ⊢
+  have := Nat.mod_le n.toNat (2 ^ pb)
+  rw [scheduleAt_congr hs, bytesAt_congr' (k := (n.setWidth pb).toNat) fun i hi => hd i (by
+    rw [BitVec.toNat_setWidth] at hi; omega), bytesAt_congr' hv]
+  exact h
 
 theorem cfbDecFinalPostOut_local (pb : Nat) : ∀ vs m m₁ m₂ r, vs.length = (cfbFinalSig.words pb).length →
     (∀ b ∈ Sig.bufs cfbFinalSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
