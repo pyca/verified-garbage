@@ -10,6 +10,7 @@ public import VerifiedGarbage.Proof.Modes.Arm.SeqFinalCT
 public import VerifiedGarbage.Proof.Modes.CfbFinalScratch
 public import VerifiedGarbage.Impl.Sm4.Arm.FbFinal
 public import VerifiedGarbage.Spec.Sm4.CfbFinal
+public import VerifiedGarbage.Spec.Sm4.OfbFinal
 public import VerifiedGarbage.Proof.Framework.Scratch
 import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
 import VerifiedGarbage.Proof.Modes.Arm.Cbc
@@ -27,6 +28,7 @@ meta import VerifiedGarbage.Proof.Modes.Arm.SeqFinalCT
 meta import VerifiedGarbage.Proof.Modes.CfbFinalScratch
 meta import VerifiedGarbage.Impl.Sm4.Arm.FbFinal
 meta import VerifiedGarbage.Spec.Sm4.CfbFinal
+meta import VerifiedGarbage.Spec.Sm4.OfbFinal
 meta import VerifiedGarbage.Proof.Framework.Scratch
 meta import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
 meta import VerifiedGarbage.Proof.Modes.Arm.Cbc
@@ -36,12 +38,13 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
-# SM4-CFB128 of a message's last piece on ARMv7 meets its contracts
+# SM4-CFB128 and SM4-OFB of a message's last piece on ARMv7 meet their contracts
 
-The generic CFB over a message's last piece (`Proof.Modes.Arm.seqFinal_verified`)
-over Sm4's ECB function (`ecbSpec .encrypt`) meets the contracts with a scratch
+The generic CFB and OFB over a message's last piece (`Proof.Modes.Arm.seqFinal_verified`)
+over Sm4's ECB function (`ecbSpec .encrypt`) meet the contracts with a scratch
 buffer of 9 words, with the 1480 bytes of stack the ECB function uses, with
-the specification's results (`Proof.Modes.Arm.cfbEncFinal_post`, …); the
+the specification's results (`Proof.Modes.Arm.cfbEncFinal_post`, …,
+`Proof.Modes.Arm.ofbFinal_post`); the
 `_framed` theorems keep the buffer on the stack, zeroed on return: 80 bytes
 more.
 -/
@@ -240,5 +243,56 @@ theorem cfbDecryptFinal_framed :
     cfbDecryptFinal_verified (by decide) (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Modes.decFinalPostIn_local _ ciphAt_congr)
     (Proof.Modes.decFinalPost_local _) cfbDecryptFinalFrameSat
+
+/-! ## OFB of a message's last piece -/
+
+theorem ofbFinalTaint : FinalTaint (ecbCore .encrypt) VG.Impl.Modes.Arm.ofb :=
+  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+
+theorem ofbFinal_implies : (seqFinalArm (ecbCore .encrypt) (ecbSpec .encrypt) VG.Impl.Modes.Arm.ofb).Implies
+    (Sig.scratchContract Arm.abi finalSig "scratch" .u64 9 (Curry.const (fun _ => True) _)
+      (Proof.Modes.ofbFinalPost ciphAt 16 Arm.abi.ptrBits) true 1480) where
+  pre s h := seqArm_pre_rw (M := byteMode) rfl (len := fun n => n) (fun n => (Nat.mul_one n).symm) (by
+    sig_pre [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app, Proof.Modes.finalSig, Arm.abi,
+      Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at h
+    exact h)
+  post s s' _ h := by
+    sig_post [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app, Proof.Modes.finalSig,
+      Proof.Modes.ofbFinalPost, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
+    have e := ofbFinal_post h fun b => by
+      show _ = 16
+      simp [ecbSpec, dirCipher, Spec.Sm4.cipher]
+    obtain ⟨e1, e2, e3, -, -⟩ := args_plain (c := (ecbCore .encrypt)) rfl s
+    simp only [show (ecbCore .encrypt).bs = 16 from rfl, e1, e2, e3] at e
+    simp only [ecbSpec, dirCipher, State.addr] at e
+    exact e
+  pub s₁ s₂ _ _ h := by
+    sig_pub [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app, Proof.Modes.finalSig, Arm.abi,
+      Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at h
+    exact seqArm_pub (M := byteMode) rfl h
+  sat := by
+    sig_implies_sat [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app, Proof.Modes.finalSig, Arm.abi,
+      Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] [fbSat, stackArg, stackArgAddr, Mem.readW,
+      Mem.read] using fbSat 1
+
+theorem ofbFinal_verified : Verified Arm.target ofbFinal
+    (Sig.scratchContract Arm.abi finalSig "scratch" .u64 9 (Curry.const (fun _ => True) _)
+      (Proof.Modes.ofbFinalPost ciphAt 16 Arm.abi.ptrBits) true 1480) :=
+  seqFinal_verified (ecbSpec .encrypt) (ofb_finalOk _ (by decide) (by decide) (by decide)) ofbFinalTaint
+    ofbFinal_implies
+
+theorem ofbFinalFrameSat : ∃ s, (Spec.Sm4.ofbFinalContract Arm.abi 1560).pre s := by
+  implies_sat [Spec.Sm4.ofbFinalContract, Spec.Sm4.ofbFinalSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+    Arm.Loc.val, Arm.State.addr] [fbFrameSat, fbSat] using fbFrameSat 1
+
+/-- `ofbFinal`, with its scratch buffer on the stack (zeroed on return). -/
+theorem ofbFinal_framed :
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 80 0 18 ofbFinal)
+      (Spec.Sm4.ofbFinalContract Arm.abi 1560) :=
+  Arm.Verified.stackScratchWiped (sig := Spec.Sm4.ofbFinalSig) (nm := "scratch") (e := .u64) (n := 9)
+    (post := Proof.Modes.ofbFinalPost ciphAt 16 Arm.abi.ptrBits) (wa := true) (stack := 1480) (m := 0) (bytes := 80)
+    ofbFinal_verified (by decide) (by decide) (by decide) (by decide) (by decide)
+    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Modes.ofbFinalPostIn_local _ ciphAt_congr)
+    (Proof.Modes.ofbFinalPost_local _) ofbFinalFrameSat
 
 end VG.Proof.Sm4.Arm
