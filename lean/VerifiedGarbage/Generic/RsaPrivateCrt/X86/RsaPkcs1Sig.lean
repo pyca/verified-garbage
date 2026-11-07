@@ -50,15 +50,11 @@ public import VerifiedGarbage.Proof.Mont.X86.ContextMath
 public import VerifiedGarbage.Proof.Mont.X86.ContextMul
 public import VerifiedGarbage.Proof.Mont.X86.DynamicAdd
 public import VerifiedGarbage.Proof.Mont.X86.DynamicFrame
-public import VerifiedGarbage.Proof.Mont.X86.DynamicSelect
 public import VerifiedGarbage.Proof.Mont.X86.ExponentInitMath
-public import VerifiedGarbage.Proof.Mont.X86.ExponentLoop
 public import VerifiedGarbage.Proof.Mont.X86.ExponentMask
 public import VerifiedGarbage.Proof.Mont.X86.ExponentShift
-public import VerifiedGarbage.Proof.Mont.X86.ExponentStep
 public import VerifiedGarbage.Proof.Mont.X86.ExponentTimingBlocks
 public import VerifiedGarbage.Proof.Mont.X86.ExponentWord
-public import VerifiedGarbage.Proof.Mont.X86.Exponentiate
 public import VerifiedGarbage.Proof.Mont.X86.Inverse
 public import VerifiedGarbage.Proof.Mont.X86.PowerInit
 public import VerifiedGarbage.Proof.Mont.X86.PowerLoop
@@ -193,15 +189,11 @@ import VerifiedGarbage.Proof.Mont.X86.ContextMath
 import VerifiedGarbage.Proof.Mont.X86.ContextMul
 import VerifiedGarbage.Proof.Mont.X86.DynamicAdd
 import VerifiedGarbage.Proof.Mont.X86.DynamicFrame
-import VerifiedGarbage.Proof.Mont.X86.DynamicSelect
 import VerifiedGarbage.Proof.Mont.X86.ExponentInitMath
-import VerifiedGarbage.Proof.Mont.X86.ExponentLoop
 import VerifiedGarbage.Proof.Mont.X86.ExponentMask
 import VerifiedGarbage.Proof.Mont.X86.ExponentShift
-import VerifiedGarbage.Proof.Mont.X86.ExponentStep
 import VerifiedGarbage.Proof.Mont.X86.ExponentTimingBlocks
 import VerifiedGarbage.Proof.Mont.X86.ExponentWord
-import VerifiedGarbage.Proof.Mont.X86.Exponentiate
 import VerifiedGarbage.Proof.Mont.X86.Inverse
 import VerifiedGarbage.Proof.Mont.X86.PowerInit
 import VerifiedGarbage.Proof.Mont.X86.PowerLoop

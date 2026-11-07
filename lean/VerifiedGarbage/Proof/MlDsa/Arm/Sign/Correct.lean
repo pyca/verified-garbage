@@ -102,7 +102,8 @@ theorem r11_one {s : State} (h : s.gpr .r11 = 0 ∨ s.gpr .r11 = 1) (hne : s.gpr
   · exact absurd e hne
   · exact e
 
-theorem rest_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (h3 : Ok3 p) {σ s : State} (h : IM p D σ s) :
+theorem rest_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (h3 : Ok3 p) {σ s : State}
+    (hpre : (signK p D).pre σ) (h : IM p D σ s) :
     WP isa (rest P p) s (FS p D σ) := by
   have hc := allChk_ok h3
   simp only [allChk, Bool.and_eq_true] at hc
@@ -113,7 +114,7 @@ theorem rest_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (h3 : Ok3 
   have hp := paramsOk h3
   have hA := expandA_max h.ok
   unfold rest
-  refine WP.seq (WP.mono (decode_ok hP hd h) fun s1 h1 => ?_)
+  refine WP.seq (WP.mono (decodeC_ok hP hd (dcChk_ok h3) hpre h) fun s1 h1 => ?_)
   refine WP.seq (WP.mono (signLoop_ok hP hp hc1 hb hks hl h1) fun s2 h2 => ?_)
   have L2 := h2.k.d.im.st.lay
   unfold ifOk
@@ -144,24 +145,28 @@ theorem entry_st {p : Params} {D : Nat} (h3 : Ok3 p) {σ s : State}
   simp only [fChk, Bool.and_eq_true, decide_eq_true_eq] at hc
   have hsz := hc.2
   have hpre' := hpre
-  obtain ⟨_, _, -, d2, -, d4, -, d6, -, -, -, -, -, -, -, -, -, -, -, -, -, -⟩ := hpre'
+  obtain ⟨_, _, -, d2, -, d4, -, d6, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hcp⟩ := hpre'
+  have ck : CK p D σ s := fun hne => by
+    obtain ⟨c1, c2, c3, cf, -⟩ := hcp hne
+    exact ⟨c1, c2, c3, by omega, VG.Proof.MlKem.bytesAt_frame hf (fun R hR => by
+      rw [List.mem_singleton] at hR; subst hR; exact c2) (by omega)⟩
   exact ⟨ht, sgLay hpre hsz ht,
     entry_bytes hf d2 (by omega) (ht.regs .r4 (by decide)),
     entry_bytes hf d4 (by omega) (ht.regs .r5 (by decide)),
-    entry_bytes hf d6 (by omega) (ht.regs .r6 (by decide))⟩
+    entry_bytes hf d6 (by omega) (ht.regs .r6 (by decide)), ck⟩
 
 theorem sign_correct {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (h3 : Ok3 p) (σ : State)
     (hpre : (signK p D).pre σ) :
-    ∃ t s', Exec isa (Impl.MlDsa.Arm.Sign.sign P p) σ t s' ∧ abiPreserved σ s' ∧ (signK p D).post σ s' := by
+    ∃ t s', Exec isa (Impl.MlDsa.Arm.Sign.withCache P p) σ t s' ∧ abiPreserved σ s' ∧ (signK p D).post σ s' := by
   have hc := allChk_ok h3
   simp only [allChk, Bool.and_eq_true] at hc
   obtain ⟨⟨⟨⟨⟨⟨⟨ha, -⟩, -⟩, -⟩, -⟩, -⟩, -⟩, hf⟩ := hc
   have hf' := hf
   simp only [fChk, Bool.and_eq_true, decide_eq_true_eq] at hf'
   obtain ⟨⟨⟨⟨⟨⟨⟨st0, fa0⟩, -⟩, -⟩, -⟩, -⟩, hsv⟩, hsz⟩ := hf'
-  have main : WP isa (Impl.MlDsa.Arm.Sign.sign P p) σ fun s₅ => (∀ r ∈ preserved, s₅.gpr r = σ.gpr r) ∧
+  have main : WP isa (Impl.MlDsa.Arm.Sign.withCache P p) σ fun s₅ => (∀ r ∈ preserved, s₅.gpr r = σ.gpr r) ∧
       s₅.sp = σ.sp ∧ ∃ s₄, FS p D σ s₄ ∧ s₅.gpr .r0 = s₄.gpr .r11 ∧ s₅.mem = s₄.mem := by
-    unfold Impl.MlDsa.Arm.Sign.sign
+    unfold Impl.MlDsa.Arm.Sign.withCache
     refine WP.seq (WP.mono (pro_ok hpre) fun s₁ ⟨h₁, hf₁, h15⟩ => ?_)
     have S1 := entry_st h3 hpre h₁ hf₁
     refine WP.seq (WP.mono (expandA_ok hP ha S1 h15) fun s₂ h₂ => ?_)
@@ -170,7 +175,7 @@ theorem sign_correct {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (h3 :
       refine ifOkElse_ok (D := D) (fun s₃ hP₃ hcs₃ hm₃ hne => ?_) fun s₃ hP₃ hcs₃ hm₃ he => ?_
       · have h1 := r11_one h₂.r01 hne
         obtain ⟨ok, fam⟩ := h₂.ok h1
-        exact rest_ok hP h3 ⟨h₂.st.step hP₃ st0, ok, Fam.keep h₂.st.lay hP₃ fa0 fam⟩
+        exact rest_ok hP h3 hpre ⟨h₂.st.step hP₃ st0, ok, Fam.keep h₂.st.lay hP₃ fa0 fam⟩
       · have h0 := he
         have e15 : s₃.gpr .r11 = 0 := by rw [hcs₃ _ (by decide) (by decide), h0]
         exact WP.block_nil ⟨h₂.st.step hP₃ st0, .inl e15, fun h1 => absurd (h1.symm.trans e15) (by decide),

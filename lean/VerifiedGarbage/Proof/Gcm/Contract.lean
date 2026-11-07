@@ -27,34 +27,6 @@ namespace VG.Proof.Gcm
 
 open VG.Spec VG.Spec.Gcm
 
-/-- `vg_aes_ctr32(schedule: *const [u8; 240], rounds: usize, counter: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256])`.
-`rounds` is public; `scratch` is working space. -/
-def ctr32Sig : Sig where
-  params := [("schedule", .array false .u8 240), ("rounds", .int .usize true),
-    ("counter", .array true .u8 16), ("data", .slice true (.array .u8 16) "n"),
-    ("scratch", .array true .u64 256)]
-
-/-- For `rounds` of 10, 12 or 14, with the key schedule `w` in the first
-`16 (rounds + 1)` bytes at `schedule`: XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)`
-into the `n` blocks at `data`, where `CB₁` is the block at `counter` and
-`CBᵢ₊₁ = inc₃₂(CBᵢ)`, and leaves `inc₃₂ⁿ(CB₁)` at `counter`. The key
-schedule, the counter and the data are secret. -/
-def ctr32Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  ctr32Sig.contract A
-    (pre := fun _schedule rounds _counter _data _n _scratch _ =>
-      rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14)
-    (post := fun schedule rounds counter data n _scratch m m' _ =>
-      let ciph := aesWith rounds.toNat (Aes.bytesAt m schedule (16 * (rounds.toNat + 1)))
-      blocksAt m' data n.toNat = ctr32 ciph (blockAt m counter) (blocksAt m data n.toNat) ∧
-        blockAt m' counter = Nat.repeat inc32 n.toNat (blockAt m counter))
-    (stack := stack)
-
-/-- `vg_ghash(h: *const [u8; 16], y: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 32])`.
-`scratch` is working space. -/
-def ghashSig : Sig where
-  params := [("h", .array false .u8 16), ("y", .array true .u8 16),
-    ("data", .slice false (.array .u8 16) "n"), ("scratch", .array true .u64 32)]
-
 /-- `vg_aes_gcm_encrypt_blocks(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264])`,
 and `vg_aes_gcm_decrypt_blocks` with the same signature. `rounds` is public;
 `scratch` is working space. -/

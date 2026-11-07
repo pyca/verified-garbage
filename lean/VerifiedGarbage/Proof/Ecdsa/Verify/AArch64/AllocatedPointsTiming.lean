@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.NafWindowTiming
 public import VerifiedGarbage.Proof.P256.VerifyTable.Build
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticProduction
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.CachedChecks
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedPoints
 import VerifiedGarbage.Proof.P256.VerifyTable.Timing
@@ -18,7 +17,6 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelectV
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafInvariant
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTable
 /-! ## `ArithmeticTableChecks` -/
 
 -- Formerly `VerifiedGarbage/Proof/Weierstrass/AArch64/ArithmeticTableTiming.lean`, which only this module imported.

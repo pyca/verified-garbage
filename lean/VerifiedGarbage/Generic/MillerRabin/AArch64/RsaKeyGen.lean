@@ -8,6 +8,10 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaKeyGen.Table
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.SharedVerified
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Search.Verified
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Generate.Verified
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Verified
+public import VerifiedGarbage.Proof.Rsa.AArch64.InvBatch
+public import VerifiedGarbage.Spec.RsaKeyGen.KeySearchContract
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcAdd
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCancelTile
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcColumns
@@ -347,18 +351,18 @@ public import VerifiedGarbage.Proof.RsaKeyGen.Primes
 public import VerifiedGarbage.Proof.RsaKeyGen.TrialMath
 public import VerifiedGarbage.TCB.AArch64.Print
 
-/-! # The RSA prime search on AArch64, its candidates calling each shared Miller–Rabin implementation -/
+/-! # RSA key generation on AArch64, its prime searches' candidates calling each shared Miller–Rabin implementation -/
 
 @[expose] public section
 
 namespace VG.Generic.MillerRabin.AArch64.RsaKeyGen
 
 def artifacts (v : Proof.MillerRabin.AArch64.RoundImpl) : List Artifact := [
-  Spec.RsaKeyGen.primeSearchApi.artifact AArch64.target {
+  Spec.RsaKeyGen.keySearchApi.artifact AArch64.target {
     suffix := v.suffix
-    stack := 208
-    code := Proof.RsaKeyGen.AArch64.Search.searchCode v
-    verified := Proof.RsaKeyGen.AArch64.Search.search_verified v
+    stack := 416
+    code := Proof.RsaKeyGen.AArch64.Generate.genCode v
+    verified := Proof.RsaKeyGen.AArch64.Generate.gen_verified v
     features := v.features }]
 
 end VG.Generic.MillerRabin.AArch64.RsaKeyGen

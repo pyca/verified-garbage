@@ -26,12 +26,6 @@ theorem secretPolys_eq (p : Params) (sk : List Byte) :
   rcases e : skDecode p sk with ⟨rho, key, tr, s1, s2, t0⟩
   simp only [preparedSecretPolys, e, List.map_append]
 
-theorem secretPolys_length (p : Params) (sk : List Byte) :
-    (preparedSecretPolys p sk).length = p.ℓ + 2 * p.k := by
-  rw [secretPolys_eq]
-  simp only [List.length_append, List.length_map, List.length_range]
-  omega
-
 theorem secret_s1 (p : Params) (sk : List Byte) {i : Nat} (hi : i < p.ℓ) :
     (preparedSecretPolys p sk)[i]! = Sign.s1F p sk i := by
   rw [secretPolys_eq]
@@ -89,5 +83,63 @@ theorem polyIs_of_copy {m m' : Mem} {src dst : Addr} {f : Poly}
     rw [hr]
   rw [he]
   exact Arith.polyIs_toNat hf hi
+
+/-- Whether the bytes at `key` are a prepared private key depends on them alone. -/
+theorem preparedSecretKey_of_bytes {p : Params} {m m' : Mem} {key : Addr}
+    (hb : VG.Spec.Sha3.bytesAt m' key (preparedSecretKeyBytes p) =
+      VG.Spec.Sha3.bytesAt m key (preparedSecretKeyBytes p))
+    (h : PreparedSecretKey p m key) : PreparedSecretKey p m' key := by
+  have h256 : n = 256 := rfl
+  have hle : p.skLen ≤ preparedSecretKeyBytes p := by simp [preparedSecretKeyBytes]
+  have hsk : VG.Spec.Sha3.bytesAt m' key p.skLen = VG.Spec.Sha3.bytesAt m key p.skLen := by
+    rw [← MlKem.bytesAt_take m' key hle, hb, MlKem.bytesAt_take m key hle]
+  intro i hi j hj
+  rw [hsk, ← h i hi j hj]
+  congr 1
+  unfold Mem.readW
+  congr 1
+  apply Mem.read_eq_of_bytes
+  intro t ht
+  rw [Mem.extractLsb'_read _ _ ht]
+  have ho : p.skLen + 4 * n * i + 4 * j + t < preparedSecretKeyBytes p := by
+    have : i + 1 ≤ p.ℓ + 2 * p.k := hi
+    rw [h256] at hj ⊢
+    simp only [preparedSecretKeyBytes, h256]
+    have : 1024 * (i + 1) ≤ 1024 * (p.ℓ + 2 * p.k) := Nat.mul_le_mul_left _ this
+    change 32 / 8 > t at ht
+    omega
+  have he := congrArg (fun xs : List Byte => xs.getD (p.skLen + 4 * n * i + 4 * j + t) 0) hb
+  rw [MlKem.bytesAt_getD _ _ ho, MlKem.bytesAt_getD _ _ ho] at he
+  rw [BitVec.add_assoc, BitVec.add_assoc, BitVec.ofNat_add_ofNat, BitVec.ofNat_add_ofNat, ← Nat.add_assoc]
+  exact he
+
+/-- Whether the bytes at `key` are a prepared public key depends on them alone. -/
+theorem preparedPublicKey_of_bytes {p : Params} {m m' : Mem} {key : Addr}
+    (hb : VG.Spec.Sha3.bytesAt m' key (preparedPublicKeyBytes p) =
+      VG.Spec.Sha3.bytesAt m key (preparedPublicKeyBytes p))
+    (h : PreparedPublicKey p m key) : PreparedPublicKey p m' key := by
+  have h256 : n = 256 := rfl
+  have hle : p.pkLen ≤ preparedPublicKeyBytes p := by simp [preparedPublicKeyBytes]
+  have hpk : VG.Spec.Sha3.bytesAt m' key p.pkLen = VG.Spec.Sha3.bytesAt m key p.pkLen := by
+    rw [← MlKem.bytesAt_take m' key hle, hb, MlKem.bytesAt_take m key hle]
+  intro i hi j hj
+  rw [hpk, ← h i hi j hj]
+  congr 1
+  unfold Mem.readW
+  congr 1
+  apply Mem.read_eq_of_bytes
+  intro t ht
+  rw [Mem.extractLsb'_read _ _ ht]
+  have ho : p.pkLen + 4 * n * i + 4 * j + t < preparedPublicKeyBytes p := by
+    have : i + 1 ≤ p.k := hi
+    rw [h256] at hj ⊢
+    simp only [preparedPublicKeyBytes, h256]
+    have : 1024 * (i + 1) ≤ 1024 * p.k := Nat.mul_le_mul_left _ this
+    change 32 / 8 > t at ht
+    omega
+  have he := congrArg (fun xs : List Byte => xs.getD (p.pkLen + 4 * n * i + 4 * j + t) 0) hb
+  rw [MlKem.bytesAt_getD _ _ ho, MlKem.bytesAt_getD _ _ ho] at he
+  rw [BitVec.add_assoc, BitVec.add_assoc, BitVec.ofNat_add_ofNat, BitVec.ofNat_add_ofNat, ← Nat.add_assoc]
+  exact he
 
 end VG.Proof.MlDsa.PreparedKey

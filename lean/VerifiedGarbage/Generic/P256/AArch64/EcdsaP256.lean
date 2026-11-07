@@ -95,7 +95,6 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafDigits
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafExec
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafInit
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafPrep
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticProduction
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CT
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CombProduction
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvEarlyCheck
@@ -106,12 +105,6 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvRed
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvStep
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvWords
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacCombOut
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacCombSum
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTree
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeStep
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowFinishTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoop
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoopTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowSum
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowSumTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointEntry
@@ -121,18 +114,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointPrep
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafArithmeticTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafChoose
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafDigit
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafFinish
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafFinishTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafLoop
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafLoopTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafSum
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTable
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableCopy
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableInit
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableStep
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableTimingStep
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafWindow
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJ
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJDigit
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJEntry
@@ -192,7 +174,6 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafDigits
 import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafExec
 import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafInit
 import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafPrep
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticProduction
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CT
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CombProduction
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvEarlyCheck
@@ -203,12 +184,6 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.InvRed
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvStep
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvWords
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacCombOut
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacCombSum
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTree
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeStep
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowFinishTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoop
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoopTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowSum
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowSumTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JointLoopTiming
@@ -216,18 +191,7 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.JointPrep
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafArithmeticTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafChoose
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafDigit
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafFinish
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafFinishTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafLoop
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafLoopTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafSum
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTable
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableCopy
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableInit
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableStep
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableTimingStep
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafWindow
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJ
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJDigit
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJEntry

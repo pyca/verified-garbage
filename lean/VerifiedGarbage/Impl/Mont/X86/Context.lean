@@ -34,31 +34,9 @@ def contextSeed (n bits : Nat) : Prog isa :=
 callers may reuse the seed construction with a shorter exponent. -/
 def contextSetup (n : Nat) : Prog isa := contextSeed n (128 * n)
 
-def exponentProduct (n : Nat) : Prog isa :=
-  .seq (.block (exponentMask (slot n 8) 4))
-  (.seq (mul (contextMod n) 0 (slot n 2) (slot n 7) (slot n 6) (slot n 5))
-    (selectProduct (contextMod n) (slot n 6) (slot n 7) 4))
-
-def exponentBody (n expWords : Nat) : Prog isa :=
-  .seq (exponentProduct n)
-  (.seq (mul (contextMod n) 0 (slot n 2) (slot n 5) (slot n 5) (slot n 5))
-    (shiftDown expWords (slot n 8)))
-
-def exponentStep (n expWords : Nat) : Prog isa :=
-  .seq (exponentBody n expWords)
-    (.block [.alu .sub .esi (.imm 1), .alu .cmp .esi (.imm 0)])
-
 /-- Encode ordinary one and the input base using the shared R-squared. -/
 def encodeBase (n : Nat) : Prog isa :=
   .seq (mul (contextMod n) 0 (slot n 2) (slot n 6) (slot n 4) (slot n 3))
     (mul (contextMod n) 0 (slot n 2) (slot n 5) (slot n 5) (slot n 4))
-
-/-- Input base and exponent occupy slots five and eight. The result replaces
-slot six. The exponent is consumed using a fixed public number of iterations. -/
-def exponentiate (n expWords : Nat) : Prog isa :=
-  .seq (encodeBase n)
-  (.seq (.block [.mov .esi (.imm (BitVec.ofNat 32 (32 * expWords)))])
-  (.seq (.loop (exponentStep n expWords) .ne)
-    (mul (contextMod n) 0 (slot n 2) (slot n 6) (slot n 6) (slot n 3))))
 
 end VG.Impl.Mont.X86.Dynamic

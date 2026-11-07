@@ -658,11 +658,6 @@ theorem finRestore_ok {sc : Addr} {s : State} (h21 : s.gpr .x21 = sc)
   intro r hr h19 h20 h21' h30
   simp only [h19, h20, h21', h30, ite_false]
 
-theorem bytesAt_frame {rs : List Region} {m m' : Mem} {p : Addr} {n : Nat} (hf : Frame rs m m')
-    (hd : ∀ r ∈ rs, Region.Disjoint ⟨p, n⟩ r) (hn : n ≤ 2 ^ 64) : bytesAt m' p n = bytesAt m p n := by
-  simp only [Spec.Sha3.bytesAt]
-  exact List.map_congr_left fun i hi => hf.bytes (R := ⟨p, n⟩) hd hn (List.mem_range.mp hi)
-
 /-- The layout `finAArch64`'s precondition gives, with `K = sp - 16`. -/
 theorem lay_of_pre {H : Spec.Sha3.HashFn} {s : State} (hp : (finAArch64 H).pre s) :
     Lay (s.gpr .x0) (s.gpr .x2) (s.gpr .x3) (s.sp - 16) H.len ∧ s.sp = s.sp - 16 + 16 := by

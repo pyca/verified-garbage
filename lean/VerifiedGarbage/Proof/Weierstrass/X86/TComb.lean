@@ -27,11 +27,8 @@ public import VerifiedGarbage.Proof.Mont.Words128
 public import VerifiedGarbage.Proof.Mont.X86.Chain
 public import VerifiedGarbage.Proof.Mont.X86.Csub
 public import VerifiedGarbage.Proof.Mont.X86.Instr
-public import VerifiedGarbage.Proof.Mont.X86.P256Red
 public import VerifiedGarbage.Proof.Mont.X86.RedRow
 public import VerifiedGarbage.Proof.Mont.X86.Row
-public import VerifiedGarbage.Proof.Mont.X86.SparseShift
-public import VerifiedGarbage.Proof.Mont.X86.SparseStep
 public import VerifiedGarbage.Proof.Mont.X86.Step
 public import VerifiedGarbage.Proof.Rc2.Memory32
 public import VerifiedGarbage.Proof.Weierstrass.TCombWords
@@ -53,11 +50,8 @@ import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Mont.Words128
 import VerifiedGarbage.Proof.Mont.X86.Chain
 import VerifiedGarbage.Proof.Mont.X86.Csub
-import VerifiedGarbage.Proof.Mont.X86.P256Red
 import VerifiedGarbage.Proof.Mont.X86.RedRow
 import VerifiedGarbage.Proof.Mont.X86.Row
-import VerifiedGarbage.Proof.Mont.X86.SparseShift
-import VerifiedGarbage.Proof.Mont.X86.SparseStep
 import VerifiedGarbage.Proof.Mont.X86.Step
 import VerifiedGarbage.Proof.Rc2.Memory32
 import VerifiedGarbage.Proof.Weierstrass.TCombWords

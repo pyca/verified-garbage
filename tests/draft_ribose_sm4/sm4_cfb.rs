@@ -76,3 +76,35 @@ fn feedback_buffers_unaligned() {
         );
     }
 }
+
+/// Many blocks at once, at lengths around multiples of sixteen blocks (the
+/// groups decryption enciphers together), agree with one at a time and with
+/// the message decrypted in two pieces, and encryption undoes decryption.
+#[test]
+fn batches() {
+    // Generated inputs test agreement between lengths, not known answers.
+    let (key, iv) = ([7; 16], [9; 16]);
+    let input = crate::bytes::pattern(16 * 50, 1, 0);
+    for blocks in [1, 15, 16, 17, 31, 32, 33, 50] {
+        let input = &input[..16 * blocks];
+        let mut whole = input.to_vec();
+        Sm4Cfb128Decryptor::new(&key, &iv)
+            .decrypt(&mut whole)
+            .unwrap();
+        let mut single = input.to_vec();
+        let mut decryptor = Sm4Cfb128Decryptor::new(&key, &iv);
+        for block in single.chunks_mut(16) {
+            decryptor.decrypt(block).unwrap();
+        }
+        assert_eq!(whole, single);
+        Sm4Cfb128Encryptor::new(&key, &iv)
+            .encrypt(&mut whole)
+            .unwrap();
+        assert_eq!(whole, input);
+        let mut rest = input.to_vec();
+        let mut decryptor = Sm4Cfb128Decryptor::new(&key, &iv);
+        decryptor.decrypt(&mut rest[..16 * blocks - 16]).unwrap();
+        decryptor.decrypt_final(&mut rest[16 * blocks - 16..]);
+        assert_eq!(rest, single);
+    }
+}

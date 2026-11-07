@@ -191,8 +191,6 @@ theorem prodRow0_ok {s : State} {base bA bB : Addr} (hZ : 4096 ≤ Z) (hs : Scr 
 
 /-! ## Rows 1 to 7 -/
 
-theorem q_add8 (w : Nat) : q (w + 8) = q w := by rw [q_mod, q_mod w]; congr 1; omega
-
 /-- Row `i` of `1 … 7` (`prodRow`), as its two chains and the last carry:
 what each adds, and the words each leaves alone. -/
 theorem prodRow_skel {i : Nat} (h1 : 1 ≤ i) (h7 : i ≤ 7) {s : State} {base bA bB : Addr} (hZ : 4096 ≤ Z)

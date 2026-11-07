@@ -268,18 +268,27 @@ fn malformed_keys_nonces_and_bounded_retries() {
         );
         assert_eq!(draws, 128);
     }
-    // A zero private scalar fails each of the bounded signing attempts.
+    // A zero private scalar fails each of the bounded signing attempts, or,
+    // on x86-64, the key's validation, before any draw.
     let zero_x = PrivateKey::from_components(&p, &q, &g, &y, &vec![0; q.len()]).unwrap();
-    let mut draws = 0;
+    #[cfg(not(target_arch = "x86_64"))]
+    {
+        let mut draws = 0;
+        assert_eq!(
+            zero_x.sign_from(&digest, |b| {
+                b.copy_from_slice(&nonce);
+                draws += 1;
+                Ok(())
+            }),
+            Err(Error::InvalidKeyOrNonce)
+        );
+        assert_eq!(draws, 8);
+    }
+    #[cfg(target_arch = "x86_64")]
     assert_eq!(
-        zero_x.sign_from(&digest, |b| {
-            b.copy_from_slice(&nonce);
-            draws += 1;
-            Ok(())
-        }),
+        zero_x.sign_from(&digest, |_| panic!("an invalid key needs no RNG")),
         Err(Error::InvalidKeyOrNonce)
     );
-    assert_eq!(draws, 8);
     let zero_q = PrivateKey::from_components(&p, &vec![0; q.len()], &g, &y, &x).unwrap();
     assert_eq!(
         zero_q.sign_from(&digest, |_| panic!("zero q needs no RNG")),
@@ -428,6 +437,69 @@ fn immutable_public_validation_cache() {
             std::thread::spawn(move || {
                 barrier.wait();
                 assert!(key.verify(&digest, &signature).is_ok());
+            })
+        })
+        .collect();
+    for thread in threads {
+        thread.join().unwrap();
+    }
+    assert_eq!(shared.validated.load(Ordering::Relaxed), 1);
+}
+
+/// On x86-64 a private key is validated on its first signature, and the
+/// result is reused, as a public key's is for verification.
+#[cfg(target_arch = "x86_64")]
+#[test]
+fn immutable_private_validation_cache() {
+    let (key, digest, nonce) = sample();
+    assert_eq!(key.validated.load(Ordering::Relaxed), 0);
+    assert_eq!(
+        key.sign_from(&digest, |_| Err(Error::Randomness)),
+        Err(Error::Randomness)
+    );
+    assert_eq!(key.validated.load(Ordering::Relaxed), 1);
+    assert_eq!(
+        sign_with_nonce(&key, &digest, &nonce),
+        Ok(sample_signature())
+    );
+    assert_eq!(
+        sign_with_nonce(&key, &digest, &nonce),
+        Ok(sample_signature())
+    );
+    assert_eq!(key.validated.load(Ordering::Relaxed), 1);
+
+    let cases = vectors(include_str!("../../vectors/nist-cavp-dsa/SigGen.txt"), true);
+    let v = &cases[0];
+    let p = hex(&v["P"], 0);
+    let q = hex(&v["Q"], 0);
+    let g = hex(&v["G"], p.len());
+    let x = hex(&v["X"], q.len());
+    // y = g is the public value of x = 1, not of this x.
+    let invalid = PrivateKey::from_components(&p, &q, &g, &g, &x).unwrap();
+    for _ in 0..2 {
+        assert_eq!(
+            invalid.sign_from(&digest, |_| panic!("an invalid key needs no RNG")),
+            Err(Error::InvalidKeyOrNonce)
+        );
+        assert_eq!(invalid.validated.load(Ordering::Relaxed), 2);
+    }
+
+    // PrivateKey is Send + Sync; simultaneous first signatures may each validate.
+    let (key, digest, nonce) = sample();
+    let shared = std::sync::Arc::new(key);
+    let barrier = std::sync::Arc::new(std::sync::Barrier::new(4));
+    let threads: Vec<_> = (0..4)
+        .map(|_| {
+            let key = shared.clone();
+            let barrier = barrier.clone();
+            let digest = digest.clone();
+            let nonce = nonce.clone();
+            std::thread::spawn(move || {
+                barrier.wait();
+                assert_eq!(
+                    sign_with_nonce(&key, &digest, &nonce),
+                    Ok(sample_signature())
+                );
             })
         })
         .collect();

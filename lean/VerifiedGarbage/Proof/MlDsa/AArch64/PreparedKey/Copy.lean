@@ -119,14 +119,4 @@ abbrev copyHint (bytes : Nat) : VG.Taint.Hint AArch64.Taint.T :=
     .seq (AArch64.Taint.ofRegs [.x0, .x1, .x2]) (.block [])
       (.loop (AArch64.Taint.ofRegs [.x0, .x1, .x2]) (.block []))
 
-theorem copy_taint {dst src : Reg} (hd : dst = .x26 ∨ dst = .x28)
-    (hs : src = .x21 ∨ src = .x25) (od os bytes : Nat) :
-    (taint.check (AArch64.Taint.ofRegs [.x21, .x25, .x26, .x28])
-      (Impl.MlDsa.AArch64.PreparedKey.copy (dst, od) (src, os) bytes)
-      (copyHint bytes)).isSome = true := by
-  rcases hd with rfl | rfl <;> rcases hs with rfl | rfl <;>
-    dsimp only [Impl.MlDsa.AArch64.PreparedKey.copy, copyHint,
-      Impl.MlDsa.AArch64.Call.lea, Impl.MlDsa.AArch64.Call.movV] <;>
-    (repeat' split) <;> rfl
-
 end VG.Proof.MlDsa.AArch64.PreparedKey

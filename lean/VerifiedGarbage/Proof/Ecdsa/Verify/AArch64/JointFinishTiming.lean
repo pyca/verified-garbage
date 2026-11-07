@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedDigitTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNaf9Timing
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticProduction
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedCachedDigitTiming
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFixedDigitTiming
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointInitTiming
@@ -20,7 +19,6 @@ meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.CachedChecks
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedTiming
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedDigitTiming
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafTiming
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticProduction
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedCachedDigitTiming
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFixedDigitTiming
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointInitTiming

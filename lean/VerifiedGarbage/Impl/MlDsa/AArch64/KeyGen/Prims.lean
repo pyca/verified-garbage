@@ -58,8 +58,4 @@ def keyGen44With (c : Impl.Sha3.AArch64.Callee) : Prog isa := keyGenWith c (prim
 def keyGen65With (c : Impl.Sha3.AArch64.Callee) : Prog isa := keyGenWith c (primsWith c) Spec.MlDsa.mlDsa65
 def keyGen87With (c : Impl.Sha3.AArch64.Callee) : Prog isa := keyGenWith c (primsWith c) Spec.MlDsa.mlDsa87
 
-def verify44With (c : Impl.Sha3.AArch64.Callee) : Prog isa := Verify.verifyWith c (primsWith c) Spec.MlDsa.mlDsa44
-def verify65With (c : Impl.Sha3.AArch64.Callee) : Prog isa := Verify.verifyWith c (primsWith c) Spec.MlDsa.mlDsa65
-def verify87With (c : Impl.Sha3.AArch64.Callee) : Prog isa := Verify.verifyWith c (primsWith c) Spec.MlDsa.mlDsa87
-
 end VG.Impl.MlDsa.AArch64.KeyGen

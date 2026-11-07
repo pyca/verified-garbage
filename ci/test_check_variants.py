@@ -255,6 +255,58 @@ class BestCallee(unittest.TestCase):
         self.assertTrue(any("no implementation of vg_g calls vg_f_ab" in e for e in errors))
 
 
+class NeverWith(unittest.TestCase):
+    # ChaCha20-Poly1305's shape: `g` calls `h` (a cipher, with `h_ssse3`
+    # and `h_avx2`) and `f` (a MAC, with `f_avx2`); the Rust code never
+    # chooses `h_ssse3` with avx and avx2, so no CPU chooses `g_ssse3_avx2`.
+    CALLS = {
+        "vg_h": [], "vg_h_ssse3": [], "vg_h_avx2": [], "vg_f": [], "vg_f_avx2": [],
+        "vg_g": ["vg_h", "vg_f"], "vg_g_ssse3": ["vg_h_ssse3", "vg_f"],
+        "vg_g_avx2": ["vg_h_avx2", "vg_f_avx2"],
+    }
+    FEATS = {"x": {"vg_h_ssse3": frozenset({"ssse3"}), "vg_h_avx2": frozenset({"avx", "avx2"}),
+                   "vg_f_avx2": frozenset({"avx", "avx2"}), "vg_g_ssse3": frozenset({"ssse3"}),
+                   "vg_g_avx2": frozenset({"avx", "avx2"})}}
+    RUST = "vg_g vg_g_ssse3 vg_g_avx2"
+
+    def check(self, never_with, calls=None):
+        return check_variants.check(fns(calls or self.CALLS), self.RUST, self.FEATS, never_with=never_with)
+
+    def test_combination_required_without_an_entry(self):
+        errors = self.check({})
+        self.assertEqual(len(errors), 1)
+        self.assertIn("vg_g_ssse3 calls vg_f, which has the variant vg_f_avx2, but there is no "
+                      "vg_g_ssse3_avx2", errors[0])
+
+    def test_combination_no_cpu_chooses(self):
+        self.assertEqual(self.check({"x": {"vg_h_ssse3": [{"avx", "avx2"}]}}), [])
+
+    def test_entry_must_cover_the_combination(self):
+        # Never chosen with avx512f, or with avx2 and sha, says nothing
+        # about CPUs with avx and avx2.
+        errors = self.check({"x": {"vg_h_ssse3": [{"avx512f"}, {"avx2", "sha"}]}})
+        self.assertEqual(len(errors), 1)
+        self.assertIn("there is no vg_g_ssse3_avx2", errors[0])
+
+    def test_entry_must_name_an_implementation_the_caller_runs(self):
+        # An entry for a function `g_ssse3` neither is nor calls excuses nothing.
+        calls = dict(self.CALLS, vg_m=[], vg_m_ssse3=[])
+        feats = {"x": dict(self.FEATS["x"], vg_m_ssse3=frozenset({"ssse3"}))}
+        errors = check_variants.check(fns(calls), self.RUST + " vg_m vg_m_ssse3", feats,
+                                      never_with={"x": {"vg_m_ssse3": [{"avx", "avx2"}]}})
+        self.assertEqual(len(errors), 1)
+        self.assertIn("there is no vg_g_ssse3_avx2", errors[0])
+
+    def test_entry_must_not_exclude_its_own_features(self):
+        errors = self.check({"x": {"vg_h_ssse3": [{"avx", "avx2"}], "vg_h_avx2": [{"avx2"}]}})
+        self.assertEqual(errors, ["x: NEVER_WITH says vg_h_avx2 is never chosen with avx2, which it "
+                                  "needs itself: it could never be chosen"])
+
+    def test_entry_must_name_a_generated_function(self):
+        errors = self.check({"x": {"vg_h_sse9": [{"avx2"}]}})
+        self.assertIn("x: NEVER_WITH names vg_h_sse9, which is not a generated function", errors[0])
+
+
 class Qualified(unittest.TestCase):
     # A caller of two interfaces whose variants share the suffix `a`: `h`
     # (with `h_a`) and `f` (with `f_a`), its instances qualified by the tags

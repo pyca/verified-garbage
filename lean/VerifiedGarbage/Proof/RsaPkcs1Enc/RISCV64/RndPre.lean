@@ -144,8 +144,6 @@ variable {s : State}
 
 theorem psLen_le (hp : RPre s) : psLen s ≤ 1021 := by have := hp.ml; have := hp.k2; unfold psLen; omega
 
-theorem rl_le (hp : RPre s) : (stackArg s 2).toNat ≤ psLen s + 128 := hp.rl
-
 theorem sp1' (hp : RPre s) : frameBytes ≤ s.sp.toNat := by have := hp.sp1; unfold frameBytes; omega
 
 theorem fb_ge (hp : RPre s) : 2176 ≤ (fb s).toNat := by
@@ -325,8 +323,5 @@ theorem wok_frame (s : State) {e n : Nat} (he : oRa + 8 ≤ e) (hen : e + n ≤ 
 /-- A write of a region apart from the stack. -/
 theorem wok_apart {s : State} {r : Region} (hr : r ∈ W s) (hd : (stR s).Disjoint r) : Wok s r :=
   ⟨⟨r, hr, fun _ h => h⟩, (k_dis hd).sub_left (frame_sub s (d := oSave) (n := 40) (by decide))⟩
-
-theorem wok_low (s : State) (hp : RPre s) : Wok s (lowR s) :=
-  ⟨⟨lowR s, by simp, fun _ h => h⟩, (kR_lowR hp).sub_left (frame_sub s (d := oSave) (n := 40) (by decide))⟩
 
 end VG.Proof.RsaPkcs1Enc.RISCV64.Rnd

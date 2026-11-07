@@ -40,28 +40,11 @@ open VG.Proof.AesSiv.X86_64 (filter_true' filter_false' filterMap_some' filterMa
 
 /-! ## The code -/
 
-theorem openTo_mx (w : Width) (f : Fn) (h : f.code.allInstrs (fun i => !loadsMxcsr i) = true) :
-    (openTo w f).allInstrs (fun i => !loadsMxcsr i) = true := by
-  simp only [openTo, Impl.AesGcm.X86_64.OpenTo.callArgs, Impl.AesGcm.X86_64.OpenTo.after,
-    Impl.AesGcm.X86_64.OpenTo.wipe, Code.allInstrs, h, Bool.true_and, Bool.and_true]
-  cases w <;> decide +kernel
-
 theorem openTo_spAll (w : Width) (f : Fn) (h : f.code.all (fun i => !X86_64.isa.writesSp i) = true) :
     (openTo w f).all (fun i => !X86_64.isa.writesSp i) = true := by
   simp only [openTo, Impl.AesGcm.X86_64.OpenTo.callArgs, Impl.AesGcm.X86_64.OpenTo.after,
     Impl.AesGcm.X86_64.OpenTo.wipe, Code.all, h, Bool.true_and, Bool.and_true]
   cases w <;> decide +kernel
-
-theorem copy_xdepth (w : Width) :
-    (Impl.ChaCha20Poly1305.X86_64.SealGather.copyBytes w : Prog isa).x86_64Depth = 0 := by
-  cases w <;> decide +kernel
-
-theorem openTo_xdepth (w : Width) (f : Fn) (h : f.code.x86_64Depth ≤ 2632) :
-    (openTo w f).x86_64Depth ≤ 2728 := by
-  simp only [openTo, Impl.AesGcm.X86_64.OpenTo.callArgs, Impl.AesGcm.X86_64.OpenTo.after,
-    Impl.AesGcm.X86_64.OpenTo.wipe, copy_xdepth, Code.x86_64Depth, X86_64.Instr.frameBytes, List.length_cons,
-    List.length_nil, Nat.max_le]
-  omega
 
 /-! ## The contracts -/
 

@@ -480,6 +480,8 @@ theorem keyCode_correct (hmx : VG.Impl.RsaKeyGen.X86_64.Key.code.allInstrs (fun 
   obtain ⟨t, s', he, hg, hp⟩ := keyCode_wp s h
   exact ⟨t, s', he, abiPreserved_of_exec hmx he hg, hp⟩
 
+instance keyProof : KeyProof := ⟨keyCode_correct, keyCode_constantTime⟩
+
 /-- `vg_rsa_keygen_key`, given that its code never loads MXCSR (which the
 registration file evaluates). -/
 theorem key_verified

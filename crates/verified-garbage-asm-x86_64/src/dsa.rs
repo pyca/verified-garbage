@@ -38,10 +38,10 @@ jmp 21f
     )
 }
 
-/// The CPU features `vg_dsa_sign_random_adx` requires (`Artifact.features`).
-pub const VG_DSA_SIGN_RANDOM_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+/// The CPU features `vg_dsa_sign_random_prevalidated_adx` requires (`Artifact.features`).
+pub const VG_DSA_SIGN_RANDOM_PREVALIDATED_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
-/// Randomized DSA signing of a prehashed digest from fresh independent random octets. Up to eight signing attempts, each with 128 nonce draws. Returns 1 with fixed-width r||s, 0 for invalid key/retry exhaustion, or 2 for insufficient random bytes. On failure out is zero. used counts consumed complete draws on every return. Checks algebraic consistency, not primality. Timing may depend on public p,q,g,y, sampling decisions, signing success bits and consumption, not otherwise on secrets. Contract: `VG.Spec.Dsa.randomSignContract`.
+/// Randomized DSA signing of a prehashed digest, for an already validated packed private key (big-endian p||q||g||y||x; vg_dsa_validate_private_key validates it). Returns exactly what vg_dsa_sign_random returns (`VG.Spec.Dsa.randomSignContract`): 1 with fixed-width r||s, 0 for retry exhaustion, or 2 for insufficient random bytes; out is zero on failure and used counts consumed complete draws on every return. Timing may depend on public p,q,g,y, sampling decisions, signing success bits and consumption, not otherwise on secrets. Contract: `VG.Spec.Dsa.randomSignPrevalidatedContract`.
 ///
 /// # Safety
 ///
@@ -54,12 +54,13 @@ pub const VG_DSA_SIGN_RANDOM_ADX_FEATURES: verified_garbage_cpu::Features = veri
 /// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
 /// * key_len must be 3*p_len + 2*q_len; out_len must be 2*q_len.
 /// * scratch_len must be at least 16*p_len + 64 words; destroy scratch after use.
-/// * Caller must assure domain validity and provide fresh independent random octets; never reuse a completed signing tape for another signature.
+/// * The exact key bytes must satisfy validatePrivateKeyBytes p_len q_len key = true. A successful vg_dsa_validate_private_key call establishes this only while the key bytes remain unchanged. Primality remains the caller's responsibility.
+/// * Provide fresh independent random octets; never reuse a completed signing tape for another signature.
 /// * `out`, `used` and `scratch` must not overlap each other, `key`, `digest`, `rand` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `used`, `key`, `digest`, `rand` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_dsa_sign_random_adx(out: *mut u8, out_len: usize, used: *mut [u64; 1], key: *const u8, key_len: usize, p_len: usize, q_len: usize, digest: *const u8, digest_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_dsa_sign_random_prevalidated_adx(out: *mut u8, out_len: usize, used: *mut [u64; 1], key: *const u8, key_len: usize, p_len: usize, q_len: usize, digest: *const u8, digest_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJAj///9IiXwkKEiJdCQwSIlUJDhIiUwkQEyJRCRITIlMJFBMAclIiYwkqAAAAEjHwAAAAABIiYQkkAAAAEjHwAgAAABIiYQkmAAAAEiLhCQAAQAASIlEJFhIi4QkCAEAAEiJRCRgSIuEJBABAABIiUQkaEiLhCQYAQAASIlEJHBIi4QkIAEAAEiJRCR4SIuEJCgBAABIiYQkgAAAAEiLhCQwAQAASImEJIgAAABIx8AAAAAASImEJMgAAABIiYQk0AAAAEiJhCTYAAAASImEJOAAAABMi5QkqAAAAEyLXCRYTInWTInZQbgAAAAAQbkAAAAA"
 20:
@@ -118,7 +119,7 @@ je 219f
 jmp 220f
 219:
 .base64 "SIt8JChIi3QkMEiLVCRASItMJEhMi0QkUEmJ4UmBwcgAAABIi0QkWEiJBCRIi0QkYEiJRCQISItEJGhIiUQkEEiLhCSAAAAASIlEJBhIi4QkiAAAAEiJRCQg"
-call {vg_dsa_sign_adx}
+call {vg_dsa_sign_prevalidated_adx}
 .base64 "icBIiYQkwAAAAEiD+AA="
 je 221f
 jmp 222f
@@ -148,7 +149,782 @@ jne 227b
 226:
 .base64 "SMfAAAAAAEiJhCTIAAAASImEJNAAAABIiYQk2AAAAEiJhCTgAAAASItUJDhIi4QkkAAAAEiJAkiLhCTAAAAASI2kJPgAAADD"
 .p2align 6"#,
-        vg_dsa_sign_adx = sym super::dsa::vg_dsa_sign_adx::vg_dsa_sign_adx,
+        vg_dsa_sign_prevalidated_adx = sym super::dsa::vg_dsa_sign_prevalidated_adx::vg_dsa_sign_prevalidated_adx,
+    )
+}
+
+/// The CPU features `vg_dsa_validate_private_key_adx` requires (`Artifact.features`).
+pub const VG_DSA_VALIDATE_PRIVATE_KEY_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// Validate packed DSA p||q||g||y||x as signing checks it: domain consistency, including g^q mod p = 1, 1 < y < p, 0 < x < q and g^x mod p = y. Returns 1 exactly when validation succeeds, otherwise 0. Does not test primality. Timing may depend on p,q,g,y and the result, not otherwise on x. Scratch contents are unspecified on return and may hold secrets. Contract: `VG.Spec.Dsa.validatePrivateKeyContract`.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
+/// * key_len must be 3*p_len + 2*q_len; scratch_len must be at least 16*p_len words; destroy scratch after use.
+/// * `scratch` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `bmi2` and `adx` target features.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_dsa_validate_private_key_adx(key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "TYnDSYkbSYlrCE2JYxBNiWsYTYlzIE2Jeyi4AAAAAEmJgygBAABJiYNAAQAASYmDMAEAAEmJgzgBAABJiYNYAQAASYm7AAEAAEmJk0gBAABJiYtQAQAASYuDAAEAAEkDg0gBAABJiYMIAQAASQODUAEAAEmJgxABAABJA4NIAQAASYmDGAEAAEkDg0gBAABJiYMgAQAATInfSYuDIAEAAEmJgzABAABIi7cAAQAASIuPSAEAAEG4AAAAAEG5AAAAAA=="
+20:
+.base64 "D7YGTYXA"
+je 21f
+jmp 22f
+21:
+.base64 "SIXA"
+jne 23f
+jmp 24f
+23:
+.base64 "SYnISYnB"
+24:
+22:
+.base64 "SIPGAUiD6QE="
+jne 20b
+.base64 "TImHsAAAAEmB+YAAAABIGcBIg/D/SImHaAEAAEiLtwgBAABIi49QAQAAQbgAAAAAQbkAAAAA"
+25:
+.base64 "D7YGTYXA"
+je 26f
+jmp 27f
+26:
+.base64 "SIXA"
+jne 28f
+jmp 29f
+28:
+.base64 "SYnISYnB"
+29:
+27:
+.base64 "SIPGAUiD6QE="
+jne 25b
+.base64 "TImHYAEAAEmB+YAAAABIGcBIg/D/SCOHaAEAAEiJh2gBAABIi5ewAAAASIH6gAAAAA=="
+je 210f
+.base64 "SIH6AAEAAA=="
+je 212f
+.base64 "SIH6gAEAAA=="
+je 214f
+.base64 "uAAAAAA="
+jmp 215f
+214:
+.base64 "TInASIPwIEiD+AFIGcA="
+215:
+jmp 213f
+212:
+.base64 "TInASIPwHEiD+AFIGcBJicJMicBIg/AgSIP4AUgZwEwJ0EmJwkyJwEiD8BRIg/gBSBnATAnQ"
+213:
+jmp 211f
+210:
+.base64 "TInASIPwFEiD+AFIGcA="
+211:
+.base64 "SCOHaAEAAEiJh2gBAABIi7cAAQAASIuPSAEAAA+2RA7/SIu3CAEAAEiLj1ABAAAPtlQO/0gh0EiD4AG6AAAAAEgpwkiJ0Egjh2gBAABIiYdoAQAASIuHWAEAAEiLl2ABAABIOcJID0LCSImHYAEAAEiLh2gBAABIhcA="
+je 216f
+.base64 "QbwwAAAATIlnMLgAAAAASIlHOEyJ4EiDwAJIAcBIAcBIAcBIifpIgcIAAQAASIlXQEgBwkiJV0hIAcJIiVdQSAHCSIlXWEgBwkiJV2BIAcJIiVdoSAHCSIlXcEgBwkiJV3hIAcJIi4cAAQAASImHgAAAAEiLh0gBAABIiYeIAAAASIn+TIuniAAAAEmDxAdJwewDSIHHgA0AAEyJZzBIibeAAAAATIngSIPAAkgBwEgBwEgBwEiJ+kiBwgABAABIiVdASAHCSIlXSEgBwkiJV1BIAcJIiVdYSAHCSIlXYEgBwkiJV2hIAcJIiVdwSAHCSIlXeEgBwkyLR0BMi2cwuAAAAABJx8YAAAAA"
+218:
+.base64 "S4kE8EmDxgFNOeY="
+jne 218b
+.base64 "S4kE4EuJROAISIuHgAAAAEiLsIAAAABIi4iIAAAASItfQLgAAAAASInKSYn2"
+219:
+.base64 "SIPqAUjByDhBD7YuSAHoSYPGAUiJ1UiD5Qc="
+je 220f
+jmp 221f
+220:
+.base64 "SInVSMHtA0iJBOu4AAAAAA=="
+221:
+.base64 "SIXS"
+jne 219b
+.base64 "SItfQEiLG0iJ2UiJ2Ej34b4CAAAASCnGSInISPfmSInBSInYSPfhvgIAAABIKcZIichI9+ZIicFIidhI9+G+AgAAAEgpxkiJyEj35kiJwUiJ2Ej34b4CAAAASCnGSInISPfmSInBSInYSPfhvgIAAABIKcZIichI9+ZIicFBvwAAAABJKc9MiX84SIu/gAAAAEiLhwgBAABIiYeAAAAASIuHUAEAAEiJh4gAAABIif5Mi6eIAAAASYPEB0nB7ANIgccANAAATIlnMEiJt4AAAABMieBIg8ACSAHASAHASAHASIn6SIHCAAEAAEiJV0BIAcJIiVdISAHCSIlXUEgBwkiJV1hIAcJIiVdgSAHCSIlXaEgBwkiJV3BIAcJIiVd4SAHCTItHQEyLZzC4AAAAAEnHxgAAAAA="
+222:
+.base64 "S4kE8EmDxgFNOeY="
+jne 222b
+.base64 "S4kE4EuJROAISIuHgAAAAEiLsIAAAABIi4iIAAAASItfQLgAAAAASInKSYn2"
+223:
+.base64 "SIPqAUjByDhBD7YuSAHoSYPGAUiJ1UiD5Qc="
+je 224f
+jmp 225f
+224:
+.base64 "SInVSMHtA0iJBOu4AAAAAA=="
+225:
+.base64 "SIXS"
+jne 223b
+.base64 "SItfQEiLG0iJ2UiJ2Ej34b4CAAAASCnGSInISPfmSInBSInYSPfhvgIAAABIKcZIichI9+ZIicFIidhI9+G+AgAAAEgpxkiJyEj35kiJwUiJ2Ej34b4CAAAASCnGSInISPfmSInBSInYSPfhvgIAAABIKcZIichI9+ZIicFBvwAAAABJKc9MiX84SIu/gAAAAEiLhxABAABIiYeAAAAASIuHSAEAAEiJh4gAAABIgceADQAATItHSEyLZzC4AAAAAEnHxgAAAAA="
+226:
+.base64 "S4kE8EmDxgFNOeY="
+jne 226b
+.base64 "S4kE4EuJROAISIuHgAAAAEiLsIAAAABIi4iIAAAASItfSLgAAAAASInKSYn2"
+227:
+.base64 "SIPqAUjByDhBD7YuSAHoSYPGAUiJ1UiD5Qc="
+je 228f
+jmp 229f
+228:
+.base64 "SInVSMHtA0iJBOu4AAAAAA=="
+229:
+.base64 "SIXS"
+jne 227b
+.base64 "TItnMEiLX0hMi1dAvQAAAABJx8YAAAAA"
+230:
+.base64 "SAHtSosE80sbBPJIGe1Jg8YBTTnm"
+jne 230b
+.base64 "TIs7SdHvScfGAQAAAA=="
+231:
+.base64 "SosE80kJx0mDxgFNOeY="
+jne 231b
+.base64 "SYP/AUgZwEiD8P9IIehIi7+AAAAASCOHaAEAAEiJh2gBAABIi4cYAQAASImHgAAAAEiLh0gBAABIiYeIAAAASIHHgA0AAEyLR0hMi2cwuAAAAABJx8YAAAAA"
+232:
+.base64 "S4kE8EmDxgFNOeY="
+jne 232b
+.base64 "S4kE4EuJROAISIuHgAAAAEiLsIAAAABIi4iIAAAASItfSLgAAAAASInKSYn2"
+233:
+.base64 "SIPqAUjByDhBD7YuSAHoSYPGAUiJ1UiD5Qc="
+je 234f
+jmp 235f
+234:
+.base64 "SInVSMHtA0iJBOu4AAAAAA=="
+235:
+.base64 "SIXS"
+jne 233b
+.base64 "TItnMEiLX0hMi1dAvQAAAABJx8YAAAAA"
+236:
+.base64 "SAHtSosE80sbBPJIGe1Jg8YBTTnm"
+jne 236b
+.base64 "TIs7SdHvScfGAQAAAA=="
+237:
+.base64 "SosE80kJx0mDxgFNOeY="
+jne 237b
+.base64 "SYP/AUgZwEiD8P9IIehIi7+AAAAASCOHaAEAAEiJh2gBAABIifhIBWA6AABIiYegAAAASIuHSAEAAEiJh6gAAABIgceADQAATItnMEiLd0BIi19wSIsGSIPoAUiJA0gZ7UnHxgEAAAA="
+238:
+.base64 "SAHtSosE9kiD2ABKiQTzSBntSYPGAU055g=="
+jne 238b
+.base64 "SIuHgAAAAEiLsKAAAABIi4ioAAAASItfcEnHx/////+6AAAAAEmJ9kkBzg=="
+239:
+.base64 "SInVSIPlBw=="
+je 240f
+jmp 241f
+240:
+.base64 "SInVSMHtA0iLBOtMIfg="
+241:
+.base64 "SYPuAUGIBkjB6AhIg8IBSDnK"
+jne 239b
+.base64 "SIu/gAAAAEiJ+EgFYDoAAEiJh4AAAABIi4dIAQAASImHiAAAAEiJ+EgF4DkAAEiJh6AAAABIi4dQAQAASImHqAAAAEiBxwA0AABMi2cwugEAAAC5AAAAAEyLR3i4AAAAAEnHxgAAAAA="
+242:
+.base64 "S4kE8EmDxgFNOeY="
+jne 242b
+.base64 "S4kE4EuJROAISYkUyEyLZzBMi1dAS4tE4vhIhcA="
+je 243f
+.base64 "S4tE4vhIweg/SIPwAUyJ4UiD4QNICcg="
+je 245f
+.base64 "S4tE4vi6AQAAALlAAAAASIP4AQ=="
+je 247f
+249:
+.base64 "SNHoSAHSSIPpAUiD+AE="
+jne 249b
+jmp 248f
+247:
+248:
+.base64 "SImP0AAAAEyJ4UiD6QFMi0dguAAAAABJx8YAAAAA"
+250:
+.base64 "S4kE8EmDxgFNOeY="
+jne 250b
+.base64 "S4kE4EuJROAISYkUyEiLj9AAAABIA08wSImP0AAAAA=="
+251:
+.base64 "SItfYEyLV0BMi0dQTItnMEiLd1i9AAAAAEnHxgAAAAA="
+252:
+.base64 "SAHtSosE80gRwEuJBPBIGe1Jg8YBTTnm"
+jne 252b
+.base64 "uAAAAABIAe1Ig9AAS4kE4L0AAAAAScfGAAAAAA=="
+253:
+.base64 "SAHtS4sE8EsbBPJKiQT2SBntSYPGAU055g=="
+jne 253b
+.base64 "S4sE4EgB7UiD2ABIGe1Jx8YAAAAA"
+254:
+.base64 "S4sE8EqLFPZIMdBIIehIMdBKiQTzSYPGAU055g=="
+jne 254b
+.base64 "SIuP0AAAAEiD6QFIiY/QAAAA"
+jne 251b
+.base64 "uAYAAABIiYfQAAAA"
+255:
+.base64 "ugQAAAC5BAAAAEG4BAAAAA=="
+call {vg_rsa_mont_mul_adx}
+.base64 "SIuH0AAAAEiD6AFIiYfQAAAA"
+jne 255b
+jmp 246f
+245:
+.base64 "SItfYEyLV0BMi2cwTItHWL0AAAAAScfGAAAAAA=="
+256:
+.base64 "uAAAAABIAe1LGwTySBntSokE80mDxgFNOeY="
+jne 256b
+.base64 "S4t04vhIifJIg/L/SMfA/////7kAAAAAQb1AAAAA"
+257:
+.base64 "SAHASBHSTRnbSYnWSSn2TRn/SYP3/00J302F/0kPRdZIAclMKflJg+0B"
+jne 257b
+.base64 "SYkISItPMEjB6QJIiY/QAAAA"
+258:
+.base64 "SItfYEyLV0BMi0dQTItnMEiLb1hLi3Ti+EqLVOP4SotE4/BJifFJKdFJg/kBTRnJTYnLSYPz/0wh2kmJxkmJ1UiLRQBJ9+VMAfBMEepIidFIg8EBSYnFSInISPfmSSnGTTn1TRn/TAH5SSH3TQH+SYn3SYPvAU0590iD0QBMCclJiwJI9+FJidG6AAAAAEgpwkmJEEgZ7UnHxgEAAAA="
+259:
+.base64 "S4sE8kj34UwByEiD0gBJidFKi1Tz+EgB7UgZwkgZ7UuJFPBJg8YBTTnm"
+jne 259b
+.base64 "SotU4/hIAe1MGcpLiRTgS4sE4EgBwE0Z270AAAAAScfGAAAAAA=="
+260:
+.base64 "S4sE8kwh2EgB7UsTBPBIGe1LiQTwSYPGAU055g=="
+jne 260b
+.base64 "S4sE4EgB7UiD0ABLiQTgS4sE4EgBwE0Z270AAAAAScfGAAAAAA=="
+261:
+.base64 "S4sE8kwh2EgB7UsTBPBIGe1LiQTwSYPGAU055g=="
+jne 261b
+.base64 "S4sE4EgB7UiD0ABLiQTgTInGScfGAAAAAA=="
+262:
+.base64 "SosE9kqJBPNJg8YBTTnm"
+jne 262b
+.base64 "SIuP0AAAAEiD6QFIiY/QAAAA"
+jne 258b
+.base64 "uAIAAABIiYfQAAAA"
+263:
+.base64 "ugQAAAC5BAAAAEG4BAAAAA=="
+call {vg_rsa_mont_mul_adx}
+.base64 "SIuH0AAAAEiD6AFIiYfQAAAA"
+jne 263b
+246:
+jmp 244f
+243:
+.base64 "TItnMLoBAAAAuQAAAABMi0dguAAAAABJx8YAAAAA"
+264:
+.base64 "S4kE8EmDxgFNOeY="
+jne 264b
+.base64 "S4kE4EuJROAISYkUyEiLTzBIAclIAclIAclIAclIAclIAclIAclIiY/QAAAA"
+265:
+.base64 "SItfYEyLV0BMi0dQTItnMEiLd1i9AAAAAEnHxgAAAAA="
+266:
+.base64 "SAHtSosE80gRwEuJBPBIGe1Jg8YBTTnm"
+jne 266b
+.base64 "uAAAAABIAe1Ig9AAS4kE4L0AAAAAScfGAAAAAA=="
+267:
+.base64 "SAHtS4sE8EsbBPJKiQT2SBntSYPGAU055g=="
+jne 267b
+.base64 "S4sE4EgB7UiD2ABIGe1Jx8YAAAAA"
+268:
+.base64 "S4sE8EqLFPZIMdBIIehIMdBKiQTzSYPGAU055g=="
+jne 268b
+.base64 "SIuP0AAAAEiD6QFIiY/QAAAA"
+jne 265b
+244:
+.base64 "ugQAAAC5BAAAAEG4BwAAAA=="
+call {vg_rsa_mont_mul_adx}
+.base64 "uQgAAABIiY/QAAAA"
+269:
+.base64 "SItfYEyLV0BMi0dQTItnMEiLd1i9AAAAAEnHxgAAAAA="
+270:
+.base64 "SAHtSosE80gRwEuJBPBIGe1Jg8YBTTnm"
+jne 270b
+.base64 "uAAAAABIAe1Ig9AAS4kE4L0AAAAAScfGAAAAAA=="
+271:
+.base64 "SAHtS4sE8EsbBPJKiQT2SBntSYPGAU055g=="
+jne 271b
+.base64 "S4sE4EgB7UiD2ABIGe1Jx8YAAAAA"
+272:
+.base64 "S4sE8EqLFPZIMdBIIehIMdBKiQTzSYPGAU055g=="
+jne 272b
+.base64 "SIuP0AAAAEiD6QFIiY/QAAAA"
+jne 269b
+.base64 "TItHcEyLZzC4AAAAAEnHxgAAAAA="
+273:
+.base64 "S4kE8EmDxgFNOeY="
+jne 273b
+.base64 "S4kE4EuJROAITItHSEyLZzC4AAAAAEnHxgAAAAA="
+274:
+.base64 "S4kE8EmDxgFNOeY="
+jne 274b
+.base64 "S4kE4EuJROAISIuHgAAAAEiLsIAAAABIi4iIAAAASIm3uAAAAEiJj7AAAABIhck="
+je 275f
+277:
+.base64 "SIu3uAAAAA+2BkiLX0hIiQNIg8YBSIm3uAAAALoGAAAAuQQAAABBuAYAAAA="
+call {vg_rsa_mont_mul_adx}
+.base64 "SItfcEyLT0hMi1dATItHUEyLZzBIi3dYvQAAAABJx8YAAAAA"
+278:
+.base64 "SAHtSosE80sTBPFLiQTwSBntSYPGAU055g=="
+jne 278b
+.base64 "uAAAAABIAe1Ig9AAS4kE4EiLX3C9AAAAAEnHxgAAAAA="
+279:
+.base64 "SAHtS4sE8EsbBPJKiQT2SBntSYPGAU055g=="
+jne 279b
+.base64 "S4sE4EgB7UiD2ABIGe1Jx8YAAAAA"
+280:
+.base64 "S4sE8EqLFPZIMdBIIehIMdBKiQTzSYPGAU055g=="
+jne 280b
+.base64 "SIuHsAAAAEiD6AFIiYewAAAA"
+jne 277b
+jmp 276f
+275:
+276:
+.base64 "SIuHgAAAAEiLsKAAAABIi4ioAAAASItfcEnHx/////+6AAAAAEmJ9kkBzg=="
+281:
+.base64 "SInVSIPlBw=="
+je 282f
+jmp 283f
+282:
+.base64 "SInVSMHtA0iLBOtMIfg="
+283:
+.base64 "SYPuAUGIBkjB6AhIg8IBSDnK"
+jne 281b
+.base64 "SIu/gAAAAEiJ+EgF4DkAAEiJxkiLj1ABAABBuAAAAAA="
+284:
+.base64 "D7YGSQnASIPGAUiD6QE="
+jne 284b
+.base64 "SYP4AUgZwEgjh2gBAABIiYdoAQAASIn4SAVAOgAASImHoAAAAEiLh1ABAABIiYeoAAAASIHHADQAAEyLZzBIi3dASItfcEiLBkiD6AJIiQNIGe1Jx8YBAAAA"
+285:
+.base64 "SAHtSosE9kiD2ABKiQTzSBntSYPGAU055g=="
+jne 285b
+.base64 "SIuHgAAAAEiLsKAAAABIi4ioAAAASItfcEnHx/////+6AAAAAEmJ9kkBzg=="
+286:
+.base64 "SInVSIPlBw=="
+je 287f
+jmp 288f
+287:
+.base64 "SInVSMHtA0iLBOtMIfg="
+288:
+.base64 "SYPuAUGIBkjB6AhIg8IBSDnK"
+jne 286b
+.base64 "SIu/gAAAAEiLhxABAABIiYeAAAAASIuHSAEAAEiJh4gAAABIi4cIAQAASImHkAAAAEiLh1ABAABIiYeYAAAASIn4SAVgOgAASImHoAAAAEiLh0gBAABIiYeoAAAASIHHgA0AAEyLZzC6AQAAALkAAAAATItHeLgAAAAAScfGAAAAAA=="
+289:
+.base64 "S4kE8EmDxgFNOeY="
+jne 289b
+.base64 "S4kE4EuJROAISYkUyEyLZzBMi1dAS4tE4vhIhcA="
+je 290f
+.base64 "S4tE4vhIweg/SIPwAUyJ4UiD4QNICcg="
+je 292f
+.base64 "S4tE4vi6AQAAALlAAAAASIP4AQ=="
+je 294f
+296:
+.base64 "SNHoSAHSSIPpAUiD+AE="
+jne 296b
+jmp 295f
+294:
+295:
+.base64 "SImP0AAAAEyJ4UiD6QFMi0dguAAAAABJx8YAAAAA"
+297:
+.base64 "S4kE8EmDxgFNOeY="
+jne 297b
+.base64 "S4kE4EuJROAISYkUyEiLj9AAAABIA08wSImP0AAAAA=="
+298:
+.base64 "SItfYEyLV0BMi0dQTItnMEiLd1i9AAAAAEnHxgAAAAA="
+299:
+.base64 "SAHtSosE80gRwEuJBPBIGe1Jg8YBTTnm"
+jne 299b
+.base64 "uAAAAABIAe1Ig9AAS4kE4L0AAAAAScfGAAAAAA=="
+2100:
+.base64 "SAHtS4sE8EsbBPJKiQT2SBntSYPGAU055g=="
+jne 2100b
+.base64 "S4sE4EgB7UiD2ABIGe1Jx8YAAAAA"
+2101:
+.base64 "S4sE8EqLFPZIMdBIIehIMdBKiQTzSYPGAU055g=="
+jne 2101b
+.base64 "SIuP0AAAAEiD6QFIiY/QAAAA"
+jne 298b
+.base64 "uAYAAABIiYfQAAAA"
+2102:
+.base64 "ugQAAAC5BAAAAEG4BAAAAA=="
+call {vg_rsa_mont_mul_adx}
+.base64 "SIuH0AAAAEiD6AFIiYfQAAAA"
+jne 2102b
+jmp 293f
+292:
+.base64 "SItfYEyLV0BMi2cwTItHWL0AAAAAScfGAAAAAA=="
+2103:
+.base64 "uAAAAABIAe1LGwTySBntSokE80mDxgFNOeY="
+jne 2103b
+.base64 "S4t04vhIifJIg/L/SMfA/////7kAAAAAQb1AAAAA"
+2104:
+.base64 "SAHASBHSTRnbSYnWSSn2TRn/SYP3/00J302F/0kPRdZIAclMKflJg+0B"
+jne 2104b
+.base64 "SYkISItPMEjB6QJIiY/QAAAA"
+2105:
+.base64 "SItfYEyLV0BMi0dQTItnMEiLb1hLi3Ti+EqLVOP4SotE4/BJifFJKdFJg/kBTRnJTYnLSYPz/0wh2kmJxkmJ1UiLRQBJ9+VMAfBMEepIidFIg8EBSYnFSInISPfmSSnGTTn1TRn/TAH5SSH3TQH+SYn3SYPvAU0590iD0QBMCclJiwJI9+FJidG6AAAAAEgpwkmJEEgZ7UnHxgEAAAA="
+2106:
+.base64 "S4sE8kj34UwByEiD0gBJidFKi1Tz+EgB7UgZwkgZ7UuJFPBJg8YBTTnm"
+jne 2106b
+.base64 "SotU4/hIAe1MGcpLiRTgS4sE4EgBwE0Z270AAAAAScfGAAAAAA=="
+2107:
+.base64 "S4sE8kwh2EgB7UsTBPBIGe1LiQTwSYPGAU055g=="
+jne 2107b
+.base64 "S4sE4EgB7UiD0ABLiQTgS4sE4EgBwE0Z270AAAAAScfGAAAAAA=="
+2108:
+.base64 "S4sE8kwh2EgB7UsTBPBIGe1LiQTwSYPGAU055g=="
+jne 2108b
+.base64 "S4sE4EgB7UiD0ABLiQTgTInGScfGAAAAAA=="
+2109:
+.base64 "SosE9kqJBPNJg8YBTTnm"
+jne 2109b
+.base64 "SIuP0AAAAEiD6QFIiY/QAAAA"
+jne 2105b
+.base64 "uAIAAABIiYfQAAAA"
+2110:
+.base64 "ugQAAAC5BAAAAEG4BAAAAA=="
+call {vg_rsa_mont_mul_adx}
+.base64 "SIuH0AAAAEiD6AFIiYfQAAAA"
+jne 2110b
+293:
+jmp 291f
+290:
+.base64 "TItnMLoBAAAAuQAAAABMi0dguAAAAABJx8YAAAAA"
+2111:
+.base64 "S4kE8EmDxgFNOeY="
+jne 2111b
+.base64 "S4kE4EuJROAISYkUyEiLTzBIAclIAclIAclIAclIAclIAclIAclIiY/QAAAA"
+2112:
+.base64 "SItfYEyLV0BMi0dQTItnMEiLd1i9AAAAAEnHxgAAAAA="
+2113:
+.base64 "SAHtSosE80gRwEuJBPBIGe1Jg8YBTTnm"
+jne 2113b
+.base64 "uAAAAABIAe1Ig9AAS4kE4L0AAAAAScfGAAAAAA=="
+2114:
+.base64 "SAHtS4sE8EsbBPJKiQT2SBntSYPGAU055g=="
+jne 2114b
+.base64 "S4sE4EgB7UiD2ABIGe1Jx8YAAAAA"
+2115:
+.base64 "S4sE8EqLFPZIMdBIIehIMdBKiQTzSYPGAU055g=="
+jne 2115b
+.base64 "SIuP0AAAAEiD6QFIiY/QAAAA"
+jne 2112b
+291:
+.base64 "TItHSEyLZzC4AAAAAEnHxgAAAAA="
+2116:
+.base64 "S4kE8EmDxgFNOeY="
+jne 2116b
+.base64 "S4kE4EuJROAISIuHgAAAAEiLsIAAAABIi4iIAAAASItfSLgAAAAASInKSYn2"
+2117:
+.base64 "SIPqAUjByDhBD7YuSAHoSYPGAUiJ1UiD5Qc="
+je 2118f
+jmp 2119f
+2118:
+.base64 "SInVSMHtA0iJBOu4AAAAAA=="
+2119:
+.base64 "SIXS"
+jne 2117b
+.base64 "ugYAAAC5BAAAAEG4BwAAAA=="
+call {vg_rsa_mont_mul_adx}
+.base64 "ugUAAAC5AQAAAEG4BAAAAA=="
+call {vg_rsa_mont_mul_adx}
+.base64 "TItnMEiLd2hIi19gScfGAAAAAA=="
+2120:
+.base64 "SosE9kqJBPNJg8YBTTnm"
+jne 2120b
+.base64 "SIuHgAAAAEiLkJAAAABIiZeIAAAASIuQmAAAAEiJl5AAAAC6AAAAAEiJl5gAAABIi0d4SItXMEiDwgJIAdJIAdJIAdJIAdBIiYfIAAAASImH0AAAAEyLZzBIi3dwSIuf0AAAAEnHxgAAAAA="
+2121:
+.base64 "SosE9kqJBPNJg8YBTTnm"
+jne 2121b
+.base64 "SIuH0AAAAEiLVzBIg8ICSAHSSAHSSAHSSAHQSImH0AAAAEyLZzBIi3dgSIuf0AAAAEnHxgAAAAA="
+2122:
+.base64 "SosE9kqJBPNJg8YBTTnm"
+jne 2122b
+.base64 "TItnMEiLd2BIi19oScfGAAAAAA=="
+2123:
+.base64 "SosE9kqJBPNJg8YBTTnm"
+jne 2123b
+.base64 "uA4AAABIiYegAAAA"
+2124:
+.base64 "ugUAAAC5BQAAAEG4BAAAAA=="
+call {vg_rsa_mont_mul_adx}
+.base64 "SIuH0AAAAEiLVzBIg8ICSAHSSAHSSAHSSAHQSImH0AAAAEyLZzBIi3doSIuf0AAAAEnHxgAAAAA="
+2125:
+.base64 "SosE9kqJBPNJg8YBTTnm"
+jne 2125b
+.base64 "SIuHoAAAAEiD6AFIiYegAAAA"
+jne 2124b
+2126:
+.base64 "SIuHiAAAAEiLj5gAAAAPtgQISImHqAAAALgCAAAASImHoAAAAA=="
+2127:
+.base64 "uAQAAABIiYfYAAAA"
+2128:
+.base64 "ugYAAAC5BgAAAEG4BgAAAA=="
+call {vg_rsa_lazy_mont_mul_adx}
+.base64 "SIuH2AAAAEiD6AFIiYfYAAAA"
+jne 2128b
+.base64 "SIuXqAAAAEiJ0EgBwEgBwEgBwEgBwEiJh6gAAABIweoESIPiD0iJl9gAAABIi4fYAAAASIXA"
+je 2129f
+.base64 "TItnMEyJ4EiDwAJIi5fYAAAASA+vwkgBwEgBwEgBwEiLt8gAAABIAcZIi19oScfGAAAAAA=="
+2131:
+.base64 "SosE9kqJBPNJg8YBTTnm"
+jne 2131b
+.base64 "ugYAAAC5BgAAAEG4BQAAAA=="
+call {vg_rsa_mont_mul_adx}
+jmp 2130f
+2129:
+2130:
+.base64 "SIuHoAAAAEiD6AFIiYegAAAA"
+jne 2127b
+.base64 "SIuHmAAAAEiDwAFIiYeYAAAASDuHkAAAAA=="
+jne 2126b
+.base64 "ugYAAAC5BgAAAEG4BwAAAA=="
+call {vg_rsa_mont_mul_adx}
+.base64 "SIuHgAAAAEiLsKAAAABIi4ioAAAASItfcEnHx/////+6AAAAAEmJ9kkBzg=="
+2132:
+.base64 "SInVSIPlBw=="
+je 2133f
+jmp 2134f
+2133:
+.base64 "SInVSMHtA0iLBOtMIfg="
+2134:
+.base64 "SYPuAUGIBkjB6AhIg8IBSDnK"
+jne 2132b
+.base64 "SIu/gAAAAEiJ+EgFYDoAAEiJh4AAAABIi4dIAQAASImHiAAAAEiBx4ANAABMi0dITItnMLgAAAAAScfGAAAAAA=="
+2135:
+.base64 "S4kE8EmDxgFNOeY="
+jne 2135b
+.base64 "S4kE4EuJROAISIuHgAAAAEiLsIAAAABIi4iIAAAASItfSLgAAAAASInKSYn2"
+2136:
+.base64 "SIPqAUjByDhBD7YuSAHoSYPGAUiJ1UiD5Qc="
+je 2137f
+jmp 2138f
+2137:
+.base64 "SInVSMHtA0iJBOu4AAAAAA=="
+2138:
+.base64 "SIXS"
+jne 2136b
+.base64 "TItnMEiLX0hMiztJg/cBScfGAQAAAA=="
+2139:
+.base64 "SosE80kJx0mDxgFNOeY="
+jne 2139b
+.base64 "SYP/AUgZwEiLv4AAAABII4doAQAASImHaAEAAEiLhyABAABIiYeAAAAASIuHUAEAAEiJh4gAAABIgccANAAATItHSEyLZzC4AAAAAEnHxgAAAAA="
+2140:
+.base64 "S4kE8EmDxgFNOeY="
+jne 2140b
+.base64 "S4kE4EuJROAISIuHgAAAAEiLsIAAAABIi4iIAAAASItfSLgAAAAASInKSYn2"
+2141:
+.base64 "SIPqAUjByDhBD7YuSAHoSYPGAUiJ1UiD5Qc="
+je 2142f
+jmp 2143f
+2142:
+.base64 "SInVSMHtA0iJBOu4AAAAAA=="
+2143:
+.base64 "SIXS"
+jne 2141b
+.base64 "TItnMEiLX0hMi1dAvQAAAABJx8YAAAAA"
+2144:
+.base64 "SAHtSosE80sbBPJIGe1Jg8YBTTnm"
+jne 2144b
+.base64 "TIs7ScfGAQAAAA=="
+2145:
+.base64 "SosE80kJx0mDxgFNOeY="
+jne 2145b
+.base64 "SYP/AUgZwEiD8P9IIehIi7+AAAAASCOHaAEAAEiJh2gBAABIi4cwAQAASImHgAAAAEiLh1ABAABIiYeIAAAASIHHADQAAEyLR0hMi2cwuAAAAABJx8YAAAAA"
+2146:
+.base64 "S4kE8EmDxgFNOeY="
+jne 2146b
+.base64 "S4kE4EuJROAISIuHgAAAAEiLsIAAAABIi4iIAAAASItfSLgAAAAASInKSYn2"
+2147:
+.base64 "SIPqAUjByDhBD7YuSAHoSYPGAUiJ1UiD5Qc="
+je 2148f
+jmp 2149f
+2148:
+.base64 "SInVSMHtA0iJBOu4AAAAAA=="
+2149:
+.base64 "SIXS"
+jne 2147b
+.base64 "TItnMEiLX0hMi1dAvQAAAABJx8YAAAAA"
+2150:
+.base64 "SAHtSosE80sbBPJIGe1Jg8YBTTnm"
+jne 2150b
+.base64 "TIs7ScfGAQAAAA=="
+2151:
+.base64 "SosE80kJx0mDxgFNOeY="
+jne 2151b
+.base64 "SYP/AUgZwEiD8P9IIehIi7+AAAAASCOHaAEAAEiJh2gBAABIi4cQAQAASImHgAAAAEiLh0gBAABIiYeIAAAASIuHIAEAAEiJh5AAAABIi4dQAQAASImHmAAAAEiJ+EgFYDoAAEiJh6AAAABIi4dIAQAASImHqAAAAEiBx4ANAABMi2cwugEAAAC5AAAAAEyLR3i4AAAAAEnHxgAAAAA="
+2152:
+.base64 "S4kE8EmDxgFNOeY="
+jne 2152b
+.base64 "S4kE4EuJROAISYkUyEyLZzBMi1dAS4tE4vhIhcA="
+je 2153f
+.base64 "S4tE4vhIweg/SIPwAUyJ4UiD4QNICcg="
+je 2155f
+.base64 "S4tE4vi6AQAAALlAAAAASIP4AQ=="
+je 2157f
+2159:
+.base64 "SNHoSAHSSIPpAUiD+AE="
+jne 2159b
+jmp 2158f
+2157:
+2158:
+.base64 "SImP0AAAAEyJ4UiD6QFMi0dguAAAAABJx8YAAAAA"
+2160:
+.base64 "S4kE8EmDxgFNOeY="
+jne 2160b
+.base64 "S4kE4EuJROAISYkUyEiLj9AAAABIA08wSImP0AAAAA=="
+2161:
+.base64 "SItfYEyLV0BMi0dQTItnMEiLd1i9AAAAAEnHxgAAAAA="
+2162:
+.base64 "SAHtSosE80gRwEuJBPBIGe1Jg8YBTTnm"
+jne 2162b
+.base64 "uAAAAABIAe1Ig9AAS4kE4L0AAAAAScfGAAAAAA=="
+2163:
+.base64 "SAHtS4sE8EsbBPJKiQT2SBntSYPGAU055g=="
+jne 2163b
+.base64 "S4sE4EgB7UiD2ABIGe1Jx8YAAAAA"
+2164:
+.base64 "S4sE8EqLFPZIMdBIIehIMdBKiQTzSYPGAU055g=="
+jne 2164b
+.base64 "SIuP0AAAAEiD6QFIiY/QAAAA"
+jne 2161b
+.base64 "uAYAAABIiYfQAAAA"
+2165:
+.base64 "ugQAAAC5BAAAAEG4BAAAAA=="
+call {vg_rsa_mont_mul_adx}
+.base64 "SIuH0AAAAEiD6AFIiYfQAAAA"
+jne 2165b
+jmp 2156f
+2155:
+.base64 "SItfYEyLV0BMi2cwTItHWL0AAAAAScfGAAAAAA=="
+2166:
+.base64 "uAAAAABIAe1LGwTySBntSokE80mDxgFNOeY="
+jne 2166b
+.base64 "S4t04vhIifJIg/L/SMfA/////7kAAAAAQb1AAAAA"
+2167:
+.base64 "SAHASBHSTRnbSYnWSSn2TRn/SYP3/00J302F/0kPRdZIAclMKflJg+0B"
+jne 2167b
+.base64 "SYkISItPMEjB6QJIiY/QAAAA"
+2168:
+.base64 "SItfYEyLV0BMi0dQTItnMEiLb1hLi3Ti+EqLVOP4SotE4/BJifFJKdFJg/kBTRnJTYnLSYPz/0wh2kmJxkmJ1UiLRQBJ9+VMAfBMEepIidFIg8EBSYnFSInISPfmSSnGTTn1TRn/TAH5SSH3TQH+SYn3SYPvAU0590iD0QBMCclJiwJI9+FJidG6AAAAAEgpwkmJEEgZ7UnHxgEAAAA="
+2169:
+.base64 "S4sE8kj34UwByEiD0gBJidFKi1Tz+EgB7UgZwkgZ7UuJFPBJg8YBTTnm"
+jne 2169b
+.base64 "SotU4/hIAe1MGcpLiRTgS4sE4EgBwE0Z270AAAAAScfGAAAAAA=="
+2170:
+.base64 "S4sE8kwh2EgB7UsTBPBIGe1LiQTwSYPGAU055g=="
+jne 2170b
+.base64 "S4sE4EgB7UiD0ABLiQTgS4sE4EgBwE0Z270AAAAAScfGAAAAAA=="
+2171:
+.base64 "S4sE8kwh2EgB7UsTBPBIGe1LiQTwSYPGAU055g=="
+jne 2171b
+.base64 "S4sE4EgB7UiD0ABLiQTgTInGScfGAAAAAA=="
+2172:
+.base64 "SosE9kqJBPNJg8YBTTnm"
+jne 2172b
+.base64 "SIuP0AAAAEiD6QFIiY/QAAAA"
+jne 2168b
+.base64 "uAIAAABIiYfQAAAA"
+2173:
+.base64 "ugQAAAC5BAAAAEG4BAAAAA=="
+call {vg_rsa_mont_mul_adx}
+.base64 "SIuH0AAAAEiD6AFIiYfQAAAA"
+jne 2173b
+2156:
+jmp 2154f
+2153:
+.base64 "TItnMLoBAAAAuQAAAABMi0dguAAAAABJx8YAAAAA"
+2174:
+.base64 "S4kE8EmDxgFNOeY="
+jne 2174b
+.base64 "S4kE4EuJROAISYkUyEiLTzBIAclIAclIAclIAclIAclIAclIAclIiY/QAAAA"
+2175:
+.base64 "SItfYEyLV0BMi0dQTItnMEiLd1i9AAAAAEnHxgAAAAA="
+2176:
+.base64 "SAHtSosE80gRwEuJBPBIGe1Jg8YBTTnm"
+jne 2176b
+.base64 "uAAAAABIAe1Ig9AAS4kE4L0AAAAAScfGAAAAAA=="
+2177:
+.base64 "SAHtS4sE8EsbBPJKiQT2SBntSYPGAU055g=="
+jne 2177b
+.base64 "S4sE4EgB7UiD2ABIGe1Jx8YAAAAA"
+2178:
+.base64 "S4sE8EqLFPZIMdBIIehIMdBKiQTzSYPGAU055g=="
+jne 2178b
+.base64 "SIuP0AAAAEiD6QFIiY/QAAAA"
+jne 2175b
+2154:
+.base64 "TItHSEyLZzC4AAAAAEnHxgAAAAA="
+2179:
+.base64 "S4kE8EmDxgFNOeY="
+jne 2179b
+.base64 "S4kE4EuJROAISIuHgAAAAEiLsIAAAABIi4iIAAAASItfSLgAAAAASInKSYn2"
+2180:
+.base64 "SIPqAUjByDhBD7YuSAHoSYPGAUiJ1UiD5Qc="
+je 2181f
+jmp 2182f
+2181:
+.base64 "SInVSMHtA0iJBOu4AAAAAA=="
+2182:
+.base64 "SIXS"
+jne 2180b
+.base64 "ugYAAAC5BAAAAEG4BwAAAA=="
+call {vg_rsa_mont_mul_adx}
+.base64 "ugUAAAC5AQAAAEG4BAAAAA=="
+call {vg_rsa_mont_mul_adx}
+.base64 "TItnMEiLd2hIi19gScfGAAAAAA=="
+2183:
+.base64 "SosE9kqJBPNJg8YBTTnm"
+jne 2183b
+.base64 "SIuHgAAAAEiLkJAAAABIiZeIAAAASIuQmAAAAEiJl5AAAAC6AAAAAEiJl5gAAABIi0d4SItXMEiDwgJIAdJIAdJIAdJIAdBIiYfIAAAASImH0AAAAEyLZzBIi3dwSIuf0AAAAEnHxgAAAAA="
+2184:
+.base64 "SosE9kqJBPNJg8YBTTnm"
+jne 2184b
+.base64 "SIuH0AAAAEiLVzBIg8ICSAHSSAHSSAHSSAHQSImH0AAAAEyLZzBIi3dgSIuf0AAAAEnHxgAAAAA="
+2185:
+.base64 "SosE9kqJBPNJg8YBTTnm"
+jne 2185b
+.base64 "TItnMEiLd2BIi19oScfGAAAAAA=="
+2186:
+.base64 "SosE9kqJBPNJg8YBTTnm"
+jne 2186b
+.base64 "uA4AAABIiYegAAAA"
+2187:
+.base64 "ugUAAAC5BQAAAEG4BAAAAA=="
+call {vg_rsa_mont_mul_adx}
+.base64 "SIuH0AAAAEiLVzBIg8ICSAHSSAHSSAHSSAHQSImH0AAAAEyLZzBIi3doSIuf0AAAAEnHxgAAAAA="
+2188:
+.base64 "SosE9kqJBPNJg8YBTTnm"
+jne 2188b
+.base64 "SIuHoAAAAEiD6AFIiYegAAAA"
+jne 2187b
+2189:
+.base64 "SIuHiAAAAEiLj5gAAAAPtgQISImHqAAAALgCAAAASImHoAAAAA=="
+2190:
+.base64 "ugYAAAC5BgAAAEG4BgAAAA=="
+call {vg_rsa_lazy_mont_mul_adx}
+.base64 "ugYAAAC5BgAAAEG4BgAAAA=="
+call {vg_rsa_lazy_mont_mul_adx}
+.base64 "ugYAAAC5BgAAAEG4BgAAAA=="
+call {vg_rsa_lazy_mont_mul_adx}
+.base64 "ugYAAAC5BgAAAEG4BgAAAA=="
+call {vg_rsa_lazy_mont_mul_adx}
+.base64 "SIuXqAAAAEiJ0EgBwEgBwEgBwEgBwEiJh6gAAABIweoESIPiD0iJl9gAAABIi4fIAAAASImH0AAAALgAAAAASImH4AAAAA=="
+2191:
+.base64 "TIu/4AAAAEiLj9AAAABMi2cwTYnjSYPDAk0B200B200B202J5UmDxQFJ0e1NAe1Ii19oTYn+SYPGAEwzt9gAAABJg/4BTRn2Zk0PbsZmRQ9swE2J/kmDxgFMM7fYAAAASYP+AU0Z9mZND27OZkUPbMlNif5Jg8YCTDO32AAAAEmD/gFNGfZmTQ9u1mZFD2zSTYn+SYPGA0wzt9gAAABJg/4BTRn2Zk0Pbt5mRQ9s202J/kmDxgRMM7fYAAAASYP+AU0Z9mZND27mZkUPbORNif5Jg8YFTDO32AAAAEmD/gFNGfZmTQ9u7mZFD2ztTYn+SYPGBkwzt9gAAABJg/4BTRn2Zk0PbvZmRQ9s9k2J/kmDxgdMM7fYAAAASYP+AU0Z9mZND27+ZkUPbP9Nif5Jg8YASYP2CEmD/gFNGfZmSQ9u/mYPbP9IicpMAdpIidZMAd5IifVMAd1JiehNAdhNicFNAdlNicpNAdpMidBMAdhBvgAAAAA="
+2192:
+.base64 "80IPbwTxZkEP28DzQg9vDPJmQQ/byWYP68HzQg9vDPZmQQ/bymYP68HzQg9vTPUAZkEP28tmD+vB80MPbwzwZkEP28xmD+vB80MPbwzxZkEP281mD+vB80MPbwzyZkEP285mD+vB80IPbwzwZkEP289mD+vB80IPbwzzZg/bz2YP68HzQg9/BPNJg8YCTTnu"
+jne 2192b
+.base64 "TAHYSImH0AAAAEyJ+EiDwAhIiYfgAAAASIP4EA=="
+jne 2191b
+.base64 "ugYAAAC5BgAAAEG4BQAAAA=="
+call {vg_rsa_mont_mul_adx}
+.base64 "SIuHoAAAAEiD6AFIiYegAAAA"
+jne 2190b
+.base64 "SIuHmAAAAEiDwAFIiYeYAAAASDuHkAAAAA=="
+jne 2189b
+.base64 "ugYAAAC5BgAAAEG4BwAAAA=="
+call {vg_rsa_mont_mul_adx}
+.base64 "SIuHgAAAAEiLsKAAAABIi4ioAAAASItfcEnHx/////+6AAAAAEmJ9kkBzg=="
+2193:
+.base64 "SInVSIPlBw=="
+je 2194f
+jmp 2195f
+2194:
+.base64 "SInVSMHtA0iLBOtMIfg="
+2195:
+.base64 "SYPuAUGIBkjB6AhIg8IBSDnK"
+jne 2193b
+.base64 "SIu/gAAAAEiJ+EgFYDoAAEiJxkiLhxgBAABIicJIi49IAQAAQbgAAAAA"
+2196:
+.base64 "D7YGRA+2CkwxyEkJwEiDxgFIg8IBSIPpAQ=="
+jne 2196b
+.base64 "SYP4AUgZwEgjh2gBAABIiYdoAQAASIuHaAEAAEiD4AFIix9Ii28ITItnEEyLbxhMi3cgTIt/KA=="
+jmp 217f
+216:
+.base64 "uAAAAABIix9Ii28ITItnEEyLbxhMi3cgTIt/KA=="
+217:
+.base64 "ww=="
+.p2align 6"#,
+        vg_rsa_mont_mul_adx = sym super::rsa::vg_rsa_mont_mul_adx::vg_rsa_mont_mul_adx,
+        vg_rsa_lazy_mont_mul_adx = sym super::rsa::vg_rsa_lazy_mont_mul_adx::vg_rsa_lazy_mont_mul_adx,
     )
 }
 
@@ -3051,7 +3827,7 @@ jne 2194b
     )
 }
 
-/// Randomized DSA signing of a prehashed digest from fresh independent random octets. Up to eight signing attempts, each with 128 nonce draws. Returns 1 with fixed-width r||s, 0 for invalid key/retry exhaustion, or 2 for insufficient random bytes. On failure out is zero. used counts consumed complete draws on every return. Checks algebraic consistency, not primality. Timing may depend on public p,q,g,y, sampling decisions, signing success bits and consumption, not otherwise on secrets. Contract: `VG.Spec.Dsa.randomSignContract`.
+/// Randomized DSA signing of a prehashed digest, for an already validated packed private key (big-endian p||q||g||y||x; vg_dsa_validate_private_key validates it). Returns exactly what vg_dsa_sign_random returns (`VG.Spec.Dsa.randomSignContract`): 1 with fixed-width r||s, 0 for retry exhaustion, or 2 for insufficient random bytes; out is zero on failure and used counts consumed complete draws on every return. Timing may depend on public p,q,g,y, sampling decisions, signing success bits and consumption, not otherwise on secrets. Contract: `VG.Spec.Dsa.randomSignPrevalidatedContract`.
 ///
 /// # Safety
 ///
@@ -3064,11 +3840,12 @@ jne 2194b
 /// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
 /// * key_len must be 3*p_len + 2*q_len; out_len must be 2*q_len.
 /// * scratch_len must be at least 16*p_len + 64 words; destroy scratch after use.
-/// * Caller must assure domain validity and provide fresh independent random octets; never reuse a completed signing tape for another signature.
+/// * The exact key bytes must satisfy validatePrivateKeyBytes p_len q_len key = true. A successful vg_dsa_validate_private_key call establishes this only while the key bytes remain unchanged. Primality remains the caller's responsibility.
+/// * Provide fresh independent random octets; never reuse a completed signing tape for another signature.
 /// * `out`, `used` and `scratch` must not overlap each other, `key`, `digest`, `rand` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `used`, `key`, `digest`, `rand` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_dsa_sign_random(out: *mut u8, out_len: usize, used: *mut [u64; 1], key: *const u8, key_len: usize, p_len: usize, q_len: usize, digest: *const u8, digest_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_dsa_sign_random_prevalidated(out: *mut u8, out_len: usize, used: *mut [u64; 1], key: *const u8, key_len: usize, p_len: usize, q_len: usize, digest: *const u8, digest_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJAj///9IiXwkKEiJdCQwSIlUJDhIiUwkQEyJRCRITIlMJFBMAclIiYwkqAAAAEjHwAAAAABIiYQkkAAAAEjHwAgAAABIiYQkmAAAAEiLhCQAAQAASIlEJFhIi4QkCAEAAEiJRCRgSIuEJBABAABIiUQkaEiLhCQYAQAASIlEJHBIi4QkIAEAAEiJRCR4SIuEJCgBAABIiYQkgAAAAEiLhCQwAQAASImEJIgAAABIx8AAAAAASImEJMgAAABIiYQk0AAAAEiJhCTYAAAASImEJOAAAABMi5QkqAAAAEyLXCRYTInWTInZQbgAAAAAQbkAAAAA"
 20:
@@ -3127,7 +3904,7 @@ je 219f
 jmp 220f
 219:
 .base64 "SIt8JChIi3QkMEiLVCRASItMJEhMi0QkUEmJ4UmBwcgAAABIi0QkWEiJBCRIi0QkYEiJRCQISItEJGhIiUQkEEiLhCSAAAAASIlEJBhIi4QkiAAAAEiJRCQg"
-call {vg_dsa_sign}
+call {vg_dsa_sign_prevalidated}
 .base64 "icBIiYQkwAAAAEiD+AA="
 je 221f
 jmp 222f
@@ -3157,7 +3934,778 @@ jne 227b
 226:
 .base64 "SMfAAAAAAEiJhCTIAAAASImEJNAAAABIiYQk2AAAAEiJhCTgAAAASItUJDhIi4QkkAAAAEiJAkiLhCTAAAAASI2kJPgAAADD"
 .p2align 6"#,
-        vg_dsa_sign = sym super::dsa::vg_dsa_sign::vg_dsa_sign,
+        vg_dsa_sign_prevalidated = sym super::dsa::vg_dsa_sign_prevalidated::vg_dsa_sign_prevalidated,
+    )
+}
+
+/// Validate packed DSA p||q||g||y||x as signing checks it: domain consistency, including g^q mod p = 1, 1 < y < p, 0 < x < q and g^x mod p = y. Returns 1 exactly when validation succeeds, otherwise 0. Does not test primality. Timing may depend on p,q,g,y and the result, not otherwise on x. Scratch contents are unspecified on return and may hold secrets. Contract: `VG.Spec.Dsa.validatePrivateKeyContract`.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
+/// * key_len must be 3*p_len + 2*q_len; scratch_len must be at least 16*p_len words; destroy scratch after use.
+/// * `scratch` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_dsa_validate_private_key(key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "TYnDSYkbSYlrCE2JYxBNiWsYTYlzIE2Jeyi4AAAAAEmJgygBAABJiYNAAQAASYmDMAEAAEmJgzgBAABJiYNYAQAASYm7AAEAAEmJk0gBAABJiYtQAQAASYuDAAEAAEkDg0gBAABJiYMIAQAASQODUAEAAEmJgxABAABJA4NIAQAASYmDGAEAAEkDg0gBAABJiYMgAQAATInfSYuDIAEAAEmJgzABAABIi7cAAQAASIuPSAEAAEG4AAAAAEG5AAAAAA=="
+20:
+.base64 "D7YGTYXA"
+je 21f
+jmp 22f
+21:
+.base64 "SIXA"
+jne 23f
+jmp 24f
+23:
+.base64 "SYnISYnB"
+24:
+22:
+.base64 "SIPGAUiD6QE="
+jne 20b
+.base64 "TImHsAAAAEmB+YAAAABIGcBIg/D/SImHaAEAAEiLtwgBAABIi49QAQAAQbgAAAAAQbkAAAAA"
+25:
+.base64 "D7YGTYXA"
+je 26f
+jmp 27f
+26:
+.base64 "SIXA"
+jne 28f
+jmp 29f
+28:
+.base64 "SYnISYnB"
+29:
+27:
+.base64 "SIPGAUiD6QE="
+jne 25b
+.base64 "TImHYAEAAEmB+YAAAABIGcBIg/D/SCOHaAEAAEiJh2gBAABIi5ewAAAASIH6gAAAAA=="
+je 210f
+.base64 "SIH6AAEAAA=="
+je 212f
+.base64 "SIH6gAEAAA=="
+je 214f
+.base64 "uAAAAAA="
+jmp 215f
+214:
+.base64 "TInASIPwIEiD+AFIGcA="
+215:
+jmp 213f
+212:
+.base64 "TInASIPwHEiD+AFIGcBJicJMicBIg/AgSIP4AUgZwEwJ0EmJwkyJwEiD8BRIg/gBSBnATAnQ"
+213:
+jmp 211f
+210:
+.base64 "TInASIPwFEiD+AFIGcA="
+211:
+.base64 "SCOHaAEAAEiJh2gBAABIi7cAAQAASIuPSAEAAA+2RA7/SIu3CAEAAEiLj1ABAAAPtlQO/0gh0EiD4AG6AAAAAEgpwkiJ0Egjh2gBAABIiYdoAQAASIuHWAEAAEiLl2ABAABIOcJID0LCSImHYAEAAEiLh2gBAABIhcA="
+je 216f
+.base64 "QbwwAAAATIlnMLgAAAAASIlHOEyJ4EiDwAJIAcBIAcBIAcBIifpIgcIAAQAASIlXQEgBwkiJV0hIAcJIiVdQSAHCSIlXWEgBwkiJV2BIAcJIiVdoSAHCSIlXcEgBwkiJV3hIAcJIi4cAAQAASImHgAAAAEiLh0gBAABIiYeIAAAASIn+TIuniAAAAEmDxAdJwewDSIHHgA0AAEyJZzBIibeAAAAATIngSIPAAkgBwEgBwEgBwEiJ+kiBwgABAABIiVdASAHCSIlXSEgBwkiJV1BIAcJIiVdYSAHCSIlXYEgBwkiJV2hIAcJIiVdwSAHCSIlXeEgBwkyLR0BMi2cwuAAAAABJx8YAAAAA"
+218:
+.base64 "S4kE8EmDxgFNOeY="
+jne 218b
+.base64 "S4kE4EuJROAISIuHgAAAAEiLsIAAAABIi4iIAAAASItfQLgAAAAASInKSYn2"
+219:
+.base64 "SIPqAUjByDhBD7YuSAHoSYPGAUiJ1UiD5Qc="
+je 220f
+jmp 221f
+220:
+.base64 "SInVSMHtA0iJBOu4AAAAAA=="
+221:
+.base64 "SIXS"
+jne 219b
+.base64 "SItfQEiLG0iJ2UiJ2Ej34b4CAAAASCnGSInISPfmSInBSInYSPfhvgIAAABIKcZIichI9+ZIicFIidhI9+G+AgAAAEgpxkiJyEj35kiJwUiJ2Ej34b4CAAAASCnGSInISPfmSInBSInYSPfhvgIAAABIKcZIichI9+ZIicFBvwAAAABJKc9MiX84SIu/gAAAAEiLhwgBAABIiYeAAAAASIuHUAEAAEiJh4gAAABIif5Mi6eIAAAASYPEB0nB7ANIgccANAAATIlnMEiJt4AAAABMieBIg8ACSAHASAHASAHASIn6SIHCAAEAAEiJV0BIAcJIiVdISAHCSIlXUEgBwkiJV1hIAcJIiVdgSAHCSIlXaEgBwkiJV3BIAcJIiVd4SAHCTItHQEyLZzC4AAAAAEnHxgAAAAA="
+222:
+.base64 "S4kE8EmDxgFNOeY="
+jne 222b
+.base64 "S4kE4EuJROAISIuHgAAAAEiLsIAAAABIi4iIAAAASItfQLgAAAAASInKSYn2"
+223:
+.base64 "SIPqAUjByDhBD7YuSAHoSYPGAUiJ1UiD5Qc="
+je 224f
+jmp 225f
+224:
+.base64 "SInVSMHtA0iJBOu4AAAAAA=="
+225:
+.base64 "SIXS"
+jne 223b
+.base64 "SItfQEiLG0iJ2UiJ2Ej34b4CAAAASCnGSInISPfmSInBSInYSPfhvgIAAABIKcZIichI9+ZIicFIidhI9+G+AgAAAEgpxkiJyEj35kiJwUiJ2Ej34b4CAAAASCnGSInISPfmSInBSInYSPfhvgIAAABIKcZIichI9+ZIicFBvwAAAABJKc9MiX84SIu/gAAAAEiLhxABAABIiYeAAAAASIuHSAEAAEiJh4gAAABIgceADQAATItHSEyLZzC4AAAAAEnHxgAAAAA="
+226:
+.base64 "S4kE8EmDxgFNOeY="
+jne 226b
+.base64 "S4kE4EuJROAISIuHgAAAAEiLsIAAAABIi4iIAAAASItfSLgAAAAASInKSYn2"
+227:
+.base64 "SIPqAUjByDhBD7YuSAHoSYPGAUiJ1UiD5Qc="
+je 228f
+jmp 229f
+228:
+.base64 "SInVSMHtA0iJBOu4AAAAAA=="
+229:
+.base64 "SIXS"
+jne 227b
+.base64 "TItnMEiLX0hMi1dAvQAAAABJx8YAAAAA"
+230:
+.base64 "SAHtSosE80sbBPJIGe1Jg8YBTTnm"
+jne 230b
+.base64 "TIs7SdHvScfGAQAAAA=="
+231:
+.base64 "SosE80kJx0mDxgFNOeY="
+jne 231b
+.base64 "SYP/AUgZwEiD8P9IIehIi7+AAAAASCOHaAEAAEiJh2gBAABIi4cYAQAASImHgAAAAEiLh0gBAABIiYeIAAAASIHHgA0AAEyLR0hMi2cwuAAAAABJx8YAAAAA"
+232:
+.base64 "S4kE8EmDxgFNOeY="
+jne 232b
+.base64 "S4kE4EuJROAISIuHgAAAAEiLsIAAAABIi4iIAAAASItfSLgAAAAASInKSYn2"
+233:
+.base64 "SIPqAUjByDhBD7YuSAHoSYPGAUiJ1UiD5Qc="
+je 234f
+jmp 235f
+234:
+.base64 "SInVSMHtA0iJBOu4AAAAAA=="
+235:
+.base64 "SIXS"
+jne 233b
+.base64 "TItnMEiLX0hMi1dAvQAAAABJx8YAAAAA"
+236:
+.base64 "SAHtSosE80sbBPJIGe1Jg8YBTTnm"
+jne 236b
+.base64 "TIs7SdHvScfGAQAAAA=="
+237:
+.base64 "SosE80kJx0mDxgFNOeY="
+jne 237b
+.base64 "SYP/AUgZwEiD8P9IIehIi7+AAAAASCOHaAEAAEiJh2gBAABIifhIBWA6AABIiYegAAAASIuHSAEAAEiJh6gAAABIgceADQAATItnMEiLd0BIi19wSIsGSIPoAUiJA0gZ7UnHxgEAAAA="
+238:
+.base64 "SAHtSosE9kiD2ABKiQTzSBntSYPGAU055g=="
+jne 238b
+.base64 "SIuHgAAAAEiLsKAAAABIi4ioAAAASItfcEnHx/////+6AAAAAEmJ9kkBzg=="
+239:
+.base64 "SInVSIPlBw=="
+je 240f
+jmp 241f
+240:
+.base64 "SInVSMHtA0iLBOtMIfg="
+241:
+.base64 "SYPuAUGIBkjB6AhIg8IBSDnK"
+jne 239b
+.base64 "SIu/gAAAAEiJ+EgFYDoAAEiJh4AAAABIi4dIAQAASImHiAAAAEiJ+EgF4DkAAEiJh6AAAABIi4dQAQAASImHqAAAAEiBxwA0AABMi2cwugEAAAC5AAAAAEyLR3i4AAAAAEnHxgAAAAA="
+242:
+.base64 "S4kE8EmDxgFNOeY="
+jne 242b
+.base64 "S4kE4EuJROAISYkUyEyLZzBMi1dAS4tE4vhIhcA="
+je 243f
+.base64 "S4tE4vhIweg/SIPwAUyJ4UiD4QNICcg="
+je 245f
+.base64 "S4tE4vi6AQAAALlAAAAASIP4AQ=="
+je 247f
+249:
+.base64 "SNHoSAHSSIPpAUiD+AE="
+jne 249b
+jmp 248f
+247:
+248:
+.base64 "SImP0AAAAEyJ4UiD6QFMi0dguAAAAABJx8YAAAAA"
+250:
+.base64 "S4kE8EmDxgFNOeY="
+jne 250b
+.base64 "S4kE4EuJROAISYkUyEiLj9AAAABIA08wSImP0AAAAA=="
+251:
+.base64 "SItfYEyLV0BMi0dQTItnMEiLd1i9AAAAAEnHxgAAAAA="
+252:
+.base64 "SAHtSosE80gRwEuJBPBIGe1Jg8YBTTnm"
+jne 252b
+.base64 "uAAAAABIAe1Ig9AAS4kE4L0AAAAAScfGAAAAAA=="
+253:
+.base64 "SAHtS4sE8EsbBPJKiQT2SBntSYPGAU055g=="
+jne 253b
+.base64 "S4sE4EgB7UiD2ABIGe1Jx8YAAAAA"
+254:
+.base64 "S4sE8EqLFPZIMdBIIehIMdBKiQTzSYPGAU055g=="
+jne 254b
+.base64 "SIuP0AAAAEiD6QFIiY/QAAAA"
+jne 251b
+.base64 "uAYAAABIiYfQAAAA"
+255:
+.base64 "ugQAAAC5BAAAAEG4BAAAAA=="
+call {vg_rsa_mont_mul}
+.base64 "SIuH0AAAAEiD6AFIiYfQAAAA"
+jne 255b
+jmp 246f
+245:
+.base64 "SItfYEyLV0BMi2cwTItHWL0AAAAAScfGAAAAAA=="
+256:
+.base64 "uAAAAABIAe1LGwTySBntSokE80mDxgFNOeY="
+jne 256b
+.base64 "S4t04vhIifJIg/L/SMfA/////7kAAAAAQb1AAAAA"
+257:
+.base64 "SAHASBHSTRnbSYnWSSn2TRn/SYP3/00J302F/0kPRdZIAclMKflJg+0B"
+jne 257b
+.base64 "SYkISItPMEjB6QJIiY/QAAAA"
+258:
+.base64 "SItfYEyLV0BMi0dQTItnMEiLb1hLi3Ti+EqLVOP4SotE4/BJifFJKdFJg/kBTRnJTYnLSYPz/0wh2kmJxkmJ1UiLRQBJ9+VMAfBMEepIidFIg8EBSYnFSInISPfmSSnGTTn1TRn/TAH5SSH3TQH+SYn3SYPvAU0590iD0QBMCclJiwJI9+FJidG6AAAAAEgpwkmJEEgZ7UnHxgEAAAA="
+259:
+.base64 "S4sE8kj34UwByEiD0gBJidFKi1Tz+EgB7UgZwkgZ7UuJFPBJg8YBTTnm"
+jne 259b
+.base64 "SotU4/hIAe1MGcpLiRTgS4sE4EgBwE0Z270AAAAAScfGAAAAAA=="
+260:
+.base64 "S4sE8kwh2EgB7UsTBPBIGe1LiQTwSYPGAU055g=="
+jne 260b
+.base64 "S4sE4EgB7UiD0ABLiQTgS4sE4EgBwE0Z270AAAAAScfGAAAAAA=="
+261:
+.base64 "S4sE8kwh2EgB7UsTBPBIGe1LiQTwSYPGAU055g=="
+jne 261b
+.base64 "S4sE4EgB7UiD0ABLiQTgTInGScfGAAAAAA=="
+262:
+.base64 "SosE9kqJBPNJg8YBTTnm"
+jne 262b
+.base64 "SIuP0AAAAEiD6QFIiY/QAAAA"
+jne 258b
+.base64 "uAIAAABIiYfQAAAA"
+263:
+.base64 "ugQAAAC5BAAAAEG4BAAAAA=="
+call {vg_rsa_mont_mul}
+.base64 "SIuH0AAAAEiD6AFIiYfQAAAA"
+jne 263b
+246:
+jmp 244f
+243:
+.base64 "TItnMLoBAAAAuQAAAABMi0dguAAAAABJx8YAAAAA"
+264:
+.base64 "S4kE8EmDxgFNOeY="
+jne 264b
+.base64 "S4kE4EuJROAISYkUyEiLTzBIAclIAclIAclIAclIAclIAclIAclIiY/QAAAA"
+265:
+.base64 "SItfYEyLV0BMi0dQTItnMEiLd1i9AAAAAEnHxgAAAAA="
+266:
+.base64 "SAHtSosE80gRwEuJBPBIGe1Jg8YBTTnm"
+jne 266b
+.base64 "uAAAAABIAe1Ig9AAS4kE4L0AAAAAScfGAAAAAA=="
+267:
+.base64 "SAHtS4sE8EsbBPJKiQT2SBntSYPGAU055g=="
+jne 267b
+.base64 "S4sE4EgB7UiD2ABIGe1Jx8YAAAAA"
+268:
+.base64 "S4sE8EqLFPZIMdBIIehIMdBKiQTzSYPGAU055g=="
+jne 268b
+.base64 "SIuP0AAAAEiD6QFIiY/QAAAA"
+jne 265b
+244:
+.base64 "ugQAAAC5BAAAAEG4BwAAAA=="
+call {vg_rsa_mont_mul}
+.base64 "uQgAAABIiY/QAAAA"
+269:
+.base64 "SItfYEyLV0BMi0dQTItnMEiLd1i9AAAAAEnHxgAAAAA="
+270:
+.base64 "SAHtSosE80gRwEuJBPBIGe1Jg8YBTTnm"
+jne 270b
+.base64 "uAAAAABIAe1Ig9AAS4kE4L0AAAAAScfGAAAAAA=="
+271:
+.base64 "SAHtS4sE8EsbBPJKiQT2SBntSYPGAU055g=="
+jne 271b
+.base64 "S4sE4EgB7UiD2ABIGe1Jx8YAAAAA"
+272:
+.base64 "S4sE8EqLFPZIMdBIIehIMdBKiQTzSYPGAU055g=="
+jne 272b
+.base64 "SIuP0AAAAEiD6QFIiY/QAAAA"
+jne 269b
+.base64 "TItHcEyLZzC4AAAAAEnHxgAAAAA="
+273:
+.base64 "S4kE8EmDxgFNOeY="
+jne 273b
+.base64 "S4kE4EuJROAITItHSEyLZzC4AAAAAEnHxgAAAAA="
+274:
+.base64 "S4kE8EmDxgFNOeY="
+jne 274b
+.base64 "S4kE4EuJROAISIuHgAAAAEiLsIAAAABIi4iIAAAASIm3uAAAAEiJj7AAAABIhck="
+je 275f
+277:
+.base64 "SIu3uAAAAA+2BkiLX0hIiQNIg8YBSIm3uAAAALoGAAAAuQQAAABBuAYAAAA="
+call {vg_rsa_mont_mul}
+.base64 "SItfcEyLT0hMi1dATItHUEyLZzBIi3dYvQAAAABJx8YAAAAA"
+278:
+.base64 "SAHtSosE80sTBPFLiQTwSBntSYPGAU055g=="
+jne 278b
+.base64 "uAAAAABIAe1Ig9AAS4kE4EiLX3C9AAAAAEnHxgAAAAA="
+279:
+.base64 "SAHtS4sE8EsbBPJKiQT2SBntSYPGAU055g=="
+jne 279b
+.base64 "S4sE4EgB7UiD2ABIGe1Jx8YAAAAA"
+280:
+.base64 "S4sE8EqLFPZIMdBIIehIMdBKiQTzSYPGAU055g=="
+jne 280b
+.base64 "SIuHsAAAAEiD6AFIiYewAAAA"
+jne 277b
+jmp 276f
+275:
+276:
+.base64 "SIuHgAAAAEiLsKAAAABIi4ioAAAASItfcEnHx/////+6AAAAAEmJ9kkBzg=="
+281:
+.base64 "SInVSIPlBw=="
+je 282f
+jmp 283f
+282:
+.base64 "SInVSMHtA0iLBOtMIfg="
+283:
+.base64 "SYPuAUGIBkjB6AhIg8IBSDnK"
+jne 281b
+.base64 "SIu/gAAAAEiJ+EgF4DkAAEiJxkiLj1ABAABBuAAAAAA="
+284:
+.base64 "D7YGSQnASIPGAUiD6QE="
+jne 284b
+.base64 "SYP4AUgZwEgjh2gBAABIiYdoAQAASIn4SAVAOgAASImHoAAAAEiLh1ABAABIiYeoAAAASIHHADQAAEyLZzBIi3dASItfcEiLBkiD6AJIiQNIGe1Jx8YBAAAA"
+285:
+.base64 "SAHtSosE9kiD2ABKiQTzSBntSYPGAU055g=="
+jne 285b
+.base64 "SIuHgAAAAEiLsKAAAABIi4ioAAAASItfcEnHx/////+6AAAAAEmJ9kkBzg=="
+286:
+.base64 "SInVSIPlBw=="
+je 287f
+jmp 288f
+287:
+.base64 "SInVSMHtA0iLBOtMIfg="
+288:
+.base64 "SYPuAUGIBkjB6AhIg8IBSDnK"
+jne 286b
+.base64 "SIu/gAAAAEiLhxABAABIiYeAAAAASIuHSAEAAEiJh4gAAABIi4cIAQAASImHkAAAAEiLh1ABAABIiYeYAAAASIn4SAVgOgAASImHoAAAAEiLh0gBAABIiYeoAAAASIHHgA0AAEyLZzC6AQAAALkAAAAATItHeLgAAAAAScfGAAAAAA=="
+289:
+.base64 "S4kE8EmDxgFNOeY="
+jne 289b
+.base64 "S4kE4EuJROAISYkUyEyLZzBMi1dAS4tE4vhIhcA="
+je 290f
+.base64 "S4tE4vhIweg/SIPwAUyJ4UiD4QNICcg="
+je 292f
+.base64 "S4tE4vi6AQAAALlAAAAASIP4AQ=="
+je 294f
+296:
+.base64 "SNHoSAHSSIPpAUiD+AE="
+jne 296b
+jmp 295f
+294:
+295:
+.base64 "SImP0AAAAEyJ4UiD6QFMi0dguAAAAABJx8YAAAAA"
+297:
+.base64 "S4kE8EmDxgFNOeY="
+jne 297b
+.base64 "S4kE4EuJROAISYkUyEiLj9AAAABIA08wSImP0AAAAA=="
+298:
+.base64 "SItfYEyLV0BMi0dQTItnMEiLd1i9AAAAAEnHxgAAAAA="
+299:
+.base64 "SAHtSosE80gRwEuJBPBIGe1Jg8YBTTnm"
+jne 299b
+.base64 "uAAAAABIAe1Ig9AAS4kE4L0AAAAAScfGAAAAAA=="
+2100:
+.base64 "SAHtS4sE8EsbBPJKiQT2SBntSYPGAU055g=="
+jne 2100b
+.base64 "S4sE4EgB7UiD2ABIGe1Jx8YAAAAA"
+2101:
+.base64 "S4sE8EqLFPZIMdBIIehIMdBKiQTzSYPGAU055g=="
+jne 2101b
+.base64 "SIuP0AAAAEiD6QFIiY/QAAAA"
+jne 298b
+.base64 "uAYAAABIiYfQAAAA"
+2102:
+.base64 "ugQAAAC5BAAAAEG4BAAAAA=="
+call {vg_rsa_mont_mul}
+.base64 "SIuH0AAAAEiD6AFIiYfQAAAA"
+jne 2102b
+jmp 293f
+292:
+.base64 "SItfYEyLV0BMi2cwTItHWL0AAAAAScfGAAAAAA=="
+2103:
+.base64 "uAAAAABIAe1LGwTySBntSokE80mDxgFNOeY="
+jne 2103b
+.base64 "S4t04vhIifJIg/L/SMfA/////7kAAAAAQb1AAAAA"
+2104:
+.base64 "SAHASBHSTRnbSYnWSSn2TRn/SYP3/00J302F/0kPRdZIAclMKflJg+0B"
+jne 2104b
+.base64 "SYkISItPMEjB6QJIiY/QAAAA"
+2105:
+.base64 "SItfYEyLV0BMi0dQTItnMEiLb1hLi3Ti+EqLVOP4SotE4/BJifFJKdFJg/kBTRnJTYnLSYPz/0wh2kmJxkmJ1UiLRQBJ9+VMAfBMEepIidFIg8EBSYnFSInISPfmSSnGTTn1TRn/TAH5SSH3TQH+SYn3SYPvAU0590iD0QBMCclJiwJI9+FJidG6AAAAAEgpwkmJEEgZ7UnHxgEAAAA="
+2106:
+.base64 "S4sE8kj34UwByEiD0gBJidFKi1Tz+EgB7UgZwkgZ7UuJFPBJg8YBTTnm"
+jne 2106b
+.base64 "SotU4/hIAe1MGcpLiRTgS4sE4EgBwE0Z270AAAAAScfGAAAAAA=="
+2107:
+.base64 "S4sE8kwh2EgB7UsTBPBIGe1LiQTwSYPGAU055g=="
+jne 2107b
+.base64 "S4sE4EgB7UiD0ABLiQTgS4sE4EgBwE0Z270AAAAAScfGAAAAAA=="
+2108:
+.base64 "S4sE8kwh2EgB7UsTBPBIGe1LiQTwSYPGAU055g=="
+jne 2108b
+.base64 "S4sE4EgB7UiD0ABLiQTgTInGScfGAAAAAA=="
+2109:
+.base64 "SosE9kqJBPNJg8YBTTnm"
+jne 2109b
+.base64 "SIuP0AAAAEiD6QFIiY/QAAAA"
+jne 2105b
+.base64 "uAIAAABIiYfQAAAA"
+2110:
+.base64 "ugQAAAC5BAAAAEG4BAAAAA=="
+call {vg_rsa_mont_mul}
+.base64 "SIuH0AAAAEiD6AFIiYfQAAAA"
+jne 2110b
+293:
+jmp 291f
+290:
+.base64 "TItnMLoBAAAAuQAAAABMi0dguAAAAABJx8YAAAAA"
+2111:
+.base64 "S4kE8EmDxgFNOeY="
+jne 2111b
+.base64 "S4kE4EuJROAISYkUyEiLTzBIAclIAclIAclIAclIAclIAclIAclIiY/QAAAA"
+2112:
+.base64 "SItfYEyLV0BMi0dQTItnMEiLd1i9AAAAAEnHxgAAAAA="
+2113:
+.base64 "SAHtSosE80gRwEuJBPBIGe1Jg8YBTTnm"
+jne 2113b
+.base64 "uAAAAABIAe1Ig9AAS4kE4L0AAAAAScfGAAAAAA=="
+2114:
+.base64 "SAHtS4sE8EsbBPJKiQT2SBntSYPGAU055g=="
+jne 2114b
+.base64 "S4sE4EgB7UiD2ABIGe1Jx8YAAAAA"
+2115:
+.base64 "S4sE8EqLFPZIMdBIIehIMdBKiQTzSYPGAU055g=="
+jne 2115b
+.base64 "SIuP0AAAAEiD6QFIiY/QAAAA"
+jne 2112b
+291:
+.base64 "TItHSEyLZzC4AAAAAEnHxgAAAAA="
+2116:
+.base64 "S4kE8EmDxgFNOeY="
+jne 2116b
+.base64 "S4kE4EuJROAISIuHgAAAAEiLsIAAAABIi4iIAAAASItfSLgAAAAASInKSYn2"
+2117:
+.base64 "SIPqAUjByDhBD7YuSAHoSYPGAUiJ1UiD5Qc="
+je 2118f
+jmp 2119f
+2118:
+.base64 "SInVSMHtA0iJBOu4AAAAAA=="
+2119:
+.base64 "SIXS"
+jne 2117b
+.base64 "ugYAAAC5BAAAAEG4BwAAAA=="
+call {vg_rsa_mont_mul}
+.base64 "ugUAAAC5AQAAAEG4BAAAAA=="
+call {vg_rsa_mont_mul}
+.base64 "TItnMEiLd2hIi19gScfGAAAAAA=="
+2120:
+.base64 "SosE9kqJBPNJg8YBTTnm"
+jne 2120b
+.base64 "SIuHgAAAAEiLkJAAAABIiZeIAAAASIuQmAAAAEiJl5AAAAC6AAAAAEiJl5gAAABIi0d4SItXMEiDwgJIAdJIAdJIAdJIAdBIiYfIAAAASImH0AAAAEyLZzBIi3dwSIuf0AAAAEnHxgAAAAA="
+2121:
+.base64 "SosE9kqJBPNJg8YBTTnm"
+jne 2121b
+.base64 "SIuH0AAAAEiLVzBIg8ICSAHSSAHSSAHSSAHQSImH0AAAAEyLZzBIi3dgSIuf0AAAAEnHxgAAAAA="
+2122:
+.base64 "SosE9kqJBPNJg8YBTTnm"
+jne 2122b
+.base64 "TItnMEiLd2BIi19oScfGAAAAAA=="
+2123:
+.base64 "SosE9kqJBPNJg8YBTTnm"
+jne 2123b
+.base64 "uA4AAABIiYegAAAA"
+2124:
+.base64 "ugUAAAC5BQAAAEG4BAAAAA=="
+call {vg_rsa_mont_mul}
+.base64 "SIuH0AAAAEiLVzBIg8ICSAHSSAHSSAHSSAHQSImH0AAAAEyLZzBIi3doSIuf0AAAAEnHxgAAAAA="
+2125:
+.base64 "SosE9kqJBPNJg8YBTTnm"
+jne 2125b
+.base64 "SIuHoAAAAEiD6AFIiYegAAAA"
+jne 2124b
+2126:
+.base64 "SIuHiAAAAEiLj5gAAAAPtgQISImHqAAAALgCAAAASImHoAAAAA=="
+2127:
+.base64 "uAQAAABIiYfYAAAA"
+2128:
+.base64 "ugYAAAC5BgAAAEG4BgAAAA=="
+call {vg_rsa_lazy_mont_mul}
+.base64 "SIuH2AAAAEiD6AFIiYfYAAAA"
+jne 2128b
+.base64 "SIuXqAAAAEiJ0EgBwEgBwEgBwEgBwEiJh6gAAABIweoESIPiD0iJl9gAAABIi4fYAAAASIXA"
+je 2129f
+.base64 "TItnMEyJ4EiDwAJIi5fYAAAASA+vwkgBwEgBwEgBwEiLt8gAAABIAcZIi19oScfGAAAAAA=="
+2131:
+.base64 "SosE9kqJBPNJg8YBTTnm"
+jne 2131b
+.base64 "ugYAAAC5BgAAAEG4BQAAAA=="
+call {vg_rsa_mont_mul}
+jmp 2130f
+2129:
+2130:
+.base64 "SIuHoAAAAEiD6AFIiYegAAAA"
+jne 2127b
+.base64 "SIuHmAAAAEiDwAFIiYeYAAAASDuHkAAAAA=="
+jne 2126b
+.base64 "ugYAAAC5BgAAAEG4BwAAAA=="
+call {vg_rsa_mont_mul}
+.base64 "SIuHgAAAAEiLsKAAAABIi4ioAAAASItfcEnHx/////+6AAAAAEmJ9kkBzg=="
+2132:
+.base64 "SInVSIPlBw=="
+je 2133f
+jmp 2134f
+2133:
+.base64 "SInVSMHtA0iLBOtMIfg="
+2134:
+.base64 "SYPuAUGIBkjB6AhIg8IBSDnK"
+jne 2132b
+.base64 "SIu/gAAAAEiJ+EgFYDoAAEiJh4AAAABIi4dIAQAASImHiAAAAEiBx4ANAABMi0dITItnMLgAAAAAScfGAAAAAA=="
+2135:
+.base64 "S4kE8EmDxgFNOeY="
+jne 2135b
+.base64 "S4kE4EuJROAISIuHgAAAAEiLsIAAAABIi4iIAAAASItfSLgAAAAASInKSYn2"
+2136:
+.base64 "SIPqAUjByDhBD7YuSAHoSYPGAUiJ1UiD5Qc="
+je 2137f
+jmp 2138f
+2137:
+.base64 "SInVSMHtA0iJBOu4AAAAAA=="
+2138:
+.base64 "SIXS"
+jne 2136b
+.base64 "TItnMEiLX0hMiztJg/cBScfGAQAAAA=="
+2139:
+.base64 "SosE80kJx0mDxgFNOeY="
+jne 2139b
+.base64 "SYP/AUgZwEiLv4AAAABII4doAQAASImHaAEAAEiLhyABAABIiYeAAAAASIuHUAEAAEiJh4gAAABIgccANAAATItHSEyLZzC4AAAAAEnHxgAAAAA="
+2140:
+.base64 "S4kE8EmDxgFNOeY="
+jne 2140b
+.base64 "S4kE4EuJROAISIuHgAAAAEiLsIAAAABIi4iIAAAASItfSLgAAAAASInKSYn2"
+2141:
+.base64 "SIPqAUjByDhBD7YuSAHoSYPGAUiJ1UiD5Qc="
+je 2142f
+jmp 2143f
+2142:
+.base64 "SInVSMHtA0iJBOu4AAAAAA=="
+2143:
+.base64 "SIXS"
+jne 2141b
+.base64 "TItnMEiLX0hMi1dAvQAAAABJx8YAAAAA"
+2144:
+.base64 "SAHtSosE80sbBPJIGe1Jg8YBTTnm"
+jne 2144b
+.base64 "TIs7ScfGAQAAAA=="
+2145:
+.base64 "SosE80kJx0mDxgFNOeY="
+jne 2145b
+.base64 "SYP/AUgZwEiD8P9IIehIi7+AAAAASCOHaAEAAEiJh2gBAABIi4cwAQAASImHgAAAAEiLh1ABAABIiYeIAAAASIHHADQAAEyLR0hMi2cwuAAAAABJx8YAAAAA"
+2146:
+.base64 "S4kE8EmDxgFNOeY="
+jne 2146b
+.base64 "S4kE4EuJROAISIuHgAAAAEiLsIAAAABIi4iIAAAASItfSLgAAAAASInKSYn2"
+2147:
+.base64 "SIPqAUjByDhBD7YuSAHoSYPGAUiJ1UiD5Qc="
+je 2148f
+jmp 2149f
+2148:
+.base64 "SInVSMHtA0iJBOu4AAAAAA=="
+2149:
+.base64 "SIXS"
+jne 2147b
+.base64 "TItnMEiLX0hMi1dAvQAAAABJx8YAAAAA"
+2150:
+.base64 "SAHtSosE80sbBPJIGe1Jg8YBTTnm"
+jne 2150b
+.base64 "TIs7ScfGAQAAAA=="
+2151:
+.base64 "SosE80kJx0mDxgFNOeY="
+jne 2151b
+.base64 "SYP/AUgZwEiD8P9IIehIi7+AAAAASCOHaAEAAEiJh2gBAABIi4cQAQAASImHgAAAAEiLh0gBAABIiYeIAAAASIuHIAEAAEiJh5AAAABIi4dQAQAASImHmAAAAEiJ+EgFYDoAAEiJh6AAAABIi4dIAQAASImHqAAAAEiBx4ANAABMi2cwugEAAAC5AAAAAEyLR3i4AAAAAEnHxgAAAAA="
+2152:
+.base64 "S4kE8EmDxgFNOeY="
+jne 2152b
+.base64 "S4kE4EuJROAISYkUyEyLZzBMi1dAS4tE4vhIhcA="
+je 2153f
+.base64 "S4tE4vhIweg/SIPwAUyJ4UiD4QNICcg="
+je 2155f
+.base64 "S4tE4vi6AQAAALlAAAAASIP4AQ=="
+je 2157f
+2159:
+.base64 "SNHoSAHSSIPpAUiD+AE="
+jne 2159b
+jmp 2158f
+2157:
+2158:
+.base64 "SImP0AAAAEyJ4UiD6QFMi0dguAAAAABJx8YAAAAA"
+2160:
+.base64 "S4kE8EmDxgFNOeY="
+jne 2160b
+.base64 "S4kE4EuJROAISYkUyEiLj9AAAABIA08wSImP0AAAAA=="
+2161:
+.base64 "SItfYEyLV0BMi0dQTItnMEiLd1i9AAAAAEnHxgAAAAA="
+2162:
+.base64 "SAHtSosE80gRwEuJBPBIGe1Jg8YBTTnm"
+jne 2162b
+.base64 "uAAAAABIAe1Ig9AAS4kE4L0AAAAAScfGAAAAAA=="
+2163:
+.base64 "SAHtS4sE8EsbBPJKiQT2SBntSYPGAU055g=="
+jne 2163b
+.base64 "S4sE4EgB7UiD2ABIGe1Jx8YAAAAA"
+2164:
+.base64 "S4sE8EqLFPZIMdBIIehIMdBKiQTzSYPGAU055g=="
+jne 2164b
+.base64 "SIuP0AAAAEiD6QFIiY/QAAAA"
+jne 2161b
+.base64 "uAYAAABIiYfQAAAA"
+2165:
+.base64 "ugQAAAC5BAAAAEG4BAAAAA=="
+call {vg_rsa_mont_mul}
+.base64 "SIuH0AAAAEiD6AFIiYfQAAAA"
+jne 2165b
+jmp 2156f
+2155:
+.base64 "SItfYEyLV0BMi2cwTItHWL0AAAAAScfGAAAAAA=="
+2166:
+.base64 "uAAAAABIAe1LGwTySBntSokE80mDxgFNOeY="
+jne 2166b
+.base64 "S4t04vhIifJIg/L/SMfA/////7kAAAAAQb1AAAAA"
+2167:
+.base64 "SAHASBHSTRnbSYnWSSn2TRn/SYP3/00J302F/0kPRdZIAclMKflJg+0B"
+jne 2167b
+.base64 "SYkISItPMEjB6QJIiY/QAAAA"
+2168:
+.base64 "SItfYEyLV0BMi0dQTItnMEiLb1hLi3Ti+EqLVOP4SotE4/BJifFJKdFJg/kBTRnJTYnLSYPz/0wh2kmJxkmJ1UiLRQBJ9+VMAfBMEepIidFIg8EBSYnFSInISPfmSSnGTTn1TRn/TAH5SSH3TQH+SYn3SYPvAU0590iD0QBMCclJiwJI9+FJidG6AAAAAEgpwkmJEEgZ7UnHxgEAAAA="
+2169:
+.base64 "S4sE8kj34UwByEiD0gBJidFKi1Tz+EgB7UgZwkgZ7UuJFPBJg8YBTTnm"
+jne 2169b
+.base64 "SotU4/hIAe1MGcpLiRTgS4sE4EgBwE0Z270AAAAAScfGAAAAAA=="
+2170:
+.base64 "S4sE8kwh2EgB7UsTBPBIGe1LiQTwSYPGAU055g=="
+jne 2170b
+.base64 "S4sE4EgB7UiD0ABLiQTgS4sE4EgBwE0Z270AAAAAScfGAAAAAA=="
+2171:
+.base64 "S4sE8kwh2EgB7UsTBPBIGe1LiQTwSYPGAU055g=="
+jne 2171b
+.base64 "S4sE4EgB7UiD0ABLiQTgTInGScfGAAAAAA=="
+2172:
+.base64 "SosE9kqJBPNJg8YBTTnm"
+jne 2172b
+.base64 "SIuP0AAAAEiD6QFIiY/QAAAA"
+jne 2168b
+.base64 "uAIAAABIiYfQAAAA"
+2173:
+.base64 "ugQAAAC5BAAAAEG4BAAAAA=="
+call {vg_rsa_mont_mul}
+.base64 "SIuH0AAAAEiD6AFIiYfQAAAA"
+jne 2173b
+2156:
+jmp 2154f
+2153:
+.base64 "TItnMLoBAAAAuQAAAABMi0dguAAAAABJx8YAAAAA"
+2174:
+.base64 "S4kE8EmDxgFNOeY="
+jne 2174b
+.base64 "S4kE4EuJROAISYkUyEiLTzBIAclIAclIAclIAclIAclIAclIAclIiY/QAAAA"
+2175:
+.base64 "SItfYEyLV0BMi0dQTItnMEiLd1i9AAAAAEnHxgAAAAA="
+2176:
+.base64 "SAHtSosE80gRwEuJBPBIGe1Jg8YBTTnm"
+jne 2176b
+.base64 "uAAAAABIAe1Ig9AAS4kE4L0AAAAAScfGAAAAAA=="
+2177:
+.base64 "SAHtS4sE8EsbBPJKiQT2SBntSYPGAU055g=="
+jne 2177b
+.base64 "S4sE4EgB7UiD2ABIGe1Jx8YAAAAA"
+2178:
+.base64 "S4sE8EqLFPZIMdBIIehIMdBKiQTzSYPGAU055g=="
+jne 2178b
+.base64 "SIuP0AAAAEiD6QFIiY/QAAAA"
+jne 2175b
+2154:
+.base64 "TItHSEyLZzC4AAAAAEnHxgAAAAA="
+2179:
+.base64 "S4kE8EmDxgFNOeY="
+jne 2179b
+.base64 "S4kE4EuJROAISIuHgAAAAEiLsIAAAABIi4iIAAAASItfSLgAAAAASInKSYn2"
+2180:
+.base64 "SIPqAUjByDhBD7YuSAHoSYPGAUiJ1UiD5Qc="
+je 2181f
+jmp 2182f
+2181:
+.base64 "SInVSMHtA0iJBOu4AAAAAA=="
+2182:
+.base64 "SIXS"
+jne 2180b
+.base64 "ugYAAAC5BAAAAEG4BwAAAA=="
+call {vg_rsa_mont_mul}
+.base64 "ugUAAAC5AQAAAEG4BAAAAA=="
+call {vg_rsa_mont_mul}
+.base64 "TItnMEiLd2hIi19gScfGAAAAAA=="
+2183:
+.base64 "SosE9kqJBPNJg8YBTTnm"
+jne 2183b
+.base64 "SIuHgAAAAEiLkJAAAABIiZeIAAAASIuQmAAAAEiJl5AAAAC6AAAAAEiJl5gAAABIi0d4SItXMEiDwgJIAdJIAdJIAdJIAdBIiYfIAAAASImH0AAAAEyLZzBIi3dwSIuf0AAAAEnHxgAAAAA="
+2184:
+.base64 "SosE9kqJBPNJg8YBTTnm"
+jne 2184b
+.base64 "SIuH0AAAAEiLVzBIg8ICSAHSSAHSSAHSSAHQSImH0AAAAEyLZzBIi3dgSIuf0AAAAEnHxgAAAAA="
+2185:
+.base64 "SosE9kqJBPNJg8YBTTnm"
+jne 2185b
+.base64 "TItnMEiLd2BIi19oScfGAAAAAA=="
+2186:
+.base64 "SosE9kqJBPNJg8YBTTnm"
+jne 2186b
+.base64 "uA4AAABIiYegAAAA"
+2187:
+.base64 "ugUAAAC5BQAAAEG4BAAAAA=="
+call {vg_rsa_mont_mul}
+.base64 "SIuH0AAAAEiLVzBIg8ICSAHSSAHSSAHSSAHQSImH0AAAAEyLZzBIi3doSIuf0AAAAEnHxgAAAAA="
+2188:
+.base64 "SosE9kqJBPNJg8YBTTnm"
+jne 2188b
+.base64 "SIuHoAAAAEiD6AFIiYegAAAA"
+jne 2187b
+2189:
+.base64 "SIuHiAAAAEiLj5gAAAAPtgQISImHqAAAALgCAAAASImHoAAAAA=="
+2190:
+.base64 "ugYAAAC5BgAAAEG4BgAAAA=="
+call {vg_rsa_lazy_mont_mul}
+.base64 "ugYAAAC5BgAAAEG4BgAAAA=="
+call {vg_rsa_lazy_mont_mul}
+.base64 "ugYAAAC5BgAAAEG4BgAAAA=="
+call {vg_rsa_lazy_mont_mul}
+.base64 "ugYAAAC5BgAAAEG4BgAAAA=="
+call {vg_rsa_lazy_mont_mul}
+.base64 "SIuXqAAAAEiJ0EgBwEgBwEgBwEgBwEiJh6gAAABIweoESIPiD0iJl9gAAABIi4fIAAAASImH0AAAALgAAAAASImH4AAAAA=="
+2191:
+.base64 "TIu/4AAAAEiLj9AAAABMi2cwTYnjSYPDAk0B200B200B202J5UmDxQFJ0e1NAe1Ii19oTYn+SYPGAEwzt9gAAABJg/4BTRn2Zk0PbsZmRQ9swE2J/kmDxgFMM7fYAAAASYP+AU0Z9mZND27OZkUPbMlNif5Jg8YCTDO32AAAAEmD/gFNGfZmTQ9u1mZFD2zSTYn+SYPGA0wzt9gAAABJg/4BTRn2Zk0Pbt5mRQ9s202J/kmDxgRMM7fYAAAASYP+AU0Z9mZND27mZkUPbORNif5Jg8YFTDO32AAAAEmD/gFNGfZmTQ9u7mZFD2ztTYn+SYPGBkwzt9gAAABJg/4BTRn2Zk0PbvZmRQ9s9k2J/kmDxgdMM7fYAAAASYP+AU0Z9mZND27+ZkUPbP9Nif5Jg8YASYP2CEmD/gFNGfZmSQ9u/mYPbP9IicpMAdpIidZMAd5IifVMAd1JiehNAdhNicFNAdlNicpNAdpMidBMAdhBvgAAAAA="
+2192:
+.base64 "80IPbwTxZkEP28DzQg9vDPJmQQ/byWYP68HzQg9vDPZmQQ/bymYP68HzQg9vTPUAZkEP28tmD+vB80MPbwzwZkEP28xmD+vB80MPbwzxZkEP281mD+vB80MPbwzyZkEP285mD+vB80IPbwzwZkEP289mD+vB80IPbwzzZg/bz2YP68HzQg9/BPNJg8YCTTnu"
+jne 2192b
+.base64 "TAHYSImH0AAAAEyJ+EiDwAhIiYfgAAAASIP4EA=="
+jne 2191b
+.base64 "ugYAAAC5BgAAAEG4BQAAAA=="
+call {vg_rsa_mont_mul}
+.base64 "SIuHoAAAAEiD6AFIiYegAAAA"
+jne 2190b
+.base64 "SIuHmAAAAEiDwAFIiYeYAAAASDuHkAAAAA=="
+jne 2189b
+.base64 "ugYAAAC5BgAAAEG4BwAAAA=="
+call {vg_rsa_mont_mul}
+.base64 "SIuHgAAAAEiLsKAAAABIi4ioAAAASItfcEnHx/////+6AAAAAEmJ9kkBzg=="
+2193:
+.base64 "SInVSIPlBw=="
+je 2194f
+jmp 2195f
+2194:
+.base64 "SInVSMHtA0iLBOtMIfg="
+2195:
+.base64 "SYPuAUGIBkjB6AhIg8IBSDnK"
+jne 2193b
+.base64 "SIu/gAAAAEiJ+EgFYDoAAEiJxkiLhxgBAABIicJIi49IAQAAQbgAAAAA"
+2196:
+.base64 "D7YGRA+2CkwxyEkJwEiDxgFIg8IBSIPpAQ=="
+jne 2196b
+.base64 "SYP4AUgZwEgjh2gBAABIiYdoAQAASIuHaAEAAEiD4AFIix9Ii28ITItnEEyLbxhMi3cgTIt/KA=="
+jmp 217f
+216:
+.base64 "uAAAAABIix9Ii28ITItnEEyLbxhMi3cgTIt/KA=="
+217:
+.base64 "ww=="
+.p2align 6"#,
+        vg_rsa_mont_mul = sym super::rsa::vg_rsa_mont_mul::vg_rsa_mont_mul,
+        vg_rsa_lazy_mont_mul = sym super::rsa::vg_rsa_lazy_mont_mul::vg_rsa_lazy_mont_mul,
     )
 }
 
@@ -6352,6 +7900,318 @@ jmp 21b
     )
 }
 
+/// The CPU features `vg_dsa_parameter_search_sha1_avx_bmi_mr_adx` requires (`Artifact.features`).
+pub const VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_MR_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// Search for DSA domain parameters (FIPS 186-4 A.1.1.2 and A.2.1) over the random tape `rand`, for the modulus width in `state`: each seed, its `q`, the `p` candidates from it and the generator's `h` candidates are read from `rand` in turn, with the rejected seeds counted in `state`. Returns 1 and writes `p || q || g` to `out` once parameters are found; 3 if the search is exhausted, by too many rejected seeds or by one seed needing more than the entropy budget; or 0 if the tape ran out inside a seed. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose last word is, for 0, the length of the next tape, more than the octets of `rand` after the first `used` and at most the entropy budget: keep those octets, in order, and append fresh random octets up to that length. `out` is zeros but for 1. Accepted parameters pass probable-prime tests, not primality certification.
+///
+/// Contract: `VG.Spec.Dsa.parameterSearchContract`. Timing may depend on everything, `rand` included: these are public domain parameters.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `used` must be valid for reads and writes of 8 bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `state` must be valid for reads and writes of 32 bytes.
+/// * `state` must come from `vg_dsa_parameter_search_init`, or from the last call of this function that returned 0.
+/// * `out_len` must be `2 * state[1]` plus 20 if `state[1]` is 128, else plus 32.
+/// * `rand_len` must be at most the entropy budget, `state[2]`.
+/// * `scratch_len` must be at least `64 * state[1] + 1024` words.
+/// * `rand` must hold independent uniform random octets. They are public under this contract and must never be used for private scalars or nonces.
+/// * `out`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `bmi1`, `bmi2` and `adx` target features.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_dsa_parameter_search_sha1_avx_bmi_mr_adx(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SItEJBBIi0AISD2AAAAA"
+je 20f
+.base64 "SD0AAQAA"
+je 22f
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
+call {vg_dsa_parameter_search_3072_mr_adx}
+.base64 "SI1kJDg="
+23:
+21:
+.base64 "ww=="
+22:
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
+call {vg_dsa_parameter_search_2048_mr_adx}
+.base64 "SI1kJDg="
+jmp 23b
+20:
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
+call {vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_adx}
+.base64 "SI1kJDg="
+jmp 21b
+.p2align 6"#,
+        vg_dsa_parameter_search_3072_mr_adx = sym super::dsa::vg_dsa_parameter_search_3072_mr_adx::vg_dsa_parameter_search_3072_mr_adx,
+        vg_dsa_parameter_search_2048_mr_adx = sym super::dsa::vg_dsa_parameter_search_2048_mr_adx::vg_dsa_parameter_search_2048_mr_adx,
+        vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_adx = sym super::dsa::vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_adx::vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_adx,
+    )
+}
+
+/// The CPU features `vg_dsa_parameter_search_sha1_avx_bmi` requires (`Artifact.features`).
+pub const VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2);
+
+/// Search for DSA domain parameters (FIPS 186-4 A.1.1.2 and A.2.1) over the random tape `rand`, for the modulus width in `state`: each seed, its `q`, the `p` candidates from it and the generator's `h` candidates are read from `rand` in turn, with the rejected seeds counted in `state`. Returns 1 and writes `p || q || g` to `out` once parameters are found; 3 if the search is exhausted, by too many rejected seeds or by one seed needing more than the entropy budget; or 0 if the tape ran out inside a seed. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose last word is, for 0, the length of the next tape, more than the octets of `rand` after the first `used` and at most the entropy budget: keep those octets, in order, and append fresh random octets up to that length. `out` is zeros but for 1. Accepted parameters pass probable-prime tests, not primality certification.
+///
+/// Contract: `VG.Spec.Dsa.parameterSearchContract`. Timing may depend on everything, `rand` included: these are public domain parameters.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `used` must be valid for reads and writes of 8 bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `state` must be valid for reads and writes of 32 bytes.
+/// * `state` must come from `vg_dsa_parameter_search_init`, or from the last call of this function that returned 0.
+/// * `out_len` must be `2 * state[1]` plus 20 if `state[1]` is 128, else plus 32.
+/// * `rand_len` must be at most the entropy budget, `state[2]`.
+/// * `scratch_len` must be at least `64 * state[1] + 1024` words.
+/// * `rand` must hold independent uniform random octets. They are public under this contract and must never be used for private scalars or nonces.
+/// * `out`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `bmi1` and `bmi2` target features.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_dsa_parameter_search_sha1_avx_bmi(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SItEJBBIi0AISD2AAAAA"
+je 20f
+.base64 "SD0AAQAA"
+je 22f
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
+call {vg_dsa_parameter_search_3072}
+.base64 "SI1kJDg="
+23:
+21:
+.base64 "ww=="
+22:
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
+call {vg_dsa_parameter_search_2048}
+.base64 "SI1kJDg="
+jmp 23b
+20:
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
+call {vg_dsa_parameter_search_1024_sha1_avx_bmi}
+.base64 "SI1kJDg="
+jmp 21b
+.p2align 6"#,
+        vg_dsa_parameter_search_3072 = sym super::dsa::vg_dsa_parameter_search_3072::vg_dsa_parameter_search_3072,
+        vg_dsa_parameter_search_2048 = sym super::dsa::vg_dsa_parameter_search_2048::vg_dsa_parameter_search_2048,
+        vg_dsa_parameter_search_1024_sha1_avx_bmi = sym super::dsa::vg_dsa_parameter_search_1024_sha1_avx_bmi::vg_dsa_parameter_search_1024_sha1_avx_bmi,
+    )
+}
+
+/// The CPU features `vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_adx` requires (`Artifact.features`).
+pub const VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_MR_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::ADX);
+
+/// Search for DSA domain parameters (FIPS 186-4 A.1.1.2 and A.2.1) over the random tape `rand`, for the modulus width in `state`: each seed, its `q`, the `p` candidates from it and the generator's `h` candidates are read from `rand` in turn, with the rejected seeds counted in `state`. Returns 1 and writes `p || q || g` to `out` once parameters are found; 3 if the search is exhausted, by too many rejected seeds or by one seed needing more than the entropy budget; or 0 if the tape ran out inside a seed. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose last word is, for 0, the length of the next tape, more than the octets of `rand` after the first `used` and at most the entropy budget: keep those octets, in order, and append fresh random octets up to that length. `out` is zeros but for 1. Accepted parameters pass probable-prime tests, not primality certification.
+///
+/// Contract: `VG.Spec.Dsa.parameterSearchContract`. Timing may depend on everything, `rand` included: these are public domain parameters.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `used` must be valid for reads and writes of 8 bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `state` must be valid for reads and writes of 32 bytes.
+/// * `state` must come from `vg_dsa_parameter_search_init`, or from the last call of this function that returned 0.
+/// * `out_len` must be `2 * state[1]` plus 20 if `state[1]` is 128, else plus 32.
+/// * `rand_len` must be at most the entropy budget, `state[2]`.
+/// * `scratch_len` must be at least `64 * state[1] + 1024` words.
+/// * `rand` must hold independent uniform random octets. They are public under this contract and must never be used for private scalars or nonces.
+/// * `out`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `bmi1`, `bmi2`, `avx2` and `adx` target features.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_adx(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SItEJBBIi0AISD2AAAAA"
+je 20f
+.base64 "SD0AAQAA"
+je 22f
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
+call {vg_dsa_parameter_search_3072_sha256_avx2_mr_adx}
+.base64 "SI1kJDg="
+23:
+21:
+.base64 "ww=="
+22:
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
+call {vg_dsa_parameter_search_2048_sha256_avx2_mr_adx}
+.base64 "SI1kJDg="
+jmp 23b
+20:
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
+call {vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_adx}
+.base64 "SI1kJDg="
+jmp 21b
+.p2align 6"#,
+        vg_dsa_parameter_search_3072_sha256_avx2_mr_adx = sym super::dsa::vg_dsa_parameter_search_3072_sha256_avx2_mr_adx::vg_dsa_parameter_search_3072_sha256_avx2_mr_adx,
+        vg_dsa_parameter_search_2048_sha256_avx2_mr_adx = sym super::dsa::vg_dsa_parameter_search_2048_sha256_avx2_mr_adx::vg_dsa_parameter_search_2048_sha256_avx2_mr_adx,
+        vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_adx = sym super::dsa::vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_adx::vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_adx,
+    )
+}
+
+/// The CPU features `vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2` requires (`Artifact.features`).
+pub const VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::AVX2);
+
+/// Search for DSA domain parameters (FIPS 186-4 A.1.1.2 and A.2.1) over the random tape `rand`, for the modulus width in `state`: each seed, its `q`, the `p` candidates from it and the generator's `h` candidates are read from `rand` in turn, with the rejected seeds counted in `state`. Returns 1 and writes `p || q || g` to `out` once parameters are found; 3 if the search is exhausted, by too many rejected seeds or by one seed needing more than the entropy budget; or 0 if the tape ran out inside a seed. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose last word is, for 0, the length of the next tape, more than the octets of `rand` after the first `used` and at most the entropy budget: keep those octets, in order, and append fresh random octets up to that length. `out` is zeros but for 1. Accepted parameters pass probable-prime tests, not primality certification.
+///
+/// Contract: `VG.Spec.Dsa.parameterSearchContract`. Timing may depend on everything, `rand` included: these are public domain parameters.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `used` must be valid for reads and writes of 8 bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `state` must be valid for reads and writes of 32 bytes.
+/// * `state` must come from `vg_dsa_parameter_search_init`, or from the last call of this function that returned 0.
+/// * `out_len` must be `2 * state[1]` plus 20 if `state[1]` is 128, else plus 32.
+/// * `rand_len` must be at most the entropy budget, `state[2]`.
+/// * `scratch_len` must be at least `64 * state[1] + 1024` words.
+/// * `rand` must hold independent uniform random octets. They are public under this contract and must never be used for private scalars or nonces.
+/// * `out`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `bmi1`, `bmi2` and `avx2` target features.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SItEJBBIi0AISD2AAAAA"
+je 20f
+.base64 "SD0AAQAA"
+je 22f
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
+call {vg_dsa_parameter_search_3072_sha256_avx2}
+.base64 "SI1kJDg="
+23:
+21:
+.base64 "ww=="
+22:
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
+call {vg_dsa_parameter_search_2048_sha256_avx2}
+.base64 "SI1kJDg="
+jmp 23b
+20:
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
+call {vg_dsa_parameter_search_1024_sha1_avx_bmi}
+.base64 "SI1kJDg="
+jmp 21b
+.p2align 6"#,
+        vg_dsa_parameter_search_3072_sha256_avx2 = sym super::dsa::vg_dsa_parameter_search_3072_sha256_avx2::vg_dsa_parameter_search_3072_sha256_avx2,
+        vg_dsa_parameter_search_2048_sha256_avx2 = sym super::dsa::vg_dsa_parameter_search_2048_sha256_avx2::vg_dsa_parameter_search_2048_sha256_avx2,
+        vg_dsa_parameter_search_1024_sha1_avx_bmi = sym super::dsa::vg_dsa_parameter_search_1024_sha1_avx_bmi::vg_dsa_parameter_search_1024_sha1_avx_bmi,
+    )
+}
+
+/// The CPU features `vg_dsa_parameter_search_sha1_avx_bmi_sha256_shani_mr_adx` requires (`Artifact.features`).
+pub const VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_SHANI_MR_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::ADX);
+
+/// Search for DSA domain parameters (FIPS 186-4 A.1.1.2 and A.2.1) over the random tape `rand`, for the modulus width in `state`: each seed, its `q`, the `p` candidates from it and the generator's `h` candidates are read from `rand` in turn, with the rejected seeds counted in `state`. Returns 1 and writes `p || q || g` to `out` once parameters are found; 3 if the search is exhausted, by too many rejected seeds or by one seed needing more than the entropy budget; or 0 if the tape ran out inside a seed. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose last word is, for 0, the length of the next tape, more than the octets of `rand` after the first `used` and at most the entropy budget: keep those octets, in order, and append fresh random octets up to that length. `out` is zeros but for 1. Accepted parameters pass probable-prime tests, not primality certification.
+///
+/// Contract: `VG.Spec.Dsa.parameterSearchContract`. Timing may depend on everything, `rand` included: these are public domain parameters.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `used` must be valid for reads and writes of 8 bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `state` must be valid for reads and writes of 32 bytes.
+/// * `state` must come from `vg_dsa_parameter_search_init`, or from the last call of this function that returned 0.
+/// * `out_len` must be `2 * state[1]` plus 20 if `state[1]` is 128, else plus 32.
+/// * `rand_len` must be at most the entropy budget, `state[2]`.
+/// * `scratch_len` must be at least `64 * state[1] + 1024` words.
+/// * `rand` must hold independent uniform random octets. They are public under this contract and must never be used for private scalars or nonces.
+/// * `out`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `bmi1`, `bmi2`, `sha`, `ssse3` and `adx` target features.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_dsa_parameter_search_sha1_avx_bmi_sha256_shani_mr_adx(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SItEJBBIi0AISD2AAAAA"
+je 20f
+.base64 "SD0AAQAA"
+je 22f
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
+call {vg_dsa_parameter_search_3072_sha256_shani_mr_adx}
+.base64 "SI1kJDg="
+23:
+21:
+.base64 "ww=="
+22:
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
+call {vg_dsa_parameter_search_2048_sha256_shani_mr_adx}
+.base64 "SI1kJDg="
+jmp 23b
+20:
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
+call {vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_adx}
+.base64 "SI1kJDg="
+jmp 21b
+.p2align 6"#,
+        vg_dsa_parameter_search_3072_sha256_shani_mr_adx = sym super::dsa::vg_dsa_parameter_search_3072_sha256_shani_mr_adx::vg_dsa_parameter_search_3072_sha256_shani_mr_adx,
+        vg_dsa_parameter_search_2048_sha256_shani_mr_adx = sym super::dsa::vg_dsa_parameter_search_2048_sha256_shani_mr_adx::vg_dsa_parameter_search_2048_sha256_shani_mr_adx,
+        vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_adx = sym super::dsa::vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_adx::vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_adx,
+    )
+}
+
+/// The CPU features `vg_dsa_parameter_search_sha1_avx_bmi_sha256_shani` requires (`Artifact.features`).
+pub const VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
+
+/// Search for DSA domain parameters (FIPS 186-4 A.1.1.2 and A.2.1) over the random tape `rand`, for the modulus width in `state`: each seed, its `q`, the `p` candidates from it and the generator's `h` candidates are read from `rand` in turn, with the rejected seeds counted in `state`. Returns 1 and writes `p || q || g` to `out` once parameters are found; 3 if the search is exhausted, by too many rejected seeds or by one seed needing more than the entropy budget; or 0 if the tape ran out inside a seed. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose last word is, for 0, the length of the next tape, more than the octets of `rand` after the first `used` and at most the entropy budget: keep those octets, in order, and append fresh random octets up to that length. `out` is zeros but for 1. Accepted parameters pass probable-prime tests, not primality certification.
+///
+/// Contract: `VG.Spec.Dsa.parameterSearchContract`. Timing may depend on everything, `rand` included: these are public domain parameters.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `used` must be valid for reads and writes of 8 bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `state` must be valid for reads and writes of 32 bytes.
+/// * `state` must come from `vg_dsa_parameter_search_init`, or from the last call of this function that returned 0.
+/// * `out_len` must be `2 * state[1]` plus 20 if `state[1]` is 128, else plus 32.
+/// * `rand_len` must be at most the entropy budget, `state[2]`.
+/// * `scratch_len` must be at least `64 * state[1] + 1024` words.
+/// * `rand` must hold independent uniform random octets. They are public under this contract and must never be used for private scalars or nonces.
+/// * `out`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `bmi1`, `bmi2`, `sha` and `ssse3` target features.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_dsa_parameter_search_sha1_avx_bmi_sha256_shani(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SItEJBBIi0AISD2AAAAA"
+je 20f
+.base64 "SD0AAQAA"
+je 22f
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
+call {vg_dsa_parameter_search_3072_sha256_shani}
+.base64 "SI1kJDg="
+23:
+21:
+.base64 "ww=="
+22:
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
+call {vg_dsa_parameter_search_2048_sha256_shani}
+.base64 "SI1kJDg="
+jmp 23b
+20:
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
+call {vg_dsa_parameter_search_1024_sha1_avx_bmi}
+.base64 "SI1kJDg="
+jmp 21b
+.p2align 6"#,
+        vg_dsa_parameter_search_3072_sha256_shani = sym super::dsa::vg_dsa_parameter_search_3072_sha256_shani::vg_dsa_parameter_search_3072_sha256_shani,
+        vg_dsa_parameter_search_2048_sha256_shani = sym super::dsa::vg_dsa_parameter_search_2048_sha256_shani::vg_dsa_parameter_search_2048_sha256_shani,
+        vg_dsa_parameter_search_1024_sha1_avx_bmi = sym super::dsa::vg_dsa_parameter_search_1024_sha1_avx_bmi::vg_dsa_parameter_search_1024_sha1_avx_bmi,
+    )
+}
+
 /// The CPU features `vg_dsa_parameter_search_sha1_shani_mr_adx` requires (`Artifact.features`).
 pub const VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_MR_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
@@ -6685,6 +8545,14 @@ pub(crate) mod vg_dsa_parameter_search_1024;
 pub(crate) mod vg_dsa_parameter_search_1024_mr_adx;
 
 #[rustfmt::skip]
+#[path = "internal/vg_dsa_parameter_search_1024_sha1_avx_bmi.rs"]
+pub(crate) mod vg_dsa_parameter_search_1024_sha1_avx_bmi;
+
+#[rustfmt::skip]
+#[path = "internal/vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_adx.rs"]
+pub(crate) mod vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_adx;
+
+#[rustfmt::skip]
 #[path = "internal/vg_dsa_parameter_search_1024_sha1_shani.rs"]
 pub(crate) mod vg_dsa_parameter_search_1024_sha1_shani;
 
@@ -6749,12 +8617,12 @@ pub(crate) mod vg_dsa_probable_prime;
 pub(crate) mod vg_dsa_probable_prime_adx;
 
 #[rustfmt::skip]
-#[path = "internal/vg_dsa_sign.rs"]
-pub(crate) mod vg_dsa_sign;
+#[path = "internal/vg_dsa_sign_prevalidated.rs"]
+pub(crate) mod vg_dsa_sign_prevalidated;
 
 #[rustfmt::skip]
-#[path = "internal/vg_dsa_sign_adx.rs"]
-pub(crate) mod vg_dsa_sign_adx;
+#[path = "internal/vg_dsa_sign_prevalidated_adx.rs"]
+pub(crate) mod vg_dsa_sign_prevalidated_adx;
 
 #[rustfmt::skip]
 #[path = "internal/vg_miller_rabin_round.rs"]

@@ -31,7 +31,7 @@ def choose (w : Nat) : Prog isa :=
 
 def advance (w : Nat) : List Instr := [.alu .add .rbx (.imm (BitVec.ofNat 32 w))]
 
-/-- `step` for a scalar of `n` words: `64 n + 1` digits. -/
+/-- A step of the recoding for a scalar of `n` words: `64 n + 1` digits. -/
 def stepN (n dst w : Nat) : Prog isa :=
   .seq (.block [.mov .rcx (.reg .r8),.alu .and .rcx (.imm 1),.alu .test .rcx (.reg .rcx)]) <|
   .seq (.ite .e (.block (shiftN n 1++advance 1))

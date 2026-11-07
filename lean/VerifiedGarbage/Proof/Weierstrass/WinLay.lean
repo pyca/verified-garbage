@@ -272,52 +272,6 @@ theorem WinLay.rcbApart_EP {K : WinCfg} {size : Nat} (hL : WinLay K size) : RcbA
   · exact hro _ (by simp [winRo]) h
   · exact hro _ (by simp [winRo]) h
 
-/-- The additions of the table: `[m + 1]P = [m]P + P`. -/
-theorem WinLay.rcbApart_tbl {K : WinCfg} {size : Nat} (hL : WinLay K size) {m : Nat}
-    (h1 : 1 ≤ m) (h7 : m ≤ 7) : RcbApart K.S (K.tblPt m) (K.tblPt 1) (K.tblPt (m + 1)) := by
-  obtain ⟨-, -, -, -, -, -, -, -, -, hD⟩ := hL.other_ne
-  have ets : ∀ o : Pt, rcbW K.S o = [K.S.t0, K.S.t1, K.S.t2, K.S.t3, K.S.t4, K.S.t5] ++
-      [o.x, o.y, o.z] := fun _ => rfl
-  rw [ets, List.nodup_append] at hD
-  have ho := tblPt_mem K (m := m + 1) (by omega) (by omega)
-  have hp := tblPt_mem K (m := m) h1 (by omega)
-  have hq := tblPt_mem K (m := 1) (by omega) (by omega)
-  have hab : ∀ x ∈ [K.S.a, K.S.b3], x ∈ winRo K := by
-    intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-    rcases hx with rfl | rfl <;> simp [winRo]
-  refine ⟨?_, fun x hx hw => ?_⟩
-  · rw [ets, List.nodup_append]
-    refine ⟨hD.1, ?_, fun x hx y hy => ?_⟩
-    · obtain ⟨i, hi, ex, -, -⟩ := ho _ (List.mem_cons_self ..)
-      simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or,
-        List.nodup_nil, and_true, tblPt_x, tblPt_y, tblPt_z, Nat.add_sub_cancel, not_false_eq_true]
-      and_intros <;> exact hL.tbl_ne₂ (by omega)
-    · obtain ⟨i, hi, rfl, -, -⟩ := ho y hy
-      exact hL.tbl_ne (rcbW_mem_other x hx) hi
-  · simp only [rcbR, List.mem_cons, List.not_mem_nil, or_false] at hx
-    rw [ets, List.mem_append] at hw
-    have hxs : x ∈ [K.S.a, K.S.b3] ∨ ∃ i < 24, x = K.tbl + 8 * K.M.n * i ∧ i < 3 * m := by
-      rcases hx with rfl | rfl | h
-      · exact Or.inl (by simp)
-      · exact Or.inl (by simp)
-      · refine Or.inr ?_
-        rcases h with rfl | rfl | rfl | rfl | rfl | rfl
-        · obtain ⟨i, hi, e, -, h⟩ := hp (K.tblPt m).x (by simp); exact ⟨i, hi, e, h⟩
-        · obtain ⟨i, hi, e, -, h⟩ := hp (K.tblPt m).y (by simp); exact ⟨i, hi, e, h⟩
-        · obtain ⟨i, hi, e, -, h⟩ := hp (K.tblPt m).z (by simp); exact ⟨i, hi, e, h⟩
-        · obtain ⟨i, hi, e, -, h⟩ := hq (K.tblPt 1).x (by simp); exact ⟨i, hi, e, by omega⟩
-        · obtain ⟨i, hi, e, -, h⟩ := hq (K.tblPt 1).y (by simp); exact ⟨i, hi, e, by omega⟩
-        · obtain ⟨i, hi, e, -, h⟩ := hq (K.tblPt 1).z (by simp); exact ⟨i, hi, e, by omega⟩
-    rcases hw with hw | hw
-    · rcases hxs with hxs | ⟨i, hi, rfl, -⟩
-      · exact hL.ro x (hab x hxs) (by
-          simp only [winOther, List.mem_append]; exact Or.inr (List.mem_append_left _ hw))
-      · exact hL.tbl_ne (rcbW_mem_other _ hw) hi rfl
-    · obtain ⟨j, hj, rfl, hj₁, -⟩ := ho _ hw
-      rcases hxs with hxs | ⟨i, hi, e, hi'⟩
-      · exact hL.tbl_ne (List.mem_append_left _ (hab _ hxs)) hj rfl
-      · exact hL.tbl_ne₂ (i := i) (j := j) (by omega) e.symm
-
 /-- The slots `toJ`, `dblJ` and `fromJ` use in the window method's doublings are apart:
 `R` into `E`, `E` into `D`, `D` into `E` and `E` into `R` (`z` the slots of zero). -/
 theorem WinLay.rcbApart_jac {K : WinCfg} {size : Nat} (hL : WinLay K size) :

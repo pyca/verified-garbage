@@ -5,7 +5,7 @@ public import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJac
 /-!
 # Short Weierstrass curves on x86-64: 5-bit windows with an affine table
 
-`JacWinCfg.window` (`WinJac.lean`), but its table brought into affine
+The window method of `WinJac.lean`, with its table brought into affine
 coordinates once it is built, so that each iteration adds the entry by the
 mixed addition (`maddJ`, 8 products and 3 squares) rather than by the
 Jacobian addition with the entry's cached powers (11 and 3). The code of an
@@ -22,7 +22,7 @@ multiplied by `D.x²` and `D.x³`; entry `1`'s by `E.x`'s. Then every entry's `Z
 (`ones`), so that the table still holds Jacobian triples with their powers,
 which the first digit's entry reads as before.
 
-The iterations (`stepA`) are `JacWinCfg.step`'s, but selecting only the
+The iterations (`stepA`) are those of `WinJac.lean`, but selecting only the
 entry's `X` and `Y` (`selectA`, `T`'s `Z` set to one), with `D = R + T` by
 the mixed addition: it is right unless `R = T` (the Jacobian addition's
 exception, which the recoding rules out) or `R = O` (where `D = T`, as

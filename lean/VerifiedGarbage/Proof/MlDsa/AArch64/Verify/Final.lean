@@ -27,12 +27,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 # ML-DSA verification on AArch64: `vg_mldsa44_verify`, `vg_mldsa65_verify`, `vg_mldsa87_verify`
 
 `c̃′ = H(μ ‖ w1Encode(w′₁))` (`hash_vpiece`) and its comparison with `c̃`
-(`cmp_vpiece`); the function, piece by piece (`verify_vpiece`): a malformed
-hint returns 0 at once, a `z` too large after the norms, and otherwise `x24`
-holds the result of the samplers and then of the comparison. For primitives
-`P` that meet their contracts (`PrimsOk`), `verify P p` meets `verifyContract
-p` (`verify_verified`): it is correct, and leaks only its inputs, which the
-contract makes public.
+(`cmp_vpiece`), and the epilogue (`epi_vpiece`).
 -/
 
 @[expose] public section
@@ -174,43 +169,7 @@ theorem cmp_vpiece {S : Nat} {p : Params} (hF : VFacts p) :
 
 /-! ## The function -/
 
-theorem compute_vpiece {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : VFacts p) :
-    VPiece p S (VB p) (VFin p) ((computeWith keccak.callee) P p) := by
-  unfold computeWith
-  refine VPiece.seq (J := SCx p p.ℓ false 0) ?_ ((nttC_vpiece hP hF).seq (VPiece.seq (J := SCx p p.ℓ true p.k) ?_
-    ((hash_vpiece hP.s16 hP.s64 hF).seq (cmp_vpiece hF))))
-  · refine VPiece.mono (VPiece.seqR (I := fun i => SCx p i false 0) p.ℓ 0 fun i _ hi => nttZ_vpiece hP hF (by omega))
-      (fun _ _ _ h => vb_sc h) fun _ _ _ h => ?_
-    simpa using h
-  · refine VPiece.mono (VPiece.seqR (I := fun r => SCx p p.ℓ true r) p.k 0 fun r _ hr => row_vpiece hP hF (by omega))
-      (fun _ _ _ h => h) fun _ _ _ h => ?_
-    simpa using h
-
 theorem normOk_zero (p : Params) (σ : State) : normOk p σ 0 := fun _ h => absurd h (Nat.not_lt_zero _)
-
-theorem body_vpiece {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : VFacts p) :
-    VPiece p S (fun σ s => VC p σ s ∧ s.gpr .x24 = 1) (VFin p) ((bodyWith keccak.callee) P p) := by
-  unfold bodyWith
-  refine (hint_vpiece hP hF).seq (VPiece.ifOk (T := fun σ => (hintOf p σ).isSome = true)
-    (fun _ _ _ h => h.2.1) (fun _ _ _ _ pub => by rw [hintOf, hintOf, (vPub_eq pub).2.2.2.1]) ?_ ?_)
-  · refine VPiece.seq (J := Z0 p p.ℓ) ?_ (VPiece.ifOk (T := fun σ => normOk p σ p.ℓ) (fun _ _ _ h => h.2)
-      (fun _ _ _ _ pub => by simp only [normOk, zOf, (vPub_eq pub).2.2.2.1]) ((samples_vpiece hP hF).seq
-        (compute_vpiece hP hF)) fun σ s _ h hn => ⟨h.1.vc, .inr ⟨by rw [h.2]; exact ifn hn _ _, ?_⟩⟩)
-    · refine VPiece.mono (VPiece.seqR (I := fun j => Z0 p j) p.ℓ 0 fun j _ hj => zOne_vpiece hP hF (by omega))
-        (fun σ s _ ⟨⟨hv, hx, hH⟩, ht⟩ => ⟨⟨hv, ?_, fun _ h => absurd h (Nat.not_lt_zero _)⟩, ?_⟩) fun _ _ _ h => ?_
-      · obtain ⟨hh, e⟩ := Option.isSome_iff_exists.mp ht
-        exact ⟨hh, e, hH hh e⟩
-      · rw [hx]; exact flag_congr (iff_of_true ht (normOk_zero p σ))
-      · simpa using h
-    · obtain ⟨hh, e, _⟩ := h.1.hint
-      show verifyMu p minBounds _ _ _ ≠ some true
-      exact Proof.MlDsa.Verify.verifyMu_norm minBounds _ _ e
-        (by rw [Proof.MlDsa.Verify.normR_vZ_iff hF.g1.2.1 p hF.g1.1]; exact hn)
-  · intro σ s _ h hn
-    refine ⟨h.1, .inr ⟨by rw [h.2.1]; exact ifn hn _ _, ?_⟩⟩
-    show verifyMu p minBounds _ _ _ ≠ some true
-    rw [Proof.MlDsa.Verify.verifyMu_hint_none minBounds _ _ (Option.not_isSome_iff_eq_none.mp hn)]
-    nofun
 
 theorem epi_vpiece {S : Nat} {p : Params} (hF : VFacts p) :
     VPiece p S (VFin p) (fun σ s => abiPreserved σ s ∧ (Spec.MlDsa.verifyContract p AArch64.abi S).post σ s)
@@ -226,22 +185,5 @@ theorem epi_vpiece {S : Nat} {p : Params} (hF : VFacts p) :
   rcases hr with ⟨e, hb⟩ | ⟨e, hb⟩
   · exact .inl ⟨by rw [hx, e]; rfl, hb⟩
   · exact .inr ⟨by rw [hx, e]; rfl, hb⟩
-
-theorem verify_vpiece {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : VFacts p) :
-    VPiece p S (fun σ s => s = σ)
-      (fun σ s => abiPreserved σ s ∧ (Spec.MlDsa.verifyContract p AArch64.abi S).post σ s) ((verifyWith keccak.callee) P p) :=
-  (pro_vpiece hF).seq ((body_vpiece hP hF).seq (epi_vpiece hF))
-
-/-- `vg_mldsa*_verify` of the parameter set `p` meets its contract, for any
-verified implementations `P` of the primitives it calls that use at most `S`
-bytes of stack, if the contract is satisfiable. -/
-theorem verify_verified {P : Prims} {S : Nat} (hP : PrimsOk P S) (p : Params)
-    (hp : p = Spec.MlDsa.mlDsa44 ∨ p = Spec.MlDsa.mlDsa65 ∨ p = Spec.MlDsa.mlDsa87)
-    (hsat : ∃ s, (Spec.MlDsa.verifyContract p AArch64.abi S).pre s) :
-    Verified AArch64.target ((verifyWith keccak.callee) P p) (Spec.MlDsa.verifyContract p AArch64.abi S) :=
-  ⟨fun σ hσ => (verify_vpiece hP (vfacts hp)).ok σ σ (vPre_of_shared hσ) rfl,
-    relStart (Q := fun _ _ => True) ((verify_vpiece hP (vfacts hp)).tr.mono
-      (fun _ _ ⟨a,b,ha,hb,hu,hx,hy⟩=>⟨a,b,vPre_of_shared ha,vPre_of_shared hb,hu,hx,hy⟩)
-      (fun _ _ h=>h)), hsat⟩
 
 end VG.Proof.MlDsa.AArch64.Verify

@@ -249,18 +249,8 @@ call {vg_mldsa_ntt_avx2}
 call {vg_mldsa_ntt_avx2}
 .base64 "SInfSIHHAJgAAEiJ3kiBxgAIAAA="
 call {vg_mldsa_ntt_avx2}
-.base64 "SInfSIHHALQAAEiJ3kiBxgAQAABIidpIgcIAiAAA"
-call {vg_mldsa_montgomery_multiply_ntt_avx2}
-.base64 "SInfSIHHALQAAEiJ3kiBxgAUAABIidpIgcIAjAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
-.base64 "SInfSIHHALQAAEiJ3kiBxgAYAABIidpIgcIAkAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
-.base64 "SInfSIHHALQAAEiJ3kiBxgAcAABIidpIgcIAlAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
-.base64 "SInfSIHHALQAAEiJ3kiBxgAgAABIidpIgcIAmAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
-.base64 "SInfSIHHALQAAEiJ3kiBxgAIAAA="
-call {vg_mldsa_montgomery_inv_ntt_avx2}
+.base64 "SInfSIHHALQAAEiJ3kiBxgAQAABIidpIgcIAiAAASInZSIHBAAgAAA=="
+call {vg_mldsa_dot_inverse5_avx2}
 .base64 "SInfSIHHALQAAEiJ3kiBxgCcAAA="
 call {vg_mldsa_add_avx2}
 .base64 "SInfSIHHALQAAEiJ3kiBxgC4AABIidpIgcIAvAAA"
@@ -269,18 +259,8 @@ call {vg_mldsa_power2round}
 call {vg_mldsa_simple_bit_pack}
 .base64 "SInfSIHHALwAAL7/DwAAugAQAABMielIgcEABgAAQbigAQAA"
 call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHALQAAEiJ3kiBxgAkAABIidpIgcIAiAAA"
-call {vg_mldsa_montgomery_multiply_ntt_avx2}
-.base64 "SInfSIHHALQAAEiJ3kiBxgAoAABIidpIgcIAjAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
-.base64 "SInfSIHHALQAAEiJ3kiBxgAsAABIidpIgcIAkAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
-.base64 "SInfSIHHALQAAEiJ3kiBxgAwAABIidpIgcIAlAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
-.base64 "SInfSIHHALQAAEiJ3kiBxgA0AABIidpIgcIAmAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
-.base64 "SInfSIHHALQAAEiJ3kiBxgAIAAA="
-call {vg_mldsa_montgomery_inv_ntt_avx2}
+.base64 "SInfSIHHALQAAEiJ3kiBxgAkAABIidpIgcIAiAAASInZSIHBAAgAAA=="
+call {vg_mldsa_dot_inverse5_avx2}
 .base64 "SInfSIHHALQAAEiJ3kiBxgCgAAA="
 call {vg_mldsa_add_avx2}
 .base64 "SInfSIHHALQAAEiJ3kiBxgC4AABIidpIgcIAvAAA"
@@ -289,18 +269,8 @@ call {vg_mldsa_power2round}
 call {vg_mldsa_simple_bit_pack}
 .base64 "SInfSIHHALwAAL7/DwAAugAQAABMielIgcGgBwAAQbigAQAA"
 call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHALQAAEiJ3kiBxgA4AABIidpIgcIAiAAA"
-call {vg_mldsa_montgomery_multiply_ntt_avx2}
-.base64 "SInfSIHHALQAAEiJ3kiBxgA8AABIidpIgcIAjAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
-.base64 "SInfSIHHALQAAEiJ3kiBxgBAAABIidpIgcIAkAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
-.base64 "SInfSIHHALQAAEiJ3kiBxgBEAABIidpIgcIAlAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
-.base64 "SInfSIHHALQAAEiJ3kiBxgBIAABIidpIgcIAmAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
-.base64 "SInfSIHHALQAAEiJ3kiBxgAIAAA="
-call {vg_mldsa_montgomery_inv_ntt_avx2}
+.base64 "SInfSIHHALQAAEiJ3kiBxgA4AABIidpIgcIAiAAASInZSIHBAAgAAA=="
+call {vg_mldsa_dot_inverse5_avx2}
 .base64 "SInfSIHHALQAAEiJ3kiBxgCkAAA="
 call {vg_mldsa_add_avx2}
 .base64 "SInfSIHHALQAAEiJ3kiBxgC4AABIidpIgcIAvAAA"
@@ -309,18 +279,8 @@ call {vg_mldsa_power2round}
 call {vg_mldsa_simple_bit_pack}
 .base64 "SInfSIHHALwAAL7/DwAAugAQAABMielIgcFACQAAQbigAQAA"
 call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHALQAAEiJ3kiBxgBMAABIidpIgcIAiAAA"
-call {vg_mldsa_montgomery_multiply_ntt_avx2}
-.base64 "SInfSIHHALQAAEiJ3kiBxgBQAABIidpIgcIAjAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
-.base64 "SInfSIHHALQAAEiJ3kiBxgBUAABIidpIgcIAkAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
-.base64 "SInfSIHHALQAAEiJ3kiBxgBYAABIidpIgcIAlAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
-.base64 "SInfSIHHALQAAEiJ3kiBxgBcAABIidpIgcIAmAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
-.base64 "SInfSIHHALQAAEiJ3kiBxgAIAAA="
-call {vg_mldsa_montgomery_inv_ntt_avx2}
+.base64 "SInfSIHHALQAAEiJ3kiBxgBMAABIidpIgcIAiAAASInZSIHBAAgAAA=="
+call {vg_mldsa_dot_inverse5_avx2}
 .base64 "SInfSIHHALQAAEiJ3kiBxgCoAAA="
 call {vg_mldsa_add_avx2}
 .base64 "SInfSIHHALQAAEiJ3kiBxgC4AABIidpIgcIAvAAA"
@@ -329,18 +289,8 @@ call {vg_mldsa_power2round}
 call {vg_mldsa_simple_bit_pack}
 .base64 "SInfSIHHALwAAL7/DwAAugAQAABMielIgcHgCgAAQbigAQAA"
 call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHALQAAEiJ3kiBxgBgAABIidpIgcIAiAAA"
-call {vg_mldsa_montgomery_multiply_ntt_avx2}
-.base64 "SInfSIHHALQAAEiJ3kiBxgBkAABIidpIgcIAjAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
-.base64 "SInfSIHHALQAAEiJ3kiBxgBoAABIidpIgcIAkAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
-.base64 "SInfSIHHALQAAEiJ3kiBxgBsAABIidpIgcIAlAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
-.base64 "SInfSIHHALQAAEiJ3kiBxgBwAABIidpIgcIAmAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
-.base64 "SInfSIHHALQAAEiJ3kiBxgAIAAA="
-call {vg_mldsa_montgomery_inv_ntt_avx2}
+.base64 "SInfSIHHALQAAEiJ3kiBxgBgAABIidpIgcIAiAAASInZSIHBAAgAAA=="
+call {vg_mldsa_dot_inverse5_avx2}
 .base64 "SInfSIHHALQAAEiJ3kiBxgCsAAA="
 call {vg_mldsa_add_avx2}
 .base64 "SInfSIHHALQAAEiJ3kiBxgC4AABIidpIgcIAvAAA"
@@ -349,18 +299,8 @@ call {vg_mldsa_power2round}
 call {vg_mldsa_simple_bit_pack}
 .base64 "SInfSIHHALwAAL7/DwAAugAQAABMielIgcGADAAAQbigAQAA"
 call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHALQAAEiJ3kiBxgB0AABIidpIgcIAiAAA"
-call {vg_mldsa_montgomery_multiply_ntt_avx2}
-.base64 "SInfSIHHALQAAEiJ3kiBxgB4AABIidpIgcIAjAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
-.base64 "SInfSIHHALQAAEiJ3kiBxgB8AABIidpIgcIAkAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
-.base64 "SInfSIHHALQAAEiJ3kiBxgCAAABIidpIgcIAlAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
-.base64 "SInfSIHHALQAAEiJ3kiBxgCEAABIidpIgcIAmAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
-.base64 "SInfSIHHALQAAEiJ3kiBxgAIAAA="
-call {vg_mldsa_montgomery_inv_ntt_avx2}
+.base64 "SInfSIHHALQAAEiJ3kiBxgB0AABIidpIgcIAiAAASInZSIHBAAgAAA=="
+call {vg_mldsa_dot_inverse5_avx2}
 .base64 "SInfSIHHALQAAEiJ3kiBxgCwAAA="
 call {vg_mldsa_add_avx2}
 .base64 "SInfSIHHALQAAEiJ3kiBxgC4AABIidpIgcIAvAAA"
@@ -385,9 +325,7 @@ call {vg_keccak_squeeze_scratch}
         vg_mldsa_rej_bounded_poly = sym super::mldsa44::vg_mldsa_rej_bounded_poly::vg_mldsa_rej_bounded_poly,
         vg_mldsa_bit_pack = sym super::mldsa44::vg_mldsa_bit_pack::vg_mldsa_bit_pack,
         vg_mldsa_ntt_avx2 = sym super::mldsa44::vg_mldsa_ntt_avx2::vg_mldsa_ntt_avx2,
-        vg_mldsa_montgomery_multiply_ntt_avx2 = sym super::mldsa44::vg_mldsa_montgomery_multiply_ntt_avx2::vg_mldsa_montgomery_multiply_ntt_avx2,
-        vg_mldsa_montgomery_multiply_add_ntt_avx2 = sym super::mldsa44::vg_mldsa_montgomery_multiply_add_ntt_avx2::vg_mldsa_montgomery_multiply_add_ntt_avx2,
-        vg_mldsa_montgomery_inv_ntt_avx2 = sym super::mldsa44::vg_mldsa_montgomery_inv_ntt_avx2::vg_mldsa_montgomery_inv_ntt_avx2,
+        vg_mldsa_dot_inverse5_avx2 = sym super::mldsa65::vg_mldsa_dot_inverse5_avx2::vg_mldsa_dot_inverse5_avx2,
         vg_mldsa_add_avx2 = sym super::mldsa44::vg_mldsa_add_avx2::vg_mldsa_add_avx2,
         vg_mldsa_power2round = sym super::mldsa44::vg_mldsa_power2round::vg_mldsa_power2round,
         vg_mldsa_simple_bit_pack = sym super::mldsa44::vg_mldsa_simple_bit_pack::vg_mldsa_simple_bit_pack,
@@ -1039,18 +977,8 @@ call {vg_mldsa_ntt_avx512}
 call {vg_mldsa_ntt_avx512}
 .base64 "SInfSIHHAJgAAEiJ3kiBxgAIAAA="
 call {vg_mldsa_ntt_avx512}
-.base64 "SInfSIHHALQAAEiJ3kiBxgAQAABIidpIgcIAiAAA"
-call {vg_mldsa_montgomery_multiply_ntt_avx512}
-.base64 "SInfSIHHALQAAEiJ3kiBxgAUAABIidpIgcIAjAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
-.base64 "SInfSIHHALQAAEiJ3kiBxgAYAABIidpIgcIAkAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
-.base64 "SInfSIHHALQAAEiJ3kiBxgAcAABIidpIgcIAlAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
-.base64 "SInfSIHHALQAAEiJ3kiBxgAgAABIidpIgcIAmAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
-.base64 "SInfSIHHALQAAEiJ3kiBxgAIAAA="
-call {vg_mldsa_montgomery_inv_ntt_avx512}
+.base64 "SInfSIHHALQAAEiJ3kiBxgAQAABIidpIgcIAiAAASInZSIHBAAgAAA=="
+call {vg_mldsa_dot_inverse5_avx512}
 .base64 "SInfSIHHALQAAEiJ3kiBxgCcAAA="
 call {vg_mldsa_add_avx512}
 .base64 "SInfSIHHALQAAEiJ3kiBxgC4AABIidpIgcIAvAAA"
@@ -1059,18 +987,8 @@ call {vg_mldsa_power2round}
 call {vg_mldsa_simple_bit_pack}
 .base64 "SInfSIHHALwAAL7/DwAAugAQAABMielIgcEABgAAQbigAQAA"
 call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHALQAAEiJ3kiBxgAkAABIidpIgcIAiAAA"
-call {vg_mldsa_montgomery_multiply_ntt_avx512}
-.base64 "SInfSIHHALQAAEiJ3kiBxgAoAABIidpIgcIAjAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
-.base64 "SInfSIHHALQAAEiJ3kiBxgAsAABIidpIgcIAkAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
-.base64 "SInfSIHHALQAAEiJ3kiBxgAwAABIidpIgcIAlAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
-.base64 "SInfSIHHALQAAEiJ3kiBxgA0AABIidpIgcIAmAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
-.base64 "SInfSIHHALQAAEiJ3kiBxgAIAAA="
-call {vg_mldsa_montgomery_inv_ntt_avx512}
+.base64 "SInfSIHHALQAAEiJ3kiBxgAkAABIidpIgcIAiAAASInZSIHBAAgAAA=="
+call {vg_mldsa_dot_inverse5_avx512}
 .base64 "SInfSIHHALQAAEiJ3kiBxgCgAAA="
 call {vg_mldsa_add_avx512}
 .base64 "SInfSIHHALQAAEiJ3kiBxgC4AABIidpIgcIAvAAA"
@@ -1079,18 +997,8 @@ call {vg_mldsa_power2round}
 call {vg_mldsa_simple_bit_pack}
 .base64 "SInfSIHHALwAAL7/DwAAugAQAABMielIgcGgBwAAQbigAQAA"
 call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHALQAAEiJ3kiBxgA4AABIidpIgcIAiAAA"
-call {vg_mldsa_montgomery_multiply_ntt_avx512}
-.base64 "SInfSIHHALQAAEiJ3kiBxgA8AABIidpIgcIAjAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
-.base64 "SInfSIHHALQAAEiJ3kiBxgBAAABIidpIgcIAkAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
-.base64 "SInfSIHHALQAAEiJ3kiBxgBEAABIidpIgcIAlAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
-.base64 "SInfSIHHALQAAEiJ3kiBxgBIAABIidpIgcIAmAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
-.base64 "SInfSIHHALQAAEiJ3kiBxgAIAAA="
-call {vg_mldsa_montgomery_inv_ntt_avx512}
+.base64 "SInfSIHHALQAAEiJ3kiBxgA4AABIidpIgcIAiAAASInZSIHBAAgAAA=="
+call {vg_mldsa_dot_inverse5_avx512}
 .base64 "SInfSIHHALQAAEiJ3kiBxgCkAAA="
 call {vg_mldsa_add_avx512}
 .base64 "SInfSIHHALQAAEiJ3kiBxgC4AABIidpIgcIAvAAA"
@@ -1099,18 +1007,8 @@ call {vg_mldsa_power2round}
 call {vg_mldsa_simple_bit_pack}
 .base64 "SInfSIHHALwAAL7/DwAAugAQAABMielIgcFACQAAQbigAQAA"
 call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHALQAAEiJ3kiBxgBMAABIidpIgcIAiAAA"
-call {vg_mldsa_montgomery_multiply_ntt_avx512}
-.base64 "SInfSIHHALQAAEiJ3kiBxgBQAABIidpIgcIAjAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
-.base64 "SInfSIHHALQAAEiJ3kiBxgBUAABIidpIgcIAkAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
-.base64 "SInfSIHHALQAAEiJ3kiBxgBYAABIidpIgcIAlAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
-.base64 "SInfSIHHALQAAEiJ3kiBxgBcAABIidpIgcIAmAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
-.base64 "SInfSIHHALQAAEiJ3kiBxgAIAAA="
-call {vg_mldsa_montgomery_inv_ntt_avx512}
+.base64 "SInfSIHHALQAAEiJ3kiBxgBMAABIidpIgcIAiAAASInZSIHBAAgAAA=="
+call {vg_mldsa_dot_inverse5_avx512}
 .base64 "SInfSIHHALQAAEiJ3kiBxgCoAAA="
 call {vg_mldsa_add_avx512}
 .base64 "SInfSIHHALQAAEiJ3kiBxgC4AABIidpIgcIAvAAA"
@@ -1119,18 +1017,8 @@ call {vg_mldsa_power2round}
 call {vg_mldsa_simple_bit_pack}
 .base64 "SInfSIHHALwAAL7/DwAAugAQAABMielIgcHgCgAAQbigAQAA"
 call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHALQAAEiJ3kiBxgBgAABIidpIgcIAiAAA"
-call {vg_mldsa_montgomery_multiply_ntt_avx512}
-.base64 "SInfSIHHALQAAEiJ3kiBxgBkAABIidpIgcIAjAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
-.base64 "SInfSIHHALQAAEiJ3kiBxgBoAABIidpIgcIAkAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
-.base64 "SInfSIHHALQAAEiJ3kiBxgBsAABIidpIgcIAlAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
-.base64 "SInfSIHHALQAAEiJ3kiBxgBwAABIidpIgcIAmAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
-.base64 "SInfSIHHALQAAEiJ3kiBxgAIAAA="
-call {vg_mldsa_montgomery_inv_ntt_avx512}
+.base64 "SInfSIHHALQAAEiJ3kiBxgBgAABIidpIgcIAiAAASInZSIHBAAgAAA=="
+call {vg_mldsa_dot_inverse5_avx512}
 .base64 "SInfSIHHALQAAEiJ3kiBxgCsAAA="
 call {vg_mldsa_add_avx512}
 .base64 "SInfSIHHALQAAEiJ3kiBxgC4AABIidpIgcIAvAAA"
@@ -1139,18 +1027,8 @@ call {vg_mldsa_power2round}
 call {vg_mldsa_simple_bit_pack}
 .base64 "SInfSIHHALwAAL7/DwAAugAQAABMielIgcGADAAAQbigAQAA"
 call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHALQAAEiJ3kiBxgB0AABIidpIgcIAiAAA"
-call {vg_mldsa_montgomery_multiply_ntt_avx512}
-.base64 "SInfSIHHALQAAEiJ3kiBxgB4AABIidpIgcIAjAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
-.base64 "SInfSIHHALQAAEiJ3kiBxgB8AABIidpIgcIAkAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
-.base64 "SInfSIHHALQAAEiJ3kiBxgCAAABIidpIgcIAlAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
-.base64 "SInfSIHHALQAAEiJ3kiBxgCEAABIidpIgcIAmAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
-.base64 "SInfSIHHALQAAEiJ3kiBxgAIAAA="
-call {vg_mldsa_montgomery_inv_ntt_avx512}
+.base64 "SInfSIHHALQAAEiJ3kiBxgB0AABIidpIgcIAiAAASInZSIHBAAgAAA=="
+call {vg_mldsa_dot_inverse5_avx512}
 .base64 "SInfSIHHALQAAEiJ3kiBxgCwAAA="
 call {vg_mldsa_add_avx512}
 .base64 "SInfSIHHALQAAEiJ3kiBxgC4AABIidpIgcIAvAAA"
@@ -1175,9 +1053,7 @@ call {vg_keccak_squeeze_scratch}
         vg_mldsa_rej_bounded_poly = sym super::mldsa44::vg_mldsa_rej_bounded_poly::vg_mldsa_rej_bounded_poly,
         vg_mldsa_bit_pack = sym super::mldsa44::vg_mldsa_bit_pack::vg_mldsa_bit_pack,
         vg_mldsa_ntt_avx512 = sym super::mldsa44::vg_mldsa_ntt_avx512::vg_mldsa_ntt_avx512,
-        vg_mldsa_montgomery_multiply_ntt_avx512 = sym super::mldsa44::vg_mldsa_montgomery_multiply_ntt_avx512::vg_mldsa_montgomery_multiply_ntt_avx512,
-        vg_mldsa_montgomery_multiply_add_ntt_avx512 = sym super::mldsa44::vg_mldsa_montgomery_multiply_add_ntt_avx512::vg_mldsa_montgomery_multiply_add_ntt_avx512,
-        vg_mldsa_montgomery_inv_ntt_avx512 = sym super::mldsa44::vg_mldsa_montgomery_inv_ntt_avx512::vg_mldsa_montgomery_inv_ntt_avx512,
+        vg_mldsa_dot_inverse5_avx512 = sym super::mldsa65::vg_mldsa_dot_inverse5_avx512::vg_mldsa_dot_inverse5_avx512,
         vg_mldsa_add_avx512 = sym super::mldsa44::vg_mldsa_add_avx512::vg_mldsa_add_avx512,
         vg_mldsa_power2round = sym super::mldsa44::vg_mldsa_power2round::vg_mldsa_power2round,
         vg_mldsa_simple_bit_pack = sym super::mldsa44::vg_mldsa_simple_bit_pack::vg_mldsa_simple_bit_pack,
@@ -1825,18 +1701,8 @@ call {vg_mldsa_ntt}
 call {vg_mldsa_ntt}
 .base64 "SInfSIHHAJgAAEiJ3kiBxgAIAAA="
 call {vg_mldsa_ntt}
-.base64 "SInfSIHHALQAAEiJ3kiBxgAQAABIidpIgcIAiAAA"
-call {vg_mldsa_multiply_ntt}
-.base64 "SInfSIHHALQAAEiJ3kiBxgAUAABIidpIgcIAjAAA"
-call {vg_mldsa_multiply_add_ntt}
-.base64 "SInfSIHHALQAAEiJ3kiBxgAYAABIidpIgcIAkAAA"
-call {vg_mldsa_multiply_add_ntt}
-.base64 "SInfSIHHALQAAEiJ3kiBxgAcAABIidpIgcIAlAAA"
-call {vg_mldsa_multiply_add_ntt}
-.base64 "SInfSIHHALQAAEiJ3kiBxgAgAABIidpIgcIAmAAA"
-call {vg_mldsa_multiply_add_ntt}
-.base64 "SInfSIHHALQAAEiJ3kiBxgAIAAA="
-call {vg_mldsa_inv_ntt}
+.base64 "SInfSIHHALQAAEiJ3kiBxgAQAABIidpIgcIAiAAASInZSIHBAAgAAA=="
+call {vg_mldsa_dot_inverse5}
 .base64 "SInfSIHHALQAAEiJ3kiBxgCcAAA="
 call {vg_mldsa_add}
 .base64 "SInfSIHHALQAAEiJ3kiBxgC4AABIidpIgcIAvAAA"
@@ -1845,18 +1711,8 @@ call {vg_mldsa_power2round}
 call {vg_mldsa_simple_bit_pack}
 .base64 "SInfSIHHALwAAL7/DwAAugAQAABMielIgcEABgAAQbigAQAA"
 call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHALQAAEiJ3kiBxgAkAABIidpIgcIAiAAA"
-call {vg_mldsa_multiply_ntt}
-.base64 "SInfSIHHALQAAEiJ3kiBxgAoAABIidpIgcIAjAAA"
-call {vg_mldsa_multiply_add_ntt}
-.base64 "SInfSIHHALQAAEiJ3kiBxgAsAABIidpIgcIAkAAA"
-call {vg_mldsa_multiply_add_ntt}
-.base64 "SInfSIHHALQAAEiJ3kiBxgAwAABIidpIgcIAlAAA"
-call {vg_mldsa_multiply_add_ntt}
-.base64 "SInfSIHHALQAAEiJ3kiBxgA0AABIidpIgcIAmAAA"
-call {vg_mldsa_multiply_add_ntt}
-.base64 "SInfSIHHALQAAEiJ3kiBxgAIAAA="
-call {vg_mldsa_inv_ntt}
+.base64 "SInfSIHHALQAAEiJ3kiBxgAkAABIidpIgcIAiAAASInZSIHBAAgAAA=="
+call {vg_mldsa_dot_inverse5}
 .base64 "SInfSIHHALQAAEiJ3kiBxgCgAAA="
 call {vg_mldsa_add}
 .base64 "SInfSIHHALQAAEiJ3kiBxgC4AABIidpIgcIAvAAA"
@@ -1865,18 +1721,8 @@ call {vg_mldsa_power2round}
 call {vg_mldsa_simple_bit_pack}
 .base64 "SInfSIHHALwAAL7/DwAAugAQAABMielIgcGgBwAAQbigAQAA"
 call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHALQAAEiJ3kiBxgA4AABIidpIgcIAiAAA"
-call {vg_mldsa_multiply_ntt}
-.base64 "SInfSIHHALQAAEiJ3kiBxgA8AABIidpIgcIAjAAA"
-call {vg_mldsa_multiply_add_ntt}
-.base64 "SInfSIHHALQAAEiJ3kiBxgBAAABIidpIgcIAkAAA"
-call {vg_mldsa_multiply_add_ntt}
-.base64 "SInfSIHHALQAAEiJ3kiBxgBEAABIidpIgcIAlAAA"
-call {vg_mldsa_multiply_add_ntt}
-.base64 "SInfSIHHALQAAEiJ3kiBxgBIAABIidpIgcIAmAAA"
-call {vg_mldsa_multiply_add_ntt}
-.base64 "SInfSIHHALQAAEiJ3kiBxgAIAAA="
-call {vg_mldsa_inv_ntt}
+.base64 "SInfSIHHALQAAEiJ3kiBxgA4AABIidpIgcIAiAAASInZSIHBAAgAAA=="
+call {vg_mldsa_dot_inverse5}
 .base64 "SInfSIHHALQAAEiJ3kiBxgCkAAA="
 call {vg_mldsa_add}
 .base64 "SInfSIHHALQAAEiJ3kiBxgC4AABIidpIgcIAvAAA"
@@ -1885,18 +1731,8 @@ call {vg_mldsa_power2round}
 call {vg_mldsa_simple_bit_pack}
 .base64 "SInfSIHHALwAAL7/DwAAugAQAABMielIgcFACQAAQbigAQAA"
 call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHALQAAEiJ3kiBxgBMAABIidpIgcIAiAAA"
-call {vg_mldsa_multiply_ntt}
-.base64 "SInfSIHHALQAAEiJ3kiBxgBQAABIidpIgcIAjAAA"
-call {vg_mldsa_multiply_add_ntt}
-.base64 "SInfSIHHALQAAEiJ3kiBxgBUAABIidpIgcIAkAAA"
-call {vg_mldsa_multiply_add_ntt}
-.base64 "SInfSIHHALQAAEiJ3kiBxgBYAABIidpIgcIAlAAA"
-call {vg_mldsa_multiply_add_ntt}
-.base64 "SInfSIHHALQAAEiJ3kiBxgBcAABIidpIgcIAmAAA"
-call {vg_mldsa_multiply_add_ntt}
-.base64 "SInfSIHHALQAAEiJ3kiBxgAIAAA="
-call {vg_mldsa_inv_ntt}
+.base64 "SInfSIHHALQAAEiJ3kiBxgBMAABIidpIgcIAiAAASInZSIHBAAgAAA=="
+call {vg_mldsa_dot_inverse5}
 .base64 "SInfSIHHALQAAEiJ3kiBxgCoAAA="
 call {vg_mldsa_add}
 .base64 "SInfSIHHALQAAEiJ3kiBxgC4AABIidpIgcIAvAAA"
@@ -1905,18 +1741,8 @@ call {vg_mldsa_power2round}
 call {vg_mldsa_simple_bit_pack}
 .base64 "SInfSIHHALwAAL7/DwAAugAQAABMielIgcHgCgAAQbigAQAA"
 call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHALQAAEiJ3kiBxgBgAABIidpIgcIAiAAA"
-call {vg_mldsa_multiply_ntt}
-.base64 "SInfSIHHALQAAEiJ3kiBxgBkAABIidpIgcIAjAAA"
-call {vg_mldsa_multiply_add_ntt}
-.base64 "SInfSIHHALQAAEiJ3kiBxgBoAABIidpIgcIAkAAA"
-call {vg_mldsa_multiply_add_ntt}
-.base64 "SInfSIHHALQAAEiJ3kiBxgBsAABIidpIgcIAlAAA"
-call {vg_mldsa_multiply_add_ntt}
-.base64 "SInfSIHHALQAAEiJ3kiBxgBwAABIidpIgcIAmAAA"
-call {vg_mldsa_multiply_add_ntt}
-.base64 "SInfSIHHALQAAEiJ3kiBxgAIAAA="
-call {vg_mldsa_inv_ntt}
+.base64 "SInfSIHHALQAAEiJ3kiBxgBgAABIidpIgcIAiAAASInZSIHBAAgAAA=="
+call {vg_mldsa_dot_inverse5}
 .base64 "SInfSIHHALQAAEiJ3kiBxgCsAAA="
 call {vg_mldsa_add}
 .base64 "SInfSIHHALQAAEiJ3kiBxgC4AABIidpIgcIAvAAA"
@@ -1925,18 +1751,8 @@ call {vg_mldsa_power2round}
 call {vg_mldsa_simple_bit_pack}
 .base64 "SInfSIHHALwAAL7/DwAAugAQAABMielIgcGADAAAQbigAQAA"
 call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHALQAAEiJ3kiBxgB0AABIidpIgcIAiAAA"
-call {vg_mldsa_multiply_ntt}
-.base64 "SInfSIHHALQAAEiJ3kiBxgB4AABIidpIgcIAjAAA"
-call {vg_mldsa_multiply_add_ntt}
-.base64 "SInfSIHHALQAAEiJ3kiBxgB8AABIidpIgcIAkAAA"
-call {vg_mldsa_multiply_add_ntt}
-.base64 "SInfSIHHALQAAEiJ3kiBxgCAAABIidpIgcIAlAAA"
-call {vg_mldsa_multiply_add_ntt}
-.base64 "SInfSIHHALQAAEiJ3kiBxgCEAABIidpIgcIAmAAA"
-call {vg_mldsa_multiply_add_ntt}
-.base64 "SInfSIHHALQAAEiJ3kiBxgAIAAA="
-call {vg_mldsa_inv_ntt}
+.base64 "SInfSIHHALQAAEiJ3kiBxgB0AABIidpIgcIAiAAASInZSIHBAAgAAA=="
+call {vg_mldsa_dot_inverse5}
 .base64 "SInfSIHHALQAAEiJ3kiBxgCwAAA="
 call {vg_mldsa_add}
 .base64 "SInfSIHHALQAAEiJ3kiBxgC4AABIidpIgcIAvAAA"
@@ -1961,9 +1777,7 @@ call {vg_keccak_squeeze_scratch}
         vg_mldsa_rej_bounded_poly = sym super::mldsa44::vg_mldsa_rej_bounded_poly::vg_mldsa_rej_bounded_poly,
         vg_mldsa_bit_pack = sym super::mldsa44::vg_mldsa_bit_pack::vg_mldsa_bit_pack,
         vg_mldsa_ntt = sym super::mldsa44::vg_mldsa_ntt::vg_mldsa_ntt,
-        vg_mldsa_multiply_ntt = sym super::mldsa44::vg_mldsa_multiply_ntt::vg_mldsa_multiply_ntt,
-        vg_mldsa_multiply_add_ntt = sym super::mldsa44::vg_mldsa_multiply_add_ntt::vg_mldsa_multiply_add_ntt,
-        vg_mldsa_inv_ntt = sym super::mldsa44::vg_mldsa_inv_ntt::vg_mldsa_inv_ntt,
+        vg_mldsa_dot_inverse5 = sym super::mldsa65::vg_mldsa_dot_inverse5::vg_mldsa_dot_inverse5,
         vg_mldsa_add = sym super::mldsa44::vg_mldsa_add::vg_mldsa_add,
         vg_mldsa_power2round = sym super::mldsa44::vg_mldsa_power2round::vg_mldsa_power2round,
         vg_mldsa_simple_bit_pack = sym super::mldsa44::vg_mldsa_simple_bit_pack::vg_mldsa_simple_bit_pack,

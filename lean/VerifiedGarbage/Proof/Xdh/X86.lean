@@ -200,9 +200,6 @@ end
 section
 variable {n w cs : Nat} {s : State}
 
-/-- The frame is the 16 bytes below `E`. -/
-theorem frame_eq : (⟨F s, 16⟩ : Region) = below (s.gpr .esp) 16 := rfl
-
 theorem argR_word (h : Pre n w (20 + cs) s) {i : Nat} (hi : i < 4) : (argR s).Contains (argAddr s i) 4 := by
   simp only [Region.Contains]
   have e₁ := argAddr_toNat h hi
@@ -544,11 +541,6 @@ theorem orBytes_wp (o : BitVec 32) (m : Mem) : ∀ (i : Nat), o.toNat + i ≤ 2 
     · rw [v₂.rd, v₁.rd, grd]
     · rw [v₂.wr, v₁.wr, gwr]
     · rw [v₂.other r h1, v₁.other r h2, go r h1 h2]
-
-/-- After the frame is freed and `out` loaded into `edx`. -/
-structure Restored (n : Nat) (f : List Byte → List Byte → List Byte) (s u : State) : Prop where
-  called : Called n f s u
-  edx : u.gpr .edx = arg s 0
 
 /-- The state after the frame: as the call left it, with `esp` back. -/
 structure Freed (n : Nat) (f : List Byte → List Byte → List Byte) (s v : State) : Prop where

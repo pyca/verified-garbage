@@ -77,16 +77,16 @@ impl PrivateKey {
         if status != 1 {
             return Err(Error::InvalidKeyOrNonce);
         }
-        Ok(Self {
-            public: PublicKey {
+        Ok(Self::new(
+            PublicKey {
                 packed: output.0[..3 * p_len + q_len].to_vec(),
                 p_len,
                 q_len,
                 backend,
                 validated: AtomicU8::new(0),
             },
-            packed: output,
-        })
+            output,
+        ))
     }
 
     /// Generate a key for the big-endian domain `p`, `q` and `g`, sampling
@@ -183,10 +183,7 @@ impl PrivateKey {
             validated: AtomicU8::new(0),
         };
         // The packed private key p || q || g || y || x is the output itself.
-        Ok(Self {
-            public,
-            packed: Secret(core::mem::take(&mut output.0)),
-        })
+        Ok(Self::new(public, Secret(core::mem::take(&mut output.0))))
     }
 }
 

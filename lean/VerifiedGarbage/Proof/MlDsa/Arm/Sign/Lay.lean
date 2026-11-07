@@ -211,7 +211,7 @@ end
 abbrev toR (s : State) (w : Ptr × Nat) : Region := ⟨pa s w.1, w.2⟩
 
 /-- The registers the function keeps the addresses of its buffers in. -/
-abbrev bases : List Reg := [.r7, .r4, .r5, .r6, .r8]
+abbrev bases : List Reg := [.r7, .r4, .r5, .r6, .r8, .r9]
 
 theorem bases_cs : ∀ r ∈ bases, r ∈ preserved ∧ r ≠ .lr := by decide
 

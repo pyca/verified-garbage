@@ -77,14 +77,6 @@ def vPre (p : Params) (S : Nat) (σ : State) : Prop :=
   (Spec.MlDsa.verifyContract p AArch64.abi S).pre {σ with rd:=vInputs p σ} ∧
   ∀r∈vInputs p σ,r∈σ.rd
 
-theorem vPre_of_shared {p : Params} {S : Nat} {σ : State}
-    (h : (Spec.MlDsa.verifyContract p AArch64.abi S).pre σ) : vPre p S σ := by
-  have hr : σ.rd=vInputs p σ := by
-    sig_pre [Spec.MlDsa.verifyContract,Spec.MlDsa.verifySig,AArch64.abi,VG.AArch64.argRegs] at h
-    exact h.2.1
-  refine ⟨?_,by intro r hm;rw [hr];exact hm⟩
-  have he : ({σ with rd:=vInputs p σ} : State)=σ := by rw [←hr]
-  simpa only [he] using h
 /-- Its public data. -/
 abbrev vPub (p : Params) (S : Nat) (σ₁ σ₂ : State) : Prop := (Spec.MlDsa.verifyContract p AArch64.abi S).pub σ₁ σ₂
 
@@ -302,48 +294,6 @@ theorem vrel_of {c : Prog isa} {Q : State → State → Prop} (htr : RelCT isa Q
     (h : ∀ σ₁ σ₂ x y, vPre p S σ₁ → vPre p S σ₂ → vPub p S σ₁ σ₂ → I σ₁ x → I σ₂ y → Q x y) :
     RelCT isa (VR p S I) c fun _ _ => True :=
   RelCT.mono htr (fun _ _ ⟨_, _, p₁, p₂, hpub, i₁, i₂⟩ => h _ _ _ _ p₁ p₂ hpub i₁ i₂) fun _ _ h => h
-
-/-- A branch, both ways: the condition agrees in both runs. -/
-theorem relIte {P Q : State → State → Prop} {c : Cond} {th el : Prog isa}
-    (hc : ∀ s₁ s₂, P s₁ s₂ → isa.eval c s₁ = isa.eval c s₂)
-    (ht : RelCT isa (fun s₁ s₂ => P s₁ s₂ ∧ isa.eval c s₁ = some true) th Q)
-    (he : RelCT isa (fun s₁ s₂ => P s₁ s₂ ∧ isa.eval c s₁ = some false) el Q) :
-    RelCT isa P (.ite c th el) Q := by
-  intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
-  have hce := hc _ _ hp
-  cases e₁ with
-  | iteT c₁ b₁ =>
-    cases e₂ with
-    | iteT _ b₂ =>
-      obtain ⟨rfl, hq⟩ := ht _ _ _ _ _ _ ⟨hp, c₁⟩ b₁ b₂
-      exact ⟨rfl, hq⟩
-    | iteF c₂ _ => rw [c₁, c₂] at hce; cases hce
-  | iteF c₁ b₁ =>
-    cases e₂ with
-    | iteT c₂ _ => rw [c₁, c₂] at hce; cases hce
-    | iteF _ b₂ =>
-      obtain ⟨rfl, hq⟩ := he _ _ _ _ _ _ ⟨hp, c₁⟩ b₁ b₂
-      exact ⟨rfl, hq⟩
-
-theorem eval24 (s : State) : isa.eval (.nonzero .x .x24) s = some (s.gpr .x24 != 0) := rfl
-
-/-- `c` if `x24 ≠ 0`, where `x24` is whether `T σ` holds, which depends on public data only. -/
-theorem VPiece.ifOk {c : Prog isa} {T : State → Prop} [DecidablePred T]
-    (hx : ∀ σ s, vPre p S σ → I σ s → s.gpr .x24 = if T σ then 1 else 0)
-    (hT : ∀ σ₁ σ₂, vPre p S σ₁ → vPre p S σ₂ → vPub p S σ₁ σ₂ → (T σ₁ ↔ T σ₂))
-    (ht : VPiece p S (fun σ s => I σ s ∧ T σ) J c) (he : ∀ σ s, vPre p S σ → I σ s → ¬ T σ → J σ s) :
-    VPiece p S I J (ifOk c) := by
-  have ev : ∀ σ s, vPre p S σ → I σ s → isa.eval (.nonzero .x .x24) s = some (decide (T σ)) := fun σ s hp hs => by
-    rw [eval24, hx σ s hp hs]; by_cases h : T σ <;> simp [h]
-  refine ⟨fun σ s hp hs => WP.ite (decide (T σ)) (ev σ s hp hs) (fun hb => ht.ok σ s hp ⟨hs, of_decide_eq_true hb⟩)
-    fun hb => WP.block_nil (he σ s hp hs (of_decide_eq_false hb)), relIte ?_ ?_ ?_⟩
-  · rintro x y ⟨σ₁, σ₂, p₁, p₂, pub, h₁, h₂⟩
-    rw [ev σ₁ x p₁ h₁, ev σ₂ y p₂ h₂, decide_eq_decide.mpr (hT σ₁ σ₂ p₁ p₂ pub)]
-  · refine RelCT.mono ht.tr (fun x y ⟨⟨σ₁, σ₂, p₁, p₂, pub, h₁, h₂⟩, hc⟩ => ?_) fun _ _ h => h
-    rw [ev σ₁ x p₁ h₁] at hc
-    have t₁ : T σ₁ := of_decide_eq_true (Option.some.inj hc)
-    exact ⟨σ₁, σ₂, p₁, p₂, pub, ⟨h₁, t₁⟩, h₂, (hT σ₁ σ₂ p₁ p₂ pub).mp t₁⟩
-  · exact RelCT.block_nil fun _ _ _ => trivial
 
 end
 

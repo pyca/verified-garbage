@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Verified
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SearchInit
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.KeyInit
+public import VerifiedGarbage.Spec.RsaKeyGen.KeySearchContract
 import Mathlib.Tactic.Finiteness.Attr
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86_64.Print
@@ -13,11 +13,8 @@ public import VerifiedGarbage.TCB.X86_64.Print
 namespace VG.Artifacts.RsaKeyGen.X86_64
 
 def artifacts : List Artifact := [
-  Spec.RsaKeyGen.keyApi.artifact X86_64.target {
-    code := Impl.RsaKeyGen.X86_64.Key.code
-    verified := Proof.RsaKeyGen.X86_64.Key.key_verified },
-  Spec.RsaKeyGen.primeInitApi.artifact X86_64.target {
-    code := Impl.RsaKeyGen.X86_64.SearchInit.init
-    verified := Proof.RsaKeyGen.X86_64.SearchInit.init_verified }]
+  Spec.RsaKeyGen.keyInitApi.artifact X86_64.target {
+    code := Impl.RsaKeyGen.X86_64.KeyInit.init
+    verified := Proof.RsaKeyGen.X86_64.KeyInit.init_verified }]
 
 end VG.Artifacts.RsaKeyGen.X86_64

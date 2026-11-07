@@ -120,13 +120,6 @@ theorem addrK {s : State} (h : Pre s) {k : Nat} (hk : k ≤ 600) :
   rw [addr_sub' (by have := h.sp; omega)]
   exact Offset.sub_ofNat_eq _ hk
 
-theorem K_toNat {s : State} (h : Pre s) {d : Nat} (hd : d ≤ 600) :
-    (K s + BitVec.ofNat 64 d).toNat = s.sp.toNat - 600 + d := by
-  have := h.sp
-  have := s.sp.isLt
-  simp only [K, State.addr, BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_setWidth]
-  omega
-
 theorem stk_sub (s : State) {d n : Nat} (h : d + n ≤ 600) : Region.Sub ⟨K s + BitVec.ofNat 64 d, n⟩ (STK s) :=
   Offset.sub_base _ h
 

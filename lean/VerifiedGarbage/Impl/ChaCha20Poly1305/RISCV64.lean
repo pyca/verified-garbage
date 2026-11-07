@@ -12,6 +12,13 @@ data = a4, len = a5, tag = a6, work = a7)` and `vg_chacha20_poly1305_open`
 ChaCha20 and Poly1305 functions. `work` is the working space, which the
 artifact's frame allocates on the stack (`withStackScratchWiped`).
 
+One body serves in place and out of place: it reads the data at `a4`
+(`src`) and writes the result to `t6` (`dst`, either `src` or apart from it,
+`vg_chacha20_xor` from `src` to `dst`). `seal` and `open` run it in place,
+with `t6 = a4` (`inPlace`); `vg_chacha20_poly1305_open_to(key, nonce, aad,
+aad_len, src, len, dst, dst_len, tag)` runs `open`'s with `dst` from `a6`,
+and `tag` and `work` from the stack (`toEntry`, `openTo`).
+
 The context is `work` rounded up to a multiple of 8, so that the registers
 saved there take aligned doubleword accesses:
 
@@ -22,11 +29,12 @@ saved there take aligned doubleword accesses:
 * `[512, 528)`: zeros, the padding;
 * `[528, 544)`: the lengths block;
 * `[544, 560)`: the tag computed by `open`;
-* `[560, 608)`: our caller's `s7`–`s11` and our return address.
+* `[560, 616)`: our caller's `s7`–`s11`, our return address and our
+  caller's `s6`.
 
-`a0` holds the context, or the Poly1305 state 384 bytes on, and `s7`–`s11`
-the additional data, its length, the data, its length and the tag
-throughout: no callee writes them, so they keep their values, and the
+`a0` holds the context, or the Poly1305 state 384 bytes on, `s7`–`s11`
+the additional data, its length, the source, its length and the tag, and
+`s6` the destination throughout: no callee writes them, so they keep their values, and the
 constant-time analysis sees them public, after every call. The MAC is
 computed by `vg_poly1305_update` on the additional data, its padding, the
 ciphertext, its padding and the lengths block, and `vg_poly1305_finalize`,
@@ -35,7 +43,7 @@ with the message's length so far as `count`.
 Constant time: only the pointers and the lengths can affect timing (the
 branches are on the lengths, in the callees, and every address is a pointer
 plus a constant or a count). `open` compares the tags without a branch,
-then, if they differ, zeroes the data (`zeroData`): that branch is on
+then, if they differ, zeroes the destination (`zeroData`): that branch is on
 whether it returns 1, which its contract lets it leak.
 -/
 
@@ -57,15 +65,16 @@ def tagOff : Nat := 544
 def savOff : Nat := 560
 /-! ## Entry and exit -/
 
-/-- The context into `t0`, and our caller's `s7`–`s11` and our return
-address saved there. -/
+/-- The context into `t0`, and our caller's `s7`–`s11`, our return address
+and our caller's `s6` saved there. -/
 def save : List Instr :=
   [.addi .t0 .a7 7, .logicImm .and .t0 .t0 (-8), .store .d .s7 .t0 savOff,
     .store .d .s8 .t0 (savOff + 8), .store .d .s9 .t0 (savOff + 16), .store .d .s10 .t0 (savOff + 24),
-    .store .d .s11 .t0 (savOff + 32), .store .d .ra .t0 (savOff + 40)]
+    .store .d .s11 .t0 (savOff + 32), .store .d .ra .t0 (savOff + 40), .store .d .s6 .t0 (savOff + 48)]
 
-/-- The arguments kept, into `s7`–`s11`. -/
-def moves : List Instr := [mov .s7 .a2, mov .s8 .a3, mov .s9 .a4, mov .s10 .a5, mov .s11 .a6]
+/-- The arguments kept, into `s7`–`s11`, and the destination into `s6`. -/
+def moves : List Instr :=
+  [mov .s7 .a2, mov .s8 .a3, mov .s9 .a4, mov .s10 .a5, mov .s11 .a6, mov .s6 .t6]
 
 /-- The ChaCha20 state for counter 0 (the constants, the key at `a0`, the
 counter and the nonce at `a1`), the padding and the lengths block, at `t0`;
@@ -79,7 +88,8 @@ def setup : List Instr :=
 /-- Our caller's registers back, from the context at `t0`. -/
 def restore : List Instr :=
   [.load .d .s7 .t0 savOff, .load .d .s8 .t0 (savOff + 8), .load .d .s9 .t0 (savOff + 16),
-    .load .d .s10 .t0 (savOff + 24), .load .d .s11 .t0 (savOff + 32), .load .d .ra .t0 (savOff + 40)]
+    .load .d .s10 .t0 (savOff + 24), .load .d .s11 .t0 (savOff + 32), .load .d .ra .t0 (savOff + 40),
+    .load .d .s6 .t0 (savOff + 48)]
 
 /-! ## The calls -/
 
@@ -118,12 +128,12 @@ def macData (out : Instr) : Prog isa :=
   (.seq (.block (round16 .a1 .s8 ++ round16 .t0 .s10 ++ [.add .a1 .a1 .t0, .addi .a1 .a1 16, out]))
     (.call "vg_poly1305_finalize" Impl.Poly1305.RISCV64.finalize)))))))
 
-/-- The ChaCha20 counter set to 1, and the data encrypted or decrypted in
-place (`vg_chacha20_xor` with `dst = src`), from `a0` at the Poly1305 state;
-`a0` back to it. -/
+/-- The ChaCha20 counter set to 1, and the source encrypted or decrypted to
+the destination (`vg_chacha20_xor` from `s9` to `s6`), from `a0` at the
+Poly1305 state; `a0` back to it. -/
 def crypt : Prog isa :=
   .seq (.block [.addi .a0 .a0 (-(polyOff : Int)), .li .t0 1, .store .b .t0 .a0 48, mov .a1 .s9,
-    mov .a2 .s10, .addi .a3 .a0 bufOff, mov .a4 .s9])
+    mov .a2 .s10, .addi .a3 .a0 bufOff, mov .a4 .s6])
   (.seq (.call "vg_chacha20_xor" Impl.ChaCha20.RISCV64.Xor.xor)
     (.block [.addi .a0 .a0 polyOff]))
 
@@ -149,10 +159,10 @@ def compare : List Instr :=
       .logic .xor .t2 .t2 .t3, .logic .or .t1 .t1 .t2]) ++
     [.li .t2 1, .sltu .t1 .t1 .t2]
 
-/-- The `s10` bytes at `s9` zeroed, a byte at a time, with `t1` zero:
-through `t2` (the address) and `t3` (the count). -/
+/-- The `s10` bytes at `s6` (the destination) zeroed, a byte at a time, with
+`t1` zero: through `t2` (the address) and `t3` (the count). -/
 def zeroData : Prog isa :=
-  .seq (.block [mov .t2 .s9, mov .t3 .s10])
+  .seq (.block [mov .t2 .s6, mov .t3 .s10])
     (.ite (.zero .t3) (.block [])
       (.loop (.block [.store .b .t1 .t2 0, .addi .t2 .t2 1, .addi .t3 .t3 (-1)]) (.nonzero .t3)))
 
@@ -172,5 +182,18 @@ def «open» : Prog isa :=
   .seq openBody
   (.seq (.ite (.zero .t1) zeroData (.block []))
     (.block (restore ++ [mov .a0 .t1])))
+
+/-! ## The entries -/
+
+/-- In place: the destination is the source (`t6 = a4`). -/
+def inPlace (c : Prog isa) : Prog isa := .seq (.block [mov .t6 .a4]) c
+
+/-- `vg_chacha20_poly1305_open_to`'s arguments where the body expects them:
+`dst` (`a6`) into `t6`, then `tag` and `work` from the frame of
+`withStackScratchArgs`, at `sp` and `sp + 8`, into `a6` and `a7`. -/
+def toEntry : List Instr := [mov .t6 .a6, .addSp .t0 0, .load .d .a6 .t0 0, .load .d .a7 .t0 8]
+
+/-- `vg_chacha20_poly1305_open_to`: `open`'s body out of place. -/
+def openTo : Prog isa := .seq (.block toEntry) «open»
 
 end VG.Impl.ChaCha20Poly1305.RISCV64

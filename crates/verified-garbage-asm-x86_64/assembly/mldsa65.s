@@ -941,40 +941,9 @@ vg_mldsa65_keygen_avx2:
 	add rsi, 4096
 	mov rdx, rbx
 	add rdx, 34816
-	call {vg_mldsa_montgomery_multiply_ntt_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 5120
-	mov rdx, rbx
-	add rdx, 35840
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 6144
-	mov rdx, rbx
-	add rdx, 36864
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 7168
-	mov rdx, rbx
-	add rdx, 37888
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 8192
-	mov rdx, rbx
-	add rdx, 38912
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 2048
-	call {vg_mldsa_montgomery_inv_ntt_avx2}
+	mov rcx, rbx
+	add rcx, 2048
+	call {vg_mldsa_dot_inverse5_avx2}
 	mov rdi, rbx
 	add rdi, 46080
 	mov rsi, rbx
@@ -1008,40 +977,9 @@ vg_mldsa65_keygen_avx2:
 	add rsi, 9216
 	mov rdx, rbx
 	add rdx, 34816
-	call {vg_mldsa_montgomery_multiply_ntt_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 10240
-	mov rdx, rbx
-	add rdx, 35840
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 11264
-	mov rdx, rbx
-	add rdx, 36864
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 12288
-	mov rdx, rbx
-	add rdx, 37888
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 13312
-	mov rdx, rbx
-	add rdx, 38912
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 2048
-	call {vg_mldsa_montgomery_inv_ntt_avx2}
+	mov rcx, rbx
+	add rcx, 2048
+	call {vg_mldsa_dot_inverse5_avx2}
 	mov rdi, rbx
 	add rdi, 46080
 	mov rsi, rbx
@@ -1075,40 +1013,9 @@ vg_mldsa65_keygen_avx2:
 	add rsi, 14336
 	mov rdx, rbx
 	add rdx, 34816
-	call {vg_mldsa_montgomery_multiply_ntt_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 15360
-	mov rdx, rbx
-	add rdx, 35840
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 16384
-	mov rdx, rbx
-	add rdx, 36864
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 17408
-	mov rdx, rbx
-	add rdx, 37888
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 18432
-	mov rdx, rbx
-	add rdx, 38912
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 2048
-	call {vg_mldsa_montgomery_inv_ntt_avx2}
+	mov rcx, rbx
+	add rcx, 2048
+	call {vg_mldsa_dot_inverse5_avx2}
 	mov rdi, rbx
 	add rdi, 46080
 	mov rsi, rbx
@@ -1142,40 +1049,9 @@ vg_mldsa65_keygen_avx2:
 	add rsi, 19456
 	mov rdx, rbx
 	add rdx, 34816
-	call {vg_mldsa_montgomery_multiply_ntt_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 20480
-	mov rdx, rbx
-	add rdx, 35840
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 21504
-	mov rdx, rbx
-	add rdx, 36864
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 22528
-	mov rdx, rbx
-	add rdx, 37888
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 23552
-	mov rdx, rbx
-	add rdx, 38912
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 2048
-	call {vg_mldsa_montgomery_inv_ntt_avx2}
+	mov rcx, rbx
+	add rcx, 2048
+	call {vg_mldsa_dot_inverse5_avx2}
 	mov rdi, rbx
 	add rdi, 46080
 	mov rsi, rbx
@@ -1209,40 +1085,9 @@ vg_mldsa65_keygen_avx2:
 	add rsi, 24576
 	mov rdx, rbx
 	add rdx, 34816
-	call {vg_mldsa_montgomery_multiply_ntt_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 25600
-	mov rdx, rbx
-	add rdx, 35840
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 26624
-	mov rdx, rbx
-	add rdx, 36864
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 27648
-	mov rdx, rbx
-	add rdx, 37888
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 28672
-	mov rdx, rbx
-	add rdx, 38912
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 2048
-	call {vg_mldsa_montgomery_inv_ntt_avx2}
+	mov rcx, rbx
+	add rcx, 2048
+	call {vg_mldsa_dot_inverse5_avx2}
 	mov rdi, rbx
 	add rdi, 46080
 	mov rsi, rbx
@@ -1276,40 +1121,9 @@ vg_mldsa65_keygen_avx2:
 	add rsi, 29696
 	mov rdx, rbx
 	add rdx, 34816
-	call {vg_mldsa_montgomery_multiply_ntt_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 30720
-	mov rdx, rbx
-	add rdx, 35840
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 31744
-	mov rdx, rbx
-	add rdx, 36864
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 32768
-	mov rdx, rbx
-	add rdx, 37888
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 33792
-	mov rdx, rbx
-	add rdx, 38912
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 2048
-	call {vg_mldsa_montgomery_inv_ntt_avx2}
+	mov rcx, rbx
+	add rcx, 2048
+	call {vg_mldsa_dot_inverse5_avx2}
 	mov rdi, rbx
 	add rdi, 46080
 	mov rsi, rbx
@@ -3108,40 +2922,9 @@ vg_mldsa65_keygen_avx512:
 	add rsi, 4096
 	mov rdx, rbx
 	add rdx, 34816
-	call {vg_mldsa_montgomery_multiply_ntt_avx512}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 5120
-	mov rdx, rbx
-	add rdx, 35840
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 6144
-	mov rdx, rbx
-	add rdx, 36864
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 7168
-	mov rdx, rbx
-	add rdx, 37888
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 8192
-	mov rdx, rbx
-	add rdx, 38912
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 2048
-	call {vg_mldsa_montgomery_inv_ntt_avx512}
+	mov rcx, rbx
+	add rcx, 2048
+	call {vg_mldsa_dot_inverse5_avx512}
 	mov rdi, rbx
 	add rdi, 46080
 	mov rsi, rbx
@@ -3175,40 +2958,9 @@ vg_mldsa65_keygen_avx512:
 	add rsi, 9216
 	mov rdx, rbx
 	add rdx, 34816
-	call {vg_mldsa_montgomery_multiply_ntt_avx512}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 10240
-	mov rdx, rbx
-	add rdx, 35840
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 11264
-	mov rdx, rbx
-	add rdx, 36864
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 12288
-	mov rdx, rbx
-	add rdx, 37888
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 13312
-	mov rdx, rbx
-	add rdx, 38912
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 2048
-	call {vg_mldsa_montgomery_inv_ntt_avx512}
+	mov rcx, rbx
+	add rcx, 2048
+	call {vg_mldsa_dot_inverse5_avx512}
 	mov rdi, rbx
 	add rdi, 46080
 	mov rsi, rbx
@@ -3242,40 +2994,9 @@ vg_mldsa65_keygen_avx512:
 	add rsi, 14336
 	mov rdx, rbx
 	add rdx, 34816
-	call {vg_mldsa_montgomery_multiply_ntt_avx512}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 15360
-	mov rdx, rbx
-	add rdx, 35840
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 16384
-	mov rdx, rbx
-	add rdx, 36864
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 17408
-	mov rdx, rbx
-	add rdx, 37888
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 18432
-	mov rdx, rbx
-	add rdx, 38912
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 2048
-	call {vg_mldsa_montgomery_inv_ntt_avx512}
+	mov rcx, rbx
+	add rcx, 2048
+	call {vg_mldsa_dot_inverse5_avx512}
 	mov rdi, rbx
 	add rdi, 46080
 	mov rsi, rbx
@@ -3309,40 +3030,9 @@ vg_mldsa65_keygen_avx512:
 	add rsi, 19456
 	mov rdx, rbx
 	add rdx, 34816
-	call {vg_mldsa_montgomery_multiply_ntt_avx512}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 20480
-	mov rdx, rbx
-	add rdx, 35840
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 21504
-	mov rdx, rbx
-	add rdx, 36864
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 22528
-	mov rdx, rbx
-	add rdx, 37888
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 23552
-	mov rdx, rbx
-	add rdx, 38912
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 2048
-	call {vg_mldsa_montgomery_inv_ntt_avx512}
+	mov rcx, rbx
+	add rcx, 2048
+	call {vg_mldsa_dot_inverse5_avx512}
 	mov rdi, rbx
 	add rdi, 46080
 	mov rsi, rbx
@@ -3376,40 +3066,9 @@ vg_mldsa65_keygen_avx512:
 	add rsi, 24576
 	mov rdx, rbx
 	add rdx, 34816
-	call {vg_mldsa_montgomery_multiply_ntt_avx512}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 25600
-	mov rdx, rbx
-	add rdx, 35840
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 26624
-	mov rdx, rbx
-	add rdx, 36864
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 27648
-	mov rdx, rbx
-	add rdx, 37888
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 28672
-	mov rdx, rbx
-	add rdx, 38912
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 2048
-	call {vg_mldsa_montgomery_inv_ntt_avx512}
+	mov rcx, rbx
+	add rcx, 2048
+	call {vg_mldsa_dot_inverse5_avx512}
 	mov rdi, rbx
 	add rdi, 46080
 	mov rsi, rbx
@@ -3443,40 +3102,9 @@ vg_mldsa65_keygen_avx512:
 	add rsi, 29696
 	mov rdx, rbx
 	add rdx, 34816
-	call {vg_mldsa_montgomery_multiply_ntt_avx512}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 30720
-	mov rdx, rbx
-	add rdx, 35840
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 31744
-	mov rdx, rbx
-	add rdx, 36864
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 32768
-	mov rdx, rbx
-	add rdx, 37888
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 33792
-	mov rdx, rbx
-	add rdx, 38912
-	call {vg_mldsa_montgomery_multiply_add_ntt_avx512}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 2048
-	call {vg_mldsa_montgomery_inv_ntt_avx512}
+	mov rcx, rbx
+	add rcx, 2048
+	call {vg_mldsa_dot_inverse5_avx512}
 	mov rdi, rbx
 	add rdi, 46080
 	mov rsi, rbx
@@ -5275,40 +4903,9 @@ vg_mldsa65_keygen:
 	add rsi, 4096
 	mov rdx, rbx
 	add rdx, 34816
-	call {vg_mldsa_multiply_ntt}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 5120
-	mov rdx, rbx
-	add rdx, 35840
-	call {vg_mldsa_multiply_add_ntt}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 6144
-	mov rdx, rbx
-	add rdx, 36864
-	call {vg_mldsa_multiply_add_ntt}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 7168
-	mov rdx, rbx
-	add rdx, 37888
-	call {vg_mldsa_multiply_add_ntt}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 8192
-	mov rdx, rbx
-	add rdx, 38912
-	call {vg_mldsa_multiply_add_ntt}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 2048
-	call {vg_mldsa_inv_ntt}
+	mov rcx, rbx
+	add rcx, 2048
+	call {vg_mldsa_dot_inverse5}
 	mov rdi, rbx
 	add rdi, 46080
 	mov rsi, rbx
@@ -5342,40 +4939,9 @@ vg_mldsa65_keygen:
 	add rsi, 9216
 	mov rdx, rbx
 	add rdx, 34816
-	call {vg_mldsa_multiply_ntt}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 10240
-	mov rdx, rbx
-	add rdx, 35840
-	call {vg_mldsa_multiply_add_ntt}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 11264
-	mov rdx, rbx
-	add rdx, 36864
-	call {vg_mldsa_multiply_add_ntt}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 12288
-	mov rdx, rbx
-	add rdx, 37888
-	call {vg_mldsa_multiply_add_ntt}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 13312
-	mov rdx, rbx
-	add rdx, 38912
-	call {vg_mldsa_multiply_add_ntt}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 2048
-	call {vg_mldsa_inv_ntt}
+	mov rcx, rbx
+	add rcx, 2048
+	call {vg_mldsa_dot_inverse5}
 	mov rdi, rbx
 	add rdi, 46080
 	mov rsi, rbx
@@ -5409,40 +4975,9 @@ vg_mldsa65_keygen:
 	add rsi, 14336
 	mov rdx, rbx
 	add rdx, 34816
-	call {vg_mldsa_multiply_ntt}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 15360
-	mov rdx, rbx
-	add rdx, 35840
-	call {vg_mldsa_multiply_add_ntt}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 16384
-	mov rdx, rbx
-	add rdx, 36864
-	call {vg_mldsa_multiply_add_ntt}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 17408
-	mov rdx, rbx
-	add rdx, 37888
-	call {vg_mldsa_multiply_add_ntt}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 18432
-	mov rdx, rbx
-	add rdx, 38912
-	call {vg_mldsa_multiply_add_ntt}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 2048
-	call {vg_mldsa_inv_ntt}
+	mov rcx, rbx
+	add rcx, 2048
+	call {vg_mldsa_dot_inverse5}
 	mov rdi, rbx
 	add rdi, 46080
 	mov rsi, rbx
@@ -5476,40 +5011,9 @@ vg_mldsa65_keygen:
 	add rsi, 19456
 	mov rdx, rbx
 	add rdx, 34816
-	call {vg_mldsa_multiply_ntt}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 20480
-	mov rdx, rbx
-	add rdx, 35840
-	call {vg_mldsa_multiply_add_ntt}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 21504
-	mov rdx, rbx
-	add rdx, 36864
-	call {vg_mldsa_multiply_add_ntt}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 22528
-	mov rdx, rbx
-	add rdx, 37888
-	call {vg_mldsa_multiply_add_ntt}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 23552
-	mov rdx, rbx
-	add rdx, 38912
-	call {vg_mldsa_multiply_add_ntt}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 2048
-	call {vg_mldsa_inv_ntt}
+	mov rcx, rbx
+	add rcx, 2048
+	call {vg_mldsa_dot_inverse5}
 	mov rdi, rbx
 	add rdi, 46080
 	mov rsi, rbx
@@ -5543,40 +5047,9 @@ vg_mldsa65_keygen:
 	add rsi, 24576
 	mov rdx, rbx
 	add rdx, 34816
-	call {vg_mldsa_multiply_ntt}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 25600
-	mov rdx, rbx
-	add rdx, 35840
-	call {vg_mldsa_multiply_add_ntt}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 26624
-	mov rdx, rbx
-	add rdx, 36864
-	call {vg_mldsa_multiply_add_ntt}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 27648
-	mov rdx, rbx
-	add rdx, 37888
-	call {vg_mldsa_multiply_add_ntt}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 28672
-	mov rdx, rbx
-	add rdx, 38912
-	call {vg_mldsa_multiply_add_ntt}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 2048
-	call {vg_mldsa_inv_ntt}
+	mov rcx, rbx
+	add rcx, 2048
+	call {vg_mldsa_dot_inverse5}
 	mov rdi, rbx
 	add rdi, 46080
 	mov rsi, rbx
@@ -5610,40 +5083,9 @@ vg_mldsa65_keygen:
 	add rsi, 29696
 	mov rdx, rbx
 	add rdx, 34816
-	call {vg_mldsa_multiply_ntt}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 30720
-	mov rdx, rbx
-	add rdx, 35840
-	call {vg_mldsa_multiply_add_ntt}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 31744
-	mov rdx, rbx
-	add rdx, 36864
-	call {vg_mldsa_multiply_add_ntt}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 32768
-	mov rdx, rbx
-	add rdx, 37888
-	call {vg_mldsa_multiply_add_ntt}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 33792
-	mov rdx, rbx
-	add rdx, 38912
-	call {vg_mldsa_multiply_add_ntt}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 2048
-	call {vg_mldsa_inv_ntt}
+	mov rcx, rbx
+	add rcx, 2048
+	call {vg_mldsa_dot_inverse5}
 	mov rdi, rbx
 	add rdi, 46080
 	mov rsi, rbx

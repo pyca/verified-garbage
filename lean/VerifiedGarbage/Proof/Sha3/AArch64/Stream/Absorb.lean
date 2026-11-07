@@ -616,12 +616,4 @@ theorem absorb_ct (v : Permutation) : ConstantTime isa Proof.Sha3.absorbAArch64.
   exact VectorTaint.constantTime (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4, .x5])
     (fun _ _ _ _ hp => agree₀ hp) hhint
 
-theorem absorb_verified (v : Permutation) :
-    Verified AArch64.target (Impl.Sha3.AArch64.Stream.absorbWith v.callee) (Proof.Sha3.absorbScratchContract AArch64.abi
-      16) :=
-  Verified.of_correct (absorb_correct v) (absorb_ct v) (by
-    sig_implies [Proof.Sha3.absorbScratchContract, Proof.Sha3.absorbScratchSig, Proof.Sha3.absorbPre, Proof.Sha3.absorbPost, Proof.Sha3.absorbAArch64,
-      AArch64.abi, AArch64.argRegs] [Proof.Sha3.AArch64.Stream.Absorb.sat] using
-      Proof.Sha3.AArch64.Stream.Absorb.sat)
-
 end VG.Proof.Sha3.AArch64.Stream.Absorb

@@ -156,6 +156,20 @@ theorem stepFrame {k : Nat} (hk : k < N s₀) {m m' : Mem}
     · exact ⟨⟨S s₀, 2064⟩, by simp, fun _ h => h⟩
     · exact ⟨stkR s₀, by simp, fun _ h => h⟩
 
+
+omit hp in
+/-- `stepFrame`, in the regions of the loop invariant (`LInv`). -/
+theorem stepFrameG {k : Nat} (hk : k < N s₀) {m m' : Mem}
+    (hf : Frame [⟨blk s₀ k, 16⟩, ivR s₀, ⟨S s₀, 2064⟩, stkR s₀] m m') :
+    Frame [ivR s₀, dataR s₀, ⟨S s₀, 2064⟩, gR s₀, stkR s₀] m m' :=
+  hf.sub fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · exact ⟨dataR s₀, by simp, UPre.data_sub hk⟩
+    · exact ⟨ivR s₀, by simp, fun _ h => h⟩
+    · exact ⟨⟨S s₀, 2064⟩, by simp, fun _ h => h⟩
+    · exact ⟨stkR s₀, by simp, fun _ h => h⟩
+
 end
 
 theorem calleeSaved_ne_rax {r : Reg} (hr : r ∈ calleeSaved) : r ≠ .rax := by
@@ -234,7 +248,7 @@ theorem encBody_ok (v : BlocksImpl) : BodyOk (cbcMode true) (encBody v.enc) := b
       · exact ⟨stkR s₀, by simp, by rw [rsp₁]; exact fun _ h => h⟩
     · simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩
   have big₁ : Frame (Big s₀) s₀.mem s₁.mem :=
-    (UPre.big_of h.frame).trans ((stepFrame hk (f₁.sub fun r hr => by
+    (UPre.big_ofG h.frame).trans ((stepFrame hk (f₁.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩)).sub fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
@@ -271,7 +285,7 @@ theorem encBody_ok (v : BlocksImpl) : BodyOk (cbcMode true) (encBody v.enc) := b
   · rw [g .rsp (by simp [calleeSaved]) (by decide) (by decide), h.rsp]
   · rw [rd₄, rd₃, c.rd, a.rd, h.rd]
   · rw [wr₄, wr₃, c.wr, a.wr, h.wr]
-  · exact h.frame.trans (stepFrame hk fStep)
+  · exact h.frame.trans (stepFrameG hk fStep)
   · rw [hp.blocksAt_step hk fStep, h.data, outSucc,
       set_prefix _ _ _ hl (by simp [Spec.Cbc.blocksAt]; exact hk)]
   · rw [newIv]
@@ -365,7 +379,7 @@ theorem decBody_ok (v : BlocksImpl) : BodyOk (cbcMode false) (decBody v.dec) := 
     · simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩
     · simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩
   have big₁ : Frame (Big s₀) s₀.mem s₁.mem :=
-    (UPre.big_of h.frame).trans ((stepFrame hk (f₁.sub fun r hr => by
+    (UPre.big_ofG h.frame).trans ((stepFrame hk (f₁.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨⟨S s₀, 2064⟩, by simp, svSub⟩)).sub fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
@@ -423,7 +437,7 @@ theorem decBody_ok (v : BlocksImpl) : BodyOk (cbcMode false) (decBody v.dec) := 
   · rw [g .rsp (by simp [calleeSaved]) (by decide) (by decide), h.rsp]
   · rw [rd₅, rd₄, rd₃, c.rd, a.rd, h.rd]
   · rw [wr₅, wr₄, wr₃, c.wr, a.wr, h.wr]
-  · exact h.frame.trans (stepFrame hk fStep)
+  · exact h.frame.trans (stepFrameG hk fStep)
   · rw [hp.blocksAt_step hk fStep, h.data, outSucc,
       set_prefix _ _ _ hl (by simp [Spec.Cbc.blocksAt]; exact hk)]
   · rw [newIv]

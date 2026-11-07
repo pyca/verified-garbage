@@ -58,10 +58,6 @@ namespace VG.Impl.Weierstrass.CheckPoint
 
 open Mont (wsBytes numAt)
 
-/-- `ws: *mut [u64; 1024]`. -/
-def sig : Sig where
-  params := [("ws", .array true .u64 1024)]
-
 namespace Curve
 
 variable (C : Curve)
@@ -117,11 +113,6 @@ def post (ws : Addr) (m m' : Mem) : Prop :=
     C.num ws m' C.pxAt = (if f = 0 then C.num ws m C.gxAt else x * C.R % C.W.p) ∧
     C.num ws m' C.pyAt = (if f = 0 then C.num ws m C.gyAt else y * C.R % C.W.p) ∧
     C.Keeps ws m m'
-
-/-- `check_point`: the flag `&=` the mask of the public point's validity. -/
-def checkContract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
-  sig.contract A (pre := fun ws m => C.pre ws m) (post := fun ws m m' _ => C.post ws m m')
-    (stack := stack)
 
 end Curve
 

@@ -370,9 +370,4 @@ def finish : List (Prog isa) := zeroAccs ++ [
 def main (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
   seqs (nSetup mul ++ primesSetup ++ checks ++ qPhase mul ++ pPhase mul ++ finish)
 
-/-- `vg_rsa_private_crt`: `n` checked as the public-key operation checks it
-(`invalid`, on `x2` and `x3`, still `n` and `n_len`). -/
-def code (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  .seq (.block (entry ++ invalid)) (.ite (.zero .x .x9) Precomputed.fail (main mul))
-
 end VG.Impl.Rsa.AArch64.Crt

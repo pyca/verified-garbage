@@ -18,8 +18,12 @@ use super::{Error, Secret};
 #[cfg(target_arch = "x86_64")]
 use crate::arch::dsa::{
     VG_DSA_PARAMETER_SEARCH_MR_ADX_FEATURES, vg_dsa_parameter_search_mr_adx,
-    vg_dsa_parameter_search_sha1_shani, vg_dsa_parameter_search_sha1_shani_mr_adx,
-    vg_dsa_parameter_search_sha1_shani_sha256_avx2,
+    vg_dsa_parameter_search_sha1_avx_bmi, vg_dsa_parameter_search_sha1_avx_bmi_mr_adx,
+    vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2,
+    vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_adx,
+    vg_dsa_parameter_search_sha1_avx_bmi_sha256_shani,
+    vg_dsa_parameter_search_sha1_avx_bmi_sha256_shani_mr_adx, vg_dsa_parameter_search_sha1_shani,
+    vg_dsa_parameter_search_sha1_shani_mr_adx, vg_dsa_parameter_search_sha1_shani_sha256_avx2,
     vg_dsa_parameter_search_sha1_shani_sha256_avx2_mr_adx,
     vg_dsa_parameter_search_sha1_shani_sha256_shani,
     vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_adx, vg_dsa_parameter_search_sha256_avx2,
@@ -85,6 +89,12 @@ pub(super) fn select_backends(
         (H1::ShaNi, H256::Avx2, true) => vg_dsa_parameter_search_sha1_shani_sha256_avx2_mr_adx,
         (H1::ShaNi, H256::ShaNi, false) => vg_dsa_parameter_search_sha1_shani_sha256_shani,
         (H1::ShaNi, H256::ShaNi, true) => vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_adx,
+        (H1::AvxBmi, H256::Scalar, false) => vg_dsa_parameter_search_sha1_avx_bmi,
+        (H1::AvxBmi, H256::Scalar, true) => vg_dsa_parameter_search_sha1_avx_bmi_mr_adx,
+        (H1::AvxBmi, H256::Avx2, false) => vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2,
+        (H1::AvxBmi, H256::Avx2, true) => vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_adx,
+        (H1::AvxBmi, H256::ShaNi, false) => vg_dsa_parameter_search_sha1_avx_bmi_sha256_shani,
+        (H1::AvxBmi, H256::ShaNi, true) => vg_dsa_parameter_search_sha1_avx_bmi_sha256_shani_mr_adx,
     }
 }
 
