@@ -75,6 +75,10 @@ structure Registration (api : Api) (target : Target) where
   writtenOk : ∀ s t s', contract.pre s → Exec target.isa code s t s' →
       Sig.writtenWithin (target.abi.withConsts consts) api.sig written s s' := by
     exact fun _ _ _ _ _ => True.intro
+  /-- `Artifact.residue`. -/
+  residue : Option (PLift (target.noResidue.elim False fun R =>
+      R code contract (api.sig.retBits ((target.abi.withConsts consts).withTables api.sig tables).ptrBits)))
+      := none
 
 /-- The artifact of the implementation `r` of `api` on `target`: its module,
 signature and `writeArgs` are `api`'s, its name `api`'s followed by
@@ -104,5 +108,6 @@ def Api.artifact (api : Api) (target : Target) (r : Registration api target) : A
   features := r.features
   written := r.written
   writtenOk := r.writtenOk
+  residue := r.residue
 
 end VG

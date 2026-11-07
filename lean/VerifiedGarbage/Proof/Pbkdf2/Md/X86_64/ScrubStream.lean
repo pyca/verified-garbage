@@ -40,6 +40,7 @@ def StreamFn.scrub (f : StreamFn) (v : VecLevel) (ks : List Nat)
   ofSig := f.ofSig
   ofApi := f.ofApi
   spSafe := (scrubReg f.reg v ks hd hst h8 hlv hrb hpost hres rfl).spSafe
+  residue := (scrubReg f.reg v ks hd hst h8 hlv hrb hpost hres rfl).residue
 
 theorem StreamFn.scrub_noResidue (f : StreamFn) (v : VecLevel) (ks : List Nat)
     (hd : f.code.x86_64Depth ≤ f.stack) (hst : f.stack + 8 < 2 ^ 64) (h8 : f.stack % 8 = 0)

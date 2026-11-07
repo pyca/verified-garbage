@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.TCB.X86_64.Isa
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # Returning without secret residue (x86-64)

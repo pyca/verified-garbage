@@ -1038,6 +1038,25 @@ theorem chunks_sum (n : Nat) : (chunks n).sum = n := (chunksAux_spec _ n (by ome
 theorem chunks_valid {n : Nat} (h8 : n % 8 = 0) : ∀ b ∈ chunks n, 0 < b ∧ b < 4096 ∧ b % 8 = 0 :=
   fun b hb => by have := (chunksAux_spec _ n (by omega)).2 b hb; omega
 
+/-- `r`'s code, scrubbed as `scrubReg` does, returns without secret residue. -/
+theorem scrubCode_noResidue {api : Api} (r : Registration api target) (v : VecLevel) (ks : List Nat)
+    (hd : r.code.x86_64Depth ≤ r.stack) (hst : r.stack + 8 < 2 ^ 64) (h8 : r.stack % 8 = 0)
+    (hlv : r.code.all (fun i => decide (i.vecLevel ≤ v.level)) = true)
+    (hrb : api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits ≤ 32 ∨ api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits = 64)
+    (hpost : PostOut r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits))
+    (hres : ResOk r.code r.contract r.stack ks (chunks r.stack)) :
+    NoResidue (scrub v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
+      (xsOf r.code ks) (psOf ks) (gsOf Taint.clobbers r.code) ks (chunks r.stack) r.code) r.contract
+      (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits) := by
+  obtain ⟨pre, post, leak, e⟩ := r.ofSig
+  have hv := r.verified
+  have hp := hpost
+  have hr := hres
+  rw [e] at hv hp hr ⊢
+  exact (Verified.scrub (ScrubAbi.of r.consts api.sig r.tables) hv (SpSafe.of_all r.spSafe) hd
+    (chunks_sum r.stack) hst (chunks_valid h8)
+    (fun i hi => by simpa using Code.all_instrs hlv i hi) hrb hp hr (tailOk_of _ _ _) (xs_of _ _) (gs_of _ _)).2
+
 /-- `r`, scrubbed: its code followed by the clearing (`scrub`), at level `v`,
 with the granules `ks` of `r.stack` bytes of stack wiped. -/
 def scrubReg {api : Api} (r : Registration api target) (v : VecLevel) (ks : List Nat)
@@ -1070,6 +1089,7 @@ def scrubReg {api : Api} (r : Registration api target) (v : VecLevel) (ks : List
   written := r.written
   writtenOk := by
     rw [hw]; exact fun _ _ _ _ _ => True.intro
+  residue := some ⟨scrubCode_noResidue r v ks hd hst h8 hlv hrb hpost hres⟩
 
 theorem scrubReg_noResidue {api : Api} (r : Registration api target) (v : VecLevel) (ks : List Nat)
     (hd : r.code.x86_64Depth ≤ r.stack) (hst : r.stack + 8 < 2 ^ 64) (h8 : r.stack % 8 = 0)
@@ -1077,16 +1097,7 @@ theorem scrubReg_noResidue {api : Api} (r : Registration api target) (v : VecLev
     (hrb : api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits ≤ 32 ∨ api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits = 64)
     (hpost : PostOut r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits))
     (hres : ResOk r.code r.contract r.stack ks (chunks r.stack)) (hw : r.written = []) :
-    NoResidue (scrubReg r v ks hd hst h8 hlv hrb hpost hres hw).code r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits) := by
-  obtain ⟨pre, post, leak, e⟩ := r.ofSig
-  have hv := r.verified
-  have hp := hpost
-  have hr := hres
-  show NoResidue (scrub v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
-    (xsOf r.code ks) (psOf ks) (gsOf Taint.clobbers r.code) ks (chunks r.stack) r.code) r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
-  rw [e] at hv hp hr ⊢
-  exact (Verified.scrub (ScrubAbi.of r.consts api.sig r.tables) hv (SpSafe.of_all r.spSafe) hd
-    (chunks_sum r.stack) hst (chunks_valid h8)
-    (fun i hi => by simpa using Code.all_instrs hlv i hi) hrb hp hr (tailOk_of _ _ _) (xs_of _ _) (gs_of _ _)).2
+    NoResidue (scrubReg r v ks hd hst h8 hlv hrb hpost hres hw).code r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits) :=
+  scrubCode_noResidue r v ks hd hst h8 hlv hrb hpost hres
 
 end VG.X86_64.Scrub

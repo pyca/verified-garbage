@@ -37,6 +37,17 @@ read.
 
 namespace VG
 
+/-- The specification of one function. -/
+structure Contract (M : ISA) where
+  /-- Precondition on the entry state: argument registers, permitted memory
+  regions, disjointness, CPU features, … -/
+  pre : M.State → Prop
+  /-- Postcondition relating the entry state to the exit state. -/
+  post : M.State → M.State → Prop
+  /-- When two entry states agree on everything public (e.g. lengths and
+  pointers, but not keys or plaintexts). -/
+  pub : M.State → M.State → Prop
+
 /-- A code-generation target: an ISA model, its printer, and its calling convention. -/
 structure Target where
   /-- Short name; also the name of the generated Rust module (e.g. `x86_64`). -/
@@ -57,17 +68,12 @@ structure Target where
   rustAbi : String
   /-- The calling convention that `rustAbi` stands for. -/
   abi : Abi isa
-
-/-- The specification of one function. -/
-structure Contract (M : ISA) where
-  /-- Precondition on the entry state: argument registers, permitted memory
-  regions, disjointness, CPU features, … -/
-  pre : M.State → Prop
-  /-- Postcondition relating the entry state to the exit state. -/
-  post : M.State → M.State → Prop
-  /-- When two entry states agree on everything public (e.g. lengths and
-  pointers, but not keys or plaintexts). -/
-  pub : M.State → M.State → Prop
+  /-- What it means on this target for a function with code `c`, contract
+  `k` and a result of `retBits` bits to return without secret residue
+  (`X86_64.NoResidue`), if the target defines it: then every artifact of the
+  target proves it (`Artifact.residue`), but those `ci/residue_allowlist.txt`
+  lists, which the emitter checks (`Rust.checkResidue`). -/
+  noResidue : Option (Prog isa → Contract isa → Nat → Prop) := none
 
 /-- The contract of a function with signature `sig` under the calling
 convention `A`: the obligations the signature implies (see `TCB/Sig.lean`),
@@ -378,5 +384,12 @@ structure Artifact where
   writtenOk : ∀ s t s', contract.pre s → Exec target.isa code s t s' →
       Sig.writtenWithin (target.abi.withConsts consts) sig written s s' := by
     exact fun _ _ _ _ _ => True.intro
+  /-- A proof that the function returns without secret residue
+  (`Target.noResidue`), or `none`. Every artifact of a target that defines
+  it has one, but those `ci/residue_allowlist.txt` lists, as the emitter
+  checks (`Rust.checkResidue`); none is possible on a target that does not. -/
+  residue : Option (PLift (target.noResidue.elim False fun R =>
+      R code contract (sig.retBits ((target.abi.withConsts consts).withTables sig tables).ptrBits)))
+      := none
 
 end VG

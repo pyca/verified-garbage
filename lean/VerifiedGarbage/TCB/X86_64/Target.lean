@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.X86_64.Print
 public import VerifiedGarbage.TCB.Artifact
+public import VerifiedGarbage.TCB.X86_64.Residue
 
 /-!
 # The x86-64 System V target
@@ -121,5 +122,6 @@ would see one per registration module rather than this one (`Rust.printsAs`). -/
     target_feature = \"sse2\")"
   rustAbi := "sysv64"
   abi := abi
+  noResidue := some NoResidue
 
 end VG.X86_64

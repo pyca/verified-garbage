@@ -673,17 +673,27 @@ def fnTablesDoc (a : Artifact) : List String :=
       (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` \
       gives, if it has one."
 
+/-- The note that `a` returns without secret residue, if it proves it
+(`Artifact.residue`). -/
+def residueDoc (a : Artifact) : List String :=
+  if a.residue.isSome then
+    ["It returns without secret residue: what it leaves in the registers, the flags and the \
+      stack below the caller's stack pointer is determined by what its caller left there and \
+      by public data (`Target.noResidue`)."]
+  else []
+
 /-- The documentation of `a` as emitted: its `doc`, with what its signature's
 contract requires of the memory each buffer is valid for and of where its
 buffers are (`Sig.layoutNote` before its `# Safety` section, `Sig.validDoc`
 first in it and `Sig.layoutDoc` at the end), and the CPU features it needs
 (`featureDoc`), and what the tables of functions it takes must be
-(`fnTablesDoc`). -/
+(`fnTablesDoc`), and that it returns without secret residue
+(`residueDoc`). -/
 def fullDoc (a : Artifact) : String :=
   let A := a.target.abi
   let items := Sig.layoutDoc A a.sig a.writeArgs a.stack ++ fnTablesDoc a
   featureDoc (prependSafety (insertNotes a.doc
-      (Sig.layoutNote A a.sig a.writeArgs ++ writtenDoc a.name a.written))
+      (Sig.layoutNote A a.sig a.writeArgs ++ writtenDoc a.name a.written ++ residueDoc a))
     (Sig.validDoc A a.sig) ++ String.join (items.map ("\n* " ++ ·))) a.features
 
 /-- If the emitter adds anything to the documentation of `a` from its
@@ -1009,6 +1019,39 @@ def checkWritten (a : Artifact) : Except String Unit := do
         writable array"
     | none => throw s!"{a.target.name}: {a.name} bounds what it writes of `{p}`, which is not \
         one of its parameters"
+
+/-- The functions `ci/residue_allowlist.txt` lists, as `(target, name)`: its
+lines but blank ones and those starting with `#`, each a target's name and a
+function's, separated by spaces. -/
+def parseResidueAllowlist (text : String) : Except String (List (String × String)) :=
+  (text.splitOn "\n").filterMapM fun l =>
+    let l := l.trimAscii.toString
+    if l.isEmpty || l.startsWith "#" then pure none
+    else match (l.splitOn " ").filter (!·.isEmpty) with
+      | [t, n] => pure (some (t, n))
+      | _ => throw s!"ci/residue_allowlist.txt: `{l}` is not a target and a function's name"
+
+/-- Every artifact of a target that defines what it means to return without
+secret residue (`Target.noResidue`) proves it (`Artifact.residue`), or
+`pending` (`parseResidueAllowlist`) lists it. If `complete` (`as` are all the
+artifacts of their targets, as in a part of `Emit.lean`, not `EmitOne.lean`),
+every function `pending` lists of one of those targets is an artifact of it
+without a proof, so that the list only ever shrinks to what is left to
+prove. -/
+def checkResidue (pending : List (String × String)) (complete : Bool) (as : List Artifact) :
+    Except String Unit := do
+  let missing := as.filter fun a =>
+    a.target.noResidue.isSome && a.residue.isNone && !pending.contains (a.target.name, a.name)
+  let targets := as.map (·.target.name)
+  let stale := if complete then
+      pending.filter fun (t, n) => targets.contains t &&
+        !as.any (fun a => a.target.name == t && a.name == n && a.residue.isNone)
+    else []
+  let msgs := missing.map (fun a => s!"{a.target.name}: {a.name} does not prove that it returns \
+      without secret residue (`Artifact.residue`), and ci/residue_allowlist.txt does not list it") ++
+    stale.map fun (t, n) => s!"ci/residue_allowlist.txt lists `{t} {n}`, which is not a function \
+      of {t} without a proof that it returns without secret residue: remove the line"
+  unless msgs.isEmpty do throw ("\n".intercalate msgs)
 
 /-- No two artifacts of a target have the same name. -/
 def checkUnique (as : List Artifact) : Except String Unit :=

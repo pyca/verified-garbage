@@ -351,9 +351,19 @@ fails if the files on disk differ from what would be generated.
 With `--part FILE`, `as` are the artifacts of a part (`parts`): only the
 files of their targets' crates are written or checked, and the other generated
 files in those crates' directories of generated files; then `FILE` gets their targets, for `finish`, which
-checks the rest. -/
+checks the rest.
+
+First, every artifact proves that it returns without secret residue, or
+`ci/residue_allowlist.txt` (relative to `lean/`) lists it; with `--part`, which
+has all the artifacts of its targets, every function the list names of those
+targets is one without a proof (`Rust.checkResidue`). -/
 def run (as : List Artifact) (args : List String) : IO UInt32 := do
   let some (check, part, dir) := parseArgs args | do IO.eprintln usage; return 2
+  let allowlist : FilePath := ".." / "ci" / "residue_allowlist.txt"
+  let text ← if ← allowlist.pathExists then IO.FS.readFile allowlist else pure ""
+  match Rust.parseResidueAllowlist text >>= fun pending => Rust.checkResidue pending part.isSome as with
+    | .ok () => pure ()
+    | .error e => do IO.eprintln e; return 1
   let files ← match Rust.files as with
     | .ok files => pure files
     | .error e => do IO.eprintln e; return 1

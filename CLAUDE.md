@@ -142,6 +142,13 @@ own changes are rebuilt either way, on top of the restored build.
   features of the algorithm's variants (and a variant that needs none, by
   its suffix): never describe an implementation's techniques there, or
   anywhere else that is not its code and proofs.
+* **x86-64 functions return without secret residue.** Every x86-64
+  artifact proves `NoResidue` (`TCB/X86_64/Residue.lean`;
+  `Registration.residue`, which `X86_64.Scrub.scrubReg` provides), but those
+  `ci/residue_allowlist.txt` lists. The list only shrinks: never add a line
+  (`ci/check_residue_allowlist.py`); the emitter refuses an unlisted function
+  without a proof, and a listed one that has one or no longer exists, so
+  converting a function removes its line (the `adding-a-primitive` skill).
 * The emitter runs compiled code, so it must be what the kernel checked:
   nothing the artifacts or the emitter use may carry `implemented_by`,
   `extern` or `export`, and nothing in `lean/VerifiedGarbage/` may declare a
