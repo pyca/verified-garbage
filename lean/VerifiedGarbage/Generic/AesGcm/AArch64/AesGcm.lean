@@ -199,9 +199,12 @@ def withPowersArtifacts (v : GcmImpl) (g : GhashWithImpl) : List Artifact :=
     verified := Proof.AesGcm.openWithPowers_keyed (openPwCode_framed v Proof.Gcm.AArch64.Pmull.mulV_keyV Proof.Gcm.AArch64.Stitch.gh8Ok g)
     features := v.stitchFeatures }]
 
-/-- The artifacts of a variant, from the implementations it names. -/
+/-- The artifacts of a variant, from the implementations it names: those that
+do not use the stitched loops only for the variant without them, of which
+the variant with them would be the same functions. -/
 def artifacts (v : GcmVariant) : List Artifact :=
-  artifactsOf v.impl ++ artifactsGather v.impl ++ artifactsOpenTo v.impl ++
+  (if v.stitch then [] else
+    artifactsOf v.impl ++ artifactsGather v.impl ++ artifactsOpenTo v.impl) ++
     (v.impl.gh.withPowers.map (withPowersArtifacts v.impl)).getD []
 
 end VG.Generic.AesGcm.AArch64.AesGcm
