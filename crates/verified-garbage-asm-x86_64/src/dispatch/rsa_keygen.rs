@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.RsaKeyGen.keySearchContract`. Timing may depend on the pointers, the lengths, `state`, the status and consumption it returns, and, for each prime's search, its rejected candidates and the octets its accepted candidate's tests read, and each key's status. Not on the primes or the key.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_rsa_generate_adx` if the CPU supports its features (`VG_RSA_GENERATE_ADX_FEATURES`); or else `vg_rsa_generate`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_rsa_generate_ifma` if the CPU supports its features (`VG_RSA_GENERATE_IFMA_FEATURES`); `vg_rsa_generate_adx` if the CPU supports its features (`VG_RSA_GENERATE_ADX_FEATURES`); or else `vg_rsa_generate`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -26,6 +26,11 @@
 #[inline]
 pub unsafe fn vg_rsa_generate_auto(key: *mut u8, key_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 7]) -> u32 {
     let cpu = verified_garbage_cpu::detected();
+    if cpu.contains(crate::rsa_keygen::VG_RSA_GENERATE_IFMA_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_rsa_generate_ifma`'s, and the CPU
+        // has the features it needs.
+        return unsafe { crate::rsa_keygen::vg_rsa_generate_ifma(key, key_len, used, rand, rand_len, scratch, scratch_len, state) };
+    }
     if cpu.contains(crate::rsa_keygen::VG_RSA_GENERATE_ADX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_rsa_generate_adx`'s, and the CPU
         // has the features it needs.
