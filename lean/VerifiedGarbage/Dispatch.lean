@@ -38,6 +38,11 @@ def ranking : Rust.Ranking := [
     -- ChaCha20-Poly1305's `_ifma` is, and `_avx512vl` on the other CPUs with
     -- AVX512VL.
     { suffix := "_ifma", modules := ["chacha20"], extra := ["avx512ifma"] },
+    -- FFDH's `_ifma` key generation from a context and `_mr_ifma` domain
+    -- operations are the ADX code of the Miller–Rabin round's IFMA instance
+    -- (`_mr_ifma` another name of `_mr_adx`), needing only BMI2 and ADX: they
+    -- are chosen where the round's IFMA is, and `_adx` on the other CPUs.
+    { suffix := "_ifma", modules := ["ffdh"], extra := ["avx512ifma"] },
     { suffix := "_ifma" },
     { suffix := "_avx512vl" },
     { suffix := "_avx512" },
