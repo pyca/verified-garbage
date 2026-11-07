@@ -121,8 +121,9 @@ mod tests {
         }
     }
 
-    /// AES-NI is reported only with SSSE3, VAES only with AES-NI, and
-    /// AVX-512F only with AVX2 (`REPORTED_WITH`).
+    /// AES-NI is reported only with SSSE3, VAES only with AES-NI,
+    /// AVX-512F only with AVX2 and AVX512_IFMA only with AVX512VL
+    /// (`REPORTED_WITH`).
     #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
     #[test]
     fn decode_aes_vaes_avx512f_need_their_others() {
@@ -130,19 +131,23 @@ mod tests {
         leaves[0][0] = 7;
         // OSXSAVE and AVX; SSSE3 and AES-NI, or AES-NI alone.
         for (ecx, ebx, want) in [
-            // VAES and AVX-512F, with AES-NI, SSSE3 and AVX2.
+            // VAES, AVX-512F and AVX512_IFMA, with AES-NI, SSSE3, AVX2 and
+            // AVX512VL.
             (
                 1 << 9 | 1 << 25,
-                1 << 5 | 1 << 16,
+                1 << 5 | 1 << 16 | 1 << 21 | 1 << 31,
                 feature::SSSE3
                     | feature::AES
                     | feature::AVX
                     | feature::AVX2
                     | feature::VAES
-                    | feature::AVX512F,
+                    | feature::AVX512F
+                    | feature::AVX512IFMA
+                    | feature::AVX512VL,
             ),
-            // Without SSSE3, no AES-NI, so no VAES; without AVX2, no AVX-512F.
-            (1 << 25, 1 << 16, feature::AVX),
+            // Without SSSE3, no AES-NI, so no VAES; without AVX2, no
+            // AVX-512F; without AVX512VL, no AVX512_IFMA.
+            (1 << 25, 1 << 16 | 1 << 21, feature::AVX),
         ] {
             leaves[1][2] = ecx | 1 << 27 | 1 << 28;
             leaves[7][1] = ebx;
@@ -230,7 +235,8 @@ mod tests {
             named.join(",")
         };
         // Every feature another is reported only with.
-        let others = feature::SSSE3 | feature::AES | feature::AVX | feature::AVX2;
+        let others =
+            feature::SSSE3 | feature::AES | feature::AVX | feature::AVX2 | feature::AVX512VL;
         for (f, with) in REPORTED_WITH {
             let without = names(f | (others & !with));
             assert!(std::panic::catch_unwind(|| allowed_by(&without, u32::MAX)).is_err());
