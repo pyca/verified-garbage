@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Ffdh.exchangeContract`. Timing may depend on the pointers, the lengths, the domain, y and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_ffdh_exchange_adx` if the CPU supports its features (`VG_FFDH_EXCHANGE_ADX_FEATURES`); or else `vg_ffdh_exchange`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_ffdh_exchange_mr_adx_exp_ifma` if the CPU supports its features (`VG_FFDH_EXCHANGE_MR_ADX_EXP_IFMA_FEATURES`); `vg_ffdh_exchange_exp_ifma` if the CPU supports its features (`VG_FFDH_EXCHANGE_EXP_IFMA_FEATURES`); `vg_ffdh_exchange_mr_adx` if the CPU supports its features (`VG_FFDH_EXCHANGE_MR_ADX_FEATURES`); or else `vg_ffdh_exchange`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -29,10 +29,20 @@
 #[inline]
 pub unsafe fn vg_ffdh_exchange_auto(out: *mut u8, out_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, peer: *const u8, peer_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::ffdh::VG_FFDH_EXCHANGE_ADX_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_ffdh_exchange_adx`'s, and the CPU
+    if cpu.contains(crate::ffdh::VG_FFDH_EXCHANGE_MR_ADX_EXP_IFMA_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_ffdh_exchange_mr_adx_exp_ifma`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::ffdh::vg_ffdh_exchange_adx(out, out_len, domain, domain_len, p_len, x, x_len, peer, peer_len, scratch, scratch_len) };
+        return unsafe { crate::ffdh::vg_ffdh_exchange_mr_adx_exp_ifma(out, out_len, domain, domain_len, p_len, x, x_len, peer, peer_len, scratch, scratch_len) };
+    }
+    if cpu.contains(crate::ffdh::VG_FFDH_EXCHANGE_EXP_IFMA_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_ffdh_exchange_exp_ifma`'s, and the CPU
+        // has the features it needs.
+        return unsafe { crate::ffdh::vg_ffdh_exchange_exp_ifma(out, out_len, domain, domain_len, p_len, x, x_len, peer, peer_len, scratch, scratch_len) };
+    }
+    if cpu.contains(crate::ffdh::VG_FFDH_EXCHANGE_MR_ADX_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_ffdh_exchange_mr_adx`'s, and the CPU
+        // has the features it needs.
+        return unsafe { crate::ffdh::vg_ffdh_exchange_mr_adx(out, out_len, domain, domain_len, p_len, x, x_len, peer, peer_len, scratch, scratch_len) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { crate::ffdh::vg_ffdh_exchange(out, out_len, domain, domain_len, p_len, x, x_len, peer, peer_len, scratch, scratch_len) }
@@ -42,7 +52,7 @@ pub unsafe fn vg_ffdh_exchange_auto(out: *mut u8, out_len: usize, domain: *const
 ///
 /// Contract: `VG.Spec.Ffdh.checkPublicContract`. Timing may depend on the pointers, the lengths, the domain and y.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_ffdh_check_public_adx` if the CPU supports its features (`VG_FFDH_CHECK_PUBLIC_ADX_FEATURES`); or else `vg_ffdh_check_public`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_ffdh_check_public_mr_adx_exp_ifma` if the CPU supports its features (`VG_FFDH_CHECK_PUBLIC_MR_ADX_EXP_IFMA_FEATURES`); `vg_ffdh_check_public_exp_ifma` if the CPU supports its features (`VG_FFDH_CHECK_PUBLIC_EXP_IFMA_FEATURES`); `vg_ffdh_check_public_mr_adx` if the CPU supports its features (`VG_FFDH_CHECK_PUBLIC_MR_ADX_FEATURES`); or else `vg_ffdh_check_public`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -61,10 +71,20 @@ pub unsafe fn vg_ffdh_exchange_auto(out: *mut u8, out_len: usize, domain: *const
 #[inline]
 pub unsafe fn vg_ffdh_check_public_auto(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::ffdh::VG_FFDH_CHECK_PUBLIC_ADX_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_ffdh_check_public_adx`'s, and the CPU
+    if cpu.contains(crate::ffdh::VG_FFDH_CHECK_PUBLIC_MR_ADX_EXP_IFMA_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_ffdh_check_public_mr_adx_exp_ifma`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::ffdh::vg_ffdh_check_public_adx(domain, domain_len, p_len, y, y_len, scratch, scratch_len) };
+        return unsafe { crate::ffdh::vg_ffdh_check_public_mr_adx_exp_ifma(domain, domain_len, p_len, y, y_len, scratch, scratch_len) };
+    }
+    if cpu.contains(crate::ffdh::VG_FFDH_CHECK_PUBLIC_EXP_IFMA_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_ffdh_check_public_exp_ifma`'s, and the CPU
+        // has the features it needs.
+        return unsafe { crate::ffdh::vg_ffdh_check_public_exp_ifma(domain, domain_len, p_len, y, y_len, scratch, scratch_len) };
+    }
+    if cpu.contains(crate::ffdh::VG_FFDH_CHECK_PUBLIC_MR_ADX_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_ffdh_check_public_mr_adx`'s, and the CPU
+        // has the features it needs.
+        return unsafe { crate::ffdh::vg_ffdh_check_public_mr_adx(domain, domain_len, p_len, y, y_len, scratch, scratch_len) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { crate::ffdh::vg_ffdh_check_public(domain, domain_len, p_len, y, y_len, scratch, scratch_len) }
@@ -74,7 +94,7 @@ pub unsafe fn vg_ffdh_check_public_auto(domain: *const u8, domain_len: usize, p_
 ///
 /// Contract: `VG.Spec.Ffdh.checkDomainContract`. Timing may depend on the pointers, the lengths and the domain.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_ffdh_check_domain_adx` if the CPU supports its features (`VG_FFDH_CHECK_DOMAIN_ADX_FEATURES`); or else `vg_ffdh_check_domain`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_ffdh_check_domain_mr_adx_exp_ifma` if the CPU supports its features (`VG_FFDH_CHECK_DOMAIN_MR_ADX_EXP_IFMA_FEATURES`); `vg_ffdh_check_domain_exp_ifma` if the CPU supports its features (`VG_FFDH_CHECK_DOMAIN_EXP_IFMA_FEATURES`); `vg_ffdh_check_domain_mr_adx` if the CPU supports its features (`VG_FFDH_CHECK_DOMAIN_MR_ADX_FEATURES`); or else `vg_ffdh_check_domain`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -90,10 +110,20 @@ pub unsafe fn vg_ffdh_check_public_auto(domain: *const u8, domain_len: usize, p_
 #[inline]
 pub unsafe fn vg_ffdh_check_domain_auto(domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::ffdh::VG_FFDH_CHECK_DOMAIN_ADX_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_ffdh_check_domain_adx`'s, and the CPU
+    if cpu.contains(crate::ffdh::VG_FFDH_CHECK_DOMAIN_MR_ADX_EXP_IFMA_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_ffdh_check_domain_mr_adx_exp_ifma`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::ffdh::vg_ffdh_check_domain_adx(domain, domain_len, p_len, scratch, scratch_len) };
+        return unsafe { crate::ffdh::vg_ffdh_check_domain_mr_adx_exp_ifma(domain, domain_len, p_len, scratch, scratch_len) };
+    }
+    if cpu.contains(crate::ffdh::VG_FFDH_CHECK_DOMAIN_EXP_IFMA_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_ffdh_check_domain_exp_ifma`'s, and the CPU
+        // has the features it needs.
+        return unsafe { crate::ffdh::vg_ffdh_check_domain_exp_ifma(domain, domain_len, p_len, scratch, scratch_len) };
+    }
+    if cpu.contains(crate::ffdh::VG_FFDH_CHECK_DOMAIN_MR_ADX_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_ffdh_check_domain_mr_adx`'s, and the CPU
+        // has the features it needs.
+        return unsafe { crate::ffdh::vg_ffdh_check_domain_mr_adx(domain, domain_len, p_len, scratch, scratch_len) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { crate::ffdh::vg_ffdh_check_domain(domain, domain_len, p_len, scratch, scratch_len) }
@@ -103,7 +133,7 @@ pub unsafe fn vg_ffdh_check_domain_auto(domain: *const u8, domain_len: usize, p_
 ///
 /// Contract: `VG.Spec.Ffdh.checkPrivateContract`. Timing may depend on the pointers, the lengths, the domain, y and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_ffdh_check_private_adx` if the CPU supports its features (`VG_FFDH_CHECK_PRIVATE_ADX_FEATURES`); or else `vg_ffdh_check_private`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_ffdh_check_private_mr_adx_exp_ifma` if the CPU supports its features (`VG_FFDH_CHECK_PRIVATE_MR_ADX_EXP_IFMA_FEATURES`); `vg_ffdh_check_private_exp_ifma` if the CPU supports its features (`VG_FFDH_CHECK_PRIVATE_EXP_IFMA_FEATURES`); `vg_ffdh_check_private_mr_adx` if the CPU supports its features (`VG_FFDH_CHECK_PRIVATE_MR_ADX_FEATURES`); or else `vg_ffdh_check_private`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -124,10 +154,20 @@ pub unsafe fn vg_ffdh_check_domain_auto(domain: *const u8, domain_len: usize, p_
 #[inline]
 pub unsafe fn vg_ffdh_check_private_auto(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::ffdh::VG_FFDH_CHECK_PRIVATE_ADX_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_ffdh_check_private_adx`'s, and the CPU
+    if cpu.contains(crate::ffdh::VG_FFDH_CHECK_PRIVATE_MR_ADX_EXP_IFMA_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_ffdh_check_private_mr_adx_exp_ifma`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::ffdh::vg_ffdh_check_private_adx(domain, domain_len, p_len, y, y_len, x, x_len, scratch, scratch_len) };
+        return unsafe { crate::ffdh::vg_ffdh_check_private_mr_adx_exp_ifma(domain, domain_len, p_len, y, y_len, x, x_len, scratch, scratch_len) };
+    }
+    if cpu.contains(crate::ffdh::VG_FFDH_CHECK_PRIVATE_EXP_IFMA_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_ffdh_check_private_exp_ifma`'s, and the CPU
+        // has the features it needs.
+        return unsafe { crate::ffdh::vg_ffdh_check_private_exp_ifma(domain, domain_len, p_len, y, y_len, x, x_len, scratch, scratch_len) };
+    }
+    if cpu.contains(crate::ffdh::VG_FFDH_CHECK_PRIVATE_MR_ADX_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_ffdh_check_private_mr_adx`'s, and the CPU
+        // has the features it needs.
+        return unsafe { crate::ffdh::vg_ffdh_check_private_mr_adx(domain, domain_len, p_len, y, y_len, x, x_len, scratch, scratch_len) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { crate::ffdh::vg_ffdh_check_private(domain, domain_len, p_len, y, y_len, x, x_len, scratch, scratch_len) }
@@ -137,7 +177,7 @@ pub unsafe fn vg_ffdh_check_private_auto(domain: *const u8, domain_len: usize, p
 ///
 /// Contract: `VG.Spec.Ffdh.derivePublicContract`. Timing may depend on the pointers, the lengths, the domain and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_ffdh_derive_public_adx` if the CPU supports its features (`VG_FFDH_DERIVE_PUBLIC_ADX_FEATURES`); or else `vg_ffdh_derive_public`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_ffdh_derive_public_mr_adx_exp_ifma` if the CPU supports its features (`VG_FFDH_DERIVE_PUBLIC_MR_ADX_EXP_IFMA_FEATURES`); `vg_ffdh_derive_public_exp_ifma` if the CPU supports its features (`VG_FFDH_DERIVE_PUBLIC_EXP_IFMA_FEATURES`); `vg_ffdh_derive_public_mr_adx` if the CPU supports its features (`VG_FFDH_DERIVE_PUBLIC_MR_ADX_FEATURES`); or else `vg_ffdh_derive_public`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -158,10 +198,20 @@ pub unsafe fn vg_ffdh_check_private_auto(domain: *const u8, domain_len: usize, p
 #[inline]
 pub unsafe fn vg_ffdh_derive_public_auto(y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::ffdh::VG_FFDH_DERIVE_PUBLIC_ADX_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_ffdh_derive_public_adx`'s, and the CPU
+    if cpu.contains(crate::ffdh::VG_FFDH_DERIVE_PUBLIC_MR_ADX_EXP_IFMA_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_ffdh_derive_public_mr_adx_exp_ifma`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::ffdh::vg_ffdh_derive_public_adx(y, y_len, domain, domain_len, p_len, x, x_len, scratch, scratch_len) };
+        return unsafe { crate::ffdh::vg_ffdh_derive_public_mr_adx_exp_ifma(y, y_len, domain, domain_len, p_len, x, x_len, scratch, scratch_len) };
+    }
+    if cpu.contains(crate::ffdh::VG_FFDH_DERIVE_PUBLIC_EXP_IFMA_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_ffdh_derive_public_exp_ifma`'s, and the CPU
+        // has the features it needs.
+        return unsafe { crate::ffdh::vg_ffdh_derive_public_exp_ifma(y, y_len, domain, domain_len, p_len, x, x_len, scratch, scratch_len) };
+    }
+    if cpu.contains(crate::ffdh::VG_FFDH_DERIVE_PUBLIC_MR_ADX_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_ffdh_derive_public_mr_adx`'s, and the CPU
+        // has the features it needs.
+        return unsafe { crate::ffdh::vg_ffdh_derive_public_mr_adx(y, y_len, domain, domain_len, p_len, x, x_len, scratch, scratch_len) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { crate::ffdh::vg_ffdh_derive_public(y, y_len, domain, domain_len, p_len, x, x_len, scratch, scratch_len) }

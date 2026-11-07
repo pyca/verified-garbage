@@ -14,6 +14,12 @@ pub use crate::chacha20poly1305::vg_chacha20_poly1305_seal as vg_chacha20_poly13
 #[allow(unused_imports)]
 pub use crate::chacha20poly1305::vg_chacha20_poly1305_open as vg_chacha20_poly1305_open_auto;
 
+/// `vg_chacha20_poly1305_open_to`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use crate::chacha20poly1305::vg_chacha20_poly1305_open_to as vg_chacha20_poly1305_open_to_auto;
+
 /// `vg_chacha20_poly1305_seal_gather`, the only implementation of it on this target, which needs no CPU feature
 /// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
 /// target.
