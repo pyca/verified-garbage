@@ -95,6 +95,40 @@ def x86Rank (module suffix : String) : Option Nat :=
   | .error e => has e "vg_poly1305_update_neon: its suffix `_neon` is not ranked"
   | .ok _ => false
 
+/-! ## Implementations no dispatcher calls (`Rust.neverChosen`) -/
+
+def impl (n : String) (fs : List String) : Rust.Impl := ⟨n, "m", fs, []⟩
+
+/-- The names a dispatcher leaves out, given the ranking `rs`. -/
+def leftOut (rs : List Rust.Rank) (ms : List (Rust.Impl × String)) : List String :=
+  match Rust.armsSplit rs "m" "x86_64" ms with
+  | .ok (_, out) => out.map (·.impl.name)
+  | .error e => [e]
+
+-- An implementation whose features include those of one ranked before it is
+-- never chosen; ranked before it, it is.
+def avx : List (Rust.Impl × String) :=
+  [(impl "f_avx2" ["avx", "avx2"], "_avx2"), (impl "f_avx512" ["avx", "avx2", "avx512f"], "_avx512")]
+#guard leftOut [{ suffix := "_avx2" }, { suffix := "_avx512" }] avx == ["f_avx512"]
+#guard leftOut [{ suffix := "_avx512" }, { suffix := "_avx2" }] avx == []
+
+-- Argon2's shape: BLAKE2b's `_avx2` with G's baseline needs what both `_avx2`
+-- need, so it is never chosen; G's `_avx512` with BLAKE2b's baseline needs
+-- other features (no AVX2), so it is.
+def argon2 : List (Rust.Impl × String) :=
+  [(impl "f_b_avx2" ["avx", "avx2"], "_b_avx2"), (impl "f_g_avx2" ["avx", "avx2"], "_g_avx2"),
+   (impl "f_b_avx2_g_avx2" ["avx", "avx2"], "_b_avx2_g_avx2"),
+   (impl "f_g_avx512" ["avx", "avx512f"], "_g_avx512")]
+#guard leftOut [{ suffix := "_avx512" }, { suffix := "_avx2" }] argon2 == ["f_g_avx2", "f_b_avx2"]
+
+-- A skipped implementation is the Rust code's to call: never left out.
+#guard leftOut [{ suffix := "_avx2" }, { suffix := "_avx512", skip := true }] avx == []
+
+-- Poly1305 on AArch64: its dispatchers call every implementation.
+#guard match Rust.neverChosen Dispatch.ranking Artifacts.Poly1305.AArch64.artifacts with
+  | .ok ns => ns.isEmpty
+  | .error _ => false
+
 /-! ## Tables of functions (`Rust.tableDispatcher`) -/
 
 /-- Tables of one interface: `VG_T` and its implementations `_SHANI` and
