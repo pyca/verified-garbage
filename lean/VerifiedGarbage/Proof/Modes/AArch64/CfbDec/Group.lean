@@ -1,7 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Modes.AArch64.CfbDec.Gather
-import VerifiedGarbage.Proof.Modes.AArch64.CfbDec.Pure
+import VerifiedGarbage.Proof.Modes.CfbDec
 public import VerifiedGarbage.Proof.Modes.AArch64.CbcGroup
 import VerifiedGarbage.Proof.Modes.Addr
 import VerifiedGarbage.Proof.Modes.AArch64.Xor
@@ -21,6 +21,7 @@ namespace VG.Proof.Modes.AArch64.CfbDec
 open VG VG.AArch64 VG.AArch64.Straight VG.Impl.Modes.AArch64
 open VG.Impl.Aes.AArch64 (sb)
 open VG.Spec.Aes (bytesAt)
+open VG.Proof.Modes.CfbDec (input_eq of_dinv)
 variable {c : Core}
 /-- The data loop, before group `g`, from the IV `iv` with the key `k`. -/
 structure Inv (cs : BlockSpec c) (s₀ : State) (B D : Addr) (n : Nat) (k : cs.Key) (iv : List Byte) (g : Nat)

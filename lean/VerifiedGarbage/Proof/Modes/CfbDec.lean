@@ -3,10 +3,18 @@ module
 public import VerifiedGarbage.Proof.Modes.Cbc
 public import VerifiedGarbage.Proof.Modes.Fb
 
-/-! # Original ciphertext supplies every independent CFB-decryption input -/
+/-!
+# CFB decryption's input blocks are the preceding ciphertext blocks
+
+`input_eq`: CFB decryption's input block `j` is CBC's chaining value, the
+preceding ciphertext block (or the IV), so that every input block is known
+before any block is decrypted, as the batched decryptions use
+(`Proof/Modes/<ISA>/CfbDec/`). `of_dinv`: their data loop's invariant, when
+done, gives the specification's result.
+-/
 
 @[expose] public section
-namespace VG.Proof.Modes.AArch64.CfbDec
+namespace VG.Proof.Modes.CfbDec
 open VG VG.Proof.Modes
 
 /-- CFB decryption's input chain is CBC's preceding original ciphertext. -/
@@ -26,4 +34,4 @@ theorem of_dinv {L : Nat} {cipher : Spec.Cbc.Cipher}
   rw [blocksOf_of_dinv (fun j => fbOut_length hc m₀ D iv j) h]
   exact (cfbDec_of L cipher m₀ D iv n).1
 
-end VG.Proof.Modes.AArch64.CfbDec
+end VG.Proof.Modes.CfbDec
