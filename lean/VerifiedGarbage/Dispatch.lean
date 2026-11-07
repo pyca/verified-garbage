@@ -45,7 +45,8 @@ def ranking : Rust.Ranking := [
     { suffix := "_avx_bmi" },
     { suffix := "_avx2" },
     { suffix := "_adx" },
-    { suffix := "_avx" }]),
+    { suffix := "_avx" },
+    { suffix := "_ssse3" }]),
   ("x86", [
     { suffix := "_aesni_pclmul" },
     { suffix := "_aesni" },
