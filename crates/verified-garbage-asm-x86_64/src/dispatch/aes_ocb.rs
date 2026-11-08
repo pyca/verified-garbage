@@ -16,9 +16,27 @@
 /// * `ctx` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
-#[inline]
+#[inline(always)]
 pub unsafe fn vg_aes_ocb_init_auto(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
-    let cpu = verified_garbage_cpu::detected();
+    // Only a process's first call of a dispatcher detects the CPU features
+    // (`first_call`), so no test runs every dispatcher's.
+    // NO-COVERAGE-START
+    /// Detects the features, and calls the dispatcher again.
+    #[allow(clippy::too_many_arguments)]
+    #[cold]
+    #[inline(never)]
+    unsafe fn first_call(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
+        let _ = verified_garbage_cpu::detected();
+        // SAFETY: the caller's obligations.
+        unsafe { vg_aes_ocb_init_auto(key, key_len, ctx) }
+    }
+    // NO-COVERAGE-END
+    let Some(cpu) = verified_garbage_cpu::known() else {
+        // NO-COVERAGE-START
+        // SAFETY: the caller's obligations.
+        return unsafe { first_call(key, key_len, ctx) };
+        // NO-COVERAGE-END
+    };
     if cpu.contains(crate::aes_ocb::VG_AES_OCB_INIT_VAES_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_ocb_init_vaes`'s, and the CPU
         // has the features it needs.
@@ -51,9 +69,27 @@ pub unsafe fn vg_aes_ocb_init_auto(key: *const u8, key_len: usize, ctx: *mut [u6
 /// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3640 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
-#[inline]
+#[inline(always)]
 pub unsafe fn vg_aes_ocb_seal_auto(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
-    let cpu = verified_garbage_cpu::detected();
+    // Only a process's first call of a dispatcher detects the CPU features
+    // (`first_call`), so no test runs every dispatcher's.
+    // NO-COVERAGE-START
+    /// Detects the features, and calls the dispatcher again.
+    #[allow(clippy::too_many_arguments)]
+    #[cold]
+    #[inline(never)]
+    unsafe fn first_call(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
+        let _ = verified_garbage_cpu::detected();
+        // SAFETY: the caller's obligations.
+        unsafe { vg_aes_ocb_seal_auto(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) }
+    }
+    // NO-COVERAGE-END
+    let Some(cpu) = verified_garbage_cpu::known() else {
+        // NO-COVERAGE-START
+        // SAFETY: the caller's obligations.
+        return unsafe { first_call(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) };
+        // NO-COVERAGE-END
+    };
     if cpu.contains(crate::aes_ocb::VG_AES_OCB_SEAL_VAES_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_ocb_seal_vaes`'s, and the CPU
         // has the features it needs.
@@ -86,9 +122,27 @@ pub unsafe fn vg_aes_ocb_seal_auto(ctx: *const [u64; 32], rounds: usize, nonce: 
 /// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3640 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
-#[inline]
+#[inline(always)]
 pub unsafe fn vg_aes_ocb_open_auto(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    // Only a process's first call of a dispatcher detects the CPU features
+    // (`first_call`), so no test runs every dispatcher's.
+    // NO-COVERAGE-START
+    /// Detects the features, and calls the dispatcher again.
+    #[allow(clippy::too_many_arguments)]
+    #[cold]
+    #[inline(never)]
+    unsafe fn first_call(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+        let _ = verified_garbage_cpu::detected();
+        // SAFETY: the caller's obligations.
+        unsafe { vg_aes_ocb_open_auto(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) }
+    }
+    // NO-COVERAGE-END
+    let Some(cpu) = verified_garbage_cpu::known() else {
+        // NO-COVERAGE-START
+        // SAFETY: the caller's obligations.
+        return unsafe { first_call(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) };
+        // NO-COVERAGE-END
+    };
     if cpu.contains(crate::aes_ocb::VG_AES_OCB_OPEN_VAES_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_ocb_open_vaes`'s, and the CPU
         // has the features it needs.

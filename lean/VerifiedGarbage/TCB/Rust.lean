@@ -1620,15 +1620,31 @@ requirements then hold for each) and how much of its arrays it writes (the
 largest bound of each array that every implementation bounds,
 `Artifact.written`). It needs no CPU feature: it calls an implementation
 that needs features only if the CPU has them, as the generated condition
-checks with `verified_garbage_cpu::detected()`, which detects the features
-the CPU and operating system support (`crates/verified-garbage-cpu/`), of
-which a `Features` constant names the bits (`featuresConst`):
+checks with what `verified_garbage_cpu::known()` gives, the features the CPU
+and operating system support (`crates/verified-garbage-cpu/`), of which a
+`Features` constant names the bits (`featuresConst`), once
+`verified_garbage_cpu::detected()` has detected them. Until then it gives
+`None`, and the dispatcher's `first_call` detects them and calls the
+dispatcher again: the call that detects is on a path of its own, so that
+the one the dispatcher always makes, to the implementation, is the only
+call its arguments must live until, and the dispatcher, inlined
+(`#[inline(always)]`), costs its caller a load and the tests:
 
 ```rust
 /// <the base's documentation, without its CPU features>
-#[inline]
+#[inline(always)]
 pub unsafe fn <base>_auto(<the signature>) {
-    let cpu = verified_garbage_cpu::detected();
+    #[cold]
+    #[inline(never)]
+    unsafe fn first_call(<the signature>) {
+        let _ = verified_garbage_cpu::detected();
+        // SAFETY: the caller's obligations.
+        unsafe { <base>_auto(<the arguments>) }
+    }
+    let Some(cpu) = verified_garbage_cpu::known() else {
+        // SAFETY: the caller's obligations.
+        return unsafe { first_call(<the arguments>) };
+    };
     if cpu.contains(crate::<module>::<NAME>_FEATURES) {
         // SAFETY: …
         return unsafe { crate::<module>::<name>(<the arguments>) };
@@ -1638,6 +1654,9 @@ pub unsafe fn <base>_auto(<the signature>) {
     unsafe { crate::<module>::<base>(<the arguments>) }
 }
 ```
+
+Only a process's first call of a dispatcher can run `first_call`, so its
+lines are excluded from the tests' coverage (`ci/merge_rust_coverage.py`).
 
 The dispatchers of a module's functions are in a file of their own,
 `dispatch/<module>.rs` of the crate's `codeDir` (`dispatchFile`), declared by
@@ -1871,10 +1890,12 @@ def argsOf (sig : Sig) : String :=
     | _ => [n])
 
 /-- The condition under which a dispatcher calls `a`, given the variable
-`cpu` it holds `verified_garbage_cpu::detected()` in. The features it checks are `a`'s (its constant, `featuresConst`) and
-its ranking's `extra` ones; for one that needs none, that detection reports
-some feature. -/
-def condOf (a : Arm) : String :=
+`cpu` it holds what detection found in: `verified_garbage_cpu::known()`'s
+`Known` if `known` (a function's dispatcher), else
+`verified_garbage_cpu::detected()`'s `Features` (a table's). The features it
+checks are `a`'s (its constant, `featuresConst`) and its ranking's `extra`
+ones; for one that needs none, that detection reports some feature. -/
+def condOf (a : Arm) (known : Bool := false) : String :=
   let name := s!"crate::{a.impl.module}::{a.impl.name.toUpper}"
   let bits := a.extra.map fun f => s!"verified_garbage_cpu::feature::{featureConst f}"
   let need : Option String := match a.impl.features.isEmpty, bits with
@@ -1882,12 +1903,14 @@ def condOf (a : Arm) : String :=
     | false, [] => some s!"{name}_FEATURES"
     | true, bs => some s!"verified_garbage_cpu::Features({" | ".intercalate bs})"
     | false, bs => some s!"verified_garbage_cpu::Features({name}_FEATURES.0 | {" | ".intercalate bs})"
+  let requested (n : String) : String :=
+    if known then s!"cpu.requested({n})" else s!"verified_garbage_cpu::requested({n})"
   let vs := a.vendors.map fun v => match need with
     | none => s!"cfg!(target_vendor = \"{v}\")"
-    | some n => s!"(cfg!(target_vendor = \"{v}\") || verified_garbage_cpu::requested({n}))"
+    | some n => s!"(cfg!(target_vendor = \"{v}\") || {requested n})"
   -- One that needs no feature, only where detection reports some (see above).
   let has := match need with
-    | none => "cpu.0 != 0"
+    | none => if known then "cpu.any()" else "cpu.0 != 0"
     | some n => s!"cpu.contains({n})"
   " && ".intercalate (vs ++ [has])
 
@@ -1928,12 +1951,31 @@ def dispatcher (g : Group) (arms : List Arm) : String :=
   safetyAllow doc ++
   -- Its signature is the implementations': Clippy allows theirs, as `extern` functions.
   "#[allow(clippy::too_many_arguments)]\n" ++
-  "#[inline]\n" ++
+  (if arms.isEmpty then "#[inline]\n" else "#[inline(always)]\n") ++
   s!"pub unsafe fn {auto}{b.sig.rust} " ++ "{\n" ++
-  (if arms.isEmpty then "" else "    let cpu = verified_garbage_cpu::detected();\n") ++
+  (if arms.isEmpty then "" else
+    "    // Only a process's first call of a dispatcher detects the CPU features\n" ++
+    "    // (`first_call`), so no test runs every dispatcher's.\n" ++
+    "    // NO-COVERAGE-START\n" ++
+    "    /// Detects the features, and calls the dispatcher again.\n" ++
+    "    #[allow(clippy::too_many_arguments)]\n" ++
+    "    #[cold]\n" ++
+    "    #[inline(never)]\n" ++
+    s!"    unsafe fn first_call{b.sig.rust} " ++ "{\n" ++
+    "        let _ = verified_garbage_cpu::detected();\n" ++
+    "        // SAFETY: the caller's obligations.\n" ++
+    s!"        unsafe " ++ "{ " ++ s!"{auto}({args})" ++ " }\n" ++
+    "    }\n" ++
+    "    // NO-COVERAGE-END\n" ++
+    "    let Some(cpu) = verified_garbage_cpu::known() else {\n" ++
+    "        // NO-COVERAGE-START\n" ++
+    "        // SAFETY: the caller's obligations.\n" ++
+    s!"        return unsafe " ++ "{ " ++ s!"first_call({args})" ++ " };\n" ++
+    "        // NO-COVERAGE-END\n" ++
+    "    };\n") ++
   String.join (arms.map fun a =>
     String.join (a.impl.gate.map fun p => s!"    #[cfg({p})]\n") ++
-    s!"    if {condOf a} " ++ "{\n" ++
+    s!"    if {condOf a true} " ++ "{\n" ++
     s!"        // SAFETY: the caller's obligations, which are `{a.impl.name}`'s, and the CPU\n" ++
     "        // has the features it needs.\n" ++
     s!"        return unsafe " ++ "{ " ++ s!"crate::{a.impl.module}::{a.impl.name}({args})" ++ " };\n" ++

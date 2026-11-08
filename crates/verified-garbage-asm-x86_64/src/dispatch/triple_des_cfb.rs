@@ -22,9 +22,27 @@ pub use crate::triple_des_cfb::vg_triple_des_cfb64_encrypt as vg_triple_des_cfb6
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 3176 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
-#[inline]
+#[inline(always)]
 pub unsafe fn vg_triple_des_cfb64_decrypt_auto(schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
-    let cpu = verified_garbage_cpu::detected();
+    // Only a process's first call of a dispatcher detects the CPU features
+    // (`first_call`), so no test runs every dispatcher's.
+    // NO-COVERAGE-START
+    /// Detects the features, and calls the dispatcher again.
+    #[allow(clippy::too_many_arguments)]
+    #[cold]
+    #[inline(never)]
+    unsafe fn first_call(schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+        let _ = verified_garbage_cpu::detected();
+        // SAFETY: the caller's obligations.
+        unsafe { vg_triple_des_cfb64_decrypt_auto(schedule, iv, data, n) }
+    }
+    // NO-COVERAGE-END
+    let Some(cpu) = verified_garbage_cpu::known() else {
+        // NO-COVERAGE-START
+        // SAFETY: the caller's obligations.
+        return unsafe { first_call(schedule, iv, data, n) };
+        // NO-COVERAGE-END
+    };
     if cpu.contains(crate::triple_des_cfb::VG_TRIPLE_DES_CFB64_DECRYPT_AVX512_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_triple_des_cfb64_decrypt_avx512`'s, and the CPU
         // has the features it needs.

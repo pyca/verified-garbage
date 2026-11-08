@@ -58,9 +58,18 @@ def has (text part : String) : Bool := (text.splitOn part).length > 1
 -- `vg_poly1305_update`: `_neon` where the ranking chooses it, else the base.
 #guard has file
   "pub unsafe fn vg_poly1305_update_auto(state: *mut [u64; 16], count: u64, data: *const u8, \
-    len: usize) {\n    \
-    let cpu = verified_garbage_cpu::detected();\n    \
-    if (cfg!(target_vendor = \"apple\") || verified_garbage_cpu::requested(\
+    len: usize) {\n"
+#guard has file
+  "        let _ = verified_garbage_cpu::detected();\n        \
+    // SAFETY: the caller's obligations.\n        \
+    unsafe { vg_poly1305_update_auto(state, count, data, len) }\n    }\n"
+#guard has file
+  "    let Some(cpu) = verified_garbage_cpu::known() else {\n        \
+    // NO-COVERAGE-START\n        \
+    // SAFETY: the caller's obligations.\n        \
+    return unsafe { first_call(state, count, data, len) };\n        \
+    // NO-COVERAGE-END\n    };\n    \
+    if (cfg!(target_vendor = \"apple\") || cpu.requested(\
     verified_garbage_cpu::Features(verified_garbage_cpu::feature::NEON))) && \
     cpu.contains(verified_garbage_cpu::Features(verified_garbage_cpu::feature::NEON)) {\n"
 #guard has file

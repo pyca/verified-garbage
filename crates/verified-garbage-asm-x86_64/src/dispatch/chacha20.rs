@@ -21,9 +21,27 @@ pub use crate::chacha20::vg_chacha20_init as vg_chacha20_init_auto;
 /// * `state` and `data` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
-#[inline]
+#[inline(always)]
 pub unsafe fn vg_chacha20_apply_auto(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    // Only a process's first call of a dispatcher detects the CPU features
+    // (`first_call`), so no test runs every dispatcher's.
+    // NO-COVERAGE-START
+    /// Detects the features, and calls the dispatcher again.
+    #[allow(clippy::too_many_arguments)]
+    #[cold]
+    #[inline(never)]
+    unsafe fn first_call(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
+        let _ = verified_garbage_cpu::detected();
+        // SAFETY: the caller's obligations.
+        unsafe { vg_chacha20_apply_auto(state, data, len) }
+    }
+    // NO-COVERAGE-END
+    let Some(cpu) = verified_garbage_cpu::known() else {
+        // NO-COVERAGE-START
+        // SAFETY: the caller's obligations.
+        return unsafe { first_call(state, data, len) };
+        // NO-COVERAGE-END
+    };
     if cpu.contains(verified_garbage_cpu::Features(crate::chacha20::VG_CHACHA20_APPLY_AVX512_FEATURES.0 | verified_garbage_cpu::feature::AVX512IFMA)) {
         // SAFETY: the caller's obligations, which are `vg_chacha20_apply_avx512`'s, and the CPU
         // has the features it needs.

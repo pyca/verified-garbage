@@ -26,9 +26,27 @@
 /// * `memory`, `scratch` and `out` must not overlap each other, `password`, `salt`, `secret`, `associated_data` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `password`, `salt`, `secret`, `associated_data`, `memory`, `scratch` and `out` may overlap the return address on the stack or the 344 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
-#[inline]
+#[inline(always)]
 pub unsafe fn vg_argon2_auto(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
-    let cpu = verified_garbage_cpu::detected();
+    // Only a process's first call of a dispatcher detects the CPU features
+    // (`first_call`), so no test runs every dispatcher's.
+    // NO-COVERAGE-START
+    /// Detects the features, and calls the dispatcher again.
+    #[allow(clippy::too_many_arguments)]
+    #[cold]
+    #[inline(never)]
+    unsafe fn first_call(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
+        let _ = verified_garbage_cpu::detected();
+        // SAFETY: the caller's obligations.
+        unsafe { vg_argon2_auto(kind, password, password_len, salt, salt_len, iterations, memory_cost, lanes, threads, secret, secret_len, associated_data, ad_len, memory, blocks, scratch, out, out_len) }
+    }
+    // NO-COVERAGE-END
+    let Some(cpu) = verified_garbage_cpu::known() else {
+        // NO-COVERAGE-START
+        // SAFETY: the caller's obligations.
+        return unsafe { first_call(kind, password, password_len, salt, salt_len, iterations, memory_cost, lanes, threads, secret, secret_len, associated_data, ad_len, memory, blocks, scratch, out, out_len) };
+        // NO-COVERAGE-END
+    };
     if cpu.contains(crate::argon2::VG_ARGON2_BLAKE2B_AVX512_G_AVX512_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_argon2_blake2b_avx512_g_avx512`'s, and the CPU
         // has the features it needs.

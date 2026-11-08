@@ -17,9 +17,27 @@
 /// * `scratch` must not overlap `pk`, `context`, `message`, `signature` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `pk`, `context`, `message`, `signature` and `scratch` may overlap the return address on the stack or the 272 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
-#[inline]
+#[inline(always)]
 pub unsafe fn vg_ed448_verify_auto(pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, signature: *const [u8; 114], scratch: *mut [u64; 1024]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    // Only a process's first call of a dispatcher detects the CPU features
+    // (`first_call`), so no test runs every dispatcher's.
+    // NO-COVERAGE-START
+    /// Detects the features, and calls the dispatcher again.
+    #[allow(clippy::too_many_arguments)]
+    #[cold]
+    #[inline(never)]
+    unsafe fn first_call(pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, signature: *const [u8; 114], scratch: *mut [u64; 1024]) -> u32 {
+        let _ = verified_garbage_cpu::detected();
+        // SAFETY: the caller's obligations.
+        unsafe { vg_ed448_verify_auto(pk, context, ctxlen, message, len, signature, scratch) }
+    }
+    // NO-COVERAGE-END
+    let Some(cpu) = verified_garbage_cpu::known() else {
+        // NO-COVERAGE-START
+        // SAFETY: the caller's obligations.
+        return unsafe { first_call(pk, context, ctxlen, message, len, signature, scratch) };
+        // NO-COVERAGE-END
+    };
     if cpu.contains(crate::ed448::VG_ED448_VERIFY_ADX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_ed448_verify_adx`'s, and the CPU
         // has the features it needs.
@@ -43,9 +61,27 @@ pub unsafe fn vg_ed448_verify_auto(pk: *const [u8; 57], context: *const u8, ctxl
 /// * `out` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
 /// * None of `out`, `seed` and `scratch` may overlap the return address on the stack or the 104 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
-#[inline]
+#[inline(always)]
 pub unsafe fn vg_ed448_public_key_auto(out: *mut [u8; 57], seed: *const [u8; 57], scratch: *mut [u64; 1024]) {
-    let cpu = verified_garbage_cpu::detected();
+    // Only a process's first call of a dispatcher detects the CPU features
+    // (`first_call`), so no test runs every dispatcher's.
+    // NO-COVERAGE-START
+    /// Detects the features, and calls the dispatcher again.
+    #[allow(clippy::too_many_arguments)]
+    #[cold]
+    #[inline(never)]
+    unsafe fn first_call(out: *mut [u8; 57], seed: *const [u8; 57], scratch: *mut [u64; 1024]) {
+        let _ = verified_garbage_cpu::detected();
+        // SAFETY: the caller's obligations.
+        unsafe { vg_ed448_public_key_auto(out, seed, scratch) }
+    }
+    // NO-COVERAGE-END
+    let Some(cpu) = verified_garbage_cpu::known() else {
+        // NO-COVERAGE-START
+        // SAFETY: the caller's obligations.
+        return unsafe { first_call(out, seed, scratch) };
+        // NO-COVERAGE-END
+    };
     if cpu.contains(crate::ed448::VG_ED448_PUBLIC_KEY_ADX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_ed448_public_key_adx`'s, and the CPU
         // has the features it needs.
@@ -74,9 +110,27 @@ pub unsafe fn vg_ed448_public_key_auto(out: *mut [u8; 57], seed: *const [u8; 57]
 /// * `out` and `scratch` must not overlap each other, `seed`, `pk`, `context`, `message` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `seed`, `pk`, `context`, `message` and `scratch` may overlap the return address on the stack or the 464 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
-#[inline]
+#[inline(always)]
 pub unsafe fn vg_ed448_sign_cached_auto(out: *mut [u8; 114], seed: *const [u8; 57], pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
-    let cpu = verified_garbage_cpu::detected();
+    // Only a process's first call of a dispatcher detects the CPU features
+    // (`first_call`), so no test runs every dispatcher's.
+    // NO-COVERAGE-START
+    /// Detects the features, and calls the dispatcher again.
+    #[allow(clippy::too_many_arguments)]
+    #[cold]
+    #[inline(never)]
+    unsafe fn first_call(out: *mut [u8; 114], seed: *const [u8; 57], pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+        let _ = verified_garbage_cpu::detected();
+        // SAFETY: the caller's obligations.
+        unsafe { vg_ed448_sign_cached_auto(out, seed, pk, context, ctxlen, message, len, scratch) }
+    }
+    // NO-COVERAGE-END
+    let Some(cpu) = verified_garbage_cpu::known() else {
+        // NO-COVERAGE-START
+        // SAFETY: the caller's obligations.
+        return unsafe { first_call(out, seed, pk, context, ctxlen, message, len, scratch) };
+        // NO-COVERAGE-END
+    };
     if cpu.contains(crate::ed448::VG_ED448_SIGN_CACHED_ADX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_ed448_sign_cached_adx`'s, and the CPU
         // has the features it needs.

@@ -22,9 +22,27 @@ pub use crate::blake2b::vg_blake2b_init as vg_blake2b_init_auto;
 /// * `state` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the return address on the stack or the 592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
-#[inline]
+#[inline(always)]
 pub unsafe fn vg_blake2b_update_auto(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
-    let cpu = verified_garbage_cpu::detected();
+    // Only a process's first call of a dispatcher detects the CPU features
+    // (`first_call`), so no test runs every dispatcher's.
+    // NO-COVERAGE-START
+    /// Detects the features, and calls the dispatcher again.
+    #[allow(clippy::too_many_arguments)]
+    #[cold]
+    #[inline(never)]
+    unsafe fn first_call(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
+        let _ = verified_garbage_cpu::detected();
+        // SAFETY: the caller's obligations.
+        unsafe { vg_blake2b_update_auto(state, count, data, len) }
+    }
+    // NO-COVERAGE-END
+    let Some(cpu) = verified_garbage_cpu::known() else {
+        // NO-COVERAGE-START
+        // SAFETY: the caller's obligations.
+        return unsafe { first_call(state, count, data, len) };
+        // NO-COVERAGE-END
+    };
     if cpu.contains(crate::blake2b::VG_BLAKE2B_UPDATE_AVX512_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_blake2b_update_avx512`'s, and the CPU
         // has the features it needs.
@@ -54,9 +72,27 @@ pub unsafe fn vg_blake2b_update_auto(state: *mut [u8; 192], count: u64, data: *c
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
-#[inline]
+#[inline(always)]
 pub unsafe fn vg_blake2b_finalize_auto(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
-    let cpu = verified_garbage_cpu::detected();
+    // Only a process's first call of a dispatcher detects the CPU features
+    // (`first_call`), so no test runs every dispatcher's.
+    // NO-COVERAGE-START
+    /// Detects the features, and calls the dispatcher again.
+    #[allow(clippy::too_many_arguments)]
+    #[cold]
+    #[inline(never)]
+    unsafe fn first_call(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
+        let _ = verified_garbage_cpu::detected();
+        // SAFETY: the caller's obligations.
+        unsafe { vg_blake2b_finalize_auto(state, count, out) }
+    }
+    // NO-COVERAGE-END
+    let Some(cpu) = verified_garbage_cpu::known() else {
+        // NO-COVERAGE-START
+        // SAFETY: the caller's obligations.
+        return unsafe { first_call(state, count, out) };
+        // NO-COVERAGE-END
+    };
     if cpu.contains(crate::blake2b::VG_BLAKE2B_FINALIZE_AVX512_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_blake2b_finalize_avx512`'s, and the CPU
         // has the features it needs.

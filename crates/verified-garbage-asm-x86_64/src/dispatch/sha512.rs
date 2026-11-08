@@ -27,9 +27,27 @@ pub use crate::sha512::vg_sha512_init as vg_sha512_init_auto;
 /// * `out` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `data` nor `out` may overlap the return address on the stack or the 1600 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
-#[inline]
+#[inline(always)]
 pub unsafe fn vg_sha384_digest_auto(data: *const u8, len: usize, out: *mut [u8; 48]) {
-    let cpu = verified_garbage_cpu::detected();
+    // Only a process's first call of a dispatcher detects the CPU features
+    // (`first_call`), so no test runs every dispatcher's.
+    // NO-COVERAGE-START
+    /// Detects the features, and calls the dispatcher again.
+    #[allow(clippy::too_many_arguments)]
+    #[cold]
+    #[inline(never)]
+    unsafe fn first_call(data: *const u8, len: usize, out: *mut [u8; 48]) {
+        let _ = verified_garbage_cpu::detected();
+        // SAFETY: the caller's obligations.
+        unsafe { vg_sha384_digest_auto(data, len, out) }
+    }
+    // NO-COVERAGE-END
+    let Some(cpu) = verified_garbage_cpu::known() else {
+        // NO-COVERAGE-START
+        // SAFETY: the caller's obligations.
+        return unsafe { first_call(data, len, out) };
+        // NO-COVERAGE-END
+    };
     if cpu.contains(crate::sha512::VG_SHA384_DIGEST_SHANI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha384_digest_shani`'s, and the CPU
         // has the features it needs.
@@ -57,9 +75,27 @@ pub unsafe fn vg_sha384_digest_auto(data: *const u8, len: usize, out: *mut [u8; 
 /// * `state` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the return address on the stack or the 1392 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
-#[inline]
+#[inline(always)]
 pub unsafe fn vg_sha512_update_auto(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
-    let cpu = verified_garbage_cpu::detected();
+    // Only a process's first call of a dispatcher detects the CPU features
+    // (`first_call`), so no test runs every dispatcher's.
+    // NO-COVERAGE-START
+    /// Detects the features, and calls the dispatcher again.
+    #[allow(clippy::too_many_arguments)]
+    #[cold]
+    #[inline(never)]
+    unsafe fn first_call(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
+        let _ = verified_garbage_cpu::detected();
+        // SAFETY: the caller's obligations.
+        unsafe { vg_sha512_update_auto(state, count, data, len) }
+    }
+    // NO-COVERAGE-END
+    let Some(cpu) = verified_garbage_cpu::known() else {
+        // NO-COVERAGE-START
+        // SAFETY: the caller's obligations.
+        return unsafe { first_call(state, count, data, len) };
+        // NO-COVERAGE-END
+    };
     if cpu.contains(crate::sha512::VG_SHA512_UPDATE_SHANI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha512_update_shani`'s, and the CPU
         // has the features it needs.
@@ -87,9 +123,27 @@ pub unsafe fn vg_sha512_update_auto(state: *mut [u8; 192], count: u64, data: *co
 /// * `out` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `data` nor `out` may overlap the return address on the stack or the 1600 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
-#[inline]
+#[inline(always)]
 pub unsafe fn vg_sha512_digest_auto(data: *const u8, len: usize, out: *mut [u8; 64]) {
-    let cpu = verified_garbage_cpu::detected();
+    // Only a process's first call of a dispatcher detects the CPU features
+    // (`first_call`), so no test runs every dispatcher's.
+    // NO-COVERAGE-START
+    /// Detects the features, and calls the dispatcher again.
+    #[allow(clippy::too_many_arguments)]
+    #[cold]
+    #[inline(never)]
+    unsafe fn first_call(data: *const u8, len: usize, out: *mut [u8; 64]) {
+        let _ = verified_garbage_cpu::detected();
+        // SAFETY: the caller's obligations.
+        unsafe { vg_sha512_digest_auto(data, len, out) }
+    }
+    // NO-COVERAGE-END
+    let Some(cpu) = verified_garbage_cpu::known() else {
+        // NO-COVERAGE-START
+        // SAFETY: the caller's obligations.
+        return unsafe { first_call(data, len, out) };
+        // NO-COVERAGE-END
+    };
     if cpu.contains(crate::sha512::VG_SHA512_DIGEST_SHANI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha512_digest_shani`'s, and the CPU
         // has the features it needs.
@@ -131,9 +185,27 @@ pub use crate::sha512::vg_sha512_256_init as vg_sha512_256_init_auto;
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 1392 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
-#[inline]
+#[inline(always)]
 pub unsafe fn vg_sha384_finalize_auto(state: *mut [u8; 192], count: u64, out: *mut [u8; 48]) {
-    let cpu = verified_garbage_cpu::detected();
+    // Only a process's first call of a dispatcher detects the CPU features
+    // (`first_call`), so no test runs every dispatcher's.
+    // NO-COVERAGE-START
+    /// Detects the features, and calls the dispatcher again.
+    #[allow(clippy::too_many_arguments)]
+    #[cold]
+    #[inline(never)]
+    unsafe fn first_call(state: *mut [u8; 192], count: u64, out: *mut [u8; 48]) {
+        let _ = verified_garbage_cpu::detected();
+        // SAFETY: the caller's obligations.
+        unsafe { vg_sha384_finalize_auto(state, count, out) }
+    }
+    // NO-COVERAGE-END
+    let Some(cpu) = verified_garbage_cpu::known() else {
+        // NO-COVERAGE-START
+        // SAFETY: the caller's obligations.
+        return unsafe { first_call(state, count, out) };
+        // NO-COVERAGE-END
+    };
     if cpu.contains(crate::sha512::VG_SHA384_FINALIZE_SHANI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha384_finalize_shani`'s, and the CPU
         // has the features it needs.
@@ -163,9 +235,27 @@ pub unsafe fn vg_sha384_finalize_auto(state: *mut [u8; 192], count: u64, out: *m
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 1392 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
-#[inline]
+#[inline(always)]
 pub unsafe fn vg_sha512_finalize_auto(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
-    let cpu = verified_garbage_cpu::detected();
+    // Only a process's first call of a dispatcher detects the CPU features
+    // (`first_call`), so no test runs every dispatcher's.
+    // NO-COVERAGE-START
+    /// Detects the features, and calls the dispatcher again.
+    #[allow(clippy::too_many_arguments)]
+    #[cold]
+    #[inline(never)]
+    unsafe fn first_call(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
+        let _ = verified_garbage_cpu::detected();
+        // SAFETY: the caller's obligations.
+        unsafe { vg_sha512_finalize_auto(state, count, out) }
+    }
+    // NO-COVERAGE-END
+    let Some(cpu) = verified_garbage_cpu::known() else {
+        // NO-COVERAGE-START
+        // SAFETY: the caller's obligations.
+        return unsafe { first_call(state, count, out) };
+        // NO-COVERAGE-END
+    };
     if cpu.contains(crate::sha512::VG_SHA512_FINALIZE_SHANI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha512_finalize_shani`'s, and the CPU
         // has the features it needs.
@@ -193,9 +283,27 @@ pub unsafe fn vg_sha512_finalize_auto(state: *mut [u8; 192], count: u64, out: *m
 /// * `out` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `data` nor `out` may overlap the return address on the stack or the 1600 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
-#[inline]
+#[inline(always)]
 pub unsafe fn vg_sha512_224_digest_auto(data: *const u8, len: usize, out: *mut [u8; 28]) {
-    let cpu = verified_garbage_cpu::detected();
+    // Only a process's first call of a dispatcher detects the CPU features
+    // (`first_call`), so no test runs every dispatcher's.
+    // NO-COVERAGE-START
+    /// Detects the features, and calls the dispatcher again.
+    #[allow(clippy::too_many_arguments)]
+    #[cold]
+    #[inline(never)]
+    unsafe fn first_call(data: *const u8, len: usize, out: *mut [u8; 28]) {
+        let _ = verified_garbage_cpu::detected();
+        // SAFETY: the caller's obligations.
+        unsafe { vg_sha512_224_digest_auto(data, len, out) }
+    }
+    // NO-COVERAGE-END
+    let Some(cpu) = verified_garbage_cpu::known() else {
+        // NO-COVERAGE-START
+        // SAFETY: the caller's obligations.
+        return unsafe { first_call(data, len, out) };
+        // NO-COVERAGE-END
+    };
     if cpu.contains(crate::sha512::VG_SHA512_224_DIGEST_SHANI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha512_224_digest_shani`'s, and the CPU
         // has the features it needs.
@@ -223,9 +331,27 @@ pub unsafe fn vg_sha512_224_digest_auto(data: *const u8, len: usize, out: *mut [
 /// * `out` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `data` nor `out` may overlap the return address on the stack or the 1600 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
-#[inline]
+#[inline(always)]
 pub unsafe fn vg_sha512_256_digest_auto(data: *const u8, len: usize, out: *mut [u8; 32]) {
-    let cpu = verified_garbage_cpu::detected();
+    // Only a process's first call of a dispatcher detects the CPU features
+    // (`first_call`), so no test runs every dispatcher's.
+    // NO-COVERAGE-START
+    /// Detects the features, and calls the dispatcher again.
+    #[allow(clippy::too_many_arguments)]
+    #[cold]
+    #[inline(never)]
+    unsafe fn first_call(data: *const u8, len: usize, out: *mut [u8; 32]) {
+        let _ = verified_garbage_cpu::detected();
+        // SAFETY: the caller's obligations.
+        unsafe { vg_sha512_256_digest_auto(data, len, out) }
+    }
+    // NO-COVERAGE-END
+    let Some(cpu) = verified_garbage_cpu::known() else {
+        // NO-COVERAGE-START
+        // SAFETY: the caller's obligations.
+        return unsafe { first_call(data, len, out) };
+        // NO-COVERAGE-END
+    };
     if cpu.contains(crate::sha512::VG_SHA512_256_DIGEST_SHANI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha512_256_digest_shani`'s, and the CPU
         // has the features it needs.
@@ -255,9 +381,27 @@ pub unsafe fn vg_sha512_256_digest_auto(data: *const u8, len: usize, out: *mut [
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 1392 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
-#[inline]
+#[inline(always)]
 pub unsafe fn vg_sha512_224_finalize_auto(state: *mut [u8; 192], count: u64, out: *mut [u8; 28]) {
-    let cpu = verified_garbage_cpu::detected();
+    // Only a process's first call of a dispatcher detects the CPU features
+    // (`first_call`), so no test runs every dispatcher's.
+    // NO-COVERAGE-START
+    /// Detects the features, and calls the dispatcher again.
+    #[allow(clippy::too_many_arguments)]
+    #[cold]
+    #[inline(never)]
+    unsafe fn first_call(state: *mut [u8; 192], count: u64, out: *mut [u8; 28]) {
+        let _ = verified_garbage_cpu::detected();
+        // SAFETY: the caller's obligations.
+        unsafe { vg_sha512_224_finalize_auto(state, count, out) }
+    }
+    // NO-COVERAGE-END
+    let Some(cpu) = verified_garbage_cpu::known() else {
+        // NO-COVERAGE-START
+        // SAFETY: the caller's obligations.
+        return unsafe { first_call(state, count, out) };
+        // NO-COVERAGE-END
+    };
     if cpu.contains(crate::sha512::VG_SHA512_224_FINALIZE_SHANI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha512_224_finalize_shani`'s, and the CPU
         // has the features it needs.
@@ -287,9 +431,27 @@ pub unsafe fn vg_sha512_224_finalize_auto(state: *mut [u8; 192], count: u64, out
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 1392 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
-#[inline]
+#[inline(always)]
 pub unsafe fn vg_sha512_256_finalize_auto(state: *mut [u8; 192], count: u64, out: *mut [u8; 32]) {
-    let cpu = verified_garbage_cpu::detected();
+    // Only a process's first call of a dispatcher detects the CPU features
+    // (`first_call`), so no test runs every dispatcher's.
+    // NO-COVERAGE-START
+    /// Detects the features, and calls the dispatcher again.
+    #[allow(clippy::too_many_arguments)]
+    #[cold]
+    #[inline(never)]
+    unsafe fn first_call(state: *mut [u8; 192], count: u64, out: *mut [u8; 32]) {
+        let _ = verified_garbage_cpu::detected();
+        // SAFETY: the caller's obligations.
+        unsafe { vg_sha512_256_finalize_auto(state, count, out) }
+    }
+    // NO-COVERAGE-END
+    let Some(cpu) = verified_garbage_cpu::known() else {
+        // NO-COVERAGE-START
+        // SAFETY: the caller's obligations.
+        return unsafe { first_call(state, count, out) };
+        // NO-COVERAGE-END
+    };
     if cpu.contains(crate::sha512::VG_SHA512_256_FINALIZE_SHANI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha512_256_finalize_shani`'s, and the CPU
         // has the features it needs.

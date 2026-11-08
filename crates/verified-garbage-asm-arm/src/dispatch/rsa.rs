@@ -32,9 +32,27 @@ pub use crate::rsa::vg_rsa_crt_values as vg_rsa_crt_values_auto;
 /// * `pre` and `scratch` must not overlap each other, `n` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `pre`, `n` and `scratch` may overlap the 56 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
-#[inline]
+#[inline(always)]
 pub unsafe fn vg_rsa_public_precompute_auto(pre: *mut u64, pre_len: usize, n: *const u8, n_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    // Only a process's first call of a dispatcher detects the CPU features
+    // (`first_call`), so no test runs every dispatcher's.
+    // NO-COVERAGE-START
+    /// Detects the features, and calls the dispatcher again.
+    #[allow(clippy::too_many_arguments)]
+    #[cold]
+    #[inline(never)]
+    unsafe fn first_call(pre: *mut u64, pre_len: usize, n: *const u8, n_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+        let _ = verified_garbage_cpu::detected();
+        // SAFETY: the caller's obligations.
+        unsafe { vg_rsa_public_precompute_auto(pre, pre_len, n, n_len, scratch, scratch_len) }
+    }
+    // NO-COVERAGE-END
+    let Some(cpu) = verified_garbage_cpu::known() else {
+        // NO-COVERAGE-START
+        // SAFETY: the caller's obligations.
+        return unsafe { first_call(pre, pre_len, n, n_len, scratch, scratch_len) };
+        // NO-COVERAGE-END
+    };
     #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
     if cpu.contains(crate::rsa::VG_RSA_PUBLIC_PRECOMPUTE_UMAAL_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_rsa_public_precompute_umaal`'s, and the CPU

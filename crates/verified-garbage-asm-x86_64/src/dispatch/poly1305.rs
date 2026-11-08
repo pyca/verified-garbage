@@ -21,9 +21,27 @@ pub use crate::poly1305::vg_poly1305_init as vg_poly1305_init_auto;
 /// * `state` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the return address on the stack or the 160 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
-#[inline]
+#[inline(always)]
 pub unsafe fn vg_poly1305_update_auto(state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
-    let cpu = verified_garbage_cpu::detected();
+    // Only a process's first call of a dispatcher detects the CPU features
+    // (`first_call`), so no test runs every dispatcher's.
+    // NO-COVERAGE-START
+    /// Detects the features, and calls the dispatcher again.
+    #[allow(clippy::too_many_arguments)]
+    #[cold]
+    #[inline(never)]
+    unsafe fn first_call(state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
+        let _ = verified_garbage_cpu::detected();
+        // SAFETY: the caller's obligations.
+        unsafe { vg_poly1305_update_auto(state, count, data, len) }
+    }
+    // NO-COVERAGE-END
+    let Some(cpu) = verified_garbage_cpu::known() else {
+        // NO-COVERAGE-START
+        // SAFETY: the caller's obligations.
+        return unsafe { first_call(state, count, data, len) };
+        // NO-COVERAGE-END
+    };
     if cpu.contains(crate::poly1305::VG_POLY1305_UPDATE_IFMA_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_poly1305_update_ifma`'s, and the CPU
         // has the features it needs.

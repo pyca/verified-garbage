@@ -18,9 +18,27 @@
 /// * `out` and `scratch` must not overlap each other, `d` or `peer` (distinct Rust objects never do).
 /// * None of `out`, `d`, `peer` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
-#[inline]
+#[inline(always)]
 pub unsafe fn vg_ecdh_p521_auto(out: *mut [u8; 66], d: *const [u8; 66], peer: *const [u8; 133], scratch: *mut [u64; 1024]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    // Only a process's first call of a dispatcher detects the CPU features
+    // (`first_call`), so no test runs every dispatcher's.
+    // NO-COVERAGE-START
+    /// Detects the features, and calls the dispatcher again.
+    #[allow(clippy::too_many_arguments)]
+    #[cold]
+    #[inline(never)]
+    unsafe fn first_call(out: *mut [u8; 66], d: *const [u8; 66], peer: *const [u8; 133], scratch: *mut [u64; 1024]) -> u32 {
+        let _ = verified_garbage_cpu::detected();
+        // SAFETY: the caller's obligations.
+        unsafe { vg_ecdh_p521_auto(out, d, peer, scratch) }
+    }
+    // NO-COVERAGE-END
+    let Some(cpu) = verified_garbage_cpu::known() else {
+        // NO-COVERAGE-START
+        // SAFETY: the caller's obligations.
+        return unsafe { first_call(out, d, peer, scratch) };
+        // NO-COVERAGE-END
+    };
     if cpu.contains(crate::ecdh_p521::VG_ECDH_P521_ADX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_ecdh_p521_adx`'s, and the CPU
         // has the features it needs.

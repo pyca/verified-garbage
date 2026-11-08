@@ -91,6 +91,47 @@ pub fn detected() -> Features {
     Features(state() as u32 & !(DETECTED_INIT as u32))
 }
 
+/// What detection found, once it has run: the features [`detected`] gives
+/// and those `VG_CPU_FEATURES` names (as [`requested`] reads them), from one
+/// load of the recorded state.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Known(u64);
+
+impl Known {
+    /// Whether the CPU has every feature of `f` ([`detected`]).
+    #[inline]
+    pub fn contains(self, f: Features) -> bool {
+        Features(self.0 as u32 & !(DETECTED_INIT as u32)).contains(f)
+    }
+
+    /// Whether detection reports some feature ([`detected`] is not empty).
+    #[inline]
+    pub fn any(self) -> bool {
+        self.0 as u32 & !(DETECTED_INIT as u32) != 0
+    }
+
+    /// Whether `VG_CPU_FEATURES` names every feature of `f`, which is not
+    /// empty ([`requested`]).
+    #[inline]
+    pub fn requested(self, f: Features) -> bool {
+        f.0 != 0 && (self.0 >> 32) as u32 & f.0 == f.0
+    }
+}
+
+/// What detection found, if it has run: one load and a test, and no call,
+/// so that a dispatcher's arguments need not outlive a call before the one
+/// it makes. Before the first detection it is `None`, and the caller
+/// detects ([`detected`]) and asks again.
+#[inline]
+pub fn known() -> Option<Known> {
+    let s = DETECTED.load(Ordering::Relaxed);
+    if s & DETECTED_INIT == 0 {
+        None
+    } else {
+        Some(Known(s))
+    }
+}
+
 /// Whether `VG_CPU_FEATURES` names every feature of `f`, which is not empty:
 /// never without the `env` Cargo feature, or if it is unset, empty or
 /// `none`. A dispatcher that chooses an implementation only for some

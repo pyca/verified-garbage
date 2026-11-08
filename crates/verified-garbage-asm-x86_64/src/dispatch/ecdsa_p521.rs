@@ -22,9 +22,27 @@
 /// * None of `out`, `d`, `digest`, `scratch` and `hmac` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * `hmac` must be the `as_ptr()` of one of the `Hmac` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 #[allow(clippy::too_many_arguments)]
-#[inline]
+#[inline(always)]
 pub unsafe fn vg_ecdsa_p521_sign_auto(out: *mut [u8; 132], d: *const [u8; 66], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    // Only a process's first call of a dispatcher detects the CPU features
+    // (`first_call`), so no test runs every dispatcher's.
+    // NO-COVERAGE-START
+    /// Detects the features, and calls the dispatcher again.
+    #[allow(clippy::too_many_arguments)]
+    #[cold]
+    #[inline(never)]
+    unsafe fn first_call(out: *mut [u8; 132], d: *const [u8; 66], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32 {
+        let _ = verified_garbage_cpu::detected();
+        // SAFETY: the caller's obligations.
+        unsafe { vg_ecdsa_p521_sign_auto(out, d, digest, digest_len, scratch, hmac) }
+    }
+    // NO-COVERAGE-END
+    let Some(cpu) = verified_garbage_cpu::known() else {
+        // NO-COVERAGE-START
+        // SAFETY: the caller's obligations.
+        return unsafe { first_call(out, d, digest, digest_len, scratch, hmac) };
+        // NO-COVERAGE-END
+    };
     if cpu.contains(crate::ecdsa_p521::VG_ECDSA_P521_SIGN_ADX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_ecdsa_p521_sign_adx`'s, and the CPU
         // has the features it needs.
@@ -50,9 +68,27 @@ pub unsafe fn vg_ecdsa_p521_sign_auto(out: *mut [u8; 132], d: *const [u8; 66], d
 /// * `scratch` must not overlap `public`, `digest` or `sig` (distinct Rust objects never do).
 /// * None of `public`, `digest`, `sig` and `scratch` may overlap the return address on the stack or the 96 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
-#[inline]
+#[inline(always)]
 pub unsafe fn vg_ecdsa_p521_verify_auto(public: *const [u8; 133], digest: *const u8, digest_len: usize, sig: *const [u8; 132], scratch: *mut [u64; 1024]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    // Only a process's first call of a dispatcher detects the CPU features
+    // (`first_call`), so no test runs every dispatcher's.
+    // NO-COVERAGE-START
+    /// Detects the features, and calls the dispatcher again.
+    #[allow(clippy::too_many_arguments)]
+    #[cold]
+    #[inline(never)]
+    unsafe fn first_call(public: *const [u8; 133], digest: *const u8, digest_len: usize, sig: *const [u8; 132], scratch: *mut [u64; 1024]) -> u32 {
+        let _ = verified_garbage_cpu::detected();
+        // SAFETY: the caller's obligations.
+        unsafe { vg_ecdsa_p521_verify_auto(public, digest, digest_len, sig, scratch) }
+    }
+    // NO-COVERAGE-END
+    let Some(cpu) = verified_garbage_cpu::known() else {
+        // NO-COVERAGE-START
+        // SAFETY: the caller's obligations.
+        return unsafe { first_call(public, digest, digest_len, sig, scratch) };
+        // NO-COVERAGE-END
+    };
     if cpu.contains(crate::ecdsa_p521::VG_ECDSA_P521_VERIFY_ADX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_ecdsa_p521_verify_adx`'s, and the CPU
         // has the features it needs.

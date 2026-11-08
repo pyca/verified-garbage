@@ -19,7 +19,7 @@ mod tests {
     use verified_garbage_cpu::detect::{NAMES, allowed, runtime};
     #[cfg(feature = "cpu-features-env")]
     use verified_garbage_cpu::detect::{allowed_by, named_by, parse};
-    use verified_garbage_cpu::{Features, feature, requested};
+    use verified_garbage_cpu::{Features, feature, known, requested};
 
     /// Each name's bit is its index in `NAMES`, and no name is there twice.
     #[test]
@@ -172,6 +172,23 @@ mod tests {
             assert_eq!(requested(Features(bit)), named & bit != 0, "{name}");
         }
         assert_eq!(requested(Features(named)), named != 0);
+    }
+
+    /// Once detection has run, `known` gives what `detected` and
+    /// `requested` do, from the one recorded state.
+    #[test]
+    fn known_is_detected() {
+        let cpu = detected();
+        let k = known().unwrap();
+        assert_eq!(k.any(), cpu.0 != 0);
+        assert!(k.contains(cpu));
+        assert!(k.contains(Features(0)));
+        assert!(!k.requested(Features(0)));
+        for (name, bit) in NAMES {
+            let f = Features(bit);
+            assert_eq!(k.contains(f), cpu.contains(f), "{name}");
+            assert_eq!(k.requested(f), requested(f), "{name}");
+        }
     }
 
     /// What a value of `VG_CPU_FEATURES` names: nothing if it is empty or

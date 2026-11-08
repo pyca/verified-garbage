@@ -10,11 +10,12 @@
 extern crate std;
 
 // Public for the library's tests of it (`src/cpu.rs`), which CI runs with
-// the library's: only `detected` and `requested` are this crate's interface.
+// the library's: only `detected`, `requested` and `known` are this crate's
+// interface.
 #[doc(hidden)]
 pub mod detect;
 
-pub use detect::{detected, requested};
+pub use detect::{Known, detected, known, requested};
 
 /// The bit of each feature detection knows in a [`Features`], by its Rust
 /// `target_feature` name in uppercase: what the generated `_FEATURES`

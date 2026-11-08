@@ -18,9 +18,27 @@
 /// * `out` and `scratch` must not overlap each other, `d` or `peer` (distinct Rust objects never do).
 /// * None of `out`, `d`, `peer` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
-#[inline]
+#[inline(always)]
 pub unsafe fn vg_ecdh_brainpoolp512r1_auto(out: *mut [u8; 64], d: *const [u8; 64], peer: *const [u8; 129], scratch: *mut [u64; 1024]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    // Only a process's first call of a dispatcher detects the CPU features
+    // (`first_call`), so no test runs every dispatcher's.
+    // NO-COVERAGE-START
+    /// Detects the features, and calls the dispatcher again.
+    #[allow(clippy::too_many_arguments)]
+    #[cold]
+    #[inline(never)]
+    unsafe fn first_call(out: *mut [u8; 64], d: *const [u8; 64], peer: *const [u8; 129], scratch: *mut [u64; 1024]) -> u32 {
+        let _ = verified_garbage_cpu::detected();
+        // SAFETY: the caller's obligations.
+        unsafe { vg_ecdh_brainpoolp512r1_auto(out, d, peer, scratch) }
+    }
+    // NO-COVERAGE-END
+    let Some(cpu) = verified_garbage_cpu::known() else {
+        // NO-COVERAGE-START
+        // SAFETY: the caller's obligations.
+        return unsafe { first_call(out, d, peer, scratch) };
+        // NO-COVERAGE-END
+    };
     #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
     if cpu.contains(crate::ecdh_brainpoolp512r1::VG_ECDH_BRAINPOOLP512R1_UMAAL_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_ecdh_brainpoolp512r1_umaal`'s, and the CPU

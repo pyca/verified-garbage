@@ -18,10 +18,28 @@
 /// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
 /// * None of `state`, `data` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
-#[inline]
+#[inline(always)]
 pub unsafe fn vg_sha3_224_update_auto(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
-    let cpu = verified_garbage_cpu::detected();
-    if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHA3_224_UPDATE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHA3_224_UPDATE_SHA3_FEATURES) {
+    // Only a process's first call of a dispatcher detects the CPU features
+    // (`first_call`), so no test runs every dispatcher's.
+    // NO-COVERAGE-START
+    /// Detects the features, and calls the dispatcher again.
+    #[allow(clippy::too_many_arguments)]
+    #[cold]
+    #[inline(never)]
+    unsafe fn first_call(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+        let _ = verified_garbage_cpu::detected();
+        // SAFETY: the caller's obligations.
+        unsafe { vg_sha3_224_update_auto(state, pos, data, len, scratch) }
+    }
+    // NO-COVERAGE-END
+    let Some(cpu) = verified_garbage_cpu::known() else {
+        // NO-COVERAGE-START
+        // SAFETY: the caller's obligations.
+        return unsafe { first_call(state, pos, data, len, scratch) };
+        // NO-COVERAGE-END
+    };
+    if (cfg!(target_vendor = "apple") || cpu.requested(crate::sha3::VG_SHA3_224_UPDATE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHA3_224_UPDATE_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha3_224_update_sha3`'s, and the CPU
         // has the features it needs.
         return unsafe { crate::sha3::vg_sha3_224_update_sha3(state, pos, data, len, scratch) };
@@ -46,10 +64,28 @@ pub unsafe fn vg_sha3_224_update_auto(state: *mut [u64; 25], pos: usize, data: *
 /// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
 /// * None of `state`, `data` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
-#[inline]
+#[inline(always)]
 pub unsafe fn vg_sha3_256_update_auto(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
-    let cpu = verified_garbage_cpu::detected();
-    if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHA3_256_UPDATE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHA3_256_UPDATE_SHA3_FEATURES) {
+    // Only a process's first call of a dispatcher detects the CPU features
+    // (`first_call`), so no test runs every dispatcher's.
+    // NO-COVERAGE-START
+    /// Detects the features, and calls the dispatcher again.
+    #[allow(clippy::too_many_arguments)]
+    #[cold]
+    #[inline(never)]
+    unsafe fn first_call(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+        let _ = verified_garbage_cpu::detected();
+        // SAFETY: the caller's obligations.
+        unsafe { vg_sha3_256_update_auto(state, pos, data, len, scratch) }
+    }
+    // NO-COVERAGE-END
+    let Some(cpu) = verified_garbage_cpu::known() else {
+        // NO-COVERAGE-START
+        // SAFETY: the caller's obligations.
+        return unsafe { first_call(state, pos, data, len, scratch) };
+        // NO-COVERAGE-END
+    };
+    if (cfg!(target_vendor = "apple") || cpu.requested(crate::sha3::VG_SHA3_256_UPDATE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHA3_256_UPDATE_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha3_256_update_sha3`'s, and the CPU
         // has the features it needs.
         return unsafe { crate::sha3::vg_sha3_256_update_sha3(state, pos, data, len, scratch) };
@@ -74,10 +110,28 @@ pub unsafe fn vg_sha3_256_update_auto(state: *mut [u64; 25], pos: usize, data: *
 /// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
 /// * None of `state`, `data` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
-#[inline]
+#[inline(always)]
 pub unsafe fn vg_sha3_384_update_auto(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
-    let cpu = verified_garbage_cpu::detected();
-    if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHA3_384_UPDATE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHA3_384_UPDATE_SHA3_FEATURES) {
+    // Only a process's first call of a dispatcher detects the CPU features
+    // (`first_call`), so no test runs every dispatcher's.
+    // NO-COVERAGE-START
+    /// Detects the features, and calls the dispatcher again.
+    #[allow(clippy::too_many_arguments)]
+    #[cold]
+    #[inline(never)]
+    unsafe fn first_call(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+        let _ = verified_garbage_cpu::detected();
+        // SAFETY: the caller's obligations.
+        unsafe { vg_sha3_384_update_auto(state, pos, data, len, scratch) }
+    }
+    // NO-COVERAGE-END
+    let Some(cpu) = verified_garbage_cpu::known() else {
+        // NO-COVERAGE-START
+        // SAFETY: the caller's obligations.
+        return unsafe { first_call(state, pos, data, len, scratch) };
+        // NO-COVERAGE-END
+    };
+    if (cfg!(target_vendor = "apple") || cpu.requested(crate::sha3::VG_SHA3_384_UPDATE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHA3_384_UPDATE_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha3_384_update_sha3`'s, and the CPU
         // has the features it needs.
         return unsafe { crate::sha3::vg_sha3_384_update_sha3(state, pos, data, len, scratch) };
@@ -102,10 +156,28 @@ pub unsafe fn vg_sha3_384_update_auto(state: *mut [u64; 25], pos: usize, data: *
 /// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
 /// * None of `state`, `data` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
-#[inline]
+#[inline(always)]
 pub unsafe fn vg_sha3_512_update_auto(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
-    let cpu = verified_garbage_cpu::detected();
-    if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHA3_512_UPDATE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHA3_512_UPDATE_SHA3_FEATURES) {
+    // Only a process's first call of a dispatcher detects the CPU features
+    // (`first_call`), so no test runs every dispatcher's.
+    // NO-COVERAGE-START
+    /// Detects the features, and calls the dispatcher again.
+    #[allow(clippy::too_many_arguments)]
+    #[cold]
+    #[inline(never)]
+    unsafe fn first_call(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+        let _ = verified_garbage_cpu::detected();
+        // SAFETY: the caller's obligations.
+        unsafe { vg_sha3_512_update_auto(state, pos, data, len, scratch) }
+    }
+    // NO-COVERAGE-END
+    let Some(cpu) = verified_garbage_cpu::known() else {
+        // NO-COVERAGE-START
+        // SAFETY: the caller's obligations.
+        return unsafe { first_call(state, pos, data, len, scratch) };
+        // NO-COVERAGE-END
+    };
+    if (cfg!(target_vendor = "apple") || cpu.requested(crate::sha3::VG_SHA3_512_UPDATE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHA3_512_UPDATE_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha3_512_update_sha3`'s, and the CPU
         // has the features it needs.
         return unsafe { crate::sha3::vg_sha3_512_update_sha3(state, pos, data, len, scratch) };
@@ -130,10 +202,28 @@ pub unsafe fn vg_sha3_512_update_auto(state: *mut [u64; 25], pos: usize, data: *
 /// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
 /// * None of `state`, `data` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
-#[inline]
+#[inline(always)]
 pub unsafe fn vg_shake128_update_auto(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
-    let cpu = verified_garbage_cpu::detected();
-    if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHAKE128_UPDATE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHAKE128_UPDATE_SHA3_FEATURES) {
+    // Only a process's first call of a dispatcher detects the CPU features
+    // (`first_call`), so no test runs every dispatcher's.
+    // NO-COVERAGE-START
+    /// Detects the features, and calls the dispatcher again.
+    #[allow(clippy::too_many_arguments)]
+    #[cold]
+    #[inline(never)]
+    unsafe fn first_call(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+        let _ = verified_garbage_cpu::detected();
+        // SAFETY: the caller's obligations.
+        unsafe { vg_shake128_update_auto(state, pos, data, len, scratch) }
+    }
+    // NO-COVERAGE-END
+    let Some(cpu) = verified_garbage_cpu::known() else {
+        // NO-COVERAGE-START
+        // SAFETY: the caller's obligations.
+        return unsafe { first_call(state, pos, data, len, scratch) };
+        // NO-COVERAGE-END
+    };
+    if (cfg!(target_vendor = "apple") || cpu.requested(crate::sha3::VG_SHAKE128_UPDATE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHAKE128_UPDATE_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_shake128_update_sha3`'s, and the CPU
         // has the features it needs.
         return unsafe { crate::sha3::vg_shake128_update_sha3(state, pos, data, len, scratch) };
@@ -156,10 +246,28 @@ pub unsafe fn vg_shake128_update_auto(state: *mut [u64; 25], pos: usize, data: *
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the 656 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
-#[inline]
+#[inline(always)]
 pub unsafe fn vg_shake128_squeeze_auto(state: *mut [u64; 25], pos: usize, out: *mut u8, outlen: usize) -> usize {
-    let cpu = verified_garbage_cpu::detected();
-    if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHAKE128_SQUEEZE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHAKE128_SQUEEZE_SHA3_FEATURES) {
+    // Only a process's first call of a dispatcher detects the CPU features
+    // (`first_call`), so no test runs every dispatcher's.
+    // NO-COVERAGE-START
+    /// Detects the features, and calls the dispatcher again.
+    #[allow(clippy::too_many_arguments)]
+    #[cold]
+    #[inline(never)]
+    unsafe fn first_call(state: *mut [u64; 25], pos: usize, out: *mut u8, outlen: usize) -> usize {
+        let _ = verified_garbage_cpu::detected();
+        // SAFETY: the caller's obligations.
+        unsafe { vg_shake128_squeeze_auto(state, pos, out, outlen) }
+    }
+    // NO-COVERAGE-END
+    let Some(cpu) = verified_garbage_cpu::known() else {
+        // NO-COVERAGE-START
+        // SAFETY: the caller's obligations.
+        return unsafe { first_call(state, pos, out, outlen) };
+        // NO-COVERAGE-END
+    };
+    if (cfg!(target_vendor = "apple") || cpu.requested(crate::sha3::VG_SHAKE128_SQUEEZE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHAKE128_SQUEEZE_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_shake128_squeeze_sha3`'s, and the CPU
         // has the features it needs.
         return unsafe { crate::sha3::vg_shake128_squeeze_sha3(state, pos, out, outlen) };
@@ -182,10 +290,28 @@ pub unsafe fn vg_shake128_squeeze_auto(state: *mut [u64; 25], pos: usize, out: *
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the 656 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
-#[inline]
+#[inline(always)]
 pub unsafe fn vg_shake256_squeeze_auto(state: *mut [u64; 25], pos: usize, out: *mut u8, outlen: usize) -> usize {
-    let cpu = verified_garbage_cpu::detected();
-    if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHAKE256_SQUEEZE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHAKE256_SQUEEZE_SHA3_FEATURES) {
+    // Only a process's first call of a dispatcher detects the CPU features
+    // (`first_call`), so no test runs every dispatcher's.
+    // NO-COVERAGE-START
+    /// Detects the features, and calls the dispatcher again.
+    #[allow(clippy::too_many_arguments)]
+    #[cold]
+    #[inline(never)]
+    unsafe fn first_call(state: *mut [u64; 25], pos: usize, out: *mut u8, outlen: usize) -> usize {
+        let _ = verified_garbage_cpu::detected();
+        // SAFETY: the caller's obligations.
+        unsafe { vg_shake256_squeeze_auto(state, pos, out, outlen) }
+    }
+    // NO-COVERAGE-END
+    let Some(cpu) = verified_garbage_cpu::known() else {
+        // NO-COVERAGE-START
+        // SAFETY: the caller's obligations.
+        return unsafe { first_call(state, pos, out, outlen) };
+        // NO-COVERAGE-END
+    };
+    if (cfg!(target_vendor = "apple") || cpu.requested(crate::sha3::VG_SHAKE256_SQUEEZE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHAKE256_SQUEEZE_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_shake256_squeeze_sha3`'s, and the CPU
         // has the features it needs.
         return unsafe { crate::sha3::vg_shake256_squeeze_sha3(state, pos, out, outlen) };
@@ -209,10 +335,28 @@ pub unsafe fn vg_shake256_squeeze_auto(state: *mut [u64; 25], pos: usize, out: *
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the 688 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
-#[inline]
+#[inline(always)]
 pub unsafe fn vg_sha3_224_finalize_auto(state: *mut [u64; 25], pos: usize, out: *mut [u8; 28]) {
-    let cpu = verified_garbage_cpu::detected();
-    if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHA3_224_FINALIZE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHA3_224_FINALIZE_SHA3_FEATURES) {
+    // Only a process's first call of a dispatcher detects the CPU features
+    // (`first_call`), so no test runs every dispatcher's.
+    // NO-COVERAGE-START
+    /// Detects the features, and calls the dispatcher again.
+    #[allow(clippy::too_many_arguments)]
+    #[cold]
+    #[inline(never)]
+    unsafe fn first_call(state: *mut [u64; 25], pos: usize, out: *mut [u8; 28]) {
+        let _ = verified_garbage_cpu::detected();
+        // SAFETY: the caller's obligations.
+        unsafe { vg_sha3_224_finalize_auto(state, pos, out) }
+    }
+    // NO-COVERAGE-END
+    let Some(cpu) = verified_garbage_cpu::known() else {
+        // NO-COVERAGE-START
+        // SAFETY: the caller's obligations.
+        return unsafe { first_call(state, pos, out) };
+        // NO-COVERAGE-END
+    };
+    if (cfg!(target_vendor = "apple") || cpu.requested(crate::sha3::VG_SHA3_224_FINALIZE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHA3_224_FINALIZE_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha3_224_finalize_sha3`'s, and the CPU
         // has the features it needs.
         return unsafe { crate::sha3::vg_sha3_224_finalize_sha3(state, pos, out) };
@@ -236,10 +380,28 @@ pub unsafe fn vg_sha3_224_finalize_auto(state: *mut [u64; 25], pos: usize, out: 
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the 688 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
-#[inline]
+#[inline(always)]
 pub unsafe fn vg_sha3_256_finalize_auto(state: *mut [u64; 25], pos: usize, out: *mut [u8; 32]) {
-    let cpu = verified_garbage_cpu::detected();
-    if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHA3_256_FINALIZE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHA3_256_FINALIZE_SHA3_FEATURES) {
+    // Only a process's first call of a dispatcher detects the CPU features
+    // (`first_call`), so no test runs every dispatcher's.
+    // NO-COVERAGE-START
+    /// Detects the features, and calls the dispatcher again.
+    #[allow(clippy::too_many_arguments)]
+    #[cold]
+    #[inline(never)]
+    unsafe fn first_call(state: *mut [u64; 25], pos: usize, out: *mut [u8; 32]) {
+        let _ = verified_garbage_cpu::detected();
+        // SAFETY: the caller's obligations.
+        unsafe { vg_sha3_256_finalize_auto(state, pos, out) }
+    }
+    // NO-COVERAGE-END
+    let Some(cpu) = verified_garbage_cpu::known() else {
+        // NO-COVERAGE-START
+        // SAFETY: the caller's obligations.
+        return unsafe { first_call(state, pos, out) };
+        // NO-COVERAGE-END
+    };
+    if (cfg!(target_vendor = "apple") || cpu.requested(crate::sha3::VG_SHA3_256_FINALIZE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHA3_256_FINALIZE_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha3_256_finalize_sha3`'s, and the CPU
         // has the features it needs.
         return unsafe { crate::sha3::vg_sha3_256_finalize_sha3(state, pos, out) };
@@ -263,10 +425,28 @@ pub unsafe fn vg_sha3_256_finalize_auto(state: *mut [u64; 25], pos: usize, out: 
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the 688 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
-#[inline]
+#[inline(always)]
 pub unsafe fn vg_sha3_384_finalize_auto(state: *mut [u64; 25], pos: usize, out: *mut [u8; 48]) {
-    let cpu = verified_garbage_cpu::detected();
-    if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHA3_384_FINALIZE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHA3_384_FINALIZE_SHA3_FEATURES) {
+    // Only a process's first call of a dispatcher detects the CPU features
+    // (`first_call`), so no test runs every dispatcher's.
+    // NO-COVERAGE-START
+    /// Detects the features, and calls the dispatcher again.
+    #[allow(clippy::too_many_arguments)]
+    #[cold]
+    #[inline(never)]
+    unsafe fn first_call(state: *mut [u64; 25], pos: usize, out: *mut [u8; 48]) {
+        let _ = verified_garbage_cpu::detected();
+        // SAFETY: the caller's obligations.
+        unsafe { vg_sha3_384_finalize_auto(state, pos, out) }
+    }
+    // NO-COVERAGE-END
+    let Some(cpu) = verified_garbage_cpu::known() else {
+        // NO-COVERAGE-START
+        // SAFETY: the caller's obligations.
+        return unsafe { first_call(state, pos, out) };
+        // NO-COVERAGE-END
+    };
+    if (cfg!(target_vendor = "apple") || cpu.requested(crate::sha3::VG_SHA3_384_FINALIZE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHA3_384_FINALIZE_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha3_384_finalize_sha3`'s, and the CPU
         // has the features it needs.
         return unsafe { crate::sha3::vg_sha3_384_finalize_sha3(state, pos, out) };
@@ -290,10 +470,28 @@ pub unsafe fn vg_sha3_384_finalize_auto(state: *mut [u64; 25], pos: usize, out: 
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the 688 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
-#[inline]
+#[inline(always)]
 pub unsafe fn vg_sha3_512_finalize_auto(state: *mut [u64; 25], pos: usize, out: *mut [u8; 64]) {
-    let cpu = verified_garbage_cpu::detected();
-    if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHA3_512_FINALIZE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHA3_512_FINALIZE_SHA3_FEATURES) {
+    // Only a process's first call of a dispatcher detects the CPU features
+    // (`first_call`), so no test runs every dispatcher's.
+    // NO-COVERAGE-START
+    /// Detects the features, and calls the dispatcher again.
+    #[allow(clippy::too_many_arguments)]
+    #[cold]
+    #[inline(never)]
+    unsafe fn first_call(state: *mut [u64; 25], pos: usize, out: *mut [u8; 64]) {
+        let _ = verified_garbage_cpu::detected();
+        // SAFETY: the caller's obligations.
+        unsafe { vg_sha3_512_finalize_auto(state, pos, out) }
+    }
+    // NO-COVERAGE-END
+    let Some(cpu) = verified_garbage_cpu::known() else {
+        // NO-COVERAGE-START
+        // SAFETY: the caller's obligations.
+        return unsafe { first_call(state, pos, out) };
+        // NO-COVERAGE-END
+    };
+    if (cfg!(target_vendor = "apple") || cpu.requested(crate::sha3::VG_SHA3_512_FINALIZE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHA3_512_FINALIZE_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha3_512_finalize_sha3`'s, and the CPU
         // has the features it needs.
         return unsafe { crate::sha3::vg_sha3_512_finalize_sha3(state, pos, out) };
@@ -314,10 +512,28 @@ pub unsafe fn vg_sha3_512_finalize_auto(state: *mut [u64; 25], pos: usize, out: 
 /// * `pos` must be less than 168.
 /// * `state` must not overlap the 656 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
-#[inline]
+#[inline(always)]
 pub unsafe fn vg_shake128_finalize_auto(state: *mut [u64; 25], pos: usize) {
-    let cpu = verified_garbage_cpu::detected();
-    if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHAKE128_FINALIZE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHAKE128_FINALIZE_SHA3_FEATURES) {
+    // Only a process's first call of a dispatcher detects the CPU features
+    // (`first_call`), so no test runs every dispatcher's.
+    // NO-COVERAGE-START
+    /// Detects the features, and calls the dispatcher again.
+    #[allow(clippy::too_many_arguments)]
+    #[cold]
+    #[inline(never)]
+    unsafe fn first_call(state: *mut [u64; 25], pos: usize) {
+        let _ = verified_garbage_cpu::detected();
+        // SAFETY: the caller's obligations.
+        unsafe { vg_shake128_finalize_auto(state, pos) }
+    }
+    // NO-COVERAGE-END
+    let Some(cpu) = verified_garbage_cpu::known() else {
+        // NO-COVERAGE-START
+        // SAFETY: the caller's obligations.
+        return unsafe { first_call(state, pos) };
+        // NO-COVERAGE-END
+    };
+    if (cfg!(target_vendor = "apple") || cpu.requested(crate::sha3::VG_SHAKE128_FINALIZE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHAKE128_FINALIZE_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_shake128_finalize_sha3`'s, and the CPU
         // has the features it needs.
         return unsafe { crate::sha3::vg_shake128_finalize_sha3(state, pos) };
@@ -338,10 +554,28 @@ pub unsafe fn vg_shake128_finalize_auto(state: *mut [u64; 25], pos: usize) {
 /// * `pos` must be less than 136.
 /// * `state` must not overlap the 656 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
-#[inline]
+#[inline(always)]
 pub unsafe fn vg_shake256_finalize_auto(state: *mut [u64; 25], pos: usize) {
-    let cpu = verified_garbage_cpu::detected();
-    if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHAKE256_FINALIZE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHAKE256_FINALIZE_SHA3_FEATURES) {
+    // Only a process's first call of a dispatcher detects the CPU features
+    // (`first_call`), so no test runs every dispatcher's.
+    // NO-COVERAGE-START
+    /// Detects the features, and calls the dispatcher again.
+    #[allow(clippy::too_many_arguments)]
+    #[cold]
+    #[inline(never)]
+    unsafe fn first_call(state: *mut [u64; 25], pos: usize) {
+        let _ = verified_garbage_cpu::detected();
+        // SAFETY: the caller's obligations.
+        unsafe { vg_shake256_finalize_auto(state, pos) }
+    }
+    // NO-COVERAGE-END
+    let Some(cpu) = verified_garbage_cpu::known() else {
+        // NO-COVERAGE-START
+        // SAFETY: the caller's obligations.
+        return unsafe { first_call(state, pos) };
+        // NO-COVERAGE-END
+    };
+    if (cfg!(target_vendor = "apple") || cpu.requested(crate::sha3::VG_SHAKE256_FINALIZE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHAKE256_FINALIZE_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_shake256_finalize_sha3`'s, and the CPU
         // has the features it needs.
         return unsafe { crate::sha3::vg_shake256_finalize_sha3(state, pos) };

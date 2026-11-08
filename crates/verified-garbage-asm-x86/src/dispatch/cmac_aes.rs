@@ -16,9 +16,27 @@
 /// * `state` must not overlap `key` or the arguments on the stack (distinct Rust objects never do).
 /// * Neither `state` nor `key` may overlap the return address on the stack or the 2372 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
-#[inline]
+#[inline(always)]
 pub unsafe fn vg_cmac_aes_init_auto(state: *mut [u64; 38], key: *const u8, key_len: usize) {
-    let cpu = verified_garbage_cpu::detected();
+    // Only a process's first call of a dispatcher detects the CPU features
+    // (`first_call`), so no test runs every dispatcher's.
+    // NO-COVERAGE-START
+    /// Detects the features, and calls the dispatcher again.
+    #[allow(clippy::too_many_arguments)]
+    #[cold]
+    #[inline(never)]
+    unsafe fn first_call(state: *mut [u64; 38], key: *const u8, key_len: usize) {
+        let _ = verified_garbage_cpu::detected();
+        // SAFETY: the caller's obligations.
+        unsafe { vg_cmac_aes_init_auto(state, key, key_len) }
+    }
+    // NO-COVERAGE-END
+    let Some(cpu) = verified_garbage_cpu::known() else {
+        // NO-COVERAGE-START
+        // SAFETY: the caller's obligations.
+        return unsafe { first_call(state, key, key_len) };
+        // NO-COVERAGE-END
+    };
     if cpu.contains(crate::cmac_aes::VG_CMAC_AES_INIT_AESNI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_cmac_aes_init_aesni`'s, and the CPU
         // has the features it needs.
@@ -42,9 +60,27 @@ pub unsafe fn vg_cmac_aes_init_auto(state: *mut [u64; 38], key: *const u8, key_l
 /// * `state` must not overlap `data` or the arguments on the stack (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the return address on the stack or the 2392 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
-#[inline]
+#[inline(always)]
 pub unsafe fn vg_cmac_aes_absorb_auto(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
-    let cpu = verified_garbage_cpu::detected();
+    // Only a process's first call of a dispatcher detects the CPU features
+    // (`first_call`), so no test runs every dispatcher's.
+    // NO-COVERAGE-START
+    /// Detects the features, and calls the dispatcher again.
+    #[allow(clippy::too_many_arguments)]
+    #[cold]
+    #[inline(never)]
+    unsafe fn first_call(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
+        let _ = verified_garbage_cpu::detected();
+        // SAFETY: the caller's obligations.
+        unsafe { vg_cmac_aes_absorb_auto(state, rounds, count, data, len) }
+    }
+    // NO-COVERAGE-END
+    let Some(cpu) = verified_garbage_cpu::known() else {
+        // NO-COVERAGE-START
+        // SAFETY: the caller's obligations.
+        return unsafe { first_call(state, rounds, count, data, len) };
+        // NO-COVERAGE-END
+    };
     if cpu.contains(crate::cmac_aes::VG_CMAC_AES_ABSORB_AESNI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_cmac_aes_absorb_aesni`'s, and the CPU
         // has the features it needs.
@@ -69,9 +105,27 @@ pub unsafe fn vg_cmac_aes_absorb_auto(state: *mut [u64; 38], rounds: usize, coun
 /// * `state` and `out` must not overlap each other or the arguments on the stack (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 2388 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
-#[inline]
+#[inline(always)]
 pub unsafe fn vg_cmac_aes_finish_auto(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
-    let cpu = verified_garbage_cpu::detected();
+    // Only a process's first call of a dispatcher detects the CPU features
+    // (`first_call`), so no test runs every dispatcher's.
+    // NO-COVERAGE-START
+    /// Detects the features, and calls the dispatcher again.
+    #[allow(clippy::too_many_arguments)]
+    #[cold]
+    #[inline(never)]
+    unsafe fn first_call(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
+        let _ = verified_garbage_cpu::detected();
+        // SAFETY: the caller's obligations.
+        unsafe { vg_cmac_aes_finish_auto(state, rounds, count, out) }
+    }
+    // NO-COVERAGE-END
+    let Some(cpu) = verified_garbage_cpu::known() else {
+        // NO-COVERAGE-START
+        // SAFETY: the caller's obligations.
+        return unsafe { first_call(state, rounds, count, out) };
+        // NO-COVERAGE-END
+    };
     if cpu.contains(crate::cmac_aes::VG_CMAC_AES_FINISH_AESNI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_cmac_aes_finish_aesni`'s, and the CPU
         // has the features it needs.

@@ -13,9 +13,27 @@
 /// * `p` must be valid for reads and writes of `len` bytes.
 /// * `p` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
-#[inline]
+#[inline(always)]
 pub unsafe fn vg_zeroize_auto(p: *mut u8, len: usize) {
-    let cpu = verified_garbage_cpu::detected();
+    // Only a process's first call of a dispatcher detects the CPU features
+    // (`first_call`), so no test runs every dispatcher's.
+    // NO-COVERAGE-START
+    /// Detects the features, and calls the dispatcher again.
+    #[allow(clippy::too_many_arguments)]
+    #[cold]
+    #[inline(never)]
+    unsafe fn first_call(p: *mut u8, len: usize) {
+        let _ = verified_garbage_cpu::detected();
+        // SAFETY: the caller's obligations.
+        unsafe { vg_zeroize_auto(p, len) }
+    }
+    // NO-COVERAGE-END
+    let Some(cpu) = verified_garbage_cpu::known() else {
+        // NO-COVERAGE-START
+        // SAFETY: the caller's obligations.
+        return unsafe { first_call(p, len) };
+        // NO-COVERAGE-END
+    };
     if cpu.contains(crate::zeroize::VG_ZEROIZE_AVX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_zeroize_avx`'s, and the CPU
         // has the features it needs.

@@ -19,10 +19,28 @@
 /// * `ek`, `dk` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
 /// * None of `seed`, `ek`, `dk` and `scratch` may overlap the 128 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
-#[inline]
+#[inline(always)]
 pub unsafe fn vg_mlkem1024_keygen_auto(seed: *const [u8; 64], ek: *mut [u8; 1568], dk: *mut [u8; 3168], scratch: *mut [u64; 6144]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
-    if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::mlkem1024::VG_MLKEM1024_KEYGEN_X2_SHA3_KECCAK_SHA3_FEATURES)) && cpu.contains(crate::mlkem1024::VG_MLKEM1024_KEYGEN_X2_SHA3_KECCAK_SHA3_FEATURES) {
+    // Only a process's first call of a dispatcher detects the CPU features
+    // (`first_call`), so no test runs every dispatcher's.
+    // NO-COVERAGE-START
+    /// Detects the features, and calls the dispatcher again.
+    #[allow(clippy::too_many_arguments)]
+    #[cold]
+    #[inline(never)]
+    unsafe fn first_call(seed: *const [u8; 64], ek: *mut [u8; 1568], dk: *mut [u8; 3168], scratch: *mut [u64; 6144]) -> u32 {
+        let _ = verified_garbage_cpu::detected();
+        // SAFETY: the caller's obligations.
+        unsafe { vg_mlkem1024_keygen_auto(seed, ek, dk, scratch) }
+    }
+    // NO-COVERAGE-END
+    let Some(cpu) = verified_garbage_cpu::known() else {
+        // NO-COVERAGE-START
+        // SAFETY: the caller's obligations.
+        return unsafe { first_call(seed, ek, dk, scratch) };
+        // NO-COVERAGE-END
+    };
+    if (cfg!(target_vendor = "apple") || cpu.requested(crate::mlkem1024::VG_MLKEM1024_KEYGEN_X2_SHA3_KECCAK_SHA3_FEATURES)) && cpu.contains(crate::mlkem1024::VG_MLKEM1024_KEYGEN_X2_SHA3_KECCAK_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_mlkem1024_keygen_x2_sha3_keccak_sha3`'s, and the CPU
         // has the features it needs.
         return unsafe { crate::mlkem1024::vg_mlkem1024_keygen_x2_sha3_keccak_sha3(seed, ek, dk, scratch) };
@@ -55,10 +73,28 @@ pub unsafe fn vg_mlkem1024_keygen_auto(seed: *const [u8; 64], ek: *mut [u8; 1568
 /// * `key`, `ct` and `scratch` must not overlap each other, `ek` or `m` (distinct Rust objects never do).
 /// * None of `ek`, `m`, `key`, `ct` and `scratch` may overlap the 128 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
-#[inline]
+#[inline(always)]
 pub unsafe fn vg_mlkem1024_encaps_auto(ek: *const [u8; 1568], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1568], scratch: *mut [u64; 6144]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
-    if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::mlkem1024::VG_MLKEM1024_ENCAPS_X2_SHA3_KECCAK_SHA3_FEATURES)) && cpu.contains(crate::mlkem1024::VG_MLKEM1024_ENCAPS_X2_SHA3_KECCAK_SHA3_FEATURES) {
+    // Only a process's first call of a dispatcher detects the CPU features
+    // (`first_call`), so no test runs every dispatcher's.
+    // NO-COVERAGE-START
+    /// Detects the features, and calls the dispatcher again.
+    #[allow(clippy::too_many_arguments)]
+    #[cold]
+    #[inline(never)]
+    unsafe fn first_call(ek: *const [u8; 1568], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1568], scratch: *mut [u64; 6144]) -> u32 {
+        let _ = verified_garbage_cpu::detected();
+        // SAFETY: the caller's obligations.
+        unsafe { vg_mlkem1024_encaps_auto(ek, m, key, ct, scratch) }
+    }
+    // NO-COVERAGE-END
+    let Some(cpu) = verified_garbage_cpu::known() else {
+        // NO-COVERAGE-START
+        // SAFETY: the caller's obligations.
+        return unsafe { first_call(ek, m, key, ct, scratch) };
+        // NO-COVERAGE-END
+    };
+    if (cfg!(target_vendor = "apple") || cpu.requested(crate::mlkem1024::VG_MLKEM1024_ENCAPS_X2_SHA3_KECCAK_SHA3_FEATURES)) && cpu.contains(crate::mlkem1024::VG_MLKEM1024_ENCAPS_X2_SHA3_KECCAK_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_mlkem1024_encaps_x2_sha3_keccak_sha3`'s, and the CPU
         // has the features it needs.
         return unsafe { crate::mlkem1024::vg_mlkem1024_encaps_x2_sha3_keccak_sha3(ek, m, key, ct, scratch) };
@@ -89,10 +125,28 @@ pub unsafe fn vg_mlkem1024_encaps_auto(ek: *const [u8; 1568], m: *const [u8; 32]
 /// * `key` and `scratch` must not overlap each other, `dk` or `ct` (distinct Rust objects never do).
 /// * None of `dk`, `ct`, `key` and `scratch` may overlap the 128 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
-#[inline]
+#[inline(always)]
 pub unsafe fn vg_mlkem1024_decaps_auto(dk: *const [u8; 3168], ct: *const [u8; 1568], key: *mut [u8; 32], scratch: *mut [u64; 6144]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
-    if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::mlkem1024::VG_MLKEM1024_DECAPS_X2_SHA3_KECCAK_SHA3_FEATURES)) && cpu.contains(crate::mlkem1024::VG_MLKEM1024_DECAPS_X2_SHA3_KECCAK_SHA3_FEATURES) {
+    // Only a process's first call of a dispatcher detects the CPU features
+    // (`first_call`), so no test runs every dispatcher's.
+    // NO-COVERAGE-START
+    /// Detects the features, and calls the dispatcher again.
+    #[allow(clippy::too_many_arguments)]
+    #[cold]
+    #[inline(never)]
+    unsafe fn first_call(dk: *const [u8; 3168], ct: *const [u8; 1568], key: *mut [u8; 32], scratch: *mut [u64; 6144]) -> u32 {
+        let _ = verified_garbage_cpu::detected();
+        // SAFETY: the caller's obligations.
+        unsafe { vg_mlkem1024_decaps_auto(dk, ct, key, scratch) }
+    }
+    // NO-COVERAGE-END
+    let Some(cpu) = verified_garbage_cpu::known() else {
+        // NO-COVERAGE-START
+        // SAFETY: the caller's obligations.
+        return unsafe { first_call(dk, ct, key, scratch) };
+        // NO-COVERAGE-END
+    };
+    if (cfg!(target_vendor = "apple") || cpu.requested(crate::mlkem1024::VG_MLKEM1024_DECAPS_X2_SHA3_KECCAK_SHA3_FEATURES)) && cpu.contains(crate::mlkem1024::VG_MLKEM1024_DECAPS_X2_SHA3_KECCAK_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_mlkem1024_decaps_x2_sha3_keccak_sha3`'s, and the CPU
         // has the features it needs.
         return unsafe { crate::mlkem1024::vg_mlkem1024_decaps_x2_sha3_keccak_sha3(dk, ct, key, scratch) };
@@ -133,10 +187,28 @@ pub use crate::mlkem1024::vg_mlkem1024_check_ek as vg_mlkem1024_check_ek_auto;
 /// * `key`, `ct` and `scratch` must not overlap each other, `ek`, `h` or `m` (distinct Rust objects never do).
 /// * None of `ek`, `h`, `m`, `key`, `ct` and `scratch` may overlap the 128 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
-#[inline]
+#[inline(always)]
 pub unsafe fn vg_mlkem1024_encaps_h_auto(ek: *const [u8; 1568], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1568], scratch: *mut [u64; 6144]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
-    if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::mlkem1024::VG_MLKEM1024_ENCAPS_H_X2_SHA3_KECCAK_SHA3_FEATURES)) && cpu.contains(crate::mlkem1024::VG_MLKEM1024_ENCAPS_H_X2_SHA3_KECCAK_SHA3_FEATURES) {
+    // Only a process's first call of a dispatcher detects the CPU features
+    // (`first_call`), so no test runs every dispatcher's.
+    // NO-COVERAGE-START
+    /// Detects the features, and calls the dispatcher again.
+    #[allow(clippy::too_many_arguments)]
+    #[cold]
+    #[inline(never)]
+    unsafe fn first_call(ek: *const [u8; 1568], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1568], scratch: *mut [u64; 6144]) -> u32 {
+        let _ = verified_garbage_cpu::detected();
+        // SAFETY: the caller's obligations.
+        unsafe { vg_mlkem1024_encaps_h_auto(ek, h, m, key, ct, scratch) }
+    }
+    // NO-COVERAGE-END
+    let Some(cpu) = verified_garbage_cpu::known() else {
+        // NO-COVERAGE-START
+        // SAFETY: the caller's obligations.
+        return unsafe { first_call(ek, h, m, key, ct, scratch) };
+        // NO-COVERAGE-END
+    };
+    if (cfg!(target_vendor = "apple") || cpu.requested(crate::mlkem1024::VG_MLKEM1024_ENCAPS_H_X2_SHA3_KECCAK_SHA3_FEATURES)) && cpu.contains(crate::mlkem1024::VG_MLKEM1024_ENCAPS_H_X2_SHA3_KECCAK_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_mlkem1024_encaps_h_x2_sha3_keccak_sha3`'s, and the CPU
         // has the features it needs.
         return unsafe { crate::mlkem1024::vg_mlkem1024_encaps_h_x2_sha3_keccak_sha3(ek, h, m, key, ct, scratch) };

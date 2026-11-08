@@ -18,9 +18,27 @@
 /// * `inner` and `outer` must not overlap each other or `key` (distinct Rust objects never do).
 /// * None of `inner`, `outer` and `key` may overlap the arguments on the stack, overlap the return address on the stack or the 1220 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
-#[inline]
+#[inline(always)]
 pub unsafe fn vg_hmac_sha1_init_auto(inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize) {
-    let cpu = verified_garbage_cpu::detected();
+    // Only a process's first call of a dispatcher detects the CPU features
+    // (`first_call`), so no test runs every dispatcher's.
+    // NO-COVERAGE-START
+    /// Detects the features, and calls the dispatcher again.
+    #[allow(clippy::too_many_arguments)]
+    #[cold]
+    #[inline(never)]
+    unsafe fn first_call(inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize) {
+        let _ = verified_garbage_cpu::detected();
+        // SAFETY: the caller's obligations.
+        unsafe { vg_hmac_sha1_init_auto(inner, outer, key, key_len) }
+    }
+    // NO-COVERAGE-END
+    let Some(cpu) = verified_garbage_cpu::known() else {
+        // NO-COVERAGE-START
+        // SAFETY: the caller's obligations.
+        return unsafe { first_call(inner, outer, key, key_len) };
+        // NO-COVERAGE-END
+    };
     if cpu.contains(crate::hmac_sha1::VG_HMAC_SHA1_INIT_SHANI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_hmac_sha1_init_shani`'s, and the CPU
         // has the features it needs.
@@ -47,9 +65,27 @@ pub unsafe fn vg_hmac_sha1_init_auto(inner: *mut [u8; 84], outer: *mut [u8; 84],
 /// * `inner` and `out` must not overlap each other or `outer` (distinct Rust objects never do).
 /// * None of `inner`, `outer` and `out` may overlap the arguments on the stack, overlap the return address on the stack or the 524 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
-#[inline]
+#[inline(always)]
 pub unsafe fn vg_hmac_sha1_finalize_auto(inner: *mut [u8; 84], outer: *const [u8; 84], count: u64, out: *mut [u8; 20]) {
-    let cpu = verified_garbage_cpu::detected();
+    // Only a process's first call of a dispatcher detects the CPU features
+    // (`first_call`), so no test runs every dispatcher's.
+    // NO-COVERAGE-START
+    /// Detects the features, and calls the dispatcher again.
+    #[allow(clippy::too_many_arguments)]
+    #[cold]
+    #[inline(never)]
+    unsafe fn first_call(inner: *mut [u8; 84], outer: *const [u8; 84], count: u64, out: *mut [u8; 20]) {
+        let _ = verified_garbage_cpu::detected();
+        // SAFETY: the caller's obligations.
+        unsafe { vg_hmac_sha1_finalize_auto(inner, outer, count, out) }
+    }
+    // NO-COVERAGE-END
+    let Some(cpu) = verified_garbage_cpu::known() else {
+        // NO-COVERAGE-START
+        // SAFETY: the caller's obligations.
+        return unsafe { first_call(inner, outer, count, out) };
+        // NO-COVERAGE-END
+    };
     if cpu.contains(crate::hmac_sha1::VG_HMAC_SHA1_FINALIZE_SHANI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_hmac_sha1_finalize_shani`'s, and the CPU
         // has the features it needs.
