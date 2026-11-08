@@ -12,20 +12,36 @@ namespace VG.Generic.AesBlocks.X86.AesEcb
 
 open VG.Proof.AesEcb.X86
 
-def artifacts (v : Proof.Aes.X86.BlocksImpl) : List Artifact := [
-  Spec.AesEcb.encryptApi.artifact X86.target {
-    suffix := v.suffix
-    code := Impl.AesEcb.X86.wiped v.enc
-    stack := 32
-    verified := encrypt_verified v
-    spSafe := encrypt_spSafe v
-    features := v.features },
-  Spec.AesEcb.decryptApi.artifact X86.target {
-    suffix := v.suffix
-    code := Impl.AesEcb.X86.wiped v.dec
-    stack := 32
-    verified := decrypt_verified v
-    spSafe := decrypt_spSafe v
-    features := v.features }]
+def artifacts (v : Proof.Aes.X86.BlocksImpl) : List Artifact :=
+  (if h : v.encWritten = 0 then [
+    Spec.AesEcb.encryptApi.artifact X86.target {
+      suffix := v.suffix
+      code := v.enc.code
+      verified := encrypt_free v h
+      spSafe := v.encSpSafe
+      features := v.features }]
+  else [
+    Spec.AesEcb.encryptApi.artifact X86.target {
+      suffix := v.suffix
+      code := Impl.AesEcb.X86.wiped v.enc v.encWritten
+      stack := 32
+      verified := encrypt_verified v
+      spSafe := encrypt_spSafe v
+      features := v.features }]) ++
+  (if h : v.decWritten = 0 then [
+    Spec.AesEcb.decryptApi.artifact X86.target {
+      suffix := v.suffix
+      code := v.dec.code
+      verified := decrypt_free v h
+      spSafe := v.decSpSafe
+      features := v.features }]
+  else [
+    Spec.AesEcb.decryptApi.artifact X86.target {
+      suffix := v.suffix
+      code := Impl.AesEcb.X86.wiped v.dec v.decWritten
+      stack := 32
+      verified := decrypt_verified v
+      spSafe := decrypt_spSafe v
+      features := v.features }])
 
 end VG.Generic.AesBlocks.X86.AesEcb
