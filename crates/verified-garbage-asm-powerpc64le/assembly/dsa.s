@@ -15749,15 +15749,6 @@ vg_dsa_verify_prevalidated:
 	rldicl %r0, %r0, 16, 48
 	add %r12, %r27, %r6
 	add %r12, %r12, %r0
-	rldicr %r24, %r2, 48, 15
-	rldicl %r24, %r24, 16, 48
-	li %r0, 28
-	mulld %r24, %r24, %r0
-	addi %r24, %r24, 704
-	add %r24, %r24, %r21
-	addi %r24, %r24, 1600
-	rldicr %r6, %r2, 48, 15
-	rldicl %r6, %r6, 16, 48
 	addi %r10, %r10, 0
 	add %r10, %r10, %r29
 	add %r10, %r10, %r29
@@ -15789,6 +15780,45 @@ vg_dsa_verify_prevalidated:
 	li %r0, 0
 	std %r0, 0(%r14)
 	addi %r10, %r31, 256
+	rldicr %r6, %r2, 48, 15
+	rldicl %r6, %r6, 16, 48
+	rldicr %r0, %r2, 32, 31
+	rldicl %r0, %r0, 16, 48
+	add %r12, %r27, %r6
+	add %r12, %r12, %r0
+	add %r12, %r12, %r6
+	addi %r10, %r10, 0
+	add %r10, %r10, %r29
+	add %r10, %r10, %r29
+	add %r10, %r10, %r29
+	add %r10, %r10, %r29
+	add %r10, %r10, %r29
+	addi %r14, %r10, 0
+	rldicl %r17, %r11, 63, 1
+	li %r0, 0
+2162:
+	std %r0, 0(%r14)
+	addi %r14, %r14, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2162b
+	add %r15, %r10, %r6
+	addi %r15, %r15, -1
+	addi %r16, %r12, 0
+	addi %r17, %r6, 0
+2163:
+	lbz %r0, 0(%r16)
+	stb %r0, 0(%r15)
+	addi %r16, %r16, 1
+	addi %r15, %r15, -1
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2163b
+	add %r14, %r10, %r29
+	addi %r14, %r14, -16
+	li %r0, 0
+	std %r0, 0(%r14)
+	addi %r10, %r31, 256
 	li %r20, 0
 	addi %r20, %r20, -1
 	addi %r8, %r10, 0
@@ -15815,7 +15845,7 @@ vg_dsa_verify_prevalidated:
 	addi %r15, %r9, 0
 	addi %r16, %r5, 0
 	rldicl %r17, %r11, 63, 1
-2162:
+2164:
 	ld %r0, 0(%r15)
 	ld %r3, 0(%r14)
 	xor %r3, %r3, %r0
@@ -15827,10 +15857,19 @@ vg_dsa_verify_prevalidated:
 	addi %r16, %r16, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
-	bne %cr0, 2162b
-	addi %r30, %r24, 0
-	rldicr %r31, %r2, 32, 31
-	rldicl %r31, %r31, 16, 48
+	bne %cr0, 2164b
+	rldicr %r12, %r2, 48, 15
+	rldicl %r12, %r12, 16, 48
+	li %r0, 28
+	mulld %r12, %r12, %r0
+	addi %r12, %r12, 704
+	add %r12, %r12, %r21
+	addi %r12, %r12, 1600
+	rldicr %r6, %r2, 32, 31
+	rldicl %r6, %r6, 16, 48
+	addi %r30, %r12, 0
+	add %r25, %r12, %r6
+	addi %r31, %r6, 0
 	ld %r0, 0(%r10)
 	ld %r12, 0(%r10)
 	mulld %r3, %r0, %r12
@@ -15863,12 +15902,12 @@ vg_dsa_verify_prevalidated:
 	add %r14, %r14, %r29
 	rldicl %r17, %r11, 63, 1
 	li %r0, 0
-2163:
+2165:
 	std %r0, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
-	bne %cr0, 2163b
+	bne %cr0, 2165b
 	addi %r14, %r10, 0
 	add %r14, %r14, %r29
 	add %r14, %r14, %r29
@@ -15885,6 +15924,9 @@ vg_dsa_verify_prevalidated:
 	add %r5, %r5, %r29
 	add %r5, %r5, %r29
 	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
 	addi %r6, %r10, 0
 	add %r6, %r6, %r29
 	addi %r7, %r10, 0
@@ -15907,13 +15949,13 @@ vg_dsa_verify_prevalidated:
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
 	li %r22, 0
-2164:
+2166:
 	std %r22, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
-	bne %cr0, 2164b
-2165:
+	bne %cr0, 2166b
+2167:
 	ld %r17, 0(%r6)
 	addi %r6, %r6, 8
 	ld %r19, 0(%r7)
@@ -15939,222 +15981,10 @@ vg_dsa_verify_prevalidated:
 	rldicr %r16, %r16, 62, 1
 	rldicl %r16, %r16, 2, 62
 	cmpldi %cr0, %r16, 0
-	beq %cr0, 2166f
-2168:
-	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
-	addi %r14, %r14, 8
-	addi %r15, %r15, 8
-	addi %r3, %r3, 8
-	addi %r16, %r16, -1
-	cmpldi %cr0, %r16, 0
-	bne %cr0, 2168b
-	b 2167f
-2166:
-2167:
-	rldicl %r16, %r11, 63, 1
-	addi %r16, %r16, -1
-	rldicl %r16, %r16, 62, 2
-	cmpldi %cr0, %r16, 0
-	beq %cr0, 2169f
-2171:
-	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
-	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
-	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
-	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
-	addi %r14, %r14, 32
-	addi %r15, %r15, 32
-	addi %r3, %r3, 32
-	addi %r16, %r16, -1
-	cmpldi %cr0, %r16, 0
-	bne %cr0, 2171b
-	b 2170f
-2169:
+	beq %cr0, 2168f
 2170:
 	ld %r19, 8(%r14)
 	addc %r18, %r18, %r19
-	li %r19, 0
-	addze %r19, %r19
-	addc %r18, %r18, %r22
-	addze %r19, %r19
-	std %r18, 0(%r14)
-	std %r19, 8(%r14)
-	addi %r4, %r4, -1
-	cmpldi %cr0, %r4, 0
-	bne %cr0, 2165b
-	addi %r14, %r8, 0
-	addi %r15, %r9, 0
-	addi %r16, %r10, 0
-	rldicl %r17, %r11, 63, 1
-	subfc %r0, %r0, %r0
-2172:
-	ld %r0, 0(%r14)
-	ld %r3, 0(%r16)
-	subfe %r0, %r3, %r0
-	std %r0, 0(%r15)
-	addi %r14, %r14, 8
-	addi %r15, %r15, 8
-	addi %r16, %r16, 8
-	addi %r17, %r17, -1
-	cmpldi %cr0, %r17, 0
-	bne %cr0, 2172b
-	ld %r0, 0(%r14)
-	li %r3, 0
-	subfe %r0, %r3, %r0
-	subfe %r20, %r20, %r20
-	addi %r14, %r8, 0
-	addi %r15, %r9, 0
-	addi %r16, %r5, 0
-	rldicl %r17, %r11, 63, 1
-2173:
-	ld %r0, 0(%r15)
-	ld %r3, 0(%r14)
-	xor %r3, %r3, %r0
-	and %r3, %r3, %r20
-	xor %r3, %r3, %r0
-	std %r3, 0(%r16)
-	addi %r14, %r14, 8
-	addi %r15, %r15, 8
-	addi %r16, %r16, 8
-	addi %r17, %r17, -1
-	cmpldi %cr0, %r17, 0
-	bne %cr0, 2173b
-	addi %r5, %r10, 0
-	add %r5, %r5, %r29
-	add %r5, %r5, %r29
-	add %r5, %r5, %r29
-	add %r5, %r5, %r29
-	add %r5, %r5, %r29
-	add %r5, %r5, %r29
-	addi %r6, %r10, 0
-	add %r6, %r6, %r29
-	add %r6, %r6, %r29
-	add %r6, %r6, %r29
-	add %r6, %r6, %r29
-	addi %r7, %r10, 0
-	add %r7, %r7, %r29
-	addi %r8, %r10, 0
-	add %r8, %r8, %r29
-	add %r8, %r8, %r29
-	addi %r9, %r10, 0
-	add %r9, %r9, %r29
-	add %r9, %r9, %r29
-	add %r9, %r9, %r29
-	addi %r4, %r11, 0
-	rldicl %r4, %r11, 63, 1
-	addi %r14, %r8, 0
-	addi %r17, %r4, 1
-	li %r22, 0
-2174:
-	std %r22, 0(%r14)
-	addi %r14, %r14, 8
-	addi %r17, %r17, -1
-	cmpldi %cr0, %r17, 0
-	bne %cr0, 2174b
-2175:
-	ld %r17, 0(%r6)
-	addi %r6, %r6, 8
-	ld %r19, 0(%r7)
-	ld %r20, 0(%r8)
-	mulld %r18, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
-	mulld %r0, %r20, %r22
-	mulld %r22, %r0, %r3
-	mulhdu %r19, %r0, %r3
-	addc %r22, %r22, %r20
-	addze %r22, %r19
-	addi %r14, %r8, 0
-	addi %r15, %r7, 0
-	addi %r3, %r10, 0
-	rldicl %r16, %r11, 63, 1
-	addi %r16, %r16, -1
-	rldicr %r16, %r16, 62, 1
-	rldicl %r16, %r16, 2, 62
-	cmpldi %cr0, %r16, 0
-	beq %cr0, 2176f
-2178:
-	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
 	ld %r19, 8(%r15)
 	mulld %r20, %r17, %r19
 	mulhdu %r19, %r17, %r19
@@ -16174,16 +16004,16 @@ vg_dsa_verify_prevalidated:
 	addi %r3, %r3, 8
 	addi %r16, %r16, -1
 	cmpldi %cr0, %r16, 0
-	bne %cr0, 2178b
-	b 2177f
-2176:
-2177:
+	bne %cr0, 2170b
+	b 2169f
+2168:
+2169:
 	rldicl %r16, %r11, 63, 1
 	addi %r16, %r16, -1
 	rldicl %r16, %r16, 62, 2
 	cmpldi %cr0, %r16, 0
-	beq %cr0, 2179f
-2181:
+	beq %cr0, 2171f
+2173:
 	ld %r19, 8(%r14)
 	addc %r18, %r18, %r19
 	ld %r19, 8(%r15)
@@ -16253,10 +16083,10 @@ vg_dsa_verify_prevalidated:
 	addi %r3, %r3, 32
 	addi %r16, %r16, -1
 	cmpldi %cr0, %r16, 0
-	bne %cr0, 2181b
-	b 2180f
-2179:
-2180:
+	bne %cr0, 2173b
+	b 2172f
+2171:
+2172:
 	ld %r19, 8(%r14)
 	addc %r18, %r18, %r19
 	li %r19, 0
@@ -16267,13 +16097,13 @@ vg_dsa_verify_prevalidated:
 	std %r19, 8(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
-	bne %cr0, 2175b
+	bne %cr0, 2167b
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
 	rldicl %r17, %r11, 63, 1
 	subfc %r0, %r0, %r0
-2182:
+2174:
 	ld %r0, 0(%r14)
 	ld %r3, 0(%r16)
 	subfe %r0, %r3, %r0
@@ -16283,7 +16113,7 @@ vg_dsa_verify_prevalidated:
 	addi %r16, %r16, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
-	bne %cr0, 2182b
+	bne %cr0, 2174b
 	ld %r0, 0(%r14)
 	li %r3, 0
 	subfe %r0, %r3, %r0
@@ -16292,7 +16122,7 @@ vg_dsa_verify_prevalidated:
 	addi %r15, %r9, 0
 	addi %r16, %r5, 0
 	rldicl %r17, %r11, 63, 1
-2183:
+2175:
 	ld %r0, 0(%r15)
 	ld %r3, 0(%r14)
 	xor %r3, %r3, %r0
@@ -16304,14 +16134,231 @@ vg_dsa_verify_prevalidated:
 	addi %r16, %r16, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
-	bne %cr0, 2183b
-2184:
-	lbz %r24, 0(%r30)
-	rldicr %r24, %r24, 56, 7
-	addi %r30, %r30, 1
-	li %r25, 8
-2185:
+	bne %cr0, 2175b
 	addi %r5, %r10, 0
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	addi %r6, %r10, 0
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	addi %r7, %r10, 0
+	add %r7, %r7, %r29
+	addi %r8, %r10, 0
+	add %r8, %r8, %r29
+	add %r8, %r8, %r29
+	addi %r9, %r10, 0
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	addi %r4, %r11, 0
+	rldicl %r4, %r11, 63, 1
+	addi %r14, %r8, 0
+	addi %r17, %r4, 1
+	li %r22, 0
+2176:
+	std %r22, 0(%r14)
+	addi %r14, %r14, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2176b
+2177:
+	ld %r17, 0(%r6)
+	addi %r6, %r6, 8
+	ld %r19, 0(%r7)
+	ld %r20, 0(%r8)
+	mulld %r18, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	mulld %r0, %r20, %r22
+	mulld %r22, %r0, %r3
+	mulhdu %r19, %r0, %r3
+	addc %r22, %r22, %r20
+	addze %r22, %r19
+	addi %r14, %r8, 0
+	addi %r15, %r7, 0
+	addi %r3, %r10, 0
+	rldicl %r16, %r11, 63, 1
+	addi %r16, %r16, -1
+	rldicr %r16, %r16, 62, 1
+	rldicl %r16, %r16, 2, 62
+	cmpldi %cr0, %r16, 0
+	beq %cr0, 2178f
+2180:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 8(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 8(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 0(%r14)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r3, %r3, 8
+	addi %r16, %r16, -1
+	cmpldi %cr0, %r16, 0
+	bne %cr0, 2180b
+	b 2179f
+2178:
+2179:
+	rldicl %r16, %r11, 63, 1
+	addi %r16, %r16, -1
+	rldicl %r16, %r16, 62, 2
+	cmpldi %cr0, %r16, 0
+	beq %cr0, 2181f
+2183:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 8(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 8(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 0(%r14)
+	ld %r19, 16(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 16(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 16(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 8(%r14)
+	ld %r19, 24(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 24(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 24(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 16(%r14)
+	ld %r19, 32(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 32(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 32(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 24(%r14)
+	addi %r14, %r14, 32
+	addi %r15, %r15, 32
+	addi %r3, %r3, 32
+	addi %r16, %r16, -1
+	cmpldi %cr0, %r16, 0
+	bne %cr0, 2183b
+	b 2182f
+2181:
+2182:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	li %r19, 0
+	addze %r19, %r19
+	addc %r18, %r18, %r22
+	addze %r19, %r19
+	std %r18, 0(%r14)
+	std %r19, 8(%r14)
+	addi %r4, %r4, -1
+	cmpldi %cr0, %r4, 0
+	bne %cr0, 2177b
+	addi %r14, %r8, 0
+	addi %r15, %r9, 0
+	addi %r16, %r10, 0
+	rldicl %r17, %r11, 63, 1
+	subfc %r0, %r0, %r0
+2184:
+	ld %r0, 0(%r14)
+	ld %r3, 0(%r16)
+	subfe %r0, %r3, %r0
+	std %r0, 0(%r15)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r16, %r16, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2184b
+	ld %r0, 0(%r14)
+	li %r3, 0
+	subfe %r0, %r3, %r0
+	subfe %r20, %r20, %r20
+	addi %r14, %r8, 0
+	addi %r15, %r9, 0
+	addi %r16, %r5, 0
+	rldicl %r17, %r11, 63, 1
+2185:
+	ld %r0, 0(%r15)
+	ld %r3, 0(%r14)
+	xor %r3, %r3, %r0
+	and %r3, %r3, %r20
+	xor %r3, %r3, %r0
+	std %r3, 0(%r16)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r16, %r16, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2185b
+	addi %r5, %r10, 0
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
 	add %r5, %r5, %r29
 	add %r5, %r5, %r29
 	add %r5, %r5, %r29
@@ -16323,10 +16370,6 @@ vg_dsa_verify_prevalidated:
 	add %r6, %r6, %r29
 	add %r6, %r6, %r29
 	addi %r7, %r10, 0
-	add %r7, %r7, %r29
-	add %r7, %r7, %r29
-	add %r7, %r7, %r29
-	add %r7, %r7, %r29
 	add %r7, %r7, %r29
 	addi %r8, %r10, 0
 	add %r8, %r8, %r29
@@ -16528,12 +16571,29 @@ vg_dsa_verify_prevalidated:
 	bne %cr0, 2195b
 	addi %r5, %r10, 0
 	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
 	addi %r6, %r10, 0
 	add %r6, %r6, %r29
 	add %r6, %r6, %r29
 	add %r6, %r6, %r29
 	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
 	addi %r7, %r10, 0
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
 	add %r7, %r7, %r29
 	add %r7, %r7, %r29
 	add %r7, %r7, %r29
@@ -16738,47 +16798,14 @@ vg_dsa_verify_prevalidated:
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
 	bne %cr0, 2205b
-	rldicl %r0, %r24, 1, 63
-	li %r3, 0
-	subf %r20, %r0, %r3
-	rldicr %r24, %r24, 1, 62
-	addi %r8, %r10, 0
-	add %r8, %r8, %r29
-	addi %r9, %r10, 0
-	add %r9, %r9, %r29
-	add %r9, %r9, %r29
-	add %r9, %r9, %r29
-	add %r9, %r9, %r29
 	addi %r5, %r10, 0
 	add %r5, %r5, %r29
 	add %r5, %r5, %r29
 	add %r5, %r5, %r29
 	add %r5, %r5, %r29
 	add %r5, %r5, %r29
-	addi %r14, %r8, 0
-	addi %r15, %r9, 0
-	addi %r16, %r5, 0
-	addi %r17, %r11, 0
-2206:
-	lwz %r0, 0(%r15)
-	lwz %r3, 0(%r14)
-	xor %r3, %r3, %r0
-	and %r3, %r3, %r20
-	xor %r3, %r3, %r0
-	stw %r3, 0(%r16)
-	addi %r14, %r14, 4
-	addi %r15, %r15, 4
-	addi %r16, %r16, 4
-	addi %r17, %r17, -1
-	cmpldi %cr0, %r17, 0
-	bne %cr0, 2206b
-	addi %r25, %r25, -1
-	cmpldi %cr0, %r25, 0
-	bne %cr0, 2185b
-	addi %r31, %r31, -1
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 2184b
-	addi %r5, %r10, 0
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
 	add %r5, %r5, %r29
 	add %r5, %r5, %r29
 	add %r5, %r5, %r29
@@ -16789,7 +16816,14 @@ vg_dsa_verify_prevalidated:
 	add %r6, %r6, %r29
 	add %r6, %r6, %r29
 	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
 	addi %r7, %r10, 0
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
 	add %r7, %r7, %r29
 	add %r7, %r7, %r29
 	add %r7, %r7, %r29
@@ -16809,13 +16843,13 @@ vg_dsa_verify_prevalidated:
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
 	li %r22, 0
-2207:
+2206:
 	std %r22, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
-	bne %cr0, 2207b
-2208:
+	bne %cr0, 2206b
+2207:
 	ld %r17, 0(%r6)
 	addi %r6, %r6, 8
 	ld %r19, 0(%r7)
@@ -16841,8 +16875,8 @@ vg_dsa_verify_prevalidated:
 	rldicr %r16, %r16, 62, 1
 	rldicl %r16, %r16, 2, 62
 	cmpldi %cr0, %r16, 0
-	beq %cr0, 2209f
-2211:
+	beq %cr0, 2208f
+2210:
 	ld %r19, 8(%r14)
 	addc %r18, %r18, %r19
 	ld %r19, 8(%r15)
@@ -16864,16 +16898,16 @@ vg_dsa_verify_prevalidated:
 	addi %r3, %r3, 8
 	addi %r16, %r16, -1
 	cmpldi %cr0, %r16, 0
-	bne %cr0, 2211b
-	b 2210f
+	bne %cr0, 2210b
+	b 2209f
+2208:
 2209:
-2210:
 	rldicl %r16, %r11, 63, 1
 	addi %r16, %r16, -1
 	rldicl %r16, %r16, 62, 2
 	cmpldi %cr0, %r16, 0
-	beq %cr0, 2212f
-2214:
+	beq %cr0, 2211f
+2213:
 	ld %r19, 8(%r14)
 	addc %r18, %r18, %r19
 	ld %r19, 8(%r15)
@@ -16943,10 +16977,10 @@ vg_dsa_verify_prevalidated:
 	addi %r3, %r3, 32
 	addi %r16, %r16, -1
 	cmpldi %cr0, %r16, 0
-	bne %cr0, 2214b
-	b 2213f
+	bne %cr0, 2213b
+	b 2212f
+2211:
 2212:
-2213:
 	ld %r19, 8(%r14)
 	addc %r18, %r18, %r19
 	li %r19, 0
@@ -16957,318 +16991,158 @@ vg_dsa_verify_prevalidated:
 	std %r19, 8(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
-	bne %cr0, 2208b
+	bne %cr0, 2207b
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
 	rldicl %r17, %r11, 63, 1
 	subfc %r0, %r0, %r0
-2215:
+2214:
 	ld %r0, 0(%r14)
 	ld %r3, 0(%r16)
 	subfe %r0, %r3, %r0
 	std %r0, 0(%r15)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r16, %r16, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2214b
+	ld %r0, 0(%r14)
+	li %r3, 0
+	subfe %r0, %r3, %r0
+	subfe %r20, %r20, %r20
+	addi %r14, %r8, 0
+	addi %r15, %r9, 0
+	addi %r16, %r5, 0
+	rldicl %r17, %r11, 63, 1
+2215:
+	ld %r0, 0(%r15)
+	ld %r3, 0(%r14)
+	xor %r3, %r3, %r0
+	and %r3, %r3, %r20
+	xor %r3, %r3, %r0
+	std %r3, 0(%r16)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r16, %r16, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
 	bne %cr0, 2215b
-	ld %r0, 0(%r14)
-	li %r3, 0
-	subfe %r0, %r3, %r0
-	subfe %r20, %r20, %r20
+	addi %r5, %r10, 0
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	addi %r6, %r10, 0
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	addi %r7, %r10, 0
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	addi %r8, %r10, 0
+	add %r8, %r8, %r29
+	add %r8, %r8, %r29
+	addi %r9, %r10, 0
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	addi %r4, %r11, 0
+	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
-	addi %r15, %r9, 0
-	addi %r16, %r5, 0
-	rldicl %r17, %r11, 63, 1
+	addi %r17, %r4, 1
+	li %r22, 0
 2216:
-	ld %r0, 0(%r15)
-	ld %r3, 0(%r14)
-	xor %r3, %r3, %r0
-	and %r3, %r3, %r20
-	xor %r3, %r3, %r0
-	std %r3, 0(%r16)
+	std %r22, 0(%r14)
 	addi %r14, %r14, 8
-	addi %r15, %r15, 8
-	addi %r16, %r16, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
 	bne %cr0, 2216b
-	addi %r31, %r23, 0
-	li %r20, 0
-	addi %r20, %r20, -1
-	addi %r8, %r10, 0
-	add %r8, %r8, %r29
-	add %r8, %r8, %r29
-	add %r8, %r8, %r29
-	add %r8, %r8, %r29
-	addi %r9, %r10, 0
-	add %r9, %r9, %r29
-	add %r9, %r9, %r29
-	add %r9, %r9, %r29
-	add %r9, %r9, %r29
-	addi %r5, %r10, 0
-	add %r5, %r5, %r29
-	add %r5, %r5, %r29
-	add %r5, %r5, %r29
-	add %r5, %r5, %r29
-	add %r5, %r5, %r29
-	add %r5, %r5, %r29
-	add %r5, %r5, %r29
-	add %r5, %r5, %r29
-	add %r5, %r5, %r29
-	addi %r14, %r8, 0
-	addi %r15, %r9, 0
-	addi %r16, %r5, 0
-	rldicl %r17, %r11, 63, 1
 2217:
-	ld %r0, 0(%r15)
-	ld %r3, 0(%r14)
-	xor %r3, %r3, %r0
-	and %r3, %r3, %r20
-	xor %r3, %r3, %r0
-	std %r3, 0(%r16)
-	addi %r14, %r14, 8
-	addi %r15, %r15, 8
-	addi %r16, %r16, 8
-	addi %r17, %r17, -1
-	cmpldi %cr0, %r17, 0
-	bne %cr0, 2217b
-	rldicr %r12, %r2, 48, 15
-	rldicl %r12, %r12, 16, 48
-	li %r0, 28
-	mulld %r12, %r12, %r0
-	addi %r12, %r12, 704
-	add %r12, %r12, %r21
-	addi %r12, %r12, 1600
-	rldicr %r6, %r2, 32, 31
-	rldicl %r6, %r6, 16, 48
-	add %r12, %r12, %r6
-	addi %r24, %r12, 0
-	rldicr %r6, %r2, 48, 15
-	rldicl %r6, %r6, 16, 48
-	rldicr %r0, %r2, 32, 31
-	rldicl %r0, %r0, 16, 48
-	add %r12, %r27, %r6
-	add %r12, %r12, %r0
-	add %r12, %r12, %r6
-	rldicr %r6, %r2, 48, 15
-	rldicl %r6, %r6, 16, 48
-	addi %r10, %r10, 0
-	add %r10, %r10, %r29
-	add %r10, %r10, %r29
-	add %r10, %r10, %r29
-	add %r10, %r10, %r29
-	addi %r14, %r10, 0
-	rldicl %r17, %r11, 63, 1
-	li %r0, 0
-2218:
-	std %r0, 0(%r14)
-	addi %r14, %r14, 8
-	addi %r17, %r17, -1
-	cmpldi %cr0, %r17, 0
-	bne %cr0, 2218b
-	add %r15, %r10, %r6
-	addi %r15, %r15, -1
-	addi %r16, %r12, 0
-	addi %r17, %r6, 0
-2219:
-	lbz %r0, 0(%r16)
-	stb %r0, 0(%r15)
-	addi %r16, %r16, 1
-	addi %r15, %r15, -1
-	addi %r17, %r17, -1
-	cmpldi %cr0, %r17, 0
-	bne %cr0, 2219b
-	add %r14, %r10, %r29
-	addi %r14, %r14, -16
-	li %r0, 0
-	std %r0, 0(%r14)
-	addi %r10, %r31, 256
-	li %r20, 0
-	addi %r20, %r20, -1
-	addi %r8, %r10, 0
-	add %r8, %r8, %r29
-	add %r8, %r8, %r29
-	add %r8, %r8, %r29
-	add %r8, %r8, %r29
-	add %r8, %r8, %r29
-	add %r8, %r8, %r29
-	add %r8, %r8, %r29
-	add %r8, %r8, %r29
-	addi %r9, %r10, 0
-	add %r9, %r9, %r29
-	add %r9, %r9, %r29
-	add %r9, %r9, %r29
-	add %r9, %r9, %r29
-	add %r9, %r9, %r29
-	add %r9, %r9, %r29
-	add %r9, %r9, %r29
-	add %r9, %r9, %r29
-	addi %r5, %r10, 0
-	add %r5, %r5, %r29
+	ld %r17, 0(%r6)
+	addi %r6, %r6, 8
+	ld %r19, 0(%r7)
+	ld %r20, 0(%r8)
+	mulld %r18, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	mulld %r0, %r20, %r22
+	mulld %r22, %r0, %r3
+	mulhdu %r19, %r0, %r3
+	addc %r22, %r22, %r20
+	addze %r22, %r19
 	addi %r14, %r8, 0
-	addi %r15, %r9, 0
-	addi %r16, %r5, 0
-	rldicl %r17, %r11, 63, 1
+	addi %r15, %r7, 0
+	addi %r3, %r10, 0
+	rldicl %r16, %r11, 63, 1
+	addi %r16, %r16, -1
+	rldicr %r16, %r16, 62, 1
+	rldicl %r16, %r16, 2, 62
+	cmpldi %cr0, %r16, 0
+	beq %cr0, 2218f
 2220:
-	ld %r0, 0(%r15)
-	ld %r3, 0(%r14)
-	xor %r3, %r3, %r0
-	and %r3, %r3, %r20
-	xor %r3, %r3, %r0
-	std %r3, 0(%r16)
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 8(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 8(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
-	addi %r16, %r16, 8
-	addi %r17, %r17, -1
-	cmpldi %cr0, %r17, 0
+	addi %r3, %r3, 8
+	addi %r16, %r16, -1
+	cmpldi %cr0, %r16, 0
 	bne %cr0, 2220b
-	addi %r30, %r24, 0
-	rldicr %r31, %r2, 32, 31
-	rldicl %r31, %r31, 16, 48
-	ld %r0, 0(%r10)
-	ld %r12, 0(%r10)
-	mulld %r3, %r0, %r12
-	li %r4, 2
-	subf %r3, %r3, %r4
-	mulld %r12, %r12, %r3
-	mulld %r3, %r0, %r12
-	li %r4, 2
-	subf %r3, %r3, %r4
-	mulld %r12, %r12, %r3
-	mulld %r3, %r0, %r12
-	li %r4, 2
-	subf %r3, %r3, %r4
-	mulld %r12, %r12, %r3
-	mulld %r3, %r0, %r12
-	li %r4, 2
-	subf %r3, %r3, %r4
-	mulld %r12, %r12, %r3
-	li %r3, 0
-	subf %r12, %r12, %r3
-	rldicr %r12, %r12, 32, 31
-	rldicl %r12, %r12, 32, 32
-	addi %r14, %r10, 0
-	add %r14, %r14, %r29
-	add %r14, %r14, %r29
-	add %r14, %r14, %r29
-	add %r14, %r14, %r29
-	add %r14, %r14, %r29
-	add %r14, %r14, %r29
-	add %r14, %r14, %r29
-	rldicl %r17, %r11, 63, 1
-	li %r0, 0
-2221:
-	std %r0, 0(%r14)
-	addi %r14, %r14, 8
-	addi %r17, %r17, -1
-	cmpldi %cr0, %r17, 0
-	bne %cr0, 2221b
-	addi %r14, %r10, 0
-	add %r14, %r14, %r29
-	add %r14, %r14, %r29
-	add %r14, %r14, %r29
-	add %r14, %r14, %r29
-	add %r14, %r14, %r29
-	add %r14, %r14, %r29
-	add %r14, %r14, %r29
-	li %r0, 1
-	stw %r0, 0(%r14)
-	addi %r5, %r10, 0
-	add %r5, %r5, %r29
-	add %r5, %r5, %r29
-	add %r5, %r5, %r29
-	add %r5, %r5, %r29
-	add %r5, %r5, %r29
-	addi %r6, %r10, 0
-	add %r6, %r6, %r29
-	addi %r7, %r10, 0
-	add %r7, %r7, %r29
-	add %r7, %r7, %r29
-	add %r7, %r7, %r29
-	add %r7, %r7, %r29
-	add %r7, %r7, %r29
-	add %r7, %r7, %r29
-	add %r7, %r7, %r29
-	addi %r8, %r10, 0
-	add %r8, %r8, %r29
-	add %r8, %r8, %r29
-	addi %r9, %r10, 0
-	add %r9, %r9, %r29
-	add %r9, %r9, %r29
-	add %r9, %r9, %r29
-	addi %r4, %r11, 0
-	rldicl %r4, %r11, 63, 1
-	addi %r14, %r8, 0
-	addi %r17, %r4, 1
-	li %r22, 0
-2222:
-	std %r22, 0(%r14)
-	addi %r14, %r14, 8
-	addi %r17, %r17, -1
-	cmpldi %cr0, %r17, 0
-	bne %cr0, 2222b
+	b 2219f
+2218:
+2219:
+	rldicl %r16, %r11, 63, 1
+	addi %r16, %r16, -1
+	rldicl %r16, %r16, 62, 2
+	cmpldi %cr0, %r16, 0
+	beq %cr0, 2221f
 2223:
-	ld %r17, 0(%r6)
-	addi %r6, %r6, 8
-	ld %r19, 0(%r7)
-	ld %r20, 0(%r8)
-	mulld %r18, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
-	mulld %r0, %r20, %r22
-	mulld %r22, %r0, %r3
-	mulhdu %r19, %r0, %r3
-	addc %r22, %r22, %r20
-	addze %r22, %r19
-	addi %r14, %r8, 0
-	addi %r15, %r7, 0
-	addi %r3, %r10, 0
-	rldicl %r16, %r11, 63, 1
-	addi %r16, %r16, -1
-	rldicr %r16, %r16, 62, 1
-	rldicl %r16, %r16, 2, 62
-	cmpldi %cr0, %r16, 0
-	beq %cr0, 2224f
-2226:
-	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
-	addi %r14, %r14, 8
-	addi %r15, %r15, 8
-	addi %r3, %r3, 8
-	addi %r16, %r16, -1
-	cmpldi %cr0, %r16, 0
-	bne %cr0, 2226b
-	b 2225f
-2224:
-2225:
-	rldicl %r16, %r11, 63, 1
-	addi %r16, %r16, -1
-	rldicl %r16, %r16, 62, 2
-	cmpldi %cr0, %r16, 0
-	beq %cr0, 2227f
-2229:
 	ld %r19, 8(%r14)
 	addc %r18, %r18, %r19
 	ld %r19, 8(%r15)
@@ -17338,27 +17212,27 @@ vg_dsa_verify_prevalidated:
 	addi %r3, %r3, 32
 	addi %r16, %r16, -1
 	cmpldi %cr0, %r16, 0
-	bne %cr0, 2229b
-	b 2228f
-2227:
-2228:
-	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	li %r19, 0
-	addze %r19, %r19
-	addc %r18, %r18, %r22
-	addze %r19, %r19
-	std %r18, 0(%r14)
-	std %r19, 8(%r14)
-	addi %r4, %r4, -1
-	cmpldi %cr0, %r4, 0
 	bne %cr0, 2223b
+	b 2222f
+2221:
+2222:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	li %r19, 0
+	addze %r19, %r19
+	addc %r18, %r18, %r22
+	addze %r19, %r19
+	std %r18, 0(%r14)
+	std %r19, 8(%r14)
+	addi %r4, %r4, -1
+	cmpldi %cr0, %r4, 0
+	bne %cr0, 2217b
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
 	rldicl %r17, %r11, 63, 1
 	subfc %r0, %r0, %r0
-2230:
+2224:
 	ld %r0, 0(%r14)
 	ld %r3, 0(%r16)
 	subfe %r0, %r3, %r0
@@ -17368,7 +17242,7 @@ vg_dsa_verify_prevalidated:
 	addi %r16, %r16, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
-	bne %cr0, 2230b
+	bne %cr0, 2224b
 	ld %r0, 0(%r14)
 	li %r3, 0
 	subfe %r0, %r3, %r0
@@ -17377,7 +17251,7 @@ vg_dsa_verify_prevalidated:
 	addi %r15, %r9, 0
 	addi %r16, %r5, 0
 	rldicl %r17, %r11, 63, 1
-2231:
+2225:
 	ld %r0, 0(%r15)
 	ld %r3, 0(%r14)
 	xor %r3, %r3, %r0
@@ -17389,8 +17263,16 @@ vg_dsa_verify_prevalidated:
 	addi %r16, %r16, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
-	bne %cr0, 2231b
+	bne %cr0, 2225b
 	addi %r5, %r10, 0
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
 	add %r5, %r5, %r29
 	add %r5, %r5, %r29
 	add %r5, %r5, %r29
@@ -17402,7 +17284,24 @@ vg_dsa_verify_prevalidated:
 	add %r6, %r6, %r29
 	add %r6, %r6, %r29
 	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
 	addi %r7, %r10, 0
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
 	add %r7, %r7, %r29
 	addi %r8, %r10, 0
 	add %r8, %r8, %r29
@@ -17416,13 +17315,13 @@ vg_dsa_verify_prevalidated:
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
 	li %r22, 0
-2232:
+2226:
 	std %r22, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
-	bne %cr0, 2232b
-2233:
+	bne %cr0, 2226b
+2227:
 	ld %r17, 0(%r6)
 	addi %r6, %r6, 8
 	ld %r19, 0(%r7)
@@ -17448,8 +17347,8 @@ vg_dsa_verify_prevalidated:
 	rldicr %r16, %r16, 62, 1
 	rldicl %r16, %r16, 2, 62
 	cmpldi %cr0, %r16, 0
-	beq %cr0, 2234f
-2236:
+	beq %cr0, 2228f
+2230:
 	ld %r19, 8(%r14)
 	addc %r18, %r18, %r19
 	ld %r19, 8(%r15)
@@ -17471,16 +17370,16 @@ vg_dsa_verify_prevalidated:
 	addi %r3, %r3, 8
 	addi %r16, %r16, -1
 	cmpldi %cr0, %r16, 0
-	bne %cr0, 2236b
-	b 2235f
-2234:
-2235:
+	bne %cr0, 2230b
+	b 2229f
+2228:
+2229:
 	rldicl %r16, %r11, 63, 1
 	addi %r16, %r16, -1
 	rldicl %r16, %r16, 62, 2
 	cmpldi %cr0, %r16, 0
-	beq %cr0, 2237f
-2239:
+	beq %cr0, 2231f
+2233:
 	ld %r19, 8(%r14)
 	addc %r18, %r18, %r19
 	ld %r19, 8(%r15)
@@ -17550,10 +17449,10 @@ vg_dsa_verify_prevalidated:
 	addi %r3, %r3, 32
 	addi %r16, %r16, -1
 	cmpldi %cr0, %r16, 0
-	bne %cr0, 2239b
-	b 2238f
-2237:
-2238:
+	bne %cr0, 2233b
+	b 2232f
+2231:
+2232:
 	ld %r19, 8(%r14)
 	addc %r18, %r18, %r19
 	li %r19, 0
@@ -17564,13 +17463,13 @@ vg_dsa_verify_prevalidated:
 	std %r19, 8(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
-	bne %cr0, 2233b
+	bne %cr0, 2227b
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
 	rldicl %r17, %r11, 63, 1
 	subfc %r0, %r0, %r0
-2240:
+2234:
 	ld %r0, 0(%r14)
 	ld %r3, 0(%r16)
 	subfe %r0, %r3, %r0
@@ -17580,7 +17479,7 @@ vg_dsa_verify_prevalidated:
 	addi %r16, %r16, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
-	bne %cr0, 2240b
+	bne %cr0, 2234b
 	ld %r0, 0(%r14)
 	li %r3, 0
 	subfe %r0, %r3, %r0
@@ -17589,7 +17488,7 @@ vg_dsa_verify_prevalidated:
 	addi %r15, %r9, 0
 	addi %r16, %r5, 0
 	rldicl %r17, %r11, 63, 1
-2241:
+2235:
 	ld %r0, 0(%r15)
 	ld %r3, 0(%r14)
 	xor %r3, %r3, %r0
@@ -17601,14 +17500,19 @@ vg_dsa_verify_prevalidated:
 	addi %r16, %r16, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
-	bne %cr0, 2241b
-2242:
-	lbz %r24, 0(%r30)
-	rldicr %r24, %r24, 56, 7
-	addi %r30, %r30, 1
-	li %r25, 8
-2243:
+	bne %cr0, 2235b
 	addi %r5, %r10, 0
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
 	add %r5, %r5, %r29
 	add %r5, %r5, %r29
 	add %r5, %r5, %r29
@@ -17619,7 +17523,20 @@ vg_dsa_verify_prevalidated:
 	add %r6, %r6, %r29
 	add %r6, %r6, %r29
 	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
 	addi %r7, %r10, 0
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
 	add %r7, %r7, %r29
 	add %r7, %r7, %r29
 	add %r7, %r7, %r29
@@ -17637,13 +17554,254 @@ vg_dsa_verify_prevalidated:
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
 	li %r22, 0
-2244:
+2236:
 	std %r22, 0(%r14)
 	addi %r14, %r14, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2236b
+2237:
+	ld %r17, 0(%r6)
+	addi %r6, %r6, 8
+	ld %r19, 0(%r7)
+	ld %r20, 0(%r8)
+	mulld %r18, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	mulld %r0, %r20, %r22
+	mulld %r22, %r0, %r3
+	mulhdu %r19, %r0, %r3
+	addc %r22, %r22, %r20
+	addze %r22, %r19
+	addi %r14, %r8, 0
+	addi %r15, %r7, 0
+	addi %r3, %r10, 0
+	rldicl %r16, %r11, 63, 1
+	addi %r16, %r16, -1
+	rldicr %r16, %r16, 62, 1
+	rldicl %r16, %r16, 2, 62
+	cmpldi %cr0, %r16, 0
+	beq %cr0, 2238f
+2240:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 8(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 8(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 0(%r14)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r3, %r3, 8
+	addi %r16, %r16, -1
+	cmpldi %cr0, %r16, 0
+	bne %cr0, 2240b
+	b 2239f
+2238:
+2239:
+	rldicl %r16, %r11, 63, 1
+	addi %r16, %r16, -1
+	rldicl %r16, %r16, 62, 2
+	cmpldi %cr0, %r16, 0
+	beq %cr0, 2241f
+2243:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 8(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 8(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 0(%r14)
+	ld %r19, 16(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 16(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 16(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 8(%r14)
+	ld %r19, 24(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 24(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 24(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 16(%r14)
+	ld %r19, 32(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 32(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 32(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 24(%r14)
+	addi %r14, %r14, 32
+	addi %r15, %r15, 32
+	addi %r3, %r3, 32
+	addi %r16, %r16, -1
+	cmpldi %cr0, %r16, 0
+	bne %cr0, 2243b
+	b 2242f
+2241:
+2242:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	li %r19, 0
+	addze %r19, %r19
+	addc %r18, %r18, %r22
+	addze %r19, %r19
+	std %r18, 0(%r14)
+	std %r19, 8(%r14)
+	addi %r4, %r4, -1
+	cmpldi %cr0, %r4, 0
+	bne %cr0, 2237b
+	addi %r14, %r8, 0
+	addi %r15, %r9, 0
+	addi %r16, %r10, 0
+	rldicl %r17, %r11, 63, 1
+	subfc %r0, %r0, %r0
+2244:
+	ld %r0, 0(%r14)
+	ld %r3, 0(%r16)
+	subfe %r0, %r3, %r0
+	std %r0, 0(%r15)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r16, %r16, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
 	bne %cr0, 2244b
+	ld %r0, 0(%r14)
+	li %r3, 0
+	subfe %r0, %r3, %r0
+	subfe %r20, %r20, %r20
+	addi %r14, %r8, 0
+	addi %r15, %r9, 0
+	addi %r16, %r5, 0
+	rldicl %r17, %r11, 63, 1
 2245:
+	ld %r0, 0(%r15)
+	ld %r3, 0(%r14)
+	xor %r3, %r3, %r0
+	and %r3, %r3, %r20
+	xor %r3, %r3, %r0
+	std %r3, 0(%r16)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r16, %r16, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2245b
+	addi %r5, %r10, 0
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	addi %r6, %r10, 0
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	addi %r7, %r10, 0
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	addi %r8, %r10, 0
+	add %r8, %r8, %r29
+	add %r8, %r8, %r29
+	addi %r9, %r10, 0
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	addi %r4, %r11, 0
+	rldicl %r4, %r11, 63, 1
+	addi %r14, %r8, 0
+	addi %r17, %r4, 1
+	li %r22, 0
+2246:
+	std %r22, 0(%r14)
+	addi %r14, %r14, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2246b
+2247:
 	ld %r17, 0(%r6)
 	addi %r6, %r6, 8
 	ld %r19, 0(%r7)
@@ -17669,114 +17827,114 @@ vg_dsa_verify_prevalidated:
 	rldicr %r16, %r16, 62, 1
 	rldicl %r16, %r16, 2, 62
 	cmpldi %cr0, %r16, 0
-	beq %cr0, 2246f
-2248:
-	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
-	addi %r14, %r14, 8
-	addi %r15, %r15, 8
-	addi %r3, %r3, 8
-	addi %r16, %r16, -1
-	cmpldi %cr0, %r16, 0
-	bne %cr0, 2248b
-	b 2247f
-2246:
-2247:
-	rldicl %r16, %r11, 63, 1
-	addi %r16, %r16, -1
-	rldicl %r16, %r16, 62, 2
-	cmpldi %cr0, %r16, 0
-	beq %cr0, 2249f
-2251:
-	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
-	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
-	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
-	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
-	addi %r14, %r14, 32
-	addi %r15, %r15, 32
-	addi %r3, %r3, 32
-	addi %r16, %r16, -1
-	cmpldi %cr0, %r16, 0
-	bne %cr0, 2251b
-	b 2250f
-2249:
+	beq %cr0, 2248f
 2250:
 	ld %r19, 8(%r14)
 	addc %r18, %r18, %r19
+	ld %r19, 8(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 8(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 0(%r14)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r3, %r3, 8
+	addi %r16, %r16, -1
+	cmpldi %cr0, %r16, 0
+	bne %cr0, 2250b
+	b 2249f
+2248:
+2249:
+	rldicl %r16, %r11, 63, 1
+	addi %r16, %r16, -1
+	rldicl %r16, %r16, 62, 2
+	cmpldi %cr0, %r16, 0
+	beq %cr0, 2251f
+2253:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 8(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 8(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 0(%r14)
+	ld %r19, 16(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 16(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 16(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 8(%r14)
+	ld %r19, 24(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 24(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 24(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 16(%r14)
+	ld %r19, 32(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 32(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 32(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 24(%r14)
+	addi %r14, %r14, 32
+	addi %r15, %r15, 32
+	addi %r3, %r3, 32
+	addi %r16, %r16, -1
+	cmpldi %cr0, %r16, 0
+	bne %cr0, 2253b
+	b 2252f
+2251:
+2252:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
 	li %r19, 0
 	addze %r19, %r19
 	addc %r18, %r18, %r22
@@ -17785,13 +17943,13 @@ vg_dsa_verify_prevalidated:
 	std %r19, 8(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
-	bne %cr0, 2245b
+	bne %cr0, 2247b
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
 	rldicl %r17, %r11, 63, 1
 	subfc %r0, %r0, %r0
-2252:
+2254:
 	ld %r0, 0(%r14)
 	ld %r3, 0(%r16)
 	subfe %r0, %r3, %r0
@@ -17799,221 +17957,9 @@ vg_dsa_verify_prevalidated:
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r16, %r16, 8
-	addi %r17, %r17, -1
-	cmpldi %cr0, %r17, 0
-	bne %cr0, 2252b
-	ld %r0, 0(%r14)
-	li %r3, 0
-	subfe %r0, %r3, %r0
-	subfe %r20, %r20, %r20
-	addi %r14, %r8, 0
-	addi %r15, %r9, 0
-	addi %r16, %r5, 0
-	rldicl %r17, %r11, 63, 1
-2253:
-	ld %r0, 0(%r15)
-	ld %r3, 0(%r14)
-	xor %r3, %r3, %r0
-	and %r3, %r3, %r20
-	xor %r3, %r3, %r0
-	std %r3, 0(%r16)
-	addi %r14, %r14, 8
-	addi %r15, %r15, 8
-	addi %r16, %r16, 8
-	addi %r17, %r17, -1
-	cmpldi %cr0, %r17, 0
-	bne %cr0, 2253b
-	addi %r5, %r10, 0
-	add %r5, %r5, %r29
-	addi %r6, %r10, 0
-	add %r6, %r6, %r29
-	add %r6, %r6, %r29
-	add %r6, %r6, %r29
-	add %r6, %r6, %r29
-	addi %r7, %r10, 0
-	add %r7, %r7, %r29
-	add %r7, %r7, %r29
-	add %r7, %r7, %r29
-	add %r7, %r7, %r29
-	add %r7, %r7, %r29
-	add %r7, %r7, %r29
-	addi %r8, %r10, 0
-	add %r8, %r8, %r29
-	add %r8, %r8, %r29
-	addi %r9, %r10, 0
-	add %r9, %r9, %r29
-	add %r9, %r9, %r29
-	add %r9, %r9, %r29
-	addi %r4, %r11, 0
-	rldicl %r4, %r11, 63, 1
-	addi %r14, %r8, 0
-	addi %r17, %r4, 1
-	li %r22, 0
-2254:
-	std %r22, 0(%r14)
-	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
 	bne %cr0, 2254b
-2255:
-	ld %r17, 0(%r6)
-	addi %r6, %r6, 8
-	ld %r19, 0(%r7)
-	ld %r20, 0(%r8)
-	mulld %r18, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
-	mulld %r0, %r20, %r22
-	mulld %r22, %r0, %r3
-	mulhdu %r19, %r0, %r3
-	addc %r22, %r22, %r20
-	addze %r22, %r19
-	addi %r14, %r8, 0
-	addi %r15, %r7, 0
-	addi %r3, %r10, 0
-	rldicl %r16, %r11, 63, 1
-	addi %r16, %r16, -1
-	rldicr %r16, %r16, 62, 1
-	rldicl %r16, %r16, 2, 62
-	cmpldi %cr0, %r16, 0
-	beq %cr0, 2256f
-2258:
-	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
-	addi %r14, %r14, 8
-	addi %r15, %r15, 8
-	addi %r3, %r3, 8
-	addi %r16, %r16, -1
-	cmpldi %cr0, %r16, 0
-	bne %cr0, 2258b
-	b 2257f
-2256:
-2257:
-	rldicl %r16, %r11, 63, 1
-	addi %r16, %r16, -1
-	rldicl %r16, %r16, 62, 2
-	cmpldi %cr0, %r16, 0
-	beq %cr0, 2259f
-2261:
-	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
-	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
-	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
-	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
-	addi %r14, %r14, 32
-	addi %r15, %r15, 32
-	addi %r3, %r3, 32
-	addi %r16, %r16, -1
-	cmpldi %cr0, %r16, 0
-	bne %cr0, 2261b
-	b 2260f
-2259:
-2260:
-	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	li %r19, 0
-	addze %r19, %r19
-	addc %r18, %r18, %r22
-	addze %r19, %r19
-	std %r18, 0(%r14)
-	std %r19, 8(%r14)
-	addi %r4, %r4, -1
-	cmpldi %cr0, %r4, 0
-	bne %cr0, 2255b
-	addi %r14, %r8, 0
-	addi %r15, %r9, 0
-	addi %r16, %r10, 0
-	rldicl %r17, %r11, 63, 1
-	subfc %r0, %r0, %r0
-2262:
-	ld %r0, 0(%r14)
-	ld %r3, 0(%r16)
-	subfe %r0, %r3, %r0
-	std %r0, 0(%r15)
-	addi %r14, %r14, 8
-	addi %r15, %r15, 8
-	addi %r16, %r16, 8
-	addi %r17, %r17, -1
-	cmpldi %cr0, %r17, 0
-	bne %cr0, 2262b
 	ld %r0, 0(%r14)
 	li %r3, 0
 	subfe %r0, %r3, %r0
@@ -18022,7 +17968,7 @@ vg_dsa_verify_prevalidated:
 	addi %r15, %r9, 0
 	addi %r16, %r5, 0
 	rldicl %r17, %r11, 63, 1
-2263:
+2255:
 	ld %r0, 0(%r15)
 	ld %r3, 0(%r14)
 	xor %r3, %r3, %r0
@@ -18034,48 +17980,21 @@ vg_dsa_verify_prevalidated:
 	addi %r16, %r16, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
-	bne %cr0, 2263b
-	rldicl %r0, %r24, 1, 63
-	li %r3, 0
-	subf %r20, %r0, %r3
-	rldicr %r24, %r24, 1, 62
-	addi %r8, %r10, 0
-	add %r8, %r8, %r29
-	addi %r9, %r10, 0
-	add %r9, %r9, %r29
-	add %r9, %r9, %r29
-	add %r9, %r9, %r29
-	add %r9, %r9, %r29
+	bne %cr0, 2255b
 	addi %r5, %r10, 0
 	add %r5, %r5, %r29
 	add %r5, %r5, %r29
 	add %r5, %r5, %r29
 	add %r5, %r5, %r29
 	add %r5, %r5, %r29
-	addi %r14, %r8, 0
-	addi %r15, %r9, 0
-	addi %r16, %r5, 0
-	addi %r17, %r11, 0
-2264:
-	lwz %r0, 0(%r15)
-	lwz %r3, 0(%r14)
-	xor %r3, %r3, %r0
-	and %r3, %r3, %r20
-	xor %r3, %r3, %r0
-	stw %r3, 0(%r16)
-	addi %r14, %r14, 4
-	addi %r15, %r15, 4
-	addi %r16, %r16, 4
-	addi %r17, %r17, -1
-	cmpldi %cr0, %r17, 0
-	bne %cr0, 2264b
-	addi %r25, %r25, -1
-	cmpldi %cr0, %r25, 0
-	bne %cr0, 2243b
-	addi %r31, %r31, -1
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 2242b
-	addi %r5, %r10, 0
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
 	add %r5, %r5, %r29
 	add %r5, %r5, %r29
 	add %r5, %r5, %r29
@@ -18086,7 +18005,20 @@ vg_dsa_verify_prevalidated:
 	add %r6, %r6, %r29
 	add %r6, %r6, %r29
 	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
 	addi %r7, %r10, 0
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
 	add %r7, %r7, %r29
 	add %r7, %r7, %r29
 	add %r7, %r7, %r29
@@ -18106,13 +18038,13 @@ vg_dsa_verify_prevalidated:
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
 	li %r22, 0
-2265:
+2256:
 	std %r22, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
-	bne %cr0, 2265b
-2266:
+	bne %cr0, 2256b
+2257:
 	ld %r17, 0(%r6)
 	addi %r6, %r6, 8
 	ld %r19, 0(%r7)
@@ -18138,8 +18070,8 @@ vg_dsa_verify_prevalidated:
 	rldicr %r16, %r16, 62, 1
 	rldicl %r16, %r16, 2, 62
 	cmpldi %cr0, %r16, 0
-	beq %cr0, 2267f
-2269:
+	beq %cr0, 2258f
+2260:
 	ld %r19, 8(%r14)
 	addc %r18, %r18, %r19
 	ld %r19, 8(%r15)
@@ -18161,16 +18093,16 @@ vg_dsa_verify_prevalidated:
 	addi %r3, %r3, 8
 	addi %r16, %r16, -1
 	cmpldi %cr0, %r16, 0
-	bne %cr0, 2269b
-	b 2268f
-2267:
-2268:
+	bne %cr0, 2260b
+	b 2259f
+2258:
+2259:
 	rldicl %r16, %r11, 63, 1
 	addi %r16, %r16, -1
 	rldicl %r16, %r16, 62, 2
 	cmpldi %cr0, %r16, 0
-	beq %cr0, 2270f
-2272:
+	beq %cr0, 2261f
+2263:
 	ld %r19, 8(%r14)
 	addc %r18, %r18, %r19
 	ld %r19, 8(%r15)
@@ -18240,10 +18172,10 @@ vg_dsa_verify_prevalidated:
 	addi %r3, %r3, 32
 	addi %r16, %r16, -1
 	cmpldi %cr0, %r16, 0
-	bne %cr0, 2272b
-	b 2271f
-2270:
-2271:
+	bne %cr0, 2263b
+	b 2262f
+2261:
+2262:
 	ld %r19, 8(%r14)
 	addc %r18, %r18, %r19
 	li %r19, 0
@@ -18254,13 +18186,13 @@ vg_dsa_verify_prevalidated:
 	std %r19, 8(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
-	bne %cr0, 2266b
+	bne %cr0, 2257b
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
 	rldicl %r17, %r11, 63, 1
 	subfc %r0, %r0, %r0
-2273:
+2264:
 	ld %r0, 0(%r14)
 	ld %r3, 0(%r16)
 	subfe %r0, %r3, %r0
@@ -18270,7 +18202,7 @@ vg_dsa_verify_prevalidated:
 	addi %r16, %r16, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
-	bne %cr0, 2273b
+	bne %cr0, 2264b
 	ld %r0, 0(%r14)
 	li %r3, 0
 	subfe %r0, %r3, %r0
@@ -18279,42 +18211,247 @@ vg_dsa_verify_prevalidated:
 	addi %r15, %r9, 0
 	addi %r16, %r5, 0
 	rldicl %r17, %r11, 63, 1
-2274:
+2265:
 	ld %r0, 0(%r15)
 	ld %r3, 0(%r14)
 	xor %r3, %r3, %r0
 	and %r3, %r3, %r20
 	xor %r3, %r3, %r0
 	std %r3, 0(%r16)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r16, %r16, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2265b
+	addi %r5, %r10, 0
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	addi %r6, %r10, 0
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	addi %r7, %r10, 0
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	addi %r8, %r10, 0
+	add %r8, %r8, %r29
+	add %r8, %r8, %r29
+	addi %r9, %r10, 0
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	addi %r4, %r11, 0
+	rldicl %r4, %r11, 63, 1
+	addi %r14, %r8, 0
+	addi %r17, %r4, 1
+	li %r22, 0
+2266:
+	std %r22, 0(%r14)
+	addi %r14, %r14, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2266b
+2267:
+	ld %r17, 0(%r6)
+	addi %r6, %r6, 8
+	ld %r19, 0(%r7)
+	ld %r20, 0(%r8)
+	mulld %r18, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	mulld %r0, %r20, %r22
+	mulld %r22, %r0, %r3
+	mulhdu %r19, %r0, %r3
+	addc %r22, %r22, %r20
+	addze %r22, %r19
+	addi %r14, %r8, 0
+	addi %r15, %r7, 0
+	addi %r3, %r10, 0
+	rldicl %r16, %r11, 63, 1
+	addi %r16, %r16, -1
+	rldicr %r16, %r16, 62, 1
+	rldicl %r16, %r16, 2, 62
+	cmpldi %cr0, %r16, 0
+	beq %cr0, 2268f
+2270:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 8(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 8(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 0(%r14)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r3, %r3, 8
+	addi %r16, %r16, -1
+	cmpldi %cr0, %r16, 0
+	bne %cr0, 2270b
+	b 2269f
+2268:
+2269:
+	rldicl %r16, %r11, 63, 1
+	addi %r16, %r16, -1
+	rldicl %r16, %r16, 62, 2
+	cmpldi %cr0, %r16, 0
+	beq %cr0, 2271f
+2273:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 8(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 8(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 0(%r14)
+	ld %r19, 16(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 16(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 16(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 8(%r14)
+	ld %r19, 24(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 24(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 24(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 16(%r14)
+	ld %r19, 32(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 32(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 32(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 24(%r14)
+	addi %r14, %r14, 32
+	addi %r15, %r15, 32
+	addi %r3, %r3, 32
+	addi %r16, %r16, -1
+	cmpldi %cr0, %r16, 0
+	bne %cr0, 2273b
+	b 2272f
+2271:
+2272:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	li %r19, 0
+	addze %r19, %r19
+	addc %r18, %r18, %r22
+	addze %r19, %r19
+	std %r18, 0(%r14)
+	std %r19, 8(%r14)
+	addi %r4, %r4, -1
+	cmpldi %cr0, %r4, 0
+	bne %cr0, 2267b
+	addi %r14, %r8, 0
+	addi %r15, %r9, 0
+	addi %r16, %r10, 0
+	rldicl %r17, %r11, 63, 1
+	subfc %r0, %r0, %r0
+2274:
+	ld %r0, 0(%r14)
+	ld %r3, 0(%r16)
+	subfe %r0, %r3, %r0
+	std %r0, 0(%r15)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r16, %r16, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
 	bne %cr0, 2274b
-	addi %r31, %r23, 0
-	li %r20, 0
-	addi %r20, %r20, -1
-	addi %r8, %r10, 0
-	add %r8, %r8, %r29
-	add %r8, %r8, %r29
-	add %r8, %r8, %r29
-	add %r8, %r8, %r29
-	add %r8, %r8, %r29
-	add %r8, %r8, %r29
-	add %r8, %r8, %r29
-	add %r8, %r8, %r29
-	addi %r9, %r10, 0
-	add %r9, %r9, %r29
-	add %r9, %r9, %r29
-	add %r9, %r9, %r29
-	add %r9, %r9, %r29
-	add %r9, %r9, %r29
-	add %r9, %r9, %r29
-	add %r9, %r9, %r29
-	add %r9, %r9, %r29
-	addi %r5, %r10, 0
-	add %r5, %r5, %r29
+	ld %r0, 0(%r14)
+	li %r3, 0
+	subfe %r0, %r3, %r0
+	subfe %r20, %r20, %r20
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r5, 0
@@ -18332,29 +18469,21 @@ vg_dsa_verify_prevalidated:
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
 	bne %cr0, 2275b
-	ld %r0, 0(%r10)
-	ld %r12, 0(%r10)
-	mulld %r3, %r0, %r12
-	li %r4, 2
-	subf %r3, %r3, %r4
-	mulld %r12, %r12, %r3
-	mulld %r3, %r0, %r12
-	li %r4, 2
-	subf %r3, %r3, %r4
-	mulld %r12, %r12, %r3
-	mulld %r3, %r0, %r12
-	li %r4, 2
-	subf %r3, %r3, %r4
-	mulld %r12, %r12, %r3
-	mulld %r3, %r0, %r12
-	li %r4, 2
-	subf %r3, %r3, %r4
-	mulld %r12, %r12, %r3
-	li %r3, 0
-	subf %r12, %r12, %r3
-	rldicr %r12, %r12, 32, 31
-	rldicl %r12, %r12, 32, 32
 	addi %r5, %r10, 0
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
 	add %r5, %r5, %r29
 	add %r5, %r5, %r29
 	add %r5, %r5, %r29
@@ -18365,7 +18494,29 @@ vg_dsa_verify_prevalidated:
 	add %r6, %r6, %r29
 	add %r6, %r6, %r29
 	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
 	addi %r7, %r10, 0
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
 	add %r7, %r7, %r29
 	addi %r8, %r10, 0
 	add %r8, %r8, %r29
@@ -18565,28 +18716,6 @@ vg_dsa_verify_prevalidated:
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
 	bne %cr0, 2285b
-	li %r20, 0
-	addi %r20, %r20, -1
-	addi %r8, %r10, 0
-	add %r8, %r8, %r29
-	add %r8, %r8, %r29
-	add %r8, %r8, %r29
-	add %r8, %r8, %r29
-	add %r8, %r8, %r29
-	add %r8, %r8, %r29
-	add %r8, %r8, %r29
-	add %r8, %r8, %r29
-	add %r8, %r8, %r29
-	addi %r9, %r10, 0
-	add %r9, %r9, %r29
-	add %r9, %r9, %r29
-	add %r9, %r9, %r29
-	add %r9, %r9, %r29
-	add %r9, %r9, %r29
-	add %r9, %r9, %r29
-	add %r9, %r9, %r29
-	add %r9, %r9, %r29
-	add %r9, %r9, %r29
 	addi %r5, %r10, 0
 	add %r5, %r5, %r29
 	add %r5, %r5, %r29
@@ -18594,24 +18723,13 @@ vg_dsa_verify_prevalidated:
 	add %r5, %r5, %r29
 	add %r5, %r5, %r29
 	add %r5, %r5, %r29
-	addi %r14, %r8, 0
-	addi %r15, %r9, 0
-	addi %r16, %r5, 0
-	rldicl %r17, %r11, 63, 1
-2286:
-	ld %r0, 0(%r15)
-	ld %r3, 0(%r14)
-	xor %r3, %r3, %r0
-	and %r3, %r3, %r20
-	xor %r3, %r3, %r0
-	std %r3, 0(%r16)
-	addi %r14, %r14, 8
-	addi %r15, %r15, 8
-	addi %r16, %r16, 8
-	addi %r17, %r17, -1
-	cmpldi %cr0, %r17, 0
-	bne %cr0, 2286b
-	addi %r5, %r10, 0
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
 	add %r5, %r5, %r29
 	add %r5, %r5, %r29
 	add %r5, %r5, %r29
@@ -18626,7 +18744,24 @@ vg_dsa_verify_prevalidated:
 	add %r6, %r6, %r29
 	add %r6, %r6, %r29
 	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
 	addi %r7, %r10, 0
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
 	add %r7, %r7, %r29
 	add %r7, %r7, %r29
 	add %r7, %r7, %r29
@@ -18644,13 +18779,13 @@ vg_dsa_verify_prevalidated:
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
 	li %r22, 0
-2287:
+2286:
 	std %r22, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
-	bne %cr0, 2287b
-2288:
+	bne %cr0, 2286b
+2287:
 	ld %r17, 0(%r6)
 	addi %r6, %r6, 8
 	ld %r19, 0(%r7)
@@ -18676,8 +18811,8 @@ vg_dsa_verify_prevalidated:
 	rldicr %r16, %r16, 62, 1
 	rldicl %r16, %r16, 2, 62
 	cmpldi %cr0, %r16, 0
-	beq %cr0, 2289f
-2291:
+	beq %cr0, 2288f
+2290:
 	ld %r19, 8(%r14)
 	addc %r18, %r18, %r19
 	ld %r19, 8(%r15)
@@ -18699,16 +18834,16 @@ vg_dsa_verify_prevalidated:
 	addi %r3, %r3, 8
 	addi %r16, %r16, -1
 	cmpldi %cr0, %r16, 0
-	bne %cr0, 2291b
-	b 2290f
+	bne %cr0, 2290b
+	b 2289f
+2288:
 2289:
-2290:
 	rldicl %r16, %r11, 63, 1
 	addi %r16, %r16, -1
 	rldicl %r16, %r16, 62, 2
 	cmpldi %cr0, %r16, 0
-	beq %cr0, 2292f
-2294:
+	beq %cr0, 2291f
+2293:
 	ld %r19, 8(%r14)
 	addc %r18, %r18, %r19
 	ld %r19, 8(%r15)
@@ -18778,10 +18913,10 @@ vg_dsa_verify_prevalidated:
 	addi %r3, %r3, 32
 	addi %r16, %r16, -1
 	cmpldi %cr0, %r16, 0
-	bne %cr0, 2294b
-	b 2293f
+	bne %cr0, 2293b
+	b 2292f
+2291:
 2292:
-2293:
 	ld %r19, 8(%r14)
 	addc %r18, %r18, %r19
 	li %r19, 0
@@ -18792,13 +18927,13 @@ vg_dsa_verify_prevalidated:
 	std %r19, 8(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
-	bne %cr0, 2288b
+	bne %cr0, 2287b
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
 	rldicl %r17, %r11, 63, 1
 	subfc %r0, %r0, %r0
-2295:
+2294:
 	ld %r0, 0(%r14)
 	ld %r3, 0(%r16)
 	subfe %r0, %r3, %r0
@@ -18808,7 +18943,7 @@ vg_dsa_verify_prevalidated:
 	addi %r16, %r16, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
-	bne %cr0, 2295b
+	bne %cr0, 2294b
 	ld %r0, 0(%r14)
 	li %r3, 0
 	subfe %r0, %r3, %r0
@@ -18817,7 +18952,7 @@ vg_dsa_verify_prevalidated:
 	addi %r15, %r9, 0
 	addi %r16, %r5, 0
 	rldicl %r17, %r11, 63, 1
-2296:
+2295:
 	ld %r0, 0(%r15)
 	ld %r3, 0(%r14)
 	xor %r3, %r3, %r0
@@ -18829,7 +18964,3996 @@ vg_dsa_verify_prevalidated:
 	addi %r16, %r16, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
+	bne %cr0, 2295b
+	addi %r5, %r10, 0
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	addi %r6, %r10, 0
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	addi %r7, %r10, 0
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	addi %r8, %r10, 0
+	add %r8, %r8, %r29
+	add %r8, %r8, %r29
+	addi %r9, %r10, 0
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	addi %r4, %r11, 0
+	rldicl %r4, %r11, 63, 1
+	addi %r14, %r8, 0
+	addi %r17, %r4, 1
+	li %r22, 0
+2296:
+	std %r22, 0(%r14)
+	addi %r14, %r14, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
 	bne %cr0, 2296b
+2297:
+	ld %r17, 0(%r6)
+	addi %r6, %r6, 8
+	ld %r19, 0(%r7)
+	ld %r20, 0(%r8)
+	mulld %r18, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	mulld %r0, %r20, %r22
+	mulld %r22, %r0, %r3
+	mulhdu %r19, %r0, %r3
+	addc %r22, %r22, %r20
+	addze %r22, %r19
+	addi %r14, %r8, 0
+	addi %r15, %r7, 0
+	addi %r3, %r10, 0
+	rldicl %r16, %r11, 63, 1
+	addi %r16, %r16, -1
+	rldicr %r16, %r16, 62, 1
+	rldicl %r16, %r16, 2, 62
+	cmpldi %cr0, %r16, 0
+	beq %cr0, 2298f
+2300:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 8(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 8(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 0(%r14)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r3, %r3, 8
+	addi %r16, %r16, -1
+	cmpldi %cr0, %r16, 0
+	bne %cr0, 2300b
+	b 2299f
+2298:
+2299:
+	rldicl %r16, %r11, 63, 1
+	addi %r16, %r16, -1
+	rldicl %r16, %r16, 62, 2
+	cmpldi %cr0, %r16, 0
+	beq %cr0, 2301f
+2303:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 8(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 8(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 0(%r14)
+	ld %r19, 16(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 16(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 16(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 8(%r14)
+	ld %r19, 24(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 24(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 24(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 16(%r14)
+	ld %r19, 32(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 32(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 32(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 24(%r14)
+	addi %r14, %r14, 32
+	addi %r15, %r15, 32
+	addi %r3, %r3, 32
+	addi %r16, %r16, -1
+	cmpldi %cr0, %r16, 0
+	bne %cr0, 2303b
+	b 2302f
+2301:
+2302:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	li %r19, 0
+	addze %r19, %r19
+	addc %r18, %r18, %r22
+	addze %r19, %r19
+	std %r18, 0(%r14)
+	std %r19, 8(%r14)
+	addi %r4, %r4, -1
+	cmpldi %cr0, %r4, 0
+	bne %cr0, 2297b
+	addi %r14, %r8, 0
+	addi %r15, %r9, 0
+	addi %r16, %r10, 0
+	rldicl %r17, %r11, 63, 1
+	subfc %r0, %r0, %r0
+2304:
+	ld %r0, 0(%r14)
+	ld %r3, 0(%r16)
+	subfe %r0, %r3, %r0
+	std %r0, 0(%r15)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r16, %r16, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2304b
+	ld %r0, 0(%r14)
+	li %r3, 0
+	subfe %r0, %r3, %r0
+	subfe %r20, %r20, %r20
+	addi %r14, %r8, 0
+	addi %r15, %r9, 0
+	addi %r16, %r5, 0
+	rldicl %r17, %r11, 63, 1
+2305:
+	ld %r0, 0(%r15)
+	ld %r3, 0(%r14)
+	xor %r3, %r3, %r0
+	and %r3, %r3, %r20
+	xor %r3, %r3, %r0
+	std %r3, 0(%r16)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r16, %r16, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2305b
+	addi %r5, %r10, 0
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	addi %r6, %r10, 0
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	addi %r7, %r10, 0
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	addi %r8, %r10, 0
+	add %r8, %r8, %r29
+	add %r8, %r8, %r29
+	addi %r9, %r10, 0
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	addi %r4, %r11, 0
+	rldicl %r4, %r11, 63, 1
+	addi %r14, %r8, 0
+	addi %r17, %r4, 1
+	li %r22, 0
+2306:
+	std %r22, 0(%r14)
+	addi %r14, %r14, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2306b
+2307:
+	ld %r17, 0(%r6)
+	addi %r6, %r6, 8
+	ld %r19, 0(%r7)
+	ld %r20, 0(%r8)
+	mulld %r18, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	mulld %r0, %r20, %r22
+	mulld %r22, %r0, %r3
+	mulhdu %r19, %r0, %r3
+	addc %r22, %r22, %r20
+	addze %r22, %r19
+	addi %r14, %r8, 0
+	addi %r15, %r7, 0
+	addi %r3, %r10, 0
+	rldicl %r16, %r11, 63, 1
+	addi %r16, %r16, -1
+	rldicr %r16, %r16, 62, 1
+	rldicl %r16, %r16, 2, 62
+	cmpldi %cr0, %r16, 0
+	beq %cr0, 2308f
+2310:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 8(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 8(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 0(%r14)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r3, %r3, 8
+	addi %r16, %r16, -1
+	cmpldi %cr0, %r16, 0
+	bne %cr0, 2310b
+	b 2309f
+2308:
+2309:
+	rldicl %r16, %r11, 63, 1
+	addi %r16, %r16, -1
+	rldicl %r16, %r16, 62, 2
+	cmpldi %cr0, %r16, 0
+	beq %cr0, 2311f
+2313:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 8(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 8(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 0(%r14)
+	ld %r19, 16(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 16(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 16(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 8(%r14)
+	ld %r19, 24(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 24(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 24(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 16(%r14)
+	ld %r19, 32(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 32(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 32(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 24(%r14)
+	addi %r14, %r14, 32
+	addi %r15, %r15, 32
+	addi %r3, %r3, 32
+	addi %r16, %r16, -1
+	cmpldi %cr0, %r16, 0
+	bne %cr0, 2313b
+	b 2312f
+2311:
+2312:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	li %r19, 0
+	addze %r19, %r19
+	addc %r18, %r18, %r22
+	addze %r19, %r19
+	std %r18, 0(%r14)
+	std %r19, 8(%r14)
+	addi %r4, %r4, -1
+	cmpldi %cr0, %r4, 0
+	bne %cr0, 2307b
+	addi %r14, %r8, 0
+	addi %r15, %r9, 0
+	addi %r16, %r10, 0
+	rldicl %r17, %r11, 63, 1
+	subfc %r0, %r0, %r0
+2314:
+	ld %r0, 0(%r14)
+	ld %r3, 0(%r16)
+	subfe %r0, %r3, %r0
+	std %r0, 0(%r15)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r16, %r16, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2314b
+	ld %r0, 0(%r14)
+	li %r3, 0
+	subfe %r0, %r3, %r0
+	subfe %r20, %r20, %r20
+	addi %r14, %r8, 0
+	addi %r15, %r9, 0
+	addi %r16, %r5, 0
+	rldicl %r17, %r11, 63, 1
+2315:
+	ld %r0, 0(%r15)
+	ld %r3, 0(%r14)
+	xor %r3, %r3, %r0
+	and %r3, %r3, %r20
+	xor %r3, %r3, %r0
+	std %r3, 0(%r16)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r16, %r16, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2315b
+	addi %r5, %r10, 0
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	addi %r6, %r10, 0
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	addi %r7, %r10, 0
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	addi %r8, %r10, 0
+	add %r8, %r8, %r29
+	add %r8, %r8, %r29
+	addi %r9, %r10, 0
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	addi %r4, %r11, 0
+	rldicl %r4, %r11, 63, 1
+	addi %r14, %r8, 0
+	addi %r17, %r4, 1
+	li %r22, 0
+2316:
+	std %r22, 0(%r14)
+	addi %r14, %r14, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2316b
+2317:
+	ld %r17, 0(%r6)
+	addi %r6, %r6, 8
+	ld %r19, 0(%r7)
+	ld %r20, 0(%r8)
+	mulld %r18, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	mulld %r0, %r20, %r22
+	mulld %r22, %r0, %r3
+	mulhdu %r19, %r0, %r3
+	addc %r22, %r22, %r20
+	addze %r22, %r19
+	addi %r14, %r8, 0
+	addi %r15, %r7, 0
+	addi %r3, %r10, 0
+	rldicl %r16, %r11, 63, 1
+	addi %r16, %r16, -1
+	rldicr %r16, %r16, 62, 1
+	rldicl %r16, %r16, 2, 62
+	cmpldi %cr0, %r16, 0
+	beq %cr0, 2318f
+2320:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 8(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 8(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 0(%r14)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r3, %r3, 8
+	addi %r16, %r16, -1
+	cmpldi %cr0, %r16, 0
+	bne %cr0, 2320b
+	b 2319f
+2318:
+2319:
+	rldicl %r16, %r11, 63, 1
+	addi %r16, %r16, -1
+	rldicl %r16, %r16, 62, 2
+	cmpldi %cr0, %r16, 0
+	beq %cr0, 2321f
+2323:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 8(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 8(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 0(%r14)
+	ld %r19, 16(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 16(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 16(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 8(%r14)
+	ld %r19, 24(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 24(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 24(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 16(%r14)
+	ld %r19, 32(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 32(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 32(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 24(%r14)
+	addi %r14, %r14, 32
+	addi %r15, %r15, 32
+	addi %r3, %r3, 32
+	addi %r16, %r16, -1
+	cmpldi %cr0, %r16, 0
+	bne %cr0, 2323b
+	b 2322f
+2321:
+2322:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	li %r19, 0
+	addze %r19, %r19
+	addc %r18, %r18, %r22
+	addze %r19, %r19
+	std %r18, 0(%r14)
+	std %r19, 8(%r14)
+	addi %r4, %r4, -1
+	cmpldi %cr0, %r4, 0
+	bne %cr0, 2317b
+	addi %r14, %r8, 0
+	addi %r15, %r9, 0
+	addi %r16, %r10, 0
+	rldicl %r17, %r11, 63, 1
+	subfc %r0, %r0, %r0
+2324:
+	ld %r0, 0(%r14)
+	ld %r3, 0(%r16)
+	subfe %r0, %r3, %r0
+	std %r0, 0(%r15)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r16, %r16, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2324b
+	ld %r0, 0(%r14)
+	li %r3, 0
+	subfe %r0, %r3, %r0
+	subfe %r20, %r20, %r20
+	addi %r14, %r8, 0
+	addi %r15, %r9, 0
+	addi %r16, %r5, 0
+	rldicl %r17, %r11, 63, 1
+2325:
+	ld %r0, 0(%r15)
+	ld %r3, 0(%r14)
+	xor %r3, %r3, %r0
+	and %r3, %r3, %r20
+	xor %r3, %r3, %r0
+	std %r3, 0(%r16)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r16, %r16, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2325b
+	li %r20, 0
+	addi %r20, %r20, -1
+	addi %r8, %r10, 0
+	add %r8, %r8, %r29
+	add %r8, %r8, %r29
+	add %r8, %r8, %r29
+	add %r8, %r8, %r29
+	add %r8, %r8, %r29
+	add %r8, %r8, %r29
+	add %r8, %r8, %r29
+	add %r8, %r8, %r29
+	addi %r9, %r10, 0
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	addi %r5, %r10, 0
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	addi %r14, %r8, 0
+	addi %r15, %r9, 0
+	addi %r16, %r5, 0
+	rldicl %r17, %r11, 63, 1
+2326:
+	ld %r0, 0(%r15)
+	ld %r3, 0(%r14)
+	xor %r3, %r3, %r0
+	and %r3, %r3, %r20
+	xor %r3, %r3, %r0
+	std %r3, 0(%r16)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r16, %r16, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2326b
+2327:
+	lbz %r24, 0(%r30)
+	rldicr %r24, %r24, 56, 7
+	lbz %r0, 0(%r25)
+	rldicr %r0, %r0, 48, 15
+	add %r24, %r24, %r0
+	addi %r30, %r30, 1
+	addi %r25, %r25, 1
+	addi %r5, %r10, 0
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	addi %r6, %r10, 0
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	addi %r7, %r10, 0
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	addi %r8, %r10, 0
+	add %r8, %r8, %r29
+	add %r8, %r8, %r29
+	addi %r9, %r10, 0
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	addi %r4, %r11, 0
+	rldicl %r4, %r11, 63, 1
+	addi %r14, %r8, 0
+	addi %r17, %r4, 1
+	li %r22, 0
+2328:
+	std %r22, 0(%r14)
+	addi %r14, %r14, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2328b
+2329:
+	ld %r17, 0(%r6)
+	addi %r6, %r6, 8
+	ld %r19, 0(%r7)
+	ld %r20, 0(%r8)
+	mulld %r18, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	mulld %r0, %r20, %r22
+	mulld %r22, %r0, %r3
+	mulhdu %r19, %r0, %r3
+	addc %r22, %r22, %r20
+	addze %r22, %r19
+	addi %r14, %r8, 0
+	addi %r15, %r7, 0
+	addi %r3, %r10, 0
+	rldicl %r16, %r11, 63, 1
+	addi %r16, %r16, -1
+	rldicr %r16, %r16, 62, 1
+	rldicl %r16, %r16, 2, 62
+	cmpldi %cr0, %r16, 0
+	beq %cr0, 2330f
+2332:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 8(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 8(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 0(%r14)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r3, %r3, 8
+	addi %r16, %r16, -1
+	cmpldi %cr0, %r16, 0
+	bne %cr0, 2332b
+	b 2331f
+2330:
+2331:
+	rldicl %r16, %r11, 63, 1
+	addi %r16, %r16, -1
+	rldicl %r16, %r16, 62, 2
+	cmpldi %cr0, %r16, 0
+	beq %cr0, 2333f
+2335:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 8(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 8(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 0(%r14)
+	ld %r19, 16(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 16(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 16(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 8(%r14)
+	ld %r19, 24(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 24(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 24(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 16(%r14)
+	ld %r19, 32(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 32(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 32(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 24(%r14)
+	addi %r14, %r14, 32
+	addi %r15, %r15, 32
+	addi %r3, %r3, 32
+	addi %r16, %r16, -1
+	cmpldi %cr0, %r16, 0
+	bne %cr0, 2335b
+	b 2334f
+2333:
+2334:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	li %r19, 0
+	addze %r19, %r19
+	addc %r18, %r18, %r22
+	addze %r19, %r19
+	std %r18, 0(%r14)
+	std %r19, 8(%r14)
+	addi %r4, %r4, -1
+	cmpldi %cr0, %r4, 0
+	bne %cr0, 2329b
+	addi %r14, %r8, 0
+	addi %r15, %r9, 0
+	addi %r16, %r10, 0
+	rldicl %r17, %r11, 63, 1
+	subfc %r0, %r0, %r0
+2336:
+	ld %r0, 0(%r14)
+	ld %r3, 0(%r16)
+	subfe %r0, %r3, %r0
+	std %r0, 0(%r15)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r16, %r16, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2336b
+	ld %r0, 0(%r14)
+	li %r3, 0
+	subfe %r0, %r3, %r0
+	subfe %r20, %r20, %r20
+	addi %r14, %r8, 0
+	addi %r15, %r9, 0
+	addi %r16, %r5, 0
+	rldicl %r17, %r11, 63, 1
+2337:
+	ld %r0, 0(%r15)
+	ld %r3, 0(%r14)
+	xor %r3, %r3, %r0
+	and %r3, %r3, %r20
+	xor %r3, %r3, %r0
+	std %r3, 0(%r16)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r16, %r16, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2337b
+	addi %r5, %r10, 0
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	addi %r6, %r10, 0
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	addi %r7, %r10, 0
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	addi %r8, %r10, 0
+	add %r8, %r8, %r29
+	add %r8, %r8, %r29
+	addi %r9, %r10, 0
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	addi %r4, %r11, 0
+	rldicl %r4, %r11, 63, 1
+	addi %r14, %r8, 0
+	addi %r17, %r4, 1
+	li %r22, 0
+2338:
+	std %r22, 0(%r14)
+	addi %r14, %r14, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2338b
+2339:
+	ld %r17, 0(%r6)
+	addi %r6, %r6, 8
+	ld %r19, 0(%r7)
+	ld %r20, 0(%r8)
+	mulld %r18, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	mulld %r0, %r20, %r22
+	mulld %r22, %r0, %r3
+	mulhdu %r19, %r0, %r3
+	addc %r22, %r22, %r20
+	addze %r22, %r19
+	addi %r14, %r8, 0
+	addi %r15, %r7, 0
+	addi %r3, %r10, 0
+	rldicl %r16, %r11, 63, 1
+	addi %r16, %r16, -1
+	rldicr %r16, %r16, 62, 1
+	rldicl %r16, %r16, 2, 62
+	cmpldi %cr0, %r16, 0
+	beq %cr0, 2340f
+2342:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 8(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 8(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 0(%r14)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r3, %r3, 8
+	addi %r16, %r16, -1
+	cmpldi %cr0, %r16, 0
+	bne %cr0, 2342b
+	b 2341f
+2340:
+2341:
+	rldicl %r16, %r11, 63, 1
+	addi %r16, %r16, -1
+	rldicl %r16, %r16, 62, 2
+	cmpldi %cr0, %r16, 0
+	beq %cr0, 2343f
+2345:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 8(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 8(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 0(%r14)
+	ld %r19, 16(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 16(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 16(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 8(%r14)
+	ld %r19, 24(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 24(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 24(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 16(%r14)
+	ld %r19, 32(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 32(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 32(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 24(%r14)
+	addi %r14, %r14, 32
+	addi %r15, %r15, 32
+	addi %r3, %r3, 32
+	addi %r16, %r16, -1
+	cmpldi %cr0, %r16, 0
+	bne %cr0, 2345b
+	b 2344f
+2343:
+2344:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	li %r19, 0
+	addze %r19, %r19
+	addc %r18, %r18, %r22
+	addze %r19, %r19
+	std %r18, 0(%r14)
+	std %r19, 8(%r14)
+	addi %r4, %r4, -1
+	cmpldi %cr0, %r4, 0
+	bne %cr0, 2339b
+	addi %r14, %r8, 0
+	addi %r15, %r9, 0
+	addi %r16, %r10, 0
+	rldicl %r17, %r11, 63, 1
+	subfc %r0, %r0, %r0
+2346:
+	ld %r0, 0(%r14)
+	ld %r3, 0(%r16)
+	subfe %r0, %r3, %r0
+	std %r0, 0(%r15)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r16, %r16, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2346b
+	ld %r0, 0(%r14)
+	li %r3, 0
+	subfe %r0, %r3, %r0
+	subfe %r20, %r20, %r20
+	addi %r14, %r8, 0
+	addi %r15, %r9, 0
+	addi %r16, %r5, 0
+	rldicl %r17, %r11, 63, 1
+2347:
+	ld %r0, 0(%r15)
+	ld %r3, 0(%r14)
+	xor %r3, %r3, %r0
+	and %r3, %r3, %r20
+	xor %r3, %r3, %r0
+	std %r3, 0(%r16)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r16, %r16, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2347b
+	rldicl %r18, %r24, 2, 62
+	rldicr %r3, %r24, 8, 55
+	rldicl %r3, %r3, 2, 62
+	rldicr %r3, %r3, 2, 61
+	add %r18, %r18, %r3
+	li %r19, 0
+2348:
+	xor %r3, %r19, %r18
+	addi %r3, %r3, -1
+	rldicl %r3, %r3, 1, 63
+	li %r0, 0
+	subf %r20, %r3, %r0
+	addi %r8, %r19, 8
+	mulld %r8, %r8, %r29
+	add %r8, %r8, %r10
+	addi %r9, %r10, 0
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	addi %r5, %r10, 0
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	addi %r14, %r8, 0
+	addi %r15, %r9, 0
+	addi %r16, %r5, 0
+	rldicl %r17, %r11, 63, 1
+2349:
+	ld %r0, 0(%r15)
+	ld %r3, 0(%r14)
+	xor %r3, %r3, %r0
+	and %r3, %r3, %r20
+	xor %r3, %r3, %r0
+	std %r3, 0(%r16)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r16, %r16, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2349b
+	addi %r19, %r19, 1
+	xor %r3, %r19, %r18
+	addi %r3, %r3, -1
+	rldicl %r3, %r3, 1, 63
+	li %r0, 0
+	subf %r20, %r3, %r0
+	addi %r8, %r19, 8
+	mulld %r8, %r8, %r29
+	add %r8, %r8, %r10
+	addi %r9, %r10, 0
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	addi %r5, %r10, 0
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	addi %r14, %r8, 0
+	addi %r15, %r9, 0
+	addi %r16, %r5, 0
+	rldicl %r17, %r11, 63, 1
+2350:
+	ld %r0, 0(%r15)
+	ld %r3, 0(%r14)
+	xor %r3, %r3, %r0
+	and %r3, %r3, %r20
+	xor %r3, %r3, %r0
+	std %r3, 0(%r16)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r16, %r16, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2350b
+	addi %r19, %r19, 1
+	addi %r4, %r19, -16
+	cmpldi %cr0, %r4, 0
+	bne %cr0, 2348b
+	addi %r5, %r10, 0
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	addi %r6, %r10, 0
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	addi %r7, %r10, 0
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	addi %r8, %r10, 0
+	add %r8, %r8, %r29
+	add %r8, %r8, %r29
+	addi %r9, %r10, 0
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	addi %r4, %r11, 0
+	rldicl %r4, %r11, 63, 1
+	addi %r14, %r8, 0
+	addi %r17, %r4, 1
+	li %r22, 0
+2351:
+	std %r22, 0(%r14)
+	addi %r14, %r14, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2351b
+2352:
+	ld %r17, 0(%r6)
+	addi %r6, %r6, 8
+	ld %r19, 0(%r7)
+	ld %r20, 0(%r8)
+	mulld %r18, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	mulld %r0, %r20, %r22
+	mulld %r22, %r0, %r3
+	mulhdu %r19, %r0, %r3
+	addc %r22, %r22, %r20
+	addze %r22, %r19
+	addi %r14, %r8, 0
+	addi %r15, %r7, 0
+	addi %r3, %r10, 0
+	rldicl %r16, %r11, 63, 1
+	addi %r16, %r16, -1
+	rldicr %r16, %r16, 62, 1
+	rldicl %r16, %r16, 2, 62
+	cmpldi %cr0, %r16, 0
+	beq %cr0, 2353f
+2355:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 8(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 8(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 0(%r14)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r3, %r3, 8
+	addi %r16, %r16, -1
+	cmpldi %cr0, %r16, 0
+	bne %cr0, 2355b
+	b 2354f
+2353:
+2354:
+	rldicl %r16, %r11, 63, 1
+	addi %r16, %r16, -1
+	rldicl %r16, %r16, 62, 2
+	cmpldi %cr0, %r16, 0
+	beq %cr0, 2356f
+2358:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 8(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 8(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 0(%r14)
+	ld %r19, 16(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 16(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 16(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 8(%r14)
+	ld %r19, 24(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 24(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 24(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 16(%r14)
+	ld %r19, 32(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 32(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 32(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 24(%r14)
+	addi %r14, %r14, 32
+	addi %r15, %r15, 32
+	addi %r3, %r3, 32
+	addi %r16, %r16, -1
+	cmpldi %cr0, %r16, 0
+	bne %cr0, 2358b
+	b 2357f
+2356:
+2357:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	li %r19, 0
+	addze %r19, %r19
+	addc %r18, %r18, %r22
+	addze %r19, %r19
+	std %r18, 0(%r14)
+	std %r19, 8(%r14)
+	addi %r4, %r4, -1
+	cmpldi %cr0, %r4, 0
+	bne %cr0, 2352b
+	addi %r14, %r8, 0
+	addi %r15, %r9, 0
+	addi %r16, %r10, 0
+	rldicl %r17, %r11, 63, 1
+	subfc %r0, %r0, %r0
+2359:
+	ld %r0, 0(%r14)
+	ld %r3, 0(%r16)
+	subfe %r0, %r3, %r0
+	std %r0, 0(%r15)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r16, %r16, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2359b
+	ld %r0, 0(%r14)
+	li %r3, 0
+	subfe %r0, %r3, %r0
+	subfe %r20, %r20, %r20
+	addi %r14, %r8, 0
+	addi %r15, %r9, 0
+	addi %r16, %r5, 0
+	rldicl %r17, %r11, 63, 1
+2360:
+	ld %r0, 0(%r15)
+	ld %r3, 0(%r14)
+	xor %r3, %r3, %r0
+	and %r3, %r3, %r20
+	xor %r3, %r3, %r0
+	std %r3, 0(%r16)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r16, %r16, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2360b
+	rldicr %r24, %r24, 2, 61
+	addi %r5, %r10, 0
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	addi %r6, %r10, 0
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	addi %r7, %r10, 0
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	addi %r8, %r10, 0
+	add %r8, %r8, %r29
+	add %r8, %r8, %r29
+	addi %r9, %r10, 0
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	addi %r4, %r11, 0
+	rldicl %r4, %r11, 63, 1
+	addi %r14, %r8, 0
+	addi %r17, %r4, 1
+	li %r22, 0
+2361:
+	std %r22, 0(%r14)
+	addi %r14, %r14, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2361b
+2362:
+	ld %r17, 0(%r6)
+	addi %r6, %r6, 8
+	ld %r19, 0(%r7)
+	ld %r20, 0(%r8)
+	mulld %r18, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	mulld %r0, %r20, %r22
+	mulld %r22, %r0, %r3
+	mulhdu %r19, %r0, %r3
+	addc %r22, %r22, %r20
+	addze %r22, %r19
+	addi %r14, %r8, 0
+	addi %r15, %r7, 0
+	addi %r3, %r10, 0
+	rldicl %r16, %r11, 63, 1
+	addi %r16, %r16, -1
+	rldicr %r16, %r16, 62, 1
+	rldicl %r16, %r16, 2, 62
+	cmpldi %cr0, %r16, 0
+	beq %cr0, 2363f
+2365:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 8(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 8(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 0(%r14)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r3, %r3, 8
+	addi %r16, %r16, -1
+	cmpldi %cr0, %r16, 0
+	bne %cr0, 2365b
+	b 2364f
+2363:
+2364:
+	rldicl %r16, %r11, 63, 1
+	addi %r16, %r16, -1
+	rldicl %r16, %r16, 62, 2
+	cmpldi %cr0, %r16, 0
+	beq %cr0, 2366f
+2368:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 8(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 8(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 0(%r14)
+	ld %r19, 16(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 16(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 16(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 8(%r14)
+	ld %r19, 24(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 24(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 24(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 16(%r14)
+	ld %r19, 32(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 32(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 32(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 24(%r14)
+	addi %r14, %r14, 32
+	addi %r15, %r15, 32
+	addi %r3, %r3, 32
+	addi %r16, %r16, -1
+	cmpldi %cr0, %r16, 0
+	bne %cr0, 2368b
+	b 2367f
+2366:
+2367:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	li %r19, 0
+	addze %r19, %r19
+	addc %r18, %r18, %r22
+	addze %r19, %r19
+	std %r18, 0(%r14)
+	std %r19, 8(%r14)
+	addi %r4, %r4, -1
+	cmpldi %cr0, %r4, 0
+	bne %cr0, 2362b
+	addi %r14, %r8, 0
+	addi %r15, %r9, 0
+	addi %r16, %r10, 0
+	rldicl %r17, %r11, 63, 1
+	subfc %r0, %r0, %r0
+2369:
+	ld %r0, 0(%r14)
+	ld %r3, 0(%r16)
+	subfe %r0, %r3, %r0
+	std %r0, 0(%r15)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r16, %r16, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2369b
+	ld %r0, 0(%r14)
+	li %r3, 0
+	subfe %r0, %r3, %r0
+	subfe %r20, %r20, %r20
+	addi %r14, %r8, 0
+	addi %r15, %r9, 0
+	addi %r16, %r5, 0
+	rldicl %r17, %r11, 63, 1
+2370:
+	ld %r0, 0(%r15)
+	ld %r3, 0(%r14)
+	xor %r3, %r3, %r0
+	and %r3, %r3, %r20
+	xor %r3, %r3, %r0
+	std %r3, 0(%r16)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r16, %r16, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2370b
+	addi %r5, %r10, 0
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	addi %r6, %r10, 0
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	addi %r7, %r10, 0
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	addi %r8, %r10, 0
+	add %r8, %r8, %r29
+	add %r8, %r8, %r29
+	addi %r9, %r10, 0
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	addi %r4, %r11, 0
+	rldicl %r4, %r11, 63, 1
+	addi %r14, %r8, 0
+	addi %r17, %r4, 1
+	li %r22, 0
+2371:
+	std %r22, 0(%r14)
+	addi %r14, %r14, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2371b
+2372:
+	ld %r17, 0(%r6)
+	addi %r6, %r6, 8
+	ld %r19, 0(%r7)
+	ld %r20, 0(%r8)
+	mulld %r18, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	mulld %r0, %r20, %r22
+	mulld %r22, %r0, %r3
+	mulhdu %r19, %r0, %r3
+	addc %r22, %r22, %r20
+	addze %r22, %r19
+	addi %r14, %r8, 0
+	addi %r15, %r7, 0
+	addi %r3, %r10, 0
+	rldicl %r16, %r11, 63, 1
+	addi %r16, %r16, -1
+	rldicr %r16, %r16, 62, 1
+	rldicl %r16, %r16, 2, 62
+	cmpldi %cr0, %r16, 0
+	beq %cr0, 2373f
+2375:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 8(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 8(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 0(%r14)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r3, %r3, 8
+	addi %r16, %r16, -1
+	cmpldi %cr0, %r16, 0
+	bne %cr0, 2375b
+	b 2374f
+2373:
+2374:
+	rldicl %r16, %r11, 63, 1
+	addi %r16, %r16, -1
+	rldicl %r16, %r16, 62, 2
+	cmpldi %cr0, %r16, 0
+	beq %cr0, 2376f
+2378:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 8(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 8(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 0(%r14)
+	ld %r19, 16(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 16(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 16(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 8(%r14)
+	ld %r19, 24(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 24(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 24(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 16(%r14)
+	ld %r19, 32(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 32(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 32(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 24(%r14)
+	addi %r14, %r14, 32
+	addi %r15, %r15, 32
+	addi %r3, %r3, 32
+	addi %r16, %r16, -1
+	cmpldi %cr0, %r16, 0
+	bne %cr0, 2378b
+	b 2377f
+2376:
+2377:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	li %r19, 0
+	addze %r19, %r19
+	addc %r18, %r18, %r22
+	addze %r19, %r19
+	std %r18, 0(%r14)
+	std %r19, 8(%r14)
+	addi %r4, %r4, -1
+	cmpldi %cr0, %r4, 0
+	bne %cr0, 2372b
+	addi %r14, %r8, 0
+	addi %r15, %r9, 0
+	addi %r16, %r10, 0
+	rldicl %r17, %r11, 63, 1
+	subfc %r0, %r0, %r0
+2379:
+	ld %r0, 0(%r14)
+	ld %r3, 0(%r16)
+	subfe %r0, %r3, %r0
+	std %r0, 0(%r15)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r16, %r16, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2379b
+	ld %r0, 0(%r14)
+	li %r3, 0
+	subfe %r0, %r3, %r0
+	subfe %r20, %r20, %r20
+	addi %r14, %r8, 0
+	addi %r15, %r9, 0
+	addi %r16, %r5, 0
+	rldicl %r17, %r11, 63, 1
+2380:
+	ld %r0, 0(%r15)
+	ld %r3, 0(%r14)
+	xor %r3, %r3, %r0
+	and %r3, %r3, %r20
+	xor %r3, %r3, %r0
+	std %r3, 0(%r16)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r16, %r16, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2380b
+	rldicl %r18, %r24, 2, 62
+	rldicr %r3, %r24, 8, 55
+	rldicl %r3, %r3, 2, 62
+	rldicr %r3, %r3, 2, 61
+	add %r18, %r18, %r3
+	li %r19, 0
+2381:
+	xor %r3, %r19, %r18
+	addi %r3, %r3, -1
+	rldicl %r3, %r3, 1, 63
+	li %r0, 0
+	subf %r20, %r3, %r0
+	addi %r8, %r19, 8
+	mulld %r8, %r8, %r29
+	add %r8, %r8, %r10
+	addi %r9, %r10, 0
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	addi %r5, %r10, 0
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	addi %r14, %r8, 0
+	addi %r15, %r9, 0
+	addi %r16, %r5, 0
+	rldicl %r17, %r11, 63, 1
+2382:
+	ld %r0, 0(%r15)
+	ld %r3, 0(%r14)
+	xor %r3, %r3, %r0
+	and %r3, %r3, %r20
+	xor %r3, %r3, %r0
+	std %r3, 0(%r16)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r16, %r16, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2382b
+	addi %r19, %r19, 1
+	xor %r3, %r19, %r18
+	addi %r3, %r3, -1
+	rldicl %r3, %r3, 1, 63
+	li %r0, 0
+	subf %r20, %r3, %r0
+	addi %r8, %r19, 8
+	mulld %r8, %r8, %r29
+	add %r8, %r8, %r10
+	addi %r9, %r10, 0
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	addi %r5, %r10, 0
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	addi %r14, %r8, 0
+	addi %r15, %r9, 0
+	addi %r16, %r5, 0
+	rldicl %r17, %r11, 63, 1
+2383:
+	ld %r0, 0(%r15)
+	ld %r3, 0(%r14)
+	xor %r3, %r3, %r0
+	and %r3, %r3, %r20
+	xor %r3, %r3, %r0
+	std %r3, 0(%r16)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r16, %r16, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2383b
+	addi %r19, %r19, 1
+	addi %r4, %r19, -16
+	cmpldi %cr0, %r4, 0
+	bne %cr0, 2381b
+	addi %r5, %r10, 0
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	addi %r6, %r10, 0
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	addi %r7, %r10, 0
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	addi %r8, %r10, 0
+	add %r8, %r8, %r29
+	add %r8, %r8, %r29
+	addi %r9, %r10, 0
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	addi %r4, %r11, 0
+	rldicl %r4, %r11, 63, 1
+	addi %r14, %r8, 0
+	addi %r17, %r4, 1
+	li %r22, 0
+2384:
+	std %r22, 0(%r14)
+	addi %r14, %r14, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2384b
+2385:
+	ld %r17, 0(%r6)
+	addi %r6, %r6, 8
+	ld %r19, 0(%r7)
+	ld %r20, 0(%r8)
+	mulld %r18, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	mulld %r0, %r20, %r22
+	mulld %r22, %r0, %r3
+	mulhdu %r19, %r0, %r3
+	addc %r22, %r22, %r20
+	addze %r22, %r19
+	addi %r14, %r8, 0
+	addi %r15, %r7, 0
+	addi %r3, %r10, 0
+	rldicl %r16, %r11, 63, 1
+	addi %r16, %r16, -1
+	rldicr %r16, %r16, 62, 1
+	rldicl %r16, %r16, 2, 62
+	cmpldi %cr0, %r16, 0
+	beq %cr0, 2386f
+2388:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 8(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 8(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 0(%r14)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r3, %r3, 8
+	addi %r16, %r16, -1
+	cmpldi %cr0, %r16, 0
+	bne %cr0, 2388b
+	b 2387f
+2386:
+2387:
+	rldicl %r16, %r11, 63, 1
+	addi %r16, %r16, -1
+	rldicl %r16, %r16, 62, 2
+	cmpldi %cr0, %r16, 0
+	beq %cr0, 2389f
+2391:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 8(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 8(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 0(%r14)
+	ld %r19, 16(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 16(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 16(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 8(%r14)
+	ld %r19, 24(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 24(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 24(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 16(%r14)
+	ld %r19, 32(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 32(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 32(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 24(%r14)
+	addi %r14, %r14, 32
+	addi %r15, %r15, 32
+	addi %r3, %r3, 32
+	addi %r16, %r16, -1
+	cmpldi %cr0, %r16, 0
+	bne %cr0, 2391b
+	b 2390f
+2389:
+2390:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	li %r19, 0
+	addze %r19, %r19
+	addc %r18, %r18, %r22
+	addze %r19, %r19
+	std %r18, 0(%r14)
+	std %r19, 8(%r14)
+	addi %r4, %r4, -1
+	cmpldi %cr0, %r4, 0
+	bne %cr0, 2385b
+	addi %r14, %r8, 0
+	addi %r15, %r9, 0
+	addi %r16, %r10, 0
+	rldicl %r17, %r11, 63, 1
+	subfc %r0, %r0, %r0
+2392:
+	ld %r0, 0(%r14)
+	ld %r3, 0(%r16)
+	subfe %r0, %r3, %r0
+	std %r0, 0(%r15)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r16, %r16, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2392b
+	ld %r0, 0(%r14)
+	li %r3, 0
+	subfe %r0, %r3, %r0
+	subfe %r20, %r20, %r20
+	addi %r14, %r8, 0
+	addi %r15, %r9, 0
+	addi %r16, %r5, 0
+	rldicl %r17, %r11, 63, 1
+2393:
+	ld %r0, 0(%r15)
+	ld %r3, 0(%r14)
+	xor %r3, %r3, %r0
+	and %r3, %r3, %r20
+	xor %r3, %r3, %r0
+	std %r3, 0(%r16)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r16, %r16, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2393b
+	rldicr %r24, %r24, 2, 61
+	addi %r5, %r10, 0
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	addi %r6, %r10, 0
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	addi %r7, %r10, 0
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	addi %r8, %r10, 0
+	add %r8, %r8, %r29
+	add %r8, %r8, %r29
+	addi %r9, %r10, 0
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	addi %r4, %r11, 0
+	rldicl %r4, %r11, 63, 1
+	addi %r14, %r8, 0
+	addi %r17, %r4, 1
+	li %r22, 0
+2394:
+	std %r22, 0(%r14)
+	addi %r14, %r14, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2394b
+2395:
+	ld %r17, 0(%r6)
+	addi %r6, %r6, 8
+	ld %r19, 0(%r7)
+	ld %r20, 0(%r8)
+	mulld %r18, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	mulld %r0, %r20, %r22
+	mulld %r22, %r0, %r3
+	mulhdu %r19, %r0, %r3
+	addc %r22, %r22, %r20
+	addze %r22, %r19
+	addi %r14, %r8, 0
+	addi %r15, %r7, 0
+	addi %r3, %r10, 0
+	rldicl %r16, %r11, 63, 1
+	addi %r16, %r16, -1
+	rldicr %r16, %r16, 62, 1
+	rldicl %r16, %r16, 2, 62
+	cmpldi %cr0, %r16, 0
+	beq %cr0, 2396f
+2398:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 8(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 8(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 0(%r14)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r3, %r3, 8
+	addi %r16, %r16, -1
+	cmpldi %cr0, %r16, 0
+	bne %cr0, 2398b
+	b 2397f
+2396:
+2397:
+	rldicl %r16, %r11, 63, 1
+	addi %r16, %r16, -1
+	rldicl %r16, %r16, 62, 2
+	cmpldi %cr0, %r16, 0
+	beq %cr0, 2399f
+2401:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 8(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 8(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 0(%r14)
+	ld %r19, 16(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 16(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 16(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 8(%r14)
+	ld %r19, 24(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 24(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 24(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 16(%r14)
+	ld %r19, 32(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 32(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 32(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 24(%r14)
+	addi %r14, %r14, 32
+	addi %r15, %r15, 32
+	addi %r3, %r3, 32
+	addi %r16, %r16, -1
+	cmpldi %cr0, %r16, 0
+	bne %cr0, 2401b
+	b 2400f
+2399:
+2400:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	li %r19, 0
+	addze %r19, %r19
+	addc %r18, %r18, %r22
+	addze %r19, %r19
+	std %r18, 0(%r14)
+	std %r19, 8(%r14)
+	addi %r4, %r4, -1
+	cmpldi %cr0, %r4, 0
+	bne %cr0, 2395b
+	addi %r14, %r8, 0
+	addi %r15, %r9, 0
+	addi %r16, %r10, 0
+	rldicl %r17, %r11, 63, 1
+	subfc %r0, %r0, %r0
+2402:
+	ld %r0, 0(%r14)
+	ld %r3, 0(%r16)
+	subfe %r0, %r3, %r0
+	std %r0, 0(%r15)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r16, %r16, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2402b
+	ld %r0, 0(%r14)
+	li %r3, 0
+	subfe %r0, %r3, %r0
+	subfe %r20, %r20, %r20
+	addi %r14, %r8, 0
+	addi %r15, %r9, 0
+	addi %r16, %r5, 0
+	rldicl %r17, %r11, 63, 1
+2403:
+	ld %r0, 0(%r15)
+	ld %r3, 0(%r14)
+	xor %r3, %r3, %r0
+	and %r3, %r3, %r20
+	xor %r3, %r3, %r0
+	std %r3, 0(%r16)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r16, %r16, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2403b
+	addi %r5, %r10, 0
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	addi %r6, %r10, 0
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	addi %r7, %r10, 0
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	addi %r8, %r10, 0
+	add %r8, %r8, %r29
+	add %r8, %r8, %r29
+	addi %r9, %r10, 0
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	addi %r4, %r11, 0
+	rldicl %r4, %r11, 63, 1
+	addi %r14, %r8, 0
+	addi %r17, %r4, 1
+	li %r22, 0
+2404:
+	std %r22, 0(%r14)
+	addi %r14, %r14, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2404b
+2405:
+	ld %r17, 0(%r6)
+	addi %r6, %r6, 8
+	ld %r19, 0(%r7)
+	ld %r20, 0(%r8)
+	mulld %r18, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	mulld %r0, %r20, %r22
+	mulld %r22, %r0, %r3
+	mulhdu %r19, %r0, %r3
+	addc %r22, %r22, %r20
+	addze %r22, %r19
+	addi %r14, %r8, 0
+	addi %r15, %r7, 0
+	addi %r3, %r10, 0
+	rldicl %r16, %r11, 63, 1
+	addi %r16, %r16, -1
+	rldicr %r16, %r16, 62, 1
+	rldicl %r16, %r16, 2, 62
+	cmpldi %cr0, %r16, 0
+	beq %cr0, 2406f
+2408:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 8(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 8(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 0(%r14)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r3, %r3, 8
+	addi %r16, %r16, -1
+	cmpldi %cr0, %r16, 0
+	bne %cr0, 2408b
+	b 2407f
+2406:
+2407:
+	rldicl %r16, %r11, 63, 1
+	addi %r16, %r16, -1
+	rldicl %r16, %r16, 62, 2
+	cmpldi %cr0, %r16, 0
+	beq %cr0, 2409f
+2411:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 8(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 8(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 0(%r14)
+	ld %r19, 16(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 16(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 16(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 8(%r14)
+	ld %r19, 24(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 24(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 24(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 16(%r14)
+	ld %r19, 32(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 32(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 32(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 24(%r14)
+	addi %r14, %r14, 32
+	addi %r15, %r15, 32
+	addi %r3, %r3, 32
+	addi %r16, %r16, -1
+	cmpldi %cr0, %r16, 0
+	bne %cr0, 2411b
+	b 2410f
+2409:
+2410:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	li %r19, 0
+	addze %r19, %r19
+	addc %r18, %r18, %r22
+	addze %r19, %r19
+	std %r18, 0(%r14)
+	std %r19, 8(%r14)
+	addi %r4, %r4, -1
+	cmpldi %cr0, %r4, 0
+	bne %cr0, 2405b
+	addi %r14, %r8, 0
+	addi %r15, %r9, 0
+	addi %r16, %r10, 0
+	rldicl %r17, %r11, 63, 1
+	subfc %r0, %r0, %r0
+2412:
+	ld %r0, 0(%r14)
+	ld %r3, 0(%r16)
+	subfe %r0, %r3, %r0
+	std %r0, 0(%r15)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r16, %r16, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2412b
+	ld %r0, 0(%r14)
+	li %r3, 0
+	subfe %r0, %r3, %r0
+	subfe %r20, %r20, %r20
+	addi %r14, %r8, 0
+	addi %r15, %r9, 0
+	addi %r16, %r5, 0
+	rldicl %r17, %r11, 63, 1
+2413:
+	ld %r0, 0(%r15)
+	ld %r3, 0(%r14)
+	xor %r3, %r3, %r0
+	and %r3, %r3, %r20
+	xor %r3, %r3, %r0
+	std %r3, 0(%r16)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r16, %r16, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2413b
+	rldicl %r18, %r24, 2, 62
+	rldicr %r3, %r24, 8, 55
+	rldicl %r3, %r3, 2, 62
+	rldicr %r3, %r3, 2, 61
+	add %r18, %r18, %r3
+	li %r19, 0
+2414:
+	xor %r3, %r19, %r18
+	addi %r3, %r3, -1
+	rldicl %r3, %r3, 1, 63
+	li %r0, 0
+	subf %r20, %r3, %r0
+	addi %r8, %r19, 8
+	mulld %r8, %r8, %r29
+	add %r8, %r8, %r10
+	addi %r9, %r10, 0
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	addi %r5, %r10, 0
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	addi %r14, %r8, 0
+	addi %r15, %r9, 0
+	addi %r16, %r5, 0
+	rldicl %r17, %r11, 63, 1
+2415:
+	ld %r0, 0(%r15)
+	ld %r3, 0(%r14)
+	xor %r3, %r3, %r0
+	and %r3, %r3, %r20
+	xor %r3, %r3, %r0
+	std %r3, 0(%r16)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r16, %r16, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2415b
+	addi %r19, %r19, 1
+	xor %r3, %r19, %r18
+	addi %r3, %r3, -1
+	rldicl %r3, %r3, 1, 63
+	li %r0, 0
+	subf %r20, %r3, %r0
+	addi %r8, %r19, 8
+	mulld %r8, %r8, %r29
+	add %r8, %r8, %r10
+	addi %r9, %r10, 0
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	addi %r5, %r10, 0
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	addi %r14, %r8, 0
+	addi %r15, %r9, 0
+	addi %r16, %r5, 0
+	rldicl %r17, %r11, 63, 1
+2416:
+	ld %r0, 0(%r15)
+	ld %r3, 0(%r14)
+	xor %r3, %r3, %r0
+	and %r3, %r3, %r20
+	xor %r3, %r3, %r0
+	std %r3, 0(%r16)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r16, %r16, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2416b
+	addi %r19, %r19, 1
+	addi %r4, %r19, -16
+	cmpldi %cr0, %r4, 0
+	bne %cr0, 2414b
+	addi %r5, %r10, 0
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	addi %r6, %r10, 0
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	addi %r7, %r10, 0
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	addi %r8, %r10, 0
+	add %r8, %r8, %r29
+	add %r8, %r8, %r29
+	addi %r9, %r10, 0
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	addi %r4, %r11, 0
+	rldicl %r4, %r11, 63, 1
+	addi %r14, %r8, 0
+	addi %r17, %r4, 1
+	li %r22, 0
+2417:
+	std %r22, 0(%r14)
+	addi %r14, %r14, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2417b
+2418:
+	ld %r17, 0(%r6)
+	addi %r6, %r6, 8
+	ld %r19, 0(%r7)
+	ld %r20, 0(%r8)
+	mulld %r18, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	mulld %r0, %r20, %r22
+	mulld %r22, %r0, %r3
+	mulhdu %r19, %r0, %r3
+	addc %r22, %r22, %r20
+	addze %r22, %r19
+	addi %r14, %r8, 0
+	addi %r15, %r7, 0
+	addi %r3, %r10, 0
+	rldicl %r16, %r11, 63, 1
+	addi %r16, %r16, -1
+	rldicr %r16, %r16, 62, 1
+	rldicl %r16, %r16, 2, 62
+	cmpldi %cr0, %r16, 0
+	beq %cr0, 2419f
+2421:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 8(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 8(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 0(%r14)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r3, %r3, 8
+	addi %r16, %r16, -1
+	cmpldi %cr0, %r16, 0
+	bne %cr0, 2421b
+	b 2420f
+2419:
+2420:
+	rldicl %r16, %r11, 63, 1
+	addi %r16, %r16, -1
+	rldicl %r16, %r16, 62, 2
+	cmpldi %cr0, %r16, 0
+	beq %cr0, 2422f
+2424:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 8(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 8(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 0(%r14)
+	ld %r19, 16(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 16(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 16(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 8(%r14)
+	ld %r19, 24(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 24(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 24(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 16(%r14)
+	ld %r19, 32(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 32(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 32(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 24(%r14)
+	addi %r14, %r14, 32
+	addi %r15, %r15, 32
+	addi %r3, %r3, 32
+	addi %r16, %r16, -1
+	cmpldi %cr0, %r16, 0
+	bne %cr0, 2424b
+	b 2423f
+2422:
+2423:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	li %r19, 0
+	addze %r19, %r19
+	addc %r18, %r18, %r22
+	addze %r19, %r19
+	std %r18, 0(%r14)
+	std %r19, 8(%r14)
+	addi %r4, %r4, -1
+	cmpldi %cr0, %r4, 0
+	bne %cr0, 2418b
+	addi %r14, %r8, 0
+	addi %r15, %r9, 0
+	addi %r16, %r10, 0
+	rldicl %r17, %r11, 63, 1
+	subfc %r0, %r0, %r0
+2425:
+	ld %r0, 0(%r14)
+	ld %r3, 0(%r16)
+	subfe %r0, %r3, %r0
+	std %r0, 0(%r15)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r16, %r16, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2425b
+	ld %r0, 0(%r14)
+	li %r3, 0
+	subfe %r0, %r3, %r0
+	subfe %r20, %r20, %r20
+	addi %r14, %r8, 0
+	addi %r15, %r9, 0
+	addi %r16, %r5, 0
+	rldicl %r17, %r11, 63, 1
+2426:
+	ld %r0, 0(%r15)
+	ld %r3, 0(%r14)
+	xor %r3, %r3, %r0
+	and %r3, %r3, %r20
+	xor %r3, %r3, %r0
+	std %r3, 0(%r16)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r16, %r16, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2426b
+	rldicr %r24, %r24, 2, 61
+	addi %r5, %r10, 0
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	addi %r6, %r10, 0
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	addi %r7, %r10, 0
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	addi %r8, %r10, 0
+	add %r8, %r8, %r29
+	add %r8, %r8, %r29
+	addi %r9, %r10, 0
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	addi %r4, %r11, 0
+	rldicl %r4, %r11, 63, 1
+	addi %r14, %r8, 0
+	addi %r17, %r4, 1
+	li %r22, 0
+2427:
+	std %r22, 0(%r14)
+	addi %r14, %r14, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2427b
+2428:
+	ld %r17, 0(%r6)
+	addi %r6, %r6, 8
+	ld %r19, 0(%r7)
+	ld %r20, 0(%r8)
+	mulld %r18, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	mulld %r0, %r20, %r22
+	mulld %r22, %r0, %r3
+	mulhdu %r19, %r0, %r3
+	addc %r22, %r22, %r20
+	addze %r22, %r19
+	addi %r14, %r8, 0
+	addi %r15, %r7, 0
+	addi %r3, %r10, 0
+	rldicl %r16, %r11, 63, 1
+	addi %r16, %r16, -1
+	rldicr %r16, %r16, 62, 1
+	rldicl %r16, %r16, 2, 62
+	cmpldi %cr0, %r16, 0
+	beq %cr0, 2429f
+2431:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 8(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 8(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 0(%r14)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r3, %r3, 8
+	addi %r16, %r16, -1
+	cmpldi %cr0, %r16, 0
+	bne %cr0, 2431b
+	b 2430f
+2429:
+2430:
+	rldicl %r16, %r11, 63, 1
+	addi %r16, %r16, -1
+	rldicl %r16, %r16, 62, 2
+	cmpldi %cr0, %r16, 0
+	beq %cr0, 2432f
+2434:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 8(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 8(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 0(%r14)
+	ld %r19, 16(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 16(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 16(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 8(%r14)
+	ld %r19, 24(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 24(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 24(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 16(%r14)
+	ld %r19, 32(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 32(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 32(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 24(%r14)
+	addi %r14, %r14, 32
+	addi %r15, %r15, 32
+	addi %r3, %r3, 32
+	addi %r16, %r16, -1
+	cmpldi %cr0, %r16, 0
+	bne %cr0, 2434b
+	b 2433f
+2432:
+2433:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	li %r19, 0
+	addze %r19, %r19
+	addc %r18, %r18, %r22
+	addze %r19, %r19
+	std %r18, 0(%r14)
+	std %r19, 8(%r14)
+	addi %r4, %r4, -1
+	cmpldi %cr0, %r4, 0
+	bne %cr0, 2428b
+	addi %r14, %r8, 0
+	addi %r15, %r9, 0
+	addi %r16, %r10, 0
+	rldicl %r17, %r11, 63, 1
+	subfc %r0, %r0, %r0
+2435:
+	ld %r0, 0(%r14)
+	ld %r3, 0(%r16)
+	subfe %r0, %r3, %r0
+	std %r0, 0(%r15)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r16, %r16, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2435b
+	ld %r0, 0(%r14)
+	li %r3, 0
+	subfe %r0, %r3, %r0
+	subfe %r20, %r20, %r20
+	addi %r14, %r8, 0
+	addi %r15, %r9, 0
+	addi %r16, %r5, 0
+	rldicl %r17, %r11, 63, 1
+2436:
+	ld %r0, 0(%r15)
+	ld %r3, 0(%r14)
+	xor %r3, %r3, %r0
+	and %r3, %r3, %r20
+	xor %r3, %r3, %r0
+	std %r3, 0(%r16)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r16, %r16, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2436b
+	addi %r5, %r10, 0
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	addi %r6, %r10, 0
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	addi %r7, %r10, 0
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	addi %r8, %r10, 0
+	add %r8, %r8, %r29
+	add %r8, %r8, %r29
+	addi %r9, %r10, 0
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	addi %r4, %r11, 0
+	rldicl %r4, %r11, 63, 1
+	addi %r14, %r8, 0
+	addi %r17, %r4, 1
+	li %r22, 0
+2437:
+	std %r22, 0(%r14)
+	addi %r14, %r14, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2437b
+2438:
+	ld %r17, 0(%r6)
+	addi %r6, %r6, 8
+	ld %r19, 0(%r7)
+	ld %r20, 0(%r8)
+	mulld %r18, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	mulld %r0, %r20, %r22
+	mulld %r22, %r0, %r3
+	mulhdu %r19, %r0, %r3
+	addc %r22, %r22, %r20
+	addze %r22, %r19
+	addi %r14, %r8, 0
+	addi %r15, %r7, 0
+	addi %r3, %r10, 0
+	rldicl %r16, %r11, 63, 1
+	addi %r16, %r16, -1
+	rldicr %r16, %r16, 62, 1
+	rldicl %r16, %r16, 2, 62
+	cmpldi %cr0, %r16, 0
+	beq %cr0, 2439f
+2441:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 8(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 8(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 0(%r14)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r3, %r3, 8
+	addi %r16, %r16, -1
+	cmpldi %cr0, %r16, 0
+	bne %cr0, 2441b
+	b 2440f
+2439:
+2440:
+	rldicl %r16, %r11, 63, 1
+	addi %r16, %r16, -1
+	rldicl %r16, %r16, 62, 2
+	cmpldi %cr0, %r16, 0
+	beq %cr0, 2442f
+2444:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 8(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 8(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 0(%r14)
+	ld %r19, 16(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 16(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 16(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 8(%r14)
+	ld %r19, 24(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 24(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 24(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 16(%r14)
+	ld %r19, 32(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 32(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 32(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 24(%r14)
+	addi %r14, %r14, 32
+	addi %r15, %r15, 32
+	addi %r3, %r3, 32
+	addi %r16, %r16, -1
+	cmpldi %cr0, %r16, 0
+	bne %cr0, 2444b
+	b 2443f
+2442:
+2443:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	li %r19, 0
+	addze %r19, %r19
+	addc %r18, %r18, %r22
+	addze %r19, %r19
+	std %r18, 0(%r14)
+	std %r19, 8(%r14)
+	addi %r4, %r4, -1
+	cmpldi %cr0, %r4, 0
+	bne %cr0, 2438b
+	addi %r14, %r8, 0
+	addi %r15, %r9, 0
+	addi %r16, %r10, 0
+	rldicl %r17, %r11, 63, 1
+	subfc %r0, %r0, %r0
+2445:
+	ld %r0, 0(%r14)
+	ld %r3, 0(%r16)
+	subfe %r0, %r3, %r0
+	std %r0, 0(%r15)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r16, %r16, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2445b
+	ld %r0, 0(%r14)
+	li %r3, 0
+	subfe %r0, %r3, %r0
+	subfe %r20, %r20, %r20
+	addi %r14, %r8, 0
+	addi %r15, %r9, 0
+	addi %r16, %r5, 0
+	rldicl %r17, %r11, 63, 1
+2446:
+	ld %r0, 0(%r15)
+	ld %r3, 0(%r14)
+	xor %r3, %r3, %r0
+	and %r3, %r3, %r20
+	xor %r3, %r3, %r0
+	std %r3, 0(%r16)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r16, %r16, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2446b
+	rldicl %r18, %r24, 2, 62
+	rldicr %r3, %r24, 8, 55
+	rldicl %r3, %r3, 2, 62
+	rldicr %r3, %r3, 2, 61
+	add %r18, %r18, %r3
+	li %r19, 0
+2447:
+	xor %r3, %r19, %r18
+	addi %r3, %r3, -1
+	rldicl %r3, %r3, 1, 63
+	li %r0, 0
+	subf %r20, %r3, %r0
+	addi %r8, %r19, 8
+	mulld %r8, %r8, %r29
+	add %r8, %r8, %r10
+	addi %r9, %r10, 0
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	addi %r5, %r10, 0
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	addi %r14, %r8, 0
+	addi %r15, %r9, 0
+	addi %r16, %r5, 0
+	rldicl %r17, %r11, 63, 1
+2448:
+	ld %r0, 0(%r15)
+	ld %r3, 0(%r14)
+	xor %r3, %r3, %r0
+	and %r3, %r3, %r20
+	xor %r3, %r3, %r0
+	std %r3, 0(%r16)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r16, %r16, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2448b
+	addi %r19, %r19, 1
+	xor %r3, %r19, %r18
+	addi %r3, %r3, -1
+	rldicl %r3, %r3, 1, 63
+	li %r0, 0
+	subf %r20, %r3, %r0
+	addi %r8, %r19, 8
+	mulld %r8, %r8, %r29
+	add %r8, %r8, %r10
+	addi %r9, %r10, 0
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	addi %r5, %r10, 0
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	addi %r14, %r8, 0
+	addi %r15, %r9, 0
+	addi %r16, %r5, 0
+	rldicl %r17, %r11, 63, 1
+2449:
+	ld %r0, 0(%r15)
+	ld %r3, 0(%r14)
+	xor %r3, %r3, %r0
+	and %r3, %r3, %r20
+	xor %r3, %r3, %r0
+	std %r3, 0(%r16)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r16, %r16, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2449b
+	addi %r19, %r19, 1
+	addi %r4, %r19, -16
+	cmpldi %cr0, %r4, 0
+	bne %cr0, 2447b
+	addi %r5, %r10, 0
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	addi %r6, %r10, 0
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	addi %r7, %r10, 0
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	addi %r8, %r10, 0
+	add %r8, %r8, %r29
+	add %r8, %r8, %r29
+	addi %r9, %r10, 0
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	addi %r4, %r11, 0
+	rldicl %r4, %r11, 63, 1
+	addi %r14, %r8, 0
+	addi %r17, %r4, 1
+	li %r22, 0
+2450:
+	std %r22, 0(%r14)
+	addi %r14, %r14, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2450b
+2451:
+	ld %r17, 0(%r6)
+	addi %r6, %r6, 8
+	ld %r19, 0(%r7)
+	ld %r20, 0(%r8)
+	mulld %r18, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	mulld %r0, %r20, %r22
+	mulld %r22, %r0, %r3
+	mulhdu %r19, %r0, %r3
+	addc %r22, %r22, %r20
+	addze %r22, %r19
+	addi %r14, %r8, 0
+	addi %r15, %r7, 0
+	addi %r3, %r10, 0
+	rldicl %r16, %r11, 63, 1
+	addi %r16, %r16, -1
+	rldicr %r16, %r16, 62, 1
+	rldicl %r16, %r16, 2, 62
+	cmpldi %cr0, %r16, 0
+	beq %cr0, 2452f
+2454:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 8(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 8(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 0(%r14)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r3, %r3, 8
+	addi %r16, %r16, -1
+	cmpldi %cr0, %r16, 0
+	bne %cr0, 2454b
+	b 2453f
+2452:
+2453:
+	rldicl %r16, %r11, 63, 1
+	addi %r16, %r16, -1
+	rldicl %r16, %r16, 62, 2
+	cmpldi %cr0, %r16, 0
+	beq %cr0, 2455f
+2457:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 8(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 8(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 0(%r14)
+	ld %r19, 16(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 16(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 16(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 8(%r14)
+	ld %r19, 24(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 24(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 24(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 16(%r14)
+	ld %r19, 32(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 32(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 32(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 24(%r14)
+	addi %r14, %r14, 32
+	addi %r15, %r15, 32
+	addi %r3, %r3, 32
+	addi %r16, %r16, -1
+	cmpldi %cr0, %r16, 0
+	bne %cr0, 2457b
+	b 2456f
+2455:
+2456:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	li %r19, 0
+	addze %r19, %r19
+	addc %r18, %r18, %r22
+	addze %r19, %r19
+	std %r18, 0(%r14)
+	std %r19, 8(%r14)
+	addi %r4, %r4, -1
+	cmpldi %cr0, %r4, 0
+	bne %cr0, 2451b
+	addi %r14, %r8, 0
+	addi %r15, %r9, 0
+	addi %r16, %r10, 0
+	rldicl %r17, %r11, 63, 1
+	subfc %r0, %r0, %r0
+2458:
+	ld %r0, 0(%r14)
+	ld %r3, 0(%r16)
+	subfe %r0, %r3, %r0
+	std %r0, 0(%r15)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r16, %r16, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2458b
+	ld %r0, 0(%r14)
+	li %r3, 0
+	subfe %r0, %r3, %r0
+	subfe %r20, %r20, %r20
+	addi %r14, %r8, 0
+	addi %r15, %r9, 0
+	addi %r16, %r5, 0
+	rldicl %r17, %r11, 63, 1
+2459:
+	ld %r0, 0(%r15)
+	ld %r3, 0(%r14)
+	xor %r3, %r3, %r0
+	and %r3, %r3, %r20
+	xor %r3, %r3, %r0
+	std %r3, 0(%r16)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r16, %r16, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2459b
+	rldicr %r24, %r24, 2, 61
+	addi %r31, %r31, -1
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2327b
+	addi %r31, %r23, 0
+	addi %r5, %r10, 0
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	add %r5, %r5, %r29
+	addi %r6, %r10, 0
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	add %r6, %r6, %r29
+	addi %r7, %r10, 0
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	add %r7, %r7, %r29
+	addi %r8, %r10, 0
+	add %r8, %r8, %r29
+	add %r8, %r8, %r29
+	addi %r9, %r10, 0
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	add %r9, %r9, %r29
+	addi %r4, %r11, 0
+	rldicl %r4, %r11, 63, 1
+	addi %r14, %r8, 0
+	addi %r17, %r4, 1
+	li %r22, 0
+2460:
+	std %r22, 0(%r14)
+	addi %r14, %r14, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2460b
+2461:
+	ld %r17, 0(%r6)
+	addi %r6, %r6, 8
+	ld %r19, 0(%r7)
+	ld %r20, 0(%r8)
+	mulld %r18, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	mulld %r0, %r20, %r22
+	mulld %r22, %r0, %r3
+	mulhdu %r19, %r0, %r3
+	addc %r22, %r22, %r20
+	addze %r22, %r19
+	addi %r14, %r8, 0
+	addi %r15, %r7, 0
+	addi %r3, %r10, 0
+	rldicl %r16, %r11, 63, 1
+	addi %r16, %r16, -1
+	rldicr %r16, %r16, 62, 1
+	rldicl %r16, %r16, 2, 62
+	cmpldi %cr0, %r16, 0
+	beq %cr0, 2462f
+2464:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 8(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 8(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 0(%r14)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r3, %r3, 8
+	addi %r16, %r16, -1
+	cmpldi %cr0, %r16, 0
+	bne %cr0, 2464b
+	b 2463f
+2462:
+2463:
+	rldicl %r16, %r11, 63, 1
+	addi %r16, %r16, -1
+	rldicl %r16, %r16, 62, 2
+	cmpldi %cr0, %r16, 0
+	beq %cr0, 2465f
+2467:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 8(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 8(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 0(%r14)
+	ld %r19, 16(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 16(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 16(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 8(%r14)
+	ld %r19, 24(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 24(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 24(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 16(%r14)
+	ld %r19, 32(%r14)
+	addc %r18, %r18, %r19
+	ld %r19, 32(%r15)
+	mulld %r20, %r17, %r19
+	mulhdu %r19, %r17, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r18
+	addze %r18, %r19
+	ld %r19, 32(%r3)
+	addc %r22, %r22, %r20
+	mulld %r20, %r0, %r19
+	mulhdu %r19, %r0, %r19
+	addze %r19, %r19
+	addc %r20, %r20, %r22
+	addze %r22, %r19
+	std %r20, 24(%r14)
+	addi %r14, %r14, 32
+	addi %r15, %r15, 32
+	addi %r3, %r3, 32
+	addi %r16, %r16, -1
+	cmpldi %cr0, %r16, 0
+	bne %cr0, 2467b
+	b 2466f
+2465:
+2466:
+	ld %r19, 8(%r14)
+	addc %r18, %r18, %r19
+	li %r19, 0
+	addze %r19, %r19
+	addc %r18, %r18, %r22
+	addze %r19, %r19
+	std %r18, 0(%r14)
+	std %r19, 8(%r14)
+	addi %r4, %r4, -1
+	cmpldi %cr0, %r4, 0
+	bne %cr0, 2461b
+	addi %r14, %r8, 0
+	addi %r15, %r9, 0
+	addi %r16, %r10, 0
+	rldicl %r17, %r11, 63, 1
+	subfc %r0, %r0, %r0
+2468:
+	ld %r0, 0(%r14)
+	ld %r3, 0(%r16)
+	subfe %r0, %r3, %r0
+	std %r0, 0(%r15)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r16, %r16, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2468b
+	ld %r0, 0(%r14)
+	li %r3, 0
+	subfe %r0, %r3, %r0
+	subfe %r20, %r20, %r20
+	addi %r14, %r8, 0
+	addi %r15, %r9, 0
+	addi %r16, %r5, 0
+	rldicl %r17, %r11, 63, 1
+2469:
+	ld %r0, 0(%r15)
+	ld %r3, 0(%r14)
+	xor %r3, %r3, %r0
+	and %r3, %r3, %r20
+	xor %r3, %r3, %r0
+	std %r3, 0(%r16)
+	addi %r14, %r14, 8
+	addi %r15, %r15, 8
+	addi %r16, %r16, 8
+	addi %r17, %r17, -1
+	cmpldi %cr0, %r17, 0
+	bne %cr0, 2469b
 	rldicr %r12, %r2, 48, 15
 	rldicl %r12, %r12, 16, 48
 	li %r0, 28
@@ -18844,21 +22968,18 @@ vg_dsa_verify_prevalidated:
 	add %r15, %r15, %r29
 	add %r15, %r15, %r29
 	add %r15, %r15, %r29
-	add %r15, %r15, %r29
-	add %r15, %r15, %r29
-	add %r15, %r15, %r29
 	add %r15, %r15, %r6
 	addi %r15, %r15, -1
 	addi %r16, %r12, 0
 	addi %r17, %r6, 0
-2297:
+2470:
 	lbz %r0, 0(%r15)
 	stb %r0, 0(%r16)
 	addi %r16, %r16, 1
 	addi %r15, %r15, -1
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
-	bne %cr0, 2297b
+	bne %cr0, 2470b
 	rldicr %r23, %r2, 48, 15
 	rldicl %r23, %r23, 16, 48
 	li %r11, 28
@@ -18882,12 +23003,12 @@ vg_dsa_verify_prevalidated:
 	add %r14, %r14, %r29
 	rldicl %r17, %r11, 63, 1
 	li %r0, 0
-2298:
+2471:
 	std %r0, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
-	bne %cr0, 2298b
+	bne %cr0, 2471b
 	addi %r5, %r10, 0
 	add %r5, %r5, %r29
 	addi %r8, %r10, 0
@@ -18897,18 +23018,18 @@ vg_dsa_verify_prevalidated:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
-2299:
+2472:
 	lbz %r24, 0(%r30)
 	rldicr %r24, %r24, 56, 7
 	addi %r30, %r30, 1
 	li %r25, 8
-2300:
+2473:
 	addi %r14, %r8, 0
 	addi %r15, %r5, 0
 	addi %r17, %r11, 0
 	rldicl %r20, %r24, 1, 63
 	rldicr %r24, %r24, 1, 62
-2301:
+2474:
 	lwz %r0, 0(%r15)
 	add %r0, %r0, %r0
 	add %r0, %r0, %r20
@@ -18918,14 +23039,14 @@ vg_dsa_verify_prevalidated:
 	addi %r15, %r15, 4
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
-	bne %cr0, 2301b
+	bne %cr0, 2474b
 	stw %r20, 0(%r14)
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
 	addi %r17, %r11, 0
 	li %r20, 0
-2302:
+2475:
 	lwz %r0, 0(%r14)
 	lwz %r3, 0(%r16)
 	subf %r0, %r3, %r0
@@ -18937,7 +23058,7 @@ vg_dsa_verify_prevalidated:
 	addi %r16, %r16, 4
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
-	bne %cr0, 2302b
+	bne %cr0, 2475b
 	lwz %r0, 0(%r14)
 	subf %r0, %r20, %r0
 	rldicl %r0, %r0, 1, 63
@@ -18947,7 +23068,7 @@ vg_dsa_verify_prevalidated:
 	addi %r15, %r9, 0
 	addi %r16, %r5, 0
 	addi %r17, %r11, 0
-2303:
+2476:
 	lwz %r0, 0(%r15)
 	lwz %r3, 0(%r14)
 	xor %r3, %r3, %r0
@@ -18959,13 +23080,13 @@ vg_dsa_verify_prevalidated:
 	addi %r16, %r16, 4
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
-	bne %cr0, 2303b
+	bne %cr0, 2476b
 	addi %r25, %r25, -1
 	cmpldi %cr0, %r25, 0
-	bne %cr0, 2300b
+	bne %cr0, 2473b
 	addi %r31, %r31, -1
 	cmpldi %cr0, %r31, 0
-	bne %cr0, 2299b
+	bne %cr0, 2472b
 	addi %r31, %r23, 0
 	addi %r12, %r28, 0
 	rldicr %r6, %r2, 32, 31
@@ -18979,24 +23100,24 @@ vg_dsa_verify_prevalidated:
 	addi %r14, %r10, 0
 	rldicl %r17, %r11, 63, 1
 	li %r0, 0
-2304:
+2477:
 	std %r0, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
-	bne %cr0, 2304b
+	bne %cr0, 2477b
 	add %r15, %r10, %r6
 	addi %r15, %r15, -1
 	addi %r16, %r12, 0
 	addi %r17, %r6, 0
-2305:
+2478:
 	lbz %r0, 0(%r16)
 	stb %r0, 0(%r15)
 	addi %r16, %r16, 1
 	addi %r15, %r15, -1
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
-	bne %cr0, 2305b
+	bne %cr0, 2478b
 	add %r14, %r10, %r29
 	addi %r14, %r14, -16
 	li %r0, 0
@@ -19012,7 +23133,7 @@ vg_dsa_verify_prevalidated:
 	add %r15, %r15, %r29
 	rldicl %r17, %r11, 63, 1
 	li %r3, 0
-2306:
+2479:
 	ld %r0, 0(%r14)
 	ld %r4, 0(%r15)
 	xor %r0, %r0, %r4
@@ -19021,7 +23142,7 @@ vg_dsa_verify_prevalidated:
 	addi %r15, %r15, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
-	bne %cr0, 2306b
+	bne %cr0, 2479b
 	li %r0, 0
 	subfc %r3, %r3, %r0
 	addze %r3, %r0
