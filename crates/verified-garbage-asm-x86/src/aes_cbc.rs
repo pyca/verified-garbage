@@ -19,19 +19,24 @@ pub const VG_AES_CBC_ENCRYPT_AESNI_FEATURES: verified_garbage_cpu::Features = ve
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `scratch` on return are unspecified.
 /// * `iv`, `data` and `scratch` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the return address on the stack or the 72 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_cbc_encrypt_aesni(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r#".base64 "jWQk1ItEJDCJBCSLRCQ0iUQkBItEJDiJRCQIi0QkPIlEJAyLRCRAiUQkEItEJESJRCQU"
-call {vg_aes_cbc_encrypt_unwiped_aesni}
-.base64 "iUQkGIlUJByLRCREiQQkuIAIAACJRCQE"
-call {vg_zeroize}
-.base64 "i0QkGItUJByNZCQsww=="
+        r#".base64 "i0QkGImYEAgAAImwFAgAAIm4GAgAAImoHAgAAIt0JBCLRCQUhcA="
+je 20f
+22:
+.base64 "i1wkDIsGiwsxyIkGi0YEi0sEMciJRgSLRgiLSwgxyIlGCItGDItLDDHIiUYMi0QkBItMJAiJ878BAAAAi2wkGFVXU1FQ"
+call {vg_aes_encrypt_blocks_aesni}
+.base64 "WFhYWFiLXCQMuAAAAACJA4lDBIlDCIlDDIsDiw4xyIkDi0MEi04EMciJQwSLQwiLTggxyIlDCItDDItODDHIiUMMg8YQi0QkFAHAAcABwAHAA0QkEDnG"
+jne 22b
+jmp 21f
+20:
+21:
+.base64 "i0QkGIuYEAgAAIuwFAgAAIu4GAgAAIuoHAgAAItMJBi4AAAAAImBAAgAAImBBAgAAImBCAgAAImBDAgAALgAAAAAiYEQCAAAiYEUCAAAiYEYCAAAiYEcCAAAww=="
 .p2align 6"#,
-        vg_aes_cbc_encrypt_unwiped_aesni = sym super::aes_cbc::vg_aes_cbc_encrypt_unwiped_aesni::vg_aes_cbc_encrypt_unwiped_aesni,
-        vg_zeroize = sym super::zeroize::vg_zeroize,
+        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
     )
 }
 
@@ -58,7 +63,7 @@ pub unsafe extern "C" fn vg_aes_cbc_decrypt_aesni(schedule: *const [u8; 240], ro
     core::arch::naked_asm!(
         r#".base64 "jWQk1ItEJDCJBCSLRCQ0iUQkBItEJDiJRCQIi0QkPIlEJAyLRCRAiUQkEItEJESJRCQU"
 call {vg_aes_cbc_decrypt_unwiped_aesni}
-.base64 "iUQkGIlUJByLRCREiQQkuIAIAACJRCQE"
+.base64 "iUQkGIlUJByLRCREiQQkuPAAAACJRCQE"
 call {vg_zeroize}
 .base64 "i0QkGItUJByNZCQsww=="
 .p2align 6"#,
@@ -86,7 +91,7 @@ pub unsafe extern "C" fn vg_aes_cbc_encrypt(schedule: *const [u8; 240], rounds: 
     core::arch::naked_asm!(
         r#".base64 "jWQk1ItEJDCJBCSLRCQ0iUQkBItEJDiJRCQIi0QkPIlEJAyLRCRAiUQkEItEJESJRCQU"
 call {vg_aes_cbc_encrypt_unwiped}
-.base64 "iUQkGIlUJByLRCREiQQkuIAIAACJRCQE"
+.base64 "iUQkGIlUJByLRCREiQQkuAAIAACJRCQE"
 call {vg_zeroize}
 .base64 "i0QkGItUJByNZCQsww=="
 .p2align 6"#,
@@ -114,7 +119,7 @@ pub unsafe extern "C" fn vg_aes_cbc_decrypt(schedule: *const [u8; 240], rounds: 
     core::arch::naked_asm!(
         r#".base64 "jWQk1ItEJDCJBCSLRCQ0iUQkBItEJDiJRCQIi0QkPIlEJAyLRCRAiUQkEItEJESJRCQU"
 call {vg_aes_cbc_decrypt_unwiped}
-.base64 "iUQkGIlUJByLRCREiQQkuIAIAACJRCQE"
+.base64 "iUQkGIlUJByLRCREiQQkuAAIAACJRCQE"
 call {vg_zeroize}
 .base64 "i0QkGItUJByNZCQsww=="
 .p2align 6"#,
@@ -134,7 +139,3 @@ pub(crate) mod vg_aes_cbc_decrypt_unwiped_aesni;
 #[rustfmt::skip]
 #[path = "internal/vg_aes_cbc_encrypt_unwiped.rs"]
 pub(crate) mod vg_aes_cbc_encrypt_unwiped;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_cbc_encrypt_unwiped_aesni.rs"]
-pub(crate) mod vg_aes_cbc_encrypt_unwiped_aesni;

@@ -109,5 +109,16 @@ vg_aes_cbc_decrypt_unwiped_aesni:
 	mov esi, DWORD PTR [eax+2068]
 	mov edi, DWORD PTR [eax+2072]
 	mov ebp, DWORD PTR [eax+2076]
+	mov ecx, DWORD PTR [esp+24]
+	mov eax, 0
+	mov DWORD PTR [ecx+2048], eax
+	mov DWORD PTR [ecx+2052], eax
+	mov DWORD PTR [ecx+2056], eax
+	mov DWORD PTR [ecx+2060], eax
+	mov eax, 0
+	mov DWORD PTR [ecx+2064], eax
+	mov DWORD PTR [ecx+2068], eax
+	mov DWORD PTR [ecx+2072], eax
+	mov DWORD PTR [ecx+2076], eax
 	ret
 	.p2align 6
