@@ -63,19 +63,11 @@ bl {vg_gf25519_r32_mul}
 .base64 "AADDOAAAZjhgAIA4YACgOCACwDg="
 bl {vg_gf25519_r32_mul}
 .base64 "AADDOEAA5oBgA+aQRADmgGQD5pBIAOaAaAPmkEwA5oBsA+aQUADmgHAD5pBUAOaAdAPmkFgA5oB4A+aQXADmgHwD5pB8A+aAwg/oeIYP53hg+Od4fAPmkBMAoDjSKQh9YAPmgBRC53xgA+aQIgDoeGQD5oAUQud8ZAPmkCIA6HhoA+aAFELnfGgD5pAiAOh4bAPmgBRC53xsA+aQIgDoeHAD5oAUQud8cAPmkCIA6Hh0A+aAFELnfHQD5pAiAOh4eAPmgBRC53x4A+aQIgDoeHwD5oAUQud8fAPmkCIA6HgTAAA5YAPmgBRC53yAA+aQIgDoeGQD5oAUQud8hAPmkCIA6HhoA+aAFELnfIgD5pAiAOh4bAPmgBRC53yMA+aQIgDoeHAD5oAUQud8kAPmkCIA6Hh0A+aAFELnfJQD5pAiAOh4eAPmgBRC53yYA+aQIgDoeHwD5oAUQud8nAPmkCIA6HicA+aAwg/reAAAgDhQIGt9hg/neGD453icA+aQYAPmgIADpoB4OqV8OFilfHgq53xgA+aQZAPmgIQDpoB4OqV8OFilfHgq53xkA+aQaAPmgIgDpoB4OqV8OFilfHgq53xoA+aQbAPmgIwDpoB4OqV8OFilfHgq53xsA+aQcAPmgJADpoB4OqV8OFilfHgq53xwA+aQdAPmgJQDpoB4OqV8OFilfHgq53x0A+aQeAPmgJgDpoB4OqV8OFilfHgq53x4A+aQfAPmgJwDpoB4OqV8OFilfHgq53x8A+aQYATm6KYD6HwAANs5YAPmgAAA7pBkA+aABADukGgD5oAIAO6QbAPmgAwA7pBwA+aAEADukHQD5oAUAO6QeAPmgBgA7pB8A+aAHADukAAExukIBObpEAQG6hgEJuogBEbqKARm6jAERus4BGbrQASG60gEputQBMbrWATm6yAAgE4=""#,
-        vg_gf25519_r32_pow250 = sym super::x25519::vg_gf25519_r32_pow250::vg_gf25519_r32_pow250,
-        vg_gf25519_r32_mul = sym super::x25519::vg_gf25519_r32_mul::vg_gf25519_r32_mul,
+        vg_gf25519_r32_pow250 = sym super::ed25519::vg_gf25519_r32_pow250::vg_gf25519_r32_pow250,
+        vg_gf25519_r32_mul = sym super::ed25519::vg_gf25519_r32_mul::vg_gf25519_r32_mul,
         VG_ED25519_COMB = sym super::consts::VG_ED25519_COMB,
     )
 }
-
-#[rustfmt::skip]
-#[path = "internal/vg_gf25519_r32_mul.rs"]
-pub(crate) mod vg_gf25519_r32_mul;
-
-#[rustfmt::skip]
-#[path = "internal/vg_gf25519_r32_pow250.rs"]
-pub(crate) mod vg_gf25519_r32_pow250;
 
 #[rustfmt::skip]
 #[path = "internal/vg_x25519.rs"]

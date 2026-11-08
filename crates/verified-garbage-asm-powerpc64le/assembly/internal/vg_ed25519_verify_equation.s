@@ -794,177 +794,186 @@ vg_ed25519_verify_equation:
 	addi %r6, %r3, 0
 	li %r12, 2
 25:
-	li %r10, 38
 	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	ld %r4, 544(%r6)
+	ld %r5, 544(%r6)
+	mulld %r7, %r4, %r5
+	mulhdu %r4, %r4, %r5
+	addc %r8, %r8, %r7
+	adde %r9, %r9, %r4
+	addze %r10, %r10
+	std %r8, 864(%r6)
+	li %r8, 0
+	ld %r4, 552(%r6)
+	ld %r5, 544(%r6)
+	mulld %r7, %r4, %r5
+	mulhdu %r4, %r4, %r5
+	addc %r9, %r9, %r7
+	adde %r10, %r10, %r4
+	addze %r8, %r8
+	ld %r4, 544(%r6)
+	ld %r5, 552(%r6)
+	mulld %r7, %r4, %r5
+	mulhdu %r4, %r4, %r5
+	addc %r9, %r9, %r7
+	adde %r10, %r10, %r4
+	addze %r8, %r8
+	std %r9, 872(%r6)
+	li %r9, 0
+	ld %r4, 560(%r6)
+	ld %r5, 544(%r6)
+	mulld %r7, %r4, %r5
+	mulhdu %r4, %r4, %r5
+	addc %r10, %r10, %r7
+	adde %r8, %r8, %r4
+	addze %r9, %r9
+	ld %r4, 552(%r6)
+	ld %r5, 552(%r6)
+	mulld %r7, %r4, %r5
+	mulhdu %r4, %r4, %r5
+	addc %r10, %r10, %r7
+	adde %r8, %r8, %r4
+	addze %r9, %r9
+	ld %r4, 544(%r6)
+	ld %r5, 560(%r6)
+	mulld %r7, %r4, %r5
+	mulhdu %r4, %r4, %r5
+	addc %r10, %r10, %r7
+	adde %r8, %r8, %r4
+	addze %r9, %r9
+	std %r10, 880(%r6)
+	li %r10, 0
+	ld %r4, 568(%r6)
+	ld %r5, 544(%r6)
+	mulld %r7, %r4, %r5
+	mulhdu %r4, %r4, %r5
+	addc %r8, %r8, %r7
+	adde %r9, %r9, %r4
+	addze %r10, %r10
+	ld %r4, 560(%r6)
+	ld %r5, 552(%r6)
+	mulld %r7, %r4, %r5
+	mulhdu %r4, %r4, %r5
+	addc %r8, %r8, %r7
+	adde %r9, %r9, %r4
+	addze %r10, %r10
+	ld %r4, 552(%r6)
+	ld %r5, 560(%r6)
+	mulld %r7, %r4, %r5
+	mulhdu %r4, %r4, %r5
+	addc %r8, %r8, %r7
+	adde %r9, %r9, %r4
+	addze %r10, %r10
+	ld %r4, 544(%r6)
+	ld %r5, 568(%r6)
+	mulld %r7, %r4, %r5
+	mulhdu %r4, %r4, %r5
+	addc %r8, %r8, %r7
+	adde %r9, %r9, %r4
+	addze %r10, %r10
+	std %r8, 888(%r6)
+	li %r8, 0
+	ld %r4, 568(%r6)
+	ld %r5, 552(%r6)
+	mulld %r7, %r4, %r5
+	mulhdu %r4, %r4, %r5
+	addc %r9, %r9, %r7
+	adde %r10, %r10, %r4
+	addze %r8, %r8
+	ld %r4, 560(%r6)
+	ld %r5, 560(%r6)
+	mulld %r7, %r4, %r5
+	mulhdu %r4, %r4, %r5
+	addc %r9, %r9, %r7
+	adde %r10, %r10, %r4
+	addze %r8, %r8
+	ld %r4, 552(%r6)
+	ld %r5, 568(%r6)
+	mulld %r7, %r4, %r5
+	mulhdu %r4, %r4, %r5
+	addc %r9, %r9, %r7
+	adde %r10, %r10, %r4
+	addze %r8, %r8
+	std %r9, 896(%r6)
+	li %r9, 0
+	ld %r4, 568(%r6)
+	ld %r5, 560(%r6)
+	mulld %r7, %r4, %r5
+	mulhdu %r4, %r4, %r5
+	addc %r10, %r10, %r7
+	adde %r8, %r8, %r4
+	addze %r9, %r9
+	ld %r4, 560(%r6)
+	ld %r5, 568(%r6)
+	mulld %r7, %r4, %r5
+	mulhdu %r4, %r4, %r5
+	addc %r10, %r10, %r7
+	adde %r8, %r8, %r4
+	addze %r9, %r9
+	std %r10, 904(%r6)
+	li %r10, 0
+	ld %r4, 568(%r6)
+	ld %r5, 568(%r6)
+	mulld %r7, %r4, %r5
+	mulhdu %r4, %r4, %r5
+	addc %r8, %r8, %r7
+	adde %r9, %r9, %r4
+	addze %r10, %r10
+	std %r8, 912(%r6)
+	li %r8, 0
+	std %r9, 920(%r6)
+	li %r9, 0
+	li %r5, 38
+	ld %r8, 864(%r6)
+	ld %r4, 896(%r6)
+	mulld %r4, %r4, %r5
+	addc %r8, %r8, %r4
+	ld %r9, 872(%r6)
+	ld %r4, 904(%r6)
+	mulld %r4, %r4, %r5
+	adde %r9, %r9, %r4
+	ld %r10, 880(%r6)
+	ld %r4, 912(%r6)
+	mulld %r4, %r4, %r5
+	adde %r10, %r10, %r4
+	ld %r11, 888(%r6)
+	ld %r4, 920(%r6)
+	mulld %r4, %r4, %r5
+	adde %r11, %r11, %r4
 	li %r7, 0
-	stw %r7, 864(%r6)
-	stw %r7, 868(%r6)
-	stw %r7, 872(%r6)
-	stw %r7, 876(%r6)
-	stw %r7, 880(%r6)
-	stw %r7, 884(%r6)
-	stw %r7, 888(%r6)
-	stw %r7, 892(%r6)
-	addi %r9, %r6, 0
-	li %r11, 8
-26:
-	lwz %r4, 544(%r9)
-	li %r8, 0
-	lwz %r5, 544(%r6)
-	mulld %r5, %r4, %r5
-	lwz %r7, 864(%r9)
-	add %r7, %r7, %r5
-	add %r7, %r7, %r8
-	stw %r7, 864(%r9)
-	rldicl %r8, %r7, 32, 32
-	lwz %r5, 548(%r6)
-	mulld %r5, %r4, %r5
-	lwz %r7, 868(%r9)
-	add %r7, %r7, %r5
-	add %r7, %r7, %r8
-	stw %r7, 868(%r9)
-	rldicl %r8, %r7, 32, 32
-	lwz %r5, 552(%r6)
-	mulld %r5, %r4, %r5
-	lwz %r7, 872(%r9)
-	add %r7, %r7, %r5
-	add %r7, %r7, %r8
-	stw %r7, 872(%r9)
-	rldicl %r8, %r7, 32, 32
-	lwz %r5, 556(%r6)
-	mulld %r5, %r4, %r5
-	lwz %r7, 876(%r9)
-	add %r7, %r7, %r5
-	add %r7, %r7, %r8
-	stw %r7, 876(%r9)
-	rldicl %r8, %r7, 32, 32
-	lwz %r5, 560(%r6)
-	mulld %r5, %r4, %r5
-	lwz %r7, 880(%r9)
-	add %r7, %r7, %r5
-	add %r7, %r7, %r8
-	stw %r7, 880(%r9)
-	rldicl %r8, %r7, 32, 32
-	lwz %r5, 564(%r6)
-	mulld %r5, %r4, %r5
-	lwz %r7, 884(%r9)
-	add %r7, %r7, %r5
-	add %r7, %r7, %r8
-	stw %r7, 884(%r9)
-	rldicl %r8, %r7, 32, 32
-	lwz %r5, 568(%r6)
-	mulld %r5, %r4, %r5
-	lwz %r7, 888(%r9)
-	add %r7, %r7, %r5
-	add %r7, %r7, %r8
-	stw %r7, 888(%r9)
-	rldicl %r8, %r7, 32, 32
-	lwz %r5, 572(%r6)
-	mulld %r5, %r4, %r5
-	lwz %r7, 892(%r9)
-	add %r7, %r7, %r5
-	add %r7, %r7, %r8
-	stw %r7, 892(%r9)
-	rldicl %r8, %r7, 32, 32
-	stw %r8, 896(%r9)
-	addi %r9, %r9, 4
-	addi %r11, %r11, -1
-	cmpldi %cr0, %r11, 0
-	bne %cr0, 26b
-	li %r8, 0
-	lwz %r7, 864(%r6)
-	lwz %r5, 896(%r6)
-	mulld %r5, %r5, %r10
-	add %r7, %r7, %r5
-	add %r7, %r7, %r8
-	stw %r7, 544(%r6)
-	rldicl %r8, %r7, 32, 32
-	lwz %r7, 868(%r6)
-	lwz %r5, 900(%r6)
-	mulld %r5, %r5, %r10
-	add %r7, %r7, %r5
-	add %r7, %r7, %r8
-	stw %r7, 548(%r6)
-	rldicl %r8, %r7, 32, 32
-	lwz %r7, 872(%r6)
-	lwz %r5, 904(%r6)
-	mulld %r5, %r5, %r10
-	add %r7, %r7, %r5
-	add %r7, %r7, %r8
-	stw %r7, 552(%r6)
-	rldicl %r8, %r7, 32, 32
-	lwz %r7, 876(%r6)
-	lwz %r5, 908(%r6)
-	mulld %r5, %r5, %r10
-	add %r7, %r7, %r5
-	add %r7, %r7, %r8
-	stw %r7, 556(%r6)
-	rldicl %r8, %r7, 32, 32
-	lwz %r7, 880(%r6)
-	lwz %r5, 912(%r6)
-	mulld %r5, %r5, %r10
-	add %r7, %r7, %r5
-	add %r7, %r7, %r8
-	stw %r7, 560(%r6)
-	rldicl %r8, %r7, 32, 32
-	lwz %r7, 884(%r6)
-	lwz %r5, 916(%r6)
-	mulld %r5, %r5, %r10
-	add %r7, %r7, %r5
-	add %r7, %r7, %r8
-	stw %r7, 564(%r6)
-	rldicl %r8, %r7, 32, 32
-	lwz %r7, 888(%r6)
-	lwz %r5, 920(%r6)
-	mulld %r5, %r5, %r10
-	add %r7, %r7, %r5
-	add %r7, %r7, %r8
-	stw %r7, 568(%r6)
-	rldicl %r8, %r7, 32, 32
-	lwz %r7, 892(%r6)
-	lwz %r5, 924(%r6)
-	mulld %r5, %r5, %r10
-	add %r7, %r7, %r5
-	add %r7, %r7, %r8
-	stw %r7, 572(%r6)
-	rldicl %r8, %r7, 32, 32
-	mulld %r8, %r8, %r10
-	lwz %r7, 544(%r6)
-	add %r7, %r7, %r8
-	stw %r7, 544(%r6)
-	rldicl %r8, %r7, 32, 32
-	lwz %r7, 548(%r6)
-	add %r7, %r7, %r8
-	stw %r7, 548(%r6)
-	rldicl %r8, %r7, 32, 32
-	lwz %r7, 552(%r6)
-	add %r7, %r7, %r8
-	stw %r7, 552(%r6)
-	rldicl %r8, %r7, 32, 32
-	lwz %r7, 556(%r6)
-	add %r7, %r7, %r8
-	stw %r7, 556(%r6)
-	rldicl %r8, %r7, 32, 32
-	lwz %r7, 560(%r6)
-	add %r7, %r7, %r8
-	stw %r7, 560(%r6)
-	rldicl %r8, %r7, 32, 32
-	lwz %r7, 564(%r6)
-	add %r7, %r7, %r8
-	stw %r7, 564(%r6)
-	rldicl %r8, %r7, 32, 32
-	lwz %r7, 568(%r6)
-	add %r7, %r7, %r8
-	stw %r7, 568(%r6)
-	rldicl %r8, %r7, 32, 32
-	lwz %r7, 572(%r6)
-	add %r7, %r7, %r8
-	stw %r7, 572(%r6)
-	rldicl %r8, %r7, 32, 32
-	mulld %r8, %r8, %r10
-	lwz %r7, 544(%r6)
-	add %r7, %r7, %r8
-	stw %r7, 544(%r6)
+	addze %r7, %r7
+	ld %r4, 896(%r6)
+	mulhdu %r4, %r4, %r5
+	addc %r9, %r9, %r4
+	ld %r4, 904(%r6)
+	mulhdu %r4, %r4, %r5
+	adde %r10, %r10, %r4
+	ld %r4, 912(%r6)
+	mulhdu %r4, %r4, %r5
+	adde %r11, %r11, %r4
+	ld %r4, 920(%r6)
+	mulhdu %r4, %r4, %r5
+	adde %r7, %r7, %r4
+	mulld %r4, %r7, %r5
+	addc %r8, %r8, %r4
+	addze %r9, %r9
+	addze %r10, %r10
+	addze %r11, %r11
+	li %r7, 0
+	addze %r7, %r7
+	mulld %r4, %r7, %r5
+	addc %r8, %r8, %r4
+	addze %r9, %r9
+	addze %r10, %r10
+	addze %r11, %r11
+	li %r7, 0
+	addze %r7, %r7
+	std %r8, 544(%r6)
+	std %r9, 552(%r6)
+	std %r10, 560(%r6)
+	std %r11, 568(%r6)
 	addi %r12, %r12, -1
 	cmpldi %cr0, %r12, 0
 	bne %cr0, 25b
@@ -1407,7 +1416,7 @@ vg_ed25519_verify_equation:
 	lwz %r7, 892(%r6)
 	add %r5, %r5, %r7
 	cmpldi %cr0, %r5, 0
-	beq %cr0, 27f
+	beq %cr0, 26f
 	li %r10, 38
 	li %r8, 0
 	li %r4, 1
@@ -1681,10 +1690,10 @@ vg_ed25519_verify_equation:
 	lwz %r7, 892(%r6)
 	add %r5, %r5, %r7
 	cmpldi %cr0, %r5, 0
-	beq %cr0, 29f
+	beq %cr0, 28f
 	li %r17, 0
-	b 210f
-29:
+	b 29f
+28:
 	lis %r7, 18958
 	ori %r7, %r7, 41136
 	stw %r7, 640(%r6)
@@ -1876,7 +1885,7 @@ vg_ed25519_verify_equation:
 	lwz %r7, 892(%r6)
 	add %r5, %r5, %r7
 	cmpldi %cr0, %r5, 0
-	beq %cr0, 211f
+	beq %cr0, 210f
 	lwz %r7, 64(%r6)
 	stw %r7, 864(%r6)
 	lwz %r7, 68(%r6)
@@ -2026,7 +2035,7 @@ vg_ed25519_verify_equation:
 	ld %r8, 24(%r6)
 	xor %r5, %r7, %r8
 	cmpldi %cr0, %r5, 0
-	beq %cr0, 213f
+	beq %cr0, 212f
 	lis %r7, 0
 	ori %r7, %r7, 0
 	stw %r7, 224(%r6)
@@ -2163,9 +2172,9 @@ vg_ed25519_verify_equation:
 	lwz %r7, 64(%r6)
 	add %r7, %r7, %r8
 	stw %r7, 64(%r6)
-	b 214f
+	b 213f
+212:
 213:
-214:
 	lis %r7, 0
 	ori %r7, %r7, 1
 	stw %r7, 128(%r6)
@@ -2197,11 +2206,11 @@ vg_ed25519_verify_equation:
 	bl {vg_gf25519_r32_mul}
 	addi %r6, %r3, 0
 	li %r17, 1
-	b 212f
-211:
+	b 211f
+210:
 	ld %r5, 24(%r6)
 	cmpldi %cr0, %r5, 0
-	bne %cr0, 215f
+	bne %cr0, 214f
 	lwz %r7, 64(%r6)
 	stw %r7, 864(%r6)
 	lwz %r7, 68(%r6)
@@ -2351,7 +2360,7 @@ vg_ed25519_verify_equation:
 	ld %r8, 24(%r6)
 	xor %r5, %r7, %r8
 	cmpldi %cr0, %r5, 0
-	beq %cr0, 217f
+	beq %cr0, 216f
 	lis %r7, 0
 	ori %r7, %r7, 0
 	stw %r7, 224(%r6)
@@ -2488,9 +2497,9 @@ vg_ed25519_verify_equation:
 	lwz %r7, 64(%r6)
 	add %r7, %r7, %r8
 	stw %r7, 64(%r6)
-	b 218f
+	b 217f
+216:
 217:
-218:
 	lis %r7, 0
 	ori %r7, %r7, 1
 	stw %r7, 128(%r6)
@@ -2522,14 +2531,14 @@ vg_ed25519_verify_equation:
 	bl {vg_gf25519_r32_mul}
 	addi %r6, %r3, 0
 	li %r17, 1
-	b 216f
-215:
+	b 215f
+214:
 	li %r17, 0
-216:
-212:
-210:
-	b 28f
-27:
+215:
+211:
+29:
+	b 27f
+26:
 	lwz %r7, 64(%r6)
 	stw %r7, 864(%r6)
 	lwz %r7, 68(%r6)
@@ -2691,7 +2700,7 @@ vg_ed25519_verify_equation:
 	lwz %r7, 892(%r6)
 	add %r5, %r5, %r7
 	cmpldi %cr0, %r5, 0
-	beq %cr0, 219f
+	beq %cr0, 218f
 	lwz %r7, 64(%r6)
 	stw %r7, 864(%r6)
 	lwz %r7, 68(%r6)
@@ -2841,7 +2850,7 @@ vg_ed25519_verify_equation:
 	ld %r8, 24(%r6)
 	xor %r5, %r7, %r8
 	cmpldi %cr0, %r5, 0
-	beq %cr0, 221f
+	beq %cr0, 220f
 	lis %r7, 0
 	ori %r7, %r7, 0
 	stw %r7, 224(%r6)
@@ -2978,9 +2987,9 @@ vg_ed25519_verify_equation:
 	lwz %r7, 64(%r6)
 	add %r7, %r7, %r8
 	stw %r7, 64(%r6)
-	b 222f
+	b 221f
+220:
 221:
-222:
 	lis %r7, 0
 	ori %r7, %r7, 1
 	stw %r7, 128(%r6)
@@ -3012,11 +3021,11 @@ vg_ed25519_verify_equation:
 	bl {vg_gf25519_r32_mul}
 	addi %r6, %r3, 0
 	li %r17, 1
-	b 220f
-219:
+	b 219f
+218:
 	ld %r5, 24(%r6)
 	cmpldi %cr0, %r5, 0
-	bne %cr0, 223f
+	bne %cr0, 222f
 	lwz %r7, 64(%r6)
 	stw %r7, 864(%r6)
 	lwz %r7, 68(%r6)
@@ -3166,7 +3175,7 @@ vg_ed25519_verify_equation:
 	ld %r8, 24(%r6)
 	xor %r5, %r7, %r8
 	cmpldi %cr0, %r5, 0
-	beq %cr0, 225f
+	beq %cr0, 224f
 	lis %r7, 0
 	ori %r7, %r7, 0
 	stw %r7, 224(%r6)
@@ -3303,9 +3312,9 @@ vg_ed25519_verify_equation:
 	lwz %r7, 64(%r6)
 	add %r7, %r7, %r8
 	stw %r7, 64(%r6)
-	b 226f
+	b 225f
+224:
 225:
-226:
 	lis %r7, 0
 	ori %r7, %r7, 1
 	stw %r7, 128(%r6)
@@ -3337,12 +3346,12 @@ vg_ed25519_verify_equation:
 	bl {vg_gf25519_r32_mul}
 	addi %r6, %r3, 0
 	li %r17, 1
-	b 224f
-223:
+	b 223f
+222:
 	li %r17, 0
-224:
-220:
-28:
+223:
+219:
+27:
 24:
 	and %r18, %r18, %r17
 	add %r14, %r6, %r28
@@ -3416,10 +3425,10 @@ vg_ed25519_verify_equation:
 	cmpldi %cr0, %r7, 0
 	bne %cr0, 22b
 	cmpldi %cr0, %r18, 0
-	bne %cr0, 227f
+	bne %cr0, 226f
 	li %r17, 0
-	b 228f
-227:
+	b 227f
+226:
 	addi %r14, %r30, 32
 	lis %r7, -28891
 	ori %r7, %r7, 54554
@@ -3543,7 +3552,7 @@ vg_ed25519_verify_equation:
 	ori %r7, %r7, 27886
 	stw %r7, 604(%r6)
 	li %r16, 0
-229:
+228:
 	addi %r14, %r6, 1632
 	rldicr %r7, %r16, 7, 56
 	add %r14, %r14, %r7
@@ -3612,7 +3621,7 @@ vg_ed25519_verify_equation:
 	lwz %r7, 188(%r6)
 	stw %r7, 124(%r14)
 	li %r15, 16
-230:
+229:
 	lwz %r7, 64(%r6)
 	stw %r7, 192(%r6)
 	lwz %r7, 68(%r6)
@@ -3682,11 +3691,11 @@ vg_ed25519_verify_equation:
 	addi %r6, %r3, 0
 	addi %r15, %r15, -1
 	cmpldi %cr0, %r15, 0
-	bne %cr0, 230b
+	bne %cr0, 229b
 	addi %r16, %r16, 1
 	addi %r7, %r16, -16
 	cmpldi %cr0, %r7, 0
-	bne %cr0, 229b
+	bne %cr0, 228b
 	lis %r7, 0
 	ori %r7, %r7, 0
 	stw %r7, 64(%r6)
@@ -3784,7 +3793,7 @@ vg_ed25519_verify_equation:
 	ori %r7, %r7, 0
 	stw %r7, 188(%r6)
 	li %r26, 16
-231:
+230:
 	addi %r26, %r26, -1
 	addi %r16, %r26, 0
 	lwz %r7, 64(%r6)
@@ -3919,7 +3928,7 @@ vg_ed25519_verify_equation:
 	lwz %r7, 124(%r14)
 	stw %r7, 188(%r6)
 	li %r16, 0
-232:
+231:
 	addi %r14, %r6, 5728
 	rldicr %r7, %r16, 7, 56
 	add %r14, %r14, %r7
@@ -4057,7 +4066,7 @@ vg_ed25519_verify_equation:
 	addi %r16, %r16, 1
 	addi %r7, %r16, -16
 	cmpldi %cr0, %r7, 0
-	bne %cr0, 232b
+	bne %cr0, 231b
 	lwz %r7, 608(%r6)
 	stw %r7, 64(%r6)
 	lwz %r7, 612(%r6)
@@ -4177,7 +4186,7 @@ vg_ed25519_verify_equation:
 	rldicl %r8, %r8, 1, 63
 	stb %r8, 47(%r6)
 	li %r16, 16
-233:
+232:
 	addi %r16, %r16, -1
 	lwz %r7, 64(%r6)
 	stw %r7, 608(%r6)
@@ -4701,9 +4710,9 @@ vg_ed25519_verify_equation:
 	stw %r5, 188(%r6)
 	stw %r7, 732(%r6)
 	cmpldi %cr0, %r16, 0
-	bne %cr0, 233b
+	bne %cr0, 232b
 	cmpldi %cr0, %r26, 0
-	bne %cr0, 231b
+	bne %cr0, 230b
 	addi %r14, %r6, 8032
 	lwz %r7, 64(%r6)
 	stw %r7, 0(%r14)
@@ -4861,7 +4870,7 @@ vg_ed25519_verify_equation:
 	ori %r7, %r7, 27886
 	stw %r7, 604(%r6)
 	li %r16, 0
-234:
+233:
 	addi %r14, %r6, 1632
 	rldicr %r7, %r16, 7, 56
 	add %r14, %r14, %r7
@@ -4930,7 +4939,7 @@ vg_ed25519_verify_equation:
 	lwz %r7, 188(%r6)
 	stw %r7, 124(%r14)
 	li %r15, 16
-235:
+234:
 	lwz %r7, 64(%r6)
 	stw %r7, 192(%r6)
 	lwz %r7, 68(%r6)
@@ -5000,11 +5009,11 @@ vg_ed25519_verify_equation:
 	addi %r6, %r3, 0
 	addi %r15, %r15, -1
 	cmpldi %cr0, %r15, 0
-	bne %cr0, 235b
+	bne %cr0, 234b
 	addi %r16, %r16, 1
 	addi %r7, %r16, -32
 	cmpldi %cr0, %r7, 0
-	bne %cr0, 234b
+	bne %cr0, 233b
 	lis %r7, 0
 	ori %r7, %r7, 0
 	stw %r7, 64(%r6)
@@ -5102,7 +5111,7 @@ vg_ed25519_verify_equation:
 	ori %r7, %r7, 0
 	stw %r7, 188(%r6)
 	li %r26, 32
-236:
+235:
 	addi %r26, %r26, -1
 	addi %r16, %r26, 0
 	lwz %r7, 64(%r6)
@@ -5237,7 +5246,7 @@ vg_ed25519_verify_equation:
 	lwz %r7, 124(%r14)
 	stw %r7, 188(%r6)
 	li %r16, 0
-237:
+236:
 	addi %r14, %r6, 5728
 	rldicr %r7, %r16, 7, 56
 	add %r14, %r14, %r7
@@ -5375,7 +5384,7 @@ vg_ed25519_verify_equation:
 	addi %r16, %r16, 1
 	addi %r7, %r16, -16
 	cmpldi %cr0, %r7, 0
-	bne %cr0, 237b
+	bne %cr0, 236b
 	lwz %r7, 608(%r6)
 	stw %r7, 64(%r6)
 	lwz %r7, 612(%r6)
@@ -5495,7 +5504,7 @@ vg_ed25519_verify_equation:
 	rldicl %r8, %r8, 1, 63
 	stb %r8, 47(%r6)
 	li %r16, 16
-238:
+237:
 	addi %r16, %r16, -1
 	lwz %r7, 64(%r6)
 	stw %r7, 608(%r6)
@@ -6019,9 +6028,9 @@ vg_ed25519_verify_equation:
 	stw %r5, 188(%r6)
 	stw %r7, 732(%r6)
 	cmpldi %cr0, %r16, 0
-	bne %cr0, 238b
+	bne %cr0, 237b
 	cmpldi %cr0, %r26, 0
-	bne %cr0, 236b
+	bne %cr0, 235b
 	lwz %r7, 64(%r6)
 	stw %r7, 192(%r6)
 	lwz %r7, 68(%r6)
@@ -6580,10 +6589,10 @@ vg_ed25519_verify_equation:
 	lwz %r7, 892(%r6)
 	add %r5, %r5, %r7
 	cmpldi %cr0, %r5, 0
-	beq %cr0, 239f
+	beq %cr0, 238f
 	li %r17, 0
-	b 240f
-239:
+	b 239f
+238:
 	li %r10, 38
 	li %r8, 0
 	li %r4, 1
@@ -6857,14 +6866,14 @@ vg_ed25519_verify_equation:
 	lwz %r7, 892(%r6)
 	add %r5, %r5, %r7
 	cmpldi %cr0, %r5, 0
-	beq %cr0, 241f
+	beq %cr0, 240f
 	li %r17, 0
-	b 242f
-241:
-	li %r17, 1
-242:
+	b 241f
 240:
-228:
+	li %r17, 1
+241:
+239:
+227:
 21:
 	ld %r7, 1120(%r6)
 	mtlr %r7
