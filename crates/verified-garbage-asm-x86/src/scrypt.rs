@@ -3,44 +3,6 @@
 //! `assembly/scrypt.s`.
 #![allow(dead_code)]
 
-/// scrypt (RFC 7914 §6) with block size parameter `r`, cost parameter `N = vlen / r` and parallelization parameter `p = blen / r`: writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` to `out`.
-///
-/// Contract: `VG.Spec.Scrypt.scryptContract`. Not constant time in the indices: timing may depend on the pointers, the lengths, `r`, `N`, `p` and the indices `j` of step 3 of each scryptROMix, which are derived from the password and the salt and so leak information about them (as in every scrypt that indexes `V` directly), but on nothing else.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `password` must be valid for reads of `password_len` bytes.
-/// * `salt` must be valid for reads of `salt_len` bytes.
-/// * `b` must be valid for reads and writes of `128 * blen` bytes.
-/// * `v` must be valid for reads and writes of `128 * vlen` bytes.
-/// * `scratch` must be valid for reads and writes of `128 * slen` bytes.
-/// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `r` must be positive, `blen` must be `p * r` and `vlen` must be `N * r` for parameters that RFC 7914 §6 accepts (`N` a power of two greater than 1 and less than `2^(16 r)`, `0 < p ≤ (2^32 - 1) * 32 / (128 r)`, `0 < out_len ≤ (2^32 - 1) * 32`), and `slen` must be `r + 16`.
-/// * `b`, `v` and `scratch` are working space: their contents on return are unspecified.
-/// * `b`, `v`, `scratch` and `out` must not overlap each other, `password` or `salt` (distinct Rust objects never do).
-/// * None of `password`, `salt`, `b`, `v`, `scratch` and `out` may overlap the arguments on the stack, overlap the return address on the stack or the 116 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_scrypt(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
-    core::arch::naked_asm!(
-        r#".base64 "UFBQUFBQUFBQi0QkKIkEJItEJCyJRCQEi0QkMIlEJAiLRCQ0iUQkDLgBAAAAiUQkEItEJDyJRCQUi0QkQMHIGYlEJBiLRCRMiUQkHA=="
-call {vg_pbkdf2_hmac_sha256_scratch}
-.base64 "i0QkPIlEJCA="
-20:
-.base64 "i0QkIIkEJItEJDiJRCQEi0QkRIlEJAiLRCRIiUQkDItEJEyJRCQQi0QkOIPAAolEJBQ="
-call {vg_scrypt_romix}
-.base64 "i0wkOMHJGYtEJCAByItUJEDByhkDVCQ8iUQkIDnQ"
-jne 20b
-.base64 "i0QkKIkEJItEJCyJRCQEi0QkPIlEJAiLRCRAwcgZiUQkDLgBAAAAiUQkEItEJFSJRCQUi0QkWIlEJBiLRCRMiUQkHA=="
-call {vg_pbkdf2_hmac_sha256_scratch}
-.base64 "WFhYWFhYWFhYww=="
-.p2align 6"#,
-        vg_pbkdf2_hmac_sha256_scratch = sym super::scrypt::vg_pbkdf2_hmac_sha256_scratch::vg_pbkdf2_hmac_sha256_scratch,
-        vg_scrypt_romix = sym super::scrypt::vg_scrypt_romix::vg_scrypt_romix,
-    )
-}
-
 /// The CPU features `vg_scrypt_shani` requires (`Artifact.features`).
 pub const VG_SCRYPT_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
 
@@ -79,6 +41,44 @@ call {vg_pbkdf2_hmac_sha256_scratch_shani}
 .base64 "WFhYWFhYWFhYww=="
 .p2align 6"#,
         vg_pbkdf2_hmac_sha256_scratch_shani = sym super::scrypt::vg_pbkdf2_hmac_sha256_scratch_shani::vg_pbkdf2_hmac_sha256_scratch_shani,
+        vg_scrypt_romix = sym super::scrypt::vg_scrypt_romix::vg_scrypt_romix,
+    )
+}
+
+/// scrypt (RFC 7914 §6) with block size parameter `r`, cost parameter `N = vlen / r` and parallelization parameter `p = blen / r`: writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` to `out`.
+///
+/// Contract: `VG.Spec.Scrypt.scryptContract`. Not constant time in the indices: timing may depend on the pointers, the lengths, `r`, `N`, `p` and the indices `j` of step 3 of each scryptROMix, which are derived from the password and the salt and so leak information about them (as in every scrypt that indexes `V` directly), but on nothing else.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `password` must be valid for reads of `password_len` bytes.
+/// * `salt` must be valid for reads of `salt_len` bytes.
+/// * `b` must be valid for reads and writes of `128 * blen` bytes.
+/// * `v` must be valid for reads and writes of `128 * vlen` bytes.
+/// * `scratch` must be valid for reads and writes of `128 * slen` bytes.
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `r` must be positive, `blen` must be `p * r` and `vlen` must be `N * r` for parameters that RFC 7914 §6 accepts (`N` a power of two greater than 1 and less than `2^(16 r)`, `0 < p ≤ (2^32 - 1) * 32 / (128 r)`, `0 < out_len ≤ (2^32 - 1) * 32`), and `slen` must be `r + 16`.
+/// * `b`, `v` and `scratch` are working space: their contents on return are unspecified.
+/// * `b`, `v`, `scratch` and `out` must not overlap each other, `password` or `salt` (distinct Rust objects never do).
+/// * None of `password`, `salt`, `b`, `v`, `scratch` and `out` may overlap the arguments on the stack, overlap the return address on the stack or the 116 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_scrypt(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "UFBQUFBQUFBQi0QkKIkEJItEJCyJRCQEi0QkMIlEJAiLRCQ0iUQkDLgBAAAAiUQkEItEJDyJRCQUi0QkQMHIGYlEJBiLRCRMiUQkHA=="
+call {vg_pbkdf2_hmac_sha256_scratch}
+.base64 "i0QkPIlEJCA="
+20:
+.base64 "i0QkIIkEJItEJDiJRCQEi0QkRIlEJAiLRCRIiUQkDItEJEyJRCQQi0QkOIPAAolEJBQ="
+call {vg_scrypt_romix}
+.base64 "i0wkOMHJGYtEJCAByItUJEDByhkDVCQ8iUQkIDnQ"
+jne 20b
+.base64 "i0QkKIkEJItEJCyJRCQEi0QkPIlEJAiLRCRAwcgZiUQkDLgBAAAAiUQkEItEJFSJRCQUi0QkWIlEJBiLRCRMiUQkHA=="
+call {vg_pbkdf2_hmac_sha256_scratch}
+.base64 "WFhYWFhYWFhYww=="
+.p2align 6"#,
+        vg_pbkdf2_hmac_sha256_scratch = sym super::scrypt::vg_pbkdf2_hmac_sha256_scratch::vg_pbkdf2_hmac_sha256_scratch,
         vg_scrypt_romix = sym super::scrypt::vg_scrypt_romix::vg_scrypt_romix,
     )
 }

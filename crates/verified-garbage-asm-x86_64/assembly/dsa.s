@@ -26411,7 +26411,7 @@ vg_dsa_derive_key:
 	ret
 	.p2align 6
 
-vg_dsa_parameter_search_mr_adx:
+vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_ifma:
 	mov rax, QWORD PTR [rsp+16]
 	mov rax, QWORD PTR [rax+8]
 	cmp rax, 128
@@ -26423,7 +26423,7 @@ vg_dsa_parameter_search_mr_adx:
 	mov QWORD PTR [rsp], rax
 	mov rax, QWORD PTR [rsp+72]
 	mov QWORD PTR [rsp+8], rax
-	call {vg_dsa_parameter_search_3072_mr_adx}
+	call {vg_dsa_parameter_search_3072_sha256_shani_mr_ifma}
 	lea rsp, [rsp+56]
 23:
 21:
@@ -26434,7 +26434,7 @@ vg_dsa_parameter_search_mr_adx:
 	mov QWORD PTR [rsp], rax
 	mov rax, QWORD PTR [rsp+72]
 	mov QWORD PTR [rsp+8], rax
-	call {vg_dsa_parameter_search_2048_mr_adx}
+	call {vg_dsa_parameter_search_2048_sha256_shani_mr_ifma}
 	lea rsp, [rsp+56]
 	jmp 23b
 20:
@@ -26443,192 +26443,7 @@ vg_dsa_parameter_search_mr_adx:
 	mov QWORD PTR [rsp], rax
 	mov rax, QWORD PTR [rsp+72]
 	mov QWORD PTR [rsp+8], rax
-	call {vg_dsa_parameter_search_1024_mr_adx}
-	lea rsp, [rsp+56]
-	jmp 21b
-	.p2align 6
-
-vg_dsa_parameter_search:
-	mov rax, QWORD PTR [rsp+16]
-	mov rax, QWORD PTR [rax+8]
-	cmp rax, 128
-	je 20f
-	cmp rax, 256
-	je 22f
-	lea rsp, [rsp-56]
-	mov rax, QWORD PTR [rsp+64]
-	mov QWORD PTR [rsp], rax
-	mov rax, QWORD PTR [rsp+72]
-	mov QWORD PTR [rsp+8], rax
-	call {vg_dsa_parameter_search_3072}
-	lea rsp, [rsp+56]
-23:
-21:
-	ret
-22:
-	lea rsp, [rsp-56]
-	mov rax, QWORD PTR [rsp+64]
-	mov QWORD PTR [rsp], rax
-	mov rax, QWORD PTR [rsp+72]
-	mov QWORD PTR [rsp+8], rax
-	call {vg_dsa_parameter_search_2048}
-	lea rsp, [rsp+56]
-	jmp 23b
-20:
-	lea rsp, [rsp-56]
-	mov rax, QWORD PTR [rsp+64]
-	mov QWORD PTR [rsp], rax
-	mov rax, QWORD PTR [rsp+72]
-	mov QWORD PTR [rsp+8], rax
-	call {vg_dsa_parameter_search_1024}
-	lea rsp, [rsp+56]
-	jmp 21b
-	.p2align 6
-
-vg_dsa_parameter_search_mr_ifma:
-	mov rax, QWORD PTR [rsp+16]
-	mov rax, QWORD PTR [rax+8]
-	cmp rax, 128
-	je 20f
-	cmp rax, 256
-	je 22f
-	lea rsp, [rsp-56]
-	mov rax, QWORD PTR [rsp+64]
-	mov QWORD PTR [rsp], rax
-	mov rax, QWORD PTR [rsp+72]
-	mov QWORD PTR [rsp+8], rax
-	call {vg_dsa_parameter_search_3072_mr_ifma}
-	lea rsp, [rsp+56]
-23:
-21:
-	ret
-22:
-	lea rsp, [rsp-56]
-	mov rax, QWORD PTR [rsp+64]
-	mov QWORD PTR [rsp], rax
-	mov rax, QWORD PTR [rsp+72]
-	mov QWORD PTR [rsp+8], rax
-	call {vg_dsa_parameter_search_2048_mr_ifma}
-	lea rsp, [rsp+56]
-	jmp 23b
-20:
-	lea rsp, [rsp-56]
-	mov rax, QWORD PTR [rsp+64]
-	mov QWORD PTR [rsp], rax
-	mov rax, QWORD PTR [rsp+72]
-	mov QWORD PTR [rsp+8], rax
-	call {vg_dsa_parameter_search_1024_mr_ifma}
-	lea rsp, [rsp+56]
-	jmp 21b
-	.p2align 6
-
-vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_adx:
-	mov rax, QWORD PTR [rsp+16]
-	mov rax, QWORD PTR [rax+8]
-	cmp rax, 128
-	je 20f
-	cmp rax, 256
-	je 22f
-	lea rsp, [rsp-56]
-	mov rax, QWORD PTR [rsp+64]
-	mov QWORD PTR [rsp], rax
-	mov rax, QWORD PTR [rsp+72]
-	mov QWORD PTR [rsp+8], rax
-	call {vg_dsa_parameter_search_3072_sha256_avx2_mr_adx}
-	lea rsp, [rsp+56]
-23:
-21:
-	ret
-22:
-	lea rsp, [rsp-56]
-	mov rax, QWORD PTR [rsp+64]
-	mov QWORD PTR [rsp], rax
-	mov rax, QWORD PTR [rsp+72]
-	mov QWORD PTR [rsp+8], rax
-	call {vg_dsa_parameter_search_2048_sha256_avx2_mr_adx}
-	lea rsp, [rsp+56]
-	jmp 23b
-20:
-	lea rsp, [rsp-56]
-	mov rax, QWORD PTR [rsp+64]
-	mov QWORD PTR [rsp], rax
-	mov rax, QWORD PTR [rsp+72]
-	mov QWORD PTR [rsp+8], rax
-	call {vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_adx}
-	lea rsp, [rsp+56]
-	jmp 21b
-	.p2align 6
-
-vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2:
-	mov rax, QWORD PTR [rsp+16]
-	mov rax, QWORD PTR [rax+8]
-	cmp rax, 128
-	je 20f
-	cmp rax, 256
-	je 22f
-	lea rsp, [rsp-56]
-	mov rax, QWORD PTR [rsp+64]
-	mov QWORD PTR [rsp], rax
-	mov rax, QWORD PTR [rsp+72]
-	mov QWORD PTR [rsp+8], rax
-	call {vg_dsa_parameter_search_3072_sha256_avx2}
-	lea rsp, [rsp+56]
-23:
-21:
-	ret
-22:
-	lea rsp, [rsp-56]
-	mov rax, QWORD PTR [rsp+64]
-	mov QWORD PTR [rsp], rax
-	mov rax, QWORD PTR [rsp+72]
-	mov QWORD PTR [rsp+8], rax
-	call {vg_dsa_parameter_search_2048_sha256_avx2}
-	lea rsp, [rsp+56]
-	jmp 23b
-20:
-	lea rsp, [rsp-56]
-	mov rax, QWORD PTR [rsp+64]
-	mov QWORD PTR [rsp], rax
-	mov rax, QWORD PTR [rsp+72]
-	mov QWORD PTR [rsp+8], rax
-	call {vg_dsa_parameter_search_1024_sha1_avx_bmi}
-	lea rsp, [rsp+56]
-	jmp 21b
-	.p2align 6
-
-vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_ifma:
-	mov rax, QWORD PTR [rsp+16]
-	mov rax, QWORD PTR [rax+8]
-	cmp rax, 128
-	je 20f
-	cmp rax, 256
-	je 22f
-	lea rsp, [rsp-56]
-	mov rax, QWORD PTR [rsp+64]
-	mov QWORD PTR [rsp], rax
-	mov rax, QWORD PTR [rsp+72]
-	mov QWORD PTR [rsp+8], rax
-	call {vg_dsa_parameter_search_3072_sha256_avx2_mr_ifma}
-	lea rsp, [rsp+56]
-23:
-21:
-	ret
-22:
-	lea rsp, [rsp-56]
-	mov rax, QWORD PTR [rsp+64]
-	mov QWORD PTR [rsp], rax
-	mov rax, QWORD PTR [rsp+72]
-	mov QWORD PTR [rsp+8], rax
-	call {vg_dsa_parameter_search_2048_sha256_avx2_mr_ifma}
-	lea rsp, [rsp+56]
-	jmp 23b
-20:
-	lea rsp, [rsp-56]
-	mov rax, QWORD PTR [rsp+64]
-	mov QWORD PTR [rsp], rax
-	mov rax, QWORD PTR [rsp+72]
-	mov QWORD PTR [rsp+8], rax
-	call {vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_ifma}
+	call {vg_dsa_parameter_search_1024_sha1_shani_mr_ifma}
 	lea rsp, [rsp+56]
 	jmp 21b
 	.p2align 6
@@ -26707,7 +26522,7 @@ vg_dsa_parameter_search_sha1_shani_sha256_shani:
 	jmp 21b
 	.p2align 6
 
-vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_ifma:
+vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_ifma:
 	mov rax, QWORD PTR [rsp+16]
 	mov rax, QWORD PTR [rax+8]
 	cmp rax, 128
@@ -26719,7 +26534,7 @@ vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_ifma:
 	mov QWORD PTR [rsp], rax
 	mov rax, QWORD PTR [rsp+72]
 	mov QWORD PTR [rsp+8], rax
-	call {vg_dsa_parameter_search_3072_sha256_shani_mr_ifma}
+	call {vg_dsa_parameter_search_3072_sha256_avx2_mr_ifma}
 	lea rsp, [rsp+56]
 23:
 21:
@@ -26730,7 +26545,7 @@ vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_ifma:
 	mov QWORD PTR [rsp], rax
 	mov rax, QWORD PTR [rsp+72]
 	mov QWORD PTR [rsp+8], rax
-	call {vg_dsa_parameter_search_2048_sha256_shani_mr_ifma}
+	call {vg_dsa_parameter_search_2048_sha256_avx2_mr_ifma}
 	lea rsp, [rsp+56]
 	jmp 23b
 20:
@@ -26739,7 +26554,192 @@ vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_ifma:
 	mov QWORD PTR [rsp], rax
 	mov rax, QWORD PTR [rsp+72]
 	mov QWORD PTR [rsp+8], rax
-	call {vg_dsa_parameter_search_1024_sha1_shani_mr_ifma}
+	call {vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_ifma}
+	lea rsp, [rsp+56]
+	jmp 21b
+	.p2align 6
+
+vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_adx:
+	mov rax, QWORD PTR [rsp+16]
+	mov rax, QWORD PTR [rax+8]
+	cmp rax, 128
+	je 20f
+	cmp rax, 256
+	je 22f
+	lea rsp, [rsp-56]
+	mov rax, QWORD PTR [rsp+64]
+	mov QWORD PTR [rsp], rax
+	mov rax, QWORD PTR [rsp+72]
+	mov QWORD PTR [rsp+8], rax
+	call {vg_dsa_parameter_search_3072_sha256_avx2_mr_adx}
+	lea rsp, [rsp+56]
+23:
+21:
+	ret
+22:
+	lea rsp, [rsp-56]
+	mov rax, QWORD PTR [rsp+64]
+	mov QWORD PTR [rsp], rax
+	mov rax, QWORD PTR [rsp+72]
+	mov QWORD PTR [rsp+8], rax
+	call {vg_dsa_parameter_search_2048_sha256_avx2_mr_adx}
+	lea rsp, [rsp+56]
+	jmp 23b
+20:
+	lea rsp, [rsp-56]
+	mov rax, QWORD PTR [rsp+64]
+	mov QWORD PTR [rsp], rax
+	mov rax, QWORD PTR [rsp+72]
+	mov QWORD PTR [rsp+8], rax
+	call {vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_adx}
+	lea rsp, [rsp+56]
+	jmp 21b
+	.p2align 6
+
+vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2:
+	mov rax, QWORD PTR [rsp+16]
+	mov rax, QWORD PTR [rax+8]
+	cmp rax, 128
+	je 20f
+	cmp rax, 256
+	je 22f
+	lea rsp, [rsp-56]
+	mov rax, QWORD PTR [rsp+64]
+	mov QWORD PTR [rsp], rax
+	mov rax, QWORD PTR [rsp+72]
+	mov QWORD PTR [rsp+8], rax
+	call {vg_dsa_parameter_search_3072_sha256_avx2}
+	lea rsp, [rsp+56]
+23:
+21:
+	ret
+22:
+	lea rsp, [rsp-56]
+	mov rax, QWORD PTR [rsp+64]
+	mov QWORD PTR [rsp], rax
+	mov rax, QWORD PTR [rsp+72]
+	mov QWORD PTR [rsp+8], rax
+	call {vg_dsa_parameter_search_2048_sha256_avx2}
+	lea rsp, [rsp+56]
+	jmp 23b
+20:
+	lea rsp, [rsp-56]
+	mov rax, QWORD PTR [rsp+64]
+	mov QWORD PTR [rsp], rax
+	mov rax, QWORD PTR [rsp+72]
+	mov QWORD PTR [rsp+8], rax
+	call {vg_dsa_parameter_search_1024_sha1_avx_bmi}
+	lea rsp, [rsp+56]
+	jmp 21b
+	.p2align 6
+
+vg_dsa_parameter_search_mr_ifma:
+	mov rax, QWORD PTR [rsp+16]
+	mov rax, QWORD PTR [rax+8]
+	cmp rax, 128
+	je 20f
+	cmp rax, 256
+	je 22f
+	lea rsp, [rsp-56]
+	mov rax, QWORD PTR [rsp+64]
+	mov QWORD PTR [rsp], rax
+	mov rax, QWORD PTR [rsp+72]
+	mov QWORD PTR [rsp+8], rax
+	call {vg_dsa_parameter_search_3072_mr_ifma}
+	lea rsp, [rsp+56]
+23:
+21:
+	ret
+22:
+	lea rsp, [rsp-56]
+	mov rax, QWORD PTR [rsp+64]
+	mov QWORD PTR [rsp], rax
+	mov rax, QWORD PTR [rsp+72]
+	mov QWORD PTR [rsp+8], rax
+	call {vg_dsa_parameter_search_2048_mr_ifma}
+	lea rsp, [rsp+56]
+	jmp 23b
+20:
+	lea rsp, [rsp-56]
+	mov rax, QWORD PTR [rsp+64]
+	mov QWORD PTR [rsp], rax
+	mov rax, QWORD PTR [rsp+72]
+	mov QWORD PTR [rsp+8], rax
+	call {vg_dsa_parameter_search_1024_mr_ifma}
+	lea rsp, [rsp+56]
+	jmp 21b
+	.p2align 6
+
+vg_dsa_parameter_search_mr_adx:
+	mov rax, QWORD PTR [rsp+16]
+	mov rax, QWORD PTR [rax+8]
+	cmp rax, 128
+	je 20f
+	cmp rax, 256
+	je 22f
+	lea rsp, [rsp-56]
+	mov rax, QWORD PTR [rsp+64]
+	mov QWORD PTR [rsp], rax
+	mov rax, QWORD PTR [rsp+72]
+	mov QWORD PTR [rsp+8], rax
+	call {vg_dsa_parameter_search_3072_mr_adx}
+	lea rsp, [rsp+56]
+23:
+21:
+	ret
+22:
+	lea rsp, [rsp-56]
+	mov rax, QWORD PTR [rsp+64]
+	mov QWORD PTR [rsp], rax
+	mov rax, QWORD PTR [rsp+72]
+	mov QWORD PTR [rsp+8], rax
+	call {vg_dsa_parameter_search_2048_mr_adx}
+	lea rsp, [rsp+56]
+	jmp 23b
+20:
+	lea rsp, [rsp-56]
+	mov rax, QWORD PTR [rsp+64]
+	mov QWORD PTR [rsp], rax
+	mov rax, QWORD PTR [rsp+72]
+	mov QWORD PTR [rsp+8], rax
+	call {vg_dsa_parameter_search_1024_mr_adx}
+	lea rsp, [rsp+56]
+	jmp 21b
+	.p2align 6
+
+vg_dsa_parameter_search:
+	mov rax, QWORD PTR [rsp+16]
+	mov rax, QWORD PTR [rax+8]
+	cmp rax, 128
+	je 20f
+	cmp rax, 256
+	je 22f
+	lea rsp, [rsp-56]
+	mov rax, QWORD PTR [rsp+64]
+	mov QWORD PTR [rsp], rax
+	mov rax, QWORD PTR [rsp+72]
+	mov QWORD PTR [rsp+8], rax
+	call {vg_dsa_parameter_search_3072}
+	lea rsp, [rsp+56]
+23:
+21:
+	ret
+22:
+	lea rsp, [rsp-56]
+	mov rax, QWORD PTR [rsp+64]
+	mov QWORD PTR [rsp], rax
+	mov rax, QWORD PTR [rsp+72]
+	mov QWORD PTR [rsp+8], rax
+	call {vg_dsa_parameter_search_2048}
+	lea rsp, [rsp+56]
+	jmp 23b
+20:
+	lea rsp, [rsp-56]
+	mov rax, QWORD PTR [rsp+64]
+	mov QWORD PTR [rsp], rax
+	mov rax, QWORD PTR [rsp+72]
+	mov QWORD PTR [rsp+8], rax
+	call {vg_dsa_parameter_search_1024}
 	lea rsp, [rsp+56]
 	jmp 21b
 	.p2align 6

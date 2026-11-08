@@ -3,6 +3,9 @@
 //! `assembly/pbkdf2_sha384.s`.
 #![allow(dead_code)]
 
+/// The CPU features `vg_pbkdf2_hmac_sha384_shani` requires (`Artifact.features`).
+pub const VG_PBKDF2_HMAC_SHA384_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SHA512);
+
 /// PBKDF2-HMAC-SHA-384 (RFC 8018 §5.2, with HMAC-SHA-384 as the pseudorandom function): writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` with `c` iterations to `out`. Calls the verified SHA-384 and HMAC-SHA-384 functions.
 ///
 /// Contract: `VG.Spec.Hmac.Instance.pbkdf2Contract` of `VG.Spec.Hmac.sha384I`. Constant time: only the pointers, the lengths and `c` may affect timing, not the password, the salt or the key.
@@ -15,8 +18,9 @@
 /// * `c` must be positive, and `out_len` at most `(2^32 - 1) * 48`.
 /// * `out` must not overlap `password`, `salt` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `password`, `salt` and `out` may overlap the return address on the stack or the 3456 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2` and `sha512` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha384(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha384_shani(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJJjy//9Ii4QkcA0AAEiJRCQISIngSIPAGEiJRCQQTYnCTItEJBBJiZhQBwAASYmoWAcAAE2JoGAHAABNiahoBwAATYmwcAcAAE2JuHgHAABNicdNiY+ABwAARInQSIPoAUmJh4gHAABIiftIifVJidRJic1Igf2BAAAA"
 jae 20f
@@ -26,19 +30,19 @@ jmp 21f
 .base64 "TIn/SIHH0AkAAA=="
 call {vg_sha384_init}
 .base64 "TIn/SIHH0AkAAL4AAAAASInaSInpTYn4"
-call {vg_sha512_update_scratch}
+call {vg_sha512_update_scratch_shani}
 .base64 "TIn/SIHH0AkAAEiJ7kyJ+kiBwvAKAABMifk="
-call {vg_sha512_finalize_scratch}
+call {vg_sha512_finalize_scratch_shani}
 .base64 "TIn6SIHC8AoAALkwAAAA"
 21:
 .base64 "TIn/SIHHkAcAAEyJ/kiBxlAIAABNifg="
-call {vg_hmac_sha384_init_scratch}
+call {vg_hmac_sha384_init_scratch_shani}
 .base64 "Qb4AAAAA"
 22:
 .base64 "Qw+2hDeQBwAAQ4iENxAJAABJg8YBSYH+wAAAAA=="
 jne 22b
 .base64 "TIn/SIHHEAkAAL6AAAAATIniTInpTYn4"
-call {vg_sha512_update_scratch}
+call {vg_sha512_update_scratch_shani}
 .base64 "TIntTYuvgAcAAEyLZCQIuwEAAABNheQ="
 je 23f
 25:
@@ -47,15 +51,15 @@ je 23f
 .base64 "Qw+2hDcQCQAAQ4iEN9AJAABJg8YBSYH+wAAAAA=="
 jne 26b
 .base64 "idgPyEGJhzALAABMif9IgcfQCQAASInuSIHGgAAAAEyJ+kiBwjALAAC5BAAAAE2J+A=="
-call {vg_sha512_update_scratch}
+call {vg_sha512_update_scratch_shani}
 .base64 "TIn/SIHH0AkAAEyJ/kiBxlAIAABIiepIgcKEAAAATIn5SIHBkAoAAE2J+A=="
-call {vg_hmac_sha384_finalize_scratch}
+call {vg_hmac_sha384_finalize_scratch_shani}
 .base64 "Qb4AAAAA"
 27:
 .base64 "Qw+2hDeQCgAAQ4iEN8AKAABJg8YBSYP+MA=="
 jne 27b
 .base64 "TIn/SIHHkAcAAEyJ/kiBxpAKAABJi5eIBwAATIn5SIHBwAoAAE2J+A=="
-call {vg_pbkdf2_hmac_sha384_iterate}
+call {vg_pbkdf2_hmac_sha384_iterate_shani}
 .base64 "uTAAAABJOcw="
 jb 28f
 jmp 29f
@@ -74,11 +78,11 @@ jmp 24f
 .base64 "SYufUAcAAEmLr1gHAABNi6dgBwAATYuvaAcAAE2Lt3AHAABNi794BwAASI2kJGgNAADD"
 .p2align 6"#,
         vg_sha384_init = sym super::sha512::vg_sha384_init,
-        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
-        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
-        vg_hmac_sha384_init_scratch = sym super::hmac_sha384::vg_hmac_sha384_init_scratch::vg_hmac_sha384_init_scratch,
-        vg_hmac_sha384_finalize_scratch = sym super::hmac_sha384::vg_hmac_sha384_finalize_scratch::vg_hmac_sha384_finalize_scratch,
-        vg_pbkdf2_hmac_sha384_iterate = sym super::pbkdf2_sha384::vg_pbkdf2_hmac_sha384_iterate::vg_pbkdf2_hmac_sha384_iterate,
+        vg_sha512_update_scratch_shani = sym super::sha512::vg_sha512_update_scratch_shani::vg_sha512_update_scratch_shani,
+        vg_sha512_finalize_scratch_shani = sym super::sha512::vg_sha512_finalize_scratch_shani::vg_sha512_finalize_scratch_shani,
+        vg_hmac_sha384_init_scratch_shani = sym super::hmac_sha384::vg_hmac_sha384_init_scratch_shani::vg_hmac_sha384_init_scratch_shani,
+        vg_hmac_sha384_finalize_scratch_shani = sym super::hmac_sha384::vg_hmac_sha384_finalize_scratch_shani::vg_hmac_sha384_finalize_scratch_shani,
+        vg_pbkdf2_hmac_sha384_iterate_shani = sym super::pbkdf2_sha384::vg_pbkdf2_hmac_sha384_iterate_shani::vg_pbkdf2_hmac_sha384_iterate_shani,
     )
 }
 
@@ -165,9 +169,6 @@ jmp 24f
     )
 }
 
-/// The CPU features `vg_pbkdf2_hmac_sha384_shani` requires (`Artifact.features`).
-pub const VG_PBKDF2_HMAC_SHA384_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SHA512);
-
 /// PBKDF2-HMAC-SHA-384 (RFC 8018 §5.2, with HMAC-SHA-384 as the pseudorandom function): writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` with `c` iterations to `out`. Calls the verified SHA-384 and HMAC-SHA-384 functions.
 ///
 /// Contract: `VG.Spec.Hmac.Instance.pbkdf2Contract` of `VG.Spec.Hmac.sha384I`. Constant time: only the pointers, the lengths and `c` may affect timing, not the password, the salt or the key.
@@ -180,9 +181,8 @@ pub const VG_PBKDF2_HMAC_SHA384_SHANI_FEATURES: verified_garbage_cpu::Features =
 /// * `c` must be positive, and `out_len` at most `(2^32 - 1) * 48`.
 /// * `out` must not overlap `password`, `salt` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `password`, `salt` and `out` may overlap the return address on the stack or the 3456 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2` and `sha512` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha384_shani(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha384(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJJjy//9Ii4QkcA0AAEiJRCQISIngSIPAGEiJRCQQTYnCTItEJBBJiZhQBwAASYmoWAcAAE2JoGAHAABNiahoBwAATYmwcAcAAE2JuHgHAABNicdNiY+ABwAARInQSIPoAUmJh4gHAABIiftIifVJidRJic1Igf2BAAAA"
 jae 20f
@@ -192,19 +192,19 @@ jmp 21f
 .base64 "TIn/SIHH0AkAAA=="
 call {vg_sha384_init}
 .base64 "TIn/SIHH0AkAAL4AAAAASInaSInpTYn4"
-call {vg_sha512_update_scratch_shani}
+call {vg_sha512_update_scratch}
 .base64 "TIn/SIHH0AkAAEiJ7kyJ+kiBwvAKAABMifk="
-call {vg_sha512_finalize_scratch_shani}
+call {vg_sha512_finalize_scratch}
 .base64 "TIn6SIHC8AoAALkwAAAA"
 21:
 .base64 "TIn/SIHHkAcAAEyJ/kiBxlAIAABNifg="
-call {vg_hmac_sha384_init_scratch_shani}
+call {vg_hmac_sha384_init_scratch}
 .base64 "Qb4AAAAA"
 22:
 .base64 "Qw+2hDeQBwAAQ4iENxAJAABJg8YBSYH+wAAAAA=="
 jne 22b
 .base64 "TIn/SIHHEAkAAL6AAAAATIniTInpTYn4"
-call {vg_sha512_update_scratch_shani}
+call {vg_sha512_update_scratch}
 .base64 "TIntTYuvgAcAAEyLZCQIuwEAAABNheQ="
 je 23f
 25:
@@ -213,15 +213,15 @@ je 23f
 .base64 "Qw+2hDcQCQAAQ4iEN9AJAABJg8YBSYH+wAAAAA=="
 jne 26b
 .base64 "idgPyEGJhzALAABMif9IgcfQCQAASInuSIHGgAAAAEyJ+kiBwjALAAC5BAAAAE2J+A=="
-call {vg_sha512_update_scratch_shani}
+call {vg_sha512_update_scratch}
 .base64 "TIn/SIHH0AkAAEyJ/kiBxlAIAABIiepIgcKEAAAATIn5SIHBkAoAAE2J+A=="
-call {vg_hmac_sha384_finalize_scratch_shani}
+call {vg_hmac_sha384_finalize_scratch}
 .base64 "Qb4AAAAA"
 27:
 .base64 "Qw+2hDeQCgAAQ4iEN8AKAABJg8YBSYP+MA=="
 jne 27b
 .base64 "TIn/SIHHkAcAAEyJ/kiBxpAKAABJi5eIBwAATIn5SIHBwAoAAE2J+A=="
-call {vg_pbkdf2_hmac_sha384_iterate_shani}
+call {vg_pbkdf2_hmac_sha384_iterate}
 .base64 "uTAAAABJOcw="
 jb 28f
 jmp 29f
@@ -240,11 +240,11 @@ jmp 24f
 .base64 "SYufUAcAAEmLr1gHAABNi6dgBwAATYuvaAcAAE2Lt3AHAABNi794BwAASI2kJGgNAADD"
 .p2align 6"#,
         vg_sha384_init = sym super::sha512::vg_sha384_init,
-        vg_sha512_update_scratch_shani = sym super::sha512::vg_sha512_update_scratch_shani::vg_sha512_update_scratch_shani,
-        vg_sha512_finalize_scratch_shani = sym super::sha512::vg_sha512_finalize_scratch_shani::vg_sha512_finalize_scratch_shani,
-        vg_hmac_sha384_init_scratch_shani = sym super::hmac_sha384::vg_hmac_sha384_init_scratch_shani::vg_hmac_sha384_init_scratch_shani,
-        vg_hmac_sha384_finalize_scratch_shani = sym super::hmac_sha384::vg_hmac_sha384_finalize_scratch_shani::vg_hmac_sha384_finalize_scratch_shani,
-        vg_pbkdf2_hmac_sha384_iterate_shani = sym super::pbkdf2_sha384::vg_pbkdf2_hmac_sha384_iterate_shani::vg_pbkdf2_hmac_sha384_iterate_shani,
+        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
+        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
+        vg_hmac_sha384_init_scratch = sym super::hmac_sha384::vg_hmac_sha384_init_scratch::vg_hmac_sha384_init_scratch,
+        vg_hmac_sha384_finalize_scratch = sym super::hmac_sha384::vg_hmac_sha384_finalize_scratch::vg_hmac_sha384_finalize_scratch,
+        vg_pbkdf2_hmac_sha384_iterate = sym super::pbkdf2_sha384::vg_pbkdf2_hmac_sha384_iterate::vg_pbkdf2_hmac_sha384_iterate,
     )
 }
 

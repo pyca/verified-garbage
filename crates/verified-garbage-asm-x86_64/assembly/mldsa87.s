@@ -4,7 +4,7 @@
 // `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
 // gives.
 
-vg_mldsa87_keygen_avx2:
+vg_mldsa87_keygen_avx512:
 	mov QWORD PTR [rcx+840], rbx
 	mov QWORD PTR [rcx+848], rbp
 	mov QWORD PTR [rcx+856], r12
@@ -180,7 +180,7 @@ vg_mldsa87_keygen_avx2:
 	add rsi, 4096
 	mov rdx, rbx
 	add rdx, 79872
-	call {vg_mldsa_rej_ntt_poly4_avx2}
+	call {vg_mldsa_rej_ntt_poly4_avx512}
 	and r15d, eax
 	mov r8d, 0
 	sub r8d, eax
@@ -216,7 +216,7 @@ vg_mldsa87_keygen_avx2:
 	add rsi, 8192
 	mov rdx, rbx
 	add rdx, 79872
-	call {vg_mldsa_rej_ntt_poly4_avx2}
+	call {vg_mldsa_rej_ntt_poly4_avx512}
 	and r15d, eax
 	mov r8d, 0
 	sub r8d, eax
@@ -252,7 +252,7 @@ vg_mldsa87_keygen_avx2:
 	add rsi, 12288
 	mov rdx, rbx
 	add rdx, 79872
-	call {vg_mldsa_rej_ntt_poly4_avx2}
+	call {vg_mldsa_rej_ntt_poly4_avx512}
 	and r15d, eax
 	mov r8d, 0
 	sub r8d, eax
@@ -288,7 +288,7 @@ vg_mldsa87_keygen_avx2:
 	add rsi, 16384
 	mov rdx, rbx
 	add rdx, 79872
-	call {vg_mldsa_rej_ntt_poly4_avx2}
+	call {vg_mldsa_rej_ntt_poly4_avx512}
 	and r15d, eax
 	mov r8d, 0
 	sub r8d, eax
@@ -324,7 +324,7 @@ vg_mldsa87_keygen_avx2:
 	add rsi, 20480
 	mov rdx, rbx
 	add rdx, 79872
-	call {vg_mldsa_rej_ntt_poly4_avx2}
+	call {vg_mldsa_rej_ntt_poly4_avx512}
 	and r15d, eax
 	mov r8d, 0
 	sub r8d, eax
@@ -360,7 +360,7 @@ vg_mldsa87_keygen_avx2:
 	add rsi, 24576
 	mov rdx, rbx
 	add rdx, 79872
-	call {vg_mldsa_rej_ntt_poly4_avx2}
+	call {vg_mldsa_rej_ntt_poly4_avx512}
 	and r15d, eax
 	mov r8d, 0
 	sub r8d, eax
@@ -396,7 +396,7 @@ vg_mldsa87_keygen_avx2:
 	add rsi, 28672
 	mov rdx, rbx
 	add rdx, 79872
-	call {vg_mldsa_rej_ntt_poly4_avx2}
+	call {vg_mldsa_rej_ntt_poly4_avx512}
 	and r15d, eax
 	mov r8d, 0
 	sub r8d, eax
@@ -432,7 +432,7 @@ vg_mldsa87_keygen_avx2:
 	add rsi, 32768
 	mov rdx, rbx
 	add rdx, 79872
-	call {vg_mldsa_rej_ntt_poly4_avx2}
+	call {vg_mldsa_rej_ntt_poly4_avx512}
 	and r15d, eax
 	mov r8d, 0
 	sub r8d, eax
@@ -468,7 +468,7 @@ vg_mldsa87_keygen_avx2:
 	add rsi, 36864
 	mov rdx, rbx
 	add rdx, 79872
-	call {vg_mldsa_rej_ntt_poly4_avx2}
+	call {vg_mldsa_rej_ntt_poly4_avx512}
 	and r15d, eax
 	mov r8d, 0
 	sub r8d, eax
@@ -504,7 +504,7 @@ vg_mldsa87_keygen_avx2:
 	add rsi, 40960
 	mov rdx, rbx
 	add rdx, 79872
-	call {vg_mldsa_rej_ntt_poly4_avx2}
+	call {vg_mldsa_rej_ntt_poly4_avx512}
 	and r15d, eax
 	mov r8d, 0
 	sub r8d, eax
@@ -540,7 +540,7 @@ vg_mldsa87_keygen_avx2:
 	add rsi, 45056
 	mov rdx, rbx
 	add rdx, 79872
-	call {vg_mldsa_rej_ntt_poly4_avx2}
+	call {vg_mldsa_rej_ntt_poly4_avx512}
 	and r15d, eax
 	mov r8d, 0
 	sub r8d, eax
@@ -576,7 +576,7 @@ vg_mldsa87_keygen_avx2:
 	add rsi, 49152
 	mov rdx, rbx
 	add rdx, 79872
-	call {vg_mldsa_rej_ntt_poly4_avx2}
+	call {vg_mldsa_rej_ntt_poly4_avx512}
 	and r15d, eax
 	mov r8d, 0
 	sub r8d, eax
@@ -612,7 +612,7 @@ vg_mldsa87_keygen_avx2:
 	add rsi, 53248
 	mov rdx, rbx
 	add rdx, 79872
-	call {vg_mldsa_rej_ntt_poly4_avx2}
+	call {vg_mldsa_rej_ntt_poly4_avx512}
 	and r15d, eax
 	mov r8d, 0
 	sub r8d, eax
@@ -648,7 +648,7 @@ vg_mldsa87_keygen_avx2:
 	add rsi, 57344
 	mov rdx, rbx
 	add rdx, 79872
-	call {vg_mldsa_rej_ntt_poly4_avx2}
+	call {vg_mldsa_rej_ntt_poly4_avx512}
 	and r15d, eax
 	mov r8d, 0
 	sub r8d, eax
@@ -1550,7 +1550,7 @@ vg_mldsa87_keygen_avx2:
 	ret
 	.p2align 6
 
-vg_mldsa87_keygen_avx512:
+vg_mldsa87_keygen_avx2:
 	mov QWORD PTR [rcx+840], rbx
 	mov QWORD PTR [rcx+848], rbp
 	mov QWORD PTR [rcx+856], r12
@@ -1726,7 +1726,7 @@ vg_mldsa87_keygen_avx512:
 	add rsi, 4096
 	mov rdx, rbx
 	add rdx, 79872
-	call {vg_mldsa_rej_ntt_poly4_avx512}
+	call {vg_mldsa_rej_ntt_poly4_avx2}
 	and r15d, eax
 	mov r8d, 0
 	sub r8d, eax
@@ -1762,7 +1762,7 @@ vg_mldsa87_keygen_avx512:
 	add rsi, 8192
 	mov rdx, rbx
 	add rdx, 79872
-	call {vg_mldsa_rej_ntt_poly4_avx512}
+	call {vg_mldsa_rej_ntt_poly4_avx2}
 	and r15d, eax
 	mov r8d, 0
 	sub r8d, eax
@@ -1798,7 +1798,7 @@ vg_mldsa87_keygen_avx512:
 	add rsi, 12288
 	mov rdx, rbx
 	add rdx, 79872
-	call {vg_mldsa_rej_ntt_poly4_avx512}
+	call {vg_mldsa_rej_ntt_poly4_avx2}
 	and r15d, eax
 	mov r8d, 0
 	sub r8d, eax
@@ -1834,7 +1834,7 @@ vg_mldsa87_keygen_avx512:
 	add rsi, 16384
 	mov rdx, rbx
 	add rdx, 79872
-	call {vg_mldsa_rej_ntt_poly4_avx512}
+	call {vg_mldsa_rej_ntt_poly4_avx2}
 	and r15d, eax
 	mov r8d, 0
 	sub r8d, eax
@@ -1870,7 +1870,7 @@ vg_mldsa87_keygen_avx512:
 	add rsi, 20480
 	mov rdx, rbx
 	add rdx, 79872
-	call {vg_mldsa_rej_ntt_poly4_avx512}
+	call {vg_mldsa_rej_ntt_poly4_avx2}
 	and r15d, eax
 	mov r8d, 0
 	sub r8d, eax
@@ -1906,7 +1906,7 @@ vg_mldsa87_keygen_avx512:
 	add rsi, 24576
 	mov rdx, rbx
 	add rdx, 79872
-	call {vg_mldsa_rej_ntt_poly4_avx512}
+	call {vg_mldsa_rej_ntt_poly4_avx2}
 	and r15d, eax
 	mov r8d, 0
 	sub r8d, eax
@@ -1942,7 +1942,7 @@ vg_mldsa87_keygen_avx512:
 	add rsi, 28672
 	mov rdx, rbx
 	add rdx, 79872
-	call {vg_mldsa_rej_ntt_poly4_avx512}
+	call {vg_mldsa_rej_ntt_poly4_avx2}
 	and r15d, eax
 	mov r8d, 0
 	sub r8d, eax
@@ -1978,7 +1978,7 @@ vg_mldsa87_keygen_avx512:
 	add rsi, 32768
 	mov rdx, rbx
 	add rdx, 79872
-	call {vg_mldsa_rej_ntt_poly4_avx512}
+	call {vg_mldsa_rej_ntt_poly4_avx2}
 	and r15d, eax
 	mov r8d, 0
 	sub r8d, eax
@@ -2014,7 +2014,7 @@ vg_mldsa87_keygen_avx512:
 	add rsi, 36864
 	mov rdx, rbx
 	add rdx, 79872
-	call {vg_mldsa_rej_ntt_poly4_avx512}
+	call {vg_mldsa_rej_ntt_poly4_avx2}
 	and r15d, eax
 	mov r8d, 0
 	sub r8d, eax
@@ -2050,7 +2050,7 @@ vg_mldsa87_keygen_avx512:
 	add rsi, 40960
 	mov rdx, rbx
 	add rdx, 79872
-	call {vg_mldsa_rej_ntt_poly4_avx512}
+	call {vg_mldsa_rej_ntt_poly4_avx2}
 	and r15d, eax
 	mov r8d, 0
 	sub r8d, eax
@@ -2086,7 +2086,7 @@ vg_mldsa87_keygen_avx512:
 	add rsi, 45056
 	mov rdx, rbx
 	add rdx, 79872
-	call {vg_mldsa_rej_ntt_poly4_avx512}
+	call {vg_mldsa_rej_ntt_poly4_avx2}
 	and r15d, eax
 	mov r8d, 0
 	sub r8d, eax
@@ -2122,7 +2122,7 @@ vg_mldsa87_keygen_avx512:
 	add rsi, 49152
 	mov rdx, rbx
 	add rdx, 79872
-	call {vg_mldsa_rej_ntt_poly4_avx512}
+	call {vg_mldsa_rej_ntt_poly4_avx2}
 	and r15d, eax
 	mov r8d, 0
 	sub r8d, eax
@@ -2158,7 +2158,7 @@ vg_mldsa87_keygen_avx512:
 	add rsi, 53248
 	mov rdx, rbx
 	add rdx, 79872
-	call {vg_mldsa_rej_ntt_poly4_avx512}
+	call {vg_mldsa_rej_ntt_poly4_avx2}
 	and r15d, eax
 	mov r8d, 0
 	sub r8d, eax
@@ -2194,7 +2194,7 @@ vg_mldsa87_keygen_avx512:
 	add rsi, 57344
 	mov rdx, rbx
 	add rdx, 79872
-	call {vg_mldsa_rej_ntt_poly4_avx512}
+	call {vg_mldsa_rej_ntt_poly4_avx2}
 	and r15d, eax
 	mov r8d, 0
 	sub r8d, eax
@@ -5603,267 +5603,21 @@ vg_mldsa87_prepare_signing_key:
 	ret
 	.p2align 6
 
-vg_mldsa87_sign_avx2:
-	mov r9d, 0
-	call {vg_mldsa87_sign_with_cache_avx2}
-	ret
-	.p2align 6
-
 vg_mldsa87_sign_avx512:
 	mov r9d, 0
 	call {vg_mldsa87_sign_with_cache_avx512}
 	ret
 	.p2align 6
 
+vg_mldsa87_sign_avx2:
+	mov r9d, 0
+	call {vg_mldsa87_sign_with_cache_avx2}
+	ret
+	.p2align 6
+
 vg_mldsa87_sign:
 	mov r9d, 0
 	call {vg_mldsa87_sign_with_cache}
-	ret
-	.p2align 6
-
-vg_mldsa87_sign_message_avx2:
-	cmp r8, 256
-	jb 20f
-	mov eax, 2
-	jmp 21f
-20:
-	mov r10, QWORD PTR [rsp+8]
-	mov r11, QWORD PTR [rsp+16]
-	mov eax, 0
-	push rdi
-	push rsi
-	push rdx
-	push rcx
-	push r8
-	push r10
-	push r9
-	push r11
-	push rax
-	mov BYTE PTR [rsp+1], r8b
-	mov rdi, QWORD PTR [rsp+8]
-	add rdi, 144384
-	mov eax, 0
-	mov QWORD PTR [rdi], rax
-	mov QWORD PTR [rdi+8], rax
-	mov QWORD PTR [rdi+16], rax
-	mov QWORD PTR [rdi+24], rax
-	mov QWORD PTR [rdi+32], rax
-	mov QWORD PTR [rdi+40], rax
-	mov QWORD PTR [rdi+48], rax
-	mov QWORD PTR [rdi+56], rax
-	mov QWORD PTR [rdi+64], rax
-	mov QWORD PTR [rdi+72], rax
-	mov QWORD PTR [rdi+80], rax
-	mov QWORD PTR [rdi+88], rax
-	mov QWORD PTR [rdi+96], rax
-	mov QWORD PTR [rdi+104], rax
-	mov QWORD PTR [rdi+112], rax
-	mov QWORD PTR [rdi+120], rax
-	mov QWORD PTR [rdi+128], rax
-	mov QWORD PTR [rdi+136], rax
-	mov QWORD PTR [rdi+144], rax
-	mov QWORD PTR [rdi+152], rax
-	mov QWORD PTR [rdi+160], rax
-	mov QWORD PTR [rdi+168], rax
-	mov QWORD PTR [rdi+176], rax
-	mov QWORD PTR [rdi+184], rax
-	mov QWORD PTR [rdi+192], rax
-	mov rdi, QWORD PTR [rsp+8]
-	add rdi, 144384
-	mov esi, 136
-	mov edx, 0
-	mov rcx, QWORD PTR [rsp+64]
-	add rcx, 64
-	mov r8d, 64
-	mov r9, QWORD PTR [rsp+8]
-	add r9, 144584
-	call {vg_keccak_absorb_scratch}
-	mov rdi, QWORD PTR [rsp+8]
-	add rdi, 144384
-	mov esi, 136
-	mov edx, 64
-	mov rcx, rsp
-	mov r8d, 2
-	mov r9, QWORD PTR [rsp+8]
-	add r9, 144584
-	call {vg_keccak_absorb_scratch}
-	mov rdi, QWORD PTR [rsp+8]
-	add rdi, 144384
-	mov esi, 136
-	mov edx, 66
-	mov rcx, QWORD PTR [rsp+40]
-	mov r8, QWORD PTR [rsp+32]
-	mov r9, QWORD PTR [rsp+8]
-	add r9, 144584
-	call {vg_keccak_absorb_scratch}
-	mov rdi, QWORD PTR [rsp+8]
-	add rdi, 144384
-	mov esi, 136
-	mov rdx, rax
-	mov rcx, QWORD PTR [rsp+56]
-	mov r8, QWORD PTR [rsp+48]
-	mov r9, QWORD PTR [rsp+8]
-	add r9, 144584
-	call {vg_keccak_absorb_scratch}
-	mov rdi, QWORD PTR [rsp+8]
-	add rdi, 144384
-	mov esi, 136
-	mov rdx, rax
-	mov ecx, 31
-	mov r8, QWORD PTR [rsp+8]
-	add r8, 144584
-	call {vg_keccak_pad_scratch}
-	mov rdi, QWORD PTR [rsp+8]
-	add rdi, 144384
-	mov esi, 136
-	mov edx, 0
-	mov rcx, QWORD PTR [rsp+8]
-	add rcx, 145224
-	mov r8d, 64
-	mov r9, QWORD PTR [rsp+8]
-	add r9, 144584
-	call {vg_keccak_squeeze_scratch}
-	mov rdi, QWORD PTR [rsp+64]
-	mov rsi, QWORD PTR [rsp+8]
-	add rsi, 145224
-	mov rdx, QWORD PTR [rsp+16]
-	mov rcx, QWORD PTR [rsp+24]
-	mov r8, QWORD PTR [rsp+8]
-	mov r9d, 0
-	call {vg_mldsa87_sign_with_cache_avx2}
-	pop r11
-	pop r11
-	pop r11
-	pop r11
-	pop r11
-	pop r11
-	pop r11
-	pop r11
-	pop r11
-21:
-	ret
-	.p2align 6
-
-vg_mldsa87_sign_message_prepared_avx2:
-	cmp r8, 256
-	jb 20f
-	mov eax, 2
-	jmp 21f
-20:
-	mov r10, QWORD PTR [rsp+8]
-	mov r11, QWORD PTR [rsp+16]
-	mov eax, 0
-	push rdi
-	push rsi
-	push rdx
-	push rcx
-	push r8
-	push r10
-	push r9
-	push r11
-	push rax
-	mov BYTE PTR [rsp+1], r8b
-	mov rdi, QWORD PTR [rsp+8]
-	add rdi, 144384
-	mov eax, 0
-	mov QWORD PTR [rdi], rax
-	mov QWORD PTR [rdi+8], rax
-	mov QWORD PTR [rdi+16], rax
-	mov QWORD PTR [rdi+24], rax
-	mov QWORD PTR [rdi+32], rax
-	mov QWORD PTR [rdi+40], rax
-	mov QWORD PTR [rdi+48], rax
-	mov QWORD PTR [rdi+56], rax
-	mov QWORD PTR [rdi+64], rax
-	mov QWORD PTR [rdi+72], rax
-	mov QWORD PTR [rdi+80], rax
-	mov QWORD PTR [rdi+88], rax
-	mov QWORD PTR [rdi+96], rax
-	mov QWORD PTR [rdi+104], rax
-	mov QWORD PTR [rdi+112], rax
-	mov QWORD PTR [rdi+120], rax
-	mov QWORD PTR [rdi+128], rax
-	mov QWORD PTR [rdi+136], rax
-	mov QWORD PTR [rdi+144], rax
-	mov QWORD PTR [rdi+152], rax
-	mov QWORD PTR [rdi+160], rax
-	mov QWORD PTR [rdi+168], rax
-	mov QWORD PTR [rdi+176], rax
-	mov QWORD PTR [rdi+184], rax
-	mov QWORD PTR [rdi+192], rax
-	mov rdi, QWORD PTR [rsp+8]
-	add rdi, 144384
-	mov esi, 136
-	mov edx, 0
-	mov rcx, QWORD PTR [rsp+64]
-	add rcx, 64
-	mov r8d, 64
-	mov r9, QWORD PTR [rsp+8]
-	add r9, 144584
-	call {vg_keccak_absorb_scratch}
-	mov rdi, QWORD PTR [rsp+8]
-	add rdi, 144384
-	mov esi, 136
-	mov edx, 64
-	mov rcx, rsp
-	mov r8d, 2
-	mov r9, QWORD PTR [rsp+8]
-	add r9, 144584
-	call {vg_keccak_absorb_scratch}
-	mov rdi, QWORD PTR [rsp+8]
-	add rdi, 144384
-	mov esi, 136
-	mov edx, 66
-	mov rcx, QWORD PTR [rsp+40]
-	mov r8, QWORD PTR [rsp+32]
-	mov r9, QWORD PTR [rsp+8]
-	add r9, 144584
-	call {vg_keccak_absorb_scratch}
-	mov rdi, QWORD PTR [rsp+8]
-	add rdi, 144384
-	mov esi, 136
-	mov rdx, rax
-	mov rcx, QWORD PTR [rsp+56]
-	mov r8, QWORD PTR [rsp+48]
-	mov r9, QWORD PTR [rsp+8]
-	add r9, 144584
-	call {vg_keccak_absorb_scratch}
-	mov rdi, QWORD PTR [rsp+8]
-	add rdi, 144384
-	mov esi, 136
-	mov rdx, rax
-	mov ecx, 31
-	mov r8, QWORD PTR [rsp+8]
-	add r8, 144584
-	call {vg_keccak_pad_scratch}
-	mov rdi, QWORD PTR [rsp+8]
-	add rdi, 144384
-	mov esi, 136
-	mov edx, 0
-	mov rcx, QWORD PTR [rsp+8]
-	add rcx, 145224
-	mov r8d, 64
-	mov r9, QWORD PTR [rsp+8]
-	add r9, 144584
-	call {vg_keccak_squeeze_scratch}
-	mov rdi, QWORD PTR [rsp+64]
-	mov rsi, QWORD PTR [rsp+8]
-	add rsi, 145224
-	mov rdx, QWORD PTR [rsp+16]
-	mov rcx, QWORD PTR [rsp+24]
-	mov r8, QWORD PTR [rsp+8]
-	mov r9d, 1
-	call {vg_mldsa87_sign_with_cache_avx2}
-	pop r11
-	pop r11
-	pop r11
-	pop r11
-	pop r11
-	pop r11
-	pop r11
-	pop r11
-	pop r11
-21:
 	ret
 	.p2align 6
 
@@ -6100,6 +5854,252 @@ vg_mldsa87_sign_message_prepared_avx512:
 	mov r8, QWORD PTR [rsp+8]
 	mov r9d, 1
 	call {vg_mldsa87_sign_with_cache_avx512}
+	pop r11
+	pop r11
+	pop r11
+	pop r11
+	pop r11
+	pop r11
+	pop r11
+	pop r11
+	pop r11
+21:
+	ret
+	.p2align 6
+
+vg_mldsa87_sign_message_avx2:
+	cmp r8, 256
+	jb 20f
+	mov eax, 2
+	jmp 21f
+20:
+	mov r10, QWORD PTR [rsp+8]
+	mov r11, QWORD PTR [rsp+16]
+	mov eax, 0
+	push rdi
+	push rsi
+	push rdx
+	push rcx
+	push r8
+	push r10
+	push r9
+	push r11
+	push rax
+	mov BYTE PTR [rsp+1], r8b
+	mov rdi, QWORD PTR [rsp+8]
+	add rdi, 144384
+	mov eax, 0
+	mov QWORD PTR [rdi], rax
+	mov QWORD PTR [rdi+8], rax
+	mov QWORD PTR [rdi+16], rax
+	mov QWORD PTR [rdi+24], rax
+	mov QWORD PTR [rdi+32], rax
+	mov QWORD PTR [rdi+40], rax
+	mov QWORD PTR [rdi+48], rax
+	mov QWORD PTR [rdi+56], rax
+	mov QWORD PTR [rdi+64], rax
+	mov QWORD PTR [rdi+72], rax
+	mov QWORD PTR [rdi+80], rax
+	mov QWORD PTR [rdi+88], rax
+	mov QWORD PTR [rdi+96], rax
+	mov QWORD PTR [rdi+104], rax
+	mov QWORD PTR [rdi+112], rax
+	mov QWORD PTR [rdi+120], rax
+	mov QWORD PTR [rdi+128], rax
+	mov QWORD PTR [rdi+136], rax
+	mov QWORD PTR [rdi+144], rax
+	mov QWORD PTR [rdi+152], rax
+	mov QWORD PTR [rdi+160], rax
+	mov QWORD PTR [rdi+168], rax
+	mov QWORD PTR [rdi+176], rax
+	mov QWORD PTR [rdi+184], rax
+	mov QWORD PTR [rdi+192], rax
+	mov rdi, QWORD PTR [rsp+8]
+	add rdi, 144384
+	mov esi, 136
+	mov edx, 0
+	mov rcx, QWORD PTR [rsp+64]
+	add rcx, 64
+	mov r8d, 64
+	mov r9, QWORD PTR [rsp+8]
+	add r9, 144584
+	call {vg_keccak_absorb_scratch}
+	mov rdi, QWORD PTR [rsp+8]
+	add rdi, 144384
+	mov esi, 136
+	mov edx, 64
+	mov rcx, rsp
+	mov r8d, 2
+	mov r9, QWORD PTR [rsp+8]
+	add r9, 144584
+	call {vg_keccak_absorb_scratch}
+	mov rdi, QWORD PTR [rsp+8]
+	add rdi, 144384
+	mov esi, 136
+	mov edx, 66
+	mov rcx, QWORD PTR [rsp+40]
+	mov r8, QWORD PTR [rsp+32]
+	mov r9, QWORD PTR [rsp+8]
+	add r9, 144584
+	call {vg_keccak_absorb_scratch}
+	mov rdi, QWORD PTR [rsp+8]
+	add rdi, 144384
+	mov esi, 136
+	mov rdx, rax
+	mov rcx, QWORD PTR [rsp+56]
+	mov r8, QWORD PTR [rsp+48]
+	mov r9, QWORD PTR [rsp+8]
+	add r9, 144584
+	call {vg_keccak_absorb_scratch}
+	mov rdi, QWORD PTR [rsp+8]
+	add rdi, 144384
+	mov esi, 136
+	mov rdx, rax
+	mov ecx, 31
+	mov r8, QWORD PTR [rsp+8]
+	add r8, 144584
+	call {vg_keccak_pad_scratch}
+	mov rdi, QWORD PTR [rsp+8]
+	add rdi, 144384
+	mov esi, 136
+	mov edx, 0
+	mov rcx, QWORD PTR [rsp+8]
+	add rcx, 145224
+	mov r8d, 64
+	mov r9, QWORD PTR [rsp+8]
+	add r9, 144584
+	call {vg_keccak_squeeze_scratch}
+	mov rdi, QWORD PTR [rsp+64]
+	mov rsi, QWORD PTR [rsp+8]
+	add rsi, 145224
+	mov rdx, QWORD PTR [rsp+16]
+	mov rcx, QWORD PTR [rsp+24]
+	mov r8, QWORD PTR [rsp+8]
+	mov r9d, 0
+	call {vg_mldsa87_sign_with_cache_avx2}
+	pop r11
+	pop r11
+	pop r11
+	pop r11
+	pop r11
+	pop r11
+	pop r11
+	pop r11
+	pop r11
+21:
+	ret
+	.p2align 6
+
+vg_mldsa87_sign_message_prepared_avx2:
+	cmp r8, 256
+	jb 20f
+	mov eax, 2
+	jmp 21f
+20:
+	mov r10, QWORD PTR [rsp+8]
+	mov r11, QWORD PTR [rsp+16]
+	mov eax, 0
+	push rdi
+	push rsi
+	push rdx
+	push rcx
+	push r8
+	push r10
+	push r9
+	push r11
+	push rax
+	mov BYTE PTR [rsp+1], r8b
+	mov rdi, QWORD PTR [rsp+8]
+	add rdi, 144384
+	mov eax, 0
+	mov QWORD PTR [rdi], rax
+	mov QWORD PTR [rdi+8], rax
+	mov QWORD PTR [rdi+16], rax
+	mov QWORD PTR [rdi+24], rax
+	mov QWORD PTR [rdi+32], rax
+	mov QWORD PTR [rdi+40], rax
+	mov QWORD PTR [rdi+48], rax
+	mov QWORD PTR [rdi+56], rax
+	mov QWORD PTR [rdi+64], rax
+	mov QWORD PTR [rdi+72], rax
+	mov QWORD PTR [rdi+80], rax
+	mov QWORD PTR [rdi+88], rax
+	mov QWORD PTR [rdi+96], rax
+	mov QWORD PTR [rdi+104], rax
+	mov QWORD PTR [rdi+112], rax
+	mov QWORD PTR [rdi+120], rax
+	mov QWORD PTR [rdi+128], rax
+	mov QWORD PTR [rdi+136], rax
+	mov QWORD PTR [rdi+144], rax
+	mov QWORD PTR [rdi+152], rax
+	mov QWORD PTR [rdi+160], rax
+	mov QWORD PTR [rdi+168], rax
+	mov QWORD PTR [rdi+176], rax
+	mov QWORD PTR [rdi+184], rax
+	mov QWORD PTR [rdi+192], rax
+	mov rdi, QWORD PTR [rsp+8]
+	add rdi, 144384
+	mov esi, 136
+	mov edx, 0
+	mov rcx, QWORD PTR [rsp+64]
+	add rcx, 64
+	mov r8d, 64
+	mov r9, QWORD PTR [rsp+8]
+	add r9, 144584
+	call {vg_keccak_absorb_scratch}
+	mov rdi, QWORD PTR [rsp+8]
+	add rdi, 144384
+	mov esi, 136
+	mov edx, 64
+	mov rcx, rsp
+	mov r8d, 2
+	mov r9, QWORD PTR [rsp+8]
+	add r9, 144584
+	call {vg_keccak_absorb_scratch}
+	mov rdi, QWORD PTR [rsp+8]
+	add rdi, 144384
+	mov esi, 136
+	mov edx, 66
+	mov rcx, QWORD PTR [rsp+40]
+	mov r8, QWORD PTR [rsp+32]
+	mov r9, QWORD PTR [rsp+8]
+	add r9, 144584
+	call {vg_keccak_absorb_scratch}
+	mov rdi, QWORD PTR [rsp+8]
+	add rdi, 144384
+	mov esi, 136
+	mov rdx, rax
+	mov rcx, QWORD PTR [rsp+56]
+	mov r8, QWORD PTR [rsp+48]
+	mov r9, QWORD PTR [rsp+8]
+	add r9, 144584
+	call {vg_keccak_absorb_scratch}
+	mov rdi, QWORD PTR [rsp+8]
+	add rdi, 144384
+	mov esi, 136
+	mov rdx, rax
+	mov ecx, 31
+	mov r8, QWORD PTR [rsp+8]
+	add r8, 144584
+	call {vg_keccak_pad_scratch}
+	mov rdi, QWORD PTR [rsp+8]
+	add rdi, 144384
+	mov esi, 136
+	mov edx, 0
+	mov rcx, QWORD PTR [rsp+8]
+	add rcx, 145224
+	mov r8d, 64
+	mov r9, QWORD PTR [rsp+8]
+	add r9, 144584
+	call {vg_keccak_squeeze_scratch}
+	mov rdi, QWORD PTR [rsp+64]
+	mov rsi, QWORD PTR [rsp+8]
+	add rsi, 145224
+	mov rdx, QWORD PTR [rsp+16]
+	mov rcx, QWORD PTR [rsp+24]
+	mov r8, QWORD PTR [rsp+8]
+	mov r9d, 1
+	call {vg_mldsa87_sign_with_cache_avx2}
 	pop r11
 	pop r11
 	pop r11
@@ -6359,263 +6359,21 @@ vg_mldsa87_sign_message_prepared:
 	ret
 	.p2align 6
 
-vg_mldsa87_verify_avx2:
-	mov r8d, 0
-	call {vg_mldsa87_verify_with_cache_avx2}
-	ret
-	.p2align 6
-
 vg_mldsa87_verify_avx512:
 	mov r8d, 0
 	call {vg_mldsa87_verify_with_cache_avx512}
 	ret
 	.p2align 6
 
+vg_mldsa87_verify_avx2:
+	mov r8d, 0
+	call {vg_mldsa87_verify_with_cache_avx2}
+	ret
+	.p2align 6
+
 vg_mldsa87_verify:
 	mov r8d, 0
 	call {vg_mldsa87_verify_with_cache}
-	ret
-	.p2align 6
-
-vg_mldsa87_verify_message_cached_avx2:
-	cmp r8, 256
-	jb 20f
-	mov eax, 2
-	jmp 21f
-20:
-	mov r11, QWORD PTR [rsp+8]
-	mov r10, QWORD PTR [rsp+16]
-	mov eax, 0
-	push rdi
-	push rsi
-	push rdx
-	push rcx
-	push r8
-	push r9
-	push r10
-	push r11
-	push rax
-	mov BYTE PTR [rsp+1], r8b
-	mov rdi, QWORD PTR [rsp+8]
-	add rdi, 144384
-	mov eax, 0
-	mov QWORD PTR [rdi], rax
-	mov QWORD PTR [rdi+8], rax
-	mov QWORD PTR [rdi+16], rax
-	mov QWORD PTR [rdi+24], rax
-	mov QWORD PTR [rdi+32], rax
-	mov QWORD PTR [rdi+40], rax
-	mov QWORD PTR [rdi+48], rax
-	mov QWORD PTR [rdi+56], rax
-	mov QWORD PTR [rdi+64], rax
-	mov QWORD PTR [rdi+72], rax
-	mov QWORD PTR [rdi+80], rax
-	mov QWORD PTR [rdi+88], rax
-	mov QWORD PTR [rdi+96], rax
-	mov QWORD PTR [rdi+104], rax
-	mov QWORD PTR [rdi+112], rax
-	mov QWORD PTR [rdi+120], rax
-	mov QWORD PTR [rdi+128], rax
-	mov QWORD PTR [rdi+136], rax
-	mov QWORD PTR [rdi+144], rax
-	mov QWORD PTR [rdi+152], rax
-	mov QWORD PTR [rdi+160], rax
-	mov QWORD PTR [rdi+168], rax
-	mov QWORD PTR [rdi+176], rax
-	mov QWORD PTR [rdi+184], rax
-	mov QWORD PTR [rdi+192], rax
-	mov rdi, QWORD PTR [rsp+8]
-	add rdi, 144384
-	mov esi, 136
-	mov edx, 0
-	mov rcx, QWORD PTR [rsp+16]
-	mov r8d, 64
-	mov r9, QWORD PTR [rsp+8]
-	add r9, 144584
-	call {vg_keccak_absorb_scratch}
-	mov rdi, QWORD PTR [rsp+8]
-	add rdi, 144384
-	mov esi, 136
-	mov edx, 64
-	mov rcx, rsp
-	mov r8d, 2
-	mov r9, QWORD PTR [rsp+8]
-	add r9, 144584
-	call {vg_keccak_absorb_scratch}
-	mov rdi, QWORD PTR [rsp+8]
-	add rdi, 144384
-	mov esi, 136
-	mov edx, 66
-	mov rcx, QWORD PTR [rsp+40]
-	mov r8, QWORD PTR [rsp+32]
-	mov r9, QWORD PTR [rsp+8]
-	add r9, 144584
-	call {vg_keccak_absorb_scratch}
-	mov rdi, QWORD PTR [rsp+8]
-	add rdi, 144384
-	mov esi, 136
-	mov rdx, rax
-	mov rcx, QWORD PTR [rsp+56]
-	mov r8, QWORD PTR [rsp+48]
-	mov r9, QWORD PTR [rsp+8]
-	add r9, 144584
-	call {vg_keccak_absorb_scratch}
-	mov rdi, QWORD PTR [rsp+8]
-	add rdi, 144384
-	mov esi, 136
-	mov rdx, rax
-	mov ecx, 31
-	mov r8, QWORD PTR [rsp+8]
-	add r8, 144584
-	call {vg_keccak_pad_scratch}
-	mov rdi, QWORD PTR [rsp+8]
-	add rdi, 144384
-	mov esi, 136
-	mov edx, 0
-	mov rcx, QWORD PTR [rsp+8]
-	add rcx, 145224
-	mov r8d, 64
-	mov r9, QWORD PTR [rsp+8]
-	add r9, 144584
-	call {vg_keccak_squeeze_scratch}
-	mov rdi, QWORD PTR [rsp+64]
-	mov rsi, QWORD PTR [rsp+8]
-	add rsi, 145224
-	mov rdx, QWORD PTR [rsp+24]
-	mov rcx, QWORD PTR [rsp+8]
-	mov r8d, 0
-	call {vg_mldsa87_verify_with_cache_avx2}
-	pop r11
-	pop r11
-	pop r11
-	pop r11
-	pop r11
-	pop r11
-	pop r11
-	pop r11
-	pop r11
-21:
-	ret
-	.p2align 6
-
-vg_mldsa87_verify_message_prepared_avx2:
-	cmp r8, 256
-	jb 20f
-	mov eax, 2
-	jmp 21f
-20:
-	mov r11, QWORD PTR [rsp+8]
-	mov r10, QWORD PTR [rsp+16]
-	mov eax, 0
-	push rdi
-	push rsi
-	push rdx
-	push rcx
-	push r8
-	push r9
-	push r10
-	push r11
-	push rax
-	mov BYTE PTR [rsp+1], r8b
-	mov rdi, QWORD PTR [rsp+8]
-	add rdi, 144384
-	mov eax, 0
-	mov QWORD PTR [rdi], rax
-	mov QWORD PTR [rdi+8], rax
-	mov QWORD PTR [rdi+16], rax
-	mov QWORD PTR [rdi+24], rax
-	mov QWORD PTR [rdi+32], rax
-	mov QWORD PTR [rdi+40], rax
-	mov QWORD PTR [rdi+48], rax
-	mov QWORD PTR [rdi+56], rax
-	mov QWORD PTR [rdi+64], rax
-	mov QWORD PTR [rdi+72], rax
-	mov QWORD PTR [rdi+80], rax
-	mov QWORD PTR [rdi+88], rax
-	mov QWORD PTR [rdi+96], rax
-	mov QWORD PTR [rdi+104], rax
-	mov QWORD PTR [rdi+112], rax
-	mov QWORD PTR [rdi+120], rax
-	mov QWORD PTR [rdi+128], rax
-	mov QWORD PTR [rdi+136], rax
-	mov QWORD PTR [rdi+144], rax
-	mov QWORD PTR [rdi+152], rax
-	mov QWORD PTR [rdi+160], rax
-	mov QWORD PTR [rdi+168], rax
-	mov QWORD PTR [rdi+176], rax
-	mov QWORD PTR [rdi+184], rax
-	mov QWORD PTR [rdi+192], rax
-	mov rdi, QWORD PTR [rsp+8]
-	add rdi, 144384
-	mov esi, 136
-	mov edx, 0
-	mov rcx, QWORD PTR [rsp+16]
-	mov r8d, 64
-	mov r9, QWORD PTR [rsp+8]
-	add r9, 144584
-	call {vg_keccak_absorb_scratch}
-	mov rdi, QWORD PTR [rsp+8]
-	add rdi, 144384
-	mov esi, 136
-	mov edx, 64
-	mov rcx, rsp
-	mov r8d, 2
-	mov r9, QWORD PTR [rsp+8]
-	add r9, 144584
-	call {vg_keccak_absorb_scratch}
-	mov rdi, QWORD PTR [rsp+8]
-	add rdi, 144384
-	mov esi, 136
-	mov edx, 66
-	mov rcx, QWORD PTR [rsp+40]
-	mov r8, QWORD PTR [rsp+32]
-	mov r9, QWORD PTR [rsp+8]
-	add r9, 144584
-	call {vg_keccak_absorb_scratch}
-	mov rdi, QWORD PTR [rsp+8]
-	add rdi, 144384
-	mov esi, 136
-	mov rdx, rax
-	mov rcx, QWORD PTR [rsp+56]
-	mov r8, QWORD PTR [rsp+48]
-	mov r9, QWORD PTR [rsp+8]
-	add r9, 144584
-	call {vg_keccak_absorb_scratch}
-	mov rdi, QWORD PTR [rsp+8]
-	add rdi, 144384
-	mov esi, 136
-	mov rdx, rax
-	mov ecx, 31
-	mov r8, QWORD PTR [rsp+8]
-	add r8, 144584
-	call {vg_keccak_pad_scratch}
-	mov rdi, QWORD PTR [rsp+8]
-	add rdi, 144384
-	mov esi, 136
-	mov edx, 0
-	mov rcx, QWORD PTR [rsp+8]
-	add rcx, 145224
-	mov r8d, 64
-	mov r9, QWORD PTR [rsp+8]
-	add r9, 144584
-	call {vg_keccak_squeeze_scratch}
-	mov rdi, QWORD PTR [rsp+64]
-	mov rsi, QWORD PTR [rsp+8]
-	add rsi, 145224
-	mov rdx, QWORD PTR [rsp+24]
-	mov rcx, QWORD PTR [rsp+8]
-	mov r8d, 1
-	call {vg_mldsa87_verify_with_cache_avx2}
-	pop r11
-	pop r11
-	pop r11
-	pop r11
-	pop r11
-	pop r11
-	pop r11
-	pop r11
-	pop r11
-21:
 	ret
 	.p2align 6
 
@@ -6848,6 +6606,248 @@ vg_mldsa87_verify_message_prepared_avx512:
 	mov rcx, QWORD PTR [rsp+8]
 	mov r8d, 1
 	call {vg_mldsa87_verify_with_cache_avx512}
+	pop r11
+	pop r11
+	pop r11
+	pop r11
+	pop r11
+	pop r11
+	pop r11
+	pop r11
+	pop r11
+21:
+	ret
+	.p2align 6
+
+vg_mldsa87_verify_message_cached_avx2:
+	cmp r8, 256
+	jb 20f
+	mov eax, 2
+	jmp 21f
+20:
+	mov r11, QWORD PTR [rsp+8]
+	mov r10, QWORD PTR [rsp+16]
+	mov eax, 0
+	push rdi
+	push rsi
+	push rdx
+	push rcx
+	push r8
+	push r9
+	push r10
+	push r11
+	push rax
+	mov BYTE PTR [rsp+1], r8b
+	mov rdi, QWORD PTR [rsp+8]
+	add rdi, 144384
+	mov eax, 0
+	mov QWORD PTR [rdi], rax
+	mov QWORD PTR [rdi+8], rax
+	mov QWORD PTR [rdi+16], rax
+	mov QWORD PTR [rdi+24], rax
+	mov QWORD PTR [rdi+32], rax
+	mov QWORD PTR [rdi+40], rax
+	mov QWORD PTR [rdi+48], rax
+	mov QWORD PTR [rdi+56], rax
+	mov QWORD PTR [rdi+64], rax
+	mov QWORD PTR [rdi+72], rax
+	mov QWORD PTR [rdi+80], rax
+	mov QWORD PTR [rdi+88], rax
+	mov QWORD PTR [rdi+96], rax
+	mov QWORD PTR [rdi+104], rax
+	mov QWORD PTR [rdi+112], rax
+	mov QWORD PTR [rdi+120], rax
+	mov QWORD PTR [rdi+128], rax
+	mov QWORD PTR [rdi+136], rax
+	mov QWORD PTR [rdi+144], rax
+	mov QWORD PTR [rdi+152], rax
+	mov QWORD PTR [rdi+160], rax
+	mov QWORD PTR [rdi+168], rax
+	mov QWORD PTR [rdi+176], rax
+	mov QWORD PTR [rdi+184], rax
+	mov QWORD PTR [rdi+192], rax
+	mov rdi, QWORD PTR [rsp+8]
+	add rdi, 144384
+	mov esi, 136
+	mov edx, 0
+	mov rcx, QWORD PTR [rsp+16]
+	mov r8d, 64
+	mov r9, QWORD PTR [rsp+8]
+	add r9, 144584
+	call {vg_keccak_absorb_scratch}
+	mov rdi, QWORD PTR [rsp+8]
+	add rdi, 144384
+	mov esi, 136
+	mov edx, 64
+	mov rcx, rsp
+	mov r8d, 2
+	mov r9, QWORD PTR [rsp+8]
+	add r9, 144584
+	call {vg_keccak_absorb_scratch}
+	mov rdi, QWORD PTR [rsp+8]
+	add rdi, 144384
+	mov esi, 136
+	mov edx, 66
+	mov rcx, QWORD PTR [rsp+40]
+	mov r8, QWORD PTR [rsp+32]
+	mov r9, QWORD PTR [rsp+8]
+	add r9, 144584
+	call {vg_keccak_absorb_scratch}
+	mov rdi, QWORD PTR [rsp+8]
+	add rdi, 144384
+	mov esi, 136
+	mov rdx, rax
+	mov rcx, QWORD PTR [rsp+56]
+	mov r8, QWORD PTR [rsp+48]
+	mov r9, QWORD PTR [rsp+8]
+	add r9, 144584
+	call {vg_keccak_absorb_scratch}
+	mov rdi, QWORD PTR [rsp+8]
+	add rdi, 144384
+	mov esi, 136
+	mov rdx, rax
+	mov ecx, 31
+	mov r8, QWORD PTR [rsp+8]
+	add r8, 144584
+	call {vg_keccak_pad_scratch}
+	mov rdi, QWORD PTR [rsp+8]
+	add rdi, 144384
+	mov esi, 136
+	mov edx, 0
+	mov rcx, QWORD PTR [rsp+8]
+	add rcx, 145224
+	mov r8d, 64
+	mov r9, QWORD PTR [rsp+8]
+	add r9, 144584
+	call {vg_keccak_squeeze_scratch}
+	mov rdi, QWORD PTR [rsp+64]
+	mov rsi, QWORD PTR [rsp+8]
+	add rsi, 145224
+	mov rdx, QWORD PTR [rsp+24]
+	mov rcx, QWORD PTR [rsp+8]
+	mov r8d, 0
+	call {vg_mldsa87_verify_with_cache_avx2}
+	pop r11
+	pop r11
+	pop r11
+	pop r11
+	pop r11
+	pop r11
+	pop r11
+	pop r11
+	pop r11
+21:
+	ret
+	.p2align 6
+
+vg_mldsa87_verify_message_prepared_avx2:
+	cmp r8, 256
+	jb 20f
+	mov eax, 2
+	jmp 21f
+20:
+	mov r11, QWORD PTR [rsp+8]
+	mov r10, QWORD PTR [rsp+16]
+	mov eax, 0
+	push rdi
+	push rsi
+	push rdx
+	push rcx
+	push r8
+	push r9
+	push r10
+	push r11
+	push rax
+	mov BYTE PTR [rsp+1], r8b
+	mov rdi, QWORD PTR [rsp+8]
+	add rdi, 144384
+	mov eax, 0
+	mov QWORD PTR [rdi], rax
+	mov QWORD PTR [rdi+8], rax
+	mov QWORD PTR [rdi+16], rax
+	mov QWORD PTR [rdi+24], rax
+	mov QWORD PTR [rdi+32], rax
+	mov QWORD PTR [rdi+40], rax
+	mov QWORD PTR [rdi+48], rax
+	mov QWORD PTR [rdi+56], rax
+	mov QWORD PTR [rdi+64], rax
+	mov QWORD PTR [rdi+72], rax
+	mov QWORD PTR [rdi+80], rax
+	mov QWORD PTR [rdi+88], rax
+	mov QWORD PTR [rdi+96], rax
+	mov QWORD PTR [rdi+104], rax
+	mov QWORD PTR [rdi+112], rax
+	mov QWORD PTR [rdi+120], rax
+	mov QWORD PTR [rdi+128], rax
+	mov QWORD PTR [rdi+136], rax
+	mov QWORD PTR [rdi+144], rax
+	mov QWORD PTR [rdi+152], rax
+	mov QWORD PTR [rdi+160], rax
+	mov QWORD PTR [rdi+168], rax
+	mov QWORD PTR [rdi+176], rax
+	mov QWORD PTR [rdi+184], rax
+	mov QWORD PTR [rdi+192], rax
+	mov rdi, QWORD PTR [rsp+8]
+	add rdi, 144384
+	mov esi, 136
+	mov edx, 0
+	mov rcx, QWORD PTR [rsp+16]
+	mov r8d, 64
+	mov r9, QWORD PTR [rsp+8]
+	add r9, 144584
+	call {vg_keccak_absorb_scratch}
+	mov rdi, QWORD PTR [rsp+8]
+	add rdi, 144384
+	mov esi, 136
+	mov edx, 64
+	mov rcx, rsp
+	mov r8d, 2
+	mov r9, QWORD PTR [rsp+8]
+	add r9, 144584
+	call {vg_keccak_absorb_scratch}
+	mov rdi, QWORD PTR [rsp+8]
+	add rdi, 144384
+	mov esi, 136
+	mov edx, 66
+	mov rcx, QWORD PTR [rsp+40]
+	mov r8, QWORD PTR [rsp+32]
+	mov r9, QWORD PTR [rsp+8]
+	add r9, 144584
+	call {vg_keccak_absorb_scratch}
+	mov rdi, QWORD PTR [rsp+8]
+	add rdi, 144384
+	mov esi, 136
+	mov rdx, rax
+	mov rcx, QWORD PTR [rsp+56]
+	mov r8, QWORD PTR [rsp+48]
+	mov r9, QWORD PTR [rsp+8]
+	add r9, 144584
+	call {vg_keccak_absorb_scratch}
+	mov rdi, QWORD PTR [rsp+8]
+	add rdi, 144384
+	mov esi, 136
+	mov rdx, rax
+	mov ecx, 31
+	mov r8, QWORD PTR [rsp+8]
+	add r8, 144584
+	call {vg_keccak_pad_scratch}
+	mov rdi, QWORD PTR [rsp+8]
+	add rdi, 144384
+	mov esi, 136
+	mov edx, 0
+	mov rcx, QWORD PTR [rsp+8]
+	add rcx, 145224
+	mov r8d, 64
+	mov r9, QWORD PTR [rsp+8]
+	add r9, 144584
+	call {vg_keccak_squeeze_scratch}
+	mov rdi, QWORD PTR [rsp+64]
+	mov rsi, QWORD PTR [rsp+8]
+	add rsi, 145224
+	mov rdx, QWORD PTR [rsp+24]
+	mov rcx, QWORD PTR [rsp+8]
+	mov r8d, 1
+	call {vg_mldsa87_verify_with_cache_avx2}
 	pop r11
 	pop r11
 	pop r11

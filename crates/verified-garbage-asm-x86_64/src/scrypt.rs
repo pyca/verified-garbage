@@ -3,6 +3,9 @@
 //! `assembly/scrypt.s`.
 #![allow(dead_code)]
 
+/// The CPU features `vg_scrypt_shani` requires (`Artifact.features`).
+pub const VG_SCRYPT_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
+
 /// scrypt (RFC 7914 §6) with block size parameter `r`, cost parameter `N = vlen / r` and parallelization parameter `p = blen / r`: writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` to `out`.
 ///
 /// Contract: `VG.Spec.Scrypt.scryptContract`. Not constant time in the indices: timing may depend on the pointers, the lengths, `r`, `N`, `p` and the indices `j` of step 3 of each scryptROMix, which are derived from the password and the salt and so leak information about them (as in every scrypt that indexes `V` directly), but on nothing else.
@@ -19,11 +22,12 @@
 /// * `b`, `v` and `scratch` are working space: their contents on return are unspecified.
 /// * `b`, `v`, `scratch` and `out` must not overlap each other, `password`, `salt` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `password`, `salt`, `b`, `v`, `scratch` and `out` may overlap the return address on the stack or the 88 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_scrypt(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_scrypt_shani(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "QVFBUFZXUFBQSItEJEBIwcg5TItEJFhIiQQkTIlEJAhBuAEAAAA="
-call {vg_pbkdf2_hmac_sha256_scratch}
+call {vg_pbkdf2_hmac_sha256_scratch_shani}
 .base64 "SItEJDBIiUQkEA=="
 20:
 .base64 "SIt8JBBIi3QkKEiLVCRISItMJFBMi0QkWEmJ8UmDwQI="
@@ -31,10 +35,10 @@ call {vg_scrypt_romix}
 .base64 "SItMJChIwck5SItEJBBIAchIi1QkQEjByjlIA1QkMEiJRCQQSDnQ"
 jne 20b
 .base64 "SIt8JBhIi3QkIEiLVCQwSItMJEBIwck5TItMJGhIi0QkcEyLRCRYSIkEJEyJRCQIQbgBAAAA"
-call {vg_pbkdf2_hmac_sha256_scratch}
+call {vg_pbkdf2_hmac_sha256_scratch_shani}
 .base64 "WFhYWFhYWMM="
 .p2align 6"#,
-        vg_pbkdf2_hmac_sha256_scratch = sym super::scrypt::vg_pbkdf2_hmac_sha256_scratch::vg_pbkdf2_hmac_sha256_scratch,
+        vg_pbkdf2_hmac_sha256_scratch_shani = sym super::scrypt::vg_pbkdf2_hmac_sha256_scratch_shani::vg_pbkdf2_hmac_sha256_scratch_shani,
         vg_scrypt_romix = sym super::scrypt::vg_scrypt_romix::vg_scrypt_romix,
     )
 }
@@ -79,9 +83,6 @@ call {vg_pbkdf2_hmac_sha256_scratch_avx2}
     )
 }
 
-/// The CPU features `vg_scrypt_shani` requires (`Artifact.features`).
-pub const VG_SCRYPT_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
-
 /// scrypt (RFC 7914 §6) with block size parameter `r`, cost parameter `N = vlen / r` and parallelization parameter `p = blen / r`: writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` to `out`.
 ///
 /// Contract: `VG.Spec.Scrypt.scryptContract`. Not constant time in the indices: timing may depend on the pointers, the lengths, `r`, `N`, `p` and the indices `j` of step 3 of each scryptROMix, which are derived from the password and the salt and so leak information about them (as in every scrypt that indexes `V` directly), but on nothing else.
@@ -98,12 +99,11 @@ pub const VG_SCRYPT_SHANI_FEATURES: verified_garbage_cpu::Features = verified_ga
 /// * `b`, `v` and `scratch` are working space: their contents on return are unspecified.
 /// * `b`, `v`, `scratch` and `out` must not overlap each other, `password`, `salt` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `password`, `salt`, `b`, `v`, `scratch` and `out` may overlap the return address on the stack or the 88 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_scrypt_shani(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_scrypt(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "QVFBUFZXUFBQSItEJEBIwcg5TItEJFhIiQQkTIlEJAhBuAEAAAA="
-call {vg_pbkdf2_hmac_sha256_scratch_shani}
+call {vg_pbkdf2_hmac_sha256_scratch}
 .base64 "SItEJDBIiUQkEA=="
 20:
 .base64 "SIt8JBBIi3QkKEiLVCRISItMJFBMi0QkWEmJ8UmDwQI="
@@ -111,10 +111,10 @@ call {vg_scrypt_romix}
 .base64 "SItMJChIwck5SItEJBBIAchIi1QkQEjByjlIA1QkMEiJRCQQSDnQ"
 jne 20b
 .base64 "SIt8JBhIi3QkIEiLVCQwSItMJEBIwck5TItMJGhIi0QkcEyLRCRYSIkEJEyJRCQIQbgBAAAA"
-call {vg_pbkdf2_hmac_sha256_scratch_shani}
+call {vg_pbkdf2_hmac_sha256_scratch}
 .base64 "WFhYWFhYWMM="
 .p2align 6"#,
-        vg_pbkdf2_hmac_sha256_scratch_shani = sym super::scrypt::vg_pbkdf2_hmac_sha256_scratch_shani::vg_pbkdf2_hmac_sha256_scratch_shani,
+        vg_pbkdf2_hmac_sha256_scratch = sym super::scrypt::vg_pbkdf2_hmac_sha256_scratch::vg_pbkdf2_hmac_sha256_scratch,
         vg_scrypt_romix = sym super::scrypt::vg_scrypt_romix::vg_scrypt_romix,
     )
 }

@@ -3,127 +3,6 @@
 //! `assembly/rsa_pkcs1_enc.s`.
 #![allow(dead_code)]
 
-/// RSAES-PKCS1-v1_5 decryption with implicit rejection: RSAES-PKCS1-V1_5-DECRYPT (RFC 8017 §7.2.2) as draft-irtf-cfrg-rsa-guidance-10 §7.2 implements it, with the private key `(n, e, d, p, q, dP, dQ, qInv)`. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), computes the encoded message `EM` of the ciphertext `input` (`n_len` bytes, most significant first) with RSADP as `vg_rsa_private_checked` does. If its padding is valid (`0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M`, `PS` at least 8 nonzero bytes), the message is `M`; otherwise it is a message derived from `d` and the ciphertext (the draft's §7.1 PRF keyed with HMAC-SHA-256 of the ciphertext under the SHA-256 digest of `d`), of at most `n_len - 11` bytes, which is the same every time the same key decrypts the same ciphertext. Writes the message at the end of `out` (`n_len` bytes), after zeros, and its length to `*msg_len`, and returns 1. Writes zeros to both and returns 0 if `n` or `e` is not such a number, the ciphertext is not below `n`, `p q ≠ n`, or `qInv ≥ p`; and returns 2 (an internal error) if RSADP's result fails its check against `e`, which is the case for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. An invalid padding is never an error. `d` is used as given, never recomputed. `p`, `dp` and `qinv` are `p_len` bytes, `q` and `dq` are `q_len` bytes, and `d` is `d_len` bytes, all most significant first.
-///
-/// Contract: `VG.Spec.RsaPkcs1Enc.decryptContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the ciphertext, the private key, the validity of the padding, the length of the message or which message is returned.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `msg_len` must be valid for reads and writes of 8 bytes.
-/// * `n` must be valid for reads of `n_len` bytes.
-/// * `e` must be valid for reads of `e_len` bytes.
-/// * `d` must be valid for reads of `d_len` bytes.
-/// * `input` must be valid for reads of `input_len` bytes.
-/// * `p` must be valid for reads of `p_len` bytes.
-/// * `q` must be valid for reads of `q_len` bytes.
-/// * `dp` must be valid for reads of `dp_len` bytes.
-/// * `dq` must be valid for reads of `dq_len` bytes.
-/// * `qinv` must be valid for reads of `qinv_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `n_len` must be in 64..=1024.
-/// * `out_len` and `input_len` must be `n_len`.
-/// * `e_len` and `d_len` must be in 1..=`n_len`.
-/// * `p_len` and `q_len` must be in 1..`n_len`.
-/// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
-/// * `scratch_len` must be at least `16 * n_len + 32`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the 3472 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_decrypt(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
-    core::arch::naked_asm!(
-        r".inst 0xf81f0ffe,0xd10343ff,0x910003e9,0xf9003120,0xf9003522,0xf9003923,0xf9003d24,0xf9004125
-.inst 0xf9004526,0xf9004927,0xf94073ea,0xf9004d2a,0xf94077ea,0xf900512a,0xf940a7ea,0xf900552a
-.inst 0xf9407fea,0xf900012a,0xf94083ea,0xf900052a,0xf94087ea,0xf900092a,0xf9408bea,0xf9000d2a
-.inst 0xf9408fea,0xf900112a,0xf94093ea,0xf900152a,0xf94097ea,0xf900192a,0xf9409bea,0xf9001d2a
-.inst 0xf9409fea,0xf900212a,0xf940a3ea,0xf900252a,0xf940a7ea,0xf900292a,0xf940abea,0xf9002d2a
-.inst 0xaa040081,0xaa030062,0xaa040083,0xaa0500a4,0xaa0600c5,0xf94077e6,0xaa010027
-bl {vg_rsa_private_checked}
-.inst 0x2a000000,0x910003e9,0xf9005920,0xf94057eb,0x9125c16b,0xf9403fec,0xd280000d
-20:
-.inst 0x3900016d,0x9100056b,0xd100058c
-cbnz x12, 20b
-.inst 0xf9404bee,0xf9404fec,0xf94057eb,0x9125c16b,0xf9403fef,0x8b0f016b,0xcb0c016b
-21:
-.inst 0x394001ca,0x3900016a,0x910005ce,0x9100056b,0xd100058c
-cbnz x12, 21b
-.inst 0xf94057e0,0x91000000
-bl {vg_sha256_init}
-.inst 0xf94057e0,0x91000000,0xd2800001,0xf94057e2,0x9125c042,0xf9403fe3,0xf94057e4,0x91030084
-bl {vg_sha256_update_scratch}
-.inst 0xf94057e0,0x91000000,0xf9403fe1,0xf94057e2,0x91104042,0xf94057e3,0x91030063
-bl {vg_sha256_finalize_scratch}
-.inst 0xf94057e0,0x91000000,0xf94057e1,0x91018021,0xf94057e2,0x91104042,0xd2800403,0xf94057e4
-.inst 0x91030084
-bl {vg_hmac_sha256_init_scratch}
-.inst 0xf94057e0,0x91000000,0xd2800801,0xf94053e2,0xf9403fe3,0xf94057e4,0x91030084
-bl {vg_sha256_update_scratch}
-.inst 0xf94057e0,0x91000000,0xf94057e1,0x91018021,0xf9403fe2,0x91010042,0xf94057e3,0x91114063
-.inst 0xf94057e4,0x91030084
-bl {vg_hmac_sha256_finalize_scratch}
-.inst 0x910003e9,0xd280000a,0xf9005d2a,0xf9403fea,0x91007d4a,0xd345fd4a,0xf900612a
-22:
-.inst 0xf94057e9,0x91100129,0xf9405feb,0xf9403fec,0xd280000a,0x3900012a,0x3900052b,0xd2800d8a
-.inst 0x3900092a,0xd2800caa,0x39000d2a,0xd2800dca,0x3900112a,0xd2800cea,0x3900152a,0xd2800e8a
-.inst 0x3900192a,0xd2800d0a,0x39001d2a,0xd280010a,0x3900212a,0xd280000a,0x3900252a,0xf94057e0
-.inst 0x91000000,0xf94057e1,0x91018021,0xf94057e2,0x91114042,0xd2800403,0xf94057e4,0x91030084
-bl {vg_hmac_sha256_init_scratch}
-.inst 0xf94057e0,0x91000000,0xd2800801,0xf94057e2,0x91100042,0xd2800143,0xf94057e4,0x91030084
-bl {vg_sha256_update_scratch}
-.inst 0xf94057e0,0x91000000,0xf94057e1,0x91018021,0xd2800942,0xf9405fe3,0xd37be863,0xf94057ea
-.inst 0x9111c14a,0x8b0a0063,0xf94057e4,0x91030084
-bl {vg_hmac_sha256_finalize_scratch}
-.inst 0xf9405feb,0x9100056b,0x910003e9,0xf9005d2b,0xd280010c,0xcb0b018c
-cbnz x12, 22b
-.inst 0x910003e9,0xd280000a,0xf9005d2a
-23:
-.inst 0xf94057e9,0x91100129,0xf9405feb,0xf9403fec,0xd280000a,0x3900012a,0x3900052b,0xd2800daa
-.inst 0x3900092a,0xd2800caa,0x39000d2a,0xd2800e6a,0x3900112a,0xd2800e6a,0x3900152a,0xd2800c2a
-.inst 0x3900192a,0xd2800cea,0x39001d2a,0xd2800caa,0x3900212a,0xd37df18a,0x3900292a,0xd348fd4a
-.inst 0x3900252a,0xf94057e0,0x91000000,0xf94057e1,0x91018021,0xf94057e2,0x91114042,0xd2800403
-.inst 0xf94057e4,0x91030084
-bl {vg_hmac_sha256_init_scratch}
-.inst 0xf94057e0,0x91000000,0xd2800801,0xf94057e2,0x91100042,0xd2800163,0xf94057e4,0x91030084
-bl {vg_sha256_update_scratch}
-.inst 0xf94057e0,0x91000000,0xf94057e1,0x91018021,0xd2800962,0xf9405fe3,0xd37be863,0xf94057ea
-.inst 0x9115c14a,0x8b0a0063,0xf94057e4,0x91030084
-bl {vg_hmac_sha256_finalize_scratch}
-.inst 0xf9405feb,0x9100056b,0x910003e9,0xf9005d2b,0xf94063ec,0xcb0b018c
-cbnz x12, 23b
-.inst 0xf9403fe9,0xd1002d29,0xd2800008
-24:
-.inst 0x8b080108,0x91000508,0xeb09010a,0xda0a014a
-cbnz x10, 24b
-.inst 0xf94057eb,0x9111c16b,0xd280100c,0xd280000d
-25:
-.inst 0x3940016a,0xd378dd4a,0x3940056e,0x8b0e014a,0x8a08014a,0xeb0a012e,0x9a8d214d,0x9100096b
-.inst 0xd100058c
-cbnz x12, 25b
-.inst 0xf94033eb,0x9100096b,0xf9403fec,0xd100098c,0xd280004e,0xd280000f,0xd2800010,0xd2800031
-26:
-.inst 0x3940016a,0xeb11014a,0xda0a014a,0x8aef0149,0x8a0e0129,0xaa090210,0xaa0a01ef,0x910005ce
-.inst 0x9100056b,0xd100058c
-cbnz x12, 26b
-.inst 0xf94033eb,0xf9403fec,0x3940016a,0xeb11014a,0xda0a014a,0x39400569,0xd280004e,0xca0e0129
-.inst 0xeb110129,0xda090129,0x8a09014a,0x8a0a01ef,0xd280014e,0xeb0e0209,0xda090129,0x8ae901ef
-.inst 0xcb100189,0xd1000529,0xca0d0129,0x8a0f0129,0xca0901ad,0xf9405bee,0xca1101ce,0xeb1101ce
-.inst 0xda0e01ce,0xcb0d0190,0x8a0e01ad,0xf94037ea,0xf900014d,0xf94057ea,0x9115c14a,0xd2800009
-27:
-.inst 0x3940016d,0x39400148,0xca0801ad,0x8a0f01ad,0xca0801ad,0xeb100128,0xda080108,0x8ae801c8
-.inst 0x8a0801ad,0x3900016d,0x91000529,0x9100056b,0x9100054a,0xd100058c
-cbnz x12, 27b
-.inst 0xf9405be0,0x910343ff,0xf84107fe,0xd65f03c0
-.p2align 6",
-        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked::vg_rsa_private_checked,
-        vg_sha256_init = sym super::sha256::vg_sha256_init,
-        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
-        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
-        vg_hmac_sha256_init_scratch = sym super::hmac_sha256::vg_hmac_sha256_init_scratch::vg_hmac_sha256_init_scratch,
-        vg_hmac_sha256_finalize_scratch = sym super::hmac_sha256::vg_hmac_sha256_finalize_scratch::vg_hmac_sha256_finalize_scratch,
-    )
-}
-
 /// The CPU features `vg_rsa_pkcs1_decrypt_sha256_sha2` requires (`Artifact.features`).
 pub const VG_RSA_PKCS1_DECRYPT_SHA256_SHA2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA2);
 
@@ -246,6 +125,127 @@ cbnz x12, 27b
         vg_sha256_finalize_scratch_sha2 = sym super::sha256::vg_sha256_finalize_scratch_sha2::vg_sha256_finalize_scratch_sha2,
         vg_hmac_sha256_init_scratch_sha2 = sym super::hmac_sha256::vg_hmac_sha256_init_scratch_sha2::vg_hmac_sha256_init_scratch_sha2,
         vg_hmac_sha256_finalize_scratch_sha2 = sym super::hmac_sha256::vg_hmac_sha256_finalize_scratch_sha2::vg_hmac_sha256_finalize_scratch_sha2,
+    )
+}
+
+/// RSAES-PKCS1-v1_5 decryption with implicit rejection: RSAES-PKCS1-V1_5-DECRYPT (RFC 8017 §7.2.2) as draft-irtf-cfrg-rsa-guidance-10 §7.2 implements it, with the private key `(n, e, d, p, q, dP, dQ, qInv)`. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), computes the encoded message `EM` of the ciphertext `input` (`n_len` bytes, most significant first) with RSADP as `vg_rsa_private_checked` does. If its padding is valid (`0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M`, `PS` at least 8 nonzero bytes), the message is `M`; otherwise it is a message derived from `d` and the ciphertext (the draft's §7.1 PRF keyed with HMAC-SHA-256 of the ciphertext under the SHA-256 digest of `d`), of at most `n_len - 11` bytes, which is the same every time the same key decrypts the same ciphertext. Writes the message at the end of `out` (`n_len` bytes), after zeros, and its length to `*msg_len`, and returns 1. Writes zeros to both and returns 0 if `n` or `e` is not such a number, the ciphertext is not below `n`, `p q ≠ n`, or `qInv ≥ p`; and returns 2 (an internal error) if RSADP's result fails its check against `e`, which is the case for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. An invalid padding is never an error. `d` is used as given, never recomputed. `p`, `dp` and `qinv` are `p_len` bytes, `q` and `dq` are `q_len` bytes, and `d` is `d_len` bytes, all most significant first.
+///
+/// Contract: `VG.Spec.RsaPkcs1Enc.decryptContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the ciphertext, the private key, the validity of the padding, the length of the message or which message is returned.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `msg_len` must be valid for reads and writes of 8 bytes.
+/// * `n` must be valid for reads of `n_len` bytes.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `d` must be valid for reads of `d_len` bytes.
+/// * `input` must be valid for reads of `input_len` bytes.
+/// * `p` must be valid for reads of `p_len` bytes.
+/// * `q` must be valid for reads of `q_len` bytes.
+/// * `dp` must be valid for reads of `dp_len` bytes.
+/// * `dq` must be valid for reads of `dq_len` bytes.
+/// * `qinv` must be valid for reads of `qinv_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `n_len` must be in 64..=1024.
+/// * `out_len` and `input_len` must be `n_len`.
+/// * `e_len` and `d_len` must be in 1..=`n_len`.
+/// * `p_len` and `q_len` must be in 1..`n_len`.
+/// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
+/// * `scratch_len` must be at least `16 * n_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the 3472 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_decrypt(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r".inst 0xf81f0ffe,0xd10343ff,0x910003e9,0xf9003120,0xf9003522,0xf9003923,0xf9003d24,0xf9004125
+.inst 0xf9004526,0xf9004927,0xf94073ea,0xf9004d2a,0xf94077ea,0xf900512a,0xf940a7ea,0xf900552a
+.inst 0xf9407fea,0xf900012a,0xf94083ea,0xf900052a,0xf94087ea,0xf900092a,0xf9408bea,0xf9000d2a
+.inst 0xf9408fea,0xf900112a,0xf94093ea,0xf900152a,0xf94097ea,0xf900192a,0xf9409bea,0xf9001d2a
+.inst 0xf9409fea,0xf900212a,0xf940a3ea,0xf900252a,0xf940a7ea,0xf900292a,0xf940abea,0xf9002d2a
+.inst 0xaa040081,0xaa030062,0xaa040083,0xaa0500a4,0xaa0600c5,0xf94077e6,0xaa010027
+bl {vg_rsa_private_checked}
+.inst 0x2a000000,0x910003e9,0xf9005920,0xf94057eb,0x9125c16b,0xf9403fec,0xd280000d
+20:
+.inst 0x3900016d,0x9100056b,0xd100058c
+cbnz x12, 20b
+.inst 0xf9404bee,0xf9404fec,0xf94057eb,0x9125c16b,0xf9403fef,0x8b0f016b,0xcb0c016b
+21:
+.inst 0x394001ca,0x3900016a,0x910005ce,0x9100056b,0xd100058c
+cbnz x12, 21b
+.inst 0xf94057e0,0x91000000
+bl {vg_sha256_init}
+.inst 0xf94057e0,0x91000000,0xd2800001,0xf94057e2,0x9125c042,0xf9403fe3,0xf94057e4,0x91030084
+bl {vg_sha256_update_scratch}
+.inst 0xf94057e0,0x91000000,0xf9403fe1,0xf94057e2,0x91104042,0xf94057e3,0x91030063
+bl {vg_sha256_finalize_scratch}
+.inst 0xf94057e0,0x91000000,0xf94057e1,0x91018021,0xf94057e2,0x91104042,0xd2800403,0xf94057e4
+.inst 0x91030084
+bl {vg_hmac_sha256_init_scratch}
+.inst 0xf94057e0,0x91000000,0xd2800801,0xf94053e2,0xf9403fe3,0xf94057e4,0x91030084
+bl {vg_sha256_update_scratch}
+.inst 0xf94057e0,0x91000000,0xf94057e1,0x91018021,0xf9403fe2,0x91010042,0xf94057e3,0x91114063
+.inst 0xf94057e4,0x91030084
+bl {vg_hmac_sha256_finalize_scratch}
+.inst 0x910003e9,0xd280000a,0xf9005d2a,0xf9403fea,0x91007d4a,0xd345fd4a,0xf900612a
+22:
+.inst 0xf94057e9,0x91100129,0xf9405feb,0xf9403fec,0xd280000a,0x3900012a,0x3900052b,0xd2800d8a
+.inst 0x3900092a,0xd2800caa,0x39000d2a,0xd2800dca,0x3900112a,0xd2800cea,0x3900152a,0xd2800e8a
+.inst 0x3900192a,0xd2800d0a,0x39001d2a,0xd280010a,0x3900212a,0xd280000a,0x3900252a,0xf94057e0
+.inst 0x91000000,0xf94057e1,0x91018021,0xf94057e2,0x91114042,0xd2800403,0xf94057e4,0x91030084
+bl {vg_hmac_sha256_init_scratch}
+.inst 0xf94057e0,0x91000000,0xd2800801,0xf94057e2,0x91100042,0xd2800143,0xf94057e4,0x91030084
+bl {vg_sha256_update_scratch}
+.inst 0xf94057e0,0x91000000,0xf94057e1,0x91018021,0xd2800942,0xf9405fe3,0xd37be863,0xf94057ea
+.inst 0x9111c14a,0x8b0a0063,0xf94057e4,0x91030084
+bl {vg_hmac_sha256_finalize_scratch}
+.inst 0xf9405feb,0x9100056b,0x910003e9,0xf9005d2b,0xd280010c,0xcb0b018c
+cbnz x12, 22b
+.inst 0x910003e9,0xd280000a,0xf9005d2a
+23:
+.inst 0xf94057e9,0x91100129,0xf9405feb,0xf9403fec,0xd280000a,0x3900012a,0x3900052b,0xd2800daa
+.inst 0x3900092a,0xd2800caa,0x39000d2a,0xd2800e6a,0x3900112a,0xd2800e6a,0x3900152a,0xd2800c2a
+.inst 0x3900192a,0xd2800cea,0x39001d2a,0xd2800caa,0x3900212a,0xd37df18a,0x3900292a,0xd348fd4a
+.inst 0x3900252a,0xf94057e0,0x91000000,0xf94057e1,0x91018021,0xf94057e2,0x91114042,0xd2800403
+.inst 0xf94057e4,0x91030084
+bl {vg_hmac_sha256_init_scratch}
+.inst 0xf94057e0,0x91000000,0xd2800801,0xf94057e2,0x91100042,0xd2800163,0xf94057e4,0x91030084
+bl {vg_sha256_update_scratch}
+.inst 0xf94057e0,0x91000000,0xf94057e1,0x91018021,0xd2800962,0xf9405fe3,0xd37be863,0xf94057ea
+.inst 0x9115c14a,0x8b0a0063,0xf94057e4,0x91030084
+bl {vg_hmac_sha256_finalize_scratch}
+.inst 0xf9405feb,0x9100056b,0x910003e9,0xf9005d2b,0xf94063ec,0xcb0b018c
+cbnz x12, 23b
+.inst 0xf9403fe9,0xd1002d29,0xd2800008
+24:
+.inst 0x8b080108,0x91000508,0xeb09010a,0xda0a014a
+cbnz x10, 24b
+.inst 0xf94057eb,0x9111c16b,0xd280100c,0xd280000d
+25:
+.inst 0x3940016a,0xd378dd4a,0x3940056e,0x8b0e014a,0x8a08014a,0xeb0a012e,0x9a8d214d,0x9100096b
+.inst 0xd100058c
+cbnz x12, 25b
+.inst 0xf94033eb,0x9100096b,0xf9403fec,0xd100098c,0xd280004e,0xd280000f,0xd2800010,0xd2800031
+26:
+.inst 0x3940016a,0xeb11014a,0xda0a014a,0x8aef0149,0x8a0e0129,0xaa090210,0xaa0a01ef,0x910005ce
+.inst 0x9100056b,0xd100058c
+cbnz x12, 26b
+.inst 0xf94033eb,0xf9403fec,0x3940016a,0xeb11014a,0xda0a014a,0x39400569,0xd280004e,0xca0e0129
+.inst 0xeb110129,0xda090129,0x8a09014a,0x8a0a01ef,0xd280014e,0xeb0e0209,0xda090129,0x8ae901ef
+.inst 0xcb100189,0xd1000529,0xca0d0129,0x8a0f0129,0xca0901ad,0xf9405bee,0xca1101ce,0xeb1101ce
+.inst 0xda0e01ce,0xcb0d0190,0x8a0e01ad,0xf94037ea,0xf900014d,0xf94057ea,0x9115c14a,0xd2800009
+27:
+.inst 0x3940016d,0x39400148,0xca0801ad,0x8a0f01ad,0xca0801ad,0xeb100128,0xda080108,0x8ae801c8
+.inst 0x8a0801ad,0x3900016d,0x91000529,0x9100056b,0x9100054a,0xd100058c
+cbnz x12, 27b
+.inst 0xf9405be0,0x910343ff,0xf84107fe,0xd65f03c0
+.p2align 6",
+        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked::vg_rsa_private_checked,
+        vg_sha256_init = sym super::sha256::vg_sha256_init,
+        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
+        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
+        vg_hmac_sha256_init_scratch = sym super::hmac_sha256::vg_hmac_sha256_init_scratch::vg_hmac_sha256_init_scratch,
+        vg_hmac_sha256_finalize_scratch = sym super::hmac_sha256::vg_hmac_sha256_finalize_scratch::vg_hmac_sha256_finalize_scratch,
     )
 }
 
