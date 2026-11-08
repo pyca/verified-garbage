@@ -305,7 +305,7 @@ impl Key {
         if !buffer.len().is_multiple_of(16) {
             return Err(IncompleteBlock);
         }
-        let mut scratch = [0; 272];
+        let mut scratch = Scratch([0; 272]);
         // SAFETY: `rounds` is 10, 12 or 14 and the schedule holds its key
         // schedule; the buffer holds `len / 16` whole blocks, and it, the
         // chaining value, the schedule and the scratch space are separate
@@ -318,24 +318,42 @@ impl Key {
                 iv,
                 buffer.as_mut_ptr().cast(),
                 buffer.len() / 16,
-                &mut scratch,
+                &mut scratch.0,
             );
         }
         // The scratch space may hold the key schedule, the data and our
         // caller's registers: wipe the bytes the function's proved write
-        // bound (`scratch_written`) allows it to write, if any. On AArch64
-        // and x86 each implementation leaves each byte of it unchanged or
-        // zero (`Proof/AesCbc/AArch64/Wiped.lean`, `Proof/AesCbc/X86/Wiped.lean`),
-        // so there is nothing to wipe.
-        #[cfg(not(any(target_arch = "aarch64", target_arch = "x86")))]
+        // bound (`scratch_written`) allows it to write, if any. On AArch64,
+        // ARMv7, PPC64LE and x86 each implementation leaves each byte of it
+        // unchanged or zero (`Proof/AesCbc/AArch64/Wiped.lean`,
+        // `Proof/AesCbc/Arm/Wiped.lean`, `Proof/AesCbc/PPC64LE/Wiped.lean`,
+        // `Proof/AesCbc/X86/Wiped.lean`), so there is nothing to wipe.
+        #[cfg(not(any(
+            target_arch = "aarch64",
+            target_arch = "arm",
+            all(target_arch = "powerpc64", target_endian = "little"),
+            target_arch = "x86"
+        )))]
         if scratch_written != 0 {
-            zeroize(&mut scratch[..scratch_written.div_ceil(8)]);
+            zeroize(&mut scratch.0[..scratch_written.div_ceil(8)]);
         }
-        #[cfg(any(target_arch = "aarch64", target_arch = "x86"))]
+        #[cfg(any(
+            target_arch = "aarch64",
+            target_arch = "arm",
+            all(target_arch = "powerpc64", target_endian = "little"),
+            target_arch = "x86"
+        ))]
         let _ = scratch_written;
         Ok(())
     }
 }
+
+/// The scratch space of the CBC functions, aligned to a cache line: the
+/// implementations read what they keep there (round keys, the inverse key
+/// schedule) for every block, and at the alignment of `[u64; 272]` some of
+/// those reads would cross cache lines, depending on the caller's stack.
+#[repr(C, align(64))]
+struct Scratch([u64; 272]);
 
 /// The signature of `vg_aes_cbc_encrypt` and `vg_aes_cbc_decrypt`.
 #[cfg(target_arch = "x86_64")]
