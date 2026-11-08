@@ -1,7 +1,0 @@
-Flat profile:
-
-Each sample counts as 0.01 seconds.
-  %   cumulative   self              self     total
- time   seconds   seconds    calls  Ts/call  Ts/call  name
- 84.56      7.91     7.91                             vg_scrypt_blockmix
- 15.52      9.36     1.45                             vg_scrypt_romix
