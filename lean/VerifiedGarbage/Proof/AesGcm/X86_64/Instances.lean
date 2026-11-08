@@ -30,7 +30,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Gather
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.BlocksVerified
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksVerifiedP
-public import VerifiedGarbage.Spec.Gcm.Prepared16
+public import VerifiedGarbage.Proof.Gcm.PreparedPowers
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared16.StreamCallee
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared16.GatherCallee
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared16.GatherSplit
@@ -515,7 +515,7 @@ def blkToR16 (v : GcmVariant) : StreamTo.BlkToFn Proof.Gcm.X86_64.Stitch.CtxMode
   .ofBlocks ("vg_aes_gcm_encrypt_blocks_to_prepared16" ++ v.impl.suffix) (blkR16 v) v.stitchToR16
 
 def encFnR16 (v : GcmVariant) : StreamTo.EncFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared16 :=
-  .ofPrepared16 ⟨Spec.Gcm.streamEncryptPrepared16Api.name ++ v.impl.suffix,
+  .ofPrepared16 ⟨"vg_aes_gcm_stream_encrypt_prepared16" ++ v.impl.suffix,
       Impl.StackScratch.X86_64.withStackArgScratch 2584 1
         (Impl.AesGcm.X86_64.streamEncrypt (v.impl.withBlk (blkR16 v)))⟩
     (streamEncryptPrepared16_framed v.impl (blkR16 v)) (X86_64.withStackArgScratch_spSafe (streamEncryptM_spSafe v.impl (blkR16 v)))
@@ -532,7 +532,7 @@ def toFnR16 (v : GcmVariant) : Gather.ToFn Proof.Gcm.X86_64.Stitch.CtxMode.prepa
 
 /-- The instance of `vg_aes_gcm_seal_prepared16` of a variant. -/
 def sealFnR16 (v : GcmVariant) (hs : v.impl.short = false) : Gather.SealFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared16 :=
-  .ofPrepared16 ⟨Spec.Gcm.sealPrepared16Api.name ++ v.impl.suffix,
+  .ofPrepared16 ⟨"vg_aes_gcm_seal_prepared16" ++ v.impl.suffix,
       Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.impl.sealCodeP (v.impl.withBlk (blkR16 v)))⟩
     (sealSelPrepared16_framed v.impl (blkR16 v) Short.shortFacts hs)
     (X86_64.withStackArgScratch_spSafe (sealCodeP_spSafe v.impl (blkR16 v)))
@@ -603,7 +603,7 @@ def openFnR (v : GcmVariant) : OpenTo.OpenFn Proof.Gcm.X86_64.Stitch.CtxMode.pre
 
 /-- The instance of `vg_aes_gcm_open_prepared16` of a variant. -/
 def openFnR16 (v : GcmVariant) (r : R16 v) : OpenTo.OpenFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared16 :=
-  .ofPrepared16 ⟨Spec.Gcm.openPrepared16Api.name ++ v.impl.suffix,
+  .ofPrepared16 ⟨"vg_aes_gcm_open_prepared16" ++ v.impl.suffix,
       Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.impl.openCodeP (v.impl.withBlk (blkR16 v)))⟩
     (openSelPrepared16_framed v.impl (blkR16 v) Short.shortFacts r.short)
     (X86_64.withStackArgScratch_spSafe (openCodeP_spSafe v.impl (blkR16 v)))
@@ -1062,7 +1062,9 @@ def sealFnF (v : GcmVariant) : Gather.SealFn Proof.Gcm.X86_64.Stitch.CtxMode.fla
 
 /-- `splitFrameSatP` with the 1032-byte context. -/
 def splitFrameSatF : VG.X86_64.State :=
-  { Split.splitFrameSat with rd := [⟨0x1000, 1032⟩, ⟨0x2000, 0⟩, ⟨0x2100, 0⟩, ⟨0, 0⟩, ⟨0x8008, 40⟩] }
+  { Split.splitFrameSat with
+    mem := fun a => if a = 0x1400 then 48 else Split.splitFrameSat.mem a
+    rd := [⟨0x1000, 1032⟩, ⟨0x2000, 0⟩, ⟨0x2100, 0⟩, ⟨0, 0⟩, ⟨0x8008, 40⟩] }
 
 theorem splitFrameSatF_pre :
     ∃ s, (VG.Proof.AesGcm.Flag.sealSplitFlaggedContract X86_64.abi 2672).pre s := by
@@ -1075,7 +1077,8 @@ theorem splitFrameSatF_pre :
     | rfl
     | decide
     | exact Region.disjoint_of_sep (by decide)
-    | (refine VG.Proof.AesGcm.Flag.flaggedPowers_of_zeroMem fun i hi => ?_
+    | (refine VG.Proof.AesGcm.Flag.flaggedPowers_of_zeroMem (fun i hi => ?_) (by decide)
+       rw [if_neg (VG.Proof.AesGcm.Flag.ctx_ne1024 hi)]
        split
        · next h => exfalso; bv_omega
        · rfl)

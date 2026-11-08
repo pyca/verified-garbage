@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.Rounds
-public import VerifiedGarbage.Spec.Gcm.Prepared16
+public import VerifiedGarbage.Proof.Gcm.PreparedPowers
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Callee
 public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
@@ -30,9 +30,9 @@ theorem encSpecPrepared16_pre {s : State} (h : encCallPre CtxMode.prepared16 s) 
   have a₂₂ := h
   clear h
   sig_pre [Proof.AesGcm.streamEncryptPrepared16RoundsContract, Spec.Gcm.streamCryptPrecomputedSig, Spec.Gcm.streamCryptPrecomputedSig,
-    Spec.Gcm.streamCryptPrepared16Pre, X86_64.abi, X86_64.argRegs]
+    Proof.Gcm.streamCryptPrepared16Pre, X86_64.abi, X86_64.argRegs]
   sig_reduce [Proof.AesGcm.streamEncryptPrepared16RoundsContract, Spec.Gcm.streamCryptPrecomputedSig, Spec.Gcm.streamCryptPrecomputedSig,
-    Spec.Gcm.streamCryptPrepared16Pre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.arg, Proof.AesGcm.args,
+    Proof.Gcm.streamCryptPrepared16Pre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.arg, Proof.AesGcm.args,
     Proof.AesGcm.ret, X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop,
     VG.X86_64.below]
   sig_and_intros
@@ -44,7 +44,7 @@ theorem encSpecPrepared16_post {s s' : State} (hR : Proof.AesGcm.rounds s)
     (h : (Proof.AesGcm.streamEncryptPrepared16RoundsContract X86_64.abi 2608).post s s') :
     Proof.AesGcm.streamEncryptX86_64.post s s' := by
   sig_post [Proof.AesGcm.streamEncryptPrepared16RoundsContract, Spec.Gcm.streamCryptPrecomputedSig, Spec.Gcm.streamCryptPrecomputedSig,
-    Spec.Gcm.streamCryptPrepared16Pre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.streamEncryptRoundsPost] at h
+    Proof.Gcm.streamCryptPrepared16Pre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.streamEncryptRoundsPost] at h
   sig_reduce [Proof.AesGcm.streamEncryptPrepared16RoundsContract, Spec.Gcm.streamCryptPrecomputedSig, Spec.Gcm.streamCryptPrecomputedSig, X86_64.abi,
     X86_64.argRegs, X86_64.stackArg, X86_64.stackArgAddr, List.range, List.range.loop] at h
   exact h hR

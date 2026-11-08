@@ -286,13 +286,13 @@ theorem prepare16_ok {s₀ : State} (hw : InRegions s₀.wr (s₀.gpr .rdi) 1024
 
 /-- It writes none of the context from byte 512 on. -/
 theorem prepare16_written (s : State) (t : List Leak) (s' : State)
-    (hs : (Spec.Gcm.prepare16Contract X86_64.abi).pre s)
+    (hs : (Proof.Gcm.prepare16Contract X86_64.abi).pre s)
     (he : Exec isa Impl.Gcm.X86_64.PrepareAvx.prepare16 s t s') :
-    Sig.writtenWithin (X86_64.abi.withConsts []) Spec.Gcm.prepare16Sig [("ctx", 512)] s s' :=
+    Sig.writtenWithin (X86_64.abi.withConsts []) Proof.Gcm.prepare16Sig [("ctx", 512)] s s' :=
   Prepare16.written16 (fun _ hw _ => WP.mono (prepare16_ok' hw) fun _ h => h.2) s t s' hs he
 
 theorem prepare16_verified :
-    Verified X86_64.target Impl.Gcm.X86_64.PrepareAvx.prepare16 (Spec.Gcm.prepare16Contract X86_64.abi) :=
+    Verified X86_64.target Impl.Gcm.X86_64.PrepareAvx.prepare16 (Proof.Gcm.prepare16Contract X86_64.abi) :=
   Prepare16.verified_ofW _ (fun _ hw _ => prepare16_ok hw) (by decide +kernel) Prepare16.prepare16Avx_ct
 
 /-! ## `vg_aes_gcm_prepare`: the 48 powers -/
@@ -350,8 +350,10 @@ theorem prepareSse_verified :
 
 /-- `prepare` after setting the flag word to 0, on the prepared key context. -/
 theorem prepareFlagged_verified :
-    Verified X86_64.target (Impl.Gcm.X86_64.Flag.prepareFlagged Impl.Gcm.X86_64.PrepareAvx.prepare)
+    Verified X86_64.target (Impl.Gcm.X86_64.Flag.prepareFlagged 16 Impl.Gcm.X86_64.PrepareAvx.prepare16)
       (Spec.Gcm.prepareContract X86_64.abi) :=
-  Prepare.flagged_verified _ (fun _ hw _ => prepare_ok hw) (by decide +kernel) Prepare.flaggedAvx_ct
+  Prepare.flagged_verified (Or.inl rfl) _
+    (fun _ hw _ => WP.mono (prepare16_ok hw) fun _ h => ⟨h.1, h.2.1, fun r h₁ _ => h.2.2.1 r h₁, h.2.2.2⟩)
+    (by decide +kernel) Prepare.flaggedAvx_ct
 
 end VG.Proof.Gcm.X86_64.PrepareAvx

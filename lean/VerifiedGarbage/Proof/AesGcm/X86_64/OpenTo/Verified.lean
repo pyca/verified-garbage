@@ -89,7 +89,7 @@ theorem toPre_prepared {s : State} (h : (Proof.AesGcm.openToPreparedRoundsContra
 
 theorem toPre_prepared16 {s : State} (h : (Proof.AesGcm.openToPrepared16RoundsContract X86_64.abi 2728).pre s) :
     ToPre CtxMode.prepared16 s := by
-  sig_pre [Proof.AesGcm.openToPrepared16RoundsContract, Spec.Gcm.openToPrecomputedSig, Spec.Gcm.openToPrecomputedSig, Spec.Gcm.openToPrepared16Pre, X86_64.abi, X86_64.argRegs,
+  sig_pre [Proof.AesGcm.openToPrepared16RoundsContract, Spec.Gcm.openToPrecomputedSig, Spec.Gcm.openToPrecomputedSig, Proof.Gcm.openToPrepared16Pre, X86_64.abi, X86_64.argRegs,
     stackArgs_six, List.append_eq] at h
   rw [Sig.pairFacts, Sig.pairFacts, Sig.pairFacts, pairFacts_ro _ (by simp)] at h
   simp only [List.map_append, List.filter_append, List.filter_map, List.map_map, List.filterMap_append,
@@ -216,7 +216,7 @@ theorem toSatP_pre : ∃ s, (Proof.AesGcm.openToPreparedRoundsContract X86_64.ab
 theorem toSatP16_pre : ∃ s, (Proof.AesGcm.openToPrepared16RoundsContract X86_64.abi 2728).pre s := by
   refine ⟨toSatP, ?_⟩
   sig_pre [Proof.AesGcm.openToPrepared16RoundsContract, Spec.Gcm.openToPrecomputedSig, Spec.Gcm.openToPrecomputedSig,
-    Spec.Gcm.openToPrepared16Pre, X86_64.abi, X86_64.argRegs, stackArgs_six, List.append_eq, toSatP, toSat, stackArg,
+    Proof.Gcm.openToPrepared16Pre, X86_64.abi, X86_64.argRegs, stackArgs_six, List.append_eq, toSatP, toSat, stackArg,
     stackArgAddr, Mem.readW, Mem.read]
   sig_and_intros
   all_goals first
@@ -303,7 +303,9 @@ theorem ctx_lowF {i : Nat} (hi : i < 129 * 8) : ¬ (0x9000 ≤ (0x1000 + BitVec.
 
 /-- `toSat`, with a prepared key context of 1032 bytes. -/
 def toSatF : State :=
-  { toSat with rd := [⟨0x1000, 1032⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x4000, 0⟩, ⟨0x6000, 0⟩, ⟨0x9008, 48⟩] }
+  { toSat with
+    mem := fun a => if a = 0x1400 then 48 else toSat.mem a
+    rd := [⟨0x1000, 1032⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x4000, 0⟩, ⟨0x6000, 0⟩, ⟨0x9008, 48⟩] }
 
 theorem toSatF_pre : ∃ s, (Proof.AesGcm.Flag.openToFlaggedRoundsContract X86_64.abi 2728).pre s := by
   refine ⟨toSatF, ?_⟩
@@ -315,7 +317,9 @@ theorem toSatF_pre : ∃ s, (Proof.AesGcm.Flag.openToFlaggedRoundsContract X86_6
     | rfl
     | decide
     | exact Region.disjoint_of_sep (by decide)
-    | exact Proof.AesGcm.Flag.flaggedPowers_of_zeroMem fun _ hi => by simp only [ctx_lowF hi, ite_false]
+    | exact Proof.AesGcm.Flag.flaggedPowers_of_zeroMem
+        (fun _ hi => by simp only [Proof.AesGcm.Flag.ctx_ne1024 hi, ctx_lowF (Nat.lt_of_lt_of_le hi (by decide)), ite_false])
+        (by decide)
 
 theorem flagged_implies :
     (toK CtxMode.flagged).Implies (Proof.AesGcm.Flag.openToFlaggedRoundsContract X86_64.abi 2728) :=
