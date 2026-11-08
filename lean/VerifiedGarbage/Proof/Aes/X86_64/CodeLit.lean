@@ -49,6 +49,7 @@ end VG.Impl.Aes.X86_64.AesNi
 
 namespace VG.Impl.Aes.X86_64.Vaes
 materialize_code ctr32
+materialize_code ctr32To
 end VG.Impl.Aes.X86_64.Vaes
 
 namespace VG.Impl.Aes.X86_64.VaesBlocks

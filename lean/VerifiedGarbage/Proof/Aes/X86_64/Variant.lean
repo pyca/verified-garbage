@@ -208,6 +208,21 @@ theorem vaes_ct : ConstantTime isa Proof.Aes.ctr32X86_64.pre Proof.Aes.ctr32X86_
   fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ ⟨a, b, c, d, e, f, _⟩ e₁ e₂ =>
     Vaes.ctr32_ct s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ ⟨a, b, c, d, e, f⟩ e₁ e₂
 
+theorem vaesTo_nosp : NoSp Impl.Aes.X86_64.Ctr32.vaesTo.code := by
+  have : ((instrs Impl.Aes.X86_64.Ctr32.vaesTo.code).all fun i => !Taint.clobbers i .rsp) = true := by
+    rw [← Code.allInstrs_eq]; lit_decide
+  exact fun i hi => by simpa using List.all_eq_true.mp this i hi
+
+/-- `vg_aes_ctr32_to_vaes`. -/
+def vaesTo : Ctr32ToImpl where
+  callee := .vaesTo
+  depth := by lit_decide
+  ok := Vaes.ctr32To_correct
+  ct := Vaes.ctr32To_ct
+  nosp := vaesTo_nosp
+  mxcsr := by lit_decide
+  spSafe := Code.all_of_allInstrs (by lit_decide)
+
 /-- The VAES implementation, `vg_aes_ctr32_vaes`. It goes with
 `vg_aes_expand_key_aesni`, which needs no more CPU features. -/
 def vaes : Ctr32Impl where
@@ -220,6 +235,7 @@ def vaes : Ctr32Impl where
   spSafe := Code.all_of_allInstrs (by lit_decide)
   suffix := "_vaes"
   features := ["aes", "avx", "avx2", "ssse3", "vaes"]
+  ctrTo := some vaesTo
   expand := .aesni
   expandDepth := by lit_decide
   expandOk := aesni_expandKey_ok

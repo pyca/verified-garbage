@@ -7,7 +7,9 @@ public import VerifiedGarbage.Impl.Aes.X86_64.AesNi
 
 `vg_aes_ctr32_vaes(schedule = rdi, rounds = rsi, counter = rdx, data = rcx, n = r8,
 scratch = r9)`, with the contract of `vg_aes_ctr32` (`Proof.Gcm.ctr32Contract`),
-for CPUs with VAES and AVX2 (and AES-NI and SSSE3, for the blocks left).
+for CPUs with VAES and AVX2 (and AES-NI and SSSE3, for the blocks left), and
+its out-of-place form `vg_aes_ctr32_to_vaes`, with the output in `r11`, the
+same code but for the stores and `r11`'s steps (`ctr32To`).
 
 A 256-bit register holds two AES states, one in each 128-bit lane, and the
 VEX.256 `vaesenc` and `vaesenclast` apply a round to each lane with the round
@@ -39,7 +41,7 @@ and every address depends only on the pointers, `rounds` and `n`.
 namespace VG.Impl.Aes.X86_64.Vaes
 
 open VG.X86_64
-open VG.Impl.Aes.X86_64.AesNi (at_ revMask ctrTail)
+open VG.Impl.Aes.X86_64.AesNi (at_ revMask ctrTail dstReg dstStep)
 
 /-- The 128-bit constant `c` into `x` (`VEX.128`, so the upper lane is
 cleared), through `rax` and `xmm13`. -/
@@ -94,12 +96,16 @@ def ctrsK (c m i : XReg) : List XReg → List Instr
   | [] => []
   | b :: bs => ([.vop (.vbin .vpshufb .l256 b c m), .vop (.vbin .vpaddd .l256 c c i)] : List Instr) ++ ctrsK c m i bs
 
-/-- XOR block register `i` into the data blocks `base + 32 (j + i)` and the
-next, through `t`. -/
-def xorDataK (t : XReg) (base : Reg) : List XReg → Nat → List Instr
+/-- XOR block register `i` into the data blocks `src + 32 (j + i)` and the
+next, through `t`, stored to `dst + 32 (j + i)`. -/
+def xorDataKG (t : XReg) (src dst : Reg) : List XReg → Nat → List Instr
   | [], _ => []
-  | b :: bs, j => ([.vmovdquLoad .l256 t (at_ base (32 * j)), .vop (.vbin .vpxor .l256 b b t),
-      .vmovdquStore .l256 (at_ base (32 * j)) b] : List Instr) ++ xorDataK t base bs (j + 1)
+  | b :: bs, j => ([.vmovdquLoad .l256 t (at_ src (32 * j)), .vop (.vbin .vpxor .l256 b b t),
+      .vmovdquStore .l256 (at_ dst (32 * j)) b] : List Instr) ++ xorDataKG t src dst bs (j + 1)
+
+/-- XOR block register `i` into the data blocks `base + 32 (j + i)` and the
+next, through `t`, in place. -/
+def xorDataK (t : XReg) (base : Reg) : List XReg → Nat → List Instr := xorDataKG t base base
 
 /-- AES of both lanes of each block register, with `rounds` (10, 12 or 14) in
 `rsi`, the key schedule at `rdi`, and its last round key at `r10`. -/
@@ -110,17 +116,17 @@ byte-reversed, and both counters advance by two. -/
 def ctrs (regs : List XReg) : List Instr := ctrsK .xmm9 .xmm10 .xmm12 regs
 
 /-- XOR block register `i` into the data blocks `rcx + 32 (j + i)` and the
-next. -/
-def xorData (regs : List XReg) (j : Nat) : List Instr := xorDataK .xmm8 .rcx regs j
+next, stored back there or, out of place (`to`), to `r11 + 32 (j + i)`. -/
+def xorData (regs : List XReg) (j : Nat) (to : Bool) : List Instr := xorDataKG .xmm8 .rcx (dstReg to) regs j
 
 def regs8 : List XReg := [.xmm0, .xmm1, .xmm2, .xmm3, .xmm4, .xmm5, .xmm6, .xmm7]
 
 /-- Sixteen blocks. -/
-def body16 : Prog isa :=
+def body16 (to : Bool) : Prog isa :=
   .seq (.block (ctrs regs8))
     (.seq (aes regs8)
-      (.block (xorData regs8 0 ++ ([.alu .add .rcx (.imm 256), .alu .sub .r8 (.imm 16),
-        .alu .cmp .r8 (.imm 16)] : List Instr))))
+      (.block (xorData regs8 0 to ++ (dstStep to 256 ++ ([.alu .add .rcx (.imm 256), .alu .sub .r8 (.imm 16),
+        .alu .cmp .r8 (.imm 16)] : List Instr)))))
 
 def ctrLoad : List Instr :=
   const .xmm10 revMask ++ ([.vop (.vinserti128 .xmm10 .xmm10 .xmm10 1)] : List Instr) ++
@@ -131,11 +137,19 @@ def ctrLoad : List Instr :=
    .mov .r10 (.reg .rsi), .alu .add .r10 (.reg .r10), .alu .add .r10 (.reg .r10),
    .alu .add .r10 (.reg .r10), .alu .add .r10 (.reg .r10), .alu .add .r10 (.reg .rdi)] : List Instr)
 
-def ctr32 : Prog isa :=
+/-- `vg_aes_ctr32_vaes` (in place), or, out of place (`to`),
+`vg_aes_ctr32_to_vaes` (the blocks read from `rcx` and written to `r11`). -/
+def ctr32G (to : Bool) : Prog isa :=
   .seq (.block [.alu .cmp .r8 (.imm 16)])
-    (.ite .b AesNi.ctr32
+    (.ite .b (AesNi.ctr32T to)
       (.seq (.block ctrLoad)
-        (.seq (.loop body16 .ae)
-          (.seq (.block [.vop .vzeroupper, .alu .cmp .r8 (.imm 8)]) (ctrTail false)))))
+        (.seq (.loop (body16 to) .ae)
+          (.seq (.block [.vop .vzeroupper, .alu .cmp .r8 (.imm 8)]) (ctrTail to)))))
+
+/-- `vg_aes_ctr32_vaes`. -/
+def ctr32 : Prog isa := ctr32G false
+
+/-- `vg_aes_ctr32_to_vaes`. -/
+def ctr32To : Prog isa := ctr32G true
 
 end VG.Impl.Aes.X86_64.Vaes
