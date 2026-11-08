@@ -55,7 +55,7 @@ structure CtxMode where
   len : Nat
   ok : Mem → Addr → Prop
   ge : 256 ≤ len
-  le : len ≤ 1088
+  le : len ≤ 1032
   frame : ∀ {rs : List Region} {m m' : Mem} {p : Addr}, Frame rs m m' →
     (∀ r ∈ rs, (⟨p, len⟩ : Region).Disjoint r) → p.toNat + len ≤ 2 ^ 64 → ok m p → ok m' p
 

@@ -25,6 +25,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Zeroize.Common
+import VerifiedGarbage.Proof.Framework.X86_64.FlagBranch
 meta import VerifiedGarbage.Impl.Gcm.X86_64.PrepareAvx
 meta import VerifiedGarbage.Impl.Gcm.X86_64.PrepareZ
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
@@ -36,6 +38,8 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Zeroize.Common
+meta import VerifiedGarbage.Proof.Framework.X86_64.FlagBranch
 
 /-!
 # Preparing a key context's powers in place: the contract on the registers
@@ -305,7 +309,7 @@ theorem written16 {c : Prog isa}
 
 end VG.Proof.Gcm.X86_64.Prepare16
 
-/-! `vg_aes_gcm_prepare` on the 1088-byte prepared key context, whose word at
+/-! `vg_aes_gcm_prepare` on the 1032-byte prepared key context, whose word at
 byte 1024 says whether the powers are absent (`Proof.AesGcm.Flag.PreparedRepr`): the
 code that computes none (`prepareAbsent`), and each implementation that
 computes them, after setting that word to 0 (`prepareFlagged`). -/
@@ -318,8 +322,8 @@ open VG.Impl.Gcm.X86_64.Flag (storeFlag prepareAbsent prepareFlagged)
 /-- `vg_aes_gcm_prepare`'s contract on the prepared key context, on the
 registers. -/
 def flaggedX86_64 : Contract isa where
-  pre s := s.rd = [] ∧ s.wr = [⟨s.gpr .rdi, 1088⟩] ∧ (s.gpr .rdi).toNat + 1088 ≤ 2 ^ 64 ∧
-    (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨s.gpr .rdi, 1088⟩
+  pre s := s.rd = [] ∧ s.wr = [⟨s.gpr .rdi, 1032⟩] ∧ (s.gpr .rdi).toNat + 1032 ≤ 2 ^ 64 ∧
+    (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨s.gpr .rdi, 1032⟩
   post s s' := Spec.Aes.bytesAt s'.mem (s.gpr .rdi) 256 = Spec.Aes.bytesAt s.mem (s.gpr .rdi) 256 ∧
     Proof.AesGcm.Flag.PreparedRepr s'.mem (s.gpr .rdi)
   pub s₁ s₂ := s₁.gpr .rdi = s₂.gpr .rdi
@@ -334,7 +338,7 @@ def flaggedSat : State where
   of := none
   mem _ := 0
   rd := []
-  wr := [⟨0x1000, 1088⟩]
+  wr := [⟨0x1000, 1032⟩]
 
 theorem flagged_implies : flaggedX86_64.Implies (Proof.AesGcm.Flag.prepareContract X86_64.abi) := by
   sig_implies [Proof.AesGcm.Flag.prepareContract, Proof.AesGcm.Flag.prepareSig, Proof.AesGcm.Flag.preparePost,
@@ -365,7 +369,7 @@ theorem flagged_pre {s₀ : State} (hp : flaggedX86_64.pre s₀) :
 theorem flagged_gpr {s₀ s₁ s : State} {v : BitVec 64} (hp : flaggedX86_64.pre s₀)
     (hm₁ : s₁.mem = s₀.mem.writeW (s₀.gpr .rdi + BitVec.ofNat 64 1024) (v : BitVec 64))
     (hg₁ : ∀ r, r ≠ .rax → s₁.gpr r = s₀.gpr r)
-    {d k : Nat} (hdk : d + k ≤ 1088) (fr : Frame [⟨s₀.gpr .rdi + BitVec.ofNat 64 d, k⟩] s₁.mem s.mem)
+    {d k : Nat} (hdk : d + k ≤ 1032) (fr : Frame [⟨s₀.gpr .rdi + BitVec.ofNat 64 d, k⟩] s₁.mem s.mem)
     (hg : ∀ r, r ≠ .rax → r ≠ .r11 → s.gpr r = s₁.gpr r) : gprPreserved s₀ s := by
   obtain ⟨_, _, _, hret⟩ := hp
   refine ⟨fun r hr => ?_, ?_⟩

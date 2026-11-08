@@ -822,21 +822,21 @@ theorem openToCodeR16_prepared (v : GcmVariant) (r : R16 v) :
 `vg_aes_gcm_open_prepared` itself, which tests the flag again, so that the
 code of `open` on the powers is in one function. The loops that read the
 powers are proven for a context of 1024 bytes holding them, and so read them
-from the 1088-byte context whose flag word is not 1 (`Proof.Gcm.X86_64.Stitch.CtxMode.flagged`). -/
+from the 1032-byte context whose flag word is not 1 (`Proof.Gcm.X86_64.Stitch.CtxMode.flagged`). -/
 
 open Gcm.X86_64.Stitch (SPreM SPreTo StitchOkM StitchOkSmall StitchToOkM StitchToDecOkM) in
 section
 
-theorem inRegions_1024 {rs : List Region} {a : Addr} (h : InRegions rs a 1088) : InRegions rs a 1024 := by
+theorem inRegions_1024 {rs : List Region} {a : Addr} (h : InRegions rs a 1032) : InRegions rs a 1024 := by
   obtain ⟨r, hr, hc⟩ := h
   exact ⟨r, hr, by unfold Region.Contains at hc ⊢; omega⟩
 
-theorem sub_1024 (a : Addr) : Region.Sub ⟨a, 1024⟩ ⟨a, 1088⟩ := Region.sub_prefix (by decide)
+theorem sub_1024 (a : Addr) : Region.Sub ⟨a, 1024⟩ ⟨a, 1032⟩ := Region.sub_prefix (by decide)
 
 theorem sPreM_ofFlagged {s₀ : VG.X86_64.State} {lo : Nat} (h : SPreM Proof.Gcm.X86_64.Stitch.CtxMode.flagged s₀ lo) : SPreM Proof.Gcm.X86_64.Stitch.CtxMode.prepared s₀ lo where
   base := h.base
   k_in := inRegions_1024 h.k_in
-  wrap_k := by have := h.wrap_k; change _ + 1088 ≤ _ at this; change _ + 1024 ≤ _; omega
+  wrap_k := by have := h.wrap_k; change _ + 1032 ≤ _ at this; change _ + 1024 ≤ _; omega
   d_k := h.d_k.sub_right (sub_1024 _)
   p_k := h.p_k.sub_right (sub_1024 _)
   ok := h.ok.2
@@ -848,7 +848,7 @@ theorem sPreTo_ofFlagged {s₀ : VG.X86_64.State} (h : SPreTo Proof.Gcm.X86_64.S
     k_y := h.k_y.sub_left (sub_1024 _)
     k_o := h.k_o.sub_left (sub_1024 _)
     k_p := h.k_p.sub_left (sub_1024 _)
-    wrap_k := by have := h.wrap_k; change _ + 1088 ≤ _ at this; change _ + 1024 ≤ _; omega
+    wrap_k := by have := h.wrap_k; change _ + 1032 ≤ _ at this; change _ + 1024 ≤ _; omega
     ok := h.ok.2 }
 
 /-- Loops on the prepared powers, on a context whose powers are present. -/
@@ -1060,9 +1060,9 @@ def sealFnF (v : GcmVariant) : Gather.SealFn Proof.Gcm.X86_64.Stitch.CtxMode.fla
   .ofFlagged ⟨Spec.Gcm.sealPreparedApi.name ++ v.impl.suffix, sealCodeF v⟩ (sealCodeF_verified v)
     (sealCodeF_spAll v) (sealCodeF_xdepth v) (sealCodeF_mx v)
 
-/-- `splitFrameSatP` with the 1088-byte context. -/
+/-- `splitFrameSatP` with the 1032-byte context. -/
 def splitFrameSatF : VG.X86_64.State :=
-  { Split.splitFrameSat with rd := [⟨0x1000, 1088⟩, ⟨0x2000, 0⟩, ⟨0x2100, 0⟩, ⟨0, 0⟩, ⟨0x8008, 40⟩] }
+  { Split.splitFrameSat with rd := [⟨0x1000, 1032⟩, ⟨0x2000, 0⟩, ⟨0x2100, 0⟩, ⟨0, 0⟩, ⟨0x8008, 40⟩] }
 
 theorem splitFrameSatF_pre :
     ∃ s, (VG.Proof.AesGcm.Flag.sealSplitFlaggedContract X86_64.abi 2672).pre s := by
@@ -1087,7 +1087,7 @@ def splitFnF (v : GcmVariant) : Gather.SplitFn Proof.Gcm.X86_64.Stitch.CtxMode.f
   .ofFlagged ⟨"vg_aes_gcm_seal_split_prepared" ++ v.impl.suffix,
       Impl.StackScratch.X86_64.withStackArgScratch 2616 5
         (Impl.AesGcm.X86_64.SealSplit.«seal» (v.impl.splitMidR (v.impl.withBlk (blkR v)) (blkToR v).fn))⟩
-    (VG.X86_64.Verified.widenFirstArray (n := 128) (n' := 136) (by decide)
+    (VG.X86_64.Verified.widenFirstArray (n := 128) (n' := 129) (by decide)
       (Split.sealSplitPrepared_framed v.impl (blkR v) (blkToR v) Short.shortFacts)
       (fun _ _ _ _ _ _ _ _ _ _ _ _ h => ⟨h.1, h.2.1, h.2.2.2⟩) splitFrameSatF_pre)
     (X86_64.withStackArgScratch_spSafe (Split.sealSplitR_spSafe v.impl (blkR v) (blkToR v)))
