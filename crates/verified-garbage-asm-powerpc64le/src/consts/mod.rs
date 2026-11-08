@@ -39,6 +39,10 @@ mod vg_p256_comb;
 pub use vg_p256_comb::VG_P256_COMB;
 
 #[rustfmt::skip]
+mod vg_p521_comb;
+pub use vg_p521_comb::VG_P521_COMB;
+
+#[rustfmt::skip]
 mod vg_rsa_keygen_trial32;
 pub use vg_rsa_keygen_trial32::VG_RSA_KEYGEN_TRIAL32;
 

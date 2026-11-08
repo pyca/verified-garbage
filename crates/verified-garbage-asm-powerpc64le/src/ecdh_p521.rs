@@ -1115,6 +1115,10 @@ bl {vg_p521_mul_mod_p}
         vg_p521_mul_mod_p = sym super::ec_p521::vg_p521_mul_mod_p::vg_p521_mul_mod_p,
         vg_p521_add_mod_p = sym super::ec_p521::vg_p521_add_mod_p::vg_p521_add_mod_p,
         vg_p521_sub_mod_p = sym super::ec_p521::vg_p521_sub_mod_p::vg_p521_sub_mod_p,
-        vg_p521_mul = sym super::ec_p521::vg_p521_mul::vg_p521_mul,
+        vg_p521_mul = sym super::ecdh_p521::vg_p521_mul::vg_p521_mul,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_p521_mul.rs"]
+pub(crate) mod vg_p521_mul;
