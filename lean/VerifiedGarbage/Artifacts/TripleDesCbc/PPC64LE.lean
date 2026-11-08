@@ -19,8 +19,8 @@ def artifacts : List Artifact := [
     stack := 608
     verified := Proof.TripleDes.PPC64LE.cbcEnc_framed Proof.TripleDes.PPC64LE.Modes.cbcEncryptChained_verified },
   Spec.TripleDes.cbcDecryptChainedApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 608 .r7 72 Impl.TripleDes.PPC64LE.cbcDecryptChained
-    stack := 608
+    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 1632 .r7 200 Impl.TripleDes.PPC64LE.cbcDecryptChained
+    stack := 1632
     verified := Proof.TripleDes.PPC64LE.cbcDec_framed Proof.TripleDes.PPC64LE.Modes.cbcDecryptChained_verified }]
 
 end VG.Artifacts.TripleDesCbc.PPC64LE
