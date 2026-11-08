@@ -19,7 +19,7 @@
 /// * `data` and `tag` must not overlap each other, `key`, `nonce` or `aad` (distinct Rust objects never do).
 /// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 772 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_chacha20_poly1305_seal(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "jaQkHP3//4uEJOgCAACJRCQEi4Qk7AIAAIlEJAiLhCTwAgAAiUQkDIuEJPQCAACJRCQQi4Qk+AIAAIlEJBSLhCT8AgAAiUQkGIuEJAADAACJRCQcieCDwCSJRCQgi0QkIItMJBSJTCQgiRiJcASJeAiJaAyJx4tMJASLVCQIuGV4cGGJR0C4bmQgM4lHRLgyLWJ5iUdIuHRlIGuJR0yLAYlHUItBBIlHVItBCIlHWItBDIlHXItBEIlHYItBFIlHZItBGIlHaItBHIlHbLgAAAAAiUdwiwKJR3SLQgSJR3iLQgiJR3yJ+YPBQIn6gcKAAAAAUlE="
 call {vg_chacha20_block}
@@ -85,7 +85,7 @@ call {vg_poly1305_finalize_scratch}
 /// * `data` must not overlap `key`, `nonce`, `aad` or `tag` (distinct Rust objects never do).
 /// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 772 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_chacha20_poly1305_open(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_open(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "jaQkHP3//4uEJOgCAACJRCQEi4Qk7AIAAIlEJAiLhCTwAgAAiUQkDIuEJPQCAACJRCQQi4Qk+AIAAIlEJBSLhCT8AgAAiUQkGIuEJAADAACJRCQcieCDwCSJRCQgi0QkIItMJBSJTCQgiRiJcASJeAiJaAyJx4tMJASLVCQIuGV4cGGJR0C4bmQgM4lHRLgyLWJ5iUdIuHRlIGuJR0yLAYlHUItBBIlHVItBCIlHWItBDIlHXItBEIlHYItBFIlHZItBGIlHaItBHIlHbLgAAAAAiUdwiwKJR3SLQgSJR3iLQgiJR3yJ+YPBQIn6gcKAAAAAUlE="
 call {vg_chacha20_block}
@@ -167,7 +167,7 @@ jmp 29f
 /// * `dst` must not overlap `key`, `nonce`, `aad`, `src` or `tag` (distinct Rust objects never do).
 /// * None of `key`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 780 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_chacha20_poly1305_open_to(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_open_to(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "jaQkFP3//4uEJPACAACJRCQEi4Qk9AIAAIlEJAiLhCT4AgAAiUQkDIuEJPwCAACJRCQQi4QkAAMAAIlEJBSLhCQEAwAAiUQkGIuEJAgDAACJRCQci4QkDAMAAIlEJCCLhCQQAwAAiUQkJIngg8AsiUQkKItMJByLVCQki0QkKIlUJByJTCQgiRiJcASJeAiJaAyJx4tMJASLVCQIuGV4cGGJR0C4bmQgM4lHRLgyLWJ5iUdIuHRlIGuJR0yLAYlHUItBBIlHVItBCIlHWItBDIlHXItBEIlHYItBFIlHZItBGIlHaItBHIlHbLgAAAAAiUdwiwKJR3SLQgSJR3iLQgiJR3yJ+YPBQIn6gcKAAAAAUlE="
 call {vg_chacha20_block}
@@ -249,7 +249,7 @@ jmp 29f
 /// * `dst` and `tag` must not overlap each other, `key`, `nonce`, `aad`, `src` or the slices `src` lists (distinct Rust objects never do).
 /// * None of `key`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 824 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_chacha20_poly1305_seal_gather(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal_gather(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "jWQk0IlcJCSJdCQoiXwkLItEJDSJBCSLRCQ4iUQkBItEJDyJRCQIi0QkQIlEJAyLRCRMiUQkEItEJFCJRCQUi0QkVIlEJBiLdCREi1wkSItUJEyD+wA="
 je 20f
@@ -302,7 +302,7 @@ pub const VG_CHACHA20_POLY1305_SEAL_SSSE3_FEATURES: verified_garbage_cpu::Featur
 /// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 772 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_chacha20_poly1305_seal_ssse3(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal_ssse3(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "jaQkHP3//4uEJOgCAACJRCQEi4Qk7AIAAIlEJAiLhCTwAgAAiUQkDIuEJPQCAACJRCQQi4Qk+AIAAIlEJBSLhCT8AgAAiUQkGIuEJAADAACJRCQcieCDwCSJRCQgi0QkIItMJBSJTCQgiRiJcASJeAiJaAyJx4tMJASLVCQIuGV4cGGJR0C4bmQgM4lHRLgyLWJ5iUdIuHRlIGuJR0yLAYlHUItBBIlHVItBCIlHWItBDIlHXItBEIlHYItBFIlHZItBGIlHaItBHIlHbLgAAAAAiUdwiwKJR3SLQgSJR3iLQgiJR3yJ+YPBQIn6gcKAAAAAUlE="
 call {vg_chacha20_block}
@@ -372,7 +372,7 @@ pub const VG_CHACHA20_POLY1305_OPEN_SSSE3_FEATURES: verified_garbage_cpu::Featur
 /// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 772 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_chacha20_poly1305_open_ssse3(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_open_ssse3(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "jaQkHP3//4uEJOgCAACJRCQEi4Qk7AIAAIlEJAiLhCTwAgAAiUQkDIuEJPQCAACJRCQQi4Qk+AIAAIlEJBSLhCT8AgAAiUQkGIuEJAADAACJRCQcieCDwCSJRCQgi0QkIItMJBSJTCQgiRiJcASJeAiJaAyJx4tMJASLVCQIuGV4cGGJR0C4bmQgM4lHRLgyLWJ5iUdIuHRlIGuJR0yLAYlHUItBBIlHVItBCIlHWItBDIlHXItBEIlHYItBFIlHZItBGIlHaItBHIlHbLgAAAAAiUdwiwKJR3SLQgSJR3iLQgiJR3yJ+YPBQIn6gcKAAAAAUlE="
 call {vg_chacha20_block}
@@ -458,7 +458,7 @@ pub const VG_CHACHA20_POLY1305_OPEN_TO_SSSE3_FEATURES: verified_garbage_cpu::Fea
 /// * None of `key`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 780 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_chacha20_poly1305_open_to_ssse3(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_open_to_ssse3(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "jaQkFP3//4uEJPACAACJRCQEi4Qk9AIAAIlEJAiLhCT4AgAAiUQkDIuEJPwCAACJRCQQi4QkAAMAAIlEJBSLhCQEAwAAiUQkGIuEJAgDAACJRCQci4QkDAMAAIlEJCCLhCQQAwAAiUQkJIngg8AsiUQkKItMJByLVCQki0QkKIlUJByJTCQgiRiJcASJeAiJaAyJx4tMJASLVCQIuGV4cGGJR0C4bmQgM4lHRLgyLWJ5iUdIuHRlIGuJR0yLAYlHUItBBIlHVItBCIlHWItBDIlHXItBEIlHYItBFIlHZItBGIlHaItBHIlHbLgAAAAAiUdwiwKJR3SLQgSJR3iLQgiJR3yJ+YPBQIn6gcKAAAAAUlE="
 call {vg_chacha20_block}
@@ -544,7 +544,7 @@ pub const VG_CHACHA20_POLY1305_SEAL_GATHER_SSSE3_FEATURES: verified_garbage_cpu:
 /// * None of `key`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 824 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_chacha20_poly1305_seal_gather_ssse3(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal_gather_ssse3(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "jWQk0IlcJCSJdCQoiXwkLItEJDSJBCSLRCQ4iUQkBItEJDyJRCQIi0QkQIlEJAyLRCRMiUQkEItEJFCJRCQUi0QkVIlEJBiLdCREi1wkSItUJEyD+wA="
 je 20f

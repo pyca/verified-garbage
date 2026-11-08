@@ -2,26 +2,94 @@
 //! The dispatchers of the verified `aes_cfb` functions for `powerpc64le`
 //! (`crate::aes_cfb`, `VG.Rust.dispatcher`).
 
-/// `vg_aes_cfb128_encrypt`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::aes_cfb::vg_aes_cfb128_encrypt as vg_aes_cfb128_encrypt_auto;
+/// AES-CFB128 encryption (NIST SP 800-38A §6.3, with 128-bit segments) of whole blocks, in place: replaces the `n` 16-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
+///
+/// Contract: `VG.Spec.Cfb.aesEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
+///
+/// It runs `vg_aes_cfb128_encrypt`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `16 * n` bytes.
+/// * `scratch` must be valid for reads and writes of 2176 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `scratch` on return are unspecified.
+/// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_aes_cfb128_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::aes_cfb::vg_aes_cfb128_encrypt(schedule, rounds, iv, data, n, scratch) }
+}
 
-/// `vg_aes_cfb128_decrypt`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::aes_cfb::vg_aes_cfb128_decrypt as vg_aes_cfb128_decrypt_auto;
+/// AES-CFB128 decryption (NIST SP 800-38A §6.3, with 128-bit segments) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
+///
+/// Contract: `VG.Spec.Cfb.aesDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
+///
+/// It runs `vg_aes_cfb128_decrypt`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `16 * n` bytes.
+/// * `scratch` must be valid for reads and writes of 2176 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `scratch` on return are unspecified.
+/// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_aes_cfb128_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::aes_cfb::vg_aes_cfb128_decrypt(schedule, rounds, iv, data, n, scratch) }
+}
 
-/// `vg_aes_cfb128_encrypt_final`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::aes_cfb::vg_aes_cfb128_encrypt_final as vg_aes_cfb128_encrypt_final_auto;
+/// AES-CFB128 encryption (NIST SP 800-38A §6.3, with 128-bit segments) of the last piece of a message, of any length, in place: replaces its whole 16-byte blocks `P₁ … Pₙ₋₁` at `data` with `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Pₙ*` of `u` bytes with `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, so that a further call continues the message, if `len` is a multiple of 16 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
+///
+/// Contract: `VG.Spec.Cfb.aesEncryptFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedule, the chaining value or the data.
+///
+/// It runs `vg_aes_cfb128_encrypt_final`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 2176 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `scratch` on return are unspecified.
+/// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the 96 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_aes_cfb128_encrypt_final_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::aes_cfb::vg_aes_cfb128_encrypt_final(schedule, rounds, iv, data, len, scratch) }
+}
 
-/// `vg_aes_cfb128_decrypt_final`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::aes_cfb::vg_aes_cfb128_decrypt_final as vg_aes_cfb128_decrypt_final_auto;
+/// AES-CFB128 decryption (NIST SP 800-38A §6.3, with 128-bit segments) of the last piece of a message, of any length, in place: replaces its whole 16-byte blocks `C₁ … Cₙ₋₁` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Cₙ*` of `u` bytes with `Pₙ* = Cₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, the last whole block at `data` on entry, so that a further call continues the message, if `len` is a multiple of 16 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
+///
+/// Contract: `VG.Spec.Cfb.aesDecryptFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedule, the chaining value or the data.
+///
+/// It runs `vg_aes_cfb128_decrypt_final`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 2176 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `scratch` on return are unspecified.
+/// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the 96 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_aes_cfb128_decrypt_final_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::aes_cfb::vg_aes_cfb128_decrypt_final(schedule, rounds, iv, data, len, scratch) }
+}

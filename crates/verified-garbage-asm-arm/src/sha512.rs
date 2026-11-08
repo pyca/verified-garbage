@@ -12,7 +12,7 @@
 /// * `state` must be valid for reads and writes of 192 bytes.
 /// * `state` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha384_init(state: *mut [u8; 192]) {
+pub(crate) unsafe extern "C" fn vg_sha384_init(state: *mut [u8; 192]) {
     core::arch::naked_asm!(
         r"movw r12, #40664
 movt r12, #49413
@@ -75,7 +75,7 @@ bx lr",
 /// * `state` must be valid for reads and writes of 192 bytes.
 /// * `state` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha512_init(state: *mut [u8; 192]) {
+pub(crate) unsafe extern "C" fn vg_sha512_init(state: *mut [u8; 192]) {
     core::arch::naked_asm!(
         r"movw r12, #51464
 movt r12, #62396
@@ -138,7 +138,7 @@ bx lr",
 /// * `state` must be valid for reads and writes of 192 bytes.
 /// * `state` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha512_224_init(state: *mut [u8; 192]) {
+pub(crate) unsafe extern "C" fn vg_sha512_224_init(state: *mut [u8; 192]) {
     core::arch::naked_asm!(
         r"movw r12, #19874
 movt r12, #6484
@@ -201,7 +201,7 @@ bx lr",
 /// * `state` must be valid for reads and writes of 192 bytes.
 /// * `state` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha512_256_init(state: *mut [u8; 192]) {
+pub(crate) unsafe extern "C" fn vg_sha512_256_init(state: *mut [u8; 192]) {
     core::arch::naked_asm!(
         r"movw r12, #63276
 movt r12, #64555
@@ -266,7 +266,7 @@ bx lr",
 /// * `state` must not overlap `data` or the arguments on the stack (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha512_update(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_sha512_update(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r"sub sp, sp, #1392
 add r12, sp, #0
@@ -418,7 +418,7 @@ bx lr",
 /// * `state` and `out` must not overlap each other or the arguments on the stack (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha512_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
+pub(crate) unsafe extern "C" fn vg_sha512_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
         r"sub sp, sp, #1392
 add r12, sp, #0
@@ -568,7 +568,7 @@ bx lr",
 /// * `state` and `out` must not overlap each other or the arguments on the stack (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha384_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 48]) {
+pub(crate) unsafe extern "C" fn vg_sha384_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 48]) {
     core::arch::naked_asm!(
         r"sub sp, sp, #1392
 add r12, sp, #0
@@ -706,7 +706,7 @@ bx lr",
 /// * `state` and `out` must not overlap each other or the arguments on the stack (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha512_256_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 32]) {
+pub(crate) unsafe extern "C" fn vg_sha512_256_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
         r"sub sp, sp, #1392
 add r12, sp, #0
@@ -832,7 +832,7 @@ bx lr",
 /// * `state` and `out` must not overlap each other or the arguments on the stack (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha512_224_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 28]) {
+pub(crate) unsafe extern "C" fn vg_sha512_224_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
         r"sub sp, sp, #1392
 add r12, sp, #0
@@ -953,7 +953,7 @@ bx lr",
 /// * `out` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `data` nor `out` may overlap the 584 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha384_digest(data: *const u8, len: usize, out: *mut [u8; 48]) {
+pub(crate) unsafe extern "C" fn vg_sha384_digest(data: *const u8, len: usize, out: *mut [u8; 48]) {
     core::arch::naked_asm!(
         r"sub sp, sp, #568
 add r3, sp, #0
@@ -1175,7 +1175,7 @@ bx lr",
 /// * `out` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `data` nor `out` may overlap the 584 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha512_digest(data: *const u8, len: usize, out: *mut [u8; 64]) {
+pub(crate) unsafe extern "C" fn vg_sha512_digest(data: *const u8, len: usize, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
         r"sub sp, sp, #568
 add r3, sp, #0
@@ -1397,7 +1397,7 @@ bx lr",
 /// * `out` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `data` nor `out` may overlap the 584 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha512_224_digest(data: *const u8, len: usize, out: *mut [u8; 28]) {
+pub(crate) unsafe extern "C" fn vg_sha512_224_digest(data: *const u8, len: usize, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
         r"sub sp, sp, #568
 add r3, sp, #0
@@ -1619,7 +1619,7 @@ bx lr",
 /// * `out` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `data` nor `out` may overlap the 584 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha512_256_digest(data: *const u8, len: usize, out: *mut [u8; 32]) {
+pub(crate) unsafe extern "C" fn vg_sha512_256_digest(data: *const u8, len: usize, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
         r"sub sp, sp, #568
 add r3, sp, #0

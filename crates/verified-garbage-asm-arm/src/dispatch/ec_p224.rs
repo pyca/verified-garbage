@@ -18,7 +18,7 @@
 /// * None of `out`, `d` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_ec_p224_public_key_auto(out: *mut [u8; 57], d: *const [u8; 28], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe fn vg_ec_p224_public_key_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 57], d: *const [u8; 28], scratch: *mut [u64; 1024]) -> u32 {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(out: *mut [u8; 57], d: *const [u8; 28], scratch: *mut [u64; 1024]) -> u32;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only

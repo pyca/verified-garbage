@@ -12,7 +12,7 @@
 /// * `ek` must be valid for reads of 1184 bytes.
 /// * `ek` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_mlkem768_check_ek(ek: *const [u8; 1184]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_mlkem768_check_ek(ek: *const [u8; 1184]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd2802009,0xf2bfe049,0xf2c08069,0xf2ffe0a9,0x4e080d30,0xd280e0c9,0xf2bfe109,0xf2c14129
 .inst 0xf2ffe169,0x4e181d30,0xd281ffe9,0x4e040d31,0xd281a029,0x4e040d32,0x6f00e413,0xd2800c0b
@@ -40,7 +40,7 @@ cbnz x11, 20b
 /// * `ek`, `dk` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
 /// * None of `seed`, `ek`, `dk` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_mlkem768_keygen(seed: *const [u8; 64], ek: *mut [u8; 1184], dk: *mut [u8; 2400], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_mlkem768_keygen(seed: *const [u8; 64], ek: *mut [u8; 1184], dk: *mut [u8; 2400], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd10083ff,0xf90003fe,0xf90007e3
 bl {vg_mlkem768_keygen_body}
@@ -70,7 +70,7 @@ bl {vg_zeroize}
 /// * `key`, `ct` and `scratch` must not overlap each other, `ek` or `m` (distinct Rust objects never do).
 /// * None of `ek`, `m`, `key`, `ct` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_mlkem768_encaps(ek: *const [u8; 1184], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_mlkem768_encaps(ek: *const [u8; 1184], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd10083ff,0xf90003fe,0xf90007e4
 bl {vg_mlkem768_encaps_body}
@@ -102,7 +102,7 @@ bl {vg_zeroize}
 /// * `key`, `ct` and `scratch` must not overlap each other, `ek`, `h` or `m` (distinct Rust objects never do).
 /// * None of `ek`, `h`, `m`, `key`, `ct` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_mlkem768_encaps_h(ek: *const [u8; 1184], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_mlkem768_encaps_h(ek: *const [u8; 1184], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd10083ff,0xf90003fe,0xf90007e5
 bl {vg_mlkem768_encaps_h_body}
@@ -130,7 +130,7 @@ bl {vg_zeroize}
 /// * `key` and `scratch` must not overlap each other, `dk` or `ct` (distinct Rust objects never do).
 /// * None of `dk`, `ct`, `key` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_mlkem768_decaps(dk: *const [u8; 2400], ct: *const [u8; 1088], key: *mut [u8; 32], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_mlkem768_decaps(dk: *const [u8; 2400], ct: *const [u8; 1088], key: *mut [u8; 32], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd10083ff,0xf90003fe,0xf90007e3
 bl {vg_mlkem768_decaps_body}
@@ -162,7 +162,7 @@ pub const VG_MLKEM768_KEYGEN_X2_SHA3_FEATURES: verified_garbage_cpu::Features = 
 /// * None of `seed`, `ek`, `dk` and `scratch` may overlap the 160 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_mlkem768_keygen_x2_sha3(seed: *const [u8; 64], ek: *mut [u8; 1184], dk: *mut [u8; 2400], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_mlkem768_keygen_x2_sha3(seed: *const [u8; 64], ek: *mut [u8; 1184], dk: *mut [u8; 2400], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd10083ff,0xf90003fe,0xf90007e3
 bl {vg_mlkem768_keygen_body_x2_sha3}
@@ -196,7 +196,7 @@ pub const VG_MLKEM768_ENCAPS_X2_SHA3_FEATURES: verified_garbage_cpu::Features = 
 /// * None of `ek`, `m`, `key`, `ct` and `scratch` may overlap the 160 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_mlkem768_encaps_x2_sha3(ek: *const [u8; 1184], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_mlkem768_encaps_x2_sha3(ek: *const [u8; 1184], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd10083ff,0xf90003fe,0xf90007e4
 bl {vg_mlkem768_encaps_body_x2_sha3}
@@ -232,7 +232,7 @@ pub const VG_MLKEM768_ENCAPS_H_X2_SHA3_FEATURES: verified_garbage_cpu::Features 
 /// * None of `ek`, `h`, `m`, `key`, `ct` and `scratch` may overlap the 160 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_mlkem768_encaps_h_x2_sha3(ek: *const [u8; 1184], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_mlkem768_encaps_h_x2_sha3(ek: *const [u8; 1184], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd10083ff,0xf90003fe,0xf90007e5
 bl {vg_mlkem768_encaps_h_body_x2_sha3}
@@ -264,7 +264,7 @@ pub const VG_MLKEM768_DECAPS_X2_SHA3_FEATURES: verified_garbage_cpu::Features = 
 /// * None of `dk`, `ct`, `key` and `scratch` may overlap the 160 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_mlkem768_decaps_x2_sha3(dk: *const [u8; 2400], ct: *const [u8; 1088], key: *mut [u8; 32], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_mlkem768_decaps_x2_sha3(dk: *const [u8; 2400], ct: *const [u8; 1088], key: *mut [u8; 32], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd10083ff,0xf90003fe,0xf90007e3
 bl {vg_mlkem768_decaps_body_x2_sha3}
@@ -296,7 +296,7 @@ pub const VG_MLKEM768_KEYGEN_X2_SHA3_KECCAK_SHA3_FEATURES: verified_garbage_cpu:
 /// * None of `seed`, `ek`, `dk` and `scratch` may overlap the 160 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_mlkem768_keygen_x2_sha3_keccak_sha3(seed: *const [u8; 64], ek: *mut [u8; 1184], dk: *mut [u8; 2400], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_mlkem768_keygen_x2_sha3_keccak_sha3(seed: *const [u8; 64], ek: *mut [u8; 1184], dk: *mut [u8; 2400], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd10083ff,0xf90003fe,0xf90007e3
 bl {vg_mlkem768_keygen_body_x2_sha3_keccak_sha3}
@@ -330,7 +330,7 @@ pub const VG_MLKEM768_ENCAPS_X2_SHA3_KECCAK_SHA3_FEATURES: verified_garbage_cpu:
 /// * None of `ek`, `m`, `key`, `ct` and `scratch` may overlap the 160 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_mlkem768_encaps_x2_sha3_keccak_sha3(ek: *const [u8; 1184], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_mlkem768_encaps_x2_sha3_keccak_sha3(ek: *const [u8; 1184], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd10083ff,0xf90003fe,0xf90007e4
 bl {vg_mlkem768_encaps_body_x2_sha3_keccak_sha3}
@@ -366,7 +366,7 @@ pub const VG_MLKEM768_ENCAPS_H_X2_SHA3_KECCAK_SHA3_FEATURES: verified_garbage_cp
 /// * None of `ek`, `h`, `m`, `key`, `ct` and `scratch` may overlap the 160 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_mlkem768_encaps_h_x2_sha3_keccak_sha3(ek: *const [u8; 1184], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_mlkem768_encaps_h_x2_sha3_keccak_sha3(ek: *const [u8; 1184], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd10083ff,0xf90003fe,0xf90007e5
 bl {vg_mlkem768_encaps_h_body_x2_sha3_keccak_sha3}
@@ -398,7 +398,7 @@ pub const VG_MLKEM768_DECAPS_X2_SHA3_KECCAK_SHA3_FEATURES: verified_garbage_cpu:
 /// * None of `dk`, `ct`, `key` and `scratch` may overlap the 160 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_mlkem768_decaps_x2_sha3_keccak_sha3(dk: *const [u8; 2400], ct: *const [u8; 1088], key: *mut [u8; 32], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_mlkem768_decaps_x2_sha3_keccak_sha3(dk: *const [u8; 2400], ct: *const [u8; 1088], key: *mut [u8; 32], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd10083ff,0xf90003fe,0xf90007e3
 bl {vg_mlkem768_decaps_body_x2_sha3_keccak_sha3}

@@ -20,7 +20,7 @@
 /// * None of `schedule`, `ctr`, `data` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_ctr_auto(schedule: *const [u8; 240], rounds: usize, ctr: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
+pub unsafe fn vg_aes_ctr_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, ctr: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(schedule: *const [u8; 240], rounds: usize, ctr: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -72,7 +72,7 @@ pub unsafe fn vg_aes_ctr_auto(schedule: *const [u8; 240], rounds: usize, ctr: *m
 /// * None of `schedule`, `ctr`, `data` and `scratch` may overlap the return address on the stack or the 116 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_ctr_final_auto(schedule: *const [u8; 240], rounds: usize, ctr: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
+pub unsafe fn vg_aes_ctr_final_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, ctr: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(schedule: *const [u8; 240], rounds: usize, ctr: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only

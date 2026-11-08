@@ -14,7 +14,7 @@
 /// * `p` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_zeroize_auto(p: *mut u8, len: usize) {
+pub unsafe fn vg_zeroize_auto(_dit: verified_garbage_cpu::Dit<'_>, p: *mut u8, len: usize) {
     /// The type of the implementations.
     type Impl = unsafe extern "sysv64" fn(p: *mut u8, len: usize);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only

@@ -19,7 +19,7 @@ pub const VG_AES_SIV_INIT_AES_FEATURES: verified_garbage_cpu::Features = verifie
 /// * Neither `key` nor `ctx` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_siv_init_aes(key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
+pub(crate) unsafe extern "C" fn vg_aes_siv_init_aes(key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
     core::arch::naked_asm!(
         r".inst 0xd12803ff,0x910003e3,0xf9044073,0xf9044474,0xf9044875,0xf9044c76,0xf904507e,0x91000013
 .inst 0xd341fc34,0x91000055,0x91000076,0x91000281
@@ -47,7 +47,7 @@ bl {vg_aes_expand_key_scratch_aes}
 /// * `ctx` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `ctx` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_siv_init(key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
+pub(crate) unsafe extern "C" fn vg_aes_siv_init(key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
     core::arch::naked_asm!(
         r".inst 0xd12803ff,0x910003e3,0xf9044073,0xf9044474,0xf9044875,0xf9044c76,0xf904507e,0x91000013
 .inst 0xd341fc34,0x91000055,0x91000076,0x91000281
@@ -81,7 +81,7 @@ pub const VG_AES_SIV_ENCRYPT_AES_FEATURES: verified_garbage_cpu::Features = veri
 /// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the 2576 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_siv_encrypt_aes(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_aes_siv_encrypt_aes(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r".inst 0xd12843ff,0x910003e7,0xf90050f3,0xf90054f4,0xf90058f5,0xf9005cf6,0xf90060f7,0xf90064f8
 .inst 0xf90068f9,0xf9006cfa,0xf90070fb,0xf90074fc,0xf90078fe,0xf9007ce6,0x910000f3,0x91000014
@@ -218,7 +218,7 @@ pub const VG_AES_SIV_DECRYPT_AES_FEATURES: verified_garbage_cpu::Features = veri
 /// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the 2576 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_siv_decrypt_aes(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_siv_decrypt_aes(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd12843ff,0x910003e7,0xf90050f3,0xf90054f4,0xf90058f5,0xf9005cf6,0xf90060f7,0xf90064f8
 .inst 0xf90068f9,0xf9006cfa,0xf90070fb,0xf90074fc,0xf90078fe,0xf9007ce6,0x910000f3,0x91000014
@@ -368,7 +368,7 @@ b 229f
 /// * `data` and `siv` must not overlap each other, `ctx`, `ads` or the slices `ads` lists (distinct Rust objects never do).
 /// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the 2576 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_siv_encrypt(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_aes_siv_encrypt(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r".inst 0xd12843ff,0x910003e7,0xf90050f3,0xf90054f4,0xf90058f5,0xf9005cf6,0xf90060f7,0xf90064f8
 .inst 0xf90068f9,0xf9006cfa,0xf90070fb,0xf90074fc,0xf90078fe,0xf9007ce6,0x910000f3,0x91000014
@@ -501,7 +501,7 @@ b 218f
 /// * `data` must not overlap `ctx`, `ads`, the slices `ads` lists or `siv` (distinct Rust objects never do).
 /// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the 2576 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_siv_decrypt(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_siv_decrypt(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd12843ff,0x910003e7,0xf90050f3,0xf90054f4,0xf90058f5,0xf9005cf6,0xf90060f7,0xf90064f8
 .inst 0xf90068f9,0xf9006cfa,0xf90070fb,0xf90074fc,0xf90078fe,0xf9007ce6,0x910000f3,0x91000014

@@ -17,7 +17,7 @@
 /// * `scratch` must not overlap `public`, `digest` or `sig` (distinct Rust objects never do).
 /// * None of `public`, `digest`, `sig` and `scratch` may overlap the return address on the stack or the 96 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ecdsa_p384_verify(public: *const [u8; 97], digest: *const u8, digest_len: usize, sig: *const [u8; 96], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p384_verify(public: *const [u8; 97], digest: *const u8, digest_len: usize, sig: *const [u8; 96], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI1kJKhJieFJg8EISIP6MA=="
 jb 20f
@@ -181,7 +181,7 @@ pub const VG_ECDSA_P384_VERIFY_ADX_FEATURES: verified_garbage_cpu::Features = ve
 /// * None of `public`, `digest`, `sig` and `scratch` may overlap the return address on the stack or the 96 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ecdsa_p384_verify_adx(public: *const [u8; 97], digest: *const u8, digest_len: usize, sig: *const [u8; 96], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p384_verify_adx(public: *const [u8; 97], digest: *const u8, digest_len: usize, sig: *const [u8; 96], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI1kJKhJieFJg8EISIP6MA=="
 jb 20f
@@ -345,7 +345,7 @@ call {vg_p384_mul_mod_p_adx}
 /// * None of `out`, `d`, `digest`, `scratch` and `hmac` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * `hmac` must be the `as_ptr()` of one of the `Hmac` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ecdsa_p384_sign(out: *mut [u8; 96], d: *const [u8; 48], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p384_sign(out: *mut [u8; 96], d: *const [u8; 48], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "TInBTYtRIE2LWShBUVBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBBU0FSV1ZSUVBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQMcBIiYQkQAEAADHASImEJEgBAAAxwEiJhCRQAQAAMcBIiYQkWAEAADHASImEJGABAAAxwEiJhCRoAQAAMcBIiYQkcAEAADHASImEJHgBAAAxwEiJhCSAAQAASIuMJNgAAAC4MAAAAEg5wUgPQ8hIiedIgcdwAQAASCnPSIu0JMAAAABFMcA="
 20:
@@ -399,7 +399,7 @@ pub const VG_ECDSA_P384_SIGN_ADX_FEATURES: verified_garbage_cpu::Features = veri
 /// * `hmac` must be the `as_ptr()` of one of the `Hmac` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 /// * The CPU must support the `bmi2`, `adx`, `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ecdsa_p384_sign_adx(out: *mut [u8; 96], d: *const [u8; 48], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p384_sign_adx(out: *mut [u8; 96], d: *const [u8; 48], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "TInBTYtRIE2LWShBUVBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBBU0FSV1ZSUVBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQMcBIiYQkQAEAADHASImEJEgBAAAxwEiJhCRQAQAAMcBIiYQkWAEAADHASImEJGABAAAxwEiJhCRoAQAAMcBIiYQkcAEAADHASImEJHgBAAAxwEiJhCSAAQAASIuMJNgAAAC4MAAAAEg5wUgPQ8hIiedIgcdwAQAASCnPSIu0JMAAAABFMcA="
 20:

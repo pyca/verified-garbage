@@ -17,7 +17,7 @@
 /// * None of `inner`, `outer` and `key` may overlap the return address on the stack or the 3440 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_hmac_sha512_init_auto(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize) {
+pub unsafe fn vg_hmac_sha512_init_auto(_dit: verified_garbage_cpu::Dit<'_>, inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize) {
     /// The type of the implementations.
     type Impl = unsafe extern "sysv64" fn(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -72,7 +72,7 @@ pub unsafe fn vg_hmac_sha512_init_auto(inner: *mut [u8; 192], outer: *mut [u8; 1
 /// * None of `inner`, `outer` and `out` may overlap the return address on the stack or the 1896 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_hmac_sha512_finalize_auto(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 64]) {
+pub unsafe fn vg_hmac_sha512_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 64]) {
     /// The type of the implementations.
     type Impl = unsafe extern "sysv64" fn(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 64]);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only

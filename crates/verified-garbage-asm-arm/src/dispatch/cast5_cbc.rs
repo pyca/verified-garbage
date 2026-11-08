@@ -2,14 +2,44 @@
 //! The dispatchers of the verified `cast5_cbc` functions for `arm`
 //! (`crate::cast5_cbc`, `VG.Rust.dispatcher`).
 
-/// `vg_cast5_cbc_encrypt_chained`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::cast5_cbc::vg_cast5_cbc_encrypt_chained as vg_cast5_cbc_encrypt_chained_auto;
+/// CAST5-CBC encryption (NIST SP 800-38A §6.2, RFC 2144 §2) of whole blocks, in place: replaces the `n` 8-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is CAST-128 encryption with `rounds` rounds under the subkeys written by `vg_cast5_expand_key`. No padding is added.
+///
+/// Contract: `VG.Spec.Cast5.cbcEncryptChainedContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
+///
+/// It runs `vg_cast5_cbc_encrypt_chained`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
+/// * `data` must be valid for reads and writes of `8 * n` bytes.
+/// * `rounds` must be 12 (for a key of up to 10 bytes) or 16 (for a longer one).
+/// * `iv` and `data` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the 336 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_cast5_cbc_encrypt_chained_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::cast5_cbc::vg_cast5_cbc_encrypt_chained(schedule, rounds, iv, data, n) }
+}
 
-/// `vg_cast5_cbc_decrypt_chained`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::cast5_cbc::vg_cast5_cbc_decrypt_chained as vg_cast5_cbc_decrypt_chained_auto;
+/// CAST5-CBC decryption (NIST SP 800-38A §6.2, RFC 2144 §2) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is CAST-128 decryption with `rounds` rounds under the subkeys written by `vg_cast5_expand_key`. No padding is removed.
+///
+/// Contract: `VG.Spec.Cast5.cbcDecryptChainedContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
+///
+/// It runs `vg_cast5_cbc_decrypt_chained`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
+/// * `data` must be valid for reads and writes of `8 * n` bytes.
+/// * `rounds` must be 12 (for a key of up to 10 bytes) or 16 (for a longer one).
+/// * `iv` and `data` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the 336 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_cast5_cbc_decrypt_chained_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::cast5_cbc::vg_cast5_cbc_decrypt_chained(schedule, rounds, iv, data, n) }
+}

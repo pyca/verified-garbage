@@ -32,7 +32,7 @@
 /// * `hash` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 /// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_rsa_pss_verify_precomputed(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const u8, digest_len: usize, sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 5]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_pss_verify_precomputed(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const u8, digest_len: usize, sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 5]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "Af8h+AAAYTmQAWvpKABr6QAAizkAACwo"
 beq %cr0, 20f
@@ -1044,7 +1044,7 @@ b 2239f
 /// * `hash` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 /// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_rsa_pss_sign(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const u8, digest_len: usize, salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 5]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_pss_sign(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const u8, digest_len: usize, salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 5]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "Af8h+AAAYTnQAWvpKABr6QAAizkAACwo"
 beq %cr0, 20f

@@ -17,7 +17,7 @@
 /// * `schedule` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
 /// * None of `key`, `schedule` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_cast5_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 128], scratch: *mut [u64; 32]) {
+pub(crate) unsafe extern "C" fn vg_cast5_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 128], scratch: *mut [u64; 32]) {
     core::arch::naked_asm!(
         r#".base64 "pgIIfMgABvhAAMb5SADm+VAABvpYACb6YABG+mgAZvpwAIb6eACm+oAAxvqIAOb6kAAG+5gAJvugAEb7qABm+7AAhvu4AKb7wADG+w=="
 bcl 20, 31, 2f
@@ -540,7 +540,7 @@ bne %cr0, 21b
 /// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_cast5_ecb_encrypt(schedule: *const [u8; 128], rounds: usize, data: *mut [u8; 8], n: usize, scratch: *mut [u64; 32]) {
+pub(crate) unsafe extern "C" fn vg_cast5_ecb_encrypt(schedule: *const [u8; 128], rounds: usize, data: *mut [u8; 8], n: usize, scratch: *mut [u64; 32]) {
     core::arch::naked_asm!(
         r#".base64 "pgIIfMgAB/hAAMf5SADn+VAAB/pYACf6YABH+mgAZ/pwAIf6eACn+oAAx/qIAOf6kAAH+5gAJ/ugAEf7qABn+7AAh/u4AKf7wADH+w=="
 bcl 20, 31, 2f
@@ -616,7 +616,7 @@ b 21f
 /// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_cast5_ecb_decrypt(schedule: *const [u8; 128], rounds: usize, data: *mut [u8; 8], n: usize, scratch: *mut [u64; 32]) {
+pub(crate) unsafe extern "C" fn vg_cast5_ecb_decrypt(schedule: *const [u8; 128], rounds: usize, data: *mut [u8; 8], n: usize, scratch: *mut [u64; 32]) {
     core::arch::naked_asm!(
         r#".base64 "pgIIfMgAB/hAAMf5SADn+VAAB/pYACf6YABH+mgAZ/pwAIf6eACn+oAAx/qIAOf6kAAH+5gAJ/ugAEf7qABn+7AAh/u4AKf7wADH+w=="
 bcl 20, 31, 2f

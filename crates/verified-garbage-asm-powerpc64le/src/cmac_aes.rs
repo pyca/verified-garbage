@@ -15,7 +15,7 @@
 /// * `state` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `state` nor `key` may overlap the 2336 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_cmac_aes_init(state: *mut [u64; 38], key: *const u8, key_len: usize) {
+pub(crate) unsafe extern "C" fn vg_cmac_aes_init(state: *mut [u64; 38], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "4fYh+CAAwTimAgh8mAgG+IAIxvmQCAb6iAjm+Xgbbnx4M898gvCweAYAEDp4I4N8eCukfHhzxX0="
 bl {vg_aes_expand_key_scratch}
@@ -39,7 +39,7 @@ bl {vg_cmac_aes_subkeys}
 /// * `state` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the 2336 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_cmac_aes_absorb(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_cmac_aes_absorb(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "4fYh+CAAATmmAgh8gAgI+IgIyPmQCOj5mAgI+qAIKPqoCEj6sAho+ngbbnx4I498eDPQfHg78Xx4QxN9AAAlKA=="
 beq %cr0, 20f
@@ -111,7 +111,7 @@ b 214f
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the 2336 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_cmac_aes_finish(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_cmac_aes_finish(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "4fYh+CAA4TimAgh8EAEj6QAAJvkYASPpCAAm+YgIB/iACMf5eDvufHg76Hx4K6d8eDPFfCABwzgAACco"
 beq %cr0, 20f

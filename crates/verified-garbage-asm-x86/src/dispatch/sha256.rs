@@ -2,17 +2,41 @@
 //! The dispatchers of the verified `sha256` functions for `x86`
 //! (`crate::sha256`, `VG.Rust.dispatcher`).
 
-/// `vg_sha224_init`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::sha256::vg_sha224_init as vg_sha224_init_auto;
+/// Starts a SHA-224 computation: makes the SHA-256 streaming state `*state` represent the empty message, hashed from the initial hash value of SHA-224 (`VG.Spec.Sha256.H0_224`). Continue with `vg_sha256_update` and `vg_sha256_finalize`, and take the first 28 bytes of the final hash value as the digest.
+///
+/// Contract: `VG.Spec.Sha256.init224Contract`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha256.ReprFrom`).
+///
+/// It runs `vg_sha224_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 96 bytes.
+/// * `state` must not overlap the arguments on the stack (distinct Rust objects never do).
+/// * `state` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_sha224_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 96]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::sha256::vg_sha224_init(state) }
+}
 
-/// `vg_sha256_init`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::sha256::vg_sha256_init as vg_sha256_init_auto;
+/// Starts a SHA-256 computation: makes the streaming state `*state` represent the empty message.
+///
+/// Contract: `VG.Spec.Sha256.initContract`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha256.Repr`).
+///
+/// It runs `vg_sha256_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 96 bytes.
+/// * `state` must not overlap the arguments on the stack (distinct Rust objects never do).
+/// * `state` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_sha256_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 96]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::sha256::vg_sha256_init(state) }
+}
 
 /// Computes the SHA-256 digest of the `len` bytes at `data` (32 bytes, `VG.Spec.Sha256.hash`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-256 computation with that message.
 ///
@@ -28,7 +52,7 @@ pub use crate::sha256::vg_sha256_init as vg_sha256_init_auto;
 /// * Neither `data` nor `out` may overlap the return address on the stack or the 372 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_sha256_digest_auto(data: *const u8, len: usize, out: *mut [u8; 32]) {
+pub unsafe fn vg_sha256_digest_auto(_dit: verified_garbage_cpu::Dit<'_>, data: *const u8, len: usize, out: *mut [u8; 32]) {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(data: *const u8, len: usize, out: *mut [u8; 32]);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -76,7 +100,7 @@ pub unsafe fn vg_sha256_digest_auto(data: *const u8, len: usize, out: *mut [u8; 
 /// * Neither `data` nor `out` may overlap the return address on the stack or the 372 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_sha224_digest_auto(data: *const u8, len: usize, out: *mut [u8; 28]) {
+pub unsafe fn vg_sha224_digest_auto(_dit: verified_garbage_cpu::Dit<'_>, data: *const u8, len: usize, out: *mut [u8; 28]) {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(data: *const u8, len: usize, out: *mut [u8; 28]);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -126,7 +150,7 @@ pub unsafe fn vg_sha224_digest_auto(data: *const u8, len: usize, out: *mut [u8; 
 /// * Neither `state` nor `data` may overlap the arguments on the stack, overlap the return address on the stack or the 656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_sha256_update_auto(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
+pub unsafe fn vg_sha256_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(state: *mut [u8; 96], count: u64, data: *const u8, len: usize);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -177,7 +201,7 @@ pub unsafe fn vg_sha256_update_auto(state: *mut [u8; 96], count: u64, data: *con
 /// * Neither `state` nor `out` may overlap the arguments on the stack, overlap the return address on the stack or the 652 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_sha256_finalize_auto(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
+pub unsafe fn vg_sha256_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -226,7 +250,7 @@ pub unsafe fn vg_sha256_finalize_auto(state: *mut [u8; 96], count: u64, out: *mu
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 652 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_sha224_finalize_auto(state: *mut [u8; 96], count: u64, out: *mut [u8; 28]) {
+pub unsafe fn vg_sha224_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 96], count: u64, out: *mut [u8; 28]) {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(state: *mut [u8; 96], count: u64, out: *mut [u8; 28]);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only

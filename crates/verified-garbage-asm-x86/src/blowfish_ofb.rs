@@ -17,7 +17,7 @@
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_blowfish_ofb(schedule: *const [u8; 4168], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+pub(crate) unsafe extern "C" fn vg_blowfish_ofb(schedule: *const [u8; 4168], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r#".base64 "jWQkkItEJHSJRCQEi0QkeIlEJAiLRCR8iUQkDIuEJIAAAACJRCQQieCDwBiJRCQUi0QkFIlYMIlwNIl4OIloPInHi3QkCIsGiUdIi0YEiUdMi0QkDIlHQItEJBCJR0SFwA=="
 je 20f
@@ -66,7 +66,7 @@ jmp 21f
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_blowfish_ofb_final(schedule: *const [u8; 4168], iv: *mut [u8; 8], data: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_blowfish_ofb_final(schedule: *const [u8; 4168], iv: *mut [u8; 8], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "jWQkkItEJHSJRCQEi0QkeIlEJAiLRCR8iUQkDIuEJIAAAACJRCQQieCDwBiJRCQUi0QkFIlYMIlwNIl4OIloPInHi3QkCIsGiUdIi0YEiUdMi0QkDIlHQItEJBCJR0SFwA=="
 je 20f

@@ -22,7 +22,7 @@
 /// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_mldsa87_sign_auto(sk: *const [u8; 4896], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
+pub unsafe fn vg_mldsa87_sign_auto(_dit: verified_garbage_cpu::Dit<'_>, sk: *const [u8; 4896], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
     /// The type of the implementations.
     type Impl = unsafe extern "sysv64" fn(sk: *const [u8; 4896], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18048]) -> u32;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -61,11 +61,26 @@ pub unsafe fn vg_mldsa87_sign_auto(sk: *const [u8; 4896], mu: *const [u8; 64], r
     unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(sk, mu, rnd, sig, scratch) }
 }
 
-/// `vg_mldsa87_pk_tr`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::mldsa87::vg_mldsa87_pk_tr as vg_mldsa87_pk_tr_auto;
+/// ML-DSA-87 public-key hash: writes `tr = H(pk, 64)` (FIPS 204 Algorithm 8, line 6), SHAKE256 of the public key `*pk` to 64 bytes, to `*tr`, the digest `vg_mldsa87_verify_message_cached` takes.
+///
+/// Contract: `VG.Spec.MlDsa.pkTrContract`. Constant time: only the pointers may affect timing, not the key, the digest or the working space.
+///
+/// It runs `vg_mldsa87_pk_tr`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 2592 bytes.
+/// * `tr` must be valid for reads and writes of 64 bytes.
+/// * `scratch` must be valid for reads and writes of 144384 bytes.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `tr` and `scratch` must not overlap each other or `pk` (distinct Rust objects never do).
+/// * None of `pk`, `tr` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_mldsa87_pk_tr_auto(_dit: verified_garbage_cpu::Dit<'_>, pk: *const [u8; 2592], tr: *mut [u8; 64], scratch: *mut [u64; 18048]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::mldsa87::vg_mldsa87_pk_tr(pk, tr, scratch) }
+}
 
 /// ML-DSA-87 key generation from a seed, `ML-DSA.KeyGen_internal(ξ)` (FIPS 204 Algorithm 6): with the 32-byte seed `ξ` at `seed`, writes the public key to `*pk` and the private key to `*sk`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
@@ -85,7 +100,7 @@ pub use crate::mldsa87::vg_mldsa87_pk_tr as vg_mldsa87_pk_tr_auto;
 /// * None of `seed`, `pk`, `sk` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_mldsa87_keygen_auto(seed: *const [u8; 32], pk: *mut [u8; 2592], sk: *mut [u8; 4896], scratch: *mut [u64; 18048]) -> u32 {
+pub unsafe fn vg_mldsa87_keygen_auto(_dit: verified_garbage_cpu::Dit<'_>, seed: *const [u8; 32], pk: *mut [u8; 2592], sk: *mut [u8; 4896], scratch: *mut [u64; 18048]) -> u32 {
     /// The type of the implementations.
     type Impl = unsafe extern "sysv64" fn(seed: *const [u8; 32], pk: *mut [u8; 2592], sk: *mut [u8; 4896], scratch: *mut [u64; 18048]) -> u32;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -141,7 +156,7 @@ pub unsafe fn vg_mldsa87_keygen_auto(seed: *const [u8; 32], pk: *mut [u8; 2592],
 /// * None of `pk`, `mu`, `sig` and `scratch` may overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_mldsa87_verify_auto(pk: *const [u8; 2592], mu: *const [u8; 64], sig: *const [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
+pub unsafe fn vg_mldsa87_verify_auto(_dit: verified_garbage_cpu::Dit<'_>, pk: *const [u8; 2592], mu: *const [u8; 64], sig: *const [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
     /// The type of the implementations.
     type Impl = unsafe extern "sysv64" fn(pk: *const [u8; 2592], mu: *const [u8; 64], sig: *const [u8; 4627], scratch: *mut [u64; 18048]) -> u32;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -201,7 +216,7 @@ pub unsafe fn vg_mldsa87_verify_auto(pk: *const [u8; 2592], mu: *const [u8; 64],
 /// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_mldsa87_sign_message_auto(sk: *const [u8; 4896], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18176]) -> u32 {
+pub unsafe fn vg_mldsa87_sign_message_auto(_dit: verified_garbage_cpu::Dit<'_>, sk: *const [u8; 4896], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18176]) -> u32 {
     /// The type of the implementations.
     type Impl = unsafe extern "sysv64" fn(sk: *const [u8; 4896], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18176]) -> u32;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -257,7 +272,7 @@ pub unsafe fn vg_mldsa87_sign_message_auto(sk: *const [u8; 4896], msg: *const u8
 /// * None of `sk`, `prepared` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_mldsa87_prepare_signing_key_auto(sk: *const [u8; 4896], prepared: *mut [u8; 28448], scratch: *mut [u64; 128]) {
+pub unsafe fn vg_mldsa87_prepare_signing_key_auto(_dit: verified_garbage_cpu::Dit<'_>, sk: *const [u8; 4896], prepared: *mut [u8; 28448], scratch: *mut [u64; 128]) {
     /// The type of the implementations.
     type Impl = unsafe extern "sysv64" fn(sk: *const [u8; 4896], prepared: *mut [u8; 28448], scratch: *mut [u64; 128]);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -307,7 +322,7 @@ pub unsafe fn vg_mldsa87_prepare_signing_key_auto(sk: *const [u8; 4896], prepare
 /// * None of `pk`, `prepared` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_mldsa87_prepare_verifying_key_auto(pk: *const [u8; 2592], prepared: *mut [u8; 10784], scratch: *mut [u64; 128]) {
+pub unsafe fn vg_mldsa87_prepare_verifying_key_auto(_dit: verified_garbage_cpu::Dit<'_>, pk: *const [u8; 2592], prepared: *mut [u8; 10784], scratch: *mut [u64; 128]) {
     /// The type of the implementations.
     type Impl = unsafe extern "sysv64" fn(pk: *const [u8; 2592], prepared: *mut [u8; 10784], scratch: *mut [u64; 128]);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -363,7 +378,7 @@ pub unsafe fn vg_mldsa87_prepare_verifying_key_auto(pk: *const [u8; 2592], prepa
 /// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_mldsa87_sign_message_prepared_auto(sk: *const [u8; 28448], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18176]) -> u32 {
+pub unsafe fn vg_mldsa87_sign_message_prepared_auto(_dit: verified_garbage_cpu::Dit<'_>, sk: *const [u8; 28448], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18176]) -> u32 {
     /// The type of the implementations.
     type Impl = unsafe extern "sysv64" fn(sk: *const [u8; 28448], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18176]) -> u32;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -422,7 +437,7 @@ pub unsafe fn vg_mldsa87_sign_message_prepared_auto(sk: *const [u8; 28448], msg:
 /// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_mldsa87_verify_message_cached_auto(pk: *const [u8; 2592], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176], tr: *const [u8; 64]) -> u32 {
+pub unsafe fn vg_mldsa87_verify_message_cached_auto(_dit: verified_garbage_cpu::Dit<'_>, pk: *const [u8; 2592], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176], tr: *const [u8; 64]) -> u32 {
     /// The type of the implementations.
     type Impl = unsafe extern "sysv64" fn(pk: *const [u8; 2592], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176], tr: *const [u8; 64]) -> u32;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -482,7 +497,7 @@ pub unsafe fn vg_mldsa87_verify_message_cached_auto(pk: *const [u8; 2592], msg: 
 /// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_mldsa87_verify_message_prepared_auto(pk: *const [u8; 10784], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176], tr: *const [u8; 64]) -> u32 {
+pub unsafe fn vg_mldsa87_verify_message_prepared_auto(_dit: verified_garbage_cpu::Dit<'_>, pk: *const [u8; 10784], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176], tr: *const [u8; 64]) -> u32 {
     /// The type of the implementations.
     type Impl = unsafe extern "sysv64" fn(pk: *const [u8; 10784], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176], tr: *const [u8; 64]) -> u32;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only

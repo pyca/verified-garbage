@@ -17,7 +17,7 @@
 /// * Neither `key` nor `ctx` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_ocb_init_auto(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
+pub unsafe fn vg_aes_ocb_init_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(key: *const u8, key_len: usize, ctx: *mut [u64; 32]);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -70,7 +70,7 @@ pub unsafe fn vg_aes_ocb_init_auto(key: *const u8, key_len: usize, ctx: *mut [u6
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_ocb_seal_auto(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
+pub unsafe fn vg_aes_ocb_seal_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -123,7 +123,7 @@ pub unsafe fn vg_aes_ocb_seal_auto(ctx: *const [u64; 32], rounds: usize, nonce: 
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_ocb_open_auto(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe fn vg_aes_ocb_open_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only

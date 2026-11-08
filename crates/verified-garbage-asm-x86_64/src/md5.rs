@@ -12,7 +12,7 @@
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `state` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_md5_init(state: *mut [u8; 80]) {
+pub(crate) unsafe extern "sysv64" fn vg_md5_init(state: *mut [u8; 80]) {
     core::arch::naked_asm!(
         r#".base64 "uAEjRWeJB7iJq83viUcEuP7cupiJRwi4dlQyEIlHDMM="
 .p2align 6"#,
@@ -30,7 +30,7 @@ pub unsafe extern "sysv64" fn vg_md5_init(state: *mut [u8; 80]) {
 /// * `state` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the return address on the stack or the 128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_md5_update(state: *mut [u8; 80], count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_md5_update(state: *mut [u8; 80], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI1kJIhJieBJg8AISYlYQEmJaEhNiWBQTYloWE2JcGBNiXhoSIn7TYnHSInVSYnMSYn1SYPlPw=="
 20:
@@ -129,7 +129,7 @@ jne 20b
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_md5_finalize(state: *mut [u8; 80], count: u64, out: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_md5_finalize(state: *mut [u8; 80], count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI1kJIhIieFIg8EISIlZQEiJaUhMiWFQTIlpWEyJcWBMiXloSIn7SYnPSInVSYn0SYn1SYPlP0G5gAAAAEG+AAAAAEmD/Tg="
 jae 20f

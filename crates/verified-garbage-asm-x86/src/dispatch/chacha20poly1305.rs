@@ -21,7 +21,7 @@
 /// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 772 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_chacha20_poly1305_seal_auto(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe fn vg_chacha20_poly1305_seal_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -74,7 +74,7 @@ pub unsafe fn vg_chacha20_poly1305_seal_auto(key: *const [u8; 32], nonce: *const
 /// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 772 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_chacha20_poly1305_open_auto(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub unsafe fn vg_chacha20_poly1305_open_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -130,7 +130,7 @@ pub unsafe fn vg_chacha20_poly1305_open_auto(key: *const [u8; 32], nonce: *const
 /// * None of `key`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 780 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_chacha20_poly1305_open_to_auto(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32 {
+pub unsafe fn vg_chacha20_poly1305_open_to_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32 {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -186,7 +186,7 @@ pub unsafe fn vg_chacha20_poly1305_open_to_auto(key: *const [u8; 32], nonce: *co
 /// * None of `key`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 824 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_chacha20_poly1305_seal_gather_auto(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe fn vg_chacha20_poly1305_seal_gather_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only

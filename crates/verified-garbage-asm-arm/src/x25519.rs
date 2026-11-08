@@ -17,7 +17,7 @@
 /// * `out` and `scratch` must not overlap each other, `scalar` or `point` (distinct Rust objects never do).
 /// * None of `out`, `scalar`, `point` and `scratch` may overlap the 8 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_x25519_exchange(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_x25519_exchange(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) -> u32 {
     core::arch::naked_asm!(
         r"push {{lr}}
 push {{r0}}
@@ -117,7 +117,7 @@ pub const VG_X25519_EXCHANGE_UMAAL_FEATURES: verified_garbage_cpu::Features = ve
 /// * The CPU must support the `umaal` target feature.
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_x25519_exchange_umaal(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_x25519_exchange_umaal(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) -> u32 {
     core::arch::naked_asm!(
         r"push {{lr}}
 push {{r0}}
@@ -210,7 +210,7 @@ bx lr",
 /// * `out` and `scratch` must not overlap each other or `scalar` (distinct Rust objects never do).
 /// * None of `out`, `scalar` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_x25519_base(out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "C" fn vg_x25519_base(out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"str r4, [r2, #0]
 str r5, [r2, #4]

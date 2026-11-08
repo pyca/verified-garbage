@@ -86,11 +86,12 @@ impl Key {
         if !matches!(key.len(), 16 | 24 | 32) {
             return Err(InvalidKeyLength);
         }
+        crate::dit::enter!(dit);
         let mut schedule = CacheAligned([0; 240]);
         // SAFETY: the key is 16, 24 or 32 bytes long; the key and the schedule
         // are separate valid buffers of the sizes of the signature. The
         // dispatcher calls only an implementation the CPU has the features of.
-        unsafe { vg_aes_expand_key_auto(key.as_ptr(), key.len(), &mut schedule.0) };
+        unsafe { vg_aes_expand_key_auto(dit, key.as_ptr(), key.len(), &mut schedule.0) };
         Ok(Self {
             schedule,
             rounds: key.len() / 4 + 6,
@@ -112,6 +113,7 @@ impl Key {
     }
 
     fn crypt(&self, iv: &mut [u8; 16], buffer: &mut [u8], encrypt: bool) {
+        crate::dit::enter!(dit);
         let mut scratch = CacheAligned([0; 272]);
         // SAFETY: `rounds` is 10, 12 or 14 and the schedule holds its key
         // schedule; `buffer`, the block at `iv`, the schedule and the scratch
@@ -120,6 +122,7 @@ impl Key {
         unsafe {
             if encrypt {
                 vg_aes_cfb8_encrypt_auto(
+                    dit,
                     &self.schedule.0,
                     self.rounds,
                     iv,
@@ -129,6 +132,7 @@ impl Key {
                 );
             } else {
                 vg_aes_cfb8_decrypt_auto(
+                    dit,
                     &self.schedule.0,
                     self.rounds,
                     iv,

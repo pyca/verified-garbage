@@ -18,7 +18,7 @@
 /// * `ctr`, `data` and `scratch` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `ctr`, `data` and `scratch` may overlap the 8 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_ctr(schedule: *const [u8; 240], rounds: usize, ctr: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
+pub(crate) unsafe extern "C" fn vg_aes_ctr(schedule: *const [u8; 240], rounds: usize, ctr: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
         r"ldr r12, [sp, #4]
 str r4, [r12, #2064]
@@ -141,7 +141,7 @@ bx lr",
 /// * `ctr`, `data` and `scratch` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `ctr`, `data` and `scratch` may overlap the 88 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_ctr_final(schedule: *const [u8; 240], rounds: usize, ctr: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
+pub(crate) unsafe extern "C" fn vg_aes_ctr_final(schedule: *const [u8; 240], rounds: usize, ctr: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
         r"sub sp, sp, #72
 add r12, sp, #0

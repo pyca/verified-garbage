@@ -2,14 +2,42 @@
 //! The dispatchers of the verified `triple_des_cfb8` functions for `riscv64`
 //! (`crate::triple_des_cfb8`, `VG.Rust.dispatcher`).
 
-/// `vg_triple_des_cfb8_encrypt`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::triple_des_cfb8::vg_triple_des_cfb8_encrypt as vg_triple_des_cfb8_encrypt_auto;
+/// Triple DES-CFB8 encryption (NIST SP 800-38A §6.3, with 8-bit segments; FIPS 46-3), in place: replaces the `len` bytes `P#₁ … P#ₙ` at `data` with `C#ⱼ = P#ⱼ ⊕ MSB₈(CIPH_K(Iⱼ))`, where `I₁` is the block at `*iv` and `Iⱼ₊₁` is `Iⱼ` without its first byte, followed by `C#ⱼ`, and `*iv` with `Iₙ₊₁` (leaving it unchanged if `len = 0`), so that a further call continues the message. `CIPH_K` is Triple DES encryption under the schedule written by `vg_triple_des_expand_key`.
+///
+/// Contract: `VG.Spec.TripleDes.cfb8EncryptContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the input block or the data.
+///
+/// It runs `vg_triple_des_cfb8_encrypt`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 384 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the 944 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_triple_des_cfb8_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut u8, len: usize) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::triple_des_cfb8::vg_triple_des_cfb8_encrypt(schedule, iv, data, len) }
+}
 
-/// `vg_triple_des_cfb8_decrypt`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::triple_des_cfb8::vg_triple_des_cfb8_decrypt as vg_triple_des_cfb8_decrypt_auto;
+/// Triple DES-CFB8 decryption (NIST SP 800-38A §6.3, with 8-bit segments; FIPS 46-3), in place: replaces the `len` bytes `C#₁ … C#ₙ` at `data` with `P#ⱼ = C#ⱼ ⊕ MSB₈(CIPH_K(Iⱼ))`, where `I₁` is the block at `*iv` and `Iⱼ₊₁` is `Iⱼ` without its first byte, followed by `C#ⱼ`, and `*iv` with `Iₙ₊₁` (leaving it unchanged if `len = 0`), so that a further call continues the message. `CIPH_K` is Triple DES encryption under the schedule written by `vg_triple_des_expand_key`.
+///
+/// Contract: `VG.Spec.TripleDes.cfb8DecryptContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the input block or the data.
+///
+/// It runs `vg_triple_des_cfb8_decrypt`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 384 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the 944 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_triple_des_cfb8_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut u8, len: usize) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::triple_des_cfb8::vg_triple_des_cfb8_decrypt(schedule, iv, data, len) }
+}

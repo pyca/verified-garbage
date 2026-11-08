@@ -2,62 +2,240 @@
 //! The dispatchers of the verified `mldsa65` functions for `powerpc64le`
 //! (`crate::mldsa65`, `VG.Rust.dispatcher`).
 
-/// `vg_mldsa65_sign`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::mldsa65::vg_mldsa65_sign as vg_mldsa65_sign_auto;
+/// ML-DSA-65 signing of a message representative, `ML-DSA.Sign_internal(sk, M′, rnd)` (FIPS 204 Algorithm 7) with `μ` computed by the caller: with the private key `*sk`, the 64-byte message representative `μ = H(tr ‖ M′, 64)` at `mu` (for the public key hash `tr`, bytes 64–127 of `*sk`) and the randomness `*rnd`, writes the signature to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
+///
+/// Contract: `VG.Spec.MlDsa.signContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signLeak`), but not on anything else of the key, the message representative or the randomness.
+///
+/// It runs `vg_mldsa65_sign`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `sk` must be valid for reads of 4032 bytes.
+/// * `mu` must be valid for reads of 64 bytes.
+/// * `rnd` must be valid for reads of 32 bytes.
+/// * `sig` must be valid for reads and writes of 3309 bytes.
+/// * `scratch` must be valid for reads and writes of 103424 bytes.
+/// * `sk` must have been written by `vg_mldsa65_keygen`.
+/// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `sig` and `scratch` must not overlap each other, `sk`, `mu` or `rnd` (distinct Rust objects never do).
+/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the 240 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_mldsa65_sign_auto(_dit: verified_garbage_cpu::Dit<'_>, sk: *const [u8; 4032], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 3309], scratch: *mut [u64; 12928]) -> u32 {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::mldsa65::vg_mldsa65_sign(sk, mu, rnd, sig, scratch) }
+}
 
-/// `vg_mldsa65_pk_tr`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::mldsa65::vg_mldsa65_pk_tr as vg_mldsa65_pk_tr_auto;
+/// ML-DSA-65 public-key hash: writes `tr = H(pk, 64)` (FIPS 204 Algorithm 8, line 6), SHAKE256 of the public key `*pk` to 64 bytes, to `*tr`, the digest `vg_mldsa65_verify_message_cached` takes.
+///
+/// Contract: `VG.Spec.MlDsa.pkTrContract`. Constant time: only the pointers may affect timing, not the key, the digest or the working space.
+///
+/// It runs `vg_mldsa65_pk_tr`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 1952 bytes.
+/// * `tr` must be valid for reads and writes of 64 bytes.
+/// * `scratch` must be valid for reads and writes of 103424 bytes.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `tr` and `scratch` must not overlap each other or `pk` (distinct Rust objects never do).
+/// * None of `pk`, `tr` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_mldsa65_pk_tr_auto(_dit: verified_garbage_cpu::Dit<'_>, pk: *const [u8; 1952], tr: *mut [u8; 64], scratch: *mut [u64; 12928]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::mldsa65::vg_mldsa65_pk_tr(pk, tr, scratch) }
+}
 
-/// `vg_mldsa65_keygen`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::mldsa65::vg_mldsa65_keygen as vg_mldsa65_keygen_auto;
+/// ML-DSA-65 key generation from a seed, `ML-DSA.KeyGen_internal(ξ)` (FIPS 204 Algorithm 6): with the 32-byte seed `ξ` at `seed`, writes the public key to `*pk` and the private key to `*sk`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
+///
+/// Contract: `VG.Spec.MlDsa.keyGenContract`. Constant time but for `ρ` and rejections: timing may depend on the pointers, on `ρ` (the first 32 bytes of the public key), and on which half-bytes of the SHAKE256 outputs `RejBoundedPoly` rejects (`rejBoundedLeak`, which is independent of the coefficients it samples), but not on anything else of the seed or the keys.
+///
+/// It runs `vg_mldsa65_keygen`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `seed` must be valid for reads of 32 bytes.
+/// * `pk` must be valid for reads and writes of 1952 bytes.
+/// * `sk` must be valid for reads and writes of 4032 bytes.
+/// * `scratch` must be valid for reads and writes of 103424 bytes.
+/// * `seed` must be random bytes from an approved RBG (FIPS 204 §3.6.1), or a seed so generated before.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `pk`, `sk` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
+/// * None of `seed`, `pk`, `sk` and `scratch` may overlap the 96 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_mldsa65_keygen_auto(_dit: verified_garbage_cpu::Dit<'_>, seed: *const [u8; 32], pk: *mut [u8; 1952], sk: *mut [u8; 4032], scratch: *mut [u64; 12928]) -> u32 {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::mldsa65::vg_mldsa65_keygen(seed, pk, sk, scratch) }
+}
 
-/// `vg_mldsa65_verify`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::mldsa65::vg_mldsa65_verify as vg_mldsa65_verify_auto;
+/// ML-DSA-65 verification of a signature of a message representative, `ML-DSA.Verify_internal(pk, M′, σ)` (FIPS 204 Algorithm 8) with `μ` computed by the caller: with the public key `*pk`, the 64-byte message representative `μ = H(H(pk, 64) ‖ M′, 64)` at `mu` and the signature `*sig`, returns 1 if the signature is valid, and 0 if it is not or if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less).
+///
+/// Contract: `VG.Spec.MlDsa.verifyContract`. Not constant time: timing may depend on the public key, the message representative and the signature.
+///
+/// It runs `vg_mldsa65_verify`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 1952 bytes.
+/// * `mu` must be valid for reads of 64 bytes.
+/// * `sig` must be valid for reads of 3309 bytes.
+/// * `scratch` must be valid for reads and writes of 103424 bytes.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `scratch` must not overlap `pk`, `mu` or `sig` (distinct Rust objects never do).
+/// * None of `pk`, `mu`, `sig` and `scratch` may overlap the 240 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_mldsa65_verify_auto(_dit: verified_garbage_cpu::Dit<'_>, pk: *const [u8; 1952], mu: *const [u8; 64], sig: *const [u8; 3309], scratch: *mut [u64; 12928]) -> u32 {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::mldsa65::vg_mldsa65_verify(pk, mu, sig, scratch) }
+}
 
-/// `vg_mldsa65_sign_message`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::mldsa65::vg_mldsa65_sign_message as vg_mldsa65_sign_message_auto;
+/// ML-DSA-65 signing, `ML-DSA.Sign(sk, M, ctx)` (FIPS 204 Algorithm 2) on the randomness `*rnd` (line 5): with the private key `*sk`, the `msg_len` bytes of the message at `msg` and the `ctx_len` bytes of the context string at `ctx`, writes the signature of the formatted message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 10), `ML-DSA.Sign_internal(sk, M′, rnd)` (Algorithm 7), to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed. Returns 2 if `ctx_len` is greater than 255 (FIPS 204 returns the error indication `⊥`): `*sig` is then unspecified.
+///
+/// Contract: `VG.Spec.MlDsa.signMessageContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `msg_len` and `ctx_len`, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signMessageLeak`), but not on anything else of the key, the message, the context string or the randomness.
+///
+/// It runs `vg_mldsa65_sign_message`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `sk` must be valid for reads of 4032 bytes.
+/// * `msg` must be valid for reads of `msg_len` bytes.
+/// * `ctx` must be valid for reads of `ctx_len` bytes.
+/// * `rnd` must be valid for reads of 32 bytes.
+/// * `sig` must be valid for reads and writes of 3309 bytes.
+/// * `scratch` must be valid for reads and writes of 104448 bytes.
+/// * `sk` must have been written by `vg_mldsa65_keygen`.
+/// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `sig` and `scratch` must not overlap each other, `sk`, `msg`, `ctx` or `rnd` (distinct Rust objects never do).
+/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the 240 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_mldsa65_sign_message_auto(_dit: verified_garbage_cpu::Dit<'_>, sk: *const [u8; 4032], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 3309], scratch: *mut [u64; 13056]) -> u32 {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::mldsa65::vg_mldsa65_sign_message(sk, msg, msg_len, ctx, ctx_len, rnd, sig, scratch) }
+}
 
-/// `vg_mldsa65_prepare_signing_key`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::mldsa65::vg_mldsa65_prepare_signing_key as vg_mldsa65_prepare_signing_key_auto;
+/// ML-DSA-65 private-key preparation: with the private key `*sk`, writes to `*prepared` the key, followed by the `ℓ + 2k` polynomials `NTT(s₁)`, `NTT(s₂)` and `NTT(t₀)` that signing (FIPS 204 Algorithm 7, lines 2–4) computes from it, for `vg_mldsa65_sign_message_prepared`.
+///
+/// Contract: `VG.Spec.MlDsa.prepareSecretKeyContract`. Constant time.
+///
+/// It runs `vg_mldsa65_prepare_signing_key`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `sk` must be valid for reads of 4032 bytes.
+/// * `prepared` must be valid for reads and writes of 21440 bytes.
+/// * `scratch` must be valid for reads and writes of 1024 bytes.
+/// * `*prepared` holds private key material, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `prepared` and `scratch` must not overlap each other or `sk` (distinct Rust objects never do).
+/// * None of `sk`, `prepared` and `scratch` may overlap the 240 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_mldsa65_prepare_signing_key_auto(_dit: verified_garbage_cpu::Dit<'_>, sk: *const [u8; 4032], prepared: *mut [u8; 21440], scratch: *mut [u64; 128]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::mldsa65::vg_mldsa65_prepare_signing_key(sk, prepared, scratch) }
+}
 
-/// `vg_mldsa65_prepare_verifying_key`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::mldsa65::vg_mldsa65_prepare_verifying_key as vg_mldsa65_prepare_verifying_key_auto;
+/// ML-DSA-65 public-key preparation: with the public key `*pk`, writes to `*prepared` the key, followed by the `k` polynomials `NTT(t₁ · 2^d)` that verification (FIPS 204 Algorithm 8, line 9) computes from it, for `vg_mldsa65_verify_message_prepared`.
+///
+/// Contract: `VG.Spec.MlDsa.preparePublicKeyContract`. Constant time.
+///
+/// It runs `vg_mldsa65_prepare_verifying_key`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 1952 bytes.
+/// * `prepared` must be valid for reads and writes of 8096 bytes.
+/// * `scratch` must be valid for reads and writes of 1024 bytes.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `prepared` and `scratch` must not overlap each other or `pk` (distinct Rust objects never do).
+/// * None of `pk`, `prepared` and `scratch` may overlap the 240 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_mldsa65_prepare_verifying_key_auto(_dit: verified_garbage_cpu::Dit<'_>, pk: *const [u8; 1952], prepared: *mut [u8; 8096], scratch: *mut [u64; 128]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::mldsa65::vg_mldsa65_prepare_verifying_key(pk, prepared, scratch) }
+}
 
-/// `vg_mldsa65_sign_message_prepared`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::mldsa65::vg_mldsa65_sign_message_prepared as vg_mldsa65_sign_message_prepared_auto;
+/// ML-DSA-65 signing with a prepared private key: `vg_mldsa65_sign_message` (with its results, timing and leakage) of the private key that `*sk` begins with.
+///
+/// Contract: `VG.Spec.MlDsa.preparedSignMessageContract`.
+///
+/// It runs `vg_mldsa65_sign_message_prepared`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `sk` must be valid for reads of 21440 bytes.
+/// * `msg` must be valid for reads of `msg_len` bytes.
+/// * `ctx` must be valid for reads of `ctx_len` bytes.
+/// * `rnd` must be valid for reads of 32 bytes.
+/// * `sig` must be valid for reads and writes of 3309 bytes.
+/// * `scratch` must be valid for reads and writes of 104448 bytes.
+/// * `sk` must have been written by `vg_mldsa65_prepare_signing_key` from a private key written by `vg_mldsa65_keygen`, and not changed since.
+/// * `*sk` holds private key material, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `sig` and `scratch` must not overlap each other, `sk`, `msg`, `ctx` or `rnd` (distinct Rust objects never do).
+/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the 240 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_mldsa65_sign_message_prepared_auto(_dit: verified_garbage_cpu::Dit<'_>, sk: *const [u8; 21440], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 3309], scratch: *mut [u64; 13056]) -> u32 {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::mldsa65::vg_mldsa65_sign_message_prepared(sk, msg, msg_len, ctx, ctx_len, rnd, sig, scratch) }
+}
 
-/// `vg_mldsa65_verify_message_cached`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::mldsa65::vg_mldsa65_verify_message_cached as vg_mldsa65_verify_message_cached_auto;
+/// ML-DSA-65 message verification with a cached public-key digest. Returns 1 for a valid signature, 0 for an invalid signature or exhausted sampling bound, and 2 if the context exceeds 255 bytes. It is `ML-DSA.Verify(pk, M, σ, ctx)` (FIPS 204 Algorithm 3) with `H(pk, 64)` read from `*tr`: with the public key `*pk`, the `msg_len` bytes of the message at `msg`, the `ctx_len` bytes of the context string at `ctx` and the signature `*sig`, it formats the message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 5), computes `μ = H(tr ‖ M′, 64)`, and verifies `*sig` on `μ` with `*pk`, `ML-DSA.Verify_internal(pk, M′, σ)` (Algorithm 8).
+///
+/// Contract: `VG.Spec.MlDsa.verifyMessageCachedContract`. Timing may depend on the public key, message, context string and signature, and on argument addresses and lengths.
+///
+/// It runs `vg_mldsa65_verify_message_cached`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 1952 bytes.
+/// * `msg` must be valid for reads of `msg_len` bytes.
+/// * `ctx` must be valid for reads of `ctx_len` bytes.
+/// * `sig` must be valid for reads of 3309 bytes.
+/// * `scratch` must be valid for reads and writes of 104448 bytes.
+/// * `tr` must be valid for reads of 64 bytes.
+/// * `*tr` must equal SHAKE256(`*pk`, 64 bytes).
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig` or `tr` (distinct Rust objects never do).
+/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the 240 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_mldsa65_verify_message_cached_auto(_dit: verified_garbage_cpu::Dit<'_>, pk: *const [u8; 1952], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 3309], scratch: *mut [u64; 13056], tr: *const [u8; 64]) -> u32 {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::mldsa65::vg_mldsa65_verify_message_cached(pk, msg, msg_len, ctx, ctx_len, sig, scratch, tr) }
+}
 
-/// `vg_mldsa65_verify_message_prepared`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::mldsa65::vg_mldsa65_verify_message_prepared as vg_mldsa65_verify_message_prepared_auto;
+/// ML-DSA-65 verification with a prepared public key: `vg_mldsa65_verify_message_cached` (with its results, timing and leakage) of the public key that `*pk` begins with.
+///
+/// Contract: `VG.Spec.MlDsa.preparedVerifyMessageContract`.
+///
+/// It runs `vg_mldsa65_verify_message_prepared`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 8096 bytes.
+/// * `msg` must be valid for reads of `msg_len` bytes.
+/// * `ctx` must be valid for reads of `ctx_len` bytes.
+/// * `sig` must be valid for reads of 3309 bytes.
+/// * `scratch` must be valid for reads and writes of 104448 bytes.
+/// * `tr` must be valid for reads of 64 bytes.
+/// * `pk` must have been written by `vg_mldsa65_prepare_verifying_key`, and not changed since.
+/// * `*tr` must equal SHAKE256 of the public key that `*pk` begins with, 64 bytes.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig` or `tr` (distinct Rust objects never do).
+/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the 240 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_mldsa65_verify_message_prepared_auto(_dit: verified_garbage_cpu::Dit<'_>, pk: *const [u8; 8096], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 3309], scratch: *mut [u64; 13056], tr: *const [u8; 64]) -> u32 {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::mldsa65::vg_mldsa65_verify_message_prepared(pk, msg, msg_len, ctx, ctx_len, sig, scratch, tr) }
+}

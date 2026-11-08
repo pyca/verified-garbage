@@ -43,6 +43,8 @@ pub(crate) fn check<H: HmacHash>(name: &str, new: fn(&[u8]) -> Hmac<H>) {
         let accept = tag_size == H::OUTPUT_SIZE * 8 && test.result == Expectation::Valid;
         let ok = h.verify(&tag.0).is_ok();
         assert_eq!(ok, accept, "tcId {}", test.tc_id);
+        let ok = Hmac::<H>::verify_mac(&key.0, &msg.0, &tag.0).is_ok();
+        assert_eq!(ok, accept, "tcId {}", test.tc_id);
         let computed = &full.as_ref()[..tag_size / 8];
         if test.result == Expectation::Valid {
             assert_eq!(computed, &tag.0[..], "tcId {}", test.tc_id);

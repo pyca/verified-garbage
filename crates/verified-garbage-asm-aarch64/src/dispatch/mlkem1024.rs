@@ -20,7 +20,7 @@
 /// * None of `seed`, `ek`, `dk` and `scratch` may overlap the 160 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_mlkem1024_keygen_auto(seed: *const [u8; 64], ek: *mut [u8; 1568], dk: *mut [u8; 3168], scratch: *mut [u64; 6144]) -> u32 {
+pub unsafe fn vg_mlkem1024_keygen_auto(_dit: verified_garbage_cpu::Dit<'_>, seed: *const [u8; 64], ek: *mut [u8; 1568], dk: *mut [u8; 3168], scratch: *mut [u64; 6144]) -> u32 {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(seed: *const [u8; 64], ek: *mut [u8; 1568], dk: *mut [u8; 3168], scratch: *mut [u64; 6144]) -> u32;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -80,7 +80,7 @@ pub unsafe fn vg_mlkem1024_keygen_auto(seed: *const [u8; 64], ek: *mut [u8; 1568
 /// * None of `ek`, `m`, `key`, `ct` and `scratch` may overlap the 160 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_mlkem1024_encaps_auto(ek: *const [u8; 1568], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1568], scratch: *mut [u64; 6144]) -> u32 {
+pub unsafe fn vg_mlkem1024_encaps_auto(_dit: verified_garbage_cpu::Dit<'_>, ek: *const [u8; 1568], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1568], scratch: *mut [u64; 6144]) -> u32 {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(ek: *const [u8; 1568], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1568], scratch: *mut [u64; 6144]) -> u32;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -138,7 +138,7 @@ pub unsafe fn vg_mlkem1024_encaps_auto(ek: *const [u8; 1568], m: *const [u8; 32]
 /// * None of `dk`, `ct`, `key` and `scratch` may overlap the 160 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_mlkem1024_decaps_auto(dk: *const [u8; 3168], ct: *const [u8; 1568], key: *mut [u8; 32], scratch: *mut [u64; 6144]) -> u32 {
+pub unsafe fn vg_mlkem1024_decaps_auto(_dit: verified_garbage_cpu::Dit<'_>, dk: *const [u8; 3168], ct: *const [u8; 1568], key: *mut [u8; 32], scratch: *mut [u64; 6144]) -> u32 {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(dk: *const [u8; 3168], ct: *const [u8; 1568], key: *mut [u8; 32], scratch: *mut [u64; 6144]) -> u32;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -178,11 +178,22 @@ pub unsafe fn vg_mlkem1024_decaps_auto(dk: *const [u8; 3168], ct: *const [u8; 15
     unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(dk, ct, key, scratch) }
 }
 
-/// `vg_mlkem1024_check_ek`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::mlkem1024::vg_mlkem1024_check_ek as vg_mlkem1024_check_ek_auto;
+/// The ML-KEM-1024 encapsulation key check (FIPS 203 §7.2): returns 1 if every 12-bit integer that the first 1536 bytes of `*ek` encode is less than `q` = 3329 (the modulus check), and 0 otherwise. An encapsulation key must pass it before it is given to `vg_mlkem1024_encaps`.
+///
+/// Contract: `VG.Spec.MlKem1024.checkEkContract`. Constant time: only the pointer may affect timing.
+///
+/// It runs `vg_mlkem1024_check_ek`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `ek` must be valid for reads of 1568 bytes.
+/// * `ek` must not wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_mlkem1024_check_ek_auto(_dit: verified_garbage_cpu::Dit<'_>, ek: *const [u8; 1568]) -> u32 {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::mlkem1024::vg_mlkem1024_check_ek(ek) }
+}
 
 /// ML-KEM-1024 encapsulation with given randomness and the hash of the key, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek`, its hash `H(ek)` in `*h` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`, as `vg_mlkem1024_encaps` does, using `*h` instead of hashing `*ek`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
@@ -206,7 +217,7 @@ pub use crate::mlkem1024::vg_mlkem1024_check_ek as vg_mlkem1024_check_ek_auto;
 /// * None of `ek`, `h`, `m`, `key`, `ct` and `scratch` may overlap the 160 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_mlkem1024_encaps_h_auto(ek: *const [u8; 1568], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1568], scratch: *mut [u64; 6144]) -> u32 {
+pub unsafe fn vg_mlkem1024_encaps_h_auto(_dit: verified_garbage_cpu::Dit<'_>, ek: *const [u8; 1568], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1568], scratch: *mut [u64; 6144]) -> u32 {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(ek: *const [u8; 1568], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1568], scratch: *mut [u64; 6144]) -> u32;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only

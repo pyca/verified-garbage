@@ -19,7 +19,7 @@
 /// * `pre` and `scratch` must not overlap each other or `n` (distinct Rust objects never do).
 /// * None of `pre`, `n` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_rsa_public_precompute(pre: *mut u64, pre_len: usize, n: *const u8, n_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_public_precompute(pre: *mut u64, pre_len: usize, n: *const u8, n_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xf9004080,0xf9004482,0xf9004883,0x91000080,0x39400045,0xd1000466,0x8b060046,0x394000c6
 .inst 0xd2800007,0xd2800028,0xeb0800aa,0x9a87210a,0x8a0800c6,0xd101006b,0xd378dd6b,0x8b05016b
@@ -195,7 +195,7 @@ cbnz x2, 234b
 /// * `dp`, `dq`, `qinv` and `scratch` must not overlap each other, `n`, `p`, `q`, `d` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `dp`, `dq`, `qinv`, `n`, `p`, `q`, `d` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_rsa_crt_values(dp: *mut u8, dp_len: usize, dq: *mut u8, dq_len: usize, qinv: *mut u8, qinv_len: usize, n: *const u8, n_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, d: *const u8, d_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_crt_values(dp: *mut u8, dp_len: usize, dq: *mut u8, dq_len: usize, qinv: *mut u8, qinv_len: usize, n: *const u8, n_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, d: *const u8, d_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xf9401be8,0xf9004100,0xf9005501,0xf9004d02,0xf9005d03,0xf9005104,0xf9004506,0xf9004907
 .inst 0xf94003e9,0xf9006109,0xf9400be9,0xf9006509,0xf94013e9,0xf9006909,0xf94017e9,0xf9006d09
@@ -843,7 +843,7 @@ cbnz x2, 296b
 /// * `p`, `q` and `scratch` must not overlap each other, `n`, `e`, `d` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `p`, `q`, `n`, `e`, `d` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_rsa_recover_primes_det(p: *mut u8, p_len: usize, q: *mut u8, q_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_recover_primes_det(p: *mut u8, p_len: usize, q: *mut u8, q_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xf9400be8,0xf9004100,0xf9005502,0xf9004504,0xf9004905,0xf9004d06,0xf9005107,0xf94003e9
 .inst 0xf9005d09,0xf94007e9,0xf9006109,0x91000100,0x91000082,0x910000a3,0x39400045,0xd1000466
@@ -1877,7 +1877,7 @@ cbnz x2, 2149b
 /// * `scratch` must not overlap `n`, `e`, `d`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `n`, `e`, `d`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_rsa_check_key(n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_check_key(n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xf94023e8,0xf9004500,0xf9004901,0xf9004d02,0xf9005103,0xf9004104,0xf9005505,0xf9005d06
 .inst 0xf9006107,0xf94003e9,0xf9006509,0xf94007e9,0xf9006909,0xf9400be9,0xf9006d09,0xf94013e9

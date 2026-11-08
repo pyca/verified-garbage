@@ -17,7 +17,7 @@
 /// * `inner` and `outer` must not overlap each other or `key` (distinct Rust objects never do).
 /// * None of `inner`, `outer` and `key` may overlap the arguments on the stack, overlap the return address on the stack or the 1124 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_hmac_md5_init(inner: *mut [u8; 80], outer: *mut [u8; 80], key: *const u8, key_len: usize) {
+pub(crate) unsafe extern "C" fn vg_hmac_md5_init(inner: *mut [u8; 80], outer: *mut [u8; 80], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "i0QkEIP4QQ=="
 jae 20f
@@ -82,7 +82,7 @@ jmp 21b
 /// * `inner` and `out` must not overlap each other or `outer` (distinct Rust objects never do).
 /// * None of `inner`, `outer` and `out` may overlap the arguments on the stack, overlap the return address on the stack or the 460 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_hmac_md5_finalize(inner: *mut [u8; 80], outer: *const [u8; 80], count: u64, out: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_hmac_md5_finalize(inner: *mut [u8; 80], outer: *const [u8; 80], count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "jaQkZP7//4uEJKABAACJRCQEi4QkpAEAAIlEJAiLhCSoAQAAiUQkDIuEJKwBAACJRCQQi4QksAEAAIlEJBSJ4IPAHIlEJBiLRCQYiVhwiXB0iXh4iWh8icWLXCQEi3QkCIt8JBSLRCQMi0wkEInqgcKAAAAAVVJRUFM="
 call {vg_md5_finalize_scratch}

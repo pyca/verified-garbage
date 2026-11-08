@@ -2,11 +2,24 @@
 //! The dispatchers of the verified `sm4_gcm` functions for `aarch64`
 //! (`crate::sm4_gcm`, `VG.Rust.dispatcher`).
 
-/// `vg_sm4_gcm_init`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::sm4_gcm::vg_sm4_gcm_init as vg_sm4_gcm_init_auto;
+/// The SM4-GCM key setup: writes the key context of the 16-byte SM4 key at `key` to `*ctx`: its key schedule (draft-ribose-cfrg-sm4-10 §7.3, as `vg_sm4_expand_key` writes it) in bytes 0–127, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255; bytes 128–239 are not used. The other `vg_sm4_gcm_*` functions read it.
+///
+/// Contract: `VG.Spec.Sm4.Gcm.initContract`. The key context is `VG.Spec.Sm4.Gcm.KeyRepr`. Constant time: only the pointers may affect timing, not the key.
+///
+/// It runs `vg_sm4_gcm_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of 16 bytes.
+/// * `ctx` must be valid for reads and writes of 256 bytes.
+/// * `ctx` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `ctx` may overlap the 4032 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_sm4_gcm_init_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *const [u8; 16], ctx: *mut [u64; 32]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::sm4_gcm::vg_sm4_gcm_init(key, ctx) }
+}
 
 /// SM4-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag; RFC 8998 §3.5.1): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
 ///
@@ -27,7 +40,7 @@ pub use crate::sm4_gcm::vg_sm4_gcm_init as vg_sm4_gcm_init_auto;
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 4048 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_sm4_gcm_seal_auto(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe fn vg_sm4_gcm_seal_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -80,7 +93,7 @@ pub unsafe fn vg_sm4_gcm_seal_auto(ctx: *const [u64; 32], nonce: *const u8, nonc
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 4048 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_sm4_gcm_open_auto(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe fn vg_sm4_gcm_open_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -129,7 +142,7 @@ pub unsafe fn vg_sm4_gcm_open_auto(ctx: *const [u64; 32], nonce: *const u8, nonc
 /// * None of `ctx`, `state` and `data` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_sm4_gcm_stream_aad_auto(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
+pub unsafe fn vg_sm4_gcm_stream_aad_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -180,7 +193,7 @@ pub unsafe fn vg_sm4_gcm_stream_aad_auto(ctx: *const [u64; 32], state: *mut [u64
 /// * None of `ctx`, `nonce` and `state` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_sm4_gcm_stream_init_auto(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
+pub unsafe fn vg_sm4_gcm_stream_init_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -230,7 +243,7 @@ pub unsafe fn vg_sm4_gcm_stream_init_auto(ctx: *const [u64; 32], nonce: *const u
 /// * None of `ctx`, `state` and `tag` may overlap the 4032 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_sm4_gcm_stream_finish_auto(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
+pub unsafe fn vg_sm4_gcm_stream_finish_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -280,7 +293,7 @@ pub unsafe fn vg_sm4_gcm_stream_finish_auto(ctx: *const [u64; 32], state: *mut [
 /// * None of `ctx`, `state` and `tag` may overlap the 4032 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_sm4_gcm_stream_verify_auto(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe fn vg_sm4_gcm_stream_verify_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -331,7 +344,7 @@ pub unsafe fn vg_sm4_gcm_stream_verify_auto(ctx: *const [u64; 32], state: *mut [
 /// * None of `ctx`, `state` and `data` may overlap the 4032 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_sm4_gcm_stream_encrypt_auto(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe fn vg_sm4_gcm_stream_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -382,7 +395,7 @@ pub unsafe fn vg_sm4_gcm_stream_encrypt_auto(ctx: *const [u64; 32], state: *mut 
 /// * None of `ctx`, `state` and `data` may overlap the 4032 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_sm4_gcm_stream_decrypt_auto(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe fn vg_sm4_gcm_stream_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only

@@ -17,7 +17,7 @@
 /// * Neither `public` nor `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_ec_p384_validate_public_key_auto(public: *const [u8; 97], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe fn vg_ec_p384_validate_public_key_auto(_dit: verified_garbage_cpu::Dit<'_>, public: *const [u8; 97], scratch: *mut [u64; 1024]) -> u32 {
     /// The type of the implementations.
     type Impl = unsafe extern "sysv64" fn(public: *const [u8; 97], scratch: *mut [u64; 1024]) -> u32;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only

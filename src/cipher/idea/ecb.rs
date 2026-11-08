@@ -32,11 +32,12 @@ impl IdeaEcb {
         let key: &[u8; 16] = key.try_into().map_err(|_| InvalidKeyLength)?;
         let mut encrypt = CacheAligned([0; 104]);
         let mut decrypt = CacheAligned([0; 104]);
+        crate::dit::enter!(dit);
         // SAFETY: the key and both schedules are separate valid buffers of
         // the required sizes.
         unsafe {
-            vg_idea_expand_key_auto(key, &mut encrypt.0);
-            vg_idea_invert_key_auto(&encrypt.0, &mut decrypt.0);
+            vg_idea_expand_key_auto(dit, key, &mut encrypt.0);
+            vg_idea_invert_key_auto(dit, &encrypt.0, &mut decrypt.0);
         }
         Ok(Self { encrypt, decrypt })
     }
@@ -58,11 +59,12 @@ fn crypt(schedule: &[u8; 104], buffer: &mut [u8]) -> Result<(), IncompleteBlock>
     if !buffer.len().is_multiple_of(8) {
         return Err(IncompleteBlock);
     }
+    crate::dit::enter!(dit);
     // SAFETY: buffer contains complete eight-byte blocks, including zero
     // blocks. The buffer and schedule are separate valid objects and do not
     // overlap the callee's stack.
     unsafe {
-        vg_idea_ecb_auto(schedule, buffer.as_mut_ptr().cast(), buffer.len() / 8);
+        vg_idea_ecb_auto(dit, schedule, buffer.as_mut_ptr().cast(), buffer.len() / 8);
     }
     Ok(())
 }

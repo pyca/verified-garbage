@@ -18,7 +18,7 @@
 /// * None of `out`, `public` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_ec_brainpoolp512r1_compress_public_key_auto(out: *mut [u8; 65], public: *const [u8; 129], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe fn vg_ec_brainpoolp512r1_compress_public_key_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 65], public: *const [u8; 129], scratch: *mut [u64; 1024]) -> u32 {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(out: *mut [u8; 65], public: *const [u8; 129], scratch: *mut [u64; 1024]) -> u32;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -69,7 +69,7 @@ pub unsafe fn vg_ec_brainpoolp512r1_compress_public_key_auto(out: *mut [u8; 65],
 /// * None of `out`, `public` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_ec_brainpoolp512r1_decompress_public_key_auto(out: *mut [u8; 129], public: *const [u8; 65], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe fn vg_ec_brainpoolp512r1_decompress_public_key_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 129], public: *const [u8; 65], scratch: *mut [u64; 1024]) -> u32 {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(out: *mut [u8; 129], public: *const [u8; 65], scratch: *mut [u64; 1024]) -> u32;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only

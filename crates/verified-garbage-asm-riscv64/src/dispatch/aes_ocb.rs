@@ -2,20 +2,70 @@
 //! The dispatchers of the verified `aes_ocb` functions for `riscv64`
 //! (`crate::aes_ocb`, `VG.Rust.dispatcher`).
 
-/// `vg_aes_ocb_init`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::aes_ocb::vg_aes_ocb_init as vg_aes_ocb_init_auto;
+/// The AES-OCB key setup (RFC 7253 §4.1): writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and `L_* = ENCIPHER(K, zeros(128))` in bytes 240–255. The other bytes are unspecified. The other `vg_aes_ocb_*` functions read it, with `Nr` as their `rounds`.
+///
+/// Contract: `VG.Spec.Ocb.initContract`. The key context is `VG.Spec.Ocb.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
+///
+/// It runs `vg_aes_ocb_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `ctx` must be valid for reads and writes of 256 bytes, and aligned for `u64`.
+/// * `key_len` must be 16, 24 or 32.
+/// * `ctx` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `ctx` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_aes_ocb_init_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::aes_ocb::vg_aes_ocb_init(key, key_len, ctx) }
+}
 
-/// `vg_aes_ocb_seal`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::aes_ocb::vg_aes_ocb_seal as vg_aes_ocb_seal_auto;
+/// AES-OCB authenticated encryption (RFC 7253 §4.2, `OCB-ENCRYPT`, with `TAGLEN = 8 * tag_len`): with the key context `*ctx` that `vg_aes_ocb_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and writes the tag of `tag_len` bytes, of the data and the `aad_len` bytes of associated data at `aad`, to the `tag_len` bytes at `tag`. The RFC's ciphertext is the encrypted data followed by the tag. A nonce must never be used twice with the same key.
+///
+/// Contract: `VG.Spec.Ocb.sealContract`. Constant time: only the pointers, `rounds`, the lengths and `tag_len` may affect timing, not the key context, the nonce, the associated data or the data.
+///
+/// It runs `vg_aes_ocb_seal`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes, and aligned for `u64`.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of `tag_len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `tag_len` must be from 1 to 16, and `nonce_len` from 1 to 15 (RFC 7253 §3.1).
+/// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_aes_ocb_seal_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::aes_ocb::vg_aes_ocb_seal(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) }
+}
 
-/// `vg_aes_ocb_open`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::aes_ocb::vg_aes_ocb_open as vg_aes_ocb_open_auto;
+/// AES-OCB authenticated decryption (RFC 7253 §4.3, `OCB-DECRYPT`, with `TAGLEN = 8 * tag_len`): with the key context `*ctx` that `vg_aes_ocb_init` wrote for `rounds` rounds and the received tag (the last `tag_len` bytes of the RFC's ciphertext) the `tag_len` bytes at `tag`, decrypts the `len` bytes of encrypted data at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and returns 1 if the tag is that of the data and the `aad_len` bytes of associated data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
+///
+/// Contract: `VG.Spec.Ocb.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the associated data, the data or the tag.
+///
+/// It runs `vg_aes_ocb_open`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes, and aligned for `u64`.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `tag_len` must be from 1 to 16, and `nonce_len` from 1 to 15 (RFC 7253 §3.1).
+/// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_aes_ocb_open_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::aes_ocb::vg_aes_ocb_open(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) }
+}

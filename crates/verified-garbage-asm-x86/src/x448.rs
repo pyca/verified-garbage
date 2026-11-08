@@ -17,7 +17,7 @@
 /// * `out` and `scratch` must not overlap each other, `scalar`, `point` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `scalar`, `point` and `scratch` may overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_x448_exchange(out: *mut [u8; 56], scalar: *const [u8; 56], point: *const [u8; 56], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_x448_exchange(out: *mut [u8; 56], scalar: *const [u8; 56], point: *const [u8; 56], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "jWQk8ItEJBSJBCSLRCQYiUQkBItEJByJRCQIi0QkIIlEJAw="
 call {vg_x448}
@@ -40,7 +40,7 @@ call {vg_x448}
 /// * `out` and `scratch` must not overlap each other, `scalar` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `scalar` and `scratch` may overlap the return address on the stack or the 100 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_x448_base(out: *mut [u8; 56], scalar: *const [u8; 56], scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "C" fn vg_x448_base(out: *mut [u8; 56], scalar: *const [u8; 56], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "uAAAAAC6BQAAAFNQUFBQUFBQUFBQUFBQUonji0QkQItMJESLVCRIUlNRUA=="
 call {vg_x448}

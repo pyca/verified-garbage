@@ -78,11 +78,12 @@ macro_rules! ml_kem {
             /// key check of FIPS 203 §7.2 (every integer it encodes is less
             /// than `q`); [`InvalidKey`] otherwise.
             pub fn from_bytes(bytes: &[u8; $ek]) -> Result<Self, InvalidKey> {
+                let dit = $crate::dit::public($crate::dit::Why::PublicKey);
                 // SAFETY: `bytes` is valid for reads of its size, and a Rust
                 // object, so it does not overlap the stack or wrap around the
                 // end of the address space. The dispatcher calls only an
                 // implementation the CPU has the features of.
-                let r = unsafe { $check_ek(bytes) };
+                let r = unsafe { $check_ek(dit, bytes) };
                 if r == 1 {
                     Ok($EncapsulationKey { bytes: *bytes, h: None })
                 } else {
@@ -113,6 +114,7 @@ macro_rules! ml_kem {
             /// [`encapsulate`](Self::encapsulate) draws.
             #[doc(hidden)]
             pub fn encapsulate_internal(&self, m: &[u8; 32]) -> Result<([u8; 32], [u8; $ct]), MlKemError> {
+                $crate::dit::enter!(dit);
                 let mut key = [0u8; 32];
                 let mut ct = [0u8; $ct];
                 // The verified contract accepts arbitrary initial scratch bytes.
@@ -130,8 +132,8 @@ macro_rules! ml_kem {
                 let r = unsafe {
                     let (ek, s) = (&self.bytes, scratch.0.as_mut_ptr());
                     match &self.h {
-                        Some(h) => $encaps_h(ek, h, m, &mut key, &mut ct, s),
-                        None => $encaps(ek, m, &mut key, &mut ct, s),
+                        Some(h) => $encaps_h(dit, ek, h, m, &mut key, &mut ct, s),
+                        None => $encaps(dit, ek, m, &mut key, &mut ct, s),
                     }
                 };
                 if r != 1 {
@@ -181,6 +183,7 @@ macro_rules! ml_kem {
             /// approved RBG (FIPS 203 §3.3, Algorithm 19), or a seed so
             /// generated before.
             pub fn from_seed(seed: &[u8; 64]) -> Result<Self, MlKemError> {
+                $crate::dit::enter!(dit);
                 let mut key = $DecapsulationKey {
                     seed: *seed,
                     ek: $EncapsulationKey { bytes: [0; $ek], h: None },
@@ -194,7 +197,7 @@ macro_rules! ml_kem {
                 // overlap each other or the stack, or wrap around the end of
                 // the address space. The dispatcher calls only an
                 // implementation the CPU has the features of.
-                let r = unsafe { $keygen(seed, &mut key.ek.bytes, &mut key.dk, scratch.0.as_mut_ptr()) };
+                let r = unsafe { $keygen(dit, seed, &mut key.ek.bytes, &mut key.dk, scratch.0.as_mut_ptr()) };
                 if r != 1 {
                     // A `SampleNTT` reaches its bound with the probability
                     // the module's documentation gives; dropping `key`
@@ -226,6 +229,7 @@ macro_rules! ml_kem {
             /// `J(z ‖ ct)` if `ct` is not a ciphertext of this key (in
             /// constant time: nothing tells whether it was rejected).
             pub fn decapsulate(&self, ct: &[u8; $ct]) -> Result<[u8; 32], MlKemError> {
+                $crate::dit::enter!(dit);
                 let mut key = [0u8; 32];
                 // The verified contract accepts arbitrary initial scratch bytes.
                 let mut scratch = $crate::align::CacheAligned(core::mem::MaybeUninit::<[u64; $scratch]>::uninit());
@@ -236,7 +240,7 @@ macro_rules! ml_kem {
                 // space. `self.dk` was written by the key generation. The
                 // dispatcher calls only an implementation the CPU has the
                 // features of.
-                let r = unsafe { $decaps(&self.dk, ct, &mut key, scratch.0.as_mut_ptr()) };
+                let r = unsafe { $decaps(dit, &self.dk, ct, &mut key, scratch.0.as_mut_ptr()) };
                 if r != 1 {
                     // A `SampleNTT` reaches its bound with the probability
                     // the module's documentation gives.

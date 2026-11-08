@@ -31,10 +31,11 @@ impl Sm4Ecb {
     /// Expands a 16-byte key for use in either direction.
     pub fn new(key: &[u8; 16]) -> Self {
         let mut schedule = CacheAligned([0; 128]);
+        crate::dit::enter!(dit);
         // SAFETY: key and schedule are separate valid buffers of the required
         // sizes.
         unsafe {
-            vg_sm4_expand_key_auto(key, &mut schedule.0);
+            vg_sm4_expand_key_auto(dit, key, &mut schedule.0);
         }
         Self { schedule }
     }
@@ -60,11 +61,13 @@ impl Sm4Ecb {
         } else {
             vg_sm4_ecb_decrypt_auto
         };
+        crate::dit::enter!(dit);
         // SAFETY: buffer contains complete 16-byte blocks, including zero
         // blocks. The buffer and schedule are separate valid objects and do not
         // overlap the callee's stack.
         unsafe {
             f(
+                dit,
                 &self.schedule.0,
                 buffer.as_mut_ptr().cast(),
                 buffer.len() / 16,
@@ -101,14 +104,15 @@ mod tests {
                 let mut storage = Aligned([0; 136]);
                 storage.0[offset..offset + 128].copy_from_slice(&ctx.schedule.0);
                 let mut output = input;
+                let dit = crate::dit::public(crate::dit::Why::Test);
                 // SAFETY: the schedule's copy and the output are separate
                 // valid objects, and the output holds four whole blocks.
                 unsafe {
                     let schedule = storage.0.as_ptr().add(offset).cast();
                     if encrypt {
-                        vg_sm4_ecb_encrypt_auto(schedule, output.as_mut_ptr().cast(), 4);
+                        vg_sm4_ecb_encrypt_auto(dit, schedule, output.as_mut_ptr().cast(), 4);
                     } else {
-                        vg_sm4_ecb_decrypt_auto(schedule, output.as_mut_ptr().cast(), 4);
+                        vg_sm4_ecb_decrypt_auto(dit, schedule, output.as_mut_ptr().cast(), 4);
                     }
                 }
                 assert_eq!(output, expected);

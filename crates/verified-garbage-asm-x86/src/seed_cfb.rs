@@ -17,7 +17,7 @@
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 1188 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_seed_cfb128_encrypt(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
+pub(crate) unsafe extern "C" fn vg_seed_cfb128_encrypt(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r#".base64 "jaQkcPv//4uEJJQEAACJRCQEi4QkmAQAAIlEJAiLhCScBAAAiUQkDIuEJKAEAACJRCQQieCDwBiJRCQUi0QkFImYUAQAAImwVAQAAIm4WAQAAImoXAQAAInHi3QkCIsGiYdoBAAAi0YEiYdsBAAAi0YIiYdwBAAAi0YMiYd0BAAAi0QkDImHYAQAAItEJBCJh2QEAACFwA=="
 je 20f
@@ -49,7 +49,7 @@ jmp 21f
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 1188 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_seed_cfb128_decrypt(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
+pub(crate) unsafe extern "C" fn vg_seed_cfb128_decrypt(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r#".base64 "jaQkcPv//4uEJJQEAACJRCQEi4QkmAQAAIlEJAiLhCScBAAAiUQkDIuEJKAEAACJRCQQieCDwBiJRCQUi0QkFImYUAQAAImwVAQAAIm4WAQAAImoXAQAAInHi3QkCIsGiYdoBAAAi0YEiYdsBAAAi0YIiYdwBAAAi0YMiYd0BAAAi0QkDImHYAQAAItEJBCJh2QEAACFwA=="
 je 20f
@@ -81,7 +81,7 @@ jmp 21f
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 1188 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_seed_cfb128_encrypt_final(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_seed_cfb128_encrypt_final(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "jaQkcPv//4uEJJQEAACJRCQEi4QkmAQAAIlEJAiLhCScBAAAiUQkDIuEJKAEAACJRCQQieCDwBiJRCQUi0QkFImYUAQAAImwVAQAAIm4WAQAAImoXAQAAInHi3QkCIsGiYdoBAAAi0YEiYdsBAAAi0YIiYdwBAAAi0YMiYd0BAAAi0QkDImHYAQAAItEJBCJh2QEAACFwA=="
 je 20f
@@ -123,7 +123,7 @@ jmp 21f
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 1188 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_seed_cfb128_decrypt_final(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_seed_cfb128_decrypt_final(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "jaQkcPv//4uEJJQEAACJRCQEi4QkmAQAAIlEJAiLhCScBAAAiUQkDIuEJKAEAACJRCQQieCDwBiJRCQUi0QkFImYUAQAAImwVAQAAIm4WAQAAImoXAQAAInHi3QkCIsGiYdoBAAAi0YEiYdsBAAAi0YIiYdwBAAAi0YMiYd0BAAAi0QkDImHYAQAAItEJBCJh2QEAACFwA=="
 je 20f

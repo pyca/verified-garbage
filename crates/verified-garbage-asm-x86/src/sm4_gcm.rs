@@ -16,7 +16,7 @@
 /// * `ctx` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `ctx` may overlap the arguments on the stack, overlap the return address on the stack or the 4112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm4_gcm_init(key: *const [u8; 16], ctx: *mut [u64; 32]) {
+pub(crate) unsafe extern "C" fn vg_sm4_gcm_init(key: *const [u8; 16], ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
         r#".base64 "jaQk8PX//4uEJBQKAACJRCQEi4QkGAoAAIlEJAiJ4IPAEIlEJAyLRCQMiZiAAAAAibCEAAAAibiIAAAAiaiMAAAAicWLdCQIi0QkBInyUlA="
 call {vg_sm4_expand_key}
@@ -49,7 +49,7 @@ pub const VG_SM4_GCM_STREAM_INIT_PCLMUL_FEATURES: verified_garbage_cpu::Features
 /// * None of `ctx`, `nonce` and `state` may overlap the arguments on the stack, overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm4_gcm_stream_init_pclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
+pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_init_pclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
     core::arch::naked_asm!(
         r#".base64 "jaQk6PX//4uEJBwKAACJRCQEi4QkIAoAAIlEJAiLhCQkCgAAiUQkDIuEJCgKAACJRCQQieCDwBiJRCQUi0QkFImYgAAAAImwhAAAAIm4iAAAAImojAAAAInFi3QkEItEJASJhZAAAACLRCQIiYUQAQAAi0QkDImFFAEAAItEJAyJhcAAAAC4AAAAAImFvAAAAIuFwAAAAIP4DA=="
 je 20f
@@ -141,7 +141,7 @@ pub const VG_SM4_GCM_STREAM_AAD_PCLMUL_FEATURES: verified_garbage_cpu::Features 
 /// * None of `ctx`, `state` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 2616 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm4_gcm_stream_aad_pclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_aad_pclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "jaQk4PX//4uEJCQKAACJRCQEi4QkKAoAAIlEJAiLhCQsCgAAiUQkDIuEJDAKAACJRCQQi4QkNAoAAIlEJBSLhCQ4CgAAiUQkGIngg8AgiUQkHItEJByJmIAAAACJsIQAAACJuIgAAACJqIwAAACJxYt0JAiLRCQEiYWQAAAAi0QkFImFEAEAAItEJBiJhRQBAACLRCQMg+APiYUYAQAAi4UUAQAAhcA="
 je 20f
@@ -214,7 +214,7 @@ pub const VG_SM4_GCM_STREAM_ENCRYPT_PCLMUL_FEATURES: verified_garbage_cpu::Featu
 /// * None of `ctx`, `state` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 4136 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm4_gcm_stream_encrypt_pclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_encrypt_pclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "jaQk2PX//4uEJCwKAACJRCQEi4QkMAoAAIlEJAiLhCQ0CgAAiUQkDIuEJDgKAACJRCQQi4QkPAoAAIlEJBSLhCRACgAAiUQkGIuEJEQKAACJRCQci4QkSAoAAIlEJCCJ4IPAKIlEJCSLRCQkiZiAAAAAibCEAAAAibiIAAAAiaiMAAAAicWLdCQIi0QkBImFkAAAAItEJAyJhZgAAACLRCQQiYWcAAAAi0QkFImFoAAAAItEJBiJhaQAAACLRCQciYWoAAAAi0QkIImFrAAAAIuFqAAAAImFEAEAAIuFrAAAAImFFAEAAIuFoAAAAIPgD4mFGAEAAIuFFAEAAIXA"
 je 20f
@@ -349,7 +349,7 @@ pub const VG_SM4_GCM_STREAM_DECRYPT_PCLMUL_FEATURES: verified_garbage_cpu::Featu
 /// * None of `ctx`, `state` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 4136 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm4_gcm_stream_decrypt_pclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_decrypt_pclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "jaQk2PX//4uEJCwKAACJRCQEi4QkMAoAAIlEJAiLhCQ0CgAAiUQkDIuEJDgKAACJRCQQi4QkPAoAAIlEJBSLhCRACgAAiUQkGIuEJEQKAACJRCQci4QkSAoAAIlEJCCJ4IPAKIlEJCSLRCQkiZiAAAAAibCEAAAAibiIAAAAiaiMAAAAicWLdCQIi0QkBImFkAAAAItEJAyJhZgAAACLRCQQiYWcAAAAi0QkFImFoAAAAItEJBiJhaQAAACLRCQciYWoAAAAi0QkIImFrAAAAIuFrAAAAIXA"
 je 20f
@@ -483,7 +483,7 @@ pub const VG_SM4_GCM_STREAM_FINISH_PCLMUL_FEATURES: verified_garbage_cpu::Featur
 /// * None of `ctx`, `state` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 4132 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm4_gcm_stream_finish_pclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_finish_pclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "jaQk3PX//4uEJCgKAACJRCQEi4QkLAoAAIlEJAiLhCQwCgAAiUQkDIuEJDQKAACJRCQQi4QkOAoAAIlEJBSLhCQ8CgAAiUQkGIuEJEAKAACJRCQcieCDwCSJRCQgi0QkIImYgAAAAImwhAAAAIm4iAAAAImojAAAAInFi3QkCItEJASJhZAAAACLRCQMiYWYAAAAi0QkEImFnAAAAItEJBSJhaAAAACLRCQYiYWkAAAAi0QkHImF1AAAAIuFoAAAAIuNmAAAAIuVoAAAAAuVpAAAAA=="
 je 20f
@@ -533,7 +533,7 @@ pub const VG_SM4_GCM_STREAM_VERIFY_PCLMUL_FEATURES: verified_garbage_cpu::Featur
 /// * None of `ctx`, `state` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 4136 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm4_gcm_stream_verify_pclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_verify_pclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "jaQk2PX//4uEJCwKAACJRCQEi4QkMAoAAIlEJAiLhCQ0CgAAiUQkDIuEJDgKAACJRCQQi4QkPAoAAIlEJBSLhCRACgAAiUQkGIuEJEQKAACJRCQci4QkSAoAAIlEJCCJ4IPAKIlEJCSLRCQkiZiAAAAAibCEAAAAibiIAAAAiaiMAAAAicWLdCQIi0QkBImFkAAAAItEJAyJhZgAAACLRCQQiYWcAAAAi0QkFImFoAAAAItEJBiJhaQAAACLRCQciYXUAAAAi0QkIImFtAAAALkAAAAAi520AAAAg/sE"
 jb 20f
@@ -612,7 +612,7 @@ pub const VG_SM4_GCM_SEAL_PCLMUL_FEATURES: verified_garbage_cpu::Features = veri
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 4136 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm4_gcm_seal_pclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_sm4_gcm_seal_pclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "jaQk2PX//4uEJCwKAACJRCQEi4QkMAoAAIlEJAiLhCQ0CgAAiUQkDIuEJDgKAACJRCQQi4QkPAoAAIlEJBSLhCRACgAAiUQkGIuEJEQKAACJRCQci4QkSAoAAIlEJCCJ4IPAKIlEJCSLRCQkiZiAAAAAibCEAAAAibiIAAAAiaiMAAAAicWJ7oPGEItEJASJhZAAAACLRCQIiYUQAQAAi0QkDImFFAEAAItEJAyJhcAAAACLRCQQiYWwAAAAi0QkFImFmAAAAItEJBiJhagAAACLRCQciYWsAAAAi0QkIImF1AAAALgAAAAAiYW8AAAAi4XAAAAAg/gM"
 je 20f
@@ -866,7 +866,7 @@ pub const VG_SM4_GCM_OPEN_PCLMUL_FEATURES: verified_garbage_cpu::Features = veri
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 4140 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm4_gcm_open_pclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_sm4_gcm_open_pclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "jaQk1PX//4uEJDAKAACJRCQEi4QkNAoAAIlEJAiLhCQ4CgAAiUQkDIuEJDwKAACJRCQQi4QkQAoAAIlEJBSLhCRECgAAiUQkGIuEJEgKAACJRCQci4QkTAoAAIlEJCCLhCRQCgAAiUQkJIngg8AsiUQkKItEJCiJmIAAAACJsIQAAACJuIgAAACJqIwAAACJxYnug8YQi0QkBImFkAAAAItEJAiJhRABAACLRCQMiYUUAQAAi0QkDImFwAAAAItEJBCJhbAAAACLRCQUiYWYAAAAi0QkGImFqAAAAItEJByJhawAAACLRCQgiYXUAAAAi0QkJImFtAAAALgAAAAAiYW8AAAAuQAAAACLnbQAAACD+wQ="
 jb 20f
@@ -1145,7 +1145,7 @@ jmp 25f
 /// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
 /// * None of `ctx`, `nonce` and `state` may overlap the arguments on the stack, overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm4_gcm_stream_init(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
+pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_init(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
     core::arch::naked_asm!(
         r#".base64 "jaQk6PX//4uEJBwKAACJRCQEi4QkIAoAAIlEJAiLhCQkCgAAiUQkDIuEJCgKAACJRCQQieCDwBiJRCQUi0QkFImYgAAAAImwhAAAAIm4iAAAAImojAAAAInFi3QkEItEJASJhZAAAACLRCQIiYUQAQAAi0QkDImFFAEAAItEJAyJhcAAAAC4AAAAAImFvAAAAIuFwAAAAIP4DA=="
 je 20f
@@ -1233,7 +1233,7 @@ jmp 21f
 /// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 2616 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm4_gcm_stream_aad(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_aad(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "jaQk4PX//4uEJCQKAACJRCQEi4QkKAoAAIlEJAiLhCQsCgAAiUQkDIuEJDAKAACJRCQQi4QkNAoAAIlEJBSLhCQ4CgAAiUQkGIngg8AgiUQkHItEJByJmIAAAACJsIQAAACJuIgAAACJqIwAAACJxYt0JAiLRCQEiYWQAAAAi0QkFImFEAEAAItEJBiJhRQBAACLRCQMg+APiYUYAQAAi4UUAQAAhcA="
 je 20f
@@ -1302,7 +1302,7 @@ jmp 21f
 /// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 4136 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm4_gcm_stream_encrypt(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_encrypt(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "jaQk2PX//4uEJCwKAACJRCQEi4QkMAoAAIlEJAiLhCQ0CgAAiUQkDIuEJDgKAACJRCQQi4QkPAoAAIlEJBSLhCRACgAAiUQkGIuEJEQKAACJRCQci4QkSAoAAIlEJCCJ4IPAKIlEJCSLRCQkiZiAAAAAibCEAAAAibiIAAAAiaiMAAAAicWLdCQIi0QkBImFkAAAAItEJAyJhZgAAACLRCQQiYWcAAAAi0QkFImFoAAAAItEJBiJhaQAAACLRCQciYWoAAAAi0QkIImFrAAAAIuFqAAAAImFEAEAAIuFrAAAAImFFAEAAIuFoAAAAIPgD4mFGAEAAIuFFAEAAIXA"
 je 20f
@@ -1433,7 +1433,7 @@ jmp 213f
 /// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 4136 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm4_gcm_stream_decrypt(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_decrypt(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "jaQk2PX//4uEJCwKAACJRCQEi4QkMAoAAIlEJAiLhCQ0CgAAiUQkDIuEJDgKAACJRCQQi4QkPAoAAIlEJBSLhCRACgAAiUQkGIuEJEQKAACJRCQci4QkSAoAAIlEJCCJ4IPAKIlEJCSLRCQkiZiAAAAAibCEAAAAibiIAAAAiaiMAAAAicWLdCQIi0QkBImFkAAAAItEJAyJhZgAAACLRCQQiYWcAAAAi0QkFImFoAAAAItEJBiJhaQAAACLRCQciYWoAAAAi0QkIImFrAAAAIuFrAAAAIXA"
 je 20f
@@ -1563,7 +1563,7 @@ jmp 222f
 /// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 4132 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm4_gcm_stream_finish(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_finish(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "jaQk3PX//4uEJCgKAACJRCQEi4QkLAoAAIlEJAiLhCQwCgAAiUQkDIuEJDQKAACJRCQQi4QkOAoAAIlEJBSLhCQ8CgAAiUQkGIuEJEAKAACJRCQcieCDwCSJRCQgi0QkIImYgAAAAImwhAAAAIm4iAAAAImojAAAAInFi3QkCItEJASJhZAAAACLRCQMiYWYAAAAi0QkEImFnAAAAItEJBSJhaAAAACLRCQYiYWkAAAAi0QkHImF1AAAAIuFoAAAAIuNmAAAAIuVoAAAAAuVpAAAAA=="
 je 20f
@@ -1609,7 +1609,7 @@ call {vg_sm4_ctr32}
 /// * `state` must not overlap `ctx` or `tag` (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 4136 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm4_gcm_stream_verify(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_verify(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "jaQk2PX//4uEJCwKAACJRCQEi4QkMAoAAIlEJAiLhCQ0CgAAiUQkDIuEJDgKAACJRCQQi4QkPAoAAIlEJBSLhCRACgAAiUQkGIuEJEQKAACJRCQci4QkSAoAAIlEJCCJ4IPAKIlEJCSLRCQkiZiAAAAAibCEAAAAibiIAAAAiaiMAAAAicWLdCQIi0QkBImFkAAAAItEJAyJhZgAAACLRCQQiYWcAAAAi0QkFImFoAAAAItEJBiJhaQAAACLRCQciYXUAAAAi0QkIImFtAAAALkAAAAAi520AAAAg/sE"
 jb 20f
@@ -1684,7 +1684,7 @@ jmp 25f
 /// * `data` and `tag` must not overlap each other, `ctx`, `nonce` or `aad` (distinct Rust objects never do).
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 4136 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm4_gcm_seal(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_sm4_gcm_seal(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "jaQk2PX//4uEJCwKAACJRCQEi4QkMAoAAIlEJAiLhCQ0CgAAiUQkDIuEJDgKAACJRCQQi4QkPAoAAIlEJBSLhCRACgAAiUQkGIuEJEQKAACJRCQci4QkSAoAAIlEJCCJ4IPAKIlEJCSLRCQkiZiAAAAAibCEAAAAibiIAAAAiaiMAAAAicWJ7oPGEItEJASJhZAAAACLRCQIiYUQAQAAi0QkDImFFAEAAItEJAyJhcAAAACLRCQQiYWwAAAAi0QkFImFmAAAAItEJBiJhagAAACLRCQciYWsAAAAi0QkIImF1AAAALgAAAAAiYW8AAAAi4XAAAAAg/gM"
 je 20f
@@ -1934,7 +1934,7 @@ call {vg_sm4_ctr32}
 /// * `data` must not overlap `ctx`, `nonce`, `aad` or `tag` (distinct Rust objects never do).
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 4140 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm4_gcm_open(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_sm4_gcm_open(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "jaQk1PX//4uEJDAKAACJRCQEi4QkNAoAAIlEJAiLhCQ4CgAAiUQkDIuEJDwKAACJRCQQi4QkQAoAAIlEJBSLhCRECgAAiUQkGIuEJEgKAACJRCQci4QkTAoAAIlEJCCLhCRQCgAAiUQkJIngg8AsiUQkKItEJCiJmIAAAACJsIQAAACJuIgAAACJqIwAAACJxYnug8YQi0QkBImFkAAAAItEJAiJhRABAACLRCQMiYUUAQAAi0QkDImFwAAAAItEJBCJhbAAAACLRCQUiYWYAAAAi0QkGImFqAAAAItEJByJhawAAACLRCQgiYXUAAAAi0QkJImFtAAAALgAAAAAiYW8AAAAuQAAAACLnbQAAACD+wQ="
 jb 20f

@@ -2,20 +2,63 @@
 //! The dispatchers of the verified `camellia` functions for `powerpc64le`
 //! (`crate::camellia`, `VG.Rust.dispatcher`).
 
-/// `vg_camellia_expand_key`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::camellia::vg_camellia_expand_key as vg_camellia_expand_key_auto;
+/// The Camellia key schedule (RFC 3713 §2.2): writes the subkeys of the `key_len`-byte key at `key` to the start of `*schedule`, in the order encryption uses them (`kw1`, `kw2`, then for each six rounds their subkeys `k` and, but after the last six, the two of `FL` and `FLINV`, then `kw3`, `kw4`), each as 8 bytes, the most significant first: 26 subkeys (208 bytes, for 18 rounds) for a key of 16 bytes, 34 (272 bytes, for 24 rounds) for one of 24 or 32, as `vg_camellia_ecb_encrypt` and `vg_camellia_ecb_decrypt` read them.
+///
+/// Contract: `VG.Spec.Camellia.expandKeyContract`. Constant time: only the pointers and `key_len` may affect timing, not the key.
+///
+/// It runs `vg_camellia_expand_key`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `schedule` must be valid for reads and writes of 272 bytes.
+/// * `key_len` must be 16, 24 or 32.
+/// * For a key of 16 bytes, the last 64 bytes of `schedule` are unspecified on return.
+/// * `schedule` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `schedule` may overlap the 3344 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_camellia_expand_key_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, schedule: *mut [u8; 272]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::camellia::vg_camellia_expand_key(key, key_len, schedule) }
+}
 
-/// `vg_camellia_ecb_encrypt`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::camellia::vg_camellia_ecb_encrypt as vg_camellia_ecb_encrypt_auto;
+/// Camellia ECB encryption (RFC 3713 §2.3, SP 800-38A §6.1): replaces each of the `n` 16-byte blocks at `data` with its encryption by Camellia with `rounds` rounds under the subkeys at `schedule`, as `vg_camellia_expand_key` writes them. No padding is added or removed. For `n = 0`, no data is transformed.
+///
+/// Contract: `VG.Spec.Camellia.ecbEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys or the data.
+///
+/// It runs `vg_camellia_ecb_encrypt`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 272 bytes.
+/// * `data` must be valid for reads and writes of `16 * n` bytes.
+/// * `rounds` must be 18 (for a key of 16 bytes) or 24 (for one of 24 or 32).
+/// * `data` must not overlap `schedule` (distinct Rust objects never do).
+/// * Neither `schedule` nor `data` may overlap the 3344 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_camellia_ecb_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 272], rounds: usize, data: *mut [u8; 16], n: usize) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::camellia::vg_camellia_ecb_encrypt(schedule, rounds, data, n) }
+}
 
-/// `vg_camellia_ecb_decrypt`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::camellia::vg_camellia_ecb_decrypt as vg_camellia_ecb_decrypt_auto;
+/// Camellia ECB decryption (RFC 3713 §2.3.3, SP 800-38A §6.1): replaces each of the `n` 16-byte blocks at `data` with its decryption by Camellia with `rounds` rounds under the subkeys at `schedule`, as `vg_camellia_expand_key` writes them (in the order encryption uses them, which decryption reverses). No padding is added or removed. For `n = 0`, no data is transformed.
+///
+/// Contract: `VG.Spec.Camellia.ecbDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys or the data.
+///
+/// It runs `vg_camellia_ecb_decrypt`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 272 bytes.
+/// * `data` must be valid for reads and writes of `16 * n` bytes.
+/// * `rounds` must be 18 (for a key of 16 bytes) or 24 (for one of 24 or 32).
+/// * `data` must not overlap `schedule` (distinct Rust objects never do).
+/// * Neither `schedule` nor `data` may overlap the 3344 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_camellia_ecb_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 272], rounds: usize, data: *mut [u8; 16], n: usize) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::camellia::vg_camellia_ecb_decrypt(schedule, rounds, data, n) }
+}

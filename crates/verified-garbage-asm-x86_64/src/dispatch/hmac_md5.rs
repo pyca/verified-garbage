@@ -2,14 +2,43 @@
 //! The dispatchers of the verified `hmac_md5` functions for `x86_64`
 //! (`crate::hmac_md5`, `VG.Rust.dispatcher`).
 
-/// `vg_hmac_md5_init`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::hmac_md5::vg_hmac_md5_init as vg_hmac_md5_init_auto;
+/// Starts an HMAC-MD5 computation with a key of any length: makes the MD5 streaming state `*inner` represent `K₀ ⊕ ipad` and `*outer` represent `K₀ ⊕ opad`, where `K₀` is the `key_len` bytes at `key` (or their MD5 digest, if there are more than 64) padded with zeros to 64 bytes (FIPS 198-1 §4, steps 1–3). The text is then absorbed with `vg_md5_update` on `*inner` (its `count` starting at 64), and the MAC computed with `vg_hmac_md5_finalize`.
+///
+/// Contract: `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.md5I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
+///
+/// It runs `vg_hmac_md5_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `inner` must be valid for reads and writes of 80 bytes.
+/// * `outer` must be valid for reads and writes of 80 bytes.
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `inner` and `outer` must not overlap each other or `key` (distinct Rust objects never do).
+/// * None of `inner`, `outer` and `key` may overlap the return address on the stack or the 1056 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_hmac_md5_init_auto(_dit: verified_garbage_cpu::Dit<'_>, inner: *mut [u8; 80], outer: *mut [u8; 80], key: *const u8, key_len: usize) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::hmac_md5::vg_hmac_md5_init(inner, outer, key, key_len) }
+}
 
-/// `vg_hmac_md5_finalize`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::hmac_md5::vg_hmac_md5_finalize as vg_hmac_md5_finalize_auto;
+/// Finishes an HMAC-MD5 computation: if, for a 64-byte key `K₀` and a text of fewer than 2⁶⁴ − 64 bytes, the MD5 streaming state `*inner` represents `(K₀ ⊕ ipad) ‖ text`, of `count` bytes, and `*outer` represents `K₀ ⊕ opad`, writes the HMAC-MD5 of the text under `K₀` (16 bytes) to `*out`.
+///
+/// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.md5I`. Constant time: only the pointers and `count` may affect timing, not the states.
+///
+/// It runs `vg_hmac_md5_finalize`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `inner` must be valid for reads and writes of 80 bytes.
+/// * `outer` must be valid for reads of 80 bytes.
+/// * `out` must be valid for reads and writes of 16 bytes.
+/// * The contents of `inner` on return are unspecified.
+/// * `inner` and `out` must not overlap each other or `outer` (distinct Rust objects never do).
+/// * None of `inner`, `outer` and `out` may overlap the return address on the stack or the 408 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_hmac_md5_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, inner: *mut [u8; 80], outer: *const [u8; 80], count: u64, out: *mut [u8; 16]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::hmac_md5::vg_hmac_md5_finalize(inner, outer, count, out) }
+}

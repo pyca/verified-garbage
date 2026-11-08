@@ -2,14 +2,44 @@
 //! The dispatchers of the verified `camellia_ofb` functions for `arm`
 //! (`crate::camellia_ofb`, `VG.Rust.dispatcher`).
 
-/// `vg_camellia_ofb`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::camellia_ofb::vg_camellia_ofb as vg_camellia_ofb_auto;
+/// Camellia-OFB encryption or decryption (NIST SP 800-38A §6.4, RFC 3713 §2.3) of whole blocks, in place: XORs the `n` 16-byte blocks at `data` with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)`, where `O₀` is the block at `*iv`, and replaces `*iv` with `Oₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is Camellia with `rounds` rounds under the subkeys at `schedule`, as `vg_camellia_expand_key` writes them.
+///
+/// Contract: `VG.Spec.Camellia.ofbContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
+///
+/// It runs `vg_camellia_ofb`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 272 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `16 * n` bytes.
+/// * `rounds` must be 18 (for a key of 16 bytes) or 24 (for one of 24 or 32).
+/// * `iv` and `data` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the 2904 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_camellia_ofb_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::camellia_ofb::vg_camellia_ofb(schedule, rounds, iv, data, n) }
+}
 
-/// `vg_camellia_ofb_final`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::camellia_ofb::vg_camellia_ofb_final as vg_camellia_ofb_final_auto;
+/// Camellia-OFB encryption or decryption (NIST SP 800-38A §6.4, RFC 3713 §2.3) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)`, where `O₀` is the block at `*iv`, a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*iv` with the last output block used, `Oₙ` (leaving it unchanged if `len = 0`): so that a further call continues the message if `len` is a multiple of 16, and otherwise keystream, to be wiped, after which the message must end. `CIPH_K` is Camellia encryption with `rounds` rounds under the subkeys at `schedule`, as `vg_camellia_expand_key` writes them.
+///
+/// Contract: `VG.Spec.Camellia.ofbFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the subkeys, the chaining value or the data.
+///
+/// It runs `vg_camellia_ofb_final`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 272 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `rounds` must be 18 (for a key of 16 bytes) or 24 (for one of 24 or 32).
+/// * `iv` and `data` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the 2904 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_camellia_ofb_final_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::camellia_ofb::vg_camellia_ofb_final(schedule, rounds, iv, data, len) }
+}

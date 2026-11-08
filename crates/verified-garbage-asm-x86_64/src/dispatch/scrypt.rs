@@ -22,7 +22,7 @@
 /// * None of `password`, `salt`, `b`, `v`, `scratch` and `out` may overlap the return address on the stack or the 88 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_scrypt_auto(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
+pub unsafe fn vg_scrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
     /// The type of the implementations.
     type Impl = unsafe extern "sysv64" fn(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only

@@ -16,7 +16,7 @@
 /// * `iv` and `data` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the 336 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_cast5_cfb64_encrypt(schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+pub(crate) unsafe extern "C" fn vg_cast5_cfb64_encrypt(schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r"sub sp, sp, #328
 add r12, sp, #0
@@ -187,7 +187,7 @@ bx lr",
 /// * `iv` and `data` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the 336 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_cast5_cfb64_decrypt(schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+pub(crate) unsafe extern "C" fn vg_cast5_cfb64_decrypt(schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r"sub sp, sp, #328
 add r12, sp, #0
@@ -362,7 +362,7 @@ bx lr",
 /// * `iv` and `data` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the 336 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_cast5_cfb64_encrypt_final(schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_cast5_cfb64_encrypt_final(schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r"sub sp, sp, #328
 add r12, sp, #0
@@ -549,7 +549,7 @@ bx lr",
 /// * `iv` and `data` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the 336 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_cast5_cfb64_decrypt_final(schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_cast5_cfb64_decrypt_final(schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r"sub sp, sp, #328
 add r12, sp, #0

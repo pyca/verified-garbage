@@ -82,11 +82,12 @@ impl Key {
         if !matches!(key.len(), 16 | 24 | 32) {
             return Err(InvalidKeyLength);
         }
+        crate::dit::enter!(dit);
         let mut schedule = CacheAligned([0; 240]);
         // SAFETY: the key is 16, 24 or 32 bytes long; the key and the schedule
         // are separate valid buffers of the sizes of the signature. The
         // dispatcher calls only an implementation the CPU has the features of.
-        unsafe { vg_aes_expand_key_auto(key.as_ptr(), key.len(), &mut schedule.0) };
+        unsafe { vg_aes_expand_key_auto(dit, key.as_ptr(), key.len(), &mut schedule.0) };
         Ok(Self {
             schedule,
             rounds: key.len() / 4 + 6,
@@ -98,7 +99,8 @@ impl Key {
     /// with the counter block after the last one used: `ctr` plus the number
     /// of blocks, modulo `2¹²⁸` (unchanged for empty input).
     fn apply_keystream(&self, ctr: &mut [u8; 16], buffer: &mut [u8]) {
-        self.crypt(ctr, buffer);
+        crate::dit::enter!(dit);
+        self.crypt(dit, ctr, buffer);
     }
 
     /// Encrypts or decrypts (the same operation) the rest of a message, of
@@ -107,8 +109,9 @@ impl Key {
     /// block the whole blocks leave in `ctr`, which it replaces with the
     /// next one.
     fn apply_keystream_final(&self, ctr: &mut [u8; 16], buffer: &mut [u8]) {
+        crate::dit::enter!(dit);
         let (blocks, rest) = buffer.split_at_mut(buffer.len() / 16 * 16);
-        self.crypt(ctr, blocks);
+        self.crypt(dit, ctr, blocks);
         if !rest.is_empty() {
             let mut scratch = CacheAligned([0; 272]);
             // SAFETY: `rounds` is 10, 12 or 14 and the schedule holds its key
@@ -118,6 +121,7 @@ impl Key {
             // an implementation the CPU has the features of.
             unsafe {
                 vg_aes_ctr_final_auto(
+                    dit,
                     &self.schedule.0,
                     self.rounds,
                     ctr,
@@ -133,7 +137,7 @@ impl Key {
     }
 
     /// CTR of whole blocks.
-    fn crypt(&self, ctr: &mut [u8; 16], blocks: &mut [u8]) {
+    fn crypt(&self, dit: crate::dit::Dit<'_>, ctr: &mut [u8; 16], blocks: &mut [u8]) {
         let mut scratch = CacheAligned([0; 272]);
         // SAFETY: `rounds` is 10, 12 or 14 and the schedule holds its key
         // schedule; `blocks` holds `len / 16` whole blocks (its length is a
@@ -143,6 +147,7 @@ impl Key {
         // the features of.
         unsafe {
             vg_aes_ctr_auto(
+                dit,
                 &self.schedule.0,
                 self.rounds,
                 ctr,

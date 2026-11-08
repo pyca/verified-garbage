@@ -2,14 +2,44 @@
 //! The dispatchers of the verified `aes_ecb` functions for `powerpc64le`
 //! (`crate::aes_ecb`, `VG.Rust.dispatcher`).
 
-/// `vg_aes_ecb_encrypt`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::aes_ecb::vg_aes_ecb_encrypt as vg_aes_ecb_encrypt_auto;
+/// AES-ECB encryption (NIST SP 800-38A §6.1) of whole blocks, in place: replaces each of the `n` 16-byte blocks at `data` with its encryption by AES (FIPS 197 §5.1, `CIPHER`) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it. No padding is added. Each byte of `scratch` is unchanged or zero on return.
+///
+/// Contract: `VG.Spec.AesEcb.encryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
+///
+/// It runs `vg_aes_ecb_encrypt`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `data` must be valid for reads and writes of `16 * n` bytes.
+/// * `scratch` must be valid for reads and writes of 2048 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `data` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_aes_ecb_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::aes_ecb::vg_aes_ecb_encrypt(schedule, rounds, data, n, scratch) }
+}
 
-/// `vg_aes_ecb_decrypt`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::aes_ecb::vg_aes_ecb_decrypt as vg_aes_ecb_decrypt_auto;
+/// AES-ECB decryption (NIST SP 800-38A §6.1) of whole blocks, in place: replaces each of the `n` 16-byte blocks at `data` with its decryption by AES (FIPS 197 §5.3, `INVCIPHER`) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (the forward cipher's schedule). No padding is removed. Each byte of `scratch` is unchanged or zero on return.
+///
+/// Contract: `VG.Spec.AesEcb.decryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
+///
+/// It runs `vg_aes_ecb_decrypt`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `data` must be valid for reads and writes of `16 * n` bytes.
+/// * `scratch` must be valid for reads and writes of 2048 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `data` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_aes_ecb_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::aes_ecb::vg_aes_ecb_decrypt(schedule, rounds, data, n, scratch) }
+}

@@ -16,7 +16,7 @@
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 240 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_cast5_cfb64_encrypt(schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_cast5_cfb64_encrypt(schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJBD///9JieFJg8EITYnJSYmZqAAAAEmJqbAAAABNiaG4AAAATYmpwAAAAE2JscgAAABNibnQAAAAZkwPbvpJicxNicVIiwdJiUEoSItHCEmJQTBIi0cQSYlBOEiLRxhJiUFASItHIEmJQUhIi0coSYlBUEiLRzBJiUFYSItHOEmJQWBIi0dASYlBaEiLR0hJiUFwSItHUEmJQXhIi0dYSYmBgAAAAEiLR2BJiYGIAAAASItHaEmJgZAAAABIi0dwSYmBmAAAAEiLR3hJiYGgAAAAZkwPfvhIiyhJiWkQTYXt"
 je 20f
@@ -79,7 +79,7 @@ jmp 21f
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 240 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_cast5_cfb64_decrypt(schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_cast5_cfb64_decrypt(schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJBD///9JieFJg8EITYnJSYmZqAAAAEmJqbAAAABNiaG4AAAATYmpwAAAAE2JscgAAABNibnQAAAAZkwPbvpJicxNicVIiwdJiUEoSItHCEmJQTBIi0cQSYlBOEiLRxhJiUFASItHIEmJQUhIi0coSYlBUEiLRzBJiUFYSItHOEmJQWBIi0dASYlBaEiLR0hJiUFwSItHUEmJQXhIi0dYSYmBgAAAAEiLR2BJiYGIAAAASItHaEmJgZAAAABIi0dwSYmBmAAAAEiLR3hJiYGgAAAAZkwPfvhIiyhJiWkQTYXt"
 je 20f
@@ -142,7 +142,7 @@ jmp 21f
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 240 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_cast5_cfb64_encrypt_final(schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_cast5_cfb64_encrypt_final(schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJBD///9JieFJg8EITYnJSYmZqAAAAEmJqbAAAABNiaG4AAAATYmpwAAAAE2JscgAAABNibnQAAAAZkwPbvpJicxNicVIiwdJiUEoSItHCEmJQTBIi0cQSYlBOEiLRxhJiUFASItHIEmJQUhIi0coSYlBUEiLRzBJiUFYSItHOEmJQWBIi0dASYlBaEiLR0hJiUFwSItHUEmJQXhIi0dYSYmBgAAAAEiLR2BJiYGIAAAASItHaEmJgZAAAABIi0dwSYmBmAAAAEiLR3hJiYGgAAAAZkwPfvhIiyhJiWkQTYXt"
 je 20f
@@ -214,7 +214,7 @@ jmp 21f
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 240 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_cast5_cfb64_decrypt_final(schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_cast5_cfb64_decrypt_final(schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJBD///9JieFJg8EITYnJSYmZqAAAAEmJqbAAAABNiaG4AAAATYmpwAAAAE2JscgAAABNibnQAAAAZkwPbvpJicxNicVIiwdJiUEoSItHCEmJQTBIi0cQSYlBOEiLRxhJiUFASItHIEmJQUhIi0coSYlBUEiLRzBJiUFYSItHOEmJQWBIi0dASYlBaEiLR0hJiUFwSItHUEmJQXhIi0dYSYmBgAAAAEiLR2BJiYGIAAAASItHaEmJgZAAAABIi0dwSYmBmAAAAEiLR3hJiYGgAAAAZkwPfvhIiyhJiWkQTYXt"
 je 20f

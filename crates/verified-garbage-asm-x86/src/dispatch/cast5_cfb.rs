@@ -2,26 +2,94 @@
 //! The dispatchers of the verified `cast5_cfb` functions for `x86`
 //! (`crate::cast5_cfb`, `VG.Rust.dispatcher`).
 
-/// `vg_cast5_cfb64_encrypt`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::cast5_cfb::vg_cast5_cfb64_encrypt as vg_cast5_cfb64_encrypt_auto;
+/// CAST5-CFB64 encryption (NIST SP 800-38A §6.3, with 64-bit segments; RFC 2144 §2) of whole blocks, in place: replaces the `n` 8-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is CAST-128 encryption with `rounds` rounds under the subkeys written by `vg_cast5_expand_key`.
+///
+/// Contract: `VG.Spec.Cast5.cfbEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
+///
+/// It runs `vg_cast5_cfb64_encrypt`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
+/// * `data` must be valid for reads and writes of `8 * n` bytes.
+/// * `rounds` must be 12 (for a key of up to 10 bytes) or 16 (for a longer one).
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 336 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_cast5_cfb64_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::cast5_cfb::vg_cast5_cfb64_encrypt(schedule, rounds, iv, data, n) }
+}
 
-/// `vg_cast5_cfb64_decrypt`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::cast5_cfb::vg_cast5_cfb64_decrypt as vg_cast5_cfb64_decrypt_auto;
+/// CAST5-CFB64 decryption (NIST SP 800-38A §6.3, with 64-bit segments; RFC 2144 §2) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is CAST-128 encryption (also for decryption) with `rounds` rounds under the subkeys written by `vg_cast5_expand_key`.
+///
+/// Contract: `VG.Spec.Cast5.cfbDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
+///
+/// It runs `vg_cast5_cfb64_decrypt`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
+/// * `data` must be valid for reads and writes of `8 * n` bytes.
+/// * `rounds` must be 12 (for a key of up to 10 bytes) or 16 (for a longer one).
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 336 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_cast5_cfb64_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::cast5_cfb::vg_cast5_cfb64_decrypt(schedule, rounds, iv, data, n) }
+}
 
-/// `vg_cast5_cfb64_encrypt_final`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::cast5_cfb::vg_cast5_cfb64_encrypt_final as vg_cast5_cfb64_encrypt_final_auto;
+/// CAST5-CFB64 encryption (NIST SP 800-38A §6.3, with 64-bit segments; RFC 2144 §2) of the last piece of a message, of any length, in place: replaces its whole 8-byte blocks `P₁ … Pₙ₋₁` at `data` with `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Pₙ*` of `u` bytes with `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, so that a further call continues the message, if `len` is a multiple of 8 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is CAST5 encryption with `rounds` rounds under the subkeys at `schedule`, as `vg_cast5_expand_key` writes them.
+///
+/// Contract: `VG.Spec.Cast5.cfbEncryptFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the subkeys, the chaining value or the data.
+///
+/// It runs `vg_cast5_cfb64_encrypt_final`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `rounds` must be 12 (for a key of up to 10 bytes) or 16 (for a longer one).
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 336 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_cast5_cfb64_encrypt_final_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut u8, len: usize) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::cast5_cfb::vg_cast5_cfb64_encrypt_final(schedule, rounds, iv, data, len) }
+}
 
-/// `vg_cast5_cfb64_decrypt_final`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::cast5_cfb::vg_cast5_cfb64_decrypt_final as vg_cast5_cfb64_decrypt_final_auto;
+/// CAST5-CFB64 decryption (NIST SP 800-38A §6.3, with 64-bit segments; RFC 2144 §2) of the last piece of a message, of any length, in place: replaces its whole 8-byte blocks `C₁ … Cₙ₋₁` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Cₙ*` of `u` bytes with `Pₙ* = Cₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, the last whole block at `data` on entry, so that a further call continues the message, if `len` is a multiple of 8 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is CAST5 encryption with `rounds` rounds under the subkeys at `schedule`, as `vg_cast5_expand_key` writes them.
+///
+/// Contract: `VG.Spec.Cast5.cfbDecryptFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the subkeys, the chaining value or the data.
+///
+/// It runs `vg_cast5_cfb64_decrypt_final`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `rounds` must be 12 (for a key of up to 10 bytes) or 16 (for a longer one).
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 336 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_cast5_cfb64_decrypt_final_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut u8, len: usize) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::cast5_cfb::vg_cast5_cfb64_decrypt_final(schedule, rounds, iv, data, len) }
+}

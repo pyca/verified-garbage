@@ -17,7 +17,7 @@
 /// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
 /// * None of `state`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_sha3_224_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+pub(crate) unsafe extern "sysv64" fn vg_sha3_224_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
     core::arch::naked_asm!(
         r#".base64 "TYnBSYnISInRSInyvpAAAABJiZkAAgAASYmpCAIAAE2JoRACAABNiakYAgAATYmxIAIAAE2JuSgCAABIiftIifVJidRJic1NicZNic9NhfY="
 je 20f
@@ -60,7 +60,7 @@ jmp 21f
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 680 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_sha3_224_finalize(state: *mut [u64; 25], pos: usize, out: *mut [u8; 28]) {
+pub(crate) unsafe extern "sysv64" fn vg_sha3_224_finalize(state: *mut [u64; 25], pos: usize, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJGj9//9IieFIg8EITImhgAIAAEiJqYgCAABJicxIidVIifK+kAAAALkGAAAATYng"
 call {vg_keccak_pad_scratch}
@@ -87,7 +87,7 @@ call {vg_keccak_squeeze_scratch}
 /// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
 /// * None of `state`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_sha3_256_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+pub(crate) unsafe extern "sysv64" fn vg_sha3_256_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
     core::arch::naked_asm!(
         r#".base64 "TYnBSYnISInRSInyvogAAABJiZkAAgAASYmpCAIAAE2JoRACAABNiakYAgAATYmxIAIAAE2JuSgCAABIiftIifVJidRJic1NicZNic9NhfY="
 je 20f
@@ -130,7 +130,7 @@ jmp 21f
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 680 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_sha3_256_finalize(state: *mut [u64; 25], pos: usize, out: *mut [u8; 32]) {
+pub(crate) unsafe extern "sysv64" fn vg_sha3_256_finalize(state: *mut [u64; 25], pos: usize, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJGj9//9IieFIg8EITImhgAIAAEiJqYgCAABJicxIidVIifK+iAAAALkGAAAATYng"
 call {vg_keccak_pad_scratch}
@@ -157,7 +157,7 @@ call {vg_keccak_squeeze_scratch}
 /// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
 /// * None of `state`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_sha3_384_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+pub(crate) unsafe extern "sysv64" fn vg_sha3_384_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
     core::arch::naked_asm!(
         r#".base64 "TYnBSYnISInRSInyvmgAAABJiZkAAgAASYmpCAIAAE2JoRACAABNiakYAgAATYmxIAIAAE2JuSgCAABIiftIifVJidRJic1NicZNic9NhfY="
 je 20f
@@ -200,7 +200,7 @@ jmp 21f
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 680 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_sha3_384_finalize(state: *mut [u64; 25], pos: usize, out: *mut [u8; 48]) {
+pub(crate) unsafe extern "sysv64" fn vg_sha3_384_finalize(state: *mut [u64; 25], pos: usize, out: *mut [u8; 48]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJGj9//9IieFIg8EITImhgAIAAEiJqYgCAABJicxIidVIifK+aAAAALkGAAAATYng"
 call {vg_keccak_pad_scratch}
@@ -227,7 +227,7 @@ call {vg_keccak_squeeze_scratch}
 /// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
 /// * None of `state`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_sha3_512_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+pub(crate) unsafe extern "sysv64" fn vg_sha3_512_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
     core::arch::naked_asm!(
         r#".base64 "TYnBSYnISInRSInyvkgAAABJiZkAAgAASYmpCAIAAE2JoRACAABNiakYAgAATYmxIAIAAE2JuSgCAABIiftIifVJidRJic1NicZNic9NhfY="
 je 20f
@@ -270,7 +270,7 @@ jmp 21f
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 680 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_sha3_512_finalize(state: *mut [u64; 25], pos: usize, out: *mut [u8; 64]) {
+pub(crate) unsafe extern "sysv64" fn vg_sha3_512_finalize(state: *mut [u64; 25], pos: usize, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJGj9//9IieFIg8EITImhgAIAAEiJqYgCAABJicxIidVIifK+SAAAALkGAAAATYng"
 call {vg_keccak_pad_scratch}
@@ -297,7 +297,7 @@ call {vg_keccak_squeeze_scratch}
 /// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
 /// * None of `state`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_shake128_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+pub(crate) unsafe extern "sysv64" fn vg_shake128_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
     core::arch::naked_asm!(
         r#".base64 "TYnBSYnISInRSInyvqgAAABJiZkAAgAASYmpCAIAAE2JoRACAABNiakYAgAATYmxIAIAAE2JuSgCAABIiftIifVJidRJic1NicZNic9NhfY="
 je 20f
@@ -337,7 +337,7 @@ jmp 21f
 /// * `pos` must be less than 168.
 /// * `state` must not overlap the return address on the stack or the 656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_shake128_finalize(state: *mut [u64; 25], pos: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_shake128_finalize(state: *mut [u64; 25], pos: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJHj9//9IieJIg8IISYnQSInyvqgAAAC5HwAAAA+2BBdIMciIBBcPtkQ3/0g1gAAAAIhEN/9MicY="
 call {vg_keccak_f1600}
@@ -359,7 +359,7 @@ call {vg_keccak_f1600}
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_shake128_squeeze(state: *mut [u64; 25], pos: usize, out: *mut u8, outlen: usize) -> usize {
+pub(crate) unsafe extern "sysv64" fn vg_shake128_squeeze(state: *mut [u64; 25], pos: usize, out: *mut u8, outlen: usize) -> usize {
     core::arch::naked_asm!(
         r#".base64 "SI2kJHj9//9JieBJg8AITYnBSYnISInRSInyvqgAAABJiZkAAgAASYmpCAIAAE2JoRACAABNiakYAgAATYmxIAIAAE2JuSgCAABIiftIifVJidRJic1NicZNic9NhfY="
 je 20f
@@ -399,7 +399,7 @@ jmp 21f
 /// * `pos` must be less than 136.
 /// * `state` must not overlap the return address on the stack or the 656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_shake256_finalize(state: *mut [u64; 25], pos: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_shake256_finalize(state: *mut [u64; 25], pos: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJHj9//9IieJIg8IISYnQSInyvogAAAC5HwAAAA+2BBdIMciIBBcPtkQ3/0g1gAAAAIhEN/9MicY="
 call {vg_keccak_f1600}
@@ -421,7 +421,7 @@ call {vg_keccak_f1600}
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_shake256_squeeze(state: *mut [u64; 25], pos: usize, out: *mut u8, outlen: usize) -> usize {
+pub(crate) unsafe extern "sysv64" fn vg_shake256_squeeze(state: *mut [u64; 25], pos: usize, out: *mut u8, outlen: usize) -> usize {
     core::arch::naked_asm!(
         r#".base64 "SI2kJHj9//9JieBJg8AITYnBSYnISInRSInyvogAAABJiZkAAgAASYmpCAIAAE2JoRACAABNiakYAgAATYmxIAIAAE2JuSgCAABIiftIifVJidRJic1NicZNic9NhfY="
 je 20f

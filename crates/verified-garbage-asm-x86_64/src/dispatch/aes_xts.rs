@@ -22,7 +22,7 @@
 /// * None of `schedule`, `tweak_schedule`, `i`, `data` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_xts_encrypt_unit_auto(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
+pub unsafe fn vg_aes_xts_encrypt_unit_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
     /// The type of the implementations.
     type Impl = unsafe extern "sysv64" fn(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -96,7 +96,7 @@ pub unsafe fn vg_aes_xts_encrypt_unit_auto(schedule: *const [u8; 240], tweak_sch
 /// * None of `schedule`, `tweak_schedule`, `i`, `data` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_xts_decrypt_unit_auto(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
+pub unsafe fn vg_aes_xts_decrypt_unit_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
     /// The type of the implementations.
     type Impl = unsafe extern "sysv64" fn(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -172,7 +172,7 @@ pub unsafe fn vg_aes_xts_decrypt_unit_auto(schedule: *const [u8; 240], tweak_sch
 /// * None of `schedule`, `tweak_schedule`, `i`, `src`, `dst` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_xts_encrypt_unit_to_auto(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], src: *const u8, len: usize, dst: *mut u8, dst_len: usize, scratch: *mut [u64; 304]) {
+pub unsafe fn vg_aes_xts_encrypt_unit_to_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], src: *const u8, len: usize, dst: *mut u8, dst_len: usize, scratch: *mut [u64; 304]) {
     /// The type of the implementations.
     type Impl = unsafe extern "sysv64" fn(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], src: *const u8, len: usize, dst: *mut u8, dst_len: usize, scratch: *mut [u64; 304]);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -248,7 +248,7 @@ pub unsafe fn vg_aes_xts_encrypt_unit_to_auto(schedule: *const [u8; 240], tweak_
 /// * None of `schedule`, `tweak_schedule`, `i`, `src`, `dst` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_xts_decrypt_unit_to_auto(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], src: *const u8, len: usize, dst: *mut u8, dst_len: usize, scratch: *mut [u64; 304]) {
+pub unsafe fn vg_aes_xts_decrypt_unit_to_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], src: *const u8, len: usize, dst: *mut u8, dst_len: usize, scratch: *mut [u64; 304]) {
     /// The type of the implementations.
     type Impl = unsafe extern "sysv64" fn(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], src: *const u8, len: usize, dst: *mut u8, dst_len: usize, scratch: *mut [u64; 304]);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only

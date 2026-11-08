@@ -19,7 +19,7 @@
 /// * None of `out`, `params`, `x` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_dsa_derive_key_auto(out: *mut u8, out_len: usize, params: *const u8, params_len: usize, p_len: usize, x: *const u8, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe fn vg_dsa_derive_key_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, params: *const u8, params_len: usize, p_len: usize, x: *const u8, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     /// The type of the implementations.
     type Impl = unsafe extern "sysv64" fn(out: *mut u8, out_len: usize, params: *const u8, params_len: usize, p_len: usize, x: *const u8, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -72,7 +72,7 @@ pub unsafe fn vg_dsa_derive_key_auto(out: *mut u8, out_len: usize, params: *cons
 /// * None of `out`, `used`, `params`, `rand` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_dsa_generate_key_auto(out: *mut u8, out_len: usize, used: *mut [u64; 1], params: *const u8, params_len: usize, p_len: usize, q_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe fn vg_dsa_generate_key_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, used: *mut [u64; 1], params: *const u8, params_len: usize, p_len: usize, q_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     /// The type of the implementations.
     type Impl = unsafe extern "sysv64" fn(out: *mut u8, out_len: usize, used: *mut [u64; 1], params: *const u8, params_len: usize, p_len: usize, q_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -128,7 +128,7 @@ pub unsafe fn vg_dsa_generate_key_auto(out: *mut u8, out_len: usize, used: *mut 
 /// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_dsa_parameter_search_auto(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
+pub unsafe fn vg_dsa_parameter_search_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
     /// The type of the implementations.
     type Impl = unsafe extern "sysv64" fn(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -211,7 +211,7 @@ pub unsafe fn vg_dsa_parameter_search_auto(out: *mut u8, out_len: usize, used: *
 /// * Neither `key` nor `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_dsa_validate_public_key_auto(key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe fn vg_dsa_validate_public_key_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     /// The type of the implementations.
     type Impl = unsafe extern "sysv64" fn(key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -263,7 +263,7 @@ pub unsafe fn vg_dsa_validate_public_key_auto(key: *const u8, key_len: usize, p_
 /// * None of `key`, `signature`, `digest` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_dsa_verify_prevalidated_auto(key: *const u8, key_len: usize, p_len: usize, q_len: usize, signature: *const u8, signature_len: usize, digest: *const u8, digest_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe fn vg_dsa_verify_prevalidated_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, p_len: usize, q_len: usize, signature: *const u8, signature_len: usize, digest: *const u8, digest_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     /// The type of the implementations.
     type Impl = unsafe extern "sysv64" fn(key: *const u8, key_len: usize, p_len: usize, q_len: usize, signature: *const u8, signature_len: usize, digest: *const u8, digest_len: usize, scratch: *mut u64, scratch_len: usize) -> u32;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -311,7 +311,7 @@ pub unsafe fn vg_dsa_verify_prevalidated_auto(key: *const u8, key_len: usize, p_
 /// * Neither `key` nor `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_dsa_validate_private_key_auto(key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe fn vg_dsa_validate_private_key_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     /// The type of the implementations.
     type Impl = unsafe extern "sysv64" fn(key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -345,11 +345,22 @@ pub unsafe fn vg_dsa_validate_private_key_auto(key: *const u8, key_len: usize, p
     unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(key, key_len, p_len, q_len, scratch, scratch_len) }
 }
 
-/// `vg_dsa_parameter_search_init`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::dsa::vg_dsa_parameter_search_init as vg_dsa_parameter_search_init_auto;
+/// Start a search for DSA domain parameters with a modulus of `p_len` octets (128, 256 or 384: 1024, 2048 or 3072 bits, with a subgroup of 160, 256 and 256 bits). Returns 1 and writes the search's four public words to `state`: the seeds it may still reject, `p_len`, its entropy budget, and the length of the first random tape to give `vg_dsa_parameter_search`. Returns 0 and writes zeros for any other `p_len`.
+///
+/// Contract: `VG.Spec.Dsa.parameterInitContract`.
+///
+/// It runs `vg_dsa_parameter_search_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 32 bytes.
+/// * `state` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_dsa_parameter_search_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 4], p_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::dsa::vg_dsa_parameter_search_init(state, p_len) }
+}
 
 /// Randomized DSA signing of a prehashed digest, for an already validated packed private key (big-endian p||q||g||y||x; vg_dsa_validate_private_key validates it). Up to eight signing attempts, each with 128 nonce draws. Returns 1 with fixed-width r||s, 0 for retry exhaustion, or 2 for insufficient random bytes; out is zero on failure and used counts consumed complete draws on every return. Timing may depend on public p,q,g,y, sampling decisions, signing success bits and consumption, not otherwise on secrets. Contract: `VG.Spec.Dsa.randomSignPrevalidatedContract`.
 ///
@@ -372,7 +383,7 @@ pub use crate::dsa::vg_dsa_parameter_search_init as vg_dsa_parameter_search_init
 /// * None of `out`, `used`, `key`, `digest`, `rand` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_dsa_sign_random_prevalidated_auto(out: *mut u8, out_len: usize, used: *mut [u64; 1], key: *const u8, key_len: usize, p_len: usize, q_len: usize, digest: *const u8, digest_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe fn vg_dsa_sign_random_prevalidated_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, used: *mut [u64; 1], key: *const u8, key_len: usize, p_len: usize, q_len: usize, digest: *const u8, digest_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     /// The type of the implementations.
     type Impl = unsafe extern "sysv64" fn(out: *mut u8, out_len: usize, used: *mut [u64; 1], key: *const u8, key_len: usize, p_len: usize, q_len: usize, digest: *const u8, digest_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only

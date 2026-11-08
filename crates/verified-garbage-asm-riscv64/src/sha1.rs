@@ -12,7 +12,7 @@
 /// * `state` must be valid for reads and writes of 84 bytes.
 /// * `state` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha1_init(state: *mut [u8; 84]) {
+pub(crate) unsafe extern "C" fn vg_sha1_init(state: *mut [u8; 84]) {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
@@ -77,7 +77,7 @@ pub unsafe extern "C" fn vg_sha1_init(state: *mut [u8; 84]) {
 /// * `state` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the 144 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha1_update(state: *mut [u8; 84], count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_sha1_update(state: *mut [u8; 84], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
@@ -211,7 +211,7 @@ j 21f
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the 144 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha1_finalize(state: *mut [u8; 84], count: u64, out: *mut [u8; 20]) {
+pub(crate) unsafe extern "C" fn vg_sha1_finalize(state: *mut [u8; 84], count: u64, out: *mut [u8; 20]) {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
@@ -398,7 +398,7 @@ beqz s6, 20b
 /// * `out` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `data` nor `out` may overlap the 288 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha1_digest(data: *const u8, len: usize, out: *mut [u8; 20]) {
+pub(crate) unsafe extern "C" fn vg_sha1_digest(data: *const u8, len: usize, out: *mut [u8; 20]) {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c

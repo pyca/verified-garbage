@@ -15,7 +15,7 @@
 /// * `schedule` must not overlap `key` or the arguments on the stack (distinct Rust objects never do).
 /// * Neither `key` nor `schedule` may overlap the return address on the stack or the 532 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_triple_des_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 384]) {
+pub(crate) unsafe extern "C" fn vg_triple_des_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 384]) {
     core::arch::naked_asm!(
         r#".base64 "jaQk7P3//4uEJBgCAACJRCQEi4QkHAIAAIlEJAiLhCQgAgAAiUQkDIngg8AUiUQkEItEJBCJKIlYBIlwCIl4DInFi1QkBIs6i3IED88PzrgAAAAAuwAAAACJ8cHpB4PhAcHJBTHLifHB6Q+D4QHByQYxy4nxwekXg+EBwckHMcuJ8cHpH4PhAcHJCDHLifnB6QeD4QHByQkxy4n5wekPg+EBwckKMcuJ+cHpF4PhAcHJCzHLifnB6R+D4QHByQwxy4nxwekGg+EBwckNMcuJ8cHpDoPhAcHJDjHLifHB6RaD4QHByQ8xy4nxwekeg+EBwckQMcuJ+cHpBoPhAcHJETHLifnB6Q6D4QHByRIxy4n5wekWg+EBwckTMcuJ+cHpHoPhAcHJFDHLifHB6QWD4QHByRUxy4nxwekNg+EBwckWMcuJ8cHpFYPhAcHJFzHLifHB6R2D4QHByRgxy4n5wekFg+EBwckZMcuJ+cHpDYPhAcHJGjHLifnB6RWD4QHByRsxy4n5wekdg+EBwckcMcuJ8cHpBIPhAcHJHTHLifHB6QyD4QHByR4xy4nxwekUg+EBwckfMcuJ8cHpHIPhATHLifHR6YPhAcHJBTHIifHB6QmD4QHByQYxyInxwekRg+EBwckHMciJ8cHpGYPhAcHJCDHIifnR6YPhAcHJCTHIifnB6QmD4QHByQoxyIn5wekRg+EBwckLMciJ+cHpGYPhAcHJDDHIifHB6QKD4QHByQ0xyInxwekKg+EBwckOMciJ8cHpEoPhAcHJDzHIifHB6RqD4QHByRAxyIn5wekCg+EBwckRMciJ+cHpCoPhAcHJEjHIifnB6RKD4QHByRMxyIn5wekag+EBwckUMciJ8cHpA4PhAcHJFTHIifHB6QuD4QHByRYxyInxwekTg+EBwckXMciJ8cHpG4PhAcHJGDHIifnB6QOD4QHByRkxyIn5wekLg+EBwckaMciJ+cHpE4PhAcHJGzHIifnB6RuD4QHByRwxyIn5wekEg+EBwckdMciJ+cHpDIPhAcHJHjHIifnB6RSD4QHByR8xyIn5wekcg+EBMciJ3onHi1QkDLgAAAAAiUUUg8IAiVUQ"
 20:
@@ -110,7 +110,7 @@ jmp 215f
 /// * `data` must not overlap `schedule` (distinct Rust objects never do).
 /// * Neither `schedule` nor `data` may overlap the arguments on the stack, overlap the return address on the stack or the 1060 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_triple_des_ecb_encrypt(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
+pub(crate) unsafe extern "C" fn vg_triple_des_ecb_encrypt(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r#".base64 "jaQk7Pv//4uEJBgEAACJRCQEi4QkHAQAAIlEJAiLhCQgBAAAiUQkDIngg8AUiUQkEItEJBCJqAACAACJmAQCAACJsAgCAACJuAwCAACJxYtcJASLdCQIi3wkDIP/AA=="
 je 20f
@@ -141,7 +141,7 @@ jmp 21f
 /// * `data` must not overlap `schedule` (distinct Rust objects never do).
 /// * Neither `schedule` nor `data` may overlap the arguments on the stack, overlap the return address on the stack or the 1060 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_triple_des_ecb_decrypt(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
+pub(crate) unsafe extern "C" fn vg_triple_des_ecb_decrypt(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r#".base64 "jaQk7Pv//4uEJBgEAACJRCQEi4QkHAQAAIlEJAiLhCQgBAAAiUQkDIngg8AUiUQkEItEJBCJqAACAACJmAQCAACJsAgCAACJuAwCAACJxYtcJASLdCQIi3wkDIP/AA=="
 je 20f

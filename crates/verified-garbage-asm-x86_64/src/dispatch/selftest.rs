@@ -2,8 +2,13 @@
 //! The dispatchers of the verified `selftest` functions for `x86_64`
 //! (`crate::selftest`, `VG.Rust.dispatcher`).
 
-/// `vg_selftest_add`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::selftest::vg_selftest_add as vg_selftest_add_auto;
+/// Pipeline self-test: returns `a.wrapping_add(b)`.
+///
+/// Contract: `VG.Spec.Selftest.addContract`. No safety requirements.
+#[allow(clippy::missing_safety_doc)]
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_selftest_add_auto(_dit: verified_garbage_cpu::Dit<'_>, a: u64, b: u64) -> u64 {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::selftest::vg_selftest_add(a, b) }
+}

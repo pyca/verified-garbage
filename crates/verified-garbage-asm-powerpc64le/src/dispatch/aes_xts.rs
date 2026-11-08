@@ -2,14 +2,52 @@
 //! The dispatchers of the verified `aes_xts` functions for `powerpc64le`
 //! (`crate::aes_xts`, `VG.Rust.dispatcher`).
 
-/// `vg_aes_xts_encrypt_unit`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::aes_xts::vg_aes_xts_encrypt_unit as vg_aes_xts_encrypt_unit_auto;
+/// XTS-AES encryption (IEEE Std 1619-2007 §5.3.2, NIST SP 800-38E) of a whole data unit, in place: replaces the `len` bytes at `data`, at least 16 and at most 2²⁰ blocks, with their encryption under the key `Key1 ‖ Key2` with the tweak value `*i`. With `m` whole blocks `P₀ … Pₘ₋₁` and `b` bytes `Pₘ` after them, each `Pⱼ` for `j < m` (`j < m - 1` if `b > 0`) becomes `Cⱼ = AES-enc(Key1, Pⱼ ⊕ Tⱼ) ⊕ Tⱼ`, where `Tⱼ = T ⊗ αʲ` (§5.2) and `T = AES-enc(Key2, i)`. If `b > 0`, ciphertext stealing makes `Cₘ` the first `b` bytes of `CC`, the encryption of `Pₘ₋₁` with `Tₘ₋₁`, and `Cₘ₋₁` the encryption with `Tₘ` of `Pₘ` followed by the other `16 - b` bytes of `CC`. `AES-enc(Key1, ·)` and `AES-enc(Key2, ·)` are AES (FIPS 197) with `rounds` rounds and the key schedules in the first `16 * (rounds + 1)` bytes of `*schedule` and `*tweak_schedule`, as `vg_aes_expand_key` writes them.
+///
+/// Contract: `VG.Spec.Xts.aesEncryptUnitContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedules, the tweak value or the data.
+///
+/// It runs `vg_aes_xts_encrypt_unit`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `tweak_schedule` must be valid for reads of 240 bytes.
+/// * `i` must be valid for reads of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 2432 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `len` must be at least 16 and at most `16 << 20` (2²⁰ blocks).
+/// * The contents of `scratch` on return are unspecified.
+/// * `data` and `scratch` must not overlap each other, `schedule`, `tweak_schedule` or `i` (distinct Rust objects never do).
+/// * None of `schedule`, `tweak_schedule`, `i`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_aes_xts_encrypt_unit_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::aes_xts::vg_aes_xts_encrypt_unit(schedule, tweak_schedule, rounds, i, data, len, scratch) }
+}
 
-/// `vg_aes_xts_decrypt_unit`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::aes_xts::vg_aes_xts_decrypt_unit as vg_aes_xts_decrypt_unit_auto;
+/// XTS-AES decryption (IEEE Std 1619-2007 §5.4.2, NIST SP 800-38E) of a whole data unit, in place: replaces the `len` bytes at `data`, at least 16 and at most 2²⁰ blocks, with their decryption under the key `Key1 ‖ Key2` with the tweak value `*i`. With `m` whole blocks `C₀ … Cₘ₋₁` and `b` bytes `Cₘ` after them, each `Cⱼ` for `j < m` (`j < m - 1` if `b > 0`) becomes `Pⱼ = AES-dec(Key1, Cⱼ ⊕ Tⱼ) ⊕ Tⱼ`, where `Tⱼ = T ⊗ αʲ` (§5.2) and `T = AES-enc(Key2, i)`. If `b > 0`, ciphertext stealing makes `Pₘ` the first `b` bytes of `PP`, the decryption of `Cₘ₋₁` with `Tₘ`, and `Pₘ₋₁` the decryption with `Tₘ₋₁` of `Cₘ` followed by the other `16 - b` bytes of `PP`. `AES-dec(Key1, ·)` is the AES inverse cipher (FIPS 197 §5.3) and `AES-enc(Key2, ·)` AES, with `rounds` rounds and the key schedules in the first `16 * (rounds + 1)` bytes of `*schedule` and `*tweak_schedule`, as `vg_aes_expand_key` writes them.
+///
+/// Contract: `VG.Spec.Xts.aesDecryptUnitContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedules, the tweak value or the data.
+///
+/// It runs `vg_aes_xts_decrypt_unit`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `tweak_schedule` must be valid for reads of 240 bytes.
+/// * `i` must be valid for reads of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 2432 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `len` must be at least 16 and at most `16 << 20` (2²⁰ blocks).
+/// * The contents of `scratch` on return are unspecified.
+/// * `data` and `scratch` must not overlap each other, `schedule`, `tweak_schedule` or `i` (distinct Rust objects never do).
+/// * None of `schedule`, `tweak_schedule`, `i`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_aes_xts_decrypt_unit_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::aes_xts::vg_aes_xts_decrypt_unit(schedule, tweak_schedule, rounds, i, data, len, scratch) }
+}

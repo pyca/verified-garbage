@@ -20,7 +20,7 @@
 /// * `b`, `v`, `scratch` and `out` must not overlap each other, `password`, `salt` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `password`, `salt`, `b`, `v`, `scratch` and `out` may overlap the 96 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_scrypt(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
+pub(crate) unsafe extern "C" fn vg_scrypt(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r".inst 0xf81f0ffe,0xd10103ff,0x910003ef,0xf90005e0,0xf90009e1,0xf9000de4,0xf90011e5,0xf90015e6
 .inst 0xf90019e7,0xd2800024,0xd379e0c6,0xf9402fe7
@@ -63,7 +63,7 @@ pub const VG_SCRYPT_SHA2_FEATURES: verified_garbage_cpu::Features = verified_gar
 /// * None of `password`, `salt`, `b`, `v`, `scratch` and `out` may overlap the 96 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha2` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_scrypt_sha2(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
+pub(crate) unsafe extern "C" fn vg_scrypt_sha2(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r".inst 0xf81f0ffe,0xd10103ff,0x910003ef,0xf90005e0,0xf90009e1,0xf9000de4,0xf90011e5,0xf90015e6
 .inst 0xf90019e7,0xd2800024,0xd379e0c6,0xf9402fe7

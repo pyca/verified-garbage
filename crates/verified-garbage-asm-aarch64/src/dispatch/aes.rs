@@ -18,7 +18,7 @@
 /// * Neither `key` nor `schedule` may overlap the 512 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_expand_key_auto(key: *const u8, key_len: usize, schedule: *mut [u8; 240]) {
+pub unsafe fn vg_aes_expand_key_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, schedule: *mut [u8; 240]) {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(key: *const u8, key_len: usize, schedule: *mut [u8; 240]);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -69,7 +69,7 @@ pub unsafe fn vg_aes_expand_key_auto(key: *const u8, key_len: usize, schedule: *
 /// * None of `schedule`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_encrypt_blocks_auto(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+pub unsafe fn vg_aes_encrypt_blocks_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -120,7 +120,7 @@ pub unsafe fn vg_aes_encrypt_blocks_auto(schedule: *const [u8; 240], rounds: usi
 /// * None of `schedule`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_decrypt_blocks_auto(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+pub unsafe fn vg_aes_decrypt_blocks_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only

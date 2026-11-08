@@ -23,7 +23,7 @@ use crate::arch::dispatch::rsa::{
 /// fits: the bytes before its last `len` must be zero, which the verified
 /// comparison checks (`ct::is_zero`). The time depends on `x.len()` and
 /// `len`, not on `x`'s value or its number of leading zero bytes.
-fn fixed(x: &[u8], len: usize) -> Option<Vec<u8>> {
+fn fixed(dit: crate::dit::Dit<'_>, x: &[u8], len: usize) -> Option<Vec<u8>> {
     let mut v = vec![0; len];
     if x.len() <= len {
         v[len - x.len()..].copy_from_slice(x);
@@ -31,7 +31,7 @@ fn fixed(x: &[u8], len: usize) -> Option<Vec<u8>> {
     }
     let (high, low) = x.split_at(x.len() - len);
     v.copy_from_slice(low);
-    if crate::ct::is_zero(high) {
+    if crate::ct::is_zero(dit, high) {
         Some(v)
     } else {
         crate::zeroize::zeroize(&mut v);
@@ -62,6 +62,7 @@ fn primes<'a>(p: &'a [u8], q: &'a [u8], k: usize) -> Result<(&'a [u8], &'a [u8])
 /// `64 ≤ n.len() ≤ 1024`, `1 ≤ e.len() ≤ 5`, `1 ≤ d.len() ≤ n.len()`,
 /// `p.len() = q.len() = n.len()` and `scratch.len() = scratch_words(n.len())`.
 unsafe fn recover(
+    dit: crate::dit::Dit<'_>,
     p: &mut [u8],
     q: &mut [u8],
     n: &[u8],
@@ -75,6 +76,7 @@ unsafe fn recover(
     // needs no CPU feature.
     let r = unsafe {
         vg_rsa_recover_primes_det_auto(
+            dit,
             p.as_mut_ptr(),
             p.len(),
             q.as_mut_ptr(),
@@ -217,6 +219,24 @@ impl PrivateKey {
         dq: &[u8],
         qinv: &[u8],
     ) -> Result<Self, Error> {
+        crate::dit::enter!(dit);
+        Self::from_crt_with(dit, n, e, d, p, q, dp, dq, qinv)
+    }
+
+    /// [`from_crt`](Self::from_crt), with the token of the operation it is part of
+    /// (see `crate::dit`).
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn from_crt_with(
+        dit: crate::dit::Dit<'_>,
+        n: &[u8],
+        e: &[u8],
+        d: &[u8],
+        p: &[u8],
+        q: &[u8],
+        dp: &[u8],
+        dq: &[u8],
+        qinv: &[u8],
+    ) -> Result<Self, Error> {
         let k = n.len();
         if !(MIN_MODULUS_LEN..=MAX_MODULUS_LEN).contains(&k) {
             return Err(Error::InvalidModulus);
@@ -226,10 +246,10 @@ impl PrivateKey {
         // `d` at the modulus' width and the CRT values at their primes', as
         // BoringSSL holds them: their own lengths are not public.
         let values = [
-            fixed(d, k),
-            fixed(dp, p.len()),
-            fixed(dq, q.len()),
-            fixed(qinv, p.len()),
+            fixed(dit, d, k),
+            fixed(dit, dp, p.len()),
+            fixed(dit, dq, q.len()),
+            fixed(dit, qinv, p.len()),
         ];
         if values.iter().any(Option::is_none) {
             for mut x in values.into_iter().flatten() {
@@ -248,7 +268,7 @@ impl PrivateKey {
             dq,
             qinv,
         };
-        if key.valid() {
+        if key.valid(dit) {
             Ok(key)
         } else {
             Err(Error::InvalidPrivateKey)
@@ -260,7 +280,7 @@ impl PrivateKey {
     /// private-key operations check of the key (a valid modulus, `p q = n`
     /// and `qInv < p`), so that they refuse only an input not below the
     /// modulus.
-    fn valid(&self) -> bool {
+    fn valid(&self, dit: crate::dit::Dit<'_>) -> bool {
         let k = self.n.len();
         let mut scratch = vec![0u64; scratch_words(k)];
         // SAFETY: each pointer is valid for its length (`scratch` for
@@ -272,6 +292,7 @@ impl PrivateKey {
         // `scratch_len = 16 n_len + 32`.
         let r = unsafe {
             vg_rsa_check_key_auto(
+                dit,
                 self.n.as_ptr(),
                 k,
                 self.e.as_ptr(),
@@ -306,13 +327,27 @@ impl PrivateKey {
         p: &[u8],
         q: &[u8],
     ) -> Result<Self, Error> {
+        crate::dit::enter!(dit);
+        Self::from_primes_with(dit, n, e, d, p, q)
+    }
+
+    /// [`from_primes_bytes`](Self::from_primes_bytes), with the token of the
+    /// operation it is part of (see `crate::dit`).
+    fn from_primes_with(
+        dit: crate::dit::Dit<'_>,
+        n: &[u8],
+        e: &[u8],
+        d: &[u8],
+        p: &[u8],
+        q: &[u8],
+    ) -> Result<Self, Error> {
         let k = n.len();
         if !(MIN_MODULUS_LEN..=MAX_MODULUS_LEN).contains(&k) {
             return Err(Error::InvalidModulus);
         }
         let e = exponent(e)?;
         let (p, q) = primes(p, q, k)?;
-        let Some(mut d) = fixed(d, k) else {
+        let Some(mut d) = fixed(dit, d, k) else {
             return Err(Error::InvalidPrivateKey);
         };
         let (mut dp, mut dq, mut qinv) = (vec![0; p.len()], vec![0; q.len()], vec![0; p.len()]);
@@ -325,6 +360,7 @@ impl PrivateKey {
         // `dq_len = q_len` and `scratch_len = 16 n_len + 32`.
         let r = unsafe {
             vg_rsa_crt_values_auto(
+                dit,
                 dp.as_mut_ptr(),
                 dp.len(),
                 dq.as_mut_ptr(),
@@ -346,7 +382,7 @@ impl PrivateKey {
         // The working space holds the private key.
         crate::zeroize::zeroize(&mut scratch);
         let key = if r == 1 {
-            PrivateKey::from_crt_bytes(n, e, &d, p, q, &dp, &dq, &qinv)
+            PrivateKey::from_crt_with(dit, n, e, &d, p, q, &dp, &dq, &qinv)
         } else {
             Err(Error::InvalidPrivateKey)
         };
@@ -359,12 +395,13 @@ impl PrivateKey {
     /// [`from_components`](Self::from_components) of the values' big-endian
     /// bytes (with any number of leading zero bytes but `n`).
     pub(crate) fn from_components_bytes(n: &[u8], e: &[u8], d: &[u8]) -> Result<Self, Error> {
+        crate::dit::enter!(dit);
         let k = n.len();
         if !(MIN_MODULUS_LEN..=MAX_MODULUS_LEN).contains(&k) {
             return Err(Error::InvalidModulus);
         }
         let e = exponent(e)?;
-        let Some(mut d) = fixed(d, k) else {
+        let Some(mut d) = fixed(dit, d, k) else {
             return Err(Error::InvalidPrivateKey);
         };
         let (mut p, mut q) = (vec![0; k], vec![0; k]);
@@ -372,11 +409,11 @@ impl PrivateKey {
         // SAFETY: the checks above give `64 ≤ n_len ≤ 1024`,
         // `1 ≤ e_len ≤ 5` and `d_len = n_len`, and `p_len = q_len = n_len`
         // and `scratch_len = scratch_words(n_len)`.
-        let found = unsafe { recover(&mut p, &mut q, n, e, &d, &mut scratch) };
+        let found = unsafe { recover(dit, &mut p, &mut q, n, e, &d, &mut scratch) };
         // The working space holds the private key.
         crate::zeroize::zeroize(&mut scratch);
         let key = if found {
-            PrivateKey::from_primes_bytes(n, e, &d, &p, &q)
+            PrivateKey::from_primes_with(dit, n, e, &d, &p, &q)
         } else {
             Err(Error::InvalidPrivateKey)
         };
@@ -646,9 +683,10 @@ mod tests {
         );
         let mut short = vec![0; k];
         short[k - 2..].copy_from_slice(&[1, 1]);
-        assert_eq!(super::fixed(&[1, 1], k), Some(short.clone()));
-        assert_eq!(super::fixed(&z(&z(&short)), k), Some(short));
-        assert_eq!(super::fixed(&[1, 0, 1], 2), None);
+        let dit = crate::dit::public(crate::dit::Why::Test);
+        assert_eq!(super::fixed(dit, &[1, 1], k), Some(short.clone()));
+        assert_eq!(super::fixed(dit, &z(&z(&short)), k), Some(short));
+        assert_eq!(super::fixed(dit, &[1, 0, 1], 2), None);
     }
 
     #[test]

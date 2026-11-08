@@ -37,10 +37,11 @@ impl CamelliaEcb {
             _ => return Err(InvalidKeyLength),
         };
         let mut schedule = CacheAligned([0; 272]);
+        crate::dit::enter!(dit);
         // SAFETY: the key has a validated length; key and schedule are separate
         // valid buffers of the required sizes.
         unsafe {
-            vg_camellia_expand_key_auto(key.as_ptr(), key.len(), &mut schedule.0);
+            vg_camellia_expand_key_auto(dit, key.as_ptr(), key.len(), &mut schedule.0);
         }
         Ok(Self { schedule, rounds })
     }
@@ -66,12 +67,14 @@ impl CamelliaEcb {
         } else {
             vg_camellia_ecb_decrypt_auto
         };
+        crate::dit::enter!(dit);
         // SAFETY: `rounds` is 18 for a key of 16 bytes and 24 otherwise, as
         // `new` expanded the schedule for. The buffer contains complete 16-byte
         // blocks, including zero blocks. The buffer and schedule are separate
         // valid objects and do not overlap the callee's stack.
         unsafe {
             f(
+                dit,
                 &self.schedule.0,
                 self.rounds,
                 buffer.as_mut_ptr().cast(),

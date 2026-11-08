@@ -2,8 +2,20 @@
 //! The dispatchers of the verified `ct` functions for `x86_64`
 //! (`crate::ct`, `VG.Rust.dispatcher`).
 
-/// `vg_ct_eq`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::ct::vg_ct_eq as vg_ct_eq_auto;
+/// Compares two byte strings in constant time: returns 1 if the `a_len` bytes at `a` are the `b_len` bytes at `b` (so byte strings of different lengths are unequal), and 0 otherwise. Writes no memory.
+///
+/// Contract: `VG.Spec.Ct.eqContract`. Constant time: only the pointers, `a_len` and `b_len` may affect timing, not the bytes compared; only the result depends on them.
+///
+/// It runs `vg_ct_eq`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `a` must be valid for reads of `a_len` bytes.
+/// * `b` must be valid for reads of `b_len` bytes.
+/// * Neither `a` nor `b` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_ct_eq_auto(_dit: verified_garbage_cpu::Dit<'_>, a: *const u8, a_len: usize, b: *const u8, b_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::ct::vg_ct_eq(a, a_len, b, b_len) }
+}

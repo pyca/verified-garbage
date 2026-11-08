@@ -15,7 +15,7 @@
 /// * `state` must not overlap `key` or the arguments on the stack (distinct Rust objects never do).
 /// * Neither `state` nor `key` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_blake2s_init(state: *mut [u8; 96], outlen: usize, key: *const u8, keylen: usize) {
+pub(crate) unsafe extern "C" fn vg_blake2s_init(state: *mut [u8; 96], outlen: usize, key: *const u8, keylen: usize) {
     core::arch::naked_asm!(
         r#".base64 "i0QkBItMJBCFyQ=="
 je 20f
@@ -44,7 +44,7 @@ jmp 21f
 /// * `state` must not overlap `data` or the arguments on the stack (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the return address on the stack or the 636 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_blake2s_update(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_blake2s_update(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "jaQkpP3//4uEJGACAACJRCQEi4QkZAIAAIlEJAiLhCRoAgAAiUQkDIuEJGwCAACJRCQQi4QkcAIAAIlEJBSJ4IPAHIlEJBiLRCQYiZgAAgAAibAEAgAAibgIAgAAiagMAgAAicWLXCQEi3QkEIt8JBSLRCQIiYUQAgAAi0wkDImNFAIAAAnB"
 je 20f
@@ -121,7 +121,7 @@ jmp 23f
 /// * `state` and `out` must not overlap each other or the arguments on the stack (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_blake2s_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
+pub(crate) unsafe extern "C" fn vg_blake2s_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
         r#".base64 "jaQkqP3//4uEJFwCAACJRCQEi4QkYAIAAIlEJAiLhCRkAgAAiUQkDIuEJGgCAACJRCQQieCDwBiJRCQUi0QkFImYAAIAAImwBAIAAIm4CAIAAImoDAIAAInFi1wkBItEJAiLTCQMCcE="
 je 20f

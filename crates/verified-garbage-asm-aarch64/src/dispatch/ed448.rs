@@ -18,7 +18,7 @@
 /// * None of `pk`, `context`, `message`, `signature` and `scratch` may overlap the 352 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_ed448_verify_auto(pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, signature: *const [u8; 114], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe fn vg_ed448_verify_auto(_dit: verified_garbage_cpu::Dit<'_>, pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, signature: *const [u8; 114], scratch: *mut [u64; 1024]) -> u32 {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, signature: *const [u8; 114], scratch: *mut [u64; 1024]) -> u32;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -68,7 +68,7 @@ pub unsafe fn vg_ed448_verify_auto(pk: *const [u8; 57], context: *const u8, ctxl
 /// * None of `out`, `seed` and `scratch` may overlap the 352 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_ed448_public_key_auto(out: *mut [u8; 57], seed: *const [u8; 57], scratch: *mut [u64; 1024]) {
+pub unsafe fn vg_ed448_public_key_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 57], seed: *const [u8; 57], scratch: *mut [u64; 1024]) {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(out: *mut [u8; 57], seed: *const [u8; 57], scratch: *mut [u64; 1024]);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -123,7 +123,7 @@ pub unsafe fn vg_ed448_public_key_auto(out: *mut [u8; 57], seed: *const [u8; 57]
 /// * None of `out`, `seed`, `pk`, `context`, `message` and `scratch` may overlap the 352 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_ed448_sign_cached_auto(out: *mut [u8; 114], seed: *const [u8; 57], pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+pub unsafe fn vg_ed448_sign_cached_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 114], seed: *const [u8; 57], pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(out: *mut [u8; 114], seed: *const [u8; 57], pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, scratch: *mut [u64; 1024]);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only

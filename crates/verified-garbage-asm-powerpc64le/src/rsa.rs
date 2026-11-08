@@ -19,7 +19,7 @@
 /// * `pre` and `scratch` must not overlap each other or `n` (distinct Rust objects never do).
 /// * None of `pre`, `n` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_rsa_public_precompute(pre: *mut u64, pre_len: usize, n: *const u8, n_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_public_precompute(pre: *mut u64, pre_len: usize, n: *const u8, n_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "gADH+YgA5/mQAAf6mAAn+qAAR/qoAGf6sACH+rgAx/rAAKf6AACnOgAAYzoAAIU5BwBmOcLoa3kwAHX5JB9keRAAhDgAAVU5FCKqfBQiBX0UIih9pA9reQAAyjlC+HF5AAAAOA=="
 20:
@@ -297,7 +297,7 @@ bne %cr0, 276b
 /// * `dp`, `dq`, `qinv` and `scratch` must not overlap each other, `n`, `p`, `q`, `d` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `dp`, `dq`, `qinv`, `n`, `p`, `q`, `d` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_rsa_crt_values(dp: *mut u8, dp_len: usize, dq: *mut u8, dq_len: usize, qinv: *mut u8, qinv_len: usize, n: *const u8, n_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, d: *const u8, d_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_crt_values(dp: *mut u8, dp_len: usize, dq: *mut u8, dq_len: usize, qinv: *mut u8, qinv_len: usize, n: *const u8, n_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, d: *const u8, d_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "kABhOQAAa+kAAMv5CADr+RAAC/oYACv6IABL+igAa/owAIv6OACr+kAAy/pIAOv6UAAL+1gAq/tgAMv7aADr+wAA6zsAAMM5AADlOQAABzoAACk6AABKOmAAYToAAHPqaACBOgAAlOpwAKE6AAC16ngAwToAANbqgADhOgAA9+qIAAE7AAAY6xRSaX3//2s5AAALiAEAgDk4YAB8eGIAfAAAaYkAACso"
 beq %cr0, 20f
@@ -867,7 +867,7 @@ bne %cr0, 2148b
 /// * `scratch` must not overlap `n`, `e`, `d`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `n`, `e`, `d`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_rsa_check_key(n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_check_key(n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "oABhOQAAa+kAAMv5CADr+RAAC/oYACv6IABL+igAa/owAIv6OACr+kAAy/pIAOv6UAAL+1gAS/tgAKv7aADL+3AA6/sAAOs7AADDOQAA5DkAAAc6AAAoOgAASToAAGo6AADlOAAABjkAAAA7"
 20:
@@ -1946,7 +1946,7 @@ b 22f
 /// * `p`, `q` and `scratch` must not overlap each other, `n`, `e`, `d` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `p`, `q`, `n`, `e`, `d` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_rsa_recover_primes_det(p: *mut u8, p_len: usize, q: *mut u8, q_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_recover_primes_det(p: *mut u8, p_len: usize, q: *mut u8, q_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "cABhOQAAa+kHAIg5wuiMeaQPjHkCAIw5AgAMOGQXAHgsAIA50gGMfRRajH2gAIw5AADM+QgA7PkQAAz6GAAs+iAATPooAGz6MACM+jgArPpAAMz6SADs+lAADPtYACz7YABM+2gAbPtwAIz7eACs+4AAzPuIAOz7AADrOwcAqDvC6L17pA+9ewIAvTsCAN07ZBfeewAAozoAAOU6AAAHOwAAKDsAAEk7AABqO2AAgTsAAJzraADBOgAA1uoAADg5AABZORRSaX3//2s5AAALiAEAgDk4YAB8eGIAfAAAaYkAACso"
 beq %cr0, 20f

@@ -14,7 +14,7 @@
 /// * `state` must not overlap `e` (distinct Rust objects never do).
 /// * Neither `state` nor `e` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rsa_generate_init(state: *mut [u64; 7], bits: usize, e: *const u8, e_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_rsa_generate_init(state: *mut [u64; 7], bits: usize, e: *const u8, e_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "QbkAAAAAQboAAAAASIXJ"
 je 20f
@@ -52,7 +52,7 @@ pub const VG_RSA_GENERATE_ADX_FEATURES: verified_garbage_cpu::Features = verifie
 /// * None of `key`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 552 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rsa_generate_adx(key: *mut u8, key_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 7]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_rsa_generate_adx(key: *mut u8, key_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 7]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJGD///9MiWQkSEmJ5EmJPCRJiVQkEEmJTCQYTYlEJCBNiUwkKEiLhCSoAAAASYlEJDBIi4QksAAAAEmJRCQ4SItICEyLSDBJiUwkCLoAAAAASYlUJEBIicpIweIDSYnTSMHiAkwB2kmJy0nB4wZJuAAAAAAAAAADTTnBSQ9E00mJVCRYSYsEJEmJRCRgSYtMJAhIweECSYlMJGhMiedIi3dgSItPaLgAAAAA"
 20:
@@ -150,7 +150,7 @@ je 22b
 /// * `key`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `key`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 552 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rsa_generate(key: *mut u8, key_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 7]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_rsa_generate(key: *mut u8, key_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 7]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJGD///9MiWQkSEmJ5EmJPCRJiVQkEEmJTCQYTYlEJCBNiUwkKEiLhCSoAAAASYlEJDBIi4QksAAAAEmJRCQ4SItICEyLSDBJiUwkCLoAAAAASYlUJEBIicpIweIDSYnTSMHiAkwB2kmJy0nB4wZJuAAAAAAAAAADTTnBSQ9E00mJVCRYSYsEJEmJRCRgSYtMJAhIweECSYlMJGhMiedIi3dgSItPaLgAAAAA"
 20:
@@ -252,7 +252,7 @@ pub const VG_RSA_GENERATE_IFMA_FEATURES: verified_garbage_cpu::Features = verifi
 /// * None of `key`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 552 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rsa_generate_ifma(key: *mut u8, key_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 7]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_rsa_generate_ifma(key: *mut u8, key_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 7]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJGD///9MiWQkSEmJ5EmJPCRJiVQkEEmJTCQYTYlEJCBNiUwkKEiLhCSoAAAASYlEJDBIi4QksAAAAEmJRCQ4SItICEyLSDBJiUwkCLoAAAAASYlUJEBIicpIweIDSYnTSMHiAkwB2kmJy0nB4wZJuAAAAAAAAAADTTnBSQ9E00mJVCRYSYsEJEmJRCRgSYtMJAhIweECSYlMJGhMiedIi3dgSItPaLgAAAAA"
 20:

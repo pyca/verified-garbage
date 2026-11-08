@@ -15,7 +15,7 @@
 /// * `ctx` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `ctx` may overlap the 256 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_rc4_init(key: *const u8, key_len: usize, ctx: *mut [u8; 258]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rc4_init(key: *const u8, key_len: usize, ctx: *mut [u8; 258]) -> u32 {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
@@ -994,7 +994,7 @@ j 21f
 /// * `ctx` and `data` must not overlap each other (distinct Rust objects never do).
 /// * Neither `ctx` nor `data` may overlap the 256 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_rc4_apply(ctx: *mut [u8; 258], data: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_rc4_apply(ctx: *mut [u8; 258], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c

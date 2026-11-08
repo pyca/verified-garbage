@@ -38,10 +38,11 @@ impl<const DECRYPT: bool> Ecb<DECRYPT> {
             pending: [0; 8],
             pending_len: 0,
         };
+        crate::dit::enter!(dit);
         // SAFETY: the key has a length in 4..=56; the key and the schedule
         // are separate valid objects of the lengths passed.
         unsafe {
-            vg_blowfish_expand_key_auto(key.as_ptr(), key.len(), &mut ecb.schedule.0);
+            vg_blowfish_expand_key_auto(dit, key.as_ptr(), key.len(), &mut ecb.schedule.0);
         }
         Ok(ecb)
     }
@@ -78,11 +79,17 @@ impl<const DECRYPT: bool> Ecb<DECRYPT> {
         } else {
             vg_blowfish_ecb_encrypt_auto
         };
+        crate::dit::enter!(dit);
         // SAFETY: `output` holds `written / 8` complete eight-byte blocks; the
         // schedule, written by key expansion, and `output` are separate valid
         // objects of the lengths passed.
         unsafe {
-            crypt(&self.schedule.0, output.as_mut_ptr().cast(), written / 8);
+            crypt(
+                dit,
+                &self.schedule.0,
+                output.as_mut_ptr().cast(),
+                written / 8,
+            );
         }
         self.pending[..left.len()].copy_from_slice(left);
         self.pending_len = left.len();

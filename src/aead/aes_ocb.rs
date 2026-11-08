@@ -75,6 +75,7 @@ fn check(nonce: &[u8]) -> Result<(), Error> {
 impl AesOcb {
     /// Prepares `key`, which must be 16, 24 or 32 bytes long.
     pub fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
+        crate::dit::enter!(dit);
         if !matches!(key.len(), 16 | 24 | 32) {
             return Err(InvalidKeyLength);
         }
@@ -88,7 +89,7 @@ impl AesOcb {
         // the return address on the stack or the stack below it, and neither
         // wraps around the end of the address space. The dispatcher calls only
         // an implementation the CPU has the features of.
-        unsafe { vg_aes_ocb_init_auto(key.as_ptr(), key.len(), &mut k.ctx.0) };
+        unsafe { vg_aes_ocb_init_auto(dit, key.as_ptr(), key.len(), &mut k.ctx.0) };
         Ok(k)
     }
 
@@ -106,6 +107,7 @@ impl AesOcb {
         aad: &[u8],
         data: &mut [u8],
     ) -> Result<[u8; T], Error> {
+        crate::dit::enter!(dit);
         assert_tag_length!(T);
         check(nonce)?;
         let mut tag = [0u8; T];
@@ -122,6 +124,7 @@ impl AesOcb {
         // features of.
         unsafe {
             vg_aes_ocb_seal_auto(
+                dit,
                 &self.ctx.0,
                 self.rounds,
                 nonce.as_ptr(),
@@ -150,6 +153,7 @@ impl AesOcb {
         data: &mut [u8],
         tag: &[u8; T],
     ) -> Result<(), Error> {
+        crate::dit::enter!(dit);
         assert_tag_length!(T);
         check(nonce)?;
         // SAFETY: as in `encrypt_in_place`, with the received tag `tag`
@@ -157,6 +161,7 @@ impl AesOcb {
         // `data`, a unique one, does not overlap.
         let ok = unsafe {
             vg_aes_ocb_open_auto(
+                dit,
                 &self.ctx.0,
                 self.rounds,
                 nonce.as_ptr(),

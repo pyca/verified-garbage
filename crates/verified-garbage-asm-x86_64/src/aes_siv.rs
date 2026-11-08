@@ -19,7 +19,7 @@ pub const VG_AES_SIV_INIT_AESNI_FEATURES: verified_garbage_cpu::Features = verif
 /// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2584 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_siv_init_aesni(key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_siv_init_aesni(key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPj1//9IieFIg8EISImZoAAAAEiJqagAAABMiaGwAAAATImpuAAAAEyJscAAAABIiftIifVI0e1JidRJic1JifZJwe4DSYPGBkiJ7kiBwQABAAA="
 call {vg_aes_expand_key_scratch_aesni}
@@ -46,7 +46,7 @@ call {vg_aes_expand_key_scratch_aesni}
 /// * `ctx` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2584 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_siv_init(key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_siv_init(key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPj1//9IieFIg8EISImZoAAAAEiJqagAAABMiaGwAAAATImpuAAAAEyJscAAAABIiftIifVI0e1JidRJic1JifZJwe4DSYPGBkiJ7kiBwQABAAA="
 call {vg_aes_expand_key_scratch}
@@ -77,7 +77,7 @@ pub const VG_AES_SIV_INIT_VAES_FEATURES: verified_garbage_cpu::Features = verifi
 /// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2584 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `ssse3` and `vaes` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_siv_init_vaes(key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_siv_init_vaes(key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPj1//9IieFIg8EISImZoAAAAEiJqagAAABMiaGwAAAATImpuAAAAEyJscAAAABIiftIifVI0e1JidRJic1JifZJwe4DSYPGBkiJ7kiBwQABAAA="
 call {vg_aes_expand_key_scratch_aesni}
@@ -110,7 +110,7 @@ pub const VG_AES_SIV_ENCRYPT_AESNI_FEATURES: verified_garbage_cpu::Features = ve
 /// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the return address on the stack or the 2616 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_siv_encrypt_aesni(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_siv_encrypt_aesni(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJNj1//9Ii4QkMAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZigAAAASImoqAAAAEyJoLAAAABMiai4AAAATImwwAAAAEyJuMgAAABIiftIifVJicdJicRJgcQACgAATYnFTYnOTYmv0AAAAE2Jt9gAAABJiVdwSYlPeEyJ4kyJ+bgAAAAASIlBEEiJQRhIiQJIiUIISYnJSYHBAAEAAEiDwRBBuBAAAAA="
 call {vg_cmac_aes_finalize_aesni}
@@ -222,7 +222,7 @@ pub const VG_AES_SIV_DECRYPT_AESNI_FEATURES: verified_garbage_cpu::Features = ve
 /// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the return address on the stack or the 2616 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_siv_decrypt_aesni(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_siv_decrypt_aesni(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJNj1//9Ii4QkMAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZigAAAASImoqAAAAEyJoLAAAABMiai4AAAATImwwAAAAEyJuMgAAABIiftIifVJicdJicRJgcQACgAATYnFTYnOTYmv0AAAAE2Jt9gAAABJiVdwSYlPeEyJ4kyJ+bgAAAAASIlBEEiJQRhIiQJIiUIISYnJSYHBAAEAAEiDwRBBuBAAAAA="
 call {vg_cmac_aes_finalize_aesni}
@@ -346,7 +346,7 @@ jmp 227f
 /// * `data` and `siv` must not overlap each other, `ctx`, `ads`, the slices `ads` lists or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the return address on the stack or the 2616 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_siv_encrypt(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_siv_encrypt(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJNj1//9Ii4QkMAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZigAAAASImoqAAAAEyJoLAAAABMiai4AAAATImwwAAAAEyJuMgAAABIiftIifVJicdJicRJgcQACgAATYnFTYnOTYmv0AAAAE2Jt9gAAABJiVdwSYlPeEyJ4kyJ+bgAAAAASIlBEEiJQRhIiQJIiUIISYnJSYHBAAEAAEiDwRBBuBAAAAA="
 call {vg_cmac_aes_finalize}
@@ -454,7 +454,7 @@ jmp 218f
 /// * `data` must not overlap `ctx`, `ads`, the slices `ads` lists, `siv` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the return address on the stack or the 2616 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_siv_decrypt(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_siv_decrypt(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJNj1//9Ii4QkMAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZigAAAASImoqAAAAEyJoLAAAABMiai4AAAATImwwAAAAEyJuMgAAABIiftIifVJicdJicRJgcQACgAATYnFTYnOTYmv0AAAAE2Jt9gAAABJiVdwSYlPeEyJ4kyJ+bgAAAAASIlBEEiJQRhIiQJIiUIISYnJSYHBAAEAAEiDwRBBuBAAAAA="
 call {vg_cmac_aes_finalize}

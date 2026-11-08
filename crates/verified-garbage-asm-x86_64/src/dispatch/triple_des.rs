@@ -2,11 +2,25 @@
 //! The dispatchers of the verified `triple_des` functions for `x86_64`
 //! (`crate::triple_des`, `VG.Rust.dispatcher`).
 
-/// `vg_triple_des_expand_key`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::triple_des::vg_triple_des_expand_key as vg_triple_des_expand_key_auto;
+/// Triple DES key expansion (FIPS 46-3 Appendix 1): expands a 16- or 24-byte key into three encryption-order DES schedules, each containing sixteen 48-bit round keys zero-extended into little-endian 64-bit slots. For a 16-byte key, K3 repeats K1. Parity bits are ignored and weak or repeated component keys are accepted.
+///
+/// Contract: `VG.Spec.TripleDes.expandKeyContract`. Constant time: only pointers and `key_len` may affect timing, not key bytes.
+///
+/// It runs `vg_triple_des_expand_key`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `schedule` must be valid for reads and writes of 384 bytes.
+/// * `key_len` must be 16 or 24.
+/// * `schedule` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `schedule` may overlap the return address on the stack or the 520 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_triple_des_expand_key_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, schedule: *mut [u8; 384]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::triple_des::vg_triple_des_expand_key(key, key_len, schedule) }
+}
 
 /// Triple DES ECB encryption (SP 800-38A §6.1) of `n` complete 8-byte blocks at `data`, in place, under the schedule written by `vg_triple_des_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
 ///
@@ -22,7 +36,7 @@ pub use crate::triple_des::vg_triple_des_expand_key as vg_triple_des_expand_key_
 /// * Neither `schedule` nor `data` may overlap the return address on the stack or the 1040 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_triple_des_ecb_encrypt_auto(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
+pub unsafe fn vg_triple_des_ecb_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
     /// The type of the implementations.
     type Impl = unsafe extern "sysv64" fn(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -75,7 +89,7 @@ pub unsafe fn vg_triple_des_ecb_encrypt_auto(schedule: *const [u8; 384], data: *
 /// * Neither `schedule` nor `data` may overlap the return address on the stack or the 1040 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_triple_des_ecb_decrypt_auto(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
+pub unsafe fn vg_triple_des_ecb_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
     /// The type of the implementations.
     type Impl = unsafe extern "sysv64" fn(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only

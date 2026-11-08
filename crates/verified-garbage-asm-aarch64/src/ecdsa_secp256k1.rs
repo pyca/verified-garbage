@@ -17,7 +17,7 @@
 /// * `scratch` must not overlap `public`, `digest` or `sig` (distinct Rust objects never do).
 /// * None of `public`, `digest`, `sig` and `scratch` may overlap the 80 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ecdsa_secp256k1_verify(public: *const [u8; 65], digest: *const u8, digest_len: usize, sig: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ecdsa_secp256k1_verify(public: *const [u8; 65], digest: *const u8, digest_len: usize, sig: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd10143ff,0x910003e5,0xd347fc4a,0xd2800feb,0x8a0b004c,0x9101818c,0xd347fd8c,0xaa0c014b
 cbnz x11, 20f
@@ -2708,7 +2708,7 @@ cbnz x19, 215b
 /// * None of `out`, `d`, `digest`, `scratch` and `hmac` may overlap the 640 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * `hmac` must be the `as_ptr()` of one of the `Hmac` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ecdsa_secp256k1_sign(out: *mut [u8; 64], d: *const [u8; 32], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ecdsa_secp256k1_sign(out: *mut [u8; 64], d: *const [u8; 32], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xf94010a6,0xf94014a7,0xf81f0ffe,0xd10983ff,0x910003ef,0xf90069e0,0xf90065e1,0xf90061e2
 .inst 0xf9005de4,0xf9006de6,0xf90071e7,0xf9012de5,0x910003ef,0xd280000e,0xf900a1ee,0xf900a5ee

@@ -37,6 +37,7 @@ impl<C: Curve> PrivateKey<C> {
     /// [`InvalidKey`] if the key is not in `[1, n − 1]`, or `peer`
     /// is not a valid public key (the verified code does not say which).
     pub fn exchange(&self, peer: &PublicKey<C>) -> Result<C::SharedSecret, InvalidKey> {
-        C::exchange(&self.d, &peer.q).ok_or(InvalidKey)
+        crate::dit::enter!(dit);
+        C::exchange(dit, &self.d, &peer.q).ok_or(InvalidKey)
     }
 }

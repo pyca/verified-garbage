@@ -17,7 +17,7 @@
 /// * `out` and `scratch` must not overlap each other, `params`, `x` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `params`, `x` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_dsa_derive_key(out: *mut u8, out_len: usize, params: *const u8, params_len: usize, p_len: usize, x: *const u8, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_dsa_derive_key(out: *mut u8, out_len: usize, params: *const u8, params_len: usize, p_len: usize, x: *const u8, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "AABqOWgAy/lwAOv5eAAL+oAAK/qIAEv6kABr+pgAi/qgAMv6qADr+rAAC/u4ACv7wABL+8gAa/vQAIv72ACr++AAy/voAOv78ABL+PgAq/oAAKs6AABlOwAAiDsAAEM75IMgeRQCR3wAAJs5xoNGeCCExngAAMw5AAAmOgAA4DkAAAA6"
 20:
@@ -686,7 +686,7 @@ bne %cr0, 2190b
 /// * `out`, `used` and `scratch` must not overlap each other, `key`, `digest`, `rand` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `used`, `key`, `digest`, `rand` and `scratch` may overlap the 304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_dsa_sign_random_prevalidated(out: *mut u8, out_len: usize, used: *mut [u64; 1], key: *const u8, key_len: usize, p_len: usize, q_len: usize, digest: *const u8, digest_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_dsa_sign_random_prevalidated(out: *mut u8, out_len: usize, used: *mut [u64; 1], key: *const u8, key_len: usize, p_len: usize, q_len: usize, digest: *const u8, digest_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "0f4h+AAAgTmYAMz5oADs+agADPqwACz6uABM+sAAbPrIAIz60ACs+tgAzPrgAOz66AAM+/AALPv4AEz7AAFs+wgBjPsQAaz7GAHM+yAB7PumAgh8KAEM+AAAQzoAAMU7AABmOgAAiDoAAKk6AADKOpgB7OqgAQzrkAFs6KgBjOiwAazoYABs+GgAjPhwAKz4AAAgOwgAQDsAAIE5AAAAOHgADPiAAAz4iAAM+JAADPgUopN9AADVOAAAzDkAACY6AADgOQAAADo="
 20:
@@ -781,7 +781,7 @@ b 220f
 /// * `out`, `used` and `scratch` must not overlap each other, `params`, `rand` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `used`, `params`, `rand` and `scratch` may overlap the 304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_dsa_generate_key(out: *mut u8, out_len: usize, used: *mut [u64; 1], params: *const u8, params_len: usize, p_len: usize, q_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_dsa_generate_key(out: *mut u8, out_len: usize, used: *mut [u64; 1], params: *const u8, params_len: usize, p_len: usize, q_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "0f4h+AAAgTmYAMz5oADs+agADPqwACz6uABM+sAAbPrIAIz60ACs+tgAzPrgAOz66AAM+/AALPv4AEz7AAFs+wgBjPsQAaz7GAHM+yAB7PumAgh8KAEM+AAAQzoAAMU7AABmOgAAiDoAAKk6AADqOpABDOuYAczqoAFM62AATPsAACA7AACBOQAAADh4AAz4gAAM+IgADPiQAAz4AABzOBSilHwUqoR8AAC0OAAA1TgAAPY4AAAaOQ=="
 bl {vg_dsa_check_parameters}
@@ -871,7 +871,7 @@ b 219f
 /// * `scratch` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_dsa_validate_public_key(key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_dsa_validate_public_key(key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "AABnOWgAy/lwAOv5eAAL+oAAK/qIAEv6kABr+pgAi/qgAMv6qADr+rAAC/u4ACv7wABL+8gAa/vQAIv72ACr++AAy/voAOv78ABL+PgAq/oAAKs6AABjOwAAgDsAAEA75IPAeBQCRXwAAJs5xoNGeCCExngAAMw5AAAmOgAA4DkAAAA6"
 20:
@@ -1493,7 +1493,7 @@ b 2181f
 /// * `scratch` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_dsa_validate_private_key(key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_dsa_validate_private_key(key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "AABnOWgAy/lwAOv5eAAL+oAAK/qIAEv6kABr+pgAi/qgAMv6qADr+rAAC/u4ACv7wABL+8gAa/vQAIv72ACr++AAy/voAOv78ABL+PgAq/oAAKs6AABjOwAAgDsAAEA75IPAeBQCRXwAAJs5xoNGeCCExngAAMw5AAAmOgAA4DkAAAA6"
 20:
@@ -2333,7 +2333,7 @@ bne %cr0, 2246b
 /// * `scratch` must not overlap `key`, `signature`, `digest` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `key`, `signature`, `digest` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_dsa_verify_prevalidated(key: *const u8, key_len: usize, p_len: usize, q_len: usize, signature: *const u8, signature_len: usize, digest: *const u8, digest_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_dsa_verify_prevalidated(key: *const u8, key_len: usize, p_len: usize, q_len: usize, signature: *const u8, signature_len: usize, digest: *const u8, digest_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "YABhOQAAa+loAMv5cADr+XgAC/qAACv6iABL+pAAa/qYAIv6oADL+qgA6/qwAAv7uAAr+8AAS/vIAGv70ACL+9gAq/vgAMv76ADr+/AAS/j4AKv6AACrOgAAYzsAAIc7AABJO4LRRHkAAAA4UACEfOAPhHhQAIR8QAAAOHgCQH04IAB8eAJEfcaDhHjkg8B4FAJFfBQiQnwAAJs5xoNGeCCExngAAMw5AAAmOgAA4DkAAAA6"
 20:
@@ -3363,7 +3363,7 @@ bne %cr0, 2306b
 /// * `state` must be valid for reads and writes of 32 bytes.
 /// * `state` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_dsa_parameter_search_init(state: *mut [u64; 4], p_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_dsa_parameter_search_init(state: *mut [u64; 4], p_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "gP8EOAAAICg="
 beq %cr0, 20f
@@ -3407,7 +3407,7 @@ b 21f
 /// * `out`, `used`, `scratch` and `state` must not overlap each other or `rand` (distinct Rust objects never do).
 /// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_dsa_parameter_search(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_dsa_parameter_search(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "pgIIfAAAaukIAIrpAACAOHgACPjIAEj40ADI+dgA6PngAAj66AAo+vAASPr4AGj6AAGI+ggBqPoQAcj6GAHo+iABCPsoASj7MAFI+zgBaPtAAaj7SAHI+1AB6PtYAYj7AABo+JAAqPhIAMj4UADo+JgASPkQAGj5oACI+EAAiPgAAIg7gP8MOAAAICg="
 beq %cr0, 20f

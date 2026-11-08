@@ -16,7 +16,7 @@
 /// * `out` must not overlap `password`, `salt` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `password`, `salt` and `out` may overlap the return address on the stack or the 1648 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha224(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha224(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJKj5//9Ii4QkYAYAAEiJRCQISIngSIPAGEiJRCQQTYnCTItEJBBJiZhAAwAASYmoSAMAAE2JoFADAABNiahYAwAATYmwYAMAAE2JuGgDAABNicdNiY9wAwAARInQSIPoAUmJh3gDAABIiftIifVJidRJic1Ig/1B"
 jae 20f
@@ -99,7 +99,7 @@ pub const VG_PBKDF2_HMAC_SHA224_AVX2_FEATURES: verified_garbage_cpu::Features = 
 /// * None of `password`, `salt` and `out` may overlap the return address on the stack or the 1648 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha224_avx2(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha224_avx2(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJKj5//9Ii4QkYAYAAEiJRCQISIngSIPAGEiJRCQQTYnCTItEJBBJiZhAAwAASYmoSAMAAE2JoFADAABNiahYAwAATYmwYAMAAE2JuGgDAABNicdNiY9wAwAARInQSIPoAUmJh3gDAABIiftIifVJidRJic1Ig/1B"
 jae 20f
@@ -182,7 +182,7 @@ pub const VG_PBKDF2_HMAC_SHA224_SHANI_FEATURES: verified_garbage_cpu::Features =
 /// * None of `password`, `salt` and `out` may overlap the return address on the stack or the 1648 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha224_shani(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha224_shani(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJKj5//9Ii4QkYAYAAEiJRCQISIngSIPAGEiJRCQQTYnCTItEJBBJiZhAAwAASYmoSAMAAE2JoFADAABNiahYAwAATYmwYAMAAE2JuGgDAABNicdNiY9wAwAARInQSIPoAUmJh3gDAABIiftIifVJidRJic1Ig/1B"
 jae 20f

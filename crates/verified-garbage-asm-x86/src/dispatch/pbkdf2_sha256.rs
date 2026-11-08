@@ -20,7 +20,7 @@
 /// * None of `password`, `salt` and `out` may overlap the arguments on the stack, overlap the return address on the stack or the 1712 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_pbkdf2_hmac_sha256_auto(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
+pub unsafe fn vg_pbkdf2_hmac_sha256_auto(_dit: verified_garbage_cpu::Dit<'_>, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only

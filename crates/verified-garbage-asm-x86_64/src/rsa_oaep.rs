@@ -41,7 +41,7 @@ pub const VG_RSA_OAEP_DECRYPT_CRT_ADX_FEATURES: verified_garbage_cpu::Features =
 /// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 /// * The CPU must support the `avx`, `avx2`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rsa_oaep_decrypt_crt_adx(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 5], mgf1: *const [usize; 5]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_decrypt_crt_adx(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 5], mgf1: *const [usize; 5]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJNj+//9IibwkqAAAAEiJlCToAAAASImMJLAAAABMiYQkuAAAAEyJjCTAAAAASIuEJDABAABIiYQkyAAAAEiLhCSIAQAASImEJNgAAABIi4QkkAEAAEiJhCTgAAAASIuEJKgBAABIiUQkcEiLhCSwAQAASImEJNAAAABIi4QkmAEAAEiJBCRIi4QkuAAAAEiJRCQISIuEJDgBAABIiUQkEEiLhCRAAQAASIlEJBhIi4QkSAEAAEiJRCQgSIuEJFABAABIiUQkKEiLhCRYAQAASIlEJDBIi4QkYAEAAEiJRCQ4SIuEJGgBAABIiUQkQEiLhCRwAQAASIlEJEhIi4QkeAEAAEiJRCRQSIuEJIABAABIiUQkWEiLRCRwSAUAIAAASIlEJGBIi4Qk0AAAAEgtAAQAAEiJRCRoSIt8JHBIg8cASIu0JLgAAABIi5QksAAAAEiLjCS4AAAATIuEJMAAAABMi4wkyAAAAA=="
 call {vg_rsa_private_checked_adx}
@@ -512,7 +512,7 @@ jne 2117b
 /// * `hash` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 /// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rsa_oaep_decrypt(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 5], mgf1: *const [usize; 5]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_decrypt(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 5], mgf1: *const [usize; 5]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJNj+//9IibwkqAAAAEiJlCToAAAASImMJLAAAABMiYQkuAAAAEyJjCTAAAAASIuEJDABAABIiYQkyAAAAEiLhCSIAQAASImEJNgAAABIi4QkkAEAAEiJhCTgAAAASIuEJKgBAABIiUQkcEiLhCSwAQAASImEJNAAAABIi4QkmAEAAEiJBCRIi4QkuAAAAEiJRCQISIuEJDgBAABIiUQkEEiLhCRAAQAASIlEJBhIi4QkSAEAAEiJRCQgSIuEJFABAABIiUQkKEiLhCRYAQAASIlEJDBIi4QkYAEAAEiJRCQ4SIuEJGgBAABIiUQkQEiLhCRwAQAASIlEJEhIi4QkeAEAAEiJRCRQSIuEJIABAABIiUQkWEiLRCRwSAUAIAAASIlEJGBIi4Qk0AAAAEgtAAQAAEiJRCRoSIt8JHBIg8cASIu0JLgAAABIi5QksAAAAEiLjCS4AAAATIuEJMAAAABMi4wkyAAAAA=="
 call {vg_rsa_private_checked}
@@ -987,7 +987,7 @@ pub const VG_RSA_OAEP_DECRYPT_CRT_IFMA_FEATURES: verified_garbage_cpu::Features 
 /// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 /// * The CPU must support the `avx`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rsa_oaep_decrypt_crt_ifma(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 5], mgf1: *const [usize; 5]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_decrypt_crt_ifma(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 5], mgf1: *const [usize; 5]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJNj+//9IibwkqAAAAEiJlCToAAAASImMJLAAAABMiYQkuAAAAEyJjCTAAAAASIuEJDABAABIiYQkyAAAAEiLhCSIAQAASImEJNgAAABIi4QkkAEAAEiJhCTgAAAASIuEJKgBAABIiUQkcEiLhCSwAQAASImEJNAAAABIi4QkmAEAAEiJBCRIi4QkuAAAAEiJRCQISIuEJDgBAABIiUQkEEiLhCRAAQAASIlEJBhIi4QkSAEAAEiJRCQgSIuEJFABAABIiUQkKEiLhCRYAQAASIlEJDBIi4QkYAEAAEiJRCQ4SIuEJGgBAABIiUQkQEiLhCRwAQAASIlEJEhIi4QkeAEAAEiJRCRQSIuEJIABAABIiUQkWEiLRCRwSAUAIAAASIlEJGBIi4Qk0AAAAEgtAAQAAEiJRCRoSIt8JHBIg8cASIu0JLgAAABIi5QksAAAAEiLjCS4AAAATIuEJMAAAABMi4wkyAAAAA=="
 call {vg_rsa_private_checked_ifma}
@@ -1459,7 +1459,7 @@ pub const VG_RSA_OAEP_ENCRYPT_PRECOMPUTED_RSA_ADX_FEATURES: verified_garbage_cpu
 /// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rsa_oaep_encrypt_precomputed_rsa_adx(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const u8, seed_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, hash: *const [usize; 5], mgf1: *const [usize; 5]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_encrypt_precomputed_rsa_adx(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const u8, seed_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, hash: *const [usize; 5], mgf1: *const [usize; 5]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJNj+//9IibwkqAAAAEiJlCSwAAAASImMJLgAAABMiYQkwAAAAEyJjCTIAAAASIuEJDABAABIiYQk2AAAAEiLhCQ4AQAASImEJOAAAABIi4QkQAEAAEiJhCToAAAASIuEJEgBAABIiYQk8AAAAEiLhCRQAQAASImEJPgAAABIi4QkYAEAAEiJRCRwSIuEJGgBAABIiYQk0AAAAEyLnCSAAQAATImcJBgBAABMi5wkGAEAAE2LWyBJg/sQ"
 je 20f
@@ -1931,7 +1931,7 @@ jne 2129b
 /// * `hash` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 /// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rsa_oaep_encrypt_precomputed(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const u8, seed_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, hash: *const [usize; 5], mgf1: *const [usize; 5]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_encrypt_precomputed(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const u8, seed_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, hash: *const [usize; 5], mgf1: *const [usize; 5]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJNj+//9IibwkqAAAAEiJlCSwAAAASImMJLgAAABMiYQkwAAAAEyJjCTIAAAASIuEJDABAABIiYQk2AAAAEiLhCQ4AQAASImEJOAAAABIi4QkQAEAAEiJhCToAAAASIuEJEgBAABIiYQk8AAAAEiLhCRQAQAASImEJPgAAABIi4QkYAEAAEiJRCRwSIuEJGgBAABIiYQk0AAAAEyLnCSAAQAATImcJBgBAABMi5wkGAEAAE2LWyBJg/sQ"
 je 20f
@@ -2407,7 +2407,7 @@ pub const VG_RSA_OAEP_ENCRYPT_PRECOMPUTED_RSA_IFMA_FEATURES: verified_garbage_cp
 /// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 /// * The CPU must support the `avx`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rsa_oaep_encrypt_precomputed_rsa_ifma(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const u8, seed_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, hash: *const [usize; 5], mgf1: *const [usize; 5]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_encrypt_precomputed_rsa_ifma(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const u8, seed_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, hash: *const [usize; 5], mgf1: *const [usize; 5]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJNj+//9IibwkqAAAAEiJlCSwAAAASImMJLgAAABMiYQkwAAAAEyJjCTIAAAASIuEJDABAABIiYQk2AAAAEiLhCQ4AQAASImEJOAAAABIi4QkQAEAAEiJhCToAAAASIuEJEgBAABIiYQk8AAAAEiLhCRQAQAASImEJPgAAABIi4QkYAEAAEiJRCRwSIuEJGgBAABIiYQk0AAAAEyLnCSAAQAATImcJBgBAABMi5wkGAEAAE2LWyBJg/sQ"
 je 20f

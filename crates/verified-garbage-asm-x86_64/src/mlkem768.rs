@@ -12,7 +12,7 @@
 /// * `ek` must be valid for reads of 1184 bytes.
 /// * `ek` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mlkem768_check_ek(ek: *const [u8; 1184]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mlkem768_check_ek(ek: *const [u8; 1184]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "QbgAAAAAuYABAAA="
 20:
@@ -36,7 +36,7 @@ pub const VG_MLKEM768_CHECK_EK_AVX2_FEATURES: verified_garbage_cpu::Features = v
 /// * `ek` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mlkem768_check_ek_avx2(ek: *const [u8; 1184]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mlkem768_check_ek_avx2(ek: *const [u8; 1184]) -> u32 {
     core::arch::naked_asm!(
         r#"lea rax, [rip + {VG_MLKEM_YCONSTS}]
 .base64 "xX5vgKAEAAA="
@@ -70,7 +70,7 @@ pub const VG_MLKEM768_KEYGEN_AVX2_FEATURES: verified_garbage_cpu::Features = ver
 /// * None of `seed`, `ek`, `dk` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mlkem768_keygen_avx2(seed: *const [u8; 64], ek: *mut [u8; 1184], dk: *mut [u8; 2400], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mlkem768_keygen_avx2(seed: *const [u8; 64], ek: *mut [u8; 1184], dk: *mut [u8; 2400], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI1kJPBIiUwkCA=="
 call {vg_mlkem768_keygen_body_avx2}
@@ -106,7 +106,7 @@ pub const VG_MLKEM768_ENCAPS_H_AVX2_FEATURES: verified_garbage_cpu::Features = v
 /// * None of `ek`, `h`, `m`, `key`, `ct` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mlkem768_encaps_h_avx2(ek: *const [u8; 1184], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mlkem768_encaps_h_avx2(ek: *const [u8; 1184], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI1kJPBMiUwkCA=="
 call {vg_mlkem768_encaps_h_body_avx2}
@@ -140,7 +140,7 @@ pub const VG_MLKEM768_ENCAPS_AVX2_FEATURES: verified_garbage_cpu::Features = ver
 /// * None of `ek`, `m`, `key`, `ct` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mlkem768_encaps_avx2(ek: *const [u8; 1184], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mlkem768_encaps_avx2(ek: *const [u8; 1184], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI1kJPBMiUQkCA=="
 call {vg_mlkem768_encaps_body_avx2}
@@ -172,7 +172,7 @@ pub const VG_MLKEM768_DECAPS_AVX2_FEATURES: verified_garbage_cpu::Features = ver
 /// * None of `dk`, `ct`, `key` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mlkem768_decaps_avx2(dk: *const [u8; 2400], ct: *const [u8; 1088], key: *mut [u8; 32], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mlkem768_decaps_avx2(dk: *const [u8; 2400], ct: *const [u8; 1088], key: *mut [u8; 32], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI1kJPBIiUwkCA=="
 call {vg_mlkem768_decaps_body_avx2}
@@ -204,7 +204,7 @@ pub const VG_MLKEM768_KEYGEN_AVX512_FEATURES: verified_garbage_cpu::Features = v
 /// * None of `seed`, `ek`, `dk` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `avx512f`, `avx512vl` and `avx512bw` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mlkem768_keygen_avx512(seed: *const [u8; 64], ek: *mut [u8; 1184], dk: *mut [u8; 2400], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mlkem768_keygen_avx512(seed: *const [u8; 64], ek: *mut [u8; 1184], dk: *mut [u8; 2400], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI1kJPBIiUwkCA=="
 call {vg_mlkem768_keygen_body_avx512}
@@ -240,7 +240,7 @@ pub const VG_MLKEM768_ENCAPS_H_AVX512_FEATURES: verified_garbage_cpu::Features =
 /// * None of `ek`, `h`, `m`, `key`, `ct` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `avx512f`, `avx512vl` and `avx512bw` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mlkem768_encaps_h_avx512(ek: *const [u8; 1184], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mlkem768_encaps_h_avx512(ek: *const [u8; 1184], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI1kJPBMiUwkCA=="
 call {vg_mlkem768_encaps_h_body_avx512}
@@ -274,7 +274,7 @@ pub const VG_MLKEM768_ENCAPS_AVX512_FEATURES: verified_garbage_cpu::Features = v
 /// * None of `ek`, `m`, `key`, `ct` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `avx512f`, `avx512vl` and `avx512bw` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mlkem768_encaps_avx512(ek: *const [u8; 1184], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mlkem768_encaps_avx512(ek: *const [u8; 1184], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI1kJPBMiUQkCA=="
 call {vg_mlkem768_encaps_body_avx512}
@@ -306,7 +306,7 @@ pub const VG_MLKEM768_DECAPS_AVX512_FEATURES: verified_garbage_cpu::Features = v
 /// * None of `dk`, `ct`, `key` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `avx512f`, `avx512vl` and `avx512bw` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mlkem768_decaps_avx512(dk: *const [u8; 2400], ct: *const [u8; 1088], key: *mut [u8; 32], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mlkem768_decaps_avx512(dk: *const [u8; 2400], ct: *const [u8; 1088], key: *mut [u8; 32], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI1kJPBIiUwkCA=="
 call {vg_mlkem768_decaps_body_avx512}
@@ -338,7 +338,7 @@ pub const VG_MLKEM768_KEYGEN_AVX_FEATURES: verified_garbage_cpu::Features = veri
 /// * None of `seed`, `ek`, `dk` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` target feature.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mlkem768_keygen_avx(seed: *const [u8; 64], ek: *mut [u8; 1184], dk: *mut [u8; 2400], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mlkem768_keygen_avx(seed: *const [u8; 64], ek: *mut [u8; 1184], dk: *mut [u8; 2400], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI1kJPBIiUwkCA=="
 call {vg_mlkem768_keygen_body}
@@ -374,7 +374,7 @@ pub const VG_MLKEM768_ENCAPS_H_AVX_FEATURES: verified_garbage_cpu::Features = ve
 /// * None of `ek`, `h`, `m`, `key`, `ct` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` target feature.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mlkem768_encaps_h_avx(ek: *const [u8; 1184], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mlkem768_encaps_h_avx(ek: *const [u8; 1184], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI1kJPBMiUwkCA=="
 call {vg_mlkem768_encaps_h_body}
@@ -408,7 +408,7 @@ pub const VG_MLKEM768_ENCAPS_AVX_FEATURES: verified_garbage_cpu::Features = veri
 /// * None of `ek`, `m`, `key`, `ct` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` target feature.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mlkem768_encaps_avx(ek: *const [u8; 1184], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mlkem768_encaps_avx(ek: *const [u8; 1184], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI1kJPBMiUQkCA=="
 call {vg_mlkem768_encaps_body}
@@ -440,7 +440,7 @@ pub const VG_MLKEM768_DECAPS_AVX_FEATURES: verified_garbage_cpu::Features = veri
 /// * None of `dk`, `ct`, `key` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` target feature.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mlkem768_decaps_avx(dk: *const [u8; 2400], ct: *const [u8; 1088], key: *mut [u8; 32], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mlkem768_decaps_avx(dk: *const [u8; 2400], ct: *const [u8; 1088], key: *mut [u8; 32], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI1kJPBIiUwkCA=="
 call {vg_mlkem768_decaps_body}
@@ -468,7 +468,7 @@ call {vg_zeroize_avx}
 /// * `ek`, `dk` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
 /// * None of `seed`, `ek`, `dk` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mlkem768_keygen(seed: *const [u8; 64], ek: *mut [u8; 1184], dk: *mut [u8; 2400], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mlkem768_keygen(seed: *const [u8; 64], ek: *mut [u8; 1184], dk: *mut [u8; 2400], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI1kJPBIiUwkCA=="
 call {vg_mlkem768_keygen_body}
@@ -500,7 +500,7 @@ call {vg_zeroize}
 /// * `key`, `ct` and `scratch` must not overlap each other, `ek`, `h` or `m` (distinct Rust objects never do).
 /// * None of `ek`, `h`, `m`, `key`, `ct` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mlkem768_encaps_h(ek: *const [u8; 1184], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mlkem768_encaps_h(ek: *const [u8; 1184], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI1kJPBMiUwkCA=="
 call {vg_mlkem768_encaps_h_body}
@@ -530,7 +530,7 @@ call {vg_zeroize}
 /// * `key`, `ct` and `scratch` must not overlap each other, `ek` or `m` (distinct Rust objects never do).
 /// * None of `ek`, `m`, `key`, `ct` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mlkem768_encaps(ek: *const [u8; 1184], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mlkem768_encaps(ek: *const [u8; 1184], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI1kJPBMiUQkCA=="
 call {vg_mlkem768_encaps_body}
@@ -558,7 +558,7 @@ call {vg_zeroize}
 /// * `key` and `scratch` must not overlap each other, `dk` or `ct` (distinct Rust objects never do).
 /// * None of `dk`, `ct`, `key` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mlkem768_decaps(dk: *const [u8; 2400], ct: *const [u8; 1088], key: *mut [u8; 32], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mlkem768_decaps(dk: *const [u8; 2400], ct: *const [u8; 1088], key: *mut [u8; 32], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI1kJPBIiUwkCA=="
 call {vg_mlkem768_decaps_body}

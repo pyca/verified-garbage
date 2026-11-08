@@ -98,6 +98,7 @@ impl Key {
         if !buffer.len().is_multiple_of(8) {
             return Err(IncompleteBlock);
         }
+        crate::dit::enter!(dit);
         // SAFETY: `rounds` is 12 or 16, as `Cast5Ecb::new` chose for the key
         // the schedule was expanded from; the buffer holds `len / 8` whole
         // blocks, and it, the chaining value (which the function reads and
@@ -105,6 +106,7 @@ impl Key {
         // the signature, none of them on the callee's stack.
         unsafe {
             vg_cast5_cbc_encrypt_chained_auto(
+                dit,
                 self.key.schedule(),
                 self.key.rounds(),
                 iv,
@@ -124,9 +126,11 @@ impl Key {
         if !buffer.len().is_multiple_of(8) {
             return Err(IncompleteBlock);
         }
+        crate::dit::enter!(dit);
         // SAFETY: as in `encrypt`.
         unsafe {
             vg_cast5_cbc_decrypt_chained_auto(
+                dit,
                 self.key.schedule(),
                 self.key.rounds(),
                 iv,

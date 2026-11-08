@@ -14,7 +14,7 @@
 /// * `state` must not overlap `e` (distinct Rust objects never do).
 /// * Neither `state` nor `e` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_rsa_generate_init(state: *mut [u64; 7], bits: usize, e: *const u8, e_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_generate_init(state: *mut [u64; 7], bits: usize, e: *const u8, e_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"str r4, [r0, #12]
 str r5, [r0, #20]
@@ -120,7 +120,7 @@ bx lr",
 /// * `key`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `key`, `used`, `rand`, `scratch` and `state` may overlap the 256 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_rsa_generate(key: *mut u8, key_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 7]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_generate(key: *mut u8, key_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 7]) -> u32 {
     core::arch::naked_asm!(
         r"push {{r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}}
 ldr r9, [sp, #52]
@@ -394,7 +394,7 @@ pub const VG_RSA_GENERATE_UMAAL_FEATURES: verified_garbage_cpu::Features = verif
 /// * The CPU must support the `umaal` target feature.
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_rsa_generate_umaal(key: *mut u8, key_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 7]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_generate_umaal(key: *mut u8, key_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 7]) -> u32 {
     core::arch::naked_asm!(
         r"push {{r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}}
 ldr r9, [sp, #52]

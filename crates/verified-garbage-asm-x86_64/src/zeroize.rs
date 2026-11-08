@@ -12,7 +12,7 @@
 /// * `p` must be valid for reads and writes of `len` bytes.
 /// * `p` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_zeroize(p: *mut u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_zeroize(p: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SMfAAAAAAEiJ8kjB6gVIg/oA"
 je 20f
@@ -56,7 +56,7 @@ pub const VG_ZEROIZE_AVX_FEATURES: verified_garbage_cpu::Features = verified_gar
 /// * `p` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` target feature.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_zeroize_avx(p: *mut u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_zeroize_avx(p: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "xfnvwEjHwAAAAABIifJIweoGSIP6AA=="
 je 20f

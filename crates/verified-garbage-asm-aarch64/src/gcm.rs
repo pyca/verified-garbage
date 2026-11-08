@@ -14,7 +14,7 @@
 /// * `pw` must not overlap `ctx` (distinct Rust objects never do).
 /// * Neither `ctx` nor `pw` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_store_powers(ctx: *const [u64; 32], pw: *mut [u64; 16]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_store_powers(ctx: *const [u64; 32], pw: *mut [u64; 16]) {
     core::arch::naked_asm!(
         r".inst 0xd2fc200d,0xd280000f,0xf9407802,0xdac00c42,0xf9407c03,0xdac00c63,0xaa0f0047,0xaa0f0068
 .inst 0xd37ffcec,0xcb0c01eb,0xd37ff8e4,0xd37ffd0c,0xaa0c0084,0xd2f84009,0x8a0b0129,0xca090084
@@ -213,7 +213,7 @@ pub const VG_AES_GCM_STORE_POWERS_AES_FEATURES: verified_garbage_cpu::Features =
 /// * Neither `ctx` nor `pw` may wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_store_powers_aes(ctx: *const [u64; 32], pw: *mut [u64; 16]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_store_powers_aes(ctx: *const [u64; 32], pw: *mut [u64; 16]) {
     core::arch::naked_asm!(
         r".inst 0x3dc03c06,0x4e2008c6,0xd2f84005,0x4e080ca1,0x6f4104c7,0x4f4154c3,0x6e0740e4,0x6e241c63
 .inst 0x0ee1e0e5,0x6e251c78,0x6e184310,0x0ef8e305,0x4ef8e303,0x0ee1e067,0x6e034063,0x6e271c64
@@ -249,7 +249,7 @@ pub const VG_AES_GCM_INIT_AES_FEATURES: verified_garbage_cpu::Features = verifie
 /// * Neither `key` nor `ctx` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_init_aes(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_init_aes(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
         r".inst 0xd12803ff,0x910003e3,0xf9004474,0xf9004875,0xf9004c76,0xf9005077,0xf9005478,0xf9005879
 .inst 0xf9005c7a,0xf900607b,0xf900647c,0xf900687e,0xf9004073,0x91000073,0x91000055,0xd342fc36
@@ -287,7 +287,7 @@ pub const VG_AES_GCM_SEAL_AES_FEATURES: verified_garbage_cpu::Features = verifie
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 2576 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_seal_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r".inst 0xd12843ff,0x910003f0,0xf9450bf1,0xf9000211,0x910043f1,0xf9000611,0xf94007e9,0xf9004534
 .inst 0xf9004935,0xf9004d36,0xf9005137,0xf9005538,0xf9005939,0xf9005d3a,0xf900613b,0xf900653c
@@ -866,7 +866,7 @@ pub const VG_AES_GCM_OPEN_AES_FEATURES: verified_garbage_cpu::Features = verifie
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_open_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_open_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd12883ff,0x910003f0,0xf94513f1,0xf9000211,0xf94517f1,0xf9000611,0x910083f1,0xf9000a11
 .inst 0xf9400be9,0xf9004534,0xf9004935,0xf9004d36,0xf9005137,0xf9005538,0xf9005939,0xf9005d3a
@@ -1517,7 +1517,7 @@ pub const VG_AES_GCM_STREAM_INIT_AES_FEATURES: verified_garbage_cpu::Features = 
 /// * None of `ctx`, `nonce` and `state` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_stream_init_aes(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_init_aes(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
     core::arch::naked_asm!(
         r".inst 0xd12803ff,0x910003e4,0xf9004494,0xf9004895,0xf9004c96,0xf9005097,0xf9005498,0xf9005899
 .inst 0xf9005c9a,0xf900609b,0xf900649c,0xf900689e,0xf9004093,0x91000093,0x91000074,0x91000015
@@ -1600,7 +1600,7 @@ pub const VG_AES_GCM_STREAM_AAD_AES_FEATURES: verified_garbage_cpu::Features = v
 /// * None of `ctx`, `state` and `data` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_stream_aad_aes(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_aad_aes(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd12803ff,0x910003e5,0xf90044b4,0xf90048b5,0xf9004cb6,0xf90050b7,0xf90054b8,0xf90058b9
 .inst 0xf9005cba,0xf90060bb,0xf90064bc,0xf90068be,0xf90040b3,0x910000b3,0x91000034,0x91000015
@@ -1696,7 +1696,7 @@ pub const VG_AES_GCM_STREAM_ENCRYPT_AES_FEATURES: verified_garbage_cpu::Features
 /// * None of `ctx`, `state` and `data` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_stream_encrypt_aes(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_encrypt_aes(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd12803ff,0x910003e7,0xf90044f4,0xf90048f5,0xf9004cf6,0xf90050f7,0xf90054f8,0xf90058f9
 .inst 0xf9005cfa,0xf90060fb,0xf90064fc,0xf90068fe,0xf90040f3,0x910000f3,0x91000054,0x91000015
@@ -1923,7 +1923,7 @@ pub const VG_AES_GCM_STREAM_DECRYPT_AES_FEATURES: verified_garbage_cpu::Features
 /// * None of `ctx`, `state` and `data` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_stream_decrypt_aes(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_decrypt_aes(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd12803ff,0x910003e7,0xf90044f4,0xf90048f5,0xf9004cf6,0xf90050f7,0xf90054f8,0xf90058f9
 .inst 0xf9005cfa,0xf90060fb,0xf90064fc,0xf90068fe,0xf90040f3,0x910000f3,0x91000054,0x91000015
@@ -2149,7 +2149,7 @@ pub const VG_AES_GCM_STREAM_FINISH_AES_FEATURES: verified_garbage_cpu::Features 
 /// * None of `ctx`, `state` and `tag` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_stream_finish_aes(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish_aes(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r".inst 0xd12803ff,0x910003e6,0xf90044d4,0xf90048d5,0xf9004cd6,0xf90050d7,0xf90054d8,0xf90058d9
 .inst 0xf9005cda,0xf90060db,0xf90064dc,0xf90068de,0xf90040d3,0x910000d3,0x91000054,0x91000015
@@ -2235,7 +2235,7 @@ pub const VG_AES_GCM_STREAM_VERIFY_AES_FEATURES: verified_garbage_cpu::Features 
 /// * None of `ctx`, `state` and `tag` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_stream_verify_aes(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify_aes(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd12803ff,0x910003e7,0xf90044f4,0xf90048f5,0xf9004cf6,0xf90050f7,0xf90054f8,0xf90058f9
 .inst 0xf9005cfa,0xf90060fb,0xf90064fc,0xf90068fe,0xf90040f3,0x910000f3,0x91000054,0x91000015
@@ -2371,7 +2371,7 @@ pub const VG_AES_GCM_SEAL_GATHER_AES_FEATURES: verified_garbage_cpu::Features = 
 /// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_seal_gather_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_gather_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r".inst 0xd10043ff,0x910003f0,0xf900061e,0xf94013f1,0xf9000211,0xf9400beb
 cbz x7, 20f
@@ -2446,7 +2446,7 @@ pub const VG_AES_GCM_OPEN_TO_AES_FEATURES: verified_garbage_cpu::Features = veri
 /// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the 2608 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_open_to_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_open_to_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd128c3ff,0x910003f0,0xf9451bf1,0xf9000211,0xf9451ff1,0xf9000611,0xf94523f1,0xf9000a11
 .inst 0xf94527f1,0xf9000e11,0x9100c3f1,0xf9001211,0xf94013e9,0xf9004534,0xf9004935,0xf9004d36
@@ -3185,7 +3185,7 @@ pub const VG_AES_GCM_SEAL_WITH_POWERS_AES_FEATURES: verified_garbage_cpu::Featur
 /// * None of `ctx`, `nonce`, `aad`, `data`, `tag` and `pw` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_seal_with_powers_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16], pw: *const [u64; 16]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_with_powers_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16], pw: *const [u64; 16]) {
     core::arch::naked_asm!(
         r".inst 0xd12883ff,0x910003f0,0xf94513f1,0xf9000211,0xf94517f1,0xf9000611,0x910083f1,0xf9000a11
 .inst 0xf9400be9,0xf9004534,0xf9004935,0xf9004d36,0xf9005137,0xf9005538,0xf9005939,0xf9005d3a
@@ -3769,7 +3769,7 @@ pub const VG_AES_GCM_OPEN_WITH_POWERS_AES_FEATURES: verified_garbage_cpu::Featur
 /// * None of `ctx`, `nonce`, `aad`, `data`, `tag` and `pw` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_open_with_powers_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize, pw: *const [u64; 16]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_open_with_powers_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize, pw: *const [u64; 16]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd12883ff,0x910003f0,0xf94513f1,0xf9000211,0xf94517f1,0xf9000611,0xf9451bf1,0xf9000a11
 .inst 0x910083f1,0xf9000e11,0xf9400fe9,0xf9004534,0xf9004935,0xf9004d36,0xf9005137,0xf9005538
@@ -5176,7 +5176,7 @@ pub const VG_AES_GCM_SEAL_WITH_POWERS_AES_SHA3_FEATURES: verified_garbage_cpu::F
 /// * None of `ctx`, `nonce`, `aad`, `data`, `tag` and `pw` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `sha3` target features.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_seal_with_powers_aes_sha3(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16], pw: *const [u64; 16]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_with_powers_aes_sha3(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16], pw: *const [u64; 16]) {
     core::arch::naked_asm!(
         r".inst 0xd12883ff,0x910003f0,0xf94513f1,0xf9000211,0xf94517f1,0xf9000611,0x910083f1,0xf9000a11
 .inst 0xf9400be9,0xf9004534,0xf9004935,0xf9004d36,0xf9005137,0xf9005538,0xf9005939,0xf9005d3a
@@ -6698,7 +6698,7 @@ pub const VG_AES_GCM_OPEN_WITH_POWERS_AES_SHA3_FEATURES: verified_garbage_cpu::F
 /// * None of `ctx`, `nonce`, `aad`, `data`, `tag` and `pw` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `sha3` target features.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_open_with_powers_aes_sha3(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize, pw: *const [u64; 16]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_open_with_powers_aes_sha3(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize, pw: *const [u64; 16]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd12883ff,0x910003f0,0xf94513f1,0xf9000211,0xf94517f1,0xf9000611,0xf9451bf1,0xf9000a11
 .inst 0x910083f1,0xf9000e11,0xf9400fe9,0xf9004534,0xf9004935,0xf9004d36,0xf9005137,0xf9005538
@@ -8458,7 +8458,7 @@ b 21b
 /// * `ctx` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `ctx` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_init(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_init(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
         r".inst 0xd12803ff,0x910003e3,0xf9004474,0xf9004875,0xf9004c76,0xf9005077,0xf9005478,0xf9005879
 .inst 0xf9005c7a,0xf900607b,0xf900647c,0xf900687e,0xf9004073,0x91000073,0x91000055,0xd342fc36
@@ -8492,7 +8492,7 @@ bl {vg_aes_ctr32}
 /// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 2576 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_seal(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_seal(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r".inst 0xd12843ff,0x910003f0,0xf9450bf1,0xf9000211,0x910043f1,0xf9000611,0xf94007e9,0xf9004534
 .inst 0xf9004935,0xf9004d36,0xf9005137,0xf9005538,0xf9005939,0xf9005d3a,0xf900613b,0xf900653c
@@ -8868,7 +8868,7 @@ bl {vg_aes_ctr32}
 /// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_open(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_open(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd12883ff,0x910003f0,0xf94513f1,0xf9000211,0xf94517f1,0xf9000611,0x910083f1,0xf9000a11
 .inst 0xf9400be9,0xf9004534,0xf9004935,0xf9004d36,0xf9005137,0xf9005538,0xf9005939,0xf9005d3a
@@ -9265,7 +9265,7 @@ b 21f
 /// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
 /// * None of `ctx`, `nonce` and `state` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_stream_init(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_init(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
     core::arch::naked_asm!(
         r".inst 0xd12803ff,0x910003e4,0xf9004494,0xf9004895,0xf9004c96,0xf9005097,0xf9005498,0xf9005899
 .inst 0xf9005c9a,0xf900609b,0xf900649c,0xf900689e,0xf9004093,0x91000093,0x91000074,0x91000015
@@ -9344,7 +9344,7 @@ b 21f
 /// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `data` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_stream_aad(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_aad(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd12803ff,0x910003e5,0xf90044b4,0xf90048b5,0xf9004cb6,0xf90050b7,0xf90054b8,0xf90058b9
 .inst 0xf9005cba,0xf90060bb,0xf90064bc,0xf90068be,0xf90040b3,0x910000b3,0x91000034,0x91000015
@@ -9436,7 +9436,7 @@ b 210f
 /// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `data` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_stream_encrypt(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_encrypt(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd12803ff,0x910003e7,0xf90044f4,0xf90048f5,0xf9004cf6,0xf90050f7,0xf90054f8,0xf90058f9
 .inst 0xf9005cfa,0xf90060fb,0xf90064fc,0xf90068fe,0xf90040f3,0x910000f3,0x91000054,0x91000015
@@ -9659,7 +9659,7 @@ b 244f
 /// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `data` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_stream_decrypt(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_decrypt(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd12803ff,0x910003e7,0xf90044f4,0xf90048f5,0xf9004cf6,0xf90050f7,0xf90054f8,0xf90058f9
 .inst 0xf9005cfa,0xf90060fb,0xf90064fc,0xf90068fe,0xf90040f3,0x910000f3,0x91000054,0x91000015
@@ -9881,7 +9881,7 @@ b 255f
 /// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `tag` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_stream_finish(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r".inst 0xd12803ff,0x910003e6,0xf90044d4,0xf90048d5,0xf9004cd6,0xf90050d7,0xf90054d8,0xf90058d9
 .inst 0xf9005cda,0xf90060db,0xf90064dc,0xf90068de,0xf90040d3,0x910000d3,0x91000054,0x91000015
@@ -9963,7 +9963,7 @@ bl {vg_aes_ctr32}
 /// * `state` must not overlap `ctx` or `tag` (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `tag` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_stream_verify(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd12803ff,0x910003e7,0xf90044f4,0xf90048f5,0xf9004cf6,0xf90050f7,0xf90054f8,0xf90058f9
 .inst 0xf9005cfa,0xf90060fb,0xf90064fc,0xf90068fe,0xf90040f3,0x910000f3,0x91000054,0x91000015
@@ -10095,7 +10095,7 @@ b 21f
 /// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_seal_gather(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_gather(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r".inst 0xd10043ff,0x910003f0,0xf900061e,0xf94013f1,0xf9000211,0xf9400beb
 cbz x7, 20f
@@ -10166,7 +10166,7 @@ bl {vg_aes_gcm_seal}
 /// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src`, `tag` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the 2608 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_open_to(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_open_to(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd128c3ff,0x910003f0,0xf9451bf1,0xf9000211,0xf9451ff1,0xf9000611,0xf94523f1,0xf9000a11
 .inst 0xf94527f1,0xf9000e11,0x9100c3f1,0xf9001211,0xf94013e9,0xf9004534,0xf9004935,0xf9004d36
@@ -10614,7 +10614,7 @@ b 2139f
 /// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `pw` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `nonce`, `aad`, `data`, `tag` and `pw` may overlap the 2576 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_seal_with_powers(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16], pw: *const [u64; 16]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_with_powers(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16], pw: *const [u64; 16]) {
     core::arch::naked_asm!(
         r".inst 0xd12843ff,0x910003f0,0xf9450bf1,0xf9000211,0x910043f1,0xf9000611,0xf94007e9,0xf9004534
 .inst 0xf9004935,0xf9004d36,0xf9005137,0xf9005538,0xf9005939,0xf9005d3a,0xf900613b,0xf900653c
@@ -10988,7 +10988,7 @@ bl {vg_aes_ctr32}
 /// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag`, `pw` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `nonce`, `aad`, `data`, `tag` and `pw` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_open_with_powers(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize, pw: *const [u64; 16]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_open_with_powers(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize, pw: *const [u64; 16]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd12883ff,0x910003f0,0xf94513f1,0xf9000211,0xf94517f1,0xf9000611,0x910083f1,0xf9000a11
 .inst 0xf9400be9,0xf9004534,0xf9004935,0xf9004d36,0xf9005137,0xf9005538,0xf9005939,0xf9005d3a

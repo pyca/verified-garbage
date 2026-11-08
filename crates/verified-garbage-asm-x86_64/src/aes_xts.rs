@@ -24,7 +24,7 @@ pub const VG_AES_XTS_ENCRYPT_UNIT_AESNI_FEATURES: verified_garbage_cpu::Features
 /// * None of `schedule`, `tweak_schedule`, `i`, `data` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_xts_encrypt_unit_aesni(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_xts_encrypt_unit_aesni(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
     core::arch::naked_asm!(
         r#".base64 "SItEJAhIiZigCAAASImoqAgAAEyJoLAIAABMiai4CAAATImwwAgAAEyJuMgIAABJicdIiftIidVNicRNic1IiwFJiYeACAAASItBCEmJh4gIAAC4AAAAAEmJh5AIAABJiYeYCAAASIn3SInuTIn6SIHCkAgAAEyJ+UiBwYAIAABBuAEAAABNifk="
 call {vg_aes_xts_encrypt_aesni}
@@ -68,7 +68,7 @@ pub const VG_AES_XTS_DECRYPT_UNIT_AESNI_FEATURES: verified_garbage_cpu::Features
 /// * None of `schedule`, `tweak_schedule`, `i`, `data` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_xts_decrypt_unit_aesni(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_xts_decrypt_unit_aesni(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
     core::arch::naked_asm!(
         r#".base64 "SItEJAhIiZigCAAASImoqAgAAEyJoLAIAABMiai4CAAATImwwAgAAEyJuMgIAABJicdIiftIidVNicRNic1IiwFJiYeACAAASItBCEmJh4gIAAC4AAAAAEmJh5AIAABJiYeYCAAASIn3SInuTIn6SIHCkAgAAEyJ+UiBwYAIAABBuAEAAABNifk="
 call {vg_aes_xts_encrypt_aesni}
@@ -119,7 +119,7 @@ pub const VG_AES_XTS_ENCRYPT_UNIT_TO_AESNI_FEATURES: verified_garbage_cpu::Featu
 /// * None of `schedule`, `tweak_schedule`, `i`, `src`, `dst` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_xts_encrypt_unit_to_aesni(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], src: *const u8, len: usize, dst: *mut u8, dst_len: usize, scratch: *mut [u64; 304]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_xts_encrypt_unit_to_aesni(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], src: *const u8, len: usize, dst: *mut u8, dst_len: usize, scratch: *mut [u64; 304]) {
     core::arch::naked_asm!(
         r#".base64 "SItEJBhIiZigCAAASImoqAgAAEyJoLAIAABMiai4CAAATImwwAgAAEyJuMgIAABJicdIiftIidVMi2QkCE2JzU2JxkiLAUmJh4AIAABIi0EISYmHiAgAALgAAAAASYmHkAgAAEmJh5gIAABIifdIie5MifpIgcKQCAAATIn5SIHBgAgAAEG4AQAAAE2J+Q=="
 call {vg_aes_xts_encrypt_aesni}
@@ -206,7 +206,7 @@ pub const VG_AES_XTS_DECRYPT_UNIT_TO_AESNI_FEATURES: verified_garbage_cpu::Featu
 /// * None of `schedule`, `tweak_schedule`, `i`, `src`, `dst` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_xts_decrypt_unit_to_aesni(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], src: *const u8, len: usize, dst: *mut u8, dst_len: usize, scratch: *mut [u64; 304]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_xts_decrypt_unit_to_aesni(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], src: *const u8, len: usize, dst: *mut u8, dst_len: usize, scratch: *mut [u64; 304]) {
     core::arch::naked_asm!(
         r#".base64 "SItEJBhIiZigCAAASImoqAgAAEyJoLAIAABMiai4CAAATImwwAgAAEyJuMgIAABJicdIiftIidVMi2QkCE2JzU2JxkiLAUmJh4AIAABIi0EISYmHiAgAALgAAAAASYmHkAgAAEmJh5gIAABIifdIie5MifpIgcKQCAAATIn5SIHBgAgAAEG4AQAAAE2J+Q=="
 call {vg_aes_xts_encrypt_aesni}
@@ -296,7 +296,7 @@ pub const VG_AES_XTS_ENCRYPT_UNIT_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::F
 /// * None of `schedule`, `tweak_schedule`, `i`, `data` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `pclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_xts_encrypt_unit_aesni_pclmul(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_xts_encrypt_unit_aesni_pclmul(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
     core::arch::naked_asm!(
         r#".base64 "SItEJAhIiZigCAAASImoqAgAAEyJoLAIAABMiai4CAAATImwwAgAAEyJuMgIAABJicdIiftIidVNicRNic1IiwFJiYeACAAASItBCEmJh4gIAAC4AAAAAEmJh5AIAABJiYeYCAAASIn3SInuTIn6SIHCkAgAAEyJ+UiBwYAIAABBuAEAAABNifk="
 call {vg_aes_xts_encrypt_aesni_pclmul}
@@ -340,7 +340,7 @@ pub const VG_AES_XTS_DECRYPT_UNIT_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::F
 /// * None of `schedule`, `tweak_schedule`, `i`, `data` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `pclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_xts_decrypt_unit_aesni_pclmul(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_xts_decrypt_unit_aesni_pclmul(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
     core::arch::naked_asm!(
         r#".base64 "SItEJAhIiZigCAAASImoqAgAAEyJoLAIAABMiai4CAAATImwwAgAAEyJuMgIAABJicdIiftIidVNicRNic1IiwFJiYeACAAASItBCEmJh4gIAAC4AAAAAEmJh5AIAABJiYeYCAAASIn3SInuTIn6SIHCkAgAAEyJ+UiBwYAIAABBuAEAAABNifk="
 call {vg_aes_xts_encrypt_aesni_pclmul}
@@ -391,7 +391,7 @@ pub const VG_AES_XTS_ENCRYPT_UNIT_TO_AESNI_PCLMUL_FEATURES: verified_garbage_cpu
 /// * None of `schedule`, `tweak_schedule`, `i`, `src`, `dst` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `pclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_xts_encrypt_unit_to_aesni_pclmul(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], src: *const u8, len: usize, dst: *mut u8, dst_len: usize, scratch: *mut [u64; 304]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_xts_encrypt_unit_to_aesni_pclmul(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], src: *const u8, len: usize, dst: *mut u8, dst_len: usize, scratch: *mut [u64; 304]) {
     core::arch::naked_asm!(
         r#".base64 "SItEJBhIiZigCAAASImoqAgAAEyJoLAIAABMiai4CAAATImwwAgAAEyJuMgIAABJicdIiftIidVMi2QkCE2JzU2JxkiLAUmJh4AIAABIi0EISYmHiAgAALgAAAAASYmHkAgAAEmJh5gIAABIifdIie5MifpIgcKQCAAATIn5SIHBgAgAAEG4AQAAAE2J+Q=="
 call {vg_aes_xts_encrypt_aesni_pclmul}
@@ -478,7 +478,7 @@ pub const VG_AES_XTS_DECRYPT_UNIT_TO_AESNI_PCLMUL_FEATURES: verified_garbage_cpu
 /// * None of `schedule`, `tweak_schedule`, `i`, `src`, `dst` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `pclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_xts_decrypt_unit_to_aesni_pclmul(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], src: *const u8, len: usize, dst: *mut u8, dst_len: usize, scratch: *mut [u64; 304]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_xts_decrypt_unit_to_aesni_pclmul(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], src: *const u8, len: usize, dst: *mut u8, dst_len: usize, scratch: *mut [u64; 304]) {
     core::arch::naked_asm!(
         r#".base64 "SItEJBhIiZigCAAASImoqAgAAEyJoLAIAABMiai4CAAATImwwAgAAEyJuMgIAABJicdIiftIidVMi2QkCE2JzU2JxkiLAUmJh4AIAABIi0EISYmHiAgAALgAAAAASYmHkAgAAEmJh5gIAABIifdIie5MifpIgcKQCAAATIn5SIHBgAgAAEG4AQAAAE2J+Q=="
 call {vg_aes_xts_encrypt_aesni_pclmul}
@@ -564,7 +564,7 @@ call {vg_aes_xts_decrypt_to_aesni_pclmul}
 /// * `data` and `scratch` must not overlap each other, `schedule`, `tweak_schedule`, `i` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `tweak_schedule`, `i`, `data` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_xts_encrypt_unit(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_xts_encrypt_unit(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
     core::arch::naked_asm!(
         r#".base64 "SItEJAhIiZigCAAASImoqAgAAEyJoLAIAABMiai4CAAATImwwAgAAEyJuMgIAABJicdIiftIidVNicRNic1IiwFJiYeACAAASItBCEmJh4gIAAC4AAAAAEmJh5AIAABJiYeYCAAASIn3SInuTIn6SIHCkAgAAEyJ+UiBwYAIAABBuAEAAABNifk="
 call {vg_aes_xts_encrypt}
@@ -604,7 +604,7 @@ jmp 21f
 /// * `data` and `scratch` must not overlap each other, `schedule`, `tweak_schedule`, `i` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `tweak_schedule`, `i`, `data` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_xts_decrypt_unit(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_xts_decrypt_unit(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
     core::arch::naked_asm!(
         r#".base64 "SItEJAhIiZigCAAASImoqAgAAEyJoLAIAABMiai4CAAATImwwAgAAEyJuMgIAABJicdIiftIidVNicRNic1IiwFJiYeACAAASItBCEmJh4gIAAC4AAAAAEmJh5AIAABJiYeYCAAASIn3SInuTIn6SIHCkAgAAEyJ+UiBwYAIAABBuAEAAABNifk="
 call {vg_aes_xts_encrypt}
@@ -651,7 +651,7 @@ call {vg_aes_xts_decrypt}
 /// * `dst` and `scratch` must not overlap each other, `schedule`, `tweak_schedule`, `i`, `src` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `tweak_schedule`, `i`, `src`, `dst` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_xts_encrypt_unit_to(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], src: *const u8, len: usize, dst: *mut u8, dst_len: usize, scratch: *mut [u64; 304]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_xts_encrypt_unit_to(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], src: *const u8, len: usize, dst: *mut u8, dst_len: usize, scratch: *mut [u64; 304]) {
     core::arch::naked_asm!(
         r#".base64 "SItEJBhIiZigCAAASImoqAgAAEyJoLAIAABMiai4CAAATImwwAgAAEyJuMgIAABJicdIiftIidVMi2QkCE2JzU2JxkiLAUmJh4AIAABIi0EISYmHiAgAALgAAAAASYmHkAgAAEmJh5gIAABIifdIie5MifpIgcKQCAAATIn5SIHBgAgAAEG4AQAAAE2J+Q=="
 call {vg_aes_xts_encrypt}
@@ -734,7 +734,7 @@ jmp 215f
 /// * `dst` and `scratch` must not overlap each other, `schedule`, `tweak_schedule`, `i`, `src` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `tweak_schedule`, `i`, `src`, `dst` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_xts_decrypt_unit_to(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], src: *const u8, len: usize, dst: *mut u8, dst_len: usize, scratch: *mut [u64; 304]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_xts_decrypt_unit_to(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], src: *const u8, len: usize, dst: *mut u8, dst_len: usize, scratch: *mut [u64; 304]) {
     core::arch::naked_asm!(
         r#".base64 "SItEJBhIiZigCAAASImoqAgAAEyJoLAIAABMiai4CAAATImwwAgAAEyJuMgIAABJicdIiftIidVMi2QkCE2JzU2JxkiLAUmJh4AIAABIi0EISYmHiAgAALgAAAAASYmHkAgAAEmJh5gIAABIifdIie5MifpIgcKQCAAATIn5SIHBgAgAAEG4AQAAAE2J+Q=="
 call {vg_aes_xts_encrypt}
@@ -824,7 +824,7 @@ pub const VG_AES_XTS_ENCRYPT_UNIT_VAES_FEATURES: verified_garbage_cpu::Features 
 /// * None of `schedule`, `tweak_schedule`, `i`, `data` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2` and `vaes` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_xts_encrypt_unit_vaes(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_xts_encrypt_unit_vaes(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
     core::arch::naked_asm!(
         r#".base64 "SItEJAhIiZigCAAASImoqAgAAEyJoLAIAABMiai4CAAATImwwAgAAEyJuMgIAABJicdIiftIidVNicRNic1IiwFJiYeACAAASItBCEmJh4gIAAC4AAAAAEmJh5AIAABJiYeYCAAASIn3SInuTIn6SIHCkAgAAEyJ+UiBwYAIAABBuAEAAABNifk="
 call {vg_aes_xts_encrypt_vaes}
@@ -868,7 +868,7 @@ pub const VG_AES_XTS_DECRYPT_UNIT_VAES_FEATURES: verified_garbage_cpu::Features 
 /// * None of `schedule`, `tweak_schedule`, `i`, `data` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2` and `vaes` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_xts_decrypt_unit_vaes(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_xts_decrypt_unit_vaes(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
     core::arch::naked_asm!(
         r#".base64 "SItEJAhIiZigCAAASImoqAgAAEyJoLAIAABMiai4CAAATImwwAgAAEyJuMgIAABJicdIiftIidVNicRNic1IiwFJiYeACAAASItBCEmJh4gIAAC4AAAAAEmJh5AIAABJiYeYCAAASIn3SInuTIn6SIHCkAgAAEyJ+UiBwYAIAABBuAEAAABNifk="
 call {vg_aes_xts_encrypt_vaes}
@@ -919,7 +919,7 @@ pub const VG_AES_XTS_ENCRYPT_UNIT_TO_VAES_FEATURES: verified_garbage_cpu::Featur
 /// * None of `schedule`, `tweak_schedule`, `i`, `src`, `dst` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2` and `vaes` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_xts_encrypt_unit_to_vaes(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], src: *const u8, len: usize, dst: *mut u8, dst_len: usize, scratch: *mut [u64; 304]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_xts_encrypt_unit_to_vaes(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], src: *const u8, len: usize, dst: *mut u8, dst_len: usize, scratch: *mut [u64; 304]) {
     core::arch::naked_asm!(
         r#".base64 "SItEJBhIiZigCAAASImoqAgAAEyJoLAIAABMiai4CAAATImwwAgAAEyJuMgIAABJicdIiftIidVMi2QkCE2JzU2JxkiLAUmJh4AIAABIi0EISYmHiAgAALgAAAAASYmHkAgAAEmJh5gIAABIifdIie5MifpIgcKQCAAATIn5SIHBgAgAAEG4AQAAAE2J+Q=="
 call {vg_aes_xts_encrypt_vaes}
@@ -1006,7 +1006,7 @@ pub const VG_AES_XTS_DECRYPT_UNIT_TO_VAES_FEATURES: verified_garbage_cpu::Featur
 /// * None of `schedule`, `tweak_schedule`, `i`, `src`, `dst` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2` and `vaes` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_xts_decrypt_unit_to_vaes(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], src: *const u8, len: usize, dst: *mut u8, dst_len: usize, scratch: *mut [u64; 304]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_xts_decrypt_unit_to_vaes(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], src: *const u8, len: usize, dst: *mut u8, dst_len: usize, scratch: *mut [u64; 304]) {
     core::arch::naked_asm!(
         r#".base64 "SItEJBhIiZigCAAASImoqAgAAEyJoLAIAABMiai4CAAATImwwAgAAEyJuMgIAABJicdIiftIidVMi2QkCE2JzU2JxkiLAUmJh4AIAABIi0EISYmHiAgAALgAAAAASYmHkAgAAEmJh5gIAABIifdIie5MifpIgcKQCAAATIn5SIHBgAgAAEG4AQAAAE2J+Q=="
 call {vg_aes_xts_encrypt_vaes}
@@ -1096,7 +1096,7 @@ pub const VG_AES_XTS_ENCRYPT_UNIT_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::F
 /// * None of `schedule`, `tweak_schedule`, `i`, `data` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `vaes` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_xts_encrypt_unit_vaes_vpclmul(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_xts_encrypt_unit_vaes_vpclmul(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
     core::arch::naked_asm!(
         r#".base64 "SItEJAhIiZigCAAASImoqAgAAEyJoLAIAABMiai4CAAATImwwAgAAEyJuMgIAABJicdIiftIidVNicRNic1IiwFJiYeACAAASItBCEmJh4gIAAC4AAAAAEmJh5AIAABJiYeYCAAASIn3SInuTIn6SIHCkAgAAEyJ+UiBwYAIAABBuAEAAABNifk="
 call {vg_aes_xts_encrypt_vaes_vpclmul}
@@ -1140,7 +1140,7 @@ pub const VG_AES_XTS_DECRYPT_UNIT_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::F
 /// * None of `schedule`, `tweak_schedule`, `i`, `data` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `vaes` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_xts_decrypt_unit_vaes_vpclmul(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_xts_decrypt_unit_vaes_vpclmul(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
     core::arch::naked_asm!(
         r#".base64 "SItEJAhIiZigCAAASImoqAgAAEyJoLAIAABMiai4CAAATImwwAgAAEyJuMgIAABJicdIiftIidVNicRNic1IiwFJiYeACAAASItBCEmJh4gIAAC4AAAAAEmJh5AIAABJiYeYCAAASIn3SInuTIn6SIHCkAgAAEyJ+UiBwYAIAABBuAEAAABNifk="
 call {vg_aes_xts_encrypt_vaes_vpclmul}
@@ -1191,7 +1191,7 @@ pub const VG_AES_XTS_ENCRYPT_UNIT_TO_VAES_VPCLMUL_FEATURES: verified_garbage_cpu
 /// * None of `schedule`, `tweak_schedule`, `i`, `src`, `dst` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `vaes` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_xts_encrypt_unit_to_vaes_vpclmul(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], src: *const u8, len: usize, dst: *mut u8, dst_len: usize, scratch: *mut [u64; 304]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_xts_encrypt_unit_to_vaes_vpclmul(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], src: *const u8, len: usize, dst: *mut u8, dst_len: usize, scratch: *mut [u64; 304]) {
     core::arch::naked_asm!(
         r#".base64 "SItEJBhIiZigCAAASImoqAgAAEyJoLAIAABMiai4CAAATImwwAgAAEyJuMgIAABJicdIiftIidVMi2QkCE2JzU2JxkiLAUmJh4AIAABIi0EISYmHiAgAALgAAAAASYmHkAgAAEmJh5gIAABIifdIie5MifpIgcKQCAAATIn5SIHBgAgAAEG4AQAAAE2J+Q=="
 call {vg_aes_xts_encrypt_vaes_vpclmul}
@@ -1278,7 +1278,7 @@ pub const VG_AES_XTS_DECRYPT_UNIT_TO_VAES_VPCLMUL_FEATURES: verified_garbage_cpu
 /// * None of `schedule`, `tweak_schedule`, `i`, `src`, `dst` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `vaes` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_xts_decrypt_unit_to_vaes_vpclmul(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], src: *const u8, len: usize, dst: *mut u8, dst_len: usize, scratch: *mut [u64; 304]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_xts_decrypt_unit_to_vaes_vpclmul(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], src: *const u8, len: usize, dst: *mut u8, dst_len: usize, scratch: *mut [u64; 304]) {
     core::arch::naked_asm!(
         r#".base64 "SItEJBhIiZigCAAASImoqAgAAEyJoLAIAABMiai4CAAATImwwAgAAEyJuMgIAABJicdIiftIidVMi2QkCE2JzU2JxkiLAUmJh4AIAABIi0EISYmHiAgAALgAAAAASYmHkAgAAEmJh5gIAABIifdIie5MifpIgcKQCAAATIn5SIHBgAgAAEG4AQAAAE2J+Q=="
 call {vg_aes_xts_encrypt_vaes_vpclmul}
@@ -1368,7 +1368,7 @@ pub const VG_AES_XTS_ENCRYPT_UNIT_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage
 /// * None of `schedule`, `tweak_schedule`, `i`, `data` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `vaes`, `vpclmulqdq`, `avx512f` and `avx512bw` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_xts_encrypt_unit_vaes_vpclmul_avx512(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_xts_encrypt_unit_vaes_vpclmul_avx512(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
     core::arch::naked_asm!(
         r#".base64 "SItEJAhIiZigCAAASImoqAgAAEyJoLAIAABMiai4CAAATImwwAgAAEyJuMgIAABJicdIiftIidVNicRNic1IiwFJiYeACAAASItBCEmJh4gIAAC4AAAAAEmJh5AIAABJiYeYCAAASIn3SInuTIn6SIHCkAgAAEyJ+UiBwYAIAABBuAEAAABNifk="
 call {vg_aes_xts_encrypt_vaes_vpclmul_avx512}
@@ -1412,7 +1412,7 @@ pub const VG_AES_XTS_DECRYPT_UNIT_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage
 /// * None of `schedule`, `tweak_schedule`, `i`, `data` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `vaes`, `vpclmulqdq`, `avx512f` and `avx512bw` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_xts_decrypt_unit_vaes_vpclmul_avx512(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_xts_decrypt_unit_vaes_vpclmul_avx512(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
     core::arch::naked_asm!(
         r#".base64 "SItEJAhIiZigCAAASImoqAgAAEyJoLAIAABMiai4CAAATImwwAgAAEyJuMgIAABJicdIiftIidVNicRNic1IiwFJiYeACAAASItBCEmJh4gIAAC4AAAAAEmJh5AIAABJiYeYCAAASIn3SInuTIn6SIHCkAgAAEyJ+UiBwYAIAABBuAEAAABNifk="
 call {vg_aes_xts_encrypt_vaes_vpclmul_avx512}
@@ -1463,7 +1463,7 @@ pub const VG_AES_XTS_ENCRYPT_UNIT_TO_VAES_VPCLMUL_AVX512_FEATURES: verified_garb
 /// * None of `schedule`, `tweak_schedule`, `i`, `src`, `dst` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `vaes`, `vpclmulqdq`, `avx512f` and `avx512bw` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_xts_encrypt_unit_to_vaes_vpclmul_avx512(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], src: *const u8, len: usize, dst: *mut u8, dst_len: usize, scratch: *mut [u64; 304]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_xts_encrypt_unit_to_vaes_vpclmul_avx512(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], src: *const u8, len: usize, dst: *mut u8, dst_len: usize, scratch: *mut [u64; 304]) {
     core::arch::naked_asm!(
         r#".base64 "SItEJBhIiZigCAAASImoqAgAAEyJoLAIAABMiai4CAAATImwwAgAAEyJuMgIAABJicdIiftIidVMi2QkCE2JzU2JxkiLAUmJh4AIAABIi0EISYmHiAgAALgAAAAASYmHkAgAAEmJh5gIAABIifdIie5MifpIgcKQCAAATIn5SIHBgAgAAEG4AQAAAE2J+Q=="
 call {vg_aes_xts_encrypt_vaes_vpclmul_avx512}
@@ -1550,7 +1550,7 @@ pub const VG_AES_XTS_DECRYPT_UNIT_TO_VAES_VPCLMUL_AVX512_FEATURES: verified_garb
 /// * None of `schedule`, `tweak_schedule`, `i`, `src`, `dst` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `vaes`, `vpclmulqdq`, `avx512f` and `avx512bw` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_xts_decrypt_unit_to_vaes_vpclmul_avx512(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], src: *const u8, len: usize, dst: *mut u8, dst_len: usize, scratch: *mut [u64; 304]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_xts_decrypt_unit_to_vaes_vpclmul_avx512(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], src: *const u8, len: usize, dst: *mut u8, dst_len: usize, scratch: *mut [u64; 304]) {
     core::arch::naked_asm!(
         r#".base64 "SItEJBhIiZigCAAASImoqAgAAEyJoLAIAABMiai4CAAATImwwAgAAEyJuMgIAABJicdIiftIidVMi2QkCE2JzU2JxkiLAUmJh4AIAABIi0EISYmHiAgAALgAAAAASYmHkAgAAEmJh5gIAABIifdIie5MifpIgcKQCAAATIn5SIHBgAgAAEG4AQAAAE2J+Q=="
 call {vg_aes_xts_encrypt_vaes_vpclmul_avx512}

@@ -16,7 +16,7 @@
 /// * `ctx` must not overlap `key` or `iv` (distinct Rust objects never do).
 /// * None of `key`, `iv` and `ctx` may overlap the return address on the stack or the 600 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rc2_cbc_init(key: *const u8, key_len: usize, effective_bits: usize, iv: *const u8, iv_len: usize, ctx: *mut [u8; 144]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_rc2_cbc_init(key: *const u8, key_len: usize, effective_bits: usize, iv: *const u8, iv_len: usize, ctx: *mut [u8; 144]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJLD9//9IieBIg8AQSIlEJAi4AQAAAEmJ8kmD6gFJgfqAAAAA"
 jae 20f
@@ -62,7 +62,7 @@ jmp 27f
 /// * `ctx` and `out` must not overlap each other or `data` (distinct Rust objects never do).
 /// * None of `ctx`, `data` and `out` may overlap the return address on the stack or the 608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rc2_cbc_encrypt_update(ctx: *mut [u8; 144], pending_len: usize, data: *const u8, len: usize, out: *mut u8, out_len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_rc2_cbc_encrypt_update(ctx: *mut [u8; 144], pending_len: usize, data: *const u8, len: usize, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJLD9//9IieBIg8AQSIlEJAhNhck="
 je 20f
@@ -123,7 +123,7 @@ jmp 212f
 /// * `ctx` and `out` must not overlap each other or `data` (distinct Rust objects never do).
 /// * None of `ctx`, `data` and `out` may overlap the return address on the stack or the 608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rc2_cbc_decrypt_update(ctx: *mut [u8; 144], pending_len: usize, data: *const u8, len: usize, out: *mut u8, out_len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_rc2_cbc_decrypt_update(ctx: *mut [u8; 144], pending_len: usize, data: *const u8, len: usize, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJLD9//9IieBIg8AQSIlEJAhNhck="
 je 20f

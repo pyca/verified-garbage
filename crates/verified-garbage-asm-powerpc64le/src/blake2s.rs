@@ -15,7 +15,7 @@
 /// * `state` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `state` nor `key` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_blake2s_init(state: *mut [u8; 96], outlen: usize, key: *const u8, keylen: usize) {
+pub(crate) unsafe extern "C" fn vg_blake2s_init(state: *mut [u8; 96], outlen: usize, key: *const u8, keylen: usize) {
     core::arch::naked_asm!(
         r#".base64 "Z7sgPYWuKWEEACORbjwgPXLzKWEIACORT6UgPTr1KWEMACORDlEgPX9SKWEQACORBZsgPYxoKWEUACORgx8gPavZKWEYACOR4FsgPRnNKWEcACORCGsgPWfmKWHkRcp4eFIpfXgiKX0AACORAAAmKA=="
 beq %cr0, 20f
@@ -42,7 +42,7 @@ b 21f
 /// * `state` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the 656 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_blake2s_update(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_blake2s_update(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "of0h+CAA4TimAgh80f8h+CAAAfgAAkf7CAJn+xACh/sYAqf7IALH+ygC5/sAAEM7AABnOwAAhTsAAKY7AADkO///3zs/ACA5OEjefwEA3jsAAD8o"
 beq %cr0, 20f
@@ -122,7 +122,7 @@ b 23f
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the 656 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_blake2s_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
+pub(crate) unsafe extern "C" fn vg_blake2s_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
         r#".base64 "of0h+CAAwTimAgh80f8h+CAAAfgAAkb7CAJm+xAChvsYAqb7IALG+ygC5vsAAEM7AABmOwAAhTsAAOQ7///fOz8AIDk4SN5/AQDeOwAAPyg="
 beq %cr0, 20f

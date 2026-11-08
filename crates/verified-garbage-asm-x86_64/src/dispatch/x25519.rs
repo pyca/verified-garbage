@@ -18,7 +18,7 @@
 /// * None of `out`, `scalar` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_x25519_base_auto(out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
+pub unsafe fn vg_x25519_base_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
     /// The type of the implementations.
     type Impl = unsafe extern "sysv64" fn(out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -74,7 +74,7 @@ pub unsafe fn vg_x25519_base_auto(out: *mut [u8; 32], scalar: *const [u8; 32], s
 /// * None of `out`, `scalar`, `point` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_x25519_exchange_auto(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) -> u32 {
+pub unsafe fn vg_x25519_exchange_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) -> u32 {
     /// The type of the implementations.
     type Impl = unsafe extern "sysv64" fn(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) -> u32;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only

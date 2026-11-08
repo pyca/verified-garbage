@@ -2,11 +2,23 @@
 //! The dispatchers of the verified `sha1` functions for `x86`
 //! (`crate::sha1`, `VG.Rust.dispatcher`).
 
-/// `vg_sha1_init`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::sha1::vg_sha1_init as vg_sha1_init_auto;
+/// Starts a SHA-1 computation: makes the streaming state `*state` represent the empty message.
+///
+/// Contract: `VG.Spec.Sha1.initContract`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha1.Repr`).
+///
+/// It runs `vg_sha1_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 84 bytes.
+/// * `state` must not overlap the arguments on the stack (distinct Rust objects never do).
+/// * `state` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_sha1_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 84]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::sha1::vg_sha1_init(state) }
+}
 
 /// Computes the SHA-1 digest of the `len` bytes at `data` (20 bytes, `VG.Spec.Sha1.hash`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-1 computation with that message.
 ///
@@ -22,7 +34,7 @@ pub use crate::sha1::vg_sha1_init as vg_sha1_init_auto;
 /// * Neither `data` nor `out` may overlap the return address on the stack or the 348 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_sha1_digest_auto(data: *const u8, len: usize, out: *mut [u8; 20]) {
+pub unsafe fn vg_sha1_digest_auto(_dit: verified_garbage_cpu::Dit<'_>, data: *const u8, len: usize, out: *mut [u8; 20]) {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(data: *const u8, len: usize, out: *mut [u8; 20]);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -72,7 +84,7 @@ pub unsafe fn vg_sha1_digest_auto(data: *const u8, len: usize, out: *mut [u8; 20
 /// * Neither `state` nor `data` may overlap the arguments on the stack, overlap the return address on the stack or the 208 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_sha1_update_auto(state: *mut [u8; 84], count: u64, data: *const u8, len: usize) {
+pub unsafe fn vg_sha1_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 84], count: u64, data: *const u8, len: usize) {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(state: *mut [u8; 84], count: u64, data: *const u8, len: usize);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -123,7 +135,7 @@ pub unsafe fn vg_sha1_update_auto(state: *mut [u8; 84], count: u64, data: *const
 /// * Neither `state` nor `out` may overlap the arguments on the stack, overlap the return address on the stack or the 204 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_sha1_finalize_auto(state: *mut [u8; 84], count: u64, out: *mut [u8; 20]) {
+pub unsafe fn vg_sha1_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 84], count: u64, out: *mut [u8; 20]) {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(state: *mut [u8; 84], count: u64, out: *mut [u8; 20]);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only

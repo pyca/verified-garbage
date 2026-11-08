@@ -15,7 +15,7 @@
 /// * `out` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
 /// * None of `out`, `seed` and `scratch` may overlap the 352 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ed448_public_key(out: *mut [u8; 57], seed: *const [u8; 57], scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "C" fn vg_ed448_public_key(out: *mut [u8; 57], seed: *const [u8; 57], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r".inst 0xf81f0ffe,0xd10503ff,0x910403ef,0xf90001e0,0x910423ef,0xf90001e1,0x910443ef,0xf90001e2
 .inst 0x910463ef,0xf90001e3,0x910483ef,0xf90001e4,0x9104a3ef,0xf90001e5,0xf9408bef,0x910001ef
@@ -73,7 +73,7 @@ bl {vg_ed448_scalar_base}
 /// * `out` and `scratch` must not overlap each other, `seed`, `pk`, `context` or `message` (distinct Rust objects never do).
 /// * None of `out`, `seed`, `pk`, `context`, `message` and `scratch` may overlap the 352 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ed448_sign_cached(out: *mut [u8; 114], seed: *const [u8; 57], pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "C" fn vg_ed448_sign_cached(out: *mut [u8; 114], seed: *const [u8; 57], pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r".inst 0xf81f0ffe,0xd10503ff,0x910403ef,0xf90001e0,0x910423ef,0xf90001e1,0x910443ef,0xf90001e2
 .inst 0x910463ef,0xf90001e3,0x910483ef,0xf90001e4,0x9104a3ef,0xf90001e5,0x910323ef,0xf90001e6
@@ -173,7 +173,7 @@ bl {vg_ed448_scalar_mul_add}
 /// * `scratch` must not overlap `pk`, `context`, `message` or `signature` (distinct Rust objects never do).
 /// * None of `pk`, `context`, `message`, `signature` and `scratch` may overlap the 352 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ed448_verify(pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, signature: *const [u8; 114], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ed448_verify(pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, signature: *const [u8; 114], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd348fc49
 cbz x9, 20f
@@ -237,7 +237,7 @@ pub const VG_ED448_PUBLIC_KEY_SHA3_FEATURES: verified_garbage_cpu::Features = ve
 /// * None of `out`, `seed` and `scratch` may overlap the 352 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ed448_public_key_sha3(out: *mut [u8; 57], seed: *const [u8; 57], scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "C" fn vg_ed448_public_key_sha3(out: *mut [u8; 57], seed: *const [u8; 57], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r".inst 0xf81f0ffe,0xd10503ff,0x910403ef,0xf90001e0,0x910423ef,0xf90001e1,0x910443ef,0xf90001e2
 .inst 0x910463ef,0xf90001e3,0x910483ef,0xf90001e4,0x9104a3ef,0xf90001e5,0xf9408bef,0x910001ef
@@ -299,7 +299,7 @@ pub const VG_ED448_SIGN_CACHED_SHA3_FEATURES: verified_garbage_cpu::Features = v
 /// * None of `out`, `seed`, `pk`, `context`, `message` and `scratch` may overlap the 352 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ed448_sign_cached_sha3(out: *mut [u8; 114], seed: *const [u8; 57], pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "C" fn vg_ed448_sign_cached_sha3(out: *mut [u8; 114], seed: *const [u8; 57], pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r".inst 0xf81f0ffe,0xd10503ff,0x910403ef,0xf90001e0,0x910423ef,0xf90001e1,0x910443ef,0xf90001e2
 .inst 0x910463ef,0xf90001e3,0x910483ef,0xf90001e4,0x9104a3ef,0xf90001e5,0x910323ef,0xf90001e6
@@ -403,7 +403,7 @@ pub const VG_ED448_VERIFY_SHA3_FEATURES: verified_garbage_cpu::Features = verifi
 /// * None of `pk`, `context`, `message`, `signature` and `scratch` may overlap the 352 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ed448_verify_sha3(pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, signature: *const [u8; 114], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ed448_verify_sha3(pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, signature: *const [u8; 114], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd348fc49
 cbz x9, 20f

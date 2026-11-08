@@ -2,20 +2,63 @@
 //! The dispatchers of the verified `cmac_aes` functions for `powerpc64le`
 //! (`crate::cmac_aes`, `VG.Rust.dispatcher`).
 
-/// `vg_cmac_aes_init`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::cmac_aes::vg_cmac_aes_init as vg_cmac_aes_init_auto;
+/// Starts an AES-CMAC computation (NIST SP 800-38B, RFC 4493): makes the streaming state `*state` represent the empty message under the AES key of `key_len` bytes at `key` (AES-128, AES-192 or AES-256). The state holds the key schedule of AES (FIPS 197) with `key_len / 4 + 6` rounds, the subkeys `K1 ‖ K2` (§6.1), the chaining value and the message's last bytes, held back (`VG.Spec.Cmac.Repr`). Continue with `vg_cmac_aes_absorb` and `vg_cmac_aes_finish`, passing them `key_len / 4 + 6` as `rounds`.
+///
+/// Contract: `VG.Spec.Cmac.aesInitContract`. Constant time: only the pointers and `key_len` may affect timing, not the key.
+///
+/// It runs `vg_cmac_aes_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 304 bytes.
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `key_len` must be 16, 24 or 32.
+/// * `state` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `state` nor `key` may overlap the 2336 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_cmac_aes_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 38], key: *const u8, key_len: usize) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::cmac_aes::vg_cmac_aes_init(state, key, key_len) }
+}
 
-/// `vg_cmac_aes_absorb`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::cmac_aes::vg_cmac_aes_absorb as vg_cmac_aes_absorb_auto;
+/// Absorbs data into an AES-CMAC computation (NIST SP 800-38B §6.2): if the streaming state `*state` represents a message of `count` bytes under an AES key with `rounds` rounds (as `vg_cmac_aes_init` set it up), it then represents that message followed by the `len` bytes at `data`, under the same key, provided that the two together are shorter than 2⁶⁴ bytes. It chains (step 6) every block of the message but its last bytes `Mₙ*` (step 3), which it holds back in the state, since only `vg_cmac_aes_finish` knows they are the last.
+///
+/// Contract: `VG.Spec.Cmac.aesAbsorbContract`. Constant time: only the pointers, `rounds`, `count` and `len` may affect timing, not the state or the data.
+///
+/// It runs `vg_cmac_aes_absorb`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 304 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `state` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the 2336 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_cmac_aes_absorb_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::cmac_aes::vg_cmac_aes_absorb(state, rounds, count, data, len) }
+}
 
-/// `vg_cmac_aes_finish`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::cmac_aes::vg_cmac_aes_finish as vg_cmac_aes_finish_auto;
+/// Finishes an AES-CMAC computation (NIST SP 800-38B §6.2, with `Tlen = 128`): if the streaming state `*state` represents a message of `count` bytes, shorter than 2⁶⁴ bytes, under an AES key with `rounds` rounds (as `vg_cmac_aes_init` and `vg_cmac_aes_absorb` set it up), writes the MAC of that message under that key to `*out`: `Cₙ = CIPH_K(Cₙ₋₁ ⊕ Mₙ)`, where `Mₙ = K1 ⊕ Mₙ*` if the message's last bytes `Mₙ*` are a complete block, and `Mₙ = K2 ⊕ (Mₙ* ‖ 10ʲ)` otherwise (step 4). The caller truncates it (step 7) and compares it (§6.3).
+///
+/// Contract: `VG.Spec.Cmac.aesFinishContract`. Constant time: only the pointers, `rounds` and `count` may affect timing, not the state.
+///
+/// It runs `vg_cmac_aes_finish`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 304 bytes.
+/// * `out` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
+/// * Neither `state` nor `out` may overlap the 2336 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_cmac_aes_finish_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::cmac_aes::vg_cmac_aes_finish(state, rounds, count, out) }
+}

@@ -2,26 +2,90 @@
 //! The dispatchers of the verified `blowfish_cfb` functions for `x86`
 //! (`crate::blowfish_cfb`, `VG.Rust.dispatcher`).
 
-/// `vg_blowfish_cfb64_encrypt`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::blowfish_cfb::vg_blowfish_cfb64_encrypt as vg_blowfish_cfb64_encrypt_auto;
+/// Blowfish-CFB64 encryption (NIST SP 800-38A §6.3, with 64-bit segments; Schneier, FSE 1994) of whole blocks, in place: replaces the `n` 8-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is Blowfish encryption under the schedule written by `vg_blowfish_expand_key`.
+///
+/// Contract: `VG.Spec.Blowfish.cfbEncryptContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
+///
+/// It runs `vg_blowfish_cfb64_encrypt`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 4168 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
+/// * `data` must be valid for reads and writes of `8 * n` bytes.
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_blowfish_cfb64_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 4168], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::blowfish_cfb::vg_blowfish_cfb64_encrypt(schedule, iv, data, n) }
+}
 
-/// `vg_blowfish_cfb64_decrypt`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::blowfish_cfb::vg_blowfish_cfb64_decrypt as vg_blowfish_cfb64_decrypt_auto;
+/// Blowfish-CFB64 decryption (NIST SP 800-38A §6.3, with 64-bit segments; Schneier, FSE 1994) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is Blowfish encryption (also for decryption) under the schedule written by `vg_blowfish_expand_key`.
+///
+/// Contract: `VG.Spec.Blowfish.cfbDecryptContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
+///
+/// It runs `vg_blowfish_cfb64_decrypt`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 4168 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
+/// * `data` must be valid for reads and writes of `8 * n` bytes.
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_blowfish_cfb64_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 4168], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::blowfish_cfb::vg_blowfish_cfb64_decrypt(schedule, iv, data, n) }
+}
 
-/// `vg_blowfish_cfb64_encrypt_final`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::blowfish_cfb::vg_blowfish_cfb64_encrypt_final as vg_blowfish_cfb64_encrypt_final_auto;
+/// Blowfish-CFB64 encryption (NIST SP 800-38A §6.3, with 64-bit segments; Schneier, FSE 1994) of the last piece of a message, of any length, in place: replaces its whole 8-byte blocks `P₁ … Pₙ₋₁` at `data` with `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Pₙ*` of `u` bytes with `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, so that a further call continues the message, if `len` is a multiple of 8 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is Blowfish encryption under the schedule written by `vg_blowfish_expand_key`.
+///
+/// Contract: `VG.Spec.Blowfish.cfbEncryptFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the chaining value or the data.
+///
+/// It runs `vg_blowfish_cfb64_encrypt_final`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 4168 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_blowfish_cfb64_encrypt_final_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 4168], iv: *mut [u8; 8], data: *mut u8, len: usize) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::blowfish_cfb::vg_blowfish_cfb64_encrypt_final(schedule, iv, data, len) }
+}
 
-/// `vg_blowfish_cfb64_decrypt_final`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::blowfish_cfb::vg_blowfish_cfb64_decrypt_final as vg_blowfish_cfb64_decrypt_final_auto;
+/// Blowfish-CFB64 decryption (NIST SP 800-38A §6.3, with 64-bit segments; Schneier, FSE 1994) of the last piece of a message, of any length, in place: replaces its whole 8-byte blocks `C₁ … Cₙ₋₁` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Cₙ*` of `u` bytes with `Pₙ* = Cₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, the last whole block at `data` on entry, so that a further call continues the message, if `len` is a multiple of 8 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is Blowfish encryption under the schedule written by `vg_blowfish_expand_key`.
+///
+/// Contract: `VG.Spec.Blowfish.cfbDecryptFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the chaining value or the data.
+///
+/// It runs `vg_blowfish_cfb64_decrypt_final`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 4168 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_blowfish_cfb64_decrypt_final_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 4168], iv: *mut [u8; 8], data: *mut u8, len: usize) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::blowfish_cfb::vg_blowfish_cfb64_decrypt_final(schedule, iv, data, len) }
+}

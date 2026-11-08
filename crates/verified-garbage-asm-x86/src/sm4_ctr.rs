@@ -17,7 +17,7 @@
 /// * `ctr` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `ctr` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 1516 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm4_ctr(schedule: *const [u8; 128], ctr: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
+pub(crate) unsafe extern "C" fn vg_sm4_ctr(schedule: *const [u8; 128], ctr: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r#".base64 "jaQkKPr//4uEJNwFAACJRCQEi4Qk4AUAAIlEJAiLhCTkBQAAiUQkDIuEJOgFAACJRCQQieCDwBiJRCQUi0QkFImYmAUAAImwnAUAAIm4oAUAAImopAUAAInHi3QkCIsGiYewBQAAi0YEiYe0BQAAi0YIiYe4BQAAi0YMiYe8BQAAuLMAAAC6AAAAAItMJARQV1JR"
 call {vg_sm4_prepare_keys}
@@ -52,7 +52,7 @@ jmp 21f
 /// * `ctr` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `ctr` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 1592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm4_ctr_final(schedule: *const [u8; 128], ctr: *mut [u8; 16], data: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_sm4_ctr_final(schedule: *const [u8; 128], ctr: *mut [u8; 16], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "jWQkyItEJDyJRCQEi0QkQIlEJAiLRCREiUQkDItEJEiJRCQQieCDwBiJRCQUi0QkFIkYiXAEiXgIiWgMi0QkBItUJAiLXCQMi3QkEMHuBFZTUlA="
 call {vg_sm4_ctr}

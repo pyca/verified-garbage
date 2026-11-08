@@ -20,7 +20,7 @@
 /// * `data` and `scratch` must not overlap each other, `schedule`, `tweak_schedule` or `i` (distinct Rust objects never do).
 /// * None of `schedule`, `tweak_schedule`, `i`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_xts_encrypt_unit(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
+pub(crate) unsafe extern "C" fn vg_aes_xts_encrypt_unit(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
     core::arch::naked_asm!(
         r#".base64 "pgIIfNAICfigCMn5qAjp+bAICfq4CCn6wAhJ+sgIafp4G258eCuvfHg78Xx4QxJ9eEszfQAAJumACDP5CAAm6YgIM/kAACA5kAgz+ZgIM/l4I4N8eHvkfZAIsziACNM4AQDgOHibaH4="
 bl {vg_aes_xts_encrypt}
@@ -59,7 +59,7 @@ b 21f
 /// * `data` and `scratch` must not overlap each other, `schedule`, `tweak_schedule` or `i` (distinct Rust objects never do).
 /// * None of `schedule`, `tweak_schedule`, `i`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_xts_decrypt_unit(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
+pub(crate) unsafe extern "C" fn vg_aes_xts_decrypt_unit(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
     core::arch::naked_asm!(
         r#".base64 "pgIIfNAICfigCMn5qAjp+bAICfq4CCn6wAhJ+sgIafp4G258eCuvfHg78Xx4QxJ9eEszfQAAJumACDP5CAAm6YgIM/kAACA5kAgz+ZgIM/l4I4N8eHvkfZAIsziACNM4AQDgOHibaH4="
 bl {vg_aes_xts_encrypt}

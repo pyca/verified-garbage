@@ -35,8 +35,9 @@ pub struct IdeaCbcEncryptor {
 impl IdeaCbcEncryptor {
     /// Expands a 16-byte key, to encrypt a message from `iv`.
     pub fn new(key: &[u8], iv: &[u8; 8]) -> Result<Self, InvalidKeyLength> {
+        crate::dit::enter!(dit);
         Ok(Self {
-            schedule: expand(key)?,
+            schedule: expand(dit, key)?,
             iv: *iv,
         })
     }
@@ -48,12 +49,14 @@ impl IdeaCbcEncryptor {
         if !buffer.len().is_multiple_of(8) {
             return Err(IncompleteBlock);
         }
+        crate::dit::enter!(dit);
         // SAFETY: the buffer holds `len / 8` whole blocks, and it, the chaining
         // value (which the function reads and replaces) and the schedule are
         // separate valid objects of the sizes of the signature, none of them on
         // the callee's stack.
         unsafe {
             vg_idea_cbc_encrypt_chained_auto(
+                dit,
                 &self.schedule.0,
                 &mut self.iv,
                 buffer.as_mut_ptr().cast(),
@@ -87,11 +90,12 @@ pub struct IdeaCbcDecryptor {
 impl IdeaCbcDecryptor {
     /// Expands a 16-byte key, to decrypt a message from `iv`.
     pub fn new(key: &[u8], iv: &[u8; 8]) -> Result<Self, InvalidKeyLength> {
-        let mut encrypt = expand(key)?;
+        crate::dit::enter!(dit);
+        let mut encrypt = expand(dit, key)?;
         let mut schedule = CacheAligned([0; 104]);
         // SAFETY: both schedules are separate valid buffers of the required
         // sizes.
-        unsafe { vg_idea_invert_key_auto(&encrypt.0, &mut schedule.0) };
+        unsafe { vg_idea_invert_key_auto(dit, &encrypt.0, &mut schedule.0) };
         zeroize(&mut encrypt.0);
         Ok(Self { schedule, iv: *iv })
     }
@@ -103,9 +107,11 @@ impl IdeaCbcDecryptor {
         if !buffer.len().is_multiple_of(8) {
             return Err(IncompleteBlock);
         }
+        crate::dit::enter!(dit);
         // SAFETY: as in `IdeaCbcEncryptor::encrypt`.
         unsafe {
             vg_idea_cbc_decrypt_chained_auto(
+                dit,
                 &self.schedule.0,
                 &mut self.iv,
                 buffer.as_mut_ptr().cast(),
@@ -123,11 +129,14 @@ impl Drop for IdeaCbcDecryptor {
 }
 
 /// The encryption subkeys of a 16-byte key.
-fn expand(key: &[u8]) -> Result<CacheAligned<[u8; 104]>, InvalidKeyLength> {
+fn expand(
+    dit: crate::dit::Dit<'_>,
+    key: &[u8],
+) -> Result<CacheAligned<[u8; 104]>, InvalidKeyLength> {
     let key: &[u8; 16] = key.try_into().map_err(|_| InvalidKeyLength)?;
     let mut schedule = CacheAligned([0; 104]);
     // SAFETY: the key and the schedule are separate valid buffers of the
     // required sizes.
-    unsafe { vg_idea_expand_key_auto(key, &mut schedule.0) };
+    unsafe { vg_idea_expand_key_auto(dit, key, &mut schedule.0) };
     Ok(schedule)
 }

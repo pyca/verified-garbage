@@ -12,7 +12,7 @@
 /// * `state` must be valid for reads and writes of 84 bytes.
 /// * `state` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha1_init(state: *mut [u8; 84]) {
+pub(crate) unsafe extern "C" fn vg_sha1_init(state: *mut [u8; 84]) {
     core::arch::naked_asm!(
         r#".base64 "RWcAPQEjCGEAAAORze8APYmrCGEEAAORupgAPf7cCGEIAAORMhAAPXZUCGEMAAOR0sMAPfDhCGEQAAORIACATg==""#,
     )
@@ -29,7 +29,7 @@ pub unsafe extern "C" fn vg_sha1_init(state: *mut [u8; 84]) {
 /// * `state` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the 240 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha1_update(state: *mut [u8; 84], count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_sha1_update(state: *mut [u8; 84], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "Qf8h+CAA4TimAgh80f8h+CAAAfhwAEf7eABn+4AAh/uIAKf7kADH+5gA5/sAAEM7AABnOwAAhTsAAKY7PwAAOThAnnwAAD0o"
 beq %cr0, 20f
@@ -140,7 +140,7 @@ b 21f
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the 240 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha1_finalize(state: *mut [u8; 84], count: u64, out: *mut [u8; 20]) {
+pub(crate) unsafe extern "C" fn vg_sha1_finalize(state: *mut [u8; 84], count: u64, out: *mut [u8; 20]) {
     core::arch::naked_asm!(
         r#".base64 "Qf8h+CAAwTimAgh80f8h+CAAAfhwAEb7eABm+4AAhvuIAKb7kADG+5gA5vsAAEM7AABmOwAAhTsAAKQ7PwAAOThAvn+AAAA5FPJ6fRQAC5kBAN47BwD+O4LR/3s="
 20:
@@ -192,7 +192,7 @@ beq %cr0, 20b
 /// * `out` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `data` nor `out` may overlap the 496 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha1_digest(data: *const u8, len: usize, out: *mut [u8; 20]) {
+pub(crate) unsafe extern "C" fn vg_sha1_digest(data: *const u8, len: usize, out: *mut [u8; 20]) {
     core::arch::naked_asm!(
         r#".base64 "cf4h+CAAwTimAgh80f8h+CAAAfg4AYb6QAGm+kgBxvpQAeb6WAEG+2ABJvsAAKY6AADFOgAA4zoAAAQ70ACGOgAAdDg="
 bl {vg_sha1_init}

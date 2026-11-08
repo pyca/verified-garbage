@@ -14,7 +14,7 @@
 /// * `schedule` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `schedule` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_idea_expand_key(key: *const [u8; 16], schedule: *mut [u8; 104]) {
+pub(crate) unsafe extern "sysv64" fn vg_idea_expand_key(key: *const [u8; 16], schedule: *mut [u8; 104]) {
     core::arch::naked_asm!(
         r#".base64 "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"
 .p2align 6"#,
@@ -32,7 +32,7 @@ pub unsafe extern "sysv64" fn vg_idea_expand_key(key: *const [u8; 16], schedule:
 /// * `inverse` must not overlap `schedule` (distinct Rust objects never do).
 /// * Neither `schedule` nor `inverse` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_idea_invert_key(schedule: *const [u8; 104], inverse: *mut [u8; 104]) {
+pub(crate) unsafe extern "sysv64" fn vg_idea_invert_key(schedule: *const [u8; 104], inverse: *mut [u8; 104]) {
     core::arch::naked_asm!(
         r#".base64 "TItHYE2JwbkPAAAA"
 20:
@@ -122,7 +122,7 @@ jne 217b
 /// * `data` must not overlap `schedule` (distinct Rust objects never do).
 /// * Neither `schedule` nor `data` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_idea_ecb(schedule: *const [u8; 104], data: *mut [u8; 8], n: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_idea_ecb(schedule: *const [u8; 104], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI1kJOhIieFIg8EISIXS"
 je 20f

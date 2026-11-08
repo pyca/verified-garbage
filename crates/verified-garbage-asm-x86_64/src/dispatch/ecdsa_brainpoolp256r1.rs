@@ -2,14 +2,50 @@
 //! The dispatchers of the verified `ecdsa_brainpoolp256r1` functions for `x86_64`
 //! (`crate::ecdsa_brainpoolp256r1`, `VG.Rust.dispatcher`).
 
-/// `vg_ecdsa_brainpoolp256r1_sign`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::ecdsa_brainpoolp256r1::vg_ecdsa_brainpoolp256r1_sign as vg_ecdsa_brainpoolp256r1_sign_auto;
+/// Deterministic ECDSA signature generation over brainpoolP256r1 with HMAC over the hash function of the table `hmac` (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (32 bytes, most significant first), signs the hash at `digest` (`digest_len` bytes, the hash function's output), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (32 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 128 candidates for `k` is suitable (which does not happen in practice).
+///
+/// Contract: `VG.Spec.Ecdsa.Rfc6979.TableInstance.signContract`. Constant time but for the number of candidates for `k` tried (almost always 1) and which table `hmac` is: timing may depend on the pointers, that number and the table, not otherwise on the key or the hash.
+///
+/// It runs `vg_ecdsa_brainpoolp256r1_sign`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 64 bytes.
+/// * `d` must be valid for reads of 32 bytes.
+/// * `digest` must be valid for reads of `digest_len` bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * `hmac` must be valid for reads of `6 * size_of::<usize>()` bytes.
+/// * `digest_len` must be the digest length of the hash function `hmac` names.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `hmac` is a table of HMAC over the hash function of the digest, which RFC 6979 uses: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the HMAC tables of this crate, `fn_tables`, say which they name).
+/// * `out` and `scratch` must not overlap each other, `d`, `digest` or `hmac` (distinct Rust objects never do).
+/// * None of `out`, `d`, `digest`, `scratch` and `hmac` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `hmac` must be the `as_ptr()` of one of the `Hmac` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_ecdsa_brainpoolp256r1_sign_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 64], d: *const [u8; 32], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32 {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::ecdsa_brainpoolp256r1::vg_ecdsa_brainpoolp256r1_sign(out, d, digest, digest_len, scratch, hmac) }
+}
 
-/// `vg_ecdsa_brainpoolp256r1_verify`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::ecdsa_brainpoolp256r1::vg_ecdsa_brainpoolp256r1_verify as vg_ecdsa_brainpoolp256r1_verify_auto;
+/// ECDSA signature verification over brainpoolP256r1 (FIPS 186-5 §6.4.2): whether the signature at `sig` (`r` then `s`, 32 bytes each, most significant first) of the hash at `digest` (`digest_len` bytes, the hash function's output, of any length; `e` is its leftmost 256 bits, or all of it if it is shorter) verifies with the public key at `public`, which must be a valid public key in the uncompressed form of SEC 1 §2.3.3 (`04`, then `x` and `y` in 32 bytes each, most significant first, both below `p`, on the curve; SP 800-56A §5.6.2.3.3). Returns 1 if it does, and 0 if it does not or the public key is not valid.
+///
+/// Contract: `VG.Spec.Ecdsa.Instance.verifyHashContract`. Every input is public: timing may depend on the pointers, `digest_len` and the contents of `public`, `digest` and `sig`.
+///
+/// It runs `vg_ecdsa_brainpoolp256r1_verify`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `public` must be valid for reads of 65 bytes.
+/// * `digest` must be valid for reads of `digest_len` bytes.
+/// * `sig` must be valid for reads of 64 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The contents of `scratch` on return are unspecified; the caller may reuse or destroy them.
+/// * `scratch` must not overlap `public`, `digest` or `sig` (distinct Rust objects never do).
+/// * None of `public`, `digest`, `sig` and `scratch` may overlap the return address on the stack or the 96 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_ecdsa_brainpoolp256r1_verify_auto(_dit: verified_garbage_cpu::Dit<'_>, public: *const [u8; 65], digest: *const u8, digest_len: usize, sig: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::ecdsa_brainpoolp256r1::vg_ecdsa_brainpoolp256r1_verify(public, digest, digest_len, sig, scratch) }
+}

@@ -2,14 +2,83 @@
 //! The dispatchers of the verified `rsa_oaep` functions for `powerpc64le`
 //! (`crate::rsa_oaep`, `VG.Rust.dispatcher`).
 
-/// `vg_rsa_oaep_decrypt`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::rsa_oaep::vg_rsa_oaep_decrypt as vg_rsa_oaep_decrypt_auto;
+/// RSAES-OAEP decryption (RFC 8017 §7.1.2) with the hash function of the table `hash` and MGF1 with that of the table `mgf1`, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), decrypts the ciphertext `ct` (`n_len` bytes, most significant first) with the label `label`: if RSADP's result passes the check against `e` and is a valid EME-OAEP encoding, writes the message to the start of `out`, zeros after it, and its length to `*msg_len`, and returns 1. Otherwise writes zeros to `out` and `*msg_len` and returns 0 for every failure of the key, the ciphertext (not below `n`) or its decoding, which are not told apart; or 2 (an internal error) if RSADP's result fails the check against `e`, which it does for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime.
+///
+/// Contract: `VG.Spec.RsaOaep.decryptTablesContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e`, and which tables `hash` and `mgf1` are, not on the private key, the label, the ciphertext, whether its decoding is valid or the message's length.
+///
+/// It runs `vg_rsa_oaep_decrypt`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `msg_len` must be valid for reads and writes of 8 bytes.
+/// * `n` must be valid for reads of `n_len` bytes.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `p` must be valid for reads of `p_len` bytes.
+/// * `q` must be valid for reads of `q_len` bytes.
+/// * `dp` must be valid for reads of `dp_len` bytes.
+/// * `dq` must be valid for reads of `dq_len` bytes.
+/// * `qinv` must be valid for reads of `qinv_len` bytes.
+/// * `label` must be valid for reads of `label_len` bytes.
+/// * `ct` must be valid for reads of `ct_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `hash` must be valid for reads of `5 * size_of::<usize>()` bytes.
+/// * `mgf1` must be valid for reads of `5 * size_of::<usize>()` bytes.
+/// * `n_len` must be in 64..=1024.
+/// * `out_len` and `ct_len` must be `n_len`.
+/// * `e_len` must be in 1..=`n_len`.
+/// * `p_len` and `q_len` must be in 1..`n_len`.
+/// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `hash` names the hash function of the label and of the encoding: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' tables of this crate, `fn_tables`, say which they name).
+/// * `mgf1` names MGF1's hash function: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' tables of this crate, `fn_tables`, say which they name).
+/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct`, `hash`, `mgf1` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `msg_len`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct`, `scratch`, `hash` and `mgf1` may overlap the 3776 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `hash` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_rsa_oaep_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 5], mgf1: *const [usize; 5]) -> u32 {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::rsa_oaep::vg_rsa_oaep_decrypt(out, out_len, msg_len, n, n_len, e, e_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, label, label_len, ct, ct_len, scratch, scratch_len, hash, mgf1) }
+}
 
-/// `vg_rsa_oaep_encrypt_precomputed`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::rsa_oaep::vg_rsa_oaep_encrypt_precomputed as vg_rsa_oaep_encrypt_precomputed_auto;
+/// RSAES-OAEP encryption (RFC 8017 §7.1.1) with the hash function of the table `hash` and MGF1 with that of the table `mgf1`. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), the public exponent `e` (`e_len` bytes, most significant first) and `pre`, the `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1), writes the encryption of the message `msg` with the label `label` and the `seed_len`-byte seed `seed` (`n_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 0 if `n` is not such a modulus or the message is longer than `n_len - 2 seed_len - 2` bytes. The seed must be fresh random bytes for each encryption. If `pre` does not hold those values, what it writes and returns is unspecified; memory safety and the timing guarantee still apply.
+///
+/// Contract: `VG.Spec.RsaOaep.encryptTablesContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n`, `e` and `pre`, and which tables `hash` and `mgf1` are, not on the message, the label or the seed.
+///
+/// It runs `vg_rsa_oaep_encrypt_precomputed`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `n` must be valid for reads of `n_len` bytes.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `label` must be valid for reads of `label_len` bytes.
+/// * `msg` must be valid for reads of `msg_len` bytes.
+/// * `seed` must be valid for reads of `seed_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes.
+/// * `hash` must be valid for reads of `5 * size_of::<usize>()` bytes.
+/// * `mgf1` must be valid for reads of `5 * size_of::<usize>()` bytes.
+/// * `n_len` must be in 64..=1024.
+/// * `out_len` must be `n_len`.
+/// * `e_len` must be in 1..=`n_len`.
+/// * `scratch_len` must be at least `8 * ⌈n_len / 8⌉ + 1072`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `seed_len` must be the digest length of the hash function `hash` names.
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
+/// * For the result to be encryption's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
+/// * `hash` names the hash function of the label and of the encoding: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' tables of this crate, `fn_tables`, say which they name).
+/// * `mgf1` names MGF1's hash function: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' tables of this crate, `fn_tables`, say which they name).
+/// * `out` and `scratch` must not overlap each other, `n`, `e`, `label`, `msg`, `seed`, `pre`, `hash`, `mgf1` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `n`, `e`, `label`, `msg`, `seed`, `scratch`, `pre`, `hash` and `mgf1` may overlap the 304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `hash` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_rsa_oaep_encrypt_precomputed_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const u8, seed_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, hash: *const [usize; 5], mgf1: *const [usize; 5]) -> u32 {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::rsa_oaep::vg_rsa_oaep_encrypt_precomputed(out, out_len, n, n_len, e, e_len, label, label_len, msg, msg_len, seed, seed_len, scratch, scratch_len, pre, pre_len, hash, mgf1) }
+}

@@ -19,7 +19,7 @@ pub const VG_CMAC_AES_INIT_AESNI_FEATURES: verified_garbage_cpu::Features = veri
 /// * Neither `state` nor `key` may overlap the return address on the stack or the 2328 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_cmac_aes_init_aesni(state: *mut [u64; 38], key: *const u8, key_len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_init_aesni(state: *mut [u64; 38], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPj2//9IieFIg8EISImZgAgAAEiJqYgIAABMiaGQCAAASIn7SInNSYnUScHsAkmDxAZIifdIidZIido="
 call {vg_aes_expand_key_scratch_aesni}
@@ -49,7 +49,7 @@ pub const VG_CMAC_AES_FINISH_AESNI_FEATURES: verified_garbage_cpu::Features = ve
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 2328 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_cmac_aes_finish_aesni(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_finish_aesni(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPj2//9JieBJg8AISIuHEAEAAEiJAUiLhxgBAABIiUEITYnBSYnQSInKSIn5SIHBIAEAAE2FwA=="
 je 20f
@@ -76,7 +76,7 @@ call {vg_cmac_aes_finalize_aesni}
 /// * `state` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `state` nor `key` may overlap the return address on the stack or the 2328 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_cmac_aes_init(state: *mut [u64; 38], key: *const u8, key_len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_init(state: *mut [u64; 38], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPj2//9IieFIg8EISImZgAgAAEiJqYgIAABMiaGQCAAASIn7SInNSYnUScHsAkmDxAZIifdIidZIido="
 call {vg_aes_expand_key_scratch}
@@ -102,7 +102,7 @@ call {vg_cmac_aes_subkeys}
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 2328 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_cmac_aes_finish(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_finish(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPj2//9JieBJg8AISIuHEAEAAEiJAUiLhxgBAABIiUEITYnBSYnQSInKSIn5SIHBIAEAAE2FwA=="
 je 20f
@@ -133,7 +133,7 @@ pub const VG_CMAC_AES_INIT_VAES_FEATURES: verified_garbage_cpu::Features = verif
 /// * Neither `state` nor `key` may overlap the return address on the stack or the 2328 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `ssse3` and `vaes` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_cmac_aes_init_vaes(state: *mut [u64; 38], key: *const u8, key_len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_init_vaes(state: *mut [u64; 38], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPj2//9IieFIg8EISImZgAgAAEiJqYgIAABMiaGQCAAASIn7SInNSYnUScHsAkmDxAZIifdIidZIido="
 call {vg_aes_expand_key_scratch_aesni}
@@ -163,7 +163,7 @@ pub const VG_CMAC_AES_FINISH_VAES_FEATURES: verified_garbage_cpu::Features = ver
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 2328 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `ssse3` and `vaes` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_cmac_aes_finish_vaes(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_finish_vaes(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPj2//9JieBJg8AISIuHEAEAAEiJAUiLhxgBAABIiUEITYnBSYnQSInKSIn5SIHBIAEAAE2FwA=="
 je 20f
@@ -194,7 +194,7 @@ pub const VG_CMAC_AES_ABSORB_AESNI_FEATURES: verified_garbage_cpu::Features = ve
 /// * Neither `state` nor `data` may overlap the return address on the stack or the 2328 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_cmac_aes_absorb_aesni(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_absorb_aesni(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPj2//9JieFJg8EISYmZgAgAAEmJqYgIAABNiaGQCAAATYmpmAgAAE2JsaAIAABNibmoCAAASIn7SIn1SYnNTYnGTYnPSIXS"
 je 20f
@@ -259,7 +259,7 @@ jmp 212f
 /// * `state` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the return address on the stack or the 2328 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_cmac_aes_absorb(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_absorb(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPj2//9JieFJg8EISYmZgAgAAEmJqYgIAABNiaGQCAAATYmpmAgAAE2JsaAIAABNibmoCAAASIn7SIn1SYnNTYnGTYnPSIXS"
 je 20f

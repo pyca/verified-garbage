@@ -22,7 +22,7 @@ pub const VG_AES_OFB_AES_FEATURES: verified_garbage_cpu::Features = verified_gar
 /// * None of `schedule`, `iv`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_ofb_aes(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
+pub(crate) unsafe extern "C" fn vg_aes_ofb_aes(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
         r".inst 0xf90408b3,0xf9040cb4,0xf90410b5,0xf90414b6,0xf90418b7,0xf9041cbe,0xf90420b8,0x91000013
 .inst 0x91000034,0x91000055,0x91000076,0x91000097,0x910000b8
@@ -61,7 +61,7 @@ pub const VG_AES_OFB_FINAL_AES_FEATURES: verified_garbage_cpu::Features = verifi
 /// * None of `schedule`, `iv`, `data` and `scratch` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_ofb_final_aes(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
+pub(crate) unsafe extern "C" fn vg_aes_ofb_final_aes(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
         r".inst 0xd10103ff,0x910003e6,0xf90000d3,0xf90004d4,0xf90008d5,0xf9000cd6,0xf90010d7,0xf90014d8
 .inst 0xf90018de,0xf9001cd9,0x91000013,0x91000034,0x91000055,0x910000b8,0x910000d9,0xd344fc89
@@ -100,7 +100,7 @@ b 21f
 /// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_ofb(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
+pub(crate) unsafe extern "C" fn vg_aes_ofb(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
         r".inst 0xf90408b3,0xf9040cb4,0xf90410b5,0xf90414b6,0xf90418b7,0xf9041cbe,0xf90420b8,0x91000013
 .inst 0x91000034,0x91000055,0x91000076,0x91000097,0x910000b8
@@ -135,7 +135,7 @@ b 21f
 /// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv`, `data` and `scratch` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_ofb_final(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
+pub(crate) unsafe extern "C" fn vg_aes_ofb_final(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
         r".inst 0xd10103ff,0x910003e6,0xf90000d3,0xf90004d4,0xf90008d5,0xf9000cd6,0xf90010d7,0xf90014d8
 .inst 0xf90018de,0xf9001cd9,0x91000013,0x91000034,0x91000055,0x910000b8,0x910000d9,0xd344fc89

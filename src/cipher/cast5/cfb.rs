@@ -141,18 +141,20 @@ impl Key {
     /// which it replaces with the last ciphertext block (unchanged for empty
     /// input).
     fn encrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) {
-        self.blocks(iv, buffer, true);
+        crate::dit::enter!(dit);
+        self.blocks(dit, iv, buffer, true);
     }
 
     /// Decrypts the whole blocks of `buffer` in place, from the block `iv`,
     /// which it replaces with the last ciphertext block (unchanged for empty
     /// input).
     fn decrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) {
-        self.blocks(iv, buffer, false);
+        crate::dit::enter!(dit);
+        self.blocks(dit, iv, buffer, false);
     }
 
     /// Encrypts (`encrypt`) or decrypts whole blocks.
-    fn blocks(&self, iv: &mut [u8; 8], blocks: &mut [u8], encrypt: bool) {
+    fn blocks(&self, dit: crate::dit::Dit<'_>, iv: &mut [u8; 8], blocks: &mut [u8], encrypt: bool) {
         // SAFETY: `rounds` is 12 or 16, as `Cast5Ecb::new` chose for the key
         // the schedule was expanded from; `blocks` holds `len / 8` whole
         // blocks, and it, the block at `iv` and the schedule are separate valid
@@ -161,6 +163,7 @@ impl Key {
         unsafe {
             if encrypt {
                 vg_cast5_cfb64_encrypt_auto(
+                    dit,
                     self.key.schedule(),
                     self.key.rounds(),
                     iv,
@@ -169,6 +172,7 @@ impl Key {
                 )
             } else {
                 vg_cast5_cfb64_decrypt_auto(
+                    dit,
                     self.key.schedule(),
                     self.key.rounds(),
                     iv,
@@ -184,10 +188,11 @@ impl Key {
     /// decrypted several at once), then the bytes after them, fewer than 8,
     /// with the final function, from the IV the whole blocks leave.
     fn last(&self, iv: &mut [u8; 8], buffer: &mut [u8], encrypt: bool) {
+        crate::dit::enter!(dit);
         let (blocks, rest) = buffer.split_at_mut(buffer.len() / 8 * 8);
-        self.blocks(iv, blocks, encrypt);
+        self.blocks(dit, iv, blocks, encrypt);
         if !rest.is_empty() {
-            self.final_(iv, rest, encrypt);
+            self.final_(dit, iv, rest, encrypt);
         }
     }
 
@@ -195,7 +200,7 @@ impl Key {
     /// of a message, of any length: it replaces `iv` with the last ciphertext
     /// block, or, after a partial last segment, with keystream, which the
     /// caller wipes.
-    fn final_(&self, iv: &mut [u8; 8], buffer: &mut [u8], encrypt: bool) {
+    fn final_(&self, dit: crate::dit::Dit<'_>, iv: &mut [u8; 8], buffer: &mut [u8], encrypt: bool) {
         // SAFETY: `rounds` is 12 or 16, as `Cast5Ecb::new` chose for the key
         // the schedule was expanded from; `buffer` is valid for `len` bytes,
         // and it, the block at `iv` and the schedule are separate valid
@@ -204,6 +209,7 @@ impl Key {
         unsafe {
             if encrypt {
                 vg_cast5_cfb64_encrypt_final_auto(
+                    dit,
                     self.key.schedule(),
                     self.key.rounds(),
                     iv,
@@ -212,6 +218,7 @@ impl Key {
                 )
             } else {
                 vg_cast5_cfb64_decrypt_final_auto(
+                    dit,
                     self.key.schedule(),
                     self.key.rounds(),
                     iv,

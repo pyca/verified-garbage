@@ -26,7 +26,7 @@
 /// * `dp`, `dq`, `qinv` and `scratch` must not overlap each other, `n`, `p`, `q`, `d` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `dp`, `dq`, `qinv`, `n`, `p`, `q`, `d` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_rsa_crt_values(dp: *mut u8, dp_len: usize, dq: *mut u8, dq_len: usize, qinv: *mut u8, qinv_len: usize, n: *const u8, n_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, d: *const u8, d_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_crt_values(dp: *mut u8, dp_len: usize, dq: *mut u8, dq_len: usize, qinv: *mut u8, qinv_len: usize, n: *const u8, n_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, d: *const u8, d_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"ldr r12, [sp, #40]
 str r4, [r12, #20]
@@ -2453,7 +2453,7 @@ bx lr",
 /// * `scratch` must not overlap `n`, `e`, `d`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `n`, `e`, `d`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_rsa_check_key(n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_check_key(n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"ldr r12, [sp, #48]
 str r4, [r12, #20]
@@ -4529,7 +4529,7 @@ bx lr",
 /// * `p`, `q` and `scratch` must not overlap each other, `n`, `e`, `d` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `p`, `q`, `n`, `e`, `d` and `scratch` may overlap the 56 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_rsa_recover_primes_det(p: *mut u8, p_len: usize, q: *mut u8, q_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_recover_primes_det(p: *mut u8, p_len: usize, q: *mut u8, q_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"push {{r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}}
 add r12, sp, #0
@@ -8488,7 +8488,7 @@ bx lr",
 /// * `pre` and `scratch` must not overlap each other, `n` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `pre`, `n` and `scratch` may overlap the 56 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_rsa_public_precompute(pre: *mut u64, pre_len: usize, n: *const u8, n_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_public_precompute(pre: *mut u64, pre_len: usize, n: *const u8, n_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"push {{r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}}
 add r12, sp, #0
@@ -11265,7 +11265,7 @@ pub const VG_RSA_PUBLIC_PRECOMPUTE_UMAAL_FEATURES: verified_garbage_cpu::Feature
 /// * The CPU must support the `umaal` target feature.
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_rsa_public_precompute_umaal(pre: *mut u64, pre_len: usize, n: *const u8, n_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_public_precompute_umaal(pre: *mut u64, pre_len: usize, n: *const u8, n_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"push {{r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}}
 add r12, sp, #0
