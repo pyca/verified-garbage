@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Stages
-import VerifiedGarbage.Proof.Ecdsa.PPC64LE.LadPow
+public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.LadPow
+import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 public import VerifiedGarbage.Impl.EcKey.PPC64LE
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Spec.EcKey
@@ -228,31 +229,12 @@ structure PkKeep (c : Cfg) (s₀ s' : State) : Prop where
   lr : s'.lr = s₀.lr
   frame : ∃ m : Mem, Unch (s₀.gpr .r5) [(0, size)] s₀.mem m ∧ Outside (s₀.gpr .r3) 0 (1 + 2 * c.C.len) m s'.mem
 
-theorem publicKey_eq' (c : Cfg) : Impl.EcKey.PPC64LE.Cfg.publicKey c =
-    .seq (.seq (.block (c.setupWith Args.publicKey)) (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n))
-      (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n))
-      (.seq (c.qMul GX GY) (.seq (pow c.powP c.SP) (.block [])))))))
-      (Impl.EcKey.PPC64LE.Cfg.middle c) := rfl
-
-/-- `vg_ec_<curve>_public_key` computes the specification's public key and
-restores the callee-saved registers and `lr`. -/
-theorem publicKey_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) {s₀ : State}
-    {extra : List Region} (hp : PkPre c s₀ extra) :
-    WP isa (Impl.EcKey.PPC64LE.Cfg.publicKey c) s₀ fun s' => PkKeep c s₀ s' ∧ PkPost c s₀ s' := by
+/-- `middle`, from what the generator and the power leave: the
+specification's public key, and what the function keeps. -/
+theorem pk_tail (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {extra : List Region} (hp : PkPre c s₀ extra)
+    {s₂ : State} (S₂ : St₂ c Args.publicKey s₀ (s₀.gpr .r5) (BitVec.allOnes 64) (G c.C) s₂) :
+    WP isa (Impl.EcKey.PPC64LE.Cfg.middle c) s₂ fun s' => PkKeep c s₀ s' ∧ PkPost c s₀ s' := by
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
-  have hp3 := hc.p_ge
-  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega_arith)
-  rw [publicKey_eq']
-  refine WP.seq (stage₁ hc hp.setup fun s₁ S₁ => ?_)
-  have F := S₁.fixed
-  have hG : Rep c.C (tmv c.C c.n (s₀.gpr .r5) s₁ (c.sl GX)) (tmv c.C c.n (s₀.gpr .r5) s₁ (c.sl GY))
-      (tmv c.C c.n (s₀.gpr .r5) s₁ (c.sl ONEP)) (G c.C) := by
-    show Rep c.C (toM _ _ (wordsVal s₁.mem _ (c.sl GX) c.n)) (toM _ _ (wordsVal s₁.mem _ (c.sl GY) c.n))
-      (toM _ _ (wordsVal s₁.mem _ (c.sl ONEP) c.n)) (G c.C)
-    rw [F.gx, F.gy, F.onep, toM_cmont hc, toM_cmont hc, toM_one hpR]
-    exact rep_affine' hC _ _
-  refine stage₂ hc h3 hC (gx := GX) (gy := GY) (by decide) (by decide) (by decide) (by decide) S₁ hc.onG hG
-    (lt_of_eq_of_lt F.gx (hmont _)) (lt_of_eq_of_lt F.gy (hmont _)) fun s₂ S₂ => WP.block_nil ?_
   have hd' : Region.Disjoint ⟨s₀.gpr .r3, 1 + 2 * c.C.len⟩ ⟨s₀.gpr .r5, size⟩ := hp.out_sc
   refine WP.mono (middle_ok hc S₂.toKeep S₂.acc_lt S₂.flag hp.out_fit (by rw [hp.wr]; simp) hd')
     fun s' ⟨xv, yv, hxl, hx, hyl, hy, bytes, r3, saved, sp, lr, frame⟩ => ⟨⟨saved, sp, lr, frame⟩, ?_⟩
@@ -282,5 +264,30 @@ theorem publicKey_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) {s₀ : Stat
   · have hok : ok c (s₀.gpr .r5) s₂ = false := decide_eq_false (by rw [hD]; omega_arith)
     rw [ite_eq_right_of_eq_false _ _ (eq_false hd)]
     exact ⟨by rw [r3, hok]; rfl, by rw [bytes, hok]; rfl⟩
+
+
+/-- `vg_ec_<curve>_public_key` with `R = [d]G` by any `generator` meeting
+`GeneratorPost` after the setup and the tables, computes the specification's
+public key and restores the callee-saved registers and `lr`. -/
+theorem publicKeyWith_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) {s₀ : State}
+    {extra : List Region} (hp : PkPre c s₀ extra) {generator : Prog isa}
+    (hMul : ∀ s, St₁ c Args.publicKey s₀ (s₀.gpr .r5) (BitVec.allOnes 64) s → s.syms = s₀.syms →
+      WP isa generator s (GeneratorPost c (s₀.gpr .r5) (kv c Args.publicKey s₀) (G c.C) s)) :
+    WP isa (Impl.EcKey.PPC64LE.Cfg.publicKeyWith c generator) s₀ fun s' => PkKeep c s₀ s' ∧ PkPost c s₀ s' := by
+  have setupRun := stage₁ hc hp.setup (A := Args.publicKey) (rest := .block [])
+    (Q := fun s => St₁ c Args.publicKey s₀ (s₀.gpr .r5) (BitVec.allOnes 64) s) (fun _ S => WP.block_nil S)
+  have run := VG.PPC64LE.WP.mono_syms setupRun fun s₁ S₁ sy => stage₂With hc h3 S₁ (hMul s₁ S₁ sy)
+    (rest := .block []) (Q := fun s₂ => WP isa (Impl.EcKey.PPC64LE.Cfg.middle c) s₂
+      fun s' => PkKeep c s₀ s' ∧ PkPost c s₀ s')
+    fun s₂ S₂ => WP.block_nil (pk_tail hc hC hp S₂)
+  simpa only [Impl.EcKey.PPC64LE.Cfg.publicKeyWith, Impl.EcKey.PPC64LE.Cfg.upToPowWith,
+    WP.seq_iff (M := isa), WP.block_nil_iff (M := isa)] using run
+
+/-- `vg_ec_<curve>_public_key` computes the specification's public key and
+restores the callee-saved registers and `lr`. -/
+theorem publicKey_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) {s₀ : State}
+    {extra : List Region} (hp : PkPre c s₀ extra) :
+    WP isa (Impl.EcKey.PPC64LE.Cfg.publicKey c) s₀ fun s' => PkKeep c s₀ s' ∧ PkPost c s₀ s' :=
+  publicKeyWith_ok hc h3 hC hp fun _ S₁ _ => gen_ok hc h3 hC S₁
 
 end VG.Proof.EcKey.PPC64LE
