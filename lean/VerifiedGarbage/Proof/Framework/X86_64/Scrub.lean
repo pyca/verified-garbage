@@ -1099,10 +1099,11 @@ def scrubReg {api : Api} (r : Registration api target) (v : VecLevel) (ks : List
   ofApi := r.ofApi
   ofSig := r.ofSig
   spSafe := scrub_spSafe v _ _ _ _ _ _ (tailOk_of 0 r.code ks).psOk (tailOk_of 0 r.code ks).gsOk r.spSafe
-  features := r.features
   written := r.written
   writtenOk := by
     rw [hw]; exact fun _ _ _ _ _ => True.intro
+  extra := r.extra
+  vendor := r.vendor
   residue := some ⟨scrubCode_noResidue r v ks hd hst h8 hlv hrb hpost hres⟩
 
 theorem scrubReg_noResidue {api : Api} (r : Registration api target) (v : VecLevel) (ks : List Nat)
