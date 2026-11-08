@@ -21,121 +21,6 @@ namespace VG.Generic.AesGcm.X86_64.AesGcm
 
 open VG.Proof.AesGcm.X86_64
 
-/-- The artifacts calling the implementations `v`. -/
-def artifactsOf (v : GcmImpl) (openTo : Artifact) : List Artifact := [
-  Spec.Gcm.sealApi.artifact X86_64.target {
-    suffix := v.suffix
-    code := Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.sealCode v.callees)
-    stack := 2624
-    verified := Proof.AesGcm.seal_keyed (sealSel_framed v Short.shortFacts)
-    spSafe := X86_64.withStackArgScratch_spSafe (sealCode_spSafe v v.blkB)
-    features := v.features },
-  Spec.Gcm.openApi.artifact X86_64.target {
-    suffix := v.suffix
-    code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.openCode v.callees)
-    stack := 2632
-    verified := Proof.AesGcm.open_keyed (openSel_framed v Short.shortFacts)
-    spSafe := X86_64.withStackArgScratch_spSafe (openCode_spSafe v v.blkB)
-    features := v.features },
-  openTo,
-  Spec.Gcm.streamEncryptApi.artifact X86_64.target {
-    suffix := v.suffix
-    code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamEncrypt v.callees)
-    stack := 2608
-    verified := Proof.AesGcm.streamEncrypt_keyed (streamEncrypt_framed v)
-    spSafe := X86_64.withStackArgScratch_spSafe (streamEncrypt_spSafe v)
-    features := v.features },
-  Spec.Gcm.streamDecryptApi.artifact X86_64.target {
-    suffix := v.suffix
-    code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamDecrypt v.callees)
-    stack := 2608
-    verified := Proof.AesGcm.streamDecrypt_keyed (streamDecrypt_framed v)
-    spSafe := X86_64.withStackArgScratch_spSafe (streamDecrypt_spSafe v)
-    features := v.features }]
-
-/-- `vg_aes_gcm_open_to` of a variant: in one pass if it has an out-of-place
-counter mode (`openToCode`). -/
-def artifactOpenTo (v : GcmVariant) : Artifact :=
-  Spec.Gcm.openToApi.artifact X86_64.target {
-    suffix := v.impl.suffix
-    code := openToCode v
-    stack := openToStack v
-    verified := Proof.AesGcm.openTo_keyed (openToCode_verified v)
-    spSafe := openToCode_spAll v
-    features := v.impl.features }
-
-/-- The `_precomputed` artifacts calling the implementations `v`. -/
-def artifactsP (v : GcmImpl) : List Artifact := [
-  Spec.Gcm.initPrecomputedApi.artifact X86_64.target {
-    suffix := v.suffix
-    code := Impl.StackScratch.X86_64.withStackScratch 2568 .rcx (Impl.AesGcm.X86_64.initPrecomputed v.callees)
-    stack := 2576
-    verified := initP_framed v
-    spSafe := X86_64.withStackScratch_spSafe_of (initP_spSafe v)
-    features := (v.ctr.features ++ v.key.features ++ v.gh.features).dedup },
-  Spec.Gcm.sealPrecomputedApi.artifact X86_64.target {
-    suffix := v.suffix
-    code := Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.sealCode (v.withBlk v.blkP))
-    stack := 2624
-    verified := Proof.AesGcm.sealPrecomputed_keyed (sealSelP_framed v Short.shortFacts)
-    spSafe := X86_64.withStackArgScratch_spSafe (sealCode_spSafe v v.blkP)
-    features := v.features },
-  Spec.Gcm.openPrecomputedApi.artifact X86_64.target {
-    suffix := v.suffix
-    code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.openCode (v.withBlk v.blkP))
-    stack := 2632
-    verified := Proof.AesGcm.openPrecomputed_keyed (openSelP_framed v Short.shortFacts)
-    spSafe := X86_64.withStackArgScratch_spSafe (openCode_spSafe v v.blkP)
-    features := v.features },
-  Spec.Gcm.streamEncryptPrecomputedApi.artifact X86_64.target {
-    suffix := v.suffix
-    code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1
-      (Impl.AesGcm.X86_64.streamEncrypt (v.withBlk v.blkP))
-    stack := 2608
-    verified := Proof.AesGcm.streamEncryptPrecomputed_keyed (streamEncryptP_framed v)
-    spSafe := X86_64.withStackArgScratch_spSafe (streamEncryptM_spSafe v v.blkP)
-    features := v.features },
-  Spec.Gcm.streamDecryptPrecomputedApi.artifact X86_64.target {
-    suffix := v.suffix
-    code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1
-      (Impl.AesGcm.X86_64.streamDecrypt (v.withBlk v.blkP))
-    stack := 2608
-    verified := Proof.AesGcm.streamDecryptPrecomputed_keyed (streamDecryptP_framed v)
-    spSafe := X86_64.withStackArgScratch_spSafe (streamDecryptM_spSafe v v.blkP)
-    features := v.features }]
-
-/-- `vg_aes_gcm_seal_gather` calling the implementations `v`, and the
-`_precomputed` one if its loops read the powers from the key context. -/
-def artifactsGather (v : GcmVariant) : List Artifact :=
-  [Spec.Gcm.sealGatherApi.artifact X86_64.target {
-    suffix := v.impl.suffix
-    code := Impl.StackScratch.X86_64.withStackArgScratch 240 5
-      (Impl.AesGcm.X86_64.SealGather.sealGather (shortFn v).quick (shortFn v).fast (shortFn v).test
-        (shortFn v).code (initFn v.impl).fn
-        (aadFn v.impl).fn (toFn v).fn (finFn v.impl).fn)
-    stack := 5128
-    verified := Proof.AesGcm.sealGather_keyed (Gather.sealGather_framed (shortFn v) (initFn v.impl) (aadFn v.impl) (toFn v)
-      (finFn v.impl))
-    spSafe := X86_64.withStackArgScratch_spSafe
-      (Gather.sealGather_spAll (shortFn v) (initFn v.impl) (aadFn v.impl) (toFn v)
-        (finFn v.impl))
-    features := v.impl.features }] ++
-  if v.impl.stitchP.isSome && v.stitchR.isNone then
-    [Spec.Gcm.sealGatherPrecomputedApi.artifact X86_64.target {
-      suffix := v.impl.suffix
-      code := Impl.StackScratch.X86_64.withStackArgScratch 240 5
-        (Impl.AesGcm.X86_64.SealGather.sealGather (shortFnP v).quick (shortFnP v).fast (shortFnP v).test
-        (shortFnP v).code (initFn v.impl).fn
-          (aadFn v.impl).fn (toFnP v).fn (finFn v.impl).fn)
-      stack := 5128
-      verified := Proof.AesGcm.sealGatherPrecomputed_keyed (Gather.sealGatherP_framed (shortFnP v) (initFn v.impl) (aadFn v.impl)
-        (toFnP v) (finFn v.impl))
-      spSafe := X86_64.withStackArgScratch_spSafe
-        (Gather.sealGather_spAll (shortFnP v) (initFn v.impl) (aadFn v.impl) (toFnP v)
-          (finFn v.impl))
-      features := v.impl.features }]
-  else []
-
 /-- The prepared artifacts of the implementations `v` whose loops read the
 48 prepared powers: by the flag, those or the ones on the key context. -/
 def artifactsR (v : GcmVariant) : List Artifact := [
@@ -302,13 +187,10 @@ def artifactsR16W (v : GcmVariant) (r : R16 v) : List Artifact := [
         (Gather.sealGather_spAll (shortFn v) (initFn v.impl) (aadFn v.impl) (toFn v) (finFn v.impl)))
     features := v.impl.features }]
 
-/-- The artifacts of a variant: those on the key context, and the prepared
-ones of every variant. -/
+/-- The artifacts of a variant: its prepared ones. -/
 def artifacts (v : GcmVariant) : List Artifact :=
-  artifactsOf v.impl (artifactOpenTo v) ++ (if v.impl.stitchP.isSome && v.stitchR.isNone then artifactsP v.impl else []) ++
-    artifactsGather v ++
-    (match v.r16 with
-      | some r => artifactsR16W v r.down
-      | none => if v.stitchR.isSome then artifactsR v else artifactsW v)
+  match v.r16 with
+  | some r => artifactsR16W v r.down
+  | none => if v.stitchR.isSome then artifactsR v else artifactsW v
 
 end VG.Generic.AesGcm.X86_64.AesGcm
