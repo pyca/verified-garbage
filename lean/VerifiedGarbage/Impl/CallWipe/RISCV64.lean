@@ -13,8 +13,9 @@ returned. It allocates a frame of 32 bytes: the return address (`ra`, which
 each call replaces) at `sp`, the buffer's address at `sp + 8`, saved before
 the first call, and `name`'s result at `sp + 16`, saved across the second.
 The frame is addressed through `t0` (`addi t0, sp, 0`), as the model's loads
-and stores take a base register; `n` is below 4095, one `li` or `li` and
-`addi` of 12-bit immediates.
+and stores take a base register; `n` is below `2^31 - 2048`: one `li` or `li`
+and `addi` of 12-bit immediates below 4095, else a `lui` and, unless `n` is
+a multiple of 4096, an `addi`.
 
 The same shape as AArch64's (`Impl/CallWipe/AArch64.lean`).
 -/
@@ -29,9 +30,19 @@ open VG.RISCV64
 and the buffer's address. -/
 def saveArg (r : Reg) : List Instr := [.addSp .t0 0, .store .d .ra .t0 0, .store .d r .t0 8]
 
-/-- `li a1, n`, as one `li` below 2048, else `li a1, 2047; addi a1, a1, n - 2047`. -/
+/-- The `lui` immediate of `n < 2^31 - 2048`: `n` rounded to the nearest
+multiple of 4096, in units of 4096. -/
+def hiOf (n : Nat) : Nat := (n + 2048) / 4096
+
+/-- The rest of `n` after `hiOf n`, in `[-2048, 2048)`: an `addi`'s immediate. -/
+def loOf (n : Nat) : Int := (n : Int) - 4096 * hiOf n
+
+/-- `li a1, n`, as one `li` below 2048, `li a1, 2047; addi a1, a1, n - 2047`
+below 4095, else `lui a1, hiOf n` then, unless it is zero, `addi a1, a1, loOf n`. -/
 def lenArg (n : Nat) : List Instr :=
-  if n < 2048 then [.li .a1 n] else [.li .a1 2047, .addi .a1 .a1 ((n : Int) - 2047)]
+  if n < 2048 then [.li .a1 n]
+  else if n < 4095 then [.li .a1 2047, .addi .a1 .a1 ((n : Int) - 2047)]
+  else .lui .a1 (BitVec.ofNat 20 (hiOf n)) :: if loOf n = 0 then [] else [.addi .a1 .a1 (loOf n)]
 
 /-- `addi t0, sp, 0; sd a0, 16(t0); ld a0, 8(t0); li a1, n`: save the
 result, and pass the buffer's address and `n` to the zeroize function. -/
