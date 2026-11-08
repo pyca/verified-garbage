@@ -10,6 +10,7 @@ public import VerifiedGarbage.Proof.MlKem.Arm.DecapsCT
 public import VerifiedGarbage.Proof.MlKem1024.Arm.KeyGenCT
 public import VerifiedGarbage.Proof.MlKem1024.Arm.EncapsCT
 public import VerifiedGarbage.Proof.MlKem1024.Arm.DecapsCT
+public import VerifiedGarbage.Proof.MlKem.Scrubbed
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Contract
@@ -24,8 +25,12 @@ decapsulation, which get `scratch` in `r3`, or `callWipeStack`
 (`Impl/CallWipe/ArmStack.lean`), for encapsulation, which gets it on the
 stack, and zeroes all of `scratch` with `vg_zeroize` once that code returns.
 It is verified against the same contract with 16 more bytes of stack, 24
-(`Verified.callWipe`), or 24 more, 32 (`Verified.callWipeStack`: its frame
-and the copy of the stack arguments, 8 bytes for one word or two).
+(`Verified.callWipe'`), or 24 more, 32 (`Verified.callWipeStack'`: its frame
+and the copy of the stack arguments, 8 bytes for one word or two), with
+`scratch` left scrubbed (`*_scrubbed`, the contracts of
+`Proof/MlKem/Scrubbed.lean`), since every byte of it is zero
+(`Scrubbed.keyGen_wiped`, …). `*_verified` are those weakened to the
+contracts of `Spec/MlKem/`, which do not state it yet.
 -/
 
 @[expose] public section
@@ -78,8 +83,8 @@ theorem keyGen_wipe {body : Prog isa}
     (h : Verified target body (Spec.MlKem.keyGenContract abi 8))
     (hd : armStack body ≤ 8)
     (hsat : ∃ s, (Spec.MlKem.keyGenContract abi 24).pre s) :
-    Verified target (Impl.MlKem.Arm.Wipe.wiped .r3 32768 "vg_mlkem768_keygen" body) (Spec.MlKem.keyGenContract abi 24) :=
-  Verified.callWipe (ps₁ := Spec.MlKem.keyGenSig.params.dropLast) (ps₂ := []) (i := 3) (stack := 8) h Proof.Zeroize.Arm.verified
+    Verified target (Impl.MlKem.Arm.Wipe.wiped .r3 32768 "vg_mlkem768_keygen" body) (Scrubbed.keyGenContract abi 24) :=
+  Verified.callWipe' (ps₁ := Spec.MlKem.keyGenSig.params.dropLast) (ps₂ := []) (i := 3) (stack := 8) h Proof.Zeroize.Arm.verified
     (by decide) (by decide) (by decide) rfl rfl (by decide) (by decide) (by decide) hd zeroize_stack (Nat.zero_le _)
     (by
       intro vs m₁ m₂ _ _ h
@@ -109,6 +114,7 @@ theorem keyGen_wipe {body : Prog isa}
         ← bytesAt_agree0 (hb.2.2.1 (pw_disj hpw (i := 2) (j := 3) (by decide) (Nat.lt_succ_self _) rfl)) (by decide)
           (n := 2400) (by decide)]
       exact h)
+    (Scrubbed.keyGen_wiped _)
     hsat
     (by
       intro vs m₁ m₂ hlen hb
@@ -124,8 +130,8 @@ theorem encapsH_wipe {body : Prog isa}
     (h : Verified target body (Spec.MlKem.encapsHContract abi 8))
     (hd : armStack body ≤ 8)
     (hsat : ∃ s, (Spec.MlKem.encapsHContract abi 32).pre s) :
-    Verified target (Impl.MlKem.Arm.Wipe.wipedStack 2 4 32768 "vg_mlkem768_encaps_h" body) (Spec.MlKem.encapsHContract abi 32) :=
-  Verified.callWipeStack (ps₁ := Spec.MlKem.encapsHSig.params.dropLast) (ps₂ := []) (i := 5) (k := 2) (off := 4) (stack := 8) h
+    Verified target (Impl.MlKem.Arm.Wipe.wipedStack 2 4 32768 "vg_mlkem768_encaps_h" body) (Scrubbed.encapsHContract abi 32) :=
+  Verified.callWipeStack' (ps₁ := Spec.MlKem.encapsHSig.params.dropLast) (ps₂ := []) (i := 5) (k := 2) (off := 4) (stack := 8) h
     Proof.Zeroize.Arm.verified (by decide) (by decide) (by decide) (by decide) rfl rfl (by decide) (by decide)
     (by decide) hd zeroize_stack (Nat.zero_le _)
     (by
@@ -163,6 +169,7 @@ theorem encapsH_wipe {body : Prog isa}
         ← bytesAt_agree0 (hb.2.2.2.2.1 (pw_disj hpw (i := 4) (j := 5) (by decide) (Nat.lt_succ_self _) rfl)) (by decide)
           (n := 1088) (by decide)]
       exact h)
+    (Scrubbed.encapsH_wiped _)
     hsat
     (by
       intro vs m₁ m₂ hlen hb
@@ -178,8 +185,8 @@ theorem encaps_wipe {body : Prog isa}
     (h : Verified target body (Spec.MlKem.encapsContract abi 8))
     (hd : armStack body ≤ 8)
     (hsat : ∃ s, (Spec.MlKem.encapsContract abi 32).pre s) :
-    Verified target (Impl.MlKem.Arm.Wipe.wipedStack 1 0 32768 "vg_mlkem768_encaps" body) (Spec.MlKem.encapsContract abi 32) :=
-  Verified.callWipeStack (ps₁ := Spec.MlKem.encapsSig.params.dropLast) (ps₂ := []) (i := 4) (k := 1) (off := 0) (stack := 8) h
+    Verified target (Impl.MlKem.Arm.Wipe.wipedStack 1 0 32768 "vg_mlkem768_encaps" body) (Scrubbed.encapsContract abi 32) :=
+  Verified.callWipeStack' (ps₁ := Spec.MlKem.encapsSig.params.dropLast) (ps₂ := []) (i := 4) (k := 1) (off := 0) (stack := 8) h
     Proof.Zeroize.Arm.verified (by decide) (by decide) (by decide) (by decide) rfl rfl (by decide) (by decide)
     (by decide) hd zeroize_stack (Nat.zero_le _)
     (by
@@ -209,6 +216,7 @@ theorem encaps_wipe {body : Prog isa}
         ← bytesAt_agree0 (hb.2.2.2.1 (pw_disj hpw (i := 3) (j := 4) (by decide) (Nat.lt_succ_self _) rfl)) (by decide)
           (n := 1088) (by decide)]
       exact h)
+    (Scrubbed.encaps_wiped _)
     hsat
     (by
       intro vs m₁ m₂ hlen hb
@@ -224,8 +232,8 @@ theorem decaps_wipe {body : Prog isa}
     (h : Verified target body (Spec.MlKem.decapsContract abi 8))
     (hd : armStack body ≤ 8)
     (hsat : ∃ s, (Spec.MlKem.decapsContract abi 24).pre s) :
-    Verified target (Impl.MlKem.Arm.Wipe.wiped .r3 32768 "vg_mlkem768_decaps" body) (Spec.MlKem.decapsContract abi 24) :=
-  Verified.callWipe (ps₁ := Spec.MlKem.decapsSig.params.dropLast) (ps₂ := []) (i := 3) (stack := 8) h Proof.Zeroize.Arm.verified
+    Verified target (Impl.MlKem.Arm.Wipe.wiped .r3 32768 "vg_mlkem768_decaps" body) (Scrubbed.decapsContract abi 24) :=
+  Verified.callWipe' (ps₁ := Spec.MlKem.decapsSig.params.dropLast) (ps₂ := []) (i := 3) (stack := 8) h Proof.Zeroize.Arm.verified
     (by decide) (by decide) (by decide) rfl rfl (by decide) (by decide) (by decide) hd zeroize_stack (Nat.zero_le _)
     (by
       intro vs m₁ m₂ _ _ h
@@ -252,6 +260,7 @@ theorem decaps_wipe {body : Prog isa}
       rw [← bytesAt_agree0 (hb.2.2.1 (pw_disj hpw (i := 2) (j := 3) (by decide) (Nat.lt_succ_self _) rfl)) (by decide)
           (n := 32) (by decide)]
       exact h)
+    (Scrubbed.decaps_wiped _)
     hsat
     (by
       intro vs m₁ m₂ hlen hb
@@ -267,8 +276,8 @@ theorem keyGen1024_wipe {body : Prog isa}
     (h : Verified target body (Spec.MlKem1024.keyGenContract abi 8))
     (hd : armStack body ≤ 8)
     (hsat : ∃ s, (Spec.MlKem1024.keyGenContract abi 24).pre s) :
-    Verified target (Impl.MlKem.Arm.Wipe.wiped .r3 49152 "vg_mlkem1024_keygen" body) (Spec.MlKem1024.keyGenContract abi 24) :=
-  Verified.callWipe (ps₁ := Spec.MlKem1024.keyGenSig.params.dropLast) (ps₂ := []) (i := 3) (stack := 8) h Proof.Zeroize.Arm.verified
+    Verified target (Impl.MlKem.Arm.Wipe.wiped .r3 49152 "vg_mlkem1024_keygen" body) (Scrubbed.keyGen1024Contract abi 24) :=
+  Verified.callWipe' (ps₁ := Spec.MlKem1024.keyGenSig.params.dropLast) (ps₂ := []) (i := 3) (stack := 8) h Proof.Zeroize.Arm.verified
     (by decide) (by decide) (by decide) rfl rfl (by decide) (by decide) (by decide) hd zeroize_stack (Nat.zero_le _)
     (by
       intro vs m₁ m₂ _ _ h
@@ -298,6 +307,7 @@ theorem keyGen1024_wipe {body : Prog isa}
         ← bytesAt_agree0 (hb.2.2.1 (pw_disj hpw (i := 2) (j := 3) (by decide) (Nat.lt_succ_self _) rfl)) (by decide)
           (n := 3168) (by decide)]
       exact h)
+    (Scrubbed.keyGen1024_wiped _)
     hsat
     (by
       intro vs m₁ m₂ hlen hb
@@ -313,8 +323,8 @@ theorem encapsH1024_wipe {body : Prog isa}
     (h : Verified target body (Spec.MlKem1024.encapsHContract abi 8))
     (hd : armStack body ≤ 8)
     (hsat : ∃ s, (Spec.MlKem1024.encapsHContract abi 32).pre s) :
-    Verified target (Impl.MlKem.Arm.Wipe.wipedStack 2 4 49152 "vg_mlkem1024_encaps_h" body) (Spec.MlKem1024.encapsHContract abi 32) :=
-  Verified.callWipeStack (ps₁ := Spec.MlKem1024.encapsHSig.params.dropLast) (ps₂ := []) (i := 5) (k := 2) (off := 4) (stack := 8) h
+    Verified target (Impl.MlKem.Arm.Wipe.wipedStack 2 4 49152 "vg_mlkem1024_encaps_h" body) (Scrubbed.encapsH1024Contract abi 32) :=
+  Verified.callWipeStack' (ps₁ := Spec.MlKem1024.encapsHSig.params.dropLast) (ps₂ := []) (i := 5) (k := 2) (off := 4) (stack := 8) h
     Proof.Zeroize.Arm.verified (by decide) (by decide) (by decide) (by decide) rfl rfl (by decide) (by decide)
     (by decide) hd zeroize_stack (Nat.zero_le _)
     (by
@@ -352,6 +362,7 @@ theorem encapsH1024_wipe {body : Prog isa}
         ← bytesAt_agree0 (hb.2.2.2.2.1 (pw_disj hpw (i := 4) (j := 5) (by decide) (Nat.lt_succ_self _) rfl)) (by decide)
           (n := 1568) (by decide)]
       exact h)
+    (Scrubbed.encapsH1024_wiped _)
     hsat
     (by
       intro vs m₁ m₂ hlen hb
@@ -367,8 +378,8 @@ theorem encaps1024_wipe {body : Prog isa}
     (h : Verified target body (Spec.MlKem1024.encapsContract abi 8))
     (hd : armStack body ≤ 8)
     (hsat : ∃ s, (Spec.MlKem1024.encapsContract abi 32).pre s) :
-    Verified target (Impl.MlKem.Arm.Wipe.wipedStack 1 0 49152 "vg_mlkem1024_encaps" body) (Spec.MlKem1024.encapsContract abi 32) :=
-  Verified.callWipeStack (ps₁ := Spec.MlKem1024.encapsSig.params.dropLast) (ps₂ := []) (i := 4) (k := 1) (off := 0) (stack := 8) h
+    Verified target (Impl.MlKem.Arm.Wipe.wipedStack 1 0 49152 "vg_mlkem1024_encaps" body) (Scrubbed.encaps1024Contract abi 32) :=
+  Verified.callWipeStack' (ps₁ := Spec.MlKem1024.encapsSig.params.dropLast) (ps₂ := []) (i := 4) (k := 1) (off := 0) (stack := 8) h
     Proof.Zeroize.Arm.verified (by decide) (by decide) (by decide) (by decide) rfl rfl (by decide) (by decide)
     (by decide) hd zeroize_stack (Nat.zero_le _)
     (by
@@ -398,6 +409,7 @@ theorem encaps1024_wipe {body : Prog isa}
         ← bytesAt_agree0 (hb.2.2.2.1 (pw_disj hpw (i := 3) (j := 4) (by decide) (Nat.lt_succ_self _) rfl)) (by decide)
           (n := 1568) (by decide)]
       exact h)
+    (Scrubbed.encaps1024_wiped _)
     hsat
     (by
       intro vs m₁ m₂ hlen hb
@@ -413,8 +425,8 @@ theorem decaps1024_wipe {body : Prog isa}
     (h : Verified target body (Spec.MlKem1024.decapsContract abi 8))
     (hd : armStack body ≤ 8)
     (hsat : ∃ s, (Spec.MlKem1024.decapsContract abi 24).pre s) :
-    Verified target (Impl.MlKem.Arm.Wipe.wiped .r3 49152 "vg_mlkem1024_decaps" body) (Spec.MlKem1024.decapsContract abi 24) :=
-  Verified.callWipe (ps₁ := Spec.MlKem1024.decapsSig.params.dropLast) (ps₂ := []) (i := 3) (stack := 8) h Proof.Zeroize.Arm.verified
+    Verified target (Impl.MlKem.Arm.Wipe.wiped .r3 49152 "vg_mlkem1024_decaps" body) (Scrubbed.decaps1024Contract abi 24) :=
+  Verified.callWipe' (ps₁ := Spec.MlKem1024.decapsSig.params.dropLast) (ps₂ := []) (i := 3) (stack := 8) h Proof.Zeroize.Arm.verified
     (by decide) (by decide) (by decide) rfl rfl (by decide) (by decide) (by decide) hd zeroize_stack (Nat.zero_le _)
     (by
       intro vs m₁ m₂ _ _ h
@@ -441,6 +453,7 @@ theorem decaps1024_wipe {body : Prog isa}
       rw [← bytesAt_agree0 (hb.2.2.1 (pw_disj hpw (i := 2) (j := 3) (by decide) (Nat.lt_succ_self _) rfl)) (by decide)
           (n := 32) (by decide)]
       exact h)
+    (Scrubbed.decaps1024_wiped _)
     hsat
     (by
       intro vs m₁ m₂ hlen hb
@@ -520,32 +533,60 @@ theorem decaps1024_sat : ∃ s, (Spec.MlKem1024.decapsContract abi 24).pre s := 
 
 /-! ## The functions -/
 
-theorem keyGen_verified : Verified target Impl.MlKem.Arm.Wipe.keyGen (Spec.MlKem.keyGenContract abi 24) :=
+theorem keyGen_scrubbed : Verified target Impl.MlKem.Arm.Wipe.keyGen (Scrubbed.keyGenContract abi 24) :=
   keyGen_wipe Proof.MlKem.Arm.KeyGen.verified keyGen_stack keyGen_sat
 
-theorem encapsH_verified : Verified target Impl.MlKem.Arm.Wipe.encapsH (Spec.MlKem.encapsHContract abi 32) :=
+theorem keyGen_verified : Verified target Impl.MlKem.Arm.Wipe.keyGen (Spec.MlKem.keyGenContract abi 24) :=
+  Scrubbed.Verified.keyGen_of_scrubbed keyGen_scrubbed
+
+theorem encapsH_scrubbed : Verified target Impl.MlKem.Arm.Wipe.encapsH (Scrubbed.encapsHContract abi 32) :=
   encapsH_wipe Proof.MlKem.Arm.Encaps.verifiedH encapsH_stack encapsH_sat
 
-theorem encaps_verified : Verified target Impl.MlKem.Arm.Wipe.encaps (Spec.MlKem.encapsContract abi 32) :=
+theorem encapsH_verified : Verified target Impl.MlKem.Arm.Wipe.encapsH (Spec.MlKem.encapsHContract abi 32) :=
+  Scrubbed.Verified.encapsH_of_scrubbed encapsH_scrubbed
+
+theorem encaps_scrubbed : Verified target Impl.MlKem.Arm.Wipe.encaps (Scrubbed.encapsContract abi 32) :=
   encaps_wipe Proof.MlKem.Arm.Encaps.verified encaps_stack encaps_sat
 
-theorem decaps_verified : Verified target Impl.MlKem.Arm.Wipe.decaps (Spec.MlKem.decapsContract abi 24) :=
+theorem encaps_verified : Verified target Impl.MlKem.Arm.Wipe.encaps (Spec.MlKem.encapsContract abi 32) :=
+  Scrubbed.Verified.encaps_of_scrubbed encaps_scrubbed
+
+theorem decaps_scrubbed : Verified target Impl.MlKem.Arm.Wipe.decaps (Scrubbed.decapsContract abi 24) :=
   decaps_wipe Proof.MlKem.Arm.Decaps.verified decaps_stack decaps_sat
+
+theorem decaps_verified : Verified target Impl.MlKem.Arm.Wipe.decaps (Spec.MlKem.decapsContract abi 24) :=
+  Scrubbed.Verified.decaps_of_scrubbed decaps_scrubbed
+
+theorem keyGen1024_scrubbed :
+    Verified target Impl.MlKem.Arm.Wipe.keyGen1024 (Scrubbed.keyGen1024Contract abi 24) :=
+  keyGen1024_wipe Proof.MlKem1024.Arm.KeyGen.verified keyGen1024_stack keyGen1024_sat
 
 theorem keyGen1024_verified :
     Verified target Impl.MlKem.Arm.Wipe.keyGen1024 (Spec.MlKem1024.keyGenContract abi 24) :=
-  keyGen1024_wipe Proof.MlKem1024.Arm.KeyGen.verified keyGen1024_stack keyGen1024_sat
+  Scrubbed.Verified.keyGen1024_of_scrubbed keyGen1024_scrubbed
+
+theorem encapsH1024_scrubbed :
+    Verified target Impl.MlKem.Arm.Wipe.encapsH1024 (Scrubbed.encapsH1024Contract abi 32) :=
+  encapsH1024_wipe Proof.MlKem1024.Arm.Encaps.verifiedH encapsH1024_stack encapsH1024_sat
 
 theorem encapsH1024_verified :
     Verified target Impl.MlKem.Arm.Wipe.encapsH1024 (Spec.MlKem1024.encapsHContract abi 32) :=
-  encapsH1024_wipe Proof.MlKem1024.Arm.Encaps.verifiedH encapsH1024_stack encapsH1024_sat
+  Scrubbed.Verified.encapsH1024_of_scrubbed encapsH1024_scrubbed
+
+theorem encaps1024_scrubbed :
+    Verified target Impl.MlKem.Arm.Wipe.encaps1024 (Scrubbed.encaps1024Contract abi 32) :=
+  encaps1024_wipe Proof.MlKem1024.Arm.Encaps.verified encaps1024_stack encaps1024_sat
 
 theorem encaps1024_verified :
     Verified target Impl.MlKem.Arm.Wipe.encaps1024 (Spec.MlKem1024.encapsContract abi 32) :=
-  encaps1024_wipe Proof.MlKem1024.Arm.Encaps.verified encaps1024_stack encaps1024_sat
+  Scrubbed.Verified.encaps1024_of_scrubbed encaps1024_scrubbed
+
+theorem decaps1024_scrubbed :
+    Verified target Impl.MlKem.Arm.Wipe.decaps1024 (Scrubbed.decaps1024Contract abi 24) :=
+  decaps1024_wipe Proof.MlKem1024.Arm.Decaps.verified decaps1024_stack decaps1024_sat
 
 theorem decaps1024_verified :
     Verified target Impl.MlKem.Arm.Wipe.decaps1024 (Spec.MlKem1024.decapsContract abi 24) :=
-  decaps1024_wipe Proof.MlKem1024.Arm.Decaps.verified decaps1024_stack decaps1024_sat
+  Scrubbed.Verified.decaps1024_of_scrubbed decaps1024_scrubbed
 
 end VG.Proof.MlKem.Arm.Wipe
