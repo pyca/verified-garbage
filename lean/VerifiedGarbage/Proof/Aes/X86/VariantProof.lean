@@ -31,6 +31,7 @@ public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyBlocks
 
 namespace VG.Impl.Aes.X86
 materialize_code ctr32
+materialize_code ctr32To
 materialize_code expandKey
 end VG.Impl.Aes.X86
 
@@ -47,6 +48,12 @@ def scalar : Ctr32Impl where
   spSafe := Code.all_of_allInstrs (by lit_decide)
   suffix := ""
   features := []
+  calleeTo := .scalarTo
+  toStack := by lit_decide
+  okTo := ctr32To_correct
+  ctTo := ctr32To_ct
+  nospTo := NoSp.of_all (by lit_decide)
+  spSafeTo := Code.all_of_allInstrs (by lit_decide)
   expand := .scalar
   expandDepth := by lit_decide
   expandStack := by lit_decide
@@ -65,6 +72,12 @@ def aesni : Ctr32Impl where
   spSafe := Code.all_of_allInstrs (by lit_decide)
   suffix := "_aesni"
   features := ["aes"]
+  calleeTo := .aesniTo
+  toStack := by lit_decide
+  okTo := AesNi.ctr32To_correct
+  ctTo := AesNi.ctr32To_ct
+  nospTo := NoSp.of_all (by lit_decide)
+  spSafeTo := Code.all_of_allInstrs (by lit_decide)
   expand := .aesni
   expandDepth := by lit_decide
   expandStack := by lit_decide

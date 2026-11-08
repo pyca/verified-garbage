@@ -12,20 +12,19 @@ import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 namespace VG.Proof.Aes.X86.AesNi
 open VG VG.X86 VG.X86.RegUpd
-open VG.Proof.Aes.X86 (CPre ctrP datP nBlk scrP ctrR datR scrR retR)
+open VG.Proof.Aes.X86 (GPre dstP dstR ctrP datP nBlk scrP ctrR scrR retR)
 open VG.Impl.Aes.X86.AesNi (at_)
 
 /-- Restoring the saved GPRs does not write memory; only the final numeric
 counter word is written, in big-endian byte order. -/
-theorem restoreCore_ok {s₀ s : State} (hp : CPre s₀) (saved : Saved s₀ s.mem)
+theorem restoreCore_ok {to : Bool} {s₀ s : State} (hp : GPre to s₀) (saved : Saved s₀ s.mem)
     (edx : s.gpr .edx = ctrP s₀) (ebp : s.gpr .ebp = scrP s₀)
     (esp : s.gpr .esp = s₀.gpr .esp) (_rd : s.rd = s₀.rd) (wr : s.wr = s₀.wr) :
     WP isa (.block Impl.Aes.X86.AesNi.restore) s fun s' =>
       s'.mem = s.mem.writeW (addr (ctrP s₀) 12) (bswap (s.gpr .ebx)) ∧
       (∀ r ∈ calleeSaved, s'.gpr r = s₀.gpr r) := by
   have hc : InRegions s.wr (addr (ctrP s₀) 12) 4 := by
-    refine ⟨ctrR s₀, ?_, ctr_contains hp (by decide)⟩
-    simp only [wr, hp.wr, List.mem_cons, true_or]
+    exact ⟨ctrR s₀, by rw [wr]; exact hp.wC, ctr_contains hp (by decide)⟩
   rw [show Impl.Aes.X86.AesNi.restore = .mov .eax (.reg .ebx) :: .bswap .eax :: .store (at_ .edx 12) .eax ::
     (Spill.restoreCode .ebp ([(.ebx, 0), (.esi, 4), (.edi, 8)] ++ [(.ebp, 12)]) ++ []) from rfl]
   refine Wp.wp_mov fun s₁ u₁ => Wp.wp_bswap fun s₂ u₂ => ?_
@@ -47,22 +46,22 @@ theorem restoreCore_ok {s₀ s : State} (hp : CPre s₀) (saved : Saved s₀ s.m
 
 /-- The complete restore preserves the encrypted data and the return slot,
 and advances only the low 32 counter bits. -/
-theorem restore_ok {s₀ s : State} (hp : CPre s₀) (i : Nat)
+theorem restore_ok {to : Bool} {s₀ s : State} (hp : GPre to s₀) (i : Nat)
     (saved : Saved s₀ s.mem) (edx : s.gpr .edx = ctrP s₀) (ebp : s.gpr .ebp = scrP s₀)
     (esp : s.gpr .esp = s₀.gpr .esp) (rd : s.rd = s₀.rd) (wr : s.wr = s₀.wr)
-    (frame : Frame [datR s₀, scrR s₀] s₀.mem s.mem)
+    (frame : Frame [dstR to s₀, scrR s₀] s₀.mem s.mem)
     (low : s.gpr .ebx = (Spec.Gcm.blockAt s₀.mem ((ctrP s₀).setWidth 64)).extractLsb' 0 32 +
       BitVec.ofNat 32 i) :
     WP isa (.block Impl.Aes.X86.AesNi.restore) s fun s' =>
       abiPreserved s₀ s' ∧
       Spec.Gcm.blockAt s'.mem ((ctrP s₀).setWidth 64) =
         Nat.repeat Spec.Gcm.inc32 i (Spec.Gcm.blockAt s₀.mem ((ctrP s₀).setWidth 64)) ∧
-      Spec.Gcm.blocksAt s'.mem ((datP s₀).setWidth 64) (nBlk s₀) =
-        Spec.Gcm.blocksAt s.mem ((datP s₀).setWidth 64) (nBlk s₀) ∧
-      Frame [ctrR s₀, datR s₀, scrR s₀] s₀.mem s'.mem ∧
+      Spec.Gcm.blocksAt s'.mem ((dstP to s₀).setWidth 64) (nBlk s₀) =
+        Spec.Gcm.blocksAt s.mem ((dstP to s₀).setWidth 64) (nBlk s₀) ∧
+      Frame [ctrR s₀, dstR to s₀, scrR s₀] s₀.mem s'.mem ∧
       Frame [ctrR s₀] s.mem s'.mem := by
   refine WP.mono (restoreCore_ok hp saved edx ebp esp rd wr) fun s' ⟨mem, regs⟩ => ?_
-  have f : Frame [ctrR s₀, datR s₀, scrR s₀] s₀.mem s'.mem := by
+  have f : Frame [ctrR s₀, dstR to s₀, scrR s₀] s₀.mem s'.mem := by
     rw [mem]
     exact (frame.mono (fun r hr => List.mem_cons_of_mem _ hr)).writeW
       List.mem_cons_self _ (ctr_contains hp (by decide))
@@ -95,7 +94,7 @@ theorem restore_ok {s₀ s : State} (hp : CPre s₀) (i : Nat)
     refine List.map_congr_left fun j hj => Proof.Gcm.blockAt_congr fun k hk => ?_
     have bound := List.mem_range.mp hj
     rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-    exact fstore.bytes (R := datR s₀) (fun r hr => by
+    exact fstore.bytes (R := dstR to s₀) (fun r hr => by
       simp only [List.mem_singleton] at hr
       subst r; exact hp.dCD.symm) (by change 16 * nBlk s₀ ≤ 2 ^ 64; have hf := hp.fD; omega)
       (by change 16 * j + k < 16 * nBlk s₀; omega)

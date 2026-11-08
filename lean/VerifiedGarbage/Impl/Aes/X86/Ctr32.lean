@@ -104,10 +104,15 @@ def keyStore : List Instr :=
 /-- Bitslice round key `esi`, and step back (CF is set after round key 0). -/
 def keyBody : List Instr := keyLoad ++ ortho ++ keyStore ++ [subI .esi 1]
 
-/-- Store the data pointer and the count, and test the count. -/
-def groupSetup : List Instr :=
-  [.mov .eax (.mem (argOp 3)), .store (at_ .edi dOff) .eax,
-   .mov .eax (.mem (argOp 4)), .store (at_ .edi nOff) .eax, .alu .test .eax (.reg .eax)]
+/-- The slot of the destination pointer, out of place. -/
+def tOff : Nat := 296
+
+/-- Store the data pointer (out of place, also the destination's) and the
+count, and test the count. -/
+def groupSetup (to : Bool := false) : List Instr :=
+  [.mov .eax (.mem (argOp 3)), .store (at_ .edi dOff) .eax] ++
+  (if to then [.mov .eax (.mem (argOp 6)), .store (at_ .edi tOff) .eax] else []) ++
+  [.mov .eax (.mem (argOp 4)), .store (at_ .edi nOff) .eax, .alu .test .eax (.reg .eax)]
 
 /-- The counter blocks `c` and `c + 1`: block `b`'s word `w` in slot `2w + b`;
 and `c := c + 2`. -/
@@ -138,32 +143,52 @@ def encrypt2 : Prog isa :=
   .seq (.block (ortho ++ keyStart ++ addRoundKey))
     (.seq (.loop (.block roundBody) .ne) (.block (lastRound ++ ortho)))
 
-/-- XOR the keystream block `b` into data block `b` at `esi`. -/
-def xorBlock (b : Nat) : List Instr :=
+/-- Where the keystream XORed into the data at `esi` is stored: back to it,
+or out of place to the destination at `ebx`. -/
+def dstReg (to : Bool) : Reg := if to then .ebx else .esi
+
+/-- XOR the keystream block `b` into data block `b` at `esi`, stored at `d`. -/
+def xorBlock (d : Reg) (b : Nat) : List Instr :=
   (List.range 4).flatMap fun w =>
     [.mov .eax (.mem (at_ .esi (16 * b + 4 * w))), xorS .eax (2 * w + b),
-     .store (at_ .esi (16 * b + 4 * w)) .eax]
+     .store (at_ d (16 * b + 4 * w)) .eax]
+
+/-- Advances the destination `ebx`, out of place, by `k` bytes. -/
+def advTo (to : Bool) (k : BitVec 32) : List Instr := if to then [addI .ebx k] else []
 
 /-- Two blocks, and on to the next two. -/
-def xorTwo : List Instr := xorBlock 0 ++ xorBlock 1 ++ [addI .esi 32, subI .ebp 2]
+def xorTwo (to : Bool := false) : List Instr :=
+  xorBlock (dstReg to) 0 ++ xorBlock (dstReg to) 1 ++ ([addI .esi 32] ++ advTo to 32 ++ [subI .ebp 2])
 
 /-- The last block. -/
-def xorOne : List Instr := xorBlock 0 ++ [subR .ebp .ebp]
+def xorOne (to : Bool := false) : List Instr := xorBlock (dstReg to) 0 ++ [subR .ebp .ebp]
 
 /-- XOR the keystream into one group (two blocks, or the last one), and
-store the data pointer and the count back (ZF is set when none are left). -/
-def xorGroup : Prog isa :=
-  .seq (.block [.mov .esi (.mem (at_ .edi dOff)), .mov .ebp (.mem (at_ .edi nOff)), .alu .cmp .ebp (.imm 2)])
-    (.seq (.ite .ae (.block xorTwo) (.block xorOne))
-      (.block [.store (at_ .edi dOff) .esi, .store (at_ .edi nOff) .ebp, .alu .test .ebp (.reg .ebp)]))
+store the data pointer, the destination's out of place, and the count back
+(ZF is set when none are left). -/
+def xorGroup (to : Bool := false) : Prog isa :=
+  .seq (.block ([.mov .esi (.mem (at_ .edi dOff)), .mov .ebp (.mem (at_ .edi nOff))] ++
+      (if to then [.mov .ebx (.mem (at_ .edi tOff))] else []) ++ [.alu .cmp .ebp (.imm 2)]))
+    (.seq (.ite .ae (.block (xorTwo to)) (.block (xorOne to)))
+      (.block ([.store (at_ .edi dOff) .esi, .store (at_ .edi nOff) .ebp] ++
+        (if to then [.store (at_ .edi tOff) .ebx] else []) ++ [.alu .test .ebp (.reg .ebp)])))
 
 /-- One group of (up to) two blocks. -/
-def group : Prog isa := .seq (.block ctrBlocks) (.seq encrypt2 xorGroup)
+def group (to : Bool := false) : Prog isa := .seq (.block ctrBlocks) (.seq encrypt2 (xorGroup to))
 
-def ctr32 : Prog isa :=
+/-- `vg_aes_ctr32`, or out of place (`to`) `vg_aes_ctr32_to(schedule, rounds,
+counter, src, n, scratch, dst)`, which reads the data at `src` and writes the
+result to `dst`. -/
+def ctr32With (to : Bool) : Prog isa :=
   .seq (.block (saveRegs 5 ++ ctrSetup ++ keySetup))
     (.seq (.loop (.block keyBody) .ae)
-      (.seq (.block groupSetup)
-        (.seq (.ite .e (.block []) (.loop group .ne)) (.block restoreRegs))))
+      (.seq (.block (groupSetup to))
+        (.seq (.ite .e (.block []) (.loop (group to) .ne)) (.block restoreRegs))))
+
+/-- `vg_aes_ctr32`. -/
+def ctr32 : Prog isa := ctr32With false
+
+/-- `vg_aes_ctr32_to`. -/
+def ctr32To : Prog isa := ctr32With true
 
 end VG.Impl.Aes.X86

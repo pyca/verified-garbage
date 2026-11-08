@@ -22,6 +22,14 @@ structure Ctr32Impl where
   spSafe : callee.code.all (fun i => !isa.writesSp i) = true
   suffix : String
   features : List String
+  /-- The same counter mode out of place, `vg_aes_ctr32_to`. -/
+  calleeTo : Impl.Aes.X86.Ctr32
+  toStack : stackUse calleeTo.code = 0
+  okTo : ∀ s, Proof.Aes.ctr32ToX86.pre s →
+    ∃ t s', Exec isa calleeTo.code s t s' ∧ abiPreserved s s' ∧ Proof.Aes.ctr32ToX86.post s s'
+  ctTo : ConstantTime isa Proof.Aes.ctr32ToX86.pre Proof.Aes.ctr32ToX86.pub calleeTo.code
+  nospTo : NoSp calleeTo.code
+  spSafeTo : calleeTo.code.all (fun i => !isa.writesSp i) = true
   expand : Impl.Aes.X86.ExpandKey
   expandDepth : stackUse expand.code = 0
   expandStack : stackUse expand.code = 0

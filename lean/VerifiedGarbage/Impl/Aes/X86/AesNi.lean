@@ -106,21 +106,31 @@ def ctrLoad (regs : List XReg) : List Instr :=
   ([.movdquLoad .xmm7 (at_ .ebp 16)] : List Instr) ++ ctrs regs ++
   ([.mov .eax (.mem (argOp 0))] : List Instr)
 
-def xorData : List XReg → Nat → List Instr
+/-- XOR the lanes `regs` into the data at `esi`, from block `j` on, storing
+at `d`: back to the data, or out of place to the destination. -/
+def xorData (d : Reg) : List XReg → Nat → List Instr
   | [], _ => []
   | b :: bs, j => ([.movdquLoad .xmm7 (at_ .esi (16 * j)), .xop (.bin .pxor b .xmm7),
-      .movdquStore (at_ .esi (16 * j)) b] : List Instr) ++ xorData bs (j + 1)
+      .movdquStore (at_ d (16 * j)) b] : List Instr) ++ xorData d bs (j + 1)
+
+/-- Where the lanes are stored: back to the data at `esi`, or out of place
+to the destination, which `edx` holds instead of the counter pointer. -/
+def dstReg (to : Bool) : Reg := if to then .edx else .esi
+
+/-- Advances the destination `edx`, out of place, by `k` bytes. -/
+def advTo (to : Bool) (k : BitVec 32) : List Instr := if to then [.alu .add .edx (.imm k)] else []
 
 def regs6 : List XReg := [.xmm0, .xmm1, .xmm2, .xmm3, .xmm4, .xmm5]
 
-def body6 : Prog isa :=
+def body6 (to : Bool := false) : Prog isa :=
   .seq (.block (ctrLoad regs6)) (.seq (aes regs6)
-    (.block (xorData regs6 0 ++ ([.alu .add .esi (.imm 96), .alu .sub .edi (.imm 6),
-      .alu .cmp .edi (.imm 6)] : List Instr))))
+    (.block (xorData (dstReg to) regs6 0 ++ (([.alu .add .esi (.imm 96)] : List Instr) ++ advTo to 96 ++
+      [.alu .sub .edi (.imm 6), .alu .cmp .edi (.imm 6)]))))
 
-def body1 : Prog isa :=
+def body1 (to : Bool := false) : Prog isa :=
   .seq (.block (ctrLoad [.xmm0])) (.seq (aes [.xmm0])
-    (.block (xorData [.xmm0] 0 ++ ([.alu .add .esi (.imm 16), .alu .sub .edi (.imm 1)] : List Instr))))
+    (.block (xorData (dstReg to) [.xmm0] 0 ++ (([.alu .add .esi (.imm 16)] : List Instr) ++ advTo to 16 ++
+      [.alu .sub .edi (.imm 1)]))))
 
 def prologue : List Instr :=
   ([.mov .eax (.mem (argOp 5))] : List Instr) ++ savedRegs.map (fun (r, d) => .store (at_ .eax d) r) ++
@@ -131,15 +141,30 @@ def prologue : List Instr :=
    .xop (.shift .psrldq .xmm7 4), .movdquStore (at_ .ebp 16) .xmm7,
    .alu .cmp .edi (.imm 6)] : List Instr)
 
+/-- Out of place, the destination (argument 6) replaces the counter pointer
+in `edx` once the counter block is read (the flags are kept). -/
+def setDst (to : Bool) : List Instr := if to then [.mov .edx (.mem (argOp 6))] else []
+
+/-- Out of place, the counter pointer reloaded into `edx` before `restore`. -/
+def setCtr (to : Bool) : List Instr := if to then [.mov .edx (.mem (argOp 2))] else []
+
 def restore : List Instr :=
   [.mov .eax (.reg .ebx), .bswap .eax, .store (at_ .edx 12) .eax,
    .mov .ebx (.mem (at_ .ebp 0)), .mov .esi (.mem (at_ .ebp 4)),
    .mov .edi (.mem (at_ .ebp 8)), .mov .ebp (.mem (at_ .ebp 12))]
 
-def ctr32 : Prog isa :=
-  .seq (.block prologue)
-    (.seq (.ite .b (.block []) (.loop body6 .ae))
+/-- `vg_aes_ctr32_aesni`, or out of place (`to`) `vg_aes_ctr32_to_aesni(schedule,
+rounds, counter, src, n, scratch, dst)`. -/
+def ctr32With (to : Bool) : Prog isa :=
+  .seq (.block (prologue ++ setDst to))
+    (.seq (.ite .b (.block []) (.loop (body6 to) .ae))
       (.seq (.block [.alu .test .edi (.reg .edi)])
-        (.seq (.ite .e (.block []) (.loop body1 .ne)) (.block restore))))
+        (.seq (.ite .e (.block []) (.loop (body1 to) .ne)) (.block (setCtr to ++ restore)))))
+
+/-- `vg_aes_ctr32_aesni`. -/
+def ctr32 : Prog isa := ctr32With false
+
+/-- `vg_aes_ctr32_to_aesni`. -/
+def ctr32To : Prog isa := ctr32With true
 
 end VG.Impl.Aes.X86.AesNi
