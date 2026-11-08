@@ -14,11 +14,11 @@ namespace VG.Generic.AesBlocks.AArch64.AesCbc
 open VG.Proof.AesCbc.AArch64
 
 def artifacts (v : Proof.Aes.AArch64.BlocksImpl) : List Artifact :=
-  (if v.enc.name = "vg_aes_encrypt_blocks_aes" then [
+  (if h : v.enc.name = "vg_aes_encrypt_blocks_aes" then [
     Spec.Cbc.aesEncryptApi.artifact AArch64.target {
       suffix := v.suffix
       code := Caller.encrypt v
-      verified := Proof.AesCbc.encrypt_keyed (Caller.verified v)
+      verified := Wiped.encrypt_free_scrubbed v h
       written := Caller.written v
       writtenOk := Caller.written_ok v
       features := v.features }]

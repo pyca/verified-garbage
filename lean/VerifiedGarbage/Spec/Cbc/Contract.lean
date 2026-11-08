@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.Aes.Contract
 public import VerifiedGarbage.Spec.Cbc
+public import VerifiedGarbage.Spec.Zeroize
 public import VerifiedGarbage.TCB.Artifact
 
 /-!
@@ -25,7 +26,9 @@ whole blocks, keeping `iv` between calls. Padding is the caller's.
 Each takes a `scratch` buffer of working space, room for that of
 `vg_aes_encrypt_blocks` and `vg_aes_decrypt_blocks` (`[u64; 256]`) and 128
 bytes more (eight blocks, e.g. of ciphertext that decryption in place must
-keep until it has decrypted the block after each). `stack` is the number of
+keep until it has decrypted the block after each). On return each byte of
+`scratch` is unchanged or zero (`Zeroize.scrubbed`), so that nothing the
+function computed is left there. `stack` is the number of
 bytes of stack below the stack pointer that an implementation's calls and
 frames use (see `Sig.contract`).
 -/
@@ -50,39 +53,48 @@ def aesSig : Sig where
 is at `schedule` with `rounds` rounds (`Aes.KeySchedule`): replaces the `n` blocks at `data`
 with their CBC encryption (§6.2) by AES with `K`, from the chaining value
 at `iv`, and the chaining value with the last ciphertext block (unchanged
-if `n = 0`). -/
+if `n = 0`); and leaves each byte of `scratch` unchanged or zero. -/
 def aesEncryptContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   aesSig.contract A
     (pre := fun _schedule rounds _iv _data _n _scratch _ =>
       rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14)
-    (post := fun schedule rounds iv data n _scratch m m' _ =>
-      ∀ key, Aes.KeySchedule m schedule rounds.toNat key →
+    (post := fun schedule rounds iv data n scratch m m' _ =>
+      (∀ key, Aes.KeySchedule m schedule rounds.toNat key →
         let ciph := aes key
         let cs := encrypt ciph (Aes.bytesAt m iv 16) (blocksAt m data n.toNat)
-        blocksAt m' data n.toNat = cs ∧ Aes.bytesAt m' iv 16 = next (Aes.bytesAt m iv 16) cs)
+        blocksAt m' data n.toNat = cs ∧ Aes.bytesAt m' iv 16 = next (Aes.bytesAt m iv 16) cs) ∧
+      Zeroize.scrubbed m m' scratch 2176)
     (stack := stack)
 
 /-- For `rounds` of 10, 12 or 14, and every AES key `K` whose key schedule
 is at `schedule` with `rounds` rounds (`Aes.KeySchedule`): replaces the `n` blocks at `data`
 with their CBC decryption (§6.2) by AES with `K`, from the chaining value
 at `iv`, and the chaining value with the last ciphertext block, the last
-block at `data` on entry (unchanged if `n = 0`). -/
+block at `data` on entry (unchanged if `n = 0`); and leaves each byte of
+`scratch` unchanged or zero. -/
 def aesDecryptContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   aesSig.contract A
     (pre := fun _schedule rounds _iv _data _n _scratch _ =>
       rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14)
-    (post := fun schedule rounds iv data n _scratch m m' _ =>
-      ∀ key, Aes.KeySchedule m schedule rounds.toNat key →
+    (post := fun schedule rounds iv data n scratch m m' _ =>
+      (∀ key, Aes.KeySchedule m schedule rounds.toNat key →
         let ciphInv := aesInv key
         let cs := blocksAt m data n.toNat
         blocksAt m' data n.toNat = decrypt ciphInv (Aes.bytesAt m iv 16) cs ∧
-          Aes.bytesAt m' iv 16 = next (Aes.bytesAt m iv 16) cs)
+          Aes.bytesAt m' iv 16 = next (Aes.bytesAt m iv 16) cs) ∧
+      Zeroize.scrubbed m m' scratch 2176)
     (stack := stack)
 
-/-- The `# Safety` items the two functions share. -/
+/-- The `# Safety` items of the functions of the AES modes whose contracts
+leave `scratch` unspecified. -/
 def aesSafety : List String := [
   "`rounds` must be 10, 12 or 14.",
   "The contents of `scratch` on return are unspecified."]
+
+/-- The `# Safety` items the two CBC functions share. -/
+def cbcSafety : List String := [
+  "`rounds` must be 10, 12 or 14.",
+  "On return each byte of `scratch` is unchanged or zero."]
 
 /-- `vg_aes_cbc_encrypt` on every target. -/
 def aesEncryptApi : Api where
@@ -98,7 +110,7 @@ def aesEncryptApi : Api where
     writes it. No padding is added.\n\n\
     Contract: `VG.Spec.Cbc.aesEncryptContract`. Constant time: only the pointers, `rounds` \
     and `n` may affect timing, not the key schedule, the chaining value or the data."
-  safety := aesSafety
+  safety := cbcSafety
 
 /-- `vg_aes_cbc_decrypt` on every target. -/
 def aesDecryptApi : Api where
@@ -115,6 +127,6 @@ def aesDecryptApi : Api where
     padding is removed.\n\n\
     Contract: `VG.Spec.Cbc.aesDecryptContract`. Constant time: only the pointers, `rounds` \
     and `n` may affect timing, not the key schedule, the chaining value or the data."
-  safety := aesSafety
+  safety := cbcSafety
 
 end VG.Spec.Cbc

@@ -12,9 +12,8 @@ import VerifiedGarbage.Proof.AesCbc.RISCV64.Lit
 `vg_aes_cbc_encrypt` and `vg_aes_cbc_decrypt` call their code, as the
 internal functions `vg_aes_cbc_{en,de}crypt_unwiped`, by `callWipe`, which
 then zeroes the whole of `scratch` with `vg_zeroize`. Each meets its contract
-and leaves each byte of `scratch` unchanged or zero (`*_scrubbed`, the
-stronger contract the Spec will state once every target's implementations
-prove it; the registration takes its weakening, `*_verified`).
+and leaves each byte of `scratch` unchanged or zero (`*_scrubbed`), which
+is the contract of `Spec/Cbc/` (`*_verified`).
 -/
 
 @[expose] public section
@@ -75,9 +74,9 @@ theorem decrypt_scrubbed :
     (decPost_local 64) (decPost_out 64)
 
 theorem encrypt_verified : Verified target encrypt (Spec.Cbc.aesEncryptContract abi 32) :=
-  Verified.of_scrubbed encrypt_scrubbed
+  encrypt_scrubbed
 
 theorem decrypt_verified : Verified target decrypt (Spec.Cbc.aesDecryptContract abi 32) :=
-  Verified.of_scrubbed decrypt_scrubbed
+  decrypt_scrubbed
 
 end VG.Proof.AesCbc.RISCV64.Wiped
