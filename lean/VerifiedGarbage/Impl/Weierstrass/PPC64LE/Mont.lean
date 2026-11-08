@@ -15,16 +15,17 @@ words, with the operations of `Impl/Mont/PPC64LE.lean` on the working space
    high half of a 32-bit argument unspecified), and `r4`, `r5` and `r6`
    point to `[o]`, `[a]` and `[b]`; the modulus is stored in the function's
    own working space (`setConst`);
-2. the operation (`mul`, `add` or `sub`) reads `[a]` and `[b]` and writes
+2. the operation (`rmul`, `add` or `sub`) reads `[a]` and `[b]` and writes
    `[o]` through the pointers, and the function returns.
 
 The functions write only the volatile registers `r0` and `r4`–`r12` (and
-neither the stack nor `LR`), so they need no frame and save nothing; `r3`
-keeps `ws`.
+neither the stack nor `LR`), so they need no frame; `r3` keeps `ws`. The
+multiplication keeps its accumulator in `r14`–`r(14 + n)`, which it saves
+in its own working space first and restores last.
 
 The own working space is the `64 n` bytes from `own n = 4096 - 64 n`: the
-accumulator (`16 n + 8` bytes), the temporary area and the modulus (`8 n`
-each). Every address is `ws` plus a constant or one of `o`, `a` and `b`
+accumulator of `add` and `sub`, or the saved registers and `m'` of `rmul`
+(`16 n + 8` bytes), the temporary area and the modulus (`8 n` each). Every address is `ws` plus a constant or one of `o`, `a` and `b`
 (plus a constant, or a counter), so only the pointer and the offsets may
 affect timing.
 -/
@@ -65,7 +66,7 @@ entry, then `op`. -/
 def fn (n m : Nat) (op : Prog isa) : Prog isa := .seq (.block zext) (.seq (.block (entry n m)) op)
 
 /-- `vg_<curve>_mul_mod_<p|n>`. -/
-def mulFn (n m : Nat) : Prog isa := fn n m (mul (mod n m) (own n))
+def mulFn (n m : Nat) : Prog isa := fn n m (rmul (mod n m) (own n))
 
 /-- `vg_<curve>_add_mod_<p|n>`. -/
 def addFn (n m : Nat) : Prog isa := fn n m (.block (add (mod n m) (own n)))

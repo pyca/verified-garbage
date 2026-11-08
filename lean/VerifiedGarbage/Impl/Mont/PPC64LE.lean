@@ -29,6 +29,10 @@ no borrow). With `R = 2^(64 n)` and `m' = -m⁻¹ mod 2⁶⁴` (`M.minv`):
   `addze`, then `t_j` the same way; the sum is below `2¹²⁸`, and its high
   word is the next carry word. `T` is then below `2m` and reduced by
   `csub`.
+* `rmul acc`: `mul` with the accumulator `T` in the registers `r14` up
+  (`treg`), which it saves at `[acc]` first and restores last, and `m'`
+  above them: a step of a row adds into a register, with no load or store
+  of `T`.
 * `add acc`: `[a] + [b]` at `[acc]` (`n` words, and the carry as a top
   word), then `csub`.
 * `sub acc`: `[a] - [b]` at `[acc]`, its borrow as a mask (`subfe` of a
@@ -162,5 +166,74 @@ borrowed (the mask `r10`). -/
 def sub (M : Mod) (acc : Nat) : List Instr :=
   setMo M :: chain true .r5 0 .r6 0 acc M.n ++ ([.sube .r10 .r10 .r10] : List Instr) ++
   chain false wb acc .r7 0 M.tmp M.n ++ sels M acc M.n
+
+/-! ## The multiplication with the accumulator in registers
+
+`rmul` is `mul` with the accumulator's `n + 1` words in the registers
+`treg 0`, …, `treg n` (`r14` up), saved at `[acc]` first and restored last
+(they are the caller's): a step of a row (`rmac`) adds the product into a
+register, not a word in memory. The rows, the count and the reduction are
+`mul`'s; the difference with `m` still goes to `[M.tmp]`. -/
+
+/-- The register of the accumulator's word `j`, for `j ≤ 9` (`r14`–`r23`). -/
+def treg (j : Nat) : Reg := [Reg.r14, .r15, .r16, .r17, .r18, .r19, .r20, .r21, .r22, .r23].getD j .r24
+
+/-- `treg (dst + j) = r9 · [rs + src + 8j] + r0 + treg (rd + j)`, its high
+word to `r0`, through `r10` and `r11`. -/
+def rmac (rs : Reg) (src rd dst j : Nat) : List Instr :=
+  [.load .d .r11 rs (src + 8 * j), .mulhu .r10 .r9 .r11, .mul .r11 .r9 .r11, .addc .r11 .r11 .r0,
+    .addze .r10 .r10, .addc (treg (dst + j)) .r11 (treg (rd + j)), .addze .r0 .r10]
+
+/-- `k` steps of a row. -/
+def rmacs (rs : Reg) (src rd dst k : Nat) : List Instr := (List.range k).flatMap (rmac rs src rd dst)
+
+/-- The row `T += u [b]`: `rowB` with `T` in registers. -/
+def rrowB (n : Nat) : List Instr :=
+  [.load .d .r9 .r5 0, .li .r0 0] ++ rmacs .r6 0 0 0 n ++
+  ([.addc (treg n) (treg n) .r0, .li .r12 0, .addze .r12 .r12] : List Instr)
+
+/-- The row `T = (T + q m) / 2⁶⁴`: `rowM` with `T` in registers. -/
+def rrowM (M : Mod) (acc : Nat) : List Instr :=
+  ([.load .d .r10 wb (acc + 8 * (M.n + 1)), .mul .r9 (treg 0) .r10, .load .d .r10 .r7 0,
+    .mulhu .r0 .r9 .r10, .mul .r10 .r9 .r10, .addc .r10 .r10 (treg 0), .addze .r0 .r0] : List Instr) ++
+  rmacs .r7 8 1 0 (M.n - 1) ++
+  ([.addc (treg (M.n - 1)) (treg M.n) .r0, .addze (treg M.n) .r12] : List Instr)
+
+/-- An iteration of `rmul`. -/
+def rrow (M : Mod) (acc : Nat) : List Instr :=
+  rrowB M.n ++ rrowM M acc ++ ([.addi .r5 .r5 8, .subi .r8 .r8 1] : List Instr)
+
+/-- Word `j` of `T - m` (`T` in registers, `m` at `r7`), with CA, to
+`[M.tmp + 8j]`. -/
+def rsubStep (M : Mod) (j : Nat) : List Instr :=
+  [.load .d .r12 .r7 (8 * j), carryOp true (j == 0) .r11 (treg j) .r12, .store .d .r11 wb (M.tmp + 8 * j)]
+
+/-- Word `k` of `T`, or of `[M.tmp]` where the mask `r10` is all ones, to
+`[r4 + 8k]`. -/
+def rselWord (M : Mod) (k : Nat) : List Instr :=
+  [.load .d .r12 wb (M.tmp + 8 * k), .logic .xor .r12 .r12 (treg k), .logic .and .r12 .r12 .r10,
+    .logic .xor .r11 (treg k) .r12, .store .d .r11 .r4 (8 * k)]
+
+/-- `csub` of `T` in registers. -/
+def rcsub (M : Mod) : List Instr :=
+  (List.range M.n).flatMap (rsubStep M) ++
+  ([.addze .r10 (treg M.n), .li .r11 0, .sub .r10 .r11 .r10] : List Instr) ++
+  (List.range M.n).flatMap (rselWord M)
+
+/-- The registers `treg 0`, …, `treg n` saved at `[acc]`. -/
+def rsave (n acc : Nat) : List Instr := (List.range (n + 1)).map fun j => .store .d (treg j) wb (acc + 8 * j)
+
+/-- … cleared. -/
+def rzero (n : Nat) : List Instr := (List.range (n + 1)).map fun j => .li (treg j) 0
+
+/-- … restored. -/
+def rrestore (n acc : Nat) : List Instr := (List.range (n + 1)).map fun j => .load .d (treg j) wb (acc + 8 * j)
+
+/-- `[r4] = [r5] [r6] R⁻¹ mod m`, the accumulator in registers (`[r4]` may
+be `[r5]` or `[r6]`). -/
+def rmul (M : Mod) (acc : Nat) : Prog isa :=
+  .seq (.block (setConst 1 (acc + 8 * (M.n + 1)) M.minv.toNat ++ rsave M.n acc ++ rzero M.n ++ [setMo M, .li .r8 M.n])) <|
+  .seq (.loop (.block (rrow M acc)) (.nonzero .d .r8)) <|
+    .block (rcsub M ++ rrestore M.n acc)
 
 end VG.Impl.Mont.PPC64LE
