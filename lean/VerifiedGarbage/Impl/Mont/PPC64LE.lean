@@ -190,6 +190,20 @@ def rmul (M : Mod) (acc : Nat) : Prog isa :=
   .seq (.loop (.block (rrow M acc)) (.nonzero .d .r8)) <|
     .block (rcsub M ++ rrestore M.n acc)
 
+/-! ## Constants of 64 bits in registers -/
+
+/-- `d = w` for `w < 2⁶⁴`: `li` for a small `w`, `lis`/`ori` for all ones,
+else the high half (`lis`, `ori`), shifted up 32, then the low half's
+halves (`oris`, `ori`). -/
+def movImm64 (d : Reg) (w : Nat) : List Instr :=
+  if w < 2 ^ 15 then [.li d w]
+  else if w = 2 ^ 64 - 1 then [.lis d 0xffff, .ori d d 0xffff]
+  else movImm d (BitVec.ofNat 32 (w >>> 32)) ++
+    [.lsl d d 32, .oris d d (BitVec.ofNat 16 (w >>> 16)), .ori d d (BitVec.ofNat 16 w)]
+
+/-- Word `j` of `m`. -/
+def mword (m j : Nat) : Nat := (m >>> (64 * j)) % 2 ^ 64
+
 /-! ## The multiplication of numbers of at most four words
 
 `rmul4` is `rmul` with `[b]` in `bReg 0`, …, `bReg (n - 1)` (the registers
@@ -246,29 +260,71 @@ def qcsub (M : Mod) : List Instr :=
   ([.addze .r10 (treg M.n), .li .r11 0, .sub .r10 .r11 .r10] : List Instr) ++
   (List.range M.n).flatMap (rselWord M)
 
-/-- `[b]` to its registers, then the modulus to its. -/
-def qload (M : Mod) : List Instr :=
+/-- `[b]` to its registers, then the modulus `m` to its, as immediates. -/
+def qload (M : Mod) (m : Nat) : List Instr :=
   (List.range M.n).map (fun j => .load .d (bReg M.n j) .r6 (8 * j)) ++
-  (List.range M.n).map (fun j => .load .d (mReg j) wb (M.mo + 8 * j))
+  (List.range M.n).flatMap (fun j => movImm64 (mReg j) (mword m j))
 
 /-- `[r4] = [r5] [r6] R⁻¹ mod m` for `n ≤ 4`, the accumulator, `[b]` and
 the modulus in registers (`[r4]` may be `[r5]` or `[r6]`). -/
-def rmul4 (M : Mod) (acc : Nat) : Prog isa :=
-  .seq (.block (setConst 1 M.tmp M.minv.toNat ++ rsave (2 * M.n) acc ++ rzero M.n ++ qload M ++ [.li .r8 M.n])) <|
+def rmul4 (M : Mod) (m acc : Nat) : Prog isa :=
+  .seq (.block (setConst 1 M.tmp M.minv.toNat ++ rsave (2 * M.n) acc ++ rzero M.n ++ qload M m ++ [.li .r8 M.n])) <|
   .seq (.loop (.block (qrow M)) (.nonzero .d .r8)) <|
     .block (qcsub M ++ rrestore (2 * M.n) acc)
 
 /-- `rmul4` for at most four words, `rmul` for more: the two have the same
 shape, so the choice is inside the blocks (and the code's shape, its frames
 in particular, does not depend on it). -/
-def rmulSel (M : Mod) (acc : Nat) : Prog isa :=
+def rmulSel (M : Mod) (m acc : Nat) : Prog isa :=
   .seq (.block (if M.n ≤ 4 then
-      setConst 1 M.tmp M.minv.toNat ++ rsave (2 * M.n) acc ++ rzero M.n ++ qload M ++ [.li .r8 M.n]
+      setConst 1 M.tmp M.minv.toNat ++ rsave (2 * M.n) acc ++ rzero M.n ++ qload M m ++ [.li .r8 M.n]
     else setConst 1 (acc + 8 * (M.n + 1)) M.minv.toNat ++ rsave M.n acc ++ rzero M.n ++ [setMo M, .li .r8 M.n])) <|
   .seq (.loop (.block (if M.n ≤ 4 then qrow M else rrow M acc)) (.nonzero .d .r8)) <|
     .block (if M.n ≤ 4 then qcsub M ++ rrestore (2 * M.n) acc else rcsub M ++ rrestore M.n acc)
 
-theorem rmulSel_eq (M : Mod) (acc : Nat) : rmulSel M acc = if M.n ≤ 4 then rmul4 M acc else rmul M acc := by
+theorem rmulSel_eq (M : Mod) (m acc : Nat) : rmulSel M m acc = if M.n ≤ 4 then rmul4 M m acc else rmul M acc := by
   unfold rmulSel rmul4 rmul; split <;> rfl
+
+/-! ## Sums and differences of at most four words, in registers
+
+`add4` and `sub4` keep the words in `vReg 0`, …, `vReg (n - 1)` (`r7`–`r10`),
+and the modulus is in no memory: each word of `m` is an immediate
+(`movImm64`) where it is needed, so the function's entry stores none.
+
+* `add4`: `[a] + [b]` (`ldStep`), the carry in `r0`, then `- m` in place
+  (`subMStep`): it borrowed exactly when the carry plus CA is 0, so the mask
+  `r11 = (r0 + CA) - 1` is all ones exactly when the sum was below `m`;
+  then `m` under the mask added back, each word stored (`backStep`).
+* `sub4`: `[a] - [b]`, the borrow's mask in `r11` (`subfe` of a register from
+  itself), and `m` under it added back. -/
+
+/-- The registers of a sum or difference. -/
+def vReg (j : Nat) : Reg := [Reg.r7, .r8, .r9, .r10].getD j .r10
+
+/-- Word `j` of `[r5] ± [r6]`, with CA, to `vReg j`. -/
+def ldStep (sub : Bool) (j : Nat) : List Instr :=
+  [.load .d .r11 .r5 (8 * j), .load .d .r12 .r6 (8 * j), carryOp sub (j == 0) (vReg j) .r11 .r12]
+
+/-- Word `j` of `m` subtracted, with CA, from `vReg j`. -/
+def subMStep (m j : Nat) : List Instr :=
+  movImm64 .r12 (mword m j) ++ ([carryOp true (j == 0) (vReg j) (vReg j) .r12] : List Instr)
+
+/-- Word `j` of `m` under the mask `r11` added, with CA, to `vReg j`, and
+stored at `[r4 + 8j]`. -/
+def backStep (m j : Nat) : List Instr :=
+  movImm64 .r12 (mword m j) ++
+    ([.logic .and .r12 .r12 .r11, carryOp false (j == 0) (vReg j) (vReg j) .r12, .store .d (vReg j) .r4 (8 * j)] :
+      List Instr)
+
+/-- `[r4] = [r5] + [r6] mod m`, for `n ≤ 4`. -/
+def add4 (n m : Nat) : List Instr :=
+  (List.range n).flatMap (ldStep false) ++ ([.li .r0 0, .addze .r0 .r0] : List Instr) ++
+  (List.range n).flatMap (subMStep m) ++ ([.addze .r11 .r0, .subi .r11 .r11 1] : List Instr) ++
+  (List.range n).flatMap (backStep m)
+
+/-- `[r4] = [r5] - [r6] mod m`, for `n ≤ 4`. -/
+def sub4 (n m : Nat) : List Instr :=
+  (List.range n).flatMap (ldStep true) ++ ([.sube .r11 .r11 .r11] : List Instr) ++
+  (List.range n).flatMap (backStep m)
 
 end VG.Impl.Mont.PPC64LE

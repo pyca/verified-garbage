@@ -115,7 +115,7 @@ theorem pre_of_call {n : Nat} {base : Addr} (hn : base.toNat + 8192 ≤ 2 ^ 64) 
 
 /-- `[o] = [a] [b] R⁻¹ mod m` by a call of `vg_<curve>_mul_mod_<p|n>`.
 It keeps every register but `fnClob`, but the constant-time analysis takes
-`r15`–`r(15 + n)` as secret after it (`Impl/Weierstrass/PPC64LE/Call.lean`):
+`r15`–`r24` as secret after it (`Impl/Weierstrass/PPC64LE/Call.lean`):
 keep public values in `r14` or `r25`–`r31`. -/
 theorem mulCall_ok {S : Impl.Weierstrass.Mont.Modulus} (hM : ModOk S.k S.m) {s : State} {base : Addr}
     (hw : WsReg s base) {o a b : Nat} (ho : o + 8 * S.k ≤ own S.k)

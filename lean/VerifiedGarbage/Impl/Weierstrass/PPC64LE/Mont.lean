@@ -13,20 +13,25 @@ words, with the operations of `Impl/Mont/PPC64LE.lean` on the working space
 
 1. the offsets are zero-extended from their low 32 bits (the ABI leaves the
    high half of a 32-bit argument unspecified), and `r4`, `r5` and `r6`
-   point to `[o]`, `[a]` and `[b]`; the modulus is stored in the function's
-   own working space (`setConst`);
-2. the operation (`rmulSel`, which is `rmul4` for at most four words and
-   `rmul` for more, `add` or `sub`) reads `[a]` and `[b]` and writes
-   `[o]` through the pointers, and the function returns.
+   point to `[o]`, `[a]` and `[b]`; for more than four words, the modulus
+   is stored in the function's own working space (`setConst`);
+2. the operation reads `[a]` and `[b]` and writes `[o]` through the
+   pointers, and the function returns. For at most four words it is
+   `rmul4`, `add4` or `sub4`, which take the modulus's words as immediates;
+   for more, `rmul`, `add` or `sub`, which read it from memory. Each
+   choice is inside the operation's blocks (`rmulSel`), so the code's shape
+   does not depend on it.
 
 The functions write only the volatile registers `r0` and `r4`–`r12` (and
 neither the stack nor `LR`), so they need no frame; `r3` keeps `ws`. The
-multiplication keeps its accumulator in `r15`–`r(15 + n)`, which it saves
-in its own working space first and restores last.
+multiplication keeps its accumulator in `r15`–`r(15 + n)` (and, for at most
+four words, `[b]` in the next `n`), which it saves in its own working space
+first and restores last.
 
 The own working space is the `64 n` bytes from `own n = 4096 - 64 n`: the
 accumulator of `add` and `sub`, or the saved registers and `m'` of `rmul`
-(`16 n + 8` bytes), the temporary area and the modulus (`8 n` each). Every address is `ws` plus a constant or one of `o`, `a` and `b`
+(`16 n + 8` bytes), the temporary area and the modulus (`8 n` each; the
+modulus's is unused for at most four words). Every address is `ws` plus a constant or one of `o`, `a` and `b`
 (plus a constant, or a counter), so only the pointer and the offsets may
 affect timing.
 -/
@@ -57,22 +62,22 @@ def mod (n m : Nat) : Mod := { n := n, mo := moAt n, tmp := tmpAt n, minv := Bit
 /-- The offsets zero-extended from their low 32 bits. -/
 def zext : List Instr := [.rotr .w .r4 .r4 0, .rotr .w .r5 .r5 0, .rotr .w .r6 .r6 0]
 
-/-- The pointers `r4 = ws + o`, `r5 = ws + a`, `r6 = ws + b`, and the
-modulus stored (through `r11`). -/
+/-- The pointers `r4 = ws + o`, `r5 = ws + a`, `r6 = ws + b`, and, for
+more than four words, the modulus stored (through `r11`). -/
 def entry (n m : Nat) : List Instr :=
-  [.add .r4 wb .r4, .add .r5 wb .r5, .add .r6 wb .r6] ++ setConst n (moAt n) m
+  [.add .r4 wb .r4, .add .r5 wb .r5, .add .r6 wb .r6] ++ if n ≤ 4 then [] else setConst n (moAt n) m
 
 /-- The function of the operation `op`: the offsets zero-extended, the
 entry, then `op`. -/
 def fn (n m : Nat) (op : Prog isa) : Prog isa := .seq (.block zext) (.seq (.block (entry n m)) op)
 
 /-- `vg_<curve>_mul_mod_<p|n>`. -/
-def mulFn (n m : Nat) : Prog isa := fn n m (rmulSel (mod n m) (own n))
+def mulFn (n m : Nat) : Prog isa := fn n m (rmulSel (mod n m) m (own n))
 
 /-- `vg_<curve>_add_mod_<p|n>`. -/
-def addFn (n m : Nat) : Prog isa := fn n m (.block (add (mod n m) (own n)))
+def addFn (n m : Nat) : Prog isa := fn n m (.block (if n ≤ 4 then add4 n m else add (mod n m) (own n)))
 
 /-- `vg_<curve>_sub_mod_<p|n>`. -/
-def subFn (n m : Nat) : Prog isa := fn n m (.block (sub (mod n m) (own n)))
+def subFn (n m : Nat) : Prog isa := fn n m (.block (if n ≤ 4 then sub4 n m else sub (mod n m) (own n)))
 
 end VG.Impl.Weierstrass.PPC64LE.Mont
