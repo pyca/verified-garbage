@@ -43,8 +43,8 @@ b 25f
 24:
 25:
 .base64 "eOu/f7AMBYEAAB+RtAwFgQQAH5G4DAWBCAAfkbwMBYEMAB+RkAyl65gMxeugDOXrqAwF6KYDCHx4++x/8AAM6KYDCHyAAEzqiABs6pAAjOqYAKzqoADM6qgA7OqwAAzruAAs68AATOvIAGzr0ACM69gArOvgAMzr6ADs6+AMITggCiE4IACATg==""#,
-        vg_sm4_prepare_keys = sym super::sm4_gcm::vg_sm4_prepare_keys::vg_sm4_prepare_keys,
-        vg_sm4_crypt_prepared = sym super::sm4_gcm::vg_sm4_crypt_prepared::vg_sm4_crypt_prepared,
+        vg_sm4_prepare_keys = sym super::sm4::vg_sm4_prepare_keys::vg_sm4_prepare_keys,
+        vg_sm4_crypt_prepared = sym super::sm4::vg_sm4_crypt_prepared::vg_sm4_crypt_prepared,
     )
 }
 
@@ -360,9 +360,9 @@ b 289f
 288:
 289:
 .base64 "eOu/f7AMBYEAAB+RtAwFgQQAH5G4DAWBCAAfkbwMBYEMAB+RkAyl65gMxeugDOXrqAwF6KYDCHwAAH/oAAB0+AgAf+gIAHT4ePvsf/AADOimAwh8gABM6ogAbOqQAIzqmACs6qAAzOqoAOzqsAAM67gALOvAAEzryABs69AAjOvYAKzr4ADM6+gA7OswDSE4cAohOCAAgE4=""#,
-        vg_ghash = sym super::sm4_gcm::vg_ghash::vg_ghash,
-        vg_sm4_prepare_keys = sym super::sm4_gcm::vg_sm4_prepare_keys::vg_sm4_prepare_keys,
-        vg_sm4_crypt_prepared = sym super::sm4_gcm::vg_sm4_crypt_prepared::vg_sm4_crypt_prepared,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_sm4_prepare_keys = sym super::sm4::vg_sm4_prepare_keys::vg_sm4_prepare_keys,
+        vg_sm4_crypt_prepared = sym super::sm4::vg_sm4_crypt_prepared::vg_sm4_crypt_prepared,
     )
 }
 
@@ -715,9 +715,9 @@ b 27f
 .base64 "AABgOA=="
 27:
 .base64 "ePvsf/AADOimAwh8gABM6ogAbOqQAIzqmACs6qAAzOqoAOzqsAAM67gALOvAAEzryABs69AAjOvYAKzr4ADM6+gA7OtADSE4cAohOCAAgE4=""#,
-        vg_ghash = sym super::sm4_gcm::vg_ghash::vg_ghash,
-        vg_sm4_prepare_keys = sym super::sm4_gcm::vg_sm4_prepare_keys::vg_sm4_prepare_keys,
-        vg_sm4_crypt_prepared = sym super::sm4_gcm::vg_sm4_crypt_prepared::vg_sm4_crypt_prepared,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_sm4_prepare_keys = sym super::sm4::vg_sm4_prepare_keys::vg_sm4_prepare_keys,
+        vg_sm4_crypt_prepared = sym super::sm4::vg_sm4_crypt_prepared::vg_sm4_crypt_prepared,
     )
 }
 
@@ -805,7 +805,7 @@ b 21f
 .base64 "AAB4gAQAmIAIALiAAAHAPAAAfpAEAJ6QCAC+kAwA3pA="
 21:
 .base64 "AAB+gAQAnoAIAL6ADAD+OAAAADksRMd8AQDGODAAfpA0AJ6QOAC+kDwA/jgsRcd8EAAe+RgAHvl4++x/8AAM6KYDCHyAAEzqiABs6pAAjOqYAKzqoADM6qgA7OqwAAzruAAs68AATOvIAGzr0ACM69gArOvgAMzr6ADs6yAKITggAIBO""#,
-        vg_ghash = sym super::sm4_gcm::vg_ghash::vg_ghash,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
     )
 }
 
@@ -872,7 +872,7 @@ b 21f
 20:
 21:
 .base64 "ePvsf/AADOimAwh8gABM6ogAbOqQAIzqmACs6qAAzOqoAOzqsAAM67gALOvAAEzryABs69AAjOvYAKzr4ADM6+gA7OsgCiE4IACATg==""#,
-        vg_ghash = sym super::sm4_gcm::vg_ghash::vg_ghash,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
     )
 }
 
@@ -1046,9 +1046,9 @@ b 227f
 226:
 227:
 .base64 "ePvsf/AADOimAwh8gABM6ogAbOqQAIzqmACs6qAAzOqoAOzqsAAM67gALOvAAEzryABs69AAjOvYAKzr4ADM6+gA7OvgDCE4IAohOCAAgE4=""#,
-        vg_sm4_prepare_keys = sym super::sm4_gcm::vg_sm4_prepare_keys::vg_sm4_prepare_keys,
-        vg_sm4_crypt_prepared = sym super::sm4_gcm::vg_sm4_crypt_prepared::vg_sm4_crypt_prepared,
-        vg_ghash = sym super::sm4_gcm::vg_ghash::vg_ghash,
+        vg_sm4_prepare_keys = sym super::sm4::vg_sm4_prepare_keys::vg_sm4_prepare_keys,
+        vg_sm4_crypt_prepared = sym super::sm4::vg_sm4_crypt_prepared::vg_sm4_crypt_prepared,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
     )
 }
 
@@ -1222,9 +1222,9 @@ b 224f
 223:
 224:
 .base64 "ePvsf/AADOimAwh8gABM6ogAbOqQAIzqmACs6qAAzOqoAOzqsAAM67gALOvAAEzryABs69AAjOvYAKzr4ADM6+gA7OvgDCE4IAohOCAAgE4=""#,
-        vg_ghash = sym super::sm4_gcm::vg_ghash::vg_ghash,
-        vg_sm4_prepare_keys = sym super::sm4_gcm::vg_sm4_prepare_keys::vg_sm4_prepare_keys,
-        vg_sm4_crypt_prepared = sym super::sm4_gcm::vg_sm4_crypt_prepared::vg_sm4_crypt_prepared,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_sm4_prepare_keys = sym super::sm4::vg_sm4_prepare_keys::vg_sm4_prepare_keys,
+        vg_sm4_crypt_prepared = sym super::sm4::vg_sm4_crypt_prepared::vg_sm4_crypt_prepared,
     )
 }
 
@@ -1286,9 +1286,9 @@ b 29f
 28:
 29:
 .base64 "eOu/f7AMBYEAAB+RtAwFgQQAH5G4DAWBCAAfkbwMBYEMAB+RkAyl65gMxeugDOXrqAwF6KYDCHwAAH/oAAB0+AgAf+gIAHT4ePvsf/AADOimAwh8gABM6ogAbOqQAIzqmACs6qAAzOqoAOzqsAAM67gALOvAAEzryABs69AAjOvYAKzr4ADM6+gA7OvgDCE4IAohOCAAgE4=""#,
-        vg_ghash = sym super::sm4_gcm::vg_ghash::vg_ghash,
-        vg_sm4_prepare_keys = sym super::sm4_gcm::vg_sm4_prepare_keys::vg_sm4_prepare_keys,
-        vg_sm4_crypt_prepared = sym super::sm4_gcm::vg_sm4_crypt_prepared::vg_sm4_crypt_prepared,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_sm4_prepare_keys = sym super::sm4::vg_sm4_prepare_keys::vg_sm4_prepare_keys,
+        vg_sm4_crypt_prepared = sym super::sm4::vg_sm4_crypt_prepared::vg_sm4_crypt_prepared,
     )
 }
 
@@ -1382,20 +1382,8 @@ b 27f
 .base64 "AABgOA=="
 27:
 .base64 "ePvsf/AADOimAwh8gABM6ogAbOqQAIzqmACs6qAAzOqoAOzqsAAM67gALOvAAEzryABs69AAjOvYAKzr4ADM6+gA7OvgDCE4IAohOCAAgE4=""#,
-        vg_ghash = sym super::sm4_gcm::vg_ghash::vg_ghash,
-        vg_sm4_prepare_keys = sym super::sm4_gcm::vg_sm4_prepare_keys::vg_sm4_prepare_keys,
-        vg_sm4_crypt_prepared = sym super::sm4_gcm::vg_sm4_crypt_prepared::vg_sm4_crypt_prepared,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_sm4_prepare_keys = sym super::sm4::vg_sm4_prepare_keys::vg_sm4_prepare_keys,
+        vg_sm4_crypt_prepared = sym super::sm4::vg_sm4_crypt_prepared::vg_sm4_crypt_prepared,
     )
 }
-
-#[rustfmt::skip]
-#[path = "internal/vg_ghash.rs"]
-pub(crate) mod vg_ghash;
-
-#[rustfmt::skip]
-#[path = "internal/vg_sm4_crypt_prepared.rs"]
-pub(crate) mod vg_sm4_crypt_prepared;
-
-#[rustfmt::skip]
-#[path = "internal/vg_sm4_prepare_keys.rs"]
-pub(crate) mod vg_sm4_prepare_keys;
