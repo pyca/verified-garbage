@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.Body
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.WinPow
+import VerifiedGarbage.Proof.Bignum.PPC64LE.PreR2Fast
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCore
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreR2
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMinv
@@ -90,6 +91,20 @@ def exPowPost (B Y X : Addr) (w k xl : Nat) (s t : State) : Prop :=
       arr s.mem B w 0 ∧ arr t.mem B w 0 = arr s.mem B w 0 ∧ Body B w s.mem t.mem ∧
     t.gpr .r10 = off B (slot w 0)
 
+/-- A valid modulus of `k` octets is above `2^(64 (w - 1))` for `w = ⌈k / 8⌉`
+(at least 2): its first octet is not zero, and it is odd. -/
+theorem top_of_valid {p k w : Nat} (h : Spec.Rsa.modulusValid p k = true) (hw : 8 * w ≤ k + 7)
+    (hw2 : 2 ≤ w) : 2 ^ (64 * (w - 1)) < p := by
+  simp only [Spec.Rsa.modulusValid, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
+  obtain ⟨⟨⟨hodd, _⟩, _⟩, hk⟩ := h
+  have e : (256 : Nat) ^ (k - 1) = 2 ^ (8 * (k - 1)) := by rw [Nat.pow_mul]
+  have hle : 2 ^ (64 * (w - 1)) ≤ p :=
+    Nat.le_trans (Nat.pow_le_pow_right (by decide) (by omega)) (e ▸ hk)
+  have hev : 2 ^ (64 * (w - 1)) % 2 = 0 := by
+    obtain ⟨j, hj⟩ : ∃ j, 64 * (w - 1) = j + 1 := ⟨64 * (w - 1) - 1, by omega⟩
+    rw [hj, Nat.pow_succ, Nat.mul_mod_left]
+  omega
+
 /-- `exPre`, with the registers it leaves for the power, and then the power:
 y's `k` octets (at `r9`) into array 4, then `y^x mod p` there, for x's `xl`
 octets at `X`, whose address and length are in the header's words 8 and 9. -/
@@ -99,7 +114,8 @@ theorem exPower_split {s : State} {B Y X : Addr} {Z w k xl : Nat} (h : Env s B Z
     (hrdY : ∀ i < k, InRegions (s.rd ++ s.wr) (off Y i) 1) (hsepY : ∀ i < k, ∀ x, ofs B x < Z → off Y i ≠ x)
     (hrdX : ∀ i < xl, InRegions (s.rd ++ s.wr) (off X i) 1) (hsepX : ∀ i < xl, ∀ x, ofs B x < Z → off X i ≠ x)
     (hX : s.mem.readW (off B 64) 64 = off X 0) (hXL : s.mem.readW (off B 72) 64 = BitVec.ofNat 64 xl)
-    (hp2 : 2 ≤ arr s.mem B w 0) (hodd : arr s.mem B w 0 % 2 = 1) :
+    (hp2 : 2 ≤ arr s.mem B w 0) (hodd : arr s.mem B w 0 % 2 = 1)
+    (hpt : 2 ^ (64 * (w - 1)) < arr s.mem B w 0) :
     WP isa exPre s fun s₆ =>
       (s₆.gpr .r30 = off X 0 ∧ s₆.gpr .r31 = BitVec.ofNat 64 xl ∧ s₆.gpr .r10 = off B (slot w 0) ∧
         s₆.gpr .r29 = BitVec.ofNat 64 (8 * (w + 2)) ∧ s₆.gpr .r11 = BitVec.ofNat 64 (2 * w) ∧ s₆.gpr .r23 = B ∧
@@ -122,7 +138,7 @@ theorem exPower_split {s : State} {B Y X : Addr} {Z w k xl : Nat} (h : Env s B Z
   have p0 : val32 s₀.mem B (slot w 0) (2 * w) = p := by rw [Outside.val32 o0 (by omega_arith) (by omega_arith)]; exact hP
   have b0 : Body B w s.mem s₀.mem := Body.of o0 (by omega_arith) (by omega_arith)
   refine WP.seq ?_
-  rw [WP.block_append_iff, WP.block_append_iff]
+  rw [WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (e0'.base (rd := .r5) (by decide) (by decide) 1) fun s₁ ⟨⟨a5, m1⟩, k1⟩ => ?_
   have e1' := e0'.keep k1 (by decide)
   refine WP.mono (e1'.base (rd := .r8) (by decide) (by decide) 2) fun s₂ ⟨⟨a8, m2⟩, k2⟩ => ?_
@@ -131,28 +147,33 @@ theorem exPower_split {s : State} {B Y X : Addr} {Z w k xl : Nat} (h : Env s B Z
   have e3' := e2'.keep k3 (by decide)
   have hm3 : s₃.mem = s₀.mem := by rw [m3, m2, m1]
   have p3 : val32 s₃.mem B (slot w 0) (2 * w) = p := by rw [hm3]; exact p0
-  refine WP.seq (WP.mono (r2_ok e3'.hs ((k3.gpr .r8 (by decide)).trans a8) a9 e3'.h10
-    ((k3.gpr .r5 (by decide)).trans ((k2.gpr .r5 (by decide)).trans a5)) e3'.h11 (by omega_arith) (by omega_arith)
-    (by omega_arith) (by rw [p3]; exact hp2)) fun s₄ ⟨hr2, o4, k4⟩ => ?_)
-  rw [p3] at hr2
-  have e4' := e3'.keep k4 (by decide)
-  have p4 : val32 s₄.mem B (slot w 0) (2 * w) = p := by rw [Outside.val32 o4 (by omega_arith) (by omega_arith)]; exact p3
-  have y4 : val32 s₄.mem B (slot w 4) (2 * w) = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem Y k) := by
-    rw [Outside.val32 o4 (by omega_arith) (by omega_arith), hm3]; exact y0
-  have b4 : Body B w s.mem s₄.mem := Outside.trans b0 (by rw [← hm3]; exact Body.of o4 (by omega_arith) (by omega_arith))
-  have hlow : (word s₄.mem B (slot w 0)).toNat % 2 = 1 := by
-    have h1 := word_eq_w32 s₄.mem B (slot w 0)
-    have h2 : val32 s₄.mem B (slot w 0) (2 * w - 1 + 1) =
-        w32 s₄.mem B (slot w 0) + 2 ^ 32 * val32 s₄.mem B (slot w 0 + 4) (2 * w - 1) := rfl
-    rw [Nat.sub_add_cancel (by omega_arith : 1 ≤ 2 * w), p4] at h2
+  have hlow : (word s₃.mem B (slot w 0)).toNat % 2 = 1 := by
+    have h1 := word_eq_w32 s₃.mem B (slot w 0)
+    have h2 : val32 s₃.mem B (slot w 0) (2 * w - 1 + 1) =
+        w32 s₃.mem B (slot w 0) + 2 ^ 32 * val32 s₃.mem B (slot w 0 + 4) (2 * w - 1) := rfl
+    rw [Nat.sub_add_cancel (by omega_arith : 1 ≤ 2 * w), p3] at h2
     omega_arith
-  rw [WP.block_append_iff]
-  refine WP.mono (Pub.minv_ok e4'.hs e4'.h10 (by omega_arith) hlow) fun s₅ ⟨⟨r12lt, r12inv, m5⟩, k5⟩ => ?_
+  refine WP.mono (Pub.minv_ok e3'.hs e3'.h10 (by omega_arith) hlow) fun s₄ ⟨⟨r12lt, r12inv, m4⟩, k4⟩ => ?_
+  have e4' := e3'.keep k4 (by decide)
+  have p4' : val32 s₄.mem B (slot w 0) (2 * w) = p := by rw [m4]; exact p3
+  have k14 := (((k0.trans k1).trans k2).trans k3).trans k4
+  refine WP.seq (WP.mono (Pre.r2Hi_ok (N := p) e4'.hs ((k4.gpr .r8 (by decide)).trans ((k3.gpr .r8 (by decide)).trans a8))
+    ((k4.gpr .r9 (by decide)).trans a9) e4'.h10
+    ((k4.gpr .r5 (by decide)).trans ((k3.gpr .r5 (by decide)).trans ((k2.gpr .r5 (by decide)).trans a5))) e4'.h11
+    (by omega_arith) (by omega_arith) (by omega_arith) r12lt (by rw [m4]; exact r12inv) p4'
+    (by rw [← hP]; exact hpt) hodd) fun s₅ ⟨hr2, o5, k5⟩ => ?_)
+  have e5' := e4'.keep k5 (by decide)
+  have p5 : val32 s₅.mem B (slot w 0) (2 * w) = p := by
+    rw [Outside.val32 o5 (by omega_arith) (by omega_arith)]; exact p4'
+  have y5 : val32 s₅.mem B (slot w 4) (2 * w) = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem Y k) := by
+    rw [Outside.val32 o5 (by omega_arith) (by omega_arith), m4, hm3]; exact y0
+  have b5 : Body B w s.mem s₅.mem :=
+    Outside.trans b0 (by rw [← hm3, ← m4]; exact Body.of o5 (by omega_arith) (by omega_arith))
   have hw64 : s₅.mem.readW (off B 64) 64 = off X 0 := by
-    rw [m5, ← hX]; exact Outside.word b4 (Or.inl (by omega_arith)) (by omega_arith)
+    rw [← hX]; exact Outside.word b5 (Or.inl (by omega_arith)) (by omega_arith)
   have hw72 : s₅.mem.readW (off B 72) 64 = BitVec.ofNat 64 xl := by
-    rw [m5, ← hXL]; exact Outside.word b4 (Or.inl (by omega_arith)) (by omega_arith)
-  have k15 := (((k0.trans k1).trans k2).trans k3).trans k4 |>.trans k5
+    rw [← hXL]; exact Outside.word b5 (Or.inl (by omega_arith)) (by omega_arith)
+  have k15 := k14.trans k5
   have hld : WP isa (.block [.load .d .r30 .r23 64, .load .d .r31 .r23 72]) s₅ fun t =>
       (t.gpr .r30 = off X 0 ∧ t.gpr .r31 = BitVec.ofNat 64 xl ∧ t.mem = s₅.mem) ∧ Keep [.r30, .r31] s₅ t := by
     refine WP.keep _ ?_ (by decide)
@@ -160,17 +181,26 @@ theorem exPower_split {s : State} {B Y X : Addr} {Z w k xl : Nat} (h : Env s B Z
       (hs.congr k15.wr).ld (d := 72) (n := 8) (by omega_arith), hw64, hw72]
   refine WP.mono hld fun s₆ ⟨⟨a30, a31, m6⟩, k6⟩ => ?_
   have k16 := k15.trans k6
-  have e5' := e4'.keep k5 (by decide)
   have g10 : s₆.gpr .r10 = off B (slot w 0) := (k6.gpr .r10 (by decide)).trans e5'.h10
   have g29 : s₆.gpr .r29 = BitVec.ofNat 64 (8 * (w + 2)) := (k6.gpr .r29 (by decide)).trans e5'.h29
   have g11 : s₆.gpr .r11 = BitVec.ofNat 64 (2 * w) := (k6.gpr .r11 (by decide)).trans e5'.h11
-  rw [← m5, ← m6] at hr2 p4 y4
-  have b6 : Body B w s.mem s₆.mem := by rw [m6, m5]; exact b4
+  have p4 : val32 s₆.mem B (slot w 0) (2 * w) = p := by rw [m6]; exact p5
+  have y4 : val32 s₆.mem B (slot w 4) (2 * w) = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem Y k) := by
+    rw [m6]; exact y5
+  rw [← m6] at hr2
+  have b6 : Body B w s.mem s₆.mem := by rw [m6]; exact b5
+  have r12lt' : (s₆.gpr .r12).toNat < 2 ^ 32 := by
+    rw [k6.gpr .r12 (by decide), k5.gpr .r12 (by decide)]; exact r12lt
+  have r12inv' : (w32 s₆.mem B (slot w 0) * (s₆.gpr .r12).toNat + 1) % 2 ^ 32 = 0 := by
+    have w1 : w32 s₆.mem B (slot w 0) = w32 s₃.mem B (slot w 0) := by
+      rw [m6]
+      have := o5.val32 (d := slot w 0) (k := 1) (by omega_arith) (by omega_arith)
+      rw [← m4]; simpa [val32] using this
+    rw [w1, k6.gpr .r12 (by decide), k5.gpr .r12 (by decide)]; exact r12inv
   refine ⟨⟨a30, a31, g10, g29, g11, (k16.gpr .r23 (by decide)).trans h23, (k16.gpr .r28 (by decide)).trans h28⟩, ?_⟩
   refine WP.mono (Win.powWin_ok (D := X) (L := xl) (hs.congr k16.wr) (by omega_arith)
     (by omega_arith) (by omega_arith) g10 g29 g11
-    (by rw [(k6.gpr .r12 (by decide))]; exact r12lt)
-    (by rw [(k6.gpr .r12 (by decide)), m6, m5]; exact r12inv) (by rw [p4]; exact hp2) (by rw [p4]; exact hodd)
+    r12lt' r12inv' (by rw [p4]; exact hp2) (by rw [p4]; exact hodd)
     (by rw [hr2, p4]; exact Nat.mod_lt _ (by omega_arith)) a30 a31 hxl (by omega_arith)
     (fun i hi => by rw [k16.rd, k16.wr]; exact hrdX i hi) hsepX)
     fun t ⟨⟨hpow, o7⟩, k7⟩ => ⟨⟨?_, ?_, ?_, ?_⟩, (k16.trans k7).mono (by decide)⟩
@@ -193,9 +223,10 @@ theorem exPower_ok {s : State} {B Y X : Addr} {Z w k xl : Nat} (h : Env s B Z w)
     (hrdY : ∀ i < k, InRegions (s.rd ++ s.wr) (off Y i) 1) (hsepY : ∀ i < k, ∀ x, ofs B x < Z → off Y i ≠ x)
     (hrdX : ∀ i < xl, InRegions (s.rd ++ s.wr) (off X i) 1) (hsepX : ∀ i < xl, ∀ x, ofs B x < Z → off X i ≠ x)
     (hX : s.mem.readW (off B 64) 64 = off X 0) (hXL : s.mem.readW (off B 72) 64 = BitVec.ofNat 64 xl)
-    (hp2 : 2 ≤ arr s.mem B w 0) (hodd : arr s.mem B w 0 % 2 = 1) :
+    (hp2 : 2 ≤ arr s.mem B w 0) (hodd : arr s.mem B w 0 % 2 = 1)
+    (hpt : 2 ^ (64 * (w - 1)) < arr s.mem B w 0) :
     WP isa exPower s fun t => exPowPost B Y X w k xl s t ∧ Keep exPowRegs s t :=
-  WP.seq (WP.mono (exPower_split h h23 h9 h28 hk hkw hxl hxl' hrdY hsepY hrdX hsepX hX hXL hp2 hodd)
+  WP.seq (WP.mono (exPower_split h h23 h9 h28 hk hkw hxl hxl' hrdY hsepY hrdX hsepX hX hXL hp2 hodd hpt)
     fun _ h => h.2)
 
 /-- The registers `exOut` writes. -/

@@ -174,11 +174,13 @@ def exFront : List Instr :=
     [.store .d .r8 .r23 64, .store .d .r9 .r23 72, .store .d .r3 .r23 80, .addi .r9 .r10 0, .addi .r3 .r5 0,
       .addi .r4 .r6 0, .addi .r5 .r7 0] ++ setup
 
-/-- y (at `r9`) into array 4, `R² mod p`, `-p⁻¹`, and x's address and
-length back from the header into `r30` and `r31`. -/
+/-- y (at `r9`) into array 4, `-p⁻¹ mod 2³²`, `R² mod p` (`Precompute.r2Hi`:
+`64 + w` doublings from `2^(64 (w - 1))`, which is below a valid p, then six
+Montgomery squares), and x's address and length back from the header into
+`r30` and `r31`. -/
 def exPre : Prog isa :=
-  .seq PublicChecked.loadX (.seq (.block (base .r5 1 ++ base .r8 2 ++ base .r9 3)) (.seq Precompute.r2
-    (.block (PublicChecked.minv ++ [.load .d .r30 .r23 64, .load .d .r31 .r23 72]))))
+  .seq PublicChecked.loadX (.seq (.block (base .r5 1 ++ base .r8 2 ++ base .r9 3 ++ PublicChecked.minv))
+    (.seq Precompute.r2Hi (.block [.load .d .r30 .r23 64, .load .d .r31 .r23 72])))
 
 /-- `z = y^x mod p` into array 4: `exPre`, then the power by x's `x_len`
 octets, by four-bit windows (`ModExp.powWin`, its table in arrays 8–23). -/
