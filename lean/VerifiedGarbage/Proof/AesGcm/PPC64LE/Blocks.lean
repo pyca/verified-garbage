@@ -3341,14 +3341,22 @@ def cipherStateWith (base : State) (nr : Nat) (plaintext : Nat → Spec.Gcm.Bloc
 
 abbrev cipherState (base : State) (nr : Nat) := cipherStateWith base nr (defaultPlaintext base)
 
-def hashPrefixWith (base : State) (nr : Nat) (plaintext : Nat → Spec.Gcm.Block) (k : Nat) : Spec.Gcm.Block :=
-  Spec.Gcm.ghashFrom (Spec.Gcm.ctxH base.mem (base.gpr .r3)) (Spec.Gcm.blockAt base.mem (base.gpr .r9))
-    ((List.range k).map (cipherBlockWith base nr plaintext))
+/-- The block a batch hashes, the ciphertext: what it writes when it
+encrypts (`hashIn = false`), and the block it reads when it decrypts. -/
+def hashedWith (base : State) (nr : Nat) (plaintext : Nat → Spec.Gcm.Block) (hashIn : Bool) (i : Nat) :
+    Spec.Gcm.Block :=
+  bif hashIn then plaintext i else cipherBlockWith base nr plaintext i
 
-theorem hashPrefixWith_add (base : State) (nr : Nat) (plaintext : Nat → Spec.Gcm.Block) (k j : Nat) :
-    hashPrefixWith base nr plaintext (k+j)=Spec.Gcm.ghashFrom (Spec.Gcm.ctxH base.mem (base.gpr .r3))
-      (hashPrefixWith base nr plaintext k)
-      ((List.range j).map (fun i => cipherBlockWith base nr plaintext (k+i))) := by
+def hashPrefixWith (base : State) (nr : Nat) (plaintext : Nat → Spec.Gcm.Block) (hashIn : Bool) (k : Nat) :
+    Spec.Gcm.Block :=
+  Spec.Gcm.ghashFrom (Spec.Gcm.ctxH base.mem (base.gpr .r3)) (Spec.Gcm.blockAt base.mem (base.gpr .r9))
+    ((List.range k).map (hashedWith base nr plaintext hashIn))
+
+theorem hashPrefixWith_add (base : State) (nr : Nat) (plaintext : Nat → Spec.Gcm.Block) (hashIn : Bool)
+    (k j : Nat) :
+    hashPrefixWith base nr plaintext hashIn (k+j)=Spec.Gcm.ghashFrom (Spec.Gcm.ctxH base.mem (base.gpr .r3))
+      (hashPrefixWith base nr plaintext hashIn k)
+      ((List.range j).map (fun i => hashedWith base nr plaintext hashIn (k+i))) := by
   simp only [hashPrefixWith,List.range_add,List.map_append,List.map_map,Spec.Gcm.ghashFrom,List.foldl_append]
   rfl
 
@@ -3501,20 +3509,20 @@ theorem gh_fixed [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
 
 def storeGprs : List Reg := [.r6,.r7,.r12,.r17,.r19]
 
-structure BatchStoreResult (base : State) (n nr : Nat) (plaintext : Nat → Spec.Gcm.Block)
+structure BatchStoreResult (base : State) (n nr : Nat) (plaintext : Nat → Spec.Gcm.Block) (hashIn : Bool)
     (input : Nat → BitVec 64 → BitVec 64 → Prop) (k : Nat) (start s : State) : Prop where
   fixed : LoopFixed base nr s
   keep : Keep storeGprs start s
   frame : Frame [coreData base n] start.mem s.mem
   processed : VG.Proof.Aes.Memory.Processed base.mem s.mem (base.gpr .r6) n (k+8)
     (cipherStateWith base nr plaintext)
-  values : ∀ i<8, cipherAt s i=cipherBlockWith base nr plaintext (k+i)
+  values : ∀ i<8, cipherAt s i=hashedWith base nr plaintext hashIn (k+i)
   ptr : s.gpr .r6=start.gpr .r6+128
   left : s.gpr .r7=start.gpr .r7-8
   hash : s.vpr .v10=start.vpr .v10
   input : input (k+8) (s.gpr .r17) (s.gpr .r19)
 
-def StoreCorrect (base : State) (n nr : Nat) (plaintext : Nat → Spec.Gcm.Block)
+def StoreCorrect (base : State) (n nr : Nat) (plaintext : Nat → Spec.Gcm.Block) (hashIn : Bool)
     (input : Nat → BitVec 64 → BitVec 64 → Prop) (store : Prog isa) : Prop :=
   ∀ k start, k+8≤n → LoopFixed base nr start →
     Frame [coreWork base,coreData base n] base.mem start.mem →
@@ -3524,10 +3532,10 @@ def StoreCorrect (base : State) (n nr : Nat) (plaintext : Nat → Spec.Gcm.Block
     (∀ i<8, cipherAt start i=Spec.Gcm.ctxCiph base.mem (base.gpr .r3) nr
       (Nat.repeat Spec.Gcm.inc32 (k+i) (Spec.Gcm.blockAt base.mem (base.gpr .r5)))) →
     input k (start.gpr .r17) (start.gpr .r19) →
-    WP isa store start (BatchStoreResult base n nr plaintext input k start)
+    WP isa store start (BatchStoreResult base n nr plaintext hashIn input k start)
 
 theorem stores_correct (base : State) (n nr : Nat) (lay : CoreLayout base n) (hmax : nr<15) :
-    StoreCorrect base n nr (defaultPlaintext base) (fun _ _ _ => True)
+    StoreCorrect base n nr (defaultPlaintext base) false (fun _ _ _ => True)
       (.block Impl.AesGcm.PPC64LE.Blocks.stores) := by
   intro k start hk fx _frame ptr offsets proc vals _input
   refine WP.mono (stores_fixed base start n nr k lay fx hmax hk ptr offsets proc vals)
@@ -3535,7 +3543,7 @@ theorem stores_correct (base : State) (n nr : Nat) (lay : CoreLayout base n) (hm
   exact ⟨fx',ht.keep.mono (by simp [storeGprs]),ht.frame,ht.processed,hvals,ht.ptr,ht.left,
     ht.v .v10 (by decide),trivial⟩
 
-structure LoopInvWith (base ready : State) (n nr : Nat) (plaintext : Nat → Spec.Gcm.Block)
+structure LoopInvWith (base ready : State) (n nr : Nat) (plaintext : Nat → Spec.Gcm.Block) (hashIn : Bool)
     (input : Nat → BitVec 64 → BitVec 64 → Prop) (k : Nat) (s : State) : Prop where
   bound : k≤n
   fixed : LoopFixed base nr s
@@ -3547,19 +3555,19 @@ structure LoopInvWith (base ready : State) (n nr : Nat) (plaintext : Nat → Spe
   counter : swapDwords (s.mem.read ((base.gpr .r10+128)+112) 16)=
     Nat.repeat Spec.Gcm.inc32 k (Spec.Gcm.blockAt base.mem (base.gpr .r5))
   word : (s.gpr .r8).setWidth 32=(Nat.repeat Spec.Gcm.inc32 k (Spec.Gcm.blockAt base.mem (base.gpr .r5))).extractLsb' 0 32
-  y : s.vpr .v10=hashPrefixWith base nr plaintext k
+  y : s.vpr .v10=hashPrefixWith base nr plaintext hashIn k
 
   baseFrame : Frame [coreWork base,coreData base n] base.mem s.mem
   input : input k (s.gpr .r17) (s.gpr .r19)
 
 abbrev LoopInv (base ready : State) (n nr k : Nat) :=
-  LoopInvWith base ready n nr (defaultPlaintext base) (fun _ _ _ => True) k
+  LoopInvWith base ready n nr (defaultPlaintext base) false (fun _ _ _ => True) k
 
-theorem LoopInvWith.initial {base entry ready : State} {n nr : Nat} {plaintext : Nat → Spec.Gcm.Block}
+theorem LoopInvWith.initial {base entry ready : State} {n nr : Nat} {plaintext : Nat → Spec.Gcm.Block} {hashIn : Bool}
     {input : Nat → BitVec 64 → BitVec 64 → Prop} (lay : CoreLayout base n)
     (hr : CacheResult base entry nr ready) (hn : base.gpr .r7=BitVec.ofNat 64 n)
     (hi : input 0 (ready.gpr .r17) (ready.gpr .r19)) :
-    LoopInvWith base ready n nr plaintext input 0 ready := by
+    LoopInvWith base ready n nr plaintext hashIn input 0 ready := by
   have hf : Frame [coreWork base] base.mem ready.mem := lay.saved_frame.trans (coreBody_frame hr.frame)
   have hp := (VG.Proof.Aes.Memory.Processed.refl base.mem (base.gpr .r6) n (cipherStateWith base nr plaintext)).frame hf
     (by simpa only [List.mem_singleton,forall_eq,coreData] using lay.scratch (coreData base n) (by simp)) lay.size
@@ -3572,11 +3580,11 @@ theorem LoopInvWith.initial {base entry ready : State} {n nr : Nat} {plaintext :
 
 
 theorem batchWithStore_ok [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
-    {base ready s : State} {n nr k : Nat} {plaintext : Nat → Spec.Gcm.Block}
+    {base ready s : State} {n nr k : Nat} {plaintext : Nat → Spec.Gcm.Block} {hashIn : Bool}
     {input : Nat → BitVec 64 → BitVec 64 → Prop} (lay : CoreLayout base n) (store : Prog isa)
-    (correct : StoreCorrect base n nr plaintext input store)
-    (hmin : 9<nr) (hmax : nr<15) (hk : k+8≤n) (hs : LoopInvWith base ready n nr plaintext input k s) :
-    WP isa (Impl.AesGcm.PPC64LE.Blocks.batchWithStore store) s (LoopInvWith base ready n nr plaintext input (k+8)) := by
+    (correct : StoreCorrect base n nr plaintext hashIn input store)
+    (hmin : 9<nr) (hmax : nr<15) (hk : k+8≤n) (hs : LoopInvWith base ready n nr plaintext hashIn input k s) :
+    WP isa (Impl.AesGcm.PPC64LE.Blocks.batchWithStore store) s (LoopInvWith base ready n nr plaintext hashIn input (k+8)) := by
   let cb := Nat.repeat Spec.Gcm.inc32 k (Spec.Gcm.blockAt base.mem (base.gpr .r5))
   rw [Impl.AesGcm.PPC64LE.Blocks.batchWithStore,Impl.AesGcm.PPC64LE.Blocks.batchWith]
   apply WP.seq
@@ -3623,10 +3631,10 @@ theorem batchWithStore_ok [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
   have hstoreFrame : Frame [coreBody base,coreData base n] ctr.mem stored.mem := by
     rw [← hfa.mem]
     exact hd.frame.mono (by simp [coreData])
-  have hyStored : stored.vpr .v10=hashPrefixWith base nr plaintext k :=
+  have hyStored : stored.vpr .v10=hashPrefixWith base nr plaintext hashIn k :=
     hd.hash.trans ((hfa.v .v10 (by decide)).trans ((hc.v .v10 (by decide)).trans hs.y))
   have hmap : (List.range 8).map (cipherAt stored)=
-      (List.range 8).map (fun i => cipherBlockWith base nr plaintext (k+i)) := by
+      (List.range 8).map (fun i => hashedWith base nr plaintext hashIn (k+i)) := by
     exact List.map_congr_left fun i hi => hd.values i (List.mem_range.mp hi)
   refine ⟨hk,fxg,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_⟩
   · exact ((((hs.keep.trans hc.keep).trans hfa.keep).trans hd.keep).trans hg.keep).mono
@@ -3661,15 +3669,15 @@ theorem batch_ok [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
 
 
 theorem batchesWith_ok
-    {base ready s : State} {n nr k : Nat} {plaintext : Nat → Spec.Gcm.Block}
+    {base ready s : State} {n nr k : Nat} {plaintext : Nat → Spec.Gcm.Block} {hashIn : Bool}
     {input : Nat → BitVec 64 → BitVec 64 → Prop} (lay : CoreLayout base n) (body : Prog isa)
-    (step : ∀ {j t}, j+8≤n → LoopInvWith base ready n nr plaintext input j t →
-      WP isa body t (LoopInvWith base ready n nr plaintext input (j+8))) (hk : k+8≤n) (hm : (n-k)%8=0)
-    (hs : LoopInvWith base ready n nr plaintext input k s) :
+    (step : ∀ {j t}, j+8≤n → LoopInvWith base ready n nr plaintext hashIn input j t →
+      WP isa body t (LoopInvWith base ready n nr plaintext hashIn input (j+8))) (hk : k+8≤n) (hm : (n-k)%8=0)
+    (hs : LoopInvWith base ready n nr plaintext hashIn input k s) :
     WP isa (.loop body (.nonzero .d .r7)) s
-      (LoopInvWith base ready n nr plaintext input n) := by
+      (LoopInvWith base ready n nr plaintext hashIn input n) := by
   refine WP.loop (M := isa)
-    (fun m t => ∃ j, m=n-j ∧ j+8≤n ∧ (n-j)%8=0 ∧ LoopInvWith base ready n nr plaintext input j t)
+    (fun m t => ∃ j, m=n-j ∧ j+8≤n ∧ (n-j)%8=0 ∧ LoopInvWith base ready n nr plaintext hashIn input j t)
     (fun m t ht => ?_) (n-k) s ⟨k,rfl,hk,hm,hs⟩
   obtain ⟨j,rfl,hj,hm,ht⟩ := ht
   refine WP.mono (step hj ht) fun u hu => ?_
@@ -3746,10 +3754,10 @@ theorem exitState_frame (s : State) :
       (List.mem_cons_of_mem _ (List.mem_singleton_self _)) (rev128 (s.vpr .v10)) (Region.contains_self _ _)
 
 
-theorem saved_during_loop {base entry ready s : State} {n nr k : Nat} {plaintext : Nat → Spec.Gcm.Block}
+theorem saved_during_loop {base entry ready s : State} {n nr k : Nat} {plaintext : Nat → Spec.Gcm.Block} {hashIn : Bool}
     {input : Nat → BitVec 64 → BitVec 64 → Prop}
     (lay : CoreLayout base n) (hc : CacheResult base entry nr ready)
-    (hs : LoopInvWith base ready n nr plaintext input k s) :
+    (hs : LoopInvWith base ready n nr plaintext hashIn input k s) :
     Spill.Saved (base.gpr .r10) base.gpr Impl.AesGcm.PPC64LE.Blocks.saved s.mem := by
   have hsave := saved_after_body base hc.frame
   refine hsave.frame hs.frame fun p hp r hr => ?_
@@ -3873,7 +3881,13 @@ theorem processed_ciphertext {base : State} {m : Mem} {n nr : Nat} {plaintext : 
     List.getElem_map,List.getElem_range,List.getElem_zipWith,cipherBlockWith]
 
 
-structure CoreResultWith (base : State) (n nr : Nat) (plaintext : Nat → Spec.Gcm.Block)
+/-- The blocks a run hashed: those it wrote when it encrypts, those it read
+when it decrypts. -/
+def coreHashed (base : State) (n : Nat) (plaintext : Nat → Spec.Gcm.Block) (hashIn : Bool) (m : Mem) :
+    List Spec.Gcm.Block :=
+  bif hashIn then (List.range n).map plaintext else Spec.Gcm.blocksAt m (base.gpr .r6) n
+
+structure CoreResultWith (base : State) (n nr : Nat) (plaintext : Nat → Spec.Gcm.Block) (hashIn : Bool)
     (input : Nat → BitVec 64 → BitVec 64 → Prop) (s : State) : Prop where
   frame : Frame [coreWork base,coreData base n,coreCounter base,coreY base] base.mem s.mem
   ciphertext : Spec.Gcm.blocksAt s.mem (base.gpr .r6) n=Spec.Gcm.ctr32
@@ -3883,18 +3897,18 @@ structure CoreResultWith (base : State) (n nr : Nat) (plaintext : Nat → Spec.G
     Nat.repeat Spec.Gcm.inc32 n (Spec.Gcm.blockAt base.mem (base.gpr .r5))
   y : Spec.Gcm.blockAt s.mem (base.gpr .r9)=Spec.Gcm.ghashFrom
     (Spec.Gcm.ctxH base.mem (base.gpr .r3)) (Spec.Gcm.blockAt base.mem (base.gpr .r9))
-    (Spec.Gcm.blocksAt s.mem (base.gpr .r6) n)
+    (coreHashed base n plaintext hashIn s.mem)
   restored : ∀ p ∈ Impl.AesGcm.PPC64LE.Blocks.saved, s.gpr p.1=base.gpr p.1
   input : input n (s.gpr .r17) (s.gpr .r19)
   narrow : Frame [coreSpills base,coreBody base,coreData base n,coreCounter base,coreY base] base.mem s.mem
 
 
-abbrev CoreResult (base : State) (n nr : Nat) := CoreResultWith base n nr (defaultPlaintext base) (fun _ _ _ => True)
+abbrev CoreResult (base : State) (n nr : Nat) := CoreResultWith base n nr (defaultPlaintext base) false (fun _ _ _ => True)
 
-theorem finish_ok {base entry ready s : State} {n nr : Nat} {plaintext : Nat → Spec.Gcm.Block}
+theorem finish_ok {base entry ready s : State} {n nr : Nat} {plaintext : Nat → Spec.Gcm.Block} {hashIn : Bool}
     {input : Nat → BitVec 64 → BitVec 64 → Prop} (lay : CoreLayout base n)
-    (hc : CacheResult base entry nr ready) (hs : LoopInvWith base ready n nr plaintext input n s) :
-    WP isa (.block Impl.AesGcm.PPC64LE.Blocks.exit) s (CoreResultWith base n nr plaintext input) := by
+    (hc : CacheResult base entry nr ready) (hs : LoopInvWith base ready n nr plaintext hashIn input n s) :
+    WP isa (.block Impl.AesGcm.PPC64LE.Blocks.exit) s (CoreResultWith base n nr plaintext hashIn input) := by
   have hfbase := hs.baseFrame
   refine WP.mono (exit_ok lay hs.fixed (saved_during_loop lay hc hs)) fun t ht => ?_
   have hp := hs.processed.frame ht.frame (by
@@ -3907,8 +3921,12 @@ theorem finish_ok {base entry ready s : State} {n nr : Nat} {plaintext : Nat →
   refine ⟨(hfbase.mono (by simp)).trans (ht.frame.mono (by simp)),processed_ciphertext hp,?_,?_,ht.restored,?_,?_⟩
   · rw [ht.mem]
     exact exitCounter_value lay hs.fixed hfbase hs.word
-  · rw [processed_blocks hp]
-    change Spec.Gcm.blockAt t.mem (base.gpr .r9)=hashPrefixWith base nr plaintext n
+  · have hh : coreHashed base n plaintext hashIn t.mem=(List.range n).map (hashedWith base nr plaintext hashIn) := by
+      cases hashIn
+      · exact processed_blocks hp
+      · rfl
+    rw [hh]
+    change Spec.Gcm.blockAt t.mem (base.gpr .r9)=hashPrefixWith base nr plaintext hashIn n
     rw [ht.mem,exitMem,← hs.fixed.yPtr,← VG.Proof.Aes.PPC64LE.Crypto.read_blockAt]
     change rev128 (((s.mem.writeW (s.gpr .r5+12) (rev32 ((s.gpr .r8).setWidth 32))).writeW
       (s.gpr .r14) (rev128 (s.vpr .v10))).readW (s.gpr .r14) 128)=_
@@ -3923,14 +3941,14 @@ theorem finish_ok {base entry ready s : State} {n nr : Nat} {plaintext : Nat →
 
 
 theorem core_nonemptyWith_ok
-    (base : State) (n nr : Nat) (plaintext : Nat → Spec.Gcm.Block)
+    (base : State) (n nr : Nat) (plaintext : Nat → Spec.Gcm.Block) (hashIn : Bool)
     (input : Nat → BitVec 64 → BitVec 64 → Prop) (body : Prog isa)
-    (step : ∀ {ready s k}, k+8≤n → LoopInvWith base ready n nr plaintext input k s →
-      WP isa body s (LoopInvWith base ready n nr plaintext input (k+8)))
+    (step : ∀ {ready s k}, k+8≤n → LoopInvWith base ready n nr plaintext hashIn input k s →
+      WP isa body s (LoopInvWith base ready n nr plaintext hashIn input (k+8)))
     (hi : input 0 (base.gpr .r17) (base.gpr .r19)) (lay : CoreLayout base n) (hn : base.gpr .r7=BitVec.ofNat 64 n)
     (hpos : 0<n) (hm : n%8=0) (hmax : nr<15)
     (hr : base.gpr .r4=BitVec.ofNat 64 nr) (hH : base.gpr .r8=base.gpr .r3+240#64) :
-    WP isa (Impl.AesGcm.PPC64LE.Blocks.codeWith body) base (CoreResultWith base n nr plaintext input) := by
+    WP isa (Impl.AesGcm.PPC64LE.Blocks.codeWith body) base (CoreResultWith base n nr plaintext hashIn input) := by
   have hne : base.gpr .r7≠0 := by
     intro he
     have hh := congrArg BitVec.toNat he
@@ -3947,7 +3965,7 @@ theorem core_nonemptyWith_ok
     rw [hc.keep.gpr (r := .r17) (by decide),hc.keep.gpr (r := .r19) (by decide),
       he.pre.keep.gpr (r := .r17) (by decide),he.pre.keep.gpr (r := .r19) (by decide)]
     exact hi
-  have hi := LoopInvWith.initial (plaintext := plaintext) lay hc hn hinput
+  have hi := LoopInvWith.initial (plaintext := plaintext) (hashIn := hashIn) lay hc hn hinput
   apply WP.seq
   refine WP.mono (batchesWith_ok lay body (fun hj ht => step hj ht) (by omega) (by simpa only [Nat.sub_zero] using hm) hi)
     fun t ht => finish_ok lay hc ht
@@ -3958,7 +3976,7 @@ theorem core_nonempty_ok [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
     (hpos : 0<n) (hm : n%8=0) (hmin : 9<nr) (hmax : nr<15)
     (hr : base.gpr .r4=BitVec.ofNat 64 nr) (hH : base.gpr .r8=base.gpr .r3+240#64) :
     WP isa Impl.AesGcm.PPC64LE.Blocks.code base (CoreResult base n nr) :=
-  core_nonemptyWith_ok base n nr (defaultPlaintext base) (fun _ _ _ => True)
+  core_nonemptyWith_ok base n nr (defaultPlaintext base) false (fun _ _ _ => True)
     Impl.AesGcm.PPC64LE.Blocks.batch (fun hj hs => batch_ok lay hmin hmax hj hs)
     trivial lay hn hpos hm hmax hr hH
 
@@ -4745,7 +4763,7 @@ theorem bulk_output {s u : State} {n nr : Nat} (lay : WrapperLayout s n) (hnr : 
 
 
 theorem bulk_pending {s u : State} {n nr : Nat} {plaintext : Nat → Spec.Gcm.Block} {input : Nat → BitVec 64 → BitVec 64 → Prop} (lay : WrapperLayout s n)
-    (hc : CoreResultWith (bulkArgsState (wrapperEntryState s)) (n-n%8) nr plaintext input u) :
+    (hc : CoreResultWith (bulkArgsState (wrapperEntryState s)) (n-n%8) nr plaintext false input u) :
     Spec.Gcm.blocksAt u.mem (s.gpr .r7+BitVec.ofNat 64 (16*(n-n%8))) (n-(n-n%8))=
       Spec.Gcm.blocksAt s.mem (s.gpr .r7+BitVec.ofNat 64 (16*(n-n%8))) (n-(n-n%8)) := by
   have hf : Frame [coreWork (wrapperView s),coreData (wrapperView s) (n-n%8),
@@ -4782,7 +4800,7 @@ theorem bulkRest_mem (s : State) : (bulkRestState s).mem=s.mem := rfl
 
 
 theorem bulk_frame {s u : State} {n nr : Nat} {plaintext : Nat → Spec.Gcm.Block} {input : Nat → BitVec 64 → BitVec 64 → Prop}
-    (hc : CoreResultWith (bulkArgsState (wrapperEntryState s)) (n-n%8) nr plaintext input u) :
+    (hc : CoreResultWith (bulkArgsState (wrapperEntryState s)) (n-n%8) nr plaintext false input u) :
     Frame (wrapperWrites s n) (wrapperHeaderMem s) u.mem := by
   have hf : Frame [coreWork (wrapperView s),coreData (wrapperView s) (n-n%8),
       coreCounter (wrapperView s),coreY (wrapperView s)] (wrapperHeaderMem s) u.mem := hc.frame

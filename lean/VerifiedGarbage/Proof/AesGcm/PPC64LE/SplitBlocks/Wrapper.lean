@@ -166,7 +166,7 @@ abbrev Mid (base : State) (n nr count k : Nat) (s : State) :=
 
 theorem bulk_output {base u : State} {n nr count : Nat} (lay : Layout base n count) (hnr : nr<15)
     (hc : Blocks.CoreResultWith (kernelBase base) (n-n%8) nr
-      (plaintext (kernelBase base) count) (input (kernelBase base) count) u) :
+      (plaintext (kernelBase base) count) false (input (kernelBase base) count) u) :
     Spec.Gcm.blocksAt u.mem (base.gpr .r7) (n-n%8)=ciphertext base nr count (n-n%8) ∧
     Spec.Gcm.blockAt u.mem (base.gpr .r5)=Nat.repeat Spec.Gcm.inc32 (n-n%8) (Spec.Gcm.blockAt base.mem (base.gpr .r5)) ∧
     Spec.Gcm.blockAt u.mem (base.gpr .r6)=Spec.Gcm.ghashFrom (Spec.Gcm.ctxH base.mem (base.gpr .r3))
@@ -211,7 +211,7 @@ theorem saved_header (base : State) (g : Reg → BitVec 64)
 theorem saved_core {base u : State} {n nr count : Nat} (lay : Layout base n count) (g : Reg → BitVec 64)
     (hs : Spill.Saved (base.gpr .r9) g extraSaved base.mem)
     (hc : Blocks.CoreResultWith (kernelBase base) (n-n%8) nr
-      (plaintext (kernelBase base) count) (input (kernelBase base) count) u) :
+      (plaintext (kernelBase base) count) false (input (kernelBase base) count) u) :
     Spill.Saved (base.gpr .r9) g extraSaved u.mem := by
   refine (saved_header base g hs).frame_in (lo := 152) (n := 16) (by decide) hc.narrow ?_
   intro r hr

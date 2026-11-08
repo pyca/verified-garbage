@@ -348,7 +348,7 @@ theorem input_advance {base start s : State} {count k : Nat}
 
 theorem stores_correct (base : State) (n nr count : Nat) (lay : Blocks.CoreLayout base n)
     (src : SourceLayout base n count) (hmax : nr<15) :
-    Blocks.StoreCorrect base n nr (plaintext base count) (input base count)
+    Blocks.StoreCorrect base n nr (plaintext base count) false (input base count)
       (.seq Impl.AesGcm.PPC64LE.SplitBlocks.load (.block Impl.AesGcm.PPC64LE.Blocks.storesFinish)) := by
   intro k start hk fx frame ptr offsets proc vals hin
   have global := reader_global base start n nr count k lay src hk fx frame ptr proc hin
@@ -415,9 +415,9 @@ theorem core_ok [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
     (hn : base.gpr .r7=BitVec.ofNat 64 n) (hm : n%8=0) (hmin : 9<nr) (hmax : nr<15)
     (hr : base.gpr .r4=BitVec.ofNat 64 nr) (hH : base.gpr .r8=base.gpr .r3+240#64) :
     WP isa Impl.AesGcm.PPC64LE.SplitBlocks.code base fun t =>
-      Blocks.CoreResultWith base n nr (plaintext base count) (input base count) t ∧ Keep coreVolatile base t := by
+      Blocks.CoreResultWith base n nr (plaintext base count) false (input base count) t ∧ Keep coreVolatile base t := by
   have hfunc : WP isa Impl.AesGcm.PPC64LE.SplitBlocks.code base
-      (Blocks.CoreResultWith base n nr (plaintext base count) (input base count)) := by
+      (Blocks.CoreResultWith base n nr (plaintext base count) false (input base count)) := by
     by_cases hz : n=0
     · subst n
       rw [Impl.AesGcm.PPC64LE.SplitBlocks.code,Impl.AesGcm.PPC64LE.Blocks.codeWith]
@@ -427,7 +427,7 @@ theorem core_ok [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
       · simp only [Spec.Gcm.blocksAt,List.range_zero,List.map_nil,Spec.Gcm.ctr32,Spec.Gcm.keystream,
           List.length_nil,List.zipWith_nil_left]
       · rfl
-    · exact Blocks.core_nonemptyWith_ok base n nr (plaintext base count) (input base count)
+    · exact Blocks.core_nonemptyWith_ok base n nr (plaintext base count) false (input base count)
         Impl.AesGcm.PPC64LE.SplitBlocks.batch (fun hk hs =>
           Blocks.batchWithStore_ok lay _ (stores_correct base n nr count lay src hmax) hmin hmax hk hs)
         (input_initial src) lay hn (by omega) hm hmax hr hH
