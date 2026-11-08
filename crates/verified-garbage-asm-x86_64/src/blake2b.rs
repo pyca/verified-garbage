@@ -31,126 +31,6 @@ jmp 21f
     )
 }
 
-/// The CPU features `vg_blake2b_update_avx2` requires (`Artifact.features`).
-pub const VG_BLAKE2B_UPDATE_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// Absorbs data into a BLAKE2b computation: if the streaming state `*state` represents data of `count` bytes, it then represents that data followed by the `len` bytes at `data`.
-///
-/// Contract: `VG.Spec.Blake2.updateBContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 192 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `count` must be the exact length of the data so far (the key block included), and `count + len` less than 2⁶⁴.
-/// * `state` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the return address on the stack or the 592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx` and `avx2` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_blake2b_update_avx2(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJLj9//9JieBJg8AISYmYAAIAAEmJqAgCAABNiaAQAgAATYmoGAIAAE2JsCACAABNibgoAgAASIn7TYnHSInVSYnMSYn2TYn1SYPtAUmD5X9Jg8UBTYX2"
-je 20f
-jmp 21f
-20:
-.base64 "Qb0AAAAA"
-21:
-.base64 "TYXk"
-je 22f
-.base64 "TYXt"
-je 24f
-.base64 "uIAAAABMKehJOcQ="
-jb 26f
-jmp 27f
-26:
-.base64 "TIng"
-27:
-.base64 "SSnESQHGSIXA"
-je 28f
-210:
-.base64 "RA+2TQBGiEwrQEiDxQFJg8UBSIPoAQ=="
-jne 210b
-jmp 29f
-28:
-29:
-.base64 "TYXk"
-je 211f
-.base64 "SInfSIneSIPGQLoBAAAATInxQbgAAAAATYn5"
-call {vg_blake2b_compress_avx2}
-.base64 "SIn7TYnPQb0AAAAA"
-jmp 212f
-211:
-212:
-jmp 25f
-24:
-25:
-.base64 "TYXk"
-je 213f
-.base64 "TIngSIPoAUjB6AdIhcA="
-je 215f
-.base64 "SInfSInuSInCTInxSIHBgAAAAEG4AAAAAE2J+Q=="
-call {vg_blake2b_compress_avx2}
-.base64 "SIn7TYnPTIngSIPoAUiD4H9Ig8ABSSnETAHlTQHmSYnE"
-jmp 216f
-215:
-216:
-.base64 "TIngSQHGQbwAAAAA"
-217:
-.base64 "RA+2TQBGiEwrQEiDxQFJg8UBSIPoAQ=="
-jne 217b
-jmp 214f
-213:
-214:
-jmp 23f
-22:
-23:
-.base64 "SYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAASI2kJEgCAADD"
-.p2align 6"#,
-        vg_blake2b_compress_avx2 = sym super::blake2b::vg_blake2b_compress_avx2::vg_blake2b_compress_avx2,
-    )
-}
-
-/// The CPU features `vg_blake2b_finalize_avx2` requires (`Artifact.features`).
-pub const VG_BLAKE2B_FINALIZE_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// Finishes a BLAKE2b computation: if the streaming state `*state` represents data of `count` bytes, compresses its last block and writes the final state `h[0..7]` (64 bytes) to `*out`. The digest of `outlen` bytes (`init`'s) is its first `outlen` bytes.
-///
-/// Contract: `VG.Spec.Blake2.finalizeBContract`. Constant time: only the pointers and `count` may affect timing, not the state.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 192 bytes.
-/// * `out` must be valid for reads and writes of 64 bytes.
-/// * `count` must be the exact length of the data (the key block included), less than 2⁶⁴.
-/// * The contents of `state` on return are unspecified.
-/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the return address on the stack or the 592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx` and `avx2` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_blake2b_finalize_avx2(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJLj9//9IieFIg8EISImZAAIAAEiJqQgCAABMiaEQAgAATImpGAIAAEyJsSACAABMibkoAgAASIn7SYnPSInVSYn2TYn1SYPtAUmD5X9Jg8UBTYX2"
-je 20f
-jmp 21f
-20:
-.base64 "Qb0AAAAA"
-21:
-.base64 "QbkAAAAAuIAAAABMKeg="
-je 22f
-24:
-.base64 "RohMK0BJg8UBSIPoAQ=="
-jne 24b
-jmp 23f
-22:
-23:
-.base64 "SInfSIneSIPGQLoBAAAATInxQbgBAAAATYn5"
-call {vg_blake2b_compress_avx2}
-.base64 "SIn7TYnPSIsDSIlFAEiLQwhIiUUISItDEEiJRRBIi0MYSIlFGEiLQyBIiUUgSItDKEiJRShIi0MwSIlFMEiLQzhIiUU4SYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAASI2kJEgCAADD"
-.p2align 6"#,
-        vg_blake2b_compress_avx2 = sym super::blake2b::vg_blake2b_compress_avx2::vg_blake2b_compress_avx2,
-    )
-}
-
 /// The CPU features `vg_blake2b_update_avx512` requires (`Artifact.features`).
 pub const VG_BLAKE2B_UPDATE_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL);
 
@@ -268,6 +148,126 @@ call {vg_blake2b_compress_avx512}
 .base64 "SIn7TYnPSIsDSIlFAEiLQwhIiUUISItDEEiJRRBIi0MYSIlFGEiLQyBIiUUgSItDKEiJRShIi0MwSIlFMEiLQzhIiUU4SYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAASI2kJEgCAADD"
 .p2align 6"#,
         vg_blake2b_compress_avx512 = sym super::blake2b::vg_blake2b_compress_avx512::vg_blake2b_compress_avx512,
+    )
+}
+
+/// The CPU features `vg_blake2b_update_avx2` requires (`Artifact.features`).
+pub const VG_BLAKE2B_UPDATE_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// Absorbs data into a BLAKE2b computation: if the streaming state `*state` represents data of `count` bytes, it then represents that data followed by the `len` bytes at `data`.
+///
+/// Contract: `VG.Spec.Blake2.updateBContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 192 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `count` must be the exact length of the data so far (the key block included), and `count + len` less than 2⁶⁴.
+/// * `state` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the return address on the stack or the 592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx` and `avx2` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_blake2b_update_avx2(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJLj9//9JieBJg8AISYmYAAIAAEmJqAgCAABNiaAQAgAATYmoGAIAAE2JsCACAABNibgoAgAASIn7TYnHSInVSYnMSYn2TYn1SYPtAUmD5X9Jg8UBTYX2"
+je 20f
+jmp 21f
+20:
+.base64 "Qb0AAAAA"
+21:
+.base64 "TYXk"
+je 22f
+.base64 "TYXt"
+je 24f
+.base64 "uIAAAABMKehJOcQ="
+jb 26f
+jmp 27f
+26:
+.base64 "TIng"
+27:
+.base64 "SSnESQHGSIXA"
+je 28f
+210:
+.base64 "RA+2TQBGiEwrQEiDxQFJg8UBSIPoAQ=="
+jne 210b
+jmp 29f
+28:
+29:
+.base64 "TYXk"
+je 211f
+.base64 "SInfSIneSIPGQLoBAAAATInxQbgAAAAATYn5"
+call {vg_blake2b_compress_avx2}
+.base64 "SIn7TYnPQb0AAAAA"
+jmp 212f
+211:
+212:
+jmp 25f
+24:
+25:
+.base64 "TYXk"
+je 213f
+.base64 "TIngSIPoAUjB6AdIhcA="
+je 215f
+.base64 "SInfSInuSInCTInxSIHBgAAAAEG4AAAAAE2J+Q=="
+call {vg_blake2b_compress_avx2}
+.base64 "SIn7TYnPTIngSIPoAUiD4H9Ig8ABSSnETAHlTQHmSYnE"
+jmp 216f
+215:
+216:
+.base64 "TIngSQHGQbwAAAAA"
+217:
+.base64 "RA+2TQBGiEwrQEiDxQFJg8UBSIPoAQ=="
+jne 217b
+jmp 214f
+213:
+214:
+jmp 23f
+22:
+23:
+.base64 "SYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAASI2kJEgCAADD"
+.p2align 6"#,
+        vg_blake2b_compress_avx2 = sym super::blake2b::vg_blake2b_compress_avx2::vg_blake2b_compress_avx2,
+    )
+}
+
+/// The CPU features `vg_blake2b_finalize_avx2` requires (`Artifact.features`).
+pub const VG_BLAKE2B_FINALIZE_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// Finishes a BLAKE2b computation: if the streaming state `*state` represents data of `count` bytes, compresses its last block and writes the final state `h[0..7]` (64 bytes) to `*out`. The digest of `outlen` bytes (`init`'s) is its first `outlen` bytes.
+///
+/// Contract: `VG.Spec.Blake2.finalizeBContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 192 bytes.
+/// * `out` must be valid for reads and writes of 64 bytes.
+/// * `count` must be the exact length of the data (the key block included), less than 2⁶⁴.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
+/// * Neither `state` nor `out` may overlap the return address on the stack or the 592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx` and `avx2` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_blake2b_finalize_avx2(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJLj9//9IieFIg8EISImZAAIAAEiJqQgCAABMiaEQAgAATImpGAIAAEyJsSACAABMibkoAgAASIn7SYnPSInVSYn2TYn1SYPtAUmD5X9Jg8UBTYX2"
+je 20f
+jmp 21f
+20:
+.base64 "Qb0AAAAA"
+21:
+.base64 "QbkAAAAAuIAAAABMKeg="
+je 22f
+24:
+.base64 "RohMK0BJg8UBSIPoAQ=="
+jne 24b
+jmp 23f
+22:
+23:
+.base64 "SInfSIneSIPGQLoBAAAATInxQbgBAAAATYn5"
+call {vg_blake2b_compress_avx2}
+.base64 "SIn7TYnPSIsDSIlFAEiLQwhIiUUISItDEEiJRRBIi0MYSIlFGEiLQyBIiUUgSItDKEiJRShIi0MwSIlFMEiLQzhIiUU4SYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAASI2kJEgCAADD"
+.p2align 6"#,
+        vg_blake2b_compress_avx2 = sym super::blake2b::vg_blake2b_compress_avx2::vg_blake2b_compress_avx2,
     )
 }
 

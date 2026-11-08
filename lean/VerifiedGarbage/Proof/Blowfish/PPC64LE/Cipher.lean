@@ -145,7 +145,7 @@ theorem round_step {s₀ : State} (E : LookEnv s₀) (up : Bool) {i : Nat} (hi :
   unfold round
   apply WP.seq
   refine WP.mono (WP.keep [.r4, .r12] (round_head u up (P := pEntry K (ord up i))
-    (by rw [I.p, addr_P _ up hi]) (by rw [keep_reads I.keep]; exact E.rd _ (by omega))
+    (by rw [I.p, addr_P _ up hi]) (by rw [keep_reads I.keep]; exact E.rd _ _ (by omega))
     (by rw [I.mem, pEntry_read _ _ ho])) (by cases up <;> decide) rfl) fun v ⟨⟨v4, vm⟩, vk⟩ => ?_
   have kv : Keep cRegs s₀ v := (I.keep.trans vk).mono (by decide)
   have Ev : LookEnv v := E.keep kv (by decide) (by decide)
@@ -226,7 +226,7 @@ theorem cipher_run {s : State} (E : LookEnv s) (up : Bool) :
     (b := s.gpr .r3 + BitVec.ofNat 64 (4096 + 4 * ord up 17))
     (by rw [V.p]; exact Offset.add_add_eq _ (by cases up <;> simp [pBase, pAt, ord]))
     (by rw [V.p]; exact Offset.add_add_eq _ (by cases up <;> simp [pBase, pAt, ord]))
-    (by rw [hrd]; exact E.rd _ r16) (by rw [hrd]; exact E.rd _ r17)
+    (by rw [hrd]; exact E.rd _ _ r16) (by rw [hrd]; exact E.rd _ _ r17)
     (by rw [V.mem, pEntry_read _ _ o16]) (by rw [V.mem, pEntry_read _ _ o17])) (by cases up <;> decide) rfl)
     fun t ⟨⟨t4, t5, tm⟩, tk⟩ => ?_
   refine ⟨?_, (V.keep.trans tk).mono (by decide), by rw [tm, V.mem]⟩

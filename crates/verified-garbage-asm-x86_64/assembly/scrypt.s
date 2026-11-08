@@ -4,7 +4,7 @@
 // `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
 // gives.
 
-vg_scrypt:
+vg_scrypt_shani:
 	push r9
 	push r8
 	push rsi
@@ -18,7 +18,7 @@ vg_scrypt:
 	mov QWORD PTR [rsp], rax
 	mov QWORD PTR [rsp+8], r8
 	mov r8d, 1
-	call {vg_pbkdf2_hmac_sha256_scratch}
+	call {vg_pbkdf2_hmac_sha256_scratch_shani}
 	mov rax, QWORD PTR [rsp+48]
 	mov QWORD PTR [rsp+16], rax
 20:
@@ -51,7 +51,7 @@ vg_scrypt:
 	mov QWORD PTR [rsp], rax
 	mov QWORD PTR [rsp+8], r8
 	mov r8d, 1
-	call {vg_pbkdf2_hmac_sha256_scratch}
+	call {vg_pbkdf2_hmac_sha256_scratch_shani}
 	pop rax
 	pop rax
 	pop rax
@@ -120,7 +120,7 @@ vg_scrypt_avx2:
 	ret
 	.p2align 6
 
-vg_scrypt_shani:
+vg_scrypt:
 	push r9
 	push r8
 	push rsi
@@ -134,7 +134,7 @@ vg_scrypt_shani:
 	mov QWORD PTR [rsp], rax
 	mov QWORD PTR [rsp+8], r8
 	mov r8d, 1
-	call {vg_pbkdf2_hmac_sha256_scratch_shani}
+	call {vg_pbkdf2_hmac_sha256_scratch}
 	mov rax, QWORD PTR [rsp+48]
 	mov QWORD PTR [rsp+16], rax
 20:
@@ -167,7 +167,7 @@ vg_scrypt_shani:
 	mov QWORD PTR [rsp], rax
 	mov QWORD PTR [rsp+8], r8
 	mov r8d, 1
-	call {vg_pbkdf2_hmac_sha256_scratch_shani}
+	call {vg_pbkdf2_hmac_sha256_scratch}
 	pop rax
 	pop rax
 	pop rax

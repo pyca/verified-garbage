@@ -14,8 +14,8 @@ def avx512 : Proof.MlKem.X86_64.Sample4Impl := .avx512
 
 def scalar : Proof.MlKem.X86_64.Sample4Impl := .scalar
 
-/-- Every implementation, which each function generic over them is emitted
-with (the registration files that import this). -/
-def variants := [avx2, avx512, scalar]
+/-- Every implementation, best first: each function generic over them is
+emitted with each (the registration files that import this). -/
+def variants := [avx512, avx2, scalar]
 
 end VG.Proof.Variants.MlKemSample4.X86_64

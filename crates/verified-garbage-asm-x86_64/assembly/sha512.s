@@ -84,7 +84,7 @@ vg_sha512_256_init:
 	ret
 	.p2align 6
 
-vg_sha384_finalize:
+vg_sha384_finalize_shani:
 	lea rsp, [rsp-1384]
 	mov rcx, rsp
 	add rcx, 8
@@ -197,7 +197,7 @@ vg_sha384_finalize:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha512_compress}
+	call {vg_sha512_compress_shani}
 	mov rbx, rdi
 	mov r15, rcx
 	mov r13d, 0
@@ -232,7 +232,7 @@ vg_sha384_finalize:
 	ret
 	.p2align 6
 
-vg_sha384_digest:
+vg_sha384_digest_shani:
 	lea rsp, [rsp-1592]
 	mov rcx, rsp
 	add rcx, 8
@@ -274,7 +274,7 @@ vg_sha384_digest:
 	mov rdi, rbx
 	mov rdx, r14
 	mov rcx, r15
-	call {vg_sha512_compress}
+	call {vg_sha512_compress_shani}
 	mov rbx, rdi
 	mov r15, rcx
 	mov rax, r14
@@ -379,7 +379,7 @@ vg_sha384_digest:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha512_compress}
+	call {vg_sha512_compress_shani}
 	mov rbx, rdi
 	mov r15, rcx
 	pxor xmm0, xmm0
@@ -411,7 +411,7 @@ vg_sha384_digest:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha512_compress}
+	call {vg_sha512_compress_shani}
 	mov rbx, rdi
 	mov r15, rcx
 	mov rax, QWORD PTR [rbx]
@@ -826,7 +826,7 @@ vg_sha384_digest_avx2:
 	ret
 	.p2align 6
 
-vg_sha384_finalize_shani:
+vg_sha384_finalize:
 	lea rsp, [rsp-1384]
 	mov rcx, rsp
 	add rcx, 8
@@ -939,7 +939,7 @@ vg_sha384_finalize_shani:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha512_compress_shani}
+	call {vg_sha512_compress}
 	mov rbx, rdi
 	mov r15, rcx
 	mov r13d, 0
@@ -974,7 +974,7 @@ vg_sha384_finalize_shani:
 	ret
 	.p2align 6
 
-vg_sha384_digest_shani:
+vg_sha384_digest:
 	lea rsp, [rsp-1592]
 	mov rcx, rsp
 	add rcx, 8
@@ -1016,7 +1016,7 @@ vg_sha384_digest_shani:
 	mov rdi, rbx
 	mov rdx, r14
 	mov rcx, r15
-	call {vg_sha512_compress_shani}
+	call {vg_sha512_compress}
 	mov rbx, rdi
 	mov r15, rcx
 	mov rax, r14
@@ -1121,7 +1121,7 @@ vg_sha384_digest_shani:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha512_compress_shani}
+	call {vg_sha512_compress}
 	mov rbx, rdi
 	mov r15, rcx
 	pxor xmm0, xmm0
@@ -1153,7 +1153,7 @@ vg_sha384_digest_shani:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha512_compress_shani}
+	call {vg_sha512_compress}
 	mov rbx, rdi
 	mov r15, rcx
 	mov rax, QWORD PTR [rbx]
@@ -1197,7 +1197,7 @@ vg_sha384_digest_shani:
 	ret
 	.p2align 6
 
-vg_sha512_update:
+vg_sha512_update_shani:
 	lea rsp, [rsp-1384]
 	mov r8, rsp
 	add r8, 8
@@ -1327,7 +1327,7 @@ vg_sha512_update:
 	mov rdi, rbx
 	mov rdx, r14
 	mov rcx, r15
-	call {vg_sha512_compress}
+	call {vg_sha512_compress_shani}
 	mov rbx, rdi
 	mov r15, rcx
 226:
@@ -1343,7 +1343,7 @@ vg_sha512_update:
 	ret
 	.p2align 6
 
-vg_sha512_finalize:
+vg_sha512_finalize_shani:
 	lea rsp, [rsp-1384]
 	mov rcx, rsp
 	add rcx, 8
@@ -1456,7 +1456,7 @@ vg_sha512_finalize:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha512_compress}
+	call {vg_sha512_compress_shani}
 	mov rbx, rdi
 	mov r15, rcx
 	mov r13d, 0
@@ -1497,7 +1497,7 @@ vg_sha512_finalize:
 	ret
 	.p2align 6
 
-vg_sha512_digest:
+vg_sha512_digest_shani:
 	lea rsp, [rsp-1592]
 	mov rcx, rsp
 	add rcx, 8
@@ -1539,7 +1539,7 @@ vg_sha512_digest:
 	mov rdi, rbx
 	mov rdx, r14
 	mov rcx, r15
-	call {vg_sha512_compress}
+	call {vg_sha512_compress_shani}
 	mov rbx, rdi
 	mov r15, rcx
 	mov rax, r14
@@ -1644,7 +1644,7 @@ vg_sha512_digest:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha512_compress}
+	call {vg_sha512_compress_shani}
 	mov rbx, rdi
 	mov r15, rcx
 	pxor xmm0, xmm0
@@ -1676,7 +1676,7 @@ vg_sha512_digest:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha512_compress}
+	call {vg_sha512_compress_shani}
 	mov rbx, rdi
 	mov r15, rcx
 	mov rax, QWORD PTR [rbx]
@@ -2255,7 +2255,7 @@ vg_sha512_digest_avx2:
 	ret
 	.p2align 6
 
-vg_sha512_update_shani:
+vg_sha512_update:
 	lea rsp, [rsp-1384]
 	mov r8, rsp
 	add r8, 8
@@ -2385,7 +2385,7 @@ vg_sha512_update_shani:
 	mov rdi, rbx
 	mov rdx, r14
 	mov rcx, r15
-	call {vg_sha512_compress_shani}
+	call {vg_sha512_compress}
 	mov rbx, rdi
 	mov r15, rcx
 226:
@@ -2401,7 +2401,7 @@ vg_sha512_update_shani:
 	ret
 	.p2align 6
 
-vg_sha512_finalize_shani:
+vg_sha512_finalize:
 	lea rsp, [rsp-1384]
 	mov rcx, rsp
 	add rcx, 8
@@ -2514,7 +2514,7 @@ vg_sha512_finalize_shani:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha512_compress_shani}
+	call {vg_sha512_compress}
 	mov rbx, rdi
 	mov r15, rcx
 	mov r13d, 0
@@ -2555,7 +2555,7 @@ vg_sha512_finalize_shani:
 	ret
 	.p2align 6
 
-vg_sha512_digest_shani:
+vg_sha512_digest:
 	lea rsp, [rsp-1592]
 	mov rcx, rsp
 	add rcx, 8
@@ -2597,7 +2597,7 @@ vg_sha512_digest_shani:
 	mov rdi, rbx
 	mov rdx, r14
 	mov rcx, r15
-	call {vg_sha512_compress_shani}
+	call {vg_sha512_compress}
 	mov rbx, rdi
 	mov r15, rcx
 	mov rax, r14
@@ -2702,7 +2702,7 @@ vg_sha512_digest_shani:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha512_compress_shani}
+	call {vg_sha512_compress}
 	mov rbx, rdi
 	mov r15, rcx
 	pxor xmm0, xmm0
@@ -2734,7 +2734,7 @@ vg_sha512_digest_shani:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha512_compress_shani}
+	call {vg_sha512_compress}
 	mov rbx, rdi
 	mov r15, rcx
 	mov rax, QWORD PTR [rbx]
@@ -2784,7 +2784,7 @@ vg_sha512_digest_shani:
 	ret
 	.p2align 6
 
-vg_sha512_224_finalize:
+vg_sha512_224_finalize_shani:
 	lea rsp, [rsp-1384]
 	mov rcx, rsp
 	add rcx, 8
@@ -2897,7 +2897,7 @@ vg_sha512_224_finalize:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha512_compress}
+	call {vg_sha512_compress_shani}
 	mov rbx, rdi
 	mov r15, rcx
 	mov r13d, 0
@@ -2926,7 +2926,7 @@ vg_sha512_224_finalize:
 	ret
 	.p2align 6
 
-vg_sha512_224_digest:
+vg_sha512_224_digest_shani:
 	lea rsp, [rsp-1592]
 	mov rcx, rsp
 	add rcx, 8
@@ -2968,7 +2968,7 @@ vg_sha512_224_digest:
 	mov rdi, rbx
 	mov rdx, r14
 	mov rcx, r15
-	call {vg_sha512_compress}
+	call {vg_sha512_compress_shani}
 	mov rbx, rdi
 	mov r15, rcx
 	mov rax, r14
@@ -3073,7 +3073,7 @@ vg_sha512_224_digest:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha512_compress}
+	call {vg_sha512_compress_shani}
 	mov rbx, rdi
 	mov r15, rcx
 	pxor xmm0, xmm0
@@ -3105,7 +3105,7 @@ vg_sha512_224_digest:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha512_compress}
+	call {vg_sha512_compress_shani}
 	mov rbx, rdi
 	mov r15, rcx
 	mov rax, QWORD PTR [rbx]
@@ -3502,7 +3502,7 @@ vg_sha512_224_digest_avx2:
 	ret
 	.p2align 6
 
-vg_sha512_224_finalize_shani:
+vg_sha512_224_finalize:
 	lea rsp, [rsp-1384]
 	mov rcx, rsp
 	add rcx, 8
@@ -3615,7 +3615,7 @@ vg_sha512_224_finalize_shani:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha512_compress_shani}
+	call {vg_sha512_compress}
 	mov rbx, rdi
 	mov r15, rcx
 	mov r13d, 0
@@ -3644,7 +3644,7 @@ vg_sha512_224_finalize_shani:
 	ret
 	.p2align 6
 
-vg_sha512_224_digest_shani:
+vg_sha512_224_digest:
 	lea rsp, [rsp-1592]
 	mov rcx, rsp
 	add rcx, 8
@@ -3686,7 +3686,7 @@ vg_sha512_224_digest_shani:
 	mov rdi, rbx
 	mov rdx, r14
 	mov rcx, r15
-	call {vg_sha512_compress_shani}
+	call {vg_sha512_compress}
 	mov rbx, rdi
 	mov r15, rcx
 	mov rax, r14
@@ -3791,7 +3791,7 @@ vg_sha512_224_digest_shani:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha512_compress_shani}
+	call {vg_sha512_compress}
 	mov rbx, rdi
 	mov r15, rcx
 	pxor xmm0, xmm0
@@ -3823,7 +3823,7 @@ vg_sha512_224_digest_shani:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha512_compress_shani}
+	call {vg_sha512_compress}
 	mov rbx, rdi
 	mov r15, rcx
 	mov rax, QWORD PTR [rbx]
@@ -3861,7 +3861,7 @@ vg_sha512_224_digest_shani:
 	ret
 	.p2align 6
 
-vg_sha512_256_finalize:
+vg_sha512_256_finalize_shani:
 	lea rsp, [rsp-1384]
 	mov rcx, rsp
 	add rcx, 8
@@ -3974,7 +3974,7 @@ vg_sha512_256_finalize:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha512_compress}
+	call {vg_sha512_compress_shani}
 	mov rbx, rdi
 	mov r15, rcx
 	mov r13d, 0
@@ -4003,7 +4003,7 @@ vg_sha512_256_finalize:
 	ret
 	.p2align 6
 
-vg_sha512_256_digest:
+vg_sha512_256_digest_shani:
 	lea rsp, [rsp-1592]
 	mov rcx, rsp
 	add rcx, 8
@@ -4045,7 +4045,7 @@ vg_sha512_256_digest:
 	mov rdi, rbx
 	mov rdx, r14
 	mov rcx, r15
-	call {vg_sha512_compress}
+	call {vg_sha512_compress_shani}
 	mov rbx, rdi
 	mov r15, rcx
 	mov rax, r14
@@ -4150,7 +4150,7 @@ vg_sha512_256_digest:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha512_compress}
+	call {vg_sha512_compress_shani}
 	mov rbx, rdi
 	mov r15, rcx
 	pxor xmm0, xmm0
@@ -4182,7 +4182,7 @@ vg_sha512_256_digest:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha512_compress}
+	call {vg_sha512_compress_shani}
 	mov rbx, rdi
 	mov r15, rcx
 	mov rax, QWORD PTR [rbx]
@@ -4579,7 +4579,7 @@ vg_sha512_256_digest_avx2:
 	ret
 	.p2align 6
 
-vg_sha512_256_finalize_shani:
+vg_sha512_256_finalize:
 	lea rsp, [rsp-1384]
 	mov rcx, rsp
 	add rcx, 8
@@ -4692,7 +4692,7 @@ vg_sha512_256_finalize_shani:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha512_compress_shani}
+	call {vg_sha512_compress}
 	mov rbx, rdi
 	mov r15, rcx
 	mov r13d, 0
@@ -4721,7 +4721,7 @@ vg_sha512_256_finalize_shani:
 	ret
 	.p2align 6
 
-vg_sha512_256_digest_shani:
+vg_sha512_256_digest:
 	lea rsp, [rsp-1592]
 	mov rcx, rsp
 	add rcx, 8
@@ -4763,7 +4763,7 @@ vg_sha512_256_digest_shani:
 	mov rdi, rbx
 	mov rdx, r14
 	mov rcx, r15
-	call {vg_sha512_compress_shani}
+	call {vg_sha512_compress}
 	mov rbx, rdi
 	mov r15, rcx
 	mov rax, r14
@@ -4868,7 +4868,7 @@ vg_sha512_256_digest_shani:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha512_compress_shani}
+	call {vg_sha512_compress}
 	mov rbx, rdi
 	mov r15, rcx
 	pxor xmm0, xmm0
@@ -4900,7 +4900,7 @@ vg_sha512_256_digest_shani:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha512_compress_shani}
+	call {vg_sha512_compress}
 	mov rbx, rdi
 	mov r15, rcx
 	mov rax, QWORD PTR [rbx]

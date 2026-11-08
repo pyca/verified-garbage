@@ -19,8 +19,8 @@ def base : RoundImpl := Proof.Variants.MillerRabin.X86_64.Base.variant
 open VG VG.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.MillerRabin.X86_64 in
 def ifma : RoundImpl := Proof.Variants.MillerRabin.X86_64.Ifma.variant
 
-/-- Every implementation, which each function generic over them is emitted
-with (the registration files that import this). -/
-def variants := [adx, base, ifma]
+/-- Every implementation, best first: each function generic over them is
+emitted with each (the registration files that import this). -/
+def variants := [ifma, adx, base]
 
 end VG.Proof.Variants.MillerRabin.X86_64

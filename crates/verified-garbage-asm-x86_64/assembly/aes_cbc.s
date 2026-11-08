@@ -17,6 +17,19 @@ vg_aes_cbc_decrypt_vaes_avx512:
 	ret
 	.p2align 6
 
+vg_aes_cbc_decrypt_vaes:
+	lea rsp, [rsp-16]
+	mov QWORD PTR [rsp+8], r9
+	call {vg_aes_cbc_decrypt_unwiped_vaes}
+	mov QWORD PTR [rsp], rax
+	mov rdi, QWORD PTR [rsp+8]
+	mov esi, 224
+	call {vg_zeroize_avx}
+	mov rax, QWORD PTR [rsp]
+	lea rsp, [rsp+16]
+	ret
+	.p2align 6
+
 vg_aes_cbc_decrypt_aesni_avx:
 	lea rsp, [rsp-16]
 	mov QWORD PTR [rsp+8], r9
@@ -197,19 +210,6 @@ vg_aes_cbc_decrypt:
 	mov rdi, QWORD PTR [rsp+8]
 	mov esi, 2176
 	call {vg_zeroize}
-	mov rax, QWORD PTR [rsp]
-	lea rsp, [rsp+16]
-	ret
-	.p2align 6
-
-vg_aes_cbc_decrypt_vaes:
-	lea rsp, [rsp-16]
-	mov QWORD PTR [rsp+8], r9
-	call {vg_aes_cbc_decrypt_unwiped_vaes}
-	mov QWORD PTR [rsp], rax
-	mov rdi, QWORD PTR [rsp+8]
-	mov esi, 224
-	call {vg_zeroize_avx}
 	mov rax, QWORD PTR [rsp]
 	lea rsp, [rsp+16]
 	ret

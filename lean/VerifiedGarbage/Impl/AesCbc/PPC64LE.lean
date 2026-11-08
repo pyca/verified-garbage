@@ -12,7 +12,9 @@ of the verified `vg_aes_encrypt_blocks` or `vg_aes_decrypt_blocks` on one
 block at a time, in place, as on x86-64 (`VG.Impl.AesCbc.X86_64`).
 
 The scratch buffer (2176 bytes): `[0, 2048)` is the working space of the
-block function, `[2048, 2064)` the ciphertext block that decryption keeps
+block function, which the POWER8 block functions do not write, and so holds
+the slots of a group of decryption (`[0, 144)`, below), `[2048, 2064)`
+the ciphertext block that decryption keeps
 across the call, `[2064, 2112)` our caller's `r14`–`r19`, and
 `[2112, 2120)` our return address (a call replaces the link register).
 
@@ -23,9 +25,14 @@ a 64-bit word at a time through `r9` and `r10`.
 
 * `encrypt`, each block: `Pⱼ ⊕ Cⱼ₋₁` in place, enciphered in place, and
   copied to the chaining value.
-* `decrypt`, each block: `Cⱼ` saved in the scratch buffer, deciphered in
-  place, XORed with the chaining value `Cⱼ₋₁`, and the saved `Cⱼ` copied to
-  the chaining value.
+* `decrypt`, each group of eight blocks while at least eight are left
+  (`decGroup`): the chaining value and the eight `Cⱼ` saved in slots 0 to 8
+  of the scratch buffer, the eight deciphered in place by one call (which
+  runs the block function's eight-block loop), each XORed with the slot
+  before its own, and slot 8 copied to the chaining value; then each block
+  left (`decBody`): `Cⱼ` saved in the scratch buffer, deciphered in place,
+  XORed with the chaining value `Cⱼ₋₁`, and the saved `Cⱼ` copied to the
+  chaining value.
 
 Only the pointers, `rounds` and `n` can affect timing: the only branches are
 on `n`.
@@ -107,6 +114,52 @@ def decBody : Prog isa :=
   .seq (.block (copy .r19 cOff .r17 0 ++ callArgs))
     (.seq decCall (.block (xorInto .r17 .r16 ++ copy .r16 0 .r19 cOff ++ advance)))
 
-def decrypt : Prog isa := whole decBody
+/-! ## Groups of eight blocks -/
+
+/-- The block at `src + e` XORed into the block at `dst + d`. -/
+def xorAt (dst : Reg) (d : Nat) (src : Reg) (e : Nat) : List Instr :=
+  [.load .d .r9 dst d, .load .d .r10 src e, .logic .xor .r9 .r9 .r10, .store .d .r9 dst d,
+   .load .d .r9 dst (d + 8), .load .d .r10 src (e + 8), .logic .xor .r9 .r9 .r10, .store .d .r9 dst (d + 8)]
+
+/-- Slot `j` of a group, at `16 j` in the scratch buffer. -/
+def slot (j : Nat) : Nat := 16 * j
+
+/-- Slot `0` the chaining value, and slot `j + 1` block `j` at `r17`, for
+`j < m`: slot `j` is what block `j` is chained with. -/
+def saveSlots (m : Nat) : List Instr :=
+  copy .r19 (slot 0) .r16 0 ++ (List.range m).flatMap fun j => copy .r19 (slot (j + 1)) .r17 (16 * j)
+
+/-- Each of the eight blocks at `r17` XORed with its slot. -/
+def fixSlots : List Instr := (List.range 8).flatMap fun j => xorAt .r17 (16 * j) .r19 (slot j)
+
+/-- The arguments of the block function for the eight blocks at `r17`. -/
+def callArgs8 : List Instr := [mov .r3 .r14, mov .r4 .r15, mov .r5 .r17, .li .r6 8, mov .r7 .r19]
+
+/-- On to the block after the eight. -/
+def advance8 : List Instr := [.addi .r17 .r17 128, .subi .r18 .r18 8]
+
+/-- How many groups of eight blocks are left, in `r9`. -/
+def countG : List Instr := [.lsr .d .r9 .r18 3]
+
+/-- `group` while at least eight blocks are left, then `one` for each block
+left. -/
+def groups (group one : Prog isa) : Prog isa :=
+  .seq (.block countG)
+    (.seq (.ite (.zero .d .r9) (.block []) (.loop (.seq group (.block countG)) (.nonzero .d .r9)))
+      (.ite (.zero .d .r18) (.block []) (.loop one (.nonzero .d .r18))))
+
+/-- The registers saved and the arguments set up, `groups group one`, and
+the registers restored. -/
+def batched (group one : Prog isa) : Prog isa :=
+  .seq (.block (save ++ setup)) (.seq (.ite (.zero .d .r18) (.block []) (groups group one)) (.block restore))
+
+/-- Eight blocks: `Cⱼ₋₁` saved in slot `j` (the chaining value for the
+first), and the last `Cⱼ` in slot 8, deciphered in place by one call, each
+XORed with its slot, and slot 8 the chaining value. -/
+def decGroup : Prog isa :=
+  .seq (.block (saveSlots 8 ++ callArgs8))
+    (.seq decCall (.block (fixSlots ++ copy .r16 0 .r19 (slot 8) ++ advance8)))
+
+def decrypt : Prog isa := batched decGroup decBody
 
 end VG.Impl.AesCbc.PPC64LE

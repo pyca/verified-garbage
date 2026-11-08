@@ -17,7 +17,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 /-!
 # DSA key derivation on PPC64LE: y
 
-`yValue_ok`: in the P space with p in array 0 and `R² mod p` in array 8,
+`yValue_ok`: in the P space with p in array 0 and `R² mod p` in array 24,
 `y = g^x mod p` (x the `q_len` octets at `r28`) to the buffer's first
 `p_len` octets, and `r22 :=` the mask of `y ≠ 0` and `y ≠ 1`.
 -/
@@ -39,7 +39,7 @@ def yValueRegs : List Reg :=
 space's arrays and the buffer's first `p_len` octets. -/
 theorem yValue_ok {s : State} {L : Lay} {key x out : Addr} {p : Nat} (hL : L.Ok) (hs : ScrL s L)
     (hr : Regs s L key x out) (hin : InP s L) (hk : Src s L key (2 * L.pl + L.ql)) (hx : Src s L x L.ql)
-    (hp0 : arrP s.mem L 0 = p) (hp : 2 ≤ p) (hpo : p % 2 = 1) (hrr : arrP s.mem L 8 = 2 ^ (128 * L.wp) % p) :
+    (hp0 : arrP s.mem L 0 = p) (hp : 2 ≤ p) (hpo : p % 2 = 1) (hrr : arrP s.mem L 24 = 2 ^ (128 * L.wp) % p) :
     WP isa yValue s fun t =>
       (Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem L.Buf L.pl) = gOf s.mem L key ^ kOf s.mem L x % p ∧
         t.gpr .r22 = mask (decide (gOf s.mem L key ^ kOf s.mem L x % p ≠ 0) &&
@@ -55,7 +55,7 @@ theorem yValue_ok {s : State} {L : Lay} {key x out : Addr} {p : Nat} (hL : L.Ok)
   have hbe := hL.buf_end
   have hqZ : L.qOff + 1600 ≤ L.Z := by simp only [Lay.bOff] at hbe; omega
   have e0 := Lay.slot_eq L.wp 0; have e1 := Lay.slot_eq L.wp 1; have e4 := Lay.slot_eq L.wp 4
-  have e7 := Lay.slot_eq L.wp 7; have e8 := Lay.slot_eq L.wp 8; have e28 := Lay.slot_eq L.wp 28
+  have e7 := Lay.slot_eq L.wp 7; have e8 := Lay.slot_eq L.wp 8; have e24 := Lay.slot_eq L.wp 24; have e28 := Lay.slot_eq L.wp 28
   have hq28 : L.qOff = slot L.wp 28 := rfl
   unfold yValue
   -- The pointers: x into `r24`, g's octets into `r12`.

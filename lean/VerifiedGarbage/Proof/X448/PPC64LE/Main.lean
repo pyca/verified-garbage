@@ -119,7 +119,7 @@ theorem afterSetup_correct {s s1 : State} {pb : List Byte}
     fun s4 ⟨hst4, hc4, hS4⟩ => ?_)
   refine WP.seq (WP.mono (invert_ok hc4 (hS4.mono (by decide)) rfl) fun s5 ⟨hst5, hc5, hS5⟩ => ?_)
   refine WP.seq (WP.mono (mulS (o := X2) (x := X2) (y := R) (by decide) (by decide) (by decide)
-    (by decide) hc5 hS5) fun s6 ⟨hr6, hf6, hS6⟩ => ?_)
+    (by decide) (by decide) (by decide) hc5 hS5) fun s6 ⟨hr6, hf6, hS6⟩ => ?_)
   -- The registers and regions along the way.
   have hst6 : Stp (s.gpr .r6) s2 s6 := hst3.trans (hst4.trans (hst5.trans ⟨hr6.mono (by decide), hf6⟩))
   have h3' : s6.gpr .r3 = s.gpr .r3 := by

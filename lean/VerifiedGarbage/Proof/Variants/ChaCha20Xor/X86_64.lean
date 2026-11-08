@@ -20,8 +20,8 @@ def scalar : Proof.ChaCha20.X86_64.XorImpl := .scalar
 
 def ssse3 : Proof.ChaCha20.X86_64.XorImpl := .ssse3
 
-/-- Every implementation, which each function generic over them is emitted
-with (the registration files that import this). -/
-def variants := [avx2, avx512, avx512Vl, ifma, scalar, ssse3]
+/-- Every implementation, best first: each function generic over them is
+emitted with each (the registration files that import this). -/
+def variants := [ifma, avx512Vl, avx512, avx2, ssse3, scalar]
 
 end VG.Proof.Variants.ChaCha20Xor.X86_64

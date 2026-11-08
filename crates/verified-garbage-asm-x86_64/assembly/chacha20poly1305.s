@@ -4,301 +4,19 @@
 // `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
 // gives.
 
-vg_chacha20_poly1305_seal_avx2:
+vg_chacha20_poly1305_seal_ifma:
 	lea rsp, [rsp-8]
 	mov rax, QWORD PTR [rsp+16]
 	mov QWORD PTR [rsp], rax
-	call {vg_chacha20_poly1305_seal_body_avx2}
+	call {vg_chacha20_poly1305_seal_body_ifma}
 	lea rsp, [rsp+8]
 	ret
 	.p2align 6
 
-vg_chacha20_poly1305_open_avx2:
-	lea rsp, [rsp-1728]
-	mov rax, QWORD PTR [rsp+1736]
-	mov QWORD PTR [rsp+8], rax
-	mov rax, rsp
-	add rax, 24
-	mov QWORD PTR [rsp+16], rax
-	mov r11, r8
-	mov rax, QWORD PTR [rsp+16]
-	mov r10, QWORD PTR [rsp+8]
-	push r11
-	push rax
-	push r10
-	call {vg_chacha20_poly1305_open_body_avx2}
-	pop r10
-	pop r10
-	pop r10
-	pxor xmm0, xmm0
-	movdqu XMMWORD PTR [rsp+24], xmm0
-	movdqu XMMWORD PTR [rsp+40], xmm0
-	movdqu XMMWORD PTR [rsp+56], xmm0
-	movdqu XMMWORD PTR [rsp+72], xmm0
-	movdqu XMMWORD PTR [rsp+88], xmm0
-	movdqu XMMWORD PTR [rsp+104], xmm0
-	movdqu XMMWORD PTR [rsp+120], xmm0
-	movdqu XMMWORD PTR [rsp+136], xmm0
-	movdqu XMMWORD PTR [rsp+152], xmm0
-	movdqu XMMWORD PTR [rsp+168], xmm0
-	movdqu XMMWORD PTR [rsp+184], xmm0
-	movdqu XMMWORD PTR [rsp+200], xmm0
-	movdqu XMMWORD PTR [rsp+216], xmm0
-	movdqu XMMWORD PTR [rsp+232], xmm0
-	movdqu XMMWORD PTR [rsp+248], xmm0
-	movdqu XMMWORD PTR [rsp+264], xmm0
-	movdqu XMMWORD PTR [rsp+280], xmm0
-	movdqu XMMWORD PTR [rsp+296], xmm0
-	movdqu XMMWORD PTR [rsp+312], xmm0
-	movdqu XMMWORD PTR [rsp+328], xmm0
-	movdqu XMMWORD PTR [rsp+344], xmm0
-	movdqu XMMWORD PTR [rsp+360], xmm0
-	movdqu XMMWORD PTR [rsp+376], xmm0
-	movdqu XMMWORD PTR [rsp+392], xmm0
-	movdqu XMMWORD PTR [rsp+408], xmm0
-	movdqu XMMWORD PTR [rsp+424], xmm0
-	movdqu XMMWORD PTR [rsp+440], xmm0
-	movdqu XMMWORD PTR [rsp+456], xmm0
-	movdqu XMMWORD PTR [rsp+472], xmm0
-	movdqu XMMWORD PTR [rsp+488], xmm0
-	movdqu XMMWORD PTR [rsp+504], xmm0
-	movdqu XMMWORD PTR [rsp+520], xmm0
-	movdqu XMMWORD PTR [rsp+536], xmm0
-	movdqu XMMWORD PTR [rsp+552], xmm0
-	movdqu XMMWORD PTR [rsp+568], xmm0
-	movdqu XMMWORD PTR [rsp+584], xmm0
-	movdqu XMMWORD PTR [rsp+600], xmm0
-	movdqu XMMWORD PTR [rsp+616], xmm0
-	movdqu XMMWORD PTR [rsp+632], xmm0
-	movdqu XMMWORD PTR [rsp+648], xmm0
-	movdqu XMMWORD PTR [rsp+664], xmm0
-	movdqu XMMWORD PTR [rsp+680], xmm0
-	lea rsp, [rsp+1728]
-	ret
-	.p2align 6
-
-vg_chacha20_poly1305_open_to_avx2:
-	lea rsp, [rsp-1744]
-	mov rax, QWORD PTR [rsp+1752]
-	mov QWORD PTR [rsp+8], rax
-	mov rax, QWORD PTR [rsp+1760]
-	mov QWORD PTR [rsp+16], rax
-	mov rax, QWORD PTR [rsp+1768]
-	mov QWORD PTR [rsp+24], rax
-	mov rax, rsp
-	add rax, 40
-	mov QWORD PTR [rsp+32], rax
-	mov rax, QWORD PTR [rsp+32]
-	mov r10, QWORD PTR [rsp+24]
-	mov r11, r8
-	mov r8, QWORD PTR [rsp+8]
-	push r11
-	push rax
-	push r10
-	call {vg_chacha20_poly1305_open_body_avx2}
-	pop r10
-	pop r10
-	pop r10
-	pxor xmm0, xmm0
-	movdqu XMMWORD PTR [rsp+40], xmm0
-	movdqu XMMWORD PTR [rsp+56], xmm0
-	movdqu XMMWORD PTR [rsp+72], xmm0
-	movdqu XMMWORD PTR [rsp+88], xmm0
-	movdqu XMMWORD PTR [rsp+104], xmm0
-	movdqu XMMWORD PTR [rsp+120], xmm0
-	movdqu XMMWORD PTR [rsp+136], xmm0
-	movdqu XMMWORD PTR [rsp+152], xmm0
-	movdqu XMMWORD PTR [rsp+168], xmm0
-	movdqu XMMWORD PTR [rsp+184], xmm0
-	movdqu XMMWORD PTR [rsp+200], xmm0
-	movdqu XMMWORD PTR [rsp+216], xmm0
-	movdqu XMMWORD PTR [rsp+232], xmm0
-	movdqu XMMWORD PTR [rsp+248], xmm0
-	movdqu XMMWORD PTR [rsp+264], xmm0
-	movdqu XMMWORD PTR [rsp+280], xmm0
-	movdqu XMMWORD PTR [rsp+296], xmm0
-	movdqu XMMWORD PTR [rsp+312], xmm0
-	movdqu XMMWORD PTR [rsp+328], xmm0
-	movdqu XMMWORD PTR [rsp+344], xmm0
-	movdqu XMMWORD PTR [rsp+360], xmm0
-	movdqu XMMWORD PTR [rsp+376], xmm0
-	movdqu XMMWORD PTR [rsp+392], xmm0
-	movdqu XMMWORD PTR [rsp+408], xmm0
-	movdqu XMMWORD PTR [rsp+424], xmm0
-	movdqu XMMWORD PTR [rsp+440], xmm0
-	movdqu XMMWORD PTR [rsp+456], xmm0
-	movdqu XMMWORD PTR [rsp+472], xmm0
-	movdqu XMMWORD PTR [rsp+488], xmm0
-	movdqu XMMWORD PTR [rsp+504], xmm0
-	movdqu XMMWORD PTR [rsp+520], xmm0
-	movdqu XMMWORD PTR [rsp+536], xmm0
-	movdqu XMMWORD PTR [rsp+552], xmm0
-	movdqu XMMWORD PTR [rsp+568], xmm0
-	movdqu XMMWORD PTR [rsp+584], xmm0
-	movdqu XMMWORD PTR [rsp+600], xmm0
-	movdqu XMMWORD PTR [rsp+616], xmm0
-	movdqu XMMWORD PTR [rsp+632], xmm0
-	movdqu XMMWORD PTR [rsp+648], xmm0
-	movdqu XMMWORD PTR [rsp+664], xmm0
-	movdqu XMMWORD PTR [rsp+680], xmm0
-	movdqu XMMWORD PTR [rsp+696], xmm0
-	lea rsp, [rsp+1744]
-	ret
-	.p2align 6
-
-vg_chacha20_poly1305_seal_gather_avx2:
-	push rdi
-	push rsi
-	push rdx
-	push rcx
-	push r8
-	push r9
-	mov r11, r8
-	mov rdi, QWORD PTR [rsp+56]
-	cmp r9, 0
-	je 20f
-22:
-	mov rsi, QWORD PTR [r11]
-	mov rcx, QWORD PTR [r11+8]
-	add r11, 16
-	cmp rcx, 64
-	jb 23f
-	vmovdqu ymm0, YMMWORD PTR [rsi]
-	vmovdqu YMMWORD PTR [rdi], ymm0
-	mov r10d, 0
-	sub r10, rdi
-	and r10, 31
-	mov r8, rcx
-	sub r8, 64
-	cmp r8, r10
-	jb 25f
-27:
-	vmovdqu ymm0, YMMWORD PTR [rsi+r10*1]
-	vmovdqu ymm1, YMMWORD PTR [rsi+r10*1+32]
-	vmovdqu YMMWORD PTR [rdi+r10*1], ymm0
-	vmovdqu YMMWORD PTR [rdi+r10*1+32], ymm1
-	add r10, 64
-	cmp r8, r10
-	jae 27b
-	jmp 26f
-25:
-26:
-	vmovdqu ymm0, YMMWORD PTR [rsi+rcx*1-64]
-	vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1-32]
-	vmovdqu YMMWORD PTR [rdi+rcx*1-64], ymm0
-	vmovdqu YMMWORD PTR [rdi+rcx*1-32], ymm1
-	jmp 24f
-23:
-	cmp rcx, 32
-	jb 28f
-	vmovdqu ymm0, YMMWORD PTR [rsi]
-	vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1-32]
-	vmovdqu YMMWORD PTR [rdi], ymm0
-	vmovdqu YMMWORD PTR [rdi+rcx*1-32], ymm1
-	jmp 29f
-28:
-	cmp rcx, 16
-	jb 210f
-	vmovdqu xmm0, XMMWORD PTR [rsi]
-	vmovdqu xmm1, XMMWORD PTR [rsi+rcx*1-16]
-	vmovdqu XMMWORD PTR [rdi], xmm0
-	vmovdqu XMMWORD PTR [rdi+rcx*1-16], xmm1
-	jmp 211f
-210:
-	cmp rcx, 8
-	jb 212f
-	mov rax, QWORD PTR [rsi]
-	mov r8, QWORD PTR [rsi+rcx*1-8]
-	mov QWORD PTR [rdi], rax
-	mov QWORD PTR [rdi+rcx*1-8], r8
-	jmp 213f
-212:
-	cmp rcx, 4
-	jb 214f
-	mov eax, DWORD PTR [rsi]
-	mov r8d, DWORD PTR [rsi+rcx*1-4]
-	mov DWORD PTR [rdi], eax
-	mov DWORD PTR [rdi+rcx*1-4], r8d
-	jmp 215f
-214:
-	mov r10d, 0
-	cmp r10, rcx
-	je 216f
-218:
-	movzx eax, BYTE PTR [rsi+r10*1]
-	mov BYTE PTR [rdi+r10*1], al
-	add r10, 1
-	cmp r10, rcx
-	jne 218b
-	jmp 217f
-216:
-217:
-215:
-213:
-211:
-29:
-24:
-	vzeroupper
-	add rdi, rcx
-	sub r9, 1
-	jne 22b
-	jmp 21f
-20:
-21:
-	mov rdi, QWORD PTR [rsp+40]
-	mov rsi, QWORD PTR [rsp+32]
-	mov rdx, QWORD PTR [rsp+24]
-	mov rcx, QWORD PTR [rsp+16]
-	mov r8, QWORD PTR [rsp+56]
-	mov r9, QWORD PTR [rsp+64]
-	mov rax, QWORD PTR [rsp+72]
-	push rax
-	call {vg_chacha20_poly1305_seal_avx2}
-	pop rax
-	pop rax
-	pop rax
-	pop rax
-	pop rax
-	pop rax
-	pop rax
-	ret
-	.p2align 6
-
-vg_chacha20_poly1305_seal_avx512:
-	mov eax, 0
+vg_chacha20_poly1305_open_ifma:
 	mov rax, r9
-	mov r10, r9
-	sub r10, 961
-	cmp r10, 64
-	mov r10, 0
-	cmovb rax, r10
-	cmp rax, 640
-	jb 20f
-	lea rsp, [rsp-8]
-	mov rax, QWORD PTR [rsp+16]
-	mov QWORD PTR [rsp], rax
-	call {vg_chacha20_poly1305_seal_body_avx512}
-	lea rsp, [rsp+8]
-21:
-	ret
-20:
-	lea rsp, [rsp-8]
-	mov rax, QWORD PTR [rsp+16]
-	mov QWORD PTR [rsp], rax
-	call {vg_chacha20_poly1305_seal_body_avx2}
-	lea rsp, [rsp+8]
-	jmp 21b
-	.p2align 6
-
-vg_chacha20_poly1305_open_avx512:
-	mov eax, 0
-	mov rax, r9
-	mov r10, r9
-	sub r10, 961
-	cmp r10, 64
-	mov r10, 0
-	cmovb rax, r10
-	cmp rax, 640
+	sub rax, 449
+	cmp rax, 191
 	jb 20f
 	lea rsp, [rsp-1728]
 	mov rax, QWORD PTR [rsp+1736]
@@ -312,7 +30,7 @@ vg_chacha20_poly1305_open_avx512:
 	push r11
 	push rax
 	push r10
-	call {vg_chacha20_poly1305_open_body_avx512}
+	call {vg_chacha20_poly1305_open_body_ifma}
 	pop r10
 	pop r10
 	pop r10
@@ -375,7 +93,7 @@ vg_chacha20_poly1305_open_avx512:
 	push r11
 	push rax
 	push r10
-	call {vg_chacha20_poly1305_open_body_avx2}
+	call {vg_chacha20_poly1305_open_body_avx512vl}
 	pop r10
 	pop r10
 	pop r10
@@ -426,15 +144,10 @@ vg_chacha20_poly1305_open_avx512:
 	jmp 21b
 	.p2align 6
 
-vg_chacha20_poly1305_open_to_avx512:
-	mov eax, 0
+vg_chacha20_poly1305_open_to_ifma:
 	mov rax, r9
-	mov r10, r9
-	sub r10, 961
-	cmp r10, 64
-	mov r10, 0
-	cmovb rax, r10
-	cmp rax, 640
+	sub rax, 449
+	cmp rax, 191
 	jb 20f
 	lea rsp, [rsp-1744]
 	mov rax, QWORD PTR [rsp+1752]
@@ -453,7 +166,7 @@ vg_chacha20_poly1305_open_to_avx512:
 	push r11
 	push rax
 	push r10
-	call {vg_chacha20_poly1305_open_body_avx512}
+	call {vg_chacha20_poly1305_open_body_ifma}
 	pop r10
 	pop r10
 	pop r10
@@ -521,7 +234,7 @@ vg_chacha20_poly1305_open_to_avx512:
 	push r11
 	push rax
 	push r10
-	call {vg_chacha20_poly1305_open_body_avx2}
+	call {vg_chacha20_poly1305_open_body_avx512vl}
 	pop r10
 	pop r10
 	pop r10
@@ -572,9 +285,9 @@ vg_chacha20_poly1305_open_to_avx512:
 	jmp 21b
 	.p2align 6
 
-vg_chacha20_poly1305_seal_gather_avx512:
+vg_chacha20_poly1305_seal_gather_ifma:
 	mov rax, QWORD PTR [rsp+16]
-	cmp rax, 1025
+	cmp rax, 961
 	jb 20f
 	push rdi
 	push rsi
@@ -600,77 +313,86 @@ vg_chacha20_poly1305_seal_gather_avx512:
 	mov rsi, QWORD PTR [r11]
 	mov rcx, QWORD PTR [r11+8]
 	add r11, 16
-	cmp rcx, 64
+	cmp rcx, 128
 	jb 27f
-	vmovdqu ymm0, YMMWORD PTR [rsi]
-	vmovdqu YMMWORD PTR [rdi], ymm0
+	vmovdqu32 zmm0, ZMMWORD PTR [rsi]
+	vmovdqu32 ZMMWORD PTR [rdi], zmm0
 	mov r10d, 0
 	sub r10, rdi
-	and r10, 31
+	and r10, 63
 	mov r8, rcx
-	sub r8, 64
+	sub r8, 128
 	cmp r8, r10
 	jb 29f
 211:
-	vmovdqu ymm0, YMMWORD PTR [rsi+r10*1]
-	vmovdqu ymm1, YMMWORD PTR [rsi+r10*1+32]
-	vmovdqu YMMWORD PTR [rdi+r10*1], ymm0
-	vmovdqu YMMWORD PTR [rdi+r10*1+32], ymm1
-	add r10, 64
+	vmovdqu32 zmm0, ZMMWORD PTR [rsi+r10*1]
+	vmovdqu32 zmm1, ZMMWORD PTR [rsi+r10*1+64]
+	vmovdqu32 ZMMWORD PTR [rdi+r10*1], zmm0
+	vmovdqu32 ZMMWORD PTR [rdi+r10*1+64], zmm1
+	add r10, 128
 	cmp r8, r10
 	jae 211b
 	jmp 210f
 29:
 210:
-	vmovdqu ymm0, YMMWORD PTR [rsi+rcx*1-64]
-	vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1-32]
-	vmovdqu YMMWORD PTR [rdi+rcx*1-64], ymm0
-	vmovdqu YMMWORD PTR [rdi+rcx*1-32], ymm1
+	vmovdqu32 zmm0, ZMMWORD PTR [rsi+rcx*1-128]
+	vmovdqu32 zmm1, ZMMWORD PTR [rsi+rcx*1-64]
+	vmovdqu32 ZMMWORD PTR [rdi+rcx*1-128], zmm0
+	vmovdqu32 ZMMWORD PTR [rdi+rcx*1-64], zmm1
 	jmp 28f
 27:
-	cmp rcx, 32
+	cmp rcx, 64
 	jb 212f
+	vmovdqu32 zmm0, ZMMWORD PTR [rsi]
+	vmovdqu32 zmm1, ZMMWORD PTR [rsi+rcx*1-64]
+	vmovdqu32 ZMMWORD PTR [rdi], zmm0
+	vmovdqu32 ZMMWORD PTR [rdi+rcx*1-64], zmm1
+	jmp 213f
+212:
+	cmp rcx, 32
+	jb 214f
 	vmovdqu ymm0, YMMWORD PTR [rsi]
 	vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1-32]
 	vmovdqu YMMWORD PTR [rdi], ymm0
 	vmovdqu YMMWORD PTR [rdi+rcx*1-32], ymm1
-	jmp 213f
-212:
+	jmp 215f
+214:
 	cmp rcx, 16
-	jb 214f
+	jb 216f
 	vmovdqu xmm0, XMMWORD PTR [rsi]
 	vmovdqu xmm1, XMMWORD PTR [rsi+rcx*1-16]
 	vmovdqu XMMWORD PTR [rdi], xmm0
 	vmovdqu XMMWORD PTR [rdi+rcx*1-16], xmm1
-	jmp 215f
-214:
+	jmp 217f
+216:
 	cmp rcx, 8
-	jb 216f
+	jb 218f
 	mov rax, QWORD PTR [rsi]
 	mov r8, QWORD PTR [rsi+rcx*1-8]
 	mov QWORD PTR [rdi], rax
 	mov QWORD PTR [rdi+rcx*1-8], r8
-	jmp 217f
-216:
+	jmp 219f
+218:
 	cmp rcx, 4
-	jb 218f
+	jb 220f
 	mov eax, DWORD PTR [rsi]
 	mov r8d, DWORD PTR [rsi+rcx*1-4]
 	mov DWORD PTR [rdi], eax
 	mov DWORD PTR [rdi+rcx*1-4], r8d
-	jmp 219f
-218:
+	jmp 221f
+220:
 	mov r10d, 0
 	cmp r10, rcx
-	je 220f
-222:
+	je 222f
+224:
 	movzx eax, BYTE PTR [rsi+r10*1]
 	mov BYTE PTR [rdi+r10*1], al
 	add r10, 1
 	cmp r10, rcx
-	jne 222b
-	jmp 221f
-220:
+	jne 224b
+	jmp 223f
+222:
+223:
 221:
 219:
 217:
@@ -694,16 +416,16 @@ vg_chacha20_poly1305_seal_gather_avx512:
 	mov r10, QWORD PTR [rsp+64]
 	mov r11, QWORD PTR [rsp+56]
 	cmp r9, 0
-	je 223f
+	je 225f
 	mov r9, QWORD PTR [r8+8]
 	mov r8, QWORD PTR [r8]
-	jmp 224f
-223:
-224:
+	jmp 226f
+225:
+226:
 	push rax
 	push r10
 	push r11
-	call {vg_chacha20_poly1305_seal_split_avx512}
+	call {vg_chacha20_poly1305_seal_split_ifma}
 	pop rax
 	pop rax
 	pop rax
@@ -724,95 +446,104 @@ vg_chacha20_poly1305_seal_gather_avx512:
 	mov r11, r8
 	mov rdi, QWORD PTR [rsp+56]
 	cmp r9, 0
-	je 225f
-227:
+	je 227f
+229:
 	mov rsi, QWORD PTR [r11]
 	mov rcx, QWORD PTR [r11+8]
 	add r11, 16
-	cmp rcx, 64
-	jb 228f
-	vmovdqu ymm0, YMMWORD PTR [rsi]
-	vmovdqu YMMWORD PTR [rdi], ymm0
+	cmp rcx, 128
+	jb 230f
+	vmovdqu32 zmm0, ZMMWORD PTR [rsi]
+	vmovdqu32 ZMMWORD PTR [rdi], zmm0
 	mov r10d, 0
 	sub r10, rdi
-	and r10, 31
+	and r10, 63
 	mov r8, rcx
-	sub r8, 64
+	sub r8, 128
 	cmp r8, r10
-	jb 230f
+	jb 232f
+234:
+	vmovdqu32 zmm0, ZMMWORD PTR [rsi+r10*1]
+	vmovdqu32 zmm1, ZMMWORD PTR [rsi+r10*1+64]
+	vmovdqu32 ZMMWORD PTR [rdi+r10*1], zmm0
+	vmovdqu32 ZMMWORD PTR [rdi+r10*1+64], zmm1
+	add r10, 128
+	cmp r8, r10
+	jae 234b
+	jmp 233f
 232:
-	vmovdqu ymm0, YMMWORD PTR [rsi+r10*1]
-	vmovdqu ymm1, YMMWORD PTR [rsi+r10*1+32]
-	vmovdqu YMMWORD PTR [rdi+r10*1], ymm0
-	vmovdqu YMMWORD PTR [rdi+r10*1+32], ymm1
-	add r10, 64
-	cmp r8, r10
-	jae 232b
+233:
+	vmovdqu32 zmm0, ZMMWORD PTR [rsi+rcx*1-128]
+	vmovdqu32 zmm1, ZMMWORD PTR [rsi+rcx*1-64]
+	vmovdqu32 ZMMWORD PTR [rdi+rcx*1-128], zmm0
+	vmovdqu32 ZMMWORD PTR [rdi+rcx*1-64], zmm1
 	jmp 231f
 230:
-231:
-	vmovdqu ymm0, YMMWORD PTR [rsi+rcx*1-64]
-	vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1-32]
-	vmovdqu YMMWORD PTR [rdi+rcx*1-64], ymm0
-	vmovdqu YMMWORD PTR [rdi+rcx*1-32], ymm1
-	jmp 229f
-228:
+	cmp rcx, 64
+	jb 235f
+	vmovdqu32 zmm0, ZMMWORD PTR [rsi]
+	vmovdqu32 zmm1, ZMMWORD PTR [rsi+rcx*1-64]
+	vmovdqu32 ZMMWORD PTR [rdi], zmm0
+	vmovdqu32 ZMMWORD PTR [rdi+rcx*1-64], zmm1
+	jmp 236f
+235:
 	cmp rcx, 32
-	jb 233f
+	jb 237f
 	vmovdqu ymm0, YMMWORD PTR [rsi]
 	vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1-32]
 	vmovdqu YMMWORD PTR [rdi], ymm0
 	vmovdqu YMMWORD PTR [rdi+rcx*1-32], ymm1
-	jmp 234f
-233:
+	jmp 238f
+237:
 	cmp rcx, 16
-	jb 235f
+	jb 239f
 	vmovdqu xmm0, XMMWORD PTR [rsi]
 	vmovdqu xmm1, XMMWORD PTR [rsi+rcx*1-16]
 	vmovdqu XMMWORD PTR [rdi], xmm0
 	vmovdqu XMMWORD PTR [rdi+rcx*1-16], xmm1
-	jmp 236f
-235:
+	jmp 240f
+239:
 	cmp rcx, 8
-	jb 237f
+	jb 241f
 	mov rax, QWORD PTR [rsi]
 	mov r8, QWORD PTR [rsi+rcx*1-8]
 	mov QWORD PTR [rdi], rax
 	mov QWORD PTR [rdi+rcx*1-8], r8
-	jmp 238f
-237:
+	jmp 242f
+241:
 	cmp rcx, 4
-	jb 239f
+	jb 243f
 	mov eax, DWORD PTR [rsi]
 	mov r8d, DWORD PTR [rsi+rcx*1-4]
 	mov DWORD PTR [rdi], eax
 	mov DWORD PTR [rdi+rcx*1-4], r8d
-	jmp 240f
-239:
+	jmp 244f
+243:
 	mov r10d, 0
 	cmp r10, rcx
-	je 241f
-243:
+	je 245f
+247:
 	movzx eax, BYTE PTR [rsi+r10*1]
 	mov BYTE PTR [rdi+r10*1], al
 	add r10, 1
 	cmp r10, rcx
-	jne 243b
-	jmp 242f
-241:
+	jne 247b
+	jmp 246f
+245:
+246:
+244:
 242:
 240:
 238:
 236:
-234:
-229:
+231:
 	vzeroupper
 	add rdi, rcx
 	sub r9, 1
-	jne 227b
-	jmp 226f
-225:
-226:
+	jne 229b
+	jmp 228f
+227:
+228:
 	mov rdi, QWORD PTR [rsp+40]
 	mov rsi, QWORD PTR [rsp+32]
 	mov rdx, QWORD PTR [rsp+24]
@@ -821,7 +552,7 @@ vg_chacha20_poly1305_seal_gather_avx512:
 	mov r9, QWORD PTR [rsp+64]
 	mov rax, QWORD PTR [rsp+72]
 	push rax
-	call {vg_chacha20_poly1305_seal_avx512}
+	call {vg_chacha20_poly1305_seal_ifma}
 	pop rax
 	pop rax
 	pop rax
@@ -1888,19 +1619,41 @@ vg_chacha20_poly1305_seal_gather_avx512vl:
 	ret
 	.p2align 6
 
-vg_chacha20_poly1305_seal_ifma:
+vg_chacha20_poly1305_seal_avx512:
+	mov eax, 0
+	mov rax, r9
+	mov r10, r9
+	sub r10, 961
+	cmp r10, 64
+	mov r10, 0
+	cmovb rax, r10
+	cmp rax, 640
+	jb 20f
 	lea rsp, [rsp-8]
 	mov rax, QWORD PTR [rsp+16]
 	mov QWORD PTR [rsp], rax
-	call {vg_chacha20_poly1305_seal_body_ifma}
+	call {vg_chacha20_poly1305_seal_body_avx512}
 	lea rsp, [rsp+8]
+21:
 	ret
+20:
+	lea rsp, [rsp-8]
+	mov rax, QWORD PTR [rsp+16]
+	mov QWORD PTR [rsp], rax
+	call {vg_chacha20_poly1305_seal_body_avx2}
+	lea rsp, [rsp+8]
+	jmp 21b
 	.p2align 6
 
-vg_chacha20_poly1305_open_ifma:
+vg_chacha20_poly1305_open_avx512:
+	mov eax, 0
 	mov rax, r9
-	sub rax, 449
-	cmp rax, 191
+	mov r10, r9
+	sub r10, 961
+	cmp r10, 64
+	mov r10, 0
+	cmovb rax, r10
+	cmp rax, 640
 	jb 20f
 	lea rsp, [rsp-1728]
 	mov rax, QWORD PTR [rsp+1736]
@@ -1914,7 +1667,7 @@ vg_chacha20_poly1305_open_ifma:
 	push r11
 	push rax
 	push r10
-	call {vg_chacha20_poly1305_open_body_ifma}
+	call {vg_chacha20_poly1305_open_body_avx512}
 	pop r10
 	pop r10
 	pop r10
@@ -1977,7 +1730,7 @@ vg_chacha20_poly1305_open_ifma:
 	push r11
 	push rax
 	push r10
-	call {vg_chacha20_poly1305_open_body_avx512vl}
+	call {vg_chacha20_poly1305_open_body_avx2}
 	pop r10
 	pop r10
 	pop r10
@@ -2028,10 +1781,15 @@ vg_chacha20_poly1305_open_ifma:
 	jmp 21b
 	.p2align 6
 
-vg_chacha20_poly1305_open_to_ifma:
+vg_chacha20_poly1305_open_to_avx512:
+	mov eax, 0
 	mov rax, r9
-	sub rax, 449
-	cmp rax, 191
+	mov r10, r9
+	sub r10, 961
+	cmp r10, 64
+	mov r10, 0
+	cmovb rax, r10
+	cmp rax, 640
 	jb 20f
 	lea rsp, [rsp-1744]
 	mov rax, QWORD PTR [rsp+1752]
@@ -2050,7 +1808,7 @@ vg_chacha20_poly1305_open_to_ifma:
 	push r11
 	push rax
 	push r10
-	call {vg_chacha20_poly1305_open_body_ifma}
+	call {vg_chacha20_poly1305_open_body_avx512}
 	pop r10
 	pop r10
 	pop r10
@@ -2118,7 +1876,7 @@ vg_chacha20_poly1305_open_to_ifma:
 	push r11
 	push rax
 	push r10
-	call {vg_chacha20_poly1305_open_body_avx512vl}
+	call {vg_chacha20_poly1305_open_body_avx2}
 	pop r10
 	pop r10
 	pop r10
@@ -2169,9 +1927,9 @@ vg_chacha20_poly1305_open_to_ifma:
 	jmp 21b
 	.p2align 6
 
-vg_chacha20_poly1305_seal_gather_ifma:
+vg_chacha20_poly1305_seal_gather_avx512:
 	mov rax, QWORD PTR [rsp+16]
-	cmp rax, 961
+	cmp rax, 1025
 	jb 20f
 	push rdi
 	push rsi
@@ -2197,86 +1955,77 @@ vg_chacha20_poly1305_seal_gather_ifma:
 	mov rsi, QWORD PTR [r11]
 	mov rcx, QWORD PTR [r11+8]
 	add r11, 16
-	cmp rcx, 128
+	cmp rcx, 64
 	jb 27f
-	vmovdqu32 zmm0, ZMMWORD PTR [rsi]
-	vmovdqu32 ZMMWORD PTR [rdi], zmm0
+	vmovdqu ymm0, YMMWORD PTR [rsi]
+	vmovdqu YMMWORD PTR [rdi], ymm0
 	mov r10d, 0
 	sub r10, rdi
-	and r10, 63
+	and r10, 31
 	mov r8, rcx
-	sub r8, 128
+	sub r8, 64
 	cmp r8, r10
 	jb 29f
 211:
-	vmovdqu32 zmm0, ZMMWORD PTR [rsi+r10*1]
-	vmovdqu32 zmm1, ZMMWORD PTR [rsi+r10*1+64]
-	vmovdqu32 ZMMWORD PTR [rdi+r10*1], zmm0
-	vmovdqu32 ZMMWORD PTR [rdi+r10*1+64], zmm1
-	add r10, 128
+	vmovdqu ymm0, YMMWORD PTR [rsi+r10*1]
+	vmovdqu ymm1, YMMWORD PTR [rsi+r10*1+32]
+	vmovdqu YMMWORD PTR [rdi+r10*1], ymm0
+	vmovdqu YMMWORD PTR [rdi+r10*1+32], ymm1
+	add r10, 64
 	cmp r8, r10
 	jae 211b
 	jmp 210f
 29:
 210:
-	vmovdqu32 zmm0, ZMMWORD PTR [rsi+rcx*1-128]
-	vmovdqu32 zmm1, ZMMWORD PTR [rsi+rcx*1-64]
-	vmovdqu32 ZMMWORD PTR [rdi+rcx*1-128], zmm0
-	vmovdqu32 ZMMWORD PTR [rdi+rcx*1-64], zmm1
+	vmovdqu ymm0, YMMWORD PTR [rsi+rcx*1-64]
+	vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1-32]
+	vmovdqu YMMWORD PTR [rdi+rcx*1-64], ymm0
+	vmovdqu YMMWORD PTR [rdi+rcx*1-32], ymm1
 	jmp 28f
 27:
-	cmp rcx, 64
-	jb 212f
-	vmovdqu32 zmm0, ZMMWORD PTR [rsi]
-	vmovdqu32 zmm1, ZMMWORD PTR [rsi+rcx*1-64]
-	vmovdqu32 ZMMWORD PTR [rdi], zmm0
-	vmovdqu32 ZMMWORD PTR [rdi+rcx*1-64], zmm1
-	jmp 213f
-212:
 	cmp rcx, 32
-	jb 214f
+	jb 212f
 	vmovdqu ymm0, YMMWORD PTR [rsi]
 	vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1-32]
 	vmovdqu YMMWORD PTR [rdi], ymm0
 	vmovdqu YMMWORD PTR [rdi+rcx*1-32], ymm1
-	jmp 215f
-214:
+	jmp 213f
+212:
 	cmp rcx, 16
-	jb 216f
+	jb 214f
 	vmovdqu xmm0, XMMWORD PTR [rsi]
 	vmovdqu xmm1, XMMWORD PTR [rsi+rcx*1-16]
 	vmovdqu XMMWORD PTR [rdi], xmm0
 	vmovdqu XMMWORD PTR [rdi+rcx*1-16], xmm1
-	jmp 217f
-216:
+	jmp 215f
+214:
 	cmp rcx, 8
-	jb 218f
+	jb 216f
 	mov rax, QWORD PTR [rsi]
 	mov r8, QWORD PTR [rsi+rcx*1-8]
 	mov QWORD PTR [rdi], rax
 	mov QWORD PTR [rdi+rcx*1-8], r8
-	jmp 219f
-218:
+	jmp 217f
+216:
 	cmp rcx, 4
-	jb 220f
+	jb 218f
 	mov eax, DWORD PTR [rsi]
 	mov r8d, DWORD PTR [rsi+rcx*1-4]
 	mov DWORD PTR [rdi], eax
 	mov DWORD PTR [rdi+rcx*1-4], r8d
-	jmp 221f
-220:
+	jmp 219f
+218:
 	mov r10d, 0
 	cmp r10, rcx
-	je 222f
-224:
+	je 220f
+222:
 	movzx eax, BYTE PTR [rsi+r10*1]
 	mov BYTE PTR [rdi+r10*1], al
 	add r10, 1
 	cmp r10, rcx
-	jne 224b
-	jmp 223f
-222:
-223:
+	jne 222b
+	jmp 221f
+220:
 221:
 219:
 217:
@@ -2300,16 +2049,16 @@ vg_chacha20_poly1305_seal_gather_ifma:
 	mov r10, QWORD PTR [rsp+64]
 	mov r11, QWORD PTR [rsp+56]
 	cmp r9, 0
-	je 225f
+	je 223f
 	mov r9, QWORD PTR [r8+8]
 	mov r8, QWORD PTR [r8]
-	jmp 226f
-225:
-226:
+	jmp 224f
+223:
+224:
 	push rax
 	push r10
 	push r11
-	call {vg_chacha20_poly1305_seal_split_ifma}
+	call {vg_chacha20_poly1305_seal_split_avx512}
 	pop rax
 	pop rax
 	pop rax
@@ -2330,104 +2079,95 @@ vg_chacha20_poly1305_seal_gather_ifma:
 	mov r11, r8
 	mov rdi, QWORD PTR [rsp+56]
 	cmp r9, 0
-	je 227f
-229:
+	je 225f
+227:
 	mov rsi, QWORD PTR [r11]
 	mov rcx, QWORD PTR [r11+8]
 	add r11, 16
-	cmp rcx, 128
-	jb 230f
-	vmovdqu32 zmm0, ZMMWORD PTR [rsi]
-	vmovdqu32 ZMMWORD PTR [rdi], zmm0
+	cmp rcx, 64
+	jb 228f
+	vmovdqu ymm0, YMMWORD PTR [rsi]
+	vmovdqu YMMWORD PTR [rdi], ymm0
 	mov r10d, 0
 	sub r10, rdi
-	and r10, 63
+	and r10, 31
 	mov r8, rcx
-	sub r8, 128
+	sub r8, 64
 	cmp r8, r10
-	jb 232f
-234:
-	vmovdqu32 zmm0, ZMMWORD PTR [rsi+r10*1]
-	vmovdqu32 zmm1, ZMMWORD PTR [rsi+r10*1+64]
-	vmovdqu32 ZMMWORD PTR [rdi+r10*1], zmm0
-	vmovdqu32 ZMMWORD PTR [rdi+r10*1+64], zmm1
-	add r10, 128
-	cmp r8, r10
-	jae 234b
-	jmp 233f
+	jb 230f
 232:
-233:
-	vmovdqu32 zmm0, ZMMWORD PTR [rsi+rcx*1-128]
-	vmovdqu32 zmm1, ZMMWORD PTR [rsi+rcx*1-64]
-	vmovdqu32 ZMMWORD PTR [rdi+rcx*1-128], zmm0
-	vmovdqu32 ZMMWORD PTR [rdi+rcx*1-64], zmm1
+	vmovdqu ymm0, YMMWORD PTR [rsi+r10*1]
+	vmovdqu ymm1, YMMWORD PTR [rsi+r10*1+32]
+	vmovdqu YMMWORD PTR [rdi+r10*1], ymm0
+	vmovdqu YMMWORD PTR [rdi+r10*1+32], ymm1
+	add r10, 64
+	cmp r8, r10
+	jae 232b
 	jmp 231f
 230:
-	cmp rcx, 64
-	jb 235f
-	vmovdqu32 zmm0, ZMMWORD PTR [rsi]
-	vmovdqu32 zmm1, ZMMWORD PTR [rsi+rcx*1-64]
-	vmovdqu32 ZMMWORD PTR [rdi], zmm0
-	vmovdqu32 ZMMWORD PTR [rdi+rcx*1-64], zmm1
-	jmp 236f
-235:
+231:
+	vmovdqu ymm0, YMMWORD PTR [rsi+rcx*1-64]
+	vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1-32]
+	vmovdqu YMMWORD PTR [rdi+rcx*1-64], ymm0
+	vmovdqu YMMWORD PTR [rdi+rcx*1-32], ymm1
+	jmp 229f
+228:
 	cmp rcx, 32
-	jb 237f
+	jb 233f
 	vmovdqu ymm0, YMMWORD PTR [rsi]
 	vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1-32]
 	vmovdqu YMMWORD PTR [rdi], ymm0
 	vmovdqu YMMWORD PTR [rdi+rcx*1-32], ymm1
-	jmp 238f
-237:
+	jmp 234f
+233:
 	cmp rcx, 16
-	jb 239f
+	jb 235f
 	vmovdqu xmm0, XMMWORD PTR [rsi]
 	vmovdqu xmm1, XMMWORD PTR [rsi+rcx*1-16]
 	vmovdqu XMMWORD PTR [rdi], xmm0
 	vmovdqu XMMWORD PTR [rdi+rcx*1-16], xmm1
-	jmp 240f
-239:
+	jmp 236f
+235:
 	cmp rcx, 8
-	jb 241f
+	jb 237f
 	mov rax, QWORD PTR [rsi]
 	mov r8, QWORD PTR [rsi+rcx*1-8]
 	mov QWORD PTR [rdi], rax
 	mov QWORD PTR [rdi+rcx*1-8], r8
-	jmp 242f
-241:
+	jmp 238f
+237:
 	cmp rcx, 4
-	jb 243f
+	jb 239f
 	mov eax, DWORD PTR [rsi]
 	mov r8d, DWORD PTR [rsi+rcx*1-4]
 	mov DWORD PTR [rdi], eax
 	mov DWORD PTR [rdi+rcx*1-4], r8d
-	jmp 244f
-243:
+	jmp 240f
+239:
 	mov r10d, 0
 	cmp r10, rcx
-	je 245f
-247:
+	je 241f
+243:
 	movzx eax, BYTE PTR [rsi+r10*1]
 	mov BYTE PTR [rdi+r10*1], al
 	add r10, 1
 	cmp r10, rcx
-	jne 247b
-	jmp 246f
-245:
-246:
-244:
+	jne 243b
+	jmp 242f
+241:
 242:
 240:
 238:
 236:
-231:
+234:
+229:
 	vzeroupper
 	add rdi, rcx
 	sub r9, 1
-	jne 229b
-	jmp 228f
-227:
-228:
+	jne 227b
+	jmp 226f
+225:
+226:
 	mov rdi, QWORD PTR [rsp+40]
 	mov rsi, QWORD PTR [rsp+32]
 	mov rdx, QWORD PTR [rsp+24]
@@ -2436,7 +2176,7 @@ vg_chacha20_poly1305_seal_gather_ifma:
 	mov r9, QWORD PTR [rsp+64]
 	mov rax, QWORD PTR [rsp+72]
 	push rax
-	call {vg_chacha20_poly1305_seal_ifma}
+	call {vg_chacha20_poly1305_seal_avx512}
 	pop rax
 	pop rax
 	pop rax
@@ -2448,16 +2188,16 @@ vg_chacha20_poly1305_seal_gather_ifma:
 	ret
 	.p2align 6
 
-vg_chacha20_poly1305_seal:
+vg_chacha20_poly1305_seal_avx2:
 	lea rsp, [rsp-8]
 	mov rax, QWORD PTR [rsp+16]
 	mov QWORD PTR [rsp], rax
-	call {vg_chacha20_poly1305_seal_body}
+	call {vg_chacha20_poly1305_seal_body_avx2}
 	lea rsp, [rsp+8]
 	ret
 	.p2align 6
 
-vg_chacha20_poly1305_open:
+vg_chacha20_poly1305_open_avx2:
 	lea rsp, [rsp-1728]
 	mov rax, QWORD PTR [rsp+1736]
 	mov QWORD PTR [rsp+8], rax
@@ -2470,7 +2210,7 @@ vg_chacha20_poly1305_open:
 	push r11
 	push rax
 	push r10
-	call {vg_chacha20_poly1305_open_body}
+	call {vg_chacha20_poly1305_open_body_avx2}
 	pop r10
 	pop r10
 	pop r10
@@ -2521,7 +2261,7 @@ vg_chacha20_poly1305_open:
 	ret
 	.p2align 6
 
-vg_chacha20_poly1305_open_to:
+vg_chacha20_poly1305_open_to_avx2:
 	lea rsp, [rsp-1744]
 	mov rax, QWORD PTR [rsp+1752]
 	mov QWORD PTR [rsp+8], rax
@@ -2539,7 +2279,7 @@ vg_chacha20_poly1305_open_to:
 	push r11
 	push rax
 	push r10
-	call {vg_chacha20_poly1305_open_body}
+	call {vg_chacha20_poly1305_open_body_avx2}
 	pop r10
 	pop r10
 	pop r10
@@ -2590,7 +2330,7 @@ vg_chacha20_poly1305_open_to:
 	ret
 	.p2align 6
 
-vg_chacha20_poly1305_seal_gather:
+vg_chacha20_poly1305_seal_gather_avx2:
 	push rdi
 	push rsi
 	push rdx
@@ -2605,74 +2345,84 @@ vg_chacha20_poly1305_seal_gather:
 	mov rsi, QWORD PTR [r11]
 	mov rcx, QWORD PTR [r11+8]
 	add r11, 16
-	cmp rcx, 32
+	cmp rcx, 64
 	jb 23f
-	movdqu xmm0, XMMWORD PTR [rsi]
-	movdqu XMMWORD PTR [rdi], xmm0
+	vmovdqu ymm0, YMMWORD PTR [rsi]
+	vmovdqu YMMWORD PTR [rdi], ymm0
 	mov r10d, 0
 	sub r10, rdi
-	and r10, 15
+	and r10, 31
 	mov r8, rcx
-	sub r8, 32
+	sub r8, 64
 	cmp r8, r10
 	jb 25f
 27:
-	movdqu xmm0, XMMWORD PTR [rsi+r10*1]
-	movdqu xmm1, XMMWORD PTR [rsi+r10*1+16]
-	movdqu XMMWORD PTR [rdi+r10*1], xmm0
-	movdqu XMMWORD PTR [rdi+r10*1+16], xmm1
-	add r10, 32
+	vmovdqu ymm0, YMMWORD PTR [rsi+r10*1]
+	vmovdqu ymm1, YMMWORD PTR [rsi+r10*1+32]
+	vmovdqu YMMWORD PTR [rdi+r10*1], ymm0
+	vmovdqu YMMWORD PTR [rdi+r10*1+32], ymm1
+	add r10, 64
 	cmp r8, r10
 	jae 27b
 	jmp 26f
 25:
 26:
-	movdqu xmm0, XMMWORD PTR [rsi+rcx*1-32]
-	movdqu xmm1, XMMWORD PTR [rsi+rcx*1-16]
-	movdqu XMMWORD PTR [rdi+rcx*1-32], xmm0
-	movdqu XMMWORD PTR [rdi+rcx*1-16], xmm1
+	vmovdqu ymm0, YMMWORD PTR [rsi+rcx*1-64]
+	vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1-32]
+	vmovdqu YMMWORD PTR [rdi+rcx*1-64], ymm0
+	vmovdqu YMMWORD PTR [rdi+rcx*1-32], ymm1
 	jmp 24f
 23:
-	cmp rcx, 16
+	cmp rcx, 32
 	jb 28f
-	movdqu xmm0, XMMWORD PTR [rsi]
-	movdqu xmm1, XMMWORD PTR [rsi+rcx*1-16]
-	movdqu XMMWORD PTR [rdi], xmm0
-	movdqu XMMWORD PTR [rdi+rcx*1-16], xmm1
+	vmovdqu ymm0, YMMWORD PTR [rsi]
+	vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1-32]
+	vmovdqu YMMWORD PTR [rdi], ymm0
+	vmovdqu YMMWORD PTR [rdi+rcx*1-32], ymm1
 	jmp 29f
 28:
-	cmp rcx, 8
+	cmp rcx, 16
 	jb 210f
+	vmovdqu xmm0, XMMWORD PTR [rsi]
+	vmovdqu xmm1, XMMWORD PTR [rsi+rcx*1-16]
+	vmovdqu XMMWORD PTR [rdi], xmm0
+	vmovdqu XMMWORD PTR [rdi+rcx*1-16], xmm1
+	jmp 211f
+210:
+	cmp rcx, 8
+	jb 212f
 	mov rax, QWORD PTR [rsi]
 	mov r8, QWORD PTR [rsi+rcx*1-8]
 	mov QWORD PTR [rdi], rax
 	mov QWORD PTR [rdi+rcx*1-8], r8
-	jmp 211f
-210:
+	jmp 213f
+212:
 	cmp rcx, 4
-	jb 212f
+	jb 214f
 	mov eax, DWORD PTR [rsi]
 	mov r8d, DWORD PTR [rsi+rcx*1-4]
 	mov DWORD PTR [rdi], eax
 	mov DWORD PTR [rdi+rcx*1-4], r8d
-	jmp 213f
-212:
+	jmp 215f
+214:
 	mov r10d, 0
 	cmp r10, rcx
-	je 214f
-216:
+	je 216f
+218:
 	movzx eax, BYTE PTR [rsi+r10*1]
 	mov BYTE PTR [rdi+r10*1], al
 	add r10, 1
 	cmp r10, rcx
-	jne 216b
-	jmp 215f
-214:
+	jne 218b
+	jmp 217f
+216:
+217:
 215:
 213:
 211:
 29:
 24:
+	vzeroupper
 	add rdi, rcx
 	sub r9, 1
 	jne 22b
@@ -2687,7 +2437,7 @@ vg_chacha20_poly1305_seal_gather:
 	mov r9, QWORD PTR [rsp+64]
 	mov rax, QWORD PTR [rsp+72]
 	push rax
-	call {vg_chacha20_poly1305_seal}
+	call {vg_chacha20_poly1305_seal_avx2}
 	pop rax
 	pop rax
 	pop rax
@@ -2938,6 +2688,256 @@ vg_chacha20_poly1305_seal_gather_ssse3:
 	mov rax, QWORD PTR [rsp+72]
 	push rax
 	call {vg_chacha20_poly1305_seal_ssse3}
+	pop rax
+	pop rax
+	pop rax
+	pop rax
+	pop rax
+	pop rax
+	pop rax
+	ret
+	.p2align 6
+
+vg_chacha20_poly1305_seal:
+	lea rsp, [rsp-8]
+	mov rax, QWORD PTR [rsp+16]
+	mov QWORD PTR [rsp], rax
+	call {vg_chacha20_poly1305_seal_body}
+	lea rsp, [rsp+8]
+	ret
+	.p2align 6
+
+vg_chacha20_poly1305_open:
+	lea rsp, [rsp-1728]
+	mov rax, QWORD PTR [rsp+1736]
+	mov QWORD PTR [rsp+8], rax
+	mov rax, rsp
+	add rax, 24
+	mov QWORD PTR [rsp+16], rax
+	mov r11, r8
+	mov rax, QWORD PTR [rsp+16]
+	mov r10, QWORD PTR [rsp+8]
+	push r11
+	push rax
+	push r10
+	call {vg_chacha20_poly1305_open_body}
+	pop r10
+	pop r10
+	pop r10
+	pxor xmm0, xmm0
+	movdqu XMMWORD PTR [rsp+24], xmm0
+	movdqu XMMWORD PTR [rsp+40], xmm0
+	movdqu XMMWORD PTR [rsp+56], xmm0
+	movdqu XMMWORD PTR [rsp+72], xmm0
+	movdqu XMMWORD PTR [rsp+88], xmm0
+	movdqu XMMWORD PTR [rsp+104], xmm0
+	movdqu XMMWORD PTR [rsp+120], xmm0
+	movdqu XMMWORD PTR [rsp+136], xmm0
+	movdqu XMMWORD PTR [rsp+152], xmm0
+	movdqu XMMWORD PTR [rsp+168], xmm0
+	movdqu XMMWORD PTR [rsp+184], xmm0
+	movdqu XMMWORD PTR [rsp+200], xmm0
+	movdqu XMMWORD PTR [rsp+216], xmm0
+	movdqu XMMWORD PTR [rsp+232], xmm0
+	movdqu XMMWORD PTR [rsp+248], xmm0
+	movdqu XMMWORD PTR [rsp+264], xmm0
+	movdqu XMMWORD PTR [rsp+280], xmm0
+	movdqu XMMWORD PTR [rsp+296], xmm0
+	movdqu XMMWORD PTR [rsp+312], xmm0
+	movdqu XMMWORD PTR [rsp+328], xmm0
+	movdqu XMMWORD PTR [rsp+344], xmm0
+	movdqu XMMWORD PTR [rsp+360], xmm0
+	movdqu XMMWORD PTR [rsp+376], xmm0
+	movdqu XMMWORD PTR [rsp+392], xmm0
+	movdqu XMMWORD PTR [rsp+408], xmm0
+	movdqu XMMWORD PTR [rsp+424], xmm0
+	movdqu XMMWORD PTR [rsp+440], xmm0
+	movdqu XMMWORD PTR [rsp+456], xmm0
+	movdqu XMMWORD PTR [rsp+472], xmm0
+	movdqu XMMWORD PTR [rsp+488], xmm0
+	movdqu XMMWORD PTR [rsp+504], xmm0
+	movdqu XMMWORD PTR [rsp+520], xmm0
+	movdqu XMMWORD PTR [rsp+536], xmm0
+	movdqu XMMWORD PTR [rsp+552], xmm0
+	movdqu XMMWORD PTR [rsp+568], xmm0
+	movdqu XMMWORD PTR [rsp+584], xmm0
+	movdqu XMMWORD PTR [rsp+600], xmm0
+	movdqu XMMWORD PTR [rsp+616], xmm0
+	movdqu XMMWORD PTR [rsp+632], xmm0
+	movdqu XMMWORD PTR [rsp+648], xmm0
+	movdqu XMMWORD PTR [rsp+664], xmm0
+	movdqu XMMWORD PTR [rsp+680], xmm0
+	lea rsp, [rsp+1728]
+	ret
+	.p2align 6
+
+vg_chacha20_poly1305_open_to:
+	lea rsp, [rsp-1744]
+	mov rax, QWORD PTR [rsp+1752]
+	mov QWORD PTR [rsp+8], rax
+	mov rax, QWORD PTR [rsp+1760]
+	mov QWORD PTR [rsp+16], rax
+	mov rax, QWORD PTR [rsp+1768]
+	mov QWORD PTR [rsp+24], rax
+	mov rax, rsp
+	add rax, 40
+	mov QWORD PTR [rsp+32], rax
+	mov rax, QWORD PTR [rsp+32]
+	mov r10, QWORD PTR [rsp+24]
+	mov r11, r8
+	mov r8, QWORD PTR [rsp+8]
+	push r11
+	push rax
+	push r10
+	call {vg_chacha20_poly1305_open_body}
+	pop r10
+	pop r10
+	pop r10
+	pxor xmm0, xmm0
+	movdqu XMMWORD PTR [rsp+40], xmm0
+	movdqu XMMWORD PTR [rsp+56], xmm0
+	movdqu XMMWORD PTR [rsp+72], xmm0
+	movdqu XMMWORD PTR [rsp+88], xmm0
+	movdqu XMMWORD PTR [rsp+104], xmm0
+	movdqu XMMWORD PTR [rsp+120], xmm0
+	movdqu XMMWORD PTR [rsp+136], xmm0
+	movdqu XMMWORD PTR [rsp+152], xmm0
+	movdqu XMMWORD PTR [rsp+168], xmm0
+	movdqu XMMWORD PTR [rsp+184], xmm0
+	movdqu XMMWORD PTR [rsp+200], xmm0
+	movdqu XMMWORD PTR [rsp+216], xmm0
+	movdqu XMMWORD PTR [rsp+232], xmm0
+	movdqu XMMWORD PTR [rsp+248], xmm0
+	movdqu XMMWORD PTR [rsp+264], xmm0
+	movdqu XMMWORD PTR [rsp+280], xmm0
+	movdqu XMMWORD PTR [rsp+296], xmm0
+	movdqu XMMWORD PTR [rsp+312], xmm0
+	movdqu XMMWORD PTR [rsp+328], xmm0
+	movdqu XMMWORD PTR [rsp+344], xmm0
+	movdqu XMMWORD PTR [rsp+360], xmm0
+	movdqu XMMWORD PTR [rsp+376], xmm0
+	movdqu XMMWORD PTR [rsp+392], xmm0
+	movdqu XMMWORD PTR [rsp+408], xmm0
+	movdqu XMMWORD PTR [rsp+424], xmm0
+	movdqu XMMWORD PTR [rsp+440], xmm0
+	movdqu XMMWORD PTR [rsp+456], xmm0
+	movdqu XMMWORD PTR [rsp+472], xmm0
+	movdqu XMMWORD PTR [rsp+488], xmm0
+	movdqu XMMWORD PTR [rsp+504], xmm0
+	movdqu XMMWORD PTR [rsp+520], xmm0
+	movdqu XMMWORD PTR [rsp+536], xmm0
+	movdqu XMMWORD PTR [rsp+552], xmm0
+	movdqu XMMWORD PTR [rsp+568], xmm0
+	movdqu XMMWORD PTR [rsp+584], xmm0
+	movdqu XMMWORD PTR [rsp+600], xmm0
+	movdqu XMMWORD PTR [rsp+616], xmm0
+	movdqu XMMWORD PTR [rsp+632], xmm0
+	movdqu XMMWORD PTR [rsp+648], xmm0
+	movdqu XMMWORD PTR [rsp+664], xmm0
+	movdqu XMMWORD PTR [rsp+680], xmm0
+	movdqu XMMWORD PTR [rsp+696], xmm0
+	lea rsp, [rsp+1744]
+	ret
+	.p2align 6
+
+vg_chacha20_poly1305_seal_gather:
+	push rdi
+	push rsi
+	push rdx
+	push rcx
+	push r8
+	push r9
+	mov r11, r8
+	mov rdi, QWORD PTR [rsp+56]
+	cmp r9, 0
+	je 20f
+22:
+	mov rsi, QWORD PTR [r11]
+	mov rcx, QWORD PTR [r11+8]
+	add r11, 16
+	cmp rcx, 32
+	jb 23f
+	movdqu xmm0, XMMWORD PTR [rsi]
+	movdqu XMMWORD PTR [rdi], xmm0
+	mov r10d, 0
+	sub r10, rdi
+	and r10, 15
+	mov r8, rcx
+	sub r8, 32
+	cmp r8, r10
+	jb 25f
+27:
+	movdqu xmm0, XMMWORD PTR [rsi+r10*1]
+	movdqu xmm1, XMMWORD PTR [rsi+r10*1+16]
+	movdqu XMMWORD PTR [rdi+r10*1], xmm0
+	movdqu XMMWORD PTR [rdi+r10*1+16], xmm1
+	add r10, 32
+	cmp r8, r10
+	jae 27b
+	jmp 26f
+25:
+26:
+	movdqu xmm0, XMMWORD PTR [rsi+rcx*1-32]
+	movdqu xmm1, XMMWORD PTR [rsi+rcx*1-16]
+	movdqu XMMWORD PTR [rdi+rcx*1-32], xmm0
+	movdqu XMMWORD PTR [rdi+rcx*1-16], xmm1
+	jmp 24f
+23:
+	cmp rcx, 16
+	jb 28f
+	movdqu xmm0, XMMWORD PTR [rsi]
+	movdqu xmm1, XMMWORD PTR [rsi+rcx*1-16]
+	movdqu XMMWORD PTR [rdi], xmm0
+	movdqu XMMWORD PTR [rdi+rcx*1-16], xmm1
+	jmp 29f
+28:
+	cmp rcx, 8
+	jb 210f
+	mov rax, QWORD PTR [rsi]
+	mov r8, QWORD PTR [rsi+rcx*1-8]
+	mov QWORD PTR [rdi], rax
+	mov QWORD PTR [rdi+rcx*1-8], r8
+	jmp 211f
+210:
+	cmp rcx, 4
+	jb 212f
+	mov eax, DWORD PTR [rsi]
+	mov r8d, DWORD PTR [rsi+rcx*1-4]
+	mov DWORD PTR [rdi], eax
+	mov DWORD PTR [rdi+rcx*1-4], r8d
+	jmp 213f
+212:
+	mov r10d, 0
+	cmp r10, rcx
+	je 214f
+216:
+	movzx eax, BYTE PTR [rsi+r10*1]
+	mov BYTE PTR [rdi+r10*1], al
+	add r10, 1
+	cmp r10, rcx
+	jne 216b
+	jmp 215f
+214:
+215:
+213:
+211:
+29:
+24:
+	add rdi, rcx
+	sub r9, 1
+	jne 22b
+	jmp 21f
+20:
+21:
+	mov rdi, QWORD PTR [rsp+40]
+	mov rsi, QWORD PTR [rsp+32]
+	mov rdx, QWORD PTR [rsp+24]
+	mov rcx, QWORD PTR [rsp+16]
+	mov r8, QWORD PTR [rsp+56]
+	mov r9, QWORD PTR [rsp+64]
+	mov rax, QWORD PTR [rsp+72]
+	push rax
+	call {vg_chacha20_poly1305_seal}
 	pop rax
 	pop rax
 	pop rax

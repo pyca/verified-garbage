@@ -24,8 +24,8 @@ def sha512_224 : Proof.HmacTable.RISCV64.HVar := Proof.HmacTable.RISCV64.sha512_
 
 def sha512_256 : Proof.HmacTable.RISCV64.HVar := Proof.HmacTable.RISCV64.sha512_256W
 
-/-- Every implementation, which each function generic over them is emitted
-with (the registration files that import this). -/
+/-- Every implementation, best first: each function generic over them is
+emitted with each (the registration files that import this). -/
 def variants := [md5, sha1, sha224, sha256, sha384, sha512, sha512_224, sha512_256]
 
 end VG.Proof.Variants.MdHash.RISCV64

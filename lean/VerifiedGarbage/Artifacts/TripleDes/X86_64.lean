@@ -53,21 +53,15 @@ def artifacts : List Artifact := [
     stack := 520
     verified := Proof.TripleDes.X86_64.expandKey_framed },
   Spec.TripleDes.ecbEncryptApi.artifact X86_64.target {
+    suffix := "_avx512"
     code := Impl.StackScratch.X86_64.withStackScratchWiped 1032 .rcx 128
-      (Impl.TripleDes.X86_64.EcbCall.sse .encrypt)
+      (Impl.TripleDes.X86_64.EcbCall.avx512 .encrypt)
     stack := 1040
-    verified := Proof.TripleDes.X86_64.ecb_framed (Proof.TripleDes.X86_64.EcbCall.sse_verified .encrypt)
-      (Code.all_of_allInstrs (Proof.TripleDes.X86_64.EcbCall.sse_sp .encrypt))
-      (Proof.TripleDes.X86_64.EcbCall.sse_depth .encrypt)
-    spSafe := Proof.TripleDes.X86_64.ecb_spSafe (Proof.TripleDes.X86_64.EcbCall.sse_sp .encrypt) },
-  Spec.TripleDes.ecbDecryptApi.artifact X86_64.target {
-    code := Impl.StackScratch.X86_64.withStackScratchWiped 1032 .rcx 128
-      (Impl.TripleDes.X86_64.EcbCall.sse .decrypt)
-    stack := 1040
-    verified := Proof.TripleDes.X86_64.ecb_framed (Proof.TripleDes.X86_64.EcbCall.sse_verified .decrypt)
-      (Code.all_of_allInstrs (Proof.TripleDes.X86_64.EcbCall.sse_sp .decrypt))
-      (Proof.TripleDes.X86_64.EcbCall.sse_depth .decrypt)
-    spSafe := Proof.TripleDes.X86_64.ecb_spSafe (Proof.TripleDes.X86_64.EcbCall.sse_sp .decrypt) },
+    verified := Proof.TripleDes.X86_64.ecb_framed (Proof.TripleDes.X86_64.EcbCall.avx512_verified .encrypt)
+      (Code.all_of_allInstrs (Proof.TripleDes.X86_64.EcbCall.avx512_sp .encrypt))
+      (Proof.TripleDes.X86_64.EcbCall.avx512_depth .encrypt)
+    features := ["avx", "avx2", "avx512f"]
+    spSafe := Proof.TripleDes.X86_64.ecb_spSafe (Proof.TripleDes.X86_64.EcbCall.avx512_sp .encrypt) },
   Spec.TripleDes.ecbEncryptApi.artifact X86_64.target {
     suffix := "_avx2"
     code := Impl.StackScratch.X86_64.withStackScratchWiped 1032 .rcx 128
@@ -78,6 +72,24 @@ def artifacts : List Artifact := [
       (Proof.TripleDes.X86_64.EcbCall.avx2_depth .encrypt)
     features := ["avx", "avx2"]
     spSafe := Proof.TripleDes.X86_64.ecb_spSafe (Proof.TripleDes.X86_64.EcbCall.avx2_sp .encrypt) },
+  Spec.TripleDes.ecbEncryptApi.artifact X86_64.target {
+    code := Impl.StackScratch.X86_64.withStackScratchWiped 1032 .rcx 128
+      (Impl.TripleDes.X86_64.EcbCall.sse .encrypt)
+    stack := 1040
+    verified := Proof.TripleDes.X86_64.ecb_framed (Proof.TripleDes.X86_64.EcbCall.sse_verified .encrypt)
+      (Code.all_of_allInstrs (Proof.TripleDes.X86_64.EcbCall.sse_sp .encrypt))
+      (Proof.TripleDes.X86_64.EcbCall.sse_depth .encrypt)
+    spSafe := Proof.TripleDes.X86_64.ecb_spSafe (Proof.TripleDes.X86_64.EcbCall.sse_sp .encrypt) },
+  Spec.TripleDes.ecbDecryptApi.artifact X86_64.target {
+    suffix := "_avx512"
+    code := Impl.StackScratch.X86_64.withStackScratchWiped 1032 .rcx 128
+      (Impl.TripleDes.X86_64.EcbCall.avx512 .decrypt)
+    stack := 1040
+    verified := Proof.TripleDes.X86_64.ecb_framed (Proof.TripleDes.X86_64.EcbCall.avx512_verified .decrypt)
+      (Code.all_of_allInstrs (Proof.TripleDes.X86_64.EcbCall.avx512_sp .decrypt))
+      (Proof.TripleDes.X86_64.EcbCall.avx512_depth .decrypt)
+    features := ["avx", "avx2", "avx512f"]
+    spSafe := Proof.TripleDes.X86_64.ecb_spSafe (Proof.TripleDes.X86_64.EcbCall.avx512_sp .decrypt) },
   Spec.TripleDes.ecbDecryptApi.artifact X86_64.target {
     suffix := "_avx2"
     code := Impl.StackScratch.X86_64.withStackScratchWiped 1032 .rcx 128
@@ -88,25 +100,13 @@ def artifacts : List Artifact := [
       (Proof.TripleDes.X86_64.EcbCall.avx2_depth .decrypt)
     features := ["avx", "avx2"]
     spSafe := Proof.TripleDes.X86_64.ecb_spSafe (Proof.TripleDes.X86_64.EcbCall.avx2_sp .decrypt) },
-  Spec.TripleDes.ecbEncryptApi.artifact X86_64.target {
-    suffix := "_avx512"
-    code := Impl.StackScratch.X86_64.withStackScratchWiped 1032 .rcx 128
-      (Impl.TripleDes.X86_64.EcbCall.avx512 .encrypt)
-    stack := 1040
-    verified := Proof.TripleDes.X86_64.ecb_framed (Proof.TripleDes.X86_64.EcbCall.avx512_verified .encrypt)
-      (Code.all_of_allInstrs (Proof.TripleDes.X86_64.EcbCall.avx512_sp .encrypt))
-      (Proof.TripleDes.X86_64.EcbCall.avx512_depth .encrypt)
-    features := ["avx", "avx2", "avx512f"]
-    spSafe := Proof.TripleDes.X86_64.ecb_spSafe (Proof.TripleDes.X86_64.EcbCall.avx512_sp .encrypt) },
   Spec.TripleDes.ecbDecryptApi.artifact X86_64.target {
-    suffix := "_avx512"
     code := Impl.StackScratch.X86_64.withStackScratchWiped 1032 .rcx 128
-      (Impl.TripleDes.X86_64.EcbCall.avx512 .decrypt)
+      (Impl.TripleDes.X86_64.EcbCall.sse .decrypt)
     stack := 1040
-    verified := Proof.TripleDes.X86_64.ecb_framed (Proof.TripleDes.X86_64.EcbCall.avx512_verified .decrypt)
-      (Code.all_of_allInstrs (Proof.TripleDes.X86_64.EcbCall.avx512_sp .decrypt))
-      (Proof.TripleDes.X86_64.EcbCall.avx512_depth .decrypt)
-    features := ["avx", "avx2", "avx512f"]
-    spSafe := Proof.TripleDes.X86_64.ecb_spSafe (Proof.TripleDes.X86_64.EcbCall.avx512_sp .decrypt) }]
+    verified := Proof.TripleDes.X86_64.ecb_framed (Proof.TripleDes.X86_64.EcbCall.sse_verified .decrypt)
+      (Code.all_of_allInstrs (Proof.TripleDes.X86_64.EcbCall.sse_sp .decrypt))
+      (Proof.TripleDes.X86_64.EcbCall.sse_depth .decrypt)
+    spSafe := Proof.TripleDes.X86_64.ecb_spSafe (Proof.TripleDes.X86_64.EcbCall.sse_sp .decrypt) }]
 
 end VG.Artifacts.TripleDes.X86_64

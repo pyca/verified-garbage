@@ -83,7 +83,7 @@ theorem baseEncode_ok {s : State} (hc : Ctx b s) {o : Addr} (h3 : s.gpr .r3 = o)
   refine WP.seq (WP.mono (invertQ_ok (qs := EQ) (by decide) (by decide) (by decide) hc hv rfl)
     fun s1 ⟨hst1, hc1, hS1⟩ => ?_)
   refine WP.seq (WP.mono (mulS (o := X2) (x := RX) (y := R) (by decide) (by decide) (by decide)
-    (by decide) hc1 hS1) fun s2 ⟨hr2, _, hS2⟩ => ?_)
+    (by decide) (by decide) (by decide) hc1 hS1) fun s2 ⟨hr2, _, hS2⟩ => ?_)
   have hr2' : Rest [.r0, .r4, .r5, .r7, .r8, .r9, .r10, .r11, .r12] s s2 := hst1.rest.trans (hr2.mono (by decide))
   have hc2 : Ctx b s2 := hc1.of_rest hr2 (by decide)
   have h32 : s2.gpr .r3 = o := by rw [hr2'.gpr _ (by decide), h3]
@@ -114,7 +114,7 @@ theorem baseEncode_ok {s : State} (hc : Ctx b s) {o : Addr} (h3 : s.gpr .r3 = o)
   rw [← hm7] at hS7
   -- `y`.
   refine WP.seq (WP.mono (mulS (o := X2) (x := RY) (y := R) (by decide) (by decide) (by decide)
-    (by decide) hc7 hS7) fun s8 ⟨hr8, _, hS8⟩ => ?_)
+    (by decide) (by decide) (by decide) hc7 hS7) fun s8 ⟨hr8, _, hS8⟩ => ?_)
   have hc8 : Ctx b s8 := hc7.of_rest hr8 (by decide)
   have h38 : s8.gpr .r3 = o := by rw [hr8.gpr _ (by decide), hr7.gpr _ (by decide), h33]
   have hw8 : s8.wr = s.wr := by rw [hr8.wr, hr7.wr, hw3]

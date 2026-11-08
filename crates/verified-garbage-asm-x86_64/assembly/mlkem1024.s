@@ -4,58 +4,6 @@
 // `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
 // gives.
 
-vg_mlkem1024_keygen_avx2:
-	lea rsp, [rsp-16]
-	mov QWORD PTR [rsp+8], rcx
-	call {vg_mlkem1024_keygen_body_avx2}
-	mov QWORD PTR [rsp], rax
-	mov rdi, QWORD PTR [rsp+8]
-	mov esi, 37376
-	call {vg_zeroize_avx}
-	mov rax, QWORD PTR [rsp]
-	lea rsp, [rsp+16]
-	ret
-	.p2align 6
-
-vg_mlkem1024_encaps_h_avx2:
-	lea rsp, [rsp-16]
-	mov QWORD PTR [rsp+8], r9
-	call {vg_mlkem1024_encaps_h_body_avx2}
-	mov QWORD PTR [rsp], rax
-	mov rdi, QWORD PTR [rsp+8]
-	mov esi, 37376
-	call {vg_zeroize_avx}
-	mov rax, QWORD PTR [rsp]
-	lea rsp, [rsp+16]
-	ret
-	.p2align 6
-
-vg_mlkem1024_encaps_avx2:
-	lea rsp, [rsp-16]
-	mov QWORD PTR [rsp+8], r8
-	call {vg_mlkem1024_encaps_body_avx2}
-	mov QWORD PTR [rsp], rax
-	mov rdi, QWORD PTR [rsp+8]
-	mov esi, 37376
-	call {vg_zeroize_avx}
-	mov rax, QWORD PTR [rsp]
-	lea rsp, [rsp+16]
-	ret
-	.p2align 6
-
-vg_mlkem1024_decaps_avx2:
-	lea rsp, [rsp-16]
-	mov QWORD PTR [rsp+8], rcx
-	call {vg_mlkem1024_decaps_body_avx2}
-	mov QWORD PTR [rsp], rax
-	mov rdi, QWORD PTR [rsp+8]
-	mov esi, 37376
-	call {vg_zeroize_avx}
-	mov rax, QWORD PTR [rsp]
-	lea rsp, [rsp+16]
-	ret
-	.p2align 6
-
 vg_mlkem1024_keygen_avx512:
 	lea rsp, [rsp-16]
 	mov QWORD PTR [rsp+8], rcx
@@ -99,6 +47,58 @@ vg_mlkem1024_decaps_avx512:
 	lea rsp, [rsp-16]
 	mov QWORD PTR [rsp+8], rcx
 	call {vg_mlkem1024_decaps_body_avx512}
+	mov QWORD PTR [rsp], rax
+	mov rdi, QWORD PTR [rsp+8]
+	mov esi, 37376
+	call {vg_zeroize_avx}
+	mov rax, QWORD PTR [rsp]
+	lea rsp, [rsp+16]
+	ret
+	.p2align 6
+
+vg_mlkem1024_keygen_avx2:
+	lea rsp, [rsp-16]
+	mov QWORD PTR [rsp+8], rcx
+	call {vg_mlkem1024_keygen_body_avx2}
+	mov QWORD PTR [rsp], rax
+	mov rdi, QWORD PTR [rsp+8]
+	mov esi, 37376
+	call {vg_zeroize_avx}
+	mov rax, QWORD PTR [rsp]
+	lea rsp, [rsp+16]
+	ret
+	.p2align 6
+
+vg_mlkem1024_encaps_h_avx2:
+	lea rsp, [rsp-16]
+	mov QWORD PTR [rsp+8], r9
+	call {vg_mlkem1024_encaps_h_body_avx2}
+	mov QWORD PTR [rsp], rax
+	mov rdi, QWORD PTR [rsp+8]
+	mov esi, 37376
+	call {vg_zeroize_avx}
+	mov rax, QWORD PTR [rsp]
+	lea rsp, [rsp+16]
+	ret
+	.p2align 6
+
+vg_mlkem1024_encaps_avx2:
+	lea rsp, [rsp-16]
+	mov QWORD PTR [rsp+8], r8
+	call {vg_mlkem1024_encaps_body_avx2}
+	mov QWORD PTR [rsp], rax
+	mov rdi, QWORD PTR [rsp+8]
+	mov esi, 37376
+	call {vg_zeroize_avx}
+	mov rax, QWORD PTR [rsp]
+	lea rsp, [rsp+16]
+	ret
+	.p2align 6
+
+vg_mlkem1024_decaps_avx2:
+	lea rsp, [rsp-16]
+	mov QWORD PTR [rsp+8], rcx
+	call {vg_mlkem1024_decaps_body_avx2}
 	mov QWORD PTR [rsp], rax
 	mov rdi, QWORD PTR [rsp+8]
 	mov esi, 37376

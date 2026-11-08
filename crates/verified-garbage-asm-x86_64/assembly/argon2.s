@@ -4,7 +4,7 @@
 // `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
 // gives.
 
-vg_argon2_blake2b_avx2_g_avx2:
+vg_argon2_blake2b_avx512_g_avx512:
 	push rbx
 	push rbp
 	push r12
@@ -508,7 +508,7 @@ vg_argon2_blake2b_avx2_g_avx2:
 	mov rdi, rbx
 	mov r8, rbx
 	add r8, 192
-	call {vg_blake2b_update_scratch_avx2}
+	call {vg_blake2b_update_scratch_avx512}
 	mov r12d, 24
 	mov r14, QWORD PTR [rbp+96]
 	mov DWORD PTR [rbx+792], r14d
@@ -519,7 +519,7 @@ vg_argon2_blake2b_avx2_g_avx2:
 	mov rdi, rbx
 	mov r8, rbx
 	add r8, 192
-	call {vg_blake2b_update_scratch_avx2}
+	call {vg_blake2b_update_scratch_avx512}
 	add r12, 4
 	mov rsi, r12
 	mov rdx, QWORD PTR [rbp+104]
@@ -527,7 +527,7 @@ vg_argon2_blake2b_avx2_g_avx2:
 	mov rdi, rbx
 	mov r8, rbx
 	add r8, 192
-	call {vg_blake2b_update_scratch_avx2}
+	call {vg_blake2b_update_scratch_avx512}
 	add r12, r14
 	mov r14, QWORD PTR [rbp+80]
 	mov DWORD PTR [rbx+792], r14d
@@ -538,7 +538,7 @@ vg_argon2_blake2b_avx2_g_avx2:
 	mov rdi, rbx
 	mov r8, rbx
 	add r8, 192
-	call {vg_blake2b_update_scratch_avx2}
+	call {vg_blake2b_update_scratch_avx512}
 	add r12, 4
 	mov rsi, r12
 	mov rdx, QWORD PTR [rbp+88]
@@ -546,7 +546,7 @@ vg_argon2_blake2b_avx2_g_avx2:
 	mov rdi, rbx
 	mov r8, rbx
 	add r8, 192
-	call {vg_blake2b_update_scratch_avx2}
+	call {vg_blake2b_update_scratch_avx512}
 	add r12, r14
 	mov r14, QWORD PTR [rbp+208]
 	mov DWORD PTR [rbx+792], r14d
@@ -557,7 +557,7 @@ vg_argon2_blake2b_avx2_g_avx2:
 	mov rdi, rbx
 	mov r8, rbx
 	add r8, 192
-	call {vg_blake2b_update_scratch_avx2}
+	call {vg_blake2b_update_scratch_avx512}
 	add r12, 4
 	mov rsi, r12
 	mov rdx, QWORD PTR [rbp+200]
@@ -565,7 +565,7 @@ vg_argon2_blake2b_avx2_g_avx2:
 	mov rdi, rbx
 	mov r8, rbx
 	add r8, 192
-	call {vg_blake2b_update_scratch_avx2}
+	call {vg_blake2b_update_scratch_avx512}
 	add r12, r14
 	mov r14, QWORD PTR [rbp+224]
 	mov DWORD PTR [rbx+792], r14d
@@ -576,7 +576,7 @@ vg_argon2_blake2b_avx2_g_avx2:
 	mov rdi, rbx
 	mov r8, rbx
 	add r8, 192
-	call {vg_blake2b_update_scratch_avx2}
+	call {vg_blake2b_update_scratch_avx512}
 	add r12, 4
 	mov rsi, r12
 	mov rdx, QWORD PTR [rbp+216]
@@ -584,7 +584,7 @@ vg_argon2_blake2b_avx2_g_avx2:
 	mov rdi, rbx
 	mov r8, rbx
 	add r8, 192
-	call {vg_blake2b_update_scratch_avx2}
+	call {vg_blake2b_update_scratch_avx512}
 	add r12, r14
 	mov rsi, r12
 	mov rdi, rbx
@@ -592,7 +592,7 @@ vg_argon2_blake2b_avx2_g_avx2:
 	add rdx, 768
 	mov rcx, rbx
 	add rcx, 192
-	call {vg_blake2b_finalize_scratch_avx2}
+	call {vg_blake2b_finalize_scratch_avx512}
 	mov r14, rbp
 	mov eax, 64
 	mov rdx, rbx
@@ -641,7 +641,7 @@ vg_argon2_blake2b_avx2_g_avx2:
 	mov rdx, r14
 	mov ecx, 1024
 	mov r8, rbx
-	call {vg_argon2_hprime_avx2}
+	call {vg_argon2_hprime_avx512}
 	add r14, 1024
 	mov eax, 1
 	mov DWORD PTR [rbp+64], eax
@@ -651,7 +651,7 @@ vg_argon2_blake2b_avx2_g_avx2:
 	mov rdx, r14
 	mov ecx, 1024
 	mov r8, rbx
-	call {vg_argon2_hprime_avx2}
+	call {vg_argon2_hprime_avx512}
 	add r14, r13
 	sub r14, 1024
 	add r12, 1
@@ -994,7 +994,7 @@ vg_argon2_blake2b_avx2_g_avx2:
 	add rsi, 5120
 	mov rdx, rcx
 	add rdx, 4096
-	call {vg_argon2_compress_avx2}
+	call {vg_argon2_compress_avx512}
 	mov rcx, QWORD PTR [rbp+248]
 	mov rdi, rcx
 	add rdi, 7168
@@ -1002,7 +1002,7 @@ vg_argon2_blake2b_avx2_g_avx2:
 	add rsi, 4096
 	mov rdx, rcx
 	add rdx, 6144
-	call {vg_argon2_compress_avx2}
+	call {vg_argon2_compress_avx512}
 	jmp 214f
 213:
 214:
@@ -1575,7 +1575,7 @@ vg_argon2_blake2b_avx2_g_avx2:
 	mov rcx, QWORD PTR [rbp+248]
 	mov rdx, rcx
 	add rdx, 4096
-	call {vg_argon2_compress_avx2}
+	call {vg_argon2_compress_avx512}
 	mov rdi, QWORD PTR [rbp+16]
 	mov rsi, QWORD PTR [rbp+248]
 	add rsi, 4096
@@ -2783,7 +2783,7 @@ vg_argon2_blake2b_avx2_g_avx2:
 	mov rdx, QWORD PTR [rbp+256]
 	mov rcx, QWORD PTR [rbp+264]
 	mov r8, QWORD PTR [rbp+248]
-	call {vg_argon2_hprime_avx2}
+	call {vg_argon2_hprime_avx512}
 	pop rax
 	pop rax
 	pop rax
@@ -5650,7 +5650,7 @@ vg_argon2_blake2b_avx2_g_avx512:
 	ret
 	.p2align 6
 
-vg_argon2_blake2b_avx512_g_avx512:
+vg_argon2_blake2b_avx2_g_avx2:
 	push rbx
 	push rbp
 	push r12
@@ -6154,7 +6154,7 @@ vg_argon2_blake2b_avx512_g_avx512:
 	mov rdi, rbx
 	mov r8, rbx
 	add r8, 192
-	call {vg_blake2b_update_scratch_avx512}
+	call {vg_blake2b_update_scratch_avx2}
 	mov r12d, 24
 	mov r14, QWORD PTR [rbp+96]
 	mov DWORD PTR [rbx+792], r14d
@@ -6165,7 +6165,7 @@ vg_argon2_blake2b_avx512_g_avx512:
 	mov rdi, rbx
 	mov r8, rbx
 	add r8, 192
-	call {vg_blake2b_update_scratch_avx512}
+	call {vg_blake2b_update_scratch_avx2}
 	add r12, 4
 	mov rsi, r12
 	mov rdx, QWORD PTR [rbp+104]
@@ -6173,7 +6173,7 @@ vg_argon2_blake2b_avx512_g_avx512:
 	mov rdi, rbx
 	mov r8, rbx
 	add r8, 192
-	call {vg_blake2b_update_scratch_avx512}
+	call {vg_blake2b_update_scratch_avx2}
 	add r12, r14
 	mov r14, QWORD PTR [rbp+80]
 	mov DWORD PTR [rbx+792], r14d
@@ -6184,7 +6184,7 @@ vg_argon2_blake2b_avx512_g_avx512:
 	mov rdi, rbx
 	mov r8, rbx
 	add r8, 192
-	call {vg_blake2b_update_scratch_avx512}
+	call {vg_blake2b_update_scratch_avx2}
 	add r12, 4
 	mov rsi, r12
 	mov rdx, QWORD PTR [rbp+88]
@@ -6192,7 +6192,7 @@ vg_argon2_blake2b_avx512_g_avx512:
 	mov rdi, rbx
 	mov r8, rbx
 	add r8, 192
-	call {vg_blake2b_update_scratch_avx512}
+	call {vg_blake2b_update_scratch_avx2}
 	add r12, r14
 	mov r14, QWORD PTR [rbp+208]
 	mov DWORD PTR [rbx+792], r14d
@@ -6203,7 +6203,7 @@ vg_argon2_blake2b_avx512_g_avx512:
 	mov rdi, rbx
 	mov r8, rbx
 	add r8, 192
-	call {vg_blake2b_update_scratch_avx512}
+	call {vg_blake2b_update_scratch_avx2}
 	add r12, 4
 	mov rsi, r12
 	mov rdx, QWORD PTR [rbp+200]
@@ -6211,7 +6211,7 @@ vg_argon2_blake2b_avx512_g_avx512:
 	mov rdi, rbx
 	mov r8, rbx
 	add r8, 192
-	call {vg_blake2b_update_scratch_avx512}
+	call {vg_blake2b_update_scratch_avx2}
 	add r12, r14
 	mov r14, QWORD PTR [rbp+224]
 	mov DWORD PTR [rbx+792], r14d
@@ -6222,7 +6222,7 @@ vg_argon2_blake2b_avx512_g_avx512:
 	mov rdi, rbx
 	mov r8, rbx
 	add r8, 192
-	call {vg_blake2b_update_scratch_avx512}
+	call {vg_blake2b_update_scratch_avx2}
 	add r12, 4
 	mov rsi, r12
 	mov rdx, QWORD PTR [rbp+216]
@@ -6230,7 +6230,7 @@ vg_argon2_blake2b_avx512_g_avx512:
 	mov rdi, rbx
 	mov r8, rbx
 	add r8, 192
-	call {vg_blake2b_update_scratch_avx512}
+	call {vg_blake2b_update_scratch_avx2}
 	add r12, r14
 	mov rsi, r12
 	mov rdi, rbx
@@ -6238,7 +6238,7 @@ vg_argon2_blake2b_avx512_g_avx512:
 	add rdx, 768
 	mov rcx, rbx
 	add rcx, 192
-	call {vg_blake2b_finalize_scratch_avx512}
+	call {vg_blake2b_finalize_scratch_avx2}
 	mov r14, rbp
 	mov eax, 64
 	mov rdx, rbx
@@ -6287,7 +6287,7 @@ vg_argon2_blake2b_avx512_g_avx512:
 	mov rdx, r14
 	mov ecx, 1024
 	mov r8, rbx
-	call {vg_argon2_hprime_avx512}
+	call {vg_argon2_hprime_avx2}
 	add r14, 1024
 	mov eax, 1
 	mov DWORD PTR [rbp+64], eax
@@ -6297,7 +6297,7 @@ vg_argon2_blake2b_avx512_g_avx512:
 	mov rdx, r14
 	mov ecx, 1024
 	mov r8, rbx
-	call {vg_argon2_hprime_avx512}
+	call {vg_argon2_hprime_avx2}
 	add r14, r13
 	sub r14, 1024
 	add r12, 1
@@ -6640,7 +6640,7 @@ vg_argon2_blake2b_avx512_g_avx512:
 	add rsi, 5120
 	mov rdx, rcx
 	add rdx, 4096
-	call {vg_argon2_compress_avx512}
+	call {vg_argon2_compress_avx2}
 	mov rcx, QWORD PTR [rbp+248]
 	mov rdi, rcx
 	add rdi, 7168
@@ -6648,7 +6648,7 @@ vg_argon2_blake2b_avx512_g_avx512:
 	add rsi, 4096
 	mov rdx, rcx
 	add rdx, 6144
-	call {vg_argon2_compress_avx512}
+	call {vg_argon2_compress_avx2}
 	jmp 214f
 213:
 214:
@@ -7221,7 +7221,7 @@ vg_argon2_blake2b_avx512_g_avx512:
 	mov rcx, QWORD PTR [rbp+248]
 	mov rdx, rcx
 	add rdx, 4096
-	call {vg_argon2_compress_avx512}
+	call {vg_argon2_compress_avx2}
 	mov rdi, QWORD PTR [rbp+16]
 	mov rsi, QWORD PTR [rbp+248]
 	add rsi, 4096
@@ -8429,7 +8429,7 @@ vg_argon2_blake2b_avx512_g_avx512:
 	mov rdx, QWORD PTR [rbp+256]
 	mov rcx, QWORD PTR [rbp+264]
 	mov r8, QWORD PTR [rbp+248]
-	call {vg_argon2_hprime_avx512}
+	call {vg_argon2_hprime_avx2}
 	pop rax
 	pop rax
 	pop rax

@@ -117,7 +117,7 @@ theorem sprefix_ok {s₀ s : State} {L : Lay} {key nonce dig out : Addr} {d : Na
   have hbe := hL.buf_end
   have hq28 : L.qOff = slot L.wp 28 := rfl
   have hqZ : slot L.wp 28 + 1600 ≤ L.Z := by simp only [Lay.bOff, Lay.qOff] at hbe; omega_arith
-  have e8 := Lay.slot_eq L.wp 8; have e28 := Lay.slot_eq L.wp 28
+  have e8 := Lay.slot_eq L.wp 8; have e24 := Lay.slot_eq L.wp 24; have e28 := Lay.slot_eq L.wp 28
   obtain ⟨ip, scr, regs, p0, -, p8, q0, -, r2⟩ := hc
   have hk3 : Src s L key (3 * L.pl + L.ql) := hk.take (by omega_arith)
   obtain ⟨-, -, eg, ey⟩ := key_kept hk3 hkp.out
@@ -153,7 +153,7 @@ theorem sprefix_ok {s₀ s : State} {L : Lay} {key nonce dig out : Addr} {d : Na
   have q0₁ : arrQ s₁.mem L 0 = q := by
     rw [arrQ, arr, Outside.val32 (keepQ_of hL fun x hx => o₁ x (Or.inr (by omega_arith))) (by decide) (by decide)]
     exact q0
-  have p8₁ : arrP s₁.mem L 8 = arrP s.mem L 8 :=
+  have p8₁ : arrP s₁.mem L 24 = arrP s.mem L 24 :=
     Outside.val32 o₁ (Or.inr (by omega_arith)) (by omega_arith)
   -- `g^k mod p` to the buffer.
   refine WP.seq (WP.mono (gk_ok (p := p) hL (scr.congr k₁.wr) (regs.keep k₁) ip₁ (hk.keep k₁.rd k₁.wr)

@@ -27,7 +27,9 @@ The arithmetic (registers `r4`, `r5`, `r7`–`r11`), with `2⁴⁴⁸ ≡ 2²²�
   `2³²`, and the carry out in `r8`;
 * `fold`: the carry out `c` folded in as `c + 2²²⁴ c`: added to limbs 0 and
   7 and carried again; `tail` folds twice, after which nothing carries out;
-* `mul`: the 28 limbs of the product row by row (Knuth's algorithm M), then,
+* `mul`: the product's fourteen doublewords row by row (a row is seven
+  products of doublewords, `mulld` and `mulhdu`, added with `addc` and
+  `addze`), the same bytes as its 28 limbs; then,
   for `lo + 2⁴⁴⁸ hi ≡ lo + hi + 2²²⁴ hi`, with `2²²⁴ hi`'s upper half folded
   once more, limb `k` of `lo + hi + hi_{k+7}` (`k < 7`) and of
   `lo + 2 hi + hi_{k-7}` (`k ≥ 7`) (`pass`), then `tail`;
@@ -125,7 +127,8 @@ def sub (o a b : Nat) : List Instr :=
 /-- Register `r` stored into the `n` words from `o` of the working space. -/
 def storeN (r : Reg) (o n : Nat) : List Instr := (List.range n).flatMap fun k => [.store .w r .r6 (o + 4 * k)]
 
-/-- The words `ACC[0, 14)` zeroed. -/
+/-- The words `ACC[0, 14)` zeroed (Ed448's scalar arithmetic on PPC64LE uses
+this and `row`). -/
 def zeroAcc : List Instr := .li .r7 0 :: storeN .r7 ACC 14
 
 /-- Limb `j` of row `i` (`r9` = the base plus `4 i`, `a_i` in `r4`) into
@@ -144,10 +147,27 @@ def mulSrc (k : Nat) : List Instr :=
   (if k < 7 then [.load .w .r5 .r6 (ACC + 56 + 4 * (k + 7)), .add .r7 .r7 .r5]
    else [.add .r7 .r7 .r5, .load .w .r5 .r6 (ACC + 56 + 4 * (k - 7)), .add .r7 .r7 .r5])
 
-/-- `[o] = [a] · [b]` (`o` may be `a` or `b`), with the product in `ACC`. -/
+/-- Doubleword `j` of row `i` (`r9` = the base plus `8 i`, `a_i` in `r4`, the
+carry word in `r8`): `a_i b_j + acc[i + j] + carry`, below `2¹²⁸`, its low
+word stored over `acc[i + j]` and its high word the next carry (`mulld`,
+`mulhdu`, and `addc`/`addze` of the doubleword and the carry). -/
+def rowStep64 (b j : Nat) : List Instr :=
+  [.load .d .r5 .r6 (b + 8 * j), .mul .r7 .r4 .r5, .mulhu .r5 .r4 .r5,
+    .load .d .r10 .r9 (ACC + 8 * j), .addc .r7 .r7 .r10, .addze .r5 .r5, .addc .r7 .r7 .r8,
+    .addze .r8 .r5, .store .d .r7 .r9 (ACC + 8 * j)]
+
+/-- Row `i` of the product of doublewords: `acc[i, i + 8) = acc[i, i + 7) + a_i · b`. -/
+def row64 (a b : Nat) : List Instr :=
+  [.load .d .r4 .r9 a, .li .r8 0] ++ (List.range 7).flatMap (rowStep64 b) ++
+    [.store .d .r8 .r9 (ACC + 56), .addi .r9 .r9 8, .subi .r11 .r11 1]
+
+/-- `[o] = [a] · [b]` (`o` may be `a` or `b`), with the product in `ACC`: its
+fourteen doublewords row by row, seven rows of seven `mulld`/`mulhdu`
+products (a loop, so that the ladder's loop stays within the reach of its
+branch), then the reduction of its 28 limbs. -/
 def mul (o a b : Nat) : Prog isa :=
-  .seq (.block (zeroAcc ++ [.addi .r9 .r6 0, .li .r11 14]))
-    (.seq (.loop (.block (row a b)) (.nonzero .d .r11))
+  .seq (.block (zeroAcc ++ [.addi .r9 .r6 0, .li .r11 7]))
+    (.seq (.loop (.block (row64 a b)) (.nonzero .d .r11))
       (.block (.li .r8 0 :: pass .r6 o mulSrc ++ tail o)))
 
 /-- Swaps limb `k` of `[x]` and `[y]` if the mask `r11` is all ones (and not

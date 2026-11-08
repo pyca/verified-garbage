@@ -226,6 +226,64 @@ vg_cmac_aes_absorb:
 	ret
 	.p2align 6
 
+vg_cmac_aes_init_vaes:
+	lea rsp, [rsp-2312]
+	mov rcx, rsp
+	add rcx, 8
+	mov QWORD PTR [rcx+2176], rbx
+	mov QWORD PTR [rcx+2184], rbp
+	mov QWORD PTR [rcx+2192], r12
+	mov rbx, rdi
+	mov rbp, rcx
+	mov r12, rdx
+	shr r12, 2
+	add r12, 6
+	mov rdi, rsi
+	mov rsi, rdx
+	mov rdx, rbx
+	call {vg_aes_expand_key_scratch_aesni}
+	mov rdi, rbx
+	mov rsi, r12
+	mov rdx, rbx
+	add rdx, 240
+	mov rcx, rbp
+	call {vg_cmac_aes_subkeys_vaes}
+	mov eax, 0
+	mov QWORD PTR [rbx+272], rax
+	mov QWORD PTR [rbx+280], rax
+	mov rbx, QWORD PTR [rbp+2176]
+	mov r12, QWORD PTR [rbp+2192]
+	mov rbp, QWORD PTR [rbp+2184]
+	lea rsp, [rsp+2312]
+	ret
+	.p2align 6
+
+vg_cmac_aes_finish_vaes:
+	lea rsp, [rsp-2312]
+	mov r8, rsp
+	add r8, 8
+	mov rax, QWORD PTR [rdi+272]
+	mov QWORD PTR [rcx], rax
+	mov rax, QWORD PTR [rdi+280]
+	mov QWORD PTR [rcx+8], rax
+	mov r9, r8
+	mov r8, rdx
+	mov rdx, rcx
+	mov rcx, rdi
+	add rcx, 288
+	test r8, r8
+	je 20f
+	sub r8, 1
+	and r8, 15
+	add r8, 1
+	jmp 21f
+20:
+21:
+	call {vg_cmac_aes_finalize_vaes}
+	lea rsp, [rsp+2312]
+	ret
+	.p2align 6
+
 vg_cmac_aes_init_aesni:
 	lea rsp, [rsp-2312]
 	mov rcx, rsp
@@ -338,64 +396,6 @@ vg_cmac_aes_finish:
 20:
 21:
 	call {vg_cmac_aes_finalize}
-	lea rsp, [rsp+2312]
-	ret
-	.p2align 6
-
-vg_cmac_aes_init_vaes:
-	lea rsp, [rsp-2312]
-	mov rcx, rsp
-	add rcx, 8
-	mov QWORD PTR [rcx+2176], rbx
-	mov QWORD PTR [rcx+2184], rbp
-	mov QWORD PTR [rcx+2192], r12
-	mov rbx, rdi
-	mov rbp, rcx
-	mov r12, rdx
-	shr r12, 2
-	add r12, 6
-	mov rdi, rsi
-	mov rsi, rdx
-	mov rdx, rbx
-	call {vg_aes_expand_key_scratch_aesni}
-	mov rdi, rbx
-	mov rsi, r12
-	mov rdx, rbx
-	add rdx, 240
-	mov rcx, rbp
-	call {vg_cmac_aes_subkeys_vaes}
-	mov eax, 0
-	mov QWORD PTR [rbx+272], rax
-	mov QWORD PTR [rbx+280], rax
-	mov rbx, QWORD PTR [rbp+2176]
-	mov r12, QWORD PTR [rbp+2192]
-	mov rbp, QWORD PTR [rbp+2184]
-	lea rsp, [rsp+2312]
-	ret
-	.p2align 6
-
-vg_cmac_aes_finish_vaes:
-	lea rsp, [rsp-2312]
-	mov r8, rsp
-	add r8, 8
-	mov rax, QWORD PTR [rdi+272]
-	mov QWORD PTR [rcx], rax
-	mov rax, QWORD PTR [rdi+280]
-	mov QWORD PTR [rcx+8], rax
-	mov r9, r8
-	mov r8, rdx
-	mov rdx, rcx
-	mov rcx, rdi
-	add rcx, 288
-	test r8, r8
-	je 20f
-	sub r8, 1
-	and r8, 15
-	add r8, 1
-	jmp 21f
-20:
-21:
-	call {vg_cmac_aes_finalize_vaes}
 	lea rsp, [rsp+2312]
 	ret
 	.p2align 6

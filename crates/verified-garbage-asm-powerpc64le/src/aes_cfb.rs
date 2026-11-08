@@ -54,11 +54,26 @@ pub(crate) unsafe extern "C" fn vg_aes_cfb128_decrypt(schedule: *const [u8; 240]
     core::arch::naked_asm!(
         r#".base64 "pgIIfEAICPgQCMj5GAjo+SAICPooCCj6MAhI+jgIaPp4G258eCOPfHgrsHx4M9F8eDvyfHhDE30AADIo"
 beq %cr0, 20f
+.base64 "wuhJegAAKSg="
+beq %cr0, 22f
+24:
+.base64 "AAAw6QAAM/kIADDpCAAz+QAAMekQADP5CAAx6RgAM/kQADHpIAAz+RgAMekoADP5IAAx6TAAM/koADHpOAAz+TAAMelAADP5OAAx6UgAM/lAADHpUAAz+UgAMelYADP5UAAx6WAAM/lYADHpaAAz+WAAMelwADP5aAAx6XgAM/l4c8N9eHvkfXibZX4IAMA4gADzOA=="
+bl {vg_aes_encrypt_blocks}
+.base64 "cAAx6QAAMPl4ADHpCAAw+QAAMekAAFPpeFIpfQAAMfkIADHpCABT6XhSKX0IADH5EAAx6RAAU+l4Uil9EAAx+RgAMekYAFPpeFIpfRgAMfkgADHpIABT6XhSKX0gADH5KAAx6SgAU+l4Uil9KAAx+TAAMekwAFPpeFIpfTAAMfk4ADHpOABT6XhSKX04ADH5QAAx6UAAU+l4Uil9QAAx+UgAMelIAFPpeFIpfUgAMflQADHpUABT6XhSKX1QADH5WAAx6VgAU+l4Uil9WAAx+WAAMelgAFPpeFIpfWAAMfloADHpaABT6XhSKX1oADH5cAAx6XAAU+l4Uil9cAAx+XgAMel4AFPpeFIpfXgAMfmAADE6+P9SOsLoSXoAACko"
+bne %cr0, 24b
+b 23f
 22:
+23:
+.base64 "AAAyKA=="
+beq %cr0, 25f
+27:
 .base64 "eHPDfXh75H14gwV+AQDAOHibZ34="
 bl {vg_aes_encrypt_blocks}
 .base64 "AAAx6QAAUOl4Uil9AAAx+QgAMekIAFDpeFIpfQgAMfkAADDpAABR6XhSKX0AADD5CAAw6QgAUel4Uil9CAAw+RAAMTr//1I6AAAyKA=="
-bne %cr0, 22b
+bne %cr0, 27b
+b 26f
+25:
+26:
 b 21f
 20:
 21:

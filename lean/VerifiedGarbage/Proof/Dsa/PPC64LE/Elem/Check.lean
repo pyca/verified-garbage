@@ -1,7 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Elem.Basic
-public import VerifiedGarbage.Proof.Bignum.PPC64LE.ModExpPow
+public import VerifiedGarbage.Proof.Bignum.PPC64LE.WinPow
 public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Table
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Ptr
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Load
@@ -111,17 +111,18 @@ theorem elemRange_ok {s : State} {B : Addr} {Z w : Nat} (h : Env s B Z w)
       (o5.mono (by omega_arith) (by omega_arith))
 
 /-- The registers `elemOrder` writes. -/
-def elemOrderRegs : List Reg := copyRegs ++ [.r4, .r6, .r12, .r30, .r31] ++ ModExp.powSRegs
+def elemOrderRegs : List Reg :=
+  [.r0, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r12, .r14, .r15, .r16, .r17, .r18, .r19, .r20, .r22, .r24, .r30, .r31]
 
 /-- `elemOrder`, in the P space with p (odd, at least 2) in array 0 and
-`R² mod p` in array 8: `r0 = 0` exactly when `[4]^q mod p = 1`; arrays 1–7
-change. -/
+`R² mod p` in array 24: `r0 = 0` exactly when `[4]^q mod p = 1` (`powWin`);
+arrays 1–23 change. -/
 theorem elemOrder_ok {s : State} {L : Lay} {key sig dig : Addr} {p : Nat} (hL : L.Ok)
     (hr : Regs s L key sig dig) (hin : InP s L) (hk : Src s L key (2 * L.pl + L.ql))
-    (hp0 : arrP s.mem L 0 = p) (hp : 2 ≤ p) (hpo : p % 2 = 1) (hrr : arrP s.mem L 8 = 2 ^ (128 * L.wp) % p) :
+    (hp0 : arrP s.mem L 0 = p) (hp : 2 ≤ p) (hpo : p % 2 = 1) (hrr : arrP s.mem L 24 = 2 ^ (128 * L.wp) % p) :
     WP isa elemOrder s fun t =>
       ((t.gpr .r0 = 0 ↔ arrP s.mem L 4 ^ qOf s.mem L key % p = 1) ∧ InP t L ∧
-        Outside L.S (slot L.wp 1) (7 * (8 * (L.wp + 2))) s.mem t.mem) ∧ Keep elemOrderRegs s t := by
+        Outside L.S (slot L.wp 1) (23 * (8 * (L.wp + 2))) s.mem t.mem) ∧ Keep elemOrderRegs s t := by
   have hZ := hL.hdr
   have hw := hL.wp_ge
   have hw8 := hL.wp_eq
@@ -130,10 +131,10 @@ theorem elemOrder_ok {s : State} {L : Lay} {key sig dig : Addr} {p : Nat} (hL : 
   have hqZ : L.qOff + 1600 ≤ L.Z := by have := hL.buf_end; simp only [Lay.bOff] at this; omega_arith
   have hq28 : L.qOff = slot L.wp 28 := rfl
   have e0 := slot_eq L.wp 0; have e1 := slot_eq L.wp 1; have e4 := slot_eq L.wp 4; have e7 := slot_eq L.wp 7
-  have e8 := slot_eq L.wp 8; have e28 := slot_eq L.wp 28
+  have e8 := slot_eq L.wp 8; have e24 := slot_eq L.wp 24; have e28 := slot_eq L.wp 28
   have en := hin.env
   unfold elemOrder
-  refine WP.seq (WP.mono (copy_ok en (o := 1) (a := 8) (by decide) (by decide) (by decide))
+  refine WP.seq (WP.mono (copy_ok en (o := 1) (a := 24) (by decide) (by decide) (by decide))
     fun s₁ ⟨⟨v1, o1⟩, k1⟩ => ?_)
   have pb1 : PBody L s.mem s₁.mem := o1.mono (by omega_arith) (by omega_arith)
   refine WP.seq ?_
@@ -162,7 +163,7 @@ theorem elemOrder_ok {s : State} {L : Lay} {key sig dig : Addr} {p : Nat} (hL : 
     rw [m4, hm3, Outside.val32 o1 (by omega_arith) (by omega_arith)]
   have hq4 : Spec.Rsa.bytesAt s₄.mem (off key L.pl) L.ql = Spec.Rsa.bytesAt s.mem (off key L.pl) L.ql := by
     rw [m4, hm3]; exact (hk.sub (o := L.pl) (k := L.ql) (by omega_arith)).bytesPre (Nat.le_refl _) (pb1.body hL) hZ
-  refine WP.seq (WP.mono (ModExp.powSecret_ok (D := off key L.pl) (L := L.ql) (en.hs.congr k14.wr) (by omega_arith)
+  refine WP.seq (WP.mono (Win.powWin_ok (D := off key L.pl) (L := L.ql) (en.hs.congr k14.wr) (by omega_arith)
     (by omega_arith) (by omega_arith) ((k4.gpr .r10 (by decide)).trans g10) ((k14.gpr .r29 (by decide)).trans en.h29)
     ((k14.gpr .r11 (by decide)).trans en.h11) r12lt (by rw [m4]; exact r12inv) (by rw [p4]; exact hp)
     (by rw [p4]; exact hpo) (by rw [r1, p4]; exact Nat.mod_lt _ (by omega_arith)) ((k4.gpr .r30 (by decide)).trans a30)
@@ -190,9 +191,12 @@ theorem elemOrder_ok {s : State} {L : Lay} {key sig dig : Addr} {p : Nat} (hL : 
     ((k1.trans k25).trans k6t).gpr .r23 (by decide) |>.trans hin.h23⟩, ?_⟩, (k15'.trans k6t).mono (by decide)⟩
   · rw [t0, v7, Outside.val32 o7' (by omega_arith) (by omega_arith), m6, v4, decide_eq_true_iff]
     exact Iff.rfl
-  · have o5' : Outside L.S (slot L.wp 1) (slot L.wp 8 - slot L.wp 1) s₄.mem s₅.mem := outs_within o5 fun r hr => by
-      simp only [Pub.powRs, List.map, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only <;> rw [slot_eq, slot_eq] <;> omega_arith
+  · have o5' : Outside L.S (slot L.wp 1) (slot L.wp 24 - slot L.wp 1) s₄.mem s₅.mem := outs_within o5 fun r hr => by
+      rw [Win.win, List.mem_singleton] at hr
+      subst hr
+      dsimp only
+      rw [slot_eq, slot_eq]
+      omega_arith
     rw [m4, hm3] at o5'
     rw [m6] at o7'
     rw [hmt]

@@ -1,6 +1,7 @@
 module
 public import VerifiedGarbage.Proof.X25519.PPC64LE.Field
 
+import VerifiedGarbage.Proof.X25519.PPC64LE.Reduce
 import VerifiedGarbage.Proof.X25519.PPC64LE.AddSub
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
@@ -10,10 +11,11 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 /-!
 # X25519 on PPC64LE: multiplication
 
-`mulAt acc o x y` computes the 16 limbs of `[x] · [y]` at `acc`, row by row
-(`row_ok`, the loop invariant `RowInv`: after `i` rows, `acc[0, i + 8)` holds
-the limbs of `x_{<i} · y`), then stores at `o` a number congruent to it
-(`mul_ok`), for any `acc` an offset reaches: X25519's `ACC` and Ed25519's.
+`mulAt acc o x y` computes the eight words of `[x] · [y]` at `acc`
+(`product_ok`, `Proof/X25519/PPC64LE/Product.lean`), then stores at `o` a
+number congruent to it (`reduce38_ok`, `Proof/X25519/PPC64LE/Reduce.lean`):
+`mul_ok`, for any `acc` an offset reaches (X25519's `ACC` and Ed25519's)
+whose offsets are multiples of 4, as `ld` and `std` require.
 Also the stores of one register into words (`stores_ok`).
 -/
 
@@ -209,67 +211,21 @@ theorem row_ok (hA : acc + 64 ≤ 4096) {x y : Nat} (hx : x + 32 ≤ acc) (hy : 
     · rw [val32_congr hacc]; exact row_val h.val
     · rw [hr11, ofNat_ne_zero (by omega_arith)]
 
+/-- `mulAt acc o x y`: `[o] = [x] · [y]` modulo `p`, through the product at
+`acc`. -/
 theorem mul_ok (hA : acc + 64 ≤ 4096) {o x y : Nat} (ho : o + 32 ≤ acc) (hx : x + 32 ≤ acc)
-    (hy : y + 32 ≤ acc) {s : State} (hc : Ctx b s) :
+    (hy : y + 32 ≤ acc) (hA4 : acc % 4 = 0) (ho4 : o % 4 = 0) (hx4 : x % 4 = 0) (hy4 : y % 4 = 0)
+    {s : State} (hc : Ctx b s) :
     WP isa (mulAt acc o x y) s fun s' =>
       Rest clob s s' ∧
       Frame [⟨b + BitVec.ofNat 64 o, 32⟩, ⟨b + BitVec.ofNat 64 acc, 64⟩] s.mem s'.mem ∧
       V s'.mem b o % P = (V s.mem b x * V s.mem b y) % P := by
   unfold mulAt
-  refine WP.seq (WP.mono (mulPre_ok hA (x := x) (y := y) hc) fun s1 h1 => ?_)
-  refine WP.seq (WP.mono (Q := RowInv acc b x y s 8) (WP.loop (M := isa)
-    (fun n s' => ∃ i, n = 8 - i ∧ i < 8 ∧ RowInv acc b x y s i s') ?_ 8 s1 ⟨0, rfl, by decide, h1⟩)
-    fun s2 h2 => ?_)
-  · rintro n s' ⟨i, rfl, hi, hr⟩
-    refine WP.mono (row_ok hA hx hy hi hr) fun s'' ⟨hr', hz⟩ => ?_
-    by_cases h8 : i + 1 = 8
-    · refine .inl ⟨by rw [eval_nonzero, hz]; simp [h8], ?_⟩
-      rw [h8] at hr'; exact hr'
-    · exact .inr ⟨by rw [eval_nonzero, hz]; simp; omega_arith, 8 - (i + 1), by omega_arith, i + 1, rfl,
-        by omega_arith, hr'⟩
-  · refine wp_li (by decide) fun s3 u3 => ?_
-    have hc3 : Ctx b s3 := h2.ctx.of_rest (u3.rest (ws := [.r8]) (by decide)) (by decide)
-    have hl16 : ∀ k < 16, accw acc s2.mem b k < 2 ^ 32 := fun k _ => wd_lt _ _ _
-    have hv : val32 (accw acc s2.mem b) 16 = V s.mem b x * V s.mem b y := h2.val
-    have hlo := val32_lt (f := accw acc s2.mem b) (n := 8) fun k hk => hl16 k (by omega_arith)
-    have hhi := val32_lt (f := fun k => accw acc s2.mem b (8 + k)) (n := 8) fun k hk =>
-      hl16 (8 + k) (by omega_arith)
-    refine WP.mono (passTail'_ok (c := foldC (accw acc s2.mem b)) (by omega_arith)
-      (foldC_le hl16) (by rw [val32_foldC]; rw [show 32 * 8 = 256 from rfl] at hlo hhi; omega_arith) hc3
-      (by rw [u3.other _ (by decide), h2.r10]) u3.gpr ?_)
-      fun s4 ⟨hr4, hf4, hv4⟩ => ⟨h2.rest.trans ((u3.rest (by decide)).trans (hr4.mono (by decide))),
-        ?_, ?_⟩
-    · intro k hk s' hp
-      have hc' : Ctx b s' := hc3.of_rest hp.rest (by decide)
-      refine lw0_ok hc' (d := acc + 4 * k) (by omega_arith) fun t1 v1 => ?_
-      refine lw0_ok (hc'.of_rest (v1.rest (ws := [.r7]) (by decide)) (by decide)) (d := acc + 32 + 4 * k)
-        (by omega_arith) fun t2 v2 => ?_
-      refine wp_mul fun t3 v3 => wp_add fun t4 v4 => WP.block_nil ⟨?_, ?_, by
-        rw [v4.mem, v3.mem, v2.mem, v1.mem]⟩
-      · have el : (t1.gpr .r7).toNat = accw acc s2.mem b k := by
-          rw [v1.gpr, toNat_ext32]; show wd s'.mem _ _ = _
-          rw [wd_pass hc3 hp.frame (by omega_arith) (by omega_arith) (by omega_arith), u3.mem]; rfl
-        have eh : (t2.gpr .r5).toNat = accw acc s2.mem b (8 + k) := by
-          rw [v2.gpr, toNat_ext32, v1.mem]; show wd s'.mem _ _ = _
-          rw [wd_pass hc3 hp.frame (by omega_arith) (by omega_arith) (by omega_arith), u3.mem, accw]
-          congr 1; omega_arith
-        have h10 : t2.gpr .r10 = 38 := by
-          rw [v2.other _ (by decide), v1.other _ (by decide), hp.rest.gpr _ (by decide),
-            u3.other _ (by decide), h2.r10]
-        have hh := hl16 (8 + k) (by omega_arith)
-        have hl := hl16 k (by omega_arith)
-        have t38 : (38 : BitVec 64).toNat = 38 := rfl
-        have e3 : (t3.gpr .r5).toNat = accw acc s2.mem b (8 + k) * 38 := by
-          rw [v3.gpr, h10, toNat_mul_lt (by rw [eh, t38]; omega_arith), eh, t38]
-        rw [v4.gpr, v3.other .r7 (by decide), v2.other .r7 (by decide),
-          toNat_add_lt (by rw [el, e3]; omega_arith), el, e3, foldC, Nat.mul_comm 38]
-      · exact (v1.rest (by decide)).trans ((v2.rest (by decide)).trans ((v3.rest (by decide)).trans
-          (v4.rest (by decide))))
-    · have hf2 : Frame [⟨b + BitVec.ofNat 64 o, 32⟩, ⟨b + BitVec.ofNat 64 acc, 64⟩]
-          s.mem s2.mem := h2.frame.mono fun r hr => by simp [List.mem_singleton.mp hr]
-      rw [u3.mem] at hf4
-      exact hf2.trans (hf4.mono fun r hr => by simp [List.mem_singleton.mp hr])
-    · rw [hv4, val32_foldC, ← hv, show (16 : Nat) = 8 + 8 from rfl, val32_append, Proof.X25519.fold256]
+  refine WP.append (product_ok hx hy hA hA4 hx4 hy4 hc) fun s1 ⟨hc1, hr1, hf1, hv1⟩ =>
+    WP.mono (reduce38_ok hA hA4 (by omega) ho4 hc1) fun s2 ⟨hr2, hf2, hv2⟩ =>
+      ⟨hr1.trans hr2, ?_, by rw [hv2, hv1]⟩
+  exact (hf1.mono fun r hr => by simp [List.mem_singleton.mp hr]).trans
+    (hf2.mono fun r hr => by simp [List.mem_singleton.mp hr])
 
 end
 

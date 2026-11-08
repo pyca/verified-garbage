@@ -9,6 +9,8 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Lit
 meta import VerifiedGarbage.Impl.Blowfish.PPC64LE.Modes
 meta import VerifiedGarbage.Proof.Framework.RegSet
+import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
 
 /-!
 # Constant-time Blowfish modes on PPC64LE
@@ -34,24 +36,24 @@ theorem modes_ofRegs (s₁ s₂ : State) (h : modePub s₁ s₂) :
 
 theorem cbcEncryptChained_constantTime (pre : State → Prop) :
     ConstantTime isa pre modePub cbcEncryptChained :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7])
+  VG.Taint.constantTime (A := vectorTaint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7])
     (fun _ _ _ _ hp => modes_ofRegs _ _ hp) (by taint_decide)
 
 theorem cbcDecryptChained_constantTime (pre : State → Prop) :
     ConstantTime isa pre modePub cbcDecryptChained :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7])
+  VG.Taint.constantTime (A := vectorTaint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7])
     (fun _ _ _ _ hp => modes_ofRegs _ _ hp) (by taint_decide)
 
 theorem ofb_constantTime (pre : State → Prop) : ConstantTime isa pre modePub ofb :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7])
+  VG.Taint.constantTime (A := vectorTaint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7])
     (fun _ _ _ _ hp => modes_ofRegs _ _ hp) (by taint_decide)
 
 theorem cfbEncrypt_constantTime (pre : State → Prop) : ConstantTime isa pre modePub cfbEncrypt :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7])
+  VG.Taint.constantTime (A := vectorTaint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7])
     (fun _ _ _ _ hp => modes_ofRegs _ _ hp) (by taint_decide)
 
 theorem cfbDecrypt_constantTime (pre : State → Prop) : ConstantTime isa pre modePub cfbDecrypt :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7])
+  VG.Taint.constantTime (A := vectorTaint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7])
     (fun _ _ _ _ hp => modes_ofRegs _ _ hp) (by taint_decide)
 
 end VG.Proof.Blowfish.PPC64LE

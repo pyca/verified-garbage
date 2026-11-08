@@ -12,8 +12,8 @@ def aesNi : Proof.Aes.X86.BlocksImpl := .aesni
 
 def scalar : Proof.Aes.X86.BlocksImpl := .scalar
 
-/-- Every implementation, which each function generic over them is emitted
-with (the registration files that import this). -/
+/-- Every implementation, best first: each function generic over them is
+emitted with each (the registration files that import this). -/
 def variants := [aesNi, scalar]
 
 end VG.Proof.Variants.AesBlocks.X86

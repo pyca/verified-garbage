@@ -129,7 +129,7 @@ vg_poly1305_finalize:
 	ret
 	.p2align 6
 
-vg_poly1305_update_avx2:
+vg_poly1305_update_ifma:
 	lea rsp, [rsp-136]
 	mov r8, rsp
 	add r8, 8
@@ -258,7 +258,7 @@ vg_poly1305_update_avx2:
 	shr rdx, 4
 	cmp rcx, 16
 	jb 29f
-	call {vg_poly1305_blocks_avx2}
+	call {vg_poly1305_blocks_ifma}
 	jmp 210f
 29:
 210:
@@ -455,7 +455,7 @@ vg_poly1305_update_avx512:
 	ret
 	.p2align 6
 
-vg_poly1305_update_ifma:
+vg_poly1305_update_avx2:
 	lea rsp, [rsp-136]
 	mov r8, rsp
 	add r8, 8
@@ -584,7 +584,7 @@ vg_poly1305_update_ifma:
 	shr rdx, 4
 	cmp rcx, 16
 	jb 29f
-	call {vg_poly1305_blocks_ifma}
+	call {vg_poly1305_blocks_avx2}
 	jmp 210f
 29:
 210:

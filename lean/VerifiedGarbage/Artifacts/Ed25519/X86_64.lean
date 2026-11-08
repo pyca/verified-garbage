@@ -81,26 +81,27 @@ def withField (c : Proof.Sha512.X86_64.Compress) (fld : Impl.Ed25519.X86_64.Arit
     signExpandedWith c bs fs bf, keyPairWith c bs fs bf]
 
 /-- Each operation with the SHA-512 implementation of `v`, if it has one, and
-each field multiplication of the Ed25519 functions: the baseline's, and
-BMI2's and ADX's (`_adx`, whose comb also selects its entries with AVX2); and with AVX512_IFMA
-(`_ifma`), verification with its windows, and signing with its comb. -/
+each field multiplication of the Ed25519 functions, best first: with
+AVX512_IFMA (`_ifma`), verification with its windows, and signing with its
+comb; BMI2's and ADX's (`_adx`, whose comb also selects its entries with
+AVX2); and the baseline's. -/
 def artifactsFor (v : Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
   match v.sha512 with
   | none => []
-  | some c => withField c Impl.X25519.X86_64.baseline "" []
-        (Impl.Ed25519.X86_64.scalarBase_precomputed Impl.X25519.X86_64.baseline) []
-        Proof.Ed25519.X86_64.VerifyCode.baseline_eq ++
-      withField c Impl.X25519.X86_64.adx "_adx" ["bmi2", "adx"] Impl.Ed25519.X86_64.scalarBase_adx
-        ["avx", "avx2", "bmi2", "adx"]
-        Proof.Ed25519.X86_64.VerifyCode.adx_eq ++
-      [verifyWith c Impl.X25519.X86_64.adx
+  | some c => [verifyWith c Impl.X25519.X86_64.adx
         Impl.Ed25519.X86_64.Ifma.windows "_ifma"
         ["avx", "avx2", "bmi2", "adx", "avx512ifma", "avx512vl"]
         Proof.Ed25519.X86_64.VerifyCode.ifma_eq,
         signExpandedWith c Impl.Ed25519.X86_64.scalarBase_ifma "_ifma"
           ["avx", "avx2", "bmi2", "adx", "avx512f", "avx512ifma", "avx512vl"],
         keyPairWith c Impl.Ed25519.X86_64.scalarBase_ifma "_ifma"
-          ["avx", "avx2", "bmi2", "adx", "avx512f", "avx512ifma", "avx512vl"]]
+          ["avx", "avx2", "bmi2", "adx", "avx512f", "avx512ifma", "avx512vl"]] ++
+      withField c Impl.X25519.X86_64.adx "_adx" ["bmi2", "adx"] Impl.Ed25519.X86_64.scalarBase_adx
+        ["avx", "avx2", "bmi2", "adx"]
+        Proof.Ed25519.X86_64.VerifyCode.adx_eq ++
+      withField c Impl.X25519.X86_64.baseline "" []
+        (Impl.Ed25519.X86_64.scalarBase_precomputed Impl.X25519.X86_64.baseline) []
+        Proof.Ed25519.X86_64.VerifyCode.baseline_eq
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.MdHash.X86_64.variants.flatMap fun v => artifactsFor v

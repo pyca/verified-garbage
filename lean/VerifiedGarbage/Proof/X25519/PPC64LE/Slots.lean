@@ -50,6 +50,15 @@ theorem sep1_get {o : Nat} {qs : List Nat} (h : Sep1 o qs = true) {q : Nat} (hq 
   simp only [Bool.and_eq_true, Bool.or_eq_true, beq_iff_eq, decide_eq_true_eq] at this
   exact ⟨this.1.elim (fun h => h.elim .inl (fun h => .inr (.inl h))) (fun h => .inr (.inr h)), this.2⟩
 
+/-- `o` and every slot of `qs` are multiples of 4, as the multiplication's
+doubleword loads and stores need. -/
+def Al4 (o : Nat) (qs : List Nat) : Bool := o % 4 == 0 && qs.all fun q => q % 4 == 0
+
+theorem al4_get {o : Nat} {qs : List Nat} (h : Al4 o qs = true) :
+    o % 4 = 0 ∧ ∀ q ∈ qs, q % 4 = 0 := by
+  simp only [Al4, Bool.and_eq_true, beq_iff_eq, List.all_eq_true] at h
+  exact ⟨h.1, h.2⟩
+
 /-- The field area `[0, ACC + 64)` of the working space: the elements and
 the product at `ACC`. -/
 abbrev FA (b : Addr) : Region := ⟨b, ACC + 64⟩
@@ -81,11 +90,12 @@ theorem frame_FA {o : Nat} (ho : o + 32 ≤ ACC) {m m' : Mem}
   rcases hr with rfl | rfl <;> exact Offset.sub_base _ (by omega_using [ho])
 
 theorem mulS {o x y : Nat} {qs : List Nat} {v : Nat → Fe} (hq : Sep1 o qs = true)
-    (ho : o + 32 ≤ ACC) (hx : x ∈ qs) (hy : y ∈ qs) {s : State} (hc : Ctx b s)
+    (hal : Al4 o qs = true) (ho : o + 32 ≤ ACC) (hx : x ∈ qs) (hy : y ∈ qs) {s : State} (hc : Ctx b s)
     (hS : SlotsOk s.mem b qs v) :
     WP isa (mul o x y) s fun s' => Rest clob s s' ∧ Frame [FA b] s.mem s'.mem ∧
       SlotsOk s'.mem b (o :: qs) (upd v o (v x * v y)) := by
-  refine WP.mono (mul_ok (by decide) ho (sep1_get hq hx).2 (sep1_get hq hy).2 hc)
+  refine WP.mono (mul_ok (by decide) ho (sep1_get hq hx).2 (sep1_get hq hy).2 (by decide)
+    (al4_get hal).1 ((al4_get hal).2 x hx) ((al4_get hal).2 y hy) hc)
     fun s' ⟨hr, hf, hv⟩ => ⟨hr, frame_FA ho hf, fun q hq' => ?_⟩
   by_cases hqo : q = o
   · subst hqo

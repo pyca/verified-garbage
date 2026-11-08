@@ -62,11 +62,12 @@ def wideArtifactsOf (v : GcmImpl) : List Artifact := [
       features := (features v ++ ["avx", "avx2"]).dedup }]
 
 
-/-- The artifacts of a variant, from the implementations it names. -/
-def artifactsFor (v : GcmVariant) : List Artifact :=
-  artifactsOf v.impl ++ if hasWide v.impl then wideArtifactsOf v.impl else []
+/-- The artifacts of the implementations `v`: those with the AVX2 copies
+first, which its dispatchers then try first. -/
+def artifactsFor (v : GcmImpl) : List Artifact :=
+  (if hasWide v then wideArtifactsOf v else []) ++ if hasNarrow v then artifactsOf v else []
 
 def artifacts : List Artifact :=
-  VG.Proof.Variants.AesGcm.X86_64.variants.flatMap fun v => artifactsFor v
+  (sivImpls (VG.Proof.Variants.AesGcm.X86_64.variants.map (·.impl))).flatMap artifactsFor
 
 end VG.Artifacts.AesGcmSiv.X86_64

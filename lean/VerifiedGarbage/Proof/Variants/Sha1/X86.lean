@@ -13,8 +13,8 @@ def scalar : Proof.Sha1.X86.Variants.Backend := Proof.Variants.Sha1.X86.Scalar.v
 
 def shaNi : Proof.Sha1.X86.Variants.Backend := Proof.Variants.Sha1.X86.ShaNi.variant
 
-/-- Every implementation, which each function generic over them is emitted
-with (the registration files that import this). -/
-def variants := [scalar, shaNi]
+/-- Every implementation, best first: each function generic over them is
+emitted with each (the registration files that import this). -/
+def variants := [shaNi, scalar]
 
 end VG.Proof.Variants.Sha1.X86

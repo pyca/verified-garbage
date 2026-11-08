@@ -5,6 +5,7 @@ import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Block
 import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Contract
 public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Xor
+public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Vmx4.Xor
 
 /-!
 # Streaming ChaCha20 on PPC64LE: the calls
@@ -52,7 +53,7 @@ theorem block_call {s : State} {S B : Addr} (hr3 : s.gpr .r3 = S) (hr4 : s.gpr .
       State.callEntry_mem, callEntry_gpr' s (by decide : Reg.r3 ∉ linkRegs),
       callEntry_gpr' s (by decide : Reg.r4 ∉ linkRegs), hr3, hr4] using hpost
 
-/-- `vg_chacha20_xor` in place (`Xor.xor_call`). -/
+/-- `vg_chacha20_xor` in place (`Vmx4.xor_call`). -/
 theorem xor_call {s : State} {S D B : Addr} {n : Nat}
     (hr3 : s.gpr .r3 = S) (hr4 : s.gpr .r4 = D)
     (hr5 : s.gpr .r5 = BitVec.ofNat 64 n) (hr6 : s.gpr .r6 = B) (hr7 : s.gpr .r7 = D) (hn : n < 2 ^ 64)
@@ -64,8 +65,8 @@ theorem xor_call {s : State} {S D B : Addr} {n : Nat}
     (hQ : ∀ s', Kept [⟨S, 64⟩, ⟨D, n⟩, ⟨B, 320⟩] s s' →
       bytesAt s'.mem D n = List.zipWith (· ^^^ ·) (bytesAt s.mem D n) (keystream (stateAt s.mem S) n) →
       Q s') :
-    WP isa (.call "vg_chacha20_xor" Impl.ChaCha20.PPC64LE.Xor.xor) s Q :=
-  Xor.xor_call hr3 hr4 hr5 hr6 hr7 hn hSD hSB hDB hwrap hc hw
+    WP isa (.call "vg_chacha20_xor" Impl.ChaCha20.PPC64LE.Vmx4.xor) s Q :=
+  Vmx4.xor_call hr3 hr4 hr5 hr6 hr7 hn hSD hSB hDB hwrap hc hw
     fun s' hrd hwr hsp hf hcs _ hpost => hQ s' ⟨hcs, hsp, hrd, hwr, hf⟩ hpost
 
 end VG.Proof.ChaCha20.PPC64LE.Stream

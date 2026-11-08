@@ -26,13 +26,15 @@ Miller–Rabin proofs, has it). The algorithm is AArch64's
 2. With `w = ⌈bits / 64⌉`: p from the first `out_len` octets of `rand`
    (`Precompute.loadN`), its top word cut to `bits` bits (the mask `2^k − 1`,
    `k = bits − 64 (w − 1)`, by a loop of `k` steps) with its top bit set,
-   and its low bit set. Its residue modulo 24 (generator 2) or 10 (generator
-   5) by a bit-serial remainder (`smallMod`; the model has no division), and
-   the congruence. Then the sieve of the 53 odd primes below 256 (the same
-   remainder, unrolled over the primes) and RSA's trial division by the
-   first 512 entries of its table (1024 above 1024 bits), `q = (p − 1) / 2`
-   in place, its oddness, its sieve and its trial division. The result is 2
-   if any of them fails.
+   and its low bit set. The congruence, from p modulo 8 (its low digit) and
+   p modulo 3 (generator 2) or 5 (generator 5): the sum of p's digits of 32
+   bits, congruent to p modulo `2³² − 1`, which 3 and 5 divide, reduced by
+   a multiplication by the divisor's reciprocal (`mulhdu`; the model has no
+   division). Then RSA's trial division by the first 512 entries of its
+   table (1024 above 1024 bits), whose first 53 are the odd primes below 256
+   that `Spec.Ffdh.primeShape` sieves by, stopping at the first divisor; if
+   none divides p, `q = (p − 1) / 2` in place, its oddness and its trial
+   division. The result is 2 if any of them fails.
 3. In the order of `Spec.Ffdh.screenedParameterWitnesses`: one witness of
    p, all of q's, then p's other `primeChecks − 1`, each modulus with its own
    word count `w = ⌈mb / 64⌉` (`mb` its bit length: `bits − 1` or `bits`):
@@ -141,19 +143,44 @@ def shapeP : Prog isa :=
       .logic .and .r6 .r6 .r4, .lsr .d .r4 .r4 1, .addi .r4 .r4 1, .logic .or .r6 .r6 .r4, .store .d .r6 .r5 0,
       .load .d .r6 .r10 0, .li .r4 1, .logic .or .r6 .r6 .r4, .store .d .r6 .r10 0]))
 
-/-- The generator's congruence: `r = p mod e` (`e` 24 for generator 2, 10
-for 5); `hBad := r ⊕ 11` for generator 2, `(r | 4) ⊕ 7` for 5, zero iff
-`r = 11` or `r ∈ {3, 7}`. -/
-def residue : Prog isa :=
-  .seq (.block [ldh .r3 hGen, .subi .r3 .r3 2])
-    (.ite (.zero .d .r3)
-      (.seq (.block [.li .r4 24]) (.seq smallMod (.block [.li .r4 11, .logic .xor .r3 .r3 .r4, sth .r3 hBad])))
-      (.seq (.block [.li .r4 10]) (.seq smallMod (.block [.li .r4 4, .logic .or .r3 .r3 .r4, .li .r4 7,
-        .logic .xor .r3 .r3 .r4, sth .r3 hBad]))))
+/-- `r3 :=` the sum of the `2 w` digits of 32 bits of array 0, which is
+congruent to it modulo `2³² − 1`. -/
+def digitSum : Prog isa :=
+  .seq (.block [.addi .r5 .r10 0, .addi .r4 .r11 0, .li .r3 0])
+    (countLoop .r4 [.load .w .r0 .r5 0, .add .r3 .r3 .r0, .addi .r5 .r5 4])
 
-/-- The sieve: `hBad |= ` the flag of an odd prime below 256 dividing
-array 0. -/
-def sieve : Prog isa := VG.Impl.MillerRabin.PPC64LE.Search.sieve oddPrimes256
+/-- `r3 := r3 mod d`, by the quotient `⌊r3 m / 2^(64 + k)⌋` for the
+reciprocal `m = ⌈2^(64 + k) / d⌉`, exact for every 64-bit `r3`: `m` is
+built in `r6` from its 16-bit pieces `m₃ m₂ m₁ m₀`, most significant first
+(`lis`, `ori`, a shift by 32, `oris`, `ori`). -/
+def modSmall (d k : Nat) (m₃ m₂ m₁ m₀ : BitVec 16) : List Instr :=
+  [.lis .r6 m₃, .ori .r6 .r6 m₂, .lsl .r6 .r6 32, .oris .r6 .r6 m₁, .ori .r6 .r6 m₀, .mulhu .r6 .r3 .r6,
+    .lsr .d .r6 .r6 k, .li .r7 d, .mul .r6 .r6 .r7, .sub .r3 .r3 .r6]
+
+/-- `r3 := r3 mod 3`: `m = 0xAAAAAAAAAAAAAAAB = ⌈2⁶⁵ / 3⌉`. -/
+def mod3 : List Instr := modSmall 3 1 0xAAAA 0xAAAA 0xAAAA 0xAAAB
+
+/-- `r3 := r3 mod 5`: `m = 0xCCCCCCCCCCCCCCCD = ⌈2⁶⁶ / 5⌉`. -/
+def mod5 : List Instr := modSmall 5 2 0xCCCC 0xCCCC 0xCCCC 0xCCCD
+
+/-- Generator 2's congruence, p ≡ 11 (mod 24): `hBad := ((p mod 8) ⊕ 3) |
+((p mod 3) ⊕ 2)`, zero iff p ≡ 3 (mod 8) and p ≡ 2 (mod 3). -/
+def residue2 : Prog isa :=
+  .seq digitSum (.block ([.load .w .r4 .r10 0] ++ mod3 ++
+    [.li .r6 7, .logic .and .r4 .r4 .r6, .li .r6 3, .logic .xor .r4 .r4 .r6, .li .r6 2, .logic .xor .r3 .r3 .r6,
+      .logic .or .r3 .r3 .r4, sth .r3 hBad]))
+
+/-- Generator 5's congruence, p ≡ 3 or 7 (mod 10): `hBad := ((p mod 2) ⊕ 1) |
+((p mod 5) | 1) ⊕ 3`, zero iff p is odd and p ≡ 2 or 3 (mod 5). -/
+def residue5 : Prog isa :=
+  .seq digitSum (.block ([.load .w .r4 .r10 0] ++ mod5 ++
+    [.li .r6 1, .logic .and .r4 .r4 .r6, .logic .xor .r4 .r4 .r6, .logic .or .r3 .r3 .r6, .li .r6 3,
+      .logic .xor .r3 .r3 .r6, .logic .or .r3 .r3 .r4, sth .r3 hBad]))
+
+/-- The generator's congruence: `hBad` zero iff p ≡ 11 (mod 24) for
+generator 2, 3 or 7 (mod 10) for 5. -/
+def residue : Prog isa :=
+  .seq (.block [ldh .r3 hGen, .subi .r3 .r3 2]) (.ite (.zero .d .r3) residue2 residue5)
 
 /-- RSA's trial division (`Spec.RsaKeyGen.obviouslyComposite`): `hBad |=`
 the flag of one of the first 512 entries of `VG_RSA_KEYGEN_TRIAL32` (1024
@@ -218,14 +245,20 @@ def tests (name : String) (roundCode : Prog isa) : Prog isa :=
   .seq (test false firstCheck name roundCode) (.seq (.block [ldh .r3 hStat, .subi .r3 .r3 1])
     (.ite (.zero .d .r3) (testQ name roundCode) qResult))
 
+/-- After p's congruence and trial division passed: q from p, its oddness
+and trial division, and the tests. -/
+def mainQ (name : String) (roundCode : Prog isa) : Prog isa :=
+  .seq halveQ (.seq trialSieve (.seq (.block [ldh .r5 hBad])
+    (.ite (.zero .d .r5) (tests name roundCode) (.block (finish 2)))))
+
 /-- Once `rand` holds the candidate's octets: p, its congruence, rejected
-before any other check (most candidates fail it); then the sieves and trial
-divisions of p and q, and the tests. -/
+before any other check (most candidates fail it); then p's trial division,
+q's only if it passes (`mainQ`), and the tests. -/
 def main (name : String) (roundCode : Prog isa) : Prog isa :=
   .seq (phase false) (.seq shapeP (.seq residue (.seq (.block [ldh .r5 hBad])
     (.ite (.zero .d .r5)
-      (.seq sieve (.seq trialSieve (.seq halveQ (.seq sieve (.seq trialSieve (.seq (.block [ldh .r5 hBad])
-        (.ite (.zero .d .r5) (tests name roundCode) (.block (finish 2)))))))))
+      (.seq trialSieve (.seq (.block [ldh .r5 hBad])
+        (.ite (.zero .d .r5) (mainQ name roundCode) (.block (finish 2)))))
       (.block (finish 2))))))
 
 /-- `vg_ffdh_parameter_candidate_sieved`. -/

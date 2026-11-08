@@ -4,6 +4,50 @@
 // `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
 // gives.
 
+vg_aes_siv_init_vaes:
+	lea rsp, [rsp-2568]
+	mov rcx, rsp
+	add rcx, 8
+	mov QWORD PTR [rcx+160], rbx
+	mov QWORD PTR [rcx+168], rbp
+	mov QWORD PTR [rcx+176], r12
+	mov QWORD PTR [rcx+184], r13
+	mov QWORD PTR [rcx+192], r14
+	mov rbx, rdi
+	mov rbp, rsi
+	shr rbp, 1
+	mov r12, rdx
+	mov r13, rcx
+	mov r14, rsi
+	shr r14, 3
+	add r14, 6
+	mov rsi, rbp
+	add rcx, 256
+	call {vg_aes_expand_key_scratch_aesni}
+	mov rdi, r12
+	mov rsi, r14
+	mov rdx, r12
+	add rdx, 240
+	mov rcx, r13
+	add rcx, 256
+	call {vg_cmac_aes_subkeys_vaes}
+	mov rdi, rbx
+	add rdi, rbp
+	mov rsi, rbp
+	mov rdx, r12
+	add rdx, 272
+	mov rcx, r13
+	add rcx, 256
+	call {vg_aes_expand_key_scratch_aesni}
+	mov rbx, QWORD PTR [r13+160]
+	mov rbp, QWORD PTR [r13+168]
+	mov r12, QWORD PTR [r13+176]
+	mov r14, QWORD PTR [r13+192]
+	mov r13, QWORD PTR [r13+184]
+	lea rsp, [rsp+2568]
+	ret
+	.p2align 6
+
 vg_aes_siv_init_aesni:
 	lea rsp, [rsp-2568]
 	mov rcx, rsp
@@ -83,50 +127,6 @@ vg_aes_siv_init:
 	mov rcx, r13
 	add rcx, 256
 	call {vg_aes_expand_key_scratch}
-	mov rbx, QWORD PTR [r13+160]
-	mov rbp, QWORD PTR [r13+168]
-	mov r12, QWORD PTR [r13+176]
-	mov r14, QWORD PTR [r13+192]
-	mov r13, QWORD PTR [r13+184]
-	lea rsp, [rsp+2568]
-	ret
-	.p2align 6
-
-vg_aes_siv_init_vaes:
-	lea rsp, [rsp-2568]
-	mov rcx, rsp
-	add rcx, 8
-	mov QWORD PTR [rcx+160], rbx
-	mov QWORD PTR [rcx+168], rbp
-	mov QWORD PTR [rcx+176], r12
-	mov QWORD PTR [rcx+184], r13
-	mov QWORD PTR [rcx+192], r14
-	mov rbx, rdi
-	mov rbp, rsi
-	shr rbp, 1
-	mov r12, rdx
-	mov r13, rcx
-	mov r14, rsi
-	shr r14, 3
-	add r14, 6
-	mov rsi, rbp
-	add rcx, 256
-	call {vg_aes_expand_key_scratch_aesni}
-	mov rdi, r12
-	mov rsi, r14
-	mov rdx, r12
-	add rdx, 240
-	mov rcx, r13
-	add rcx, 256
-	call {vg_cmac_aes_subkeys_vaes}
-	mov rdi, rbx
-	add rdi, rbp
-	mov rsi, rbp
-	mov rdx, r12
-	add rdx, 272
-	mov rcx, r13
-	add rcx, 256
-	call {vg_aes_expand_key_scratch_aesni}
 	mov rbx, QWORD PTR [r13+160]
 	mov rbp, QWORD PTR [r13+168]
 	mov r12, QWORD PTR [r13+176]

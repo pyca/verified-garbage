@@ -36,7 +36,7 @@ vg_sha256_init:
 	ret
 	.p2align 6
 
-vg_sha224_finalize:
+vg_sha224_finalize_shani:
 	lea rsp, [rsp-616]
 	mov rcx, rsp
 	add rcx, 8
@@ -141,7 +141,7 @@ vg_sha224_finalize:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha256_compress}
+	call {vg_sha256_compress_shani}
 	mov rbx, rdi
 	mov r15, rcx
 	mov r13d, 0
@@ -179,7 +179,7 @@ vg_sha224_finalize:
 	ret
 	.p2align 6
 
-vg_sha224_digest:
+vg_sha224_digest_shani:
 	lea rsp, [rsp-728]
 	mov rcx, rsp
 	add rcx, 8
@@ -217,7 +217,7 @@ vg_sha224_digest:
 	mov rdi, rbx
 	mov rdx, r14
 	mov rcx, r15
-	call {vg_sha256_compress}
+	call {vg_sha256_compress_shani}
 	mov rbx, rdi
 	mov r15, rcx
 	mov rax, r14
@@ -318,7 +318,7 @@ vg_sha224_digest:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha256_compress}
+	call {vg_sha256_compress_shani}
 	mov rbx, rdi
 	mov r15, rcx
 	pxor xmm0, xmm0
@@ -342,7 +342,7 @@ vg_sha224_digest:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha256_compress}
+	call {vg_sha256_compress_shani}
 	mov rbx, rdi
 	mov r15, rcx
 	mov eax, DWORD PTR [rbx]
@@ -730,7 +730,7 @@ vg_sha224_digest_avx2:
 	ret
 	.p2align 6
 
-vg_sha224_finalize_shani:
+vg_sha224_finalize:
 	lea rsp, [rsp-616]
 	mov rcx, rsp
 	add rcx, 8
@@ -835,7 +835,7 @@ vg_sha224_finalize_shani:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha256_compress_shani}
+	call {vg_sha256_compress}
 	mov rbx, rdi
 	mov r15, rcx
 	mov r13d, 0
@@ -873,7 +873,7 @@ vg_sha224_finalize_shani:
 	ret
 	.p2align 6
 
-vg_sha224_digest_shani:
+vg_sha224_digest:
 	lea rsp, [rsp-728]
 	mov rcx, rsp
 	add rcx, 8
@@ -911,7 +911,7 @@ vg_sha224_digest_shani:
 	mov rdi, rbx
 	mov rdx, r14
 	mov rcx, r15
-	call {vg_sha256_compress_shani}
+	call {vg_sha256_compress}
 	mov rbx, rdi
 	mov r15, rcx
 	mov rax, r14
@@ -1012,7 +1012,7 @@ vg_sha224_digest_shani:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha256_compress_shani}
+	call {vg_sha256_compress}
 	mov rbx, rdi
 	mov r15, rcx
 	pxor xmm0, xmm0
@@ -1036,7 +1036,7 @@ vg_sha224_digest_shani:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha256_compress_shani}
+	call {vg_sha256_compress}
 	mov rbx, rdi
 	mov r15, rcx
 	mov eax, DWORD PTR [rbx]
@@ -1077,7 +1077,7 @@ vg_sha224_digest_shani:
 	ret
 	.p2align 6
 
-vg_sha256_update:
+vg_sha256_update_shani:
 	lea rsp, [rsp-616]
 	mov r8, rsp
 	add r8, 8
@@ -1207,7 +1207,7 @@ vg_sha256_update:
 	mov rdi, rbx
 	mov rdx, r14
 	mov rcx, r15
-	call {vg_sha256_compress}
+	call {vg_sha256_compress_shani}
 	mov rbx, rdi
 	mov r15, rcx
 226:
@@ -1223,7 +1223,7 @@ vg_sha256_update:
 	ret
 	.p2align 6
 
-vg_sha256_finalize:
+vg_sha256_finalize_shani:
 	lea rsp, [rsp-616]
 	mov rcx, rsp
 	add rcx, 8
@@ -1328,7 +1328,7 @@ vg_sha256_finalize:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha256_compress}
+	call {vg_sha256_compress_shani}
 	mov rbx, rdi
 	mov r15, rcx
 	mov r13d, 0
@@ -1369,7 +1369,7 @@ vg_sha256_finalize:
 	ret
 	.p2align 6
 
-vg_sha256_digest:
+vg_sha256_digest_shani:
 	lea rsp, [rsp-728]
 	mov rcx, rsp
 	add rcx, 8
@@ -1407,7 +1407,7 @@ vg_sha256_digest:
 	mov rdi, rbx
 	mov rdx, r14
 	mov rcx, r15
-	call {vg_sha256_compress}
+	call {vg_sha256_compress_shani}
 	mov rbx, rdi
 	mov r15, rcx
 	mov rax, r14
@@ -1508,7 +1508,7 @@ vg_sha256_digest:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha256_compress}
+	call {vg_sha256_compress_shani}
 	mov rbx, rdi
 	mov r15, rcx
 	pxor xmm0, xmm0
@@ -1532,7 +1532,7 @@ vg_sha256_digest:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha256_compress}
+	call {vg_sha256_compress_shani}
 	mov rbx, rdi
 	mov r15, rcx
 	mov eax, DWORD PTR [rbx]
@@ -2075,7 +2075,7 @@ vg_sha256_digest_avx2:
 	ret
 	.p2align 6
 
-vg_sha256_update_shani:
+vg_sha256_update:
 	lea rsp, [rsp-616]
 	mov r8, rsp
 	add r8, 8
@@ -2205,7 +2205,7 @@ vg_sha256_update_shani:
 	mov rdi, rbx
 	mov rdx, r14
 	mov rcx, r15
-	call {vg_sha256_compress_shani}
+	call {vg_sha256_compress}
 	mov rbx, rdi
 	mov r15, rcx
 226:
@@ -2221,7 +2221,7 @@ vg_sha256_update_shani:
 	ret
 	.p2align 6
 
-vg_sha256_finalize_shani:
+vg_sha256_finalize:
 	lea rsp, [rsp-616]
 	mov rcx, rsp
 	add rcx, 8
@@ -2326,7 +2326,7 @@ vg_sha256_finalize_shani:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha256_compress_shani}
+	call {vg_sha256_compress}
 	mov rbx, rdi
 	mov r15, rcx
 	mov r13d, 0
@@ -2367,7 +2367,7 @@ vg_sha256_finalize_shani:
 	ret
 	.p2align 6
 
-vg_sha256_digest_shani:
+vg_sha256_digest:
 	lea rsp, [rsp-728]
 	mov rcx, rsp
 	add rcx, 8
@@ -2405,7 +2405,7 @@ vg_sha256_digest_shani:
 	mov rdi, rbx
 	mov rdx, r14
 	mov rcx, r15
-	call {vg_sha256_compress_shani}
+	call {vg_sha256_compress}
 	mov rbx, rdi
 	mov r15, rcx
 	mov rax, r14
@@ -2506,7 +2506,7 @@ vg_sha256_digest_shani:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha256_compress_shani}
+	call {vg_sha256_compress}
 	mov rbx, rdi
 	mov r15, rcx
 	pxor xmm0, xmm0
@@ -2530,7 +2530,7 @@ vg_sha256_digest_shani:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha256_compress_shani}
+	call {vg_sha256_compress}
 	mov rbx, rdi
 	mov r15, rcx
 	mov eax, DWORD PTR [rbx]

@@ -15,8 +15,16 @@ mod vg_cast5_s5678;
 pub use vg_cast5_s5678::VG_CAST5_S5678;
 
 #[rustfmt::skip]
+mod vg_chacha20_vmx4_consts;
+pub use vg_chacha20_vmx4_consts::VG_CHACHA20_VMX4_CONSTS;
+
+#[rustfmt::skip]
 mod vg_ed25519_comb;
 pub use vg_ed25519_comb::VG_ED25519_COMB;
+
+#[rustfmt::skip]
+mod vg_ed25519_verify_neg_base;
+pub use vg_ed25519_verify_neg_base::VG_ED25519_VERIFY_NEG_BASE;
 
 #[rustfmt::skip]
 mod vg_ffdh_vetted_groups_ppc;

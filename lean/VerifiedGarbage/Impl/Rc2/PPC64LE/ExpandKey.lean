@@ -38,7 +38,7 @@ def piInit : List Instr :=
 
 /-- `r11 := PITABLE[q]`, the byte at offset `q` (in `r10`) of the table in
 the working space. -/
-def piLookup : Prog isa := scan .r7 .r15 32 [0, 1, 2] 8
+def piLookup : Prog isa := .block (vscan .r7 .r15 true false)
 
 /-- `L[i] := key[i]`, the next `i`; `r0` is zero at the key's length. -/
 def copyKey : List Instr :=

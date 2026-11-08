@@ -19,8 +19,8 @@ def base : CrtImpl := Proof.Variants.RsaPrivateCrt.X86_64.Base.variant
 open VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64 in
 def ifma : CrtImpl := Proof.Variants.RsaPrivateCrt.X86_64.Ifma.variant
 
-/-- Every implementation, which each function generic over them is emitted
-with (the registration files that import this). -/
-def variants := [adx, base, ifma]
+/-- Every implementation, best first: each function generic over them is
+emitted with each (the registration files that import this). -/
+def variants := [ifma, adx, base]
 
 end VG.Proof.Variants.RsaPrivateCrt.X86_64

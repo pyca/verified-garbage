@@ -2,7 +2,6 @@ module
 public import VerifiedGarbage.Proof.TripleDes.PPC64LE.Spills
 
 import VerifiedGarbage.Proof.TripleDes.PPC64LE.RoundBody
-import VerifiedGarbage.Proof.TripleDes.PPC64LE.Box
 import VerifiedGarbage.Proof.TripleDes.PPC64LE.Write
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 public import VerifiedGarbage.Impl.TripleDes.PPC64LE.Block
@@ -41,9 +40,8 @@ theorem roundAdvance_ok (s : State) :
 theorem roundStep_ok (s : State)
     (l r : BitVec 32) (k : BitVec 64) (n : Nat) (hn : 1 ≤ n) (hn' : n < 17)
     (hl : s.gpr .r14 = l.setWidth 64) (hr : s.gpr .r15 = r.setWidth 64)
-    (hk : s.mem.readW (s.gpr .r17) 64 = k) (hok : Ok sboxCfg s)
+    (hk : s.mem.readW (s.gpr .r17) 64 = k) (hok : Ok scratchCfg s) (hc : ConstsAt s)
     (hread : InRegions (s.rd ++ s.wr) (s.gpr .r17) 8)
-    (hsep : (⟨s.gpr .r17, 8⟩ : Region).Disjoint (spillRegion s))
     (hcount : s.gpr .r16 = BitVec.ofNat 64 n) :
     ∃ s', runBlock isa (roundBody ++ roundAdvance) s = some s' ∧
       s'.gpr .r14 = r.setWidth 64 ∧
@@ -54,8 +52,8 @@ theorem roundStep_ok (s : State)
       s'.rd = s.rd ∧ s'.wr = s.wr ∧
       (∀ q ∈ roundStepKept, s'.gpr q = s.gpr q) ∧
       Frame [spillRegion s] s.mem s'.mem := by
-  obtain ⟨s₁, run₁, left₁, right₁, rd₁, wr₁, keep₁, frame₁⟩ :=
-    roundBody_ok s l r k hl hr hk hok hread hsep
+  obtain ⟨s₁, run₁, left₁, right₁, rd₁, wr₁, keep₁, mem₁⟩ :=
+    roundBody_ok s l r k hl hr hk hok hc hread
   obtain ⟨s₂, run₂, ptr₂, count₂, rd₂, wr₂, mem₂, keep₂⟩ := roundAdvance_ok s₁
   obtain ⟨hsub, hzero⟩ := countDown_rules n hn' hn
   have hcount₁ : s₁.gpr .r16 = BitVec.ofNat 64 n := (keep₁ .r16 (by decide)).trans hcount
@@ -71,6 +69,6 @@ theorem roundStep_ok (s : State)
     have hq' : q ∈ roundOuterKept := by revert hq; cases q <;> decide
     have hneq : q ≠ .r16 ∧ q ≠ .r17 := by revert hq; cases q <;> decide
     exact (keep₂ q hneq.1 hneq.2).trans (keep₁ q hq')
-  · rw [mem₂]; exact frame₁
+  · rw [mem₂, mem₁]; exact Frame.refl _ _
 
 end VG.Proof.TripleDes.PPC64LE

@@ -321,6 +321,20 @@ loops (`sivAvx`), which the dispatcher prefers, runs. -/
 def hasWide (v : GcmImpl) : Bool :=
   !sivStitch v && (sivWide v || sivAvx v || !(v.ctr.features.contains "aes" && v.gh.features.contains "pclmulqdq"))
 
+/-- Whether `v`'s instances without the AVX2 copies may run where those with
+them (`hasWide`), which a dispatcher tries first, cannot: where they need
+fewer CPU features. -/
+def hasNarrow (v : GcmImpl) : Bool :=
+  !hasWide v || !(features v ++ ["avx", "avx2"]).all (sivFeatures v).contains
+
+/-- The implementations of `vs` whose instances a dispatcher trying them in
+order could choose: each but one with no fewer CPU features than one before
+it (`sivFeatures`), as a variant of AES-GCM that differs from another only
+in what AES-GCM-SIV does not call. -/
+def sivImpls (vs : List GcmImpl) : List GcmImpl :=
+  vs.foldl (init := []) fun acc v =>
+    if acc.any fun w => (sivFeatures w).all (sivFeatures v).contains then acc else acc ++ [v]
+
 /-- The copy/XOR variant: the code of `seal` and `open` with the AVX2
 copies, which those whose callees need AVX2 already take. -/
 def wideSealCode (v : GcmImpl) : Prog X86_64.isa := sealWith v true (loopsOf v)

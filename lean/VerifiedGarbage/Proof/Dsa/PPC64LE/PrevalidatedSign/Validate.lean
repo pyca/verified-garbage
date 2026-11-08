@@ -78,7 +78,7 @@ theorem privateChecks_ok {s₀ s : State} {L : Lay} {key : Addr} (hL : L.Ok) (hK
   have hw16 := hL.wp_ge
   have hw8 := hL.wp_eq
   have hbe := hL.buf_end
-  have e8 := Lay.slot_eq L.wp 8; have e28 := Lay.slot_eq L.wp 28
+  have e8 := Lay.slot_eq L.wp 8; have e24 := Lay.slot_eq L.wp 24; have e28 := Lay.slot_eq L.wp 28
   have hq28 : L.qOff = slot L.wp 28 := rfl
   have hqZ : slot L.wp 28 + 1600 ≤ L.Z := by simp only [Lay.bOff, Lay.qOff] at hbe; omega_arith
   obtain ⟨ip, scr, regs, p0, -, p8, q0, -, -⟩ := hc

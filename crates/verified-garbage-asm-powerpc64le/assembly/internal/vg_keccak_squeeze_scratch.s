@@ -32,6 +32,8 @@ vg_keccak_squeeze_scratch:
 	addi %r3, %r26, 0
 	addi %r4, %r27, 0
 	bl {vg_keccak_f1600}
+	addi %r26, %r3, 0
+	addi %r27, %r4, 0
 24:
 	li %r10, 7
 	and %r10, %r29, %r10

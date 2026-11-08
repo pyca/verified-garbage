@@ -88,7 +88,7 @@ vg_rsa_generate_init:
 	mov r0, r1
 	bx lr
 
-vg_rsa_generate:
+vg_rsa_generate_umaal:
 	push {r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}
 	ldr r9, [sp, #52]
 	mov r4, r0
@@ -156,7 +156,7 @@ vg_rsa_generate:
 	mov r1, r5
 	mov r2, r6
 	add r3, r9, #48
-	bl {vg_rsa_prime_search}
+	bl {vg_rsa_prime_search_umaal}
 	add sp, sp, #32
 	ldr r12, [r6, #0]
 	add r8, r8, r12
@@ -332,7 +332,7 @@ vg_rsa_generate:
 	ldr r4, [sp], #40
 	bx lr
 
-vg_rsa_generate_umaal:
+vg_rsa_generate:
 	push {r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}
 	ldr r9, [sp, #52]
 	mov r4, r0
@@ -400,7 +400,7 @@ vg_rsa_generate_umaal:
 	mov r1, r5
 	mov r2, r6
 	add r3, r9, #48
-	bl {vg_rsa_prime_search_umaal}
+	bl {vg_rsa_prime_search}
 	add sp, sp, #32
 	ldr r12, [r6, #0]
 	add r8, r8, r12
