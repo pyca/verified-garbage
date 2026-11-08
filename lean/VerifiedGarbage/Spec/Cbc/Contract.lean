@@ -27,8 +27,8 @@ Each takes a `scratch` buffer of working space, room for that of
 `vg_aes_encrypt_blocks` and `vg_aes_decrypt_blocks` (`[u64; 256]`) and 128
 bytes more (eight blocks, e.g. of ciphertext that decryption in place must
 keep until it has decrypted the block after each). On return each byte of
-`scratch` is unchanged or zero (`Zeroize.scrubbed`): nothing the function
-computed is left there for the caller to wipe. `stack` is the number of
+`scratch` is unchanged or zero (`Zeroize.scrubbed`), so that nothing the
+function computed is left there. `stack` is the number of
 bytes of stack below the stack pointer that an implementation's calls and
 frames use (see `Sig.contract`).
 -/
