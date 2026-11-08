@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 # X25519 on PPC64LE: the ladder
 
 One iteration of the ladder (`step_ok`) takes the elements `x1, x2, z2, x3,
-z3, a24` from the state after the bits `254` down to `n` (`ladderAfter k x1
+z3` from the state after the bits `254` down to `n` (`ladderAfter k x1
 n`) to the state after `n - 1`, with the swap in `r0` and the counter in
 `r12`; the loop (`ladder_ok`) runs it for the bits 254 down to 0.
 -/
@@ -76,32 +76,41 @@ theorem opSub {o x y : Nat} (hq : Sep1 o qs = true) (hal : Al4 o qs = true) (ho 
     WP isa (.block (sub o x y)) s (Cur b s0 a c (o :: qs) (upd v o (v x - v y))) :=
   WP.mono (subS hq hal ho hx hy h.ctx h.slots) fun _ ⟨hr, hf, hS⟩ => h.next hr hf hS
 
+theorem opMul24 {o x : Nat} (hq : Sep1 o qs = true) (hal : Al4 o qs = true) (ho : o + 32 ≤ ACC)
+    (hx : x ∈ qs) {s : State} (h : Cur b s0 a c qs v s) :
+    WP isa (.block (mulA24 o x)) s (Cur b s0 a c (o :: qs) (upd v o (a24 * v x))) :=
+  WP.mono (mul24S hq hal ho hx h.ctx h.slots) fun _ ⟨hr, hf, hS⟩ => h.next hr hf hS
+
 end
 
 /-! ## Sequences of field operations -/
 
-/-- A field operation: `o = x · y`, `x + y` or `x - y`. -/
+/-- A field operation: `o = x · y`, `x + y`, `x - y` or `a24 · x`. -/
 inductive FOp
   | mul (o x y : Nat)
+  | mul24 (o x : Nat)
   | add (o x y : Nat)
   | sub (o x y : Nat)
 
 def FOp.code : FOp → Prog isa
   | .mul o x y => Impl.X25519.PPC64LE.mul o x y
+  | .mul24 o x => .block (mulA24 o x)
   | .add o x y => .block (Impl.X25519.PPC64LE.add o x y)
   | .sub o x y => .block (Impl.X25519.PPC64LE.sub o x y)
 
 def FOp.out : FOp → Nat
-  | .mul o _ _ | .add o _ _ | .sub o _ _ => o
+  | .mul o _ _ | .mul24 o _ | .add o _ _ | .sub o _ _ => o
 
 def FOp.x : FOp → Nat
-  | .mul _ x _ | .add _ x _ | .sub _ x _ => x
+  | .mul _ x _ | .mul24 _ x | .add _ x _ | .sub _ x _ => x
 
 def FOp.y : FOp → Nat
   | .mul _ _ y | .add _ _ y | .sub _ _ y => y
+  | .mul24 _ x => x
 
 def FOp.val : FOp → (Nat → Fe) → Fe
   | .mul _ x y, v => v x * v y
+  | .mul24 _ x, v => a24 * v x
   | .add _ x y, v => v x + v y
   | .sub _ x y, v => v x - v y
 
@@ -133,6 +142,7 @@ theorem op_ok {b : Addr} {s0 : State} {a c : BitVec 64} {qs : List Nat} {v : Nat
     WP isa op.code s (Cur b s0 a c (op.out :: qs) (upd v op.out (op.val v))) := by
   cases op with
   | mul o x y => exact opMul hq hal ho hx hy h
+  | mul24 o x => exact opMul24 hq hal ho hx h
   | add o x y => exact opAdd hq hal ho hx hy h
   | sub o x y => exact opSub hq hal ho hx hy h
 
@@ -152,17 +162,17 @@ theorem ops_ok {b : Addr} {s0 : State} {a c : BitVec 64} {k : Prog isa} {Q : Sta
 def ladOps : List FOp :=
   [.add A X2 Z2, .mul AA A A, .sub B X2 Z2, .mul BB B B, .sub E AA BB, .add C X3 Z3, .sub D X3 Z3,
     .mul DA D A, .mul CB C B, .add X3 DA CB, .mul X3 X3 X3, .sub Z3 DA CB, .mul Z3 Z3 Z3,
-    .mul Z3 X1 Z3, .mul X2 AA BB, .mul Z2 A24 E, .add Z2 AA Z2, .mul Z2 E Z2]
+    .mul Z3 X1 Z3, .mul X2 AA BB, .mul24 Z2 E, .add Z2 AA Z2, .mul Z2 E Z2]
 
 /-- The slots the ladder's state lives in. -/
-def LQ : List Nat := [X1, X2, Z2, X3, Z3, A24]
+def LQ : List Nat := [X1, X2, Z2, X3, Z3]
 
 theorem ladOps_ok : opsOk ladOps LQ = true := by decide
 
-/-- The elements of the ladder's state `st`, and `x1` and `a24`. -/
+/-- The elements of the ladder's state `st`, and `x1`. -/
 def ladV (x1 : Fe) (st : Ladder) (q : Nat) : Fe :=
   if q = X1 then x1 else if q = X2 then st.x2 else if q = Z2 then st.z2 else if q = X3 then st.x3
-  else if q = Z3 then st.z3 else a24
+  else st.z3
 
 theorem cswap_fst (sw : Nat) (x y : Fe) : (Spec.X25519.cswap sw x y).1 = sel sw x y := by
   unfold Spec.X25519.cswap sel; split <;> rfl
@@ -177,9 +187,9 @@ theorem ladOps_vals (k : Nat) (x1 : Fe) (st : Ladder) (t : Nat) :
   intro q hq
   rw [ladderStep_eq]
   simp only [LQ, List.mem_cons, List.not_mem_nil, or_false] at hq
-  rcases hq with rfl | rfl | rfl | rfl | rfl | rfl <;>
+  rcases hq with rfl | rfl | rfl | rfl | rfl <;>
     simp only [ladOps, runOps, FOp.out, FOp.val, upd, swapV, ladV, cswap_fst, cswap_snd, X1, X2, Z2, X3,
-      Z3, A, B, C, D, AA, BB, E, DA, CB, A24, Nat.reduceEqDiff, ↓reduceIte]
+      Z3, A, B, C, D, AA, BB, E, DA, CB, Nat.reduceEqDiff, ↓reduceIte]
 
 theorem ofNat_xor {x y : Nat} (hx : x < 2 ^ 64) (hy : y < 2 ^ 64) :
     BitVec.ofNat 64 x ^^^ BitVec.ofNat 64 y = BitVec.ofNat 64 (x ^^^ y) := by
