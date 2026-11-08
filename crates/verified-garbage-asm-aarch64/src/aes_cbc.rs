@@ -22,7 +22,7 @@ pub const VG_AES_CBC_DECRYPT_AES_SHA3_SCRATCH_WRITTEN: usize = 0;
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `scratch` must be valid for reads and writes of 2176 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
+/// * On return each byte of `scratch` is unchanged or zero.
 /// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `sha3` target features.
@@ -209,7 +209,7 @@ pub const VG_AES_CBC_DECRYPT_AES_SCRATCH_WRITTEN: usize = 0;
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `scratch` must be valid for reads and writes of 2176 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
+/// * On return each byte of `scratch` is unchanged or zero.
 /// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
@@ -398,7 +398,7 @@ pub const VG_AES_CBC_ENCRYPT_AES_SCRATCH_WRITTEN: usize = 0;
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `scratch` must be valid for reads and writes of 2176 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
+/// * On return each byte of `scratch` is unchanged or zero.
 /// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
@@ -499,7 +499,7 @@ b 215f
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `scratch` must be valid for reads and writes of 2176 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
+/// * On return each byte of `scratch` is unchanged or zero.
 /// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv`, `data` and `scratch` may overlap the 32 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
@@ -527,7 +527,7 @@ bl {vg_zeroize}
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `scratch` must be valid for reads and writes of 2176 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
+/// * On return each byte of `scratch` is unchanged or zero.
 /// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv`, `data` and `scratch` may overlap the 32 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]

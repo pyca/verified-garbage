@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Cbc.Contract
+public import VerifiedGarbage.Proof.AesCbc.Rounds
 public import VerifiedGarbage.Proof.AesEcb.Wipe
 public import VerifiedGarbage.Proof.Framework.PostMono
 import VerifiedGarbage.Proof.Framework.Offset
@@ -16,8 +17,9 @@ contract with `scratch` left scrubbed (`scrubbedPost`: each byte unchanged
 or zero, `Spec.Zeroize.scrubbed`) where it writes nothing in `scratch`
 (`Verified.cbc_of_unwritten`), and otherwise as a call of it followed by the
 zeroize function on the whole of `scratch`, which the target's `callWipe`
-proves zero on return (`wiped`). Until the contracts in `Spec/Cbc/` state
-it, such a proof is registered weakened to them (`Verified.of_scrubbed`).
+proves zero on return (`wiped`). The contracts in `Spec/Cbc/` are
+`scrubbedPost` of the postconditions without it (`encrypt_eq`,
+`decrypt_eq`).
 
 `callWipe` needs the CBC functions' postconditions to read the memory on
 entry only within the buffers (`encPost_local`, `decPost_local`) and the
@@ -43,36 +45,19 @@ theorem blocksAt_congr {m₁ m₂ : Mem} {p : Addr} {n : Nat}
 
 /-! ## The contracts -/
 
-/-- The precondition of every CBC function. -/
-def pre (pb : Nat) : Curry (aesSig.words pb) (Mem → Prop) :=
-  fun _schedule rounds _iv _data _n _scratch _ => rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14
-
-/-- `aesEncryptContract`'s postcondition. -/
-def encPost (pb : Nat) : aesSig.Post pb := fun schedule rounds iv data n _scratch m m' _ =>
-  ∀ key, Spec.Aes.KeySchedule m schedule rounds.toNat key →
-    let ciph := aes key
-    let cs := encrypt ciph (Spec.Aes.bytesAt m iv 16) (blocksAt m data n.toNat)
-    blocksAt m' data n.toNat = cs ∧ Spec.Aes.bytesAt m' iv 16 = next (Spec.Aes.bytesAt m iv 16) cs
-
-/-- `aesDecryptContract`'s postcondition. -/
-def decPost (pb : Nat) : aesSig.Post pb := fun schedule rounds iv data n _scratch m m' _ =>
-  ∀ key, Spec.Aes.KeySchedule m schedule rounds.toNat key →
-    let ciphInv := aesInv key
-    let cs := blocksAt m data n.toNat
-    blocksAt m' data n.toNat = decrypt ciphInv (Spec.Aes.bytesAt m iv 16) cs ∧
-      Spec.Aes.bytesAt m' iv 16 = next (Spec.Aes.bytesAt m iv 16) cs
-
 /-- `P`, and nothing written left in `scratch`. -/
 def scrubbedPost (pb : Nat) (P : aesSig.Post pb) : aesSig.Post pb :=
   fun schedule rounds iv data n scratch m m' x =>
     P schedule rounds iv data n scratch m m' x ∧ Spec.Zeroize.scrubbed m m' scratch 2176
 
 theorem encrypt_eq {M : ISA} (A : Abi M) (stack : Nat) :
-    aesEncryptContract A stack = aesSig.contract A (pre A.ptrBits) (encPost A.ptrBits) false stack none :=
+    aesEncryptContract A stack =
+      aesSig.contract A (pre A.ptrBits) (scrubbedPost A.ptrBits (encPost A.ptrBits)) false stack none :=
   rfl
 
 theorem decrypt_eq {M : ISA} (A : Abi M) (stack : Nat) :
-    aesDecryptContract A stack = aesSig.contract A (pre A.ptrBits) (decPost A.ptrBits) false stack none :=
+    aesDecryptContract A stack =
+      aesSig.contract A (pre A.ptrBits) (scrubbedPost A.ptrBits (decPost A.ptrBits)) false stack none :=
   rfl
 
 /-- The arguments, six words. -/
@@ -239,17 +224,6 @@ theorem Verified.cbc_of_unwritten {T : Target} {c : Prog T.isa} {A : Abi T.isa} 
     intro hW
     exact unwritten _ P _ _ _ _ (hlen s vals hv) hq fun b hb hn i hi hl =>
       hW _ (List.mem_singleton_self _) b hb hn i hi hl
-
-/-- `scrubbedPost P` implies `P`. -/
-theorem scrubbedPost_imp (pb : Nat) (P : aesSig.Post pb) : aesSig.PostImp pb (scrubbedPost pb P) P :=
-  fun _ _ _ _ _ _ _ _ _ h => h.1
-
-/-- A proof that leaves `scratch` scrubbed is one of the contract without it. -/
-theorem Verified.of_scrubbed {T : Target} {c : Prog T.isa} {A : Abi T.isa} {stack : Nat}
-    {P : aesSig.Post A.ptrBits}
-    (h : Verified T c (aesSig.contract A (pre A.ptrBits) (scrubbedPost A.ptrBits P) false stack none)) :
-    Verified T c (aesSig.contract A (pre A.ptrBits) P false stack none) :=
-  h.post_mono (scrubbedPost_imp _ P)
 
 /-! ## Wiping only what an implementation writes -/
 

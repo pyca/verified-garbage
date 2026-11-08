@@ -17,7 +17,7 @@ pub const VG_AES_CBC_DECRYPT_VAES_AVX512_FEATURES: verified_garbage_cpu::Feature
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `scratch` must be valid for reads and writes of 2176 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
+/// * On return each byte of `scratch` is unchanged or zero.
 /// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv`, `data` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `vaes` and `avx512f` target features.
@@ -49,7 +49,7 @@ pub const VG_AES_CBC_DECRYPT_AESNI_AVX_FEATURES: verified_garbage_cpu::Features 
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `scratch` must be valid for reads and writes of 2176 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
+/// * On return each byte of `scratch` is unchanged or zero.
 /// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv`, `data` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `avx` target features.
@@ -86,7 +86,7 @@ pub const VG_AES_CBC_ENCRYPT_AESNI_SCRATCH_WRITTEN: usize = 0;
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `scratch` must be valid for reads and writes of 2176 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
+/// * On return each byte of `scratch` is unchanged or zero.
 /// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
@@ -140,7 +140,7 @@ pub const VG_AES_CBC_DECRYPT_AESNI_FEATURES: verified_garbage_cpu::Features = ve
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `scratch` must be valid for reads and writes of 2176 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
+/// * On return each byte of `scratch` is unchanged or zero.
 /// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv`, `data` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
@@ -172,7 +172,7 @@ pub const VG_AES_CBC_ENCRYPT_AVX_FEATURES: verified_garbage_cpu::Features = veri
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `scratch` must be valid for reads and writes of 2176 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
+/// * On return each byte of `scratch` is unchanged or zero.
 /// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv`, `data` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` target feature.
@@ -204,7 +204,7 @@ pub const VG_AES_CBC_DECRYPT_AVX_FEATURES: verified_garbage_cpu::Features = veri
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `scratch` must be valid for reads and writes of 2176 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
+/// * On return each byte of `scratch` is unchanged or zero.
 /// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv`, `data` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` target feature.
@@ -233,7 +233,7 @@ call {vg_zeroize_avx}
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `scratch` must be valid for reads and writes of 2176 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
+/// * On return each byte of `scratch` is unchanged or zero.
 /// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv`, `data` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
@@ -261,7 +261,7 @@ call {vg_zeroize}
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `scratch` must be valid for reads and writes of 2176 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
+/// * On return each byte of `scratch` is unchanged or zero.
 /// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv`, `data` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
@@ -292,7 +292,7 @@ pub const VG_AES_CBC_DECRYPT_VAES_FEATURES: verified_garbage_cpu::Features = ver
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `scratch` must be valid for reads and writes of 2176 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
+/// * On return each byte of `scratch` is unchanged or zero.
 /// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv`, `data` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2` and `vaes` target features.

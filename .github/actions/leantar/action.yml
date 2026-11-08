@@ -18,4 +18,5 @@ runs:
     - name: Download leantar
       shell: bash
       run: |
-        "$(python3 ci/leantar_release.py)" --version
+        leantar=$(python3 ci/leantar_release.py)
+        "$leantar" --version
