@@ -214,10 +214,21 @@ theorem kArg_off (P : RfcHash) (L : Lay P.I.hashLen) :
     kArg P L = L.B + BitVec.ofNat 64 (96 + fT) ∧ 128 ≤ 96 + fT ∧ 96 + fT + P.Q ≤ 688 := by
   have := Q_le P; exact ⟨rfl, by decide, by simp only [fT]; omega⟩
 
+/-- `core`'s tables, as its contract asks. -/
+theorem core_tables (hL : L.Ok) (hq : L.q = P.Q) (hcs : L.cs = P.R.C.cs) {t : State} (hc : Ctx L g lr m₀ t) :
+    CoreTables P.R.C.cs t ⟨L.out, 2 * P.R.C.E.curve.len⟩ L.scr := by
+  have eQ : P.R.C.E.curve.len = L.q := hq.symm
+  have eO : (⟨L.out, 2 * P.R.C.E.curve.len⟩ : Region) = L.OUT := by rw [eQ]
+  rw [eO, ← hcs]
+  refine ⟨hc.held_now hL, fun T hT => ?_⟩
+  rw [hc.tbls] at hT
+  obtain ⟨hn, tO, tS, -, al⟩ := hL.tables T hT
+  exact ⟨hn, tO, tS, al⟩
+
 /-- The call of `core`: it writes the signature of the private key, its
 digest and `k`, or zeros, and changes only `out`, `scratch` and the calls'
 stack. -/
-theorem core_ok (hL : L.Ok) (hq : L.q = P.Q) {t : State} (hc : Ctx L g lr m₀ t)
+theorem core_ok (hL : L.Ok) (hq : L.q = P.Q) (hcs : L.cs = P.R.C.cs) {t : State} (hc : Ctx L g lr m₀ t)
     (h3 : t.gpr .r3 = L.out) (h4 : t.gpr .r4 = L.d) (h5 : t.gpr .r5 = dgArg P L) (h6 : t.gpr .r6 = kArg P L)
     (h7 : t.gpr .r7 = L.scr) :
     WP isa (.call (cfgOf P).coreN (cfgOf P).coreC) t fun u => Ctx L g lr m₀ u ∧ Frame (CoreW L) t.mem u.mem ∧
@@ -241,16 +252,18 @@ theorem core_ok (hL : L.Ok) (hq : L.q = P.Q) {t : State} (hc : Ctx L g lr m₀ t
   have eD : (⟨L.d, P.R.C.E.curve.len⟩ : Region) = L.D := by rw [eQ]
   refine WP.of_syms (coreCall P.R.C h3 h4 h5 h6 h7 (by rw [eO, eD]; exact hL.od) (by rw [eO]; exact go)
     (by rw [eO]; exact ko) (by rw [eO]; exact hL.oc) (by rw [eD]; exact hL.dc) gs ks
-    (by rw [eQ]; exact hL.no) (by rw [eQ]; exact hL.nd) gn kn hL.nc ?_ ?_ ?_)
-  · rw [eO, eD]
-    refine hc.covers fun r hr => ?_
-    simp only [List.mem_cons, List.not_mem_nil, or_false, List.cons_append, List.nil_append] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl
-    · exact ⟨L.D, by simp, within_base _ (Nat.le_refl _)⟩
-    · exact gw
-    · exact kw
-    · exact ⟨L.OUT, by simp, within_base _ (Nat.le_refl _)⟩
-    · exact ⟨L.SCR, by simp, within_base _ (Nat.le_refl _)⟩
+    (by rw [eQ]; exact hL.no) (by rw [eQ]; exact hL.nd) gn kn hL.nc ?_ ?_ ?_ ?_)
+  · exact core_tables hL hq hcs hc
+  · rw [eO, eD, ← hcs, hc.tbls]
+    refine hc.coversT fun r hr => ?_
+    simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with ((rfl | rfl | rfl) | hT) | (rfl | rfl)
+    · exact .inl ⟨L.D, by simp, within_base _ (Nat.le_refl _)⟩
+    · exact .inl gw
+    · exact .inl kw
+    · exact .inr hT
+    · exact .inl ⟨L.OUT, by simp, within_base _ (Nat.le_refl _)⟩
+    · exact .inl ⟨L.SCR, by simp, within_base _ (Nat.le_refl _)⟩
   · rw [eO]
     refine hc.coversW fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -315,7 +328,7 @@ structure Mid (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) (i : Nat) (u : St
 theorem try₁_ok (hL : L.Ok) (hq : HOk P L) {t : State} (hc : Ctx L g lr m₀ t) {i : Nat}
     (hi : LoopInv P L m₀ i t) :
     WP isa (cfgOf P).cand t fun u => Ctx L g lr m₀ u ∧ P₁ P L m₀ i u :=
-  WP.mono (cand_ok hL hq.2 hc hi.saved) fun _ ⟨hc₁, hf₁, hk₁, hv₁, hb₁, _⟩ => ⟨hc₁, hi.lt, hk₁.trans hi.k,
+  WP.mono (cand_ok hL hq.2.1 hc hi.saved) fun _ ⟨hc₁, hf₁, hk₁, hv₁, hb₁, _⟩ => ⟨hc₁, hi.lt, hk₁.trans hi.k,
     by rw [hv₁, hi.k, hi.v], (cnt_away hL cw_away hf₁).trans hi.cnt, hi.fails,
     hi.dg.frameA hL hf₁ cw_away, by rw [hb₁, hi.k, hi.v]; rfl⟩
 
@@ -332,10 +345,10 @@ theorem coreSig_eq (hL : L.Ok) (hq : L.q = P.Q) {t : State} (hc : Ctx L g lr m�
   rw [hc.dBytes hL hq, hkv]
   exact congrArg (fun e => Spec.Ecdsa.signWith _ _ e _) hdg
 
-theorem try₃_ok (hL : L.Ok) (hq : L.q = P.Q) {t : State} (hc : Ctx L g lr m₀ t) {i : Nat}
+theorem try₃_ok (hL : L.Ok) (hq : L.q = P.Q) (hcs : L.cs = P.R.C.cs) {t : State} (hc : Ctx L g lr m₀ t) {i : Nat}
     (hi : P₁ P L m₀ i t) (ha : Args P L t) :
     WP isa (.call (cfgOf P).coreN (cfgOf P).coreC) t fun u => Ctx L g lr m₀ u ∧ P₃ P L m₀ i u := by
-  refine WP.mono (core_ok hL hq hc ha.r3 ha.r4 ha.r5 ha.r6 ha.r7) fun u₃ ⟨hc₃, hf₃, hr₃⟩ => ?_
+  refine WP.mono (core_ok hL hq hcs hc ha.r3 ha.r4 ha.r5 ha.r6 ha.r7) fun u₃ ⟨hc₃, hf₃, hr₃⟩ => ?_
   rw [coreSig_eq hL hq hc hi.dg hi.kk] at hr₃
   obtain ⟨ek, ev⟩ := kv_keep (P := P) hf₃ (corew_kv hL)
   exact ⟨hc₃, hi.lt, ek.trans hi.k, ev.trans hi.v, (cnt_away hL corew_away hf₃).trans hi.cnt, hi.fails,
@@ -415,7 +428,7 @@ theorem tryOne_ok (hL : L.Ok) (hq : HOk P L) {t : State} (hc : Ctx L g lr m₀ t
         (isa.eval (.nonzero .d .r12) t' = some true ∧ LoopInv P L m₀ (i + 1) t')) :=
   WP.seq (WP.mono (try₁_ok hL hq hc hi) fun _ ⟨h₁, p₁⟩ =>
     WP.seq (WP.mono (try₂_ok hL h₁ p₁) fun _ ⟨h₂, p₂, a₂⟩ =>
-      WP.seq (WP.mono (try₃_ok hL hq.1 h₂ p₂ a₂) fun _ ⟨h₃, p₃⟩ =>
+      WP.seq (WP.mono (try₃_ok hL hq.1 hq.2.2 h₂ p₂ a₂) fun _ ⟨h₃, p₃⟩ =>
         WP.seq (WP.mono (try₄_ok hL hq.1 h₃ p₃) fun _ ⟨h₄, p₄⟩ => branch_ok hL hq h₄ p₄))))
 
 theorem tries_ok (hL : L.Ok) (hq : HOk P L) {t : State} (hc : Ctx L g lr m₀ t) (h0 : LoopInv P L m₀ 0 t) :

@@ -17,7 +17,8 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Middle
-import VerifiedGarbage.Proof.Ecdsa.PPC64LE.LadPow
+public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.LadPow
+import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 public import VerifiedGarbage.Proof.Weierstrass.MulContract
 
 /-!
@@ -280,6 +281,29 @@ theorem sign_eq (c : Cfg) : c.sign = .seq (.block (c.setupWith Args.sign))
     (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n))
     (.seq (c.qMul GX GY) (.seq (pow c.powP c.SP) (.seq c.middle
       (.seq (pow c.powN c.SN) c.scalar))))))) := rfl
+
+theorem signWith_eq (c : Cfg) (generator : Prog isa) : c.signWith generator = .seq (.block (c.setupWith Args.sign))
+    (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n))
+    (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n))
+    (.seq generator (.seq (pow c.powP c.SP) (.seq c.middle
+      (.seq (pow c.powN c.SN) c.scalar))))))) := rfl
+
+/-- `vg_ecdsa_<curve>_sign` with `R = [k]G` by any `generator` meeting
+`GeneratorPost` after the setup and the tables computes the specification's
+signature, restores the callee-saved registers and `lr`, and changes only
+the working space and `out`. -/
+theorem signWith_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) {s₀ : State} {extra : List Region}
+    (hp : Pre c s₀ extra) {generator : Prog isa}
+    (hMul : ∀ s, St₁ c .sign s₀ (s₀.gpr .r7) (BitVec.allOnes 64) s → s.syms = s₀.syms →
+      WP isa generator s (GeneratorPost c (s₀.gpr .r7) (kv c .sign s₀) (G c.C) s)) :
+    WP isa (c.signWith generator) s₀ fun s' => SignKeep c s₀ s' ∧ SignPost c s₀ s' := by
+  have setupRun := stage₁ hc hp.setup (A := .sign) (rest := .block [])
+    (Q := fun s => St₁ c .sign s₀ (s₀.gpr .r7) (BitVec.allOnes 64) s) (fun _ S => WP.block_nil S)
+  have run := VG.PPC64LE.WP.mono_syms setupRun fun s₁ S₁ sy => stage₂With hc h3 S₁ (hMul s₁ S₁ sy)
+    (rest := .seq c.middle (.seq (pow c.powN c.SN) c.scalar)) fun s₂ S₂ =>
+      stage₃ hc S₂ fun s₃ S₃ => stage₄ hc hC hp S₃
+  rw [signWith_eq]
+  simpa only [WP.seq_iff (M := isa), WP.block_nil_iff (M := isa)] using run
 
 /-- `vg_ecdsa_<curve>_sign` computes the specification's signature, restores
 the callee-saved registers and `lr`, and changes only the working space and

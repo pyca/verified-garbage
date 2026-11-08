@@ -29,6 +29,7 @@ open VG VG.PPC64LE
 /-- `vg_ecdsa_p521_sign`, with P-521's group law `hL`. -/
 def p521Core (hL : Weierstrass.Law Spec.P521.curve) : Core where
   E := Spec.Ecdsa.P521.inst
+  cs := []
   C := Impl.Ecdsa.PPC64LE.signP521
   N := "vg_ecdsa_p521_sign_k"
   V := (Proof.Ecdsa.PPC64LE.P521.sign_verified hL).1
@@ -63,7 +64,7 @@ def p521R (hL : Weierstrass.Law Spec.P521.curve) : RfcCurve where
 theorem p521T_verified (hL : Weierstrass.Law Spec.P521.curve) (vs : List Proof.HmacTable.PPC64LE.HVar)
     (hv : OK vs) :
     Verified PPC64LE.target (signCodeT (p521R hL) Spec.Ecdsa.Rfc6979.Curves.p521.tries vs)
-      (specK Spec.Ecdsa.Rfc6979.Curves.p521 vs) :=
-  signT_verified ⟨rfl, by decide, by decide⟩ p521_blk rfl hv (by decide)
+      (specK Spec.Ecdsa.Rfc6979.Curves.p521 [] vs) :=
+  signT_verified ⟨rfl, by decide, by decide⟩ p521_blk rfl hv (sat_nil hv (by decide) rfl)
 
 end VG.Proof.Ecdsa.Rfc6979.PPC64LE

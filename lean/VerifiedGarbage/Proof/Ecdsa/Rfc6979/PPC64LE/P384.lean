@@ -29,6 +29,7 @@ open VG VG.PPC64LE
 /-- `vg_ecdsa_p384_sign`, with P-384's group law `hL`. -/
 def p384Core (hL : Weierstrass.Law Spec.P384.curve) : Core where
   E := Spec.Ecdsa.P384.inst
+  cs := []
   C := Impl.Ecdsa.PPC64LE.signP384
   N := "vg_ecdsa_p384_sign_k"
   V := (Proof.Ecdsa.PPC64LE.P384.sign_verified hL).1
@@ -64,7 +65,7 @@ def p384R (hL : Weierstrass.Law Spec.P384.curve) : RfcCurve where
 theorem p384T_verified (hL : Weierstrass.Law Spec.P384.curve) (vs : List Proof.HmacTable.PPC64LE.HVar)
     (hv : OK vs) :
     Verified PPC64LE.target (signCodeT (p384R hL) Spec.Ecdsa.Rfc6979.Curves.p384.tries vs)
-      (specK Spec.Ecdsa.Rfc6979.Curves.p384 vs) :=
-  signT_verified ⟨rfl, by decide, by decide⟩ p384_blk rfl hv (by decide)
+      (specK Spec.Ecdsa.Rfc6979.Curves.p384 [] vs) :=
+  signT_verified ⟨rfl, by decide, by decide⟩ p384_blk rfl hv (sat_nil hv (by decide) rfl)
 
 end VG.Proof.Ecdsa.Rfc6979.PPC64LE

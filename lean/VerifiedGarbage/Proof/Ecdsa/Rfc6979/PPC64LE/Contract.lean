@@ -26,8 +26,8 @@ open VG VG.PPC64LE Spec.Weierstrass Spec.Ecdsa
 abbrev result (I : Proof.Ecdsa.Rfc6979.Instance) (m : Mem) (d digest : Addr) : Option (Nat × Nat) × Nat :=
   I.result m d digest
 
-def rfcPPC (I : Proof.Ecdsa.Rfc6979.Instance) (N : Nat) (TabFacts : State → Prop) (ns : List String) :
-    Contract PPC64LE.isa where
+def rfcPPC (I : Proof.Ecdsa.Rfc6979.Instance) (N : Nat) (TabFacts : State → Prop) (ns : List String)
+    (cs : List (String × List (BitVec 64)) := []) : Contract PPC64LE.isa where
   pre s :=
     let out : Region := ⟨s.gpr .r3, 2 * I.ecdsa.curve.len⟩
     let d : Region := ⟨s.gpr .r4, I.ecdsa.curve.len⟩
@@ -35,7 +35,7 @@ def rfcPPC (I : Proof.Ecdsa.Rfc6979.Instance) (N : Nat) (TabFacts : State → Pr
     let scratch : Region := ⟨s.gpr .r7, 8192⟩
     let tab : Region := ⟨s.gpr .r8, 48⟩
     let stk : Region := below s.sp N
-    s.rd = [d, digest, tab] ∧ s.wr = [out, scratch] ∧
+    s.rd = [d, digest, tab] ++ Abi.constRegions s.syms cs ∧ s.wr = [out, scratch] ∧
       out.Disjoint d ∧ out.Disjoint digest ∧ out.Disjoint scratch ∧
       d.Disjoint scratch ∧ digest.Disjoint scratch ∧
       stk.Disjoint out ∧ stk.Disjoint d ∧ stk.Disjoint digest ∧ stk.Disjoint scratch ∧
@@ -43,7 +43,9 @@ def rfcPPC (I : Proof.Ecdsa.Rfc6979.Instance) (N : Nat) (TabFacts : State → Pr
       (s.gpr .r4).toNat + I.ecdsa.curve.len ≤ 2 ^ 64 ∧
       (s.gpr .r5).toNat + I.hashLen ≤ 2 ^ 64 ∧ (s.gpr .r7).toNat + 8192 ≤ 2 ^ 64 ∧ N ≤ s.sp.toNat ∧
       (s.gpr .r8).toNat + 48 ≤ 2 ^ 64 ∧ tab.Disjoint out ∧ tab.Disjoint scratch ∧ stk.Disjoint tab ∧
-      TabFacts s
+      TabFacts s ∧ Abi.constsHeld s.mem s.syms cs ∧
+      (∀ t ∈ Abi.constRegions s.syms cs, t.base.toNat + t.len ≤ 2 ^ 64 ∧ t.Disjoint out ∧
+        t.Disjoint scratch ∧ stk.Disjoint t ∧ t.base.toNat % 64 = 0)
   post s s' :=
     match (result I s.mem (s.gpr .r4) (s.gpr .r5)).1 with
     | some rs => (s'.gpr .r3).setWidth 32 = 1 ∧
@@ -53,6 +55,6 @@ def rfcPPC (I : Proof.Ecdsa.Rfc6979.Instance) (N : Nat) (TabFacts : State → Pr
   pub s₁ s₂ := s₁.sp = s₂.sp ∧ s₁.gpr .r3 = s₂.gpr .r3 ∧ s₁.gpr .r4 = s₂.gpr .r4 ∧
     s₁.gpr .r5 = s₂.gpr .r5 ∧ s₁.gpr .r7 = s₂.gpr .r7 ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧
     (result I s₁.mem (s₁.gpr .r4) (s₁.gpr .r5)).2 = (result I s₂.mem (s₂.gpr .r4) (s₂.gpr .r5)).2 ∧
-    ∀ n ∈ ns, s₁.syms n = s₂.syms n
+    (∀ n ∈ ns, s₁.syms n = s₂.syms n) ∧ ∀ c ∈ cs, s₁.syms c.1 = s₂.syms c.1
 
 end VG.Proof.Ecdsa.Rfc6979.PPC64LE

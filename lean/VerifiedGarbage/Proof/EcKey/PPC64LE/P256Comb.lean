@@ -11,9 +11,8 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.EcKey.PPC64LE.Main
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P256
-import VerifiedGarbage.Proof.P256.PPC64LE.Comb
+public import VerifiedGarbage.Proof.P256.PPC64LE.Comb
 import VerifiedGarbage.Proof.EcKey.PPC64LE.P256CombLit
-public import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -30,7 +29,6 @@ meta import VerifiedGarbage.Proof.EcKey.PPC64LE.Main
 meta import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P256
 meta import VerifiedGarbage.Proof.P256.PPC64LE.Comb
 meta import VerifiedGarbage.Proof.EcKey.PPC64LE.P256CombLit
-meta import VerifiedGarbage.Proof.Framework.ConstMem
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.AddrArith
@@ -139,23 +137,13 @@ theorem combPk_ct : ConstantTime isa pkPC.pre pkPC.pub Impl.EcKey.PPC64LE.public
 
 theorem combConsts_eq : p256CombConsts = [(p256Comb.tsym, p256CombWords)] := rfl
 
-/-- The memory of the witness with the table: the table at `0x100000`
-(irreducible: unfolding it in a definitional check would evaluate the
-table). -/
-@[irreducible] def combSatMem : Mem := constMem 0x100000 p256CombWords
-
-theorem combSatMem_held : ∀ i < p256CombWords.length,
-    combSatMem.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = p256CombWords.getD i 0 := by
-  unfold combSatMem
-  exact constMem_held _ _ (by rw [Proof.P256.PPC64LE.comb_words_length]; omega)
-
 /-- A state satisfying the precondition with the table. -/
 def combSatC : State :=
-  { satState with mem := combSatMem, rd := [⟨0x2000, 32⟩, ⟨0x100000, 151552⟩], syms := fun _ => 0x100000 }
+  { satState with mem := Proof.P256.PPC64LE.combSatMem, rd := [⟨0x2000, 32⟩, ⟨0x100000, 151552⟩], syms := fun _ => 0x100000 }
 
 theorem combPk_sat : (Spec.EcKey.P256.inst.publicKeyContract (abi.withConsts p256CombConsts)).pre combSatC := by
   have hl := Proof.P256.PPC64LE.comb_words_length
-  have held := combSatMem_held
+  have held := Proof.P256.PPC64LE.combSatMem_held
   rw [combConsts_eq]
   generalize p256CombWords = W at hl held ⊢
   generalize e : combSatC = s

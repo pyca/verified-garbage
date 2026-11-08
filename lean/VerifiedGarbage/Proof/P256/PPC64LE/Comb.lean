@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Weierstrass.TCombWords
 import VerifiedGarbage.Proof.Weierstrass.Env
 import VerifiedGarbage.Proof.Weierstrass.BytesLen
 import VerifiedGarbage.Proof.P256.Comb7Shape
+public import VerifiedGarbage.Proof.Framework.ConstMem
 
 /-!
 # P-256's seven-bit comb on PPC64LE
@@ -83,5 +84,15 @@ theorem comb_generator_ok (hC : Law Spec.P256.curve) {A : Args} {s₀ : State} {
   refine WP.mono (comb_ok p256Comb (comb_config hC) hC p256_ok.onG S.ws ht' sym hd'
     (Nat.lt_of_le_of_lt (Nat.shiftRight_le _ _) (ofBytes_bytesAt_lt _ _ _)) F'.zero S.t₀ F'.ap F'.b3p)
     fun t ⟨keep, unch, lt, rep⟩ => ⟨keep, unch.cover comb_writes_cover, lt, rep⟩
+
+/-- The memory of the witnesses with the table: the table at `0x100000`
+(irreducible: unfolding it in a definitional check would evaluate the
+table). -/
+@[irreducible] def combSatMem : Mem := constMem 0x100000 p256CombWords
+
+theorem combSatMem_held : ∀ i < p256CombWords.length,
+    combSatMem.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = p256CombWords.getD i 0 := by
+  unfold combSatMem
+  exact constMem_held _ _ (by rw [comb_words_length]; omega)
 
 end VG.Proof.P256.PPC64LE
