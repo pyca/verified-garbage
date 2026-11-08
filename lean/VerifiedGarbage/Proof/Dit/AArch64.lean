@@ -10,7 +10,7 @@ public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Proof.Framework.Block
 meta import VerifiedGarbage.Proof.Framework.Block
@@ -32,9 +32,13 @@ written, the calling convention's preserved state kept, constant time, with
 PSTATE.DIT public for `vg_dit_enter`, which leaks whether it was off
 (`enter_leak`): it writes PSTATE.DIT only then.
 
+`vg_dit_enter_dsb` and `vg_dit_enter_sb` are `vg_dit_enter` with barriers
+after turning the mode on (`enterWith`), which change nothing in the model:
+the same proofs cover all three.
+
 `enter_dit` and `clear_dit` prove what the contracts cannot name, the
 functions' effect on PSTATE.DIT, of every run of their code in the model:
-after `vg_dit_enter`, PSTATE.DIT is 1, and `x0` is 1 if it was 1 on entry
+after `vg_dit_enter` (or a variant), PSTATE.DIT is 1, and `x0` is 1 if it was 1 on entry
 and 0 if it was 0; after `vg_dit_clear`, it is 0.
 -/
 
@@ -51,33 +55,48 @@ theorem enter_head (s : State) :
         ((if s.dit then 0x1000000#64 else 0#64) >>> 24), []) := by
   simp [execBlock, isa, exec, addrs, State.read, gpr_write_self, Size.bits]
 
-/-- From any state, `vg_dit_enter` runs and ends with PSTATE.DIT on, `x0`
-its old value (1 or 0), and the memory and regions unchanged. -/
-theorem enter_wp (s : State) :
-    WP isa enter s fun t => t.dit = true ∧ t.gpr .x0 = (if s.dit then 1 else 0) ∧
+/-- Barriers leave the state as it is and leak nothing. -/
+theorem execBlock_barriers (bars : List Barrier) (s : State) :
+    execBlock isa (bars.map .barrier) s = some (s, []) := by
+  induction bars with
+  | nil => rfl
+  | cons b bs ih => simp [execBlock, isa, exec, addrs, ih]
+
+/-- Turning the mode on, then the barriers: PSTATE.DIT on, nothing else
+changed, nothing leaked. -/
+theorem execBlock_on (bars : List Barrier) (s : State) :
+    execBlock isa (.msrDitImm true :: bars.map .barrier) s = some ({ s with dit := true }, []) := by
+  have h := execBlock_barriers bars { s with dit := true }
+  simp only [isa] at h
+  simp [execBlock, isa, exec, addrs, h]
+
+/-- From any state, `vg_dit_enter` (and each of its variants) runs and ends
+with PSTATE.DIT on, `x0` its old value (1 or 0), and the memory and regions
+unchanged. -/
+theorem enter_wp (bars : List Barrier) (s : State) :
+    WP isa (enterWith bars) s fun t => t.dit = true ∧ t.gpr .x0 = (if s.dit then 1 else 0) ∧
       t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
   refine WP.seq (WP.block ⟨_, enter_head s, ?_⟩)
   cases hd : s.dit
   · refine WP.ite true (by simp [eval, State.read, gpr_write_self]) (fun _ => ?_)
       (fun h => nomatch h)
-    exact WP.block ⟨_, rfl, by simp [State.write, hd]⟩
+    exact WP.block ⟨_, execBlock_on bars _, by simp [State.write, hd]⟩
   · refine WP.ite false (by simp [eval, State.read, gpr_write_self]) (fun h => nomatch h)
       (fun _ => WP.block_nil ?_)
     simp [State.write, hd]
 
-/-- Every run of `vg_dit_enter` leaks only whether PSTATE.DIT was off: the
-branch it takes, to turn it on only then. -/
-theorem enter_leak {s s' : State} {t : List Leak} (h : Exec isa enter s t s') :
-    t = [.branch (!s.dit)] := by
+/-- Every run of `vg_dit_enter` (and of each of its variants) leaks only
+whether PSTATE.DIT was off: the branch it takes, to turn it on only then. -/
+theorem enter_leak {bars : List Barrier} {s s' : State} {t : List Leak}
+    (h : Exec isa (enterWith bars) s t s') : t = [.branch (!s.dit)] := by
   cases h with
   | seq h₁ h₂ =>
     rw [Exec.block_iff, enter_head] at h₁
     obtain ⟨rfl, rfl⟩ := Prod.mk.inj (Option.some.inj h₁)
     cases h₂ with
     | iteT hc h =>
-      rw [Exec.block_iff] at h
-      simp only [execBlock, isa, exec, addrs, Option.map_some, List.map_nil, List.append_nil,
-        Option.some.injEq, Prod.mk.injEq] at h
+      rw [Exec.block_iff, execBlock_on] at h
+      simp only [Option.some.injEq, Prod.mk.injEq] at h
       obtain ⟨-, rfl⟩ := h
       cases hd : s.dit <;> simp [hd, eval, State.read, gpr_write_self] at hc ⊢
     | iteF hc h =>
@@ -86,11 +105,13 @@ theorem enter_leak {s s' : State} {t : List Leak} (h : Exec isa enter s t s') :
       obtain ⟨-, rfl⟩ := h
       cases hd : s.dit <;> simp [hd, eval, State.read, gpr_write_self] at hc ⊢
 
-/-- Every run of `vg_dit_enter` ends with PSTATE.DIT on, and with `x0` 1 if
-PSTATE.DIT was on on entry and 0 if it was off. -/
-theorem enter_dit {s s' : State} {t : List Leak} (h : Exec isa enter s t s') :
+/-- Every run of `vg_dit_enter` (and of each of its variants) ends with
+PSTATE.DIT on, and with `x0` 1 if PSTATE.DIT was on on entry and 0 if it was
+off. -/
+theorem enter_dit {bars : List Barrier} {s s' : State} {t : List Leak}
+    (h : Exec isa (enterWith bars) s t s') :
     s'.dit = true ∧ s'.gpr .x0 = if s.dit then 1 else 0 := by
-  obtain ⟨_, _, he, hq⟩ := enter_wp s
+  obtain ⟨_, _, he, hq⟩ := enter_wp bars s
   rw [(Exec.det h he).2]
   exact ⟨hq.1, hq.2.1⟩
 
@@ -129,14 +150,22 @@ def sat : State where
 public too, as `Spec.Dit.enterContract` makes it (`Abi.withMode`). -/
 def enterK : Contract isa := { contract with pub s t := s.sp = t.sp ∧ s.dit = t.dit }
 
-theorem enter_verified : Verified target enter (Spec.Dit.enterContract abi) := by
+/-- `vg_dit_enter`, or a variant with barriers `bars`, against its contract,
+given that its code writes no preserved register (`hk`) and no preserved
+vector register (`hv`), and calls nothing (`hn`), which the instances
+evaluate. -/
+theorem enterWith_verified (bars : List Barrier)
+    (hk : (enterWith bars).allInstrs (keeps (RegSet.ofList preserved)) = true := by decide +kernel)
+    (hv : (enterWith bars).allInstrs keepsV = true := by decide +kernel)
+    (hn : (enterWith bars).noCalls = true := by decide +kernel) :
+    Verified target (enterWith bars) (Spec.Dit.enterContract abi) := by
   apply Verified.of_correct (k := enterK)
   · intro s _
-    obtain ⟨tr, t, he, -⟩ := enter_wp s
-    refine ⟨tr, t, he, ⟨?_, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, trivial⟩
+    obtain ⟨tr, t, he, -⟩ := enter_wp bars s
+    refine ⟨tr, t, he, ⟨?_, Exec.sp he, Exec.preservedV he hv⟩, trivial⟩
     intro r hr
-    have hc := instrs_keeps (c := enter) (rs := preserved) (by decide +kernel)
-    apply Exec.gpr (fun i hi => ?_) he
+    have hc := instrs_keeps (c := enterWith bars) (rs := preserved) hk
+    apply Exec.gpr (fun i hi => ?_) he (.inl hn)
     simpa using List.all_eq_true.mp (List.all_eq_true.mp hc i hi) r hr
   · exact ConstantTime.of_leakage (fun s => [.branch (!s.dit)]) (fun _ _ _ _ h => enter_leak h)
       fun _ _ _ _ h => by rw [h.2]
@@ -153,6 +182,15 @@ theorem enter_verified : Verified target enter (Spec.Dit.enterContract abi) := b
         cases h₁ : s₁.dit <;> cases h₂ : s₂.dit <;> simp_all
       sat := by sig_implies_sat [Spec.Dit.enterContract, Spec.Dit.enterSig, Abi.withMode, enterK,
         contract, abi, argRegs] [sat] using sat }
+
+theorem enter_verified : Verified target enter (Spec.Dit.enterContract abi) :=
+  enterWith_verified []
+
+theorem enterDsb_verified : Verified target enterDsb (Spec.Dit.enterContract abi) :=
+  enterWith_verified [.dsbSy, .isb]
+
+theorem enterSb_verified : Verified target enterSb (Spec.Dit.enterContract abi) :=
+  enterWith_verified [.sb]
 
 theorem clear_verified : Verified target clear (Spec.Dit.clearContract abi) := by
   apply Verified.of_correct (k := contract)
