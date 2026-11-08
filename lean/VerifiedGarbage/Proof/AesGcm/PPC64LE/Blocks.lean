@@ -4330,21 +4330,14 @@ private theorem TailConfig.ctr {s : State} {n nr : Nat} (hc : TailConfig s n nr)
 
 
 private theorem TailConfig.gh {s u : State} {n nr : Nat} (hc : TailConfig s n nr)
-    (hu : VG.Proof.AesGcm.PPC64LE.CtrPost (tailCtrState s) (s.gpr .r29) (s.gpr .r27)
-      (s.gpr .r30) (s.gpr .r31+64) nr n u) :
+    (hp : ∀ r ∈ preserved, u.gpr r=s.gpr r) (hurd : u.rd=s.rd) (huwr : u.wr=s.wr) :
     VG.Proof.AesGcm.PPC64LE.GhCall (tailGhState u) (s.gpr .r29+240) (s.gpr .r26)
       (s.gpr .r30) (s.gpr .r31+64) n := by
   have lay := hc.layout
-  have hp : ∀ r ∈ preserved, u.gpr r=s.gpr r := fun r hr =>
-    (hu.saved r hr).trans ((tailCtr_keep s).gpr (by
-      have hdis : ∀ r ∈ preserved, r ∉ coreVolatile := by decide
-      exact hdis r hr))
   have hr : (tailGhState u).rd++(tailGhState u).wr=s.rd++s.wr := by
-    rw [(tailGh_keep u).2.1,(tailGh_keep u).2.2,hu.rd,hu.wr]
-    rfl
+    rw [(tailGh_keep u).2.1,(tailGh_keep u).2.2,hurd,huwr]
   have hw : (tailGhState u).wr=s.wr := by
-    rw [(tailGh_keep u).2.2,hu.wr]
-    rfl
+    rw [(tailGh_keep u).2.2,huwr]
   have hwrites : Covers [⟨s.gpr .r26,16⟩,⟨s.gpr .r31+64,256⟩] (tailGhState u).wr := by
     rw [hw]
     apply Covers.trans ?_ lay.writes
@@ -4441,7 +4434,10 @@ theorem tail_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] (s : State) (n nr : Nat) (hc : T
     apply WP.seq
     refine WP.mono (tailGhArgs_ok u) fun gh hgargs => ?_
     subst gh
-    refine WP.mono (VG.Proof.AesGcm.PPC64LE.gh_call (hc.gh hu)) fun t ht => ?_
+    refine WP.mono (VG.Proof.AesGcm.PPC64LE.gh_call (hc.gh (fun r hr =>
+      (hu.saved r hr).trans ((tailCtr_keep s).gpr (by
+        have hdis : ∀ r ∈ preserved, r ∉ coreVolatile := by decide
+        exact hdis r hr))) hu.rd hu.wr)) fun t ht => ?_
     have lay := hc.layout
     have hsp : ∀ r ∈ preserved, r ∉ coreVolatile := by decide
     have hp : ∀ r ∈ preserved, t.gpr r=s.gpr r := fun r hr =>
@@ -4658,6 +4654,149 @@ theorem split_ciphertext (m : Mem) (D : Addr) (n k : Nat) (hk : k≤n)
   simp only [Spec.Gcm.blocksAt,List.length_map,List.length_range]
 
 
+
+private theorem TailConfig.ctrAt {s u : State} {n nr : Nat} (hc : TailConfig s n nr)
+    (hp : ∀ r ∈ preserved, u.gpr r=s.gpr r) (hurd : u.rd=s.rd) (huwr : u.wr=s.wr) :
+    VG.Proof.AesGcm.PPC64LE.CtrCall (tailCtrState u) (s.gpr .r29) (s.gpr .r27)
+      (s.gpr .r30) (s.gpr .r31+64) nr n := by
+  have h := hc.ctr
+  have e25 := hp .r25 (by decide)
+  have e27 := hp .r27 (by decide)
+  have e28 := hp .r28 (by decide)
+  have e29 := hp .r29 (by decide)
+  have e30 := hp .r30 (by decide)
+  have e31 := hp .r31 (by decide)
+  have hrd : (tailCtrState u).rd=(tailCtrState s).rd := by
+    simp only [tailCtrState,RegUpd.rd_write,hurd]
+  have hwr : (tailCtrState u).wr=(tailCtrState s).wr := by
+    simp only [tailCtrState,RegUpd.wr_write,huwr]
+  refine ⟨?_,?_,?_,?_,?_,?_,h.rounds,h.n_lt,h.kc,h.kd,h.ks,h.cd,h.cs,h.ds,h.fit,?_,?_⟩
+  · exact (show (tailCtrState u).gpr .r3=(tailCtrState s).gpr .r3 by
+      simp only [tailCtrState,RegUpd.gpr_write,reduceCtorEq,ite_true,ite_false,e29]).trans h.r3
+  · exact (show (tailCtrState u).gpr .r4=(tailCtrState s).gpr .r4 by
+      simp only [tailCtrState,RegUpd.gpr_write,reduceCtorEq,ite_true,ite_false,e28]).trans h.r4
+  · exact (show (tailCtrState u).gpr .r5=(tailCtrState s).gpr .r5 by
+      simp only [tailCtrState,RegUpd.gpr_write,reduceCtorEq,ite_true,ite_false,e27]).trans h.r5
+  · exact (show (tailCtrState u).gpr .r6=(tailCtrState s).gpr .r6 by
+      simp only [tailCtrState,RegUpd.gpr_write,reduceCtorEq,ite_true,ite_false,e30]).trans h.r6
+  · exact (show (tailCtrState u).gpr .r7=(tailCtrState s).gpr .r7 by
+      simp only [tailCtrState,RegUpd.gpr_write,reduceCtorEq,ite_true,ite_false,e25]).trans h.r7
+  · exact (show (tailCtrState u).gpr .r8=(tailCtrState s).gpr .r8 by
+      simp only [tailCtrState,RegUpd.gpr_write,reduceCtorEq,ite_true,ite_false,e31]).trans h.r8
+  · rw [hrd,hwr]; exact h.reads
+  · rw [hwr]; exact h.writes
+
+
+/-- What decryption's tail leaves: the blocks at `r30` decrypted in place,
+and GHASH over the ciphertext they held. -/
+structure DecTailResult (base : State) (n nr : Nat) (s : State) : Prop where
+  rd : s.rd=base.rd
+  wr : s.wr=base.wr
+  sp : s.sp=base.sp
+  saved : ∀ r ∈ preserved, s.gpr r=base.gpr r
+  frame : Frame [coreCounter (tailBase base),coreY (tailBase base),coreData (tailBase base) n,
+    coreWork (tailBase base)] base.mem s.mem
+  plaintext : Spec.Gcm.blocksAt s.mem (base.gpr .r30) n=Spec.Gcm.ctr32
+    (Spec.Gcm.ctxCiph base.mem (base.gpr .r29) nr) (Spec.Gcm.blockAt base.mem (base.gpr .r27))
+    (Spec.Gcm.blocksAt base.mem (base.gpr .r30) n)
+  counter : Spec.Gcm.blockAt s.mem (base.gpr .r27)=
+    Nat.repeat Spec.Gcm.inc32 n (Spec.Gcm.blockAt base.mem (base.gpr .r27))
+  y : Spec.Gcm.blockAt s.mem (base.gpr .r26)=Spec.Gcm.ghashFrom
+    (Spec.Gcm.ctxH base.mem (base.gpr .r29)) (Spec.Gcm.blockAt base.mem (base.gpr .r26))
+    (Spec.Gcm.blocksAt base.mem (base.gpr .r30) n)
+
+
+theorem decTail_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] (s : State) (n nr : Nat) (hc : TailConfig s n nr) :
+    WP isa Impl.AesGcm.PPC64LE.Blocks.decTail s (DecTailResult s n nr) := by
+  rw [Impl.AesGcm.PPC64LE.Blocks.decTail]
+  by_cases hz : n=0
+  · subst n
+    refine WP.ite true (by simp only [eval,State.read,Size.bits,BitVec.setWidth_eq,hc.count]; rfl)
+      (fun _ => WP.block_nil ?_) (by simp)
+    refine ⟨rfl,rfl,rfl,fun _ _ => rfl,Frame.refl _ _,?_,rfl,?_⟩
+    · simp only [Spec.Gcm.blocksAt,List.range_zero,List.map_nil,Spec.Gcm.ctr32,Spec.Gcm.keystream,
+        List.length_nil,List.zipWith_nil_left]
+    · rfl
+  · have hne : s.gpr .r25≠0 := by
+      intro he
+      have hh := congrArg BitVec.toNat he
+      rw [hc.count,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by have := hc.layout.size; omega)] at hh
+      exact hz hh
+    refine WP.ite false (by simpa only [eval,State.read,Size.bits,BitVec.setWidth_eq,
+      Option.some.injEq,beq_eq_false_iff_ne] using hne) (by simp) (fun _ => ?_)
+    have lay := hc.layout
+    have hsp : ∀ r ∈ preserved, r ∉ coreVolatile := by decide
+    apply WP.seq
+    refine WP.mono (tailGhArgs_ok s) fun gh hgargs => ?_
+    subst gh
+    apply WP.seq
+    refine WP.mono (VG.Proof.AesGcm.PPC64LE.gh_call (hc.gh (u := s) (fun _ _ => rfl) rfl rfl))
+      fun u hu => ?_
+    have hpu : ∀ r ∈ preserved, u.gpr r=s.gpr r := fun r hr =>
+      (hu.saved r hr).trans ((tailGh_keep s).gpr (hsp r hr))
+    have hurd : u.rd=s.rd := hu.rd.trans (tailGh_keep s).2.1
+    have huwr : u.wr=s.wr := hu.wr.trans (tailGh_keep s).2.2
+    apply WP.seq
+    refine WP.mono (tailCtrArgs_ok u) fun ctr hcargs => ?_
+    subst ctr
+    refine WP.mono (VG.Proof.AesGcm.PPC64LE.ctr_call (hc.ctrAt hpu hurd huwr)) fun t ht => ?_
+    have hp : ∀ r ∈ preserved, t.gpr r=s.gpr r := fun r hr =>
+      (ht.saved r hr).trans (((tailCtr_keep u).gpr (hsp r hr)).trans (hpu r hr))
+    have hfg : Frame [coreY (tailBase s),⟨s.gpr .r31+64,256⟩] s.mem u.mem := hu.frame
+    have hfc : Frame [coreCounter (tailBase s),coreData (tailBase s) n,coreWork (tailBase s)] u.mem t.mem :=
+      ht.frame
+    have hwork : Region.Sub (⟨s.gpr .r31+64,256⟩ : Region) (coreWork (tailBase s)) :=
+      Region.sub_prefix (by decide)
+    have hdata : Spec.Gcm.blocksAt u.mem (s.gpr .r30) n=Spec.Gcm.blocksAt s.mem (s.gpr .r30) n := by
+      apply blocks_frame hfg
+      intro r hr
+      simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+      rcases hr with rfl | rfl
+      · exact (lay.data (coreY (tailBase s)) (by simp)).symm
+      · exact (lay.scratch (coreData (tailBase s) n) (by simp)).sub_right hwork
+    have hcounter : Spec.Gcm.blockAt u.mem (s.gpr .r27)=Spec.Gcm.blockAt s.mem (s.gpr .r27) := by
+      apply block_frame hfg
+      intro r hr
+      simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+      rcases hr with rfl | rfl
+      · exact lay.counterY
+      · exact (lay.scratch (coreCounter (tailBase s)) (by simp)).sub_right hwork
+    have hkey : Spec.Gcm.ctxCiph u.mem (s.gpr .r29) nr=Spec.Gcm.ctxCiph s.mem (s.gpr .r29) nr := by
+      apply ctxCipher_frame hfg _ (by rcases hc.valid with h | h | h <;> omega)
+      intro r hr
+      simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+      rcases hr with rfl | rfl
+      · exact lay.yKey
+      · exact (lay.scratch (coreKey (tailBase s)) (by simp)).sub_right hwork
+    have hy : Spec.Gcm.blockAt t.mem (s.gpr .r26)=Spec.Gcm.blockAt u.mem (s.gpr .r26) := by
+      apply block_frame hfc
+      intro r hr
+      simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact lay.counterY.symm
+      · exact lay.data (coreY (tailBase s)) (by simp)
+      · exact lay.scratch (coreY (tailBase s)) (by simp)
+    have hfs : Frame [coreCounter (tailBase s),coreY (tailBase s),coreData (tailBase s) n,
+        coreWork (tailBase s)] s.mem u.mem := hfg.sub (fun r hr => by
+      simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+      rcases hr with rfl | rfl
+      · exact ⟨coreY (tailBase s),by simp,fun _ h => h⟩
+      · exact ⟨coreWork (tailBase s),by simp,hwork⟩)
+    have hout : Spec.Gcm.blocksAt t.mem (s.gpr .r30) n=Spec.Gcm.ctr32 (Spec.Gcm.ctxCiph u.mem (s.gpr .r29) nr)
+        (Spec.Gcm.blockAt u.mem (s.gpr .r27)) (Spec.Gcm.blocksAt u.mem (s.gpr .r30) n) := ht.out
+    have hctr : Spec.Gcm.blockAt t.mem (s.gpr .r27)=Nat.repeat Spec.Gcm.inc32 n
+        (Spec.Gcm.blockAt u.mem (s.gpr .r27)) := ht.ctr
+    have hgh : Spec.Gcm.blockAt u.mem (s.gpr .r26)=Spec.Gcm.ghashFrom
+        (Spec.Gcm.blockAt s.mem (s.gpr .r29+240)) (Spec.Gcm.blockAt s.mem (s.gpr .r26))
+        (Spec.Gcm.blocksAt s.mem (s.gpr .r30) n) := hu.out
+    refine ⟨ht.rd.trans hurd,ht.wr.trans huwr,ht.sp.trans (hu.sp.trans rfl),hp,
+      hfs.trans (hfc.mono (by simp)),?_,?_,?_⟩
+    · rw [hout,hkey,hcounter,hdata]
+    · rw [hctr,hcounter]
+    · rw [hy,hgh]
+      rfl
+
+
 def wrapperWrites (s : State) (n : Nat) : List Region :=
   [coreWork (wrapperView s),coreData (wrapperView s) n,coreCounter (wrapperView s),coreY (wrapperView s)]
 
@@ -4665,8 +4804,11 @@ def wrapperCiphertext (s : State) (nr n : Nat) : List Spec.Gcm.Block :=
   Spec.Gcm.ctr32 (Spec.Gcm.ctxCiph s.mem (s.gpr .r3) nr) (Spec.Gcm.blockAt s.mem (s.gpr .r5))
     (Spec.Gcm.blocksAt s.mem (s.gpr .r7) n)
 
-structure WrapperMidWith (base : State) (n nr k : Nat)
-    (ciphertext pending : Nat → List Spec.Gcm.Block) (s : State) (ignored : List Reg := []) : Prop where
+/-- The wrapper after `k` blocks: `ciphertext k` written, `pending k` still
+to process, and GHASH over `hashed k` (the ciphertext, which decryption
+reads and encryption writes). -/
+structure WrapperMidH (base : State) (n nr k : Nat)
+    (ciphertext hashed pending : Nat → List Spec.Gcm.Block) (s : State) (ignored : List Reg := []) : Prop where
   bound : k≤n
   fixed : WrapperFixed base s
   ptr : s.gpr .r30=base.gpr .r7+BitVec.ofNat 64 (16*k)
@@ -4679,7 +4821,11 @@ structure WrapperMidWith (base : State) (n nr k : Nat)
   counter : Spec.Gcm.blockAt s.mem (base.gpr .r5)=
     Nat.repeat Spec.Gcm.inc32 k (Spec.Gcm.blockAt base.mem (base.gpr .r5))
   y : Spec.Gcm.blockAt s.mem (base.gpr .r6)=Spec.Gcm.ghashFrom
-    (Spec.Gcm.ctxH base.mem (base.gpr .r3)) (Spec.Gcm.blockAt base.mem (base.gpr .r6)) (ciphertext k)
+    (Spec.Gcm.ctxH base.mem (base.gpr .r3)) (Spec.Gcm.blockAt base.mem (base.gpr .r6)) (hashed k)
+
+abbrev WrapperMidWith (base : State) (n nr k : Nat)
+    (ciphertext pending : Nat → List Spec.Gcm.Block) (s : State) (ignored : List Reg := []) : Prop :=
+  WrapperMidH base n nr k ciphertext ciphertext pending s ignored
 
 
 abbrev WrapperMid (base : State) (n nr k : Nat) : State → Prop :=
@@ -4921,8 +5067,8 @@ theorem CoreLayout.slice {s : State} {n k j : Nat} (lay : CoreLayout s n) (hk : 
     exact (lay.data r hr).sub_right hsub
 
 
-theorem wrapper_tail_config {base s : State} {n nr k : Nat} {ciphertext pending : Nat → List Spec.Gcm.Block} (lay : WrapperLayout base n)
-    (hs : WrapperMidWith base n nr k ciphertext pending s) (hnr : base.gpr .r4=BitVec.ofNat 64 nr)
+theorem wrapper_tail_config {base s : State} {n nr k : Nat} {ciphertext hashed pending : Nat → List Spec.Gcm.Block} (lay : WrapperLayout base n)
+    (hs : WrapperMidH base n nr k ciphertext hashed pending s) (hnr : base.gpr .r4=BitVec.ofNat 64 nr)
     (hv : nr=10 ∨ nr=12 ∨ nr=14) : TailConfig s (n-k) nr := by
   have hl : CoreLayout (tailBase s) (n-k) := by
     apply (lay.core.slice (k := k) (j := n-k) (by have := hs.bound; omega)).congr
@@ -4994,7 +5140,7 @@ theorem wrapper_saved {base : State} {m : Mem} {n : Nat} (lay : WrapperLayout ba
     exact wrapperHeader_lr base
 
 
-structure WrapperDoneWith (base : State) (n nr : Nat) (ciphertext : List Spec.Gcm.Block) (s : State) : Prop where
+structure WrapperDoneH (base : State) (n nr : Nat) (ciphertext hashed : List Spec.Gcm.Block) (s : State) : Prop where
   fixed : WrapperFixed base s
   keep : ∀ r ∈ preserved, r ∉ Impl.AesGcm.PPC64LE.Blocks.wrapperSaved.map Prod.fst → s.gpr r=base.gpr r
   frame : Frame (wrapperWrites base n) (wrapperHeaderMem base) s.mem
@@ -5002,8 +5148,10 @@ structure WrapperDoneWith (base : State) (n nr : Nat) (ciphertext : List Spec.Gc
   counter : Spec.Gcm.blockAt s.mem (base.gpr .r5)=
     Nat.repeat Spec.Gcm.inc32 n (Spec.Gcm.blockAt base.mem (base.gpr .r5))
   y : Spec.Gcm.blockAt s.mem (base.gpr .r6)=Spec.Gcm.ghashFrom
-    (Spec.Gcm.ctxH base.mem (base.gpr .r3)) (Spec.Gcm.blockAt base.mem (base.gpr .r6))
-    (Spec.Gcm.blocksAt s.mem (base.gpr .r7) n)
+    (Spec.Gcm.ctxH base.mem (base.gpr .r3)) (Spec.Gcm.blockAt base.mem (base.gpr .r6)) hashed
+
+abbrev WrapperDoneWith (base : State) (n nr : Nat) (ciphertext : List Spec.Gcm.Block) : State → Prop :=
+  WrapperDoneH base n nr ciphertext ciphertext
 
 
 abbrev WrapperDone (base : State) (n nr : Nat) : State → Prop :=
@@ -5066,7 +5214,69 @@ theorem wrapper_tailWith_ok [VG.Proof.Gcm.PPC64LE.GhashLaw]
     · exact (ht.saved .r31 (by decide)).trans hs.fixed.work
   · intro r hr hn
     exact (ht.saved r hr).trans (hs.keep r hr hn)
-  · rw [hsplit]
+  · rw [← hout,hsplit]
+    simpa only [Spec.Gcm.ghashFrom,List.foldl_append] using hy
+
+
+theorem wrapper_decTailWith_ok [VG.Proof.Gcm.PPC64LE.GhashLaw]
+    {base s : State} {n nr k : Nat} {ciphertext hashed pending : Nat → List Spec.Gcm.Block} (lay : WrapperLayout base n)
+    (hs : WrapperMidH base n nr k ciphertext hashed pending s)
+    (hnr : base.gpr .r4=BitVec.ofNat 64 nr) (hv : nr=10 ∨ nr=12 ∨ nr=14)
+    (hjoin : ciphertext n=ciphertext k ++ Spec.Gcm.ctr32 (Spec.Gcm.ctxCiph base.mem (base.gpr .r3) nr)
+      (Nat.repeat Spec.Gcm.inc32 k (Spec.Gcm.blockAt base.mem (base.gpr .r5))) (pending k))
+    (hhash : hashed n=hashed k ++ pending k) :
+    WP isa Impl.AesGcm.PPC64LE.Blocks.decTail s (WrapperDoneH base n nr (ciphertext n) (hashed n)) := by
+  refine WP.mono (decTail_ok s (n-k) nr (wrapper_tail_config lay hs hnr hv)) fun t ht => ?_
+  have hft : Frame [coreCounter (wrapperView base),coreY (wrapperView base),
+      ⟨base.gpr .r7+BitVec.ofNat 64 (16*k),16*(n-k)⟩,coreWork (wrapperView base)] s.mem t.mem := by
+    have hh := ht.frame
+    change Frame [⟨s.gpr .r27,16⟩,⟨s.gpr .r26,16⟩,⟨s.gpr .r30,16*(n-k)⟩,⟨s.gpr .r31+64,2048⟩] s.mem t.mem at hh
+    rw [hs.fixed.counter,hs.fixed.y,hs.ptr,hs.fixed.work] at hh
+    exact hh
+  have hprefix : Spec.Gcm.blocksAt t.mem (base.gpr .r7) k=ciphertext k := by
+    refine (blocks_frame hft ?_).trans hs.completed
+    intro r hr
+    have hsub : Region.Sub (⟨base.gpr .r7,16*k⟩ : Region) (coreData (wrapperView base) n) :=
+      Region.sub_prefix (by change 16*k≤16*n; have := hs.bound; omega)
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · exact (lay.core.data (coreCounter (wrapperView base)) (by simp)).symm.sub_left hsub
+    · exact (lay.core.data (coreY (wrapperView base)) (by simp)).symm.sub_left hsub
+    · exact Offset.base_disjoint _ (by omega) (by have := lay.core.size; have := hs.bound; omega)
+    · exact (lay.core.scratch (coreData (wrapperView base) n) (by simp)).sub_left hsub
+  have hsubout := ht.plaintext
+  rw [hs.fixed.ctx,hs.ptr,hs.fixed.counter,wrapper_ctxCipher lay hs.frame (by rcases hv with h | h | h <;> omega),
+    hs.counter,hs.pending] at hsubout
+  have hsplit : Spec.Gcm.blocksAt t.mem (base.gpr .r7) n=ciphertext k ++
+      Spec.Gcm.blocksAt t.mem (base.gpr .r7+BitVec.ofNat 64 (16*k)) (n-k) := by
+    have hh := VG.Proof.Gcm.blocksAt_add t.mem (base.gpr .r7) k (n-k)
+    rw [show k+(n-k)=n by have := hs.bound; omega,hprefix] at hh
+    exact hh
+  have hout : Spec.Gcm.blocksAt t.mem (base.gpr .r7) n=ciphertext n := by
+    rw [hsplit,hsubout]
+    exact hjoin.symm
+  have hcounter := ht.counter
+  rw [hs.fixed.counter,hs.counter,repeat_counter_add,show k+(n-k)=n by have := hs.bound; omega] at hcounter
+  have hy := ht.y
+  rw [hs.fixed.y,hs.fixed.ctx,hs.ptr,wrapper_h lay hs.frame,hs.y,hs.pending] at hy
+  have hf : Frame (wrapperWrites base n) s.mem t.mem := hft.sub (fun r hr => by
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · exact ⟨coreCounter (wrapperView base),by simp [wrapperWrites],fun _ h => h⟩
+    · exact ⟨coreY (wrapperView base),by simp [wrapperWrites],fun _ h => h⟩
+    · exact ⟨coreData (wrapperView base) n,by simp [wrapperWrites],
+        Offset.sub_base _ (d := 16*k) (n := 16*(n-k)) (k := 16*n) (by have := hs.bound; omega)⟩
+    · exact ⟨coreWork (wrapperView base),by simp [wrapperWrites],fun _ h => h⟩)
+  refine ⟨?_,?_,hs.frame.trans hf,hout,hcounter,?_⟩
+  · refine ⟨ht.rd.trans hs.fixed.rd,ht.wr.trans hs.fixed.wr,?_,?_,?_,?_,?_⟩
+    · exact (ht.saved .r29 (by decide)).trans hs.fixed.ctx
+    · exact (ht.saved .r28 (by decide)).trans hs.fixed.rounds
+    · exact (ht.saved .r27 (by decide)).trans hs.fixed.counter
+    · exact (ht.saved .r26 (by decide)).trans hs.fixed.y
+    · exact (ht.saved .r31 (by decide)).trans hs.fixed.work
+  · intro r hr hn
+    exact (ht.saved r hr).trans (hs.keep r hr hn)
+  · rw [hhash]
     simpa only [Spec.Gcm.ghashFrom,List.foldl_append] using hy
 
 
@@ -5101,7 +5311,7 @@ theorem wrapper_final_frame {base : State} {m : Mem} {n : Nat}
   · exact ⟨coreY (wrapperView base),by simp [wrapperFullWrites],fun _ h => h⟩
 
 
-structure WrapperResultWith (base : State) (n nr : Nat) (output : List Spec.Gcm.Block) (s : State) : Prop where
+structure WrapperResultH (base : State) (n nr : Nat) (output hashed : List Spec.Gcm.Block) (s : State) : Prop where
   rd : s.rd=base.rd
   wr : s.wr=base.wr
   saved : ∀ r ∈ preserved, s.gpr r=base.gpr r
@@ -5111,16 +5321,19 @@ structure WrapperResultWith (base : State) (n nr : Nat) (output : List Spec.Gcm.
   counter : Spec.Gcm.blockAt s.mem (base.gpr .r5)=
     Nat.repeat Spec.Gcm.inc32 n (Spec.Gcm.blockAt base.mem (base.gpr .r5))
   y : Spec.Gcm.blockAt s.mem (base.gpr .r6)=Spec.Gcm.ghashFrom
-    (Spec.Gcm.ctxH base.mem (base.gpr .r3)) (Spec.Gcm.blockAt base.mem (base.gpr .r6)) output
+    (Spec.Gcm.ctxH base.mem (base.gpr .r3)) (Spec.Gcm.blockAt base.mem (base.gpr .r6)) hashed
+
+abbrev WrapperResultWith (base : State) (n nr : Nat) (output : List Spec.Gcm.Block) : State → Prop :=
+  WrapperResultH base n nr output output
 
 
 abbrev WrapperResult (base : State) (n nr : Nat) : State → Prop :=
   WrapperResultWith base n nr (wrapperCiphertext base nr n)
 
 
-theorem wrapper_finish {base s : State} {n nr : Nat} {ciphertext : List Spec.Gcm.Block} (lay : WrapperLayout base n)
-    (hs : WrapperDoneWith base n nr ciphertext s) :
-    WP isa (.block Impl.AesGcm.PPC64LE.Blocks.wrapperExit) s (WrapperResultWith base n nr ciphertext) := by
+theorem wrapper_finish {base s : State} {n nr : Nat} {ciphertext hashed : List Spec.Gcm.Block} (lay : WrapperLayout base n)
+    (hs : WrapperDoneH base n nr ciphertext hashed s) :
+    WP isa (.block Impl.AesGcm.PPC64LE.Blocks.wrapperExit) s (WrapperResultH base n nr ciphertext hashed) := by
   have hv := wrapper_saved lay hs.frame
   have hr : ∀ off, off+8≤64 → InRegions (s.rd++s.wr) (base.gpr .r9+BitVec.ofNat 64 off) 8 := by
     intro off ho

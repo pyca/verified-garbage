@@ -92,13 +92,6 @@ def maybeBulkOf (dec : Bool) : Prog isa := .ite (.zero .d .r12) (.block []) (bul
 
 def maybeBulk : Prog isa := maybeBulkOf false
 
-/-- Decryption's last blocks, in place at the destination: the ciphertext
-hashed, then decrypted (`tail` in the other order). -/
-def decTail : Prog isa := .ite (.zero .d .r25) (.block [])
- (.seq (.block tailGhArgs)
- (.seq (.call "vg_ghash" Impl.Gcm.PPC64LE.ghash)
- (.seq (.block tailCtrArgs) (.call "vg_aes_ctr32" Impl.Aes.PPC64LE.ctr32))))
-
 def tailOf (dec : Bool) : Prog isa := bif dec then decTail else tail
 
 def bodyOf (dec : Bool) : Prog isa := .seq (.block wrapperEntry) (.seq (maybeBulkOf dec)

@@ -279,6 +279,13 @@ def tail : Prog isa := .ite (.zero .d .r25) (.block [])
  (.seq (.call "vg_aes_ctr32" Impl.Aes.PPC64LE.ctr32)
  (.seq (.block tailGhArgs) (.call "vg_ghash" Impl.Gcm.PPC64LE.ghash))))
 
+/-- Decryption's last blocks, in place at the destination: the ciphertext
+hashed, then decrypted (`tail` in the other order). -/
+def decTail : Prog isa := .ite (.zero .d .r25) (.block [])
+ (.seq (.block tailGhArgs)
+ (.seq (.call "vg_ghash" Impl.Gcm.PPC64LE.ghash)
+ (.seq (.block tailCtrArgs) (.call "vg_aes_ctr32" Impl.Aes.PPC64LE.ctr32))))
+
 def wrapperExit : List Instr :=
  [.load .d .r0 .r31 56, .mtlr .r0, mov .r12 .r31] ++
  wrapperSaved.map (fun (r,o) => .load .d r .r12 o)
