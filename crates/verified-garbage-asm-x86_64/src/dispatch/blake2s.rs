@@ -12,7 +12,7 @@ pub use crate::blake2s::vg_blake2s_init as vg_blake2s_init_auto;
 ///
 /// Contract: `VG.Spec.Blake2.updateSContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_blake2s_update_avx` if the CPU supports its features (`VG_BLAKE2S_UPDATE_AVX_FEATURES`); or else `vg_blake2s_update`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_blake2s_update_avx` if the CPU supports its features (`VG_BLAKE2S_UPDATE_AVX_FEATURES`); or else `vg_blake2s_update`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -24,21 +24,42 @@ pub use crate::blake2s::vg_blake2s_init as vg_blake2s_init_auto;
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_blake2s_update_auto(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::blake2s::VG_BLAKE2S_UPDATE_AVX_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_blake2s_update_avx`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::blake2s::vg_blake2s_update_avx(state, count, data, len) };
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(state: *mut [u8; 96], count: u64, data: *const u8, len: usize);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if cpu.contains(crate::blake2s::VG_BLAKE2S_UPDATE_AVX_FEATURES) {
+            return crate::blake2s::vg_blake2s_update_avx;
+        }
+        crate::blake2s::vg_blake2s_update
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::blake2s::vg_blake2s_update(state, count, data, len) }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(state, count, data, len) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(state, count, data, len) }
 }
 
 /// Finishes a BLAKE2s computation: if the streaming state `*state` represents data of `count` bytes, compresses its last block and writes the final state `h[0..7]` (32 bytes) to `*out`. The digest of `outlen` bytes (`init`'s) is its first `outlen` bytes.
 ///
 /// Contract: `VG.Spec.Blake2.finalizeSContract`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_blake2s_finalize_avx` if the CPU supports its features (`VG_BLAKE2S_FINALIZE_AVX_FEATURES`); or else `vg_blake2s_finalize`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_blake2s_finalize_avx` if the CPU supports its features (`VG_BLAKE2S_FINALIZE_AVX_FEATURES`); or else `vg_blake2s_finalize`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -51,12 +72,33 @@ pub unsafe fn vg_blake2s_update_auto(state: *mut [u8; 96], count: u64, data: *co
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_blake2s_finalize_auto(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::blake2s::VG_BLAKE2S_FINALIZE_AVX_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_blake2s_finalize_avx`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::blake2s::vg_blake2s_finalize_avx(state, count, out) };
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if cpu.contains(crate::blake2s::VG_BLAKE2S_FINALIZE_AVX_FEATURES) {
+            return crate::blake2s::vg_blake2s_finalize_avx;
+        }
+        crate::blake2s::vg_blake2s_finalize
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::blake2s::vg_blake2s_finalize(state, count, out) }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(state, count, out) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(state, count, out) }
 }

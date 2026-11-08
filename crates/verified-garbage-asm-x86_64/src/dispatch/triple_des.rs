@@ -12,7 +12,7 @@ pub use crate::triple_des::vg_triple_des_expand_key as vg_triple_des_expand_key_
 ///
 /// Contract: `VG.Spec.TripleDes.ecbEncryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_triple_des_ecb_encrypt_avx512` if the CPU supports its features (`VG_TRIPLE_DES_ECB_ENCRYPT_AVX512_FEATURES`); `vg_triple_des_ecb_encrypt_avx2` if the CPU supports its features (`VG_TRIPLE_DES_ECB_ENCRYPT_AVX2_FEATURES`); or else `vg_triple_des_ecb_encrypt`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_triple_des_ecb_encrypt_avx512` if the CPU supports its features (`VG_TRIPLE_DES_ECB_ENCRYPT_AVX512_FEATURES`); `vg_triple_des_ecb_encrypt_avx2` if the CPU supports its features (`VG_TRIPLE_DES_ECB_ENCRYPT_AVX2_FEATURES`); or else `vg_triple_des_ecb_encrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -23,26 +23,45 @@ pub use crate::triple_des::vg_triple_des_expand_key as vg_triple_des_expand_key_
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_triple_des_ecb_encrypt_auto(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::triple_des::VG_TRIPLE_DES_ECB_ENCRYPT_AVX512_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_triple_des_ecb_encrypt_avx512`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::triple_des::vg_triple_des_ecb_encrypt_avx512(schedule, data, n) };
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if cpu.contains(crate::triple_des::VG_TRIPLE_DES_ECB_ENCRYPT_AVX512_FEATURES) {
+            return crate::triple_des::vg_triple_des_ecb_encrypt_avx512;
+        }
+        if cpu.contains(crate::triple_des::VG_TRIPLE_DES_ECB_ENCRYPT_AVX2_FEATURES) {
+            return crate::triple_des::vg_triple_des_ecb_encrypt_avx2;
+        }
+        crate::triple_des::vg_triple_des_ecb_encrypt
     }
-    if cpu.contains(crate::triple_des::VG_TRIPLE_DES_ECB_ENCRYPT_AVX2_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_triple_des_ecb_encrypt_avx2`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::triple_des::vg_triple_des_ecb_encrypt_avx2(schedule, data, n) };
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(schedule, data, n) }
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::triple_des::vg_triple_des_ecb_encrypt(schedule, data, n) }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(schedule, data, n) }
 }
 
 /// Triple DES ECB decryption (SP 800-38A §6.1) of `n` complete 8-byte blocks at `data`, in place, under the schedule written by `vg_triple_des_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
 ///
 /// Contract: `VG.Spec.TripleDes.ecbDecryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_triple_des_ecb_decrypt_avx512` if the CPU supports its features (`VG_TRIPLE_DES_ECB_DECRYPT_AVX512_FEATURES`); `vg_triple_des_ecb_decrypt_avx2` if the CPU supports its features (`VG_TRIPLE_DES_ECB_DECRYPT_AVX2_FEATURES`); or else `vg_triple_des_ecb_decrypt`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_triple_des_ecb_decrypt_avx512` if the CPU supports its features (`VG_TRIPLE_DES_ECB_DECRYPT_AVX512_FEATURES`); `vg_triple_des_ecb_decrypt_avx2` if the CPU supports its features (`VG_TRIPLE_DES_ECB_DECRYPT_AVX2_FEATURES`); or else `vg_triple_des_ecb_decrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -53,17 +72,36 @@ pub unsafe fn vg_triple_des_ecb_encrypt_auto(schedule: *const [u8; 384], data: *
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_triple_des_ecb_decrypt_auto(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::triple_des::VG_TRIPLE_DES_ECB_DECRYPT_AVX512_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_triple_des_ecb_decrypt_avx512`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::triple_des::vg_triple_des_ecb_decrypt_avx512(schedule, data, n) };
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if cpu.contains(crate::triple_des::VG_TRIPLE_DES_ECB_DECRYPT_AVX512_FEATURES) {
+            return crate::triple_des::vg_triple_des_ecb_decrypt_avx512;
+        }
+        if cpu.contains(crate::triple_des::VG_TRIPLE_DES_ECB_DECRYPT_AVX2_FEATURES) {
+            return crate::triple_des::vg_triple_des_ecb_decrypt_avx2;
+        }
+        crate::triple_des::vg_triple_des_ecb_decrypt
     }
-    if cpu.contains(crate::triple_des::VG_TRIPLE_DES_ECB_DECRYPT_AVX2_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_triple_des_ecb_decrypt_avx2`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::triple_des::vg_triple_des_ecb_decrypt_avx2(schedule, data, n) };
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(schedule, data, n) }
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::triple_des::vg_triple_des_ecb_decrypt(schedule, data, n) }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(schedule, data, n) }
 }
