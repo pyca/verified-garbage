@@ -1651,9 +1651,10 @@ safety: each is proven against the contract that their common documentation
 states, and each is called only on a CPU with its features. So the ranking
 (`Rank`) is not trusted, and comes from outside the trusted base
 (`VerifiedGarbage/Dispatch.lean`). The dispatcher tries the implementations
-in the order it gives, each where the CPU also has the ranking's `extra`
-features for it and, if the ranking names a `vendor`, only where the
-compilation target's `target_vendor` is that, or where `VG_CPU_FEATURES`
+in the order it gives, each where the CPU also has the `extra` features
+that the ranking or its registration (`Artifact.extra`) gives it and, if
+either names a `vendor` (`Artifact.vendor`), only where the compilation
+target's `target_vendor` is that, or where `VG_CPU_FEATURES`
 names every feature the implementation needs
 (`verified_garbage_cpu::requested`, for testing it elsewhere); an
 implementation whose `cfg` (`Printer.featureCfg`) the build lacks is not
@@ -1829,13 +1830,20 @@ structure Impl where
   module : String
   features : List String
   gate : List String
+  /-- Its registration's `extra` features and `vendor` (`Artifact.extra`,
+  `Artifact.vendor`). -/
+  extra : List String := []
+  vendor : Option String := none
 
 /-- The function `a`, as an implementation a dispatcher may call. -/
 def Impl.ofArtifact (a : Artifact) : Impl :=
-  ⟨a.name, a.module, a.features, a.features.filterMap a.target.printer.featureCfg⟩
+  { name := a.name, module := a.module, features := a.features
+    gate := a.features.filterMap a.target.printer.featureCfg, extra := a.extra
+    vendor := a.vendor }
 
-/-- An implementation a dispatcher may choose, with its ranking's `extra`
-features and `vendor`s (those of each of its suffix's parts). -/
+/-- An implementation a dispatcher may choose, with the `extra` features and
+`vendor`s of its registration and of its ranking (those of each of its
+suffix's parts). -/
 structure Arm where
   impl : Impl
   extra : List String
@@ -1847,7 +1855,7 @@ tries, in order (see above), or why `rs` does not rank them. -/
 def armsOf (rs : List Rank) (m t : String) (members : List (Impl × String)) :
     Except String (List Arm) := do
   let arm (a : Impl) (ranks : List Rank) : Arm :=
-    ⟨a, dedup (ranks.flatMap (·.extra)), dedup (ranks.filterMap (·.vendor))⟩
+    ⟨a, dedup (a.extra ++ ranks.flatMap (·.extra)), dedup (a.vendor.toList ++ ranks.filterMap (·.vendor))⟩
   let keyed ← if members.all fun (_, s) => (rankOf rs m s).isSome then
       pure (members.map fun (a, s) => match rankOf rs m s with
         | some (i, r) => ([i], arm a [r])
@@ -2003,20 +2011,38 @@ def selector (g : Group) (arms : List Arm) : String :=
   s!"    crate::{b.module}::{b.name}\n" ++
   "}\n"
 
-/-- Each `Rank` of `rs` has a suffix starting with `_` and, if it names a
-vendor, a vendor of lowercase ASCII letters, digits and underscores (the
-text the dispatcher puts in `cfg!(target_vendor = "…")`), and each of its
-`extra` features is a name of letters, digits, `.` and `_`. -/
+/-- Whether `v` is a vendor of lowercase ASCII letters, digits and
+underscores (the text the dispatcher puts in `cfg!(target_vendor = "…")`). -/
+def vendorOk (v : String) : Bool :=
+  !v.isEmpty && v.all fun c => c.isLower || c.isDigit || c == '_'
+
+/-- Whether `f` is a feature's name of letters, digits, `.` and `_`. -/
+def featureOk (f : String) : Bool :=
+  !f.isEmpty && f.all fun c => c.isAlphanum || c == '.' || c == '_'
+
+/-- Each `Rank` of `rs` has a suffix starting with `_`, and its vendor, if it
+names one, and each of its `extra` features are as `vendorOk` and
+`featureOk` require. -/
 def checkRanks (t : String) (rs : List Rank) : Except String Unit :=
   rs.forM fun r => do
     unless r.suffix.startsWith "_" && r.suffix.length > 1 do
       throw s!"{t}: the ranked suffix `{r.suffix}` does not start with `_`"
     if let some v := r.vendor then
-      unless !v.isEmpty && v.all fun c => c.isLower || c.isDigit || c == '_' do
+      unless vendorOk v do
         throw s!"{t}: the ranked suffix `{r.suffix}` names the vendor `{v}`"
     for f in r.extra do
-      unless !f.isEmpty && f.all fun c => c.isAlphanum || c == '.' || c == '_' do
+      unless featureOk f do
         throw s!"{t}: the ranked suffix `{r.suffix}` needs the feature `{f}`"
+
+/-- The artifact `a`'s vendor, if it names one, and each of its `extra`
+features are as `vendorOk` and `featureOk` require. -/
+def checkChoice (a : Artifact) : Except String Unit := do
+  if let some v := a.vendor then
+    unless vendorOk v do
+      throw s!"{a.target.name}: {a.name} names the vendor `{v}`"
+  for f in a.extra do
+    unless featureOk f do
+      throw s!"{a.target.name}: {a.name} needs the feature `{f}`"
 
 /-- The dispatchers of the artifacts `as` of the module `m` of a target (see
 above), with the selectors of those whose bases `selected` names, as the
@@ -2067,7 +2093,8 @@ the CPU features each table needs (`features`), its `cfg` predicates
 def tableDispatcher (rs : List Rank) (t : String) (features : FnTable → List String)
     (gate : List String → List String) (rankModule : FnTable → String) (b : FnTable)
     (members : List (FnTable × String)) : Except String String := do
-  let impl (T : FnTable) : Impl := ⟨T.name, "fn_tables", features T, gate (features T)⟩
+  let impl (T : FnTable) : Impl :=
+    { name := T.name, module := "fn_tables", features := features T, gate := gate (features T) }
   let arms ← armsOf rs (rankModule b) t (members.map fun (T, s) => (impl T, s.toLower))
   let item (a : Arm) : String :=
     let needs := if a.impl.features.isEmpty then
@@ -2199,8 +2226,9 @@ tables of constants, or an internal function's name or tables, are not as
 artifact's features are not those its code requires (`checkFeatures`), its
 code has an instruction its target's printer cannot encode
 (`checkEncodable`), its doc has no `# Safety` section at its end for what
-`fullDoc` adds to it (`checkLayout`) or a bound on what it writes is not of a
-writable array parameter, at most its size (`checkWritten`), or `ranking`
+`fullDoc` adds to it (`checkLayout`), a bound on what it writes is not of a
+writable array parameter, at most its size (`checkWritten`), or its vendor
+or `extra` features are not names (`checkChoice`), or `ranking`
 (each target's, by its name) does not rank an implementation a dispatcher
 calls (`dispatchers`, `checkRanks`), or `selected` names a function of a
 target that has no dispatcher there (`dispatchers`); with each module's
@@ -2234,6 +2262,7 @@ def files (as : List Artifact) (ranking : Ranking := []) (selected : Selected :=
   forMPar ps checkEncodable
   forMPar as checkLayout
   forMPar as checkWritten
+  forMPar as checkChoice
   let disp ← (targetsOf as).flatMapM fun (t, _) => do
     let rs := (ranking.lookup t).getD []
     checkRanks t rs
