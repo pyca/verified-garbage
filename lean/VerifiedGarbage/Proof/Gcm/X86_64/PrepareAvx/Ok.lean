@@ -30,7 +30,7 @@ open VG VG.X86_64 VG.Proof.Gcm.Poly
 open VG.Impl.Aes.X86_64.AesNi (at_)
 open VG.Impl.Gcm.X86_64.Pclmul (poly)
 open VG.Impl.Gcm.X86_64.StitchAvx8 (prepOff)
-open VG.Impl.Gcm.X86_64.PrepareAvx (step plan plan48 setup stepS setupS sqS mulDS)
+open VG.Impl.Gcm.X86_64.PrepareAvx (step plan setup stepS setupS sqS mulDS)
 open VG.Proof.Gcm.X86_64.Pclmul (Only eq_prepared constImm_ok ldrev_ok hInvImm_ok rev_eq)
 open VG.Proof.Gcm.X86_64.Stitch (in_sub in_sub_int)
 open VG.Spec.Gcm (Block hpow)
@@ -40,10 +40,6 @@ abbrev Step := XReg × XReg × XReg × Nat
 
 theorem lane0_prepare16 :
     lane0Block (setup ++ plan.flatMap step) = some (setupS ++ plan.flatMap stepS) := by
-  decide +kernel
-
-theorem lane0_prepare :
-    lane0Block (setup ++ plan48.flatMap step) = some (setupS ++ plan48.flatMap stepS) := by
   decide +kernel
 
 /-- Each step's operands hold powers adding up to its own, which is one of
@@ -294,59 +290,6 @@ theorem prepare16_written (s : State) (t : List Leak) (s' : State)
 theorem prepare16_verified :
     Verified X86_64.target Impl.Gcm.X86_64.PrepareAvx.prepare16 (Proof.Gcm.prepare16Contract X86_64.abi) :=
   Prepare16.verified_ofW _ (fun _ hw _ => prepare16_ok hw) (by decide +kernel) Prepare16.prepare16Avx_ct
-
-/-! ## `vg_aes_gcm_prepare`: the 48 powers -/
-
-theorem plan48_valid : valid 48 [(.xmm3, 1)] plan48 = true := by decide
-
-theorem plan48_stored : ∀ k < 24, ∀ l < 2, 2 * k + 2 - l ∈ storedAfter [1] plan48 := by decide
-
-/-- `prepare`: the 48 prepared powers of the hash subkey at `C + 240` into
-pairs 0–23 of the context at `C`, nothing else written. -/
-theorem prepare_ok {s₀ : State} (hw : InRegions s₀.wr (s₀.gpr .rdi) 1024) :
-    WP isa Impl.Gcm.X86_64.PrepareAvx.prepare s₀ (Prepare.PrepOk s₀) := by
-  have hS : WP isa (.block (setupS ++ plan48.flatMap stepS)) (s₀.proj 0) fun t' =>
-      Inv 48 (Spec.Gcm.ctxH s₀.mem (s₀.gpr .rdi)) (s₀.gpr .rdi) s₀.mem (envAfter [(.xmm3, 1)] plan48)
-        (storedAfter [1] plan48) t' ∧ (∀ q, q ≠ .rax → t'.gpr q = s₀.gpr q) ∧ t'.rd = s₀.rd ∧
-        t'.wr = s₀.wr := by
-    rw [WP.block_append_iff]
-    refine WP.mono (setupS_ok (.inr rfl) (s₀.proj 0) (by rw [State.proj_wr, State.proj_gpr]; exact hw))
-      fun t₁ ⟨hi₁, g₁, rd₁, wr₁⟩ => ?_
-    rw [State.proj_mem, State.proj_gpr] at hi₁
-    refine WP.mono (planS_ok plan48 _ _ t₁ plan48_valid hi₁) fun t' ⟨hi', g', rd', wr'⟩ =>
-      ⟨hi', fun q hq => by rw [g' q hq, g₁ q hq, State.proj_gpr], by rw [rd', rd₁, State.proj_rd],
-        by rw [wr', wr₁, State.proj_wr]⟩
-  refine WP.mono (WP.lane0 lane0_prepare hS) fun s ⟨⟨hi, g, rd, wr⟩, _, _⟩ =>
-    ⟨fun k hk l hl => ?_, ?_, fun r hr _ => ?_, ?_, ?_⟩
-  · have := (hi.st _ (plan48_stored k hk l hl)).2.2
-    rw [prepOff_pair hl, State.proj_mem] at this
-    exact this
-  · have := hi.fr; rw [State.proj_mem] at this; exact this
-  · rw [← State.proj_gpr s 0, g r hr]
-  · rw [← State.proj_rd s 0, rd]
-  · rw [← State.proj_wr s 0, wr]
-
-theorem prepare_verified :
-    Verified X86_64.target Impl.Gcm.X86_64.PrepareAvx.prepare (Proof.Gcm.preparePowersContract X86_64.abi) :=
-  Prepare.verified_of _ (fun _ hw _ => prepare_ok hw) (by decide +kernel) Prepare16.prepareAvx_ct
-
-/-- `prepareSse`, the SSE code itself: the 48 prepared powers of the hash
-subkey at `C + 240` into pairs 0–23 of the context at `C`, nothing else
-written. -/
-theorem prepareSse_ok {s₀ : State} (hw : InRegions s₀.wr (s₀.gpr .rdi) 1024) :
-    WP isa Impl.Gcm.X86_64.PrepareAvx.prepareSse s₀ (Prepare.PrepOk s₀) := by
-  simp only [Impl.Gcm.X86_64.PrepareAvx.prepareSse]
-  rw [WP.block_append_iff]
-  refine WP.mono (setupS_ok (.inr rfl) s₀ hw) fun t₁ ⟨hi₁, g₁, rd₁, wr₁⟩ => ?_
-  refine WP.mono (planS_ok plan48 _ _ t₁ plan48_valid hi₁) fun s ⟨hi, g, rd, wr⟩ =>
-    ⟨fun k hk l hl => ?_, hi.fr, fun r hr _ => by rw [g r hr, g₁ r hr], by rw [rd, rd₁], by rw [wr, wr₁]⟩
-  have := (hi.st _ (plan48_stored k hk l hl)).2.2
-  rw [prepOff_pair hl] at this
-  exact this
-
-theorem prepareSse_verified :
-    Verified X86_64.target Impl.Gcm.X86_64.PrepareAvx.prepareSse (Proof.Gcm.preparePowersContract X86_64.abi) :=
-  Prepare.verified_of _ (fun _ hw _ => prepareSse_ok hw) (by decide +kernel) Prepare16.prepareSse_ct
 
 /-- `prepare16` after setting the count to 16, on the prepared key context. -/
 theorem prepareFlagged_verified :

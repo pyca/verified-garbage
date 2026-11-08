@@ -119,12 +119,19 @@ theorem seal_of_base {c : Prog isa}
   Verified.leak_flag (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h
     (fun _ _ _ _ _ _ _ _ _ _ h => h.1) seal_satF) (fun _ _ _ _ _ _ _ _ _ _ => rfl)
 
+/-- From its proof leaking only whether the count is at least `t`. -/
+theorem seal_ofB {t : Nat} (ht : t = 16 ∨ t = 48) {c : Prog isa} {stack : Nat}
+    (h : Verified target c (AesGcm.Flag.sealRoundsContractB t abi stack)) :
+    Verified target c (AesGcm.Flag.sealRoundsContract abi stack) :=
+  Verified.leak_head (AesGcm.Flag.flagBit t) Spec.Gcm.flagLeak (AesGcm.Flag.flagBit_of_flagLeak ht) h
+    (fun _ _ _ _ _ _ _ _ _ _ => ⟨_, rfl, rfl⟩)
+
 /-- By the flag: `c₁` on the prepared powers, `c₂` on the key context. -/
-theorem seal_onFlag {c₁ c₂ : Prog isa}
+theorem seal_onFlagB {c₁ c₂ : Prog isa}
     (h₁ : Verified target c₁ (Proof.AesGcm.sealPreparedRoundsContract abi 2624))
     (h₂ : Verified target c₂ (Proof.AesGcm.sealRoundsContract abi 2624)) :
-    Verified target (Impl.Gcm.X86_64.Flag.onFlag 48 c₁ c₂) (AesGcm.Flag.sealRoundsContract abi 2624) :=
-  Verified.of_onFlagCtx (Or.inr rfl) (by decide)
+    Verified target (Impl.Gcm.X86_64.Flag.onFlag 48 c₁ c₂) (AesGcm.Flag.sealRoundsContractB 48 abi 2624) :=
+  Verified.of_onFlagCtxL (Or.inr rfl) (VG.X86_64.flagBit 48) VG.X86_64.flagBit_iff (by decide)
     (VG.X86_64.Verified.widenFirstArray (n := 128) (n' := 129) (by decide) h₁
       (fun _ _ _ _ _ _ _ _ _ _ h => h) seal_satpow)
     (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h₂
@@ -134,13 +141,19 @@ theorem seal_onFlag {c₁ c₂ : Prog isa}
     (fun _ _ _ _ _ _ _ _ _ _ => rfl)
     seal_satF
 
+theorem seal_onFlag {c₁ c₂ : Prog isa}
+    (h₁ : Verified target c₁ (Proof.AesGcm.sealPreparedRoundsContract abi 2624))
+    (h₂ : Verified target c₂ (Proof.AesGcm.sealRoundsContract abi 2624)) :
+    Verified target (Impl.Gcm.X86_64.Flag.onFlag 48 c₁ c₂) (AesGcm.Flag.sealRoundsContract abi 2624) :=
+  seal_ofB (Or.inr rfl) (seal_onFlagB h₁ h₂)
+
 /-- By the flag: `c₁` on the first sixteen prepared powers, `c₂` on the key
 context. -/
-theorem seal_onFlag16 {c₁ c₂ : Prog isa}
+theorem seal_onFlag16B {c₁ c₂ : Prog isa}
     (h₁ : Verified target c₁ (Proof.AesGcm.sealPrepared16RoundsContract abi 2624))
     (h₂ : Verified target c₂ (Proof.AesGcm.sealRoundsContract abi 2624)) :
-    Verified target (Impl.Gcm.X86_64.Flag.onFlag 16 c₁ c₂) (AesGcm.Flag.sealRoundsContract abi 2624) :=
-  Verified.of_onFlagCtx (Or.inl rfl) (by decide)
+    Verified target (Impl.Gcm.X86_64.Flag.onFlag 16 c₁ c₂) (AesGcm.Flag.sealRoundsContractB 16 abi 2624) :=
+  Verified.of_onFlagCtxL (Or.inl rfl) (VG.X86_64.flagBit 16) VG.X86_64.flagBit_iff (by decide)
     (VG.X86_64.Verified.widenFirstArray (n := 128) (n' := 129) (by decide) h₁
       (fun _ _ _ _ _ _ _ _ _ _ h => h) seal_satpow16)
     (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h₂
@@ -149,6 +162,12 @@ theorem seal_onFlag16 {c₁ c₂ : Prog isa}
     (fun _ _ _ _ _ _ _ _ _ _ h _ => h.1)
     (fun _ _ _ _ _ _ _ _ _ _ => rfl)
     seal_satF
+
+theorem seal_onFlag16 {c₁ c₂ : Prog isa}
+    (h₁ : Verified target c₁ (Proof.AesGcm.sealPrepared16RoundsContract abi 2624))
+    (h₂ : Verified target c₂ (Proof.AesGcm.sealRoundsContract abi 2624)) :
+    Verified target (Impl.Gcm.X86_64.Flag.onFlag 16 c₁ c₂) (AesGcm.Flag.sealRoundsContract abi 2624) :=
+  seal_ofB (Or.inl rfl) (seal_onFlag16B h₁ h₂)
 
 /-! ## `open` -/
 
@@ -218,12 +237,19 @@ theorem open_of_base {c : Prog isa}
   Verified.leak_flag (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h
     (fun _ _ _ _ _ _ _ _ _ _ _ h => h.1) open_satF) (fun _ _ _ _ _ _ _ _ _ _ _ => rfl)
 
+/-- From its proof leaking only whether the count is at least `t`. -/
+theorem open_ofB {t : Nat} (ht : t = 16 ∨ t = 48) {c : Prog isa} {stack : Nat}
+    (h : Verified target c (AesGcm.Flag.openRoundsContractB t abi stack)) :
+    Verified target c (AesGcm.Flag.openRoundsContract abi stack) :=
+  Verified.leak_head (AesGcm.Flag.flagBit t) Spec.Gcm.flagLeak (AesGcm.Flag.flagBit_of_flagLeak ht) h
+    (fun _ _ _ _ _ _ _ _ _ _ _ => ⟨_, rfl, rfl⟩)
+
 /-- By the flag: `c₁` on the prepared powers, `c₂` on the key context. -/
-theorem open_onFlag {c₁ c₂ : Prog isa}
+theorem open_onFlagB {c₁ c₂ : Prog isa}
     (h₁ : Verified target c₁ (Proof.AesGcm.openPreparedRoundsContract abi 2632))
     (h₂ : Verified target c₂ (Proof.AesGcm.openRoundsContract abi 2632)) :
-    Verified target (Impl.Gcm.X86_64.Flag.onFlag 48 c₁ c₂) (AesGcm.Flag.openRoundsContract abi 2632) :=
-  Verified.of_onFlagCtx (Or.inr rfl) (by decide)
+    Verified target (Impl.Gcm.X86_64.Flag.onFlag 48 c₁ c₂) (AesGcm.Flag.openRoundsContractB 48 abi 2632) :=
+  Verified.of_onFlagCtxL (Or.inr rfl) (VG.X86_64.flagBit 48) VG.X86_64.flagBit_iff (by decide)
     (VG.X86_64.Verified.widenFirstArray (n := 128) (n' := 129) (by decide) h₁
       (fun _ _ _ _ _ _ _ _ _ _ _ h => h) open_satpow)
     (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h₂
@@ -233,13 +259,19 @@ theorem open_onFlag {c₁ c₂ : Prog isa}
     (fun _ _ _ _ _ _ _ _ _ _ _ => rfl)
     open_satF
 
+theorem open_onFlag {c₁ c₂ : Prog isa}
+    (h₁ : Verified target c₁ (Proof.AesGcm.openPreparedRoundsContract abi 2632))
+    (h₂ : Verified target c₂ (Proof.AesGcm.openRoundsContract abi 2632)) :
+    Verified target (Impl.Gcm.X86_64.Flag.onFlag 48 c₁ c₂) (AesGcm.Flag.openRoundsContract abi 2632) :=
+  open_ofB (Or.inr rfl) (open_onFlagB h₁ h₂)
+
 /-- By the flag: `c₁` on the first sixteen prepared powers, `c₂` on the key
 context. -/
-theorem open_onFlag16 {c₁ c₂ : Prog isa}
+theorem open_onFlag16B {c₁ c₂ : Prog isa}
     (h₁ : Verified target c₁ (Proof.AesGcm.openPrepared16RoundsContract abi 2632))
     (h₂ : Verified target c₂ (Proof.AesGcm.openRoundsContract abi 2632)) :
-    Verified target (Impl.Gcm.X86_64.Flag.onFlag 16 c₁ c₂) (AesGcm.Flag.openRoundsContract abi 2632) :=
-  Verified.of_onFlagCtx (Or.inl rfl) (by decide)
+    Verified target (Impl.Gcm.X86_64.Flag.onFlag 16 c₁ c₂) (AesGcm.Flag.openRoundsContractB 16 abi 2632) :=
+  Verified.of_onFlagCtxL (Or.inl rfl) (VG.X86_64.flagBit 16) VG.X86_64.flagBit_iff (by decide)
     (VG.X86_64.Verified.widenFirstArray (n := 128) (n' := 129) (by decide) h₁
       (fun _ _ _ _ _ _ _ _ _ _ _ h => h) open_satpow16)
     (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h₂
@@ -248,6 +280,12 @@ theorem open_onFlag16 {c₁ c₂ : Prog isa}
     (fun _ _ _ _ _ _ _ _ _ _ _ h _ => h.1)
     (fun _ _ _ _ _ _ _ _ _ _ _ => rfl)
     open_satF
+
+theorem open_onFlag16 {c₁ c₂ : Prog isa}
+    (h₁ : Verified target c₁ (Proof.AesGcm.openPrepared16RoundsContract abi 2632))
+    (h₂ : Verified target c₂ (Proof.AesGcm.openRoundsContract abi 2632)) :
+    Verified target (Impl.Gcm.X86_64.Flag.onFlag 16 c₁ c₂) (AesGcm.Flag.openRoundsContract abi 2632) :=
+  open_ofB (Or.inl rfl) (open_onFlag16B h₁ h₂)
 
 /-! ## `streamEncrypt` -/
 
@@ -316,12 +354,19 @@ theorem streamEncrypt_of_base {c : Prog isa}
   Verified.leak_flag (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h
     (fun _ _ _ _ _ _ _ _ h => h.1) streamEncrypt_satF) (fun _ _ _ _ _ _ _ _ => rfl)
 
+/-- From its proof leaking only whether the count is at least `t`. -/
+theorem streamEncrypt_ofB {t : Nat} (ht : t = 16 ∨ t = 48) {c : Prog isa} {stack : Nat}
+    (h : Verified target c (AesGcm.Flag.streamEncryptRoundsContractB t abi stack)) :
+    Verified target c (AesGcm.Flag.streamEncryptRoundsContract abi stack) :=
+  Verified.leak_head (AesGcm.Flag.flagBit t) Spec.Gcm.flagLeak (AesGcm.Flag.flagBit_of_flagLeak ht) h
+    (fun _ _ _ _ _ _ _ _ => ⟨_, rfl, rfl⟩)
+
 /-- By the flag: `c₁` on the prepared powers, `c₂` on the key context. -/
-theorem streamEncrypt_onFlag {c₁ c₂ : Prog isa}
+theorem streamEncrypt_onFlagB {c₁ c₂ : Prog isa}
     (h₁ : Verified target c₁ (Proof.AesGcm.streamEncryptPreparedRoundsContract abi 2608))
     (h₂ : Verified target c₂ (Proof.AesGcm.streamEncryptRoundsContract abi 2608)) :
-    Verified target (Impl.Gcm.X86_64.Flag.onFlag 48 c₁ c₂) (AesGcm.Flag.streamEncryptRoundsContract abi 2608) :=
-  Verified.of_onFlagCtx (Or.inr rfl) (by decide)
+    Verified target (Impl.Gcm.X86_64.Flag.onFlag 48 c₁ c₂) (AesGcm.Flag.streamEncryptRoundsContractB 48 abi 2608) :=
+  Verified.of_onFlagCtxL (Or.inr rfl) (VG.X86_64.flagBit 48) VG.X86_64.flagBit_iff (by decide)
     (VG.X86_64.Verified.widenFirstArray (n := 128) (n' := 129) (by decide) h₁
       (fun _ _ _ _ _ _ _ _ h => h) streamEncrypt_satpow)
     (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h₂
@@ -331,13 +376,19 @@ theorem streamEncrypt_onFlag {c₁ c₂ : Prog isa}
     (fun _ _ _ _ _ _ _ _ => rfl)
     streamEncrypt_satF
 
+theorem streamEncrypt_onFlag {c₁ c₂ : Prog isa}
+    (h₁ : Verified target c₁ (Proof.AesGcm.streamEncryptPreparedRoundsContract abi 2608))
+    (h₂ : Verified target c₂ (Proof.AesGcm.streamEncryptRoundsContract abi 2608)) :
+    Verified target (Impl.Gcm.X86_64.Flag.onFlag 48 c₁ c₂) (AesGcm.Flag.streamEncryptRoundsContract abi 2608) :=
+  streamEncrypt_ofB (Or.inr rfl) (streamEncrypt_onFlagB h₁ h₂)
+
 /-- By the flag: `c₁` on the first sixteen prepared powers, `c₂` on the key
 context. -/
-theorem streamEncrypt_onFlag16 {c₁ c₂ : Prog isa}
+theorem streamEncrypt_onFlag16B {c₁ c₂ : Prog isa}
     (h₁ : Verified target c₁ (Proof.AesGcm.streamEncryptPrepared16RoundsContract abi 2608))
     (h₂ : Verified target c₂ (Proof.AesGcm.streamEncryptRoundsContract abi 2608)) :
-    Verified target (Impl.Gcm.X86_64.Flag.onFlag 16 c₁ c₂) (AesGcm.Flag.streamEncryptRoundsContract abi 2608) :=
-  Verified.of_onFlagCtx (Or.inl rfl) (by decide)
+    Verified target (Impl.Gcm.X86_64.Flag.onFlag 16 c₁ c₂) (AesGcm.Flag.streamEncryptRoundsContractB 16 abi 2608) :=
+  Verified.of_onFlagCtxL (Or.inl rfl) (VG.X86_64.flagBit 16) VG.X86_64.flagBit_iff (by decide)
     (VG.X86_64.Verified.widenFirstArray (n := 128) (n' := 129) (by decide) h₁
       (fun _ _ _ _ _ _ _ _ h => h) streamEncrypt_satpow16)
     (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h₂
@@ -346,6 +397,12 @@ theorem streamEncrypt_onFlag16 {c₁ c₂ : Prog isa}
     (fun _ _ _ _ _ _ _ _ h _ => h.1)
     (fun _ _ _ _ _ _ _ _ => rfl)
     streamEncrypt_satF
+
+theorem streamEncrypt_onFlag16 {c₁ c₂ : Prog isa}
+    (h₁ : Verified target c₁ (Proof.AesGcm.streamEncryptPrepared16RoundsContract abi 2608))
+    (h₂ : Verified target c₂ (Proof.AesGcm.streamEncryptRoundsContract abi 2608)) :
+    Verified target (Impl.Gcm.X86_64.Flag.onFlag 16 c₁ c₂) (AesGcm.Flag.streamEncryptRoundsContract abi 2608) :=
+  streamEncrypt_ofB (Or.inl rfl) (streamEncrypt_onFlag16B h₁ h₂)
 
 /-! ## `streamDecrypt` -/
 
@@ -412,12 +469,19 @@ theorem streamDecrypt_of_base {c : Prog isa}
   Verified.leak_flag (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h
     (fun _ _ _ _ _ _ _ _ h => h.1) streamDecrypt_satF) (fun _ _ _ _ _ _ _ _ => rfl)
 
+/-- From its proof leaking only whether the count is at least `t`. -/
+theorem streamDecrypt_ofB {t : Nat} (ht : t = 16 ∨ t = 48) {c : Prog isa} {stack : Nat}
+    (h : Verified target c (AesGcm.Flag.streamDecryptRoundsContractB t abi stack)) :
+    Verified target c (AesGcm.Flag.streamDecryptRoundsContract abi stack) :=
+  Verified.leak_head (AesGcm.Flag.flagBit t) Spec.Gcm.flagLeak (AesGcm.Flag.flagBit_of_flagLeak ht) h
+    (fun _ _ _ _ _ _ _ _ => ⟨_, rfl, rfl⟩)
+
 /-- By the flag: `c₁` on the prepared powers, `c₂` on the key context. -/
-theorem streamDecrypt_onFlag {c₁ c₂ : Prog isa}
+theorem streamDecrypt_onFlagB {c₁ c₂ : Prog isa}
     (h₁ : Verified target c₁ (Proof.AesGcm.streamDecryptPreparedRoundsContract abi 2608))
     (h₂ : Verified target c₂ (Proof.AesGcm.streamDecryptRoundsContract abi 2608)) :
-    Verified target (Impl.Gcm.X86_64.Flag.onFlag 48 c₁ c₂) (AesGcm.Flag.streamDecryptRoundsContract abi 2608) :=
-  Verified.of_onFlagCtx (Or.inr rfl) (by decide)
+    Verified target (Impl.Gcm.X86_64.Flag.onFlag 48 c₁ c₂) (AesGcm.Flag.streamDecryptRoundsContractB 48 abi 2608) :=
+  Verified.of_onFlagCtxL (Or.inr rfl) (VG.X86_64.flagBit 48) VG.X86_64.flagBit_iff (by decide)
     (VG.X86_64.Verified.widenFirstArray (n := 128) (n' := 129) (by decide) h₁
       (fun _ _ _ _ _ _ _ _ h => h) streamDecrypt_satpow)
     (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h₂
@@ -427,13 +491,19 @@ theorem streamDecrypt_onFlag {c₁ c₂ : Prog isa}
     (fun _ _ _ _ _ _ _ _ => rfl)
     streamDecrypt_satF
 
+theorem streamDecrypt_onFlag {c₁ c₂ : Prog isa}
+    (h₁ : Verified target c₁ (Proof.AesGcm.streamDecryptPreparedRoundsContract abi 2608))
+    (h₂ : Verified target c₂ (Proof.AesGcm.streamDecryptRoundsContract abi 2608)) :
+    Verified target (Impl.Gcm.X86_64.Flag.onFlag 48 c₁ c₂) (AesGcm.Flag.streamDecryptRoundsContract abi 2608) :=
+  streamDecrypt_ofB (Or.inr rfl) (streamDecrypt_onFlagB h₁ h₂)
+
 /-- By the flag: `c₁` on the first sixteen prepared powers, `c₂` on the key
 context. -/
-theorem streamDecrypt_onFlag16 {c₁ c₂ : Prog isa}
+theorem streamDecrypt_onFlag16B {c₁ c₂ : Prog isa}
     (h₁ : Verified target c₁ (Proof.AesGcm.streamDecryptPrepared16RoundsContract abi 2608))
     (h₂ : Verified target c₂ (Proof.AesGcm.streamDecryptRoundsContract abi 2608)) :
-    Verified target (Impl.Gcm.X86_64.Flag.onFlag 16 c₁ c₂) (AesGcm.Flag.streamDecryptRoundsContract abi 2608) :=
-  Verified.of_onFlagCtx (Or.inl rfl) (by decide)
+    Verified target (Impl.Gcm.X86_64.Flag.onFlag 16 c₁ c₂) (AesGcm.Flag.streamDecryptRoundsContractB 16 abi 2608) :=
+  Verified.of_onFlagCtxL (Or.inl rfl) (VG.X86_64.flagBit 16) VG.X86_64.flagBit_iff (by decide)
     (VG.X86_64.Verified.widenFirstArray (n := 128) (n' := 129) (by decide) h₁
       (fun _ _ _ _ _ _ _ _ h => h) streamDecrypt_satpow16)
     (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h₂
@@ -442,6 +512,12 @@ theorem streamDecrypt_onFlag16 {c₁ c₂ : Prog isa}
     (fun _ _ _ _ _ _ _ _ h _ => h.1)
     (fun _ _ _ _ _ _ _ _ => rfl)
     streamDecrypt_satF
+
+theorem streamDecrypt_onFlag16 {c₁ c₂ : Prog isa}
+    (h₁ : Verified target c₁ (Proof.AesGcm.streamDecryptPrepared16RoundsContract abi 2608))
+    (h₂ : Verified target c₂ (Proof.AesGcm.streamDecryptRoundsContract abi 2608)) :
+    Verified target (Impl.Gcm.X86_64.Flag.onFlag 16 c₁ c₂) (AesGcm.Flag.streamDecryptRoundsContract abi 2608) :=
+  streamDecrypt_ofB (Or.inl rfl) (streamDecrypt_onFlag16B h₁ h₂)
 
 /-! ## `sealGather` -/
 
@@ -744,28 +820,28 @@ theorem openTo_onFlag162776 {c₁ c₂ : Prog isa}
 
 /-- By the flag: `c₁` on a context whose powers are present, `c₂` on the key
 context. -/
-theorem openTo_onFlagF {c₁ c₂ : Prog isa}
-    (h₁ : Verified target c₁ (AesGcm.Flag.openToFlaggedRoundsContract abi 2728))
+theorem openTo_onFlagF {t : Nat} (ht : t = 16 ∨ t = 48) {c₁ c₂ : Prog isa}
+    (h₁ : Verified target c₁ (AesGcm.Flag.openToFlaggedRoundsContract t abi 2728))
     (h₂ : Verified target c₂ (Proof.AesGcm.openToRoundsContract abi 2728)) :
-    Verified target (Impl.Gcm.X86_64.Flag.onFlag 48 c₁ c₂) (AesGcm.Flag.openToRoundsContract abi 2728) :=
-  Verified.of_onFlagCtx (Or.inr rfl) (by decide) h₁
+    Verified target (Impl.Gcm.X86_64.Flag.onFlag t c₁ c₂) (AesGcm.Flag.openToRoundsContract abi 2728) :=
+  Verified.of_onFlagCtx ht (by decide) h₁
     (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h₂
       (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h => h) openTo_satbase)
-    (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.1, hf, h.2.2.2 hf⟩)
+    (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.1, hf, h.2.2⟩)
     (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h _ => ⟨h.1, h.2.1⟩)
     (fun _ _ _ _ _ _ _ _ _ _ _ _ _ => rfl)
     openTo_satF
 
 /-- By the flag: `c₁` on a context whose powers are present, `c₂` on the key
 context, with the stack of the code that splits. -/
-theorem openTo_onFlagF2776 {c₁ c₂ : Prog isa}
-    (h₁ : Verified target c₁ (AesGcm.Flag.openToFlaggedRoundsContract abi 2776))
+theorem openTo_onFlagF2776 {t : Nat} (ht : t = 16 ∨ t = 48) {c₁ c₂ : Prog isa}
+    (h₁ : Verified target c₁ (AesGcm.Flag.openToFlaggedRoundsContract t abi 2776))
     (h₂ : Verified target c₂ (Proof.AesGcm.openToRoundsContract abi 2776)) :
-    Verified target (Impl.Gcm.X86_64.Flag.onFlag 48 c₁ c₂) (AesGcm.Flag.openToRoundsContract abi 2776) :=
-  Verified.of_onFlagCtx (Or.inr rfl) (by decide) h₁
+    Verified target (Impl.Gcm.X86_64.Flag.onFlag t c₁ c₂) (AesGcm.Flag.openToRoundsContract abi 2776) :=
+  Verified.of_onFlagCtx ht (by decide) h₁
     (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h₂
       (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h => h) openTo_satbase2776)
-    (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.1, hf, h.2.2.2 hf⟩)
+    (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.1, hf, h.2.2⟩)
     (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h _ => ⟨h.1, h.2.1⟩)
     (fun _ _ _ _ _ _ _ _ _ _ _ _ _ => rfl)
     openTo_satF2776

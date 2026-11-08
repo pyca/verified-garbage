@@ -32,7 +32,7 @@ namespace VG.Proof.Gcm.X86_64.Prepare16
 open VG VG.X86_64 VG.Proof.Gcm.Poly
 open VG.Impl.Aes.X86_64.AesNi (at_)
 open VG.Impl.Gcm.X86_64.Pclmul (poly)
-open VG.Impl.Gcm.X86_64.Prepare16 (Op plan plan48 setup mulD fold prepare16 prepare)
+open VG.Impl.Gcm.X86_64.Prepare16 (Op plan setup mulD fold prepare16)
 open VG.Impl.Gcm.X86_64.Stitch (storesK)
 open VG.Impl.Gcm.X86_64.PrepareAvx (sqS mulDS)
 open VG.Proof.Gcm.X86_64.PrepareAvx (sqS_ok mulDS_ok scratch not_scratch)
@@ -440,30 +440,6 @@ theorem prepare16_verified :
   Verified.of_correct prepare16_correct prepare16_ct (by
     sig_implies [Proof.Gcm.prepare16Contract, Proof.Gcm.prepare16Sig, Proof.Gcm.prepare16Post, prepare16X86_64,
       X86_64.abi, X86_64.argRegs] [satState] using satState)
-
-/-! ## `vg_aes_gcm_prepare`: the 48 powers -/
-
-theorem plan48_valid : valid 24 [(.xmm3, some 1, none)] plan48 = true := by decide
-
-theorem plan48_stored : ∀ k < 24, k ∈ storedAfter [] plan48 := by decide
-
-/-- `prepare`: the 48 prepared powers of the hash subkey at `C + 240` into
-pairs 0–23 of the context at `C`, nothing else written. -/
-theorem prepare_ok {s₀ : State} (hw : InRegions s₀.wr (s₀.gpr .rdi) 1024)
-    (hwrap : (s₀.gpr .rdi).toNat + 1024 ≤ 2 ^ 64) :
-    WP isa prepare s₀ (Prepare.PrepOk s₀) := by
-  simp only [prepare]
-  rw [WP.block_append_iff, WP.block_append_iff]
-  refine WP.mono (setup_ok (N := 24) (by decide) s₀ hw hwrap) fun t₁ ⟨hi₁, g₁, rd₁, wr₁⟩ => ?_
-  refine WP.mono (plan_ok plan48 _ _ t₁ plan48_valid hi₁) fun t₂ ⟨⟨_, hi₂⟩, g₂, rd₂, wr₂⟩ => ?_
-  refine WP.mono (Prepare.vzu_ok t₂) fun s ⟨g, m, rd, wr⟩ =>
-    ⟨fun k hk l hl => ?_, by rw [m]; exact hi₂.fr, fun r hr _ => by rw [g, g₂ r hr, g₁ r hr],
-      by rw [rd, rd₂, rd₁], by rw [wr, wr₂, wr₁]⟩
-  rw [m]; exact (hi₂.st k (plan48_stored k hk)).2 l hl
-
-theorem prepare_verified : Verified X86_64.target prepare (Proof.Gcm.preparePowersContract X86_64.abi) :=
-  Prepare.verified_of prepare (fun _ hw hwrap => prepare_ok hw hwrap) (by decide +kernel)
-    Prepare16.prepare_ct
 
 /-- `prepare16` after setting the count to 16, on the prepared key context. -/
 theorem prepareFlagged_verified :

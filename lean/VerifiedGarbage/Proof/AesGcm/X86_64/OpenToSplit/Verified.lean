@@ -599,8 +599,8 @@ theorem openToSelPrepared16_verified (thr : Nat) (w : Impl.ChaCha20Poly1305.X86_
 
 /-! ## On the prepared key context whose powers are present -/
 
-theorem toPre_flaggedS {s : State} (h : (Proof.AesGcm.Flag.openToFlaggedScratchContract X86_64.abi 152).pre s) :
-    ToPreS CtxMode.flagged s := by
+theorem toPre_flaggedS {t : Nat} {s : State} (h : (Proof.AesGcm.Flag.openToFlaggedScratchContract t X86_64.abi 152).pre s) :
+    ToPreS (CtxMode.flaggedT t) s := by
   sig_pre [Proof.AesGcm.Flag.openToFlaggedScratchContract, Proof.AesGcm.Flag.openToFlaggedScratchSig,
     Proof.AesGcm.Flag.openToFlaggedPre, X86_64.abi, X86_64.argRegs, stackArgs_seven, List.append_eq] at h
   rw [Sig.pairFacts, Sig.pairFacts, Sig.pairFacts, Sig.pairFacts, pairFacts_ro _ (by simp)] at h
@@ -616,13 +616,13 @@ theorem toPre_flaggedS {s : State} (h : (Proof.AesGcm.Flag.openToFlaggedScratchC
   exact ⟨rd, wr, kd, nd, ad, sd, dt, da, kw, nw, aw, sw, tw, dw, wa', rk, rn, ra, rs, rdd, rt, rw, bk, bn, ba, bs,
     bd, bt, bw, barg, wk, wn, wa, ws, wd, wt, ww, w₁, w₂, ro, dl, hpw⟩
 
-theorem toPost_flaggedS {s s' : State} (h : OpenTo.toPost s s') :
-    (Proof.AesGcm.Flag.openToFlaggedScratchContract X86_64.abi 152).post s s' := by
+theorem toPost_flaggedS {t : Nat} {s s' : State} (h : OpenTo.toPost s s') :
+    (Proof.AesGcm.Flag.openToFlaggedScratchContract t X86_64.abi 152).post s s' := by
   sig_post [Proof.AesGcm.Flag.openToFlaggedScratchContract, Proof.AesGcm.Flag.openToFlaggedScratchSig,
     Proof.AesGcm.openToRoundsPost, X86_64.abi, X86_64.argRegs, stackArgs_seven, List.append_eq]
   exact fun _ => h
 
-theorem toPub_flaggedS {s₁ s₂ : State} (hp : (Proof.AesGcm.Flag.openToFlaggedScratchContract X86_64.abi 152).pub s₁ s₂) :
+theorem toPub_flaggedS {t : Nat} {s₁ s₂ : State} (hp : (Proof.AesGcm.Flag.openToFlaggedScratchContract t X86_64.abi 152).pub s₁ s₂) :
     toPubS s₁ s₂ := by
   sig_pub [Proof.AesGcm.Flag.openToFlaggedScratchContract, Proof.AesGcm.Flag.openToFlaggedScratchSig, Spec.Gcm.openToLeak,
     X86_64.abi, X86_64.argRegs, stackArgs_seven, List.append_eq] at hp
@@ -654,7 +654,7 @@ def toSatSF : State where
   rd := [⟨0x1000, 1032⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x4000, 0⟩, ⟨0x6000, 0⟩, ⟨0x9008, 56⟩]
   wr := [⟨0x5000, 0⟩, ⟨0x7000, 2560⟩]
 
-theorem toSatSF_pre : ∃ s, (Proof.AesGcm.Flag.openToFlaggedScratchContract X86_64.abi 152).pre s := by
+theorem toSatSF_pre {t : Nat} (ht : t ≤ 48) : ∃ s, (Proof.AesGcm.Flag.openToFlaggedScratchContract t X86_64.abi 152).pre s := by
   refine ⟨toSatSF, ?_⟩
   sig_pre [Proof.AesGcm.Flag.openToFlaggedScratchContract, Proof.AesGcm.Flag.openToFlaggedScratchSig,
     Proof.AesGcm.Flag.openToFlaggedPre, X86_64.abi, X86_64.argRegs, stackArgs_seven, List.append_eq, toSatSF, stackArg, stackArgAddr, Mem.readW, Mem.read]
@@ -663,26 +663,26 @@ theorem toSatSF_pre : ∃ s, (Proof.AesGcm.Flag.openToFlaggedScratchContract X86
     | rfl
     | decide
     | exact Region.disjoint_of_sep (by decide)
-    | exact Proof.AesGcm.Flag.flaggedPowers_of_zeroMem
+    | exact Proof.AesGcm.Flag.flaggedPowers_of_zeroMem ht
         (fun _ hi => by simp only [Proof.AesGcm.Flag.ctx_ne1024 hi, OpenTo.ctx_lowF (Nat.lt_of_lt_of_le hi (by decide)), ite_false])
         (by decide)
 
-theorem flaggedS_implies :
-    (toSK CtxMode.flagged).Implies (Proof.AesGcm.Flag.openToFlaggedScratchContract X86_64.abi 152) :=
-  ⟨fun _ h => toPre_flaggedS h, fun _ _ _ h => toPost_flaggedS h, fun _ _ _ _ h => toPub_flaggedS h, toSatSF_pre⟩
+theorem flaggedS_implies {t : Nat} (ht : t ≤ 48) :
+    (toSK (CtxMode.flaggedT t)).Implies (Proof.AesGcm.Flag.openToFlaggedScratchContract t X86_64.abi 152) :=
+  ⟨fun _ h => toPre_flaggedS h, fun _ _ _ h => toPost_flaggedS h, fun _ _ _ _ h => toPub_flaggedS h, toSatSF_pre ht⟩
 
 /-- `openToSplit`, calling an instance of `vg_aes_gcm_open_split` for a prepared
 key context, with its working space as an argument. -/
-theorem openToSplitFlagged_core (F : OpenSplitFn CtxMode.flagged) :
+theorem openToSplitFlagged_core {t : Nat} (ht : t ≤ 48) (F : OpenSplitFn (CtxMode.flaggedT t)) :
     Verified X86_64.target (Impl.AesGcm.X86_64.OpenToSplit.openToSplit F.fn)
-      (Proof.AesGcm.Flag.openToFlaggedScratchContract X86_64.abi 152) :=
-  Verified.of_correct (k := toSK CtxMode.flagged)
+      (Proof.AesGcm.Flag.openToFlaggedScratchContract t X86_64.abi 152) :=
+  Verified.of_correct (k := toSK (CtxMode.flaggedT t))
     (fun _ hs => by obtain ⟨t, s', he, ha, hp⟩ := openToSplit_wp F hs; exact ⟨t, s', he, ha, hp⟩) (openToSplit_ct F)
-    flaggedS_implies
+    (flaggedS_implies ht)
 
 /-! ## In its frame -/
 
-theorem toSatF2776_pre : ∃ s, (Proof.AesGcm.Flag.openToFlaggedRoundsContract X86_64.abi 2776).pre s := by
+theorem toSatF2776_pre {t : Nat} (ht : t ≤ 48) : ∃ s, (Proof.AesGcm.Flag.openToFlaggedRoundsContract t X86_64.abi 2776).pre s := by
   refine ⟨OpenTo.toSatF, ?_⟩
   sig_pre [Proof.AesGcm.Flag.openToFlaggedRoundsContract, Spec.Gcm.openToPreparedSig, Spec.Gcm.openToPreparedSig,
     Proof.AesGcm.Flag.openToFlaggedPre, X86_64.abi, X86_64.argRegs, OpenTo.stackArgs_six, List.append_eq, OpenTo.toSatF,
@@ -692,29 +692,29 @@ theorem toSatF2776_pre : ∃ s, (Proof.AesGcm.Flag.openToFlaggedRoundsContract X
     | rfl
     | decide
     | exact Region.disjoint_of_sep (by decide)
-    | exact Proof.AesGcm.Flag.flaggedPowers_of_zeroMem
+    | exact Proof.AesGcm.Flag.flaggedPowers_of_zeroMem ht
         (fun _ hi => by simp only [Proof.AesGcm.Flag.ctx_ne1024 hi, OpenTo.ctx_lowF (Nat.lt_of_lt_of_le hi (by decide)), ite_false])
         (by decide)
 
 /-- `openToSplit` in its frame of 2624 bytes, holding its working space. -/
-theorem openToSplitFlagged_framed (F : OpenSplitFn CtxMode.flagged) :
+theorem openToSplitFlagged_framed {t : Nat} (ht : t ≤ 48) (F : OpenSplitFn (CtxMode.flaggedT t)) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2624 6 (Impl.AesGcm.X86_64.OpenToSplit.openToSplit F.fn))
-      (Proof.AesGcm.Flag.openToFlaggedRoundsContract X86_64.abi 2776) :=
+      (Proof.AesGcm.Flag.openToFlaggedRoundsContract t X86_64.abi 2776) :=
   X86_64.Verified.stackArgScratch (sig := Spec.Gcm.openToPreparedSig) (nm := "work") (e := .u64)
-    (n := 320) (pre := Proof.AesGcm.Flag.openToFlaggedPre X86_64.abi.ptrBits)
+    (n := 320) (pre := Proof.AesGcm.Flag.openToFlaggedPre t X86_64.abi.ptrBits)
     (post := Proof.AesGcm.openToRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 152)
-    (leak := some (Spec.Gcm.openToLeak X86_64.abi.ptrBits)) (bytes := 2624) (openToSplitFlagged_core F)
+    (leak := some (Spec.Gcm.openToLeak X86_64.abi.ptrBits)) (bytes := 2624) (openToSplitFlagged_core ht F)
     (by decide) (by decide) (by decide) (openToSplit_spAll F.fn F.spAll) (openToSplit_xdepth F.fn F.xd)
-    (Proof.AesGcm.Flag.openToFlaggedPre_local _) (Proof.AesGcm.Flag.openToFlaggedRoundsPost_local _) toSatF2776_pre
+    (Proof.AesGcm.Flag.openToFlaggedPre_local t _) (Proof.AesGcm.Flag.openToFlaggedRoundsPost_local _) (toSatF2776_pre ht)
     (hleak := Proof.AesGcm.Flag.openToFlaggedLeak_local _)
 
 /-! ## Choosing by length -/
 
 /-- What `open_to`'s contract with 2776 bytes of stack gives of `OpenTo.toK`'s
 precondition, with 2728. -/
-theorem toPre2776_flagged {s : State} (h : (Proof.AesGcm.Flag.openToFlaggedRoundsContract X86_64.abi 2776).pre s) :
-    OpenTo.ToPre CtxMode.flagged s := by
+theorem toPre2776_flagged {t : Nat} {s : State} (h : (Proof.AesGcm.Flag.openToFlaggedRoundsContract t X86_64.abi 2776).pre s) :
+    OpenTo.ToPre (CtxMode.flaggedT t) s := by
   sig_pre [Proof.AesGcm.Flag.openToFlaggedRoundsContract, Spec.Gcm.openToPreparedSig, Spec.Gcm.openToPreparedSig,
     Proof.AesGcm.Flag.openToFlaggedPre, X86_64.abi, X86_64.argRegs, OpenTo.stackArgs_six, List.append_eq] at h
   rw [Sig.pairFacts, Sig.pairFacts, Sig.pairFacts, pairFacts_ro _ (by simp)] at h
@@ -732,8 +732,8 @@ theorem toPre2776_flagged {s : State} (h : (Proof.AesGcm.Flag.openToFlaggedRound
     ba.sub_left sb, bs.sub_left sb, bd.sub_left sb, bt.sub_left sb, barg.sub_left sb, wk, wn, wa, ws, wd, wt,
     by omega, w₂, ro, dl, hpw⟩
 
-theorem toPub2776_flagged {s₁ s₂ : State}
-    (hp : (Proof.AesGcm.Flag.openToFlaggedRoundsContract X86_64.abi 2776).pub s₁ s₂) : OpenTo.toPub s₁ s₂ := by
+theorem toPub2776_flagged {t : Nat} {s₁ s₂ : State}
+    (hp : (Proof.AesGcm.Flag.openToFlaggedRoundsContract t X86_64.abi 2776).pub s₁ s₂) : OpenTo.toPub s₁ s₂ := by
   sig_pub [Proof.AesGcm.Flag.openToFlaggedRoundsContract, Spec.Gcm.openToPreparedSig, Spec.Gcm.openToPreparedSig,
     Spec.Gcm.openToLeak, X86_64.abi, X86_64.argRegs, OpenTo.stackArgs_six, List.append_eq] at hp
   simp only [List.getD_cons_succ, List.getD_cons_zero, Sig.descRegion] at hp
@@ -748,27 +748,27 @@ theorem toPub2776_flagged {s₁ s₂ : State}
   | 5, _ => exact a₅
   | n + 6, h => exact absurd h (by omega)
 
-theorem pre2776_congrF {s u : State} (h : Same s u)
-    (hs : (Proof.AesGcm.Flag.openToFlaggedRoundsContract X86_64.abi 2776).pre s) :
-    (Proof.AesGcm.Flag.openToFlaggedRoundsContract X86_64.abi 2776).pre u := by
+theorem pre2776_congrF {t : Nat} {s u : State} (h : Same s u)
+    (hs : (Proof.AesGcm.Flag.openToFlaggedRoundsContract t X86_64.abi 2776).pre s) :
+    (Proof.AesGcm.Flag.openToFlaggedRoundsContract t X86_64.abi 2776).pre u := by
   sig_pre [Proof.AesGcm.Flag.openToFlaggedRoundsContract, Spec.Gcm.openToPreparedSig, Spec.Gcm.openToPreparedSig,
     Proof.AesGcm.Flag.openToFlaggedPre, X86_64.abi, X86_64.argRegs, OpenTo.stackArgs_six, List.append_eq] at hs ⊢
   simp only [h.sa, h.saa, h.gpr .rdi (by decide), h.gpr .rsi (by decide), h.gpr .rdx (by decide),
     h.gpr .rcx (by decide), h.gpr .r8 (by decide), h.gpr .r9 (by decide), h.gpr .rsp (by decide), h.mem, h.rd, h.wr]
   exact hs
 
-theorem post2776_congrF {s u s' : State} (h : Same s u)
-    (q : (Proof.AesGcm.Flag.openToFlaggedRoundsContract X86_64.abi 2776).post u s') :
-    (Proof.AesGcm.Flag.openToFlaggedRoundsContract X86_64.abi 2776).post s s' := by
+theorem post2776_congrF {t : Nat} {s u s' : State} (h : Same s u)
+    (q : (Proof.AesGcm.Flag.openToFlaggedRoundsContract t X86_64.abi 2776).post u s') :
+    (Proof.AesGcm.Flag.openToFlaggedRoundsContract t X86_64.abi 2776).post s s' := by
   sig_post [Proof.AesGcm.Flag.openToFlaggedRoundsContract, Spec.Gcm.openToPreparedSig, Spec.Gcm.openToPreparedSig,
     Proof.AesGcm.openToRoundsPost, X86_64.abi, X86_64.argRegs, OpenTo.stackArgs_six, List.append_eq] at q ⊢
   simp only [h.sa, h.gpr .rdi (by decide), h.gpr .rsi (by decide), h.gpr .rdx (by decide),
     h.gpr .rcx (by decide), h.gpr .r8 (by decide), h.gpr .r9 (by decide), h.mem] at q
   exact q
 
-theorem pub2776_congrF {s u s' u' : State} (h : Same s u) (h' : Same s' u')
-    (q : (Proof.AesGcm.Flag.openToFlaggedRoundsContract X86_64.abi 2776).pub s s') :
-    (Proof.AesGcm.Flag.openToFlaggedRoundsContract X86_64.abi 2776).pub u u' := by
+theorem pub2776_congrF {t : Nat} {s u s' u' : State} (h : Same s u) (h' : Same s' u')
+    (q : (Proof.AesGcm.Flag.openToFlaggedRoundsContract t X86_64.abi 2776).pub s s') :
+    (Proof.AesGcm.Flag.openToFlaggedRoundsContract t X86_64.abi 2776).pub u u' := by
   sig_pub [Proof.AesGcm.Flag.openToFlaggedRoundsContract, Spec.Gcm.openToPreparedSig, Spec.Gcm.openToPreparedSig,
     Spec.Gcm.openToLeak, X86_64.abi, X86_64.argRegs, OpenTo.stackArgs_six, List.append_eq] at q ⊢
   simp only [h.sa, h.saa, h.gpr .rdi (by decide), h.gpr .rsi (by decide), h.gpr .rdx (by decide),
@@ -777,8 +777,8 @@ theorem pub2776_congrF {s u s' u' : State} (h : Same s u) (h' : Same s' u')
     h'.gpr .rcx (by decide), h'.gpr .r8 (by decide), h'.gpr .r9 (by decide), h'.gpr .rsp (by decide), h'.mem]
   exact q
 
-theorem pre_narrowF {s : State} (h : (Proof.AesGcm.Flag.openToFlaggedRoundsContract X86_64.abi 2776).pre s) :
-    (Proof.AesGcm.Flag.openToFlaggedRoundsContract X86_64.abi 2728).pre s := by
+theorem pre_narrowF {t : Nat} {s : State} (h : (Proof.AesGcm.Flag.openToFlaggedRoundsContract t X86_64.abi 2776).pre s) :
+    (Proof.AesGcm.Flag.openToFlaggedRoundsContract t X86_64.abi 2728).pre s := by
   sig_pre [Proof.AesGcm.Flag.openToFlaggedRoundsContract, Spec.Gcm.openToPreparedSig, Spec.Gcm.openToPreparedSig,
     Proof.AesGcm.Flag.openToFlaggedPre, X86_64.abi, X86_64.argRegs, OpenTo.stackArgs_six, List.append_eq] at h ⊢
   rw [Sig.pairFacts, Sig.pairFacts, Sig.pairFacts, pairFacts_ro _ (by simp)] at h ⊢
@@ -793,18 +793,18 @@ theorem pre_narrowF {s : State} (h : (Proof.AesGcm.Flag.openToFlaggedRoundsContr
   exact ⟨by omega, w₂, rd, wr, hd, rk, rn, ra, rs, rdd, rt, rarg, bk.sub_left sb, bn.sub_left sb, ba.sub_left sb,
     bs.sub_left sb, bd.sub_left sb, bt.sub_left sb, barg.sub_left sb, rest⟩
 
-theorem post_widenF {s u s' : State} (h : Same s u)
-    (q : (Proof.AesGcm.Flag.openToFlaggedRoundsContract X86_64.abi 2728).post u s') :
-    (Proof.AesGcm.Flag.openToFlaggedRoundsContract X86_64.abi 2776).post s s' := by
+theorem post_widenF {t : Nat} {s u s' : State} (h : Same s u)
+    (q : (Proof.AesGcm.Flag.openToFlaggedRoundsContract t X86_64.abi 2728).post u s') :
+    (Proof.AesGcm.Flag.openToFlaggedRoundsContract t X86_64.abi 2776).post s s' := by
   sig_post [Proof.AesGcm.Flag.openToFlaggedRoundsContract, Spec.Gcm.openToPreparedSig, Spec.Gcm.openToPreparedSig,
     Proof.AesGcm.openToRoundsPost, X86_64.abi, X86_64.argRegs, OpenTo.stackArgs_six, List.append_eq] at q ⊢
   simp only [h.sa, h.gpr .rdi (by decide), h.gpr .rsi (by decide), h.gpr .rdx (by decide),
     h.gpr .rcx (by decide), h.gpr .r8 (by decide), h.gpr .r9 (by decide), h.mem] at q
   exact q
 
-theorem pub_narrowF {s u s' u' : State} (h : Same s u) (h' : Same s' u')
-    (q : (Proof.AesGcm.Flag.openToFlaggedRoundsContract X86_64.abi 2776).pub s s') :
-    (Proof.AesGcm.Flag.openToFlaggedRoundsContract X86_64.abi 2728).pub u u' := by
+theorem pub_narrowF {t : Nat} {s u s' u' : State} (h : Same s u) (h' : Same s' u')
+    (q : (Proof.AesGcm.Flag.openToFlaggedRoundsContract t X86_64.abi 2776).pub s s') :
+    (Proof.AesGcm.Flag.openToFlaggedRoundsContract t X86_64.abi 2728).pub u u' := by
   have q' := pub2776_congrF h h' q
   sig_pub [Proof.AesGcm.Flag.openToFlaggedRoundsContract, Spec.Gcm.openToPreparedSig, Spec.Gcm.openToPreparedSig,
     Spec.Gcm.openToLeak, X86_64.abi, X86_64.argRegs, OpenTo.stackArgs_six, List.append_eq] at q' ⊢
@@ -813,11 +813,11 @@ theorem pub_narrowF {s u s' u' : State} (h : Same s u) (h' : Same s' u')
 /-- `vg_aes_gcm_open_to_prepared`'s code on a context whose powers are present:
 by a copy below `thr` bytes, and in one pass from `thr` on, calling
 `vg_aes_gcm_open_prepared`. -/
-theorem openToSelFlagged_verified (thr : Nat) (w : Impl.ChaCha20Poly1305.X86_64.SealGather.Width)
-    (F : OpenTo.OpenFn CtxMode.flagged) (FS : OpenSplitFn CtxMode.flagged) (hT : thr < 2 ^ 31 := by decide) :
+theorem openToSelFlagged_verified {t : Nat} (ht : t ≤ 48) (thr : Nat) (w : Impl.ChaCha20Poly1305.X86_64.SealGather.Width)
+    (F : OpenTo.OpenFn (CtxMode.flaggedT t)) (FS : OpenSplitFn (CtxMode.flaggedT t)) (hT : thr < 2 ^ 31 := by decide) :
     Verified X86_64.target (Impl.AesGcm.X86_64.OpenToSplit.openToSel thr w F.fn FS.fn)
-      (Proof.AesGcm.Flag.openToFlaggedRoundsContract X86_64.abi 2776) := by
-  have run (s : State) (hs : (Proof.AesGcm.Flag.openToFlaggedRoundsContract X86_64.abi 2776).pre s) :
+      (Proof.AesGcm.Flag.openToFlaggedRoundsContract t X86_64.abi 2776) := by
+  have run (s : State) (hs : (Proof.AesGcm.Flag.openToFlaggedRoundsContract t X86_64.abi 2776).pre s) :
       ∃ u, execBlock isa (Impl.AesGcm.X86_64.OpenToSplit.cmpLen thr) s = some (u, [.addr (stackArgAddr s 1)]) ∧
         (∀ r, r ≠ .rax → u.gpr r = s.gpr r) ∧ u.mem = s.mem ∧ u.rd = s.rd ∧ u.wr = s.wr ∧ u.mxcsr = s.mxcsr ∧
         eval .ae u = some (decide (thr ≤ (stackArg s 1).toNat)) := by
@@ -828,8 +828,8 @@ theorem openToSelFlagged_verified (thr : Nat) (w : Impl.ChaCha20Poly1305.X86_64.
     simp only [stackArgAddr, Nat.reduceMul, Nat.reduceAdd]
     exact Offset.contains _ (by omega) (by omega) (by omega)
   refine Verified.entryBranch (p := fun s => decide (thr ≤ (stackArg s 1).toNat))
-    (fun s => [.addr (stackArgAddr s 1)]) (openToSplitFlagged_framed FS) (OpenTo.openToFlagged_verified w F)
-    (fun s hs => ?_) ?_ toSatF2776_pre
+    (fun s => [.addr (stackArgAddr s 1)]) (openToSplitFlagged_framed ht FS) (OpenTo.openToFlagged_verified ht w F)
+    (fun s hs => ?_) ?_ (toSatF2776_pre ht)
   · obtain ⟨u, e, g, hm, hrd, hwr, hmx, ev⟩ := run s hs
     have hS : Same s u := ⟨g, hm, hrd, hwr, hmx⟩
     exact ⟨u, e, ev, fun _ => ⟨pre2776_congrF hS hs, fun s' a q => ⟨hS.abi a, post2776_congrF hS q⟩⟩,
