@@ -30,7 +30,7 @@ meta import VerifiedGarbage.Proof.BrainpoolP384r1.PPC64LE.Comb
 meta import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
-# ECDSA signatures over brainpoolBrainpoolP384r1r1 by the comb on PPC64LE: `Verified`
+# ECDSA signatures over brainpoolP384r1 by the comb on PPC64LE: `Verified`
 
 `vg_ecdsa_brainpoolp384r1_sign` with `[k]G` by the seven-bit comb, whose table is a
 read-only constant (`Abi.withConsts`): `combSign_ok`, from `signWith_ok` and
