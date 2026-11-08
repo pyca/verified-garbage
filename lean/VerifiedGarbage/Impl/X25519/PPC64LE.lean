@@ -21,9 +21,8 @@ result is reduced fully. A limb is stored with `stw`, which keeps the low
 lives in the working space, at a constant offset from its base, which stays
 in `r6` (`out` stays in `r3`):
 
-* `x1, x2, z2, x3, z3`, the ladder's temporaries, the constant `a24`, the
-  inversion's result and the final reduction's temporary, 32 bytes each
-  (`X1`, …);
+* `x1, x2, z2, x3, z3`, the ladder's temporaries, the inversion's result
+  and the final reduction's temporary, 32 bytes each (`X1`, …);
 * the 8 words of a product (`ACC`, 64 bytes) and the bits of the scalar
   (`BITS`, byte `t` is bit `t` of the clamped scalar).
 
@@ -50,7 +49,7 @@ The arithmetic (registers `r4`, `r5`, `r7`–`r11`):
   negative.
 
 The ladder follows RFC 7748 §5 operation by operation (with `a24 · E` a
-multiplication by the constant element `A24`), over the bits of the scalar
+multiplication by the word `121665`, `mulA24`), over the bits of the scalar
 from 254 down to 0 (the counter `r12`, which indexes `BITS`; `swap` in `r0`).
 The inversion `z2^(p-2)` is ref10's addition chain (254 squarings and 11
 multiplications), its runs of squarings counted by `r12`.
@@ -82,7 +81,7 @@ def BB : Nat := 320
 def E : Nat := 352
 def DA : Nat := 384
 def CB : Nat := 416
-def A24 : Nat := 448
+-- 448 to 480 is unused.
 def R : Nat := 480
 def Y : Nat := 512
 def ACC : Nat := 544
@@ -228,6 +227,20 @@ borrow). -/
 def sub (o a b : Nat) : List Instr :=
   (List.range 4).flatMap (subW a b) ++ [.li .r5 38] ++ borrowFold ++ borrowFold ++ stores4 o
 
+/-- `121665 = 2¹⁶ + 0xdb41` (`a24`) into `r5`. -/
+def a24Const : List Instr := [.lis .r5 1, .ori .r5 .r5 0xdb41]
+
+/-- `[o] = 121665 · [a]` (`a24 · [a]`; `o` may be `a`): the words of the
+product, each `mulld` plus the previous `mulhdu` by the carry chain, and its
+top word `t < 2¹⁷` (in `r7`), folded in as `38 t` twice. -/
+def mulA24 (o a : Nat) : List Instr :=
+  a24Const ++
+  [.load .d .r8 .r6 a, .mulhu .r7 .r8 .r5, .mul .r8 .r8 .r5,
+    .load .d .r9 .r6 (a + 8), .mulhu .r4 .r9 .r5, .mul .r9 .r9 .r5, .addc .r9 .r9 .r7,
+    .load .d .r10 .r6 (a + 16), .mulhu .r7 .r10 .r5, .mul .r10 .r10 .r5, .adde .r10 .r10 .r4,
+    .load .d .r11 .r6 (a + 24), .mulhu .r4 .r11 .r5, .mul .r11 .r11 .r5, .adde .r11 .r11 .r7,
+    .addze .r7 .r4, .li .r5 38] ++ foldTop ++ foldTop ++ stores4 o
+
 /-- `[o] = [a] · [b]` (`o` may be `a` or `b`), with the product at `acc`. -/
 def mulAt (acc o a b : Nat) : Prog isa := .block (product acc a b ++ reduce38 acc o)
 
@@ -262,7 +275,7 @@ def step : Prog isa :=
   .seq (mul BB B B) <| .seq (.block (sub E AA BB)) <| .seq (.block (add C X3 Z3)) <|
   .seq (.block (sub D X3 Z3)) <| .seq (mul DA D A) <| .seq (mul CB C B) <|
   .seq (.block (add X3 DA CB)) <| .seq (mul X3 X3 X3) <| .seq (.block (sub Z3 DA CB)) <|
-  .seq (mul Z3 Z3 Z3) <| .seq (mul Z3 X1 Z3) <| .seq (mul X2 AA BB) <| .seq (mul Z2 A24 E) <|
+  .seq (mul Z3 Z3 Z3) <| .seq (mul Z3 X1 Z3) <| .seq (mul X2 AA BB) <| .seq (.block (mulA24 Z2 E)) <|
   .seq (.block (add Z2 AA Z2)) <| .seq (mul Z2 E Z2) (.block [])
 
 /-- The 255 iterations, for `t` from 254 down to 0, with `swap = 0`. -/
@@ -334,11 +347,10 @@ def decodeStep (k : Nat) : List Instr :=
   [.load .w .r7 .r5 (4 * k)] ++ (if k = 7 then low31 else []) ++
     [.store .w .r7 .r6 (X1 + 4 * k), .store .w .r7 .r6 (X3 + 4 * k)]
 
-/-- `x2 = 1`, `z2 = 0`, `z3 = 1` and `A24 = 121665 = 2¹⁶ + 0xdb41`. -/
+/-- `x2 = 1`, `z2 = 0` and `z3 = 1`. -/
 def consts : List Instr :=
-  [.li .r7 1, .li .r8 0, .lis .r5 1, .ori .r5 .r5 0xdb41, .store .w .r7 .r6 X2,
-    .store .w .r8 .r6 Z2, .store .w .r7 .r6 Z3, .store .w .r5 .r6 A24] ++
-  storeN .r8 (X2 + 4) 7 ++ storeN .r8 (Z2 + 4) 7 ++ storeN .r8 (Z3 + 4) 7 ++ storeN .r8 (A24 + 4) 7
+  [.li .r7 1, .li .r8 0, .store .w .r7 .r6 X2, .store .w .r8 .r6 Z2, .store .w .r7 .r6 Z3] ++
+  storeN .r8 (X2 + 4) 7 ++ storeN .r8 (Z2 + 4) 7 ++ storeN .r8 (Z3 + 4) 7
 
 /-- The u-coordinate into `X1` and `X3`, and the constants. -/
 def setup : List Instr := (List.range 8).flatMap decodeStep ++ consts
