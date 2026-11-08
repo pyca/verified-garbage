@@ -180,16 +180,21 @@ arch = "x86_64"
 # implementations: the baseline's, PCLMULQDQ's and VPCLMULQDQ's.
 # RSAES-PKCS1-v1_5 decryption with SHA-256's SHA extensions and RSA's ADX
 # code, which a runner with AVX512_IFMA never chooses unrestricted.
-# RSA's arithmetic runs in full on the unrestricted line, and its
+# RSA's arithmetic runs in full in the `rust` job, and its
 # baseline and ADX code on p4p's and skx's, so the restricted lines run
 # only the small RSA groups that reach each hash's implementation.
 # ML-KEM's `_avx` instances, the baseline's wiping its working space with
 # `vg_zeroize_avx`, which a runner with AVX2 never chooses.
+# No line is unrestricted: the `rust` job's x86-64 Linux entry runs every
+# test on a runner of the same pool, with the same detection (CPUID, which
+# needs no `std`). The pool's CPUs differ (with AVX-512 and AVX512_IFMA or
+# without), so whatever a runner chooses is forced somewhere regardless: by
+# a line here, which names only features every runner has, or by an SDE
+# chip's.
 [[cpu]]
 chip = "native"
 arch = "x86_64"
 runs = """
-- | ffdh dsa sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts cmac chacha20 triple_des_ecb triple_des_cbc triple_des_cfb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 ed448 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs zeroize sm4_gcm cpu
 none | sm4_gcm
 aes,ssse3 | aes_gcm cmac aes_ccm aes_siv aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts zeroize cpu
 pclmulqdq,ssse3 | aes_gcm sm4_gcm cpu
@@ -208,25 +213,26 @@ avx,avx2,bmi1,bmi2,sha,ssse3 | rsa_oaep_pairs cpu
 adx,avx,avx2,bmi1,bmi2,sha,ssse3 | rsa_oaep_pairs cpu
 """
 
-# x86 feature dispatch, natively in a 32-bit userspace, with the
-# runner's features (ChaCha20's and ChaCha20-Poly1305's SSSE3
-# instances, RSAES-PKCS1-v1_5 decryption, RSASSA-PSS and RSAES-OAEP
-# with SHA-1's and SHA-256's SHA extensions, and DSA parameter
-# generation with them) and the same groups with the baseline
-# implementations; and
-# AES-GCM's and AES-GCM-SIV's instances for AES's or GHASH's
-# extension alone, and SM4-GCM's with PCLMULQDQ's GHASH. The container's options are `rust`'s x86 entry's.
-# The `rust` job's x86 entry runs every test, in this container: what
-# has one implementation on x86 (RSA's arithmetic, RSA key generation,
-# FFDH, Blowfish, CAST5, the curves, …) is the same code there, so no line
-# here repeats it, and the lines run only the small RSA groups that reach
-# each hash's implementation.
+# x86 feature dispatch, natively in a 32-bit userspace: the baseline
+# implementations of every group whose implementation the runner's
+# features choose; and AES-GCM's and AES-GCM-SIV's instances for AES's or
+# GHASH's extension alone, and SM4-GCM's with PCLMULQDQ's GHASH. The
+# container's options are `rust`'s x86 entry's.
+# The `rust` job's x86 entry runs every test, in this container, with the
+# runner's features (ChaCha20's and ChaCha20-Poly1305's SSSE3 instances,
+# RSAES-PKCS1-v1_5 decryption, RSASSA-PSS and RSAES-OAEP with SHA-1's and
+# SHA-256's SHA extensions, and DSA parameter generation with them),
+# detected with CPUID, which needs no `std`, so no line here is
+# unrestricted (and the lines name only features every runner has); and
+# what has one implementation on x86 (RSA's arithmetic,
+# RSA key generation, FFDH, Blowfish, CAST5, the curves, …) is the same
+# code there, so the lines run only the small RSA groups that reach each
+# hash's implementation.
 [[cpu]]
 chip = "native"
 arch = "x86"
 container = { image = "ghcr.io/pyca/verified-garbage-runner:i686", options = "--platform linux/386 --security-opt seccomp=unconfined" }
 runs = """
-- | sha1 sha224 sha256 sha384 sha512 aes_ccm aes_gcm aes_gcm_siv aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts aes_siv cmac chacha20 mlkem scrypt x25519 ed25519 ecdsa p256_sha rsa_pkcs1_hashes rsa_pss_hashes rsa_oaep_pairs dsa_parameters sm4_gcm cpu
 none | sha1 sha224 sha256 sha384 sha512 aes_ccm aes_gcm aes_gcm_siv aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts aes_siv cmac chacha20 mlkem scrypt x25519 ed25519 ecdsa p256_sha rsa_pkcs1_hashes rsa_pss_hashes rsa_oaep_pairs dsa_parameters sm4_gcm cpu
 aes,ssse3 | aes_gcm aes_gcm_siv cpu
 pclmulqdq,ssse3 | aes_gcm aes_gcm_siv sm4_gcm cpu
@@ -365,37 +371,38 @@ runs = """
 avx,avx2,sha512,avx512f,bmi2,adx,avx512ifma,avx512vl | rsa_oaep_pairs cpu
 """
 
-# The runner has SVE2, so the unrestricted run tests the `_sve2`
-# instances; `neon` and `none` test ChaCha20's NEON and scalar ones,
-# `sha3` and `none` the SHA-3 prototype and its scalar fallback (and
-# the instances of ML-KEM, ML-DSA and Ed448 calling each),
-# `none` deterministic ECDSA with the scalar SHA-256 and SHA-512
-# and AES-CCM with the scalar AES, and RSAES-PKCS1-v1_5 decryption
-# with the scalar SHA-256 (the unrestricted runs of the plain tests
-# take its `_sha256_sha2` instance), and the unrestricted run and
-# `none` AES-OCB's `_aes` and scalar instances. AES-GCM and
-# AES-GCM-SIV: the unrestricted run takes their `_aes_sha3` instances,
-# `aes` their `_aes` ones, and `none` AES-GCM-SIV's scalar ones.
-# SM4-GCM: the unrestricted run takes its `_aes` instances (PMULL's
-# GHASH), `none` its baseline ones.
-# RSAES-OAEP: `sha2` takes SHA-1's and SHA-256's `_sha2`
-# instances with SHA-512's scalar ones, `none` the scalar ones,
-# `sha3` SHA-512's `_sha3` ones with SHA-1's scalar MGF1, and
-# `sha2,sha3` both extensions together. AArch64's RSA arithmetic has one
-# implementation, which the `rust` job tests in full, so these lines run
-# only the small RSA groups that reach each hash's implementation.
+# The `rust` job runs every test with the runner's features, detected at
+# run time with the default `std`: SVE2's `_sve2` ChaCha20, FEAT_AES's
+# `_aes_sha3` and `_aes` instances (AES-GCM, AES-GCM-SIV and AES-CBC
+# decryption with FEAT_SHA3 too), SHA-1's and SHA-256's `_sha2` and SHA-512's
+# `_sha512` (and every caller of them: HMAC, PBKDF2, scrypt, DSA, ECDSA,
+# Ed25519, RSA), ML-DSA's and ML-KEM's `_sha3`, and DIT; and the baseline
+# SHA-3, Ed448 and Poly1305, whose FEAT_SHA3 and NEON variants are chosen
+# off Apple's cores only when `VG_CPU_FEATURES` names them. So no line here
+# is unrestricted, and each runs only what its features choose differently:
+# `neon` ChaCha20's and Poly1305's NEON instances; `aes` AES-GCM's,
+# AES-GCM-SIV's and AES-CBC's `_aes` ones; `sha3` the SHA-3 prototype (and
+# the ML-KEM and Ed448 instances calling it), and RSAES-OAEP with SHA-512's
+# `_sha512` and SHA-1's scalar MGF1; `sha2` RSAES-OAEP with SHA-1's and
+# SHA-256's `_sha2` and SHA-512's scalar code; and `none` the scalar
+# instances of everything the runner's features accelerate: AES and every
+# mode of it, CMAC and SM4-GCM's GHASH, ChaCha20, SHA-1, SHA-224, SHA-256,
+# SHA-384 and SHA-512 (with HMAC, PBKDF2, scrypt and the hashes' tables), DSA,
+# ECDSA's hashes, Ed25519, ML-KEM and ML-DSA, RSAES-PKCS1-v1_5 decryption and
+# RSAES-OAEP with the scalar hashes, and code without DIT. AArch64's RSA
+# arithmetic has one implementation, which the `rust` job tests in full, so
+# these lines run only the small RSA groups that reach each hash's
+# implementation.
 [[cpu]]
 chip = "native"
 arch = "aarch64"
 os = "ubuntu-26.04-arm"
 runs = """
-- | aes_gcm aes_gcm_siv aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts aes_siv aes_ccm cmac sha1 sha224 sha256 sha384 sha512 sha3 shake mlkem mldsa ed448 scrypt chacha20 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs sm4_gcm cpu dit
 neon | chacha20 poly1305
 aes | aes_gcm aes_gcm_siv aes_cbc
-sha3 | sha3 shake mlkem mldsa ed448 rsa_oaep_pairs
-sha2 | dsa_parameters rsa_oaep_pairs
-sha2,sha3 | rsa_oaep_pairs
-none | dsa aes_siv chacha20 sha3 shake mlkem mldsa ecdsa p224_sha p256_sha p384_sha ed448 aes_gcm_siv aes_ccm aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts rsa_pkcs1_hashes rsa_oaep_pairs sm4_gcm dit
+sha3 | sha3 shake mlkem ed448 rsa_oaep_pairs
+sha2 | rsa_oaep_pairs
+none | aes_gcm aes_siv aes_ccm aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts cmac sm4_gcm chacha20 sha1 sha224 sha256 sha384 sha512 scrypt dsa ecdsa p224_sha p256_sha p384_sha ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs mlkem mldsa rsa_pkcs1_hashes rsa_oaep_pairs dit cpu
 """
 
 # ARMv7, in the `rust` job's container (cross-compiled, run as that job
