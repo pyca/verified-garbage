@@ -1,5 +1,39 @@
 # Unproven native RISC-V Keccak experiments
 
+## Final outcome: no production speedup established
+
+The first row-0 C winner did not carry into verified assembly. The direct
+register-cache port was fully proved and passed CI, including 624 native
+RISC-V tests, but the actual Rust/assembly benchmark regressed SHA-3/SHAKE
+by about 1%; ML-KEM/ML-DSA showed no convincing improvement. It remains
+draft PR https://github.com/pyca/verified-garbage/pull/4625 . Do not treat
+the earlier C timings as evidence that the proposed library change is faster.
+
+Actual emitted-code comparison (three interleaved rounds, plus fresh binary
+copies for the ML-KEM groups):
+https://github.com/pyca/verified-garbage/actions/runs/42486622526 .
+Base `f46fc9a81981a5d20a9365f2153b667666e18a5b`, candidate
+`1d7c992c5fa8f9ac631b299be641a37c80e24e0c`.
+
+Further experiments rejected:
+
+* https://github.com/pyca/verified-garbage/actions/runs/42487479642
+  (`3eb613d3602f4b5dcf545acaa3a981ccc514958a`): seven dependency-preserving
+  instruction schedules regressed the permutation by 0.7–2.7%; the direct
+  cache control regressed 1.0%. The unchanged C row-0 function, relinked at
+  a different address, regressed 12.7% in the kernel and 7.2% in long SHAKE.
+  Its earlier gains are not robust across binary layouts.
+* https://github.com/pyca/verified-garbage/actions/runs/42488001305
+  (`49eb568b2c`): shared row-4 caching and carried column parities reduce
+  the two-round loop from 82 loads/50 stores to 42 loads/40 stores. The
+  assembly permutation nevertheless regressed 5.4%, and long SHAKE 3.7%.
+  The C equivalent improved some short SHAKE/PQC operations but regressed
+  the permutation and did not establish a general improvement. All 9,850
+  permutation, 130 SHAKE/OpenSSL and 160 PQC differential checks passed.
+
+No scheduling/parity experiment was added to the production proof branch.
+The instruction/load reductions above are separate from native elapsed time.
+
 These C candidates are experiments, not verified library implementations.
 The library and generated crates are unchanged. The experiment branch adds an isolated native job to
 the manual benchmark workflow; that workflow change will not enter a PR.
