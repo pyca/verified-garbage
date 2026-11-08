@@ -37,11 +37,11 @@ theorem stateAt_eq (m : Mem) (a : Addr) : Spec.Aes.stateAt m a = st (m.readW a 1
     rw [getD_st _ hi, VG.Proof.Gcm.X86.byte_readW _ _ hi]
     simp [Spec.Aes.stateAt, Vector.getD, hi]
 
-theorem loadData_ok (regs : List XReg) (j : Nat) (s : State) (hnd : regs.Nodup)
-    (hin : ∀ k < regs.length, InRegions (s.rd ++ s.wr) (addr (s.gpr .esi) (16 * (j + k))) 16) :
-    WP isa (.block (loadData regs j)) s fun s' =>
+theorem loadData_ok (p : Reg) (regs : List XReg) (j : Nat) (s : State) (hnd : regs.Nodup)
+    (hin : ∀ k < regs.length, InRegions (s.rd ++ s.wr) (addr (s.gpr p) (16 * (j + k))) 16) :
+    WP isa (.block (loadData p regs j)) s fun s' =>
       (∀ k (h : k < regs.length),
-        st (s'.xmm regs[k]) = Spec.Aes.stateAt s.mem (addr (s.gpr .esi) (16 * (j + k)))) ∧
+        st (s'.xmm regs[k]) = Spec.Aes.stateAt s.mem (addr (s.gpr p) (16 * (j + k)))) ∧
       s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       (∀ r, r ∉ regs → s'.xmm r = s.xmm r) := by
   induction regs generalizing j s with
@@ -52,7 +52,7 @@ theorem loadData_ok (regs : List XReg) (j : Nat) (s : State) (hnd : regs.Nodup)
     rw [loadData, ← List.singleton_append, WP.block_append_iff]
     have hin0 := hin 0 (by omega)
     rw [Nat.add_zero] at hin0
-    refine WP.mono (Q := fun s₁ => s₁ = s.setXmm b (s.mem.readW (addr (s.gpr .esi) (16 * j)) 128)) ?_
+    refine WP.mono (Q := fun s₁ => s₁ = s.setXmm b (s.mem.readW (addr (s.gpr p) (16 * j)) 128)) ?_
       fun s₁ e₁ => ?_
     · apply WP.of_runBlock
       simp only [runBlock_cons, runStep_some, runBlock_nil, exec, isa, State.load128, ea_at, hin0,
@@ -74,13 +74,13 @@ theorem loadData_ok (regs : List XReg) (j : Nat) (s : State) (hnd : regs.Nodup)
     · simp only [List.mem_cons, not_or] at hr
       rw [hx r hr.2, xmm_setXmm_of_ne _ _ hr.1]
 
-theorem storeData_ok (regs : List XReg) (j : Nat) (s : State)
-    (hin : ∀ k < regs.length, InRegions s.wr (addr (s.gpr .esi) (16 * (j + k))) 16)
-    (hw : (s.gpr .esi).toNat + 16 * (j + regs.length) ≤ 2 ^ 32) :
-    WP isa (.block (storeData regs j)) s fun s' =>
-      (∀ k (h : k < regs.length), Spec.Aes.stateAt s'.mem (addr (s.gpr .esi) (16 * (j + k))) =
+theorem storeData_ok (p : Reg) (regs : List XReg) (j : Nat) (s : State)
+    (hin : ∀ k < regs.length, InRegions s.wr (addr (s.gpr p) (16 * (j + k))) 16)
+    (hw : (s.gpr p).toNat + 16 * (j + regs.length) ≤ 2 ^ 32) :
+    WP isa (.block (storeData p regs j)) s fun s' =>
+      (∀ k (h : k < regs.length), Spec.Aes.stateAt s'.mem (addr (s.gpr p) (16 * (j + k))) =
         st (s.xmm regs[k])) ∧
-      Frame [⟨addr (s.gpr .esi) (16 * j), 16 * regs.length⟩] s.mem s'.mem ∧
+      Frame [⟨addr (s.gpr p) (16 * j), 16 * regs.length⟩] s.mem s'.mem ∧
       s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ (∀ r, s'.xmm r = s.xmm r) := by
   induction regs generalizing j s with
   | nil => exact WP.block_nil ⟨fun _ h => absurd h (by simp), Frame.refl _ _, rfl, rfl, rfl, fun _ => rfl⟩
@@ -89,28 +89,28 @@ theorem storeData_ok (regs : List XReg) (j : Nat) (s : State)
     rw [storeData, ← List.singleton_append, WP.block_append_iff]
     have hin0 := hin 0 (by omega)
     rw [Nat.add_zero] at hin0
-    let s₁ : State := { s with mem := s.mem.writeW (addr (s.gpr .esi) (16 * j)) (s.xmm b) }
+    let s₁ : State := { s with mem := s.mem.writeW (addr (s.gpr p) (16 * j)) (s.xmm b) }
     refine WP.mono (Q := fun t => t = s₁) ?_ fun t e => ?_
     · apply WP.of_runBlock
       simp only [runBlock_cons, runStep_some, runBlock_nil, exec, isa, State.store128, ea_at, hin0,
         ↓reduceIte, Option.some.injEq, exists_eq_left']
       rfl
     subst e
-    have ha0 : addr (s.gpr .esi) (16 * j) = (s.gpr .esi).setWidth 64 + BitVec.ofNat 64 (16 * j) :=
+    have ha0 : addr (s.gpr p) (16 * j) = (s.gpr p).setWidth 64 + BitVec.ofNat 64 (16 * j) :=
       addr_eq (by omega)
     refine WP.mono (ih (j + 1) s₁ (fun k hk => by
         rw [show j + 1 + k = j + (k + 1) by omega]; exact hin (k + 1) (by omega))
-      (by show (s.gpr .esi).toNat + _ ≤ _; omega)) fun s' ⟨hb, hf, g, rd, wr, hx⟩ => ?_
-    let R₀ : Region := ⟨(s.gpr .esi).setWidth 64 + BitVec.ofNat 64 (16 * j), 16 * (bs.length + 1)⟩
+      (by show (s.gpr p).toNat + _ ≤ _; omega)) fun s' ⟨hb, hf, g, rd, wr, hx⟩ => ?_
+    let R₀ : Region := ⟨(s.gpr p).setWidth 64 + BitVec.ofNat 64 (16 * j), 16 * (bs.length + 1)⟩
     -- The blocks after the first: apart from it, and within the whole run.
-    have hrest : ∀ r ∈ [(⟨addr (s₁.gpr .esi) (16 * (j + 1)), 16 * bs.length⟩ : Region)],
-        Region.Disjoint ⟨(s.gpr .esi).setWidth 64 + BitVec.ofNat 64 (16 * j), 16⟩ r ∧ Region.Sub r R₀ := by
+    have hrest : ∀ r ∈ [(⟨addr (s₁.gpr p) (16 * (j + 1)), 16 * bs.length⟩ : Region)],
+        Region.Disjoint ⟨(s.gpr p).setWidth 64 + BitVec.ofNat 64 (16 * j), 16⟩ r ∧ Region.Sub r R₀ := by
       intro r hr
       simp only [List.mem_singleton] at hr; subst hr
       by_cases hl : bs.length = 0
       · rw [hl]
         exact ⟨fun a _ h => by simp [Region.Contains] at h, fun a h => by simp [Region.Contains] at h⟩
-      · rw [show s₁.gpr .esi = s.gpr .esi from rfl, addr_eq (by omega)]
+      · rw [show s₁.gpr p = s.gpr p from rfl, addr_eq (by omega)]
         exact ⟨Offset.disjoint _ (.inl (by omega)) (by omega) (by omega), Offset.sub _ (by omega) (by omega)⟩
     refine ⟨fun k hk => ?_, ?_, g, rd, wr, hx⟩
     · cases k with

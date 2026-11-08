@@ -90,7 +90,7 @@ number of registers). -/
 theorem blocks_ok (rs : List XReg) (hrs : rs = regs6 ∨ rs = [.xmm0]) (tail : List Instr)
     {Q : State → Prop} {c : Nat} (hc : c + rs.length ≤ bN s₀) {s : State} (hI : Inv KP F s₀ g m₁ c c s)
     (hQ : ∀ s', Inv KP F s₀ g m₁ (c + rs.length) c s' → WP isa (.block tail) s' Q) :
-    WP isa (.seq (.block (loadData rs 0)) (.seq (f rs) (.block (storeData rs 0 ++ tail)))) s Q := by
+    WP isa (.seq (.block (loadData .esi rs 0)) (.seq (f rs) (.block (storeData .esi rs 0 ++ tail)))) s Q := by
   obtain ⟨hnd, h6⟩ := regs_nodup rs hrs
   have hw := hp.fD
   have hlen := (regs_len rs hrs).1
@@ -99,7 +99,7 @@ theorem blocks_ok (rs : List XReg) (hrs : rs = regs6 ∨ rs = [.xmm0]) (tail : L
     rw [hI.esi, addr_add, addr_eq (by omega), show 16 * c + 16 * (0 + k) = 16 * (c + k) by omega]
   have hout : ∀ k, c + k < bN s₀ → InRegions s.wr (bAddr s₀ (c + k)) 16 := fun k hk =>
     ⟨bDatR s₀, by rw [hI.wr, hp.wr]; exact List.mem_cons_self .., Offset.contains_base _ (by omega) (by omega)⟩
-  refine WP.seq (WP.mono (loadData_ok rs 0 s hnd fun k hk => by
+  refine WP.seq (WP.mono (loadData_ok .esi rs 0 s hnd fun k hk => by
       rw [haddr k (by omega)]; exact in_rd (hout k (by omega))) fun s₁ ⟨e₁, g₁, m₁, rd₁, wr₁, x₁⟩ => ?_)
   have hkp₁ : KP s₁ := hst s s₁ hI.kp (fun r _ _ => by rw [g₁]) rd₁ wr₁ (by rw [m₁]; exact Frame.refl _ _)
   refine WP.seq (WP.mono (hf rs hrs s₁ hkp₁) fun s₂ ⟨e₂, f₂⟩ => ?_)
@@ -108,7 +108,7 @@ theorem blocks_ok (rs : List XReg) (hrs : rs = regs6 ∨ rs = [.xmm0]) (tail : L
     simp only [show ¬ c + k < c by omega, ite_false]
   have hesi₂ : s₂.gpr .esi = s.gpr .esi := by rw [f₂.gpr, g₁]
   rw [WP.block_append_iff]
-  refine WP.mono (storeData_ok rs 0 s₂ (fun k hk => by
+  refine WP.mono (storeData_ok .esi rs 0 s₂ (fun k hk => by
       rw [hesi₂, haddr k (by omega), f₂.wr, wr₁]; exact hout k (by omega))
       (by rw [hesi₂, hI.esi, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
         Nat.mod_eq_of_lt (by omega)]; omega))
