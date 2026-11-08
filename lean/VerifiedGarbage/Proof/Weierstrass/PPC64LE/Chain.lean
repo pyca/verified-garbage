@@ -1,5 +1,6 @@
 module
 
+-- separate module: the PPC64LE power by a chain, for any `ChainCfg` (verification and compressed keys can use it), as `Proof/Weierstrass/AArch64/Chain.lean`; it does not depend on the ECDSA layout
 public import VerifiedGarbage.Impl.Weierstrass.PPC64LE.Chain
 public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Pow
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Copy

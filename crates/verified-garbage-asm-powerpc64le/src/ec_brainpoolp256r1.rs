@@ -38,14 +38,446 @@ bl {vg_brainpoolp256r1_point_double}
 bl {vg_brainpoolp256r1_point_add}
 .base64 "FPqDfAAQhIgAAKA4UChEfQANg+igDKPoeCKlfDhQpXx4KoR8AAKD+AgNg+ioDKPoeCKlfDhQpXx4KoR8CAKD+BANg+iwDKPoeCKlfDhQpXx4KoR8EAKD+BgNg+i4DKPoeCKlfDhQpXx4KoR8GAKD+CANg+jADKPoeCKlfDhQpXx4KoR8IAKD+CgNg+jIDKPoeCKlfDhQpXx4KoR8KAKD+DANg+jQDKPoeCKlfDhQpXx4KoR8MAKD+DgNg+jYDKPoeCKlfDhQpXx4KoR8OAKD+EANg+jgDKPoeCKlfDhQpXx4KoR8QAKD+EgNg+joDKPoeCKlfDhQpXx4KoR8SAKD+FANg+jwDKPoeCKlfDhQpXx4KoR8UAKD+FgNg+j4DKPoeCKlfDhQpXx4KoR8WAKD+AAAPyg="
 bne %cr0, 23b
-.base64 "4ACD6OADg/joAIPo6AOD+PAAg+jwA4P4+ACD6PgDg/gAAeA7"
+.base64 "QAKD6GACg/hIAoPoaAKD+FACg+hwAoP4WAKD6HgCg/hgA4A4QAKgOEACwDg="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "gAKAOGACoDhgA8A4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "oAKAOIACoDhgA8A4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "wAKAOKACoDhgA8A4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "4AKAOMACoDhgA8A4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAOAOOACoDhgA8A4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "IAOAOAADoDhgA8A4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "QAOAOCADoDhgA8A4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "oAKD6OADg/ioAoPo6AOD+LACg+jwA4P4uAKD6PgDg/gFAOA7"
 24:
 .base64 "////O+ADgDjgA6A44APAOA=="
 bl {vg_brainpoolp256r1_mul_mod_p}
-.base64 "AASAOOADoDhAAsA4"
-bl {vg_brainpoolp256r1_mul_mod_p}
-.base64 "FPqDfAARhIgAAKA4UChEfeADg+gABKPoeCKlfDhQpXx4KoR84AOD+OgDg+gIBKPoeCKlfDhQpXx4KoR86AOD+PADg+gQBKPoeCKlfDhQpXx4KoR88AOD+PgDg+gYBKPoeCKlfDhQpXx4KoR8+AOD+AAAPyg="
+.base64 "AAA/KA=="
 bne %cr0, 24b
+.base64 "4AOAOOADoDjgAsA4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "BADgOw=="
+25:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 25b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "BADgOw=="
+26:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 26b
+.base64 "4AOAOOADoDgAA8A4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "BADgOw=="
+27:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 27b
+.base64 "4AOAOOADoDigAsA4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "BQDgOw=="
+28:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 28b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "BADgOw=="
+29:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 29b
+.base64 "4AOAOOADoDgAA8A4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "BADgOw=="
+210:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 210b
+.base64 "4AOAOOADoDjAAsA4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AgDgOw=="
+211:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 211b
+.base64 "4AOAOOADoDhgAsA4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "CADgOw=="
+212:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 212b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "BADgOw=="
+213:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 213b
+.base64 "4AOAOOADoDjAAsA4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "BADgOw=="
+214:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 214b
+.base64 "4AOAOOADoDigAsA4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "BQDgOw=="
+215:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 215b
+.base64 "4AOAOOADoDjgAsA4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "BADgOw=="
+216:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 216b
+.base64 "4AOAOOADoDgAA8A4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AgDgOw=="
+217:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 217b
+.base64 "4AOAOOADoDiAAsA4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "CADgOw=="
+218:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 218b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "BADgOw=="
+219:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 219b
+.base64 "4AOAOOADoDjgAsA4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "BADgOw=="
+220:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 220b
+.base64 "4AOAOOADoDjgAsA4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AQDgOw=="
+221:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 221b
+.base64 "4AOAOOADoDhgAsA4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "CADgOw=="
+222:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 222b
+.base64 "4AOAOOADoDigAsA4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "BQDgOw=="
+223:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 223b
+.base64 "4AOAOOADoDjgAsA4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "CADgOw=="
+224:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 224b
+.base64 "4AOAOOADoDjgAsA4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "BADgOw=="
+225:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 225b
+.base64 "4AOAOOADoDggA8A4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AQDgOw=="
+226:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 226b
+.base64 "4AOAOOADoDhgAsA4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "CADgOw=="
+227:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 227b
+.base64 "4AOAOOADoDjAAsA4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "BwDgOw=="
+228:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 228b
+.base64 "4AOAOOADoDggA8A4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "BADgOw=="
+229:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 229b
+.base64 "4AOAOOADoDjAAsA4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "BgDgOw=="
+230:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 230b
+.base64 "4AOAOOADoDjgAsA4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "BADgOw=="
+231:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 231b
+.base64 "4AOAOOADoDgAA8A4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AQDgOw=="
+232:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 232b
+.base64 "4AOAOOADoDhgAsA4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "BgDgOw=="
+233:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 233b
+.base64 "4AOAOOADoDjAAsA4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "BQDgOw=="
+234:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 234b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "BADgOw=="
+235:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 235b
+.base64 "4AOAOOADoDggA8A4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AQDgOw=="
+236:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 236b
+.base64 "4AOAOOADoDhgAsA4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "BADgOw=="
+237:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 237b
+.base64 "4AOAOOADoDhgAsA4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "BwDgOw=="
+238:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 238b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "BADgOw=="
+239:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 239b
+.base64 "4AOAOOADoDigAsA4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "BQDgOw=="
+240:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 240b
+.base64 "4AOAOOADoDjgAsA4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "BADgOw=="
+241:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 241b
+.base64 "4AOAOOADoDiAAsA4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "BADgOw=="
+242:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 242b
+.base64 "4AOAOOADoDhgAsA4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "CgDgOw=="
+243:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 243b
+.base64 "4AOAOOADoDigAsA4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "BgDgOw=="
+244:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 244b
+.base64 "4AOAOOADoDhgAsA4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "DADgOw=="
+245:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 245b
+.base64 "4AOAOOADoDjgAsA4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AwDgOw=="
+246:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 246b
+.base64 "4AOAOOADoDigAsA4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AwDgOw=="
+247:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 247b
+.base64 "4AOAOOADoDhgAsA4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "CQDgOw=="
+248:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 248b
+.base64 "4AOAOOADoDjAAsA4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AgDgOw=="
+249:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 249b
+.base64 "4AOAOOADoDhgAsA4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "BwDgOw=="
+250:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 250b
+.base64 "4AOAOOADoDhAA8A4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "BADgOw=="
+251:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 251b
+.base64 "4AOAOOADoDgAA8A4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "BADgOw=="
+252:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 252b
+.base64 "4AOAOOADoDjAAsA4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "BQDgOw=="
+253:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 253b
+.base64 "4AOAOOADoDigAsA4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "BgDgOw=="
+254:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 254b
+.base64 "4AOAOOADoDggA8A4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "BADgOw=="
+255:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 255b
+.base64 "4AOAOOADoDggA8A4"
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AgDgOw=="
+256:
+.base64 "////O+ADgDjgA6A44APAOA=="
+bl {vg_brainpoolp256r1_mul_mod_p}
+.base64 "AAA/KA=="
+bne %cr0, 256b
+.base64 "4AOAOOADoDhgAsA4"
+bl {vg_brainpoolp256r1_mul_mod_p}
 .base64 "gASAOAACoDjgA8A4"
 bl {vg_brainpoolp256r1_mul_mod_p}
 .base64 "oASAOIAEoDjAAMA4"
