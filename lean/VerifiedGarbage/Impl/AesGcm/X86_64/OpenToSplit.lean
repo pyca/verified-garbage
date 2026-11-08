@@ -6,10 +6,9 @@ public import VerifiedGarbage.Impl.StackScratch.X86_64
 /-!
 # AES-GCM decryption out of place, in one pass: x86-64 implementation
 
-`vg_aes_gcm_open_to` (`Impl.AesGcm.X86_64.OpenTo`) for long inputs, by a
-call of an instance of `vg_aes_gcm_open_split` (`f`), which decrypts the
-ciphertext at `src` to `dst` as it absorbs it, rather than copying it to
-`dst` and decrypting it there.
+`vg_aes_gcm_open_to`, whatever the length, by a call of an instance of
+`vg_aes_gcm_open_split` (`f`), which decrypts the ciphertext at `src` to
+`dst` as it absorbs it, with no copy.
 
 `openToSplit f` takes `open_to`'s arguments and a working space of 2560 bytes
 after them, `work = [rsp + 56]`, which `withStackArgScratch` allocates on the
@@ -20,11 +19,7 @@ in the frame's lowest seven words (`dst`, `len`, `tag`, `tag_len`, `src`,
 16 at the call, and calls
 `f(ctx, rounds, nonce, nonce_len, aad, aad_len, dst, len, tag, tag_len, src, len, work)`,
 whose six register arguments are still ours. If it returns 0 (the tag is
-wrong), `dst` is zeroed as in `open_to` (`OpenTo.after`).
-
-`openToSel thr w f fS` chooses between the two, from `len`, which is public:
-`open_to` (copying `2 ^ w.log` bytes at a time, and calling `f`) below `thr`
-bytes, and `openToSplit fS` in its frame from `thr` on.
+wrong), `dst` is zeroed (`OpenTo.after`).
 -/
 
 @[expose] public section
@@ -33,7 +28,7 @@ namespace VG.Impl.AesGcm.X86_64.OpenToSplit
 
 open VG.X86_64
 open VG.Impl.AesGcm.X86_64 (at_ imm Fn)
-open VG.Impl.AesGcm.X86_64.OpenTo (frameRegs stArg after openTo)
+open VG.Impl.AesGcm.X86_64.OpenTo (frameRegs stArg after)
 
 /-- The call's seven stack arguments, into the lowest seven words of our
 frame. -/
@@ -51,19 +46,5 @@ def openToSplit (f : Fn) : Prog isa :=
 return address, a copy of the six stack arguments, the address of the
 working space and its 2560 bytes. -/
 abbrev scratchBytes : Nat := 2624
-
-/-- The length from which `vg_aes_gcm_open_to_prepared` decrypts in one
-pass. -/
-abbrev thr : Nat := 1024
-
-/-- `len` against `thr`. -/
-def cmpLen (thr : Nat) : List Instr :=
-  [.mov .rax (.mem (at_ .rsp 16)), .alu .cmp .rax (.imm (BitVec.ofNat 32 thr))]
-
-/-- `vg_aes_gcm_open_to`: by a copy and a call of `f` below `thr` bytes, and
-by a call of `fS` in one pass from `thr` on. -/
-def openToSel (thr : Nat) (w : Impl.ChaCha20Poly1305.X86_64.SealGather.Width) (f fS : Fn) : Prog isa :=
-  .seq (.block (cmpLen thr))
-    (Code.iteCold .ae (Impl.StackScratch.X86_64.withStackArgScratch scratchBytes 6 (openToSplit fS)) (openTo w f))
 
 end VG.Impl.AesGcm.X86_64.OpenToSplit
