@@ -10,6 +10,8 @@ the words of the tables in memory. Proven once here, with no target, as
 `Proof/P384/Comb7Shape.lean`.
 -/
 
+-- separate module: the tables' shape, which the kernel checks by walking every table, is target-independent, so other targets' combs can share it
+
 @[expose] public section
 
 namespace VG.Proof.BrainpoolP256r1
