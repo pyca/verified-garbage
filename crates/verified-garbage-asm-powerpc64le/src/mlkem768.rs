@@ -22,7 +22,7 @@ pub unsafe extern "C" fn vg_mlkem768_keygen(seed: *const [u8; 64], ek: *mut [u8;
     core::arch::naked_asm!(
         r#".base64 "pgIIfNH/IfggAAH4KACBOQAA7Pt4M998"
 bl {vg_mlkem768_keygen_body}
-.base64 "eBtrfHj7438AAIA4AACEZACAhGB4W399"
+.base64 "eBtrfHj7438AAIA4AACEZAAAhGB4W399"
 bl {vg_zeroize}
 .base64 "ePvjfygAgTkAAOzrIAAB6DAAITimAwh8IACATg==""#,
         vg_mlkem768_keygen_body = sym super::mlkem768::vg_mlkem768_keygen_body::vg_mlkem768_keygen_body,
@@ -51,7 +51,7 @@ pub unsafe extern "C" fn vg_mlkem768_encaps(ek: *const [u8; 1184], m: *const [u8
     core::arch::naked_asm!(
         r#".base64 "pgIIfNH/IfggAAH4KACBOQAA7Pt4O/98"
 bl {vg_mlkem768_encaps_body}
-.base64 "eBtrfHj7438AAIA4AACEZACAhGB4W399"
+.base64 "eBtrfHj7438AAIA4AACEZAAAhGB4W399"
 bl {vg_zeroize}
 .base64 "ePvjfygAgTkAAOzrIAAB6DAAITimAwh8IACATg==""#,
         vg_mlkem768_encaps_body = sym super::mlkem768::vg_mlkem768_encaps_body::vg_mlkem768_encaps_body,
@@ -82,7 +82,7 @@ pub unsafe extern "C" fn vg_mlkem768_encaps_h(ek: *const [u8; 1184], h: *const [
     core::arch::naked_asm!(
         r#".base64 "pgIIfNH/IfggAAH4KACBOQAA7Pt4Qx99"
 bl {vg_mlkem768_encaps_h_body}
-.base64 "eBtrfHj7438AAIA4AACEZACAhGB4W399"
+.base64 "eBtrfHj7438AAIA4AACEZAAAhGB4W399"
 bl {vg_zeroize}
 .base64 "ePvjfygAgTkAAOzrIAAB6DAAITimAwh8IACATg==""#,
         vg_mlkem768_encaps_h_body = sym super::mlkem768::vg_mlkem768_encaps_h_body::vg_mlkem768_encaps_h_body,
@@ -109,7 +109,7 @@ pub unsafe extern "C" fn vg_mlkem768_decaps(dk: *const [u8; 2400], ct: *const [u
     core::arch::naked_asm!(
         r#".base64 "pgIIfNH/IfggAAH4KACBOQAA7Pt4M998"
 bl {vg_mlkem768_decaps_body}
-.base64 "eBtrfHj7438AAIA4AACEZACAhGB4W399"
+.base64 "eBtrfHj7438AAIA4AACEZAAAhGB4W399"
 bl {vg_zeroize}
 .base64 "ePvjfygAgTkAAOzrIAAB6DAAITimAwh8IACATg==""#,
         vg_mlkem768_decaps_body = sym super::mlkem768::vg_mlkem768_decaps_body::vg_mlkem768_decaps_body,

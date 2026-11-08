@@ -49,7 +49,7 @@ vg_mlkem1024_keygen:
 	or %r3, %r31, %r31
 	li %r4, 0
 	oris %r4, %r4, 0
-	ori %r4, %r4, 49152
+	ori %r4, %r4, 0
 	or %r31, %r11, %r11
 	bl {vg_zeroize}
 	or %r3, %r31, %r31
@@ -72,7 +72,7 @@ vg_mlkem1024_encaps:
 	or %r3, %r31, %r31
 	li %r4, 0
 	oris %r4, %r4, 0
-	ori %r4, %r4, 49152
+	ori %r4, %r4, 0
 	or %r31, %r11, %r11
 	bl {vg_zeroize}
 	or %r3, %r31, %r31
@@ -95,7 +95,7 @@ vg_mlkem1024_encaps_h:
 	or %r3, %r31, %r31
 	li %r4, 0
 	oris %r4, %r4, 0
-	ori %r4, %r4, 49152
+	ori %r4, %r4, 0
 	or %r31, %r11, %r11
 	bl {vg_zeroize}
 	or %r3, %r31, %r31
@@ -118,7 +118,7 @@ vg_mlkem1024_decaps:
 	or %r3, %r31, %r31
 	li %r4, 0
 	oris %r4, %r4, 0
-	ori %r4, %r4, 49152
+	ori %r4, %r4, 0
 	or %r31, %r11, %r11
 	bl {vg_zeroize}
 	or %r3, %r31, %r31

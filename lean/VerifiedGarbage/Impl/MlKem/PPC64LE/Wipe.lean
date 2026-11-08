@@ -10,9 +10,8 @@ public import VerifiedGarbage.Impl.MlKem1024.PPC64LE.Top
 
 Each function of ML-KEM-768 and ML-KEM-1024 taking `scratch` calls its code
 (`Impl.MlKem.PPC64LE.keygen`, …) as the internal function named for it,
-then `vg_zeroize` on all of `scratch` (`callWipe`): 32768 bytes for
-ML-KEM-768 and 49152 for ML-KEM-1024, with no proven smaller bound on what
-the code writes there.
+then `vg_zeroize` (`callWipe`) on 0 bytes of `scratch` (DIAGNOSTIC: the
+Rust code wipes `scratch`).
 -/
 
 @[expose] public section
@@ -27,27 +26,27 @@ def wiped (r : Reg) (n : Nat) (fn : String) (body : Prog isa) : Prog isa :=
   callWipe r n (fn ++ "_body") body "vg_zeroize" Impl.Zeroize.PPC64LE.zeroize
 
 /-- `vg_mlkem768_keygen`. -/
-def keyGen : Prog isa := wiped .r6 32768 "vg_mlkem768_keygen" Impl.MlKem.PPC64LE.keygen
+def keyGen : Prog isa := wiped .r6 0 "vg_mlkem768_keygen" Impl.MlKem.PPC64LE.keygen
 
 /-- `vg_mlkem768_encaps_h`. -/
-def encapsH : Prog isa := wiped .r8 32768 "vg_mlkem768_encaps_h" Impl.MlKem.PPC64LE.encapsH
+def encapsH : Prog isa := wiped .r8 0 "vg_mlkem768_encaps_h" Impl.MlKem.PPC64LE.encapsH
 
 /-- `vg_mlkem768_encaps`. -/
-def encaps : Prog isa := wiped .r7 32768 "vg_mlkem768_encaps" Impl.MlKem.PPC64LE.encaps
+def encaps : Prog isa := wiped .r7 0 "vg_mlkem768_encaps" Impl.MlKem.PPC64LE.encaps
 
 /-- `vg_mlkem768_decaps`. -/
-def decaps : Prog isa := wiped .r6 32768 "vg_mlkem768_decaps" Impl.MlKem.PPC64LE.decaps
+def decaps : Prog isa := wiped .r6 0 "vg_mlkem768_decaps" Impl.MlKem.PPC64LE.decaps
 
 /-- `vg_mlkem1024_keygen`. -/
-def keyGen1024 : Prog isa := wiped .r6 49152 "vg_mlkem1024_keygen" Impl.MlKem1024.PPC64LE.keygen1024
+def keyGen1024 : Prog isa := wiped .r6 0 "vg_mlkem1024_keygen" Impl.MlKem1024.PPC64LE.keygen1024
 
 /-- `vg_mlkem1024_encaps_h`. -/
-def encapsH1024 : Prog isa := wiped .r8 49152 "vg_mlkem1024_encaps_h" Impl.MlKem1024.PPC64LE.encapsH1024
+def encapsH1024 : Prog isa := wiped .r8 0 "vg_mlkem1024_encaps_h" Impl.MlKem1024.PPC64LE.encapsH1024
 
 /-- `vg_mlkem1024_encaps`. -/
-def encaps1024 : Prog isa := wiped .r7 49152 "vg_mlkem1024_encaps" Impl.MlKem1024.PPC64LE.encaps1024
+def encaps1024 : Prog isa := wiped .r7 0 "vg_mlkem1024_encaps" Impl.MlKem1024.PPC64LE.encaps1024
 
 /-- `vg_mlkem1024_decaps`. -/
-def decaps1024 : Prog isa := wiped .r6 49152 "vg_mlkem1024_decaps" Impl.MlKem1024.PPC64LE.decaps1024
+def decaps1024 : Prog isa := wiped .r6 0 "vg_mlkem1024_decaps" Impl.MlKem1024.PPC64LE.decaps1024
 
 end VG.Impl.MlKem.PPC64LE.Wipe

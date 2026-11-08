@@ -147,7 +147,7 @@ macro_rules! ml_kem {
                 // before inspecting the return status.
                 // SAFETY: the entire scratch allocation is writable, including
                 // bytes the operation may not have initialized.
-                #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "powerpc64")))]
+                #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
                 unsafe {
                     $crate::zeroize::zeroize_raw(scratch.as_mut_ptr().cast(), core::mem::size_of::<Scratch>());
                 }
@@ -218,7 +218,7 @@ macro_rules! ml_kem {
                 // before inspecting the return status.
                 // SAFETY: the entire scratch allocation is writable, including
                 // bytes the operation may not have initialized.
-                #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "powerpc64")))]
+                #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
                 unsafe {
                     $crate::zeroize::zeroize_raw(scratch.as_mut_ptr().cast(), core::mem::size_of::<Scratch>());
                 }
@@ -270,7 +270,7 @@ macro_rules! ml_kem {
                 // before inspecting the return status.
                 // SAFETY: the entire scratch allocation is writable, including
                 // bytes the operation may not have initialized.
-                #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "powerpc64")))]
+                #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
                 unsafe {
                     $crate::zeroize::zeroize_raw(scratch.as_mut_ptr().cast(), core::mem::size_of::<Scratch>());
                 }

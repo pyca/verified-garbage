@@ -82,7 +82,7 @@ theorem keyGen_wipe {body : Prog isa} {st : Nat}
     (h : Verified target body (Spec.MlKem.keyGenContract abi st))
     (hd : sdepth body ≤ st) (hst : st + 48 < 2 ^ 64)
     (hsat : ∃ s, (Spec.MlKem.keyGenContract abi (st + 48)).pre s) :
-    Verified target (Impl.MlKem.PPC64LE.Wipe.wiped .r6 32768 "vg_mlkem768_keygen" body) (Spec.MlKem.keyGenContract abi (st + 48)) :=
+    Verified target (Impl.MlKem.PPC64LE.Wipe.wiped .r6 0 "vg_mlkem768_keygen" body) (Spec.MlKem.keyGenContract abi (st + 48)) :=
   Verified.callWipe (ps₁ := Spec.MlKem.keyGenSig.params.dropLast) (ps₂ := []) (i := 3) h Proof.Zeroize.PPC64LE.verified (Nat.le_of_ble_eq_true rfl) (by decide) rfl rfl
     (by decide) (by decide) hst hd zeroize_sdepth (Nat.zero_le _)
     (by
@@ -128,7 +128,7 @@ theorem encapsH_wipe {body : Prog isa} {st : Nat}
     (h : Verified target body (Spec.MlKem.encapsHContract abi st))
     (hd : sdepth body ≤ st) (hst : st + 48 < 2 ^ 64)
     (hsat : ∃ s, (Spec.MlKem.encapsHContract abi (st + 48)).pre s) :
-    Verified target (Impl.MlKem.PPC64LE.Wipe.wiped .r8 32768 "vg_mlkem768_encaps_h" body) (Spec.MlKem.encapsHContract abi (st + 48)) :=
+    Verified target (Impl.MlKem.PPC64LE.Wipe.wiped .r8 0 "vg_mlkem768_encaps_h" body) (Spec.MlKem.encapsHContract abi (st + 48)) :=
   Verified.callWipe (ps₁ := Spec.MlKem.encapsHSig.params.dropLast) (ps₂ := []) (i := 5) h Proof.Zeroize.PPC64LE.verified (Nat.le_of_ble_eq_true rfl) (by decide) rfl rfl
     (by decide) (by decide) hst hd zeroize_sdepth (Nat.zero_le _)
     (by
@@ -181,7 +181,7 @@ theorem encaps_wipe {body : Prog isa} {st : Nat}
     (h : Verified target body (Spec.MlKem.encapsContract abi st))
     (hd : sdepth body ≤ st) (hst : st + 48 < 2 ^ 64)
     (hsat : ∃ s, (Spec.MlKem.encapsContract abi (st + 48)).pre s) :
-    Verified target (Impl.MlKem.PPC64LE.Wipe.wiped .r7 32768 "vg_mlkem768_encaps" body) (Spec.MlKem.encapsContract abi (st + 48)) :=
+    Verified target (Impl.MlKem.PPC64LE.Wipe.wiped .r7 0 "vg_mlkem768_encaps" body) (Spec.MlKem.encapsContract abi (st + 48)) :=
   Verified.callWipe (ps₁ := Spec.MlKem.encapsSig.params.dropLast) (ps₂ := []) (i := 4) h Proof.Zeroize.PPC64LE.verified (Nat.le_of_ble_eq_true rfl) (by decide) rfl rfl
     (by decide) (by decide) hst hd zeroize_sdepth (Nat.zero_le _)
     (by
@@ -226,7 +226,7 @@ theorem decaps_wipe {body : Prog isa} {st : Nat}
     (h : Verified target body (Spec.MlKem.decapsContract abi st))
     (hd : sdepth body ≤ st) (hst : st + 48 < 2 ^ 64)
     (hsat : ∃ s, (Spec.MlKem.decapsContract abi (st + 48)).pre s) :
-    Verified target (Impl.MlKem.PPC64LE.Wipe.wiped .r6 32768 "vg_mlkem768_decaps" body) (Spec.MlKem.decapsContract abi (st + 48)) :=
+    Verified target (Impl.MlKem.PPC64LE.Wipe.wiped .r6 0 "vg_mlkem768_decaps" body) (Spec.MlKem.decapsContract abi (st + 48)) :=
   Verified.callWipe (ps₁ := Spec.MlKem.decapsSig.params.dropLast) (ps₂ := []) (i := 3) h Proof.Zeroize.PPC64LE.verified (Nat.le_of_ble_eq_true rfl) (by decide) rfl rfl
     (by decide) (by decide) hst hd zeroize_sdepth (Nat.zero_le _)
     (by
@@ -269,7 +269,7 @@ theorem keyGen1024_wipe {body : Prog isa} {st : Nat}
     (h : Verified target body (Spec.MlKem1024.keyGenContract abi st))
     (hd : sdepth body ≤ st) (hst : st + 48 < 2 ^ 64)
     (hsat : ∃ s, (Spec.MlKem1024.keyGenContract abi (st + 48)).pre s) :
-    Verified target (Impl.MlKem.PPC64LE.Wipe.wiped .r6 49152 "vg_mlkem1024_keygen" body) (Spec.MlKem1024.keyGenContract abi (st + 48)) :=
+    Verified target (Impl.MlKem.PPC64LE.Wipe.wiped .r6 0 "vg_mlkem1024_keygen" body) (Spec.MlKem1024.keyGenContract abi (st + 48)) :=
   Verified.callWipe (ps₁ := Spec.MlKem1024.keyGenSig.params.dropLast) (ps₂ := []) (i := 3) h Proof.Zeroize.PPC64LE.verified (Nat.le_of_ble_eq_true rfl) (by decide) rfl rfl
     (by decide) (by decide) hst hd zeroize_sdepth (Nat.zero_le _)
     (by
@@ -315,7 +315,7 @@ theorem encapsH1024_wipe {body : Prog isa} {st : Nat}
     (h : Verified target body (Spec.MlKem1024.encapsHContract abi st))
     (hd : sdepth body ≤ st) (hst : st + 48 < 2 ^ 64)
     (hsat : ∃ s, (Spec.MlKem1024.encapsHContract abi (st + 48)).pre s) :
-    Verified target (Impl.MlKem.PPC64LE.Wipe.wiped .r8 49152 "vg_mlkem1024_encaps_h" body) (Spec.MlKem1024.encapsHContract abi (st + 48)) :=
+    Verified target (Impl.MlKem.PPC64LE.Wipe.wiped .r8 0 "vg_mlkem1024_encaps_h" body) (Spec.MlKem1024.encapsHContract abi (st + 48)) :=
   Verified.callWipe (ps₁ := Spec.MlKem1024.encapsHSig.params.dropLast) (ps₂ := []) (i := 5) h Proof.Zeroize.PPC64LE.verified (Nat.le_of_ble_eq_true rfl) (by decide) rfl rfl
     (by decide) (by decide) hst hd zeroize_sdepth (Nat.zero_le _)
     (by
@@ -368,7 +368,7 @@ theorem encaps1024_wipe {body : Prog isa} {st : Nat}
     (h : Verified target body (Spec.MlKem1024.encapsContract abi st))
     (hd : sdepth body ≤ st) (hst : st + 48 < 2 ^ 64)
     (hsat : ∃ s, (Spec.MlKem1024.encapsContract abi (st + 48)).pre s) :
-    Verified target (Impl.MlKem.PPC64LE.Wipe.wiped .r7 49152 "vg_mlkem1024_encaps" body) (Spec.MlKem1024.encapsContract abi (st + 48)) :=
+    Verified target (Impl.MlKem.PPC64LE.Wipe.wiped .r7 0 "vg_mlkem1024_encaps" body) (Spec.MlKem1024.encapsContract abi (st + 48)) :=
   Verified.callWipe (ps₁ := Spec.MlKem1024.encapsSig.params.dropLast) (ps₂ := []) (i := 4) h Proof.Zeroize.PPC64LE.verified (Nat.le_of_ble_eq_true rfl) (by decide) rfl rfl
     (by decide) (by decide) hst hd zeroize_sdepth (Nat.zero_le _)
     (by
@@ -413,7 +413,7 @@ theorem decaps1024_wipe {body : Prog isa} {st : Nat}
     (h : Verified target body (Spec.MlKem1024.decapsContract abi st))
     (hd : sdepth body ≤ st) (hst : st + 48 < 2 ^ 64)
     (hsat : ∃ s, (Spec.MlKem1024.decapsContract abi (st + 48)).pre s) :
-    Verified target (Impl.MlKem.PPC64LE.Wipe.wiped .r6 49152 "vg_mlkem1024_decaps" body) (Spec.MlKem1024.decapsContract abi (st + 48)) :=
+    Verified target (Impl.MlKem.PPC64LE.Wipe.wiped .r6 0 "vg_mlkem1024_decaps" body) (Spec.MlKem1024.decapsContract abi (st + 48)) :=
   Verified.callWipe (ps₁ := Spec.MlKem1024.decapsSig.params.dropLast) (ps₂ := []) (i := 3) h Proof.Zeroize.PPC64LE.verified (Nat.le_of_ble_eq_true rfl) (by decide) rfl rfl
     (by decide) (by decide) hst hd zeroize_sdepth (Nat.zero_le _)
     (by
