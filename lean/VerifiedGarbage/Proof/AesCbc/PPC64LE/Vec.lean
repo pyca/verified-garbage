@@ -224,8 +224,8 @@ theorem read8_wp {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k + 8 ≤ N s�
   refine ⟨fun r hr => ?_, by rw [hb.ptr, r6₄], ?_, ⟨?_, ?_, ?_, by rcases hR₀ with e | e | e <;> omega,
     by rcases hR₀ with e | e | e <;> omega, fun j hj => ?_⟩, ?_, ?_, by rw [hb.effects.mem, hm₄],
     fun j hj => ?_⟩
-  · obtain ⟨h0, h3, h4, h6, -, h8, -, -, h11, h12⟩ := pres_ne hr
-    rw [hb.effects.keep.gpr (by simp [h6, h8]), hl₄.keep.gpr (by simp [h0, h11, h12]), g₃ r h3 h4 h6]
+  · obtain ⟨h0, h3, h4, h6, -, -, -, -, h11, h12⟩ := pres_ne hr
+    rw [hb.effects.keep.gpr (by simpa using h6), hl₄.keep.gpr (by simp [h0, h11, h12]), g₃ r h3 h4 h6]
   · rw [hb.effects.keep.gpr (by decide), hl₄.keep.gpr (by decide), u₃.other _ (by decide),
       u₂.other _ (by decide), u₁.gpr, r14]
   · exact (hb.effects.keep.gpr (by decide)).trans h0
