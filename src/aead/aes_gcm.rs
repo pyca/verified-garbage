@@ -64,13 +64,13 @@ use core::mem::MaybeUninit;
 /// A 16-byte block.
 type Block = [u8; 16];
 
-/// What a key keeps of its key context: on x86-64, the prepared key context
-/// of `vg_aes_gcm_prepare` (`VG.Spec.Gcm.PreparedPowersRepr`), whose first
-/// 256 bytes are the key context of `vg_aes_gcm_init` (`AesGcm::key`) and
-/// the rest the powers of its hash subkey; elsewhere, the key context of
-/// `vg_aes_gcm_init` alone.
+/// What a key keeps of its key context: on x86-64, the 1088-byte prepared key
+/// context of `vg_aes_gcm_prepare` (`VG.Spec.Gcm.PreparedRepr`), whose first
+/// 256 bytes are the key context of `vg_aes_gcm_init` (`AesGcm::key`),
+/// followed by the powers of its hash subkey and a word saying whether they
+/// are there; elsewhere, the key context of `vg_aes_gcm_init` alone.
 #[cfg(target_arch = "x86_64")]
-type KeyCtx = [u64; 128];
+type KeyCtx = [u64; 136];
 #[cfg(not(target_arch = "x86_64"))]
 type KeyCtx = [u64; 32];
 
@@ -215,11 +215,11 @@ impl AesGcm {
         // are distinct objects, so they do not overlap each other or anything
         // on the stack, or wrap around the end of the address space.
         unsafe { vg_aes_gcm_init_auto(key.as_ptr(), key.len(), k.ctx.as_mut_ptr().cast()) };
-        // SAFETY: `k.ctx` is valid for reads and writes of 1024 bytes, and
+        // SAFETY: `k.ctx` is valid for reads and writes of 1088 bytes, and
         // overlaps nothing on the stack; its first 256 bytes are the key
         // context of `vg_aes_gcm_init` (`VG.Spec.Gcm.KeyRepr`), which
-        // `vg_aes_gcm_prepare` keeps, writing the powers after them
-        // (`PreparedPowersRepr`), which the `_prepared` functions require.
+        // `vg_aes_gcm_prepare` keeps, making the rest a prepared key context
+        // (`PreparedRepr`), which the `_prepared` functions require.
         #[cfg(target_arch = "x86_64")]
         unsafe {
             vg_aes_gcm_prepare_auto(k.ctx.as_mut_ptr())
@@ -274,7 +274,7 @@ impl AesGcm {
         // SAFETY: `self.ctx` is the key context `vg_aes_gcm_init` wrote for
         // `self.rounds` (10, 12 or 14) rounds, valid for reads of 256 bytes,
         // followed on x86-64 by the powers `vg_aes_gcm_prepare` wrote for the
-        // same key (`AesGcm::new`), valid for reads of 1024 bytes in all,
+        // same key (`AesGcm::new`), valid for reads of 1088 bytes in all,
         // and on AArch64 next to the powers `vg_aes_gcm_store_powers` wrote
         // (`self.powers`, 128 bytes); `nonce` and `aad` are valid for reads
         // and `data` for reads and writes of their lengths, and `tag` (a
