@@ -28,7 +28,7 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 # ECDH over P-384 on PPC64LE: `Verified`
 
 `win_mulPowOk`: `[d]P` by the four-bit windows
-(`Proof/Ecdsa/PPC64LE/P384/Window.lean`), then `Z^(p-2)` by the power, leaves
+(`Proof/Ecdsa/PPC64LE/P384/Window.lean`), then `Z^(p-2)` by its addition chain, leaves
 what ECDH's last stage needs (`LadPost`). `ecdh_ppc`: from `exchangeWith_ok`,
 for P-384's configuration; `ecdh_ct`: the
 time depends only on `out`, `d`, `peer` and `scratch` (`taint_decide` on the
@@ -59,10 +59,10 @@ theorem post_of {s s' : State} (h : EPost p384 s s') : ecdhPPC.post s s' := by
 set_option exponentiation.threshold 512 in
 open VG.Impl.Mont VG.Impl.Weierstrass.PPC64LE VG.Proof.Mont VG.Proof.Mont.PPC64LE VG.Proof.Weierstrass
   VG.Proof.Weierstrass.PPC64LE in
-/-- The windows, then the power, meet `MulPowOk`. -/
+/-- The windows, then the addition chain, meet `MulPowOk`. -/
 theorem win_mulPowOk (hL : Weierstrass.Law Spec.P384.curve) (s₀ : State) :
     MulPowOk p384 s₀ (Window.Cfg.mul p384 PX PY BP) := by
-  intro base s K hrx hry hrz _ ht₀ ht₁ hbp P hP hG hlx hly rest Q h
+  intro base s K hrx hry hrz _ ht₀ _ hbp P hP hG hlx hly rest Q h
   have h7 : p384.n < 10 := by decide
   have hn := K.ws.nowrap
   have hpR := unitMod_pow_two p384_ok.p_odd (64 * p384.n)
@@ -99,37 +99,36 @@ theorem win_mulPowOk (hL : Weierstrass.Law Spec.P384.curve) (s₀ : State) :
   have lx₅ : sv p384 base s₅ RX < p384.C.p := R₅.x
   have ly₅ : sv p384 base s₅ RY < p384.C.p := R₅.y
   have lz₅ : sv p384 base s₅ RZ < p384.C.p := R₅.z
-  refine WP.seq (WP.mono (pow_ok (P := p384.powP) (S := p384.SP) (e := p384.C.p - 2) p384_ok.fpk p384_ok.fpm
-    (modP p384_ok) rfl (powLayP p384_ok) hpR K₅'.ws lz₅ K₅'.fixed.onep
-    (fun t ht => by
-      show s₅.mem (off base (bitsAt p384.n 1 + t)) = _
-      rw [tbl_unch U₅ h7 (j := 1) (by decide) ht (tA₅ 1 (by decide) (by decide) t ht)]
-      exact ht₁ t ht)
-    (by decide)) fun s₆ ⟨K₆, U₆, lt₆, v₆⟩ => h s₆ ?_)
-  rw [powWxP_eq] at U₆
-  have K₆' : Keep p384 s₀ base s₆ := K₅'.step h7 K₆ (hU := U₆) (hW := fixedOk_powWx h7) (hWs := powWx_le h7)
-  have e₆ : ∀ {i}, i < 45 → i ∉ [ACC, PT] → sv p384 base s₆ i = sv p384 base s₅ i := fun hi hr =>
-    sv_unch U₆ h7 hn hi (apart_powWx h7 hi hr)
+  refine WP.seq (WP.mono (chainPow_ok (P := p384.chainP) (S := p384.SP) (e := p384.C.p - 2) p384_ok.fpk
+    p384_ok.fpm (modP p384_ok) (chainLayP p384_ok) hpR K₅'.ws lz₅ p384_ok.chainP)
+    fun s₆ ⟨K₆, U₆, lt₆, v₆⟩ => h s₆ ?_)
+  rw [chainWP_eq] at U₆
+  have K₆' : Keep p384 s₀ base s₆ := K₅'.step h7 K₆ (hU := U₆) (hW := fixedOk_chainW h7) (hWs := chainW_le h7)
+  have e₆ : ∀ {i}, i < 45 → i ≠ ACC → (i < DX ∨ T2 < i) → sv p384 base s₆ i = sv p384 base s₅ i :=
+    fun hi hr ht => sv_unch U₆ h7 hn hi (apart_chainW h7 hi hr ht)
   have tR : ∀ i ∈ [RX, RY, RZ], Point.tmv p384.C p384.n base s₆ (p384.sl i) =
       Point.tmv p384.C p384.n base s₅ (p384.sl i) := by
     intro i hi
     show toM _ _ (sv p384 base s₆ i) = toM _ _ (sv p384 base s₅ i)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
-    rcases hi with rfl | rfl | rfl <;> rw [e₆ (by decide) (by decide)]
-  have apF : ∀ w ∈ Proof.Ecdsa.PPC64LE.Window.P384.mulW ++ [(p384.sl ACC, 8 * p384.n), (p384.sl PT, 8 * p384.n),
+    rcases hi with rfl | rfl | rfl <;> rw [e₆ (by decide) (by decide) (by decide)]
+  have apF : ∀ w ∈ Proof.Ecdsa.PPC64LE.Window.P384.mulW ++ [(p384.sl ACC, 8 * p384.n), (p384.sl DX, 9 * (8 * p384.n)),
       (Impl.Weierstrass.PPC64LE.Mont.own p384.n, 64 * p384.n)], p384.sl FLAG + 8 ≤ w.1 ∨ w.1 + w.2 ≤ p384.sl FLAG := by
     intro w hw
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hw
     rcases hw with rfl | rfl | rfl | rfl | rfl | rfl <;> decide
   refine ⟨K₆', fun hi hl => ?_, ?_, ?_,
     by rw [tR RX (by simp), tR RY (by simp), tR RZ (by simp)]; exact R₅.rep,
-    by rw [e₆ (by decide) (by decide)]; exact lx₅,
-    by rw [e₆ (by decide) (by decide)]; exact ly₅,
-    by rw [e₆ (by decide) (by decide)]; exact lz₅, lt₆, ?_⟩
-  · rw [e₆ hi (Proof.Ecdsa.PPC64LE.nmem_of hl (by decide)), e₅ hi hl]
+    by rw [e₆ (by decide) (by decide) (by decide)]; exact lx₅,
+    by rw [e₆ (by decide) (by decide) (by decide)]; exact ly₅,
+    by rw [e₆ (by decide) (by decide) (by decide)]; exact lz₅, lt₆, ?_⟩
+  · rw [e₆ hi (by intro h; subst h; simp at hl) (by
+      simp only [List.mem_cons, Proof.Ecdsa.PPC64LE.ladIx, not_or] at hl
+      simp only [DX, T2, DY, DZ, TX, TY, TZ, T0, T1] at hl ⊢
+      omega), e₅ hi hl]
   · rw [flagW, (U₅.trans U₆).word apF (by decide), ← flagW]
   · intro t ht
-    rw [tbl_unch U₆ h7 (j := 2) (by decide) ht (tbl_apart_powWx h7 2 t),
+    rw [tbl_unch U₆ h7 (j := 2) (by decide) ht (tbl_apart_chainW h7 2 t),
       tbl_unch U₅ h7 (j := 2) (by decide) ht (tA₅ 2 (by decide) (by decide) t ht)]
   · rw [tR RZ (by simp)]; exact v₆
 
