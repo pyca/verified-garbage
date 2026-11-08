@@ -153,7 +153,7 @@ def groupBody : List Instr :=
   transpose ++
   [.lxvd2x .v3 .r6 .r9] ++ zcalc ++ bfly .v9 .v11 .v2 .v3 ++ bfly .v8 .v10 .v2 .v3 ++
   [.lxvd2x .v3 .r7 .r9] ++ zcalc ++ bfly .v9 .v8 .v2 .v3 ++
-  [.lxvd2x .v3 .r7 .r8, .addi .r6 .r6 16, .addi .r7 .r7 32] ++ zcalc ++ bfly .v11 .v10 .v2 .v3 ++
+  [.lxvd2x .v3 .r7 .r8] ++ zcalc ++ [.addi .r6 .r6 16, .addi .r7 .r7 32] ++ bfly .v11 .v10 .v2 .v3 ++
   transpose ++
   [.stxvd2x .v8 .r5 .r9, .stxvd2x .v9 .r5 .r8, .stxvd2x .v10 .r5 .r11, .stxvd2x .v11 .r5 .r12,
    .addi .r5 .r5 64, .subi .r10 .r10 1]
