@@ -2,20 +2,68 @@
 //! The dispatchers of the verified `cast5` functions for `x86_64`
 //! (`crate::cast5`, `VG.Rust.dispatcher`).
 
-/// `vg_cast5_expand_key`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::cast5::vg_cast5_expand_key as vg_cast5_expand_key_auto;
+/// CAST-128 (CAST5) key expansion (RFC 2144 §2.4): pads the `key_len` bytes at `key` with zero bytes to 16 bytes (§2.5) and writes the subkeys `K1 … K32` to `*schedule`, each a little-endian 32-bit word: the masking subkeys `Km1 … Km16`, then the rotate subkeys `Kr1 … Kr16` (§2.4.1). A key of up to 10 bytes is used with 12 rounds, a longer one with 16.
+///
+/// Contract: `VG.Spec.Cast5.expandKeyContract`. Constant time: only pointers and `key_len` may affect timing, not the key bytes.
+///
+/// It runs `vg_cast5_expand_key`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `schedule` must be valid for reads and writes of 128 bytes.
+/// * `scratch` must be valid for reads and writes of 256 bytes.
+/// * `key_len` must be in 5..=16.
+/// * The contents of `scratch` on return are unspecified.
+/// * `schedule` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
+/// * None of `key`, `schedule` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_cast5_expand_key_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, schedule: *mut [u8; 128], scratch: *mut [u64; 32]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::cast5::vg_cast5_expand_key(key, key_len, schedule, scratch) }
+}
 
-/// `vg_cast5_ecb_encrypt`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::cast5::vg_cast5_ecb_encrypt as vg_cast5_ecb_encrypt_auto;
+/// CAST-128 (CAST5) ECB encryption (RFC 2144 §2, SP 800-38A §6.1) of `n` complete 8-byte blocks at `data`, in place, with `rounds` rounds under the subkeys written by `vg_cast5_expand_key`: 12 for a key of up to 10 bytes, 16 for a longer one (§2.5). Only the least significant 5 bits of each rotate subkey are used. No padding is added. For `n = 0`, no data is transformed.
+///
+/// Contract: `VG.Spec.Cast5.ecbEncryptContract`. Constant time: only pointers, `rounds` and `n` may affect timing, not the subkeys or data, including S-box indices and rotation amounts.
+///
+/// It runs `vg_cast5_ecb_encrypt`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `data` must be valid for reads and writes of `8 * n` bytes.
+/// * `scratch` must be valid for reads and writes of 256 bytes.
+/// * `rounds` must be 12 or 16.
+/// * The contents of `scratch` on return are unspecified.
+/// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_cast5_ecb_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 128], rounds: usize, data: *mut [u8; 8], n: usize, scratch: *mut [u64; 32]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::cast5::vg_cast5_ecb_encrypt(schedule, rounds, data, n, scratch) }
+}
 
-/// `vg_cast5_ecb_decrypt`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::cast5::vg_cast5_ecb_decrypt as vg_cast5_ecb_decrypt_auto;
+/// CAST-128 (CAST5) ECB decryption (RFC 2144 §2, SP 800-38A §6.1) of `n` complete 8-byte blocks at `data`, in place, with `rounds` rounds under the subkeys written by `vg_cast5_expand_key`: 12 for a key of up to 10 bytes, 16 for a longer one (§2.5). Only the least significant 5 bits of each rotate subkey are used. No padding is removed. For `n = 0`, no data is transformed.
+///
+/// Contract: `VG.Spec.Cast5.ecbDecryptContract`. Constant time: only pointers, `rounds` and `n` may affect timing, not the subkeys or data, including S-box indices and rotation amounts.
+///
+/// It runs `vg_cast5_ecb_decrypt`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `data` must be valid for reads and writes of `8 * n` bytes.
+/// * `scratch` must be valid for reads and writes of 256 bytes.
+/// * `rounds` must be 12 or 16.
+/// * The contents of `scratch` on return are unspecified.
+/// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_cast5_ecb_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 128], rounds: usize, data: *mut [u8; 8], n: usize, scratch: *mut [u64; 32]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::cast5::vg_cast5_ecb_decrypt(schedule, rounds, data, n, scratch) }
+}

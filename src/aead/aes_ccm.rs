@@ -90,6 +90,7 @@ fn check(nonce: &[u8], len: usize) -> Result<(), Error> {
 impl AesCcm {
     /// Prepares `key`, which must be 16, 24 or 32 bytes long.
     pub fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
+        crate::dit::enter!(dit);
         if !matches!(key.len(), 16 | 24 | 32) {
             return Err(InvalidKeyLength);
         }
@@ -103,7 +104,7 @@ impl AesCcm {
         // the return address on the stack or the stack below it, and neither
         // wraps around the end of the address space. The dispatcher calls
         // only an implementation the CPU has the features of.
-        unsafe { vg_aes_expand_key_auto(key.as_ptr(), key.len(), &mut k.schedule.0) };
+        unsafe { vg_aes_expand_key_auto(dit, key.as_ptr(), key.len(), &mut k.schedule.0) };
         Ok(k)
     }
 
@@ -121,6 +122,7 @@ impl AesCcm {
         aad: &[u8],
         data: &mut [u8],
     ) -> Result<[u8; T], Error> {
+        crate::dit::enter!(dit);
         assert_tag_length!(T);
         check(nonce, data.len())?;
         let mut tag = [0u8; T];
@@ -138,6 +140,7 @@ impl AesCcm {
         // implementation the CPU has the features of.
         unsafe {
             vg_aes_ccm_seal_auto(
+                dit,
                 &self.schedule.0,
                 self.rounds,
                 nonce.as_ptr(),
@@ -167,6 +170,7 @@ impl AesCcm {
         data: &mut [u8],
         tag: &[u8; T],
     ) -> Result<(), Error> {
+        crate::dit::enter!(dit);
         assert_tag_length!(T);
         check(nonce, data.len())?;
         // SAFETY: as in `encrypt_in_place`, with the received tag `tag`
@@ -174,6 +178,7 @@ impl AesCcm {
         // `data`, a unique one, does not overlap.
         let ok = unsafe {
             vg_aes_ccm_open_auto(
+                dit,
                 &self.schedule.0,
                 self.rounds,
                 nonce.as_ptr(),

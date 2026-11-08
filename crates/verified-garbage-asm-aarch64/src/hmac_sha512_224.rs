@@ -15,7 +15,7 @@
 /// * `inner` and `outer` must not overlap each other or `key` (distinct Rust objects never do).
 /// * None of `inner`, `outer` and `key` may overlap the 3424 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_hmac_sha512_224_init(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize) {
+pub(crate) unsafe extern "C" fn vg_hmac_sha512_224_init(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd280100a,0xd280000c,0xeb03014b,0x9a832189
 cbnz x9, 20f
@@ -130,7 +130,7 @@ b 21b
 /// * `inner` and `out` must not overlap each other or `outer` (distinct Rust objects never do).
 /// * None of `inner`, `outer` and `out` may overlap the 1888 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_hmac_sha512_224_finalize(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 28]) {
+pub(crate) unsafe extern "C" fn vg_hmac_sha512_224_finalize(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
         r".inst 0xd11d43ff,0x910003e4,0xf9015893,0xf9015c94,0xf9016095,0xf9016496,0xf9016898,0xf9016c9e
 .inst 0xf9017097,0x91000013,0x91000034,0x91000075,0x91000097,0x91000041,0x910ba2e2,0x910002e3
@@ -168,7 +168,7 @@ pub const VG_HMAC_SHA512_224_INIT_SHA512_FEATURES: verified_garbage_cpu::Feature
 /// * None of `inner`, `outer` and `key` may overlap the 3424 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_hmac_sha512_224_init_sha512(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize) {
+pub(crate) unsafe extern "C" fn vg_hmac_sha512_224_init_sha512(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd280100a,0xd280000c,0xeb03014b,0x9a832189
 cbnz x9, 20f
@@ -287,7 +287,7 @@ pub const VG_HMAC_SHA512_224_FINALIZE_SHA512_FEATURES: verified_garbage_cpu::Fea
 /// * None of `inner`, `outer` and `out` may overlap the 1888 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_hmac_sha512_224_finalize_sha512(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 28]) {
+pub(crate) unsafe extern "C" fn vg_hmac_sha512_224_finalize_sha512(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
         r".inst 0xd11d43ff,0x910003e4,0xf9015893,0xf9015c94,0xf9016095,0xf9016496,0xf9016898,0xf9016c9e
 .inst 0xf9017097,0x91000013,0x91000034,0x91000075,0x91000097,0x91000041,0x910ba2e2,0x910002e3

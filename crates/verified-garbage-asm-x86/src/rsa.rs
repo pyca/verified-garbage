@@ -26,7 +26,7 @@
 /// * `p`, `q` and `scratch` must not overlap each other, `n`, `e` or `d` (distinct Rust objects never do).
 /// * None of `p`, `q`, `n`, `e`, `d` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 96 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_rsa_recover_primes_det(p: *mut u8, p_len: usize, q: *mut u8, q_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_recover_primes_det(p: *mut u8, p_len: usize, q: *mut u8, q_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "i0QkLIkYiWgEiXAIiXgMiceLdCQUi0wkGA+2BonzAcuD6wEPthOJw4PrAcHrH4nNg+1Awc0YAcWB7YAAAADB7R+D4gGD8gEJ0wnrg/sA"
 je 20f
@@ -1338,7 +1338,7 @@ jne 2403b
 /// * `scratch` must not overlap `n`, `e`, `d`, `p`, `q`, `dp`, `dq` or `qinv` (distinct Rust objects never do).
 /// * None of `n`, `e`, `d`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 20 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_rsa_check_key(n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_check_key(n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "i0QkRIkYiWgEiXAIiXgMiceLdCQEi0wkCA+2BonzAcuD6wEPthOJw4PrAcHrH4nNg+1Awc0YAcWB7YAAAADB7R+D4gGD8gEJ0wnrg/sA"
 je 20f
@@ -2172,7 +2172,7 @@ jmp 210f
 /// * `dp`, `dq`, `qinv` and `scratch` must not overlap each other, `n`, `p`, `q` or `d` (distinct Rust objects never do).
 /// * None of `dp`, `dq`, `qinv`, `n`, `p`, `q`, `d` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 52 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_rsa_crt_values(dp: *mut u8, dp_len: usize, dq: *mut u8, dq_len: usize, qinv: *mut u8, qinv_len: usize, n: *const u8, n_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, d: *const u8, d_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_crt_values(dp: *mut u8, dp_len: usize, dq: *mut u8, dq_len: usize, qinv: *mut u8, qinv_len: usize, n: *const u8, n_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, d: *const u8, d_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "i0QkPIkYiWgEiXAIiXgMiceLdCQci0wkIA+2BonzAcuD6wEPthOJw4PrAcHrH4nNg+1Awc0YAcWB7YAAAADB7R+D4gGD8gEJ0wnrg/sA"
 je 20f
@@ -3498,7 +3498,7 @@ jne 2419b
 /// * `pre` and `scratch` must not overlap each other or `n` (distinct Rust objects never do).
 /// * None of `pre`, `n` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 96 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_rsa_public_precompute(pre: *mut u64, pre_len: usize, n: *const u8, n_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_public_precompute(pre: *mut u64, pre_len: usize, n: *const u8, n_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "i0QkFIkYiWgEiXAIiXgMiceLdCQMi0wkEA+2BonzAcuD6wEPthOJw4PrAcHrH4nNg+1Awc0YAcWB7YAAAADB7R+D4gGD8gEJ0wnrg/sA"
 je 20f

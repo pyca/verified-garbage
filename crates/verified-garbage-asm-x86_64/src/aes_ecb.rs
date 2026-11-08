@@ -20,7 +20,7 @@ pub const VG_AES_ECB_DECRYPT_AESNI_AVX_FEATURES: verified_garbage_cpu::Features 
 /// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `avx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_ecb_decrypt_aesni_avx(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_ecb_decrypt_aesni_avx(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
         r#".base64 "SI1kJPBMiUQkCA=="
 call {vg_aes_decrypt_blocks_aesni}
@@ -50,7 +50,7 @@ pub const VG_AES_ECB_ENCRYPT_AESNI_FEATURES: verified_garbage_cpu::Features = ve
 /// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_ecb_encrypt_aesni(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_ecb_encrypt_aesni(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
         r#".base64 "SYnyTQHSTQHSTQHSTQHSSQH6SIP5CA=="
 jb 20f
@@ -112,7 +112,7 @@ pub const VG_AES_ECB_DECRYPT_AESNI_FEATURES: verified_garbage_cpu::Features = ve
 /// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_ecb_decrypt_aesni(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_ecb_decrypt_aesni(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
         r#".base64 "SI1kJPBMiUQkCA=="
 call {vg_aes_decrypt_blocks_aesni}
@@ -142,7 +142,7 @@ pub const VG_AES_ECB_ENCRYPT_AVX_FEATURES: verified_garbage_cpu::Features = veri
 /// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` target feature.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_ecb_encrypt_avx(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_ecb_encrypt_avx(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
         r#".base64 "SI1kJPBMiUQkCA=="
 call {vg_aes_encrypt_blocks}
@@ -172,7 +172,7 @@ pub const VG_AES_ECB_DECRYPT_AVX_FEATURES: verified_garbage_cpu::Features = veri
 /// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` target feature.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_ecb_decrypt_avx(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_ecb_decrypt_avx(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
         r#".base64 "SI1kJPBMiUQkCA=="
 call {vg_aes_decrypt_blocks}
@@ -198,7 +198,7 @@ call {vg_zeroize_avx}
 /// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_ecb_encrypt(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_ecb_encrypt(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
         r#".base64 "SI1kJPBMiUQkCA=="
 call {vg_aes_encrypt_blocks}
@@ -224,7 +224,7 @@ call {vg_zeroize}
 /// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_ecb_decrypt(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_ecb_decrypt(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
         r#".base64 "SI1kJPBMiUQkCA=="
 call {vg_aes_decrypt_blocks}
@@ -254,7 +254,7 @@ pub const VG_AES_ECB_DECRYPT_VAES_FEATURES: verified_garbage_cpu::Features = ver
 /// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2` and `vaes` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_ecb_decrypt_vaes(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_ecb_decrypt_vaes(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
         r#".base64 "SI1kJPBMiUQkCA=="
 call {vg_aes_decrypt_blocks_vaes}
@@ -284,7 +284,7 @@ pub const VG_AES_ECB_ENCRYPT_VAES_FEATURES: verified_garbage_cpu::Features = ver
 /// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2` and `vaes` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_ecb_encrypt_vaes(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_ecb_encrypt_vaes(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
         r#".base64 "SYnyTQHSTQHSTQHSTQHSSQH6SIP5EA=="
 jb 20f

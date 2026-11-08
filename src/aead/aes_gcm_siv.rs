@@ -79,6 +79,7 @@ impl AesGcmSiv {
     /// Prepares the key-generating key `key`, which must be 16 or 32 bytes
     /// long (AEAD_AES_128_GCM_SIV, AEAD_AES_256_GCM_SIV).
     pub fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
+        crate::dit::enter!(dit);
         if !matches!(key.len(), 16 | 32) {
             return Err(InvalidKeyLength);
         }
@@ -97,7 +98,7 @@ impl AesGcmSiv {
             // and neither wraps around the end of the address space. The
             // dispatcher calls only an implementation the CPU has the features
             // of.
-            unsafe { vg_aes_expand_key_auto(key.as_ptr(), key.len(), &mut k.schedule.0) };
+            unsafe { vg_aes_expand_key_auto(dit, key.as_ptr(), key.len(), &mut k.schedule.0) };
         }
         k
     }
@@ -113,6 +114,7 @@ impl AesGcmSiv {
         aad: &[u8],
         data: &mut [u8],
     ) -> Result<[u8; 16], Error> {
+        crate::dit::enter!(dit);
         check(aad.len() as u64, data.len() as u64)?;
         let mut tag = [0u8; 16];
         // SAFETY: `self.schedule` is the key schedule `vg_aes_expand_key`
@@ -127,6 +129,7 @@ impl AesGcmSiv {
         // the features of.
         unsafe {
             vg_aes_gcm_siv_seal_auto(
+                dit,
                 &self.schedule.0,
                 self.rounds,
                 nonce,
@@ -150,12 +153,14 @@ impl AesGcmSiv {
         data: &mut [u8],
         tag: &[u8; 16],
     ) -> Result<(), Error> {
+        crate::dit::enter!(dit);
         check(aad.len() as u64, data.len() as u64)?;
         // SAFETY: as in `encrypt_in_place`, with the received tag `tag`
         // valid for reads of 16 bytes, which `data`, a unique borrow, does not
         // overlap.
         let ok = unsafe {
             vg_aes_gcm_siv_open_auto(
+                dit,
                 &self.schedule.0,
                 self.rounds,
                 nonce,

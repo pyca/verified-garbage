@@ -15,7 +15,7 @@
 /// * `state` must not overlap `key` or `nonce` (distinct Rust objects never do).
 /// * None of `state`, `key` and `nonce` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_chacha20_init(state: *mut [u64; 96], key: *const [u8; 32], nonce: *const [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_chacha20_init(state: *mut [u64; 96], key: *const [u8; 32], nonce: *const [u8; 16]) {
     core::arch::naked_asm!(
         r"ldr r3, [r1, #0]
 str r3, [r0, #16]
@@ -77,7 +77,7 @@ bx lr",
 /// * `state` must not overlap `nonce` (distinct Rust objects never do).
 /// * Neither `state` nor `nonce` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_chacha20_set_nonce(state: *mut [u64; 96], nonce: *const [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_chacha20_set_nonce(state: *mut [u64; 96], nonce: *const [u8; 16]) {
     core::arch::naked_asm!(
         r"ldr r2, [r1, #0]
 ldr r3, [r1, #4]
@@ -122,7 +122,7 @@ bx lr",
 /// * `state` and `data` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `data` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_chacha20_apply(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_chacha20_apply(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
     core::arch::naked_asm!(
         r"ldr r3, [r0, #128]
 ldr r12, [r0, #132]

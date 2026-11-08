@@ -94,10 +94,11 @@ impl Key {
             return Err(InvalidKeyLength);
         }
         let mut schedule = CacheAligned([0; 384]);
+        crate::dit::enter!(dit);
         // SAFETY: the key has a validated length; key and schedule are separate
         // valid buffers of the required sizes.
         unsafe {
-            vg_triple_des_expand_key_auto(key.as_ptr(), key.len(), &mut schedule.0);
+            vg_triple_des_expand_key_auto(dit, key.as_ptr(), key.len(), &mut schedule.0);
         }
         Ok(Self { schedule })
     }
@@ -111,12 +112,14 @@ impl Key {
         if !buffer.len().is_multiple_of(8) {
             return Err(IncompleteBlock);
         }
+        crate::dit::enter!(dit);
         // SAFETY: the buffer holds `len / 8` whole blocks, and it, the chaining
         // value (which the function reads and replaces) and the schedule are
         // separate valid objects of the sizes of the signature, none of them on
         // the callee's stack.
         unsafe {
             vg_triple_des_cbc_encrypt_chained_auto(
+                dit,
                 &self.schedule.0,
                 iv,
                 buffer.as_mut_ptr().cast(),
@@ -135,10 +138,12 @@ impl Key {
         if !buffer.len().is_multiple_of(8) {
             return Err(IncompleteBlock);
         }
+        crate::dit::enter!(dit);
         // SAFETY: as in `encrypt`; the dispatcher calls only an implementation
         // the CPU has the features of.
         unsafe {
             vg_triple_des_cbc_decrypt_chained_auto(
+                dit,
                 &self.schedule.0,
                 iv,
                 buffer.as_mut_ptr().cast(),

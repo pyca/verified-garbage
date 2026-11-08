@@ -16,7 +16,7 @@
 /// * `tr` and `scratch` must not overlap each other or `pk` (distinct Rust objects never do).
 /// * None of `pk`, `tr` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mldsa87_pk_tr(pk: *const [u8; 2592], tr: *mut [u8; 64], scratch: *mut [u64; 18048]) {
+pub(crate) unsafe extern "sysv64" fn vg_mldsa87_pk_tr(pk: *const [u8; 2592], tr: *mut [u8; 64], scratch: *mut [u64; 18048]) {
     core::arch::naked_asm!(
         r#".base64 "SImaSAMAAEiJqlADAABMiaJYAwAATImqYAMAAEyJsmgDAABMibpwAwAASInTSYn8SYn1Qb8BAAAAuAAAAABIiQNIiUMISIlDEEiJQxhIiUMgSIlDKEiJQzBIiUM4SIlDQEiJQ0hIiUNQSIlDWEiJQ2BIiUNoSIlDcEiJQ3hIiYOAAAAASImDiAAAAEiJg5AAAABIiYOYAAAASImDoAAAAEiJg6gAAABIiYOwAAAASImDuAAAAEiJg8AAAABIid9Ig8cAvogAAAC6AAAAAEyJ4UiDwQBBuCAKAABJidlJgcHIAAAA"
 call {vg_keccak_absorb_scratch}
@@ -51,7 +51,7 @@ pub const VG_MLDSA87_KEYGEN_AVX2_FEATURES: verified_garbage_cpu::Features = veri
 /// * None of `seed`, `pk`, `sk` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mldsa87_keygen_avx2(seed: *const [u8; 32], pk: *mut [u8; 2592], sk: *mut [u8; 4896], scratch: *mut [u64; 18048]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mldsa87_keygen_avx2(seed: *const [u8; 32], pk: *mut [u8; 2592], sk: *mut [u8; 4896], scratch: *mut [u64; 18048]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SImZSAMAAEiJqVADAABMiaFYAwAATImpYAMAAEyJsWgDAABMiblwAwAASInLSIn9SYn0SYnVQb8BAAAAuAgAAACIg4ADAAC4BwAAAIiDgQMAALgAAAAASIkDSIlDCEiJQxBIiUMYSIlDIEiJQyhIiUMwSIlDOEiJQ0BIiUNISIlDUEiJQ1hIiUNgSIlDaEiJQ3BIiUN4SImDgAAAAEiJg4gAAABIiYOQAAAASImDmAAAAEiJg6AAAABIiYOoAAAASImDsAAAAEiJg7gAAABIiYPAAAAASInfSIPHAL6IAAAAugAAAABIielIg8EAQbggAAAASYnZSYHByAAAAA=="
 call {vg_keccak_absorb_scratch}
@@ -434,7 +434,7 @@ pub const VG_MLDSA87_PREPARE_VERIFYING_KEY_AVX2_FEATURES: verified_garbage_cpu::
 /// * None of `pk`, `prepared` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mldsa87_prepare_verifying_key_avx2(pk: *const [u8; 2592], prepared: *mut [u8; 10784], scratch: *mut [u64; 128]) {
+pub(crate) unsafe extern "sysv64" fn vg_mldsa87_prepare_verifying_key_avx2(pk: *const [u8; 2592], prepared: *mut [u8; 10784], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
         r#".base64 "SImaSAMAAEiJqlADAABMiaJYAwAATImqYAMAAEyJsmgDAABMibpwAwAASInzSIn9SYnUSYnVSInvSIPHIEiJ3kiBxiAKAAA="
 call {vg_mldsa_unpack_t1}
@@ -497,7 +497,7 @@ pub const VG_MLDSA87_PREPARE_SIGNING_KEY_AVX2_FEATURES: verified_garbage_cpu::Fe
 /// * None of `sk`, `prepared` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mldsa87_prepare_signing_key_avx2(sk: *const [u8; 4896], prepared: *mut [u8; 28448], scratch: *mut [u64; 128]) {
+pub(crate) unsafe extern "sysv64" fn vg_mldsa87_prepare_signing_key_avx2(sk: *const [u8; 4896], prepared: *mut [u8; 28448], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
         r#".base64 "SImaSAMAAEiJqlADAABMiaJYAwAATImqYAMAAEyJsmgDAABMibpwAwAASInzSIn9SYnUSYnVSInvSIHHgAAAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwCATAAA="
 call {vg_mldsa_bit_unpack}
@@ -623,7 +623,7 @@ pub const VG_MLDSA87_SIGN_AVX2_FEATURES: verified_garbage_cpu::Features = verifi
 /// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mldsa87_sign_avx2(sk: *const [u8; 4896], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mldsa87_sign_avx2(sk: *const [u8; 4896], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "QbkAAAAA"
 call {vg_mldsa87_sign_with_cache_avx2}
@@ -655,7 +655,7 @@ pub const VG_MLDSA87_SIGN_MESSAGE_AVX2_FEATURES: verified_garbage_cpu::Features 
 /// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mldsa87_sign_message_avx2(sk: *const [u8; 4896], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18176]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mldsa87_sign_message_avx2(sk: *const [u8; 4896], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18176]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SYH4AAEAAA=="
 jb 20f
@@ -710,7 +710,7 @@ pub const VG_MLDSA87_SIGN_MESSAGE_PREPARED_AVX2_FEATURES: verified_garbage_cpu::
 /// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mldsa87_sign_message_prepared_avx2(sk: *const [u8; 28448], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18176]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mldsa87_sign_message_prepared_avx2(sk: *const [u8; 28448], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18176]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SYH4AAEAAA=="
 jb 20f
@@ -760,7 +760,7 @@ pub const VG_MLDSA87_VERIFY_AVX2_FEATURES: verified_garbage_cpu::Features = veri
 /// * None of `pk`, `mu`, `sig` and `scratch` may overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mldsa87_verify_avx2(pk: *const [u8; 2592], mu: *const [u8; 64], sig: *const [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mldsa87_verify_avx2(pk: *const [u8; 2592], mu: *const [u8; 64], sig: *const [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "QbgAAAAA"
 call {vg_mldsa87_verify_with_cache_avx2}
@@ -791,7 +791,7 @@ pub const VG_MLDSA87_VERIFY_MESSAGE_CACHED_AVX2_FEATURES: verified_garbage_cpu::
 /// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mldsa87_verify_message_cached_avx2(pk: *const [u8; 2592], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176], tr: *const [u8; 64]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mldsa87_verify_message_cached_avx2(pk: *const [u8; 2592], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176], tr: *const [u8; 64]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SYH4AAEAAA=="
 jb 20f
@@ -845,7 +845,7 @@ pub const VG_MLDSA87_VERIFY_MESSAGE_PREPARED_AVX2_FEATURES: verified_garbage_cpu
 /// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mldsa87_verify_message_prepared_avx2(pk: *const [u8; 10784], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176], tr: *const [u8; 64]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mldsa87_verify_message_prepared_avx2(pk: *const [u8; 10784], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176], tr: *const [u8; 64]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SYH4AAEAAA=="
 jb 20f
@@ -896,7 +896,7 @@ pub const VG_MLDSA87_KEYGEN_AVX512_FEATURES: verified_garbage_cpu::Features = ve
 /// * None of `seed`, `pk`, `sk` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mldsa87_keygen_avx512(seed: *const [u8; 32], pk: *mut [u8; 2592], sk: *mut [u8; 4896], scratch: *mut [u64; 18048]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mldsa87_keygen_avx512(seed: *const [u8; 32], pk: *mut [u8; 2592], sk: *mut [u8; 4896], scratch: *mut [u64; 18048]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SImZSAMAAEiJqVADAABMiaFYAwAATImpYAMAAEyJsWgDAABMiblwAwAASInLSIn9SYn0SYnVQb8BAAAAuAgAAACIg4ADAAC4BwAAAIiDgQMAALgAAAAASIkDSIlDCEiJQxBIiUMYSIlDIEiJQyhIiUMwSIlDOEiJQ0BIiUNISIlDUEiJQ1hIiUNgSIlDaEiJQ3BIiUN4SImDgAAAAEiJg4gAAABIiYOQAAAASImDmAAAAEiJg6AAAABIiYOoAAAASImDsAAAAEiJg7gAAABIiYPAAAAASInfSIPHAL6IAAAAugAAAABIielIg8EAQbggAAAASYnZSYHByAAAAA=="
 call {vg_keccak_absorb_scratch}
@@ -1283,7 +1283,7 @@ pub const VG_MLDSA87_SIGN_AVX512_FEATURES: verified_garbage_cpu::Features = veri
 /// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mldsa87_sign_avx512(sk: *const [u8; 4896], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mldsa87_sign_avx512(sk: *const [u8; 4896], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "QbkAAAAA"
 call {vg_mldsa87_sign_with_cache_avx512}
@@ -1315,7 +1315,7 @@ pub const VG_MLDSA87_SIGN_MESSAGE_AVX512_FEATURES: verified_garbage_cpu::Feature
 /// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mldsa87_sign_message_avx512(sk: *const [u8; 4896], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18176]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mldsa87_sign_message_avx512(sk: *const [u8; 4896], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18176]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SYH4AAEAAA=="
 jb 20f
@@ -1370,7 +1370,7 @@ pub const VG_MLDSA87_SIGN_MESSAGE_PREPARED_AVX512_FEATURES: verified_garbage_cpu
 /// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mldsa87_sign_message_prepared_avx512(sk: *const [u8; 28448], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18176]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mldsa87_sign_message_prepared_avx512(sk: *const [u8; 28448], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18176]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SYH4AAEAAA=="
 jb 20f
@@ -1420,7 +1420,7 @@ pub const VG_MLDSA87_VERIFY_AVX512_FEATURES: verified_garbage_cpu::Features = ve
 /// * None of `pk`, `mu`, `sig` and `scratch` may overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mldsa87_verify_avx512(pk: *const [u8; 2592], mu: *const [u8; 64], sig: *const [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mldsa87_verify_avx512(pk: *const [u8; 2592], mu: *const [u8; 64], sig: *const [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "QbgAAAAA"
 call {vg_mldsa87_verify_with_cache_avx512}
@@ -1451,7 +1451,7 @@ pub const VG_MLDSA87_VERIFY_MESSAGE_CACHED_AVX512_FEATURES: verified_garbage_cpu
 /// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mldsa87_verify_message_cached_avx512(pk: *const [u8; 2592], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176], tr: *const [u8; 64]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mldsa87_verify_message_cached_avx512(pk: *const [u8; 2592], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176], tr: *const [u8; 64]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SYH4AAEAAA=="
 jb 20f
@@ -1505,7 +1505,7 @@ pub const VG_MLDSA87_VERIFY_MESSAGE_PREPARED_AVX512_FEATURES: verified_garbage_c
 /// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mldsa87_verify_message_prepared_avx512(pk: *const [u8; 10784], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176], tr: *const [u8; 64]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mldsa87_verify_message_prepared_avx512(pk: *const [u8; 10784], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176], tr: *const [u8; 64]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SYH4AAEAAA=="
 jb 20f
@@ -1552,7 +1552,7 @@ call {vg_mldsa87_verify_with_cache_avx512}
 /// * `pk`, `sk` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
 /// * None of `seed`, `pk`, `sk` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mldsa87_keygen(seed: *const [u8; 32], pk: *mut [u8; 2592], sk: *mut [u8; 4896], scratch: *mut [u64; 18048]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mldsa87_keygen(seed: *const [u8; 32], pk: *mut [u8; 2592], sk: *mut [u8; 4896], scratch: *mut [u64; 18048]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SImZSAMAAEiJqVADAABMiaFYAwAATImpYAMAAEyJsWgDAABMiblwAwAASInLSIn9SYn0SYnVQb8BAAAAuAgAAACIg4ADAAC4BwAAAIiDgQMAALgAAAAASIkDSIlDCEiJQxBIiUMYSIlDIEiJQyhIiUMwSIlDOEiJQ0BIiUNISIlDUEiJQ1hIiUNgSIlDaEiJQ3BIiUN4SImDgAAAAEiJg4gAAABIiYOQAAAASImDmAAAAEiJg6AAAABIiYOoAAAASImDsAAAAEiJg7gAAABIiYPAAAAASInfSIPHAL6IAAAAugAAAABIielIg8EAQbggAAAASYnZSYHByAAAAA=="
 call {vg_keccak_absorb_scratch}
@@ -1931,7 +1931,7 @@ call {vg_keccak_squeeze_scratch}
 /// * `prepared` and `scratch` must not overlap each other or `pk` (distinct Rust objects never do).
 /// * None of `pk`, `prepared` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mldsa87_prepare_verifying_key(pk: *const [u8; 2592], prepared: *mut [u8; 10784], scratch: *mut [u64; 128]) {
+pub(crate) unsafe extern "sysv64" fn vg_mldsa87_prepare_verifying_key(pk: *const [u8; 2592], prepared: *mut [u8; 10784], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
         r#".base64 "SImaSAMAAEiJqlADAABMiaJYAwAATImqYAMAAEyJsmgDAABMibpwAwAASInzSIn9SYnUSYnVSInvSIPHIEiJ3kiBxiAKAAA="
 call {vg_mldsa_unpack_t1}
@@ -1990,7 +1990,7 @@ jne 20b
 /// * `prepared` and `scratch` must not overlap each other or `sk` (distinct Rust objects never do).
 /// * None of `sk`, `prepared` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mldsa87_prepare_signing_key(sk: *const [u8; 4896], prepared: *mut [u8; 28448], scratch: *mut [u64; 128]) {
+pub(crate) unsafe extern "sysv64" fn vg_mldsa87_prepare_signing_key(sk: *const [u8; 4896], prepared: *mut [u8; 28448], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
         r#".base64 "SImaSAMAAEiJqlADAABMiaJYAwAATImqYAMAAEyJsmgDAABMibpwAwAASInzSIn9SYnUSYnVSInvSIHHgAAAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwCATAAA="
 call {vg_mldsa_bit_unpack}
@@ -2112,7 +2112,7 @@ jne 20b
 /// * `sig` and `scratch` must not overlap each other, `sk`, `mu` or `rnd` (distinct Rust objects never do).
 /// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mldsa87_sign(sk: *const [u8; 4896], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mldsa87_sign(sk: *const [u8; 4896], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "QbkAAAAA"
 call {vg_mldsa87_sign_with_cache}
@@ -2140,7 +2140,7 @@ call {vg_mldsa87_sign_with_cache}
 /// * `sig` and `scratch` must not overlap each other, `sk`, `msg`, `ctx`, `rnd` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mldsa87_sign_message(sk: *const [u8; 4896], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18176]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mldsa87_sign_message(sk: *const [u8; 4896], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18176]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SYH4AAEAAA=="
 jb 20f
@@ -2191,7 +2191,7 @@ call {vg_mldsa87_sign_with_cache}
 /// * `sig` and `scratch` must not overlap each other, `sk`, `msg`, `ctx`, `rnd` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mldsa87_sign_message_prepared(sk: *const [u8; 28448], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18176]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mldsa87_sign_message_prepared(sk: *const [u8; 28448], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18176]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SYH4AAEAAA=="
 jb 20f
@@ -2237,7 +2237,7 @@ call {vg_mldsa87_sign_with_cache}
 /// * `scratch` must not overlap `pk`, `mu` or `sig` (distinct Rust objects never do).
 /// * None of `pk`, `mu`, `sig` and `scratch` may overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mldsa87_verify(pk: *const [u8; 2592], mu: *const [u8; 64], sig: *const [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mldsa87_verify(pk: *const [u8; 2592], mu: *const [u8; 64], sig: *const [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "QbgAAAAA"
 call {vg_mldsa87_verify_with_cache}
@@ -2264,7 +2264,7 @@ call {vg_mldsa87_verify_with_cache}
 /// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig`, `tr` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mldsa87_verify_message_cached(pk: *const [u8; 2592], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176], tr: *const [u8; 64]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mldsa87_verify_message_cached(pk: *const [u8; 2592], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176], tr: *const [u8; 64]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SYH4AAEAAA=="
 jb 20f
@@ -2314,7 +2314,7 @@ call {vg_mldsa87_verify_with_cache}
 /// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig`, `tr` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_mldsa87_verify_message_prepared(pk: *const [u8; 10784], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176], tr: *const [u8; 64]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mldsa87_verify_message_prepared(pk: *const [u8; 10784], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176], tr: *const [u8; 64]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SYH4AAEAAA=="
 jb 20f

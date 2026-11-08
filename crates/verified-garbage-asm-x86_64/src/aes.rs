@@ -16,7 +16,7 @@
 /// * `schedule` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `schedule` may overlap the return address on the stack or the 520 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 240]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 240]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPj9//9IieFIg8EISYnJSYmZgAEAAEmJqYgBAABNiaGQAQAATYmpmAEAAE2JsaABAABNibmoAQAASYnw"
 20:
@@ -71,7 +71,7 @@ pub const VG_AES_EXPAND_KEY_AESNI_FEATURES: verified_garbage_cpu::Features = ver
 /// * Neither `key` nor `schedule` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_expand_key_aesni(key: *const u8, key_len: usize, schedule: *mut [u8; 240]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_expand_key_aesni(key: *const u8, key_len: usize, schedule: *mut [u8; 240]) {
     core::arch::naked_asm!(
         r#".base64 "Zg927WYPctUfZg9v9WYP/vZmD2/+Zg/+/2ZED2/HZkUP/sBmRQ9vyGZFD/7JZkUPb9FmRQ/+0mZFD2/aZkUP/ttmRQ9v42ZFD/7kSIP+GA=="
 je 20f
@@ -105,7 +105,7 @@ jmp 21f
 /// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_encrypt_blocks(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_encrypt_blocks(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
         r#".base64 "TYnBSYnISYmZgAEAAEmJqYgBAABNiaGQAQAATYmpmAEAAE2JsaABAABNibmoAQAASYn3SAH2SAH2SAH2SAH2SAH3TInOSIHGgAcAAA=="
 20:
@@ -176,7 +176,7 @@ jmp 22f
 /// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_decrypt_blocks(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_decrypt_blocks(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
         r#".base64 "TYnBSYnISYmZgAEAAEmJqYgBAABNiaGQAQAATYmpmAEAAE2JsaABAABNibmoAQAASYn3SAH2SAH2SAH2SAH2SAH3TInOSIHGgAcAAA=="
 20:
@@ -256,7 +256,7 @@ pub const VG_AES_ENCRYPT_BLOCKS_AESNI_SCRATCH_WRITTEN: usize = 0;
 /// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_encrypt_blocks_aesni(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_encrypt_blocks_aesni(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
         r#".base64 "SYnyTQHSTQHSTQHSTQHSSQH6SIP5CA=="
 jb 20f
@@ -319,7 +319,7 @@ pub const VG_AES_DECRYPT_BLOCKS_AESNI_FEATURES: verified_garbage_cpu::Features =
 /// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_decrypt_blocks_aesni(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_decrypt_blocks_aesni(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
         r#".base64 "80QPb0cQZkUPONvA80UPf0AQ80QPb0cgZkUPONvA80UPf0Ag80QPb0cwZkUPONvA80UPf0Aw80QPb0dAZkUPONvA80UPf0BA80QPb0dQZkUPONvA80UPf0BQ80QPb0dgZkUPONvA80UPf0Bg80QPb0dwZkUPONvA80UPf0Bw80QPb4eAAAAAZkUPONvA80UPf4CAAAAA80QPb4eQAAAAZkUPONvA80UPf4CQAAAASIP+Cg=="
 je 20f
@@ -400,7 +400,7 @@ pub const VG_AES_ENCRYPT_BLOCKS_VAES_SCRATCH_WRITTEN: usize = 0;
 /// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2` and `vaes` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_encrypt_blocks_vaes(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_encrypt_blocks_vaes(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
         r#".base64 "SYnyTQHSTQHSTQHSTQHSSQH6SIP5EA=="
 jb 20f
@@ -482,7 +482,7 @@ pub const VG_AES_DECRYPT_BLOCKS_VAES_FEATURES: verified_garbage_cpu::Features = 
 /// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2` and `vaes` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_decrypt_blocks_vaes(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_decrypt_blocks_vaes(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
         r#".base64 "80QPb0cQZkUPONvA80UPf0AQ80QPb0cgZkUPONvA80UPf0Ag80QPb0cwZkUPONvA80UPf0Aw80QPb0dAZkUPONvA80UPf0BA80QPb0dQZkUPONvA80UPf0BQ80QPb0dgZkUPONvA80UPf0Bg80QPb0dwZkUPONvA80UPf0Bw80QPb4eAAAAAZkUPONvA80UPf4CAAAAA80QPb4eQAAAAZkUPONvA80UPf4CQAAAASIP+Cg=="
 je 20f

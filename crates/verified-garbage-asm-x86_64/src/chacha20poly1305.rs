@@ -21,7 +21,7 @@ pub const VG_CHACHA20_POLY1305_SEAL_AVX2_FEATURES: verified_garbage_cpu::Feature
 /// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 1768 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_avx2(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_avx2(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI1kJPhIi0QkEEiJBCQ="
 call {vg_chacha20_poly1305_seal_body_avx2}
@@ -49,7 +49,7 @@ pub const VG_CHACHA20_POLY1305_OPEN_AVX2_FEATURES: verified_garbage_cpu::Feature
 /// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 1784 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_chacha20_poly1305_open_avx2(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_avx2(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJED5//9Ii4QkyAYAAEiJRCQISIngSIPAGEiJRCQQTYnDSItEJBBMi1QkCEFTUEFS"
 call {vg_chacha20_poly1305_open_body_avx2}
@@ -80,7 +80,7 @@ pub const VG_CHACHA20_POLY1305_OPEN_TO_AVX2_FEATURES: verified_garbage_cpu::Feat
 /// * None of `key`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 1800 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_chacha20_poly1305_open_to_avx2(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_to_avx2(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJDD5//9Ii4Qk2AYAAEiJRCQISIuEJOAGAABIiUQkEEiLhCToBgAASIlEJBhIieBIg8AoSIlEJCBIi0QkIEyLVCQYTYnDTItEJAhBU1BBUg=="
 call {vg_chacha20_poly1305_open_body_avx2}
@@ -111,7 +111,7 @@ pub const VG_CHACHA20_POLY1305_SEAL_GATHER_AVX2_FEATURES: verified_garbage_cpu::
 /// * None of `key`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 1880 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_gather_avx2(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_gather_avx2(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQQVFNicNIi3wkOEmD+QA="
 je 20f
@@ -193,7 +193,7 @@ pub const VG_CHACHA20_POLY1305_SEAL_AVX512_FEATURES: verified_garbage_cpu::Featu
 /// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 1768 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx512f` and `avx2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_avx512(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_avx512(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "uAAAAABMichNicpJgerBAwAASYP6QEnHwgAAAABJD0LCSD2AAgAA"
 jb 20f
@@ -231,7 +231,7 @@ pub const VG_CHACHA20_POLY1305_OPEN_AVX512_FEATURES: verified_garbage_cpu::Featu
 /// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 1784 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx512f` and `avx2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_chacha20_poly1305_open_avx512(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_avx512(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "uAAAAABMichNicpJgerBAwAASYP6QEnHwgAAAABJD0LCSD2AAgAA"
 jb 20f
@@ -272,7 +272,7 @@ pub const VG_CHACHA20_POLY1305_OPEN_TO_AVX512_FEATURES: verified_garbage_cpu::Fe
 /// * None of `key`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 1800 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx512f` and `avx2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_chacha20_poly1305_open_to_avx512(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_to_avx512(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "uAAAAABMichNicpJgerBAwAASYP6QEnHwgAAAABJD0LCSD2AAgAA"
 jb 20f
@@ -313,7 +313,7 @@ pub const VG_CHACHA20_POLY1305_SEAL_GATHER_AVX512_FEATURES: verified_garbage_cpu
 /// * None of `key`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 1880 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx512f` and `avx2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_gather_avx512(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_gather_avx512(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SItEJBBIPQEEAAA="
 jb 20f
@@ -471,7 +471,7 @@ pub const VG_CHACHA20_POLY1305_SEAL_AVX512VL_FEATURES: verified_garbage_cpu::Fea
 /// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 1768 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_avx512vl(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_avx512vl(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "uAAAAABMichNicpJgerBAwAASYP6QEnHwgAAAABJD0LCSD0AAwAA"
 jb 20f
@@ -710,7 +710,7 @@ pub const VG_CHACHA20_POLY1305_OPEN_AVX512VL_FEATURES: verified_garbage_cpu::Fea
 /// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 1784 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_chacha20_poly1305_open_avx512vl(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_avx512vl(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "uAAAAABMichNicpJgerBAwAASYP6QEnHwgAAAABJD0LCSD0AAwAA"
 jb 20f
@@ -751,7 +751,7 @@ pub const VG_CHACHA20_POLY1305_OPEN_TO_AVX512VL_FEATURES: verified_garbage_cpu::
 /// * None of `key`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 1800 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_chacha20_poly1305_open_to_avx512vl(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_to_avx512vl(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "uAAAAABMichNicpJgerBAwAASYP6QEnHwgAAAABJD0LCSD0AAwAA"
 jb 20f
@@ -792,7 +792,7 @@ pub const VG_CHACHA20_POLY1305_SEAL_GATHER_AVX512VL_FEATURES: verified_garbage_c
 /// * None of `key`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 1880 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_gather_avx512vl(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_gather_avx512vl(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SItEJBBIPQEEAAA="
 jb 20f
@@ -950,7 +950,7 @@ pub const VG_CHACHA20_POLY1305_SEAL_IFMA_FEATURES: verified_garbage_cpu::Feature
 /// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 1768 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx512f`, `avx2` and `avx512ifma` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_ifma(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_ifma(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI1kJPhIi0QkEEiJBCQ="
 call {vg_chacha20_poly1305_seal_body_ifma}
@@ -978,7 +978,7 @@ pub const VG_CHACHA20_POLY1305_OPEN_IFMA_FEATURES: verified_garbage_cpu::Feature
 /// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 1784 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx512f`, `avx2`, `avx512ifma` and `avx512vl` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_chacha20_poly1305_open_ifma(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_ifma(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "TInISC3BAQAASD2/AAAA"
 jb 20f
@@ -1019,7 +1019,7 @@ pub const VG_CHACHA20_POLY1305_OPEN_TO_IFMA_FEATURES: verified_garbage_cpu::Feat
 /// * None of `key`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 1800 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx512f`, `avx2`, `avx512ifma` and `avx512vl` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_chacha20_poly1305_open_to_ifma(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_to_ifma(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "TInISC3BAQAASD2/AAAA"
 jb 20f
@@ -1060,7 +1060,7 @@ pub const VG_CHACHA20_POLY1305_SEAL_GATHER_IFMA_FEATURES: verified_garbage_cpu::
 /// * None of `key`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 1880 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx512f`, `avx2` and `avx512ifma` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_gather_ifma(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_gather_ifma(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SItEJBBIPcEDAAA="
 jb 20f
@@ -1226,7 +1226,7 @@ call {vg_chacha20_poly1305_seal_ifma}
 /// * `data` and `tag` must not overlap each other, `key`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 1768 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_chacha20_poly1305_seal(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI1kJPhIi0QkEEiJBCQ="
 call {vg_chacha20_poly1305_seal_body}
@@ -1250,7 +1250,7 @@ call {vg_chacha20_poly1305_seal_body}
 /// * `data` must not overlap `key`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 1784 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_chacha20_poly1305_open(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJED5//9Ii4QkyAYAAEiJRCQISIngSIPAGEiJRCQQTYnDSItEJBBMi1QkCEFTUEFS"
 call {vg_chacha20_poly1305_open_body}
@@ -1277,7 +1277,7 @@ call {vg_chacha20_poly1305_open_body}
 /// * `dst` must not overlap `key`, `nonce`, `aad`, `src`, `tag` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `key`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 1800 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_chacha20_poly1305_open_to(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_to(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJDD5//9Ii4Qk2AYAAEiJRCQISIuEJOAGAABIiUQkEEiLhCToBgAASIlEJBhIieBIg8AoSIlEJCBIi0QkIEyLVCQYTYnDTItEJAhBU1BBUg=="
 call {vg_chacha20_poly1305_open_body}
@@ -1304,7 +1304,7 @@ call {vg_chacha20_poly1305_open_body}
 /// * `dst` and `tag` must not overlap each other, `key`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
 /// * None of `key`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 1880 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_gather(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_gather(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQQVFNicNIi3wkOEmD+QA="
 je 20f
@@ -1380,7 +1380,7 @@ pub const VG_CHACHA20_POLY1305_SEAL_SSSE3_FEATURES: verified_garbage_cpu::Featur
 /// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 1768 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` target feature.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_ssse3(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_ssse3(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI1kJPhIi0QkEEiJBCQ="
 call {vg_chacha20_poly1305_seal_body_ssse3}
@@ -1408,7 +1408,7 @@ pub const VG_CHACHA20_POLY1305_OPEN_SSSE3_FEATURES: verified_garbage_cpu::Featur
 /// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 1784 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` target feature.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_chacha20_poly1305_open_ssse3(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_ssse3(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJED5//9Ii4QkyAYAAEiJRCQISIngSIPAGEiJRCQQTYnDSItEJBBMi1QkCEFTUEFS"
 call {vg_chacha20_poly1305_open_body_ssse3}
@@ -1439,7 +1439,7 @@ pub const VG_CHACHA20_POLY1305_OPEN_TO_SSSE3_FEATURES: verified_garbage_cpu::Fea
 /// * None of `key`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 1800 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` target feature.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_chacha20_poly1305_open_to_ssse3(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_to_ssse3(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJDD5//9Ii4Qk2AYAAEiJRCQISIuEJOAGAABIiUQkEEiLhCToBgAASIlEJBhIieBIg8AoSIlEJCBIi0QkIEyLVCQYTYnDTItEJAhBU1BBUg=="
 call {vg_chacha20_poly1305_open_body_ssse3}
@@ -1470,7 +1470,7 @@ pub const VG_CHACHA20_POLY1305_SEAL_GATHER_SSSE3_FEATURES: verified_garbage_cpu:
 /// * None of `key`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 1880 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` target feature.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_gather_ssse3(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_gather_ssse3(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQQVFNicNIi3wkOEmD+QA="
 je 20f

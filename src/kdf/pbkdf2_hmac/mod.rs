@@ -28,7 +28,13 @@ pub trait Pbkdf2Hash: HmacHash {
     /// Fills `out` with the key derived from `password` and `salt` with
     /// `iterations` iterations (see [`derive()`]).
     #[doc(hidden)]
-    fn pbkdf2_derive(password: &[u8], salt: &[u8], iterations: NonZeroU32, out: &mut [u8]);
+    fn pbkdf2_derive(
+        dit: crate::dit::Dit<'_>,
+        password: &[u8],
+        salt: &[u8],
+        iterations: NonZeroU32,
+        out: &mut [u8],
+    );
 }
 
 /// Fills `out` with the key derived from `password` and `salt` with
@@ -39,7 +45,8 @@ pub trait Pbkdf2Hash: HmacHash {
 /// If `out` is longer than (2³² − 1) times the digest size ("derived key too
 /// long" in RFC 8018).
 pub fn derive<H: Pbkdf2Hash>(password: &[u8], salt: &[u8], iterations: NonZeroU32, out: &mut [u8]) {
-    H::pbkdf2_derive(password, salt, iterations, out);
+    crate::dit::enter!(dit);
+    H::pbkdf2_derive(dit, password, salt, iterations, out);
 }
 
 /// The key derived from a password did not match the expected one: the
@@ -89,10 +96,11 @@ pub fn verify<H: Pbkdf2Hash, const N: usize>(
     iterations: NonZeroU32,
     expected: &[u8; N],
 ) -> Result<(), KeyMismatch> {
+    crate::dit::enter!(dit);
     crate::ct::assert_verify_len!(N);
     let mut key = [0u8; N];
-    H::pbkdf2_derive(password, salt, iterations, &mut key);
-    let matches = crate::ct::eq(&key, expected);
+    H::pbkdf2_derive(dit, password, salt, iterations, &mut key);
+    let matches = crate::ct::eq(dit, &key, expected);
     crate::zeroize::zeroize(&mut key);
     if matches { Ok(()) } else { Err(KeyMismatch) }
 }
@@ -112,6 +120,7 @@ macro_rules! whole_pbkdf2 {
     ($hash:ident, pbkdf2: $pbkdf2:path, output: $output:literal $(,)?) => {
         impl super::Pbkdf2Hash for $hash {
             fn pbkdf2_derive(
+                dit: $crate::dit::Dit<'_>,
                 password: &[u8],
                 salt: &[u8],
                 iterations: core::num::NonZeroU32,
@@ -129,6 +138,7 @@ macro_rules! whole_pbkdf2 {
                 // features of.
                 unsafe {
                     $pbkdf2(
+                        dit,
                         password.as_ptr(),
                         password.len(),
                         salt.as_ptr(),

@@ -145,6 +145,8 @@ fn encrypt_with(
     mgf1: Table,
     mut random: impl FnMut(&mut [u8]) -> Result<(), Error>,
 ) -> Result<Vec<u8>, Error> {
+    // The plaintext and the seed are secret.
+    crate::dit::enter!(dit);
     let k = key.modulus_len();
     if plaintext.len() + 2 * len + 2 > k {
         return Err(Error::MessageTooLong);
@@ -155,7 +157,7 @@ fn encrypt_with(
     random(seed)?;
     let mut out = vec![0u8; k];
     let mut scratch = key.verify_scratch.take(public_scratch_words(k), true);
-    let pre = key.pre(&mut scratch);
+    let pre = key.pre(dit, &mut scratch);
     // SAFETY: each pointer is valid for its length (`out` and `scratch` for
     // writes), and none overlaps another or wraps around, as they are
     // distinct Rust allocations; `PublicKey::new` gives
@@ -169,6 +171,7 @@ fn encrypt_with(
     // implementations the CPU has the features of.
     let r = unsafe {
         vg_rsa_oaep_encrypt_precomputed_auto(
+            dit,
             out.as_mut_ptr(),
             k,
             key.n.as_ptr(),
@@ -214,14 +217,16 @@ impl PrivateKey {
         mgf1_hash: Hash,
         label: &[u8],
     ) -> Result<Vec<u8>, Error> {
+        crate::dit::enter!(dit);
         let (h, m) = with_tables(hash, mgf1_hash).ok_or(Error::UnsupportedHash)?;
-        decrypt_with(self, ciphertext, label, h, m)
+        decrypt_with(dit, self, ciphertext, label, h, m)
     }
 }
 
 /// `vg_rsa_oaep_decrypt` with the label's hash function `hash` and MGF1's
 /// `mgf1`.
 fn decrypt_with(
+    dit: crate::dit::Dit<'_>,
     key: &PrivateKey,
     ciphertext: &[u8],
     label: &[u8],
@@ -247,6 +252,7 @@ fn decrypt_with(
     // has the features of.
     let r = unsafe {
         vg_rsa_oaep_decrypt_auto(
+            dit,
             out.as_mut_ptr(),
             k,
             &mut len,

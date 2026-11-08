@@ -139,11 +139,12 @@ impl Key {
         if !matches!(key.len(), 16 | 24 | 32) {
             return Err(InvalidKeyLength);
         }
+        crate::dit::enter!(dit);
         let mut schedule = CacheAligned([0; 240]);
         // SAFETY: the key is 16, 24 or 32 bytes long; the key and the schedule
         // are separate valid buffers of the sizes of the signature. The
         // dispatcher calls only an implementation the CPU has the features of.
-        unsafe { vg_aes_expand_key_auto(key.as_ptr(), key.len(), &mut schedule.0) };
+        unsafe { vg_aes_expand_key_auto(dit, key.as_ptr(), key.len(), &mut schedule.0) };
         Ok(Self {
             schedule,
             rounds: key.len() / 4 + 6,
@@ -154,36 +155,40 @@ impl Key {
     /// which it replaces with the last ciphertext block (unchanged for empty
     /// input).
     fn encrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) {
-        self.blocks(iv, buffer, true);
+        crate::dit::enter!(dit);
+        self.blocks(dit, iv, buffer, true);
     }
 
     /// Decrypts the whole blocks of `buffer` in place, from the block `iv`,
     /// which it replaces with the last ciphertext block (unchanged for empty
     /// input).
     fn decrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) {
-        self.blocks(iv, buffer, false);
+        crate::dit::enter!(dit);
+        self.blocks(dit, iv, buffer, false);
     }
 
     /// Encrypts the rest of a message, of any length, in place: its whole
-    /// blocks with `encrypt`, then the bytes after them, fewer than 16, with
+    /// blocks with `blocks`, then the bytes after them, fewer than 16, with
     /// the final function, from the IV the whole blocks leave.
     fn encrypt_final(&self, iv: &mut [u8; 16], buffer: &mut [u8]) {
+        crate::dit::enter!(dit);
         let (blocks, rest) = buffer.split_at_mut(buffer.len() / 16 * 16);
-        self.encrypt(iv, blocks);
+        self.blocks(dit, iv, blocks, true);
         if !rest.is_empty() {
-            self.final_(iv, rest, true);
+            self.final_(dit, iv, rest, true);
         }
     }
 
     /// Decrypts the rest of a message, of any length, in place: its whole
-    /// blocks with `decrypt` (which may decrypt several at once), then the
+    /// blocks with `blocks` (which may decrypt several at once), then the
     /// bytes after them, fewer than 16, with the final function, from the IV
     /// the whole blocks leave.
     fn decrypt_final(&self, iv: &mut [u8; 16], buffer: &mut [u8]) {
+        crate::dit::enter!(dit);
         let (blocks, rest) = buffer.split_at_mut(buffer.len() / 16 * 16);
-        self.decrypt(iv, blocks);
+        self.blocks(dit, iv, blocks, false);
         if !rest.is_empty() {
-            self.final_(iv, rest, false);
+            self.final_(dit, iv, rest, false);
         }
     }
 
@@ -191,7 +196,13 @@ impl Key {
     /// of a message, of any length: it
     /// replaces `iv` with the last ciphertext block, or, after a partial last
     /// segment, with keystream, which the caller wipes.
-    fn final_(&self, iv: &mut [u8; 16], buffer: &mut [u8], encrypt: bool) {
+    fn final_(
+        &self,
+        dit: crate::dit::Dit<'_>,
+        iv: &mut [u8; 16],
+        buffer: &mut [u8],
+        encrypt: bool,
+    ) {
         let mut scratch = CacheAligned([0; 272]);
         // SAFETY: `rounds` is 10, 12 or 14 and the schedule holds its key
         // schedule; `buffer` is valid for `len` bytes, and it, the block at
@@ -201,6 +212,7 @@ impl Key {
         unsafe {
             if encrypt {
                 vg_aes_cfb128_encrypt_final_auto(
+                    dit,
                     &self.schedule.0,
                     self.rounds,
                     iv,
@@ -210,6 +222,7 @@ impl Key {
                 );
             } else {
                 vg_aes_cfb128_decrypt_final_auto(
+                    dit,
                     &self.schedule.0,
                     self.rounds,
                     iv,
@@ -225,7 +238,13 @@ impl Key {
     }
 
     /// Encrypts (`encrypt`) or decrypts whole blocks.
-    fn blocks(&self, iv: &mut [u8; 16], blocks: &mut [u8], encrypt: bool) {
+    fn blocks(
+        &self,
+        dit: crate::dit::Dit<'_>,
+        iv: &mut [u8; 16],
+        blocks: &mut [u8],
+        encrypt: bool,
+    ) {
         let mut scratch = CacheAligned([0; 272]);
         // SAFETY: `rounds` is 10, 12 or 14 and the schedule holds its key
         // schedule; `blocks` holds `len / 16` whole blocks (its length is a
@@ -236,6 +255,7 @@ impl Key {
         unsafe {
             if encrypt {
                 vg_aes_cfb128_encrypt_auto(
+                    dit,
                     &self.schedule.0,
                     self.rounds,
                     iv,
@@ -245,6 +265,7 @@ impl Key {
                 );
             } else {
                 vg_aes_cfb128_decrypt_auto(
+                    dit,
                     &self.schedule.0,
                     self.rounds,
                     iv,

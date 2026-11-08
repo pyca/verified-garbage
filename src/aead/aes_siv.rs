@@ -70,6 +70,7 @@ impl AesSiv {
     /// Prepares `key`, which must be 32, 48 or 64 bytes long: `K1`, for
     /// S2V, then `K2`, for CTR, each 16, 24 or 32 bytes.
     pub fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
+        crate::dit::enter!(dit);
         if !matches!(key.len(), 32 | 48 | 64) {
             return Err(InvalidKeyLength);
         }
@@ -84,7 +85,7 @@ impl AesSiv {
         // the function uses, and neither wraps around the end of the address
         // space. The dispatcher calls only an implementation the CPU has the
         // features of.
-        unsafe { vg_aes_siv_init_auto(key.as_ptr(), key.len(), &mut k.ctx.0) };
+        unsafe { vg_aes_siv_init_auto(dit, key.as_ptr(), key.len(), &mut k.ctx.0) };
         Ok(k)
     }
 
@@ -114,6 +115,7 @@ impl AesSiv {
     /// protocol that must hide repeated messages passes a nonce as the last
     /// component.
     pub fn encrypt_in_place(&self, ads: &[&[u8]], data: &mut [u8]) -> Result<Block, Error> {
+        crate::dit::enter!(dit);
         let mut storage = [const { MaybeUninit::uninit() }; Self::MAX_COMPONENTS];
         let descs = Self::descriptors(ads, &mut storage)?;
         let mut siv = [0u8; 16];
@@ -133,6 +135,7 @@ impl AesSiv {
         // CPU has the features of.
         unsafe {
             vg_aes_siv_encrypt_auto(
+                dit,
                 &self.ctx.0,
                 self.rounds,
                 descs,
@@ -155,6 +158,7 @@ impl AesSiv {
         data: &mut [u8],
         tag: &[u8; 16],
     ) -> Result<(), Error> {
+        crate::dit::enter!(dit);
         let mut storage = [const { MaybeUninit::uninit() }; Self::MAX_COMPONENTS];
         let descs = Self::descriptors(ads, &mut storage)?;
         // SAFETY: as in `encrypt_in_place`, with the received synthetic IV
@@ -163,6 +167,7 @@ impl AesSiv {
         // only read-only buffers may overlap it.
         let ok = unsafe {
             vg_aes_siv_decrypt_auto(
+                dit,
                 &self.ctx.0,
                 self.rounds,
                 descs,

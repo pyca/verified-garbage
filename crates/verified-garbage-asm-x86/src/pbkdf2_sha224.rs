@@ -18,7 +18,7 @@
 /// * `out` must not overlap `password` or `salt` (distinct Rust objects never do).
 /// * None of `password`, `salt` and `out` may overlap the arguments on the stack, overlap the return address on the stack or the 1712 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_pbkdf2_hmac_sha224(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
+pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha224(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "jaQknPn//4uEJGgGAACJRCQEi4QkbAYAAIlEJAiLhCRwBgAAiUQkDIuEJHQGAACJRCQQi4QkeAYAAIlEJBSLhCR8BgAAiUQkGIuEJIAGAACJRCQcieCDwCSJRCQgi0QkIImYQAMAAImwRAMAAIm4SAMAAImoTAMAAInFi0wkCIP5QQ=="
 jae 20f
@@ -103,7 +103,7 @@ pub const VG_PBKDF2_HMAC_SHA224_SHANI_FEATURES: verified_garbage_cpu::Features =
 /// * None of `password`, `salt` and `out` may overlap the arguments on the stack, overlap the return address on the stack or the 1712 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_pbkdf2_hmac_sha224_shani(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
+pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha224_shani(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "jaQknPn//4uEJGgGAACJRCQEi4QkbAYAAIlEJAiLhCRwBgAAiUQkDIuEJHQGAACJRCQQi4QkeAYAAIlEJBSLhCR8BgAAiUQkGIuEJIAGAACJRCQcieCDwCSJRCQgi0QkIImYQAMAAImwRAMAAIm4SAMAAImoTAMAAInFi0wkCIP5QQ=="
 jae 20f

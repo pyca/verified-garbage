@@ -91,9 +91,10 @@ impl Key {
             return Err(InvalidKeyLength);
         }
         let mut schedule = CacheAligned([0; 384]);
+        crate::dit::enter!(dit);
         // SAFETY: the key has a validated length; key and schedule are separate
         // valid buffers of the required sizes.
-        unsafe { vg_triple_des_expand_key_auto(key.as_ptr(), key.len(), &mut schedule.0) };
+        unsafe { vg_triple_des_expand_key_auto(dit, key.as_ptr(), key.len(), &mut schedule.0) };
         Ok(Self { schedule })
     }
 
@@ -101,11 +102,18 @@ impl Key {
     /// replaces with the one to continue from: its last `8 - n` bytes
     /// followed by the last `n` (up to 8) ciphertext bytes.
     fn encrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) {
+        crate::dit::enter!(dit);
         // SAFETY: `buffer`, the block at `iv` and the schedule are separate
         // valid objects of the sizes of the signature, none of them on the
         // callee's stack.
         unsafe {
-            vg_triple_des_cfb8_encrypt_auto(&self.schedule.0, iv, buffer.as_mut_ptr(), buffer.len())
+            vg_triple_des_cfb8_encrypt_auto(
+                dit,
+                &self.schedule.0,
+                iv,
+                buffer.as_mut_ptr(),
+                buffer.len(),
+            )
         };
     }
 
@@ -113,9 +121,16 @@ impl Key {
     /// replaces with the one to continue from: its last `8 - n` bytes
     /// followed by the last `n` (up to 8) ciphertext bytes.
     fn decrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) {
+        crate::dit::enter!(dit);
         // SAFETY: as in `encrypt`.
         unsafe {
-            vg_triple_des_cfb8_decrypt_auto(&self.schedule.0, iv, buffer.as_mut_ptr(), buffer.len())
+            vg_triple_des_cfb8_decrypt_auto(
+                dit,
+                &self.schedule.0,
+                iv,
+                buffer.as_mut_ptr(),
+                buffer.len(),
+            )
         };
     }
 }

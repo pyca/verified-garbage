@@ -49,16 +49,27 @@ def file : String :=
 
 def has (text part : String) : Bool := (text.splitOn part).length > 1
 
--- The functions with one implementation: other names of it.
-#guard has file "pub use crate::poly1305::vg_poly1305_init as vg_poly1305_init_auto;\n"
-#guard has file "pub use crate::poly1305::vg_poly1305_finalize as vg_poly1305_finalize_auto;\n"
+-- The functions with one implementation: a dispatcher that takes the token and calls it.
+#guard has file
+  "pub unsafe fn vg_poly1305_init_auto(_dit: verified_garbage_cpu::Dit<'_>, \
+    state: *mut [u64; 16], key: *const [u8; 32]) {\n    \
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.\n    \
+    unsafe { crate::poly1305::vg_poly1305_init(state, key) }\n}\n"
+#guard has file "pub unsafe fn vg_poly1305_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, "
+
+-- The implementations of a function with a dispatcher are the crate's own: the library
+-- reaches them only through it, with the token.
+#guard has (((out.find? (·.1 == "verified-garbage-asm-aarch64/src/poly1305.rs")).map (·.2)).getD "")
+  "pub(crate) unsafe extern \"C\" fn vg_poly1305_update_neon("
+#guard !has (((out.find? (·.1 == "verified-garbage-asm-aarch64/src/poly1305.rs")).map (·.2)).getD "")
+  "\npub unsafe extern"
 
 -- `vg_poly1305_update`: `_neon` where its registration lets it be chosen, else the base,
 -- chosen by `select` on the first call (`first`) and called through `CHOSEN`
 -- from then on.
 #guard has file
-  "pub unsafe fn vg_poly1305_update_auto(state: *mut [u64; 16], count: u64, data: *const u8, \
-    len: usize) {\n    \
+  "pub unsafe fn vg_poly1305_update_auto(_dit: verified_garbage_cpu::Dit<'_>, \
+    state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {\n    \
     /// The type of the implementations.\n    \
     type Impl = unsafe extern \"C\" fn(state: *mut [u64; 16], count: u64, data: *const u8, \
     len: usize);\n"

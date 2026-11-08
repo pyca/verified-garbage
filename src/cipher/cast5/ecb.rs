@@ -34,11 +34,18 @@ impl Cast5Ecb {
         }
         let mut schedule = CacheAligned([0; 128]);
         let mut scratch = CacheAligned([0; 32]);
+        crate::dit::enter!(dit);
         // SAFETY: the key has a validated length; the key, schedule and
         // scratch space are separate valid objects of the sizes of the
         // signature.
         unsafe {
-            vg_cast5_expand_key_auto(key.as_ptr(), key.len(), &mut schedule.0, &mut scratch.0);
+            vg_cast5_expand_key_auto(
+                dit,
+                key.as_ptr(),
+                key.len(),
+                &mut schedule.0,
+                &mut scratch.0,
+            );
         }
         // The scratch space holds the intermediate values of key expansion.
         zeroize(&mut scratch.0);
@@ -75,6 +82,7 @@ impl Cast5Ecb {
         if !buffer.len().is_multiple_of(8) {
             return Err(IncompleteBlock);
         }
+        crate::dit::enter!(dit);
         let mut scratch = CacheAligned([0; 32]);
         // SAFETY: `rounds` is 12 or 16, as `new` chose for the key the
         // schedule was expanded from; the buffer holds `len / 8` whole
@@ -83,6 +91,7 @@ impl Cast5Ecb {
         unsafe {
             if encrypt {
                 vg_cast5_ecb_encrypt_auto(
+                    dit,
                     &self.schedule.0,
                     self.rounds,
                     buffer.as_mut_ptr().cast(),
@@ -91,6 +100,7 @@ impl Cast5Ecb {
                 );
             } else {
                 vg_cast5_ecb_decrypt_auto(
+                    dit,
                     &self.schedule.0,
                     self.rounds,
                     buffer.as_mut_ptr().cast(),

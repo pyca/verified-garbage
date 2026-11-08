@@ -48,8 +48,9 @@ impl VerifyingKey {
     /// [`InvalidSignature`] if the signature is not 64 bytes long, an
     /// encoding is not canonical, or the equation does not hold.
     pub fn verify(&self, message: &[u8], signature: &[u8]) -> Result<(), InvalidSignature> {
+        let dit = crate::dit::public(crate::dit::Why::Verify);
         let signature: &[u8; 64] = signature.try_into().map_err(|_| InvalidSignature)?;
-        let valid = verify_message(&self.bytes, message, signature);
+        let valid = verify_message(dit, &self.bytes, message, signature);
         if valid == 1 {
             Ok(())
         } else {
@@ -86,9 +87,10 @@ impl Drop for SigningKey {
 impl SigningKey {
     /// Derive a signing key and its public key from an RFC 8032 seed.
     pub fn from_seed(seed: &[u8; 32]) -> Self {
+        crate::dit::enter!(dit);
         let mut expanded = [0u8; 64];
         let mut public = [0u8; 32];
-        key_pair(&mut public, &mut expanded, seed);
+        key_pair(dit, &mut public, &mut expanded, seed);
         Self {
             seed: *seed,
             expanded,
@@ -108,14 +110,20 @@ impl SigningKey {
 
     /// Sign `message` deterministically using pure Ed25519 (RFC 8032 §5.1.6).
     pub fn sign(&self, message: &[u8]) -> [u8; 64] {
-        sign_message(self, message)
+        crate::dit::enter!(dit);
+        sign_message(dit, self, message)
     }
 }
 
 /// The seed's SHA-512 digest (RFC 8032 §5.1.5, step 1) into `expanded` and
 /// its public key (§5.1.5) into `public`, with the verified
 /// `vg_ed25519_key_pair`.
-fn key_pair(public: &mut [u8; 32], expanded: &mut [u8; 64], seed: &[u8; 32]) {
+fn key_pair(
+    dit: crate::dit::Dit<'_>,
+    public: &mut [u8; 32],
+    expanded: &mut [u8; 64],
+    seed: &[u8; 32],
+) {
     // Uninitialized: the contract holds whatever the scratch holds, so
     // filling it with zeros first would only cost time.
     let mut scratch = CacheAligned(MaybeUninit::<[u64; 1024]>::uninit());
@@ -124,12 +132,17 @@ fn key_pair(public: &mut [u8; 32], expanded: &mut [u8; 64], seed: &[u8; 32]) {
     // neither each other nor the call's stack, and none wraps the address
     // space. The dispatcher calls only an implementation the CPU has the
     // features of.
-    unsafe { vg_ed25519_key_pair_auto(public, expanded, seed, scratch.0.as_mut_ptr()) };
+    unsafe { vg_ed25519_key_pair_auto(dit, public, expanded, seed, scratch.0.as_mut_ptr()) };
     // SAFETY: `scratch` is writable for its whole length.
     unsafe { zeroize_raw(scratch.0.as_mut_ptr().cast(), size_of::<[u64; 1024]>()) };
 }
 
-fn verify_message(pk: &[u8; 32], message: &[u8], signature: &[u8; 64]) -> u32 {
+fn verify_message(
+    dit: crate::dit::Dit<'_>,
+    pk: &[u8; 32],
+    message: &[u8],
+    signature: &[u8; 64],
+) -> u32 {
     // Uninitialized: each function's contract holds whatever the scratch
     // holds, so filling it with zeros first would only cost time.
     let mut scratch = CacheAligned(MaybeUninit::<[u64; 1024]>::uninit());
@@ -138,6 +151,7 @@ fn verify_message(pk: &[u8; 32], message: &[u8], signature: &[u8; 64]) -> u32 {
     // dispatcher calls only an implementation the CPU has the features of.
     let valid = unsafe {
         vg_ed25519_verify_auto(
+            dit,
             pk,
             message.as_ptr(),
             message.len(),
@@ -150,7 +164,7 @@ fn verify_message(pk: &[u8; 32], message: &[u8], signature: &[u8; 64]) -> u32 {
     valid
 }
 
-fn sign_message(key: &SigningKey, message: &[u8]) -> [u8; 64] {
+fn sign_message(dit: crate::dit::Dit<'_>, key: &SigningKey, message: &[u8]) -> [u8; 64] {
     let mut signature = [0u8; 64];
     // Uninitialized: each function's contract holds whatever the scratch
     // holds, so filling it with zeros first would only cost time.
@@ -164,6 +178,7 @@ fn sign_message(key: &SigningKey, message: &[u8]) -> [u8; 64] {
     // implementation the CPU has the features of.
     unsafe {
         vg_ed25519_sign_expanded_auto(
+            dit,
             &mut signature,
             &key.expanded,
             &key.public.bytes,

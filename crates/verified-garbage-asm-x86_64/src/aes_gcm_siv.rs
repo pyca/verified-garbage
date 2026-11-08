@@ -24,7 +24,7 @@ pub const VG_AES_GCM_SIV_SEAL_AESNI_FEATURES: verified_garbage_cpu::Features = v
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` and `aes` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_aesni(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_aesni(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAAC7AAAAAEyJ/0iBx+gBAABJi6/IAAAASNHtSIPtAQ=="
 20:
@@ -216,7 +216,7 @@ pub const VG_AES_GCM_SIV_OPEN_AESNI_FEATURES: verified_garbage_cpu::Features = v
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` and `aes` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_open_aesni(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_aesni(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcIuwAAAABMif9IgcfoAQAASYuvyAAAAEjR7UiD7QE="
 20:
@@ -425,7 +425,7 @@ pub const VG_AES_GCM_SIV_SEAL_AESNI_AVX2_FEATURES: verified_garbage_cpu::Feature
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3`, `aes`, `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_aesni_avx2(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_aesni_avx2(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SItEJAhMCcBIPYAAAAA="
 jae 20f
@@ -868,7 +868,7 @@ pub const VG_AES_GCM_SIV_OPEN_AESNI_AVX2_FEATURES: verified_garbage_cpu::Feature
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3`, `aes`, `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_open_aesni_avx2(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_aesni_avx2(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJAhMCcBIPYAAAAA="
 jae 20f
@@ -1345,7 +1345,7 @@ pub const VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Featu
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq`, `ssse3` and `aes` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_aesni_pclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_aesni_pclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAAC7AAAAAEyJ/0iBx+gBAABJi6/IAAAASNHtSIPtAQ=="
 20:
@@ -1537,7 +1537,7 @@ pub const VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Featu
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq`, `ssse3` and `aes` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_open_aesni_pclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_aesni_pclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcIuwAAAABMif9IgcfoAQAASYuvyAAAAEjR7UiD7QE="
 20:
@@ -1746,7 +1746,7 @@ pub const VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::F
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq`, `ssse3`, `aes` and `avx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_aesni_pclmul_avx(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_aesni_pclmul_avx(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAAC7AAAAAEyJ/0iBx+gBAABJi6/IAAAASNHtSIPtAQ=="
 20:
@@ -2078,7 +2078,7 @@ pub const VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::F
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq`, `ssse3`, `aes` and `avx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_open_aesni_pclmul_avx(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_aesni_pclmul_avx(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcIuwAAAABMif9IgcfoAQAASYuvyAAAAEjR7UiD7QE="
 20:
@@ -2444,7 +2444,7 @@ pub const VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_AVX_AVX2_FEATURES: verified_garbage_c
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq`, `ssse3`, `aes`, `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_aesni_pclmul_avx_avx2(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_aesni_pclmul_avx_avx2(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SItEJAhMCcBIPYAAAAA="
 jae 20f
@@ -3216,7 +3216,7 @@ pub const VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX_AVX2_FEATURES: verified_garbage_c
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq`, `ssse3`, `aes`, `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_open_aesni_pclmul_avx_avx2(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_aesni_pclmul_avx_avx2(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJAhMCcBIPYAAAAA="
 jae 20f
@@ -4056,7 +4056,7 @@ pub const VG_AES_GCM_SIV_SEAL_AESNI_VPCLMUL_FEATURES: verified_garbage_cpu::Feat
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `aes`, `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_aesni_vpclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_aesni_vpclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAAC7AAAAAEyJ/0iBx+gBAABJi6/IAAAASNHtSIPtAQ=="
 20:
@@ -4332,7 +4332,7 @@ pub const VG_AES_GCM_SIV_OPEN_AESNI_VPCLMUL_FEATURES: verified_garbage_cpu::Feat
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `aes`, `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_open_aesni_vpclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_aesni_vpclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcIuwAAAABMif9IgcfoAQAASYuvyAAAAEjR7UiD7QE="
 20:
@@ -4627,7 +4627,7 @@ pub const VG_AES_GCM_SIV_SEAL_AESNI_VPCLMUL_AVX2_FEATURES: verified_garbage_cpu:
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `aes`, `avx` and `avx2` target features.
 #[allow(unused_imports)]
-pub use self::vg_aes_gcm_siv_seal_aesni_vpclmul as vg_aes_gcm_siv_seal_aesni_vpclmul_avx2;
+pub(crate) use self::vg_aes_gcm_siv_seal_aesni_vpclmul as vg_aes_gcm_siv_seal_aesni_vpclmul_avx2;
 
 /// The CPU features `vg_aes_gcm_siv_open_aesni_vpclmul_avx2` requires (`Artifact.features`).
 pub const VG_AES_GCM_SIV_OPEN_AESNI_VPCLMUL_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
@@ -4652,7 +4652,7 @@ pub const VG_AES_GCM_SIV_OPEN_AESNI_VPCLMUL_AVX2_FEATURES: verified_garbage_cpu:
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `aes`, `avx` and `avx2` target features.
 #[allow(unused_imports)]
-pub use self::vg_aes_gcm_siv_open_aesni_vpclmul as vg_aes_gcm_siv_open_aesni_vpclmul_avx2;
+pub(crate) use self::vg_aes_gcm_siv_open_aesni_vpclmul as vg_aes_gcm_siv_open_aesni_vpclmul_avx2;
 
 /// The CPU features `vg_aes_gcm_siv_seal_pclmul` requires (`Artifact.features`).
 pub const VG_AES_GCM_SIV_SEAL_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
@@ -4675,7 +4675,7 @@ pub const VG_AES_GCM_SIV_SEAL_PCLMUL_FEATURES: verified_garbage_cpu::Features = 
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_pclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_pclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAAC7AAAAAEyJ/0iBx+gBAABJi6/IAAAASNHtSIPtAQ=="
 20:
@@ -4867,7 +4867,7 @@ pub const VG_AES_GCM_SIV_OPEN_PCLMUL_FEATURES: verified_garbage_cpu::Features = 
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_open_pclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_pclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcIuwAAAABMif9IgcfoAQAASYuvyAAAAEjR7UiD7QE="
 20:
@@ -5076,7 +5076,7 @@ pub const VG_AES_GCM_SIV_SEAL_PCLMUL_AVX2_FEATURES: verified_garbage_cpu::Featur
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq`, `ssse3`, `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_pclmul_avx2(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_pclmul_avx2(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SItEJAhMCcBIPYAAAAA="
 jae 20f
@@ -5519,7 +5519,7 @@ pub const VG_AES_GCM_SIV_OPEN_PCLMUL_AVX2_FEATURES: verified_garbage_cpu::Featur
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq`, `ssse3`, `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_open_pclmul_avx2(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_pclmul_avx2(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJAhMCcBIPYAAAAA="
 jae 20f
@@ -5992,7 +5992,7 @@ jmp 21b
 /// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_seal(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAAC7AAAAAEyJ/0iBx+gBAABJi6/IAAAASNHtSIPtAQ=="
 20:
@@ -6180,7 +6180,7 @@ jmp 242f
 /// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_open(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcIuwAAAABMif9IgcfoAQAASYuvyAAAAEjR7UiD7QE="
 20:
@@ -6389,7 +6389,7 @@ pub const VG_AES_GCM_SIV_SEAL_AVX2_FEATURES: verified_garbage_cpu::Features = ve
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_avx2(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_avx2(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SItEJAhMCcBIPYAAAAA="
 jae 20f
@@ -6832,7 +6832,7 @@ pub const VG_AES_GCM_SIV_OPEN_AVX2_FEATURES: verified_garbage_cpu::Features = ve
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_open_avx2(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_avx2(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJAhMCcBIPYAAAAA="
 jae 20f
@@ -7309,7 +7309,7 @@ pub const VG_AES_GCM_SIV_SEAL_VAES_FEATURES: verified_garbage_cpu::Features = ve
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3`, `aes`, `vaes`, `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_vaes(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_vaes(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAAC7AAAAAEyJ/0iBx+gBAABJi6/IAAAASNHtSIPtAQ=="
 20:
@@ -7585,7 +7585,7 @@ pub const VG_AES_GCM_SIV_OPEN_VAES_FEATURES: verified_garbage_cpu::Features = ve
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3`, `aes`, `vaes`, `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_open_vaes(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_vaes(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcIuwAAAABMif9IgcfoAQAASYuvyAAAAEjR7UiD7QE="
 20:
@@ -7880,7 +7880,7 @@ pub const VG_AES_GCM_SIV_SEAL_VAES_AVX2_FEATURES: verified_garbage_cpu::Features
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3`, `aes`, `vaes`, `avx` and `avx2` target features.
 #[allow(unused_imports)]
-pub use self::vg_aes_gcm_siv_seal_vaes as vg_aes_gcm_siv_seal_vaes_avx2;
+pub(crate) use self::vg_aes_gcm_siv_seal_vaes as vg_aes_gcm_siv_seal_vaes_avx2;
 
 /// The CPU features `vg_aes_gcm_siv_open_vaes_avx2` requires (`Artifact.features`).
 pub const VG_AES_GCM_SIV_OPEN_VAES_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
@@ -7905,7 +7905,7 @@ pub const VG_AES_GCM_SIV_OPEN_VAES_AVX2_FEATURES: verified_garbage_cpu::Features
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3`, `aes`, `vaes`, `avx` and `avx2` target features.
 #[allow(unused_imports)]
-pub use self::vg_aes_gcm_siv_open_vaes as vg_aes_gcm_siv_open_vaes_avx2;
+pub(crate) use self::vg_aes_gcm_siv_open_vaes as vg_aes_gcm_siv_open_vaes_avx2;
 
 /// The CPU features `vg_aes_gcm_siv_seal_vaes_pclmul` requires (`Artifact.features`).
 pub const VG_AES_GCM_SIV_SEAL_VAES_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
@@ -7928,7 +7928,7 @@ pub const VG_AES_GCM_SIV_SEAL_VAES_PCLMUL_FEATURES: verified_garbage_cpu::Featur
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq`, `ssse3`, `aes`, `vaes`, `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_vaes_pclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_vaes_pclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAAC7AAAAAEyJ/0iBx+gBAABJi6/IAAAASNHtSIPtAQ=="
 20:
@@ -8204,7 +8204,7 @@ pub const VG_AES_GCM_SIV_OPEN_VAES_PCLMUL_FEATURES: verified_garbage_cpu::Featur
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq`, `ssse3`, `aes`, `vaes`, `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_open_vaes_pclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_vaes_pclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcIuwAAAABMif9IgcfoAQAASYuvyAAAAEjR7UiD7QE="
 20:
@@ -8499,7 +8499,7 @@ pub const VG_AES_GCM_SIV_SEAL_VAES_PCLMUL_AVX2_FEATURES: verified_garbage_cpu::F
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq`, `ssse3`, `aes`, `vaes`, `avx` and `avx2` target features.
 #[allow(unused_imports)]
-pub use self::vg_aes_gcm_siv_seal_vaes_pclmul as vg_aes_gcm_siv_seal_vaes_pclmul_avx2;
+pub(crate) use self::vg_aes_gcm_siv_seal_vaes_pclmul as vg_aes_gcm_siv_seal_vaes_pclmul_avx2;
 
 /// The CPU features `vg_aes_gcm_siv_open_vaes_pclmul_avx2` requires (`Artifact.features`).
 pub const VG_AES_GCM_SIV_OPEN_VAES_PCLMUL_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
@@ -8524,7 +8524,7 @@ pub const VG_AES_GCM_SIV_OPEN_VAES_PCLMUL_AVX2_FEATURES: verified_garbage_cpu::F
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq`, `ssse3`, `aes`, `vaes`, `avx` and `avx2` target features.
 #[allow(unused_imports)]
-pub use self::vg_aes_gcm_siv_open_vaes_pclmul as vg_aes_gcm_siv_open_vaes_pclmul_avx2;
+pub(crate) use self::vg_aes_gcm_siv_open_vaes_pclmul as vg_aes_gcm_siv_open_vaes_pclmul_avx2;
 
 /// The CPU features `vg_aes_gcm_siv_seal_vaes_vpclmul` requires (`Artifact.features`).
 pub const VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
@@ -8547,7 +8547,7 @@ pub const VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Featu
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `aes`, `vaes`, `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_vaes_vpclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_vaes_vpclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAAC7AAAAAEyJ/0iBx+gBAABJi6/IAAAASNHtSIPtAQ=="
 20:
@@ -9020,7 +9020,7 @@ pub const VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Featu
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `aes`, `vaes`, `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_open_vaes_vpclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_vaes_vpclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcIuwAAAABMif9IgcfoAQAASYuvyAAAAEjR7UiD7QE="
 20:
@@ -9527,7 +9527,7 @@ pub const VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `aes`, `vaes`, `avx` and `avx2` target features.
 #[allow(unused_imports)]
-pub use self::vg_aes_gcm_siv_seal_vaes_vpclmul as vg_aes_gcm_siv_seal_vaes_vpclmul_avx512;
+pub(crate) use self::vg_aes_gcm_siv_seal_vaes_vpclmul as vg_aes_gcm_siv_seal_vaes_vpclmul_avx512;
 
 /// The CPU features `vg_aes_gcm_siv_open_vaes_vpclmul_avx512` requires (`Artifact.features`).
 pub const VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
@@ -9552,7 +9552,7 @@ pub const VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `aes`, `vaes`, `avx` and `avx2` target features.
 #[allow(unused_imports)]
-pub use self::vg_aes_gcm_siv_open_vaes_vpclmul as vg_aes_gcm_siv_open_vaes_vpclmul_avx512;
+pub(crate) use self::vg_aes_gcm_siv_open_vaes_vpclmul as vg_aes_gcm_siv_open_vaes_vpclmul_avx512;
 
 /// The CPU features `vg_aes_gcm_siv_seal_vpclmul` requires (`Artifact.features`).
 pub const VG_AES_GCM_SIV_SEAL_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
@@ -9575,7 +9575,7 @@ pub const VG_AES_GCM_SIV_SEAL_VPCLMUL_FEATURES: verified_garbage_cpu::Features =
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_vpclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_vpclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAAC7AAAAAEyJ/0iBx+gBAABJi6/IAAAASNHtSIPtAQ=="
 20:
@@ -9851,7 +9851,7 @@ pub const VG_AES_GCM_SIV_OPEN_VPCLMUL_FEATURES: verified_garbage_cpu::Features =
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_siv_open_vpclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_vpclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcIuwAAAABMif9IgcfoAQAASYuvyAAAAEjR7UiD7QE="
 20:
@@ -10146,7 +10146,7 @@ pub const VG_AES_GCM_SIV_SEAL_VPCLMUL_AVX2_FEATURES: verified_garbage_cpu::Featu
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx` and `avx2` target features.
 #[allow(unused_imports)]
-pub use self::vg_aes_gcm_siv_seal_vpclmul as vg_aes_gcm_siv_seal_vpclmul_avx2;
+pub(crate) use self::vg_aes_gcm_siv_seal_vpclmul as vg_aes_gcm_siv_seal_vpclmul_avx2;
 
 /// The CPU features `vg_aes_gcm_siv_open_vpclmul_avx2` requires (`Artifact.features`).
 pub const VG_AES_GCM_SIV_OPEN_VPCLMUL_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
@@ -10171,7 +10171,7 @@ pub const VG_AES_GCM_SIV_OPEN_VPCLMUL_AVX2_FEATURES: verified_garbage_cpu::Featu
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx` and `avx2` target features.
 #[allow(unused_imports)]
-pub use self::vg_aes_gcm_siv_open_vpclmul as vg_aes_gcm_siv_open_vpclmul_avx2;
+pub(crate) use self::vg_aes_gcm_siv_open_vpclmul as vg_aes_gcm_siv_open_vpclmul_avx2;
 
 #[rustfmt::skip]
 #[path = "internal/vg_ghash.rs"]

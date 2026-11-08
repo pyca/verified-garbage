@@ -19,7 +19,7 @@ pub const VG_CMAC_AES_INIT_AES_FEATURES: verified_garbage_cpu::Features = verifi
 /// * Neither `state` nor `key` may overlap the 2304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_cmac_aes_init_aes(state: *mut [u64; 38], key: *const u8, key_len: usize) {
+pub(crate) unsafe extern "C" fn vg_cmac_aes_init_aes(state: *mut [u64; 38], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd12403ff,0x910003e3,0xf9044073,0xf9044474,0xf9044875,0xf9044c7e,0x91000013,0x91000074
 .inst 0xd342fc55,0x91001ab5,0x91000020,0x91000041,0x91000262
@@ -51,7 +51,7 @@ pub const VG_CMAC_AES_FINISH_AES_FEATURES: verified_garbage_cpu::Features = veri
 /// * Neither `state` nor `out` may overlap the 2304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_cmac_aes_finish_aes(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_cmac_aes_finish_aes(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r".inst 0xd12403ff,0x910003e4,0xf9408809,0xf9000069,0xf9408c09,0xf9000469,0xf9044093,0xf904449e
 .inst 0x91000093,0x91000085,0x91000044,0x91000062,0x91048003
@@ -79,7 +79,7 @@ bl {vg_cmac_aes_finalize_aes}
 /// * `state` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `state` nor `key` may overlap the 2304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_cmac_aes_init(state: *mut [u64; 38], key: *const u8, key_len: usize) {
+pub(crate) unsafe extern "C" fn vg_cmac_aes_init(state: *mut [u64; 38], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd12403ff,0x910003e3,0xf9044073,0xf9044474,0xf9044875,0xf9044c7e,0x91000013,0x91000074
 .inst 0xd342fc55,0x91001ab5,0x91000020,0x91000041,0x91000262
@@ -107,7 +107,7 @@ bl {vg_cmac_aes_subkeys}
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the 2304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_cmac_aes_finish(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_cmac_aes_finish(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r".inst 0xd12403ff,0x910003e4,0xf9408809,0xf9000069,0xf9408c09,0xf9000469,0xf9044093,0xf904449e
 .inst 0x91000093,0x91000085,0x91000044,0x91000062,0x91048003
@@ -139,7 +139,7 @@ pub const VG_CMAC_AES_ABSORB_AES_FEATURES: verified_garbage_cpu::Features = veri
 /// * Neither `state` nor `data` may overlap the 2304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_cmac_aes_absorb_aes(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_cmac_aes_absorb_aes(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd12403ff,0x910003e5,0xf90440b3,0xf90444b4,0xf90448b5,0xf9044cb6,0xf90450b8,0xf90454be
 .inst 0xf90458b7,0x91000013,0x91000034,0x91000075,0x91000096,0x910000b7
@@ -213,7 +213,7 @@ b 214f
 /// * `state` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the 2304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_cmac_aes_absorb(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_cmac_aes_absorb(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd12403ff,0x910003e5,0xf90440b3,0xf90444b4,0xf90448b5,0xf9044cb6,0xf90450b8,0xf90454be
 .inst 0xf90458b7,0x91000013,0x91000034,0x91000075,0x91000096,0x910000b7

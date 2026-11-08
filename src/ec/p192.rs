@@ -15,7 +15,7 @@ use crate::zeroize::zeroize;
 
 /// The public key `Q = dG` of the key `d`, in the uncompressed form of
 /// SEC 1 §2.3.3, or `None` if `d` is not in `[1, n − 1]`.
-pub(crate) fn public_key(d: &[u8; 24]) -> Option<[u8; 49]> {
+pub(crate) fn public_key(dit: crate::dit::Dit<'_>, d: &[u8; 24]) -> Option<[u8; 49]> {
     let mut out = [0; 49];
     let mut scratch = CacheAligned([0u64; 1024]);
     // SAFETY: `out` is valid for reads and writes of 49 bytes, `d` for reads
@@ -23,7 +23,7 @@ pub(crate) fn public_key(d: &[u8; 24]) -> Option<[u8; 49]> {
     // are distinct objects from each other and `d`, so none overlaps another
     // or the call's stack frame, and, as Rust objects, none wraps around the
     // address space.
-    let ok = unsafe { vg_ec_p192_public_key_auto(&mut out, d, &mut scratch.0) };
+    let ok = unsafe { vg_ec_p192_public_key_auto(dit, &mut out, d, &mut scratch.0) };
     zeroize(&mut scratch.0);
     (ok == 1).then_some(out)
 }

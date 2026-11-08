@@ -31,10 +31,12 @@ mod sealed {
     /// of it with the public key `q`.
     pub trait Functions<C: super::Curve>: crate::hashes::HashFunction {
         fn sign(
+            dit: crate::dit::Dit<'_>,
             d: &C::PrivateKey,
             digest: &Self::Output,
         ) -> Result<C::Signature, super::InvalidKey>;
         fn verify(
+            dit: crate::dit::Dit<'_>,
             q: &C::PublicKey,
             digest: &Self::Output,
             signature: &C::Signature,
@@ -81,7 +83,8 @@ impl<C: Curve> PrivateKey<C> {
         &self,
         digest: &H::Output,
     ) -> Result<C::Signature, InvalidKey> {
-        H::sign(&self.d, digest)
+        crate::dit::enter!(dit);
+        H::sign(dit, &self.d, digest)
     }
 }
 
@@ -116,6 +119,7 @@ impl<C: Curve> PublicKey<C> {
         digest: &H::Output,
         signature: &C::Signature,
     ) -> Result<(), InvalidSignature> {
-        H::verify(&self.q, digest, signature)
+        let dit = crate::dit::public(crate::dit::Why::Verify);
+        H::verify(dit, &self.q, digest, signature)
     }
 }

@@ -37,7 +37,7 @@
 /// * `hash` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 /// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_rsa_oaep_decrypt(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 5], mgf1: *const [usize; 5]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_oaep_decrypt(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 5], mgf1: *const [usize; 5]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "Af8h+AAAgTlwAMz5eADs+YAADPqIACz6kABM+pgAbPqgAIz6qACs+rAAzPq4AOz6wAAM+8gALPvQAEz72ABs++AAjPvoAKz7pgIIfPAADPjIAczpeDvvfHgbcHx4K7F8qAFM6rABbOpB/yH4AACBOWAATPkgAgzoaAAM+CgCDOhwAAz4MAIM6HgADPg4AgzogAAM+EACDOiIAAz4SAIM6JAADPhQAgzomAAM+FgCDOigAAz4YAIM6KgADPgAIAA4FAIOfLAADPiQAmzpAPxrObgAbPkAAG44eHvkfXgzxXx4e+Z9eEMHfXhLKH14AizpeHvqfQ=="
 bl {vg_rsa_private_checked}
@@ -432,7 +432,7 @@ bne %cr0, 293b
 /// * `hash` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 /// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_rsa_oaep_encrypt_precomputed(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const u8, seed_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, hash: *const [usize; 5], mgf1: *const [usize; 5]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_oaep_encrypt_precomputed(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const u8, seed_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, hash: *const [usize; 5], mgf1: *const [usize; 5]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "Af8h+AAAgTlwAMz5eADs+YAADPqIACz6kABM+pgAbPqgAIz6qACs+rAAzPq4AOz6wAAM+8gALPvQAEz72ABs++AAjPvoAKz7pgIIfPAADPiAAczpeDPPfHgbcHx4O/F8eEMSfXhLM314U1R9kAGs6pgBzOqIAezqYAEs6WgBTOlwAWzpAABhOKABY+ggAGPo8P+DOAAAJCg="
 beq %cr0, 20f

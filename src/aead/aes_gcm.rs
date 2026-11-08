@@ -191,7 +191,10 @@ impl Drop for AesGcm {
         // flag word (`VG.Spec.Gcm.wipePreparedContract`).
         #[cfg(target_arch = "x86_64")]
         unsafe {
-            vg_aes_gcm_wipe_prepared_auto(self.ctx.0.as_mut_ptr())
+            vg_aes_gcm_wipe_prepared_auto(
+                crate::dit::public(crate::dit::Why::Wipe),
+                self.ctx.0.as_mut_ptr(),
+            )
         };
         // SAFETY: `self.ctx` is valid for writes of `size_of::<KeyCtx>()`
         // bytes, and lies outside `zeroize_raw`'s frame.
@@ -211,6 +214,7 @@ impl AesGcm {
     /// Prepares `key`, which must be 16, 24 or 32 bytes long (AES-128,
     /// AES-192 or AES-256).
     pub fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
+        crate::dit::enter!(dit);
         if !matches!(key.len(), 16 | 24 | 32) {
             return Err(InvalidKeyLength);
         }
@@ -228,7 +232,7 @@ impl AesGcm {
         // 24 or 32; `k.ctx` is valid for reads and writes of 256 bytes. They
         // are distinct objects, so they do not overlap each other or anything
         // on the stack, or wrap around the end of the address space.
-        unsafe { vg_aes_gcm_init_auto(key.as_ptr(), key.len(), k.ctx.0.as_mut_ptr().cast()) };
+        unsafe { vg_aes_gcm_init_auto(dit, key.as_ptr(), key.len(), k.ctx.0.as_mut_ptr().cast()) };
         // SAFETY: `k.ctx` is valid for reads and writes of 1032 bytes, and
         // overlaps nothing on the stack; its first 256 bytes are the key
         // context of `vg_aes_gcm_init` (`VG.Spec.Gcm.KeyRepr`), which
@@ -236,7 +240,7 @@ impl AesGcm {
         // (`PreparedRepr`), which the `_prepared` functions require.
         #[cfg(target_arch = "x86_64")]
         unsafe {
-            vg_aes_gcm_prepare_auto(k.ctx.0.as_mut_ptr())
+            vg_aes_gcm_prepare_auto(dit, k.ctx.0.as_mut_ptr())
         };
         // SAFETY: the key context, valid for reads of 256 bytes (written
         // above), and `k.powers`, for writes of 128, are distinct fields, so
@@ -246,7 +250,7 @@ impl AesGcm {
         // which the `_with_powers` functions require.
         #[cfg(target_arch = "aarch64")]
         unsafe {
-            vg_aes_gcm_store_powers_auto(k.ctx.0.as_ptr().cast(), &mut k.powers.0)
+            vg_aes_gcm_store_powers_auto(dit, k.ctx.0.as_ptr().cast(), &mut k.powers.0)
         };
         Ok(k)
     }
@@ -272,18 +276,19 @@ impl AesGcm {
         aad: &[u8],
         data: &mut [u8],
     ) -> Result<Block, Error> {
+        crate::dit::enter!(dit);
         // Check the lengths before encrypting anything.
         check_nonce(nonce)?;
         add_len(0, data.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
-        Ok(self.seal(nonce, aad, data))
+        Ok(self.seal(dit, nonce, aad, data))
     }
 
     /// `vg_aes_gcm_seal` (on x86-64, `vg_aes_gcm_seal_prepared`; on
     /// AArch64, `vg_aes_gcm_seal_with_powers`) of `data` in place, whose
     /// lengths the caller checked.
     #[inline(always)]
-    fn seal(&self, nonce: &[u8], aad: &[u8], data: &mut [u8]) -> Block {
+    fn seal(&self, dit: crate::dit::Dit<'_>, nonce: &[u8], aad: &[u8], data: &mut [u8]) -> Block {
         let mut tag: Block = [0; 16];
         // SAFETY: `self.ctx` is the key context `vg_aes_gcm_init` wrote for
         // `self.rounds` (10, 12 or 14) rounds, valid for reads of 256 bytes,
@@ -299,6 +304,7 @@ impl AesGcm {
         unsafe {
             #[cfg(target_arch = "x86_64")]
             vg_aes_gcm_seal_prepared_auto(
+                dit,
                 self.ctx.0.as_ptr(),
                 self.rounds,
                 nonce.as_ptr(),
@@ -311,6 +317,7 @@ impl AesGcm {
             );
             #[cfg(target_arch = "aarch64")]
             vg_aes_gcm_seal_with_powers_auto(
+                dit,
                 self.key(),
                 self.rounds,
                 nonce.as_ptr(),
@@ -324,6 +331,7 @@ impl AesGcm {
             );
             #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
             vg_aes_gcm_seal_auto(
+                dit,
                 self.key(),
                 self.rounds,
                 nonce.as_ptr(),
@@ -372,11 +380,12 @@ impl AesGcm {
         data: &mut [u8],
         tag: &[u8; N],
     ) -> Result<(), Error> {
+        crate::dit::enter!(dit);
         assert_tag_length!(N);
         check_nonce(nonce)?;
         add_len(0, data.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
-        self.open(data, tag, nonce, aad)
+        self.open(dit, data, tag, nonce, aad)
     }
 
     /// GCM-AD (§7.2) with `tag`, of a length between 4 and 16 (which the
@@ -390,12 +399,20 @@ impl AesGcm {
     /// stores (5–11% slower opens of up to 255 bytes on Zen 3, 4 and 5); and
     /// an inline call made every open about 5 ns slower on Emerald Rapids.
     #[cfg_attr(target_arch = "x86_64", inline(never))]
-    fn open(&self, data: &mut [u8], tag: &[u8], nonce: &[u8], aad: &[u8]) -> Result<(), Error> {
+    fn open(
+        &self,
+        dit: crate::dit::Dit<'_>,
+        data: &mut [u8],
+        tag: &[u8],
+        nonce: &[u8],
+        aad: &[u8],
+    ) -> Result<(), Error> {
         // SAFETY: as in `seal`, with the received tag `tag` valid for reads
         // of its length.
         let ok = unsafe {
             #[cfg(target_arch = "x86_64")]
             let ok = vg_aes_gcm_open_prepared_auto(
+                dit,
                 self.ctx.0.as_ptr(),
                 self.rounds,
                 nonce.as_ptr(),
@@ -409,6 +426,7 @@ impl AesGcm {
             );
             #[cfg(target_arch = "aarch64")]
             let ok = vg_aes_gcm_open_with_powers_auto(
+                dit,
                 self.key(),
                 self.rounds,
                 nonce.as_ptr(),
@@ -423,6 +441,7 @@ impl AesGcm {
             );
             #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
             let ok = vg_aes_gcm_open_auto(
+                dit,
                 self.key(),
                 self.rounds,
                 nonce.as_ptr(),
@@ -474,6 +493,7 @@ impl AesGcm {
         tag: &[u8; N],
         out: &mut [u8],
     ) -> Result<(), Error> {
+        crate::dit::enter!(dit);
         assert_tag_length!(N);
         if out.len() != ciphertext.len() {
             return Err(Error::InvalidOutputLength);
@@ -488,6 +508,7 @@ impl AesGcm {
         let ok = unsafe {
             #[cfg(target_arch = "x86_64")]
             let ok = vg_aes_gcm_open_to_prepared_auto(
+                dit,
                 self.ctx.0.as_ptr(),
                 self.rounds,
                 nonce.as_ptr(),
@@ -503,6 +524,7 @@ impl AesGcm {
             );
             #[cfg(not(target_arch = "x86_64"))]
             let ok = vg_aes_gcm_open_to_auto(
+                dit,
                 self.key(),
                 self.rounds,
                 nonce.as_ptr(),
@@ -543,6 +565,7 @@ impl AesGcm {
         plaintext: &[&[u8]],
         out: &mut [u8],
     ) -> Result<Block, Error> {
+        crate::dit::enter!(dit);
         if plaintext.len() > Self::MAX_PIECES {
             return Err(Error::TooManyPieces);
         }
@@ -555,7 +578,7 @@ impl AesGcm {
             return Err(Error::InvalidOutputLength);
         }
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
-        Ok(self.seal_pieces(nonce, aad, plaintext, out))
+        Ok(self.seal_pieces(dit, nonce, aad, plaintext, out))
     }
 
     /// `encrypt` on AArch64, where no `_with_powers` function gathers the
@@ -565,21 +588,35 @@ impl AesGcm {
     /// `encrypt` checked is `out.len()`).
     #[cfg(target_arch = "aarch64")]
     #[inline(never)]
-    fn seal_pieces(&self, nonce: &[u8], aad: &[u8], plaintext: &[&[u8]], out: &mut [u8]) -> Block {
+    fn seal_pieces(
+        &self,
+        dit: crate::dit::Dit<'_>,
+        nonce: &[u8],
+        aad: &[u8],
+        plaintext: &[&[u8]],
+        out: &mut [u8],
+    ) -> Block {
         let mut rest = &mut *out;
         for piece in plaintext {
             let (dst, tail) = rest.split_at_mut(piece.len());
             dst.copy_from_slice(piece);
             rest = tail;
         }
-        self.seal(nonce, aad, out)
+        self.seal(dit, nonce, aad, out)
     }
 
     /// `encrypt` elsewhere, by `vg_aes_gcm_seal_gather` (on x86-64,
     /// `vg_aes_gcm_seal_gather_prepared`).
     #[cfg(not(target_arch = "aarch64"))]
     #[inline(always)]
-    fn seal_pieces(&self, nonce: &[u8], aad: &[u8], plaintext: &[&[u8]], out: &mut [u8]) -> Block {
+    fn seal_pieces(
+        &self,
+        dit: crate::dit::Dit<'_>,
+        nonce: &[u8],
+        aad: &[u8],
+        plaintext: &[&[u8]],
+        out: &mut [u8],
+    ) -> Block {
         // The descriptors of the pieces, as `vg_aes_gcm_seal_gather` takes
         // them: each its address and its length. Only the first
         // `plaintext.len()` are written, and the function reads only those.
@@ -599,6 +636,7 @@ impl AesGcm {
         unsafe {
             #[cfg(target_arch = "x86_64")]
             vg_aes_gcm_seal_gather_prepared_auto(
+                dit,
                 self.ctx.0.as_ptr(),
                 self.rounds,
                 nonce.as_ptr(),
@@ -613,6 +651,7 @@ impl AesGcm {
             );
             #[cfg(not(target_arch = "x86_64"))]
             vg_aes_gcm_seal_gather_auto(
+                dit,
                 self.key(),
                 self.rounds,
                 nonce.as_ptr(),
@@ -633,8 +672,9 @@ impl AesGcm {
     /// nonzero length; 12 bytes is the recommended one). A nonce must never
     /// be used twice with the same key.
     pub fn encryptor(&self, nonce: &[u8]) -> Result<AesGcmEncryptor<'_>, Error> {
+        crate::dit::enter!(dit);
         Ok(AesGcmEncryptor {
-            stream: Stream::new(self, nonce)?,
+            stream: Stream::new(dit, self, nonce)?,
         })
     }
 
@@ -643,8 +683,9 @@ impl AesGcm {
     /// been authenticated until its [`finalize`](AesGcmDecryptor::finalize)
     /// succeeds.
     pub fn decryptor(&self, nonce: &[u8]) -> Result<AesGcmDecryptor<'_>, Error> {
+        crate::dit::enter!(dit);
         Ok(AesGcmDecryptor {
-            stream: Stream::new(self, nonce)?,
+            stream: Stream::new(dit, self, nonce)?,
         })
     }
 }
@@ -673,7 +714,7 @@ impl<const DECRYPT: bool> Drop for Stream<'_, DECRYPT> {
 
 impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
     /// Starts a message under `key` and `nonce`.
-    fn new(key: &'a AesGcm, nonce: &[u8]) -> Result<Self, Error> {
+    fn new(dit: crate::dit::Dit<'_>, key: &'a AesGcm, nonce: &[u8]) -> Result<Self, Error> {
         check_nonce(nonce)?;
         let mut s = Stream {
             key,
@@ -688,13 +729,13 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
         // the writable one overlaps nothing else, nor anything on the stack,
         // and none wraps around.
         unsafe {
-            vg_aes_gcm_stream_init_auto(key.key(), nonce.as_ptr(), nonce.len(), &mut s.state.0)
+            vg_aes_gcm_stream_init_auto(dit, key.key(), nonce.as_ptr(), nonce.len(), &mut s.state.0)
         };
         Ok(s)
     }
 
     /// Absorbs more additional data, which must all come before the text.
-    fn update_aad(&mut self, aad: &[u8]) -> Result<(), Error> {
+    fn update_aad(&mut self, dit: crate::dit::Dit<'_>, aad: &[u8]) -> Result<(), Error> {
         if self.in_text {
             return Err(Error::AadAfterText);
         }
@@ -704,6 +745,7 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
         // `self.aad_len` bytes of additional data and no text yet.
         unsafe {
             vg_aes_gcm_stream_aad_auto(
+                dit,
                 self.key.key(),
                 &mut self.state.0,
                 self.aad_len,
@@ -717,7 +759,7 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
 
     /// Encrypts (or, if `DECRYPT`, decrypts) the next `data.len()` bytes of
     /// the text in place.
-    fn update(&mut self, data: &mut [u8]) -> Result<(), Error> {
+    fn update(&mut self, dit: crate::dit::Dit<'_>, data: &mut [u8]) -> Result<(), Error> {
         let text_len =
             add_len(self.text_len, data.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
         self.in_text = true;
@@ -740,6 +782,7 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
         // `self.text_len` of text.
         unsafe {
             (if DECRYPT { decrypt } else { encrypt })(
+                dit,
                 ctx,
                 self.key.rounds,
                 &mut self.state.0,
@@ -756,13 +799,14 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
 
 impl Stream<'_, false> {
     /// Finishes the message and returns its 16-byte tag.
-    fn finish(mut self) -> Block {
+    fn finish(mut self, dit: crate::dit::Dit<'_>) -> Block {
         let mut tag: Block = [0; 16];
         // SAFETY: as in `update`, with `tag` (a local) valid for reads and
         // writes of 16 bytes. `update_aad` and `update` checked the lengths
         // (§5.2.1.1).
         unsafe {
             vg_aes_gcm_stream_finish_auto(
+                dit,
                 self.key.key(),
                 self.key.rounds,
                 &mut self.state.0,
@@ -778,11 +822,12 @@ impl Stream<'_, false> {
 impl Stream<'_, true> {
     /// Finishes the message and checks the received prefix in constant time.
     /// Callers check at compile time that its length is between 4 and 16.
-    fn verify(mut self, tag: &[u8]) -> Result<(), Error> {
+    fn verify(mut self, dit: crate::dit::Dit<'_>, tag: &[u8]) -> Result<(), Error> {
         // SAFETY: as in `finish`, with the received tag `tag` valid for
         // reads of its length.
         let ok = unsafe {
             vg_aes_gcm_stream_verify_auto(
+                dit,
                 self.key.key(),
                 self.key.rounds,
                 &mut self.state.0,
@@ -816,19 +861,22 @@ impl AesGcmEncryptor<'_> {
     /// Absorbs more additional data. All of it must come before the
     /// plaintext.
     pub fn update_aad(&mut self, aad: &[u8]) -> Result<(), Error> {
-        self.stream.update_aad(aad)
+        crate::dit::enter!(dit);
+        self.stream.update_aad(dit, aad)
     }
 
     /// Encrypts the next `data.len()` bytes of the plaintext in place.
     pub fn update(&mut self, data: &mut [u8]) -> Result<(), Error> {
-        self.stream.update(data)
+        crate::dit::enter!(dit);
+        self.stream.update(dit, data)
     }
 
     /// Finishes the message and returns its full 16-byte tag. A protocol
     /// that sends a shorter tag sends its first bytes. GCM leaves no
     /// buffered text to return.
     pub fn finalize(self) -> Block {
-        self.stream.finish()
+        crate::dit::enter!(dit);
+        self.stream.finish(dit)
     }
 }
 
@@ -854,14 +902,16 @@ impl AesGcmDecryptor<'_> {
     /// Absorbs more additional data. All of it must come before the
     /// ciphertext.
     pub fn update_aad(&mut self, aad: &[u8]) -> Result<(), Error> {
-        self.stream.update_aad(aad)
+        crate::dit::enter!(dit);
+        self.stream.update_aad(dit, aad)
     }
 
     /// Decrypts the next `data.len()` bytes of the ciphertext in place. The
     /// result is not authenticated until [`finalize`](Self::finalize) (or
     /// [`finalize_truncated`](Self::finalize_truncated)) succeeds.
     pub fn update(&mut self, data: &mut [u8]) -> Result<(), Error> {
-        self.stream.update(data)
+        crate::dit::enter!(dit);
+        self.stream.update(dit, data)
     }
 
     /// Finishes the message and checks that `tag` is its 16-byte tag. If
@@ -885,8 +935,9 @@ impl AesGcmDecryptor<'_> {
     /// Appendix C restricts 4- and 8-byte tags to applications that bound the
     /// length of the messages and the number of decryptions under one key.
     pub fn finalize_truncated<const N: usize>(self, tag: &[u8; N]) -> Result<(), Error> {
+        crate::dit::enter!(dit);
         assert_tag_length!(N);
-        self.stream.verify(tag)
+        self.stream.verify(dit, tag)
     }
 }
 

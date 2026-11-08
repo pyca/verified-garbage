@@ -19,7 +19,7 @@ pub const VG_ED448_PUBLIC_KEY_ADX_FEATURES: verified_garbage_cpu::Features = ver
 /// * None of `out`, `seed` and `scratch` may overlap the return address on the stack or the 104 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ed448_public_key_adx(out: *mut [u8; 57], seed: *const [u8; 57], scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "sysv64" fn vg_ed448_public_key_adx(out: *mut [u8; 57], seed: *const [u8; 57], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUFBQUFBQUFBIi3wkQLgAAAAASIkHSIlHCEiJRxBIiUcYSIlHIEiJRyhIiUcwSIlHOEiJR0BIiUdISIlHUEiJR1hIiUdgSIlHaEiJR3BIiUd4SImHgAAAAEiJh4gAAABIiYeQAAAASImHmAAAAEiJh6AAAABIiYeoAAAASImHsAAAAEiJh7gAAABIiYfAAAAASIt8JEC+iAAAALoAAAAASItMJEhBuDkAAABMi0wkQEmBwQABAAA="
 call {vg_keccak_absorb_scratch}
@@ -59,7 +59,7 @@ pub const VG_ED448_SIGN_CACHED_ADX_FEATURES: verified_garbage_cpu::Features = ve
 /// * None of `out`, `seed`, `pk`, `context`, `message` and `scratch` may overlap the return address on the stack or the 464 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ed448_sign_cached_adx(out: *mut [u8; 114], seed: *const [u8; 57], pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "sysv64" fn vg_ed448_sign_cached_adx(out: *mut [u8; 114], seed: *const [u8; 57], pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "TItUJAhMi1wkELgAAAAAUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQQVNXQVJBUUFQUVJQUFBQUFBQVlBQUFBQUFBQUFBQUFBQUFBQSLhTaWdFZDQ0OEiJBCRIi4Qk2AAAAEgBwEgBwEgBwEgBwEgBwEgBwEgBwEgBwEiJRCQISIu8JPgAAAC4AAAAAEiJB0iJRwhIiUcQSIlHGEiJRyBIiUcoSIlHMEiJRzhIiUdASIlHSEiJR1BIiUdYSIlHYEiJR2hIiUdwSIlHeEiJh4AAAABIiYeIAAAASImHkAAAAEiJh5gAAABIiYegAAAASImHqAAAAEiJh7AAAABIiYe4AAAASImHwAAAAEiLvCT4AAAAvogAAAC6AAAAAEiLjCSIAAAAQbg5AAAATIuMJPgAAABJgcEAAQAA"
 call {vg_keccak_absorb_scratch}
@@ -129,7 +129,7 @@ pub const VG_ED448_VERIFY_ADX_FEATURES: verified_garbage_cpu::Features = verifie
 /// * None of `pk`, `context`, `message`, `signature` and `scratch` may overlap the return address on the stack or the 272 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ed448_verify_adx(pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, signature: *const [u8; 114], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ed448_verify_adx(pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, signature: *const [u8; 114], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SIH6AAEAAA=="
 jb 20f
@@ -178,7 +178,7 @@ call {vg_ed448_verify_equation_adx}
 /// * `out` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
 /// * None of `out`, `seed` and `scratch` may overlap the return address on the stack or the 104 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ed448_public_key(out: *mut [u8; 57], seed: *const [u8; 57], scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "sysv64" fn vg_ed448_public_key(out: *mut [u8; 57], seed: *const [u8; 57], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUFBQUFBQUFBIi3wkQLgAAAAASIkHSIlHCEiJRxBIiUcYSIlHIEiJRyhIiUcwSIlHOEiJR0BIiUdISIlHUEiJR1hIiUdgSIlHaEiJR3BIiUd4SImHgAAAAEiJh4gAAABIiYeQAAAASImHmAAAAEiJh6AAAABIiYeoAAAASImHsAAAAEiJh7gAAABIiYfAAAAASIt8JEC+iAAAALoAAAAASItMJEhBuDkAAABMi0wkQEmBwQABAAA="
 call {vg_keccak_absorb_scratch}
@@ -214,7 +214,7 @@ call {vg_ed448_scalar_base}
 /// * `out` and `scratch` must not overlap each other, `seed`, `pk`, `context`, `message` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `seed`, `pk`, `context`, `message` and `scratch` may overlap the return address on the stack or the 464 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ed448_sign_cached(out: *mut [u8; 114], seed: *const [u8; 57], pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "sysv64" fn vg_ed448_sign_cached(out: *mut [u8; 114], seed: *const [u8; 57], pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "TItUJAhMi1wkELgAAAAAUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQQVNXQVJBUUFQUVJQUFBQUFBQVlBQUFBQUFBQUFBQUFBQUFBQSLhTaWdFZDQ0OEiJBCRIi4Qk2AAAAEgBwEgBwEgBwEgBwEgBwEgBwEgBwEgBwEiJRCQISIu8JPgAAAC4AAAAAEiJB0iJRwhIiUcQSIlHGEiJRyBIiUcoSIlHMEiJRzhIiUdASIlHSEiJR1BIiUdYSIlHYEiJR2hIiUdwSIlHeEiJh4AAAABIiYeIAAAASImHkAAAAEiJh5gAAABIiYegAAAASImHqAAAAEiJh7AAAABIiYe4AAAASImHwAAAAEiLvCT4AAAAvogAAAC6AAAAAEiLjCSIAAAAQbg5AAAATIuMJPgAAABJgcEAAQAA"
 call {vg_keccak_absorb_scratch}
@@ -280,7 +280,7 @@ call {vg_ed448_scalar_mul_add}
 /// * `scratch` must not overlap `pk`, `context`, `message`, `signature` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `pk`, `context`, `message`, `signature` and `scratch` may overlap the return address on the stack or the 272 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ed448_verify(pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, signature: *const [u8; 114], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ed448_verify(pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, signature: *const [u8; 114], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SIH6AAEAAA=="
 jb 20f

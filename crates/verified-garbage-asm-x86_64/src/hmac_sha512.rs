@@ -15,7 +15,7 @@
 /// * `inner` and `outer` must not overlap each other or `key` (distinct Rust objects never do).
 /// * None of `inner`, `outer` and `key` may overlap the return address on the stack or the 3440 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_hmac_sha512_init(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_hmac_sha512_init(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SIH5gQAAAA=="
 jae 20f
@@ -78,7 +78,7 @@ jmp 21b
 /// * `inner` and `out` must not overlap each other or `outer` (distinct Rust objects never do).
 /// * None of `inner`, `outer` and `out` may overlap the return address on the stack or the 1896 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_hmac_sha512_finalize(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 64]) {
+pub(crate) unsafe extern "sysv64" fn vg_hmac_sha512_finalize(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJKj4//9JieBJg8AISYmYYAUAAEmJqGgFAABNiaBwBQAATYmoeAUAAE2JsIAFAABNibiIBQAASIn7SYn0SYnNTYnHSInWTIn6SIHCkAUAAEyJ+Q=="
 call {vg_sha512_finalize_scratch}
@@ -107,7 +107,7 @@ pub const VG_HMAC_SHA512_INIT_AVX2_FEATURES: verified_garbage_cpu::Features = ve
 /// * None of `inner`, `outer` and `key` may overlap the return address on the stack or the 3440 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_hmac_sha512_init_avx2(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_hmac_sha512_init_avx2(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SIH5gQAAAA=="
 jae 20f
@@ -174,7 +174,7 @@ pub const VG_HMAC_SHA512_FINALIZE_AVX2_FEATURES: verified_garbage_cpu::Features 
 /// * None of `inner`, `outer` and `out` may overlap the return address on the stack or the 1896 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_hmac_sha512_finalize_avx2(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 64]) {
+pub(crate) unsafe extern "sysv64" fn vg_hmac_sha512_finalize_avx2(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJKj4//9JieBJg8AISYmYYAUAAEmJqGgFAABNiaBwBQAATYmoeAUAAE2JsIAFAABNibiIBQAASIn7SYn0SYnNTYnHSInWTIn6SIHCkAUAAEyJ+Q=="
 call {vg_sha512_finalize_scratch_avx2}
@@ -203,7 +203,7 @@ pub const VG_HMAC_SHA512_INIT_SHANI_FEATURES: verified_garbage_cpu::Features = v
 /// * None of `inner`, `outer` and `key` may overlap the return address on the stack or the 3440 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2` and `sha512` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_hmac_sha512_init_shani(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_hmac_sha512_init_shani(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SIH5gQAAAA=="
 jae 20f
@@ -270,7 +270,7 @@ pub const VG_HMAC_SHA512_FINALIZE_SHANI_FEATURES: verified_garbage_cpu::Features
 /// * None of `inner`, `outer` and `out` may overlap the return address on the stack or the 1896 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2` and `sha512` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_hmac_sha512_finalize_shani(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 64]) {
+pub(crate) unsafe extern "sysv64" fn vg_hmac_sha512_finalize_shani(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJKj4//9JieBJg8AISYmYYAUAAEmJqGgFAABNiaBwBQAATYmoeAUAAE2JsIAFAABNibiIBQAASIn7SYn0SYnNTYnHSInWTIn6SIHCkAUAAEyJ+Q=="
 call {vg_sha512_finalize_scratch_shani}

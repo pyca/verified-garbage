@@ -12,7 +12,7 @@
 /// * `state` must be valid for reads and writes of 96 bytes.
 /// * `state` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_sha224_init(state: *mut [u8; 96]) {
+pub(crate) unsafe extern "sysv64" fn vg_sha224_init(state: *mut [u8; 96]) {
     core::arch::naked_asm!(
         r#".base64 "SLjYngXBB9V8NmZID27ASLgX3XAwOVkO92ZID27IZg9swfMPfwdIuDELwP8RFVhoZkgPbsBIuKeP+WSkT/q+ZkgPbshmD2zB8w9/RxDD"
 .p2align 6"#,
@@ -28,7 +28,7 @@ pub unsafe extern "sysv64" fn vg_sha224_init(state: *mut [u8; 96]) {
 /// * `state` must be valid for reads and writes of 96 bytes.
 /// * `state` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_sha256_init(state: *mut [u8; 96]) {
+pub(crate) unsafe extern "sysv64" fn vg_sha256_init(state: *mut [u8; 96]) {
     core::arch::naked_asm!(
         r#".base64 "SLhn5glqha5nu2ZID27ASLhy8248OvVPpWZID27IZg9swfMPfwdIuH9SDlGMaAWbZkgPbsBIuKvZgx8ZzeBbZkgPbshmD2zB8w9/RxDD"
 .p2align 6"#,
@@ -47,7 +47,7 @@ pub unsafe extern "sysv64" fn vg_sha256_init(state: *mut [u8; 96]) {
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_sha224_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 28]) {
+pub(crate) unsafe extern "sysv64" fn vg_sha224_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJJj9//9IieFIg8EISImZMAIAAEiJqTgCAABMiaFAAgAATImpSAIAAEyJsVACAABMiblYAgAASIn7SYnPSInVSYn0SYn1SYPlP0G5gAAAAEG+AAAAAEmD/Tg="
 jae 20f
@@ -125,7 +125,7 @@ je 22b
 /// * `out` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `data` nor `out` may overlap the return address on the stack or the 736 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_sha224_digest(data: *const u8, len: usize, out: *mut [u8; 28]) {
+pub(crate) unsafe extern "sysv64" fn vg_sha224_digest(data: *const u8, len: usize, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJCj9//9IieFIg8EISIPBYEiJmTACAABIiak4AgAATImhQAIAAEyJqUgCAABMibFQAgAATIm5WAIAAEmJz0iJy0iD62BJif1JifRIidVIid9IuNieBcEH1Xw2ZkgPbsBIuBfdcDA5WQ73ZkgPbshmD2zB8w9/B0i4MQvA/xEVWGhmSA9uwEi4p4/5ZKRP+r5mSA9uyGYPbMHzD39HEE2J5knB7gZNhfY="
 je 20f
@@ -202,7 +202,7 @@ pub const VG_SHA224_FINALIZE_AVX2_FEATURES: verified_garbage_cpu::Features = ver
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_sha224_finalize_avx2(state: *mut [u8; 96], count: u64, out: *mut [u8; 28]) {
+pub(crate) unsafe extern "sysv64" fn vg_sha224_finalize_avx2(state: *mut [u8; 96], count: u64, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJJj9//9IieFIg8EISImZMAIAAEiJqTgCAABMiaFAAgAATImpSAIAAEyJsVACAABMiblYAgAASIn7SYnPSInVSYn0SYn1SYPlP0G5gAAAAEG+AAAAAEmD/Tg="
 jae 20f
@@ -284,7 +284,7 @@ pub const VG_SHA224_DIGEST_AVX2_FEATURES: verified_garbage_cpu::Features = verif
 /// * Neither `data` nor `out` may overlap the return address on the stack or the 736 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_sha224_digest_avx2(data: *const u8, len: usize, out: *mut [u8; 28]) {
+pub(crate) unsafe extern "sysv64" fn vg_sha224_digest_avx2(data: *const u8, len: usize, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJCj9//9IieFIg8EISIPBYEiJmTACAABIiak4AgAATImhQAIAAEyJqUgCAABMibFQAgAATIm5WAIAAEmJz0iJy0iD62BJif1JifRIidVIid9IuNieBcEH1Xw2ZkgPbsBIuBfdcDA5WQ73ZkgPbshmD2zB8w9/B0i4MQvA/xEVWGhmSA9uwEi4p4/5ZKRP+r5mSA9uyGYPbMHzD39HEE2J5knB7gZNhfY="
 je 20f
@@ -361,7 +361,7 @@ pub const VG_SHA224_FINALIZE_SHANI_FEATURES: verified_garbage_cpu::Features = ve
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_sha224_finalize_shani(state: *mut [u8; 96], count: u64, out: *mut [u8; 28]) {
+pub(crate) unsafe extern "sysv64" fn vg_sha224_finalize_shani(state: *mut [u8; 96], count: u64, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJJj9//9IieFIg8EISImZMAIAAEiJqTgCAABMiaFAAgAATImpSAIAAEyJsVACAABMiblYAgAASIn7SYnPSInVSYn0SYn1SYPlP0G5gAAAAEG+AAAAAEmD/Tg="
 jae 20f
@@ -443,7 +443,7 @@ pub const VG_SHA224_DIGEST_SHANI_FEATURES: verified_garbage_cpu::Features = veri
 /// * Neither `data` nor `out` may overlap the return address on the stack or the 736 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_sha224_digest_shani(data: *const u8, len: usize, out: *mut [u8; 28]) {
+pub(crate) unsafe extern "sysv64" fn vg_sha224_digest_shani(data: *const u8, len: usize, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJCj9//9IieFIg8EISIPBYEiJmTACAABIiak4AgAATImhQAIAAEyJqUgCAABMibFQAgAATIm5WAIAAEmJz0iJy0iD62BJif1JifRIidVIid9IuNieBcEH1Xw2ZkgPbsBIuBfdcDA5WQ73ZkgPbshmD2zB8w9/B0i4MQvA/xEVWGhmSA9uwEi4p4/5ZKRP+r5mSA9uyGYPbMHzD39HEE2J5knB7gZNhfY="
 je 20f
@@ -515,7 +515,7 @@ call {vg_sha256_compress_shani}
 /// * `state` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the return address on the stack or the 624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_sha256_update(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_sha256_update(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJJj9//9JieBJg8AISYmYMAIAAEmJqDgCAABNiaBAAgAATYmoSAIAAE2JsFACAABNibhYAgAASIn7TYnHSInVSYnMSYn1SYPlPw=="
 20:
@@ -614,7 +614,7 @@ jne 20b
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_sha256_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
+pub(crate) unsafe extern "sysv64" fn vg_sha256_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJJj9//9IieFIg8EISImZMAIAAEiJqTgCAABMiaFAAgAATImpSAIAAEyJsVACAABMiblYAgAASIn7SYnPSInVSYn0SYn1SYPlP0G5gAAAAEG+AAAAAEmD/Tg="
 jae 20f
@@ -692,7 +692,7 @@ je 22b
 /// * `out` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `data` nor `out` may overlap the return address on the stack or the 736 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_sha256_digest(data: *const u8, len: usize, out: *mut [u8; 32]) {
+pub(crate) unsafe extern "sysv64" fn vg_sha256_digest(data: *const u8, len: usize, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJCj9//9IieFIg8EISIPBYEiJmTACAABIiak4AgAATImhQAIAAEyJqUgCAABMibFQAgAATIm5WAIAAEmJz0iJy0iD62BJif1JifRIidVIid9IuGfmCWqFrme7ZkgPbsBIuHLzbjw69U+lZkgPbshmD2zB8w9/B0i4f1IOUYxoBZtmSA9uwEi4q9mDHxnN4FtmSA9uyGYPbMHzD39HEE2J5knB7gZNhfY="
 je 20f
@@ -768,7 +768,7 @@ pub const VG_SHA256_UPDATE_AVX2_FEATURES: verified_garbage_cpu::Features = verif
 /// * Neither `state` nor `data` may overlap the return address on the stack or the 624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_sha256_update_avx2(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_sha256_update_avx2(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJJj9//9JieBJg8AISYmYMAIAAEmJqDgCAABNiaBAAgAATYmoSAIAAE2JsFACAABNibhYAgAASIn7TYnHSInVSYnMSYn1SYPlPw=="
 20:
@@ -871,7 +871,7 @@ pub const VG_SHA256_FINALIZE_AVX2_FEATURES: verified_garbage_cpu::Features = ver
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_sha256_finalize_avx2(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
+pub(crate) unsafe extern "sysv64" fn vg_sha256_finalize_avx2(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJJj9//9IieFIg8EISImZMAIAAEiJqTgCAABMiaFAAgAATImpSAIAAEyJsVACAABMiblYAgAASIn7SYnPSInVSYn0SYn1SYPlP0G5gAAAAEG+AAAAAEmD/Tg="
 jae 20f
@@ -953,7 +953,7 @@ pub const VG_SHA256_DIGEST_AVX2_FEATURES: verified_garbage_cpu::Features = verif
 /// * Neither `data` nor `out` may overlap the return address on the stack or the 736 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_sha256_digest_avx2(data: *const u8, len: usize, out: *mut [u8; 32]) {
+pub(crate) unsafe extern "sysv64" fn vg_sha256_digest_avx2(data: *const u8, len: usize, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJCj9//9IieFIg8EISIPBYEiJmTACAABIiak4AgAATImhQAIAAEyJqUgCAABMibFQAgAATIm5WAIAAEmJz0iJy0iD62BJif1JifRIidVIid9IuGfmCWqFrme7ZkgPbsBIuHLzbjw69U+lZkgPbshmD2zB8w9/B0i4f1IOUYxoBZtmSA9uwEi4q9mDHxnN4FtmSA9uyGYPbMHzD39HEE2J5knB7gZNhfY="
 je 20f
@@ -1029,7 +1029,7 @@ pub const VG_SHA256_UPDATE_SHANI_FEATURES: verified_garbage_cpu::Features = veri
 /// * Neither `state` nor `data` may overlap the return address on the stack or the 624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_sha256_update_shani(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_sha256_update_shani(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJJj9//9JieBJg8AISYmYMAIAAEmJqDgCAABNiaBAAgAATYmoSAIAAE2JsFACAABNibhYAgAASIn7TYnHSInVSYnMSYn1SYPlPw=="
 20:
@@ -1132,7 +1132,7 @@ pub const VG_SHA256_FINALIZE_SHANI_FEATURES: verified_garbage_cpu::Features = ve
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_sha256_finalize_shani(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
+pub(crate) unsafe extern "sysv64" fn vg_sha256_finalize_shani(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJJj9//9IieFIg8EISImZMAIAAEiJqTgCAABMiaFAAgAATImpSAIAAEyJsVACAABMiblYAgAASIn7SYnPSInVSYn0SYn1SYPlP0G5gAAAAEG+AAAAAEmD/Tg="
 jae 20f
@@ -1214,7 +1214,7 @@ pub const VG_SHA256_DIGEST_SHANI_FEATURES: verified_garbage_cpu::Features = veri
 /// * Neither `data` nor `out` may overlap the return address on the stack or the 736 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_sha256_digest_shani(data: *const u8, len: usize, out: *mut [u8; 32]) {
+pub(crate) unsafe extern "sysv64" fn vg_sha256_digest_shani(data: *const u8, len: usize, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJCj9//9IieFIg8EISIPBYEiJmTACAABIiak4AgAATImhQAIAAEyJqUgCAABMibFQAgAATIm5WAIAAEmJz0iJy0iD62BJif1JifRIidVIid9IuGfmCWqFrme7ZkgPbsBIuHLzbjw69U+lZkgPbshmD2zB8w9/B0i4f1IOUYxoBZtmSA9uwEi4q9mDHxnN4FtmSA9uyGYPbMHzD39HEE2J5knB7gZNhfY="
 je 20f

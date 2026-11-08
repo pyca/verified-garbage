@@ -2,8 +2,25 @@
 //! The dispatchers of the verified `pbkdf2_sha384` functions for `x86`
 //! (`crate::pbkdf2_sha384`, `VG.Rust.dispatcher`).
 
-/// `vg_pbkdf2_hmac_sha384`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::pbkdf2_sha384::vg_pbkdf2_hmac_sha384 as vg_pbkdf2_hmac_sha384_auto;
+/// PBKDF2-HMAC-SHA-384 (RFC 8018 §5.2, with HMAC-SHA-384 as the pseudorandom function): writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` with `c` iterations to `out`. Calls the verified SHA-384 and HMAC-SHA-384 functions.
+///
+/// Contract: `VG.Spec.Hmac.Instance.pbkdf2Contract` of `VG.Spec.Hmac.sha384I`. Constant time: only the pointers, the lengths and `c` may affect timing, not the password, the salt or the key.
+///
+/// It runs `vg_pbkdf2_hmac_sha384`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `password` must be valid for reads of `password_len` bytes.
+/// * `salt` must be valid for reads of `salt_len` bytes.
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `c` must be positive, and `out_len` at most `(2^32 - 1) * 48`.
+/// * `out` must not overlap `password` or `salt` (distinct Rust objects never do).
+/// * None of `password`, `salt` and `out` may overlap the arguments on the stack, overlap the return address on the stack or the 3520 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_pbkdf2_hmac_sha384_auto(_dit: verified_garbage_cpu::Dit<'_>, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::pbkdf2_sha384::vg_pbkdf2_hmac_sha384(password, password_len, salt, salt_len, c, out, out_len) }
+}

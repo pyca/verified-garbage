@@ -94,9 +94,10 @@ impl Key {
             return Err(InvalidKeyLength);
         }
         let mut schedule = CacheAligned([0; 240]);
+        crate::dit::enter!(dit);
         // SAFETY: the key is 16, 24 or 32 bytes long, and the key and the
         // schedule are separate valid buffers of the sizes of the signature.
-        unsafe { vg_aes_expand_key_auto(key.as_ptr(), key.len(), &mut schedule.0) };
+        unsafe { vg_aes_expand_key_auto(dit, key.as_ptr(), key.len(), &mut schedule.0) };
         Ok(Self {
             schedule,
             rounds: key.len() / 4 + 6,
@@ -131,6 +132,7 @@ impl Key {
         if !buffer.len().is_multiple_of(16) {
             return Err(IncompleteBlock);
         }
+        crate::dit::enter!(dit);
         // The contracts hold whatever the working space holds, so it need
         // not be initialized.
         let mut scratch = CacheAligned(MaybeUninit::<[u64; 272]>::uninit());
@@ -143,6 +145,7 @@ impl Key {
         unsafe {
             if encrypt {
                 vg_aes_cbc_encrypt_auto(
+                    dit,
                     &self.schedule.0,
                     self.rounds,
                     iv,
@@ -152,6 +155,7 @@ impl Key {
                 );
             } else {
                 vg_aes_cbc_decrypt_auto(
+                    dit,
                     &self.schedule.0,
                     self.rounds,
                     iv,

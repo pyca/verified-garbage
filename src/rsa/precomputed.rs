@@ -27,7 +27,7 @@ pub(super) fn modulus_valid(n: &[u8]) -> bool {
 
 /// What `vg_rsa_public_precompute` writes for `n` and returns, computed in
 /// `scratch`, which has at least `public_scratch_words(n.len())` words.
-fn precompute(n: &[u8], scratch: &mut [u64]) -> (Vec<u64>, u32) {
+fn precompute(dit: crate::dit::Dit<'_>, n: &[u8], scratch: &mut [u64]) -> (Vec<u64>, u32) {
     let k = n.len();
     assert!((64..=1024).contains(&k) && scratch.len() >= public_scratch_words(k));
     let mut pre = vec![0u64; precomputed_words(k)];
@@ -39,6 +39,7 @@ fn precompute(n: &[u8], scratch: &mut [u64]) -> (Vec<u64>, u32) {
     // implementation the CPU has the features of.
     let r = unsafe {
         vg_rsa_public_precompute_auto(
+            dit,
             pre.as_mut_ptr(),
             pre.len(),
             n.as_ptr(),
@@ -63,10 +64,10 @@ impl Precomputed {
     /// same at every call, computed in `scratch` (at least
     /// `public_scratch_words(n.len())` words, left holding only values of `n`) if
     /// no call has yet.
-    pub(crate) fn get(&self, n: &[u8], scratch: &mut [u64]) -> &[u64] {
+    pub(crate) fn get(&self, dit: crate::dit::Dit<'_>, n: &[u8], scratch: &mut [u64]) -> &[u64] {
         let pointer = self.0.load(Ordering::Acquire);
         if pointer.is_null() {
-            let (pre, r) = precompute(n, scratch);
+            let (pre, r) = precompute(dit, n, scratch);
             // `vg_rsa_public_precompute` refuses only moduli that
             // `modulus_valid` refuses (`VG.Spec.Rsa.modulusValid`).
             assert_eq!(r, 1);
@@ -157,6 +158,7 @@ mod tests {
     /// accepts, at the edges of each condition.
     #[test]
     fn validity_matches_precompute() {
+        let dit = crate::dit::public(crate::dit::Why::Test);
         let mut even = number(65, 1);
         even[64] = 0x5a;
         let cases = [
@@ -172,7 +174,7 @@ mod tests {
         for (n, valid) in cases {
             assert_eq!(modulus_valid(&n), valid);
             let mut scratch = vec![0; public_scratch_words(n.len())];
-            let (pre, r) = precompute(&n, &mut scratch);
+            let (pre, r) = precompute(dit, &n, &mut scratch);
             assert_eq!(r, u32::from(valid));
             assert_eq!(pre.iter().any(|&w| w != 0), valid);
         }
@@ -183,6 +185,7 @@ mod tests {
 
     #[test]
     fn r2_normalization_boundary() {
+        let dit = crate::dit::public(crate::dit::Why::Test);
         for k in [128, 256] {
             let mut below = vec![0xff; k];
             below[0] = 0x7f;
@@ -192,7 +195,7 @@ mod tests {
             // With R = 2^(8k), R is respectively 2 or -2 modulo n.
             for n in [below, above] {
                 let mut scratch = vec![0; public_scratch_words(k)];
-                let (values, valid) = precompute(&n, &mut scratch);
+                let (values, valid) = precompute(dit, &n, &mut scratch);
                 assert_eq!(valid, 1);
                 let r2 = &values[k / 8..];
                 assert_eq!(r2[0], 4);
@@ -206,7 +209,7 @@ mod tests {
             let w = k.div_ceil(8);
             let bit = (128 * w) % (8 * k);
             let mut scratch = vec![0; public_scratch_words(k)];
-            let (values, valid) = precompute(&n, &mut scratch);
+            let (values, valid) = precompute(dit, &n, &mut scratch);
             assert_eq!(valid, 1);
             let mut expected = vec![0; w];
             expected[bit / 64] = 1 << (bit % 64);
@@ -216,19 +219,20 @@ mod tests {
 
     #[test]
     fn computed_once_and_shared_by_clones() {
+        let dit = crate::dit::public(crate::dit::Why::Test);
         let n = number(64, 0x80);
         let mut scratch = vec![0; public_scratch_words(64)];
         let pre = Precomputed::new();
         let empty = pre.clone();
         assert!(empty.0.load(Ordering::Relaxed).is_null());
-        let values = pre.get(&n, &mut scratch).to_vec();
-        assert_eq!(values, precompute(&n, &mut scratch).0);
-        let first = pre.get(&n, &mut scratch).as_ptr();
-        assert_eq!(pre.get(&n, &mut scratch).as_ptr(), first);
+        let values = pre.get(dit, &n, &mut scratch).to_vec();
+        assert_eq!(values, precompute(dit, &n, &mut scratch).0);
+        let first = pre.get(dit, &n, &mut scratch).as_ptr();
+        assert_eq!(pre.get(dit, &n, &mut scratch).as_ptr(), first);
         let clone = pre.clone();
         assert!(!clone.0.load(Ordering::Relaxed).is_null());
-        assert_eq!(clone.get(&n, &mut scratch), &values[..]);
-        assert_eq!(empty.get(&n, &mut scratch), &values[..]);
+        assert_eq!(clone.get(dit, &n, &mut scratch), &values[..]);
+        assert_eq!(empty.get(dit, &n, &mut scratch), &values[..]);
         assert_eq!(pre, empty);
         assert_eq!(std::format!("{pre:?}"), "Precomputed");
     }
@@ -244,15 +248,17 @@ mod tests {
 
     #[test]
     fn concurrent_first_operations_agree() {
+        let dit = crate::dit::public(crate::dit::Why::Test);
         let n = number(128, 0xc5);
         let mut scratch = vec![0; public_scratch_words(128)];
-        let expected = precompute(&n, &mut scratch).0;
+        let expected = precompute(dit, &n, &mut scratch).0;
         let pre = Precomputed::new();
         std::thread::scope(|scope| {
             for _ in 0..4 {
                 scope.spawn(|| {
+                    let dit = crate::dit::public(crate::dit::Why::Test);
                     let mut scratch = vec![0; public_scratch_words(128)];
-                    assert_eq!(pre.get(&n, &mut scratch), &expected[..]);
+                    assert_eq!(pre.get(dit, &n, &mut scratch), &expected[..]);
                 });
             }
         });

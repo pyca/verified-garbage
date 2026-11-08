@@ -86,10 +86,11 @@ impl AesXts {
         if !matches!(key.len(), 32 | 48 | 64) {
             return Err(XtsError::InvalidKeyLength);
         }
+        crate::dit::enter!(dit);
         let (key1, key2) = key.split_at(key.len() / 2);
         // Without branching on the key's bytes, only on whether they are all
         // equal.
-        if crate::ct::eq(key1, key2) {
+        if crate::ct::eq(dit, key1, key2) {
             return Err(XtsError::EqualKeyHalves);
         }
         let mut data_schedule = CacheAligned([0; 240]);
@@ -99,8 +100,8 @@ impl AesXts {
         // The dispatcher calls only an implementation the CPU has the
         // features of.
         unsafe {
-            vg_aes_expand_key_auto(key1.as_ptr(), key1.len(), &mut data_schedule.0);
-            vg_aes_expand_key_auto(key2.as_ptr(), key2.len(), &mut tweak_schedule.0);
+            vg_aes_expand_key_auto(dit, key1.as_ptr(), key1.len(), &mut data_schedule.0);
+            vg_aes_expand_key_auto(dit, key2.as_ptr(), key2.len(), &mut tweak_schedule.0);
         }
         Ok(Self {
             data_schedule,
@@ -113,19 +114,27 @@ impl AesXts {
     /// (§5.3.2). Returns an error without changing the buffer if it is
     /// shorter than 16 bytes or longer than [`XTS_MAX_BLOCKS`] blocks.
     pub fn encrypt_in_place(&self, i: &[u8; 16], buffer: &mut [u8]) -> Result<(), XtsError> {
-        self.unit(true, i, buffer)
+        crate::dit::enter!(dit);
+        self.unit(dit, true, i, buffer)
     }
 
     /// Decrypts the data unit `buffer` in place with the tweak value `i`
     /// (§5.4.2). Returns an error without changing the buffer if it is
     /// shorter than 16 bytes or longer than [`XTS_MAX_BLOCKS`] blocks.
     pub fn decrypt_in_place(&self, i: &[u8; 16], buffer: &mut [u8]) -> Result<(), XtsError> {
-        self.unit(false, i, buffer)
+        crate::dit::enter!(dit);
+        self.unit(dit, false, i, buffer)
     }
 
     /// Encrypts (`enc`) or decrypts the data unit `buffer` in place with the
     /// tweak value `i`, after checking its length.
-    fn unit(&self, enc: bool, i: &[u8; 16], buffer: &mut [u8]) -> Result<(), XtsError> {
+    fn unit(
+        &self,
+        dit: crate::dit::Dit<'_>,
+        enc: bool,
+        i: &[u8; 16],
+        buffer: &mut [u8],
+    ) -> Result<(), XtsError> {
         check_len(buffer.len())?;
         let mut scratch = CacheAligned([0; 304]);
         // SAFETY: `rounds` is 10, 12 or 14 and the schedules hold its key
@@ -137,6 +146,7 @@ impl AesXts {
         unsafe {
             if enc {
                 vg_aes_xts_encrypt_unit_auto(
+                    dit,
                     &self.data_schedule.0,
                     &self.tweak_schedule.0,
                     self.rounds,
@@ -147,6 +157,7 @@ impl AesXts {
                 );
             } else {
                 vg_aes_xts_decrypt_unit_auto(
+                    dit,
                     &self.data_schedule.0,
                     &self.tweak_schedule.0,
                     self.rounds,
@@ -168,7 +179,8 @@ impl AesXts {
     /// if it is not, or if `src` is shorter than 16 bytes or longer than
     /// [`XTS_MAX_BLOCKS`] blocks.
     pub fn encrypt(&self, i: &[u8; 16], src: &[u8], dst: &mut [u8]) -> Result<(), XtsError> {
-        self.unit_to(true, i, src, dst)
+        crate::dit::enter!(dit);
+        self.unit_to(dit, true, i, src, dst)
     }
 
     /// Decrypts the data unit `src` with the tweak value `i` (§5.4.2) into
@@ -176,13 +188,21 @@ impl AesXts {
     /// if it is not, or if `src` is shorter than 16 bytes or longer than
     /// [`XTS_MAX_BLOCKS`] blocks.
     pub fn decrypt(&self, i: &[u8; 16], src: &[u8], dst: &mut [u8]) -> Result<(), XtsError> {
-        self.unit_to(false, i, src, dst)
+        crate::dit::enter!(dit);
+        self.unit_to(dit, false, i, src, dst)
     }
 
     /// Encrypts (`enc`) or decrypts the data unit `src` into `dst`, after
     /// checking their lengths, with the out-of-place function.
     #[cfg(target_arch = "x86_64")]
-    fn unit_to(&self, enc: bool, i: &[u8; 16], src: &[u8], dst: &mut [u8]) -> Result<(), XtsError> {
+    fn unit_to(
+        &self,
+        dit: crate::dit::Dit<'_>,
+        enc: bool,
+        i: &[u8; 16],
+        src: &[u8],
+        dst: &mut [u8],
+    ) -> Result<(), XtsError> {
         if src.len() != dst.len() {
             return Err(XtsError::InvalidOutputLength);
         }
@@ -197,6 +217,7 @@ impl AesXts {
         unsafe {
             if enc {
                 vg_aes_xts_encrypt_unit_to_auto(
+                    dit,
                     &self.data_schedule.0,
                     &self.tweak_schedule.0,
                     self.rounds,
@@ -209,6 +230,7 @@ impl AesXts {
                 );
             } else {
                 vg_aes_xts_decrypt_unit_to_auto(
+                    dit,
                     &self.data_schedule.0,
                     &self.tweak_schedule.0,
                     self.rounds,
@@ -230,16 +252,23 @@ impl AesXts {
     /// Encrypts (`enc`) or decrypts the data unit `src` into `dst`, after
     /// checking their lengths: a copy, transformed in place.
     #[cfg(not(target_arch = "x86_64"))]
-    fn unit_to(&self, enc: bool, i: &[u8; 16], src: &[u8], dst: &mut [u8]) -> Result<(), XtsError> {
+    fn unit_to(
+        &self,
+        dit: crate::dit::Dit<'_>,
+        enc: bool,
+        i: &[u8; 16],
+        src: &[u8],
+        dst: &mut [u8],
+    ) -> Result<(), XtsError> {
         if src.len() != dst.len() {
             return Err(XtsError::InvalidOutputLength);
         }
         check_len(src.len())?;
         dst.copy_from_slice(src);
         if enc {
-            self.encrypt_in_place(i, dst)
+            self.unit(dit, true, i, dst)
         } else {
-            self.decrypt_in_place(i, dst)
+            self.unit(dit, false, i, dst)
         }
     }
 }

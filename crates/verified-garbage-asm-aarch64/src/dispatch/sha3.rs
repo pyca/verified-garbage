@@ -19,7 +19,7 @@
 /// * None of `state`, `data` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_sha3_224_update_auto(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+pub unsafe fn vg_sha3_224_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -71,7 +71,7 @@ pub unsafe fn vg_sha3_224_update_auto(state: *mut [u64; 25], pos: usize, data: *
 /// * None of `state`, `data` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_sha3_256_update_auto(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+pub unsafe fn vg_sha3_256_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -123,7 +123,7 @@ pub unsafe fn vg_sha3_256_update_auto(state: *mut [u64; 25], pos: usize, data: *
 /// * None of `state`, `data` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_sha3_384_update_auto(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+pub unsafe fn vg_sha3_384_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -175,7 +175,7 @@ pub unsafe fn vg_sha3_384_update_auto(state: *mut [u64; 25], pos: usize, data: *
 /// * None of `state`, `data` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_sha3_512_update_auto(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+pub unsafe fn vg_sha3_512_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -227,7 +227,7 @@ pub unsafe fn vg_sha3_512_update_auto(state: *mut [u64; 25], pos: usize, data: *
 /// * None of `state`, `data` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_shake128_update_auto(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+pub unsafe fn vg_shake128_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -277,7 +277,7 @@ pub unsafe fn vg_shake128_update_auto(state: *mut [u64; 25], pos: usize, data: *
 /// * Neither `state` nor `out` may overlap the 656 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_shake128_squeeze_auto(state: *mut [u64; 25], pos: usize, out: *mut u8, outlen: usize) -> usize {
+pub unsafe fn vg_shake128_squeeze_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, out: *mut u8, outlen: usize) -> usize {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(state: *mut [u64; 25], pos: usize, out: *mut u8, outlen: usize) -> usize;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -327,7 +327,7 @@ pub unsafe fn vg_shake128_squeeze_auto(state: *mut [u64; 25], pos: usize, out: *
 /// * Neither `state` nor `out` may overlap the 656 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_shake256_squeeze_auto(state: *mut [u64; 25], pos: usize, out: *mut u8, outlen: usize) -> usize {
+pub unsafe fn vg_shake256_squeeze_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, out: *mut u8, outlen: usize) -> usize {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(state: *mut [u64; 25], pos: usize, out: *mut u8, outlen: usize) -> usize;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -378,7 +378,7 @@ pub unsafe fn vg_shake256_squeeze_auto(state: *mut [u64; 25], pos: usize, out: *
 /// * Neither `state` nor `out` may overlap the 688 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_sha3_224_finalize_auto(state: *mut [u64; 25], pos: usize, out: *mut [u8; 28]) {
+pub unsafe fn vg_sha3_224_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, out: *mut [u8; 28]) {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(state: *mut [u64; 25], pos: usize, out: *mut [u8; 28]);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -429,7 +429,7 @@ pub unsafe fn vg_sha3_224_finalize_auto(state: *mut [u64; 25], pos: usize, out: 
 /// * Neither `state` nor `out` may overlap the 688 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_sha3_256_finalize_auto(state: *mut [u64; 25], pos: usize, out: *mut [u8; 32]) {
+pub unsafe fn vg_sha3_256_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, out: *mut [u8; 32]) {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(state: *mut [u64; 25], pos: usize, out: *mut [u8; 32]);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -480,7 +480,7 @@ pub unsafe fn vg_sha3_256_finalize_auto(state: *mut [u64; 25], pos: usize, out: 
 /// * Neither `state` nor `out` may overlap the 688 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_sha3_384_finalize_auto(state: *mut [u64; 25], pos: usize, out: *mut [u8; 48]) {
+pub unsafe fn vg_sha3_384_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, out: *mut [u8; 48]) {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(state: *mut [u64; 25], pos: usize, out: *mut [u8; 48]);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -531,7 +531,7 @@ pub unsafe fn vg_sha3_384_finalize_auto(state: *mut [u64; 25], pos: usize, out: 
 /// * Neither `state` nor `out` may overlap the 688 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_sha3_512_finalize_auto(state: *mut [u64; 25], pos: usize, out: *mut [u8; 64]) {
+pub unsafe fn vg_sha3_512_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, out: *mut [u8; 64]) {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(state: *mut [u64; 25], pos: usize, out: *mut [u8; 64]);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -579,7 +579,7 @@ pub unsafe fn vg_sha3_512_finalize_auto(state: *mut [u64; 25], pos: usize, out: 
 /// * `state` must not overlap the 656 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_shake128_finalize_auto(state: *mut [u64; 25], pos: usize) {
+pub unsafe fn vg_shake128_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize) {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(state: *mut [u64; 25], pos: usize);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -627,7 +627,7 @@ pub unsafe fn vg_shake128_finalize_auto(state: *mut [u64; 25], pos: usize) {
 /// * `state` must not overlap the 656 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_shake256_finalize_auto(state: *mut [u64; 25], pos: usize) {
+pub unsafe fn vg_shake256_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize) {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(state: *mut [u64; 25], pos: usize);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only

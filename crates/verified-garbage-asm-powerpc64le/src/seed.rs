@@ -14,7 +14,7 @@
 /// * `schedule` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `schedule` may overlap the 1072 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_seed_expand_key(key: *const [u8; 16], schedule: *mut [u8; 128]) {
+pub(crate) unsafe extern "C" fn vg_seed_expand_key(key: *const [u8; 16], schedule: *mut [u8; 128]) {
     core::arch::naked_asm!(
         r#".base64 "0fsh+CAAoTh4K6h8gAPI+YgD6PmQAwj6mAMo+qADSPqoA2j6sAOI+rgDqPrAA8j6yAPo+tADCPvYAyj74ANI++gDaPvwA4j7+AOo+wAEyPsIBOj7AAAgOSxMI33GByl5BADAOCw0w3x4S8Z8CAAgOSxMI33GByl5DADgOCw843x4S+d8IgDJeCIA6ngUUil9N55gPbl5a2FQSCt9gAEokVAwJ30UWil9hAEokQLAxngiAMl4IgDqeBRSKX1uPGA9c/NrYVBIK32IASiRUDAnfRRaKX2MASiRAEDneCIAyXgiAOp4FFIpfd14YD3m5mthUEgrfZABKJFQMCd9FFopfZQBKJECwMZ4IgDJeCIA6ngUUil9u/FgPczNa2FQSCt9mAEokVAwJ30UWil9nAEokQBA53giAMl4IgDqeBRSKX1342A9mZtrYVBIK32gASiRUDAnfRRaKX2kASiRAsDGeCIAyXgiAOp4FFIpfe/GYD0zN2thUEgrfagBKJFQMCd9FFopfawBKJEAQOd4IgDJeCIA6ngUUil93o1gPWdua2FQSCt9sAEokVAwJ30UWil9tAEokQLAxngiAMl4IgDqeBRSKX28G2A9z9xrYVBIK324ASiRUDAnfRRaKX28ASiRAEDneCIAyXgiAOp4FFIpfXk3YD2euWthUEgrfcABKJFQMCd9FFopfcQBKJECwMZ4IgDJeCIA6ngUUil9825gPTxza2FQSCt9yAEokVAwJ30UWil9zAEokQBA53giAMl4IgDqeBRSKX3m3WA9eOZrYVBIK33QASiRUDAnfRRaKX3UASiRAsDGeCIAyXgiAOp4FFIpfc27YD3xzGthUEgrfdgBKJFQMCd9FFopfdwBKJEAQOd4IgDJeCIA6ngUUil9m3dgPeOZa2FQSCt94AEokVAwJ30UWil95AEokQLAxngiAMl4IgDqeBRSKX0372A9xjNrYVBIK33oASiRUDAnfRRaKX3sASiRAEDneCIAyXgiAOp4FFIpfW7eYD2NZ2thUEgrffABKJFQMCd9FFopffQBKJECwMZ4IgDJeCIA6ngUUil93LxgPRvPa2FQSCt9+AEokVAwJ30UWil9/AEokQBA53gCAMA4"
 20:
@@ -41,7 +41,7 @@ bne %cr0, 20b
 /// * `data` must not overlap `schedule` (distinct Rust objects never do).
 /// * Neither `schedule` nor `data` may overlap the 1168 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_seed_ecb_encrypt(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {
+pub(crate) unsafe extern "C" fn vg_seed_ecb_encrypt(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r#".base64 "ofsh+CAAwTimAgh80f8h+CAAAfg="
 bl {vg_seed_encrypt_blocks}
@@ -61,7 +61,7 @@ bl {vg_seed_encrypt_blocks}
 /// * `data` must not overlap `schedule` (distinct Rust objects never do).
 /// * Neither `schedule` nor `data` may overlap the 1168 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_seed_ecb_decrypt(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {
+pub(crate) unsafe extern "C" fn vg_seed_ecb_decrypt(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r#".base64 "ofsh+CAAwTimAgh80f8h+CAAAfg="
 bl {vg_seed_decrypt_blocks}

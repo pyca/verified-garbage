@@ -14,7 +14,7 @@
 /// * `state` must not overlap `e` (distinct Rust objects never do).
 /// * Neither `state` nor `e` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_rsa_generate_init(state: *mut [u64; 7], bits: usize, e: *const u8, e_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_generate_init(state: *mut [u64; 7], bits: usize, e: *const u8, e_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "AAAgOQAAQDkAACYo"
 beq %cr0, 20f
@@ -47,7 +47,7 @@ b 21f
 /// * `key`, `used`, `scratch` and `state` must not overlap each other or `rand` (distinct Rust objects never do).
 /// * None of `key`, `used`, `rand`, `scratch` and `state` may overlap the 1088 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_rsa_generate(key: *mut u8, key_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 7]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_generate(key: *mut u8, key_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 7]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "cf8h+CAAYTlIAOv7AADrOwAAf/gQAL/4GADf+CAA//goAB/5MAA/+TgAX/kIAIroMAAq6QgAn/gAAAA4QAAf+CQfhXikLoZ4FDKlfOQmhngkH4d4FDrGfAMA4DjGwed4eDoofSIAB3k+AAhVeEPnfAEAADlQOOh84A/neNI5xnwUMqV8WAC/+KYCCHzR/yH4IAAB+AAAf+hgAH/4CACf6GQXhHhoAJ/4YAB/6GgAn+gAAKA4"
 20:

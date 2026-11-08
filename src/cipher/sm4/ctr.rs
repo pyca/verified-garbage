@@ -76,10 +76,11 @@ impl Key {
     /// Expands a 16-byte key.
     fn new(key: &[u8; 16]) -> Self {
         let mut schedule = CacheAligned([0; 128]);
+        crate::dit::enter!(dit);
         // SAFETY: key and schedule are separate valid buffers of the required
         // sizes.
         unsafe {
-            vg_sm4_expand_key_auto(key, &mut schedule.0);
+            vg_sm4_expand_key_auto(dit, key, &mut schedule.0);
         }
         Self { schedule }
     }
@@ -89,7 +90,8 @@ impl Key {
     /// with the counter block after the last one used: `ctr` plus the number
     /// of blocks, modulo `2¹²⁸` (unchanged for empty input).
     fn apply_keystream(&self, ctr: &mut [u8; 16], buffer: &mut [u8]) {
-        self.crypt(ctr, buffer);
+        crate::dit::enter!(dit);
+        self.crypt(dit, ctr, buffer);
     }
 
     /// Encrypts or decrypts (the same operation) the rest of a message, of
@@ -98,22 +100,26 @@ impl Key {
     /// block the whole blocks leave in `ctr`, which it replaces with the
     /// next one.
     fn apply_keystream_final(&self, ctr: &mut [u8; 16], buffer: &mut [u8]) {
+        crate::dit::enter!(dit);
         let (blocks, rest) = buffer.split_at_mut(buffer.len() / 16 * 16);
-        self.crypt(ctr, blocks);
+        self.crypt(dit, ctr, blocks);
         if !rest.is_empty() {
             // SAFETY: as for `crypt`, with `rest` valid for `len` bytes.
-            unsafe { vg_sm4_ctr_final_auto(&self.schedule.0, ctr, rest.as_mut_ptr(), rest.len()) };
+            unsafe {
+                vg_sm4_ctr_final_auto(dit, &self.schedule.0, ctr, rest.as_mut_ptr(), rest.len())
+            };
         }
     }
 
     /// CTR of whole blocks.
-    fn crypt(&self, ctr: &mut [u8; 16], blocks: &mut [u8]) {
+    fn crypt(&self, dit: crate::dit::Dit<'_>, ctr: &mut [u8; 16], blocks: &mut [u8]) {
         // SAFETY: `blocks` holds `len / 16` whole blocks (its length is a
         // multiple of 16), and it, the block at `ctr` and the schedule are
         // separate valid objects of the sizes of the signature, none of them on
         // the callee's stack.
         unsafe {
             vg_sm4_ctr_auto(
+                dit,
                 &self.schedule.0,
                 ctr,
                 blocks.as_mut_ptr().cast(),

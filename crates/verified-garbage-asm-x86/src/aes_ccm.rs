@@ -26,7 +26,7 @@ pub const VG_AES_CCM_SEAL_AESNI_FEATURES: verified_garbage_cpu::Features = verif
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2668 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_ccm_seal_aesni(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
+pub(crate) unsafe extern "C" fn vg_aes_ccm_seal_aesni(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "jaQk0PX//4uEJDQKAACJRCQEi4QkOAoAAIlEJAiLhCQ8CgAAiUQkDIuEJEAKAACJRCQQi4QkRAoAAIlEJBSLhCRICgAAiUQkGIuEJEwKAACJRCQci4QkUAoAAIlEJCCLhCRUCgAAiUQkJIuEJFgKAACJRCQoieCDwDCJRCQsi0QkLImYgAAAAImwhAAAAIm4iAAAAImojAAAAInFi0QkBImFkAAAAItEJAiJhZQAAACLRCQMiYWYAAAAi0QkEImFnAAAAItEJBSJhaAAAACLRCQYiYWkAAAAi0QkHImFqAAAAItEJCCJhawAAACLRCQkiYXUAAAAi0QkKImFtAAAALgAAAAAiUUwiUU0iUU4iUU8uA4AAAArhZwAAACIRTCLvZgAAACJ6oPCMYuNnAAAAA=="
 20:
@@ -159,7 +159,7 @@ pub const VG_AES_CCM_OPEN_AESNI_FEATURES: verified_garbage_cpu::Features = verif
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2668 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_ccm_open_aesni(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_ccm_open_aesni(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "jaQk0PX//4uEJDQKAACJRCQEi4QkOAoAAIlEJAiLhCQ8CgAAiUQkDIuEJEAKAACJRCQQi4QkRAoAAIlEJBSLhCRICgAAiUQkGIuEJEwKAACJRCQci4QkUAoAAIlEJCCLhCRUCgAAiUQkJIuEJFgKAACJRCQoieCDwDCJRCQsi0QkLImYgAAAAImwhAAAAIm4iAAAAImojAAAAInFi0QkBImFkAAAAItEJAiJhZQAAACLRCQMiYWYAAAAi0QkEImFnAAAAItEJBSJhaAAAACLRCQYiYWkAAAAi0QkHImFqAAAAItEJCCJhawAAACLRCQkiYXUAAAAi0QkKImFtAAAALgAAAAAiUUwiUU0iUU4iUU8uA4AAAArhZwAAACIRTCLvZgAAACJ6oPCMYuNnAAAAA=="
 20:
@@ -301,7 +301,7 @@ jmp 228f
 /// * `data` and `tag` must not overlap each other, `schedule`, `nonce` or `aad` (distinct Rust objects never do).
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2668 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_ccm_seal(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
+pub(crate) unsafe extern "C" fn vg_aes_ccm_seal(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "jaQk0PX//4uEJDQKAACJRCQEi4QkOAoAAIlEJAiLhCQ8CgAAiUQkDIuEJEAKAACJRCQQi4QkRAoAAIlEJBSLhCRICgAAiUQkGIuEJEwKAACJRCQci4QkUAoAAIlEJCCLhCRUCgAAiUQkJIuEJFgKAACJRCQoieCDwDCJRCQsi0QkLImYgAAAAImwhAAAAIm4iAAAAImojAAAAInFi0QkBImFkAAAAItEJAiJhZQAAACLRCQMiYWYAAAAi0QkEImFnAAAAItEJBSJhaAAAACLRCQYiYWkAAAAi0QkHImFqAAAAItEJCCJhawAAACLRCQkiYXUAAAAi0QkKImFtAAAALgAAAAAiUUwiUU0iUU4iUU8uA4AAAArhZwAAACIRTCLvZgAAACJ6oPCMYuNnAAAAA=="
 20:
@@ -430,7 +430,7 @@ jne 225b
 /// * `data` must not overlap `schedule`, `nonce`, `aad` or `tag` (distinct Rust objects never do).
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2668 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_ccm_open(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_ccm_open(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "jaQk0PX//4uEJDQKAACJRCQEi4QkOAoAAIlEJAiLhCQ8CgAAiUQkDIuEJEAKAACJRCQQi4QkRAoAAIlEJBSLhCRICgAAiUQkGIuEJEwKAACJRCQci4QkUAoAAIlEJCCLhCRUCgAAiUQkJIuEJFgKAACJRCQoieCDwDCJRCQsi0QkLImYgAAAAImwhAAAAIm4iAAAAImojAAAAInFi0QkBImFkAAAAItEJAiJhZQAAACLRCQMiYWYAAAAi0QkEImFnAAAAItEJBSJhaAAAACLRCQYiYWkAAAAi0QkHImFqAAAAItEJCCJhawAAACLRCQkiYXUAAAAi0QkKImFtAAAALgAAAAAiUUwiUU0iUU4iUU8uA4AAAArhZwAAACIRTCLvZgAAACJ6oPCMYuNnAAAAA=="
 20:

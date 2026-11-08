@@ -16,7 +16,7 @@
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the 3344 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_camellia_ofb(schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
+pub(crate) unsafe extern "C" fn vg_camellia_ofb(schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r".inst 0xd13443ff,0x910003e5,0x910000a5,0xf90628b3,0xf9062cb4,0xf90630b5,0xf90634b6,0xf90638b7
 .inst 0xf9063cb8,0xf90640b9,0xf90644ba,0xf90648bb,0xf9064cbc,0x91000053,0x91000077,0x91000098
@@ -82,7 +82,7 @@ b 21f
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the 3344 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_camellia_ofb_final(schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_camellia_ofb_final(schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd13443ff,0x910003e5,0x910000a5,0xf90628b3,0xf9062cb4,0xf90630b5,0xf90634b6,0xf90638b7
 .inst 0xf9063cb8,0xf90640b9,0xf90644ba,0xf90648bb,0xf9064cbc,0x91000053,0x91000077,0x91000098

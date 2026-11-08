@@ -16,7 +16,7 @@
 /// * `schedule` must not overlap `key` or the arguments on the stack (distinct Rust objects never do).
 /// * Neither `key` nor `schedule` may overlap the return address on the stack or the 532 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 240]) {
+pub(crate) unsafe extern "C" fn vg_aes_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 240]) {
     core::arch::naked_asm!(
         r#".base64 "jaQk7P3//4uEJBgCAACJRCQEi4QkHAIAAIlEJAiLhCQgAgAAiUQkDIngg8AUiUQkEItEJBCJmAABAACJsAQBAACJuAgBAACJqAwBAACJx4t0JASLbCQMi0wkCA=="
 20:
@@ -71,7 +71,7 @@ pub const VG_AES_EXPAND_KEY_AESNI_FEATURES: verified_garbage_cpu::Features = ver
 /// * Neither `key` nor `schedule` may overlap the return address on the stack or the 532 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_expand_key_aesni(key: *const u8, key_len: usize, schedule: *mut [u8; 240]) {
+pub(crate) unsafe extern "C" fn vg_aes_expand_key_aesni(key: *const u8, key_len: usize, schedule: *mut [u8; 240]) {
     core::arch::naked_asm!(
         r#".base64 "jaQk7P3//4uEJBgCAACJRCQEi4QkHAIAAIlEJAiLhCQgAgAAiUQkDIngg8AUiUQkEItEJASLTCQIi1QkDIP5GA=="
 je 20f
@@ -105,7 +105,7 @@ jmp 21f
 /// * `data` and `scratch` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_encrypt_blocks(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+pub(crate) unsafe extern "C" fn vg_aes_encrypt_blocks(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
         r#".base64 "i0QkFImYAAEAAImwBAEAAIm4CAEAAImoDAEAAInHi3QkCA=="
 20:
@@ -156,7 +156,7 @@ jmp 22f
 /// * `data` and `scratch` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_decrypt_blocks(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+pub(crate) unsafe extern "C" fn vg_aes_decrypt_blocks(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
         r#".base64 "i0QkFImYAAEAAImwBAEAAIm4CAEAAImoDAEAAInHi3QkCA=="
 20:
@@ -211,7 +211,7 @@ pub const VG_AES_ENCRYPT_BLOCKS_AESNI_FEATURES: verified_garbage_cpu::Features =
 /// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_encrypt_blocks_aesni(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+pub(crate) unsafe extern "C" fn vg_aes_encrypt_blocks_aesni(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
         r#".base64 "i0QkBItUJAyLRCQMidEpwcHpBIPBBYtEJBA5wYtMJAiLRCQE"
 jae 20f
@@ -278,7 +278,7 @@ pub const VG_AES_DECRYPT_BLOCKS_AESNI_FEATURES: verified_garbage_cpu::Features =
 /// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_decrypt_blocks_aesni(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+pub(crate) unsafe extern "C" fn vg_aes_decrypt_blocks_aesni(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
         r#".base64 "i1QkFIkyiXoEi0QkBItMJAiLdCQMi3wkEPMPb3AQZg842/bzD39yEPMPb3AgZg842/bzD39yIPMPb3AwZg842/bzD39yMPMPb3BAZg842/bzD39yQPMPb3BQZg842/bzD39yUPMPb3BgZg842/bzD39yYPMPb3BwZg842/bzD39ycPMPb7CAAAAAZg842/bzD3+ygAAAAPMPb7CQAAAAZg842/bzD3+ykAAAAIP5Cg=="
 je 20f

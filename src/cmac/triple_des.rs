@@ -54,6 +54,7 @@ impl TripleDesCmac {
     /// (two-key TDEA: `K1 ‖ K2`, with `K3 = K1`) or 24 bytes (three-key
     /// TDEA: `K1 ‖ K2 ‖ K3`) long. The DES keys' parity bits are ignored.
     pub fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
+        crate::dit::enter!(dit);
         if !matches!(key.len(), 16 | 24) {
             return Err(InvalidKeyLength);
         }
@@ -67,7 +68,9 @@ impl TripleDesCmac {
         // return address (on x86-64 and x86), the arguments on the stack (on
         // 32-bit ARM and x86) or the stack below them that the function uses,
         // and neither wraps around the end of the address space.
-        unsafe { vg_cmac_triple_des_stream_init_auto(&mut c.state.0, key.as_ptr(), key.len()) };
+        unsafe {
+            vg_cmac_triple_des_stream_init_auto(dit, &mut c.state.0, key.as_ptr(), key.len())
+        };
         Ok(c)
     }
 
@@ -77,6 +80,7 @@ impl TripleDesCmac {
     ///
     /// If the message reaches 2⁶⁴ bytes.
     pub fn update(&mut self, data: &[u8]) {
+        crate::dit::enter!(dit);
         let count = self
             .count
             .checked_add(data.len() as u64)
@@ -91,13 +95,26 @@ impl TripleDesCmac {
         // `data` is shorter than 2⁶⁴ bytes, as the contract's postcondition
         // requires.
         unsafe {
-            vg_cmac_triple_des_absorb_auto(&mut self.state.0, self.count, data.as_ptr(), data.len())
+            vg_cmac_triple_des_absorb_auto(
+                dit,
+                &mut self.state.0,
+                self.count,
+                data.as_ptr(),
+                data.len(),
+            )
         };
         self.count = count;
     }
 
     /// Returns the MAC of everything absorbed.
-    pub fn finalize(mut self) -> [u8; 8] {
+    pub fn finalize(self) -> [u8; 8] {
+        crate::dit::enter!(dit);
+        self.finalize_with(dit)
+    }
+
+    /// [`finalize`](Self::finalize), with the token of the operation it is
+    /// part of (see `crate::dit`).
+    fn finalize_with(mut self, dit: crate::dit::Dit<'_>) -> [u8; 8] {
         let mut mac = [0; 8];
         // SAFETY: `self.state` is valid for reads and writes of 416 bytes
         // and `mac` for writes of 8. `self.state` is owned and `mac` a
@@ -106,7 +123,7 @@ impl TripleDesCmac {
         // stack below them that the function uses, and neither wraps around
         // the end of the address space. The state represents a message of
         // `self.count` bytes, as the contract's postcondition requires.
-        unsafe { vg_cmac_triple_des_finish_auto(&mut self.state.0, self.count, &mut mac) };
+        unsafe { vg_cmac_triple_des_finish_auto(dit, &mut self.state.0, self.count, &mut mac) };
         mac
     }
 
@@ -115,7 +132,8 @@ impl TripleDesCmac {
     /// differs from it (its length is public). `mac` must be the whole MAC,
     /// of [`MAC_SIZE`](Self::MAC_SIZE) bytes; a truncated one is rejected.
     pub fn verify(self, mac: &[u8]) -> Result<(), InvalidMac> {
-        if crate::ct::eq(&self.finalize(), mac) {
+        crate::dit::enter!(dit);
+        if crate::ct::eq(dit, &self.finalize_with(dit), mac) {
             Ok(())
         } else {
             Err(InvalidMac)

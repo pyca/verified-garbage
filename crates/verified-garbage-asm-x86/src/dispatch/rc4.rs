@@ -2,14 +2,45 @@
 //! The dispatchers of the verified `rc4` functions for `x86`
 //! (`crate::rc4`, `VG.Rust.dispatcher`).
 
-/// `vg_rc4_init`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::rc4::vg_rc4_init as vg_rc4_init_auto;
+/// Starts raw RC4 (ARCFOUR draft §§3.1–3.2): for `key_len` in 1..=256, schedules the bytes at `key`, writes the permutation and two zero PRGA indices to `*ctx` (`VG.Spec.Rc4.contextAt`), and returns 0. Otherwise returns 1. No initial stream bytes are discarded.
+///
+/// Contract: `VG.Spec.Rc4.initContract`. Constant time: only pointers and `key_len` may affect timing, not the key or key-dependent table indices.
+///
+/// It runs `vg_rc4_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `ctx` must be valid for reads and writes of 258 bytes.
+/// * On failure, the contents of `ctx` on return are unspecified.
+/// * `ctx` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `ctx` may overlap the arguments on the stack, overlap the return address on the stack or the 84 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_rc4_init_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, ctx: *mut [u8; 258]) -> u32 {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::rc4::vg_rc4_init(key, key_len, ctx) }
+}
 
-/// `vg_rc4_apply`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::rc4::vg_rc4_apply as vg_rc4_apply_auto;
+/// Continues raw RC4 encryption or decryption: XORs the next `len` stream bytes into `data` in place and preserves the next stream position in `*ctx` (`VG.Spec.Rc4.contextAt`). Empty input leaves the context unchanged. There is no nonce, padding, authentication, automatic discard or final output.
+///
+/// Contract: `VG.Spec.Rc4.applyContract`. Constant time: only pointers, `len` and the initial PRGA index `i` (the public byte count modulo 256 for an initialized context) may affect timing. Key bytes, the permutation, `j`, keystream lookup indices and data remain secret. The function may leak `i`.
+///
+/// It runs `vg_rc4_apply`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads and writes of 258 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `ctx` and `data` must not overlap each other (distinct Rust objects never do).
+/// * Neither `ctx` nor `data` may overlap the arguments on the stack, overlap the return address on the stack or the 84 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_rc4_apply_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *mut [u8; 258], data: *mut u8, len: usize) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::rc4::vg_rc4_apply(ctx, data, len) }
+}

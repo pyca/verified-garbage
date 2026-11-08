@@ -30,10 +30,11 @@ impl SeedEcb {
     /// Expands a 16-byte key for use in either direction.
     pub fn new(key: &[u8; 16]) -> Self {
         let mut schedule = CacheAligned([0; 128]);
+        crate::dit::enter!(dit);
         // SAFETY: key and schedule are separate valid buffers of the required
         // sizes.
         unsafe {
-            vg_seed_expand_key_auto(key, &mut schedule.0);
+            vg_seed_expand_key_auto(dit, key, &mut schedule.0);
         }
         Self { schedule }
     }
@@ -59,11 +60,13 @@ impl SeedEcb {
         } else {
             vg_seed_ecb_decrypt_auto
         };
+        crate::dit::enter!(dit);
         // SAFETY: buffer contains complete 16-byte blocks, including zero
         // blocks. The buffer and schedule are separate valid objects and do not
         // overlap the callee's stack.
         unsafe {
             f(
+                dit,
                 &self.schedule.0,
                 buffer.as_mut_ptr().cast(),
                 buffer.len() / 16,

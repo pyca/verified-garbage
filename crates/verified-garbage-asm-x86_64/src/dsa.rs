@@ -12,7 +12,7 @@
 /// * `state` must be valid for reads and writes of 32 bytes.
 /// * `state` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_dsa_parameter_search_init(state: *mut [u64; 4], p_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_dsa_parameter_search_init(state: *mut [u64; 4], p_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SIH+gAAAAA=="
 je 20f
@@ -60,7 +60,7 @@ pub const VG_DSA_SIGN_RANDOM_PREVALIDATED_ADX_FEATURES: verified_garbage_cpu::Fe
 /// * None of `out`, `used`, `key`, `digest`, `rand` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_dsa_sign_random_prevalidated_adx(out: *mut u8, out_len: usize, used: *mut [u64; 1], key: *const u8, key_len: usize, p_len: usize, q_len: usize, digest: *const u8, digest_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_dsa_sign_random_prevalidated_adx(out: *mut u8, out_len: usize, used: *mut [u64; 1], key: *const u8, key_len: usize, p_len: usize, q_len: usize, digest: *const u8, digest_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJAj///9IiXwkKEiJdCQwSIlUJDhIiUwkQEyJRCRITIlMJFBMAclIiYwkqAAAAEjHwAAAAABIiYQkkAAAAEjHwAgAAABIiYQkmAAAAEiLhCQAAQAASIlEJFhIi4QkCAEAAEiJRCRgSIuEJBABAABIiUQkaEiLhCQYAQAASIlEJHBIi4QkIAEAAEiJRCR4SIuEJCgBAABIiYQkgAAAAEiLhCQwAQAASImEJIgAAABIx8AAAAAASImEJMgAAABIiYQk0AAAAEiJhCTYAAAASImEJOAAAABMi5QkqAAAAEyLXCRYTInWTInZQbgAAAAAQbkAAAAA"
 20:
@@ -168,7 +168,7 @@ pub const VG_DSA_VALIDATE_PRIVATE_KEY_ADX_FEATURES: verified_garbage_cpu::Featur
 /// * Neither `key` nor `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_dsa_validate_private_key_adx(key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_dsa_validate_private_key_adx(key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "TYnDSYkbSYlrCE2JYxBNiWsYTYlzIE2Jeyi4AAAAAEmJgygBAABJiYNAAQAASYmDMAEAAEmJgzgBAABJiYNYAQAASYm7AAEAAEmJk0gBAABJiYtQAQAASYuDAAEAAEkDg0gBAABJiYMIAQAASQODUAEAAEmJgxABAABJA4NIAQAASYmDGAEAAEkDg0gBAABJiYMgAQAATInfSYuDIAEAAEmJgzABAABIi7cAAQAASIuPSAEAAEG4AAAAAEG5AAAAAA=="
 20:
@@ -943,7 +943,7 @@ pub const VG_DSA_VALIDATE_PUBLIC_KEY_ADX_FEATURES: verified_garbage_cpu::Feature
 /// * Neither `key` nor `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_dsa_validate_public_key_adx(key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_dsa_validate_public_key_adx(key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "TYnDSYkbSYlrCE2JYxBNiWsYTYlzIE2Jeyi4AAAAAEmJg0ABAABJiYMwAQAASYm7AAEAAEmJk0gBAABJiYtQAQAATYmDKAEAAEmJgzgBAABJiYNYAQAASYuDAAEAAEkDg0gBAABJiYMIAQAASQODUAEAAEmJgxABAABJA4NIAQAASYmDGAEAAEkDg0gBAABJiYMgAQAATInfSIu3AAEAAEiLj0gBAABBuAAAAABBuQAAAAA="
 20:
@@ -1691,7 +1691,7 @@ pub const VG_DSA_VERIFY_PREVALIDATED_ADX_FEATURES: verified_garbage_cpu::Feature
 /// * None of `key`, `signature`, `digest` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_dsa_verify_prevalidated_adx(key: *const u8, key_len: usize, p_len: usize, q_len: usize, signature: *const u8, signature_len: usize, digest: *const u8, digest_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_dsa_verify_prevalidated_adx(key: *const u8, key_len: usize, p_len: usize, q_len: usize, signature: *const u8, signature_len: usize, digest: *const u8, digest_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "TItcJBhJiRtJiWsITYljEE2JaxhNiXMgTYl7KLgAAAAASYmDQAEAAEmJgzABAABJibsAAQAASYmTSAEAAEmJi1ABAABNiYMoAQAASItEJAhJiYM4AQAASItEJBBJiYNYAQAASYuDAAEAAEkDg0gBAABJiYMIAQAASQODUAEAAEmJgxABAABJA4NIAQAASYmDGAEAAEkDg0gBAABJiYMgAQAATInfSIu3AAEAAEiLj0gBAABBuAAAAABBuQAAAAA="
 20:
@@ -2967,7 +2967,7 @@ pub const VG_DSA_GENERATE_KEY_ADX_FEATURES: verified_garbage_cpu::Features = ver
 /// * None of `out`, `used`, `params`, `rand` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_dsa_generate_key_adx(out: *mut u8, out_len: usize, used: *mut [u64; 1], params: *const u8, params_len: usize, p_len: usize, q_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_dsa_generate_key_adx(out: *mut u8, out_len: usize, used: *mut [u64; 1], params: *const u8, params_len: usize, p_len: usize, q_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJAj///9IiXwkKEiJdCQwSIlUJDhIiUwkQEyJRCRITIlMJFBMAclIiYwkqAAAAEjHwAAAAABIiYQkkAAAAEiJhCTAAAAASIuEJAABAABIiUQkWEiLhCQIAQAASIlEJHBIi4QkEAEAAEiJRCR4SIuEJBgBAABIiYQkgAAAAEiLhCQgAQAASImEJIgAAABIi3wkQEiLdCRISItUJFBIi0wkWEyLhCSAAAAATIuMJIgAAAA="
 call {vg_dsa_check_parameters_adx}
@@ -3073,7 +3073,7 @@ pub const VG_DSA_DERIVE_KEY_ADX_FEATURES: verified_garbage_cpu::Features = verif
 /// * None of `out`, `params`, `x` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_dsa_derive_key_adx(out: *mut u8, out_len: usize, params: *const u8, params_len: usize, p_len: usize, x: *const u8, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_dsa_derive_key_adx(out: *mut u8, out_len: usize, params: *const u8, params_len: usize, p_len: usize, x: *const u8, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "TItcJBBJiRtJiWsITYljEE2JaxhNiXMgTYl7KLgAAAAASYmDKAEAAEmJgzABAABJiYM4AQAASYmDWAEAAEmJu0ABAABJiZMAAQAATYmDSAEAAEiLRCQISYmDUAEAAEmLgwABAABJA4NIAQAASYmDCAEAAEkDg1ABAABJiYMQAQAASQODSAEAAEmJgxgBAABJA4NIAQAASYmDIAEAAEyJ302JiyABAABMidhIBWA9AABJiYMYAQAASIu3AAEAAEiLj0gBAABBuAAAAABBuQAAAAA="
 20:
@@ -3845,7 +3845,7 @@ jne 2194b
 /// * `out`, `used` and `scratch` must not overlap each other, `key`, `digest`, `rand` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `used`, `key`, `digest`, `rand` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_dsa_sign_random_prevalidated(out: *mut u8, out_len: usize, used: *mut [u64; 1], key: *const u8, key_len: usize, p_len: usize, q_len: usize, digest: *const u8, digest_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_dsa_sign_random_prevalidated(out: *mut u8, out_len: usize, used: *mut [u64; 1], key: *const u8, key_len: usize, p_len: usize, q_len: usize, digest: *const u8, digest_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJAj///9IiXwkKEiJdCQwSIlUJDhIiUwkQEyJRCRITIlMJFBMAclIiYwkqAAAAEjHwAAAAABIiYQkkAAAAEjHwAgAAABIiYQkmAAAAEiLhCQAAQAASIlEJFhIi4QkCAEAAEiJRCRgSIuEJBABAABIiUQkaEiLhCQYAQAASIlEJHBIi4QkIAEAAEiJRCR4SIuEJCgBAABIiYQkgAAAAEiLhCQwAQAASImEJIgAAABIx8AAAAAASImEJMgAAABIiYQk0AAAAEiJhCTYAAAASImEJOAAAABMi5QkqAAAAEyLXCRYTInWTInZQbgAAAAAQbkAAAAA"
 20:
@@ -3949,7 +3949,7 @@ jne 227b
 /// * `scratch` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_dsa_validate_private_key(key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_dsa_validate_private_key(key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "TYnDSYkbSYlrCE2JYxBNiWsYTYlzIE2Jeyi4AAAAAEmJgygBAABJiYNAAQAASYmDMAEAAEmJgzgBAABJiYNYAQAASYm7AAEAAEmJk0gBAABJiYtQAQAASYuDAAEAAEkDg0gBAABJiYMIAQAASQODUAEAAEmJgxABAABJA4NIAQAASYmDGAEAAEkDg0gBAABJiYMgAQAATInfSYuDIAEAAEmJgzABAABIi7cAAQAASIuPSAEAAEG4AAAAAEG5AAAAAA=="
 20:
@@ -4720,7 +4720,7 @@ jmp 217f
 /// * `scratch` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_dsa_validate_public_key(key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_dsa_validate_public_key(key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "TYnDSYkbSYlrCE2JYxBNiWsYTYlzIE2Jeyi4AAAAAEmJg0ABAABJiYMwAQAASYm7AAEAAEmJk0gBAABJiYtQAQAATYmDKAEAAEmJgzgBAABJiYNYAQAASYuDAAEAAEkDg0gBAABJiYMIAQAASQODUAEAAEmJgxABAABJA4NIAQAASYmDGAEAAEkDg0gBAABJiYMgAQAATInfSIu3AAEAAEiLj0gBAABBuAAAAABBuQAAAAA="
 20:
@@ -5464,7 +5464,7 @@ jmp 217f
 /// * `scratch` must not overlap `key`, `signature`, `digest` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `key`, `signature`, `digest` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_dsa_verify_prevalidated(key: *const u8, key_len: usize, p_len: usize, q_len: usize, signature: *const u8, signature_len: usize, digest: *const u8, digest_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_dsa_verify_prevalidated(key: *const u8, key_len: usize, p_len: usize, q_len: usize, signature: *const u8, signature_len: usize, digest: *const u8, digest_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "TItcJBhJiRtJiWsITYljEE2JaxhNiXMgTYl7KLgAAAAASYmDQAEAAEmJgzABAABJibsAAQAASYmTSAEAAEmJi1ABAABNiYMoAQAASItEJAhJiYM4AQAASItEJBBJiYNYAQAASYuDAAEAAEkDg0gBAABJiYMIAQAASQODUAEAAEmJgxABAABJA4NIAQAASYmDGAEAAEkDg0gBAABJiYMgAQAATInfSIu3AAEAAEiLj0gBAABBuAAAAABBuQAAAAA="
 20:
@@ -6736,7 +6736,7 @@ jmp 217f
 /// * `out`, `used` and `scratch` must not overlap each other, `params`, `rand` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `used`, `params`, `rand` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_dsa_generate_key(out: *mut u8, out_len: usize, used: *mut [u64; 1], params: *const u8, params_len: usize, p_len: usize, q_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_dsa_generate_key(out: *mut u8, out_len: usize, used: *mut [u64; 1], params: *const u8, params_len: usize, p_len: usize, q_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJAj///9IiXwkKEiJdCQwSIlUJDhIiUwkQEyJRCRITIlMJFBMAclIiYwkqAAAAEjHwAAAAABIiYQkkAAAAEiJhCTAAAAASIuEJAABAABIiUQkWEiLhCQIAQAASIlEJHBIi4QkEAEAAEiJRCR4SIuEJBgBAABIiYQkgAAAAEiLhCQgAQAASImEJIgAAABIi3wkQEiLdCRISItUJFBIi0wkWEyLhCSAAAAATIuMJIgAAAA="
 call {vg_dsa_check_parameters}
@@ -6838,7 +6838,7 @@ jne 224b
 /// * `out` and `scratch` must not overlap each other, `params`, `x` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `params`, `x` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_dsa_derive_key(out: *mut u8, out_len: usize, params: *const u8, params_len: usize, p_len: usize, x: *const u8, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_dsa_derive_key(out: *mut u8, out_len: usize, params: *const u8, params_len: usize, p_len: usize, x: *const u8, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "TItcJBBJiRtJiWsITYljEE2JaxhNiXMgTYl7KLgAAAAASYmDKAEAAEmJgzABAABJiYM4AQAASYmDWAEAAEmJu0ABAABJiZMAAQAATYmDSAEAAEiLRCQISYmDUAEAAEmLgwABAABJA4NIAQAASYmDCAEAAEkDg1ABAABJiYMQAQAASQODSAEAAEmJgxgBAABJA4NIAQAASYmDIAEAAEyJ302JiyABAABMidhIBWA9AABJiYMYAQAASIu3AAEAAEiLj0gBAABBuAAAAABBuQAAAAA="
 20:
@@ -7615,7 +7615,7 @@ pub const VG_DSA_PARAMETER_SEARCH_MR_ADX_FEATURES: verified_garbage_cpu::Feature
 /// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_dsa_parameter_search_mr_adx(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_dsa_parameter_search_mr_adx(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJBBIi0AISD2AAAAA"
 je 20f
@@ -7663,7 +7663,7 @@ jmp 21b
 /// * `out`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_dsa_parameter_search(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_dsa_parameter_search(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJBBIi0AISD2AAAAA"
 je 20f
@@ -7715,7 +7715,7 @@ pub const VG_DSA_PARAMETER_SEARCH_MR_IFMA_FEATURES: verified_garbage_cpu::Featur
 /// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_dsa_parameter_search_mr_ifma(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_dsa_parameter_search_mr_ifma(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJBBIi0AISD2AAAAA"
 je 20f
@@ -7767,7 +7767,7 @@ pub const VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_MR_ADX_FEATURES: veri
 /// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `bmi1`, `bmi2`, `avx2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_adx(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_adx(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJBBIi0AISD2AAAAA"
 je 20f
@@ -7819,7 +7819,7 @@ pub const VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_FEATURES: verified_ga
 /// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `bmi1`, `bmi2` and `avx2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJBBIi0AISD2AAAAA"
 je 20f
@@ -7871,7 +7871,7 @@ pub const VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_MR_IFMA_FEATURES: ver
 /// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `bmi1`, `bmi2`, `avx2`, `avx512f`, `avx512ifma`, `avx512vl` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_ifma(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_ifma(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJBBIi0AISD2AAAAA"
 je 20f
@@ -7923,7 +7923,7 @@ pub const VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_MR_ADX_FEATURES: verif
 /// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha`, `ssse3`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_adx(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_adx(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJBBIi0AISD2AAAAA"
 je 20f
@@ -7975,7 +7975,7 @@ pub const VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_FEATURES: verified_gar
 /// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_dsa_parameter_search_sha1_shani_sha256_shani(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_dsa_parameter_search_sha1_shani_sha256_shani(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJBBIi0AISD2AAAAA"
 je 20f
@@ -8027,7 +8027,7 @@ pub const VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_MR_IFMA_FEATURES: veri
 /// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha`, `ssse3`, `avx`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_ifma(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_ifma(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJBBIi0AISD2AAAAA"
 je 20f

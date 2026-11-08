@@ -23,7 +23,7 @@ use core::mem::{MaybeUninit, size_of};
 
 /// `X25519(scalar, u)` (RFC 7748 §5), by `vg_x25519_exchange`, which also
 /// checks it: `None` if it is all zero (§6.1).
-fn exchange(scalar: &[u8; 32], u: &[u8; 32]) -> Option<[u8; 32]> {
+fn exchange(dit: crate::dit::Dit<'_>, scalar: &[u8; 32], u: &[u8; 32]) -> Option<[u8; 32]> {
     let mut out = [0u8; 32];
     // Uninitialized: the function's contract holds whatever the scratch
     // holds, so filling it with zeros first would only cost time.
@@ -33,7 +33,8 @@ fn exchange(scalar: &[u8; 32], u: &[u8; 32]) -> Option<[u8; 32]> {
     // distinct Rust objects, so they do not overlap each other or the stack,
     // or wrap around the end of the address space. The dispatcher calls only
     // an implementation the CPU has the features of.
-    let nonzero = unsafe { vg_x25519_exchange_auto(&mut out, scalar, u, scratch.0.as_mut_ptr()) };
+    let nonzero =
+        unsafe { vg_x25519_exchange_auto(dit, &mut out, scalar, u, scratch.0.as_mut_ptr()) };
     // SAFETY: `scratch` is writable for its whole length.
     unsafe { zeroize_raw(scratch.0.as_mut_ptr().cast(), size_of::<[u64; 512]>()) };
     // The contract: 0 if and only if `out` is all zero, so there is no
@@ -42,7 +43,7 @@ fn exchange(scalar: &[u8; 32], u: &[u8; 32]) -> Option<[u8; 32]> {
 }
 
 /// `X25519(scalar, 9)`, by `vg_x25519_base`.
-fn base(scalar: &[u8; 32]) -> [u8; 32] {
+fn base(dit: crate::dit::Dit<'_>, scalar: &[u8; 32]) -> [u8; 32] {
     let mut out = [0u8; 32];
     // Uninitialized, as in `exchange`.
     let mut scratch = CacheAligned(MaybeUninit::<[u64; 1024]>::uninit());
@@ -51,7 +52,7 @@ fn base(scalar: &[u8; 32]) -> [u8; 32] {
     // disjoint from each other and from the input. No buffer overlaps the
     // callee's stack or wraps around the address space. The dispatcher calls
     // only an implementation the CPU has the features of.
-    unsafe { vg_x25519_base_auto(&mut out, scalar, scratch.0.as_mut_ptr()) };
+    unsafe { vg_x25519_base_auto(dit, &mut out, scalar, scratch.0.as_mut_ptr()) };
     // The bytes of `scratch` the function may have written: on AArch64 its
     // first `VG_X25519_BASE_AUTO_SCRATCH_WRITTEN` (`Artifact.written`, which
     // every implementation the dispatcher may call bounds), elsewhere all of it.
@@ -106,8 +107,9 @@ impl PrivateKey {
 
     /// The public key, `X25519(k, 9)` (RFC 7748 §6.1).
     pub fn public_key(&self) -> PublicKey {
+        crate::dit::enter!(dit);
         PublicKey {
-            bytes: base(&self.bytes),
+            bytes: base(dit, &self.bytes),
         }
     }
 
@@ -116,7 +118,8 @@ impl PrivateKey {
     /// is all zero, which the verified code checks without revealing
     /// anything else about it.
     pub fn exchange(&self, peer: &PublicKey) -> Result<[u8; 32], XdhError> {
-        exchange(&self.bytes, &peer.bytes).ok_or(XdhError::ZeroSharedSecret)
+        crate::dit::enter!(dit);
+        exchange(dit, &self.bytes, &peer.bytes).ok_or(XdhError::ZeroSharedSecret)
     }
 }
 

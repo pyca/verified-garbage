@@ -15,7 +15,7 @@
 /// * `inner` and `outer` must not overlap each other or `key` (distinct Rust objects never do).
 /// * None of `inner`, `outer` and `key` may overlap the return address on the stack or the 1152 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_hmac_sha1_init(inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_hmac_sha1_init(inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SIP5QQ=="
 jae 20f
@@ -78,7 +78,7 @@ jmp 21b
 /// * `inner` and `out` must not overlap each other or `outer` (distinct Rust objects never do).
 /// * None of `inner`, `outer` and `out` may overlap the return address on the stack or the 472 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_hmac_sha1_finalize(inner: *mut [u8; 84], outer: *const [u8; 84], count: u64, out: *mut [u8; 20]) {
+pub(crate) unsafe extern "sysv64" fn vg_hmac_sha1_finalize(inner: *mut [u8; 84], outer: *const [u8; 84], count: u64, out: *mut [u8; 20]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJDj+//9JieBJg8AISYmYoAAAAEmJqKgAAABNiaCwAAAATYmouAAAAE2JsMAAAABNibjIAAAASIn7SYn0SYnNTYnHSInWTIn6SIHC0AAAAEyJ+Q=="
 call {vg_sha1_finalize_scratch}
@@ -107,7 +107,7 @@ pub const VG_HMAC_SHA1_INIT_AVX_BMI_FEATURES: verified_garbage_cpu::Features = v
 /// * None of `inner`, `outer` and `key` may overlap the return address on the stack or the 1152 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_hmac_sha1_init_avx_bmi(inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_hmac_sha1_init_avx_bmi(inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SIP5QQ=="
 jae 20f
@@ -174,7 +174,7 @@ pub const VG_HMAC_SHA1_FINALIZE_AVX_BMI_FEATURES: verified_garbage_cpu::Features
 /// * None of `inner`, `outer` and `out` may overlap the return address on the stack or the 472 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_hmac_sha1_finalize_avx_bmi(inner: *mut [u8; 84], outer: *const [u8; 84], count: u64, out: *mut [u8; 20]) {
+pub(crate) unsafe extern "sysv64" fn vg_hmac_sha1_finalize_avx_bmi(inner: *mut [u8; 84], outer: *const [u8; 84], count: u64, out: *mut [u8; 20]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJDj+//9JieBJg8AISYmYoAAAAEmJqKgAAABNiaCwAAAATYmouAAAAE2JsMAAAABNibjIAAAASIn7SYn0SYnNTYnHSInWTIn6SIHC0AAAAEyJ+Q=="
 call {vg_sha1_finalize_scratch_avx_bmi}
@@ -203,7 +203,7 @@ pub const VG_HMAC_SHA1_INIT_SHANI_FEATURES: verified_garbage_cpu::Features = ver
 /// * None of `inner`, `outer` and `key` may overlap the return address on the stack or the 1152 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_hmac_sha1_init_shani(inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_hmac_sha1_init_shani(inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SIP5QQ=="
 jae 20f
@@ -270,7 +270,7 @@ pub const VG_HMAC_SHA1_FINALIZE_SHANI_FEATURES: verified_garbage_cpu::Features =
 /// * None of `inner`, `outer` and `out` may overlap the return address on the stack or the 472 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_hmac_sha1_finalize_shani(inner: *mut [u8; 84], outer: *const [u8; 84], count: u64, out: *mut [u8; 20]) {
+pub(crate) unsafe extern "sysv64" fn vg_hmac_sha1_finalize_shani(inner: *mut [u8; 84], outer: *const [u8; 84], count: u64, out: *mut [u8; 20]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJDj+//9JieBJg8AISYmYoAAAAEmJqKgAAABNiaCwAAAATYmouAAAAE2JsMAAAABNibjIAAAASIn7SYn0SYnNTYnHSInWTIn6SIHC0AAAAEyJ+Q=="
 call {vg_sha1_finalize_scratch_shani}

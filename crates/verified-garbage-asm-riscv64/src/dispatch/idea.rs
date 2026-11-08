@@ -2,20 +2,59 @@
 //! The dispatchers of the verified `idea` functions for `riscv64`
 //! (`crate::idea`, `VG.Rust.dispatcher`).
 
-/// `vg_idea_ecb`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::idea::vg_idea_ecb as vg_idea_ecb_auto;
+/// IDEA in ECB mode (Lai, 1992, §3.3; SP 800-38A §6.1) on `n` complete 8-byte blocks at `data`, in place, under the 52 subkeys at `schedule`: encryption under the subkeys `vg_idea_expand_key` writes, decryption under those `vg_idea_invert_key` writes. No padding is added or removed. For `n = 0`, no data is transformed.
+///
+/// Contract: `VG.Spec.Idea.ecbContract`. Constant time: only pointers and `n` may affect timing, not the subkeys or data, including words or subkeys that are 0.
+///
+/// It runs `vg_idea_ecb`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 104 bytes.
+/// * `data` must be valid for reads and writes of `8 * n` bytes.
+/// * `data` must not overlap `schedule` (distinct Rust objects never do).
+/// * Neither `schedule` nor `data` may wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_idea_ecb_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 104], data: *mut [u8; 8], n: usize) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::idea::vg_idea_ecb(schedule, data, n) }
+}
 
-/// `vg_idea_expand_key`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::idea::vg_idea_expand_key as vg_idea_expand_key_auto;
+/// IDEA encryption key schedule (Lai, 1992, §3.3): writes the 52 encryption subkeys of the 16-byte key at `key` (as eight big-endian 16-bit words, rotated left by 25 bits after every eight subkeys) to `*schedule`, as little-endian 16-bit words.
+///
+/// Contract: `VG.Spec.Idea.expandKeyContract`. Constant time: only pointers may affect timing, not the key.
+///
+/// It runs `vg_idea_expand_key`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of 16 bytes.
+/// * `schedule` must be valid for reads and writes of 104 bytes.
+/// * `schedule` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `schedule` may wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_idea_expand_key_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *const [u8; 16], schedule: *mut [u8; 104]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::idea::vg_idea_expand_key(key, schedule) }
+}
 
-/// `vg_idea_invert_key`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::idea::vg_idea_invert_key as vg_idea_invert_key_auto;
+/// IDEA decryption key schedule (Lai, 1992, §3.3): writes to `*inverse` the 52 decryption subkeys of the 52 encryption subkeys at `schedule` (both as little-endian 16-bit words, as `vg_idea_expand_key` writes them): the multiplicative inverses modulo 2^16 + 1 (with 0 standing for 2^16), additive inverses modulo 2^16 and copies of the encryption subkeys, in reverse round order.
+///
+/// Contract: `VG.Spec.Idea.invertKeyContract`. Constant time: only pointers may affect timing, not the subkeys, including those that are 0 or 1.
+///
+/// It runs `vg_idea_invert_key`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 104 bytes.
+/// * `inverse` must be valid for reads and writes of 104 bytes.
+/// * `inverse` must not overlap `schedule` (distinct Rust objects never do).
+/// * Neither `schedule` nor `inverse` may wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_idea_invert_key_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 104], inverse: *mut [u8; 104]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::idea::vg_idea_invert_key(schedule, inverse) }
+}

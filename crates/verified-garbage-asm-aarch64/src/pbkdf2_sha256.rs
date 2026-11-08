@@ -16,7 +16,7 @@
 /// * `out` must not overlap `password` or `salt` (distinct Rust objects never do).
 /// * None of `password`, `salt` and `out` may overlap the 1616 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_pbkdf2_hmac_sha256(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
+pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha256(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd11903ff,0x910003e7,0x9100008a,0x910000e4,0xf901a093,0xf901a494,0xf901a895,0xf901ac96
 .inst 0xf901b098,0xf901b49e,0xf901b897,0x91000097,0xf901bee5,0x51000549,0xf901c2e9,0xf901c6e6
@@ -110,7 +110,7 @@ pub const VG_PBKDF2_HMAC_SHA256_SHA2_FEATURES: verified_garbage_cpu::Features = 
 /// * None of `password`, `salt` and `out` may overlap the 1616 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha2` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_pbkdf2_hmac_sha256_sha2(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
+pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha256_sha2(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd11903ff,0x910003e7,0x9100008a,0x910000e4,0xf901a093,0xf901a494,0xf901a895,0xf901ac96
 .inst 0xf901b098,0xf901b49e,0xf901b897,0x91000097,0xf901bee5,0x51000549,0xf901c2e9,0xf901c6e6

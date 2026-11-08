@@ -52,10 +52,12 @@ impl<const DECRYPT: bool> Cbc<DECRYPT> {
             ctx: CacheAligned([0; 144]),
             pending_len: 0,
         };
+        crate::dit::enter!(dit);
         // SAFETY: the key, IV and context are valid, separate objects of the
         // lengths passed; the primitive checks the lengths.
         let code = unsafe {
             vg_rc2_cbc_init_auto(
+                dit,
                 key.as_ptr(),
                 key.len(),
                 effective_bits,
@@ -93,6 +95,7 @@ impl<const DECRYPT: bool> Cbc<DECRYPT> {
         } else {
             vg_rc2_cbc_encrypt_update_auto
         };
+        crate::dit::enter!(dit);
         // SAFETY: the context holds `pending_len` (less than 8) pending
         // bytes; `output` is exactly `(pending_len + input.len()) / 8 * 8`
         // bytes long, as the contract requires; the context, input and
@@ -101,6 +104,7 @@ impl<const DECRYPT: bool> Cbc<DECRYPT> {
         // overlap).
         unsafe {
             update(
+                dit,
                 &mut self.ctx.0,
                 self.pending_len,
                 input.as_ptr(),

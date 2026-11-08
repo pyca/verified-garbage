@@ -144,9 +144,10 @@ impl Key {
             _ => return Err(InvalidKeyLength),
         };
         let mut schedule = CacheAligned([0; 272]);
+        crate::dit::enter!(dit);
         // SAFETY: the key has a validated length; key and schedule are separate
         // valid buffers of the required sizes.
-        unsafe { vg_camellia_expand_key_auto(key.as_ptr(), key.len(), &mut schedule.0) };
+        unsafe { vg_camellia_expand_key_auto(dit, key.as_ptr(), key.len(), &mut schedule.0) };
         Ok(Self { schedule, rounds })
     }
 
@@ -154,18 +155,26 @@ impl Key {
     /// which it replaces with the last ciphertext block (unchanged for empty
     /// input).
     fn encrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) {
-        self.blocks(iv, buffer, true);
+        crate::dit::enter!(dit);
+        self.blocks(dit, iv, buffer, true);
     }
 
     /// Decrypts the whole blocks of `buffer` in place, from the block `iv`,
     /// which it replaces with the last ciphertext block (unchanged for empty
     /// input).
     fn decrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) {
-        self.blocks(iv, buffer, false);
+        crate::dit::enter!(dit);
+        self.blocks(dit, iv, buffer, false);
     }
 
     /// Encrypts (`encrypt`) or decrypts whole blocks.
-    fn blocks(&self, iv: &mut [u8; 16], blocks: &mut [u8], encrypt: bool) {
+    fn blocks(
+        &self,
+        dit: crate::dit::Dit<'_>,
+        iv: &mut [u8; 16],
+        blocks: &mut [u8],
+        encrypt: bool,
+    ) {
         // SAFETY: `rounds` is 18 or 24 and the schedule holds that many rounds'
         // subkeys; `blocks` holds `len / 16` whole blocks (its length is a
         // multiple of 16), and it, the block at `iv` and the schedule are
@@ -174,6 +183,7 @@ impl Key {
         unsafe {
             if encrypt {
                 vg_camellia_cfb128_encrypt_auto(
+                    dit,
                     &self.schedule.0,
                     self.rounds,
                     iv,
@@ -182,6 +192,7 @@ impl Key {
                 )
             } else {
                 vg_camellia_cfb128_decrypt_auto(
+                    dit,
                     &self.schedule.0,
                     self.rounds,
                     iv,
@@ -197,10 +208,11 @@ impl Key {
     /// decrypted several at once), then the bytes after them, fewer than 16,
     /// with the final function, from the IV the whole blocks leave.
     fn last(&self, iv: &mut [u8; 16], buffer: &mut [u8], encrypt: bool) {
+        crate::dit::enter!(dit);
         let (blocks, rest) = buffer.split_at_mut(buffer.len() / 16 * 16);
-        self.blocks(iv, blocks, encrypt);
+        self.blocks(dit, iv, blocks, encrypt);
         if !rest.is_empty() {
-            self.final_(iv, rest, encrypt);
+            self.final_(dit, iv, rest, encrypt);
         }
     }
 
@@ -208,13 +220,20 @@ impl Key {
     /// of a message, of any length: it replaces `iv` with the last ciphertext
     /// block, or, after a partial last segment, with keystream, which the
     /// caller wipes.
-    fn final_(&self, iv: &mut [u8; 16], buffer: &mut [u8], encrypt: bool) {
+    fn final_(
+        &self,
+        dit: crate::dit::Dit<'_>,
+        iv: &mut [u8; 16],
+        buffer: &mut [u8],
+        encrypt: bool,
+    ) {
         // SAFETY: `rounds` is a number of rounds the schedule holds subkeys for; `buffer` is valid for `len` bytes, and it, the block
         // at `iv` and the schedule are separate valid objects of the sizes of
         // the signature, none of them on the callee's stack.
         unsafe {
             if encrypt {
                 vg_camellia_cfb128_encrypt_final_auto(
+                    dit,
                     &self.schedule.0,
                     self.rounds,
                     iv,
@@ -223,6 +242,7 @@ impl Key {
                 )
             } else {
                 vg_camellia_cfb128_decrypt_final_auto(
+                    dit,
                     &self.schedule.0,
                     self.rounds,
                     iv,

@@ -36,10 +36,11 @@ impl TripleDesEcb {
             return Err(InvalidKeyLength);
         }
         let mut schedule = CacheAligned([0; 384]);
+        crate::dit::enter!(dit);
         // SAFETY: the key has a validated length; key and schedule are separate
         // valid buffers of the required sizes.
         unsafe {
-            vg_triple_des_expand_key_auto(key.as_ptr(), key.len(), &mut schedule.0);
+            vg_triple_des_expand_key_auto(dit, key.as_ptr(), key.len(), &mut schedule.0);
         }
         Ok(Self { schedule })
     }
@@ -65,12 +66,14 @@ impl TripleDesEcb {
         } else {
             vg_triple_des_ecb_decrypt_auto
         };
+        crate::dit::enter!(dit);
         // SAFETY: buffer contains complete eight-byte blocks, including zero
         // blocks. The buffer and schedule are separate valid objects and do not
         // overlap the callee's stack. The dispatcher calls only an implementation
         // the CPU has the features of.
         unsafe {
             f(
+                dit,
                 &self.schedule.0,
                 buffer.as_mut_ptr().cast(),
                 buffer.len() / 8,

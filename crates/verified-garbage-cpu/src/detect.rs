@@ -477,6 +477,17 @@ fn aarch64_sve2() -> bool {
     cfg!(target_feature = "sve2")
 }
 
+/// Whether the CPU has FEAT_DIT, whatever `VG_CPU_FEATURES` says: data
+/// independent timing chooses no implementation but is the mode every one
+/// runs in (the library's `src/dit.rs`), so the tests and benchmarks of every
+/// configuration run with it wherever the CPU has it. (`detected` reports it
+/// as any other feature, so that `VG_CPU_FEATURES=none` reports none, and
+/// the dispatchers choose the base implementations.)
+#[cfg(target_arch = "aarch64")]
+pub fn dit() -> bool {
+    aarch64_dit()
+}
+
 /// Whether the CPU has FEAT_DIT, asked of the operating system.
 #[cfg(all(target_arch = "aarch64", feature = "std"))]
 fn aarch64_dit() -> bool {

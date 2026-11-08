@@ -73,10 +73,11 @@ impl Drop for Squeezing {
     }
 }
 
-/// `update`: absorbs `data` into `$s` (an `Absorbing`), with the dispatcher
-/// of the function's `update`.
+/// `update`: absorbs `data` into `$s` (an `Absorbing`), with the token
+/// `$dit`, with the dispatcher of the function's `update`.
 macro_rules! absorb {
-    ($s:expr, $data:expr, $update:ident) => {{
+    ($dit:expr, $s:expr, $data:expr, $update:ident) => {{
+        let dit: crate::dit::Dit<'_> = $dit;
         let s: &mut Absorbing = $s;
         let data: &[u8] = $data;
         // Uninitialized: the contract holds whatever the scratch holds, so
@@ -93,6 +94,7 @@ macro_rules! absorb {
         // only an implementation the CPU has the features of.
         s.pos = unsafe {
             $update(
+                dit,
                 &mut s.state.0,
                 s.pos,
                 data.as_ptr(),
@@ -136,11 +138,23 @@ macro_rules! sha3 {
 
             /// Absorbs `data`.
             pub fn update(&mut self, data: &[u8]) {
-                absorb!(&mut self.0, data, $update);
+                self.update_with(crate::dit::public(crate::dit::Why::UnkeyedHash), data);
+            }
+
+            /// [`update`](Self::update), with the token of the operation it
+            /// is part of (see `crate::dit`).
+            pub(crate) fn update_with(&mut self, dit: crate::dit::Dit<'_>, data: &[u8]) {
+                absorb!(dit, &mut self.0, data, $update);
             }
 
             /// Pads the message and returns its digest.
-            pub fn finalize(mut self) -> [u8; $output] {
+            pub fn finalize(self) -> [u8; $output] {
+                self.finalize_with(crate::dit::public(crate::dit::Why::UnkeyedHash))
+            }
+
+            /// [`finalize`](Self::finalize), with the token of the operation
+            /// it is part of (see `crate::dit`).
+            pub(crate) fn finalize_with(mut self, dit: crate::dit::Dit<'_>) -> [u8; $output] {
                 let mut digest = [0; $output];
                 // SAFETY: as in `update`, `self.0.pos` is the position
                 // `update` returned for the message `self.0.state`
@@ -148,15 +162,22 @@ macro_rules! sha3 {
                 // 200 bytes and `digest` for writes of its size, distinct
                 // objects. The dispatcher calls only an implementation the
                 // CPU has the features of.
-                unsafe { $finalize(&mut self.0.state.0, self.0.pos, &mut digest) };
+                unsafe { $finalize(dit, &mut self.0.state.0, self.0.pos, &mut digest) };
                 digest
             }
 
             /// The digest of `data`.
             pub fn digest(data: &[u8]) -> [u8; $output] {
+                Self::digest_with(crate::dit::public(crate::dit::Why::UnkeyedHash), data)
+            }
+
+            /// [`digest`](Self::digest), with the token of the operation it
+            /// is part of (see `crate::dit`).
+            #[allow(dead_code)]
+            pub(crate) fn digest_with(dit: crate::dit::Dit<'_>, data: &[u8]) -> [u8; $output] {
                 let mut h = Self::new();
-                h.update(data);
-                h.finalize()
+                h.update_with(dit, data);
+                h.finalize_with(dit)
             }
         }
 
@@ -201,6 +222,12 @@ macro_rules! shake {
         impl $reader {
             /// Writes the next `out.len()` bytes of output to `out`.
             pub fn squeeze(&mut self, out: &mut [u8]) {
+                self.squeeze_with(crate::dit::public(crate::dit::Why::UnkeyedHash), out);
+            }
+
+            /// [`squeeze`](Self::squeeze), with the token of the operation
+            /// it is part of (see `crate::dit`).
+            pub(crate) fn squeeze_with(&mut self, dit: crate::dit::Dit<'_>, out: &mut [u8]) {
                 let s = &mut self.0;
                 // SAFETY: `s.pos` is the position `finalize` (0) or the last
                 // `squeeze` left, at most the rate, from which `s.state`
@@ -210,7 +237,7 @@ macro_rules! shake {
                 // each other or the stack below the stack pointer. The
                 // dispatcher calls only an implementation the CPU has the
                 // features of.
-                s.pos = unsafe { $squeeze(&mut s.state.0, s.pos, out.as_mut_ptr(), out.len()) };
+                s.pos = unsafe { $squeeze(dit, &mut s.state.0, s.pos, out.as_mut_ptr(), out.len()) };
             }
         }
 
@@ -231,19 +258,31 @@ macro_rules! shake {
 
             /// Absorbs `data`.
             pub fn update(&mut self, data: &[u8]) {
-                absorb!(&mut self.0, data, $update);
+                self.update_with(crate::dit::public(crate::dit::Why::UnkeyedHash), data);
+            }
+
+            /// [`update`](Self::update), with the token of the operation it
+            /// is part of (see `crate::dit`).
+            pub(crate) fn update_with(&mut self, dit: crate::dit::Dit<'_>, data: &[u8]) {
+                absorb!(dit, &mut self.0, data, $update);
             }
 
             /// Pads the message and returns a reader of its output, which
             /// can be squeezed in pieces.
             pub fn finalize_xof(self) -> $reader {
+                self.finalize_xof_with(crate::dit::public(crate::dit::Why::UnkeyedHash))
+            }
+
+            /// [`finalize_xof`](Self::finalize_xof), with the token of the
+            /// operation it is part of (see `crate::dit`).
+            pub(crate) fn finalize_xof_with(self, dit: crate::dit::Dit<'_>) -> $reader {
                 let mut state = self.0.state;
                 // SAFETY: as in `update`, `self.0.pos` is the position
                 // `update` returned for the message `state` represents;
                 // `state` is valid for reads and writes of 200 bytes. The
                 // dispatcher calls only an implementation the CPU has the
                 // features of.
-                unsafe { $finalize(&mut state.0, self.0.pos) };
+                unsafe { $finalize(dit, &mut state.0, self.0.pos) };
                 // From position 0, the padded state gives the output from its
                 // first byte on.
                 $reader(Squeezing { state, pos: 0 })
@@ -252,15 +291,29 @@ macro_rules! shake {
             /// Pads the message and fills `out` with the first `out.len()`
             /// bytes of output.
             pub fn finalize(self, out: &mut [u8]) {
-                self.finalize_xof().squeeze(out);
+                self.finalize_with(crate::dit::public(crate::dit::Why::UnkeyedHash), out);
+            }
+
+            /// [`finalize`](Self::finalize), with the token of the operation
+            /// it is part of (see `crate::dit`).
+            #[allow(dead_code)]
+            pub(crate) fn finalize_with(self, dit: crate::dit::Dit<'_>, out: &mut [u8]) {
+                self.finalize_xof_with(dit).squeeze_with(dit, out);
             }
 
             /// Fills `out` with the first `out.len()` bytes of output for
             /// `data`.
             pub fn digest(data: &[u8], out: &mut [u8]) {
+                Self::digest_with(crate::dit::public(crate::dit::Why::UnkeyedHash), data, out);
+            }
+
+            /// [`digest`](Self::digest), with the token of the operation it
+            /// is part of (see `crate::dit`).
+            #[allow(dead_code)]
+            pub(crate) fn digest_with(dit: crate::dit::Dit<'_>, data: &[u8], out: &mut [u8]) {
                 let mut h = Self::new();
-                h.update(data);
-                h.finalize(out);
+                h.update_with(dit, data);
+                h.finalize_with(dit, out);
             }
         }
     };

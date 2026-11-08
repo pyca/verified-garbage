@@ -15,7 +15,7 @@
 /// * `state` must not overlap `key` or `nonce` (distinct Rust objects never do).
 /// * None of `state`, `key` and `nonce` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_chacha20_init(state: *mut [u64; 96], key: *const [u8; 32], nonce: *const [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_chacha20_init(state: *mut [u64; 96], key: *const [u8; 32], nonce: *const [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SIsGSItOCEyLRhBMi04YSIlHEEiJTxhMiUcgTIlPKEiJ1kiLBkiLTgiLFkiJRzBIiU84SLhleHBhbmQgM0iJB0i4Mi1ieXRlIGtIiUcISLkAAAAAAQAAAEgp0UgByUgByUgByUgByUgByUgByUiJj4AAAADD"
 .p2align 6"#,
@@ -33,7 +33,7 @@ pub unsafe extern "sysv64" fn vg_chacha20_init(state: *mut [u64; 96], key: *cons
 /// * `state` must not overlap `nonce` (distinct Rust objects never do).
 /// * Neither `state` nor `nonce` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_chacha20_set_nonce(state: *mut [u64; 96], nonce: *const [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_chacha20_set_nonce(state: *mut [u64; 96], nonce: *const [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SIsGSItOCIsWSIlHMEiJTzhIuGV4cGFuZCAzSIkHSLgyLWJ5dGUga0iJRwhIuQAAAAABAAAASCnRSAHJSAHJSAHJSAHJSAHJSAHJSImPgAAAAMM="
 .p2align 6"#,
@@ -55,7 +55,7 @@ pub const VG_CHACHA20_APPLY_AVX2_FEATURES: verified_garbage_cpu::Features = veri
 /// * Neither `state` nor `data` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_chacha20_apply_avx2(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_chacha20_apply_avx2(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SIuHgAAAAEg50A=="
 jb 20f
@@ -139,7 +139,7 @@ pub const VG_CHACHA20_APPLY_AVX512_FEATURES: verified_garbage_cpu::Features = ve
 /// * Neither `state` nor `data` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx512f` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_chacha20_apply_avx512(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_chacha20_apply_avx512(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SIuHgAAAAEg50A=="
 jb 20f
@@ -223,7 +223,7 @@ pub const VG_CHACHA20_APPLY_AVX512VL_FEATURES: verified_garbage_cpu::Features = 
 /// * Neither `state` nor `data` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_chacha20_apply_avx512vl(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_chacha20_apply_avx512vl(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SIuHgAAAAEg50A=="
 jb 20f
@@ -303,7 +303,7 @@ jmp 21f
 /// * `state` and `data` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_chacha20_apply(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_chacha20_apply(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SIuHgAAAAEg50A=="
 jb 20f
@@ -387,7 +387,7 @@ pub const VG_CHACHA20_APPLY_SSSE3_FEATURES: verified_garbage_cpu::Features = ver
 /// * Neither `state` nor `data` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` target feature.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_chacha20_apply_ssse3(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_chacha20_apply_ssse3(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SIuHgAAAAEg50A=="
 jb 20f

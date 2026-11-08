@@ -17,7 +17,7 @@
 /// * `out` and `scratch` must not overlap each other, `d` or `peer` (distinct Rust objects never do).
 /// * None of `out`, `d`, `peer` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ecdh_p521(out: *mut [u8; 66], d: *const [u8; 66], peer: *const [u8; 133], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ecdh_p521(out: *mut [u8; 66], d: *const [u8; 66], peer: *const [u8; 133], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c

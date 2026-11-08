@@ -12,7 +12,12 @@ use alloc::sync::Arc;
 pub(super) struct Precomputed(Arc<[u64]>);
 
 impl Precomputed {
-    pub(super) fn new(domain: &[u8], p_len: usize, scratch: &mut [u64]) -> Self {
+    pub(super) fn new(
+        dit: crate::dit::Dit<'_>,
+        domain: &[u8],
+        p_len: usize,
+        scratch: &mut [u64],
+    ) -> Self {
         let mut words = alloc::vec![0; 3 + 34 * p_len.div_ceil(8)];
         // SAFETY: the domain was accepted by vg_ffdh_check_domain. Its
         // length is 2*p_len or 3*p_len, p_len is in 64..=1024, words has
@@ -21,6 +26,7 @@ impl Precomputed {
         // dispatcher calls only an implementation the CPU has the features of.
         let ok = unsafe {
             vg_ffdh_generate_key_precompute_auto(
+                dit,
                 words.as_mut_ptr(),
                 words.len(),
                 domain.as_ptr(),

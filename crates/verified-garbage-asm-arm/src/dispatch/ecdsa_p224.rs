@@ -23,7 +23,7 @@
 /// * `hmac` must be the `as_ptr()` of one of the `Hmac` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_ecdsa_p224_sign_auto(out: *mut [u8; 56], d: *const [u8; 28], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32 {
+pub unsafe fn vg_ecdsa_p224_sign_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 56], d: *const [u8; 28], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32 {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(out: *mut [u8; 56], d: *const [u8; 28], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -75,7 +75,7 @@ pub unsafe fn vg_ecdsa_p224_sign_auto(out: *mut [u8; 56], d: *const [u8; 28], di
 /// * None of `public`, `digest`, `sig` and `scratch` may overlap the 96 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_ecdsa_p224_verify_auto(public: *const [u8; 57], digest: *const u8, digest_len: usize, sig: *const [u8; 56], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe fn vg_ecdsa_p224_verify_auto(_dit: verified_garbage_cpu::Dit<'_>, public: *const [u8; 57], digest: *const u8, digest_len: usize, sig: *const [u8; 56], scratch: *mut [u64; 1024]) -> u32 {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(public: *const [u8; 57], digest: *const u8, digest_len: usize, sig: *const [u8; 56], scratch: *mut [u64; 1024]) -> u32;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only

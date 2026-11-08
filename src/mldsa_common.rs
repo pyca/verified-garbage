@@ -80,6 +80,7 @@ macro_rules! ml_dsa {
             /// The public key `bytes` (every byte string of this size is
             /// one).
             pub fn from_bytes(bytes: &[u8; $pk]) -> Self {
+                let dit = $crate::dit::public($crate::dit::Why::PublicKey);
                 let mut tr = [0; 64];
                 // The verified contract accepts arbitrary initial scratch bytes.
                 let mut scratch = $crate::align::CacheAligned(core::mem::MaybeUninit::<Scratch>::uninit());
@@ -92,7 +93,7 @@ macro_rules! ml_dsa {
                 // (`VG.Spec.MlDsa.pkTrContract`), which
                 // `verify_message_cached` requires.
                 unsafe {
-                    $pk_tr(bytes, &mut tr, scratch.0.as_mut_ptr())
+                    $pk_tr(dit, bytes, &mut tr, scratch.0.as_mut_ptr())
                 }
                 $VerifyingKey { bytes: *bytes, tr }
             }
@@ -110,6 +111,7 @@ macro_rules! ml_dsa {
             /// which nothing is a valid signature (Algorithm 3 returns an
             /// error).
             pub fn verify(&self, msg: &[u8], ctx: &[u8], sig: &[u8; $sig]) -> Result<(), InvalidSignature> {
+                let dit = $crate::dit::public($crate::dit::Why::Verify);
                 // The verified contracts accept arbitrary initial scratch bytes.
                 let mut scratch = $crate::align::CacheAligned(core::mem::MaybeUninit::<MessageScratch>::uninit());
                 let (m, m_len, c, c_len) = (msg.as_ptr(), msg.len(), ctx.as_ptr(), ctx.len());
@@ -121,7 +123,7 @@ macro_rules! ml_dsa {
                 // The dispatcher calls only an implementation the CPU has the
                 // features of.
                 let r = unsafe {
-                    $verify_message_cached(&self.bytes, m, m_len, c, c_len, sig, scratch.0.as_mut_ptr(), &self.tr)
+                    $verify_message_cached(dit, &self.bytes, m, m_len, c, c_len, sig, scratch.0.as_mut_ptr(), &self.tr)
                 };
                 // 2 is a context longer than 255 bytes.
                 if r == 1 { Ok(()) } else { Err(InvalidSignature) }
@@ -135,6 +137,7 @@ macro_rules! ml_dsa {
             /// not hash the message or apply context formatting.
             /// Returns [`InvalidSignature`] if verification fails.
             pub fn verify_mu(&self, mu: &[u8; 64], sig: &[u8; $sig]) -> Result<(), InvalidSignature> {
+                let dit = $crate::dit::public($crate::dit::Why::Verify);
                 // The verified contracts accept arbitrary initial scratch bytes.
                 let mut scratch = $crate::align::CacheAligned(core::mem::MaybeUninit::<Scratch>::uninit());
                 // SAFETY: `self.bytes`, `mu`, `sig` and `scratch` are valid
@@ -144,7 +147,7 @@ macro_rules! ml_dsa {
                 // The dispatcher calls only an implementation the CPU has the
                 // features of.
                 let r = unsafe {
-                    $verify(&self.bytes, mu, sig, scratch.0.as_mut_ptr())
+                    $verify(dit, &self.bytes, mu, sig, scratch.0.as_mut_ptr())
                 };
                 if r == 1 { Ok(()) } else { Err(InvalidSignature) }
             }
@@ -184,6 +187,7 @@ macro_rules! ml_dsa {
             /// an approved RBG (FIPS 204 §3.6.1, Algorithm 1), or a seed so
             /// generated before.
             pub fn from_seed(seed: &[u8; 32]) -> Result<Self, MlDsaError> {
+                $crate::dit::enter!(dit);
                 let mut key = $SigningKey {
                     seed: *seed,
                     vk: $VerifyingKey {
@@ -202,7 +206,7 @@ macro_rules! ml_dsa {
                 // The dispatcher calls only an implementation the CPU has the
                 // features of.
                 let r = unsafe {
-                    $keygen(seed, &mut key.vk.bytes, &mut key.sk, scratch.0.as_mut_ptr())
+                    $keygen(dit, seed, &mut key.vk.bytes, &mut key.sk, scratch.0.as_mut_ptr())
                 };
                 // SAFETY: the entire scratch allocation is writable, including
                 // bytes the operation may not have initialized.
@@ -253,6 +257,7 @@ macro_rules! ml_dsa {
             }
 
             fn sign_with(&self, msg: &[u8], ctx: &[u8], rnd: &[u8; 32]) -> Result<[u8; $sig], MlDsaError> {
+                $crate::dit::enter!(dit);
                 let mut sig = [0u8; $sig];
                 // The verified contracts accept arbitrary initial scratch bytes.
                 let mut scratch = $crate::align::CacheAligned(core::mem::MaybeUninit::<MessageScratch>::uninit());
@@ -266,7 +271,7 @@ macro_rules! ml_dsa {
                 // The dispatcher calls only an implementation the CPU has the
                 // features of.
                 let r = unsafe {
-                    $sign_message(&self.sk, m, m_len, c, c_len, rnd, &mut sig, scratch.0.as_mut_ptr())
+                    $sign_message(dit, &self.sk, m, m_len, c, c_len, rnd, &mut sig, scratch.0.as_mut_ptr())
                 };
                 // SAFETY: the entire scratch allocation is writable, including
                 // bytes the operation may not have initialized.
@@ -298,6 +303,7 @@ macro_rules! ml_dsa {
             /// are a concern. Returns [`MlDsaError::LoopBound`] if a loop
             /// reaches its bound.
             pub fn sign_mu(&self, mu: &[u8; 64], rnd: &[u8; 32]) -> Result<[u8; $sig], MlDsaError> {
+                $crate::dit::enter!(dit);
                 let mut sig = [0u8; $sig];
                 // The verified contracts accept arbitrary initial scratch bytes.
                 let mut scratch = $crate::align::CacheAligned(core::mem::MaybeUninit::<Scratch>::uninit());
@@ -310,7 +316,7 @@ macro_rules! ml_dsa {
                 // The dispatcher calls only an implementation the CPU has the
                 // features of.
                 let r = unsafe {
-                    $sign(&self.sk, mu, rnd, &mut sig, scratch.0.as_mut_ptr())
+                    $sign(dit, &self.sk, mu, rnd, &mut sig, scratch.0.as_mut_ptr())
                 };
                 // SAFETY: the entire scratch allocation is writable, including
                 // bytes the operation may not have initialized.
@@ -332,6 +338,7 @@ macro_rules! ml_dsa {
             /// This key, prepared for many verifications: see
             #[doc = concat!("[`", stringify!($PreparedVerifyingKey), "`].")]
             pub fn prepare(self) -> $PreparedVerifyingKey {
+                let dit = $crate::dit::public($crate::dit::Why::PublicKey);
                 let mut prepared = $crate::align::CacheAligned([0u8; $prepared_pk]);
                 // The verified contract accepts arbitrary initial scratch bytes.
                 let mut work = $crate::align::CacheAligned(core::mem::MaybeUninit::<[u64; 128]>::uninit());
@@ -342,7 +349,7 @@ macro_rules! ml_dsa {
                 // of the address space. `prepare_verify` writes the
                 // prepared key of `self.bytes` to `prepared`
                 // (`VG.Spec.MlDsa.preparePublicKeyContract`).
-                unsafe { $prepare_verify(&self.bytes, &mut prepared.0, work.0.as_mut_ptr()) };
+                unsafe { $prepare_verify(dit, &self.bytes, &mut prepared.0, work.0.as_mut_ptr()) };
                 $PreparedVerifyingKey { prepared, key: self }
             }
         }
@@ -375,6 +382,7 @@ macro_rules! ml_dsa {
 
             #[doc = concat!("What [`", stringify!($VerifyingKey), "::verify`] says of the key it was prepared from.")]
             pub fn verify(&self, msg: &[u8], ctx: &[u8], sig: &[u8; $sig]) -> Result<(), InvalidSignature> {
+                let dit = $crate::dit::public($crate::dit::Why::Verify);
                 // The verified contracts accept arbitrary initial scratch bytes.
                 let mut scratch = $crate::align::CacheAligned(core::mem::MaybeUninit::<MessageScratch>::uninit());
                 let (m, m_len, c, c_len) = (msg.as_ptr(), msg.len(), ctx.as_ptr(), ctx.len());
@@ -389,7 +397,7 @@ macro_rules! ml_dsa {
                 // The dispatcher calls only an implementation the CPU has
                 // the features of.
                 let r = unsafe {
-                    $verify_message_prepared(&self.prepared.0, m, m_len, c, c_len, sig, scratch.0.as_mut_ptr(), &self.key.tr)
+                    $verify_message_prepared(dit, &self.prepared.0, m, m_len, c, c_len, sig, scratch.0.as_mut_ptr(), &self.key.tr)
                 };
                 // 2 is a context longer than 255 bytes.
                 if r == 1 { Ok(()) } else { Err(InvalidSignature) }
@@ -400,6 +408,7 @@ macro_rules! ml_dsa {
             /// This key, prepared for many signatures: see
             #[doc = concat!("[`", stringify!($PreparedSigningKey), "`].")]
             pub fn prepare(self) -> $PreparedSigningKey {
+                $crate::dit::enter!(dit);
                 let mut prepared = $crate::align::CacheAligned([0u8; $prepared_sk]);
                 // The verified contract accepts arbitrary initial scratch bytes.
                 let mut work = $crate::align::CacheAligned(core::mem::MaybeUninit::<[u64; 128]>::uninit());
@@ -410,7 +419,7 @@ macro_rules! ml_dsa {
                 // address space. `prepare_sign` writes the prepared key of
                 // `self.sk` to `prepared`
                 // (`VG.Spec.MlDsa.prepareSecretKeyContract`).
-                unsafe { $prepare_sign(&self.sk, &mut prepared.0, work.0.as_mut_ptr()) };
+                unsafe { $prepare_sign(dit, &self.sk, &mut prepared.0, work.0.as_mut_ptr()) };
                 // SAFETY: the entire working space is writable, including
                 // bytes the preparation may not have initialized.
                 unsafe { $crate::zeroize::zeroize_raw(work.0.as_mut_ptr().cast(), core::mem::size_of_val(&work.0)) };
@@ -465,6 +474,7 @@ macro_rules! ml_dsa {
             }
 
             fn sign_with(&self, msg: &[u8], ctx: &[u8], rnd: &[u8; 32]) -> Result<[u8; $sig], MlDsaError> {
+                $crate::dit::enter!(dit);
                 let mut sig = [0u8; $sig];
                 // The verified contracts accept arbitrary initial scratch bytes.
                 let mut scratch = $crate::align::CacheAligned(core::mem::MaybeUninit::<MessageScratch>::uninit());
@@ -478,7 +488,7 @@ macro_rules! ml_dsa {
                 // the key generation wrote. The dispatcher calls only an
                 // implementation the CPU has the features of.
                 let r = unsafe {
-                    $sign_message_prepared(&self.prepared.0, m, m_len, c, c_len, rnd, &mut sig, scratch.0.as_mut_ptr())
+                    $sign_message_prepared(dit, &self.prepared.0, m, m_len, c, c_len, rnd, &mut sig, scratch.0.as_mut_ptr())
                 };
                 // SAFETY: the entire scratch allocation is writable, including
                 // bytes the operation may not have initialized.

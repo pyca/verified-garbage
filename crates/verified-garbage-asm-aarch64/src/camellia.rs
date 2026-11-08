@@ -16,7 +16,7 @@
 /// * `schedule` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `schedule` may overlap the 3248 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_camellia_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 272]) {
+pub(crate) unsafe extern "C" fn vg_camellia_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 272]) {
     core::arch::naked_asm!(
         r".inst 0xd132c3ff,0x910003e3,0x91000065,0x91000023,0xf905c0b3,0xf905c4b4,0xf905c8b5,0xf905ccb6
 .inst 0xf905d0b7,0xf905d4b8,0xf905d8b9,0xf905dcba,0xf905e0bb,0xf905e4bc,0xd2801ff5,0xf2a01ff5
@@ -373,7 +373,7 @@ b 210f
 /// * `data` must not overlap `schedule` (distinct Rust objects never do).
 /// * Neither `schedule` nor `data` may overlap the 3248 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_camellia_ecb_encrypt(schedule: *const [u8; 272], rounds: usize, data: *mut [u8; 16], n: usize) {
+pub(crate) unsafe extern "C" fn vg_camellia_ecb_encrypt(schedule: *const [u8; 272], rounds: usize, data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r".inst 0xd132c3ff,0x910003e4,0x91000085,0xf905c0b3,0xf905c4b4,0xf905c8b5,0xf905ccb6,0xf905d0b7
 .inst 0xf905d4b8,0xf905d8b9,0xf905dcba,0xf905e0bb,0xf905e4bc,0xd2801ff5,0xf2a01ff5,0xf2c01ff5
@@ -740,7 +740,7 @@ b 24f
 /// * `data` must not overlap `schedule` (distinct Rust objects never do).
 /// * Neither `schedule` nor `data` may overlap the 3248 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_camellia_ecb_decrypt(schedule: *const [u8; 272], rounds: usize, data: *mut [u8; 16], n: usize) {
+pub(crate) unsafe extern "C" fn vg_camellia_ecb_decrypt(schedule: *const [u8; 272], rounds: usize, data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r".inst 0xd132c3ff,0x910003e4,0x91000085,0xf905c0b3,0xf905c4b4,0xf905c8b5,0xf905ccb6,0xf905d0b7
 .inst 0xf905d4b8,0xf905d8b9,0xf905dcba,0xf905e0bb,0xf905e4bc,0xd2801ff5,0xf2a01ff5,0xf2c01ff5

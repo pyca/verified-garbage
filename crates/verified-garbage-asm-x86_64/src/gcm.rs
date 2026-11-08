@@ -14,7 +14,7 @@ pub const VG_AES_GCM_PREPARE_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Feat
 /// * `ctx` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq` and `avx512f` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_prepare_vpclmul_avx512(ctx: *mut [u64; 129]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_prepare_vpclmul_avx512(ctx: *mut [u64; 129]) {
     core::arch::naked_asm!(
         r#".base64 "SMfAMAAAAEiJhwAEAAA="
 lea rax, [rip + {VG_GCM_CONSTS}]
@@ -39,7 +39,7 @@ pub const VG_AES_GCM_PREPARE_VPCLMUL_FEATURES: verified_garbage_cpu::Features = 
 /// * `ctx` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_prepare_vpclmul(ctx: *mut [u64; 129]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_prepare_vpclmul(ctx: *mut [u64; 129]) {
     core::arch::naked_asm!(
         r#".base64 "SMfAEAAAAEiJhwAEAAA="
 lea rax, [rip + {VG_GCM_CONSTS}]
@@ -64,7 +64,7 @@ pub const VG_AES_GCM_PREPARE_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features
 /// * `ctx` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `pclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_prepare_pclmul_avx(ctx: *mut [u64; 129]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_prepare_pclmul_avx(ctx: *mut [u64; 129]) {
     core::arch::naked_asm!(
         r#".base64 "SMfAEAAAAEiJhwAEAABIuA8ODQwLCgkIxOH5bsBIuAcGBQQDAgEAxGH5buDEwXlsxEi4AAAAAAAAAADE4fluyEi4AAAAAAAAAMLEYflu4MTBcWzMxfpvv/AAAADE4kEA+Ei4AQAAAAAAAADEYflu6Ei4AAAAAAAAAMLEYflu4MRBEWzsSLj//////////8Rh+W7wxEEJbPbF4XP3AcWhc9c/xMEhc/sIxaHr28V5cN//xMEhctMfxEEh/t7EQSHf3cWh79vF+n+fEAEAAMRjYUTDAMRjYUTTEcRjOUTZEMRBeXDATsRBOe/DxGM5RNkQxEF5cMBOxEE578PEwSnv4MX6f6cAAQAAxGNZRMMAxGNZRNMRxGNZRMsBxGNZRNsQxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEwSnv6cX6f68wAQAAxGNZRMQAxGNZRNQRxGM5RNkQxEF5cMBOxEE578PEYzlE2RDEQXlwwE7EQTnvw8TBKe/wxfp/tyABAADEY0lEwwDEY0lE0xHEY0lEywHEY0lE2xDEQTHvy8RjOUTZEMRBeXDATsRBOe/DxEEx78jEYzFE2RDEQXlwyU7EQTHvy8RBKe/hxXp/p1ABAADEY1FExQDEY1FE1RHEYzlE2RDEQXlwwE7EQTnvw8RjOUTZEMRBeXDATsRBOe/DxEEp7+jFen+vQAEAAMRjSUTFAMRjSUTVEcRjSUTNAcRjSUTdEMRBMe/LxGM5RNkQxEF5cMBOxEE578PEQTHvyMRjMUTZEMRBeXDJTsRBMe/LxEEp7/HFen+3cAEAAMRjSUTGAMRjSUTWEcRjOUTZEMRBeXDATsRBOe/DxGM5RNkQxEF5cMBOxEE578PEQSnv+MV6f79gAQAAxGMBRMMAxGMBRNMRxGMBRMsBxGMBRNsQxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEwSnv0cX6f5eQAQAAxEMZRMQAxEMZRNQRxGM5RNkQxEF5cMBOxEE578PEYzlE2RDEQXlwwE7EQTnvw8TBKe/gxfp/p4ABAADEYwFExQDEYwFE1RHEYwFEzQHEYwFE3RDEQTHvy8RjOUTZEMRBeXDATsRBOe/DxEEx78jEYzFE2RDEQXlwyU7EQTHvy8TBKe/xxfp/t7ABAADEQxFExQDEQxFE1RHEYzlE2RDEQXlwwE7EQTnvw8RjOUTZEMRBeXDATsRBOe/DxMEp7/jF+n+/oAEAAMRDAUTEAMRDAUTUEcRDAUTMAcRDAUTcEMRBMe/LxGM5RNkQxEF5cMBOxEE578PEQTHvyMRjMUTZEMRBeXDJTsRBMe/LxMEp78HF+n+H0AEAAMRDCUTGAMRDCUTWEcRjOUTZEMRBeXDATsRBOe/DxGM5RNkQxEF5cMBOxEE578PEwSnv0MX6f5fAAQAAxEMBRMYAxEMBRNYRxEMBRM4BxEMBRN4QxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEwSnv4cX6f6fwAQAAxEMBRMcAxEMBRNcRxGM5RNkQxEF5cMBOxEE578PEYzlE2RDEQXlwwE7EQTnvw8TBKe/wxfp/t+ABAADD"
 .p2align 6"#,
@@ -78,7 +78,7 @@ pub unsafe extern "sysv64" fn vg_aes_gcm_prepare_pclmul_avx(ctx: *mut [u64; 129]
 /// * `ctx` must be valid for reads and writes of 1032 bytes.
 /// * `ctx` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_prepare(ctx: *mut [u64; 129]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_prepare(ctx: *mut [u64; 129]) {
     core::arch::naked_asm!(
         r#".base64 "SMfAAAAAAEiJhwAEAADD"
 .p2align 6"#,
@@ -96,7 +96,7 @@ pub const VG_AES_GCM_WIPE_PREPARED_AVX_FEATURES: verified_garbage_cpu::Features 
 /// * `ctx` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` target feature.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_wipe_prepared_avx(ctx: *mut [u64; 129]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_wipe_prepared_avx(ctx: *mut [u64; 129]) {
     core::arch::naked_asm!(
         r#".base64 "SIuHAAQAAEiD+DA="
 jae 20f
@@ -123,7 +123,7 @@ jmp 21b
 /// * `ctx` must be valid for reads and writes of 1032 bytes.
 /// * `ctx` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_wipe_prepared(ctx: *mut [u64; 129]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_wipe_prepared(ctx: *mut [u64; 129]) {
     core::arch::naked_asm!(
         r#".base64 "SIuHAAQAAEiD+DA="
 jae 20f
@@ -159,7 +159,7 @@ pub const VG_AES_GCM_INIT_AESNI_FEATURES: verified_garbage_cpu::Features = verif
 /// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` and `aes` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_init_aesni(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_aesni(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPj1//9IieFIg8EISImZgAAAAEiJqYgAAABMiaGQAAAATImpmAAAAEyJsaAAAABMibmoAAAASYnPSYnVSInzSMHrAkiDwwZMiflIgcEAAgAA"
 call {vg_aes_expand_key_scratch_aesni}
@@ -184,7 +184,7 @@ call {vg_aes_ctr32_aesni}
 /// * `ctx` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_init(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPj1//9IieFIg8EISImZgAAAAEiJqYgAAABMiaGQAAAATImpmAAAAEyJsaAAAABMibmoAAAASYnPSYnVSInzSMHrAkiDwwZMiflIgcEAAgAA"
 call {vg_aes_expand_key_scratch}
@@ -213,7 +213,7 @@ pub const VG_AES_GCM_INIT_VAES_FEATURES: verified_garbage_cpu::Features = verifi
 /// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `ssse3`, `vaes` and `aes` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_init_vaes(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_vaes(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPj1//9IieFIg8EISImZgAAAAEiJqYgAAABMiaGQAAAATImpmAAAAEyJsaAAAABMibmoAAAASYnPSYnVSInzSMHrAkiDwwZMiflIgcEAAgAA"
 call {vg_aes_expand_key_scratch_aesni}
@@ -244,7 +244,7 @@ pub const VG_AES_GCM_STREAM_FINISH_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::
 /// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2584 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPD1//9IieBIg8AQSIlEJAhIi0QkCEiJmIAAAABIiaiIAAAATImgkAAAAEyJqJgAAABMibCgAAAATIm4qAAAAEmJx0mJ1kmJ/UmJt7AAAABJiY+4AAAATYmHwAAAAE2Jj8gAAABJi5/AAAAASYuHuAAAAEiF2w=="
 je 20f
@@ -292,7 +292,7 @@ pub const VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::
 /// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABIi1wkCEmJn+AAAABMic65AAAAAEiD+wQ="
 jb 20f
@@ -378,7 +378,7 @@ pub const VG_AES_GCM_STREAM_FINISH_AESNI_FEATURES: verified_garbage_cpu::Feature
 /// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2584 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_aesni(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_aesni(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPD1//9IieBIg8AQSIlEJAhIi0QkCEiJmIAAAABIiaiIAAAATImgkAAAAEyJqJgAAABMibCgAAAATIm4qAAAAEmJx0mJ1kmJ/UmJt7AAAABJiY+4AAAATYmHwAAAAE2Jj8gAAABJi5/AAAAASYuHuAAAAEiF2w=="
 je 20f
@@ -426,7 +426,7 @@ pub const VG_AES_GCM_STREAM_VERIFY_AESNI_FEATURES: verified_garbage_cpu::Feature
 /// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_aesni(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_aesni(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABIi1wkCEmJn+AAAABMic65AAAAAEiD+wQ="
 jb 20f
@@ -512,7 +512,7 @@ pub const VG_AES_GCM_STREAM_FINISH_AESNI_VPCLMUL_FEATURES: verified_garbage_cpu:
 /// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2584 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_aesni_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_aesni_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPD1//9IieBIg8AQSIlEJAhIi0QkCEiJmIAAAABIiaiIAAAATImgkAAAAEyJqJgAAABMibCgAAAATIm4qAAAAEmJx0mJ1kmJ/UmJt7AAAABJiY+4AAAATYmHwAAAAE2Jj8gAAABJi5/AAAAASYuHuAAAAEiF2w=="
 je 20f
@@ -560,7 +560,7 @@ pub const VG_AES_GCM_STREAM_VERIFY_AESNI_VPCLMUL_FEATURES: verified_garbage_cpu:
 /// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_aesni_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_aesni_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABIi1wkCEmJn+AAAABMic65AAAAAEiD+wQ="
 jb 20f
@@ -646,7 +646,7 @@ pub const VG_AES_GCM_STREAM_FINISH_PCLMUL_FEATURES: verified_garbage_cpu::Featur
 /// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2584 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPD1//9IieBIg8AQSIlEJAhIi0QkCEiJmIAAAABIiaiIAAAATImgkAAAAEyJqJgAAABMibCgAAAATIm4qAAAAEmJx0mJ1kmJ/UmJt7AAAABJiY+4AAAATYmHwAAAAE2Jj8gAAABJi5/AAAAASYuHuAAAAEiF2w=="
 je 20f
@@ -694,7 +694,7 @@ pub const VG_AES_GCM_STREAM_VERIFY_PCLMUL_FEATURES: verified_garbage_cpu::Featur
 /// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABIi1wkCEmJn+AAAABMic65AAAAAEiD+wQ="
 jb 20f
@@ -776,7 +776,7 @@ jmp 25f
 /// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2584 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_finish(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPD1//9IieBIg8AQSIlEJAhIi0QkCEiJmIAAAABIiaiIAAAATImgkAAAAEyJqJgAAABMibCgAAAATIm4qAAAAEmJx0mJ1kmJ/UmJt7AAAABJiY+4AAAATYmHwAAAAE2Jj8gAAABJi5/AAAAASYuHuAAAAEiF2w=="
 je 20f
@@ -820,7 +820,7 @@ call {vg_aes_ctr32}
 /// * `state` must not overlap `ctx`, `tag` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_verify(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABIi1wkCEmJn+AAAABMic65AAAAAEiD+wQ="
 jb 20f
@@ -906,7 +906,7 @@ pub const VG_AES_GCM_STREAM_FINISH_VPCLMUL_FEATURES: verified_garbage_cpu::Featu
 /// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2584 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPD1//9IieBIg8AQSIlEJAhIi0QkCEiJmIAAAABIiaiIAAAATImgkAAAAEyJqJgAAABMibCgAAAATIm4qAAAAEmJx0mJ1kmJ/UmJt7AAAABJiY+4AAAATYmHwAAAAE2Jj8gAAABJi5/AAAAASYuHuAAAAEiF2w=="
 je 20f
@@ -954,7 +954,7 @@ pub const VG_AES_GCM_STREAM_VERIFY_VPCLMUL_FEATURES: verified_garbage_cpu::Featu
 /// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABIi1wkCEmJn+AAAABMic65AAAAAEiD+wQ="
 jb 20f
@@ -1040,7 +1040,7 @@ pub const VG_AES_GCM_STREAM_FINISH_VAES_PCLMUL_FEATURES: verified_garbage_cpu::F
 /// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2584 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `vaes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_vaes_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_vaes_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPD1//9IieBIg8AQSIlEJAhIi0QkCEiJmIAAAABIiaiIAAAATImgkAAAAEyJqJgAAABMibCgAAAATIm4qAAAAEmJx0mJ1kmJ/UmJt7AAAABJiY+4AAAATYmHwAAAAE2Jj8gAAABJi5/AAAAASYuHuAAAAEiF2w=="
 je 20f
@@ -1088,7 +1088,7 @@ pub const VG_AES_GCM_STREAM_VERIFY_VAES_PCLMUL_FEATURES: verified_garbage_cpu::F
 /// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `vaes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_vaes_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_vaes_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABIi1wkCEmJn+AAAABMic65AAAAAEiD+wQ="
 jb 20f
@@ -1174,7 +1174,7 @@ pub const VG_AES_GCM_STREAM_FINISH_VAES_FEATURES: verified_garbage_cpu::Features
 /// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2584 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `ssse3` and `vaes` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_vaes(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_vaes(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPD1//9IieBIg8AQSIlEJAhIi0QkCEiJmIAAAABIiaiIAAAATImgkAAAAEyJqJgAAABMibCgAAAATIm4qAAAAEmJx0mJ1kmJ/UmJt7AAAABJiY+4AAAATYmHwAAAAE2Jj8gAAABJi5/AAAAASYuHuAAAAEiF2w=="
 je 20f
@@ -1222,7 +1222,7 @@ pub const VG_AES_GCM_STREAM_VERIFY_VAES_FEATURES: verified_garbage_cpu::Features
 /// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `ssse3` and `vaes` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_vaes(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_vaes(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABIi1wkCEmJn+AAAABMic65AAAAAEiD+wQ="
 jb 20f
@@ -1308,7 +1308,7 @@ pub const VG_AES_GCM_STREAM_FINISH_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::
 /// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2584 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_vaes_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_vaes_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPD1//9IieBIg8AQSIlEJAhIi0QkCEiJmIAAAABIiaiIAAAATImgkAAAAEyJqJgAAABMibCgAAAATIm4qAAAAEmJx0mJ1kmJ/UmJt7AAAABJiY+4AAAATYmHwAAAAE2Jj8gAAABJi5/AAAAASYuHuAAAAEiF2w=="
 je 20f
@@ -1356,7 +1356,7 @@ pub const VG_AES_GCM_STREAM_VERIFY_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::
 /// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_vaes_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_vaes_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABIi1wkCEmJn+AAAABMic65AAAAAEiD+wQ="
 jb 20f
@@ -1442,7 +1442,7 @@ pub const VG_AES_GCM_SEAL_PREPARED_AESNI_FEATURES: verified_garbage_cpu::Feature
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared_aesni(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared_aesni(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJNj1//9Ii4QkMAoAAEiJRCQISIuEJDgKAABIiUQkEEiLhCRACgAASIlEJBhIieBIg8AoSIlEJCBIi0QkIEiJmIAAAABIiaiIAAAATImgkAAAAEyJqJgAAABMibCgAAAATIm4qAAAAEmJx02J/kmDxhBJif1JibewAAAATYmH6AAAAE2Jj7gAAABIi0QkCEmJh8gAAABIi0QkEEmJh9AAAABJidRIic1Ig/0M"
 je 20f
@@ -1562,7 +1562,7 @@ pub const VG_AES_GCM_OPEN_PREPARED_AESNI_FEATURES: verified_garbage_cpu::Feature
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_open_prepared_aesni(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_prepared_aesni(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJND1//9Ii4QkOAoAAEiJRCQISIuEJEAKAABIiUQkEEiLhCRICgAASIlEJBhIi4QkUAoAAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdNif5Jg8YQSYn9SYm3sAAAAE2Jh+gAAABNiY+4AAAASItEJAhJiYfIAAAASItEJBBJiYfQAAAASYnUSInNSItcJCBJiZ/gAAAAuQAAAABIg/sE"
 jb 20f
@@ -1734,7 +1734,7 @@ pub const VG_AES_GCM_OPEN_TO_PREPARED_AESNI_FEATURES: verified_garbage_cpu::Feat
 /// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2776 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared_aesni(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared_aesni(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJMD1//9Ii4QkSAoAAEiJRCQISIuEJFAKAABIiUQkEEiLhCRYCgAASIlEJBhIi4QkYAoAAEiJRCQgSIuEJGgKAABIiUQkKEiLhCRwCgAASIlEJDBIieBIg8BASIlEJDhXVlJRQVBBUVBQUFBQSItEJHBIiQQkSItEJGhIiUQkCEiLhCSAAAAASIlEJBBIi4QkiAAAAEiJRCQYSItEJGBIiUQkIEiLRCRoSIlEJChIi4QkkAAAAEiJRCQw"
 call {vg_aes_gcm_open_split_aesni}
@@ -1773,7 +1773,7 @@ pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_AESNI_FEATURES: verified_garbage_cp
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared_aesni(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared_aesni(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
 je 20f
@@ -1960,7 +1960,7 @@ pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED_AESNI_FEATURES: verified_garbage_cp
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared_aesni(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared_aesni(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
 je 20f
@@ -2152,7 +2152,7 @@ pub const VG_AES_GCM_SEAL_GATHER_PREPARED_AESNI_FEATURES: verified_garbage_cpu::
 /// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared_aesni(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared_aesni(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJBD///9Ii4Qk+AAAAEiJRCQISIuEJAABAABIiUQkEEiLhCQIAQAASIlEJBhIi4QkEAEAAEiJRCQgSIuEJBgBAABIiUQkKEiJ4EiDwDhIiUQkMEyLXCQwTItUJAhIi0QkEEmJO0mJcwhNiUMQTYlLGE2JS1BNiVM4SYlDQEiLRCQYTItUJCBMi0QkKEmJQyBNiVMoTYlDMLgAAAAASYlDSEmJQ1hJiUNgSInWSInKTInZSIPBaEyLXCQwSYtDKEg97///fw=="
 jb 20f
@@ -2371,7 +2371,7 @@ pub const VG_AES_GCM_SEAL_PREPARED_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared_aesni_pclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared_aesni_pclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJNj1//9Ii4QkMAoAAEiJRCQISIuEJDgKAABIiUQkEEiLhCRACgAASIlEJBhIieBIg8AoSIlEJCBIi0QkIEiJmIAAAABIiaiIAAAATImgkAAAAEyJqJgAAABMibCgAAAATIm4qAAAAEmJx02J/kmDxhBJif1JibewAAAATYmH6AAAAE2Jj7gAAABIi0QkCEmJh8gAAABIi0QkEEmJh9AAAABJidRIic1Ig/0M"
 je 20f
@@ -2491,7 +2491,7 @@ pub const VG_AES_GCM_OPEN_PREPARED_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_open_prepared_aesni_pclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_prepared_aesni_pclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJND1//9Ii4QkOAoAAEiJRCQISIuEJEAKAABIiUQkEEiLhCRICgAASIlEJBhIi4QkUAoAAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdNif5Jg8YQSYn9SYm3sAAAAE2Jh+gAAABNiY+4AAAASItEJAhJiYfIAAAASItEJBBJiYfQAAAASYnUSInNSItcJCBJiZ/gAAAAuQAAAABIg/sE"
 jb 20f
@@ -2663,7 +2663,7 @@ pub const VG_AES_GCM_OPEN_TO_PREPARED_AESNI_PCLMUL_FEATURES: verified_garbage_cp
 /// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2776 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared_aesni_pclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared_aesni_pclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJMD1//9Ii4QkSAoAAEiJRCQISIuEJFAKAABIiUQkEEiLhCRYCgAASIlEJBhIi4QkYAoAAEiJRCQgSIuEJGgKAABIiUQkKEiLhCRwCgAASIlEJDBIieBIg8BASIlEJDhXVlJRQVBBUVBQUFBQSItEJHBIiQQkSItEJGhIiUQkCEiLhCSAAAAASIlEJBBIi4QkiAAAAEiJRCQYSItEJGBIiUQkIEiLRCRoSIlEJChIi4QkkAAAAEiJRCQw"
 call {vg_aes_gcm_open_split_aesni_pclmul}
@@ -2702,7 +2702,7 @@ pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_AESNI_PCLMUL_FEATURES: verified_gar
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
 je 20f
@@ -2889,7 +2889,7 @@ pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED_AESNI_PCLMUL_FEATURES: verified_gar
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared_aesni_pclmul(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared_aesni_pclmul(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
 je 20f
@@ -3081,7 +3081,7 @@ pub const VG_AES_GCM_SEAL_GATHER_PREPARED_AESNI_PCLMUL_FEATURES: verified_garbag
 /// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared_aesni_pclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared_aesni_pclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJBD///9Ii4Qk+AAAAEiJRCQISIuEJAABAABIiUQkEEiLhCQIAQAASIlEJBhIi4QkEAEAAEiJRCQgSIuEJBgBAABIiUQkKEiJ4EiDwDhIiUQkMEyLXCQwTItUJAhIi0QkEEmJO0mJcwhNiUMQTYlLGE2JS1BNiVM4SYlDQEiLRCQYTItUJCBMi0QkKEmJQyBNiVMoTYlDMLgAAAAASYlDSEmJQ1hJiUNgSInWSInKTInZSIPBaEyLXCQwSYtDKEg97///fw=="
 jb 20f
@@ -3300,7 +3300,7 @@ pub const VG_AES_GCM_SEAL_PREPARED_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_c
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq`, `ssse3` and `avx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared_aesni_pclmul_avx(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared_aesni_pclmul_avx(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SIuHAAQAAEiD+BA="
 jae 20f
@@ -3687,7 +3687,7 @@ pub const VG_AES_GCM_OPEN_PREPARED_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_c
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq`, `ssse3` and `avx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_open_prepared_aesni_pclmul_avx(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_prepared_aesni_pclmul_avx(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SIuHAAQAAEiD+BA="
 jae 20f
@@ -4141,7 +4141,7 @@ pub const VG_AES_GCM_OPEN_TO_PREPARED_AESNI_PCLMUL_AVX_FEATURES: verified_garbag
 /// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2728 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq`, `ssse3` and `avx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared_aesni_pclmul_avx(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared_aesni_pclmul_avx(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SIuHAAQAAEiD+BA="
 jae 20f
@@ -4295,7 +4295,7 @@ pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_AESNI_PCLMUL_AVX_FEATURES: verified
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq`, `ssse3` and `avx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul_avx(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul_avx(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SIuHAAQAAEiD+BA="
 jae 20f
@@ -4651,7 +4651,7 @@ pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED_AESNI_PCLMUL_AVX_FEATURES: verified
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq`, `ssse3` and `avx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared_aesni_pclmul_avx(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared_aesni_pclmul_avx(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SIuHAAQAAEiD+BA="
 jae 20f
@@ -5013,7 +5013,7 @@ pub const VG_AES_GCM_SEAL_GATHER_PREPARED_AESNI_PCLMUL_AVX_FEATURES: verified_ga
 /// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq`, `ssse3` and `avx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared_aesni_pclmul_avx(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared_aesni_pclmul_avx(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SIuHAAQAAEiD+BA="
 jae 20f
@@ -5588,7 +5588,7 @@ pub const VG_AES_GCM_SEAL_PREPARED_AESNI_VPCLMUL_FEATURES: verified_garbage_cpu:
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared_aesni_vpclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared_aesni_vpclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJNj1//9Ii4QkMAoAAEiJRCQISIuEJDgKAABIiUQkEEiLhCRACgAASIlEJBhIieBIg8AoSIlEJCBIi0QkIEiJmIAAAABIiaiIAAAATImgkAAAAEyJqJgAAABMibCgAAAATIm4qAAAAEmJx02J/kmDxhBJif1JibewAAAATYmH6AAAAE2Jj7gAAABIi0QkCEmJh8gAAABIi0QkEEmJh9AAAABJidRIic1Ig/0M"
 je 20f
@@ -5708,7 +5708,7 @@ pub const VG_AES_GCM_OPEN_PREPARED_AESNI_VPCLMUL_FEATURES: verified_garbage_cpu:
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_open_prepared_aesni_vpclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_prepared_aesni_vpclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJND1//9Ii4QkOAoAAEiJRCQISIuEJEAKAABIiUQkEEiLhCRICgAASIlEJBhIi4QkUAoAAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdNif5Jg8YQSYn9SYm3sAAAAE2Jh+gAAABNiY+4AAAASItEJAhJiYfIAAAASItEJBBJiYfQAAAASYnUSInNSItcJCBJiZ/gAAAAuQAAAABIg/sE"
 jb 20f
@@ -5880,7 +5880,7 @@ pub const VG_AES_GCM_OPEN_TO_PREPARED_AESNI_VPCLMUL_FEATURES: verified_garbage_c
 /// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2776 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared_aesni_vpclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared_aesni_vpclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJMD1//9Ii4QkSAoAAEiJRCQISIuEJFAKAABIiUQkEEiLhCRYCgAASIlEJBhIi4QkYAoAAEiJRCQgSIuEJGgKAABIiUQkKEiLhCRwCgAASIlEJDBIieBIg8BASIlEJDhXVlJRQVBBUVBQUFBQSItEJHBIiQQkSItEJGhIiUQkCEiLhCSAAAAASIlEJBBIi4QkiAAAAEiJRCQYSItEJGBIiUQkIEiLRCRoSIlEJChIi4QkkAAAAEiJRCQw"
 call {vg_aes_gcm_open_split_aesni_vpclmul}
@@ -5919,7 +5919,7 @@ pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_AESNI_VPCLMUL_FEATURES: verified_ga
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared_aesni_vpclmul(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared_aesni_vpclmul(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
 je 20f
@@ -6106,7 +6106,7 @@ pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED_AESNI_VPCLMUL_FEATURES: verified_ga
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared_aesni_vpclmul(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared_aesni_vpclmul(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
 je 20f
@@ -6298,7 +6298,7 @@ pub const VG_AES_GCM_SEAL_GATHER_PREPARED_AESNI_VPCLMUL_FEATURES: verified_garba
 /// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared_aesni_vpclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared_aesni_vpclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJBD///9Ii4Qk+AAAAEiJRCQISIuEJAABAABIiUQkEEiLhCQIAQAASIlEJBhIi4QkEAEAAEiJRCQgSIuEJBgBAABIiUQkKEiJ4EiDwDhIiUQkMEyLXCQwTItUJAhIi0QkEEmJO0mJcwhNiUMQTYlLGE2JS1BNiVM4SYlDQEiLRCQYTItUJCBMi0QkKEmJQyBNiVMoTYlDMLgAAAAASYlDSEmJQ1hJiUNgSInWSInKTInZSIPBaEyLXCQwSYtDKEg97///fw=="
 jb 20f
@@ -6517,7 +6517,7 @@ pub const VG_AES_GCM_SEAL_PREPARED_PCLMUL_FEATURES: verified_garbage_cpu::Featur
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared_pclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared_pclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJNj1//9Ii4QkMAoAAEiJRCQISIuEJDgKAABIiUQkEEiLhCRACgAASIlEJBhIieBIg8AoSIlEJCBIi0QkIEiJmIAAAABIiaiIAAAATImgkAAAAEyJqJgAAABMibCgAAAATIm4qAAAAEmJx02J/kmDxhBJif1JibewAAAATYmH6AAAAE2Jj7gAAABIi0QkCEmJh8gAAABIi0QkEEmJh9AAAABJidRIic1Ig/0M"
 je 20f
@@ -6637,7 +6637,7 @@ pub const VG_AES_GCM_OPEN_PREPARED_PCLMUL_FEATURES: verified_garbage_cpu::Featur
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_open_prepared_pclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_prepared_pclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJND1//9Ii4QkOAoAAEiJRCQISIuEJEAKAABIiUQkEEiLhCRICgAASIlEJBhIi4QkUAoAAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdNif5Jg8YQSYn9SYm3sAAAAE2Jh+gAAABNiY+4AAAASItEJAhJiYfIAAAASItEJBBJiYfQAAAASYnUSInNSItcJCBJiZ/gAAAAuQAAAABIg/sE"
 jb 20f
@@ -6809,7 +6809,7 @@ pub const VG_AES_GCM_OPEN_TO_PREPARED_PCLMUL_FEATURES: verified_garbage_cpu::Fea
 /// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2776 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared_pclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared_pclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJMD1//9Ii4QkSAoAAEiJRCQISIuEJFAKAABIiUQkEEiLhCRYCgAASIlEJBhIi4QkYAoAAEiJRCQgSIuEJGgKAABIiUQkKEiLhCRwCgAASIlEJDBIieBIg8BASIlEJDhXVlJRQVBBUVBQUFBQSItEJHBIiQQkSItEJGhIiUQkCEiLhCSAAAAASIlEJBBIi4QkiAAAAEiJRCQYSItEJGBIiUQkIEiLRCRoSIlEJChIi4QkkAAAAEiJRCQw"
 call {vg_aes_gcm_open_split_pclmul}
@@ -6848,7 +6848,7 @@ pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_PCLMUL_FEATURES: verified_garbage_c
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared_pclmul(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared_pclmul(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
 je 20f
@@ -7035,7 +7035,7 @@ pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED_PCLMUL_FEATURES: verified_garbage_c
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared_pclmul(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared_pclmul(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
 je 20f
@@ -7227,7 +7227,7 @@ pub const VG_AES_GCM_SEAL_GATHER_PREPARED_PCLMUL_FEATURES: verified_garbage_cpu:
 /// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared_pclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared_pclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJBD///9Ii4Qk+AAAAEiJRCQISIuEJAABAABIiUQkEEiLhCQIAQAASIlEJBhIi4QkEAEAAEiJRCQgSIuEJBgBAABIiUQkKEiJ4EiDwDhIiUQkMEyLXCQwTItUJAhIi0QkEEmJO0mJcwhNiUMQTYlLGE2JS1BNiVM4SYlDQEiLRCQYTItUJCBMi0QkKEmJQyBNiVMoTYlDMLgAAAAASYlDSEmJQ1hJiUNgSInWSInKTInZSIPBaEyLXCQwSYtDKEg97///fw=="
 jb 20f
@@ -7442,7 +7442,7 @@ call {vg_aes_gcm_seal_pclmul}
 /// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJNj1//9Ii4QkMAoAAEiJRCQISIuEJDgKAABIiUQkEEiLhCRACgAASIlEJBhIieBIg8AoSIlEJCBIi0QkIEiJmIAAAABIiaiIAAAATImgkAAAAEyJqJgAAABMibCgAAAATIm4qAAAAEmJx02J/kmDxhBJif1JibewAAAATYmH6AAAAE2Jj7gAAABIi0QkCEmJh8gAAABIi0QkEEmJh9AAAABJidRIic1Ig/0M"
 je 20f
@@ -7558,7 +7558,7 @@ call {vg_aes_ctr32}
 /// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_open_prepared(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_prepared(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJND1//9Ii4QkOAoAAEiJRCQISIuEJEAKAABIiUQkEEiLhCRICgAASIlEJBhIi4QkUAoAAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdNif5Jg8YQSYn9SYm3sAAAAE2Jh+gAAABNiY+4AAAASItEJAhJiYfIAAAASItEJBBJiYfQAAAASYnUSInNSItcJCBJiZ/gAAAAuQAAAABIg/sE"
 jb 20f
@@ -7726,7 +7726,7 @@ jmp 25f
 /// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src`, `tag` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2776 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJMD1//9Ii4QkSAoAAEiJRCQISIuEJFAKAABIiUQkEEiLhCRYCgAASIlEJBhIi4QkYAoAAEiJRCQgSIuEJGgKAABIiUQkKEiLhCRwCgAASIlEJDBIieBIg8BASIlEJDhXVlJRQVBBUVBQUFBQSItEJHBIiQQkSItEJGhIiUQkCEiLhCSAAAAASIlEJBBIi4QkiAAAAEiJRCQYSItEJGBIiUQkIEiLRCRoSIlEJChIi4QkkAAAAEiJRCQw"
 call {vg_aes_gcm_open_split}
@@ -7761,7 +7761,7 @@ jmp 23f
 /// * `state` and `data` must not overlap each other, `ctx` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
 je 20f
@@ -7944,7 +7944,7 @@ jmp 21f
 /// * `state` and `data` must not overlap each other, `ctx` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
 je 20f
@@ -8132,7 +8132,7 @@ jmp 21f
 /// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJBD///9Ii4Qk+AAAAEiJRCQISIuEJAABAABIiUQkEEiLhCQIAQAASIlEJBhIi4QkEAEAAEiJRCQgSIuEJBgBAABIiUQkKEiJ4EiDwDhIiUQkMEyLXCQwTItUJAhIi0QkEEmJO0mJcwhNiUMQTYlLGE2JS1BNiVM4SYlDQEiLRCQYTItUJCBMi0QkKEmJQyBNiVMoTYlDMLgAAAAASYlDSEmJQ1hJiUNgSInWSInKTInZSIPBaEyLXCQwSYtDKEg97///fw=="
 jb 20f
@@ -8351,7 +8351,7 @@ pub const VG_AES_GCM_SEAL_PREPARED_VAES_FEATURES: verified_garbage_cpu::Features
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `ssse3` and `vaes` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared_vaes(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared_vaes(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJNj1//9Ii4QkMAoAAEiJRCQISIuEJDgKAABIiUQkEEiLhCRACgAASIlEJBhIieBIg8AoSIlEJCBIi0QkIEiJmIAAAABIiaiIAAAATImgkAAAAEyJqJgAAABMibCgAAAATIm4qAAAAEmJx02J/kmDxhBJif1JibewAAAATYmH6AAAAE2Jj7gAAABIi0QkCEmJh8gAAABIi0QkEEmJh9AAAABJidRIic1Ig/0M"
 je 20f
@@ -8471,7 +8471,7 @@ pub const VG_AES_GCM_OPEN_PREPARED_VAES_FEATURES: verified_garbage_cpu::Features
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `ssse3` and `vaes` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_open_prepared_vaes(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_prepared_vaes(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJND1//9Ii4QkOAoAAEiJRCQISIuEJEAKAABIiUQkEEiLhCRICgAASIlEJBhIi4QkUAoAAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdNif5Jg8YQSYn9SYm3sAAAAE2Jh+gAAABNiY+4AAAASItEJAhJiYfIAAAASItEJBBJiYfQAAAASYnUSInNSItcJCBJiZ/gAAAAuQAAAABIg/sE"
 jb 20f
@@ -8643,7 +8643,7 @@ pub const VG_AES_GCM_OPEN_TO_PREPARED_VAES_FEATURES: verified_garbage_cpu::Featu
 /// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2776 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `ssse3` and `vaes` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared_vaes(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared_vaes(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJMD1//9Ii4QkSAoAAEiJRCQISIuEJFAKAABIiUQkEEiLhCRYCgAASIlEJBhIi4QkYAoAAEiJRCQgSIuEJGgKAABIiUQkKEiLhCRwCgAASIlEJDBIieBIg8BASIlEJDhXVlJRQVBBUVBQUFBQSItEJHBIiQQkSItEJGhIiUQkCEiLhCSAAAAASIlEJBBIi4QkiAAAAEiJRCQYSItEJGBIiUQkIEiLRCRoSIlEJChIi4QkkAAAAEiJRCQw"
 call {vg_aes_gcm_open_split_vaes}
@@ -8682,7 +8682,7 @@ pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VAES_FEATURES: verified_garbage_cpu
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `ssse3` and `vaes` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared_vaes(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared_vaes(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
 je 20f
@@ -8869,7 +8869,7 @@ pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED_VAES_FEATURES: verified_garbage_cpu
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `ssse3` and `vaes` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared_vaes(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared_vaes(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
 je 20f
@@ -9061,7 +9061,7 @@ pub const VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_FEATURES: verified_garbage_cpu::F
 /// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `ssse3` and `vaes` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared_vaes(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared_vaes(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJBD///9Ii4Qk+AAAAEiJRCQISIuEJAABAABIiUQkEEiLhCQIAQAASIlEJBhIi4QkEAEAAEiJRCQgSIuEJBgBAABIiUQkKEiJ4EiDwDhIiUQkMEyLXCQwTItUJAhIi0QkEEmJO0mJcwhNiUMQTYlLGE2JS1BNiVM4SYlDQEiLRCQYTItUJCBMi0QkKEmJQyBNiVMoTYlDMLgAAAAASYlDSEmJQ1hJiUNgSInWSInKTInZSIPBaEyLXCQwSYtDKEg97///fw=="
 jb 20f
@@ -9280,7 +9280,7 @@ pub const VG_AES_GCM_SEAL_PREPARED_VAES_PCLMUL_FEATURES: verified_garbage_cpu::F
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `vaes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared_vaes_pclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared_vaes_pclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJNj1//9Ii4QkMAoAAEiJRCQISIuEJDgKAABIiUQkEEiLhCRACgAASIlEJBhIieBIg8AoSIlEJCBIi0QkIEiJmIAAAABIiaiIAAAATImgkAAAAEyJqJgAAABMibCgAAAATIm4qAAAAEmJx02J/kmDxhBJif1JibewAAAATYmH6AAAAE2Jj7gAAABIi0QkCEmJh8gAAABIi0QkEEmJh9AAAABJidRIic1Ig/0M"
 je 20f
@@ -9400,7 +9400,7 @@ pub const VG_AES_GCM_OPEN_PREPARED_VAES_PCLMUL_FEATURES: verified_garbage_cpu::F
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `vaes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_open_prepared_vaes_pclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_prepared_vaes_pclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJND1//9Ii4QkOAoAAEiJRCQISIuEJEAKAABIiUQkEEiLhCRICgAASIlEJBhIi4QkUAoAAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdNif5Jg8YQSYn9SYm3sAAAAE2Jh+gAAABNiY+4AAAASItEJAhJiYfIAAAASItEJBBJiYfQAAAASYnUSInNSItcJCBJiZ/gAAAAuQAAAABIg/sE"
 jb 20f
@@ -9572,7 +9572,7 @@ pub const VG_AES_GCM_OPEN_TO_PREPARED_VAES_PCLMUL_FEATURES: verified_garbage_cpu
 /// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2776 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `vaes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared_vaes_pclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared_vaes_pclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJMD1//9Ii4QkSAoAAEiJRCQISIuEJFAKAABIiUQkEEiLhCRYCgAASIlEJBhIi4QkYAoAAEiJRCQgSIuEJGgKAABIiUQkKEiLhCRwCgAASIlEJDBIieBIg8BASIlEJDhXVlJRQVBBUVBQUFBQSItEJHBIiQQkSItEJGhIiUQkCEiLhCSAAAAASIlEJBBIi4QkiAAAAEiJRCQYSItEJGBIiUQkIEiLRCRoSIlEJChIi4QkkAAAAEiJRCQw"
 call {vg_aes_gcm_open_split_vaes_pclmul}
@@ -9611,7 +9611,7 @@ pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VAES_PCLMUL_FEATURES: verified_garb
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `vaes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared_vaes_pclmul(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared_vaes_pclmul(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
 je 20f
@@ -9798,7 +9798,7 @@ pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED_VAES_PCLMUL_FEATURES: verified_garb
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `vaes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared_vaes_pclmul(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared_vaes_pclmul(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
 je 20f
@@ -9990,7 +9990,7 @@ pub const VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_PCLMUL_FEATURES: verified_garbage
 /// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `vaes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared_vaes_pclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared_vaes_pclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJBD///9Ii4Qk+AAAAEiJRCQISIuEJAABAABIiUQkEEiLhCQIAQAASIlEJBhIi4QkEAEAAEiJRCQgSIuEJBgBAABIiUQkKEiJ4EiDwDhIiUQkMEyLXCQwTItUJAhIi0QkEEmJO0mJcwhNiUMQTYlLGE2JS1BNiVM4SYlDQEiLRCQYTItUJCBMi0QkKEmJQyBNiVMoTYlDMLgAAAAASYlDSEmJQ1hJiUNgSInWSInKTInZSIPBaEyLXCQwSYtDKEg97///fw=="
 jb 20f
@@ -10209,7 +10209,7 @@ pub const VG_AES_GCM_SEAL_PREPARED_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared_vaes_vpclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared_vaes_vpclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SIuHAAQAAEiD+BA="
 jae 20f
@@ -10429,7 +10429,7 @@ pub const VG_AES_GCM_OPEN_PREPARED_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_open_prepared_vaes_vpclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_prepared_vaes_vpclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SIuHAAQAAEiD+BA="
 jae 20f
@@ -10883,7 +10883,7 @@ pub const VG_AES_GCM_OPEN_TO_PREPARED_VAES_VPCLMUL_FEATURES: verified_garbage_cp
 /// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2776 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared_vaes_vpclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared_vaes_vpclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SIuHAAQAAEiD+BA="
 jae 20f
@@ -11059,7 +11059,7 @@ pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VAES_VPCLMUL_FEATURES: verified_gar
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SIuHAAQAAEiD+BA="
 jae 20f
@@ -11415,7 +11415,7 @@ pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED_VAES_VPCLMUL_FEATURES: verified_gar
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SIuHAAQAAEiD+BA="
 jae 20f
@@ -11777,7 +11777,7 @@ pub const VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_VPCLMUL_FEATURES: verified_garbag
 /// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared_vaes_vpclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared_vaes_vpclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SIuHAAQAAEiD+BA="
 jae 20f
@@ -12352,7 +12352,7 @@ pub const VG_AES_GCM_SEAL_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified_garbag
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx512f` and `avx512bw` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SIuHAAQAAEiD+DA="
 jae 20f
@@ -12960,7 +12960,7 @@ pub const VG_AES_GCM_OPEN_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified_garbag
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx512f` and `avx512bw` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_open_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SIuHAAQAAEiD+DA="
 jae 20f
@@ -13759,7 +13759,7 @@ pub const VG_AES_GCM_OPEN_TO_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified_gar
 /// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2776 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx512f` and `avx512bw` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SIuHAAQAAEiD+DA="
 jae 20f
@@ -13935,7 +13935,7 @@ pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verif
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx512f` and `avx512bw` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SIuHAAQAAEiD+DA="
 jae 20f
@@ -14291,7 +14291,7 @@ pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verif
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx512f` and `avx512bw` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SIuHAAQAAEiD+DA="
 jae 20f
@@ -14653,7 +14653,7 @@ pub const VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified
 /// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx512f` and `avx512bw` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SIuHAAQAAEiD+DA="
 jae 20f
@@ -15103,7 +15103,7 @@ pub const VG_AES_GCM_SEAL_PREPARED_VPCLMUL_FEATURES: verified_garbage_cpu::Featu
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared_vpclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared_vpclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJNj1//9Ii4QkMAoAAEiJRCQISIuEJDgKAABIiUQkEEiLhCRACgAASIlEJBhIieBIg8AoSIlEJCBIi0QkIEiJmIAAAABIiaiIAAAATImgkAAAAEyJqJgAAABMibCgAAAATIm4qAAAAEmJx02J/kmDxhBJif1JibewAAAATYmH6AAAAE2Jj7gAAABIi0QkCEmJh8gAAABIi0QkEEmJh9AAAABJidRIic1Ig/0M"
 je 20f
@@ -15223,7 +15223,7 @@ pub const VG_AES_GCM_OPEN_PREPARED_VPCLMUL_FEATURES: verified_garbage_cpu::Featu
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_open_prepared_vpclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_prepared_vpclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJND1//9Ii4QkOAoAAEiJRCQISIuEJEAKAABIiUQkEEiLhCRICgAASIlEJBhIi4QkUAoAAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdNif5Jg8YQSYn9SYm3sAAAAE2Jh+gAAABNiY+4AAAASItEJAhJiYfIAAAASItEJBBJiYfQAAAASYnUSInNSItcJCBJiZ/gAAAAuQAAAABIg/sE"
 jb 20f
@@ -15395,7 +15395,7 @@ pub const VG_AES_GCM_OPEN_TO_PREPARED_VPCLMUL_FEATURES: verified_garbage_cpu::Fe
 /// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2776 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared_vpclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared_vpclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJMD1//9Ii4QkSAoAAEiJRCQISIuEJFAKAABIiUQkEEiLhCRYCgAASIlEJBhIi4QkYAoAAEiJRCQgSIuEJGgKAABIiUQkKEiLhCRwCgAASIlEJDBIieBIg8BASIlEJDhXVlJRQVBBUVBQUFBQSItEJHBIiQQkSItEJGhIiUQkCEiLhCSAAAAASIlEJBBIi4QkiAAAAEiJRCQYSItEJGBIiUQkIEiLRCRoSIlEJChIi4QkkAAAAEiJRCQw"
 call {vg_aes_gcm_open_split_vpclmul}
@@ -15434,7 +15434,7 @@ pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VPCLMUL_FEATURES: verified_garbage_
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared_vpclmul(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared_vpclmul(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
 je 20f
@@ -15621,7 +15621,7 @@ pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED_VPCLMUL_FEATURES: verified_garbage_
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared_vpclmul(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared_vpclmul(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
 je 20f
@@ -15813,7 +15813,7 @@ pub const VG_AES_GCM_SEAL_GATHER_PREPARED_VPCLMUL_FEATURES: verified_garbage_cpu
 /// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared_vpclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared_vpclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJBD///9Ii4Qk+AAAAEiJRCQISIuEJAABAABIiUQkEEiLhCQIAQAASIlEJBhIi4QkEAEAAEiJRCQgSIuEJBgBAABIiUQkKEiJ4EiDwDhIiUQkMEyLXCQwTItUJAhIi0QkEEmJO0mJcwhNiUMQTYlLGE2JS1BNiVM4SYlDQEiLRCQYTItUJCBMi0QkKEmJQyBNiVMoTYlDMLgAAAAASYlDSEmJQ1hJiUNgSInWSInKTInZSIPBaEyLXCQwSYtDKEg97///fw=="
 jb 20f
@@ -16032,7 +16032,7 @@ pub const VG_AES_GCM_STREAM_INIT_PCLMUL_FEATURES: verified_garbage_cpu::Features
 /// * None of `ctx`, `nonce` and `state` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_init_pclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_init_pclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPj1//9JieBJg8AISYmYgAAAAEmJqIgAAABNiaCQAAAATYmomAAAAE2JsKAAAABNibioAAAATYnHSYnOSYn9SYn0SInVSIP9DA=="
 je 20f
@@ -16082,7 +16082,7 @@ pub const VG_AES_GCM_STREAM_AAD_PCLMUL_FEATURES: verified_garbage_cpu::Features 
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_aad_pclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_aad_pclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPj1//9JieFJg8EISYmZgAAAAEmJqYgAAABNiaGQAAAATYmpmAAAAE2JsaAAAABNibmoAAAATYnPSYn2SYn9SYnMTInFSInTSIPjD0iF7Q=="
 je 20f
@@ -16147,7 +16147,7 @@ jmp 21f
 /// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
 /// * None of `ctx`, `nonce` and `state` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_init(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_init(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPj1//9JieBJg8AISYmYgAAAAEmJqIgAAABNiaCQAAAATYmomAAAAE2JsKAAAABNibioAAAATYnHSYnOSYn9SYn0SInVSIP9DA=="
 je 20f
@@ -16193,7 +16193,7 @@ jmp 21f
 /// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_aad(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_aad(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPj1//9JieFJg8EISYmZgAAAAEmJqYgAAABNiaGQAAAATYmpmAAAAE2JsaAAAABNibmoAAAATYnPSYn2SYn9SYnMTInFSInTSIPjD0iF7Q=="
 je 20f
@@ -16262,7 +16262,7 @@ pub const VG_AES_GCM_STREAM_INIT_VPCLMUL_FEATURES: verified_garbage_cpu::Feature
 /// * None of `ctx`, `nonce` and `state` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_init_vpclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_init_vpclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPj1//9JieBJg8AISYmYgAAAAEmJqIgAAABNiaCQAAAATYmomAAAAE2JsKAAAABNibioAAAATYnHSYnOSYn9SYn0SInVSIP9DA=="
 je 20f
@@ -16312,7 +16312,7 @@ pub const VG_AES_GCM_STREAM_AAD_VPCLMUL_FEATURES: verified_garbage_cpu::Features
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_aad_vpclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_aad_vpclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPj1//9JieFJg8EISYmZgAAAAEmJqYgAAABNiaGQAAAATYmpmAAAAE2JsaAAAABNibmoAAAATYnPSYn2SYn9SYnMTInFSInTSIPjD0iF7Q=="
 je 20f

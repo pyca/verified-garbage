@@ -93,9 +93,10 @@ impl Key {
             return Err(InvalidKeyLength);
         }
         let mut schedule = CacheAligned([0; 4168]);
+        crate::dit::enter!(dit);
         // SAFETY: the key has a length in 4..=56; the key and the schedule
         // are separate valid objects of the lengths passed.
-        unsafe { vg_blowfish_expand_key_auto(key.as_ptr(), key.len(), &mut schedule.0) };
+        unsafe { vg_blowfish_expand_key_auto(dit, key.as_ptr(), key.len(), &mut schedule.0) };
         Ok(Self { schedule })
     }
 
@@ -108,12 +109,14 @@ impl Key {
         if !buffer.len().is_multiple_of(8) {
             return Err(IncompleteBlock);
         }
+        crate::dit::enter!(dit);
         // SAFETY: the buffer holds `len / 8` whole blocks, and it, the chaining
         // value (which the function reads and replaces) and the schedule are
         // separate valid objects of the sizes of the signature, none of them on
         // the callee's stack.
         unsafe {
             vg_blowfish_cbc_encrypt_chained_auto(
+                dit,
                 &self.schedule.0,
                 iv,
                 buffer.as_mut_ptr().cast(),
@@ -132,9 +135,11 @@ impl Key {
         if !buffer.len().is_multiple_of(8) {
             return Err(IncompleteBlock);
         }
+        crate::dit::enter!(dit);
         // SAFETY: as in `encrypt`.
         unsafe {
             vg_blowfish_cbc_decrypt_chained_auto(
+                dit,
                 &self.schedule.0,
                 iv,
                 buffer.as_mut_ptr().cast(),

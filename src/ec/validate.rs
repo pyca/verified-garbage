@@ -16,13 +16,14 @@ macro_rules! validate {
             /// hybrid encodings are rejected. Available on x86-64.
             pub fn validate_public_key(public: &[u8; 2 * $len + 1]) -> bool {
                 use crate::arch::dispatch::$module::$validate;
+                let dit = crate::dit::public(crate::dit::Why::PublicKey);
                 let mut ws = $crate::align::CacheAligned([0u64; 1024]);
                 // SAFETY: public is readable for the complete encoding;
                 // ws is a separate, writable 8192-byte Rust object. They
                 // cannot overlap each other or the call's stack frame, or
                 // wrap around the address space. The dispatcher calls only
                 // an implementation the CPU has the features of.
-                let ok = unsafe { $validate(public, &mut ws.0) };
+                let ok = unsafe { $validate(dit, public, &mut ws.0) };
                 // The verified contract returns exactly zero or one.
                 ok == 1
             }

@@ -16,7 +16,7 @@
 /// * `out` and `scratch` must not overlap each other or `public` (distinct Rust objects never do).
 /// * None of `out`, `public` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ec_p192_compress_public_key(out: *mut [u8; 25], public: *const [u8; 49], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ec_p192_compress_public_key(out: *mut [u8; 25], public: *const [u8; 49], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0x91000044,0x91000026,0x91000423,0x91000061,0x91000062,0xf9000093,0xf9000494,0xf9000895
 .inst 0xf9000c96,0xf9001097,0xf9001498,0xf9001899,0xf9001c9e,0x91000014,0x91000080,0xf9400865
@@ -93,7 +93,7 @@ bl {vg_p192_check_point}
 /// * `out` and `scratch` must not overlap each other or `public` (distinct Rust objects never do).
 /// * None of `out`, `public` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ec_p192_decompress_public_key(out: *mut [u8; 49], public: *const [u8; 25], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ec_p192_decompress_public_key(out: *mut [u8; 49], public: *const [u8; 25], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0x91000044,0x91000026,0x91000423,0x91000061,0x91000062,0xf9000093,0xf9000494,0xf9000895
 .inst 0xf9000c96,0xf9001097,0xf9001498,0xf9001899,0xf9001c9e,0x91000014,0x91000080,0xf9400865

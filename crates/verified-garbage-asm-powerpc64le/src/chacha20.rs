@@ -15,7 +15,7 @@
 /// * `state` must not overlap `key` or `nonce` (distinct Rust objects never do).
 /// * None of `state`, `key` and `nonce` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_chacha20_init(state: *mut [u64; 96], key: *const [u8; 32], nonce: *const [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_chacha20_init(state: *mut [u64; 96], key: *const [u8; 32], nonce: *const [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "AAAk6QgAROkQAGTpGACE6RAAI/kYAEP5IABj+SgAg/kAAIU4AAAkgQQARIEIAGSBDACEgTAAI5E0AEOROABjkTwAg5FwYUA9ZXhKYQAAQ5EgM0A9bmRKYQQAQ5FieUA9Mi1KYQgAQ5Ega0A9dGVKYQwAQ5EBAIA5xgeMeVBgiX1kNox5gACD+SAAgE4=""#,
     )
@@ -32,7 +32,7 @@ pub unsafe extern "C" fn vg_chacha20_init(state: *mut [u64; 96], key: *const [u8
 /// * `state` must not overlap `nonce` (distinct Rust objects never do).
 /// * Neither `state` nor `nonce` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_chacha20_set_nonce(state: *mut [u64; 96], nonce: *const [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_chacha20_set_nonce(state: *mut [u64; 96], nonce: *const [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "AAAkgQQARIEIAGSBDACEgTAAI5E0AEOROABjkTwAg5FwYUA9ZXhKYQAAQ5EgM0A9bmRKYQQAQ5FieUA9Mi1KYQgAQ5Ega0A9dGVKYQwAQ5EBAIA5xgeMeVBgiX1kNox5gACD+SAAgE4=""#,
     )
@@ -49,7 +49,7 @@ pub unsafe extern "C" fn vg_chacha20_set_nonce(state: *mut [u64; 96], nonce: *co
 /// * `state` and `data` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `data` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_chacha20_apply(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_chacha20_apply(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "gAAj6QEAgDk/AOA4ODgnfUL4KnlC+Kt4UFBLfThgK304YKZ8UFhmfeAPa3lQUEt94A9KeUL46HhC+Kt4UEALfThg63w4YKZ8UFhmfeAPa3lQQAt94A8IeQAAKig="
 bne %cr0, 20f

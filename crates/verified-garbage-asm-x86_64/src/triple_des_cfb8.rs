@@ -15,7 +15,7 @@
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 984 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_triple_des_cfb8_encrypt(schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_triple_des_cfb8_encrypt(schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJDD8//9JieBJg8AITYnBSYmZiAMAAEmJqZADAABNiaGYAwAATYmpoAMAAE2JsagDAABNibmwAwAAZkwPbv5JidRJic1IiwdJiYEIAgAASItHCEmJgRACAABIi0cQSYmBGAIAAEiLRxhJiYEgAgAASItHIEmJgSgCAABIi0coSYmBMAIAAEiLRzBJiYE4AgAASItHOEmJgUACAABIi0dASYmBSAIAAEiLR0hJiYFQAgAASItHUEmJgVgCAABIi0dYSYmBYAIAAEiLR2BJiYFoAgAASItHaEmJgXACAABIi0dwSYmBeAIAAEiLR3hJiYGAAgAASIuHgAAAAEmJgYgCAABIi4eIAAAASYmBkAIAAEiLh5AAAABJiYGYAgAASIuHmAAAAEmJgaACAABIi4egAAAASYmBqAIAAEiLh6gAAABJiYGwAgAASIuHsAAAAEmJgbgCAABIi4e4AAAASYmBwAIAAEiLh8AAAABJiYHIAgAASIuHyAAAAEmJgdACAABIi4fQAAAASYmB2AIAAEiLh9gAAABJiYHgAgAASIuH4AAAAEmJgegCAABIi4foAAAASYmB8AIAAEiLh/AAAABJiYH4AgAASIuH+AAAAEmJgQADAABIi4cAAQAASYmBCAMAAEiLhwgBAABJiYEQAwAASIuHEAEAAEmJgRgDAABIi4cYAQAASYmBIAMAAEiLhyABAABJiYEoAwAASIuHKAEAAEmJgTADAABIi4cwAQAASYmBOAMAAEiLhzgBAABJiYFAAwAASIuHQAEAAEmJgUgDAABIi4dIAQAASYmBUAMAAEiLh1ABAABJiYFYAwAASIuHWAEAAEmJgWADAABIi4dgAQAASYmBaAMAAEiLh2gBAABJiYFwAwAASIuHcAEAAEmJgXgDAABIi4d4AQAASYmBgAMAAE2F7Q=="
 je 20f
@@ -45,7 +45,7 @@ jmp 21f
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 984 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_triple_des_cfb8_decrypt(schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_triple_des_cfb8_decrypt(schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJDD8//9JieBJg8AITYnBSYmZiAMAAEmJqZADAABNiaGYAwAATYmpoAMAAE2JsagDAABNibmwAwAAZkwPbv5JidRJic1IiwdJiYEIAgAASItHCEmJgRACAABIi0cQSYmBGAIAAEiLRxhJiYEgAgAASItHIEmJgSgCAABIi0coSYmBMAIAAEiLRzBJiYE4AgAASItHOEmJgUACAABIi0dASYmBSAIAAEiLR0hJiYFQAgAASItHUEmJgVgCAABIi0dYSYmBYAIAAEiLR2BJiYFoAgAASItHaEmJgXACAABIi0dwSYmBeAIAAEiLR3hJiYGAAgAASIuHgAAAAEmJgYgCAABIi4eIAAAASYmBkAIAAEiLh5AAAABJiYGYAgAASIuHmAAAAEmJgaACAABIi4egAAAASYmBqAIAAEiLh6gAAABJiYGwAgAASIuHsAAAAEmJgbgCAABIi4e4AAAASYmBwAIAAEiLh8AAAABJiYHIAgAASIuHyAAAAEmJgdACAABIi4fQAAAASYmB2AIAAEiLh9gAAABJiYHgAgAASIuH4AAAAEmJgegCAABIi4foAAAASYmB8AIAAEiLh/AAAABJiYH4AgAASIuH+AAAAEmJgQADAABIi4cAAQAASYmBCAMAAEiLhwgBAABJiYEQAwAASIuHEAEAAEmJgRgDAABIi4cYAQAASYmBIAMAAEiLhyABAABJiYEoAwAASIuHKAEAAEmJgTADAABIi4cwAQAASYmBOAMAAEiLhzgBAABJiYFAAwAASIuHQAEAAEmJgUgDAABIi4dIAQAASYmBUAMAAEiLh1ABAABJiYFYAwAASIuHWAEAAEmJgWADAABIi4dgAQAASYmBaAMAAEiLh2gBAABJiYFwAwAASIuHcAEAAEmJgXgDAABIi4d4AQAASYmBgAMAAE2F7Q=="
 je 20f

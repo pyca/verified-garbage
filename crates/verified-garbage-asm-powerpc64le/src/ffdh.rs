@@ -10,7 +10,7 @@
 /// * `state` must be valid for reads and writes of 128 bytes.
 /// * `state` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ffdh_parameter_generation_init(state: *mut [u64; 16], bits: usize, generator: u32) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ffdh_parameter_generation_init(state: *mut [u64; 16], bits: usize, generator: u32) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "gpOMeAAALCg="
 beq %cr0, 20f
@@ -36,7 +36,7 @@ b 23f
 /// * `state` must be valid for reads and writes of 128 bytes.
 /// * `state` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ffdh_key_generation_init(state: *mut [u64; 16], p_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ffdh_key_generation_init(state: *mut [u64; 16], p_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "wqqMeAAALCg="
 beq %cr0, 20f
@@ -73,7 +73,7 @@ b 23f
 /// * `scratch` must not overlap `domain` or `y` (distinct Rust objects never do).
 /// * None of `domain`, `y` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ffdh_check_public(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ffdh_check_public(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "cADI+XgA6PmAAAj6iAAo+pAASPqYAGj6oACI+qgAqPqwAMj6uAAI+8AAKPvIAEj70ABo+9gAiPvgAKj76ADI+/AA6Pv4AOj6AADoOgAAozoAAGQ7AACFOwcAZTnC6Gt5JB99eRAAvTsAAVc5pA9reQAA9zsAAEY7AACVOQAA3DgAAMo5QvhxeQAAADg="
 20:
@@ -367,7 +367,7 @@ b 218f
 /// * `scratch` must not overlap `domain` (distinct Rust objects never do).
 /// * Neither `domain` nor `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ffdh_check_domain(domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ffdh_check_domain(domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "pgKIfQD/BTgAACAo"
 beq %cr0, 20f
@@ -1019,7 +1019,7 @@ b 251f
 /// * `out` and `scratch` must not overlap each other, `domain`, `x`, `peer` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `domain`, `x`, `peer` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ffdh_exchange(out: *mut u8, out_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, peer: *const u8, peer_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ffdh_exchange(out: *mut u8, out_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, peer: *const u8, peer_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "aABhOQAAa+lwAMv5eADr+YAAC/qIACv6kABL+pgAa/qgAIv6qACr+rAAy/q4AAv7wAAr+8gAS/vQAGv72ACL++AAq/voAMv78ADr+/gA6/oAAOs6QAAX+UgAN/lQAHf4AAAqOQAAZTgAAIY4AACnOAAAozoAAGQ7AACFOwcAZTnC6Gt5JB99eRAAvTsAAVc5pA9reQAA9zsAAJU5AADcOAAAyjlC+HF5AAAAOA=="
 20:
@@ -1298,7 +1298,7 @@ bne %cr0, 275b
 /// * `y` and `scratch` must not overlap each other, `domain`, `x` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `y`, `domain`, `x` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ffdh_derive_public(y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ffdh_derive_public(y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "cADK+XgA6vmAAAr6iAAq+pAASvqYAGr6oACK+qgAqvqwAMr6uAAK+8AAKvvIAEr70ABq+9gAivvgAKr76ADK+/AA6vv4AOr6AADqOkAAF/lIADf5UAB3+AAAZTgAAIY4AACnOAAAozoAAGQ7AACFOwcAZTnC6Gt5JB99eRAAvTsAAVc5pA9reQAA9zsU4jV9AACVOQAA3DgAAMo5QvhxeQAAADg="
 20:
@@ -1629,7 +1629,7 @@ bne %cr0, 289b
 /// * `scratch` must not overlap `domain`, `y`, `x` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `domain`, `y`, `x` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ffdh_check_private(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ffdh_check_private(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "cADK+XgA6vmAAAr6iAAq+pAASvqYAGr6oACK+qgAqvqwAMr6uAAK+8AAKvvIAEr70ABq+9gAivvgAKr76ADK+/AA6vv4AOr6AADqOkAAF/lIADf5UADX+AAAozoAAGQ7AACFOwcAZTnC6Gt5JB99eRAAvTsAAVc5pA9reQAA9zsU4jV9AACVOQAA3DgAAMo5QvhxeQAAADg="
 20:
@@ -1960,7 +1960,7 @@ b 220f
 /// * `ctx` and `scratch` must not overlap each other or `domain` (distinct Rust objects never do).
 /// * None of `ctx`, `domain` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ffdh_generate_key_precompute(ctx: *mut u64, ctx_len: usize, domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ffdh_generate_key_precompute(ctx: *mut u64, ctx_len: usize, domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "cADI+XgA6PmAAAj6iAAo+pAASPqYAGj6oACI+qgAqPqwAMj6uAAI+8AAKPvIAEj70ABo+9gAiPvgAKj76ADI+/AA6Pv4AOj6AADoOgAAd/gAAGU4AACGOAAApzimAoh9AP8FOAAAICg="
 beq %cr0, 20f
@@ -2455,7 +2455,7 @@ bne %cr0, 2100b
 /// * `x`, `y` and `scratch` must not overlap each other, `domain`, `rand`, `ctx` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `x`, `y`, `domain`, `rand`, `scratch` and `ctx` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ffdh_generate_key_cached(x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, ctx: *const u64, ctx_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ffdh_generate_key_cached(x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, ctx: *const u64, ctx_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "aABhOQAAa+l4AIE5AACM6XAAy/l4AOv5gAAL+ogAK/qQAEv6mABr+qAAi/qoAKv6sADL+rgAC/vAACv7yABL+9AAa/vYAIv74ACr++gAy/vwAOv7+ADr+gAA6zoAAAzoCADM6BAAbOkAAJf5CAAX+BAA1/gYAHf5QAB3+EgAl/hQALf4WABX+QAAZzgAAIg4AACpOAAAozoAAGQ7AACFOwcAZTnC6Gt5JB99eRAAvTsAAVc5pA9reQAA9zsAAJU5AADcOAAAyjlC+HF5AAAAOA=="
 20:
@@ -2842,7 +2842,7 @@ bne %cr0, 2107b
 /// * `x`, `y`, `used`, `scratch` and `state` must not overlap each other, `domain`, `rand`, `ctx` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `x`, `y`, `used`, `domain`, `rand`, `scratch`, `state` and `ctx` may overlap the 192 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ffdh_generate_key_search_cached(x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, used: *mut [u64; 1], domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16], ctx: *const u64, ctx_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ffdh_generate_key_search_cached(x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, used: *mut [u64; 1], domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16], ctx: *const u64, ctx_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "YABhOSAAi+kAAAvoCACL6BAAy+gYAEvpIADs+wAA7DsoAH/4MAC/+DgAH/lAAD/5eAD/+EgAH/hQAJ/4AABgOVgAf/lgAN/4aABf+aYCCHzR/yH4IAAB+A=="
 20:
@@ -2936,7 +2936,7 @@ beq %cr0, 20b
 /// * `out`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the 336 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ffdh_generate_parameters(out: *mut u8, out_len: usize, used: *mut [u64; 1], bits: usize, generator: u32, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ffdh_generate_parameters(out: *mut u8, out_len: usize, used: *mut [u64; 1], bits: usize, generator: u32, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "YABhOQgAi+kAAGvpIADs+wAA7DsoAH/4MACf+DgAv/hAAN/4PgDnVEgA//hQAB/5WAA/+QAAADhgAB/4aABf+XgAf/mmAgh80f8h+CAAAfg="
 20:

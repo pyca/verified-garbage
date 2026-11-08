@@ -96,10 +96,11 @@ impl Key {
             _ => return Err(InvalidKeyLength),
         };
         let mut schedule = CacheAligned([0; 272]);
+        crate::dit::enter!(dit);
         // SAFETY: the key has a validated length; key and schedule are separate
         // valid buffers of the required sizes.
         unsafe {
-            vg_camellia_expand_key_auto(key.as_ptr(), key.len(), &mut schedule.0);
+            vg_camellia_expand_key_auto(dit, key.as_ptr(), key.len(), &mut schedule.0);
         }
         Ok(Self { schedule, rounds })
     }
@@ -113,6 +114,7 @@ impl Key {
         if !buffer.len().is_multiple_of(16) {
             return Err(IncompleteBlock);
         }
+        crate::dit::enter!(dit);
         // SAFETY: `rounds` is 18 for a key of 16 bytes and 24 otherwise, as
         // `new` expanded the schedule for. The buffer holds `len / 16` whole
         // blocks, and it, the chaining value (which the function reads and
@@ -120,6 +122,7 @@ impl Key {
         // the signature, none of them on the callee's stack.
         unsafe {
             vg_camellia_cbc_encrypt_chained_auto(
+                dit,
                 &self.schedule.0,
                 self.rounds,
                 iv,
@@ -139,9 +142,11 @@ impl Key {
         if !buffer.len().is_multiple_of(16) {
             return Err(IncompleteBlock);
         }
+        crate::dit::enter!(dit);
         // SAFETY: as in `encrypt`.
         unsafe {
             vg_camellia_cbc_decrypt_chained_auto(
+                dit,
                 &self.schedule.0,
                 self.rounds,
                 iv,

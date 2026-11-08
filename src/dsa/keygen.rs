@@ -33,6 +33,7 @@ impl PrivateKey {
     /// callers must assure domain primality separately.
     /// Available on x86, x86-64, AArch64, 32-bit ARM and PPC64LE.
     pub fn from_private_components(p: &[u8], q: &[u8], g: &[u8], x: &[u8]) -> Result<Self, Error> {
+        crate::dit::enter!(dit);
         if !matches!(
             (p.len(), q.len()),
             (128, 20) | (256, 20 | 28 | 32) | (384, 32)
@@ -54,6 +55,7 @@ impl PrivateKey {
         // of. Both secret allocations are wiped on drop, including on failure.
         let status = unsafe {
             vg_dsa_derive_key_auto(
+                dit,
                 output.0.as_mut_ptr(),
                 output.0.len(),
                 params.as_ptr(),
@@ -100,6 +102,7 @@ impl PrivateKey {
         g: &[u8],
         random: impl FnMut(&mut [u8]) -> Result<(), Error>,
     ) -> Result<Self, Error> {
+        crate::dit::enter!(dit);
         if !matches!(
             (p.len(), q.len()),
             (128, 20) | (256, 20 | 28 | 32) | (384, 32)
@@ -126,6 +129,7 @@ impl PrivateKey {
             // implementation the CPU has the features of.
             let status = unsafe {
                 vg_dsa_generate_key_auto(
+                    dit,
                     output.0.as_mut_ptr(),
                     output.0.len(),
                     &mut used,

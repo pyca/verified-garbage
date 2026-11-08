@@ -15,7 +15,7 @@
 /// * `state` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `state` nor `key` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_blake2b_init(state: *mut [u8; 192], outlen: usize, key: *const u8, keylen: usize) {
+pub(crate) unsafe extern "C" fn vg_blake2b_init(state: *mut [u8; 192], outlen: usize, key: *const u8, keylen: usize) {
     core::arch::naked_asm!(
         r".inst 0xd294e769,0xf2b09949,0xf2d5d0a9,0xf2f76ce9,0xf9000409,0xd29f0569,0xf2bfd289,0xf2de6e49
 .inst 0xf2e78dc9,0xf9000809,0xd286de29,0xf2abe3a9,0xf2dea749,0xf2f4a9e9,0xf9000c09,0xd2905a29
@@ -50,7 +50,7 @@ b 21f
 /// * `state` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the 592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_blake2b_update(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_blake2b_update(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd10903ff,0x910003e4,0xf81f0ffe,0xf9010093,0xf9010494,0xf9010895,0xf9010c96,0xf9011097
 .inst 0xf9011498,0x91000013,0x91000094,0x91000055,0x91000076,0x91000038,0xd1000717,0xd2800fe9
@@ -130,7 +130,7 @@ b 23f
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the 592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_blake2b_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
+pub(crate) unsafe extern "C" fn vg_blake2b_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
         r".inst 0xd10903ff,0x910003e3,0xf81f0ffe,0xf9010073,0xf9010474,0xf9010875,0xf9010c76,0xf9011077
 .inst 0xf9011478,0x91000013,0x91000074,0x91000055,0x91000038,0xd1000717,0xd2800fe9,0x8a0902f7

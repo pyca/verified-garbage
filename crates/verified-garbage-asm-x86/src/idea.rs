@@ -14,7 +14,7 @@
 /// * `schedule` must not overlap `key` or the arguments on the stack (distinct Rust objects never do).
 /// * Neither `key` nor `schedule` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_idea_expand_key(key: *const [u8; 16], schedule: *mut [u8; 104]) {
+pub(crate) unsafe extern "C" fn vg_idea_expand_key(key: *const [u8; 16], schedule: *mut [u8; 104]) {
     core::arch::naked_asm!(
         r#".base64 "i0QkBItMJAiLEMHKCIHi/wD/AIkRixDByhiB4gD/AP8zEYkRi1AEwcoIgeL/AP8AiVEEi1AEwcoYgeIA/wD/M1EEiVEEi1AIwcoIgeL/AP8AiVEIi1AIwcoYgeIA/wD/M1EIiVEIi1AMwcoIgeL/AP8AiVEMi1AMwcoYgeIA/wD/M1EMiVEMi1AEwcoPgeIBAAH+iVEQi1AEwcofgeL+Af4BM1EQiVEQixDByg+B4gD+AAAzURCJURCLUAjByg+B4gEAAf6JURSLUAjByh+B4v4B/gEzURSJURSLUATByg+B4gD+AAAzURSJURSLUAzByg+B4gEAAf6JURiLUAzByh+B4v4B/gEzURiJURiLUAjByg+B4gD+AAAzURiJURiLEMHKD4HiAQAB/olRHIsQwcofgeL+Af4BM1EciVEci1AMwcoPgeIA/gAAM1EciVEci1AIwcoGgeIDAAP8iVEgi1AEwcoWgeL8AwAAM1EgiVEgi1AEwcoGgeIA/AAAM1EgiVEgi1AIwcoWgeIAAPwDM1EgiVEgi1AMwcoGgeIDAAP8iVEki1AIwcoWgeL8AwAAM1EkiVEki1AIwcoGgeIA/AAAM1EkiVEki1AMwcoWgeIAAPwDM1EkiVEkixDBygaB4gMAA/yJUSiLUAzByhaB4vwDAAAzUSiJUSiLUAzBygaB4gD8AAAzUSiJUSiLEMHKFoHiAAD8AzNRKIlRKItQBMHKBoHiAwAD/IlRLIsQwcoWgeL8AwAAM1EsiVEsixDBygaB4gD8AAAzUSyJUSyLUATByhaB4gAA/AMzUSyJUSyLUAjByh2B4gf4APiJUTCLUAjByg2B4vgHAAAzUTCJUTCLUAzByh2B4gAABwAzUTCJUTCLUAzByg2B4gAA+AczUTCJUTCLUAzByh2B4gf4APiJUTSLUAzByg2B4vgHAAAzUTSJUTSLEMHKHYHiAAAHADNRNIlRNIsQwcoNgeIAAPgHM1E0iVE0ixDByh2B4gf4APiJUTiLEMHKDYHi+AcAADNROIlROItQBMHKHYHiAAAHADNROIlROItQBMHKDYHiAAD4BzNROIlROItQBMHKHYHiB/gA+IlRPItQBMHKDYHi+AcAADNRPIlRPItQCMHKHYHiAAAHADNRPIlRPItQCMHKDYHiAAD4BzNRPIlRPItQDMHKFIHiD/AA8IlRQItQDMHKBIHi8A/wDzNRQIlRQIsQwcoUgeIAAA8AM1FAiVFAixDByhSB4g/wAPCJUUSLEMHKBIHi8A/wDzNRRIlRRItQBMHKFIHiAAAPADNRRIlRRItQBMHKFIHiD/AA8IlRSItQBMHKBIHi8A/wDzNRSIlRSItQCMHKFIHiAAAPADNRSIlRSItQCMHKFIHiD/AA8IlRTItQCMHKBIHi8A/wDzNRTIlRTItQDMHKFIHiAAAPADNRTIlRTIsQwcoLgeIfAB/giVFQixDByhuB4uAf4B8zUVCJUVCLUAzByguB4gDgAAAzUVCJUVCLUATByguB4h8AH+CJUVSLUATByhuB4uAf4B8zUVSJUVSLEMHKC4HiAOAAADNRVIlRVItQCMHKC4HiHwAf4IlRWItQCMHKG4Hi4B/gHzNRWIlRWItQBMHKC4HiAOAAADNRWIlRWItQDMHKC4HiHwAf4IlRXItQDMHKG4Hi4B/gHzNRXIlRXItQCMHKC4HiAOAAADNRXIlRXItQBMHKAoHiPwA/wIlRYIsQwcoSgeLAPwAAM1FgiVFgixDBygKB4gDAAAAzUWCJUWCLUATByhKB4gAAwD8zUWCJUWCLUAjBygKB4j8AP8CJUWSLUATByhKB4sA/AAAzUWSJUWSLUATBygKB4gDAAAAzUWSJUWSLUAjByhKB4gAAwD8zUWSJUWTD"
 .p2align 6"#,
@@ -32,7 +32,7 @@ pub unsafe extern "C" fn vg_idea_expand_key(key: *const [u8; 16], schedule: *mut
 /// * `inverse` must not overlap `schedule` or the arguments on the stack (distinct Rust objects never do).
 /// * Neither `schedule` nor `inverse` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_idea_invert_key(schedule: *const [u8; 104], inverse: *mut [u8; 104]) {
+pub(crate) unsafe extern "C" fn vg_idea_invert_key(schedule: *const [u8; 104], inverse: *mut [u8; 104]) {
     core::arch::naked_asm!(
         r#".base64 "jWQk4ItEJCSJRCQEi0QkKIlEJAiJ4IPAEIlEJAyLRCQMiRiJcASJeAiJaAyLdCQEi3wkCIteYInZvQ8AAAA="
 20:
@@ -122,7 +122,7 @@ jne 217b
 /// * `data` must not overlap `schedule` or the arguments on the stack (distinct Rust objects never do).
 /// * Neither `schedule` nor `data` may overlap the return address on the stack or the 152 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_idea_ecb(schedule: *const [u8; 104], data: *mut [u8; 8], n: usize) {
+pub(crate) unsafe extern "C" fn vg_idea_ecb(schedule: *const [u8; 104], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r#".base64 "jaQkaP///4uEJJwAAACJRCQEi4QkoAAAAIlEJAiLhCSkAAAAiUQkDIngg8AUiUQkEItEJBCJWHSJcHiJeHyJqIAAAACJxotUJASLAokGi0IEiUYEi0IIiUYIi0IMiUYMi0IQiUYQi0IUiUYUi0IYiUYYi0IciUYci0IgiUYgi0IkiUYki0IoiUYoi0IsiUYsi0IwiUYwi0I0iUY0i0I4iUY4i0I8iUY8i0JAiUZAi0JEiUZEi0JIiUZIi0JMiUZMi0JQiUZQi0JUiUZUi0JYiUZYi0JciUZci0JgiUZgi0JkiUZki0QkCIlGbItEJAyJRnCD+AA="
 je 20f

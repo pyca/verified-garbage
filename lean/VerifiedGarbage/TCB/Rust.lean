@@ -24,9 +24,26 @@ machine code that runs is exactly the code that was verified (plus the
 final `ret` from the printer). The functions of each target are a crate
 of their own, `verified-garbage-asm-<target>` (`crateDir`, under `crates/`;
 its `Cargo.toml` is written by hand), one file `<module>.rs` per `module`,
-in its `src/` (`codeDir`), compiled only under the target's `cfg` (`targetRoot`), whose
-items are therefore `pub`. The library depends on the crate of the target
-it is built for and names it `crate::arch` (`Cargo.toml`, `src/lib.rs`).
+in its `src/` (`codeDir`), compiled only under the target's `cfg` (`targetRoot`). The
+library depends on the crate of the target it is built for and names it
+`crate::arch` (`Cargo.toml`, `src/lib.rs`).
+
+The library calls verified code only through the dispatchers
+(see "Dispatchers" below), which take a token, `verified_garbage_cpu::Dit`,
+first. A naked function that is an implementation of a function with a
+dispatcher is therefore `pub(crate)` (`visibilities`): only the crate's
+generated code names it (the dispatchers, the `sym` operands
+of its callers and `fn_tables`). The token proves nothing to the model and
+changes no code that runs; it is for the Rust that calls the verified code.
+The leakage model assumes that the data-independent-time instructions take
+time independent of their data, which Arm guarantees only while PSTATE.DIT
+is on (`TCB/AArch64/Isa.lean`), and a `Dit` can only be made by the code that
+turns it on (`src/dit.rs`), or by an `unsafe` assertion that the call needs
+no such guarantee (all of its inputs are public): so the compiler checks
+that every call of verified code from the library starts where data
+independent timing was seen to. A function with no dispatcher (its base
+needs CPU features, as `vg_dit_enter`'s, which turns the mode on, does)
+stays `pub`.
 
 The functions are in crates of their own, rather than modules of the
 library, for the time it takes to compile them: rustc puts naked functions
@@ -810,7 +827,7 @@ where
   withCode a (codeOf a lines moduleOf)
   /-- `function a`, given the text of its function after its name, `code`
   (`codeOf`). -/
-  withCode (a : Artifact) (code : String) : String :=
+  withCode (a : Artifact) (code : String) (vis : String := "pub") : String :=
   let gate := gateOf a
   let doc := fullDoc a
   featuresConst a.name gate a.features ++
@@ -819,7 +836,7 @@ where
   gate ++
   safetyAllow doc ++
   "#[unsafe(naked)]\n" ++
-  s!"pub unsafe extern \"{a.target.rustAbi}\" fn {a.name}" ++ code
+  s!"{vis} unsafe extern \"{a.target.rustAbi}\" fn {a.name}" ++ code
 
 /-- What makes two functions of a module the same function: their `cfg`
 attribute, calling convention, signature and body (`gateOf`, `codeOf`),
@@ -832,7 +849,7 @@ def sameKey (a : Artifact) (code : String) : String :=
 module, whose text but for its name, documentation and constants is the
 text `a`'s would have (`sameKey`): a `use` of it as `a`'s name, under `a`'s
 `cfg` attribute, with `a`'s documentation (saying so) and constants. -/
-def alias (a : Artifact) (canon : String) : String :=
+def alias (a : Artifact) (canon : String) (vis : String := "pub") : String :=
   let gate := gateOf a
   let note := s!"The machine code of this function is that of `{canon}`, which is emitted once \
     and named both ways: the two are the same function."
@@ -844,7 +861,7 @@ def alias (a : Artifact) (canon : String) : String :=
   docComment "" doc ++
   gate ++
   "#[allow(unused_imports)]\n" ++
-  s!"pub use self::{canon} as {a.name};\n"
+  s!"{vis} use self::{canon} as {a.name};\n"
 
 /-- The tables of constants of `a`: those its contract gives it
 (`Artifact.consts`) and those its instructions carry (`Printer.codeTables`,
@@ -954,10 +971,12 @@ def moduleItems (moduleOf : Artifact → String → String) (ps : List Prepared)
 
 /-- The text of the functions of a module (`moduleItems`): each as `function`
 writes it, if it is emitted as itself, else the `alias` of the function it
-is emitted as. -/
-def moduleText (items : List (Prepared × String × String)) : String :=
+is emitted as; each with the visibility `vis` gives its name. -/
+def moduleText (items : List (Prepared × String × String))
+    (vis : String → String := fun _ => "pub") : String :=
   String.join (items.map fun (p, code, c) =>
-    "\n" ++ if c == p.art.name then function.withCode p.art code else alias p.art c)
+    "\n" ++ if c == p.art.name then function.withCode p.art code (vis c)
+      else alias p.art c (vis p.art.name))
 
 /-- The assembly file of the functions of a module (`moduleItems`), which the
 crate does not compile: each function emitted as itself as its name, then
@@ -1640,7 +1659,7 @@ implementation, and `Relaxed` is enough:
 ```rust
 /// <the base's documentation, without its CPU features>
 #[inline]
-pub unsafe fn <base>_auto(<the signature>) {
+pub unsafe fn <base>_auto(_dit: verified_garbage_cpu::Dit<'_>, <the signature>) {
     type Impl = unsafe extern "<abi>" fn<the signature>;
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
@@ -1717,8 +1736,9 @@ another name of it, so that the Rust code calling the dispatcher is the same
 on every target, whatever implementations each has:
 
 ```rust
-#[allow(unused_imports)]
-pub use crate::<module>::<base> as <base>_auto;
+pub unsafe fn <base>_auto(_dit: verified_garbage_cpu::Dit<'_>, <the signature>) {
+    unsafe { crate::<module>::<base>(<the arguments>) }
+}
 ```
 
 A function whose base needs CPU features gets none (there is nothing to fall
@@ -1886,6 +1906,19 @@ def armsOf (rs : List Rank) (t : String) (members : List (Impl × String)) :
   return sorted.foldl (init := []) fun acc (_, l) =>
     if acc.any (weaker · l) then acc else acc ++ [l]
 
+/-- The token every dispatcher takes first: proof that the
+caller has seen to data independent timing on its thread (see the top of
+this file). -/
+def ditParam : String := "_dit: verified_garbage_cpu::Dit<'_>"
+
+/-- The signature `sig` of a dispatcher: the token (`ditParam`), then the
+implementations' parameters and result. -/
+def ditSig (sig : Sig) : String :=
+  "(" ++ ", ".intercalate (ditParam :: sig.params.map fun p => p.2.rust p.1) ++ ")" ++
+    match sig.ret with
+    | none => ""
+    | some ty => s!" -> {ty.rust}"
+
 /-- The name of the dispatcher of the function whose base is `base`. -/
 def autoName (base : String) : String := base ++ "_auto"
 
@@ -1977,7 +2010,7 @@ def dispatcher (g : Group) (arms : List Arm) : String :=
   -- Its signature is the implementations': Clippy allows theirs, as `extern` functions.
   "#[allow(clippy::too_many_arguments)]\n" ++
   "#[inline]\n" ++
-  s!"pub unsafe fn {auto}{b.sig.rust} " ++ "{\n" ++
+  s!"pub unsafe fn {auto}{ditSig b.sig} " ++ "{\n" ++
   "    /// The type of the implementations.\n" ++
   s!"    type Impl = unsafe extern \"{abi}\" fn{b.sig.rust};\n" ++
   "    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only\n" ++
@@ -2006,16 +2039,22 @@ def dispatcher (g : Group) (arms : List Arm) : String :=
   "}\n"
 
 /-- The dispatcher of the function `g` whose base is its only implementation:
-another name of it. -/
+a function that takes the token (`ditSig`) and calls it. -/
 def soleDispatcher (g : Group) : String :=
   let b := g.base
   let auto := autoName b.name
+  let note := s!"It runs `{b.name}`, the only implementation of it on this target, which needs \
+    no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target."
+  let doc := fullDoc.fullDocWith b auto b.stack b.written [] [note]
   writtenConsts auto "" b.written ++
-  s!"/// `{b.name}`, the only implementation of it on this target, which needs no CPU feature\n" ++
-  "/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every\n" ++
-  "/// target.\n" ++
-  "#[allow(unused_imports)]\n" ++
-  s!"pub use crate::{b.module}::{b.name} as {auto};\n"
+  docComment "" doc ++
+  safetyAllow doc ++
+  "#[allow(clippy::too_many_arguments)]\n" ++
+  "#[inline]\n" ++
+  s!"pub unsafe fn {auto}{ditSig b.sig} " ++ "{\n" ++
+  "    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.\n" ++
+  "    unsafe { " ++ s!"crate::{b.module}::{b.name}({argsOf b.sig})" ++ " }\n" ++
+  "}\n"
 
 /-- Whether `v` is a vendor of lowercase ASCII letters, digits and
 underscores (the text the dispatcher puts in `cfg!(target_vendor = "…")`). -/
@@ -2152,6 +2191,21 @@ def dispatchFile (t m text : String) : String :=
     s!"//! The dispatchers of the verified `{m}` functions for `{t}`\n" ++
     s!"//! (`crate::{m}`, `VG.Rust.dispatcher`).\n") ++ text
 
+/-- The visibility of each function of a module (`moduleItems`), by its
+name: `pub(crate)` if it is an implementation of a function with a
+dispatcher (whose base needs no CPU feature, `dispatchers`) and so is every
+artifact emitted as it (`alias`), so that the library calls it only through
+the dispatcher, which takes the token (see the top of this file);
+else `pub`. -/
+def visibilities (items : List (Prepared × String × String)) : String → String :=
+  let as := items.map (·.1.art)
+  let dispatched := ((groupsOf as).filter (·.base.features.isEmpty)).flatMap fun g =>
+    g.base.name :: g.members.map (·.1.name)
+  let open_ := (items.filter fun (p, _, _) => !dispatched.contains p.art.name).map (·.2.2)
+  fun n =>
+    let canon := ((items.find? (·.1.art.name == n)).map (·.2.2)).getD n
+    if dispatched.contains n && !open_.contains canon then "pub(crate)" else "pub"
+
 /-- The generated files of the artifacts of `ps`, given the module of each
 function each artifact calls; each artifact's code as `ps` printed it
 (`Prepared.lines`). -/
@@ -2196,11 +2250,12 @@ def render (ps : List Prepared) (hs : List Internal) (moduleOf : String → Stri
     -- Each module's files on a task of their own: a part (`Emit.run`) has one target.
     ((modules.map fun m => Task.spawn fun _ =>
       let items := moduleItems (fun a => moduleOf a.target.name) (arts.filter (·.art.module == m))
+      let vis := visibilities items
       [(s!"{src}/{m}.rs",
         header ++ s!"//! Verified `{m}` functions for `{t}`, whose text is in\n" ++
         s!"//! `{assemblyFile m}`.\n" ++
         "#![allow(dead_code)]\n" ++
-        moduleText items ++ internalDecls (hs.filter (·.owner == m))),
+        moduleText items vis ++ internalDecls (hs.filter (·.owner == m))),
        (s!"{crateDir t}/{assemblyFile m}", assemblyHeader t m ++ moduleAssembly items)]).map
       Task.get).flatten
   -- Each target's files on a task of their own.
