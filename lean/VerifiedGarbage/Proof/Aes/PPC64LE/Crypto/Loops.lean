@@ -17,15 +17,14 @@ theorem LoopInv.write12 {inverse ctr : Bool} {base s : State} {nr n k : Nat} {D 
     (h : LoopInv inverse ctr base nr n D E icb k s) (x : BitVec 64) :
     LoopInv inverse ctr base nr n D E icb k (s.write .r12 x) := by
   have he := Local.write s .r12 x
-  refine ⟨h.bound, (h.keep.trans he.keep).mono (by simp [loopGprs]), ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨h.bound, (h.keep.trans he.keep).mono (by simp [loopGprs]), ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [he.keep.gpr (by decide)]; exact h.ptr
   · rw [he.keep.gpr (by decide)]; exact h.left
   · rw [he.mem]; exact h.processed
   · rw [he.mem]; exact h.frame
   · rw [he.v _ (by simp)]; exact h.mask
   · intro ht; rw [he.v _ (by simp)]; exact h.control ht
-  · intro ht; rw [he.v _ (by simp)]; exact h.counterPrefix ht
-  · intro ht; rw [he.keep.gpr (by decide)]; exact h.counter ht
+  · intro ht; rw [he.v _ (by simp)]; exact h.counter ht
 
 theorem quotient_ok (s : State) : WP isa (.block [.lsr .d .r12 .r7 3]) s
     (· = s.write .r12 (s.gpr .r7 >>> 3)) := by
