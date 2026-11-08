@@ -8,8 +8,10 @@ public import VerifiedGarbage.Impl.Vector.PPC64LE
 
 Long inputs use an eight-block loop with powers of H. Adjacent blocks
 share both lanes of each polynomial multiply, and all products are XORed
-before one reduction. Inputs shorter than sixteen blocks, and the tail,
-use the single-block loop. All vector registers are volatile.
+before one reduction. Inputs shorter than sixteen blocks, and what the
+eight-block loop leaves, are hashed two blocks at a time with `H²` and one
+reduction, and the last block, if any, by the single-block loop. All vector
+registers are volatile.
 -/
 
 @[expose] public section
@@ -153,13 +155,30 @@ def bulk : Prog isa :=
 def finish : Prog isa :=
   .seq (.ite (.zero .d .r6) (.block []) (.loop (.block body) (.nonzero .d .r6))) (.block epilogue)
 
-/-- Nonempty short messages go directly to the hardware loop. -/
-def serial : Prog isa :=
-  .seq (.loop (.block body) (.nonzero .d .r6)) (.block epilogue)
+/-- Two blocks: the first with the accumulator, times `H²`, plus the second,
+times `H`, with one reduction, from the packed `H²` and `H` of
+`packKeyStep 3` (which `bulk` also leaves). No accumulator is written, so
+`H` is kept. -/
+def pairBody : List Instr :=
+  packedRead 0 ++ packedProducts (keyLow 3) (keyHigh 3) ++ reduce Y ++ [.subi .r6 .r6 2]
+
+/-- Pairs of blocks while at least two are left. -/
+def pairLoop : Prog isa :=
+  .loop (.block (pairBody ++ [.lsr .d .r10 .r6 1])) (.nonzero .d .r10)
+
+/-- `H²`, the packed `H²` and `H`, then pairs of blocks. -/
+def paired : Prog isa := .seq (.block (preparePowers 2 ++ packKeyStep 3)) pairLoop
+
+/-- Pairs of blocks, if at least two are left. -/
+def pairsIf (pairs : Prog isa) : Prog isa :=
+  .seq (.block [.lsr .d .r10 .r6 1]) (.ite (.zero .d .r10) (.block []) pairs)
+
+/-- Fewer than sixteen blocks: in pairs, then the last one if any. -/
+def short : Prog isa := .seq (pairsIf paired) finish
 
 def ghash : Prog isa :=
   .ite (.zero .d .r6) (.block [])
     (.seq (.block (prologue ++ [.lsr .d .r10 .r6 4]))
-      (.ite (.zero .d .r10) serial (.seq bulk finish)))
+      (.ite (.zero .d .r10) short (.seq bulk (.seq (pairsIf pairLoop) finish))))
 
 end VG.Impl.Gcm.PPC64LE.Vpmsum

@@ -303,17 +303,26 @@ vg_ghash:
 	bne %cr0, 24b
 	vsldoi %v6, %v8, %v8, 8
 	vsldoi %v16, %v15, %v6, 8
-	cmpldi %cr0, %r6, 0
+	rldicl %r10, %r6, 63, 1
+	cmpldi %cr0, %r10, 0
 	beq %cr0, 25f
 27:
 	lxvd2x 38, %r5, %r0
 	vperm %v6, %v6, %v6, %v18
+	addi %r5, %r5, 16
 	vxor %v6, %v6, %v0
-	vsldoi %v2, %v6, %v19, 8
-	vpmsumd %v5, %v2, %v16
-	vsldoi %v2, %v19, %v6, 8
-	vpmsumd %v3, %v2, %v16
-	vpmsumd %v4, %v6, %v16
+	lxvd2x 37, %r5, %r0
+	vperm %v5, %v5, %v5, %v18
+	addi %r5, %r5, 16
+	vsldoi %v5, %v5, %v5, 8
+	vsldoi %v2, %v6, %v5, 8
+	vsldoi %v7, %v5, %v6, 8
+	vsldoi %v7, %v7, %v7, 8
+	vpmsumd %v5, %v2, %v15
+	vpmsumd %v3, %v7, %v8
+	vpmsumd %v4, %v2, %v8
+	vpmsumd %v2, %v7, %v15
+	vxor %v4, %v4, %v2
 	vsldoi %v7, %v3, %v19, 8
 	vpmsumd %v7, %v7, %v1
 	vsldoi %v3, %v3, %v3, 8
@@ -325,18 +334,16 @@ vg_ghash:
 	vxor %v5, %v5, %v4
 	vsldoi %v7, %v7, %v7, 8
 	vxor %v0, %v5, %v7
-	addi %r5, %r5, 16
-	addi %r6, %r6, -1
-	cmpldi %cr0, %r6, 0
+	addi %r6, %r6, -2
+	rldicl %r10, %r6, 63, 1
+	cmpldi %cr0, %r10, 0
 	bne %cr0, 27b
 	b 26f
 25:
 26:
-	vperm %v7, %v0, %v0, %v18
-	stxvd2x 39, %r4, %r0
-	b 23f
-22:
-28:
+	cmpldi %cr0, %r6, 0
+	beq %cr0, 28f
+210:
 	lxvd2x 38, %r5, %r0
 	vperm %v6, %v6, %v6, %v18
 	vxor %v6, %v6, %v0
@@ -359,7 +366,104 @@ vg_ghash:
 	addi %r5, %r5, 16
 	addi %r6, %r6, -1
 	cmpldi %cr0, %r6, 0
-	bne %cr0, 28b
+	bne %cr0, 210b
+	b 29f
+28:
+29:
+	vperm %v7, %v0, %v0, %v18
+	stxvd2x 39, %r4, %r0
+	b 23f
+22:
+	rldicl %r10, %r6, 63, 1
+	cmpldi %cr0, %r10, 0
+	beq %cr0, 211f
+	vsldoi %v6, %v16, %v16, 8
+	vsldoi %v2, %v6, %v19, 8
+	vpmsumd %v5, %v2, %v16
+	vsldoi %v2, %v19, %v6, 8
+	vpmsumd %v3, %v2, %v16
+	vpmsumd %v4, %v6, %v16
+	vsldoi %v7, %v3, %v19, 8
+	vpmsumd %v7, %v7, %v1
+	vsldoi %v3, %v3, %v3, 8
+	vxor %v4, %v4, %v3
+	vxor %v4, %v4, %v7
+	vsldoi %v7, %v4, %v19, 8
+	vpmsumd %v7, %v7, %v1
+	vsldoi %v5, %v5, %v5, 8
+	vxor %v5, %v5, %v4
+	vsldoi %v7, %v7, %v7, 8
+	vxor %v8, %v5, %v7
+	vsldoi %v8, %v8, %v8, 8
+	vsldoi %v6, %v16, %v16, 8
+	vsldoi %v7, %v6, %v8, 8
+	vsldoi %v7, %v7, %v7, 8
+	vsldoi %v8, %v8, %v6, 8
+	vor %v15, %v7, %v7
+213:
+	lxvd2x 38, %r5, %r0
+	vperm %v6, %v6, %v6, %v18
+	addi %r5, %r5, 16
+	vxor %v6, %v6, %v0
+	lxvd2x 37, %r5, %r0
+	vperm %v5, %v5, %v5, %v18
+	addi %r5, %r5, 16
+	vsldoi %v5, %v5, %v5, 8
+	vsldoi %v2, %v6, %v5, 8
+	vsldoi %v7, %v5, %v6, 8
+	vsldoi %v7, %v7, %v7, 8
+	vpmsumd %v5, %v2, %v15
+	vpmsumd %v3, %v7, %v8
+	vpmsumd %v4, %v2, %v8
+	vpmsumd %v2, %v7, %v15
+	vxor %v4, %v4, %v2
+	vsldoi %v7, %v3, %v19, 8
+	vpmsumd %v7, %v7, %v1
+	vsldoi %v3, %v3, %v3, 8
+	vxor %v4, %v4, %v3
+	vxor %v4, %v4, %v7
+	vsldoi %v7, %v4, %v19, 8
+	vpmsumd %v7, %v7, %v1
+	vsldoi %v5, %v5, %v5, 8
+	vxor %v5, %v5, %v4
+	vsldoi %v7, %v7, %v7, 8
+	vxor %v0, %v5, %v7
+	addi %r6, %r6, -2
+	rldicl %r10, %r6, 63, 1
+	cmpldi %cr0, %r10, 0
+	bne %cr0, 213b
+	b 212f
+211:
+212:
+	cmpldi %cr0, %r6, 0
+	beq %cr0, 214f
+216:
+	lxvd2x 38, %r5, %r0
+	vperm %v6, %v6, %v6, %v18
+	vxor %v6, %v6, %v0
+	vsldoi %v2, %v6, %v19, 8
+	vpmsumd %v5, %v2, %v16
+	vsldoi %v2, %v19, %v6, 8
+	vpmsumd %v3, %v2, %v16
+	vpmsumd %v4, %v6, %v16
+	vsldoi %v7, %v3, %v19, 8
+	vpmsumd %v7, %v7, %v1
+	vsldoi %v3, %v3, %v3, 8
+	vxor %v4, %v4, %v3
+	vxor %v4, %v4, %v7
+	vsldoi %v7, %v4, %v19, 8
+	vpmsumd %v7, %v7, %v1
+	vsldoi %v5, %v5, %v5, 8
+	vxor %v5, %v5, %v4
+	vsldoi %v7, %v7, %v7, 8
+	vxor %v0, %v5, %v7
+	addi %r5, %r5, 16
+	addi %r6, %r6, -1
+	cmpldi %cr0, %r6, 0
+	bne %cr0, 216b
+	b 215f
+214:
+215:
 	vperm %v7, %v0, %v0, %v18
 	stxvd2x 39, %r4, %r0
 23:

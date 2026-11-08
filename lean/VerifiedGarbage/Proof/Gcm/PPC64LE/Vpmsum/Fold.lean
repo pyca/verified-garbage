@@ -569,6 +569,71 @@ theorem packedBody_ok (h : BitVec 128) (s : State) (hc : Config s) (hk : PackedK
   exact ⟨by simpa only [vpr_write] using hclass, writeVector hf .r6 (s.gpr .r6-8)⟩
 
 
+/-! ## Two blocks per reduction -/
+
+/-- The packed `H²` and `H` that `pairBody` reads (pair 3 of `PackedKeys`). -/
+def PairKeys (h : BitVec 128) (s : State) : Prop :=
+  s.vpr (keyLow 3) = lowPair (keyValue h 1) (keyValue h 0) ∧
+    s.vpr (keyHigh 3) = highPair (keyValue h 1) (keyValue h 0)
+
+theorem PackedKeys.pair {h : BitVec 128} {s : State} (hk : PackedKeys h 4 s) : PairKeys h s :=
+  hk 3 (by decide)
+
+theorem pairKeys_ok (h : BitVec 128) (s : State) (h2 : s.vpr (powerReg 2) = keyValue h 1)
+    (h1 : s.vpr (powerReg 1) = keyValue h 0) :
+    WP isa (.block (packKeyStep 3)) s fun t =>
+      PairKeys h t ∧ VOnly [A,T,keyLow 3,keyHigh 3] s t := by
+  unfold packKeyStep
+  refine WP.mono (packKeys_ok (powerReg 2) (powerReg 1) (keyLow 3) (keyHigh 3) s
+    (by decide) (by decide) (by decide) (by decide)) fun t ⟨hl,hh,hf⟩ => ?_
+  rw [h2, h1] at hl hh
+  exact ⟨⟨hl, hh⟩, hf⟩
+
+/-- What `pairBody` writes. -/
+def pairWritten : List VReg := [Y,U,LO,MID,HI,A,T]
+
+theorem pairBody_ok (h : BitVec 128) (s : State) (hc : Config s) (hk : PairKeys h s)
+    (hr0 : InRegions (s.rd ++ s.wr) (s.gpr .r5) 16)
+    (hr1 : InRegions (s.rd ++ s.wr) (s.gpr .r5+16) 16) :
+    WP isa (.block Impl.Gcm.PPC64LE.Vpmsum.pairBody) s fun t =>
+      ρ (t.vpr Y) = hashField (x * φ h) (ρ (s.vpr Y)) (fun j => ρ (loadedAt s (16*j))) 2 ∧
+      VOnly pairWritten ((s.write .r5 (s.gpr .r5+32)).write .r6 (s.gpr .r6-2)) t := by
+  unfold Impl.Gcm.PPC64LE.Vpmsum.pairBody
+  repeat rw [WP.block_append_iff]
+  refine WP.mono (packedRead_ok 0 s hc.zero hc.mask hr0 hr1) fun u ⟨ha,hb,hu⟩ => ?_
+  have f := pair_key_free ⟨3,by decide⟩
+  have hul : u.vpr (keyLow 3) = lowPair (keyValue h 1) (keyValue h 0) := by
+    rw [hu.v (keyLow 3) (by decide), vpr_write]
+    exact hk.1
+  have huh : u.vpr (keyHigh 3) = highPair (keyValue h 1) (keyValue h 0) := by
+    rw [hu.v (keyHigh 3) (by decide), vpr_write]
+    exact hk.2
+  refine WP.mono (packedProducts_ok (keyLow 3) (keyHigh 3) _ _ u f.1 f.2.1 hul huh) fun v ⟨hp,hv⟩ => ?_
+  have huv := hu.trans hv
+  have hcv : v.vpr C = Impl.Gcm.Clmul.poly ++ Impl.Gcm.Clmul.poly := by
+    rw [huv.v C (by decide), vpr_write]
+    exact hc.c
+  have hzv : v.vpr Z = 0 := by
+    rw [huv.v Z (by decide), vpr_write]
+    exact hc.z
+  refine WP.mono (reduce_ok Y v hcv hzv) fun w ⟨hy,hw⟩ => ?_
+  have hf : VOnly pairWritten (s.write .r5 (s.gpr .r5+32)) w :=
+    (huv.trans hw).weaken (by simp [pairWritten, or_left_comm, or_comm])
+  have h6 : w.gpr .r6 = s.gpr .r6 := by
+    rw [hf.gpr, RegUpd.gpr_write, ite_eq_right (by decide)]
+  have hlast : WP isa (.block [.subi .r6 .r6 2]) w (· = w.write .r6 (s.gpr .r6-2)) := by
+    apply WP.of_runBlock
+    simp only [runBlock_cons, runStep_some, runBlock_nil,
+      exec_subi' (d := .r6) (n := .r6) (imm := 2) (by decide), h6,
+      Option.some.injEq, exists_eq_left']
+    rfl
+  refine WP.mono hlast fun t ht => ?_
+  subst t
+  refine ⟨?_, writeVector hf .r6 (s.gpr .r6-2)⟩
+  rw [vpr_write, hy, ρ_reduce, hp, pairedProd_val, ha, hb, ite_eq_left rfl, keyValue_term, keyValue_term, ρ_xor]
+  simp only [hashField, Nat.mul_zero, Nat.mul_one]
+  ring
+
 theorem hashField_ghash (h y : BitVec 128) (m : Mem) (p : Addr) (i n : Nat) :
     φ (Spec.Gcm.ghashFrom h y (Spec.Gcm.blocksAt m p (i+n))) =
       hashField (φ h) (φ (Spec.Gcm.ghashFrom h y (Spec.Gcm.blocksAt m p i)))
