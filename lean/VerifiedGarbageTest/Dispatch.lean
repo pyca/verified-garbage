@@ -116,6 +116,44 @@ def selFile : String :=
   | .error e => has e "vg_poly1305_update_neon has a selector (`VG.Dispatch.selected`) but no dispatcher"
   | .ok _ => false
 
+/-! ## A registration's `extra` features and `vendor` (`Artifact.extra`, `Artifact.vendor`) -/
+
+/-- The ranking without its rule for Poly1305's `_neon`, which ranks `_neon` alone. -/
+def plainRanking : Rust.Ranking :=
+  Dispatch.ranking.map fun (t, rs) => (t, rs.filter fun r => !r.modules.contains "poly1305")
+
+/-- The files of Poly1305 on AArch64 under `rk`, with `f` applied to `_neon`. -/
+def neonOut (rk : Rust.Ranking) (f : Artifact → Artifact) : Except String (List (String × String)) :=
+  Rust.files (Artifacts.Poly1305.AArch64.artifacts.map fun a =>
+    if a.name == "vg_poly1305_update_neon" then f a else a) rk
+
+-- The ranking's rule, given by the registration instead: the same files.
+#guard match neonOut plainRanking fun a => { a with vendor := some "apple", extra := ["neon"] } with
+  | .ok fs => fs == out
+  | .error _ => false
+
+-- Either may give each, and they combine.
+#guard match neonOut (Dispatch.ranking.map fun (t, rs) => (t, rs.map fun r =>
+      if r.modules.contains "poly1305" then { r with extra := [] } else r))
+    fun a => { a with extra := ["neon"] } with
+  | .ok fs => fs == out
+  | .error _ => false
+
+-- Without either, `_neon` is chosen everywhere.
+#guard match neonOut plainRanking id with
+  | .ok fs => fs != out && has (((fs.find? (·.1 ==
+      "verified-garbage-asm-aarch64/src/dispatch/poly1305.rs")).map (·.2)).getD "")
+      "    if cpu.0 != 0 {\n"
+  | .error _ => false
+
+-- A vendor or feature that is not a name fails the emitter.
+#guard match neonOut plainRanking fun a => { a with vendor := some "Apple" } with
+  | .error e => has e "vg_poly1305_update_neon names the vendor `Apple`"
+  | .ok _ => false
+#guard match neonOut plainRanking fun a => { a with extra := ["ne on"] } with
+  | .error e => has e "vg_poly1305_update_neon needs the feature `ne on`"
+  | .ok _ => false
+
 /-- The position of a suffix in x86-64's ranking for a module. -/
 def x86Rank (module suffix : String) : Option Nat :=
   (Rust.rankOf ((Dispatch.ranking.lookup "x86_64").getD []) module suffix).map (·.1)
