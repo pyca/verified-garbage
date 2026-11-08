@@ -52,7 +52,8 @@ theorem expandKey_ok (s : State) (hc : KeyConfig s (s.gpr .r3) (s.gpr .r5) (s.gp
     rw [hu.keep.gpr (by decide), hkn]
     simp only [base, RegUpd.gpr_write_self, K, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   refine WP.seq (WP.mono (wordSetup_ok hcfg hu h7) fun v hv => ?_)
-  refine WP.mono (word_loop_ok hcfg hv (by omega)) fun t ht => ⟨?_, ?_⟩
+  refine WP.seq (WP.mono (prev_load_ok hcfg hv) fun w hw => ?_)
+  refine WP.mono (word_loop_ok hcfg hw.1 hw.2 (by omega)) fun t ht => ⟨?_, ?_⟩
   · exact (he.keep.trans ht.keep).mono (by simp [keyGprs])
   · have hbytes := VG.Proof.Aes.KeyWords.bytesAt_eq t.mem S (VG.Proof.Aes.KeyWords.W base.mem P nk)
       (4*(nk+7)) ht.good

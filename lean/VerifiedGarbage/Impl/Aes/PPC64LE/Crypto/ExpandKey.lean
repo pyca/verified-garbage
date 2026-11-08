@@ -5,7 +5,9 @@ public import VerifiedGarbage.Impl.Aes.PPC64LE.Crypto
 /-! # POWER8 AES key expansion
 
 FIPS 197's word loop, with `vsbox` for SubWord. Pointers and word counts
-stay in volatile GPRs; the scratch argument is unused. Word operations
+stay in volatile GPRs; the scratch argument is unused. The previous word
+stays in `r9` from one iteration to the next, loaded once before the loop,
+so that no iteration waits for the word the one before it stored. Word operations
 explicitly zero-extend the low 32 bits after extracting the substituted
 word from the vector register.
 -/
@@ -45,11 +47,11 @@ def wordEnd : Prog isa :=
   .seq (.ite (.zero .d .r0) (.block [.li .r12 0]) (.block [])) (.block [.subi .r4 .r4 1])
 
 def wordBody : Prog isa :=
-  .seq (.block [.load .w .r9 .r11 0]) (.seq tempWord (.seq (.block wordStore) wordEnd))
+  .seq tempWord (.seq (.block wordStore) wordEnd)
 
 def expandKey : Prog isa :=
   .seq (.block [mov .r7 .r4])
     (.seq (.loop (.block copyBody) (.nonzero .d .r4))
-      (.seq (.block wordSetup) (.loop wordBody (.nonzero .d .r4))))
+      (.seq (.block wordSetup) (.seq (.block [.load .w .r9 .r11 0]) (.loop wordBody (.nonzero .d .r4)))))
 
 end VG.Impl.Aes.PPC64LE.Crypto
