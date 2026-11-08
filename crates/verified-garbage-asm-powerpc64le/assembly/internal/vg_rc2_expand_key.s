@@ -223,45 +223,68 @@ vg_rc2_expand_key:
 	add %r10, %r10, %r11
 	rldicr %r10, %r10, 56, 7
 	rldicl %r10, %r10, 8, 56
-	li %r11, 0
-	addi %r15, %r7, 248
-24:
-	subf %r0, %r7, %r15
+	li %r0, 7
 	xor %r12, %r10, %r0
-	rldicl %r12, %r12, 61, 3
-	addi %r12, %r12, -1
+	rldicr %r12, %r12, 56, 7
+	mtvsrd 32, %r12
+	rldicr %r12, %r10, 58, 5
 	rldicl %r12, %r12, 1, 63
-	addi %r12, %r12, -1
-	ld %r0, 0(%r15)
-	and %r12, %r0, %r12
-	xor %r0, %r0, %r12
-	or %r11, %r11, %r0
-	subf %r0, %r7, %r15
-	addi %r15, %r15, -8
-	cmpldi %cr0, %r0, 0
-	bne %cr0, 24b
-	rldicr %r12, %r10, 63, 0
+	li %r0, 0
+	subf %r12, %r12, %r0
+	mtvsrd 33, %r12
+	rldicr %r12, %r10, 57, 6
 	rldicl %r12, %r12, 1, 63
-	addi %r12, %r12, -1
-	rldicl %r0, %r11, 56, 0
-	xor %r11, %r11, %r0
-	and %r11, %r11, %r12
-	xor %r11, %r11, %r0
-	rldicr %r12, %r10, 62, 1
+	li %r0, 0
+	subf %r12, %r12, %r0
+	mtvsrd 34, %r12
+	rldicr %r12, %r10, 56, 7
 	rldicl %r12, %r12, 1, 63
-	addi %r12, %r12, -1
-	rldicl %r0, %r11, 48, 0
-	xor %r11, %r11, %r0
-	and %r11, %r11, %r12
-	xor %r11, %r11, %r0
-	rldicr %r12, %r10, 61, 2
-	rldicl %r12, %r12, 1, 63
-	addi %r12, %r12, -1
-	rldicl %r0, %r11, 32, 0
-	xor %r11, %r11, %r0
-	and %r11, %r11, %r12
-	xor %r11, %r11, %r0
-	rldicr %r11, %r11, 56, 7
+	li %r0, 0
+	subf %r12, %r12, %r0
+	mtvsrd 35, %r12
+	li %r0, 0
+	li %r12, 16
+	or %r15, %r7, %r7
+	lxvd2x 36, %r15, %r0
+	lxvd2x 37, %r15, %r12
+	vperm %v6, %v4, %v5, %v0
+	addi %r15, %r15, 32
+	lxvd2x 36, %r15, %r0
+	lxvd2x 37, %r15, %r12
+	vperm %v7, %v4, %v5, %v0
+	addi %r15, %r15, 32
+	lxvd2x 36, %r15, %r0
+	lxvd2x 37, %r15, %r12
+	vperm %v8, %v4, %v5, %v0
+	addi %r15, %r15, 32
+	lxvd2x 36, %r15, %r0
+	lxvd2x 37, %r15, %r12
+	vperm %v9, %v4, %v5, %v0
+	addi %r15, %r15, 32
+	lxvd2x 36, %r15, %r0
+	lxvd2x 37, %r15, %r12
+	vperm %v10, %v4, %v5, %v0
+	addi %r15, %r15, 32
+	lxvd2x 36, %r15, %r0
+	lxvd2x 37, %r15, %r12
+	vperm %v11, %v4, %v5, %v0
+	addi %r15, %r15, 32
+	lxvd2x 36, %r15, %r0
+	lxvd2x 37, %r15, %r12
+	vperm %v12, %v4, %v5, %v0
+	addi %r15, %r15, 32
+	lxvd2x 36, %r15, %r0
+	lxvd2x 37, %r15, %r12
+	vperm %v13, %v4, %v5, %v0
+	addi %r15, %r15, 32
+	vsel %v6, %v6, %v7, %v1
+	vsel %v8, %v8, %v9, %v1
+	vsel %v6, %v6, %v8, %v2
+	vsel %v10, %v10, %v11, %v1
+	vsel %v12, %v12, %v13, %v1
+	vsel %v10, %v10, %v12, %v2
+	vsel %v6, %v6, %v10, %v3
+	mfvsrd %r11, 38
 	rldicl %r11, %r11, 8, 56
 	add %r9, %r6, %r8
 	stb %r11, 0(%r9)
@@ -282,101 +305,124 @@ vg_rc2_expand_key:
 	li %r12, 255
 	addi %r10, %r9, -1
 	cmpldi %cr0, %r10, 0
-	beq %cr0, 25f
-	b 26f
-25:
+	beq %cr0, 24f
+	b 25f
+24:
 	li %r12, 1
-26:
+25:
 	addi %r10, %r9, -2
 	cmpldi %cr0, %r10, 0
-	beq %cr0, 27f
-	b 28f
-27:
+	beq %cr0, 26f
+	b 27f
+26:
 	li %r12, 3
-28:
+27:
 	addi %r10, %r9, -3
 	cmpldi %cr0, %r10, 0
-	beq %cr0, 29f
-	b 210f
-29:
+	beq %cr0, 28f
+	b 29f
+28:
 	li %r12, 7
-210:
+29:
 	addi %r10, %r9, -4
 	cmpldi %cr0, %r10, 0
-	beq %cr0, 211f
-	b 212f
-211:
+	beq %cr0, 210f
+	b 211f
+210:
 	li %r12, 15
-212:
+211:
 	addi %r10, %r9, -5
 	cmpldi %cr0, %r10, 0
-	beq %cr0, 213f
-	b 214f
-213:
+	beq %cr0, 212f
+	b 213f
+212:
 	li %r12, 31
-214:
+213:
 	addi %r10, %r9, -6
 	cmpldi %cr0, %r10, 0
-	beq %cr0, 215f
-	b 216f
-215:
+	beq %cr0, 214f
+	b 215f
+214:
 	li %r12, 63
-216:
+215:
 	addi %r10, %r9, -7
 	cmpldi %cr0, %r10, 0
-	beq %cr0, 217f
-	b 218f
-217:
+	beq %cr0, 216f
+	b 217f
+216:
 	li %r12, 127
-218:
+217:
 	add %r9, %r6, %r8
 	lbz %r10, 0(%r9)
 	and %r10, %r10, %r12
-	li %r11, 0
-	addi %r15, %r7, 248
-219:
-	subf %r0, %r7, %r15
+	li %r0, 7
 	xor %r12, %r10, %r0
-	rldicl %r12, %r12, 61, 3
-	addi %r12, %r12, -1
+	rldicr %r12, %r12, 56, 7
+	mtvsrd 32, %r12
+	rldicr %r12, %r10, 58, 5
 	rldicl %r12, %r12, 1, 63
-	addi %r12, %r12, -1
-	ld %r0, 0(%r15)
-	and %r12, %r0, %r12
-	xor %r0, %r0, %r12
-	or %r11, %r11, %r0
-	subf %r0, %r7, %r15
-	addi %r15, %r15, -8
-	cmpldi %cr0, %r0, 0
-	bne %cr0, 219b
-	rldicr %r12, %r10, 63, 0
+	li %r0, 0
+	subf %r12, %r12, %r0
+	mtvsrd 33, %r12
+	rldicr %r12, %r10, 57, 6
 	rldicl %r12, %r12, 1, 63
-	addi %r12, %r12, -1
-	rldicl %r0, %r11, 56, 0
-	xor %r11, %r11, %r0
-	and %r11, %r11, %r12
-	xor %r11, %r11, %r0
-	rldicr %r12, %r10, 62, 1
+	li %r0, 0
+	subf %r12, %r12, %r0
+	mtvsrd 34, %r12
+	rldicr %r12, %r10, 56, 7
 	rldicl %r12, %r12, 1, 63
-	addi %r12, %r12, -1
-	rldicl %r0, %r11, 48, 0
-	xor %r11, %r11, %r0
-	and %r11, %r11, %r12
-	xor %r11, %r11, %r0
-	rldicr %r12, %r10, 61, 2
-	rldicl %r12, %r12, 1, 63
-	addi %r12, %r12, -1
-	rldicl %r0, %r11, 32, 0
-	xor %r11, %r11, %r0
-	and %r11, %r11, %r12
-	xor %r11, %r11, %r0
-	rldicr %r11, %r11, 56, 7
+	li %r0, 0
+	subf %r12, %r12, %r0
+	mtvsrd 35, %r12
+	li %r0, 0
+	li %r12, 16
+	or %r15, %r7, %r7
+	lxvd2x 36, %r15, %r0
+	lxvd2x 37, %r15, %r12
+	vperm %v6, %v4, %v5, %v0
+	addi %r15, %r15, 32
+	lxvd2x 36, %r15, %r0
+	lxvd2x 37, %r15, %r12
+	vperm %v7, %v4, %v5, %v0
+	addi %r15, %r15, 32
+	lxvd2x 36, %r15, %r0
+	lxvd2x 37, %r15, %r12
+	vperm %v8, %v4, %v5, %v0
+	addi %r15, %r15, 32
+	lxvd2x 36, %r15, %r0
+	lxvd2x 37, %r15, %r12
+	vperm %v9, %v4, %v5, %v0
+	addi %r15, %r15, 32
+	lxvd2x 36, %r15, %r0
+	lxvd2x 37, %r15, %r12
+	vperm %v10, %v4, %v5, %v0
+	addi %r15, %r15, 32
+	lxvd2x 36, %r15, %r0
+	lxvd2x 37, %r15, %r12
+	vperm %v11, %v4, %v5, %v0
+	addi %r15, %r15, 32
+	lxvd2x 36, %r15, %r0
+	lxvd2x 37, %r15, %r12
+	vperm %v12, %v4, %v5, %v0
+	addi %r15, %r15, 32
+	lxvd2x 36, %r15, %r0
+	lxvd2x 37, %r15, %r12
+	vperm %v13, %v4, %v5, %v0
+	addi %r15, %r15, 32
+	vsel %v6, %v6, %v7, %v1
+	vsel %v8, %v8, %v9, %v1
+	vsel %v6, %v6, %v8, %v2
+	vsel %v10, %v10, %v11, %v1
+	vsel %v12, %v12, %v13, %v1
+	vsel %v10, %v10, %v12, %v2
+	vsel %v6, %v6, %v10, %v3
+	mfvsrd %r11, 38
 	rldicl %r11, %r11, 8, 56
 	add %r9, %r6, %r8
 	stb %r11, 0(%r9)
 	cmpldi %cr0, %r8, 0
-	beq %cr0, 220f
-222:
+	beq %cr0, 218f
+220:
 	addi %r8, %r8, -1
 	add %r9, %r6, %r8
 	lbz %r10, 1(%r9)
@@ -384,53 +430,76 @@ vg_rc2_expand_key:
 	add %r9, %r6, %r9
 	lbz %r11, 0(%r9)
 	xor %r10, %r10, %r11
-	li %r11, 0
-	addi %r15, %r7, 248
-223:
-	subf %r0, %r7, %r15
+	li %r0, 7
 	xor %r12, %r10, %r0
-	rldicl %r12, %r12, 61, 3
-	addi %r12, %r12, -1
+	rldicr %r12, %r12, 56, 7
+	mtvsrd 32, %r12
+	rldicr %r12, %r10, 58, 5
 	rldicl %r12, %r12, 1, 63
-	addi %r12, %r12, -1
-	ld %r0, 0(%r15)
-	and %r12, %r0, %r12
-	xor %r0, %r0, %r12
-	or %r11, %r11, %r0
-	subf %r0, %r7, %r15
-	addi %r15, %r15, -8
-	cmpldi %cr0, %r0, 0
-	bne %cr0, 223b
-	rldicr %r12, %r10, 63, 0
+	li %r0, 0
+	subf %r12, %r12, %r0
+	mtvsrd 33, %r12
+	rldicr %r12, %r10, 57, 6
 	rldicl %r12, %r12, 1, 63
-	addi %r12, %r12, -1
-	rldicl %r0, %r11, 56, 0
-	xor %r11, %r11, %r0
-	and %r11, %r11, %r12
-	xor %r11, %r11, %r0
-	rldicr %r12, %r10, 62, 1
+	li %r0, 0
+	subf %r12, %r12, %r0
+	mtvsrd 34, %r12
+	rldicr %r12, %r10, 56, 7
 	rldicl %r12, %r12, 1, 63
-	addi %r12, %r12, -1
-	rldicl %r0, %r11, 48, 0
-	xor %r11, %r11, %r0
-	and %r11, %r11, %r12
-	xor %r11, %r11, %r0
-	rldicr %r12, %r10, 61, 2
-	rldicl %r12, %r12, 1, 63
-	addi %r12, %r12, -1
-	rldicl %r0, %r11, 32, 0
-	xor %r11, %r11, %r0
-	and %r11, %r11, %r12
-	xor %r11, %r11, %r0
-	rldicr %r11, %r11, 56, 7
+	li %r0, 0
+	subf %r12, %r12, %r0
+	mtvsrd 35, %r12
+	li %r0, 0
+	li %r12, 16
+	or %r15, %r7, %r7
+	lxvd2x 36, %r15, %r0
+	lxvd2x 37, %r15, %r12
+	vperm %v6, %v4, %v5, %v0
+	addi %r15, %r15, 32
+	lxvd2x 36, %r15, %r0
+	lxvd2x 37, %r15, %r12
+	vperm %v7, %v4, %v5, %v0
+	addi %r15, %r15, 32
+	lxvd2x 36, %r15, %r0
+	lxvd2x 37, %r15, %r12
+	vperm %v8, %v4, %v5, %v0
+	addi %r15, %r15, 32
+	lxvd2x 36, %r15, %r0
+	lxvd2x 37, %r15, %r12
+	vperm %v9, %v4, %v5, %v0
+	addi %r15, %r15, 32
+	lxvd2x 36, %r15, %r0
+	lxvd2x 37, %r15, %r12
+	vperm %v10, %v4, %v5, %v0
+	addi %r15, %r15, 32
+	lxvd2x 36, %r15, %r0
+	lxvd2x 37, %r15, %r12
+	vperm %v11, %v4, %v5, %v0
+	addi %r15, %r15, 32
+	lxvd2x 36, %r15, %r0
+	lxvd2x 37, %r15, %r12
+	vperm %v12, %v4, %v5, %v0
+	addi %r15, %r15, 32
+	lxvd2x 36, %r15, %r0
+	lxvd2x 37, %r15, %r12
+	vperm %v13, %v4, %v5, %v0
+	addi %r15, %r15, 32
+	vsel %v6, %v6, %v7, %v1
+	vsel %v8, %v8, %v9, %v1
+	vsel %v6, %v6, %v8, %v2
+	vsel %v10, %v10, %v11, %v1
+	vsel %v12, %v12, %v13, %v1
+	vsel %v10, %v10, %v12, %v2
+	vsel %v6, %v6, %v10, %v3
+	mfvsrd %r11, 38
 	rldicl %r11, %r11, 8, 56
 	add %r9, %r6, %r8
 	stb %r11, 0(%r9)
 	cmpldi %cr0, %r8, 0
-	bne %cr0, 222b
-	b 221f
-220:
-221:
+	bne %cr0, 220b
+	b 219f
+218:
+219:
 	ld %r14, 256(%r7)
 	ld %r15, 264(%r7)
 	blr
