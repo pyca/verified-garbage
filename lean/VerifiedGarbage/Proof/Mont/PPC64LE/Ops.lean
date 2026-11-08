@@ -18,9 +18,16 @@ public import VerifiedGarbage.Proof.Mont.PPC64LE.Words
 /-!
 # Montgomery arithmetic on PPC64LE: the operations
 
-`mul`, `add` and `sub` (`Impl/Mont/PPC64LE.lean`) on the numbers at `[r5]`
+`rmul`, `add` and `sub` (`Impl/Mont/PPC64LE.lean`) on the numbers at `[r5]`
 and `[r6]`, into `[r4]`, with the modulus `m` at `[r3 + M.mo]`, for a layout
-of the working space (`OpLay`): `mul_ok`, `add_ok`, `sub_ok`.
+of the working space (`OpLay`): `rmul_ok`, `add_ok`, `sub_ok`.
+
+The accumulator of `rmul` is in the registers `treg j`, `r15` up, which are
+none of the registers the rest of the code names (`treg_ne`) and distinct
+for `j < 10` (`treg_inj`); `regsVal t d k` is the number in `treg d`, …,
+`treg (d + k - 1)`. A row of steps (`rmacs_ok`), the iteration of the loop
+(`rrow_ok`, invariant `RLoopInv`) and the loop (`rloop_ok`), the reduction
+(`rcsub_ok`), and the registers saved, cleared and restored around them.
 -/
 
 @[expose] public section
@@ -58,37 +65,7 @@ def opOuts (M : Mod) (acc O : Nat) : List (Nat × Nat) :=
 /-- The registers the operations write. -/
 def opClob : List Reg := [.r0, .r5, .r7, .r8, .r9, .r10, .r11, .r12]
 
-/-! ## Clearing, and the modulus's pointer -/
-
-theorem zeros_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {acc : Nat}
-    (h3 : At s base .r3 0) (hacc4 : acc % 4 = 0) : ∀ {k : Nat}, acc + 8 * k ≤ size →
-    WP isa (.block ((List.range k).map fun j => .store .d .r11 wb (acc + 8 * j))) (s.write .r11 (BitVec.ofNat 64 0))
-      fun u => Outside base acc (8 * k) s.mem u.mem ∧ (∀ j < k, word u.mem base (acc + 8 * j) = 0) ∧
-        Kp [.r11] s u ∧ u.gpr .r11 = BitVec.ofNat 64 0
-  | 0, _ => WP.block_nil ⟨Outside.refl _ _ _ _, fun _ h => absurd h (Nat.not_lt_zero _),
-      Kp.write s _ (by decide), by simp only [write_gpr, ite_true]⟩
-  | k + 1, hk => by
-    have hn := hs.nowrap
-    have hs15 := hs.small
-    rw [List.range_succ, List.map_append, List.map_cons, List.map_nil]
-    refine wp_append (WP.mono (zeros_ok hs h3 hacc4 (k := k) (by omega_arith)) fun s₁ ⟨O₁, Z₁, K₁, r₁⟩ => ?_)
-    refine wp_step (std_ok (K₁.ws hs) (K₁.at h3) (by decide) (by omega) (d := acc + 8 * k) (by omega_arith))
-      (WP.block_nil ?_)
-    rw [Nat.zero_add]
-    have W := writeW_outside s₁.mem base (d := acc + 8 * k) (s₁.gpr .r11) (by omega_arith)
-    refine ⟨(O₁.mono (Nat.le_refl _) (by omega_arith)).trans (W.mono (by omega_arith) (by omega_arith)), fun j hj => ?_,
-      K₁.trans (Kp.store _ _ _), r₁⟩
-    rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
-    · show word (s₁.mem.writeW _ _) base _ = 0
-      rw [word_writeW_ne _ (by omega_arith) (by omega_arith) (by omega_arith)]; exact Z₁ j hj
-    · show word (s₁.mem.writeW _ _) base _ = 0
-      rw [word_writeW_self, r₁]; rfl
-
-theorem wordsVal_zeros {m : Mem} {base : Addr} {d : Nat} :
-    ∀ {k : Nat}, (∀ j < k, word m base (d + 8 * j) = 0) → wordsVal m base d k = 0
-  | 0, _ => rfl
-  | k + 1, h => by
-    rw [wordsVal_succ_top, wordsVal_zeros fun j hj => h j (by omega_arith), h k (by omega_arith)]; rfl
+/-! ## The modulus's pointer -/
 
 theorem setMo_ok {s : State} {base : Addr} {M : Mod} (h3 : At s base .r3 0) (hmo : M.mo < 2 ^ 15) :
     exec (setMo M) s = some (s.write .r7 (off base M.mo)) := by
@@ -254,77 +231,6 @@ theorem sub_ok {M : Mod} {base : Addr} {size acc O A B m : Nat} {s : State} (hp 
     have k₃ : Kp opClob s₂ s₃ := (Kp.writeCarry _ _ (by decide)).trans (K₃.mono (by decide))
     exact (k₂.trans k₃).trans (K₄.mono (by decide))
 
-/-- `[r4] = [r5] [r6] R⁻¹ mod m`, for `[r6]` below `m`. -/
-theorem mul_ok {M : Mod} {base : Addr} {size acc O A B m : Nat} {s : State} (hp : OpPre M base size O A B m s)
-    (hL : OpLay M size acc O A B) (hinv : (m * M.minv.toNat + 1) % 2 ^ 64 = 0)
-    (hb : wordsVal s.mem base B M.n < m) :
-    WP isa (mul M acc) s fun u =>
-      wordsVal u.mem base O M.n < m ∧
-      wordsVal u.mem base O M.n * 2 ^ (64 * M.n) % m = wordsVal s.mem base A M.n * wordsVal s.mem base B M.n % m ∧
-      Outs base (opOuts M acc O) s.mem u.mem ∧ Kp opClob s u := by
-  have hn := hp.ws.nowrap
-  have hs15 := hp.ws.small
-  have hL' := hL
-  obtain ⟨n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, acc4, tmp4, sat, am, ao, aa, ab, tm, to⟩ := hL'
-  have hML : MulLay M size acc A B :=
-    ⟨n0, by omega_arith, a_le, b_le, mo_le, acc4, by omega_arith, by omega_arith, by omega_arith⟩
-  have hmi4 : (acc + 8 * (M.n + 1)) % 4 = 0 := by omega_arith
-  refine WP.seq ?_
-  simp only [zeros, List.append_assoc, List.cons_append]
-  -- `m'` above the accumulator.
-  refine wp_append (WP.mono (setConst_ok hp.ws hp.r3 (n := 1) (o := acc + 8 * (M.n + 1)) (x := M.minv.toNat)
-    (by omega_arith) M.minv.isLt) fun s₁ ⟨O₁, V₁, K₁⟩ => ?_)
-  refine wp_step (exec_li (by decide)) ?_
-  refine wp_append (WP.mono (zeros_ok (K₁.ws hp.ws) (K₁.at hp.r3) acc4 (acc := acc) (k := M.n + 1) (by omega_arith))
-    fun s₂ ⟨O₂, Z₂, K₂, _⟩ => ?_)
-  refine wp_step (setMo_ok ((K₁.trans K₂).at hp.r3) (by omega_arith)) ?_
-  refine wp_step (exec_li (by omega_arith)) (WP.block_nil ?_)
-  generalize hu : (s₂.write .r7 (off base M.mo)).write .r8 (BitVec.ofNat 64 M.n) = u
-  have hum : u.mem = s₂.mem := by rw [← hu]; rfl
-  have K₀u : Kp [.r7, .r8, .r11] s u := by
-    rw [← hu]
-    exact ((K₁.trans K₂).mono (by decide)).trans ((Kp.write _ _ (by decide)).trans (Kp.write _ _ (by decide)))
-  have Ous : Outs base (opOuts M acc O) s.mem u.mem := by
-    rw [hum]
-    have o₁ : Outs base (opOuts M acc O) s.mem s₁.mem :=
-      Outs.of_outside (O₁.mono (o' := acc) (n' := 4 * (4 * M.n + 2)) (by omega_arith) (by omega_arith))
-        (List.mem_cons_self ..)
-    have o₂ : Outs base (opOuts M acc O) s₁.mem s₂.mem :=
-      Outs.of_outside (O₂.mono (o' := acc) (n' := 4 * (4 * M.n + 2)) (Nat.le_refl _) (by omega_arith))
-        (List.mem_cons_self ..)
-    exact o₁.trans o₂
-  have hmi : (word u.mem base (acc + 8 * (M.n + 1))).toNat = M.minv.toNat := by
-    rw [hum, O₂.word (by omega_arith) (by omega_arith), ← V₁, ← wordsVal_eq_val32]
-    simp only [wordsVal, Nat.mul_zero, Nat.add_zero]
-  have hmu : wordsVal u.mem base M.mo M.n = m := by
-    rw [hum, O₂.wordsVal (by omega_arith) (by omega_arith), O₁.wordsVal (by omega_arith) (by omega_arith),
-      wordsVal_eq_val32, hp.mo]
-  have hAu : wordsVal u.mem base A M.n = wordsVal s.mem base A M.n := by
-    rw [hum, O₂.wordsVal (by omega_arith) (by omega_arith), O₁.wordsVal (by omega_arith) (by omega_arith)]
-  have hBu : wordsVal u.mem base B M.n = wordsVal s.mem base B M.n := by
-    rw [hum, O₂.wordsVal (by omega_arith) (by omega_arith), O₁.wordsVal (by omega_arith) (by omega_arith)]
-  have hws : Ws u base size := K₀u.ws hp.ws
-  -- The invariant at word 0.
-  have h0 : LoopInv base M acc A B m 0 u u := by
-    refine ⟨K₀u.at hp.r3, ?_, K₀u.at hp.r6, ?_, ?_, Outside.refl _ _ _ _, Kp.refl _ _, ?_, ?_⟩
-    · rw [Nat.mul_zero, Nat.add_zero]; exact K₀u.at hp.r5
-    · rw [At, ← hu]; simp only [write_gpr, reduceCtorEq, ite_false, ite_true]
-    · rw [← hu]; simp only [write_gpr, ite_true, Nat.sub_zero]
-    · rw [hum, wordsVal_zeros fun j hj => Z₂ j hj]; have := hp.m0; omega_arith
-    · exact ⟨0, by rw [hum, wordsVal_zeros fun j hj => Z₂ j hj]; simp [wordsVal]⟩
-  refine WP.seq (WP.mono (loop_ok hws hML hmu (by rw [hmi]; exact hinv) (by rw [hBu]; exact hb) h0) fun t I => ?_)
-  -- The reduction.
-  obtain ⟨U, hU⟩ := I.cong
-  have hmt : wordsVal t.mem base M.mo M.n = m := by rw [I.out.wordsVal (by omega_arith) (by omega_arith), hmu]
-  refine WP.mono (csub_ok (I.kp.ws hws) I.r3 (by rw [At, kp_clob I.kp]; exact K₀u.at hp.r4) I.r7 hL.csub n0 hmt
-    I.lt) fun v ⟨V₃, O₃, K₃⟩ => ⟨?_, ?_, ?_, ?_⟩
-  · rw [V₃]; exact Nat.mod_lt _ hp.m0
-  · rw [V₃, Nat.mod_mul_mod, Nat.mul_comm, hU, hAu, hBu, Nat.add_mul_mod_self_right]
-  · exact (Ous.trans (Outs.of_outside (I.out.mono (Nat.le_refl _) (by omega_arith)) (List.mem_cons_self ..))).trans
-      (outs_tail O₃)
-  · exact ((K₀u.mono (by decide)).trans (I.kp.trans (K₃.mono (by decide)))).mono (by decide)
-
-/-! # The multiplication with the accumulator in registers (`rmul`) -/
 
 /-! ## The registers of the accumulator -/
 
@@ -505,7 +411,7 @@ theorem rmacs_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {r
     WP isa (.block (rmacs rs src rd dst k)) s fun u =>
       regsVal u dst k + 2 ^ (64 * k) * (u.gpr .r0).toNat =
         regsVal s rd k + (s.gpr .r9).toNat * wordsVal s.mem base (K + src) k + (s.gpr .r0).toNat ∧
-      u.mem = s.mem ∧ Kp ([.r0, .r10, .r11] ++ tregs dst k) s u
+      u.mem = s.mem ∧ Kp (([.r0, .r10, .r11] : List Reg) ++ tregs dst k) s u
   | 0, _ => WP.block_nil ⟨by simp [regsVal, wordsVal], rfl, Kp.refl _ _⟩
   | k + 1, hk => by
     rw [rmacs_succ]
