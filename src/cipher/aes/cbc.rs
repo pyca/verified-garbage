@@ -324,11 +324,12 @@ impl Key {
         // The scratch space may hold the key schedule, the data and our
         // caller's registers: wipe the bytes the function's proved write
         // bound (`scratch_written`) allows it to write, if any. On AArch64,
-        // RISC-V and PPC64LE each implementation leaves each byte of it
-        // unchanged or zero (`Proof/AesCbc/<ISA>/Wiped.lean`), so there is
-        // nothing to wipe.
+        // ARMv7, RISC-V and PPC64LE each implementation leaves each byte of
+        // it unchanged or zero (`Proof/AesCbc/<ISA>/Wiped.lean`), so there
+        // is nothing to wipe.
         #[cfg(not(any(
             target_arch = "aarch64",
+            target_arch = "arm",
             target_arch = "riscv64",
             all(target_arch = "powerpc64", target_endian = "little")
         )))]
@@ -337,6 +338,7 @@ impl Key {
         }
         #[cfg(any(
             target_arch = "aarch64",
+            target_arch = "arm",
             target_arch = "riscv64",
             all(target_arch = "powerpc64", target_endian = "little")
         ))]
