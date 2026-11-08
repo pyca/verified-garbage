@@ -57,8 +57,8 @@ theorem ctr_constantTime {post : State → State → Prop} :
 theorem ctr_correct (s : State) (hs : (modeContract 16 ctrPost).pre s) :
     ∃ t s', Exec isa ctr s t s' ∧ abiPreserved s s' ∧ (modeContract 16 ctrPost).post s s' :=
   WP.mono (Proof.Modes.PPC64LE.ctrWide_wp (dirCoreSpec .encrypt) (lg := 4) rfl (by decide) (by decide) (by decide)
-    (seqPre_of .encrypt (M := Mode.ctrEarly) rfl hs)
-    (keyArgs_of .encrypt (M := Mode.ctrEarly) rfl hs))
+    (seqPre_of (dirCore .encrypt) rfl rfl (dirCoreSpec .encrypt).layout (M := Mode.ctrEarly) rfl hs)
+    (keyArgs_of (dirCore .encrypt) rfl (M := Mode.ctrEarly) rfl hs))
     fun _ ⟨h1, h2, h3, _⟩ => by simp only [cipher_enc] at h2 h3; exact ⟨h1, h2, h3⟩
 
 theorem ctr_verified : Verified target ctr (Proof.Sm4.ctrScratchContract abi (slots + 6)) := by

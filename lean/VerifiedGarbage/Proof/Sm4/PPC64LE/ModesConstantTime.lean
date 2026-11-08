@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Sm4.PPC64LE.CallSum
 import VerifiedGarbage.Proof.Sm4.PPC64LE.Lit
 import VerifiedGarbage.Proof.Framework.PPC64LE.Lit
 import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.SlotTaint
 meta import VerifiedGarbage.Impl.Sm4.PPC64LE.Modes
 meta import VerifiedGarbage.Proof.Sm4.PPC64LE.ModesLit
@@ -14,6 +15,7 @@ meta import VerifiedGarbage.Proof.Sm4.PPC64LE.CallSum
 meta import VerifiedGarbage.Proof.Sm4.PPC64LE.Lit
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Lit
 meta import VerifiedGarbage.Proof.Framework.Taint
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
 meta import VerifiedGarbage.Proof.Framework.RegSet
 
 /-! # Constant-time SM4 modes on PPC64LE
@@ -95,10 +97,19 @@ theorem modes_agree {st : Nat} {post : State → State → Prop} (s₁ s₂ : St
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl | rfl <;> simp [SlotTaint.region, hw₂]
 
+/-- The public arguments agree: the vector analysis's taint on entry, for
+the modes over the single-block core, which call nothing. -/
+theorem modes_agreeV {st : Nat} {post : State → State → Prop} (s₁ s₂ : State)
+    (_ : (modeContract st post).pre s₁) (_ : (modeContract st post).pre s₂) (hp : modePub s₁ s₂) :
+    VG.PPC64LE.Taint.Agree (VG.PPC64LE.Taint.ofRegs [.r3, .r4, .r5, .r6, .r7]) s₁ s₂ := by
+  obtain ⟨hsp, hr⟩ := hp
+  refine ⟨hsp, fun r h => hr r ?_⟩
+  simpa only [VG.PPC64LE.Taint.mem_ofRegs] using h
+
 theorem cbcEncryptChained_constantTime {post : State → State → Prop} :
     ConstantTime isa (modeContract 16 post).pre modePub cbcEncryptChained :=
-  VG.Taint.constantTime_of_exists (A := slotTaint) modeTaint modes_agree
-    (by taint_decide_sum [prepSum, cryptSum])
+  VG.Taint.constantTime (A := vectorTaint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7]) modes_agreeV
+    (by taint_decide)
 
 theorem cbcDecryptChained_constantTime {post : State → State → Prop} :
     ConstantTime isa (modeContract 16 post).pre modePub cbcDecryptChained :=
@@ -107,13 +118,13 @@ theorem cbcDecryptChained_constantTime {post : State → State → Prop} :
 
 theorem ofb_constantTime {post : State → State → Prop} :
     ConstantTime isa (modeContract 16 post).pre modePub ofb :=
-  VG.Taint.constantTime_of_exists (A := slotTaint) modeTaint modes_agree
-    (by taint_decide_sum [prepSum, cryptSum])
+  VG.Taint.constantTime (A := vectorTaint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7]) modes_agreeV
+    (by taint_decide)
 
 theorem cfbEncrypt_constantTime {post : State → State → Prop} :
     ConstantTime isa (modeContract 16 post).pre modePub cfbEncrypt :=
-  VG.Taint.constantTime_of_exists (A := slotTaint) modeTaint modes_agree
-    (by taint_decide_sum [prepSum, cryptSum])
+  VG.Taint.constantTime (A := vectorTaint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7]) modes_agreeV
+    (by taint_decide)
 
 theorem cfbDecrypt_constantTime {post : State → State → Prop} :
     ConstantTime isa (modeContract 16 post).pre modePub cfbDecrypt :=

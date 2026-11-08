@@ -33,3 +33,7 @@ pub use vg_sha256_ppc64le_k::VG_SHA256_PPC64LE_K;
 #[rustfmt::skip]
 mod vg_sha512_ppc64le_k;
 pub use vg_sha512_ppc64le_k::VG_SHA512_PPC64LE_K;
+
+#[rustfmt::skip]
+mod vg_sm4_ppc64le_affine;
+pub use vg_sm4_ppc64le_affine::VG_SM4_PPC64LE_AFFINE;
