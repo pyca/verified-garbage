@@ -280,7 +280,7 @@ class LeanArchiveTests(unittest.TestCase):
     def test_unpack_empty_private_downloads_the_release(self):
         fetched = []
 
-        def fetch():
+        def fetch(token=None):
             fetched.append(True)
             return self.stub
 
