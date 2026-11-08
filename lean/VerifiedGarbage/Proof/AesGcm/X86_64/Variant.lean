@@ -227,12 +227,23 @@ def decToR : StitchToName → Prog isa
   | .vaesAvx512 => Impl.Gcm.X86_64.StitchZH.decToR
   | .aesniAvx => Impl.Gcm.X86_64.StitchToDec.decToR
 
+/-- The out-of-place decryption loop named `n`, for a key context of
+`vg_aes_gcm_init`: the in-place loop's, out of place (only the 256-bit
+loop's so far: the others decrypt by a copy, and name it). -/
+def decTo : StitchToName → Prog isa
+  | _ => Impl.Gcm.X86_64.StitchToDec.decTo
+
 end StitchToName
 
 /-- Static and constant-time facts of the prepared out-of-place decryption
 loop named `n` (`StitchToName.decToR`). -/
 structure PieceToDecR (n : StitchToName) : Type where
   dec : PieceTo n.decToR true false
+
+/-- Static and constant-time facts of the out-of-place decryption loop named
+`n` for a key context of `vg_aes_gcm_init` (`StitchToName.decTo`). -/
+structure PieceToDec (n : StitchToName) : Type where
+  dec : PieceTo n.decTo false false
 
 /-- Out-of-place loops by name, with the facts `PieceTo` states of them (and
 of those for a key context of `vg_aes_gcm_init_precomputed`, if they read
@@ -247,6 +258,11 @@ structure StitchToPart where
   (`StitchToName.decToR`), with the same CPU features (`none`: it copies
   the blocks to the output and decrypts them there). -/
   pieceToDecR : Option (PieceToDecR name) := none
+  /-- The loop that decrypts out of place for `vg_aes_gcm_decrypt_blocks_to`
+  with a key context of `vg_aes_gcm_init` (`StitchToName.decTo`), with the
+  same CPU features (`none`: `vg_aes_gcm_open_to` copies the data and
+  decrypts it in place). -/
+  pieceToDec : Option (PieceToDec name) := none
 
 /-- A `StitchImpl` with its loops named, and so without their proof of
 `StitchOk` (`StitchName.ok`). -/

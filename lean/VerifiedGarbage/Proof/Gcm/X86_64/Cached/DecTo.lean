@@ -54,7 +54,8 @@ theorem setupToDec_ok {s₀ : State} (hp : SPreTo CtxMode.prepared s₀) :
         VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s := by
   have hm := hp.toM
   rw [show setupPToDec = Impl.Gcm.X86_64.StitchToDec.setup ++ setupZ by
-    simp only [setupPToDec, Impl.Gcm.X86_64.StitchToDec.setup, List.append_assoc]]
+    simp only [setupPToDec, Impl.Gcm.X86_64.StitchToDec.setup, Impl.Gcm.X86_64.StitchToDec.setupWith,
+      List.append_assoc]]
   have h₁ : WP isa (.block (Impl.Gcm.X86_64.StitchToDec.setup ++ setupZ)) s₀ fun s =>
       ∃ P : Nat → Nat → Block, DInvM true s₀ P 0 s ∧
         ∀ k < 4, ∀ l < 4, P k l = hInvF (Spec.Gcm.hpow (hk s₀) (16 - 4 * k - l)) := by

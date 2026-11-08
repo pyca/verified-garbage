@@ -41,12 +41,25 @@ def setupCToDec : List Instr :=
    .mov .r10 (.reg .rsi), .alu .add .r10 (.reg .r10), .alu .add .r10 (.reg .r10),
    .alu .add .r10 (.reg .r10), .alu .add .r10 (.reg .r10), .alu .add .r10 (.reg .rdi)]
 
+/-- The setup, out of place, after `g`, which leaves the powers of the hash
+subkey in the registers: they are stored to the working space, then the
+rest (`setupCToDec`). -/
+def setupWith (g : List Instr) : List Instr := g ++ storesK .r11 pregs 0 ++ setupCToDec
+
+/-- The loop, out of place, after `g`, which leaves the powers of the hash
+subkey in the registers: `n` (a multiple of 16, at least 16) blocks. -/
+def decToG (g : List Instr) : Prog isa :=
+  .seq (.block (setupWith g)) (.seq (.loop (dbody true) .ae) (.block (storeCtr ++ storeY)))
+
 /-- `StitchR.setup`, out of place. -/
-def setup : List Instr := StitchZR.setupGP ++ storesK .r11 pregs 0 ++ setupCToDec
+def setup : List Instr := setupWith StitchZR.setupGP
 
 /-- `StitchR.decR`, out of place: `n` (a multiple of 16, at least 16)
 blocks. -/
-def decToR : Prog isa :=
-  .seq (.block setup) (.seq (.loop (dbody true) .ae) (.block (storeCtr ++ storeY)))
+def decToR : Prog isa := decToG StitchZR.setupGP
+
+/-- `Stitch.dec`, out of place, for a key context of `vg_aes_gcm_init`: the
+powers computed from the hash subkey (`Stitch.setupG`). -/
+def decTo : Prog isa := decToG Stitch.setupG
 
 end VG.Impl.Gcm.X86_64.StitchToDec

@@ -609,6 +609,32 @@ def openSplitFnR (v : GcmVariant) : OpenToSplit.OpenSplitFn Proof.Gcm.X86_64.Sti
 
 /-! ## `vg_aes_gcm_open_to` in one pass -/
 
+/-- The out-of-place decryption loop for a key context of `vg_aes_gcm_init`:
+the powers computed from the hash subkey (`StitchZTo.setupGTo_ok`), which
+give the products of a decryption body (`Stitch.finD`), then the loop
+(`StitchToDec.decTailToDec_ok`). -/
+theorem decTo_ok : Proof.Gcm.X86_64.Stitch.StitchToDecOkM Proof.Gcm.X86_64.Stitch.CtxMode.base
+    Impl.Gcm.X86_64.StitchToDec.decTo := fun s₀ hp hm => by
+  have hs : WP X86_64.isa (.block (Impl.Gcm.X86_64.StitchToDec.setupWith Impl.Gcm.X86_64.Stitch.setupG)) s₀
+      fun s => ∃ P, Proof.Gcm.X86_64.StitchToDec.ReadyToDec s₀ P s ∧
+        Proof.Gcm.X86_64.Stitch.FinOk Impl.Gcm.X86_64.Stitch.ordD (Proof.Gcm.X86_64.Stitch.hk s₀) P := by
+    rw [Impl.Gcm.X86_64.StitchToDec.setupWith, List.append_assoc, WP.block_append_iff]
+    refine WP.mono (Proof.Gcm.X86_64.StitchZTo.setupGTo_ok hp) fun s₁ ⟨l0, l1, pw, g₁, m₁, rd₁, wr₁⟩ => ?_
+    exact WP.mono (Proof.Gcm.X86_64.StitchToDec.setupTToDec_ok hp l0 l1 g₁ m₁ rd₁ wr₁) fun _ hR =>
+      ⟨_, hR, Proof.Gcm.X86_64.Stitch.finD pw⟩
+  exact WP.seq (WP.mono hs fun _ ⟨_, hR, hf⟩ => Proof.Gcm.X86_64.StitchToDec.decTailToDec_ok hp hm hf hR)
+
+/-- The out-of-place decryption loop of a variant, for a key context of
+`vg_aes_gcm_init`. -/
+def GcmVariant.stitchToDec (v : GcmVariant) :
+    Option (StitchToDecCode Proof.Gcm.X86_64.Stitch.CtxMode.base) :=
+  (v.stitch.bind (·.toPart)).bind fun p => p.pieceToDec.bind (code p.name)
+where
+  /-- The loop named `n` and its proof. -/
+  code : (n : StitchToName) → PieceToDec n → Option (StitchToDecCode Proof.Gcm.X86_64.Stitch.CtxMode.base)
+    | .vaes, q => some ⟨_, decTo_ok, q.dec⟩
+    | _, _ => none
+
 /-- The out-of-place counter mode `vg_aes_gcm_open_to` of a variant decrypts
 with, in one pass and with no copy: that of its `vg_aes_ctr32`, if it has
 one (`Ctr32Impl.ctrTo`), for a variant with no interleaved loops, whose
@@ -623,23 +649,33 @@ def blkToDecB (v : GcmVariant) (c : Proof.Aes.X86_64.Ctr32ToImpl) :
     BlkToDecFn Proof.Gcm.X86_64.Stitch.CtxMode.base :=
   .ofTo ("vg_aes_gcm_decrypt_blocks_to" ++ v.impl.suffix) v.impl.gh c
 
-/-- The instance of `vg_aes_gcm_open_split` of a variant, decrypting with `c`. -/
-def openSplitFnB (v : GcmVariant) (c : Proof.Aes.X86_64.Ctr32ToImpl) :
+/-- The instance of `vg_aes_gcm_decrypt_blocks_to` of a variant, for a key
+context of `vg_aes_gcm_init`, that decrypts the whole groups of 16 blocks
+from `src` to `dst` with no copy, if it has one: its out-of-place
+interleaved loop (`GcmVariant.stitchToDec`), or, with no interleaved loops,
+`vg_ghash` then its out-of-place counter mode (`GcmVariant.ctrTo`). -/
+def GcmVariant.blkToDecB? (v : GcmVariant) : Option (BlkToDecFn Proof.Gcm.X86_64.Stitch.CtxMode.base) :=
+  match v.stitchToDec with
+  | some c => some (.ofBlocks ("vg_aes_gcm_decrypt_blocks_to" ++ v.impl.suffix) v.impl.blkB (some c))
+  | none => v.ctrTo.map (blkToDecB v)
+
+/-- The instance of `vg_aes_gcm_open_split` of a variant, decrypting with `b`. -/
+def openSplitFnB (v : GcmVariant) (b : BlkToDecFn Proof.Gcm.X86_64.Stitch.CtxMode.base) :
     OpenToSplit.OpenSplitFn Proof.Gcm.X86_64.Stitch.CtxMode.base :=
-  .of ("vg_aes_gcm_open_split" ++ v.impl.suffix) v.impl v.impl.blkB (blkToDecB v c)
+  .of ("vg_aes_gcm_open_split" ++ v.impl.suffix) v.impl v.impl.blkB b
 
 /-- `vg_aes_gcm_open_to` of a variant: in one pass, whatever the length, if
-it has an out-of-place counter mode (`GcmVariant.ctrTo`), by `open`'s body
-out of place (`vg_aes_gcm_open_split`) in a frame holding its working space;
+it decrypts out of place (`GcmVariant.blkToDecB?`), by `open`'s body out of
+place (`vg_aes_gcm_open_split`) in a frame holding its working space;
 otherwise by a copy. -/
 def openToCode (v : GcmVariant) : Prog VG.X86_64.isa :=
-  match v.ctrTo with
-  | some c => Impl.StackScratch.X86_64.withStackArgScratch Impl.AesGcm.X86_64.OpenToSplit.scratchBytes 6
-      (Impl.AesGcm.X86_64.OpenToSplit.openToSplit (openSplitFnB v c).fn)
+  match v.blkToDecB? with
+  | some b => Impl.StackScratch.X86_64.withStackArgScratch Impl.AesGcm.X86_64.OpenToSplit.scratchBytes 6
+      (Impl.AesGcm.X86_64.OpenToSplit.openToSplit (openSplitFnB v b).fn)
   | none => Impl.AesGcm.X86_64.OpenTo.openTo v.impl.copyW (openFn v.impl).fn
 
 /-- The stack `openToCode` uses. -/
-def openToStack (v : GcmVariant) : Nat := if v.ctrTo.isSome then 2776 else 2728
+def openToStack (v : GcmVariant) : Nat := if v.blkToDecB?.isSome then 2776 else 2728
 
 theorem openToCode_verified (v : GcmVariant) :
     Verified X86_64.target (openToCode v) (Proof.AesGcm.openToRoundsContract X86_64.abi (openToStack v)) := by
@@ -663,7 +699,7 @@ theorem openToCode_keyed (v : GcmVariant) :
     Verified X86_64.target (openToCode v) (VG.Proof.AesGcm.Flag.openToRoundsContract X86_64.abi (openToStack v)) := by
   have h := openToCode_verified v
   unfold openToStack at h ⊢
-  cases hc : v.ctrTo.isSome <;> simp only [hc, Bool.false_eq_true, ↓reduceIte] at h ⊢
+  cases hc : v.blkToDecB?.isSome <;> simp only [hc, Bool.false_eq_true, ↓reduceIte] at h ⊢
   · exact Flag.openTo_of_base h
   · exact Flag.openTo_of_base2776 h
 
@@ -931,7 +967,7 @@ theorem openToCodeR_onFlag (v : GcmVariant) :
   have h := openToCodeF_verified v
   have hb := openToCode_verified v
   unfold openToStackF openToStackR openToStack at *
-  cases hc : v.stitchToDecR.isSome <;> cases hd : v.ctrTo.isSome <;>
+  cases hc : v.stitchToDecR.isSome <;> cases hd : v.blkToDecB?.isSome <;>
     simp only [hc, hd, Bool.false_eq_true, ↓reduceIte] at h hb ⊢
   · exact Flag.openTo_onFlagF (Or.inr rfl) h hb
   · exact Flag.openTo_onFlagF2776 (Or.inr rfl) (VG.X86_64.Verified.stack_mono (by decide) h
@@ -1262,7 +1298,7 @@ theorem openToCodeR16_onFlag (v : GcmVariant) (r : R16 v) :
   have h := openToCodeF16_verified v r
   have hb := openToCode_verified v
   unfold openToStackF16 openToStackR16 openToStack at *
-  cases hc : v.stitchToDecR16.isSome <;> cases hd : v.ctrTo.isSome <;>
+  cases hc : v.stitchToDecR16.isSome <;> cases hd : v.blkToDecB?.isSome <;>
     simp only [hc, hd, Bool.false_eq_true, ↓reduceIte] at h hb ⊢
   · exact Flag.openTo_onFlagF (Or.inl rfl) h hb
   · exact Flag.openTo_onFlagF2776 (Or.inl rfl) (VG.X86_64.Verified.stack_mono (by decide) h

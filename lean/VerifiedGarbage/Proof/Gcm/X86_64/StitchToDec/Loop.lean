@@ -184,7 +184,8 @@ theorem setupToDec_ok {s₀ : State} {np : Nat} {hn : 8 ≤ np ∧ np ≤ 24} (h
     (h8 : 8 ≤ np) :
     WP isa (.block Impl.Gcm.X86_64.StitchToDec.setup) s₀
       (ReadyToDec s₀ fun k l => StitchZP.hInvF (Spec.Gcm.hpow (hk s₀) (16 - 2 * k - l))) := by
-  rw [Impl.Gcm.X86_64.StitchToDec.setup, List.append_assoc, WP.block_append_iff]
+  rw [Impl.Gcm.X86_64.StitchToDec.setup, Impl.Gcm.X86_64.StitchToDec.setupWith, List.append_assoc,
+    WP.block_append_iff]
   refine WP.mono (StitchZRTo.setupGPTo_ok hp h8) fun s₁ ⟨l0, l1, pw, g₁, m₁, rd₁, wr₁⟩ => ?_
   refine WP.mono (setupTToDec_ok hp l0 l1 g₁ m₁ rd₁ wr₁) fun s hR => ?_
   exact { hR with pw := fun k hk l hl => by rw [hR.pw k hk l hl, pw k hk l hl] }

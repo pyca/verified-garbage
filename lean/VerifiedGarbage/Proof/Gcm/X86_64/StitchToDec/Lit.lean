@@ -22,5 +22,6 @@ For the checks of every instruction and the constant-time analyses of the
 namespace VG
 
 materialize_code Impl.Gcm.X86_64.StitchToDec.decToR
+materialize_code Impl.Gcm.X86_64.StitchToDec.decTo
 
 end VG
