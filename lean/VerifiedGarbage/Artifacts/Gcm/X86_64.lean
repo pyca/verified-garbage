@@ -38,6 +38,9 @@ def artifacts : List Artifact := [
     suffix := ""
     code := Impl.Gcm.X86_64.Flag.prepareAbsent
     verified := Proof.Gcm.X86_64.Prepare.absent_verified },
+  Spec.Gcm.wipePreparedApi.artifact X86_64.target {
+    code := Impl.Gcm.X86_64.Flag.wipe
+    verified := Proof.Gcm.X86_64.Prepare.wipe_verified },
   Spec.Gcm.prepare16Api.artifact X86_64.target {
     suffix := "_vpclmul"
     written := [("ctx", 512)]

@@ -651,7 +651,7 @@ def toSatSF : State where
   mem a := if 0x9000 ≤ a.toNat then
     (if a = 0x9009 then 0x40 else if a = 0x9019 then 0x50 else if a = 0x9029 then 0x60 else
       if a = 0x9039 then 0x70 else 0) else 0
-  rd := [⟨0x1000, 1088⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x4000, 0⟩, ⟨0x6000, 0⟩, ⟨0x9008, 56⟩]
+  rd := [⟨0x1000, 1032⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x4000, 0⟩, ⟨0x6000, 0⟩, ⟨0x9008, 56⟩]
   wr := [⟨0x5000, 0⟩, ⟨0x7000, 2560⟩]
 
 theorem toSatSF_pre : ∃ s, (Proof.AesGcm.Flag.openToFlaggedScratchContract X86_64.abi 152).pre s := by

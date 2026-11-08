@@ -25,6 +25,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Zeroize.Common
+import VerifiedGarbage.Proof.Framework.X86_64.FlagBranch
 meta import VerifiedGarbage.Impl.Gcm.X86_64.PrepareAvx
 meta import VerifiedGarbage.Impl.Gcm.X86_64.PrepareZ
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
@@ -36,6 +38,8 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Zeroize.Common
+meta import VerifiedGarbage.Proof.Framework.X86_64.FlagBranch
 
 /-!
 # Preparing a key context's powers in place: the contract on the registers
@@ -305,7 +309,7 @@ theorem written16 {c : Prog isa}
 
 end VG.Proof.Gcm.X86_64.Prepare16
 
-/-! `vg_aes_gcm_prepare` on the 1088-byte prepared key context, whose word at
+/-! `vg_aes_gcm_prepare` on the 1032-byte prepared key context, whose word at
 byte 1024 says whether the powers are absent (`Spec.Gcm.PreparedRepr`): the
 code that computes none (`prepareAbsent`), and each implementation that
 computes them, after setting that word to 0 (`prepareFlagged`). -/
@@ -318,8 +322,8 @@ open VG.Impl.Gcm.X86_64.Flag (storeFlag prepareAbsent prepareFlagged)
 /-- `vg_aes_gcm_prepare`'s contract on the prepared key context, on the
 registers. -/
 def flaggedX86_64 : Contract isa where
-  pre s := s.rd = [] ∧ s.wr = [⟨s.gpr .rdi, 1088⟩] ∧ (s.gpr .rdi).toNat + 1088 ≤ 2 ^ 64 ∧
-    (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨s.gpr .rdi, 1088⟩
+  pre s := s.rd = [] ∧ s.wr = [⟨s.gpr .rdi, 1032⟩] ∧ (s.gpr .rdi).toNat + 1032 ≤ 2 ^ 64 ∧
+    (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨s.gpr .rdi, 1032⟩
   post s s' := Spec.Aes.bytesAt s'.mem (s.gpr .rdi) 256 = Spec.Aes.bytesAt s.mem (s.gpr .rdi) 256 ∧
     Spec.Gcm.PreparedRepr s'.mem (s.gpr .rdi)
   pub s₁ s₂ := s₁.gpr .rdi = s₂.gpr .rdi
@@ -334,7 +338,7 @@ def flaggedSat : State where
   of := none
   mem _ := 0
   rd := []
-  wr := [⟨0x1000, 1088⟩]
+  wr := [⟨0x1000, 1032⟩]
 
 theorem flagged_implies : flaggedX86_64.Implies (Spec.Gcm.prepareContract X86_64.abi) := by
   sig_implies [Spec.Gcm.prepareContract, Spec.Gcm.prepareSig, Spec.Gcm.preparePost,
@@ -365,7 +369,7 @@ theorem flagged_pre {s₀ : State} (hp : flaggedX86_64.pre s₀) :
 theorem flagged_gpr {s₀ s₁ s : State} {v : BitVec 64} (hp : flaggedX86_64.pre s₀)
     (hm₁ : s₁.mem = s₀.mem.writeW (s₀.gpr .rdi + BitVec.ofNat 64 1024) (v : BitVec 64))
     (hg₁ : ∀ r, r ≠ .rax → s₁.gpr r = s₀.gpr r)
-    {d k : Nat} (hdk : d + k ≤ 1088) (fr : Frame [⟨s₀.gpr .rdi + BitVec.ofNat 64 d, k⟩] s₁.mem s.mem)
+    {d k : Nat} (hdk : d + k ≤ 1032) (fr : Frame [⟨s₀.gpr .rdi + BitVec.ofNat 64 d, k⟩] s₁.mem s.mem)
     (hg : ∀ r, r ≠ .rax → r ≠ .r11 → s.gpr r = s₁.gpr r) : gprPreserved s₀ s := by
   obtain ⟨_, _, _, hret⟩ := hp
   refine ⟨fun r hr => ?_, ?_⟩
@@ -487,5 +491,160 @@ theorem flaggedAvx_ct :
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   subst hr; exact h
+
+/-! `vg_aes_gcm_wipe_prepared` (`wipe`): `onFlag` chooses between two blocks
+that zero the context 16 bytes at a time from `xmm0`, the first 1024 bytes
+where the flag word is not 1 and the first 256 where it is. Each block is
+verified against `wipePreparedContract` with the flag word's value in its
+precondition and no leak (`wipeBranch`), and `Verified.of_onFlagCtx` joins
+them. -/
+
+open VG.Impl.Gcm.X86_64.Flag (zeroStores zeroBlocks wipe)
+open VG.Proof.Zeroize (Prefix prefix_writeW prefix_spec)
+
+/-- What `zeroStores k n` keeps and makes, from `s`. -/
+def ZOk (s : State) (i : Nat) (t : State) : Prop :=
+  t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.xmm .xmm0 = s.xmm .xmm0 ∧ t.mxcsr = s.mxcsr ∧
+  Prefix t.mem (s.gpr .rdi) i ∧ Frame s.wr s.mem t.mem
+
+theorem zeroStores_ok (n : Nat) : ∀ (k : Nat) (s₀ s : State),
+    s.xmm .xmm0 = 0 → 16 * (k + n) < 2 ^ 64 →
+    (∀ j < n, InRegions s₀.wr (s₀.gpr .rdi + BitVec.ofNat 64 (16 * (k + j))) 16) →
+    ZOk s₀ (16 * k) s →
+    WP isa (.block (zeroStores k n)) s (ZOk s₀ (16 * (k + n))) := by
+  induction n with
+  | zero => intro k s₀ s _ _ _ h; exact WP.block_nil (by simpa using h)
+  | succ n ih =>
+    intro k s₀ s hx hn hw h
+    obtain ⟨hg, hrd, hwr, hx0, hmx, hz, hf⟩ := h
+    have hs := hw 0 (by omega)
+    rw [Nat.add_zero] at hs
+    have hd : s.gpr .rdi = s₀.gpr .rdi := by rw [hg]
+    let s' : State := { s with mem := s.mem.writeW (s₀.gpr .rdi + BitVec.ofNat 64 (16 * k)) (0 : BitVec 128) }
+    have e : 16 * (k + (n + 1)) = 16 * (k + 1 + n) := by omega
+    rw [e]
+    refine WP.block_cons_iff.mpr ⟨s', ?_,
+      ih (k + 1) s₀ s' hx (by omega) (fun j hj => by have := hw (j + 1) (by omega); rwa [show k + (j + 1) = k + 1 + j by omega] at this) ?_⟩
+    · have ho : BitVec.ofInt 64 (16 * (k : Int)) = BitVec.ofNat 64 (16 * k) := by
+        rw [show (16 * (k : Int)) = ((16 * k : Nat) : Int) by push_cast; rfl, BitVec.ofInt_natCast]
+      simp only [exec, State.store128, State.ea, hd, hx, ho]
+      simp only [(hwr ▸ hs : InRegions s.wr _ 16), ↓reduceIte]
+      rfl
+    · obtain ⟨r, hr, hc⟩ := hs
+      have e1 : 16 * (k + 1) = 16 * k + 128 / 8 := by omega
+      rw [e1]
+      exact ⟨hg, hrd, hwr, hx0, hmx, prefix_writeW hz (by omega), hf.writeW hr _ hc⟩
+
+
+theorem pxor_run (s : State) : ∃ s₁, isa.exec (.xop (.bin .pxor .xmm0 .xmm0)) s = some s₁ ∧
+    s₁.xmm .xmm0 = 0 ∧ s₁.gpr = s.gpr ∧ s₁.mem = s.mem ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr ∧ s₁.mxcsr = s.mxcsr := by
+  refine ⟨_, rfl, ?_⟩
+  simp only [XOp.exec, State.setXmm, XBinOp.eval, ↓reduceIte, BitVec.xor_self, and_self]
+  exact ⟨rfl, trivial⟩
+
+
+/-- `zeroBlocks n` from `s₀`: the first `16 * n` bytes at `rdi` are zero, and
+nothing else the calling convention or the contract reads changed. -/
+theorem zeroBlocks_ok (n : Nat) (s₀ : State) (hn : 16 * n < 2 ^ 64)
+    (hw : ∀ j < n, InRegions s₀.wr (s₀.gpr .rdi + BitVec.ofNat 64 (16 * j)) 16) :
+    WP isa (.block (zeroBlocks n)) s₀ fun t =>
+      t.gpr = s₀.gpr ∧ t.mxcsr = s₀.mxcsr ∧ Prefix t.mem (s₀.gpr .rdi) (16 * n) ∧
+        Frame s₀.wr s₀.mem t.mem := by
+  obtain ⟨s₁, he, hx, hg, hm, hrd, hwr, hmx⟩ := pxor_run s₀
+  have h0 : ZOk s₁ (16 * 0) s₁ := ⟨rfl, rfl, rfl, rfl, rfl, fun j hj => absurd hj (by omega), Frame.refl _ _⟩
+  refine WP.block_cons_iff.mpr ⟨s₁, he, WP.mono (zeroStores_ok n 0 s₁ s₁ hx (by omega)
+    (fun j hj => by rw [hg, hwr, Nat.zero_add]; exact hw j hj) h0) fun t ⟨tg, _, _, _, tmx, tz, tf⟩ => ?_⟩
+  rw [hg, Nat.zero_add] at tz
+  rw [hwr, hm] at tf
+  exact ⟨tg.trans hg, tmx.trans hmx, tz, tf⟩
+
+/-- `wipe`'s contract on the registers, for the branch that runs where the
+flag word satisfies `F`. -/
+def wipeX86_64 (F : BitVec 64 → Prop) : Contract isa where
+  pre s := s.rd = [] ∧ s.wr = [⟨s.gpr .rdi, 1032⟩] ∧ (s.gpr .rdi).toNat + 1032 ≤ 2 ^ 64 ∧
+    (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨s.gpr .rdi, 1032⟩ ∧ F (s.mem.readW (s.gpr .rdi + 1024) 64)
+  post s s' := Spec.Aes.bytesAt s'.mem (s.gpr .rdi) (Spec.Gcm.wipePreparedLen s.mem (s.gpr .rdi)) =
+    List.replicate (Spec.Gcm.wipePreparedLen s.mem (s.gpr .rdi)) 0
+  pub s₁ s₂ := s₁.gpr .rdi = s₂.gpr .rdi
+
+/-- The branch of `wipe` zeroing `16 * n` bytes, where the flag word says
+that is all there is to zero. -/
+theorem zeroBlocks_correct {F : BitVec 64 → Prop} (n : Nat) (hn : n ≤ 64)
+    (hF : ∀ (m : Mem) (p : Addr), F (m.readW (p + 1024) 64) → Spec.Gcm.wipePreparedLen m p = 16 * n)
+    (s₀ : State) (hp : (wipeX86_64 F).pre s₀) :
+    ∃ t s', Exec isa (.block (zeroBlocks n)) s₀ t s' ∧ abiPreserved s₀ s' ∧ (wipeX86_64 F).post s₀ s' := by
+  obtain ⟨_, hwr, hb, hret, hf⟩ := hp
+  have hw : ∀ j < n, InRegions s₀.wr (s₀.gpr .rdi + BitVec.ofNat 64 (16 * j)) 16 := fun j hj =>
+    ⟨_, by rw [hwr]; exact List.mem_singleton_self _, Offset.contains_base _ (by omega) (by omega)⟩
+  obtain ⟨t, s', he, hg, hmx, hz, fr⟩ := zeroBlocks_ok n s₀ (by omega) hw
+  refine ⟨t, s', he, ⟨fun r _ => by rw [hg], ?_, by rw [hmx]⟩, ?_⟩
+  · rw [hwr] at fr
+    exact fr.readW (Region.contains_self _ _) (fun r hr => by
+      obtain rfl := List.mem_singleton.mp hr; exact hret) (by decide)
+  · show Spec.Aes.bytesAt _ _ _ = _
+    rw [hF _ _ hf]
+    exact prefix_spec hz
+
+
+theorem zeroBlocks64_ct (F : BitVec 64 → Prop) :
+    ConstantTime isa (wipeX86_64 F).pre (wipeX86_64 F).pub (.block (zeroBlocks 64)) := by
+  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi]) ?_ (by taint_decide)
+  intro s₁ s₂ _ _ h
+  refine Taint.agree_ofRegs fun r hr => ?_
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  subst hr; exact h
+
+theorem zeroBlocks16_ct (F : BitVec 64 → Prop) :
+    ConstantTime isa (wipeX86_64 F).pre (wipeX86_64 F).pub (.block (zeroBlocks 16)) := by
+  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi]) ?_ (by taint_decide)
+  intro s₁ s₂ _ _ h
+  refine Taint.agree_ofRegs fun r hr => ?_
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  subst hr; exact h
+
+
+/-- `wipePreparedContract` for the branch that runs where the flag word
+satisfies `C`, with no leak. -/
+def wipeBranch (C : BitVec 64 → Prop) : Contract isa :=
+  Spec.Gcm.wipePreparedSig.contract X86_64.abi (pre := fun ctx m => C (m.readW (ctx + 1024) 64))
+    (post := Spec.Gcm.wipePreparedPost 64) (writeArgs := true)
+
+/-- A state meeting `wipeBranch`'s precondition, with the flag word `v`. -/
+def wipeSat (v : Byte) : State where
+  gpr r := match r with
+    | .rdi => 0x1000 | .rsp => 0x5000 | _ => 0
+  cf := none
+  zf := none
+  sf := none
+  of := none
+  mem a := if a = 0x1400 then v else 0
+  rd := []
+  wr := [⟨0x1000, 1032⟩]
+
+theorem wipe_implies_ne : (wipeX86_64 (· ≠ 1)).Implies (wipeBranch (· ≠ 1)) := by
+  sig_implies [wipeBranch, Spec.Gcm.wipePreparedSig, Spec.Gcm.wipePreparedPost, wipeX86_64,
+    X86_64.abi, X86_64.argRegs] [wipeSat] using wipeSat 0
+
+
+theorem wipe_implies_eq : (wipeX86_64 (· = 1)).Implies (wipeBranch (· = 1)) := by
+  sig_implies [wipeBranch, Spec.Gcm.wipePreparedSig, Spec.Gcm.wipePreparedPost, wipeX86_64,
+    X86_64.abi, X86_64.argRegs] [wipeSat] using wipeSat 1
+
+theorem wipe64_verified : Verified X86_64.target (.block (zeroBlocks 64)) (wipeBranch (· ≠ 1)) :=
+  Verified.of_correct (zeroBlocks_correct 64 (by decide)
+    (fun m p h => by simp only [Spec.Gcm.wipePreparedLen, h, ↓reduceIte])) (zeroBlocks64_ct _) wipe_implies_ne
+
+theorem wipe16_verified : Verified X86_64.target (.block (zeroBlocks 16)) (wipeBranch (· = 1)) :=
+  Verified.of_correct (zeroBlocks_correct 16 (by decide)
+    (fun m p h => by simp only [Spec.Gcm.wipePreparedLen, h, ↓reduceIte])) (zeroBlocks16_ct _) wipe_implies_eq
+
+/-- `vg_aes_gcm_wipe_prepared`. -/
+theorem wipe_verified : Verified X86_64.target wipe (Spec.Gcm.wipePreparedContract X86_64.abi) :=
+  Verified.of_onFlagCtx (by decide) wipe64_verified wipe16_verified
+    (fun _ _ _ h => h) (fun _ _ _ h => h) (fun _ _ => rfl)
+    (by obtain ⟨s, hs⟩ := wipe_implies_ne.sat
+        exact ⟨s, pre_of_rel (name := "ctx") (w := true) (N := 129) (rest := []) (ret := none)
+          (C := fun _ _ => True) (pre := fun ctx m => m.readW (ctx + 1024) 64 ≠ 1)
+          (pre' := Curry.const (fun _ => True) _) (fun _ _ _ _ => trivial) hs trivial⟩)
 
 end VG.Proof.Gcm.X86_64.Prepare

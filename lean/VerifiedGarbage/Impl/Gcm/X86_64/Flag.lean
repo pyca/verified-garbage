@@ -6,7 +6,7 @@ public import VerifiedGarbage.TCB.Code
 /-!
 # The prepared key context's flag, on x86-64
 
-A prepared key context of 1088 bytes holds, at byte 1024, a word that is 1
+A prepared key context of 1032 bytes holds, at byte 1024, a word that is 1
 when its powers are absent. `onFlag c₁ c₂` reads it and runs `c₁` if it is
 not 1 (the powers are there) and `c₂` if it is (the code that reads only the
 key context).
@@ -43,5 +43,21 @@ def prepareAbsent : Prog isa :=
 word to 0, so that the functions on the context read them. -/
 def prepareFlagged (c : Prog isa) : Prog isa :=
   .seq (.block (storeFlag 0)) c
+
+/-- `movdqu [rdi + 16 * i], xmm0` for `i` from `k` to `k + n - 1`. -/
+def zeroStores (k : Nat) : Nat → List Instr
+  | 0 => []
+  | n + 1 => .movdquStore { base := .rdi, disp := 16 * k } .xmm0 :: zeroStores (k + 1) n
+
+/-- `pxor xmm0, xmm0`, then zeroes the `16 * n` bytes at `rdi`. -/
+def zeroBlocks (n : Nat) : List Instr :=
+  .xop (.bin .pxor .xmm0 .xmm0) :: zeroStores 0 n
+
+/-- `vg_aes_gcm_wipe_prepared`: zeroes the 1024 bytes of the key context and
+the powers if they are there, and the 256 bytes of the key context if they
+are absent, all that `vg_aes_gcm_init` and `vg_aes_gcm_prepare` wrote but the
+flag word. -/
+def wipe : Prog isa :=
+  onFlag (.block (zeroBlocks 64)) (.block (zeroBlocks 16))
 
 end VG.Impl.Gcm.X86_64.Flag
