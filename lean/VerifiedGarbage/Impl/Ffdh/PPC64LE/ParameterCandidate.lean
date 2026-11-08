@@ -32,9 +32,12 @@ Miller–Rabin proofs, has it). The algorithm is AArch64's
    a multiplication by the divisor's reciprocal (`mulhdu`; the model has no
    division). Then RSA's trial division by the first 512 entries of its
    table (1024 above 1024 bits), whose first 53 are the odd primes below 256
-   that `Spec.Ffdh.primeShape` sieves by, stopping at the first divisor; if
-   none divides p, `q = (p − 1) / 2` in place, its oddness and its trial
-   division. The result is 2 if any of them fails.
+   that `Spec.Ffdh.primeShape` sieves by, stopping at the first divisor:
+   first by the table's first 16 entries (`firstEntries`), then, with `q =
+   (p − 1) / 2` in place, q's oddness and its trial division, and last, with
+   p loaded again, p's whole trial division (so that a q with a small factor
+   is rejected before p's whole division). The result is 2 if any of them
+   fails.
 3. In the order of `Spec.Ffdh.screenedParameterWitnesses`: one witness of
    p, all of q's, then p's other `primeChecks − 1`, each modulus with its own
    word count `w = ⌈mb / 64⌉` (`mb` its bit length: `bits − 1` or `bits`):
@@ -245,19 +248,38 @@ def tests (name : String) (roundCode : Prog isa) : Prog isa :=
   .seq (test false firstCheck name roundCode) (.seq (.block [ldh .r3 hStat, .subi .r3 .r3 1])
     (.ite (.zero .d .r3) (testQ name roundCode) qResult))
 
-/-- After p's congruence and trial division passed: q from p, its oddness
-and trial division, and the tests. -/
-def mainQ (name : String) (roundCode : Prog isa) : Prog isa :=
-  .seq halveQ (.seq trialSieve (.seq (.block [ldh .r5 hBad])
+/-- Trial division by the first `n` entries of the table only (`n` below
+`2^15`): `hBad |=` the flag of one of them dividing array 0. -/
+def trialSieveN (n : Nat) : Prog isa :=
+  .seq (.block [.li .r3 n, sth .r3 hTrialN])
+    (.seq (VG.Impl.RsaKeyGen.PPC64LE.Trial.trial hTrialN)
+      (.block [ldh .r5 hBad, .logic .or .r5 .r5 .r22, sth .r5 hBad]))
+
+/-- The entries p is divided by before q's trial division: most of p's
+small factors, at a fraction of the whole division's cost. -/
+def firstEntries : Nat := 16
+
+/-- After q passed: p again in array 0, its whole trial division, and the
+tests. -/
+def mainP (name : String) (roundCode : Prog isa) : Prog isa :=
+  .seq shapeP (.seq trialSieve (.seq (.block [ldh .r5 hBad])
     (.ite (.zero .d .r5) (tests name roundCode) (.block (finish 2)))))
 
+/-- After p's congruence and its first entries passed: q from p, its
+oddness and whole trial division, then `mainP`. A q with a small factor
+is rejected before p's whole division. -/
+def mainQ (name : String) (roundCode : Prog isa) : Prog isa :=
+  .seq halveQ (.seq trialSieve (.seq (.block [ldh .r5 hBad])
+    (.ite (.zero .d .r5) (mainP name roundCode) (.block (finish 2)))))
+
 /-- Once `rand` holds the candidate's octets: p, its congruence, rejected
-before any other check (most candidates fail it); then p's trial division,
-q's only if it passes (`mainQ`), and the tests. -/
+before any other check (most candidates fail it); then trial division by
+the table's first entries, q's (`mainQ`), p's whole (`mainP`), and the
+tests. -/
 def main (name : String) (roundCode : Prog isa) : Prog isa :=
   .seq (phase false) (.seq shapeP (.seq residue (.seq (.block [ldh .r5 hBad])
     (.ite (.zero .d .r5)
-      (.seq trialSieve (.seq (.block [ldh .r5 hBad])
+      (.seq (trialSieveN firstEntries) (.seq (.block [ldh .r5 hBad])
         (.ite (.zero .d .r5) (mainQ name roundCode) (.block (finish 2)))))
       (.block (finish 2))))))
 
