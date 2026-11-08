@@ -93,11 +93,11 @@ theorem sealGatherPrepared16Pre_local : ∀ vs m₁ m₂, vs.length = (sealGathe
   have hc := agree_of hb.1
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
     ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
-    (sealGatherPrepared16Pre pb) _ m₁ at h
+    (Spec.Gcm.sealGatherPrepared16Pre pb) _ m₁ at h
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
     ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
-    (sealGatherPrepared16Pre pb) _ m₂
-  dsimp only [Curry.apply, sealGatherPrepared16Pre, ArgWord.ofRaw] at h ⊢
+    (Spec.Gcm.sealGatherPrepared16Pre pb) _ m₂
+  dsimp only [Curry.apply, Spec.Gcm.sealGatherPrepared16Pre, ArgWord.ofRaw] at h ⊢
   have := Nat.mod_le cnt.toNat (2 ^ pb)
   rw [gatheredLen_congr_le (by rw [BitVec.toNat_setWidth]; exact this) hl]
   exact ⟨h.1, h.2.1, preparedPowers16Repr_congr hc h.2.2⟩

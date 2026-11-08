@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Spec.Gcm.Prepared16
-
 public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Callee
 public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
 import Mathlib.Data.List.Basic

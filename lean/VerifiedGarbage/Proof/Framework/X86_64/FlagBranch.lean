@@ -11,14 +11,15 @@ public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
-# Choosing on the prepared key context's flag, on x86-64
+# Choosing on the prepared key context's count of powers, on x86-64
 
-`onFlag c₁ c₂` (`Impl/Gcm/X86_64/Flag.lean`) reads the word at `rdi + 1024`
-into `rax` and compares it with 1, writing only `rax` and the flags, which no
-contract reads (`Same`): so a contract built by `Sig.contract` holds of the
-state after it as of the state before (`pre_same`, `post_same`, `pub_same`).
-It then runs `c₁` if the word is not 1 (the powers are there) and `c₂` if it
-is (the code that reads only the key context).
+`onFlag t c₁ c₂` (`Impl/Gcm/X86_64/Flag.lean`) reads the word at
+`rdi + 1024` into `rax` and compares it with `t`, writing only `rax` and the
+flags, which no contract reads (`Same`): so a contract built by
+`Sig.contract` holds of the state after it as of the state before
+(`pre_same`, `post_same`, `pub_same`). It then runs `c₁` if the word is at
+least `t` (the `t` powers it reads are there) and `c₂` if not (the code that
+reads only the key context).
 -/
 
 @[expose] public section
@@ -39,11 +40,12 @@ theorem Same.abi {s u s' : State} (h : Same s u) (a : abiPreserved u s') : abiPr
   ⟨fun r hr => by rw [a.1 r hr, h.gpr r (by rintro rfl; simp [calleeSaved] at hr)],
     by rw [← h.gpr .rsp (by decide), a.2.1, h.mem], by rw [a.2.2, h.mx]⟩
 
-/-- `testFlag` from `s`: it reads the word at `rdi + 1024`, and sets ZF if it
-is 1. -/
-theorem testFlag_run (s : State) (hin : InRegions (s.rd ++ s.wr) (s.gpr .rdi + 1024) 8) :
-    ∃ u, execBlock isa testFlag s = some (u, [.addr (s.gpr .rdi + 1024)]) ∧ Same s u ∧
-      eval .ne u = some (decide (s.mem.readW (s.gpr .rdi + 1024) 64 ≠ 1)) := by
+/-- `testFlag t` from `s`: it reads the word at `rdi + 1024`, and clears CF if
+it is at least `t`. -/
+theorem testFlag_run {t : Nat} (htv : t = 16 ∨ t = 48) (s : State)
+    (hin : InRegions (s.rd ++ s.wr) (s.gpr .rdi + 1024) 8) :
+    ∃ u, execBlock isa (testFlag t) s = some (u, [.addr (s.gpr .rdi + 1024)]) ∧ Same s u ∧
+      eval .ae u = some (decide (t ≤ (s.mem.readW (s.gpr .rdi + 1024) 64).toNat)) := by
   have ea : s.ea { base := .rdi, disp := flagOff } = s.gpr .rdi + 1024 := rfl
   refine ⟨?u, ?h1, ⟨?h2, ?h3, ?h4, ?h5, ?h6⟩, ?h7⟩
   case h1 =>
@@ -57,16 +59,12 @@ theorem testFlag_run (s : State) (hin : InRegions (s.rd ++ s.wr) (s.gpr .rdi + 1
     intro r hr
     simp only [gpr_arithFlags, gpr_setReg, hr, ↓reduceIte]
   case h7 =>
-    simp only [eval, zf_arithFlags, gpr_setReg, ↓reduceIte]
-    simp
-    generalize s.mem.readW _ 64 = x
-    by_cases h : x = 1#64
-    · subst h; decide
-    · have hx : x - 1#64 ≠ 0#64 := fun e => h (by
-        have := congrArg (· + 1#64) e
-        simp only [BitVec.sub_add_cancel] at this
-        exact this)
-      rw [beq_eq_false_iff_ne.mpr hx, decide_eq_false h]
+    simp only [eval, cf_arithFlags, gpr_setReg, ↓reduceIte, Option.map_some]
+    have e : ((BitVec.ofNat 32 t).signExtend 64).toNat = t := by
+      rcases htv with rfl | rfl <;> rfl
+    simp only [e, Option.some.injEq]
+    generalize (s.mem.readW _ 64).toNat = x
+    by_cases h : t ≤ x <;> simp [h] <;> omega
 
 /-! ## What a contract reads is the same after the test -/
 
@@ -129,36 +127,36 @@ theorem pub_same {s u s' u' : State} (h : Same s u) (h' : Same s' u') :
 
 /-! ## The choice -/
 
-/-- The word at `rdi + 1024`. -/
-abbrev flagWord (s : State) : BitVec 64 := s.mem.readW (s.gpr .rdi + 1024) 64
+/-- The count at `rdi + 1024`. -/
+abbrev flagCount (s : State) : Nat := (s.mem.readW (s.gpr .rdi + 1024) 64).toNat
 
-/-- `onFlag c₁ c₂` against `k`, from `c₁` against `k₁` and `c₂` against `k₂`
-(contracts of the same signature and postcondition): from `k`'s
-precondition, the word at `rdi + 1024` is readable, and `k₁`'s precondition
-holds if it is not 1 and `k₂`'s if it is; and two runs with the same public
-data have the same `rdi` and agree on whether the word is 1, and have the
-same public data for `k₁` and `k₂`. -/
-theorem Verified.of_onFlag {c₁ c₂ : Prog isa} {pre₁ pre₂ : Curry (sig.words 64) (Mem → Prop)}
+/-- `onFlag t c₁ c₂` against `k`, from `c₁` against `k₁` and `c₂` against
+`k₂` (contracts of the same signature and postcondition): from `k`'s
+precondition, the count at `rdi + 1024` is readable, and `k₁`'s precondition
+holds if it is at least `t` and `k₂`'s if not; and two runs with the same
+public data have the same `rdi` and agree on whether the count is at least
+`t`, and have the same public data for `k₁` and `k₂`. -/
+theorem Verified.of_onFlag {t : Nat} (htv : t = 16 ∨ t = 48) {c₁ c₂ : Prog isa} {pre₁ pre₂ : Curry (sig.words 64) (Mem → Prop)}
     {leak₁ leak₂ : Option (Curry (sig.words 64) (Mem → List Nat))}
     (h₁ : Verified target c₁ (sig.contract abi pre₁ post wa stack leak₁))
     (h₂ : Verified target c₂ (sig.contract abi pre₂ post wa stack leak₂))
     (hin : ∀ s, (sig.contract abi pre post wa stack leak).pre s →
       InRegions (s.rd ++ s.wr) (s.gpr .rdi + 1024) 8)
-    (hp₁ : ∀ s, (sig.contract abi pre post wa stack leak).pre s → flagWord s ≠ 1 →
+    (hp₁ : ∀ s, (sig.contract abi pre post wa stack leak).pre s → t ≤ flagCount s →
       (sig.contract abi pre₁ post wa stack leak₁).pre s)
-    (hp₂ : ∀ s, (sig.contract abi pre post wa stack leak).pre s → flagWord s = 1 →
+    (hp₂ : ∀ s, (sig.contract abi pre post wa stack leak).pre s → ¬ t ≤ flagCount s →
       (sig.contract abi pre₂ post wa stack leak₂).pre s)
     (hpub : ∀ s s', (sig.contract abi pre post wa stack leak).pre s →
       (sig.contract abi pre post wa stack leak).pre s' →
       (sig.contract abi pre post wa stack leak).pub s s' →
-      s.gpr .rdi = s'.gpr .rdi ∧ (flagWord s = 1 ↔ flagWord s' = 1) ∧
+      s.gpr .rdi = s'.gpr .rdi ∧ (t ≤ flagCount s ↔ t ≤ flagCount s') ∧
       (sig.contract abi pre₁ post wa stack leak₁).pub s s' ∧
       (sig.contract abi pre₂ post wa stack leak₂).pub s s')
     (hsat : ∃ s, (sig.contract abi pre post wa stack leak).pre s) :
-    Verified target (Impl.Gcm.X86_64.Flag.onFlag c₁ c₂) (sig.contract abi pre post wa stack leak) := by
+    Verified target (Impl.Gcm.X86_64.Flag.onFlag t c₁ c₂) (sig.contract abi pre post wa stack leak) := by
   have run (s : State) (hs : (sig.contract abi pre post wa stack leak).pre s) :=
-    testFlag_run s (hin s hs)
-  refine Verified.entryBranch (p := fun s => decide (flagWord s ≠ 1))
+    testFlag_run htv s (hin s hs)
+  refine Verified.entryBranch (p := fun s => decide (t ≤ flagCount s))
     (fun s => [.addr (s.gpr .rdi + 1024)]) h₁ h₂ (fun s hs => ?_) ?_ hsat
   · obtain ⟨u, e, hS, ev⟩ := run s hs
     refine ⟨u, e, ev, fun hp => ⟨(pre_same hS).mpr (hp₁ s hs (of_decide_eq_true hp)),
@@ -173,7 +171,7 @@ theorem Verified.of_onFlag {c₁ c₂ : Prog isa} {pre₁ pre₂ : Curry (sig.wo
     obtain ⟨rfl, -⟩ := Prod.mk.inj (Option.some.inj e')
     obtain ⟨hr, hz, q₁, q₂⟩ := hpub s s' hs hs' hq
     refine ⟨by rw [hr], ?_, fun _ => (pub_same hS hS').mpr q₁, fun _ => (pub_same hS hS').mpr q₂⟩
-    simp only [ne_eq, decide_not, hz]
+    simp only [hz]
 
 /-! ## For a first argument that is the prepared key context -/
 
@@ -188,8 +186,23 @@ theorem abi_args_rdi {ws : List Nat} {vals : State → List (BitVec 64)}
     | cons w ws => exact ⟨_, rfl⟩
   · exact ⟨_, rfl⟩
 
-/-- What the flag word at `ctx + 1024` leaks: whether it is 0. -/
-abbrev flagLeak (m : Mem) (ctx : Addr) : Nat := if m.readW (ctx + 1024) 64 = 1 then 1 else 0
+/-- What the count at `ctx + 1024` leaks: whether it is at least 48, at least
+16, or less. -/
+abbrev flagLeak (m : Mem) (ctx : Addr) : Nat :=
+  if 48 ≤ (m.readW (ctx + 1024) 64).toNat then 2
+  else if 16 ≤ (m.readW (ctx + 1024) 64).toNat then 1 else 0
+
+/-- Two counts of the same `flagLeak` are both at least 16, or both not, and
+both at least 48, or both not. -/
+theorem flagLeak_iff {t : Nat} (htv : t = 16 ∨ t = 48) {m m' : Mem} {p p' : Addr}
+    (h : flagLeak m p = flagLeak m' p') :
+    t ≤ (m.readW (p + 1024) 64).toNat ↔ t ≤ (m'.readW (p' + 1024) 64).toNat := by
+  simp only [flagLeak] at h
+  generalize (m.readW (p + 1024) 64).toNat = a at h ⊢
+  generalize (m'.readW (p' + 1024) 64).toNat = b at h ⊢
+  by_cases h48a : 48 ≤ a <;> by_cases h48b : 48 ≤ b <;> by_cases h16a : 16 ≤ a <;>
+    by_cases h16b : 16 ≤ b <;> simp only [h48a, h48b, h16a, h16b, ↓reduceIte] at h <;>
+    rcases htv with rfl | rfl <;> omega
 
 theorem Curry.apply_const' {α : Type} (a : α) :
     ∀ (ws : List ArgWord) (vs : List (BitVec 64)), Curry.apply ws (Curry.const a ws) vs = a
@@ -234,26 +247,26 @@ theorem pre_of_rel {C : Mem → Addr → Prop} {leakA leakB : Option (Curry
 
 /-- `Verified.of_onFlag` for a first argument that is an array of `N ≥ 129` words: the preconditions as relations between curried functions of the
 other arguments, given the first; and `leak`, `leak₁`'s (none: nothing)
-after whether the flag word is 1. -/
-theorem Verified.of_onFlagCtx (hN : 129 ≤ N) {c₁ c₂ : Prog isa}
+after `flagLeak`, the class of the count, for a threshold `t` of 16 or 48. -/
+theorem Verified.of_onFlagCtx {t : Nat} (htv : t = 16 ∨ t = 48) (hN : 129 ≤ N) {c₁ c₂ : Prog isa}
     {pre pre₁ pre₂ : Curry ((firstArraySigB name w .u64 N rest ret).words 64) (Mem → Prop)}
     {leak₁ : Option (Curry ((firstArraySigB name w .u64 N rest ret).words 64) (Mem → List Nat))}
     {leak : Curry ((firstArraySigB name w .u64 N rest ret).words 64) (Mem → List Nat)}
     (h₁ : Verified target c₁ ((firstArraySigB name w .u64 N rest ret).contract abi pre₁ post wa stack leak₁))
     (h₂ : Verified target c₂ ((firstArraySigB name w .u64 N rest ret).contract abi pre₂ post wa stack leak₁))
-    (hp₁ : ∀ ctx, Curry.Forall₂ (fun p q => ∀ m, p m → m.readW (ctx + 1024) 64 ≠ 1 → q m) _
+    (hp₁ : ∀ ctx, Curry.Forall₂ (fun p q => ∀ m, p m → t ≤ (m.readW (ctx + 1024) 64).toNat → q m) _
       (pre ctx) (pre₁ ctx))
-    (hp₂ : ∀ ctx, Curry.Forall₂ (fun p q => ∀ m, p m → m.readW (ctx + 1024) 64 = 1 → q m) _
+    (hp₂ : ∀ ctx, Curry.Forall₂ (fun p q => ∀ m, p m → ¬ t ≤ (m.readW (ctx + 1024) 64).toNat → q m) _
       (pre ctx) (pre₂ ctx))
     (hleak : ∀ ctx, Curry.Forall₂ (fun f g => ∀ m, f m = flagLeak m ctx :: g m) _
       (leak ctx) ((leak₁.getD (Curry.const (fun _ => []) _)) ctx))
     (hsat : ∃ s, ((firstArraySigB name w .u64 N rest ret).contract abi pre post wa stack (some leak)).pre s) :
-    Verified target (Impl.Gcm.X86_64.Flag.onFlag c₁ c₂)
+    Verified target (Impl.Gcm.X86_64.Flag.onFlag t c₁ c₂)
       ((firstArraySigB name w .u64 N rest ret).contract abi pre post wa stack (some leak)) := by
   have hne : List.map (fun x => ArgWord.bits abi.ptrBits x)
       ((firstArraySigB name w .u64 N rest ret).words abi.ptrBits) ≠ [] := by
     simp [Sig.words, Param.words]
-  refine Verified.of_onFlag h₁ h₂ ?_ ?_ ?_ ?_ hsat
+  refine Verified.of_onFlag htv h₁ h₂ ?_ ?_ ?_ ?_ hsat
   · intro s hs
     dsimp only [Sig.contract] at hs
     split at hs
@@ -277,8 +290,8 @@ theorem Verified.of_onFlagCtx (hN : 129 ≤ N) {c₁ c₂ : Prog isa}
     have h1 : (1024 : BitVec 64).toNat = 1024 := rfl
     simp only [Elem.size]
     omega
-  · exact fun s hs hf => pre_of_rel (C := fun m ctx => m.readW (ctx + 1024) 64 ≠ 1) hp₁ hs hf
-  · exact fun s hs hf => pre_of_rel (C := fun m ctx => m.readW (ctx + 1024) 64 = 1) hp₂ hs hf
+  · exact fun s hs hf => pre_of_rel (C := fun m ctx => t ≤ (m.readW (ctx + 1024) 64).toNat) hp₁ hs hf
+  · exact fun s hs hf => pre_of_rel (C := fun m ctx => ¬ t ≤ (m.readW (ctx + 1024) 64).toNat) hp₂ hs hf
   · intro s s' _ _ hq
     dsimp only [Sig.contract] at hq ⊢
     split at hq
@@ -315,8 +328,7 @@ theorem Verified.of_onFlagCtx (hN : 129 ≤ N) {c₁ c₂ : Prog isa}
         change Curry.apply _ l (vals s) s.mem = Curry.apply _ l (vals s') s'.mem
         rw [hvs, hvs']
         exact hrest
-    simp only [flagLeak, flagWord, ← hr] at hf ⊢
-    constructor <;> intro h <;> simp only [h, ↓reduceIte] at hf <;> split at hf <;> simp_all
+    exact flagLeak_iff htv hf
 end
 
 /-! ## A longer writable first array -/
@@ -517,19 +529,19 @@ theorem Verified.leak_mono {f f' : Curry (sig.words A.ptrBits) (Mem → List Nat
 end
 
 section
-variable {name : String} {N : Nat} {rest : List (String × Param)} {ret : Option IntTy}
-  {post : (firstArraySig name .u64 N rest ret).Post 64} {wa : Bool} {stack : Nat}
+variable {name : String} {w : Bool} {N : Nat} {rest : List (String × Param)} {ret : Option IntTy}
+  {post : (firstArraySigB name w .u64 N rest ret).Post 64} {wa : Bool} {stack : Nat}
 
 /-- A proof that leaks `leak₁` (none: nothing) moved to a contract that leaks
-whether the flag word is 1 first (`Verified.with_leak`, `Verified.leak_mono`). -/
+`flagLeak` first (`Verified.with_leak`, `Verified.leak_mono`). -/
 theorem Verified.leak_flag {c : Prog isa}
-    {pre : Curry ((firstArraySig name .u64 N rest ret).words 64) (Mem → Prop)}
-    {leak₁ : Option (Curry ((firstArraySig name .u64 N rest ret).words 64) (Mem → List Nat))}
-    {leak : Curry ((firstArraySig name .u64 N rest ret).words 64) (Mem → List Nat)}
-    (h : Verified target c ((firstArraySig name .u64 N rest ret).contract abi pre post wa stack leak₁))
+    {pre : Curry ((firstArraySigB name w .u64 N rest ret).words 64) (Mem → Prop)}
+    {leak₁ : Option (Curry ((firstArraySigB name w .u64 N rest ret).words 64) (Mem → List Nat))}
+    {leak : Curry ((firstArraySigB name w .u64 N rest ret).words 64) (Mem → List Nat)}
+    (h : Verified target c ((firstArraySigB name w .u64 N rest ret).contract abi pre post wa stack leak₁))
     (hleak : ∀ ctx, Curry.Forall₂ (fun f g => ∀ m, f m = flagLeak m ctx :: g m) _
       (leak ctx) ((leak₁.getD (Curry.const (fun _ => []) _)) ctx)) :
-    Verified target c ((firstArraySig name .u64 N rest ret).contract abi pre post wa stack (some leak)) := by
+    Verified target c ((firstArraySigB name w .u64 N rest ret).contract abi pre post wa stack (some leak)) := by
   cases leak₁ with
   | none => exact Verified.with_leak h leak
   | some l =>
@@ -559,9 +571,9 @@ theorem Verified.leak_flag {c : Prog isa}
 end
 
 /-- `onFlag` writes `rsp` nowhere if neither branch does (`Artifact.spSafe`). -/
-theorem onFlag_spSafe {c₁ c₂ : Prog isa}
+theorem onFlag_spSafe {t : Nat} {c₁ c₂ : Prog isa}
     (h₁ : c₁.all (fun i => !isa.writesSp i) = true) (h₂ : c₂.all (fun i => !isa.writesSp i) = true) :
-    (Impl.Gcm.X86_64.Flag.onFlag c₁ c₂).all (fun i => !isa.writesSp i) = true := by
+    (Impl.Gcm.X86_64.Flag.onFlag t c₁ c₂).all (fun i => !isa.writesSp i) = true := by
   simp only [Impl.Gcm.X86_64.Flag.onFlag, Code.iteCold, Code.all, h₁, h₂, Bool.and_true]
   rfl
 

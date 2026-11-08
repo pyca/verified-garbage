@@ -25,9 +25,9 @@ the contracts of `Proof/AesGcm/Flag.lean`:
 * an implementation that reads no powers runs its code on the key context,
   whose proof moves to the 1032-byte context (`Verified.widenFirstArray`)
   and leaks the flag's (`Verified.with_leak`, `Verified.leak_mono`);
-* one that reads them runs, by the flag (`onFlag`), its code on the prepared
-  powers if they are there, and its code on the key context if not
-  (`Verified.of_onFlagCtx`).
+* one that reads them runs, by the count (`onFlag t`, `t` the powers it
+  reads, 48 or 16), its code on the prepared powers if they are there, and its
+  code on the key context if not (`Verified.of_onFlagCtx`).
 -/
 
 @[expose] public section
@@ -53,7 +53,13 @@ theorem seal_satF : ∃ s, (AesGcm.Flag.sealSig.contract abi (AesGcm.Flag.sealPr
     | rfl
     | decide
     | exact Region.disjoint_of_sep (by decide)
-    | (refine Or.inr ?_
+    | (intro _
+       refine preparedPowersRepr_of_zero fun i hi => ?_
+       split
+       · next h => exfalso; bv_omega
+       · rfl)
+    | (intro _
+       refine preparedPowers16Repr_of ?_
        refine preparedPowersRepr_of_zero fun i hi => ?_
        split
        · next h => exfalso; bv_omega
@@ -116,13 +122,13 @@ theorem seal_of_base {c : Prog isa}
 theorem seal_onFlag {c₁ c₂ : Prog isa}
     (h₁ : Verified target c₁ (Proof.AesGcm.sealPreparedRoundsContract abi 2624))
     (h₂ : Verified target c₂ (Proof.AesGcm.sealRoundsContract abi 2624)) :
-    Verified target (Impl.Gcm.X86_64.Flag.onFlag c₁ c₂) (AesGcm.Flag.sealRoundsContract abi 2624) :=
-  Verified.of_onFlagCtx (by decide)
+    Verified target (Impl.Gcm.X86_64.Flag.onFlag 48 c₁ c₂) (AesGcm.Flag.sealRoundsContract abi 2624) :=
+  Verified.of_onFlagCtx (Or.inr rfl) (by decide)
     (VG.X86_64.Verified.widenFirstArray (n := 128) (n' := 129) (by decide) h₁
       (fun _ _ _ _ _ _ _ _ _ _ h => h) seal_satpow)
     (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h₂
       (fun _ _ _ _ _ _ _ _ _ _ h => h) seal_satbase)
-    (fun _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.resolve_left hf⟩)
+    (fun _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.2 hf⟩)
     (fun _ _ _ _ _ _ _ _ _ _ h _ => h.1)
     (fun _ _ _ _ _ _ _ _ _ _ => rfl)
     seal_satF
@@ -132,13 +138,13 @@ context. -/
 theorem seal_onFlag16 {c₁ c₂ : Prog isa}
     (h₁ : Verified target c₁ (Proof.AesGcm.sealPrepared16RoundsContract abi 2624))
     (h₂ : Verified target c₂ (Proof.AesGcm.sealRoundsContract abi 2624)) :
-    Verified target (Impl.Gcm.X86_64.Flag.onFlag c₁ c₂) (AesGcm.Flag.sealRoundsContract abi 2624) :=
-  Verified.of_onFlagCtx (by decide)
+    Verified target (Impl.Gcm.X86_64.Flag.onFlag 16 c₁ c₂) (AesGcm.Flag.sealRoundsContract abi 2624) :=
+  Verified.of_onFlagCtx (Or.inl rfl) (by decide)
     (VG.X86_64.Verified.widenFirstArray (n := 128) (n' := 129) (by decide) h₁
       (fun _ _ _ _ _ _ _ _ _ _ h => h) seal_satpow16)
     (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h₂
       (fun _ _ _ _ _ _ _ _ _ _ h => h) seal_satbase)
-    (fun _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, preparedPowers16Repr_of (h.2.resolve_left hf)⟩)
+    (fun _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.1 hf⟩)
     (fun _ _ _ _ _ _ _ _ _ _ h _ => h.1)
     (fun _ _ _ _ _ _ _ _ _ _ => rfl)
     seal_satF
@@ -158,7 +164,10 @@ theorem open_satF : ∃ s, (AesGcm.Flag.openSig.contract abi (AesGcm.Flag.openPr
     | rfl
     | decide
     | exact Region.disjoint_of_sep (by decide)
-    | (refine Or.inr ?_
+    | (intro _
+       exact preparedPowersRepr_of_zero fun _ _ => rfl)
+    | (intro _
+       refine preparedPowers16Repr_of ?_
        exact preparedPowersRepr_of_zero fun _ _ => rfl)
 
 
@@ -212,13 +221,13 @@ theorem open_of_base {c : Prog isa}
 theorem open_onFlag {c₁ c₂ : Prog isa}
     (h₁ : Verified target c₁ (Proof.AesGcm.openPreparedRoundsContract abi 2632))
     (h₂ : Verified target c₂ (Proof.AesGcm.openRoundsContract abi 2632)) :
-    Verified target (Impl.Gcm.X86_64.Flag.onFlag c₁ c₂) (AesGcm.Flag.openRoundsContract abi 2632) :=
-  Verified.of_onFlagCtx (by decide)
+    Verified target (Impl.Gcm.X86_64.Flag.onFlag 48 c₁ c₂) (AesGcm.Flag.openRoundsContract abi 2632) :=
+  Verified.of_onFlagCtx (Or.inr rfl) (by decide)
     (VG.X86_64.Verified.widenFirstArray (n := 128) (n' := 129) (by decide) h₁
       (fun _ _ _ _ _ _ _ _ _ _ _ h => h) open_satpow)
     (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h₂
       (fun _ _ _ _ _ _ _ _ _ _ _ h => h) open_satbase)
-    (fun _ _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.resolve_left hf⟩)
+    (fun _ _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.2 hf⟩)
     (fun _ _ _ _ _ _ _ _ _ _ _ h _ => h.1)
     (fun _ _ _ _ _ _ _ _ _ _ _ => rfl)
     open_satF
@@ -228,13 +237,13 @@ context. -/
 theorem open_onFlag16 {c₁ c₂ : Prog isa}
     (h₁ : Verified target c₁ (Proof.AesGcm.openPrepared16RoundsContract abi 2632))
     (h₂ : Verified target c₂ (Proof.AesGcm.openRoundsContract abi 2632)) :
-    Verified target (Impl.Gcm.X86_64.Flag.onFlag c₁ c₂) (AesGcm.Flag.openRoundsContract abi 2632) :=
-  Verified.of_onFlagCtx (by decide)
+    Verified target (Impl.Gcm.X86_64.Flag.onFlag 16 c₁ c₂) (AesGcm.Flag.openRoundsContract abi 2632) :=
+  Verified.of_onFlagCtx (Or.inl rfl) (by decide)
     (VG.X86_64.Verified.widenFirstArray (n := 128) (n' := 129) (by decide) h₁
       (fun _ _ _ _ _ _ _ _ _ _ _ h => h) open_satpow16)
     (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h₂
       (fun _ _ _ _ _ _ _ _ _ _ _ h => h) open_satbase)
-    (fun _ _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, preparedPowers16Repr_of (h.2.resolve_left hf)⟩)
+    (fun _ _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.1 hf⟩)
     (fun _ _ _ _ _ _ _ _ _ _ _ h _ => h.1)
     (fun _ _ _ _ _ _ _ _ _ _ _ => rfl)
     open_satF
@@ -253,7 +262,10 @@ theorem streamEncrypt_satF : ∃ s, (AesGcm.Flag.streamCryptSig.contract abi (Ae
     | rfl
     | decide
     | exact Region.disjoint_of_sep (by decide)
-    | (refine Or.inr ?_
+    | (intro _
+       exact preparedPowersRepr_of_zero fun _ _ => rfl)
+    | (intro _
+       refine preparedPowers16Repr_of ?_
        exact preparedPowersRepr_of_zero fun _ _ => rfl)
 
 
@@ -307,13 +319,13 @@ theorem streamEncrypt_of_base {c : Prog isa}
 theorem streamEncrypt_onFlag {c₁ c₂ : Prog isa}
     (h₁ : Verified target c₁ (Proof.AesGcm.streamEncryptPreparedRoundsContract abi 2608))
     (h₂ : Verified target c₂ (Proof.AesGcm.streamEncryptRoundsContract abi 2608)) :
-    Verified target (Impl.Gcm.X86_64.Flag.onFlag c₁ c₂) (AesGcm.Flag.streamEncryptRoundsContract abi 2608) :=
-  Verified.of_onFlagCtx (by decide)
+    Verified target (Impl.Gcm.X86_64.Flag.onFlag 48 c₁ c₂) (AesGcm.Flag.streamEncryptRoundsContract abi 2608) :=
+  Verified.of_onFlagCtx (Or.inr rfl) (by decide)
     (VG.X86_64.Verified.widenFirstArray (n := 128) (n' := 129) (by decide) h₁
       (fun _ _ _ _ _ _ _ _ h => h) streamEncrypt_satpow)
     (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h₂
       (fun _ _ _ _ _ _ _ _ h => h) streamEncrypt_satbase)
-    (fun _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.resolve_left hf⟩)
+    (fun _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.2 hf⟩)
     (fun _ _ _ _ _ _ _ _ h _ => h.1)
     (fun _ _ _ _ _ _ _ _ => rfl)
     streamEncrypt_satF
@@ -323,13 +335,13 @@ context. -/
 theorem streamEncrypt_onFlag16 {c₁ c₂ : Prog isa}
     (h₁ : Verified target c₁ (Proof.AesGcm.streamEncryptPrepared16RoundsContract abi 2608))
     (h₂ : Verified target c₂ (Proof.AesGcm.streamEncryptRoundsContract abi 2608)) :
-    Verified target (Impl.Gcm.X86_64.Flag.onFlag c₁ c₂) (AesGcm.Flag.streamEncryptRoundsContract abi 2608) :=
-  Verified.of_onFlagCtx (by decide)
+    Verified target (Impl.Gcm.X86_64.Flag.onFlag 16 c₁ c₂) (AesGcm.Flag.streamEncryptRoundsContract abi 2608) :=
+  Verified.of_onFlagCtx (Or.inl rfl) (by decide)
     (VG.X86_64.Verified.widenFirstArray (n := 128) (n' := 129) (by decide) h₁
       (fun _ _ _ _ _ _ _ _ h => h) streamEncrypt_satpow16)
     (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h₂
       (fun _ _ _ _ _ _ _ _ h => h) streamEncrypt_satbase)
-    (fun _ _ _ _ _ _ _ _ h hf => ⟨h.1, preparedPowers16Repr_of (h.2.resolve_left hf)⟩)
+    (fun _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.1 hf⟩)
     (fun _ _ _ _ _ _ _ _ h _ => h.1)
     (fun _ _ _ _ _ _ _ _ => rfl)
     streamEncrypt_satF
@@ -346,7 +358,10 @@ theorem streamDecrypt_satF : ∃ s, (AesGcm.Flag.streamCryptSig.contract abi (Ae
     | rfl
     | decide
     | exact Region.disjoint_of_sep (by decide)
-    | (refine Or.inr ?_
+    | (intro _
+       exact preparedPowersRepr_of_zero fun _ _ => rfl)
+    | (intro _
+       refine preparedPowers16Repr_of ?_
        exact preparedPowersRepr_of_zero fun _ _ => rfl)
 
 
@@ -400,13 +415,13 @@ theorem streamDecrypt_of_base {c : Prog isa}
 theorem streamDecrypt_onFlag {c₁ c₂ : Prog isa}
     (h₁ : Verified target c₁ (Proof.AesGcm.streamDecryptPreparedRoundsContract abi 2608))
     (h₂ : Verified target c₂ (Proof.AesGcm.streamDecryptRoundsContract abi 2608)) :
-    Verified target (Impl.Gcm.X86_64.Flag.onFlag c₁ c₂) (AesGcm.Flag.streamDecryptRoundsContract abi 2608) :=
-  Verified.of_onFlagCtx (by decide)
+    Verified target (Impl.Gcm.X86_64.Flag.onFlag 48 c₁ c₂) (AesGcm.Flag.streamDecryptRoundsContract abi 2608) :=
+  Verified.of_onFlagCtx (Or.inr rfl) (by decide)
     (VG.X86_64.Verified.widenFirstArray (n := 128) (n' := 129) (by decide) h₁
       (fun _ _ _ _ _ _ _ _ h => h) streamDecrypt_satpow)
     (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h₂
       (fun _ _ _ _ _ _ _ _ h => h) streamDecrypt_satbase)
-    (fun _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.resolve_left hf⟩)
+    (fun _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.2 hf⟩)
     (fun _ _ _ _ _ _ _ _ h _ => h.1)
     (fun _ _ _ _ _ _ _ _ => rfl)
     streamDecrypt_satF
@@ -416,13 +431,13 @@ context. -/
 theorem streamDecrypt_onFlag16 {c₁ c₂ : Prog isa}
     (h₁ : Verified target c₁ (Proof.AesGcm.streamDecryptPrepared16RoundsContract abi 2608))
     (h₂ : Verified target c₂ (Proof.AesGcm.streamDecryptRoundsContract abi 2608)) :
-    Verified target (Impl.Gcm.X86_64.Flag.onFlag c₁ c₂) (AesGcm.Flag.streamDecryptRoundsContract abi 2608) :=
-  Verified.of_onFlagCtx (by decide)
+    Verified target (Impl.Gcm.X86_64.Flag.onFlag 16 c₁ c₂) (AesGcm.Flag.streamDecryptRoundsContract abi 2608) :=
+  Verified.of_onFlagCtx (Or.inl rfl) (by decide)
     (VG.X86_64.Verified.widenFirstArray (n := 128) (n' := 129) (by decide) h₁
       (fun _ _ _ _ _ _ _ _ h => h) streamDecrypt_satpow16)
     (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h₂
       (fun _ _ _ _ _ _ _ _ h => h) streamDecrypt_satbase)
-    (fun _ _ _ _ _ _ _ _ h hf => ⟨h.1, preparedPowers16Repr_of (h.2.resolve_left hf)⟩)
+    (fun _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.1 hf⟩)
     (fun _ _ _ _ _ _ _ _ h _ => h.1)
     (fun _ _ _ _ _ _ _ _ => rfl)
     streamDecrypt_satF
@@ -442,7 +457,10 @@ theorem sealGather_satF : ∃ s, (AesGcm.Flag.sealGatherSig.contract abi (AesGcm
     | rfl
     | decide
     | exact Region.disjoint_of_sep (by decide)
-    | (refine Or.inr ?_
+    | (intro _
+       exact preparedPowersRepr_of_zero fun _ hi => by simp only [Gather.ctx_low hi, ite_false])
+    | (intro _
+       refine preparedPowers16Repr_of ?_
        exact preparedPowersRepr_of_zero fun _ hi => by simp only [Gather.ctx_low hi, ite_false])
 
 
@@ -496,13 +514,13 @@ theorem sealGather_of_base {c : Prog isa}
 theorem sealGather_onFlag {c₁ c₂ : Prog isa}
     (h₁ : Verified target c₁ (Proof.AesGcm.sealGatherPreparedRoundsContract abi 5128))
     (h₂ : Verified target c₂ (Proof.AesGcm.sealGatherRoundsContract abi 5128)) :
-    Verified target (Impl.Gcm.X86_64.Flag.onFlag c₁ c₂) (AesGcm.Flag.sealGatherRoundsContract abi 5128) :=
-  Verified.of_onFlagCtx (by decide)
+    Verified target (Impl.Gcm.X86_64.Flag.onFlag 48 c₁ c₂) (AesGcm.Flag.sealGatherRoundsContract abi 5128) :=
+  Verified.of_onFlagCtx (Or.inr rfl) (by decide)
     (VG.X86_64.Verified.widenFirstArray (n := 128) (n' := 129) (by decide) h₁
       (fun _ _ _ _ _ _ _ _ _ _ _ _ h => h) sealGather_satpow)
     (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h₂
       (fun _ _ _ _ _ _ _ _ _ _ _ _ h => h) sealGather_satbase)
-    (fun _ _ _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.1, h.2.2.resolve_left hf⟩)
+    (fun _ _ _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.1, h.2.2.2 hf⟩)
     (fun _ _ _ _ _ _ _ _ _ _ _ _ h _ => ⟨h.1, h.2.1⟩)
     (fun _ _ _ _ _ _ _ _ _ _ _ _ => rfl)
     sealGather_satF
@@ -512,13 +530,13 @@ context. -/
 theorem sealGather_onFlag16 {c₁ c₂ : Prog isa}
     (h₁ : Verified target c₁ (Proof.AesGcm.sealGatherPrepared16RoundsContract abi 5128))
     (h₂ : Verified target c₂ (Proof.AesGcm.sealGatherRoundsContract abi 5128)) :
-    Verified target (Impl.Gcm.X86_64.Flag.onFlag c₁ c₂) (AesGcm.Flag.sealGatherRoundsContract abi 5128) :=
-  Verified.of_onFlagCtx (by decide)
+    Verified target (Impl.Gcm.X86_64.Flag.onFlag 16 c₁ c₂) (AesGcm.Flag.sealGatherRoundsContract abi 5128) :=
+  Verified.of_onFlagCtx (Or.inl rfl) (by decide)
     (VG.X86_64.Verified.widenFirstArray (n := 128) (n' := 129) (by decide) h₁
       (fun _ _ _ _ _ _ _ _ _ _ _ _ h => h) sealGather_satpow16)
     (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h₂
       (fun _ _ _ _ _ _ _ _ _ _ _ _ h => h) sealGather_satbase)
-    (fun _ _ _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.1, preparedPowers16Repr_of (h.2.2.resolve_left hf)⟩)
+    (fun _ _ _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.1, h.2.2.1 hf⟩)
     (fun _ _ _ _ _ _ _ _ _ _ _ _ h _ => ⟨h.1, h.2.1⟩)
     (fun _ _ _ _ _ _ _ _ _ _ _ _ => rfl)
     sealGather_satF
@@ -538,7 +556,10 @@ theorem openTo_satF : ∃ s, (AesGcm.Flag.openToSig.contract abi (AesGcm.Flag.op
     | rfl
     | decide
     | exact Region.disjoint_of_sep (by decide)
-    | (refine Or.inr ?_
+    | (intro _
+       exact Proof.AesGcm.preparedPowersRepr_of_zeroMem fun _ hi => by simp only [OpenTo.ctx_low hi, ite_false])
+    | (intro _
+       refine preparedPowers16Repr_of ?_
        exact Proof.AesGcm.preparedPowersRepr_of_zeroMem fun _ hi => by simp only [OpenTo.ctx_low hi, ite_false])
 
 
@@ -592,13 +613,13 @@ theorem openTo_of_base {c : Prog isa}
 theorem openTo_onFlag {c₁ c₂ : Prog isa}
     (h₁ : Verified target c₁ (Proof.AesGcm.openToPreparedRoundsContract abi 2728))
     (h₂ : Verified target c₂ (Proof.AesGcm.openToRoundsContract abi 2728)) :
-    Verified target (Impl.Gcm.X86_64.Flag.onFlag c₁ c₂) (AesGcm.Flag.openToRoundsContract abi 2728) :=
-  Verified.of_onFlagCtx (by decide)
+    Verified target (Impl.Gcm.X86_64.Flag.onFlag 48 c₁ c₂) (AesGcm.Flag.openToRoundsContract abi 2728) :=
+  Verified.of_onFlagCtx (Or.inr rfl) (by decide)
     (VG.X86_64.Verified.widenFirstArray (n := 128) (n' := 129) (by decide) h₁
       (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h => h) openTo_satpow)
     (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h₂
       (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h => h) openTo_satbase)
-    (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.1, h.2.2.resolve_left hf⟩)
+    (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.1, h.2.2.2 hf⟩)
     (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h _ => ⟨h.1, h.2.1⟩)
     (fun _ _ _ _ _ _ _ _ _ _ _ _ _ => rfl)
     openTo_satF
@@ -608,13 +629,13 @@ context. -/
 theorem openTo_onFlag16 {c₁ c₂ : Prog isa}
     (h₁ : Verified target c₁ (Proof.AesGcm.openToPrepared16RoundsContract abi 2728))
     (h₂ : Verified target c₂ (Proof.AesGcm.openToRoundsContract abi 2728)) :
-    Verified target (Impl.Gcm.X86_64.Flag.onFlag c₁ c₂) (AesGcm.Flag.openToRoundsContract abi 2728) :=
-  Verified.of_onFlagCtx (by decide)
+    Verified target (Impl.Gcm.X86_64.Flag.onFlag 16 c₁ c₂) (AesGcm.Flag.openToRoundsContract abi 2728) :=
+  Verified.of_onFlagCtx (Or.inl rfl) (by decide)
     (VG.X86_64.Verified.widenFirstArray (n := 128) (n' := 129) (by decide) h₁
       (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h => h) openTo_satpow16)
     (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h₂
       (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h => h) openTo_satbase)
-    (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.1, preparedPowers16Repr_of (h.2.2.resolve_left hf)⟩)
+    (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.1, h.2.2.1 hf⟩)
     (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h _ => ⟨h.1, h.2.1⟩)
     (fun _ _ _ _ _ _ _ _ _ _ _ _ _ => rfl)
     openTo_satF
@@ -629,7 +650,10 @@ theorem openTo_satF2776 : ∃ s, (AesGcm.Flag.openToSig.contract abi (AesGcm.Fla
     | rfl
     | decide
     | exact Region.disjoint_of_sep (by decide)
-    | (refine Or.inr ?_
+    | (intro _
+       exact Proof.AesGcm.preparedPowersRepr_of_zeroMem fun _ hi => by simp only [OpenTo.ctx_low hi, ite_false])
+    | (intro _
+       refine preparedPowers16Repr_of ?_
        exact Proof.AesGcm.preparedPowersRepr_of_zeroMem fun _ hi => by simp only [OpenTo.ctx_low hi, ite_false])
 
 
@@ -690,13 +714,13 @@ theorem openTo_of_base2776 {c : Prog isa}
 theorem openTo_onFlag2776 {c₁ c₂ : Prog isa}
     (h₁ : Verified target c₁ (Proof.AesGcm.openToPreparedRoundsContract abi 2776))
     (h₂ : Verified target c₂ (Proof.AesGcm.openToRoundsContract abi 2776)) :
-    Verified target (Impl.Gcm.X86_64.Flag.onFlag c₁ c₂) (AesGcm.Flag.openToRoundsContract abi 2776) :=
-  Verified.of_onFlagCtx (by decide)
+    Verified target (Impl.Gcm.X86_64.Flag.onFlag 48 c₁ c₂) (AesGcm.Flag.openToRoundsContract abi 2776) :=
+  Verified.of_onFlagCtx (Or.inr rfl) (by decide)
     (VG.X86_64.Verified.widenFirstArray (n := 128) (n' := 129) (by decide) h₁
       (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h => h) openTo_satpow2776)
     (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h₂
       (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h => h) openTo_satbase2776)
-    (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.1, h.2.2.resolve_left hf⟩)
+    (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.1, h.2.2.2 hf⟩)
     (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h _ => ⟨h.1, h.2.1⟩)
     (fun _ _ _ _ _ _ _ _ _ _ _ _ _ => rfl)
     openTo_satF2776
@@ -706,13 +730,13 @@ context. -/
 theorem openTo_onFlag162776 {c₁ c₂ : Prog isa}
     (h₁ : Verified target c₁ (Proof.AesGcm.openToPrepared16RoundsContract abi 2776))
     (h₂ : Verified target c₂ (Proof.AesGcm.openToRoundsContract abi 2776)) :
-    Verified target (Impl.Gcm.X86_64.Flag.onFlag c₁ c₂) (AesGcm.Flag.openToRoundsContract abi 2776) :=
-  Verified.of_onFlagCtx (by decide)
+    Verified target (Impl.Gcm.X86_64.Flag.onFlag 16 c₁ c₂) (AesGcm.Flag.openToRoundsContract abi 2776) :=
+  Verified.of_onFlagCtx (Or.inl rfl) (by decide)
     (VG.X86_64.Verified.widenFirstArray (n := 128) (n' := 129) (by decide) h₁
       (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h => h) openTo_satpow162776)
     (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h₂
       (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h => h) openTo_satbase2776)
-    (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.1, preparedPowers16Repr_of (h.2.2.resolve_left hf)⟩)
+    (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.1, h.2.2.1 hf⟩)
     (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h _ => ⟨h.1, h.2.1⟩)
     (fun _ _ _ _ _ _ _ _ _ _ _ _ _ => rfl)
     openTo_satF2776
@@ -722,11 +746,11 @@ context. -/
 theorem openTo_onFlagF {c₁ c₂ : Prog isa}
     (h₁ : Verified target c₁ (AesGcm.Flag.openToFlaggedRoundsContract abi 2728))
     (h₂ : Verified target c₂ (Proof.AesGcm.openToRoundsContract abi 2728)) :
-    Verified target (Impl.Gcm.X86_64.Flag.onFlag c₁ c₂) (AesGcm.Flag.openToRoundsContract abi 2728) :=
-  Verified.of_onFlagCtx (by decide) h₁
+    Verified target (Impl.Gcm.X86_64.Flag.onFlag 48 c₁ c₂) (AesGcm.Flag.openToRoundsContract abi 2728) :=
+  Verified.of_onFlagCtx (Or.inr rfl) (by decide) h₁
     (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h₂
       (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h => h) openTo_satbase)
-    (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.1, hf, h.2.2.resolve_left hf⟩)
+    (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.1, hf, h.2.2.2 hf⟩)
     (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h _ => ⟨h.1, h.2.1⟩)
     (fun _ _ _ _ _ _ _ _ _ _ _ _ _ => rfl)
     openTo_satF
@@ -736,11 +760,11 @@ context, with the stack of the code that splits. -/
 theorem openTo_onFlagF2776 {c₁ c₂ : Prog isa}
     (h₁ : Verified target c₁ (AesGcm.Flag.openToFlaggedRoundsContract abi 2776))
     (h₂ : Verified target c₂ (Proof.AesGcm.openToRoundsContract abi 2776)) :
-    Verified target (Impl.Gcm.X86_64.Flag.onFlag c₁ c₂) (AesGcm.Flag.openToRoundsContract abi 2776) :=
-  Verified.of_onFlagCtx (by decide) h₁
+    Verified target (Impl.Gcm.X86_64.Flag.onFlag 48 c₁ c₂) (AesGcm.Flag.openToRoundsContract abi 2776) :=
+  Verified.of_onFlagCtx (Or.inr rfl) (by decide) h₁
     (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h₂
       (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h => h) openTo_satbase2776)
-    (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.1, hf, h.2.2.resolve_left hf⟩)
+    (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.1, hf, h.2.2.2 hf⟩)
     (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h _ => ⟨h.1, h.2.1⟩)
     (fun _ _ _ _ _ _ _ _ _ _ _ _ _ => rfl)
     openTo_satF2776

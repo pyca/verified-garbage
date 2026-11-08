@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Proof.AesGcm.RoundsTo
 public import VerifiedGarbage.Spec.Gcm.Prepared
+public import VerifiedGarbage.Spec.Gcm.Prepared16
 import VerifiedGarbage.Proof.AesGcm.ScratchPrepared
 import VerifiedGarbage.Proof.AesGcm.ScratchOpenTo
 import VerifiedGarbage.Proof.AesGcm.Scratch
@@ -10,16 +11,16 @@ import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.Framework.Sig
 
 /-!
-# AES-GCM's prepared key context with a flag
+# AES-GCM's prepared key context with a count of its powers
 
 The contracts that are to replace those of `Spec/Gcm/Prepared.lean`, whose
 code is proven against them first (and registered once they do): a
-prepared key context of 1032 bytes, whose word at byte 1024 is 1 when it
-holds no powers (`PreparedRepr`), which a `prepare` that computes none
-writes alone (one that computes them need not write it); the functions
-reading it may branch on whether that word is 1, which they leak
-(`flagLeak`), and take the code that reads only its first 256 bytes, the
-key context of `vg_aes_gcm_init`, if it is. Pre- and postconditions are
+prepared key context of 1032 bytes, whose word at byte 1024 counts the
+powers present, 0, 16 or 48 (`PreparedRepr`), which `prepare` writes; the
+functions reading it may branch on whether that count is at least 48 or at
+least 16, which they leak (`flagLeak`), and take the code that reads the
+powers present, or only its first 256 bytes, the key context of
+`vg_aes_gcm_init`, if there are too few. Pre- and postconditions are
 those of the prepared contracts but for `PreparedRepr`; each has its
 `*RoundsContract`, of `Proof/AesGcm/Rounds.lean`'s form, which the proofs
 target, and its form with the key (`*_keyed`).
@@ -31,14 +32,21 @@ namespace VG.Proof.AesGcm.Flag
 
 open VG.Spec.Gcm
 
-/-- The prepared key context at `p` either says it holds no powers (its word
-at byte 1024 is 1) or holds them (`PreparedPowersRepr`). -/
-def PreparedRepr (m : Mem) (p : Addr) : Prop :=
-  m.readW (p + 1024) 64 = 1 ∨ PreparedPowersRepr m p
+/-- The count of the prepared key context at `p`: its word at byte 1024. -/
+def powerCount (m : Mem) (p : Addr) : Nat := (m.readW (p + 1024) 64).toNat
 
-/-- What a function reading the prepared key context at `p` may leak of it:
-whether it holds no powers. -/
-def flagLeak (m : Mem) (p : Addr) : Nat := if m.readW (p + 1024) 64 = 1 then 1 else 0
+/-- A prepared key context: if its count is at least 16, the first 16 powers
+are present (`PreparedPowers16Repr`), and if it is at least 48, all 48
+(`PreparedPowersRepr`). -/
+def PreparedRepr (m : Mem) (p : Addr) : Prop :=
+  (16 ≤ powerCount m p → PreparedPowers16Repr m p) ∧
+    (48 ≤ powerCount m p → PreparedPowersRepr m p)
+
+/-- What a function on the prepared key context at `p` may leak of it: which
+of the counts that tell its functions apart it has (at least 48, at least 16,
+or fewer). -/
+def flagLeak (m : Mem) (p : Addr) : Nat :=
+  if 48 ≤ powerCount m p then 2 else if 16 ≤ powerCount m p then 1 else 0
 
 /-! ## The key setup -/
 
@@ -61,19 +69,20 @@ def wipePreparedSig : Sig where
   params := [("ctx", .array true .u64 129)]
 
 /-- How many bytes of the prepared key context at `p` hold secrets: the key
-context and the powers (1024) if the flag word is not 1, the key context
-alone (256) if it is. -/
-def wipePreparedLen (m : Mem) (p : Addr) : Nat := if m.readW (p + 1024) 64 = 1 then 256 else 1024
+context and the powers its count says are present, 48 (1024 bytes in all),
+16 (512) or none (256). -/
+def wipePreparedLen (m : Mem) (p : Addr) : Nat :=
+  if 48 ≤ powerCount m p then 1024 else if 16 ≤ powerCount m p then 512 else 256
 
-/-- Zeroes the first `wipePreparedLen` bytes, as the flag word was on entry. -/
+/-- Zeroes the first `wipePreparedLen` bytes, as the count was on entry. -/
 def wipePreparedPost (pb : Nat) : wipePreparedSig.Post pb := fun ctx m m' _ =>
   Spec.Aes.bytesAt m' ctx (wipePreparedLen m ctx) = List.replicate (wipePreparedLen m ctx) 0
 
-/-- What `wipe` may leak: whether the powers are absent. -/
+/-- What `wipe` may leak: `flagLeak`. -/
 def wipePreparedLeak (pb : Nat) : Curry (wipePreparedSig.words pb) (Mem → List Nat) :=
   fun ctx m => [flagLeak m ctx]
 
-/-- No precondition: the flag word says how much to zero, whatever it is. -/
+/-- No precondition: the count says how much to zero, whatever it is. -/
 def wipePreparedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   wipePreparedSig.contract A (post := wipePreparedPost A.ptrBits) (writeArgs := true)
     (stack := stack) (leak := some (wipePreparedLeak A.ptrBits))
@@ -236,14 +245,14 @@ theorem openTo_keyed {T : Target} {c : Prog T.isa} {A : Abi T.isa} {stack : Nat}
 
 /-! ## `open_to` on a prepared key context whose powers are present
 
-The contract of the code that `vg_aes_gcm_open_to_prepared` runs, by the flag,
-when the powers are present: on the prepared key context whose flag word is
-not 1 and which holds the powers (`FlaggedPowers`), it calls
-`vg_aes_gcm_open_prepared`, which tests the flag again. -/
+The contract of the code that `vg_aes_gcm_open_to_prepared` runs, by the
+count, when the 48 powers are present: on the prepared key context whose count
+is at least 48 and which holds the powers (`FlaggedPowers`), it calls
+`vg_aes_gcm_open_prepared`, which tests the count again. -/
 
-/-- The powers are present, and the flag word says so. -/
+/-- The 48 powers are present, and the count says so. -/
 def FlaggedPowers (m : Mem) (p : Addr) : Prop :=
-  m.readW (p + 1024) 64 ≠ 1 ∧ PreparedPowersRepr m p
+  48 ≤ (m.readW (p + 1024) 64).toNat ∧ PreparedPowersRepr m p
 
 def openToFlaggedPre (pb : Nat) : Curry (openToSig.words pb) (Mem → Prop) :=
   fun ctx rounds _nonce _nonceLen _aad _aadLen _src len _dst dstLen _tag _tagLen m =>
@@ -286,11 +295,20 @@ theorem flaggedPowers_congr {m₁ m₂ : Mem} {p : Addr}
   rw [show (p + 1024 : Addr) = p + BitVec.ofNat 64 1024 from rfl, e]
   exact hr.1
 
-/-- A context of zeros has the powers, and its flag word is 0. -/
-theorem flaggedPowers_of_zeroMem {m : Mem} {p : Addr} (h : ∀ i < 129 * 8, m (p + BitVec.ofNat 64 i) = 0) :
-    FlaggedPowers m p :=
-  flaggedPowers_congr (m₁ := fun _ => 0) h
-    ⟨by simp [Mem.readW, Mem.read], AesGcm.preparedPowersRepr_zeroMem p⟩
+/-- The witnesses' contexts, at `0x1000`: none of their first 1024 bytes is the
+count's. -/
+theorem ctx_ne1024 {i : Nat} (hi : i < 128 * 8) : ¬ ((0x1000 + BitVec.ofNat 64 i : Addr) = 0x1400) := by
+  intro h
+  have := congrArg BitVec.toNat h
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := i) (by omega)] at this
+  simp at this
+  omega
+
+/-- A context whose first 1024 bytes are zeros has the powers (of the hash
+subkey 0), and a count of 48 says so. -/
+theorem flaggedPowers_of_zeroMem {m : Mem} {p : Addr} (h : ∀ i < 128 * 8, m (p + BitVec.ofNat 64 i) = 0)
+    (hc : m.readW (p + 1024) 64 = 48) : FlaggedPowers m p :=
+  ⟨by rw [hc]; decide, AesGcm.preparedPowersRepr_of_zeroMem h⟩
 
 theorem openToFlaggedPre_local (pb : Nat) : ∀ vs m₁ m₂, vs.length = (openToSig.words pb).length →
     (∀ b ∈ Sig.bufs openToSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →

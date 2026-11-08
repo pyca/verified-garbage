@@ -26,7 +26,7 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Zeroize.Common
-import VerifiedGarbage.Proof.Framework.X86_64.FlagBranch
+public import VerifiedGarbage.Proof.Framework.X86_64.FlagBranch
 meta import VerifiedGarbage.Impl.Gcm.X86_64.PrepareAvx
 meta import VerifiedGarbage.Impl.Gcm.X86_64.PrepareZ
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
@@ -76,15 +76,18 @@ theorem prepareZ_ct :
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   subst hr; exact h
 
-/-- What `vg_aes_gcm_prepare` does from `s₀`: the 48 prepared powers of the
-hash subkey at `C + 240` into pairs 0–23 of the context at `C`, nothing else
-written, and the registers but `rax` and `r11` kept. -/
-def PrepOk (s₀ s : State) : Prop :=
-  (∀ k < 24, ∀ l < 2, s.mem.readW (s₀.gpr .rdi + BitVec.ofNat 64 (256 + 32 * k + 16 * l)) 128 =
+/-- What code computing the first `p` pairs of prepared powers does from `s₀`:
+those powers of the hash subkey at `C + 240` into pairs 0 to `p - 1` of the
+context at `C`, nothing written outside its bytes 256–1023, and the
+registers but `rax` and `r11` kept. -/
+def PrepOkN (p : Nat) (s₀ s : State) : Prop :=
+  (∀ k < p, ∀ l < 2, s.mem.readW (s₀.gpr .rdi + BitVec.ofNat 64 (256 + 32 * k + 16 * l)) 128 =
     Spec.Gcm.preparedPower (Spec.Gcm.hpow (Spec.Gcm.ctxH s₀.mem (s₀.gpr .rdi)) (2 * k + 2 - l))) ∧
   Frame [⟨s₀.gpr .rdi + BitVec.ofNat 64 256, 768⟩] s₀.mem s.mem ∧
   (∀ r, r ≠ .rax → r ≠ .r11 → s.gpr r = s₀.gpr r) ∧ s.rd = s₀.rd ∧ s.wr = s₀.wr
 
+/-- What `vg_aes_gcm_prepare` does from `s₀`: all 48 prepared powers. -/
+def PrepOk (s₀ s : State) : Prop := PrepOkN 24 s₀ s
 
 theorem bytesAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr} {n : Nat}
     (hd : ∀ r ∈ rs, (⟨p, n⟩ : Region).Disjoint r) (hn : n ≤ 2 ^ 64) :
@@ -310,9 +313,10 @@ theorem written16 {c : Prog isa}
 end VG.Proof.Gcm.X86_64.Prepare16
 
 /-! `vg_aes_gcm_prepare` on the 1032-byte prepared key context, whose word at
-byte 1024 says whether the powers are absent (`Proof.AesGcm.Flag.PreparedRepr`): the
-code that computes none (`prepareAbsent`), and each implementation that
-computes them, after setting that word to 0 (`prepareFlagged`). -/
+byte 1024 counts the powers present (`Proof.AesGcm.Flag.PreparedRepr`): the code that
+computes none and sets it to 0 (`prepareAbsent`), and each implementation
+that computes 48 or 16, after setting it to their number
+(`prepareFlagged`). -/
 
 namespace VG.Proof.Gcm.X86_64.Prepare
 
@@ -344,7 +348,7 @@ theorem flagged_implies : flaggedX86_64.Implies (Proof.AesGcm.Flag.prepareContra
   sig_implies [Proof.AesGcm.Flag.prepareContract, Proof.AesGcm.Flag.prepareSig, Proof.AesGcm.Flag.preparePost,
     flaggedX86_64, X86_64.abi, X86_64.argRegs] [flaggedSat] using flaggedSat
 
-/-- `storeFlag v` from `s₀`: the flag word is `v`, and only it and `rax`
+/-- `storeFlag v` from `s₀`: the count is `v`, and only it and `rax`
 changed. -/
 theorem storeFlag_run (v : BitVec 32) (s₀ : State)
     (hw : InRegions s₀.wr (s₀.gpr .rdi + BitVec.ofNat 64 1024) 8) :
@@ -395,34 +399,39 @@ theorem absent_ct :
 
 theorem absent_correct (s₀ : State) (hp : flaggedX86_64.pre s₀) :
     ∃ t s', Exec isa prepareAbsent s₀ t s' ∧ abiPreserved s₀ s' ∧ flaggedX86_64.post s₀ s' := by
-  obtain ⟨t, s', he, hm, hg, _, _⟩ := storeFlag_run 1 s₀ (flagged_pre hp)
+  obtain ⟨t, s', he, hm, hg, _, _⟩ := storeFlag_run 0 s₀ (flagged_pre hp)
   have fr : Frame [⟨s₀.gpr .rdi + BitVec.ofNat 64 1024, 8⟩] s₀.mem s'.mem := by
     rw [hm]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
   refine ⟨t, s', he, abiPreserved_of_exec (by rfl) he
-    (flagged_gpr hp hm hg (d := 1024) (k := 8) (by decide) (Frame.refl _ _) fun _ _ _ => rfl), ?_, Or.inl ?_⟩
+    (flagged_gpr hp hm hg (d := 1024) (k := 8) (by decide) (Frame.refl _ _) fun _ _ _ => rfl), ?_, ?_⟩
   · exact bytesAt_frame fr (fun r hr => by
       obtain rfl := List.mem_singleton.mp hr
       exact Offset.base_disjoint _ (by decide) (by omega)) (by decide)
-  · rw [hm]; exact Mem.readW_writeW_self64 _ _ _
+  · have hc : Proof.AesGcm.Flag.powerCount s'.mem (s₀.gpr .rdi) = 0 := by
+      simp only [Proof.AesGcm.Flag.powerCount]
+      rw [show (s₀.gpr .rdi + 1024 : Addr) = s₀.gpr .rdi + BitVec.ofNat 64 1024 from rfl, hm,
+        Mem.readW_writeW_self64]
+      rfl
+    exact ⟨fun h => absurd (hc ▸ h) (by decide), fun h => absurd (hc ▸ h) (by decide)⟩
 
 /-- `vg_aes_gcm_prepare` computing no powers. -/
 theorem absent_verified : Verified X86_64.target prepareAbsent (Proof.AesGcm.Flag.prepareContract X86_64.abi) :=
   Verified.of_correct absent_correct absent_ct flagged_implies
 
-/-- `prepareFlagged c`, for code `c` that writes the prepared powers and
-nothing else (`PrepOk`). -/
-theorem flagged_correct {c : Prog isa}
+/-- `prepareFlagged n c`, for code `c` that writes the first `n` prepared
+powers, 16 or 48, and nothing else (`PrepOkN`). -/
+theorem flagged_correct {n : Nat} (hn : n = 16 ∨ n = 48) {c : Prog isa}
     (hok : ∀ s₀, InRegions s₀.wr (s₀.gpr .rdi) 1024 → (s₀.gpr .rdi).toNat + 1024 ≤ 2 ^ 64 →
-      WP isa c s₀ (PrepOk s₀))
+      WP isa c s₀ (PrepOkN (n / 2) s₀))
     (hx : c.allInstrs (fun i => !loadsMxcsr i) = true) (s₀ : State) (hp : flaggedX86_64.pre s₀) :
-    ∃ t s', Exec isa (prepareFlagged c) s₀ t s' ∧ abiPreserved s₀ s' ∧ flaggedX86_64.post s₀ s' := by
-  have hx' : (prepareFlagged c).allInstrs (fun i => !loadsMxcsr i) = true := by
+    ∃ t s', Exec isa (prepareFlagged n c) s₀ t s' ∧ abiPreserved s₀ s' ∧ flaggedX86_64.post s₀ s' := by
+  have hx' : (prepareFlagged n c).allInstrs (fun i => !loadsMxcsr i) = true := by
     simp only [prepareFlagged, Code.allInstrs, hx, Bool.and_true]; rfl
   have hwrap := hp.2.2.1
   have hwr := hp.2.1
-  have hW : WP isa (prepareFlagged c) s₀ fun s => gprPreserved s₀ s ∧ flaggedX86_64.post s₀ s := by
+  have hW : WP isa (prepareFlagged n c) s₀ fun s => gprPreserved s₀ s ∧ flaggedX86_64.post s₀ s := by
     rw [prepareFlagged, WP.seq_iff]
-    refine WP.mono (storeFlag_run 0 s₀ (flagged_pre hp)) fun s₁ ⟨hm₁, hg₁, _, hwr₁⟩ => ?_
+    refine WP.mono (storeFlag_run (BitVec.ofNat 32 n) s₀ (flagged_pre hp)) fun s₁ ⟨hm₁, hg₁, _, hwr₁⟩ => ?_
     have hrdi : s₁.gpr .rdi = s₀.gpr .rdi := hg₁ _ (by decide)
     have hw : InRegions s₁.wr (s₁.gpr .rdi) 1024 := by
       rw [hwr₁, hrdi, hwr]
@@ -446,30 +455,47 @@ theorem flagged_correct {c : Prog isa}
         obtain rfl := List.mem_singleton.mp hr
         exact (Offset.disjoint (s₀.gpr .rdi) (d := 240) (n := 16) (e := 256) (k := 768) (.inl (by decide))
           (by decide) (by omega)).sub_left (Region.sub_prefix (Nat.le_refl _))) (by decide)]
-    refine ⟨flagged_gpr hp hm₁ hg₁ (by decide) fr g, keep.trans keep₁, Or.inr fun k hk => ?_⟩
-    rw [hH]
-    have p0 := pw k hk 0 (by decide)
-    have p1 := pw k hk 1 (by decide)
-    rw [Nat.mul_zero, Nat.add_zero, Nat.sub_zero] at p0
-    rw [show 256 + 32 * k + 16 * 1 = 272 + 32 * k by omega, show 2 * k + 2 - 1 = 2 * k + 1 by omega] at p1
-    exact ⟨p0, p1⟩
+    have hc : Proof.AesGcm.Flag.powerCount s.mem (s₀.gpr .rdi) = n := by
+      simp only [Proof.AesGcm.Flag.powerCount]
+      rw [show (s₀.gpr .rdi + 1024 : Addr) = s₀.gpr .rdi + BitVec.ofNat 64 1024 from rfl,
+        fr.readW (r := ⟨s₀.gpr .rdi + BitVec.ofNat 64 1024, 8⟩) (Region.contains_self _ _) (fun r hr => by
+          obtain rfl := List.mem_singleton.mp hr
+          exact Offset.disjoint (s₀.gpr .rdi) (d := 1024) (n := 8) (e := 256) (k := 768) (.inr (by decide))
+            (by decide) (by omega)) (by decide), hm₁, Mem.readW_writeW_self64]
+      rcases hn with rfl | rfl <;> rfl
+    have pairs (q : Nat) (hq : q ≤ n / 2) : ∀ k < q,
+        s.mem.readW (s₀.gpr .rdi + BitVec.ofNat 64 (256 + 32 * k)) 128 =
+          Spec.Gcm.preparedPower (Spec.Gcm.hpow (Spec.Gcm.ctxH s.mem (s₀.gpr .rdi)) (2 * k + 2)) ∧
+        s.mem.readW (s₀.gpr .rdi + BitVec.ofNat 64 (272 + 32 * k)) 128 =
+          Spec.Gcm.preparedPower (Spec.Gcm.hpow (Spec.Gcm.ctxH s.mem (s₀.gpr .rdi)) (2 * k + 1)) := by
+      intro k hk
+      rw [hH]
+      have p0 := pw k (by omega) 0 (by decide)
+      have p1 := pw k (by omega) 1 (by decide)
+      rw [Nat.mul_zero, Nat.add_zero, Nat.sub_zero] at p0
+      rw [show 256 + 32 * k + 16 * 1 = 272 + 32 * k by omega, show 2 * k + 2 - 1 = 2 * k + 1 by omega] at p1
+      exact ⟨p0, p1⟩
+    refine ⟨flagged_gpr hp hm₁ hg₁ (by decide) fr g, keep.trans keep₁, fun h => pairs 8 ?_, fun h => pairs 24 ?_⟩
+    · rw [hc] at h; omega
+    · rw [hc] at h; omega
   obtain ⟨t, s', he, hg, hpost⟩ := hW
   exact ⟨t, s', he, abiPreserved_of_exec hx' he hg, hpost⟩
 
-/-- `Verified` for `prepareFlagged c`, for code `c` that writes the prepared
-powers and nothing else, loads no MXCSR, and is constant time. -/
-theorem flagged_verified (c : Prog isa)
+/-- `Verified` for `prepareFlagged n c`, for code `c` that writes the first
+`n` prepared powers, 16 or 48, and nothing else, loads no MXCSR, and is
+constant time. -/
+theorem flagged_verified {n : Nat} (hn : n = 16 ∨ n = 48) (c : Prog isa)
     (hok : ∀ s₀, InRegions s₀.wr (s₀.gpr .rdi) 1024 → (s₀.gpr .rdi).toNat + 1024 ≤ 2 ^ 64 →
-      WP isa c s₀ (PrepOk s₀))
+      WP isa c s₀ (PrepOkN (n / 2) s₀))
     (hx : c.allInstrs (fun i => !loadsMxcsr i) = true)
-    (hct : ConstantTime isa flaggedX86_64.pre flaggedX86_64.pub (prepareFlagged c)) :
-    Verified X86_64.target (prepareFlagged c) (Proof.AesGcm.Flag.prepareContract X86_64.abi) :=
-  Verified.of_correct (flagged_correct hok hx) hct flagged_implies
+    (hct : ConstantTime isa flaggedX86_64.pre flaggedX86_64.pub (prepareFlagged n c)) :
+    Verified X86_64.target (prepareFlagged n c) (Proof.AesGcm.Flag.prepareContract X86_64.abi) :=
+  Verified.of_correct (flagged_correct hn hok hx) hct flagged_implies
 
 /-- The constant time of each implementation that computes the powers, after
-`storeFlag 0`. -/
+`storeFlag`. -/
 theorem flaggedZ_ct :
-    ConstantTime isa flaggedX86_64.pre flaggedX86_64.pub (prepareFlagged Impl.Gcm.X86_64.PrepareZ.prepare) := by
+    ConstantTime isa flaggedX86_64.pre flaggedX86_64.pub (prepareFlagged 48 Impl.Gcm.X86_64.PrepareZ.prepare) := by
   refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi]) ?_ (by taint_decide)
   intro s₁ s₂ _ _ h
   refine Taint.agree_ofRegs fun r hr => ?_
@@ -477,7 +503,7 @@ theorem flaggedZ_ct :
   subst hr; exact h
 
 theorem flagged16_ct :
-    ConstantTime isa flaggedX86_64.pre flaggedX86_64.pub (prepareFlagged Impl.Gcm.X86_64.Prepare16.prepare) := by
+    ConstantTime isa flaggedX86_64.pre flaggedX86_64.pub (prepareFlagged 16 Impl.Gcm.X86_64.Prepare16.prepare16) := by
   refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi]) ?_ (by taint_decide)
   intro s₁ s₂ _ _ h
   refine Taint.agree_ofRegs fun r hr => ?_
@@ -485,20 +511,22 @@ theorem flagged16_ct :
   subst hr; exact h
 
 theorem flaggedAvx_ct :
-    ConstantTime isa flaggedX86_64.pre flaggedX86_64.pub (prepareFlagged Impl.Gcm.X86_64.PrepareAvx.prepare) := by
+    ConstantTime isa flaggedX86_64.pre flaggedX86_64.pub (prepareFlagged 16 Impl.Gcm.X86_64.PrepareAvx.prepare16) := by
   refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi]) ?_ (by taint_decide)
   intro s₁ s₂ _ _ h
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   subst hr; exact h
 
-/-! `vg_aes_gcm_wipe_prepared` (`wipe avx`): `onFlag` chooses between two
-blocks that zero the context from a zero vector register, 32 bytes at a time
-from `ymm0` with AVX and 16 from `xmm0` without, the first 1024 bytes where
-the flag word is not 1 and the first 256 where it is. Each block is verified
-against `wipePreparedContract` with the flag word's value in its
-precondition and no leak (`wipeBranch`), and `Verified.of_onFlagCtx` joins
-them. -/
+/-! `vg_aes_gcm_wipe_prepared` (`wipe avx`): `onFlag 48` and `onFlag 16`
+choose among three blocks that zero the context from a zero vector register,
+32 bytes at a time from `ymm0` with AVX and 16 from `xmm0` without: the first
+1024 bytes where the count is at least 48, 512 where it is at least 16, and
+256 where it is less. Each block is verified against `wipePreparedContract`
+with the count's range in its precondition and no leak (`wipeBranch`), and
+`Verified.of_onFlagCtx` joins them: the inner choice leaks `flagLeak`, the
+outer `flagLeak` again, which the contract's one `flagLeak` gives
+(`Verified.leak_mono`). -/
 
 open VG.Impl.Gcm.X86_64.Flag (storeBytes zeroStore zeroStores zeroReg zeroBlocks wipe)
 open VG.Proof.Zeroize (Prefix prefix_writeW prefix_spec)
@@ -587,20 +615,20 @@ theorem zeroBlocks_ok (avx : Bool) (n : Nat) (s₀ : State) (hn : storeBytes avx
   · exact WP.block_cons_iff.mpr ⟨_, rfl, WP.block_nil (fin t h)⟩
 
 
-/-- `wipe`'s contract on the registers, for the branch that runs where the
-flag word satisfies `F`. -/
-def wipeX86_64 (F : BitVec 64 → Prop) : Contract isa where
+/-- `wipe`'s contract on the registers, for the block that runs where the
+count satisfies `F`. -/
+def wipeX86_64 (F : Nat → Prop) : Contract isa where
   pre s := s.rd = [] ∧ s.wr = [⟨s.gpr .rdi, 1032⟩] ∧ (s.gpr .rdi).toNat + 1032 ≤ 2 ^ 64 ∧
-    (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨s.gpr .rdi, 1032⟩ ∧ F (s.mem.readW (s.gpr .rdi + 1024) 64)
+    (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨s.gpr .rdi, 1032⟩ ∧ F (s.mem.readW (s.gpr .rdi + 1024) 64).toNat
   post s s' := Spec.Aes.bytesAt s'.mem (s.gpr .rdi) (Proof.AesGcm.Flag.wipePreparedLen s.mem (s.gpr .rdi)) =
     List.replicate (Proof.AesGcm.Flag.wipePreparedLen s.mem (s.gpr .rdi)) 0
   pub s₁ s₂ := s₁.gpr .rdi = s₂.gpr .rdi
 
-/-- The branch of `wipe avx` zeroing `bytes` bytes, where the flag word says
-that is all there is to zero. -/
-theorem zeroBlocks_correct (avx : Bool) {F : BitVec 64 → Prop} (bytes : Nat) (hb : bytes ≤ 1024)
+/-- The block of `wipe avx` zeroing `bytes` bytes, where the count says that
+is all there is to zero. -/
+theorem zeroBlocks_correct (avx : Bool) {F : Nat → Prop} (bytes : Nat) (hb : bytes ≤ 1024)
     (he : storeBytes avx * (bytes / storeBytes avx) = bytes)
-    (hF : ∀ (m : Mem) (p : Addr), F (m.readW (p + 1024) 64) → Proof.AesGcm.Flag.wipePreparedLen m p = bytes)
+    (hF : ∀ (m : Mem) (p : Addr), F (m.readW (p + 1024) 64).toNat → Proof.AesGcm.Flag.wipePreparedLen m p = bytes)
     (s₀ : State) (hp : (wipeX86_64 F).pre s₀) :
     ∃ t s', Exec isa (.block (zeroBlocks avx bytes)) s₀ t s' ∧ abiPreserved s₀ s' ∧
       (wipeX86_64 F).post s₀ s' := by
@@ -621,7 +649,7 @@ theorem zeroBlocks_correct (avx : Bool) {F : BitVec 64 → Prop} (bytes : Nat) (
     rw [hF _ _ hf]
     exact prefix_spec hz
 
-theorem zeroBlocks1024_ct (avx : Bool) (F : BitVec 64 → Prop) :
+theorem zeroBlocks1024_ct (avx : Bool) (F : Nat → Prop) :
     ConstantTime isa (wipeX86_64 F).pre (wipeX86_64 F).pub (.block (zeroBlocks avx 1024)) := by
   cases avx <;>
   · refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi]) ?_ (by taint_decide)
@@ -630,7 +658,16 @@ theorem zeroBlocks1024_ct (avx : Bool) (F : BitVec 64 → Prop) :
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     subst hr; exact h
 
-theorem zeroBlocks256_ct (avx : Bool) (F : BitVec 64 → Prop) :
+theorem zeroBlocks512_ct (avx : Bool) (F : Nat → Prop) :
+    ConstantTime isa (wipeX86_64 F).pre (wipeX86_64 F).pub (.block (zeroBlocks avx 512)) := by
+  cases avx <;>
+  · refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi]) ?_ (by taint_decide)
+    intro s₁ s₂ _ _ h
+    refine Taint.agree_ofRegs fun r hr => ?_
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    subst hr; exact h
+
+theorem zeroBlocks256_ct (avx : Bool) (F : Nat → Prop) :
     ConstantTime isa (wipeX86_64 F).pre (wipeX86_64 F).pub (.block (zeroBlocks avx 256)) := by
   cases avx <;>
   · refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi]) ?_ (by taint_decide)
@@ -639,13 +676,14 @@ theorem zeroBlocks256_ct (avx : Bool) (F : BitVec 64 → Prop) :
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     subst hr; exact h
 
-/-- `wipePreparedContract` for the branch that runs where the flag word
-satisfies `C`, with no leak. -/
-def wipeBranch (C : BitVec 64 → Prop) : Contract isa :=
-  Proof.AesGcm.Flag.wipePreparedSig.contract X86_64.abi (pre := fun ctx m => C (m.readW (ctx + 1024) 64))
+/-- `wipePreparedContract` for the block that runs where the count satisfies
+`C`, with no leak. -/
+def wipeBranch (C : Nat → Prop) : Contract isa :=
+  Proof.AesGcm.Flag.wipePreparedSig.contract X86_64.abi
+    (pre := fun ctx m => C (m.readW (ctx + 1024) 64).toNat)
     (post := Proof.AesGcm.Flag.wipePreparedPost 64) (writeArgs := true)
 
-/-- A state meeting `wipeBranch`'s precondition, with the flag word `v`. -/
+/-- A state meeting `wipeBranch`'s precondition, with the count `v`. -/
 def wipeSat (v : Byte) : State where
   gpr r := match r with
     | .rdi => 0x1000 | .rsp => 0x5000 | _ => 0
@@ -657,28 +695,62 @@ def wipeSat (v : Byte) : State where
   rd := []
   wr := [⟨0x1000, 1032⟩]
 
-theorem wipe_implies_ne : (wipeX86_64 (· ≠ 1)).Implies (wipeBranch (· ≠ 1)) := by
+theorem wipe_implies48 : (wipeX86_64 (48 ≤ ·)).Implies (wipeBranch (48 ≤ ·)) := by
+  sig_implies [wipeBranch, Proof.AesGcm.Flag.wipePreparedSig, Proof.AesGcm.Flag.wipePreparedPost, wipeX86_64,
+    X86_64.abi, X86_64.argRegs] [wipeSat] using wipeSat 48
+
+theorem wipe_implies16 : (wipeX86_64 fun c => ¬ 48 ≤ c ∧ 16 ≤ c).Implies
+    (wipeBranch fun c => ¬ 48 ≤ c ∧ 16 ≤ c) := by
+  sig_implies [wipeBranch, Proof.AesGcm.Flag.wipePreparedSig, Proof.AesGcm.Flag.wipePreparedPost, wipeX86_64,
+    X86_64.abi, X86_64.argRegs] [wipeSat] using wipeSat 16
+
+theorem wipe_implies0 : (wipeX86_64 fun c => ¬ 48 ≤ c ∧ ¬ 16 ≤ c).Implies
+    (wipeBranch fun c => ¬ 48 ≤ c ∧ ¬ 16 ≤ c) := by
   sig_implies [wipeBranch, Proof.AesGcm.Flag.wipePreparedSig, Proof.AesGcm.Flag.wipePreparedPost, wipeX86_64,
     X86_64.abi, X86_64.argRegs] [wipeSat] using wipeSat 0
 
-theorem wipe_implies_eq : (wipeX86_64 (· = 1)).Implies (wipeBranch (· = 1)) := by
-  sig_implies [wipeBranch, Proof.AesGcm.Flag.wipePreparedSig, Proof.AesGcm.Flag.wipePreparedPost, wipeX86_64,
-    X86_64.abi, X86_64.argRegs] [wipeSat] using wipeSat 1
+/-- The blocks of `wipe avx` on counts under 48: by the count, 512 bytes or
+256. -/
+theorem wipeLow_verified (avx : Bool) :
+    Verified X86_64.target (Impl.Gcm.X86_64.Flag.onFlag 16 (.block (zeroBlocks avx 512)) (.block (zeroBlocks avx 256)))
+      (Proof.AesGcm.Flag.wipePreparedSig.contract X86_64.abi
+        (pre := fun ctx m => ¬ 48 ≤ (m.readW (ctx + 1024) 64).toNat)
+        (post := Proof.AesGcm.Flag.wipePreparedPost 64) (writeArgs := true)
+        (leak := some fun ctx m => [VG.X86_64.flagLeak m ctx])) :=
+  Verified.of_onFlagCtx (Or.inl rfl) (by decide)
+    (Verified.of_correct (zeroBlocks_correct avx 512 (by decide) (by cases avx <;> rfl)
+      (fun m p h => by simp only [Proof.AesGcm.Flag.wipePreparedLen, Proof.AesGcm.Flag.powerCount, h.1, h.2, ↓reduceIte]))
+      (zeroBlocks512_ct avx _) wipe_implies16)
+    (Verified.of_correct (zeroBlocks_correct avx 256 (by decide) (by cases avx <;> rfl)
+      (fun m p h => by simp only [Proof.AesGcm.Flag.wipePreparedLen, Proof.AesGcm.Flag.powerCount, h.1, h.2, ↓reduceIte]))
+      (zeroBlocks256_ct avx _) wipe_implies0)
+    (fun _ _ h₁ h₂ => ⟨h₁, h₂⟩) (fun _ _ h₁ h₂ => ⟨h₁, h₂⟩) (fun _ _ => rfl)
+    (by obtain ⟨s, hs⟩ := wipe_implies0.sat
+        exact ⟨s, pre_of_rel (name := "ctx") (w := true) (N := 129) (rest := []) (ret := none)
+          (C := fun _ _ => True) (pre := fun ctx m => ¬ 48 ≤ (m.readW (ctx + 1024) 64).toNat ∧
+            ¬ 16 ≤ (m.readW (ctx + 1024) 64).toNat)
+          (fun _ _ h _ => h.1) hs trivial⟩)
 
 /-- `vg_aes_gcm_wipe_prepared`, with AVX if `avx`. -/
 theorem wipe_verified (avx : Bool) :
-    Verified X86_64.target (wipe avx) (Proof.AesGcm.Flag.wipePreparedContract X86_64.abi) :=
-  Verified.of_onFlagCtx (by decide)
-    (Verified.of_correct (zeroBlocks_correct avx 1024 (by decide) (by cases avx <;> rfl)
-      (fun m p h => by simp only [Proof.AesGcm.Flag.wipePreparedLen, h, ↓reduceIte]))
-      (zeroBlocks1024_ct avx _) wipe_implies_ne)
-    (Verified.of_correct (zeroBlocks_correct avx 256 (by decide) (by cases avx <;> rfl)
-      (fun m p h => by simp only [Proof.AesGcm.Flag.wipePreparedLen, h, ↓reduceIte]))
-      (zeroBlocks256_ct avx _) wipe_implies_eq)
+    Verified X86_64.target (wipe avx) (Proof.AesGcm.Flag.wipePreparedContract X86_64.abi) := by
+  have h48 := Verified.leak_flag (name := "ctx") (rest := []) (ret := none)
+    (leak := fun ctx m => [VG.X86_64.flagLeak m ctx])
+    (Verified.of_correct (zeroBlocks_correct avx (F := (48 ≤ ·)) 1024 (by decide) (by cases avx <;> rfl)
+      (fun m p h => by simp only [Proof.AesGcm.Flag.wipePreparedLen, Proof.AesGcm.Flag.powerCount, h, ↓reduceIte]))
+      (zeroBlocks1024_ct avx _) wipe_implies48) (fun _ _ => rfl)
+  have h := Verified.of_onFlagCtx (Or.inr rfl) (by decide) (leak := fun ctx m => [VG.X86_64.flagLeak m ctx,
+      VG.X86_64.flagLeak m ctx]) h48 (wipeLow_verified avx)
     (fun _ _ _ h => h) (fun _ _ _ h => h) (fun _ _ => rfl)
-    (by obtain ⟨s, hs⟩ := wipe_implies_ne.sat
+    (by obtain ⟨s, hs⟩ := wipe_implies48.sat
         exact ⟨s, pre_of_rel (name := "ctx") (w := true) (N := 129) (rest := []) (ret := none)
-          (C := fun _ _ => True) (pre := fun ctx m => m.readW (ctx + 1024) 64 ≠ 1)
-          (pre' := Curry.const (fun _ => True) _) (fun _ _ _ _ => trivial) hs trivial⟩)
+          (C := fun _ _ => True) (pre := fun ctx m => 48 ≤ (m.readW (ctx + 1024) 64).toNat)
+          (fun _ _ _ _ => trivial) hs trivial⟩)
+  have key : ∀ v m, Curry.apply (Proof.AesGcm.Flag.wipePreparedSig.words abi.ptrBits)
+      (fun ctx m => [VG.X86_64.flagLeak m ctx, VG.X86_64.flagLeak m ctx]) v m =
+      Curry.apply (Proof.AesGcm.Flag.wipePreparedSig.words abi.ptrBits) (Proof.AesGcm.Flag.wipePreparedLeak abi.ptrBits) v m ++
+        Curry.apply (Proof.AesGcm.Flag.wipePreparedSig.words abi.ptrBits) (Proof.AesGcm.Flag.wipePreparedLeak abi.ptrBits) v m := by
+    intro v m; cases v <;> rfl
+  exact Verified.leak_mono h fun v₁ v₂ m₁ m₂ e => by rw [key, key, e]
 
 end VG.Proof.Gcm.X86_64.Prepare
