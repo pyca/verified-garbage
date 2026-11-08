@@ -84,6 +84,19 @@ instructions in an ISA model) go in their own PR before either.
    them). If its code uses instructions outside
    the target's baseline ISA, list the CPU features they require in
    `features` (the emitter rejects anything but the exact set).
+   On x86-64 a function also proves that it returns without secret residue
+   (`Registration.residue`, `TCB/X86_64/Residue.lean`): build its
+   registration in `Proof/` and scrub it with `X86_64.Scrub.scrubReg`,
+   whose code clears what the residue analysis (`X86_64.RTaint`) finds may
+   hold secrets and which sets `residue`; the registration file binds the
+   result. Only functions `ci/residue_allowlist.txt` already lists may go
+   without: the list only shrinks (`ci/check_residue_allowlist.py`), and the
+   emitter refuses a listed function that has a proof, so converting one
+   removes its line. Where the analysis fails, its trace says at which
+   instruction (an index it cannot bound, a value reloaded after a store it
+   cannot place): change the code so it can, as the Merkle–Damgård
+   streaming code clamps its indices and ChaCha20's `apply` keeps its
+   pointers in `r13`–`r15`.
    A function that calls another one with several implementations (e.g.
    scalar and SHA-NI compression) is proven once for any of them and
    registered in `Generic/<Iface>/<Target>/<Alg>.lean`, which the emitter
