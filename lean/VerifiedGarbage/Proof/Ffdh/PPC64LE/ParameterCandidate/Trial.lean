@@ -65,6 +65,8 @@ theorem TabIn.step {B T : Addr} {Z : Nat} {s t : State} {rs : List (Nat × Nat)}
   unfold ofs
   omega
 
+theorem trialN_range {bits : Nat} : 1 ≤ trialN bits ∧ trialN bits ≤ 1024 := by unfold trialN; split <;> decide
+
 /-- The count of entries, `1024 − 512 [bits ≤ 1024]`. -/
 theorem trialCount_eq {bits : Nat} (hb : bits ≤ 8192) :
     BitVec.ofNat 64 1024 - (BitVec.ofNat 64 bits - BitVec.ofNat 64 1025) >>> 63 <<< 9 =
@@ -178,10 +180,10 @@ theorem MB.count {p : PP} {x : Nat} {B : Prop} {T : Addr} {s : State} (h : MB p 
       exact h.bad) syu
 
 /-- The table's address and the count. -/
-theorem MB.trialA {p : PP} {x : Nat} {B : Prop} {T : Addr} {u : State} (h : MB p T x B u)
-    (h208 : u.mem.readW (p.B + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 (trialN p.bits)) :
+theorem MB.trialA {p : PP} {x : Nat} {B : Prop} {T : Addr} {u : State} {N : Nat} (h : MB p T x B u)
+    (h208 : u.mem.readW (p.B + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 N) :
     WP isa (.block [.adrSym .r23 TrialTable32.symbol, ldh .r24 hTrialN]) u fun v =>
-      (v.gpr .r23 = T ∧ v.gpr .r24 = BitVec.ofNat 64 (trialN p.bits) ∧ v.mem = u.mem) ∧
+      (v.gpr .r23 = T ∧ v.gpr .r24 = BitVec.ofNat 64 N ∧ v.mem = u.mem) ∧
       (∀ r, r ∉ [Reg.r23, Reg.r24] → v.gpr r = u.gpr r) ∧ v.rd = u.rd ∧ v.wr = u.wr ∧ v.sp = u.sp ∧
       v.syms = u.syms := by
   have l208 : InRegions (u.rd ++ u.wr) (p.B + BitVec.ofNat 64 208) 8 := h.st.ld (d := 208) (by decide)
@@ -195,15 +197,15 @@ theorem MB.trialA {p : PP} {x : Nat} {B : Prop} {T : Addr} {u : State} (h : MB p
 
 /-- What RSA's loop needs, once the table's address and the count are in
 `r23` and `r24`. -/
-theorem MB.loopArgs {p : PP} {x : Nat} {B : Prop} {T : Addr} {u v : State} (h : MB p T x B u)
+theorem MB.loopArgs {p : PP} {x : Nat} {B : Prop} {T : Addr} {u v : State} {N : Nat} (h : MB p T x B u)
     (vm : v.mem = u.mem) (vg : ∀ r, r ∉ [Reg.r23, Reg.r24] → v.gpr r = u.gpr r) (vrd : v.rd = u.rd)
-    (vwr : v.wr = u.wr) :
+    (vwr : v.wr = u.wr) (hN : 1 ≤ N ∧ N ≤ 1024) :
     Scr v p.B p.Z ∧ v.gpr .r10 = off p.B (slot (wOf p.bits) 0) ∧
       v.gpr .r11 = BitVec.ofNat 64 (2 * wOf p.bits) ∧
       VG.Proof.Mont.val32 v.mem p.B (slot (wOf p.bits) 0) (2 * wOf p.bits) = x ∧ 1 ≤ wOf p.bits ∧
-      wOf p.bits < 2 ^ 31 ∧ slot (wOf p.bits) 0 + 8 * wOf p.bits ≤ p.Z ∧ 1 ≤ trialN p.bits ∧
-      trialN p.bits ≤ 1024 ∧
-      (∀ i < trialN p.bits, v.mem.readW (T + BitVec.ofNat 64 (8 * i)) 64 =
+      wOf p.bits < 2 ^ 31 ∧ slot (wOf p.bits) 0 + 8 * wOf p.bits ≤ p.Z ∧ 1 ≤ N ∧
+      N ≤ 1024 ∧
+      (∀ i < N, v.mem.readW (T + BitVec.ofNat 64 (8 * i)) 64 =
           BitVec.ofNat 64 (TrialTable32.entry i) ∧ InRegions (v.rd ++ v.wr) (T + BitVec.ofNat 64 (8 * i)) 8) := by
   have hb1 := h.st.dims.b1
   have hb2 := h.st.dims.b2
@@ -213,7 +215,6 @@ theorem MB.loopArgs {p : PP} {x : Nat} {B : Prop} {T : Addr} {u v : State} (h : 
   have hsl : slot (wOf p.bits) 0 = 256 := by simp [slot, hdrBytes]
   have hwe : wOf p.bits = (p.bits + 63) / 64 := rfl
   have hZe : p.Z = 8 * p.n := rfl
-  have hN : 1 ≤ trialN p.bits ∧ trialN p.bits ≤ 1024 := by unfold trialN; split <;> decide
   refine ⟨h.st.scr.congr vwr, by rw [vg _ (by decide)]; exact h.ph.r10, by rw [vg _ (by decide)]; exact h.ph.r11,
     by rw [vm, Pre.val32_eq_wv]; exact h.n, by omega_arith, by omega_arith, by rw [hsl]; omega_arith, hN.1, hN.2,
     fun i hi => ⟨by rw [vm]; exact h.tab.tab i (by omega_arith), ?_⟩⟩
@@ -260,7 +261,40 @@ theorem trialSieve_ok {p : PP} {x : Nat} {B : Prop} {T : Addr} {s : State} (h : 
   unfold trialSieve VG.Impl.RsaKeyGen.PPC64LE.Trial.trial
   refine WP.seq (WP.mono h.count fun u ⟨hu, h208⟩ => ?_)
   refine WP.seq (WP.seq (WP.mono (hu.trialA h208) fun v ⟨⟨v23, v24, vm⟩, vg, vrd, vwr, vsp, syv⟩ => ?_))
-  obtain ⟨vs, v10, v11, vc, w1, w2, hZ, n1, n2, htab⟩ := hu.loopArgs vm vg vrd vwr
+  obtain ⟨vs, v10, v11, vc, w1, w2, hZ, n1, n2, htab⟩ := hu.loopArgs vm vg vrd vwr trialN_range
+  refine WP.mono_syms (VG.Proof.RsaKeyGen.PPC64LE.Trial.loop_ok vs v10 v11 vc w1 w2 hZ n1 n2 v23 htab v24)
+    fun w ⟨⟨w22, wm⟩, kw⟩ syw => ?_
+  exact hu.orBad w22 (wm.trans vm) (fun r hr => (kw.gpr r fun h' => hr (List.mem_append_right _ h')).trans
+    (vg r fun h' => hr (List.mem_append_left _ h'))) (kw.rd.trans vrd) (kw.wr.trans vwr) (kw.sp.trans vsp)
+    (syw.trans syv)
+
+/-- `hTrialN := n`. -/
+theorem MB.countN {p : PP} {x : Nat} {B : Prop} {T : Addr} {s : State} (h : MB p T x B s) (n : Nat)
+    (hn : n < 2 ^ 15) :
+    WP isa (.block [.li .r3 n, sth .r3 hTrialN]) s fun u =>
+      MB p T x B u ∧ u.mem.readW (p.B + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 n := by
+  have s208 : InRegions s.wr (p.B + BitVec.ofNat 64 208) 8 := h.st.st (d := 208) (by decide)
+  refine WP.mono_syms (WP.mono (WP.keep [.r3] (Q := fun u =>
+      u.mem = s.mem.writeW (p.B + BitVec.ofNat 64 208) (BitVec.ofNat 64 n))
+    (by simp only [sth, hTrialN]; prun [h.st.r31, s208, exec_li hn]) (by rfl))
+    fun u hu => hu) fun u ⟨um, ku⟩ syu => ⟨?_, by rw [um, rw_self]⟩
+  have fu : Frm p.B [(208, 8)] s.mem u.mem := by
+    rw [um]; exact frm_writeW (a := 208) (Frm.refl _ _ _) _ ⟨_, List.mem_singleton_self _, by decide, by decide⟩
+      (by decide)
+  exact h.step (fu.mono fun r hr => by rw [List.mem_singleton.mp hr]; simp) ku.gpr ku.rd ku.wr ku.sp
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by
+      rw [show word u.mem p.B (8 * hBad) = word s.mem p.B (8 * hBad) by
+        rw [um]; exact rw_off _ _ _ (by decide) (by decide) (by decide)]
+      exact h.bad) syu
+
+/-- Trial division of array 0 by the first `n` entries only. -/
+theorem trialSieveN_ok {p : PP} {x : Nat} {B : Prop} {T : Addr} {s : State} {n : Nat} (h : MB p T x B s)
+    (hn : 1 ≤ n) (hn' : n ≤ 1024) :
+    WP isa (trialSieveN n) s (MB p T x (B ∧ VG.Proof.RsaKeyGen.trialPrefix x n = false)) := by
+  unfold trialSieveN VG.Impl.RsaKeyGen.PPC64LE.Trial.trial
+  refine WP.seq (WP.mono (h.countN n (by omega)) fun u ⟨hu, h208⟩ => ?_)
+  refine WP.seq (WP.seq (WP.mono (hu.trialA h208) fun v ⟨⟨v23, v24, vm⟩, vg, vrd, vwr, vsp, syv⟩ => ?_))
+  obtain ⟨vs, v10, v11, vc, w1, w2, hZ, n1, n2, htab⟩ := hu.loopArgs vm vg vrd vwr ⟨hn, hn'⟩
   refine WP.mono_syms (VG.Proof.RsaKeyGen.PPC64LE.Trial.loop_ok vs v10 v11 vc w1 w2 hZ n1 n2 v23 htab v24)
     fun w ⟨⟨w22, wm⟩, kw⟩ syw => ?_
   exact hu.orBad w22 (wm.trans vm) (fun r hr => (kw.gpr r fun h' => hr (List.mem_append_right _ h')).trans

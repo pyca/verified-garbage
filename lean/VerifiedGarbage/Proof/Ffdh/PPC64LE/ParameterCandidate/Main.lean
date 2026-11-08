@@ -14,7 +14,8 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 # An FFDH parameter candidate on PPC64LE: once `rand` is long enough
 
 `main_ok`: p from the tape, its shape (the congruence, RSA's trial division
-of p, then q's parity and trial division), and the tests, against
+of p by the table's first entries, q's parity and trial division, then p's
+whole trial division), and the tests, against
 `Spec.Ffdh.sievedParameterCandidate`.
 -/
 
@@ -135,6 +136,36 @@ theorem MB.halve {p : PP} {T : Addr} {x : Nat} {B : Prop} {s : State} (h : MB p 
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> dsimp only <;> first | (simp only [hBad]; omega_arith) | omega_arith) k.rd⟩
 
+/-- p into array 0 again. -/
+theorem MB.reshape {p : PP} {T : Addr} {y : Nat} {B : Prop} {s : State} (h : MB p T y B s)
+    (hL : p.L ≤ p.r.length) :
+    WP isa shapeP s (MB p T (Spec.Ffdh.candidateOf p.bits (Spec.Rsa.os2ip (p.r.take p.L))) B) := by
+  have hb2 := h.st.dims.b2
+  have hdn := h.st.dims.n
+  have hLe : p.L = (p.bits + 7) / 8 := rfl
+  have hwe : wOf p.bits = (p.bits + 63) / 64 := rfl
+  have hZe : p.Z = 8 * p.n := rfl
+  have hsl : slot (wOf p.bits) 0 = 256 := slot_zero _
+  refine WP.mono_syms (shapeP_ok h.st h.ph hL) fun t ⟨⟨hn, f⟩, k⟩ sy => ?_
+  obtain ⟨st, ph, hU⟩ := shapeStep h.st h.ph h.u f (fun r hr => by
+    rw [List.mem_singleton.mp hr, hsl]; exact .inr rfl) k (by decide) (by decide) (by decide) (by decide)
+  refine ⟨st, ph, hU, hn, ?_, h.tab.step sy f (fun r hr => by
+    rw [List.mem_singleton.mp hr]; dsimp only; omega_arith) k.rd⟩
+  rw [show word t.mem p.B (8 * hBad) = word s.mem p.B (8 * hBad) from
+    f.word_eq (fun r hr => by rw [List.mem_singleton.mp hr, hsl]; simp only [hBad]; omega_arith) (by
+      simp only [hBad]; omega_arith)]
+  exact h.bad
+
+theorem trialPrefix_mono {c m n : Nat} (hmn : m ≤ n) (h : VG.Proof.RsaKeyGen.trialPrefix c n = false) :
+    VG.Proof.RsaKeyGen.trialPrefix c m = false := by
+  unfold VG.Proof.RsaKeyGen.trialPrefix at *
+  rw [List.any_eq_false] at *
+  intro i hi
+  exact h i (List.mem_range.mpr (Nat.lt_of_lt_of_le (List.mem_range.mp hi) hmn))
+
+theorem firstEntries_le (bits : Nat) : firstEntries ≤ trialN bits := by
+  unfold firstEntries trialN; split <;> decide
+
 /-- The spec's shape checks, of the candidate `c`. -/
 abbrev specShape (bits g c : Nat) : Bool :=
   Spec.Ffdh.generationShape bits g c && Spec.Ffdh.primeShape c && Spec.Ffdh.primeShape ((c - 1) / 2) &&
@@ -174,34 +205,47 @@ theorem main_ok (R : RoundImpl) {p : PP} {T : Addr} {s : State} (h : St p s) (ht
     refine reject M₄.st M₄.u (Bool.eq_false_iff.mpr fun ht' => ?_)
     have h0 : word t₃.mem p.B 200 = 0#64 := M₃.bad.mpr (hsh.mpr ht').1
     simp [h0] at hz
-  refine WP.seq (WP.mono (trialSieve_ok M₄) fun t₅ M₅ => ?_)
-  refine WP.seq (WP.mono M₅.badLoad fun t₆ ⟨M₆, t5'⟩ => ?_)
-  refine WP.ite (word t₅.mem p.B 200 == 0) (by rw [eval_zero, t5']) (fun hz' => ?_) (fun hz' => ?_)
+  refine WP.seq (WP.mono (trialSieveN_ok M₄ (by decide) (by decide)) fun t₅ M₅ => ?_)
+  refine WP.seq (WP.mono M₅.badLoad fun t₆ ⟨M₆, z₁⟩ => ?_)
+  refine WP.ite (word t₅.mem p.B 200 == 0) (by rw [eval_zero, z₁]) (fun hz₁ => ?_) (fun hz₁ => ?_)
   rotate_left
-  · -- p has a small factor.
+  · -- p has a small factor among the first entries.
     refine reject M₆.st M₆.u (Bool.eq_false_iff.mpr fun ht' => ?_)
     obtain ⟨a, b, -, -⟩ := hsh.mpr ht'
-    have h0 : word t₅.mem p.B 200 = 0#64 := M₅.bad.mpr ⟨a, b⟩
-    simp [h0] at hz'
+    have h0 : word t₅.mem p.B 200 = 0#64 := M₅.bad.mpr ⟨a, trialPrefix_mono (firstEntries_le _) b⟩
+    simp [h0] at hz₁
   unfold mainQ
   refine WP.seq (WP.mono M₆.halve fun t₇ M₇ => ?_)
   refine WP.seq (WP.mono (trialSieve_ok M₇) fun t₈ M₈ => ?_)
-  refine WP.seq (WP.mono M₈.badLoad fun t₉ ⟨M₉, t5''⟩ => ?_)
-  have hall : word t₈.mem p.B (8 * hBad) = 0#64 ↔
+  refine WP.seq (WP.mono M₈.badLoad fun t₉ ⟨M₉, z₂⟩ => ?_)
+  refine WP.ite (word t₈.mem p.B 200 == 0) (by rw [eval_zero, z₂]) (fun hz₂ => ?_) (fun hz₂ => ?_)
+  rotate_left
+  · -- q is even or has a small factor.
+    refine reject M₉.st M₉.u (Bool.eq_false_iff.mpr fun ht' => ?_)
+    obtain ⟨a, b, c', d⟩ := hsh.mpr ht'
+    have h0 : word t₈.mem p.B 200 = 0#64 := M₈.bad.mpr ⟨⟨⟨a, trialPrefix_mono (firstEntries_le _) b⟩, c'⟩, d⟩
+    simp [h0] at hz₂
+  unfold mainP
+  refine WP.seq (WP.mono (M₉.reshape hL) fun t₁₀ M₁₀ => ?_)
+  rw [← hc'] at M₁₀
+  refine WP.seq (WP.mono (trialSieve_ok M₁₀) fun t₁₁ M₁₁ => ?_)
+  refine WP.seq (WP.mono M₁₁.badLoad fun t₁₂ ⟨M₁₂, z₃⟩ => ?_)
+  have hall : word t₁₁.mem p.B (8 * hBad) = 0#64 ↔
       goodRes p.g c ∧ VG.Proof.RsaKeyGen.trialPrefix c (trialN p.bits) = false ∧ c / 2 % 2 = 1 ∧
         VG.Proof.RsaKeyGen.trialPrefix (c / 2) (trialN p.bits) = false :=
-    M₈.bad.trans ⟨fun ⟨⟨⟨a, b⟩, c'⟩, d⟩ => ⟨a, b, c', d⟩, fun ⟨a, b, c', d⟩ => ⟨⟨⟨a, b⟩, c'⟩, d⟩⟩
-  refine WP.ite (word t₈.mem p.B 200 == 0) (by rw [eval_zero, t5'']) (fun hz'' => ?_) (fun hz'' => ?_)
+    M₁₁.bad.trans ⟨fun ⟨⟨⟨⟨a, _⟩, c'⟩, d⟩, e⟩ => ⟨a, e, c', d⟩,
+      fun ⟨a, e, c', d⟩ => ⟨⟨⟨⟨a, trialPrefix_mono (firstEntries_le _) e⟩, c'⟩, d⟩, e⟩⟩
+  refine WP.ite (word t₁₁.mem p.B 200 == 0) (by rw [eval_zero, z₃]) (fun hz₃ => ?_) (fun hz₃ => ?_)
   · -- The shape passes: the tests.
-    have hshape := hsh.mp (hall.mp (beq_iff_eq.mp hz''))
+    have hshape := hsh.mp (hall.mp (beq_iff_eq.mp hz₃))
     rw [hshape]
     simp only [Bool.not_true, Bool.false_eq_true, ↓reduceIte]
     have hq : (c - 1) / 2 = c / 2 := by omega_arith
-    obtain ⟨_, _, hqo, _⟩ := hall.mp (beq_iff_eq.mp hz'')
+    obtain ⟨_, _, hqo, _⟩ := hall.mp (beq_iff_eq.mp hz₃)
     rw [hc'] at hq hqo ⊢
-    exact tests_ok R M₉.st rfl (by rw [hq]; exact hqo) M₉.u hL
-  · refine reject M₉.st M₉.u (Bool.eq_false_iff.mpr fun ht' => ?_)
-    have h0 : word t₈.mem p.B 200 = 0#64 := hall.mpr (hsh.mpr ht')
-    simp [h0] at hz''
+    exact tests_ok R M₁₂.st rfl (by rw [hq]; exact hqo) M₁₂.u hL
+  · refine reject M₁₂.st M₁₂.u (Bool.eq_false_iff.mpr fun ht' => ?_)
+    have h0 : word t₁₁.mem p.B 200 = 0#64 := hall.mpr (hsh.mpr ht')
+    simp [h0] at hz₃
 
 end VG.Proof.Ffdh.PPC64LE.ParameterCandidate
