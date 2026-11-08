@@ -14,17 +14,40 @@
 /// * `scratch` must be valid for reads and writes of 2048 bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `data` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_ecb_encrypt(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
-        r#".base64 "pgIIfNH/IfggAAH4KACBOQAA7Pt4O/98"
-bl {vg_aes_encrypt_blocks}
-.base64 "eBtrfHj7438AAIA4AACEZAAIhGB4W399"
-bl {vg_zeroize}
-.base64 "ePvjfygAgTkAAOzrIAAB6DAAITimAwh8IACATg==""#,
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
-        vg_zeroize = sym super::zeroize::vg_zeroize,
+        r#".base64 "AAAmKA=="
+beq %cr0, 20f
+.base64 "eDPHfHgrpnwAAAA4xAQAEAYHYD0EBWthxgdreQIDa2UAAWthDg+APQwNjGHGB4x5CguMZQgJjGFnAWt+ZwEsfCyaYBIsCnMSwujseAAALCg="
+beq %cr0, 22f
+24:
+.base64 "mQYGfOsEABAQAMY4mQYmfOsMIRAQAMY4mQZGfOsUQhAQAMY4mQZmfOscYxAQAMY4mQaGfOskhBAQAMY4mQamfOsspRAQAMY4mQbGfOs0xhAQAMY4mQbmfOs85xAQAMY4gP/GOHgbaXyZBgl960QIEcREABDERCEQxERCEMREYxDERIQQxESlEMRExhDEROcQEAApOf//RDk="
+25:
+.base64 "mQYJfetECBEIRQAQCEUhEAhFQhAIRWMQCEWEEAhFpRAIRcYQCEXnEBAAKTn//0o5AAAqKA=="
+bne %cr0, 25b
+.base64 "mQYJfetECBEJRQAQCUUhEAlFQhAJRWMQCUWEEAlFpRAJRcYQCUXnEOsEABCZBwZ8EADGOOsMIRCZByZ8EADGOOsUQhCZB0Z8EADGOOscYxCZB2Z8EADGOOskhBCZB4Z8EADGOOsspRCZB6Z8EADGOOs0xhCZB8Z8EADGOOs85xCZB+Z8EADGOPj/5zjC6Ox4AAAsKA=="
+bne %cr0, 24b
+b 23f
+22:
+23:
+.base64 "AAAnKA=="
+beq %cr0, 26f
+28:
+.base64 "mQYGfOsEABAQAMY48P/GOHgbaXyZBgl960QIEcREABAQACk5//9EOQ=="
+29:
+.base64 "mQYJfetECBEIRQAQEAApOf//SjkAACoo"
+bne %cr0, 29b
+.base64 "mQYJfetECBEJRQAQ6wQAEJkHBnwQAMY4///nOAAAJyg="
+bne %cr0, 28b
+b 27f
+26:
+27:
+b 21f
+20:
+21:
+.base64 "IACATg==""#,
     )
 }
 
@@ -39,16 +62,39 @@ bl {vg_zeroize}
 /// * `scratch` must be valid for reads and writes of 2048 bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `data` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_ecb_decrypt(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
-        r#".base64 "pgIIfNH/IfggAAH4KACBOQAA7Pt4O/98"
-bl {vg_aes_decrypt_blocks}
-.base64 "eBtrfHj7438AAIA4AACEZAAIhGB4W399"
-bl {vg_zeroize}
-.base64 "ePvjfygAgTkAAOzrIAAB6DAAITimAwh8IACATg==""#,
-        vg_aes_decrypt_blocks = sym super::aes::vg_aes_decrypt_blocks,
-        vg_zeroize = sym super::zeroize::vg_zeroize,
+        r#".base64 "AAAmKA=="
+beq %cr0, 20f
+.base64 "eDPHfHgrpnwAAAA4xAQAEAYHYD0EBWthxgdreQIDa2UAAWthDg+APQwNjGHGB4x5CguMZQgJjGFnAWt+ZwEsfCyaYBIsCnMSwujseAAALCg="
+beq %cr0, 22f
+24:
+.base64 "mQYGfOsEABAQAMY4mQYmfOsMIRAQAMY4mQZGfOsUQhAQAMY4mQZmfOscYxAQAMY4mQaGfOskhBAQAMY4mQamfOsspRAQAMY4mQbGfOs0xhAQAMY4mQbmfOs85xAQAMY4gP/GOOQmiXgUSiN9mQYJfetECBHERAAQxEQhEMREQhDERGMQxESEEMREpRDERMYQxETnEPD/KTn//0Q5"
+25:
+.base64 "mQYJfetECBFIRQAQSEUhEEhFQhBIRWMQSEWEEEhFpRBIRcYQSEXnEPD/KTn//0o5AAAqKA=="
+bne %cr0, 25b
+.base64 "mQYJfetECBFJRQAQSUUhEElFQhBJRWMQSUWEEElFpRBJRcYQSUXnEOsEABCZBwZ8EADGOOsMIRCZByZ8EADGOOsUQhCZB0Z8EADGOOscYxCZB2Z8EADGOOskhBCZB4Z8EADGOOsspRCZB6Z8EADGOOs0xhCZB8Z8EADGOOs85xCZB+Z8EADGOPj/5zjC6Ox4AAAsKA=="
+bne %cr0, 24b
+b 23f
+22:
+23:
+.base64 "AAAnKA=="
+beq %cr0, 26f
+28:
+.base64 "mQYGfOsEABAQAMY48P/GOOQmiXgUSiN9mQYJfetECBHERAAQ8P8pOf//RDk="
+29:
+.base64 "mQYJfetECBFIRQAQ8P8pOf//SjkAACoo"
+bne %cr0, 29b
+.base64 "mQYJfetECBFJRQAQ6wQAEJkHBnwQAMY4///nOAAAJyg="
+bne %cr0, 28b
+b 27f
+26:
+27:
+b 21f
+20:
+21:
+.base64 "IACATg==""#,
     )
 }

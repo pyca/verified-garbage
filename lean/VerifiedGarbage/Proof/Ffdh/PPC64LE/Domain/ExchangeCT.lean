@@ -144,7 +144,7 @@ def X5 (x : XD) (s : State) : Prop :=
   (s.gpr .r30 = off x.X 0 ∧ s.gpr .r31 = BitVec.ofNat 64 x.xl ∧ s.gpr .r10 = off x.c.S (slot x.c.w 0) ∧
     s.gpr .r29 = BitVec.ofNat 64 (8 * (x.c.w + 2)) ∧ s.gpr .r11 = BitVec.ofNat 64 (2 * x.c.w) ∧
     s.gpr .r23 = x.c.S ∧ s.gpr .r28 = BitVec.ofNat 64 x.c.k) ∧
-  WP isa ModExp.powSecret s (X6 x)
+  WP isa ModExp.powWin s (X6 x)
 
 /-- `Pins` from registers that the predicate fixes as functions of the data. -/
 theorem pins_of {α : Type} {Φ : α → State → Prop} {rs : List Reg} (f : α → Reg → BitVec 64)

@@ -16,9 +16,13 @@
 
 // How the library decides (for its developers):
 //
-// Every verified function takes a `Dit` token first, which only this
-// module makes, so the compiler checks that every call of verified code
-// comes from an operation that decided whether it needs the mode:
+// The library calls verified code only through the generated dispatchers
+// (`<function>_auto`), which take a `Dit` token first; the implementations
+// they choose among are private to the generated crate. Only this module
+// makes tokens, so the compiler checks that every call of verified code
+// comes from an operation that decided whether it needs the mode (the two
+// functions without a dispatcher, `vg_dit_enter` and `vg_dit_clear`, are
+// those that turn it on and off, and take none):
 //
 // * `enter!` (a `Guard`), for an operation that may process secrets (it
 //   takes a key, or produces or hides a secret). It turns data independent

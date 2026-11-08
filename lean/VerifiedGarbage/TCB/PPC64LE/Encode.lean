@@ -121,6 +121,8 @@ def VOp.encode : VOp → Option Nat
   | .add dw dr n m => some (vx (if dw then 192 else 128) dr.ctorIdx n.ctorIdx m.ctorIdx)
   -- "vsldoi" (VA, 44): `SHB` (bits 22–25, the `VRC` field's low four), `sh < 16`.
   | .sldoi dr n m sh => if sh < 16 then some (va 44 dr.ctorIdx n.ctorIdx m.ctorIdx sh) else none
+  -- "vrlw" (VX, 132).
+  | .rlw dr n m => some (vx 132 dr.ctorIdx n.ctorIdx m.ctorIdx)
 
 open Enc in
 /-- The words of an instruction, in order: one for each instruction
