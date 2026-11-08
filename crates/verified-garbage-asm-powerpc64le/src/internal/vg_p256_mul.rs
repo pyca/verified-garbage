@@ -24,7 +24,7 @@ bl {vg_p256_point_add}
 .base64 "FPqDfAAQhIgAAKA4UChEfQANg+igDKPoeCKlfDhQpXx4KoR8AAKD+AgNg+ioDKPoeCKlfDhQpXx4KoR8CAKD+BANg+iwDKPoeCKlfDhQpXx4KoR8EAKD+BgNg+i4DKPoeCKlfDhQpXx4KoR8GAKD+CANg+jADKPoeCKlfDhQpXx4KoR8IAKD+CgNg+jIDKPoeCKlfDhQpXx4KoR8KAKD+DANg+jQDKPoeCKlfDhQpXx4KoR8MAKD+DgNg+jYDKPoeCKlfDhQpXx4KoR8OAKD+EANg+jgDKPoeCKlfDhQpXx4KoR8QAKD+EgNg+joDKPoeCKlfDhQpXx4KoR8SAKD+FANg+jwDKPoeCKlfDhQpXx4KoR8UAKD+FgNg+j4DKPoeCKlfDhQpXx4KoR8WAKD+AAAPyg="
 bne %cr0, 21b
 .base64 "6AUD6KYDCHzgBePrIACATg==""#,
-        vg_p256_point_double = sym crate::ec_p256::vg_p256_point_double::vg_p256_point_double,
+        vg_p256_point_double = sym crate::ecdh_p256::vg_p256_point_double::vg_p256_point_double,
         vg_p256_point_add = sym crate::ec_p256::vg_p256_point_add::vg_p256_point_add,
     )
 }
