@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Aes.PPC64LE.Crypto.Value
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 import VerifiedGarbage.Proof.Framework.PPC64LE.Reduce
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 
 -- separate module: setup and round groups are used by both the cipher and key loops.
 /-! # POWER8 AES instruction groups -/
@@ -137,42 +138,42 @@ theorem blocks_setup_ok (s : State) :
   · exact (((Local.write s .r7 (s.gpr .r6)).trans (Local.write _ .r6 (s.gpr .r5))).trans he).weaken
       (by simp [or_left_comm]) (by simp)
 
-theorem counter_ok (b : VReg) (s : State)
-    (hc : s.vpr Impl.Aes.PPC64LE.Crypto.counterMask = Impl.Aes.PPC64LE.Crypto.counterControl) :
+theorem counter_ok (b : VReg) (s : State) (hb : b ≠ Impl.Aes.PPC64LE.Crypto.counterBase)
+    (hbs : b ≠ Impl.Aes.PPC64LE.Crypto.counterStep)
+    (hc : s.vpr Impl.Aes.PPC64LE.Crypto.counterStep = Impl.Aes.PPC64LE.Crypto.counterOne) :
     WP isa (.block (Impl.Aes.PPC64LE.Crypto.counter b)) s fun t =>
-      t.vpr b = (s.vpr Impl.Aes.PPC64LE.Crypto.counterBase).extractLsb' 32 96 ++ (s.gpr .r8).extractLsb' 0 32 ∧
-      t.gpr .r8 = s.gpr .r8 + 1 ∧
-      Local [.r8] [b, Impl.Aes.PPC64LE.Crypto.counterWord] s t := by
-  apply WP.of_runBlock
-  simp only [Impl.Aes.PPC64LE.Crypto.counter, runBlock_cons, runStep_some, runBlock_nil,
-    reduceExec, reduceVOpEval, Option.map_some, vpr_writeV, gpr_writeV,
-    reduceCtorEq, ne_eq, not_false_eq_true, ite_false, hc, counter_value, ite_true,
-    show 1 < 2^15 by decide, and_self, Option.some.injEq, exists_eq_left']
-  refine ⟨?_, ?_, ⟨⟨fun r hr => ?_, ?_, ?_⟩, fun r hr => ?_, ?_⟩⟩
-  · simp only [vpr_write, vpr_writeV, ite_true]
-  · simp only [RegUpd.gpr_write_self, BitVec.ofNat_eq_ofNat]
-  · simp only [List.mem_singleton] at hr
-    simp only [RegUpd.gpr_write, hr, ite_false, gpr_writeV]
-  · simp only [RegUpd.rd_write, rd_writeV]
-  · simp only [RegUpd.wr_write, wr_writeV]
-  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    simp only [vpr_write, vpr_writeV, hr.1, hr.2, ite_false]
-  · simp only [RegUpd.mem_write, mem_writeV]
-
+      t.vpr b = s.vpr Impl.Aes.PPC64LE.Crypto.counterBase ∧
+      t.vpr Impl.Aes.PPC64LE.Crypto.counterBase = ctrAdd (s.vpr Impl.Aes.PPC64LE.Crypto.counterBase) 1 ∧
+      Local [] [b, Impl.Aes.PPC64LE.Crypto.counterBase] s t := by
+  rw [Impl.Aes.PPC64LE.Crypto.counter, ← List.singleton_append, WP.block_append_iff]
+  refine WP.mono (vector_step (.vop (.logic .or b Impl.Aes.PPC64LE.Crypto.counterBase
+    Impl.Aes.PPC64LE.Crypto.counterBase)) b (s.vpr Impl.Aes.PPC64LE.Crypto.counterBase) s
+    (by simp only [reduceExec, reduceVOpEval, BitVec.or_self, Option.map_some])) fun u ⟨hu, ho⟩ => ?_
+  have hcb : u.vpr Impl.Aes.PPC64LE.Crypto.counterBase = s.vpr Impl.Aes.PPC64LE.Crypto.counterBase :=
+    ho.v _ (by simpa only [List.mem_singleton] using hb.symm)
+  have hst : u.vpr Impl.Aes.PPC64LE.Crypto.counterStep = Impl.Aes.PPC64LE.Crypto.counterOne :=
+    (ho.v _ (by simpa only [List.mem_singleton] using hbs.symm)).trans hc
+  refine WP.mono (vector_step (.vop (.add false Impl.Aes.PPC64LE.Crypto.counterBase
+    Impl.Aes.PPC64LE.Crypto.counterBase Impl.Aes.PPC64LE.Crypto.counterStep))
+    Impl.Aes.PPC64LE.Crypto.counterBase (ctrAdd (s.vpr Impl.Aes.PPC64LE.Crypto.counterBase) 1) u
+    (by simp only [reduceExec, reduceVOpEval, Bool.false_eq_true, ite_false, Option.map_some, hst, hcb,
+      counter_step])) fun t ⟨ht, ho'⟩ => ⟨?_, ht, (Local.of_vector (ho.trans ho')).weaken (by simp) (by simp)⟩
+  rw [ho'.v b (by simpa only [List.mem_singleton] using hb), hu]
 
 def inputVector (ctr : Bool) (s : State) : BitVec 128 :=
-  if ctr then (s.vpr Impl.Aes.PPC64LE.Crypto.counterBase).extractLsb' 32 96 ++ (s.gpr .r8).extractLsb' 0 32
-  else rev128 (s.mem.read (s.gpr .r6) 16)
+  if ctr then s.vpr Impl.Aes.PPC64LE.Crypto.counterBase else rev128 (s.mem.read (s.gpr .r6) 16)
 
 theorem readBlock_ok (ctr : Bool) (b : VReg) (s : State) (hb : b ≠ mask)
+    (hbc : b ≠ Impl.Aes.PPC64LE.Crypto.counterBase) (hbs : b ≠ Impl.Aes.PPC64LE.Crypto.counterStep)
     (h0 : s.gpr .r0 = 0) (hm : s.vpr mask = byteMask)
-    (hc : ctr = true → s.vpr Impl.Aes.PPC64LE.Crypto.counterMask = Impl.Aes.PPC64LE.Crypto.counterControl)
+    (hc : ctr = true → s.vpr Impl.Aes.PPC64LE.Crypto.counterStep = Impl.Aes.PPC64LE.Crypto.counterOne)
     (hr : InRegions (s.rd ++ s.wr) (s.gpr .r6) 16) :
     WP isa (.block (Impl.Aes.PPC64LE.Crypto.readBlock ctr b)) s fun t =>
       t.vpr b = inputVector ctr s ∧
       t.gpr .r6 = (if ctr then s.gpr .r6 else s.gpr .r6 + 16) ∧
-      t.gpr .r8 = (if ctr then s.gpr .r8 + 1 else s.gpr .r8) ∧
-      Local [.r6, .r8] [b, Impl.Aes.PPC64LE.Crypto.counterWord] s t := by
+      t.vpr Impl.Aes.PPC64LE.Crypto.counterBase = (if ctr then ctrAdd (s.vpr Impl.Aes.PPC64LE.Crypto.counterBase) 1
+        else s.vpr Impl.Aes.PPC64LE.Crypto.counterBase) ∧
+      Local [.r6] [b, Impl.Aes.PPC64LE.Crypto.counterBase] s t := by
   cases ctr
   · simp only [Impl.Aes.PPC64LE.Crypto.readBlock, inputVector, Bool.false_eq_true, ite_false]
     rw [WP.block_append_iff]
@@ -183,12 +184,12 @@ theorem readBlock_ok (ctr : Bool) (b : VReg) (s : State) (hb : b ≠ mask)
     refine ⟨?_, ?_, ?_, ?_⟩
     · simpa only [vpr_write] using hv
     · simp only [RegUpd.gpr_write_self, ho.gpr, BitVec.ofNat_eq_ofNat]
-    · simp only [RegUpd.gpr_write, reduceCtorEq, ite_false, ho.gpr]
+    · simp only [vpr_write]; exact ho.v _ (by simpa only [List.mem_singleton] using hbc.symm)
     · exact ((Local.of_vector ho).trans (Local.write u .r6 (u.gpr .r6 + BitVec.ofNat 64 16))).weaken
         (by simp) (by simp)
   · simp only [Impl.Aes.PPC64LE.Crypto.readBlock, inputVector, ite_true]
-    refine WP.mono (counter_ok b s (hc rfl)) fun t ⟨hv, hg, hf⟩ => ⟨hv, ?_, hg, ?_⟩
-    · exact hf.keep.gpr (by decide : Reg.r6 ∉ [Reg.r8])
+    refine WP.mono (counter_ok b s hbc hbs (hc rfl)) fun t ⟨hv, hg, hf⟩ => ⟨hv, ?_, hg, ?_⟩
+    · exact hf.keep.gpr (by decide : Reg.r6 ∉ ([] : List Reg))
     · exact hf.weaken (by simp) (by simp)
 
 theorem storePerm_ok (d n : VReg) (p offset : Reg) (s : State) (hp : p ≠ .r0)
@@ -240,13 +241,18 @@ theorem storeAdvance_ok (b : VReg) (o : Reg) (s : State) (hm : s.vpr mask = byte
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [vpr_write, vpr_writeV, hr.1, ite_false]
 
+theorem swapDwords_xor (x y : BitVec 128) : swapDwords (x ^^^ y) = swapDwords x ^^^ swapDwords y := by
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  simp only [getLsbD_swapDwords _ hi, BitVec.getLsbD_xor]
+
 def outputAt (ctr : Bool) (v : BitVec 128) (m : Mem) (p : Addr) : BitVec 128 :=
   if ctr then v ^^^ rev128 (m.read p 16) else v
 
 def outputVector (ctr : Bool) (b : VReg) (s : State) : BitVec 128 :=
   outputAt ctr (s.vpr b) s.mem (s.gpr .r6)
 
-theorem writeBlock_ok (ctr : Bool) (b : VReg) (o : Reg) (s : State) (hb : b ≠ mask)
+theorem writeBlock_ok (ctr : Bool) (b : VReg) (o : Reg) (s : State)
     (hd : b ≠ Impl.Aes.PPC64LE.Crypto.data) (h0 : s.gpr .r0 = 0) (hm : s.vpr mask = byteMask)
     (hr : InRegions (s.rd ++ s.wr) (s.gpr .r6) 16) (hw : InRegions s.wr (s.gpr .r6 + s.gpr o) 16) :
     WP isa (.block (Impl.Aes.PPC64LE.Crypto.writeBlock ctr b o)) s fun t =>
@@ -255,28 +261,24 @@ theorem writeBlock_ok (ctr : Bool) (b : VReg) (o : Reg) (s : State) (hb : b ≠ 
   · simpa only [Impl.Aes.PPC64LE.Crypto.writeBlock, outputVector, outputAt, Bool.false_eq_true,
       ite_false, List.nil_append] using storeAdvance_ok b o s hm hw
   · simp only [Impl.Aes.PPC64LE.Crypto.writeBlock, outputVector, outputAt, ite_true]
-    rw [WP.block_append_iff, WP.block_append_iff]
-    refine WP.mono (load_ok Impl.Aes.PPC64LE.Crypto.data .r6 s (by decide) (by decide) h0 hm hr)
-      fun u ⟨hv, ho⟩ => ?_
-    refine WP.mono (vector_step (.vop (.logic .xor b b Impl.Aes.PPC64LE.Crypto.data)) b
-      (u.vpr b ^^^ u.vpr Impl.Aes.PPC64LE.Crypto.data) u (by rfl)) fun w ⟨hx, ho'⟩ => ?_
-    have hg : w.gpr = s.gpr := ho'.gpr.trans ho.gpr
-    have hmem : w.mem = s.mem := ho'.mem.trans ho.mem
-    have hmask : w.vpr mask = byteMask := (ho'.v mask (by simpa only [List.mem_singleton] using Ne.symm hb)).trans
-      ((ho.v mask (by decide)).trans hm)
-    have hw' : InRegions w.wr (w.gpr .r6 + w.gpr o) 16 := by rw [ho'.wr, ho.wr, hg]; exact hw
-    have hval : w.vpr b = s.vpr b ^^^ rev128 (s.mem.read (s.gpr .r6) 16) := by
-      rw [hx, ho.v b (by simpa only [List.mem_singleton] using hd), hv]
-    refine WP.mono (storeAdvance_ok b o w hmask hw') fun t ht => ?_
+    have hr0 : InRegions (s.rd ++ s.wr) (s.gpr .r6 + s.gpr .r0) 16 := by
+      rw [h0]; simpa only [BitVec.ofNat_eq_ofNat, BitVec.add_zero] using hr
+    refine WP.cons (exec_lxvd2x Impl.Aes.PPC64LE.Crypto.data .r6 .r0 s (by decide) hr0) ?_
+    refine WP.cons (exec_flip b b _ (by rw [vpr_writeV, ite_eq_right (by decide)]; exact hm)) ?_
+    refine WP.cons (show exec (.vop (.logic .xor b b Impl.Aes.PPC64LE.Crypto.data)) _ = some _ from rfl) ?_
+    refine WP.cons (exec_stxvd2x b .r6 o _ (by decide) (by simpa only [wr_writeV, gpr_writeV] using hw)) ?_
+    refine WP.cons (exec_addi' (d := .r6) (n := .r6) (imm := 16) (by decide)) (wp_nil ?_)
+    simp only [vpr_writeV, gpr_writeV, mem_writeV, rd_writeV, wr_writeV, ite_true, ite_eq_right hd, h0,
+      BitVec.ofNat_eq_ofNat, BitVec.add_zero, show Impl.Aes.PPC64LE.Crypto.data ≠ b from Ne.symm hd, ite_false]
     refine ⟨?_, ?_, ⟨fun r hr => ?_, ?_, ?_⟩, fun r hr => ?_⟩
-    · rw [ht.mem, hmem, hg, hval]
-    · rw [ht.ptr, hg]
-    · exact (ht.keep.gpr hr).trans (congrFun hg r)
-    · exact ht.keep.2.1.trans (ho'.rd.trans ho.rd)
-    · exact ht.keep.2.2.trans (ho'.wr.trans ho.wr)
-    · rw [ht.v r hr]
-      simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-      rw [ho'.v r (by simpa only [List.mem_singleton] using hr.1),
-        ho.v r (by simpa only [List.mem_singleton] using hr.2)]
+    · simp only [RegUpd.mem_write]
+      rw [swapDwords_xor, flip_store, swapDwords_involutive, rev128_xor, rev128_rev128]
+    · simp only [RegUpd.gpr_write_self]; rfl
+    · simp only [List.mem_singleton] at hr
+      simp only [RegUpd.gpr_write, hr, ite_false]
+    · simp only [RegUpd.rd_write]
+    · simp only [RegUpd.wr_write]
+    · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+      simp only [vpr_write, vpr_writeV, hr.1, hr.2, ite_false]
 
 end VG.Proof.Aes.PPC64LE.Crypto

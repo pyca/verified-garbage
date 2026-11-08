@@ -18,14 +18,15 @@ abbrev key : VReg := .v8
 abbrev data : VReg := .v9
 abbrev mask : VReg := .v19
 abbrev counterBase : VReg := .v10
-abbrev counterWord : VReg := .v11
-abbrev counterMask : VReg := .v18
+abbrev counterStep : VReg := .v11
 
 def byteMask : BitVec 128 := 0x07060504030201000f0e0d0c0b0a0908
 
 def mov (d n : Reg) : Instr := .logic .or d n n
 
-def counterControl : BitVec 128 := 0x000102030405060708090a0b14151617
+/-- One in the last word: `vadduwm` by it adds one to the counter, the
+last 32 bits of the block, modulo 2³². -/
+def counterOne : BitVec 128 := 1
 
 def setMask (d : VReg) (x : BitVec 128) : List Instr :=
   Impl.Vector.PPC64LE.const64 .r11 (x.extractLsb' 64 64) ++
@@ -78,10 +79,10 @@ def breg : Nat → VReg
 
 def batchRegs (n : Nat) : List VReg := (List.range n).map breg
 
-/-- Insert the low 32 bits of the integer counter into the original
-counter prefix. `vperm` selects only defined bytes of `mtvsrd`. -/
+/-- The counter block, and the counter block's last word plus one
+(`vadduwm`, which adds modulo 2³² in each word). -/
 def counter (v : VReg) : List Instr :=
-  [.mtvsrd counterWord .r8, .vop (.perm v counterBase counterWord counterMask), .addi .r8 .r8 1]
+  [.vop (.logic .or v counterBase counterBase), .vop (.add false counterBase counterBase counterStep)]
 
 /-- The data pointer is advanced here; CTR's counter pointer stays fixed. -/
 def readBlock (ctr : Bool) (v : VReg) : List Instr :=
@@ -91,8 +92,13 @@ def readBlock (ctr : Bool) (v : VReg) : List Instr :=
 `dst - src` out of place), and `r6` advanced. -/
 def storeAdvance (v : VReg) (o : Reg := .r0) : List Instr := storePerm v v .r6 o ++ [.addi .r6 .r6 16]
 
+/-- CTR XORs the keystream into the data in `lxvd2x`'s order, after the
+store's `vperm`: one `vperm` for the block, not one for the data and one for
+the result. -/
 def writeBlock (ctr : Bool) (v : VReg) (o : Reg := .r0) : List Instr :=
-  (if ctr then load data .r6 ++ [.vop (.logic .xor v v data)] else []) ++ storeAdvance v o
+  if ctr then [.lxvd2x data .r6 .r0, .vop (.perm v v v mask), .vop (.logic .xor v v data), .stxvd2x v .r6 o,
+    .addi .r6 .r6 16]
+  else storeAdvance v o
 
 def group (inverse ctr : Bool) (count : Nat) (o : Reg := .r0) : Prog isa :=
   let rs := batchRegs count
@@ -116,24 +122,23 @@ def encryptBlocks : Prog isa := blocks false
 
 def decryptBlocks : Prog isa := blocks true
 
-/-- The masks, the counter's last word in `r8` (byte-reversed, through
-`r11 = 12`) and the counter block in `counterBase`. -/
+/-- The byte-order mask, `counterOne` in `counterStep` and the counter
+block in `counterBase`. -/
 def ctrSetup : List Instr :=
-  setup ++ setMask counterMask counterControl ++ [.li .r11 12, .loadRev .w .r8 .r5 .r11] ++ load counterBase .r5
+  setup ++ setMask counterStep counterOne ++ load counterBase .r5
 
 def ctrPre (to : Bool) : List Instr := if to then [.sub .r9 .r8 .r6] else []
 def ctrPost (to : Bool) : List Instr := if to then [mov .r11 .r9] else []
 def ctrOff (to : Bool) : Reg := if to then .r11 else .r0
-def ctrFin (to : Bool) : List Instr := if to then [.li .r11 12] else []
 
 /-- Counter mode on the `n = r7` blocks at `r6`, in place (`to = false`), or
 written to `r8` (`to = true`): then `dst - src` is kept in `r9` across the
-setup (`ctrPre`), then in `r11`, the stores' offset register (`ctrPost`),
-and `r11` is 12 again for the counter's final store (`ctrFin`). -/
+setup (`ctrPre`), then in `r11`, the stores' offset register (`ctrPost`).
+The counter block, `n` further on, is stored back at the end. -/
 def ctrWith (to : Bool) : Prog isa :=
   .ite (.zero .d .r7) (.block [])
     (.seq (.block (ctrPre to ++ ctrSetup ++ ctrPost to))
-      (.seq (batches false true (ctrOff to)) (.block (ctrFin to ++ [.storeRev .w .r8 .r5 .r11]))))
+      (.seq (batches false true (ctrOff to)) (.block (store counterBase .r5))))
 
 /-- `vg_aes_ctr32(schedule = r3, rounds = r4, counter = r5, data = r6, n = r7,
 scratch = r8)`, in place. -/

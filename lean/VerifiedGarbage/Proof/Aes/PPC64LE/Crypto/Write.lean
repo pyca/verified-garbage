@@ -45,7 +45,7 @@ theorem write_step (ctr : Bool) {o : Reg} {s₀ s : State} {m₀ : Mem} {D E : A
   have all := batchFacts ⟨8, by decide⟩
   have facts := batchFacts ⟨c, by omega⟩
   have hbm : breg c ≠ mask := fun he => all.2.2.1 (he ▸ breg_mem hc8)
-  have hbd : breg c ≠ data := fun he => all.2.2.2.2.2.2 (he ▸ breg_mem hc8)
+  have hbd : breg c ≠ data := fun he => all.2.2.2.2.2 (he ▸ breg_mem hc8)
   have hz : s.gpr .r0 = 0 := (h.keep.gpr (by decide)).trans h0
   have hmm : s.vpr mask = byteMask := (h.fixed mask (by simp [facts.2.2.1, mask, data])).trans hm
   have hso : s.gpr o = E - D := (h.keep.gpr (by simpa only [List.mem_singleton] using ho)).trans hO
@@ -60,7 +60,7 @@ theorem write_step (ctr : Bool) {o : Reg} {s₀ s : State} {m₀ : Mem} {D E : A
   have hx : aesState (outputVector ctr (breg c) s) = F (k+c) := by
     rw [outputVector, h.val c (Nat.le_refl _) hc, h.ptr]
     exact hF c hc s.mem h.processed h.frame
-  refine WP.mono (writeBlock_ok ctr (breg c) o s hbm hbd hz hmm hrr hwr) fun t ht => ?_
+  refine WP.mono (writeBlock_ok ctr (breg c) o s hbd hz hmm hrr hwr) fun t ht => ?_
   have hp := h.processed.store hsize (show k+c < n by omega) (v := rev128 (outputVector ctr (breg c) s)) (by
     intro j hj
     change VG.VectorCrypto.vbyte (rev128 (outputVector ctr (breg c) s)) j = _
@@ -79,7 +79,7 @@ theorem write_step (ctr : Bool) {o : Reg} {s₀ s : State} {m₀ : Mem} {D E : A
   · intro i hi hin
     have hi8 : i < 8 := by omega
     have hbc : breg i ≠ breg c := breg_ne hi8 hc8 (by omega)
-    have hbid : breg i ≠ data := fun he => all.2.2.2.2.2.2 (he ▸ breg_mem hi8)
+    have hbid : breg i ≠ data := fun he => all.2.2.2.2.2 (he ▸ breg_mem hi8)
     rw [ht.v (breg i) (by simp [hbc, hbid])]
     exact h.val i (by omega) hin
   · intro r hr

@@ -24,16 +24,15 @@ def outputState (inverse ctr : Bool) (nr : Nat) (w : List Byte) (icb : Spec.Gcm.
     Spec.Gcm.blockAt m (D + BitVec.ofNat 64 (16*i)))
   else result inverse nr w (inputState false icb m D i)
 
-theorem counter_readValue (s : State) (icb : Spec.Gcm.Block) (k i : Nat)
-    (hb : (s.vpr counterBase).extractLsb' 32 96 = icb.extractLsb' 32 96)
-    (hw : (s.gpr .r8).setWidth 32 = icb.extractLsb' 0 32 + BitVec.ofNat 32 k) :
-    readValue true s i = Nat.repeat Spec.Gcm.inc32 (k+i) icb := by
-  simp only [readValue, ite_true, hb]
-  change icb.extractLsb' 32 96 ++ (s.gpr .r8 + BitVec.ofNat 64 i).setWidth 32 = _
-  rw [BitVec.setWidth_add _ _ (by decide), hw, BitVec.setWidth_ofNat_of_le (by decide),
-    BitVec.add_assoc, ← BitVec.ofNat_add,
-    ← VG.Proof.Aes.repeat_inc32_hi icb (k+i), ← VG.Proof.Aes.repeat_inc32_lo icb (k+i),
+theorem ctrAdd_repeat (icb : Spec.Gcm.Block) (j : Nat) : ctrAdd icb j = Nat.repeat Spec.Gcm.inc32 j icb := by
+  rw [ctrAdd, ← VG.Proof.Aes.repeat_inc32_hi icb j, ← VG.Proof.Aes.repeat_inc32_lo icb j,
     BitVec.extractLsb'_append_extractLsb'_eq_extractLsb' (by decide), BitVec.extractLsb'_eq_self]
+
+theorem counter_readValue (s : State) (icb : Spec.Gcm.Block) (k i : Nat)
+    (hc : s.vpr counterBase = ctrAdd icb k) :
+    readValue true s i = Nat.repeat Spec.Gcm.inc32 (k+i) icb := by
+  simp only [readValue, ite_true]
+  rw [hc, ctrAdd_add, ctrAdd_repeat]
 
 /-- The source's unprocessed blocks are as they were: in place, by
 `Processed`; out of place, because the destination is apart from it. -/
@@ -52,8 +51,7 @@ theorem src_stateAt {m₀ m : Mem} {D E : Addr} {n k j : Nat} {F : Nat → Spec.
 
 theorem input_state (ctr : Bool) (s : State) (icb : Spec.Gcm.Block) {m₀ : Mem} {D : Addr}
     {k : Nat} (hptr : s.gpr .r6 = D + BitVec.ofNat 64 (16*k))
-    (hb : ctr = true → (s.vpr counterBase).extractLsb' 32 96 = icb.extractLsb' 32 96)
-    (hw : ctr = true → (s.gpr .r8).setWidth 32 = icb.extractLsb' 0 32 + BitVec.ofNat 32 k)
+    (hc : ctr = true → s.vpr counterBase = ctrAdd icb k)
     (i : Nat) (hsrc : Spec.Aes.stateAt s.mem (D + BitVec.ofNat 64 (16*(k+i))) =
       Spec.Aes.stateAt m₀ (D + BitVec.ofNat 64 (16*(k+i)))) :
     aesState (readValue ctr s i) = inputState ctr icb m₀ D (k+i) := by
@@ -61,7 +59,7 @@ theorem input_state (ctr : Bool) (s : State) (icb : Spec.Gcm.Block) {m₀ : Mem}
   · simp only [readValue, inputState, Bool.false_eq_true, ite_false, hptr, Offset.add_add, load_state]
     rw [show 16*k+16*i = 16*(k+i) by omega]
     exact hsrc
-  · rw [counter_readValue s icb k i (hb rfl) (hw rfl)]
+  · rw [counter_readValue s icb k i (hc rfl)]
     simp only [inputState, ite_true]
 
 theorem output_state (inverse ctr : Bool) (nr : Nat) (w : List Byte) (icb : Spec.Gcm.Block)

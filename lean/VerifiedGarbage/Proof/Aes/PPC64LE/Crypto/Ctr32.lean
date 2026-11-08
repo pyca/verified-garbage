@@ -15,19 +15,22 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 `ctrWith to` is CTR in place (`ctr32`, `to = false`) and from `r6` to `r8`
 (`ctr32To`, `to = true`), with one proof (`ctrWith_ok`): the two differ
 only in the setup (`setupWith_ok`, which leaves the stores' offset register
-`ctrOff to` at `dst - src`) and in `r11` before the counter's final store. -/
+`ctrOff to` at `dst - src`). -/
 
 @[expose] public section
 namespace VG.Proof.Aes.PPC64LE.Crypto
 open VG VG.PPC64LE
 open VG.Proof.Aes.Memory
-open VG.Impl.Aes.PPC64LE.Crypto (counterBase counterMask counterControl mask byteMask ctrPre ctrPost ctrOff ctrFin
-  ctrWith)
+open VG.Impl.Aes.PPC64LE.Crypto (counterBase counterStep counterOne mask byteMask ctrPre ctrPost ctrOff ctrWith)
 
 def ctrGprs : List Reg := [.r0, .r8, .r6, .r7, .r9, .r10, .r11, .r12]
 
 /-- Where `ctrWith to` writes the blocks: at `r6` in place, at `r8` out of place. -/
 def dstOf (to : Bool) (s : State) : Addr := if to then s.gpr .r8 else s.gpr .r6
+
+theorem read_write_self16 (m : Mem) (a : Addr) (v : BitVec 128) : (m.write a 16 v).read a 16 = v :=
+  Mem.read_eq_of_bytes fun i hi => by
+    simp only [Mem.write, Mem.sub_ofNat_toNat a (show i < 2 ^ 64 by omega), hi, ite_true]
 
 /-- `r9 := r8 - r6`. -/
 theorem sub_ok (s : State) : WP isa (.block [.sub .r9 .r8 .r6]) s fun t =>
@@ -45,23 +48,21 @@ theorem mov11_ok (s : State) : WP isa (.block [Impl.Aes.PPC64LE.Crypto.mov .r11 
   exact ⟨by rw [RegUpd.gpr_write_self, BitVec.or_self], Local.write s .r11 _⟩
 
 /-- After the setup of `ctrWith to`: `CtrSetup`, with the stores' offset
-register at `dst - src`, and `r11` at 12 in place. -/
+register at `dst - src`. -/
 structure SetupWith (to : Bool) (s t : State) : Prop where
-  effects : Local [.r0, .r8, .r9, .r11, .r12] [.v0, .v1, mask, counterMask, counterBase] s t
+  effects : Local [.r0, .r9, .r11, .r12] [.v0, .v1, mask, counterStep, counterBase] s t
   zero : t.gpr .r0 = 0
   mask : t.vpr mask = byteMask
-  control : t.vpr counterMask = counterControl
+  control : t.vpr counterStep = counterOne
   baseValue : t.vpr counterBase = Spec.Gcm.blockAt s.mem (s.gpr .r5)
-  word : (t.gpr .r8).setWidth 32 = (Spec.Gcm.blockAt s.mem (s.gpr .r5)).extractLsb' 0 32
   off : t.gpr (ctrOff to) = dstOf to s - s.gpr .r6
-  r11 : to = false → t.gpr .r11 = 12
 
 theorem setupWith_ok (to : Bool) (s : State) (hcr : (⟨s.gpr .r5, 16⟩ : Region) ∈ s.rd ++ s.wr) :
     WP isa (.block (ctrPre to ++ Impl.Aes.PPC64LE.Crypto.ctrSetup ++ ctrPost to)) s (SetupWith to s) := by
   cases to
   · simp only [ctrPre, ctrPost, Bool.false_eq_true, ite_false, List.nil_append, List.append_nil]
     refine WP.mono (ctr_setup_ok s hcr) fun t hb => ⟨hb.effects.weaken (by decide) (by decide), hb.zero,
-      hb.mask, hb.control, hb.baseValue, hb.word, ?_, fun _ => hb.offset⟩
+      hb.mask, hb.control, hb.baseValue, ?_⟩
     simp only [ctrOff, dstOf, Bool.false_eq_true, ite_false, BitVec.sub_self]
     exact hb.zero
   · simp only [ctrPre, ctrPost, ite_true]
@@ -75,9 +76,8 @@ theorem setupWith_ok (to : Bool) (s : State) (hcr : (⟨s.gpr .r5, 16⟩ : Regio
     have hm₁ : s₁.mem = s.mem := e₁.mem
     refine ⟨((e₁.trans hb.effects).trans e₂).weaken (by decide) (by decide),
       (e₂.keep.gpr (by decide)).trans hb.zero, (e₂.v _ (by decide)).trans hb.mask,
-      (e₂.v _ (by decide)).trans hb.control, ?_, ?_, ?_, fun h => nomatch h⟩
+      (e₂.v _ (by decide)).trans hb.control, ?_, ?_⟩
     · rw [e₂.v _ (by decide), hb.baseValue, h15, hm₁]
-    · rw [e₂.keep.gpr (by decide), hb.word, h15, hm₁]
     · simp only [ctrOff, dstOf, ite_true]
       rw [h11, hb.effects.keep.gpr (by decide), h9]
 
@@ -133,67 +133,34 @@ theorem ctrWith_ok (to : Bool) (s : State) (hK : (⟨s.gpr .r3, 240⟩ : Region)
       · cases to <;> decide
     have hi : LoopInv false true base nr n D E icb 0 base := by
       refine ⟨by omega, Keep.refl _ _, ?_, ?_, Processed.refl _ _ _ _, Frame.refl _ _, hb.mask,
-        fun _ => hb.control, ?_, ?_⟩
+        fun _ => hb.control, ?_⟩
       · rw [e.keep.gpr (by decide)]
         simp only [Nat.mul_zero, BitVec.add_zero]; rfl
       · rw [e.keep.gpr (by decide)]
         simp only [Nat.sub_zero, n, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-      · intro _; rw [hb.baseValue]
-      · intro _; simpa only [BitVec.ofNat_eq_ofNat, BitVec.add_zero] using hb.word
+      · intro _; rw [hb.baseValue, ctrAdd_zero]
     refine WP.seq (WP.mono (batches_ok hc hi) fun u hu => ?_)
     have hC5 : u.gpr .r5 = C := (hu.keep.gpr (by decide)).trans (e.keep.gpr (by decide))
-    -- `r11` back to 12, then the counter's last word
-    have hfin : WP isa (.block (ctrFin to)) u fun v => v.gpr .r11 = 12 ∧ Local [.r11] [] u v := by
-      cases to
-      · simp only [ctrFin, Bool.false_eq_true, ite_false]
-        exact WP.block_nil ⟨(hu.keep.gpr (by decide)).trans (hb.r11 rfl), Local.refl _ _ _⟩
-      · simp only [ctrFin, ite_true]
-        apply WP.of_runBlock
-        rw [runBlock_cons, show exec (.li .r11 12) u = some (u.write .r11 12) from rfl, runStep_some,
-          runBlock_nil]
-        simp only [Option.some.injEq, exists_eq_left']
-        exact ⟨RegUpd.gpr_write_self .., Local.write u .r11 _⟩
-    rw [WP.block_append_iff]
-    refine WP.mono hfin fun v ⟨h11, ev⟩ => ?_
-    have hCv : v.gpr .r5 = C := (ev.keep.gpr (by decide)).trans hC5
-    have hwv : InRegions v.wr (v.gpr .r5 + v.gpr .r11) 4 := by
-      rw [ev.keep.2.2, hu.keep.2.2, e.keep.2.2, hCv, h11]
-      exact ⟨⟨C, 16⟩, hC, Offset.contains_base _ (d := 12) (n := 4) (k := 16) (by decide) (by decide)⟩
-    have hstore : WP isa (.block [.storeRev .w .r8 .r5 .r11]) v
-        (· = {v with mem := v.mem.writeW (C + 12) (rev32 ((v.gpr .r8).setWidth 32))}) := by
-      apply WP.of_runBlock
-      rw [runBlock_cons, exec_storeRev_w (by decide) hwv, runStep_some, runBlock_nil, hCv, h11]
-      simp only [Option.some.injEq, exists_eq_left']
-    refine WP.mono hstore fun t ht => ?_
+    -- the counter block, `n` further on, stored back
+    have hwv : InRegions u.wr (u.gpr .r5) 16 := by
+      rw [hu.keep.2.2, e.keep.2.2, hC5]
+      exact ⟨⟨C, 16⟩, hC, Region.contains_self _ _⟩
+    refine WP.mono (store_ok counterBase .r5 u (by decide) ((hu.keep.gpr (by decide)).trans hb.zero) hu.mask hwv)
+      fun t ht => ?_
     subst t
-    have hvm : v.mem = u.mem := ev.mem
-    have hv8 : v.gpr .r8 = u.gpr .r8 := ev.keep.gpr (by decide)
-    have hf : Frame [⟨C, 16⟩] u.mem (u.mem.writeW (C+12) (rev32 ((u.gpr .r8).setWidth 32))) :=
-      (Frame.refl _ _).writeW (List.mem_singleton_self _) _
-        (Offset.contains_base _ (d := 12) (n := 4) (k := 16) (by decide) (by decide))
+    have hf : Frame [⟨C, 16⟩] u.mem (u.mem.write C 16 (rev128 (u.vpr counterBase))) :=
+      (Frame.refl _ _).write (List.mem_singleton_self _) _ (Region.contains_self _ _)
     have hp := hu.processed.frame hf (by simpa only [List.mem_singleton, forall_eq] using hcd.symm) hsize
     have hbm : base.mem = s.mem := e.mem
     have hsched : schedule nr base = schedule nr s := by
       rw [schedule, hbm, e.keep.gpr (by decide)]
     rw [hsched, hbm] at hp
-    refine ⟨((e.keep.trans hu.keep).trans ev.keep).mono (by simp [ctrGprs, loopGprs]), ?_, ?_⟩
-    · show Spec.Gcm.blocksAt (v.mem.writeW (C + 12) (rev32 ((v.gpr .r8).setWidth 32))) E n = _
-      rw [hvm, hv8]
+    refine ⟨(e.keep.trans hu.keep).mono (by simp [ctrGprs, loopGprs]), ?_, ?_⟩
+    · show Spec.Gcm.blocksAt (u.mem.write (u.gpr .r5) 16 (rev128 (u.vpr counterBase))) E n = _
+      rw [hC5]
       exact ctr_processed hp
-    · have hframe := hu.frame
-      rw [hbm] at hframe
-      show Spec.Gcm.blockAt (v.mem.writeW (C + 12) (rev32 ((v.gpr .r8).setWidth 32))) C = _
-      rw [hvm, hv8]
-      apply counter_after (word := (u.gpr .r8).setWidth 32) (hu.counter rfl)
-      intro i hi
-      change (u.mem.write (C+12) 4 (rev32 ((u.gpr .r8).setWidth 32))) (C + BitVec.ofNat 64 i) = _
-      rw [Mem.write, show (12 : BitVec 64) = BitVec.ofNat 64 12 from rfl,
-        Offset.sub_toNat' C (by omega) (by omega)]
-      by_cases hil : i < 12
-      · rw [ite_eq_right (show ¬12 ≤ i by omega), ite_eq_right (show ¬2^64+i-12 < 4 by omega), ite_eq_left hil]
-        exact hframe.bytes (R := ⟨C, 16⟩) (by simpa only [List.mem_singleton, forall_eq] using hcd)
-          (by change 16 ≤ 2^64; decide) hi
-      · rw [ite_eq_left (show 12 ≤ i by omega), ite_eq_left (show i-12 < 4 by omega), ite_eq_right hil]
+    · show Spec.Gcm.blockAt (u.mem.write (u.gpr .r5) 16 (rev128 (u.vpr counterBase))) C = _
+      rw [hC5, ← read_blockAt, read_write_self16, rev128_rev128, hu.counter rfl, ctrAdd_repeat]
 
 theorem ctr32_ok (s : State) (hs : Proof.Aes.ctr32PPC64LE.pre s) :
     WP isa Impl.Aes.PPC64LE.Crypto.ctr32 s fun t => Keep ctrGprs s t ∧ Proof.Aes.ctr32PPC64LE.post s t := by
