@@ -136,15 +136,9 @@ pub fn has_some() -> bool {
     COMPILED.0 != 0 || detected().0 != 0
 }
 
-/// `f`, if `on`, and otherwise no feature: a bit of [`COMPILED`] (which
-/// some targets, and the `env` feature, make of none).
-#[allow(dead_code)]
-const fn bit_if(on: bool, f: u32) -> u32 {
-    if on { f } else { 0 }
-}
-
 /// The features the compilation target enables (by their Rust
-/// `target_feature` names, as `feature` names their bits), which every CPU
+/// `target_feature` names, as `feature` names their bits; each `cfg!` is 0
+/// or 1, as in `decode`), which every CPU
 /// running this code has: code compiled with a target feature may use it
 /// anywhere, so a CPU without it cannot run this code at all. AVX and the
 /// AVX-512 features included: the operating system must then also save
@@ -156,22 +150,22 @@ const fn bit_if(on: bool, f: u32) -> u32 {
 /// answers as `detected` does, but without detecting.
 #[cfg(all(not(feature = "env"), any(target_arch = "x86", target_arch = "x86_64")))]
 pub const COMPILED: Features = Features(
-    bit_if(cfg!(target_feature = "ssse3"), feature::SSSE3)
-        | bit_if(cfg!(target_feature = "sha"), feature::SHA)
-        | bit_if(cfg!(target_feature = "aes"), feature::AES)
-        | bit_if(cfg!(target_feature = "pclmulqdq"), feature::PCLMULQDQ)
-        | bit_if(cfg!(target_feature = "avx"), feature::AVX)
-        | bit_if(cfg!(target_feature = "avx2"), feature::AVX2)
-        | bit_if(cfg!(target_feature = "bmi1"), feature::BMI1)
-        | bit_if(cfg!(target_feature = "bmi2"), feature::BMI2)
-        | bit_if(cfg!(target_feature = "avx512f"), feature::AVX512F)
-        | bit_if(cfg!(target_feature = "sha512"), feature::SHA512)
-        | bit_if(cfg!(target_feature = "adx"), feature::ADX)
-        | bit_if(cfg!(target_feature = "avx512ifma"), feature::AVX512IFMA)
-        | bit_if(cfg!(target_feature = "avx512vl"), feature::AVX512VL)
-        | bit_if(cfg!(target_feature = "vaes"), feature::VAES)
-        | bit_if(cfg!(target_feature = "vpclmulqdq"), feature::VPCLMULQDQ)
-        | bit_if(cfg!(target_feature = "avx512bw"), feature::AVX512BW),
+    (cfg!(target_feature = "ssse3") as u32 * feature::SSSE3)
+        | (cfg!(target_feature = "sha") as u32 * feature::SHA)
+        | (cfg!(target_feature = "aes") as u32 * feature::AES)
+        | (cfg!(target_feature = "pclmulqdq") as u32 * feature::PCLMULQDQ)
+        | (cfg!(target_feature = "avx") as u32 * feature::AVX)
+        | (cfg!(target_feature = "avx2") as u32 * feature::AVX2)
+        | (cfg!(target_feature = "bmi1") as u32 * feature::BMI1)
+        | (cfg!(target_feature = "bmi2") as u32 * feature::BMI2)
+        | (cfg!(target_feature = "avx512f") as u32 * feature::AVX512F)
+        | (cfg!(target_feature = "sha512") as u32 * feature::SHA512)
+        | (cfg!(target_feature = "adx") as u32 * feature::ADX)
+        | (cfg!(target_feature = "avx512ifma") as u32 * feature::AVX512IFMA)
+        | (cfg!(target_feature = "avx512vl") as u32 * feature::AVX512VL)
+        | (cfg!(target_feature = "vaes") as u32 * feature::VAES)
+        | (cfg!(target_feature = "vpclmulqdq") as u32 * feature::VPCLMULQDQ)
+        | (cfg!(target_feature = "avx512bw") as u32 * feature::AVX512BW),
 );
 
 /// The features the compilation target enables, which every CPU running
@@ -180,12 +174,12 @@ pub const COMPILED: Features = Features(
 /// as in `runtime`.
 #[cfg(all(not(feature = "env"), target_arch = "aarch64"))]
 pub const COMPILED: Features = Features(
-    bit_if(cfg!(target_feature = "neon"), feature::NEON)
-        | bit_if(cfg!(target_feature = "aes"), feature::AES)
-        | bit_if(cfg!(target_feature = "sha2"), feature::SHA2)
-        | bit_if(cfg!(target_feature = "sha3"), feature::SHA3)
-        | bit_if(cfg!(target_feature = "sve2"), feature::SVE2)
-        | bit_if(cfg!(target_feature = "dit"), feature::DIT),
+    (cfg!(target_feature = "neon") as u32 * feature::NEON)
+        | (cfg!(target_feature = "aes") as u32 * feature::AES)
+        | (cfg!(target_feature = "sha2") as u32 * feature::SHA2)
+        | (cfg!(target_feature = "sha3") as u32 * feature::SHA3)
+        | (cfg!(target_feature = "sve2") as u32 * feature::SVE2)
+        | (cfg!(target_feature = "dit") as u32 * feature::DIT),
 );
 
 /// ARMv7's `umaal`, on the operating systems that run on A-profile cores
