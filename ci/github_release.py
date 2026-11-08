@@ -3,18 +3,11 @@
 
   python3 ci/github_release.py OWNER/REPO TAG NAME OUT   # TAG may be `latest`
 
-With a token in `GH_TOKEN` (CI passes the job's own, which reads public
-repositories), the download goes through the REST API, authenticated: GitHub
-now and then degrades only unauthenticated traffic (its status page on
-2026-11-08: "Increase in timeouts for some unauthenticated users"), which
-failed CI's downloads of elan and leantar. The token is sent only to
-api.github.com: the asset's bytes come from the host the API redirects to,
-which a header added with `add_unredirected_header` does not reach. Without a
-token, or when the API refuses it (its rate limit is spent), the download
-goes to the release's public URL.
-
-Either way, a request that fails with a 5xx, a 429 or a dropped connection
-is tried again, after 2, 4, 8 and 16 seconds.
+Downloads try the public URL first, with five-second timeouts and retries
+after 2, 4, 8 and 16 seconds for transient failures. If that fails and
+`GH_TOKEN` is set, the authenticated REST API is tried with the same
+timeouts and backoff. The token is sent only to api.github.com, never to
+the host an asset redirects to.
 """
 
 import argparse
@@ -32,10 +25,8 @@ from pathlib import Path
 API = "https://api.github.com"
 # Seconds to wait before each retry of a request that failed transiently.
 BACKOFF = (2, 4, 8, 16)
-# The API's answers to a token whose rate limit is spent.
-REFUSED = (403, 429)
 # Seconds a connection may stay silent before an attempt is given up.
-TIMEOUT = 30
+TIMEOUT = 5
 
 
 def urlopen(req):
@@ -73,17 +64,18 @@ def api_request(url, token, accept):
 
 def download(repo, tag, name, token=None, opener=urlopen, sleep=time.sleep):
     """The bytes of the file `name` of `repo`'s release `tag` (or `latest`)."""
-    if token:
-        try:
-            return download_api(repo, tag, name, token, opener, sleep)
-        except urllib.error.HTTPError as e:
-            if e.code not in REFUSED:
-                raise
-            print(f"The API refused the download ({e}): downloading it without the API", file=sys.stderr)
     where = "latest/download" if tag == "latest" else f"download/{urllib.parse.quote(tag, safe='')}"
     url = f"https://github.com/{repo}/releases/{where}/{name}"
     print(f"Downloading {url}", file=sys.stderr)
-    return read(urllib.request.Request(url), opener, sleep)
+    try:
+        return read(urllib.request.Request(url), opener, sleep)
+    except (urllib.error.URLError, http.client.HTTPException, OSError) as e:
+        if not token:
+            raise
+        # We have seen unauthenticated endpoints fail while authenticated ones
+        # work. Keep auth as a fallback: we do not want to use up our rate limits.
+        print(f"Public download failed ({e}); trying the authenticated API", file=sys.stderr)
+        return download_api(repo, tag, name, token, opener, sleep)
 
 
 def download_api(repo, tag, name, token, opener, sleep):
