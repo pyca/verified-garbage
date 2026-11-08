@@ -137,7 +137,7 @@ theorem gIdx_lt (m : Mem) (p : Addr) (a b c d : Pos) {k : Nat} (_ : k < 4) :
   | 2 => exact this _
   | _ + 3 => exact this _
 
-theorem pv_ne : ∀ r ∈ preservedV, r ≠ .v1 ∧ r ≠ .v2 ∧ r ≠ .v3 ∧ r ≠ .v4 ∧ r ≠ .v5 := by decide
+theorem pv_ne : ∀ r ∈ preservedV, r ≠ .v1 ∧ r ≠ .v2 ∧ r ≠ .v3 ∧ r ≠ .v4 ∧ r ≠ .v5 ∧ r ≠ .v16 ∧ r ≠ .v17 ∧ r ≠ .v18 ∧ r ≠ .v19 := by decide
 
 /-- A line: `w0` := its value; no memory written. -/
 theorem line_ok (s : State) (st : XZ) (l : Impl.Cast5.Line) (hl : lineOk l = true)
@@ -164,15 +164,15 @@ theorem line_ok (s : State) (st : XZ) (l : Impl.Cast5.Line) (hl : lineOk l = tru
   have hq : ∀ a q, l.word = some (a, q) → q < 4 := by
     intro a q h; rw [h] at hwd; simpa using hwd
   have hv6 : v.v .v6 = s.v .v6 :=
-    (vk.v .v6 (by decide) (by decide) (by decide) (by decide) (by decide)).trans (uv .v6 (by decide))
+    (vk.v .v6 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)).trans (uv .v6 (by decide))
   refine WP.mono (WP.keep [.x0, .x9] (tail_ok v he5 hq v1 hvw) (tail_writes _ _) rfl (tail_keepsV _ _))
     fun w ⟨⟨wx0, wm, wrd, wwr, wsy, wv⟩, wk⟩ => ?_
   have hvm : v.mem = s.mem := vk.mem.trans um
   refine ⟨?_, by rw [wm, hvm], by rw [wrd, vk.rd, urd], by rw [wwr, vk.wr, uwr], by rw [wsy, vsy, usy],
     by rw [wv, hv6], ⟨fun r hr => ?_, by rw [wk.rd, vk.rd, urd], by rw [wk.wr, vk.wr, uwr],
       by rw [wk.sp, vk.sp, uk.sp], fun r hr => by
-        obtain ⟨n1, n2, n3, n4, n5⟩ := pv_ne r hr
-        rw [wk.vcs r hr, vk.v r n1 n2 n3 n4 n5, uk.vcs r hr]⟩⟩
+        obtain ⟨n1, n2, n3, n4, n5, n16, n17, n18, n19⟩ := pv_ne r hr
+        rw [wk.vcs r hr, vk.v r n1 n2 n3 n4 n5 n16 n17 n18 n19, uk.vcs r hr]⟩⟩
   · have hum : u.mem = s.mem := um
     have hl (k : Nat) (hk : k < 4) :
         ent u.mem (u.syms s5678Sym) (gIdx s.mem (s.gpr .x3) l.main.1 l.main.2.1 l.main.2.2.1
