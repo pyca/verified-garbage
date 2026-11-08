@@ -440,6 +440,107 @@ theorem fstep {s₀ : State} (hp : Pre s₀) {m₁ : Mem} {Q : Poly} {len k st g
   · rw [r10, h.r10, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, count_sub hg]
     exact count_nz hg (by omega)
 
+/-! ## The vector NTT: blocks -/
+
+theorem exec_splat1 (d n : VReg) (s : State) :
+    exec (.vop (.splat true d n 1)) s = some (s.writeV d (ofVWords fun _ => vword (s.vpr n) 1)) := rfl
+
+theorem exec_splat0' (d n : VReg) (s : State) :
+    exec (.vop (.splat true d n 0)) s = some (s.writeV d (ofVWords fun _ => vword (s.vpr n) 0)) := rfl
+
+theorem lsr4 {len : Nat} (h : 4 * len < 2 ^ 64) : BitVec.ofNat 64 (4 * len) >>> 4 = BitVec.ofNat 64 (len / 4) := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
+    Nat.mod_eq_of_lt h, Nat.mod_eq_of_lt (by omega)]
+  omega
+
+/-- After `c` blocks of the layer with `len` and `nb` blocks, from `Q`. -/
+structure BInv (s₀ : State) (m₁ : Mem) (Q : Poly) (len nb : Nat) (c : Nat) (s : State) : Prop where
+  env : VEnv s₀ m₁ s
+  r5 : s.gpr .r5 = BitVec.ofNat 64 (4 * (2 * len * c))
+  r7 : s.gpr .r7 = BitVec.ofNat 64 (8 * (nb + c))
+  r9 : s.gpr .r9 = BitVec.ofNat 64 (4 * len)
+  poly : PolyIs s.mem (F s₀) (nttLayerN Q len c)
+
+theorem bstep {s₀ : State} (hp : Pre s₀) {m₁ : Mem} (hm : VSetup s₀ m₁) {Q : Poly} {len nb c : Nat}
+    (h4 : 4 ≤ len) (hl4 : len % 4 = 0) (hnb : len * nb = 128) (hc : c < nb) {s : State}
+    (h : BInv s₀ m₁ Q len nb c s) :
+    WP isa vblockCode s fun s' => BInv s₀ m₁ Q len nb (c + 1) s' ∧ (s'.gpr .r0 != 0) = decide (c + 1 ≠ nb) := by
+  have hl : 0 < len := by omega
+  have hdiv : 128 / len = nb := by rw [← hnb, Nat.mul_div_cancel_left _ hl]
+  have hlc : len * (c + 1) ≤ len * nb := Nat.mul_le_mul_left _ hc
+  rw [Nat.mul_add, Nat.mul_one] at hlc
+  have hk : nb + c + 1 < 128 := by
+    have : 4 * nb ≤ 128 := hnb ▸ Nat.mul_le_mul_right nb h4
+    omega
+  have hb : 2 * len * (c + 1) ≤ 256 := by
+    have := Nat.mul_le_mul_left len (show c + 1 ≤ nb from hc)
+    rw [Nat.mul_assoc]; omega
+  have ez : s.gpr .r4 + s.gpr .r7 = S s₀ + BitVec.ofNat 64 (8 * (nb + c)) := by rw [h.env.r4, h.r7]
+  obtain ⟨z1, z0, -, -⟩ := h.env.zrow hp hm hk
+  rw [vblockCode, WP.seq_iff]
+  refine WP.cons (exec_lxvd2x .v11 .r4 .r7 s (by decide) (ez ▸ h.env.rowZ hp hk)) ?_
+  refine WP.cons (exec_splat1 _ _ _) (WP.cons (exec_splat0' _ _ _) ?_)
+  refine WP.cons (exec_addi (by decide) (by decide)) (WP.cons exec_add ?_)
+  refine WP.cons (exec_lsr_d (by decide)) (wp_nil ?_)
+  rw [WP.seq_iff]
+  refine wp_loop_nz (FInv s₀ m₁ (nttLayerN Q len c) len (nb + c) (2 * len * c)) (N := len / 4) (by omega)
+    (fun g hg t ht => fstep hp (by omega_arith) hg ht) (fun s₂ h₂ => ?_) ?_
+  · refine WP.cons (exec_addi (by decide) (by decide)) (WP.cons (exec_subi (by decide) (by decide)) (wp_nil ?_))
+    have e5 : BitVec.ofNat 64 (4 * (2 * len * c + 4 * (len / 4) + len)) + BitVec.ofNat 64 0 =
+        BitVec.ofNat 64 (4 * (2 * len * (c + 1))) := by
+      rw [add_ofNat]; exact congrArg _ (by rw [Nat.mul_succ]; omega_arith)
+    refine ⟨⟨⟨?_, ?_, fun r hr => ?_, ⟨?_, ?_, ?_, ?_, ?_, ?_⟩, h₂.env.lr, h₂.env.rd, h₂.env.wr, h₂.env.sp,
+      h₂.env.frame⟩, ?_, ?_, ?_, ?_⟩, ?_⟩
+    · simp only [RegUpd.gpr_write, reduceCtorEq, ite_false, h₂.env.r3]
+    · simp only [RegUpd.gpr_write, reduceCtorEq, ite_false, h₂.env.r4]
+    · obtain ⟨n0, n5, -⟩ := pres_ne r hr
+      simp only [RegUpd.gpr_write, n0, n5, ite_false, h₂.env.kept r hr]
+    · exact h₂.env.c.v0
+    · exact h₂.env.c.v1
+    · exact h₂.env.c.v2
+    · exact h₂.env.c.v3
+    · exact h₂.env.c.v12
+    · exact h₂.env.c.v13
+    · simp only [RegUpd.gpr_write, reduceCtorEq, ite_false, ite_true, h₂.r6, e5]
+    · simp only [RegUpd.gpr_write, reduceCtorEq, ite_false, h₂.r7]; exact congrArg _ (by omega)
+    · simp only [RegUpd.gpr_write, reduceCtorEq, ite_false, h₂.r9]
+    · have hp2 := h₂.poly
+      rw [show 4 * (len / 4) = len by omega] at hp2
+      rw [nttLayerN_succ, hdiv, nttBlock]; exact hp2
+    · simp only [RegUpd.gpr_write, reduceCtorEq, ite_false, ite_true, h₂.r6, e5]
+      rw [sub_nz (by omega) (by decide)]
+      have e8 : 4 * (2 * len * (c + 1)) = 8 * (len * (c + 1)) := by rw [Nat.mul_assoc 2]; omega
+      have key : 4 * (2 * len * (c + 1)) = 1024 ↔ c + 1 = nb := by
+        rw [e8]
+        constructor
+        · intro e; exact Nat.eq_of_mul_eq_mul_left hl (by omega)
+        · intro e; subst e; omega
+      exact decide_eq_decide.mpr (not_congr key)
+  · refine ⟨⟨?_, ?_, fun r hr => ?_, ⟨?_, ?_, ?_, ?_, ?_, ?_⟩, h.env.lr, h.env.rd, h.env.wr, h.env.sp,
+      h.env.frame⟩, ?_, ?_, ?_, ?_, ?_, fun i hi => ?_, fun i hi => ?_, ?_⟩
+    · simp only [RegUpd.gpr_write, gpr_writeV, reduceCtorEq, ite_false, h.env.r3]
+    · simp only [RegUpd.gpr_write, gpr_writeV, reduceCtorEq, ite_false, h.env.r4]
+    · obtain ⟨-, -, n6, n7, -, n10, -⟩ := pres_ne r hr
+      simp only [RegUpd.gpr_write, gpr_writeV, n6, n7, n10, ite_false, h.env.kept r hr]
+    · simp only [vpr_write, vpr_writeV, reduceCtorEq, ite_false, h.env.c.v0]
+    · simp only [vpr_write, vpr_writeV, reduceCtorEq, ite_false, h.env.c.v1]
+    · simp only [vpr_write, vpr_writeV, reduceCtorEq, ite_false, h.env.c.v2]
+    · simp only [vpr_write, vpr_writeV, reduceCtorEq, ite_false, h.env.c.v3]
+    · simp only [vpr_write, vpr_writeV, reduceCtorEq, ite_false, h.env.c.v12]
+    · simp only [vpr_write, vpr_writeV, reduceCtorEq, ite_false, h.env.c.v13]
+    · simp only [RegUpd.gpr_write, gpr_writeV, reduceCtorEq, ite_false, h.r5, Nat.mul_zero, Nat.add_zero]
+    · simp only [RegUpd.gpr_write, gpr_writeV, reduceCtorEq, ite_false, ite_true, h.r5, h.r9, add_ofNat]
+      exact congrArg _ (by omega)
+    · simp only [RegUpd.gpr_write, gpr_writeV, reduceCtorEq, ite_false, ite_true, h.r7]
+      rw [add_ofNat]; exact congrArg _ (by omega)
+    · simp only [RegUpd.gpr_write, gpr_writeV, reduceCtorEq, ite_false, h.r9]
+    · simp only [RegUpd.gpr_write, gpr_writeV, reduceCtorEq, ite_false, ite_true, h.r9, Nat.sub_zero]
+      exact lsr4 (by omega)
+    · simp only [vpr_write, vpr_writeV, reduceCtorEq, ite_false, ite_true, vword_ofVWords _ hi, ez, z1]
+    · simp only [vpr_write, vpr_writeV, reduceCtorEq, ite_false, ite_true, vword_ofVWords _ hi, ez, z0]
+    · rw [Nat.mul_zero, nttBlockN_zero]; exact h.poly
+
 /-! ## Verified -/
 
 /-- A state satisfying the precondition. -/
