@@ -51,9 +51,16 @@ structure LayoutI (K : TCombCfg) : Prop where
   qy : K.L.T.y = K.L.T.x + 8 * K.L.M.n
   qz : K.L.T.z = K.L.T.x + 16 * K.L.M.n
   negD : K.neg = K.L.D.x
-  zeroS : K.zero ∈ ladSlots K.L
-  zeroW : K.zero ∉ ladWs K.L
+  zeroLe : K.zero + 8 * K.L.M.n ≤ own K.L.M.n
+  zero4 : K.zero % 4 = 0
+  zeroW : ∀ w ∈ ladWx K.L, K.zero + 8 * K.L.M.n ≤ w.1 ∨ w.1 + w.2 ≤ K.zero
   apart : RcbApart K.L.S K.L.R K.L.T K.L.D
+
+/-- The ladder's layout with another number of bits in its table. -/
+theorem _root_.VG.Proof.Weierstrass.PPC64LE.Point.LadLayI.with_nbits {L : LadderCfg} (h : LadLayI L) {nb : Nat} (h1 : 1 ≤ nb) (h15 : nb < 2 ^ 15)
+    (hb : L.bits + nb ≤ 8192) (hw : ∀ w ∈ ladW L, L.bits + nb ≤ w.1 ∨ w.1 + w.2 ≤ L.bits) :
+    LadLayI { L with nbits := nb } :=
+  ⟨⟨h.lay.lay, h.lay.a1, h.lay.a2, h.lay.ro, h.lay.rne, h.lay.rdt, ⟨h1, show nb < 2 ^ 16 by omega⟩, hb, hw⟩, h.al, h.bits, h15⟩
 
 theorem mem_ladWx {L : LadderCfg} {x : Nat} (h : x ∈ ladWs L) : (x, 8 * L.M.n) ∈ ladWx L := by
   simp only [ladWx, ladW, List.mem_append, List.mem_map, List.mem_singleton]
@@ -72,13 +79,12 @@ theorem LayoutI.nums {K : TCombCfg} (h : LayoutI K) :
     (∀ x ∈ [K.L.R.x, K.L.R.y, K.L.R.z, K.zero], K.neg + 8 * K.L.M.n ≤ x ∨ x + 8 * K.L.M.n ≤ K.neg) ∧
     (∀ x ∈ [K.L.R.x, K.L.R.y, K.L.R.z], K.zero + 8 * K.L.M.n ≤ x ∨ x + 8 * K.L.M.n ≤ K.zero) := by
   have hL := h.lad
-  have sl : ∀ x ∈ [K.L.R.x, K.L.R.y, K.L.R.z, K.L.T.x, K.L.T.y, K.L.T.z, K.L.D.x, K.zero, K.L.S.a,
+  have sl : ∀ x ∈ [K.L.R.x, K.L.R.y, K.L.R.z, K.L.T.x, K.L.T.y, K.L.T.z, K.L.D.x, K.L.S.a,
       K.L.S.b3], x ∈ ladSlots K.L := by
     intro x hx
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-    rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     all_goals first
-      | exact h.zeroS
       | (refine ladPts_slots K.L _ ?_; simp; done)
       | (refine ladR_slots K.L _ ?_; simp [ladR, ladRo]; done)
   have ap : ∀ {x y}, x ∈ ladSlots K.L → y ∈ ladSlots K.L → x ≠ y →
@@ -98,11 +104,11 @@ theorem LayoutI.nums {K : TCombCfg} (h : LayoutI K) :
       subst e
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hy ⊢
       rcases hy with h | h | h | h <;> simp [h])
-  have zW : ∀ y ∈ [K.L.R.x, K.L.R.y, K.L.R.z, K.L.T.x, K.L.T.y, K.L.T.z, K.L.D.x], K.zero ≠ y :=
-    fun y hy e => h.zeroW (by
-      subst e
+  have zA : ∀ y ∈ [K.L.R.x, K.L.R.y, K.L.R.z, K.L.T.x, K.L.T.y, K.L.T.z, K.L.D.x],
+      K.zero + 8 * K.L.M.n ≤ y ∨ y + 8 * K.L.M.n ≤ K.zero :=
+    fun y hy => h.zeroW _ (mem_ladWx (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hy
-      rcases hy with h | h | h | h | h | h | h <;> rw [h] <;> mem_list)
+      rcases hy with h | h | h | h | h | h | h <;> rw [h] <;> mem_list))
   have tD : ∀ y ∈ [K.L.T.x, K.L.T.y, K.L.T.z], y ≠ K.L.D.x := fun y hy e =>
     h.apart.apart y (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hy
@@ -110,6 +116,8 @@ theorem LayoutI.nums {K : TCombCfg} (h : LayoutI K) :
   refine ⟨hown, ?_, by rw [qy, qx, hqy], by rw [qz, qx, hqz], ?_, ?_, ?_⟩
   · intro x hx
     rw [qx, qy, qz, nd] at hx
+    by_cases hz : x = K.zero
+    · subst hz; exact ⟨h.zeroLe, h.zero4⟩
     exact ⟨le (sl x (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hx ⊢; omega)),
       hL.al x (sl x (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hx ⊢; omega))⟩
   · have tx := sl K.L.T.x (by simp)
@@ -128,7 +136,7 @@ theorem LayoutI.nums {K : TCombCfg} (h : LayoutI K) :
         (rT _ (by simp) _ (by simp))
     · exact apT (sl _ (by simp)) (rT _ (by simp) _ (by simp)) (rT _ (by simp) _ (by simp))
         (rT _ (by simp) _ (by simp))
-    · exact apT h.zeroS (zW _ (by simp)) (zW _ (by simp)) (zW _ (by simp))
+    · have := zA K.L.T.x (by simp); have := zA K.L.T.y (by simp); have := zA K.L.T.z (by simp); omega
     · rw [nd]
       exact apT (sl _ (by simp)) (tD _ (by simp)).symm (tD _ (by simp)).symm (tD _ (by simp)).symm
   · intro x hx
@@ -138,10 +146,10 @@ theorem LayoutI.nums {K : TCombCfg} (h : LayoutI K) :
     · exact ap (sl _ (by simp)) (sl _ (by simp)) (rT _ (by simp) _ (by simp)).symm
     · exact ap (sl _ (by simp)) (sl _ (by simp)) (rT _ (by simp) _ (by simp)).symm
     · exact ap (sl _ (by simp)) (sl _ (by simp)) (rT _ (by simp) _ (by simp)).symm
-    · exact ap (sl _ (by simp)) h.zeroS (zW _ (by simp)).symm
+    · exact (zA _ (by simp)).symm
   · intro x hx
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-    rcases hx with rfl | rfl | rfl <;> exact ap h.zeroS (sl _ (by simp)) (zW _ (by simp))
+    rcases hx with rfl | rfl | rfl <;> exact zA _ (by simp)
 
 /-! ## What every iteration keeps -/
 
@@ -175,7 +183,7 @@ theorem InputsI.keep {K : TCombCfg} {C : Curve} {tbl : List (List (Nat × Nat))}
     · exact h.lad.apart_wx (ladR_slots K.L _ (by simp [ladR, ladRo])) (h.lad.lay.ro _ (by simp [ladRo]))
   refine ⟨i.wsr.of_rk keep r3, i.table.unch (by rw [keep.rd, keep.wr]) mem
     (fun w hw => by have := h.wx w hw; omega) hd, by rw [syms]; exact i.symbol, ?_, ?_, ?_, ?_⟩
-  · rw [mem.wordsVal (h.lad.apart_wx h.zeroS h.zeroW) (by omega), i.zero]
+  · rw [mem.wordsVal h.zeroW (by omega), i.zero]
   · intro j hj
     rw [mem.byte (h.lad.bits_wx hj) (by have := h.bitsE; omega), i.bits j hj]
   · rw [mem.wordsVal (ro _ (by simp)) (by omega), i.coeffA]
