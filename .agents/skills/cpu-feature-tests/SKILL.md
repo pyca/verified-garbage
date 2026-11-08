@@ -18,7 +18,12 @@ Intel SDE presents (`rust-cpu-features` in `ci.yml`, whose CPUs are the
 `cpu` entries of `ci/rust_matrix.toml`; SDE runs the SHA
 extensions' code very slowly, so the chips that have them run only the
 tests that need them); and benchmarks each with
-`VG_CPU_FEATURES` (`CPU_FEATURES` in `ci/bench_arches.py`). A configuration
+`VG_CPU_FEATURES` (`CPU_FEATURES` in `ci/bench_arches.py`). The `rust` job runs every test with
+its runner's features (the default features include `std`, which AArch64
+needs to detect them at run time), so a native CPU's lines restrict them,
+never leave them unrestricted, and run only the groups whose implementation
+that restriction changes: the baseline's (`none`) of everything the
+runner's features accelerate. A configuration
 to test is a line of a CPU's `runs` in `ci/rust_matrix.toml`
 (`<VG_CPU_FEATURES> | <groups>`), never a step or job of its own, and
 each CPU has one line per value of `VG_CPU_FEATURES` (CI checks both), so

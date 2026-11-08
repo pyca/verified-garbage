@@ -140,8 +140,9 @@ class RsaEmulationTests(unittest.TestCase):
         self.assertIn("rsa::keygen::tests::generate_small_d", lib)
         self.assertNotIn("rsa::keygen::tests::primes", lib)
         self.assertFalse(lib & selectors)
-        # The full suites still belong to native and SKX runs.
-        for chip in ("native", "skx", "icx"):
+        # The full suites still belong to the SKX run (and natively to the
+        # `rust` job, which runs every test).
+        for chip in ("skx", "icx"):
             self.assertTrue(expensive <= set.union(*self.selected(chip, "tests", listed)))
             self.assertTrue(selectors <= set.union(*self.selected(chip, "lib", listed)))
 
