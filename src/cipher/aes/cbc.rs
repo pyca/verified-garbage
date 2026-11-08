@@ -144,8 +144,6 @@ impl Key {
                 vg_aes_cbc_decrypt_auto(&self.schedule.0, self.rounds, iv, data, n, &mut scratch.0);
             }
         }
-        // Every implementation leaves each byte of `scratch` unchanged or zero
-        // (`Proof/AesCbc/<ISA>/Wiped.lean`), so it needs no wipe here.
         Ok(())
     }
 }
