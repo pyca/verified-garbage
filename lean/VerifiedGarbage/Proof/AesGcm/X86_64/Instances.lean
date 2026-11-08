@@ -716,11 +716,6 @@ that read its first sixteen prepared powers (`*_prepared16`) are proven
 against them too, as `PreparedPowersRepr` implies `PreparedPowers16Repr`.
 So every implementation has the prepared functions, and their dispatchers a
 baseline. -/
-/-- A context of 24 prepared pairs holds the first 8. -/
-theorem preparedPowers16Repr_of {m : Mem} {p : Addr} (h : Spec.Gcm.PreparedPowersRepr m p) :
-    Spec.Gcm.PreparedPowers16Repr m p :=
-  fun k hk => h k (by omega)
-
 /-! ## From the key context -/
 
 theorem sealPrepared_of_base {c : Prog X86_64.isa}
