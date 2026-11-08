@@ -105,7 +105,7 @@ theorem mulAdd_call {out r k a ws : Addr} (h3 : s.gpr .r3 = out) (h4 : s.gpr .r4
     h3, h4, h5, h6] at hp
   exact hp
 
-theorem veq_call (hR : Proof.Ed448.RecoverOk) (hV : Proof.Ed448.VerifyEq4Ok) {pk sig ch ws : Addr}
+theorem veq_call (hR : Proof.Ed448.RecoverOk) {pk sig ch ws : Addr}
     (h3 : s.gpr .r3 = pk) (h4 : s.gpr .r4 = sig) (h5 : s.gpr .r5 = ch) (h6 : s.gpr .r6 = ws)
     (d₁ : Region.Disjoint ⟨pk, 57⟩ ⟨ws, 8192⟩) (d₂ : Region.Disjoint ⟨sig, 114⟩ ⟨ws, 8192⟩)
     (d₃ : Region.Disjoint ⟨ch, 57⟩ ⟨ws, 8192⟩)
@@ -116,7 +116,7 @@ theorem veq_call (hR : Proof.Ed448.RecoverOk) (hV : Proof.Ed448.VerifyEq4Ok) {pk
       (s'.gpr .r3).setWidth 32 = (if Spec.Ed448.verifyEquation (bytesAt s.mem pk 57) (bytesAt s.mem sig 114)
         (bytesAt s.mem ch 57) then 1 else 0) → Q s') :
     WP isa (.call "vg_ed448_verify_equation" Impl.Ed448.PPC64LE.verifyEquation) s Q := by
-  refine WP.call (k := verifyPPC) (verifyEquation_ok hR hV) (rd := [⟨pk, 57⟩, ⟨sig, 114⟩, ⟨ch, 57⟩])
+  refine WP.call (k := verifyPPC) (verifyEquation_ok hR) (rd := [⟨pk, 57⟩, ⟨sig, 114⟩, ⟨ch, 57⟩])
     (wr := [⟨ws, 8192⟩])
     ⟨by rw [State.withRegions_rd, ce_gpr _ _ _ (by decide), ce_gpr _ _ _ (by decide), ce_gpr _ _ _ (by decide),
         h3, h4, h5],

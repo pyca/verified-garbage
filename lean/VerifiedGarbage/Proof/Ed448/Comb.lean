@@ -2,9 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Ed448.Comb
 public import VerifiedGarbage.Proof.X448.BaseTable
-import Mathlib.Tactic.Ring.RingNF
-import Mathlib.Tactic.FieldSimp
-import Mathlib.Tactic.Ring
 
 /-! The table and scalar arithmetic of the four-column, 456-bit fixed-base comb. -/
 
@@ -78,7 +75,7 @@ theorem accScalar_step (k t : Nat) (ht : t < 114) :
   simp only [Nat.pow_zero, Nat.div_one, Nat.add_zero] at h0
   rw [digit, weight_bits _ (Nat.mod_lt _ (by decide)) _ (Nat.mod_lt _ (by decide))
     _ (Nat.mod_lt _ (by decide)) _ (Nat.mod_lt _ (by decide)), accScalar, h0, h1, h2, h3, accScalar]
-  ring
+  omega
 
 theorem accScalar_total (k : Nat) (hk : k < 2 ^ 456) : accScalar k 0 = k := by
   simp only [accScalar, Nat.pow_zero, Nat.div_one]
