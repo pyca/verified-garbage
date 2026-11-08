@@ -37,8 +37,10 @@ which the caller's says nothing of: the precondition, postcondition and leak
 must read the memory on entry only within the function's buffers (`hpre`,
 `hpost`, `hleak`). The zeroize function writes the array after the first
 function returned: the postcondition must read the memory on return only
-within the buffers apart from the array (`hpostOut`), which the precondition
-keeps apart from the others (it is writable).
+within the buffers apart from the bytes it zeroes, the first `n` of the array
+(`Verified.callWipeTail'`'s `hpostOut`), which the precondition keeps apart
+from the other buffers (it is writable). `Verified.callWipe'` takes the
+narrower condition that it reads none of the array.
 
 Constant time: the frame's accesses depend on `esp` alone, each callee is
 constant time, and the zeroize function's arguments, the array's address and
@@ -1177,7 +1179,7 @@ variable {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)} {post 
 /-- A run of `callWipe` from the caller's state `s`: it keeps what the
 calling convention requires, its postcondition is the first function's if
 that reads the memory on return only within the buffers apart from the
-array (`hout`), and the first `n` bytes of the array are zero. -/
+first `n` bytes of the array (`hout`), and those bytes are zero. -/
 theorem cw_wp {name zname : String} {body zcode : Prog isa} {zst : Nat}
     (h : Verified target body (sig.contract abi pre post wa stack leak))
     (hz : Verified target zcode (Spec.Zeroize.zeroizeContract abi zst))
@@ -1195,8 +1197,8 @@ theorem cw_wp {name zname : String} {body zcode : Prog isa} {zst : Nat}
     {s : State} (hs : (sig.contract abi pre post wa (stack + frameSize (slots sig) + 4) leak).pre s)
     (hj : j < slots sig)
     (harr : (⟨(arg s j).setWidth 64, k * e.size⟩, true) ∈ Sig.bufs sig.params (stackArgs sig s))
-    (hout : ∀ m₁ m₂ x, (∀ b ∈ Sig.bufs sig.params (stackArgs sig s),
-        b.1.Disjoint ⟨(arg s j).setWidth 64, k * e.size⟩ → ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    (hout : ∀ m₁ m₂ x, (∀ b ∈ Sig.bufs sig.params (stackArgs sig s), ∀ a, b.1.Contains a 1 →
+        ¬(⟨(arg s j).setWidth 64, n⟩ : Region).Contains a 1 → m₁ a = m₂ a) →
       Curry.apply (sig.words abi.ptrBits) post (stackArgs sig s) s.mem m₁ x →
         Curry.apply (sig.words abi.ptrBits) post (stackArgs sig s) s.mem m₂ x) :
     WP isa (callWipe (slots sig) j n name body zname zcode) s fun G =>
@@ -1241,10 +1243,10 @@ theorem cw_wp {name zname : String} {body zcode : Prog isa} {zst : Nat}
       exact Offset.base_disjoint_below _ (by omega_using [hsb, hE])
   · -- The postcondition, which reads the memory on return only within the buffers apart from the array.
     rw [post_stack, freed_gpr _ _ (by decide), freed_gpr _ _ (by decide), heax, hedx, hra, hrd', freed_mem, hmw]
-    refine hout c'.mem _ _ (fun b hb hbA x hx => ?_) hc'.2.2.2.2.2
+    refine hout c'.mem _ _ (fun b hb x hx hnx => ?_) hc'.2.2.2.2.2
     refine (hfc x fun R hR hcR => ?_).symm
     rcases List.mem_cons.mp hR with rfl | hR
-    · exact hbA x hx (Region.sub_prefix hn x hcR)
+    · exact hnx hcR
     · simp only [List.mem_singleton] at hR; subst hR
       exact hlow b (bufs_mem hb) _ _ (Nat.le_refl _) (Nat.le_refl _) x hcR hx
 
@@ -1300,8 +1302,11 @@ frames and uses no more stack than its contract gives it (`hsp`, `hd`,
 `hzsp`, `hzd`). The precondition, postcondition and leak must read the
 memory on entry only within the function's buffers (`hpre`, `hpost`,
 `hleak`), and the postcondition the memory on return only within those
-apart from the array (`hpostOut`). -/
-theorem Verified.callWipe' {post' : sig.Post abi.ptrBits} {name zname : String}
+apart from the first `n` bytes of the array (`hpostOut`): it may read the
+rest of the array, which the zeroize function does not write (so that
+`post'` may say that the bytes past the first `n`, which the function did
+not write, are unchanged). -/
+theorem Verified.callWipeTail' {post' : sig.Post abi.ptrBits} {name zname : String}
     {body zcode : Prog isa} {zst : Nat} {ps₁ ps₂ : List (String × Param)} {nm : String} {e : Elem}
     {k n i j : Nat}
     (h : Verified target body (sig.contract abi pre post wa stack leak))
@@ -1322,8 +1327,8 @@ theorem Verified.callWipe' {post' : sig.Post abi.ptrBits} {name zname : String}
         Curry.apply (sig.words abi.ptrBits) post vs m₂ m' x)
     (hpostOut : ∀ vs m m₁ m₂ x, vs.length = (sig.words abi.ptrBits).length →
       (Sig.bufs sig.params vs).Pairwise (fun a b => (a.2 || b.2) → a.1.Disjoint b.1) →
-      (∀ b ∈ Sig.bufs sig.params vs, b.1.Disjoint ⟨vs.getD i 0, k * e.size⟩ →
-        ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 →
+        ¬(⟨vs.getD i 0, n⟩ : Region).Contains a 1 → m₁ a = m₂ a) →
       Curry.apply (sig.words abi.ptrBits) post vs m m₁ x →
         Curry.apply (sig.words abi.ptrBits) post vs m m₂ x)
     (hwiped : ∀ vs m m' x, vs.length = (sig.words abi.ptrBits).length →
@@ -1386,10 +1391,11 @@ theorem Verified.callWipe' {post' : sig.Post abi.ptrBits} {name zname : String}
       Nat.mod_eq_of_lt (a := (arg s₂ j).toNat) (by have := (arg s₂ j).isLt; omega),
       Nat.mod_eq_of_lt (arg s₁ j).isLt, Nat.mod_eq_of_lt (arg s₂ j).isLt] at h2
     exact BitVec.eq_of_toNat_eq h2
-  -- The postcondition reads the memory on return only within the buffers apart from the array.
+  -- The postcondition reads the memory on return only within the buffers apart from the
+  -- array's first `n` bytes.
   have hout : ∀ s, (sig.contract abi pre post wa (stack + frameSize (slots sig) + 4) leak).pre s → ∀ m₁ m₂ x,
-      (∀ b ∈ Sig.bufs sig.params (stackArgs sig s), b.1.Disjoint ⟨(arg s j).setWidth 64, k * e.size⟩ →
-        ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      (∀ b ∈ Sig.bufs sig.params (stackArgs sig s), ∀ a, b.1.Contains a 1 →
+        ¬(⟨(arg s j).setWidth 64, n⟩ : Region).Contains a 1 → m₁ a = m₂ a) →
       Curry.apply (sig.words abi.ptrBits) post (stackArgs sig s) s.mem m₁ x →
         Curry.apply (sig.words abi.ptrBits) post (stackArgs sig s) s.mem m₂ x := by
     intro s hs m₁ m₂ x hag hq
@@ -1480,6 +1486,46 @@ theorem Verified.callWipe' {post' : sig.Post abi.ptrBits} {name zname : String}
       obtain ⟨u₁, hu₁, -⟩ := restoreRet_run (hin σ₁ g₁ h₁' r₁ w₁ e₁)
       obtain ⟨u₂, hu₂, -⟩ := restoreRet_run (hin σ₂ g₂ h₂' r₂ w₂ e₂)
       exact ⟨u₁, u₂, _, hu₁, by rw [hu₂, e₁, e₂, hsp12], trivial⟩
+
+/-- `Verified.callWipeTail'` for a postcondition that reads the memory on
+return only within the buffers apart from the whole array (`hpostOut`). -/
+theorem Verified.callWipe' {post' : sig.Post abi.ptrBits} {name zname : String}
+    {body zcode : Prog isa} {zst : Nat} {ps₁ ps₂ : List (String × Param)} {nm : String} {e : Elem}
+    {k n i j : Nat}
+    (h : Verified target body (sig.contract abi pre post wa stack leak))
+    (hz : Verified target zcode (Spec.Zeroize.zeroizeContract abi zst))
+    (hl : Sig.noLists sig.params = true)
+    (hps : sig.params = ps₁ ++ (nm, .array true e k) :: ps₂)
+    (hi : i = (ps₁.flatMap fun p => p.2.words 32).length)
+    (hj : j = (argSlots (widths sig) 0).getD i 0)
+    (hn : n ≤ k * e.size) (hn32 : n < 2 ^ 32) (hB : frameSize (slots sig) < 4096)
+    (hsp : NoSp body) (hd : stackUse body ≤ stack)
+    (hzsp : NoSp zcode) (hzd : stackUse zcode ≤ zst) (hzs : zst ≤ stack)
+    (hpre : ∀ vs m₁ m₂, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) pre vs m₁ → Curry.apply (sig.words abi.ptrBits) pre vs m₂)
+    (hpost : ∀ vs m₁ m₂ m' x, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) post vs m₁ m' x →
+        Curry.apply (sig.words abi.ptrBits) post vs m₂ m' x)
+    (hpostOut : ∀ vs m m₁ m₂ x, vs.length = (sig.words abi.ptrBits).length →
+      (Sig.bufs sig.params vs).Pairwise (fun a b => (a.2 || b.2) → a.1.Disjoint b.1) →
+      (∀ b ∈ Sig.bufs sig.params vs, b.1.Disjoint ⟨vs.getD i 0, k * e.size⟩ →
+        ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) post vs m m₁ x →
+        Curry.apply (sig.words abi.ptrBits) post vs m m₂ x)
+    (hwiped : ∀ vs m m' x, vs.length = (sig.words abi.ptrBits).length →
+      Curry.apply (sig.words abi.ptrBits) post vs m m' x →
+      Spec.Zeroize.bytesAt m' (vs.getD i 0) n = Spec.Zeroize.zeros n →
+        Curry.apply (sig.words abi.ptrBits) post' vs m m' x)
+    (hsat : ∃ s, (sig.contract abi pre post' wa (stack + frameSize (slots sig) + 4) leak).pre s)
+    (hleak : Sig.LeakLocal abi.ptrBits sig leak := by trivial) :
+    Verified target (Impl.CallWipe.X86.callWipe (slots sig) j n name body zname zcode)
+      (sig.contract abi pre post' wa (stack + frameSize (slots sig) + 4) leak) :=
+  Verified.callWipeTail' h hz hl hps hi hj hn hn32 hB hsp hd hzsp hzd hzs hpre hpost
+    (fun vs m m₁ m₂ x hlen hpw hag => hpostOut vs m m₁ m₂ x hlen hpw fun b hb hbA a ha =>
+      hag b hb a ha fun hp => hbA a ha (Region.sub_prefix hn a hp))
+    hwiped hsat hleak
 
 /-- `Verified.callWipe'`, with the function's postcondition. -/
 theorem Verified.callWipe {name zname : String} {body zcode : Prog isa} {zst : Nat}
