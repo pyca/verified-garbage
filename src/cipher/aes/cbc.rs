@@ -325,12 +325,13 @@ impl Key {
         // caller's registers: wipe the bytes the function's proved write
         // bound (`scratch_written`) allows it to write, if any. On AArch64
         // bound (`scratch_written`) allows it to write, if any. On AArch64,
-        // PPC64LE and x86 each implementation leaves each byte of it
+        // ARMv7, PPC64LE and x86 each implementation leaves each byte of it
         // unchanged or zero (`Proof/AesCbc/AArch64/Wiped.lean`,
-        // `Proof/AesCbc/PPC64LE/Wiped.lean`, `Proof/AesCbc/X86/Wiped.lean`),
-        // so there is nothing to wipe.
+        // `Proof/AesCbc/Arm/Wiped.lean`, `Proof/AesCbc/PPC64LE/Wiped.lean`,
+        // `Proof/AesCbc/X86/Wiped.lean`), so there is nothing to wipe.
         #[cfg(not(any(
             target_arch = "aarch64",
+            target_arch = "arm",
             all(target_arch = "powerpc64", target_endian = "little"),
             target_arch = "x86"
         )))]
@@ -339,6 +340,7 @@ impl Key {
         }
         #[cfg(any(
             target_arch = "aarch64",
+            target_arch = "arm",
             all(target_arch = "powerpc64", target_endian = "little"),
             target_arch = "x86"
         ))]
