@@ -13,7 +13,8 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratch
 
 As on AArch64 (`Proof/Framework/AArch64/StackScratchConsts.lean`).
 `Verified.stackScratchWipedC`: `Verified.stackScratchWiped` for contracts
-under `abi.withConsts K`, whose readable regions end with the tables `K`.
+under `abi.withConsts K`, whose readable regions end with the tables `K`, and
+`Verified.stackScratchLC`: `Verified.stackScratchL`'s, with any leak.
 The frame and the state the code runs from (`narrow`) are those of
 `Verified.stackScratchWiped`. Without its tables, a state satisfying the
 contract under `abi.withConsts K` satisfies it under `abi` (`pre_consts`),
@@ -76,7 +77,8 @@ theorem reserved_below (hS : 0 < stack + bytes) (s : State) :
 
 /-- What the precondition under `abi.withConsts` says of the stack pointer. -/
 theorem sp_of_preK (hk : (sig.words abi.ptrBits).length < 8) (hl : Sig.noLists sig.params = true)
-    {s : State} (hs : (sig.contract (abi.withConsts (c₀ :: cs)) pre post wa (stack + bytes)).pre s) :
+    {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))}
+    {s : State} (hs : (sig.contract (abi.withConsts (c₀ :: cs)) pre post wa (stack + bytes) leak).pre s) :
     stack + bytes ≤ s.sp.toNat := by
   have hwf := ((pre_regs (by omega_using [hk]) hl).mp (pre_consts.mp hs).1).1
   simp only [stripConsts_sp] at hwf
@@ -89,9 +91,9 @@ theorem narrowK_pre (hk : (sig.words abi.ptrBits).length < 8)
     (hpre : ∀ vs m₁ m₂, vs.length = (sig.words abi.ptrBits).length →
       (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
       Curry.apply (sig.words abi.ptrBits) pre vs m₁ → Curry.apply (sig.words abi.ptrBits) pre vs m₂)
-    (hl : Sig.noLists sig.params = true) {s : State}
-    (hs : (sig.contract (abi.withConsts (c₀ :: cs)) pre post wa (stack + bytes)).pre s) :
-    (Sig.scratchContract (abi.withConsts (c₀ :: cs)) sig nm e n pre post wa stack).pre
+    (hl : Sig.noLists sig.params = true) {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))}
+    {s : State} (hs : (sig.contract (abi.withConsts (c₀ :: cs)) pre post wa (stack + bytes) leak).pre s) :
+    (Sig.scratchContract (abi.withConsts (c₀ :: cs)) sig nm e n pre post wa stack leak).pre
       (narrow sig e n bytes s) := by
   obtain ⟨hs', hdr, hd, ht, hal⟩ := pre_consts.mp hs
   have hn := narrow_pre (nm := nm) hk hb hpre hs' hl
@@ -267,6 +269,70 @@ theorem Verified.stackScratchWipedC {c : Prog isa}
     have hsp₁₂ : s₁.sp = s₂.sp := ((pub_regs (by omega_using [hk]) hl).mp hp').1
     rw [hct _ _ _ _ _ _ (narrowK_pre hk hb hpre hl h₁) (narrowK_pre hk hb hpre hl h₂)
       (pub_consts.mpr ⟨narrow_pub hk hp' hl, fun c hc => hsy c hc⟩) f₁ f₂, hsp₁₂]
+
+/-- Code verified for a function whose last argument, in a register, is a
+scratch buffer, and which reads the tables `c₀ :: cs`, is verified for the
+function without it, with any leak (`Verified.stackScratchL`, under
+`abi.withConsts (c₀ :: cs)`). -/
+theorem Verified.stackScratchLC {c : Prog isa}
+    {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))}
+    (h : Verified target c (Sig.scratchContract (abi.withConsts (c₀ :: cs)) sig nm e n pre post wa stack leak))
+    (hk : (sig.words abi.ptrBits).length < 8)
+    (hb : 32 < bytes ∧ bytes < 4096 ∧ bytes % 16 = 0 ∧ n * e.size + 32 ≤ bytes)
+    (hpre : ∀ vs m₁ m₂, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) pre vs m₁ → Curry.apply (sig.words abi.ptrBits) pre vs m₂)
+    (hpost : ∀ vs m₁ m₂ m' r, vs.length = (sig.words abi.ptrBits).length →
+      Curry.apply (sig.words abi.ptrBits) pre vs m₂ →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) post vs m₁ m' r →
+        Curry.apply (sig.words abi.ptrBits) post vs m₂ m' r)
+    (hleak : ∀ f, leak = some f → ∀ vs m₁ m₂, vs.length = (sig.words abi.ptrBits).length →
+      Curry.apply (sig.words abi.ptrBits) pre vs m₂ →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply _ f vs m₁ = Curry.apply _ f vs m₂)
+    (hsat : ∃ s, (sig.contract (abi.withConsts (c₀ :: cs)) pre post wa (stack + bytes) leak).pre s)
+    (hl : Sig.noLists sig.params = true := by decide) :
+    Verified target (withStackScratch bytes (argRegs.getD (sig.words abi.ptrBits).length .r3) c)
+      (sig.contract (abi.withConsts (c₀ :: cs)) pre post wa (stack + bytes) leak) := by
+  obtain ⟨hcor, hct, -⟩ := h
+  have hlen := regArgs_length sig
+  have hrun : ∀ s, (sig.contract (abi.withConsts (c₀ :: cs)) pre post wa (stack + bytes) leak).pre s →
+      ∃ t s₃, Exec isa c (narrow sig e n bytes s) t s₃ ∧
+      (Sig.scratchContract (abi.withConsts (c₀ :: cs)) sig nm e n pre post wa stack leak).post
+        (narrow sig e n bytes s) s₃ ∧
+      Exec isa (withStackScratch bytes (argRegs.getD (sig.words abi.ptrBits).length .r3) c) s
+        (.addr (s.sp - BitVec.ofNat 64 bytes) :: t) (popState bytes s s₃) ∧
+      abiPreserved s (popState bytes s s₃) ∧ (popState bytes s s₃).mem = s₃.mem ∧
+      (popState bytes s s₃).gpr = s₃.gpr := by
+    intro s hs
+    obtain ⟨t, s₃, he, ha, hq⟩ := hcor _ (narrowK_pre (nm := nm) hk hb hpre hl hs)
+    exact ⟨t, s₃, he, hq, withStackScratchK_run hk hb (sp_of_preK hk hl hs) he ha⟩
+  refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => ?_, hsat⟩
+  · obtain ⟨t, s₃, -, hq, hex, ha, hm, hg⟩ := hrun s hs
+    have hs' := (pre_consts.mp hs).1
+    refine ⟨_, _, hex, ha, ?_⟩
+    refine post_consts.mpr ((post_regs (by omega_using [hk])).mpr ?_)
+    have hq' := (post_regs (sig := sig.withScratch nm e n)
+      (pre := Curry.withScratch abi.ptrBits nm e n sig.params pre)
+      (post := Curry.withScratch abi.ptrBits nm e n sig.params post)
+      (by rw [Sig.words_withScratch, List.length_append, List.length_singleton]; omega_using [hk])).mp
+      (post_consts.mp hq)
+    rw [narrow_regArgs hk] at hq'
+    rw [hm, hg]
+    have hq'' := Eq.mp (congrFun (congrFun (congrFun (Curry.apply_withScratch abi.ptrBits nm e n sig.params
+      post _ _ (hlen s (by omega_using [hk]))) _) s₃.mem) _) hq'
+    exact hpost _ _ _ _ _ (hlen s (by omega_using [hk])) ((pre_regs (by omega_using [hk]) hl).mp hs').2.2.2.2.2.2
+      (fun b hb' a ha => (narrow_agree (e := e) (n := n) hk hb.1 hs' hl b hb' a ha).symm) hq''
+  · obtain ⟨u₁, r₁, f₁, -, x₁, -⟩ := hrun s₁ h₁
+    obtain ⟨u₂, r₂, f₂, -, x₂, -⟩ := hrun s₂ h₂
+    obtain ⟨hp', hsy⟩ := pub_consts.mp hp
+    have hn := narrow_pubL (nm := nm) (e := e) (n := n) hk hb.1 hleak (pre_consts.mp h₁).1 (pre_consts.mp h₂).1
+      (pub_stripConsts.mpr hp') hl
+    rw [← stripConsts_narrow, ← stripConsts_narrow] at hn
+    rw [(Exec.det e₁ x₁).1, (Exec.det e₂ x₂).1, ((pub_regsL (by omega_using [hk]) hl).mp hp').1.1,
+      hct _ _ _ _ _ _ (narrowK_pre (nm := nm) hk hb hpre hl h₁) (narrowK_pre (nm := nm) hk hb hpre hl h₂)
+        (pub_consts.mpr ⟨pub_stripConsts.mp hn, fun c hc => hsy c hc⟩) f₁ f₂]
 
 end
 

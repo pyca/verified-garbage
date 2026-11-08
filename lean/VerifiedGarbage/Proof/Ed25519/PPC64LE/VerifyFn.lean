@@ -8,13 +8,14 @@ public import VerifiedGarbage.Proof.Ed25519.PPC64LE.ScalarReduce
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointTable
 import VerifiedGarbage.Proof.X25519.PPC64LE.Instr
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 
 /-!
 # `vg_ed25519_verify_equation` on PPC64LE
 
 The nonvolatile registers saved at `SAVE` and `lr` at `LRS` of `scratch`
-(`r6`), the pointers moved to `r29`–`r31`, the body (`verifyBody_ok`), and
-its result returned in `r3` (`verify_ok`).
+(`r6`), the pointers moved to `r29`–`r31`, the body (`verifyBody_ok`, given
+the windows' proof, `RhsOk`), and its result returned in `r3` (`verify_ok`).
 -/
 
 @[expose] public section
@@ -25,13 +26,15 @@ open VG VG.PPC64LE VG.Impl.Ed25519.PPC64LE VG.Proof.X25519.PPC64LE
 open VG.Spec.Ed25519 (decodeLE bytesAt)
 
 /-- The precondition, by register: `pk` in `r3`, the signature in `r4`, the challenge in `r5` and
-`scratch` in `r6`. -/
+`scratch` in `r6`; the static of `-[1]B … -[15]B` at `bSym`. -/
 structure VerifyPre (s : State) : Prop where
-  rd : s.rd = [⟨s.gpr .r3, 32⟩, ⟨s.gpr .r4, 64⟩, ⟨s.gpr .r5, 64⟩]
+  rd : s.rd = [⟨s.gpr .r3, 32⟩, ⟨s.gpr .r4, 64⟩, ⟨s.gpr .r5, 64⟩, ⟨s.syms bSym, 1920⟩]
   wr : s.wr = [⟨s.gpr .r6, 8192⟩]
   pk_ws : (⟨s.gpr .r3, 32⟩ : Region).Disjoint ⟨s.gpr .r6, 8192⟩
   sig_ws : (⟨s.gpr .r4, 64⟩ : Region).Disjoint ⟨s.gpr .r6, 8192⟩
   ch_ws : (⟨s.gpr .r5, 64⟩ : Region).Disjoint ⟨s.gpr .r6, 8192⟩
+  /-- The static of `-[1]B … -[15]B`. -/
+  bs : BStat (s.gpr .r6) (s.syms bSym) s
 
 /-- The regions the verification writes are clear of the saved registers'. -/
 theorem verW_saves {B : Addr} (lo n : Nat) (h1 : 1024 ≤ lo) (h2 : lo + n ≤ 1632) :
@@ -120,7 +123,7 @@ theorem verifySetup_ok {s : State} (hp : VerifyPre s) :
       rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega_arith)) (by omega_arith) (by omega_arith)),
     s4.gpr, e7, hb ▸ hsvL⟩
 
-theorem verify_ok {s : State} (hp : VerifyPre s) :
+theorem verify_ok (hR : RhsOk) {s : State} (hp : VerifyPre s) :
     WP isa Impl.Ed25519.PPC64LE.verifyEquation s fun t =>
       (∀ r ∈ preserved, t.gpr r = s.gpr r) ∧ t.sp = s.sp ∧ t.lr = s.lr ∧
       t.gpr .r3 = if Spec.Ed25519.verifyEquation (bytesAt s.mem (s.gpr .r3) 32) (bytesAt s.mem (s.gpr .r4) 64)
@@ -130,7 +133,7 @@ theorem verify_ok {s : State} (hp : VerifyPre s) :
   obtain ⟨b, hb⟩ : ∃ b, b = s.gpr .r6 := ⟨_, rfl⟩
   have hws : (⟨b, 8192⟩ : Region) ∈ s.wr := by rw [hp.wr, hb]; simp
   unfold Impl.Ed25519.PPC64LE.verifyEquation
-  refine WP.seq (WP.mono (verifySetup_ok hp) fun s5 ⟨hv5, hR5, _, hF5, hsv, g, hg, hsvL⟩ => ?_)
+  refine WP.seq (WP.mono_syms (verifySetup_ok hp) fun s5 ⟨hv5, hR5, _, hF5, hsv, g, hg, hsvL⟩ sy5 => ?_)
   rw [← hb] at hv5 hF5 hsv hsvL
   have hsub : ∀ r ∈ [(⟨b, 8192⟩ : Region)], Region.Sub r ⟨b, 8192⟩ := fun r hr => by
     rw [List.mem_singleton.mp hr]; exact fun _ h => h
@@ -139,7 +142,10 @@ theorem verify_ok {s : State} (hp : VerifyPre s) :
         (bytesAt s.mem (s.gpr .r4) 64) (bytesAt s.mem (s.gpr .r5) 64) := by
     rw [bytesAt_ws hF5 hsub hv5.pkD (by decide), bytesAt_ws hF5 hsub hv5.sigD (by decide),
       bytesAt_ws hF5 hsub hv5.chD (by decide)]
-  refine WP.seq (WP.mono (verifyBody_ok hv5) fun s7 ⟨r7, f7, e17⟩ => ?_)
+  have hB5 : BStat b (s5.syms bSym) s5 := by
+    rw [sy5]
+    exact (hb ▸ hp.bs).of_frame hR5.rd hF5 hsub
+  refine WP.seq (WP.mono (verifyBody_ok hR hv5 hB5) fun s7 ⟨r7, f7, e17⟩ => ?_)
   rw [hbytes] at e17
   -- The link register restored, the result, and the registers.
   unfold verifyFinish
