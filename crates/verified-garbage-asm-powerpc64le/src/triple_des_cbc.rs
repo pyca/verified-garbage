@@ -28,7 +28,7 @@ b 21f
 20:
 21:
 .base64 "eOu/fygCBYEAAB+RLAIFgQQAH5EIAqXrEALF6xgC5esgAgXopgMIfCAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlAAGz5SABs+VAAbPlYAGz5YABs+WgAbPlwAGz5eABs+YAAbPmIAGz5kABs+ZgAbPmgAGz5qABs+bAAbPm4AGz5wABs+cgAbPnQAGz52ABs+eAAbPnoAGz58ABs+fgAbPkAAWz5CAFs+RABbPkYAWz5IAFs+SgBbPkwAWz5OAFs+UABbPlIAWz5UAFs+VgBbPlgAWz5aAFs+XABbPl4AWz5gAFs+YgBbPmQAWz5mAFs+aABbPmoAWz5sAFs+bgBbPnAAWz5yAFs+dABbPnYAWz54AFs+egBbPnwAWz5+AFs+QACbPkIAmz5EAJs+RgCbPkgAmz5KAJs+TACbPk4Amz5YAIhOCAAgE4=""#,
-        vg_triple_des_encrypt_block = sym super::triple_des_cbc::vg_triple_des_encrypt_block::vg_triple_des_encrypt_block,
+        vg_triple_des_encrypt_block = sym super::triple_des::vg_triple_des_encrypt_block::vg_triple_des_encrypt_block,
     )
 }
 
@@ -67,14 +67,6 @@ b 24f
 23:
 24:
 .base64 "eOu/fyAGBYEAAB+RJAYFgQQAH5EABqXrCAbF6xAG5esYBgXopgMIfCAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlAAGz5SABs+VAAbPlYAGz5YABs+WgAbPlwAGz5eABs+YAAbPmIAGz5kABs+ZgAbPmgAGz5qABs+bAAbPm4AGz5wABs+cgAbPnQAGz52ABs+eAAbPnoAGz58ABs+fgAbPkAAWz5CAFs+RABbPkYAWz5IAFs+SgBbPkwAWz5OAFs+UABbPlIAWz5UAFs+VgBbPlgAWz5aAFs+XABbPl4AWz5gAFs+YgBbPmQAWz5mAFs+aABbPmoAWz5sAFs+bgBbPnAAWz5yAFs+dABbPnYAWz54AFs+egBbPnwAWz5+AFs+QACbPkIAmz5EAJs+RgCbPkgAmz5KAJs+TACbPk4Amz5QAJs+UgCbPlQAmz5WAJs+WACbPloAmz5cAJs+XgCbPmAAmz5iAJs+ZACbPmYAmz5oAJs+agCbPmwAmz5uAJs+cACbPnIAmz50AJs+dgCbPngAmz56AJs+fACbPn4Amz5AANs+QgDbPkQA2z5GANs+SADbPkoA2z5MANs+TgDbPlAA2z5SANs+VADbPlYA2z5YANs+WgDbPlwA2z5eANs+YADbPmIA2z5kANs+ZgDbPmgA2z5qANs+bADbPm4A2z5wANs+cgDbPnQA2z52ANs+eADbPnoA2z58ANs+fgDbPkABGz5CARs+RAEbPkYBGz5IARs+SgEbPkwBGz5OARs+UAEbPlIBGz5UARs+VgEbPlgBGz5aARs+XAEbPl4BGz5gARs+YgEbPmQBGz5mARs+aAEbPmoBGz5sARs+bgEbPnABGz5yARs+dAEbPnYBGz54ARs+egEbPnwBGz5+ARs+QAFbPkIBWz5EAVs+RgFbPkgBWz5KAVs+TAFbPk4BWz5QAVs+UgFbPlQBWz5WAVs+WAFbPloBWz5cAVs+XgFbPmABWz5iAVs+ZAFbPmYBWz5oAVs+agFbPmwBWz5uAVs+cAFbPnIBWz50AVs+dgFbPngBWz56AVs+fAFbPn4BWz5AAZs+QgGbPkQBmz5GAZs+SAGbPkoBmz5MAZs+TgGbPlgBiE4IACATg==""#,
-        vg_triple_des_ecb64_decrypt = sym super::triple_des_cbc::vg_triple_des_ecb64_decrypt::vg_triple_des_ecb64_decrypt,
+        vg_triple_des_ecb64_decrypt = sym super::triple_des::vg_triple_des_ecb64_decrypt::vg_triple_des_ecb64_decrypt,
     )
 }
-
-#[rustfmt::skip]
-#[path = "internal/vg_triple_des_ecb64_decrypt.rs"]
-pub(crate) mod vg_triple_des_ecb64_decrypt;
-
-#[rustfmt::skip]
-#[path = "internal/vg_triple_des_encrypt_block.rs"]
-pub(crate) mod vg_triple_des_encrypt_block;
