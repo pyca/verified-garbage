@@ -315,6 +315,131 @@ theorem vconsts_ok {s : State} :
   · rw [c₆.sp, c₅.sp, c₄.sp, c₃.sp, c₂.sp, c₁.sp]; rfl
   · rw [c₆.lr, c₅.lr, c₄.lr, c₃.lr, c₂.lr, c₁.lr]; rfl
 
+/-! ## The vector NTT: what every loop keeps -/
+
+open VG.Proof.MlKem.PPC64LE.Lanes VG.Proof.MlKem.PPC64LE.VBfly
+
+/-- What the setup leaves in memory `m₁`: the table at `S` and the polynomial. -/
+structure VSetup (s₀ : State) (m₁ : Mem) : Prop where
+  tab : ∀ j < 128, m₁.readW (S s₀ + BitVec.ofNat 64 (8 * j)) 32 = BitVec.ofNat 32 (zeta j).val ∧
+    m₁.readW (S s₀ + BitVec.ofNat 64 (8 * j + 4)) 32 = BitVec.ofNat 32 (zetaPrime (zeta j).val)
+  poly : PolyIs m₁ (F s₀) (P s₀)
+
+/-- What every loop keeps. -/
+structure VEnv (s₀ : State) (m₁ : Mem) (s : State) : Prop where
+  r3 : s.gpr .r3 = F s₀
+  r4 : s.gpr .r4 = S s₀
+  kept : ∀ r ∈ preserved, s.gpr r = s₀.gpr r
+  c : Consts s
+  lr : s.lr = s₀.lr
+  rd : s.rd = s₀.rd
+  wr : s.wr = s₀.wr
+  sp : s.sp = s₀.sp
+  frame : Frame [polyRegion (F s₀)] m₁ s.mem
+
+theorem pres_ne : ∀ r ∈ preserved, r ≠ .r0 ∧ r ≠ .r5 ∧ r ≠ .r6 ∧ r ≠ .r7 ∧ r ≠ .r9 ∧ r ≠ .r10 ∧
+    r ≠ .r11 ∧ r ≠ .r12 := by decide
+
+theorem VEnv.rowR {s₀ : State} (hp : Pre s₀) {m₁ : Mem} {s : State} (h : VEnv s₀ m₁ s) {j : Nat}
+    (hj : j + 4 ≤ 256) : InRegions (s.rd ++ s.wr) (coeffAddr (F s₀) j) 16 := by
+  rw [h.rd, h.wr, hp.rd, hp.wr]; exact ⟨polyRegion (F s₀), by simp, Offset.contains_base _ (by omega) (by omega)⟩
+
+theorem VEnv.rowW {s₀ : State} (hp : Pre s₀) {m₁ : Mem} {s : State} (h : VEnv s₀ m₁ s) {j : Nat}
+    (hj : j + 4 ≤ 256) : InRegions s.wr (coeffAddr (F s₀) j) 16 := by
+  rw [h.wr, hp.wr]; exact ⟨polyRegion (F s₀), by simp, Offset.contains_base _ (by omega) (by omega)⟩
+
+theorem VEnv.rowZ {s₀ : State} (hp : Pre s₀) {m₁ : Mem} {s : State} (h : VEnv s₀ m₁ s) {k : Nat}
+    (hk : k + 1 < 128) : InRegions (s.rd ++ s.wr) (S s₀ + BitVec.ofNat 64 (8 * k)) 16 := by
+  rw [h.rd, h.wr, hp.rd, hp.wr]; exact ⟨polyRegion (S s₀), by simp, Offset.contains_base _ (by omega) (by omega)⟩
+
+theorem toNat_zp (z : Zq) : (BitVec.ofNat 32 (zetaPrime z.val)).toNat = z.val * 2 ^ 32 / 3329 := by
+  rw [BitVec.toNat_ofNat, zetaPrime, Nat.mod_eq_of_lt (Nat.div_lt_of_lt_mul (by have := val_lt z; omega))]
+
+/-- The words of the entries `k` and `k + 1` of the table, loaded by `lxvd2x`. -/
+theorem VEnv.zrow {s₀ : State} (hp : Pre s₀) {m₁ : Mem} (hm : VSetup s₀ m₁) {s : State} (h : VEnv s₀ m₁ s)
+    {k : Nat} (hk : k + 1 < 128) :
+    vword (swapDwords (s.mem.read (S s₀ + BitVec.ofNat 64 (8 * k)) 16)) 1 = BitVec.ofNat 32 (zeta k).val ∧
+    vword (swapDwords (s.mem.read (S s₀ + BitVec.ofNat 64 (8 * k)) 16)) 0 =
+      BitVec.ofNat 32 (zetaPrime (zeta k).val) ∧
+    vword (swapDwords (s.mem.read (S s₀ + BitVec.ofNat 64 (8 * k)) 16)) 3 = BitVec.ofNat 32 (zeta (k + 1)).val ∧
+    vword (swapDwords (s.mem.read (S s₀ + BitVec.ofNat 64 (8 * k)) 16)) 2 =
+      BitVec.ofNat 32 (zetaPrime (zeta (k + 1)).val) := by
+  have fS := hp.fitS
+  rw [h.frame.read (r := polyRegion (S s₀)) (Offset.contains_base _ (by omega) (by omega))
+    (fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact hp.disj.symm) (by decide)]
+  rw [vword_row _ _ (by decide), vword_row _ _ (by decide), vword_row _ _ (by decide), vword_row _ _ (by decide)]
+  simp only [Nat.reduceXor, Nat.reduceMul, ptr_add]
+  obtain ⟨a0, a1⟩ := hm.tab k (by omega)
+  obtain ⟨b0, b1⟩ := hm.tab (k + 1) hk
+  rw [Nat.add_zero, a0, a1, show 8 * k + 8 = 8 * (k + 1) by omega, b0,
+    show 8 * k + 12 = 8 * (k + 1) + 4 by omega, b1]
+  exact ⟨rfl, rfl, rfl, rfl⟩
+
+theorem add_ofNat (a b : Nat) : BitVec.ofNat 64 a + BitVec.ofNat 64 b = BitVec.ofNat 64 (a + b) :=
+  (BitVec.ofNat_add a b).symm
+
+theorem sub_nz {a b : Nat} (ha : a < 2 ^ 64) (hb : b < 2 ^ 64) :
+    (BitVec.ofNat 64 a - BitVec.ofNat 64 b != 0) = decide (a ≠ b) := by
+  have := ptr_ne 0 ha hb
+  rwa [show (0 : BitVec 64) = 0#64 from rfl, BitVec.zero_add, BitVec.zero_add] at this
+
+/-! ## The vector NTT: groups of four butterflies -/
+
+/-- After `g` groups of four butterflies of the block from `st` with the
+zeta `zeta k` of the layer with `len`, from `Q`. -/
+structure FInv (s₀ : State) (m₁ : Mem) (Q : Poly) (len k st : Nat) (g : Nat) (s : State) : Prop where
+  env : VEnv s₀ m₁ s
+  r5 : s.gpr .r5 = BitVec.ofNat 64 (4 * (st + 4 * g))
+  r6 : s.gpr .r6 = BitVec.ofNat 64 (4 * (st + 4 * g + len))
+  r7 : s.gpr .r7 = BitVec.ofNat 64 (8 * (k + 1))
+  r9 : s.gpr .r9 = BitVec.ofNat 64 (4 * len)
+  r10 : s.gpr .r10 = BitVec.ofNat 64 (len / 4 - g)
+  v4 : ∀ i < 4, vword (s.vpr .v4) i = BitVec.ofNat 32 (zeta k).val
+  v5 : ∀ i < 4, vword (s.vpr .v5) i = BitVec.ofNat 32 (zetaPrime (zeta k).val)
+  poly : PolyIs s.mem (F s₀) (nttBlockN Q len k st (4 * g))
+
+theorem fstep {s₀ : State} (hp : Pre s₀) {m₁ : Mem} {Q : Poly} {len k st g : Nat}
+    (hs : st + 2 * len ≤ 256) (hg : g < len / 4) {s : State} (h : FInv s₀ m₁ Q len k st g s) :
+    WP isa (.block vbflyBody) s fun s' =>
+      FInv s₀ m₁ Q len k st (g + 1) s' ∧ (s'.gpr .r10 != 0) = decide (g + 1 ≠ len / 4) := by
+  have ht : 4 * g + 4 ≤ len := by omega
+  have eA : s.gpr .r3 + s.gpr .r5 = coeffAddr (F s₀) (st + 4 * g) := by rw [h.env.r3, h.r5]
+  have eB : s.gpr .r3 + s.gpr .r6 = coeffAddr (F s₀) (st + 4 * g + len) := by rw [h.env.r3, h.r6]
+  refine WP.mono (body_ok (eA ▸ h.env.rowR hp (by omega)) (eB ▸ h.env.rowR hp (by omega))
+    (eA ▸ h.env.rowW hp (by omega)) (eB ▸ h.env.rowW hp (by omega))
+    (fun i hi => by rw [eA, row_lane h.poly (by omega) hi, toNat_val32]; exact val_lt _)
+    (fun i hi => by rw [eB, row_lane h.poly (by omega) hi, toNat_val32]; exact val_lt _)
+    (fun i hi => by rw [h.v4 i hi, toNat_val32]; exact val_lt _)
+    (fun i hi => by rw [h.v5 i hi, h.v4 i hi, toNat_zp, toNat_val32]) h.env.c.v0 h.env.c.v1)
+    fun s' ⟨A, B, hA, hB, m, r5, r6, r10, kp⟩ => ⟨⟨⟨?_, ?_, fun r hr => ?_, ⟨?_, ?_, ?_, ?_, ?_, ?_⟩,
+      kp.lr.trans h.env.lr, kp.rd.trans h.env.rd, kp.wr.trans h.env.wr, kp.sp.trans h.env.sp, ?_⟩,
+      ?_, ?_, ?_, ?_, ?_, fun i hi => ?_, fun i hi => ?_, ?_⟩, ?_⟩
+  · rw [kp.g _ (by decide) (by decide) (by decide), h.env.r3]
+  · rw [kp.g _ (by decide) (by decide) (by decide), h.env.r4]
+  · obtain ⟨-, n5, n6, -, -, n10, -⟩ := pres_ne r hr
+    rw [kp.g r n5 n6 n10, h.env.kept r hr]
+  · rw [kp.v _ (by decide) (by decide) (by decide) (by decide) (by decide), h.env.c.v0]
+  · rw [kp.v _ (by decide) (by decide) (by decide) (by decide) (by decide), h.env.c.v1]
+  · rw [kp.v _ (by decide) (by decide) (by decide) (by decide) (by decide), h.env.c.v2]
+  · rw [kp.v _ (by decide) (by decide) (by decide) (by decide) (by decide), h.env.c.v3]
+  · rw [kp.v _ (by decide) (by decide) (by decide) (by decide) (by decide), h.env.c.v12]
+  · rw [kp.v _ (by decide) (by decide) (by decide) (by decide) (by decide), h.env.c.v13]
+  · rw [m, eA, eB]
+    exact (h.env.frame.write (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))).write
+      (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))
+  · rw [r5, h.r5, show (16 : BitVec 64) = BitVec.ofNat 64 16 from rfl, add_ofNat]; exact congrArg _ (by omega)
+  · rw [r6, h.r6, show (16 : BitVec 64) = BitVec.ofNat 64 16 from rfl, add_ofNat]; exact congrArg _ (by omega)
+  · rw [kp.g _ (by decide) (by decide) (by decide), h.r7]
+  · rw [kp.g _ (by decide) (by decide) (by decide), h.r9]
+  · rw [r10, h.r10, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, count_sub hg]
+  · rw [kp.v _ (by decide) (by decide) (by decide) (by decide) (by decide), h.v4 i hi]
+  · rw [kp.v _ (by decide) (by decide) (by decide) (by decide) (by decide), h.v5 i hi]
+  · rw [m, eA, eB, show 4 * (g + 1) = 4 * g + 4 by omega]
+    exact group_poly ht hs h.poly (fun p hp => by rw [hA p hp, eA, eB, h.v4 p hp])
+      (fun p hp => by rw [hB p hp, eA, eB, h.v4 p hp])
+  · rw [r10, h.r10, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, count_sub hg]
+    exact count_nz hg (by omega)
+
 /-! ## Verified -/
 
 /-- A state satisfying the precondition. -/
