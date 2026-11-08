@@ -145,13 +145,14 @@ impl Key {
             }
         }
         // The scratch space may hold the key schedule, the data and our
-        // caller's registers. On x86-64, AArch64, ARMv7 and PPC64LE each
-        // implementation leaves each byte of it unchanged or zero
+        // caller's registers. On x86-64, AArch64, ARMv7, RISC-V and PPC64LE
+        // each implementation leaves each byte of it unchanged or zero
         // (`Proof/AesCbc/<ISA>/Wiped.lean`); elsewhere, wipe it.
         #[cfg(not(any(
             target_arch = "x86_64",
             target_arch = "aarch64",
             target_arch = "arm",
+            target_arch = "riscv64",
             all(target_arch = "powerpc64", target_endian = "little")
         )))]
         zeroize(&mut scratch.0);
@@ -159,6 +160,7 @@ impl Key {
             target_arch = "x86_64",
             target_arch = "aarch64",
             target_arch = "arm",
+            target_arch = "riscv64",
             all(target_arch = "powerpc64", target_endian = "little")
         ))]
         let _ = &mut scratch;

@@ -18,7 +18,8 @@ import VerifiedGarbage.Proof.Framework.Contract
 Untrusted: everything here is checked by Lean. `finish_ok`: `Y` and the
 counter stored back; `enc_ok`, `dec_ok`: `Impl.Gcm.AArch64.Stitch.enc` and
 `dec` meet `EPost` and `DPost` from a state of `KPre`, for any `ghPart`
-that is GHASH (`Gh8Ok`).
+that is GHASH (`Gh8Ok`); `decM_ok`: `dec to` meets `DPostT` from a state of
+`KPreM`, the plaintext over the text or, out of place, at the destination.
 -/
 
 @[expose] public section
@@ -35,21 +36,21 @@ open VG.Spec.Gcm (Block blockAt blocksAt inc32 aesWith ghashFrom ctr32)
 open VG.Impl.Gcm.AArch64.Stitch
 
 /-- What `finish` leaves. -/
-structure FPost (s₀ : State) (hb : Nat → Block) (s : State) : Prop where
+structure FPost (s₀ : State) (to : Bool) (hb : Nat → Block) (s : State) : Prop where
   y : blockAt s.mem (stp s₀ + BitVec.ofNat 64 16) = yh s₀ hb (8 * nb s₀)
   ctr : blockAt s.mem (stp s₀ + BitVec.ofNat 64 48) = Nat.repeat inc32 (8 * nb s₀) (icb s₀)
-  data : DataInv s₀.mem s.mem (dp s₀) (8 * nb s₀) (8 * nb s₀) (kst s₀)
-  frame : Frame [yR s₀, cR s₀, dR s₀] s₀.mem s.mem
-  gpr : ∀ r, r ∉ kRegs → s.gpr r = s₀.gpr r
+  data : DataInvM s₀.mem s.mem (dp s₀) (op s₀ to) (8 * nb s₀) (8 * nb s₀) (kst s₀)
+  frame : Frame [yR s₀, cR s₀, oR s₀ to] s₀.mem s.mem
+  gpr : ∀ r, r ∉ kRegsT to → s.gpr r = s₀.gpr r
   sp : s.sp = s₀.sp
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
 
-theorem finish_ok {s₀ : State} (hp : KPre s₀) {hb : Nat → Block} {s : State}
-    (hI : LInv s₀ hb (nb s₀) (nb s₀) s) : WP isa (.block finish) s (FPost s₀ hb) := by
+theorem finish_ok {s₀ : State} {to : Bool} (hp : KPreM s₀ to) {hb : Nat → Block} {s : State}
+    (hI : LInv s₀ to hb (nb s₀) (nb s₀) s) : WP isa (.block finish) s (FPost s₀ to hb) := by
   have hn := hp.n16
   have hs := hp.wrap_s
-  have g20 : s.gpr .x20 = stp s₀ := hI.gpr _ (by decide)
+  have g20 : s.gpr .x20 = stp s₀ := hI.gpr _ (notMem_kRegsT _ (by decide))
   have e60 : stp s₀ + BitVec.ofNat 64 60 = stp s₀ + BitVec.ofNat 64 48 + BitVec.ofNat 64 12 := by
     rw [Offset.add_add]
   have hy : InRegions s.wr (s.gpr .x20 + BitVec.ofNat 64 16) 16 := by rw [hI.wr, g20]; exact hp.y_in
@@ -83,7 +84,7 @@ theorem finish_ok {s₀ : State} (hp : KPre s₀) {hb : Nat → Block} {s : Stat
       s₀.mem (stp s₀ + BitVec.ofNat 64 48 + BitVec.ofNat 64 k) := fun k hk => by
     rw [fy.bytes (R := cR s₀) (by simp only [List.mem_singleton, forall_eq]; exact hp.y_c.symm)
       (by show (16 : Nat) ≤ 2 ^ 64; decide) hk]
-    exact hI.frame.bytes (R := cR s₀) (by simp only [List.mem_singleton, forall_eq]; exact hp.d_c.symm)
+    exact hI.frame.bytes (R := cR s₀) (by simp only [List.mem_singleton, forall_eq]; exact hp.o_c.symm)
       (by show (16 : Nat) ≤ 2 ^ 64; decide) hk
   have hcb₁ : blockAt m₁ (stp s₀ + BitVec.ofNat 64 48) = icb s₀ :=
     Proof.Gcm.blockAt_congr fun k hk => hcb k hk
@@ -113,7 +114,7 @@ theorem finish_ok {s₀ : State} (hp : KPre s₀) {hb : Nat → Block} {s : Stat
         ite_eq_left (show k < 12 by omega)]
   · -- The data.
     dsimp only
-    refine Proof.Aes.AArch64.dataInv_frame (rs := [yR s₀, cR s₀]) ?_ ?_ (by omega)
+    refine dataInvM_frame (rs := [yR s₀, cR s₀]) ?_ ?_ (by omega)
       (by have := hI.data; rw [show 8 * nb s₀ = 8 * nb s₀ from rfl] at this; exact this)
     · rw [← hm₁]
       exact (((Frame.refl _ _).write (List.mem_cons_self ..) _ (Region.contains_self _ _)).writeW
@@ -122,36 +123,64 @@ theorem finish_ok {s₀ : State} (hp : KPre s₀) {hb : Nat → Block} {s : Stat
     · intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact (show (⟨dp s₀, 16 * (8 * nb s₀)⟩ : Region) = dR s₀ by simp [dR]; omega) ▸ hp.d_y
-      · exact (show (⟨dp s₀, 16 * (8 * nb s₀)⟩ : Region) = dR s₀ by simp [dR]; omega) ▸ hp.d_c
+      · exact (show (⟨op s₀ to, 16 * (8 * nb s₀)⟩ : Region) = oR s₀ to by simp [oR]; omega) ▸ hp.o_y
+      · exact (show (⟨op s₀ to, 16 * (8 * nb s₀)⟩ : Region) = oR s₀ to by simp [oR]; omega) ▸ hp.o_c
   · -- The frame.
     dsimp only
     rw [← hm₁]
     exact ((hI.frame.mono fun r hr => by simp at hr ⊢; exact .inr (.inr hr)).write (List.mem_cons_self ..) _
       (Region.contains_self _ _)).writeW (List.mem_cons_of_mem _ (List.mem_cons_self ..)) _
       (Offset.contains_base _ (by omega) (by omega))
-  · simp only [kRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+  · have hk := (kRegsT_not hr).1
+    simp only [kRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hk
     dsimp only
-    rw [gpr_write_of_ne _ _ _ hr.2.2.2.1, hI.gpr r (by simp [kRegs, hr.1, hr.2.1, hr.2.2.1,
-      hr.2.2.2.1, hr.2.2.2.2.1, hr.2.2.2.2.2])]
+    rw [gpr_write_of_ne _ _ _ hk.2.2.2.1, hI.gpr r hr]
+
+/-- The blocks of the output, once all are written. -/
+theorem ctr32_of_dataInvM {m₀ m : Mem} {D O : Addr} {n R : Nat} {w : List Byte}
+    {icb : Block} (h : DataInvM m₀ m D O n n (keyStream R w icb)) :
+    blocksAt m O n = ctr32 (aesWith R w) icb (blocksAt m₀ D n) := by
+  unfold Spec.Gcm.ctr32 Spec.Gcm.keystream Spec.Gcm.blocksAt
+  apply List.ext_getElem (by simp)
+  intro i h1 h2
+  simp only [List.getElem_map, List.getElem_range, List.getElem_zipWith, List.length_map,
+    List.length_range]
+  simp only [List.length_map, List.length_range] at h1
+  refine Proof.Aes.block_ext fun k hk => ?_
+  rw [Proof.Aes.toBytes_xor _ _ hk, Proof.Aes.toBytes_blockAt _ _ hk, Proof.Aes.toBytes_blockAt _ _ hk,
+    BitVec.add_assoc, ← BitVec.ofNat_add, BitVec.add_assoc, ← BitVec.ofNat_add, h _ (by omega_arith),
+    ite_eq_left (by omega_arith)]
+  refine congrArg (_ ^^^ ·) ?_
+  unfold Spec.Gcm.aesWith
+  rw [Proof.Aes.toBytes_ofBytes (by simp) hk, keyStream, show (16 * i + k) / 16 = i by omega_arith,
+    show (16 * i + k) % 16 = k by omega_arith, Proof.Aes.getD_eq _ hk, List.getD_eq_getElem?_getD,
+    Vector.getElem?_toList, Vector.getElem?_eq_getElem hk, Option.getD_some]
+  rfl
 
 /-! ## The loops -/
 
 theorem enc_ok {s₀ : State} (hp : KPre s₀) (gh : Gh8Ok) : WP isa enc s₀ (EPost s₀) := by
+  have hm := hp.toM
   unfold enc
-  refine WP.seq (WP.mono (setup_ok hp (blockC s₀)) fun s₁ hI₁ => ?_)
-  refine WP.seq (WP.mono (byRounds_ok hp (f := encLoop) hI₁ fun s hI => encLoop_ok hp gh hI) fun s₂ hI₂ => ?_)
-  refine WP.mono (finish_ok hp hI₂) fun s' h => ⟨Proof.Aes.AArch64.ctr32_of_dataInv h.data, h.ctr, ?_, h.frame,
-    h.gpr, h.sp, h.rd, h.wr⟩
-  rw [h.y, Proof.Aes.AArch64.ctr32_of_dataInv h.data, ctr32_eq_map]
+  refine WP.seq (WP.mono (setup_ok hm (blockC s₀)) fun s₁ hI₁ => ?_)
+  refine WP.seq (WP.mono (byRounds_ok hm (f := encLoop) hI₁ fun s hI => encLoop_ok hm gh hI) fun s₂ hI₂ => ?_)
+  refine WP.mono (finish_ok hm hI₂) fun s' h =>
+    ⟨Proof.Aes.AArch64.ctr32_of_dataInv (dataInvM_self.mp h.data), h.ctr, ?_, h.frame, h.gpr, h.sp, h.rd, h.wr⟩
+  rw [h.y, Proof.Aes.AArch64.ctr32_of_dataInv (dataInvM_self.mp h.data), ctr32_eq_map]
 
-theorem dec_ok {s₀ : State} (hp : KPre s₀) (gh : Gh8Ok) : WP isa dec s₀ (DPost s₀) := by
+/-- The decryption to `op s₀ to`: over the text, or out of place. -/
+theorem decM_ok {s₀ : State} {to : Bool} (hp : KPreM s₀ to) (gh : Gh8Ok) :
+    WP isa (dec to) s₀ (DPostT s₀ to) := by
   unfold dec
   refine WP.seq (WP.mono (setup_ok hp (blockO s₀)) fun s₁ hI₁ => ?_)
-  refine WP.seq (WP.mono (byRounds_ok hp (f := decLoop) hI₁ fun s hI => decLoop_ok hp gh hI) fun s₂ hI₂ => ?_)
-  refine WP.mono (finish_ok hp hI₂) fun s' h => ⟨Proof.Aes.AArch64.ctr32_of_dataInv h.data, h.ctr, ?_, h.frame,
+  refine WP.seq (WP.mono (byRounds_ok hp (f := fun nr => decLoop nr to) hI₁ fun s hI => decLoop_ok hp gh hI)
+    fun s₂ hI₂ => ?_)
+  refine WP.mono (finish_ok hp hI₂) fun s' h => ⟨ctr32_of_dataInvM h.data, h.ctr, ?_, h.frame,
     h.gpr, h.sp, h.rd, h.wr⟩
   rw [h.y]
   rfl
+
+theorem dec_ok {s₀ : State} (hp : KPre s₀) (gh : Gh8Ok) : WP isa dec s₀ (DPost s₀) :=
+  WP.mono (decM_ok hp.toM gh) fun _ h => ⟨h.data, h.ctr, h.y, h.frame, h.gpr, h.sp, h.rd, h.wr⟩
 
 end VG.Proof.Gcm.AArch64.Stitch

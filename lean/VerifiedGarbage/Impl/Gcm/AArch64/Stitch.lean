@@ -31,7 +31,8 @@ instructions (which issue to one) leave.
 The two parts use different registers and only read memory, so woven they
 run as one and then the other (`Proof/Framework/Interleave.lean`). `seal`
 encrypts batch `i + 1` while it hashes batch `i` (stored by the previous
-iteration); `open` decrypts and hashes the same batch.
+iteration); `open` decrypts and hashes the same batch, and stores the
+plaintext over it or, out of place, to a destination (`x15`, `outReg`).
 -/
 
 @[expose] public section
@@ -154,8 +155,11 @@ def fuse : List Instr → List (List Instr)
 def parts (nr o : Nat) : List Instr :=
   VG.Impl.Weave.weaveG (fuse (aesPart nr o)) (ghPart.map fun x => [x])
 
+/-- Store `v0`–`v7` to the eight blocks at `p + o`. -/
+def storesAt (p : Reg) (o : Nat) : List Instr := (List.range 8).flatMap fun j => [.strq (breg j) p (o + 16 * j)]
+
 /-- Store `v0`–`v7` to the eight blocks at `x9 + o`. -/
-def stores (o : Nat) : List Instr := (List.range 8).flatMap fun j => [.strq (breg j) .x9 (o + 16 * j)]
+abbrev stores (o : Nat) : List Instr := storesAt .x9 o
 
 /-- The counter (`w10`), the reduction constant, `Y` (at `x20 + 16`) and the
 pointer to the text (`x23`) set up; `x11 = x26 / 128` batches. -/
@@ -180,13 +184,22 @@ def encLoop (nr : Nat) : Prog isa :=
     (.seq (.ite (.zero .x .x11) (.block []) (.loop (.block (encBody nr)) (.nonzero .x .x11)))
       (.block (ghPart ++ ([.addImm .x .x9 .x9 128] : List Instr))))
 
-/-- One iteration of `open`'s loop: the batch at `x9` decrypted and hashed. -/
-def decBody (nr : Nat) : List Instr :=
-  parts nr 0 ++ stores 0 ++
-    ([.addImm .x .x9 .x9 128, .subImm .x .x11 .x11 1] : List Instr)
+/-- Where `open`'s loop stores the plaintext: over the ciphertext (`x9`), or,
+out of place (`to`), to the destination at `x15`, advanced with it. -/
+def outReg (to : Bool) : Reg := cond to .x15 .x9
+
+/-- The pointers past a batch: the destination's too, out of place, and the
+count of batches. -/
+def adv (to : Bool) : List Instr :=
+  cond to [.addImm .x .x15 .x15 128] [] ++ [.addImm .x .x9 .x9 128, .subImm .x .x11 .x11 1]
+
+/-- One iteration of `open`'s loop: the batch at `x9` decrypted and hashed,
+the plaintext stored to `outReg to`. -/
+def decBody (nr : Nat) (to : Bool := false) : List Instr :=
+  parts nr 0 ++ storesAt (outReg to) 0 ++ adv to
 
 /-- `open`'s loop over `x11 ≥ 1` batches. -/
-def decLoop (nr : Nat) : Prog isa := .loop (.block (decBody nr)) (.nonzero .x .x11)
+def decLoop (nr : Nat) (to : Bool := false) : Prog isa := .loop (.block (decBody nr to)) (.nonzero .x .x11)
 
 /-- The loop for the number of rounds in `x22` (10, 12 or 14). -/
 def byRounds (f : Nat → Prog isa) : Prog isa :=
@@ -197,7 +210,9 @@ def byRounds (f : Nat → Prog isa) : Prog isa :=
 (at least 128), with the table of keys set up. -/
 def enc : Prog isa := .seq (.block setup) (.seq (byRounds encLoop) (.block finish))
 
-/-- Decrypt and hash them. -/
-def dec : Prog isa := .seq (.block setup) (.seq (byRounds decLoop) (.block finish))
+/-- Decrypt and hash them: in place, or, with `to`, the plaintext to the
+destination at `x15` (which the loop advances past it). -/
+def dec (to : Bool := false) : Prog isa :=
+  .seq (.block setup) (.seq (byRounds fun nr => decLoop nr to) (.block finish))
 
 end VG.Impl.Gcm.AArch64.Stitch

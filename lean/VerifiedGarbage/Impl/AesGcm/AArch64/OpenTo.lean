@@ -89,4 +89,50 @@ def openTo (n : Nat) (f : Fn) : Prog isa :=
       (.block (ret n)))))))
     (.free (frameBytes n))
 
+/-! ## In one pass
+
+`openToSplit f` takes `openTo 3`'s arguments and calls `f`, an
+implementation of `vg_aes_gcm_open_split_with_powers` with its working space
+in a frame of its own, which decrypts the `len` bytes at `src` to `dst` as it
+hashes them, rather than copying them to `dst` first:
+`f(ctx, rounds, nonce, nonce_len, aad, aad_len, dst, len, tag, tag_len, pw,
+src, len)`. Its frame of 48 bytes holds the call's five stack arguments, our
+stack arguments `tag`, `tag_len` and `pw`, then `src` and `len`, and our
+return address after them; `dst` is zeroed if it returns 0, as in `openTo`.
+
+`openToSel f fS` chooses between the two, from `nonce_len`, `aad_len` and
+`len`, which are public: `openToSplit fS` for a 12-byte nonce, less than 16
+bytes of additional data and at least `Stitch.minLen` (768) bytes, which
+`f`'s path for TLS records would decrypt by its interleaved loop, and
+`openTo 3 f` otherwise. -/
+
+/-- The entry of `openToSplit`: our return address at `sp + 40`, the call's
+stack arguments at `sp`, …, `sp + 32`, and `dst` as the call's `data`. -/
+def splitEntry : List Instr :=
+  [.addSp .x16 0, .str .x .x30 .x16 40] ++ copyArgs 48 3 ++
+    [.str .x .x6 .x16 24, .str .x .x7 .x16 32, .ldrSp .x6 48]
+
+/-- `vg_aes_gcm_open_to_with_powers` in one pass, calling `f`, an
+implementation of `vg_aes_gcm_open_split_with_powers`. -/
+def openToSplit (f : Fn) : Prog isa :=
+  .frame (.alloc 48)
+    (.seq (.block splitEntry)
+    (.seq (.call f.name f.code)
+    (.seq (after 5)
+      (.block (ret 5)))))
+    (.free 48)
+
+/-- `x10 = (aad_len >> 4) | ((len - 768) >> 63) | (nonce_len ^ 12)`, zero
+only for a 12-byte nonce, less than 16 bytes of additional data and at
+least 768 bytes of text (`len - 768` without its sign bit; a text of 2⁶³ + 768
+bytes or more, which no buffer is, takes `openTo`). -/
+def selSplit : List Instr :=
+  [.subImm .x .x9 .x7 768, .lsr .x .x9 .x9 63, .lsr .x .x10 .x5 4, .logic .orr .x .x10 .x10 .x9,
+    .movz .x .x9 12 0, .logic .eor .x .x9 .x3 .x9, .logic .orr .x .x10 .x10 .x9]
+
+/-- `vg_aes_gcm_open_to_with_powers`: in one pass by a call of `fS`, or by a
+copy and a call of `f`. -/
+def openToSel (f fS : Fn) : Prog isa :=
+  .seq (.block selSplit) (Code.iteCold (.zero .x .x10) (openToSplit fS) (openTo 3 f))
+
 end VG.Impl.AesGcm.AArch64.OpenTo

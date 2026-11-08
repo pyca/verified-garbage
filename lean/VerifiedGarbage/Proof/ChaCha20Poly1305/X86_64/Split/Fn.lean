@@ -256,14 +256,6 @@ theorem pre : preX86_64 true (u.withRegions (rdB u) (wrB u)) := by
 
 end Body
 
-/-- `APre` of a state that may read more. -/
-theorem APre.of_more {e : Bool} {u : State} {rd wr more : List Region} (h : preX86_64 e (u.withRegions rd wr)) :
-    APre e (u.withRegions (rd ++ more) wr) := by
-  have h' := APre.of _ h
-  obtain ⟨m', hm'⟩ := h'.rd
-  have hrd : rd = (if e then [kR u, nR u, aR u, argR u] else [kR u, nR u, aR u, tR u, argR u]) ++ m' := hm'
-  exact { h' with rd := ⟨m' ++ more, by simp only [State.withRegions_rd, hrd, List.append_assoc]; rfl⟩ }
-
 /-- `sealSplitBody`'s precondition, narrowed. -/
 theorem Body.spre {whole : Bool} {s u : State} (hs : FPre s) (hb : Body whole s u) :
     SPre (u.withRegions (rdB u ++ [arg2R u, spR u]) (wrB u)) := by
