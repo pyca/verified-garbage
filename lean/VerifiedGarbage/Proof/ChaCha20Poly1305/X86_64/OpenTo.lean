@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.OpenTo
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.OpenTail
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.CallOpen
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.OpenToScratch
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Frame
@@ -21,6 +22,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.OpenTo
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.OpenTail
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.CallOpen
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.OpenToScratch
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.X86_64.Frame
@@ -42,14 +44,13 @@ meta import VerifiedGarbage.Proof.Framework.Sig
 /-!
 # ChaCha20-Poly1305 decryption out of place, x86-64: `Verified`
 
-`OpenTo.body` (`Impl/ChaCha20Poly1305/X86_64/OpenTo.lean`) runs `open`'s
-shared code (`openShared`, or the stitched `openStitchedShared`, verified
-against `sharedK`: `OpenTail.lean`) inline, in a frame laid out as `open`'s
-entry (`framed`), with the state's permissions narrowed to `open`'s regions
-and the ciphertext's (`WP.inlineF`, `relCT_inline`). From what the contract
-of `vg_chacha20_poly1305_open_to` with its working space gives (`TPre`), the
-frame's state satisfies `sharedK`'s precondition (`Body.spre`), and its
-postcondition is `open_to`'s (`toPost`). Then `work` in a frame of its own
+`OpenTo.body` (`Impl/ChaCha20Poly1305/X86_64/OpenTo.lean`) loads the
+arguments of `open`'s body and calls it (`Shared.callOpen`), as `open` does:
+from what the contract of `vg_chacha20_poly1305_open_to` with its working
+space gives (`TPre`), the state after the loads satisfies what the call needs
+(`cpre_of`: `CallOpen.CPre`), and what the call does (`CallOpen.callOpen_ok`,
+`CallOpen.callOpen_rel`, from the body's contract, proven once) is
+`open_to`'s postcondition (`toPost`). Then `work` in a frame of its own
 (`Verified.stackArgScratchWipedXPre`: the postcondition reads the
 destination's `len` bytes, which the precondition makes `dst_len`), and the
 AVX-512 instances' choice of the AVX2 code by the length, as `open`'s
@@ -79,8 +80,8 @@ abbrev eDst : Addr := stackArg s 0
 abbrev eTg : Addr := stackArg s 2
 abbrev eW : Addr := stackArg s 3
 /-- Their regions (the destination's `len` bytes, which are `dst_len`), the
-stack arguments, the return address, and the 48 bytes below it that the
-frame (24) and `open`'s calls (24) use, from `fB`. -/
+stack arguments, the return address, and the 56 bytes below it that the
+call uses (`CallOpen.hstk`), from `fB`. -/
 abbrev ekR : Region := ⟨s.gpr .rdi, 32⟩
 abbrev enR : Region := ⟨s.gpr .rsi, 12⟩
 abbrev eaR : Region := ⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩
@@ -90,13 +91,13 @@ abbrev etR : Region := ⟨eTg s, 16⟩
 abbrev ewR : Region := ⟨eW s, 1696⟩
 abbrev eargR : Region := ⟨stackArgAddr s 0, 32⟩
 abbrev eretR : Region := ⟨s.gpr .rsp, 8⟩
-abbrev fB : Addr := s.gpr .rsp - BitVec.ofNat 64 48
-abbrev estkR : Region := ⟨fB s, 48⟩
+abbrev fB : Addr := s.gpr .rsp - BitVec.ofNat 64 56
+abbrev estkR : Region := ⟨fB s, 56⟩
 end
 
 /-- What the contract of `vg_chacha20_poly1305_open_to` with `work` gives. -/
 structure TPre (s : State) : Prop where
-  sp_lo : 48 ≤ (s.gpr .rsp).toNat
+  sp_lo : 56 ≤ (s.gpr .rsp).toNat
   sp_hi : (s.gpr .rsp).toNat + 40 ≤ 2 ^ 64
   rd : s.rd = [ekR s, enR s, eaR s, esR s, etR s, eargR s]
   wr : s.wr = [⟨eDst s, (stackArg s 1).toNat⟩, ewR s]
@@ -169,46 +170,15 @@ def toK : Contract isa where
   post := toPost
   pub := toPub
 
-/-! ## The frame -/
-
 namespace TPre
 
 variable {s : State} (hs : TPre s)
 include hs
 
-theorem fB_lt : (fB s).toNat + 88 ≤ 2 ^ 64 := by
-  have := hs.sp_lo; have := hs.sp_hi
-  rw [toNat_sub_ofNat (by omega)]; omega
-
-omit hs in
-theorem rsp_eq : s.gpr .rsp = fB s + BitVec.ofNat 64 48 := (BitVec.sub_add_cancel _ _).symm
-
-omit hs in
-/-- A part of the 48 bytes of stack is apart from a region apart from all of
-them. -/
-theorem stk_disj {r : Region} (h : (estkR s).Disjoint r) {d n : Nat} (hd : d + n ≤ 48) :
-    (⟨fB s + BitVec.ofNat 64 d, n⟩ : Region).Disjoint r :=
-  h.sub_left (Offset.sub_base _ hd)
-
-omit hs in
-theorem stk0 {r : Region} (h : (estkR s).Disjoint r) {n : Nat} (hn : n ≤ 48) :
-    (⟨fB s, n⟩ : Region).Disjoint r :=
-  h.sub_left (Region.sub_prefix hn)
-
-/-- The return address, at `fB + 48`, is apart from the stack below it. -/
-theorem ret_stk {d n : Nat} (hd : d + n ≤ 48) :
-    (eretR s).Disjoint ⟨fB s + BitVec.ofNat 64 d, n⟩ := by
-  have := hs.fB_lt
-  show (⟨s.gpr .rsp, 8⟩ : Region).Disjoint _
-  rw [rsp_eq]; exact Offset.disjoint _ (.inr hd) (by omega) (by omega)
-
-omit hs in
-theorem arg_contains {j : Nat} (hj : j < 4) : (eargR s).Contains (off (s.gpr .rsp) (8 * (j + 1))) 8 := by
-  rw [off_eq]; exact Offset.contains _ (e := 8 * (0 + 1)) (by omega) (by omega) (by omega)
-
 /-- A stack argument is readable. -/
 theorem arg_in {j : Nat} (hj : j < 4) : InRegions (s.rd ++ s.wr) (off (s.gpr .rsp) (8 * (j + 1))) 8 :=
-  ⟨eargR s, by rw [hs.rd]; simp, arg_contains hj⟩
+  ⟨eargR s, by rw [hs.rd]; simp, by
+    rw [off_eq]; exact Offset.contains _ (e := 8 * (0 + 1)) (by omega) (by omega) (by have := hs.sp_hi; omega)⟩
 
 omit hs in
 theorem arg_val (j : Nat) : s.mem.readW (off (s.gpr .rsp) (8 * (j + 1))) 64 = stackArg s j := by
@@ -245,391 +215,144 @@ theorem toArgs_ok {s : State} (hs : TPre s) : WP isa (.block toArgs) s (Loaded s
     fun r h₁ h₂ h₃ h₄ => by simp [gpr_setReg, h₁, h₂, h₃, h₄], by simp [mem_setReg], by simp [rd_setReg],
     by simp [wr_setReg], by simp [mxcsr_setReg]⟩
 
-/-- The registers the frame pushes. -/
-abbrev frameRegs : List Reg := [.rax, .r10, .r11]
+/-! ## The call -/
 
-/-- The state `open`'s shared code starts in: after the frame's push. -/
-structure Body (s u : State) : Prop where
-  rdi : u.gpr .rdi = s.gpr .rdi
-  rsi : u.gpr .rsi = s.gpr .rsi
-  rdx : u.gpr .rdx = s.gpr .rdx
-  rcx : u.gpr .rcx = s.gpr .rcx
-  r8 : u.gpr .r8 = eDst s
-  r9 : u.gpr .r9 = s.gpr .r9
-  r11 : u.gpr .r11 = eSrc s
-  rsp : u.gpr .rsp = fB s + BitVec.ofNat 64 24
-  cs : ∀ r ∈ calleeSaved, r ≠ .rsp → u.gpr r = s.gpr r
-  a0 : u.mem.readW (fB s + BitVec.ofNat 64 32) 64 = eTg s
-  a1 : u.mem.readW (fB s + BitVec.ofNat 64 40) 64 = eW s
-  mem : Frame [⟨fB s + BitVec.ofNat 64 24, 24⟩] s.mem u.mem
-  rd : u.rd = s.rd
-  wr : u.wr = ⟨fB s + BitVec.ofNat 64 24, 24⟩ :: s.wr
-  mx : u.mxcsr = s.mxcsr
+namespace Loaded
 
-theorem sub_fB (s : State) {a : Nat} (h : a ≤ 48) :
-    s.gpr .rsp - BitVec.ofNat 64 a = fB s + BitVec.ofNat 64 (48 - a) := Offset.sub_ofNat_eq _ h
+variable {s h : State} (hh : Loaded s h)
+include hh
 
-theorem body_of {s h : State} (hs : TPre s) (hh : Loaded s h) : Body s (pushed frameRegs h) := by
-  have hsp : h.gpr .rsp = s.gpr .rsp := hh.keep _ (by decide) (by decide) (by decide) (by decide)
-  have hn : 8 * frameRegs.length ≤ (h.gpr .rsp).toNat := by rw [hsp]; have := hs.sp_lo; simp; omega
-  obtain ⟨pf, pw⟩ := pushRegs_mem h frameRegs (by decide) hn
-  rw [hsp, sub_fB s (by decide)] at pf
-  have pw' : ∀ j (hj : j < 3) (d : Nat), d + 8 * (j + 1) = 48 →
-      (pushed frameRegs h).mem.readW (fB s + BitVec.ofNat 64 d) 64 = h.gpr frameRegs[j] := by
-    intro j hj d hd
-    have := pw j hj
-    rw [hsp, sub_fB s (by omega), show 48 - 8 * (j + 1) = d by omega] at this
-    exact this
-  have ga : ∀ r, r ≠ .rsp → (pushed frameRegs h).gpr r = h.gpr r := fun r hr => pushed_gpr _ _ hr
-  have kp : ∀ r, r ≠ .rax → r ≠ .r10 → r ≠ .r11 → r ≠ .r8 → r ≠ .rsp → (pushed frameRegs h).gpr r = s.gpr r :=
-    fun r h₁ h₂ h₃ h₄ h₅ => by rw [ga r h₅, hh.keep r h₁ h₂ h₃ h₄]
-  refine ⟨kp _ (by decide) (by decide) (by decide) (by decide) (by decide),
-    kp _ (by decide) (by decide) (by decide) (by decide) (by decide),
-    kp _ (by decide) (by decide) (by decide) (by decide) (by decide),
-    kp _ (by decide) (by decide) (by decide) (by decide) (by decide),
-    by rw [ga _ (by decide), hh.r8], kp _ (by decide) (by decide) (by decide) (by decide) (by decide),
-    by rw [ga _ (by decide), hh.r11], ?_, fun r hr hr' => ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · rw [pushed_rsp, hsp, sub_fB s (by decide)]; rfl
-  · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
-    exact kp r (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
-      (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
-      (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
-      (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide) hr'
-  · rw [pw' 1 (by decide) 32 (by decide)]; exact hh.r10
-  · rw [pw' 0 (by decide) 40 (by decide)]; exact hh.rax
-  · rw [← hh.mem]; exact pf
-  · rw [pushed_rd, hh.rd]
-  · rw [pushed_wr, hsp, sub_fB s (show 8 * frameRegs.length ≤ 48 by decide), hh.wr]
-    rfl
-  · rw [pushed_mxcsr, hh.mx]
+theorem rsp : h.gpr .rsp = s.gpr .rsp := hh.keep _ (by decide) (by decide) (by decide) (by decide)
+theorem rdi : h.gpr .rdi = s.gpr .rdi := hh.keep _ (by decide) (by decide) (by decide) (by decide)
+theorem rsi : h.gpr .rsi = s.gpr .rsi := hh.keep _ (by decide) (by decide) (by decide) (by decide)
+theorem rdx : h.gpr .rdx = s.gpr .rdx := hh.keep _ (by decide) (by decide) (by decide) (by decide)
+theorem rcx : h.gpr .rcx = s.gpr .rcx := hh.keep _ (by decide) (by decide) (by decide) (by decide)
+theorem r9 : h.gpr .r9 = s.gpr .r9 := hh.keep _ (by decide) (by decide) (by decide) (by decide)
 
-/-! ## The shared code's precondition, narrowed -/
+theorem ek : CallOpen.hkR h = ekR s := by show (⟨h.gpr .rdi, 32⟩ : Region) = _; rw [hh.rdi]
+theorem en : CallOpen.hnR h = enR s := by show (⟨h.gpr .rsi, 12⟩ : Region) = _; rw [hh.rsi]
+theorem ea : CallOpen.haR h = eaR s := by
+  show (⟨h.gpr .rdx, (h.gpr .rcx).toNat⟩ : Region) = _; rw [hh.rdx, hh.rcx]
+theorem es : CallOpen.hsR h = esR s := by
+  show (⟨h.gpr .r11, (h.gpr .r9).toNat⟩ : Region) = _; rw [hh.r11, hh.r9]
+theorem ed : CallOpen.hdR h = edR s := by
+  show (⟨h.gpr .r8, (h.gpr .r9).toNat⟩ : Region) = _; rw [hh.r8, hh.r9]
+theorem et : CallOpen.htR h = etR s := by show (⟨h.gpr .r10, 16⟩ : Region) = _; rw [hh.r10]
+theorem ew : CallOpen.hwR h = ewR s := by show (⟨h.gpr .rax, 1696⟩ : Region) = _; rw [hh.rax]
+theorem eb : CallOpen.hstk h = estkR s := by
+  show (⟨h.gpr .rsp - BitVec.ofNat 64 56, 56⟩ : Region) = _; rw [hh.rsp]
 
-theorem stackArg_wr (s : State) (rd wr : List Region) (j : Nat) :
-    stackArg (s.withRegions rd wr) j = stackArg s j := rfl
-theorem stackArgAddr_wr (s : State) (rd wr : List Region) (j : Nat) :
-    stackArgAddr (s.withRegions rd wr) j = stackArgAddr s j := rfl
+end Loaded
 
-/-- What the shared code may read and write, narrowed from the frame's
-state: `open`'s regions, and the ciphertext. -/
-abbrev rdB (u : State) : List Region := [kR u, nR u, aR u, tR u, argR u]
-abbrev wrB (u : State) : List Region := [dR u, ctxR u]
-abbrev srcR (u : State) : Region := ⟨sp u, L u⟩
-
-theorem sub24 (B : Addr) : B + BitVec.ofNat 64 24 - 24 = B := BitVec.add_sub_cancel _ _
-theorem sub24' (B : Addr) : B + BitVec.ofNat 64 24 - BitVec.ofNat 64 24 = B := BitVec.add_sub_cancel _ _
-
-namespace Body
-
-variable {s u : State} (hb : Body s u)
-include hb
-
-theorem addr (j : Nat) : stackArgAddr u j = fB s + BitVec.ofNat 64 (24 + 8 * (j + 1)) := by
-  show u.gpr .rsp + _ = _
-  rw [hb.rsp, Offset.add_ofNat_add_ofNat]
-
-theorem arg0 : stackArg u 0 = eTg s := by
-  show u.mem.readW (stackArgAddr u 0) 64 = _; rw [hb.addr]; exact hb.a0
-theorem arg1 : stackArg u 1 = eW s := by
-  show u.mem.readW (stackArgAddr u 1) 64 = _; rw [hb.addr]; exact hb.a1
-
-variable (hs : TPre s)
-include hs
-
-/-- `open`'s precondition, narrowed. -/
-theorem pre : preX86_64 false (u.withRegions (rdB u) (wrB u)) := by
-  have e0 := hb.arg0
-  have e1 := hb.arg1
-  have eA := hb.addr 0
-  simp only [preX86_64, stackArg_wr, stackArgAddr_wr, State.withRegions_gpr, State.withRegions_rd,
-    State.withRegions_wr, Bool.false_eq_true, ite_false, kR, nR, aR, argR, dR, tR, ctxR, kp, np, ad, AL, dp,
-    L, tp, cx, e0, e1, eA, hb.rdi, hb.rsi, hb.rdx, hb.rcx, hb.r8, hb.r9, hb.rsp, true_and, sub24, rdB, wrB,
-    Nat.reduceAdd, Nat.reduceMul]
-  refine ⟨hs.k_w.symm, hs.n_w.symm, hs.a_w.symm, hs.d_w.symm, hs.t_w.symm,
-    (TPre.stk_disj hs.b_w (d := 32) (n := 16) (by decide)).symm, hs.k_d.symm, hs.n_d.symm, hs.a_d.symm, hs.d_t,
-    (TPre.stk_disj hs.b_d (d := 32) (n := 16) (by decide)).symm,
-    TPre.stk_disj hs.b_w (d := 24) (n := 8) (by decide), TPre.stk_disj hs.b_a (d := 24) (n := 8) (by decide),
-    TPre.stk_disj hs.b_d (d := 24) (n := 8) (by decide), TPre.stk_disj hs.b_t (d := 24) (n := 8) (by decide),
-    TPre.stk0 hs.b_w (by decide), TPre.stk0 hs.b_k (by decide), TPre.stk0 hs.b_n (by decide),
-    TPre.stk0 hs.b_a (by decide), TPre.stk0 hs.b_d (by decide), TPre.stk0 hs.b_t (by decide),
-    hs.o_w, hs.o_a, hs.o_d, hs.o_t, hs.o_k, hs.o_n⟩
-
-/-- The shared code's precondition, narrowed. -/
-theorem spre : SPreO (u.withRegions (rdB u ++ [srcR u]) (wrB u)) := by
-  have hp := APre.of_more (more := [srcR u]) (hb.pre hs)
-  have hB := hs.fB_lt
-  refine ⟨hp, ⟨?_, ?_, ?_, ?_, Covers.of_mem fun r hr => ?_⟩, .inr ?_⟩ <;>
-    simp only [srcR, sp, L, ctxR, stkR, dR, dp, cx, stackArg_wr, State.withRegions_gpr, hb.arg1, hb.r11, hb.r9,
-      hb.r8, hb.rsp, below, sub24'] at *
-  · exact (s.gpr .r9).isLt
-  · exact hs.o_s
-  · exact hs.s_w.symm
-  · exact TPre.stk0 hs.b_s (by decide)
-  · simp only [List.mem_singleton] at hr; subst hr
-    simp
+/-- The state after `toArgs` is ready for the call. -/
+theorem cpre_of {s h : State} (hs : TPre s) (hh : Loaded s h) : CallOpen.CPre h := by
+  have hd := hs.dl
+  refine ⟨by rw [hh.rsp]; exact hs.sp_lo, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, .inr ?_,
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+    simp only [hh.ek, hh.en, hh.ea, hh.es, hh.ed, hh.et, hh.ew, hh.eb, CallOpen.hS, CallOpen.hD,
+      CallOpen.hT, CallOpen.hW, CallOpen.hL, hh.r11, hh.r8, hh.r10, hh.rax, hh.rdi, hh.rsi, hh.rdx, hh.rcx, hh.r9]
+  · rw [hh.rd, hh.wr, hs.rd]
+    exact Covers.left (Covers.of_mem fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp)
+  · rw [hh.wr, hs.wr, hd]
+    exact Covers.of_mem fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl <;> simp
+  · exact hs.k_w.symm
+  · exact hs.n_w.symm
+  · exact hs.a_w.symm
+  · exact hs.d_w.symm
+  · exact hs.t_w.symm
+  · exact hs.k_d.symm
+  · exact hs.n_d.symm
+  · exact hs.a_d.symm
+  · exact hs.d_t
+  · exact hs.s_w
   · exact hs.s_d.symm
+  · exact hs.b_k
+  · exact hs.b_n
+  · exact hs.b_a
+  · exact hs.b_s
+  · exact hs.b_d
+  · exact hs.b_t
+  · exact hs.b_w
+  · exact hs.o_k
+  · exact hs.o_n
+  · exact hs.o_a
+  · exact hs.o_s
+  · exact hs.o_d
+  · exact hs.o_t
+  · exact hs.o_w
 
-/-! ## The regions, within the frame's -/
+/-- The return address, at `fB + 56`, is apart from the stack below it. -/
+theorem ret_stk {s : State} (hs : TPre s) : (eretR s).Disjoint (estkR s) := by
+  have := hs.sp_lo
+  show (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨s.gpr .rsp - BitVec.ofNat 64 56, 56⟩
+  exact Offset.base_disjoint_below _ (by have := hs.sp_hi; omega)
 
-omit hs in
-/-- A part of the frame's words. -/
-theorem in_frame {d n : Nat} (h : 24 ≤ d) (h' : d + n ≤ 48) :
-    Covers [⟨fB s + BitVec.ofNat 64 d, n⟩] (u.rd ++ u.wr) :=
-  Covers.of_sub fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨⟨fB s + BitVec.ofNat 64 24, 24⟩, List.mem_append_right _ (by rw [hb.wr]; simp), d - 24,
-      by simp only; rw [Offset.add_ofNat_add_ofNat, Nat.add_sub_cancel' h], by simp only; omega⟩
-
-theorem rd_cov : Covers (rdB u ++ [srcR u]) (u.rd ++ u.wr) := by
-  have eA := hb.addr 0
-  have mem_rd : ∀ r ∈ s.rd, Covers [r] (u.rd ++ u.wr) := fun r h =>
-    Covers.of_mem fun r' hr' => by
-      simp only [List.mem_singleton] at hr'; subst hr'
-      exact List.mem_append_left _ (by rw [hb.rd]; exact h)
-  refine Covers.cons (mem_rd _ ?_) (Covers.cons (mem_rd _ ?_) (Covers.cons (mem_rd _ ?_)
-    (Covers.cons (mem_rd _ ?_) (Covers.cons ?_ (Covers.cons (mem_rd _ ?_) Covers.nil)))))
-  · show (⟨u.gpr .rdi, 32⟩ : Region) ∈ _; rw [hb.rdi, hs.rd]; simp
-  · show (⟨u.gpr .rsi, 12⟩ : Region) ∈ _; rw [hb.rsi, hs.rd]; simp
-  · show (⟨u.gpr .rdx, (u.gpr .rcx).toNat⟩ : Region) ∈ _; rw [hb.rdx, hb.rcx, hs.rd]; simp
-  · show (⟨stackArg u 0, 16⟩ : Region) ∈ _; rw [hb.arg0, hs.rd]; simp
-  · show Covers [⟨stackArgAddr u 0, 16⟩] _
-    rw [eA]; exact hb.in_frame (by decide) (by decide)
-  · show (⟨u.gpr .r11, (u.gpr .r9).toNat⟩ : Region) ∈ _; rw [hb.r11, hb.r9, hs.rd]; simp
-
-theorem wr_cov : Covers (wrB u) u.wr := by
-  refine Covers.of_mem fun r hr => ?_
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rw [hb.wr, hs.wr]
-  rcases hr with rfl | rfl
-  · show (⟨u.gpr .r8, (u.gpr .r9).toNat⟩ : Region) ∈ _; rw [hb.r8, hb.r9, hs.dl]; simp
-  · show (⟨stackArg u 1, 1696⟩ : Region) ∈ _; rw [hb.arg1]; simp
-
-omit hs in
-/-- The memory of the frame's state, apart from the frame. -/
-theorem bytes_eq {p : Addr} {n : Nat} (hk : (estkR s).Disjoint ⟨p, n⟩) (hn : n ≤ 2 ^ 64) :
-    bytesAt u.mem p n = bytesAt s.mem p n :=
-  bytesAt_frame hb.mem (fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr
-    exact (TPre.stk_disj hk (d := 24) (n := 24) (by decide)).symm) hn
-
-end Body
-
-/-! ## The function -/
-
-/-- `framed c`, for verified code `c` that writes `rsp` only in its frames'
-pushes and pops and uses at most 24 bytes of stack below `rsp`, run from
-`open_to`'s entry state in the frame with its permissions narrowed to
-`open`'s regions and the ciphertext's. -/
-theorem framed_ok {c : Prog isa}
-    (hv : ∀ s, sharedK.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ sharedK.post s s')
-    (hsp : SpSafe c) (hd : c.x86_64Depth ≤ 24) {s : State} (hs : TPre s) :
-    WP isa (framed c) s fun z => abiPreserved s z ∧ toPost s z := by
-  refine WP.seq (WP.mono (toArgs_ok hs) fun h hh => ?_)
-  have hsp' : h.gpr .rsp = s.gpr .rsp := hh.keep _ (by decide) (by decide) (by decide) (by decide)
-  have hB := hs.fB_lt
-  have hn : 8 * frameRegs.length ≤ (h.gpr .rsp).toNat := by rw [hsp']; have := hs.sp_lo; simp; omega
-  have hu := body_of hs hh
-  refine WP.frame (by decide) (by decide) (by decide) hn ?_
-  refine WP.inlineF hv hsp (by omega) (hu.spre hs) (Covers.append_left (hu.rd_cov hs) (hu.wr_cov hs).right)
-    (hu.wr_cov hs) fun s₂ rd₂ wr₂ ab₂ f₂ _ post₂ => ?_
-  have rsp₂ : s₂.gpr .rsp = (pushed frameRegs h).gpr .rsp := ab₂.1 _ calleeSaved_rsp
-  refine ⟨rsp₂, wr₂, ⟨fun r hr => ?_, ?_, ?_⟩, ?_⟩
-  · by_cases hr' : r = .rsp
-    · subst hr'
-      rw [popped_rsp, rsp₂, hu.rsp, Offset.add_ofNat_add_ofNat, TPre.rsp_eq]
-      rfl
-    · have hra : r ≠ .r10 := by rintro rfl; simp [calleeSaved] at hr
-      rw [popped_gpr _ _ _ hr' hra, ab₂.1 r hr, hu.cs r hr hr']
-  · -- The return address: apart from what the shared code writes, and the frame.
-    have hf := Frame.below_mono f₂ hd (by decide)
-    rw [popped_mem]
-    have e₁ : wrB (pushed frameRegs h) = [edR s, ewR s] := by
-      show [(⟨(pushed frameRegs h).gpr .r8, ((pushed frameRegs h).gpr .r9).toNat⟩ : Region),
-        ⟨stackArg (pushed frameRegs h) 1, 1696⟩] = _
-      rw [hu.r8, hu.r9, hu.arg1]
-    rw [e₁, hu.rsp] at hf
-    simp only [below, sub24'] at hf
-    rw [hf.readW (r := eretR s) (Region.contains_self _ _) (fun r hr => by
-        simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with (rfl | rfl) | rfl
-        · exact hs.r_d
-        · exact hs.r_w
-        · have := hs.ret_stk (d := 0) (n := 24) (by decide)
-          rwa [BitVec.add_zero] at this) (by decide),
-      hu.mem.readW (r := eretR s) (Region.contains_self _ _) (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr
-        exact hs.ret_stk (d := 24) (n := 24) (by decide)) (by decide)]
-  · rw [popped_mxcsr, ab₂.2.2, hu.mx]
-  · -- The postcondition, from the shared code's.
-    have post' : openSPost ((pushed frameRegs h).withRegions (rdB (pushed frameRegs h) ++ [srcR (pushed frameRegs h)]) (wrB (pushed frameRegs h)))
-        (s₂.withRegions (rdB (pushed frameRegs h) ++ [srcR (pushed frameRegs h)]) (wrB (pushed frameRegs h))) := post₂
-    have eK : K ((pushed frameRegs h).withRegions (rdB (pushed frameRegs h) ++ [srcR (pushed frameRegs h)]) (wrB (pushed frameRegs h))) =
-        bytesAt s.mem (s.gpr .rdi) 32 := by
-      show bytesAt (pushed frameRegs h).mem ((pushed frameRegs h).gpr .rdi) 32 = _
-      rw [hu.rdi]; exact hu.bytes_eq hs.b_k (by decide)
-    have eN : N ((pushed frameRegs h).withRegions (rdB (pushed frameRegs h) ++ [srcR (pushed frameRegs h)]) (wrB (pushed frameRegs h))) =
-        bytesAt s.mem (s.gpr .rsi) 12 := by
-      show bytesAt (pushed frameRegs h).mem ((pushed frameRegs h).gpr .rsi) 12 = _
-      rw [hu.rsi]; exact hu.bytes_eq hs.b_n (by decide)
-    have eA : A ((pushed frameRegs h).withRegions (rdB (pushed frameRegs h) ++ [srcR (pushed frameRegs h)]) (wrB (pushed frameRegs h))) =
-        bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat := by
-      show bytesAt (pushed frameRegs h).mem ((pushed frameRegs h).gpr .rdx)
-        ((pushed frameRegs h).gpr .rcx).toNat = _
-      rw [hu.rdx, hu.rcx]; exact hu.bytes_eq hs.b_a (Nat.le_of_lt (s.gpr .rcx).isLt)
-    have eC : C ((pushed frameRegs h).withRegions (rdB (pushed frameRegs h) ++ [srcR (pushed frameRegs h)]) (wrB (pushed frameRegs h))) =
-        bytesAt s.mem (eSrc s) (eLn s) := by
-      show bytesAt (pushed frameRegs h).mem ((pushed frameRegs h).gpr .r11)
-        ((pushed frameRegs h).gpr .r9).toNat = _
-      rw [hu.r11, hu.r9]; exact hu.bytes_eq hs.b_s (Nat.le_of_lt (s.gpr .r9).isLt)
-    have eT : T0 ((pushed frameRegs h).withRegions (rdB (pushed frameRegs h) ++ [srcR (pushed frameRegs h)]) (wrB (pushed frameRegs h))) =
-        bytesAt s.mem (eTg s) 16 := by
-      show bytesAt (pushed frameRegs h).mem (stackArg (pushed frameRegs h) 0) 16 = _
-      rw [hu.arg0]; exact hu.bytes_eq hs.b_t (by decide)
-    have eD : dp ((pushed frameRegs h).withRegions (rdB (pushed frameRegs h) ++ [srcR (pushed frameRegs h)]) (wrB (pushed frameRegs h))) = eDst s := hu.r8
-    have eL : L ((pushed frameRegs h).withRegions (rdB (pushed frameRegs h) ++ [srcR (pushed frameRegs h)]) (wrB (pushed frameRegs h))) = eLn s := by
-      show ((pushed frameRegs h).gpr .r9).toNat = _; rw [hu.r9]
-    have eR : (popped .r10 frameRegs.length s₂).gpr .rax = s₂.gpr .rax :=
-      popped_gpr _ _ _ (by decide) (by decide)
-    unfold openSPost at post'
-    unfold toPost
-    rw [eK, eN, eA, eC, eT, eD, eL] at post'
-    rw [eR, popped_mem]
-    exact post'
-
-/-! ## Constant time -/
-
-section
-variable {σ₁ σ₂ : State} (p₁ : TPre σ₁) (p₂ : TPre σ₂) (hq : toPub σ₁ σ₂)
-include p₁ p₂ hq
-
-/-- The public data of the shared code's narrowed entry state, in two runs. -/
-theorem body_pub {u₁ u₂ : State} (hu₁ : Body σ₁ u₁) (hu₂ : Body σ₂ u₂) :
-    sharedPub (u₁.withRegions (rdB u₁ ++ [srcR u₁]) (wrB u₁)) (u₂.withRegions (rdB u₂ ++ [srcR u₂]) (wrB u₂)) := by
-  obtain ⟨q₁, q₂, q₃, q₄, q₅, q₆, qsp, a₀, a₁, a₂, a₃, ql⟩ := hq
-  have hB : fB σ₁ = fB σ₂ := by simp only [fB, qsp]
-  refine ⟨⟨by show u₁.gpr .rdi = u₂.gpr .rdi; rw [hu₁.rdi, hu₂.rdi, q₁],
-    by show u₁.gpr .rsi = u₂.gpr .rsi; rw [hu₁.rsi, hu₂.rsi, q₂],
-    by show u₁.gpr .rdx = u₂.gpr .rdx; rw [hu₁.rdx, hu₂.rdx, q₃],
-    by show u₁.gpr .rcx = u₂.gpr .rcx; rw [hu₁.rcx, hu₂.rcx, q₄],
-    by show u₁.gpr .r8 = u₂.gpr .r8; rw [hu₁.r8, hu₂.r8, eDst, eDst, a₀],
-    by show u₁.gpr .r9 = u₂.gpr .r9; rw [hu₁.r9, hu₂.r9, q₆],
-    by show u₁.gpr .rsp = u₂.gpr .rsp; rw [hu₁.rsp, hu₂.rsp, hB],
-    by show stackArg u₁ 0 = stackArg u₂ 0; rw [hu₁.arg0, hu₂.arg0, eTg, eTg, a₂],
-    by show stackArg u₁ 1 = stackArg u₂ 1; rw [hu₁.arg1, hu₂.arg1, eW, eW, a₃]⟩,
-    by show u₁.gpr .r11 = u₂.gpr .r11; rw [hu₁.r11, hu₂.r11, eSrc, eSrc, q₅], ?_⟩
-  have leak : ∀ {σ u : State}, TPre σ → Body σ u →
-      openSLeak (u.withRegions (rdB u ++ [srcR u]) (wrB u)) = toLeak σ := fun {σ u} hσ hu => by
-    have eK : bytesAt u.mem (u.gpr .rdi) 32 = bytesAt σ.mem (σ.gpr .rdi) 32 := by
-      rw [hu.rdi]; exact hu.bytes_eq hσ.b_k (by decide)
-    have eN : bytesAt u.mem (u.gpr .rsi) 12 = bytesAt σ.mem (σ.gpr .rsi) 12 := by
-      rw [hu.rsi]; exact hu.bytes_eq hσ.b_n (by decide)
-    have eA : bytesAt u.mem (u.gpr .rdx) (u.gpr .rcx).toNat = bytesAt σ.mem (σ.gpr .rdx) (σ.gpr .rcx).toNat := by
-      rw [hu.rdx, hu.rcx]; exact hu.bytes_eq hσ.b_a (Nat.le_of_lt (σ.gpr .rcx).isLt)
-    have eC : bytesAt u.mem (u.gpr .r11) (u.gpr .r9).toNat = bytesAt σ.mem (eSrc σ) (eLn σ) := by
-      rw [hu.r11, hu.r9]; exact hu.bytes_eq hσ.b_s (Nat.le_of_lt (σ.gpr .r9).isLt)
-    have eT : bytesAt u.mem (stackArg u 0) 16 = bytesAt σ.mem (eTg σ) 16 := by
-      rw [hu.arg0]; exact hu.bytes_eq hσ.b_t (by decide)
-    show [if (Spec.ChaCha20Poly1305.decrypt (bytesAt u.mem (u.gpr .rdi) 32) (bytesAt u.mem (u.gpr .rsi) 12)
-      (bytesAt u.mem (u.gpr .rdx) (u.gpr .rcx).toNat) (bytesAt u.mem (u.gpr .r11) (u.gpr .r9).toNat)
-      (bytesAt u.mem (stackArg u 0) 16)).isSome then 1 else 0] = _
-    rw [eK, eN, eA, eC, eT]; rfl
-  rw [leak p₁ hu₁, leak p₂ hu₂, ql]
-
-/-- The frame around code that is constant time from the shared code's
-entry state, narrowed. -/
-theorem framed_rel {c : Prog isa}
-    (hv : ∀ s, sharedK.pre s → ∃ t s', Exec isa c s t s' ∧ sharedK.post s s')
-    (hct : ConstantTime isa sharedK.pre sharedK.pub c) :
-    RelCT isa (Eq2 σ₁ σ₂) (framed c) TT := by
-  have qsp := hq.2.2.2.2.2.2.1
-  refine rel_seq (rel_regs [.rsp] (by simp [qsp]) ⟨_, by taint_decide⟩) (toArgs_ok p₁) (toArgs_ok p₂)
-    fun h₁ h₂ hh₁ hh₂ => ?_
-  have hsp : ∀ {σ h}, Loaded σ h → h.gpr .rsp = σ.gpr .rsp := fun hh =>
-    hh.keep _ (by decide) (by decide) (by decide) (by decide)
-  refine rel_frame (by rw [hsp hh₁, hsp hh₂, qsp]) ?_
-  have hu₁ := body_of p₁ hh₁
-  have hu₂ := body_of p₂ hh₂
-  refine (regionModel.relCT_inline (c := c) (Pre := sharedK.pre) (Pub := sharedK.pub) hv hct
-    (P := Eq2 (pushed frameRegs h₁) (pushed frameRegs h₂)) fun x₁ x₂ ⟨e₁, e₂⟩ => ?_).mono
-    (fun _ _ h => h) fun _ _ h => h
-  subst e₁ e₂
-  exact ⟨_, _, _, _, hu₁.spre p₁, hu₂.spre p₂, body_pub p₁ p₂ hq hu₁ hu₂,
-    Covers.append_left (hu₁.rd_cov p₁) (hu₁.wr_cov p₁).right, hu₁.wr_cov p₁,
-    Covers.append_left (hu₂.rd_cov p₂) (hu₂.wr_cov p₂).right, hu₂.wr_cov p₂⟩
-
-end
-
-/-! ## The body of an instance -/
-
-/-- The shared code the body of the instance calling the implementation `v`
-of `vg_chacha20_xor` runs in the frame. -/
-abbrev inner (v : XorImpl) : Prog isa :=
-  if v.poly = .avx2 then Stitch.openStitchedShared v.callee .avx2 else openShared v.callee v.poly
-
-theorem inner_ok (v : XorImpl) (s : State) (hs : sharedK.pre s) :
-    ∃ t s', Exec isa (inner v) s t s' ∧ abiPreserved s s' ∧ sharedK.post s s' := by
-  by_cases hv : v.poly = .avx2
-  · have h := Stitch.stitchedShared_ok v hv s hs
-    rw [hv] at h
-    simpa only [inner, hv, ↓reduceIte] using h
-  · simpa only [inner, hv, ↓reduceIte] using shared_ok v s hs
-
-theorem inner_ct (v : XorImpl) : ConstantTime isa sharedK.pre sharedK.pub (inner v) := by
-  by_cases hv : v.poly = .avx2
-  · have h := Stitch.stitchedShared_ct v hv
-    rw [hv] at h
-    simpa only [inner, hv, ↓reduceIte] using h
-  · simpa only [inner, hv, ↓reduceIte] using shared_ct v
-
-theorem inner_spSafe (v : XorImpl) : (inner v).all (fun i => !isa.writesSp i) = true := by
-  by_cases hv : v.poly = .avx2
-  · have h := Stitch.openS_spSafe v hv
-    rw [hv] at h
-    simp only [Stitch.openStitched, Code.all, Bool.and_eq_true] at h
-    simpa only [inner, hv, ↓reduceIte, Stitch.openStitchedShared, Code.all, Bool.and_eq_true] using h.2
-  · have h := open_spSafe v
-    simp only [«open», Code.all, Bool.and_eq_true] at h
-    simpa only [inner, hv, ↓reduceIte] using h.2
-
-theorem inner_xdepth (v : XorImpl) : (inner v).x86_64Depth ≤ 24 := by
-  by_cases hv : v.poly = .avx2
-  · have h := Stitch.openS_xdepth v
-    rw [hv] at h
-    simp only [Stitch.openStitched, Code.x86_64Depth, Nat.max_le] at h
-    simpa only [inner, hv, ↓reduceIte, Stitch.openStitchedShared, Code.x86_64Depth, Nat.max_le] using h.2
-  · have h := open_xdepth v
-    simp only [«open», Code.x86_64Depth, Nat.max_le] at h
-    simpa only [inner, hv, ↓reduceIte] using h.2
-
-theorem body_eq (v : XorImpl) : body v.callee v.poly = framed (inner v) := rfl
-
-theorem body_spSafe (v : XorImpl) : (body v.callee v.poly).all (fun i => !isa.writesSp i) = true := by
-  rw [body_eq]
-  simp only [framed, Code.all, inner_spSafe v, Bool.and_true]
-  decide
-
-theorem body_xdepth (v : XorImpl) : (body v.callee v.poly).x86_64Depth ≤ 48 := by
-  have h := inner_xdepth v
-  rw [body_eq]
-  simp only [framed, Code.x86_64Depth, X86_64.Instr.frameBytes, Nat.zero_max]
-  change _ + 24 ≤ 48
-  omega
+/-! ## The body -/
 
 theorem body_correct (v : XorImpl) (s : State) (hs : toK.pre s) :
-    ∃ t s', Exec isa (body v.callee v.poly) s t s' ∧ abiPreserved s s' ∧ toK.post s s' :=
-  let ⟨t, s', e, a, p⟩ := framed_ok (inner_ok v) (SpSafe.of_all (inner_spSafe v)) (inner_xdepth v) hs
-  ⟨t, s', e, a, p⟩
+    ∃ t s', Exec isa (body v.callee v.poly) s t s' ∧ abiPreserved s s' ∧ toK.post s s' := by
+  have hs : TPre s := hs
+  refine WP.seq (WP.mono (toArgs_ok hs) fun h hh => ?_)
+  refine WP.mono (CallOpen.callOpen_ok v (cpre_of hs hh)) fun z hz => ⟨⟨fun r hr => ?_, ?_, ?_⟩, ?_⟩
+  · rw [hz.cs r hr]
+    simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
+    exact hh.keep r (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
+      (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
+      (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
+      (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
+  · -- The return address: apart from the destination, `work` and the stack.
+    have hf := hz.mem
+    rw [hh.ed, hh.ew, hh.eb, hh.mem] at hf
+    exact hf.readW (r := eretR s) (Region.contains_self _ _) (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact hs.r_d
+      · exact hs.r_w
+      · exact ret_stk hs) (by decide)
+  · rw [hz.mx, hh.mx]
+  · have hp := hz.post
+    unfold CallOpen.hPost at hp
+    show toPost s z
+    unfold toPost
+    rw [hh.mem, hh.rdi, hh.rsi, hh.rdx, hh.rcx, CallOpen.hS, CallOpen.hT, CallOpen.hD, CallOpen.hL, hh.r11,
+      hh.r10, hh.r8, hh.r9] at hp
+    exact hp
 
-theorem body_ct (v : XorImpl) : ConstantTime isa toK.pre toK.pub (body v.callee v.poly) :=
-  ct_of fun _ _ p₁ p₂ hq => framed_rel p₁ p₂ hq
-    (fun s hs => let ⟨t, s', e, _, p⟩ := inner_ok v s hs; ⟨t, s', e, p⟩) (inner_ct v)
+theorem body_ct (v : XorImpl) : ConstantTime isa toK.pre toK.pub (body v.callee v.poly) := by
+  refine ct_of fun σ₁ σ₂ p₁ p₂ hq => ?_
+  have p₁ : TPre σ₁ := p₁
+  have p₂ : TPre σ₂ := p₂
+  obtain ⟨q₁, q₂, q₃, q₄, q₅, q₆, qsp, a₀, a₁, a₂, a₃, ql⟩ := hq
+  refine rel_seq (rel_regs [.rsp] (by simp [qsp]) ⟨_, by taint_decide⟩) (toArgs_ok p₁) (toArgs_ok p₂)
+    fun h₁ h₂ hh₁ hh₂ => CallOpen.callOpen_rel v (cpre_of p₁ hh₁) (cpre_of p₂ hh₂)
+      ⟨by rw [hh₁.rdi, hh₂.rdi, q₁], by rw [hh₁.rsi, hh₂.rsi, q₂], by rw [hh₁.rdx, hh₂.rdx, q₃],
+        by rw [hh₁.rcx, hh₂.rcx, q₄], by rw [hh₁.r8, hh₂.r8, eDst, eDst, a₀], by rw [hh₁.r9, hh₂.r9, q₆],
+        by rw [hh₁.r10, hh₂.r10, eTg, eTg, a₂], by rw [hh₁.r11, hh₂.r11, eSrc, eSrc, q₅],
+        by rw [hh₁.rax, hh₂.rax, eW, eW, a₃], by rw [hh₁.rsp, hh₂.rsp, qsp], ?_⟩
+  have leak : ∀ {σ h : State}, Loaded σ h → CallOpen.hLeak h = toLeak σ := fun {σ h} hh => by
+    unfold CallOpen.hLeak toLeak
+    rw [hh.mem, hh.rdi, hh.rsi, hh.rdx, hh.rcx, CallOpen.hS, CallOpen.hT, CallOpen.hL, hh.r11, hh.r10, hh.r9]
+  rw [leak hh₁, leak hh₂, ql]
+
+theorem body_spSafe (v : XorImpl) : (body v.callee v.poly).all (fun i => !isa.writesSp i) = true := by
+  simp only [body, Code.all, CallOpen.callOpen_spSafe v, Bool.and_true]
+  decide
+
+theorem body_xdepth (v : XorImpl) : (body v.callee v.poly).x86_64Depth ≤ 56 := by
+  have h := CallOpen.callOpen_xdepth v
+  simp only [body, Code.x86_64Depth, Nat.max_le]
+  exact ⟨Nat.zero_le _, h⟩
 
 /-! ## The contract -/
 
 theorem stackArgs_four (s : State) : List.map (stackArg s) (List.range 4) =
     [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3] := rfl
 
-theorem tpre_of_spec {s : State} (h : (openToScratchContract X86_64.abi 212 48).pre s) : TPre s := by
+theorem tpre_of_spec {s : State} (h : (openToScratchContract X86_64.abi 212 56).pre s) : TPre s := by
   sig_pre [openToScratchContract, openToScratchSig, Spec.ChaCha20Poly1305.openToPre, X86_64.abi,
     X86_64.argRegs, stackArgs_four, List.append_eq] at h
   rw [Sig.pairFacts, Sig.pairFacts, Sig.pairFacts, Sig.pairFacts, Gather.pairFacts_ro _ (by simp)] at h
@@ -646,7 +369,7 @@ theorem tpre_of_spec {s : State} (h : (openToScratchContract X86_64.abi 212 48).
   exact ⟨lo, hi, rd, wr, kd, kw, nd, nw, ad, aw, sd, sw, dt, dw, dg, tw, wg, rk, rn, ra, rs, rdd, rt, rw, rg,
     bk, bn, ba, bs, bd, bt, bw, bg, ok, on, oa, os, od, ot, ow, dl⟩
 
-theorem pub_of {s₁ s₂ : State} (hp : (openToScratchContract X86_64.abi 212 48).pub s₁ s₂) : toPub s₁ s₂ := by
+theorem pub_of {s₁ s₂ : State} (hp : (openToScratchContract X86_64.abi 212 56).pub s₁ s₂) : toPub s₁ s₂ := by
   sig_pub [openToScratchContract, openToScratchSig, Spec.ChaCha20Poly1305.openToPre,
     Spec.ChaCha20Poly1305.openToLeak, X86_64.abi, X86_64.argRegs, stackArgs_four, List.append_eq] at hp
   simp only [List.getD_cons_succ, List.getD_cons_zero] at hp
@@ -667,7 +390,7 @@ def toSat : State where
   rd := [⟨0x1000, 32⟩, ⟨0x1100, 12⟩, ⟨0x2000, 0⟩, ⟨0x2100, 0⟩, ⟨0x4000, 16⟩, ⟨0x8008, 32⟩]
   wr := [⟨0x3000, 0⟩, ⟨0, 1696⟩]
 
-theorem toSat_pre : ∃ s, (openToScratchContract X86_64.abi 212 48).pre s := by
+theorem toSat_pre : ∃ s, (openToScratchContract X86_64.abi 212 56).pre s := by
   refine ⟨toSat, ?_⟩
   sig_pre [openToScratchContract, openToScratchSig, Spec.ChaCha20Poly1305.openToPre, X86_64.abi,
     X86_64.argRegs, stackArgs_four, List.append_eq]
@@ -680,7 +403,7 @@ theorem toSat_pre : ∃ s, (openToScratchContract X86_64.abi 212 48).pre s := by
 
 /-- The postconditions match on `decrypt` through different auxiliary
 functions, so the implication splits on it. -/
-theorem to_implies : toK.Implies (openToScratchContract X86_64.abi 212 48) where
+theorem to_implies : toK.Implies (openToScratchContract X86_64.abi 212 56) where
   pre _ h := tpre_of_spec h
   post s s' _ h := by
     sig_eval [openToScratchContract, openToScratchSig, Spec.ChaCha20Poly1305.openToPost, X86_64.abi,
@@ -701,7 +424,7 @@ theorem to_implies : toK.Implies (openToScratchContract X86_64.abi 212 48) where
   sat := toSat_pre
 
 theorem body_verified (v : XorImpl) :
-    Verified X86_64.target (body v.callee v.poly) (openToScratchContract X86_64.abi 212 48) :=
+    Verified X86_64.target (body v.callee v.poly) (openToScratchContract X86_64.abi 212 56) :=
   Verified.of_correct (k := toK) (body_correct v) (body_ct v) to_implies
 
 /-! ## The frame of `work` -/
@@ -714,7 +437,7 @@ def toFrameSat : State :=
 theorem stackArgs_three (s : State) : List.map (stackArg s) (List.range 3) =
     [stackArg s 0, stackArg s 1, stackArg s 2] := rfl
 
-theorem toFrameSat_pre : ∃ s, (Spec.ChaCha20Poly1305.openToContract X86_64.abi 1792).pre s := by
+theorem toFrameSat_pre : ∃ s, (Spec.ChaCha20Poly1305.openToContract X86_64.abi 1800).pre s := by
   refine ⟨toFrameSat, ?_⟩
   sig_pre [Spec.ChaCha20Poly1305.openToContract, Spec.ChaCha20Poly1305.openToSig,
     Spec.ChaCha20Poly1305.openToPre, X86_64.abi, X86_64.argRegs, stackArgs_three, List.append_eq]
@@ -730,10 +453,10 @@ implementation `v` of `vg_chacha20_xor`, without a choice by the length,
 with its working space in a frame of its own. -/
 theorem scratched_verified (v : XorImpl) :
     Verified X86_64.target (scratched (body v.callee v.poly))
-      (Spec.ChaCha20Poly1305.openToContract X86_64.abi 1792) :=
+      (Spec.ChaCha20Poly1305.openToContract X86_64.abi 1800) :=
   X86_64.Verified.stackArgScratchWipedXPre (sig := Spec.ChaCha20Poly1305.openToSig) (nm := "work") (e := .u64)
     (n := 212) (pre := Spec.ChaCha20Poly1305.openToPre X86_64.abi.ptrBits)
-    (post := Spec.ChaCha20Poly1305.openToPost X86_64.abi.ptrBits) (wa := true) (stack := 48)
+    (post := Spec.ChaCha20Poly1305.openToPost X86_64.abi.ptrBits) (wa := true) (stack := 56)
     (leak := some (Spec.ChaCha20Poly1305.openToLeak X86_64.abi.ptrBits))
     (bytes := 1744) (k := 42) (body_verified v) (by decide) (by decide) (by decide)
     (body_spSafe v) (body_xdepth v) (by decide) (openToPre_local _) (openToPost_local _) (openToPost_out _)
@@ -749,7 +472,7 @@ As `open`'s (`Shared.open_verified`): the AVX-512 instances choose by the
 length, before allocating `work`, the AVX2 code with `vg_chacha20_xor_avx2`'s or
 `vg_chacha20_xor_avx512vl`'s rounds. -/
 
-theorem pub_len {s t : State} (h : (Spec.ChaCha20Poly1305.openToContract X86_64.abi 1792).pub s t) :
+theorem pub_len {s t : State} (h : (Spec.ChaCha20Poly1305.openToContract X86_64.abi 1800).pub s t) :
     s.gpr .r9 = t.gpr .r9 := by
   rw [Spec.ChaCha20Poly1305.openToContract, pubL_args (by decide)] at h
   have hh := h.2.1 5 (by decide)
@@ -758,28 +481,28 @@ theorem pub_len {s t : State} (h : (Spec.ChaCha20Poly1305.openToContract X86_64.
 
 /-- A public length choice between two framed implementations. -/
 theorem choose {b : List Instr} {p : Addr → Bool} {a c : Prog isa}
-    (ha : Verified X86_64.target a (Spec.ChaCha20Poly1305.openToContract X86_64.abi 1792))
-    (hc : Verified X86_64.target c (Spec.ChaCha20Poly1305.openToContract X86_64.abi 1792))
+    (ha : Verified X86_64.target a (Spec.ChaCha20Poly1305.openToContract X86_64.abi 1800))
+    (hc : Verified X86_64.target c (Spec.ChaCha20Poly1305.openToContract X86_64.abi 1800))
     (hb : ∀ s, WP isa (.block b) s fun u => isa.eval .b u = some (p (s.gpr .r9)) ∧ Stitch.FlagsOnly s u)
     (ht : ∀ i ∈ b, ∀ s, isa.addrs i s = []) :
     Verified X86_64.target (.seq (.block b) (Code.iteCold .b a c))
-      (Spec.ChaCha20Poly1305.openToContract X86_64.abi 1792) :=
+      (Spec.ChaCha20Poly1305.openToContract X86_64.abi 1800) :=
   Shared.chooseK
     (fun _ _ hf hs => Shared.flags_pre_sig (sig := Spec.ChaCha20Poly1305.openToSig)
       (pre := Spec.ChaCha20Poly1305.openToPre 64) (post := Spec.ChaCha20Poly1305.openToPost 64) (wa := true)
-      (stack := 1792) (leak := some (Spec.ChaCha20Poly1305.openToLeak 64)) (by decide) hf hs)
+      (stack := 1800) (leak := some (Spec.ChaCha20Poly1305.openToLeak 64)) (by decide) hf hs)
     (fun _ _ _ hf hP => Shared.flags_post_sig (sig := Spec.ChaCha20Poly1305.openToSig)
       (pre := Spec.ChaCha20Poly1305.openToPre 64) (post := Spec.ChaCha20Poly1305.openToPost 64) (wa := true)
-      (stack := 1792) (leak := some (Spec.ChaCha20Poly1305.openToLeak 64)) (by decide) hf hP)
+      (stack := 1800) (leak := some (Spec.ChaCha20Poly1305.openToLeak 64)) (by decide) hf hP)
     (fun _ _ _ _ hf hg hp => Shared.flags_pub_sig (sig := Spec.ChaCha20Poly1305.openToSig)
       (pre := Spec.ChaCha20Poly1305.openToPre 64) (post := Spec.ChaCha20Poly1305.openToPost 64) (wa := true)
-      (stack := 1792) (leak := some (Spec.ChaCha20Poly1305.openToLeak 64)) (by decide) hf hg hp)
+      (stack := 1800) (leak := some (Spec.ChaCha20Poly1305.openToLeak 64)) (by decide) hf hg hp)
     (fun _ _ hp => pub_len hp) toFrameSat_pre ha hc hb ht
 
 /-- `vg_chacha20_poly1305_open_to` of the instance calling the
 implementation `v` of `vg_chacha20_xor`. -/
 theorem openTo_verified (v : XorImpl) :
-    Verified X86_64.target (openToCode v.callee v.poly) (Spec.ChaCha20Poly1305.openToContract X86_64.abi 1792) := by
+    Verified X86_64.target (openToCode v.callee v.poly) (Spec.ChaCha20Poly1305.openToContract X86_64.abi 1800) := by
   cases hb : v.poly with
   | avx512 =>
     have hs := scratched_verified v.small
