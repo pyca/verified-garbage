@@ -3,15 +3,17 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Table
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 public import VerifiedGarbage.Proof.Weierstrass.Law
-public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP256r1.PPC64LE
+public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP256r1.PPC64LEComb
 public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP256r1
-public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.BrainpoolP256r1.Verified
+public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.BrainpoolP256r1.Comb
+import VerifiedGarbage.Proof.Ecdsa.PPC64LE.BrainpoolP256r1.CombLit
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Table
 meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 meta import VerifiedGarbage.Proof.Weierstrass.Law
-meta import VerifiedGarbage.Impl.Ecdsa.BrainpoolP256r1.PPC64LE
+meta import VerifiedGarbage.Impl.Ecdsa.BrainpoolP256r1.PPC64LEComb
 meta import VerifiedGarbage.Spec.Ecdsa.BrainpoolP256r1
-meta import VerifiedGarbage.Proof.Ecdsa.PPC64LE.BrainpoolP256r1.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.PPC64LE.BrainpoolP256r1.Comb
+meta import VerifiedGarbage.Proof.Ecdsa.PPC64LE.BrainpoolP256r1.CombLit
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 
 /-! # Deterministic ECDSA on PPC64LE: brainpoolP256r1
@@ -26,15 +28,15 @@ namespace VG.Proof.Ecdsa.Rfc6979.PPC64LE
 
 open VG VG.PPC64LE
 
-/-- `vg_ecdsa_brainpoolp256r1_sign`, with brainpoolP256r1's group law `hL`. -/
+/-- `vg_ecdsa_brainpoolp256r1_sign`, with `[k]G` by the comb, and brainpoolP256r1's group law `hL`. -/
 def brainpoolp256r1Core (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) : Core where
   E := Spec.Ecdsa.BrainpoolP256r1.inst
-  cs := []
-  C := Impl.Ecdsa.PPC64LE.signBrainpoolP256r1
+  cs := Impl.Weierstrass.PPC64LE.brainpoolp256r1CombConsts
+  C := Impl.Ecdsa.PPC64LE.signBrainpoolP256r1Comb
   N := "vg_ecdsa_brainpoolp256r1_sign_k"
-  V := (Proof.Ecdsa.PPC64LE.BrainpoolP256r1.sign_verified hL).1
-  ct := (Proof.Ecdsa.PPC64LE.BrainpoolP256r1.sign_verified hL).2.1
-  d := by decide +kernel
+  V := (Proof.Ecdsa.PPC64LE.BrainpoolP256r1.combSign_verified hL).1
+  ct := (Proof.Ecdsa.PPC64LE.BrainpoolP256r1.combSign_verified hL).2.1
+  d := by lit_decide
 
 theorem brainpoolp256r1_nBits : Spec.Ecdsa.nBits Spec.BrainpoolP256r1.curve = 256 := by
   show Spec.BrainpoolP256r1.curve.n.log2 + 1 = 256
@@ -63,9 +65,11 @@ def brainpoolp256r1R (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) : RfcCurv
 
 /-- `vg_ecdsa_brainpoolp256r1_sign`, with the tables of `vs`, meets `TableInstance.signContract`. -/
 theorem brainpoolp256r1T_verified (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) (vs : List Proof.HmacTable.PPC64LE.HVar)
-    (hv : OK vs) :
+    (hv : OK vs ∧ "VG_BRAINPOOLP256R1_COMB" ∉ Proof.HmacTable.PPC64LE.names vs) :
     Verified PPC64LE.target (signCodeT (brainpoolp256r1R hL) Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1.tries vs)
-      (specK Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1 [] vs) :=
-  signT_verified ⟨rfl, by decide, by decide⟩ brainpoolp256r1_blk rfl hv (sat_nil hv (by decide) rfl)
+      (specK Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1 Impl.Weierstrass.PPC64LE.brainpoolp256r1CombConsts vs) :=
+  signT_verified ⟨rfl, by decide, by decide⟩ brainpoolp256r1_blk rfl hv.1
+    (sat_one hv.1 Proof.BrainpoolP256r1.PPC64LE.combSatMem hv.2
+      (by rw [Proof.BrainpoolP256r1.PPC64LE.comb_words_length]; decide) Proof.BrainpoolP256r1.PPC64LE.combSatMem_held (by decide) rfl)
 
 end VG.Proof.Ecdsa.Rfc6979.PPC64LE
