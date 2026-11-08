@@ -4,7 +4,7 @@
 
 /// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_ed25519_verify_sha3` if the CPU supports its features (`VG_ED25519_VERIFY_SHA3_FEATURES`); or else `vg_ed25519_verify`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_ed25519_verify_sha512` if the CPU supports its features (`VG_ED25519_VERIFY_SHA512_FEATURES`); or else `vg_ed25519_verify`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -19,10 +19,10 @@
 #[inline]
 pub unsafe fn vg_ed25519_verify_auto(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::ed25519::VG_ED25519_VERIFY_SHA3_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_ed25519_verify_sha3`'s, and the CPU
+    if cpu.contains(crate::ed25519::VG_ED25519_VERIFY_SHA512_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_ed25519_verify_sha512`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::ed25519::vg_ed25519_verify_sha3(pk, message, len, signature, scratch) };
+        return unsafe { crate::ed25519::vg_ed25519_verify_sha512(pk, message, len, signature, scratch) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { crate::ed25519::vg_ed25519_verify(pk, message, len, signature, scratch) }
@@ -30,7 +30,7 @@ pub unsafe fn vg_ed25519_verify_auto(pk: *const [u8; 32], message: *const u8, le
 
 /// Ed25519 key-pair derivation (RFC 8032 §5.1.5): for the 32-byte private seed at `seed`, writes its 64-byte SHA-512 digest (§5.1.5, step 1) to `*expanded` and its 32-byte public key to `*out`, including pruning: the digest and public key that `vg_ed25519_sign_expanded` takes. Contract: `VG.Spec.Ed25519.keyPairContract`. Constant time: only pointers may affect timing.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_ed25519_key_pair_sha3` if the CPU supports its features (`VG_ED25519_KEY_PAIR_SHA3_FEATURES`); or else `vg_ed25519_key_pair`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_ed25519_key_pair_sha512` if the CPU supports its features (`VG_ED25519_KEY_PAIR_SHA512_FEATURES`); or else `vg_ed25519_key_pair`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -47,10 +47,10 @@ pub unsafe fn vg_ed25519_verify_auto(pk: *const [u8; 32], message: *const u8, le
 #[inline]
 pub unsafe fn vg_ed25519_key_pair_auto(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::ed25519::VG_ED25519_KEY_PAIR_SHA3_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_ed25519_key_pair_sha3`'s, and the CPU
+    if cpu.contains(crate::ed25519::VG_ED25519_KEY_PAIR_SHA512_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_ed25519_key_pair_sha512`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::ed25519::vg_ed25519_key_pair_sha3(out, expanded, seed, scratch) };
+        return unsafe { crate::ed25519::vg_ed25519_key_pair_sha512(out, expanded, seed, scratch) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { crate::ed25519::vg_ed25519_key_pair(out, expanded, seed, scratch) }
@@ -58,7 +58,7 @@ pub unsafe fn vg_ed25519_key_pair_auto(out: *mut [u8; 32], expanded: *mut [u8; 6
 
 /// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_ed25519_sign_expanded_sha3` if the CPU supports its features (`VG_ED25519_SIGN_EXPANDED_SHA3_FEATURES`); or else `vg_ed25519_sign_expanded`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_ed25519_sign_expanded_sha512` if the CPU supports its features (`VG_ED25519_SIGN_EXPANDED_SHA512_FEATURES`); or else `vg_ed25519_sign_expanded`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -76,10 +76,10 @@ pub unsafe fn vg_ed25519_key_pair_auto(out: *mut [u8; 32], expanded: *mut [u8; 6
 #[inline]
 pub unsafe fn vg_ed25519_sign_expanded_auto(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_SHA3_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_ed25519_sign_expanded_sha3`'s, and the CPU
+    if cpu.contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_SHA512_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_ed25519_sign_expanded_sha512`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::ed25519::vg_ed25519_sign_expanded_sha3(out, expanded, pk, message, len, scratch) };
+        return unsafe { crate::ed25519::vg_ed25519_sign_expanded_sha512(out, expanded, pk, message, len, scratch) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { crate::ed25519::vg_ed25519_sign_expanded(out, expanded, pk, message, len, scratch) }

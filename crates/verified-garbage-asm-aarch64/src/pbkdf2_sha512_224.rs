@@ -105,8 +105,8 @@ b 25f
     )
 }
 
-/// The CPU features `vg_pbkdf2_hmac_sha512_224_sha3` requires (`Artifact.features`).
-pub const VG_PBKDF2_HMAC_SHA512_224_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
+/// The CPU features `vg_pbkdf2_hmac_sha512_224_sha512` requires (`Artifact.features`).
+pub const VG_PBKDF2_HMAC_SHA512_224_SHA512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
 
 /// PBKDF2-HMAC-SHA-512/224 (RFC 8018 §5.2, with HMAC-SHA-512/224 as the pseudorandom function): writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` with `c` iterations to `out`. Calls the verified SHA-512/224 and HMAC-SHA-512/224 functions.
 ///
@@ -122,7 +122,7 @@ pub const VG_PBKDF2_HMAC_SHA512_224_SHA3_FEATURES: verified_garbage_cpu::Feature
 /// * None of `password`, `salt` and `out` may overlap the 3424 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_pbkdf2_hmac_sha512_224_sha3(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
+pub unsafe extern "C" fn vg_pbkdf2_hmac_sha512_224_sha512(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd13543ff,0x910003e7,0x9100008a,0x910000e4,0xf903a893,0xf903ac94,0xf903b095,0xf903b496
 .inst 0xf903b898,0xf903bc9e,0xf903c097,0x91000097,0xf903c6e5,0x51000549,0xf903cae9,0xf903cee6
@@ -133,9 +133,9 @@ cbz x9, 22f
 .inst 0x912782e0
 bl {vg_sha512_224_init}
 .inst 0x912782e0,0xd2800001,0x91000262,0x91000283,0x910002e4
-bl {vg_sha512_update_scratch_sha3}
+bl {vg_sha512_update_scratch_sha512}
 .inst 0x912782e0,0x91000281,0x912b62e2,0x910002e3
-bl {vg_sha512_finalize_scratch_sha3}
+bl {vg_sha512_finalize_scratch_sha512}
 .inst 0x912b62e2,0xd2800383
 b 23f
 22:
@@ -146,7 +146,7 @@ b 21f
 .inst 0x91000262,0x91000283
 21:
 .inst 0x911e82e0,0x912182e1,0x910002e4
-bl {vg_hmac_sha512_224_init_scratch_sha3}
+bl {vg_hmac_sha512_224_init_scratch_sha512}
 .inst 0xb947a2e9,0xb90922e9,0xb947a6e9,0xb90926e9,0xb947aae9,0xb9092ae9,0xb947aee9,0xb9092ee9
 .inst 0xb947b2e9,0xb90932e9,0xb947b6e9,0xb90936e9,0xb947bae9,0xb9093ae9,0xb947bee9,0xb9093ee9
 .inst 0xb947c2e9,0xb90942e9,0xb947c6e9,0xb90946e9,0xb947cae9,0xb9094ae9,0xb947cee9,0xb9094ee9
@@ -160,7 +160,7 @@ bl {vg_hmac_sha512_224_init_scratch_sha3}
 .inst 0xb94842e9,0xb909c2e9,0xb94846e9,0xb909c6e9,0xb9484ae9,0xb909cae9,0xb9484ee9,0xb909cee9
 .inst 0xb94852e9,0xb909d2e9,0xb94856e9,0xb909d6e9,0xb9485ae9,0xb909dae9,0xb9485ee9,0xb909dee9
 .inst 0x912482e0,0xd2801001,0x910002a2,0x910002c3,0x910002e4
-bl {vg_sha512_update_scratch_sha3}
+bl {vg_sha512_update_scratch_sha512}
 .inst 0x910002d4,0xf943c6f6,0xf943cef5,0xd2800033
 cbz x21, 24f
 26:
@@ -177,13 +177,13 @@ cbz x21, 24f
 .inst 0xb949c2e9,0xb90a82e9,0xb949c6e9,0xb90a86e9,0xb949cae9,0xb90a8ae9,0xb949cee9,0xb90a8ee9
 .inst 0xb949d2e9,0xb90a92e9,0xb949d6e9,0xb90a96e9,0xb949dae9,0xb90a9ae9,0xb949dee9,0xb90a9ee9
 .inst 0x5ac00a69,0xb90b1ae9,0x912782e0,0x91020281,0x912c62e2,0xd2800083,0x910002e4
-bl {vg_sha512_update_scratch_sha3}
+bl {vg_sha512_update_scratch_sha512}
 .inst 0x912782e0,0x912182e1,0x91021282,0x912a82e3,0x910002e4
-bl {vg_hmac_sha512_224_finalize_scratch_sha3}
+bl {vg_hmac_sha512_224_finalize_scratch_sha512}
 .inst 0xb94aa2e9,0xb90abee9,0xb94aa6e9,0xb90ac2e9,0xb94aaae9,0xb90ac6e9,0xb94aaee9,0xb90acae9
 .inst 0xb94ab2e9,0xb90acee9,0xb94ab6e9,0xb90ad2e9,0xb94abae9,0xb90ad6e9,0x911e82e0,0x912a82e1
 .inst 0xf943cae2,0x912af2e3,0x910002e4
-bl {vg_pbkdf2_hmac_sha512_224_iterate_sha3}
+bl {vg_pbkdf2_hmac_sha512_224_iterate_sha512}
 .inst 0xd280038b,0xd10072a9,0xd37ffd29
 cbz x9, 27f
 .inst 0x910002ab
@@ -203,11 +203,11 @@ b 25f
 .inst 0xd65f03c0
 .p2align 6",
         vg_sha512_224_init = sym super::sha512::vg_sha512_224_init,
-        vg_sha512_update_scratch_sha3 = sym super::sha512::vg_sha512_update_scratch_sha3::vg_sha512_update_scratch_sha3,
-        vg_sha512_finalize_scratch_sha3 = sym super::sha512::vg_sha512_finalize_scratch_sha3::vg_sha512_finalize_scratch_sha3,
-        vg_hmac_sha512_224_init_scratch_sha3 = sym super::hmac_sha512_224::vg_hmac_sha512_224_init_scratch_sha3::vg_hmac_sha512_224_init_scratch_sha3,
-        vg_hmac_sha512_224_finalize_scratch_sha3 = sym super::hmac_sha512_224::vg_hmac_sha512_224_finalize_scratch_sha3::vg_hmac_sha512_224_finalize_scratch_sha3,
-        vg_pbkdf2_hmac_sha512_224_iterate_sha3 = sym super::pbkdf2_sha512_224::vg_pbkdf2_hmac_sha512_224_iterate_sha3::vg_pbkdf2_hmac_sha512_224_iterate_sha3,
+        vg_sha512_update_scratch_sha512 = sym super::sha512::vg_sha512_update_scratch_sha512::vg_sha512_update_scratch_sha512,
+        vg_sha512_finalize_scratch_sha512 = sym super::sha512::vg_sha512_finalize_scratch_sha512::vg_sha512_finalize_scratch_sha512,
+        vg_hmac_sha512_224_init_scratch_sha512 = sym super::hmac_sha512_224::vg_hmac_sha512_224_init_scratch_sha512::vg_hmac_sha512_224_init_scratch_sha512,
+        vg_hmac_sha512_224_finalize_scratch_sha512 = sym super::hmac_sha512_224::vg_hmac_sha512_224_finalize_scratch_sha512::vg_hmac_sha512_224_finalize_scratch_sha512,
+        vg_pbkdf2_hmac_sha512_224_iterate_sha512 = sym super::pbkdf2_sha512_224::vg_pbkdf2_hmac_sha512_224_iterate_sha512::vg_pbkdf2_hmac_sha512_224_iterate_sha512,
     )
 }
 
@@ -216,5 +216,5 @@ b 25f
 pub(crate) mod vg_pbkdf2_hmac_sha512_224_iterate;
 
 #[rustfmt::skip]
-#[path = "internal/vg_pbkdf2_hmac_sha512_224_iterate_sha3.rs"]
-pub(crate) mod vg_pbkdf2_hmac_sha512_224_iterate_sha3;
+#[path = "internal/vg_pbkdf2_hmac_sha512_224_iterate_sha512.rs"]
+pub(crate) mod vg_pbkdf2_hmac_sha512_224_iterate_sha512;

@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Hmac.Instance.pbkdf2Contract` of `VG.Spec.Hmac.sha512_256I`. Constant time: only the pointers, the lengths and `c` may affect timing, not the password, the salt or the key.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_pbkdf2_hmac_sha512_256_sha3` if the CPU supports its features (`VG_PBKDF2_HMAC_SHA512_256_SHA3_FEATURES`); or else `vg_pbkdf2_hmac_sha512_256`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_pbkdf2_hmac_sha512_256_sha512` if the CPU supports its features (`VG_PBKDF2_HMAC_SHA512_256_SHA512_FEATURES`); or else `vg_pbkdf2_hmac_sha512_256`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -20,10 +20,10 @@
 #[inline]
 pub unsafe fn vg_pbkdf2_hmac_sha512_256_auto(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::pbkdf2_sha512_256::VG_PBKDF2_HMAC_SHA512_256_SHA3_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_pbkdf2_hmac_sha512_256_sha3`'s, and the CPU
+    if cpu.contains(crate::pbkdf2_sha512_256::VG_PBKDF2_HMAC_SHA512_256_SHA512_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_pbkdf2_hmac_sha512_256_sha512`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::pbkdf2_sha512_256::vg_pbkdf2_hmac_sha512_256_sha3(password, password_len, salt, salt_len, c, out, out_len) };
+        return unsafe { crate::pbkdf2_sha512_256::vg_pbkdf2_hmac_sha512_256_sha512(password, password_len, salt, salt_len, c, out, out_len) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { crate::pbkdf2_sha512_256::vg_pbkdf2_hmac_sha512_256(password, password_len, salt, salt_len, c, out, out_len) }

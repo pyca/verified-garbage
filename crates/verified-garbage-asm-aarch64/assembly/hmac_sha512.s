@@ -572,7 +572,7 @@ vg_hmac_sha512_finalize:
 	ret
 	.p2align 6
 
-vg_hmac_sha512_init_sha3:
+vg_hmac_sha512_init_sha512:
 	movz x10, #128, lsl #0
 	movz x12, #0, lsl #0
 	subs x11, x10, x3
@@ -747,13 +747,13 @@ vg_hmac_sha512_init_sha3:
 	add x0, x19, #0
 	movz x2, #1, lsl #0
 	add x3, x20, #0
-	bl {vg_sha512_compress_sha3}
+	bl {vg_sha512_compress_sha512}
 	add x19, x21, #0
 	add x1, x21, #64
 	add x0, x19, #0
 	movz x2, #1, lsl #0
 	add x3, x20, #0
-	bl {vg_sha512_compress_sha3}
+	bl {vg_sha512_compress_sha512}
 	ldr x19, [x23, #688]
 	ldr x20, [x23, #696]
 	ldr x21, [x23, #704]
@@ -790,12 +790,12 @@ vg_hmac_sha512_init_sha3:
 	add x2, x19, #0
 	add x3, x20, #0
 	add x4, x23, #0
-	bl {vg_sha512_update_scratch_sha3}
+	bl {vg_sha512_update_scratch_sha512}
 	add x0, x23, #2528
 	add x1, x20, #0
 	add x2, x23, #2848
 	add x3, x23, #0
-	bl {vg_sha512_finalize_scratch_sha3}
+	bl {vg_sha512_finalize_scratch_sha512}
 	add x2, x23, #2848
 	movz x3, #64, lsl #0
 	b 28f
@@ -811,7 +811,7 @@ vg_hmac_sha512_init_sha3:
 	add x0, x21, #0
 	add x1, x22, #0
 	add x4, x23, #0
-	bl {vg_hmac_sha512_init_scratch_sha3}
+	bl {vg_hmac_sha512_init_scratch_sha512}
 	ldr x19, [x23, #1872]
 	ldr x20, [x23, #1880]
 	ldr x21, [x23, #1888]
@@ -1044,7 +1044,7 @@ vg_hmac_sha512_init_sha3:
 	b 21b
 	.p2align 6
 
-vg_hmac_sha512_finalize_sha3:
+vg_hmac_sha512_finalize_sha512:
 	sub sp, sp, #1872
 	add x4, sp, #0
 	str x19, [x4, #688]
@@ -1061,7 +1061,7 @@ vg_hmac_sha512_finalize_sha3:
 	add x1, x2, #0
 	add x2, x23, #744
 	add x3, x23, #0
-	bl {vg_sha512_finalize_scratch_sha3}
+	bl {vg_sha512_finalize_scratch_sha512}
 	ldp x9, x10, [x20, #0]
 	stp x9, x10, [x19, #0]
 	ldp x9, x10, [x20, #16]
@@ -1103,7 +1103,7 @@ vg_hmac_sha512_finalize_sha3:
 	add x0, x19, #0
 	movz x2, #1, lsl #0
 	add x3, x20, #0
-	bl {vg_sha512_compress_sha3}
+	bl {vg_sha512_compress_sha512}
 	add x21, x24, #0
 	ldr x9, [x19, #0]
 	rev x9, x9
