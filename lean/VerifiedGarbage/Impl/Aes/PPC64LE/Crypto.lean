@@ -107,12 +107,19 @@ def group (inverse ctr : Bool) (count : Nat) (o : Reg := .r0) : Prog isa :=
     (.seq (aes inverse rs)
       (.block (rs.flatMap (fun v => writeBlock ctr v o) ++ [.subi .r7 .r7 rs.length])))
 
-/-- The data loops, storing each block at `r6 + o` (in place with `o = r0`). -/
+/-- `c` (1, 2 or 4) blocks if bit `c` of the number left, `r7`, is set. -/
+def tailStep (inverse ctr : Bool) (c : Nat) (o : Reg := .r0) : Prog isa :=
+  .seq (.block [.li .r12 c, .logic .and .r12 .r7 .r12])
+    (.ite (.zero .d .r12) (.block []) (group inverse ctr c o))
+
+/-- The data loops, storing each block at `r6 + o` (in place with `o = r0`):
+eight blocks at a time, then the rest (fewer than eight) by four, two and
+one, by the bits of their number. -/
 def batches (inverse ctr : Bool) (o : Reg := .r0) : Prog isa :=
   .seq (.block [.lsr .d .r12 .r7 3])
     (.seq (.ite (.zero .d .r12) (.block [])
         (.loop (.seq (group inverse ctr 8 o) (.block [.lsr .d .r12 .r7 3])) (.nonzero .d .r12)))
-      (.ite (.zero .d .r7) (.block []) (.loop (group inverse ctr 1 o) (.nonzero .d .r7))))
+      (.seq (tailStep inverse ctr 4 o) (.seq (tailStep inverse ctr 2 o) (tailStep inverse ctr 1 o))))
 
 def blocks (inverse : Bool) : Prog isa :=
   .ite (.zero .d .r6) (.block [])
@@ -127,26 +134,11 @@ block in `counterBase`. -/
 def ctrSetup : List Instr :=
   setup ++ setMask counterStep counterOne ++ load counterBase .r5
 
-def ctrPre (to : Bool) : List Instr := if to then [.sub .r9 .r8 .r6] else []
-def ctrPost (to : Bool) : List Instr := if to then [mov .r11 .r9] else []
-def ctrOff (to : Bool) : Reg := if to then .r11 else .r0
-
-/-- Counter mode on the `n = r7` blocks at `r6`, in place (`to = false`), or
-written to `r8` (`to = true`): then `dst - src` is kept in `r9` across the
-setup (`ctrPre`), then in `r11`, the stores' offset register (`ctrPost`).
-The counter block, `n` further on, is stored back at the end. -/
-def ctrWith (to : Bool) : Prog isa :=
-  .ite (.zero .d .r7) (.block [])
-    (.seq (.block (ctrPre to ++ ctrSetup ++ ctrPost to))
-      (.seq (batches false true (ctrOff to)) (.block (store counterBase .r5))))
-
 /-- `vg_aes_ctr32(schedule = r3, rounds = r4, counter = r5, data = r6, n = r7,
-scratch = r8)`, in place. -/
-def ctr32 : Prog isa := ctrWith false
-
-/-- `vg_aes_ctr32_to(schedule = r3, rounds = r4, counter = r5, src = r6,
-n = r7, dst = r8)`: `ctr32` reading the blocks at `src` and writing the
-results to `dst`. -/
-def ctr32To : Prog isa := ctrWith true
+scratch = r8)`: counter mode on the `n` blocks at `r6`, in place, and the
+counter block, `n` further on, stored back. -/
+def ctr32 : Prog isa :=
+  .ite (.zero .d .r7) (.block [])
+    (.seq (.block ctrSetup) (.seq (batches false true) (.block (store counterBase .r5))))
 
 end VG.Impl.Aes.PPC64LE.Crypto
