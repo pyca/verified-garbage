@@ -107,15 +107,15 @@ vg_scrypt_blockmix:
 	add eax, edx
 	ror eax, 25
 	xor r13d, eax
+	mov eax, DWORD PTR [rsi+12]
+	add eax, r15d
+	ror eax, 25
+	xor r9d, eax
 	mov eax, r14d
 	add eax, ebx
 	ror eax, 25
 	xor eax, DWORD PTR [rsi+8]
 	mov DWORD PTR [rsi+8], eax
-	mov eax, DWORD PTR [rsi+12]
-	add eax, r15d
-	ror eax, 25
-	xor r9d, eax
 	mov eax, r10d
 	add eax, ecx
 	ror eax, 23
@@ -125,14 +125,14 @@ vg_scrypt_blockmix:
 	ror eax, 23
 	xor eax, DWORD PTR [rsi+4]
 	mov DWORD PTR [rsi+4], eax
-	mov eax, DWORD PTR [rsi+8]
-	add eax, r14d
-	ror eax, 23
-	xor r8d, eax
 	mov eax, r9d
 	add eax, DWORD PTR [rsi+12]
 	ror eax, 23
 	xor ebp, eax
+	mov eax, DWORD PTR [rsi+8]
+	add eax, r14d
+	ror eax, 23
+	xor r8d, eax
 	mov eax, r12d
 	add eax, r10d
 	ror eax, 19
@@ -142,14 +142,14 @@ vg_scrypt_blockmix:
 	add eax, r13d
 	ror eax, 19
 	xor edx, eax
-	mov eax, r8d
-	add eax, DWORD PTR [rsi+8]
-	ror eax, 19
-	xor ebx, eax
 	mov eax, ebp
 	add eax, r9d
 	ror eax, 19
 	xor r15d, eax
+	mov eax, r8d
+	add eax, DWORD PTR [rsi+8]
+	ror eax, 19
+	xor ebx, eax
 	mov eax, DWORD PTR [rsi]
 	add eax, r12d
 	ror eax, 14
@@ -158,15 +158,15 @@ vg_scrypt_blockmix:
 	add eax, DWORD PTR [rsi+4]
 	ror eax, 14
 	xor r11d, eax
-	mov eax, ebx
-	add eax, r8d
-	ror eax, 14
-	xor r14d, eax
 	mov eax, r15d
 	add eax, ebp
 	ror eax, 14
 	xor eax, DWORD PTR [rsi+12]
 	mov DWORD PTR [rsi+12], eax
+	mov eax, ebx
+	add eax, r8d
+	ror eax, 14
+	xor r14d, eax
 	mov eax, ecx
 	add eax, r9d
 	ror eax, 25
@@ -175,15 +175,15 @@ vg_scrypt_blockmix:
 	add eax, r10d
 	ror eax, 25
 	xor ebx, eax
-	mov eax, r14d
-	add eax, r13d
-	ror eax, 25
-	xor r15d, eax
 	mov eax, DWORD PTR [rsi+12]
 	add eax, DWORD PTR [rsi+8]
 	ror eax, 25
 	xor eax, DWORD PTR [rsi]
 	mov DWORD PTR [rsi], eax
+	mov eax, r14d
+	add eax, r13d
+	ror eax, 25
+	xor r15d, eax
 	mov eax, edx
 	add eax, ecx
 	ror eax, 23
@@ -192,15 +192,15 @@ vg_scrypt_blockmix:
 	add eax, r11d
 	ror eax, 23
 	xor ebp, eax
-	mov eax, r15d
-	add eax, r14d
-	ror eax, 23
-	xor r12d, eax
 	mov eax, DWORD PTR [rsi]
 	add eax, DWORD PTR [rsi+12]
 	ror eax, 23
 	xor eax, DWORD PTR [rsi+4]
 	mov DWORD PTR [rsi+4], eax
+	mov eax, r15d
+	add eax, r14d
+	ror eax, 23
+	xor r12d, eax
 	mov eax, r8d
 	add eax, edx
 	ror eax, 19
@@ -209,15 +209,15 @@ vg_scrypt_blockmix:
 	add eax, ebx
 	ror eax, 19
 	xor r10d, eax
-	mov eax, r12d
-	add eax, r15d
-	ror eax, 19
-	xor r13d, eax
 	mov eax, DWORD PTR [rsi+4]
 	add eax, DWORD PTR [rsi]
 	ror eax, 19
 	xor eax, DWORD PTR [rsi+8]
 	mov DWORD PTR [rsi+8], eax
+	mov eax, r12d
+	add eax, r15d
+	ror eax, 19
+	xor r13d, eax
 	mov eax, r9d
 	add eax, r8d
 	ror eax, 14
@@ -226,15 +226,15 @@ vg_scrypt_blockmix:
 	add eax, ebp
 	ror eax, 14
 	xor r11d, eax
-	mov eax, r13d
-	add eax, r12d
-	ror eax, 14
-	xor r14d, eax
 	mov eax, DWORD PTR [rsi+8]
 	add eax, DWORD PTR [rsi+4]
 	ror eax, 14
 	xor eax, DWORD PTR [rsi+12]
 	mov DWORD PTR [rsi+12], eax
+	mov eax, r13d
+	add eax, r12d
+	ror eax, 14
+	xor r14d, eax
 	mov eax, ecx
 	add eax, DWORD PTR [rsi]
 	ror eax, 25
@@ -243,15 +243,15 @@ vg_scrypt_blockmix:
 	add eax, edx
 	ror eax, 25
 	xor r13d, eax
+	mov eax, DWORD PTR [rsi+12]
+	add eax, r15d
+	ror eax, 25
+	xor r9d, eax
 	mov eax, r14d
 	add eax, ebx
 	ror eax, 25
 	xor eax, DWORD PTR [rsi+8]
 	mov DWORD PTR [rsi+8], eax
-	mov eax, DWORD PTR [rsi+12]
-	add eax, r15d
-	ror eax, 25
-	xor r9d, eax
 	mov eax, r10d
 	add eax, ecx
 	ror eax, 23
@@ -261,14 +261,14 @@ vg_scrypt_blockmix:
 	ror eax, 23
 	xor eax, DWORD PTR [rsi+4]
 	mov DWORD PTR [rsi+4], eax
-	mov eax, DWORD PTR [rsi+8]
-	add eax, r14d
-	ror eax, 23
-	xor r8d, eax
 	mov eax, r9d
 	add eax, DWORD PTR [rsi+12]
 	ror eax, 23
 	xor ebp, eax
+	mov eax, DWORD PTR [rsi+8]
+	add eax, r14d
+	ror eax, 23
+	xor r8d, eax
 	mov eax, r12d
 	add eax, r10d
 	ror eax, 19
@@ -278,14 +278,14 @@ vg_scrypt_blockmix:
 	add eax, r13d
 	ror eax, 19
 	xor edx, eax
-	mov eax, r8d
-	add eax, DWORD PTR [rsi+8]
-	ror eax, 19
-	xor ebx, eax
 	mov eax, ebp
 	add eax, r9d
 	ror eax, 19
 	xor r15d, eax
+	mov eax, r8d
+	add eax, DWORD PTR [rsi+8]
+	ror eax, 19
+	xor ebx, eax
 	mov eax, DWORD PTR [rsi]
 	add eax, r12d
 	ror eax, 14
@@ -294,15 +294,15 @@ vg_scrypt_blockmix:
 	add eax, DWORD PTR [rsi+4]
 	ror eax, 14
 	xor r11d, eax
-	mov eax, ebx
-	add eax, r8d
-	ror eax, 14
-	xor r14d, eax
 	mov eax, r15d
 	add eax, ebp
 	ror eax, 14
 	xor eax, DWORD PTR [rsi+12]
 	mov DWORD PTR [rsi+12], eax
+	mov eax, ebx
+	add eax, r8d
+	ror eax, 14
+	xor r14d, eax
 	mov eax, ecx
 	add eax, r9d
 	ror eax, 25
@@ -311,15 +311,15 @@ vg_scrypt_blockmix:
 	add eax, r10d
 	ror eax, 25
 	xor ebx, eax
-	mov eax, r14d
-	add eax, r13d
-	ror eax, 25
-	xor r15d, eax
 	mov eax, DWORD PTR [rsi+12]
 	add eax, DWORD PTR [rsi+8]
 	ror eax, 25
 	xor eax, DWORD PTR [rsi]
 	mov DWORD PTR [rsi], eax
+	mov eax, r14d
+	add eax, r13d
+	ror eax, 25
+	xor r15d, eax
 	mov eax, edx
 	add eax, ecx
 	ror eax, 23
@@ -328,15 +328,15 @@ vg_scrypt_blockmix:
 	add eax, r11d
 	ror eax, 23
 	xor ebp, eax
-	mov eax, r15d
-	add eax, r14d
-	ror eax, 23
-	xor r12d, eax
 	mov eax, DWORD PTR [rsi]
 	add eax, DWORD PTR [rsi+12]
 	ror eax, 23
 	xor eax, DWORD PTR [rsi+4]
 	mov DWORD PTR [rsi+4], eax
+	mov eax, r15d
+	add eax, r14d
+	ror eax, 23
+	xor r12d, eax
 	mov eax, r8d
 	add eax, edx
 	ror eax, 19
@@ -345,15 +345,15 @@ vg_scrypt_blockmix:
 	add eax, ebx
 	ror eax, 19
 	xor r10d, eax
-	mov eax, r12d
-	add eax, r15d
-	ror eax, 19
-	xor r13d, eax
 	mov eax, DWORD PTR [rsi+4]
 	add eax, DWORD PTR [rsi]
 	ror eax, 19
 	xor eax, DWORD PTR [rsi+8]
 	mov DWORD PTR [rsi+8], eax
+	mov eax, r12d
+	add eax, r15d
+	ror eax, 19
+	xor r13d, eax
 	mov eax, r9d
 	add eax, r8d
 	ror eax, 14
@@ -362,15 +362,15 @@ vg_scrypt_blockmix:
 	add eax, ebp
 	ror eax, 14
 	xor r11d, eax
-	mov eax, r13d
-	add eax, r12d
-	ror eax, 14
-	xor r14d, eax
 	mov eax, DWORD PTR [rsi+8]
 	add eax, DWORD PTR [rsi+4]
 	ror eax, 14
 	xor eax, DWORD PTR [rsi+12]
 	mov DWORD PTR [rsi+12], eax
+	mov eax, r13d
+	add eax, r12d
+	ror eax, 14
+	xor r14d, eax
 	mov eax, ecx
 	add eax, DWORD PTR [rsi]
 	ror eax, 25
@@ -379,151 +379,15 @@ vg_scrypt_blockmix:
 	add eax, edx
 	ror eax, 25
 	xor r13d, eax
+	mov eax, DWORD PTR [rsi+12]
+	add eax, r15d
+	ror eax, 25
+	xor r9d, eax
 	mov eax, r14d
 	add eax, ebx
 	ror eax, 25
 	xor eax, DWORD PTR [rsi+8]
 	mov DWORD PTR [rsi+8], eax
-	mov eax, DWORD PTR [rsi+12]
-	add eax, r15d
-	ror eax, 25
-	xor r9d, eax
-	mov eax, r10d
-	add eax, ecx
-	ror eax, 23
-	xor r12d, eax
-	mov eax, r13d
-	add eax, r11d
-	ror eax, 23
-	xor eax, DWORD PTR [rsi+4]
-	mov DWORD PTR [rsi+4], eax
-	mov eax, DWORD PTR [rsi+8]
-	add eax, r14d
-	ror eax, 23
-	xor r8d, eax
-	mov eax, r9d
-	add eax, DWORD PTR [rsi+12]
-	ror eax, 23
-	xor ebp, eax
-	mov eax, r12d
-	add eax, r10d
-	ror eax, 19
-	xor eax, DWORD PTR [rsi]
-	mov DWORD PTR [rsi], eax
-	mov eax, DWORD PTR [rsi+4]
-	add eax, r13d
-	ror eax, 19
-	xor edx, eax
-	mov eax, r8d
-	add eax, DWORD PTR [rsi+8]
-	ror eax, 19
-	xor ebx, eax
-	mov eax, ebp
-	add eax, r9d
-	ror eax, 19
-	xor r15d, eax
-	mov eax, DWORD PTR [rsi]
-	add eax, r12d
-	ror eax, 14
-	xor ecx, eax
-	mov eax, edx
-	add eax, DWORD PTR [rsi+4]
-	ror eax, 14
-	xor r11d, eax
-	mov eax, ebx
-	add eax, r8d
-	ror eax, 14
-	xor r14d, eax
-	mov eax, r15d
-	add eax, ebp
-	ror eax, 14
-	xor eax, DWORD PTR [rsi+12]
-	mov DWORD PTR [rsi+12], eax
-	mov eax, ecx
-	add eax, r9d
-	ror eax, 25
-	xor edx, eax
-	mov eax, r11d
-	add eax, r10d
-	ror eax, 25
-	xor ebx, eax
-	mov eax, r14d
-	add eax, r13d
-	ror eax, 25
-	xor r15d, eax
-	mov eax, DWORD PTR [rsi+12]
-	add eax, DWORD PTR [rsi+8]
-	ror eax, 25
-	xor eax, DWORD PTR [rsi]
-	mov DWORD PTR [rsi], eax
-	mov eax, edx
-	add eax, ecx
-	ror eax, 23
-	xor r8d, eax
-	mov eax, ebx
-	add eax, r11d
-	ror eax, 23
-	xor ebp, eax
-	mov eax, r15d
-	add eax, r14d
-	ror eax, 23
-	xor r12d, eax
-	mov eax, DWORD PTR [rsi]
-	add eax, DWORD PTR [rsi+12]
-	ror eax, 23
-	xor eax, DWORD PTR [rsi+4]
-	mov DWORD PTR [rsi+4], eax
-	mov eax, r8d
-	add eax, edx
-	ror eax, 19
-	xor r9d, eax
-	mov eax, ebp
-	add eax, ebx
-	ror eax, 19
-	xor r10d, eax
-	mov eax, r12d
-	add eax, r15d
-	ror eax, 19
-	xor r13d, eax
-	mov eax, DWORD PTR [rsi+4]
-	add eax, DWORD PTR [rsi]
-	ror eax, 19
-	xor eax, DWORD PTR [rsi+8]
-	mov DWORD PTR [rsi+8], eax
-	mov eax, r9d
-	add eax, r8d
-	ror eax, 14
-	xor ecx, eax
-	mov eax, r10d
-	add eax, ebp
-	ror eax, 14
-	xor r11d, eax
-	mov eax, r13d
-	add eax, r12d
-	ror eax, 14
-	xor r14d, eax
-	mov eax, DWORD PTR [rsi+8]
-	add eax, DWORD PTR [rsi+4]
-	ror eax, 14
-	xor eax, DWORD PTR [rsi+12]
-	mov DWORD PTR [rsi+12], eax
-	mov eax, ecx
-	add eax, DWORD PTR [rsi]
-	ror eax, 25
-	xor r10d, eax
-	mov eax, r11d
-	add eax, edx
-	ror eax, 25
-	xor r13d, eax
-	mov eax, r14d
-	add eax, ebx
-	ror eax, 25
-	xor eax, DWORD PTR [rsi+8]
-	mov DWORD PTR [rsi+8], eax
-	mov eax, DWORD PTR [rsi+12]
-	add eax, r15d
-	ror eax, 25
-	xor r9d, eax
 	mov eax, r10d
 	add eax, ecx
 	ror eax, 23
@@ -533,14 +397,14 @@ vg_scrypt_blockmix:
 	ror eax, 23
 	xor eax, DWORD PTR [rsi+4]
 	mov DWORD PTR [rsi+4], eax
-	mov eax, DWORD PTR [rsi+8]
-	add eax, r14d
-	ror eax, 23
-	xor r8d, eax
 	mov eax, r9d
 	add eax, DWORD PTR [rsi+12]
 	ror eax, 23
 	xor ebp, eax
+	mov eax, DWORD PTR [rsi+8]
+	add eax, r14d
+	ror eax, 23
+	xor r8d, eax
 	mov eax, r12d
 	add eax, r10d
 	ror eax, 19
@@ -550,14 +414,14 @@ vg_scrypt_blockmix:
 	add eax, r13d
 	ror eax, 19
 	xor edx, eax
-	mov eax, r8d
-	add eax, DWORD PTR [rsi+8]
-	ror eax, 19
-	xor ebx, eax
 	mov eax, ebp
 	add eax, r9d
 	ror eax, 19
 	xor r15d, eax
+	mov eax, r8d
+	add eax, DWORD PTR [rsi+8]
+	ror eax, 19
+	xor ebx, eax
 	mov eax, DWORD PTR [rsi]
 	add eax, r12d
 	ror eax, 14
@@ -566,15 +430,15 @@ vg_scrypt_blockmix:
 	add eax, DWORD PTR [rsi+4]
 	ror eax, 14
 	xor r11d, eax
-	mov eax, ebx
-	add eax, r8d
-	ror eax, 14
-	xor r14d, eax
 	mov eax, r15d
 	add eax, ebp
 	ror eax, 14
 	xor eax, DWORD PTR [rsi+12]
 	mov DWORD PTR [rsi+12], eax
+	mov eax, ebx
+	add eax, r8d
+	ror eax, 14
+	xor r14d, eax
 	mov eax, ecx
 	add eax, r9d
 	ror eax, 25
@@ -583,15 +447,15 @@ vg_scrypt_blockmix:
 	add eax, r10d
 	ror eax, 25
 	xor ebx, eax
-	mov eax, r14d
-	add eax, r13d
-	ror eax, 25
-	xor r15d, eax
 	mov eax, DWORD PTR [rsi+12]
 	add eax, DWORD PTR [rsi+8]
 	ror eax, 25
 	xor eax, DWORD PTR [rsi]
 	mov DWORD PTR [rsi], eax
+	mov eax, r14d
+	add eax, r13d
+	ror eax, 25
+	xor r15d, eax
 	mov eax, edx
 	add eax, ecx
 	ror eax, 23
@@ -600,15 +464,15 @@ vg_scrypt_blockmix:
 	add eax, r11d
 	ror eax, 23
 	xor ebp, eax
-	mov eax, r15d
-	add eax, r14d
-	ror eax, 23
-	xor r12d, eax
 	mov eax, DWORD PTR [rsi]
 	add eax, DWORD PTR [rsi+12]
 	ror eax, 23
 	xor eax, DWORD PTR [rsi+4]
 	mov DWORD PTR [rsi+4], eax
+	mov eax, r15d
+	add eax, r14d
+	ror eax, 23
+	xor r12d, eax
 	mov eax, r8d
 	add eax, edx
 	ror eax, 19
@@ -617,15 +481,15 @@ vg_scrypt_blockmix:
 	add eax, ebx
 	ror eax, 19
 	xor r10d, eax
-	mov eax, r12d
-	add eax, r15d
-	ror eax, 19
-	xor r13d, eax
 	mov eax, DWORD PTR [rsi+4]
 	add eax, DWORD PTR [rsi]
 	ror eax, 19
 	xor eax, DWORD PTR [rsi+8]
 	mov DWORD PTR [rsi+8], eax
+	mov eax, r12d
+	add eax, r15d
+	ror eax, 19
+	xor r13d, eax
 	mov eax, r9d
 	add eax, r8d
 	ror eax, 14
@@ -634,15 +498,151 @@ vg_scrypt_blockmix:
 	add eax, ebp
 	ror eax, 14
 	xor r11d, eax
-	mov eax, r13d
-	add eax, r12d
-	ror eax, 14
-	xor r14d, eax
 	mov eax, DWORD PTR [rsi+8]
 	add eax, DWORD PTR [rsi+4]
 	ror eax, 14
 	xor eax, DWORD PTR [rsi+12]
 	mov DWORD PTR [rsi+12], eax
+	mov eax, r13d
+	add eax, r12d
+	ror eax, 14
+	xor r14d, eax
+	mov eax, ecx
+	add eax, DWORD PTR [rsi]
+	ror eax, 25
+	xor r10d, eax
+	mov eax, r11d
+	add eax, edx
+	ror eax, 25
+	xor r13d, eax
+	mov eax, DWORD PTR [rsi+12]
+	add eax, r15d
+	ror eax, 25
+	xor r9d, eax
+	mov eax, r14d
+	add eax, ebx
+	ror eax, 25
+	xor eax, DWORD PTR [rsi+8]
+	mov DWORD PTR [rsi+8], eax
+	mov eax, r10d
+	add eax, ecx
+	ror eax, 23
+	xor r12d, eax
+	mov eax, r13d
+	add eax, r11d
+	ror eax, 23
+	xor eax, DWORD PTR [rsi+4]
+	mov DWORD PTR [rsi+4], eax
+	mov eax, r9d
+	add eax, DWORD PTR [rsi+12]
+	ror eax, 23
+	xor ebp, eax
+	mov eax, DWORD PTR [rsi+8]
+	add eax, r14d
+	ror eax, 23
+	xor r8d, eax
+	mov eax, r12d
+	add eax, r10d
+	ror eax, 19
+	xor eax, DWORD PTR [rsi]
+	mov DWORD PTR [rsi], eax
+	mov eax, DWORD PTR [rsi+4]
+	add eax, r13d
+	ror eax, 19
+	xor edx, eax
+	mov eax, ebp
+	add eax, r9d
+	ror eax, 19
+	xor r15d, eax
+	mov eax, r8d
+	add eax, DWORD PTR [rsi+8]
+	ror eax, 19
+	xor ebx, eax
+	mov eax, DWORD PTR [rsi]
+	add eax, r12d
+	ror eax, 14
+	xor ecx, eax
+	mov eax, edx
+	add eax, DWORD PTR [rsi+4]
+	ror eax, 14
+	xor r11d, eax
+	mov eax, r15d
+	add eax, ebp
+	ror eax, 14
+	xor eax, DWORD PTR [rsi+12]
+	mov DWORD PTR [rsi+12], eax
+	mov eax, ebx
+	add eax, r8d
+	ror eax, 14
+	xor r14d, eax
+	mov eax, ecx
+	add eax, r9d
+	ror eax, 25
+	xor edx, eax
+	mov eax, r11d
+	add eax, r10d
+	ror eax, 25
+	xor ebx, eax
+	mov eax, DWORD PTR [rsi+12]
+	add eax, DWORD PTR [rsi+8]
+	ror eax, 25
+	xor eax, DWORD PTR [rsi]
+	mov DWORD PTR [rsi], eax
+	mov eax, r14d
+	add eax, r13d
+	ror eax, 25
+	xor r15d, eax
+	mov eax, edx
+	add eax, ecx
+	ror eax, 23
+	xor r8d, eax
+	mov eax, ebx
+	add eax, r11d
+	ror eax, 23
+	xor ebp, eax
+	mov eax, DWORD PTR [rsi]
+	add eax, DWORD PTR [rsi+12]
+	ror eax, 23
+	xor eax, DWORD PTR [rsi+4]
+	mov DWORD PTR [rsi+4], eax
+	mov eax, r15d
+	add eax, r14d
+	ror eax, 23
+	xor r12d, eax
+	mov eax, r8d
+	add eax, edx
+	ror eax, 19
+	xor r9d, eax
+	mov eax, ebp
+	add eax, ebx
+	ror eax, 19
+	xor r10d, eax
+	mov eax, DWORD PTR [rsi+4]
+	add eax, DWORD PTR [rsi]
+	ror eax, 19
+	xor eax, DWORD PTR [rsi+8]
+	mov DWORD PTR [rsi+8], eax
+	mov eax, r12d
+	add eax, r15d
+	ror eax, 19
+	xor r13d, eax
+	mov eax, r9d
+	add eax, r8d
+	ror eax, 14
+	xor ecx, eax
+	mov eax, r10d
+	add eax, ebp
+	ror eax, 14
+	xor r11d, eax
+	mov eax, DWORD PTR [rsi+8]
+	add eax, DWORD PTR [rsi+4]
+	ror eax, 14
+	xor eax, DWORD PTR [rsi+12]
+	mov DWORD PTR [rsi+12], eax
+	mov eax, r13d
+	add eax, r12d
+	ror eax, 14
+	xor r14d, eax
 	add ecx, DWORD PTR [rdi]
 	mov DWORD PTR [rdi], ecx
 	add edx, DWORD PTR [rdi+4]
@@ -736,15 +736,15 @@ vg_scrypt_blockmix:
 	add eax, edx
 	ror eax, 25
 	xor r13d, eax
+	mov eax, DWORD PTR [rsi+12]
+	add eax, r15d
+	ror eax, 25
+	xor r9d, eax
 	mov eax, r14d
 	add eax, ebx
 	ror eax, 25
 	xor eax, DWORD PTR [rsi+8]
 	mov DWORD PTR [rsi+8], eax
-	mov eax, DWORD PTR [rsi+12]
-	add eax, r15d
-	ror eax, 25
-	xor r9d, eax
 	mov eax, r10d
 	add eax, ecx
 	ror eax, 23
@@ -754,14 +754,14 @@ vg_scrypt_blockmix:
 	ror eax, 23
 	xor eax, DWORD PTR [rsi+4]
 	mov DWORD PTR [rsi+4], eax
-	mov eax, DWORD PTR [rsi+8]
-	add eax, r14d
-	ror eax, 23
-	xor r8d, eax
 	mov eax, r9d
 	add eax, DWORD PTR [rsi+12]
 	ror eax, 23
 	xor ebp, eax
+	mov eax, DWORD PTR [rsi+8]
+	add eax, r14d
+	ror eax, 23
+	xor r8d, eax
 	mov eax, r12d
 	add eax, r10d
 	ror eax, 19
@@ -771,14 +771,14 @@ vg_scrypt_blockmix:
 	add eax, r13d
 	ror eax, 19
 	xor edx, eax
-	mov eax, r8d
-	add eax, DWORD PTR [rsi+8]
-	ror eax, 19
-	xor ebx, eax
 	mov eax, ebp
 	add eax, r9d
 	ror eax, 19
 	xor r15d, eax
+	mov eax, r8d
+	add eax, DWORD PTR [rsi+8]
+	ror eax, 19
+	xor ebx, eax
 	mov eax, DWORD PTR [rsi]
 	add eax, r12d
 	ror eax, 14
@@ -787,15 +787,15 @@ vg_scrypt_blockmix:
 	add eax, DWORD PTR [rsi+4]
 	ror eax, 14
 	xor r11d, eax
-	mov eax, ebx
-	add eax, r8d
-	ror eax, 14
-	xor r14d, eax
 	mov eax, r15d
 	add eax, ebp
 	ror eax, 14
 	xor eax, DWORD PTR [rsi+12]
 	mov DWORD PTR [rsi+12], eax
+	mov eax, ebx
+	add eax, r8d
+	ror eax, 14
+	xor r14d, eax
 	mov eax, ecx
 	add eax, r9d
 	ror eax, 25
@@ -804,15 +804,15 @@ vg_scrypt_blockmix:
 	add eax, r10d
 	ror eax, 25
 	xor ebx, eax
-	mov eax, r14d
-	add eax, r13d
-	ror eax, 25
-	xor r15d, eax
 	mov eax, DWORD PTR [rsi+12]
 	add eax, DWORD PTR [rsi+8]
 	ror eax, 25
 	xor eax, DWORD PTR [rsi]
 	mov DWORD PTR [rsi], eax
+	mov eax, r14d
+	add eax, r13d
+	ror eax, 25
+	xor r15d, eax
 	mov eax, edx
 	add eax, ecx
 	ror eax, 23
@@ -821,15 +821,15 @@ vg_scrypt_blockmix:
 	add eax, r11d
 	ror eax, 23
 	xor ebp, eax
-	mov eax, r15d
-	add eax, r14d
-	ror eax, 23
-	xor r12d, eax
 	mov eax, DWORD PTR [rsi]
 	add eax, DWORD PTR [rsi+12]
 	ror eax, 23
 	xor eax, DWORD PTR [rsi+4]
 	mov DWORD PTR [rsi+4], eax
+	mov eax, r15d
+	add eax, r14d
+	ror eax, 23
+	xor r12d, eax
 	mov eax, r8d
 	add eax, edx
 	ror eax, 19
@@ -838,15 +838,15 @@ vg_scrypt_blockmix:
 	add eax, ebx
 	ror eax, 19
 	xor r10d, eax
-	mov eax, r12d
-	add eax, r15d
-	ror eax, 19
-	xor r13d, eax
 	mov eax, DWORD PTR [rsi+4]
 	add eax, DWORD PTR [rsi]
 	ror eax, 19
 	xor eax, DWORD PTR [rsi+8]
 	mov DWORD PTR [rsi+8], eax
+	mov eax, r12d
+	add eax, r15d
+	ror eax, 19
+	xor r13d, eax
 	mov eax, r9d
 	add eax, r8d
 	ror eax, 14
@@ -855,15 +855,15 @@ vg_scrypt_blockmix:
 	add eax, ebp
 	ror eax, 14
 	xor r11d, eax
-	mov eax, r13d
-	add eax, r12d
-	ror eax, 14
-	xor r14d, eax
 	mov eax, DWORD PTR [rsi+8]
 	add eax, DWORD PTR [rsi+4]
 	ror eax, 14
 	xor eax, DWORD PTR [rsi+12]
 	mov DWORD PTR [rsi+12], eax
+	mov eax, r13d
+	add eax, r12d
+	ror eax, 14
+	xor r14d, eax
 	mov eax, ecx
 	add eax, DWORD PTR [rsi]
 	ror eax, 25
@@ -872,15 +872,15 @@ vg_scrypt_blockmix:
 	add eax, edx
 	ror eax, 25
 	xor r13d, eax
+	mov eax, DWORD PTR [rsi+12]
+	add eax, r15d
+	ror eax, 25
+	xor r9d, eax
 	mov eax, r14d
 	add eax, ebx
 	ror eax, 25
 	xor eax, DWORD PTR [rsi+8]
 	mov DWORD PTR [rsi+8], eax
-	mov eax, DWORD PTR [rsi+12]
-	add eax, r15d
-	ror eax, 25
-	xor r9d, eax
 	mov eax, r10d
 	add eax, ecx
 	ror eax, 23
@@ -890,14 +890,14 @@ vg_scrypt_blockmix:
 	ror eax, 23
 	xor eax, DWORD PTR [rsi+4]
 	mov DWORD PTR [rsi+4], eax
-	mov eax, DWORD PTR [rsi+8]
-	add eax, r14d
-	ror eax, 23
-	xor r8d, eax
 	mov eax, r9d
 	add eax, DWORD PTR [rsi+12]
 	ror eax, 23
 	xor ebp, eax
+	mov eax, DWORD PTR [rsi+8]
+	add eax, r14d
+	ror eax, 23
+	xor r8d, eax
 	mov eax, r12d
 	add eax, r10d
 	ror eax, 19
@@ -907,14 +907,14 @@ vg_scrypt_blockmix:
 	add eax, r13d
 	ror eax, 19
 	xor edx, eax
-	mov eax, r8d
-	add eax, DWORD PTR [rsi+8]
-	ror eax, 19
-	xor ebx, eax
 	mov eax, ebp
 	add eax, r9d
 	ror eax, 19
 	xor r15d, eax
+	mov eax, r8d
+	add eax, DWORD PTR [rsi+8]
+	ror eax, 19
+	xor ebx, eax
 	mov eax, DWORD PTR [rsi]
 	add eax, r12d
 	ror eax, 14
@@ -923,15 +923,15 @@ vg_scrypt_blockmix:
 	add eax, DWORD PTR [rsi+4]
 	ror eax, 14
 	xor r11d, eax
-	mov eax, ebx
-	add eax, r8d
-	ror eax, 14
-	xor r14d, eax
 	mov eax, r15d
 	add eax, ebp
 	ror eax, 14
 	xor eax, DWORD PTR [rsi+12]
 	mov DWORD PTR [rsi+12], eax
+	mov eax, ebx
+	add eax, r8d
+	ror eax, 14
+	xor r14d, eax
 	mov eax, ecx
 	add eax, r9d
 	ror eax, 25
@@ -940,15 +940,15 @@ vg_scrypt_blockmix:
 	add eax, r10d
 	ror eax, 25
 	xor ebx, eax
-	mov eax, r14d
-	add eax, r13d
-	ror eax, 25
-	xor r15d, eax
 	mov eax, DWORD PTR [rsi+12]
 	add eax, DWORD PTR [rsi+8]
 	ror eax, 25
 	xor eax, DWORD PTR [rsi]
 	mov DWORD PTR [rsi], eax
+	mov eax, r14d
+	add eax, r13d
+	ror eax, 25
+	xor r15d, eax
 	mov eax, edx
 	add eax, ecx
 	ror eax, 23
@@ -957,15 +957,15 @@ vg_scrypt_blockmix:
 	add eax, r11d
 	ror eax, 23
 	xor ebp, eax
-	mov eax, r15d
-	add eax, r14d
-	ror eax, 23
-	xor r12d, eax
 	mov eax, DWORD PTR [rsi]
 	add eax, DWORD PTR [rsi+12]
 	ror eax, 23
 	xor eax, DWORD PTR [rsi+4]
 	mov DWORD PTR [rsi+4], eax
+	mov eax, r15d
+	add eax, r14d
+	ror eax, 23
+	xor r12d, eax
 	mov eax, r8d
 	add eax, edx
 	ror eax, 19
@@ -974,15 +974,15 @@ vg_scrypt_blockmix:
 	add eax, ebx
 	ror eax, 19
 	xor r10d, eax
-	mov eax, r12d
-	add eax, r15d
-	ror eax, 19
-	xor r13d, eax
 	mov eax, DWORD PTR [rsi+4]
 	add eax, DWORD PTR [rsi]
 	ror eax, 19
 	xor eax, DWORD PTR [rsi+8]
 	mov DWORD PTR [rsi+8], eax
+	mov eax, r12d
+	add eax, r15d
+	ror eax, 19
+	xor r13d, eax
 	mov eax, r9d
 	add eax, r8d
 	ror eax, 14
@@ -991,15 +991,15 @@ vg_scrypt_blockmix:
 	add eax, ebp
 	ror eax, 14
 	xor r11d, eax
-	mov eax, r13d
-	add eax, r12d
-	ror eax, 14
-	xor r14d, eax
 	mov eax, DWORD PTR [rsi+8]
 	add eax, DWORD PTR [rsi+4]
 	ror eax, 14
 	xor eax, DWORD PTR [rsi+12]
 	mov DWORD PTR [rsi+12], eax
+	mov eax, r13d
+	add eax, r12d
+	ror eax, 14
+	xor r14d, eax
 	mov eax, ecx
 	add eax, DWORD PTR [rsi]
 	ror eax, 25
@@ -1008,151 +1008,15 @@ vg_scrypt_blockmix:
 	add eax, edx
 	ror eax, 25
 	xor r13d, eax
+	mov eax, DWORD PTR [rsi+12]
+	add eax, r15d
+	ror eax, 25
+	xor r9d, eax
 	mov eax, r14d
 	add eax, ebx
 	ror eax, 25
 	xor eax, DWORD PTR [rsi+8]
 	mov DWORD PTR [rsi+8], eax
-	mov eax, DWORD PTR [rsi+12]
-	add eax, r15d
-	ror eax, 25
-	xor r9d, eax
-	mov eax, r10d
-	add eax, ecx
-	ror eax, 23
-	xor r12d, eax
-	mov eax, r13d
-	add eax, r11d
-	ror eax, 23
-	xor eax, DWORD PTR [rsi+4]
-	mov DWORD PTR [rsi+4], eax
-	mov eax, DWORD PTR [rsi+8]
-	add eax, r14d
-	ror eax, 23
-	xor r8d, eax
-	mov eax, r9d
-	add eax, DWORD PTR [rsi+12]
-	ror eax, 23
-	xor ebp, eax
-	mov eax, r12d
-	add eax, r10d
-	ror eax, 19
-	xor eax, DWORD PTR [rsi]
-	mov DWORD PTR [rsi], eax
-	mov eax, DWORD PTR [rsi+4]
-	add eax, r13d
-	ror eax, 19
-	xor edx, eax
-	mov eax, r8d
-	add eax, DWORD PTR [rsi+8]
-	ror eax, 19
-	xor ebx, eax
-	mov eax, ebp
-	add eax, r9d
-	ror eax, 19
-	xor r15d, eax
-	mov eax, DWORD PTR [rsi]
-	add eax, r12d
-	ror eax, 14
-	xor ecx, eax
-	mov eax, edx
-	add eax, DWORD PTR [rsi+4]
-	ror eax, 14
-	xor r11d, eax
-	mov eax, ebx
-	add eax, r8d
-	ror eax, 14
-	xor r14d, eax
-	mov eax, r15d
-	add eax, ebp
-	ror eax, 14
-	xor eax, DWORD PTR [rsi+12]
-	mov DWORD PTR [rsi+12], eax
-	mov eax, ecx
-	add eax, r9d
-	ror eax, 25
-	xor edx, eax
-	mov eax, r11d
-	add eax, r10d
-	ror eax, 25
-	xor ebx, eax
-	mov eax, r14d
-	add eax, r13d
-	ror eax, 25
-	xor r15d, eax
-	mov eax, DWORD PTR [rsi+12]
-	add eax, DWORD PTR [rsi+8]
-	ror eax, 25
-	xor eax, DWORD PTR [rsi]
-	mov DWORD PTR [rsi], eax
-	mov eax, edx
-	add eax, ecx
-	ror eax, 23
-	xor r8d, eax
-	mov eax, ebx
-	add eax, r11d
-	ror eax, 23
-	xor ebp, eax
-	mov eax, r15d
-	add eax, r14d
-	ror eax, 23
-	xor r12d, eax
-	mov eax, DWORD PTR [rsi]
-	add eax, DWORD PTR [rsi+12]
-	ror eax, 23
-	xor eax, DWORD PTR [rsi+4]
-	mov DWORD PTR [rsi+4], eax
-	mov eax, r8d
-	add eax, edx
-	ror eax, 19
-	xor r9d, eax
-	mov eax, ebp
-	add eax, ebx
-	ror eax, 19
-	xor r10d, eax
-	mov eax, r12d
-	add eax, r15d
-	ror eax, 19
-	xor r13d, eax
-	mov eax, DWORD PTR [rsi+4]
-	add eax, DWORD PTR [rsi]
-	ror eax, 19
-	xor eax, DWORD PTR [rsi+8]
-	mov DWORD PTR [rsi+8], eax
-	mov eax, r9d
-	add eax, r8d
-	ror eax, 14
-	xor ecx, eax
-	mov eax, r10d
-	add eax, ebp
-	ror eax, 14
-	xor r11d, eax
-	mov eax, r13d
-	add eax, r12d
-	ror eax, 14
-	xor r14d, eax
-	mov eax, DWORD PTR [rsi+8]
-	add eax, DWORD PTR [rsi+4]
-	ror eax, 14
-	xor eax, DWORD PTR [rsi+12]
-	mov DWORD PTR [rsi+12], eax
-	mov eax, ecx
-	add eax, DWORD PTR [rsi]
-	ror eax, 25
-	xor r10d, eax
-	mov eax, r11d
-	add eax, edx
-	ror eax, 25
-	xor r13d, eax
-	mov eax, r14d
-	add eax, ebx
-	ror eax, 25
-	xor eax, DWORD PTR [rsi+8]
-	mov DWORD PTR [rsi+8], eax
-	mov eax, DWORD PTR [rsi+12]
-	add eax, r15d
-	ror eax, 25
-	xor r9d, eax
 	mov eax, r10d
 	add eax, ecx
 	ror eax, 23
@@ -1162,14 +1026,14 @@ vg_scrypt_blockmix:
 	ror eax, 23
 	xor eax, DWORD PTR [rsi+4]
 	mov DWORD PTR [rsi+4], eax
-	mov eax, DWORD PTR [rsi+8]
-	add eax, r14d
-	ror eax, 23
-	xor r8d, eax
 	mov eax, r9d
 	add eax, DWORD PTR [rsi+12]
 	ror eax, 23
 	xor ebp, eax
+	mov eax, DWORD PTR [rsi+8]
+	add eax, r14d
+	ror eax, 23
+	xor r8d, eax
 	mov eax, r12d
 	add eax, r10d
 	ror eax, 19
@@ -1179,14 +1043,14 @@ vg_scrypt_blockmix:
 	add eax, r13d
 	ror eax, 19
 	xor edx, eax
-	mov eax, r8d
-	add eax, DWORD PTR [rsi+8]
-	ror eax, 19
-	xor ebx, eax
 	mov eax, ebp
 	add eax, r9d
 	ror eax, 19
 	xor r15d, eax
+	mov eax, r8d
+	add eax, DWORD PTR [rsi+8]
+	ror eax, 19
+	xor ebx, eax
 	mov eax, DWORD PTR [rsi]
 	add eax, r12d
 	ror eax, 14
@@ -1195,15 +1059,15 @@ vg_scrypt_blockmix:
 	add eax, DWORD PTR [rsi+4]
 	ror eax, 14
 	xor r11d, eax
-	mov eax, ebx
-	add eax, r8d
-	ror eax, 14
-	xor r14d, eax
 	mov eax, r15d
 	add eax, ebp
 	ror eax, 14
 	xor eax, DWORD PTR [rsi+12]
 	mov DWORD PTR [rsi+12], eax
+	mov eax, ebx
+	add eax, r8d
+	ror eax, 14
+	xor r14d, eax
 	mov eax, ecx
 	add eax, r9d
 	ror eax, 25
@@ -1212,15 +1076,15 @@ vg_scrypt_blockmix:
 	add eax, r10d
 	ror eax, 25
 	xor ebx, eax
-	mov eax, r14d
-	add eax, r13d
-	ror eax, 25
-	xor r15d, eax
 	mov eax, DWORD PTR [rsi+12]
 	add eax, DWORD PTR [rsi+8]
 	ror eax, 25
 	xor eax, DWORD PTR [rsi]
 	mov DWORD PTR [rsi], eax
+	mov eax, r14d
+	add eax, r13d
+	ror eax, 25
+	xor r15d, eax
 	mov eax, edx
 	add eax, ecx
 	ror eax, 23
@@ -1229,15 +1093,15 @@ vg_scrypt_blockmix:
 	add eax, r11d
 	ror eax, 23
 	xor ebp, eax
-	mov eax, r15d
-	add eax, r14d
-	ror eax, 23
-	xor r12d, eax
 	mov eax, DWORD PTR [rsi]
 	add eax, DWORD PTR [rsi+12]
 	ror eax, 23
 	xor eax, DWORD PTR [rsi+4]
 	mov DWORD PTR [rsi+4], eax
+	mov eax, r15d
+	add eax, r14d
+	ror eax, 23
+	xor r12d, eax
 	mov eax, r8d
 	add eax, edx
 	ror eax, 19
@@ -1246,15 +1110,15 @@ vg_scrypt_blockmix:
 	add eax, ebx
 	ror eax, 19
 	xor r10d, eax
-	mov eax, r12d
-	add eax, r15d
-	ror eax, 19
-	xor r13d, eax
 	mov eax, DWORD PTR [rsi+4]
 	add eax, DWORD PTR [rsi]
 	ror eax, 19
 	xor eax, DWORD PTR [rsi+8]
 	mov DWORD PTR [rsi+8], eax
+	mov eax, r12d
+	add eax, r15d
+	ror eax, 19
+	xor r13d, eax
 	mov eax, r9d
 	add eax, r8d
 	ror eax, 14
@@ -1263,15 +1127,151 @@ vg_scrypt_blockmix:
 	add eax, ebp
 	ror eax, 14
 	xor r11d, eax
-	mov eax, r13d
-	add eax, r12d
-	ror eax, 14
-	xor r14d, eax
 	mov eax, DWORD PTR [rsi+8]
 	add eax, DWORD PTR [rsi+4]
 	ror eax, 14
 	xor eax, DWORD PTR [rsi+12]
 	mov DWORD PTR [rsi+12], eax
+	mov eax, r13d
+	add eax, r12d
+	ror eax, 14
+	xor r14d, eax
+	mov eax, ecx
+	add eax, DWORD PTR [rsi]
+	ror eax, 25
+	xor r10d, eax
+	mov eax, r11d
+	add eax, edx
+	ror eax, 25
+	xor r13d, eax
+	mov eax, DWORD PTR [rsi+12]
+	add eax, r15d
+	ror eax, 25
+	xor r9d, eax
+	mov eax, r14d
+	add eax, ebx
+	ror eax, 25
+	xor eax, DWORD PTR [rsi+8]
+	mov DWORD PTR [rsi+8], eax
+	mov eax, r10d
+	add eax, ecx
+	ror eax, 23
+	xor r12d, eax
+	mov eax, r13d
+	add eax, r11d
+	ror eax, 23
+	xor eax, DWORD PTR [rsi+4]
+	mov DWORD PTR [rsi+4], eax
+	mov eax, r9d
+	add eax, DWORD PTR [rsi+12]
+	ror eax, 23
+	xor ebp, eax
+	mov eax, DWORD PTR [rsi+8]
+	add eax, r14d
+	ror eax, 23
+	xor r8d, eax
+	mov eax, r12d
+	add eax, r10d
+	ror eax, 19
+	xor eax, DWORD PTR [rsi]
+	mov DWORD PTR [rsi], eax
+	mov eax, DWORD PTR [rsi+4]
+	add eax, r13d
+	ror eax, 19
+	xor edx, eax
+	mov eax, ebp
+	add eax, r9d
+	ror eax, 19
+	xor r15d, eax
+	mov eax, r8d
+	add eax, DWORD PTR [rsi+8]
+	ror eax, 19
+	xor ebx, eax
+	mov eax, DWORD PTR [rsi]
+	add eax, r12d
+	ror eax, 14
+	xor ecx, eax
+	mov eax, edx
+	add eax, DWORD PTR [rsi+4]
+	ror eax, 14
+	xor r11d, eax
+	mov eax, r15d
+	add eax, ebp
+	ror eax, 14
+	xor eax, DWORD PTR [rsi+12]
+	mov DWORD PTR [rsi+12], eax
+	mov eax, ebx
+	add eax, r8d
+	ror eax, 14
+	xor r14d, eax
+	mov eax, ecx
+	add eax, r9d
+	ror eax, 25
+	xor edx, eax
+	mov eax, r11d
+	add eax, r10d
+	ror eax, 25
+	xor ebx, eax
+	mov eax, DWORD PTR [rsi+12]
+	add eax, DWORD PTR [rsi+8]
+	ror eax, 25
+	xor eax, DWORD PTR [rsi]
+	mov DWORD PTR [rsi], eax
+	mov eax, r14d
+	add eax, r13d
+	ror eax, 25
+	xor r15d, eax
+	mov eax, edx
+	add eax, ecx
+	ror eax, 23
+	xor r8d, eax
+	mov eax, ebx
+	add eax, r11d
+	ror eax, 23
+	xor ebp, eax
+	mov eax, DWORD PTR [rsi]
+	add eax, DWORD PTR [rsi+12]
+	ror eax, 23
+	xor eax, DWORD PTR [rsi+4]
+	mov DWORD PTR [rsi+4], eax
+	mov eax, r15d
+	add eax, r14d
+	ror eax, 23
+	xor r12d, eax
+	mov eax, r8d
+	add eax, edx
+	ror eax, 19
+	xor r9d, eax
+	mov eax, ebp
+	add eax, ebx
+	ror eax, 19
+	xor r10d, eax
+	mov eax, DWORD PTR [rsi+4]
+	add eax, DWORD PTR [rsi]
+	ror eax, 19
+	xor eax, DWORD PTR [rsi+8]
+	mov DWORD PTR [rsi+8], eax
+	mov eax, r12d
+	add eax, r15d
+	ror eax, 19
+	xor r13d, eax
+	mov eax, r9d
+	add eax, r8d
+	ror eax, 14
+	xor ecx, eax
+	mov eax, r10d
+	add eax, ebp
+	ror eax, 14
+	xor r11d, eax
+	mov eax, DWORD PTR [rsi+8]
+	add eax, DWORD PTR [rsi+4]
+	ror eax, 14
+	xor eax, DWORD PTR [rsi+12]
+	mov DWORD PTR [rsi+12], eax
+	mov eax, r13d
+	add eax, r12d
+	ror eax, 14
+	xor r14d, eax
 	add ecx, DWORD PTR [rdi]
 	mov DWORD PTR [rdi], ecx
 	add edx, DWORD PTR [rdi+4]
