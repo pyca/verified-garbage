@@ -21,24 +21,23 @@ namespace VG.Artifacts.Gcm.X86_64
 def artifacts : List Artifact := [
   Spec.Gcm.prepareApi.artifact X86_64.target {
     suffix := "_vpclmul_avx512"
-    code := Impl.Gcm.X86_64.PrepareZ.prepare
-    verified := Proof.Gcm.X86_64.PrepareZ.prepare_verified
+    code := Impl.Gcm.X86_64.Flag.prepareFlagged Impl.Gcm.X86_64.PrepareZ.prepare
+    verified := Proof.Gcm.X86_64.PrepareZ.prepareFlagged_verified
     features := ["avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq", "avx512f"] },
   Spec.Gcm.prepareApi.artifact X86_64.target {
     suffix := "_vpclmul"
-    code := Impl.Gcm.X86_64.Prepare16.prepare
-    verified := Proof.Gcm.X86_64.Prepare16.prepare_verified
+    code := Impl.Gcm.X86_64.Flag.prepareFlagged Impl.Gcm.X86_64.Prepare16.prepare
+    verified := Proof.Gcm.X86_64.Prepare16.prepareFlagged_verified
     features := ["avx", "avx2", "ssse3", "vpclmulqdq"] },
   Spec.Gcm.prepareApi.artifact X86_64.target {
     suffix := "_pclmul_avx"
-    code := Impl.Gcm.X86_64.PrepareAvx.prepare
-    verified := Proof.Gcm.X86_64.PrepareAvx.prepare_verified
+    code := Impl.Gcm.X86_64.Flag.prepareFlagged Impl.Gcm.X86_64.PrepareAvx.prepare
+    verified := Proof.Gcm.X86_64.PrepareAvx.prepareFlagged_verified
     features := ["avx", "pclmulqdq"] },
   Spec.Gcm.prepareApi.artifact X86_64.target {
-    suffix := "_pclmul"
-    code := Impl.Gcm.X86_64.PrepareAvx.prepareSse
-    verified := Proof.Gcm.X86_64.PrepareAvx.prepareSse_verified
-    features := ["pclmulqdq", "ssse3"] },
+    suffix := ""
+    code := Impl.Gcm.X86_64.Flag.prepareAbsent
+    verified := Proof.Gcm.X86_64.Prepare.absent_verified },
   Spec.Gcm.prepare16Api.artifact X86_64.target {
     suffix := "_vpclmul"
     written := [("ctx", 512)]

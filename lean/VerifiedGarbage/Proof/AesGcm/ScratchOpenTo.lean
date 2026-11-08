@@ -2,6 +2,7 @@ module
 
 -- separate module: the target-independent contracts with the working space and their locality, as `ScratchSplit.lean`, apart from the x86-64 proof that uses them
 
+public import VerifiedGarbage.Proof.Gcm.PreparedPowers
 public import VerifiedGarbage.Spec.Gcm.Prepared
 public import VerifiedGarbage.Spec.Gcm.Prepared16
 public import VerifiedGarbage.Proof.AesGcm.RoundsTo
@@ -45,7 +46,7 @@ def openToPreparedScratchSig : Sig where
 def openToPreparedScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   openToPreparedScratchSig.contract A
     (pre := fun ctx rounds nonce nonceLen aad aadLen src len dst dstLen tag tagLen _work =>
-      openToPreparedPre A.ptrBits ctx rounds nonce nonceLen aad aadLen src len dst dstLen tag tagLen)
+      Proof.Gcm.openToPowersPre A.ptrBits ctx rounds nonce nonceLen aad aadLen src len dst dstLen tag tagLen)
     (post := fun ctx rounds nonce nonceLen aad aadLen src len dst dstLen tag tagLen _work =>
       openToRoundsPost A.ptrBits ctx rounds nonce nonceLen aad aadLen src len dst dstLen tag tagLen)
     (writeArgs := true) (stack := stack)
@@ -65,10 +66,10 @@ def openToPrepared16ScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : C
 
 variable (pb : Nat)
 
-theorem openToPreparedPre_local : ∀ vs m₁ m₂, vs.length = (openToPreparedSig.words pb).length →
-    (∀ b ∈ Sig.bufs openToPreparedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (openToPreparedSig.words pb) (openToPreparedPre pb) vs m₁ →
-      Curry.apply (openToPreparedSig.words pb) (openToPreparedPre pb) vs m₂ := by
+theorem openToPreparedPre_local : ∀ vs m₁ m₂, vs.length = (Spec.Gcm.openToPrecomputedSig.words pb).length →
+    (∀ b ∈ Sig.bufs Spec.Gcm.openToPrecomputedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (Spec.Gcm.openToPrecomputedSig.words pb) (Proof.Gcm.openToPowersPre pb) vs m₁ →
+      Curry.apply (Spec.Gcm.openToPrecomputedSig.words pb) (Proof.Gcm.openToPowersPre pb) vs m₂ := by
   intro vs m₁ m₂ hlen hb h
   obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 11) hlen
   replace hlen := Nat.succ.inj hlen
@@ -76,22 +77,22 @@ theorem openToPreparedPre_local : ∀ vs m₁ m₂, vs.length = (openToPreparedS
     obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
     replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [openToPreparedSig, openToPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil,
+  simp only [Spec.Gcm.openToPrecomputedSig, openToPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil,
     or_false, forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
   have hc := agree_of hb.1
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
     ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb]
-    (openToPreparedPre pb) _ m₁ at h
+    (Proof.Gcm.openToPowersPre pb) _ m₁ at h
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
     ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb]
-    (openToPreparedPre pb) _ m₂
-  dsimp only [Curry.apply, openToPreparedPre, ArgWord.ofRaw, IntTy.bits] at h ⊢
+    (Proof.Gcm.openToPowersPre pb) _ m₂
+  dsimp only [Curry.apply, Proof.Gcm.openToPowersPre, ArgWord.ofRaw, IntTy.bits] at h ⊢
   exact ⟨h.1, h.2.1, preparedPowersRepr_congr hc h.2.2⟩
 
-theorem openToPrepared16Pre_local : ∀ vs m₁ m₂, vs.length = (openToPreparedSig.words pb).length →
-    (∀ b ∈ Sig.bufs openToPreparedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (openToPreparedSig.words pb) (openToPrepared16Pre pb) vs m₁ →
-      Curry.apply (openToPreparedSig.words pb) (openToPrepared16Pre pb) vs m₂ := by
+theorem openToPrepared16Pre_local : ∀ vs m₁ m₂, vs.length = (Spec.Gcm.openToPrecomputedSig.words pb).length →
+    (∀ b ∈ Sig.bufs Spec.Gcm.openToPrecomputedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (Spec.Gcm.openToPrecomputedSig.words pb) (openToPrepared16Pre pb) vs m₁ →
+      Curry.apply (Spec.Gcm.openToPrecomputedSig.words pb) (openToPrepared16Pre pb) vs m₂ := by
   intro vs m₁ m₂ hlen hb h
   obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 11) hlen
   replace hlen := Nat.succ.inj hlen
@@ -99,7 +100,7 @@ theorem openToPrepared16Pre_local : ∀ vs m₁ m₂, vs.length = (openToPrepare
     obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
     replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [openToPreparedSig, openToPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil,
+  simp only [Spec.Gcm.openToPrecomputedSig, openToPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil,
     or_false, forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
   have hc := agree_of hb.1
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
@@ -140,10 +141,10 @@ theorem openToResult_local {m₁ m₂ : Mem} {ctx rd nonce nl aad al src len tag
     bytesAt_congr (p := tag) (n := (tl.setWidth pb).toNat) fun i hi => ht i (by
       rw [BitVec.toNat_setWidth] at hi; omega)]
 
-theorem openToRoundsPost_local : ∀ vs m₁ m₂ m' r, vs.length = (openToPreparedSig.words pb).length →
-    (∀ b ∈ Sig.bufs openToPreparedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (openToPreparedSig.words pb) (openToRoundsPost pb) vs m₁ m' r →
-      Curry.apply (openToPreparedSig.words pb) (openToRoundsPost pb) vs m₂ m' r := by
+theorem openToRoundsPost_local : ∀ vs m₁ m₂ m' r, vs.length = (Spec.Gcm.openToPrecomputedSig.words pb).length →
+    (∀ b ∈ Sig.bufs Spec.Gcm.openToPrecomputedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (Spec.Gcm.openToPrecomputedSig.words pb) (openToRoundsPost pb) vs m₁ m' r →
+      Curry.apply (Spec.Gcm.openToPrecomputedSig.words pb) (openToRoundsPost pb) vs m₂ m' r := by
   intro vs m₁ m₂ m' r hlen hb h
   obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 11) hlen
   replace hlen := Nat.succ.inj hlen
@@ -170,7 +171,7 @@ theorem openToRoundsPost_local : ∀ vs m₁ m₂ m' r, vs.length = (openToPrepa
   obtain ⟨tl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [openToPreparedSig, openToPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+  simp only [Spec.Gcm.openToPrecomputedSig, openToPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
     ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb]
@@ -184,10 +185,10 @@ theorem openToRoundsPost_local : ∀ vs m₁ m₂ m' r, vs.length = (openToPrepa
     (agree_of hb.2.2.2.2.2)]
   exact h hr
 
-theorem openToLeak_local : ∀ vs m₁ m₂, vs.length = (openToPreparedSig.words pb).length →
-    (∀ b ∈ Sig.bufs openToPreparedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (openToPreparedSig.words pb) (openToLeak pb) vs m₁ =
-      Curry.apply (openToPreparedSig.words pb) (openToLeak pb) vs m₂ := by
+theorem openToLeak_local : ∀ vs m₁ m₂, vs.length = (Spec.Gcm.openToPrecomputedSig.words pb).length →
+    (∀ b ∈ Sig.bufs Spec.Gcm.openToPrecomputedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (Spec.Gcm.openToPrecomputedSig.words pb) (openToLeak pb) vs m₁ =
+      Curry.apply (Spec.Gcm.openToPrecomputedSig.words pb) (openToLeak pb) vs m₂ := by
   intro vs m₁ m₂ hlen hb
   obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 11) hlen
   replace hlen := Nat.succ.inj hlen
@@ -214,7 +215,7 @@ theorem openToLeak_local : ∀ vs m₁ m₂, vs.length = (openToPreparedSig.word
   obtain ⟨tl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [openToPreparedSig, openToPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+  simp only [Spec.Gcm.openToPrecomputedSig, openToPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
     ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb]

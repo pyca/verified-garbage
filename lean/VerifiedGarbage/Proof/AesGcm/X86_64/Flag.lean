@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.PreparedPowers
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Frame
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Verified
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Verified
@@ -43,10 +44,10 @@ open VG VG.X86_64
 def sealSatF : State :=
   { sealFrameSat with rd := [⟨0x1000, 1088⟩, ⟨0x2000, 0⟩, ⟨0x2100, 0⟩, ⟨0x8008, 24⟩] }
 
-theorem seal_satF : ∃ s, (AesGcm.Flag.sealSig.contract abi (AesGcm.Flag.sealPre 64)
+theorem seal_satF : ∃ s, (Spec.Gcm.sealPreparedSig.contract abi (Spec.Gcm.sealPreparedPre 64)
     (Proof.AesGcm.sealRoundsPost 64) true 2624 none).pre s := by
   refine ⟨sealSatF, ?_⟩
-  sig_pre [AesGcm.Flag.sealSig, AesGcm.Flag.sealPre, AesGcm.Flag.PreparedRepr, Proof.AesGcm.sealRoundsPost, X86_64.abi,
+  sig_pre [Spec.Gcm.sealPreparedSig, Spec.Gcm.sealPreparedPre, Spec.Gcm.PreparedRepr, Proof.AesGcm.sealRoundsPost, X86_64.abi,
     X86_64.argRegs, sealSatF, sealFrameSat, sealSat]
   sig_and_intros
   all_goals first
@@ -60,10 +61,10 @@ theorem seal_satF : ∃ s, (AesGcm.Flag.sealSig.contract abi (AesGcm.Flag.sealPr
        · rfl)
 
 
-theorem seal_satpow : ∃ s, (AesGcm.Flag.sealSig.contract abi (Spec.Gcm.sealPreparedPre 64)
+theorem seal_satpow : ∃ s, (Spec.Gcm.sealPreparedSig.contract abi (Proof.Gcm.sealPowersPre 64)
     (Proof.AesGcm.sealRoundsPost 64) true 2624 none).pre s := by
   refine ⟨sealSatF, ?_⟩
-  sig_pre [AesGcm.Flag.sealSig, Spec.Gcm.sealPreparedPre, AesGcm.Flag.PreparedRepr, Proof.AesGcm.sealRoundsPost, X86_64.abi,
+  sig_pre [Spec.Gcm.sealPreparedSig, Proof.Gcm.sealPowersPre, Spec.Gcm.PreparedRepr, Proof.AesGcm.sealRoundsPost, X86_64.abi,
     X86_64.argRegs, sealSatF, sealFrameSat, sealSat]
   sig_and_intros
   all_goals first
@@ -76,10 +77,10 @@ theorem seal_satpow : ∃ s, (AesGcm.Flag.sealSig.contract abi (Spec.Gcm.sealPre
        · rfl)
 
 
-theorem seal_satpow16 : ∃ s, (AesGcm.Flag.sealSig.contract abi (Spec.Gcm.sealPrepared16Pre 64)
+theorem seal_satpow16 : ∃ s, (Spec.Gcm.sealPreparedSig.contract abi (Spec.Gcm.sealPrepared16Pre 64)
     (Proof.AesGcm.sealRoundsPost 64) true 2624 none).pre s := by
   refine ⟨sealSatF, ?_⟩
-  sig_pre [AesGcm.Flag.sealSig, Spec.Gcm.sealPrepared16Pre, AesGcm.Flag.PreparedRepr, Proof.AesGcm.sealRoundsPost, X86_64.abi,
+  sig_pre [Spec.Gcm.sealPreparedSig, Spec.Gcm.sealPrepared16Pre, Spec.Gcm.PreparedRepr, Proof.AesGcm.sealRoundsPost, X86_64.abi,
     X86_64.argRegs, sealSatF, sealFrameSat, sealSat]
   sig_and_intros
   all_goals first
@@ -93,10 +94,10 @@ theorem seal_satpow16 : ∃ s, (AesGcm.Flag.sealSig.contract abi (Spec.Gcm.sealP
        · rfl)
 
 
-theorem seal_satbase : ∃ s, (AesGcm.Flag.sealSig.contract abi (Spec.Gcm.sealPre 64)
+theorem seal_satbase : ∃ s, (Spec.Gcm.sealPreparedSig.contract abi (Spec.Gcm.sealPre 64)
     (Proof.AesGcm.sealRoundsPost 64) true 2624 none).pre s := by
   refine ⟨sealSatF, ?_⟩
-  sig_pre [AesGcm.Flag.sealSig, Spec.Gcm.sealPre, AesGcm.Flag.PreparedRepr, Proof.AesGcm.sealRoundsPost, X86_64.abi,
+  sig_pre [Spec.Gcm.sealPreparedSig, Spec.Gcm.sealPre, Spec.Gcm.PreparedRepr, Proof.AesGcm.sealRoundsPost, X86_64.abi,
     X86_64.argRegs, sealSatF, sealFrameSat, sealSat]
   sig_and_intros
   all_goals first
@@ -148,10 +149,10 @@ theorem seal_onFlag16 {c₁ c₂ : Prog isa}
 def openSatF : State :=
   { openFrameSat with rd := [⟨0x1000, 1088⟩, ⟨0x2000, 0⟩, ⟨0x2100, 0⟩, ⟨0, 0⟩, ⟨0x8008, 32⟩] }
 
-theorem open_satF : ∃ s, (AesGcm.Flag.openSig.contract abi (AesGcm.Flag.openPre 64)
+theorem open_satF : ∃ s, (Spec.Gcm.openPreparedSig.contract abi (Spec.Gcm.openPreparedPre 64)
     (Proof.AesGcm.openRoundsPost 64) true 2632 none).pre s := by
   refine ⟨openSatF, ?_⟩
-  sig_pre [AesGcm.Flag.openSig, AesGcm.Flag.openPre, AesGcm.Flag.PreparedRepr, Proof.AesGcm.openRoundsPost, X86_64.abi,
+  sig_pre [Spec.Gcm.openPreparedSig, Spec.Gcm.openPreparedPre, Spec.Gcm.PreparedRepr, Proof.AesGcm.openRoundsPost, X86_64.abi,
     X86_64.argRegs, openSatF, openFrameSat, openSat]
   sig_and_intros
   all_goals first
@@ -162,10 +163,10 @@ theorem open_satF : ∃ s, (AesGcm.Flag.openSig.contract abi (AesGcm.Flag.openPr
        exact preparedPowersRepr_of_zero fun _ _ => rfl)
 
 
-theorem open_satpow : ∃ s, (AesGcm.Flag.openSig.contract abi (Spec.Gcm.openPreparedPre 64)
+theorem open_satpow : ∃ s, (Spec.Gcm.openPreparedSig.contract abi (Proof.Gcm.openPowersPre 64)
     (Proof.AesGcm.openRoundsPost 64) true 2632 none).pre s := by
   refine ⟨openSatF, ?_⟩
-  sig_pre [AesGcm.Flag.openSig, Spec.Gcm.openPreparedPre, AesGcm.Flag.PreparedRepr, Proof.AesGcm.openRoundsPost, X86_64.abi,
+  sig_pre [Spec.Gcm.openPreparedSig, Proof.Gcm.openPowersPre, Spec.Gcm.PreparedRepr, Proof.AesGcm.openRoundsPost, X86_64.abi,
     X86_64.argRegs, openSatF, openFrameSat, openSat]
   sig_and_intros
   all_goals first
@@ -175,10 +176,10 @@ theorem open_satpow : ∃ s, (AesGcm.Flag.openSig.contract abi (Spec.Gcm.openPre
     | (exact preparedPowersRepr_of_zero fun _ _ => rfl)
 
 
-theorem open_satpow16 : ∃ s, (AesGcm.Flag.openSig.contract abi (Spec.Gcm.openPrepared16Pre 64)
+theorem open_satpow16 : ∃ s, (Spec.Gcm.openPreparedSig.contract abi (Spec.Gcm.openPrepared16Pre 64)
     (Proof.AesGcm.openRoundsPost 64) true 2632 none).pre s := by
   refine ⟨openSatF, ?_⟩
-  sig_pre [AesGcm.Flag.openSig, Spec.Gcm.openPrepared16Pre, AesGcm.Flag.PreparedRepr, Proof.AesGcm.openRoundsPost, X86_64.abi,
+  sig_pre [Spec.Gcm.openPreparedSig, Spec.Gcm.openPrepared16Pre, Spec.Gcm.PreparedRepr, Proof.AesGcm.openRoundsPost, X86_64.abi,
     X86_64.argRegs, openSatF, openFrameSat, openSat]
   sig_and_intros
   all_goals first
@@ -189,10 +190,10 @@ theorem open_satpow16 : ∃ s, (AesGcm.Flag.openSig.contract abi (Spec.Gcm.openP
        exact preparedPowersRepr_of_zero fun _ _ => rfl)
 
 
-theorem open_satbase : ∃ s, (AesGcm.Flag.openSig.contract abi (Spec.Gcm.openPre 64)
+theorem open_satbase : ∃ s, (Spec.Gcm.openPreparedSig.contract abi (Spec.Gcm.openPre 64)
     (Proof.AesGcm.openRoundsPost 64) true 2632 none).pre s := by
   refine ⟨openSatF, ?_⟩
-  sig_pre [AesGcm.Flag.openSig, Spec.Gcm.openPre, AesGcm.Flag.PreparedRepr, Proof.AesGcm.openRoundsPost, X86_64.abi,
+  sig_pre [Spec.Gcm.openPreparedSig, Spec.Gcm.openPre, Spec.Gcm.PreparedRepr, Proof.AesGcm.openRoundsPost, X86_64.abi,
     X86_64.argRegs, openSatF, openFrameSat, openSat]
   sig_and_intros
   all_goals first
@@ -243,10 +244,10 @@ theorem open_onFlag16 {c₁ c₂ : Prog isa}
 
 def crSatF : State := { crFrameSat with rd := [⟨0x1000, 1088⟩, ⟨0x8008, 8⟩] }
 
-theorem streamEncrypt_satF : ∃ s, (AesGcm.Flag.streamCryptSig.contract abi (AesGcm.Flag.streamCryptPre 64)
+theorem streamEncrypt_satF : ∃ s, (Spec.Gcm.streamCryptPreparedSig.contract abi (Spec.Gcm.streamCryptPreparedPre 64)
     (Proof.AesGcm.streamEncryptRoundsPost 64) true 2608 none).pre s := by
   refine ⟨crSatF, ?_⟩
-  sig_pre [AesGcm.Flag.streamCryptSig, AesGcm.Flag.streamCryptPre, AesGcm.Flag.PreparedRepr, Proof.AesGcm.streamEncryptRoundsPost, X86_64.abi,
+  sig_pre [Spec.Gcm.streamCryptPreparedSig, Spec.Gcm.streamCryptPreparedPre, Spec.Gcm.PreparedRepr, Proof.AesGcm.streamEncryptRoundsPost, X86_64.abi,
     X86_64.argRegs, crSatF, crFrameSat, crSat]
   sig_and_intros
   all_goals first
@@ -257,10 +258,10 @@ theorem streamEncrypt_satF : ∃ s, (AesGcm.Flag.streamCryptSig.contract abi (Ae
        exact preparedPowersRepr_of_zero fun _ _ => rfl)
 
 
-theorem streamEncrypt_satpow : ∃ s, (AesGcm.Flag.streamCryptSig.contract abi (Spec.Gcm.streamCryptPreparedPre 64)
+theorem streamEncrypt_satpow : ∃ s, (Spec.Gcm.streamCryptPreparedSig.contract abi (Proof.Gcm.streamCryptPowersPre 64)
     (Proof.AesGcm.streamEncryptRoundsPost 64) true 2608 none).pre s := by
   refine ⟨crSatF, ?_⟩
-  sig_pre [AesGcm.Flag.streamCryptSig, Spec.Gcm.streamCryptPreparedPre, AesGcm.Flag.PreparedRepr, Proof.AesGcm.streamEncryptRoundsPost, X86_64.abi,
+  sig_pre [Spec.Gcm.streamCryptPreparedSig, Proof.Gcm.streamCryptPowersPre, Spec.Gcm.PreparedRepr, Proof.AesGcm.streamEncryptRoundsPost, X86_64.abi,
     X86_64.argRegs, crSatF, crFrameSat, crSat]
   sig_and_intros
   all_goals first
@@ -270,10 +271,10 @@ theorem streamEncrypt_satpow : ∃ s, (AesGcm.Flag.streamCryptSig.contract abi (
     | (exact preparedPowersRepr_of_zero fun _ _ => rfl)
 
 
-theorem streamEncrypt_satpow16 : ∃ s, (AesGcm.Flag.streamCryptSig.contract abi (Spec.Gcm.streamCryptPrepared16Pre 64)
+theorem streamEncrypt_satpow16 : ∃ s, (Spec.Gcm.streamCryptPreparedSig.contract abi (Spec.Gcm.streamCryptPrepared16Pre 64)
     (Proof.AesGcm.streamEncryptRoundsPost 64) true 2608 none).pre s := by
   refine ⟨crSatF, ?_⟩
-  sig_pre [AesGcm.Flag.streamCryptSig, Spec.Gcm.streamCryptPrepared16Pre, AesGcm.Flag.PreparedRepr, Proof.AesGcm.streamEncryptRoundsPost, X86_64.abi,
+  sig_pre [Spec.Gcm.streamCryptPreparedSig, Spec.Gcm.streamCryptPrepared16Pre, Spec.Gcm.PreparedRepr, Proof.AesGcm.streamEncryptRoundsPost, X86_64.abi,
     X86_64.argRegs, crSatF, crFrameSat, crSat]
   sig_and_intros
   all_goals first
@@ -284,10 +285,10 @@ theorem streamEncrypt_satpow16 : ∃ s, (AesGcm.Flag.streamCryptSig.contract abi
        exact preparedPowersRepr_of_zero fun _ _ => rfl)
 
 
-theorem streamEncrypt_satbase : ∃ s, (AesGcm.Flag.streamCryptSig.contract abi (Spec.Gcm.streamTextPre 64)
+theorem streamEncrypt_satbase : ∃ s, (Spec.Gcm.streamCryptPreparedSig.contract abi (Spec.Gcm.streamTextPre 64)
     (Proof.AesGcm.streamEncryptRoundsPost 64) true 2608 none).pre s := by
   refine ⟨crSatF, ?_⟩
-  sig_pre [AesGcm.Flag.streamCryptSig, Spec.Gcm.streamTextPre, AesGcm.Flag.PreparedRepr, Proof.AesGcm.streamEncryptRoundsPost, X86_64.abi,
+  sig_pre [Spec.Gcm.streamCryptPreparedSig, Spec.Gcm.streamTextPre, Spec.Gcm.PreparedRepr, Proof.AesGcm.streamEncryptRoundsPost, X86_64.abi,
     X86_64.argRegs, crSatF, crFrameSat, crSat]
   sig_and_intros
   all_goals first
@@ -336,10 +337,10 @@ theorem streamEncrypt_onFlag16 {c₁ c₂ : Prog isa}
 
 /-! ## `streamDecrypt` -/
 
-theorem streamDecrypt_satF : ∃ s, (AesGcm.Flag.streamCryptSig.contract abi (AesGcm.Flag.streamCryptPre 64)
+theorem streamDecrypt_satF : ∃ s, (Spec.Gcm.streamCryptPreparedSig.contract abi (Spec.Gcm.streamCryptPreparedPre 64)
     (Proof.AesGcm.streamDecryptRoundsPost 64) true 2608 none).pre s := by
   refine ⟨crSatF, ?_⟩
-  sig_pre [AesGcm.Flag.streamCryptSig, AesGcm.Flag.streamCryptPre, AesGcm.Flag.PreparedRepr, Proof.AesGcm.streamDecryptRoundsPost, X86_64.abi,
+  sig_pre [Spec.Gcm.streamCryptPreparedSig, Spec.Gcm.streamCryptPreparedPre, Spec.Gcm.PreparedRepr, Proof.AesGcm.streamDecryptRoundsPost, X86_64.abi,
     X86_64.argRegs, crSatF, crFrameSat, crSat]
   sig_and_intros
   all_goals first
@@ -350,10 +351,10 @@ theorem streamDecrypt_satF : ∃ s, (AesGcm.Flag.streamCryptSig.contract abi (Ae
        exact preparedPowersRepr_of_zero fun _ _ => rfl)
 
 
-theorem streamDecrypt_satpow : ∃ s, (AesGcm.Flag.streamCryptSig.contract abi (Spec.Gcm.streamCryptPreparedPre 64)
+theorem streamDecrypt_satpow : ∃ s, (Spec.Gcm.streamCryptPreparedSig.contract abi (Proof.Gcm.streamCryptPowersPre 64)
     (Proof.AesGcm.streamDecryptRoundsPost 64) true 2608 none).pre s := by
   refine ⟨crSatF, ?_⟩
-  sig_pre [AesGcm.Flag.streamCryptSig, Spec.Gcm.streamCryptPreparedPre, AesGcm.Flag.PreparedRepr, Proof.AesGcm.streamDecryptRoundsPost, X86_64.abi,
+  sig_pre [Spec.Gcm.streamCryptPreparedSig, Proof.Gcm.streamCryptPowersPre, Spec.Gcm.PreparedRepr, Proof.AesGcm.streamDecryptRoundsPost, X86_64.abi,
     X86_64.argRegs, crSatF, crFrameSat, crSat]
   sig_and_intros
   all_goals first
@@ -363,10 +364,10 @@ theorem streamDecrypt_satpow : ∃ s, (AesGcm.Flag.streamCryptSig.contract abi (
     | (exact preparedPowersRepr_of_zero fun _ _ => rfl)
 
 
-theorem streamDecrypt_satpow16 : ∃ s, (AesGcm.Flag.streamCryptSig.contract abi (Spec.Gcm.streamCryptPrepared16Pre 64)
+theorem streamDecrypt_satpow16 : ∃ s, (Spec.Gcm.streamCryptPreparedSig.contract abi (Spec.Gcm.streamCryptPrepared16Pre 64)
     (Proof.AesGcm.streamDecryptRoundsPost 64) true 2608 none).pre s := by
   refine ⟨crSatF, ?_⟩
-  sig_pre [AesGcm.Flag.streamCryptSig, Spec.Gcm.streamCryptPrepared16Pre, AesGcm.Flag.PreparedRepr, Proof.AesGcm.streamDecryptRoundsPost, X86_64.abi,
+  sig_pre [Spec.Gcm.streamCryptPreparedSig, Spec.Gcm.streamCryptPrepared16Pre, Spec.Gcm.PreparedRepr, Proof.AesGcm.streamDecryptRoundsPost, X86_64.abi,
     X86_64.argRegs, crSatF, crFrameSat, crSat]
   sig_and_intros
   all_goals first
@@ -377,10 +378,10 @@ theorem streamDecrypt_satpow16 : ∃ s, (AesGcm.Flag.streamCryptSig.contract abi
        exact preparedPowersRepr_of_zero fun _ _ => rfl)
 
 
-theorem streamDecrypt_satbase : ∃ s, (AesGcm.Flag.streamCryptSig.contract abi (Spec.Gcm.streamTextPre 64)
+theorem streamDecrypt_satbase : ∃ s, (Spec.Gcm.streamCryptPreparedSig.contract abi (Spec.Gcm.streamTextPre 64)
     (Proof.AesGcm.streamDecryptRoundsPost 64) true 2608 none).pre s := by
   refine ⟨crSatF, ?_⟩
-  sig_pre [AesGcm.Flag.streamCryptSig, Spec.Gcm.streamTextPre, AesGcm.Flag.PreparedRepr, Proof.AesGcm.streamDecryptRoundsPost, X86_64.abi,
+  sig_pre [Spec.Gcm.streamCryptPreparedSig, Spec.Gcm.streamTextPre, Spec.Gcm.PreparedRepr, Proof.AesGcm.streamDecryptRoundsPost, X86_64.abi,
     X86_64.argRegs, crSatF, crFrameSat, crSat]
   sig_and_intros
   all_goals first
@@ -432,10 +433,10 @@ theorem streamDecrypt_onFlag16 {c₁ c₂ : Prog isa}
 def gatherSatF : State :=
   { Gather.gatherFrameSat with rd := [⟨0x1000, 1088⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x4000, 0⟩, ⟨0x9008, 40⟩] }
 
-theorem sealGather_satF : ∃ s, (AesGcm.Flag.sealGatherSig.contract abi (AesGcm.Flag.sealGatherPre 64)
+theorem sealGather_satF : ∃ s, (Spec.Gcm.sealGatherPreparedSig.contract abi (Spec.Gcm.sealGatherPreparedPre 64)
     (Proof.AesGcm.sealGatherRoundsPost 64) true 5128 none).pre s := by
   refine ⟨gatherSatF, ?_⟩
-  sig_pre [AesGcm.Flag.sealGatherSig, AesGcm.Flag.sealGatherPre, AesGcm.Flag.PreparedRepr, Proof.AesGcm.sealGatherRoundsPost, Gather.stackArgs_five, List.append_eq, stackArg, stackArgAddr, Mem.readW, Mem.read, X86_64.abi,
+  sig_pre [Spec.Gcm.sealGatherPreparedSig, Spec.Gcm.sealGatherPreparedPre, Spec.Gcm.PreparedRepr, Proof.AesGcm.sealGatherRoundsPost, Gather.stackArgs_five, List.append_eq, stackArg, stackArgAddr, Mem.readW, Mem.read, X86_64.abi,
     X86_64.argRegs, gatherSatF, Gather.gatherFrameSat, Gather.gatherSat]
   sig_and_intros
   all_goals first
@@ -446,10 +447,10 @@ theorem sealGather_satF : ∃ s, (AesGcm.Flag.sealGatherSig.contract abi (AesGcm
        exact preparedPowersRepr_of_zero fun _ hi => by simp only [Gather.ctx_low hi, ite_false])
 
 
-theorem sealGather_satpow : ∃ s, (AesGcm.Flag.sealGatherSig.contract abi (Spec.Gcm.sealGatherPreparedPre 64)
+theorem sealGather_satpow : ∃ s, (Spec.Gcm.sealGatherPreparedSig.contract abi (Proof.Gcm.sealGatherPowersPre 64)
     (Proof.AesGcm.sealGatherRoundsPost 64) true 5128 none).pre s := by
   refine ⟨gatherSatF, ?_⟩
-  sig_pre [AesGcm.Flag.sealGatherSig, Spec.Gcm.sealGatherPreparedPre, AesGcm.Flag.PreparedRepr, Proof.AesGcm.sealGatherRoundsPost, Gather.stackArgs_five, List.append_eq, stackArg, stackArgAddr, Mem.readW, Mem.read, X86_64.abi,
+  sig_pre [Spec.Gcm.sealGatherPreparedSig, Proof.Gcm.sealGatherPowersPre, Spec.Gcm.PreparedRepr, Proof.AesGcm.sealGatherRoundsPost, Gather.stackArgs_five, List.append_eq, stackArg, stackArgAddr, Mem.readW, Mem.read, X86_64.abi,
     X86_64.argRegs, gatherSatF, Gather.gatherFrameSat, Gather.gatherSat]
   sig_and_intros
   all_goals first
@@ -459,10 +460,10 @@ theorem sealGather_satpow : ∃ s, (AesGcm.Flag.sealGatherSig.contract abi (Spec
     | (exact preparedPowersRepr_of_zero fun _ hi => by simp only [Gather.ctx_low hi, ite_false])
 
 
-theorem sealGather_satpow16 : ∃ s, (AesGcm.Flag.sealGatherSig.contract abi (Spec.Gcm.sealGatherPrepared16Pre 64)
+theorem sealGather_satpow16 : ∃ s, (Spec.Gcm.sealGatherPreparedSig.contract abi (Spec.Gcm.sealGatherPrepared16Pre 64)
     (Proof.AesGcm.sealGatherRoundsPost 64) true 5128 none).pre s := by
   refine ⟨gatherSatF, ?_⟩
-  sig_pre [AesGcm.Flag.sealGatherSig, Spec.Gcm.sealGatherPrepared16Pre, AesGcm.Flag.PreparedRepr, Proof.AesGcm.sealGatherRoundsPost, Gather.stackArgs_five, List.append_eq, stackArg, stackArgAddr, Mem.readW, Mem.read, X86_64.abi,
+  sig_pre [Spec.Gcm.sealGatherPreparedSig, Spec.Gcm.sealGatherPrepared16Pre, Spec.Gcm.PreparedRepr, Proof.AesGcm.sealGatherRoundsPost, Gather.stackArgs_five, List.append_eq, stackArg, stackArgAddr, Mem.readW, Mem.read, X86_64.abi,
     X86_64.argRegs, gatherSatF, Gather.gatherFrameSat, Gather.gatherSat]
   sig_and_intros
   all_goals first
@@ -473,10 +474,10 @@ theorem sealGather_satpow16 : ∃ s, (AesGcm.Flag.sealGatherSig.contract abi (Sp
        exact preparedPowersRepr_of_zero fun _ hi => by simp only [Gather.ctx_low hi, ite_false])
 
 
-theorem sealGather_satbase : ∃ s, (AesGcm.Flag.sealGatherSig.contract abi (Spec.Gcm.sealGatherPre 64)
+theorem sealGather_satbase : ∃ s, (Spec.Gcm.sealGatherPreparedSig.contract abi (Spec.Gcm.sealGatherPre 64)
     (Proof.AesGcm.sealGatherRoundsPost 64) true 5128 none).pre s := by
   refine ⟨gatherSatF, ?_⟩
-  sig_pre [AesGcm.Flag.sealGatherSig, Spec.Gcm.sealGatherPre, AesGcm.Flag.PreparedRepr, Proof.AesGcm.sealGatherRoundsPost, Gather.stackArgs_five, List.append_eq, stackArg, stackArgAddr, Mem.readW, Mem.read, X86_64.abi,
+  sig_pre [Spec.Gcm.sealGatherPreparedSig, Spec.Gcm.sealGatherPre, Spec.Gcm.PreparedRepr, Proof.AesGcm.sealGatherRoundsPost, Gather.stackArgs_five, List.append_eq, stackArg, stackArgAddr, Mem.readW, Mem.read, X86_64.abi,
     X86_64.argRegs, gatherSatF, Gather.gatherFrameSat, Gather.gatherSat]
   sig_and_intros
   all_goals first
@@ -528,10 +529,10 @@ theorem sealGather_onFlag16 {c₁ c₂ : Prog isa}
 def toSatF : State :=
   { OpenTo.toSat with rd := [⟨0x1000, 1088⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x4000, 0⟩, ⟨0x6000, 0⟩, ⟨0x9008, 48⟩] }
 
-theorem openTo_satF : ∃ s, (AesGcm.Flag.openToSig.contract abi (AesGcm.Flag.openToPre 64)
+theorem openTo_satF : ∃ s, (Spec.Gcm.openToPreparedSig.contract abi (Spec.Gcm.openToPreparedPre 64)
     (Proof.AesGcm.openToRoundsPost 64) true 2728 none).pre s := by
   refine ⟨toSatF, ?_⟩
-  sig_pre [AesGcm.Flag.openToSig, AesGcm.Flag.openToPre, AesGcm.Flag.PreparedRepr, Proof.AesGcm.openToRoundsPost, OpenTo.stackArgs_six, List.append_eq, stackArg, stackArgAddr, Mem.readW, Mem.read, X86_64.abi,
+  sig_pre [Spec.Gcm.openToPreparedSig, Spec.Gcm.openToPreparedPre, Spec.Gcm.PreparedRepr, Proof.AesGcm.openToRoundsPost, OpenTo.stackArgs_six, List.append_eq, stackArg, stackArgAddr, Mem.readW, Mem.read, X86_64.abi,
     X86_64.argRegs, toSatF, OpenTo.toSat]
   sig_and_intros
   all_goals first
@@ -542,10 +543,10 @@ theorem openTo_satF : ∃ s, (AesGcm.Flag.openToSig.contract abi (AesGcm.Flag.op
        exact Proof.AesGcm.preparedPowersRepr_of_zeroMem fun _ hi => by simp only [OpenTo.ctx_low hi, ite_false])
 
 
-theorem openTo_satpow : ∃ s, (AesGcm.Flag.openToSig.contract abi (Spec.Gcm.openToPreparedPre 64)
+theorem openTo_satpow : ∃ s, (Spec.Gcm.openToPreparedSig.contract abi (Proof.Gcm.openToPowersPre 64)
     (Proof.AesGcm.openToRoundsPost 64) true 2728 none).pre s := by
   refine ⟨toSatF, ?_⟩
-  sig_pre [AesGcm.Flag.openToSig, Spec.Gcm.openToPreparedPre, AesGcm.Flag.PreparedRepr, Proof.AesGcm.openToRoundsPost, OpenTo.stackArgs_six, List.append_eq, stackArg, stackArgAddr, Mem.readW, Mem.read, X86_64.abi,
+  sig_pre [Spec.Gcm.openToPreparedSig, Proof.Gcm.openToPowersPre, Spec.Gcm.PreparedRepr, Proof.AesGcm.openToRoundsPost, OpenTo.stackArgs_six, List.append_eq, stackArg, stackArgAddr, Mem.readW, Mem.read, X86_64.abi,
     X86_64.argRegs, toSatF, OpenTo.toSat]
   sig_and_intros
   all_goals first
@@ -555,10 +556,10 @@ theorem openTo_satpow : ∃ s, (AesGcm.Flag.openToSig.contract abi (Spec.Gcm.ope
     | (exact Proof.AesGcm.preparedPowersRepr_of_zeroMem fun _ hi => by simp only [OpenTo.ctx_low hi, ite_false])
 
 
-theorem openTo_satpow16 : ∃ s, (AesGcm.Flag.openToSig.contract abi (Spec.Gcm.openToPrepared16Pre 64)
+theorem openTo_satpow16 : ∃ s, (Spec.Gcm.openToPreparedSig.contract abi (Spec.Gcm.openToPrepared16Pre 64)
     (Proof.AesGcm.openToRoundsPost 64) true 2728 none).pre s := by
   refine ⟨toSatF, ?_⟩
-  sig_pre [AesGcm.Flag.openToSig, Spec.Gcm.openToPrepared16Pre, AesGcm.Flag.PreparedRepr, Proof.AesGcm.openToRoundsPost, OpenTo.stackArgs_six, List.append_eq, stackArg, stackArgAddr, Mem.readW, Mem.read, X86_64.abi,
+  sig_pre [Spec.Gcm.openToPreparedSig, Spec.Gcm.openToPrepared16Pre, Spec.Gcm.PreparedRepr, Proof.AesGcm.openToRoundsPost, OpenTo.stackArgs_six, List.append_eq, stackArg, stackArgAddr, Mem.readW, Mem.read, X86_64.abi,
     X86_64.argRegs, toSatF, OpenTo.toSat]
   sig_and_intros
   all_goals first
@@ -569,10 +570,10 @@ theorem openTo_satpow16 : ∃ s, (AesGcm.Flag.openToSig.contract abi (Spec.Gcm.o
        exact Proof.AesGcm.preparedPowersRepr_of_zeroMem fun _ hi => by simp only [OpenTo.ctx_low hi, ite_false])
 
 
-theorem openTo_satbase : ∃ s, (AesGcm.Flag.openToSig.contract abi (Spec.Gcm.openToPre 64)
+theorem openTo_satbase : ∃ s, (Spec.Gcm.openToPreparedSig.contract abi (Spec.Gcm.openToPre 64)
     (Proof.AesGcm.openToRoundsPost 64) true 2728 none).pre s := by
   refine ⟨toSatF, ?_⟩
-  sig_pre [AesGcm.Flag.openToSig, Spec.Gcm.openToPre, AesGcm.Flag.PreparedRepr, Proof.AesGcm.openToRoundsPost, OpenTo.stackArgs_six, List.append_eq, stackArg, stackArgAddr, Mem.readW, Mem.read, X86_64.abi,
+  sig_pre [Spec.Gcm.openToPreparedSig, Spec.Gcm.openToPre, Spec.Gcm.PreparedRepr, Proof.AesGcm.openToRoundsPost, OpenTo.stackArgs_six, List.append_eq, stackArg, stackArgAddr, Mem.readW, Mem.read, X86_64.abi,
     X86_64.argRegs, toSatF, OpenTo.toSat]
   sig_and_intros
   all_goals first
@@ -619,10 +620,10 @@ theorem openTo_onFlag16 {c₁ c₂ : Prog isa}
     (fun _ _ _ _ _ _ _ _ _ _ _ _ _ => rfl)
     openTo_satF
 
-theorem openTo_satF2776 : ∃ s, (AesGcm.Flag.openToSig.contract abi (AesGcm.Flag.openToPre 64)
+theorem openTo_satF2776 : ∃ s, (Spec.Gcm.openToPreparedSig.contract abi (Spec.Gcm.openToPreparedPre 64)
     (Proof.AesGcm.openToRoundsPost 64) true 2776 none).pre s := by
   refine ⟨toSatF, ?_⟩
-  sig_pre [AesGcm.Flag.openToSig, AesGcm.Flag.openToPre, AesGcm.Flag.PreparedRepr, Proof.AesGcm.openToRoundsPost, OpenTo.stackArgs_six, List.append_eq, stackArg, stackArgAddr, Mem.readW, Mem.read, X86_64.abi,
+  sig_pre [Spec.Gcm.openToPreparedSig, Spec.Gcm.openToPreparedPre, Spec.Gcm.PreparedRepr, Proof.AesGcm.openToRoundsPost, OpenTo.stackArgs_six, List.append_eq, stackArg, stackArgAddr, Mem.readW, Mem.read, X86_64.abi,
     X86_64.argRegs, toSatF, OpenTo.toSat]
   sig_and_intros
   all_goals first
@@ -633,10 +634,10 @@ theorem openTo_satF2776 : ∃ s, (AesGcm.Flag.openToSig.contract abi (AesGcm.Fla
        exact Proof.AesGcm.preparedPowersRepr_of_zeroMem fun _ hi => by simp only [OpenTo.ctx_low hi, ite_false])
 
 
-theorem openTo_satpow2776 : ∃ s, (AesGcm.Flag.openToSig.contract abi (Spec.Gcm.openToPreparedPre 64)
+theorem openTo_satpow2776 : ∃ s, (Spec.Gcm.openToPreparedSig.contract abi (Proof.Gcm.openToPowersPre 64)
     (Proof.AesGcm.openToRoundsPost 64) true 2776 none).pre s := by
   refine ⟨toSatF, ?_⟩
-  sig_pre [AesGcm.Flag.openToSig, Spec.Gcm.openToPreparedPre, AesGcm.Flag.PreparedRepr, Proof.AesGcm.openToRoundsPost, OpenTo.stackArgs_six, List.append_eq, stackArg, stackArgAddr, Mem.readW, Mem.read, X86_64.abi,
+  sig_pre [Spec.Gcm.openToPreparedSig, Proof.Gcm.openToPowersPre, Spec.Gcm.PreparedRepr, Proof.AesGcm.openToRoundsPost, OpenTo.stackArgs_six, List.append_eq, stackArg, stackArgAddr, Mem.readW, Mem.read, X86_64.abi,
     X86_64.argRegs, toSatF, OpenTo.toSat]
   sig_and_intros
   all_goals first
@@ -646,10 +647,10 @@ theorem openTo_satpow2776 : ∃ s, (AesGcm.Flag.openToSig.contract abi (Spec.Gcm
     | (exact Proof.AesGcm.preparedPowersRepr_of_zeroMem fun _ hi => by simp only [OpenTo.ctx_low hi, ite_false])
 
 
-theorem openTo_satpow162776 : ∃ s, (AesGcm.Flag.openToSig.contract abi (Spec.Gcm.openToPrepared16Pre 64)
+theorem openTo_satpow162776 : ∃ s, (Spec.Gcm.openToPreparedSig.contract abi (Spec.Gcm.openToPrepared16Pre 64)
     (Proof.AesGcm.openToRoundsPost 64) true 2776 none).pre s := by
   refine ⟨toSatF, ?_⟩
-  sig_pre [AesGcm.Flag.openToSig, Spec.Gcm.openToPrepared16Pre, AesGcm.Flag.PreparedRepr, Proof.AesGcm.openToRoundsPost, OpenTo.stackArgs_six, List.append_eq, stackArg, stackArgAddr, Mem.readW, Mem.read, X86_64.abi,
+  sig_pre [Spec.Gcm.openToPreparedSig, Spec.Gcm.openToPrepared16Pre, Spec.Gcm.PreparedRepr, Proof.AesGcm.openToRoundsPost, OpenTo.stackArgs_six, List.append_eq, stackArg, stackArgAddr, Mem.readW, Mem.read, X86_64.abi,
     X86_64.argRegs, toSatF, OpenTo.toSat]
   sig_and_intros
   all_goals first
@@ -660,10 +661,10 @@ theorem openTo_satpow162776 : ∃ s, (AesGcm.Flag.openToSig.contract abi (Spec.G
        exact Proof.AesGcm.preparedPowersRepr_of_zeroMem fun _ hi => by simp only [OpenTo.ctx_low hi, ite_false])
 
 
-theorem openTo_satbase2776 : ∃ s, (AesGcm.Flag.openToSig.contract abi (Spec.Gcm.openToPre 64)
+theorem openTo_satbase2776 : ∃ s, (Spec.Gcm.openToPreparedSig.contract abi (Spec.Gcm.openToPre 64)
     (Proof.AesGcm.openToRoundsPost 64) true 2776 none).pre s := by
   refine ⟨toSatF, ?_⟩
-  sig_pre [AesGcm.Flag.openToSig, Spec.Gcm.openToPre, AesGcm.Flag.PreparedRepr, Proof.AesGcm.openToRoundsPost, OpenTo.stackArgs_six, List.append_eq, stackArg, stackArgAddr, Mem.readW, Mem.read, X86_64.abi,
+  sig_pre [Spec.Gcm.openToPreparedSig, Spec.Gcm.openToPre, Spec.Gcm.PreparedRepr, Proof.AesGcm.openToRoundsPost, OpenTo.stackArgs_six, List.append_eq, stackArg, stackArgAddr, Mem.readW, Mem.read, X86_64.abi,
     X86_64.argRegs, toSatF, OpenTo.toSat]
   sig_and_intros
   all_goals first

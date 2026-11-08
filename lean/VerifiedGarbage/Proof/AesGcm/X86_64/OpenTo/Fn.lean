@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.PreparedPowers
 public import VerifiedGarbage.Impl.AesGcm.X86_64.OpenTo
 public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Proof.AesGcm.Flag
@@ -127,10 +128,10 @@ theorem openSpecR_pre {s : State} (h : openPreK CtxMode.prepared s) :
   rename_i a₁ a₂ a₃ a₄ a₅ a₆ a₇ a₈ a₉ a₁₀ a₁₁ a₁₂ a₁₃ a₁₄ a₁₅ a₁₆ a₁₇ a₁₈ a₁₉ a₂₀ a₂₁ a₂₂ a₂₃ a₂₄ a₂₅ a₂₆ a₂₇
   have a₂₈ := h
   clear h
-  sig_pre [Proof.AesGcm.openPreparedRoundsContract, Spec.Gcm.openPreparedSig, Spec.Gcm.openPrecomputedSig,
-    Spec.Gcm.openPreparedPre, X86_64.abi, X86_64.argRegs]
-  sig_reduce [Proof.AesGcm.openPreparedRoundsContract, Spec.Gcm.openPreparedSig, Spec.Gcm.openPrecomputedSig,
-    Spec.Gcm.openPreparedPre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret,
+  sig_pre [Proof.AesGcm.openPreparedRoundsContract, Spec.Gcm.openPrecomputedSig, Spec.Gcm.openPrecomputedSig,
+    Proof.Gcm.openPowersPre, X86_64.abi, X86_64.argRegs]
+  sig_reduce [Proof.AesGcm.openPreparedRoundsContract, Spec.Gcm.openPrecomputedSig, Spec.Gcm.openPrecomputedSig,
+    Proof.Gcm.openPowersPre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret,
     X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below]
   sig_and_intros
   all_goals simp only [Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg,
@@ -146,9 +147,9 @@ theorem openSpecR16_pre {s : State} (h : openPreK CtxMode.prepared16 s) :
   rename_i a₁ a₂ a₃ a₄ a₅ a₆ a₇ a₈ a₉ a₁₀ a₁₁ a₁₂ a₁₃ a₁₄ a₁₅ a₁₆ a₁₇ a₁₈ a₁₉ a₂₀ a₂₁ a₂₂ a₂₃ a₂₄ a₂₅ a₂₆ a₂₇
   have a₂₈ := h
   clear h
-  sig_pre [Proof.AesGcm.openPrepared16RoundsContract, Spec.Gcm.openPreparedSig, Spec.Gcm.openPrecomputedSig,
+  sig_pre [Proof.AesGcm.openPrepared16RoundsContract, Spec.Gcm.openPrecomputedSig, Spec.Gcm.openPrecomputedSig,
     Spec.Gcm.openPrepared16Pre, X86_64.abi, X86_64.argRegs]
-  sig_reduce [Proof.AesGcm.openPrepared16RoundsContract, Spec.Gcm.openPreparedSig, Spec.Gcm.openPrecomputedSig,
+  sig_reduce [Proof.AesGcm.openPrepared16RoundsContract, Spec.Gcm.openPrecomputedSig, Spec.Gcm.openPrecomputedSig,
     Spec.Gcm.openPrepared16Pre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret,
     X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below]
   sig_and_intros
@@ -171,18 +172,18 @@ theorem openSpec_post {s s' : State} (hR : rounds s)
 theorem openSpecR_post {s s' : State} (hR : rounds s)
     (h : (Proof.AesGcm.openPreparedRoundsContract X86_64.abi 2632).post s s') :
     Proof.AesGcm.openX86_64.post s s' := by
-  sig_post [Proof.AesGcm.openPreparedRoundsContract, Spec.Gcm.openPreparedSig, Spec.Gcm.openPrecomputedSig,
-    Spec.Gcm.openPreparedPre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.openRoundsPost] at h
-  sig_reduce [Proof.AesGcm.openPreparedRoundsContract, Spec.Gcm.openPreparedSig, Spec.Gcm.openPrecomputedSig,
+  sig_post [Proof.AesGcm.openPreparedRoundsContract, Spec.Gcm.openPrecomputedSig, Spec.Gcm.openPrecomputedSig,
+    Proof.Gcm.openPowersPre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.openRoundsPost] at h
+  sig_reduce [Proof.AesGcm.openPreparedRoundsContract, Spec.Gcm.openPrecomputedSig, Spec.Gcm.openPrecomputedSig,
     X86_64.abi, X86_64.argRegs, X86_64.stackArg, X86_64.stackArgAddr, List.range, List.range.loop] at h
   exact h hR
 
 theorem openSpecR16_post {s s' : State} (hR : rounds s)
     (h : (Proof.AesGcm.openPrepared16RoundsContract X86_64.abi 2632).post s s') :
     Proof.AesGcm.openX86_64.post s s' := by
-  sig_post [Proof.AesGcm.openPrepared16RoundsContract, Spec.Gcm.openPreparedSig, Spec.Gcm.openPrecomputedSig,
+  sig_post [Proof.AesGcm.openPrepared16RoundsContract, Spec.Gcm.openPrecomputedSig, Spec.Gcm.openPrecomputedSig,
     Spec.Gcm.openPrepared16Pre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.openRoundsPost] at h
-  sig_reduce [Proof.AesGcm.openPrepared16RoundsContract, Spec.Gcm.openPreparedSig, Spec.Gcm.openPrecomputedSig,
+  sig_reduce [Proof.AesGcm.openPrepared16RoundsContract, Spec.Gcm.openPrecomputedSig, Spec.Gcm.openPrecomputedSig,
     X86_64.abi, X86_64.argRegs, X86_64.stackArg, X86_64.stackArgAddr, List.range, List.range.loop] at h
   exact h hR
 
@@ -208,9 +209,9 @@ theorem openSpecR_pub {s₁ s₂ : State} (h : openPubK s₁ s₂) :
   have b₁ := a₈ 1 (by decide)
   have b₂ := a₈ 2 (by decide)
   have b₃ := a₈ 3 (by decide)
-  sig_pub [Proof.AesGcm.openPreparedRoundsContract, Spec.Gcm.openPreparedSig, Spec.Gcm.openPrecomputedSig,
+  sig_pub [Proof.AesGcm.openPreparedRoundsContract, Spec.Gcm.openPrecomputedSig, Spec.Gcm.openPrecomputedSig,
     Spec.Gcm.openLeak, X86_64.abi, X86_64.argRegs]
-  sig_reduce [Proof.AesGcm.openPreparedRoundsContract, Spec.Gcm.openPreparedSig, Spec.Gcm.openPrecomputedSig,
+  sig_reduce [Proof.AesGcm.openPreparedRoundsContract, Spec.Gcm.openPrecomputedSig, Spec.Gcm.openPrecomputedSig,
     Spec.Gcm.openLeak, X86_64.abi, X86_64.argRegs, X86_64.stackArg, X86_64.stackArgAddr, List.range,
     List.range.loop, Proof.AesGcm.arg]
   simp only [Proof.AesGcm.arg, Proof.AesGcm.openLeak, Proof.AesGcm.rounds, X86_64.stackArg,
@@ -225,9 +226,9 @@ theorem openSpecR16_pub {s₁ s₂ : State} (h : openPubK s₁ s₂) :
   have b₁ := a₈ 1 (by decide)
   have b₂ := a₈ 2 (by decide)
   have b₃ := a₈ 3 (by decide)
-  sig_pub [Proof.AesGcm.openPrepared16RoundsContract, Spec.Gcm.openPreparedSig, Spec.Gcm.openPrecomputedSig,
+  sig_pub [Proof.AesGcm.openPrepared16RoundsContract, Spec.Gcm.openPrecomputedSig, Spec.Gcm.openPrecomputedSig,
     Spec.Gcm.openLeak, X86_64.abi, X86_64.argRegs]
-  sig_reduce [Proof.AesGcm.openPrepared16RoundsContract, Spec.Gcm.openPreparedSig, Spec.Gcm.openPrecomputedSig,
+  sig_reduce [Proof.AesGcm.openPrepared16RoundsContract, Spec.Gcm.openPrecomputedSig, Spec.Gcm.openPrecomputedSig,
     Spec.Gcm.openLeak, X86_64.abi, X86_64.argRegs, X86_64.stackArg, X86_64.stackArgAddr, List.range,
     List.range.loop, Proof.AesGcm.arg]
   simp only [Proof.AesGcm.arg, Proof.AesGcm.openLeak, Proof.AesGcm.rounds, X86_64.stackArg,
@@ -273,14 +274,14 @@ theorem openSpecF_pre {s : State} (h : openPreK CtxMode.flagged s) :
   rename_i a₁ a₂ a₃ a₄ a₅ a₆ a₇ a₈ a₉ a₁₀ a₁₁ a₁₂ a₁₃ a₁₄ a₁₅ a₁₆ a₁₇ a₁₈ a₁₉ a₂₀ a₂₁ a₂₂ a₂₃ a₂₄ a₂₅ a₂₆ a₂₇
   have a₂₈ := h
   clear h
-  sig_pre [Proof.AesGcm.Flag.openRoundsContract, Proof.AesGcm.Flag.openSig, Proof.AesGcm.Flag.openSig,
-    Proof.AesGcm.Flag.openPre, X86_64.abi, X86_64.argRegs]
-  sig_reduce [Proof.AesGcm.Flag.openRoundsContract, Proof.AesGcm.Flag.openSig, Proof.AesGcm.Flag.openSig,
-    Proof.AesGcm.Flag.openPre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret,
+  sig_pre [Proof.AesGcm.Flag.openRoundsContract, Spec.Gcm.openPreparedSig, Spec.Gcm.openPreparedSig,
+    Spec.Gcm.openPreparedPre, X86_64.abi, X86_64.argRegs]
+  sig_reduce [Proof.AesGcm.Flag.openRoundsContract, Spec.Gcm.openPreparedSig, Spec.Gcm.openPreparedSig,
+    Spec.Gcm.openPreparedPre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret,
     X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below]
   sig_and_intros
   all_goals simp only [Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg,
-    X86_64.stackArgAddr, VG.X86_64.below, Nat.mul_one, Proof.AesGcm.rounds, CtxMode.flagged, Proof.AesGcm.Flag.PreparedRepr,
+    X86_64.stackArgAddr, VG.X86_64.below, Nat.mul_one, Proof.AesGcm.rounds, CtxMode.flagged, Spec.Gcm.PreparedRepr,
     VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr] at *
   all_goals first
     | with_reducible assumption
@@ -290,27 +291,27 @@ theorem openSpecF_pre {s : State} (h : openPreK CtxMode.flagged s) :
 theorem openSpecF_post {s s' : State} (hR : rounds s)
     (h : (Proof.AesGcm.Flag.openRoundsContract X86_64.abi 2632).post s s') :
     Proof.AesGcm.openX86_64.post s s' := by
-  sig_post [Proof.AesGcm.Flag.openRoundsContract, Proof.AesGcm.Flag.openSig, Proof.AesGcm.Flag.openSig,
-    Proof.AesGcm.Flag.openPre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.openRoundsPost] at h
-  sig_reduce [Proof.AesGcm.Flag.openRoundsContract, Proof.AesGcm.Flag.openSig, Proof.AesGcm.Flag.openSig,
+  sig_post [Proof.AesGcm.Flag.openRoundsContract, Spec.Gcm.openPreparedSig, Spec.Gcm.openPreparedSig,
+    Spec.Gcm.openPreparedPre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.openRoundsPost] at h
+  sig_reduce [Proof.AesGcm.Flag.openRoundsContract, Spec.Gcm.openPreparedSig, Spec.Gcm.openPreparedSig,
     X86_64.abi, X86_64.argRegs, X86_64.stackArg, X86_64.stackArgAddr, List.range, List.range.loop] at h
   exact h hR
 theorem openSpecF_pub {s₁ s₂ : State} (h : openPubK s₁ s₂)
     (o₁ : CtxMode.flagged.ok s₁.mem (s₁.gpr .rdi)) (o₂ : CtxMode.flagged.ok s₂.mem (s₂.gpr .rdi)) :
     (Proof.AesGcm.Flag.openRoundsContract X86_64.abi 2632).pub s₁ s₂ := by
-  have f₁ : Proof.AesGcm.Flag.flagLeak s₁.mem (s₁.gpr .rdi) = 0 := by
-    simp only [Proof.AesGcm.Flag.flagLeak]; exact ite_eq_right_iff.mpr fun h => absurd h o₁.1
-  have f₂ : Proof.AesGcm.Flag.flagLeak s₂.mem (s₂.gpr .rdi) = 0 := by
-    simp only [Proof.AesGcm.Flag.flagLeak]; exact ite_eq_right_iff.mpr fun h => absurd h o₂.1
+  have f₁ : Spec.Gcm.flagLeak s₁.mem (s₁.gpr .rdi) = 0 := by
+    simp only [Spec.Gcm.flagLeak]; exact ite_eq_right_iff.mpr fun h => absurd h o₁.1
+  have f₂ : Spec.Gcm.flagLeak s₂.mem (s₂.gpr .rdi) = 0 := by
+    simp only [Spec.Gcm.flagLeak]; exact ite_eq_right_iff.mpr fun h => absurd h o₂.1
   obtain ⟨⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈⟩, a₉⟩ := h
   have b₀ := a₈ 0 (by decide)
   have b₁ := a₈ 1 (by decide)
   have b₂ := a₈ 2 (by decide)
   have b₃ := a₈ 3 (by decide)
-  sig_pub [Proof.AesGcm.Flag.openRoundsContract, Proof.AesGcm.Flag.openSig, Proof.AesGcm.Flag.openSig,
-    Proof.AesGcm.Flag.openLeak, Spec.Gcm.openLeak, X86_64.abi, X86_64.argRegs]
-  sig_reduce [Proof.AesGcm.Flag.openRoundsContract, Proof.AesGcm.Flag.openSig, Proof.AesGcm.Flag.openSig,
-    Proof.AesGcm.Flag.openLeak, Spec.Gcm.openLeak, X86_64.abi, X86_64.argRegs, X86_64.stackArg, X86_64.stackArgAddr, List.range,
+  sig_pub [Proof.AesGcm.Flag.openRoundsContract, Spec.Gcm.openPreparedSig, Spec.Gcm.openPreparedSig,
+    Spec.Gcm.openPreparedLeak, Spec.Gcm.openLeak, X86_64.abi, X86_64.argRegs]
+  sig_reduce [Proof.AesGcm.Flag.openRoundsContract, Spec.Gcm.openPreparedSig, Spec.Gcm.openPreparedSig,
+    Spec.Gcm.openPreparedLeak, Spec.Gcm.openLeak, X86_64.abi, X86_64.argRegs, X86_64.stackArg, X86_64.stackArgAddr, List.range,
     List.range.loop, Proof.AesGcm.arg]
   simp only [Proof.AesGcm.arg, Proof.AesGcm.openLeak, Proof.AesGcm.rounds, X86_64.stackArg,
     X86_64.stackArgAddr] at b₀ b₁ b₂ b₃ a₉

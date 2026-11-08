@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.PreparedPowers
 public import VerifiedGarbage.Proof.Gcm.X86_64.PrepareAvx.Step
 public import VerifiedGarbage.Proof.Gcm.X86_64.PrepareCT
 public import VerifiedGarbage.Impl.Gcm.X86_64.PrepareAvx
@@ -287,7 +288,7 @@ theorem prepare16_ok {s₀ : State} (hw : InRegions s₀.wr (s₀.gpr .rdi) 1024
 theorem prepare16_written (s : State) (t : List Leak) (s' : State)
     (hs : (Spec.Gcm.prepare16Contract X86_64.abi).pre s)
     (he : Exec isa Impl.Gcm.X86_64.PrepareAvx.prepare16 s t s') :
-    Sig.writtenWithin (X86_64.abi.withConsts []) Spec.Gcm.prepareSig [("ctx", 512)] s s' :=
+    Sig.writtenWithin (X86_64.abi.withConsts []) Spec.Gcm.prepare16Sig [("ctx", 512)] s s' :=
   Prepare16.written16 (fun _ hw _ => WP.mono (prepare16_ok' hw) fun _ h => h.2) s t s' hs he
 
 theorem prepare16_verified :
@@ -326,7 +327,7 @@ theorem prepare_ok {s₀ : State} (hw : InRegions s₀.wr (s₀.gpr .rdi) 1024) 
   · rw [← State.proj_wr s 0, wr]
 
 theorem prepare_verified :
-    Verified X86_64.target Impl.Gcm.X86_64.PrepareAvx.prepare (Spec.Gcm.prepareContract X86_64.abi) :=
+    Verified X86_64.target Impl.Gcm.X86_64.PrepareAvx.prepare (Proof.Gcm.preparePowersContract X86_64.abi) :=
   Prepare.verified_of _ (fun _ hw _ => prepare_ok hw) (by decide +kernel) Prepare16.prepareAvx_ct
 
 /-- `prepareSse`, the SSE code itself: the 48 prepared powers of the hash
@@ -344,13 +345,13 @@ theorem prepareSse_ok {s₀ : State} (hw : InRegions s₀.wr (s₀.gpr .rdi) 102
   exact this
 
 theorem prepareSse_verified :
-    Verified X86_64.target Impl.Gcm.X86_64.PrepareAvx.prepareSse (Spec.Gcm.prepareContract X86_64.abi) :=
+    Verified X86_64.target Impl.Gcm.X86_64.PrepareAvx.prepareSse (Proof.Gcm.preparePowersContract X86_64.abi) :=
   Prepare.verified_of _ (fun _ hw _ => prepareSse_ok hw) (by decide +kernel) Prepare16.prepareSse_ct
 
 /-- `prepare` after setting the flag word to 0, on the prepared key context. -/
 theorem prepareFlagged_verified :
     Verified X86_64.target (Impl.Gcm.X86_64.Flag.prepareFlagged Impl.Gcm.X86_64.PrepareAvx.prepare)
-      (Proof.AesGcm.Flag.prepareContract X86_64.abi) :=
+      (Spec.Gcm.prepareContract X86_64.abi) :=
   Prepare.flagged_verified _ (fun _ hw _ => prepare_ok hw) (by decide +kernel) Prepare.flaggedAvx_ct
 
 end VG.Proof.Gcm.X86_64.PrepareAvx

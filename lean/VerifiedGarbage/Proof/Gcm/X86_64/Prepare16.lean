@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.PreparedPowers
 public import VerifiedGarbage.Proof.Gcm.X86_64.PrepareAvx.Step
 public import VerifiedGarbage.Proof.Gcm.X86_64.PrepareCT
 public import VerifiedGarbage.Impl.Gcm.X86_64.Prepare16
@@ -397,7 +398,7 @@ theorem prepare16_ok {s₀ : State} (hw : InRegions s₀.wr (s₀.gpr .rdi) 1024
 /-- It writes none of the context from byte 512 on. -/
 theorem prepare16_written (s : State) (t : List Leak) (s' : State)
     (hs : (Spec.Gcm.prepare16Contract X86_64.abi).pre s) (he : Exec isa prepare16 s t s') :
-    Sig.writtenWithin (X86_64.abi.withConsts []) Spec.Gcm.prepareSig [("ctx", 512)] s s' :=
+    Sig.writtenWithin (X86_64.abi.withConsts []) Spec.Gcm.prepare16Sig [("ctx", 512)] s s' :=
   written16 (fun _ hw hwrap => WP.mono (prepare16_ok hw hwrap) fun _ h => h.2.1) s t s' hs he
 
 theorem correct16 {s₀ : State} (hp : prepare16X86_64.pre s₀) :
@@ -437,7 +438,7 @@ theorem prepare16_correct (s : State) (hs : prepare16X86_64.pre s) :
 theorem prepare16_verified :
     Verified X86_64.target prepare16 (Spec.Gcm.prepare16Contract X86_64.abi) :=
   Verified.of_correct prepare16_correct prepare16_ct (by
-    sig_implies [Spec.Gcm.prepare16Contract, Spec.Gcm.prepareSig, Spec.Gcm.prepare16Post, prepare16X86_64,
+    sig_implies [Spec.Gcm.prepare16Contract, Spec.Gcm.prepare16Sig, Spec.Gcm.prepare16Post, prepare16X86_64,
       X86_64.abi, X86_64.argRegs] [satState] using satState)
 
 /-! ## `vg_aes_gcm_prepare`: the 48 powers -/
@@ -460,13 +461,13 @@ theorem prepare_ok {s₀ : State} (hw : InRegions s₀.wr (s₀.gpr .rdi) 1024)
       by rw [rd, rd₂, rd₁], by rw [wr, wr₂, wr₁]⟩
   rw [m]; exact (hi₂.st k (plan48_stored k hk)).2 l hl
 
-theorem prepare_verified : Verified X86_64.target prepare (Spec.Gcm.prepareContract X86_64.abi) :=
+theorem prepare_verified : Verified X86_64.target prepare (Proof.Gcm.preparePowersContract X86_64.abi) :=
   Prepare.verified_of prepare (fun _ hw hwrap => prepare_ok hw hwrap) (by decide +kernel)
     Prepare16.prepare_ct
 
 /-- `prepare` after setting the flag word to 0, on the prepared key context. -/
 theorem prepareFlagged_verified :
-    Verified X86_64.target (Impl.Gcm.X86_64.Flag.prepareFlagged prepare) (Proof.AesGcm.Flag.prepareContract X86_64.abi) :=
+    Verified X86_64.target (Impl.Gcm.X86_64.Flag.prepareFlagged prepare) (Spec.Gcm.prepareContract X86_64.abi) :=
   Prepare.flagged_verified prepare (fun _ hw hwrap => prepare_ok hw hwrap) (by decide +kernel)
     Prepare.flagged16_ct
 

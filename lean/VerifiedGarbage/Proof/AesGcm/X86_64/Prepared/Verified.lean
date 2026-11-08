@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.PreparedPowers
 public import VerifiedGarbage.Proof.AesGcm.Rounds
 import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
 public import VerifiedGarbage.Proof.AesGcm.ScratchPrepared
@@ -34,28 +35,28 @@ theorem sealPreparedCode_verified {c : Prog isa}
   Verified.of_correct hc hct
     { pre := by
         sig_implies_pre [Proof.AesGcm.sealPreparedScratchContract, Proof.AesGcm.sealPreparedScratchSig, Proof.AesGcm.sealPrecomputedScratchSig,
-          Spec.Gcm.sealPreparedPre, Proof.AesGcm.sealRoundsPost, Proof.AesGcm.sealX86_64M, Proof.AesGcm.sealX86_64,
+          Proof.Gcm.sealPowersPre, Proof.AesGcm.sealRoundsPost, Proof.AesGcm.sealX86_64M, Proof.AesGcm.sealX86_64,
           Proof.AesGcm.sealPre, Proof.AesGcm.oneLay, Proof.AesGcm.onePub, CtxMode.prepared, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr, X86_64.abi,
           Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds,
           X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
           X86_64.argRegs]
       post := by
         sig_implies_post [Proof.AesGcm.sealPreparedScratchContract, Proof.AesGcm.sealPreparedScratchSig, Proof.AesGcm.sealPrecomputedScratchSig,
-          Spec.Gcm.sealPreparedPre, Proof.AesGcm.sealRoundsPost, Proof.AesGcm.sealX86_64M, Proof.AesGcm.sealX86_64,
+          Proof.Gcm.sealPowersPre, Proof.AesGcm.sealRoundsPost, Proof.AesGcm.sealX86_64M, Proof.AesGcm.sealX86_64,
           Proof.AesGcm.sealPre, Proof.AesGcm.oneLay, Proof.AesGcm.onePub, CtxMode.prepared, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr, X86_64.abi,
           Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds,
           X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
           X86_64.argRegs]
       pub := by
         sig_implies_pub [Proof.AesGcm.sealPreparedScratchContract, Proof.AesGcm.sealPreparedScratchSig, Proof.AesGcm.sealPrecomputedScratchSig,
-          Spec.Gcm.sealPreparedPre, Proof.AesGcm.sealRoundsPost, Proof.AesGcm.sealX86_64M, Proof.AesGcm.sealX86_64,
+          Proof.Gcm.sealPowersPre, Proof.AesGcm.sealRoundsPost, Proof.AesGcm.sealX86_64M, Proof.AesGcm.sealX86_64,
           Proof.AesGcm.sealPre, Proof.AesGcm.oneLay, Proof.AesGcm.onePub, CtxMode.prepared, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr, X86_64.abi,
           Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds,
           X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
           X86_64.argRegs]
       sat := ⟨sealSatP, by
         sig_pre [Proof.AesGcm.sealPreparedScratchContract, Proof.AesGcm.sealPreparedScratchSig, Proof.AesGcm.sealPrecomputedScratchSig,
-          Spec.Gcm.sealPreparedPre, X86_64.abi, X86_64.argRegs, sealSatP, sealSat]
+          Proof.Gcm.sealPowersPre, X86_64.abi, X86_64.argRegs, sealSatP, sealSat]
         sig_and_intros
         all_goals first
           | rfl
@@ -77,13 +78,13 @@ theorem openPreparedCode_verified {c : Prog isa}
     Verified X86_64.target c (Proof.AesGcm.openPreparedScratchContract X86_64.abi 24) :=
   Verified.of_correct hc hct
     { pre := by sig_implies_pre [Proof.AesGcm.openPreparedScratchContract, Proof.AesGcm.openPreparedScratchSig, Proof.AesGcm.openPrecomputedScratchSig,
-          Spec.Gcm.openPreparedPre, Proof.AesGcm.openRoundsPost, Spec.Gcm.openLeak, Proof.AesGcm.openX86_64M,
+          Proof.Gcm.openPowersPre, Proof.AesGcm.openRoundsPost, Spec.Gcm.openLeak, Proof.AesGcm.openX86_64M,
           Proof.AesGcm.openX86_64, Proof.AesGcm.openLeak, Proof.AesGcm.openPre, Proof.AesGcm.oneLay,
           Proof.AesGcm.onePub, CtxMode.prepared, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds,
           X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
           X86_64.argRegs]
       post := by sig_implies_post [Proof.AesGcm.openPreparedScratchContract, Proof.AesGcm.openPreparedScratchSig, Proof.AesGcm.openPrecomputedScratchSig,
-          Spec.Gcm.openPreparedPre, Proof.AesGcm.openRoundsPost, Spec.Gcm.openLeak, Proof.AesGcm.openX86_64M,
+          Proof.Gcm.openPowersPre, Proof.AesGcm.openRoundsPost, Spec.Gcm.openLeak, Proof.AesGcm.openX86_64M,
           Proof.AesGcm.openX86_64, Proof.AesGcm.openLeak, Proof.AesGcm.openPre, Proof.AesGcm.oneLay,
           Proof.AesGcm.onePub, CtxMode.prepared, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds,
           X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
@@ -91,20 +92,20 @@ theorem openPreparedCode_verified {c : Prog isa}
       pub := by
         intro s₁ s₂ _ _ h
         sig_pub [Proof.AesGcm.openPreparedScratchContract, Proof.AesGcm.openPreparedScratchSig, Proof.AesGcm.openPrecomputedScratchSig,
-          Spec.Gcm.openPreparedPre, Proof.AesGcm.openRoundsPost, Spec.Gcm.openLeak, Proof.AesGcm.openX86_64M,
+          Proof.Gcm.openPowersPre, Proof.AesGcm.openRoundsPost, Spec.Gcm.openLeak, Proof.AesGcm.openX86_64M,
           Proof.AesGcm.openX86_64, Proof.AesGcm.openLeak, Proof.AesGcm.openPre, Proof.AesGcm.oneLay,
           Proof.AesGcm.onePub, CtxMode.prepared, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds,
           X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
           X86_64.argRegs] at h
         sig_split h
         sig_reduce [Proof.AesGcm.openPreparedScratchContract, Proof.AesGcm.openPreparedScratchSig, Proof.AesGcm.openPrecomputedScratchSig,
-          Spec.Gcm.openPreparedPre, Proof.AesGcm.openRoundsPost, Spec.Gcm.openLeak, Proof.AesGcm.openX86_64M,
+          Proof.Gcm.openPowersPre, Proof.AesGcm.openRoundsPost, Spec.Gcm.openLeak, Proof.AesGcm.openX86_64M,
           Proof.AesGcm.openX86_64, Proof.AesGcm.openLeak, Proof.AesGcm.openPre, Proof.AesGcm.oneLay,
           Proof.AesGcm.onePub, CtxMode.prepared, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds,
           X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
           X86_64.argRegs]
         sig_simp [Proof.AesGcm.openPreparedScratchContract, Proof.AesGcm.openPreparedScratchSig, Proof.AesGcm.openPrecomputedScratchSig,
-          Spec.Gcm.openPreparedPre, Proof.AesGcm.openRoundsPost, Spec.Gcm.openLeak, Proof.AesGcm.openX86_64M,
+          Proof.Gcm.openPowersPre, Proof.AesGcm.openRoundsPost, Spec.Gcm.openLeak, Proof.AesGcm.openX86_64M,
           Proof.AesGcm.openX86_64, Proof.AesGcm.openLeak, Proof.AesGcm.openPre, Proof.AesGcm.oneLay,
           Proof.AesGcm.onePub, CtxMode.prepared, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds,
           X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
@@ -114,7 +115,7 @@ theorem openPreparedCode_verified {c : Prog isa}
         all_goals with_reducible assumption
       sat := ⟨openSatP, by
         sig_pre [Proof.AesGcm.openPreparedScratchContract, Proof.AesGcm.openPreparedScratchSig, Proof.AesGcm.openPrecomputedScratchSig,
-          Spec.Gcm.openPreparedPre, X86_64.abi, X86_64.argRegs, openSatP, openSat]
+          Proof.Gcm.openPowersPre, X86_64.abi, X86_64.argRegs, openSatP, openSat]
         sig_and_intros
         all_goals first
           | rfl
@@ -127,26 +128,26 @@ theorem streamEncryptPrepared_verified (v : GcmImpl) (B : BlkFn CtxMode.prepared
       (Proof.AesGcm.streamEncryptPreparedScratchContract X86_64.abi 24) :=
   Verified.of_correct (streamEncryptM_correct v B) (streamEncryptM_ct v B)
     { pre := by sig_implies_pre [Proof.AesGcm.streamEncryptPreparedScratchContract, Proof.AesGcm.streamCryptPreparedScratchSig, Proof.AesGcm.streamCryptPrecomputedScratchSig,
-          Spec.Gcm.streamCryptPreparedPre, Proof.AesGcm.streamEncryptRoundsPost, Proof.AesGcm.streamEncryptX86_64M,
+          Proof.Gcm.streamCryptPowersPre, Proof.AesGcm.streamEncryptRoundsPost, Proof.AesGcm.streamEncryptX86_64M,
           Proof.AesGcm.streamEncryptX86_64, Proof.AesGcm.streamCryptPre, Proof.AesGcm.streamCryptPub, CtxMode.prepared, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr,
           X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds,
           X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
           X86_64.argRegs]
       post := by sig_implies_post [Proof.AesGcm.streamEncryptPreparedScratchContract, Proof.AesGcm.streamCryptPreparedScratchSig, Proof.AesGcm.streamCryptPrecomputedScratchSig,
-          Spec.Gcm.streamCryptPreparedPre, Proof.AesGcm.streamEncryptRoundsPost, Proof.AesGcm.streamEncryptX86_64M,
+          Proof.Gcm.streamCryptPowersPre, Proof.AesGcm.streamEncryptRoundsPost, Proof.AesGcm.streamEncryptX86_64M,
           Proof.AesGcm.streamEncryptX86_64, Proof.AesGcm.streamCryptPre, Proof.AesGcm.streamCryptPub, CtxMode.prepared, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr,
           X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds,
           X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
           X86_64.argRegs]
       pub := by sig_implies_pub [Proof.AesGcm.streamEncryptPreparedScratchContract, Proof.AesGcm.streamCryptPreparedScratchSig, Proof.AesGcm.streamCryptPrecomputedScratchSig,
-          Spec.Gcm.streamCryptPreparedPre, Proof.AesGcm.streamEncryptRoundsPost, Proof.AesGcm.streamEncryptX86_64M,
+          Proof.Gcm.streamCryptPowersPre, Proof.AesGcm.streamEncryptRoundsPost, Proof.AesGcm.streamEncryptX86_64M,
           Proof.AesGcm.streamEncryptX86_64, Proof.AesGcm.streamCryptPre, Proof.AesGcm.streamCryptPub, CtxMode.prepared, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr,
           X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds,
           X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
           X86_64.argRegs]
       sat := ⟨crSatP, by
         sig_pre [Proof.AesGcm.streamEncryptPreparedScratchContract, Proof.AesGcm.streamCryptPreparedScratchSig, Proof.AesGcm.streamCryptPrecomputedScratchSig,
-          Spec.Gcm.streamCryptPreparedPre, X86_64.abi, X86_64.argRegs, crSatP, crSat]
+          Proof.Gcm.streamCryptPowersPre, X86_64.abi, X86_64.argRegs, crSatP, crSat]
         sig_and_intros
         all_goals first
           | rfl
@@ -159,26 +160,26 @@ theorem streamDecryptPrepared_verified (v : GcmImpl) (B : BlkFn CtxMode.prepared
       (Proof.AesGcm.streamDecryptPreparedScratchContract X86_64.abi 24) :=
   Verified.of_correct (streamDecryptM_correct v B) (streamDecryptM_ct v B)
     { pre := by sig_implies_pre [Proof.AesGcm.streamDecryptPreparedScratchContract, Proof.AesGcm.streamCryptPreparedScratchSig, Proof.AesGcm.streamCryptPrecomputedScratchSig,
-          Spec.Gcm.streamCryptPreparedPre, Proof.AesGcm.streamDecryptRoundsPost, Proof.AesGcm.streamDecryptX86_64M,
+          Proof.Gcm.streamCryptPowersPre, Proof.AesGcm.streamDecryptRoundsPost, Proof.AesGcm.streamDecryptX86_64M,
           Proof.AesGcm.streamDecryptX86_64, Proof.AesGcm.streamCryptPre, Proof.AesGcm.streamCryptPub, CtxMode.prepared, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr,
           X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds,
           X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
           X86_64.argRegs]
       post := by sig_implies_post [Proof.AesGcm.streamDecryptPreparedScratchContract, Proof.AesGcm.streamCryptPreparedScratchSig, Proof.AesGcm.streamCryptPrecomputedScratchSig,
-          Spec.Gcm.streamCryptPreparedPre, Proof.AesGcm.streamDecryptRoundsPost, Proof.AesGcm.streamDecryptX86_64M,
+          Proof.Gcm.streamCryptPowersPre, Proof.AesGcm.streamDecryptRoundsPost, Proof.AesGcm.streamDecryptX86_64M,
           Proof.AesGcm.streamDecryptX86_64, Proof.AesGcm.streamCryptPre, Proof.AesGcm.streamCryptPub, CtxMode.prepared, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr,
           X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds,
           X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
           X86_64.argRegs]
       pub := by sig_implies_pub [Proof.AesGcm.streamDecryptPreparedScratchContract, Proof.AesGcm.streamCryptPreparedScratchSig, Proof.AesGcm.streamCryptPrecomputedScratchSig,
-          Spec.Gcm.streamCryptPreparedPre, Proof.AesGcm.streamDecryptRoundsPost, Proof.AesGcm.streamDecryptX86_64M,
+          Proof.Gcm.streamCryptPowersPre, Proof.AesGcm.streamDecryptRoundsPost, Proof.AesGcm.streamDecryptX86_64M,
           Proof.AesGcm.streamDecryptX86_64, Proof.AesGcm.streamCryptPre, Proof.AesGcm.streamCryptPub, CtxMode.prepared, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr,
           X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds,
           X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
           X86_64.argRegs]
       sat := ⟨crSatP, by
         sig_pre [Proof.AesGcm.streamDecryptPreparedScratchContract, Proof.AesGcm.streamCryptPreparedScratchSig, Proof.AesGcm.streamCryptPrecomputedScratchSig,
-          Spec.Gcm.streamCryptPreparedPre, X86_64.abi, X86_64.argRegs, crSatP, crSat]
+          Proof.Gcm.streamCryptPowersPre, X86_64.abi, X86_64.argRegs, crSatP, crSat]
         sig_and_intros
         all_goals first
           | rfl
@@ -190,7 +191,7 @@ theorem streamDecryptPrepared_verified (v : GcmImpl) (B : BlkFn CtxMode.prepared
 
 theorem sealFrameSatPrepared_pre : ∃ s, (Proof.AesGcm.sealPreparedRoundsContract X86_64.abi 2624).pre s := by
   refine ⟨sealFrameSatP, ?_⟩
-  sig_pre [Proof.AesGcm.sealPreparedRoundsContract, Spec.Gcm.sealPreparedSig, Spec.Gcm.sealPrecomputedSig, Spec.Gcm.sealPreparedPre,
+  sig_pre [Proof.AesGcm.sealPreparedRoundsContract, Spec.Gcm.sealPrecomputedSig, Spec.Gcm.sealPrecomputedSig, Proof.Gcm.sealPowersPre,
     Proof.AesGcm.sealRoundsPost, X86_64.abi, X86_64.argRegs, sealFrameSatP, sealFrameSat, sealSat]
   sig_and_intros
   all_goals first
@@ -207,8 +208,8 @@ theorem sealPreparedCode_framed {c : Prog isa}
     (hsp : c.all (fun i => !X86_64.isa.writesSp i) = true) (hxd : c.x86_64Depth ≤ 24) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 2600 3 c)
       (Proof.AesGcm.sealPreparedRoundsContract X86_64.abi 2624) :=
-  X86_64.Verified.stackArgScratch (sig := Spec.Gcm.sealPreparedSig) (nm := "work") (e := .u64)
-    (n := 320) (pre := Spec.Gcm.sealPreparedPre X86_64.abi.ptrBits)
+  X86_64.Verified.stackArgScratch (sig := Spec.Gcm.sealPrecomputedSig) (nm := "work") (e := .u64)
+    (n := 320) (pre := Proof.Gcm.sealPowersPre X86_64.abi.ptrBits)
     (post := Proof.AesGcm.sealRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
     (bytes := 2600) hv (by decide) (by decide) (by decide)
     hsp hxd (Proof.AesGcm.sealPreparedPre_local _)
@@ -222,7 +223,7 @@ theorem sealPrepared_framed (v : GcmImpl) (B : BlkFn CtxMode.prepared) :
 
 theorem openFrameSatPrepared_pre : ∃ s, (Proof.AesGcm.openPreparedRoundsContract X86_64.abi 2632).pre s := by
   refine ⟨openFrameSatP, ?_⟩
-  sig_pre [Proof.AesGcm.openPreparedRoundsContract, Spec.Gcm.openPreparedSig, Spec.Gcm.openPrecomputedSig, Spec.Gcm.openPreparedPre,
+  sig_pre [Proof.AesGcm.openPreparedRoundsContract, Spec.Gcm.openPrecomputedSig, Spec.Gcm.openPrecomputedSig, Proof.Gcm.openPowersPre,
     Proof.AesGcm.openRoundsPost, Spec.Gcm.openLeak, X86_64.abi, X86_64.argRegs, openFrameSatP, openFrameSat, openSat]
   sig_and_intros
   all_goals first
@@ -236,8 +237,8 @@ theorem openPreparedCode_framed {c : Prog isa}
     (hsp : c.all (fun i => !X86_64.isa.writesSp i) = true) (hxd : c.x86_64Depth ≤ 24) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 2608 4 c)
       (Proof.AesGcm.openPreparedRoundsContract X86_64.abi 2632) :=
-  X86_64.Verified.stackArgScratch (sig := Spec.Gcm.openPreparedSig) (nm := "work") (e := .u64)
-    (n := 320) (pre := Spec.Gcm.openPreparedPre X86_64.abi.ptrBits)
+  X86_64.Verified.stackArgScratch (sig := Spec.Gcm.openPrecomputedSig) (nm := "work") (e := .u64)
+    (n := 320) (pre := Proof.Gcm.openPowersPre X86_64.abi.ptrBits)
     (post := Proof.AesGcm.openRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
     (leak := some (Spec.Gcm.openLeak X86_64.abi.ptrBits)) (bytes := 2608) hv
     (by decide) (by decide) (by decide) hsp hxd
@@ -246,8 +247,8 @@ theorem openPreparedCode_framed {c : Prog isa}
 
 theorem streamEncryptFrameSatPrepared_pre : ∃ s, (Proof.AesGcm.streamEncryptPreparedRoundsContract X86_64.abi 2608).pre s := by
   refine ⟨crFrameSatP, ?_⟩
-  sig_pre [Proof.AesGcm.streamEncryptPreparedRoundsContract, Spec.Gcm.streamCryptPreparedSig, Spec.Gcm.streamCryptPrecomputedSig,
-    Spec.Gcm.streamCryptPreparedPre, Proof.AesGcm.streamEncryptRoundsPost, X86_64.abi, X86_64.argRegs, crFrameSatP, crFrameSat,
+  sig_pre [Proof.AesGcm.streamEncryptPreparedRoundsContract, Spec.Gcm.streamCryptPrecomputedSig, Spec.Gcm.streamCryptPrecomputedSig,
+    Proof.Gcm.streamCryptPowersPre, Proof.AesGcm.streamEncryptRoundsPost, X86_64.abi, X86_64.argRegs, crFrameSatP, crFrameSat,
     crSat]
   sig_and_intros
   all_goals first
@@ -260,8 +261,8 @@ theorem streamEncryptPrepared_framed (v : GcmImpl) (B : BlkFn CtxMode.prepared) 
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (streamEncrypt (v.withBlk B)))
       (Proof.AesGcm.streamEncryptPreparedRoundsContract X86_64.abi 2608) :=
-  X86_64.Verified.stackArgScratch (sig := Spec.Gcm.streamCryptPreparedSig) (nm := "scratch") (e := .u64)
-    (n := 320) (pre := Spec.Gcm.streamCryptPreparedPre X86_64.abi.ptrBits)
+  X86_64.Verified.stackArgScratch (sig := Spec.Gcm.streamCryptPrecomputedSig) (nm := "scratch") (e := .u64)
+    (n := 320) (pre := Proof.Gcm.streamCryptPowersPre X86_64.abi.ptrBits)
     (post := Proof.AesGcm.streamEncryptRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
     (bytes := 2584) (streamEncryptPrepared_verified v B) (by decide) (by decide) (by decide)
     (streamEncryptM_spSafe v B) (streamEncryptM_xdepth v B) (Proof.AesGcm.streamCryptPreparedPre_local _)
@@ -269,8 +270,8 @@ theorem streamEncryptPrepared_framed (v : GcmImpl) (B : BlkFn CtxMode.prepared) 
 
 theorem streamDecryptFrameSatPrepared_pre : ∃ s, (Proof.AesGcm.streamDecryptPreparedRoundsContract X86_64.abi 2608).pre s := by
   refine ⟨crFrameSatP, ?_⟩
-  sig_pre [Proof.AesGcm.streamDecryptPreparedRoundsContract, Spec.Gcm.streamCryptPreparedSig, Spec.Gcm.streamCryptPrecomputedSig,
-    Spec.Gcm.streamCryptPreparedPre, Proof.AesGcm.streamDecryptRoundsPost, X86_64.abi, X86_64.argRegs, crFrameSatP, crFrameSat,
+  sig_pre [Proof.AesGcm.streamDecryptPreparedRoundsContract, Spec.Gcm.streamCryptPrecomputedSig, Spec.Gcm.streamCryptPrecomputedSig,
+    Proof.Gcm.streamCryptPowersPre, Proof.AesGcm.streamDecryptRoundsPost, X86_64.abi, X86_64.argRegs, crFrameSatP, crFrameSat,
     crSat]
   sig_and_intros
   all_goals first
@@ -283,8 +284,8 @@ theorem streamDecryptPrepared_framed (v : GcmImpl) (B : BlkFn CtxMode.prepared) 
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (streamDecrypt (v.withBlk B)))
       (Proof.AesGcm.streamDecryptPreparedRoundsContract X86_64.abi 2608) :=
-  X86_64.Verified.stackArgScratch (sig := Spec.Gcm.streamCryptPreparedSig) (nm := "scratch") (e := .u64)
-    (n := 320) (pre := Spec.Gcm.streamCryptPreparedPre X86_64.abi.ptrBits)
+  X86_64.Verified.stackArgScratch (sig := Spec.Gcm.streamCryptPrecomputedSig) (nm := "scratch") (e := .u64)
+    (n := 320) (pre := Proof.Gcm.streamCryptPowersPre X86_64.abi.ptrBits)
     (post := Proof.AesGcm.streamDecryptRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
     (bytes := 2584) (streamDecryptPrepared_verified v B) (by decide) (by decide) (by decide)
     (streamDecryptM_spSafe v B) (streamDecryptM_xdepth v B) (Proof.AesGcm.streamCryptPreparedPre_local _)

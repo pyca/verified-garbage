@@ -35,19 +35,14 @@ use crate::arch::gcm::vg_aes_gcm_open_to;
 use crate::arch::gcm::vg_aes_gcm_seal_gather;
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 use crate::arch::gcm::{
-    VG_AES_GCM_PREPARE_VPCLMUL_AVX512_FEATURES, VG_AES_GCM_PREPARE16_PCLMUL_AVX_CTX_WRITTEN,
-    VG_AES_GCM_PREPARE16_PCLMUL_AVX_FEATURES, VG_AES_GCM_PREPARE16_VPCLMUL_CTX_WRITTEN,
-    VG_AES_GCM_PREPARE16_VPCLMUL_FEATURES, vg_aes_gcm_open_prepared_vaes_vpclmul_avx512,
+    VG_AES_GCM_PREPARE16_PCLMUL_AVX_CTX_WRITTEN, VG_AES_GCM_PREPARE16_PCLMUL_AVX_FEATURES,
+    VG_AES_GCM_PREPARE16_VPCLMUL_CTX_WRITTEN, VG_AES_GCM_PREPARE16_VPCLMUL_FEATURES,
     vg_aes_gcm_open_prepared16_aesni_pclmul_avx, vg_aes_gcm_open_prepared16_vaes_vpclmul,
-    vg_aes_gcm_prepare_vpclmul_avx512, vg_aes_gcm_prepare16_pclmul_avx,
-    vg_aes_gcm_prepare16_vpclmul, vg_aes_gcm_seal_gather_prepared_vaes_vpclmul_avx512,
+    vg_aes_gcm_prepare16_pclmul_avx, vg_aes_gcm_prepare16_vpclmul,
     vg_aes_gcm_seal_gather_prepared16_aesni_pclmul_avx,
-    vg_aes_gcm_seal_gather_prepared16_vaes_vpclmul, vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512,
-    vg_aes_gcm_seal_prepared16_aesni_pclmul_avx, vg_aes_gcm_seal_prepared16_vaes_vpclmul,
-    vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul_avx512,
-    vg_aes_gcm_stream_decrypt_prepared16_aesni_pclmul_avx,
+    vg_aes_gcm_seal_gather_prepared16_vaes_vpclmul, vg_aes_gcm_seal_prepared16_aesni_pclmul_avx,
+    vg_aes_gcm_seal_prepared16_vaes_vpclmul, vg_aes_gcm_stream_decrypt_prepared16_aesni_pclmul_avx,
     vg_aes_gcm_stream_decrypt_prepared16_vaes_vpclmul,
-    vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512,
     vg_aes_gcm_stream_encrypt_prepared16_aesni_pclmul_avx,
     vg_aes_gcm_stream_encrypt_prepared16_vaes_vpclmul,
 };
@@ -119,7 +114,6 @@ use crate::arch::gcm::{
 };
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 use crate::arch::gcm::{
-    vg_aes_gcm_open_to_prepared_vaes_vpclmul_avx512,
     vg_aes_gcm_open_to_prepared16_aesni_pclmul_avx, vg_aes_gcm_open_to_prepared16_vaes_vpclmul,
 };
 #[cfg(target_arch = "aarch64")]
@@ -610,10 +604,6 @@ static FNS_VAES_VPCLMUL_PREPARED: Fns = Backend::VaesVpclmul
     .plain_fns()
     .with(&PREPARED_VAES_VPCLMUL);
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-static FNS_VAES_VPCLMUL_AVX512_PREPARED: Fns = Backend::VaesVpclmulAvx512
-    .plain_fns()
-    .with(&PREPARED_VAES_VPCLMUL_AVX512);
-#[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 static FNS_AESNI_PCLMUL_AVX_PREPARED: Fns = Backend::AesNiPclmulAvx
     .plain_fns()
     .with(&PREPARED_AESNI_PCLMUL_AVX);
@@ -655,11 +645,9 @@ impl Backend {
             Backend::VaesVpclmul => or_prepared(&FNS_VAES_VPCLMUL, &FNS_VAES_VPCLMUL_PREPARED),
             #[cfg(all(target_arch = "x86_64", not(feature = "alloc")))]
             Backend::VaesVpclmul => &FNS_VAES_VPCLMUL,
-            #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-            Backend::VaesVpclmulAvx512 => {
-                or_prepared(&FNS_VAES_VPCLMUL_AVX512, &FNS_VAES_VPCLMUL_AVX512_PREPARED)
-            }
-            #[cfg(all(target_arch = "x86_64", not(feature = "alloc")))]
+            // Its `_prepared` instances take the 1088-byte prepared key
+            // context of `vg_aes_gcm_prepare`, which this code does not lay out.
+            #[cfg(target_arch = "x86_64")]
             Backend::VaesVpclmulAvx512 => &FNS_VAES_VPCLMUL_AVX512,
             #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
             Backend::AesNiPclmulAvx => {
@@ -831,19 +819,6 @@ type StreamPrepared =
     unsafe extern "sysv64" fn(*const [u64; 128], usize, *mut [u64; 10], u64, u64, *mut u8, usize);
 
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-static PREPARED_VAES_VPCLMUL_AVX512: Prepared = Prepared {
-    features: VG_AES_GCM_PREPARE_VPCLMUL_AVX512_FEATURES,
-    seal: vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512,
-    open: vg_aes_gcm_open_prepared_vaes_vpclmul_avx512,
-    open_to: vg_aes_gcm_open_to_prepared_vaes_vpclmul_avx512,
-    seal_gather: vg_aes_gcm_seal_gather_prepared_vaes_vpclmul_avx512,
-    stream_encrypt: vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512,
-    stream_decrypt: vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul_avx512,
-    prepare: vg_aes_gcm_prepare_vpclmul_avx512,
-    written: size_of::<Ctx>(),
-};
-
-#[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 static PREPARED_VAES_VPCLMUL: Prepared = Prepared {
     features: VG_AES_GCM_PREPARE16_VPCLMUL_FEATURES,
     seal: vg_aes_gcm_seal_prepared16_vaes_vpclmul,
@@ -889,7 +864,6 @@ impl Backend {
     /// `f` has those of their key setup.
     fn prepared(self, f: Features) -> Option<&'static Prepared> {
         let p = match self {
-            Backend::VaesVpclmulAvx512 => &PREPARED_VAES_VPCLMUL_AVX512,
             Backend::VaesVpclmul => &PREPARED_VAES_VPCLMUL,
             Backend::AesNiPclmulAvx => &PREPARED_AESNI_PCLMUL_AVX,
             Backend::AesNi
@@ -899,6 +873,7 @@ impl Backend {
             | Backend::Vpclmul
             | Backend::VaesPclmul
             | Backend::AesNiVpclmul
+            | Backend::VaesVpclmulAvx512
             | Backend::Scalar => return None,
         };
         f.contains(p.features).then_some(p)
@@ -2401,8 +2376,6 @@ mod tests {
         target_arch = "aarch64"
     ))]
     const PREPARED: &[Backend] = &[
-        #[cfg(target_arch = "x86_64")]
-        Backend::VaesVpclmulAvx512,
         #[cfg(target_arch = "x86_64")]
         Backend::VaesVpclmul,
         #[cfg(target_arch = "x86_64")]
