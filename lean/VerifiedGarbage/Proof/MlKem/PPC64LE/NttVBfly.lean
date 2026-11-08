@@ -1,6 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.PPC64LE.NttLanes
+-- separate module: its proofs (about 10 s) build in parallel with `Reduce`'s, which `Ntt` also imports
+
+public import VerifiedGarbage.Proof.Framework.PPC64LE.VWords
 public import VerifiedGarbage.Impl.MlKem.PPC64LE.Ntt
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
@@ -9,16 +11,26 @@ public import VerifiedGarbage.Proof.MlKem.Ntt
 import VerifiedGarbage.Proof.MlKem.Arith
 import VerifiedGarbage.Proof.MlKem.NttLayer
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
-# ML-KEM on PPC64LE: the vector butterfly, word by word
+# ML-KEM on PPC64LE: the vector NTT, word by word
 
-The butterflies of `vbfly` (`Impl/MlKem/PPC64LE/Ntt.lean`) on each word
-(`bflyV_lane`): from coefficients `x`, `y` below `q` and a zeta `z` below `q`
-with `z' = ⌊z · 2³² / q⌋` (`zetaPrime`), the words of `v6` and `v7` become
-`(x + z·y) mod q` and `(x - z·y) mod q`. The product by the zeta is Shoup's
-(`shoup_bounds`): `y·z - ⌊y·z' / 2³²⌋·q` is less than `2q`, and `min(v, v - q)`
-of a word below `2q` is its remainder (`minq`).
+What `Proof/MlKem/PPC64LE/Ntt.lean` needs of the vector NTT's code
+(`Impl/MlKem/PPC64LE/Ntt.lean`) but its loops, on the words of vectors of
+`Proof/Framework/PPC64LE/VWords.lean`:
+
+* the butterflies of `vbfly` on each word (`vbfly_ok`): from coefficients
+  `x`, `y` below `q` and a zeta `z` below `q` with `z' = ⌊z · 2³² / q⌋`
+  (`zetaPrime`), the words of `v6` and `v7` become `(x + z·y) mod q` and
+  `(x - z·y) mod q`. The product by the zeta is Shoup's (`shoup_bounds`):
+  `y·z - ⌊y·z' / 2³²⌋·q` is less than `2q`, and `min(v, v - q)` of a word
+  below `2q` is its remainder (`minq`);
+* rows of four coefficients loaded and stored (`row_lane`, `coeffAt_row`,
+  `polyIs_rows`);
+* the bodies of the inner loop (`body_ok`), four butterflies of a block
+  (`group_poly`), and of the last layer (`body2_ok`), two blocks of
+  `len = 2` (`pair_poly`).
 -/
 
 @[expose] public section
@@ -26,7 +38,6 @@ of a word below `2q` is its remainder (`minq`).
 namespace VG.Proof.MlKem.PPC64LE.VBfly
 
 open VG VG.PPC64LE VG.Impl.MlKem.PPC64LE
-open VG.Proof.MlKem.PPC64LE.Lanes
 
 /-! ## Arithmetic -/
 
@@ -133,20 +144,23 @@ theorem exec_vmulE (d n m : VReg) (s : State) :
 theorem exec_vmulO (d n m : VReg) (s : State) :
     exec (.vop (.mulu true true d n m)) s = some (s.writeV d (mulD 1 (s.vpr n) (s.vpr m))) := rfl
 
+theorem exec_perm (d n m c : VReg) (s : State) :
+    exec (.vop (.perm d n m c)) s = some (s.writeV d (permV (s.vpr n) (s.vpr m) (s.vpr c))) := rfl
+
 theorem vword_qVec {i : Nat} (hi : i < 4) : vword qVec i = Q32 := by
   rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl <;> decide
 
 /-- The high words of the products gathered in word order. -/
 theorem vword_hi (n m : BitVec 128) {i : Nat} (hi : i < 4) :
-    vword (perm (mulD 0 n m) (mulD 1 n m) ctlHi) i =
+    vword (permV (mulD 0 n m) (mulD 1 n m) ctlHi) i =
       (BitVec.ofNat 64 ((vword n i).toNat * (vword m i).toNat)).extractLsb' 32 32 := by
   rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl
-  · rw [vword_perm _ _ _ (q := 0) (by decide) (by decide) (by decide), mulD, vword_dwords _ _ (by decide)]; rfl
-  · rw [vword_perm _ _ _ (q := 4) (by decide) (by decide) (by decide)]
+  · rw [vword_permV _ _ _ (k := 0) (by decide) (by decide) (by decide), mulD, vword_dwords _ _ (by decide)]; rfl
+  · rw [vword_permV _ _ _ (k := 4) (by decide) (by decide) (by decide)]
     simp only [show ¬ (4 : Nat) < 4 by decide, ↓reduceIte, Nat.sub_self, mulD]
     rw [vword_dwords _ _ (by decide)]; rfl
-  · rw [vword_perm _ _ _ (q := 2) (by decide) (by decide) (by decide), mulD, vword_dwords _ _ (by decide)]; rfl
-  · rw [vword_perm _ _ _ (q := 6) (by decide) (by decide) (by decide)]
+  · rw [vword_permV _ _ _ (k := 2) (by decide) (by decide) (by decide), mulD, vword_dwords _ _ (by decide)]; rfl
+  · rw [vword_permV _ _ _ (k := 6) (by decide) (by decide) (by decide)]
     simp only [show ¬ (6 : Nat) < 4 by decide, ↓reduceIte, Nat.reduceSub, mulD]
     rw [vword_dwords _ _ (by decide)]; rfl
 
@@ -204,8 +218,6 @@ theorem vbfly_ok {s : State} (h : BIn s) :
 section
 open VG.Proof.MlKem VG.Spec.MlKem
 
-theorem xor1 : ∀ d < 4, d ^^^ 1 < 4 ∧ (d ^^^ 1) ^^^ 1 = d := by decide
-
 theorem coeffAddr_add (F : Addr) (j q : Nat) :
     coeffAddr F j + BitVec.ofNat 64 (4 * q) = coeffAddr F (j + q) := by
   rw [coeffAddr, coeffAddr, BitVec.add_assoc, ← BitVec.ofNat_add, Nat.mul_add]
@@ -213,31 +225,23 @@ theorem coeffAddr_add (F : Addr) (j q : Nat) :
 /-- The words of a row of coefficients loaded by `lxvd2x`: `1, 0, 3, 2`. -/
 theorem row_lane {m : Mem} {F : Addr} {f : Poly} (h : PolyIs m F f) {j : Nat} (hj : j + 4 ≤ 256) {p : Nat}
     (hp : p < 4) : vword (swapDwords (m.read (coeffAddr F j) 16)) p = BitVec.ofNat 32 (f[j + (p ^^^ 1)]!).val := by
-  rw [vword_row _ _ hp, coeffAddr_add, ← coeffAt_eq]
-  exact polyIs_coeffAt h (by have := (xor1 p hp).1; rw [n_eq]; omega)
-
-theorem sub_toNat (F : Addr) (i t : Nat) {j : Nat} (hj : j < 256) :
-    (F + BitVec.ofNat 64 (4 * i) + BitVec.ofNat 64 t - (F + BitVec.ofNat 64 (4 * j))).toNat =
-      (4 * i + t + (2 ^ 64 - 4 * j)) % 2 ^ 64 := by
-  have := F.isLt
-  simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]
-  omega
+  rw [vword_load _ _ hp, coeffAddr_add, ← coeffAt_eq]
+  exact polyIs_coeffAt h (by have := xor1_lt hp; rw [n_eq]; omega)
 
 /-- A coefficient after `stxvd2x` of a row from `j`. -/
 theorem coeffAt_row (m : Mem) (F : Addr) (j : Nat) (v : BitVec 128) {i : Nat} (hi : i < 256)
     (hj : j + 4 ≤ 256) :
     coeffAt (m.write (coeffAddr F j) 16 (swapDwords v)) F i =
       if j ≤ i ∧ i < j + 4 then vword v ((i - j) ^^^ 1) else coeffAt m F i := by
-  apply ext_bytes32
-  intro t ht
-  rw [coeffAt, ← Mem.readW_byte _ _ ht]
-  simp only [Mem.write, coeffAddr]
-  rw [sub_toNat F i t (by omega)]
-  by_cases hr : j ≤ i ∧ i < j + 4
-  · rw [ite_eq_left (by omega), ite_eq_left hr, show (4 * i + t + (2 ^ 64 - 4 * j)) % 2 ^ 64 = 4 * (i - j) + t by
-      omega, store_byte _ (by omega), show (4 * (i - j) + t) / 4 = i - j by omega,
-      show (4 * (i - j) + t) % 4 = t by omega]
-  · rw [ite_eq_right (by omega), ite_eq_right hr, coeffAt, ← Mem.readW_byte _ _ ht]
+  split
+  · rename_i h
+    rw [coeffAt_eq, show coeffAddr F i = coeffAddr F j + BitVec.ofNat 64 (4 * (i - j)) by
+      rw [coeffAddr_add, show j + (i - j) = i by omega]]
+    exact readW_store _ _ _ (by omega)
+  · have hw : m.write (coeffAddr F j) 16 (swapDwords v) = m.writeW (coeffAddr F j) (swapDwords v) := by
+      simp only [Mem.writeW, BitVec.setWidth_eq]
+    rw [hw]
+    exact Mem.readW_writeW_sep (Offset.sep F (by omega) (by omega) (by omega)) (by decide)
 
 /-- Two rows stored over a polynomial. -/
 theorem polyIs_rows {m : Mem} {F : Addr} {f g : Poly} (h : PolyIs m F f) {j₁ j₂ : Nat}
@@ -250,11 +254,11 @@ theorem polyIs_rows {m : Mem} {F : Addr} {f g : Poly} (h : PolyIs m F f) {j₁ j
   rw [n_eq] at hi
   rw [coeffAt_row _ _ _ _ hi h2, coeffAt_row _ _ _ _ hi h1]
   by_cases r2 : j₂ ≤ i ∧ i < j₂ + 4
-  · obtain ⟨l, e⟩ := xor1 (i - j₂) (by omega)
+  · have l := xor1_lt (e := i - j₂) (by omega); have e := xor1_xor1 (i - j₂)
     rw [ite_eq_left r2, hB _ l, e, Nat.add_sub_cancel' r2.1]
   rw [ite_eq_right r2]
   by_cases r1 : j₁ ≤ i ∧ i < j₁ + 4
-  · obtain ⟨l, e⟩ := xor1 (i - j₁) (by omega)
+  · have l := xor1_lt (e := i - j₁) (by omega); have e := xor1_xor1 (i - j₁)
     rw [ite_eq_left r1, hA _ l, e, Nat.add_sub_cancel' r1.1]
   rw [ite_eq_right r1, polyIs_coeffAt h (by rw [n_eq]; exact hi), hf i hi r1 r2]
 
@@ -338,36 +342,36 @@ theorem body_ok {s : State} (ia : InRegions (s.rd ++ s.wr) (s.gpr .r3 + s.gpr .r
 /-! ## The last layer: two blocks of `len = 2` per step -/
 
 theorem vword_lo (n m : BitVec 128) {p : Nat} (hp : p < 4) :
-    vword (perm n m ctlLo) p = if p < 2 then vword n p else vword m (p - 2) := by
+    vword (permV n m ctlLo) p = if p < 2 then vword n p else vword m (p - 2) := by
   rcases (by omega : p = 0 ∨ p = 1 ∨ p = 2 ∨ p = 3) with rfl | rfl | rfl | rfl
-  · rw [vword_perm _ _ _ (q := 0) (by decide) (by decide) (by decide)]; rfl
-  · rw [vword_perm _ _ _ (q := 1) (by decide) (by decide) (by decide)]; rfl
-  · rw [vword_perm _ _ _ (q := 4) (by decide) (by decide) (by decide)]; rfl
-  · rw [vword_perm _ _ _ (q := 5) (by decide) (by decide) (by decide)]; rfl
+  · rw [vword_permV _ _ _ (k := 0) (by decide) (by decide) (by decide)]; rfl
+  · rw [vword_permV _ _ _ (k := 1) (by decide) (by decide) (by decide)]; rfl
+  · rw [vword_permV _ _ _ (k := 4) (by decide) (by decide) (by decide)]; rfl
+  · rw [vword_permV _ _ _ (k := 5) (by decide) (by decide) (by decide)]; rfl
 
 theorem vword_hi2 (n m : BitVec 128) {p : Nat} (hp : p < 4) :
-    vword (perm n m ctlHi2) p = if p < 2 then vword n (p + 2) else vword m p := by
+    vword (permV n m ctlHi2) p = if p < 2 then vword n (p + 2) else vword m p := by
   rcases (by omega : p = 0 ∨ p = 1 ∨ p = 2 ∨ p = 3) with rfl | rfl | rfl | rfl
-  · rw [vword_perm _ _ _ (q := 2) (by decide) (by decide) (by decide)]; rfl
-  · rw [vword_perm _ _ _ (q := 3) (by decide) (by decide) (by decide)]; rfl
-  · rw [vword_perm _ _ _ (q := 6) (by decide) (by decide) (by decide)]; rfl
-  · rw [vword_perm _ _ _ (q := 7) (by decide) (by decide) (by decide)]; rfl
+  · rw [vword_permV _ _ _ (k := 2) (by decide) (by decide) (by decide)]; rfl
+  · rw [vword_permV _ _ _ (k := 3) (by decide) (by decide) (by decide)]; rfl
+  · rw [vword_permV _ _ _ (k := 6) (by decide) (by decide) (by decide)]; rfl
+  · rw [vword_permV _ _ _ (k := 7) (by decide) (by decide) (by decide)]; rfl
 
 theorem vword_pw (n : BitVec 128) {p : Nat} (hp : p < 4) :
-    vword (perm n n ctlPw) p = vword n (if p < 2 then 1 else 3) := by
+    vword (permV n n ctlPw) p = vword n (if p < 2 then 1 else 3) := by
   rcases (by omega : p = 0 ∨ p = 1 ∨ p = 2 ∨ p = 3) with rfl | rfl | rfl | rfl
-  · rw [vword_perm _ _ _ (q := 1) (by decide) (by decide) (by decide)]; rfl
-  · rw [vword_perm _ _ _ (q := 1) (by decide) (by decide) (by decide)]; rfl
-  · rw [vword_perm _ _ _ (q := 3) (by decide) (by decide) (by decide)]; rfl
-  · rw [vword_perm _ _ _ (q := 3) (by decide) (by decide) (by decide)]; rfl
+  · rw [vword_permV _ _ _ (k := 1) (by decide) (by decide) (by decide)]; rfl
+  · rw [vword_permV _ _ _ (k := 1) (by decide) (by decide) (by decide)]; rfl
+  · rw [vword_permV _ _ _ (k := 3) (by decide) (by decide) (by decide)]; rfl
+  · rw [vword_permV _ _ _ (k := 3) (by decide) (by decide) (by decide)]; rfl
 
 theorem vword_pwp (n : BitVec 128) {p : Nat} (hp : p < 4) :
-    vword (perm n n ctlPwp) p = vword n (if p < 2 then 0 else 2) := by
+    vword (permV n n ctlPwp) p = vword n (if p < 2 then 0 else 2) := by
   rcases (by omega : p = 0 ∨ p = 1 ∨ p = 2 ∨ p = 3) with rfl | rfl | rfl | rfl
-  · rw [vword_perm _ _ _ (q := 0) (by decide) (by decide) (by decide)]; rfl
-  · rw [vword_perm _ _ _ (q := 0) (by decide) (by decide) (by decide)]; rfl
-  · rw [vword_perm _ _ _ (q := 2) (by decide) (by decide) (by decide)]; rfl
-  · rw [vword_perm _ _ _ (q := 2) (by decide) (by decide) (by decide)]; rfl
+  · rw [vword_permV _ _ _ (k := 0) (by decide) (by decide) (by decide)]; rfl
+  · rw [vword_permV _ _ _ (k := 0) (by decide) (by decide) (by decide)]; rfl
+  · rw [vword_permV _ _ _ (k := 2) (by decide) (by decide) (by decide)]; rfl
+  · rw [vword_permV _ _ _ (k := 2) (by decide) (by decide) (by decide)]; rfl
 
 /-- What a step of the last layer keeps. -/
 structure Kept2 (s s' : State) : Prop where
@@ -453,7 +457,7 @@ theorem body2_ok {s : State} {R T Z : BitVec 128}
     runBlock_cons, exec_subi (by decide) (by decide), runStep_some, runBlock_nil]
   have e2 := v₂ .v2 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
   have e3 := v₂ .v3 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-  refine ⟨_, rfl, perm (s₂.vpr .v6) (s₂.vpr .v7) ctlLo, perm (s₂.vpr .v6) (s₂.vpr .v7) ctlHi2,
+  refine ⟨_, rfl, permV (s₂.vpr .v6) (s₂.vpr .v7) ctlLo, permV (s₂.vpr .v6) (s₂.vpr .v7) ctlHi2,
     fun p hp => ?_, fun p hp => ?_, ?_, ?_, ?_, ?_, ⟨fun r h5 h6' h7' h10 => ?_,
     fun v n4 n5 n6 n7 n8 n9 n10 n11 => ?_, hv.rd, hv.wr, hv.sp, hv.lr⟩⟩
   · rw [vword_lo _ _ hp]
@@ -505,11 +509,11 @@ theorem group_poly {m : Mem} {F : Addr} {Q : Poly} {len k st t : Nat} (ht : t + 
   have g0 := fun i (hi : i < 256) => nttBlockN_get Q (k := k) (t := t) hl (by omega) hs' (i := i) (by rw [n_eq]; exact hi)
   refine polyIs_rows h (j₁ := st + t) (j₂ := st + t + len) (by omega) (by omega) (fun p hp => ?_) (fun p hp => ?_)
     (fun i hi r1 r2 => ?_)
-  · have l := (xor1 p hp).1
+  · have l := xor1_lt hp
     rw [hA p hp, row_lane h (by omega) hp, row_lane h (by omega) hp, bx_val]
     simp (disch := omega) only [g4, g0, ↓ite_eq_left, ↓ite_eq_right]
     rw [Nat.add_right_comm (st + t) _ len]
-  · have l := (xor1 p hp).1
+  · have l := xor1_lt hp
     rw [hB p hp, row_lane h (by omega) hp, row_lane h (by omega) hp, by'_val]
     simp (disch := omega) only [g4, g0, ↓ite_eq_left, ↓ite_eq_right]
     rw [show st + t + len + (p ^^^ 1) - len = st + t + (p ^^^ 1) by omega]

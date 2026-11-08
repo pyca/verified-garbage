@@ -19,6 +19,7 @@ meta import Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.Framework.PPC64LE.RunR
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.RunR
 import VerifiedGarbage.Proof.MlKem.PPC64LE.NttVBfly
+import VerifiedGarbage.Proof.Framework.PPC64LE.VWords
 import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.Range
@@ -326,7 +327,7 @@ theorem vconsts_ok {s : State} :
 
 /-! ## The vector NTT: what every loop keeps -/
 
-open VG.Proof.MlKem.PPC64LE.Lanes VG.Proof.MlKem.PPC64LE.VBfly
+open VG.Proof.MlKem.PPC64LE.VBfly
 
 /-- What the setup leaves in memory `m₁`: the table at `S` and the polynomial. -/
 structure VSetup (s₀ : State) (m₁ : Mem) : Prop where
@@ -376,7 +377,7 @@ theorem VEnv.zrow {s₀ : State} (hp : Pre s₀) {m₁ : Mem} (hm : VSetup s₀ 
   have fS := hp.fitS
   rw [h.frame.read (r := polyRegion (S s₀)) (Offset.contains_base _ (by omega) (by omega))
     (fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact hp.disj.symm) (by decide)]
-  rw [vword_row _ _ (by decide), vword_row _ _ (by decide), vword_row _ _ (by decide), vword_row _ _ (by decide)]
+  rw [vword_load _ _ (by decide), vword_load _ _ (by decide), vword_load _ _ (by decide), vword_load _ _ (by decide)]
   simp only [Nat.reduceXor, Nat.reduceMul, ptr_add]
   obtain ⟨a0, a1⟩ := hm.tab k (by omega)
   obtain ⟨b0, b1⟩ := hm.tab (k + 1) hk
