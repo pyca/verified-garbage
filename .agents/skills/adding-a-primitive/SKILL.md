@@ -129,12 +129,11 @@ instructions in an ISA model) go in their own PR before either.
    functions it calls, lemmas about its code) in a module of the
    algorithm's proofs, as `Proof/AesGcm/X86_64/Instances.lean` does.
    A function whose proof takes a Weierstrass curve's group law (`Law`,
-   `Proof/Weierstrass/Law.lean`) is registered generic over it the same
-   way: the law is the one variant of the interface `<Curve>` on each target
-   (`Variants/<Curve>/<Target>/Law.lean`, the only files that import the
-   Mathlib algebra of its proof), and the registration file is
-   `Generic/<Curve>/<Target>/<Alg>.lean` (`Generic/<Iface>/<Curve>/<Target>/`
-   when it is generic over an implementation too). The law has no suffix.
+   `Proof/Weierstrass/Law.lean`) is registered as any other, passing the
+   law: its registration file imports `Proof/<Curve>/<Target>/Law.lean`,
+   which defines it (`hasLaw`) and is the only module that imports the
+   Mathlib algebra of its proof, privately, exposing only its type. A law
+   is not a variant: there is one per curve and target, with no suffix.
 5. Regenerate the generated crates, build the public Rust API on top of the primitive
    (calling each function's dispatcher, `<name>_auto`, where it has variants;
    the Rust only checks arguments, lays out buffers and calls: see "The
