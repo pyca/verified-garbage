@@ -1,6 +1,7 @@
 module
 public import VerifiedGarbage.Impl.AesGcm.AArch64.Stitch
 public import VerifiedGarbage.Proof.AesGcm.Rounds
+public import VerifiedGarbage.Proof.AesGcm.RoundsTo
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Verified
 public import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Ops
@@ -12,10 +13,11 @@ import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.SealPw
 # AES-GCM on AArch64: the code of each function, with or without the interleaved loops
 
 Untrusted: everything here is checked by Lean. For the implementations `v`,
-the code of `seal`, `open` and the functions with the powers: with the loops
-that interleave counter mode and GHASH (`Impl/AesGcm/AArch64/Stitch.lean`)
-if `v.stitch`, and otherwise as before, each `Verified` against its contract,
-for `Generic/AesGcm/AArch64/AesGcm.lean`.
+the code of `seal`, `open` and the functions with the powers (`open_to`'s
+in one pass): with the loops that interleave counter mode and GHASH
+(`Impl/AesGcm/AArch64/Stitch.lean`) if `v.stitch`, and otherwise as before,
+each `Verified` against its contract, for
+`Generic/AesGcm/AArch64/AesGcm.lean`.
 -/
 
 @[expose] public section
@@ -38,6 +40,13 @@ def sealPwCode (v : GcmImpl) (g : GhashWithImpl) : Prog isa :=
 def openPwCode (v : GcmImpl) (g : GhashWithImpl) : Prog isa :=
   if v.stitch then Impl.AesGcm.AArch64.Stitch.openWithPw v.callees g.fn else Impl.AesGcm.AArch64.Fast.openWithPw v.callees g.fn
 
+/-- `vg_aes_gcm_open_to_with_powers`, calling `g`, in one pass: with the
+interleaved loops if `v.stitch`, as `openPwCode`, else the path for TLS
+records (`Fast.openToWithPw`). -/
+def openToPwCode (v : GcmImpl) (g : GhashWithImpl) : Prog isa :=
+  if v.stitch then Impl.AesGcm.AArch64.Stitch.openToWithPw v.callees g.fn
+  else Impl.AesGcm.AArch64.Fast.openToWithPw v.callees g.fn
+
 section
 variable (v : GcmImpl) (hMK : MulKey) (hP : PrepPow) (gh : Gh8Ok)
 include hMK hP gh
@@ -59,6 +68,15 @@ theorem openPwCode_framed (g : GhashWithImpl) :
   split
   · exact Fast.openPwS_framed v g hMK gh
   · exact Fast.openPw_framed v g hMK
+
+omit hP in
+theorem openToPwCode_framed (g : GhashWithImpl) :
+    Verified AArch64.target (Impl.StackScratch.AArch64.withStackArgScratch 2608 5 (openToPwCode v g))
+      (Proof.AesGcm.openToWithPowersRoundsContract AArch64.abi 2608) := by
+  unfold openToPwCode
+  split
+  · exact Fast.openToPwS_framed v g hMK gh
+  · exact Fast.openToPw_framed v g hMK
 
 end
 

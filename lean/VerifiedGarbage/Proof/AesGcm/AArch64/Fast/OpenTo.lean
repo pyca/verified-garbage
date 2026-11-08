@@ -56,8 +56,9 @@ branch on the tag length and other path (`OpenToOne.lean`).
 `Fast.openTo` (`vg_ghash` hashing the whole blocks) and
 `Fast.openToWithPw` (`vg_ghash_with_powers`, `pw` the stack argument 4) are
 `Verified` against `open_to`'s contracts with the working space as an
-argument, and so in a frame of 2608 bytes; `openToCode` and `openToPwCode`
-choose them for the implementations with PMULL.
+argument, and so in a frame of 2608 bytes; `openToCode` chooses the first
+for the implementations with PMULL (`openToPwCode`, `Stitch/Instances.lean`,
+the second for those without the interleaved loops).
 -/
 
 @[expose] public section
@@ -573,21 +574,5 @@ theorem openToCode_depth (v : GcmImpl) :
   split
   · exact Fast.fastOpenTo_depth v
   · exact openTo_depth v
-
-/-- `vg_aes_gcm_open_to_with_powers` for the implementations `v` with
-`vg_ghash_with_powers` (`g`), which have PMULL: the path for TLS records,
-calling `g`, as `vg_aes_gcm_open_with_powers` (`openPwCode`) for those
-without the interleaved loops. -/
-def openToPwCode (v : GcmImpl) (g : GhashWithImpl) : Prog isa :=
-  Impl.AesGcm.AArch64.Fast.openToWithPw v.callees g.fn
-
-theorem openToPwCode_framed (v : GcmImpl) (g : GhashWithImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) :
-    Verified AArch64.target (Impl.StackScratch.AArch64.withStackArgScratch 2608 5 (openToPwCode v g))
-      (Proof.AesGcm.openToWithPowersRoundsContract AArch64.abi 2608) :=
-  Fast.openToPw_framed v g hMK
-
-theorem openToPwCode_depth (v : GcmImpl) (g : GhashWithImpl) :
-    16 * (Impl.StackScratch.AArch64.withStackArgScratch 2608 5 (openToPwCode v g)).aarch64Depth ≤ 2608 :=
-  Fast.openToPw_depth v g
 
 end VG.Proof.AesGcm.AArch64
