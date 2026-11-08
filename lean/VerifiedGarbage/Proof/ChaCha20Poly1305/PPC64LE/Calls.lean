@@ -3,6 +3,7 @@ module
 import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Contract
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.PPC64LE
 public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Xor
+public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Vmx4.Xor
 public import VerifiedGarbage.Proof.Poly1305.PPC64LE.Shared
 public import VerifiedGarbage.Proof.Poly1305.PPC64LE.Init
 public import VerifiedGarbage.Proof.Poly1305.PPC64LE.Finalize
@@ -77,7 +78,7 @@ theorem block_call {s : State} {S B : Addr} (h3 : s.gpr .r3 = S) (h4 : s.gpr .r4
 
 /-! ## `vg_chacha20_xor` -/
 
-/-- `vg_chacha20_xor` from `X` to `D` (`Proof.ChaCha20.PPC64LE.Xor.xor_call_to`). -/
+/-- `vg_chacha20_xor` from `X` to `D` (`Proof.ChaCha20.PPC64LE.Vmx4.xor_call_to`). -/
 theorem xor_call_to {s : State} {S X D B : Addr} {n : Nat} (h3 : s.gpr .r3 = S) (h4 : s.gpr .r4 = X)
     (h5 : s.gpr .r5 = BitVec.ofNat 64 n) (h6 : s.gpr .r6 = B) (h7 : s.gpr .r7 = D) (hn : n < 2 ^ 64)
     (hSX : (⟨S, 64⟩ : Region).Disjoint ⟨X, n⟩) (hSD : (⟨S, 64⟩ : Region).Disjoint ⟨D, n⟩)
@@ -91,8 +92,8 @@ theorem xor_call_to {s : State} {S X D B : Addr} {n : Nat} (h3 : s.gpr .r3 = S) 
       Spec.ChaCha20.bytesAt s'.mem D n =
         List.zipWith (· ^^^ ·) (Spec.ChaCha20.bytesAt s.mem X n)
           (keystream (stateAt s.mem S) n) → Q s') :
-    WP isa (.call "vg_chacha20_xor" Impl.ChaCha20.PPC64LE.Xor.xor) s Q :=
-  Proof.ChaCha20.PPC64LE.Xor.xor_call_to h3 h4 h5 h6 h7 hn hSX hSD hSB hXB hDB hXD hX hD hc hw
+    WP isa (.call "vg_chacha20_xor" Impl.ChaCha20.PPC64LE.Vmx4.xor) s Q :=
+  Proof.ChaCha20.PPC64LE.Vmx4.xor_call_to h3 h4 h5 h6 h7 hn hSX hSD hSB hXB hDB hXD hX hD hc hw
     fun s' hrd hwr hsp hf hcs _ hpost => hQ s' ⟨hcs, hsp, hrd, hwr, hf⟩ hpost
 
 /-! ## `vg_poly1305_init` -/
