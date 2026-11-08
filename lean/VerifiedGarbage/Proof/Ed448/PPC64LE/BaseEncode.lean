@@ -80,7 +80,7 @@ theorem baseEncode_ok {s : State} (hc : Ctx b s) {o : Addr} (h3 : s.gpr .r3 = o)
     · exact absurd rfl hqR
     all_goals decide)
   unfold baseEncode
-  refine WP.seq (WP.mono (invertQ_ok (qs := EQ) (by decide) (by decide) (by decide) hc hv rfl)
+  refine WP.seq (WP.mono (invertQ_ok (qs := EQ) (by decide) (by decide) (by decide) (by decide) hc hv rfl)
     fun s1 ⟨hst1, hc1, hS1⟩ => ?_)
   refine WP.seq (WP.mono (mulS (o := X2) (x := RX) (y := R) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) hc1 hS1) fun s2 ⟨hr2, _, hS2⟩ => ?_)
