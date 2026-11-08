@@ -14,30 +14,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.FlagBranch
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.SigEval
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import VerifiedGarbage.Proof.Gcm.X86_64.PrepareCT
 public import VerifiedGarbage.Impl.Gcm.X86_64.Flag
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Frame
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Verified
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Verified
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.OpenTo.Verified
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Verified
-meta import VerifiedGarbage.Proof.AesGcm.ScratchPrepared
-meta import VerifiedGarbage.Proof.AesGcm.Rounds
-meta import VerifiedGarbage.Proof.AesGcm.RoundsTo
-meta import VerifiedGarbage.Proof.Framework.X86_64.WidenArray
-meta import VerifiedGarbage.Proof.AesGcm.Flag
-meta import VerifiedGarbage.Proof.Framework.X86_64.FlagBranch
-meta import VerifiedGarbage.Proof.Framework.Sig
-meta import VerifiedGarbage.Proof.Framework.SigEval
-meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
-meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
-meta import VerifiedGarbage.Proof.Gcm.X86_64.PrepareCT
-meta import VerifiedGarbage.Impl.Gcm.X86_64.Flag
 
 /-!
 # AES-GCM on x86-64 against the flagged prepared contracts
@@ -739,94 +716,5 @@ theorem openTo_onFlag162776 {c₁ c₂ : Prog isa}
     (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h _ => ⟨h.1, h.2.1⟩)
     (fun _ _ _ _ _ _ _ _ _ _ _ _ _ => rfl)
     openTo_satF2776
-
-/-! ## `prepare` -/
-
-/-- A state meeting the flagged `prepareContract`'s precondition. -/
-def prepareSatF : State where
-  gpr r := match r with
-    | .rdi => 0x1000 | .rsp => 0x5000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem _ := 0
-  rd := []
-  wr := [⟨0x1000, 1088⟩]
-
-theorem prepare_satF : ∃ s, (AesGcm.Flag.prepareContract abi).pre s := by
-  refine ⟨prepareSatF, ?_⟩
-  sig_pre [AesGcm.Flag.prepareContract, AesGcm.Flag.prepareSig, X86_64.abi, X86_64.argRegs, prepareSatF]
-  sig_and_intros
-  all_goals first
-    | rfl
-    | decide
-    | exact Region.disjoint_of_sep (by decide)
-
-/-- From a `prepare` that writes the powers. -/
-theorem prepare_of_powers {c : Prog isa}
-    (h : Verified target c (Spec.Gcm.prepareContract abi)) :
-    Verified target c (AesGcm.Flag.prepareContract abi) :=
-  Verified.post_mono
-    (VG.X86_64.Verified.widenFirstArrayW (n := 128) (n' := 136) (by decide) h
-      (fun _ _ h => h) prepare_satF)
-    (fun _ _ _ _ ⟨hb, hp⟩ => ⟨hb, Or.inr hp⟩)
-
-/-- `vg_aes_gcm_prepare`'s flagged contract, on the registers. -/
-def absentX86_64 : Contract isa where
-  pre s := s.rd = [] ∧ s.wr = [⟨s.gpr .rdi, 1088⟩] ∧ (s.gpr .rdi).toNat + 1088 ≤ 2 ^ 64 ∧
-    (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨s.gpr .rdi, 1088⟩
-  post s s' := Spec.Aes.bytesAt s'.mem (s.gpr .rdi) 256 = Spec.Aes.bytesAt s.mem (s.gpr .rdi) 256 ∧
-    AesGcm.Flag.PreparedRepr s'.mem (s.gpr .rdi)
-  pub s₁ s₂ := s₁.gpr .rdi = s₂.gpr .rdi
-
-theorem absent_ct :
-    ConstantTime isa absentX86_64.pre absentX86_64.pub Impl.Gcm.X86_64.Flag.prepareAbsent := by
-  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi]) ?_ (by taint_decide)
-  intro s₁ s₂ _ _ h
-  refine Taint.agree_ofRegs fun r hr => ?_
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  subst hr; exact h
-
-theorem absent_run (s₀ : State) (hw : InRegions s₀.wr (s₀.gpr .rdi + BitVec.ofNat 64 1024) 8) :
-    WP isa Impl.Gcm.X86_64.Flag.prepareAbsent s₀ fun s =>
-      s.mem = s₀.mem.writeW (s₀.gpr .rdi + BitVec.ofNat 64 1024) (1#64) ∧
-      (∀ r, r ≠ .rax → s.gpr r = s₀.gpr r) ∧ s.rd = s₀.rd ∧ s.wr = s₀.wr := by
-  have h1 : (1 : BitVec 32).signExtend 64 = 1#64 := by decide
-  have ho : BitVec.ofInt 64 ((1024 : Nat) : Int) = BitVec.ofNat 64 1024 := rfl
-  refine WP.of_runBlock ⟨{ s₀.setReg .rax 1#64 with
-    mem := s₀.mem.writeW (s₀.gpr .rdi + BitVec.ofNat 64 1024) (1#64) }, ?_, ?_⟩
-  · simp only [Impl.Gcm.X86_64.Flag.flagOff, runBlock_cons,
-      runStep_some, runBlock_nil, exec, readSrc, Option.map_some, h1, State.store64, State.ea,
-      ho, RegUpd.wr_setReg, hw, ↓reduceIte, RegUpd.gpr_setReg_self, RegUpd.gpr_setReg_of_ne _ _ (show ¬Reg.rdi = .rax by decide)]
-    rfl
-  · exact ⟨rfl, fun r hr => RegUpd.gpr_setReg_of_ne _ _ hr, rfl, rfl⟩
-
-theorem absent_correct (s₀ : State) (hp : absentX86_64.pre s₀) :
-    ∃ t s', Exec isa Impl.Gcm.X86_64.Flag.prepareAbsent s₀ t s' ∧ abiPreserved s₀ s' ∧
-      absentX86_64.post s₀ s' := by
-  obtain ⟨_, hwr, hwrap, hret⟩ := hp
-  have hw : InRegions s₀.wr (s₀.gpr .rdi + BitVec.ofNat 64 1024) 8 := by
-    rw [hwr]; exact ⟨_, List.mem_singleton_self _, Offset.contains_base _ (by decide) (by decide)⟩
-  obtain ⟨t, s', he, hm, hg, _, _⟩ := absent_run s₀ hw
-  have fr : Frame [⟨s₀.gpr .rdi + BitVec.ofNat 64 1024, 8⟩] s₀.mem s'.mem := by
-    rw [hm]
-    exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-  refine ⟨t, s', he, abiPreserved_of_exec (by rfl) he ⟨fun r hr => hg r (by
-      simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide), ?_⟩, ?_, Or.inl ?_⟩
-  · exact fr.readW (Region.contains_self _ _) (fun r hr => by
-      obtain rfl := List.mem_singleton.mp hr
-      exact hret.sub_right (Offset.sub_base (s₀.gpr .rdi) (by decide))) (by decide)
-  · exact Proof.Gcm.X86_64.Prepare.bytesAt_frame fr (fun r hr => by
-      obtain rfl := List.mem_singleton.mp hr
-      exact Offset.base_disjoint _ (by decide) (by omega)) (by decide)
-  · rw [hm]; exact Mem.readW_writeW_self64 _ _ _
-
-theorem absent_verified :
-    Verified target Impl.Gcm.X86_64.Flag.prepareAbsent (AesGcm.Flag.prepareContract abi) :=
-  Verified.of_correct absent_correct absent_ct (by
-    sig_implies [AesGcm.Flag.prepareContract, AesGcm.Flag.prepareSig, AesGcm.Flag.preparePost,
-      absentX86_64, X86_64.abi, X86_64.argRegs] [prepareSatF] using prepareSatF)
 
 end VG.Proof.AesGcm.X86_64.Flag

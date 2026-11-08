@@ -464,4 +464,10 @@ theorem prepare_verified : Verified X86_64.target prepare (Spec.Gcm.prepareContr
   Prepare.verified_of prepare (fun _ hw hwrap => prepare_ok hw hwrap) (by decide +kernel)
     Prepare16.prepare_ct
 
+/-- `prepare` after setting the flag word to 0, on the prepared key context. -/
+theorem prepareFlagged_verified :
+    Verified X86_64.target (Impl.Gcm.X86_64.Flag.prepareFlagged prepare) (Proof.AesGcm.Flag.prepareContract X86_64.abi) :=
+  Prepare.flagged_verified prepare (fun _ hw hwrap => prepare_ok hw hwrap) (by decide +kernel)
+    Prepare.flagged16_ct
+
 end VG.Proof.Gcm.X86_64.Prepare16
