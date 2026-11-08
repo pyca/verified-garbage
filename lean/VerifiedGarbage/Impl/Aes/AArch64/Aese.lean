@@ -12,7 +12,11 @@ Two functions, for CPUs with FEAT_AES:
 * `vg_aes_expand_key_scratch_aes(key = x0, key_len = x1, schedule = x2, scratch = x3)`, with the
   contract of `vg_aes_expand_key_scratch` (`Proof.Aes.expandKeyScratchContract`).
 * `vg_aes_ctr32_aes(schedule = x0, rounds = x1, counter = x2, data = x3, n = x4, scratch = x5)`,
-  with the contract of `vg_aes_ctr32` (`Proof.Aes.ctr32AArch64`).
+  with the contract of `vg_aes_ctr32` (`Proof.Aes.ctr32AArch64`), and its
+  out-of-place form, the internal `vg_aes_ctr32_to_aes(…, src = x3, …,
+  dst = x6)` (`Proof.Aes.ctr32ToAArch64`), the same code (`ctr32Gen`) but
+  that it stores each block through `x14`, which holds `dst`, rather than
+  over the data.
 
 Neither uses `scratch` or writes a callee-saved register. Every branch and
 every address depends only on the pointers and the public lengths
@@ -89,30 +93,38 @@ def ctrs : List VReg → Nat → List Instr
   | [], _ => []
   | b :: bs, i => ctr1 b i ++ ctrs bs (i + 1)
 
-/-- XOR block register `b` into the data block `x3 + 16 j`. -/
-def xor1 (b : VReg) (j : Nat) : List Instr :=
-  [.ldrq .v31 .x3 (16 * j), .vop (.logic .eor b b .v31), .strq b .x3 (16 * j)]
+/-- Where the output goes: over the data (`x3`), or out of place (`to`) to
+the destination, kept in `x14`. -/
+def outR (to : Bool) : Reg := cond to .x14 .x3
+
+/-- XOR block register `b` into the data block `x3 + 16 j`, stored to the
+output block `16 j`. -/
+def xor1 (to : Bool) (b : VReg) (j : Nat) : List Instr :=
+  [.ldrq .v31 .x3 (16 * j), .vop (.logic .eor b b .v31), .strq b (outR to) (16 * j)]
 
 /-- XOR the registers into the data blocks `j`, `j + 1`, …. -/
-def xorData : List VReg → Nat → List Instr
+def xorData (to : Bool) : List VReg → Nat → List Instr
   | [], _ => []
-  | b :: bs, j => xor1 b j ++ xorData bs (j + 1)
+  | b :: bs, j => xor1 to b j ++ xorData to bs (j + 1)
+
+/-- The output's pointer past `k` bytes, out of place. -/
+def advO (to : Bool) (k : Nat) : List Instr := cond to [.addImm .x .x14 .x14 k] []
 
 def regs8 : List VReg := [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7]
 
 /-- Eight blocks; `x13 = n / 8` for the blocks left. -/
-def body8 : Prog isa :=
+def body8 (to : Bool) : Prog isa :=
   .seq (.block (ctrs regs8 0))
     (.seq (aes regs8)
-      (.block (xorData regs8 0 ++ ([.addImm .w .x10 .x10 8, .addImm .x .x3 .x3 128,
-        .subImm .x .x4 .x4 8, .lsr .x .x13 .x4 3] : List Instr))))
+      (.block (xorData to regs8 0 ++ (([.addImm .w .x10 .x10 8, .addImm .x .x3 .x3 128,
+        .subImm .x .x4 .x4 8, .lsr .x .x13 .x4 3] : List Instr) ++ advO to 128))))
 
 /-- One block. -/
-def body1 : Prog isa :=
+def body1 (to : Bool) : Prog isa :=
   .seq (.block (ctrs [.v0] 0))
     (.seq (aes [.v0])
-      (.block (xorData [.v0] 0 ++ ([.addImm .w .x10 .x10 1, .addImm .x .x3 .x3 16,
-        .subImm .x .x4 .x4 1] : List Instr))))
+      (.block (xorData to [.v0] 0 ++ (([.addImm .w .x10 .x10 1, .addImm .x .x3 .x3 16,
+        .subImm .x .x4 .x4 1] : List Instr) ++ advO to 16))))
 
 /-- Load the round keys, and set up `x6`, `x7`, the counter `w10` and `x13 = n / 8`. -/
 def setup : List Instr :=
@@ -124,11 +136,17 @@ def setup : List Instr :=
 /-- Write the final counter back. -/
 def ctrStore : List Instr := [.rev32 .x12 .x10, .str .w .x12 .x2 12]
 
-def ctr32 : Prog isa :=
-  .seq (.block setup)
-    (.seq (.ite (.zero .x .x13) (.block []) (.loop body8 (.nonzero .x .x13)))
-      (.seq (.ite (.zero .x .x4) (.block []) (.loop body1 (.nonzero .x .x4)))
+/-- `vg_aes_ctr32_aes`, or out of place (`to`) `vg_aes_ctr32_to_aes`, with
+the destination in `x6`, moved to `x14` before `setup` takes `x6`. -/
+def ctr32Gen (to : Bool) : Prog isa :=
+  .seq (.block (cond to [.addImm .x .x14 .x6 0] [] ++ setup))
+    (.seq (.ite (.zero .x .x13) (.block []) (.loop (body8 to) (.nonzero .x .x13)))
+      (.seq (.ite (.zero .x .x4) (.block []) (.loop (body1 to) (.nonzero .x .x4)))
         (.block ctrStore)))
+
+def ctr32 : Prog isa := ctr32Gen false
+
+def ctr32To : Prog isa := ctr32Gen true
 
 /-! ## Key expansion -/
 
