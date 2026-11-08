@@ -333,6 +333,143 @@ theorem sub_ok {o x y : Nat} (ho : o + 32 ≤ 4096) (hx : x + 32 ≤ 4096) (hy :
       omega
     rw [hP, key, Nat.add_mul_mod_self_left]
 
+
+/-! ## The multiple by `a24` -/
+
+/-- A write that keeps CA. -/
+theorem wp_wr {i : Instr} {d : Reg} {v : BitVec 64} {is : List Instr} {s : State}
+    {Q : State → Prop} (he : exec i s = some (s.write d v))
+    (k : ∀ s', Upd s s' d v → s'.ca = s.ca → WP isa (.block is) s' Q) :
+    WP isa (.block (i :: is)) s Q :=
+  WP.cons he (k _ (Upd.write _ _ _) rfl)
+
+/-- Word `off` of the working space times `121665` (in `r5`): its low word
+into `d` and its high word into `h`. -/
+theorem wstep_ok {d h : Reg} (hdh : d ≠ h) (hd5 : d ≠ .r5) (hh5 : h ≠ .r5) {off : Nat} (ho : off + 8 ≤ 4096) (ho4 : off % 4 = 0) {s : State}
+    (hc : Ctx b s) (h5 : s.gpr .r5 = 121665) {is : List Instr} {Q : State → Prop}
+    (k : ∀ s', (s'.gpr d).toNat = dw s.mem b off * 121665 % 2 ^ 64 →
+      (s'.gpr h).toNat = dw s.mem b off * 121665 / 2 ^ 64 → s'.ca = s.ca → Rest [d, h] s s' →
+      s'.mem = s.mem → WP isa (.block is) s' Q) :
+    WP isa (.block (.load .d d .r6 off :: .mulhu h d .r5 :: .mul d d .r5 :: is)) s Q := by
+  refine ldw_ok hc ho ho4 ?_
+  generalize hs1 : s.write d _ = s1
+  have u1 : Upd s s1 d (s.mem.readW (b + BitVec.ofNat 64 off) 64) := hs1 ▸ Upd.write _ _ _
+  have c1 : s1.ca = s.ca := by rw [← hs1]; rfl
+  refine wp_wr exec_mulhu fun s2 u2 c2 => wp_wr exec_mul fun s3 u3 c3 => k s3 ?_ ?_ ?_ ?_ ?_
+  · have g1 : (s1.gpr d).toNat = dw s.mem b off := by rw [u1.gpr]; rfl
+    have g5 : s1.gpr .r5 = 121665 := by rw [u1.other _ (Ne.symm hd5), h5]
+    rw [u3.gpr, u2.other _ hdh, u2.other _ (Ne.symm hh5), g5, BitVec.toNat_mul, g1]; rfl
+  · have g1 : (s1.gpr d).toNat = dw s.mem b off := by rw [u1.gpr]; rfl
+    have g5 : s1.gpr .r5 = 121665 := by rw [u1.other _ (Ne.symm hd5), h5]
+    have hw := dw_lt s.mem b off
+    rw [u3.other _ (Ne.symm hdh), u2.gpr, g1, g5, show (121665 : BitVec 64).toNat = 121665 from rfl,
+      toNat_imm (by omega)]
+  · rw [c3, c2, c1]
+  · exact (u1.rest (by simp)).trans ((u2.rest (by simp)).trans (u3.rest (by simp)))
+  · rw [u3.mem, u2.mem, u1.mem]
+
+theorem lis_ori_a24 : ((((1 : BitVec 16) ++ (0 : BitVec 16)).signExtend 64) |||
+    (0xdb41 : BitVec 16).setWidth 64) = 121665 := by decide
+
+/-- `mulA24 o x`: a number congruent to `121665 [x]` at `o`. -/
+theorem mulA24_ok {o x : Nat} (ho : o + 32 ≤ 4096) (hx : x + 32 ≤ 4096) (ho4 : o % 4 = 0)
+    (hx4 : x % 4 = 0) {s : State} (hc : Ctx b s) :
+    WP isa (.block (mulA24 o x)) s fun s' =>
+      Rest clob s s' ∧ Frame [⟨b + BitVec.ofNat 64 o, 32⟩] s.mem s'.mem ∧
+      V s'.mem b o % P = (121665 * V s.mem b x) % P := by
+  unfold mulA24 a24Const stores4
+  simp only [List.append_assoc, List.cons_append, List.nil_append]
+  refine wp_wr exec_lis fun s1 u1 _ => wp_wr exec_ori fun s2 u2 _ => ?_
+  have r2 : Rest [.r5] s s2 := (u1.rest (by simp)).trans (u2.rest (by simp))
+  have hc2 := hc.of_rest r2 (by decide)
+  have h52 : s2.gpr .r5 = 121665 := by rw [u2.gpr, u1.gpr]; exact lis_ori_a24
+  have m2 : s2.mem = s.mem := by rw [u2.mem, u1.mem]
+  -- Word 0.
+  refine wstep_ok (d := .r8) (h := .r7) (by decide) (by decide) (by decide)
+    (by omega) (by omega) hc2 h52 fun s3 a3 b3 c3 r3 m3 => ?_
+  have hc3 := hc2.of_rest r3 (by decide)
+  -- Word 1.
+  refine wstep_ok (d := .r9) (h := .r4) (by decide) (by decide) (by decide)
+    (by omega) (by omega) hc3 (by rw [r3.gpr _ (by decide), h52]) fun s4 a4 b4 c4 r4 m4 => ?_
+  refine wp_addc fun s5 u5 => ?_
+  have hc5 := (hc3.of_rest r4 (by decide)).of_rest (u5.rest (ws := [.r9]) (by decide)) (by decide)
+  -- Word 2.
+  refine wstep_ok (d := .r10) (h := .r7) (by decide) (by decide) (by decide)
+    (by omega) (by omega) hc5
+    (by rw [u5.other _ (by decide), r4.gpr _ (by decide), r3.gpr _ (by decide), h52])
+    fun s6 a6 b6 c6 r6 m6 => ?_
+  refine wp_adde fun s7 u7 => ?_
+  have hc7 := (hc5.of_rest r6 (by decide)).of_rest (u7.rest (ws := [.r10]) (by decide)) (by decide)
+  -- Word 3.
+  refine wstep_ok (d := .r11) (h := .r4) (by decide) (by decide) (by decide)
+    (by omega) (by omega) hc7
+    (by rw [u7.other _ (by decide), r6.gpr _ (by decide), u5.other _ (by decide), r4.gpr _ (by decide),
+      r3.gpr _ (by decide), h52])
+    fun s8 a8 b8 c8 r8 m8 => ?_
+  refine wp_adde fun s9 u9 => wp_addze fun s10 u10 => WP.cons (exec_li (by decide)) ?_
+  generalize hs11 : s10.write .r5 (BitVec.ofNat 64 38) = s11
+  have r11 : Rest [.r5] s10 s11 := by rw [← hs11]; exact (Upd.write _ _ _).rest (by simp)
+  have h511 : s11.gpr .r5 = 38 := by rw [← hs11, RegUpd.gpr_write_self]; rfl
+  have m11 : s11.mem = s.mem := by
+    rw [← hs11, RegUpd.mem_write, u10.mem, u9.mem, m8, u7.mem, m6, u5.mem, m4, m3, m2]
+  -- The words of the product.
+  have K := fun i => Nat.mod_add_div (dw s.mem b (x + 8 * i) * 121665) (2 ^ 64)
+  have W := fun i => dw_lt s.mem b (x + 8 * i)
+  have M3 : s3.mem = s.mem := by rw [m3, m2]
+  have M5 : s5.mem = s.mem := by rw [u5.mem, m4, M3]
+  have M7 : s7.mem = s.mem := by rw [u7.mem, m6, M5]
+  rw [m2] at a3 b3; rw [M3] at a4 b4; rw [M5] at a6 b6; rw [M7] at a8 b8
+  have v5 := u5.val; have v7 := u7.val; have v9 := u9.val; have v10 := u10.val
+  rw [a4, r4.gpr .r7 (by decide), b3] at v5
+  rw [a6, r6.gpr .r4 (by decide), u5.other .r4 (by decide), b4, c6] at v7
+  rw [a8, r8.gpr .r7 (by decide), u7.other .r7 (by decide), b6, c8] at v9
+  rw [u9.other .r4 (by decide), b8] at v10
+  have h3 : dw s.mem b (x + 24) * 121665 / 2 ^ 64 < 121665 :=
+    Nat.div_lt_of_lt_mul (by have := dw_lt s.mem b (x + 24); omega)
+  have c9 : s9.ca.toNat ≤ 1 := u9.ca
+  have l10 := (s10.gpr .r7).isLt
+  have e7 : (s11.gpr .r7).toNat = dw s.mem b (x + 24) * 121665 / 2 ^ 64 + s9.ca.toNat := by
+    rw [r11.gpr _ (by decide)]; have := u10.ca; omega
+  have e8 : (s11.gpr .r8).toNat = dw s.mem b x * 121665 % 2 ^ 64 := by
+    rw [r11.gpr _ (by decide), u10.other _ (by decide), u9.other _ (by decide), r8.gpr _ (by decide),
+      u7.other _ (by decide), r6.gpr _ (by decide), u5.other _ (by decide), r4.gpr _ (by decide), a3]
+  have e9 : s11.gpr .r9 = s5.gpr .r9 := by
+    rw [r11.gpr _ (by decide), u10.other _ (by decide), u9.other _ (by decide), r8.gpr _ (by decide),
+      u7.other _ (by decide), r6.gpr _ (by decide)]
+  have e10 : s11.gpr .r10 = s7.gpr .r10 := by
+    rw [r11.gpr _ (by decide), u10.other _ (by decide), u9.other _ (by decide), r8.gpr _ (by decide)]
+  have e11 : s11.gpr .r11 = s9.gpr .r11 := by rw [r11.gpr _ (by decide), u10.other _ (by decide)]
+  have hv11 : rv4 s11 + 2 ^ 256 * (s11.gpr .r7).toNat = 121665 * V s.mem b x := by
+    rw [V_eq4, e7]
+    simp only [rv4, val4, ew, wreg, Nat.reduceEqDiff, ↓reduceIte, e9, e10, e11]
+    rw [e8]
+    simp only [Nat.mul_zero, Nat.add_zero] at K W v5 v7 v9 ⊢
+    have := K 0; have := K 1; have := K 2; have := K 3
+    simp only [Nat.mul_zero, Nat.add_zero, Nat.reduceMul] at *
+    omega_arith
+  have r11' : Rest clob s s11 :=
+    (r2.mono (by decide)).trans ((r3.mono (by decide)).trans ((r4.mono (by decide)).trans
+      ((u5.rest (by decide)).trans ((r6.mono (by decide)).trans ((u7.rest (by decide)).trans
+      ((r8.mono (by decide)).trans ((u9.rest (by decide)).trans ((u10.rest (by decide)).trans
+      (r11.mono (by decide))))))))))
+  have hc11 := hc.of_rest r11' (by decide)
+  have b11 : (s11.gpr .r7).toNat < 2 ^ 58 := by rw [e7]; omega
+  refine WP.append (foldTop_ok h511 b11) fun s12 ⟨v12, t12, r12, m12⟩ => ?_
+  refine WP.append (foldTop_ok (by rw [r12.gpr _ (by decide), h511]) (by omega))
+    fun s13 ⟨v13, t13, r13, m13⟩ => ?_
+  refine WP.mono (stores4_ok ho ho4 (hc11.of_rest (r12.trans r13) (by decide)))
+    fun s14 ⟨v14, f14, r14⟩ => ⟨?_, ?_, ?_⟩
+  · exact r11'.trans ((r12.mono (by decide)).trans ((r13.mono (by decide)).trans (r14.mono (by decide))))
+  · rw [m13, m12, m11] at f14; exact f14
+  · rw [v14]
+    have b12 := rv4_lt s12; have b13 := rv4_lt s13; have b11' := rv4_lt s11
+    have hP : P = 2 ^ 255 - 19 := rfl
+    generalize V s.mem b x = X at *
+    have z13 : (s13.gpr .r7).toNat = 0 := by omega
+    rw [z13] at v13
+    rw [hP]
+    omega
+
 end
 
 end VG.Proof.X25519.PPC64LE
