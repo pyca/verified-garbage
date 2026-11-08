@@ -13,9 +13,10 @@ meta import VerifiedGarbage.Artifacts.Poly1305.AArch64
 How a dispatcher reads and ranks its implementations' suffixes, and what it
 is for Poly1305 on AArch64: `vg_poly1305_update` and its `_neon` variant,
 which its registration lets the dispatcher choose only on Apple's targets
-(or where `VG_CPU_FEATURES` names its features), and only with the `neon` feature
-detected; `vg_poly1305_init` and `vg_poly1305_finalize`, its only
-implementations, whose dispatchers are other names of them.
+(or where `VG_CPU_FEATURES` names its features), and only where the target
+enables or detection reports the `neon` feature; `vg_poly1305_init` and
+`vg_poly1305_finalize`, its only implementations, whose dispatchers are
+other names of them.
 -/
 
 namespace VG.Test.Dispatch
@@ -68,8 +69,10 @@ def has (text part : String) : Bool := (text.splitOn part).length > 1
   "    fn select() -> Impl {\n        \
     let cpu = verified_garbage_cpu::detected();\n        \
     if (cfg!(target_vendor = \"apple\") || verified_garbage_cpu::requested(\
-    verified_garbage_cpu::Features(verified_garbage_cpu::feature::NEON))) && \
-    cpu.contains(verified_garbage_cpu::Features(verified_garbage_cpu::feature::NEON)) {\n            \
+    verified_garbage_cpu::Features(verified_garbage_cpu::feature::NEON)))\n            \
+    && (const { verified_garbage_cpu::target_contains(\
+    verified_garbage_cpu::Features(verified_garbage_cpu::feature::NEON)) }\n            \
+    || cpu.contains(verified_garbage_cpu::Features(verified_garbage_cpu::feature::NEON)))\n        {\n            \
     return crate::poly1305::vg_poly1305_update_neon;\n        }\n        \
     crate::poly1305::vg_poly1305_update\n    }\n"
 #guard has file
@@ -119,7 +122,7 @@ def neonOut (rk : Rust.Ranking) (f : Artifact → Artifact) : Except String (Lis
 #guard match neonOut plainRanking id with
   | .ok fs => fs != out && has (((fs.find? (·.1 ==
       "verified-garbage-asm-aarch64/src/dispatch/poly1305.rs")).map (·.2)).getD "")
-      "    if cpu.0 != 0 {\n"
+      "        if const { verified_garbage_cpu::COMPILED.0 != 0 }\n            || cpu.0 != 0\n        {\n"
   | .error _ => false
 
 -- A vendor or feature that is not a name fails the emitter.
@@ -192,10 +195,12 @@ def tables : String := tableText rs [tU, tAvx2, t2, tT, tShani]
   "pub fn vg_t_auto() -> &'static crate::fn_tables::Fns {\n    \
     let cpu = verified_garbage_cpu::detected();\n    \
     #[cfg(target_feature = \"sha\")]\n    \
-    if cpu.contains(crate::fn_tables::VG_T_SHANI_FEATURES) {\n        \
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_T_SHANI_FEATURES) }\n        \
+    || cpu.contains(crate::fn_tables::VG_T_SHANI_FEATURES)\n    {\n        \
     return &crate::fn_tables::VG_T_SHANI;\n    }\n    \
     #[cfg(target_feature = \"avx2\")]\n    \
-    if cpu.contains(crate::fn_tables::VG_T_AVX2_FEATURES) {\n        \
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_T_AVX2_FEATURES) }\n        \
+    || cpu.contains(crate::fn_tables::VG_T_AVX2_FEATURES)\n    {\n        \
     return &crate::fn_tables::VG_T_AVX2;\n    }\n    \
     &crate::fn_tables::VG_T\n}\n"
 

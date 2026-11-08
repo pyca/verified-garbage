@@ -25,7 +25,9 @@ pub unsafe fn vg_aes_siv_init_auto(key: *const u8, key_len: usize, ctx: *mut [u6
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::aes_siv::VG_AES_SIV_INIT_AES_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_siv::VG_AES_SIV_INIT_AES_FEATURES) }
+            || cpu.contains(crate::aes_siv::VG_AES_SIV_INIT_AES_FEATURES)
+        {
             return crate::aes_siv::vg_aes_siv_init_aes;
         }
         crate::aes_siv::vg_aes_siv_init
@@ -74,7 +76,9 @@ pub unsafe fn vg_aes_siv_encrypt_auto(ctx: *const [u64; 64], rounds: usize, ads:
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::aes_siv::VG_AES_SIV_ENCRYPT_AES_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_siv::VG_AES_SIV_ENCRYPT_AES_FEATURES) }
+            || cpu.contains(crate::aes_siv::VG_AES_SIV_ENCRYPT_AES_FEATURES)
+        {
             return crate::aes_siv::vg_aes_siv_encrypt_aes;
         }
         crate::aes_siv::vg_aes_siv_encrypt
@@ -123,7 +127,9 @@ pub unsafe fn vg_aes_siv_decrypt_auto(ctx: *const [u64; 64], rounds: usize, ads:
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::aes_siv::VG_AES_SIV_DECRYPT_AES_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_siv::VG_AES_SIV_DECRYPT_AES_FEATURES) }
+            || cpu.contains(crate::aes_siv::VG_AES_SIV_DECRYPT_AES_FEATURES)
+        {
             return crate::aes_siv::vg_aes_siv_decrypt_aes;
         }
         crate::aes_siv::vg_aes_siv_decrypt

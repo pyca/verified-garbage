@@ -31,7 +31,9 @@ pub unsafe fn vg_blake2s_update_auto(state: *mut [u8; 96], count: u64, data: *co
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::blake2s::VG_BLAKE2S_UPDATE_AVX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::blake2s::VG_BLAKE2S_UPDATE_AVX_FEATURES) }
+            || cpu.contains(crate::blake2s::VG_BLAKE2S_UPDATE_AVX_FEATURES)
+        {
             return crate::blake2s::vg_blake2s_update_avx;
         }
         crate::blake2s::vg_blake2s_update
@@ -79,7 +81,9 @@ pub unsafe fn vg_blake2s_finalize_auto(state: *mut [u8; 96], count: u64, out: *m
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::blake2s::VG_BLAKE2S_FINALIZE_AVX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::blake2s::VG_BLAKE2S_FINALIZE_AVX_FEATURES) }
+            || cpu.contains(crate::blake2s::VG_BLAKE2S_FINALIZE_AVX_FEATURES)
+        {
             return crate::blake2s::vg_blake2s_finalize_avx;
         }
         crate::blake2s::vg_blake2s_finalize

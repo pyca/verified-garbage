@@ -35,7 +35,9 @@ pub unsafe fn vg_sm4_gcm_seal_auto(ctx: *const [u64; 32], nonce: *const u8, nonc
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::sm4_gcm::VG_SM4_GCM_SEAL_AES_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::sm4_gcm::VG_SM4_GCM_SEAL_AES_FEATURES) }
+            || cpu.contains(crate::sm4_gcm::VG_SM4_GCM_SEAL_AES_FEATURES)
+        {
             return crate::sm4_gcm::vg_sm4_gcm_seal_aes;
         }
         crate::sm4_gcm::vg_sm4_gcm_seal
@@ -86,7 +88,9 @@ pub unsafe fn vg_sm4_gcm_open_auto(ctx: *const [u64; 32], nonce: *const u8, nonc
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::sm4_gcm::VG_SM4_GCM_OPEN_AES_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::sm4_gcm::VG_SM4_GCM_OPEN_AES_FEATURES) }
+            || cpu.contains(crate::sm4_gcm::VG_SM4_GCM_OPEN_AES_FEATURES)
+        {
             return crate::sm4_gcm::vg_sm4_gcm_open_aes;
         }
         crate::sm4_gcm::vg_sm4_gcm_open
@@ -133,7 +137,9 @@ pub unsafe fn vg_sm4_gcm_stream_aad_auto(ctx: *const [u64; 32], state: *mut [u64
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_AAD_AES_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_AAD_AES_FEATURES) }
+            || cpu.contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_AAD_AES_FEATURES)
+        {
             return crate::sm4_gcm::vg_sm4_gcm_stream_aad_aes;
         }
         crate::sm4_gcm::vg_sm4_gcm_stream_aad
@@ -182,7 +188,9 @@ pub unsafe fn vg_sm4_gcm_stream_init_auto(ctx: *const [u64; 32], nonce: *const u
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_INIT_AES_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_INIT_AES_FEATURES) }
+            || cpu.contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_INIT_AES_FEATURES)
+        {
             return crate::sm4_gcm::vg_sm4_gcm_stream_init_aes;
         }
         crate::sm4_gcm::vg_sm4_gcm_stream_init
@@ -230,7 +238,9 @@ pub unsafe fn vg_sm4_gcm_stream_finish_auto(ctx: *const [u64; 32], state: *mut [
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_FINISH_AES_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_FINISH_AES_FEATURES) }
+            || cpu.contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_FINISH_AES_FEATURES)
+        {
             return crate::sm4_gcm::vg_sm4_gcm_stream_finish_aes;
         }
         crate::sm4_gcm::vg_sm4_gcm_stream_finish
@@ -278,7 +288,9 @@ pub unsafe fn vg_sm4_gcm_stream_verify_auto(ctx: *const [u64; 32], state: *mut [
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_VERIFY_AES_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_VERIFY_AES_FEATURES) }
+            || cpu.contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_VERIFY_AES_FEATURES)
+        {
             return crate::sm4_gcm::vg_sm4_gcm_stream_verify_aes;
         }
         crate::sm4_gcm::vg_sm4_gcm_stream_verify
@@ -327,7 +339,9 @@ pub unsafe fn vg_sm4_gcm_stream_encrypt_auto(ctx: *const [u64; 32], state: *mut 
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_ENCRYPT_AES_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_ENCRYPT_AES_FEATURES) }
+            || cpu.contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_ENCRYPT_AES_FEATURES)
+        {
             return crate::sm4_gcm::vg_sm4_gcm_stream_encrypt_aes;
         }
         crate::sm4_gcm::vg_sm4_gcm_stream_encrypt
@@ -376,7 +390,9 @@ pub unsafe fn vg_sm4_gcm_stream_decrypt_auto(ctx: *const [u64; 32], state: *mut 
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_DECRYPT_AES_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_DECRYPT_AES_FEATURES) }
+            || cpu.contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_DECRYPT_AES_FEATURES)
+        {
             return crate::sm4_gcm::vg_sm4_gcm_stream_decrypt_aes;
         }
         crate::sm4_gcm::vg_sm4_gcm_stream_decrypt

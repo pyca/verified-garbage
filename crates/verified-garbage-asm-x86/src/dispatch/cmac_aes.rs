@@ -25,7 +25,9 @@ pub unsafe fn vg_cmac_aes_init_auto(state: *mut [u64; 38], key: *const u8, key_l
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::cmac_aes::VG_CMAC_AES_INIT_AESNI_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::cmac_aes::VG_CMAC_AES_INIT_AESNI_FEATURES) }
+            || cpu.contains(crate::cmac_aes::VG_CMAC_AES_INIT_AESNI_FEATURES)
+        {
             return crate::cmac_aes::vg_cmac_aes_init_aesni;
         }
         crate::cmac_aes::vg_cmac_aes_init
@@ -72,7 +74,9 @@ pub unsafe fn vg_cmac_aes_absorb_auto(state: *mut [u64; 38], rounds: usize, coun
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::cmac_aes::VG_CMAC_AES_ABSORB_AESNI_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::cmac_aes::VG_CMAC_AES_ABSORB_AESNI_FEATURES) }
+            || cpu.contains(crate::cmac_aes::VG_CMAC_AES_ABSORB_AESNI_FEATURES)
+        {
             return crate::cmac_aes::vg_cmac_aes_absorb_aesni;
         }
         crate::cmac_aes::vg_cmac_aes_absorb
@@ -120,7 +124,9 @@ pub unsafe fn vg_cmac_aes_finish_auto(state: *mut [u64; 38], rounds: usize, coun
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::cmac_aes::VG_CMAC_AES_FINISH_AESNI_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::cmac_aes::VG_CMAC_AES_FINISH_AESNI_FEATURES) }
+            || cpu.contains(crate::cmac_aes::VG_CMAC_AES_FINISH_AESNI_FEATURES)
+        {
             return crate::cmac_aes::vg_cmac_aes_finish_aesni;
         }
         crate::cmac_aes::vg_cmac_aes_finish

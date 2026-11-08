@@ -26,7 +26,9 @@ pub unsafe fn vg_x448_base_auto(out: *mut [u8; 56], scalar: *const [u8; 56], scr
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::x448::VG_X448_BASE_ADX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::x448::VG_X448_BASE_ADX_FEATURES) }
+            || cpu.contains(crate::x448::VG_X448_BASE_ADX_FEATURES)
+        {
             return crate::x448::vg_x448_base_adx;
         }
         crate::x448::vg_x448_base
@@ -75,7 +77,9 @@ pub unsafe fn vg_x448_exchange_auto(out: *mut [u8; 56], scalar: *const [u8; 56],
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::x448::VG_X448_EXCHANGE_ADX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::x448::VG_X448_EXCHANGE_ADX_FEATURES) }
+            || cpu.contains(crate::x448::VG_X448_EXCHANGE_ADX_FEATURES)
+        {
             return crate::x448::vg_x448_exchange_adx;
         }
         crate::x448::vg_x448_exchange

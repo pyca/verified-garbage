@@ -48,7 +48,9 @@ pub unsafe fn vg_rsa_oaep_decrypt_auto(out: *mut u8, out_len: usize, msg_len: *m
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
         #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-        if cpu.contains(crate::rsa_oaep::VG_RSA_OAEP_DECRYPT_UMAAL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::rsa_oaep::VG_RSA_OAEP_DECRYPT_UMAAL_FEATURES) }
+            || cpu.contains(crate::rsa_oaep::VG_RSA_OAEP_DECRYPT_UMAAL_FEATURES)
+        {
             return crate::rsa_oaep::vg_rsa_oaep_decrypt_umaal;
         }
         crate::rsa_oaep::vg_rsa_oaep_decrypt
@@ -115,7 +117,9 @@ pub unsafe fn vg_rsa_oaep_encrypt_precomputed_auto(out: *mut u8, out_len: usize,
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
         #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-        if cpu.contains(crate::rsa_oaep::VG_RSA_OAEP_ENCRYPT_PRECOMPUTED_UMAAL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::rsa_oaep::VG_RSA_OAEP_ENCRYPT_PRECOMPUTED_UMAAL_FEATURES) }
+            || cpu.contains(crate::rsa_oaep::VG_RSA_OAEP_ENCRYPT_PRECOMPUTED_UMAAL_FEATURES)
+        {
             return crate::rsa_oaep::vg_rsa_oaep_encrypt_precomputed_umaal;
         }
         crate::rsa_oaep::vg_rsa_oaep_encrypt_precomputed

@@ -31,10 +31,14 @@ pub unsafe fn vg_triple_des_cbc_decrypt_chained_auto(schedule: *const [u8; 384],
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::triple_des_cbc::VG_TRIPLE_DES_CBC_DECRYPT_CHAINED_AVX512_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::triple_des_cbc::VG_TRIPLE_DES_CBC_DECRYPT_CHAINED_AVX512_FEATURES) }
+            || cpu.contains(crate::triple_des_cbc::VG_TRIPLE_DES_CBC_DECRYPT_CHAINED_AVX512_FEATURES)
+        {
             return crate::triple_des_cbc::vg_triple_des_cbc_decrypt_chained_avx512;
         }
-        if cpu.contains(crate::triple_des_cbc::VG_TRIPLE_DES_CBC_DECRYPT_CHAINED_AVX2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::triple_des_cbc::VG_TRIPLE_DES_CBC_DECRYPT_CHAINED_AVX2_FEATURES) }
+            || cpu.contains(crate::triple_des_cbc::VG_TRIPLE_DES_CBC_DECRYPT_CHAINED_AVX2_FEATURES)
+        {
             return crate::triple_des_cbc::vg_triple_des_cbc_decrypt_chained_avx2;
         }
         crate::triple_des_cbc::vg_triple_des_cbc_decrypt_chained

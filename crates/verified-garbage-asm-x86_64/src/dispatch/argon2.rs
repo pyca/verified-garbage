@@ -35,13 +35,19 @@ pub unsafe fn vg_argon2_auto(kind: u32, password: *const u8, password_len: usize
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::argon2::VG_ARGON2_BLAKE2B_AVX512_G_AVX512_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::argon2::VG_ARGON2_BLAKE2B_AVX512_G_AVX512_FEATURES) }
+            || cpu.contains(crate::argon2::VG_ARGON2_BLAKE2B_AVX512_G_AVX512_FEATURES)
+        {
             return crate::argon2::vg_argon2_blake2b_avx512_g_avx512;
         }
-        if cpu.contains(crate::argon2::VG_ARGON2_BLAKE2B_AVX2_G_AVX512_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::argon2::VG_ARGON2_BLAKE2B_AVX2_G_AVX512_FEATURES) }
+            || cpu.contains(crate::argon2::VG_ARGON2_BLAKE2B_AVX2_G_AVX512_FEATURES)
+        {
             return crate::argon2::vg_argon2_blake2b_avx2_g_avx512;
         }
-        if cpu.contains(crate::argon2::VG_ARGON2_BLAKE2B_AVX2_G_AVX2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::argon2::VG_ARGON2_BLAKE2B_AVX2_G_AVX2_FEATURES) }
+            || cpu.contains(crate::argon2::VG_ARGON2_BLAKE2B_AVX2_G_AVX2_FEATURES)
+        {
             return crate::argon2::vg_argon2_blake2b_avx2_g_avx2;
         }
         crate::argon2::vg_argon2

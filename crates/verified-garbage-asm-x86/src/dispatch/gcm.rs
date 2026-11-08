@@ -27,7 +27,9 @@ pub unsafe fn vg_aes_gcm_init_auto(key: *const u8, key_len: usize, ctx: *mut [u6
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::gcm::VG_AES_GCM_INIT_AESNI_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_INIT_AESNI_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_INIT_AESNI_FEATURES)
+        {
             return crate::gcm::vg_aes_gcm_init_aesni;
         }
         crate::gcm::vg_aes_gcm_init
@@ -81,13 +83,19 @@ pub unsafe fn vg_aes_gcm_seal_auto(ctx: *const [u64; 32], rounds: usize, nonce: 
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::gcm::VG_AES_GCM_SEAL_AESNI_PCLMUL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_SEAL_AESNI_PCLMUL_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_SEAL_AESNI_PCLMUL_FEATURES)
+        {
             return crate::gcm::vg_aes_gcm_seal_aesni_pclmul;
         }
-        if cpu.contains(crate::gcm::VG_AES_GCM_SEAL_AESNI_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_SEAL_AESNI_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_SEAL_AESNI_FEATURES)
+        {
             return crate::gcm::vg_aes_gcm_seal_aesni;
         }
-        if cpu.contains(crate::gcm::VG_AES_GCM_SEAL_PCLMUL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_SEAL_PCLMUL_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_SEAL_PCLMUL_FEATURES)
+        {
             return crate::gcm::vg_aes_gcm_seal_pclmul;
         }
         crate::gcm::vg_aes_gcm_seal
@@ -141,13 +149,19 @@ pub unsafe fn vg_aes_gcm_open_auto(ctx: *const [u64; 32], rounds: usize, nonce: 
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::gcm::VG_AES_GCM_OPEN_AESNI_PCLMUL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_OPEN_AESNI_PCLMUL_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_OPEN_AESNI_PCLMUL_FEATURES)
+        {
             return crate::gcm::vg_aes_gcm_open_aesni_pclmul;
         }
-        if cpu.contains(crate::gcm::VG_AES_GCM_OPEN_AESNI_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_OPEN_AESNI_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_OPEN_AESNI_FEATURES)
+        {
             return crate::gcm::vg_aes_gcm_open_aesni;
         }
-        if cpu.contains(crate::gcm::VG_AES_GCM_OPEN_PCLMUL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_OPEN_PCLMUL_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_OPEN_PCLMUL_FEATURES)
+        {
             return crate::gcm::vg_aes_gcm_open_pclmul;
         }
         crate::gcm::vg_aes_gcm_open
@@ -203,13 +217,19 @@ pub unsafe fn vg_aes_gcm_open_to_auto(ctx: *const [u64; 32], rounds: usize, nonc
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::gcm::VG_AES_GCM_OPEN_TO_AESNI_PCLMUL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_OPEN_TO_AESNI_PCLMUL_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_OPEN_TO_AESNI_PCLMUL_FEATURES)
+        {
             return crate::gcm::vg_aes_gcm_open_to_aesni_pclmul;
         }
-        if cpu.contains(crate::gcm::VG_AES_GCM_OPEN_TO_AESNI_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_OPEN_TO_AESNI_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_OPEN_TO_AESNI_FEATURES)
+        {
             return crate::gcm::vg_aes_gcm_open_to_aesni;
         }
-        if cpu.contains(crate::gcm::VG_AES_GCM_OPEN_TO_PCLMUL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_OPEN_TO_PCLMUL_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_OPEN_TO_PCLMUL_FEATURES)
+        {
             return crate::gcm::vg_aes_gcm_open_to_pclmul;
         }
         crate::gcm::vg_aes_gcm_open_to
@@ -258,7 +278,9 @@ pub unsafe fn vg_aes_gcm_stream_aad_auto(ctx: *const [u64; 32], state: *mut [u64
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_AAD_PCLMUL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_AAD_PCLMUL_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_AAD_PCLMUL_FEATURES)
+        {
             return crate::gcm::vg_aes_gcm_stream_aad_pclmul;
         }
         crate::gcm::vg_aes_gcm_stream_aad
@@ -314,13 +336,19 @@ pub unsafe fn vg_aes_gcm_seal_gather_auto(ctx: *const [u64; 32], rounds: usize, 
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::gcm::VG_AES_GCM_SEAL_GATHER_AESNI_PCLMUL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_SEAL_GATHER_AESNI_PCLMUL_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_SEAL_GATHER_AESNI_PCLMUL_FEATURES)
+        {
             return crate::gcm::vg_aes_gcm_seal_gather_aesni_pclmul;
         }
-        if cpu.contains(crate::gcm::VG_AES_GCM_SEAL_GATHER_AESNI_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_SEAL_GATHER_AESNI_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_SEAL_GATHER_AESNI_FEATURES)
+        {
             return crate::gcm::vg_aes_gcm_seal_gather_aesni;
         }
-        if cpu.contains(crate::gcm::VG_AES_GCM_SEAL_GATHER_PCLMUL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_SEAL_GATHER_PCLMUL_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_SEAL_GATHER_PCLMUL_FEATURES)
+        {
             return crate::gcm::vg_aes_gcm_seal_gather_pclmul;
         }
         crate::gcm::vg_aes_gcm_seal_gather
@@ -371,7 +399,9 @@ pub unsafe fn vg_aes_gcm_stream_init_auto(ctx: *const [u64; 32], nonce: *const u
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_INIT_PCLMUL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_INIT_PCLMUL_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_INIT_PCLMUL_FEATURES)
+        {
             return crate::gcm::vg_aes_gcm_stream_init_pclmul;
         }
         crate::gcm::vg_aes_gcm_stream_init
@@ -422,13 +452,19 @@ pub unsafe fn vg_aes_gcm_stream_finish_auto(ctx: *const [u64; 32], rounds: usize
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_FINISH_AESNI_PCLMUL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_FINISH_AESNI_PCLMUL_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_FINISH_AESNI_PCLMUL_FEATURES)
+        {
             return crate::gcm::vg_aes_gcm_stream_finish_aesni_pclmul;
         }
-        if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_FINISH_AESNI_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_FINISH_AESNI_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_FINISH_AESNI_FEATURES)
+        {
             return crate::gcm::vg_aes_gcm_stream_finish_aesni;
         }
-        if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_FINISH_PCLMUL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_FINISH_PCLMUL_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_FINISH_PCLMUL_FEATURES)
+        {
             return crate::gcm::vg_aes_gcm_stream_finish_pclmul;
         }
         crate::gcm::vg_aes_gcm_stream_finish
@@ -479,13 +515,19 @@ pub unsafe fn vg_aes_gcm_stream_verify_auto(ctx: *const [u64; 32], rounds: usize
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_FEATURES)
+        {
             return crate::gcm::vg_aes_gcm_stream_verify_aesni_pclmul;
         }
-        if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_VERIFY_AESNI_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_VERIFY_AESNI_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_VERIFY_AESNI_FEATURES)
+        {
             return crate::gcm::vg_aes_gcm_stream_verify_aesni;
         }
-        if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_VERIFY_PCLMUL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_VERIFY_PCLMUL_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_VERIFY_PCLMUL_FEATURES)
+        {
             return crate::gcm::vg_aes_gcm_stream_verify_pclmul;
         }
         crate::gcm::vg_aes_gcm_stream_verify
@@ -537,13 +579,19 @@ pub unsafe fn vg_aes_gcm_stream_encrypt_auto(ctx: *const [u64; 32], rounds: usiz
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_ENCRYPT_AESNI_PCLMUL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_ENCRYPT_AESNI_PCLMUL_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_ENCRYPT_AESNI_PCLMUL_FEATURES)
+        {
             return crate::gcm::vg_aes_gcm_stream_encrypt_aesni_pclmul;
         }
-        if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_ENCRYPT_AESNI_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_ENCRYPT_AESNI_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_ENCRYPT_AESNI_FEATURES)
+        {
             return crate::gcm::vg_aes_gcm_stream_encrypt_aesni;
         }
-        if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_ENCRYPT_PCLMUL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_ENCRYPT_PCLMUL_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_ENCRYPT_PCLMUL_FEATURES)
+        {
             return crate::gcm::vg_aes_gcm_stream_encrypt_pclmul;
         }
         crate::gcm::vg_aes_gcm_stream_encrypt
@@ -595,13 +643,19 @@ pub unsafe fn vg_aes_gcm_stream_decrypt_auto(ctx: *const [u64; 32], rounds: usiz
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_DECRYPT_AESNI_PCLMUL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_DECRYPT_AESNI_PCLMUL_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_DECRYPT_AESNI_PCLMUL_FEATURES)
+        {
             return crate::gcm::vg_aes_gcm_stream_decrypt_aesni_pclmul;
         }
-        if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_DECRYPT_AESNI_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_DECRYPT_AESNI_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_DECRYPT_AESNI_FEATURES)
+        {
             return crate::gcm::vg_aes_gcm_stream_decrypt_aesni;
         }
-        if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_DECRYPT_PCLMUL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_DECRYPT_PCLMUL_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_DECRYPT_PCLMUL_FEATURES)
+        {
             return crate::gcm::vg_aes_gcm_stream_decrypt_pclmul;
         }
         crate::gcm::vg_aes_gcm_stream_decrypt

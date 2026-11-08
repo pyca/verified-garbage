@@ -40,7 +40,9 @@ pub unsafe fn vg_rsa_pkcs1_sign_auto(out: *mut u8, out_len: usize, n: *const u8,
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
         #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-        if cpu.contains(crate::rsa_pkcs1_sig::VG_RSA_PKCS1_SIGN_UMAAL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::rsa_pkcs1_sig::VG_RSA_PKCS1_SIGN_UMAAL_FEATURES) }
+            || cpu.contains(crate::rsa_pkcs1_sig::VG_RSA_PKCS1_SIGN_UMAAL_FEATURES)
+        {
             return crate::rsa_pkcs1_sig::vg_rsa_pkcs1_sign_umaal;
         }
         crate::rsa_pkcs1_sig::vg_rsa_pkcs1_sign
@@ -101,7 +103,9 @@ pub unsafe fn vg_rsa_pkcs1_verify_precomputed_auto(n: *const u8, n_len: usize, e
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
         #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-        if cpu.contains(crate::rsa_pkcs1_sig::VG_RSA_PKCS1_VERIFY_PRECOMPUTED_UMAAL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::rsa_pkcs1_sig::VG_RSA_PKCS1_VERIFY_PRECOMPUTED_UMAAL_FEATURES) }
+            || cpu.contains(crate::rsa_pkcs1_sig::VG_RSA_PKCS1_VERIFY_PRECOMPUTED_UMAAL_FEATURES)
+        {
             return crate::rsa_pkcs1_sig::vg_rsa_pkcs1_verify_precomputed_umaal;
         }
         crate::rsa_pkcs1_sig::vg_rsa_pkcs1_verify_precomputed
@@ -163,7 +167,9 @@ pub unsafe fn vg_rsa_pkcs1_recover_precomputed_auto(out: *mut u8, out_len: usize
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
         #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-        if cpu.contains(crate::rsa_pkcs1_sig::VG_RSA_PKCS1_RECOVER_PRECOMPUTED_UMAAL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::rsa_pkcs1_sig::VG_RSA_PKCS1_RECOVER_PRECOMPUTED_UMAAL_FEATURES) }
+            || cpu.contains(crate::rsa_pkcs1_sig::VG_RSA_PKCS1_RECOVER_PRECOMPUTED_UMAAL_FEATURES)
+        {
             return crate::rsa_pkcs1_sig::vg_rsa_pkcs1_recover_precomputed_umaal;
         }
         crate::rsa_pkcs1_sig::vg_rsa_pkcs1_recover_precomputed

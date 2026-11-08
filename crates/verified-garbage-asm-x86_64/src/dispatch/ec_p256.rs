@@ -26,7 +26,9 @@ pub unsafe fn vg_ec_p256_public_key_auto(out: *mut [u8; 65], d: *const [u8; 32],
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::ec_p256::VG_EC_P256_PUBLIC_KEY_ADX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ec_p256::VG_EC_P256_PUBLIC_KEY_ADX_FEATURES) }
+            || cpu.contains(crate::ec_p256::VG_EC_P256_PUBLIC_KEY_ADX_FEATURES)
+        {
             return crate::ec_p256::vg_ec_p256_public_key_adx;
         }
         crate::ec_p256::vg_ec_p256_public_key

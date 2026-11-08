@@ -41,28 +41,44 @@ pub unsafe fn vg_rsa_pkcs1_decrypt_auto(out: *mut u8, out_len: usize, msg_len: *
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_SHA256_SHANI_CRT_IFMA_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_SHA256_SHANI_CRT_IFMA_FEATURES) }
+            || cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_SHA256_SHANI_CRT_IFMA_FEATURES)
+        {
             return crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_sha256_shani_crt_ifma;
         }
-        if cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_SHA256_SHANI_CRT_ADX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_SHA256_SHANI_CRT_ADX_FEATURES) }
+            || cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_SHA256_SHANI_CRT_ADX_FEATURES)
+        {
             return crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_sha256_shani_crt_adx;
         }
-        if cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_SHA256_SHANI_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_SHA256_SHANI_FEATURES) }
+            || cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_SHA256_SHANI_FEATURES)
+        {
             return crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_sha256_shani;
         }
-        if cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_SHA256_AVX2_CRT_IFMA_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_SHA256_AVX2_CRT_IFMA_FEATURES) }
+            || cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_SHA256_AVX2_CRT_IFMA_FEATURES)
+        {
             return crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_sha256_avx2_crt_ifma;
         }
-        if cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_SHA256_AVX2_CRT_ADX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_SHA256_AVX2_CRT_ADX_FEATURES) }
+            || cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_SHA256_AVX2_CRT_ADX_FEATURES)
+        {
             return crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_sha256_avx2_crt_adx;
         }
-        if cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_SHA256_AVX2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_SHA256_AVX2_FEATURES) }
+            || cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_SHA256_AVX2_FEATURES)
+        {
             return crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_sha256_avx2;
         }
-        if cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_CRT_IFMA_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_CRT_IFMA_FEATURES) }
+            || cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_CRT_IFMA_FEATURES)
+        {
             return crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_crt_ifma;
         }
-        if cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_CRT_ADX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_CRT_ADX_FEATURES) }
+            || cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_CRT_ADX_FEATURES)
+        {
             return crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_crt_adx;
         }
         crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt
@@ -124,10 +140,14 @@ pub unsafe fn vg_rsa_pkcs1_encrypt_random_auto(out: *mut u8, out_len: usize, tap
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_ENCRYPT_RANDOM_IFMA_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_ENCRYPT_RANDOM_IFMA_FEATURES) }
+            || cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_ENCRYPT_RANDOM_IFMA_FEATURES)
+        {
             return crate::rsa_pkcs1_enc::vg_rsa_pkcs1_encrypt_random_ifma;
         }
-        if cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_ENCRYPT_RANDOM_ADX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_ENCRYPT_RANDOM_ADX_FEATURES) }
+            || cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_ENCRYPT_RANDOM_ADX_FEATURES)
+        {
             return crate::rsa_pkcs1_enc::vg_rsa_pkcs1_encrypt_random_adx;
         }
         crate::rsa_pkcs1_enc::vg_rsa_pkcs1_encrypt_random

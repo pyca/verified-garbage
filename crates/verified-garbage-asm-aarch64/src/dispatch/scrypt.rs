@@ -30,7 +30,9 @@ pub unsafe fn vg_scrypt_auto(password: *const u8, password_len: usize, salt: *co
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::scrypt::VG_SCRYPT_SHA2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::scrypt::VG_SCRYPT_SHA2_FEATURES) }
+            || cpu.contains(crate::scrypt::VG_SCRYPT_SHA2_FEATURES)
+        {
             return crate::scrypt::vg_scrypt_sha2;
         }
         crate::scrypt::vg_scrypt

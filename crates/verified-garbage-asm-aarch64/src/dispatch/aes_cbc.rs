@@ -28,7 +28,9 @@ pub unsafe fn vg_aes_cbc_encrypt_auto(schedule: *const [u8; 240], rounds: usize,
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::aes_cbc::VG_AES_CBC_ENCRYPT_AES_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_cbc::VG_AES_CBC_ENCRYPT_AES_FEATURES) }
+            || cpu.contains(crate::aes_cbc::VG_AES_CBC_ENCRYPT_AES_FEATURES)
+        {
             return crate::aes_cbc::vg_aes_cbc_encrypt_aes;
         }
         crate::aes_cbc::vg_aes_cbc_encrypt
@@ -78,10 +80,14 @@ pub unsafe fn vg_aes_cbc_decrypt_auto(schedule: *const [u8; 240], rounds: usize,
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::aes_cbc::VG_AES_CBC_DECRYPT_AES_SHA3_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_cbc::VG_AES_CBC_DECRYPT_AES_SHA3_FEATURES) }
+            || cpu.contains(crate::aes_cbc::VG_AES_CBC_DECRYPT_AES_SHA3_FEATURES)
+        {
             return crate::aes_cbc::vg_aes_cbc_decrypt_aes_sha3;
         }
-        if cpu.contains(crate::aes_cbc::VG_AES_CBC_DECRYPT_AES_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_cbc::VG_AES_CBC_DECRYPT_AES_FEATURES) }
+            || cpu.contains(crate::aes_cbc::VG_AES_CBC_DECRYPT_AES_FEATURES)
+        {
             return crate::aes_cbc::vg_aes_cbc_decrypt_aes;
         }
         crate::aes_cbc::vg_aes_cbc_decrypt

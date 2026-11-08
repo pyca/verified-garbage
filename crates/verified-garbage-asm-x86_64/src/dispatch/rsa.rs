@@ -41,7 +41,9 @@ pub unsafe fn vg_rsa_public_precompute_auto(pre: *mut u64, pre_len: usize, n: *c
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::rsa::VG_RSA_PUBLIC_PRECOMPUTE_ADX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::rsa::VG_RSA_PUBLIC_PRECOMPUTE_ADX_FEATURES) }
+            || cpu.contains(crate::rsa::VG_RSA_PUBLIC_PRECOMPUTE_ADX_FEATURES)
+        {
             return crate::rsa::vg_rsa_public_precompute_adx;
         }
         crate::rsa::vg_rsa_public_precompute

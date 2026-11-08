@@ -27,7 +27,9 @@ pub unsafe fn vg_ec_p224_public_key_auto(out: *mut [u8; 57], d: *const [u8; 28],
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
         #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-        if cpu.contains(crate::ec_p224::VG_EC_P224_PUBLIC_KEY_UMAAL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ec_p224::VG_EC_P224_PUBLIC_KEY_UMAAL_FEATURES) }
+            || cpu.contains(crate::ec_p224::VG_EC_P224_PUBLIC_KEY_UMAAL_FEATURES)
+        {
             return crate::ec_p224::vg_ec_p224_public_key_umaal;
         }
         crate::ec_p224::vg_ec_p224_public_key

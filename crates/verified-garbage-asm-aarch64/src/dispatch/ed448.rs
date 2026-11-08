@@ -26,7 +26,10 @@ pub unsafe fn vg_ed448_verify_auto(pk: *const [u8; 57], context: *const u8, ctxl
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::ed448::VG_ED448_VERIFY_SHA3_FEATURES)) && cpu.contains(crate::ed448::VG_ED448_VERIFY_SHA3_FEATURES) {
+        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::ed448::VG_ED448_VERIFY_SHA3_FEATURES))
+            && (const { verified_garbage_cpu::target_contains(crate::ed448::VG_ED448_VERIFY_SHA3_FEATURES) }
+            || cpu.contains(crate::ed448::VG_ED448_VERIFY_SHA3_FEATURES))
+        {
             return crate::ed448::vg_ed448_verify_sha3;
         }
         crate::ed448::vg_ed448_verify
@@ -73,7 +76,10 @@ pub unsafe fn vg_ed448_public_key_auto(out: *mut [u8; 57], seed: *const [u8; 57]
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::ed448::VG_ED448_PUBLIC_KEY_SHA3_FEATURES)) && cpu.contains(crate::ed448::VG_ED448_PUBLIC_KEY_SHA3_FEATURES) {
+        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::ed448::VG_ED448_PUBLIC_KEY_SHA3_FEATURES))
+            && (const { verified_garbage_cpu::target_contains(crate::ed448::VG_ED448_PUBLIC_KEY_SHA3_FEATURES) }
+            || cpu.contains(crate::ed448::VG_ED448_PUBLIC_KEY_SHA3_FEATURES))
+        {
             return crate::ed448::vg_ed448_public_key_sha3;
         }
         crate::ed448::vg_ed448_public_key
@@ -125,7 +131,10 @@ pub unsafe fn vg_ed448_sign_cached_auto(out: *mut [u8; 114], seed: *const [u8; 5
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::ed448::VG_ED448_SIGN_CACHED_SHA3_FEATURES)) && cpu.contains(crate::ed448::VG_ED448_SIGN_CACHED_SHA3_FEATURES) {
+        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::ed448::VG_ED448_SIGN_CACHED_SHA3_FEATURES))
+            && (const { verified_garbage_cpu::target_contains(crate::ed448::VG_ED448_SIGN_CACHED_SHA3_FEATURES) }
+            || cpu.contains(crate::ed448::VG_ED448_SIGN_CACHED_SHA3_FEATURES))
+        {
             return crate::ed448::vg_ed448_sign_cached_sha3;
         }
         crate::ed448::vg_ed448_sign_cached

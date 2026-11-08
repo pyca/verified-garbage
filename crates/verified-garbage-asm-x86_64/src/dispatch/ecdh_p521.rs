@@ -27,7 +27,9 @@ pub unsafe fn vg_ecdh_p521_auto(out: *mut [u8; 66], d: *const [u8; 66], peer: *c
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::ecdh_p521::VG_ECDH_P521_ADX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ecdh_p521::VG_ECDH_P521_ADX_FEATURES) }
+            || cpu.contains(crate::ecdh_p521::VG_ECDH_P521_ADX_FEATURES)
+        {
             return crate::ecdh_p521::vg_ecdh_p521_adx;
         }
         crate::ecdh_p521::vg_ecdh_p521

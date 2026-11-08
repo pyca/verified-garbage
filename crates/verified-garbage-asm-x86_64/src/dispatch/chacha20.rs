@@ -30,16 +30,24 @@ pub unsafe fn vg_chacha20_apply_auto(state: *mut [u64; 96], data: *mut u8, len: 
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::chacha20::VG_CHACHA20_APPLY_AVX512VL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::chacha20::VG_CHACHA20_APPLY_AVX512VL_FEATURES) }
+            || cpu.contains(crate::chacha20::VG_CHACHA20_APPLY_AVX512VL_FEATURES)
+        {
             return crate::chacha20::vg_chacha20_apply_avx512vl;
         }
-        if cpu.contains(crate::chacha20::VG_CHACHA20_APPLY_AVX512_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::chacha20::VG_CHACHA20_APPLY_AVX512_FEATURES) }
+            || cpu.contains(crate::chacha20::VG_CHACHA20_APPLY_AVX512_FEATURES)
+        {
             return crate::chacha20::vg_chacha20_apply_avx512;
         }
-        if cpu.contains(crate::chacha20::VG_CHACHA20_APPLY_AVX2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::chacha20::VG_CHACHA20_APPLY_AVX2_FEATURES) }
+            || cpu.contains(crate::chacha20::VG_CHACHA20_APPLY_AVX2_FEATURES)
+        {
             return crate::chacha20::vg_chacha20_apply_avx2;
         }
-        if cpu.contains(crate::chacha20::VG_CHACHA20_APPLY_SSSE3_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::chacha20::VG_CHACHA20_APPLY_SSSE3_FEATURES) }
+            || cpu.contains(crate::chacha20::VG_CHACHA20_APPLY_SSSE3_FEATURES)
+        {
             return crate::chacha20::vg_chacha20_apply_ssse3;
         }
         crate::chacha20::vg_chacha20_apply

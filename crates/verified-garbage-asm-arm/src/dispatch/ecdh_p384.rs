@@ -28,7 +28,9 @@ pub unsafe fn vg_ecdh_p384_auto(out: *mut [u8; 48], d: *const [u8; 48], peer: *c
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
         #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-        if cpu.contains(crate::ecdh_p384::VG_ECDH_P384_UMAAL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ecdh_p384::VG_ECDH_P384_UMAAL_FEATURES) }
+            || cpu.contains(crate::ecdh_p384::VG_ECDH_P384_UMAAL_FEATURES)
+        {
             return crate::ecdh_p384::vg_ecdh_p384_umaal;
         }
         crate::ecdh_p384::vg_ecdh_p384

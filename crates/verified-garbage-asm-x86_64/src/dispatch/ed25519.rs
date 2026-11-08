@@ -25,28 +25,44 @@ pub unsafe fn vg_ed25519_verify_auto(pk: *const [u8; 32], message: *const u8, le
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::ed25519::VG_ED25519_VERIFY_SHANI_IFMA_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ed25519::VG_ED25519_VERIFY_SHANI_IFMA_FEATURES) }
+            || cpu.contains(crate::ed25519::VG_ED25519_VERIFY_SHANI_IFMA_FEATURES)
+        {
             return crate::ed25519::vg_ed25519_verify_shani_ifma;
         }
-        if cpu.contains(crate::ed25519::VG_ED25519_VERIFY_SHANI_ADX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ed25519::VG_ED25519_VERIFY_SHANI_ADX_FEATURES) }
+            || cpu.contains(crate::ed25519::VG_ED25519_VERIFY_SHANI_ADX_FEATURES)
+        {
             return crate::ed25519::vg_ed25519_verify_shani_adx;
         }
-        if cpu.contains(crate::ed25519::VG_ED25519_VERIFY_AVX2_IFMA_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ed25519::VG_ED25519_VERIFY_AVX2_IFMA_FEATURES) }
+            || cpu.contains(crate::ed25519::VG_ED25519_VERIFY_AVX2_IFMA_FEATURES)
+        {
             return crate::ed25519::vg_ed25519_verify_avx2_ifma;
         }
-        if cpu.contains(crate::ed25519::VG_ED25519_VERIFY_AVX2_ADX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ed25519::VG_ED25519_VERIFY_AVX2_ADX_FEATURES) }
+            || cpu.contains(crate::ed25519::VG_ED25519_VERIFY_AVX2_ADX_FEATURES)
+        {
             return crate::ed25519::vg_ed25519_verify_avx2_adx;
         }
-        if cpu.contains(crate::ed25519::VG_ED25519_VERIFY_IFMA_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ed25519::VG_ED25519_VERIFY_IFMA_FEATURES) }
+            || cpu.contains(crate::ed25519::VG_ED25519_VERIFY_IFMA_FEATURES)
+        {
             return crate::ed25519::vg_ed25519_verify_ifma;
         }
-        if cpu.contains(crate::ed25519::VG_ED25519_VERIFY_SHANI_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ed25519::VG_ED25519_VERIFY_SHANI_FEATURES) }
+            || cpu.contains(crate::ed25519::VG_ED25519_VERIFY_SHANI_FEATURES)
+        {
             return crate::ed25519::vg_ed25519_verify_shani;
         }
-        if cpu.contains(crate::ed25519::VG_ED25519_VERIFY_AVX2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ed25519::VG_ED25519_VERIFY_AVX2_FEATURES) }
+            || cpu.contains(crate::ed25519::VG_ED25519_VERIFY_AVX2_FEATURES)
+        {
             return crate::ed25519::vg_ed25519_verify_avx2;
         }
-        if cpu.contains(crate::ed25519::VG_ED25519_VERIFY_ADX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ed25519::VG_ED25519_VERIFY_ADX_FEATURES) }
+            || cpu.contains(crate::ed25519::VG_ED25519_VERIFY_ADX_FEATURES)
+        {
             return crate::ed25519::vg_ed25519_verify_adx;
         }
         crate::ed25519::vg_ed25519_verify
@@ -95,28 +111,44 @@ pub unsafe fn vg_ed25519_key_pair_auto(out: *mut [u8; 32], expanded: *mut [u8; 6
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::ed25519::VG_ED25519_KEY_PAIR_SHANI_IFMA_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ed25519::VG_ED25519_KEY_PAIR_SHANI_IFMA_FEATURES) }
+            || cpu.contains(crate::ed25519::VG_ED25519_KEY_PAIR_SHANI_IFMA_FEATURES)
+        {
             return crate::ed25519::vg_ed25519_key_pair_shani_ifma;
         }
-        if cpu.contains(crate::ed25519::VG_ED25519_KEY_PAIR_SHANI_ADX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ed25519::VG_ED25519_KEY_PAIR_SHANI_ADX_FEATURES) }
+            || cpu.contains(crate::ed25519::VG_ED25519_KEY_PAIR_SHANI_ADX_FEATURES)
+        {
             return crate::ed25519::vg_ed25519_key_pair_shani_adx;
         }
-        if cpu.contains(crate::ed25519::VG_ED25519_KEY_PAIR_AVX2_IFMA_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ed25519::VG_ED25519_KEY_PAIR_AVX2_IFMA_FEATURES) }
+            || cpu.contains(crate::ed25519::VG_ED25519_KEY_PAIR_AVX2_IFMA_FEATURES)
+        {
             return crate::ed25519::vg_ed25519_key_pair_avx2_ifma;
         }
-        if cpu.contains(crate::ed25519::VG_ED25519_KEY_PAIR_AVX2_ADX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ed25519::VG_ED25519_KEY_PAIR_AVX2_ADX_FEATURES) }
+            || cpu.contains(crate::ed25519::VG_ED25519_KEY_PAIR_AVX2_ADX_FEATURES)
+        {
             return crate::ed25519::vg_ed25519_key_pair_avx2_adx;
         }
-        if cpu.contains(crate::ed25519::VG_ED25519_KEY_PAIR_IFMA_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ed25519::VG_ED25519_KEY_PAIR_IFMA_FEATURES) }
+            || cpu.contains(crate::ed25519::VG_ED25519_KEY_PAIR_IFMA_FEATURES)
+        {
             return crate::ed25519::vg_ed25519_key_pair_ifma;
         }
-        if cpu.contains(crate::ed25519::VG_ED25519_KEY_PAIR_SHANI_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ed25519::VG_ED25519_KEY_PAIR_SHANI_FEATURES) }
+            || cpu.contains(crate::ed25519::VG_ED25519_KEY_PAIR_SHANI_FEATURES)
+        {
             return crate::ed25519::vg_ed25519_key_pair_shani;
         }
-        if cpu.contains(crate::ed25519::VG_ED25519_KEY_PAIR_AVX2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ed25519::VG_ED25519_KEY_PAIR_AVX2_FEATURES) }
+            || cpu.contains(crate::ed25519::VG_ED25519_KEY_PAIR_AVX2_FEATURES)
+        {
             return crate::ed25519::vg_ed25519_key_pair_avx2;
         }
-        if cpu.contains(crate::ed25519::VG_ED25519_KEY_PAIR_ADX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ed25519::VG_ED25519_KEY_PAIR_ADX_FEATURES) }
+            || cpu.contains(crate::ed25519::VG_ED25519_KEY_PAIR_ADX_FEATURES)
+        {
             return crate::ed25519::vg_ed25519_key_pair_adx;
         }
         crate::ed25519::vg_ed25519_key_pair
@@ -166,28 +198,44 @@ pub unsafe fn vg_ed25519_sign_expanded_auto(out: *mut [u8; 64], expanded: *const
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_SHANI_IFMA_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_SHANI_IFMA_FEATURES) }
+            || cpu.contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_SHANI_IFMA_FEATURES)
+        {
             return crate::ed25519::vg_ed25519_sign_expanded_shani_ifma;
         }
-        if cpu.contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_SHANI_ADX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_SHANI_ADX_FEATURES) }
+            || cpu.contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_SHANI_ADX_FEATURES)
+        {
             return crate::ed25519::vg_ed25519_sign_expanded_shani_adx;
         }
-        if cpu.contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_AVX2_IFMA_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_AVX2_IFMA_FEATURES) }
+            || cpu.contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_AVX2_IFMA_FEATURES)
+        {
             return crate::ed25519::vg_ed25519_sign_expanded_avx2_ifma;
         }
-        if cpu.contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_AVX2_ADX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_AVX2_ADX_FEATURES) }
+            || cpu.contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_AVX2_ADX_FEATURES)
+        {
             return crate::ed25519::vg_ed25519_sign_expanded_avx2_adx;
         }
-        if cpu.contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_IFMA_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_IFMA_FEATURES) }
+            || cpu.contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_IFMA_FEATURES)
+        {
             return crate::ed25519::vg_ed25519_sign_expanded_ifma;
         }
-        if cpu.contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_SHANI_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_SHANI_FEATURES) }
+            || cpu.contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_SHANI_FEATURES)
+        {
             return crate::ed25519::vg_ed25519_sign_expanded_shani;
         }
-        if cpu.contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_AVX2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_AVX2_FEATURES) }
+            || cpu.contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_AVX2_FEATURES)
+        {
             return crate::ed25519::vg_ed25519_sign_expanded_avx2;
         }
-        if cpu.contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_ADX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_ADX_FEATURES) }
+            || cpu.contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_ADX_FEATURES)
+        {
             return crate::ed25519::vg_ed25519_sign_expanded_adx;
         }
         crate::ed25519::vg_ed25519_sign_expanded

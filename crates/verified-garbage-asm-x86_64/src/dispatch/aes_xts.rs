@@ -30,19 +30,29 @@ pub unsafe fn vg_aes_xts_encrypt_unit_auto(schedule: *const [u8; 240], tweak_sch
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_VAES_VPCLMUL_AVX512_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_VAES_VPCLMUL_AVX512_FEATURES) }
+            || cpu.contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_VAES_VPCLMUL_AVX512_FEATURES)
+        {
             return crate::aes_xts::vg_aes_xts_encrypt_unit_vaes_vpclmul_avx512;
         }
-        if cpu.contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_VAES_VPCLMUL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_VAES_VPCLMUL_FEATURES) }
+            || cpu.contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_VAES_VPCLMUL_FEATURES)
+        {
             return crate::aes_xts::vg_aes_xts_encrypt_unit_vaes_vpclmul;
         }
-        if cpu.contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_AESNI_PCLMUL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_AESNI_PCLMUL_FEATURES) }
+            || cpu.contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_AESNI_PCLMUL_FEATURES)
+        {
             return crate::aes_xts::vg_aes_xts_encrypt_unit_aesni_pclmul;
         }
-        if cpu.contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_VAES_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_VAES_FEATURES) }
+            || cpu.contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_VAES_FEATURES)
+        {
             return crate::aes_xts::vg_aes_xts_encrypt_unit_vaes;
         }
-        if cpu.contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_AESNI_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_AESNI_FEATURES) }
+            || cpu.contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_AESNI_FEATURES)
+        {
             return crate::aes_xts::vg_aes_xts_encrypt_unit_aesni;
         }
         crate::aes_xts::vg_aes_xts_encrypt_unit
@@ -94,19 +104,29 @@ pub unsafe fn vg_aes_xts_decrypt_unit_auto(schedule: *const [u8; 240], tweak_sch
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_VAES_VPCLMUL_AVX512_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_VAES_VPCLMUL_AVX512_FEATURES) }
+            || cpu.contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_VAES_VPCLMUL_AVX512_FEATURES)
+        {
             return crate::aes_xts::vg_aes_xts_decrypt_unit_vaes_vpclmul_avx512;
         }
-        if cpu.contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_VAES_VPCLMUL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_VAES_VPCLMUL_FEATURES) }
+            || cpu.contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_VAES_VPCLMUL_FEATURES)
+        {
             return crate::aes_xts::vg_aes_xts_decrypt_unit_vaes_vpclmul;
         }
-        if cpu.contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_AESNI_PCLMUL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_AESNI_PCLMUL_FEATURES) }
+            || cpu.contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_AESNI_PCLMUL_FEATURES)
+        {
             return crate::aes_xts::vg_aes_xts_decrypt_unit_aesni_pclmul;
         }
-        if cpu.contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_VAES_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_VAES_FEATURES) }
+            || cpu.contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_VAES_FEATURES)
+        {
             return crate::aes_xts::vg_aes_xts_decrypt_unit_vaes;
         }
-        if cpu.contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_AESNI_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_AESNI_FEATURES) }
+            || cpu.contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_AESNI_FEATURES)
+        {
             return crate::aes_xts::vg_aes_xts_decrypt_unit_aesni;
         }
         crate::aes_xts::vg_aes_xts_decrypt_unit
@@ -160,19 +180,29 @@ pub unsafe fn vg_aes_xts_encrypt_unit_to_auto(schedule: *const [u8; 240], tweak_
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_TO_VAES_VPCLMUL_AVX512_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_TO_VAES_VPCLMUL_AVX512_FEATURES) }
+            || cpu.contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_TO_VAES_VPCLMUL_AVX512_FEATURES)
+        {
             return crate::aes_xts::vg_aes_xts_encrypt_unit_to_vaes_vpclmul_avx512;
         }
-        if cpu.contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_TO_VAES_VPCLMUL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_TO_VAES_VPCLMUL_FEATURES) }
+            || cpu.contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_TO_VAES_VPCLMUL_FEATURES)
+        {
             return crate::aes_xts::vg_aes_xts_encrypt_unit_to_vaes_vpclmul;
         }
-        if cpu.contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_TO_AESNI_PCLMUL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_TO_AESNI_PCLMUL_FEATURES) }
+            || cpu.contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_TO_AESNI_PCLMUL_FEATURES)
+        {
             return crate::aes_xts::vg_aes_xts_encrypt_unit_to_aesni_pclmul;
         }
-        if cpu.contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_TO_VAES_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_TO_VAES_FEATURES) }
+            || cpu.contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_TO_VAES_FEATURES)
+        {
             return crate::aes_xts::vg_aes_xts_encrypt_unit_to_vaes;
         }
-        if cpu.contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_TO_AESNI_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_TO_AESNI_FEATURES) }
+            || cpu.contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_TO_AESNI_FEATURES)
+        {
             return crate::aes_xts::vg_aes_xts_encrypt_unit_to_aesni;
         }
         crate::aes_xts::vg_aes_xts_encrypt_unit_to
@@ -226,19 +256,29 @@ pub unsafe fn vg_aes_xts_decrypt_unit_to_auto(schedule: *const [u8; 240], tweak_
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_TO_VAES_VPCLMUL_AVX512_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_TO_VAES_VPCLMUL_AVX512_FEATURES) }
+            || cpu.contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_TO_VAES_VPCLMUL_AVX512_FEATURES)
+        {
             return crate::aes_xts::vg_aes_xts_decrypt_unit_to_vaes_vpclmul_avx512;
         }
-        if cpu.contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_TO_VAES_VPCLMUL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_TO_VAES_VPCLMUL_FEATURES) }
+            || cpu.contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_TO_VAES_VPCLMUL_FEATURES)
+        {
             return crate::aes_xts::vg_aes_xts_decrypt_unit_to_vaes_vpclmul;
         }
-        if cpu.contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_TO_AESNI_PCLMUL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_TO_AESNI_PCLMUL_FEATURES) }
+            || cpu.contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_TO_AESNI_PCLMUL_FEATURES)
+        {
             return crate::aes_xts::vg_aes_xts_decrypt_unit_to_aesni_pclmul;
         }
-        if cpu.contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_TO_VAES_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_TO_VAES_FEATURES) }
+            || cpu.contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_TO_VAES_FEATURES)
+        {
             return crate::aes_xts::vg_aes_xts_decrypt_unit_to_vaes;
         }
-        if cpu.contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_TO_AESNI_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_TO_AESNI_FEATURES) }
+            || cpu.contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_TO_AESNI_FEATURES)
+        {
             return crate::aes_xts::vg_aes_xts_decrypt_unit_to_aesni;
         }
         crate::aes_xts::vg_aes_xts_decrypt_unit_to

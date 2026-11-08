@@ -45,7 +45,9 @@ pub unsafe fn vg_dsa_parameter_search_auto(out: *mut u8, out_len: usize, used: *
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
         #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-        if cpu.contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_UMAAL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_UMAAL_FEATURES) }
+            || cpu.contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_UMAAL_FEATURES)
+        {
             return crate::dsa::vg_dsa_parameter_search_umaal;
         }
         crate::dsa::vg_dsa_parameter_search

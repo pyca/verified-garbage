@@ -31,7 +31,9 @@ pub unsafe fn vg_ecdsa_p384_sign_auto(out: *mut [u8; 96], d: *const [u8; 48], di
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::ecdsa_p384::VG_ECDSA_P384_SIGN_ADX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ecdsa_p384::VG_ECDSA_P384_SIGN_ADX_FEATURES) }
+            || cpu.contains(crate::ecdsa_p384::VG_ECDSA_P384_SIGN_ADX_FEATURES)
+        {
             return crate::ecdsa_p384::vg_ecdsa_p384_sign_adx;
         }
         crate::ecdsa_p384::vg_ecdsa_p384_sign
@@ -80,7 +82,9 @@ pub unsafe fn vg_ecdsa_p384_verify_auto(public: *const [u8; 97], digest: *const 
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::ecdsa_p384::VG_ECDSA_P384_VERIFY_ADX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ecdsa_p384::VG_ECDSA_P384_VERIFY_ADX_FEATURES) }
+            || cpu.contains(crate::ecdsa_p384::VG_ECDSA_P384_VERIFY_ADX_FEATURES)
+        {
             return crate::ecdsa_p384::vg_ecdsa_p384_verify_adx;
         }
         crate::ecdsa_p384::vg_ecdsa_p384_verify

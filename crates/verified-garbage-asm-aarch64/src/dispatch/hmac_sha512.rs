@@ -25,7 +25,9 @@ pub unsafe fn vg_hmac_sha512_init_auto(inner: *mut [u8; 192], outer: *mut [u8; 1
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::hmac_sha512::VG_HMAC_SHA512_INIT_SHA512_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::hmac_sha512::VG_HMAC_SHA512_INIT_SHA512_FEATURES) }
+            || cpu.contains(crate::hmac_sha512::VG_HMAC_SHA512_INIT_SHA512_FEATURES)
+        {
             return crate::hmac_sha512::vg_hmac_sha512_init_sha512;
         }
         crate::hmac_sha512::vg_hmac_sha512_init
@@ -73,7 +75,9 @@ pub unsafe fn vg_hmac_sha512_finalize_auto(inner: *mut [u8; 192], outer: *const 
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::hmac_sha512::VG_HMAC_SHA512_FINALIZE_SHA512_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::hmac_sha512::VG_HMAC_SHA512_FINALIZE_SHA512_FEATURES) }
+            || cpu.contains(crate::hmac_sha512::VG_HMAC_SHA512_FINALIZE_SHA512_FEATURES)
+        {
             return crate::hmac_sha512::vg_hmac_sha512_finalize_sha512;
         }
         crate::hmac_sha512::vg_hmac_sha512_finalize

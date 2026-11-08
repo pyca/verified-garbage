@@ -33,7 +33,9 @@ pub unsafe fn vg_rsa_generate_auto(key: *mut u8, key_len: usize, used: *mut [u64
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
         #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-        if cpu.contains(crate::rsa_keygen::VG_RSA_GENERATE_UMAAL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::rsa_keygen::VG_RSA_GENERATE_UMAAL_FEATURES) }
+            || cpu.contains(crate::rsa_keygen::VG_RSA_GENERATE_UMAAL_FEATURES)
+        {
             return crate::rsa_keygen::vg_rsa_generate_umaal;
         }
         crate::rsa_keygen::vg_rsa_generate

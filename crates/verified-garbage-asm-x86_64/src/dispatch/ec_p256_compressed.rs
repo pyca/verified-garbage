@@ -26,7 +26,9 @@ pub unsafe fn vg_ec_p256_compress_public_key_auto(out: *mut [u8; 33], public: *c
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::ec_p256_compressed::VG_EC_P256_COMPRESS_PUBLIC_KEY_ADX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ec_p256_compressed::VG_EC_P256_COMPRESS_PUBLIC_KEY_ADX_FEATURES) }
+            || cpu.contains(crate::ec_p256_compressed::VG_EC_P256_COMPRESS_PUBLIC_KEY_ADX_FEATURES)
+        {
             return crate::ec_p256_compressed::vg_ec_p256_compress_public_key_adx;
         }
         crate::ec_p256_compressed::vg_ec_p256_compress_public_key
@@ -74,7 +76,9 @@ pub unsafe fn vg_ec_p256_decompress_public_key_auto(out: *mut [u8; 65], public: 
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::ec_p256_compressed::VG_EC_P256_DECOMPRESS_PUBLIC_KEY_ADX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ec_p256_compressed::VG_EC_P256_DECOMPRESS_PUBLIC_KEY_ADX_FEATURES) }
+            || cpu.contains(crate::ec_p256_compressed::VG_EC_P256_DECOMPRESS_PUBLIC_KEY_ADX_FEATURES)
+        {
             return crate::ec_p256_compressed::vg_ec_p256_decompress_public_key_adx;
         }
         crate::ec_p256_compressed::vg_ec_p256_decompress_public_key

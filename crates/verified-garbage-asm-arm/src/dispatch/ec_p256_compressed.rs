@@ -27,7 +27,9 @@ pub unsafe fn vg_ec_p256_compress_public_key_auto(out: *mut [u8; 33], public: *c
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
         #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-        if cpu.contains(crate::ec_p256_compressed::VG_EC_P256_COMPRESS_PUBLIC_KEY_UMAAL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ec_p256_compressed::VG_EC_P256_COMPRESS_PUBLIC_KEY_UMAAL_FEATURES) }
+            || cpu.contains(crate::ec_p256_compressed::VG_EC_P256_COMPRESS_PUBLIC_KEY_UMAAL_FEATURES)
+        {
             return crate::ec_p256_compressed::vg_ec_p256_compress_public_key_umaal;
         }
         crate::ec_p256_compressed::vg_ec_p256_compress_public_key
@@ -76,7 +78,9 @@ pub unsafe fn vg_ec_p256_decompress_public_key_auto(out: *mut [u8; 65], public: 
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
         #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-        if cpu.contains(crate::ec_p256_compressed::VG_EC_P256_DECOMPRESS_PUBLIC_KEY_UMAAL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ec_p256_compressed::VG_EC_P256_DECOMPRESS_PUBLIC_KEY_UMAAL_FEATURES) }
+            || cpu.contains(crate::ec_p256_compressed::VG_EC_P256_DECOMPRESS_PUBLIC_KEY_UMAAL_FEATURES)
+        {
             return crate::ec_p256_compressed::vg_ec_p256_decompress_public_key_umaal;
         }
         crate::ec_p256_compressed::vg_ec_p256_decompress_public_key

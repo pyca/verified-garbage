@@ -27,7 +27,9 @@ pub unsafe fn vg_aes_ocb_init_auto(key: *const u8, key_len: usize, ctx: *mut [u6
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::aes_ocb::VG_AES_OCB_INIT_AESNI_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_ocb::VG_AES_OCB_INIT_AESNI_FEATURES) }
+            || cpu.contains(crate::aes_ocb::VG_AES_OCB_INIT_AESNI_FEATURES)
+        {
             return crate::aes_ocb::vg_aes_ocb_init_aesni;
         }
         crate::aes_ocb::vg_aes_ocb_init
@@ -80,7 +82,9 @@ pub unsafe fn vg_aes_ocb_seal_auto(ctx: *const [u64; 32], rounds: usize, nonce: 
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::aes_ocb::VG_AES_OCB_SEAL_AESNI_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_ocb::VG_AES_OCB_SEAL_AESNI_FEATURES) }
+            || cpu.contains(crate::aes_ocb::VG_AES_OCB_SEAL_AESNI_FEATURES)
+        {
             return crate::aes_ocb::vg_aes_ocb_seal_aesni;
         }
         crate::aes_ocb::vg_aes_ocb_seal
@@ -133,7 +137,9 @@ pub unsafe fn vg_aes_ocb_open_auto(ctx: *const [u64; 32], rounds: usize, nonce: 
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::aes_ocb::VG_AES_OCB_OPEN_AESNI_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_ocb::VG_AES_OCB_OPEN_AESNI_FEATURES) }
+            || cpu.contains(crate::aes_ocb::VG_AES_OCB_OPEN_AESNI_FEATURES)
+        {
             return crate::aes_ocb::vg_aes_ocb_open_aesni;
         }
         crate::aes_ocb::vg_aes_ocb_open

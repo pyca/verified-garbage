@@ -155,11 +155,15 @@ emitter checks the declaration is exact, and the generated function's
 `# Safety` section makes their presence the caller's obligation. The Rust
 that calls it checks for them first, using the generated `<NAME>_FEATURES`
 constant, or calls the function's generated dispatcher, `<name>_auto`
-(`dispatch/<module>.rs` of its crate, `Rust.dispatcher`), which checks them itself with the features
-`verified_garbage_cpu::detected()` reports (`crates/verified-garbage-cpu/`),
-and needs none: it calls an implementation only on a CPU with that
-implementation's features, in the order `Dispatch.lean` ranks them, and
-otherwise the baseline. The ranking is not trusted: every implementation it
+(`dispatch/<module>.rs` of its crate, `Rust.dispatcher`), which checks them itself, among
+the features the compilation target enables (`verified_garbage_cpu::target_contains`,
+in a `const` block) and those `verified_garbage_cpu::detected()` reports
+(`crates/verified-garbage-cpu/`), and needs none: it calls an implementation
+only on a CPU with that implementation's features, in the order
+`Dispatch.lean` ranks them, and otherwise the baseline. Where the
+compilation target enables an implementation's features (`-C
+target-cpu=x86-64-v3`), the compiler sees that it chooses that one, and the
+implementations ranked after it are not linked. The ranking is not trusted: every implementation it
 may choose is proven against the same contract.
 
 ## What you need to trust
@@ -174,7 +178,8 @@ may choose is proven against the same contract.
 * The detection of CPU features (`crates/verified-garbage-cpu/src/detect.rs`):
   the dispatchers, and the Rust that checks a `<NAME>_FEATURES` constant
   itself, call code needing a feature only where it reports the CPU and
-  operating system support it.
+  operating system support it, or where the compilation target enables it
+  (`COMPILED`, which the dispatchers ask with `target_contains`).
 * Lean's kernel, and the assembler in `rustc`/LLVM for what is printed as
   text: ARM's code, and the branches, calls, addresses of statics and
   directives of the others.

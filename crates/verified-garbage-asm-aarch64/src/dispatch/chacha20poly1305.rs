@@ -27,10 +27,14 @@ pub unsafe fn vg_chacha20_poly1305_seal_auto(key: *const [u8; 32], nonce: *const
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_SEAL_SVE2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_SEAL_SVE2_FEATURES) }
+            || cpu.contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_SEAL_SVE2_FEATURES)
+        {
             return crate::chacha20poly1305::vg_chacha20_poly1305_seal_sve2;
         }
-        if cpu.0 != 0 {
+        if const { verified_garbage_cpu::COMPILED.0 != 0 }
+            || cpu.0 != 0
+        {
             return crate::chacha20poly1305::vg_chacha20_poly1305_seal_neon;
         }
         crate::chacha20poly1305::vg_chacha20_poly1305_seal
@@ -79,10 +83,14 @@ pub unsafe fn vg_chacha20_poly1305_open_auto(key: *const [u8; 32], nonce: *const
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_OPEN_SVE2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_OPEN_SVE2_FEATURES) }
+            || cpu.contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_OPEN_SVE2_FEATURES)
+        {
             return crate::chacha20poly1305::vg_chacha20_poly1305_open_sve2;
         }
-        if cpu.0 != 0 {
+        if const { verified_garbage_cpu::COMPILED.0 != 0 }
+            || cpu.0 != 0
+        {
             return crate::chacha20poly1305::vg_chacha20_poly1305_open_neon;
         }
         crate::chacha20poly1305::vg_chacha20_poly1305_open
@@ -134,10 +142,14 @@ pub unsafe fn vg_chacha20_poly1305_open_to_auto(key: *const [u8; 32], nonce: *co
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_OPEN_TO_SVE2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_OPEN_TO_SVE2_FEATURES) }
+            || cpu.contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_OPEN_TO_SVE2_FEATURES)
+        {
             return crate::chacha20poly1305::vg_chacha20_poly1305_open_to_sve2;
         }
-        if cpu.0 != 0 {
+        if const { verified_garbage_cpu::COMPILED.0 != 0 }
+            || cpu.0 != 0
+        {
             return crate::chacha20poly1305::vg_chacha20_poly1305_open_to_neon;
         }
         crate::chacha20poly1305::vg_chacha20_poly1305_open_to
@@ -189,10 +201,14 @@ pub unsafe fn vg_chacha20_poly1305_seal_gather_auto(key: *const [u8; 32], nonce:
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_SEAL_GATHER_SVE2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_SEAL_GATHER_SVE2_FEATURES) }
+            || cpu.contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_SEAL_GATHER_SVE2_FEATURES)
+        {
             return crate::chacha20poly1305::vg_chacha20_poly1305_seal_gather_sve2;
         }
-        if cpu.0 != 0 {
+        if const { verified_garbage_cpu::COMPILED.0 != 0 }
+            || cpu.0 != 0
+        {
             return crate::chacha20poly1305::vg_chacha20_poly1305_seal_gather_neon;
         }
         crate::chacha20poly1305::vg_chacha20_poly1305_seal_gather

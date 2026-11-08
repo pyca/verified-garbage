@@ -30,10 +30,14 @@ pub unsafe fn vg_triple_des_ecb_encrypt_auto(schedule: *const [u8; 384], data: *
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::triple_des::VG_TRIPLE_DES_ECB_ENCRYPT_AVX512_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::triple_des::VG_TRIPLE_DES_ECB_ENCRYPT_AVX512_FEATURES) }
+            || cpu.contains(crate::triple_des::VG_TRIPLE_DES_ECB_ENCRYPT_AVX512_FEATURES)
+        {
             return crate::triple_des::vg_triple_des_ecb_encrypt_avx512;
         }
-        if cpu.contains(crate::triple_des::VG_TRIPLE_DES_ECB_ENCRYPT_AVX2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::triple_des::VG_TRIPLE_DES_ECB_ENCRYPT_AVX2_FEATURES) }
+            || cpu.contains(crate::triple_des::VG_TRIPLE_DES_ECB_ENCRYPT_AVX2_FEATURES)
+        {
             return crate::triple_des::vg_triple_des_ecb_encrypt_avx2;
         }
         crate::triple_des::vg_triple_des_ecb_encrypt
@@ -79,10 +83,14 @@ pub unsafe fn vg_triple_des_ecb_decrypt_auto(schedule: *const [u8; 384], data: *
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::triple_des::VG_TRIPLE_DES_ECB_DECRYPT_AVX512_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::triple_des::VG_TRIPLE_DES_ECB_DECRYPT_AVX512_FEATURES) }
+            || cpu.contains(crate::triple_des::VG_TRIPLE_DES_ECB_DECRYPT_AVX512_FEATURES)
+        {
             return crate::triple_des::vg_triple_des_ecb_decrypt_avx512;
         }
-        if cpu.contains(crate::triple_des::VG_TRIPLE_DES_ECB_DECRYPT_AVX2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::triple_des::VG_TRIPLE_DES_ECB_DECRYPT_AVX2_FEATURES) }
+            || cpu.contains(crate::triple_des::VG_TRIPLE_DES_ECB_DECRYPT_AVX2_FEATURES)
+        {
             return crate::triple_des::vg_triple_des_ecb_decrypt_avx2;
         }
         crate::triple_des::vg_triple_des_ecb_decrypt

@@ -28,7 +28,9 @@ pub unsafe fn vg_ecdh_secp256k1_auto(out: *mut [u8; 32], d: *const [u8; 32], pee
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
         #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-        if cpu.contains(crate::ecdh_secp256k1::VG_ECDH_SECP256K1_UMAAL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ecdh_secp256k1::VG_ECDH_SECP256K1_UMAAL_FEATURES) }
+            || cpu.contains(crate::ecdh_secp256k1::VG_ECDH_SECP256K1_UMAAL_FEATURES)
+        {
             return crate::ecdh_secp256k1::vg_ecdh_secp256k1_umaal;
         }
         crate::ecdh_secp256k1::vg_ecdh_secp256k1

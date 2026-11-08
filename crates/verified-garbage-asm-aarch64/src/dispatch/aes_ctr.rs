@@ -28,7 +28,9 @@ pub unsafe fn vg_aes_ctr_auto(schedule: *const [u8; 240], rounds: usize, ctr: *m
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::aes_ctr::VG_AES_CTR_AES_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_ctr::VG_AES_CTR_AES_FEATURES) }
+            || cpu.contains(crate::aes_ctr::VG_AES_CTR_AES_FEATURES)
+        {
             return crate::aes_ctr::vg_aes_ctr_aes;
         }
         crate::aes_ctr::vg_aes_ctr
@@ -78,7 +80,9 @@ pub unsafe fn vg_aes_ctr_final_auto(schedule: *const [u8; 240], rounds: usize, c
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::aes_ctr::VG_AES_CTR_FINAL_AES_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_ctr::VG_AES_CTR_FINAL_AES_FEATURES) }
+            || cpu.contains(crate::aes_ctr::VG_AES_CTR_FINAL_AES_FEATURES)
+        {
             return crate::aes_ctr::vg_aes_ctr_final_aes;
         }
         crate::aes_ctr::vg_aes_ctr_final

@@ -26,7 +26,9 @@ pub unsafe fn vg_aes_ecb_encrypt_auto(schedule: *const [u8; 240], rounds: usize,
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::aes_ecb::VG_AES_ECB_ENCRYPT_AESNI_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_ecb::VG_AES_ECB_ENCRYPT_AESNI_FEATURES) }
+            || cpu.contains(crate::aes_ecb::VG_AES_ECB_ENCRYPT_AESNI_FEATURES)
+        {
             return crate::aes_ecb::vg_aes_ecb_encrypt_aesni;
         }
         crate::aes_ecb::vg_aes_ecb_encrypt
@@ -74,7 +76,9 @@ pub unsafe fn vg_aes_ecb_decrypt_auto(schedule: *const [u8; 240], rounds: usize,
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::aes_ecb::VG_AES_ECB_DECRYPT_AESNI_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_ecb::VG_AES_ECB_DECRYPT_AESNI_FEATURES) }
+            || cpu.contains(crate::aes_ecb::VG_AES_ECB_DECRYPT_AESNI_FEATURES)
+        {
             return crate::aes_ecb::vg_aes_ecb_decrypt_aesni;
         }
         crate::aes_ecb::vg_aes_ecb_decrypt

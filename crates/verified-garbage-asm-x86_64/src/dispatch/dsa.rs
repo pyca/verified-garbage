@@ -27,7 +27,9 @@ pub unsafe fn vg_dsa_derive_key_auto(out: *mut u8, out_len: usize, params: *cons
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::dsa::VG_DSA_DERIVE_KEY_ADX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::dsa::VG_DSA_DERIVE_KEY_ADX_FEATURES) }
+            || cpu.contains(crate::dsa::VG_DSA_DERIVE_KEY_ADX_FEATURES)
+        {
             return crate::dsa::vg_dsa_derive_key_adx;
         }
         crate::dsa::vg_dsa_derive_key
@@ -78,7 +80,9 @@ pub unsafe fn vg_dsa_generate_key_auto(out: *mut u8, out_len: usize, used: *mut 
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::dsa::VG_DSA_GENERATE_KEY_ADX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::dsa::VG_DSA_GENERATE_KEY_ADX_FEATURES) }
+            || cpu.contains(crate::dsa::VG_DSA_GENERATE_KEY_ADX_FEATURES)
+        {
             return crate::dsa::vg_dsa_generate_key_adx;
         }
         crate::dsa::vg_dsa_generate_key
@@ -132,28 +136,44 @@ pub unsafe fn vg_dsa_parameter_search_auto(out: *mut u8, out_len: usize, used: *
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_MR_IFMA_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_MR_IFMA_FEATURES) }
+            || cpu.contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_MR_IFMA_FEATURES)
+        {
             return crate::dsa::vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_ifma;
         }
-        if cpu.contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_MR_ADX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_MR_ADX_FEATURES) }
+            || cpu.contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_MR_ADX_FEATURES)
+        {
             return crate::dsa::vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_adx;
         }
-        if cpu.contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_FEATURES) }
+            || cpu.contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_FEATURES)
+        {
             return crate::dsa::vg_dsa_parameter_search_sha1_shani_sha256_shani;
         }
-        if cpu.contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_MR_IFMA_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_MR_IFMA_FEATURES) }
+            || cpu.contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_MR_IFMA_FEATURES)
+        {
             return crate::dsa::vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_ifma;
         }
-        if cpu.contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_MR_ADX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_MR_ADX_FEATURES) }
+            || cpu.contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_MR_ADX_FEATURES)
+        {
             return crate::dsa::vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_adx;
         }
-        if cpu.contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_FEATURES) }
+            || cpu.contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_FEATURES)
+        {
             return crate::dsa::vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2;
         }
-        if cpu.contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_MR_IFMA_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_MR_IFMA_FEATURES) }
+            || cpu.contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_MR_IFMA_FEATURES)
+        {
             return crate::dsa::vg_dsa_parameter_search_mr_ifma;
         }
-        if cpu.contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_MR_ADX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_MR_ADX_FEATURES) }
+            || cpu.contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_MR_ADX_FEATURES)
+        {
             return crate::dsa::vg_dsa_parameter_search_mr_adx;
         }
         crate::dsa::vg_dsa_parameter_search
@@ -199,7 +219,9 @@ pub unsafe fn vg_dsa_validate_public_key_auto(key: *const u8, key_len: usize, p_
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::dsa::VG_DSA_VALIDATE_PUBLIC_KEY_ADX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::dsa::VG_DSA_VALIDATE_PUBLIC_KEY_ADX_FEATURES) }
+            || cpu.contains(crate::dsa::VG_DSA_VALIDATE_PUBLIC_KEY_ADX_FEATURES)
+        {
             return crate::dsa::vg_dsa_validate_public_key_adx;
         }
         crate::dsa::vg_dsa_validate_public_key
@@ -249,7 +271,9 @@ pub unsafe fn vg_dsa_verify_prevalidated_auto(key: *const u8, key_len: usize, p_
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::dsa::VG_DSA_VERIFY_PREVALIDATED_ADX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::dsa::VG_DSA_VERIFY_PREVALIDATED_ADX_FEATURES) }
+            || cpu.contains(crate::dsa::VG_DSA_VERIFY_PREVALIDATED_ADX_FEATURES)
+        {
             return crate::dsa::vg_dsa_verify_prevalidated_adx;
         }
         crate::dsa::vg_dsa_verify_prevalidated
@@ -295,7 +319,9 @@ pub unsafe fn vg_dsa_validate_private_key_auto(key: *const u8, key_len: usize, p
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::dsa::VG_DSA_VALIDATE_PRIVATE_KEY_ADX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::dsa::VG_DSA_VALIDATE_PRIVATE_KEY_ADX_FEATURES) }
+            || cpu.contains(crate::dsa::VG_DSA_VALIDATE_PRIVATE_KEY_ADX_FEATURES)
+        {
             return crate::dsa::vg_dsa_validate_private_key_adx;
         }
         crate::dsa::vg_dsa_validate_private_key
@@ -354,7 +380,9 @@ pub unsafe fn vg_dsa_sign_random_prevalidated_auto(out: *mut u8, out_len: usize,
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::dsa::VG_DSA_SIGN_RANDOM_PREVALIDATED_ADX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::dsa::VG_DSA_SIGN_RANDOM_PREVALIDATED_ADX_FEATURES) }
+            || cpu.contains(crate::dsa::VG_DSA_SIGN_RANDOM_PREVALIDATED_ADX_FEATURES)
+        {
             return crate::dsa::vg_dsa_sign_random_prevalidated_adx;
         }
         crate::dsa::vg_dsa_sign_random_prevalidated

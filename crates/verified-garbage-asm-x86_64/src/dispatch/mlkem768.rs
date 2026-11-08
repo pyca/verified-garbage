@@ -28,13 +28,19 @@ pub unsafe fn vg_mlkem768_keygen_auto(seed: *const [u8; 64], ek: *mut [u8; 1184]
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::mlkem768::VG_MLKEM768_KEYGEN_AVX512_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::mlkem768::VG_MLKEM768_KEYGEN_AVX512_FEATURES) }
+            || cpu.contains(crate::mlkem768::VG_MLKEM768_KEYGEN_AVX512_FEATURES)
+        {
             return crate::mlkem768::vg_mlkem768_keygen_avx512;
         }
-        if cpu.contains(crate::mlkem768::VG_MLKEM768_KEYGEN_AVX2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::mlkem768::VG_MLKEM768_KEYGEN_AVX2_FEATURES) }
+            || cpu.contains(crate::mlkem768::VG_MLKEM768_KEYGEN_AVX2_FEATURES)
+        {
             return crate::mlkem768::vg_mlkem768_keygen_avx2;
         }
-        if cpu.contains(crate::mlkem768::VG_MLKEM768_KEYGEN_AVX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::mlkem768::VG_MLKEM768_KEYGEN_AVX_FEATURES) }
+            || cpu.contains(crate::mlkem768::VG_MLKEM768_KEYGEN_AVX_FEATURES)
+        {
             return crate::mlkem768::vg_mlkem768_keygen_avx;
         }
         crate::mlkem768::vg_mlkem768_keygen
@@ -86,13 +92,19 @@ pub unsafe fn vg_mlkem768_encaps_auto(ek: *const [u8; 1184], m: *const [u8; 32],
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::mlkem768::VG_MLKEM768_ENCAPS_AVX512_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::mlkem768::VG_MLKEM768_ENCAPS_AVX512_FEATURES) }
+            || cpu.contains(crate::mlkem768::VG_MLKEM768_ENCAPS_AVX512_FEATURES)
+        {
             return crate::mlkem768::vg_mlkem768_encaps_avx512;
         }
-        if cpu.contains(crate::mlkem768::VG_MLKEM768_ENCAPS_AVX2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::mlkem768::VG_MLKEM768_ENCAPS_AVX2_FEATURES) }
+            || cpu.contains(crate::mlkem768::VG_MLKEM768_ENCAPS_AVX2_FEATURES)
+        {
             return crate::mlkem768::vg_mlkem768_encaps_avx2;
         }
-        if cpu.contains(crate::mlkem768::VG_MLKEM768_ENCAPS_AVX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::mlkem768::VG_MLKEM768_ENCAPS_AVX_FEATURES) }
+            || cpu.contains(crate::mlkem768::VG_MLKEM768_ENCAPS_AVX_FEATURES)
+        {
             return crate::mlkem768::vg_mlkem768_encaps_avx;
         }
         crate::mlkem768::vg_mlkem768_encaps
@@ -142,13 +154,19 @@ pub unsafe fn vg_mlkem768_decaps_auto(dk: *const [u8; 2400], ct: *const [u8; 108
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::mlkem768::VG_MLKEM768_DECAPS_AVX512_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::mlkem768::VG_MLKEM768_DECAPS_AVX512_FEATURES) }
+            || cpu.contains(crate::mlkem768::VG_MLKEM768_DECAPS_AVX512_FEATURES)
+        {
             return crate::mlkem768::vg_mlkem768_decaps_avx512;
         }
-        if cpu.contains(crate::mlkem768::VG_MLKEM768_DECAPS_AVX2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::mlkem768::VG_MLKEM768_DECAPS_AVX2_FEATURES) }
+            || cpu.contains(crate::mlkem768::VG_MLKEM768_DECAPS_AVX2_FEATURES)
+        {
             return crate::mlkem768::vg_mlkem768_decaps_avx2;
         }
-        if cpu.contains(crate::mlkem768::VG_MLKEM768_DECAPS_AVX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::mlkem768::VG_MLKEM768_DECAPS_AVX_FEATURES) }
+            || cpu.contains(crate::mlkem768::VG_MLKEM768_DECAPS_AVX_FEATURES)
+        {
             return crate::mlkem768::vg_mlkem768_decaps_avx;
         }
         crate::mlkem768::vg_mlkem768_decaps
@@ -192,7 +210,9 @@ pub unsafe fn vg_mlkem768_check_ek_auto(ek: *const [u8; 1184]) -> u32 {
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::mlkem768::VG_MLKEM768_CHECK_EK_AVX2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::mlkem768::VG_MLKEM768_CHECK_EK_AVX2_FEATURES) }
+            || cpu.contains(crate::mlkem768::VG_MLKEM768_CHECK_EK_AVX2_FEATURES)
+        {
             return crate::mlkem768::vg_mlkem768_check_ek_avx2;
         }
         crate::mlkem768::vg_mlkem768_check_ek
@@ -246,13 +266,19 @@ pub unsafe fn vg_mlkem768_encaps_h_auto(ek: *const [u8; 1184], h: *const [u8; 32
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::mlkem768::VG_MLKEM768_ENCAPS_H_AVX512_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::mlkem768::VG_MLKEM768_ENCAPS_H_AVX512_FEATURES) }
+            || cpu.contains(crate::mlkem768::VG_MLKEM768_ENCAPS_H_AVX512_FEATURES)
+        {
             return crate::mlkem768::vg_mlkem768_encaps_h_avx512;
         }
-        if cpu.contains(crate::mlkem768::VG_MLKEM768_ENCAPS_H_AVX2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::mlkem768::VG_MLKEM768_ENCAPS_H_AVX2_FEATURES) }
+            || cpu.contains(crate::mlkem768::VG_MLKEM768_ENCAPS_H_AVX2_FEATURES)
+        {
             return crate::mlkem768::vg_mlkem768_encaps_h_avx2;
         }
-        if cpu.contains(crate::mlkem768::VG_MLKEM768_ENCAPS_H_AVX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::mlkem768::VG_MLKEM768_ENCAPS_H_AVX_FEATURES) }
+            || cpu.contains(crate::mlkem768::VG_MLKEM768_ENCAPS_H_AVX_FEATURES)
+        {
             return crate::mlkem768::vg_mlkem768_encaps_h_avx;
         }
         crate::mlkem768::vg_mlkem768_encaps_h

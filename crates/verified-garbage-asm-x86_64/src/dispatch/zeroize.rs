@@ -22,7 +22,9 @@ pub unsafe fn vg_zeroize_auto(p: *mut u8, len: usize) {
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::zeroize::VG_ZEROIZE_AVX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::zeroize::VG_ZEROIZE_AVX_FEATURES) }
+            || cpu.contains(crate::zeroize::VG_ZEROIZE_AVX_FEATURES)
+        {
             return crate::zeroize::vg_zeroize_avx;
         }
         crate::zeroize::vg_zeroize

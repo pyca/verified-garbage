@@ -43,7 +43,9 @@ pub unsafe fn vg_rsa_pkcs1_decrypt_auto(out: *mut u8, out_len: usize, msg_len: *
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_SHA256_SHANI_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_SHA256_SHANI_FEATURES) }
+            || cpu.contains(crate::rsa_pkcs1_enc::VG_RSA_PKCS1_DECRYPT_SHA256_SHANI_FEATURES)
+        {
             return crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_sha256_shani;
         }
         crate::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt
