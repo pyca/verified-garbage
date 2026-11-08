@@ -270,13 +270,13 @@ def colsV (cs : Nat → Nat) : Nat → Nat
 
 /-! ## The accumulator's registers -/
 
-theorem rr_ne : ∀ k < 14, rr k ≠ rr (k + 1) ∧ rr k ≠ rr (k + 2) ∧ rr (k + 1) ≠ rr (k + 2) ∧
+theorem rr_ne : ∀ k < 8, rr k ≠ rr (k + 1) ∧ rr k ≠ rr (k + 2) ∧ rr (k + 1) ≠ rr (k + 2) ∧
     rr k ≠ .r4 ∧ rr k ≠ .r5 ∧ rr k ≠ .r7 ∧ rr (k + 1) ≠ .r4 ∧ rr (k + 1) ≠ .r5 ∧ rr (k + 1) ≠ .r7 ∧
     rr (k + 2) ≠ .r4 ∧ rr (k + 2) ≠ .r5 ∧ rr (k + 2) ≠ .r7 ∧ rr (k + 3) = rr k ∧
     rr k ∈ clob ∧ rr (k + 1) ∈ clob ∧ rr (k + 2) ∈ clob := by decide
 
 section
-variable {acc N : Nat} {b : Addr}
+variable {acc : Nat} {b : Addr}
 
 /-- The words below `acc + 8k`. -/
 def accW (acc : Nat) (m : Mem) (b : Addr) : Nat → Nat
@@ -300,11 +300,11 @@ theorem accW_congr {m m' : Mem} : ∀ {k}, (∀ c < k, dw m' b (acc + 8 * c) = d
   | k + 1, h => by
     rw [accW, accW, accW_congr (fun c hc => h c (by omega)), h k (by omega)]
 
-/-- The product's area at `acc`, of `N` words. -/
-abbrev AR (acc N : Nat) (b : Addr) : Region := ⟨b + BitVec.ofNat 64 acc, 8 * N⟩
+/-- The product's area at `acc`. -/
+abbrev AR (acc : Nat) (b : Addr) : Region := ⟨b + BitVec.ofNat 64 acc, 64⟩
 
 /-- An element below `acc`, unchanged in a frame of the product's area. -/
-theorem dw_acc (hA : acc + 8 * N ≤ 4096) {m m' : Mem} (hf : Frame [AR acc N b] m m') {d : Nat}
+theorem dw_acc (hA : acc + 64 ≤ 4096) {m m' : Mem} (hf : Frame [AR acc b] m m') {d : Nat}
     (hd : d + 8 ≤ acc) : dw m' b d = dw m b d :=
   dw_frame hf fun r hr => by
     rw [List.mem_singleton.mp hr]
@@ -315,22 +315,21 @@ theorem dw_acc (hA : acc + 8 * N ≤ 4096) {m m' : Mem} (hf : Frame [AR acc N b]
 /-- After `k` columns, from `s0`: the words below `acc + 8k` and the
 accumulator `rr k, rr (k + 1)` (with `rr (k + 2)` zero) hold the sum of the
 first `k` columns `cs`; the code changed only `clob` and `acc`. -/
-structure ColInv (acc N : Nat) (b : Addr) (s0 : State) (cs : Nat → Nat) (k : Nat) (s : State) : Prop where
+structure ColInv (acc : Nat) (b : Addr) (s0 : State) (cs : Nat → Nat) (k : Nat) (s : State) : Prop where
   ctx : Ctx b s
   rest : Rest clob s0 s
-  frame : Frame [AR acc N b] s0.mem s.mem
+  frame : Frame [AR acc b] s0.mem s.mem
   top : s.gpr (rr (k + 2)) = 0
   val : accW acc s.mem b k + (2 ^ 64) ^ k * ((s.gpr (rr k)).toNat + 2 ^ 64 * (s.gpr (rr (k + 1))).toNat) =
     colsV cs k
 
 /-- The end of column `k`: the low word stored, the register zeroed. -/
-theorem colEnd_ok (hA : acc + 8 * N ≤ 4096) (hA4 : acc % 4 = 0) (hN : N ≤ 14) {s0 : State} {k : Nat}
-    (hk : k < N)
-    {s : State} (hc : Ctx b s) (hr : Rest clob s0 s) (hf : Frame [AR acc N b] s0.mem s.mem)
+theorem colEnd_ok (hA : acc + 64 ≤ 4096) (hA4 : acc % 4 = 0) {s0 : State} {k : Nat} (hk : k < 8)
+    {s : State} (hc : Ctx b s) (hr : Rest clob s0 s) (hf : Frame [AR acc b] s0.mem s.mem)
     {cs : Nat → Nat}
     (hv : accW acc s.mem b k + (2 ^ 64) ^ k * v3 s (rr k) (rr (k + 1)) (rr (k + 2)) = colsV cs (k + 1)) :
-    WP isa (.block (colEnd acc k)) s (ColInv acc N b s0 cs (k + 1)) := by
-  obtain ⟨h01, h02, h12, -, -, -, -, -, -, -, -, -, h3, hrr, -, -⟩ := rr_ne k (by omega)
+    WP isa (.block (colEnd acc k)) s (ColInv acc b s0 cs (k + 1)) := by
+  obtain ⟨h01, h02, h12, -, -, -, -, -, -, -, -, -, h3, hrr, -, -⟩ := rr_ne k hk
   unfold colEnd
   refine sd0_ok hc (by omega) (by omega) fun s1 u1 => wp_li (by decide) fun s2 u2 => WP.block_nil ?_
   have hm : s2.mem = s.mem.writeW (b + BitVec.ofNat 64 (acc + 8 * k)) (s.gpr (rr k)) := by
@@ -358,21 +357,21 @@ theorem colEnd_ok (hA : acc + 8 * N ≤ 4096) (hA4 : acc % 4 = 0) (hN : N ≤ 14
 
 /-- A column's terms: from a state with the accumulator `acc`, each term `p`
 of `ps` adds `f p`. -/
-def TermOk (acc N : Nat) (b : Addr) (s0 : State) (k : Nat) (f : Nat × Nat → Nat)
+def TermOk (acc : Nat) (b : Addr) (s0 : State) (k : Nat) (f : Nat × Nat → Nat)
     (code : Nat × Nat → List Instr) (p : Nat × Nat) : Prop :=
-  ∀ s, Ctx b s → Rest clob s0 s → Frame [AR acc N b] s0.mem s.mem →
+  ∀ s, Ctx b s → Rest clob s0 s → Frame [AR acc b] s0.mem s.mem →
     WP isa (.block (code p)) s fun s' => Ctx b s' ∧ Rest clob s0 s' ∧
-      Frame [AR acc N b] s0.mem s'.mem ∧ s'.mem = s.mem ∧
+      Frame [AR acc b] s0.mem s'.mem ∧ s'.mem = s.mem ∧
       (v3 s (rr k) (rr (k + 1)) (rr (k + 2)) + f p < 2 ^ 192 →
         v3 s' (rr k) (rr (k + 1)) (rr (k + 2)) = v3 s (rr k) (rr (k + 1)) (rr (k + 2)) + f p)
 
 /-- A column's terms, by induction on them. -/
 theorem terms_ok {s0 : State} {k : Nat} {f : Nat × Nat → Nat} {code : Nat × Nat → List Instr} :
-    ∀ (ps : List (Nat × Nat)), (∀ p ∈ ps, TermOk acc N b s0 k f code p) → ∀ s, Ctx b s →
-      Rest clob s0 s → Frame [AR acc N b] s0.mem s.mem →
+    ∀ (ps : List (Nat × Nat)), (∀ p ∈ ps, TermOk acc b s0 k f code p) → ∀ s, Ctx b s →
+      Rest clob s0 s → Frame [AR acc b] s0.mem s.mem →
       v3 s (rr k) (rr (k + 1)) (rr (k + 2)) + tsum f ps < 2 ^ 192 →
       WP isa (.block (ps.flatMap code)) s fun s' => Ctx b s' ∧ Rest clob s0 s' ∧
-        Frame [AR acc N b] s0.mem s'.mem ∧ s'.mem = s.mem ∧
+        Frame [AR acc b] s0.mem s'.mem ∧ s'.mem = s.mem ∧
         v3 s' (rr k) (rr (k + 1)) (rr (k + 2)) = v3 s (rr k) (rr (k + 1)) (rr (k + 2)) + tsum f ps
   | [], _, s, hc, hr, hf, _ => WP.block_nil ⟨hc, hr, hf, rfl, by simp [tsum]⟩
   | p :: ps, hok, s, hc, hr, hf, hb => by
@@ -385,12 +384,11 @@ theorem terms_ok {s0 : State} {k : Nat} {f : Nat × Nat → Nat} {code : Nat × 
     rw [hv2, hv1, tsum_cons]; omega
 
 /-- Column `k`: its terms `ps`, which sum to `cs k`, then its end. -/
-theorem column_ok (hA : acc + 8 * N ≤ 4096) (hA4 : acc % 4 = 0) (hN : N ≤ 14) {s0 : State} {k : Nat}
-    (hk : k < N)
+theorem column_ok (hA : acc + 64 ≤ 4096) (hA4 : acc % 4 = 0) {s0 : State} {k : Nat} (hk : k < 8)
     {f : Nat × Nat → Nat} {code : Nat × Nat → List Instr} {cs : Nat → Nat} (ps : List (Nat × Nat))
-    (hok : ∀ p ∈ ps, TermOk acc N b s0 k f code p) (hcs : cs k = tsum f ps)
-    (hbd : tsum f ps < 7 * 2 ^ 128) {s : State} (h : ColInv acc N b s0 cs k s) :
-    WP isa (.block (ps.flatMap code ++ colEnd acc k)) s (ColInv acc N b s0 cs (k + 1)) := by
+    (hok : ∀ p ∈ ps, TermOk acc b s0 k f code p) (hcs : cs k = tsum f ps)
+    (hbd : tsum f ps < 4 * 2 ^ 128) {s : State} (h : ColInv acc b s0 cs k s) :
+    WP isa (.block (ps.flatMap code ++ colEnd acc k)) s (ColInv acc b s0 cs (k + 1)) := by
   have hv0 : v3 s (rr k) (rr (k + 1)) (rr (k + 2)) =
       (s.gpr (rr k)).toNat + 2 ^ 64 * (s.gpr (rr (k + 1))).toNat := by
     simp only [v3, h.top]; rfl
@@ -398,29 +396,29 @@ theorem column_ok (hA : acc + 8 * N ≤ 4096) (hA4 : acc % 4 = 0) (hN : N ≤ 14
   have hh := (s.gpr (rr (k + 1))).isLt
   refine WP.append (terms_ok ps hok s h.ctx h.rest h.frame (by rw [hv0]; omega_arith))
     fun s1 ⟨hc1, hr1, hf1, hm1, hv1⟩ => ?_
-  exact colEnd_ok (cs := cs) hA hA4 hN hk hc1 hr1 hf1 (by
+  exact colEnd_ok (cs := cs) hA hA4 hk hc1 hr1 hf1 (by
     rw [hm1, hv1, hv0, colsV, ← h.val, hcs, Nat.mul_add]; omega_arith)
 
 /-- The columns, by induction. -/
 theorem columns_ok {s0 : State} {cs : Nat → Nat} {col : Nat → List Instr}
-    (hcol : ∀ k < N, ∀ s, ColInv acc N b s0 cs k s →
-      WP isa (.block (col k)) s (ColInv acc N b s0 cs (k + 1))) :
-    ∀ n ≤ N, ∀ s, ColInv acc N b s0 cs 0 s →
-      WP isa (.block ((List.range n).flatMap col)) s (ColInv acc N b s0 cs n)
+    (hcol : ∀ k < 8, ∀ s, ColInv acc b s0 cs k s →
+      WP isa (.block (col k)) s (ColInv acc b s0 cs (k + 1))) :
+    ∀ n ≤ 8, ∀ s, ColInv acc b s0 cs 0 s →
+      WP isa (.block ((List.range n).flatMap col)) s (ColInv acc b s0 cs n)
   | 0, _, s, h => WP.block_nil h
   | n + 1, hn, s, h => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
     exact WP.append (columns_ok hcol n (by omega) s h) fun s1 h1 => hcol n (by omega) s1 h1
 
 /-- After the eight columns, the words at `acc` are the columns' sum. -/
-theorem ColInv.final {s0 : State} {cs : Nat → Nat} {s : State} (h : ColInv acc N b s0 cs N s)
-    (hlt : colsV cs N < (2 ^ 64) ^ N) : accW acc s.mem b N = colsV cs N := by
+theorem ColInv.final {s0 : State} {cs : Nat → Nat} {s : State} (h : ColInv acc b s0 cs 8 s)
+    (hlt : colsV cs 8 < (2 ^ 64) ^ 8) : accW acc s.mem b 8 = colsV cs 8 := by
   have hv := h.val
-  have := accW_lt (acc := acc) s.mem b N
-  generalize (2 ^ 64) ^ N = K at *
-  generalize accW acc s.mem b N = A at *
-  generalize (s.gpr (rr N)).toNat + 2 ^ 64 * (s.gpr (rr (N + 1))).toNat = C at *
-  generalize colsV cs N = V at *
+  have := accW_lt (acc := acc) s.mem b 8
+  generalize (2 ^ 64) ^ 8 = K at *
+  generalize accW acc s.mem b 8 = A at *
+  generalize (s.gpr (rr 8)).toNat + 2 ^ 64 * (s.gpr (rr (8 + 1))).toNat = C at *
+  generalize colsV cs 8 = V at *
   rcases Nat.eq_zero_or_pos C with rfl | hC
   · omega
   · have : K ≤ K * C := Nat.le_mul_of_pos_right _ hC
@@ -431,24 +429,17 @@ theorem ColInv.final {s0 : State} {cs : Nat → Nat} {s : State} (h : ColInv acc
 /-- The columns of a product: column `k` is the sum of `a_i b_j` with `i + j = k`. -/
 def mulF (X Y : Nat → Nat) (p : Nat × Nat) : Nat := X p.1 * Y p.2
 
-def mulCs (n : Nat) (X Y : Nat → Nat) (k : Nat) : Nat := tsum (mulF X Y) (colPairs n k)
+def mulCs (X Y : Nat → Nat) (k : Nat) : Nat := tsum (mulF X Y) (colPairs k)
 
-theorem colPairs_ok (n k : Nat) : ∀ p ∈ colPairs n k, p.1 < n ∧ p.2 < n := by
-  intro p hp
-  simp only [colPairs, List.mem_map, List.mem_filter, List.mem_reverse, List.mem_range,
-    decide_eq_true_eq] at hp
-  obtain ⟨i, ⟨hi, -, hk⟩, rfl⟩ := hp
-  exact ⟨hi, hk⟩
+theorem colPairs_ok : ∀ k < 8, ∀ p ∈ colPairs k, p.1 < 4 ∧ p.2 < 4 := by decide
 
-theorem colPairs_len (n k : Nat) : (colPairs n k).length ≤ n := by
-  simp only [colPairs, List.length_map]
-  exact Nat.le_trans (List.length_filter_le _ _) (by simp)
+theorem colPairs_len : ∀ k < 8, (colPairs k).length ≤ 4 := by decide
 
 /-- A term `a_i b_j` of column `k`. -/
-theorem mulTerm_ok {n : Nat} {s0 : State} {x y : Nat} (hx : x + 8 * n ≤ acc) (hy : y + 8 * n ≤ acc)
-    (hA : acc + 8 * N ≤ 4096) (hx4 : x % 4 = 0) (hy4 : y % 4 = 0) {k i j : Nat} (hk : k < 14)
-    (hi : i < n) (hj : j < n) :
-    TermOk acc N b s0 k (mulF (ew s0.mem b x) (ew s0.mem b y)) (mulTerm x y k) (i, j) := by
+theorem mulTerm_ok {s0 : State} {x y : Nat} (hx : x + 32 ≤ acc) (hy : y + 32 ≤ acc)
+    (hA : acc + 64 ≤ 4096) (hx4 : x % 4 = 0) (hy4 : y % 4 = 0) {k i j : Nat} (hk : k < 8)
+    (hi : i < 4) (hj : j < 4) :
+    TermOk acc b s0 k (mulF (ew s0.mem b x) (ew s0.mem b y)) (mulTerm x y k) (i, j) := by
   intro s hc hr hf
   obtain ⟨h01, h02, h12, h04, h05, h07, h14, h15, h17, h24, h25, h27, -, c0, c1, c2⟩ := rr_ne k hk
   simp only [mulTerm]
@@ -491,14 +482,14 @@ theorem mulF_le (X Y : Nat → Nat) (hX : ∀ i, X i < 2 ^ 64) (hY : ∀ j, Y j 
   Nat.mul_le_mul (by have := hX p.1; omega) (by have := hY p.2; omega)
 
 theorem tsum_lt {f : Nat × Nat → Nat} (hf : ∀ p, f p ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1))
-    {ps : List (Nat × Nat)} (hl : ps.length ≤ 7) : tsum f ps < 7 * 2 ^ 128 := by
+    {ps : List (Nat × Nat)} (hl : ps.length ≤ 4) : tsum f ps < 4 * 2 ^ 128 := by
   have := tsum_le (ps := ps) fun p _ => hf p
-  have : ps.length * ((2 ^ 64 - 1) * (2 ^ 64 - 1)) ≤ 7 * ((2 ^ 64 - 1) * (2 ^ 64 - 1)) :=
+  have : ps.length * ((2 ^ 64 - 1) * (2 ^ 64 - 1)) ≤ 4 * ((2 ^ 64 - 1) * (2 ^ 64 - 1)) :=
     Nat.mul_le_mul_right _ hl
   omega
 
 /-- The columns sum to the product. -/
-theorem mulCols_sum (X Y : Nat → Nat) : colsV (mulCs 4 X Y) 8 = val4 X * val4 Y := by
+theorem mulCols_sum (X Y : Nat → Nat) : colsV (mulCs X Y) 8 = val4 X * val4 Y := by
   simp only [colsV, val4]
   generalize 2 ^ 64 = B
   simp only [mulCs, colPairs, tsum, List.range_succ, List.range_zero,
@@ -513,44 +504,32 @@ theorem val4_lt {f : Nat → Nat} (h : ∀ i < 4, f i < 2 ^ 64) : val4 f < (2 ^ 
   have := h 3 (by decide)
   unfold val4; omega_arith
 
-/-- `product n acc x y`: the columns of `[x] · [y]`, `n` words each, at `acc`. -/
-theorem productN_ok {n : Nat} (hn : 2 * n ≤ 14) (hn1 : 1 ≤ n) {x y : Nat} (hx : x + 8 * n ≤ acc)
-    (hy : y + 8 * n ≤ acc) (hA : acc + 8 * (2 * n) ≤ 4096) (hA4 : acc % 4 = 0) (hx4 : x % 4 = 0)
-    (hy4 : y % 4 = 0) {s0 : State} (hc : Ctx b s0)
-    (hlt : colsV (mulCs n (ew s0.mem b x) (ew s0.mem b y)) (2 * n) < (2 ^ 64) ^ (2 * n)) :
-    WP isa (.block (product n acc x y)) s0 fun s' => Ctx b s' ∧ Rest clob s0 s' ∧
-      Frame [AR acc (2 * n) b] s0.mem s'.mem ∧
-      accW acc s'.mem b (2 * n) = colsV (mulCs n (ew s0.mem b x) (ew s0.mem b y)) (2 * n) := by
+/-- `product acc x y`: the eight words of `[x] · [y]` at `acc`. -/
+theorem product_ok {x y : Nat} (hx : x + 32 ≤ acc) (hy : y + 32 ≤ acc) (hA : acc + 64 ≤ 4096)
+    (hA4 : acc % 4 = 0) (hx4 : x % 4 = 0) (hy4 : y % 4 = 0) {s0 : State} (hc : Ctx b s0) :
+    WP isa (.block (product acc x y)) s0 fun s' => Ctx b s' ∧ Rest clob s0 s' ∧
+      Frame [AR acc b] s0.mem s'.mem ∧ accW acc s'.mem b 8 = V s0.mem b x * V s0.mem b y := by
   unfold product
   refine wp_li (by decide) fun s1 u1 => wp_li (by decide) fun s2 u2 => wp_li (by decide) fun s3 u3 => ?_
   have hr3 : Rest clob s0 s3 :=
     (u1.rest (by decide)).trans ((u2.rest (by decide)).trans (u3.rest (by decide)))
   have hm3 : s3.mem = s0.mem := by rw [u3.mem, u2.mem, u1.mem]
-  have hinit : ColInv acc (2 * n) b s0 (mulCs n (ew s0.mem b x) (ew s0.mem b y)) 0 s3 :=
+  have hinit : ColInv acc b s0 (mulCs (ew s0.mem b x) (ew s0.mem b y)) 0 s3 :=
     ⟨hc.of_rest hr3 (by decide), hr3, by rw [hm3]; exact Frame.refl _ _, u3.gpr, by
       simp only [accW, colsV, show rr 0 = .r8 from rfl, show rr (0 + 1) = .r9 from rfl,
         u3.other .r8 (by decide), u3.other .r9 (by decide), u2.other .r8 (by decide), u2.gpr, u1.gpr]
       rfl⟩
-  refine WP.mono (columns_ok (col := mulCol n acc x y)
-    (fun k hk s h => column_ok hA hA4 hn hk (colPairs n k) (fun p hp => by
-      obtain ⟨h1, h2⟩ := colPairs_ok n k p hp
-      exact mulTerm_ok hx hy hA hx4 hy4 (by omega) h1 h2) rfl
-      (tsum_lt (mulF_le _ _ (fun i => dw_lt _ _ _) (fun i => dw_lt _ _ _))
-        (Nat.le_trans (colPairs_len n k) (by omega))) h)
-    (2 * n) (Nat.le_refl _) s3 hinit)
-    fun s4 h4 => ⟨h4.ctx, h4.rest, h4.frame, h4.final hlt⟩
-
-/-- `product 4 acc x y`: the eight words of `[x] · [y]` at `acc`. -/
-theorem product_ok {x y : Nat} (hx : x + 32 ≤ acc) (hy : y + 32 ≤ acc) (hA : acc + 64 ≤ 4096)
-    (hA4 : acc % 4 = 0) (hx4 : x % 4 = 0) (hy4 : y % 4 = 0) {s0 : State} (hc : Ctx b s0) :
-    WP isa (.block (product 4 acc x y)) s0 fun s' => Ctx b s' ∧ Rest clob s0 s' ∧
-      Frame [AR acc 8 b] s0.mem s'.mem ∧ accW acc s'.mem b 8 = V s0.mem b x * V s0.mem b y := by
+  refine WP.mono (columns_ok (col := mulCol acc x y)
+    (fun k hk s h => column_ok hA hA4 hk (colPairs k) (fun p hp => by
+      obtain ⟨h1, h2⟩ := colPairs_ok k hk p hp
+      exact mulTerm_ok hx hy hA hx4 hy4 hk h1 h2) rfl
+      (tsum_lt (mulF_le _ _ (fun i => dw_lt _ _ _) (fun i => dw_lt _ _ _)) (colPairs_len k hk)) h)
+    8 (Nat.le_refl _) s3 hinit)
+    fun s4 h4 => ⟨h4.ctx, h4.rest, h4.frame, ?_⟩
   have hlt : val4 (ew s0.mem b x) * val4 (ew s0.mem b y) < (2 ^ 64) ^ 8 :=
     Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_lt (val4_lt fun i _ => dw_lt _ _ _)
       (val4_lt fun i _ => dw_lt _ _ _)) (by rw [← Nat.pow_add])
-  refine WP.mono (productN_ok (n := 4) (by decide) (by decide) hx hy hA hA4 hx4 hy4 hc
-    (by rw [mulCols_sum]; exact hlt)) fun s4 ⟨h1, h2, h3, h4⟩ => ⟨h1, h2, h3, ?_⟩
-  rw [h4, mulCols_sum, V_eq4, V_eq4]
+  rw [h4.final (by rw [mulCols_sum]; exact hlt), mulCols_sum, V_eq4, V_eq4]
 
 end
 

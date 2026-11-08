@@ -13,7 +13,8 @@ import VerifiedGarbage.Proof.X448.PPC64LE.Product
 # X448 on PPC64LE: multiplication
 
 `mul o x y` computes the 28 limbs of `[x] · [y]` at `ACC`, as fourteen
-doublewords by columns (`product7_ok`, `Proof/X448/PPC64LE/Product.lean`),
+doublewords row by row (`rows64_ok`, with `row64_ok` of
+`Proof/X448/PPC64LE/Product.lean`),
 then stores at `o` a number congruent to it (`mul_ok`). Also the rows of a
 product of limbs (`row_ok`, the loop invariant `RowInv`: after `i` rows,
 `ACC[0, i + 14)` holds the limbs of `x_{<i} · y`), which Ed448's scalar
@@ -182,6 +183,46 @@ theorem wd_acc {s0 s : State} (hc : Ctx b s0) {o k j : Nat} (ho : o + 56 ≤ ACC
   have hA := ACC_eq
   exact wd_pass hc hf (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
 
+/-- The rows of doublewords: from `s`, the 28 limbs of `[x] · [y]` at `ACC`,
+then `k`. -/
+theorem rows64_ok {x y : Nat} (hx : x + 56 ≤ ACC) (hy : y + 56 ≤ ACC) (hx4 : x % 4 = 0)
+    (hy4 : y % 4 = 0) {s : State} (hc : Ctx b s) {rest : Prog isa} {Q : State → Prop}
+    (k : ∀ s', Ctx b s' → Rest clob s s' → Frame [⟨b + BitVec.ofNat 64 ACC, 112⟩] s.mem s'.mem →
+      val32 (accw ACC s'.mem b) 28 = V s.mem b x * V s.mem b y → WP isa rest s' Q) :
+    WP isa (.seq (.block (zeroAcc ++ ([.addi .r9 .r6 0, .li .r11 7] : List Instr)))
+      (.seq (.loop (.block (row64 x y)) (.nonzero .d .r11)) rest)) s Q := by
+  have hA := ACC_eq
+  have hpre : WP isa (.block (zeroAcc ++ ([.addi .r9 .r6 0, .li .r11 7] : List Instr))) s
+      (RowInv64 b x y s 0) := by
+    refine WP.append (zeroAcc_ok hc) fun s2 ⟨hz, hf2, hr2⟩ => ?_
+    have hc2 : Ctx b s2 := hc.of_rest hr2 (by decide)
+    refine wp_addi (by decide) (by decide) fun s3 u3 => wp_li (by decide) fun s4 u4 => WP.block_nil ?_
+    have hr : Rest clob s s4 :=
+      (hr2.mono (by decide)).trans ((u3.rest (by decide)).trans (u4.rest (by decide)))
+    have hm4 : s4.mem = s2.mem := by rw [u4.mem, u3.mem]
+    refine ⟨hc.of_rest hr (by decide), hr, ?_, u4.gpr, ?_, ?_⟩
+    · rw [u4.other _ (by decide), u3.gpr, hc2.r6]
+    · rw [hm4]; exact hf2.sub fun r hr => ⟨_, List.mem_singleton_self _, by
+        rw [List.mem_singleton.mp hr]; exact Region.sub_prefix (by decide)⟩
+    · rw [hm4, Nat.zero_add, accW_val32, show (2 * 7 : Nat) = 14 from rfl,
+        val32_congr (f := fun k => wd s2.mem b (ACC + 4 * k)) (g := fun _ => 0) (fun k hk => hz k hk),
+        val32_zero_fn, show colsV (ew s.mem b x) 0 = 0 from rfl, Nat.zero_mul]
+  refine WP.seq (WP.mono hpre fun s1 h1 => ?_)
+  refine WP.seq (WP.mono (Q := RowInv64 b x y s 7) (WP.loop (M := isa)
+    (fun n s' => ∃ i, n = 7 - i ∧ i < 7 ∧ RowInv64 b x y s i s') ?_ 7 s1 ⟨0, rfl, by decide, h1⟩)
+    fun s2 h2 => ?_)
+  · rintro n s' ⟨i, rfl, hi, hr⟩
+    refine WP.mono (row64_ok hx hy hx4 hy4 hi hr) fun s'' ⟨hr', hz⟩ => ?_
+    by_cases h7 : i + 1 = 7
+    · refine .inl ⟨by rw [eval_nonzero, hz]; simp [h7], ?_⟩
+      rw [h7] at hr'; exact hr'
+    · exact .inr ⟨by rw [eval_nonzero, hz]; simp; omega_arith, 7 - (i + 1), by omega_arith, i + 1, rfl,
+        by omega_arith, hr'⟩
+  · refine k s2 h2.ctx h2.rest h2.frame ?_
+    have hv := h2.val
+    rw [← V_eq_cols, ← V_eq_cols, accW_val32] at hv
+    exact hv
+
 theorem mul_ok {o x y : Nat} (ho : o + 56 ≤ ACC) (hx : x + 56 ≤ ACC)
     (hy : y + 56 ≤ ACC) (hx4 : x % 4 = 0) (hy4 : y % 4 = 0) {s : State} (hc : Ctx b s) :
     WP isa (mul o x y) s fun s' =>
@@ -190,8 +231,7 @@ theorem mul_ok {o x y : Nat} (ho : o + 56 ≤ ACC) (hx : x + 56 ≤ ACC)
       V s'.mem b o % P = (V s.mem b x * V s.mem b y) % P := by
   have hA := ACC_eq
   unfold mul
-  refine WP.seq (WP.mono (product7_ok hx hy hx4 hy4 hc) fun s2 h2 => ?_)
-  obtain ⟨h2ctx, h2rest, h2frame, h2val⟩ := h2
+  refine rows64_ok hx hy hx4 hy4 hc fun s2 h2ctx h2rest h2frame h2val => ?_
   · rw [List.cons_append]
     refine wp_li (by decide) fun s3 u3 => ?_
     have hc3 : Ctx b s3 := h2ctx.of_rest (u3.rest (ws := [.r8]) (by decide)) (by decide)

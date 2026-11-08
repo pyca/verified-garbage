@@ -163,10 +163,10 @@ field element's 32 bytes, eight 32-bit limbs, are also four 64-bit words
 rr (k + 2)`: `r8`, `r9` and `r10` in turn. -/
 def rr (k : Nat) : Reg := if k % 3 = 0 then .r8 else if k % 3 = 1 then .r9 else .r10
 
-/-- The terms `(i, j)` of column `k` of a product of two `n`-word numbers,
-`i` descending. -/
-def colPairs (n k : Nat) : List (Nat × Nat) :=
-  ((List.range n).reverse.filter fun i => i ≤ k ∧ k - i < n).map fun i => (i, k - i)
+/-- The terms `(i, j)` of column `k` of a product of four words, `i`
+descending. -/
+def colPairs (k : Nat) : List (Nat × Nat) :=
+  ((List.range 4).reverse.filter fun i => i ≤ k ∧ k - i < 4).map fun i => (i, k - i)
 
 /-- A term `a_i b_j` of column `k`, both loaded (into `r4` and `r5`), added
 to the accumulator: the low word of the product (`mulld`, into `r7`) with
@@ -181,13 +181,12 @@ def mulTerm (a b k : Nat) (p : Nat × Nat) : List Instr :=
 register zeroed, which becomes the top word of column `k + 1`'s accumulator. -/
 def colEnd (acc k : Nat) : List Instr := [.store .d (rr k) .r6 (acc + 8 * k), .li (rr k) 0]
 
-/-- Column `k` of `[a] · [b]`, of `n` words each. -/
-def mulCol (n acc a b k : Nat) : List Instr := (colPairs n k).flatMap (mulTerm a b k) ++ colEnd acc k
+/-- Column `k` of `[a] · [b]`. -/
+def mulCol (acc a b k : Nat) : List Instr := (colPairs k).flatMap (mulTerm a b k) ++ colEnd acc k
 
-/-- The `2n` words of `[a] · [b]` (of `n` words each) at `acc`, by columns
-(product scanning); X448 on PPC64LE uses it for `n = 7`. -/
-def product (n acc a b : Nat) : List Instr :=
-  [.li .r8 0, .li .r9 0, .li .r10 0] ++ (List.range (2 * n)).flatMap (mulCol n acc a b)
+/-- The eight words of `[a] · [b]` at `acc`, by columns (product scanning). -/
+def product (acc a b : Nat) : List Instr :=
+  [.li .r8 0, .li .r9 0, .li .r10 0] ++ (List.range 8).flatMap (mulCol acc a b)
 
 /-- Word `k` of the reduced product, in `r8`–`r11`. -/
 def wreg (k : Nat) : Reg := if k = 0 then .r8 else if k = 1 then .r9 else if k = 2 then .r10 else .r11
@@ -218,7 +217,7 @@ def reduce38 (acc o : Nat) : List Instr :=
     (List.range 4).map fun k => .store .d (wreg k) .r6 (o + 8 * k)
 
 /-- `[o] = [a] · [b]` (`o` may be `a` or `b`), with the product at `acc`. -/
-def mulAt (acc o a b : Nat) : Prog isa := .block (product 4 acc a b ++ reduce38 acc o)
+def mulAt (acc o a b : Nat) : Prog isa := .block (product acc a b ++ reduce38 acc o)
 
 /-- `[o] = [a] · [b]`, with the product in `ACC`. -/
 abbrev mul (o a b : Nat) : Prog isa := mulAt ACC o a b
