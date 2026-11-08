@@ -98,14 +98,14 @@ impl<H: HmacHash> Hmac<H> {
 #[derive(Clone)]
 pub struct StreamingHmacState<H, const S: usize> {
     pub(crate) inner: H,
-    pub(crate) outer: [u8; S],
+    pub(crate) outer: crate::align::CacheAligned<[u8; S]>,
 }
 
 impl<H, const S: usize> Drop for StreamingHmacState<H, S> {
     /// Wipes the outer state, which represents `K₀ ⊕ opad` (the inner hash
     /// wipes its own).
     fn drop(&mut self) {
-        crate::zeroize::zeroize(&mut self.outer);
+        crate::zeroize::zeroize(&mut self.outer.0);
     }
 }
 
@@ -136,7 +136,7 @@ macro_rules! streaming_hmac {
                 // one represents `K₀ ⊕ ipad`, of a block.
                 let mut state = super::StreamingHmacState {
                     inner: $hash::from_state([0; $state], Self::BLOCK_SIZE as u64),
-                    outer: [0; $state],
+                    outer: $crate::align::CacheAligned([0; $state]),
                 };
                 let (inner, _) = state.inner.state_mut();
                 // SAFETY: `inner` and `state.outer` are valid for reads and
@@ -146,7 +146,7 @@ macro_rules! streaming_hmac {
                 // call's stack frame, nor wrap around the address space. The
                 // dispatcher calls only an implementation the CPU has the
                 // features of.
-                unsafe { $init(inner, &mut state.outer, key.as_ptr(), key.len()) };
+                unsafe { $init(inner, &mut state.outer.0, key.as_ptr(), key.len()) };
                 state
             }
 
@@ -168,7 +168,7 @@ macro_rules! streaming_hmac {
                 // below 2⁶⁴, so the text is shorter than 2⁶⁴ − B bytes), and
                 // `state.outer` represents `K₀ ⊕ opad`. The dispatcher calls
                 // only an implementation the CPU has the features of.
-                unsafe { $finalize(inner, &state.outer, count, &mut mac) };
+                unsafe { $finalize(inner, &state.outer.0, count, &mut mac) };
                 mac
             }
 
@@ -176,17 +176,17 @@ macro_rules! streaming_hmac {
                 // As in `hmac_init` and `hmac_finalize`, with the states on
                 // the stack: `inner` is wiped when dropped, `outer` below.
                 let mut inner = $hash::from_state([0; $state], Self::BLOCK_SIZE as u64);
-                let mut outer = [0; $state];
+                let mut outer = $crate::align::CacheAligned([0; $state]);
                 let (st, _) = inner.state_mut();
                 // SAFETY: as in `hmac_init`.
-                unsafe { $init(st, &mut outer, key.as_ptr(), key.len()) };
+                unsafe { $init(st, &mut outer.0, key.as_ptr(), key.len()) };
                 inner.update(data);
                 let (st, count) = inner.state_mut();
                 let mut mac = [0; $output];
                 // SAFETY: as in `hmac_finalize`: `st` represents `(K₀ ⊕
                 // ipad) ‖ data`, of `count` bytes, and `outer` `K₀ ⊕ opad`.
-                unsafe { $finalize(st, &outer, count, &mut mac) };
-                $crate::zeroize::zeroize(&mut outer);
+                unsafe { $finalize(st, &outer.0, count, &mut mac) };
+                $crate::zeroize::zeroize(&mut outer.0);
                 mac
             }
         }

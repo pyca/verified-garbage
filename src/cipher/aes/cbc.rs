@@ -10,6 +10,7 @@
     target_arch = "riscv64"
 ))]
 
+use crate::align::CacheAligned;
 use crate::arch::aes::vg_aes_expand_key;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::aes::vg_aes_expand_key_aes;
@@ -134,7 +135,7 @@ fn select(f: Features) -> Backend {
 /// An expanded AES key, which serves both directions.
 struct Key {
     /// The key schedule `vg_aes_expand_key` writes.
-    schedule: [u8; 240],
+    schedule: CacheAligned<[u8; 240]>,
     /// The number of rounds of AES: 10, 12 or 14.
     rounds: usize,
     /// The implementation of AES the functions called use.
@@ -216,11 +217,11 @@ impl Key {
             vg_aes_expand_key_aesni,
             vg_aes_expand_key_aes
         );
-        let mut schedule = [0; 240];
+        let mut schedule = CacheAligned([0; 240]);
         // SAFETY: the key is 16, 24 or 32 bytes long; the key and the schedule
         // are separate valid buffers of the sizes of the signature, and
         // `select` chose `expand` for the CPU's features.
-        unsafe { expand(key.as_ptr(), key.len(), &mut schedule) };
+        unsafe { expand(key.as_ptr(), key.len(), &mut schedule.0) };
         Ok(Self {
             schedule,
             rounds: key.len() / 4 + 6,
@@ -305,7 +306,7 @@ impl Key {
         if !buffer.len().is_multiple_of(16) {
             return Err(IncompleteBlock);
         }
-        let mut scratch = Scratch([0; 272]);
+        let mut scratch = CacheAligned([0; 272]);
         // SAFETY: `rounds` is 10, 12 or 14 and the schedule holds its key
         // schedule; the buffer holds `len / 16` whole blocks, and it, the
         // chaining value, the schedule and the scratch space are separate
@@ -313,7 +314,7 @@ impl Key {
         // the CPU's features.
         unsafe {
             f(
-                &self.schedule,
+                &self.schedule.0,
                 self.rounds,
                 iv,
                 buffer.as_mut_ptr().cast(),
@@ -342,13 +343,6 @@ impl Key {
         Ok(())
     }
 }
-
-/// The scratch space of the CBC functions, aligned to a cache line: the
-/// implementations read what they keep there (round keys, the inverse key
-/// schedule) for every block, and at the alignment of `[u64; 272]` some of
-/// those reads would cross cache lines, depending on the caller's stack.
-#[repr(C, align(64))]
-struct Scratch([u64; 272]);
 
 /// The signature of `vg_aes_cbc_encrypt` and `vg_aes_cbc_decrypt`.
 #[cfg(target_arch = "x86_64")]
@@ -379,7 +373,7 @@ type Cbc = unsafe extern "C" fn(
 
 impl Drop for Key {
     fn drop(&mut self) {
-        zeroize(&mut self.schedule);
+        zeroize(&mut self.schedule.0);
     }
 }
 

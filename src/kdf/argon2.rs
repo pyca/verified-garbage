@@ -19,6 +19,8 @@
 
 use alloc::vec::Vec;
 
+use crate::align::CacheAligned;
+
 use crate::arch::dispatch::argon2::vg_argon2_auto;
 use crate::error::PasswordHashError;
 
@@ -193,17 +195,21 @@ struct Derivation<'a> {
     /// The other inputs.
     inputs: Inputs<'a>,
     /// The memory matrix, of `1024 · blocks` bytes.
-    matrix: Vec<[u64; 128]>,
+    matrix: Vec<CacheAligned<[u64; 128]>>,
     /// 16 KiB of working space.
-    scratch: Vec<[u64; 2048]>,
+    scratch: Vec<CacheAligned<[u64; 2048]>>,
     /// The length of the key to derive.
     len: usize,
 }
 
 impl Drop for Derivation<'_> {
     fn drop(&mut self) {
-        crate::zeroize::zeroize(self.matrix.as_flattened_mut());
-        crate::zeroize::zeroize(self.scratch.as_flattened_mut());
+        for block in &mut self.matrix {
+            crate::zeroize::zeroize(&mut block.0);
+        }
+        for block in &mut self.scratch {
+            crate::zeroize::zeroize(&mut block.0);
+        }
     }
 }
 
@@ -248,8 +254,8 @@ impl<'a> Derivation<'a> {
         Ok(Derivation {
             params: *params,
             inputs,
-            matrix: allocate(blocks, [0; 128])?,
-            scratch: allocate(1, [0; 2048])?,
+            matrix: allocate(blocks, CacheAligned([0; 128]))?,
+            scratch: allocate(1, CacheAligned([0; 2048]))?,
             len,
         })
     }
@@ -298,9 +304,9 @@ impl<'a> Derivation<'a> {
                 secret.len(),
                 associated_data.as_ptr(),
                 associated_data.len(),
-                self.matrix.as_mut_ptr(),
+                self.matrix.as_mut_ptr().cast(),
                 self.matrix.len(),
-                self.scratch.as_mut_ptr(),
+                self.scratch.as_mut_ptr().cast(),
                 out.as_mut_ptr(),
                 out.len(),
             )

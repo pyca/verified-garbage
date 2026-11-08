@@ -16,6 +16,7 @@
     target_arch = "riscv64"
 ))]
 
+use crate::align::CacheAligned;
 use crate::arch::dispatch::aes::vg_aes_expand_key_auto;
 use crate::arch::dispatch::aes_ccm::{vg_aes_ccm_open_auto, vg_aes_ccm_seal_auto};
 use crate::error::InvalidKeyLength;
@@ -59,7 +60,7 @@ crate::error::impl_error! {
 #[derive(Clone)]
 pub struct AesCcm {
     /// The key schedule `vg_aes_expand_key` writes.
-    schedule: [u8; 240],
+    schedule: CacheAligned<[u8; 240]>,
     /// The number of rounds of AES.
     rounds: usize,
 }
@@ -67,7 +68,7 @@ pub struct AesCcm {
 impl Drop for AesCcm {
     /// Wipes the key schedule.
     fn drop(&mut self) {
-        zeroize(&mut self.schedule);
+        zeroize(&mut self.schedule.0);
     }
 }
 
@@ -93,7 +94,7 @@ impl AesCcm {
             return Err(InvalidKeyLength);
         }
         let mut k = AesCcm {
-            schedule: [0; 240],
+            schedule: CacheAligned([0; 240]),
             rounds: key.len() / 4 + 6,
         };
         // SAFETY: `key` is valid for reads of `key.len()` bytes, which is 16,
@@ -102,7 +103,7 @@ impl AesCcm {
         // the return address on the stack or the stack below it, and neither
         // wraps around the end of the address space. The dispatcher calls
         // only an implementation the CPU has the features of.
-        unsafe { vg_aes_expand_key_auto(key.as_ptr(), key.len(), &mut k.schedule) };
+        unsafe { vg_aes_expand_key_auto(key.as_ptr(), key.len(), &mut k.schedule.0) };
         Ok(k)
     }
 
@@ -137,7 +138,7 @@ impl AesCcm {
         // implementation the CPU has the features of.
         unsafe {
             vg_aes_ccm_seal_auto(
-                &self.schedule,
+                &self.schedule.0,
                 self.rounds,
                 nonce.as_ptr(),
                 nonce.len(),
@@ -173,7 +174,7 @@ impl AesCcm {
         // `data`, a unique one, does not overlap.
         let ok = unsafe {
             vg_aes_ccm_open_auto(
-                &self.schedule,
+                &self.schedule.0,
                 self.rounds,
                 nonce.as_ptr(),
                 nonce.len(),

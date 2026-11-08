@@ -12,6 +12,7 @@
     target_arch = "riscv64"
 ))]
 
+use crate::align::CacheAligned;
 use crate::arch::dispatch::poly1305::vg_poly1305_update_auto;
 use crate::arch::poly1305::{vg_poly1305_finalize, vg_poly1305_init};
 use crate::zeroize::zeroize;
@@ -21,7 +22,7 @@ use crate::error::InvalidMac;
 /// An incremental Poly1305 computation.
 pub struct Poly1305 {
     /// The streaming state, representing the key and the message so far.
-    state: [u64; 16],
+    state: CacheAligned<[u64; 16]>,
     /// The message length so far, in bytes, modulo 2⁶⁴.
     count: u64,
 }
@@ -29,7 +30,7 @@ pub struct Poly1305 {
 impl Drop for Poly1305 {
     /// Wipes the state, which holds the key.
     fn drop(&mut self) {
-        zeroize(&mut self.state);
+        zeroize(&mut self.state.0);
     }
 }
 
@@ -41,12 +42,12 @@ impl Poly1305 {
 
     /// Starts a computation with the one-time key `key`.
     pub fn new(key: &[u8; 32]) -> Self {
-        let mut state = [0; 16];
+        let mut state = CacheAligned([0; 16]);
         // SAFETY: `state` is valid for writes of 128 bytes and `key` for
         // reads of 32 bytes; they are distinct objects, so they do not overlap
         // each other or anything on the stack (the return address and any
         // arguments), and do not wrap around the end of the address space.
-        unsafe { vg_poly1305_init(&mut state, key) };
+        unsafe { vg_poly1305_init(&mut state.0, key) };
         Poly1305 { state, count: 0 }
     }
 
@@ -60,7 +61,9 @@ impl Poly1305 {
         // address space. `self.state` represents a message of `self.count`
         // bytes, modulo 2⁶⁴. The dispatcher calls only an implementation the
         // CPU has the features of.
-        unsafe { vg_poly1305_update_auto(&mut self.state, self.count, data.as_ptr(), data.len()) };
+        unsafe {
+            vg_poly1305_update_auto(&mut self.state.0, self.count, data.as_ptr(), data.len())
+        };
         self.count = self.count.wrapping_add(data.len() as u64);
     }
 
@@ -73,7 +76,7 @@ impl Poly1305 {
         // and any arguments), and do not wrap around the end of the address
         // space. `self.state` represents a message of `self.count` bytes,
         // modulo 2⁶⁴.
-        unsafe { vg_poly1305_finalize(&mut self.state, self.count, &mut tag) };
+        unsafe { vg_poly1305_finalize(&mut self.state.0, self.count, &mut tag) };
         tag
     }
 

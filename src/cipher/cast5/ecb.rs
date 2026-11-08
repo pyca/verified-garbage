@@ -10,6 +10,7 @@
     target_arch = "riscv64"
 ))]
 
+use crate::align::CacheAligned;
 use crate::arch::cast5::{vg_cast5_ecb_decrypt, vg_cast5_ecb_encrypt, vg_cast5_expand_key};
 use crate::error::{IncompleteBlock, InvalidKeyLength};
 use crate::zeroize::zeroize;
@@ -19,7 +20,7 @@ use crate::zeroize::zeroize;
 /// ECB encrypts equal blocks to equal blocks, so it reveals patterns in the
 /// data.
 pub struct Cast5Ecb {
-    schedule: [u8; 128],
+    schedule: CacheAligned<[u8; 128]>,
     rounds: usize,
 }
 
@@ -29,16 +30,16 @@ impl Cast5Ecb {
         if !(5..=16).contains(&key.len()) {
             return Err(InvalidKeyLength);
         }
-        let mut schedule = [0; 128];
-        let mut scratch = [0; 32];
+        let mut schedule = CacheAligned([0; 128]);
+        let mut scratch = CacheAligned([0; 32]);
         // SAFETY: the key has a validated length; the key, schedule and
         // scratch space are separate valid objects of the sizes of the
         // signature.
         unsafe {
-            vg_cast5_expand_key(key.as_ptr(), key.len(), &mut schedule, &mut scratch);
+            vg_cast5_expand_key(key.as_ptr(), key.len(), &mut schedule.0, &mut scratch.0);
         }
         // The scratch space holds the intermediate values of key expansion.
-        zeroize(&mut scratch);
+        zeroize(&mut scratch.0);
         Ok(Self {
             schedule,
             rounds: if key.len() <= 10 { 12 } else { 16 },
@@ -59,7 +60,7 @@ impl Cast5Ecb {
 
     /// The subkeys, for the other modes of CAST5.
     pub(crate) fn schedule(&self) -> &[u8; 128] {
-        &self.schedule
+        &self.schedule.0
     }
 
     /// The number of rounds, 12 or 16, for the modes built on CAST5.
@@ -71,23 +72,23 @@ impl Cast5Ecb {
         if !buffer.len().is_multiple_of(8) {
             return Err(IncompleteBlock);
         }
-        let mut scratch = [0; 32];
+        let mut scratch = CacheAligned([0; 32]);
         // SAFETY: `rounds` is 12 or 16, as `new` chose for the key the
         // schedule was expanded from; the buffer holds `len / 8` whole
         // blocks, and it, the schedule and the scratch space are separate
         // valid objects of the sizes of the signature.
         unsafe {
             f(
-                &self.schedule,
+                &self.schedule.0,
                 self.rounds,
                 buffer.as_mut_ptr().cast(),
                 buffer.len() / 8,
-                &mut scratch,
+                &mut scratch.0,
             );
         }
         // The scratch space may hold the subkeys, the data and our caller's
         // registers.
-        zeroize(&mut scratch);
+        zeroize(&mut scratch.0);
         Ok(())
     }
 }
@@ -107,6 +108,6 @@ type Ecb = unsafe extern "C" fn(*const [u8; 128], usize, *mut [u8; 8], usize, *m
 
 impl Drop for Cast5Ecb {
     fn drop(&mut self) {
-        zeroize(&mut self.schedule);
+        zeroize(&mut self.schedule.0);
     }
 }

@@ -9,6 +9,7 @@
     target_arch = "riscv64"
 ))]
 
+use crate::align::CacheAligned;
 use crate::arch::camellia::{
     vg_camellia_ecb_decrypt, vg_camellia_ecb_encrypt, vg_camellia_expand_key,
 };
@@ -23,7 +24,7 @@ use crate::zeroize::zeroize;
 /// ECB encrypts equal blocks to equal blocks, so it reveals patterns in the
 /// data.
 pub struct CamelliaEcb {
-    schedule: [u8; 272],
+    schedule: CacheAligned<[u8; 272]>,
     rounds: usize,
 }
 
@@ -35,11 +36,11 @@ impl CamelliaEcb {
             24 | 32 => 24,
             _ => return Err(InvalidKeyLength),
         };
-        let mut schedule = [0; 272];
+        let mut schedule = CacheAligned([0; 272]);
         // SAFETY: the key has a validated length; key and schedule are separate
         // valid buffers of the required sizes.
         unsafe {
-            vg_camellia_expand_key(key.as_ptr(), key.len(), &mut schedule);
+            vg_camellia_expand_key(key.as_ptr(), key.len(), &mut schedule.0);
         }
         Ok(Self { schedule, rounds })
     }
@@ -71,7 +72,7 @@ impl CamelliaEcb {
         // valid objects and do not overlap the callee's stack.
         unsafe {
             f(
-                &self.schedule,
+                &self.schedule.0,
                 self.rounds,
                 buffer.as_mut_ptr().cast(),
                 buffer.len() / 16,
@@ -83,6 +84,6 @@ impl CamelliaEcb {
 
 impl Drop for CamelliaEcb {
     fn drop(&mut self) {
-        zeroize(&mut self.schedule);
+        zeroize(&mut self.schedule.0);
     }
 }

@@ -13,6 +13,7 @@
     target_arch = "riscv64"
 ))]
 
+use crate::align::CacheAligned;
 use crate::arch::cmac_triple_des::{
     vg_cmac_triple_des_absorb, vg_cmac_triple_des_finish, vg_cmac_triple_des_stream_init,
 };
@@ -32,7 +33,7 @@ const STATE: usize = 52;
 pub struct TripleDesCmac {
     /// The streaming state (`VG.Spec.Cmac.tdesRepr`): the key schedule, the
     /// subkeys, the chaining value and the bytes held back.
-    state: [u64; STATE],
+    state: CacheAligned<[u64; STATE]>,
     /// The length of the message the state represents, in bytes.
     count: u64,
 }
@@ -40,7 +41,7 @@ pub struct TripleDesCmac {
 impl Drop for TripleDesCmac {
     /// Wipes the streaming state, which holds the key schedule.
     fn drop(&mut self) {
-        zeroize(&mut self.state);
+        zeroize(&mut self.state.0);
     }
 }
 
@@ -56,7 +57,7 @@ impl TripleDesCmac {
             return Err(InvalidKeyLength);
         }
         let mut c = TripleDesCmac {
-            state: [0; STATE],
+            state: CacheAligned([0; STATE]),
             count: 0,
         };
         // SAFETY: `c.state` is valid for reads and writes of 416 bytes, and
@@ -65,7 +66,7 @@ impl TripleDesCmac {
         // return address (on x86-64 and x86), the arguments on the stack (on
         // 32-bit ARM and x86) or the stack below them that the function uses,
         // and neither wraps around the end of the address space.
-        unsafe { vg_cmac_triple_des_stream_init(&mut c.state, key.as_ptr(), key.len()) };
+        unsafe { vg_cmac_triple_des_stream_init(&mut c.state.0, key.as_ptr(), key.len()) };
         Ok(c)
     }
 
@@ -89,7 +90,7 @@ impl TripleDesCmac {
         // `data` is shorter than 2⁶⁴ bytes, as the contract's postcondition
         // requires.
         unsafe {
-            vg_cmac_triple_des_absorb(&mut self.state, self.count, data.as_ptr(), data.len())
+            vg_cmac_triple_des_absorb(&mut self.state.0, self.count, data.as_ptr(), data.len())
         };
         self.count = count;
     }
@@ -104,7 +105,7 @@ impl TripleDesCmac {
         // stack below them that the function uses, and neither wraps around
         // the end of the address space. The state represents a message of
         // `self.count` bytes, as the contract's postcondition requires.
-        unsafe { vg_cmac_triple_des_finish(&mut self.state, self.count, &mut mac) };
+        unsafe { vg_cmac_triple_des_finish(&mut self.state.0, self.count, &mut mac) };
         mac
     }
 
