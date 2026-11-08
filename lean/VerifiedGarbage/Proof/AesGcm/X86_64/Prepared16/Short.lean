@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.Rounds
-public import VerifiedGarbage.Spec.Gcm.Prepared16
+public import VerifiedGarbage.Proof.Gcm.PreparedPowers
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.VerifiedP
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared16.Verified

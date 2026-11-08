@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.RsaOaep.decryptTablesContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e`, and which tables `hash` and `mgf1` are, not on the private key, the label, the ciphertext, whether its decoding is valid or the message's length.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_rsa_oaep_decrypt_crt_ifma` if the CPU supports its features (`VG_RSA_OAEP_DECRYPT_CRT_IFMA_FEATURES`); `vg_rsa_oaep_decrypt_crt_adx` if the CPU supports its features (`VG_RSA_OAEP_DECRYPT_CRT_ADX_FEATURES`); or else `vg_rsa_oaep_decrypt`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_rsa_oaep_decrypt_crt_ifma` if the CPU supports its features (`VG_RSA_OAEP_DECRYPT_CRT_IFMA_FEATURES`); `vg_rsa_oaep_decrypt_crt_adx` if the CPU supports its features (`VG_RSA_OAEP_DECRYPT_CRT_ADX_FEATURES`); or else `vg_rsa_oaep_decrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -39,27 +39,50 @@
 /// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_rsa_oaep_decrypt_auto(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 5], mgf1: *const [usize; 5]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::rsa_oaep::VG_RSA_OAEP_DECRYPT_CRT_IFMA_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_rsa_oaep_decrypt_crt_ifma`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::rsa_oaep::vg_rsa_oaep_decrypt_crt_ifma(out, out_len, msg_len, n, n_len, e, e_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, label, label_len, ct, ct_len, scratch, scratch_len, hash, mgf1) };
+pub unsafe fn vg_rsa_oaep_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 5], mgf1: *const [usize; 5]) -> u32 {
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 5], mgf1: *const [usize; 5]) -> u32;
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::rsa_oaep::VG_RSA_OAEP_DECRYPT_CRT_IFMA_FEATURES) }
+            || cpu.contains(crate::rsa_oaep::VG_RSA_OAEP_DECRYPT_CRT_IFMA_FEATURES)
+        {
+            return crate::rsa_oaep::vg_rsa_oaep_decrypt_crt_ifma;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::rsa_oaep::VG_RSA_OAEP_DECRYPT_CRT_ADX_FEATURES) }
+            || cpu.contains(crate::rsa_oaep::VG_RSA_OAEP_DECRYPT_CRT_ADX_FEATURES)
+        {
+            return crate::rsa_oaep::vg_rsa_oaep_decrypt_crt_adx;
+        }
+        crate::rsa_oaep::vg_rsa_oaep_decrypt
     }
-    if cpu.contains(crate::rsa_oaep::VG_RSA_OAEP_DECRYPT_CRT_ADX_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_rsa_oaep_decrypt_crt_adx`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::rsa_oaep::vg_rsa_oaep_decrypt_crt_adx(out, out_len, msg_len, n, n_len, e, e_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, label, label_len, ct, ct_len, scratch, scratch_len, hash, mgf1) };
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 5], mgf1: *const [usize; 5]) -> u32 {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(out, out_len, msg_len, n, n_len, e, e_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, label, label_len, ct, ct_len, scratch, scratch_len, hash, mgf1) }
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::rsa_oaep::vg_rsa_oaep_decrypt(out, out_len, msg_len, n, n_len, e, e_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, label, label_len, ct, ct_len, scratch, scratch_len, hash, mgf1) }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(out, out_len, msg_len, n, n_len, e, e_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, label, label_len, ct, ct_len, scratch, scratch_len, hash, mgf1) }
 }
 
 /// RSAES-OAEP encryption (RFC 8017 §7.1.1) with the hash function of the table `hash` and MGF1 with that of the table `mgf1`. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), the public exponent `e` (`e_len` bytes, most significant first) and `pre`, the `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1), writes the encryption of the message `msg` with the label `label` and the `seed_len`-byte seed `seed` (`n_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 0 if `n` is not such a modulus or the message is longer than `n_len - 2 seed_len - 2` bytes. The seed must be fresh random bytes for each encryption. If `pre` does not hold those values, what it writes and returns is unspecified; memory safety and the timing guarantee still apply.
 ///
 /// Contract: `VG.Spec.RsaOaep.encryptTablesContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n`, `e` and `pre`, and which tables `hash` and `mgf1` are, not on the message, the label or the seed.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_rsa_oaep_encrypt_precomputed_rsa_ifma` if the CPU supports its features (`VG_RSA_OAEP_ENCRYPT_PRECOMPUTED_RSA_IFMA_FEATURES`); `vg_rsa_oaep_encrypt_precomputed_rsa_adx` if the CPU supports its features (`VG_RSA_OAEP_ENCRYPT_PRECOMPUTED_RSA_ADX_FEATURES`); or else `vg_rsa_oaep_encrypt_precomputed`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_rsa_oaep_encrypt_precomputed_rsa_ifma` if the CPU supports its features (`VG_RSA_OAEP_ENCRYPT_PRECOMPUTED_RSA_IFMA_FEATURES`); `vg_rsa_oaep_encrypt_precomputed_rsa_adx` if the CPU supports its features (`VG_RSA_OAEP_ENCRYPT_PRECOMPUTED_RSA_ADX_FEATURES`); or else `vg_rsa_oaep_encrypt_precomputed`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -89,18 +112,41 @@ pub unsafe fn vg_rsa_oaep_decrypt_auto(out: *mut u8, out_len: usize, msg_len: *m
 /// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_rsa_oaep_encrypt_precomputed_auto(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const u8, seed_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, hash: *const [usize; 5], mgf1: *const [usize; 5]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::rsa_oaep::VG_RSA_OAEP_ENCRYPT_PRECOMPUTED_RSA_IFMA_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_rsa_oaep_encrypt_precomputed_rsa_ifma`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::rsa_oaep::vg_rsa_oaep_encrypt_precomputed_rsa_ifma(out, out_len, n, n_len, e, e_len, label, label_len, msg, msg_len, seed, seed_len, scratch, scratch_len, pre, pre_len, hash, mgf1) };
+pub unsafe fn vg_rsa_oaep_encrypt_precomputed_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const u8, seed_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, hash: *const [usize; 5], mgf1: *const [usize; 5]) -> u32 {
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const u8, seed_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, hash: *const [usize; 5], mgf1: *const [usize; 5]) -> u32;
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::rsa_oaep::VG_RSA_OAEP_ENCRYPT_PRECOMPUTED_RSA_IFMA_FEATURES) }
+            || cpu.contains(crate::rsa_oaep::VG_RSA_OAEP_ENCRYPT_PRECOMPUTED_RSA_IFMA_FEATURES)
+        {
+            return crate::rsa_oaep::vg_rsa_oaep_encrypt_precomputed_rsa_ifma;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::rsa_oaep::VG_RSA_OAEP_ENCRYPT_PRECOMPUTED_RSA_ADX_FEATURES) }
+            || cpu.contains(crate::rsa_oaep::VG_RSA_OAEP_ENCRYPT_PRECOMPUTED_RSA_ADX_FEATURES)
+        {
+            return crate::rsa_oaep::vg_rsa_oaep_encrypt_precomputed_rsa_adx;
+        }
+        crate::rsa_oaep::vg_rsa_oaep_encrypt_precomputed
     }
-    if cpu.contains(crate::rsa_oaep::VG_RSA_OAEP_ENCRYPT_PRECOMPUTED_RSA_ADX_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_rsa_oaep_encrypt_precomputed_rsa_adx`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::rsa_oaep::vg_rsa_oaep_encrypt_precomputed_rsa_adx(out, out_len, n, n_len, e, e_len, label, label_len, msg, msg_len, seed, seed_len, scratch, scratch_len, pre, pre_len, hash, mgf1) };
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const u8, seed_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, hash: *const [usize; 5], mgf1: *const [usize; 5]) -> u32 {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(out, out_len, n, n_len, e, e_len, label, label_len, msg, msg_len, seed, seed_len, scratch, scratch_len, pre, pre_len, hash, mgf1) }
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::rsa_oaep::vg_rsa_oaep_encrypt_precomputed(out, out_len, n, n_len, e, e_len, label, label_len, msg, msg_len, seed, seed_len, scratch, scratch_len, pre, pre_len, hash, mgf1) }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(out, out_len, n, n_len, e, e_len, label, label_len, msg, msg_len, seed, seed_len, scratch, scratch_len, pre, pre_len, hash, mgf1) }
 }

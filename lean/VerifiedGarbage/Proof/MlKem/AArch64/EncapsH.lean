@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.MlKem.Scrubbed
 public import VerifiedGarbage.Proof.MlKem.AArch64.Encaps
 public import VerifiedGarbage.Proof.MlKem1024.AArch64.Encaps
 public import VerifiedGarbage.Impl.MlKem1024.AArch64.Encaps
@@ -97,9 +98,9 @@ theorem ctH {c : Prog isa} {k : Contract isa} (hct : ConstantTime isa k.pre k.pu
 
 /-! ## ML-KEM-768, one Keccak state at a time -/
 
-theorem pre768 {s : State} (h : (Spec.MlKem.encapsHContract AArch64.abi 16).pre s) :
+theorem pre768 {s : State} (h : (Proof.MlKem.Scrubbed.encapsHBodyContract AArch64.abi 16).pre s) :
     (afterH shiftH (encapsAArch64 lay768)).pre s := by
-  sig_pre [Spec.MlKem.encapsHContract, Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, AArch64.abi,
+  sig_pre [Proof.MlKem.Scrubbed.encapsHBodyContract, Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, AArch64.abi,
     AArch64.argRegs] at h
   obtain ⟨h0, rd, wr, d03, d04, d05, -, -, -, d23, d24, d25, d34, d35, d45, b0, -, b2, b3, b4, b5,
     -, -, -, -, -, -, -⟩ := h
@@ -115,14 +116,14 @@ def satH (ekLen ctLen scr : Nat) : State where
   rd := [⟨0x1000, ekLen⟩, ⟨0x2000, 32⟩, ⟨0x3000, 32⟩]
   wr := [⟨0x4000, 32⟩, ⟨0x5000, ctLen⟩, ⟨0x10000, scr⟩]
 
-theorem implies768 : (afterH shiftH (encapsAArch64 lay768)).Implies (Spec.MlKem.encapsHContract AArch64.abi 16) where
+theorem implies768 : (afterH shiftH (encapsAArch64 lay768)).Implies (Proof.MlKem.Scrubbed.encapsHBodyContract AArch64.abi 16) where
   pre _ h := pre768 h
   post s s' _ h := by
-    sig_post [Spec.MlKem.encapsHContract, Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, AArch64.abi,
+    sig_post [Proof.MlKem.Scrubbed.encapsHBodyContract, Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, AArch64.abi,
       AArch64.argRegs]
     exact h
   pub s₁ s₂ _ _ h := by
-    sig_pub [Spec.MlKem.encapsHContract, Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, AArch64.abi,
+    sig_pub [Proof.MlKem.Scrubbed.encapsHBodyContract, Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, AArch64.abi,
       AArch64.argRegs] at h
     obtain ⟨hsp, hl, g0, -, g2, g3, g4, g5⟩ := h
     exact ⟨g0, g2, g3, g4, g5, hsp, hl⟩
@@ -130,7 +131,7 @@ theorem implies768 : (afterH shiftH (encapsAArch64 lay768)).Implies (Spec.MlKem.
     refine ⟨satH 1184 1088 32768, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlKem.encapsHContract, Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, AArch64.abi,
+    · sig_reduce [Proof.MlKem.Scrubbed.encapsHBodyContract, Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, AArch64.abi,
         AArch64.argRegs]
       sig_and_intros
       all_goals first
@@ -139,7 +140,7 @@ theorem implies768 : (afterH shiftH (encapsAArch64 lay768)).Implies (Spec.MlKem.
         | exact VG.Proof.MlKem.hMem_h (n := 1184) (by decide)
 
 theorem encapsH_verifiedWith {keccak : VG.Proof.Sha3.AArch64.Permutation} :
-    Verified AArch64.target (encapsHWith keccak.callee) (Spec.MlKem.encapsHContract AArch64.abi 16) :=
+    Verified AArch64.target (encapsHWith keccak.callee) (Proof.MlKem.Scrubbed.encapsHBodyContract AArch64.abi 16) :=
   Verified.of_correct (correctH (Encaps.encaps_correctWith (keccak := keccak)))
     (ctH (Encaps.ct KeyGen.wf768 Encaps.taints768)) implies768
 
@@ -149,9 +150,9 @@ theorem encapsH_verifiedWith {keccak : VG.Proof.Sha3.AArch64.Permutation} :
 open VG.Proof.MlKem.AArch64.Hybrid (encapsAArch64S entryContractS)
 open VG.Proof.MlKem.AArch64.Optimized (constants)
 
-theorem baseS768 {s : State} (h : (Spec.MlKem.encapsHContract AArch64.abi 128).pre s) :
+theorem baseS768 {s : State} (h : (Proof.MlKem.Scrubbed.encapsHBodyContract AArch64.abi 128).pre s) :
     (encapsAArch64S lay768).pre (shiftH s) := by
-  sig_pre [Spec.MlKem.encapsHContract, Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, AArch64.abi,
+  sig_pre [Proof.MlKem.Scrubbed.encapsHBodyContract, Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, AArch64.abi,
     AArch64.argRegs] at h
   obtain ⟨h0, rd, wr, d03, d04, d05, -, -, -, d23, d24, d25, d34, d35, d45, b0, -, b2, b3, b4, b5,
     -, -, -, -, -, -, -⟩ := h
@@ -209,31 +210,31 @@ theorem strip_satHT (ekLen ctLen scr : Nat) : stripConsts constants (satHT ekLen
     List.take_left]
 
 theorem impliesP768 : (afterH shiftH (entryContractS (encapsAArch64S lay768))).Implies
-    (Spec.MlKem.encapsHContract (AArch64.abi.withConsts constants) 128) where
+    (Proof.MlKem.Scrubbed.encapsHBodyContract (AArch64.abi.withConsts constants) 128) where
   pre s h := by
-    unfold Spec.MlKem.encapsHContract constants at h
+    unfold Proof.MlKem.Scrubbed.encapsHBodyContract constants at h
     have hp := pre_consts.mp h
     exact ⟨baseS768 hp.1, hp.2⟩
   post s t h hp := by
-    unfold Spec.MlKem.encapsHContract constants at h ⊢
-    show (Spec.MlKem.encapsHContract AArch64.abi 128).post (stripConsts constants s) t
-    sig_post [Spec.MlKem.encapsHContract, Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, AArch64.abi,
+    unfold Proof.MlKem.Scrubbed.encapsHBodyContract constants at h ⊢
+    show (Proof.MlKem.Scrubbed.encapsHBodyContract AArch64.abi 128).post (stripConsts constants s) t
+    sig_post [Proof.MlKem.Scrubbed.encapsHBodyContract, Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, AArch64.abi,
       AArch64.argRegs]
     exact hp
   pub s₁ s₂ h₁ h₂ hp := by
-    unfold Spec.MlKem.encapsHContract constants at h₁ h₂ hp
+    unfold Proof.MlKem.Scrubbed.encapsHBodyContract constants at h₁ h₂ hp
     have hpp := pub_consts.mp hp
     have hb := hpp.1
-    sig_pub [Spec.MlKem.encapsHContract, Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, AArch64.abi,
+    sig_pub [Proof.MlKem.Scrubbed.encapsHBodyContract, Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, AArch64.abi,
       AArch64.argRegs] at hb
     obtain ⟨hsp, hl, g0, -, g2, g3, g4, g5⟩ := hb
     exact ⟨⟨g0, g2, g3, g4, g5, hsp, hl⟩, hpp.2⟩
   sat := by
     refine ⟨satHT 1184 1088 32768, ?_⟩
-    unfold Spec.MlKem.encapsHContract constants
+    unfold Proof.MlKem.Scrubbed.encapsHBodyContract constants
     apply pre_consts.mpr
     constructor
-    · change (Spec.MlKem.encapsHContract AArch64.abi 128).pre (stripConsts constants (satHT 1184 1088 32768))
+    · change (Proof.MlKem.Scrubbed.encapsHBodyContract AArch64.abi 128).pre (stripConsts constants (satHT 1184 1088 32768))
       rw [strip_satHT]
       sig_pre [Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, AArch64.abi, AArch64.argRegs]
       and_intros
@@ -267,29 +268,29 @@ theorem impliesP768 : (afterH shiftH (entryContractS (encapsAArch64S lay768))).I
 theorem encapsHP768_verified (v : Proof.Sha3.AArch64.Permutation) :
     Verified AArch64.target
       (Impl.MlKem.AArch64.Kem16P.encapsH (FixedHash.fixedHash v.callee) (FixedHash.prfW v.callee) lay768)
-      (Spec.MlKem.encapsHContract (AArch64.abi.withConsts constants) 128) :=
+      (Proof.MlKem.Scrubbed.encapsHBodyContract (AArch64.abi.withConsts constants) 128) :=
   Verified.of_correct (correctH (Kem16P.encapsP768_correct v)) (ctH (Kem16P.encapsP768_ct v)) impliesP768
 
 
 /-! ## ML-KEM-1024, one Keccak state at a time -/
 
-theorem pre1024 {s : State} (h : (Spec.MlKem1024.encapsHContract AArch64.abi 16).pre s) :
+theorem pre1024 {s : State} (h : (Proof.MlKem.Scrubbed.encapsH1024BodyContract AArch64.abi 16).pre s) :
     (afterH shiftH (encapsAArch64 Impl.MlKem1024.AArch64.lay1024)).pre s := by
-  sig_pre [Spec.MlKem1024.encapsHContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, AArch64.abi,
+  sig_pre [Proof.MlKem.Scrubbed.encapsH1024BodyContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, AArch64.abi,
     AArch64.argRegs] at h
   obtain ⟨h0, rd, wr, d03, d04, d05, -, -, -, d23, d24, d25, d34, d35, d45, b0, -, b2, b3, b4, b5,
     -, -, -, -, -, -, -⟩ := h
   exact ⟨by show _ ∈ s.rd; rw [rd]; exact .head _, by show _ ∈ s.rd; rw [rd]; exact .tail _ (.tail _ (.head _)), wr, d03, d04, d05, d23, d24,
     d25, d34, d35, d45, h0, b0, b2, b3, b4, b5⟩
 
-theorem implies1024 : (afterH shiftH (encapsAArch64 Impl.MlKem1024.AArch64.lay1024)).Implies (Spec.MlKem1024.encapsHContract AArch64.abi 16) where
+theorem implies1024 : (afterH shiftH (encapsAArch64 Impl.MlKem1024.AArch64.lay1024)).Implies (Proof.MlKem.Scrubbed.encapsH1024BodyContract AArch64.abi 16) where
   pre _ h := pre1024 h
   post s s' _ h := by
-    sig_post [Spec.MlKem1024.encapsHContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, AArch64.abi,
+    sig_post [Proof.MlKem.Scrubbed.encapsH1024BodyContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, AArch64.abi,
       AArch64.argRegs]
     exact h
   pub s₁ s₂ _ _ h := by
-    sig_pub [Spec.MlKem1024.encapsHContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, AArch64.abi,
+    sig_pub [Proof.MlKem.Scrubbed.encapsH1024BodyContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, AArch64.abi,
       AArch64.argRegs] at h
     obtain ⟨hsp, hl, g0, -, g2, g3, g4, g5⟩ := h
     exact ⟨g0, g2, g3, g4, g5, hsp, hl⟩
@@ -297,7 +298,7 @@ theorem implies1024 : (afterH shiftH (encapsAArch64 Impl.MlKem1024.AArch64.lay10
     refine ⟨satH 1568 1568 49152, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlKem1024.encapsHContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, AArch64.abi,
+    · sig_reduce [Proof.MlKem.Scrubbed.encapsH1024BodyContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, AArch64.abi,
         AArch64.argRegs]
       sig_and_intros
       all_goals first
@@ -306,7 +307,7 @@ theorem implies1024 : (afterH shiftH (encapsAArch64 Impl.MlKem1024.AArch64.lay10
         | exact VG.Proof.MlKem.hMem_h (n := 1568) (by decide)
 
 theorem encapsH1024_verifiedWith {keccak : VG.Proof.Sha3.AArch64.Permutation} :
-    Verified AArch64.target (Impl.MlKem1024.AArch64.encapsHWith keccak.callee) (Spec.MlKem1024.encapsHContract AArch64.abi 16) :=
+    Verified AArch64.target (Impl.MlKem1024.AArch64.encapsHWith keccak.callee) (Proof.MlKem.Scrubbed.encapsH1024BodyContract AArch64.abi 16) :=
   Verified.of_correct (correctH (VG.Proof.MlKem1024.AArch64.Encaps.encaps_correctWith (keccak := keccak)))
     (ctH (Encaps.ct VG.Proof.MlKem1024.AArch64.KeyGen.wf1024 VG.Proof.MlKem1024.AArch64.Encaps.taints1024)) implies1024
 
@@ -314,9 +315,9 @@ theorem encapsH1024_verifiedWith {keccak : VG.Proof.Sha3.AArch64.Permutation} :
 
 /-! ## ML-KEM-1024, the paired instances -/
 
-theorem baseS1024 {s : State} (h : (Spec.MlKem1024.encapsHContract AArch64.abi 128).pre s) :
+theorem baseS1024 {s : State} (h : (Proof.MlKem.Scrubbed.encapsH1024BodyContract AArch64.abi 128).pre s) :
     (encapsAArch64S Impl.MlKem1024.AArch64.lay1024).pre (shiftH s) := by
-  sig_pre [Spec.MlKem1024.encapsHContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, AArch64.abi,
+  sig_pre [Proof.MlKem.Scrubbed.encapsH1024BodyContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, AArch64.abi,
     AArch64.argRegs] at h
   obtain ⟨h0, rd, wr, d03, d04, d05, -, -, -, d23, d24, d25, d34, d35, d45, b0, -, b2, b3, b4, b5,
     -, -, -, -, -, -, -⟩ := h
@@ -325,31 +326,31 @@ theorem baseS1024 {s : State} (h : (Spec.MlKem1024.encapsHContract AArch64.abi 1
 
 
 theorem impliesP1024 : (afterH shiftH (entryContractS (encapsAArch64S Impl.MlKem1024.AArch64.lay1024))).Implies
-    (Spec.MlKem1024.encapsHContract (AArch64.abi.withConsts constants) 128) where
+    (Proof.MlKem.Scrubbed.encapsH1024BodyContract (AArch64.abi.withConsts constants) 128) where
   pre s h := by
-    unfold Spec.MlKem1024.encapsHContract constants at h
+    unfold Proof.MlKem.Scrubbed.encapsH1024BodyContract constants at h
     have hp := pre_consts.mp h
     exact ⟨baseS1024 hp.1, hp.2⟩
   post s t h hp := by
-    unfold Spec.MlKem1024.encapsHContract constants at h ⊢
-    show (Spec.MlKem1024.encapsHContract AArch64.abi 128).post (stripConsts constants s) t
-    sig_post [Spec.MlKem1024.encapsHContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, AArch64.abi,
+    unfold Proof.MlKem.Scrubbed.encapsH1024BodyContract constants at h ⊢
+    show (Proof.MlKem.Scrubbed.encapsH1024BodyContract AArch64.abi 128).post (stripConsts constants s) t
+    sig_post [Proof.MlKem.Scrubbed.encapsH1024BodyContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, AArch64.abi,
       AArch64.argRegs]
     exact hp
   pub s₁ s₂ h₁ h₂ hp := by
-    unfold Spec.MlKem1024.encapsHContract constants at h₁ h₂ hp
+    unfold Proof.MlKem.Scrubbed.encapsH1024BodyContract constants at h₁ h₂ hp
     have hpp := pub_consts.mp hp
     have hb := hpp.1
-    sig_pub [Spec.MlKem1024.encapsHContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, AArch64.abi,
+    sig_pub [Proof.MlKem.Scrubbed.encapsH1024BodyContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, AArch64.abi,
       AArch64.argRegs] at hb
     obtain ⟨hsp, hl, g0, -, g2, g3, g4, g5⟩ := hb
     exact ⟨⟨g0, g2, g3, g4, g5, hsp, hl⟩, hpp.2⟩
   sat := by
     refine ⟨satHT 1568 1568 49152, ?_⟩
-    unfold Spec.MlKem1024.encapsHContract constants
+    unfold Proof.MlKem.Scrubbed.encapsH1024BodyContract constants
     apply pre_consts.mpr
     constructor
-    · change (Spec.MlKem1024.encapsHContract AArch64.abi 128).pre (stripConsts constants (satHT 1568 1568 49152))
+    · change (Proof.MlKem.Scrubbed.encapsH1024BodyContract AArch64.abi 128).pre (stripConsts constants (satHT 1568 1568 49152))
       rw [strip_satHT]
       sig_pre [Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, AArch64.abi, AArch64.argRegs]
       and_intros
@@ -383,7 +384,7 @@ theorem impliesP1024 : (afterH shiftH (entryContractS (encapsAArch64S Impl.MlKem
 theorem encapsHP1024_verified (v : Proof.Sha3.AArch64.Permutation) :
     Verified AArch64.target
       (Impl.MlKem.AArch64.Kem16P.encapsH (FixedHash.fixedHash v.callee) (FixedHash.prfW v.callee) Impl.MlKem1024.AArch64.lay1024)
-      (Spec.MlKem1024.encapsHContract (AArch64.abi.withConsts constants) 128) :=
+      (Proof.MlKem.Scrubbed.encapsH1024BodyContract (AArch64.abi.withConsts constants) 128) :=
   Verified.of_correct (correctH (Kem16P.encapsP1024_correct v)) (ctH (Kem16P.encapsP1024_ct v)) impliesP1024
 
 end VG.Proof.MlKem.AArch64.EncapsH

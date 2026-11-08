@@ -2,14 +2,44 @@
 //! The dispatchers of the verified `cast5_ofb` functions for `riscv64`
 //! (`crate::cast5_ofb`, `VG.Rust.dispatcher`).
 
-/// `vg_cast5_ofb`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::cast5_ofb::vg_cast5_ofb as vg_cast5_ofb_auto;
+/// CAST5-OFB encryption or decryption (NIST SP 800-38A §6.4, RFC 2144 §2) of whole blocks, in place: XORs the `n` 8-byte blocks at `data` with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)`, where `O₀` is the block at `*iv`, and replaces `*iv` with `Oₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is CAST-128 encryption with `rounds` rounds under the subkeys written by `vg_cast5_expand_key`.
+///
+/// Contract: `VG.Spec.Cast5.ofbContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
+///
+/// It runs `vg_cast5_ofb`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
+/// * `data` must be valid for reads and writes of `8 * n` bytes.
+/// * `rounds` must be 12 (for a key of up to 10 bytes) or 16 (for a longer one).
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the 128 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_cast5_ofb_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::cast5_ofb::vg_cast5_ofb(schedule, rounds, iv, data, n) }
+}
 
-/// `vg_cast5_ofb_final`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::cast5_ofb::vg_cast5_ofb_final as vg_cast5_ofb_final_auto;
+/// CAST5-OFB encryption or decryption (NIST SP 800-38A §6.4, RFC 2144 §2) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)`, where `O₀` is the block at `*iv`, a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*iv` with the last output block used, `Oₙ` (leaving it unchanged if `len = 0`): so that a further call continues the message if `len` is a multiple of 8, and otherwise keystream, to be wiped, after which the message must end. `CIPH_K` is CAST5 encryption with `rounds` rounds under the subkeys at `schedule`, as `vg_cast5_expand_key` writes them.
+///
+/// Contract: `VG.Spec.Cast5.ofbFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the subkeys, the chaining value or the data.
+///
+/// It runs `vg_cast5_ofb_final`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `rounds` must be 12 (for a key of up to 10 bytes) or 16 (for a longer one).
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the 128 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_cast5_ofb_final_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut u8, len: usize) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::cast5_ofb::vg_cast5_ofb_final(schedule, rounds, iv, data, len) }
+}

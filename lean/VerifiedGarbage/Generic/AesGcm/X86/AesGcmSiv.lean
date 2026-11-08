@@ -86,14 +86,14 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
   Spec.GcmSiv.sealApi.artifact X86.target {
     suffix := v.suffix
     code := Impl.StackScratch.X86.withStackScratch 2856 8 (Impl.AesGcmSiv.X86.«seal» v.callees)
-    stack := 2884
+    stack := 2888
     verified := Proof.AesGcmSiv.seal_keyed (seal_framed v VG.Proof.GcmSiv.Polyval.tagInput_eq_tagInputG)
     spSafe := Proof.AesGcm.X86.withStackScratch_spSafe (seal_spSafe v)
     features := v.features },
   Spec.GcmSiv.openApi.artifact X86.target {
     suffix := v.suffix
     code := Impl.StackScratch.X86.withStackScratch 2856 8 (Impl.AesGcmSiv.X86.«open» v.callees)
-    stack := 2884
+    stack := 2888
     verified := Proof.AesGcmSiv.open_keyed (open_framed v VG.Proof.GcmSiv.Polyval.tagInput_eq_tagInputG)
     spSafe := Proof.AesGcm.X86.withStackScratch_spSafe (open_spSafe v)
     features := v.features }]

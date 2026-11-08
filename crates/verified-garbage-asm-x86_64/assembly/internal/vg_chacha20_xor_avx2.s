@@ -45,6 +45,8 @@ vg_chacha20_xor_avx2:
 	mov QWORD PTR [rcx+208], rax
 	movabs rax, 30064771078
 	mov QWORD PTR [rcx+216], rax
+	mov r11, r8
+	sub r11, rsi
 	cmp rdx, 512
 	jb 20f
 22:
@@ -1529,25 +1531,25 @@ vg_chacha20_xor_avx2:
 	vpaddd ymm2, ymm2, ymm14
 	vpaddd ymm3, ymm3, ymm14
 	vpxor xmm12, xmm0, XMMWORD PTR [rsi]
-	vmovdqu XMMWORD PTR [rsi], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1], xmm12
 	vextracti128 xmm13, ymm0, 1
 	vpxor xmm12, xmm13, XMMWORD PTR [rsi+256]
-	vmovdqu XMMWORD PTR [rsi+256], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+256], xmm12
 	vpxor xmm12, xmm1, XMMWORD PTR [rsi+64]
-	vmovdqu XMMWORD PTR [rsi+64], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+64], xmm12
 	vextracti128 xmm13, ymm1, 1
 	vpxor xmm12, xmm13, XMMWORD PTR [rsi+320]
-	vmovdqu XMMWORD PTR [rsi+320], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+320], xmm12
 	vpxor xmm12, xmm2, XMMWORD PTR [rsi+128]
-	vmovdqu XMMWORD PTR [rsi+128], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+128], xmm12
 	vextracti128 xmm13, ymm2, 1
 	vpxor xmm12, xmm13, XMMWORD PTR [rsi+384]
-	vmovdqu XMMWORD PTR [rsi+384], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+384], xmm12
 	vpxor xmm12, xmm3, XMMWORD PTR [rsi+192]
-	vmovdqu XMMWORD PTR [rsi+192], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+192], xmm12
 	vextracti128 xmm13, ymm3, 1
 	vpxor xmm12, xmm13, XMMWORD PTR [rsi+448]
-	vmovdqu XMMWORD PTR [rsi+448], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+448], xmm12
 	vpunpckldq ymm12, ymm4, ymm5
 	vpunpckhdq ymm13, ymm4, ymm5
 	vpunpckldq ymm14, ymm6, ymm7
@@ -1562,25 +1564,25 @@ vg_chacha20_xor_avx2:
 	vpaddd ymm6, ymm6, ymm14
 	vpaddd ymm7, ymm7, ymm14
 	vpxor xmm12, xmm4, XMMWORD PTR [rsi+16]
-	vmovdqu XMMWORD PTR [rsi+16], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+16], xmm12
 	vextracti128 xmm13, ymm4, 1
 	vpxor xmm12, xmm13, XMMWORD PTR [rsi+272]
-	vmovdqu XMMWORD PTR [rsi+272], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+272], xmm12
 	vpxor xmm12, xmm5, XMMWORD PTR [rsi+80]
-	vmovdqu XMMWORD PTR [rsi+80], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+80], xmm12
 	vextracti128 xmm13, ymm5, 1
 	vpxor xmm12, xmm13, XMMWORD PTR [rsi+336]
-	vmovdqu XMMWORD PTR [rsi+336], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+336], xmm12
 	vpxor xmm12, xmm6, XMMWORD PTR [rsi+144]
-	vmovdqu XMMWORD PTR [rsi+144], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+144], xmm12
 	vextracti128 xmm13, ymm6, 1
 	vpxor xmm12, xmm13, XMMWORD PTR [rsi+400]
-	vmovdqu XMMWORD PTR [rsi+400], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+400], xmm12
 	vpxor xmm12, xmm7, XMMWORD PTR [rsi+208]
-	vmovdqu XMMWORD PTR [rsi+208], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+208], xmm12
 	vextracti128 xmm13, ymm7, 1
 	vpxor xmm12, xmm13, XMMWORD PTR [rsi+464]
-	vmovdqu XMMWORD PTR [rsi+464], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+464], xmm12
 	vmovdqu ymm15, YMMWORD PTR [rcx+192]
 	vpaddd ymm8, ymm8, ymm15
 	vpunpckldq ymm12, ymm8, ymm9
@@ -1597,25 +1599,25 @@ vg_chacha20_xor_avx2:
 	vpaddd ymm10, ymm10, ymm14
 	vpaddd ymm11, ymm11, ymm14
 	vpxor xmm12, xmm8, XMMWORD PTR [rsi+48]
-	vmovdqu XMMWORD PTR [rsi+48], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+48], xmm12
 	vextracti128 xmm13, ymm8, 1
 	vpxor xmm12, xmm13, XMMWORD PTR [rsi+304]
-	vmovdqu XMMWORD PTR [rsi+304], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+304], xmm12
 	vpxor xmm12, xmm9, XMMWORD PTR [rsi+112]
-	vmovdqu XMMWORD PTR [rsi+112], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+112], xmm12
 	vextracti128 xmm13, ymm9, 1
 	vpxor xmm12, xmm13, XMMWORD PTR [rsi+368]
-	vmovdqu XMMWORD PTR [rsi+368], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+368], xmm12
 	vpxor xmm12, xmm10, XMMWORD PTR [rsi+176]
-	vmovdqu XMMWORD PTR [rsi+176], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+176], xmm12
 	vextracti128 xmm13, ymm10, 1
 	vpxor xmm12, xmm13, XMMWORD PTR [rsi+432]
-	vmovdqu XMMWORD PTR [rsi+432], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+432], xmm12
 	vpxor xmm12, xmm11, XMMWORD PTR [rsi+240]
-	vmovdqu XMMWORD PTR [rsi+240], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+240], xmm12
 	vextracti128 xmm13, ymm11, 1
 	vpxor xmm12, xmm13, XMMWORD PTR [rsi+496]
-	vmovdqu XMMWORD PTR [rsi+496], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+496], xmm12
 	vmovdqu ymm0, YMMWORD PTR [rcx]
 	vmovdqu ymm1, YMMWORD PTR [rcx+32]
 	vmovdqu ymm2, YMMWORD PTR [rcx+64]
@@ -1634,25 +1636,25 @@ vg_chacha20_xor_avx2:
 	vpaddd ymm2, ymm2, ymm14
 	vpaddd ymm3, ymm3, ymm14
 	vpxor xmm12, xmm0, XMMWORD PTR [rsi+32]
-	vmovdqu XMMWORD PTR [rsi+32], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+32], xmm12
 	vextracti128 xmm13, ymm0, 1
 	vpxor xmm12, xmm13, XMMWORD PTR [rsi+288]
-	vmovdqu XMMWORD PTR [rsi+288], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+288], xmm12
 	vpxor xmm12, xmm1, XMMWORD PTR [rsi+96]
-	vmovdqu XMMWORD PTR [rsi+96], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+96], xmm12
 	vextracti128 xmm13, ymm1, 1
 	vpxor xmm12, xmm13, XMMWORD PTR [rsi+352]
-	vmovdqu XMMWORD PTR [rsi+352], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+352], xmm12
 	vpxor xmm12, xmm2, XMMWORD PTR [rsi+160]
-	vmovdqu XMMWORD PTR [rsi+160], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+160], xmm12
 	vextracti128 xmm13, ymm2, 1
 	vpxor xmm12, xmm13, XMMWORD PTR [rsi+416]
-	vmovdqu XMMWORD PTR [rsi+416], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+416], xmm12
 	vpxor xmm12, xmm3, XMMWORD PTR [rsi+224]
-	vmovdqu XMMWORD PTR [rsi+224], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+224], xmm12
 	vextracti128 xmm13, ymm3, 1
 	vpxor xmm12, xmm13, XMMWORD PTR [rsi+480]
-	vmovdqu XMMWORD PTR [rsi+480], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+480], xmm12
 	mov eax, DWORD PTR [rdi+48]
 	add eax, 8
 	mov DWORD PTR [rdi+48], eax
@@ -3146,21 +3148,21 @@ vg_chacha20_xor_avx2:
 	vpaddd ymm2, ymm2, ymm14
 	vpaddd ymm3, ymm3, ymm14
 	vpxor xmm12, xmm0, XMMWORD PTR [rsi]
-	vmovdqu XMMWORD PTR [rsi], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1], xmm12
 	vextracti128 xmm13, ymm0, 1
 	vpxor xmm12, xmm13, XMMWORD PTR [rsi+256]
-	vmovdqu XMMWORD PTR [rsi+256], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+256], xmm12
 	vpxor xmm12, xmm1, XMMWORD PTR [rsi+64]
-	vmovdqu XMMWORD PTR [rsi+64], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+64], xmm12
 	vextracti128 xmm13, ymm1, 1
 	vpxor xmm12, xmm13, XMMWORD PTR [rsi+320]
-	vmovdqu XMMWORD PTR [rsi+320], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+320], xmm12
 	vpxor xmm12, xmm2, XMMWORD PTR [rsi+128]
-	vmovdqu XMMWORD PTR [rsi+128], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+128], xmm12
 	vextracti128 xmm13, ymm2, 1
 	vmovdqu XMMWORD PTR [rcx+128], xmm13
 	vpxor xmm12, xmm3, XMMWORD PTR [rsi+192]
-	vmovdqu XMMWORD PTR [rsi+192], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+192], xmm12
 	vextracti128 xmm13, ymm3, 1
 	vmovdqu XMMWORD PTR [rcx+224], xmm13
 	vpunpckldq ymm12, ymm4, ymm5
@@ -3177,21 +3179,21 @@ vg_chacha20_xor_avx2:
 	vpaddd ymm6, ymm6, ymm14
 	vpaddd ymm7, ymm7, ymm14
 	vpxor xmm12, xmm4, XMMWORD PTR [rsi+16]
-	vmovdqu XMMWORD PTR [rsi+16], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+16], xmm12
 	vextracti128 xmm13, ymm4, 1
 	vpxor xmm12, xmm13, XMMWORD PTR [rsi+272]
-	vmovdqu XMMWORD PTR [rsi+272], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+272], xmm12
 	vpxor xmm12, xmm5, XMMWORD PTR [rsi+80]
-	vmovdqu XMMWORD PTR [rsi+80], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+80], xmm12
 	vextracti128 xmm13, ymm5, 1
 	vpxor xmm12, xmm13, XMMWORD PTR [rsi+336]
-	vmovdqu XMMWORD PTR [rsi+336], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+336], xmm12
 	vpxor xmm12, xmm6, XMMWORD PTR [rsi+144]
-	vmovdqu XMMWORD PTR [rsi+144], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+144], xmm12
 	vextracti128 xmm13, ymm6, 1
 	vmovdqu XMMWORD PTR [rcx+144], xmm13
 	vpxor xmm12, xmm7, XMMWORD PTR [rsi+208]
-	vmovdqu XMMWORD PTR [rsi+208], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+208], xmm12
 	vextracti128 xmm13, ymm7, 1
 	vmovdqu XMMWORD PTR [rcx+240], xmm13
 	vmovdqu ymm15, YMMWORD PTR [rcx+192]
@@ -3210,21 +3212,21 @@ vg_chacha20_xor_avx2:
 	vpaddd ymm10, ymm10, ymm14
 	vpaddd ymm11, ymm11, ymm14
 	vpxor xmm12, xmm8, XMMWORD PTR [rsi+48]
-	vmovdqu XMMWORD PTR [rsi+48], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+48], xmm12
 	vextracti128 xmm13, ymm8, 1
 	vpxor xmm12, xmm13, XMMWORD PTR [rsi+304]
-	vmovdqu XMMWORD PTR [rsi+304], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+304], xmm12
 	vpxor xmm12, xmm9, XMMWORD PTR [rsi+112]
-	vmovdqu XMMWORD PTR [rsi+112], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+112], xmm12
 	vextracti128 xmm13, ymm9, 1
 	vpxor xmm12, xmm13, XMMWORD PTR [rsi+368]
-	vmovdqu XMMWORD PTR [rsi+368], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+368], xmm12
 	vpxor xmm12, xmm10, XMMWORD PTR [rsi+176]
-	vmovdqu XMMWORD PTR [rsi+176], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+176], xmm12
 	vextracti128 xmm13, ymm10, 1
 	vmovdqu XMMWORD PTR [rcx+176], xmm13
 	vpxor xmm12, xmm11, XMMWORD PTR [rsi+240]
-	vmovdqu XMMWORD PTR [rsi+240], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+240], xmm12
 	vextracti128 xmm13, ymm11, 1
 	vmovdqu XMMWORD PTR [rcx+272], xmm13
 	vmovdqu ymm0, YMMWORD PTR [rcx]
@@ -3245,21 +3247,21 @@ vg_chacha20_xor_avx2:
 	vpaddd ymm2, ymm2, ymm14
 	vpaddd ymm3, ymm3, ymm14
 	vpxor xmm12, xmm0, XMMWORD PTR [rsi+32]
-	vmovdqu XMMWORD PTR [rsi+32], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+32], xmm12
 	vextracti128 xmm13, ymm0, 1
 	vpxor xmm12, xmm13, XMMWORD PTR [rsi+288]
-	vmovdqu XMMWORD PTR [rsi+288], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+288], xmm12
 	vpxor xmm12, xmm1, XMMWORD PTR [rsi+96]
-	vmovdqu XMMWORD PTR [rsi+96], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+96], xmm12
 	vextracti128 xmm13, ymm1, 1
 	vpxor xmm12, xmm13, XMMWORD PTR [rsi+352]
-	vmovdqu XMMWORD PTR [rsi+352], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+352], xmm12
 	vpxor xmm12, xmm2, XMMWORD PTR [rsi+160]
-	vmovdqu XMMWORD PTR [rsi+160], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+160], xmm12
 	vextracti128 xmm13, ymm2, 1
 	vmovdqu XMMWORD PTR [rcx+160], xmm13
 	vpxor xmm12, xmm3, XMMWORD PTR [rsi+224]
-	vmovdqu XMMWORD PTR [rsi+224], xmm12
+	vmovdqu XMMWORD PTR [rsi+r11*1+224], xmm12
 	vextracti128 xmm13, ymm3, 1
 	vmovdqu XMMWORD PTR [rcx+256], xmm13
 	vmovdqu ymm12, YMMWORD PTR [rcx+128]
@@ -3273,14 +3275,16 @@ vg_chacha20_xor_avx2:
 	mov r9, rcx
 	add rsi, 384
 	sub rdx, 384
-	mov r10, rsi
+	mov r10, r11
+	add r10, rsi
+	mov r11, rsi
 	mov rsi, r9
 	mov ecx, 0
 	mov rax, rdx
 	shr rax, 5
 	je 25f
 27:
-	vmovdqu ymm0, YMMWORD PTR [r10+rcx*1]
+	vmovdqu ymm0, YMMWORD PTR [r11+rcx*1]
 	vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1]
 	vpxor ymm0, ymm0, ymm1
 	vmovdqu YMMWORD PTR [r10+rcx*1], ymm0
@@ -3292,6 +3296,7 @@ vg_chacha20_xor_avx2:
 26:
 	mov rdi, r10
 	add rdi, rcx
+	add r11, rcx
 	add rsi, rcx
 	sub rdx, rcx
 	mov ecx, 0
@@ -3299,7 +3304,7 @@ vg_chacha20_xor_avx2:
 	shr rax, 3
 	je 28f
 210:
-	mov r8, QWORD PTR [rdi+rcx*1]
+	mov r8, QWORD PTR [r11+rcx*1]
 	xor r8, QWORD PTR [rsi+rcx*1]
 	mov QWORD PTR [rdi+rcx*1], r8
 	add rcx, 8
@@ -3311,7 +3316,7 @@ vg_chacha20_xor_avx2:
 	cmp rcx, rdx
 	je 211f
 213:
-	movzx eax, BYTE PTR [rdi+rcx*1]
+	movzx eax, BYTE PTR [r11+rcx*1]
 	movzx r8d, BYTE PTR [rsi+rcx*1]
 	xor rax, r8
 	mov BYTE PTR [rdi+rcx*1], al
@@ -4513,35 +4518,35 @@ vg_chacha20_xor_avx2:
 	vperm2i128 ymm12, ymm0, ymm1, 32
 	vmovdqu ymm13, YMMWORD PTR [rsi]
 	vpxor ymm13, ymm13, ymm12
-	vmovdqu YMMWORD PTR [rsi], ymm13
+	vmovdqu YMMWORD PTR [rsi+r11*1], ymm13
 	vperm2i128 ymm12, ymm2, ymm3, 32
 	vmovdqu ymm13, YMMWORD PTR [rsi+32]
 	vpxor ymm13, ymm13, ymm12
-	vmovdqu YMMWORD PTR [rsi+32], ymm13
+	vmovdqu YMMWORD PTR [rsi+r11*1+32], ymm13
 	vperm2i128 ymm12, ymm0, ymm1, 49
 	vmovdqu ymm13, YMMWORD PTR [rsi+64]
 	vpxor ymm13, ymm13, ymm12
-	vmovdqu YMMWORD PTR [rsi+64], ymm13
+	vmovdqu YMMWORD PTR [rsi+r11*1+64], ymm13
 	vperm2i128 ymm12, ymm2, ymm3, 49
 	vmovdqu ymm13, YMMWORD PTR [rsi+96]
 	vpxor ymm13, ymm13, ymm12
-	vmovdqu YMMWORD PTR [rsi+96], ymm13
+	vmovdqu YMMWORD PTR [rsi+r11*1+96], ymm13
 	vperm2i128 ymm12, ymm4, ymm5, 32
 	vmovdqu ymm13, YMMWORD PTR [rsi+128]
 	vpxor ymm13, ymm13, ymm12
-	vmovdqu YMMWORD PTR [rsi+128], ymm13
+	vmovdqu YMMWORD PTR [rsi+r11*1+128], ymm13
 	vperm2i128 ymm12, ymm6, ymm7, 32
 	vmovdqu ymm13, YMMWORD PTR [rsi+160]
 	vpxor ymm13, ymm13, ymm12
-	vmovdqu YMMWORD PTR [rsi+160], ymm13
+	vmovdqu YMMWORD PTR [rsi+r11*1+160], ymm13
 	vperm2i128 ymm12, ymm4, ymm5, 49
 	vmovdqu ymm13, YMMWORD PTR [rsi+192]
 	vpxor ymm13, ymm13, ymm12
-	vmovdqu YMMWORD PTR [rsi+192], ymm13
+	vmovdqu YMMWORD PTR [rsi+r11*1+192], ymm13
 	vperm2i128 ymm12, ymm6, ymm7, 49
 	vmovdqu ymm13, YMMWORD PTR [rsi+224]
 	vpxor ymm13, ymm13, ymm12
-	vmovdqu YMMWORD PTR [rsi+224], ymm13
+	vmovdqu YMMWORD PTR [rsi+r11*1+224], ymm13
 	vperm2i128 ymm12, ymm8, ymm9, 32
 	vmovdqu YMMWORD PTR [r9], ymm12
 	vperm2i128 ymm12, ymm10, ymm11, 32
@@ -4552,14 +4557,16 @@ vg_chacha20_xor_avx2:
 	vmovdqu YMMWORD PTR [r9+96], ymm12
 	add rsi, 256
 	sub rdx, 256
-	mov r10, rsi
+	mov r10, r11
+	add r10, rsi
+	mov r11, rsi
 	mov rsi, r9
 	mov ecx, 0
 	mov rax, rdx
 	shr rax, 5
 	je 216f
 218:
-	vmovdqu ymm0, YMMWORD PTR [r10+rcx*1]
+	vmovdqu ymm0, YMMWORD PTR [r11+rcx*1]
 	vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1]
 	vpxor ymm0, ymm0, ymm1
 	vmovdqu YMMWORD PTR [r10+rcx*1], ymm0
@@ -4571,6 +4578,7 @@ vg_chacha20_xor_avx2:
 217:
 	mov rdi, r10
 	add rdi, rcx
+	add r11, rcx
 	add rsi, rcx
 	sub rdx, rcx
 	mov ecx, 0
@@ -4578,7 +4586,7 @@ vg_chacha20_xor_avx2:
 	shr rax, 3
 	je 219f
 221:
-	mov r8, QWORD PTR [rdi+rcx*1]
+	mov r8, QWORD PTR [r11+rcx*1]
 	xor r8, QWORD PTR [rsi+rcx*1]
 	mov QWORD PTR [rdi+rcx*1], r8
 	add rcx, 8
@@ -4590,7 +4598,7 @@ vg_chacha20_xor_avx2:
 	cmp rcx, rdx
 	je 222f
 224:
-	movzx eax, BYTE PTR [rdi+rcx*1]
+	movzx eax, BYTE PTR [r11+rcx*1]
 	movzx r8d, BYTE PTR [rsi+rcx*1]
 	xor rax, r8
 	mov BYTE PTR [rdi+rcx*1], al
@@ -5409,14 +5417,16 @@ vg_chacha20_xor_avx2:
 	vmovdqu YMMWORD PTR [r9+192], ymm10
 	vperm2i128 ymm10, ymm6, ymm7, 49
 	vmovdqu YMMWORD PTR [r9+224], ymm10
-	mov r10, rsi
+	mov r10, r11
+	add r10, rsi
+	mov r11, rsi
 	mov rsi, r9
 	mov ecx, 0
 	mov rax, rdx
 	shr rax, 5
 	je 227f
 229:
-	vmovdqu ymm0, YMMWORD PTR [r10+rcx*1]
+	vmovdqu ymm0, YMMWORD PTR [r11+rcx*1]
 	vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1]
 	vpxor ymm0, ymm0, ymm1
 	vmovdqu YMMWORD PTR [r10+rcx*1], ymm0
@@ -5428,6 +5438,7 @@ vg_chacha20_xor_avx2:
 228:
 	mov rdi, r10
 	add rdi, rcx
+	add r11, rcx
 	add rsi, rcx
 	sub rdx, rcx
 	mov ecx, 0
@@ -5435,7 +5446,7 @@ vg_chacha20_xor_avx2:
 	shr rax, 3
 	je 230f
 232:
-	mov r8, QWORD PTR [rdi+rcx*1]
+	mov r8, QWORD PTR [r11+rcx*1]
 	xor r8, QWORD PTR [rsi+rcx*1]
 	mov QWORD PTR [rdi+rcx*1], r8
 	add rcx, 8
@@ -5447,7 +5458,7 @@ vg_chacha20_xor_avx2:
 	cmp rcx, rdx
 	je 233f
 235:
-	movzx eax, BYTE PTR [rdi+rcx*1]
+	movzx eax, BYTE PTR [r11+rcx*1]
 	movzx r8d, BYTE PTR [rsi+rcx*1]
 	xor rax, r8
 	mov BYTE PTR [rdi+rcx*1], al
@@ -5869,14 +5880,16 @@ vg_chacha20_xor_avx2:
 	vmovdqu YMMWORD PTR [r9+64], ymm10
 	vperm2i128 ymm10, ymm2, ymm3, 49
 	vmovdqu YMMWORD PTR [r9+96], ymm10
-	mov r10, rsi
+	mov r10, r11
+	add r10, rsi
+	mov r11, rsi
 	mov rsi, r9
 	mov ecx, 0
 	mov rax, rdx
 	shr rax, 5
 	je 240f
 242:
-	vmovdqu ymm0, YMMWORD PTR [r10+rcx*1]
+	vmovdqu ymm0, YMMWORD PTR [r11+rcx*1]
 	vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1]
 	vpxor ymm0, ymm0, ymm1
 	vmovdqu YMMWORD PTR [r10+rcx*1], ymm0
@@ -5888,6 +5901,7 @@ vg_chacha20_xor_avx2:
 241:
 	mov rdi, r10
 	add rdi, rcx
+	add r11, rcx
 	add rsi, rcx
 	sub rdx, rcx
 	mov ecx, 0
@@ -5895,7 +5909,7 @@ vg_chacha20_xor_avx2:
 	shr rax, 3
 	je 243f
 245:
-	mov r8, QWORD PTR [rdi+rcx*1]
+	mov r8, QWORD PTR [r11+rcx*1]
 	xor r8, QWORD PTR [rsi+rcx*1]
 	mov QWORD PTR [rdi+rcx*1], r8
 	add rcx, 8
@@ -5907,7 +5921,7 @@ vg_chacha20_xor_avx2:
 	cmp rcx, rdx
 	je 246f
 248:
-	movzx eax, BYTE PTR [rdi+rcx*1]
+	movzx eax, BYTE PTR [r11+rcx*1]
 	movzx r8d, BYTE PTR [rsi+rcx*1]
 	xor rax, r8
 	mov BYTE PTR [rdi+rcx*1], al
@@ -5920,6 +5934,8 @@ vg_chacha20_xor_avx2:
 	jmp 239f
 238:
 	vzeroupper
+	mov r8, r11
+	add r8, rsi
 	call {vg_chacha20_xor}
 	mov r9, rsi
 239:

@@ -23,8 +23,8 @@ group, until the code it tests is built for them: `ecdsa`'s unit tests are
 x86-64's for now, and run on the other CPUs' `ecdsa` lines when they are
 built there too.
 
-  cpu_tests.py emulated-rsa CPU
-      of the runs on stdin, focused RSA groups for ICX/DMR; use only after
+  cpu_tests.py emulated-runs CPU
+      of the runs on stdin, focused RSA, DSA and FFDH groups for ICX/DMR; use only after
       detecting SDE on a host without AVX512_IFMA
   cpu_tests.py select BINARY LIB TESTS GROUP...
       the tests of the groups in BINARY (`lib`, `tests` or `cavp`), one per
@@ -60,7 +60,7 @@ def runs_in(runner, test):
 
 GROUPS = {
     "aes_cbc": {
-        "lib": ["cipher::aes::cbc"],
+        "lib": [],
         "tests": ["cavp::aes_cbc", "wycheproof::aes_cbc"],
     },
     "aes_ccm": {
@@ -68,7 +68,7 @@ GROUPS = {
         "tests": ["cavp::aes_ccm", "wycheproof::aes_ccm"],
     },
     "aes_ecb": {
-        "lib": ["cipher::aes::ecb"],
+        "lib": [],
         "tests": ["cavp::aes_ecb"],
     },
     "aes_gcm": {
@@ -168,8 +168,22 @@ GROUPS = {
         "lib": ["cpu"],
         "tests": [],
     },
+    "dit": {
+        "lib": ["dit"],
+        "tests": [],
+    },
     "dsa_parameters": {
         "lib": ["dsa::parameters"],
+        "tests": [],
+    },
+    "dsa_parameters_dispatch": {
+        "lib": ["dsa::parameters::search"],
+        "tests": [],
+    },
+    # The full error/randomness tests run natively. Keep both hashes'
+    # published answers and the search dispatcher under emulated IFMA.
+    "dsa_parameters_ifma": {
+        "lib": ["dsa::parameters::search", "dsa::parameters::tests::cavp_generated_parameters"],
         "tests": [],
     },
     "dsa": {
@@ -219,7 +233,7 @@ GROUPS = {
         ],
     },
     "mlkem": {
-        "lib": ["mlkem_common", "mlkem1024::backend_tests", "mlkem768::backend_tests"],
+        "lib": [],
         "tests": ["acvp::mlkem1024", "acvp::mlkem768", "wycheproof::mlkem1024", "wycheproof::mlkem768"],
     },
     "p224": {
@@ -289,6 +303,16 @@ GROUPS = {
     "ffdh": {
         "lib": ["ffdh"],
         "tests": ["cavp::ffdh"],
+    },
+    # Native/SKX run the complete suite. Exercise parameter generation,
+    # key generation, domain operations and published exchange answers
+    # without repeating the large safe-prime generation test under SDE.
+    "ffdh_ifma": {
+        "lib": ["ffdh::domain::cache_tests::clones_share_immutable_context_and_keep_it_alive",
+                "ffdh::tests::key_search_consumes_rejected_attempts",
+                "ffdh::tests::partial_limb_moduli_and_short_exponents"],
+        "tests": ["cavp::ffdh::imported_private_components", "cavp::ffdh::components_generation_and_padding",
+                  "cavp::ffdh::safe_prime_parameter_generation"],
     },
     "rsa": {
         "lib": ["rsa"],
@@ -502,13 +526,15 @@ GROUPS = {
 
 # Optional groups: these are used only when SDE runs ICX/DMR on a host
 # without IFMA. A run whose hosts all have IFMA legitimately uses none.
-EMULATED_RSA_GROUPS = {
+EMULATED_GROUPS = {
     "rsa": "rsa_ifma",
+    "ffdh": "ffdh_ifma",
+    "dsa_parameters": "dsa_parameters_ifma",
 }
 
 
-def emulated_rsa_runs(cpu, runs):
-    """Focused RSA groups for ICX/DMR; call only after host detection.
+def emulated_runs(cpu, runs):
+    """Focused groups for ICX/DMR; call only after host detection.
 
     Preserve every feature line and its order: shards must agree about
     ownership even when their hosts have different instruction sets.
@@ -521,7 +547,7 @@ def emulated_rsa_runs(cpu, runs):
         if not sep:
             lines.append(raw)
             continue
-        groups = [EMULATED_RSA_GROUPS.get(g, g) for g in tests.split()]
+        groups = [EMULATED_GROUPS.get(g, g) for g in tests.split()]
         lines.append(f"{features.strip()} | {' '.join(groups)}")
     return "\n".join(lines)
 
@@ -532,6 +558,37 @@ PATH = re.compile(r"[A-Za-z_][A-Za-z0-9_]*(::[A-Za-z_][A-Za-z0-9_]*)*")
 def selects(path, test):
     """Whether `path` selects the test named `test`."""
     return test == path or test.startswith(path + "::")
+
+
+def original_group(group):
+    """A host-reduced group's identity before the emulation substitution."""
+    return {v: k for k, v in EMULATED_GROUPS.items()}.get(group, group)
+
+
+def disjoint_groups(names):
+    """Bundle overlapping groups so independent tasks never repeat a test.
+
+    Use the original selectors even on reduced hosts: every shard must
+    compute the same bundles before choosing its host's actual tests.
+    """
+    parents = list(range(len(names)))
+
+    def root(i):
+        while parents[i] != i:
+            i = parents[i]
+        return i
+
+    for i, name in enumerate(names):
+        a = GROUPS.get(original_group(name), {})
+        for j in range(i):
+            b = GROUPS.get(original_group(names[j]), {})
+            if any(selects(p, q) or selects(q, p)
+                   for binary in BINARIES for p in a.get(binary, []) for q in b.get(binary, [])):
+                parents[root(i)] = root(j)
+    bundles = {}
+    for i, name in enumerate(names):
+        bundles.setdefault(root(i), []).append(name)
+    return [" ".join(bundle) for bundle in bundles.values()]
 
 
 def parse_list(text):
@@ -576,7 +633,7 @@ def check(records):
     # IFMA. Check their reachability even when this run got only full hosts.
     for record in records:
         if record["cpu"].split()[0] in ("icx", "dmr"):
-            used.update(EMULATED_RSA_GROUPS[g] for g in record["groups"] if g in EMULATED_RSA_GROUPS)
+            used.update(EMULATED_GROUPS[g] for g in record["groups"] if g in EMULATED_GROUPS)
     errors = [f"group {name} is used by no CPU's runs" for name in GROUPS if name not in used]
     for name, group in GROUPS.items():
         for b in BINARIES:
@@ -617,8 +674,8 @@ def main(argv):
         for t in select(RUNNERS[argv[1]], listed, argv[4:]):
             if runs_in(argv[1], t):
                 print(t)
-    elif argv[:1] == ["emulated-rsa"] and len(argv) == 2:
-        print(emulated_rsa_runs(argv[1], sys.stdin.read()))
+    elif argv[:1] == ["emulated-runs"] and len(argv) == 2:
+        print(emulated_runs(argv[1], sys.stdin.read()))
     elif argv[:1] == ["record"] and len(argv) == 5:
         tests = {"lib": parse_list(read(argv[3])), "tests": parse_list(read(argv[4]))}
         cpu = " ".join(argv[1].split())

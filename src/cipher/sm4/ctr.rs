@@ -12,15 +12,16 @@
     target_arch = "riscv64"
 ))]
 
-use crate::arch::sm4::vg_sm4_expand_key;
-use crate::arch::sm4_ctr::{vg_sm4_ctr, vg_sm4_ctr_final};
+use crate::align::CacheAligned;
+use crate::arch::dispatch::sm4::vg_sm4_expand_key_auto;
+use crate::arch::dispatch::sm4_ctr::{vg_sm4_ctr_auto, vg_sm4_ctr_final_auto};
 use crate::error::IncompleteBlock;
 use crate::zeroize::zeroize;
 
 /// An expanded SM4 key.
 struct Key {
     /// The key schedule `vg_sm4_expand_key` writes.
-    schedule: [u8; 128],
+    schedule: CacheAligned<[u8; 128]>,
 }
 
 /// SM4-CTR of one message, whose encryption and decryption are the
@@ -74,11 +75,12 @@ impl Sm4Ctr {
 impl Key {
     /// Expands a 16-byte key.
     fn new(key: &[u8; 16]) -> Self {
-        let mut schedule = [0; 128];
+        let mut schedule = CacheAligned([0; 128]);
+        crate::dit::enter!(dit);
         // SAFETY: key and schedule are separate valid buffers of the required
         // sizes.
         unsafe {
-            vg_sm4_expand_key(key, &mut schedule);
+            vg_sm4_expand_key_auto(dit, key, &mut schedule.0);
         }
         Self { schedule }
     }
@@ -88,7 +90,8 @@ impl Key {
     /// with the counter block after the last one used: `ctr` plus the number
     /// of blocks, modulo `2¹²⁸` (unchanged for empty input).
     fn apply_keystream(&self, ctr: &mut [u8; 16], buffer: &mut [u8]) {
-        self.crypt(ctr, buffer);
+        crate::dit::enter!(dit);
+        self.crypt(dit, ctr, buffer);
     }
 
     /// Encrypts or decrypts (the same operation) the rest of a message, of
@@ -97,23 +100,27 @@ impl Key {
     /// block the whole blocks leave in `ctr`, which it replaces with the
     /// next one.
     fn apply_keystream_final(&self, ctr: &mut [u8; 16], buffer: &mut [u8]) {
+        crate::dit::enter!(dit);
         let (blocks, rest) = buffer.split_at_mut(buffer.len() / 16 * 16);
-        self.crypt(ctr, blocks);
+        self.crypt(dit, ctr, blocks);
         if !rest.is_empty() {
             // SAFETY: as for `crypt`, with `rest` valid for `len` bytes.
-            unsafe { vg_sm4_ctr_final(&self.schedule, ctr, rest.as_mut_ptr(), rest.len()) };
+            unsafe {
+                vg_sm4_ctr_final_auto(dit, &self.schedule.0, ctr, rest.as_mut_ptr(), rest.len())
+            };
         }
     }
 
     /// CTR of whole blocks.
-    fn crypt(&self, ctr: &mut [u8; 16], blocks: &mut [u8]) {
+    fn crypt(&self, dit: crate::dit::Dit<'_>, ctr: &mut [u8; 16], blocks: &mut [u8]) {
         // SAFETY: `blocks` holds `len / 16` whole blocks (its length is a
         // multiple of 16), and it, the block at `ctr` and the schedule are
         // separate valid objects of the sizes of the signature, none of them on
         // the callee's stack.
         unsafe {
-            vg_sm4_ctr(
-                &self.schedule,
+            vg_sm4_ctr_auto(
+                dit,
+                &self.schedule.0,
                 ctr,
                 blocks.as_mut_ptr().cast(),
                 blocks.len() / 16,
@@ -124,6 +131,6 @@ impl Key {
 
 impl Drop for Key {
     fn drop(&mut self) {
-        zeroize(&mut self.schedule);
+        zeroize(&mut self.schedule.0);
     }
 }

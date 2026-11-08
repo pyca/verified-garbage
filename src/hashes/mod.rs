@@ -1,5 +1,13 @@
 //! Hash functions, one module each: MD5, SHA-1, the SHA-2 and SHA-3 families,
 //! BLAKE2 and SM3.
+//!
+//! Hashing treats its input as public: on AArch64 it does not turn on data
+//! independent timing (PSTATE.DIT), which Arm needs for the timing of its
+//! instructions to be guaranteed independent of their data. To compute a
+//! function of a secret, use a keyed function, which does: HMAC
+//! (`crate::hmac`), a KDF (`crate::kdf`), or keyed BLAKE2 (`new_keyed`).
+//! The library's own operations on secrets that hash (HMAC, the KDFs,
+//! signing) hash with the mode on.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -50,56 +58,64 @@ pub trait HashFunction: Clone {
     }
 }
 
-/// Defines a hash function over verified streaming primitives:
+/// Defines a hash function over the dispatchers of verified streaming
+/// primitives (`crate::arch::dispatch`), each of which runs the best
+/// implementation this CPU runs:
 ///
-/// * `init(state: *mut [u8; STATE])` makes `state` represent the empty
+/// Each takes the operation's token (`crate::dit::Dit`) first:
+///
+/// * `init(dit, state: *mut [u8; STATE])` makes `state` represent the empty
 ///   message;
-/// * `update(state, count: u64, data: *const u8, len: usize)`
+/// * `update(dit, state, count: u64, data: *const u8, len: usize)`
 ///   absorbs `len` bytes into a state representing a message of `count`
 ///   bytes;
-/// * `finalize(state, count: u64, out: *mut [u8; OUTPUT])` writes the
-///   digest.
-///
-/// `backends` names the enum of the implementations of `update` and
-/// `finalize` to choose from, each a variant: first the one for the
-/// target's baseline ISA, then any that need CPU features (their generated
-/// `_FEATURES` constants), best first. An object uses the first
-/// that the CPU can run, chosen when it is created (see `crate::cpu`).
-///
-/// `digests`, if given, is every implementation's one-shot
-/// `digest(data: *const u8, len: usize, out: *mut [u8; OUTPUT])`, which
-/// `digest` calls: the match is exhaustive, so an implementation without one
-/// does not compile. Without it, `digest` uses the streaming functions.
+/// * `finalize(dit, state, count: u64, out: *mut [u8; OUTPUT])` writes the
+///   digest;
+/// * `digest(dit, data: *const u8, len: usize, out: *mut [u8; OUTPUT])`, if
+///   given, writes the digest of the `len` bytes at `data` in one call.
+///   Without it, `digest` uses the streaming functions.
 ///
 /// Every region is a distinct Rust object, so none overlaps another or the
 /// return address, and none wraps around the end of the address space; the
 /// length is kept exactly (`update` panics rather than let it reach 2⁶⁴
 /// bytes).
 macro_rules! streaming_hash {
-    // `digest`, with the one-shot `digests`.
-    (@digest $backend:ident, $output:literal, { $($dvariant:ident)* }) => {
+    // `digest`, with the one-shot `digest`.
+    (@digest $output:literal, $digest:path) => {
         /// The digest of `data`, in one call.
         pub fn digest(data: &[u8]) -> [u8; $output] {
+            Self::digest_with($crate::dit::public($crate::dit::Why::UnkeyedHash), data)
+        }
+
+        /// [`digest`](Self::digest), with the token of the operation it is
+        /// part of (see `crate::dit`).
+        #[allow(dead_code)]
+        pub(crate) fn digest_with(dit: $crate::dit::Dit<'_>, data: &[u8]) -> [u8; $output] {
             let mut out = [0; $output];
             // SAFETY: `data` is valid for reads of `data.len()` bytes and
             // `out` for writes of its size; they are distinct objects, so
             // they do not overlap each other, the return address or the
             // arguments on the stack, and do not wrap around the end of the
-            // address space. The backend is selected for this CPU's
-            // features.
-            unsafe {
-                $backend::select($crate::cpu::detected()).digest(data.as_ptr(), data.len(), &mut out)
-            };
+            // address space. The dispatcher calls only an implementation
+            // the CPU has the features of.
+            unsafe { $digest(dit, data.as_ptr(), data.len(), &mut out) };
             out
         }
     };
     // `digest`, with the streaming functions.
-    (@digest $backend:ident, $output:literal) => {
+    (@digest $output:literal) => {
         /// The digest of `data`.
         pub fn digest(data: &[u8]) -> [u8; $output] {
-            let mut h = Self::new();
-            h.update(data);
-            h.finalize()
+            Self::digest_with($crate::dit::public($crate::dit::Why::UnkeyedHash), data)
+        }
+
+        /// [`digest`](Self::digest), with the token of the operation it is
+        /// part of (see `crate::dit`).
+        #[allow(dead_code)]
+        pub(crate) fn digest_with(dit: $crate::dit::Dit<'_>, data: &[u8]) -> [u8; $output] {
+            let mut h = Self::new_with(dit);
+            h.update_with(dit, data);
+            h.finalize_with(dit)
         }
     };
     (
@@ -109,131 +125,21 @@ macro_rules! streaming_hash {
             block: $block:literal,
             output: $output:literal,
             init: $init:path,
-            backends: $backend:ident {
-                $base:ident => ($update:path, $finalize:path)
-                $(, $(#[$attr:meta])* $variant:ident if [$($req:path),*] => ($vupdate:path, $vfinalize:path))*
-                $(,)?
-            }
-            $(, digests: {
-                $($(#[$dattr:meta])* $dvariant:ident => $digest:path),* $(,)?
-            })?
+            update: $update:path,
+            finalize: $finalize:path
+            $(, digest: $digest:path)?
             $(,)?
         }
     ) => {
-        /// The implementations of the streaming primitives.
-        #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-        pub(crate) enum $backend {
-            /// For the baseline ISA.
-            $base,
-            $(
-                $(#[$attr])*
-                /// Needing CPU features.
-                $variant,
-            )*
-        }
-
-        impl $backend {
-            /// The CPU features `select` requires to choose each
-            /// implementation, by its discriminant (none for the baseline):
-            /// every CPU it is chosen for has them, so a function chosen
-            /// with it may need no other, which its caller checks when it
-            /// compiles (`assert!` in a `const`). (A hash function with no
-            /// implementation but the baseline does not use it.)
-            #[allow(dead_code)]
-            pub(crate) const REQUIRES: &[verified_garbage_cpu::Features] = &[
-                verified_garbage_cpu::Features(0),
-                $(
-                    $(#[$attr])*
-                    verified_garbage_cpu::Features::all(&[$($req),*]),
-                )*
-            ];
-
-            /// The best implementation a CPU with the features `f` can run.
-            pub(crate) fn select(f: verified_garbage_cpu::Features) -> Self {
-                $(
-                    $(#[$attr])*
-                    if f.contains(Self::REQUIRES[Self::$variant as usize]) {
-                        return Self::$variant;
-                    }
-                )*
-                let _ = f;
-                Self::$base
-            }
-
-            /// `update`.
-            ///
-            /// # Safety
-            ///
-            /// As for the artifacts; the CPU must have the features of the
-            /// implementation (as `select` guarantees).
-            #[inline(always)]
-            pub(crate) unsafe fn update(
-                self,
-                state: &mut [u8; $state],
-                count: u64,
-                data: *const u8,
-                len: usize,
-            ) {
-                // SAFETY: the caller's obligations.
-                unsafe {
-                    match self {
-                        Self::$base => $update(state, count, data, len),
-                        $($(#[$attr])* Self::$variant => $vupdate(state, count, data, len),)*
-                    }
-                }
-            }
-
-            /// `finalize`.
-            ///
-            /// # Safety
-            ///
-            /// As for the artifacts; the CPU must have the features of the
-            /// implementation (as `select` guarantees).
-            #[inline(always)]
-            pub(crate) unsafe fn finalize(
-                self,
-                state: &mut [u8; $state],
-                count: u64,
-                out: &mut [u8; $output],
-            ) {
-                // SAFETY: the caller's obligations.
-                unsafe {
-                    match self {
-                        Self::$base => $finalize(state, count, out),
-                        $($(#[$attr])* Self::$variant => $vfinalize(state, count, out),)*
-                    }
-                }
-            }
-
-            $(
-            /// The one-shot `digest` of the `len` bytes at `data` into `out`.
-            ///
-            /// # Safety
-            ///
-            /// As for the artifacts; the CPU must have the features of the
-            /// implementation (as `select` guarantees).
-            pub(crate) unsafe fn digest(self, data: *const u8, len: usize, out: &mut [u8; $output]) {
-                // SAFETY: the caller's obligations.
-                unsafe {
-                    match self {
-                        $($(#[$dattr])* Self::$dvariant => $digest(data, len, out),)*
-                    }
-                }
-            }
-            )?
-        }
-
         $(#[$doc])*
         ///
         /// Messages are limited to 2⁶⁴ − 1 bytes.
         #[derive(Clone)]
         pub struct $name {
             /// The streaming state, representing the message so far.
-            state: [u8; $state],
+            state: $crate::align::CacheAligned<[u8; $state]>,
             /// The message length so far, in bytes.
             length: u64,
-            /// The implementation this CPU runs.
-            backend: $backend,
         }
 
         impl Default for $name {
@@ -246,7 +152,7 @@ macro_rules! streaming_hash {
             /// Wipes the streaming state (which, for HMAC, represents the
             /// key).
             fn drop(&mut self) {
-                $crate::zeroize::zeroize(&mut self.state);
+                $crate::zeroize::zeroize(&mut self.state.0);
             }
         }
 
@@ -258,14 +164,20 @@ macro_rules! streaming_hash {
 
             /// Starts a new computation.
             pub fn new() -> Self {
-                let mut state = [0; $state];
+                Self::new_with($crate::dit::public($crate::dit::Why::UnkeyedHash))
+            }
+
+            /// [`new`](Self::new), with the token of the operation it is
+            /// part of (see `crate::dit`).
+            #[allow(dead_code)]
+            pub(crate) fn new_with(dit: $crate::dit::Dit<'_>) -> Self {
+                let mut state = $crate::align::CacheAligned([0; $state]);
                 // SAFETY: `state` is valid for writes of its size, and is a
                 // distinct object from the return address (on x86-64 and x86)
                 // and the argument on the stack (on x86); as a Rust object, it
                 // does not wrap around the end of the address space.
-                unsafe { $init(&mut state) };
-                let backend = $backend::select($crate::cpu::detected());
-                $name { state, length: 0, backend }
+                unsafe { $init(dit, &mut state.0) };
+                $name { state, length: 0 }
             }
 
             /// Absorbs `data`.
@@ -274,6 +186,16 @@ macro_rules! streaming_hash {
             ///
             /// If the message reaches 2⁶⁴ bytes.
             pub fn update(&mut self, data: &[u8]) {
+                self.update_with($crate::dit::public($crate::dit::Why::UnkeyedHash), data)
+            }
+
+            /// [`update`](Self::update), with the token of the operation it
+            /// is part of (see `crate::dit`).
+            ///
+            /// # Panics
+            ///
+            /// If the message reaches 2⁶⁴ bytes.
+            pub(crate) fn update_with(&mut self, dit: $crate::dit::Dit<'_>, data: &[u8]) {
                 let (length, overflow) = self.length.overflowing_add(data.len() as u64);
                 assert!(!overflow, "message too long");
                 // SAFETY: `self.state` is valid for reads and writes of its
@@ -282,21 +204,20 @@ macro_rules! streaming_hash {
                 // address (on x86-64 and x86) or the arguments on the stack
                 // (on 32-bit ARM and x86), and do not wrap around the end of
                 // the address space. `self.length` is the length of the
-                // message `self.state` represents. `self.backend` was
-                // selected for this CPU's features.
-                unsafe {
-                    self.backend.update(
-                        &mut self.state,
-                        self.length,
-                        data.as_ptr(),
-                        data.len(),
-                    )
-                };
+                // message `self.state` represents. The dispatcher calls only
+                // an implementation the CPU has the features of.
+                unsafe { $update(dit, &mut self.state.0, self.length, data.as_ptr(), data.len()) };
                 self.length = length;
             }
 
             /// Pads the message and returns its digest.
-            pub fn finalize(mut self) -> [u8; $output] {
+            pub fn finalize(self) -> [u8; $output] {
+                self.finalize_with($crate::dit::public($crate::dit::Why::UnkeyedHash))
+            }
+
+            /// [`finalize`](Self::finalize), with the token of the operation
+            /// it is part of (see `crate::dit`).
+            pub(crate) fn finalize_with(mut self, dit: $crate::dit::Dit<'_>) -> [u8; $output] {
                 let mut out = [0; $output];
                 // SAFETY: `self.state` is valid for reads and writes of its
                 // size and `out` for writes of its size; they are distinct
@@ -305,31 +226,30 @@ macro_rules! streaming_hash {
                 // and x86) or the arguments on the stack (on 32-bit ARM and
                 // x86), and do not wrap around the end of the address space.
                 // `self.length` is the exact length of the message
-                // `self.state` represents. `self.backend` was selected for
-                // this CPU's features.
-                unsafe {
-                    self.backend
-                        .finalize(&mut self.state, self.length, &mut out)
-                };
+                // `self.state` represents. The dispatcher calls only an
+                // implementation the CPU has the features of.
+                unsafe { $finalize(dit, &mut self.state.0, self.length, &mut out) };
                 out
             }
 
-            $crate::hashes::streaming_hash!(@digest $backend, $output $(, { $($dvariant)* })?);
+            $crate::hashes::streaming_hash!(@digest $output $(, $digest)?);
 
             /// A computation whose streaming state is `state`, which must
             /// represent a message of `length` bytes (for HMAC, whose
             /// `init` makes such states).
             #[allow(dead_code)]
             pub(crate) fn from_state(state: [u8; $state], length: u64) -> Self {
-                let backend = $backend::select($crate::cpu::detected());
-                $name { state, length, backend }
+                $name {
+                    state: $crate::align::CacheAligned(state),
+                    length,
+                }
             }
 
             /// The streaming state, in place, and the length of the message
             /// it represents.
             #[allow(dead_code)]
             pub(crate) fn state_mut(&mut self) -> (&mut [u8; $state], u64) {
-                (&mut self.state, self.length)
+                (&mut self.state.0, self.length)
             }
         }
 

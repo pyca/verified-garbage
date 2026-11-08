@@ -14,7 +14,7 @@
 /// * `schedule` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `schedule` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_idea_expand_key(key: *const [u8; 16], schedule: *mut [u8; 104]) {
+pub(crate) unsafe extern "C" fn vg_idea_expand_key(key: *const [u8; 16], schedule: *mut [u8; 104]) {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
@@ -322,7 +322,7 @@ pub unsafe extern "C" fn vg_idea_expand_key(key: *const [u8; 16], schedule: *mut
 /// * `inverse` must not overlap `schedule` (distinct Rust objects never do).
 /// * Neither `schedule` nor `inverse` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_idea_invert_key(schedule: *const [u8; 104], inverse: *mut [u8; 104]) {
+pub(crate) unsafe extern "C" fn vg_idea_invert_key(schedule: *const [u8; 104], inverse: *mut [u8; 104]) {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
@@ -1500,7 +1500,7 @@ bnez a2, 217b
 /// * `data` must not overlap `schedule` (distinct Rust objects never do).
 /// * Neither `schedule` nor `data` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_idea_ecb(schedule: *const [u8; 104], data: *mut [u8; 8], n: usize) {
+pub(crate) unsafe extern "C" fn vg_idea_ecb(schedule: *const [u8; 104], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c

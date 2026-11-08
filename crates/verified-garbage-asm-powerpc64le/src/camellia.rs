@@ -16,7 +16,7 @@
 /// * `schedule` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `schedule` may overlap the 3344 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_camellia_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 272]) {
+pub(crate) unsafe extern "C" fn vg_camellia_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 272]) {
     core::arch::naked_asm!(
         r#".base64 "8fIh+CAAwTh4M8h8eCOGfIALyPmIC+j5kAsI+pgLKPqgC0j6qAto+rALiPq4C6j6wAvI+sgL6PrQCwj72Aso++ALSPvoC2j78AuI+/gLqPsADMj7CAzo+/8AwD7/ANZixgfWev8A1mb/ANZigAHI+gD/wD4A/9ZixgfWegD/1mYA/9ZiiAHI+v8AwD4A/9ZixgfWegAA1mYAANZikAHI+gAAwD4AANZixgfWev8A1mYA/9ZimAHI+gAAwD7/ANZixgfWegD/1mYAANZioAHI+gADiDj//8A+AADWYsYH1noAANZmAP/WYgAAxPr//8A+/wDWYsYH1nr/ANZmAP/WYggAxPr/AMA+/wDWYsYH1nr//9ZmAADWYhAAxPr//8A+AADWYsYH1nr//9ZmAP/WYhgAxPr/AMA+AP/WYsYH1nr/ANZmAP/WYiAAxPr/AMA+/wDWYsYH1noAANZm///WYigAxPr/AMA+/wDWYsYH1noA/9ZmAADWYjAAxPoA/8A+AP/WYsYH1nr//9Zm/wDWYjgAxPpAAIQ4AADAPgD/1mLGB9Z6AADWZgAA1mIAAMT6AP/APgD/1mLGB9Z6///WZv8A1mIIAMT6AADAPgAA1mLGB9Z6AADWZv//1mIQAMT6/wDAPv8A1mLGB9Z6///WZgD/1mIYAMT6///APgD/1mLGB9Z6/wDWZv8A1mIgAMT6AP/APv//1mLGB9Z6///WZv8A1mIoAMT6/wDAPv//1mLGB9Z6/wDWZgD/1mIwAMT6AP/APv8A1mLGB9Z6AP/WZv8A1mI4AMT6QACEOP8AwD7/ANZixgfWev//1mYA/9ZiAADE+v//wD7//9ZixgfWev//1mb/ANZiCADE+v//wD7/ANZixgfWev//1mb/ANZiEADE+v//wD4AANZixgfWev//1mYA/9ZiGADE+gD/wD7/ANZixgfWegAA1mYAANZiIADE+v//wD7/ANZixgfWev8A1mYA/9ZiKADE+gAAwD4AANZixgfWev//1mb//9ZiMADE+gD/wD4A/9ZixgfWev8A1mb//9ZiOADE+kAAhDj/AMA+///WYsYH1nr//9ZmAP/WYgAAxPoAAMA+///WYsYH1nr//9ZmAADWYggAxPr//8A+AP/WYsYH1nr/ANZm/wDWYhAAxPoA/8A+AP/WYsYH1nr/ANZmAADWYhgAxPoA/8A+/wDWYsYH1nr//9Zm///WYiAAxPr/AMA+AP/WYsYH1nr/ANZmAP/WYigAxPoAAMA+///WYsYH1nr//9Zm///WYjAAxPr/AMA+AADWYsYH1nr//9ZmAP/WYjgAxPpAAIQ4AP/APv//1mLGB9Z6/wDWZgAA1mIAAMT6/wDAPv8A1mLGB9Z6AADWZgD/1mIIAMT6AP/APv//1mLGB9Z6/wDWZgD/1mIQAMT6///APgD/1mLGB9Z6AP/WZgD/1mIYAMT6///APgAA1mLGB9Z6AADWZv//1mIgAMT6/wDAPv//1mLGB9Z6///WZgAA1mIoAMT6/wDAPgAA1mLGB9Z6///WZgD/1mIwAMT6/wDAPgAA1mLGB9Z6/wDWZgD/1mI4AMT6QACEOAD/wD4A/9ZixgfWegAA1mYA/9ZiAADE+v8AwD4AANZixgfWev//1mYA/9ZiCADE+gD/wD4AANZixgfWev//1mYAANZiEADE+gD/wD7/ANZixgfWegAA1mYAANZiGADE+gD/wD4AANZixgfWev8A1mb//9ZiIADE+gD/wD4AANZixgfWegD/1mb//9ZiKADE+v//wD4A/9ZixgfWev//1mYAANZiMADE+v//wD7//9ZixgfWegD/1mb//9ZiOADE+kAAhDgAAMPqEAzI+ggAw+oYDMj68P/mOgAANyg="
 beq %cr0, 20f
@@ -71,7 +71,7 @@ b 210f
 /// * `data` must not overlap `schedule` (distinct Rust objects never do).
 /// * Neither `schedule` nor `data` may overlap the 3344 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_camellia_ecb_encrypt(schedule: *const [u8; 272], rounds: usize, data: *mut [u8; 16], n: usize) {
+pub(crate) unsafe extern "C" fn vg_camellia_ecb_encrypt(schedule: *const [u8; 272], rounds: usize, data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r#".base64 "8fIh+CAA4Th4O+h8gAvI+YgL6PmQCwj6mAso+qALSPqoC2j6sAuI+rgLqPrAC8j6yAvo+tALCPvYCyj74AtI++gLaPvwC4j7+Auo+wAMyPsIDOj7/wDAPv8A1mLGB9Z6/wDWZv8A1mKAAcj6AP/APgD/1mLGB9Z6AP/WZgD/1mKIAcj6/wDAPgD/1mLGB9Z6AADWZgAA1mKQAcj6AADAPgAA1mLGB9Z6/wDWZgD/1mKYAcj6AADAPv8A1mLGB9Z6AP/WZgAA1mKgAcj67v/EOgAANig="
 beq %cr0, 20f
@@ -144,7 +144,7 @@ b 24f
 /// * `data` must not overlap `schedule` (distinct Rust objects never do).
 /// * Neither `schedule` nor `data` may overlap the 3344 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_camellia_ecb_decrypt(schedule: *const [u8; 272], rounds: usize, data: *mut [u8; 16], n: usize) {
+pub(crate) unsafe extern "C" fn vg_camellia_ecb_decrypt(schedule: *const [u8; 272], rounds: usize, data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r#".base64 "8fIh+CAA4Th4O+h8gAvI+YgL6PmQCwj6mAso+qALSPqoC2j6sAuI+rgLqPrAC8j6yAvo+tALCPvYCyj74AtI++gLaPvwC4j7+Auo+wAMyPsIDOj7/wDAPv8A1mLGB9Z6/wDWZv8A1mKAAcj6AP/APgD/1mLGB9Z6AP/WZgD/1mKIAcj6/wDAPgD/1mLGB9Z6AADWZgAA1mKQAcj6AADAPgAA1mLGB9Z6/wDWZgD/1mKYAcj6AADAPv8A1mLGB9Z6AP/WZgAA1mKgAcj67v/EOgAANig="
 beq %cr0, 20f

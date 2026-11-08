@@ -16,7 +16,7 @@
 /// * `schedule` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `schedule` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 240]) {
+pub(crate) unsafe extern "C" fn vg_aes_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 240]) {
     core::arch::naked_asm!(
         r#".base64 "eCOHfA=="
 20:
@@ -67,7 +67,7 @@ bne %cr0, 21b
 /// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_encrypt_blocks(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+pub(crate) unsafe extern "C" fn vg_aes_encrypt_blocks(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
         r#".base64 "AAAmKA=="
 beq %cr0, 20f
@@ -116,7 +116,7 @@ b 21f
 /// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_decrypt_blocks(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+pub(crate) unsafe extern "C" fn vg_aes_decrypt_blocks(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
         r#".base64 "AAAmKA=="
 beq %cr0, 20f
@@ -156,6 +156,10 @@ b 21f
 pub(crate) mod vg_aes_ctr32;
 
 #[rustfmt::skip]
+#[path = "internal/vg_aes_ctr32_to.rs"]
+pub(crate) mod vg_aes_ctr32_to;
+
+#[rustfmt::skip]
 #[path = "internal/vg_aes_expand_key_scratch.rs"]
 pub(crate) mod vg_aes_expand_key_scratch;
 
@@ -166,6 +170,10 @@ pub(crate) mod vg_aes_gcm_encrypt_blocks;
 #[rustfmt::skip]
 #[path = "internal/vg_aes_gcm_encrypt_blocks_split.rs"]
 pub(crate) mod vg_aes_gcm_encrypt_blocks_split;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_open_split.rs"]
+pub(crate) mod vg_aes_gcm_open_split;
 
 #[rustfmt::skip]
 #[path = "internal/vg_aes_gcm_seal_split.rs"]

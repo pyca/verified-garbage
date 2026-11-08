@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.MlKem.Scrubbed
 public import VerifiedGarbage.Proof.MlKem.AArch64.KeyGen
 public import VerifiedGarbage.Spec.MlKem.Contract1024
 import VerifiedGarbage.Proof.Framework.Offset
@@ -51,9 +52,9 @@ theorem keyGen_correctWith (s : State) (hs : (keyGenAArch64 lay1024).pre s) :
   keyGen_correct wf1024 hs
 
 theorem keyGen_verifiedWith :
-    Verified AArch64.target (keyGenWith keccak.callee) (Spec.MlKem1024.keyGenContract AArch64.abi 16) :=
+    Verified AArch64.target (keyGenWith keccak.callee) (Proof.MlKem.Scrubbed.keyGen1024BodyContract AArch64.abi 16) :=
   Verified.of_correct (keyGen_correctWith (keccak := keccak)) (ct wf1024 taints1024) (by
-    mlkem_implies [Spec.MlKem1024.keyGenContract, Spec.MlKem1024.keyGenSig, keyGenAArch64, lay1024,
+    mlkem_implies [Proof.MlKem.Scrubbed.keyGen1024BodyContract, Spec.MlKem1024.keyGenSig, keyGenAArch64, lay1024,
       KemLay.params, Spec.MlKem.mlKem1024, KemLay.ekLen, KemLay.dkLen, AArch64.abi, AArch64.argRegs] [sat]
       using sat)
 

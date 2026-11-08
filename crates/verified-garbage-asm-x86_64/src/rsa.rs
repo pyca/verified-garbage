@@ -19,7 +19,7 @@
 /// * `pre` and `scratch` must not overlap each other or `n` (distinct Rust objects never do).
 /// * None of `pre`, `n` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rsa_public_precompute(pre: *mut u64, pre_len: usize, n: *const u8, n_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_rsa_public_precompute(pre: *mut u64, pre_len: usize, n: *const u8, n_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SYkYSYloCE2JYBBNiWgYTYlwIE2JeChJibiAAAAASYmQiAAAAEmJiJAAAABMiccPtgJIg/gBSBntD7ZECv9Ig+ABSIP4AUgZ9kgJ9UiJzkiD7kBIwc44D7YCSAHGSIH+gAAAAEgZ9kgJ9UiF7Q=="
 jne 20f
@@ -158,7 +158,7 @@ pub const VG_RSA_PUBLIC_PRECOMPUTE_ADX_FEATURES: verified_garbage_cpu::Features 
 /// * None of `pre`, `n` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rsa_public_precompute_adx(pre: *mut u64, pre_len: usize, n: *const u8, n_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_rsa_public_precompute_adx(pre: *mut u64, pre_len: usize, n: *const u8, n_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SYkYSYloCE2JYBBNiWgYTYlwIE2JeChJibiAAAAASYmQiAAAAEmJiJAAAABMiccPtgJIg/gBSBntD7ZECv9Ig+ABSIP4AUgZ9kgJ9UiJzkiD7kBIwc44D7YCSAHGSIH+gAAAAEgZ9kgJ9UiF7Q=="
 jne 20f
@@ -324,7 +324,7 @@ jne 239b
 /// * `dp`, `dq`, `qinv` and `scratch` must not overlap each other, `n`, `p`, `q`, `d` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `dp`, `dq`, `qinv`, `n`, `p`, `q`, `d` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rsa_crt_values(dp: *mut u8, dp_len: usize, dq: *mut u8, dq_len: usize, qinv: *mut u8, qinv_len: usize, n: *const u8, n_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, d: *const u8, d_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_rsa_crt_values(dp: *mut u8, dp_len: usize, dq: *mut u8, dq_len: usize, qinv: *mut u8, qinv_len: usize, n: *const u8, n_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, d: *const u8, d_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "TItcJEhJiRtJiWsITYljEE2JaxhNiXMgTYl7KEmJu4AAAABJibOoAAAASYmTmAAAAEmJi7gAAABNiYOgAAAASItEJAhJiYOIAAAASItEJBBJiYOQAAAASItEJBhJiYPAAAAASItEJChJiYPIAAAASItEJDhJiYPQAAAASItEJEBJiYPYAAAATInfSIuXiAAAAEiLj5AAAAAPtgJIg/gBSBntD7ZECv9Ig+ABSIP4AUgZ9kgJ9UiJzkiD7kBIwc44D7YCSAHGSIH+gAAAAEgZ9kgJ9UiF7Q=="
 jne 20f
@@ -839,7 +839,7 @@ jne 2126b
 /// * `p`, `q` and `scratch` must not overlap each other, `n`, `e`, `d` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `p`, `q`, `n`, `e`, `d` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rsa_recover_primes_det(p: *mut u8, p_len: usize, q: *mut u8, q_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_rsa_recover_primes_det(p: *mut u8, p_len: usize, q: *mut u8, q_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "TItcJChJiRtJiWsITYljEE2JaxhNiXMgTYl7KEmJu4AAAABJiZOoAAAATYmDiAAAAE2Ji5AAAABIi0QkCEmJg5gAAABIi0QkEEmJg6AAAABIi0QkGEmJg7gAAABIi0QkIEmJg8AAAABMid9Ii5eIAAAASIuPkAAAAA+2AkiD+AFIGe0PtkQK/0iD4AFIg/gBSBn2SAn1SInOSIPuQEjBzjgPtgJIAcZIgf6AAAAASBn2SAn1SIXt"
 jne 20f
@@ -1439,7 +1439,7 @@ jne 2144b
 /// * `scratch` must not overlap `n`, `e`, `d`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `n`, `e`, `d`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rsa_check_key(n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_rsa_check_key(n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "TItcJFhJiRtJiWsITYljEE2JaxhNiXMgTYl7KEmJu4gAAABJibOQAAAASYmTmAAAAEmJi6AAAABNiYOAAAAATYmLqAAAAEiLRCQISYmDuAAAAEiLRCQQSYmDwAAAAEiLRCQYSYmDyAAAAEiLRCQgSYmD0AAAAEiLRCQoSYmD2AAAAEiLRCQ4SYmD4AAAAEiLRCRISYmD6AAAAEyJ30mJ0EmJyUG7AAAAAEG6AAAAAA=="
 20:

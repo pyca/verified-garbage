@@ -16,7 +16,7 @@
 /// * `out` and `scratch` must not overlap each other or `public` (distinct Rust objects never do).
 /// * None of `out`, `public` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ec_p256_compress_public_key(out: *mut [u8; 33], public: *const [u8; 65], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ec_p256_compress_public_key(out: *mut [u8; 33], public: *const [u8; 65], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
@@ -662,7 +662,7 @@ call {vg_p256_check_point}
 /// * `out` and `scratch` must not overlap each other or `public` (distinct Rust objects never do).
 /// * None of `out`, `public` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ec_p256_decompress_public_key(out: *mut [u8; 65], public: *const [u8; 33], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ec_p256_decompress_public_key(out: *mut [u8; 65], public: *const [u8; 33], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c

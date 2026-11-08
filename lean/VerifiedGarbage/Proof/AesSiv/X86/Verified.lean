@@ -38,7 +38,7 @@ theorem cov_mem {r : Region} {ts : List Region} (h : r ∈ ts) : Covers [r] ts :
   intro a n ⟨x, hx, hc⟩
   simp only [List.mem_singleton] at hx; subst hx; exact ⟨x, h, hc⟩
 
-theorem below_eq56 {SP : BitVec 32} (h : 56 ≤ SP.toNat) : below SP 56 = ⟨w64 SP - BitVec.ofNat 64 56, 56⟩ := by
+theorem below_eq60 {SP : BitVec 32} (h : 60 ≤ SP.toNat) : below SP 60 = ⟨w64 SP - BitVec.ofNat 64 60, 60⟩ := by
   simp only [below, Region.mk.injEq, and_true]
   exact VG.X86.Taint.sub_setWidth h
 
@@ -50,7 +50,7 @@ abbrev ETopS (s : State) : Prop :=
 set_option linter.unusedSimpArgs false in
 /-- The precondition of `encrypt`'s shared contract with the working space:
 the entry's invariant, and `siv` writable and apart from the data. -/
-theorem encPre_of {s : State} (h : (Proof.AesSiv.encryptScratchContract X86.abi 56).pre s) :
+theorem encPre_of {s : State} (h : (Proof.AesSiv.encryptScratchContract X86.abi 60).pre s) :
     ETopS s ∧ Covers [⟨w64 (arg s 6), 16⟩] s.wr ∧
       (⟨w64 (arg s 6), 16⟩ : Region).Disjoint ⟨w64 (arg s 4), (arg s 5).toNat⟩ := by
   sig_pre [Proof.AesSiv.encryptScratchContract, Proof.AesSiv.encryptScratchSig, Spec.Siv.encryptPre, X86.abi,
@@ -66,7 +66,7 @@ theorem encPre_of {s : State} (h : (Proof.AesSiv.encryptScratchContract X86.abi 
   obtain ⟨cW, ⟨-, cA⟩, dT, dW, dDesc, ⟨dL, dA⟩, tW, -, ⟨-, -⟩, wDesc, ⟨wL, wA⟩, ⟨-, descA⟩, -⟩ := hc1
   obtain ⟨retDesc, ⟨retL, retA⟩, sC, sD, sT, sW, sDesc, sL, sA⟩ := hc2
   obtain ⟨descFit, lFit⟩ := hc3
-  have bE := below_eq56 sp56
+  have bE := below_eq60 sp56
   have inRd {r : Region} (hr : r ∈ s.rd) : r ∈ s.rd ++ s.wr := List.mem_append_left _ hr
   have inWr {r : Region} (hr : r ∈ s.wr) : r ∈ s.rd ++ s.wr := List.mem_append_right _ hr
   have mC : (⟨w64 (arg s 0), 512⟩ : Region) ∈ s.rd := by rw [hrd]; exact List.mem_cons_self
@@ -94,7 +94,7 @@ theorem encPre_of {s : State} (h : (Proof.AesSiv.encryptScratchContract X86.abi 
 set_option linter.unusedSimpArgs false in
 /-- The precondition of `decrypt`'s shared contract with the working space:
 the entry's invariant. -/
-theorem decPre_of {s : State} (h : (Proof.AesSiv.decryptScratchContract X86.abi 56).pre s) : ETopS s := by
+theorem decPre_of {s : State} (h : (Proof.AesSiv.decryptScratchContract X86.abi 60).pre s) : ETopS s := by
   sig_pre [Proof.AesSiv.decryptScratchContract, Proof.AesSiv.decryptScratchSig, Spec.Siv.decryptPre, X86.abi,
     X86.argSlots, X86.argVal, X86.argBytes] at h
   sig_split h
@@ -108,7 +108,7 @@ theorem decPre_of {s : State} (h : (Proof.AesSiv.decryptScratchContract X86.abi 
   obtain ⟨cW, ⟨-, cA⟩, -, dW, dDesc, ⟨dL, dA⟩, tW, ⟨-, -⟩, wDesc, ⟨wL, wA⟩, ⟨-, descA⟩, -⟩ := hc1
   obtain ⟨retDesc, ⟨retL, retA⟩, sC, sD, sT, sW, sDesc, sL, sA⟩ := hc2
   obtain ⟨descFit, lFit⟩ := hc3
-  have bE := below_eq56 sp56
+  have bE := below_eq60 sp56
   have inRd {r : Region} (hr : r ∈ s.rd) : r ∈ s.rd ++ s.wr := List.mem_append_left _ hr
   have inWr {r : Region} (hr : r ∈ s.wr) : r ∈ s.rd ++ s.wr := List.mem_append_right _ hr
   have mC : (⟨w64 (arg s 0), 512⟩ : Region) ∈ s.rd := by rw [hrd]; exact List.mem_cons_self
@@ -189,7 +189,7 @@ theorem encSat_args (rd wr : List Region) : arg (encSat rd wr) 0 = 0x1000 ∧ ar
     decide
   exact h
 
-theorem encSat_pre : ∃ s, (Proof.AesSiv.encryptScratchContract X86.abi 56).pre s := by
+theorem encSat_pre : ∃ s, (Proof.AesSiv.encryptScratchContract X86.abi 60).pre s := by
   obtain ⟨a0, a1, a2, a3, a4, a5, a6, a7, e⟩ := encSat_args [⟨0x1000, 512⟩, ⟨0x2000, 0⟩]
     [⟨0x3000, 0⟩, ⟨0x5000, 16⟩, ⟨0x4000, 2576⟩, ⟨0x8004, 32⟩]
   have esp : (encSat [⟨0x1000, 512⟩, ⟨0x2000, 0⟩]
@@ -198,7 +198,7 @@ theorem encSat_pre : ∃ s, (Proof.AesSiv.encryptScratchContract X86.abi 56).pre
     X86.abi, X86.argSlots, X86.argVal, X86.argBytes] [a0, a1, a2, a3, a4, a5, a6, a7, e, esp]
     using encSat [⟨0x1000, 512⟩, ⟨0x2000, 0⟩] [⟨0x3000, 0⟩, ⟨0x5000, 16⟩, ⟨0x4000, 2576⟩, ⟨0x8004, 32⟩]
 
-theorem decSat_pre : ∃ s, (Proof.AesSiv.decryptScratchContract X86.abi 56).pre s := by
+theorem decSat_pre : ∃ s, (Proof.AesSiv.decryptScratchContract X86.abi 60).pre s := by
   obtain ⟨a0, a1, a2, a3, a4, a5, a6, a7, e⟩ := encSat_args [⟨0x1000, 512⟩, ⟨0x5000, 16⟩, ⟨0x2000, 0⟩]
     [⟨0x3000, 0⟩, ⟨0x4000, 2576⟩, ⟨0x8004, 32⟩]
   have esp : (encSat [⟨0x1000, 512⟩, ⟨0x5000, 16⟩, ⟨0x2000, 0⟩]
@@ -215,7 +215,7 @@ theorem noEsp_of {c : Prog isa} (h : NoSp c) :
 variable (v : Proof.Aes.X86.Ctr32Impl)
 
 theorem encrypt_verified :
-    Verified X86.target (encrypt v.callee v.suffix) (Proof.AesSiv.encryptScratchContract X86.abi 56) := by
+    Verified X86.target (encrypt v.callee v.suffix) (Proof.AesSiv.encryptScratchContract X86.abi 60) := by
   refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => ?_, encSat_pre⟩
   · obtain ⟨E, hTw, hTd⟩ := encPre_of hs
     obtain ⟨t, s', he, hq⟩ := encrypt_wp v E.pre hTw hTd
@@ -237,7 +237,7 @@ theorem encrypt_verified :
 theorem setWidth_ret (a b : BitVec 32) : (a ++ b).setWidth 32 = b := BitVec.setWidth_append_eq_right
 
 theorem decrypt_verified :
-    Verified X86.target (decrypt v.callee v.suffix) (Proof.AesSiv.decryptScratchContract X86.abi 56) := by
+    Verified X86.target (decrypt v.callee v.suffix) (Proof.AesSiv.decryptScratchContract X86.abi 60) := by
   refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => ?_, decSat_pre⟩
   · obtain ⟨t, s', he, hq⟩ := decrypt_wp v (decPre_of hs).pre
     refine ⟨t, s', he, hq.1, ?_⟩
@@ -269,25 +269,25 @@ theorem decrypt_noEsp : (decrypt v.callee v.suffix).allInstrs (fun i => !Taint.c
     noEsp_of (Proof.CmacAes.X86.finalize_nosp v), noEsp_of v.nosp]
   decide +kernel
 
-theorem encrypt_stackUse : stackUse (encrypt v.callee v.suffix) ≤ 56 := by
+theorem encrypt_stackUse : stackUse (encrypt v.callee v.suffix) ≤ 60 := by
   simp only [encrypt, encS2v, sivEntry, Impl.AesGcm.X86.entry, start, s2vAds, cmacOf, cmacPre, updCall, finCall,
     Impl.CmacAes.Stream.X86.call6, finish, shortTail, copyN, shortMac, longTail, longMac, ctr, ctrWhole, ctrTail,
     ctrCall, sivOut, stackUse, Proof.CmacAes.X86.update_stack v, Proof.CmacAes.X86.finalize_stack v, v.stack]
   decide +kernel
 
-theorem decrypt_stackUse : stackUse (decrypt v.callee v.suffix) ≤ 56 := by
+theorem decrypt_stackUse : stackUse (decrypt v.callee v.suffix) ≤ 60 := by
   simp only [decrypt, encS2v, sivEntry, Impl.AesGcm.X86.entry, start, s2vAds, cmacOf, cmacPre, updCall, finCall,
     Impl.CmacAes.Stream.X86.call6, finish, shortTail, copyN, shortMac, longTail, longMac, ctr, ctrWhole, ctrTail,
     ctrCall, mask, sivIn, stackUse, Proof.CmacAes.X86.update_stack v, Proof.CmacAes.X86.finalize_stack v, v.stack]
   decide +kernel
 
-theorem encFrameSat_pre : ∃ s, (Proof.AesSiv.encryptRoundsContract X86.abi 2668).pre s := by
+theorem encFrameSat_pre : ∃ s, (Proof.AesSiv.encryptRoundsContract X86.abi 2672).pre s := by
   implies_sat [Proof.AesSiv.encryptRoundsContract, Spec.Siv.encryptSig, Spec.Siv.encryptPre, Proof.AesSiv.encryptRoundsPost,
     X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [encSat, X86.arg, X86.argAddr, Mem.readW, Mem.read]
     using encSat [⟨0x1000, 512⟩, ⟨0x2000, 0⟩] [⟨0x3000, 0⟩, ⟨0x5000, 16⟩, ⟨0x8004, 28⟩]
 
-theorem decFrameSat_pre : ∃ s, (Proof.AesSiv.decryptRoundsContract X86.abi 2668).pre s := by
+theorem decFrameSat_pre : ∃ s, (Proof.AesSiv.decryptRoundsContract X86.abi 2672).pre s := by
   implies_sat [Proof.AesSiv.decryptRoundsContract, Spec.Siv.decryptSig, Spec.Siv.decryptPre, Proof.AesSiv.decryptRoundsPost,
     Spec.Siv.decryptLeak, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [encSat, X86.arg, X86.argAddr, Mem.readW, Mem.read]
@@ -297,19 +297,19 @@ theorem decFrameSat_pre : ∃ s, (Proof.AesSiv.decryptRoundsContract X86.abi 266
 argument slots, the working space's address and its 2576 bytes. -/
 theorem encrypt_framed :
     Verified X86.target (Impl.StackScratch.X86.withStackScratch 2612 7 (encrypt v.callee v.suffix))
-      (Proof.AesSiv.encryptRoundsContract X86.abi 2668) :=
+      (Proof.AesSiv.encryptRoundsContract X86.abi 2672) :=
   X86.Verified.stackScratchL (sig := Spec.Siv.encryptSig) (nm := "work") (e := .u64) (n := 322)
     (pre := Spec.Siv.encryptPre X86.abi.ptrBits) (post := Proof.AesSiv.encryptRoundsPost X86.abi.ptrBits)
-    (wa := true) (stack := 56) (bytes := 2612) (encrypt_verified v) (by decide) (encrypt_noEsp v)
+    (wa := true) (stack := 60) (bytes := 2612) (encrypt_verified v) (by decide) (encrypt_noEsp v)
     (encrypt_stackUse v) (Proof.AesSiv.encryptPre_local _) (Proof.AesSiv.encryptPost_local _) encFrameSat_pre
 
 /-- `decrypt` in a frame of 2612 bytes, as `encrypt`. -/
 theorem decrypt_framed :
     Verified X86.target (Impl.StackScratch.X86.withStackScratch 2612 7 (decrypt v.callee v.suffix))
-      (Proof.AesSiv.decryptRoundsContract X86.abi 2668) :=
+      (Proof.AesSiv.decryptRoundsContract X86.abi 2672) :=
   X86.Verified.stackScratchL (sig := Spec.Siv.decryptSig) (nm := "work") (e := .u64) (n := 322)
     (pre := Spec.Siv.decryptPre X86.abi.ptrBits) (post := Proof.AesSiv.decryptRoundsPost X86.abi.ptrBits)
-    (wa := true) (stack := 56) (leak := some (Spec.Siv.decryptLeak X86.abi.ptrBits)) (bytes := 2612)
+    (wa := true) (stack := 60) (leak := some (Spec.Siv.decryptLeak X86.abi.ptrBits)) (bytes := 2612)
     (decrypt_verified v) (by decide) (decrypt_noEsp v) (decrypt_stackUse v) (Proof.AesSiv.decryptPre_local _)
     (Proof.AesSiv.decryptPost_local _) decFrameSat_pre (hleak := Proof.AesSiv.decryptLeak_local _)
 
@@ -319,7 +319,7 @@ theorem decrypt_framed :
 def initRd (s : State) : List Region := [⟨w64 (arg s 0), (arg s 1).toNat⟩, ⟨argAddr s 0, 16⟩]
 def initWr (s : State) : List Region := [⟨w64 (arg s 2), 512⟩, ⟨w64 (arg s 3), 2560⟩]
 
-theorem initPre_of {s : State} (h : (Proof.AesSiv.initScratchContract X86.abi 48).pre s) :
+theorem initPre_of {s : State} (h : (Proof.AesSiv.initScratchContract X86.abi 52).pre s) :
     initX86.pre (s.withRegions (initRd s) (initWr s)) ∧ s.rd = [⟨w64 (arg s 0), (arg s 1).toNat⟩] ∧
       s.wr = [⟨w64 (arg s 2), 512⟩, ⟨w64 (arg s 3), 2560⟩, ⟨argAddr s 0, 16⟩] := by
   sig_pre [Proof.AesSiv.initScratchContract, Proof.AesSiv.initScratchSig, Spec.Siv.initPre, X86.abi, X86.argSlots,
@@ -343,7 +343,7 @@ def initSat : State where
   rd := [⟨0x1000, 32⟩]
   wr := [⟨0x2000, 512⟩, ⟨0x4000, 2560⟩, ⟨0x8004, 16⟩]
 
-theorem initSat_pre : ∃ s, (Proof.AesSiv.initScratchContract X86.abi 48).pre s := by
+theorem initSat_pre : ∃ s, (Proof.AesSiv.initScratchContract X86.abi 52).pre s := by
   have a0 : arg initSat 0 = 0x1000 := by decide
   have a1 : arg initSat 1 = 32 := by decide
   have a2 : arg initSat 2 = 0x2000 := by decide
@@ -354,7 +354,7 @@ theorem initSat_pre : ∃ s, (Proof.AesSiv.initScratchContract X86.abi 48).pre s
     Spec.Siv.initPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] [a0, a1, a2, a3, e, esp] using initSat
 
 theorem init_verified :
-    Verified X86.target (initCore v.expand v.callee v.suffix) (Proof.AesSiv.initScratchContract X86.abi 48) := by
+    Verified X86.target (initCore v.expand v.callee v.suffix) (Proof.AesSiv.initScratchContract X86.abi 52) := by
   refine X86.Verified.narrowTo (k := initX86)
     ⟨fun s hs => init_wp v hs, init_ct v, initSat_pre.elim fun s hs => ⟨_, (initPre_of hs).1⟩⟩
     initRd initWr (fun s hs => (initPre_of hs).1) (fun s hs => ?_) (fun s hs => ?_) (fun s s' hs hq => ?_)
@@ -388,7 +388,7 @@ theorem init_noEsp : (initCore v.expand v.callee v.suffix).allInstrs (fun i => !
     noEsp_of (Proof.CmacAes.X86.subkeys_nosp v)]
   decide +kernel
 
-theorem init_stackUse : stackUse (initCore v.expand v.callee v.suffix) ≤ 48 := by
+theorem init_stackUse : stackUse (initCore v.expand v.callee v.suffix) ≤ 52 := by
   simp only [initCore, Impl.CmacAes.Stream.X86.call4, stackUse, v.expandStack, Proof.CmacAes.X86.subkeys_stack v]
   decide +kernel
 
@@ -396,7 +396,7 @@ theorem init_stackUse : stackUse (initCore v.expand v.callee v.suffix) ≤ 48 :=
 working space. -/
 def initFrameSat : State := { initSat with rd := [⟨0x1000, 32⟩], wr := [⟨0x2000, 512⟩, ⟨0x8004, 12⟩] }
 
-theorem initFrameSat_pre : ∃ s, (Spec.Siv.initContract X86.abi 2628).pre s := by
+theorem initFrameSat_pre : ∃ s, (Spec.Siv.initContract X86.abi 2632).pre s := by
   implies_sat [Spec.Siv.initContract, Spec.Siv.initSig, Spec.Siv.initPre, Spec.Siv.initPost,
     X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [initFrameSat, initSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using initFrameSat
@@ -405,10 +405,10 @@ theorem initFrameSat_pre : ∃ s, (Spec.Siv.initContract X86.abi 2628).pre s := 
 argument slots and the 2560 bytes of working space. -/
 theorem init_framed :
     Verified X86.target (Impl.StackScratch.X86.withStackScratch 2580 3 (initCore v.expand v.callee v.suffix))
-      (Spec.Siv.initContract X86.abi 2628) :=
+      (Spec.Siv.initContract X86.abi 2632) :=
   X86.Verified.stackScratch (sig := Spec.Siv.initSig) (nm := "scratch") (e := .u64) (n := 320)
     (pre := Spec.Siv.initPre X86.abi.ptrBits) (post := Spec.Siv.initPost X86.abi.ptrBits)
-    (wa := true) (stack := 48) (bytes := 2580) (init_verified v) (by decide) (init_noEsp v)
+    (wa := true) (stack := 52) (bytes := 2580) (init_verified v) (by decide) (init_noEsp v)
     (init_stackUse v) (Proof.AesSiv.initPre_local _) (Proof.AesSiv.initPost_local _) initFrameSat_pre
 
 /-! ## The stack pointer -/

@@ -1,15 +1,39 @@
 module
 
-import VerifiedGarbage.Spec.Dsa.ImportSizes
-meta import VerifiedGarbage.Spec.Dsa.ImportSizes
 import VerifiedGarbage.Spec.Dsa.Generate
 meta import VerifiedGarbage.Spec.Dsa.Generate
 
-/-! Regression checks for the trusted legacy DSA import-size policy. -/
+/-! Regression checks for the trusted legacy DSA import-size policy:
+`supportedSizes` and `lengthsValid` accept exactly the FIPS 186-4 §4.2
+pairs and the legacy (2048,160) pair, stated below as `Import.sizesValid`
+and `Import.lengthsValid`, and parameter generation does not. -/
 namespace VG.Test.DsaImportSizes
 open Spec.Dsa
 
--- Existing contracts now adopt exactly the separately reviewed import policy.
+namespace Import
+
+/-- Accepted actual (p,q) bit lengths, including the legacy 2048/160 pair. -/
+def sizesValid (l n : Nat) : Prop :=
+  (l = 1024 ∧ n = 160) ∨ (l = 2048 ∧ (n = 160 ∨ n = 224 ∨ n = 256)) ∨
+    (l = 3072 ∧ n = 256)
+
+instance (l n : Nat) : Decidable (sizesValid l n) := by
+  unfold sizesValid
+  infer_instance
+
+/-- Accepted external (p,q) byte widths. Leading-zero padding is allowed;
+actual domain sizes are checked separately with `sizesValid`. -/
+def lengthsValid (pLen qLen : Nat) : Prop :=
+  (pLen = 128 ∧ qLen = 20) ∨ (pLen = 256 ∧ (qLen = 20 ∨ qLen = 28 ∨ qLen = 32)) ∨
+    (pLen = 384 ∧ qLen = 32)
+
+instance (pLen qLen : Nat) : Decidable (lengthsValid pLen qLen) := by
+  unfold lengthsValid
+  infer_instance
+
+end Import
+
+-- The contracts adopt exactly the import policy.
 example (l n : Nat) : supportedSizes l n ↔ Import.sizesValid l n := Iff.rfl
 example (pLen qLen : Nat) : lengthsValid pLen qLen ↔ Import.lengthsValid pLen qLen := Iff.rfl
 
@@ -25,15 +49,14 @@ example (pLen qLen : Nat) : Import.lengthsValid pLen qLen ↔
   unfold Import.lengthsValid Import.sizesValid
   omega
 
-#guard Import.sizesValid 2048 160
-#guard Import.lengthsValid 256 20
-#guard ¬Import.sizesValid 1024 224
-#guard ¬Import.sizesValid 3072 160
-#guard ¬Import.lengthsValid 128 28
-#guard ¬Import.lengthsValid 384 20
+#guard supportedSizes 2048 160
+#guard lengthsValid 256 20
+#guard ¬supportedSizes 1024 224
+#guard ¬supportedSizes 3072 160
+#guard ¬lengthsValid 128 28
+#guard ¬lengthsValid 384 20
 
 -- The import extension does not enable parameter generation at 2048/160.
-#guard subgroupBits 2048 == some 256
 #guard ¬generationLengthsValid 256 20
 
 end VG.Test.DsaImportSizes

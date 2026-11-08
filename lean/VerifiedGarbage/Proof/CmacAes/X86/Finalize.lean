@@ -70,7 +70,7 @@ structure FPre (s₀ : State) : Prop where
   st_fit : (St s₀).toNat + 16 ≤ 2 ^ 32
   last_fit : (Dp s₀).toNat + N s₀ ≤ 2 ^ 32
   scr_fit : (S s₀).toNat + 2176 ≤ 2 ^ 32
-  esp28 : 28 ≤ (E s₀).toNat
+  esp32 : 32 ≤ (E s₀).toNat
   esp_fit : (E s₀).toNat + 28 ≤ 2 ^ 32
   rounds : R s₀ = 10 ∨ R s₀ = 12 ∨ R s₀ = 14
   len : N s₀ ≤ 16
@@ -86,8 +86,8 @@ section
 variable {s₀ : State} (hp : FPre s₀)
 include hp
 
-theorem FPre.below_eq : below (E s₀) 28 = stkR s₀ := by
-  simp only [below]; rw [Taint.sub_setWidth hp.esp28]
+theorem FPre.below_eq : below (E s₀) 32 = stkR s₀ := by
+  simp only [below]; rw [Taint.sub_setWidth hp.esp32]
 
 theorem FPre.argA {i : Nat} (hi : i < 6) : argAddr s₀ i = argAddr s₀ 0 + BitVec.ofNat 64 (4 * i) := by
   have : (s₀.gpr .esp).toNat + 28 ≤ 2 ^ 32 := hp.esp_fit

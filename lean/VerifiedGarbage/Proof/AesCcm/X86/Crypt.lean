@@ -20,10 +20,10 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 # AES-CCM on x86: counter mode (`ctr`)
 
 Untrusted: everything here is checked by Lean. `ctr` encrypts the whole
-blocks of the data with one call of `vg_aes_ctr32` from `Ctr₁`, whose low 32
+blocks of the data with one call of `vg_aes_ctr32_to` from `Ctr₁`, whose low 32
 bits do not wrap around as there are fewer than 2²⁸ blocks (`ctrWhole_ok`),
 then its last `n mod 16` bytes with `CIPH_K(Ctr₁₊ₙ/₁₆)`, which
-`vg_aes_ctr32` writes over a zero block (`ctrTail_ok`): the data XORed with
+`vg_aes_ctr32_to` writes over a zero block (`ctrTail_ok`): the data XORed with
 CCM's keystream from `Ctr₁` (`ctr_ok`), which is its encryption
 (`Proof.AesCcm.crypt_eq`).
 -/
@@ -43,7 +43,7 @@ open VG.Proof.AesGcm.X86 (w64 toNat_ofNat32 toNat_add32 slotv zero4_fold zero4_b
 
 /-- What `ctr` writes: `Ctrⱼ` and the keystream block at `[64, 96)`, `[240, 2560)`, the stack and the data. -/
 abbrev ctrR (W SP D : BitVec 32) (n : Nat) : List Region :=
-  [⟨w64 W + BitVec.ofNat 64 64, 32⟩, wC W, below SP 56, ⟨w64 D, n⟩]
+  [⟨w64 W + BitVec.ofNat 64 64, 32⟩, wC W, below SP 60, ⟨w64 D, n⟩]
 
 /-- What `ctr` needs. -/
 structure CtrCtx (K W SP : BitVec 32) (s : State) (R : Nat) (nonce : List Byte) (D : BitVec 32) (n : Nat) : Prop where
@@ -152,7 +152,7 @@ theorem ctrSplit_ok {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (E : Env K
     exact Mem.readW_writeW_self32 _ _ _
 
 /-- `Ctrᵢ` at `W + 64`, and the key schedule, the number of rounds and
-`W + 64` in `eax`, `ecx`, `edx`, for `vg_aes_ctr32`. -/
+`W + 64` in `eax`, `ecx`, `edx`, for `vg_aes_ctr32_to`. -/
 theorem ctrArgs_ok {K W SP : BitVec 32} {s₁ : State} (L : Lay K W SP) (E₁ : Env K W SP s₁) {R : Nat}
     (hK₁ : slotv s₁.mem W ctxO = K) (hR₁ : slotv s₁.mem W roundsO = BitVec.ofNat 32 R) {nonce : List Byte}
     (h7 : 7 ≤ nonce.length) (h13 : nonce.length ≤ 13)
@@ -203,7 +203,7 @@ theorem ctrArgs_ok {K W SP : BitVec 32} {s₁ : State} (L : Lay K W SP) (E₁ : 
   exact ⟨sc, runBlock_app_of (runBlock_app_of runa runb) runc, by rw [hmc, ← hma]; exact fb, by rw [hmc]; exact hcb,
     hax, hcx, hdx, hbxc, hdic, hbpc, hspc, by rw [hrdc, hrdb, hrda], by rw [hwrc, hwrb, hwra]⟩
 
-/-- The whole blocks of the data, by one call of `vg_aes_ctr32` from `Ctr₁`. -/
+/-- The whole blocks of the data, by one call of `vg_aes_ctr32_to` from `Ctr₁`. -/
 theorem ctrWhole_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} {R : Nat} {nonce : List Byte} {D : BitVec 32}
     {n : Nat} (C : CtrCtx K W SP s R nonce D n) (E : Env K W SP s) (hK : slotv s.mem W ctxO = K)
     (hRo : slotv s.mem W roundsO = BitVec.ofNat 32 R) (hDp : slotv s.mem W dataO = D)
@@ -263,7 +263,7 @@ theorem ctrWhole_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} {R : Nat} {
       · exact ⟨⟨w64 W + BitVec.ofNat 64 64, 32⟩, by simp, Region.sub_prefix (by decide)⟩
       · exact ⟨⟨w64 D, n⟩, by simp, Region.sub_prefix hb⟩
       · exact ⟨wC W, by simp, Offset.sub _ (by decide) (by decide)⟩
-      · exact ⟨below SP 56, by simp, fun _ h => h⟩
+      · exact ⟨below SP 60, by simp, fun _ h => h⟩
     have k₄ : ∀ o, 240 ≤ o → o + 4 ≤ 384 → slotv s₄.mem W o = slotv sc.mem W o := fun o h₁ h₂ =>
       f₄.readW (r := ⟨w64 W + BitVec.ofNat 64 o, 4⟩) (Region.contains_self _ _) (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -314,7 +314,7 @@ theorem ctrWhole_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} {R : Nat} {
 /-! ## The last bytes -/
 
 /-- `Ctrⱼ`, `j = ⌊n / 16⌋ + 1`, at `W + 64`, the keystream block at `W + 80`
-zeroed, and the arguments of `vg_aes_ctr32` to encrypt it. -/
+zeroed, and the arguments of `vg_aes_ctr32_to` to encrypt it. -/
 theorem ctrTailArgs_ok {K W SP : BitVec 32} {t₀ : State} (L : Lay K W SP) (E₀ : Env K W SP t₀) {R : Nat}
     (hK₀ : slotv t₀.mem W ctxO = K) (hR₀ : slotv t₀.mem W roundsO = BitVec.ofNat 32 R) {n : Nat}
     (hl₀ : slotv t₀.mem W lenO = BitVec.ofNat 32 n) (hn32 : n < 2 ^ 32) {nonce : List Byte}
@@ -455,7 +455,7 @@ theorem ctrTail_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} {R : Nat} {n
     -- What was written before the XOR.
     have fd' := fd
     rw [a80] at fd'
-    have fbd : Frame [⟨w64 W + BitVec.ofNat 64 64, 32⟩, ⟨w64 W + BitVec.ofNat 64 384, 2048⟩, below SP 56]
+    have fbd : Frame [⟨w64 W + BitVec.ofNat 64 64, 32⟩, ⟨w64 W + BitVec.ofNat 64 384, 2048⟩, below SP 60]
         t.mem td.mem := by
       rw [← hm₀]
       refine (ft.sub fun r hr => ?_).trans (fd'.sub fun r hr => ?_)
@@ -465,7 +465,7 @@ theorem ctrTail_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} {R : Nat} {n
         · exact ⟨⟨w64 W + BitVec.ofNat 64 64, 32⟩, by simp, Region.sub_prefix (by decide)⟩
         · exact ⟨⟨w64 W + BitVec.ofNat 64 64, 32⟩, by simp, Offset.sub _ (by decide) (by decide)⟩
         · exact ⟨_, by simp, fun _ h => h⟩
-        · exact ⟨below SP 56, by simp, fun _ h => h⟩
+        · exact ⟨below SP 60, by simp, fun _ h => h⟩
     have fR : Frame (ctrR W SP D n) s.mem td.mem := I.frame.trans (fbd.sub fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
@@ -516,7 +516,7 @@ theorem ctrTail_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} {R : Nat} {n
         simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩)
     · -- The bytes.
       have dD : ∀ {a l : Nat}, a + l ≤ n → ∀ r ∈ [(⟨w64 W + BitVec.ofNat 64 64, 32⟩ : Region),
-          ⟨w64 W + BitVec.ofNat 64 384, 2048⟩, below SP 56], (⟨w64 D + BitVec.ofNat 64 a, l⟩ : Region).Disjoint r := by
+          ⟨w64 W + BitVec.ofNat 64 384, 2048⟩, below SP 60], (⟨w64 D + BitVec.ofNat 64 a, l⟩ : Region).Disjoint r := by
         intro a l hl r hr
         have sA : Region.Sub ⟨w64 D + BitVec.ofNat 64 a, l⟩ ⟨w64 D, n⟩ := Offset.sub_base (w64 D) hl
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

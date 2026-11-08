@@ -102,9 +102,11 @@ compile_error!("AArch64 needs a target with NEON (not, e.g., aarch64-unknown-non
 compile_error!("32-bit ARM needs an AAPCS target (not Apple's armv7s or armv7k)");
 
 pub mod aead;
+mod align;
 pub mod cipher;
 pub mod cmac;
 mod ct;
+mod dit;
 pub mod dsa;
 pub mod ec;
 pub mod ed25519;
@@ -134,6 +136,7 @@ mod tests {
     #[cfg(target_arch = "x86_64")]
     #[test]
     fn selftest_add_x86_64() {
+        let dit = crate::dit::public(crate::dit::Why::Test);
         let cases = [
             (0, 0),
             (1, 2),
@@ -144,7 +147,7 @@ mod tests {
         ];
         for (a, b) in cases {
             // SAFETY: the contract has no preconditions.
-            let r = unsafe { crate::arch::selftest::vg_selftest_add(a, b) };
+            let r = unsafe { crate::arch::dispatch::selftest::vg_selftest_add_auto(dit, a, b) };
             assert_eq!(r, a.wrapping_add(b));
         }
     }

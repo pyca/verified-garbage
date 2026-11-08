@@ -28,6 +28,7 @@
     target_arch = "riscv64"
 ))]
 
+use crate::align::CacheAligned;
 use crate::arch::dispatch::sm4_gcm::{
     vg_sm4_gcm_init_auto, vg_sm4_gcm_open_auto, vg_sm4_gcm_seal_auto, vg_sm4_gcm_stream_aad_auto,
     vg_sm4_gcm_stream_decrypt_auto, vg_sm4_gcm_stream_encrypt_auto, vg_sm4_gcm_stream_finish_auto,
@@ -110,13 +111,13 @@ macro_rules! assert_tag_length {
 #[derive(Clone)]
 pub struct Sm4Gcm {
     /// The key context `vg_sm4_gcm_init` writes (`VG.Spec.Sm4.Gcm.KeyRepr`).
-    ctx: [u64; 32],
+    ctx: CacheAligned<[u64; 32]>,
 }
 
 impl Drop for Sm4Gcm {
     /// Wipes the key context.
     fn drop(&mut self) {
-        zeroize(&mut self.ctx);
+        zeroize(&mut self.ctx.0);
     }
 }
 
@@ -126,13 +127,16 @@ impl Sm4Gcm {
 
     /// Prepares a 16-byte SM4 key.
     pub fn new(key: &[u8; 16]) -> Self {
-        let mut k = Sm4Gcm { ctx: [0; 32] };
+        crate::dit::enter!(dit);
+        let mut k = Sm4Gcm {
+            ctx: CacheAligned([0; 32]),
+        };
         // SAFETY: `key` is valid for reads of 16 bytes and `k.ctx` for reads
         // and writes of 256. They are distinct objects, so they do not
         // overlap each other or anything on the stack, or wrap around the end
         // of the address space. The dispatcher calls only an implementation
         // the CPU has the features of.
-        unsafe { vg_sm4_gcm_init_auto(key, &mut k.ctx) };
+        unsafe { vg_sm4_gcm_init_auto(dit, key, &mut k.ctx.0) };
         k
     }
 
@@ -149,6 +153,7 @@ impl Sm4Gcm {
         aad: &[u8],
         data: &mut [u8],
     ) -> Result<Block, Error> {
+        crate::dit::enter!(dit);
         // Check the lengths before encrypting anything.
         check_nonce(nonce)?;
         add_len(0, data.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
@@ -164,7 +169,8 @@ impl Sm4Gcm {
         // CPU has the features of.
         unsafe {
             vg_sm4_gcm_seal_auto(
-                &self.ctx,
+                dit,
+                &self.ctx.0,
                 nonce.as_ptr(),
                 nonce.len(),
                 aad.as_ptr(),
@@ -208,6 +214,7 @@ impl Sm4Gcm {
         data: &mut [u8],
         tag: &[u8; N],
     ) -> Result<(), Error> {
+        crate::dit::enter!(dit);
         assert_tag_length!(N);
         check_nonce(nonce)?;
         add_len(0, data.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
@@ -217,7 +224,8 @@ impl Sm4Gcm {
         // rejects any other length).
         let ok = unsafe {
             vg_sm4_gcm_open_auto(
-                &self.ctx,
+                dit,
+                &self.ctx.0,
                 nonce.as_ptr(),
                 nonce.len(),
                 aad.as_ptr(),
@@ -237,15 +245,17 @@ impl Sm4Gcm {
 
     /// Starts an incremental encryption under `nonce`.
     pub fn encryptor(&self, nonce: &[u8]) -> Result<Sm4GcmEncryptor<'_>, Error> {
+        crate::dit::enter!(dit);
         Ok(Sm4GcmEncryptor {
-            stream: Stream::new(self, nonce)?,
+            stream: Stream::new(dit, self, nonce)?,
         })
     }
 
     /// Starts an incremental decryption under `nonce`.
     pub fn decryptor(&self, nonce: &[u8]) -> Result<Sm4GcmDecryptor<'_>, Error> {
+        crate::dit::enter!(dit);
         Ok(Sm4GcmDecryptor {
-            stream: Stream::new(self, nonce)?,
+            stream: Stream::new(dit, self, nonce)?,
         })
     }
 }
@@ -258,7 +268,7 @@ struct Stream<'a, const DECRYPT: bool> {
     key: &'a Sm4Gcm,
     /// The streaming state `vg_sm4_gcm_stream_init` writes and the other
     /// functions update (`VG.Spec.Gcm.StreamRepr`).
-    state: [u64; 10],
+    state: CacheAligned<[u64; 10]>,
     aad_len: u64,
     text_len: u64,
     /// Whether [`update`](Self::update) has been called.
@@ -268,17 +278,17 @@ struct Stream<'a, const DECRYPT: bool> {
 impl<const DECRYPT: bool> Drop for Stream<'_, DECRYPT> {
     /// Wipes the streaming state (the key wipes itself).
     fn drop(&mut self) {
-        zeroize(&mut self.state);
+        zeroize(&mut self.state.0);
     }
 }
 
 impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
     /// Starts a message under `key` and `nonce`.
-    fn new(key: &'a Sm4Gcm, nonce: &[u8]) -> Result<Self, Error> {
+    fn new(dit: crate::dit::Dit<'_>, key: &'a Sm4Gcm, nonce: &[u8]) -> Result<Self, Error> {
         check_nonce(nonce)?;
         let mut s = Stream {
             key,
-            state: [0; 10],
+            state: CacheAligned([0; 10]),
             aad_len: 0,
             text_len: 0,
             in_text: false,
@@ -290,12 +300,20 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
         // else, nor anything on the stack, and none wraps around. The
         // dispatcher calls only an implementation the CPU has the features
         // of.
-        unsafe { vg_sm4_gcm_stream_init_auto(&key.ctx, nonce.as_ptr(), nonce.len(), &mut s.state) };
+        unsafe {
+            vg_sm4_gcm_stream_init_auto(
+                dit,
+                &key.ctx.0,
+                nonce.as_ptr(),
+                nonce.len(),
+                &mut s.state.0,
+            )
+        };
         Ok(s)
     }
 
     /// Absorbs more additional data, which must all come before the text.
-    fn update_aad(&mut self, aad: &[u8]) -> Result<(), Error> {
+    fn update_aad(&mut self, dit: crate::dit::Dit<'_>, aad: &[u8]) -> Result<(), Error> {
         if self.in_text {
             return Err(Error::AadAfterText);
         }
@@ -305,8 +323,9 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
         // `self.aad_len` bytes of additional data and no text yet.
         unsafe {
             vg_sm4_gcm_stream_aad_auto(
-                &self.key.ctx,
-                &mut self.state,
+                dit,
+                &self.key.ctx.0,
+                &mut self.state.0,
                 self.aad_len,
                 aad.as_ptr(),
                 aad.len(),
@@ -318,7 +337,7 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
 
     /// Encrypts (or, if `DECRYPT`, decrypts) the next `data.len()` bytes of
     /// the text in place.
-    fn update(&mut self, data: &mut [u8]) -> Result<(), Error> {
+    fn update(&mut self, dit: crate::dit::Dit<'_>, data: &mut [u8]) -> Result<(), Error> {
         let text_len =
             add_len(self.text_len, data.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
         self.in_text = true;
@@ -333,8 +352,9 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
         // additional data and `self.text_len` of text.
         unsafe {
             f(
-                &self.key.ctx,
-                &mut self.state,
+                dit,
+                &self.key.ctx.0,
+                &mut self.state.0,
                 self.aad_len,
                 self.text_len,
                 data.as_mut_ptr(),
@@ -348,15 +368,16 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
 
 impl Stream<'_, false> {
     /// Finishes the message and returns its 16-byte tag.
-    fn finish(mut self) -> Block {
+    fn finish(mut self, dit: crate::dit::Dit<'_>) -> Block {
         let mut tag: Block = [0; 16];
         // SAFETY: as in `update`, with `tag` (a local) valid for reads and
         // writes of 16 bytes. `update_aad` and `update` checked the lengths
         // (§5.2.1.1).
         unsafe {
             vg_sm4_gcm_stream_finish_auto(
-                &self.key.ctx,
-                &mut self.state,
+                dit,
+                &self.key.ctx.0,
+                &mut self.state.0,
                 self.aad_len,
                 self.text_len,
                 &mut tag,
@@ -369,13 +390,14 @@ impl Stream<'_, false> {
 impl Stream<'_, true> {
     /// Finishes the message and checks the received prefix in constant time.
     /// Callers check at compile time that its length is between 4 and 16.
-    fn verify(mut self, tag: &[u8]) -> Result<(), Error> {
+    fn verify(mut self, dit: crate::dit::Dit<'_>, tag: &[u8]) -> Result<(), Error> {
         // SAFETY: as in `finish`, with the received tag `tag` valid for
         // reads of its length.
         let ok = unsafe {
             vg_sm4_gcm_stream_verify_auto(
-                &self.key.ctx,
-                &mut self.state,
+                dit,
+                &self.key.ctx.0,
+                &mut self.state.0,
                 self.aad_len,
                 self.text_len,
                 tag.as_ptr(),
@@ -403,18 +425,21 @@ impl Sm4GcmEncryptor<'_> {
     /// Absorbs more additional data. All of it must come before the
     /// plaintext.
     pub fn update_aad(&mut self, aad: &[u8]) -> Result<(), Error> {
-        self.stream.update_aad(aad)
+        crate::dit::enter!(dit);
+        self.stream.update_aad(dit, aad)
     }
 
     /// Encrypts the next `data.len()` bytes of the plaintext in place.
     pub fn update(&mut self, data: &mut [u8]) -> Result<(), Error> {
-        self.stream.update(data)
+        crate::dit::enter!(dit);
+        self.stream.update(dit, data)
     }
 
     /// Finishes the message and returns its full 16-byte tag. A protocol
     /// that sends a shorter tag sends its first bytes.
     pub fn finalize(self) -> Block {
-        self.stream.finish()
+        crate::dit::enter!(dit);
+        self.stream.finish(dit)
     }
 }
 
@@ -440,14 +465,16 @@ impl Sm4GcmDecryptor<'_> {
     /// Absorbs more additional data. All of it must come before the
     /// ciphertext.
     pub fn update_aad(&mut self, aad: &[u8]) -> Result<(), Error> {
-        self.stream.update_aad(aad)
+        crate::dit::enter!(dit);
+        self.stream.update_aad(dit, aad)
     }
 
     /// Decrypts the next `data.len()` bytes of the ciphertext in place. The
     /// result is not authenticated until [`finalize`](Self::finalize) (or
     /// [`finalize_truncated`](Self::finalize_truncated)) succeeds.
     pub fn update(&mut self, data: &mut [u8]) -> Result<(), Error> {
-        self.stream.update(data)
+        crate::dit::enter!(dit);
+        self.stream.update(dit, data)
     }
 
     /// Finishes the message and checks that `tag` is its 16-byte tag. If
@@ -465,8 +492,9 @@ impl Sm4GcmDecryptor<'_> {
     /// error when the call is compiled (see the
     /// [module documentation](self#tags)).
     pub fn finalize_truncated<const N: usize>(self, tag: &[u8; N]) -> Result<(), Error> {
+        crate::dit::enter!(dit);
         assert_tag_length!(N);
-        self.stream.verify(tag)
+        self.stream.verify(dit, tag)
     }
 }
 
@@ -484,15 +512,16 @@ mod tests {
         assert_eq!(add_len(MAX_TEXT, 1, MAX_TEXT), Err(()));
         assert_eq!(add_len(u64::MAX, 1, u64::MAX), Err(()));
         let key = Sm4Gcm::new(&[1; 16]);
-        let mut s = Stream::<false>::new(&key, &[0; 12]).unwrap();
+        let dit = crate::dit::public(crate::dit::Why::Test);
+        let mut s = Stream::<false>::new(dit, &key, &[0; 12]).unwrap();
         s.text_len = MAX_TEXT;
         let mut data = [9; 3];
-        assert_eq!(s.update(&mut data), Err(Error::InvalidTextLength));
+        assert_eq!(s.update(dit, &mut data), Err(Error::InvalidTextLength));
         assert_eq!(data, [9; 3]);
-        let mut s = Stream::<true>::new(&key, &[0; 12]).unwrap();
+        let mut s = Stream::<true>::new(dit, &key, &[0; 12]).unwrap();
         s.aad_len = MAX_AAD;
-        assert_eq!(s.update_aad(&[0]), Err(Error::InvalidAadLength));
-        assert_eq!(s.update_aad(&[]), Ok(()));
+        assert_eq!(s.update_aad(dit, &[0]), Err(Error::InvalidAadLength));
+        assert_eq!(s.update_aad(dit, &[]), Ok(()));
     }
 
     #[test]

@@ -107,12 +107,37 @@ class LintTests(unittest.TestCase):
         self.assertEqual(cpu_tests.lint(text), ["native: VG_CPU_FEATURES=neon twice"])
 
 
-class RsaEmulationTests(unittest.TestCase):
+class CpuEmulationTests(unittest.TestCase):
     def selected(self, chip, binary, listed, emulated=False):
         cpu = next(c for c in tomllib.loads(MATRIX.read_text())["cpu"] if c["chip"] == chip)
-        runs = cpu_tests.emulated_rsa_runs(chip, cpu["runs"]) if emulated else cpu["runs"]
+        runs = cpu_tests.emulated_runs(chip, cpu["runs"]) if emulated else cpu["runs"]
         return [set(cpu_tests.select(binary, listed, groups.split()))
                 for _, groups in parse_runs(runs)]
+
+    def test_icx_generates_dsa_parameters_once_and_keeps_dispatch_coverage(self):
+        cpu = next(c for c in tomllib.loads(MATRIX.read_text())["cpu"] if c["chip"] == "icx")
+        runs = parse_runs(cpu["runs"])
+        full = [features for features, groups in runs if "dsa_parameters" in groups.split()]
+        smoke = [features for features, groups in runs if "dsa_parameters_dispatch" in groups.split()]
+        self.assertEqual(full, ["-"])
+        self.assertEqual(len(smoke), 2)
+        listed = {"lib": ["dsa::parameters::search::tests::init_words",
+                          "dsa::parameters::search::tests::steps",
+                          "dsa::parameters::tests::cavp_generated_parameters",
+                          "dsa::parameters::tests::generated_parameters_with_os_randomness"],
+                  "tests": []}
+        self.assertEqual(cpu_tests.select("lib", listed, ["dsa_parameters_dispatch"]), listed["lib"][:2])
+        self.assertEqual(cpu_tests.select("lib", listed, ["dsa_parameters"]), listed["lib"])
+
+    def test_emulated_generation_groups_keep_only_focused_checks(self):
+        runs = cpu_tests.emulated_runs("icx", "- | rsa ffdh dsa_parameters cpu\n")
+        self.assertEqual(parse_runs(runs), [("-", "rsa_ifma ffdh_ifma dsa_parameters_ifma cpu")])
+        self.assertEqual(cpu_tests.emulated_runs("native", "- | ffdh dsa_parameters\n"),
+                         "- | ffdh dsa_parameters\n")
+        self.assertEqual(len(cpu_tests.GROUPS["ffdh_ifma"]["lib"]) +
+                         len(cpu_tests.GROUPS["ffdh_ifma"]["tests"]), 6)
+        self.assertNotIn("ffdh::generation::tests::published_candidates_and_tape_consumption",
+                         cpu_tests.GROUPS["ffdh_ifma"]["lib"])
 
     def test_icx_keeps_ifma_vectors_without_repeating_prime_generation_or_stress(self):
         # Include a test for every path, so select also checks that no group
@@ -140,8 +165,9 @@ class RsaEmulationTests(unittest.TestCase):
         self.assertIn("rsa::keygen::tests::generate_small_d", lib)
         self.assertNotIn("rsa::keygen::tests::primes", lib)
         self.assertFalse(lib & selectors)
-        # The full suites still belong to native and SKX runs.
-        for chip in ("native", "skx", "icx"):
+        # The full suites still belong to the SKX run (and natively to the
+        # `rust` job, which runs every test).
+        for chip in ("skx", "icx"):
             self.assertTrue(expensive <= set.union(*self.selected(chip, "tests", listed)))
             self.assertTrue(selectors <= set.union(*self.selected(chip, "lib", listed)))
 
@@ -155,7 +181,7 @@ class RsaEmulationTests(unittest.TestCase):
     def test_reduction_preserves_feature_lines_and_other_cpus(self):
         for cpu in tomllib.loads(MATRIX.read_text())["cpu"]:
             runs = cpu["runs"]
-            reduced = cpu_tests.emulated_rsa_runs(cpu["chip"], runs)
+            reduced = cpu_tests.emulated_runs(cpu["chip"], runs)
             self.assertEqual([f for f, _ in parse_runs(runs)],
                              [f for f, _ in parse_runs(reduced)])
             if cpu["chip"] not in ("icx", "dmr"):

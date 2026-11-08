@@ -2,8 +2,23 @@
 //! The dispatchers of the verified `ec_p224` functions for `riscv64`
 //! (`crate::ec_p224`, `VG.Rust.dispatcher`).
 
-/// `vg_ec_p224_public_key`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::ec_p224::vg_ec_p224_public_key as vg_ec_p224_public_key_auto;
+/// P-224 public-key derivation (FIPS 186-5 §A.2, SP 800-56A §5.6.1.2): writes the public key `Q = dG` of the private key `d` at `d` (28 bytes, most significant first) to `*out`, in the uncompressed form of SEC 1 §2.3.3 (`04`, then `x` and `y` in 28 bytes each, most significant first), and returns 1; or, if `d` is not in `[1, n-1]`, writes zeros and returns 0.
+///
+/// Contract: `VG.Spec.EcKey.Instance.publicKeyContract`. Constant time: only the pointers may affect timing, not the private key.
+///
+/// It runs `vg_ec_p224_public_key`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 57 bytes.
+/// * `d` must be valid for reads of 28 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes, and aligned for `u64`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other or `d` (distinct Rust objects never do).
+/// * None of `out`, `d` and `scratch` may wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_ec_p224_public_key_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 57], d: *const [u8; 28], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::ec_p224::vg_ec_p224_public_key(out, d, scratch) }
+}

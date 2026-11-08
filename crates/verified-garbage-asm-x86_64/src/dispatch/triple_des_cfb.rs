@@ -2,17 +2,31 @@
 //! The dispatchers of the verified `triple_des_cfb` functions for `x86_64`
 //! (`crate::triple_des_cfb`, `VG.Rust.dispatcher`).
 
-/// `vg_triple_des_cfb64_encrypt`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::triple_des_cfb::vg_triple_des_cfb64_encrypt as vg_triple_des_cfb64_encrypt_auto;
+/// Triple DES-CFB64 encryption (NIST SP 800-38A §6.3, with 64-bit segments; FIPS 46-3) of whole blocks, in place: replaces the `n` 8-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is Triple DES encryption under the schedule written by `vg_triple_des_expand_key`.
+///
+/// Contract: `VG.Spec.TripleDes.cfbEncryptContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
+///
+/// It runs `vg_triple_des_cfb64_encrypt`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 384 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
+/// * `data` must be valid for reads and writes of `8 * n` bytes.
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 984 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_triple_des_cfb64_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::triple_des_cfb::vg_triple_des_cfb64_encrypt(schedule, iv, data, n) }
+}
 
 /// Triple DES-CFB64 decryption (NIST SP 800-38A §6.3, with 64-bit segments; FIPS 46-3) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is Triple DES encryption (also for decryption) under the schedule written by `vg_triple_des_expand_key`.
 ///
 /// Contract: `VG.Spec.TripleDes.cfbDecryptContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_triple_des_cfb64_decrypt_avx512` if the CPU supports its features (`VG_TRIPLE_DES_CFB64_DECRYPT_AVX512_FEATURES`); `vg_triple_des_cfb64_decrypt_avx2` if the CPU supports its features (`VG_TRIPLE_DES_CFB64_DECRYPT_AVX2_FEATURES`); or else `vg_triple_des_cfb64_decrypt`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_triple_des_cfb64_decrypt_avx512` if the CPU supports its features (`VG_TRIPLE_DES_CFB64_DECRYPT_AVX512_FEATURES`); `vg_triple_des_cfb64_decrypt_avx2` if the CPU supports its features (`VG_TRIPLE_DES_CFB64_DECRYPT_AVX2_FEATURES`); or else `vg_triple_des_cfb64_decrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -23,30 +37,81 @@ pub use crate::triple_des_cfb::vg_triple_des_cfb64_encrypt as vg_triple_des_cfb6
 /// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 3176 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_triple_des_cfb64_decrypt_auto(schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::triple_des_cfb::VG_TRIPLE_DES_CFB64_DECRYPT_AVX512_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_triple_des_cfb64_decrypt_avx512`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::triple_des_cfb::vg_triple_des_cfb64_decrypt_avx512(schedule, iv, data, n) };
+pub unsafe fn vg_triple_des_cfb64_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::triple_des_cfb::VG_TRIPLE_DES_CFB64_DECRYPT_AVX512_FEATURES) }
+            || cpu.contains(crate::triple_des_cfb::VG_TRIPLE_DES_CFB64_DECRYPT_AVX512_FEATURES)
+        {
+            return crate::triple_des_cfb::vg_triple_des_cfb64_decrypt_avx512;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::triple_des_cfb::VG_TRIPLE_DES_CFB64_DECRYPT_AVX2_FEATURES) }
+            || cpu.contains(crate::triple_des_cfb::VG_TRIPLE_DES_CFB64_DECRYPT_AVX2_FEATURES)
+        {
+            return crate::triple_des_cfb::vg_triple_des_cfb64_decrypt_avx2;
+        }
+        crate::triple_des_cfb::vg_triple_des_cfb64_decrypt
     }
-    if cpu.contains(crate::triple_des_cfb::VG_TRIPLE_DES_CFB64_DECRYPT_AVX2_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_triple_des_cfb64_decrypt_avx2`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::triple_des_cfb::vg_triple_des_cfb64_decrypt_avx2(schedule, iv, data, n) };
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(schedule, iv, data, n) }
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::triple_des_cfb::vg_triple_des_cfb64_decrypt(schedule, iv, data, n) }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(schedule, iv, data, n) }
 }
 
-/// `vg_triple_des_cfb64_encrypt_final`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::triple_des_cfb::vg_triple_des_cfb64_encrypt_final as vg_triple_des_cfb64_encrypt_final_auto;
+/// Triple DES-CFB64 encryption (NIST SP 800-38A §6.3, with 64-bit segments; FIPS 46-3) of the last piece of a message, of any length, in place: replaces its whole 8-byte blocks `P₁ … Pₙ₋₁` at `data` with `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Pₙ*` of `u` bytes with `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, so that a further call continues the message, if `len` is a multiple of 8 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is Triple DES encryption under the schedule written by `vg_triple_des_expand_key`.
+///
+/// Contract: `VG.Spec.TripleDes.cfbEncryptFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the chaining value or the data.
+///
+/// It runs `vg_triple_des_cfb64_encrypt_final`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 384 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 984 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_triple_des_cfb64_encrypt_final_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut u8, len: usize) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::triple_des_cfb::vg_triple_des_cfb64_encrypt_final(schedule, iv, data, len) }
+}
 
-/// `vg_triple_des_cfb64_decrypt_final`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::triple_des_cfb::vg_triple_des_cfb64_decrypt_final as vg_triple_des_cfb64_decrypt_final_auto;
+/// Triple DES-CFB64 decryption (NIST SP 800-38A §6.3, with 64-bit segments; FIPS 46-3) of the last piece of a message, of any length, in place: replaces its whole 8-byte blocks `C₁ … Cₙ₋₁` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Cₙ*` of `u` bytes with `Pₙ* = Cₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, the last whole block at `data` on entry, so that a further call continues the message, if `len` is a multiple of 8 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is Triple DES encryption under the schedule written by `vg_triple_des_expand_key`.
+///
+/// Contract: `VG.Spec.TripleDes.cfbDecryptFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the chaining value or the data.
+///
+/// It runs `vg_triple_des_cfb64_decrypt_final`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 384 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 984 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_triple_des_cfb64_decrypt_final_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut u8, len: usize) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::triple_des_cfb::vg_triple_des_cfb64_decrypt_final(schedule, iv, data, len) }
+}

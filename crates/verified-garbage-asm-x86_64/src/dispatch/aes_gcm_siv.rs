@@ -8,7 +8,7 @@
 ///
 /// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_gcm_siv_seal_vaes_vpclmul_avx512` if the CPU supports its features (`VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_AVX512_FEATURES`); `vg_aes_gcm_siv_seal_vaes_pclmul_avx2` if the CPU supports its features (`VG_AES_GCM_SIV_SEAL_VAES_PCLMUL_AVX2_FEATURES`); `vg_aes_gcm_siv_seal_aesni_vpclmul_avx2` if the CPU supports its features (`VG_AES_GCM_SIV_SEAL_AESNI_VPCLMUL_AVX2_FEATURES`); `vg_aes_gcm_siv_seal_aesni_pclmul_avx_avx2` if the CPU supports its features (`VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_AVX_AVX2_FEATURES`); `vg_aes_gcm_siv_seal_aesni_pclmul_avx` if the CPU supports its features (`VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_AVX_FEATURES`); `vg_aes_gcm_siv_seal_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_siv_seal_vaes_avx2` if the CPU supports its features (`VG_AES_GCM_SIV_SEAL_VAES_AVX2_FEATURES`); `vg_aes_gcm_siv_seal_aesni_avx2` if the CPU supports its features (`VG_AES_GCM_SIV_SEAL_AESNI_AVX2_FEATURES`); `vg_aes_gcm_siv_seal_aesni` if the CPU supports its features (`VG_AES_GCM_SIV_SEAL_AESNI_FEATURES`); `vg_aes_gcm_siv_seal_vpclmul_avx2` if the CPU supports its features (`VG_AES_GCM_SIV_SEAL_VPCLMUL_AVX2_FEATURES`); `vg_aes_gcm_siv_seal_pclmul_avx2` if the CPU supports its features (`VG_AES_GCM_SIV_SEAL_PCLMUL_AVX2_FEATURES`); `vg_aes_gcm_siv_seal_pclmul` if the CPU supports its features (`VG_AES_GCM_SIV_SEAL_PCLMUL_FEATURES`); `vg_aes_gcm_siv_seal_avx2` if the CPU supports its features (`VG_AES_GCM_SIV_SEAL_AVX2_FEATURES`); or else `vg_aes_gcm_siv_seal`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_gcm_siv_seal_vaes_vpclmul_avx512` if the CPU supports its features (`VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_AVX512_FEATURES`); `vg_aes_gcm_siv_seal_vaes_pclmul_avx2` if the CPU supports its features (`VG_AES_GCM_SIV_SEAL_VAES_PCLMUL_AVX2_FEATURES`); `vg_aes_gcm_siv_seal_aesni_vpclmul_avx2` if the CPU supports its features (`VG_AES_GCM_SIV_SEAL_AESNI_VPCLMUL_AVX2_FEATURES`); `vg_aes_gcm_siv_seal_aesni_pclmul_avx_avx2` if the CPU supports its features (`VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_AVX_AVX2_FEATURES`); `vg_aes_gcm_siv_seal_aesni_pclmul_avx` if the CPU supports its features (`VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_AVX_FEATURES`); `vg_aes_gcm_siv_seal_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_siv_seal_vaes_avx2` if the CPU supports its features (`VG_AES_GCM_SIV_SEAL_VAES_AVX2_FEATURES`); `vg_aes_gcm_siv_seal_aesni_avx2` if the CPU supports its features (`VG_AES_GCM_SIV_SEAL_AESNI_AVX2_FEATURES`); `vg_aes_gcm_siv_seal_aesni` if the CPU supports its features (`VG_AES_GCM_SIV_SEAL_AESNI_FEATURES`); `vg_aes_gcm_siv_seal_vpclmul_avx2` if the CPU supports its features (`VG_AES_GCM_SIV_SEAL_VPCLMUL_AVX2_FEATURES`); `vg_aes_gcm_siv_seal_pclmul_avx2` if the CPU supports its features (`VG_AES_GCM_SIV_SEAL_PCLMUL_AVX2_FEATURES`); `vg_aes_gcm_siv_seal_pclmul` if the CPU supports its features (`VG_AES_GCM_SIV_SEAL_PCLMUL_FEATURES`); `vg_aes_gcm_siv_seal_avx2` if the CPU supports its features (`VG_AES_GCM_SIV_SEAL_AVX2_FEATURES`); or else `vg_aes_gcm_siv_seal`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -22,75 +22,98 @@
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_gcm_siv_seal_auto(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_AVX512_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_seal_vaes_vpclmul_avx512`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_seal_vaes_vpclmul_avx512(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
+pub unsafe fn vg_aes_gcm_siv_seal_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_AVX512_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_AVX512_FEATURES)
+        {
+            return crate::aes_gcm_siv::vg_aes_gcm_siv_seal_vaes_vpclmul_avx512;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_VAES_PCLMUL_AVX2_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_VAES_PCLMUL_AVX2_FEATURES)
+        {
+            return crate::aes_gcm_siv::vg_aes_gcm_siv_seal_vaes_pclmul_avx2;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_VPCLMUL_AVX2_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_VPCLMUL_AVX2_FEATURES)
+        {
+            return crate::aes_gcm_siv::vg_aes_gcm_siv_seal_aesni_vpclmul_avx2;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_AVX_AVX2_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_AVX_AVX2_FEATURES)
+        {
+            return crate::aes_gcm_siv::vg_aes_gcm_siv_seal_aesni_pclmul_avx_avx2;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_AVX_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_AVX_FEATURES)
+        {
+            return crate::aes_gcm_siv::vg_aes_gcm_siv_seal_aesni_pclmul_avx;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_FEATURES)
+        {
+            return crate::aes_gcm_siv::vg_aes_gcm_siv_seal_aesni_pclmul;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_VAES_AVX2_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_VAES_AVX2_FEATURES)
+        {
+            return crate::aes_gcm_siv::vg_aes_gcm_siv_seal_vaes_avx2;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_AVX2_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_AVX2_FEATURES)
+        {
+            return crate::aes_gcm_siv::vg_aes_gcm_siv_seal_aesni_avx2;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_FEATURES)
+        {
+            return crate::aes_gcm_siv::vg_aes_gcm_siv_seal_aesni;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_VPCLMUL_AVX2_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_VPCLMUL_AVX2_FEATURES)
+        {
+            return crate::aes_gcm_siv::vg_aes_gcm_siv_seal_vpclmul_avx2;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_PCLMUL_AVX2_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_PCLMUL_AVX2_FEATURES)
+        {
+            return crate::aes_gcm_siv::vg_aes_gcm_siv_seal_pclmul_avx2;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_PCLMUL_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_PCLMUL_FEATURES)
+        {
+            return crate::aes_gcm_siv::vg_aes_gcm_siv_seal_pclmul;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AVX2_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AVX2_FEATURES)
+        {
+            return crate::aes_gcm_siv::vg_aes_gcm_siv_seal_avx2;
+        }
+        crate::aes_gcm_siv::vg_aes_gcm_siv_seal
     }
-    if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_VAES_PCLMUL_AVX2_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_seal_vaes_pclmul_avx2`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_seal_vaes_pclmul_avx2(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(schedule, rounds, nonce, aad, aad_len, data, len, tag) }
     }
-    if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_VPCLMUL_AVX2_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_seal_aesni_vpclmul_avx2`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_seal_aesni_vpclmul_avx2(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
-    }
-    if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_AVX_AVX2_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_seal_aesni_pclmul_avx_avx2`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_seal_aesni_pclmul_avx_avx2(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
-    }
-    if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_AVX_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_seal_aesni_pclmul_avx`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_seal_aesni_pclmul_avx(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
-    }
-    if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_seal_aesni_pclmul`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_seal_aesni_pclmul(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
-    }
-    if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_VAES_AVX2_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_seal_vaes_avx2`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_seal_vaes_avx2(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
-    }
-    if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_AVX2_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_seal_aesni_avx2`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_seal_aesni_avx2(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
-    }
-    if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_seal_aesni`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_seal_aesni(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
-    }
-    if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_VPCLMUL_AVX2_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_seal_vpclmul_avx2`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_seal_vpclmul_avx2(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
-    }
-    if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_PCLMUL_AVX2_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_seal_pclmul_avx2`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_seal_pclmul_avx2(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
-    }
-    if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_PCLMUL_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_seal_pclmul`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_seal_pclmul(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
-    }
-    if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AVX2_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_seal_avx2`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_seal_avx2(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
-    }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_seal(schedule, rounds, nonce, aad, aad_len, data, len, tag) }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(schedule, rounds, nonce, aad, aad_len, data, len, tag) }
 }
 
 /// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
@@ -99,7 +122,7 @@ pub unsafe fn vg_aes_gcm_siv_seal_auto(schedule: *const [u8; 240], rounds: usize
 ///
 /// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_gcm_siv_open_vaes_vpclmul_avx512` if the CPU supports its features (`VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_AVX512_FEATURES`); `vg_aes_gcm_siv_open_vaes_pclmul_avx2` if the CPU supports its features (`VG_AES_GCM_SIV_OPEN_VAES_PCLMUL_AVX2_FEATURES`); `vg_aes_gcm_siv_open_aesni_vpclmul_avx2` if the CPU supports its features (`VG_AES_GCM_SIV_OPEN_AESNI_VPCLMUL_AVX2_FEATURES`); `vg_aes_gcm_siv_open_aesni_pclmul_avx_avx2` if the CPU supports its features (`VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX_AVX2_FEATURES`); `vg_aes_gcm_siv_open_aesni_pclmul_avx` if the CPU supports its features (`VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX_FEATURES`); `vg_aes_gcm_siv_open_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_siv_open_vaes_avx2` if the CPU supports its features (`VG_AES_GCM_SIV_OPEN_VAES_AVX2_FEATURES`); `vg_aes_gcm_siv_open_aesni_avx2` if the CPU supports its features (`VG_AES_GCM_SIV_OPEN_AESNI_AVX2_FEATURES`); `vg_aes_gcm_siv_open_aesni` if the CPU supports its features (`VG_AES_GCM_SIV_OPEN_AESNI_FEATURES`); `vg_aes_gcm_siv_open_vpclmul_avx2` if the CPU supports its features (`VG_AES_GCM_SIV_OPEN_VPCLMUL_AVX2_FEATURES`); `vg_aes_gcm_siv_open_pclmul_avx2` if the CPU supports its features (`VG_AES_GCM_SIV_OPEN_PCLMUL_AVX2_FEATURES`); `vg_aes_gcm_siv_open_pclmul` if the CPU supports its features (`VG_AES_GCM_SIV_OPEN_PCLMUL_FEATURES`); `vg_aes_gcm_siv_open_avx2` if the CPU supports its features (`VG_AES_GCM_SIV_OPEN_AVX2_FEATURES`); or else `vg_aes_gcm_siv_open`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_gcm_siv_open_vaes_vpclmul_avx512` if the CPU supports its features (`VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_AVX512_FEATURES`); `vg_aes_gcm_siv_open_vaes_pclmul_avx2` if the CPU supports its features (`VG_AES_GCM_SIV_OPEN_VAES_PCLMUL_AVX2_FEATURES`); `vg_aes_gcm_siv_open_aesni_vpclmul_avx2` if the CPU supports its features (`VG_AES_GCM_SIV_OPEN_AESNI_VPCLMUL_AVX2_FEATURES`); `vg_aes_gcm_siv_open_aesni_pclmul_avx_avx2` if the CPU supports its features (`VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX_AVX2_FEATURES`); `vg_aes_gcm_siv_open_aesni_pclmul_avx` if the CPU supports its features (`VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX_FEATURES`); `vg_aes_gcm_siv_open_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_siv_open_vaes_avx2` if the CPU supports its features (`VG_AES_GCM_SIV_OPEN_VAES_AVX2_FEATURES`); `vg_aes_gcm_siv_open_aesni_avx2` if the CPU supports its features (`VG_AES_GCM_SIV_OPEN_AESNI_AVX2_FEATURES`); `vg_aes_gcm_siv_open_aesni` if the CPU supports its features (`VG_AES_GCM_SIV_OPEN_AESNI_FEATURES`); `vg_aes_gcm_siv_open_vpclmul_avx2` if the CPU supports its features (`VG_AES_GCM_SIV_OPEN_VPCLMUL_AVX2_FEATURES`); `vg_aes_gcm_siv_open_pclmul_avx2` if the CPU supports its features (`VG_AES_GCM_SIV_OPEN_PCLMUL_AVX2_FEATURES`); `vg_aes_gcm_siv_open_pclmul` if the CPU supports its features (`VG_AES_GCM_SIV_OPEN_PCLMUL_FEATURES`); `vg_aes_gcm_siv_open_avx2` if the CPU supports its features (`VG_AES_GCM_SIV_OPEN_AVX2_FEATURES`); or else `vg_aes_gcm_siv_open`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -113,73 +136,96 @@ pub unsafe fn vg_aes_gcm_siv_seal_auto(schedule: *const [u8; 240], rounds: usize
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_gcm_siv_open_auto(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_AVX512_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_open_vaes_vpclmul_avx512`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_open_vaes_vpclmul_avx512(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
+pub unsafe fn vg_aes_gcm_siv_open_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32;
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_AVX512_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_AVX512_FEATURES)
+        {
+            return crate::aes_gcm_siv::vg_aes_gcm_siv_open_vaes_vpclmul_avx512;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_VAES_PCLMUL_AVX2_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_VAES_PCLMUL_AVX2_FEATURES)
+        {
+            return crate::aes_gcm_siv::vg_aes_gcm_siv_open_vaes_pclmul_avx2;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_VPCLMUL_AVX2_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_VPCLMUL_AVX2_FEATURES)
+        {
+            return crate::aes_gcm_siv::vg_aes_gcm_siv_open_aesni_vpclmul_avx2;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX_AVX2_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX_AVX2_FEATURES)
+        {
+            return crate::aes_gcm_siv::vg_aes_gcm_siv_open_aesni_pclmul_avx_avx2;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX_FEATURES)
+        {
+            return crate::aes_gcm_siv::vg_aes_gcm_siv_open_aesni_pclmul_avx;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_FEATURES)
+        {
+            return crate::aes_gcm_siv::vg_aes_gcm_siv_open_aesni_pclmul;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_VAES_AVX2_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_VAES_AVX2_FEATURES)
+        {
+            return crate::aes_gcm_siv::vg_aes_gcm_siv_open_vaes_avx2;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_AVX2_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_AVX2_FEATURES)
+        {
+            return crate::aes_gcm_siv::vg_aes_gcm_siv_open_aesni_avx2;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_FEATURES)
+        {
+            return crate::aes_gcm_siv::vg_aes_gcm_siv_open_aesni;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_VPCLMUL_AVX2_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_VPCLMUL_AVX2_FEATURES)
+        {
+            return crate::aes_gcm_siv::vg_aes_gcm_siv_open_vpclmul_avx2;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_PCLMUL_AVX2_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_PCLMUL_AVX2_FEATURES)
+        {
+            return crate::aes_gcm_siv::vg_aes_gcm_siv_open_pclmul_avx2;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_PCLMUL_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_PCLMUL_FEATURES)
+        {
+            return crate::aes_gcm_siv::vg_aes_gcm_siv_open_pclmul;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AVX2_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AVX2_FEATURES)
+        {
+            return crate::aes_gcm_siv::vg_aes_gcm_siv_open_avx2;
+        }
+        crate::aes_gcm_siv::vg_aes_gcm_siv_open
     }
-    if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_VAES_PCLMUL_AVX2_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_open_vaes_pclmul_avx2`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_open_vaes_pclmul_avx2(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(schedule, rounds, nonce, aad, aad_len, data, len, tag) }
     }
-    if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_VPCLMUL_AVX2_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_open_aesni_vpclmul_avx2`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_open_aesni_vpclmul_avx2(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
-    }
-    if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX_AVX2_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_open_aesni_pclmul_avx_avx2`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_open_aesni_pclmul_avx_avx2(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
-    }
-    if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_open_aesni_pclmul_avx`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_open_aesni_pclmul_avx(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
-    }
-    if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_open_aesni_pclmul`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_open_aesni_pclmul(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
-    }
-    if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_VAES_AVX2_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_open_vaes_avx2`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_open_vaes_avx2(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
-    }
-    if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_AVX2_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_open_aesni_avx2`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_open_aesni_avx2(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
-    }
-    if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_open_aesni`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_open_aesni(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
-    }
-    if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_VPCLMUL_AVX2_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_open_vpclmul_avx2`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_open_vpclmul_avx2(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
-    }
-    if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_PCLMUL_AVX2_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_open_pclmul_avx2`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_open_pclmul_avx2(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
-    }
-    if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_PCLMUL_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_open_pclmul`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_open_pclmul(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
-    }
-    if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AVX2_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_open_avx2`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_open_avx2(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
-    }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_open(schedule, rounds, nonce, aad, aad_len, data, len, tag) }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(schedule, rounds, nonce, aad, aad_len, data, len, tag) }
 }

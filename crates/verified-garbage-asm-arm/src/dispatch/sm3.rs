@@ -2,20 +2,58 @@
 //! The dispatchers of the verified `sm3` functions for `arm`
 //! (`crate::sm3`, `VG.Rust.dispatcher`).
 
-/// `vg_sm3_init`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::sm3::vg_sm3_init as vg_sm3_init_auto;
+/// Starts an SM3 computation: makes the streaming state `*state` represent the empty message.
+///
+/// Contract: `VG.Spec.Sm3.initContract`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sm3.Repr`).
+///
+/// It runs `vg_sm3_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 96 bytes.
+/// * `state` must not wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_sm3_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 96]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::sm3::vg_sm3_init(state) }
+}
 
-/// `vg_sm3_update`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::sm3::vg_sm3_update as vg_sm3_update_auto;
+/// Absorbs data into an SM3 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), it then represents that message followed by the `len` bytes at `data`.
+///
+/// Contract: `VG.Spec.Sm3.updateContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// It runs `vg_sm3_update`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 96 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `state` must not overlap `data` or the arguments on the stack (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the 168 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_sm3_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::sm3::vg_sm3_update(state, count, data, len) }
+}
 
-/// `vg_sm3_finalize`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::sm3::vg_sm3_finalize as vg_sm3_finalize_auto;
+/// Finishes an SM3 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), writes the SM3 hash value of that message (32 bytes) to `*out`.
+///
+/// Contract: `VG.Spec.Sm3.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// It runs `vg_sm3_finalize`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 96 bytes.
+/// * `out` must be valid for reads and writes of 32 bytes.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `out` must not overlap each other or the arguments on the stack (distinct Rust objects never do).
+/// * Neither `state` nor `out` may overlap the 168 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_sm3_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::sm3::vg_sm3_finalize(state, count, out) }
+}

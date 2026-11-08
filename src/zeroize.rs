@@ -56,16 +56,10 @@ pub(crate) fn zeroize<T: Int>(x: &mut [T]) {
 /// `p` must be valid for writes of `len` bytes, which may not wrap around the
 /// end of the address space or overlap the callee's stack frame.
 pub(crate) unsafe fn zeroize_raw(p: *mut u8, len: usize) {
-    #[cfg(target_arch = "x86_64")]
-    if crate::cpu::detected().contains(crate::arch::zeroize::VG_ZEROIZE_AVX_FEATURES) {
-        // SAFETY: the caller's, and the CPU has AVX, the feature
-        // `vg_zeroize_avx` needs.
-        unsafe { crate::arch::zeroize::vg_zeroize_avx(p, len) };
-        core::sync::atomic::compiler_fence(core::sync::atomic::Ordering::SeqCst);
-        return;
-    }
+    // Storing zeros takes the same time whatever the memory held.
+    let dit = crate::dit::public(crate::dit::Why::Wipe);
     // SAFETY: the caller's.
-    unsafe { crate::arch::zeroize::vg_zeroize(p, len) };
+    unsafe { crate::arch::dispatch::zeroize::vg_zeroize_auto(dit, p, len) };
     core::sync::atomic::compiler_fence(core::sync::atomic::Ordering::SeqCst);
 }
 

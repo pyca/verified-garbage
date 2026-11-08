@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Ccm.sealContract`. Constant time: only the pointers, `rounds`, the lengths and `tag_len` may affect timing, not the key schedule, the nonce, the associated data or the payload.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_ccm_seal_vaes` if the CPU supports its features (`VG_AES_CCM_SEAL_VAES_FEATURES`); `vg_aes_ccm_seal_aesni` if the CPU supports its features (`VG_AES_CCM_SEAL_AESNI_FEATURES`); or else `vg_aes_ccm_seal`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_ccm_seal_aesni` if the CPU supports its features (`VG_AES_CCM_SEAL_AESNI_FEATURES`); or else `vg_aes_ccm_seal`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -22,27 +22,45 @@
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_ccm_seal_auto(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::aes_ccm::VG_AES_CCM_SEAL_VAES_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_ccm_seal_vaes`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_ccm::vg_aes_ccm_seal_vaes(schedule, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) };
+pub unsafe fn vg_aes_ccm_seal_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::aes_ccm::VG_AES_CCM_SEAL_AESNI_FEATURES) }
+            || cpu.contains(crate::aes_ccm::VG_AES_CCM_SEAL_AESNI_FEATURES)
+        {
+            return crate::aes_ccm::vg_aes_ccm_seal_aesni;
+        }
+        crate::aes_ccm::vg_aes_ccm_seal
     }
-    if cpu.contains(crate::aes_ccm::VG_AES_CCM_SEAL_AESNI_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_ccm_seal_aesni`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_ccm::vg_aes_ccm_seal_aesni(schedule, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) };
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(schedule, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) }
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::aes_ccm::vg_aes_ccm_seal(schedule, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(schedule, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) }
 }
 
 /// AES-CCM decryption-verification (NIST SP 800-38C §6.2, with the formatting and counter generation of its Appendix A): with the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it, and the received encrypted MAC (the last `tag_len` bytes of the ciphertext) the `tag_len` bytes at `tag`, decrypts the `len` bytes of encrypted payload at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and returns 1 if the MAC is that of the payload and the `aad_len` bytes of associated data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The MACs are compared without a branch.
 ///
 /// Contract: `VG.Spec.Ccm.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the associated data, the data or the tag.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_ccm_open_vaes` if the CPU supports its features (`VG_AES_CCM_OPEN_VAES_FEATURES`); `vg_aes_ccm_open_aesni` if the CPU supports its features (`VG_AES_CCM_OPEN_AESNI_FEATURES`); or else `vg_aes_ccm_open`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_ccm_open_aesni` if the CPU supports its features (`VG_AES_CCM_OPEN_AESNI_FEATURES`); or else `vg_aes_ccm_open`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -58,18 +76,36 @@ pub unsafe fn vg_aes_ccm_seal_auto(schedule: *const [u8; 240], rounds: usize, no
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_ccm_open_auto(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::aes_ccm::VG_AES_CCM_OPEN_VAES_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_ccm_open_vaes`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_ccm::vg_aes_ccm_open_vaes(schedule, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) };
+pub unsafe fn vg_aes_ccm_open_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32;
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::aes_ccm::VG_AES_CCM_OPEN_AESNI_FEATURES) }
+            || cpu.contains(crate::aes_ccm::VG_AES_CCM_OPEN_AESNI_FEATURES)
+        {
+            return crate::aes_ccm::vg_aes_ccm_open_aesni;
+        }
+        crate::aes_ccm::vg_aes_ccm_open
     }
-    if cpu.contains(crate::aes_ccm::VG_AES_CCM_OPEN_AESNI_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_ccm_open_aesni`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_ccm::vg_aes_ccm_open_aesni(schedule, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) };
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(schedule, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) }
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::aes_ccm::vg_aes_ccm_open(schedule, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(schedule, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) }
 }

@@ -23,10 +23,10 @@ meta import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64
 # ChaCha20-Poly1305 on x86-64: `open` after the tag
 
 Untrusted: everything here is checked by Lean. `openTail`, which both `open`
-and the stitched `openStitched` end with: from the state their bodies leave
-(`TailIn`), the tags compared without a branch, the data zeroed if they
-differ (`zeroData`), and the registers restored; then `open` from `openBody`
-and `openTail`. Constant time: `openBody` by its own proof (`body_rel`),
+and the stitched `openStitchedShared` end with: from the state their bodies
+leave (`TailIn`), the tags compared without a branch, the data zeroed if they
+differ (`zeroData`), and the registers restored; then `openShared` from
+`openBody` and `openTail`. Constant time: `openBody` by its own proof (`body_rel`),
 then the tail from the public data that the correctness proof gives both
 runs, the branch being on whether the tag is right, which the contract lets
 `open` leak (`openX86_64.pub`).
@@ -167,11 +167,47 @@ theorem zeroData_ok {s₀ : State} (hp : APre false s₀) {s : State} (h : Inv s
 
 /-! ## The tail -/
 
+theorem stk_arg (s₀ : State) : (stkR s₀).Disjoint (argR s₀) := by
+  have := Offset.disjoint_base (s₀.gpr .rsp - BitVec.ofNat 64 24) (d := 32) (n := 16) (k := 24) (by decide)
+    (by decide)
+  rw [show s₀.gpr .rsp - BitVec.ofNat 64 24 + BitVec.ofNat 64 32 = stackArgAddr s₀ 0 by
+    rw [stackArgAddr, BitVec.sub_eq_add_neg, BitVec.add_assoc]; congr 1] at this
+  exact this.symm
+
+/-- `tagLoad`: the received tag's address into `r12`, from its stack slot,
+which the body never writes. -/
+theorem tagLoad_ok {s₀ : State} (hp : APre false s₀) {t : Addr} {s : State} (h : TailIn s₀ t s) :
+    WP isa (.block tagLoad) s (TailIn s₀ (tp s₀)) := by
+  have ea : off (s₀.gpr .rsp) 8 = stackArgAddr s₀ 0 := by rw [off_eq, stackArgAddr]
+  have hc : (argR s₀).Contains (stackArgAddr s₀ 0) (64 / 8) := by
+    have := Offset.contains_base (stackArgAddr s₀ 0) (d := 0) (n := 8) (k := 16) (by decide) (by decide)
+    rwa [BitVec.add_zero] at this
+  have hin : InRegions (s.rd ++ s.wr) (off (s.gpr .rsp) 8) 8 := by
+    rw [h.inv.rsp, ea, h.inv.rd]
+    exact ⟨argR s₀, by simp [hp.g_rd], hc⟩
+  have hv : s.mem.readW (off (s.gpr .rsp) 8) 64 = tp s₀ := by
+    rw [h.inv.rsp, ea, h.inv.frame.readW hc (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact (hp.c_g.sub_left (sub_ctx s₀ (by lit_omega))).symm
+      · exact hp.d_g.symm
+      · exact (stk_arg s₀).symm) (by decide)]
+    rfl
+  apply WP.of_runBlock
+  simp only [tagLoad, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, State.load64, ea_at, hin,
+    ite_true, Option.map_some, hv, Option.some.injEq, exists_eq_left']
+  have g : ∀ r, r ≠ .r12 → (s.setReg .r12 (tp s₀)).gpr r = s.gpr r := fun r hr =>
+    RegUpd.gpr_setReg_of_ne _ _ hr
+  exact ⟨⟨by rw [g _ (by decide), h.inv.r15], by rw [g _ (by decide), h.inv.r14],
+      by rw [g _ (by decide), h.inv.r13], RegUpd.gpr_setReg_self _ _ _, by rw [g _ (by decide), h.inv.rsp],
+      h.inv.rd, h.inv.wr, h.inv.saved, h.inv.frame⟩,
+    by rw [g _ (by decide), h.rcx], by rw [g _ (by decide), h.rdi], h.tag, h.pt, h.mx⟩
+
 /-- The tags compared, and `ZF` whether they differ: `eax` is 1 if the tag
 is right. -/
-theorem cmpTail_ok {s₀ : State} (hp : APre false s₀) {s : State} (h : TailIn s₀ s) :
+theorem cmpTail_ok {s₀ : State} (hp : APre false s₀) {s : State} (h : TailIn s₀ (tp s₀) s) :
     WP isa (.block (compare ++ ([.alu32 .cmp .rax (.imm 0)] : List Instr))) s fun s' => Inv s₀ s' ∧
-      (s'.gpr .rax).setWidth 32 = (if mac (otk s₀) (macData (A s₀) (D s₀)) = T0 s₀ then 1 else 0) ∧
+      (s'.gpr .rax).setWidth 32 = (if mac (otk s₀) (macData (A s₀) (C s₀)) = T0 s₀ then 1 else 0) ∧
       s'.zf = some ((s'.gpr .rax).setWidth 32 == 0) ∧ s'.gpr .rdi = off (cx s₀) 448 ∧ s'.mem = s.mem ∧
       s'.mxcsr = s.mxcsr := by
   have T0 : bytesAt s.mem (tp s₀) 16 = T0 s₀ := bytesAt_frame h.inv.frame (by rdisj_all) (by lit_omega)
@@ -188,22 +224,34 @@ theorem low8 {x : BitVec 64} (h : x.setWidth 32 = 0) : x.setWidth 8 = 0 := by
   rw [show x.setWidth 8 = (x.setWidth 32).setWidth 8 by rw [BitVec.setWidth_setWidth_of_le _ (by decide)], h]
   rfl
 
-theorem tail_ok {s₀ : State} (hp : APre false s₀) {s : State} (h : TailIn s₀ s) :
-    WP isa openTail s fun s' => abiPreserved s₀ s' ∧ openX86_64.post s₀ s' := by
+/-- What `open`'s body and tail give: `openX86_64.post` with the ciphertext
+read from `sp` (`C`) and the plaintext written to `dp`. -/
+def openSPost (s₀ s' : State) : Prop :=
+  match Spec.ChaCha20Poly1305.decrypt (K s₀) (N s₀) (A s₀) (C s₀) (T0 s₀) with
+  | some pt => (s'.gpr .rax).setWidth 32 = 1 ∧ bytesAt s'.mem (dp s₀) (L s₀) = pt
+  | none => (s'.gpr .rax).setWidth 32 = 0 ∧ bytesAt s'.mem (dp s₀) (L s₀) = List.replicate (L s₀) 0
+
+/-- What `open`'s body may leak: whether the message is authenticated. -/
+def openSLeak (s₀ : State) : List Nat :=
+  [if (Spec.ChaCha20Poly1305.decrypt (K s₀) (N s₀) (A s₀) (C s₀) (T0 s₀)).isSome then 1 else 0]
+
+theorem tailT_ok {s₀ : State} (hp : APre false s₀) {s : State} (h : TailIn s₀ (tp s₀) s) :
+    WP isa (.seq (.block (compare ++ ([.alu32 .cmp .rax (.imm 0)] : List Instr)))
+      (.seq (.ite .e zeroData (.block [])) (.block restore))) s fun s' =>
+      abiPreserved s₀ s' ∧ openSPost s₀ s' := by
   have ret : ∀ {m : Mem}, Frame [dR s₀] s.mem m →
       m.readW (s₀.gpr .rsp) 64 = s₀.mem.readW (s₀.gpr .rsp) 64 := fun hf => by
     have c : (retR s₀).Contains (s₀.gpr .rsp) (64 / 8) := Region.contains_self _ _
     rw [hf.readW c (by rdisj_all) (by lit_omega), h.inv.frame.readW c (by rdisj_all) (by lit_omega)]
-  unfold openTail
   refine WP.seq (WP.mono (cmpTail_ok hp h) fun s₂ ⟨i₂, rax₂, z₂, rdi₂, m₂, mx₂⟩ => ?_)
   refine WP.seq ?_
-  by_cases hc : mac (otk s₀) (macData (A s₀) (D s₀)) = T0 s₀
+  by_cases hc : mac (otk s₀) (macData (A s₀) (C s₀)) = T0 s₀
   · simp only [hc, ↓reduceIte] at rax₂
     refine WP.ite false (by show s₂.zf = some false; rw [z₂, rax₂]; rfl) (by simp) fun _ => WP.block_nil ?_
     refine WP.mono_mx (by decide) (restore_ok hp rdi₂ i₂.saved i₂.rsp i₂.rd i₂.wr)
       fun s₃ ⟨cs₃, rax₃, m₃⟩ mx₃ => ⟨⟨cs₃, by rw [m₃, m₂]; exact ret (Frame.refl _ _),
         by rw [mx₃, mx₂, h.mx]⟩, ?_⟩
-    rw [openX86_64, Contract.post_mk]
+    unfold openSPost
     split
     next pt hpt =>
       obtain ⟨-, rfl⟩ := decrypt_eq_some hpt
@@ -215,26 +263,48 @@ theorem tail_ok {s₀ : State} (hp : APre false s₀) {s : State} (h : TailIn s�
     refine WP.mono_mx (by decide) (restore_ok hp (by rw [k₃.rdi, rdi₂]) k₃.inv.saved k₃.inv.rsp k₃.inv.rd
       k₃.inv.wr) fun s₄ ⟨cs₄, rax₄, m₄⟩ mx₄ => ⟨⟨cs₄, by rw [m₄]; exact ret (by rw [← m₂]; exact k₃.frame),
         by rw [mx₄, k₃.mx, mx₂, h.mx]⟩, ?_⟩
-    rw [openX86_64, Contract.post_mk]
+    unfold openSPost
     split
     next pt hpt => exact absurd (decrypt_eq_some hpt).1 hc
     next hn => exact ⟨by rw [rax₄, k₃.rax, rax₂], by rw [m₄, z₃]⟩
 
-theorem open_correct (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre false s₀) :
-    WP isa («open» v.callee v.poly) s₀ fun s' => abiPreserved s₀ s' ∧ openX86_64.post s₀ s' :=
-  WP.seq (WP.mono (body_ok v hp) fun _ h => tail_ok hp h)
+theorem tail_ok {s₀ : State} (hp : APre false s₀) {t : Addr} {s : State} (h : TailIn s₀ t s) :
+    WP isa openTail s fun s' => abiPreserved s₀ s' ∧ openSPost s₀ s' :=
+  WP.seq (WP.mono (tagLoad_ok hp h) fun _ h => tailT_ok hp h)
+
+/-- `APre` of a state that may read more. -/
+theorem APre.of_more {e : Bool} {u : State} {rd wr more : List Region} (h : preX86_64 e (u.withRegions rd wr)) :
+    APre e (u.withRegions (rd ++ more) wr) := by
+  have h' := APre.of _ h
+  obtain ⟨m', hm'⟩ := h'.rd
+  have hrd : rd = (if e then [kR u, nR u, aR u, argR u] else [kR u, nR u, aR u, tR u, argR u]) ++ m' := hm'
+  exact { h' with rd := ⟨m' ++ more, by simp only [State.withRegions_rd, hrd, List.append_assoc]; rfl⟩ }
+
+/-- What the code `open` and `open_to` share (`openShared`, and the stitched
+`Stitch.openStitchedShared`) starts from: `open`'s precondition, with the
+ciphertext at `r11` (`sp`), which is the data or apart from it. -/
+def SPreO (s₀ : State) : Prop := APre false s₀ ∧ SrcIO s₀ (sp s₀)
+
+theorem shared_correct (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : SPreO s₀) :
+    WP isa (openShared v.callee v.poly) s₀ fun s' => abiPreserved s₀ s' ∧ openSPost s₀ s' :=
+  WP.seq (WP.mono (body_ok v hp.1 hp.2) fun _ h => tail_ok hp.1 h)
 
 /-! ## Constant time -/
 
+/-- Whether the message is authenticated, in the state on entry to `open`'s
+body. -/
+def okS (s₀ : State) : Bool :=
+  (Spec.ChaCha20Poly1305.decrypt (K s₀) (N s₀) (A s₀) (C s₀) (T0 s₀)).isSome
+
 theorem ok_iff (s₀ : State) :
-    okX86_64 s₀ = true ↔ mac (otk s₀) (macData (A s₀) (D s₀)) = T0 s₀ := by
-  unfold okX86_64
+    okS s₀ = true ↔ mac (otk s₀) (macData (A s₀) (C s₀)) = T0 s₀ := by
+  unfold okS
   constructor
   · intro h
     obtain ⟨pt, hpt⟩ := Option.isSome_iff_exists.mp h
     exact (decrypt_eq_some hpt).1
   · intro h
-    cases hd : Spec.ChaCha20Poly1305.decrypt (K s₀) (N s₀) (A s₀) (D s₀) (T0 s₀) with
+    cases hd : Spec.ChaCha20Poly1305.decrypt (K s₀) (N s₀) (A s₀) (C s₀) (T0 s₀) with
     | none => exact absurd h (decrypt_eq_none hd)
     | some _ => rfl
 
@@ -242,16 +312,16 @@ theorem leak_bool {a b : Bool} (h : [if a = true then 1 else 0] = [if b = true t
   cases a <;> cases b <;> simp_all
 
 /-- The result in two runs whose leaks agree. -/
-theorem bit_eq {s₁ s₂ : State} (h : openLeakX86_64 s₁ = openLeakX86_64 s₂) :
-    (if mac (otk s₁) (macData (A s₁) (D s₁)) = T0 s₁ then (1 : BitVec 32) else 0) =
-      if mac (otk s₂) (macData (A s₂) (D s₂)) = T0 s₂ then 1 else 0 := by
-  have e : okX86_64 s₁ = okX86_64 s₂ := leak_bool h
-  by_cases h₁ : okX86_64 s₁ = true
-  · have h₂ : okX86_64 s₂ = true := e ▸ h₁
+theorem bit_eq {s₁ s₂ : State} (h : openSLeak s₁ = openSLeak s₂) :
+    (if mac (otk s₁) (macData (A s₁) (C s₁)) = T0 s₁ then (1 : BitVec 32) else 0) =
+      if mac (otk s₂) (macData (A s₂) (C s₂)) = T0 s₂ then 1 else 0 := by
+  have e : okS s₁ = okS s₂ := leak_bool h
+  by_cases h₁ : okS s₁ = true
+  · have h₂ : okS s₂ = true := e ▸ h₁
     simp only [(ok_iff s₁).mp h₁, (ok_iff s₂).mp h₂, ↓reduceIte]
-  · have h₂ : ¬okX86_64 s₂ = true := e ▸ h₁
-    simp only [show ¬mac (otk s₁) (macData (A s₁) (D s₁)) = T0 s₁ from fun h' => h₁ ((ok_iff s₁).mpr h'),
-      show ¬mac (otk s₂) (macData (A s₂) (D s₂)) = T0 s₂ from fun h' => h₂ ((ok_iff s₂).mpr h'), ↓reduceIte]
+  · have h₂ : ¬okS s₂ = true := e ▸ h₁
+    simp only [show ¬mac (otk s₁) (macData (A s₁) (C s₁)) = T0 s₁ from fun h' => h₁ ((ok_iff s₁).mpr h'),
+      show ¬mac (otk s₂) (macData (A s₂) (C s₂)) = T0 s₂ from fun h' => h₂ ((ok_iff s₂).mpr h'), ↓reduceIte]
 
 /-- An empty block, in two runs: the same (empty) trace, and the states
 unchanged. -/
@@ -274,7 +344,7 @@ theorem taintRel {P : State → State → Prop} {c : Prog isa} (rs : List Reg)
 /-- What `cmpTail_ok` gives. -/
 structure CmpT (s₀ s : State) : Prop where
   inv : Inv s₀ s
-  rax : (s.gpr .rax).setWidth 32 = (if mac (otk s₀) (macData (A s₀) (D s₀)) = T0 s₀ then 1 else 0)
+  rax : (s.gpr .rax).setWidth 32 = (if mac (otk s₀) (macData (A s₀) (C s₀)) = T0 s₀ then 1 else 0)
   zf : s.zf = some ((s.gpr .rax).setWidth 32 == 0)
   rdi : s.gpr .rdi = off (cx s₀) 448
 
@@ -286,11 +356,12 @@ theorem zero_of_e {s₀ x : State} (h : CmpT s₀ x) (he : isa.eval .e x = some 
 
 section
 variable {s₀ s₀' : State} (hp : APre false s₀) (hp' : APre false s₀') (hq : pubX86_64 s₀ s₀')
-  (hl : openLeakX86_64 s₀ = openLeakX86_64 s₀')
+  (hl : openSLeak s₀ = openSLeak s₀')
 include hp hp' hq hl
 
 /-- `openTail`, in two runs from the states `body_ok` describes. -/
-theorem tail_rel : RelCT isa (fun x y => TailIn s₀ x ∧ TailIn s₀' y) openTail fun _ _ => True := by
+theorem tail_rel {t t' : Addr} :
+    RelCT isa (fun x y => TailIn s₀ t x ∧ TailIn s₀' t' y) openTail fun _ _ => True := by
   obtain ⟨-, -, -, -, p5, p6, p7, p8, p9⟩ := id hq
   have ecx : cx s₀ = cx s₀' := by simp only [cx, p9]
   have edp : dp s₀ = dp s₀' := by simp only [dp, p5]
@@ -300,6 +371,11 @@ theorem tail_rel : RelCT isa (fun x y => TailIn s₀ x ∧ TailIn s₀' y) openT
       show y.zf = some true
       rw [hy.zf, hy.rax, ← bit_eq hl, ← hx.rax, ← hx.zf]; exact h
   unfold openTail
+  refine RelCT.seq (R := fun x y => TailIn s₀ (tp s₀) x ∧ TailIn s₀' (tp s₀') y)
+    (RelCT.mono ((taintRel [.rsp] (fun x y h r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        subst hr; rw [h.1.inv.rsp, h.2.inv.rsp, p7]) (by taint_decide)).wp fun x y h =>
+      ⟨tagLoad_ok hp h.1, tagLoad_ok hp' h.2⟩) (fun _ _ h => h) fun _ _ h => h.2) ?_
   refine RelCT.seq (R := fun x y => CmpT s₀ x ∧ CmpT s₀' y)
     (RelCT.mono ((taintRel [.rcx, .r12] (fun x y h r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -331,14 +407,30 @@ theorem tail_rel : RelCT isa (fun x y => TailIn s₀ x ∧ TailIn s₀' y) openT
 
 end
 
-theorem open_rel (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ s₀' : State} (h₀ : preX86_64 false s₀)
-    (h₀' : preX86_64 false s₀') (hq : pubX86_64 s₀ s₀') (hl : openLeakX86_64 s₀ = openLeakX86_64 s₀') :
-    RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') («open» v.callee v.poly) fun _ _ => True := by
-  have hp := APre.of _ h₀
-  have hp' := APre.of _ h₀'
-  refine RelCT.seq (R := fun x y => TailIn s₀ x ∧ TailIn s₀' y)
-    (RelCT.mono ((body_rel v h₀ h₀' hq).wp fun x y ⟨ex, ey⟩ => by
-      subst ex; subst ey; exact ⟨body_ok v hp, body_ok v hp'⟩) (fun _ _ h => h) fun _ _ h => h.2)
-    (tail_rel hp hp' hq hl)
+/-- The public data of the shared code's entry: `open`'s, the ciphertext's
+address, and whether the tag is right (what `open` may leak). -/
+def sharedPub (s₁ s₂ : State) : Prop := pubX86_64 s₁ s₂ ∧ sp s₁ = sp s₂ ∧ openSLeak s₁ = openSLeak s₂
+
+/-- The contract of the shared code, as `open_to` runs it inline. -/
+def sharedK : Contract isa where
+  pre := SPreO
+  post := openSPost
+  pub := sharedPub
+
+theorem shared_rel (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ s₀' : State} (hp : SPreO s₀) (hp' : SPreO s₀')
+    (hq : sharedPub s₀ s₀') :
+    RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (openShared v.callee v.poly) fun _ _ => True :=
+  RelCT.seq (R := fun x y => TailIn s₀ (sp s₀) x ∧ TailIn s₀' (sp s₀') y)
+    (RelCT.mono ((body_rel v hp.1 hp'.1 hq.1 hq.2.1 hp.2 hp'.2).wp fun x y ⟨ex, ey⟩ => by
+      subst ex; subst ey; exact ⟨body_ok v hp.1 hp.2, body_ok v hp'.1 hp'.2⟩) (fun _ _ h => h) fun _ _ h => h.2)
+    (tail_rel hp.1 hp'.1 hq.1 hq.2.2)
+
+theorem shared_ok (v : Proof.ChaCha20.X86_64.XorImpl) (s : State) (hs : sharedK.pre s) :
+    ∃ t s', Exec isa (openShared v.callee v.poly) s t s' ∧ abiPreserved s s' ∧ sharedK.post s s' :=
+  let ⟨t, s', e, a, p⟩ := shared_correct v hs; ⟨t, s', e, a, p⟩
+
+theorem shared_ct (v : Proof.ChaCha20.X86_64.XorImpl) :
+    ConstantTime isa sharedK.pre sharedK.pub (openShared v.callee v.poly) :=
+  fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (shared_rel v h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
 end VG.Proof.ChaCha20Poly1305.X86_64

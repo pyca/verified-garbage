@@ -143,6 +143,7 @@ impl PrivateKey {
         mgf1_hash: Hash,
         salt_len: usize,
     ) -> Result<Vec<u8>, Error> {
+        crate::dit::enter!(dit);
         if digest.len() != hash.digest_len() {
             return Err(Error::InvalidDigestLength);
         }
@@ -151,7 +152,7 @@ impl PrivateKey {
         }
         let mut salt = vec![0u8; salt_len];
         getrandom::fill(&mut salt).map_err(|_| Error::Randomness)?;
-        let r = sign_with(self, digest, hash, mgf1_hash, &salt);
+        let r = sign_with(dit, self, digest, hash, mgf1_hash, &salt);
         zeroize(&mut salt);
         r
     }
@@ -159,6 +160,7 @@ impl PrivateKey {
 
 /// The signature of `digest` with the salt `salt`.
 fn sign_with(
+    dit: crate::dit::Dit<'_>,
     key: &PrivateKey,
     digest: &[u8],
     hash: Hash,
@@ -183,6 +185,7 @@ fn sign_with(
     // CPU has the features of.
     let r = unsafe {
         vg_rsa_pss_sign_auto(
+            dit,
             out.as_mut_ptr(),
             k,
             key.n.as_ptr(),
@@ -235,6 +238,7 @@ impl PublicKey {
         mgf1_hash: Hash,
         salt_length: SaltLength,
     ) -> Result<(), InvalidSignature> {
+        let dit = crate::dit::public(crate::dit::Why::Verify);
         let k = self.n.len();
         if digest.len() != hash.digest_len() || signature.len() != k {
             return Err(InvalidSignature);
@@ -245,7 +249,7 @@ impl PublicKey {
         };
         let (h, m) = with_tables(hash, mgf1_hash);
         let mut scratch = self.verify_scratch.take(public_scratch_words(k), false);
-        let pre = self.pre(&mut scratch);
+        let pre = self.pre(dit, &mut scratch);
         // SAFETY: each pointer is valid for its length (`scratch` for writes),
         // and none overlaps another or wraps around, as they are distinct Rust
         // allocations; `PublicKey::new` gives `64 ≤ n_len ≤ 1024` and
@@ -260,6 +264,7 @@ impl PublicKey {
         // of.
         let r = unsafe {
             vg_rsa_pss_verify_precomputed_auto(
+                dit,
                 self.n.as_ptr(),
                 k,
                 self.e.as_ptr(),

@@ -31,6 +31,25 @@ namespace VG.Proof.Aes.X86_64
 
 open VG.X86_64
 
+/-- An implementation of `vg_aes_ctr32_to` on x86-64: `vg_aes_ctr32` out of
+place (`AesNi.ctr32ToX86_64`), the data read from `rcx` and the output
+written to `r11`. -/
+structure Ctr32ToImpl where
+  /-- Its symbol and code. -/
+  callee : Impl.Aes.X86_64.Ctr32
+  /-- It makes no calls. -/
+  depth : callee.code.depth = 0
+  ok : ∀ s, AesNi.ctr32ToX86_64.pre s →
+    ∃ t s', Exec isa callee.code s t s' ∧ abiPreserved s s' ∧ AesNi.ctr32ToX86_64.post s s'
+  ct : ConstantTime isa AesNi.ctr32ToX86_64.pre AesNi.ctr32ToX86_64.pub callee.code
+  /-- It never writes the stack pointer. -/
+  nosp : NoSp callee.code
+  /-- It never loads MXCSR. -/
+  mxcsr : callee.code.allInstrs (fun i => !loadsMxcsr i) = true
+  spSafe : callee.code.all (fun i => !isa.writesSp i) = true
+  /-- It uses no stack. -/
+  noStack : callee.code.x86_64Depth = 0 := by lit_decide
+
 /-- An implementation of `vg_aes_ctr32` on x86-64. -/
 structure Ctr32Impl where
   /-- Its symbol and code. -/
@@ -63,6 +82,9 @@ structure Ctr32Impl where
   expandMxcsr : expand.code.allInstrs (fun i => !loadsMxcsr i) = true
   expandSpSafe : expand.code.all (fun i => !isa.writesSp i) = true
   expandNoStack : expand.code.x86_64Depth = 0 := by lit_decide
+  /-- Its form out of place (`vg_aes_ctr32_to`), with the same CPU features,
+  if any: AES-GCM's `open_to` decrypts with it in one pass. -/
+  ctrTo : Option Ctr32ToImpl := none
 
 namespace Ctr32Impl
 
@@ -76,6 +98,21 @@ theorem expandKey_nosp : NoSp Impl.Aes.X86_64.ExpandKey.scalar.code := by
     rw [← Code.allInstrs_eq]; lit_decide
   exact fun i hi => by simpa using List.all_eq_true.mp this i hi
 
+theorem scalarTo_nosp : NoSp Impl.Aes.X86_64.Ctr32.scalarTo.code := by
+  have : ((instrs Impl.Aes.X86_64.Ctr32.scalarTo.code).all fun i => !Taint.clobbers i .rsp) = true := by
+    rw [← Code.allInstrs_eq]; lit_decide
+  exact fun i hi => by simpa using List.all_eq_true.mp this i hi
+
+/-- `vg_aes_ctr32_to`, the bitsliced implementation out of place. -/
+def scalarTo : Ctr32ToImpl where
+  callee := .scalarTo
+  depth := by lit_decide
+  ok := ctr32To_correct
+  ct := ctr32To_ct
+  nosp := scalarTo_nosp
+  mxcsr := by lit_decide
+  spSafe := Code.all_of_allInstrs (by lit_decide)
+
 /-- The bitsliced implementation, `vg_aes_ctr32`, in the baseline ISA. -/
 def scalar : Ctr32Impl where
   callee := .scalar
@@ -87,6 +124,7 @@ def scalar : Ctr32Impl where
   spSafe := Code.all_of_allInstrs (by lit_decide)
   suffix := ""
   features := []
+  ctrTo := some scalarTo
   expand := .scalar
   expandDepth := by lit_decide
   expandOk := expandKey_correct
@@ -124,6 +162,21 @@ theorem aesni_expandKey_ct : ConstantTime isa Proof.Aes.expandKeyX86_64.pre Proo
   fun s₁ s₂ t₁ t₂ s₁' s₂' ⟨a, b, _, _, _, c, _, d⟩ ⟨a', b', _, _, _, c', _, d'⟩ ⟨e, f, g, h, _⟩ e₁ e₂ =>
     AesNi.Key.expandKey_ct s₁ s₂ t₁ t₂ s₁' s₂' ⟨a, b, c, d⟩ ⟨a', b', c', d'⟩ ⟨e, f, g, h⟩ e₁ e₂
 
+theorem aesniTo_nosp : NoSp Impl.Aes.X86_64.Ctr32.aesniTo.code := by
+  have : ((instrs Impl.Aes.X86_64.Ctr32.aesniTo.code).all fun i => !Taint.clobbers i .rsp) = true := by
+    rw [← Code.allInstrs_eq]; lit_decide
+  exact fun i hi => by simpa using List.all_eq_true.mp this i hi
+
+/-- `vg_aes_ctr32_to_aesni`. -/
+def aesniTo : Ctr32ToImpl where
+  callee := .aesniTo
+  depth := by lit_decide
+  ok := AesNi.ctr32To_correct
+  ct := AesNi.ctr32To_ct
+  nosp := aesniTo_nosp
+  mxcsr := by lit_decide
+  spSafe := Code.all_of_allInstrs (by lit_decide)
+
 /-- The AES-NI implementation, `vg_aes_ctr32_aesni`. -/
 def aesni : Ctr32Impl where
   callee := .aesni
@@ -135,6 +188,7 @@ def aesni : Ctr32Impl where
   spSafe := Code.all_of_allInstrs (by lit_decide)
   suffix := "_aesni"
   features := ["aes", "ssse3"]
+  ctrTo := some aesniTo
   expand := .aesni
   expandDepth := by lit_decide
   expandOk := aesni_expandKey_ok
@@ -154,6 +208,21 @@ theorem vaes_ct : ConstantTime isa Proof.Aes.ctr32X86_64.pre Proof.Aes.ctr32X86_
   fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ ⟨a, b, c, d, e, f, _⟩ e₁ e₂ =>
     Vaes.ctr32_ct s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ ⟨a, b, c, d, e, f⟩ e₁ e₂
 
+theorem vaesTo_nosp : NoSp Impl.Aes.X86_64.Ctr32.vaesTo.code := by
+  have : ((instrs Impl.Aes.X86_64.Ctr32.vaesTo.code).all fun i => !Taint.clobbers i .rsp) = true := by
+    rw [← Code.allInstrs_eq]; lit_decide
+  exact fun i hi => by simpa using List.all_eq_true.mp this i hi
+
+/-- `vg_aes_ctr32_to_vaes`. -/
+def vaesTo : Ctr32ToImpl where
+  callee := .vaesTo
+  depth := by lit_decide
+  ok := Vaes.ctr32To_correct
+  ct := Vaes.ctr32To_ct
+  nosp := vaesTo_nosp
+  mxcsr := by lit_decide
+  spSafe := Code.all_of_allInstrs (by lit_decide)
+
 /-- The VAES implementation, `vg_aes_ctr32_vaes`. It goes with
 `vg_aes_expand_key_aesni`, which needs no more CPU features. -/
 def vaes : Ctr32Impl where
@@ -166,6 +235,7 @@ def vaes : Ctr32Impl where
   spSafe := Code.all_of_allInstrs (by lit_decide)
   suffix := "_vaes"
   features := ["aes", "avx", "avx2", "ssse3", "vaes"]
+  ctrTo := some vaesTo
   expand := .aesni
   expandDepth := by lit_decide
   expandOk := aesni_expandKey_ok

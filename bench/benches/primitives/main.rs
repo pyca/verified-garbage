@@ -10,10 +10,6 @@
 //! runs them (and does nothing on architectures the algorithm doesn't
 //! support yet), so that adding one adds a file.
 
-// No benchmark runs on RISC-V until an algorithm's PR widens its gate, so
-// the helpers they share are unused there until then.
-#![cfg_attr(target_arch = "riscv64", allow(dead_code))]
-
 use std::hint::black_box;
 
 use criterion::measurement::WallTime;
@@ -491,7 +487,7 @@ pub(crate) fn hmac_group_sizes<O: AsRef<[u8]>>(
 /// Benchmarks checking an HMAC with the hash `H` and `md` (32-byte key)
 /// against OpenSSL's and, if it has the hash, aws-lc-rs's `aws_lc`:
 /// computing the MAC of the data and comparing it with the expected one in
-/// constant time (`Hmac::verify`; OpenSSL's `CRYPTO_memcmp`; aws-lc-rs's
+/// constant time (`Hmac::verify_mac`; OpenSSL's `CRYPTO_memcmp`; aws-lc-rs's
 /// `hmac::verify`, making its key in each iteration).
 #[cfg(any(
     target_arch = "x86_64",
@@ -517,9 +513,8 @@ pub(crate) fn hmac_verify_group<H: verified_garbage::hmac::HmacHash>(
         let mac = Hmac::<H>::mac(&key, &data);
         g.bench(BenchmarkId::new(VG, size), |b| {
             b.iter(|| {
-                let mut h = Hmac::<H>::new(black_box(&key));
-                h.update(black_box(&data));
-                h.verify(black_box(mac.as_ref())).unwrap()
+                Hmac::<H>::verify_mac(black_box(&key), black_box(&data), black_box(mac.as_ref()))
+                    .unwrap()
             })
         });
         let mut out = [0u8; 64];

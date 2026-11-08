@@ -2,20 +2,63 @@
 //! The dispatchers of the verified `blake2s` functions for `aarch64`
 //! (`crate::blake2s`, `VG.Rust.dispatcher`).
 
-/// `vg_blake2s_init`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::blake2s::vg_blake2s_init as vg_blake2s_init_auto;
+/// Starts a BLAKE2s computation of an `outlen`-byte digest with the `keylen`-byte key at `key` (none if `keylen` is 0): makes the streaming state `*state` represent the key padded to a block, the first block of the data (none for unkeyed hashing), hashed from the initial state for `outlen` and `keylen` (RFC 7693 §2.5, §3.3). The length of the data is then 64 if `keylen > 0` and 0 otherwise. Continue with `vg_blake2s_update` and `vg_blake2s_finalize`.
+///
+/// Contract: `VG.Spec.Blake2.initSContract`. The streaming state is the hash state followed by a buffered last block (`VG.Spec.Blake2.Repr`). Constant time: only the pointers, `outlen` and `keylen` may affect timing, not the key.
+///
+/// It runs `vg_blake2s_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 96 bytes.
+/// * `key` must be valid for reads of `keylen` bytes.
+/// * `outlen` must be between 1 and 32, and `keylen` at most 32.
+/// * `state` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `state` nor `key` may wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_blake2s_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 96], outlen: usize, key: *const u8, keylen: usize) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::blake2s::vg_blake2s_init(state, outlen, key, keylen) }
+}
 
-/// `vg_blake2s_update`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::blake2s::vg_blake2s_update as vg_blake2s_update_auto;
+/// Absorbs data into a BLAKE2s computation: if the streaming state `*state` represents data of `count` bytes, it then represents that data followed by the `len` bytes at `data`.
+///
+/// Contract: `VG.Spec.Blake2.updateSContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// It runs `vg_blake2s_update`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 96 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `count` must be the exact length of the data so far (the key block included), and `count + len` less than 2⁶⁴.
+/// * `state` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the 592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_blake2s_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::blake2s::vg_blake2s_update(state, count, data, len) }
+}
 
-/// `vg_blake2s_finalize`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::blake2s::vg_blake2s_finalize as vg_blake2s_finalize_auto;
+/// Finishes a BLAKE2s computation: if the streaming state `*state` represents data of `count` bytes, compresses its last block and writes the final state `h[0..7]` (32 bytes) to `*out`. The digest of `outlen` bytes (`init`'s) is its first `outlen` bytes.
+///
+/// Contract: `VG.Spec.Blake2.finalizeSContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// It runs `vg_blake2s_finalize`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 96 bytes.
+/// * `out` must be valid for reads and writes of 32 bytes.
+/// * `count` must be the exact length of the data (the key block included), less than 2⁶⁴.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
+/// * Neither `state` nor `out` may overlap the 592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_blake2s_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::blake2s::vg_blake2s_finalize(state, count, out) }
+}

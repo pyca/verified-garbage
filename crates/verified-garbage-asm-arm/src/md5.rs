@@ -12,7 +12,7 @@
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `state` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_md5_init(state: *mut [u8; 80]) {
+pub(crate) unsafe extern "C" fn vg_md5_init(state: *mut [u8; 80]) {
     core::arch::naked_asm!(
         r"movw r12, #8961
 movt r12, #26437
@@ -41,7 +41,7 @@ bx lr",
 /// * `state` must not overlap `data` or the arguments on the stack (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the 128 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_md5_update(state: *mut [u8; 80], count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_md5_update(state: *mut [u8; 80], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r"sub sp, sp, #128
 add r12, sp, #0
@@ -192,7 +192,7 @@ bx lr",
 /// * `state` and `out` must not overlap each other or the arguments on the stack (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the 128 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_md5_finalize(state: *mut [u8; 80], count: u64, out: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_md5_finalize(state: *mut [u8; 80], count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"sub sp, sp, #128
 add r12, sp, #0

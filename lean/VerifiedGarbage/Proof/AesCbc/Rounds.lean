@@ -53,17 +53,52 @@ def decryptRoundsContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M 
         Aes.bytesAt m' iv 16 = next (Aes.bytesAt m iv 16) cs)
     (stack := stack)
 
-/-- `Spec.Cbc.aesEncryptContract` from `encryptRoundsContract`. -/
+/-! ## The contracts without `scratch`'s clause
+
+`Spec.Cbc.aesEncryptContract` and `Spec.Cbc.aesDecryptContract` are these
+postconditions and `scratch` left scrubbed (`Wipe.scrubbedPost`,
+`Wipe.encrypt_eq`, `Wipe.decrypt_eq`). -/
+
+namespace Wipe
+
+/-- The precondition of every CBC function. -/
+def pre (pb : Nat) : Curry (aesSig.words pb) (Mem → Prop) :=
+  fun _schedule rounds _iv _data _n _scratch _ => rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14
+
+/-- The postcondition of `Spec.Cbc.aesEncryptContract` without its clause on
+`scratch`. -/
+def encPost (pb : Nat) : aesSig.Post pb := fun schedule rounds iv data n _scratch m m' _ =>
+  ∀ key, Aes.KeySchedule m schedule rounds.toNat key →
+    let ciph := aes key
+    let cs := encrypt ciph (Aes.bytesAt m iv 16) (blocksAt m data n.toNat)
+    blocksAt m' data n.toNat = cs ∧ Aes.bytesAt m' iv 16 = next (Aes.bytesAt m iv 16) cs
+
+/-- The postcondition of `Spec.Cbc.aesDecryptContract` without its clause on
+`scratch`. -/
+def decPost (pb : Nat) : aesSig.Post pb := fun schedule rounds iv data n _scratch m m' _ =>
+  ∀ key, Aes.KeySchedule m schedule rounds.toNat key →
+    let ciphInv := aesInv key
+    let cs := blocksAt m data n.toNat
+    blocksAt m' data n.toNat = decrypt ciphInv (Aes.bytesAt m iv 16) cs ∧
+      Aes.bytesAt m' iv 16 = next (Aes.bytesAt m iv 16) cs
+
+end Wipe
+
+/-- `Spec.Cbc.aesEncryptContract` without `scratch`'s clause, from
+`encryptRoundsContract`. -/
 theorem encrypt_keyed {T : Target} {c : Prog T.isa} {A : Abi T.isa} {stack : Nat}
-    (h : Verified T c (encryptRoundsContract A stack)) : Verified T c (Spec.Cbc.aesEncryptContract A stack) :=
+    (h : Verified T c (encryptRoundsContract A stack)) :
+    Verified T c (aesSig.contract A (Wipe.pre A.ptrBits) (Wipe.encPost A.ptrBits) false stack none) :=
   h.post_mono fun _ _ _ _ _ _ _ _ _ hp key ⟨_, hr, hw⟩ => by
     dsimp only at hp
     rw [hw, hr] at hp
     exact hp
 
-/-- `Spec.Cbc.aesDecryptContract` from `decryptRoundsContract`. -/
+/-- `Spec.Cbc.aesDecryptContract` without `scratch`'s clause, from
+`decryptRoundsContract`. -/
 theorem decrypt_keyed {T : Target} {c : Prog T.isa} {A : Abi T.isa} {stack : Nat}
-    (h : Verified T c (decryptRoundsContract A stack)) : Verified T c (Spec.Cbc.aesDecryptContract A stack) :=
+    (h : Verified T c (decryptRoundsContract A stack)) :
+    Verified T c (aesSig.contract A (Wipe.pre A.ptrBits) (Wipe.decPost A.ptrBits) false stack none) :=
   h.post_mono fun _ _ _ _ _ _ _ _ _ hp key ⟨_, hr, hw⟩ => by
     dsimp only at hp
     rw [hw, hr] at hp

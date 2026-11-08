@@ -119,14 +119,14 @@ theorem finArgs_wp {s₀ : State} (hp : FPre s₀) {s : State} (h : BPost s₀ s
   have rd₈ : s₈.rd = s₀.rd := by rw [u₈.rd, u₇.rd, u₆.rd, u₅.rd, u₄.rd, rd₃']
   have wr₈ : s₈.wr = s₀.wr := by rw [u₈.wr, u₇.wr, u₆.wr, u₅.wr, u₄.wr, wr₃']
   have mem₈ : s₈.mem = s₃.mem := by rw [u₈.mem, u₇.mem, u₆.mem, u₅.mem, u₄.mem]
-  have hb : below (s₈.gpr .esp) 28 = stkR s₀ := by rw [sp₈]; exact hp.below_eq
+  have hb : below (s₈.gpr .esp) 32 = stkR s₀ := by rw [sp₈]; exact hp.below_eq
   have stS : Spec.Aes.bytesAt s.mem ((St s₀).setWidth 64) 16 =
       Spec.Aes.bytesAt s₀.mem ((St s₀).setWidth 64) 16 :=
     Proof.Cmac.bytesAt_frame16 ((savedMem_frame s₀).trans (h.frame.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨scrR s₀, List.mem_singleton_self _, Offset.sub_base _ (by decide)⟩)) fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact hp.st_scr
-  refine ⟨⟨?_, ?_, ?_, ?_, u₈.gpr, ?_, hR, by rw [sp₈]; exact hp.esp28, ?_,
+  refine ⟨⟨?_, ?_, ?_, ?_, u₈.gpr, ?_, hR, by rw [sp₈]; exact hp.esp32, ?_,
     hp.key_st.sub_left (Region.sub_prefix (by decide)),
     (hp.key_scr.sub_left (Region.sub_prefix (by decide))).sub_right (Region.sub_prefix (by decide)),
     by rw [cA]; exact cSt, by rw [cA]; exact Offset.disjoint_base _ (by decide) (by omega),
@@ -182,7 +182,7 @@ theorem finalize_wp {s₀ : State} (h0 : finalizeX86.pre s₀) :
   unfold finalize
   refine WP.seq (WP.mono (finPre_wp hp) fun s₁ h₁ => ?_)
   refine WP.seq (WP.mono (ctr_call v h₁.pre) fun s₂ h₂ => ?_)
-  have hb : below (s₁.gpr .esp) 28 = stkR s₀ := by rw [h₁.esp]; exact hp.below_eq
+  have hb : below (s₁.gpr .esp) 32 = stkR s₀ := by rw [h₁.esp]; exact hp.below_eq
   have f₁ : Frame [stR s₀, ⟨(S s₀).setWidth 64, 2064⟩, stkR s₀] (savedMem s₀) s₁.mem :=
     h₁.frame.sub fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -233,7 +233,7 @@ theorem finalize_wp {s₀ : State} (h0 : finalizeX86.pre s₀) :
   refine ⟨⟨r₄.abi (by decide) (by decide) (by rw [u₃.other _ (by decide), esp₂]), ?_⟩, ?_⟩
   · rw [r₄.mem, u₃.mem]
     have rs : (retR s₀).Disjoint (stkR s₀) := by
-      have := Offset.disjoint_below_above ((E s₀).setWidth 64) (m := 28) (a := 0) (l := 4) (by decide)
+      have := Offset.disjoint_below_above ((E s₀).setWidth 64) (m := 32) (a := 0) (l := 4) (by decide)
       rw [add0] at this
       exact this.symm
     exact big₂.readW (r := retR s₀) (Region.contains_self _ _) (fun r hr => by
@@ -260,7 +260,7 @@ end
 
 The code before the call is checked by the taint analysis, from `esp` and the
 stack arguments (its branches and the copy loop depend only on `last_len`),
-the call of `vg_aes_ctr32`, in its frame, is constant time by its own proof
+the call of `vg_aes_ctr32_to`, in its frame, is constant time by its own proof
 (`ctr_rel`), its arguments pinned by the correctness proof (`FMid`), and the
 restore after it by the taint analysis again.
 -/
@@ -299,7 +299,7 @@ theorem FMid.f {s₀ s : State} (h : FMid s₀ s) :
 
 theorem fcall_after {s₀ : State} (hp : FPre s₀) {s : State} (h : FMid s₀ s) : WP isa (ctrCall v.callee) s (Pt s₀) :=
   WP.mono (ctr_call v h.pre) fun s' hc => by
-    have hb : below (s.gpr .esp) 28 = stkR s₀ := by rw [h.esp]; exact hp.below_eq
+    have hb : below (s.gpr .esp) 32 = stkR s₀ := by rw [h.esp]; exact hp.below_eq
     have fr := hc.frame
     rw [hb, hp.cA] at fr
     have big := UPre.big_of (h.f.trans (fr.sub fun r hr => by

@@ -214,35 +214,51 @@ def ksBlock (b : Nat) : List Instr :=
   if b < 4 then [mova ta (q b), bin .punpcklqdq ta (q (b + 4))]
   else [mova ta (q (b - 4)), bin .punpckhqdq ta (q b)]
 
-def xorBlock (b : Nat) : List Instr :=
-  ksBlock b ++ [ldx tb .rdx (16 * b), pxor tb ta, stx .rdx (16 * b) tb]
+open Impl.Aes.X86_64 (dstR dstLoad dstAdv dstSave) in
+/-- XOR keystream block `b` into data block `b`, stored at `dstR to`. -/
+def xorBlockG (to : Bool) (b : Nat) : List Instr :=
+  ksBlock b ++ [ldx tb .rdx (16 * b), pxor tb ta, stx (dstR to) (16 * b) tb]
 
+def xorBlock : Nat → List Instr := xorBlockG false
+
+open Impl.Aes.X86_64 (dstR dstLoad dstAdv dstSave) in
 /-- Eight blocks, and on to the next (ZF is set when none are left). -/
-def xorFull : List Instr :=
-  (List.range 8).flatMap xorBlock ++ ([.alu .add .rdx (.imm 128), .alu .sub .r8 (.imm 8)] : List Instr)
+def xorFullG (to : Bool) : List Instr :=
+  (List.range 8).flatMap (xorBlockG to) ++ dstAdv to 128 ++ dstSave to ++
+    ([.alu .add .rdx (.imm 128), .alu .sub .r8 (.imm 8)] : List Instr)
 
+def xorFull : List Instr := xorFullG false
+
+open Impl.Aes.X86_64 (dstR dstLoad dstAdv dstSave) in
 /-- The last five to seven blocks (and ZF set). -/
-def xorTail : Prog isa :=
-  .seq (.block ((List.range 5).flatMap xorBlock ++ ([.alu .cmp .r8 (.imm 6)] : List Instr)))
-    (.seq (.ite .ae (.seq (.block (xorBlock 5 ++ ([.alu .cmp .r8 (.imm 7)] : List Instr)))
-        (.ite .ae (.block (xorBlock 6)) (.block [])))
+def xorTailG (to : Bool) : Prog isa :=
+  .seq (.block ((List.range 5).flatMap (xorBlockG to) ++ ([.alu .cmp .r8 (.imm 6)] : List Instr)))
+    (.seq (.ite .ae (.seq (.block (xorBlockG to 5 ++ ([.alu .cmp .r8 (.imm 7)] : List Instr)))
+        (.ite .ae (.block (xorBlockG to 6)) (.block [])))
       (.block []))
-    (.block [.alu .sub .r8 (.reg .r8)]))
+    (.block (dstSave to ++ [.alu .sub .r8 (.reg .r8)])))
+
+def xorTail : Prog isa := xorTailG false
 
 /-- The spill slots' base, and the masks' of ShiftRows. -/
 def groupSetup : List Instr :=
   [.mov .rcx (.reg .r9), .mov .r11 (.reg .r9), .alu .add .r11 (.imm (BitVec.ofNat 32 srOff))]
 
+open Impl.Aes.X86_64 (dstLoad) in
 /-- A group of eight blocks, or the last five to seven. -/
-def sseGroup : Prog isa :=
+def sseGroupG (to : Bool) : Prog isa :=
   .seq (.block (groupSetup ++ ctrBlocks))
     (.seq encrypt8
-      (.seq (.block [.alu .cmp .r8 (.imm 8)]) (.ite .ae (.block xorFull) xorTail)))
+      (.seq (.block (dstLoad to ++ [.alu .cmp .r8 (.imm 8)])) (.ite .ae (.block (xorFullG to)) (xorTailG to))))
+
+def sseGroup : Prog isa := sseGroupG false
 
 /-- A group: of four blocks or fewer if at most four are left, else of eight
 or the last five to seven. -/
-def group : Prog isa :=
-  .seq (.block [.alu .cmp .r8 (.imm 5)]) (.ite .b Impl.Aes.X86_64.group sseGroup)
+def groupG (to : Bool) : Prog isa :=
+  .seq (.block [.alu .cmp .r8 (.imm 5)]) (.ite .b (Impl.Aes.X86_64.groupG to) (sseGroupG to))
+
+def group : Prog isa := groupG false
 
 end VG.Impl.Aes.X86_64.Sse
 
@@ -250,11 +266,25 @@ namespace VG.Impl.Aes.X86_64
 
 open VG.X86_64
 
-/-- `vg_aes_ctr32(schedule = rdi, rounds = rsi, counter = rdx, data = rcx, n = r8, scratch = r9)`. -/
-def ctr32 : Prog isa :=
-  .seq (.block (saveRegs ++ ctrSetup ++ keySetup))
+/-- Out of place, keep the output pointer (`r11`) in `xmm15` through the key
+loop, which writes every general-purpose register but no vector one. -/
+def dstStash (to : Bool) : List Instr := if to then [.xop (.movq .xmm15 .r11)] else []
+
+/-- Out of place, store the output pointer from `xmm15` to its slot. -/
+def dstInit (to : Bool) : List Instr := if to then [.movqR t1 .xmm15, st dSlot t1] else []
+
+/-- `vg_aes_ctr32(schedule = rdi, rounds = rsi, counter = rdx, data = rcx, n = r8, scratch = r9)`,
+or, out of place (`to`), `vg_aes_ctr32_to`, which reads the data at `rcx` and
+writes the result to `r11`. -/
+def ctr32G (to : Bool) : Prog isa :=
+  .seq (.block (dstStash to ++ saveRegs ++ ctrSetup ++ keySetup))
     (.seq (.loop (.block keyBody) .ae)
-      (.seq (.block (Sse.srSetup ++ keyDone ++ ([.alu .test .r8 (.reg .r8)] : List Instr)))
-        (.seq (.ite .e (.block []) (.loop Sse.group .ne)) (.block restoreRegs))))
+      (.seq (.block (dstInit to ++ Sse.srSetup ++ keyDone ++ ([.alu .test .r8 (.reg .r8)] : List Instr)))
+        (.seq (.ite .e (.block []) (.loop (Sse.groupG to) .ne)) (.block restoreRegs))))
+
+def ctr32 : Prog isa := ctr32G false
+
+/-- `vg_aes_ctr32_to`. -/
+def ctr32To : Prog isa := ctr32G true
 
 end VG.Impl.Aes.X86_64

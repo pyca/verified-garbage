@@ -2,20 +2,67 @@
 //! The dispatchers of the verified `rc2` functions for `riscv64`
 //! (`crate::rc2`, `VG.Rust.dispatcher`).
 
-/// `vg_rc2_cbc_init`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::rc2::vg_rc2_cbc_init as vg_rc2_cbc_init_auto;
+/// Starts RC2-CBC without padding (RFC 2268, NIST SP 800-38A §6.2), in either direction: checks that `key_len` is in 1..=128, then that `effective_bits` is in 1..=1024, then that `iv_len` is 8, and returns 1, 2 or 3 respectively for the first that is not (`VG.Spec.Rc2.Error.code`). Otherwise writes to `*ctx` the context with the key schedule of the `key_len` bytes at `key` with `effective_bits` effective key bits (`VG.Spec.Rc2.expandKey`), the `iv_len` bytes at `iv` as the chaining value, and no pending input (`VG.Spec.Rc2.contextAt`), and returns 0. Continue with `vg_rc2_cbc_encrypt_update` or `vg_rc2_cbc_decrypt_update` from 0 pending bytes. Effective bits are independent of the supplied key length.
+///
+/// Contract: `VG.Spec.Rc2.cbcInitContract`. Constant time: only the pointers, `key_len`, `effective_bits` and `iv_len` may affect timing, not the key or the IV.
+///
+/// It runs `vg_rc2_cbc_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `iv` must be valid for reads of `iv_len` bytes.
+/// * `ctx` must be valid for reads and writes of 144 bytes.
+/// * If the function returns nonzero, the contents of `ctx` on return are unspecified.
+/// * `ctx` must not overlap `key` or `iv` (distinct Rust objects never do).
+/// * None of `key`, `iv` and `ctx` may overlap the 608 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_rc2_cbc_init_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, effective_bits: usize, iv: *const u8, iv_len: usize, ctx: *mut [u8; 144]) -> u32 {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::rc2::vg_rc2_cbc_init(key, key_len, effective_bits, iv, iv_len, ctx) }
+}
 
-/// `vg_rc2_cbc_encrypt_update`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::rc2::vg_rc2_cbc_encrypt_update as vg_rc2_cbc_encrypt_update_auto;
+/// Continues RC2-CBC encryption without padding: if `*ctx` is a context with `pending_len` pending bytes (`VG.Spec.Rc2.contextAt`, written by `vg_rc2_cbc_init` and updated by this function), encrypts the complete 8-byte blocks of the pending bytes followed by the `len` bytes at `data`, `C[i] = RC2(schedule, P[i] XOR C[i-1])` from the context's chaining value, writes them to `out` (`out_len` bytes), and leaves in `*ctx` the last ciphertext block as the chaining value and the remaining `(pending_len + len) % 8` bytes as the pending input. The caller keeps the number of pending bytes; when the input ends, it is an incomplete block unless it is 0.
+///
+/// Contract: `VG.Spec.Rc2.cbcEncryptUpdateContract`. Constant time: only the pointers, `pending_len`, `len` and `out_len` may affect timing, not the context or the data.
+///
+/// It runs `vg_rc2_cbc_encrypt_update`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads and writes of 144 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `pending_len` must be less than 8.
+/// * `out_len` must be `(pending_len + len) / 8 * 8`.
+/// * `ctx` and `out` must not overlap each other or `data` (distinct Rust objects never do).
+/// * None of `ctx`, `data` and `out` may overlap the 608 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_rc2_cbc_encrypt_update_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *mut [u8; 144], pending_len: usize, data: *const u8, len: usize, out: *mut u8, out_len: usize) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::rc2::vg_rc2_cbc_encrypt_update(ctx, pending_len, data, len, out, out_len) }
+}
 
-/// `vg_rc2_cbc_decrypt_update`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::rc2::vg_rc2_cbc_decrypt_update as vg_rc2_cbc_decrypt_update_auto;
+/// Continues RC2-CBC decryption without padding: if `*ctx` is a context with `pending_len` pending bytes (`VG.Spec.Rc2.contextAt`, written by `vg_rc2_cbc_init` and updated by this function), decrypts the complete 8-byte blocks of the pending bytes followed by the `len` bytes at `data`, `P[i] = RC2_inverse(schedule, C[i]) XOR C[i-1]` from the context's chaining value, writes them to `out` (`out_len` bytes), and leaves in `*ctx` the last input ciphertext block as the chaining value and the remaining `(pending_len + len) % 8` bytes as the pending input. The caller keeps the number of pending bytes; when the input ends, it is an incomplete block unless it is 0.
+///
+/// Contract: `VG.Spec.Rc2.cbcDecryptUpdateContract`. Constant time: only the pointers, `pending_len`, `len` and `out_len` may affect timing, not the context or the data.
+///
+/// It runs `vg_rc2_cbc_decrypt_update`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads and writes of 144 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `pending_len` must be less than 8.
+/// * `out_len` must be `(pending_len + len) / 8 * 8`.
+/// * `ctx` and `out` must not overlap each other or `data` (distinct Rust objects never do).
+/// * None of `ctx`, `data` and `out` may overlap the 608 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_rc2_cbc_decrypt_update_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *mut [u8; 144], pending_len: usize, data: *const u8, len: usize, out: *mut u8, out_len: usize) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::rc2::vg_rc2_cbc_decrypt_update(ctx, pending_len, data, len, out, out_len) }
+}

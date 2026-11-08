@@ -3,9 +3,6 @@
 //! `assembly/internal/vg_aes_gcm_stream_encrypt_to_prepared16_aesni_pclmul_avx.s`.
 #![allow(dead_code)]
 
-/// The CPU features `vg_aes_gcm_stream_encrypt_to_prepared16_aesni_pclmul_avx` requires (`VG.Rust.Internal.features`).
-pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_TO_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AES);
-
 /// An internal function of the verified functions of this crate (`VG.Rust.Internal`): code that they call, which is not itself an artifact. It has no contract of its own: the proof of each function that calls it covers its code, which the model runs for the call (`Code.call`), and the emitter checks that every call of it is of this code.
 ///
 /// # Safety
@@ -23,7 +20,7 @@ jb 22f
 .base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
 jne 24b
 .base64 "TItcJCBNi1NISYs7SYtzCEmLUxBJi0sYTYtDIE2LSzhBUg=="
-call {vg_aes_gcm_stream_encrypt_prepared16_aesni_pclmul_avx}
+call {vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul_avx}
 .base64 "WEyLXCQgSYtDSEmJQ0A="
 jmp 23f
 22:
@@ -62,14 +59,14 @@ je 213f
 .base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
 jne 215b
 .base64 "TItcJCBJi0NATYtTMEkpwkmLO0mLcwhJi1MQSYtLGE2LQyBJAcBNi0s4SQHBQVI="
-call {vg_aes_gcm_stream_encrypt_prepared16_aesni_pclmul_avx}
+call {vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul_avx}
 .base64 "WA=="
 jmp 214f
 213:
 214:
 .base64 "SI2kJLgIAADD"
 .p2align 6"#,
-        vg_aes_gcm_stream_encrypt_prepared16_aesni_pclmul_avx = sym crate::gcm::vg_aes_gcm_stream_encrypt_prepared16_aesni_pclmul_avx,
+        vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul_avx = sym crate::gcm::vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul_avx,
         vg_aes_gcm_encrypt_blocks_to_prepared16_aesni_pclmul_avx = sym crate::aes::vg_aes_gcm_encrypt_blocks_to_prepared16_aesni_pclmul_avx::vg_aes_gcm_encrypt_blocks_to_prepared16_aesni_pclmul_avx,
     )
 }

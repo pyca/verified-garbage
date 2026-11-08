@@ -12,7 +12,7 @@
 /// * `state` must be valid for reads and writes of 32 bytes.
 /// * `state` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_dsa_parameter_search_init(state: *mut [u64; 4], p_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_dsa_parameter_search_init(state: *mut [u64; 4], p_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd1020029
 cbz x9, 20f
@@ -59,7 +59,7 @@ b 21f
 /// * `out`, `used` and `scratch` must not overlap each other, `key`, `digest`, `rand` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `used`, `key`, `digest`, `rand` and `scratch` may overlap the 256 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_dsa_sign_random_prevalidated(out: *mut u8, out_len: usize, used: *mut [u64; 1], key: *const u8, key_len: usize, p_len: usize, q_len: usize, digest: *const u8, digest_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_dsa_sign_random_prevalidated(out: *mut u8, out_len: usize, used: *mut [u64; 1], key: *const u8, key_len: usize, p_len: usize, q_len: usize, digest: *const u8, digest_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd10403ff,0x9100a3ef,0xf90001e0,0x9100c3ef,0xf90001e1,0x9100e3ef,0xf90001e2,0x910103ef
 .inst 0xf90001e3,0x910123ef,0xf90001e4,0x910143ef,0xf90001e5,0x910163ef,0xf90001e6,0x910183ef
@@ -180,7 +180,7 @@ cbnz x9, 227b
 /// * `scratch` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_dsa_validate_private_key(key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_dsa_validate_private_key(key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".inst 0x9100008b,0xd280000c,0xf900956c,0xf900a16c,0xf900996c,0xf9009d6c,0xf900ad6c,0xf9008160
 .inst 0xf900a562,0xf900a963,0xf9408163,0xf940a56c,0x8b0c0063,0xf9008563,0xf940a96d,0x8b0d0063
@@ -1058,7 +1058,7 @@ b 217f
 /// * `scratch` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_dsa_validate_public_key(key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_dsa_validate_public_key(key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".inst 0x9100008b,0xd2800006,0xd2800007,0xd280000c,0xf900a16c,0xf900996c,0xf9008160,0xf900a562
 .inst 0xf900a963,0xf9009564,0xf9009d66,0xf900ad67,0xf9408163,0xf940a56c,0x8b0c0063,0xf9008563
@@ -1907,7 +1907,7 @@ b 217f
 /// * `scratch` must not overlap `key`, `signature`, `digest` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `key`, `signature`, `digest` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_dsa_verify_prevalidated(key: *const u8, key_len: usize, p_len: usize, q_len: usize, signature: *const u8, signature_len: usize, digest: *const u8, digest_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_dsa_verify_prevalidated(key: *const u8, key_len: usize, p_len: usize, q_len: usize, signature: *const u8, signature_len: usize, digest: *const u8, digest_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xf94003eb,0xd280000c,0xf900a16c,0xf900996c,0xf9008160,0xf900a562,0xf900a963,0xf9009564
 .inst 0xf9009d66,0xf900ad67,0xf9408163,0xf940a56c,0x8b0c0063,0xf9008563,0xf940a96d,0x8b0d0063
@@ -3325,7 +3325,7 @@ b 217f
 /// * `out`, `used` and `scratch` must not overlap each other, `params`, `rand` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `used`, `params`, `rand` and `scratch` may overlap the 256 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_dsa_generate_key(out: *mut u8, out_len: usize, used: *mut [u64; 1], params: *const u8, params_len: usize, p_len: usize, q_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_dsa_generate_key(out: *mut u8, out_len: usize, used: *mut [u64; 1], params: *const u8, params_len: usize, p_len: usize, q_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd10403ff,0x9100a3ef,0xf90001e0,0x9100c3ef,0xf90001e1,0x9100e3ef,0xf90001e2,0x910103ef
 .inst 0xf90001e3,0x910123ef,0xf90001e4,0x910143ef,0xf90001e5,0x910163ef,0xf90001e6,0x9101c3ef
@@ -3442,7 +3442,7 @@ cbnz x9, 224b
 /// * `out` and `scratch` must not overlap each other, `params`, `x` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `params`, `x` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_dsa_derive_key(out: *mut u8, out_len: usize, params: *const u8, params_len: usize, p_len: usize, x: *const u8, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_dsa_derive_key(out: *mut u8, out_len: usize, params: *const u8, params_len: usize, p_len: usize, x: *const u8, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".inst 0x910000eb,0xd280000c,0xf900956c,0xf900996c,0xf9009d6c,0xf900ad6c,0xf900a160,0xf9008162
 .inst 0xf900a564,0xf900a966,0xf9408163,0xf940a56c,0x8b0c0063,0xf9008563,0xf940a96d,0x8b0d0063
@@ -4321,7 +4321,7 @@ cbnz x2, 2193b
 /// * `out`, `used`, `scratch` and `state` must not overlap each other or `rand` (distinct Rust objects never do).
 /// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the 768 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_dsa_parameter_search(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_dsa_parameter_search(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd10783ff,0xf9009bf3,0xf9009ff4,0xf900a3f5,0xf900a7f6,0xf900abf7,0xf900aff8,0xf900b3f9
 .inst 0xf900b7fa,0xf900bbfb,0xf900bffc,0x4e083d09,0xf900c3e9,0x4e083d29,0xf900c7e9,0x4e083d49
@@ -5957,7 +5957,7 @@ pub const VG_DSA_PARAMETER_SEARCH_SHA1_SHA2_SHA256_SHA2_FEATURES: verified_garba
 /// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the 768 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha2` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_dsa_parameter_search_sha1_sha2_sha256_sha2(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_dsa_parameter_search_sha1_sha2_sha256_sha2(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd10783ff,0xf9009bf3,0xf9009ff4,0xf900a3f5,0xf900a7f6,0xf900abf7,0xf900aff8,0xf900b3f9
 .inst 0xf900b7fa,0xf900bbfb,0xf900bffc,0x4e083d09,0xf900c3e9,0x4e083d29,0xf900c7e9,0x4e083d49

@@ -118,6 +118,7 @@ impl PublicKey {
     /// [`InvalidSignature`] if the signature is not valid, is not twice as
     /// long as `q`, or the key is not valid.
     pub fn verify(&self, digest: &[u8], signature: &[u8]) -> Result<(), InvalidSignature> {
+        let dit = crate::dit::public(crate::dit::Why::Verify);
         if signature.len() != 2 * self.q_len {
             return Err(InvalidSignature);
         }
@@ -133,6 +134,7 @@ impl PublicKey {
             // features of.
             let valid = unsafe {
                 vg_dsa_validate_public_key_auto(
+                    dit,
                     self.packed.as_ptr(),
                     self.packed.len(),
                     self.p_len,
@@ -159,6 +161,7 @@ impl PublicKey {
         // of.
         let result = unsafe {
             vg_dsa_verify_prevalidated_auto(
+                dit,
                 self.packed.as_ptr(),
                 self.packed.len(),
                 self.p_len,
@@ -251,9 +254,10 @@ impl PrivateKey {
         digest: &[u8],
         random: impl FnMut(&mut [u8]) -> Result<(), Error>,
     ) -> Result<Vec<u8>, Error> {
+        crate::dit::enter!(dit);
         let q_len = self.public.q_len;
         let mut scratch = Secret(vec![0u64; 16 * self.public.p_len + 64]);
-        if !self.validate(&mut scratch.0) {
+        if !self.validate(dit, &mut scratch.0) {
             return Err(Error::InvalidKeyOrNonce);
         }
         let mut output = vec![0u8; 2 * q_len];
@@ -269,6 +273,7 @@ impl PrivateKey {
             // features of.
             let status = unsafe {
                 vg_dsa_sign_random_prevalidated_auto(
+                    dit,
                     output.as_mut_ptr(),
                     output.len(),
                     &mut used,
@@ -305,7 +310,7 @@ impl PrivateKey {
 
     /// Whether `vg_dsa_validate_private_key` accepts the key, validating it
     /// on the first call. `scratch` holds at least 16*p_len words.
-    fn validate(&self, scratch: &mut [u64]) -> bool {
+    fn validate(&self, dit: crate::dit::Dit<'_>, scratch: &mut [u64]) -> bool {
         match self.validated.load(Ordering::Relaxed) {
             0 => {}
             state => return state == 1,
@@ -316,6 +321,7 @@ impl PrivateKey {
         // implementation the CPU has the features of.
         let valid = unsafe {
             vg_dsa_validate_private_key_auto(
+                dit,
                 self.packed.0.as_ptr(),
                 self.packed.0.len(),
                 self.public.p_len,

@@ -9,13 +9,21 @@ A primitive with implementations for different CPU features is tested (and
 benchmarked) end to end in each configuration, never through a special API:
 the `cpu-features-env` Cargo feature lets `VG_CPU_FEATURES` restrict the
 features detected (see
-`crates/verified-garbage-cpu/src/detect.rs`). CI tests each configuration that
+`crates/verified-garbage-cpu/src/detect.rs`), but never those the compilation
+target enables (`COMPILED`, e.g. `-C target-cpu=x86-64-v3` or
+`aarch64-apple-darwin`'s baseline), which it is limited to the others of:
+test the baseline with a target that enables none. CI tests each configuration that
 chooses differently on a CPU that has those features: the runner's, or one
 Intel SDE presents (`rust-cpu-features` in `ci.yml`, whose CPUs are the
 `cpu` entries of `ci/rust_matrix.toml`; SDE runs the SHA
 extensions' code very slowly, so the chips that have them run only the
 tests that need them); and benchmarks each with
-`VG_CPU_FEATURES` (`CPU_FEATURES` in `ci/bench_arches.py`). A configuration
+`VG_CPU_FEATURES` (`CPU_FEATURES` in `ci/bench_arches.py`). The `rust` job runs every test with
+its runner's features (the default features include `std`, which AArch64
+needs to detect them at run time), so a native CPU's lines restrict them,
+never leave them unrestricted, and run only the groups whose implementation
+that restriction changes: the baseline's (`none`) of everything the
+runner's features accelerate. A configuration
 to test is a line of a CPU's `runs` in `ci/rust_matrix.toml`
 (`<VG_CPU_FEATURES> | <groups>`), never a step or job of its own, and
 each CPU has one line per value of `VG_CPU_FEATURES` (CI checks both), so
@@ -29,8 +37,10 @@ never into a line by matching part of its name. CI fails a path that
 selects no test on any CPU, and a group that selects none on a line's CPU.
 A CPU whose lines take long runs as shards (its `shards = n`: n jobs, each
 with a `shard` of `i/n`), which deal out its
-lines by the CPU time each took on `main` (`ci/cpu_shards.py`): to speed
-one up, add a shard, never split its lines by hand.
+independent groups by the CPU time each took on `main` (`ci/cpu_shards.py`).
+Overlapping selectors stay together, so every test runs once per feature
+configuration; an unrestricted line can span several shards. Add shards
+when needed, rather than duplicating feature lines or assigning them by hand.
 To test the baseline ISA's implementations:
 
 ```sh

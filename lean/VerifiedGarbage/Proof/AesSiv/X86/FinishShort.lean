@@ -263,7 +263,7 @@ theorem shortTail_ok {C W SP : BitVec 32} (L : Lay C W SP) {R : Nat} {P : BitVec
 stack below `SP`. -/
 abbrev finR (W SP : BitVec 32) (out : Nat) : List Region :=
   [⟨w64 W + BitVec.ofNat 64 out, 16⟩, ⟨w64 W + BitVec.ofNat 64 32, 32⟩, ⟨w64 W + BitVec.ofNat 64 144, 32⟩, wS W,
-    ⟨w64 W + BitVec.ofNat 64 256, 2176⟩, below SP 56]
+    ⟨w64 W + BitVec.ofNat 64 256, 2176⟩, below SP 60]
 
 /-- What `finish out` leaves: S2V's end, from `D` and the string `P`, at
 `W + out`. -/

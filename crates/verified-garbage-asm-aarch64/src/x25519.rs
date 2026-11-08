@@ -17,7 +17,7 @@
 /// * `out` and `scratch` must not overlap each other, `scalar` or `point` (distinct Rust objects never do).
 /// * None of `out`, `scalar`, `point` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_x25519_exchange(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_x25519_exchange(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xf81f0ffe,0x910003e9,0xf9000520
 bl {vg_x25519}
@@ -54,7 +54,7 @@ pub const VG_X25519_BASE_SCRATCH_WRITTEN: usize = 1024;
 /// * `out` and `scratch` must not overlap each other or `scalar` (distinct Rust objects never do).
 /// * None of `out`, `scalar` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_x25519_base(out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "C" fn vg_x25519_base(out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r".inst 0xf9000053,0xf9000454,0xf9000855,0xf9000c56,0xf9001057,0xf9001458,0xf9001840,0x91000040
 .inst 0x52800013,0x5280002b

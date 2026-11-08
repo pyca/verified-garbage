@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.MlKem.Scrubbed
 public import VerifiedGarbage.Proof.MlKem.X86.EncapsBody
 import VerifiedGarbage.Proof.MlKem1024.X86.Kem
 public import VerifiedGarbage.Spec.MlKem.Contract1024
@@ -46,8 +47,8 @@ instance : EncapsOK L1024 where
   dCt := by simp only [Enc.safe, Enc.safeS]; decide
   acc := by simp only [Enc.safe, Enc.safeS]; decide
 
-theorem pre_of {s₀ : State} (h : (Spec.MlKem1024.encapsContract X86.abi 88).pre s₀) : TPre (Y L1024) s₀ := by
-  sig_pre [Spec.MlKem1024.encapsContract, Spec.MlKem1024.encapsSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at h
+theorem pre_of {s₀ : State} (h : (Proof.MlKem.Scrubbed.encaps1024BodyContract X86.abi 88).pre s₀) : TPre (Y L1024) s₀ := by
+  sig_pre [Proof.MlKem.Scrubbed.encaps1024BodyContract, Spec.MlKem1024.encapsSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at h
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20, h21,
     h22, h23, -, h25, h26, h27, h28, h29, h30, h31, h32, h33, h34, h35⟩ := h
   have hs : (⟨(E0 s₀).setWidth 64 - 88#64, 88⟩ : Region) = below (E0 s₀) 88 := by
@@ -90,8 +91,8 @@ theorem pre_of {s₀ : State} (h : (Spec.MlKem1024.encapsContract X86.abi 88).pr
     rcases c5 i hi with rfl | rfl | rfl | rfl | rfl
     exacts [h31, h32, h33, h34, h35]
 
-theorem pub_of {s₀ s₀' : State} (h : (Spec.MlKem1024.encapsContract X86.abi 88).pub s₀ s₀') : TPub (Y L1024) (lk L1024) s₀ s₀' := by
-  sig_pub [Spec.MlKem1024.encapsContract, Spec.MlKem1024.encapsSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at h
+theorem pub_of {s₀ s₀' : State} (h : (Proof.MlKem.Scrubbed.encaps1024BodyContract X86.abi 88).pub s₀ s₀') : TPub (Y L1024) (lk L1024) s₀ s₀' := by
+  sig_pub [Proof.MlKem.Scrubbed.encaps1024BodyContract, Spec.MlKem1024.encapsSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at h
   obtain ⟨e₁, e₂, e₃, e₄, e₅, e₆, e₇⟩ := h
   refine ⟨e₁, fun i hi => ?_, ?_⟩
   · simp only [Y, Lay.n, List.length_cons, List.length_nil] at hi
@@ -107,12 +108,12 @@ def satMem : Mem := fun a =>
   if a = 0x5009 then 0x08 else if a = 0x500d then 0x10 else if a = 0x5011 then 0x20 else if a = 0x5016 then 1
   else 0
 
-theorem verified : Verified X86.target Impl.MlKem1024.X86.encaps (Spec.MlKem1024.encapsContract X86.abi 88) := by
+theorem verified : Verified X86.target Impl.MlKem1024.X86.encaps (Proof.MlKem.Scrubbed.encaps1024BodyContract X86.abi 88) := by
   refine Piece.verified (((piece (L := L1024) (by decide) (NoSp.of_all (by lit_decide))).pre_mono (fun _ h => pre_of h) fun _ _ _ _ h => pub_of h).mono
     (fun _ _ _ h => h) fun s₀ s' _ hq => ?_) ?_
   · obtain ⟨habi, -, -, s, hfin, hm, hax⟩ := hq
     refine ⟨habi, ?_⟩
-    sig_post [Spec.MlKem1024.encapsContract, Spec.MlKem1024.encapsSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+    sig_post [Proof.MlKem.Scrubbed.encaps1024BodyContract, Spec.MlKem1024.encapsSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     rw [setWidth_append32, hax, hfin.eax, hm]
     have r := post (by decide) hfin
     rw [ek_eq, msg_eq, addr0, addr0, addr0, addr0] at r
@@ -120,7 +121,7 @@ theorem verified : Verified X86.target Impl.MlKem1024.X86.encaps (Spec.MlKem1024
   · let st := satState satMem [⟨0, 1568⟩, ⟨0x800, 32⟩]
       [⟨0x1000, 32⟩, ⟨0x2000, 1568⟩, ⟨0x10000, 49152⟩, ⟨0x5004, 20⟩]
     refine ⟨st, ?_⟩
-    sig_sat_check [Spec.MlKem1024.encapsContract, Spec.MlKem1024.encapsSig, X86.abi, X86.argSlots, X86.argVal,
+    sig_sat_check [Proof.MlKem.Scrubbed.encaps1024BodyContract, Spec.MlKem1024.encapsSig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes]
 
 /-! ## `vg_mlkem1024_encaps_h` -/
@@ -141,9 +142,9 @@ instance : EncapsHOK L1024 where
   dCt := by simp only [Enc.safe, Enc.safeS]; decide
   acc := by simp only [Enc.safe, Enc.safeS]; decide
 
-theorem pre_ofH {s₀ : State} (h : (Spec.MlKem1024.encapsHContract X86.abi 88).pre s₀) :
+theorem pre_ofH {s₀ : State} (h : (Proof.MlKem.Scrubbed.encapsH1024BodyContract X86.abi 88).pre s₀) :
     TPre (YH L1024) s₀ ∧ hv s₀ = H (ek L1024 s₀) := by
-  sig_pre [Spec.MlKem1024.encapsHContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, X86.abi, X86.argSlots,
+  sig_pre [Proof.MlKem.Scrubbed.encapsH1024BodyContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, X86.abi, X86.argSlots,
     X86.argVal, X86.argBytes] at h
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20, h21,
     h22, h23, h24, h25, h26, h27, h28, -, h30, h31, h32, h33, h34, h35, h36, h37, h38, h39, h40, h41, h42,
@@ -191,9 +192,9 @@ theorem pre_ofH {s₀ : State} (h : (Spec.MlKem1024.encapsHContract X86.abi 88).
     rcases c6 i hi with rfl | rfl | rfl | rfl | rfl | rfl
     exacts [h37, h38, h39, h40, h41, h42]
 
-theorem pub_ofH {s₀ s₀' : State} (h : (Spec.MlKem1024.encapsHContract X86.abi 88).pub s₀ s₀') :
+theorem pub_ofH {s₀ s₀' : State} (h : (Proof.MlKem.Scrubbed.encapsH1024BodyContract X86.abi 88).pub s₀ s₀') :
     TPub (YH L1024) (lk L1024) s₀ s₀' := by
-  sig_pub [Spec.MlKem1024.encapsHContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, X86.abi, X86.argSlots,
+  sig_pub [Proof.MlKem.Scrubbed.encapsH1024BodyContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, X86.abi, X86.argSlots,
     X86.argVal, X86.argBytes] at h
   obtain ⟨e₁, e₂, e₃, e₄, e₅, e₆, e₇, e₈⟩ := h
   refine ⟨e₁, fun i hi => ?_, ?_⟩
@@ -212,12 +213,12 @@ def satStH1024 : State := satState (satMemH 1568) [⟨0x1000, 1568⟩, ⟨0x2000
 theorem satStH1024_ek : BitVec.setWidth 64 (arg satStH1024 0) = 0x1000 := by decide +kernel
 theorem satStH1024_h : BitVec.setWidth 64 (arg satStH1024 1) = 0x2000 := by decide +kernel
 
-theorem verifiedH : Verified X86.target Impl.MlKem1024.X86.encapsH (Spec.MlKem1024.encapsHContract X86.abi 88) := by
+theorem verifiedH : Verified X86.target Impl.MlKem1024.X86.encapsH (Proof.MlKem.Scrubbed.encapsH1024BodyContract X86.abi 88) := by
   refine Piece.verified (((pieceH (L := L1024) (by decide) (NoSp.of_all (by lit_decide))).pre_mono
     (fun _ h => (pre_ofH h).1) fun _ _ _ _ h => pub_ofH h).mono (fun _ _ _ h => h) fun s₀ s' hpre hq => ?_) ?_
   · obtain ⟨habi, -, -, s, hfin, hm, hax⟩ := hq
     refine ⟨habi, ?_⟩
-    sig_post [Spec.MlKem1024.encapsHContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, X86.abi, X86.argSlots,
+    sig_post [Proof.MlKem.Scrubbed.encapsH1024BodyContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, X86.abi, X86.argSlots,
       X86.argVal, X86.argBytes]
     rw [setWidth_append32, hax, hfin.eax, hm]
     have r := postH (by decide) (pre_ofH hpre).2 hfin
@@ -226,7 +227,7 @@ theorem verifiedH : Verified X86.target Impl.MlKem1024.X86.encapsH (Spec.MlKem10
   · refine ⟨satStH1024, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlKem1024.encapsHContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, X86.abi,
+    · sig_reduce [Proof.MlKem.Scrubbed.encapsH1024BodyContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, X86.abi,
         X86.argSlots, X86.argVal, X86.argBytes]
       sig_and_intros
       all_goals first

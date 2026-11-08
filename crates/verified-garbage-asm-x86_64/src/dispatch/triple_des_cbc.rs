@@ -2,17 +2,31 @@
 //! The dispatchers of the verified `triple_des_cbc` functions for `x86_64`
 //! (`crate::triple_des_cbc`, `VG.Rust.dispatcher`).
 
-/// `vg_triple_des_cbc_encrypt_chained`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::triple_des_cbc::vg_triple_des_cbc_encrypt_chained as vg_triple_des_cbc_encrypt_chained_auto;
+/// Triple DES-CBC encryption (NIST SP 800-38A §6.2, FIPS 46-3) of whole blocks, in place: replaces the `n` 8-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is Triple DES encryption under the schedule written by `vg_triple_des_expand_key`. No padding is added.
+///
+/// Contract: `VG.Spec.TripleDes.cbcEncryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
+///
+/// It runs `vg_triple_des_cbc_encrypt_chained`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 384 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
+/// * `data` must be valid for reads and writes of `8 * n` bytes.
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 984 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_triple_des_cbc_encrypt_chained_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::triple_des_cbc::vg_triple_des_cbc_encrypt_chained(schedule, iv, data, n) }
+}
 
 /// Triple DES-CBC decryption (NIST SP 800-38A §6.2, FIPS 46-3) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is Triple DES decryption under the schedule written by `vg_triple_des_expand_key`. No padding is removed.
 ///
 /// Contract: `VG.Spec.TripleDes.cbcDecryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_triple_des_cbc_decrypt_chained_avx512` if the CPU supports its features (`VG_TRIPLE_DES_CBC_DECRYPT_CHAINED_AVX512_FEATURES`); `vg_triple_des_cbc_decrypt_chained_avx2` if the CPU supports its features (`VG_TRIPLE_DES_CBC_DECRYPT_CHAINED_AVX2_FEATURES`); or else `vg_triple_des_cbc_decrypt_chained`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_triple_des_cbc_decrypt_chained_avx512` if the CPU supports its features (`VG_TRIPLE_DES_CBC_DECRYPT_CHAINED_AVX512_FEATURES`); `vg_triple_des_cbc_decrypt_chained_avx2` if the CPU supports its features (`VG_TRIPLE_DES_CBC_DECRYPT_CHAINED_AVX2_FEATURES`); or else `vg_triple_des_cbc_decrypt_chained`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -23,18 +37,41 @@ pub use crate::triple_des_cbc::vg_triple_des_cbc_encrypt_chained as vg_triple_de
 /// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 3176 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_triple_des_cbc_decrypt_chained_auto(schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::triple_des_cbc::VG_TRIPLE_DES_CBC_DECRYPT_CHAINED_AVX512_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_triple_des_cbc_decrypt_chained_avx512`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::triple_des_cbc::vg_triple_des_cbc_decrypt_chained_avx512(schedule, iv, data, n) };
+pub unsafe fn vg_triple_des_cbc_decrypt_chained_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::triple_des_cbc::VG_TRIPLE_DES_CBC_DECRYPT_CHAINED_AVX512_FEATURES) }
+            || cpu.contains(crate::triple_des_cbc::VG_TRIPLE_DES_CBC_DECRYPT_CHAINED_AVX512_FEATURES)
+        {
+            return crate::triple_des_cbc::vg_triple_des_cbc_decrypt_chained_avx512;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::triple_des_cbc::VG_TRIPLE_DES_CBC_DECRYPT_CHAINED_AVX2_FEATURES) }
+            || cpu.contains(crate::triple_des_cbc::VG_TRIPLE_DES_CBC_DECRYPT_CHAINED_AVX2_FEATURES)
+        {
+            return crate::triple_des_cbc::vg_triple_des_cbc_decrypt_chained_avx2;
+        }
+        crate::triple_des_cbc::vg_triple_des_cbc_decrypt_chained
     }
-    if cpu.contains(crate::triple_des_cbc::VG_TRIPLE_DES_CBC_DECRYPT_CHAINED_AVX2_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_triple_des_cbc_decrypt_chained_avx2`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::triple_des_cbc::vg_triple_des_cbc_decrypt_chained_avx2(schedule, iv, data, n) };
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(schedule, iv, data, n) }
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::triple_des_cbc::vg_triple_des_cbc_decrypt_chained(schedule, iv, data, n) }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(schedule, iv, data, n) }
 }

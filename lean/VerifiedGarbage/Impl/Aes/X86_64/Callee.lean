@@ -32,6 +32,15 @@ def Ctr32.scalar : Ctr32 := ⟨"vg_aes_ctr32", ctr32⟩
 def Ctr32.aesni : Ctr32 := ⟨"vg_aes_ctr32_aesni", AesNi.ctr32⟩
 def Ctr32.vaes : Ctr32 := ⟨"vg_aes_ctr32_vaes", Vaes.ctr32⟩
 
+/-- `vg_aes_ctr32_aesni` out of place (`AesNi.ctr32To`). -/
+def Ctr32.aesniTo : Ctr32 := ⟨"vg_aes_ctr32_to_aesni", AesNi.ctr32To⟩
+
+/-- `vg_aes_ctr32_vaes` out of place (`Vaes.ctr32To`). -/
+def Ctr32.vaesTo : Ctr32 := ⟨"vg_aes_ctr32_to_vaes", Vaes.ctr32To⟩
+
+/-- `vg_aes_ctr32` out of place (`ctr32To`). -/
+def Ctr32.scalarTo : Ctr32 := ⟨"vg_aes_ctr32_to", ctr32To⟩
+
 /-- An implementation of `vg_aes_expand_key_scratch` to call: its symbol and its code. -/
 structure ExpandKey where
   name : String

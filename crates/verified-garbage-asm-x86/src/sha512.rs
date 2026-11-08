@@ -13,7 +13,7 @@
 /// * `state` must not overlap the arguments on the stack (distinct Rust objects never do).
 /// * `state` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha384_init(state: *mut [u8; 192]) {
+pub(crate) unsafe extern "C" fn vg_sha384_init(state: *mut [u8; 192]) {
     core::arch::naked_asm!(
         r#".base64 "i0QkBLnYngXBiQi5XZ27y4lIBLkH1Xw2iUgIuSopmmKJSAy5F91wMIlIELlaAVmRiUgUuTlZDveJSBi52OwvFYlIHLkxC8D/iUgguWcmM2eJSCS5ERVYaIlIKLmHSrSOiUgsuaeP+WSJSDC5DS4M24lINLmkT/q+iUg4uR1ItUeJSDzD"
 .p2align 6"#,
@@ -30,7 +30,7 @@ pub unsafe extern "C" fn vg_sha384_init(state: *mut [u8; 192]) {
 /// * `state` must not overlap the arguments on the stack (distinct Rust objects never do).
 /// * `state` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha512_init(state: *mut [u8; 192]) {
+pub(crate) unsafe extern "C" fn vg_sha512_init(state: *mut [u8; 192]) {
     core::arch::naked_asm!(
         r#".base64 "i0QkBLkIybzziQi5Z+YJaolIBLk7p8qEiUgIuYWuZ7uJSAy5K/iU/olIELly8248iUgUufE2HV+JSBi5OvVPpYlIHLnRguatiUgguX9SDlGJSCS5H2w+K4lIKLmMaAWbiUgsuWu9QfuJSDC5q9mDH4lINLl5IX4TiUg4uRnN4FuJSDzD"
 .p2align 6"#,
@@ -47,7 +47,7 @@ pub unsafe extern "C" fn vg_sha512_init(state: *mut [u8; 192]) {
 /// * `state` must not overlap the arguments on the stack (distinct Rust objects never do).
 /// * `state` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha512_224_init(state: *mut [u8; 192]) {
+pub(crate) unsafe extern "C" fn vg_sha512_224_init(state: *mut [u8; 192]) {
     core::arch::naked_asm!(
         r#".base64 "i0QkBLmiTVQZiQi5yDc9jIlIBLnW1NyJiUgIuWaZ4XOJSAy5gpz/MolIELmut/odiUgUuc+fL1iJSBi5FNWdZ4lIHLmoTdR7iUgguWkrbQ+JSCS5QonEBIlIKLlzb+N3iUgsucg2HWqJSDC5qIWdP4lINLmhktaRiUg4ua3mEhGJSDzD"
 .p2align 6"#,
@@ -64,7 +64,7 @@ pub unsafe extern "C" fn vg_sha512_224_init(state: *mut [u8; 192]) {
 /// * `state` must not overlap the arguments on the stack (distinct Rust objects never do).
 /// * `state` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha512_256_init(state: *mut [u8; 192]) {
+pub(crate) unsafe extern "C" fn vg_sha512_256_init(state: *mut [u8; 192]) {
     core::arch::naked_asm!(
         r#".base64 "i0QkBLks9yv8iQi5lCExIolIBLnCZEzIiUgIuaNfVZ+JSAy5UbFTb4lIELlruJMjiUgUub3qQFmJSBi5GXc4lolIHLnj/46oiUggueI+KJaJSCS5kjmGU4lIKLklHl6+iUgsuaq4hSyJSDC5/JkBK4lINLmiLMWBiUg4udwttw6JSDzD"
 .p2align 6"#,
@@ -82,7 +82,7 @@ pub unsafe extern "C" fn vg_sha512_256_init(state: *mut [u8; 192]) {
 /// * `state` must not overlap `data` or the arguments on the stack (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the return address on the stack or the 1424 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha512_update(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_sha512_update(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "jaQkhPr//4uEJIAFAACJRCQEi4QkhAUAAIlEJAiLhCSIBQAAiUQkDIuEJIwFAACJRCQQi4QkkAUAAIlEJBSJ4IPAHIlEJBiLRCQYiZjgAAAAibDkAAAAibjoAAAAiajsAAAAi1wkBItsJBCLdCQUi3wkCIPnfw=="
 20:
@@ -165,7 +165,7 @@ jne 20b
 /// * `state` and `out` must not overlap each other or the arguments on the stack (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 1420 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha512_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
+pub(crate) unsafe extern "C" fn vg_sha512_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
         r#".base64 "jaQkiPr//4uEJHwFAACJRCQEi4QkgAUAAIlEJAiLhCSEBQAAiUQkDIuEJIgFAACJRCQQieCDwBiJRCQUi0QkFImY4AAAAImw5AAAAIm46AAAAImo7AAAAInFi1wkBItMJAiJjfAAAACLTCQMiY30AAAAi0wkEImN+AAAAIt8JAiD53+J2gH6uYAAAACISkCDxwG+AAAAAIP/cQ=="
 jae 20f
@@ -217,7 +217,7 @@ je 22b
 /// * `state` and `out` must not overlap each other or the arguments on the stack (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 1420 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha384_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 48]) {
+pub(crate) unsafe extern "C" fn vg_sha384_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 48]) {
     core::arch::naked_asm!(
         r#".base64 "jaQkiPr//4uEJHwFAACJRCQEi4QkgAUAAIlEJAiLhCSEBQAAiUQkDIuEJIgFAACJRCQQieCDwBiJRCQUi0QkFImY4AAAAImw5AAAAIm46AAAAImo7AAAAInFi1wkBItMJAiJjfAAAACLTCQMiY30AAAAi0wkEImN+AAAAIt8JAiD53+J2gH6uYAAAACISkCDxwG+AAAAAIP/cQ=="
 jae 20f
@@ -269,7 +269,7 @@ je 22b
 /// * `state` and `out` must not overlap each other or the arguments on the stack (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 1420 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha512_256_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 32]) {
+pub(crate) unsafe extern "C" fn vg_sha512_256_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
         r#".base64 "jaQkiPr//4uEJHwFAACJRCQEi4QkgAUAAIlEJAiLhCSEBQAAiUQkDIuEJIgFAACJRCQQieCDwBiJRCQUi0QkFImY4AAAAImw5AAAAIm46AAAAImo7AAAAInFi1wkBItMJAiJjfAAAACLTCQMiY30AAAAi0wkEImN+AAAAIt8JAiD53+J2gH6uYAAAACISkCDxwG+AAAAAIP/cQ=="
 jae 20f
@@ -321,7 +321,7 @@ je 22b
 /// * `state` and `out` must not overlap each other or the arguments on the stack (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 1420 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha512_224_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 28]) {
+pub(crate) unsafe extern "C" fn vg_sha512_224_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
         r#".base64 "jaQkiPr//4uEJHwFAACJRCQEi4QkgAUAAIlEJAiLhCSEBQAAiUQkDIuEJIgFAACJRCQQieCDwBiJRCQUi0QkFImY4AAAAImw5AAAAIm46AAAAImo7AAAAInFi1wkBItMJAiJjfAAAACLTCQMiY30AAAAi0wkEImN+AAAAIt8JAiD53+J2gH6uYAAAACISkCDxwG+AAAAAIP/cQ=="
 jae 20f
@@ -371,7 +371,7 @@ je 22b
 /// * `out` must not overlap `data` or the arguments on the stack (distinct Rust objects never do).
 /// * Neither `data` nor `out` may overlap the return address on the stack or the 612 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha384_digest(data: *const u8, len: usize, out: *mut [u8; 48]) {
+pub(crate) unsafe extern "C" fn vg_sha384_digest(data: *const u8, len: usize, out: *mut [u8; 48]) {
     core::arch::naked_asm!(
         r#".base64 "jaQkzP3//4uEJDgCAACJRCQEi4QkPAIAAIlEJAiLhCRAAgAAiUQkDIngg8AUiUQkEItEJBCJmBABAACJsBQBAACJuBgBAACJqBwBAACJxYnvgccgAQAAVw=="
 call {vg_sha384_init}
@@ -402,7 +402,7 @@ jne 20b
 /// * `out` must not overlap `data` or the arguments on the stack (distinct Rust objects never do).
 /// * Neither `data` nor `out` may overlap the return address on the stack or the 612 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha512_digest(data: *const u8, len: usize, out: *mut [u8; 64]) {
+pub(crate) unsafe extern "C" fn vg_sha512_digest(data: *const u8, len: usize, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
         r#".base64 "jaQkzP3//4uEJDgCAACJRCQEi4QkPAIAAIlEJAiLhCRAAgAAiUQkDIngg8AUiUQkEItEJBCJmBABAACJsBQBAACJuBgBAACJqBwBAACJxYnvgccgAQAAVw=="
 call {vg_sha512_init}
@@ -433,7 +433,7 @@ jne 20b
 /// * `out` must not overlap `data` or the arguments on the stack (distinct Rust objects never do).
 /// * Neither `data` nor `out` may overlap the return address on the stack or the 612 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha512_224_digest(data: *const u8, len: usize, out: *mut [u8; 28]) {
+pub(crate) unsafe extern "C" fn vg_sha512_224_digest(data: *const u8, len: usize, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
         r#".base64 "jaQkzP3//4uEJDgCAACJRCQEi4QkPAIAAIlEJAiLhCRAAgAAiUQkDIngg8AUiUQkEItEJBCJmBABAACJsBQBAACJuBgBAACJqBwBAACJxYnvgccgAQAAVw=="
 call {vg_sha512_224_init}
@@ -464,7 +464,7 @@ jne 20b
 /// * `out` must not overlap `data` or the arguments on the stack (distinct Rust objects never do).
 /// * Neither `data` nor `out` may overlap the return address on the stack or the 612 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha512_256_digest(data: *const u8, len: usize, out: *mut [u8; 32]) {
+pub(crate) unsafe extern "C" fn vg_sha512_256_digest(data: *const u8, len: usize, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
         r#".base64 "jaQkzP3//4uEJDgCAACJRCQEi4QkPAIAAIlEJAiLhCRAAgAAiUQkDIngg8AUiUQkEItEJBCJmBABAACJsBQBAACJuBgBAACJqBwBAACJxYnvgccgAQAAVw=="
 call {vg_sha512_256_init}

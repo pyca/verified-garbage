@@ -28,6 +28,8 @@ namespace VG.Test.Cast5
 
 open Lean Elab Command Spec.Cast5
 
+instance (n : Nat) : Decidable (validKey n) := inferInstanceAs (Decidable (5 ≤ n ∧ n ≤ 16))
+
 def unhex (s : String) : Except String (List Byte) := do
   let cs := s.toLower.toList.filter (!·.isWhitespace)
   unless cs.length % 2 == 0 do throw "odd number of hex digits"

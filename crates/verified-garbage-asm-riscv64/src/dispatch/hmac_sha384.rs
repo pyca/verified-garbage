@@ -2,14 +2,43 @@
 //! The dispatchers of the verified `hmac_sha384` functions for `riscv64`
 //! (`crate::hmac_sha384`, `VG.Rust.dispatcher`).
 
-/// `vg_hmac_sha384_init`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::hmac_sha384::vg_hmac_sha384_init as vg_hmac_sha384_init_auto;
+/// Starts an HMAC-SHA-384 computation with a key of any length: makes the SHA-384 streaming state `*inner` represent `K₀ ⊕ ipad` and `*outer` represent `K₀ ⊕ opad`, where `K₀` is the `key_len` bytes at `key` (or their SHA-384 digest, if there are more than 128) padded with zeros to 128 bytes (FIPS 198-1 §4, steps 1–3). The text is then absorbed with `vg_sha512_update` on `*inner` (its `count` starting at 128), and the MAC computed with `vg_hmac_sha384_finalize`.
+///
+/// Contract: `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.sha384I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
+///
+/// It runs `vg_hmac_sha384_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `inner` must be valid for reads and writes of 192 bytes.
+/// * `outer` must be valid for reads and writes of 192 bytes.
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `inner` and `outer` must not overlap each other or `key` (distinct Rust objects never do).
+/// * None of `inner`, `outer` and `key` may overlap the 496 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_hmac_sha384_init_auto(_dit: verified_garbage_cpu::Dit<'_>, inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::hmac_sha384::vg_hmac_sha384_init(inner, outer, key, key_len) }
+}
 
-/// `vg_hmac_sha384_finalize`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::hmac_sha384::vg_hmac_sha384_finalize as vg_hmac_sha384_finalize_auto;
+/// Finishes an HMAC-SHA-384 computation: if, for a 128-byte key `K₀` and a text of fewer than 2⁶⁴ − 128 bytes, the SHA-384 streaming state `*inner` represents `(K₀ ⊕ ipad) ‖ text`, of `count` bytes, and `*outer` represents `K₀ ⊕ opad`, writes the HMAC-SHA-384 of the text under `K₀` (48 bytes) to `*out`.
+///
+/// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.sha384I`. Constant time: only the pointers and `count` may affect timing, not the states.
+///
+/// It runs `vg_hmac_sha384_finalize`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `inner` must be valid for reads and writes of 192 bytes.
+/// * `outer` must be valid for reads of 192 bytes.
+/// * `out` must be valid for reads and writes of 48 bytes.
+/// * The contents of `inner` on return are unspecified.
+/// * `inner` and `out` must not overlap each other or `outer` (distinct Rust objects never do).
+/// * None of `inner`, `outer` and `out` may overlap the 304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_hmac_sha384_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 48]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::hmac_sha384::vg_hmac_sha384_finalize(inner, outer, count, out) }
+}

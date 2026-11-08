@@ -19,7 +19,8 @@ function (B.1) applied to the whole block (`m = b = 128`):
 (`inc`), wrapping from `1¹²⁸` to `0¹²⁸`. The caller chooses `T₁`, and is
 responsible for the uniqueness of the counter blocks across messages that
 B.2 requires. The last block may be partial (`Pₙ*`, of `u` bytes), XORed
-with `MSB_u(Oₙ)`: `aesCtr` takes a string of any length.
+with `MSB_u(Oₙ)`, so CTR takes a string of any length: `cryptFinal`
+(`Spec/Ctr/Final.lean`).
 
 A message may be processed in pieces of whole blocks: CTR of `P₁ … Pₙ`
 from `T₁` is CTR of `P₁ … Pₖ` from `T₁`, followed by CTR of
@@ -64,15 +65,5 @@ def crypt (ciph : Cipher) (t : List Byte) (xs : List (List Byte)) : List (List B
 /-- The counter block to continue from after `n` blocks from `t`:
 `Tₙ₊₁`, the `n`-th increment of `t` (see above). -/
 def next (t : List Byte) (n : Nat) : List Byte := Nat.repeat inc n t
-
-/-! ## With AES -/
-
-/-- AES-CTR encryption or decryption of `x` (of any length) under the key
-`key` (16, 24 or 32 bytes) from the 16-byte initial counter block `t`: `x`
-XORed with the output blocks, the last one truncated to what is left of
-`x` (§6.5, `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`). -/
-def aesCtr (key t x : List Byte) : List Byte :=
-  let ciph := Cbc.aes key
-  List.zipWith (· ^^^ ·) x ((counters t ((x.length + 15) / 16)).map ciph).flatten
 
 end VG.Spec.Ctr

@@ -17,7 +17,7 @@
 /// * `out` and `scratch` must not overlap each other, `scalar` or `point` (distinct Rust objects never do).
 /// * None of `out`, `scalar`, `point` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_x25519_exchange(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_x25519_exchange(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "Vw=="
 call {vg_x25519}
@@ -45,7 +45,7 @@ pub const VG_X25519_EXCHANGE_ADX_FEATURES: verified_garbage_cpu::Features = veri
 /// * None of `out`, `scalar`, `point` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_x25519_exchange_adx(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_x25519_exchange_adx(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "Vw=="
 call {vg_x25519_adx}
@@ -73,7 +73,7 @@ pub const VG_X25519_EXCHANGE_IFMA_FEATURES: verified_garbage_cpu::Features = ver
 /// * None of `out`, `scalar`, `point` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi2`, `adx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_x25519_exchange_ifma(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_x25519_exchange_ifma(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "Vw=="
 call {vg_x25519_ifma}
@@ -96,7 +96,7 @@ call {vg_x25519_ifma}
 /// * `out` and `scratch` must not overlap each other or `scalar` (distinct Rust objects never do).
 /// * None of `out`, `scalar` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_x25519_base(out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "sysv64" fn vg_x25519_base(out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "SIkaSIlqCEyJYhBMiWoYTIlyIEyJeihIiXowSInXuwAAAAA="
 20:
@@ -160,7 +160,7 @@ pub const VG_X25519_BASE_ADX_FEATURES: verified_garbage_cpu::Features = verified
 /// * None of `out`, `scalar` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_x25519_base_adx(out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "sysv64" fn vg_x25519_base_adx(out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "SIkaSIlqCEyJYhBMiWoYTIlyIEyJeihIiXowSInXuwAAAAA="
 20:
@@ -226,7 +226,7 @@ pub const VG_X25519_BASE_IFMA_FEATURES: verified_garbage_cpu::Features = verifie
 /// * None of `out`, `scalar` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi2`, `adx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_x25519_base_ifma(out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "sysv64" fn vg_x25519_base_ifma(out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "SIkaSIlqCEyJYhBMiWoYTIlyIEyJeihIiXowSInXuwAAAAA="
 20:

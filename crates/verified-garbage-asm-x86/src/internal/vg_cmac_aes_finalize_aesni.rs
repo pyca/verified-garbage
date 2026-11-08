@@ -3,9 +3,6 @@
 //! `assembly/internal/vg_cmac_aes_finalize_aesni.s`.
 #![allow(dead_code)]
 
-/// The CPU features `vg_cmac_aes_finalize_aesni` requires (`VG.Rust.Internal.features`).
-pub(crate) const VG_CMAC_AES_FINALIZE_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
-
 /// An internal function of the verified functions of this crate (`VG.Rust.Internal`): code that they call, which is not itself an artifact. It has no contract of its own: the proof of each function that calls it covers its code, which the model runs for the call (`Code.call`), and the emitter checks that every call of it is of this code.
 ///
 /// # Safety
@@ -29,10 +26,10 @@ jmp 21f
 20:
 .base64 "i1wkEItUJASLA4uK8AAAADHIiYUACAAAi0MEi4r0AAAAMciJhQQIAACLQwiLivgAAAAxyImFCAgAAItDDIuK/AAAADHIiYUMCAAA"
 21:
-.base64 "i1wkDIuFAAgAAIsLMciJhQAIAACLhQQIAACLSwQxyImFBAgAAIuFCAgAAItLCDHIiYUICAAAi4UMCAAAi0sMMciJhQwIAAC4AAAAAIkDiUMEiUMIiUMMi0QkBItMJAiJ6oHCAAgAAL8BAAAAVVdTUlFQ"
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYi0QkGIuYEAgAAIuwFAgAAIu4GAgAAIuoHAgAAMM="
+.base64 "i1wkDIuFAAgAAIsLMciJhQAIAACLhQQIAACLSwQxyImFBAgAAIuFCAgAAItLCDHIiYUICAAAi4UMCAAAi0sMMciJhQwIAAC4AAAAAIkDiUMEiUMIiUMMi0QkBItMJAiJ6oHCAAgAAL8BAAAAU1VXU1JRUA=="
+call {vg_aes_ctr32_to_aesni}
+.base64 "WFhYWFhYWItEJBiLmBAIAACLsBQIAACLuBgIAACLqBwIAADD"
 .p2align 6"#,
-        vg_aes_ctr32_aesni = sym crate::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_ctr32_to_aesni = sym crate::aes::vg_aes_ctr32_to_aesni::vg_aes_ctr32_to_aesni,
     )
 }

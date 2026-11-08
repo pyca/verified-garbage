@@ -18,6 +18,8 @@
 
 use alloc::vec::Vec;
 
+use crate::align::CacheAligned;
+
 use crate::arch::dispatch::scrypt::vg_scrypt_auto;
 use crate::error::PasswordHashError;
 
@@ -27,11 +29,11 @@ use crate::error::PasswordHashError;
 const PBKDF2_CHUNKS: usize = 14;
 
 /// A zeroed vector of `len` 128-byte chunks, or `AllocationFailed`.
-fn chunks(len: usize) -> Result<Vec<[u8; 128]>, PasswordHashError> {
+fn chunks(len: usize) -> Result<Vec<CacheAligned<[u8; 128]>>, PasswordHashError> {
     let mut v = Vec::new();
     v.try_reserve_exact(len)
         .map_err(|_| PasswordHashError::AllocationFailed)?;
-    v.resize(len, [0; 128]);
+    v.resize(len, CacheAligned([0; 128]));
     Ok(v)
 }
 
@@ -64,7 +66,8 @@ pub fn derive(
     max_memory: usize,
     out: &mut [u8],
 ) -> Result<(), PasswordHashError> {
-    Memory::new(n, r, p, max_memory, out.len())?.derive(password, salt, out);
+    crate::dit::enter!(dit);
+    Memory::new(n, r, p, max_memory, out.len())?.derive(dit, password, salt, out);
     Ok(())
 }
 
@@ -101,11 +104,12 @@ pub fn verify<const N: usize>(
     max_memory: usize,
     expected: &[u8; N],
 ) -> Result<(), PasswordHashError> {
+    crate::dit::enter!(dit);
     crate::ct::assert_verify_len!(N);
     let mut memory = Memory::new(n, r, p, max_memory, N)?;
     let mut key = [0u8; N];
-    memory.derive(password, salt, &mut key);
-    let matches = crate::ct::eq(&key, expected);
+    memory.derive(dit, password, salt, &mut key);
+    let matches = crate::ct::eq(dit, &key, expected);
     crate::zeroize::zeroize(&mut key);
     if matches {
         Ok(())
@@ -121,11 +125,11 @@ struct Memory {
     /// The block size parameter `r`.
     r: usize,
     /// The `p` blocks of `128 r` bytes.
-    b: Vec<[u8; 128]>,
+    b: Vec<CacheAligned<[u8; 128]>>,
     /// ROMix's table, of `n` blocks.
-    v: Vec<[u8; 128]>,
+    v: Vec<CacheAligned<[u8; 128]>>,
     /// `r + 16` chunks of working space.
-    scratch: Vec<[u8; 128]>,
+    scratch: Vec<CacheAligned<[u8; 128]>>,
     /// The length of the key to derive.
     len: usize,
 }
@@ -171,9 +175,10 @@ impl Memory {
 
     /// Fills `out`, of the length the memory was allocated for, with the
     /// key derived from `password` and `salt`.
-    fn derive(&mut self, password: &[u8], salt: &[u8], out: &mut [u8]) {
+    fn derive(&mut self, dit: crate::dit::Dit<'_>, password: &[u8], salt: &[u8], out: &mut [u8]) {
         assert_eq!(out.len(), self.len);
         derive_by(
+            dit,
             password,
             salt,
             self.r,
@@ -187,9 +192,14 @@ impl Memory {
 
 impl Drop for Memory {
     fn drop(&mut self) {
-        crate::zeroize::zeroize(self.b.as_flattened_mut());
-        crate::zeroize::zeroize(self.v.as_flattened_mut());
-        crate::zeroize::zeroize(self.scratch.as_flattened_mut());
+        for chunk in self
+            .b
+            .iter_mut()
+            .chain(&mut self.v)
+            .chain(&mut self.scratch)
+        {
+            crate::zeroize::zeroize(&mut chunk.0);
+        }
     }
 }
 
@@ -198,12 +208,13 @@ impl Drop for Memory {
 /// [`Memory::new`] checked, with `r + 16` chunks of `scratch`.
 #[allow(clippy::too_many_arguments)]
 fn derive_by(
+    dit: crate::dit::Dit<'_>,
     password: &[u8],
     salt: &[u8],
     r: usize,
-    b: &mut [[u8; 128]],
-    v: &mut [[u8; 128]],
-    scratch: &mut [[u8; 128]],
+    b: &mut [CacheAligned<[u8; 128]>],
+    v: &mut [CacheAligned<[u8; 128]>],
+    scratch: &mut [CacheAligned<[u8; 128]>],
     out: &mut [u8],
 ) {
     // SAFETY: `r > 0`; `b.len() = r p` and `v.len() = n r` for `n`, `r`, `p`
@@ -219,16 +230,17 @@ fn derive_by(
     // has the features of.
     unsafe {
         vg_scrypt_auto(
+            dit,
             password.as_ptr(),
             password.len(),
             salt.as_ptr(),
             salt.len(),
             r,
-            b.as_mut_ptr(),
+            b.as_mut_ptr().cast(),
             b.len(),
-            v.as_mut_ptr(),
+            v.as_mut_ptr().cast(),
             v.len(),
-            scratch.as_mut_ptr(),
+            scratch.as_mut_ptr().cast(),
             scratch.len(),
             out.as_mut_ptr(),
             out.len(),

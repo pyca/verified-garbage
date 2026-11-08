@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.MlKem.Scrubbed
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Prf
 public import VerifiedGarbage.Impl.MlKem.AArch64.Kem16
 import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Interface
@@ -97,28 +98,28 @@ theorem hashOkJ1024 : HashOk Impl.MlKem1024.AArch64.lay1024 (Kem16.jSrc Impl.MlK
 
 /-! ## ML-KEM-768 -/
 
-theorem decapsS768_base : (decapsAArch64S lay768).Implies (Spec.MlKem.decapsContract abi 128) := by
-  mlkem_implies [Spec.MlKem.decapsContract, Spec.MlKem.decapsSig, decapsAArch64S, decapsAArch64, lay768,
+theorem decapsS768_base : (decapsAArch64S lay768).Implies (Proof.MlKem.Scrubbed.decapsBodyContract abi 128) := by
+  mlkem_implies [Proof.MlKem.Scrubbed.decapsBodyContract, Spec.MlKem.decapsSig, decapsAArch64S, decapsAArch64, lay768,
       KemLay.params, Spec.MlKem.mlKem768, KemLay.dkLen, KemLay.ctLen, AArch64.abi, AArch64.argRegs]
       [VG.Proof.MlKem.AArch64.Decaps.sat] using VG.Proof.MlKem.AArch64.Decaps.sat
 
-def decapsH768Contract := Spec.MlKem.decapsContract (abi.withConsts constants) 128
+def decapsH768Contract := Proof.MlKem.Scrubbed.decapsBodyContract (abi.withConsts constants) 128
 
 theorem decapsH768_entry {s : State} (h : decapsH768Contract.pre s) :
     (entryContractS (decapsAArch64S lay768)).pre s := by
-  unfold decapsH768Contract Spec.MlKem.decapsContract constants at h
+  unfold decapsH768Contract Proof.MlKem.Scrubbed.decapsBodyContract constants at h
   have hp := (pre_consts.mp h)
   exact ⟨decapsS768_base.pre _ hp.1,hp.2⟩
 
 theorem decapsH768_post {s t : State} (h : decapsH768Contract.pre s)
     (hp : (decapsAArch64S lay768).post s t) : decapsH768Contract.post s t := by
-  unfold decapsH768Contract Spec.MlKem.decapsContract constants at h ⊢
+  unfold decapsH768Contract Proof.MlKem.Scrubbed.decapsBodyContract constants at h ⊢
   have hh := pre_consts.mp h
   exact decapsS768_base.post (stripConsts constants s) t hh.1 hp
 
 theorem decapsH768_pub {s t : State} (hs : decapsH768Contract.pre s) (ht : decapsH768Contract.pre t)
     (hp : decapsH768Contract.pub s t) : (entryContractS (decapsAArch64S lay768)).pub s t := by
-  unfold decapsH768Contract Spec.MlKem.decapsContract constants at hs ht hp
+  unfold decapsH768Contract Proof.MlKem.Scrubbed.decapsBodyContract constants at hs ht hp
   have hsp := pre_consts.mp hs
   have htp := pre_consts.mp ht
   have hpp := pub_consts.mp hp
@@ -126,10 +127,10 @@ theorem decapsH768_pub {s t : State} (hs : decapsH768Contract.pre s) (ht : decap
 
 theorem decapsH768_sat : ∃s,decapsH768Contract.pre s := by
   refine ⟨addTables VG.Proof.MlKem.AArch64.Decaps.sat,?_⟩
-  unfold decapsH768Contract Spec.MlKem.decapsContract constants
+  unfold decapsH768Contract Proof.MlKem.Scrubbed.decapsBodyContract constants
   apply pre_consts.mpr
   constructor
-  · change (Spec.MlKem.decapsContract abi 128).pre (stripConsts constants (addTables VG.Proof.MlKem.AArch64.Decaps.sat))
+  · change (Proof.MlKem.Scrubbed.decapsBodyContract abi 128).pre (stripConsts constants (addTables VG.Proof.MlKem.AArch64.Decaps.sat))
     rw [strip_addTables]
     sig_pre [Spec.MlKem.decapsSig,abi,argRegs]
     and_intros
@@ -162,30 +163,30 @@ theorem decapsH768_sat : ∃s,decapsH768Contract.pre s := by
 /-! ## ML-KEM-1024 -/
 
 theorem decapsS1024_base :
-    (decapsAArch64S Impl.MlKem1024.AArch64.lay1024).Implies (Spec.MlKem1024.decapsContract abi 128) := by
-  mlkem_implies [Spec.MlKem1024.decapsContract, Spec.MlKem1024.decapsSig, decapsAArch64S, decapsAArch64,
+    (decapsAArch64S Impl.MlKem1024.AArch64.lay1024).Implies (Proof.MlKem.Scrubbed.decaps1024BodyContract abi 128) := by
+  mlkem_implies [Proof.MlKem.Scrubbed.decaps1024BodyContract, Spec.MlKem1024.decapsSig, decapsAArch64S, decapsAArch64,
       Impl.MlKem1024.AArch64.lay1024, KemLay.params, Spec.MlKem.mlKem1024, KemLay.dkLen, KemLay.ctLen,
       AArch64.abi, AArch64.argRegs] [VG.Proof.MlKem1024.AArch64.Decaps.sat]
       using VG.Proof.MlKem1024.AArch64.Decaps.sat
 
-def decapsH1024Contract := Spec.MlKem1024.decapsContract (abi.withConsts constants) 128
+def decapsH1024Contract := Proof.MlKem.Scrubbed.decaps1024BodyContract (abi.withConsts constants) 128
 
 theorem decapsH1024_entry {s : State} (h : decapsH1024Contract.pre s) :
     (entryContractS (decapsAArch64S Impl.MlKem1024.AArch64.lay1024)).pre s := by
-  unfold decapsH1024Contract Spec.MlKem1024.decapsContract constants at h
+  unfold decapsH1024Contract Proof.MlKem.Scrubbed.decaps1024BodyContract constants at h
   have hp := (pre_consts.mp h)
   exact ⟨decapsS1024_base.pre _ hp.1,hp.2⟩
 
 theorem decapsH1024_post {s t : State} (h : decapsH1024Contract.pre s)
     (hp : (decapsAArch64S Impl.MlKem1024.AArch64.lay1024).post s t) : decapsH1024Contract.post s t := by
-  unfold decapsH1024Contract Spec.MlKem1024.decapsContract constants at h ⊢
+  unfold decapsH1024Contract Proof.MlKem.Scrubbed.decaps1024BodyContract constants at h ⊢
   have hh := pre_consts.mp h
   exact decapsS1024_base.post (stripConsts constants s) t hh.1 hp
 
 theorem decapsH1024_pub {s t : State} (hs : decapsH1024Contract.pre s) (ht : decapsH1024Contract.pre t)
     (hp : decapsH1024Contract.pub s t) :
     (entryContractS (decapsAArch64S Impl.MlKem1024.AArch64.lay1024)).pub s t := by
-  unfold decapsH1024Contract Spec.MlKem1024.decapsContract constants at hs ht hp
+  unfold decapsH1024Contract Proof.MlKem.Scrubbed.decaps1024BodyContract constants at hs ht hp
   have hsp := pre_consts.mp hs
   have htp := pre_consts.mp ht
   have hpp := pub_consts.mp hp
@@ -193,10 +194,10 @@ theorem decapsH1024_pub {s t : State} (hs : decapsH1024Contract.pre s) (ht : dec
 
 theorem decapsH1024_sat : ∃s,decapsH1024Contract.pre s := by
   refine ⟨addTables VG.Proof.MlKem1024.AArch64.Decaps.sat,?_⟩
-  unfold decapsH1024Contract Spec.MlKem1024.decapsContract constants
+  unfold decapsH1024Contract Proof.MlKem.Scrubbed.decaps1024BodyContract constants
   apply pre_consts.mpr
   constructor
-  · change (Spec.MlKem1024.decapsContract abi 128).pre
+  · change (Proof.MlKem.Scrubbed.decaps1024BodyContract abi 128).pre
       (stripConsts constants (addTables VG.Proof.MlKem1024.AArch64.Decaps.sat))
     rw [strip_addTables]
     sig_pre [Spec.MlKem1024.decapsSig,abi,argRegs]

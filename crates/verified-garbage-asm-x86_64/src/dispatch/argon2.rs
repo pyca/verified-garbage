@@ -8,7 +8,7 @@
 ///
 /// Contract: `VG.Spec.Argon2.deriveContract`. Argon2i is constant time in all input contents. Argon2d/id additionally permit timing to depend on the sequence of data-dependent reference block indices (`VG.Spec.Argon2.references`), as required by their addressing rules, but on nothing else secret. Pointers, lengths and numeric parameters are public.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_argon2_blake2b_avx512_g_avx512` if the CPU supports its features (`VG_ARGON2_BLAKE2B_AVX512_G_AVX512_FEATURES`); `vg_argon2_blake2b_avx2_g_avx2` if the CPU supports its features (`VG_ARGON2_BLAKE2B_AVX2_G_AVX2_FEATURES`); or else `vg_argon2`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_argon2_blake2b_avx512_g_avx512` if the CPU supports its features (`VG_ARGON2_BLAKE2B_AVX512_G_AVX512_FEATURES`); `vg_argon2_blake2b_avx2_g_avx512` if the CPU supports its features (`VG_ARGON2_BLAKE2B_AVX2_G_AVX512_FEATURES`); `vg_argon2_blake2b_avx2_g_avx2` if the CPU supports its features (`VG_ARGON2_BLAKE2B_AVX2_G_AVX2_FEATURES`); or else `vg_argon2`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -27,18 +27,46 @@
 /// * None of `password`, `salt`, `secret`, `associated_data`, `memory`, `scratch` and `out` may overlap the return address on the stack or the 344 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_argon2_auto(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::argon2::VG_ARGON2_BLAKE2B_AVX512_G_AVX512_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_argon2_blake2b_avx512_g_avx512`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::argon2::vg_argon2_blake2b_avx512_g_avx512(kind, password, password_len, salt, salt_len, iterations, memory_cost, lanes, threads, secret, secret_len, associated_data, ad_len, memory, blocks, scratch, out, out_len) };
+pub unsafe fn vg_argon2_auto(_dit: verified_garbage_cpu::Dit<'_>, kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::argon2::VG_ARGON2_BLAKE2B_AVX512_G_AVX512_FEATURES) }
+            || cpu.contains(crate::argon2::VG_ARGON2_BLAKE2B_AVX512_G_AVX512_FEATURES)
+        {
+            return crate::argon2::vg_argon2_blake2b_avx512_g_avx512;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::argon2::VG_ARGON2_BLAKE2B_AVX2_G_AVX512_FEATURES) }
+            || cpu.contains(crate::argon2::VG_ARGON2_BLAKE2B_AVX2_G_AVX512_FEATURES)
+        {
+            return crate::argon2::vg_argon2_blake2b_avx2_g_avx512;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::argon2::VG_ARGON2_BLAKE2B_AVX2_G_AVX2_FEATURES) }
+            || cpu.contains(crate::argon2::VG_ARGON2_BLAKE2B_AVX2_G_AVX2_FEATURES)
+        {
+            return crate::argon2::vg_argon2_blake2b_avx2_g_avx2;
+        }
+        crate::argon2::vg_argon2
     }
-    if cpu.contains(crate::argon2::VG_ARGON2_BLAKE2B_AVX2_G_AVX2_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_argon2_blake2b_avx2_g_avx2`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::argon2::vg_argon2_blake2b_avx2_g_avx2(kind, password, password_len, salt, salt_len, iterations, memory_cost, lanes, threads, secret, secret_len, associated_data, ad_len, memory, blocks, scratch, out, out_len) };
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(kind, password, password_len, salt, salt_len, iterations, memory_cost, lanes, threads, secret, secret_len, associated_data, ad_len, memory, blocks, scratch, out, out_len) }
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::argon2::vg_argon2(kind, password, password_len, salt, salt_len, iterations, memory_cost, lanes, threads, secret, secret_len, associated_data, ad_len, memory, blocks, scratch, out, out_len) }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(kind, password, password_len, salt, salt_len, iterations, memory_cost, lanes, threads, secret, secret_len, associated_data, ad_len, memory, blocks, scratch, out, out_len) }
 }

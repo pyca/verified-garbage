@@ -2,8 +2,27 @@
 //! The dispatchers of the verified `scrypt` functions for `riscv64`
 //! (`crate::scrypt`, `VG.Rust.dispatcher`).
 
-/// `vg_scrypt`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::scrypt::vg_scrypt as vg_scrypt_auto;
+/// scrypt (RFC 7914 §6) with block size parameter `r`, cost parameter `N = vlen / r` and parallelization parameter `p = blen / r`: writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` to `out`.
+///
+/// Contract: `VG.Spec.Scrypt.scryptContract`. Not constant time in the indices: timing may depend on the pointers, the lengths, `r`, `N`, `p` and the indices `j` of step 3 of each scryptROMix, which are derived from the password and the salt and so leak information about them (as in every scrypt that indexes `V` directly), but on nothing else.
+///
+/// It runs `vg_scrypt`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `password` must be valid for reads of `password_len` bytes.
+/// * `salt` must be valid for reads of `salt_len` bytes.
+/// * `b` must be valid for reads and writes of `128 * blen` bytes.
+/// * `v` must be valid for reads and writes of `128 * vlen` bytes.
+/// * `scratch` must be valid for reads and writes of `128 * slen` bytes.
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `r` must be positive, `blen` must be `p * r` and `vlen` must be `N * r` for parameters that RFC 7914 §6 accepts (`N` a power of two greater than 1 and less than `2^(16 r)`, `0 < p ≤ (2^32 - 1) * 32 / (128 r)`, `0 < out_len ≤ (2^32 - 1) * 32`), and `slen` must be `r + 16`.
+/// * `b`, `v` and `scratch` are working space: their contents on return are unspecified.
+/// * `b`, `v`, `scratch` and `out` must not overlap each other, `password`, `salt` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `password`, `salt`, `b`, `v`, `scratch` and `out` may overlap the 1248 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_scrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::scrypt::vg_scrypt(password, password_len, salt, salt_len, r, b, blen, v, vlen, scratch, slen, out, out_len) }
+}

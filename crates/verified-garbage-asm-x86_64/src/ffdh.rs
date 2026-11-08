@@ -10,7 +10,7 @@
 /// * `state` must be valid for reads and writes of 128 bytes.
 /// * `state` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_parameter_generation_init(state: *mut [u64; 16], bits: usize, generator: u32) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_parameter_generation_init(state: *mut [u64; 16], bits: usize, generator: u32) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "idJIgf4AAgAA"
 jb 20f
@@ -49,7 +49,7 @@ jmp 21f
 /// * `state` must be valid for reads and writes of 128 bytes.
 /// * `state` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_key_generation_init(state: *mut [u64; 16], p_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_key_generation_init(state: *mut [u64; 16], p_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SIP+QA=="
 jb 20f
@@ -89,7 +89,7 @@ pub const VG_FFDH_GENERATE_KEY_PRECOMPUTE_ADX_FEATURES: verified_garbage_cpu::Fe
 /// * None of `ctx`, `domain` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_generate_key_precompute_adx(ctx: *mut u64, ctx_len: usize, domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_generate_key_precompute_adx(ctx: *mut u64, ctx_len: usize, domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SYkZSYlpCE2JYRBNiWkYTYlxIE2JeShJibnQAAAASYmJgAAAAE2JgYgAAABIiddJi4GIAAAASD0AAQAAugEAAAA="
 je 20f
@@ -542,7 +542,7 @@ pub const VG_FFDH_GENERATE_KEY_CACHED_ADX_FEATURES: verified_garbage_cpu::Featur
 /// * None of `x`, `y`, `domain`, `rand`, `scratch` and `ctx` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_generate_key_cached_adx(x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, ctx: *const u64, ctx_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_generate_key_cached_adx(x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, ctx: *const u64, ctx_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJCBMi1QkCEyLXCQQSIkYSIloCEyJYBBMiWgYTIlwIEyJeChIibigAAAASImQmAAAAEyJgIAAAABMiYiIAAAATImQkAAAAEyJmMgAAABIicdIi5eAAAAASIuPkAAAAEiJ0EgByEiJh9gAAABIAchIiYfgAAAAD7YCSIP4AUgZ7Q+2RAr/SIPgAUiD+AFIGfZICfVIic5Ig+5ASMHOOA+2AkgBxkiB/oAAAABIGfZICfVIhe0="
 jne 20f
@@ -835,7 +835,7 @@ pub const VG_FFDH_GENERATE_KEY_SEARCH_CACHED_ADX_FEATURES: verified_garbage_cpu:
 /// * None of `x`, `y`, `used`, `domain`, `rand`, `scratch`, `state` and `ctx` may overlap the return address on the stack or the 72 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_generate_key_search_cached_adx(x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, used: *mut [u64; 1], domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16], ctx: *const u64, ctx_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_generate_key_search_cached_adx(x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, used: *mut [u64; 1], domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16], ctx: *const u64, ctx_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJDhMiWAgSYnESYl8JChJiVQkME2JRCR4TYlMJDhMi1QkCEyLXCQYSItEJCBIi0wkKEiLdCQwTYlUJEBNiVwkSEmJRCRQSYlMJGBJiXQkaLgAAAAASYlEJFg="
 20:
@@ -934,7 +934,7 @@ pub const VG_FFDH_GENERATE_PARAMETERS_ADX_FEATURES: verified_garbage_cpu::Featur
 /// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 160 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_generate_parameters_adx(out: *mut u8, out_len: usize, used: *mut [u64; 1], bits: usize, generator: u32, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_generate_parameters_adx(out: *mut u8, out_len: usize, used: *mut [u64; 1], bits: usize, generator: u32, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "RYnASItEJCBMiWAgSYnESYl8JChJiXQkMEmJVCQ4SYlMJEBNiUQkSE2JTCRQTItUJAhMi1wkEEiLRCQYTYlUJFhNiVwkaEmJRCR4uAAAAABJiUQkYA=="
 20:
@@ -3378,7 +3378,7 @@ je 20b
 /// * `ctx` and `scratch` must not overlap each other, `domain` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `domain` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_generate_key_precompute(ctx: *mut u64, ctx_len: usize, domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_generate_key_precompute(ctx: *mut u64, ctx_len: usize, domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SYkZSYlpCE2JYRBNiWkYTYlxIE2JeShJibnQAAAASYmJgAAAAE2JgYgAAABIiddJi4GIAAAASD0AAQAAugEAAAA="
 je 20f
@@ -4180,7 +4180,7 @@ jmp 281f
 /// * `x`, `y` and `scratch` must not overlap each other, `domain`, `rand`, `ctx` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `x`, `y`, `domain`, `rand`, `scratch` and `ctx` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_generate_key_cached(x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, ctx: *const u64, ctx_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_generate_key_cached(x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, ctx: *const u64, ctx_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJCBMi1QkCEyLXCQQSIkYSIloCEyJYBBMiWgYTIlwIEyJeChIibigAAAASImQmAAAAEyJgIAAAABMiYiIAAAATImQkAAAAEyJmMgAAABIicdIi5eAAAAASIuPkAAAAEiJ0EgByEiJh9gAAABIAchIiYfgAAAAD7YCSIP4AUgZ7Q+2RAr/SIPgAUiD+AFIGfZICfVIic5Ig+5ASMHOOA+2AkgBxkiB/oAAAABIGfZICfVIhe0="
 jne 20f
@@ -4822,7 +4822,7 @@ jmp 21f
 /// * `x`, `y`, `used`, `scratch` and `state` must not overlap each other, `domain`, `rand`, `ctx` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `x`, `y`, `used`, `domain`, `rand`, `scratch`, `state` and `ctx` may overlap the return address on the stack or the 72 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_generate_key_search_cached(x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, used: *mut [u64; 1], domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16], ctx: *const u64, ctx_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_generate_key_search_cached(x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, used: *mut [u64; 1], domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16], ctx: *const u64, ctx_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJDhMiWAgSYnESYl8JChJiVQkME2JRCR4TYlMJDhMi1QkCEyLXCQYSItEJCBIi0wkKEiLdCQwTYlUJEBNiVwkSEmJRCRQSYlMJGBJiXQkaLgAAAAASYlEJFg="
 20:
@@ -4917,7 +4917,7 @@ je 20b
 /// * `out`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 160 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_generate_parameters(out: *mut u8, out_len: usize, used: *mut [u64; 1], bits: usize, generator: u32, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_generate_parameters(out: *mut u8, out_len: usize, used: *mut [u64; 1], bits: usize, generator: u32, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "RYnASItEJCBMiWAgSYnESYl8JChJiXQkMEmJVCQ4SYlMJEBNiUQkSE2JTCRQTItUJAhMi1wkEEiLRCQYTYlUJFhNiVwkaEmJRCR4uAAAAABJiUQkYA=="
 20:
@@ -6441,7 +6441,7 @@ pub const VG_FFDH_GENERATE_PARAMETERS_IFMA_FEATURES: verified_garbage_cpu::Featu
 /// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 160 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_generate_parameters_ifma(out: *mut u8, out_len: usize, used: *mut [u64; 1], bits: usize, generator: u32, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_generate_parameters_ifma(out: *mut u8, out_len: usize, used: *mut [u64; 1], bits: usize, generator: u32, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "RYnASItEJCBMiWAgSYnESYl8JChJiXQkMEmJVCQ4SYlMJEBNiUQkSE2JTCRQTItUJAhMi1wkEEiLRCQYTYlUJFhNiVwkaEmJRCR4uAAAAABJiUQkYA=="
 20:
@@ -8891,7 +8891,7 @@ pub const VG_FFDH_CHECK_PUBLIC_MR_ADX_FEATURES: verified_garbage_cpu::Features =
 /// * None of `domain`, `y` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_check_public_mr_adx(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_check_public_mr_adx(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SYkZSYlpCE2JYRBNiWkYTYlxIE2JeShJibmAAAAASYmxiAAAAEmJkZAAAABJiYmYAAAATInPSIuXgAAAAEiLj5AAAABIidBIAchIiYfYAAAASAHISImH4AAAAA+2AkiD+AFIGe0PtkQK/0iD4AFIg/gBSBn2SAn1SInOSIPuQEjBzjgPtgJIAcZIgf6AAAAASBn2SAn1SIXt"
 jne 20f
@@ -9154,7 +9154,7 @@ pub const VG_FFDH_EXCHANGE_MR_ADX_FEATURES: verified_garbage_cpu::Features = ver
 /// * None of `out`, `domain`, `x`, `peer` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_exchange_mr_adx(out: *mut u8, out_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, peer: *const u8, peer_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_exchange_mr_adx(out: *mut u8, out_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, peer: *const u8, peer_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJCBMi1QkCEyLXCQQSIkYSIloCEyJYBBMiWgYTIlwIEyJeChIibiwAAAASImQgAAAAEiJiIgAAABMiYCQAAAATImIoAAAAEyJkKgAAABMiZiYAAAASInHSIuXgAAAAEiLj5AAAABIidBIAchIiYfYAAAASAHISImH4AAAAA+2AkiD+AFIGe0PtkQK/0iD4AFIg/gBSBn2SAn1SInOSIPuQEjBzjgPtgJIAcZIgf6AAAAASBn2SAn1SIXt"
 jne 20f
@@ -9391,7 +9391,7 @@ pub const VG_FFDH_CHECK_PRIVATE_MR_ADX_FEATURES: verified_garbage_cpu::Features 
 /// * None of `domain`, `y`, `x` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_check_private_mr_adx(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_check_private_mr_adx(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJBBMi1QkCEiJGEiJaAhMiWAQTIloGEyJcCBMiXgoSIm4gAAAAEiJsIgAAABIiZCQAAAASImImAAAAEyJiKAAAABMiZCoAAAASInHSIuXgAAAAEiLj5AAAABIidBIAchIiYfYAAAASAHISImH4AAAAA+2AkiD+AFIGe0PtkQK/0iD4AFIg/gBSBn2SAn1SInOSIPuQEjBzjgPtgJIAcZIgf6AAAAASBn2SAn1SIXt"
 jne 20f
@@ -9693,7 +9693,7 @@ pub const VG_FFDH_DERIVE_PUBLIC_MR_ADX_FEATURES: verified_garbage_cpu::Features 
 /// * None of `y`, `domain`, `x` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_derive_public_mr_adx(y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_derive_public_mr_adx(y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJBBMi1QkCEiJGEiJaAhMiWAQTIloGEyJcCBMiXgoSImQgAAAAEiJiIgAAABMiYCQAAAASIm4mAAAAEyJiKAAAABMiZCoAAAASInHSIu3mAAAAEiLj5AAAAC4AAAAAA=="
 20:
@@ -9986,7 +9986,7 @@ pub const VG_FFDH_CHECK_DOMAIN_MR_ADX_FEATURES: verified_garbage_cpu::Features =
 /// * Neither `domain` nor `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_check_domain_mr_adx(domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_check_domain_mr_adx(domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SYnJSYmxgAAAAEmJkYgAAABJi4GIAAAASD0AAQAAugEAAAA="
 je 20f
@@ -10626,7 +10626,7 @@ pub const VG_FFDH_CHECK_PUBLIC_MR_ADX_EXP_IFMA_FEATURES: verified_garbage_cpu::F
 /// * None of `domain`, `y` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2`, `adx`, `avx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_check_public_mr_adx_exp_ifma(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_check_public_mr_adx_exp_ifma(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SYkZSYlpCE2JYRBNiWkYTYlxIE2JeShJibmAAAAASYmxiAAAAEmJkZAAAABJiYmYAAAATInPSIuXgAAAAEiLj5AAAABIidBIAchIiYfYAAAASAHISImH4AAAAA+2AkiD+AFIGe0PtkQK/0iD4AFIg/gBSBn2SAn1SInOSIPuQEjBzjgPtgJIAcZIgf6AAAAASBn2SAn1SIXt"
 jne 20f
@@ -11232,7 +11232,7 @@ pub const VG_FFDH_EXCHANGE_MR_ADX_EXP_IFMA_FEATURES: verified_garbage_cpu::Featu
 /// * None of `out`, `domain`, `x`, `peer` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2`, `adx`, `avx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_exchange_mr_adx_exp_ifma(out: *mut u8, out_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, peer: *const u8, peer_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_exchange_mr_adx_exp_ifma(out: *mut u8, out_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, peer: *const u8, peer_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJCBMi1QkCEyLXCQQSIkYSIloCEyJYBBMiWgYTIlwIEyJeChIibiwAAAASImQgAAAAEiJiIgAAABMiYCQAAAATImIoAAAAEyJkKgAAABMiZiYAAAASInHSIuXgAAAAEiLj5AAAABIidBIAchIiYfYAAAASAHISImH4AAAAA+2AkiD+AFIGe0PtkQK/0iD4AFIg/gBSBn2SAn1SInOSIPuQEjBzjgPtgJIAcZIgf6AAAAASBn2SAn1SIXt"
 jne 20f
@@ -11812,7 +11812,7 @@ pub const VG_FFDH_CHECK_PRIVATE_MR_ADX_EXP_IFMA_FEATURES: verified_garbage_cpu::
 /// * None of `domain`, `y`, `x` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2`, `adx`, `avx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_check_private_mr_adx_exp_ifma(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_check_private_mr_adx_exp_ifma(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJBBMi1QkCEiJGEiJaAhMiWAQTIloGEyJcCBMiXgoSIm4gAAAAEiJsIgAAABIiZCQAAAASImImAAAAEyJiKAAAABMiZCoAAAASInHSIuXgAAAAEiLj5AAAABIidBIAchIiYfYAAAASAHISImH4AAAAA+2AkiD+AFIGe0PtkQK/0iD4AFIg/gBSBn2SAn1SInOSIPuQEjBzjgPtgJIAcZIgf6AAAAASBn2SAn1SIXt"
 jne 20f
@@ -12457,7 +12457,7 @@ pub const VG_FFDH_DERIVE_PUBLIC_MR_ADX_EXP_IFMA_FEATURES: verified_garbage_cpu::
 /// * None of `y`, `domain`, `x` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2`, `adx`, `avx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_derive_public_mr_adx_exp_ifma(y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_derive_public_mr_adx_exp_ifma(y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJBBMi1QkCEiJGEiJaAhMiWAQTIloGEyJcCBMiXgoSImQgAAAAEiJiIgAAABMiYCQAAAASIm4mAAAAEyJiKAAAABMiZCoAAAASInHSIu3mAAAAEiLj5AAAAC4AAAAAA=="
 20:
@@ -13093,7 +13093,7 @@ pub const VG_FFDH_CHECK_DOMAIN_MR_ADX_EXP_IFMA_FEATURES: verified_garbage_cpu::F
 /// * Neither `domain` nor `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2`, `adx`, `avx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_check_domain_mr_adx_exp_ifma(domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_check_domain_mr_adx_exp_ifma(domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SYnJSYmxgAAAAEmJkYgAAABJi4GIAAAASD0AAQAAugEAAAA="
 je 20f
@@ -14072,7 +14072,7 @@ jmp 281f
 /// * `scratch` must not overlap `domain`, `y` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `domain`, `y` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_check_public(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_check_public(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SYkZSYlpCE2JYRBNiWkYTYlxIE2JeShJibmAAAAASYmxiAAAAEmJkZAAAABJiYmYAAAATInPSIuXgAAAAEiLj5AAAABIidBIAchIiYfYAAAASAHISImH4AAAAA+2AkiD+AFIGe0PtkQK/0iD4AFIg/gBSBn2SAn1SInOSIPuQEjBzjgPtgJIAcZIgf6AAAAASBn2SAn1SIXt"
 jne 20f
@@ -14979,7 +14979,7 @@ jmp 21f
 /// * `out` and `scratch` must not overlap each other, `domain`, `x`, `peer` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `domain`, `x`, `peer` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_exchange(out: *mut u8, out_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, peer: *const u8, peer_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_exchange(out: *mut u8, out_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, peer: *const u8, peer_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJCBMi1QkCEyLXCQQSIkYSIloCEyJYBBMiWgYTIlwIEyJeChIibiwAAAASImQgAAAAEiJiIgAAABMiYCQAAAATImIoAAAAEyJkKgAAABMiZiYAAAASInHSIuXgAAAAEiLj5AAAABIidBIAchIiYfYAAAASAHISImH4AAAAA+2AkiD+AFIGe0PtkQK/0iD4AFIg/gBSBn2SAn1SInOSIPuQEjBzjgPtgJIAcZIgf6AAAAASBn2SAn1SIXt"
 jne 20f
@@ -15860,7 +15860,7 @@ jmp 21f
 /// * `scratch` must not overlap `domain`, `y`, `x` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `domain`, `y`, `x` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_check_private(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_check_private(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJBBMi1QkCEiJGEiJaAhMiWAQTIloGEyJcCBMiXgoSIm4gAAAAEiJsIgAAABIiZCQAAAASImImAAAAEyJiKAAAABMiZCoAAAASInHSIuXgAAAAEiLj5AAAABIidBIAchIiYfYAAAASAHISImH4AAAAA+2AkiD+AFIGe0PtkQK/0iD4AFIg/gBSBn2SAn1SInOSIPuQEjBzjgPtgJIAcZIgf6AAAAASBn2SAn1SIXt"
 jne 20f
@@ -16806,7 +16806,7 @@ jmp 21f
 /// * `y` and `scratch` must not overlap each other, `domain`, `x` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `y`, `domain`, `x` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_derive_public(y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_derive_public(y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJBBMi1QkCEiJGEiJaAhMiWAQTIloGEyJcCBMiXgoSImQgAAAAEiJiIgAAABMiYCQAAAASIm4mAAAAEyJiKAAAABMiZCoAAAASInHSIu3mAAAAEiLj5AAAAC4AAAAAA=="
 20:
@@ -17743,7 +17743,7 @@ jmp 22f
 /// * `scratch` must not overlap `domain` (distinct Rust objects never do).
 /// * Neither `domain` nor `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_check_domain(domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_check_domain(domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SYnJSYmxgAAAAEmJkYgAAABJi4GIAAAASD0AAQAAugEAAAA="
 je 20f
@@ -19149,7 +19149,7 @@ pub const VG_FFDH_CHECK_PUBLIC_EXP_IFMA_FEATURES: verified_garbage_cpu::Features
 /// * None of `domain`, `y` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_check_public_exp_ifma(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_check_public_exp_ifma(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SYkZSYlpCE2JYRBNiWkYTYlxIE2JeShJibmAAAAASYmxiAAAAEmJkZAAAABJiYmYAAAATInPSIuXgAAAAEiLj5AAAABIidBIAchIiYfYAAAASAHISImH4AAAAA+2AkiD+AFIGe0PtkQK/0iD4AFIg/gBSBn2SAn1SInOSIPuQEjBzjgPtgJIAcZIgf6AAAAASBn2SAn1SIXt"
 jne 20f
@@ -20403,7 +20403,7 @@ pub const VG_FFDH_EXCHANGE_EXP_IFMA_FEATURES: verified_garbage_cpu::Features = v
 /// * None of `out`, `domain`, `x`, `peer` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_exchange_exp_ifma(out: *mut u8, out_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, peer: *const u8, peer_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_exchange_exp_ifma(out: *mut u8, out_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, peer: *const u8, peer_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJCBMi1QkCEyLXCQQSIkYSIloCEyJYBBMiWgYTIlwIEyJeChIibiwAAAASImQgAAAAEiJiIgAAABMiYCQAAAATImIoAAAAEyJkKgAAABMiZiYAAAASInHSIuXgAAAAEiLj5AAAABIidBIAchIiYfYAAAASAHISImH4AAAAA+2AkiD+AFIGe0PtkQK/0iD4AFIg/gBSBn2SAn1SInOSIPuQEjBzjgPtgJIAcZIgf6AAAAASBn2SAn1SIXt"
 jne 20f
@@ -21631,7 +21631,7 @@ pub const VG_FFDH_CHECK_PRIVATE_EXP_IFMA_FEATURES: verified_garbage_cpu::Feature
 /// * None of `domain`, `y`, `x` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_check_private_exp_ifma(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_check_private_exp_ifma(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJBBMi1QkCEiJGEiJaAhMiWAQTIloGEyJcCBMiXgoSIm4gAAAAEiJsIgAAABIiZCQAAAASImImAAAAEyJiKAAAABMiZCoAAAASInHSIuXgAAAAEiLj5AAAABIidBIAchIiYfYAAAASAHISImH4AAAAA+2AkiD+AFIGe0PtkQK/0iD4AFIg/gBSBn2SAn1SInOSIPuQEjBzjgPtgJIAcZIgf6AAAAASBn2SAn1SIXt"
 jne 20f
@@ -22924,7 +22924,7 @@ pub const VG_FFDH_DERIVE_PUBLIC_EXP_IFMA_FEATURES: verified_garbage_cpu::Feature
 /// * None of `y`, `domain`, `x` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_derive_public_exp_ifma(y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_derive_public_exp_ifma(y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJBBMi1QkCEiJGEiJaAhMiWAQTIloGEyJcCBMiXgoSImQgAAAAEiJiIgAAABMiYCQAAAASIm4mAAAAEyJiKAAAABMiZCoAAAASInHSIu3mAAAAEiLj5AAAAC4AAAAAA=="
 20:
@@ -24208,7 +24208,7 @@ pub const VG_FFDH_CHECK_DOMAIN_EXP_IFMA_FEATURES: verified_garbage_cpu::Features
 /// * Neither `domain` nor `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ffdh_check_domain_exp_ifma(domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_check_domain_exp_ifma(domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SYnJSYmxgAAAAEmJkYgAAABJi4GIAAAASD0AAQAAugEAAAA="
 je 20f

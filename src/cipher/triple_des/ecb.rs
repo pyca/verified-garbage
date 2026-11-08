@@ -9,10 +9,11 @@
     target_arch = "riscv64"
 ))]
 
+use crate::align::CacheAligned;
+use crate::arch::dispatch::triple_des::vg_triple_des_expand_key_auto;
 use crate::arch::dispatch::triple_des::{
     vg_triple_des_ecb_decrypt_auto, vg_triple_des_ecb_encrypt_auto,
 };
-use crate::arch::triple_des::vg_triple_des_expand_key;
 use crate::error::{IncompleteBlock, InvalidKeyLength};
 use crate::zeroize::zeroize;
 
@@ -25,7 +26,7 @@ use crate::zeroize::zeroize;
 /// ECB encrypts equal blocks to equal blocks, so it reveals patterns in the
 /// data.
 pub struct TripleDesEcb {
-    schedule: [u8; 384],
+    schedule: CacheAligned<[u8; 384]>,
 }
 
 impl TripleDesEcb {
@@ -34,11 +35,12 @@ impl TripleDesEcb {
         if !matches!(key.len(), 16 | 24) {
             return Err(InvalidKeyLength);
         }
-        let mut schedule = [0; 384];
+        let mut schedule = CacheAligned([0; 384]);
+        crate::dit::enter!(dit);
         // SAFETY: the key has a validated length; key and schedule are separate
         // valid buffers of the required sizes.
         unsafe {
-            vg_triple_des_expand_key(key.as_ptr(), key.len(), &mut schedule);
+            vg_triple_des_expand_key_auto(dit, key.as_ptr(), key.len(), &mut schedule.0);
         }
         Ok(Self { schedule })
     }
@@ -64,12 +66,18 @@ impl TripleDesEcb {
         } else {
             vg_triple_des_ecb_decrypt_auto
         };
+        crate::dit::enter!(dit);
         // SAFETY: buffer contains complete eight-byte blocks, including zero
         // blocks. The buffer and schedule are separate valid objects and do not
         // overlap the callee's stack. The dispatcher calls only an implementation
         // the CPU has the features of.
         unsafe {
-            f(&self.schedule, buffer.as_mut_ptr().cast(), buffer.len() / 8);
+            f(
+                dit,
+                &self.schedule.0,
+                buffer.as_mut_ptr().cast(),
+                buffer.len() / 8,
+            );
         }
         Ok(())
     }
@@ -77,6 +85,6 @@ impl TripleDesEcb {
 
 impl Drop for TripleDesEcb {
     fn drop(&mut self) {
-        zeroize(&mut self.schedule);
+        zeroize(&mut self.schedule.0);
     }
 }

@@ -255,7 +255,7 @@ theorem stOut_of {H : Block} {iv a : List Byte} {R n : Nat} {D Tg : Addr} {ρ σ
     (hR : R = 10 ∨ R = 12 ∨ R = 14) (h28 : σ.gpr .x28 = Tg) (F₂ : Frame [workR W, ⟨D, n⟩] ρ.mem s₂.mem)
     (hrd : σ.rd = ρ.rd) (hwr : σ.wr = ρ.wr)
     (hm : Stitch.SMid Ctx (W + BitVec.ofNat 64 16) W SP H (a ++ Spec.Gcm.zeros (Spec.Gcm.padLen a.length))
-      (Spec.Gcm.inc32 (Spec.Gcm.j0 H iv)) R D n c s₂ s₃)
+      (Spec.Gcm.inc32 (Spec.Gcm.j0 H iv)) R D D n c s₂ s₃)
     (x23 : s₄.gpr .x23 = D + BitVec.ofNat 64 (Stitch.pre n))
     (x27 : s₄.gpr .x27 = D + BitVec.ofNat 64 (Stitch.pre n))
     (x24 : s₄.gpr .x24 = BitVec.ofNat 64 (n - Stitch.pre n))
@@ -301,7 +301,7 @@ theorem stOut_of {H : Block} {iv a : List Byte} {R n : Nat} {D Tg : Addr} {ρ σ
   have x22₄ : s₄.gpr .x22 = BitVec.ofNat 64 R := by rw [g _ (by simp), h₂.x22, h22]
   exact ⟨⟨he₄, x22₄, hR, by rw [g _ (by simp), h₂.x26], x27, by rw [g _ (by simp), h₂.x28, h28], hH₄, key₄, hd₄,
     F₄, by rw [r₄.rd, hm.rd, h₂.rd, hrd], by rw [r₄.wr, hm.wr, h₂.wr, hwr]⟩,
-    ⟨he₄, fun _ _ => rfl, x22₄, hR, x23, x24, x25, hd₄.drop hpn⟩⟩
+    ⟨he₄, fun _ _ => rfl, x22₄, hR, x23, x24, x25, hd₄.drop hpn, rfl⟩⟩
 
 /-- The arguments of the call on the whole blocks of the rest of the ciphertext. -/
 theorem ctCS_ok {H : Block} {R n : Nat} {D Tg : Addr} {ρ s₄ : State}

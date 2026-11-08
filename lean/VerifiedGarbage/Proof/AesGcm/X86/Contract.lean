@@ -11,8 +11,8 @@ Untrusted: everything here is checked by Lean. The artifacts' contracts are
 the shared ones of `Spec/Gcm/Contract.lean`, which imply these
 (`Verified.lean`). The arguments are on the stack, from `[esp + 4]`
 (cdecl), and may be overwritten (`writeArgs`); each call pushes its
-arguments and the return address below `esp`: 28 bytes for
-`vg_aes_ctr32`, 24 for `vg_ghash` (all `stream_init` and `stream_aad`
+arguments and the return address below `esp`: 32 bytes for
+`vg_aes_ctr32_to` (in place), 24 for `vg_ghash` (all `stream_init` and `stream_aad`
 call), which no buffer overlaps, nor the return address.
 -/
 
@@ -38,14 +38,14 @@ def initPre (s : State) : Prop :=
   let scr : Region := ⟨(arg s 3).setWidth 64, 2560⟩
   let args : Region := ⟨argAddr s 0, 16⟩
   let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
-  let stack : Region := ⟨(s.gpr .esp).setWidth 64 - 28, 28⟩
+  let stack : Region := ⟨(s.gpr .esp).setWidth 64 - 32, 32⟩
   s.rd = [key] ∧ s.wr = [ctx, scr, args] ∧
   key.Disjoint ctx ∧ key.Disjoint scr ∧ key.Disjoint args ∧ ctx.Disjoint scr ∧ ctx.Disjoint args ∧
   scr.Disjoint args ∧
   ret.Disjoint key ∧ ret.Disjoint ctx ∧ ret.Disjoint scr ∧ ret.Disjoint args ∧
   stack.Disjoint key ∧ stack.Disjoint ctx ∧ stack.Disjoint scr ∧ stack.Disjoint args ∧
   (arg s 0).toNat + (arg s 1).toNat ≤ 2 ^ 32 ∧ (arg s 2).toNat + 256 ≤ 2 ^ 32 ∧
-  (arg s 3).toNat + 2560 ≤ 2 ^ 32 ∧ 28 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 20 ≤ 2 ^ 32 ∧
+  (arg s 3).toNat + 2560 ≤ 2 ^ 32 ∧ 32 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 20 ≤ 2 ^ 32 ∧
   ((arg s 1).toNat = 16 ∨ (arg s 1).toNat = 24 ∨ (arg s 1).toNat = 32)
 
 def initX86 : Contract isa where
@@ -111,14 +111,14 @@ def streamCryptPre (s : State) : Prop :=
   let scr : Region := ⟨(arg s 9).setWidth 64, 2560⟩
   let args : Region := ⟨argAddr s 0, 40⟩
   let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
-  let stack : Region := ⟨(s.gpr .esp).setWidth 64 - 28, 28⟩
+  let stack : Region := ⟨(s.gpr .esp).setWidth 64 - 32, 32⟩
   s.rd = [ctx] ∧ s.wr = [st, data, scr, args] ∧
   ctx.Disjoint st ∧ ctx.Disjoint data ∧ ctx.Disjoint scr ∧ ctx.Disjoint args ∧ st.Disjoint data ∧
   st.Disjoint scr ∧ st.Disjoint args ∧ data.Disjoint scr ∧ data.Disjoint args ∧ scr.Disjoint args ∧
   ret.Disjoint ctx ∧ ret.Disjoint st ∧ ret.Disjoint data ∧ ret.Disjoint scr ∧ ret.Disjoint args ∧
   stack.Disjoint ctx ∧ stack.Disjoint st ∧ stack.Disjoint data ∧ stack.Disjoint scr ∧ stack.Disjoint args ∧
   (arg s 0).toNat + 256 ≤ 2 ^ 32 ∧ (arg s 2).toNat + 80 ≤ 2 ^ 32 ∧
-  (arg s 7).toNat + (arg s 8).toNat ≤ 2 ^ 32 ∧ (arg s 9).toNat + 2560 ≤ 2 ^ 32 ∧ 28 ≤ (s.gpr .esp).toNat ∧
+  (arg s 7).toNat + (arg s 8).toNat ≤ 2 ^ 32 ∧ (arg s 9).toNat + 2560 ≤ 2 ^ 32 ∧ 32 ≤ (s.gpr .esp).toNat ∧
   (s.gpr .esp).toNat + 44 ≤ 2 ^ 32 ∧ roundsOk s 1
 
 def streamEncryptX86 : Contract isa where
@@ -153,14 +153,14 @@ def finPre (s : State) : Prop :=
   let scr : Region := ⟨(arg s 8).setWidth 64, 2560⟩
   let args : Region := ⟨argAddr s 0, 36⟩
   let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
-  let stack : Region := ⟨(s.gpr .esp).setWidth 64 - 28, 28⟩
+  let stack : Region := ⟨(s.gpr .esp).setWidth 64 - 32, 32⟩
   s.rd = [ctx] ∧ s.wr = [st, tag, scr, args] ∧
   ctx.Disjoint st ∧ ctx.Disjoint tag ∧ ctx.Disjoint scr ∧ ctx.Disjoint args ∧ st.Disjoint tag ∧
   st.Disjoint scr ∧ st.Disjoint args ∧ tag.Disjoint scr ∧ tag.Disjoint args ∧ scr.Disjoint args ∧
   ret.Disjoint ctx ∧ ret.Disjoint st ∧ ret.Disjoint tag ∧ ret.Disjoint scr ∧ ret.Disjoint args ∧
   stack.Disjoint ctx ∧ stack.Disjoint st ∧ stack.Disjoint tag ∧ stack.Disjoint scr ∧ stack.Disjoint args ∧
   (arg s 0).toNat + 256 ≤ 2 ^ 32 ∧ (arg s 2).toNat + 80 ≤ 2 ^ 32 ∧ (arg s 7).toNat + 16 ≤ 2 ^ 32 ∧
-  (arg s 8).toNat + 2560 ≤ 2 ^ 32 ∧ 28 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 40 ≤ 2 ^ 32 ∧ roundsOk s 1
+  (arg s 8).toNat + 2560 ≤ 2 ^ 32 ∧ 32 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 40 ≤ 2 ^ 32 ∧ roundsOk s 1
 
 def streamFinishX86 : Contract isa where
   pre := finPre
@@ -180,14 +180,14 @@ def verifyPre (s : State) : Prop :=
   let scr : Region := ⟨(arg s 9).setWidth 64, 2560⟩
   let args : Region := ⟨argAddr s 0, 40⟩
   let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
-  let stack : Region := ⟨(s.gpr .esp).setWidth 64 - 28, 28⟩
+  let stack : Region := ⟨(s.gpr .esp).setWidth 64 - 32, 32⟩
   s.rd = [ctx, tag] ∧ s.wr = [st, scr, args] ∧
   ctx.Disjoint st ∧ ctx.Disjoint scr ∧ ctx.Disjoint args ∧ tag.Disjoint st ∧ tag.Disjoint scr ∧
   tag.Disjoint args ∧ st.Disjoint scr ∧ st.Disjoint args ∧ scr.Disjoint args ∧
   ret.Disjoint ctx ∧ ret.Disjoint st ∧ ret.Disjoint tag ∧ ret.Disjoint scr ∧ ret.Disjoint args ∧
   stack.Disjoint ctx ∧ stack.Disjoint st ∧ stack.Disjoint tag ∧ stack.Disjoint scr ∧ stack.Disjoint args ∧
   (arg s 0).toNat + 256 ≤ 2 ^ 32 ∧ (arg s 2).toNat + 80 ≤ 2 ^ 32 ∧ (arg s 7).toNat + (arg s 8).toNat ≤ 2 ^ 32 ∧
-  (arg s 9).toNat + 2560 ≤ 2 ^ 32 ∧ 28 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 44 ≤ 2 ^ 32 ∧ roundsOk s 1
+  (arg s 9).toNat + 2560 ≤ 2 ^ 32 ∧ 32 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 44 ≤ 2 ^ 32 ∧ roundsOk s 1
 
 def streamVerifyX86 : Contract isa where
   pre := verifyPre
@@ -212,7 +212,7 @@ def sealPre (s : State) : Prop :=
   let scr : Region := ⟨(arg s 9).setWidth 64, 2560⟩
   let args : Region := ⟨argAddr s 0, 40⟩
   let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
-  let stack : Region := ⟨(s.gpr .esp).setWidth 64 - 28, 28⟩
+  let stack : Region := ⟨(s.gpr .esp).setWidth 64 - 32, 32⟩
   s.rd = [ctx, nonce, aad] ∧ s.wr = [data, tag, scr, args] ∧
   ctx.Disjoint data ∧ ctx.Disjoint tag ∧ ctx.Disjoint scr ∧ ctx.Disjoint args ∧ nonce.Disjoint data ∧
   nonce.Disjoint tag ∧ nonce.Disjoint scr ∧ nonce.Disjoint args ∧ aad.Disjoint data ∧ aad.Disjoint tag ∧
@@ -224,7 +224,7 @@ def sealPre (s : State) : Prop :=
   stack.Disjoint tag ∧ stack.Disjoint scr ∧ stack.Disjoint args ∧
   (arg s 0).toNat + 256 ≤ 2 ^ 32 ∧ (arg s 2).toNat + (arg s 3).toNat ≤ 2 ^ 32 ∧
   (arg s 4).toNat + (arg s 5).toNat ≤ 2 ^ 32 ∧ (arg s 6).toNat + (arg s 7).toNat ≤ 2 ^ 32 ∧
-  (arg s 8).toNat + 16 ≤ 2 ^ 32 ∧ (arg s 9).toNat + 2560 ≤ 2 ^ 32 ∧ 28 ≤ (s.gpr .esp).toNat ∧
+  (arg s 8).toNat + 16 ≤ 2 ^ 32 ∧ (arg s 9).toNat + 2560 ≤ 2 ^ 32 ∧ 32 ≤ (s.gpr .esp).toNat ∧
   (s.gpr .esp).toNat + 44 ≤ 2 ^ 32 ∧ roundsOk s 1
 
 def sealX86 : Contract isa where
@@ -246,7 +246,7 @@ def openPre (s : State) : Prop :=
   let scr : Region := ⟨(arg s 10).setWidth 64, 2560⟩
   let args : Region := ⟨argAddr s 0, 44⟩
   let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
-  let stack : Region := ⟨(s.gpr .esp).setWidth 64 - 28, 28⟩
+  let stack : Region := ⟨(s.gpr .esp).setWidth 64 - 32, 32⟩
   s.rd = [ctx, nonce, aad, tag] ∧ s.wr = [data, scr, args] ∧
   ctx.Disjoint data ∧ ctx.Disjoint scr ∧ ctx.Disjoint args ∧ nonce.Disjoint data ∧ nonce.Disjoint scr ∧
   nonce.Disjoint args ∧ aad.Disjoint data ∧ aad.Disjoint scr ∧ aad.Disjoint args ∧ data.Disjoint tag ∧
@@ -257,7 +257,7 @@ def openPre (s : State) : Prop :=
   stack.Disjoint tag ∧ stack.Disjoint scr ∧ stack.Disjoint args ∧
   (arg s 0).toNat + 256 ≤ 2 ^ 32 ∧ (arg s 2).toNat + (arg s 3).toNat ≤ 2 ^ 32 ∧
   (arg s 4).toNat + (arg s 5).toNat ≤ 2 ^ 32 ∧ (arg s 6).toNat + (arg s 7).toNat ≤ 2 ^ 32 ∧
-  (arg s 8).toNat + (arg s 9).toNat ≤ 2 ^ 32 ∧ (arg s 10).toNat + 2560 ≤ 2 ^ 32 ∧ 28 ≤ (s.gpr .esp).toNat ∧
+  (arg s 8).toNat + (arg s 9).toNat ≤ 2 ^ 32 ∧ (arg s 10).toNat + 2560 ≤ 2 ^ 32 ∧ 32 ≤ (s.gpr .esp).toNat ∧
   (s.gpr .esp).toNat + 48 ≤ 2 ^ 32 ∧ roundsOk s 1
 
 /-- What `open` computes. -/

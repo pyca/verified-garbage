@@ -11,7 +11,9 @@
 ))]
 
 use super::Cast5Ecb;
-use crate::arch::cast5_cbc::{vg_cast5_cbc_decrypt_chained, vg_cast5_cbc_encrypt_chained};
+use crate::arch::dispatch::cast5_cbc::{
+    vg_cast5_cbc_decrypt_chained_auto, vg_cast5_cbc_encrypt_chained_auto,
+};
 use crate::error::{IncompleteBlock, InvalidKeyLength};
 
 /// An expanded CAST5 key, which serves both directions.
@@ -96,13 +98,15 @@ impl Key {
         if !buffer.len().is_multiple_of(8) {
             return Err(IncompleteBlock);
         }
+        crate::dit::enter!(dit);
         // SAFETY: `rounds` is 12 or 16, as `Cast5Ecb::new` chose for the key
         // the schedule was expanded from; the buffer holds `len / 8` whole
         // blocks, and it, the chaining value (which the function reads and
         // replaces) and the schedule are separate valid objects of the sizes of
         // the signature, none of them on the callee's stack.
         unsafe {
-            vg_cast5_cbc_encrypt_chained(
+            vg_cast5_cbc_encrypt_chained_auto(
+                dit,
                 self.key.schedule(),
                 self.key.rounds(),
                 iv,
@@ -122,9 +126,11 @@ impl Key {
         if !buffer.len().is_multiple_of(8) {
             return Err(IncompleteBlock);
         }
+        crate::dit::enter!(dit);
         // SAFETY: as in `encrypt`.
         unsafe {
-            vg_cast5_cbc_decrypt_chained(
+            vg_cast5_cbc_decrypt_chained_auto(
+                dit,
                 self.key.schedule(),
                 self.key.rounds(),
                 iv,

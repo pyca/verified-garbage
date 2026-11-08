@@ -1,20 +1,22 @@
 //! CPU features, for choosing among implementations of a primitive: their
 //! detection is the crate `verified_garbage_cpu`'s
 //! (`crates/verified-garbage-cpu/src/detect.rs`), which the generated
-//! dispatchers ask too, and its tests are here, which CI runs with the
+//! dispatchers ask, and its tests are here, which CI runs with the
 //! library's.
-
-pub(crate) use verified_garbage_cpu::detected;
 
 #[cfg(test)]
 mod tests {
-    use super::detected;
+    #[cfg(all(
+        feature = "cpu-features-env",
+        any(target_arch = "x86", target_arch = "x86_64")
+    ))]
+    use verified_garbage_cpu::detect::REPORTED_WITH;
     #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
     use verified_garbage_cpu::detect::decode;
     use verified_garbage_cpu::detect::{NAMES, allowed, runtime};
     #[cfg(feature = "cpu-features-env")]
     use verified_garbage_cpu::detect::{allowed_by, named_by, parse};
-    use verified_garbage_cpu::{Features, feature, requested};
+    use verified_garbage_cpu::{COMPILED, Features, detected, feature, requested, target_contains};
 
     /// Each name's bit is its index in `NAMES`, and no name is there twice.
     #[test]
@@ -116,11 +118,80 @@ mod tests {
         }
     }
 
+    /// AES-NI is reported only with SSSE3, VAES only with AES-NI, and
+    /// AVX-512F only with AVX2 (`REPORTED_WITH`).
+    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+    #[test]
+    fn decode_aes_vaes_avx512f_need_their_others() {
+        let mut leaves = [[0; 4]; 8];
+        leaves[0][0] = 7;
+        // OSXSAVE and AVX; SSSE3 and AES-NI, or AES-NI alone.
+        for (ecx, ebx, want) in [
+            // VAES and AVX-512F, with AES-NI, SSSE3 and AVX2.
+            (
+                1 << 9 | 1 << 25,
+                1 << 5 | 1 << 16,
+                feature::SSSE3
+                    | feature::AES
+                    | feature::AVX
+                    | feature::AVX2
+                    | feature::VAES
+                    | feature::AVX512F,
+            ),
+            // Without SSSE3, no AES-NI, so no VAES; without AVX2, no AVX-512F.
+            (1 << 25, 1 << 16, feature::AVX),
+        ] {
+            leaves[1][2] = ecx | 1 << 27 | 1 << 28;
+            leaves[7][1] = ebx;
+            leaves[7][2] = 1 << 9;
+            let f = decode(|leaf, _| leaves[leaf as usize], || 0b1110_0111);
+            assert_eq!(Features(f), Features(want));
+        }
+    }
+
     /// Detection returns the CPU's features, restricted as
-    /// `VG_CPU_FEATURES` says.
+    /// `VG_CPU_FEATURES` says, but for those the compilation target enables,
+    /// which it cannot remove.
     #[test]
     fn detected_is_allowed() {
-        assert_eq!(detected(), Features(runtime() & allowed(runtime())));
+        assert_eq!(
+            detected(),
+            Features(runtime() & allowed(runtime()) | COMPILED.0)
+        );
+    }
+
+    /// The CPU has every feature the compilation target enables, and
+    /// detection reports each, whatever `VG_CPU_FEATURES` says; neither
+    /// AArch64's `neon` nor ARMv7's `umaal` is one of them, so that
+    /// `VG_CPU_FEATURES` can still turn off the code that names them.
+    #[test]
+    fn compiled_is_detected() {
+        assert!(Features(runtime()).contains(COMPILED));
+        assert!(detected().contains(COMPILED));
+        assert!(!COMPILED.contains(Features(feature::NEON)));
+        assert!(!COMPILED.contains(Features(feature::UMAAL)));
+    }
+
+    /// The features of `aarch64-apple-darwin`'s baseline (Apple's M1),
+    /// which `target_contains` answers for without detecting.
+    #[cfg(all(target_arch = "aarch64", target_vendor = "apple"))]
+    #[test]
+    fn compiled_apple() {
+        let m1 = feature::AES | feature::SHA2 | feature::SHA3 | feature::DIT;
+        assert!(COMPILED.contains(Features(m1)));
+    }
+
+    /// `target_contains` holds only where detection reports the same
+    /// features.
+    #[test]
+    fn target_contains_is_detected() {
+        assert!(target_contains(Features(0)));
+        for (name, bit) in NAMES {
+            let f = Features(bit);
+            assert_eq!(target_contains(f), COMPILED.contains(f), "{name}");
+            assert!(!target_contains(f) || detected().contains(f), "{name}");
+        }
+        assert!(target_contains(COMPILED));
     }
 
     /// `requested` says whether `VG_CPU_FEATURES` names every feature of a
@@ -165,12 +236,41 @@ mod tests {
         allowed_by("aes,sha,avx", 0b101);
     }
 
-    /// BMI2 or ADX without AVX2 is a configuration no CPU has.
-    #[cfg(feature = "cpu-features-env")]
+    /// BMI2 without AVX2 is a configuration no CPU has.
+    #[cfg(all(
+        feature = "cpu-features-env",
+        any(target_arch = "x86", target_arch = "x86_64")
+    ))]
     #[test]
-    #[should_panic(expected = "VG_CPU_FEATURES names bmi2 or adx without avx2, which no CPU has")]
-    fn allowed_by_bmi2_adx_without_avx2() {
+    #[should_panic(expected = "VG_CPU_FEATURES names bmi2 without avx2, which no CPU has")]
+    fn allowed_by_bmi2_without_avx2() {
         allowed_by("bmi2,adx", u32::MAX);
+    }
+
+    /// Naming a feature that is reported only with another
+    /// (`REPORTED_WITH`) fails without that one, whatever else it names, and
+    /// not with it.
+    #[cfg(all(
+        feature = "cpu-features-env",
+        any(target_arch = "x86", target_arch = "x86_64")
+    ))]
+    #[test]
+    fn allowed_by_reported_with() {
+        // `VG_CPU_FEATURES` naming the features `bits`.
+        let names = |bits: u32| {
+            let named: std::vec::Vec<&str> = (NAMES.iter())
+                .filter(|(_, b)| bits & b != 0)
+                .map(|(n, _)| *n)
+                .collect();
+            named.join(",")
+        };
+        // Every feature another is reported only with.
+        let others = feature::SSSE3 | feature::AES | feature::AVX | feature::AVX2;
+        for (f, with) in REPORTED_WITH {
+            let without = names(f | (others & !with));
+            assert!(std::panic::catch_unwind(|| allowed_by(&without, u32::MAX)).is_err());
+            assert_eq!(allowed_by(&names(f | others), u32::MAX), f | others);
+        }
     }
 
     /// With AVX2, BMI2 and ADX are allowed.

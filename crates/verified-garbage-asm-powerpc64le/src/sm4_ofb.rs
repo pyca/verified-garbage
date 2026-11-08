@@ -15,7 +15,7 @@
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the 3296 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm4_ofb(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
+pub(crate) unsafe extern "C" fn vg_sm4_ofb(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r#".base64 "IfMh+CAA4TimAgh8qAwH+JAMp/uYDMf7oAzn+3gjnXx4M958eCOffHgrpnx4O+V8AAAfgbAMBZEEAB+BtAwFkQgAH4G4DAWRDAAfgbwMBZF4M998eBtnfAAAgDiSAcA4"
 bl {vg_sm4_prepare_keys}
@@ -47,7 +47,7 @@ b 21f
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the 3296 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm4_ofb_final(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_sm4_ofb_final(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "IfMh+CAA4TimAgh8qAwH+JAMp/uYDMf7oAzn+3gjnXx4M958eCOffHgrpnx4O+V8AAAfgbAMBZEEAB+BtAwFkQgAH4G4DAWRDAAfgbwMBZF4M998eBtnfAAAgDiSAcA4"
 bl {vg_sm4_prepare_keys}

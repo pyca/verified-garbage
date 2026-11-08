@@ -70,7 +70,7 @@ include G
 
 /-- A block of the state before the counter block, apart from what `crypt` writes. -/
 theorem st_crFrameO {d : Nat} (hd : d + 16 ≤ 48) :
-    ∀ r ∈ crFrame (stOf (p.2 8)) (p.2 8) p.1 28 (p.2 6) (p.2 7).toNat,
+    ∀ r ∈ crFrame (stOf (p.2 8)) (p.2 8) p.1 32 (p.2 6) (p.2 7).toNat,
       (⟨w64 (stOf (p.2 8)) + BitVec.ofNat 64 d, 16⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -112,6 +112,7 @@ theorem seal_pc (p : BitVec 32 × (Nat → BitVec 32)) :
   · exact Pc.vacuous fun a s ⟨h₁, h₂, _⟩ => hex ⟨a, h₁, h₂⟩
   obtain ⟨z, hz, hzp⟩ := hex
   have G : OL p := (op_of_seal hz).ol rfl (by decide) hzp
+  have D : OLD p := (opd_of_seal hz).old (by decide) hzp
   have L := G.L
   have a8 : ∀ {s₀ : State}, pubSw 10 8 s₀ = p → arg s₀ 8 = p.2 9 := fun h => pubSw_last h (by decide) rfl
   have a67 : ∀ {s₀ : State}, pubSw 10 8 s₀ = p → arg s₀ 6 = p.2 6 ∧ arg s₀ 7 = p.2 7 := fun h =>
@@ -127,8 +128,11 @@ theorem seal_pc (p : BitVec 32 × (Nat → BitVec 32)) :
     (fun _ h => op_of_seal h) p G (by taint_decide) (by taint_decide)) ?_
   refine Pc.seq (Pc.lift (oneAad_pc G) (fun s₀ s => (s₀, s)) fun s₀ s h => ⟨h.1, rfl⟩) ?_
   -- The data encrypted.
-  refine Pc.seq (Pc.lift (oneCrypt_pc G (fun s₀ => inc32 (jOf p s₀))) (fun s₀ s => (s₀, s))
-    fun s₀ s ⟨_, _, ⟨ha, _⟩, _⟩ => ⟨⟨ha.o, Proof.Gcm.ctr_zero _ _ _ _ ha.cb⟩, rfl⟩) ?_
+  refine Pc.seq (Pc.lift (oneCrypt_pc G D (fun s₀ => inc32 (jOf p s₀))) (fun s₀ s => (s₀, s))
+    fun s₀ s ⟨_, ⟨_, _, hpub, hpre⟩, ⟨ha, _⟩, _⟩ => ⟨⟨ha.o, Proof.Gcm.ctr_zero _ _ _ _ ha.cb, by
+      rw [ha.o.wr, ← pubSw_arg hpub (k := 6) (by decide) (by decide) (by decide),
+        ← pubSw_arg hpub (k := 7) (by decide) (by decide) (by decide)]
+      exact sealPre_data hpre⟩, rfl⟩) ?_
   -- The tag.
   refine Pc.seq (Pc.lift (oneTag_pc G (o := 0) (.inl rfl)) (fun s₀ s => (s₀, s))
     fun s₀ s ⟨s₂, ⟨_, _, ⟨ha, _⟩, _⟩, ⟨o', _, fC⟩, _⟩ => ⟨⟨o', ?_, ?_⟩, rfl⟩) ?_

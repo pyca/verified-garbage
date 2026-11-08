@@ -13,9 +13,10 @@
     target_arch = "riscv64"
 ))]
 
+use crate::align::CacheAligned;
 use core::mem::MaybeUninit;
 
-use crate::arch::rc4::{vg_rc4_apply, vg_rc4_init};
+use crate::arch::dispatch::rc4::{vg_rc4_apply_auto, vg_rc4_init_auto};
 use crate::error::InvalidKeyLength;
 use crate::zeroize::zeroize_raw;
 
@@ -23,22 +24,23 @@ use crate::zeroize::zeroize_raw;
 pub struct Rc4 {
     /// The permutation and two indices. Initialization writes every byte
     /// on success; only verified primitives read this opaque context.
-    ctx: MaybeUninit<[u8; 258]>,
+    ctx: CacheAligned<MaybeUninit<[u8; 258]>>,
 }
 
 impl Rc4 {
     /// Schedules a key of 1..=256 bytes and starts at stream position zero.
     /// Longer keys are rejected rather than truncated. No bytes are discarded.
     pub fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
+        crate::dit::enter!(dit);
         let mut c = Self {
-            ctx: MaybeUninit::uninit(),
+            ctx: CacheAligned(MaybeUninit::uninit()),
         };
         // SAFETY: the key is readable for its length, and the context is
         // writable for 258 bytes. Initialization reads no context byte
         // before writing it and checks the key length. These distinct
         // objects do not overlap or wrap around the address space; the
         // primitive uses only baseline instructions.
-        let code = unsafe { vg_rc4_init(key.as_ptr(), key.len(), c.ctx.as_mut_ptr()) };
+        let code = unsafe { vg_rc4_init_auto(dit, key.as_ptr(), key.len(), c.ctx.0.as_mut_ptr()) };
         if code == 0 {
             Ok(c)
         } else {
@@ -50,11 +52,12 @@ impl Rc4 {
     /// Updates consume exactly their input length; empty input preserves
     /// the context. The next call continues at the next stream byte.
     pub fn apply_keystream(&mut self, data: &mut [u8]) {
+        crate::dit::enter!(dit);
         // SAFETY: successful initialization wrote the entire context.
         // The context and data are valid, separate objects of the lengths
         // passed, with no address-space wrapping. The target's baseline
         // includes every instruction used by the primitive.
-        unsafe { vg_rc4_apply(self.ctx.as_mut_ptr(), data.as_mut_ptr(), data.len()) };
+        unsafe { vg_rc4_apply_auto(dit, self.ctx.0.as_mut_ptr(), data.as_mut_ptr(), data.len()) };
     }
 
     /// Consumes and wipes the context. Raw RC4 emits no final bytes or tag.
@@ -66,6 +69,6 @@ impl Drop for Rc4 {
         // SAFETY: the context is writable for all 258 bytes, including
         // after failed initialization. It is a distinct Rust object that
         // does not overlap the callee's stack or wrap around the address space.
-        unsafe { zeroize_raw(self.ctx.as_mut_ptr().cast::<u8>(), 258) };
+        unsafe { zeroize_raw(self.ctx.0.as_mut_ptr().cast::<u8>(), 258) };
     }
 }

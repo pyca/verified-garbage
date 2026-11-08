@@ -9,7 +9,10 @@
     target_arch = "riscv64"
 ))]
 
-use crate::arch::idea::{vg_idea_ecb, vg_idea_expand_key, vg_idea_invert_key};
+use crate::align::CacheAligned;
+use crate::arch::dispatch::idea::{
+    vg_idea_ecb_auto, vg_idea_expand_key_auto, vg_idea_invert_key_auto,
+};
 use crate::error::{IncompleteBlock, InvalidKeyLength};
 use crate::zeroize::zeroize;
 
@@ -19,21 +22,22 @@ use crate::zeroize::zeroize;
 /// ECB encrypts equal blocks to equal blocks, so it reveals patterns in the
 /// data.
 pub struct IdeaEcb {
-    encrypt: [u8; 104],
-    decrypt: [u8; 104],
+    encrypt: CacheAligned<[u8; 104]>,
+    decrypt: CacheAligned<[u8; 104]>,
 }
 
 impl IdeaEcb {
     /// Expands a 16-byte key for use in either direction.
     pub fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
         let key: &[u8; 16] = key.try_into().map_err(|_| InvalidKeyLength)?;
-        let mut encrypt = [0; 104];
-        let mut decrypt = [0; 104];
+        let mut encrypt = CacheAligned([0; 104]);
+        let mut decrypt = CacheAligned([0; 104]);
+        crate::dit::enter!(dit);
         // SAFETY: the key and both schedules are separate valid buffers of
         // the required sizes.
         unsafe {
-            vg_idea_expand_key(key, &mut encrypt);
-            vg_idea_invert_key(&encrypt, &mut decrypt);
+            vg_idea_expand_key_auto(dit, key, &mut encrypt.0);
+            vg_idea_invert_key_auto(dit, &encrypt.0, &mut decrypt.0);
         }
         Ok(Self { encrypt, decrypt })
     }
@@ -41,13 +45,13 @@ impl IdeaEcb {
     /// Encrypts complete eight-byte blocks in place. Empty input is valid.
     /// Returns an error without changing the buffer if its length is invalid.
     pub fn encrypt(&self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
-        crypt(&self.encrypt, buffer)
+        crypt(&self.encrypt.0, buffer)
     }
 
     /// Decrypts complete eight-byte blocks in place. Empty input is valid.
     /// Returns an error without changing the buffer if its length is invalid.
     pub fn decrypt(&self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
-        crypt(&self.decrypt, buffer)
+        crypt(&self.decrypt.0, buffer)
     }
 }
 
@@ -55,18 +59,19 @@ fn crypt(schedule: &[u8; 104], buffer: &mut [u8]) -> Result<(), IncompleteBlock>
     if !buffer.len().is_multiple_of(8) {
         return Err(IncompleteBlock);
     }
+    crate::dit::enter!(dit);
     // SAFETY: buffer contains complete eight-byte blocks, including zero
     // blocks. The buffer and schedule are separate valid objects and do not
     // overlap the callee's stack.
     unsafe {
-        vg_idea_ecb(schedule, buffer.as_mut_ptr().cast(), buffer.len() / 8);
+        vg_idea_ecb_auto(dit, schedule, buffer.as_mut_ptr().cast(), buffer.len() / 8);
     }
     Ok(())
 }
 
 impl Drop for IdeaEcb {
     fn drop(&mut self) {
-        zeroize(&mut self.encrypt);
-        zeroize(&mut self.decrypt);
+        zeroize(&mut self.encrypt.0);
+        zeroize(&mut self.decrypt.0);
     }
 }

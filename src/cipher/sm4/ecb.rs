@@ -10,7 +10,10 @@
     target_arch = "riscv64"
 ))]
 
-use crate::arch::sm4::{vg_sm4_ecb_decrypt, vg_sm4_ecb_encrypt, vg_sm4_expand_key};
+use crate::align::CacheAligned;
+use crate::arch::dispatch::sm4::{
+    vg_sm4_ecb_decrypt_auto, vg_sm4_ecb_encrypt_auto, vg_sm4_expand_key_auto,
+};
 use crate::error::IncompleteBlock;
 use crate::zeroize::zeroize;
 
@@ -18,20 +21,21 @@ use crate::zeroize::zeroize;
 ///
 /// No padding is added or removed. ECB encrypts equal blocks to equal blocks,
 /// so it reveals patterns in the data.
-// Aligned to 8 bytes, which makes the functions faster on RISC-V.
-#[repr(C, align(8))]
+// Aligned to a cache line, by its schedule (at least 8 bytes make the
+// functions faster on RISC-V).
 pub struct Sm4Ecb {
-    schedule: [u8; 128],
+    schedule: CacheAligned<[u8; 128]>,
 }
 
 impl Sm4Ecb {
     /// Expands a 16-byte key for use in either direction.
     pub fn new(key: &[u8; 16]) -> Self {
-        let mut schedule = [0; 128];
+        let mut schedule = CacheAligned([0; 128]);
+        crate::dit::enter!(dit);
         // SAFETY: key and schedule are separate valid buffers of the required
         // sizes.
         unsafe {
-            vg_sm4_expand_key(key, &mut schedule);
+            vg_sm4_expand_key_auto(dit, key, &mut schedule.0);
         }
         Self { schedule }
     }
@@ -53,16 +57,18 @@ impl Sm4Ecb {
             return Err(IncompleteBlock);
         }
         let f = if encrypt {
-            vg_sm4_ecb_encrypt
+            vg_sm4_ecb_encrypt_auto
         } else {
-            vg_sm4_ecb_decrypt
+            vg_sm4_ecb_decrypt_auto
         };
+        crate::dit::enter!(dit);
         // SAFETY: buffer contains complete 16-byte blocks, including zero
         // blocks. The buffer and schedule are separate valid objects and do not
         // overlap the callee's stack.
         unsafe {
             f(
-                &self.schedule,
+                dit,
+                &self.schedule.0,
                 buffer.as_mut_ptr().cast(),
                 buffer.len() / 16,
             );
@@ -73,13 +79,13 @@ impl Sm4Ecb {
 
 impl Drop for Sm4Ecb {
     fn drop(&mut self) {
-        zeroize(&mut self.schedule);
+        zeroize(&mut self.schedule.0);
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{Sm4Ecb, vg_sm4_ecb_decrypt, vg_sm4_ecb_encrypt};
+    use super::{Sm4Ecb, vg_sm4_ecb_decrypt_auto, vg_sm4_ecb_encrypt_auto};
 
     /// Eight-byte aligned storage for a schedule at an offset.
     #[repr(align(8))]
@@ -96,16 +102,17 @@ mod tests {
             ctx.crypt(&mut expected, encrypt).unwrap();
             for offset in 0..8 {
                 let mut storage = Aligned([0; 136]);
-                storage.0[offset..offset + 128].copy_from_slice(&ctx.schedule);
+                storage.0[offset..offset + 128].copy_from_slice(&ctx.schedule.0);
                 let mut output = input;
+                let dit = crate::dit::public(crate::dit::Why::Test);
                 // SAFETY: the schedule's copy and the output are separate
                 // valid objects, and the output holds four whole blocks.
                 unsafe {
                     let schedule = storage.0.as_ptr().add(offset).cast();
                     if encrypt {
-                        vg_sm4_ecb_encrypt(schedule, output.as_mut_ptr().cast(), 4);
+                        vg_sm4_ecb_encrypt_auto(dit, schedule, output.as_mut_ptr().cast(), 4);
                     } else {
-                        vg_sm4_ecb_decrypt(schedule, output.as_mut_ptr().cast(), 4);
+                        vg_sm4_ecb_decrypt_auto(dit, schedule, output.as_mut_ptr().cast(), 4);
                     }
                 }
                 assert_eq!(output, expected);

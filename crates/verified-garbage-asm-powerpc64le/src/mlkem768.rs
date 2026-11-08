@@ -14,101 +14,19 @@
 /// * `dk` must be valid for reads and writes of 2400 bytes.
 /// * `scratch` must be valid for reads and writes of 32768 bytes.
 /// * `seed` must be random bytes from an approved RBG (FIPS 203 §3.3), or a seed so generated before.
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
+/// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `ek`, `dk` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
-/// * None of `seed`, `ek`, `dk` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `seed`, `ek`, `dk` and `scratch` may overlap the 96 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_mlkem768_keygen(seed: *const [u8; 64], ek: *mut [u8; 1184], dk: *mut [u8; 2400], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_mlkem768_keygen(seed: *const [u8; 64], ek: *mut [u8; 1184], dk: *mut [u8; 2400], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "pgIIfEgDBvtQAyb7WANG+2ADZvtoA4b7cAOm+3gDxvuAA+b7iAMG+AAAwzsAAKQ7AACFOwAA5jsDAAA4oAQfmAAAADgAAB/4CAAf+BAAH/gYAB/4IAAf+CgAH/gwAB/4OAAf+EAAH/hIAB/4UAAf+FgAH/hgAB/4aAAf+HAAH/h4AB/4gAAf+IgAH/iQAB/4mAAf+KAAH/ioAB/4sAAf+LgAH/jAAB/4AACgOAAAfzhIAIA4AADeOCAA4DjIAB85"
-bl {vg_keccak_absorb_scratch}
-.base64 "AACjOAAAfzhIAIA4oATfOAEA4DjIAB85"
-bl {vg_keccak_absorb_scratch}
-.base64 "AACjOAAAfzhIAIA4BgDAOMgA/zg="
-bl {vg_keccak_pad_scratch}
-.base64 "AACgOAAAfzhIAIA4mAPfOEAA4DjIAB85"
-bl {vg_keccak_squeeze_scratch}
-.base64 "mAN/OOAEnzggAKA4"
-20:
-.base64 "AADDiAAAxJgBAGM4AQCEOP//pTgAACUo"
-bne %cr0, 20b
-.base64 "AABAOw=="
-21:
-.base64 "2ANfmwAAADgAAB/4CAAf+BAAH/gYAB/4IAAf+CgAH/gwAB/4OAAf+EAAH/hIAB/4UAAf+FgAH/hgAB/4aAAf+HAAH/h4AB/4gAAf+IgAH/iQAB/4mAAf+KAAH/ioAB/4sAAf+LgAH/jAAB/4AACgOAAAfziIAIA4uAPfOCEA4DjIAB85"
-bl {vg_keccak_absorb_scratch}
-.base64 "AACjOAAAfziIAIA4HwDAOMgA/zg="
-bl {vg_keccak_pad_scratch}
-.base64 "AACgOAAAfziIAIA4IATfOIAA4DjIAB85"
-bl {vg_keccak_squeeze_scratch}
-.base64 "IAR/OGRVRHsUIp98ABSEOA=="
-bl {vg_mlkem_cbd2}
-.base64 "ZFVDexQaf3wAFGM4AEifOA=="
-bl {vg_mlkem_ntt}
-.base64 "AQBaO/r/GjgAACAo"
-bne %cr0, 21b
-.base64 "AQAAOwAAQDs="
-22:
-.base64 "ADR/OAAAgDgAAaA4"
-23:
-.base64 "AACDkAQAYzj//6U4AAAlKA=="
-bne %cr0, 23b
-.base64 "AAAgOw=="
-24:
-.base64 "AAU/mwEFX5vgBH84ADyfOABAvzg="
-bl {vg_mlkem_sample_ntt}
-.base64 "OBgYfwAAIyg="
-beq %cr0, 25f
-.base64 "ADyfOA=="
-b 26f
-25:
-.base64 "ZFUkexQin3wAFIQ4"
-26:
-.base64 "ADh/OGRVJXsUKr98ABSlOABI3zg="
-bl {vg_mlkem_multiply_ntts}
-.base64 "ADR/OAA4nzg="
-bl {vg_mlkem_add}
-.base64 "AQA5O/3/GTgAACAo"
-bne %cr0, 24b
-.base64 "ADR/OGRVRHsUIp98ACCEOA=="
-bl {vg_mlkem_add}
-.base64 "ADR/OIABADjSARp8FAKdfA=="
-bl {vg_mlkem_encode12}
-.base64 "AQBaO/3/GjgAACAo"
-bne %cr0, 22b
-.base64 "AABAOw=="
-27:
-.base64 "ZFVDexQaf3wAFGM4gAEAONIBGnwUApx8"
-bl {vg_mlkem_encode12}
-.base64 "AQBaO/3/GjgAACAo"
-bne %cr0, 27b
-.base64 "4AR/OIAEnTggAKA4"
-28:
-.base64 "AADDiAAAxJgBAGM4AQCEOP//pTgAACUo"
-bne %cr0, 28b
-.base64 "AAB9OIAEnDigBKA4"
-29:
-.base64 "AADDiAAAxJgBAGM4AQCEOP//pTgAACUo"
-bne %cr0, 29b
-.base64 "AAAAOAAAH/gIAB/4EAAf+BgAH/ggAB/4KAAf+DAAH/g4AB/4QAAf+EgAH/hQAB/4WAAf+GAAH/hoAB/4cAAf+HgAH/iAAB/4iAAf+JAAH/iYAB/4oAAf+KgAH/iwAB/4uAAf+MAAH/gAAKA4AAB/OIgAgDgAAN04oATgOMgAHzk="
-bl {vg_keccak_absorb_scratch}
-.base64 "AACjOAAAfziIAIA4BgDAOMgA/zg="
-bl {vg_keccak_pad_scratch}
-.base64 "AACgOAAAfziIAIA4IAncOCAA4DjIAB85"
-bl {vg_keccak_squeeze_scratch}
-.base64 "IAB+OEAJnDggAKA4"
-210:
-.base64 "AADDiAAAxJgBAGM4AQCEOP//pTgAACUo"
-bne %cr0, 210b
-.base64 "AAB4OIgDH+imAwh8SAMf61ADP+tYA1/rYAN/62gDn+twA7/reAPf64AD/+sgAIBO""#,
-        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mlkem_cbd2 = sym super::mlkem1024::vg_mlkem_cbd2::vg_mlkem_cbd2,
-        vg_mlkem_ntt = sym super::mlkem1024::vg_mlkem_ntt::vg_mlkem_ntt,
-        vg_mlkem_sample_ntt = sym super::mlkem1024::vg_mlkem_sample_ntt::vg_mlkem_sample_ntt,
-        vg_mlkem_multiply_ntts = sym super::mlkem1024::vg_mlkem_multiply_ntts::vg_mlkem_multiply_ntts,
-        vg_mlkem_add = sym super::mlkem1024::vg_mlkem_add::vg_mlkem_add,
-        vg_mlkem_encode12 = sym super::mlkem1024::vg_mlkem_encode12::vg_mlkem_encode12,
+        r#".base64 "pgIIfNH/IfggAAH4KACBOQAA7Pt4M998"
+bl {vg_mlkem768_keygen_body}
+.base64 "eBtrfHj7438AAIA4AACEZACAhGB4W399"
+bl {vg_zeroize}
+.base64 "ePvjfygAgTkAAOzrIAAB6DAAITimAwh8IACATg==""#,
+        vg_mlkem768_keygen_body = sym super::mlkem768::vg_mlkem768_keygen_body::vg_mlkem768_keygen_body,
+        vg_zeroize = sym super::zeroize::vg_zeroize,
     )
 }
 
@@ -125,136 +43,19 @@ bne %cr0, 210b
 /// * `scratch` must be valid for reads and writes of 32768 bytes.
 /// * `ek` must have passed `vg_mlkem768_check_ek` (FIPS 203 §7.2).
 /// * `m` must be fresh random bytes from an approved RBG (FIPS 203 §3.3).
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
+/// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `key`, `ct` and `scratch` must not overlap each other, `ek` or `m` (distinct Rust objects never do).
-/// * None of `ek`, `m`, `key`, `ct` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ek`, `m`, `key`, `ct` and `scratch` may overlap the 96 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_mlkem768_encaps(ek: *const [u8; 1184], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_mlkem768_encaps(ek: *const [u8; 1184], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "pgIIfEgDB/tQAyf7WANH+2ADZ/toA4f7cAOn+3gDx/uAA+f7iAMH+AAAwzsAAKQ7AACFOwAAZjsAAOc7AAB9OAAEnzggAKA4"
-20:
-.base64 "AADDiAAAxJgBAGM4AQCEOP//pTgAACUo"
-bne %cr0, 20b
-.base64 "AAS/OwAAADgAAB/4CAAf+BAAH/gYAB/4IAAf+CgAH/gwAB/4OAAf+EAAH/hIAB/4UAAf+FgAH/hgAB/4aAAf+HAAH/h4AB/4gAAf+IgAH/iQAB/4mAAf+KAAH/ioAB/4sAAf+LgAH/jAAB/4AACgOAAAfziIAIA4AADeOKAE4DjIAB85"
-bl {vg_keccak_absorb_scratch}
-.base64 "AACjOAAAfziIAIA4BgDAOMgA/zg="
-bl {vg_keccak_pad_scratch}
-.base64 "AACgOAAAfziIAIA44APfOCAA4DjIAB85"
-bl {vg_keccak_squeeze_scratch}
-.base64 "AAAAOAAAH/gIAB/4EAAf+BgAH/ggAB/4KAAf+DAAH/g4AB/4QAAf+EgAH/hQAB/4WAAf+GAAH/hoAB/4cAAf+HgAH/iAAB/4iAAf+JAAH/iYAB/4oAAf+KgAH/iwAB/4uAAf+MAAH/gAAKA4AAB/OEgAgDgABN84IADgOMgAHzk="
-bl {vg_keccak_absorb_scratch}
-.base64 "AACjOAAAfzhIAIA44APfOCAA4DjIAB85"
-bl {vg_keccak_absorb_scratch}
-.base64 "AACjOAAAfzhIAIA4BgDAOMgA/zg="
-bl {vg_keccak_pad_scratch}
-.base64 "AACgOAAAfzhIAIA4mAPfOEAA4DjIAB85"
-bl {vg_keccak_squeeze_scratch}
-.base64 "mAN/OAAAnDggAKA4"
-21:
-.base64 "AADDiAAAxJgBAGM4AQCEOP//pTgAACUo"
-bne %cr0, 21b
-.base64 "gAR+OOAEnzggAKA4"
-22:
-.base64 "AADDiAAAxJgBAGM4AQCEOP//pTgAACUo"
-bne %cr0, 22b
-.base64 "AABAOw=="
-23:
-.base64 "gAEAONIBGnwUAn58ZFVEexQin3wACIQ4"
-bl {vg_mlkem_decode12}
-.base64 "AQBaO/3/GjgAACAo"
-bne %cr0, 23b
-.base64 "AABAOw=="
-24:
-.base64 "2ANfmwAAADgAAB/4CAAf+BAAH/gYAB/4IAAf+CgAH/gwAB/4OAAf+EAAH/hIAB/4UAAf+FgAH/hgAB/4aAAf+HAAH/h4AB/4gAAf+IgAH/iQAB/4mAAf+KAAH/ioAB/4sAAf+LgAH/jAAB/4AACgOAAAfziIAIA4uAPfOCEA4DjIAB85"
-bl {vg_keccak_absorb_scratch}
-.base64 "AACjOAAAfziIAIA4HwDAOMgA/zg="
-bl {vg_keccak_pad_scratch}
-.base64 "AACgOAAAfziIAIA4IATfOIAA4DjIAB85"
-bl {vg_keccak_squeeze_scratch}
-.base64 "IAR/OGRVRHsUIp98ABSEOA=="
-bl {vg_mlkem_cbd2}
-.base64 "ZFVDexQaf3wAFGM4AEifOA=="
-bl {vg_mlkem_ntt}
-.base64 "AQBaO/3/GjgAACAo"
-bne %cr0, 24b
-.base64 "AwBAOw=="
-25:
-.base64 "2ANfmwAAADgAAB/4CAAf+BAAH/gYAB/4IAAf+CgAH/gwAB/4OAAf+EAAH/hIAB/4UAAf+FgAH/hgAB/4aAAf+HAAH/h4AB/4gAAf+IgAH/iQAB/4mAAf+KAAH/ioAB/4sAAf+LgAH/jAAB/4AACgOAAAfziIAIA4uAPfOCEA4DjIAB85"
-bl {vg_keccak_absorb_scratch}
-.base64 "AACjOAAAfziIAIA4HwDAOMgA/zg="
-bl {vg_keccak_pad_scratch}
-.base64 "AACgOAAAfziIAIA4IATfOIAA4DjIAB85"
-bl {vg_keccak_squeeze_scratch}
-.base64 "IAR/OGRVRHsUIp98ABSEOA=="
-bl {vg_mlkem_cbd2}
-.base64 "AQBaO/n/GjgAACAo"
-bne %cr0, 25b
-.base64 "AAB9OCAAgDgBAKA4ADDfOA=="
-bl {vg_mlkem_decode_decompress}
-.base64 "AQAAOwAAQDs="
-26:
-.base64 "ADR/OAAAgDgAAaA4"
-27:
-.base64 "AACDkAQAYzj//6U4AAAlKA=="
-bne %cr0, 27b
-.base64 "AAAgOw=="
-28:
-.base64 "AAVfmwEFP5vgBH84ADyfOABAvzg="
-bl {vg_mlkem_sample_ntt}
-.base64 "OBgYfwAAIyg="
-beq %cr0, 29f
-.base64 "ADyfOA=="
-b 210f
-29:
-.base64 "ZFUkexQin3wAFIQ4"
-210:
-.base64 "ADh/OGRVJXsUKr98ABSlOABI3zg="
-bl {vg_mlkem_multiply_ntts}
-.base64 "ADR/OAA4nzg="
-bl {vg_mlkem_add}
-.base64 "AQA5O/3/GTgAACAo"
-bne %cr0, 28b
-.base64 "ADR/OABInzg="
-bl {vg_mlkem_inv_ntt}
-.base64 "ADR/OGRVRHsUIp98ACCEOA=="
-bl {vg_mlkem_add}
-.base64 "QAEAONIBGnwUArt8ADR/OAoAgDhAAcA4"
-bl {vg_mlkem_compress_encode}
-.base64 "AQBaO/3/GjgAACAo"
-bne %cr0, 26b
-.base64 "ADR/OAAAgDgAAaA4"
-211:
-.base64 "AACDkAQAYzj//6U4AAAlKA=="
-bne %cr0, 211b
-.base64 "AAAgOw=="
-212:
-.base64 "ADh/OGRVJHsUIp98AAiEOGRVJXsUKr98ABSlOABI3zg="
-bl {vg_mlkem_multiply_ntts}
-.base64 "ADR/OAA4nzg="
-bl {vg_mlkem_add}
-.base64 "AQA5O/3/GTgAACAo"
-bne %cr0, 212b
-.base64 "ADR/OABInzg="
-bl {vg_mlkem_inv_ntt}
-.base64 "ADR/OAAsnzg="
-bl {vg_mlkem_add}
-.base64 "ADR/OAAwnzg="
-bl {vg_mlkem_add}
-.base64 "ADR/OAQAgDjAA7s4gADAOA=="
-bl {vg_mlkem_compress_encode}
-.base64 "AAB4OIgDH+imAwh8SAMf61ADP+tYA1/rYAN/62gDn+twA7/reAPf64AD/+sgAIBO""#,
-        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mlkem_decode12 = sym super::mlkem1024::vg_mlkem_decode12::vg_mlkem_decode12,
-        vg_mlkem_cbd2 = sym super::mlkem1024::vg_mlkem_cbd2::vg_mlkem_cbd2,
-        vg_mlkem_ntt = sym super::mlkem1024::vg_mlkem_ntt::vg_mlkem_ntt,
-        vg_mlkem_decode_decompress = sym super::mlkem1024::vg_mlkem_decode_decompress::vg_mlkem_decode_decompress,
-        vg_mlkem_sample_ntt = sym super::mlkem1024::vg_mlkem_sample_ntt::vg_mlkem_sample_ntt,
-        vg_mlkem_multiply_ntts = sym super::mlkem1024::vg_mlkem_multiply_ntts::vg_mlkem_multiply_ntts,
-        vg_mlkem_add = sym super::mlkem1024::vg_mlkem_add::vg_mlkem_add,
-        vg_mlkem_inv_ntt = sym super::mlkem1024::vg_mlkem_inv_ntt::vg_mlkem_inv_ntt,
-        vg_mlkem_compress_encode = sym super::mlkem1024::vg_mlkem_compress_encode::vg_mlkem_compress_encode,
+        r#".base64 "pgIIfNH/IfggAAH4KACBOQAA7Pt4O/98"
+bl {vg_mlkem768_encaps_body}
+.base64 "eBtrfHj7438AAIA4AACEZACAhGB4W399"
+bl {vg_zeroize}
+.base64 "ePvjfygAgTkAAOzrIAAB6DAAITimAwh8IACATg==""#,
+        vg_mlkem768_encaps_body = sym super::mlkem768::vg_mlkem768_encaps_body::vg_mlkem768_encaps_body,
+        vg_zeroize = sym super::zeroize::vg_zeroize,
     )
 }
 
@@ -273,134 +74,19 @@ bl {vg_mlkem_compress_encode}
 /// * `ek` must have passed `vg_mlkem768_check_ek` (FIPS 203 §7.2).
 /// * `h` must hold `H(ek)`, the SHA3-256 hash of the bytes of `*ek` (FIPS 203 §4.1).
 /// * `m` must be fresh random bytes from an approved RBG (FIPS 203 §3.3).
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
+/// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `key`, `ct` and `scratch` must not overlap each other, `ek`, `h` or `m` (distinct Rust objects never do).
-/// * None of `ek`, `h`, `m`, `key`, `ct` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ek`, `h`, `m`, `key`, `ct` and `scratch` may overlap the 96 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_mlkem768_encaps_h(ek: *const [u8; 1184], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_mlkem768_encaps_h(ek: *const [u8; 1184], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "pgIIfEgDCPtQAyj7WANI+2ADaPtoA4j7cAOo+3gDyPuAA+j7iAMI+AAAwzsAAKU7AACGOwAAZzsAAOg7AABEOwAAejjgA584IACgOA=="
-20:
-.base64 "AADDiAAAxJgBAGM4AQCEOP//pTgAACUo"
-bne %cr0, 20b
-.base64 "AAB9OAAEnzggAKA4"
-21:
-.base64 "AADDiAAAxJgBAGM4AQCEOP//pTgAACUo"
-bne %cr0, 21b
-.base64 "AAS/OwAAADgAAB/4CAAf+BAAH/gYAB/4IAAf+CgAH/gwAB/4OAAf+EAAH/hIAB/4UAAf+FgAH/hgAB/4aAAf+HAAH/h4AB/4gAAf+IgAH/iQAB/4mAAf+KAAH/ioAB/4sAAf+LgAH/jAAB/4AACgOAAAfzhIAIA4AATfOCAA4DjIAB85"
-bl {vg_keccak_absorb_scratch}
-.base64 "AACjOAAAfzhIAIA44APfOCAA4DjIAB85"
-bl {vg_keccak_absorb_scratch}
-.base64 "AACjOAAAfzhIAIA4BgDAOMgA/zg="
-bl {vg_keccak_pad_scratch}
-.base64 "AACgOAAAfzhIAIA4mAPfOEAA4DjIAB85"
-bl {vg_keccak_squeeze_scratch}
-.base64 "mAN/OAAAnDggAKA4"
-22:
-.base64 "AADDiAAAxJgBAGM4AQCEOP//pTgAACUo"
-bne %cr0, 22b
-.base64 "gAR+OOAEnzggAKA4"
-23:
-.base64 "AADDiAAAxJgBAGM4AQCEOP//pTgAACUo"
-bne %cr0, 23b
-.base64 "AABAOw=="
-24:
-.base64 "gAEAONIBGnwUAn58ZFVEexQin3wACIQ4"
-bl {vg_mlkem_decode12}
-.base64 "AQBaO/3/GjgAACAo"
-bne %cr0, 24b
-.base64 "AABAOw=="
-25:
-.base64 "2ANfmwAAADgAAB/4CAAf+BAAH/gYAB/4IAAf+CgAH/gwAB/4OAAf+EAAH/hIAB/4UAAf+FgAH/hgAB/4aAAf+HAAH/h4AB/4gAAf+IgAH/iQAB/4mAAf+KAAH/ioAB/4sAAf+LgAH/jAAB/4AACgOAAAfziIAIA4uAPfOCEA4DjIAB85"
-bl {vg_keccak_absorb_scratch}
-.base64 "AACjOAAAfziIAIA4HwDAOMgA/zg="
-bl {vg_keccak_pad_scratch}
-.base64 "AACgOAAAfziIAIA4IATfOIAA4DjIAB85"
-bl {vg_keccak_squeeze_scratch}
-.base64 "IAR/OGRVRHsUIp98ABSEOA=="
-bl {vg_mlkem_cbd2}
-.base64 "ZFVDexQaf3wAFGM4AEifOA=="
-bl {vg_mlkem_ntt}
-.base64 "AQBaO/3/GjgAACAo"
-bne %cr0, 25b
-.base64 "AwBAOw=="
-26:
-.base64 "2ANfmwAAADgAAB/4CAAf+BAAH/gYAB/4IAAf+CgAH/gwAB/4OAAf+EAAH/hIAB/4UAAf+FgAH/hgAB/4aAAf+HAAH/h4AB/4gAAf+IgAH/iQAB/4mAAf+KAAH/ioAB/4sAAf+LgAH/jAAB/4AACgOAAAfziIAIA4uAPfOCEA4DjIAB85"
-bl {vg_keccak_absorb_scratch}
-.base64 "AACjOAAAfziIAIA4HwDAOMgA/zg="
-bl {vg_keccak_pad_scratch}
-.base64 "AACgOAAAfziIAIA4IATfOIAA4DjIAB85"
-bl {vg_keccak_squeeze_scratch}
-.base64 "IAR/OGRVRHsUIp98ABSEOA=="
-bl {vg_mlkem_cbd2}
-.base64 "AQBaO/n/GjgAACAo"
-bne %cr0, 26b
-.base64 "AAB9OCAAgDgBAKA4ADDfOA=="
-bl {vg_mlkem_decode_decompress}
-.base64 "AQAAOwAAQDs="
-27:
-.base64 "ADR/OAAAgDgAAaA4"
-28:
-.base64 "AACDkAQAYzj//6U4AAAlKA=="
-bne %cr0, 28b
-.base64 "AAAgOw=="
-29:
-.base64 "AAVfmwEFP5vgBH84ADyfOABAvzg="
-bl {vg_mlkem_sample_ntt}
-.base64 "OBgYfwAAIyg="
-beq %cr0, 210f
-.base64 "ADyfOA=="
-b 211f
-210:
-.base64 "ZFUkexQin3wAFIQ4"
-211:
-.base64 "ADh/OGRVJXsUKr98ABSlOABI3zg="
-bl {vg_mlkem_multiply_ntts}
-.base64 "ADR/OAA4nzg="
-bl {vg_mlkem_add}
-.base64 "AQA5O/3/GTgAACAo"
-bne %cr0, 29b
-.base64 "ADR/OABInzg="
-bl {vg_mlkem_inv_ntt}
-.base64 "ADR/OGRVRHsUIp98ACCEOA=="
-bl {vg_mlkem_add}
-.base64 "QAEAONIBGnwUArt8ADR/OAoAgDhAAcA4"
-bl {vg_mlkem_compress_encode}
-.base64 "AQBaO/3/GjgAACAo"
-bne %cr0, 27b
-.base64 "ADR/OAAAgDgAAaA4"
-212:
-.base64 "AACDkAQAYzj//6U4AAAlKA=="
-bne %cr0, 212b
-.base64 "AAAgOw=="
-213:
-.base64 "ADh/OGRVJHsUIp98AAiEOGRVJXsUKr98ABSlOABI3zg="
-bl {vg_mlkem_multiply_ntts}
-.base64 "ADR/OAA4nzg="
-bl {vg_mlkem_add}
-.base64 "AQA5O/3/GTgAACAo"
-bne %cr0, 213b
-.base64 "ADR/OABInzg="
-bl {vg_mlkem_inv_ntt}
-.base64 "ADR/OAAsnzg="
-bl {vg_mlkem_add}
-.base64 "ADR/OAAwnzg="
-bl {vg_mlkem_add}
-.base64 "ADR/OAQAgDjAA7s4gADAOA=="
-bl {vg_mlkem_compress_encode}
-.base64 "AAB4OIgDH+imAwh8SAMf61ADP+tYA1/rYAN/62gDn+twA7/reAPf64AD/+sgAIBO""#,
-        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mlkem_decode12 = sym super::mlkem1024::vg_mlkem_decode12::vg_mlkem_decode12,
-        vg_mlkem_cbd2 = sym super::mlkem1024::vg_mlkem_cbd2::vg_mlkem_cbd2,
-        vg_mlkem_ntt = sym super::mlkem1024::vg_mlkem_ntt::vg_mlkem_ntt,
-        vg_mlkem_decode_decompress = sym super::mlkem1024::vg_mlkem_decode_decompress::vg_mlkem_decode_decompress,
-        vg_mlkem_sample_ntt = sym super::mlkem1024::vg_mlkem_sample_ntt::vg_mlkem_sample_ntt,
-        vg_mlkem_multiply_ntts = sym super::mlkem1024::vg_mlkem_multiply_ntts::vg_mlkem_multiply_ntts,
-        vg_mlkem_add = sym super::mlkem1024::vg_mlkem_add::vg_mlkem_add,
-        vg_mlkem_inv_ntt = sym super::mlkem1024::vg_mlkem_inv_ntt::vg_mlkem_inv_ntt,
-        vg_mlkem_compress_encode = sym super::mlkem1024::vg_mlkem_compress_encode::vg_mlkem_compress_encode,
+        r#".base64 "pgIIfNH/IfggAAH4KACBOQAA7Pt4Qx99"
+bl {vg_mlkem768_encaps_h_body}
+.base64 "eBtrfHj7438AAIA4AACEZACAhGB4W399"
+bl {vg_zeroize}
+.base64 "ePvjfygAgTkAAOzrIAAB6DAAITimAwh8IACATg==""#,
+        vg_mlkem768_encaps_h_body = sym super::mlkem768::vg_mlkem768_encaps_h_body::vg_mlkem768_encaps_h_body,
+        vg_zeroize = sym super::zeroize::vg_zeroize,
     )
 }
 
@@ -415,177 +101,19 @@ bl {vg_mlkem_compress_encode}
 /// * `key` must be valid for reads and writes of 32 bytes.
 /// * `scratch` must be valid for reads and writes of 32768 bytes.
 /// * `dk` must have been written by `vg_mlkem768_keygen` (so that it passes the checks of FIPS 203 §7.3).
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
+/// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `key` and `scratch` must not overlap each other, `dk` or `ct` (distinct Rust objects never do).
-/// * None of `dk`, `ct`, `key` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `dk`, `ct`, `key` and `scratch` may overlap the 96 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_mlkem768_decaps(dk: *const [u8; 2400], ct: *const [u8; 1088], key: *mut [u8; 32], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_mlkem768_decaps(dk: *const [u8; 2400], ct: *const [u8; 1088], key: *mut [u8; 32], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "pgIIfEgDBvtQAyb7WANG+2ADZvtoA4b7cAOm+3gDxvuAA+b7iAMG+JADpvgAAMM7AACEOwAA5jsAAHw4AGCfOEAEoDg="
-20:
-.base64 "AADDiAAAxJgBAGM4AQCEOP//pTgAACUo"
-bne %cr0, 20b
-.base64 "AGCfOwAAQDs="
-21:
-.base64 "QAEAONIBGnwUAnx8QAGAOAoAoDhkVUZ7FDLffAAUxjg="
-bl {vg_mlkem_decode_decompress}
-.base64 "ZFVDexQaf3wAFGM4AEifOA=="
-bl {vg_mlkem_ntt}
-.base64 "AQBaO/3/GjgAACAo"
-bne %cr0, 21b
-.base64 "AABAOw=="
-22:
-.base64 "gAEAONIBGnwUAn58ZFVEexQin3wACIQ4"
-bl {vg_mlkem_decode12}
-.base64 "AQBaO/3/GjgAACAo"
-bne %cr0, 22b
-.base64 "ADR/OAAAgDgAAaA4"
-23:
-.base64 "AACDkAQAYzj//6U4AAAlKA=="
-bne %cr0, 23b
-.base64 "AAAgOw=="
-24:
-.base64 "ADh/OGRVJHsUIp98AAiEOGRVJXsUKr98ABSlOABI3zg="
-bl {vg_mlkem_multiply_ntts}
-.base64 "ADR/OAA4nzg="
-bl {vg_mlkem_add}
-.base64 "AQA5O/3/GTgAACAo"
-bne %cr0, 24b
-.base64 "ADR/OABInzg="
-bl {vg_mlkem_inv_ntt}
-.base64 "wAN8OIAAgDgEAKA4ACzfOA=="
-bl {vg_mlkem_decode_decompress}
-.base64 "ACx/OAA0nzg="
-bl {vg_mlkem_sub}
-.base64 "ACx/OAEAgDgABL84IADAOA=="
-bl {vg_mlkem_compress_encode}
-.base64 "AAAAOAAAH/gIAB/4EAAf+BgAH/ggAB/4KAAf+DAAH/g4AB/4QAAf+EgAH/hQAB/4WAAf+GAAH/hoAB/4cAAf+HgAH/iAAB/4iAAf+JAAH/iYAB/4oAAf+KgAH/iwAB/4uAAf+MAAH/gAAKA4AAB/OEgAgDgABN84IADgOMgAHzk="
-bl {vg_keccak_absorb_scratch}
-.base64 "AACjOAAAfzhIAIA4IAneOCAA4DjIAB85"
-bl {vg_keccak_absorb_scratch}
-.base64 "AACjOAAAfzhIAIA4BgDAOMgA/zg="
-bl {vg_keccak_pad_scratch}
-.base64 "AACgOAAAfzhIAIA4mAPfOEAA4DjIAB85"
-bl {vg_keccak_squeeze_scratch}
-.base64 "AAAAOAAAH/gIAB/4EAAf+BgAH/ggAB/4KAAf+DAAH/g4AB/4QAAf+EgAH/hQAB/4WAAf+GAAH/hoAB/4cAAf+HgAH/iAAB/4iAAf+JAAH/iYAB/4oAAf+KgAH/iwAB/4uAAf+MAAH/gAAKA4AAB/OIgAgDhACd44IADgOMgAHzk="
-bl {vg_keccak_absorb_scratch}
-.base64 "AACjOAAAfziIAIA4AGDfOEAE4DjIAB85"
-bl {vg_keccak_absorb_scratch}
-.base64 "AACjOAAAfziIAIA4HwDAOMgA/zg="
-bl {vg_keccak_pad_scratch}
-.base64 "AACgOAAAfziIAIA4wATfOCAA4DjIAB85"
-bl {vg_keccak_squeeze_scratch}
-.base64 "gATeOwAEvzsATH87gAR+OOAEnzggAKA4"
-25:
-.base64 "AADDiAAAxJgBAGM4AQCEOP//pTgAACUo"
-bne %cr0, 25b
-.base64 "AABAOw=="
-26:
-.base64 "gAEAONIBGnwUAn58ZFVEexQin3wACIQ4"
-bl {vg_mlkem_decode12}
-.base64 "AQBaO/3/GjgAACAo"
-bne %cr0, 26b
-.base64 "AABAOw=="
-27:
-.base64 "2ANfmwAAADgAAB/4CAAf+BAAH/gYAB/4IAAf+CgAH/gwAB/4OAAf+EAAH/hIAB/4UAAf+FgAH/hgAB/4aAAf+HAAH/h4AB/4gAAf+IgAH/iQAB/4mAAf+KAAH/ioAB/4sAAf+LgAH/jAAB/4AACgOAAAfziIAIA4uAPfOCEA4DjIAB85"
-bl {vg_keccak_absorb_scratch}
-.base64 "AACjOAAAfziIAIA4HwDAOMgA/zg="
-bl {vg_keccak_pad_scratch}
-.base64 "AACgOAAAfziIAIA4IATfOIAA4DjIAB85"
-bl {vg_keccak_squeeze_scratch}
-.base64 "IAR/OGRVRHsUIp98ABSEOA=="
-bl {vg_mlkem_cbd2}
-.base64 "ZFVDexQaf3wAFGM4AEifOA=="
-bl {vg_mlkem_ntt}
-.base64 "AQBaO/3/GjgAACAo"
-bne %cr0, 27b
-.base64 "AwBAOw=="
-28:
-.base64 "2ANfmwAAADgAAB/4CAAf+BAAH/gYAB/4IAAf+CgAH/gwAB/4OAAf+EAAH/hIAB/4UAAf+FgAH/hgAB/4aAAf+HAAH/h4AB/4gAAf+IgAH/iQAB/4mAAf+KAAH/ioAB/4sAAf+LgAH/jAAB/4AACgOAAAfziIAIA4uAPfOCEA4DjIAB85"
-bl {vg_keccak_absorb_scratch}
-.base64 "AACjOAAAfziIAIA4HwDAOMgA/zg="
-bl {vg_keccak_pad_scratch}
-.base64 "AACgOAAAfziIAIA4IATfOIAA4DjIAB85"
-bl {vg_keccak_squeeze_scratch}
-.base64 "IAR/OGRVRHsUIp98ABSEOA=="
-bl {vg_mlkem_cbd2}
-.base64 "AQBaO/n/GjgAACAo"
-bne %cr0, 28b
-.base64 "AAB9OCAAgDgBAKA4ADDfOA=="
-bl {vg_mlkem_decode_decompress}
-.base64 "AQAAOwAAQDs="
-29:
-.base64 "ADR/OAAAgDgAAaA4"
-210:
-.base64 "AACDkAQAYzj//6U4AAAlKA=="
-bne %cr0, 210b
-.base64 "AAAgOw=="
-211:
-.base64 "AAVfmwEFP5vgBH84ADyfOABAvzg="
-bl {vg_mlkem_sample_ntt}
-.base64 "OBgYfwAAIyg="
-beq %cr0, 212f
-.base64 "ADyfOA=="
-b 213f
-212:
-.base64 "ZFUkexQin3wAFIQ4"
-213:
-.base64 "ADh/OGRVJXsUKr98ABSlOABI3zg="
-bl {vg_mlkem_multiply_ntts}
-.base64 "ADR/OAA4nzg="
-bl {vg_mlkem_add}
-.base64 "AQA5O/3/GTgAACAo"
-bne %cr0, 211b
-.base64 "ADR/OABInzg="
-bl {vg_mlkem_inv_ntt}
-.base64 "ADR/OGRVRHsUIp98ACCEOA=="
-bl {vg_mlkem_add}
-.base64 "QAEAONIBGnwUArt8ADR/OAoAgDhAAcA4"
-bl {vg_mlkem_compress_encode}
-.base64 "AQBaO/3/GjgAACAo"
-bne %cr0, 29b
-.base64 "ADR/OAAAgDgAAaA4"
-214:
-.base64 "AACDkAQAYzj//6U4AAAlKA=="
-bne %cr0, 214b
-.base64 "AAAgOw=="
-215:
-.base64 "ADh/OGRVJHsUIp98AAiEOGRVJXsUKr98ABSlOABI3zg="
-bl {vg_mlkem_multiply_ntts}
-.base64 "ADR/OAA4nzg="
-bl {vg_mlkem_add}
-.base64 "AQA5O/3/GTgAACAo"
-bne %cr0, 215b
-.base64 "ADR/OABInzg="
-bl {vg_mlkem_inv_ntt}
-.base64 "ADR/OAAsnzg="
-bl {vg_mlkem_add}
-.base64 "ADR/OAAwnzg="
-bl {vg_mlkem_add}
-.base64 "ADR/OAQAgDjAA7s4gADAOA=="
-bl {vg_mlkem_compress_encode}
-.base64 "AAB8OABMnzgAAIA5QARAOw=="
-216:
-.base64 "AACjiAAAxIh4MqV8eCuMfQEAYzgBAIQ4//9aOwAAOig="
-bne %cr0, 216b
-.base64 "//+MOeAPjHkAAGA4UBiMfZgDfzjABJ84kAO/6CAAQDs="
-217:
-.base64 "AADDiAAA5Ih4OsZ8OGDGfHg6xnwAAMWYAQBjOAEAhDgBAKU4//9aOwAAOig="
-bne %cr0, 217b
-.base64 "AAB4OIgDH+imAwh8SAMf61ADP+tYA1/rYAN/62gDn+twA7/reAPf64AD/+sgAIBO""#,
-        vg_mlkem_decode_decompress = sym super::mlkem1024::vg_mlkem_decode_decompress::vg_mlkem_decode_decompress,
-        vg_mlkem_ntt = sym super::mlkem1024::vg_mlkem_ntt::vg_mlkem_ntt,
-        vg_mlkem_decode12 = sym super::mlkem1024::vg_mlkem_decode12::vg_mlkem_decode12,
-        vg_mlkem_multiply_ntts = sym super::mlkem1024::vg_mlkem_multiply_ntts::vg_mlkem_multiply_ntts,
-        vg_mlkem_add = sym super::mlkem1024::vg_mlkem_add::vg_mlkem_add,
-        vg_mlkem_inv_ntt = sym super::mlkem1024::vg_mlkem_inv_ntt::vg_mlkem_inv_ntt,
-        vg_mlkem_sub = sym super::mlkem1024::vg_mlkem_sub::vg_mlkem_sub,
-        vg_mlkem_compress_encode = sym super::mlkem1024::vg_mlkem_compress_encode::vg_mlkem_compress_encode,
-        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mlkem_cbd2 = sym super::mlkem1024::vg_mlkem_cbd2::vg_mlkem_cbd2,
-        vg_mlkem_sample_ntt = sym super::mlkem1024::vg_mlkem_sample_ntt::vg_mlkem_sample_ntt,
+        r#".base64 "pgIIfNH/IfggAAH4KACBOQAA7Pt4M998"
+bl {vg_mlkem768_decaps_body}
+.base64 "eBtrfHj7438AAIA4AACEZACAhGB4W399"
+bl {vg_zeroize}
+.base64 "ePvjfygAgTkAAOzrIAAB6DAAITimAwh8IACATg==""#,
+        vg_mlkem768_decaps_body = sym super::mlkem768::vg_mlkem768_decaps_body::vg_mlkem768_decaps_body,
+        vg_zeroize = sym super::zeroize::vg_zeroize,
     )
 }
 
@@ -598,7 +126,7 @@ bne %cr0, 217b
 /// * `ek` must be valid for reads of 1184 bytes.
 /// * `ek` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_mlkem768_check_ek(ek: *const [u8; 1184]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_mlkem768_check_ek(ek: *const [u8; 1184]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "gAGAOAAAoDg="
 20:
@@ -607,3 +135,19 @@ bne %cr0, 20b
 .base64 "AADAOFAwxXzgD8Z4AQBgOFAYZnwgAIBO""#,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem768_decaps_body.rs"]
+pub(crate) mod vg_mlkem768_decaps_body;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem768_encaps_body.rs"]
+pub(crate) mod vg_mlkem768_encaps_body;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem768_encaps_h_body.rs"]
+pub(crate) mod vg_mlkem768_encaps_h_body;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem768_keygen_body.rs"]
+pub(crate) mod vg_mlkem768_keygen_body;

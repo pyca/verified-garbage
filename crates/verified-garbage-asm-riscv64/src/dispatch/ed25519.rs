@@ -2,20 +2,67 @@
 //! The dispatchers of the verified `ed25519` functions for `riscv64`
 //! (`crate::ed25519`, `VG.Rust.dispatcher`).
 
-/// `vg_ed25519_verify`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::ed25519::vg_ed25519_verify as vg_ed25519_verify_auto;
+/// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
+///
+/// It runs `vg_ed25519_verify`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 32 bytes.
+/// * `message` must be valid for reads of `len` bytes.
+/// * `signature` must be valid for reads of 64 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes, and aligned for `u64`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `scratch` must not overlap `pk`, `message` or `signature` (distinct Rust objects never do).
+/// * None of `pk`, `message`, `signature` and `scratch` may overlap the 480 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_ed25519_verify_auto(_dit: verified_garbage_cpu::Dit<'_>, pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::ed25519::vg_ed25519_verify(pk, message, len, signature, scratch) }
+}
 
-/// `vg_ed25519_key_pair`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::ed25519::vg_ed25519_key_pair as vg_ed25519_key_pair_auto;
+/// Ed25519 key-pair derivation (RFC 8032 §5.1.5): for the 32-byte private seed at `seed`, writes its 64-byte SHA-512 digest (§5.1.5, step 1) to `*expanded` and its 32-byte public key to `*out`, including pruning: the digest and public key that `vg_ed25519_sign_expanded` takes. Contract: `VG.Spec.Ed25519.keyPairContract`. Constant time: only pointers may affect timing.
+///
+/// It runs `vg_ed25519_key_pair`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 32 bytes.
+/// * `expanded` must be valid for reads and writes of 64 bytes.
+/// * `seed` must be valid for reads of 32 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes, and aligned for `u64`.
+/// * The seed must originate from a cryptographically secure random generator.
+/// * The 64 bytes written to `expanded` are secret: the caller must destroy them after use.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out`, `expanded` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
+/// * None of `out`, `expanded`, `seed` and `scratch` may overlap the 480 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_ed25519_key_pair_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::ed25519::vg_ed25519_key_pair(out, expanded, seed, scratch) }
+}
 
-/// `vg_ed25519_sign_expanded`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::ed25519::vg_ed25519_sign_expanded as vg_ed25519_sign_expanded_auto;
+/// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
+///
+/// It runs `vg_ed25519_sign_expanded`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 64 bytes.
+/// * `expanded` must be valid for reads of 64 bytes.
+/// * `pk` must be valid for reads of 32 bytes.
+/// * `message` must be valid for reads of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes, and aligned for `u64`.
+/// * The 64 bytes at `expanded` must equal the SHA-512 digest (`VG.Spec.Sha512.sha512`) of a 32-byte seed, and the 32 bytes at `pk` the public key derived from that seed by RFC 8032 §5.1.5 (`VG.Spec.Ed25519.publicKey`).
+/// * The seed must originate from a cryptographically secure random generator.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other, `expanded`, `pk` or `message` (distinct Rust objects never do).
+/// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the 496 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_ed25519_sign_expanded_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::ed25519::vg_ed25519_sign_expanded(out, expanded, pk, message, len, scratch) }
+}

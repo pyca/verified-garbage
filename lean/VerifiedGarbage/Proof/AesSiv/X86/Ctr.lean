@@ -18,11 +18,11 @@ Untrusted: everything here is checked by Lean. As on ARMv7
 (`Proof/AesSiv/Arm/Ctr.lean`): `counter 0` sets the counter block at
 `W + 96` to `Q`, the IV at `W` with bit 7 of its bytes 8 and 12 cleared
 (`counter_bytes`, `Proof.AesSiv.counter_words4`). `ctrWhole` encrypts the
-whole blocks of the data by one call of `vg_aes_ctr32` from `Q`, whose
+whole blocks of the data by one call of `vg_aes_ctr32_to` from `Q`, whose
 counters do not wrap around (`Proof.AesSiv.counter_low`,
 `Proof.AesSiv.repeat_inc32`), and which leaves `Q + nb` in the counter block
 (`ctrWhole_ok`); `ctrTail` XORs the last bytes with the first bytes of the
-keystream block of that counter, which `vg_aes_ctr32` computes on a zero
+keystream block of that counter, which `vg_aes_ctr32_to` computes on a zero
 block at `W + 80` (`ctrTail_ok`). Together, CTR's output on the data
 (`ctr_ok`).
 -/
@@ -53,7 +53,7 @@ theorem Dat.of_eq {C W SP : BitVec 32} {s s' : State} {D : BitVec 32} {n : Nat} 
     (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : Dat C W SP s' D n :=
   ⟨h.buf.of_eq hrd hwr, by rw [hwr]; exact h.wr, h.c⟩
 
-/-- The first `k` bytes of the data as `vg_aes_ctr32`'s. -/
+/-- The first `k` bytes of the data as `vg_aes_ctr32_to`'s. -/
 theorem Dat.dst {C W SP : BitVec 32} {s : State} {D : BitVec 32} {n : Nat} (h : Dat C W SP s D n) {k : Nat}
     (hk : k ≤ n) {c : Nat} (hc : c + 16 ≤ 256) : Dst C W SP s D k c where
   wr := fun a m ⟨r, hr, hc'⟩ => by
@@ -66,9 +66,9 @@ theorem Dat.dst {C W SP : BitVec 32} {s : State} {D : BitVec 32} {n : Nat} (h : 
   stk := h.buf.stk.sub_right (Region.sub_prefix hk)
 
 /-- What CTR writes: the keystream and counter blocks, the working space of
-`vg_aes_ctr32`, the stack below `SP` and the data. -/
+`vg_aes_ctr32_to`, the stack below `SP` and the data. -/
 abbrev ctrR (W SP D : BitVec 32) (n : Nat) : List Region :=
-  [⟨w64 W + BitVec.ofNat 64 ksOff, 32⟩, ⟨w64 W + BitVec.ofNat 64 256, 2048⟩, below SP 56, ⟨w64 D, n⟩]
+  [⟨w64 W + BitVec.ofNat 64 ksOff, 32⟩, ⟨w64 W + BitVec.ofNat 64 256, 2048⟩, below SP 60, ⟨w64 D, n⟩]
 
 theorem beq_zero32 {a : Nat} (ha : a < 2 ^ 32) : (BitVec.ofNat 32 a == 0) = decide (a = 0) := by
   have := Proof.AesGcm.X86.and_self_beq32 ha
@@ -326,7 +326,7 @@ theorem ctrTail_ok (v : Ctr32Impl) {C W SP : BitVec 32} (L : Lay C W SP) {R : Na
         Proof.Cmac.aesWith_bytes _ _ (length_be128 _)] at hx₃
       rw [hx₃]; rfl
     -- The arguments of the XOR.
-    have f₂₃ : Frame [⟨w64 W + BitVec.ofNat 64 ksOff, 32⟩, ⟨w64 W + BitVec.ofNat 64 256, 2048⟩, below SP 56]
+    have f₂₃ : Frame [⟨w64 W + BitVec.ofNat 64 ksOff, 32⟩, ⟨w64 W + BitVec.ofNat 64 256, 2048⟩, below SP 60]
         s₂.mem s₃.mem := by
       rw [eK] at f₃
       exact f₃.sub fun r hr => by
@@ -336,7 +336,7 @@ theorem ctrTail_ok (v : Ctr32Impl) {C W SP : BitVec 32} (L : Lay C W SP) {R : Na
         · exact ⟨_, List.mem_cons_self .., Region.sub_prefix (by decide)⟩
         · exact ⟨_, by simp, fun _ h => h⟩
         · exact ⟨_, by simp, fun _ h => h⟩
-    have f₀₃ : Frame [⟨w64 W + BitVec.ofNat 64 ksOff, 32⟩, ⟨w64 W + BitVec.ofNat 64 256, 2048⟩, below SP 56]
+    have f₀₃ : Frame [⟨w64 W + BitVec.ofNat 64 ksOff, 32⟩, ⟨w64 W + BitVec.ofNat 64 256, 2048⟩, below SP 60]
         s.mem s₃.mem :=
       (f₂.sub fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr

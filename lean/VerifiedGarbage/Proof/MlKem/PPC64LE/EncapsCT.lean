@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.MlKem.Scrubbed
 public import VerifiedGarbage.Proof.MlKem.PPC64LE.Encaps
 import VerifiedGarbage.Proof.MlKem.PPC64LE.EncryptCT
 public import VerifiedGarbage.Proof.MlKem.PPC64LE.HashCT
@@ -228,8 +229,8 @@ theorem M_eq (K : KemLay) (s₀ : State) : M K s₀ = bytesAt s₀.mem (s₀.gpr
 
 /-! ## ML-KEM-768 -/
 
-theorem pre_of {s : State} (h : (Spec.MlKem.encapsContract PPC64LE.abi 48).pre s) : Pre kl768 s := by
-  sig_pre [Spec.MlKem.encapsContract, Spec.MlKem.encapsSig, PPC64LE.abi, PPC64LE.argRegs] at h
+theorem pre_of {s : State} (h : (Proof.MlKem.Scrubbed.encapsBodyContract PPC64LE.abi 48).pre s) : Pre kl768 s := by
+  sig_pre [Proof.MlKem.Scrubbed.encapsBodyContract, Spec.MlKem.encapsSig, PPC64LE.abi, PPC64LE.argRegs] at h
   obtain ⟨h0, h1, h2, d1, d2, d3, d4, d5, d6, d7, d8, d9, b1, b2, b3, b4, b5,
     f1, f2, f3, f4, f5⟩ := h
   exact ⟨kl768_wf, kl768_calls, h0, by rw [h1]; exact .head _, by rw [h1]; exact .tail _ (.head _), h2, d1, d2, d3, d4, d5, d6, d7, d8, d9, b1, b2, b3, b4,
@@ -240,8 +241,8 @@ theorem post_of {s₀ s : State}
     (hkey : bytesAt s.mem (pKey s₀) 32 = KK kl768 s₀)
     (hct : bytesAt s.mem (pCt s₀) 1088 = VG.Proof.MlKem.KPke.ct kl768.p
       (aEnc (ekRho kl768.p (EK kl768 s₀)) (RR kl768 s₀)) (EK kl768 s₀) (M kl768 s₀) (RR kl768 s₀)) :
-    (Spec.MlKem.encapsContract PPC64LE.abi 48).post s₀ s := by
-  sig_post [Spec.MlKem.encapsContract, Spec.MlKem.encapsSig, PPC64LE.abi, PPC64LE.argRegs]
+    (Proof.MlKem.Scrubbed.encapsBodyContract PPC64LE.abi 48).post s₀ s := by
+  sig_post [Proof.MlKem.Scrubbed.encapsBodyContract, Spec.MlKem.encapsSig, PPC64LE.abi, PPC64LE.argRegs]
   have e : BitVec.setWidth 32
       (if okEnc kl768.k (ekRho kl768.p (EK kl768 s₀)) kl768.k then (1 : BitVec 64) else 0) =
       if okEnc kl768.k (ekRho kl768.p (EK kl768 s₀)) kl768.k then 1 else 0 := by
@@ -262,13 +263,13 @@ def satState : State where
   wr := [⟨0x3000, 32⟩, ⟨0x4000, 1088⟩, ⟨0x10000, 32768⟩]
 
 theorem verified :
-    Verified PPC64LE.target Impl.MlKem.PPC64LE.encaps (Spec.MlKem.encapsContract PPC64LE.abi 48) := by
+    Verified PPC64LE.target Impl.MlKem.PPC64LE.encaps (Proof.MlKem.Scrubbed.encapsBodyContract PPC64LE.abi 48) := by
   refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, ?_⟩
   · obtain ⟨t, s', he, hpres, hsp, hlr, h3, hkey, hct⟩ := correct (pre_of hs)
     exact ⟨t, s', he, ⟨hpres, hsp, hlr⟩, post_of h3 hkey hct⟩
   · have hp₁ := pre_of h₁
     have hp₂ := pre_of h₂
-    sig_pub [Spec.MlKem.encapsContract, Spec.MlKem.encapsSig, PPC64LE.abi, PPC64LE.argRegs] at hpub
+    sig_pub [Proof.MlKem.Scrubbed.encapsBodyContract, Spec.MlKem.encapsSig, PPC64LE.abi, PPC64LE.argRegs] at hpub
     obtain ⟨hsp, hl, g3, g4, g5, g6, g7⟩ := hpub
     have hr : ekRho kl768.p (EK kl768 s₁) = ekRho kl768.p (EK kl768 s₂) := by
       rw [EK_eq, EK_eq]
@@ -278,7 +279,7 @@ theorem verified :
   · refine ⟨satState, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlKem.encapsContract, Spec.MlKem.encapsSig, PPC64LE.abi, PPC64LE.argRegs]
+    · sig_reduce [Proof.MlKem.Scrubbed.encapsBodyContract, Spec.MlKem.encapsSig, PPC64LE.abi, PPC64LE.argRegs]
       sig_and_intros
       all_goals first
         | trivial
@@ -372,8 +373,8 @@ theorem all_ctH {K : KemLay} {s₁ s₂ : State} (two : TwoH K s₁ s₂) :
 
 /-! ## ML-KEM-768's `encapsH` -/
 
-theorem pre_ofH {s : State} (h : (Spec.MlKem.encapsHContract PPC64LE.abi 48).pre s) : PreH kl768 s := by
-  sig_pre [Spec.MlKem.encapsHContract, Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, PPC64LE.abi,
+theorem pre_ofH {s : State} (h : (Proof.MlKem.Scrubbed.encapsHBodyContract PPC64LE.abi 48).pre s) : PreH kl768 s := by
+  sig_pre [Proof.MlKem.Scrubbed.encapsHBodyContract, Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, PPC64LE.abi,
     PPC64LE.argRegs] at h
   obtain ⟨h0, h1, h2, d1, d2, d3, dh1, dh2, dh3, d4, d5, d6, d7, d8, d9, b1, bh, b2, b3, b4, b5,
     f1, fh, f2, f3, f4, f5, hh⟩ := h
@@ -389,8 +390,8 @@ theorem post_ofH {s₀ s : State}
     (hct : bytesAt s.mem (pCt (args s₀)) 1088 = VG.Proof.MlKem.KPke.ct kl768.p
       (aEnc (ekRho kl768.p (EK kl768 (args s₀))) (RR kl768 (args s₀))) (EK kl768 (args s₀)) (M kl768 (args s₀))
       (RR kl768 (args s₀))) :
-    (Spec.MlKem.encapsHContract PPC64LE.abi 48).post s₀ s := by
-  sig_post [Spec.MlKem.encapsHContract, Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, PPC64LE.abi,
+    (Proof.MlKem.Scrubbed.encapsHBodyContract PPC64LE.abi 48).post s₀ s := by
+  sig_post [Proof.MlKem.Scrubbed.encapsHBodyContract, Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, PPC64LE.abi,
     PPC64LE.argRegs]
   have e : BitVec.setWidth 32
       (if okEnc kl768.k (ekRho kl768.p (EK kl768 (args s₀))) kl768.k then (1 : BitVec 64) else 0) =
@@ -414,13 +415,13 @@ def satStateH (ekLen ctLen scr : Nat) : State where
   wr := [⟨0x4000, 32⟩, ⟨0x5000, ctLen⟩, ⟨0x10000, scr⟩]
 
 theorem verifiedH :
-    Verified PPC64LE.target Impl.MlKem.PPC64LE.encapsH (Spec.MlKem.encapsHContract PPC64LE.abi 48) := by
+    Verified PPC64LE.target Impl.MlKem.PPC64LE.encapsH (Proof.MlKem.Scrubbed.encapsHBodyContract PPC64LE.abi 48) := by
   refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, ?_⟩
   · obtain ⟨t, s', he, hpres, hsp, hlr, h3, hkey, hct⟩ := correctH (pre_ofH hs)
     exact ⟨t, s', he, ⟨fun r hr => (hpres r hr).trans (args_preserved s r hr), hsp, hlr⟩, post_ofH h3 hkey hct⟩
   · have hq₁ := pre_ofH h₁
     have hq₂ := pre_ofH h₂
-    sig_pub [Spec.MlKem.encapsHContract, Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, PPC64LE.abi,
+    sig_pub [Proof.MlKem.Scrubbed.encapsHBodyContract, Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, PPC64LE.abi,
       PPC64LE.argRegs] at hpub
     obtain ⟨hsp, hl, g3, g4, g5, g6, g7, g8⟩ := hpub
     have hr : ekRho kl768.p (EK kl768 (args s₁)) = ekRho kl768.p (EK kl768 (args s₂)) := by
@@ -431,7 +432,7 @@ theorem verifiedH :
   · refine ⟨satStateH 1184 1088 32768, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlKem.encapsHContract, Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, PPC64LE.abi,
+    · sig_reduce [Proof.MlKem.Scrubbed.encapsHBodyContract, Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, PPC64LE.abi,
         PPC64LE.argRegs]
       sig_and_intros
       all_goals first

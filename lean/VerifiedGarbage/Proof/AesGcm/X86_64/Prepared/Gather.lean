@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.PreparedPowers
 public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Verified
 import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Verified
@@ -26,7 +27,7 @@ theorem gatherPrePrepared_of {s : State}
     (h : (Proof.AesGcm.sealGatherPreparedScratchContract X86_64.abi 4888).pre s) :
     Proof.AesGcm.sealGatherPreM CtxMode.prepared s := by
   sig_pre [Proof.AesGcm.sealGatherPreparedScratchContract, Proof.AesGcm.sealGatherPreparedScratchSig, Proof.AesGcm.sealGatherPrecomputedScratchSig,
-    Spec.Gcm.sealGatherPreparedPre, X86_64.abi, X86_64.argRegs, stackArgs_six, List.append_eq] at h
+    Proof.Gcm.sealGatherPowersPre, X86_64.abi, X86_64.argRegs, stackArgs_six, List.append_eq] at h
   rw [Sig.pairFacts, Sig.pairFacts, Sig.pairFacts, pairFacts_ro _ (by simp)] at h
   simp only [List.map_append, List.filter_append, List.filter_map, List.map_map, List.filterMap_append,
     List.filterMap_map, List.map_cons, List.map_nil, List.filter_cons, List.filter_nil, Function.comp_def,
@@ -54,7 +55,7 @@ theorem gatherPubPrepared_of {s₁ s₂ : State}
     (hp : (Proof.AesGcm.sealGatherPreparedScratchContract X86_64.abi 4888).pub s₁ s₂) :
     Proof.AesGcm.sealGatherPub s₁ s₂ := by
   sig_pub [Proof.AesGcm.sealGatherPreparedScratchContract, Proof.AesGcm.sealGatherPreparedScratchSig, Proof.AesGcm.sealGatherPrecomputedScratchSig,
-    Spec.Gcm.sealGatherPreparedPre, X86_64.abi, X86_64.argRegs, stackArgs_six, List.append_eq] at hp
+    Proof.Gcm.sealGatherPowersPre, X86_64.abi, X86_64.argRegs, stackArgs_six, List.append_eq] at hp
   simp only [List.getD_cons_succ, List.getD_cons_zero, Sig.descRegion] at hp
   obtain ⟨q₇, q₁, q₂, q₃, q₄, q₅, q₆, a₀, a₁, a₂, a₃, a₄, a₅, hd⟩ := hp
   exact ⟨q₁, q₂, q₃, q₄, q₅, q₆, q₇, a₀, a₁, a₂, a₃, a₄, a₅, fun i hi => hd i (by simpa using hi)⟩
@@ -62,7 +63,7 @@ theorem gatherPubPrepared_of {s₁ s₂ : State}
 theorem gatherSatPrepared_pre : ∃ s, (Proof.AesGcm.sealGatherPreparedScratchContract X86_64.abi 4888).pre s := by
   refine ⟨gatherSatP, ?_⟩
   sig_pre [Proof.AesGcm.sealGatherPreparedScratchContract, Proof.AesGcm.sealGatherPreparedScratchSig, Proof.AesGcm.sealGatherPrecomputedScratchSig,
-    Spec.Gcm.sealGatherPreparedPre, X86_64.abi, X86_64.argRegs, stackArgs_six, List.append_eq,
+    Proof.Gcm.sealGatherPowersPre, X86_64.abi, X86_64.argRegs, stackArgs_six, List.append_eq,
     gatherSatP, gatherSat, stackArg, stackArgAddr, Mem.readW, Mem.read]
   sig_and_intros
   all_goals first
@@ -87,8 +88,8 @@ theorem sealGatherPrepared_core (Sh : ShortFn CtxMode.prepared) (I : InitFn) (A 
 
 theorem gatherFrameSatPrepared_pre : ∃ s, (Proof.AesGcm.sealGatherPreparedRoundsContract X86_64.abi 5128).pre s := by
   refine ⟨gatherFrameSatP, ?_⟩
-  sig_pre [Proof.AesGcm.sealGatherPreparedRoundsContract, Spec.Gcm.sealGatherPreparedSig, Spec.Gcm.sealGatherPrecomputedSig,
-    Spec.Gcm.sealGatherPreparedPre, X86_64.abi, X86_64.argRegs, stackArgs_five, List.append_eq,
+  sig_pre [Proof.AesGcm.sealGatherPreparedRoundsContract, Spec.Gcm.sealGatherPrecomputedSig, Spec.Gcm.sealGatherPrecomputedSig,
+    Proof.Gcm.sealGatherPowersPre, X86_64.abi, X86_64.argRegs, stackArgs_five, List.append_eq,
     gatherFrameSatP, gatherFrameSat, gatherSat, stackArg, stackArgAddr, Mem.readW, Mem.read]
   sig_and_intros
   all_goals first
@@ -103,8 +104,8 @@ theorem sealGatherPrepared_framed (Sh : ShortFn CtxMode.prepared) (I : InitFn)
       (Impl.StackScratch.X86_64.withStackArgScratch 240 5
         (withFront long Sp.fn (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn)))
       (Proof.AesGcm.sealGatherPreparedRoundsContract X86_64.abi 5128) :=
-  X86_64.Verified.stackArgScratchL (sig := Spec.Gcm.sealGatherPreparedSig) (nm := "scratch") (e := .u64)
-    (n := 23) (pre := Spec.Gcm.sealGatherPreparedPre X86_64.abi.ptrBits)
+  X86_64.Verified.stackArgScratchL (sig := Spec.Gcm.sealGatherPrecomputedSig) (nm := "scratch") (e := .u64)
+    (n := 23) (pre := Proof.Gcm.sealGatherPowersPre X86_64.abi.ptrBits)
     (post := Proof.AesGcm.sealGatherRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 4888) (bytes := 240)
     (sealGatherPrepared_core Sh I A T F Sp long) (by decide) (by decide) (by decide)
     (withFront_spAll Sh I A T F Sp long) (withFront_xdepth Sh I A T F Sp long)

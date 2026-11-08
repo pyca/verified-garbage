@@ -2,14 +2,52 @@
 //! The dispatchers of the verified `aes_gcm_siv` functions for `powerpc64le`
 //! (`crate::aes_gcm_siv`, `VG.Rust.dispatcher`).
 
-/// `vg_aes_gcm_siv_seal`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::aes_gcm_siv::vg_aes_gcm_siv_seal as vg_aes_gcm_siv_seal_auto;
+/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
+///
+/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
+///
+/// It runs `vg_aes_gcm_siv_seal`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` and `tag` must not overlap each other, `schedule`, `nonce` or `aad` (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the 3936 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_aes_gcm_siv_seal_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_seal(schedule, rounds, nonce, aad, aad_len, data, len, tag) }
+}
 
-/// `vg_aes_gcm_siv_open`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::aes_gcm_siv::vg_aes_gcm_siv_open as vg_aes_gcm_siv_open_auto;
+/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
+///
+/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
+///
+/// It runs `vg_aes_gcm_siv_open`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` must not overlap `schedule`, `nonce`, `aad` or `tag` (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the 3936 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_aes_gcm_siv_open_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_open(schedule, rounds, nonce, aad, aad_len, data, len, tag) }
+}

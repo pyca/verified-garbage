@@ -6,6 +6,7 @@ import Mathlib.Tactic.NormNum.Pow
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86_64.Print
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Shared
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.OpenTo
 
 /-! # ChaCha20-Poly1305 (RFC 8439 §2.8) on x86-64 -/
 
@@ -38,9 +39,16 @@ def artifacts (v : Proof.ChaCha20.X86_64.XorImpl) : List Artifact := [
   Spec.ChaCha20Poly1305.openZeroApi.artifact X86_64.target {
     suffix := v.suffix
     code := Impl.ChaCha20Poly1305.X86_64.Shared.openCode v.callee v.poly
-    stack := 1768
+    stack := 1784
     verified := Shared.open_verified v
     spSafe := Shared.open_sp v
+    features := openFeatures v },
+  Spec.ChaCha20Poly1305.openToApi.artifact X86_64.target {
+    suffix := v.suffix
+    code := Impl.ChaCha20Poly1305.X86_64.OpenTo.openToCode v.callee v.poly
+    stack := 1800
+    verified := OpenTo.openTo_verified v
+    spSafe := OpenTo.openTo_sp v
     features := openFeatures v },
   Spec.ChaCha20Poly1305.sealGatherApi.artifact X86_64.target {
     suffix := v.suffix

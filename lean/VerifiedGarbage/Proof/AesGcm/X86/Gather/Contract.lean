@@ -10,7 +10,7 @@ public import VerifiedGarbage.Proof.Framework.PowLit
 
 Untrusted: everything here is checked by Lean. The contract the proof of
 `vg_aes_gcm_seal_gather` is written against, which the shared one
-(`Proof.AesGcm.sealGatherRoundsContract`, with the 2684 bytes of stack below the stack
+(`Proof.AesGcm.sealGatherRoundsContract`, with the 2688 bytes of stack below the stack
 pointer that its frame and its call use) implies (`Gather/Verified.lean`):
 cdecl, `(ctx, rounds, nonce, nonce_len, aad, aad_len, src, src_count, dst,
 len, tag)` at `[esp + 4]` on, which the function may overwrite.
@@ -51,7 +51,7 @@ abbrev dR : Region := ⟨w64 (Dst s), L s⟩
 abbrev tgR : Region := ⟨w64 (Tg s), 16⟩
 abbrev argR : Region := ⟨argAddr s 0, 44⟩
 abbrev retR : Region := ⟨w64 (s.gpr .esp), 4⟩
-abbrev stkR : Region := ⟨w64 (s.gpr .esp) - BitVec.ofNat 64 2684, 2684⟩
+abbrev stkR : Region := ⟨w64 (s.gpr .esp) - BitVec.ofNat 64 2688, 2688⟩
 
 /-- The total length of the first `i` slices, and their bytes. -/
 abbrev gl (i : Nat) : Nat := gatheredLen 32 s.mem (w64 (Src s)) i
@@ -77,7 +77,7 @@ def gatherPre (s : State) : Prop :=
     (K s).toNat + 256 ≤ 2 ^ 32 ∧ (Nn s).toNat + NL s ≤ 2 ^ 32 ∧ (Ad s).toNat + AL s ≤ 2 ^ 32 ∧
     (Dst s).toNat + L s ≤ 2 ^ 32 ∧ (Tg s).toNat + 16 ≤ 2 ^ 32 ∧
     (Src s).toNat + Cnt s * 8 ≤ 2 ^ 32 ∧ (∀ r ∈ lsR s, r.base.toNat + r.len ≤ 2 ^ 32) ∧
-    2684 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 48 ≤ 2 ^ 32 ∧
+    2688 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 48 ≤ 2 ^ 32 ∧
     ((arg s 1).toNat = 10 ∨ (arg s 1).toNat = 12 ∨ (arg s 1).toNat = 14) ∧ gl s (Cnt s) = L s
 
 /-- What two runs agree on: the stack pointer, the arguments and the descriptors. -/

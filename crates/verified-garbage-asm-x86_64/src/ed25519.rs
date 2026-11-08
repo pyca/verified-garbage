@@ -15,7 +15,7 @@
 /// * `scratch` must not overlap `pk`, `message` or `signature` (distinct Rust objects never do).
 /// * None of `pk`, `message`, `signature` and `scratch` may overlap the return address on the stack or the 184 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ed25519_verify(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQUFBQUFBQUFBQUFBQUFBQUEiLvCSAAAAA"
 call {vg_sha512_init}
@@ -56,7 +56,7 @@ call {vg_ed25519_verify_equation}
 /// * `out` and `scratch` must not overlap each other, `expanded`, `pk` or `message` (distinct Rust objects never do).
 /// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ed25519_sign_expanded(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQQVFQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQSIuEJOgAAABIiwhIiYwkgAAAAEiLSAhIiYwkiAAAAEiLSBBIiYwkkAAAAEiLSBhIiYwkmAAAAEiLSCBIiYwkoAAAAEiLSChIiYwkqAAAAEiLSDBIiYwksAAAAEiLSDhIiYwkuAAAAEyLhCSAAAAATIuMJIgAAABMi5QkkAAAAEyLnCSYAAAASYPg+Ei5/////////z9JIctIuQAAAAAAAABASQnLTIkEJEyJTCQITIlUJBBMiVwkGEyLhCSgAAAATIuMJKgAAABMi5QksAAAAEyLnCS4AAAATIlEJCBMiUwkKEyJVCQwTIlcJDhIi7wkyAAAAA=="
 call {vg_sha512_init}
@@ -109,7 +109,7 @@ call {vg_ed25519_scalar_mul_add}
 /// * `out`, `expanded` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
 /// * None of `out`, `expanded`, `seed` and `scratch` may overlap the return address on the stack or the 1632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ed25519_key_pair(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_key_pair(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "V1ZRSInXSInyviAAAAA="
 call {vg_sha512_digest}
@@ -138,7 +138,7 @@ pub const VG_ED25519_VERIFY_ADX_FEATURES: verified_garbage_cpu::Features = verif
 /// * None of `pk`, `message`, `signature` and `scratch` may overlap the return address on the stack or the 184 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ed25519_verify_adx(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_adx(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQUFBQUFBQUFBQUFBQUFBQUEiLvCSAAAAA"
 call {vg_sha512_init}
@@ -183,7 +183,7 @@ pub const VG_ED25519_SIGN_EXPANDED_ADX_FEATURES: verified_garbage_cpu::Features 
 /// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ed25519_sign_expanded_adx(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded_adx(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQQVFQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQSIuEJOgAAABIiwhIiYwkgAAAAEiLSAhIiYwkiAAAAEiLSBBIiYwkkAAAAEiLSBhIiYwkmAAAAEiLSCBIiYwkoAAAAEiLSChIiYwkqAAAAEiLSDBIiYwksAAAAEiLSDhIiYwkuAAAAEyLhCSAAAAATIuMJIgAAABMi5QkkAAAAEyLnCSYAAAASYPg+Ei5/////////z9JIctIuQAAAAAAAABASQnLTIkEJEyJTCQITIlUJBBMiVwkGEyLhCSgAAAATIuMJKgAAABMi5QksAAAAEyLnCS4AAAATIlEJCBMiUwkKEyJVCQwTIlcJDhIi7wkyAAAAA=="
 call {vg_sha512_init}
@@ -240,7 +240,7 @@ pub const VG_ED25519_KEY_PAIR_ADX_FEATURES: verified_garbage_cpu::Features = ver
 /// * None of `out`, `expanded`, `seed` and `scratch` may overlap the return address on the stack or the 1632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ed25519_key_pair_adx(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_key_pair_adx(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "V1ZRSInXSInyviAAAAA="
 call {vg_sha512_digest}
@@ -269,7 +269,7 @@ pub const VG_ED25519_VERIFY_IFMA_FEATURES: verified_garbage_cpu::Features = veri
 /// * None of `pk`, `message`, `signature` and `scratch` may overlap the return address on the stack or the 184 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi2`, `adx`, `avx512ifma` and `avx512vl` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ed25519_verify_ifma(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_ifma(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQUFBQUFBQUFBQUFBQUFBQUEiLvCSAAAAA"
 call {vg_sha512_init}
@@ -314,7 +314,7 @@ pub const VG_ED25519_SIGN_EXPANDED_IFMA_FEATURES: verified_garbage_cpu::Features
 /// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi2`, `adx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ed25519_sign_expanded_ifma(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded_ifma(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQQVFQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQSIuEJOgAAABIiwhIiYwkgAAAAEiLSAhIiYwkiAAAAEiLSBBIiYwkkAAAAEiLSBhIiYwkmAAAAEiLSCBIiYwkoAAAAEiLSChIiYwkqAAAAEiLSDBIiYwksAAAAEiLSDhIiYwkuAAAAEyLhCSAAAAATIuMJIgAAABMi5QkkAAAAEyLnCSYAAAASYPg+Ei5/////////z9JIctIuQAAAAAAAABASQnLTIkEJEyJTCQITIlUJBBMiVwkGEyLhCSgAAAATIuMJKgAAABMi5QksAAAAEyLnCS4AAAATIlEJCBMiUwkKEyJVCQwTIlcJDhIi7wkyAAAAA=="
 call {vg_sha512_init}
@@ -371,7 +371,7 @@ pub const VG_ED25519_KEY_PAIR_IFMA_FEATURES: verified_garbage_cpu::Features = ve
 /// * None of `out`, `expanded`, `seed` and `scratch` may overlap the return address on the stack or the 1632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi2`, `adx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ed25519_key_pair_ifma(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_key_pair_ifma(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "V1ZRSInXSInyviAAAAA="
 call {vg_sha512_digest}
@@ -400,7 +400,7 @@ pub const VG_ED25519_VERIFY_AVX2_FEATURES: verified_garbage_cpu::Features = veri
 /// * None of `pk`, `message`, `signature` and `scratch` may overlap the return address on the stack or the 184 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ed25519_verify_avx2(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_avx2(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQUFBQUFBQUFBQUFBQUFBQUEiLvCSAAAAA"
 call {vg_sha512_init}
@@ -445,7 +445,7 @@ pub const VG_ED25519_SIGN_EXPANDED_AVX2_FEATURES: verified_garbage_cpu::Features
 /// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ed25519_sign_expanded_avx2(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded_avx2(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQQVFQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQSIuEJOgAAABIiwhIiYwkgAAAAEiLSAhIiYwkiAAAAEiLSBBIiYwkkAAAAEiLSBhIiYwkmAAAAEiLSCBIiYwkoAAAAEiLSChIiYwkqAAAAEiLSDBIiYwksAAAAEiLSDhIiYwkuAAAAEyLhCSAAAAATIuMJIgAAABMi5QkkAAAAEyLnCSYAAAASYPg+Ei5/////////z9JIctIuQAAAAAAAABASQnLTIkEJEyJTCQITIlUJBBMiVwkGEyLhCSgAAAATIuMJKgAAABMi5QksAAAAEyLnCS4AAAATIlEJCBMiUwkKEyJVCQwTIlcJDhIi7wkyAAAAA=="
 call {vg_sha512_init}
@@ -502,7 +502,7 @@ pub const VG_ED25519_KEY_PAIR_AVX2_FEATURES: verified_garbage_cpu::Features = ve
 /// * None of `out`, `expanded`, `seed` and `scratch` may overlap the return address on the stack or the 1632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ed25519_key_pair_avx2(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_key_pair_avx2(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "V1ZRSInXSInyviAAAAA="
 call {vg_sha512_digest_avx2}
@@ -531,7 +531,7 @@ pub const VG_ED25519_VERIFY_AVX2_ADX_FEATURES: verified_garbage_cpu::Features = 
 /// * None of `pk`, `message`, `signature` and `scratch` may overlap the return address on the stack or the 184 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ed25519_verify_avx2_adx(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_avx2_adx(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQUFBQUFBQUFBQUFBQUFBQUEiLvCSAAAAA"
 call {vg_sha512_init}
@@ -576,7 +576,7 @@ pub const VG_ED25519_SIGN_EXPANDED_AVX2_ADX_FEATURES: verified_garbage_cpu::Feat
 /// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ed25519_sign_expanded_avx2_adx(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded_avx2_adx(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQQVFQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQSIuEJOgAAABIiwhIiYwkgAAAAEiLSAhIiYwkiAAAAEiLSBBIiYwkkAAAAEiLSBhIiYwkmAAAAEiLSCBIiYwkoAAAAEiLSChIiYwkqAAAAEiLSDBIiYwksAAAAEiLSDhIiYwkuAAAAEyLhCSAAAAATIuMJIgAAABMi5QkkAAAAEyLnCSYAAAASYPg+Ei5/////////z9JIctIuQAAAAAAAABASQnLTIkEJEyJTCQITIlUJBBMiVwkGEyLhCSgAAAATIuMJKgAAABMi5QksAAAAEyLnCS4AAAATIlEJCBMiUwkKEyJVCQwTIlcJDhIi7wkyAAAAA=="
 call {vg_sha512_init}
@@ -633,7 +633,7 @@ pub const VG_ED25519_KEY_PAIR_AVX2_ADX_FEATURES: verified_garbage_cpu::Features 
 /// * None of `out`, `expanded`, `seed` and `scratch` may overlap the return address on the stack or the 1632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ed25519_key_pair_avx2_adx(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_key_pair_avx2_adx(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "V1ZRSInXSInyviAAAAA="
 call {vg_sha512_digest_avx2}
@@ -662,7 +662,7 @@ pub const VG_ED25519_VERIFY_AVX2_IFMA_FEATURES: verified_garbage_cpu::Features =
 /// * None of `pk`, `message`, `signature` and `scratch` may overlap the return address on the stack or the 184 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2`, `adx`, `avx512ifma` and `avx512vl` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ed25519_verify_avx2_ifma(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_avx2_ifma(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQUFBQUFBQUFBQUFBQUFBQUEiLvCSAAAAA"
 call {vg_sha512_init}
@@ -707,7 +707,7 @@ pub const VG_ED25519_SIGN_EXPANDED_AVX2_IFMA_FEATURES: verified_garbage_cpu::Fea
 /// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2`, `adx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ed25519_sign_expanded_avx2_ifma(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded_avx2_ifma(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQQVFQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQSIuEJOgAAABIiwhIiYwkgAAAAEiLSAhIiYwkiAAAAEiLSBBIiYwkkAAAAEiLSBhIiYwkmAAAAEiLSCBIiYwkoAAAAEiLSChIiYwkqAAAAEiLSDBIiYwksAAAAEiLSDhIiYwkuAAAAEyLhCSAAAAATIuMJIgAAABMi5QkkAAAAEyLnCSYAAAASYPg+Ei5/////////z9JIctIuQAAAAAAAABASQnLTIkEJEyJTCQITIlUJBBMiVwkGEyLhCSgAAAATIuMJKgAAABMi5QksAAAAEyLnCS4AAAATIlEJCBMiUwkKEyJVCQwTIlcJDhIi7wkyAAAAA=="
 call {vg_sha512_init}
@@ -764,7 +764,7 @@ pub const VG_ED25519_KEY_PAIR_AVX2_IFMA_FEATURES: verified_garbage_cpu::Features
 /// * None of `out`, `expanded`, `seed` and `scratch` may overlap the return address on the stack or the 1632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2`, `adx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ed25519_key_pair_avx2_ifma(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_key_pair_avx2_ifma(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "V1ZRSInXSInyviAAAAA="
 call {vg_sha512_digest_avx2}
@@ -793,7 +793,7 @@ pub const VG_ED25519_VERIFY_SHANI_FEATURES: verified_garbage_cpu::Features = ver
 /// * None of `pk`, `message`, `signature` and `scratch` may overlap the return address on the stack or the 184 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2` and `sha512` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ed25519_verify_shani(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_shani(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQUFBQUFBQUFBQUFBQUFBQUEiLvCSAAAAA"
 call {vg_sha512_init}
@@ -838,7 +838,7 @@ pub const VG_ED25519_SIGN_EXPANDED_SHANI_FEATURES: verified_garbage_cpu::Feature
 /// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2` and `sha512` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ed25519_sign_expanded_shani(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded_shani(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQQVFQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQSIuEJOgAAABIiwhIiYwkgAAAAEiLSAhIiYwkiAAAAEiLSBBIiYwkkAAAAEiLSBhIiYwkmAAAAEiLSCBIiYwkoAAAAEiLSChIiYwkqAAAAEiLSDBIiYwksAAAAEiLSDhIiYwkuAAAAEyLhCSAAAAATIuMJIgAAABMi5QkkAAAAEyLnCSYAAAASYPg+Ei5/////////z9JIctIuQAAAAAAAABASQnLTIkEJEyJTCQITIlUJBBMiVwkGEyLhCSgAAAATIuMJKgAAABMi5QksAAAAEyLnCS4AAAATIlEJCBMiUwkKEyJVCQwTIlcJDhIi7wkyAAAAA=="
 call {vg_sha512_init}
@@ -895,7 +895,7 @@ pub const VG_ED25519_KEY_PAIR_SHANI_FEATURES: verified_garbage_cpu::Features = v
 /// * None of `out`, `expanded`, `seed` and `scratch` may overlap the return address on the stack or the 1632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2` and `sha512` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ed25519_key_pair_shani(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_key_pair_shani(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "V1ZRSInXSInyviAAAAA="
 call {vg_sha512_digest_shani}
@@ -924,7 +924,7 @@ pub const VG_ED25519_VERIFY_SHANI_ADX_FEATURES: verified_garbage_cpu::Features =
 /// * None of `pk`, `message`, `signature` and `scratch` may overlap the return address on the stack or the 184 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `sha512`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ed25519_verify_shani_adx(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_shani_adx(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQUFBQUFBQUFBQUFBQUFBQUEiLvCSAAAAA"
 call {vg_sha512_init}
@@ -969,7 +969,7 @@ pub const VG_ED25519_SIGN_EXPANDED_SHANI_ADX_FEATURES: verified_garbage_cpu::Fea
 /// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `sha512`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ed25519_sign_expanded_shani_adx(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded_shani_adx(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQQVFQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQSIuEJOgAAABIiwhIiYwkgAAAAEiLSAhIiYwkiAAAAEiLSBBIiYwkkAAAAEiLSBhIiYwkmAAAAEiLSCBIiYwkoAAAAEiLSChIiYwkqAAAAEiLSDBIiYwksAAAAEiLSDhIiYwkuAAAAEyLhCSAAAAATIuMJIgAAABMi5QkkAAAAEyLnCSYAAAASYPg+Ei5/////////z9JIctIuQAAAAAAAABASQnLTIkEJEyJTCQITIlUJBBMiVwkGEyLhCSgAAAATIuMJKgAAABMi5QksAAAAEyLnCS4AAAATIlEJCBMiUwkKEyJVCQwTIlcJDhIi7wkyAAAAA=="
 call {vg_sha512_init}
@@ -1026,7 +1026,7 @@ pub const VG_ED25519_KEY_PAIR_SHANI_ADX_FEATURES: verified_garbage_cpu::Features
 /// * None of `out`, `expanded`, `seed` and `scratch` may overlap the return address on the stack or the 1632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `sha512`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ed25519_key_pair_shani_adx(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_key_pair_shani_adx(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "V1ZRSInXSInyviAAAAA="
 call {vg_sha512_digest_shani}
@@ -1055,7 +1055,7 @@ pub const VG_ED25519_VERIFY_SHANI_IFMA_FEATURES: verified_garbage_cpu::Features 
 /// * None of `pk`, `message`, `signature` and `scratch` may overlap the return address on the stack or the 184 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `sha512`, `bmi2`, `adx`, `avx512ifma` and `avx512vl` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ed25519_verify_shani_ifma(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_shani_ifma(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQUFBQUFBQUFBQUFBQUFBQUEiLvCSAAAAA"
 call {vg_sha512_init}
@@ -1100,7 +1100,7 @@ pub const VG_ED25519_SIGN_EXPANDED_SHANI_IFMA_FEATURES: verified_garbage_cpu::Fe
 /// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `sha512`, `bmi2`, `adx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ed25519_sign_expanded_shani_ifma(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded_shani_ifma(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQQVFQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQSIuEJOgAAABIiwhIiYwkgAAAAEiLSAhIiYwkiAAAAEiLSBBIiYwkkAAAAEiLSBhIiYwkmAAAAEiLSCBIiYwkoAAAAEiLSChIiYwkqAAAAEiLSDBIiYwksAAAAEiLSDhIiYwkuAAAAEyLhCSAAAAATIuMJIgAAABMi5QkkAAAAEyLnCSYAAAASYPg+Ei5/////////z9JIctIuQAAAAAAAABASQnLTIkEJEyJTCQITIlUJBBMiVwkGEyLhCSgAAAATIuMJKgAAABMi5QksAAAAEyLnCS4AAAATIlEJCBMiUwkKEyJVCQwTIlcJDhIi7wkyAAAAA=="
 call {vg_sha512_init}
@@ -1157,7 +1157,7 @@ pub const VG_ED25519_KEY_PAIR_SHANI_IFMA_FEATURES: verified_garbage_cpu::Feature
 /// * None of `out`, `expanded`, `seed` and `scratch` may overlap the return address on the stack or the 1632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `sha512`, `bmi2`, `adx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ed25519_key_pair_shani_ifma(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_key_pair_shani_ifma(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "V1ZRSInXSInyviAAAAA="
 call {vg_sha512_digest_shani}

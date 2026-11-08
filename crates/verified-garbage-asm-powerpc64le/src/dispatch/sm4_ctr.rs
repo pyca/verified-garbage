@@ -2,14 +2,42 @@
 //! The dispatchers of the verified `sm4_ctr` functions for `powerpc64le`
 //! (`crate::sm4_ctr`, `VG.Rust.dispatcher`).
 
-/// `vg_sm4_ctr`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::sm4_ctr::vg_sm4_ctr as vg_sm4_ctr_auto;
+/// SM4-CTR encryption or decryption (NIST SP 800-38A §6.5, draft-ribose-cfrg-sm4-10 §7.1) of whole blocks, in place: XORs the `n` 16-byte blocks at `data` with the output blocks `Oⱼ = CIPH_K(Tⱼ)`, where `T₁` is the block at `*ctr` and `Tⱼ₊₁ = Tⱼ + 1 mod 2¹²⁸` (Appendix B.1's standard incrementing function on the whole block, read as a big-endian integer), and replaces `*ctr` with `Tₙ₊₁` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is SM4 under the schedule written by `vg_sm4_expand_key`.
+///
+/// Contract: `VG.Spec.Sm4.ctrContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the counter block or the data.
+///
+/// It runs `vg_sm4_ctr`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `ctr` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `16 * n` bytes.
+/// * `ctr` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `ctr` and `data` may overlap the 3296 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_sm4_ctr_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 128], ctr: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::sm4_ctr::vg_sm4_ctr(schedule, ctr, data, n) }
+}
 
-/// `vg_sm4_ctr_final`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::sm4_ctr::vg_sm4_ctr_final as vg_sm4_ctr_final_auto;
+/// SM4-CTR encryption or decryption (NIST SP 800-38A §6.5, draft-ribose-cfrg-sm4-10 §7.1) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Tⱼ)`, where `T₁` is the block at `*ctr` and `Tⱼ₊₁ = Tⱼ + 1 mod 2¹²⁸` (Appendix B.1's standard incrementing function on the whole block, read as a big-endian integer), a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*ctr` with `Tₙ₊₁` (leaving it unchanged if `len = 0`), so that a further call continues the message if `len` is a multiple of 16; after a partial last block the message must end. `CIPH_K` is SM4 encryption under the schedule written by `vg_sm4_expand_key`.
+///
+/// Contract: `VG.Spec.Sm4.ctrFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the counter block or the data.
+///
+/// It runs `vg_sm4_ctr_final`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `ctr` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `ctr` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `ctr` and `data` may overlap the 3408 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_sm4_ctr_final_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 128], ctr: *mut [u8; 16], data: *mut u8, len: usize) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::sm4_ctr::vg_sm4_ctr_final(schedule, ctr, data, len) }
+}

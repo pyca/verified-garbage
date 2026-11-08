@@ -256,6 +256,17 @@ structure Artifact where
   writtenOk : ∀ s t s', contract.pre s → Exec target.isa code s t s' →
       Sig.writtenWithin target.abi sig written s s' := by
     exact fun _ _ _ _ _ => True.intro
+  /-- CPU features beyond `features`, by their Rust `target_feature` names,
+  without which its function's dispatcher does not choose it: those of the
+  CPUs it is faster on. -/
+  extra : List String := []
+  /-- The compilation target's `target_vendor`, if any, outside which its
+  function's dispatcher chooses it only where `VG_CPU_FEATURES` names every
+  feature it needs: that of the CPUs it is faster on, where no feature tells
+  them apart. Like `extra`, it is not trusted: it only
+  says when the dispatcher may choose the implementation, and means nothing
+  for a base, which the dispatcher falls back on. -/
+  vendor : Option String := none
 
 /-- Proves `Registration.spSafe`, by default. `Proof/Framework/Registration.lean`
 implements it, with the proofs the kernel checks fastest on each ISA; how it
@@ -326,6 +337,10 @@ structure Registration (api : Api) (target : Target) where
   writtenOk : ∀ s t s', contract.pre s → Exec target.isa code s t s' →
       Sig.writtenWithin target.abi api.sig written s s' := by
     exact fun _ _ _ _ _ => True.intro
+  /-- `Artifact.extra`. -/
+  extra : List String := []
+  /-- `Artifact.vendor`. -/
+  vendor : Option String := none
 
 /-- The artifact of the implementation `r` of `api` on `target`: its module,
 signature and `writeArgs` are `api`'s, its name `api`'s followed by
@@ -358,5 +373,7 @@ def Api.artifact (api : Api) (target : Target) [Emitter target.isa] (r : Registr
   features := r.features
   written := r.written
   writtenOk := r.writtenOk
+  extra := r.extra
+  vendor := r.vendor
 
 end VG

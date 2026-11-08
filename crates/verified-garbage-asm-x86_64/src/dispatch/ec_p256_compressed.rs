@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.EcKey.Instance.compressPublicKeyContract`. The input is public: timing may depend on the pointers and the contents of `public`.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_ec_p256_compress_public_key_adx` if the CPU supports its features (`VG_EC_P256_COMPRESS_PUBLIC_KEY_ADX_FEATURES`); or else `vg_ec_p256_compress_public_key`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_ec_p256_compress_public_key_adx` if the CPU supports its features (`VG_EC_P256_COMPRESS_PUBLIC_KEY_ADX_FEATURES`); or else `vg_ec_p256_compress_public_key`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -18,22 +18,45 @@
 /// * None of `out`, `public` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_ec_p256_compress_public_key_auto(out: *mut [u8; 33], public: *const [u8; 65], scratch: *mut [u64; 1024]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::ec_p256_compressed::VG_EC_P256_COMPRESS_PUBLIC_KEY_ADX_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_ec_p256_compress_public_key_adx`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::ec_p256_compressed::vg_ec_p256_compress_public_key_adx(out, public, scratch) };
+pub unsafe fn vg_ec_p256_compress_public_key_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 33], public: *const [u8; 65], scratch: *mut [u64; 1024]) -> u32 {
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(out: *mut [u8; 33], public: *const [u8; 65], scratch: *mut [u64; 1024]) -> u32;
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::ec_p256_compressed::VG_EC_P256_COMPRESS_PUBLIC_KEY_ADX_FEATURES) }
+            || cpu.contains(crate::ec_p256_compressed::VG_EC_P256_COMPRESS_PUBLIC_KEY_ADX_FEATURES)
+        {
+            return crate::ec_p256_compressed::vg_ec_p256_compress_public_key_adx;
+        }
+        crate::ec_p256_compressed::vg_ec_p256_compress_public_key
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::ec_p256_compressed::vg_ec_p256_compress_public_key(out, public, scratch) }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(out: *mut [u8; 33], public: *const [u8; 65], scratch: *mut [u64; 1024]) -> u32 {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(out, public, scratch) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(out, public, scratch) }
 }
 
 /// Validate and decompress a P-256 public key (SEC 1 §2.3.4, SP 800-56A §5.6.2.3.3): reads `02` or `03` followed by `x` in 32 bytes, most significant first; checks `x` below the field prime and recovers a coordinate `y` satisfying the curve equation with even parity for `02`, odd for `03`. Writes `04` followed by `x` and `y` in 32 bytes each and returns 1. If no such finite point exists, writes 65 zero bytes and returns 0. Rejects infinity and hybrid encodings. The curve has cofactor one, so no subgroup multiplication is required.
 ///
 /// Contract: `VG.Spec.EcKey.Instance.decompressPublicKeyContract`. The input is public: timing may depend on the pointers and the contents of `public`.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_ec_p256_decompress_public_key_adx` if the CPU supports its features (`VG_EC_P256_DECOMPRESS_PUBLIC_KEY_ADX_FEATURES`); or else `vg_ec_p256_decompress_public_key`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_ec_p256_decompress_public_key_adx` if the CPU supports its features (`VG_EC_P256_DECOMPRESS_PUBLIC_KEY_ADX_FEATURES`); or else `vg_ec_p256_decompress_public_key`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -45,13 +68,36 @@ pub unsafe fn vg_ec_p256_compress_public_key_auto(out: *mut [u8; 33], public: *c
 /// * None of `out`, `public` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_ec_p256_decompress_public_key_auto(out: *mut [u8; 65], public: *const [u8; 33], scratch: *mut [u64; 1024]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::ec_p256_compressed::VG_EC_P256_DECOMPRESS_PUBLIC_KEY_ADX_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_ec_p256_decompress_public_key_adx`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::ec_p256_compressed::vg_ec_p256_decompress_public_key_adx(out, public, scratch) };
+pub unsafe fn vg_ec_p256_decompress_public_key_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 65], public: *const [u8; 33], scratch: *mut [u64; 1024]) -> u32 {
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(out: *mut [u8; 65], public: *const [u8; 33], scratch: *mut [u64; 1024]) -> u32;
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::ec_p256_compressed::VG_EC_P256_DECOMPRESS_PUBLIC_KEY_ADX_FEATURES) }
+            || cpu.contains(crate::ec_p256_compressed::VG_EC_P256_DECOMPRESS_PUBLIC_KEY_ADX_FEATURES)
+        {
+            return crate::ec_p256_compressed::vg_ec_p256_decompress_public_key_adx;
+        }
+        crate::ec_p256_compressed::vg_ec_p256_decompress_public_key
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::ec_p256_compressed::vg_ec_p256_decompress_public_key(out, public, scratch) }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(out: *mut [u8; 65], public: *const [u8; 33], scratch: *mut [u64; 1024]) -> u32 {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(out, public, scratch) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(out, public, scratch) }
 }

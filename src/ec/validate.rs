@@ -16,13 +16,14 @@ macro_rules! validate {
             /// hybrid encodings are rejected. Available on x86-64.
             pub fn validate_public_key(public: &[u8; 2 * $len + 1]) -> bool {
                 use crate::arch::dispatch::$module::$validate;
-                let mut ws = [0u64; 1024];
+                let dit = crate::dit::public(crate::dit::Why::PublicKey);
+                let mut ws = $crate::align::CacheAligned([0u64; 1024]);
                 // SAFETY: public is readable for the complete encoding;
                 // ws is a separate, writable 8192-byte Rust object. They
                 // cannot overlap each other or the call's stack frame, or
                 // wrap around the address space. The dispatcher calls only
                 // an implementation the CPU has the features of.
-                let ok = unsafe { $validate(public, &mut ws) };
+                let ok = unsafe { $validate(dit, public, &mut ws.0) };
                 // The verified contract returns exactly zero or one.
                 ok == 1
             }
@@ -108,7 +109,9 @@ mod tests {
                 let mut one = [0; $len];
                 one[$len - 1] = 1;
                 let reference = PrivateKey::<$curve>::from_bytes(&one);
-                for d in 1..=8 {
+                let public = *reference.public_key().unwrap().as_bytes();
+                assert!($curve::validate_public_key(&public));
+                for d in 2..=8 {
                     let mut private = one;
                     private[$len - 1] = d;
                     let public = *PrivateKey::<$curve>::from_bytes(&private)
@@ -116,24 +119,26 @@ mod tests {
                         .unwrap()
                         .as_bytes();
                     assert!($curve::validate_public_key(&public));
-                    // Check every tag, including compressed and hybrid
-                    // forms, against the uncompressed encoding requirement.
-                    for tag in 0..=255 {
+                }
+                // Encoding and coordinate checks need only one valid point:
+                // repeating every mutation for each key repeats costly ECDH
+                // reference calls without testing another input position.
+                // Check every tag, including compressed and hybrid forms.
+                for tag in 0..=255 {
+                    let mut q = public;
+                    q[0] = tag;
+                    assert_eq!($curve::validate_public_key(&q), tag == 4);
+                }
+                // Differential checks exercise decoding at every byte,
+                // field bounds, and both coordinates' curve equation.
+                for i in 1..public.len() {
+                    for byte in [0, 1, 0xff] {
                         let mut q = public;
-                        q[0] = tag;
-                        assert_eq!($curve::validate_public_key(&q), tag == 4);
-                    }
-                    // Differential checks exercise decoding at every byte,
-                    // field bounds, and both coordinates' curve equation.
-                    for i in 1..public.len() {
-                        for byte in [0, 1, 0xff] {
-                            let mut q = public;
-                            q[i] = byte;
-                            assert_eq!(
-                                $curve::validate_public_key(&q),
-                                reference.exchange(&PublicKey::from_bytes(&q)).is_ok()
-                            );
-                        }
+                        q[i] = byte;
+                        assert_eq!(
+                            $curve::validate_public_key(&q),
+                            reference.exchange(&PublicKey::from_bytes(&q)).is_ok()
+                        );
                     }
                 }
                 for tag in [0, 4] {

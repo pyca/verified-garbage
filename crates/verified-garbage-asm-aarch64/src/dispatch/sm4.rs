@@ -2,20 +2,59 @@
 //! The dispatchers of the verified `sm4` functions for `aarch64`
 //! (`crate::sm4`, `VG.Rust.dispatcher`).
 
-/// `vg_sm4_expand_key`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::sm4::vg_sm4_expand_key as vg_sm4_expand_key_auto;
+/// SM4 key expansion (draft-ribose-cfrg-sm4-10 §7.3): expands the 16-byte key at `key` into the 32 round keys, written to `schedule` as 32 little-endian 32-bit words `rk_0`, …, `rk_31`.
+///
+/// Contract: `VG.Spec.Sm4.expandKeyContract`. Constant time: only pointers may affect timing, not key bytes.
+///
+/// It runs `vg_sm4_expand_key`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of 16 bytes.
+/// * `schedule` must be valid for reads and writes of 128 bytes.
+/// * `schedule` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `schedule` may overlap the 3168 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_sm4_expand_key_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *const [u8; 16], schedule: *mut [u8; 128]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::sm4::vg_sm4_expand_key(key, schedule) }
+}
 
-/// `vg_sm4_ecb_encrypt`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::sm4::vg_sm4_ecb_encrypt as vg_sm4_ecb_encrypt_auto;
+/// SM4 ECB encryption (draft-ribose-cfrg-sm4-10 §7.1, SP 800-38A §6.1) of `n` complete 16-byte blocks at `data`, in place, under the schedule written by `vg_sm4_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
+///
+/// Contract: `VG.Spec.Sm4.ecbEncryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including S-box inputs.
+///
+/// It runs `vg_sm4_ecb_encrypt`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `data` must be valid for reads and writes of `16 * n` bytes.
+/// * `data` must not overlap `schedule` (distinct Rust objects never do).
+/// * Neither `schedule` nor `data` may overlap the 3184 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_sm4_ecb_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::sm4::vg_sm4_ecb_encrypt(schedule, data, n) }
+}
 
-/// `vg_sm4_ecb_decrypt`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::sm4::vg_sm4_ecb_decrypt as vg_sm4_ecb_decrypt_auto;
+/// SM4 ECB decryption (draft-ribose-cfrg-sm4-10 §7.2, SP 800-38A §6.1) of `n` complete 16-byte blocks at `data`, in place, under the schedule written by `vg_sm4_expand_key`: the encryption procedure with the round keys in reverse order. No padding is added or removed. For `n = 0`, no data is transformed.
+///
+/// Contract: `VG.Spec.Sm4.ecbDecryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including S-box inputs.
+///
+/// It runs `vg_sm4_ecb_decrypt`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `data` must be valid for reads and writes of `16 * n` bytes.
+/// * `data` must not overlap `schedule` (distinct Rust objects never do).
+/// * Neither `schedule` nor `data` may overlap the 3184 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_sm4_ecb_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::sm4::vg_sm4_ecb_decrypt(schedule, data, n) }
+}

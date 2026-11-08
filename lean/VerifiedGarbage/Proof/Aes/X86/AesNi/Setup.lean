@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 
 namespace VG.Proof.Aes.X86.AesNi
 open VG VG.X86 VG.X86.RegUpd
-open VG.Proof.Aes.X86 (CPre schP nRounds ctrP datP nBlk scrP scrR ctrR argR)
+open VG.Proof.Aes.X86 (GPre argRg schP nRounds ctrP datP nBlk scrP scrR ctrR)
 open VG.Impl.Aes.X86.AesNi (at_ argOp savedRegs)
 
 /-- The callee-saved registers are saved in the scratch buffer. -/
@@ -38,25 +38,18 @@ structure Start (s₀ s : State) : Prop extends Setup s₀ s where
   cf : s.cf = some (decide (nBlk s₀ < 6))
   zf : s.zf = some (decide (nBlk s₀ = 6))
 
-theorem scratch_contains {s : State} (hp : CPre s) {d n : Nat} (h : d + n ≤ 2048) (hn : 0 < n := by decide) :
+theorem scratch_contains {to : Bool} {s : State} (hp : GPre to s) {d n : Nat} (h : d + n ≤ 2048) (hn : 0 < n := by decide) :
     (scrR s).Contains (addr (scrP s) d) n := by
   rw [addr_eq (by have hf := hp.fB; omega)]
   exact Offset.contains_base _ h (by omega)
 
-theorem scratch_in {s : State} (hp : CPre s) {d n : Nat} (h : d + n ≤ 2048) (hn : 0 < n := by decide) :
-    InRegions s.wr (addr (scrP s) d) n := by
-  refine ⟨scrR s, ?_, scratch_contains hp h hn⟩
-  simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false, or_true]
+theorem scratch_in {to : Bool} {s : State} (hp : GPre to s) {d n : Nat} (h : d + n ≤ 2048)
+    (hn : 0 < n := by decide) : InRegions s.wr (addr (scrP s) d) n :=
+  ⟨scrR s, hp.wB, scratch_contains hp h hn⟩
 
-theorem arg_contains {s : State} (hp : CPre s) {i : Nat} (hi : i < 6) :
-    (argR s).Contains (argAddr s i) 4 := by
-  have hf := hp.fSp
-  change (⟨addr (s.gpr .esp) 4, 24⟩ : Region).Contains (addr (s.gpr .esp) (4 + 4 * i)) 4
-  rw [addr_eq (by omega), addr_eq (by omega)]
-  rw [show (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 (4 + 4 * i) =
-      ((s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4) + BitVec.ofNat 64 (4 * i) by
-      rw [BitVec.add_assoc, ← BitVec.ofNat_add]]
-  exact Offset.contains_base _ (by omega) (by omega)
+theorem arg_contains {to : Bool} {s : State} (hp : GPre to s) {i : Nat} (hi : i < 6 ∨ (to = true ∧ i = 6)) :
+    (argRg to s).Contains (argAddr s i) 4 :=
+  hp.argC hi
 
 
 theorem Setup.setReg {s₀ s : State} (h : Setup s₀ s) (d : Reg) (v : BitVec 32)
@@ -66,7 +59,7 @@ theorem Setup.setReg {s₀ s : State} (h : Setup s₀ s) (d : Reg) (v : BitVec 3
     by rw [mem_setReg]; exact h.frame⟩
 
 
-theorem ctr_contains {s : State} (hp : CPre s) {d n : Nat} (h : d + n ≤ 16)
+theorem ctr_contains {to : Bool} {s : State} (hp : GPre to s) {d n : Nat} (h : d + n ≤ 16)
     (hn : 0 < n := by decide) : (ctrR s).Contains (addr (ctrP s) d) n := by
   rw [addr_eq (by have hf := hp.fC; omega)]
   exact Offset.contains_base _ h (by omega)

@@ -16,7 +16,7 @@
 /// * `schedule` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `schedule` may overlap the return address on the stack or the 520 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 240]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 240]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPj9//9IieFIg8EISYnJSYmZgAEAAEmJqYgBAABNiaGQAQAATYmpmAEAAE2JsaABAABNibmoAQAASYnw"
 20:
@@ -71,7 +71,7 @@ pub const VG_AES_EXPAND_KEY_AESNI_FEATURES: verified_garbage_cpu::Features = ver
 /// * Neither `key` nor `schedule` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_expand_key_aesni(key: *const u8, key_len: usize, schedule: *mut [u8; 240]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_expand_key_aesni(key: *const u8, key_len: usize, schedule: *mut [u8; 240]) {
     core::arch::naked_asm!(
         r#".base64 "Zg927WYPctUfZg9v9WYP/vZmD2/+Zg/+/2ZED2/HZkUP/sBmRQ9vyGZFD/7JZkUPb9FmRQ/+0mZFD2/aZkUP/ttmRQ9v42ZFD/7kSIP+GA=="
 je 20f
@@ -105,7 +105,7 @@ jmp 21f
 /// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_encrypt_blocks(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_encrypt_blocks(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
         r#".base64 "TYnBSYnISYmZgAEAAEmJqYgBAABNiaGQAQAATYmpmAEAAE2JsaABAABNibmoAQAASYn3SAH2SAH2SAH2SAH2SAH3TInOSIHGgAcAAA=="
 20:
@@ -176,7 +176,7 @@ jmp 22f
 /// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_decrypt_blocks(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_decrypt_blocks(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
         r#".base64 "TYnBSYnISYmZgAEAAEmJqYgBAABNiaGQAQAATYmpmAEAAE2JsaABAABNibmoAQAASYn3SAH2SAH2SAH2SAH2SAH3TInOSIHGgAcAAA=="
 20:
@@ -256,7 +256,7 @@ pub const VG_AES_ENCRYPT_BLOCKS_AESNI_SCRATCH_WRITTEN: usize = 0;
 /// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_encrypt_blocks_aesni(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_encrypt_blocks_aesni(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
         r#".base64 "SYnyTQHSTQHSTQHSTQHSSQH6SIP5CA=="
 jb 20f
@@ -319,7 +319,7 @@ pub const VG_AES_DECRYPT_BLOCKS_AESNI_FEATURES: verified_garbage_cpu::Features =
 /// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_decrypt_blocks_aesni(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_decrypt_blocks_aesni(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
         r#".base64 "80QPb0cQZkUPONvA80UPf0AQ80QPb0cgZkUPONvA80UPf0Ag80QPb0cwZkUPONvA80UPf0Aw80QPb0dAZkUPONvA80UPf0BA80QPb0dQZkUPONvA80UPf0BQ80QPb0dgZkUPONvA80UPf0Bg80QPb0dwZkUPONvA80UPf0Bw80QPb4eAAAAAZkUPONvA80UPf4CAAAAA80QPb4eQAAAAZkUPONvA80UPf4CQAAAASIP+Cg=="
 je 20f
@@ -400,7 +400,7 @@ pub const VG_AES_ENCRYPT_BLOCKS_VAES_SCRATCH_WRITTEN: usize = 0;
 /// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2` and `vaes` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_encrypt_blocks_vaes(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_encrypt_blocks_vaes(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
         r#".base64 "SYnyTQHSTQHSTQHSTQHSSQH6SIP5EA=="
 jb 20f
@@ -482,7 +482,7 @@ pub const VG_AES_DECRYPT_BLOCKS_VAES_FEATURES: verified_garbage_cpu::Features = 
 /// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2` and `vaes` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_decrypt_blocks_vaes(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_decrypt_blocks_vaes(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
         r#".base64 "80QPb0cQZkUPONvA80UPf0AQ80QPb0cgZkUPONvA80UPf0Ag80QPb0cwZkUPONvA80UPf0Aw80QPb0dAZkUPONvA80UPf0BA80QPb0dQZkUPONvA80UPf0BQ80QPb0dgZkUPONvA80UPf0Bg80QPb0dwZkUPONvA80UPf0Bw80QPb4eAAAAAZkUPONvA80UPf4CAAAAA80QPb4eQAAAAZkUPONvA80UPf4CQAAAASIP+Cg=="
 je 20f
@@ -569,6 +569,18 @@ pub(crate) mod vg_aes_ctr32;
 pub(crate) mod vg_aes_ctr32_aesni;
 
 #[rustfmt::skip]
+#[path = "internal/vg_aes_ctr32_to.rs"]
+pub(crate) mod vg_aes_ctr32_to;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_ctr32_to_aesni.rs"]
+pub(crate) mod vg_aes_ctr32_to_aesni;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_ctr32_to_vaes.rs"]
+pub(crate) mod vg_aes_ctr32_to_vaes;
+
+#[rustfmt::skip]
 #[path = "internal/vg_aes_ctr32_vaes.rs"]
 pub(crate) mod vg_aes_ctr32_vaes;
 
@@ -617,12 +629,44 @@ pub(crate) mod vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul;
 pub(crate) mod vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512;
 
 #[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_decrypt_blocks_to.rs"]
+pub(crate) mod vg_aes_gcm_decrypt_blocks_to;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_decrypt_blocks_to_aesni.rs"]
+pub(crate) mod vg_aes_gcm_decrypt_blocks_to_aesni;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_decrypt_blocks_to_aesni_pclmul.rs"]
+pub(crate) mod vg_aes_gcm_decrypt_blocks_to_aesni_pclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_decrypt_blocks_to_aesni_vpclmul.rs"]
+pub(crate) mod vg_aes_gcm_decrypt_blocks_to_aesni_vpclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_decrypt_blocks_to_pclmul.rs"]
+pub(crate) mod vg_aes_gcm_decrypt_blocks_to_pclmul;
+
+#[rustfmt::skip]
 #[path = "internal/vg_aes_gcm_decrypt_blocks_to_prepared16_vaes_vpclmul.rs"]
 pub(crate) mod vg_aes_gcm_decrypt_blocks_to_prepared16_vaes_vpclmul;
 
 #[rustfmt::skip]
 #[path = "internal/vg_aes_gcm_decrypt_blocks_to_prepared_vaes_vpclmul_avx512.rs"]
 pub(crate) mod vg_aes_gcm_decrypt_blocks_to_prepared_vaes_vpclmul_avx512;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_decrypt_blocks_to_vaes.rs"]
+pub(crate) mod vg_aes_gcm_decrypt_blocks_to_vaes;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_decrypt_blocks_to_vaes_pclmul.rs"]
+pub(crate) mod vg_aes_gcm_decrypt_blocks_to_vaes_pclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_decrypt_blocks_to_vpclmul.rs"]
+pub(crate) mod vg_aes_gcm_decrypt_blocks_to_vpclmul;
 
 #[rustfmt::skip]
 #[path = "internal/vg_aes_gcm_decrypt_blocks_vaes.rs"]
@@ -757,12 +801,80 @@ pub(crate) mod vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512;
 pub(crate) mod vg_aes_gcm_encrypt_blocks_vpclmul;
 
 #[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_open_aesni_pclmul_avx.rs"]
+pub(crate) mod vg_aes_gcm_open_aesni_pclmul_avx;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_open_split.rs"]
+pub(crate) mod vg_aes_gcm_open_split;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_open_split_aesni.rs"]
+pub(crate) mod vg_aes_gcm_open_split_aesni;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_open_split_aesni_pclmul.rs"]
+pub(crate) mod vg_aes_gcm_open_split_aesni_pclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_open_split_aesni_vpclmul.rs"]
+pub(crate) mod vg_aes_gcm_open_split_aesni_vpclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_open_split_pclmul.rs"]
+pub(crate) mod vg_aes_gcm_open_split_pclmul;
+
+#[rustfmt::skip]
 #[path = "internal/vg_aes_gcm_open_split_prepared16_vaes_vpclmul.rs"]
 pub(crate) mod vg_aes_gcm_open_split_prepared16_vaes_vpclmul;
 
 #[rustfmt::skip]
 #[path = "internal/vg_aes_gcm_open_split_prepared_vaes_vpclmul_avx512.rs"]
 pub(crate) mod vg_aes_gcm_open_split_prepared_vaes_vpclmul_avx512;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_open_split_vaes.rs"]
+pub(crate) mod vg_aes_gcm_open_split_vaes;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_open_split_vaes_pclmul.rs"]
+pub(crate) mod vg_aes_gcm_open_split_vaes_pclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_open_split_vpclmul.rs"]
+pub(crate) mod vg_aes_gcm_open_split_vpclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_open_vaes_vpclmul.rs"]
+pub(crate) mod vg_aes_gcm_open_vaes_vpclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_open_vaes_vpclmul_avx512.rs"]
+pub(crate) mod vg_aes_gcm_open_vaes_vpclmul_avx512;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_seal.rs"]
+pub(crate) mod vg_aes_gcm_seal;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_seal_aesni.rs"]
+pub(crate) mod vg_aes_gcm_seal_aesni;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_seal_aesni_pclmul.rs"]
+pub(crate) mod vg_aes_gcm_seal_aesni_pclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_seal_aesni_pclmul_avx.rs"]
+pub(crate) mod vg_aes_gcm_seal_aesni_pclmul_avx;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_seal_aesni_vpclmul.rs"]
+pub(crate) mod vg_aes_gcm_seal_aesni_vpclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_seal_pclmul.rs"]
+pub(crate) mod vg_aes_gcm_seal_pclmul;
 
 #[rustfmt::skip]
 #[path = "internal/vg_aes_gcm_seal_split.rs"]
@@ -821,6 +933,50 @@ pub(crate) mod vg_aes_gcm_seal_split_vaes_vpclmul_avx512;
 pub(crate) mod vg_aes_gcm_seal_split_vpclmul;
 
 #[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_seal_vaes.rs"]
+pub(crate) mod vg_aes_gcm_seal_vaes;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_seal_vaes_pclmul.rs"]
+pub(crate) mod vg_aes_gcm_seal_vaes_pclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_seal_vaes_vpclmul.rs"]
+pub(crate) mod vg_aes_gcm_seal_vaes_vpclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_seal_vaes_vpclmul_avx512.rs"]
+pub(crate) mod vg_aes_gcm_seal_vaes_vpclmul_avx512;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_seal_vpclmul.rs"]
+pub(crate) mod vg_aes_gcm_seal_vpclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_stream_encrypt.rs"]
+pub(crate) mod vg_aes_gcm_stream_encrypt;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_stream_encrypt_aesni.rs"]
+pub(crate) mod vg_aes_gcm_stream_encrypt_aesni;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_stream_encrypt_aesni_pclmul.rs"]
+pub(crate) mod vg_aes_gcm_stream_encrypt_aesni_pclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_stream_encrypt_aesni_pclmul_avx.rs"]
+pub(crate) mod vg_aes_gcm_stream_encrypt_aesni_pclmul_avx;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_stream_encrypt_aesni_vpclmul.rs"]
+pub(crate) mod vg_aes_gcm_stream_encrypt_aesni_vpclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_stream_encrypt_pclmul.rs"]
+pub(crate) mod vg_aes_gcm_stream_encrypt_pclmul;
+
+#[rustfmt::skip]
 #[path = "internal/vg_aes_gcm_stream_encrypt_to.rs"]
 pub(crate) mod vg_aes_gcm_stream_encrypt_to;
 
@@ -875,3 +1031,23 @@ pub(crate) mod vg_aes_gcm_stream_encrypt_to_vaes_vpclmul_avx512;
 #[rustfmt::skip]
 #[path = "internal/vg_aes_gcm_stream_encrypt_to_vpclmul.rs"]
 pub(crate) mod vg_aes_gcm_stream_encrypt_to_vpclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_stream_encrypt_vaes.rs"]
+pub(crate) mod vg_aes_gcm_stream_encrypt_vaes;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_stream_encrypt_vaes_pclmul.rs"]
+pub(crate) mod vg_aes_gcm_stream_encrypt_vaes_pclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_stream_encrypt_vaes_vpclmul.rs"]
+pub(crate) mod vg_aes_gcm_stream_encrypt_vaes_vpclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_stream_encrypt_vaes_vpclmul_avx512.rs"]
+pub(crate) mod vg_aes_gcm_stream_encrypt_vaes_vpclmul_avx512;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_stream_encrypt_vpclmul.rs"]
+pub(crate) mod vg_aes_gcm_stream_encrypt_vpclmul;

@@ -15,7 +15,7 @@
 /// * `state` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `state` nor `key` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_blake2s_init(state: *mut [u8; 96], outlen: usize, key: *const u8, keylen: usize) {
+pub(crate) unsafe extern "C" fn vg_blake2s_init(state: *mut [u8; 96], outlen: usize, key: *const u8, keylen: usize) {
     core::arch::naked_asm!(
         r"movw r12, #44677
 movt r12, #47975
@@ -89,7 +89,7 @@ bx lr",
 /// * `state` must not overlap `data` or the arguments on the stack (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the 608 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_blake2s_update(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_blake2s_update(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r"sub sp, sp, #592
 add r12, sp, #0
@@ -262,7 +262,7 @@ bx lr",
 /// * `state` and `out` must not overlap each other or the arguments on the stack (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the 608 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_blake2s_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
+pub(crate) unsafe extern "C" fn vg_blake2s_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
         r"sub sp, sp, #592
 add r12, sp, #0

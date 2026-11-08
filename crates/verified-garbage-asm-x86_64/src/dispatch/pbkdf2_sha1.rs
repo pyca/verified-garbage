@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Hmac.Instance.pbkdf2Contract` of `VG.Spec.Hmac.sha1I`. Constant time: only the pointers, the lengths and `c` may affect timing, not the password, the salt or the key.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_pbkdf2_hmac_sha1_shani` if the CPU supports its features (`VG_PBKDF2_HMAC_SHA1_SHANI_FEATURES`); `vg_pbkdf2_hmac_sha1_avx_bmi` if the CPU supports its features (`VG_PBKDF2_HMAC_SHA1_AVX_BMI_FEATURES`); or else `vg_pbkdf2_hmac_sha1`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_pbkdf2_hmac_sha1_shani` if the CPU supports its features (`VG_PBKDF2_HMAC_SHA1_SHANI_FEATURES`); `vg_pbkdf2_hmac_sha1_avx_bmi` if the CPU supports its features (`VG_PBKDF2_HMAC_SHA1_AVX_BMI_FEATURES`); or else `vg_pbkdf2_hmac_sha1`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -18,18 +18,41 @@
 /// * None of `password`, `salt` and `out` may overlap the return address on the stack or the 1168 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_pbkdf2_hmac_sha1_auto(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::pbkdf2_sha1::VG_PBKDF2_HMAC_SHA1_SHANI_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_pbkdf2_hmac_sha1_shani`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::pbkdf2_sha1::vg_pbkdf2_hmac_sha1_shani(password, password_len, salt, salt_len, c, out, out_len) };
+pub unsafe fn vg_pbkdf2_hmac_sha1_auto(_dit: verified_garbage_cpu::Dit<'_>, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::pbkdf2_sha1::VG_PBKDF2_HMAC_SHA1_SHANI_FEATURES) }
+            || cpu.contains(crate::pbkdf2_sha1::VG_PBKDF2_HMAC_SHA1_SHANI_FEATURES)
+        {
+            return crate::pbkdf2_sha1::vg_pbkdf2_hmac_sha1_shani;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::pbkdf2_sha1::VG_PBKDF2_HMAC_SHA1_AVX_BMI_FEATURES) }
+            || cpu.contains(crate::pbkdf2_sha1::VG_PBKDF2_HMAC_SHA1_AVX_BMI_FEATURES)
+        {
+            return crate::pbkdf2_sha1::vg_pbkdf2_hmac_sha1_avx_bmi;
+        }
+        crate::pbkdf2_sha1::vg_pbkdf2_hmac_sha1
     }
-    if cpu.contains(crate::pbkdf2_sha1::VG_PBKDF2_HMAC_SHA1_AVX_BMI_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_pbkdf2_hmac_sha1_avx_bmi`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::pbkdf2_sha1::vg_pbkdf2_hmac_sha1_avx_bmi(password, password_len, salt, salt_len, c, out, out_len) };
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(password, password_len, salt, salt_len, c, out, out_len) }
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::pbkdf2_sha1::vg_pbkdf2_hmac_sha1(password, password_len, salt, salt_len, c, out, out_len) }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(password, password_len, salt, salt_len, c, out, out_len) }
 }

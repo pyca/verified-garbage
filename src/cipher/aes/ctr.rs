@@ -11,6 +11,7 @@
     target_arch = "riscv64"
 ))]
 
+use crate::align::CacheAligned;
 use crate::arch::dispatch::aes::vg_aes_expand_key_auto;
 use crate::arch::dispatch::aes_ctr::{vg_aes_ctr_auto, vg_aes_ctr_final_auto};
 use crate::error::{IncompleteBlock, InvalidKeyLength};
@@ -19,7 +20,7 @@ use crate::zeroize::zeroize;
 /// An expanded AES key.
 struct Key {
     /// The key schedule `vg_aes_expand_key` writes.
-    schedule: [u8; 240],
+    schedule: CacheAligned<[u8; 240]>,
     /// The number of rounds of AES: 10, 12 or 14.
     rounds: usize,
 }
@@ -81,11 +82,12 @@ impl Key {
         if !matches!(key.len(), 16 | 24 | 32) {
             return Err(InvalidKeyLength);
         }
-        let mut schedule = [0; 240];
+        crate::dit::enter!(dit);
+        let mut schedule = CacheAligned([0; 240]);
         // SAFETY: the key is 16, 24 or 32 bytes long; the key and the schedule
         // are separate valid buffers of the sizes of the signature. The
         // dispatcher calls only an implementation the CPU has the features of.
-        unsafe { vg_aes_expand_key_auto(key.as_ptr(), key.len(), &mut schedule) };
+        unsafe { vg_aes_expand_key_auto(dit, key.as_ptr(), key.len(), &mut schedule.0) };
         Ok(Self {
             schedule,
             rounds: key.len() / 4 + 6,
@@ -97,7 +99,8 @@ impl Key {
     /// with the counter block after the last one used: `ctr` plus the number
     /// of blocks, modulo `2¹²⁸` (unchanged for empty input).
     fn apply_keystream(&self, ctr: &mut [u8; 16], buffer: &mut [u8]) {
-        self.crypt(ctr, buffer);
+        crate::dit::enter!(dit);
+        self.crypt(dit, ctr, buffer);
     }
 
     /// Encrypts or decrypts (the same operation) the rest of a message, of
@@ -106,10 +109,11 @@ impl Key {
     /// block the whole blocks leave in `ctr`, which it replaces with the
     /// next one.
     fn apply_keystream_final(&self, ctr: &mut [u8; 16], buffer: &mut [u8]) {
+        crate::dit::enter!(dit);
         let (blocks, rest) = buffer.split_at_mut(buffer.len() / 16 * 16);
-        self.crypt(ctr, blocks);
+        self.crypt(dit, ctr, blocks);
         if !rest.is_empty() {
-            let mut scratch = [0; 272];
+            let mut scratch = CacheAligned([0; 272]);
             // SAFETY: `rounds` is 10, 12 or 14 and the schedule holds its key
             // schedule; `rest` is valid for `len` bytes, and it, the block at
             // `ctr`, the schedule and the scratch space are separate valid
@@ -117,23 +121,24 @@ impl Key {
             // an implementation the CPU has the features of.
             unsafe {
                 vg_aes_ctr_final_auto(
-                    &self.schedule,
+                    dit,
+                    &self.schedule.0,
                     self.rounds,
                     ctr,
                     rest.as_mut_ptr(),
                     rest.len(),
-                    &mut scratch,
+                    &mut scratch.0,
                 );
             }
             // The scratch space may hold the key schedule, the data and our
             // caller's registers.
-            zeroize(&mut scratch);
+            zeroize(&mut scratch.0);
         }
     }
 
     /// CTR of whole blocks.
-    fn crypt(&self, ctr: &mut [u8; 16], blocks: &mut [u8]) {
-        let mut scratch = [0; 272];
+    fn crypt(&self, dit: crate::dit::Dit<'_>, ctr: &mut [u8; 16], blocks: &mut [u8]) {
+        let mut scratch = CacheAligned([0; 272]);
         // SAFETY: `rounds` is 10, 12 or 14 and the schedule holds its key
         // schedule; `blocks` holds `len / 16` whole blocks (its length is a
         // multiple of 16), and it, the block at `ctr`, the schedule and the
@@ -142,22 +147,23 @@ impl Key {
         // the features of.
         unsafe {
             vg_aes_ctr_auto(
-                &self.schedule,
+                dit,
+                &self.schedule.0,
                 self.rounds,
                 ctr,
                 blocks.as_mut_ptr().cast(),
                 blocks.len() / 16,
-                &mut scratch,
+                &mut scratch.0,
             );
         }
         // The scratch space may hold the key schedule, the data and our
         // caller's registers.
-        zeroize(&mut scratch);
+        zeroize(&mut scratch.0);
     }
 }
 
 impl Drop for Key {
     fn drop(&mut self) {
-        zeroize(&mut self.schedule);
+        zeroize(&mut self.schedule.0);
     }
 }

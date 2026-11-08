@@ -36,13 +36,13 @@ open VG.Spec.Gcm (Block blockAt ghashFrom ghash blocks zeros padLen ofBytes inc3
 open VG.Proof.Gcm (Absorbed Ctr xorKs lensBlock)
 
 section
-variable (c : Callees) (cl : Prog isa) (tb : List Instr)
+variable (c : Callees) (cl : Prog isa) (tb : List Instr) (to : Bool)
 
 /-- `openRunWithS` up to the branch on the tag. -/
 def openRunAS : Prog isa :=
   .seq Impl.AesGcm.AArch64.Fast.front
   (.seq (.block [.ldrq .v0 .x20 48, .strq .v0 .x19 Impl.AesGcm.AArch64.Stitch.cbO])
-  (.seq (Impl.AesGcm.AArch64.Stitch.stitched [] tb Impl.Gcm.AArch64.Stitch.dec)
+  (.seq (Impl.AesGcm.AArch64.Stitch.decPart tb to)
   (.seq (.block (Impl.AesGcm.AArch64.Stitch.whole ++ [.add .x .x23 .x23 .x9, .sub .x .x24 .x26 .x9, imm .x25 0] ++
       absSeg2 16))
   (.seq cl
@@ -71,7 +71,7 @@ def omBS : Prog isa := .seq (.ite (.zero .x .x27) (failB c) (okB c)) (.block [mo
 
 /-- `openRunWithS` is `openRunAS` then `omBS`. -/
 theorem openRunWithS_split :
-    PEq (.seq (openRunAS c cl tb) (omBS c)) (Impl.AesGcm.AArch64.Stitch.openRunWithS c tb cl) := by
+    PEq (.seq (openRunAS c cl tb to) (omBS c)) (Impl.AesGcm.AArch64.Stitch.openRunWithS c tb cl to) := by
   unfold openRunAS omBS failB okB Impl.AesGcm.AArch64.Stitch.openRunWithS
   refine (PEq.assoc _ _ _).trans (PEq.seq_right _ ?_)
   refine (PEq.assoc _ _ _).trans (PEq.seq_right _ ?_)
@@ -105,21 +105,24 @@ theorem blockAt_copy (m : Mem) (a b : Addr) : blockAt (m.write a 16 (m.read b 16
 
 /-- Before the branch on the tag, from `s` (after `open`'s entry): `MidO`,
 but for the first `P` bytes of the text, decrypted, the counter block past
-them, and the first counter block at `W + cbO`. -/
-structure MidS (fr : List Region) (Ctx W SP D Np A : Addr) (R nl al n tl P : Nat) (s s₇ : State) : Prop where
+them, and the first counter block at `W + cbO`; the ciphertext is
+`C₁ ++ C₂`, of which the text holds `C₁` decrypted and then `C₂`. -/
+structure MidS (fr : List Region) (Ctx W SP D Np A : Addr) (R nl al n tl P : Nat) (C₁ C₂ : List Byte)
+    (s s₇ : State) : Prop where
   env : Env Ctx (W + BitVec.ofNat 64 16) W SP s₇
   frame : Frame fr s.mem s₇.mem
   x22 : s₇.gpr .x22 = BitVec.ofNat 64 R
   x27 : s₇.gpr .x27 = BitVec.ofNat 64 (if decide ((Spec.Gcm.fullTag (ciphOf s.mem Ctx R)
     (blockAt s.mem (Ctx + BitVec.ofNat 64 240)) (bytesAt s.mem Np nl) (bytesAt s.mem A al)
-    (bytesAt s.mem D n)).take tl = bytesAt s.mem W tl) then 1 else 0)
+    (C₁ ++ C₂)).take tl = bytesAt s.mem W tl) then 1 else 0)
   data : DataW Ctx (W + BitVec.ofNat 64 16) W s₇ D n
   sD : s₇.mem.readW (W + BitVec.ofNat 64 232) 64 = D
   sN : s₇.mem.readW (W + BitVec.ofNat 64 240) 64 = BitVec.ofNat 64 n
   hP : P = 128 * (n / 128)
+  len₁ : C₁.length = P
   pre : bytesAt s₇.mem D P = xorKs (ciphOf s.mem Ctx R)
-    (inc32 (Spec.Gcm.j0 (blockAt s.mem (Ctx + BitVec.ofNat 64 240)) (bytesAt s.mem Np nl))) 0 (bytesAt s.mem D P)
-  rest : bytesAt s₇.mem (D + BitVec.ofNat 64 P) (n - P) = bytesAt s.mem (D + BitVec.ofNat 64 P) (n - P)
+    (inc32 (Spec.Gcm.j0 (blockAt s.mem (Ctx + BitVec.ofNat 64 240)) (bytesAt s.mem Np nl))) 0 C₁
+  rest : bytesAt s₇.mem (D + BitVec.ofNat 64 P) (n - P) = C₂
   cb : blockAt s₇.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) =
     Nat.repeat inc32 (P / 16) (inc32 (Spec.Gcm.j0 (blockAt s.mem (Ctx + BitVec.ofNat 64 240)) (bytesAt s.mem Np nl)))
   cbs : blockAt s₇.mem (W + BitVec.ofNat 64 Impl.AesGcm.AArch64.Stitch.cbO) =
@@ -127,11 +130,12 @@ structure MidS (fr : List Region) (Ctx W SP D Np A : Addr) (R nl al n tl P : Nat
   ciph : ciphOf s₇.mem Ctx R = ciphOf s.mem Ctx R
 
 section
-variable {Ctx W SP D Np A : Addr} {R nl al n tl P : Nat} (L : Lay Ctx (W + BitVec.ofNat 64 16) W)
+variable {Ctx W SP D Np A : Addr} {R nl al n tl P : Nat} {C₁ C₂ : List Byte}
+  (L : Lay Ctx (W + BitVec.ofNat 64 16) W)
 include L
 
 omit L in
-theorem failArgs_ok {fr : List Region} {s s₇ : State} (mo : MidS fr Ctx W SP D Np A R nl al n tl P s s₇) :
+theorem failArgs_ok {fr : List Region} {s s₇ : State} (mo : MidS fr Ctx W SP D Np A R nl al n tl P C₁ C₂ s s₇) :
     ∃ s₈, runBlock isa (([.ldrq .v0 .x19 Impl.AesGcm.AArch64.Stitch.cbO, .strq .v0 .x20 48,
       .ldr .x .x23 .x19 dataO, .ldr .x .x26 .x19 lenO] : List Instr) ++ Impl.AesGcm.AArch64.Stitch.whole ++
       [mov .x24 .x9, imm .x25 0]) s₇ = some s₈ ∧
@@ -170,7 +174,7 @@ theorem failArgs_ok {fr : List Region} {s s₇ : State} (mo : MidS fr Ctx W SP D
     rw [rs 240 (by decide) (by decide), e₂]
 
 omit L in
-theorem okArgs_ok {fr : List Region} {s s₇ : State} (mo : MidS fr Ctx W SP D Np A R nl al n tl P s s₇) :
+theorem okArgs_ok {fr : List Region} {s s₇ : State} (mo : MidS fr Ctx W SP D Np A R nl al n tl P C₁ C₂ s s₇) :
     ∃ s₈, runBlock isa (([.ldr .x .x23 .x19 dataO, .ldr .x .x26 .x19 lenO] : List Instr) ++ Impl.AesGcm.AArch64.Stitch.whole ++
       ([.add .x .x23 .x23 .x9, .sub .x .x24 .x26 .x9, imm .x25 0] : List Instr)) s₇ = some s₈ ∧
       s₈.gpr .x23 = D + BitVec.ofNat 64 P ∧ s₈.gpr .x24 = BitVec.ofNat 64 (n - P) ∧
@@ -199,16 +203,16 @@ theorem okArgs_ok {fr : List Region} {s s₇ : State} (mo : MidS fr Ctx W SP D N
 /-- `omBS`: the rest decrypted if the tag is right, and the text as it was
 if not. -/
 theorem omBS_ok (v : GcmImpl) {fr : List Region} {s s₇ : State} (hR : R = 10 ∨ R = 12 ∨ R = 14)
-    (mo : MidS fr Ctx W SP D Np A R nl al n tl P s s₇) :
+    (mo : MidS fr Ctx W SP D Np A R nl al n tl P C₁ C₂ s s₇) :
     WP isa (omBS v.callees) s₇ fun s' =>
       let ciph := ciphOf s.mem Ctx R
       let H := blockAt s.mem (Ctx + BitVec.ofNat 64 240)
-      let T := Spec.Gcm.fullTag ciph H (bytesAt s.mem Np nl) (bytesAt s.mem A al) (bytesAt s.mem D n)
+      let T := Spec.Gcm.fullTag ciph H (bytesAt s.mem Np nl) (bytesAt s.mem A al) (C₁ ++ C₂)
       let b := decide (T.take tl = bytesAt s.mem W tl)
       (Env Ctx (W + BitVec.ofNat 64 16) W SP s' ∧
       s'.gpr .x0 = BitVec.ofNat 64 (if b then 1 else 0) ∧
-      bytesAt s'.mem D n = if b then gctr ciph (inc32 (Spec.Gcm.j0 H (bytesAt s.mem Np nl))) (bytesAt s.mem D n)
-        else bytesAt s.mem D n) ∧ Frame (crFrame (W + BitVec.ofNat 64 16) W D n) s₇.mem s'.mem := by
+      bytesAt s'.mem D n = if b then gctr ciph (inc32 (Spec.Gcm.j0 H (bytesAt s.mem Np nl))) (C₁ ++ C₂)
+        else C₁ ++ C₂) ∧ Frame (crFrame (W + BitVec.ofNat 64 16) W D n) s₇.mem s'.mem := by
   have hn := mo.data.ok.lt
   have hwrap := mo.data.ok.wrap
   have hPn : P ≤ n := mo.hP ▸ Nat.mul_div_le n 128
@@ -235,12 +239,12 @@ theorem omBS_ok (v : GcmImpl) {fr : List Region} {s s₇ : State} (hR : R = 10 �
   have cbs₇ := mo.cbs
   rw [hJ] at pre₇ cb₇ cbs₇
   generalize decide ((Spec.Gcm.fullTag (ciphOf s.mem Ctx R) (blockAt s.mem (Ctx + BitVec.ofNat 64 240))
-    (bytesAt s.mem Np nl) (bytesAt s.mem A al) (bytesAt s.mem D n)).take tl = bytesAt s.mem W tl) = B at x27₇ ⊢
+    (bytesAt s.mem Np nl) (bytesAt s.mem A al) (C₁ ++ C₂)).take tl = bytesAt s.mem W tl) = B at x27₇ ⊢
   unfold omBS
   have hite : WP isa (.ite (.zero .x .x27) (failB v.callees) (okB v.callees)) s₇
       (fun (s₉ : State) => Env Ctx (W + BitVec.ofNat 64 16) W SP s₉ ∧ s₉.gpr .x27 = s₇.gpr .x27 ∧
       Frame (crFrame (W + BitVec.ofNat 64 16) W D n) s₇.mem s₉.mem ∧
-      bytesAt s₉.mem D n = if B then gctr (ciphOf s.mem Ctx R) J (bytesAt s.mem D n) else bytesAt s.mem D n) := by
+      bytesAt s₉.mem D n = if B then gctr (ciphOf s.mem Ctx R) J (C₁ ++ C₂) else C₁ ++ C₂) := by
     refine WP.ite (decide ((if B then 1 else 0) = 0)) (eval_zero x27₇ (by cases B <;> decide)) (fun ht => ?_)
       (fun hf => ?_)
     · have hB : B = false := by revert ht; cases B <;> simp
@@ -260,7 +264,7 @@ theorem omBS_ok (v : GcmImpl) {fr : List Region} {s s₇ : State} (hR : R = 10 �
           exact (mo.data.ok.st.sub_left hE).sub_right (Lay.stSub (by decide))
       have hCr : CrIn Ctx (W + BitVec.ofNat 64 16) W SP s₈.gpr R 0 D P s₈ :=
         ⟨he₈, fun _ _ => rfl, by rw [og₈ _ (by decide), mo.x22], hR, x23₈, x24₈, x25₈,
-          (mo.data.take hPn).of_eq rd₈ wr₈⟩
+          (mo.data.take hPn).of_eq rd₈ wr₈, rfl⟩
       have hcb₈ : blockAt s₈.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) = J := by
         rw [m₈, blockAt_copy, cbs₇]
       have hc₈ : ciphOf s₈.mem Ctx R = ciphOf s.mem Ctx R := by
@@ -273,10 +277,10 @@ theorem omBS_ok (v : GcmImpl) {fr : List Region} {s s₇ : State} (hR : R = 10 �
       · refine (f₈.sub fun r hr => ?_).trans (h₉.frame.sub (crSub subP))
         simp only [List.mem_singleton] at hr; subst hr
         exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), Region.sub_prefix (by decide)⟩
-      · have e₁ : bytesAt s₉.mem D P = bytesAt s.mem D P := by
+      · have e₁ : bytesAt s₉.mem D P = C₁ := by
           rw [h₉.out (Proof.Gcm.ctr_zero _ _ _ _ hcb₈), hc₈, bytesAt_frame f₈ (dS subP) (by omega), pre₇,
             xorKs_xorKs]
-        have e₂ : bytesAt s₉.mem (D + BitVec.ofNat 64 P) (n - P) = bytesAt s.mem (D + BitVec.ofNat 64 P) (n - P) := by
+        have e₂ : bytesAt s₉.mem (D + BitVec.ofNat 64 P) (n - P) = C₂ := by
           rw [bytesAt_frame h₉.frame (fun r hr => by
               simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
               rcases hr with rfl | rfl | rfl
@@ -284,7 +288,7 @@ theorem omBS_ok (v : GcmImpl) {fr : List Region} {s s₇ : State} (hR : R = 10 �
               · exact (mo.data.ok.st.sub_left subR).sub_right (Lay.stSub (by decide))
               · exact (mo.data.ok.w.sub_left subR).sub_right (Lay.wSub (by decide))) (by omega),
             bytesAt_frame f₈ (dS subR) (by omega), mo.rest]
-        rw [hsplit, e₁, e₂, ← hsplit]; rfl
+        rw [hsplit, e₁, e₂]; rfl
     · have hB : B = true := by revert hf; cases B <;> simp
       subst hB
       unfold okB
@@ -293,7 +297,7 @@ theorem omBS_ok (v : GcmImpl) {fr : List Region} {s s₇ : State} (hR : R = 10 �
       have he₈ := mo.env.of_regs r₈
       have hCr : CrIn Ctx (W + BitVec.ofNat 64 16) W SP s₈.gpr R P (D + BitVec.ofNat 64 P) (n - P) s₈ :=
         ⟨he₈, fun _ _ => rfl, by rw [r₈.others _ (by decide), mo.x22], hR, x23₈, x24₈, x25₈,
-          (mo.data.drop hPn).of_eq r₈.rd r₈.wr⟩
+          (mo.data.drop hPn).of_eq r₈.rd r₈.wr, rfl⟩
       have hctr : Ctr s₈.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 64)
           (ciphOf s₈.mem Ctx R) J P :=
         ⟨by rw [r₈.mem, cb₇]; congr 1; omega, fun h => absurd hP16 h⟩
@@ -310,9 +314,9 @@ theorem omBS_ok (v : GcmImpl) {fr : List Region} {s s₇ : State} (hR : R = 10 �
               · exact (mo.data.ok.st.sub_left subP).sub_right (Lay.stSub (by decide))
               · exact (mo.data.ok.w.sub_left subP).sub_right (Lay.wSub (by decide))) (by omega), r₈.mem]
         rw [hsplit, e₁, pre₇, h₉.out hctr, r₈.mem, mo.ciph, mo.rest,
-          show (if true = true then gctr (ciphOf s.mem Ctx R) J (bytesAt s.mem D n) else bytesAt s.mem D n) =
-            gctr (ciphOf s.mem Ctx R) J (bytesAt s.mem D n) from rfl, Proof.Gcm.gctr_eq, hsplit s.mem,
-          Proof.Gcm.xorKs_append, length_bytesAt, Nat.zero_add]
+          show (if true = true then gctr (ciphOf s.mem Ctx R) J (C₁ ++ C₂) else C₁ ++ C₂) =
+            gctr (ciphOf s.mem Ctx R) J (C₁ ++ C₂) from rfl, Proof.Gcm.gctr_eq,
+          Proof.Gcm.xorKs_append, mo.len₁, Nat.zero_add]
   refine WP.seq (WP.mono hite fun s₉ ⟨he₉, x27₉, f₉, d₉⟩ => ?_)
   refine WP.run ⟨_, by arun [], rfl⟩ fun s' hs' => ?_
   subst hs'

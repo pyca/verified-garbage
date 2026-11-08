@@ -17,8 +17,9 @@
     target_arch = "riscv64"
 ))]
 
-use crate::arch::chacha20::{vg_chacha20_init, vg_chacha20_set_nonce};
+use crate::align::CacheAligned;
 use crate::arch::dispatch::chacha20::vg_chacha20_apply_auto;
+use crate::arch::dispatch::chacha20::{vg_chacha20_init_auto, vg_chacha20_set_nonce_auto};
 use crate::zeroize::zeroize_raw;
 use core::mem::MaybeUninit;
 
@@ -36,7 +37,7 @@ pub struct ChaCha20 {
     /// and the partly used block, then the working space of `apply`. Only
     /// the verified functions read or write it, and they read only bytes
     /// they have written, so it need not be initialized.
-    state: MaybeUninit<[u64; 96]>,
+    state: CacheAligned<MaybeUninit<[u64; 96]>>,
     /// The key and the nonce of `new` (and `reset_nonce`), which `init`
     /// reads while `pending`.
     key: [u8; 32],
@@ -68,7 +69,7 @@ impl ChaCha20 {
     /// little-endian, followed by the 12-byte RFC 8439 nonce).
     pub fn new(key: &[u8; 32], nonce: &[u8; 16]) -> Self {
         ChaCha20 {
-            state: MaybeUninit::uninit(),
+            state: CacheAligned(MaybeUninit::uninit()),
             key: *key,
             nonce: *nonce,
             pending: true,
@@ -76,13 +77,13 @@ impl ChaCha20 {
     }
 
     /// Runs `vg_chacha20_init` on the key and nonce stored.
-    fn start(&mut self) {
+    fn start(&mut self, dit: crate::dit::Dit<'_>) {
         // SAFETY: `state` is valid for writes of 768 bytes (`init` reads none
         // of them), `key` for reads of 32 bytes and `nonce` for reads of 16
         // bytes; they are distinct fields, so they do not overlap each other
         // or the return address, and do not wrap around the end of the
         // address space.
-        unsafe { vg_chacha20_init(self.state.as_mut_ptr(), &self.key, &self.nonce) };
+        unsafe { vg_chacha20_init_auto(dit, self.state.0.as_mut_ptr(), &self.key, &self.nonce) };
         self.pending = false;
     }
 
@@ -92,9 +93,10 @@ impl ChaCha20 {
             self.nonce = *nonce;
             return;
         }
+        crate::dit::enter!(dit);
         // SAFETY: as in `start`, for `state` and `nonce` (`set_nonce` reads
         // no byte of `state` either).
-        unsafe { vg_chacha20_set_nonce(self.state.as_mut_ptr(), nonce) };
+        unsafe { vg_chacha20_set_nonce_auto(dit, self.state.0.as_mut_ptr(), nonce) };
     }
 
     /// XORs the next `data.len()` bytes of the keystream into `data`
@@ -107,8 +109,9 @@ impl ChaCha20 {
     /// have been applied since the nonce (with initial block counter `c`) was
     /// set. `data` is then left unchanged.
     pub fn apply_keystream(&mut self, data: &mut [u8]) {
+        crate::dit::enter!(dit);
         if self.pending {
-            self.start();
+            self.start(dit);
         }
         // SAFETY: `state` is valid for reads and writes of 768 bytes (the
         // bytes `apply` reads before writing them are those `init` and
@@ -119,7 +122,12 @@ impl ChaCha20 {
         // do not wrap around the end of the address space. The dispatcher
         // calls only an implementation the CPU has the features of.
         let ok = unsafe {
-            vg_chacha20_apply_auto(self.state.as_mut_ptr(), data.as_mut_ptr(), data.len())
+            vg_chacha20_apply_auto(
+                dit,
+                self.state.0.as_mut_ptr(),
+                data.as_mut_ptr(),
+                data.len(),
+            )
         };
         // `apply` checks the block counter itself, and leaves the data and the
         // state unchanged when it would overflow.

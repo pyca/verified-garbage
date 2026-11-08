@@ -87,23 +87,26 @@ def counter (v : VReg) : List Instr :=
 def readBlock (ctr : Bool) (v : VReg) : List Instr :=
   if ctr then counter v else load v .r6 ++ [.addi .r6 .r6 16]
 
-def storeAdvance (v : VReg) : List Instr := store v .r6 ++ [.addi .r6 .r6 16]
+/-- The block stored at `r6 + o` (`o` is `r0`, zero, in place; it holds
+`dst - src` out of place), and `r6` advanced. -/
+def storeAdvance (v : VReg) (o : Reg := .r0) : List Instr := storePerm v v .r6 o ++ [.addi .r6 .r6 16]
 
-def writeBlock (ctr : Bool) (v : VReg) : List Instr :=
-  (if ctr then load data .r6 ++ [.vop (.logic .xor v v data)] else []) ++ storeAdvance v
+def writeBlock (ctr : Bool) (v : VReg) (o : Reg := .r0) : List Instr :=
+  (if ctr then load data .r6 ++ [.vop (.logic .xor v v data)] else []) ++ storeAdvance v o
 
-def group (inverse ctr : Bool) (count : Nat) : Prog isa :=
+def group (inverse ctr : Bool) (count : Nat) (o : Reg := .r0) : Prog isa :=
   let rs := batchRegs count
   .seq (.block (rs.flatMap (readBlock ctr) ++
       (if ctr then [] else [.subi .r6 .r6 (16 * rs.length)])))
     (.seq (aes inverse rs)
-      (.block (rs.flatMap (writeBlock ctr) ++ [.subi .r7 .r7 rs.length])))
+      (.block (rs.flatMap (fun v => writeBlock ctr v o) ++ [.subi .r7 .r7 rs.length])))
 
-def batches (inverse ctr : Bool) : Prog isa :=
+/-- The data loops, storing each block at `r6 + o` (in place with `o = r0`). -/
+def batches (inverse ctr : Bool) (o : Reg := .r0) : Prog isa :=
   .seq (.block [.lsr .d .r12 .r7 3])
     (.seq (.ite (.zero .d .r12) (.block [])
-        (.loop (.seq (group inverse ctr 8) (.block [.lsr .d .r12 .r7 3])) (.nonzero .d .r12)))
-      (.ite (.zero .d .r7) (.block []) (.loop (group inverse ctr 1) (.nonzero .d .r7))))
+        (.loop (.seq (group inverse ctr 8 o) (.block [.lsr .d .r12 .r7 3])) (.nonzero .d .r12)))
+      (.ite (.zero .d .r7) (.block []) (.loop (group inverse ctr 1 o) (.nonzero .d .r7))))
 
 def blocks (inverse : Bool) : Prog isa :=
   .ite (.zero .d .r6) (.block [])
@@ -113,10 +116,32 @@ def encryptBlocks : Prog isa := blocks false
 
 def decryptBlocks : Prog isa := blocks true
 
-def ctr32 : Prog isa :=
+/-- The masks, the counter's last word in `r8` (byte-reversed, through
+`r11 = 12`) and the counter block in `counterBase`. -/
+def ctrSetup : List Instr :=
+  setup ++ setMask counterMask counterControl ++ [.li .r11 12, .loadRev .w .r8 .r5 .r11] ++ load counterBase .r5
+
+def ctrPre (to : Bool) : List Instr := if to then [.sub .r9 .r8 .r6] else []
+def ctrPost (to : Bool) : List Instr := if to then [mov .r11 .r9] else []
+def ctrOff (to : Bool) : Reg := if to then .r11 else .r0
+def ctrFin (to : Bool) : List Instr := if to then [.li .r11 12] else []
+
+/-- Counter mode on the `n = r7` blocks at `r6`, in place (`to = false`), or
+written to `r8` (`to = true`): then `dst - src` is kept in `r9` across the
+setup (`ctrPre`), then in `r11`, the stores' offset register (`ctrPost`),
+and `r11` is 12 again for the counter's final store (`ctrFin`). -/
+def ctrWith (to : Bool) : Prog isa :=
   .ite (.zero .d .r7) (.block [])
-    (.seq (.block (setup ++ setMask counterMask counterControl ++
-      [.li .r11 12, .loadRev .w .r8 .r5 .r11] ++ load counterBase .r5))
-      (.seq (batches false true) (.block [.storeRev .w .r8 .r5 .r11])))
+    (.seq (.block (ctrPre to ++ ctrSetup ++ ctrPost to))
+      (.seq (batches false true (ctrOff to)) (.block (ctrFin to ++ [.storeRev .w .r8 .r5 .r11]))))
+
+/-- `vg_aes_ctr32(schedule = r3, rounds = r4, counter = r5, data = r6, n = r7,
+scratch = r8)`, in place. -/
+def ctr32 : Prog isa := ctrWith false
+
+/-- `vg_aes_ctr32_to(schedule = r3, rounds = r4, counter = r5, src = r6,
+n = r7, dst = r8)`: `ctr32` reading the blocks at `src` and writing the
+results to `dst`. -/
+def ctr32To : Prog isa := ctrWith true
 
 end VG.Impl.Aes.PPC64LE.Crypto

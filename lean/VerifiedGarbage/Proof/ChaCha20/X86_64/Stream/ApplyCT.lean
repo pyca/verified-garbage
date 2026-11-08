@@ -217,8 +217,8 @@ theorem part1_rel (hle : L a ≤ N a) :
     fun x y ⟨hx, hy⟩ => ⟨part1_ok h.pa hle hx, part1_ok h.pb (by rw [← h.eqL, ← h.hleft]; exact hle) hy⟩
 
 theorem xor_rel (v : Proof.ChaCha20.X86_64.XorImpl) :
-    RelCT isa (fun x y => Args a x ∧ Args b y) (.call v.callee.name v.callee.code) fun _ _ => True :=
-  RelCT.callEx v.ok v.ct fun x y ⟨hx, hy⟩ =>
+    RelCT isa (fun x y => Args a x ∧ Args b y) v.callee.inPlace fun _ _ => True :=
+  v.relIn fun x y ⟨hx, hy⟩ =>
     ⟨[], _, [], _, hx.pre v h.pa, hy.pre v h.pb, by
       simp only [Proof.ChaCha20.xorStack, Proof.ChaCha20.xorX86_64, State.withRegions_gpr,
         State.callEntry_rsp, callEntry_gpr' x (by decide : Reg.rdi ≠ .rsp),
@@ -313,12 +313,13 @@ theorem apply_ct (v : Proof.ChaCha20.X86_64.XorImpl) :
 
 theorem apply_mxcsr (v : Proof.ChaCha20.X86_64.XorImpl) :
     (apply v.callee).allInstrs (fun i => !loadsMxcsr i) = true := by
-  simp only [apply, part2, Code.allInstrs, v.mxcsr, Bool.and_true, Bool.true_and]
+  simp only [apply, part2, Impl.ChaCha20.X86_64.Callee.inPlace, Code.allInstrs, v.mxcsr, Bool.and_true,
+    Bool.true_and]
   lit_decide
 
 theorem apply_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) :
     (apply v.callee).all (fun i => !X86_64.isa.writesSp i) = true := by
-  simp only [apply, part2, Code.all, v.spSafe, Bool.and_true]
+  simp only [apply, part2, Impl.ChaCha20.X86_64.Callee.inPlace, Code.all, v.spSafe, Bool.and_true]
   lit_decide
 
 theorem apply_ok (v : Proof.ChaCha20.X86_64.XorImpl) (s : State) (hs : Proof.ChaCha20.applyX86_64.pre s) :

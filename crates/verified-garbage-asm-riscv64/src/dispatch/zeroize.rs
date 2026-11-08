@@ -2,8 +2,19 @@
 //! The dispatchers of the verified `zeroize` functions for `riscv64`
 //! (`crate::zeroize`, `VG.Rust.dispatcher`).
 
-/// `vg_zeroize`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::zeroize::vg_zeroize as vg_zeroize_auto;
+/// Wipes a buffer: sets the `len` bytes at `p` to zero, and writes no other memory. A call of it is not a dead store the compiler may remove, since the compiler cannot see its code.
+///
+/// Contract: `VG.Spec.Zeroize.zeroizeContract`. Constant time: only `p` and `len` may affect timing, not the bytes wiped.
+///
+/// It runs `vg_zeroize`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `p` must be valid for reads and writes of `len` bytes.
+/// * `p` must not wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_zeroize_auto(_dit: verified_garbage_cpu::Dit<'_>, p: *mut u8, len: usize) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::zeroize::vg_zeroize(p, len) }
+}

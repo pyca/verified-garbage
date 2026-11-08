@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealContract`. Constant time: only the pointers and the lengths may affect timing, not the key, the nonce or the data. The block counter wraps around beyond 2³²-1 blocks of data (RFC 8439's `P_MAX`), which the caller must not exceed for the construction to be secure.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_chacha20_poly1305_seal_ssse3` if the CPU supports its features (`VG_CHACHA20_POLY1305_SEAL_SSSE3_FEATURES`); or else `vg_chacha20_poly1305_seal`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_chacha20_poly1305_seal_ssse3` if the CPU supports its features (`VG_CHACHA20_POLY1305_SEAL_SSSE3_FEATURES`); or else `vg_chacha20_poly1305_seal`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -21,22 +21,45 @@
 /// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 772 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_chacha20_poly1305_seal_auto(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_SEAL_SSSE3_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_chacha20_poly1305_seal_ssse3`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::chacha20poly1305::vg_chacha20_poly1305_seal_ssse3(key, nonce, aad, aad_len, data, len, tag) };
+pub unsafe fn vg_chacha20_poly1305_seal_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_SEAL_SSSE3_FEATURES) }
+            || cpu.contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_SEAL_SSSE3_FEATURES)
+        {
+            return crate::chacha20poly1305::vg_chacha20_poly1305_seal_ssse3;
+        }
+        crate::chacha20poly1305::vg_chacha20_poly1305_seal
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::chacha20poly1305::vg_chacha20_poly1305_seal(key, nonce, aad, aad_len, data, len, tag) }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(key, nonce, aad, aad_len, data, len, tag) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(key, nonce, aad, aad_len, data, len, tag) }
 }
 
 /// ChaCha20-Poly1305 decryption (RFC 8439 §2.8): with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, having decrypted the ciphertext in place; otherwise returns 0, and the `len` bytes at `data` are zeros. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.openZeroContract`. Constant time but for the result: only the pointers, the lengths and whether the function returns 1 or 0 may affect timing, not the key, the nonce, the additional data, the tag or the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_chacha20_poly1305_open_ssse3` if the CPU supports its features (`VG_CHACHA20_POLY1305_OPEN_SSSE3_FEATURES`); or else `vg_chacha20_poly1305_open`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_chacha20_poly1305_open_ssse3` if the CPU supports its features (`VG_CHACHA20_POLY1305_OPEN_SSSE3_FEATURES`); or else `vg_chacha20_poly1305_open`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -51,22 +74,45 @@ pub unsafe fn vg_chacha20_poly1305_seal_auto(key: *const [u8; 32], nonce: *const
 /// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 772 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_chacha20_poly1305_open_auto(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_OPEN_SSSE3_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_chacha20_poly1305_open_ssse3`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::chacha20poly1305::vg_chacha20_poly1305_open_ssse3(key, nonce, aad, aad_len, data, len, tag) };
+pub unsafe fn vg_chacha20_poly1305_open_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32;
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_OPEN_SSSE3_FEATURES) }
+            || cpu.contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_OPEN_SSSE3_FEATURES)
+        {
+            return crate::chacha20poly1305::vg_chacha20_poly1305_open_ssse3;
+        }
+        crate::chacha20poly1305::vg_chacha20_poly1305_open
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::chacha20poly1305::vg_chacha20_poly1305_open(key, nonce, aad, aad_len, data, len, tag) }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(key, nonce, aad, aad_len, data, len, tag) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(key, nonce, aad, aad_len, data, len, tag) }
 }
 
 /// ChaCha20-Poly1305 decryption (RFC 8439 §2.8), out of place: with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `src` and the `aad_len` bytes of additional data at `aad`, having then written the plaintext to the `dst_len = len` bytes at `dst`; otherwise returns 0, having written zeros to them: `vg_chacha20_poly1305_open` with the ciphertext read from `src` and the plaintext written to `dst`. `src` is not written, and `dst` is a buffer of its own: it overlaps no other buffer, `src` included. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.openToContract`. Constant time but for the result: only the pointers, the lengths and whether the function returns 1 or 0 may affect timing, not the key, the nonce, the additional data, the tag or the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_chacha20_poly1305_open_to_ssse3` if the CPU supports its features (`VG_CHACHA20_POLY1305_OPEN_TO_SSSE3_FEATURES`); or else `vg_chacha20_poly1305_open_to`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_chacha20_poly1305_open_to_ssse3` if the CPU supports its features (`VG_CHACHA20_POLY1305_OPEN_TO_SSSE3_FEATURES`); or else `vg_chacha20_poly1305_open_to`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -84,22 +130,45 @@ pub unsafe fn vg_chacha20_poly1305_open_auto(key: *const [u8; 32], nonce: *const
 /// * None of `key`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 780 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_chacha20_poly1305_open_to_auto(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_OPEN_TO_SSSE3_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_chacha20_poly1305_open_to_ssse3`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::chacha20poly1305::vg_chacha20_poly1305_open_to_ssse3(key, nonce, aad, aad_len, src, len, dst, dst_len, tag) };
+pub unsafe fn vg_chacha20_poly1305_open_to_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32 {
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32;
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_OPEN_TO_SSSE3_FEATURES) }
+            || cpu.contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_OPEN_TO_SSSE3_FEATURES)
+        {
+            return crate::chacha20poly1305::vg_chacha20_poly1305_open_to_ssse3;
+        }
+        crate::chacha20poly1305::vg_chacha20_poly1305_open_to
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::chacha20poly1305::vg_chacha20_poly1305_open_to(key, nonce, aad, aad_len, src, len, dst, dst_len, tag) }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32 {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(key, nonce, aad, aad_len, src, len, dst, dst_len, tag) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(key, nonce, aad, aad_len, src, len, dst, dst_len, tag) }
 }
 
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8), out of place, of a plaintext in pieces: with the key `*key` and the nonce `*nonce`, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_chacha20_poly1305_seal` with the plaintext gathered from `src`.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealGatherContract`. Constant time: only the pointers, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key, the nonce, the additional data or the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_chacha20_poly1305_seal_gather_ssse3` if the CPU supports its features (`VG_CHACHA20_POLY1305_SEAL_GATHER_SSSE3_FEATURES`); or else `vg_chacha20_poly1305_seal_gather`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_chacha20_poly1305_seal_gather_ssse3` if the CPU supports its features (`VG_CHACHA20_POLY1305_SEAL_GATHER_SSSE3_FEATURES`); or else `vg_chacha20_poly1305_seal_gather`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -117,13 +186,36 @@ pub unsafe fn vg_chacha20_poly1305_open_to_auto(key: *const [u8; 32], nonce: *co
 /// * None of `key`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 824 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_chacha20_poly1305_seal_gather_auto(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_SEAL_GATHER_SSSE3_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_chacha20_poly1305_seal_gather_ssse3`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::chacha20poly1305::vg_chacha20_poly1305_seal_gather_ssse3(key, nonce, aad, aad_len, src, src_count, dst, len, tag) };
+pub unsafe fn vg_chacha20_poly1305_seal_gather_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_SEAL_GATHER_SSSE3_FEATURES) }
+            || cpu.contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_SEAL_GATHER_SSSE3_FEATURES)
+        {
+            return crate::chacha20poly1305::vg_chacha20_poly1305_seal_gather_ssse3;
+        }
+        crate::chacha20poly1305::vg_chacha20_poly1305_seal_gather
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::chacha20poly1305::vg_chacha20_poly1305_seal_gather(key, nonce, aad, aad_len, src, src_count, dst, len, tag) }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(key, nonce, aad, aad_len, src, src_count, dst, len, tag) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(key, nonce, aad, aad_len, src, src_count, dst, len, tag) }
 }

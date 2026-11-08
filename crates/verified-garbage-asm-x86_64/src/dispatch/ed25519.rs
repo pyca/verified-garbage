@@ -4,7 +4,7 @@
 
 /// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_ed25519_verify_shani_ifma` if the CPU supports its features (`VG_ED25519_VERIFY_SHANI_IFMA_FEATURES`); `vg_ed25519_verify_shani_adx` if the CPU supports its features (`VG_ED25519_VERIFY_SHANI_ADX_FEATURES`); `vg_ed25519_verify_avx2_ifma` if the CPU supports its features (`VG_ED25519_VERIFY_AVX2_IFMA_FEATURES`); `vg_ed25519_verify_avx2_adx` if the CPU supports its features (`VG_ED25519_VERIFY_AVX2_ADX_FEATURES`); `vg_ed25519_verify_ifma` if the CPU supports its features (`VG_ED25519_VERIFY_IFMA_FEATURES`); `vg_ed25519_verify_shani` if the CPU supports its features (`VG_ED25519_VERIFY_SHANI_FEATURES`); `vg_ed25519_verify_avx2` if the CPU supports its features (`VG_ED25519_VERIFY_AVX2_FEATURES`); `vg_ed25519_verify_adx` if the CPU supports its features (`VG_ED25519_VERIFY_ADX_FEATURES`); or else `vg_ed25519_verify`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_ed25519_verify_shani_ifma` if the CPU supports its features (`VG_ED25519_VERIFY_SHANI_IFMA_FEATURES`); `vg_ed25519_verify_shani_adx` if the CPU supports its features (`VG_ED25519_VERIFY_SHANI_ADX_FEATURES`); `vg_ed25519_verify_avx2_ifma` if the CPU supports its features (`VG_ED25519_VERIFY_AVX2_IFMA_FEATURES`); `vg_ed25519_verify_avx2_adx` if the CPU supports its features (`VG_ED25519_VERIFY_AVX2_ADX_FEATURES`); `vg_ed25519_verify_ifma` if the CPU supports its features (`VG_ED25519_VERIFY_IFMA_FEATURES`); `vg_ed25519_verify_shani` if the CPU supports its features (`VG_ED25519_VERIFY_SHANI_FEATURES`); `vg_ed25519_verify_avx2` if the CPU supports its features (`VG_ED25519_VERIFY_AVX2_FEATURES`); `vg_ed25519_verify_adx` if the CPU supports its features (`VG_ED25519_VERIFY_ADX_FEATURES`); or else `vg_ed25519_verify`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -17,55 +17,78 @@
 /// * None of `pk`, `message`, `signature` and `scratch` may overlap the return address on the stack or the 184 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_ed25519_verify_auto(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::ed25519::VG_ED25519_VERIFY_SHANI_IFMA_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_ed25519_verify_shani_ifma`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::ed25519::vg_ed25519_verify_shani_ifma(pk, message, len, signature, scratch) };
+pub unsafe fn vg_ed25519_verify_auto(_dit: verified_garbage_cpu::Dit<'_>, pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32;
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::ed25519::VG_ED25519_VERIFY_SHANI_IFMA_FEATURES) }
+            || cpu.contains(crate::ed25519::VG_ED25519_VERIFY_SHANI_IFMA_FEATURES)
+        {
+            return crate::ed25519::vg_ed25519_verify_shani_ifma;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::ed25519::VG_ED25519_VERIFY_SHANI_ADX_FEATURES) }
+            || cpu.contains(crate::ed25519::VG_ED25519_VERIFY_SHANI_ADX_FEATURES)
+        {
+            return crate::ed25519::vg_ed25519_verify_shani_adx;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::ed25519::VG_ED25519_VERIFY_AVX2_IFMA_FEATURES) }
+            || cpu.contains(crate::ed25519::VG_ED25519_VERIFY_AVX2_IFMA_FEATURES)
+        {
+            return crate::ed25519::vg_ed25519_verify_avx2_ifma;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::ed25519::VG_ED25519_VERIFY_AVX2_ADX_FEATURES) }
+            || cpu.contains(crate::ed25519::VG_ED25519_VERIFY_AVX2_ADX_FEATURES)
+        {
+            return crate::ed25519::vg_ed25519_verify_avx2_adx;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::ed25519::VG_ED25519_VERIFY_IFMA_FEATURES) }
+            || cpu.contains(crate::ed25519::VG_ED25519_VERIFY_IFMA_FEATURES)
+        {
+            return crate::ed25519::vg_ed25519_verify_ifma;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::ed25519::VG_ED25519_VERIFY_SHANI_FEATURES) }
+            || cpu.contains(crate::ed25519::VG_ED25519_VERIFY_SHANI_FEATURES)
+        {
+            return crate::ed25519::vg_ed25519_verify_shani;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::ed25519::VG_ED25519_VERIFY_AVX2_FEATURES) }
+            || cpu.contains(crate::ed25519::VG_ED25519_VERIFY_AVX2_FEATURES)
+        {
+            return crate::ed25519::vg_ed25519_verify_avx2;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::ed25519::VG_ED25519_VERIFY_ADX_FEATURES) }
+            || cpu.contains(crate::ed25519::VG_ED25519_VERIFY_ADX_FEATURES)
+        {
+            return crate::ed25519::vg_ed25519_verify_adx;
+        }
+        crate::ed25519::vg_ed25519_verify
     }
-    if cpu.contains(crate::ed25519::VG_ED25519_VERIFY_SHANI_ADX_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_ed25519_verify_shani_adx`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::ed25519::vg_ed25519_verify_shani_adx(pk, message, len, signature, scratch) };
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(pk, message, len, signature, scratch) }
     }
-    if cpu.contains(crate::ed25519::VG_ED25519_VERIFY_AVX2_IFMA_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_ed25519_verify_avx2_ifma`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::ed25519::vg_ed25519_verify_avx2_ifma(pk, message, len, signature, scratch) };
-    }
-    if cpu.contains(crate::ed25519::VG_ED25519_VERIFY_AVX2_ADX_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_ed25519_verify_avx2_adx`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::ed25519::vg_ed25519_verify_avx2_adx(pk, message, len, signature, scratch) };
-    }
-    if cpu.contains(crate::ed25519::VG_ED25519_VERIFY_IFMA_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_ed25519_verify_ifma`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::ed25519::vg_ed25519_verify_ifma(pk, message, len, signature, scratch) };
-    }
-    if cpu.contains(crate::ed25519::VG_ED25519_VERIFY_SHANI_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_ed25519_verify_shani`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::ed25519::vg_ed25519_verify_shani(pk, message, len, signature, scratch) };
-    }
-    if cpu.contains(crate::ed25519::VG_ED25519_VERIFY_AVX2_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_ed25519_verify_avx2`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::ed25519::vg_ed25519_verify_avx2(pk, message, len, signature, scratch) };
-    }
-    if cpu.contains(crate::ed25519::VG_ED25519_VERIFY_ADX_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_ed25519_verify_adx`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::ed25519::vg_ed25519_verify_adx(pk, message, len, signature, scratch) };
-    }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::ed25519::vg_ed25519_verify(pk, message, len, signature, scratch) }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(pk, message, len, signature, scratch) }
 }
 
 /// Ed25519 key-pair derivation (RFC 8032 §5.1.5): for the 32-byte private seed at `seed`, writes its 64-byte SHA-512 digest (§5.1.5, step 1) to `*expanded` and its 32-byte public key to `*out`, including pruning: the digest and public key that `vg_ed25519_sign_expanded` takes. Contract: `VG.Spec.Ed25519.keyPairContract`. Constant time: only pointers may affect timing.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_ed25519_key_pair_shani_ifma` if the CPU supports its features (`VG_ED25519_KEY_PAIR_SHANI_IFMA_FEATURES`); `vg_ed25519_key_pair_shani_adx` if the CPU supports its features (`VG_ED25519_KEY_PAIR_SHANI_ADX_FEATURES`); `vg_ed25519_key_pair_avx2_ifma` if the CPU supports its features (`VG_ED25519_KEY_PAIR_AVX2_IFMA_FEATURES`); `vg_ed25519_key_pair_avx2_adx` if the CPU supports its features (`VG_ED25519_KEY_PAIR_AVX2_ADX_FEATURES`); `vg_ed25519_key_pair_ifma` if the CPU supports its features (`VG_ED25519_KEY_PAIR_IFMA_FEATURES`); `vg_ed25519_key_pair_shani` if the CPU supports its features (`VG_ED25519_KEY_PAIR_SHANI_FEATURES`); `vg_ed25519_key_pair_avx2` if the CPU supports its features (`VG_ED25519_KEY_PAIR_AVX2_FEATURES`); `vg_ed25519_key_pair_adx` if the CPU supports its features (`VG_ED25519_KEY_PAIR_ADX_FEATURES`); or else `vg_ed25519_key_pair`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_ed25519_key_pair_shani_ifma` if the CPU supports its features (`VG_ED25519_KEY_PAIR_SHANI_IFMA_FEATURES`); `vg_ed25519_key_pair_shani_adx` if the CPU supports its features (`VG_ED25519_KEY_PAIR_SHANI_ADX_FEATURES`); `vg_ed25519_key_pair_avx2_ifma` if the CPU supports its features (`VG_ED25519_KEY_PAIR_AVX2_IFMA_FEATURES`); `vg_ed25519_key_pair_avx2_adx` if the CPU supports its features (`VG_ED25519_KEY_PAIR_AVX2_ADX_FEATURES`); `vg_ed25519_key_pair_ifma` if the CPU supports its features (`VG_ED25519_KEY_PAIR_IFMA_FEATURES`); `vg_ed25519_key_pair_shani` if the CPU supports its features (`VG_ED25519_KEY_PAIR_SHANI_FEATURES`); `vg_ed25519_key_pair_avx2` if the CPU supports its features (`VG_ED25519_KEY_PAIR_AVX2_FEATURES`); `vg_ed25519_key_pair_adx` if the CPU supports its features (`VG_ED25519_KEY_PAIR_ADX_FEATURES`); or else `vg_ed25519_key_pair`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -80,55 +103,78 @@ pub unsafe fn vg_ed25519_verify_auto(pk: *const [u8; 32], message: *const u8, le
 /// * None of `out`, `expanded`, `seed` and `scratch` may overlap the return address on the stack or the 1632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_ed25519_key_pair_auto(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::ed25519::VG_ED25519_KEY_PAIR_SHANI_IFMA_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_ed25519_key_pair_shani_ifma`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::ed25519::vg_ed25519_key_pair_shani_ifma(out, expanded, seed, scratch) };
+pub unsafe fn vg_ed25519_key_pair_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::ed25519::VG_ED25519_KEY_PAIR_SHANI_IFMA_FEATURES) }
+            || cpu.contains(crate::ed25519::VG_ED25519_KEY_PAIR_SHANI_IFMA_FEATURES)
+        {
+            return crate::ed25519::vg_ed25519_key_pair_shani_ifma;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::ed25519::VG_ED25519_KEY_PAIR_SHANI_ADX_FEATURES) }
+            || cpu.contains(crate::ed25519::VG_ED25519_KEY_PAIR_SHANI_ADX_FEATURES)
+        {
+            return crate::ed25519::vg_ed25519_key_pair_shani_adx;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::ed25519::VG_ED25519_KEY_PAIR_AVX2_IFMA_FEATURES) }
+            || cpu.contains(crate::ed25519::VG_ED25519_KEY_PAIR_AVX2_IFMA_FEATURES)
+        {
+            return crate::ed25519::vg_ed25519_key_pair_avx2_ifma;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::ed25519::VG_ED25519_KEY_PAIR_AVX2_ADX_FEATURES) }
+            || cpu.contains(crate::ed25519::VG_ED25519_KEY_PAIR_AVX2_ADX_FEATURES)
+        {
+            return crate::ed25519::vg_ed25519_key_pair_avx2_adx;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::ed25519::VG_ED25519_KEY_PAIR_IFMA_FEATURES) }
+            || cpu.contains(crate::ed25519::VG_ED25519_KEY_PAIR_IFMA_FEATURES)
+        {
+            return crate::ed25519::vg_ed25519_key_pair_ifma;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::ed25519::VG_ED25519_KEY_PAIR_SHANI_FEATURES) }
+            || cpu.contains(crate::ed25519::VG_ED25519_KEY_PAIR_SHANI_FEATURES)
+        {
+            return crate::ed25519::vg_ed25519_key_pair_shani;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::ed25519::VG_ED25519_KEY_PAIR_AVX2_FEATURES) }
+            || cpu.contains(crate::ed25519::VG_ED25519_KEY_PAIR_AVX2_FEATURES)
+        {
+            return crate::ed25519::vg_ed25519_key_pair_avx2;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::ed25519::VG_ED25519_KEY_PAIR_ADX_FEATURES) }
+            || cpu.contains(crate::ed25519::VG_ED25519_KEY_PAIR_ADX_FEATURES)
+        {
+            return crate::ed25519::vg_ed25519_key_pair_adx;
+        }
+        crate::ed25519::vg_ed25519_key_pair
     }
-    if cpu.contains(crate::ed25519::VG_ED25519_KEY_PAIR_SHANI_ADX_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_ed25519_key_pair_shani_adx`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::ed25519::vg_ed25519_key_pair_shani_adx(out, expanded, seed, scratch) };
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(out, expanded, seed, scratch) }
     }
-    if cpu.contains(crate::ed25519::VG_ED25519_KEY_PAIR_AVX2_IFMA_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_ed25519_key_pair_avx2_ifma`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::ed25519::vg_ed25519_key_pair_avx2_ifma(out, expanded, seed, scratch) };
-    }
-    if cpu.contains(crate::ed25519::VG_ED25519_KEY_PAIR_AVX2_ADX_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_ed25519_key_pair_avx2_adx`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::ed25519::vg_ed25519_key_pair_avx2_adx(out, expanded, seed, scratch) };
-    }
-    if cpu.contains(crate::ed25519::VG_ED25519_KEY_PAIR_IFMA_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_ed25519_key_pair_ifma`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::ed25519::vg_ed25519_key_pair_ifma(out, expanded, seed, scratch) };
-    }
-    if cpu.contains(crate::ed25519::VG_ED25519_KEY_PAIR_SHANI_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_ed25519_key_pair_shani`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::ed25519::vg_ed25519_key_pair_shani(out, expanded, seed, scratch) };
-    }
-    if cpu.contains(crate::ed25519::VG_ED25519_KEY_PAIR_AVX2_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_ed25519_key_pair_avx2`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::ed25519::vg_ed25519_key_pair_avx2(out, expanded, seed, scratch) };
-    }
-    if cpu.contains(crate::ed25519::VG_ED25519_KEY_PAIR_ADX_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_ed25519_key_pair_adx`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::ed25519::vg_ed25519_key_pair_adx(out, expanded, seed, scratch) };
-    }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::ed25519::vg_ed25519_key_pair(out, expanded, seed, scratch) }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(out, expanded, seed, scratch) }
 }
 
 /// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_ed25519_sign_expanded_shani_ifma` if the CPU supports its features (`VG_ED25519_SIGN_EXPANDED_SHANI_IFMA_FEATURES`); `vg_ed25519_sign_expanded_shani_adx` if the CPU supports its features (`VG_ED25519_SIGN_EXPANDED_SHANI_ADX_FEATURES`); `vg_ed25519_sign_expanded_avx2_ifma` if the CPU supports its features (`VG_ED25519_SIGN_EXPANDED_AVX2_IFMA_FEATURES`); `vg_ed25519_sign_expanded_avx2_adx` if the CPU supports its features (`VG_ED25519_SIGN_EXPANDED_AVX2_ADX_FEATURES`); `vg_ed25519_sign_expanded_ifma` if the CPU supports its features (`VG_ED25519_SIGN_EXPANDED_IFMA_FEATURES`); `vg_ed25519_sign_expanded_shani` if the CPU supports its features (`VG_ED25519_SIGN_EXPANDED_SHANI_FEATURES`); `vg_ed25519_sign_expanded_avx2` if the CPU supports its features (`VG_ED25519_SIGN_EXPANDED_AVX2_FEATURES`); `vg_ed25519_sign_expanded_adx` if the CPU supports its features (`VG_ED25519_SIGN_EXPANDED_ADX_FEATURES`); or else `vg_ed25519_sign_expanded`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_ed25519_sign_expanded_shani_ifma` if the CPU supports its features (`VG_ED25519_SIGN_EXPANDED_SHANI_IFMA_FEATURES`); `vg_ed25519_sign_expanded_shani_adx` if the CPU supports its features (`VG_ED25519_SIGN_EXPANDED_SHANI_ADX_FEATURES`); `vg_ed25519_sign_expanded_avx2_ifma` if the CPU supports its features (`VG_ED25519_SIGN_EXPANDED_AVX2_IFMA_FEATURES`); `vg_ed25519_sign_expanded_avx2_adx` if the CPU supports its features (`VG_ED25519_SIGN_EXPANDED_AVX2_ADX_FEATURES`); `vg_ed25519_sign_expanded_ifma` if the CPU supports its features (`VG_ED25519_SIGN_EXPANDED_IFMA_FEATURES`); `vg_ed25519_sign_expanded_shani` if the CPU supports its features (`VG_ED25519_SIGN_EXPANDED_SHANI_FEATURES`); `vg_ed25519_sign_expanded_avx2` if the CPU supports its features (`VG_ED25519_SIGN_EXPANDED_AVX2_FEATURES`); `vg_ed25519_sign_expanded_adx` if the CPU supports its features (`VG_ED25519_SIGN_EXPANDED_ADX_FEATURES`); or else `vg_ed25519_sign_expanded`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -144,48 +190,71 @@ pub unsafe fn vg_ed25519_key_pair_auto(out: *mut [u8; 32], expanded: *mut [u8; 6
 /// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_ed25519_sign_expanded_auto(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_SHANI_IFMA_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_ed25519_sign_expanded_shani_ifma`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::ed25519::vg_ed25519_sign_expanded_shani_ifma(out, expanded, pk, message, len, scratch) };
+pub unsafe fn vg_ed25519_sign_expanded_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_SHANI_IFMA_FEATURES) }
+            || cpu.contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_SHANI_IFMA_FEATURES)
+        {
+            return crate::ed25519::vg_ed25519_sign_expanded_shani_ifma;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_SHANI_ADX_FEATURES) }
+            || cpu.contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_SHANI_ADX_FEATURES)
+        {
+            return crate::ed25519::vg_ed25519_sign_expanded_shani_adx;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_AVX2_IFMA_FEATURES) }
+            || cpu.contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_AVX2_IFMA_FEATURES)
+        {
+            return crate::ed25519::vg_ed25519_sign_expanded_avx2_ifma;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_AVX2_ADX_FEATURES) }
+            || cpu.contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_AVX2_ADX_FEATURES)
+        {
+            return crate::ed25519::vg_ed25519_sign_expanded_avx2_adx;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_IFMA_FEATURES) }
+            || cpu.contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_IFMA_FEATURES)
+        {
+            return crate::ed25519::vg_ed25519_sign_expanded_ifma;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_SHANI_FEATURES) }
+            || cpu.contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_SHANI_FEATURES)
+        {
+            return crate::ed25519::vg_ed25519_sign_expanded_shani;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_AVX2_FEATURES) }
+            || cpu.contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_AVX2_FEATURES)
+        {
+            return crate::ed25519::vg_ed25519_sign_expanded_avx2;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_ADX_FEATURES) }
+            || cpu.contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_ADX_FEATURES)
+        {
+            return crate::ed25519::vg_ed25519_sign_expanded_adx;
+        }
+        crate::ed25519::vg_ed25519_sign_expanded
     }
-    if cpu.contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_SHANI_ADX_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_ed25519_sign_expanded_shani_adx`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::ed25519::vg_ed25519_sign_expanded_shani_adx(out, expanded, pk, message, len, scratch) };
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(out, expanded, pk, message, len, scratch) }
     }
-    if cpu.contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_AVX2_IFMA_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_ed25519_sign_expanded_avx2_ifma`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::ed25519::vg_ed25519_sign_expanded_avx2_ifma(out, expanded, pk, message, len, scratch) };
-    }
-    if cpu.contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_AVX2_ADX_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_ed25519_sign_expanded_avx2_adx`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::ed25519::vg_ed25519_sign_expanded_avx2_adx(out, expanded, pk, message, len, scratch) };
-    }
-    if cpu.contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_IFMA_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_ed25519_sign_expanded_ifma`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::ed25519::vg_ed25519_sign_expanded_ifma(out, expanded, pk, message, len, scratch) };
-    }
-    if cpu.contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_SHANI_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_ed25519_sign_expanded_shani`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::ed25519::vg_ed25519_sign_expanded_shani(out, expanded, pk, message, len, scratch) };
-    }
-    if cpu.contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_AVX2_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_ed25519_sign_expanded_avx2`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::ed25519::vg_ed25519_sign_expanded_avx2(out, expanded, pk, message, len, scratch) };
-    }
-    if cpu.contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_ADX_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_ed25519_sign_expanded_adx`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::ed25519::vg_ed25519_sign_expanded_adx(out, expanded, pk, message, len, scratch) };
-    }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::ed25519::vg_ed25519_sign_expanded(out, expanded, pk, message, len, scratch) }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(out, expanded, pk, message, len, scratch) }
 }

@@ -19,7 +19,7 @@ pub const VG_AES_OCB_INIT_AES_FEATURES: verified_garbage_cpu::Features = verifie
 /// * Neither `key` nor `ctx` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_ocb_init_aes(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
+pub(crate) unsafe extern "C" fn vg_aes_ocb_init_aes(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
         r".inst 0xd12803ff,0x910003e3,0xf9005474,0xf9005875,0xf9005c76,0xf9006077,0xf9006478,0xf9006879
 .inst 0xf9006c7a,0xf900707b,0xf900747c,0xf900787e,0xf9005073,0x91000073,0x91000054,0xd342fc36
@@ -55,7 +55,7 @@ pub const VG_AES_OCB_SEAL_AES_FEATURES: verified_garbage_cpu::Features = verifie
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_ocb_seal_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
+pub(crate) unsafe extern "C" fn vg_aes_ocb_seal_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd12883ff,0x910003f0,0xf94513f1,0xf9000211,0xf94517f1,0xf9000611,0x910083f1,0xf9000a11
 .inst 0xf9400be9,0xf9005534,0xf9005935,0xf9005d36,0xf9006137,0xf9006538,0xf9006939,0xf9006d3a
@@ -332,7 +332,7 @@ pub const VG_AES_OCB_OPEN_AES_FEATURES: verified_garbage_cpu::Features = verifie
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_ocb_open_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_ocb_open_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd12883ff,0x910003f0,0xf94513f1,0xf9000211,0xf94517f1,0xf9000611,0x910083f1,0xf9000a11
 .inst 0xf9400be9,0xf9005534,0xf9005935,0xf9005d36,0xf9006137,0xf9006538,0xf9006939,0xf9006d3a
@@ -629,7 +629,7 @@ b 251f
 /// * `ctx` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `ctx` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_ocb_init(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
+pub(crate) unsafe extern "C" fn vg_aes_ocb_init(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
         r".inst 0xd12803ff,0x910003e3,0xf9005474,0xf9005875,0xf9005c76,0xf9006077,0xf9006478,0xf9006879
 .inst 0xf9006c7a,0xf900707b,0xf900747c,0xf900787e,0xf9005073,0x91000073,0x91000054,0xd342fc36
@@ -661,7 +661,7 @@ bl {vg_aes_encrypt_blocks}
 /// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_ocb_seal(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
+pub(crate) unsafe extern "C" fn vg_aes_ocb_seal(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd12883ff,0x910003f0,0xf94513f1,0xf9000211,0xf94517f1,0xf9000611,0x910083f1,0xf9000a11
 .inst 0xf9400be9,0xf9005534,0xf9005935,0xf9005d36,0xf9006137,0xf9006538,0xf9006939,0xf9006d3a
@@ -934,7 +934,7 @@ cbnz x13, 248b
 /// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_ocb_open(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_ocb_open(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd12883ff,0x910003f0,0xf94513f1,0xf9000211,0xf94517f1,0xf9000611,0x910083f1,0xf9000a11
 .inst 0xf9400be9,0xf9005534,0xf9005935,0xf9005d36,0xf9006137,0xf9006538,0xf9006939,0xf9006d3a

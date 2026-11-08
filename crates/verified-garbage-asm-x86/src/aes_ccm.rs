@@ -23,10 +23,10 @@ pub const VG_AES_CCM_SEAL_AESNI_FEATURES: verified_garbage_cpu::Features = verif
 /// * `tag_len` must be 4, 6, 8, 10, 12, 14 or 16, and `nonce_len` from 7 to 13 (Appendix A.1).
 /// * `len` must be less than `2^(8 * (15 - nonce_len))` (Appendix A.1).
 /// * `data` and `tag` must not overlap each other, `schedule`, `nonce` or `aad` (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2664 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2668 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_ccm_seal_aesni(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
+pub(crate) unsafe extern "C" fn vg_aes_ccm_seal_aesni(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "jaQk0PX//4uEJDQKAACJRCQEi4QkOAoAAIlEJAiLhCQ8CgAAiUQkDIuEJEAKAACJRCQQi4QkRAoAAIlEJBSLhCRICgAAiUQkGIuEJEwKAACJRCQci4QkUAoAAIlEJCCLhCRUCgAAiUQkJIuEJFgKAACJRCQoieCDwDCJRCQsi0QkLImYgAAAAImwhAAAAIm4iAAAAImojAAAAInFi0QkBImFkAAAAItEJAiJhZQAAACLRCQMiYWYAAAAi0QkEImFnAAAAItEJBSJhaAAAACLRCQYiYWkAAAAi0QkHImFqAAAAItEJCCJhawAAACLRCQkiYXUAAAAi0QkKImFtAAAALgAAAAAiUUwiUU0iUU4iUU8uA4AAAArhZwAAACIRTCLvZgAAACJ6oPCMYuNnAAAAA=="
 20:
@@ -104,21 +104,21 @@ call {vg_cmac_aes_update_aesni}
 jmp 218f
 217:
 218:
-.base64 "uAAAAACLTTCJTUCLTTSJTUSLTTiJTUgPyAtFPIlFTIuFkAAAAIuNlAAAAInqg8JAieuDwwC/AQAAAIHFgAEAAFVXU1JRUA=="
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge2AAQAAi4WoAAAAiYUQAQAAi4WsAAAAiYUUAQAAi50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
+.base64 "uAAAAACLTTCJTUCLTTSJTUSLTTiJTUgPyAtFPIlFTIuFkAAAAIuNlAAAAInqg8JAieuDwwC/AQAAAIHFgAEAAFNVV1NSUVA="
+call {vg_aes_ctr32_to_aesni}
+.base64 "WFhYWFhYWIHtgAEAAIuFqAAAAImFEAEAAIuFrAAAAImFFAEAAIudEAEAAIu9FAEAAMHvBIuFFAEAAInCg+IPiZUUAQAAKdAB2ImFEAEAAIX/"
 je 220f
-.base64 "uAEAAACLTTCJTUCLTTSJTUSLTTiJTUgPyAtFPIlFTIuFkAAAAIuNlAAAAInqg8JAgcWAAQAAVVdTUlFQ"
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge2AAQAA"
+.base64 "uAEAAACLTTCJTUCLTTSJTUSLTTiJTUgPyAtFPIlFTIuFkAAAAIuNlAAAAInqg8JAgcWAAQAAU1VXU1JRUA=="
+call {vg_aes_ctr32_to_aesni}
+.base64 "WFhYWFhYWIHtgAEAAA=="
 jmp 221f
 220:
 221:
 .base64 "i40UAQAAhck="
 je 222f
-.base64 "i4WsAAAAwegEg8ABi00wiU1Ai000iU1Ei004iU1ID8gLRTyJRUy4AAAAAIlFUIlFVIlFWIlFXIuFkAAAAIuNlAAAAInqg8JAieuDw1C/AQAAAIHFgAEAAFVXU1JRUA=="
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge2AAQAAi70QAQAAieqDwlCLjRQBAAA="
+.base64 "i4WsAAAAwegEg8ABi00wiU1Ai000iU1Ei004iU1ID8gLRTyJRUy4AAAAAIlFUIlFVIlFWIlFXIuFkAAAAIuNlAAAAInqg8JAieuDw1C/AQAAAIHFgAEAAFNVV1NSUVA="
+call {vg_aes_ctr32_to_aesni}
+.base64 "WFhYWFhYWIHtgAEAAIu9EAEAAInqg8JQi40UAQAA"
 224:
 .base64 "D7YCD7YfMdiIB4PHAYPCAYPpAQ=="
 jne 224b
@@ -132,7 +132,7 @@ jne 225b
 .base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkMAoAAMM="
 .p2align 6"#,
         vg_cmac_aes_update_aesni = sym super::cmac_aes::vg_cmac_aes_update_aesni::vg_cmac_aes_update_aesni,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_ctr32_to_aesni = sym super::aes::vg_aes_ctr32_to_aesni::vg_aes_ctr32_to_aesni,
     )
 }
 
@@ -156,10 +156,10 @@ pub const VG_AES_CCM_OPEN_AESNI_FEATURES: verified_garbage_cpu::Features = verif
 /// * `tag_len` must be 4, 6, 8, 10, 12, 14 or 16, and `nonce_len` from 7 to 13 (Appendix A.1).
 /// * `len` must be less than `2^(8 * (15 - nonce_len))` (Appendix A.1).
 /// * `data` must not overlap `schedule`, `nonce`, `aad` or `tag` (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2664 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2668 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_ccm_open_aesni(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_ccm_open_aesni(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "jaQk0PX//4uEJDQKAACJRCQEi4QkOAoAAIlEJAiLhCQ8CgAAiUQkDIuEJEAKAACJRCQQi4QkRAoAAIlEJBSLhCRICgAAiUQkGIuEJEwKAACJRCQci4QkUAoAAIlEJCCLhCRUCgAAiUQkJIuEJFgKAACJRCQoieCDwDCJRCQsi0QkLImYgAAAAImwhAAAAIm4iAAAAImojAAAAInFi0QkBImFkAAAAItEJAiJhZQAAACLRCQMiYWYAAAAi0QkEImFnAAAAItEJBSJhaAAAACLRCQYiYWkAAAAi0QkHImFqAAAAItEJCCJhawAAACLRCQkiYXUAAAAi0QkKImFtAAAALgAAAAAiUUwiUU0iUU4iUU8uA4AAAArhZwAAACIRTCLvZgAAACJ6oPCMYuNnAAAAA=="
 20:
@@ -167,17 +167,17 @@ pub unsafe extern "C" fn vg_aes_ccm_open_aesni(schedule: *const [u8; 240], round
 jne 20b
 .base64 "i4WoAAAAiYUQAQAAi4WsAAAAiYUUAQAAi50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
 je 21f
-.base64 "uAEAAACLTTCJTUCLTTSJTUSLTTiJTUgPyAtFPIlFTIuFkAAAAIuNlAAAAInqg8JAgcWAAQAAVVdTUlFQ"
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge2AAQAA"
+.base64 "uAEAAACLTTCJTUCLTTSJTUSLTTiJTUgPyAtFPIlFTIuFkAAAAIuNlAAAAInqg8JAgcWAAQAAU1VXU1JRUA=="
+call {vg_aes_ctr32_to_aesni}
+.base64 "WFhYWFhYWIHtgAEAAA=="
 jmp 22f
 21:
 22:
 .base64 "i40UAQAAhck="
 je 23f
-.base64 "i4WsAAAAwegEg8ABi00wiU1Ai000iU1Ei004iU1ID8gLRTyJRUy4AAAAAIlFUIlFVIlFWIlFXIuFkAAAAIuNlAAAAInqg8JAieuDw1C/AQAAAIHFgAEAAFVXU1JRUA=="
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge2AAQAAi70QAQAAieqDwlCLjRQBAAA="
+.base64 "i4WsAAAAwegEg8ABi00wiU1Ai000iU1Ei004iU1ID8gLRTyJRUy4AAAAAIlFUIlFVIlFWIlFXIuFkAAAAIuNlAAAAInqg8JAieuDw1C/AQAAAIHFgAEAAFNVV1NSUVA="
+call {vg_aes_ctr32_to_aesni}
+.base64 "WFhYWFhYWIHtgAEAAIu9EAEAAInqg8JQi40UAQAA"
 25:
 .base64 "D7YCD7YfMdiIB4PHAYPCAYPpAQ=="
 jne 25b
@@ -256,9 +256,9 @@ call {vg_cmac_aes_update_aesni}
 jmp 223f
 222:
 223:
-.base64 "uAAAAACLTTCJTUCLTTSJTUSLTTiJTUgPyAtFPIlFTIuFkAAAAIuNlAAAAInqg8JAieuDw2C/AQAAAIHFgAEAAFVXU1JRUA=="
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge2AAQAAuAAAAACJhcQAAACJhcgAAACJhcwAAACJhdAAAACLvdQAAACJ6oHCxAAAAIuNtAAAAA=="
+.base64 "uAAAAACLTTCJTUCLTTSJTUSLTTiJTUgPyAtFPIlFTIuFkAAAAIuNlAAAAInqg8JAieuDw2C/AQAAAIHFgAEAAFNVV1NSUVA="
+call {vg_aes_ctr32_to_aesni}
+.base64 "WFhYWFhYWIHtgAEAALgAAAAAiYXEAAAAiYXIAAAAiYXMAAAAiYXQAAAAi73UAAAAieqBwsQAAACLjbQAAAA="
 225:
 .base64 "D7YHiAKDxwGDwgGD6QE="
 jne 225b
@@ -277,7 +277,7 @@ jmp 228f
 228:
 .base64 "i4WwAAAAi52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkMAoAAMM="
 .p2align 6"#,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_ctr32_to_aesni = sym super::aes::vg_aes_ctr32_to_aesni::vg_aes_ctr32_to_aesni,
         vg_cmac_aes_update_aesni = sym super::cmac_aes::vg_cmac_aes_update_aesni::vg_cmac_aes_update_aesni,
     )
 }
@@ -299,9 +299,9 @@ jmp 228f
 /// * `tag_len` must be 4, 6, 8, 10, 12, 14 or 16, and `nonce_len` from 7 to 13 (Appendix A.1).
 /// * `len` must be less than `2^(8 * (15 - nonce_len))` (Appendix A.1).
 /// * `data` and `tag` must not overlap each other, `schedule`, `nonce` or `aad` (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2664 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2668 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_ccm_seal(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
+pub(crate) unsafe extern "C" fn vg_aes_ccm_seal(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "jaQk0PX//4uEJDQKAACJRCQEi4QkOAoAAIlEJAiLhCQ8CgAAiUQkDIuEJEAKAACJRCQQi4QkRAoAAIlEJBSLhCRICgAAiUQkGIuEJEwKAACJRCQci4QkUAoAAIlEJCCLhCRUCgAAiUQkJIuEJFgKAACJRCQoieCDwDCJRCQsi0QkLImYgAAAAImwhAAAAIm4iAAAAImojAAAAInFi0QkBImFkAAAAItEJAiJhZQAAACLRCQMiYWYAAAAi0QkEImFnAAAAItEJBSJhaAAAACLRCQYiYWkAAAAi0QkHImFqAAAAItEJCCJhawAAACLRCQkiYXUAAAAi0QkKImFtAAAALgAAAAAiUUwiUU0iUU4iUU8uA4AAAArhZwAAACIRTCLvZgAAACJ6oPCMYuNnAAAAA=="
 20:
@@ -379,21 +379,21 @@ call {vg_cmac_aes_update}
 jmp 218f
 217:
 218:
-.base64 "uAAAAACLTTCJTUCLTTSJTUSLTTiJTUgPyAtFPIlFTIuFkAAAAIuNlAAAAInqg8JAieuDwwC/AQAAAIHFgAEAAFVXU1JRUA=="
-call {vg_aes_ctr32}
-.base64 "WFhYWFhYge2AAQAAi4WoAAAAiYUQAQAAi4WsAAAAiYUUAQAAi50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
+.base64 "uAAAAACLTTCJTUCLTTSJTUSLTTiJTUgPyAtFPIlFTIuFkAAAAIuNlAAAAInqg8JAieuDwwC/AQAAAIHFgAEAAFNVV1NSUVA="
+call {vg_aes_ctr32_to}
+.base64 "WFhYWFhYWIHtgAEAAIuFqAAAAImFEAEAAIuFrAAAAImFFAEAAIudEAEAAIu9FAEAAMHvBIuFFAEAAInCg+IPiZUUAQAAKdAB2ImFEAEAAIX/"
 je 220f
-.base64 "uAEAAACLTTCJTUCLTTSJTUSLTTiJTUgPyAtFPIlFTIuFkAAAAIuNlAAAAInqg8JAgcWAAQAAVVdTUlFQ"
-call {vg_aes_ctr32}
-.base64 "WFhYWFhYge2AAQAA"
+.base64 "uAEAAACLTTCJTUCLTTSJTUSLTTiJTUgPyAtFPIlFTIuFkAAAAIuNlAAAAInqg8JAgcWAAQAAU1VXU1JRUA=="
+call {vg_aes_ctr32_to}
+.base64 "WFhYWFhYWIHtgAEAAA=="
 jmp 221f
 220:
 221:
 .base64 "i40UAQAAhck="
 je 222f
-.base64 "i4WsAAAAwegEg8ABi00wiU1Ai000iU1Ei004iU1ID8gLRTyJRUy4AAAAAIlFUIlFVIlFWIlFXIuFkAAAAIuNlAAAAInqg8JAieuDw1C/AQAAAIHFgAEAAFVXU1JRUA=="
-call {vg_aes_ctr32}
-.base64 "WFhYWFhYge2AAQAAi70QAQAAieqDwlCLjRQBAAA="
+.base64 "i4WsAAAAwegEg8ABi00wiU1Ai000iU1Ei004iU1ID8gLRTyJRUy4AAAAAIlFUIlFVIlFWIlFXIuFkAAAAIuNlAAAAInqg8JAieuDw1C/AQAAAIHFgAEAAFNVV1NSUVA="
+call {vg_aes_ctr32_to}
+.base64 "WFhYWFhYWIHtgAEAAIu9EAEAAInqg8JQi40UAQAA"
 224:
 .base64 "D7YCD7YfMdiIB4PHAYPCAYPpAQ=="
 jne 224b
@@ -407,7 +407,7 @@ jne 225b
 .base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkMAoAAMM="
 .p2align 6"#,
         vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
     )
 }
 
@@ -428,9 +428,9 @@ jne 225b
 /// * `tag_len` must be 4, 6, 8, 10, 12, 14 or 16, and `nonce_len` from 7 to 13 (Appendix A.1).
 /// * `len` must be less than `2^(8 * (15 - nonce_len))` (Appendix A.1).
 /// * `data` must not overlap `schedule`, `nonce`, `aad` or `tag` (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2664 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2668 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_ccm_open(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_ccm_open(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "jaQk0PX//4uEJDQKAACJRCQEi4QkOAoAAIlEJAiLhCQ8CgAAiUQkDIuEJEAKAACJRCQQi4QkRAoAAIlEJBSLhCRICgAAiUQkGIuEJEwKAACJRCQci4QkUAoAAIlEJCCLhCRUCgAAiUQkJIuEJFgKAACJRCQoieCDwDCJRCQsi0QkLImYgAAAAImwhAAAAIm4iAAAAImojAAAAInFi0QkBImFkAAAAItEJAiJhZQAAACLRCQMiYWYAAAAi0QkEImFnAAAAItEJBSJhaAAAACLRCQYiYWkAAAAi0QkHImFqAAAAItEJCCJhawAAACLRCQkiYXUAAAAi0QkKImFtAAAALgAAAAAiUUwiUU0iUU4iUU8uA4AAAArhZwAAACIRTCLvZgAAACJ6oPCMYuNnAAAAA=="
 20:
@@ -438,17 +438,17 @@ pub unsafe extern "C" fn vg_aes_ccm_open(schedule: *const [u8; 240], rounds: usi
 jne 20b
 .base64 "i4WoAAAAiYUQAQAAi4WsAAAAiYUUAQAAi50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
 je 21f
-.base64 "uAEAAACLTTCJTUCLTTSJTUSLTTiJTUgPyAtFPIlFTIuFkAAAAIuNlAAAAInqg8JAgcWAAQAAVVdTUlFQ"
-call {vg_aes_ctr32}
-.base64 "WFhYWFhYge2AAQAA"
+.base64 "uAEAAACLTTCJTUCLTTSJTUSLTTiJTUgPyAtFPIlFTIuFkAAAAIuNlAAAAInqg8JAgcWAAQAAU1VXU1JRUA=="
+call {vg_aes_ctr32_to}
+.base64 "WFhYWFhYWIHtgAEAAA=="
 jmp 22f
 21:
 22:
 .base64 "i40UAQAAhck="
 je 23f
-.base64 "i4WsAAAAwegEg8ABi00wiU1Ai000iU1Ei004iU1ID8gLRTyJRUy4AAAAAIlFUIlFVIlFWIlFXIuFkAAAAIuNlAAAAInqg8JAieuDw1C/AQAAAIHFgAEAAFVXU1JRUA=="
-call {vg_aes_ctr32}
-.base64 "WFhYWFhYge2AAQAAi70QAQAAieqDwlCLjRQBAAA="
+.base64 "i4WsAAAAwegEg8ABi00wiU1Ai000iU1Ei004iU1ID8gLRTyJRUy4AAAAAIlFUIlFVIlFWIlFXIuFkAAAAIuNlAAAAInqg8JAieuDw1C/AQAAAIHFgAEAAFNVV1NSUVA="
+call {vg_aes_ctr32_to}
+.base64 "WFhYWFhYWIHtgAEAAIu9EAEAAInqg8JQi40UAQAA"
 25:
 .base64 "D7YCD7YfMdiIB4PHAYPCAYPpAQ=="
 jne 25b
@@ -527,9 +527,9 @@ call {vg_cmac_aes_update}
 jmp 223f
 222:
 223:
-.base64 "uAAAAACLTTCJTUCLTTSJTUSLTTiJTUgPyAtFPIlFTIuFkAAAAIuNlAAAAInqg8JAieuDw2C/AQAAAIHFgAEAAFVXU1JRUA=="
-call {vg_aes_ctr32}
-.base64 "WFhYWFhYge2AAQAAuAAAAACJhcQAAACJhcgAAACJhcwAAACJhdAAAACLvdQAAACJ6oHCxAAAAIuNtAAAAA=="
+.base64 "uAAAAACLTTCJTUCLTTSJTUSLTTiJTUgPyAtFPIlFTIuFkAAAAIuNlAAAAInqg8JAieuDw2C/AQAAAIHFgAEAAFNVV1NSUVA="
+call {vg_aes_ctr32_to}
+.base64 "WFhYWFhYWIHtgAEAALgAAAAAiYXEAAAAiYXIAAAAiYXMAAAAiYXQAAAAi73UAAAAieqBwsQAAACLjbQAAAA="
 225:
 .base64 "D7YHiAKDxwGDwgGD6QE="
 jne 225b
@@ -548,7 +548,7 @@ jmp 228f
 228:
 .base64 "i4WwAAAAi52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkMAoAAMM="
 .p2align 6"#,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
         vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,
     )
 }

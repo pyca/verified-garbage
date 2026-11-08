@@ -39,43 +39,40 @@ structure OP (nA w : Nat) (s : State) : Prop where
   cR : Covers [⟨w64 (arg s 0), 256⟩] (s.rd ++ s.wr)
   nR : Covers [⟨w64 (arg s 2), (arg s 3).toNat⟩] (s.rd ++ s.wr)
   aR : Covers [⟨w64 (arg s 4), (arg s 5).toNat⟩] (s.rd ++ s.wr)
-  dW : Covers [⟨w64 (arg s 6), (arg s 7).toNat⟩] s.wr
+  dW : Covers [⟨w64 (arg s 6), (arg s 7).toNat⟩] (s.rd ++ s.wr)
   wW : Covers [⟨w64 (arg s w), 2560⟩] s.wr
   argR : Covers [⟨argAddr s 0, 4 * nA⟩] (s.rd ++ s.wr)
-  c_d : (⟨w64 (arg s 0), 256⟩ : Region).Disjoint ⟨w64 (arg s 6), (arg s 7).toNat⟩
   c_w : (⟨w64 (arg s 0), 256⟩ : Region).Disjoint ⟨w64 (arg s w), 2560⟩
-  n_d : (⟨w64 (arg s 2), (arg s 3).toNat⟩ : Region).Disjoint ⟨w64 (arg s 6), (arg s 7).toNat⟩
   n_w : (⟨w64 (arg s 2), (arg s 3).toNat⟩ : Region).Disjoint ⟨w64 (arg s w), 2560⟩
-  a_d : (⟨w64 (arg s 4), (arg s 5).toNat⟩ : Region).Disjoint ⟨w64 (arg s 6), (arg s 7).toNat⟩
   a_w : (⟨w64 (arg s 4), (arg s 5).toNat⟩ : Region).Disjoint ⟨w64 (arg s w), 2560⟩
   d_w : (⟨w64 (arg s 6), (arg s 7).toNat⟩ : Region).Disjoint ⟨w64 (arg s w), 2560⟩
   d_a : (⟨w64 (arg s 6), (arg s 7).toNat⟩ : Region).Disjoint ⟨argAddr s 0, 4 * nA⟩
   w_a : (⟨w64 (arg s w), 2560⟩ : Region).Disjoint ⟨argAddr s 0, 4 * nA⟩
   r_d : (⟨w64 (s.gpr .esp), 4⟩ : Region).Disjoint ⟨w64 (arg s 6), (arg s 7).toNat⟩
   r_w : (⟨w64 (s.gpr .esp), 4⟩ : Region).Disjoint ⟨w64 (arg s w), 2560⟩
-  k_c : (below (s.gpr .esp) 28).Disjoint ⟨w64 (arg s 0), 256⟩
-  k_n : (below (s.gpr .esp) 28).Disjoint ⟨w64 (arg s 2), (arg s 3).toNat⟩
-  k_a : (below (s.gpr .esp) 28).Disjoint ⟨w64 (arg s 4), (arg s 5).toNat⟩
-  k_d : (below (s.gpr .esp) 28).Disjoint ⟨w64 (arg s 6), (arg s 7).toNat⟩
-  k_w : (below (s.gpr .esp) 28).Disjoint ⟨w64 (arg s w), 2560⟩
+  k_c : (below (s.gpr .esp) 32).Disjoint ⟨w64 (arg s 0), 256⟩
+  k_n : (below (s.gpr .esp) 32).Disjoint ⟨w64 (arg s 2), (arg s 3).toNat⟩
+  k_a : (below (s.gpr .esp) 32).Disjoint ⟨w64 (arg s 4), (arg s 5).toNat⟩
+  k_d : (below (s.gpr .esp) 32).Disjoint ⟨w64 (arg s 6), (arg s 7).toNat⟩
+  k_w : (below (s.gpr .esp) 32).Disjoint ⟨w64 (arg s w), 2560⟩
   fc : (arg s 0).toNat + 256 ≤ 2 ^ 32
   fn : (arg s 2).toNat + (arg s 3).toNat ≤ 2 ^ 32
   fa : (arg s 4).toNat + (arg s 5).toNat ≤ 2 ^ 32
   fd : (arg s 6).toNat + (arg s 7).toNat ≤ 2 ^ 32
   fw : (arg s w).toNat + 2560 ≤ 2 ^ 32
-  sp : 28 ≤ (s.gpr .esp).toNat
+  sp : 32 ≤ (s.gpr .esp).toNat
   fg : (s.gpr .esp).toNat + 4 + 4 * nA ≤ 2 ^ 32
   rounds : roundsOk s 1
 
 theorem op_of_seal {s : State} (h : sealPre s) : OP 10 9 s := by
   simp only [sealPre] at h
-  obtain ⟨hrd, hwr, c_d, -, c_w, -, n_d, -, n_w, -, a_d, -, a_w, -, -, d_w, d_a, -, -, w_a, -, -, -, r_d, -, r_w, -,
+  obtain ⟨hrd, hwr, -, -, c_w, -, -, -, n_w, -, -, -, a_w, -, -, d_w, d_a, -, -, w_a, -, -, -, r_d, -, r_w, -,
     k_c, k_n, k_a, k_d, -, k_w, -, fc, fn, fa, fd, -, fw, sp, fg, hR⟩ := h
   rw [ofNat_lit, below_eq sp] at k_c k_n k_a k_d k_w
   exact ⟨by rw [hrd, hwr]; exact covers_of_mem (by simp), by rw [hrd, hwr]; exact covers_of_mem (by simp),
-    by rw [hrd, hwr]; exact covers_of_mem (by simp), by rw [hwr]; exact covers_of_mem (by simp),
-    by rw [hwr]; exact covers_of_mem (by simp), by rw [hrd, hwr]; exact covers_of_mem (by simp), c_d, c_w, n_d,
-    n_w, a_d, a_w, d_w, d_a, w_a, r_d, r_w, k_c, k_n, k_a, k_d, k_w, fc, fn, fa, fd, fw, sp, by omega_arith, hR⟩
+    by rw [hrd, hwr]; exact covers_of_mem (by simp), by rw [hrd, hwr]; exact covers_of_mem (by simp),
+    by rw [hwr]; exact covers_of_mem (by simp), by rw [hrd, hwr]; exact covers_of_mem (by simp), c_w,
+    n_w, a_w, d_w, d_a, w_a, r_d, r_w, k_c, k_n, k_a, k_d, k_w, fc, fn, fa, fd, fw, sp, by omega_arith, hR⟩
 
 /-- The tag `seal` writes. -/
 theorem sealPre_tag {s : State} (h : sealPre s) : Covers [⟨w64 (arg s 8), 16⟩] s.wr ∧
@@ -87,21 +84,46 @@ theorem sealPre_tag {s : State} (h : sealPre s) : Covers [⟨w64 (arg s 8), 16�
     -, -, -, -, ft, -, -, -, -⟩ := h
   exact ⟨by rw [hwr]; exact covers_of_mem (by simp), ft, t_w, r_t, d_t⟩
 
+/-- The data `seal` and `open` write in place. -/
+theorem sealPre_data {s : State} (h : sealPre s) : Covers [⟨w64 (arg s 6), (arg s 7).toNat⟩] s.wr := by
+  simp only [sealPre] at h
+  rw [h.2.1]; exact covers_of_mem (by simp)
+
+theorem openPre_data {s : State} (h : openPre s) : Covers [⟨w64 (arg s 6), (arg s 7).toNat⟩] s.wr := by
+  simp only [openPre] at h
+  rw [h.2.1]; exact covers_of_mem (by simp)
+
 theorem op_of_open {s : State} (h : openPre s) : OP 11 10 s := by
   simp only [openPre] at h
-  obtain ⟨hrd, hwr, c_d, c_w, -, n_d, n_w, -, a_d, a_w, -, -, d_w, d_a, -, -, w_a, -, -, -, r_d, -, r_w, -, k_c, k_n,
+  obtain ⟨hrd, hwr, -, c_w, -, -, n_w, -, -, a_w, -, -, d_w, d_a, -, -, w_a, -, -, -, r_d, -, r_w, -, k_c, k_n,
     k_a, k_d, -, k_w, -, fc, fn, fa, fd, -, fw, sp, fg, hR⟩ := h
   rw [ofNat_lit, below_eq sp] at k_c k_n k_a k_d k_w
   exact ⟨by rw [hrd, hwr]; exact covers_of_mem (by simp), by rw [hrd, hwr]; exact covers_of_mem (by simp),
-    by rw [hrd, hwr]; exact covers_of_mem (by simp), by rw [hwr]; exact covers_of_mem (by simp),
-    by rw [hwr]; exact covers_of_mem (by simp), by rw [hrd, hwr]; exact covers_of_mem (by simp), c_d, c_w, n_d,
-    n_w, a_d, a_w, d_w, d_a, w_a, r_d, r_w, k_c, k_n, k_a, k_d, k_w, fc, fn, fa, fd, fw, sp, by omega_arith, hR⟩
+    by rw [hrd, hwr]; exact covers_of_mem (by simp), by rw [hrd, hwr]; exact covers_of_mem (by simp),
+    by rw [hwr]; exact covers_of_mem (by simp), by rw [hrd, hwr]; exact covers_of_mem (by simp), c_w,
+    n_w, a_w, d_w, d_a, w_a, r_d, r_w, k_c, k_n, k_a, k_d, k_w, fc, fn, fa, fd, fw, sp, by omega_arith, hR⟩
+
+/-- What the data being written in place adds: the context and the
+additional data apart from it. -/
+structure OPD (s : State) : Prop where
+  c_d : (⟨w64 (arg s 0), 256⟩ : Region).Disjoint ⟨w64 (arg s 6), (arg s 7).toNat⟩
+  a_d : (⟨w64 (arg s 4), (arg s 5).toNat⟩ : Region).Disjoint ⟨w64 (arg s 6), (arg s 7).toNat⟩
+
+theorem opd_of_seal {s : State} (h : sealPre s) : OPD s := by
+  simp only [sealPre] at h
+  obtain ⟨-, -, c_d, -, -, -, -, -, -, -, a_d, -⟩ := h
+  exact ⟨c_d, a_d⟩
+
+theorem opd_of_open {s : State} (h : openPre s) : OPD s := by
+  simp only [openPre] at h
+  obtain ⟨-, -, c_d, -, -, -, -, -, a_d, -⟩ := h
+  exact ⟨c_d, a_d⟩
 
 /-- The tag `open` reads. -/
 theorem openPre_tag {s : State} (h : openPre s) :
     Covers [⟨w64 (arg s 8), (arg s 9).toNat⟩] (s.rd ++ s.wr) ∧ (arg s 8).toNat + (arg s 9).toNat ≤ 2 ^ 32 ∧
       (⟨w64 (arg s 8), (arg s 9).toNat⟩ : Region).Disjoint ⟨w64 (arg s 10), 2560⟩ ∧
-      (below (s.gpr .esp) 28).Disjoint ⟨w64 (arg s 8), (arg s 9).toNat⟩ := by
+      (below (s.gpr .esp) 32).Disjoint ⟨w64 (arg s 8), (arg s 9).toNat⟩ := by
   simp only [openPre] at h
   obtain ⟨hrd, hwr, -, -, -, -, -, -, -, -, -, -, -, -, t_w, -, -, -, -, -, -, -, -, -, -, -, -, -, k_t, -, -, -, -, -,
     -, ft, -, sp, -, -⟩ := h
@@ -113,18 +135,15 @@ theorem stOf_w64 {W : BitVec 32} (hw : W.toNat + 2560 ≤ 2 ^ 32) : w64 (stOf W)
 
 /-- The layout of `seal` and `open`, for the public data `p`. -/
 structure OL (p : BitVec 32 × (Nat → BitVec 32)) : Prop where
-  L : Lay (p.2 0) (stOf (p.2 8)) (p.2 8) p.1 28
-  c_d : (⟨w64 (p.2 0), 256⟩ : Region).Disjoint ⟨w64 (p.2 6), (p.2 7).toNat⟩
-  n_d : (⟨w64 (p.2 2), (p.2 3).toNat⟩ : Region).Disjoint ⟨w64 (p.2 6), (p.2 7).toNat⟩
+  L : Lay (p.2 0) (stOf (p.2 8)) (p.2 8) p.1 32
   n_w : (⟨w64 (p.2 2), (p.2 3).toNat⟩ : Region).Disjoint ⟨w64 (p.2 8), 2560⟩
-  a_d : (⟨w64 (p.2 4), (p.2 5).toNat⟩ : Region).Disjoint ⟨w64 (p.2 6), (p.2 7).toNat⟩
   a_w : (⟨w64 (p.2 4), (p.2 5).toNat⟩ : Region).Disjoint ⟨w64 (p.2 8), 2560⟩
   d_w : (⟨w64 (p.2 6), (p.2 7).toNat⟩ : Region).Disjoint ⟨w64 (p.2 8), 2560⟩
   r_d : (⟨w64 p.1, 4⟩ : Region).Disjoint ⟨w64 (p.2 6), (p.2 7).toNat⟩
   r_w : (⟨w64 p.1, 4⟩ : Region).Disjoint ⟨w64 (p.2 8), 2560⟩
-  k_n : (below p.1 28).Disjoint ⟨w64 (p.2 2), (p.2 3).toNat⟩
-  k_a : (below p.1 28).Disjoint ⟨w64 (p.2 4), (p.2 5).toNat⟩
-  k_d : (below p.1 28).Disjoint ⟨w64 (p.2 6), (p.2 7).toNat⟩
+  k_n : (below p.1 32).Disjoint ⟨w64 (p.2 2), (p.2 3).toNat⟩
+  k_a : (below p.1 32).Disjoint ⟨w64 (p.2 4), (p.2 5).toNat⟩
+  k_d : (below p.1 32).Disjoint ⟨w64 (p.2 6), (p.2 7).toNat⟩
   fn : (p.2 2).toNat + (p.2 3).toNat ≤ 2 ^ 32
   fa : (p.2 4).toNat + (p.2 5).toNat ≤ 2 ^ 32
   fd : (p.2 6).toNat + (p.2 7).toNat ≤ 2 ^ 32
@@ -135,32 +154,46 @@ theorem OP.ol {nA w : Nat} (hw : nA = w + 1) (h9 : 9 ≤ w) {s : State} (h : OP 
   have a : ∀ i, i < 8 → arg s i = p.2 i := fun i hi => pubSw_arg hp (by omega_arith) (by omega_arith) (by omega_arith)
   have aW : arg s w = p.2 8 := pubSw_W hp (by omega_arith) hw
   have esp : s.gpr .esp = p.1 := pubSw_esp hp
-  obtain ⟨-, -, -, -, -, -, c_d, c_w, n_d, n_w, a_d, a_w, d_w, -, -, r_d, r_w, k_c, k_n, k_a, k_d, k_w, fc, fn, fa,
+  obtain ⟨-, -, -, -, -, -, c_w, n_w, a_w, d_w, -, -, r_d, r_w, k_c, k_n, k_a, k_d, k_w, fc, fn, fa,
     fd, fw, sp, -, hR⟩ := h
   have e := fun i hi => a i hi
   simp only [e 0 (by omega_arith), e 2 (by omega_arith), e 3 (by omega_arith), e 4 (by omega_arith), e 5 (by omega_arith),
-    e 6 (by omega_arith), e 7 (by omega_arith), aW, esp] at c_d c_w n_d n_w a_d a_w d_w r_d r_w k_c k_n
+    e 6 (by omega_arith), e 7 (by omega_arith), aW, esp] at c_w n_w a_w d_w r_d r_w k_c k_n
   simp only [e 0 (by omega_arith), e 1 (by omega_arith), e 2 (by omega_arith), e 3 (by omega_arith), e 4 (by omega_arith), e 5 (by omega_arith),
     e 6 (by omega_arith), e 7 (by omega_arith), aW, esp, roundsOk] at k_a k_d k_w fc fn fa fd fw sp hR
   have hs := stOf_w64 fw
   have sw : (⟨w64 (stOf (p.2 8)), 80⟩ : Region).Sub ⟨w64 (p.2 8), 2560⟩ := by
     rw [hs]; exact Lay.wSub (by decide)
   refine ⟨⟨fc, by rw [toNat_add32 (by omega_arith)]; omega_arith, fw, by decide, by decide, sp,
-    c_w.sub_right sw, c_w, ?_, ?_, k_c, k_w.sub_right sw, k_w⟩, c_d, n_d, n_w, a_d, a_w, d_w,
+    c_w.sub_right sw, c_w, ?_, ?_, k_c, k_w.sub_right sw, k_w⟩, n_w, a_w, d_w,
     r_d, r_w, k_n, k_a, k_d, fn, fa, fd, hR⟩
   · rw [hs]
     have := Lay.w_w (W := p.2 8) (a := 16) (n := 80) (d := 0) (k := 16) (.inr (by decide)) (by decide) (by decide)
     rwa [BitVec.add_zero] at this
   · rw [hs]; exact Lay.w_w (.inl (by decide)) (by decide) (by decide)
 
+/-- What the data being written in place adds to the layout. -/
+structure OLD (p : BitVec 32 × (Nat → BitVec 32)) : Prop where
+  c_d : (⟨w64 (p.2 0), 256⟩ : Region).Disjoint ⟨w64 (p.2 6), (p.2 7).toNat⟩
+  a_d : (⟨w64 (p.2 4), (p.2 5).toNat⟩ : Region).Disjoint ⟨w64 (p.2 6), (p.2 7).toNat⟩
+
+theorem OPD.old {nA : Nat} (h9 : 8 < nA) {s : State} (h : OPD s) {p : BitVec 32 × (Nat → BitVec 32)}
+    (hp : pubSw nA 8 s = p) : OLD p := by
+  have a : ∀ i, i < 8 → arg s i = p.2 i := fun i hi => pubSw_arg hp (by omega_arith) (by omega_arith) (by omega_arith)
+  obtain ⟨c_d, a_d⟩ := h
+  rw [a 0 (by decide), a 6 (by decide), a 7 (by decide)] at c_d
+  rw [a 4 (by decide), a 5 (by decide), a 6 (by decide), a 7 (by decide)] at a_d
+  exact ⟨c_d, a_d⟩
+
 /-- The regions of `W` and the stack the pieces write (but the tag at `W`). -/
 abbrev oF (p : BitVec 32 × (Nat → BitVec 32)) : List Region :=
   [⟨w64 (p.2 8) + BitVec.ofNat 64 16, 112⟩, ⟨w64 (p.2 8) + BitVec.ofNat 64 auxO, 4⟩, ⟨w64 (p.2 8) + BitVec.ofNat 64 rO, 16⟩, wsR (p.2 8),
-    below p.1 28]
+    below p.1 32]
 
-/-- Those, the data and the first block of `W`: what `OEnv` survives. -/
+/-- Those and the first block of `W`: what `OEnv` survives (`OEnv.frame`); and
+the data, when it is written in place (`OEnv.frameD`). -/
 abbrev oFF (p : BitVec 32 × (Nat → BitVec 32)) : List Region :=
-  ⟨w64 (p.2 8), 16⟩ :: ⟨w64 (p.2 6), (p.2 7).toNat⟩ :: oF p
+  ⟨w64 (p.2 8), 16⟩ :: oF p
 
 /-- What holds from the entry of `seal` or `open` to the exit. -/
 structure OEnv (p : BitVec 32 × (Nat → BitVec 32)) (s₀ s : State) : Prop where
@@ -182,7 +215,7 @@ structure OEnv (p : BitVec 32 × (Nat → BitVec 32)) (s₀ s : State) : Prop wh
   wr : s.wr = s₀.wr
   nIn : Covers [⟨w64 (p.2 2), (p.2 3).toNat⟩] (s.rd ++ s.wr)
   aIn : Covers [⟨w64 (p.2 4), (p.2 5).toNat⟩] (s.rd ++ s.wr)
-  dIn : Covers [⟨w64 (p.2 6), (p.2 7).toNat⟩] s.wr
+  dIn : Covers [⟨w64 (p.2 6), (p.2 7).toNat⟩] (s.rd ++ s.wr)
 
 section
 variable {p : BitVec 32 × (Nat → BitVec 32)} (G : OL p)
@@ -195,10 +228,9 @@ theorem slot_oF {o n : Nat} (h₁ : 128 ≤ o)
   simp only [auxO, rO] at h₂
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
   · have := Lay.w_w (W := p.2 8) (a := o) (n := n) (d := 0) (k := 16) (.inr (by omega_arith)) (by omega_arith) (by decide)
     rwa [BitVec.add_zero] at this
-  · exact (G.d_w.sub_right (Lay.wSub (by omega_arith))).symm
   · exact Lay.w_w (.inr (by omega_arith)) (by omega_arith) (by decide)
   · exact Lay.w_w (by simp only [auxO]; omega_arith) (by omega_arith) (by decide)
   · exact Lay.w_w (by simp only [rO]; omega_arith) (by omega_arith) (by decide)
@@ -209,9 +241,8 @@ theorem slot_oF {o n : Nat} (h₁ : 128 ≤ o)
 theorem ctx_oF : ∀ r ∈ oFF p, (⟨w64 (p.2 0), 256⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
   · exact G.L.cw.sub_right (Region.sub_prefix (by decide))
-  · exact G.c_d
   · exact G.L.cw.sub_right (Lay.wSub (by decide))
   · exact G.L.cw.sub_right (Lay.wSub (by decide))
   · exact G.L.cw.sub_right (Lay.wSub (by decide))
@@ -222,9 +253,8 @@ theorem ctx_oF : ∀ r ∈ oFF p, (⟨w64 (p.2 0), 256⟩ : Region).Disjoint r :
 theorem aad_oF : ∀ r ∈ oFF p, (⟨w64 (p.2 4), (p.2 5).toNat⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
   · exact G.a_w.sub_right (Region.sub_prefix (by decide))
-  · exact G.a_d
   · exact G.a_w.sub_right (Lay.wSub (by decide))
   · exact G.a_w.sub_right (Lay.wSub (by decide))
   · exact G.a_w.sub_right (Lay.wSub (by decide))
@@ -235,36 +265,65 @@ theorem aad_oF : ∀ r ∈ oFF p, (⟨w64 (p.2 4), (p.2 5).toNat⟩ : Region).Di
 theorem ret_oF : ∀ r ∈ oFF p, (⟨w64 p.1, 4⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
   · exact G.r_w.sub_right (Region.sub_prefix (by decide))
-  · exact G.r_d
   · exact G.r_w.sub_right (Lay.wSub (by decide))
   · exact G.r_w.sub_right (Lay.wSub (by decide))
   · exact G.r_w.sub_right (Lay.wSub (by decide))
   · exact G.r_w.sub_right (Lay.wSub (by decide))
   · exact ret_below G.L.sp
 
-/-- `OEnv` after code that writes within `oFF p` and keeps the registers. -/
-theorem OEnv.frame {s₀ s s' : State} (h : OEnv p s₀ s)
-    (hf : Frame (oFF p) s.mem s'.mem)
+/-- `OEnv` after code that writes within `rs`, apart from the kept slots, the
+context, the additional data and the return address, and keeps the registers. -/
+theorem OEnv.frameG {rs : List Region}
+    (hsl : ∀ {o n : Nat}, 128 ≤ o → (o + n ≤ auxO ∨ (auxO + 4 ≤ o ∧ o + n ≤ rO) ∨ (rO + 16 ≤ o ∧ o + n ≤ 240)) →
+      ∀ r ∈ rs, (⟨w64 (p.2 8) + BitVec.ofNat 64 o, n⟩ : Region).Disjoint r)
+    (hct : ∀ r ∈ rs, (⟨w64 (p.2 0), 256⟩ : Region).Disjoint r)
+    (had : ∀ r ∈ rs, (⟨w64 (p.2 4), (p.2 5).toNat⟩ : Region).Disjoint r)
+    (hrt : ∀ r ∈ rs, (⟨w64 p.1, 4⟩ : Region).Disjoint r) {s₀ s s' : State} (h : OEnv p s₀ s)
+    (hf : Frame rs s.mem s'.mem)
     (hbp : s'.gpr .ebp = s.gpr .ebp) (hsi : s'.gpr .esi = s.gpr .esi) (hsp : s'.gpr .esp = s.gpr .esp)
     (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : OEnv p s₀ s' := by
   have sl : ∀ o, 128 ≤ o → (o + 4 ≤ auxO ∨ (auxO + 4 ≤ o ∧ o + 4 ≤ rO) ∨ (rO + 16 ≤ o ∧ o + 4 ≤ 240)) →
       slotv s'.mem (p.2 8) o = slotv s.mem (p.2 8) o := fun o h₁ h₂ => by
-    rw [slotv_eq, slotv_eq]; exact slot_frame hf (slot_oF G h₁ h₂)
+    rw [slotv_eq, slotv_eq]; exact slot_frame hf (hsl h₁ h₂)
   have hR := G.rounds
   refine ⟨h.env.keep hbp hsi hsp hrd hwr ?_, ⟨by rw [sl _ (by decide) (by decide)]; exact h.rounds.1, h.rounds.2⟩,
     by rw [sl _ (by decide) (by decide)]; exact h.aadO, by rw [sl _ (by decide) (by decide)]; exact h.alO,
     by rw [sl _ (by decide) (by decide)]; exact h.dataO, by rw [sl _ (by decide) (by decide)]; exact h.lenO,
     by rw [sl _ (by decide) (by decide)]; exact h.zO, by rw [sl _ (by decide) (by decide)]; exact h.nlO,
-    by rw [sl _ (by decide) (by decide)]; exact h.tp, h.saved.frame hf fun r hr => ?_, by rw [ret_kept hf (ret_oF G)]; exact h.ret,
-    by rw [ciph_frame hf (ctx_oF G) hR]; exact h.ciph,
+    by rw [sl _ (by decide) (by decide)]; exact h.tp, h.saved.frame hf fun r hr => ?_, by rw [ret_kept hf hrt]; exact h.ret,
+    by rw [ciph_frame hf hct hR]; exact h.ciph,
     by rw [show Hk s'.mem (p.2 0) = Hk s.mem (p.2 0) from blockAt_frame hf fun r hr =>
-      (ctx_oF G r hr).sub_left (Lay.ctxSub (by decide))]; exact h.hk,
-    by rw [bytesAt_frame hf (aad_oF G) (by omega_arith)]; exact h.aad, by rw [hrd]; exact h.rd, by rw [hwr]; exact h.wr,
-    by rw [hrd, hwr]; exact h.nIn, by rw [hrd, hwr]; exact h.aIn, by rw [hwr]; exact h.dIn⟩
+      (hct r hr).sub_left (Lay.ctxSub (by decide))]; exact h.hk,
+    by rw [bytesAt_frame hf had (by have := G.fa; omega_arith)]; exact h.aad, by rw [hrd]; exact h.rd,
+    by rw [hwr]; exact h.wr, by rw [hrd, hwr]; exact h.nIn, by rw [hrd, hwr]; exact h.aIn,
+    by rw [hrd, hwr]; exact h.dIn⟩
   · have := sl ctxO (by decide) (by decide); rwa [slotv_eq, slotv_eq] at this
-  · exact slot_oF G (o := 128) (n := 16) (by decide) (by decide) r hr
+  · exact hsl (o := 128) (n := 16) (by decide) (by decide) r hr
+
+/-- `OEnv` after code that writes within `oFF p` and keeps the registers. -/
+theorem OEnv.frame {s₀ s s' : State} (h : OEnv p s₀ s)
+    (hf : Frame (oFF p) s.mem s'.mem)
+    (hbp : s'.gpr .ebp = s.gpr .ebp) (hsi : s'.gpr .esi = s.gpr .esi) (hsp : s'.gpr .esp = s.gpr .esp)
+    (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : OEnv p s₀ s' :=
+  h.frameG G (fun h₁ h₂ => slot_oF G h₁ h₂) (ctx_oF G) (aad_oF G) (ret_oF G) hf hbp hsi hsp hrd hwr
+
+/-- `OEnv` after code that writes within the data in place and `oFF p`. -/
+theorem OEnv.frameD (D : OLD p) {s₀ s s' : State} (h : OEnv p s₀ s)
+    (hf : Frame (⟨w64 (p.2 6), (p.2 7).toNat⟩ :: oFF p) s.mem s'.mem)
+    (he : Env (p.2 0) (stOf (p.2 8)) (p.2 8) p.1 s') (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : OEnv p s₀ s' := by
+  refine h.frameG G (fun h₁ h₂ r hr => ?_) (fun r hr => ?_) (fun r hr => ?_) (fun r hr => ?_) hf
+    (by rw [he.ebp, h.env.ebp]) (by rw [he.esi, h.env.esi]) (by rw [he.esp, h.env.esp]) hrd hwr
+  all_goals rcases List.mem_cons.mp hr with rfl | hr
+  · exact (G.d_w.sub_right (Lay.wSub (by simp only [auxO, rO] at h₂; omega_arith))).symm
+  · exact slot_oF G h₁ h₂ r hr
+  · exact D.c_d
+  · exact ctx_oF G r hr
+  · exact D.a_d
+  · exact aad_oF G r hr
+  · exact G.r_d
+  · exact ret_oF G r hr
 
 theorem OEnv.frameE {s₀ s s' : State} (h : OEnv p s₀ s)
     (hf : Frame (oFF p) s.mem s'.mem)
@@ -293,7 +352,7 @@ theorem ws_sub_oF : ∃ r' ∈ oF p, Region.Sub (wsR (p.2 8)) r' :=
   ⟨_, by simp, fun _ h => h⟩
 
 omit G in
-theorem stk_sub_oF : ∃ r' ∈ oF p, Region.Sub (below p.1 28) r' :=
+theorem stk_sub_oF : ∃ r' ∈ oF p, Region.Sub (below p.1 32) r' :=
   ⟨_, by simp, fun _ h => h⟩
 
 omit G in
@@ -302,11 +361,15 @@ theorem pslot_sub_oF : ∃ r' ∈ oF p, Region.Sub (pslotR (p.2 8)) r' :=
 
 omit G in
 theorem Frame.oD {m m' : Mem} (h : Frame (oF p) m m') : Frame (oFF p) m m' :=
-  h.mono fun _ hr => List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hr)
+  h.mono fun _ hr => List.mem_cons_of_mem _ hr
 
 omit G in
-theorem Frame.oDD {m m' : Mem} (h : Frame (⟨w64 (p.2 6), (p.2 7).toNat⟩ :: oF p) m m') : Frame (oFF p) m m' :=
-  h.mono fun _ hr => List.mem_cons_of_mem _ hr
+theorem Frame.oDD {m m' : Mem} (h : Frame (⟨w64 (p.2 6), (p.2 7).toNat⟩ :: oF p) m m') :
+    Frame (⟨w64 (p.2 6), (p.2 7).toNat⟩ :: oFF p) m m' :=
+  h.mono fun _ hr => by
+    rcases List.mem_cons.mp hr with rfl | hr
+    · exact List.mem_cons_self ..
+    · exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hr)
 
 omit G in
 theorem d_sub_oF :
@@ -434,7 +497,7 @@ theorem oneEntry_pc (nA w : Nat) (hw : nA = w + 1) (h9 : 9 ≤ w) (ex : List (Na
     · exact bytesAt_frame fE (dE G.a_w) (by omega_arith)
     · rw [rd₃, wr₃, e.rd, e.wr, ← a 2 (by omega_arith), ← a 3 (by omega_arith)]; exact h.nR
     · rw [rd₃, wr₃, e.rd, e.wr, ← a 4 (by omega_arith), ← a 5 (by omega_arith)]; exact h.aR
-    · rw [wr₃, e.wr, ← a 6 (by omega_arith), ← a 7 (by omega_arith)]; exact h.dW
+    · rw [rd₃, wr₃, e.rd, e.wr, ← a 6 (by omega_arith), ← a 7 (by omega_arith)]; exact h.dW
     · exact bytesAt_frame fE (dE G.n_w) (by omega_arith)
     · exact bytesAt_frame fE (dE G.d_w) (by omega_arith)
   · refine CT.seq (J := fun s => s.gpr .eax = p.2 8 ∧ s.gpr .esp = p.1)

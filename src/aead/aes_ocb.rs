@@ -15,6 +15,7 @@
     target_arch = "riscv64"
 ))]
 
+use crate::align::CacheAligned;
 use crate::arch::dispatch::aes_ocb::{
     vg_aes_ocb_init_auto, vg_aes_ocb_open_auto, vg_aes_ocb_seal_auto,
 };
@@ -50,7 +51,7 @@ crate::error::impl_error! {
 pub struct AesOcb {
     /// The key context `vg_aes_ocb_init` writes: the key schedule, and `L_*`
     /// in bytes 240–255.
-    ctx: [u64; 32],
+    ctx: CacheAligned<[u64; 32]>,
     /// The number of rounds of AES.
     rounds: usize,
 }
@@ -58,7 +59,7 @@ pub struct AesOcb {
 impl Drop for AesOcb {
     /// Wipes the key context.
     fn drop(&mut self) {
-        zeroize(&mut self.ctx);
+        zeroize(&mut self.ctx.0);
     }
 }
 
@@ -74,11 +75,12 @@ fn check(nonce: &[u8]) -> Result<(), Error> {
 impl AesOcb {
     /// Prepares `key`, which must be 16, 24 or 32 bytes long.
     pub fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
+        crate::dit::enter!(dit);
         if !matches!(key.len(), 16 | 24 | 32) {
             return Err(InvalidKeyLength);
         }
         let mut k = AesOcb {
-            ctx: [0; 32],
+            ctx: CacheAligned([0; 32]),
             rounds: key.len() / 4 + 6,
         };
         // SAFETY: `key` is valid for reads of `key.len()` bytes, which is 16,
@@ -87,7 +89,7 @@ impl AesOcb {
         // the return address on the stack or the stack below it, and neither
         // wraps around the end of the address space. The dispatcher calls only
         // an implementation the CPU has the features of.
-        unsafe { vg_aes_ocb_init_auto(key.as_ptr(), key.len(), &mut k.ctx) };
+        unsafe { vg_aes_ocb_init_auto(dit, key.as_ptr(), key.len(), &mut k.ctx.0) };
         Ok(k)
     }
 
@@ -105,6 +107,7 @@ impl AesOcb {
         aad: &[u8],
         data: &mut [u8],
     ) -> Result<[u8; T], Error> {
+        crate::dit::enter!(dit);
         assert_tag_length!(T);
         check(nonce)?;
         let mut tag = [0u8; T];
@@ -121,7 +124,8 @@ impl AesOcb {
         // features of.
         unsafe {
             vg_aes_ocb_seal_auto(
-                &self.ctx,
+                dit,
+                &self.ctx.0,
                 self.rounds,
                 nonce.as_ptr(),
                 nonce.len(),
@@ -149,6 +153,7 @@ impl AesOcb {
         data: &mut [u8],
         tag: &[u8; T],
     ) -> Result<(), Error> {
+        crate::dit::enter!(dit);
         assert_tag_length!(T);
         check(nonce)?;
         // SAFETY: as in `encrypt_in_place`, with the received tag `tag`
@@ -156,7 +161,8 @@ impl AesOcb {
         // `data`, a unique one, does not overlap.
         let ok = unsafe {
             vg_aes_ocb_open_auto(
-                &self.ctx,
+                dit,
+                &self.ctx.0,
                 self.rounds,
                 nonce.as_ptr(),
                 nonce.len(),

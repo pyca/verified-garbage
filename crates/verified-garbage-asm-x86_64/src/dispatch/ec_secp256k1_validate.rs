@@ -2,8 +2,22 @@
 //! The dispatchers of the verified `ec_secp256k1_validate` functions for `x86_64`
 //! (`crate::ec_secp256k1_validate`, `VG.Rust.dispatcher`).
 
-/// `vg_ec_secp256k1_validate_public_key`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::ec_secp256k1_validate::vg_ec_secp256k1_validate_public_key as vg_ec_secp256k1_validate_public_key_auto;
+/// secp256k1 public-key validation (SEC 1 §2.3.4, SP 800-56A §5.6.2.3.3): returns 1 if `public` is a valid public key in the uncompressed form of SEC 1 §2.3.3 (`04`, then `x` and `y` in 32 bytes each, most significant first), and 0 otherwise. Checks the encoding tag, both coordinates below the field prime and the curve equation; rejects infinity and compressed or hybrid encodings. The curve has cofactor one, so no scalar multiplication is required.
+///
+/// Contract: `VG.Spec.EcKey.Instance.validatePublicKeyContract`. The input is public: timing may depend on the pointers and the contents of `public`.
+///
+/// It runs `vg_ec_secp256k1_validate_public_key`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `public` must be valid for reads of 65 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The contents of `scratch` on return are unspecified; the caller may reuse or destroy them.
+/// * `scratch` must not overlap `public` (distinct Rust objects never do).
+/// * Neither `public` nor `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_ec_secp256k1_validate_public_key_auto(_dit: verified_garbage_cpu::Dit<'_>, public: *const [u8; 65], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::ec_secp256k1_validate::vg_ec_secp256k1_validate_public_key(public, scratch) }
+}

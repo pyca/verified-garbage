@@ -51,7 +51,7 @@ theorem finalize_raw_wp (v : Ctr32Impl) {s₀ : State} (h0 : finalizeX86.pre s�
   unfold finalize
   refine WP.seq (WP.mono (finPre_wp hp) fun s₁ h₁ => ?_)
   refine WP.seq (WP.mono (ctr_call v h₁.pre) fun s₂ h₂ => ?_)
-  have hb : below (s₁.gpr .esp) 28 = stkR s₀ := by rw [h₁.esp]; exact hp.below_eq
+  have hb : below (s₁.gpr .esp) 32 = stkR s₀ := by rw [h₁.esp]; exact hp.below_eq
   have f₁ : Frame [stR s₀, ⟨(S s₀).setWidth 64, 2064⟩, stkR s₀] (savedMem s₀) s₁.mem :=
     h₁.frame.sub fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -102,7 +102,7 @@ theorem finalize_raw_wp (v : Ctr32Impl) {s₀ : State} (h0 : finalizeX86.pre s�
   refine ⟨⟨r₄.abi (by decide) (by decide) (by rw [u₃.other _ (by decide), esp₂]), ?_⟩, ?_⟩
   · rw [r₄.mem, u₃.mem]
     have rs : (retR s₀).Disjoint (stkR s₀) := by
-      have := Offset.disjoint_below_above ((E s₀).setWidth 64) (m := 28) (a := 0) (l := 4) (by decide)
+      have := Offset.disjoint_below_above ((E s₀).setWidth 64) (m := 32) (a := 0) (l := 4) (by decide)
       rw [add0] at this
       exact this.symm
     exact big₂.readW (r := retR s₀) (Region.contains_self _ _) (fun r hr => by
@@ -119,7 +119,7 @@ structure FRPost (s : State) (K St P S : BitVec 32) (L R : Nat) (s' : State) : P
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
   saved : ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r
-  frame : Frame [⟨St.setWidth 64, 16⟩, ⟨S.setWidth 64, 2176⟩, below (s.gpr .esp) 56] s.mem s'.mem
+  frame : Frame [⟨St.setWidth 64, 16⟩, ⟨S.setWidth 64, 2176⟩, below (s.gpr .esp) 60] s.mem s'.mem
   out : Spec.Aes.bytesAt s'.mem (St.setWidth 64) 16 =
     Spec.Cmac.aesWith R (Spec.Aes.bytesAt s.mem (K.setWidth 64) (16 * (R + 1)))
       (Spec.Cmac.xor (Spec.Cmac.lastBlock 16 (Spec.Aes.bytesAt s.mem (K.setWidth 64 + BitVec.ofNat 64 240) 16)
@@ -141,7 +141,7 @@ theorem finr_call (v : Ctr32Impl) {s : State} {K St P S : BitVec 32} {L R : Nat}
   obtain ⟨a0, a1, a2, a3, a4, -⟩ := h.args
   rw [(fin_stack v)] at f'
   refine ⟨rd', wr', cs', f'.mono fun r hr => by simpa using hr, ?_⟩
-  have keep : ∀ {p : Addr} {k : Nat}, (below (s.gpr .esp) 56).Disjoint ⟨p, k⟩ → k ≤ 2 ^ 64 →
+  have keep : ∀ {p : Addr} {k : Nat}, (below (s.gpr .esp) 60).Disjoint ⟨p, k⟩ → k ≤ 2 ^ 64 →
       Spec.Aes.bytesAt (pushed rs6 s).callEntry.mem p k = Spec.Aes.bytesAt s.mem p k :=
     fun hd hk => entry_bytes h.fit hrs6 (by simp) he hd hk
   simp only [finalizeRawX86, mn, W, Dp, N, arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, a4, hR, hL,

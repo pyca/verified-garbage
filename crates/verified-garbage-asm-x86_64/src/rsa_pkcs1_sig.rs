@@ -33,7 +33,7 @@ pub const VG_RSA_PKCS1_SIGN_ADX_FEATURES: verified_garbage_cpu::Features = verif
 /// * None of `out`, `n`, `e`, `digest`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the return address on the stack or the 4456 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rsa_pkcs1_sign_adx(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, digest: *const u8, digest_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_sign_adx(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, digest: *const u8, digest_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJFj7//9IiXwkcEiJdCR4SImUJIAAAABIiYwkiAAAAEyJhCSQAAAATImMJJgAAABJieBJgcCgAAAASIuUJLAEAACJ0kiLtCS4BAAATIuMJMAEAACD+gA="
 je 20f
@@ -247,7 +247,7 @@ jne 257b
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `digest`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `n`, `e`, `digest`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the return address on the stack or the 4456 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rsa_pkcs1_sign(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, digest: *const u8, digest_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_sign(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, digest: *const u8, digest_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJFj7//9IiXwkcEiJdCR4SImUJIAAAABIiYwkiAAAAEyJhCSQAAAATImMJJgAAABJieBJgcCgAAAASIuUJLAEAACJ0kiLtCS4BAAATIuMJMAEAACD+gA="
 je 20f
@@ -465,7 +465,7 @@ pub const VG_RSA_PKCS1_SIGN_IFMA_FEATURES: verified_garbage_cpu::Features = veri
 /// * None of `out`, `n`, `e`, `digest`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the return address on the stack or the 4456 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rsa_pkcs1_sign_ifma(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, digest: *const u8, digest_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_sign_ifma(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, digest: *const u8, digest_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJFj7//9IiXwkcEiJdCR4SImUJIAAAABIiYwkiAAAAEyJhCSQAAAATImMJJgAAABJieBJgcCgAAAASIuUJLAEAACJ0kiLtCS4BAAATIuMJMAEAACD+gA="
 je 20f
@@ -682,7 +682,7 @@ pub const VG_RSA_PKCS1_VERIFY_PRECOMPUTED_ADX_FEATURES: verified_garbage_cpu::Fe
 /// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the return address on the stack or the 2144 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rsa_pkcs1_verify_precomputed_adx(n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, digest: *const u8, digest_len: usize, sig: *const u8, sig_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_verify_precomputed_adx(n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, digest: *const u8, digest_len: usize, sig: *const u8, sig_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJBhIOfA="
 jne 20f
@@ -918,7 +918,7 @@ pub const VG_RSA_PKCS1_RECOVER_PRECOMPUTED_ADX_FEATURES: verified_garbage_cpu::F
 /// * None of `out`, `n`, `e`, `sig`, `scratch` and `pre` may overlap the return address on the stack or the 2144 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rsa_pkcs1_recover_precomputed_adx(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, sig: *const u8, sig_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_recover_precomputed_adx(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, sig: *const u8, sig_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJBhIOcg="
 jne 20f
@@ -1157,7 +1157,7 @@ jne 265b
 /// * `scratch` must not overlap `n`, `e`, `digest`, `sig`, `pre` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the return address on the stack or the 2144 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rsa_pkcs1_verify_precomputed(n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, digest: *const u8, digest_len: usize, sig: *const u8, sig_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_verify_precomputed(n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, digest: *const u8, digest_len: usize, sig: *const u8, sig_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJBhIOfA="
 jne 20f
@@ -1389,7 +1389,7 @@ jmp 21f
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `sig`, `pre` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `n`, `e`, `sig`, `scratch` and `pre` may overlap the return address on the stack or the 2144 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rsa_pkcs1_recover_precomputed(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, sig: *const u8, sig_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_recover_precomputed(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, sig: *const u8, sig_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJBhIOcg="
 jne 20f
@@ -1632,7 +1632,7 @@ pub const VG_RSA_PKCS1_VERIFY_PRECOMPUTED_IFMA_FEATURES: verified_garbage_cpu::F
 /// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the return address on the stack or the 2144 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rsa_pkcs1_verify_precomputed_ifma(n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, digest: *const u8, digest_len: usize, sig: *const u8, sig_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_verify_precomputed_ifma(n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, digest: *const u8, digest_len: usize, sig: *const u8, sig_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJBhIOfA="
 jne 20f
@@ -1868,7 +1868,7 @@ pub const VG_RSA_PKCS1_RECOVER_PRECOMPUTED_IFMA_FEATURES: verified_garbage_cpu::
 /// * None of `out`, `n`, `e`, `sig`, `scratch` and `pre` may overlap the return address on the stack or the 2144 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rsa_pkcs1_recover_precomputed_ifma(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, sig: *const u8, sig_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_recover_precomputed_ifma(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, sig: *const u8, sig_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJBhIOcg="
 jne 20f

@@ -19,7 +19,7 @@
 /// * `scratch` must not overlap `public`, `digest` or `sig` (distinct Rust objects never do).
 /// * None of `public`, `digest`, `sig` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 136 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ecdsa_brainpoolp256r1_verify(public: *const [u8; 65], digest: *const u8, digest_len: usize, sig: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ecdsa_brainpoolp256r1_verify(public: *const [u8; 65], digest: *const u8, digest_len: usize, sig: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "jWQklItEJHCJRCQEi0QkdIlEJAiLRCR4iUQkDItEJHyJRCQQi4QkgAAAAIlEJBSJ4IPAHIlEJBiLRCQMg/gg"
 jb 20f
@@ -243,7 +243,7 @@ call {vg_brainpoolp256r1_sub_mod_n}
 /// * None of `out`, `d`, `digest`, `scratch` and `hmac` may overlap the arguments on the stack, overlap the return address on the stack or the 588 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * `hmac` must be the `as_ptr()` of one of the `Hmac` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ecdsa_brainpoolp256r1_sign(out: *mut [u8; 64], d: *const [u8; 32], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ecdsa_brainpoolp256r1_sign(out: *mut [u8; 64], d: *const [u8; 32], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "jaQkAP7//4mcJIAAAACJtCSEAAAAibwkiAAAAImsJIwAAACLhCQYAgAAi0gQiYwkkAAAAItIFImMJJQAAAC4AAAAAImEJOgAAACJhCTsAAAAiYQk8AAAAImEJPQAAACJhCT4AAAAiYQk/AAAAImEJAABAACJhCQEAQAAiYQkCAEAAImEJAwBAACJhCQQAQAAiYQkFAEAAImEJBgBAACJhCQcAQAAiYQkIAEAAImEJCQBAACJhCQoAQAAiYQkLAEAAIuMJJAAAACD6SAZ0iHRg8EgieOBwwgBAAApy4u0JAwCAAA="
 20:

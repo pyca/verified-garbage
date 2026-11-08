@@ -97,7 +97,7 @@ theorem chainedLen_div (k : Nat) : 16 * (Spec.Cmac.chainedLen 16 k / 16) = Spec.
 called and the stack below `SP`. -/
 abbrev cmacR (W SP : BitVec 32) : List Region :=
   [⟨w64 W + BitVec.ofNat 64 stOff, 16⟩, ⟨w64 W + BitVec.ofNat 64 nbO, 4⟩, ⟨w64 W + BitVec.ofNat 64 256, 2176⟩,
-    below SP 56]
+    below SP 60]
 
 /-- What `cmacOf` leaves: the CMAC of `S` with the context's PRF in the state
 at `W + 144`. -/

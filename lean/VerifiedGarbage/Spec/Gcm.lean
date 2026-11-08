@@ -29,8 +29,9 @@ Two kinds of functions are implemented in assembly; their contracts are in
   below).
 
 The supported tag lengths, extending §5.2.1.2, are `tagLenOk`. The limits on the
-other lengths (§5.2.1.1, `supported`) concern a whole message, which a
-streaming caller gives in pieces; the caller checks them.
+other lengths (§5.2.1.1: `len(P) ≤ 2³⁹ − 256`, `len(A) ≤ 2⁶⁴ − 1`,
+`1 ≤ len(IV) ≤ 2⁶⁴ − 1` bits) concern a whole message, which a streaming
+caller gives in pieces; the caller checks them.
 -/
 
 @[expose] public section
@@ -150,32 +151,15 @@ def encrypt (ciph : Block → Block) (t : Nat) (iv p a : List Byte) : List Byte 
   let s := ghash h (authBlocks a c)
   (c, (gctr ciph j (toBytes s)).take t)
 
-/-- Whether the bit lengths of the IV, the ciphertext and the additional
-authenticated data are supported (§5.2.1.1), for byte strings of these
-lengths. -/
-def supported (ivLen cLen aLen : Nat) : Bool :=
-  1 ≤ 8 * ivLen && 8 * ivLen ≤ 2 ^ 64 - 1 && 8 * cLen ≤ 2 ^ 39 - 256 && 8 * aLen ≤ 2 ^ 64 - 1
-
-/-- §7.2, `GCM-AD_K(IV, C, A, T)` (Algorithm 5), for the block cipher `ciph`
-and a tag length of `t` bytes: `none` (FAIL) if a length is not supported
-or `len(T) ≠ t` (step 1), otherwise the plaintext `P = GCTR_K(inc₃₂(J₀), C)`
-if the tag `T' = MSB_t(GCTR_K(J₀, S))` equals `T`, and `none` if not. -/
-def decrypt (ciph : Block → Block) (t : Nat) (iv c a tag : List Byte) : Option (List Byte) :=
-  if !supported iv.length c.length a.length || tag.length ≠ t then none
-  else
-    let h := ciph 0
-    let j := j0 h iv
-    let p := gctr ciph (inc32 j) c
-    let s := ghash h (authBlocks a c)
-    if (gctr ciph j (toBytes s)).take t = tag then some p else none
-
 /-! ## With the hash subkey given
 
 An implementation computes the hash subkey `H = CIPH_K(0¹²⁸)` (§7.1 step 1,
 §7.2 step 2) once per key, stores it, and uses the stored value: GCM-AE and
-GCM-AD for a given `H` are `encryptWith` and `decryptWith`, and `encrypt`
-and `decrypt` are those with `H = CIPH_K(0¹²⁸)` (`encrypt_eq`,
-`decrypt_eq`, which hold by definition). -/
+GCM-AD for a given `H` are `encryptWith` and `decryptWith`. `encrypt` is
+`encryptWith` with `H = CIPH_K(0¹²⁸)` (`encrypt_eq`, which holds by
+definition), and GCM-AD (§7.2) is step 1, which rejects lengths that are not
+supported (§5.2.1.1) and a tag that is not `t` bytes, followed by
+`decryptWith` with that `H`. -/
 
 /-- §7.1 steps 2 and 4–6 (§7.2 steps 3 and 5–7), before the truncation
 `MSB_t`, for the hash subkey `h`: the 16-byte block `GCTR_K(J₀, S)`, where
@@ -204,13 +188,6 @@ def decryptWith (ciph : Block → Block) (h : Block) (t : Nat) (iv c a tag : Lis
     Option (List Byte) :=
   if (fullTag ciph h iv a c).take t = tag then some (gctr ciph (inc32 (j0 h iv)) c) else none
 
-/-- GCM-AD is step 1 (the lengths) followed by `decryptWith` for the hash
-subkey `CIPH_K(0¹²⁸)`. -/
-theorem decrypt_eq (ciph : Block → Block) (t : Nat) (iv c a tag : List Byte) :
-    decrypt ciph t iv c a tag =
-      if !supported iv.length c.length a.length || tag.length ≠ t then none
-      else decryptWith ciph (ciph 0) t iv c a tag := rfl
-
 /-- Whether the implementation supports a tag of `t` bytes: 4 through 16.
 This extends §5.2.1.2, which permits only 4, 8, 12, 13, 14, 15 and 16.
 The authentication check still compares exactly the first `t` bytes. -/
@@ -229,10 +206,6 @@ def aes (key : List Byte) : Block → Block :=
 /-- AES-GCM authenticated encryption, with a tag of `t` bytes. -/
 def aesGcmEncrypt (key : List Byte) (t : Nat) (iv p a : List Byte) : List Byte × List Byte :=
   encrypt (aes key) t iv p a
-
-/-- AES-GCM authenticated decryption, with a tag of `t` bytes. -/
-def aesGcmDecrypt (key : List Byte) (t : Nat) (iv c a tag : List Byte) : Option (List Byte) :=
-  decrypt (aes key) t iv c a tag
 
 /-! ## On memory -/
 

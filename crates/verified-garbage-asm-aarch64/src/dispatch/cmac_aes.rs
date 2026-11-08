@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Cmac.aesInitContract`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_cmac_aes_init_aes` if the CPU supports its features (`VG_CMAC_AES_INIT_AES_FEATURES`); or else `vg_cmac_aes_init`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_cmac_aes_init_aes` if the CPU supports its features (`VG_CMAC_AES_INIT_AES_FEATURES`); or else `vg_cmac_aes_init`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -17,22 +17,45 @@
 /// * Neither `state` nor `key` may overlap the 2304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_cmac_aes_init_auto(state: *mut [u64; 38], key: *const u8, key_len: usize) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::cmac_aes::VG_CMAC_AES_INIT_AES_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_cmac_aes_init_aes`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::cmac_aes::vg_cmac_aes_init_aes(state, key, key_len) };
+pub unsafe fn vg_cmac_aes_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 38], key: *const u8, key_len: usize) {
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(state: *mut [u64; 38], key: *const u8, key_len: usize);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::cmac_aes::VG_CMAC_AES_INIT_AES_FEATURES) }
+            || cpu.contains(crate::cmac_aes::VG_CMAC_AES_INIT_AES_FEATURES)
+        {
+            return crate::cmac_aes::vg_cmac_aes_init_aes;
+        }
+        crate::cmac_aes::vg_cmac_aes_init
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::cmac_aes::vg_cmac_aes_init(state, key, key_len) }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(state: *mut [u64; 38], key: *const u8, key_len: usize) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(state, key, key_len) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(state, key, key_len) }
 }
 
 /// Finishes an AES-CMAC computation (NIST SP 800-38B §6.2, with `Tlen = 128`): if the streaming state `*state` represents a message of `count` bytes, shorter than 2⁶⁴ bytes, under an AES key with `rounds` rounds (as `vg_cmac_aes_init` and `vg_cmac_aes_absorb` set it up), writes the MAC of that message under that key to `*out`: `Cₙ = CIPH_K(Cₙ₋₁ ⊕ Mₙ)`, where `Mₙ = K1 ⊕ Mₙ*` if the message's last bytes `Mₙ*` are a complete block, and `Mₙ = K2 ⊕ (Mₙ* ‖ 10ʲ)` otherwise (step 4). The caller truncates it (step 7) and compares it (§6.3).
 ///
 /// Contract: `VG.Spec.Cmac.aesFinishContract`. Constant time: only the pointers, `rounds` and `count` may affect timing, not the state.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_cmac_aes_finish_aes` if the CPU supports its features (`VG_CMAC_AES_FINISH_AES_FEATURES`); or else `vg_cmac_aes_finish`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_cmac_aes_finish_aes` if the CPU supports its features (`VG_CMAC_AES_FINISH_AES_FEATURES`); or else `vg_cmac_aes_finish`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -44,22 +67,45 @@ pub unsafe fn vg_cmac_aes_init_auto(state: *mut [u64; 38], key: *const u8, key_l
 /// * Neither `state` nor `out` may overlap the 2304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_cmac_aes_finish_auto(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::cmac_aes::VG_CMAC_AES_FINISH_AES_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_cmac_aes_finish_aes`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::cmac_aes::vg_cmac_aes_finish_aes(state, rounds, count, out) };
+pub unsafe fn vg_cmac_aes_finish_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::cmac_aes::VG_CMAC_AES_FINISH_AES_FEATURES) }
+            || cpu.contains(crate::cmac_aes::VG_CMAC_AES_FINISH_AES_FEATURES)
+        {
+            return crate::cmac_aes::vg_cmac_aes_finish_aes;
+        }
+        crate::cmac_aes::vg_cmac_aes_finish
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::cmac_aes::vg_cmac_aes_finish(state, rounds, count, out) }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(state, rounds, count, out) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(state, rounds, count, out) }
 }
 
 /// Absorbs data into an AES-CMAC computation (NIST SP 800-38B §6.2): if the streaming state `*state` represents a message of `count` bytes under an AES key with `rounds` rounds (as `vg_cmac_aes_init` set it up), it then represents that message followed by the `len` bytes at `data`, under the same key, provided that the two together are shorter than 2⁶⁴ bytes. It chains (step 6) every block of the message but its last bytes `Mₙ*` (step 3), which it holds back in the state, since only `vg_cmac_aes_finish` knows they are the last.
 ///
 /// Contract: `VG.Spec.Cmac.aesAbsorbContract`. Constant time: only the pointers, `rounds`, `count` and `len` may affect timing, not the state or the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_cmac_aes_absorb_aes` if the CPU supports its features (`VG_CMAC_AES_ABSORB_AES_FEATURES`); or else `vg_cmac_aes_absorb`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_cmac_aes_absorb_aes` if the CPU supports its features (`VG_CMAC_AES_ABSORB_AES_FEATURES`); or else `vg_cmac_aes_absorb`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -70,13 +116,36 @@ pub unsafe fn vg_cmac_aes_finish_auto(state: *mut [u64; 38], rounds: usize, coun
 /// * Neither `state` nor `data` may overlap the 2304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_cmac_aes_absorb_auto(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::cmac_aes::VG_CMAC_AES_ABSORB_AES_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_cmac_aes_absorb_aes`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::cmac_aes::vg_cmac_aes_absorb_aes(state, rounds, count, data, len) };
+pub unsafe fn vg_cmac_aes_absorb_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::cmac_aes::VG_CMAC_AES_ABSORB_AES_FEATURES) }
+            || cpu.contains(crate::cmac_aes::VG_CMAC_AES_ABSORB_AES_FEATURES)
+        {
+            return crate::cmac_aes::vg_cmac_aes_absorb_aes;
+        }
+        crate::cmac_aes::vg_cmac_aes_absorb
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::cmac_aes::vg_cmac_aes_absorb(state, rounds, count, data, len) }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(state, rounds, count, data, len) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(state, rounds, count, data, len) }
 }

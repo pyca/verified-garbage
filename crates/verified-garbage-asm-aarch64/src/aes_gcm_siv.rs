@@ -24,7 +24,7 @@ pub const VG_AES_GCM_SIV_SEAL_AES_FEATURES: verified_garbage_cpu::Features = ver
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the 3824 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_siv_seal_aes(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_siv_seal_aes(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r".inst 0xd13bc3ff,0x910003f0,0x910043f1,0xf9000211,0xf94003e9,0xf9004534,0xf9004935,0xf9004d36
 .inst 0xf9005137,0xf9005538,0xf9005939,0xf9005d3a,0xf900613b,0xf900653c,0xf900693e,0xf9004133
@@ -368,7 +368,7 @@ pub const VG_AES_GCM_SIV_OPEN_AES_FEATURES: verified_garbage_cpu::Features = ver
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the 3824 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_siv_open_aes(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_siv_open_aes(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd13bc3ff,0x910003f0,0x910043f1,0xf9000211,0xf94003e9,0xf9004534,0xf9004935,0xf9004d36
 .inst 0xf9005137,0xf9005538,0xf9005939,0xf9005d3a,0xf900613b,0xf900653c,0xf900693e,0xf9004133
@@ -892,7 +892,7 @@ pub const VG_AES_GCM_SIV_SEAL_AES_SHA3_FEATURES: verified_garbage_cpu::Features 
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the 3824 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `sha3` target features.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_siv_seal_aes_sha3(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_siv_seal_aes_sha3(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r".inst 0xd13bc3ff,0x910003f0,0x910043f1,0xf9000211,0xf94003e9,0xf9004534,0xf9004935,0xf9004d36
 .inst 0xf9005137,0xf9005538,0xf9005939,0xf9005d3a,0xf900613b,0xf900653c,0xf900693e,0xf9004133
@@ -1231,7 +1231,7 @@ pub const VG_AES_GCM_SIV_OPEN_AES_SHA3_FEATURES: verified_garbage_cpu::Features 
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the 3824 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `sha3` target features.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_siv_open_aes_sha3(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_siv_open_aes_sha3(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd13bc3ff,0x910003f0,0x910043f1,0xf9000211,0xf94003e9,0xf9004534,0xf9004935,0xf9004d36
 .inst 0xf9005137,0xf9005538,0xf9005939,0xf9005d3a,0xf900613b,0xf900653c,0xf900693e,0xf9004133
@@ -1734,7 +1734,7 @@ b 253f
 /// * `data` and `tag` must not overlap each other, `schedule`, `nonce` or `aad` (distinct Rust objects never do).
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the 3824 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_siv_seal(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_siv_seal(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r".inst 0xd13bc3ff,0x910003f0,0x910043f1,0xf9000211,0xf94003e9,0xf9004534,0xf9004935,0xf9004d36
 .inst 0xf9005137,0xf9005538,0xf9005939,0xf9005d3a,0xf900613b,0xf900653c,0xf900693e,0xf9004133
@@ -1909,7 +1909,7 @@ b 232f
 /// * `data` must not overlap `schedule`, `nonce`, `aad` or `tag` (distinct Rust objects never do).
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the 3824 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_siv_open(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_siv_open(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd13bc3ff,0x910003f0,0x910043f1,0xf9000211,0xf94003e9,0xf9004534,0xf9004935,0xf9004d36
 .inst 0xf9005137,0xf9005538,0xf9005939,0xf9005d3a,0xf900613b,0xf900653c,0xf900693e,0xf9004133

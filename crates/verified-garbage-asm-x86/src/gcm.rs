@@ -18,19 +18,19 @@ pub const VG_AES_GCM_INIT_AESNI_FEATURES: verified_garbage_cpu::Features = verif
 /// * `ctx` must be valid for reads and writes of 256 bytes.
 /// * `key_len` must be 16, 24 or 32.
 /// * `ctx` must not overlap `key` (distinct Rust objects never do).
-/// * Neither `key` nor `ctx` may overlap the arguments on the stack, overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `key` nor `ctx` may overlap the arguments on the stack, overlap the return address on the stack or the 2612 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_init_aesni(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_init_aesni(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
         r#".base64 "jaQk7PX//4uEJBgKAACJRCQEi4QkHAoAAIlEJAiLhCQgCgAAiUQkDIngg8AUiUQkEItEJBCJmIAAAACJsIQAAACJuIgAAACJqIwAAACJxYt0JAyLTCQIicvB6wKDwwaLRCQEifKBxQACAABVUlFQ"
 call {vg_aes_expand_key_scratch_aesni}
-.base64 "WFhYWIHtAAIAALgAAAAAiYbwAAAAiYb0AAAAiYb4AAAAiYb8AAAAuAAAAACJRWCJRWSJRWiJRWyJ8InZieqDwmCJ84HD8AAAAL8BAAAAgcUAAgAAVVdTUlFQ"
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge0AAgAAi52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkFAoAAMM="
+.base64 "WFhYWIHtAAIAALgAAAAAiYbwAAAAiYb0AAAAiYb4AAAAiYb8AAAAuAAAAACJRWCJRWSJRWiJRWyJ8InZieqDwmCJ84HD8AAAAL8BAAAAgcUAAgAAU1VXU1JRUA=="
+call {vg_aes_ctr32_to_aesni}
+.base64 "WFhYWFhYWIHtAAIAAIudgAAAAIu1hAAAAIu9iAAAAIutjAAAAI2kJBQKAADD"
 .p2align 6"#,
         vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_ctr32_to_aesni = sym super::aes::vg_aes_ctr32_to_aesni::vg_aes_ctr32_to_aesni,
     )
 }
 
@@ -46,18 +46,18 @@ call {vg_aes_ctr32_aesni}
 /// * `ctx` must be valid for reads and writes of 256 bytes.
 /// * `key_len` must be 16, 24 or 32.
 /// * `ctx` must not overlap `key` (distinct Rust objects never do).
-/// * Neither `key` nor `ctx` may overlap the arguments on the stack, overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `key` nor `ctx` may overlap the arguments on the stack, overlap the return address on the stack or the 2612 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_init(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_init(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
         r#".base64 "jaQk7PX//4uEJBgKAACJRCQEi4QkHAoAAIlEJAiLhCQgCgAAiUQkDIngg8AUiUQkEItEJBCJmIAAAACJsIQAAACJuIgAAACJqIwAAACJxYt0JAyLTCQIicvB6wKDwwaLRCQEifKBxQACAABVUlFQ"
 call {vg_aes_expand_key_scratch}
-.base64 "WFhYWIHtAAIAALgAAAAAiYbwAAAAiYb0AAAAiYb4AAAAiYb8AAAAuAAAAACJRWCJRWSJRWiJRWyJ8InZieqDwmCJ84HD8AAAAL8BAAAAgcUAAgAAVVdTUlFQ"
-call {vg_aes_ctr32}
-.base64 "WFhYWFhYge0AAgAAi52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkFAoAAMM="
+.base64 "WFhYWIHtAAIAALgAAAAAiYbwAAAAiYb0AAAAiYb4AAAAiYb8AAAAuAAAAACJRWCJRWSJRWiJRWyJ8InZieqDwmCJ84HD8AAAAL8BAAAAgcUAAgAAU1VXU1JRUA=="
+call {vg_aes_ctr32_to}
+.base64 "WFhYWFhYWIHtAAIAAIudgAAAAIu1hAAAAIu9iAAAAIutjAAAAI2kJBQKAADD"
 .p2align 6"#,
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
     )
 }
 
@@ -79,10 +79,10 @@ pub const VG_AES_GCM_STREAM_ENCRYPT_AESNI_FEATURES: verified_garbage_cpu::Featur
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `state` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 2636 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_stream_encrypt_aesni(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_encrypt_aesni(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "jaQk1PX//4uEJDAKAACJRCQEi4QkNAoAAIlEJAiLhCQ4CgAAiUQkDIuEJDwKAACJRCQQi4QkQAoAAIlEJBSLhCRECgAAiUQkGIuEJEgKAACJRCQci4QkTAoAAIlEJCCLhCRQCgAAiUQkJIngg8AsiUQkKItEJCiJmIAAAACJsIQAAACJuIgAAACJqIwAAACJxYt0JAyLRCQEiYWQAAAAi0QkCImFlAAAAItEJBCJhZgAAACLRCQUiYWcAAAAi0QkGImFoAAAAItEJByJhaQAAACLRCQgiYWoAAAAi0QkJImFrAAAAIuFqAAAAImFEAEAAIuFrAAAAImFFAEAAIuFoAAAAIPgD4mFGAEAAIuFFAEAAIXA"
 je 20f
@@ -103,17 +103,17 @@ jmp 23f
 23:
 .base64 "i50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
 je 27f
-.base64 "i4WQAAAAi42UAAAAifKDwjCBxQACAABVV1NSUVA="
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge0AAgAA"
+.base64 "i4WQAAAAi42UAAAAifKDwjCBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to_aesni}
+.base64 "WFhYWFhYWIHtAAIAAA=="
 jmp 28f
 27:
 28:
 .base64 "i4UUAQAAhcA="
 je 29f
-.base64 "uAAAAACJRkCJRkSJRkiJRkyJ84PDQL8BAAAAi4WQAAAAi42UAAAAifKDwjCBxQACAABVV1NSUVA="
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge0AAgAAi70QAQAAifKDwkCLjRQBAAA="
+.base64 "uAAAAACJRkCJRkSJRkiJRkyJ84PDQL8BAAAAi4WQAAAAi42UAAAAifKDwjCBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to_aesni}
+.base64 "WFhYWFhYWIHtAAIAAIu9EAEAAInyg8JAi40UAQAA"
 211:
 .base64 "D7YCD7YfMdiIB4PHAYPCAYPpAQ=="
 jne 211b
@@ -192,7 +192,7 @@ jmp 213f
 213:
 .base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkLAoAAMM="
 .p2align 6"#,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_ctr32_to_aesni = sym super::aes::vg_aes_ctr32_to_aesni::vg_aes_ctr32_to_aesni,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
     )
 }
@@ -215,10 +215,10 @@ pub const VG_AES_GCM_STREAM_DECRYPT_AESNI_FEATURES: verified_garbage_cpu::Featur
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `state` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 2636 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_stream_decrypt_aesni(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_decrypt_aesni(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "jaQk1PX//4uEJDAKAACJRCQEi4QkNAoAAIlEJAiLhCQ4CgAAiUQkDIuEJDwKAACJRCQQi4QkQAoAAIlEJBSLhCRECgAAiUQkGIuEJEgKAACJRCQci4QkTAoAAIlEJCCLhCRQCgAAiUQkJIngg8AsiUQkKItEJCiJmIAAAACJsIQAAACJuIgAAACJqIwAAACJxYt0JAyLRCQEiYWQAAAAi0QkCImFlAAAAItEJBCJhZgAAACLRCQUiYWcAAAAi0QkGImFoAAAAItEJByJhaQAAACLRCQgiYWoAAAAi0QkJImFrAAAAIuFrAAAAIXA"
 je 20f
@@ -306,17 +306,17 @@ jmp 224f
 224:
 .base64 "i50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
 je 228f
-.base64 "i4WQAAAAi42UAAAAifKDwjCBxQACAABVV1NSUVA="
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge0AAgAA"
+.base64 "i4WQAAAAi42UAAAAifKDwjCBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to_aesni}
+.base64 "WFhYWFhYWIHtAAIAAA=="
 jmp 229f
 228:
 229:
 .base64 "i4UUAQAAhcA="
 je 230f
-.base64 "uAAAAACJRkCJRkSJRkiJRkyJ84PDQL8BAAAAi4WQAAAAi42UAAAAifKDwjCBxQACAABVV1NSUVA="
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge0AAgAAi70QAQAAifKDwkCLjRQBAAA="
+.base64 "uAAAAACJRkCJRkSJRkiJRkyJ84PDQL8BAAAAi4WQAAAAi42UAAAAifKDwjCBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to_aesni}
+.base64 "WFhYWFhYWIHtAAIAAIu9EAEAAInyg8JAi40UAQAA"
 232:
 .base64 "D7YCD7YfMdiIB4PHAYPCAYPpAQ=="
 jne 232b
@@ -329,7 +329,7 @@ jmp 222f
 .base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkLAoAAMM="
 .p2align 6"#,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_ctr32_to_aesni = sym super::aes::vg_aes_ctr32_to_aesni::vg_aes_ctr32_to_aesni,
     )
 }
 
@@ -350,10 +350,10 @@ pub const VG_AES_GCM_STREAM_FINISH_AESNI_FEATURES: verified_garbage_cpu::Feature
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2628 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `state` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_stream_finish_aesni(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish_aesni(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "jaQk2PX//4uEJCwKAACJRCQEi4QkMAoAAIlEJAiLhCQ0CgAAiUQkDIuEJDgKAACJRCQQi4QkPAoAAIlEJBSLhCRACgAAiUQkGIuEJEQKAACJRCQci4QkSAoAAIlEJCCJ4IPAKIlEJCSLRCQkiZiAAAAAibCEAAAAibiIAAAAiaiMAAAAicWLdCQMi0QkBImFkAAAAItEJAiJhZQAAACLRCQQiYWYAAAAi0QkFImFnAAAAItEJBiJhaAAAACLRCQciYWkAAAAi0QkIImF1AAAAIuFoAAAAIuNmAAAAIuVoAAAAAuVpAAAAA=="
 je 20f
@@ -375,12 +375,12 @@ jmp 23f
 23:
 .base64 "i4WYAAAAi42cAAAAAckByQHJicLB6h0B0QHAAcABwA/JD8iJTWCJRWSLhaAAAACLjaQAAAAByQHJAcmJwsHqHQHRAcABwAHAD8kPyIlNaIlFbInrg8NgvwEAAACLhZAAAAAF8AAAAInyg8IQgcUAAgAAVVdTUlA="
 call {vg_ghash}
-.base64 "WFhYWFiB7QACAACLRhCLThSLVhiLXhyJRQCJTQSJVQiJXQyJ64PDAL8BAAAAi4WQAAAAi42UAAAAifKBxQACAABVV1NSUVA="
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge0AAgAAi0UAi00Ei1UIi10Mi73UAAAAiQeJTwSJVwiJXwyLnYAAAACLtYQAAACLvYgAAACLrYwAAACNpCQoCgAAww=="
+.base64 "WFhYWFiB7QACAACLRhCLThSLVhiLXhyJRQCJTQSJVQiJXQyJ64PDAL8BAAAAi4WQAAAAi42UAAAAifKBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to_aesni}
+.base64 "WFhYWFhYWIHtAAIAAItFAItNBItVCItdDIu91AAAAIkHiU8EiVcIiV8Mi52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkKAoAAMM="
 .p2align 6"#,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_ctr32_to_aesni = sym super::aes::vg_aes_ctr32_to_aesni::vg_aes_ctr32_to_aesni,
     )
 }
 
@@ -401,10 +401,10 @@ pub const VG_AES_GCM_STREAM_VERIFY_AESNI_FEATURES: verified_garbage_cpu::Feature
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
 /// * `state` must not overlap `ctx` or `tag` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `state` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2636 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_stream_verify_aesni(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify_aesni(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "jaQk1PX//4uEJDAKAACJRCQEi4QkNAoAAIlEJAiLhCQ4CgAAiUQkDIuEJDwKAACJRCQQi4QkQAoAAIlEJBSLhCRECgAAiUQkGIuEJEgKAACJRCQci4QkTAoAAIlEJCCLhCRQCgAAiUQkJIngg8AsiUQkKItEJCiJmIAAAACJsIQAAACJuIgAAACJqIwAAACJxYt0JAyLRCQEiYWQAAAAi0QkCImFlAAAAItEJBCJhZgAAACLRCQUiYWcAAAAi0QkGImFoAAAAItEJByJhaQAAACLRCQgiYXUAAAAi0QkJImFtAAAALkAAAAAi520AAAAg/sE"
 jb 20f
@@ -443,9 +443,9 @@ jmp 210f
 210:
 .base64 "i4WYAAAAi42cAAAAAckByQHJicLB6h0B0QHAAcABwA/JD8iJTWCJRWSLhaAAAACLjaQAAAAByQHJAcmJwsHqHQHRAcABwAHAD8kPyIlNaIlFbInrg8NgvwEAAACLhZAAAAAF8AAAAInyg8IQgcUAAgAAVVdTUlA="
 call {vg_ghash}
-.base64 "WFhYWFiB7QACAACLRhCLThSLVhiLXhyJRQCJTQSJVQiJXQyJ64PDAL8BAAAAi4WQAAAAi42UAAAAifKBxQACAABVV1NSUVA="
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge0AAgAAuAAAAACJhfAAAACJhfQAAACJhfgAAACJhfwAAACJ74PHAInqgcLwAAAAi420AAAA"
+.base64 "WFhYWFiB7QACAACLRhCLThSLVhiLXhyJRQCJTQSJVQiJXQyJ64PDAL8BAAAAi4WQAAAAi42UAAAAifKBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to_aesni}
+.base64 "WFhYWFhYWIHtAAIAALgAAAAAiYXwAAAAiYX0AAAAiYX4AAAAiYX8AAAAie+DxwCJ6oHC8AAAAIuNtAAAAA=="
 212:
 .base64 "D7YHiAKDxwGDwgGD6QE="
 jne 212b
@@ -457,7 +457,7 @@ jmp 25f
 .base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkLAoAAMM="
 .p2align 6"#,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_ctr32_to_aesni = sym super::aes::vg_aes_ctr32_to_aesni::vg_aes_ctr32_to_aesni,
     )
 }
 
@@ -481,10 +481,10 @@ pub const VG_AES_GCM_SEAL_AESNI_FEATURES: verified_garbage_cpu::Features = verif
 /// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `data` and `tag` must not overlap each other, `ctx`, `nonce` or `aad` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2636 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_seal_aesni(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_aesni(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "jaQk1PX//4uEJDAKAACJRCQEi4QkNAoAAIlEJAiLhCQ4CgAAiUQkDIuEJDwKAACJRCQQi4QkQAoAAIlEJBSLhCRECgAAiUQkGIuEJEgKAACJRCQci4QkTAoAAIlEJCCLhCRQCgAAiUQkJIngg8AsiUQkKItEJCiJmIAAAACJsIQAAACJuIgAAACJqIwAAACJxYnug8YQi0QkBImFkAAAAItEJAiJhZQAAACLRCQMiYUQAQAAi0QkEImFFAEAAItEJBCJhcAAAACLRCQUiYWwAAAAi0QkGImFmAAAAItEJByJhagAAACLRCQgiYWsAAAAi0QkJImF1AAAALgAAAAAiYW8AAAAi4XAAAAAg/gM"
 je 20f
@@ -628,17 +628,17 @@ jmp 239f
 239:
 .base64 "i50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
 je 243f
-.base64 "i4WQAAAAi42UAAAAifKDwjCBxQACAABVV1NSUVA="
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge0AAgAA"
+.base64 "i4WQAAAAi42UAAAAifKDwjCBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to_aesni}
+.base64 "WFhYWFhYWIHtAAIAAA=="
 jmp 244f
 243:
 244:
 .base64 "i4UUAQAAhcA="
 je 245f
-.base64 "uAAAAACJRkCJRkSJRkiJRkyJ84PDQL8BAAAAi4WQAAAAi42UAAAAifKDwjCBxQACAABVV1NSUVA="
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge0AAgAAi70QAQAAifKDwkCLjRQBAAA="
+.base64 "uAAAAACJRkCJRkSJRkiJRkyJ84PDQL8BAAAAi4WQAAAAi42UAAAAifKDwjCBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to_aesni}
+.base64 "WFhYWFhYWIHtAAIAAIu9EAEAAInyg8JAi40UAQAA"
 247:
 .base64 "D7YCD7YfMdiIB4PHAYPCAYPpAQ=="
 jne 247b
@@ -707,12 +707,12 @@ jmp 263f
 263:
 .base64 "i4WYAAAAi428AAAAAckByQHJicLB6h0B0QHAAcABwA/JD8iJTWCJRWSLhawAAACLjbwAAAAByQHJAcmJwsHqHQHRAcABwAHAD8kPyIlNaIlFbInrg8NgvwEAAACLhZAAAAAF8AAAAInyg8IQgcUAAgAAVVdTUlA="
 call {vg_ghash}
-.base64 "WFhYWFiB7QACAACLRhCLThSLVhiLXhyJRQCJTQSJVQiJXQyJ64PDAL8BAAAAi4WQAAAAi42UAAAAifKBxQACAABVV1NSUVA="
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge0AAgAAi0UAi00Ei1UIi10Mi73UAAAAiQeJTwSJVwiJXwyLnYAAAACLtYQAAACLvYgAAACLrYwAAACNpCQsCgAAww=="
+.base64 "WFhYWFiB7QACAACLRhCLThSLVhiLXhyJRQCJTQSJVQiJXQyJ64PDAL8BAAAAi4WQAAAAi42UAAAAifKBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to_aesni}
+.base64 "WFhYWFhYWIHtAAIAAItFAItNBItVCItdDIu91AAAAIkHiU8EiVcIiV8Mi52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkLAoAAMM="
 .p2align 6"#,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_ctr32_to_aesni = sym super::aes::vg_aes_ctr32_to_aesni::vg_aes_ctr32_to_aesni,
     )
 }
 
@@ -736,10 +736,10 @@ pub const VG_AES_GCM_OPEN_AESNI_FEATURES: verified_garbage_cpu::Features = verif
 /// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `data` must not overlap `ctx`, `nonce`, `aad` or `tag` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2636 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2640 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_open_aesni(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_open_aesni(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "jaQk0PX//4uEJDQKAACJRCQEi4QkOAoAAIlEJAiLhCQ8CgAAiUQkDIuEJEAKAACJRCQQi4QkRAoAAIlEJBSLhCRICgAAiUQkGIuEJEwKAACJRCQci4QkUAoAAIlEJCCLhCRUCgAAiUQkJIuEJFgKAACJRCQoieCDwDCJRCQsi0QkLImYgAAAAImwhAAAAIm4iAAAAImojAAAAInFie6DxhCLRCQEiYWQAAAAi0QkCImFlAAAAItEJAyJhRABAACLRCQQiYUUAQAAi0QkEImFwAAAAItEJBSJhbAAAACLRCQYiYWYAAAAi0QkHImFqAAAAItEJCCJhawAAACLRCQkiYXUAAAAi0QkKImFtAAAALgAAAAAiYW8AAAAuQAAAACLnbQAAACD+wQ="
 jb 20f
@@ -936,9 +936,9 @@ jmp 257f
 257:
 .base64 "i4WYAAAAi428AAAAAckByQHJicLB6h0B0QHAAcABwA/JD8iJTWCJRWSLhawAAACLjbwAAAAByQHJAcmJwsHqHQHRAcABwAHAD8kPyIlNaIlFbInrg8NgvwEAAACLhZAAAAAF8AAAAInyg8IQgcUAAgAAVVdTUlA="
 call {vg_ghash}
-.base64 "WFhYWFiB7QACAACLRhCLThSLVhiLXhyJRXCJTXSJVXiJXXyJ64PDcL8BAAAAi4WQAAAAi42UAAAAifKBxQACAABVV1NSUVA="
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge0AAgAAuAAAAACJhcQAAACJhcgAAACJhcwAAACJhdAAAACLvdQAAACJ6oHCxAAAAIuNtAAAAA=="
+.base64 "WFhYWFiB7QACAACLRhCLThSLVhiLXhyJRXCJTXSJVXiJXXyJ64PDcL8BAAAAi4WQAAAAi42UAAAAifKBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to_aesni}
+.base64 "WFhYWFhYWIHtAAIAALgAAAAAiYXEAAAAiYXIAAAAiYXMAAAAiYXQAAAAi73UAAAAieqBwsQAAACLjbQAAAA="
 259:
 .base64 "D7YHiAKDxwGDwgGD6QE="
 jne 259b
@@ -967,17 +967,17 @@ jmp 266f
 266:
 .base64 "i50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
 je 270f
-.base64 "i4WQAAAAi42UAAAAifKDwjCBxQACAABVV1NSUVA="
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge0AAgAA"
+.base64 "i4WQAAAAi42UAAAAifKDwjCBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to_aesni}
+.base64 "WFhYWFhYWIHtAAIAAA=="
 jmp 271f
 270:
 271:
 .base64 "i4UUAQAAhcA="
 je 272f
-.base64 "uAAAAACJRkCJRkSJRkiJRkyJ84PDQL8BAAAAi4WQAAAAi42UAAAAifKDwjCBxQACAABVV1NSUVA="
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge0AAgAAi70QAQAAifKDwkCLjRQBAAA="
+.base64 "uAAAAACJRkCJRkSJRkiJRkyJ84PDQL8BAAAAi4WQAAAAi42UAAAAifKDwjCBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to_aesni}
+.base64 "WFhYWFhYWIHtAAIAAIu9EAEAAInyg8JAi40UAQAA"
 274:
 .base64 "D7YCD7YfMdiIB4PHAYPCAYPpAQ=="
 jne 274b
@@ -998,7 +998,7 @@ jmp 25f
 .base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkMAoAAMM="
 .p2align 6"#,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_ctr32_to_aesni = sym super::aes::vg_aes_ctr32_to_aesni::vg_aes_ctr32_to_aesni,
     )
 }
 
@@ -1024,10 +1024,10 @@ pub const VG_AES_GCM_SEAL_GATHER_AESNI_FEATURES: verified_garbage_cpu::Features 
 /// * `rounds` must be 10, 12 or 14.
 /// * The slices `src` lists must be `len` bytes long in all.
 /// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src` or the slices `src` lists (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2684 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2688 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_seal_gather_aesni(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_gather_aesni(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "jWQk0IlcJCSJdCQoiXwkLItEJDSJBCSLRCQ4iUQkBItEJDyJRCQIi0QkQIlEJAyLRCREiUQkEItEJEiJRCQUi0QkVIlEJBiLRCRYiUQkHItEJFyJRCQgi3QkTItcJFCLVCRUg/sA"
 je 20f
@@ -1082,44 +1082,265 @@ pub const VG_AES_GCM_OPEN_TO_AESNI_FEATURES: verified_garbage_cpu::Features = ve
 /// * `rounds` must be 10, 12 or 14.
 /// * `dst_len` must equal `len`.
 /// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src` or `tag` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2688 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2696 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_open_to_aesni(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_open_to_aesni(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "jWQk0Il0JCiJfCQsi0QkNIkEJItEJDiJRCQEi0QkPIlEJAiLRCRAiUQkDItEJESJRCQQi0QkSIlEJBSLRCRUiUQkGItEJFCJRCQci0QkXIlEJCCLRCRgiUQkJInmg8ZMi1QkVIs+i04EwekCg/kA"
-je 20f
+        r#".base64 "jaQkyPX//4uEJDwKAACJRCQEi4QkQAoAAIlEJAiLhCRECgAAiUQkDIuEJEgKAACJRCQQi4QkTAoAAIlEJBSLhCRQCgAAiUQkGIuEJFQKAACJRCQci4QkWAoAAIlEJCCLhCRcCgAAiUQkJIuEJGAKAACJRCQoi4QkZAoAAIlEJCyLhCRoCgAAiUQkMIngg8A4iUQkNI1kJNCLRCRUiQQki0QkNIlEJASLRCQ4iUQkCItEJDyJRCQMi0QkQIlEJBCLRCREiUQkFItEJEiJRCQYi0QkTIlEJByLRCRQiUQkIItEJFyJRCQki0QkYIlEJCiLRCRkiUQkLItEJCyJmIAAAACJsIQAAACJuIgAAACJqIwAAACJxYnug8YQi0QkBImFkAAAAItEJAiJhZQAAACLRCQMiYUQAQAAi0QkEImFFAEAAItEJBCJhcAAAACLRCQUiYWwAAAAi0QkGImFmAAAAItEJByJhagAAACLRCQgiYWsAAAAi0QkJImF1AAAAItEJCiJhbQAAAC4AAAAAImFvAAAALkAAAAAi520AAAAg/sE"
+jb 20f
+.base64 "g/sR"
+jb 22f
+jmp 23f
 22:
-.base64 "iweJAoPHBIPCBIPpAQ=="
-jne 22b
+.base64 "uQEAAAA="
+23:
 jmp 21f
 20:
 21:
-.base64 "i04Eg+ED"
-je 23f
-25:
-.base64 "D7YHiAKDxwGDwgGD6QE="
-jne 25b
-jmp 24f
-23:
-24:
-call {vg_aes_gcm_open_aesni}
-.base64 "hcA="
+.base64 "hck="
+je 24f
+.base64 "i4XAAAAAg/gM"
 je 26f
-jmp 27f
-26:
-.base64 "i1QkVItMJFC4AAAAAIP5AA=="
+.base64 "uAAAAACJBolGBIlGCIlGDImFGAEAAIuFFAEAAIXA"
 je 28f
+.base64 "i4UYAQAAhcA="
+je 210f
+.base64 "uRAAAAArjRgBAACLhRQBAAA5yA=="
+jb 212f
+jmp 213f
+212:
+.base64 "icE="
+213:
+.base64 "i70QAQAAifKDwiADlRgBAACLhRQBAAApyImFFAEAAIuFGAEAAAHIiYUYAQAAifgByImFEAEAAA=="
+214:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 214b
+.base64 "i4UYAQAAg/gQ"
+je 215f
+jmp 216f
+215:
+.base64 "ifODwyC/AQAAAIuFkAAAAAXwAAAAifKDwgCBxQACAABVV1NSUA=="
+call {vg_ghash}
+.base64 "WFhYWFiB7QACAAA="
+216:
+jmp 211f
 210:
-.base64 "iAKDwgGD6QE="
-jne 210b
+211:
+.base64 "i50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
+je 217f
+.base64 "i4WQAAAABfAAAACJ8oPCAIHFAAIAAFVXU1JQ"
+call {vg_ghash}
+.base64 "WFhYWFiB7QACAAA="
+jmp 218f
+217:
+218:
+.base64 "i40UAQAAhck="
+je 219f
+.base64 "i70QAQAAifKDwiA="
+221:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 221b
+jmp 220f
+219:
+220:
 jmp 29f
 28:
 29:
+.base64 "i4XAAAAAg+APiYUYAQAAi40YAQAAhck="
+je 222f
+.base64 "uAAAAACJRWCJRWSJRWiJRWyJ94PHIInqg8Jg"
+224:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 224b
+.base64 "ieuDw2C/AQAAAIuFkAAAAAXwAAAAifKDwgCBxQACAABVV1NSUA=="
+call {vg_ghash}
+.base64 "WFhYWFiB7QACAAA="
+jmp 223f
+222:
+223:
+.base64 "i4W8AAAAi428AAAAAckByQHJicLB6h0B0QHAAcABwA/JD8iJTWCJRWSLhcAAAACLjbwAAAAByQHJAcmJwsHqHQHRAcABwAHAD8kPyIlNaIlFbInrg8NgvwEAAACLhZAAAAAF8AAAAInyg8IAgcUAAgAAVVdTUlA="
+call {vg_ghash}
+.base64 "WFhYWFiB7QACAAA="
+jmp 27f
+26:
+.base64 "i70QAQAAiweLTwSLVwiJBolOBIlWCLgAAAABiUYM"
 27:
-.base64 "i3QkKIt8JCyNZCQwww=="
+.base64 "iwaJRjCLRgSJRjSLRgiJRjiLRgwPyIPAAQ/IiUY8uAAAAACJRhCJRhSJRhiJRhyLhbAAAACJhRABAACLhZgAAACJhRQBAAC4AAAAAImFGAEAAIuFFAEAAIXA"
+je 225f
+.base64 "i4UYAQAAhcA="
+je 227f
+.base64 "uRAAAAArjRgBAACLhRQBAAA5yA=="
+jb 229f
+jmp 230f
+229:
+.base64 "icE="
+230:
+.base64 "i70QAQAAifKDwiADlRgBAACLhRQBAAApyImFFAEAAIuFGAEAAAHIiYUYAQAAifgByImFEAEAAA=="
+231:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 231b
+.base64 "i4UYAQAAg/gQ"
+je 232f
+jmp 233f
+232:
+.base64 "ifODwyC/AQAAAIuFkAAAAAXwAAAAifKDwhCBxQACAABVV1NSUA=="
+call {vg_ghash}
+.base64 "WFhYWFiB7QACAAA="
+233:
+jmp 228f
+227:
+228:
+.base64 "i50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
+je 234f
+.base64 "i4WQAAAABfAAAACJ8oPCEIHFAAIAAFVXU1JQ"
+call {vg_ghash}
+.base64 "WFhYWFiB7QACAAA="
+jmp 235f
+234:
+235:
+.base64 "i40UAQAAhck="
+je 236f
+.base64 "i70QAQAAifKDwiA="
+238:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 238b
+jmp 237f
+236:
+237:
+jmp 226f
+225:
+226:
+.base64 "i4WYAAAAg+APiYUYAQAAi40YAQAAhck="
+je 239f
+.base64 "uAAAAACJRWCJRWSJRWiJRWyJ94PHIInqg8Jg"
+241:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 241b
+.base64 "ieuDw2C/AQAAAIuFkAAAAAXwAAAAifKDwhCBxQACAABVV1NSUA=="
+call {vg_ghash}
+.base64 "WFhYWFiB7QACAAA="
+jmp 240f
+239:
+240:
+.base64 "i4WoAAAAiYUQAQAAi4WsAAAAiYUUAQAAuAAAAACJhRgBAACLhRQBAACFwA=="
+je 242f
+.base64 "i4UYAQAAhcA="
+je 244f
+.base64 "uRAAAAArjRgBAACLhRQBAAA5yA=="
+jb 246f
+jmp 247f
+246:
+.base64 "icE="
+247:
+.base64 "i70QAQAAifKDwiADlRgBAACLhRQBAAApyImFFAEAAIuFGAEAAAHIiYUYAQAAifgByImFEAEAAA=="
+248:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 248b
+.base64 "i4UYAQAAg/gQ"
+je 249f
+jmp 250f
+249:
+.base64 "ifODwyC/AQAAAIuFkAAAAAXwAAAAifKDwhCBxQACAABVV1NSUA=="
+call {vg_ghash}
+.base64 "WFhYWFiB7QACAAA="
+250:
+jmp 245f
+244:
+245:
+.base64 "i50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
+je 251f
+.base64 "i4WQAAAABfAAAACJ8oPCEIHFAAIAAFVXU1JQ"
+call {vg_ghash}
+.base64 "WFhYWFiB7QACAAA="
+jmp 252f
+251:
+252:
+.base64 "i40UAQAAhck="
+je 253f
+.base64 "i70QAQAAifKDwiA="
+255:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 255b
+jmp 254f
+253:
+254:
+jmp 243f
+242:
+243:
+.base64 "i4WsAAAAg+APiYUYAQAAi40YAQAAhck="
+je 256f
+.base64 "uAAAAACJRWCJRWSJRWiJRWyJ94PHIInqg8Jg"
+258:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 258b
+.base64 "ieuDw2C/AQAAAIuFkAAAAAXwAAAAifKDwhCBxQACAABVV1NSUA=="
+call {vg_ghash}
+.base64 "WFhYWFiB7QACAAA="
+jmp 257f
+256:
+257:
+.base64 "i4WYAAAAi428AAAAAckByQHJicLB6h0B0QHAAcABwA/JD8iJTWCJRWSLhawAAACLjbwAAAAByQHJAcmJwsHqHQHRAcABwAHAD8kPyIlNaIlFbInrg8NgvwEAAACLhZAAAAAF8AAAAInyg8IQgcUAAgAAVVdTUlA="
+call {vg_ghash}
+.base64 "WFhYWFiB7QACAACLRhCLThSLVhiLXhyJRXCJTXSJVXiJXXyJ64PDcL8BAAAAi4WQAAAAi42UAAAAifKBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to_aesni}
+.base64 "WFhYWFhYWIHtAAIAALgAAAAAiYXEAAAAiYXIAAAAiYXMAAAAiYXQAAAAi73UAAAAieqBwsQAAACLjbQAAAA="
+259:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 259b
+.base64 "uAAAAACJhfAAAACJhfQAAACJhfgAAACJhfwAAACJ74PHcInqgcLwAAAAi420AAAA"
+260:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 260b
+.base64 "i4XwAAAAM4XEAAAAi430AAAAM43IAAAACciLjfgAAAAzjcwAAAAJyIuN/AAAADON0AAAAAnIg/gBuAAAAACD0ACJhbgAAACFwA=="
+je 261f
+.base64 "i52oAAAAi72sAAAAwe8Ehf8="
+je 263f
+.base64 "i4WQAAAAi42UAAAAifKDwjCBxQACAABVV1NSUVA="
+call {vg_aes_ctr32_to_aesni}
+.base64 "WFhYWFhYge0AAgAA"
+jmp 264f
+263:
+264:
+.base64 "i42sAAAAg+EPhck="
+je 265f
+.base64 "uAAAAACJRkCJRkSJRkiJRkyJ84PDQL8BAAAAi4WQAAAAi42UAAAAifKDwjCBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to_aesni}
+.base64 "WFhYWFhYWIHtAAIAAIuFrAAAAInBg+EPKciJ8oPCQIs8JAHHi7WoAAAAAcY="
+267:
+.base64 "D7YCD7YeMdiIB4PHAYPGAYPCAYPpAQ=="
+jne 267b
+.base64 "ie6DxhA="
+jmp 266f
+265:
+266:
+jmp 262f
+261:
+.base64 "ixQki42sAAAAuAAAAACD+QA="
+je 268f
+270:
+.base64 "iAKDwgGD6QE="
+jne 270b
+jmp 269f
+268:
+269:
+262:
+.base64 "i4W4AAAA"
+jmp 25f
+24:
+.base64 "ixQki42sAAAAuAAAAACD+QA="
+je 271f
+273:
+.base64 "iAKDwgGD6QE="
+jne 273b
+jmp 272f
+271:
+272:
+25:
+.base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjWQkMI2kJDgKAADD"
 .p2align 6"#,
-        vg_aes_gcm_open_aesni = sym super::gcm::vg_aes_gcm_open_aesni,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_aes_ctr32_to_aesni = sym super::aes::vg_aes_ctr32_to_aesni::vg_aes_ctr32_to_aesni,
     )
 }
 
@@ -1141,10 +1362,10 @@ pub const VG_AES_GCM_STREAM_ENCRYPT_AESNI_PCLMUL_FEATURES: verified_garbage_cpu:
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `state` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 2636 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_stream_encrypt_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_encrypt_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "jaQk1PX//4uEJDAKAACJRCQEi4QkNAoAAIlEJAiLhCQ4CgAAiUQkDIuEJDwKAACJRCQQi4QkQAoAAIlEJBSLhCRECgAAiUQkGIuEJEgKAACJRCQci4QkTAoAAIlEJCCLhCRQCgAAiUQkJIngg8AsiUQkKItEJCiJmIAAAACJsIQAAACJuIgAAACJqIwAAACJxYt0JAyLRCQEiYWQAAAAi0QkCImFlAAAAItEJBCJhZgAAACLRCQUiYWcAAAAi0QkGImFoAAAAItEJByJhaQAAACLRCQgiYWoAAAAi0QkJImFrAAAAIuFqAAAAImFEAEAAIuFrAAAAImFFAEAAIuFoAAAAIPgD4mFGAEAAIuFFAEAAIXA"
 je 20f
@@ -1165,17 +1386,17 @@ jmp 23f
 23:
 .base64 "i50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
 je 27f
-.base64 "i4WQAAAAi42UAAAAifKDwjCBxQACAABVV1NSUVA="
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge0AAgAA"
+.base64 "i4WQAAAAi42UAAAAifKDwjCBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to_aesni}
+.base64 "WFhYWFhYWIHtAAIAAA=="
 jmp 28f
 27:
 28:
 .base64 "i4UUAQAAhcA="
 je 29f
-.base64 "uAAAAACJRkCJRkSJRkiJRkyJ84PDQL8BAAAAi4WQAAAAi42UAAAAifKDwjCBxQACAABVV1NSUVA="
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge0AAgAAi70QAQAAifKDwkCLjRQBAAA="
+.base64 "uAAAAACJRkCJRkSJRkiJRkyJ84PDQL8BAAAAi4WQAAAAi42UAAAAifKDwjCBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to_aesni}
+.base64 "WFhYWFhYWIHtAAIAAIu9EAEAAInyg8JAi40UAQAA"
 211:
 .base64 "D7YCD7YfMdiIB4PHAYPCAYPpAQ=="
 jne 211b
@@ -1254,7 +1475,7 @@ jmp 213f
 213:
 .base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkLAoAAMM="
 .p2align 6"#,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_ctr32_to_aesni = sym super::aes::vg_aes_ctr32_to_aesni::vg_aes_ctr32_to_aesni,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
     )
 }
@@ -1277,10 +1498,10 @@ pub const VG_AES_GCM_STREAM_DECRYPT_AESNI_PCLMUL_FEATURES: verified_garbage_cpu:
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `state` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 2636 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_stream_decrypt_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_decrypt_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "jaQk1PX//4uEJDAKAACJRCQEi4QkNAoAAIlEJAiLhCQ4CgAAiUQkDIuEJDwKAACJRCQQi4QkQAoAAIlEJBSLhCRECgAAiUQkGIuEJEgKAACJRCQci4QkTAoAAIlEJCCLhCRQCgAAiUQkJIngg8AsiUQkKItEJCiJmIAAAACJsIQAAACJuIgAAACJqIwAAACJxYt0JAyLRCQEiYWQAAAAi0QkCImFlAAAAItEJBCJhZgAAACLRCQUiYWcAAAAi0QkGImFoAAAAItEJByJhaQAAACLRCQgiYWoAAAAi0QkJImFrAAAAIuFrAAAAIXA"
 je 20f
@@ -1368,17 +1589,17 @@ jmp 224f
 224:
 .base64 "i50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
 je 228f
-.base64 "i4WQAAAAi42UAAAAifKDwjCBxQACAABVV1NSUVA="
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge0AAgAA"
+.base64 "i4WQAAAAi42UAAAAifKDwjCBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to_aesni}
+.base64 "WFhYWFhYWIHtAAIAAA=="
 jmp 229f
 228:
 229:
 .base64 "i4UUAQAAhcA="
 je 230f
-.base64 "uAAAAACJRkCJRkSJRkiJRkyJ84PDQL8BAAAAi4WQAAAAi42UAAAAifKDwjCBxQACAABVV1NSUVA="
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge0AAgAAi70QAQAAifKDwkCLjRQBAAA="
+.base64 "uAAAAACJRkCJRkSJRkiJRkyJ84PDQL8BAAAAi4WQAAAAi42UAAAAifKDwjCBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to_aesni}
+.base64 "WFhYWFhYWIHtAAIAAIu9EAEAAInyg8JAi40UAQAA"
 232:
 .base64 "D7YCD7YfMdiIB4PHAYPCAYPpAQ=="
 jne 232b
@@ -1391,7 +1612,7 @@ jmp 222f
 .base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkLAoAAMM="
 .p2align 6"#,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_ctr32_to_aesni = sym super::aes::vg_aes_ctr32_to_aesni::vg_aes_ctr32_to_aesni,
     )
 }
 
@@ -1412,10 +1633,10 @@ pub const VG_AES_GCM_STREAM_FINISH_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2628 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `state` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_stream_finish_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "jaQk2PX//4uEJCwKAACJRCQEi4QkMAoAAIlEJAiLhCQ0CgAAiUQkDIuEJDgKAACJRCQQi4QkPAoAAIlEJBSLhCRACgAAiUQkGIuEJEQKAACJRCQci4QkSAoAAIlEJCCJ4IPAKIlEJCSLRCQkiZiAAAAAibCEAAAAibiIAAAAiaiMAAAAicWLdCQMi0QkBImFkAAAAItEJAiJhZQAAACLRCQQiYWYAAAAi0QkFImFnAAAAItEJBiJhaAAAACLRCQciYWkAAAAi0QkIImF1AAAAIuFoAAAAIuNmAAAAIuVoAAAAAuVpAAAAA=="
 je 20f
@@ -1437,12 +1658,12 @@ jmp 23f
 23:
 .base64 "i4WYAAAAi42cAAAAAckByQHJicLB6h0B0QHAAcABwA/JD8iJTWCJRWSLhaAAAACLjaQAAAAByQHJAcmJwsHqHQHRAcABwAHAD8kPyIlNaIlFbInrg8NgvwEAAACLhZAAAAAF8AAAAInyg8IQgcUAAgAAVVdTUlA="
 call {vg_ghash_pclmul}
-.base64 "WFhYWFiB7QACAACLRhCLThSLVhiLXhyJRQCJTQSJVQiJXQyJ64PDAL8BAAAAi4WQAAAAi42UAAAAifKBxQACAABVV1NSUVA="
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge0AAgAAi0UAi00Ei1UIi10Mi73UAAAAiQeJTwSJVwiJXwyLnYAAAACLtYQAAACLvYgAAACLrYwAAACNpCQoCgAAww=="
+.base64 "WFhYWFiB7QACAACLRhCLThSLVhiLXhyJRQCJTQSJVQiJXQyJ64PDAL8BAAAAi4WQAAAAi42UAAAAifKBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to_aesni}
+.base64 "WFhYWFhYWIHtAAIAAItFAItNBItVCItdDIu91AAAAIkHiU8EiVcIiV8Mi52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkKAoAAMM="
 .p2align 6"#,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_ctr32_to_aesni = sym super::aes::vg_aes_ctr32_to_aesni::vg_aes_ctr32_to_aesni,
     )
 }
 
@@ -1463,10 +1684,10 @@ pub const VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
 /// * `state` must not overlap `ctx` or `tag` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `state` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2636 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_stream_verify_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "jaQk1PX//4uEJDAKAACJRCQEi4QkNAoAAIlEJAiLhCQ4CgAAiUQkDIuEJDwKAACJRCQQi4QkQAoAAIlEJBSLhCRECgAAiUQkGIuEJEgKAACJRCQci4QkTAoAAIlEJCCLhCRQCgAAiUQkJIngg8AsiUQkKItEJCiJmIAAAACJsIQAAACJuIgAAACJqIwAAACJxYt0JAyLRCQEiYWQAAAAi0QkCImFlAAAAItEJBCJhZgAAACLRCQUiYWcAAAAi0QkGImFoAAAAItEJByJhaQAAACLRCQgiYXUAAAAi0QkJImFtAAAALkAAAAAi520AAAAg/sE"
 jb 20f
@@ -1505,9 +1726,9 @@ jmp 210f
 210:
 .base64 "i4WYAAAAi42cAAAAAckByQHJicLB6h0B0QHAAcABwA/JD8iJTWCJRWSLhaAAAACLjaQAAAAByQHJAcmJwsHqHQHRAcABwAHAD8kPyIlNaIlFbInrg8NgvwEAAACLhZAAAAAF8AAAAInyg8IQgcUAAgAAVVdTUlA="
 call {vg_ghash_pclmul}
-.base64 "WFhYWFiB7QACAACLRhCLThSLVhiLXhyJRQCJTQSJVQiJXQyJ64PDAL8BAAAAi4WQAAAAi42UAAAAifKBxQACAABVV1NSUVA="
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge0AAgAAuAAAAACJhfAAAACJhfQAAACJhfgAAACJhfwAAACJ74PHAInqgcLwAAAAi420AAAA"
+.base64 "WFhYWFiB7QACAACLRhCLThSLVhiLXhyJRQCJTQSJVQiJXQyJ64PDAL8BAAAAi4WQAAAAi42UAAAAifKBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to_aesni}
+.base64 "WFhYWFhYWIHtAAIAALgAAAAAiYXwAAAAiYX0AAAAiYX4AAAAiYX8AAAAie+DxwCJ6oHC8AAAAIuNtAAAAA=="
 212:
 .base64 "D7YHiAKDxwGDwgGD6QE="
 jne 212b
@@ -1519,7 +1740,7 @@ jmp 25f
 .base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkLAoAAMM="
 .p2align 6"#,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_ctr32_to_aesni = sym super::aes::vg_aes_ctr32_to_aesni::vg_aes_ctr32_to_aesni,
     )
 }
 
@@ -1543,10 +1764,10 @@ pub const VG_AES_GCM_SEAL_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features 
 /// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `data` and `tag` must not overlap each other, `ctx`, `nonce` or `aad` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2636 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_seal_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "jaQk1PX//4uEJDAKAACJRCQEi4QkNAoAAIlEJAiLhCQ4CgAAiUQkDIuEJDwKAACJRCQQi4QkQAoAAIlEJBSLhCRECgAAiUQkGIuEJEgKAACJRCQci4QkTAoAAIlEJCCLhCRQCgAAiUQkJIngg8AsiUQkKItEJCiJmIAAAACJsIQAAACJuIgAAACJqIwAAACJxYnug8YQi0QkBImFkAAAAItEJAiJhZQAAACLRCQMiYUQAQAAi0QkEImFFAEAAItEJBCJhcAAAACLRCQUiYWwAAAAi0QkGImFmAAAAItEJByJhagAAACLRCQgiYWsAAAAi0QkJImF1AAAALgAAAAAiYW8AAAAi4XAAAAAg/gM"
 je 20f
@@ -1690,17 +1911,17 @@ jmp 239f
 239:
 .base64 "i50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
 je 243f
-.base64 "i4WQAAAAi42UAAAAifKDwjCBxQACAABVV1NSUVA="
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge0AAgAA"
+.base64 "i4WQAAAAi42UAAAAifKDwjCBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to_aesni}
+.base64 "WFhYWFhYWIHtAAIAAA=="
 jmp 244f
 243:
 244:
 .base64 "i4UUAQAAhcA="
 je 245f
-.base64 "uAAAAACJRkCJRkSJRkiJRkyJ84PDQL8BAAAAi4WQAAAAi42UAAAAifKDwjCBxQACAABVV1NSUVA="
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge0AAgAAi70QAQAAifKDwkCLjRQBAAA="
+.base64 "uAAAAACJRkCJRkSJRkiJRkyJ84PDQL8BAAAAi4WQAAAAi42UAAAAifKDwjCBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to_aesni}
+.base64 "WFhYWFhYWIHtAAIAAIu9EAEAAInyg8JAi40UAQAA"
 247:
 .base64 "D7YCD7YfMdiIB4PHAYPCAYPpAQ=="
 jne 247b
@@ -1769,12 +1990,12 @@ jmp 263f
 263:
 .base64 "i4WYAAAAi428AAAAAckByQHJicLB6h0B0QHAAcABwA/JD8iJTWCJRWSLhawAAACLjbwAAAAByQHJAcmJwsHqHQHRAcABwAHAD8kPyIlNaIlFbInrg8NgvwEAAACLhZAAAAAF8AAAAInyg8IQgcUAAgAAVVdTUlA="
 call {vg_ghash_pclmul}
-.base64 "WFhYWFiB7QACAACLRhCLThSLVhiLXhyJRQCJTQSJVQiJXQyJ64PDAL8BAAAAi4WQAAAAi42UAAAAifKBxQACAABVV1NSUVA="
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge0AAgAAi0UAi00Ei1UIi10Mi73UAAAAiQeJTwSJVwiJXwyLnYAAAACLtYQAAACLvYgAAACLrYwAAACNpCQsCgAAww=="
+.base64 "WFhYWFiB7QACAACLRhCLThSLVhiLXhyJRQCJTQSJVQiJXQyJ64PDAL8BAAAAi4WQAAAAi42UAAAAifKBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to_aesni}
+.base64 "WFhYWFhYWIHtAAIAAItFAItNBItVCItdDIu91AAAAIkHiU8EiVcIiV8Mi52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkLAoAAMM="
 .p2align 6"#,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_ctr32_to_aesni = sym super::aes::vg_aes_ctr32_to_aesni::vg_aes_ctr32_to_aesni,
     )
 }
 
@@ -1798,10 +2019,10 @@ pub const VG_AES_GCM_OPEN_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features 
 /// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `data` must not overlap `ctx`, `nonce`, `aad` or `tag` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2636 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2640 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_open_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_open_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "jaQk0PX//4uEJDQKAACJRCQEi4QkOAoAAIlEJAiLhCQ8CgAAiUQkDIuEJEAKAACJRCQQi4QkRAoAAIlEJBSLhCRICgAAiUQkGIuEJEwKAACJRCQci4QkUAoAAIlEJCCLhCRUCgAAiUQkJIuEJFgKAACJRCQoieCDwDCJRCQsi0QkLImYgAAAAImwhAAAAIm4iAAAAImojAAAAInFie6DxhCLRCQEiYWQAAAAi0QkCImFlAAAAItEJAyJhRABAACLRCQQiYUUAQAAi0QkEImFwAAAAItEJBSJhbAAAACLRCQYiYWYAAAAi0QkHImFqAAAAItEJCCJhawAAACLRCQkiYXUAAAAi0QkKImFtAAAALgAAAAAiYW8AAAAuQAAAACLnbQAAACD+wQ="
 jb 20f
@@ -1998,9 +2219,9 @@ jmp 257f
 257:
 .base64 "i4WYAAAAi428AAAAAckByQHJicLB6h0B0QHAAcABwA/JD8iJTWCJRWSLhawAAACLjbwAAAAByQHJAcmJwsHqHQHRAcABwAHAD8kPyIlNaIlFbInrg8NgvwEAAACLhZAAAAAF8AAAAInyg8IQgcUAAgAAVVdTUlA="
 call {vg_ghash_pclmul}
-.base64 "WFhYWFiB7QACAACLRhCLThSLVhiLXhyJRXCJTXSJVXiJXXyJ64PDcL8BAAAAi4WQAAAAi42UAAAAifKBxQACAABVV1NSUVA="
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge0AAgAAuAAAAACJhcQAAACJhcgAAACJhcwAAACJhdAAAACLvdQAAACJ6oHCxAAAAIuNtAAAAA=="
+.base64 "WFhYWFiB7QACAACLRhCLThSLVhiLXhyJRXCJTXSJVXiJXXyJ64PDcL8BAAAAi4WQAAAAi42UAAAAifKBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to_aesni}
+.base64 "WFhYWFhYWIHtAAIAALgAAAAAiYXEAAAAiYXIAAAAiYXMAAAAiYXQAAAAi73UAAAAieqBwsQAAACLjbQAAAA="
 259:
 .base64 "D7YHiAKDxwGDwgGD6QE="
 jne 259b
@@ -2029,17 +2250,17 @@ jmp 266f
 266:
 .base64 "i50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
 je 270f
-.base64 "i4WQAAAAi42UAAAAifKDwjCBxQACAABVV1NSUVA="
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge0AAgAA"
+.base64 "i4WQAAAAi42UAAAAifKDwjCBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to_aesni}
+.base64 "WFhYWFhYWIHtAAIAAA=="
 jmp 271f
 270:
 271:
 .base64 "i4UUAQAAhcA="
 je 272f
-.base64 "uAAAAACJRkCJRkSJRkiJRkyJ84PDQL8BAAAAi4WQAAAAi42UAAAAifKDwjCBxQACAABVV1NSUVA="
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge0AAgAAi70QAQAAifKDwkCLjRQBAAA="
+.base64 "uAAAAACJRkCJRkSJRkiJRkyJ84PDQL8BAAAAi4WQAAAAi42UAAAAifKDwjCBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to_aesni}
+.base64 "WFhYWFhYWIHtAAIAAIu9EAEAAInyg8JAi40UAQAA"
 274:
 .base64 "D7YCD7YfMdiIB4PHAYPCAYPpAQ=="
 jne 274b
@@ -2060,7 +2281,7 @@ jmp 25f
 .base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkMAoAAMM="
 .p2align 6"#,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_ctr32_to_aesni = sym super::aes::vg_aes_ctr32_to_aesni::vg_aes_ctr32_to_aesni,
     )
 }
 
@@ -2086,10 +2307,10 @@ pub const VG_AES_GCM_SEAL_GATHER_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Fe
 /// * `rounds` must be 10, 12 or 14.
 /// * The slices `src` lists must be `len` bytes long in all.
 /// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src` or the slices `src` lists (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2684 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2688 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_seal_gather_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_gather_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "jWQk0IlcJCSJdCQoiXwkLItEJDSJBCSLRCQ4iUQkBItEJDyJRCQIi0QkQIlEJAyLRCREiUQkEItEJEiJRCQUi0QkVIlEJBiLRCRYiUQkHItEJFyJRCQgi3QkTItcJFCLVCRUg/sA"
 je 20f
@@ -2144,44 +2365,265 @@ pub const VG_AES_GCM_OPEN_TO_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Featur
 /// * `rounds` must be 10, 12 or 14.
 /// * `dst_len` must equal `len`.
 /// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src` or `tag` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2688 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2696 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_open_to_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_open_to_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "jWQk0Il0JCiJfCQsi0QkNIkEJItEJDiJRCQEi0QkPIlEJAiLRCRAiUQkDItEJESJRCQQi0QkSIlEJBSLRCRUiUQkGItEJFCJRCQci0QkXIlEJCCLRCRgiUQkJInmg8ZMi1QkVIs+i04EwekCg/kA"
-je 20f
+        r#".base64 "jaQkyPX//4uEJDwKAACJRCQEi4QkQAoAAIlEJAiLhCRECgAAiUQkDIuEJEgKAACJRCQQi4QkTAoAAIlEJBSLhCRQCgAAiUQkGIuEJFQKAACJRCQci4QkWAoAAIlEJCCLhCRcCgAAiUQkJIuEJGAKAACJRCQoi4QkZAoAAIlEJCyLhCRoCgAAiUQkMIngg8A4iUQkNI1kJNCLRCRUiQQki0QkNIlEJASLRCQ4iUQkCItEJDyJRCQMi0QkQIlEJBCLRCREiUQkFItEJEiJRCQYi0QkTIlEJByLRCRQiUQkIItEJFyJRCQki0QkYIlEJCiLRCRkiUQkLItEJCyJmIAAAACJsIQAAACJuIgAAACJqIwAAACJxYnug8YQi0QkBImFkAAAAItEJAiJhZQAAACLRCQMiYUQAQAAi0QkEImFFAEAAItEJBCJhcAAAACLRCQUiYWwAAAAi0QkGImFmAAAAItEJByJhagAAACLRCQgiYWsAAAAi0QkJImF1AAAAItEJCiJhbQAAAC4AAAAAImFvAAAALkAAAAAi520AAAAg/sE"
+jb 20f
+.base64 "g/sR"
+jb 22f
+jmp 23f
 22:
-.base64 "iweJAoPHBIPCBIPpAQ=="
-jne 22b
+.base64 "uQEAAAA="
+23:
 jmp 21f
 20:
 21:
-.base64 "i04Eg+ED"
-je 23f
-25:
-.base64 "D7YHiAKDxwGDwgGD6QE="
-jne 25b
-jmp 24f
-23:
-24:
-call {vg_aes_gcm_open_aesni_pclmul}
-.base64 "hcA="
+.base64 "hck="
+je 24f
+.base64 "i4XAAAAAg/gM"
 je 26f
-jmp 27f
-26:
-.base64 "i1QkVItMJFC4AAAAAIP5AA=="
+.base64 "uAAAAACJBolGBIlGCIlGDImFGAEAAIuFFAEAAIXA"
 je 28f
+.base64 "i4UYAQAAhcA="
+je 210f
+.base64 "uRAAAAArjRgBAACLhRQBAAA5yA=="
+jb 212f
+jmp 213f
+212:
+.base64 "icE="
+213:
+.base64 "i70QAQAAifKDwiADlRgBAACLhRQBAAApyImFFAEAAIuFGAEAAAHIiYUYAQAAifgByImFEAEAAA=="
+214:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 214b
+.base64 "i4UYAQAAg/gQ"
+je 215f
+jmp 216f
+215:
+.base64 "ifODwyC/AQAAAIuFkAAAAAXwAAAAifKDwgCBxQACAABVV1NSUA=="
+call {vg_ghash_pclmul}
+.base64 "WFhYWFiB7QACAAA="
+216:
+jmp 211f
 210:
-.base64 "iAKDwgGD6QE="
-jne 210b
+211:
+.base64 "i50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
+je 217f
+.base64 "i4WQAAAABfAAAACJ8oPCAIHFAAIAAFVXU1JQ"
+call {vg_ghash_pclmul}
+.base64 "WFhYWFiB7QACAAA="
+jmp 218f
+217:
+218:
+.base64 "i40UAQAAhck="
+je 219f
+.base64 "i70QAQAAifKDwiA="
+221:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 221b
+jmp 220f
+219:
+220:
 jmp 29f
 28:
 29:
+.base64 "i4XAAAAAg+APiYUYAQAAi40YAQAAhck="
+je 222f
+.base64 "uAAAAACJRWCJRWSJRWiJRWyJ94PHIInqg8Jg"
+224:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 224b
+.base64 "ieuDw2C/AQAAAIuFkAAAAAXwAAAAifKDwgCBxQACAABVV1NSUA=="
+call {vg_ghash_pclmul}
+.base64 "WFhYWFiB7QACAAA="
+jmp 223f
+222:
+223:
+.base64 "i4W8AAAAi428AAAAAckByQHJicLB6h0B0QHAAcABwA/JD8iJTWCJRWSLhcAAAACLjbwAAAAByQHJAcmJwsHqHQHRAcABwAHAD8kPyIlNaIlFbInrg8NgvwEAAACLhZAAAAAF8AAAAInyg8IAgcUAAgAAVVdTUlA="
+call {vg_ghash_pclmul}
+.base64 "WFhYWFiB7QACAAA="
+jmp 27f
+26:
+.base64 "i70QAQAAiweLTwSLVwiJBolOBIlWCLgAAAABiUYM"
 27:
-.base64 "i3QkKIt8JCyNZCQwww=="
+.base64 "iwaJRjCLRgSJRjSLRgiJRjiLRgwPyIPAAQ/IiUY8uAAAAACJRhCJRhSJRhiJRhyLhbAAAACJhRABAACLhZgAAACJhRQBAAC4AAAAAImFGAEAAIuFFAEAAIXA"
+je 225f
+.base64 "i4UYAQAAhcA="
+je 227f
+.base64 "uRAAAAArjRgBAACLhRQBAAA5yA=="
+jb 229f
+jmp 230f
+229:
+.base64 "icE="
+230:
+.base64 "i70QAQAAifKDwiADlRgBAACLhRQBAAApyImFFAEAAIuFGAEAAAHIiYUYAQAAifgByImFEAEAAA=="
+231:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 231b
+.base64 "i4UYAQAAg/gQ"
+je 232f
+jmp 233f
+232:
+.base64 "ifODwyC/AQAAAIuFkAAAAAXwAAAAifKDwhCBxQACAABVV1NSUA=="
+call {vg_ghash_pclmul}
+.base64 "WFhYWFiB7QACAAA="
+233:
+jmp 228f
+227:
+228:
+.base64 "i50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
+je 234f
+.base64 "i4WQAAAABfAAAACJ8oPCEIHFAAIAAFVXU1JQ"
+call {vg_ghash_pclmul}
+.base64 "WFhYWFiB7QACAAA="
+jmp 235f
+234:
+235:
+.base64 "i40UAQAAhck="
+je 236f
+.base64 "i70QAQAAifKDwiA="
+238:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 238b
+jmp 237f
+236:
+237:
+jmp 226f
+225:
+226:
+.base64 "i4WYAAAAg+APiYUYAQAAi40YAQAAhck="
+je 239f
+.base64 "uAAAAACJRWCJRWSJRWiJRWyJ94PHIInqg8Jg"
+241:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 241b
+.base64 "ieuDw2C/AQAAAIuFkAAAAAXwAAAAifKDwhCBxQACAABVV1NSUA=="
+call {vg_ghash_pclmul}
+.base64 "WFhYWFiB7QACAAA="
+jmp 240f
+239:
+240:
+.base64 "i4WoAAAAiYUQAQAAi4WsAAAAiYUUAQAAuAAAAACJhRgBAACLhRQBAACFwA=="
+je 242f
+.base64 "i4UYAQAAhcA="
+je 244f
+.base64 "uRAAAAArjRgBAACLhRQBAAA5yA=="
+jb 246f
+jmp 247f
+246:
+.base64 "icE="
+247:
+.base64 "i70QAQAAifKDwiADlRgBAACLhRQBAAApyImFFAEAAIuFGAEAAAHIiYUYAQAAifgByImFEAEAAA=="
+248:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 248b
+.base64 "i4UYAQAAg/gQ"
+je 249f
+jmp 250f
+249:
+.base64 "ifODwyC/AQAAAIuFkAAAAAXwAAAAifKDwhCBxQACAABVV1NSUA=="
+call {vg_ghash_pclmul}
+.base64 "WFhYWFiB7QACAAA="
+250:
+jmp 245f
+244:
+245:
+.base64 "i50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
+je 251f
+.base64 "i4WQAAAABfAAAACJ8oPCEIHFAAIAAFVXU1JQ"
+call {vg_ghash_pclmul}
+.base64 "WFhYWFiB7QACAAA="
+jmp 252f
+251:
+252:
+.base64 "i40UAQAAhck="
+je 253f
+.base64 "i70QAQAAifKDwiA="
+255:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 255b
+jmp 254f
+253:
+254:
+jmp 243f
+242:
+243:
+.base64 "i4WsAAAAg+APiYUYAQAAi40YAQAAhck="
+je 256f
+.base64 "uAAAAACJRWCJRWSJRWiJRWyJ94PHIInqg8Jg"
+258:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 258b
+.base64 "ieuDw2C/AQAAAIuFkAAAAAXwAAAAifKDwhCBxQACAABVV1NSUA=="
+call {vg_ghash_pclmul}
+.base64 "WFhYWFiB7QACAAA="
+jmp 257f
+256:
+257:
+.base64 "i4WYAAAAi428AAAAAckByQHJicLB6h0B0QHAAcABwA/JD8iJTWCJRWSLhawAAACLjbwAAAAByQHJAcmJwsHqHQHRAcABwAHAD8kPyIlNaIlFbInrg8NgvwEAAACLhZAAAAAF8AAAAInyg8IQgcUAAgAAVVdTUlA="
+call {vg_ghash_pclmul}
+.base64 "WFhYWFiB7QACAACLRhCLThSLVhiLXhyJRXCJTXSJVXiJXXyJ64PDcL8BAAAAi4WQAAAAi42UAAAAifKBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to_aesni}
+.base64 "WFhYWFhYWIHtAAIAALgAAAAAiYXEAAAAiYXIAAAAiYXMAAAAiYXQAAAAi73UAAAAieqBwsQAAACLjbQAAAA="
+259:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 259b
+.base64 "uAAAAACJhfAAAACJhfQAAACJhfgAAACJhfwAAACJ74PHcInqgcLwAAAAi420AAAA"
+260:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 260b
+.base64 "i4XwAAAAM4XEAAAAi430AAAAM43IAAAACciLjfgAAAAzjcwAAAAJyIuN/AAAADON0AAAAAnIg/gBuAAAAACD0ACJhbgAAACFwA=="
+je 261f
+.base64 "i52oAAAAi72sAAAAwe8Ehf8="
+je 263f
+.base64 "i4WQAAAAi42UAAAAifKDwjCBxQACAABVV1NSUVA="
+call {vg_aes_ctr32_to_aesni}
+.base64 "WFhYWFhYge0AAgAA"
+jmp 264f
+263:
+264:
+.base64 "i42sAAAAg+EPhck="
+je 265f
+.base64 "uAAAAACJRkCJRkSJRkiJRkyJ84PDQL8BAAAAi4WQAAAAi42UAAAAifKDwjCBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to_aesni}
+.base64 "WFhYWFhYWIHtAAIAAIuFrAAAAInBg+EPKciJ8oPCQIs8JAHHi7WoAAAAAcY="
+267:
+.base64 "D7YCD7YeMdiIB4PHAYPGAYPCAYPpAQ=="
+jne 267b
+.base64 "ie6DxhA="
+jmp 266f
+265:
+266:
+jmp 262f
+261:
+.base64 "ixQki42sAAAAuAAAAACD+QA="
+je 268f
+270:
+.base64 "iAKDwgGD6QE="
+jne 270b
+jmp 269f
+268:
+269:
+262:
+.base64 "i4W4AAAA"
+jmp 25f
+24:
+.base64 "ixQki42sAAAAuAAAAACD+QA="
+je 271f
+273:
+.base64 "iAKDwgGD6QE="
+jne 273b
+jmp 272f
+271:
+272:
+25:
+.base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjWQkMI2kJDgKAADD"
 .p2align 6"#,
-        vg_aes_gcm_open_aesni_pclmul = sym super::gcm::vg_aes_gcm_open_aesni_pclmul,
+        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_ctr32_to_aesni = sym super::aes::vg_aes_ctr32_to_aesni::vg_aes_ctr32_to_aesni,
     )
 }
 
@@ -2203,10 +2645,10 @@ pub const VG_AES_GCM_STREAM_ENCRYPT_PCLMUL_FEATURES: verified_garbage_cpu::Featu
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `state` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 2636 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_stream_encrypt_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_encrypt_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "jaQk1PX//4uEJDAKAACJRCQEi4QkNAoAAIlEJAiLhCQ4CgAAiUQkDIuEJDwKAACJRCQQi4QkQAoAAIlEJBSLhCRECgAAiUQkGIuEJEgKAACJRCQci4QkTAoAAIlEJCCLhCRQCgAAiUQkJIngg8AsiUQkKItEJCiJmIAAAACJsIQAAACJuIgAAACJqIwAAACJxYt0JAyLRCQEiYWQAAAAi0QkCImFlAAAAItEJBCJhZgAAACLRCQUiYWcAAAAi0QkGImFoAAAAItEJByJhaQAAACLRCQgiYWoAAAAi0QkJImFrAAAAIuFqAAAAImFEAEAAIuFrAAAAImFFAEAAIuFoAAAAIPgD4mFGAEAAIuFFAEAAIXA"
 je 20f
@@ -2227,17 +2669,17 @@ jmp 23f
 23:
 .base64 "i50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
 je 27f
-.base64 "i4WQAAAAi42UAAAAifKDwjCBxQACAABVV1NSUVA="
-call {vg_aes_ctr32}
-.base64 "WFhYWFhYge0AAgAA"
+.base64 "i4WQAAAAi42UAAAAifKDwjCBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to}
+.base64 "WFhYWFhYWIHtAAIAAA=="
 jmp 28f
 27:
 28:
 .base64 "i4UUAQAAhcA="
 je 29f
-.base64 "uAAAAACJRkCJRkSJRkiJRkyJ84PDQL8BAAAAi4WQAAAAi42UAAAAifKDwjCBxQACAABVV1NSUVA="
-call {vg_aes_ctr32}
-.base64 "WFhYWFhYge0AAgAAi70QAQAAifKDwkCLjRQBAAA="
+.base64 "uAAAAACJRkCJRkSJRkiJRkyJ84PDQL8BAAAAi4WQAAAAi42UAAAAifKDwjCBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to}
+.base64 "WFhYWFhYWIHtAAIAAIu9EAEAAInyg8JAi40UAQAA"
 211:
 .base64 "D7YCD7YfMdiIB4PHAYPCAYPpAQ=="
 jne 211b
@@ -2316,7 +2758,7 @@ jmp 213f
 213:
 .base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkLAoAAMM="
 .p2align 6"#,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
     )
 }
@@ -2339,10 +2781,10 @@ pub const VG_AES_GCM_STREAM_DECRYPT_PCLMUL_FEATURES: verified_garbage_cpu::Featu
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `state` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 2636 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_stream_decrypt_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_decrypt_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "jaQk1PX//4uEJDAKAACJRCQEi4QkNAoAAIlEJAiLhCQ4CgAAiUQkDIuEJDwKAACJRCQQi4QkQAoAAIlEJBSLhCRECgAAiUQkGIuEJEgKAACJRCQci4QkTAoAAIlEJCCLhCRQCgAAiUQkJIngg8AsiUQkKItEJCiJmIAAAACJsIQAAACJuIgAAACJqIwAAACJxYt0JAyLRCQEiYWQAAAAi0QkCImFlAAAAItEJBCJhZgAAACLRCQUiYWcAAAAi0QkGImFoAAAAItEJByJhaQAAACLRCQgiYWoAAAAi0QkJImFrAAAAIuFrAAAAIXA"
 je 20f
@@ -2430,17 +2872,17 @@ jmp 224f
 224:
 .base64 "i50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
 je 228f
-.base64 "i4WQAAAAi42UAAAAifKDwjCBxQACAABVV1NSUVA="
-call {vg_aes_ctr32}
-.base64 "WFhYWFhYge0AAgAA"
+.base64 "i4WQAAAAi42UAAAAifKDwjCBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to}
+.base64 "WFhYWFhYWIHtAAIAAA=="
 jmp 229f
 228:
 229:
 .base64 "i4UUAQAAhcA="
 je 230f
-.base64 "uAAAAACJRkCJRkSJRkiJRkyJ84PDQL8BAAAAi4WQAAAAi42UAAAAifKDwjCBxQACAABVV1NSUVA="
-call {vg_aes_ctr32}
-.base64 "WFhYWFhYge0AAgAAi70QAQAAifKDwkCLjRQBAAA="
+.base64 "uAAAAACJRkCJRkSJRkiJRkyJ84PDQL8BAAAAi4WQAAAAi42UAAAAifKDwjCBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to}
+.base64 "WFhYWFhYWIHtAAIAAIu9EAEAAInyg8JAi40UAQAA"
 232:
 .base64 "D7YCD7YfMdiIB4PHAYPCAYPpAQ=="
 jne 232b
@@ -2453,7 +2895,7 @@ jmp 222f
 .base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkLAoAAMM="
 .p2align 6"#,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
     )
 }
 
@@ -2474,10 +2916,10 @@ pub const VG_AES_GCM_STREAM_FINISH_PCLMUL_FEATURES: verified_garbage_cpu::Featur
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2628 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `state` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_stream_finish_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "jaQk2PX//4uEJCwKAACJRCQEi4QkMAoAAIlEJAiLhCQ0CgAAiUQkDIuEJDgKAACJRCQQi4QkPAoAAIlEJBSLhCRACgAAiUQkGIuEJEQKAACJRCQci4QkSAoAAIlEJCCJ4IPAKIlEJCSLRCQkiZiAAAAAibCEAAAAibiIAAAAiaiMAAAAicWLdCQMi0QkBImFkAAAAItEJAiJhZQAAACLRCQQiYWYAAAAi0QkFImFnAAAAItEJBiJhaAAAACLRCQciYWkAAAAi0QkIImF1AAAAIuFoAAAAIuNmAAAAIuVoAAAAAuVpAAAAA=="
 je 20f
@@ -2499,12 +2941,12 @@ jmp 23f
 23:
 .base64 "i4WYAAAAi42cAAAAAckByQHJicLB6h0B0QHAAcABwA/JD8iJTWCJRWSLhaAAAACLjaQAAAAByQHJAcmJwsHqHQHRAcABwAHAD8kPyIlNaIlFbInrg8NgvwEAAACLhZAAAAAF8AAAAInyg8IQgcUAAgAAVVdTUlA="
 call {vg_ghash_pclmul}
-.base64 "WFhYWFiB7QACAACLRhCLThSLVhiLXhyJRQCJTQSJVQiJXQyJ64PDAL8BAAAAi4WQAAAAi42UAAAAifKBxQACAABVV1NSUVA="
-call {vg_aes_ctr32}
-.base64 "WFhYWFhYge0AAgAAi0UAi00Ei1UIi10Mi73UAAAAiQeJTwSJVwiJXwyLnYAAAACLtYQAAACLvYgAAACLrYwAAACNpCQoCgAAww=="
+.base64 "WFhYWFiB7QACAACLRhCLThSLVhiLXhyJRQCJTQSJVQiJXQyJ64PDAL8BAAAAi4WQAAAAi42UAAAAifKBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to}
+.base64 "WFhYWFhYWIHtAAIAAItFAItNBItVCItdDIu91AAAAIkHiU8EiVcIiV8Mi52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkKAoAAMM="
 .p2align 6"#,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
     )
 }
 
@@ -2525,10 +2967,10 @@ pub const VG_AES_GCM_STREAM_VERIFY_PCLMUL_FEATURES: verified_garbage_cpu::Featur
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
 /// * `state` must not overlap `ctx` or `tag` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `state` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2636 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_stream_verify_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "jaQk1PX//4uEJDAKAACJRCQEi4QkNAoAAIlEJAiLhCQ4CgAAiUQkDIuEJDwKAACJRCQQi4QkQAoAAIlEJBSLhCRECgAAiUQkGIuEJEgKAACJRCQci4QkTAoAAIlEJCCLhCRQCgAAiUQkJIngg8AsiUQkKItEJCiJmIAAAACJsIQAAACJuIgAAACJqIwAAACJxYt0JAyLRCQEiYWQAAAAi0QkCImFlAAAAItEJBCJhZgAAACLRCQUiYWcAAAAi0QkGImFoAAAAItEJByJhaQAAACLRCQgiYXUAAAAi0QkJImFtAAAALkAAAAAi520AAAAg/sE"
 jb 20f
@@ -2567,9 +3009,9 @@ jmp 210f
 210:
 .base64 "i4WYAAAAi42cAAAAAckByQHJicLB6h0B0QHAAcABwA/JD8iJTWCJRWSLhaAAAACLjaQAAAAByQHJAcmJwsHqHQHRAcABwAHAD8kPyIlNaIlFbInrg8NgvwEAAACLhZAAAAAF8AAAAInyg8IQgcUAAgAAVVdTUlA="
 call {vg_ghash_pclmul}
-.base64 "WFhYWFiB7QACAACLRhCLThSLVhiLXhyJRQCJTQSJVQiJXQyJ64PDAL8BAAAAi4WQAAAAi42UAAAAifKBxQACAABVV1NSUVA="
-call {vg_aes_ctr32}
-.base64 "WFhYWFhYge0AAgAAuAAAAACJhfAAAACJhfQAAACJhfgAAACJhfwAAACJ74PHAInqgcLwAAAAi420AAAA"
+.base64 "WFhYWFiB7QACAACLRhCLThSLVhiLXhyJRQCJTQSJVQiJXQyJ64PDAL8BAAAAi4WQAAAAi42UAAAAifKBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to}
+.base64 "WFhYWFhYWIHtAAIAALgAAAAAiYXwAAAAiYX0AAAAiYX4AAAAiYX8AAAAie+DxwCJ6oHC8AAAAIuNtAAAAA=="
 212:
 .base64 "D7YHiAKDxwGDwgGD6QE="
 jne 212b
@@ -2581,7 +3023,7 @@ jmp 25f
 .base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkLAoAAMM="
 .p2align 6"#,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
     )
 }
 
@@ -2605,10 +3047,10 @@ pub const VG_AES_GCM_SEAL_PCLMUL_FEATURES: verified_garbage_cpu::Features = veri
 /// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `data` and `tag` must not overlap each other, `ctx`, `nonce` or `aad` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2636 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_seal_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "jaQk1PX//4uEJDAKAACJRCQEi4QkNAoAAIlEJAiLhCQ4CgAAiUQkDIuEJDwKAACJRCQQi4QkQAoAAIlEJBSLhCRECgAAiUQkGIuEJEgKAACJRCQci4QkTAoAAIlEJCCLhCRQCgAAiUQkJIngg8AsiUQkKItEJCiJmIAAAACJsIQAAACJuIgAAACJqIwAAACJxYnug8YQi0QkBImFkAAAAItEJAiJhZQAAACLRCQMiYUQAQAAi0QkEImFFAEAAItEJBCJhcAAAACLRCQUiYWwAAAAi0QkGImFmAAAAItEJByJhagAAACLRCQgiYWsAAAAi0QkJImF1AAAALgAAAAAiYW8AAAAi4XAAAAAg/gM"
 je 20f
@@ -2752,17 +3194,17 @@ jmp 239f
 239:
 .base64 "i50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
 je 243f
-.base64 "i4WQAAAAi42UAAAAifKDwjCBxQACAABVV1NSUVA="
-call {vg_aes_ctr32}
-.base64 "WFhYWFhYge0AAgAA"
+.base64 "i4WQAAAAi42UAAAAifKDwjCBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to}
+.base64 "WFhYWFhYWIHtAAIAAA=="
 jmp 244f
 243:
 244:
 .base64 "i4UUAQAAhcA="
 je 245f
-.base64 "uAAAAACJRkCJRkSJRkiJRkyJ84PDQL8BAAAAi4WQAAAAi42UAAAAifKDwjCBxQACAABVV1NSUVA="
-call {vg_aes_ctr32}
-.base64 "WFhYWFhYge0AAgAAi70QAQAAifKDwkCLjRQBAAA="
+.base64 "uAAAAACJRkCJRkSJRkiJRkyJ84PDQL8BAAAAi4WQAAAAi42UAAAAifKDwjCBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to}
+.base64 "WFhYWFhYWIHtAAIAAIu9EAEAAInyg8JAi40UAQAA"
 247:
 .base64 "D7YCD7YfMdiIB4PHAYPCAYPpAQ=="
 jne 247b
@@ -2831,12 +3273,12 @@ jmp 263f
 263:
 .base64 "i4WYAAAAi428AAAAAckByQHJicLB6h0B0QHAAcABwA/JD8iJTWCJRWSLhawAAACLjbwAAAAByQHJAcmJwsHqHQHRAcABwAHAD8kPyIlNaIlFbInrg8NgvwEAAACLhZAAAAAF8AAAAInyg8IQgcUAAgAAVVdTUlA="
 call {vg_ghash_pclmul}
-.base64 "WFhYWFiB7QACAACLRhCLThSLVhiLXhyJRQCJTQSJVQiJXQyJ64PDAL8BAAAAi4WQAAAAi42UAAAAifKBxQACAABVV1NSUVA="
-call {vg_aes_ctr32}
-.base64 "WFhYWFhYge0AAgAAi0UAi00Ei1UIi10Mi73UAAAAiQeJTwSJVwiJXwyLnYAAAACLtYQAAACLvYgAAACLrYwAAACNpCQsCgAAww=="
+.base64 "WFhYWFiB7QACAACLRhCLThSLVhiLXhyJRQCJTQSJVQiJXQyJ64PDAL8BAAAAi4WQAAAAi42UAAAAifKBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to}
+.base64 "WFhYWFhYWIHtAAIAAItFAItNBItVCItdDIu91AAAAIkHiU8EiVcIiV8Mi52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkLAoAAMM="
 .p2align 6"#,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
     )
 }
 
@@ -2860,10 +3302,10 @@ pub const VG_AES_GCM_OPEN_PCLMUL_FEATURES: verified_garbage_cpu::Features = veri
 /// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `data` must not overlap `ctx`, `nonce`, `aad` or `tag` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2636 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2640 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_open_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_open_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "jaQk0PX//4uEJDQKAACJRCQEi4QkOAoAAIlEJAiLhCQ8CgAAiUQkDIuEJEAKAACJRCQQi4QkRAoAAIlEJBSLhCRICgAAiUQkGIuEJEwKAACJRCQci4QkUAoAAIlEJCCLhCRUCgAAiUQkJIuEJFgKAACJRCQoieCDwDCJRCQsi0QkLImYgAAAAImwhAAAAIm4iAAAAImojAAAAInFie6DxhCLRCQEiYWQAAAAi0QkCImFlAAAAItEJAyJhRABAACLRCQQiYUUAQAAi0QkEImFwAAAAItEJBSJhbAAAACLRCQYiYWYAAAAi0QkHImFqAAAAItEJCCJhawAAACLRCQkiYXUAAAAi0QkKImFtAAAALgAAAAAiYW8AAAAuQAAAACLnbQAAACD+wQ="
 jb 20f
@@ -3060,9 +3502,9 @@ jmp 257f
 257:
 .base64 "i4WYAAAAi428AAAAAckByQHJicLB6h0B0QHAAcABwA/JD8iJTWCJRWSLhawAAACLjbwAAAAByQHJAcmJwsHqHQHRAcABwAHAD8kPyIlNaIlFbInrg8NgvwEAAACLhZAAAAAF8AAAAInyg8IQgcUAAgAAVVdTUlA="
 call {vg_ghash_pclmul}
-.base64 "WFhYWFiB7QACAACLRhCLThSLVhiLXhyJRXCJTXSJVXiJXXyJ64PDcL8BAAAAi4WQAAAAi42UAAAAifKBxQACAABVV1NSUVA="
-call {vg_aes_ctr32}
-.base64 "WFhYWFhYge0AAgAAuAAAAACJhcQAAACJhcgAAACJhcwAAACJhdAAAACLvdQAAACJ6oHCxAAAAIuNtAAAAA=="
+.base64 "WFhYWFiB7QACAACLRhCLThSLVhiLXhyJRXCJTXSJVXiJXXyJ64PDcL8BAAAAi4WQAAAAi42UAAAAifKBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to}
+.base64 "WFhYWFhYWIHtAAIAALgAAAAAiYXEAAAAiYXIAAAAiYXMAAAAiYXQAAAAi73UAAAAieqBwsQAAACLjbQAAAA="
 259:
 .base64 "D7YHiAKDxwGDwgGD6QE="
 jne 259b
@@ -3091,17 +3533,17 @@ jmp 266f
 266:
 .base64 "i50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
 je 270f
-.base64 "i4WQAAAAi42UAAAAifKDwjCBxQACAABVV1NSUVA="
-call {vg_aes_ctr32}
-.base64 "WFhYWFhYge0AAgAA"
+.base64 "i4WQAAAAi42UAAAAifKDwjCBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to}
+.base64 "WFhYWFhYWIHtAAIAAA=="
 jmp 271f
 270:
 271:
 .base64 "i4UUAQAAhcA="
 je 272f
-.base64 "uAAAAACJRkCJRkSJRkiJRkyJ84PDQL8BAAAAi4WQAAAAi42UAAAAifKDwjCBxQACAABVV1NSUVA="
-call {vg_aes_ctr32}
-.base64 "WFhYWFhYge0AAgAAi70QAQAAifKDwkCLjRQBAAA="
+.base64 "uAAAAACJRkCJRkSJRkiJRkyJ84PDQL8BAAAAi4WQAAAAi42UAAAAifKDwjCBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to}
+.base64 "WFhYWFhYWIHtAAIAAIu9EAEAAInyg8JAi40UAQAA"
 274:
 .base64 "D7YCD7YfMdiIB4PHAYPCAYPpAQ=="
 jne 274b
@@ -3122,7 +3564,7 @@ jmp 25f
 .base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkMAoAAMM="
 .p2align 6"#,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
     )
 }
 
@@ -3148,10 +3590,10 @@ pub const VG_AES_GCM_SEAL_GATHER_PCLMUL_FEATURES: verified_garbage_cpu::Features
 /// * `rounds` must be 10, 12 or 14.
 /// * The slices `src` lists must be `len` bytes long in all.
 /// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src` or the slices `src` lists (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2684 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2688 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_seal_gather_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_gather_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "jWQk0IlcJCSJdCQoiXwkLItEJDSJBCSLRCQ4iUQkBItEJDyJRCQIi0QkQIlEJAyLRCREiUQkEItEJEiJRCQUi0QkVIlEJBiLRCRYiUQkHItEJFyJRCQgi3QkTItcJFCLVCRUg/sA"
 je 20f
@@ -3206,44 +3648,265 @@ pub const VG_AES_GCM_OPEN_TO_PCLMUL_FEATURES: verified_garbage_cpu::Features = v
 /// * `rounds` must be 10, 12 or 14.
 /// * `dst_len` must equal `len`.
 /// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src` or `tag` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2688 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2696 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_open_to_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_open_to_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "jWQk0Il0JCiJfCQsi0QkNIkEJItEJDiJRCQEi0QkPIlEJAiLRCRAiUQkDItEJESJRCQQi0QkSIlEJBSLRCRUiUQkGItEJFCJRCQci0QkXIlEJCCLRCRgiUQkJInmg8ZMi1QkVIs+i04EwekCg/kA"
-je 20f
+        r#".base64 "jaQkyPX//4uEJDwKAACJRCQEi4QkQAoAAIlEJAiLhCRECgAAiUQkDIuEJEgKAACJRCQQi4QkTAoAAIlEJBSLhCRQCgAAiUQkGIuEJFQKAACJRCQci4QkWAoAAIlEJCCLhCRcCgAAiUQkJIuEJGAKAACJRCQoi4QkZAoAAIlEJCyLhCRoCgAAiUQkMIngg8A4iUQkNI1kJNCLRCRUiQQki0QkNIlEJASLRCQ4iUQkCItEJDyJRCQMi0QkQIlEJBCLRCREiUQkFItEJEiJRCQYi0QkTIlEJByLRCRQiUQkIItEJFyJRCQki0QkYIlEJCiLRCRkiUQkLItEJCyJmIAAAACJsIQAAACJuIgAAACJqIwAAACJxYnug8YQi0QkBImFkAAAAItEJAiJhZQAAACLRCQMiYUQAQAAi0QkEImFFAEAAItEJBCJhcAAAACLRCQUiYWwAAAAi0QkGImFmAAAAItEJByJhagAAACLRCQgiYWsAAAAi0QkJImF1AAAAItEJCiJhbQAAAC4AAAAAImFvAAAALkAAAAAi520AAAAg/sE"
+jb 20f
+.base64 "g/sR"
+jb 22f
+jmp 23f
 22:
-.base64 "iweJAoPHBIPCBIPpAQ=="
-jne 22b
+.base64 "uQEAAAA="
+23:
 jmp 21f
 20:
 21:
-.base64 "i04Eg+ED"
-je 23f
-25:
-.base64 "D7YHiAKDxwGDwgGD6QE="
-jne 25b
-jmp 24f
-23:
-24:
-call {vg_aes_gcm_open_pclmul}
-.base64 "hcA="
+.base64 "hck="
+je 24f
+.base64 "i4XAAAAAg/gM"
 je 26f
-jmp 27f
-26:
-.base64 "i1QkVItMJFC4AAAAAIP5AA=="
+.base64 "uAAAAACJBolGBIlGCIlGDImFGAEAAIuFFAEAAIXA"
 je 28f
+.base64 "i4UYAQAAhcA="
+je 210f
+.base64 "uRAAAAArjRgBAACLhRQBAAA5yA=="
+jb 212f
+jmp 213f
+212:
+.base64 "icE="
+213:
+.base64 "i70QAQAAifKDwiADlRgBAACLhRQBAAApyImFFAEAAIuFGAEAAAHIiYUYAQAAifgByImFEAEAAA=="
+214:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 214b
+.base64 "i4UYAQAAg/gQ"
+je 215f
+jmp 216f
+215:
+.base64 "ifODwyC/AQAAAIuFkAAAAAXwAAAAifKDwgCBxQACAABVV1NSUA=="
+call {vg_ghash_pclmul}
+.base64 "WFhYWFiB7QACAAA="
+216:
+jmp 211f
 210:
-.base64 "iAKDwgGD6QE="
-jne 210b
+211:
+.base64 "i50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
+je 217f
+.base64 "i4WQAAAABfAAAACJ8oPCAIHFAAIAAFVXU1JQ"
+call {vg_ghash_pclmul}
+.base64 "WFhYWFiB7QACAAA="
+jmp 218f
+217:
+218:
+.base64 "i40UAQAAhck="
+je 219f
+.base64 "i70QAQAAifKDwiA="
+221:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 221b
+jmp 220f
+219:
+220:
 jmp 29f
 28:
 29:
+.base64 "i4XAAAAAg+APiYUYAQAAi40YAQAAhck="
+je 222f
+.base64 "uAAAAACJRWCJRWSJRWiJRWyJ94PHIInqg8Jg"
+224:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 224b
+.base64 "ieuDw2C/AQAAAIuFkAAAAAXwAAAAifKDwgCBxQACAABVV1NSUA=="
+call {vg_ghash_pclmul}
+.base64 "WFhYWFiB7QACAAA="
+jmp 223f
+222:
+223:
+.base64 "i4W8AAAAi428AAAAAckByQHJicLB6h0B0QHAAcABwA/JD8iJTWCJRWSLhcAAAACLjbwAAAAByQHJAcmJwsHqHQHRAcABwAHAD8kPyIlNaIlFbInrg8NgvwEAAACLhZAAAAAF8AAAAInyg8IAgcUAAgAAVVdTUlA="
+call {vg_ghash_pclmul}
+.base64 "WFhYWFiB7QACAAA="
+jmp 27f
+26:
+.base64 "i70QAQAAiweLTwSLVwiJBolOBIlWCLgAAAABiUYM"
 27:
-.base64 "i3QkKIt8JCyNZCQwww=="
+.base64 "iwaJRjCLRgSJRjSLRgiJRjiLRgwPyIPAAQ/IiUY8uAAAAACJRhCJRhSJRhiJRhyLhbAAAACJhRABAACLhZgAAACJhRQBAAC4AAAAAImFGAEAAIuFFAEAAIXA"
+je 225f
+.base64 "i4UYAQAAhcA="
+je 227f
+.base64 "uRAAAAArjRgBAACLhRQBAAA5yA=="
+jb 229f
+jmp 230f
+229:
+.base64 "icE="
+230:
+.base64 "i70QAQAAifKDwiADlRgBAACLhRQBAAApyImFFAEAAIuFGAEAAAHIiYUYAQAAifgByImFEAEAAA=="
+231:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 231b
+.base64 "i4UYAQAAg/gQ"
+je 232f
+jmp 233f
+232:
+.base64 "ifODwyC/AQAAAIuFkAAAAAXwAAAAifKDwhCBxQACAABVV1NSUA=="
+call {vg_ghash_pclmul}
+.base64 "WFhYWFiB7QACAAA="
+233:
+jmp 228f
+227:
+228:
+.base64 "i50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
+je 234f
+.base64 "i4WQAAAABfAAAACJ8oPCEIHFAAIAAFVXU1JQ"
+call {vg_ghash_pclmul}
+.base64 "WFhYWFiB7QACAAA="
+jmp 235f
+234:
+235:
+.base64 "i40UAQAAhck="
+je 236f
+.base64 "i70QAQAAifKDwiA="
+238:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 238b
+jmp 237f
+236:
+237:
+jmp 226f
+225:
+226:
+.base64 "i4WYAAAAg+APiYUYAQAAi40YAQAAhck="
+je 239f
+.base64 "uAAAAACJRWCJRWSJRWiJRWyJ94PHIInqg8Jg"
+241:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 241b
+.base64 "ieuDw2C/AQAAAIuFkAAAAAXwAAAAifKDwhCBxQACAABVV1NSUA=="
+call {vg_ghash_pclmul}
+.base64 "WFhYWFiB7QACAAA="
+jmp 240f
+239:
+240:
+.base64 "i4WoAAAAiYUQAQAAi4WsAAAAiYUUAQAAuAAAAACJhRgBAACLhRQBAACFwA=="
+je 242f
+.base64 "i4UYAQAAhcA="
+je 244f
+.base64 "uRAAAAArjRgBAACLhRQBAAA5yA=="
+jb 246f
+jmp 247f
+246:
+.base64 "icE="
+247:
+.base64 "i70QAQAAifKDwiADlRgBAACLhRQBAAApyImFFAEAAIuFGAEAAAHIiYUYAQAAifgByImFEAEAAA=="
+248:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 248b
+.base64 "i4UYAQAAg/gQ"
+je 249f
+jmp 250f
+249:
+.base64 "ifODwyC/AQAAAIuFkAAAAAXwAAAAifKDwhCBxQACAABVV1NSUA=="
+call {vg_ghash_pclmul}
+.base64 "WFhYWFiB7QACAAA="
+250:
+jmp 245f
+244:
+245:
+.base64 "i50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
+je 251f
+.base64 "i4WQAAAABfAAAACJ8oPCEIHFAAIAAFVXU1JQ"
+call {vg_ghash_pclmul}
+.base64 "WFhYWFiB7QACAAA="
+jmp 252f
+251:
+252:
+.base64 "i40UAQAAhck="
+je 253f
+.base64 "i70QAQAAifKDwiA="
+255:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 255b
+jmp 254f
+253:
+254:
+jmp 243f
+242:
+243:
+.base64 "i4WsAAAAg+APiYUYAQAAi40YAQAAhck="
+je 256f
+.base64 "uAAAAACJRWCJRWSJRWiJRWyJ94PHIInqg8Jg"
+258:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 258b
+.base64 "ieuDw2C/AQAAAIuFkAAAAAXwAAAAifKDwhCBxQACAABVV1NSUA=="
+call {vg_ghash_pclmul}
+.base64 "WFhYWFiB7QACAAA="
+jmp 257f
+256:
+257:
+.base64 "i4WYAAAAi428AAAAAckByQHJicLB6h0B0QHAAcABwA/JD8iJTWCJRWSLhawAAACLjbwAAAAByQHJAcmJwsHqHQHRAcABwAHAD8kPyIlNaIlFbInrg8NgvwEAAACLhZAAAAAF8AAAAInyg8IQgcUAAgAAVVdTUlA="
+call {vg_ghash_pclmul}
+.base64 "WFhYWFiB7QACAACLRhCLThSLVhiLXhyJRXCJTXSJVXiJXXyJ64PDcL8BAAAAi4WQAAAAi42UAAAAifKBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to}
+.base64 "WFhYWFhYWIHtAAIAALgAAAAAiYXEAAAAiYXIAAAAiYXMAAAAiYXQAAAAi73UAAAAieqBwsQAAACLjbQAAAA="
+259:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 259b
+.base64 "uAAAAACJhfAAAACJhfQAAACJhfgAAACJhfwAAACJ74PHcInqgcLwAAAAi420AAAA"
+260:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 260b
+.base64 "i4XwAAAAM4XEAAAAi430AAAAM43IAAAACciLjfgAAAAzjcwAAAAJyIuN/AAAADON0AAAAAnIg/gBuAAAAACD0ACJhbgAAACFwA=="
+je 261f
+.base64 "i52oAAAAi72sAAAAwe8Ehf8="
+je 263f
+.base64 "i4WQAAAAi42UAAAAifKDwjCBxQACAABVV1NSUVA="
+call {vg_aes_ctr32_to}
+.base64 "WFhYWFhYge0AAgAA"
+jmp 264f
+263:
+264:
+.base64 "i42sAAAAg+EPhck="
+je 265f
+.base64 "uAAAAACJRkCJRkSJRkiJRkyJ84PDQL8BAAAAi4WQAAAAi42UAAAAifKDwjCBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to}
+.base64 "WFhYWFhYWIHtAAIAAIuFrAAAAInBg+EPKciJ8oPCQIs8JAHHi7WoAAAAAcY="
+267:
+.base64 "D7YCD7YeMdiIB4PHAYPGAYPCAYPpAQ=="
+jne 267b
+.base64 "ie6DxhA="
+jmp 266f
+265:
+266:
+jmp 262f
+261:
+.base64 "ixQki42sAAAAuAAAAACD+QA="
+je 268f
+270:
+.base64 "iAKDwgGD6QE="
+jne 270b
+jmp 269f
+268:
+269:
+262:
+.base64 "i4W4AAAA"
+jmp 25f
+24:
+.base64 "ixQki42sAAAAuAAAAACD+QA="
+je 271f
+273:
+.base64 "iAKDwgGD6QE="
+jne 273b
+jmp 272f
+271:
+272:
+25:
+.base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjWQkMI2kJDgKAADD"
 .p2align 6"#,
-        vg_aes_gcm_open_pclmul = sym super::gcm::vg_aes_gcm_open_pclmul,
+        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
     )
 }
 
@@ -3262,9 +3925,9 @@ jmp 29f
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `state` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 2636 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_stream_encrypt(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_encrypt(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "jaQk1PX//4uEJDAKAACJRCQEi4QkNAoAAIlEJAiLhCQ4CgAAiUQkDIuEJDwKAACJRCQQi4QkQAoAAIlEJBSLhCRECgAAiUQkGIuEJEgKAACJRCQci4QkTAoAAIlEJCCLhCRQCgAAiUQkJIngg8AsiUQkKItEJCiJmIAAAACJsIQAAACJuIgAAACJqIwAAACJxYt0JAyLRCQEiYWQAAAAi0QkCImFlAAAAItEJBCJhZgAAACLRCQUiYWcAAAAi0QkGImFoAAAAItEJByJhaQAAACLRCQgiYWoAAAAi0QkJImFrAAAAIuFqAAAAImFEAEAAIuFrAAAAImFFAEAAIuFoAAAAIPgD4mFGAEAAIuFFAEAAIXA"
 je 20f
@@ -3285,17 +3948,17 @@ jmp 23f
 23:
 .base64 "i50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
 je 27f
-.base64 "i4WQAAAAi42UAAAAifKDwjCBxQACAABVV1NSUVA="
-call {vg_aes_ctr32}
-.base64 "WFhYWFhYge0AAgAA"
+.base64 "i4WQAAAAi42UAAAAifKDwjCBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to}
+.base64 "WFhYWFhYWIHtAAIAAA=="
 jmp 28f
 27:
 28:
 .base64 "i4UUAQAAhcA="
 je 29f
-.base64 "uAAAAACJRkCJRkSJRkiJRkyJ84PDQL8BAAAAi4WQAAAAi42UAAAAifKDwjCBxQACAABVV1NSUVA="
-call {vg_aes_ctr32}
-.base64 "WFhYWFhYge0AAgAAi70QAQAAifKDwkCLjRQBAAA="
+.base64 "uAAAAACJRkCJRkSJRkiJRkyJ84PDQL8BAAAAi4WQAAAAi42UAAAAifKDwjCBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to}
+.base64 "WFhYWFhYWIHtAAIAAIu9EAEAAInyg8JAi40UAQAA"
 211:
 .base64 "D7YCD7YfMdiIB4PHAYPCAYPpAQ=="
 jne 211b
@@ -3374,7 +4037,7 @@ jmp 213f
 213:
 .base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkLAoAAMM="
 .p2align 6"#,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
     )
 }
@@ -3394,9 +4057,9 @@ jmp 213f
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `state` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 2636 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_stream_decrypt(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_decrypt(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "jaQk1PX//4uEJDAKAACJRCQEi4QkNAoAAIlEJAiLhCQ4CgAAiUQkDIuEJDwKAACJRCQQi4QkQAoAAIlEJBSLhCRECgAAiUQkGIuEJEgKAACJRCQci4QkTAoAAIlEJCCLhCRQCgAAiUQkJIngg8AsiUQkKItEJCiJmIAAAACJsIQAAACJuIgAAACJqIwAAACJxYt0JAyLRCQEiYWQAAAAi0QkCImFlAAAAItEJBCJhZgAAACLRCQUiYWcAAAAi0QkGImFoAAAAItEJByJhaQAAACLRCQgiYWoAAAAi0QkJImFrAAAAIuFrAAAAIXA"
 je 20f
@@ -3484,17 +4147,17 @@ jmp 224f
 224:
 .base64 "i50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
 je 228f
-.base64 "i4WQAAAAi42UAAAAifKDwjCBxQACAABVV1NSUVA="
-call {vg_aes_ctr32}
-.base64 "WFhYWFhYge0AAgAA"
+.base64 "i4WQAAAAi42UAAAAifKDwjCBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to}
+.base64 "WFhYWFhYWIHtAAIAAA=="
 jmp 229f
 228:
 229:
 .base64 "i4UUAQAAhcA="
 je 230f
-.base64 "uAAAAACJRkCJRkSJRkiJRkyJ84PDQL8BAAAAi4WQAAAAi42UAAAAifKDwjCBxQACAABVV1NSUVA="
-call {vg_aes_ctr32}
-.base64 "WFhYWFhYge0AAgAAi70QAQAAifKDwkCLjRQBAAA="
+.base64 "uAAAAACJRkCJRkSJRkiJRkyJ84PDQL8BAAAAi4WQAAAAi42UAAAAifKDwjCBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to}
+.base64 "WFhYWFhYWIHtAAIAAIu9EAEAAInyg8JAi40UAQAA"
 232:
 .base64 "D7YCD7YfMdiIB4PHAYPCAYPpAQ=="
 jne 232b
@@ -3507,7 +4170,7 @@ jmp 222f
 .base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkLAoAAMM="
 .p2align 6"#,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
     )
 }
 
@@ -3525,9 +4188,9 @@ jmp 222f
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2628 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `state` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_stream_finish(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "jaQk2PX//4uEJCwKAACJRCQEi4QkMAoAAIlEJAiLhCQ0CgAAiUQkDIuEJDgKAACJRCQQi4QkPAoAAIlEJBSLhCRACgAAiUQkGIuEJEQKAACJRCQci4QkSAoAAIlEJCCJ4IPAKIlEJCSLRCQkiZiAAAAAibCEAAAAibiIAAAAiaiMAAAAicWLdCQMi0QkBImFkAAAAItEJAiJhZQAAACLRCQQiYWYAAAAi0QkFImFnAAAAItEJBiJhaAAAACLRCQciYWkAAAAi0QkIImF1AAAAIuFoAAAAIuNmAAAAIuVoAAAAAuVpAAAAA=="
 je 20f
@@ -3549,12 +4212,12 @@ jmp 23f
 23:
 .base64 "i4WYAAAAi42cAAAAAckByQHJicLB6h0B0QHAAcABwA/JD8iJTWCJRWSLhaAAAACLjaQAAAAByQHJAcmJwsHqHQHRAcABwAHAD8kPyIlNaIlFbInrg8NgvwEAAACLhZAAAAAF8AAAAInyg8IQgcUAAgAAVVdTUlA="
 call {vg_ghash}
-.base64 "WFhYWFiB7QACAACLRhCLThSLVhiLXhyJRQCJTQSJVQiJXQyJ64PDAL8BAAAAi4WQAAAAi42UAAAAifKBxQACAABVV1NSUVA="
-call {vg_aes_ctr32}
-.base64 "WFhYWFhYge0AAgAAi0UAi00Ei1UIi10Mi73UAAAAiQeJTwSJVwiJXwyLnYAAAACLtYQAAACLvYgAAACLrYwAAACNpCQoCgAAww=="
+.base64 "WFhYWFiB7QACAACLRhCLThSLVhiLXhyJRQCJTQSJVQiJXQyJ64PDAL8BAAAAi4WQAAAAi42UAAAAifKBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to}
+.base64 "WFhYWFhYWIHtAAIAAItFAItNBItVCItdDIu91AAAAIkHiU8EiVcIiV8Mi52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkKAoAAMM="
 .p2align 6"#,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
     )
 }
 
@@ -3572,9 +4235,9 @@ call {vg_aes_ctr32}
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
 /// * `state` must not overlap `ctx` or `tag` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `state` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2636 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_stream_verify(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "jaQk1PX//4uEJDAKAACJRCQEi4QkNAoAAIlEJAiLhCQ4CgAAiUQkDIuEJDwKAACJRCQQi4QkQAoAAIlEJBSLhCRECgAAiUQkGIuEJEgKAACJRCQci4QkTAoAAIlEJCCLhCRQCgAAiUQkJIngg8AsiUQkKItEJCiJmIAAAACJsIQAAACJuIgAAACJqIwAAACJxYt0JAyLRCQEiYWQAAAAi0QkCImFlAAAAItEJBCJhZgAAACLRCQUiYWcAAAAi0QkGImFoAAAAItEJByJhaQAAACLRCQgiYXUAAAAi0QkJImFtAAAALkAAAAAi520AAAAg/sE"
 jb 20f
@@ -3613,9 +4276,9 @@ jmp 210f
 210:
 .base64 "i4WYAAAAi42cAAAAAckByQHJicLB6h0B0QHAAcABwA/JD8iJTWCJRWSLhaAAAACLjaQAAAAByQHJAcmJwsHqHQHRAcABwAHAD8kPyIlNaIlFbInrg8NgvwEAAACLhZAAAAAF8AAAAInyg8IQgcUAAgAAVVdTUlA="
 call {vg_ghash}
-.base64 "WFhYWFiB7QACAACLRhCLThSLVhiLXhyJRQCJTQSJVQiJXQyJ64PDAL8BAAAAi4WQAAAAi42UAAAAifKBxQACAABVV1NSUVA="
-call {vg_aes_ctr32}
-.base64 "WFhYWFhYge0AAgAAuAAAAACJhfAAAACJhfQAAACJhfgAAACJhfwAAACJ74PHAInqgcLwAAAAi420AAAA"
+.base64 "WFhYWFiB7QACAACLRhCLThSLVhiLXhyJRQCJTQSJVQiJXQyJ64PDAL8BAAAAi4WQAAAAi42UAAAAifKBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to}
+.base64 "WFhYWFhYWIHtAAIAALgAAAAAiYXwAAAAiYX0AAAAiYX4AAAAiYX8AAAAie+DxwCJ6oHC8AAAAIuNtAAAAA=="
 212:
 .base64 "D7YHiAKDxwGDwgGD6QE="
 jne 212b
@@ -3627,7 +4290,7 @@ jmp 25f
 .base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkLAoAAMM="
 .p2align 6"#,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
     )
 }
 
@@ -3648,9 +4311,9 @@ jmp 25f
 /// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `data` and `tag` must not overlap each other, `ctx`, `nonce` or `aad` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2636 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_seal(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_seal(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "jaQk1PX//4uEJDAKAACJRCQEi4QkNAoAAIlEJAiLhCQ4CgAAiUQkDIuEJDwKAACJRCQQi4QkQAoAAIlEJBSLhCRECgAAiUQkGIuEJEgKAACJRCQci4QkTAoAAIlEJCCLhCRQCgAAiUQkJIngg8AsiUQkKItEJCiJmIAAAACJsIQAAACJuIgAAACJqIwAAACJxYnug8YQi0QkBImFkAAAAItEJAiJhZQAAACLRCQMiYUQAQAAi0QkEImFFAEAAItEJBCJhcAAAACLRCQUiYWwAAAAi0QkGImFmAAAAItEJByJhagAAACLRCQgiYWsAAAAi0QkJImF1AAAALgAAAAAiYW8AAAAi4XAAAAAg/gM"
 je 20f
@@ -3794,17 +4457,17 @@ jmp 239f
 239:
 .base64 "i50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
 je 243f
-.base64 "i4WQAAAAi42UAAAAifKDwjCBxQACAABVV1NSUVA="
-call {vg_aes_ctr32}
-.base64 "WFhYWFhYge0AAgAA"
+.base64 "i4WQAAAAi42UAAAAifKDwjCBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to}
+.base64 "WFhYWFhYWIHtAAIAAA=="
 jmp 244f
 243:
 244:
 .base64 "i4UUAQAAhcA="
 je 245f
-.base64 "uAAAAACJRkCJRkSJRkiJRkyJ84PDQL8BAAAAi4WQAAAAi42UAAAAifKDwjCBxQACAABVV1NSUVA="
-call {vg_aes_ctr32}
-.base64 "WFhYWFhYge0AAgAAi70QAQAAifKDwkCLjRQBAAA="
+.base64 "uAAAAACJRkCJRkSJRkiJRkyJ84PDQL8BAAAAi4WQAAAAi42UAAAAifKDwjCBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to}
+.base64 "WFhYWFhYWIHtAAIAAIu9EAEAAInyg8JAi40UAQAA"
 247:
 .base64 "D7YCD7YfMdiIB4PHAYPCAYPpAQ=="
 jne 247b
@@ -3873,12 +4536,12 @@ jmp 263f
 263:
 .base64 "i4WYAAAAi428AAAAAckByQHJicLB6h0B0QHAAcABwA/JD8iJTWCJRWSLhawAAACLjbwAAAAByQHJAcmJwsHqHQHRAcABwAHAD8kPyIlNaIlFbInrg8NgvwEAAACLhZAAAAAF8AAAAInyg8IQgcUAAgAAVVdTUlA="
 call {vg_ghash}
-.base64 "WFhYWFiB7QACAACLRhCLThSLVhiLXhyJRQCJTQSJVQiJXQyJ64PDAL8BAAAAi4WQAAAAi42UAAAAifKBxQACAABVV1NSUVA="
-call {vg_aes_ctr32}
-.base64 "WFhYWFhYge0AAgAAi0UAi00Ei1UIi10Mi73UAAAAiQeJTwSJVwiJXwyLnYAAAACLtYQAAACLvYgAAACLrYwAAACNpCQsCgAAww=="
+.base64 "WFhYWFiB7QACAACLRhCLThSLVhiLXhyJRQCJTQSJVQiJXQyJ64PDAL8BAAAAi4WQAAAAi42UAAAAifKBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to}
+.base64 "WFhYWFhYWIHtAAIAAItFAItNBItVCItdDIu91AAAAIkHiU8EiVcIiV8Mi52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkLAoAAMM="
 .p2align 6"#,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
     )
 }
 
@@ -3899,9 +4562,9 @@ call {vg_aes_ctr32}
 /// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `data` must not overlap `ctx`, `nonce`, `aad` or `tag` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2636 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2640 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_open(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_open(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "jaQk0PX//4uEJDQKAACJRCQEi4QkOAoAAIlEJAiLhCQ8CgAAiUQkDIuEJEAKAACJRCQQi4QkRAoAAIlEJBSLhCRICgAAiUQkGIuEJEwKAACJRCQci4QkUAoAAIlEJCCLhCRUCgAAiUQkJIuEJFgKAACJRCQoieCDwDCJRCQsi0QkLImYgAAAAImwhAAAAIm4iAAAAImojAAAAInFie6DxhCLRCQEiYWQAAAAi0QkCImFlAAAAItEJAyJhRABAACLRCQQiYUUAQAAi0QkEImFwAAAAItEJBSJhbAAAACLRCQYiYWYAAAAi0QkHImFqAAAAItEJCCJhawAAACLRCQkiYXUAAAAi0QkKImFtAAAALgAAAAAiYW8AAAAuQAAAACLnbQAAACD+wQ="
 jb 20f
@@ -4098,9 +4761,9 @@ jmp 257f
 257:
 .base64 "i4WYAAAAi428AAAAAckByQHJicLB6h0B0QHAAcABwA/JD8iJTWCJRWSLhawAAACLjbwAAAAByQHJAcmJwsHqHQHRAcABwAHAD8kPyIlNaIlFbInrg8NgvwEAAACLhZAAAAAF8AAAAInyg8IQgcUAAgAAVVdTUlA="
 call {vg_ghash}
-.base64 "WFhYWFiB7QACAACLRhCLThSLVhiLXhyJRXCJTXSJVXiJXXyJ64PDcL8BAAAAi4WQAAAAi42UAAAAifKBxQACAABVV1NSUVA="
-call {vg_aes_ctr32}
-.base64 "WFhYWFhYge0AAgAAuAAAAACJhcQAAACJhcgAAACJhcwAAACJhdAAAACLvdQAAACJ6oHCxAAAAIuNtAAAAA=="
+.base64 "WFhYWFiB7QACAACLRhCLThSLVhiLXhyJRXCJTXSJVXiJXXyJ64PDcL8BAAAAi4WQAAAAi42UAAAAifKBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to}
+.base64 "WFhYWFhYWIHtAAIAALgAAAAAiYXEAAAAiYXIAAAAiYXMAAAAiYXQAAAAi73UAAAAieqBwsQAAACLjbQAAAA="
 259:
 .base64 "D7YHiAKDxwGDwgGD6QE="
 jne 259b
@@ -4129,17 +4792,17 @@ jmp 266f
 266:
 .base64 "i50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
 je 270f
-.base64 "i4WQAAAAi42UAAAAifKDwjCBxQACAABVV1NSUVA="
-call {vg_aes_ctr32}
-.base64 "WFhYWFhYge0AAgAA"
+.base64 "i4WQAAAAi42UAAAAifKDwjCBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to}
+.base64 "WFhYWFhYWIHtAAIAAA=="
 jmp 271f
 270:
 271:
 .base64 "i4UUAQAAhcA="
 je 272f
-.base64 "uAAAAACJRkCJRkSJRkiJRkyJ84PDQL8BAAAAi4WQAAAAi42UAAAAifKDwjCBxQACAABVV1NSUVA="
-call {vg_aes_ctr32}
-.base64 "WFhYWFhYge0AAgAAi70QAQAAifKDwkCLjRQBAAA="
+.base64 "uAAAAACJRkCJRkSJRkiJRkyJ84PDQL8BAAAAi4WQAAAAi42UAAAAifKDwjCBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to}
+.base64 "WFhYWFhYWIHtAAIAAIu9EAEAAInyg8JAi40UAQAA"
 274:
 .base64 "D7YCD7YfMdiIB4PHAYPCAYPpAQ=="
 jne 274b
@@ -4160,7 +4823,7 @@ jmp 25f
 .base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkMAoAAMM="
 .p2align 6"#,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
     )
 }
 
@@ -4183,9 +4846,9 @@ jmp 25f
 /// * `rounds` must be 10, 12 or 14.
 /// * The slices `src` lists must be `len` bytes long in all.
 /// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src` or the slices `src` lists (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2684 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2688 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_seal_gather(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_gather(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "jWQk0IlcJCSJdCQoiXwkLItEJDSJBCSLRCQ4iUQkBItEJDyJRCQIi0QkQIlEJAyLRCREiUQkEItEJEiJRCQUi0QkVIlEJBiLRCRYiUQkHItEJFyJRCQgi3QkTItcJFCLVCRUg/sA"
 je 20f
@@ -4237,43 +4900,264 @@ call {vg_aes_gcm_seal}
 /// * `rounds` must be 10, 12 or 14.
 /// * `dst_len` must equal `len`.
 /// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src` or `tag` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2688 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2696 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_open_to(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_open_to(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "jWQk0Il0JCiJfCQsi0QkNIkEJItEJDiJRCQEi0QkPIlEJAiLRCRAiUQkDItEJESJRCQQi0QkSIlEJBSLRCRUiUQkGItEJFCJRCQci0QkXIlEJCCLRCRgiUQkJInmg8ZMi1QkVIs+i04EwekCg/kA"
-je 20f
+        r#".base64 "jaQkyPX//4uEJDwKAACJRCQEi4QkQAoAAIlEJAiLhCRECgAAiUQkDIuEJEgKAACJRCQQi4QkTAoAAIlEJBSLhCRQCgAAiUQkGIuEJFQKAACJRCQci4QkWAoAAIlEJCCLhCRcCgAAiUQkJIuEJGAKAACJRCQoi4QkZAoAAIlEJCyLhCRoCgAAiUQkMIngg8A4iUQkNI1kJNCLRCRUiQQki0QkNIlEJASLRCQ4iUQkCItEJDyJRCQMi0QkQIlEJBCLRCREiUQkFItEJEiJRCQYi0QkTIlEJByLRCRQiUQkIItEJFyJRCQki0QkYIlEJCiLRCRkiUQkLItEJCyJmIAAAACJsIQAAACJuIgAAACJqIwAAACJxYnug8YQi0QkBImFkAAAAItEJAiJhZQAAACLRCQMiYUQAQAAi0QkEImFFAEAAItEJBCJhcAAAACLRCQUiYWwAAAAi0QkGImFmAAAAItEJByJhagAAACLRCQgiYWsAAAAi0QkJImF1AAAAItEJCiJhbQAAAC4AAAAAImFvAAAALkAAAAAi520AAAAg/sE"
+jb 20f
+.base64 "g/sR"
+jb 22f
+jmp 23f
 22:
-.base64 "iweJAoPHBIPCBIPpAQ=="
-jne 22b
+.base64 "uQEAAAA="
+23:
 jmp 21f
 20:
 21:
-.base64 "i04Eg+ED"
-je 23f
-25:
-.base64 "D7YHiAKDxwGDwgGD6QE="
-jne 25b
-jmp 24f
-23:
-24:
-call {vg_aes_gcm_open}
-.base64 "hcA="
+.base64 "hck="
+je 24f
+.base64 "i4XAAAAAg/gM"
 je 26f
-jmp 27f
-26:
-.base64 "i1QkVItMJFC4AAAAAIP5AA=="
+.base64 "uAAAAACJBolGBIlGCIlGDImFGAEAAIuFFAEAAIXA"
 je 28f
+.base64 "i4UYAQAAhcA="
+je 210f
+.base64 "uRAAAAArjRgBAACLhRQBAAA5yA=="
+jb 212f
+jmp 213f
+212:
+.base64 "icE="
+213:
+.base64 "i70QAQAAifKDwiADlRgBAACLhRQBAAApyImFFAEAAIuFGAEAAAHIiYUYAQAAifgByImFEAEAAA=="
+214:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 214b
+.base64 "i4UYAQAAg/gQ"
+je 215f
+jmp 216f
+215:
+.base64 "ifODwyC/AQAAAIuFkAAAAAXwAAAAifKDwgCBxQACAABVV1NSUA=="
+call {vg_ghash}
+.base64 "WFhYWFiB7QACAAA="
+216:
+jmp 211f
 210:
-.base64 "iAKDwgGD6QE="
-jne 210b
+211:
+.base64 "i50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
+je 217f
+.base64 "i4WQAAAABfAAAACJ8oPCAIHFAAIAAFVXU1JQ"
+call {vg_ghash}
+.base64 "WFhYWFiB7QACAAA="
+jmp 218f
+217:
+218:
+.base64 "i40UAQAAhck="
+je 219f
+.base64 "i70QAQAAifKDwiA="
+221:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 221b
+jmp 220f
+219:
+220:
 jmp 29f
 28:
 29:
+.base64 "i4XAAAAAg+APiYUYAQAAi40YAQAAhck="
+je 222f
+.base64 "uAAAAACJRWCJRWSJRWiJRWyJ94PHIInqg8Jg"
+224:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 224b
+.base64 "ieuDw2C/AQAAAIuFkAAAAAXwAAAAifKDwgCBxQACAABVV1NSUA=="
+call {vg_ghash}
+.base64 "WFhYWFiB7QACAAA="
+jmp 223f
+222:
+223:
+.base64 "i4W8AAAAi428AAAAAckByQHJicLB6h0B0QHAAcABwA/JD8iJTWCJRWSLhcAAAACLjbwAAAAByQHJAcmJwsHqHQHRAcABwAHAD8kPyIlNaIlFbInrg8NgvwEAAACLhZAAAAAF8AAAAInyg8IAgcUAAgAAVVdTUlA="
+call {vg_ghash}
+.base64 "WFhYWFiB7QACAAA="
+jmp 27f
+26:
+.base64 "i70QAQAAiweLTwSLVwiJBolOBIlWCLgAAAABiUYM"
 27:
-.base64 "i3QkKIt8JCyNZCQwww=="
+.base64 "iwaJRjCLRgSJRjSLRgiJRjiLRgwPyIPAAQ/IiUY8uAAAAACJRhCJRhSJRhiJRhyLhbAAAACJhRABAACLhZgAAACJhRQBAAC4AAAAAImFGAEAAIuFFAEAAIXA"
+je 225f
+.base64 "i4UYAQAAhcA="
+je 227f
+.base64 "uRAAAAArjRgBAACLhRQBAAA5yA=="
+jb 229f
+jmp 230f
+229:
+.base64 "icE="
+230:
+.base64 "i70QAQAAifKDwiADlRgBAACLhRQBAAApyImFFAEAAIuFGAEAAAHIiYUYAQAAifgByImFEAEAAA=="
+231:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 231b
+.base64 "i4UYAQAAg/gQ"
+je 232f
+jmp 233f
+232:
+.base64 "ifODwyC/AQAAAIuFkAAAAAXwAAAAifKDwhCBxQACAABVV1NSUA=="
+call {vg_ghash}
+.base64 "WFhYWFiB7QACAAA="
+233:
+jmp 228f
+227:
+228:
+.base64 "i50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
+je 234f
+.base64 "i4WQAAAABfAAAACJ8oPCEIHFAAIAAFVXU1JQ"
+call {vg_ghash}
+.base64 "WFhYWFiB7QACAAA="
+jmp 235f
+234:
+235:
+.base64 "i40UAQAAhck="
+je 236f
+.base64 "i70QAQAAifKDwiA="
+238:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 238b
+jmp 237f
+236:
+237:
+jmp 226f
+225:
+226:
+.base64 "i4WYAAAAg+APiYUYAQAAi40YAQAAhck="
+je 239f
+.base64 "uAAAAACJRWCJRWSJRWiJRWyJ94PHIInqg8Jg"
+241:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 241b
+.base64 "ieuDw2C/AQAAAIuFkAAAAAXwAAAAifKDwhCBxQACAABVV1NSUA=="
+call {vg_ghash}
+.base64 "WFhYWFiB7QACAAA="
+jmp 240f
+239:
+240:
+.base64 "i4WoAAAAiYUQAQAAi4WsAAAAiYUUAQAAuAAAAACJhRgBAACLhRQBAACFwA=="
+je 242f
+.base64 "i4UYAQAAhcA="
+je 244f
+.base64 "uRAAAAArjRgBAACLhRQBAAA5yA=="
+jb 246f
+jmp 247f
+246:
+.base64 "icE="
+247:
+.base64 "i70QAQAAifKDwiADlRgBAACLhRQBAAApyImFFAEAAIuFGAEAAAHIiYUYAQAAifgByImFEAEAAA=="
+248:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 248b
+.base64 "i4UYAQAAg/gQ"
+je 249f
+jmp 250f
+249:
+.base64 "ifODwyC/AQAAAIuFkAAAAAXwAAAAifKDwhCBxQACAABVV1NSUA=="
+call {vg_ghash}
+.base64 "WFhYWFiB7QACAAA="
+250:
+jmp 245f
+244:
+245:
+.base64 "i50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
+je 251f
+.base64 "i4WQAAAABfAAAACJ8oPCEIHFAAIAAFVXU1JQ"
+call {vg_ghash}
+.base64 "WFhYWFiB7QACAAA="
+jmp 252f
+251:
+252:
+.base64 "i40UAQAAhck="
+je 253f
+.base64 "i70QAQAAifKDwiA="
+255:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 255b
+jmp 254f
+253:
+254:
+jmp 243f
+242:
+243:
+.base64 "i4WsAAAAg+APiYUYAQAAi40YAQAAhck="
+je 256f
+.base64 "uAAAAACJRWCJRWSJRWiJRWyJ94PHIInqg8Jg"
+258:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 258b
+.base64 "ieuDw2C/AQAAAIuFkAAAAAXwAAAAifKDwhCBxQACAABVV1NSUA=="
+call {vg_ghash}
+.base64 "WFhYWFiB7QACAAA="
+jmp 257f
+256:
+257:
+.base64 "i4WYAAAAi428AAAAAckByQHJicLB6h0B0QHAAcABwA/JD8iJTWCJRWSLhawAAACLjbwAAAAByQHJAcmJwsHqHQHRAcABwAHAD8kPyIlNaIlFbInrg8NgvwEAAACLhZAAAAAF8AAAAInyg8IQgcUAAgAAVVdTUlA="
+call {vg_ghash}
+.base64 "WFhYWFiB7QACAACLRhCLThSLVhiLXhyJRXCJTXSJVXiJXXyJ64PDcL8BAAAAi4WQAAAAi42UAAAAifKBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to}
+.base64 "WFhYWFhYWIHtAAIAALgAAAAAiYXEAAAAiYXIAAAAiYXMAAAAiYXQAAAAi73UAAAAieqBwsQAAACLjbQAAAA="
+259:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 259b
+.base64 "uAAAAACJhfAAAACJhfQAAACJhfgAAACJhfwAAACJ74PHcInqgcLwAAAAi420AAAA"
+260:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 260b
+.base64 "i4XwAAAAM4XEAAAAi430AAAAM43IAAAACciLjfgAAAAzjcwAAAAJyIuN/AAAADON0AAAAAnIg/gBuAAAAACD0ACJhbgAAACFwA=="
+je 261f
+.base64 "i52oAAAAi72sAAAAwe8Ehf8="
+je 263f
+.base64 "i4WQAAAAi42UAAAAifKDwjCBxQACAABVV1NSUVA="
+call {vg_aes_ctr32_to}
+.base64 "WFhYWFhYge0AAgAA"
+jmp 264f
+263:
+264:
+.base64 "i42sAAAAg+EPhck="
+je 265f
+.base64 "uAAAAACJRkCJRkSJRkiJRkyJ84PDQL8BAAAAi4WQAAAAi42UAAAAifKDwjCBxQACAABTVVdTUlFQ"
+call {vg_aes_ctr32_to}
+.base64 "WFhYWFhYWIHtAAIAAIuFrAAAAInBg+EPKciJ8oPCQIs8JAHHi7WoAAAAAcY="
+267:
+.base64 "D7YCD7YeMdiIB4PHAYPGAYPCAYPpAQ=="
+jne 267b
+.base64 "ie6DxhA="
+jmp 266f
+265:
+266:
+jmp 262f
+261:
+.base64 "ixQki42sAAAAuAAAAACD+QA="
+je 268f
+270:
+.base64 "iAKDwgGD6QE="
+jne 270b
+jmp 269f
+268:
+269:
+262:
+.base64 "i4W4AAAA"
+jmp 25f
+24:
+.base64 "ixQki42sAAAAuAAAAACD+QA="
+je 271f
+273:
+.base64 "iAKDwgGD6QE="
+jne 273b
+jmp 272f
+271:
+272:
+25:
+.base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjWQkMI2kJDgKAADD"
 .p2align 6"#,
-        vg_aes_gcm_open = sym super::gcm::vg_aes_gcm_open,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
     )
 }
 
@@ -4295,7 +5179,7 @@ pub const VG_AES_GCM_STREAM_AAD_PCLMUL_FEATURES: verified_garbage_cpu::Features 
 /// * None of `ctx`, `state` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 2616 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_stream_aad_pclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_aad_pclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "jaQk4PX//4uEJCQKAACJRCQEi4QkKAoAAIlEJAiLhCQsCgAAiUQkDIuEJDAKAACJRCQQi4QkNAoAAIlEJBSLhCQ4CgAAiUQkGIngg8AgiUQkHItEJByJmIAAAACJsIQAAACJuIgAAACJqIwAAACJxYt0JAiLRCQEiYWQAAAAi0QkFImFEAEAAItEJBiJhRQBAACLRCQMg+APiYUYAQAAi4UUAQAAhcA="
 je 20f
@@ -4368,7 +5252,7 @@ pub const VG_AES_GCM_STREAM_INIT_PCLMUL_FEATURES: verified_garbage_cpu::Features
 /// * None of `ctx`, `nonce` and `state` may overlap the arguments on the stack, overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_stream_init_pclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_init_pclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
     core::arch::naked_asm!(
         r#".base64 "jaQk6PX//4uEJBwKAACJRCQEi4QkIAoAAIlEJAiLhCQkCgAAiUQkDIuEJCgKAACJRCQQieCDwBiJRCQUi0QkFImYgAAAAImwhAAAAIm4iAAAAImojAAAAInFi3QkEItEJASJhZAAAACLRCQIiYUQAQAAi0QkDImFFAEAAItEJAyJhcAAAAC4AAAAAImFvAAAAIuFwAAAAIP4DA=="
 je 20f
@@ -4456,7 +5340,7 @@ jmp 21f
 /// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 2616 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_stream_aad(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_aad(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "jaQk4PX//4uEJCQKAACJRCQEi4QkKAoAAIlEJAiLhCQsCgAAiUQkDIuEJDAKAACJRCQQi4QkNAoAAIlEJBSLhCQ4CgAAiUQkGIngg8AgiUQkHItEJByJmIAAAACJsIQAAACJuIgAAACJqIwAAACJxYt0JAiLRCQEiYWQAAAAi0QkFImFEAEAAItEJBiJhRQBAACLRCQMg+APiYUYAQAAi4UUAQAAhcA="
 je 20f
@@ -4525,7 +5409,7 @@ jmp 21f
 /// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
 /// * None of `ctx`, `nonce` and `state` may overlap the arguments on the stack, overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_stream_init(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_init(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
     core::arch::naked_asm!(
         r#".base64 "jaQk6PX//4uEJBwKAACJRCQEi4QkIAoAAIlEJAiLhCQkCgAAiUQkDIuEJCgKAACJRCQQieCDwBiJRCQUi0QkFImYgAAAAImwhAAAAIm4iAAAAImojAAAAInFi3QkEItEJASJhZAAAACLRCQIiYUQAQAAi0QkDImFFAEAAItEJAyJhcAAAAC4AAAAAImFvAAAAIuFwAAAAIP4DA=="
 je 20f

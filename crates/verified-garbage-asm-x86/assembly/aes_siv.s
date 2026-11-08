@@ -551,13 +551,15 @@ vg_aes_siv_encrypt_aesni:
 	add edx, 96
 	mov ebx, DWORD PTR [ebp+192]
 	add ebp, 256
+	push ebx
 	push ebp
 	push edi
 	push ebx
 	push edx
 	push ecx
 	push eax
-	call {vg_aes_ctr32_aesni}
+	call {vg_aes_ctr32_to_aesni}
+	pop eax
 	pop eax
 	pop eax
 	pop eax
@@ -585,13 +587,15 @@ vg_aes_siv_encrypt_aesni:
 	add ebx, 80
 	mov edi, 1
 	add ebp, 256
+	push ebx
 	push ebp
 	push edi
 	push ebx
 	push edx
 	push ecx
 	push eax
-	call {vg_aes_ctr32_aesni}
+	call {vg_aes_ctr32_to_aesni}
+	pop eax
 	pop eax
 	pop eax
 	pop eax
@@ -871,13 +875,15 @@ vg_aes_siv_decrypt_aesni:
 	add edx, 96
 	mov ebx, DWORD PTR [ebp+192]
 	add ebp, 256
+	push ebx
 	push ebp
 	push edi
 	push ebx
 	push edx
 	push ecx
 	push eax
-	call {vg_aes_ctr32_aesni}
+	call {vg_aes_ctr32_to_aesni}
+	pop eax
 	pop eax
 	pop eax
 	pop eax
@@ -905,13 +911,15 @@ vg_aes_siv_decrypt_aesni:
 	add ebx, 80
 	mov edi, 1
 	add ebp, 256
+	push ebx
 	push ebp
 	push edi
 	push ebx
 	push edx
 	push ecx
 	push eax
-	call {vg_aes_ctr32_aesni}
+	call {vg_aes_ctr32_to_aesni}
+	pop eax
 	pop eax
 	pop eax
 	pop eax
@@ -1778,13 +1786,15 @@ vg_aes_siv_encrypt:
 	add edx, 96
 	mov ebx, DWORD PTR [ebp+192]
 	add ebp, 256
+	push ebx
 	push ebp
 	push edi
 	push ebx
 	push edx
 	push ecx
 	push eax
-	call {vg_aes_ctr32}
+	call {vg_aes_ctr32_to}
+	pop eax
 	pop eax
 	pop eax
 	pop eax
@@ -1812,13 +1822,15 @@ vg_aes_siv_encrypt:
 	add ebx, 80
 	mov edi, 1
 	add ebp, 256
+	push ebx
 	push ebp
 	push edi
 	push ebx
 	push edx
 	push ecx
 	push eax
-	call {vg_aes_ctr32}
+	call {vg_aes_ctr32_to}
+	pop eax
 	pop eax
 	pop eax
 	pop eax
@@ -2098,13 +2110,15 @@ vg_aes_siv_decrypt:
 	add edx, 96
 	mov ebx, DWORD PTR [ebp+192]
 	add ebp, 256
+	push ebx
 	push ebp
 	push edi
 	push ebx
 	push edx
 	push ecx
 	push eax
-	call {vg_aes_ctr32}
+	call {vg_aes_ctr32_to}
+	pop eax
 	pop eax
 	pop eax
 	pop eax
@@ -2132,13 +2146,15 @@ vg_aes_siv_decrypt:
 	add ebx, 80
 	mov edi, 1
 	add ebp, 256
+	push ebx
 	push ebp
 	push edi
 	push ebx
 	push edx
 	push ecx
 	push eax
-	call {vg_aes_ctr32}
+	call {vg_aes_ctr32_to}
+	pop eax
 	pop eax
 	pop eax
 	pop eax

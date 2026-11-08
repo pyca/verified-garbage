@@ -2,20 +2,60 @@
 //! The dispatchers of the verified `blowfish` functions for `powerpc64le`
 //! (`crate::blowfish`, `VG.Rust.dispatcher`).
 
-/// `vg_blowfish_expand_key`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::blowfish::vg_blowfish_expand_key as vg_blowfish_expand_key_auto;
+/// Blowfish key expansion (Schneier, FSE 1994): initializes the P-array and S-boxes with the digits of π, XORs the `key_len` bytes at `key` into the P-array, and replaces the P-array and S-boxes with 521 successive encryptions, writing them to `*schedule`: the S-boxes in byte planes (byte `b` of S_{j+1}[x] at `1024 j + 256 b + x`), then P₁…P₁₈ as little-endian words at 4096. Weak keys are accepted.
+///
+/// Contract: `VG.Spec.Blowfish.expandKeyContract`. Constant time: only pointers and `key_len` may affect timing, not the key, including the S-box indices of the key schedule's encryptions.
+///
+/// It runs `vg_blowfish_expand_key`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `schedule` must be valid for reads and writes of 4168 bytes.
+/// * `key_len` must be in 4..=56.
+/// * `schedule` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `schedule` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_blowfish_expand_key_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, schedule: *mut [u8; 4168]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::blowfish::vg_blowfish_expand_key(key, key_len, schedule) }
+}
 
-/// `vg_blowfish_ecb_encrypt`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::blowfish::vg_blowfish_ecb_encrypt as vg_blowfish_ecb_encrypt_auto;
+/// Blowfish ECB encryption (SP 800-38A §6.1's construction) of `n` complete 8-byte blocks at `data`, in place, under the schedule written by `vg_blowfish_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
+///
+/// Contract: `VG.Spec.Blowfish.ecbEncryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including the S-box indices.
+///
+/// It runs `vg_blowfish_ecb_encrypt`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 4168 bytes.
+/// * `data` must be valid for reads and writes of `8 * n` bytes.
+/// * `data` must not overlap `schedule` (distinct Rust objects never do).
+/// * Neither `schedule` nor `data` may overlap the 288 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_blowfish_ecb_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 4168], data: *mut [u8; 8], n: usize) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::blowfish::vg_blowfish_ecb_encrypt(schedule, data, n) }
+}
 
-/// `vg_blowfish_ecb_decrypt`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::blowfish::vg_blowfish_ecb_decrypt as vg_blowfish_ecb_decrypt_auto;
+/// Blowfish ECB decryption (SP 800-38A §6.1's construction) of `n` complete 8-byte blocks at `data`, in place, under the schedule written by `vg_blowfish_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
+///
+/// Contract: `VG.Spec.Blowfish.ecbDecryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including the S-box indices.
+///
+/// It runs `vg_blowfish_ecb_decrypt`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 4168 bytes.
+/// * `data` must be valid for reads and writes of `8 * n` bytes.
+/// * `data` must not overlap `schedule` (distinct Rust objects never do).
+/// * Neither `schedule` nor `data` may overlap the 288 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_blowfish_ecb_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 4168], data: *mut [u8; 8], n: usize) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::blowfish::vg_blowfish_ecb_decrypt(schedule, data, n) }
+}

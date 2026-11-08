@@ -37,7 +37,7 @@
 /// * `hash` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 /// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_rsa_oaep_decrypt(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 5], mgf1: *const [usize; 5]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_oaep_decrypt(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 5], mgf1: *const [usize; 5]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xf81f0ffe,0xd10443ff,0x910003e9,0xf9004d20,0xf9006d22,0xf9005123,0xf9005524,0xf9005925
 .inst 0xf9005d26,0xf9000127,0xf940b7ea,0xf900652a,0xf940bbea,0xf900692a,0xf940c7ea,0xf900312a
@@ -613,7 +613,7 @@ cbnz x12, 293b
 /// * `hash` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 /// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_rsa_oaep_encrypt_precomputed(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const u8, seed_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, hash: *const [usize; 5], mgf1: *const [usize; 5]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_oaep_encrypt_precomputed(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const u8, seed_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, hash: *const [usize; 5], mgf1: *const [usize; 5]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xf81f0ffe,0xd10443ff,0x910003e9,0xf9004d20,0xf9005122,0xf9005523,0xf9005924,0xf9005d25
 .inst 0xf9006526,0xf9006927,0xf94093ea,0xf9006d2a,0xf94097ea,0xf900712a,0xf9409bea,0xf900752a

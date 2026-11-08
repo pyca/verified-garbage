@@ -92,29 +92,32 @@ theorem count_ok (N : Nat) (s : State) (hN : N ≤ 8) :
     Option.some.injEq, exists_eq_left']
   exact ⟨RegUpd.gpr_write_self .., Local.write s .r7 _⟩
 
-structure BatchDone (ctr : Bool) (s₀ : State) (m₀ : Mem) (D : Addr) (n k N : Nat)
+structure BatchDone (ctr : Bool) (s₀ : State) (m₀ : Mem) (D E : Addr) (n k N : Nat)
     (F : Nat → Spec.Aes.State) (s : State) : Prop where
   keep : Keep [.r6, .r7, .r8, .r9, .r10] s₀ s
   ptr : s.gpr .r6 = D + BitVec.ofNat 64 (16*(k+N))
   counter : s.gpr .r8 = if ctr then s₀.gpr .r8 + BitVec.ofNat 64 N else s₀.gpr .r8
   left : s.gpr .r7 = s₀.gpr .r7 - BitVec.ofNat 64 N
-  processed : Processed m₀ s.mem D n (k+N) F
-  frame : Frame [⟨D, 16*n⟩] s₀.mem s.mem
+  processed : Processed m₀ s.mem E n (k+N) F
+  frame : Frame [⟨E, 16*n⟩] s₀.mem s.mem
   fixed : ∀ r, r ∉ key :: data :: counterWord :: batchRegs N → s.vpr r = s₀.vpr r
 
-theorem group_ok (inverse ctr : Bool) (N : Nat) (s : State) {nr n k : Nat} {m₀ : Mem}
-    {D : Addr} {F : Nat → Spec.Aes.State} (hN : N ≤ 8) (hkn : k+N ≤ n) (hsize : 16*n ≤ 2^64)
+/-- A batch, reading the blocks at `D` and storing them at `E` (through the
+offset register `o`, which holds `E - D`). -/
+theorem group_ok (inverse ctr : Bool) (N : Nat) (o : Reg) (s : State) {nr n k : Nat} {m₀ : Mem}
+    {D E : Addr} {F : Nat → Spec.Aes.State} (hN : N ≤ 8) (hkn : k+N ≤ n) (hsize : 16*n ≤ 2^64)
     (hp : Inputs nr s) (hc : ctr = true → s.vpr counterMask = counterControl)
-    (hw : (⟨D, 16*n⟩ : Region) ∈ s.wr)
-    (hptr : s.gpr .r6 = D + BitVec.ofNat 64 (16*k)) (hproc : Processed m₀ s.mem D n k F)
+    (hw : (⟨E, 16*n⟩ : Region) ∈ s.wr) (hrd : (⟨D, 16*n⟩ : Region) ∈ s.rd ++ s.wr)
+    (ho : o ∉ [.r6, .r8, .r9, .r10]) (hO : s.gpr o = E - D)
+    (hptr : s.gpr .r6 = D + BitVec.ofNat 64 (16*k)) (hproc : Processed m₀ s.mem E n k F)
     (hF : ∀ i < N, ∀ v, aesState v = result inverse nr (schedule nr s) (aesState (readValue ctr s i)) →
-      ∀ m, Processed m₀ m D n (k+i) F →
+      ∀ m, Processed m₀ m E n (k+i) F → Frame [⟨E, 16*n⟩] s.mem m →
         aesState (outputAt ctr v m (D + BitVec.ofNat 64 (16*(k+i)))) = F (k+i)) :
-    WP isa (Impl.Aes.PPC64LE.Crypto.group inverse ctr N) s (BatchDone ctr s m₀ D n k N F) := by
+    WP isa (Impl.Aes.PPC64LE.Crypto.group inverse ctr N o) s (BatchDone ctr s m₀ D E n k N F) := by
   have hr : ∀ i < N, InRegions (s.rd ++ s.wr) (s.gpr .r6 + BitVec.ofNat 64 (16*i)) 16 := by
     intro i hi
     rw [hptr, Offset.add_add]
-    exact ⟨⟨D, 16*n⟩, List.mem_append_right _ hw,
+    exact ⟨⟨D, 16*n⟩, hrd,
       Offset.contains_base D (d := 16*k+16*i) (n := 16) (k := 16*n) (by omega) (by omega)⟩
   have hb := batch_cipher_ok inverse ctr N s hN hp hc hr
   rw [Impl.Aes.PPC64LE.Crypto.group]
@@ -125,11 +128,15 @@ theorem group_ok (inverse ctr : Bool) (N : Nat) (s : State) {nr n k : Nat} {m₀
   have hmask : u.vpr mask = byteMask := by
     have facts := batchFacts ⟨N, by omega⟩
     exact (hu.effects.v mask (by simp [facts.2.2.1, mask, key, counterWord])).trans hp.mask
-  have hwu : (⟨D, 16*n⟩ : Region) ∈ u.wr := by rw [hu.effects.keep.2.2]; exact hw
+  have hwu : (⟨E, 16*n⟩ : Region) ∈ u.wr := by rw [hu.effects.keep.2.2]; exact hw
+  have hru : (⟨D, 16*n⟩ : Region) ∈ u.rd ++ u.wr := by
+    rw [hu.effects.keep.2.1, hu.effects.keep.2.2]; exact hrd
+  have hOu : u.gpr o = E - D := (hu.effects.keep.gpr ho).trans hO
+  have ho6 : o ≠ .r6 := fun e => ho (by simp [e])
   have hpu : u.gpr .r6 = D + BitVec.ofNat 64 (16*k) := hu.ptr.trans hptr
-  have hpr : Processed m₀ u.mem D n k F := by rw [hu.effects.mem]; exact hproc
-  refine WP.mono (write_ok ctr hN hkn hsize hwu hzero hmask hpu hpr
-    (fun i hi m hm => hF i hi _ (hu.val i hi) m hm)) fun v hv => ?_
+  have hpr : Processed m₀ u.mem E n k F := by rw [hu.effects.mem]; exact hproc
+  refine WP.mono (write_ok ctr hN hkn hsize hwu hru ho6 hOu hzero hmask hpu hpr
+    (fun i hi m hm hf => hF i hi _ (hu.val i hi) m hm (by rw [← hu.effects.mem]; exact hf))) fun v hv => ?_
   simp only [batchRegs, List.length_map, List.length_range]
   refine WP.mono (count_ok N v hN) fun w ⟨hl, he⟩ => ?_
   refine ⟨((hu.effects.keep.trans hv.keep).trans he.keep).mono (by simp), ?_, ?_, ?_, ?_, ?_, ?_⟩

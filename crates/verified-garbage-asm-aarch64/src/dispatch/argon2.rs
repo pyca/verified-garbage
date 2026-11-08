@@ -2,8 +2,32 @@
 //! The dispatchers of the verified `argon2` functions for `aarch64`
 //! (`crate::argon2`, `VG.Rust.dispatcher`).
 
-/// `vg_argon2`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::argon2::vg_argon2 as vg_argon2_auto;
+/// Argon2 version 1.3 (RFC 9106): derives `out_len` bytes at `out` from the password, salt, optional secret and associated data. `kind` selects Argon2d (0), Argon2i (1) or Argon2id (2). Performs the entire derivation: H₀, H′, initialization, all memory-filling passes, the final lane XOR and H′ of that block.
+///
+/// `iterations` is the pass count, `memory_cost` is the requested KiB count, and `lanes` is the algorithm's parallelism parameter. `threads` limits execution workers and does not change the result; serial execution is permitted.
+///
+/// Contract: `VG.Spec.Argon2.deriveContract`. Argon2i is constant time in all input contents. Argon2d/id additionally permit timing to depend on the sequence of data-dependent reference block indices (`VG.Spec.Argon2.references`), as required by their addressing rules, but on nothing else secret. Pointers, lengths and numeric parameters are public.
+///
+/// It runs `vg_argon2`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `password` must be valid for reads of `password_len` bytes.
+/// * `salt` must be valid for reads of `salt_len` bytes.
+/// * `secret` must be valid for reads of `secret_len` bytes.
+/// * `associated_data` must be valid for reads of `ad_len` bytes.
+/// * `memory` must be valid for reads and writes of `1024 * blocks` bytes.
+/// * `scratch` must be valid for reads and writes of 16384 bytes.
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `kind` must be 0, 1 or 2; `iterations` must be positive; `lanes` and `threads` must be in 1..2^24-1; `memory_cost` must be at least `8 * lanes`.
+/// * All input lengths must be less than 2^32; `out_len` must be in 4..2^32-1.
+/// * `blocks` must equal `4 * lanes * floor(memory_cost / (4 * lanes))`.
+/// * `memory` and `scratch` are working space: their initial contents are arbitrary and their contents on return are unspecified.
+/// * `memory`, `scratch` and `out` must not overlap each other, `password`, `salt`, `secret`, `associated_data` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `password`, `salt`, `secret`, `associated_data`, `memory`, `scratch` and `out` may overlap the 400 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_argon2_auto(_dit: verified_garbage_cpu::Dit<'_>, kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::argon2::vg_argon2(kind, password, password_len, salt, salt_len, iterations, memory_cost, lanes, threads, secret, secret_len, associated_data, ad_len, memory, blocks, scratch, out, out_len) }
+}

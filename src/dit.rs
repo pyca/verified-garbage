@@ -1,0 +1,400 @@
+//! Data independent timing (on AArch64, PSTATE.DIT, FEAT_DIT): Arm
+//! guarantees the timing of the data-independent-time instructions, which
+//! the proofs' leakage model assumes, only while it is on.
+//!
+//! Every verified function takes a [`Dit`] token first, which only this
+//! module makes, so the compiler checks that every call of verified code
+//! comes from an operation that decided whether it needs the mode:
+//!
+//! * [`enter!`] (a [`Guard`]), for an operation that may process secrets
+//!   (it takes a key, or produces or hides a secret): MACs, AEADs, ciphers,
+//!   KDFs, key generation, signing, key agreement, KEMs and RSA's private
+//!   key and encryption. It turns data independent timing on for the
+//!   current thread, where the CPU has it, until the guard is dropped, with
+//!   the verified function `vg_dit_enter`, and turns it off again with
+//!   `vg_dit_clear` if it was off before (`lean/VerifiedGarbage/Spec/Dit.lean`,
+//!   and their effect on it, `VG.Proof.Dit.AArch64.enter_dit` and
+//!   `clear_dit`). Elsewhere it does nothing: no other target has such a
+//!   mode.
+//! * [`public`], for an operation whose inputs and outputs are all the
+//!   caller's public data, for the reason [`Why`] names: hashing without a
+//!   key, verifying a signature, checking or converting a public key, and
+//!   wiping memory. It leaves the mode as it is.
+//! * [`enter_if!`], for a type that is either, as its state says: BLAKE2,
+//!   keyed or not.
+//!
+//! `ci/check_dit.py` checks that each module uses only the reasons its
+//! algorithms' family allows (`docs/algorithms/`), so a new primitive gets
+//! the mode its family needs.
+//!
+//! An operation enters the mode once and passes its token down: the
+//! functions it shares with others take the token (`update_with`,
+//! `digest_with`, …) rather than deciding again. In the tests (debug builds
+//! with `cfg(test)` or `cpu-features-env`), entering a guard while another
+//! is live on the thread, or making a token for public work inside an
+//! operation that holds the mode, panics: the first would turn the mode on
+//! twice, the second would run part of a secret operation as if it were
+//! public. So each operation pays for the mode once.
+
+use core::marker::PhantomData;
+
+pub(crate) use verified_garbage_cpu::Dit;
+
+/// Why an operation may run without data independent timing: all of its
+/// inputs and outputs are public. `ci/check_dit.py` checks which families
+/// may give each.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+// Each target builds only some of the modules that give each reason.
+#[allow(dead_code)]
+pub(crate) enum Why {
+    /// Hashing without a key (SHA-1, SHA-2, SHA-3, SHAKE, BLAKE2 unkeyed,
+    /// MD5, SM3): its input is the caller's, and so is the digest. Hashing
+    /// a secret calls for a MAC or KDF, which take the mode.
+    UnkeyedHash,
+    /// Verifying a signature: the public key, message and signature are
+    /// public.
+    Verify,
+    /// Checking, compressing or decompressing a public key.
+    PublicKey,
+    /// Wiping memory, which stores zeros whatever the data: allowed in
+    /// any operation, inside one that holds the mode too.
+    Wipe,
+    /// A test, which only checks values.
+    #[cfg(test)]
+    Test,
+}
+
+/// Data independent timing on the current thread while it lives (see the
+/// module's documentation), and the [`Dit`] tokens that say so
+/// ([`Guard::token`]). It is neither `Send` nor `Sync`: the mode is a
+/// thread's own.
+pub(crate) struct Guard {
+    /// Whether this guard holds the mode: made by [`Guard::new`], or by
+    /// [`Guard::new_if`] for secret work.
+    active: bool,
+    /// Whether this guard turned the mode on, which it then turns off when
+    /// dropped: it was off, and the CPU has it.
+    #[cfg(target_arch = "aarch64")]
+    clear: bool,
+    _thread: PhantomData<*const ()>,
+}
+
+impl Guard {
+    /// Turns data independent timing on for the current thread, where the
+    /// CPU has it.
+    #[inline]
+    #[track_caller]
+    pub(crate) fn new() -> Self {
+        check::enter();
+        Guard {
+            active: true,
+            #[cfg(target_arch = "aarch64")]
+            clear: aarch64::enter(),
+            _thread: PhantomData,
+        }
+    }
+
+    /// [`Guard::new`] if `secret`, else a guard that leaves the mode as it
+    /// is, for public work, as `why` says.
+    #[inline]
+    #[track_caller]
+    pub(crate) fn new_if(secret: bool, why: Why) -> Self {
+        if secret {
+            Self::new()
+        } else {
+            let _ = public(why);
+            Guard {
+                active: false,
+                #[cfg(target_arch = "aarch64")]
+                clear: false,
+                _thread: PhantomData,
+            }
+        }
+    }
+
+    /// A token for as long as the guard is borrowed.
+    #[inline(always)]
+    pub(crate) fn token(&self) -> Dit<'_> {
+        // SAFETY: the guard turned the mode on where the CPU has it, and it
+        // stays on until the guard is dropped, which the borrow outlives; or
+        // its work is public (`new_if`).
+        unsafe { Dit::assume() }
+    }
+}
+
+impl Drop for Guard {
+    #[inline]
+    fn drop(&mut self) {
+        if self.active {
+            check::leave();
+        }
+        #[cfg(target_arch = "aarch64")]
+        if self.clear {
+            aarch64::clear();
+        }
+    }
+}
+
+#[cfg(target_arch = "aarch64")]
+mod aarch64 {
+    use crate::arch::dit::{vg_dit_clear, vg_dit_enter};
+
+    /// Turns PSTATE.DIT on if the CPU has FEAT_DIT, `vg_dit_enter`'s one
+    /// feature (`VG_DIT_ENTER_FEATURES`), whatever `VG_CPU_FEATURES` says
+    /// (`verified_garbage_cpu::detect::dit`), and returns whether it was off
+    /// then.
+    #[inline]
+    pub(super) fn enter() -> bool {
+        enter_if(verified_garbage_cpu::detect::dit())
+    }
+
+    /// `enter`, given whether the CPU has FEAT_DIT, so that the tests run
+    /// the case without it on any CPU.
+    #[inline(always)]
+    pub(super) fn enter_if(has: bool) -> bool {
+        if !has {
+            return false;
+        }
+        // SAFETY: the CPU has FEAT_DIT, which `vg_dit_enter` requires, and it
+        // writes no memory. It is what turns the mode on and reads no data,
+        // and it has no dispatcher (its base needs FEAT_DIT), so the
+        // generated crate exports it without a token.
+        unsafe { vg_dit_enter() == 0 }
+    }
+
+    /// Turns PSTATE.DIT off, after `enter` found it off and turned it on.
+    #[inline]
+    pub(super) fn clear() {
+        // SAFETY: `enter` found FEAT_DIT, which `vg_dit_clear` requires too
+        // (`VG_DIT_CLEAR_FEATURES` is the same set), and it writes no memory.
+        // It reads no data.
+        unsafe { vg_dit_clear() }
+    }
+}
+
+/// The tests' checks that each operation decides once (see the module's
+/// documentation): whether a guard is live on this thread.
+#[cfg(all(debug_assertions, any(test, feature = "cpu-features-env")))]
+mod check {
+    extern crate std;
+
+    use std::sync::Mutex;
+    use std::thread::{self, ThreadId};
+    use std::vec::Vec;
+
+    /// The threads holding a guard. Not a `thread_local!`: that macro expands
+    /// the standard library's code into this crate, which coverage then
+    /// records at a path outside the repository. Nothing panics while it is
+    /// locked, so it is never poisoned.
+    static LIVE: Mutex<Vec<ThreadId>> = Mutex::new(Vec::new());
+
+    #[track_caller]
+    pub(super) fn enter() {
+        let id = thread::current().id();
+        let mut live = LIVE.lock().unwrap();
+        let nested = live.contains(&id);
+        if !nested {
+            live.push(id);
+        }
+        drop(live);
+        assert!(
+            !nested,
+            "a DIT guard entered inside another: pass the operation's token down"
+        );
+    }
+
+    pub(super) fn leave() {
+        let id = thread::current().id();
+        LIVE.lock().unwrap().retain(|t| *t != id);
+    }
+
+    #[track_caller]
+    pub(super) fn public() {
+        let id = thread::current().id();
+        let held = LIVE.lock().unwrap().contains(&id);
+        assert!(
+            !held,
+            "a public token made inside an operation that holds DIT: pass its token down"
+        );
+    }
+}
+
+/// Without the checks, nothing.
+#[cfg(not(all(debug_assertions, any(test, feature = "cpu-features-env"))))]
+mod check {
+    #[inline(always)]
+    pub(super) fn enter() {}
+    #[inline(always)]
+    pub(super) fn leave() {}
+    #[inline(always)]
+    pub(super) fn public() {}
+}
+
+/// Binds `$dit` to a [`Dit`] token of a new [`Guard`], which keeps data
+/// independent timing on until the end of the enclosing block.
+macro_rules! enter {
+    ($dit:ident) => {
+        let guard = $crate::dit::Guard::new();
+        let $dit = guard.token();
+    };
+}
+pub(crate) use enter;
+
+/// Binds `$dit` to a token of a [`Guard::new_if`]: data independent timing
+/// until the end of the enclosing block if `$secret`, else public work, as
+/// the [`Why`] `$why` says.
+macro_rules! enter_if {
+    ($dit:ident, $secret:expr, $why:expr) => {
+        let guard = $crate::dit::Guard::new_if($secret, $why);
+        let $dit = guard.token();
+    };
+}
+pub(crate) use enter_if;
+
+/// A token for work whose inputs and outputs are all public, as `why`
+/// says: its timing may depend on them, so the mode is left as it is.
+#[track_caller]
+#[inline(always)]
+pub(crate) fn public(why: Why) -> Dit<'static> {
+    match why {
+        Why::Wipe => {}
+        #[cfg(test)]
+        Why::Test => {}
+        _ => check::public(),
+    }
+    // SAFETY: `why` says that every input of the verified functions the
+    // token is passed to is public, and `check` that no secret operation
+    // is running on this thread (in the tests).
+    unsafe { Dit::assume() }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Why;
+    #[cfg(target_arch = "aarch64")]
+    use crate::arch::dit::{VG_DIT_ENTER_FEATURES, vg_dit_clear, vg_dit_enter};
+
+    /// Whether the CPU has FEAT_DIT.
+    #[cfg(target_arch = "aarch64")]
+    fn has() -> bool {
+        verified_garbage_cpu::detect::dit()
+    }
+
+    /// `vg_dit_enter` (and `vg_dit_clear`) need FEAT_DIT alone, which is
+    /// what `has` asks.
+    #[cfg(target_arch = "aarch64")]
+    #[test]
+    fn features_are_dit() {
+        assert_eq!(VG_DIT_ENTER_FEATURES.0, verified_garbage_cpu::feature::DIT);
+    }
+
+    /// Whether PSTATE.DIT is on, read by entering, which leaves it on: this
+    /// turns it off again if it was off. Only on a CPU with FEAT_DIT.
+    #[cfg(target_arch = "aarch64")]
+    fn on() -> bool {
+        // SAFETY: the callers checked for FEAT_DIT, which both functions
+        // require; they write no memory.
+        unsafe {
+            let was = vg_dit_enter() == 1;
+            if !was {
+                vg_dit_clear();
+            }
+            was
+        }
+    }
+
+    /// Entering turns the mode on and reports what it was; clearing turns
+    /// it off. This changes PSTATE.DIT of the test's thread alone, and
+    /// leaves it off.
+    #[cfg(target_arch = "aarch64")]
+    #[test]
+    fn enter_and_clear() {
+        assert!(!has() || cycle());
+    }
+
+    /// `enter_and_clear` on a CPU with FEAT_DIT; returns true.
+    #[cfg(target_arch = "aarch64")]
+    fn cycle() -> bool {
+        // SAFETY: the CPU has FEAT_DIT, as both functions require
+        // (`VG_DIT_CLEAR_FEATURES` is the same set).
+        unsafe {
+            vg_dit_enter();
+            assert_eq!(vg_dit_enter(), 1);
+            vg_dit_clear();
+            assert_eq!(vg_dit_enter(), 0);
+            assert_eq!(vg_dit_enter(), 1);
+            vg_dit_clear();
+        }
+        true
+    }
+
+    /// Without FEAT_DIT, entering does nothing, and leaves nothing to
+    /// clear.
+    #[cfg(target_arch = "aarch64")]
+    #[test]
+    fn enter_without_dit() {
+        assert!(!super::aarch64::enter_if(false));
+    }
+
+    /// A guard turns the mode on while it lives, where the CPU has it, and
+    /// leaves it off after; one for public work leaves it as it is.
+    #[test]
+    fn guard() {
+        #[cfg(target_arch = "aarch64")]
+        let has = has();
+        #[cfg(target_arch = "aarch64")]
+        if has {
+            // SAFETY: the CPU has FEAT_DIT; it writes no memory.
+            unsafe { vg_dit_clear() };
+        }
+        {
+            super::enter!(dit);
+            let _ = dit;
+            #[cfg(target_arch = "aarch64")]
+            assert!(!has || on());
+            // Wiping needs no decision of its own.
+            let _ = super::public(Why::Wipe);
+        }
+        #[cfg(target_arch = "aarch64")]
+        assert!(!has || !on());
+        {
+            super::enter_if!(dit, true, Why::UnkeyedHash);
+            let _ = dit;
+            #[cfg(target_arch = "aarch64")]
+            assert!(!has || on());
+        }
+        {
+            super::enter_if!(dit, false, Why::UnkeyedHash);
+            let _ = dit;
+            #[cfg(target_arch = "aarch64")]
+            assert!(!has || !on());
+            // A public guard holds nothing, so a secret operation may follow.
+            super::enter!(inner);
+            let _ = inner;
+        }
+        #[cfg(target_arch = "aarch64")]
+        assert!(!has || !on());
+    }
+
+    /// Entering a guard inside another panics in the tests.
+    #[cfg(debug_assertions)]
+    #[test]
+    #[should_panic(expected = "a DIT guard entered inside another")]
+    fn nested_guard() {
+        super::enter!(outer);
+        let _ = outer;
+        super::enter!(inner);
+        let _ = inner;
+    }
+
+    /// Making a token for public work inside a secret operation panics in
+    /// the tests.
+    #[cfg(debug_assertions)]
+    #[test]
+    #[should_panic(expected = "a public token made inside an operation that holds DIT")]
+    fn public_inside_guard() {
+        super::enter!(dit);
+        let _ = dit;
+        let _ = super::public(Why::UnkeyedHash);
+    }
+}

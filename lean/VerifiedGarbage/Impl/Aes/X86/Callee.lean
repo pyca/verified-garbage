@@ -19,8 +19,10 @@ structure ExpandKey where
 structure Blocks where
   name : String
   code : Prog isa
-def Ctr32.scalar : Ctr32 := ⟨"vg_aes_ctr32", ctr32⟩
-def Ctr32.aesni : Ctr32 := ⟨"vg_aes_ctr32_aesni", AesNi.ctr32⟩
+/-- AES counter mode from `src` (argument 3) to `dst` (argument 6), which
+in-place callers give the same. -/
+def Ctr32.scalar : Ctr32 := ⟨"vg_aes_ctr32_to", ctr32To⟩
+def Ctr32.aesni : Ctr32 := ⟨"vg_aes_ctr32_to_aesni", AesNi.ctr32To⟩
 def ExpandKey.scalar : ExpandKey := ⟨"vg_aes_expand_key_scratch", expandKey⟩
 def ExpandKey.aesni : ExpandKey := ⟨"vg_aes_expand_key_scratch_aesni", AesNi.expandKey⟩
 def Blocks.encScalar : Blocks := ⟨"vg_aes_encrypt_blocks", encryptBlocks⟩

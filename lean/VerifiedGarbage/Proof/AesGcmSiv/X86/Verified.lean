@@ -12,15 +12,15 @@ import VerifiedGarbage.Proof.AesGcm.X86.Contract
 # AES-GCM-SIV on x86: `Verified`
 
 Untrusted: everything here is checked by Lean. Correctness and constant time
-(for any implementations `v` of `vg_aes_ctr32`, `vg_aes_expand_key` and
+(for any implementations `v` of `vg_aes_ctr32_to`, `vg_aes_expand_key` and
 `vg_ghash`), given that the tag input computed with GHASH is the RFC's
 (`TagInputEq`, which the registration file has from
 `Proof.GcmSiv.Polyval.tagInput_eq_tagInputG`, so that no proof here imports
 its algebra), a state satisfying each
 precondition, and the shared contracts with the working space as a last
-argument (`Proof/AesGcmSiv/Scratch.lean`), with 28 bytes of stack: a call of
-`vg_aes_ctr32` (its six arguments and return address), which makes no
-calls.
+argument (`Proof/AesGcmSiv/Scratch.lean`), with 32 bytes of stack: a call of
+`vg_aes_ctr32_to` in place (its seven arguments and return address), which
+makes no calls.
 -/
 
 @[expose] public section
@@ -90,7 +90,7 @@ theorem openSat_args : arg openSat 0 = 0x1000 ∧ arg openSat 1 = 10 ∧ arg ope
   sealSat_args
 
 theorem seal_verified (v : GcmImpl) (hti : TagInputEq) :
-    Verified X86.target («seal» v.callees) (Proof.AesGcmSiv.sealScratchContract X86.abi 352 28) :=
+    Verified X86.target («seal» v.callees) (Proof.AesGcmSiv.sealScratchContract X86.abi 352 32) :=
   Verified.of_correct (fun _ hs => seal_wp v hti hs) (seal_ct v) (by
     obtain ⟨a0, a1, a2, a3, a4, a5, a6, a7, a8, e⟩ := sealSat_args
     have esp : sealSat.gpr .esp = 0x8000 := rfl
@@ -100,7 +100,7 @@ theorem seal_verified (v : GcmImpl) (hti : TagInputEq) :
       [a0, a1, a2, a3, a4, a5, a6, a7, a8, e, esp] using sealSat)
 
 theorem open_verified (v : GcmImpl) (hti : TagInputEq) :
-    Verified X86.target («open» v.callees) (Proof.AesGcmSiv.openScratchContract X86.abi 352 28) :=
+    Verified X86.target («open» v.callees) (Proof.AesGcmSiv.openScratchContract X86.abi 352 32) :=
   Verified.of_correct (fun _ hs => open_wp v hti hs) (open_ct v)
     { pre := by
         sig_implies_pre [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig, Spec.GcmSiv.openPre,

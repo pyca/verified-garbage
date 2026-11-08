@@ -17,7 +17,7 @@
 /// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
 /// * None of `state`, `data` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha3_224_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+pub(crate) unsafe extern "C" fn vg_sha3_224_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
     core::arch::naked_asm!(
         r".inst 0x91000085,0x91000064,0x91000043,0x91000022,0xd2801201
 cbz x2, 20f
@@ -455,7 +455,7 @@ b 214f
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the 688 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha3_224_finalize(state: *mut [u64; 25], pos: usize, out: *mut [u8; 28]) {
+pub(crate) unsafe extern "C" fn vg_sha3_224_finalize(state: *mut [u64; 25], pos: usize, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
         r".inst 0xd10a83ff,0x910003e3,0xf9014c7e,0xf9014073,0xf9014474,0xf9014875,0x91000013,0x91000054
 .inst 0x91000075,0x91000022,0xd2801201,0xd28000c3,0x910002a4
@@ -483,7 +483,7 @@ bl {vg_keccak_squeeze_scratch}
 /// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
 /// * None of `state`, `data` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha3_256_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+pub(crate) unsafe extern "C" fn vg_sha3_256_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
     core::arch::naked_asm!(
         r".inst 0x91000085,0x91000064,0x91000043,0x91000022,0xd2801101
 cbz x2, 20f
@@ -921,7 +921,7 @@ b 214f
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the 688 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha3_256_finalize(state: *mut [u64; 25], pos: usize, out: *mut [u8; 32]) {
+pub(crate) unsafe extern "C" fn vg_sha3_256_finalize(state: *mut [u64; 25], pos: usize, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
         r".inst 0xd10a83ff,0x910003e3,0xf9014c7e,0xf9014073,0xf9014474,0xf9014875,0x91000013,0x91000054
 .inst 0x91000075,0x91000022,0xd2801101,0xd28000c3,0x910002a4
@@ -949,7 +949,7 @@ bl {vg_keccak_squeeze_scratch}
 /// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
 /// * None of `state`, `data` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha3_384_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+pub(crate) unsafe extern "C" fn vg_sha3_384_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
     core::arch::naked_asm!(
         r".inst 0x91000085,0x91000064,0x91000043,0x91000022,0xd2800d01
 cbz x2, 20f
@@ -1387,7 +1387,7 @@ b 214f
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the 688 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha3_384_finalize(state: *mut [u64; 25], pos: usize, out: *mut [u8; 48]) {
+pub(crate) unsafe extern "C" fn vg_sha3_384_finalize(state: *mut [u64; 25], pos: usize, out: *mut [u8; 48]) {
     core::arch::naked_asm!(
         r".inst 0xd10a83ff,0x910003e3,0xf9014c7e,0xf9014073,0xf9014474,0xf9014875,0x91000013,0x91000054
 .inst 0x91000075,0x91000022,0xd2800d01,0xd28000c3,0x910002a4
@@ -1415,7 +1415,7 @@ bl {vg_keccak_squeeze_scratch}
 /// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
 /// * None of `state`, `data` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha3_512_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+pub(crate) unsafe extern "C" fn vg_sha3_512_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
     core::arch::naked_asm!(
         r".inst 0x91000085,0x91000064,0x91000043,0x91000022,0xd2800901
 cbz x2, 20f
@@ -1853,7 +1853,7 @@ b 214f
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the 688 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha3_512_finalize(state: *mut [u64; 25], pos: usize, out: *mut [u8; 64]) {
+pub(crate) unsafe extern "C" fn vg_sha3_512_finalize(state: *mut [u64; 25], pos: usize, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
         r".inst 0xd10a83ff,0x910003e3,0xf9014c7e,0xf9014073,0xf9014474,0xf9014875,0x91000013,0x91000054
 .inst 0x91000075,0x91000022,0xd2800901,0xd28000c3,0x910002a4
@@ -1881,7 +1881,7 @@ bl {vg_keccak_squeeze_scratch}
 /// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
 /// * None of `state`, `data` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_shake128_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+pub(crate) unsafe extern "C" fn vg_shake128_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
     core::arch::naked_asm!(
         r".inst 0x91000085,0x91000064,0x91000043,0x91000022,0xd2801501
 cbz x2, 20f
@@ -2316,7 +2316,7 @@ b 214f
 /// * `pos` must be less than 168.
 /// * `state` must not overlap the 656 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_shake128_finalize(state: *mut [u64; 25], pos: usize) {
+pub(crate) unsafe extern "C" fn vg_shake128_finalize(state: *mut [u64; 25], pos: usize) {
     core::arch::naked_asm!(
         r".inst 0xd10a03ff,0x910003e2,0x91000044,0x91000022,0xd2801501,0xd28003e3,0xf81f0ffe,0x8b020009
 .inst 0x3940012a,0xca03014a,0x3900012a,0x8b010009,0xd1000529,0x3940012a,0xd280100b,0xca0b014a
@@ -2340,7 +2340,7 @@ bl {vg_keccak_f1600}
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the 656 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_shake128_squeeze(state: *mut [u64; 25], pos: usize, out: *mut u8, outlen: usize) -> usize {
+pub(crate) unsafe extern "C" fn vg_shake128_squeeze(state: *mut [u64; 25], pos: usize, out: *mut u8, outlen: usize) -> usize {
     core::arch::naked_asm!(
         r".inst 0xd10a03ff,0x910003e4,0x91000085,0x91000064,0x91000043,0x91000022,0xd2801501,0xf81f0ffe
 .inst 0xf90100b3,0xf90104b4,0xf90108b5,0xf9010cb6,0xf90110b7,0xf90114b8,0x91000013,0x910000b4
@@ -2372,7 +2372,7 @@ b 21f
     )
 }
 
-/// Finishes absorbing a SHAKE256 message: if the state `*state` represents a message whose length is `pos` modulo 136 (`VG.Spec.Sha3.Repr` with SHAKE256's rate, as `vg_shake256_update` leaves it), it becomes a state that, squeezed by `vg_shake256_squeeze` from position 0, gives the output of SHAKE256 of that message (`VG.Spec.Sha3.shake256`) from its first byte on (`VG.Spec.Sha3.XofRepr`).
+/// Finishes absorbing a SHAKE256 message: if the state `*state` represents a message whose length is `pos` modulo 136 (`VG.Spec.Sha3.Repr` with SHAKE256's rate, as `vg_sha3_256_update` leaves it), it becomes a state that, squeezed by `vg_shake256_squeeze` from position 0, gives the output of SHAKE256 of that message (`VG.Spec.Sha3.shake256`) from its first byte on (`VG.Spec.Sha3.XofRepr`).
 ///
 /// Contract: `VG.Spec.Sha3.xofFinalizeContract` for `VG.Spec.Sha3.xofShake256`. Constant time: only the pointer and `pos` may affect timing, not the state.
 ///
@@ -2382,7 +2382,7 @@ b 21f
 /// * `pos` must be less than 136.
 /// * `state` must not overlap the 656 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_shake256_finalize(state: *mut [u64; 25], pos: usize) {
+pub(crate) unsafe extern "C" fn vg_shake256_finalize(state: *mut [u64; 25], pos: usize) {
     core::arch::naked_asm!(
         r".inst 0xd10a03ff,0x910003e2,0x91000044,0x91000022,0xd2801101,0xd28003e3,0xf81f0ffe,0x8b020009
 .inst 0x3940012a,0xca03014a,0x3900012a,0x8b010009,0xd1000529,0x3940012a,0xd280100b,0xca0b014a
@@ -2406,7 +2406,7 @@ bl {vg_keccak_f1600}
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the 656 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_shake256_squeeze(state: *mut [u64; 25], pos: usize, out: *mut u8, outlen: usize) -> usize {
+pub(crate) unsafe extern "C" fn vg_shake256_squeeze(state: *mut [u64; 25], pos: usize, out: *mut u8, outlen: usize) -> usize {
     core::arch::naked_asm!(
         r".inst 0xd10a03ff,0x910003e4,0x91000085,0x91000064,0x91000043,0x91000022,0xd2801101,0xf81f0ffe
 .inst 0xf90100b3,0xf90104b4,0xf90108b5,0xf9010cb6,0xf90110b7,0xf90114b8,0x91000013,0x910000b4
@@ -2456,7 +2456,7 @@ pub const VG_SHA3_224_UPDATE_SHA3_FEATURES: verified_garbage_cpu::Features = ver
 /// * None of `state`, `data` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha3_224_update_sha3(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+pub(crate) unsafe extern "C" fn vg_sha3_224_update_sha3(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
     core::arch::naked_asm!(
         r".inst 0x91000085,0x91000064,0x91000043,0x91000022,0xd2801201
 cbz x2, 20f
@@ -2778,7 +2778,7 @@ pub const VG_SHA3_224_FINALIZE_SHA3_FEATURES: verified_garbage_cpu::Features = v
 /// * Neither `state` nor `out` may overlap the 688 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha3_224_finalize_sha3(state: *mut [u64; 25], pos: usize, out: *mut [u8; 28]) {
+pub(crate) unsafe extern "C" fn vg_sha3_224_finalize_sha3(state: *mut [u64; 25], pos: usize, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
         r".inst 0xd10a83ff,0x910003e3,0xf9014c7e,0xf9014073,0xf9014474,0xf9014875,0x91000013,0x91000054
 .inst 0x91000075,0x91000022,0xd2801201,0xd28000c3,0x910002a4
@@ -2810,7 +2810,7 @@ pub const VG_SHA3_256_UPDATE_SHA3_FEATURES: verified_garbage_cpu::Features = ver
 /// * None of `state`, `data` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha3_256_update_sha3(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+pub(crate) unsafe extern "C" fn vg_sha3_256_update_sha3(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
     core::arch::naked_asm!(
         r".inst 0x91000085,0x91000064,0x91000043,0x91000022,0xd2801101
 cbz x2, 20f
@@ -3132,7 +3132,7 @@ pub const VG_SHA3_256_FINALIZE_SHA3_FEATURES: verified_garbage_cpu::Features = v
 /// * Neither `state` nor `out` may overlap the 688 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha3_256_finalize_sha3(state: *mut [u64; 25], pos: usize, out: *mut [u8; 32]) {
+pub(crate) unsafe extern "C" fn vg_sha3_256_finalize_sha3(state: *mut [u64; 25], pos: usize, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
         r".inst 0xd10a83ff,0x910003e3,0xf9014c7e,0xf9014073,0xf9014474,0xf9014875,0x91000013,0x91000054
 .inst 0x91000075,0x91000022,0xd2801101,0xd28000c3,0x910002a4
@@ -3164,7 +3164,7 @@ pub const VG_SHA3_384_UPDATE_SHA3_FEATURES: verified_garbage_cpu::Features = ver
 /// * None of `state`, `data` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha3_384_update_sha3(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+pub(crate) unsafe extern "C" fn vg_sha3_384_update_sha3(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
     core::arch::naked_asm!(
         r".inst 0x91000085,0x91000064,0x91000043,0x91000022,0xd2800d01
 cbz x2, 20f
@@ -3486,7 +3486,7 @@ pub const VG_SHA3_384_FINALIZE_SHA3_FEATURES: verified_garbage_cpu::Features = v
 /// * Neither `state` nor `out` may overlap the 688 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha3_384_finalize_sha3(state: *mut [u64; 25], pos: usize, out: *mut [u8; 48]) {
+pub(crate) unsafe extern "C" fn vg_sha3_384_finalize_sha3(state: *mut [u64; 25], pos: usize, out: *mut [u8; 48]) {
     core::arch::naked_asm!(
         r".inst 0xd10a83ff,0x910003e3,0xf9014c7e,0xf9014073,0xf9014474,0xf9014875,0x91000013,0x91000054
 .inst 0x91000075,0x91000022,0xd2800d01,0xd28000c3,0x910002a4
@@ -3518,7 +3518,7 @@ pub const VG_SHA3_512_UPDATE_SHA3_FEATURES: verified_garbage_cpu::Features = ver
 /// * None of `state`, `data` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha3_512_update_sha3(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+pub(crate) unsafe extern "C" fn vg_sha3_512_update_sha3(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
     core::arch::naked_asm!(
         r".inst 0x91000085,0x91000064,0x91000043,0x91000022,0xd2800901
 cbz x2, 20f
@@ -3840,7 +3840,7 @@ pub const VG_SHA3_512_FINALIZE_SHA3_FEATURES: verified_garbage_cpu::Features = v
 /// * Neither `state` nor `out` may overlap the 688 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha3_512_finalize_sha3(state: *mut [u64; 25], pos: usize, out: *mut [u8; 64]) {
+pub(crate) unsafe extern "C" fn vg_sha3_512_finalize_sha3(state: *mut [u64; 25], pos: usize, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
         r".inst 0xd10a83ff,0x910003e3,0xf9014c7e,0xf9014073,0xf9014474,0xf9014875,0x91000013,0x91000054
 .inst 0x91000075,0x91000022,0xd2800901,0xd28000c3,0x910002a4
@@ -3872,7 +3872,7 @@ pub const VG_SHAKE128_UPDATE_SHA3_FEATURES: verified_garbage_cpu::Features = ver
 /// * None of `state`, `data` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_shake128_update_sha3(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+pub(crate) unsafe extern "C" fn vg_shake128_update_sha3(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
     core::arch::naked_asm!(
         r".inst 0x91000085,0x91000064,0x91000043,0x91000022,0xd2801501
 cbz x2, 20f
@@ -4191,7 +4191,7 @@ pub const VG_SHAKE128_FINALIZE_SHA3_FEATURES: verified_garbage_cpu::Features = v
 /// * `state` must not overlap the 656 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_shake128_finalize_sha3(state: *mut [u64; 25], pos: usize) {
+pub(crate) unsafe extern "C" fn vg_shake128_finalize_sha3(state: *mut [u64; 25], pos: usize) {
     core::arch::naked_asm!(
         r".inst 0xd10a03ff,0x910003e2,0x91000044,0x91000022,0xd2801501,0xd28003e3,0xf81f0ffe,0x8b020009
 .inst 0x3940012a,0xca03014a,0x3900012a,0x8b010009,0xd1000529,0x3940012a,0xd280100b,0xca0b014a
@@ -4219,7 +4219,7 @@ pub const VG_SHAKE128_SQUEEZE_SHA3_FEATURES: verified_garbage_cpu::Features = ve
 /// * Neither `state` nor `out` may overlap the 656 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_shake128_squeeze_sha3(state: *mut [u64; 25], pos: usize, out: *mut u8, outlen: usize) -> usize {
+pub(crate) unsafe extern "C" fn vg_shake128_squeeze_sha3(state: *mut [u64; 25], pos: usize, out: *mut u8, outlen: usize) -> usize {
     core::arch::naked_asm!(
         r".inst 0xd10a03ff,0x910003e4,0x91000085,0x91000064,0x91000043,0x91000022,0xd2801501,0xf81f0ffe
 .inst 0xf90100b3,0xf90104b4,0xf90108b5,0xf9010cb6,0xf90110b7,0xf90114b8,0x91000013,0x910000b4
@@ -4254,7 +4254,7 @@ b 21f
 /// The CPU features `vg_shake256_finalize_sha3` requires (`Artifact.features`).
 pub const VG_SHAKE256_FINALIZE_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
 
-/// Finishes absorbing a SHAKE256 message: if the state `*state` represents a message whose length is `pos` modulo 136 (`VG.Spec.Sha3.Repr` with SHAKE256's rate, as `vg_shake256_update` leaves it), it becomes a state that, squeezed by `vg_shake256_squeeze` from position 0, gives the output of SHAKE256 of that message (`VG.Spec.Sha3.shake256`) from its first byte on (`VG.Spec.Sha3.XofRepr`).
+/// Finishes absorbing a SHAKE256 message: if the state `*state` represents a message whose length is `pos` modulo 136 (`VG.Spec.Sha3.Repr` with SHAKE256's rate, as `vg_sha3_256_update` leaves it), it becomes a state that, squeezed by `vg_shake256_squeeze` from position 0, gives the output of SHAKE256 of that message (`VG.Spec.Sha3.shake256`) from its first byte on (`VG.Spec.Sha3.XofRepr`).
 ///
 /// Contract: `VG.Spec.Sha3.xofFinalizeContract` for `VG.Spec.Sha3.xofShake256`. Constant time: only the pointer and `pos` may affect timing, not the state.
 ///
@@ -4265,7 +4265,7 @@ pub const VG_SHAKE256_FINALIZE_SHA3_FEATURES: verified_garbage_cpu::Features = v
 /// * `state` must not overlap the 656 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_shake256_finalize_sha3(state: *mut [u64; 25], pos: usize) {
+pub(crate) unsafe extern "C" fn vg_shake256_finalize_sha3(state: *mut [u64; 25], pos: usize) {
     core::arch::naked_asm!(
         r".inst 0xd10a03ff,0x910003e2,0x91000044,0x91000022,0xd2801101,0xd28003e3,0xf81f0ffe,0x8b020009
 .inst 0x3940012a,0xca03014a,0x3900012a,0x8b010009,0xd1000529,0x3940012a,0xd280100b,0xca0b014a
@@ -4293,7 +4293,7 @@ pub const VG_SHAKE256_SQUEEZE_SHA3_FEATURES: verified_garbage_cpu::Features = ve
 /// * Neither `state` nor `out` may overlap the 656 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_shake256_squeeze_sha3(state: *mut [u64; 25], pos: usize, out: *mut u8, outlen: usize) -> usize {
+pub(crate) unsafe extern "C" fn vg_shake256_squeeze_sha3(state: *mut [u64; 25], pos: usize, out: *mut u8, outlen: usize) -> usize {
     core::arch::naked_asm!(
         r".inst 0xd10a03ff,0x910003e4,0x91000085,0x91000064,0x91000043,0x91000022,0xd2801101,0xf81f0ffe
 .inst 0xf90100b3,0xf90104b4,0xf90108b5,0xf9010cb6,0xf90110b7,0xf90114b8,0x91000013,0x910000b4

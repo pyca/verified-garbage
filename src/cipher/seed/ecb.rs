@@ -9,7 +9,10 @@
     target_arch = "riscv64"
 ))]
 
-use crate::arch::seed::{vg_seed_ecb_decrypt, vg_seed_ecb_encrypt, vg_seed_expand_key};
+use crate::align::CacheAligned;
+use crate::arch::dispatch::seed::{
+    vg_seed_ecb_decrypt_auto, vg_seed_ecb_encrypt_auto, vg_seed_expand_key_auto,
+};
 use crate::error::IncompleteBlock;
 use crate::zeroize::zeroize;
 
@@ -20,17 +23,18 @@ use crate::zeroize::zeroize;
 /// ECB encrypts equal blocks to equal blocks, so it reveals patterns in the
 /// data.
 pub struct SeedEcb {
-    schedule: [u8; 128],
+    schedule: CacheAligned<[u8; 128]>,
 }
 
 impl SeedEcb {
     /// Expands a 16-byte key for use in either direction.
     pub fn new(key: &[u8; 16]) -> Self {
-        let mut schedule = [0; 128];
+        let mut schedule = CacheAligned([0; 128]);
+        crate::dit::enter!(dit);
         // SAFETY: key and schedule are separate valid buffers of the required
         // sizes.
         unsafe {
-            vg_seed_expand_key(key, &mut schedule);
+            vg_seed_expand_key_auto(dit, key, &mut schedule.0);
         }
         Self { schedule }
     }
@@ -52,16 +56,18 @@ impl SeedEcb {
             return Err(IncompleteBlock);
         }
         let f = if encrypt {
-            vg_seed_ecb_encrypt
+            vg_seed_ecb_encrypt_auto
         } else {
-            vg_seed_ecb_decrypt
+            vg_seed_ecb_decrypt_auto
         };
+        crate::dit::enter!(dit);
         // SAFETY: buffer contains complete 16-byte blocks, including zero
         // blocks. The buffer and schedule are separate valid objects and do not
         // overlap the callee's stack.
         unsafe {
             f(
-                &self.schedule,
+                dit,
+                &self.schedule.0,
                 buffer.as_mut_ptr().cast(),
                 buffer.len() / 16,
             );
@@ -72,6 +78,6 @@ impl SeedEcb {
 
 impl Drop for SeedEcb {
     fn drop(&mut self) {
-        zeroize(&mut self.schedule);
+        zeroize(&mut self.schedule.0);
     }
 }

@@ -10,15 +10,18 @@
     target_arch = "riscv64"
 ))]
 
-use crate::arch::blowfish::vg_blowfish_expand_key;
-use crate::arch::blowfish_cbc::{vg_blowfish_cbc_decrypt_chained, vg_blowfish_cbc_encrypt_chained};
+use crate::align::CacheAligned;
+use crate::arch::dispatch::blowfish::vg_blowfish_expand_key_auto;
+use crate::arch::dispatch::blowfish_cbc::{
+    vg_blowfish_cbc_decrypt_chained_auto, vg_blowfish_cbc_encrypt_chained_auto,
+};
 use crate::error::{IncompleteBlock, InvalidKeyLength};
 use crate::zeroize::zeroize;
 
 /// An expanded Blowfish key, which serves both directions.
 struct Key {
     /// The schedule `vg_blowfish_expand_key` writes.
-    schedule: [u8; 4168],
+    schedule: CacheAligned<[u8; 4168]>,
 }
 
 /// A Blowfish-CBC encryption of one message, without padding.
@@ -89,10 +92,11 @@ impl Key {
         if !(4..=56).contains(&key.len()) {
             return Err(InvalidKeyLength);
         }
-        let mut schedule = [0; 4168];
+        let mut schedule = CacheAligned([0; 4168]);
+        crate::dit::enter!(dit);
         // SAFETY: the key has a length in 4..=56; the key and the schedule
         // are separate valid objects of the lengths passed.
-        unsafe { vg_blowfish_expand_key(key.as_ptr(), key.len(), &mut schedule) };
+        unsafe { vg_blowfish_expand_key_auto(dit, key.as_ptr(), key.len(), &mut schedule.0) };
         Ok(Self { schedule })
     }
 
@@ -105,13 +109,15 @@ impl Key {
         if !buffer.len().is_multiple_of(8) {
             return Err(IncompleteBlock);
         }
+        crate::dit::enter!(dit);
         // SAFETY: the buffer holds `len / 8` whole blocks, and it, the chaining
         // value (which the function reads and replaces) and the schedule are
         // separate valid objects of the sizes of the signature, none of them on
         // the callee's stack.
         unsafe {
-            vg_blowfish_cbc_encrypt_chained(
-                &self.schedule,
+            vg_blowfish_cbc_encrypt_chained_auto(
+                dit,
+                &self.schedule.0,
                 iv,
                 buffer.as_mut_ptr().cast(),
                 buffer.len() / 8,
@@ -129,10 +135,12 @@ impl Key {
         if !buffer.len().is_multiple_of(8) {
             return Err(IncompleteBlock);
         }
+        crate::dit::enter!(dit);
         // SAFETY: as in `encrypt`.
         unsafe {
-            vg_blowfish_cbc_decrypt_chained(
-                &self.schedule,
+            vg_blowfish_cbc_decrypt_chained_auto(
+                dit,
+                &self.schedule.0,
                 iv,
                 buffer.as_mut_ptr().cast(),
                 buffer.len() / 8,
@@ -144,6 +152,6 @@ impl Key {
 
 impl Drop for Key {
     fn drop(&mut self) {
-        zeroize(&mut self.schedule);
+        zeroize(&mut self.schedule.0);
     }
 }

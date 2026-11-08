@@ -32,7 +32,7 @@
 /// * `out`, `tape` and `scratch` must not overlap each other, `n`, `e`, `msg`, `rand` or `pre` (distinct Rust objects never do).
 /// * None of `out`, `tape`, `n`, `e`, `msg`, `rand`, `scratch` and `pre` may overlap the arguments on the stack, overlap the return address on the stack or the 2296 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_rsa_pkcs1_encrypt_random(out: *mut u8, out_len: usize, tape: *mut [u64; 2], n: *const u8, n_len: usize, e: *const u8, e_len: usize, msg: *const u8, msg_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_encrypt_random(out: *mut u8, out_len: usize, tape: *mut [u64; 2], n: *const u8, n_len: usize, e: *const u8, e_len: usize, msg: *const u8, msg_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "U1VWV42kJMD7//+LlCRkBAAAi4QkdAQAACnCg+oDi7QkeAQAAIuMJHwEAACJ54PHQIP5AA=="
 jne 20f
@@ -126,7 +126,7 @@ jne 217b
 /// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq` or `qinv` (distinct Rust objects never do).
 /// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 3568 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_rsa_pkcs1_decrypt(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_decrypt(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "U1VWV41kJJiLRCR8iQQki4QkjAAAAIlEJASLhCSIAAAAiUQkCIuEJIwAAACJRCQMi4QkkAAAAIlEJBCLhCSUAAAAiUQkFIuEJKAAAACJRCQYi4QkjAAAAIlEJByLhCSoAAAAiUQkIIuEJKwAAACJRCQki4QksAAAAIlEJCiLhCS0AAAAiUQkLIuEJLgAAACJRCQwi4QkvAAAAIlEJDSLhCTAAAAAiUQkOIuEJMQAAACJRCQ8i4QkyAAAAIlEJECLhCTMAAAAiUQkRIuEJNAAAACJRCRIi4Qk1AAAAIlEJEw="
 call {vg_rsa_private_checked}
@@ -231,7 +231,7 @@ pub const VG_RSA_PKCS1_DECRYPT_SHA256_SHANI_FEATURES: verified_garbage_cpu::Feat
 /// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 3568 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_rsa_pkcs1_decrypt_sha256_shani(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_decrypt_sha256_shani(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "U1VWV41kJJiLRCR8iQQki4QkjAAAAIlEJASLhCSIAAAAiUQkCIuEJIwAAACJRCQMi4QkkAAAAIlEJBCLhCSUAAAAiUQkFIuEJKAAAACJRCQYi4QkjAAAAIlEJByLhCSoAAAAiUQkIIuEJKwAAACJRCQki4QksAAAAIlEJCiLhCS0AAAAiUQkLIuEJLgAAACJRCQwi4QkvAAAAIlEJDSLhCTAAAAAiUQkOIuEJMQAAACJRCQ8i4QkyAAAAIlEJECLhCTMAAAAiUQkRIuEJNAAAACJRCRIi4Qk1AAAAIlEJEw="
 call {vg_rsa_private_checked}

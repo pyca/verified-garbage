@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.sha384I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_hmac_sha384_init_sha3` if the CPU supports its features (`VG_HMAC_SHA384_INIT_SHA3_FEATURES`); or else `vg_hmac_sha384_init`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_hmac_sha384_init_sha512` if the CPU supports its features (`VG_HMAC_SHA384_INIT_SHA512_FEATURES`); or else `vg_hmac_sha384_init`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -17,22 +17,45 @@
 /// * None of `inner`, `outer` and `key` may overlap the 3424 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_hmac_sha384_init_auto(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::hmac_sha384::VG_HMAC_SHA384_INIT_SHA3_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_hmac_sha384_init_sha3`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::hmac_sha384::vg_hmac_sha384_init_sha3(inner, outer, key, key_len) };
+pub unsafe fn vg_hmac_sha384_init_auto(_dit: verified_garbage_cpu::Dit<'_>, inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize) {
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::hmac_sha384::VG_HMAC_SHA384_INIT_SHA512_FEATURES) }
+            || cpu.contains(crate::hmac_sha384::VG_HMAC_SHA384_INIT_SHA512_FEATURES)
+        {
+            return crate::hmac_sha384::vg_hmac_sha384_init_sha512;
+        }
+        crate::hmac_sha384::vg_hmac_sha384_init
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::hmac_sha384::vg_hmac_sha384_init(inner, outer, key, key_len) }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(inner, outer, key, key_len) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(inner, outer, key, key_len) }
 }
 
 /// Finishes an HMAC-SHA-384 computation: if, for a 128-byte key `K₀` and a text of fewer than 2⁶⁴ − 128 bytes, the SHA-384 streaming state `*inner` represents `(K₀ ⊕ ipad) ‖ text`, of `count` bytes, and `*outer` represents `K₀ ⊕ opad`, writes the HMAC-SHA-384 of the text under `K₀` (48 bytes) to `*out`.
 ///
 /// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.sha384I`. Constant time: only the pointers and `count` may affect timing, not the states.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_hmac_sha384_finalize_sha3` if the CPU supports its features (`VG_HMAC_SHA384_FINALIZE_SHA3_FEATURES`); or else `vg_hmac_sha384_finalize`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_hmac_sha384_finalize_sha512` if the CPU supports its features (`VG_HMAC_SHA384_FINALIZE_SHA512_FEATURES`); or else `vg_hmac_sha384_finalize`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -44,13 +67,36 @@ pub unsafe fn vg_hmac_sha384_init_auto(inner: *mut [u8; 192], outer: *mut [u8; 1
 /// * None of `inner`, `outer` and `out` may overlap the 1888 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_hmac_sha384_finalize_auto(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 48]) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::hmac_sha384::VG_HMAC_SHA384_FINALIZE_SHA3_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_hmac_sha384_finalize_sha3`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::hmac_sha384::vg_hmac_sha384_finalize_sha3(inner, outer, count, out) };
+pub unsafe fn vg_hmac_sha384_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 48]) {
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 48]);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::hmac_sha384::VG_HMAC_SHA384_FINALIZE_SHA512_FEATURES) }
+            || cpu.contains(crate::hmac_sha384::VG_HMAC_SHA384_FINALIZE_SHA512_FEATURES)
+        {
+            return crate::hmac_sha384::vg_hmac_sha384_finalize_sha512;
+        }
+        crate::hmac_sha384::vg_hmac_sha384_finalize
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::hmac_sha384::vg_hmac_sha384_finalize(inner, outer, count, out) }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 48]) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(inner, outer, count, out) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(inner, outer, count, out) }
 }

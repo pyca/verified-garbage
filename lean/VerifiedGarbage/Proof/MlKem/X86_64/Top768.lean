@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.MlKem.Scrubbed
 public import VerifiedGarbage.Spec.MlKem.EncapsH
 public import VerifiedGarbage.Proof.MlKem.X86_64.EkFusedCT16
 public import VerifiedGarbage.Proof.MlKem.X86_64.Dc16Dec
@@ -124,15 +125,15 @@ def decapsSat : State where
   wr := [⟨0x3000, 32⟩, ⟨0x10000, 32768⟩]
 
 /-- The shared contract of `keyGen`, from the contract its proofs are written against. -/
-theorem keyGenImp768 : (keyGenK kem768).Implies (Spec.MlKem.keyGenContract X86_64.abi 32) :=
-    { pre := by sig_implies_pre [Spec.MlKem.keyGenContract, Spec.MlKem.keyGenSig, keyGenK, X86_64.abi, VG.X86_64.argRegs, kem768, Kem.ekLen, Kem.dkLen, Kem.ctLen, Params.ekLen, Params.dkLen, Params.ctLen, mlKem768]
-      post := by sig_implies_post [Spec.MlKem.keyGenContract, Spec.MlKem.keyGenSig, keyGenK, X86_64.abi, VG.X86_64.argRegs, kem768, Kem.ekLen, Kem.dkLen, Kem.ctLen, Params.ekLen, Params.dkLen, Params.ctLen, mlKem768]
+theorem keyGenImp768 : (keyGenK kem768).Implies (Proof.MlKem.Scrubbed.keyGenBodyContract X86_64.abi 32) :=
+    { pre := by sig_implies_pre [Proof.MlKem.Scrubbed.keyGenBodyContract, Spec.MlKem.keyGenSig, keyGenK, X86_64.abi, VG.X86_64.argRegs, kem768, Kem.ekLen, Kem.dkLen, Kem.ctLen, Params.ekLen, Params.dkLen, Params.ctLen, mlKem768]
+      post := by sig_implies_post [Proof.MlKem.Scrubbed.keyGenBodyContract, Spec.MlKem.keyGenSig, keyGenK, X86_64.abi, VG.X86_64.argRegs, kem768, Kem.ekLen, Kem.dkLen, Kem.ctLen, Params.ekLen, Params.dkLen, Params.ctLen, mlKem768]
       pub := by
         intro s₁ s₂ _ _ h
-        sig_pub [Spec.MlKem.keyGenContract, Spec.MlKem.keyGenSig, keyGenK, X86_64.abi, VG.X86_64.argRegs] at h
+        sig_pub [Proof.MlKem.Scrubbed.keyGenBodyContract, Spec.MlKem.keyGenSig, keyGenK, X86_64.abi, VG.X86_64.argRegs] at h
         obtain ⟨hsp, hb, hdi, hsi, hdx, hcx⟩ := h
         exact ⟨hdi, hsi, hdx, hcx, hsp, map_toNat_inj hb⟩
-      sat := by sig_implies_sat [Spec.MlKem.keyGenContract, Spec.MlKem.keyGenSig, keyGenK, X86_64.abi, VG.X86_64.argRegs, kem768, Kem.ekLen, Kem.dkLen, Kem.ctLen, Params.ekLen, Params.dkLen, Params.ctLen, mlKem768] [keyGenSat]
+      sat := by sig_implies_sat [Proof.MlKem.Scrubbed.keyGenBodyContract, Spec.MlKem.keyGenSig, keyGenK, X86_64.abi, VG.X86_64.argRegs, kem768, Kem.ekLen, Kem.dkLen, Kem.ctLen, Params.ekLen, Params.dkLen, Params.ctLen, mlKem768] [keyGenSat]
         using keyGenSat }
 
 /-- The halves of K-PKE key generation of ML-KEM-768, safe to call. -/
@@ -165,22 +166,22 @@ theorem kgH16T768 : KeyGenH.KgH16T kem768w where
   pT := ⟨_, by taint_decide⟩
 
 theorem keyGen_verified (v : Sample4Impl) :
-    Verified X86_64.target (Impl.MlKem.X86_64.keyGen v.callee) (Spec.MlKem.keyGenContract X86_64.abi 32) :=
+    Verified X86_64.target (Impl.MlKem.X86_64.keyGen v.callee) (Proof.MlKem.Scrubbed.keyGenBodyContract X86_64.abi 32) :=
   keyGenHSel_verified kgRows768 v kgH16Wf768 kgH16T768 kpke768 kg16Wf768 kgWf768 keyGenImp768
     (fun b p B P => by kgh_ctl v b p B P kgRows768) (fun _ c S => by s16_ctl v c S kpke768) (by s4_ctl v)
 
 /-- The shared contract of `encapsH`, from the contract its proofs are written against. -/
-theorem encapsHImp768 : (encapsK kem768).Implies (Spec.MlKem.encapsHContract X86_64.abi 32) :=
-    { pre := by sig_implies_pre [Spec.MlKem.encapsHContract, Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, encapsK, X86_64.abi, VG.X86_64.argRegs, kem768, Kem.ekLen, Kem.dkLen, Kem.ctLen, Params.ekLen, Params.dkLen, Params.ctLen, mlKem768]
-      post := by sig_implies_post [Spec.MlKem.encapsHContract, Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, encapsK, X86_64.abi, VG.X86_64.argRegs, kem768, Kem.ekLen, Kem.dkLen, Kem.ctLen, Params.ekLen, Params.dkLen, Params.ctLen, mlKem768]
+theorem encapsHImp768 : (encapsK kem768).Implies (Proof.MlKem.Scrubbed.encapsHBodyContract X86_64.abi 32) :=
+    { pre := by sig_implies_pre [Proof.MlKem.Scrubbed.encapsHBodyContract, Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, encapsK, X86_64.abi, VG.X86_64.argRegs, kem768, Kem.ekLen, Kem.dkLen, Kem.ctLen, Params.ekLen, Params.dkLen, Params.ctLen, mlKem768]
+      post := by sig_implies_post [Proof.MlKem.Scrubbed.encapsHBodyContract, Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, encapsK, X86_64.abi, VG.X86_64.argRegs, kem768, Kem.ekLen, Kem.dkLen, Kem.ctLen, Params.ekLen, Params.dkLen, Params.ctLen, mlKem768]
       pub := by
         intro s₁ s₂ _ _ h
-        sig_pub [Spec.MlKem.encapsHContract, Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, encapsK, X86_64.abi, VG.X86_64.argRegs] at h
+        sig_pub [Proof.MlKem.Scrubbed.encapsHBodyContract, Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, encapsK, X86_64.abi, VG.X86_64.argRegs] at h
         obtain ⟨hsp, hb, hdi, hsi, hdx, hcx, h8, h9⟩ := h
         exact ⟨hdi, hsi, hdx, hcx, h8, h9, hsp, map_toNat_inj hb⟩
       sat := by
         refine ⟨encapsHSat 1184 1088 32768, ?_⟩
-        sig_pre [Spec.MlKem.encapsHContract, Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, encapsK, X86_64.abi, VG.X86_64.argRegs, kem768, Kem.ekLen, Kem.dkLen, Kem.ctLen, Params.ekLen, Params.dkLen, Params.ctLen, mlKem768]
+        sig_pre [Proof.MlKem.Scrubbed.encapsHBodyContract, Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, encapsK, X86_64.abi, VG.X86_64.argRegs, kem768, Kem.ekLen, Kem.dkLen, Kem.ctLen, Params.ekLen, Params.dkLen, Params.ctLen, mlKem768]
         sig_and_intros
         all_goals first
           | exact encapsHSat_h (ekLen := 1184) (ctLen := 1088) (scr := 32768) (by decide)
@@ -189,7 +190,7 @@ theorem encapsHImp768 : (encapsK kem768).Implies (Spec.MlKem.encapsHContract X86
           | exact Region.disjoint_of_sep (by decide) }
 
 theorem encapsH_verified (v : Sample4Impl) :
-    Verified X86_64.target (Impl.MlKem.X86_64.encapsH v.callee) (Spec.MlKem.encapsHContract X86_64.abi 32) :=
+    Verified X86_64.target (Impl.MlKem.X86_64.encapsH v.callee) (Proof.MlKem.Scrubbed.encapsHBodyContract X86_64.abi 32) :=
   encapsHPSel_verified kpke768 v ecP16Wf768 ec16Wf768 ecWf768 calls768 encapsHImp768
     (fun p P => by ecp_ctl v p P kpke768) (fun _ c S => by s16_ctl v c S kpke768) (by s4_ctl v)
 
@@ -197,36 +198,36 @@ theorem encaps_ctl (v : Sample4Impl) : ctlOk (kemEncaps kem768 v.callee) = true 
   s4_ctl v
 
 /-- The shared contract of `encaps`, from the contract its proofs are written against. -/
-theorem encapsImp768 : (encK kem768).Implies (Spec.MlKem.encapsContract X86_64.abi 32) :=
-    { pre := by sig_implies_pre [Spec.MlKem.encapsContract, Spec.MlKem.encapsSig, encK, X86_64.abi, VG.X86_64.argRegs, kem768, Kem.ekLen, Kem.dkLen, Kem.ctLen, Params.ekLen, Params.dkLen, Params.ctLen, mlKem768]
-      post := by sig_implies_post [Spec.MlKem.encapsContract, Spec.MlKem.encapsSig, encK, X86_64.abi, VG.X86_64.argRegs, kem768, Kem.ekLen, Kem.dkLen, Kem.ctLen, Params.ekLen, Params.dkLen, Params.ctLen, mlKem768]
+theorem encapsImp768 : (encK kem768).Implies (Proof.MlKem.Scrubbed.encapsBodyContract X86_64.abi 32) :=
+    { pre := by sig_implies_pre [Proof.MlKem.Scrubbed.encapsBodyContract, Spec.MlKem.encapsSig, encK, X86_64.abi, VG.X86_64.argRegs, kem768, Kem.ekLen, Kem.dkLen, Kem.ctLen, Params.ekLen, Params.dkLen, Params.ctLen, mlKem768]
+      post := by sig_implies_post [Proof.MlKem.Scrubbed.encapsBodyContract, Spec.MlKem.encapsSig, encK, X86_64.abi, VG.X86_64.argRegs, kem768, Kem.ekLen, Kem.dkLen, Kem.ctLen, Params.ekLen, Params.dkLen, Params.ctLen, mlKem768]
       pub := by
         intro s₁ s₂ _ _ h
-        sig_pub [Spec.MlKem.encapsContract, Spec.MlKem.encapsSig, encK, X86_64.abi, VG.X86_64.argRegs] at h
+        sig_pub [Proof.MlKem.Scrubbed.encapsBodyContract, Spec.MlKem.encapsSig, encK, X86_64.abi, VG.X86_64.argRegs] at h
         obtain ⟨hsp, hb, hdi, hsi, hdx, hcx, h8⟩ := h
         exact ⟨hdi, hsi, hdx, hcx, h8, hsp, map_toNat_inj hb⟩
-      sat := by sig_implies_sat [Spec.MlKem.encapsContract, Spec.MlKem.encapsSig, encK, X86_64.abi, VG.X86_64.argRegs, kem768, Kem.ekLen, Kem.dkLen, Kem.ctLen, Params.ekLen, Params.dkLen, Params.ctLen, mlKem768] [encapsSat]
+      sat := by sig_implies_sat [Proof.MlKem.Scrubbed.encapsBodyContract, Spec.MlKem.encapsSig, encK, X86_64.abi, VG.X86_64.argRegs, kem768, Kem.ekLen, Kem.dkLen, Kem.ctLen, Params.ekLen, Params.dkLen, Params.ctLen, mlKem768] [encapsSat]
         using encapsSat 1184 1088 32768 }
 
 theorem encaps_verified (v : Sample4Impl) :
-    Verified X86_64.target (Impl.MlKem.X86_64.encaps v.callee) (Spec.MlKem.encapsContract X86_64.abi 32) :=
+    Verified X86_64.target (Impl.MlKem.X86_64.encaps v.callee) (Proof.MlKem.Scrubbed.encapsBodyContract X86_64.abi 32) :=
   encapsSel_verified (n := kem768.scr) (Nat.le_refl _) kpke768 v ek16HWf768 ekt16Wf768 ekWf768 calls768 encapsImp768
     (fun _ c b S B => by ek16_ctl v c b S B kpke768) (encaps_ctl v)
 
 /-- The shared contract of `decaps`, from the contract its proofs are written against. -/
-theorem decapsImp768 : (decapsK kem768).Implies (Spec.MlKem.decapsContract X86_64.abi 32) :=
-    { pre := by sig_implies_pre [Spec.MlKem.decapsContract, Spec.MlKem.decapsSig, decapsK, X86_64.abi, VG.X86_64.argRegs, kem768, Kem.ekLen, Kem.dkLen, Kem.ctLen, Params.ekLen, Params.dkLen, Params.ctLen, mlKem768]
-      post := by sig_implies_post [Spec.MlKem.decapsContract, Spec.MlKem.decapsSig, decapsK, X86_64.abi, VG.X86_64.argRegs, kem768, Kem.ekLen, Kem.dkLen, Kem.ctLen, Params.ekLen, Params.dkLen, Params.ctLen, mlKem768]
+theorem decapsImp768 : (decapsK kem768).Implies (Proof.MlKem.Scrubbed.decapsBodyContract X86_64.abi 32) :=
+    { pre := by sig_implies_pre [Proof.MlKem.Scrubbed.decapsBodyContract, Spec.MlKem.decapsSig, decapsK, X86_64.abi, VG.X86_64.argRegs, kem768, Kem.ekLen, Kem.dkLen, Kem.ctLen, Params.ekLen, Params.dkLen, Params.ctLen, mlKem768]
+      post := by sig_implies_post [Proof.MlKem.Scrubbed.decapsBodyContract, Spec.MlKem.decapsSig, decapsK, X86_64.abi, VG.X86_64.argRegs, kem768, Kem.ekLen, Kem.dkLen, Kem.ctLen, Params.ekLen, Params.dkLen, Params.ctLen, mlKem768]
       pub := by
         intro s₁ s₂ _ _ h
-        sig_pub [Spec.MlKem.decapsContract, Spec.MlKem.decapsSig, decapsK, X86_64.abi, VG.X86_64.argRegs] at h
+        sig_pub [Proof.MlKem.Scrubbed.decapsBodyContract, Spec.MlKem.decapsSig, decapsK, X86_64.abi, VG.X86_64.argRegs] at h
         obtain ⟨hsp, hb, hdi, hsi, hdx, hcx⟩ := h
         exact ⟨hdi, hsi, hdx, hcx, hsp, map_toNat_inj hb⟩
-      sat := by sig_implies_sat [Spec.MlKem.decapsContract, Spec.MlKem.decapsSig, decapsK, X86_64.abi, VG.X86_64.argRegs, kem768, Kem.ekLen, Kem.dkLen, Kem.ctLen, Params.ekLen, Params.dkLen, Params.ctLen, mlKem768] [decapsSat]
+      sat := by sig_implies_sat [Proof.MlKem.Scrubbed.decapsBodyContract, Spec.MlKem.decapsSig, decapsK, X86_64.abi, VG.X86_64.argRegs, kem768, Kem.ekLen, Kem.dkLen, Kem.ctLen, Params.ekLen, Params.dkLen, Params.ctLen, mlKem768] [decapsSat]
         using decapsSat }
 
 theorem decaps_verified (v : Sample4Impl) :
-    Verified X86_64.target (Impl.MlKem.X86_64.decaps v.callee) (Spec.MlKem.decapsContract X86_64.abi 32) :=
+    Verified X86_64.target (Impl.MlKem.X86_64.decaps v.callee) (Proof.MlKem.Scrubbed.decapsBodyContract X86_64.abi 32) :=
   decapsSel_verified (n := kem768.scr) (Nat.le_refl _) kpke768 v djHWf768 djtWf768 dcWf768 calls768 decapsImp768
     (fun _ c b S B => by ek16_ctl v c b S B kpke768) (by s4_ctl v)
 

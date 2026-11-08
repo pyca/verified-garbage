@@ -12,15 +12,16 @@
     target_arch = "riscv64"
 ))]
 
-use crate::arch::camellia::vg_camellia_expand_key;
-use crate::arch::camellia_ctr::{vg_camellia_ctr, vg_camellia_ctr_final};
+use crate::align::CacheAligned;
+use crate::arch::dispatch::camellia::vg_camellia_expand_key_auto;
+use crate::arch::dispatch::camellia_ctr::{vg_camellia_ctr_auto, vg_camellia_ctr_final_auto};
 use crate::error::{IncompleteBlock, InvalidKeyLength};
 use crate::zeroize::zeroize;
 
 /// An expanded Camellia key.
 struct Key {
     /// The subkeys `vg_camellia_expand_key` writes.
-    schedule: [u8; 272],
+    schedule: CacheAligned<[u8; 272]>,
     rounds: usize,
 }
 
@@ -82,11 +83,12 @@ impl Key {
             24 | 32 => 24,
             _ => return Err(InvalidKeyLength),
         };
-        let mut schedule = [0; 272];
+        let mut schedule = CacheAligned([0; 272]);
+        crate::dit::enter!(dit);
         // SAFETY: the key has a validated length; key and schedule are separate
         // valid buffers of the required sizes.
         unsafe {
-            vg_camellia_expand_key(key.as_ptr(), key.len(), &mut schedule);
+            vg_camellia_expand_key_auto(dit, key.as_ptr(), key.len(), &mut schedule.0);
         }
         Ok(Self { schedule, rounds })
     }
@@ -96,7 +98,8 @@ impl Key {
     /// with the counter block after the last one used: `ctr` plus the number
     /// of blocks, modulo `2¹²⁸` (unchanged for empty input).
     fn apply_keystream(&self, ctr: &mut [u8; 16], buffer: &mut [u8]) {
-        self.crypt(ctr, buffer);
+        crate::dit::enter!(dit);
+        self.crypt(dit, ctr, buffer);
     }
 
     /// Encrypts or decrypts (the same operation) the rest of a message, of
@@ -105,13 +108,15 @@ impl Key {
     /// block the whole blocks leave in `ctr`, which it replaces with the
     /// next one.
     fn apply_keystream_final(&self, ctr: &mut [u8; 16], buffer: &mut [u8]) {
+        crate::dit::enter!(dit);
         let (blocks, rest) = buffer.split_at_mut(buffer.len() / 16 * 16);
-        self.crypt(ctr, blocks);
+        self.crypt(dit, ctr, blocks);
         if !rest.is_empty() {
             // SAFETY: as for `crypt`, with `rest` valid for `len` bytes.
             unsafe {
-                vg_camellia_ctr_final(
-                    &self.schedule,
+                vg_camellia_ctr_final_auto(
+                    dit,
+                    &self.schedule.0,
                     self.rounds,
                     ctr,
                     rest.as_mut_ptr(),
@@ -122,15 +127,16 @@ impl Key {
     }
 
     /// CTR of whole blocks.
-    fn crypt(&self, ctr: &mut [u8; 16], blocks: &mut [u8]) {
+    fn crypt(&self, dit: crate::dit::Dit<'_>, ctr: &mut [u8; 16], blocks: &mut [u8]) {
         // SAFETY: `rounds` is 18 for a key of 16 bytes and 24 otherwise, as
         // `new` expanded the schedule for. `blocks` holds `len / 16` whole
         // blocks (its length is a multiple of 16), and it, the block at `ctr`
         // and the schedule are separate valid objects of the sizes of the
         // signature, none of them on the callee's stack.
         unsafe {
-            vg_camellia_ctr(
-                &self.schedule,
+            vg_camellia_ctr_auto(
+                dit,
+                &self.schedule.0,
                 self.rounds,
                 ctr,
                 blocks.as_mut_ptr().cast(),
@@ -142,6 +148,6 @@ impl Key {
 
 impl Drop for Key {
     fn drop(&mut self) {
-        zeroize(&mut self.schedule);
+        zeroize(&mut self.schedule.0);
     }
 }

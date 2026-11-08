@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Siv.initContract`. The key context is `VG.Spec.Siv.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_siv_init_vaes` if the CPU supports its features (`VG_AES_SIV_INIT_VAES_FEATURES`); `vg_aes_siv_init_aesni` if the CPU supports its features (`VG_AES_SIV_INIT_AESNI_FEATURES`); or else `vg_aes_siv_init`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_siv_init_vaes` if the CPU supports its features (`VG_AES_SIV_INIT_VAES_FEATURES`); `vg_aes_siv_init_aesni` if the CPU supports its features (`VG_AES_SIV_INIT_AESNI_FEATURES`); or else `vg_aes_siv_init`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -17,27 +17,50 @@
 /// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2584 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_siv_init_auto(key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::aes_siv::VG_AES_SIV_INIT_VAES_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_siv_init_vaes`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_siv::vg_aes_siv_init_vaes(key, key_len, ctx) };
+pub unsafe fn vg_aes_siv_init_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(key: *const u8, key_len: usize, ctx: *mut [u64; 64]);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::aes_siv::VG_AES_SIV_INIT_VAES_FEATURES) }
+            || cpu.contains(crate::aes_siv::VG_AES_SIV_INIT_VAES_FEATURES)
+        {
+            return crate::aes_siv::vg_aes_siv_init_vaes;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::aes_siv::VG_AES_SIV_INIT_AESNI_FEATURES) }
+            || cpu.contains(crate::aes_siv::VG_AES_SIV_INIT_AESNI_FEATURES)
+        {
+            return crate::aes_siv::vg_aes_siv_init_aesni;
+        }
+        crate::aes_siv::vg_aes_siv_init
     }
-    if cpu.contains(crate::aes_siv::VG_AES_SIV_INIT_AESNI_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_siv_init_aesni`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_siv::vg_aes_siv_init_aesni(key, key_len, ctx) };
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(key, key_len, ctx) }
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::aes_siv::vg_aes_siv_init(key, key_len, ctx) }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(key, key_len, ctx) }
 }
 
 /// AES-SIV encryption, `SIV-ENCRYPT` (RFC 5297 §2.6): with the key context `*ctx` that `vg_aes_siv_init` wrote for `rounds` rounds, computes the synthetic IV `V = S2V(K1, AD1, …, ADn, P)` of the `ads_count` components of associated data that `ads` lists (each an address and a length, in bytes; for nonce-based encryption, §3, the nonce is the last) and the `len` bytes of plaintext `P` at `data`, writes it to `*siv`, and encrypts the plaintext in place with AES-CTR under `K2` from `V` with bits 31 and 63 cleared. The RFC's output is `V` followed by the encrypted data.
 ///
 /// Contract: `VG.Spec.Siv.encryptContract`. Constant time: only the pointers, `rounds`, `ads_count`, `len` and where the components are (their addresses and lengths) may affect timing, not the key context, the associated data or the plaintext.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_siv_encrypt_vaes` if the CPU supports its features (`VG_AES_SIV_ENCRYPT_VAES_FEATURES`); `vg_aes_siv_encrypt_aesni` if the CPU supports its features (`VG_AES_SIV_ENCRYPT_AESNI_FEATURES`); or else `vg_aes_siv_encrypt`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_siv_encrypt_aesni` if the CPU supports its features (`VG_AES_SIV_ENCRYPT_AESNI_FEATURES`); or else `vg_aes_siv_encrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -50,27 +73,45 @@ pub unsafe fn vg_aes_siv_init_auto(key: *const u8, key_len: usize, ctx: *mut [u6
 /// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the return address on the stack or the 2616 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_siv_encrypt_auto(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::aes_siv::VG_AES_SIV_ENCRYPT_VAES_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_siv_encrypt_vaes`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_siv::vg_aes_siv_encrypt_vaes(ctx, rounds, ads, ads_count, data, len, siv) };
+pub unsafe fn vg_aes_siv_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::aes_siv::VG_AES_SIV_ENCRYPT_AESNI_FEATURES) }
+            || cpu.contains(crate::aes_siv::VG_AES_SIV_ENCRYPT_AESNI_FEATURES)
+        {
+            return crate::aes_siv::vg_aes_siv_encrypt_aesni;
+        }
+        crate::aes_siv::vg_aes_siv_encrypt
     }
-    if cpu.contains(crate::aes_siv::VG_AES_SIV_ENCRYPT_AESNI_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_siv_encrypt_aesni`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_siv::vg_aes_siv_encrypt_aesni(ctx, rounds, ads, ads_count, data, len, siv) };
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(ctx, rounds, ads, ads_count, data, len, siv) }
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::aes_siv::vg_aes_siv_encrypt(ctx, rounds, ads, ads_count, data, len, siv) }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(ctx, rounds, ads, ads_count, data, len, siv) }
 }
 
 /// AES-SIV decryption, `SIV-DECRYPT` (RFC 5297 §2.7): with the key context `*ctx` that `vg_aes_siv_init` wrote for `rounds` rounds and the received synthetic IV `V` at `siv`, decrypts the `len` bytes of ciphertext at `data` in place with AES-CTR under `K2` from `V` with bits 31 and 63 cleared, computes `S2V(K1, AD1, …, ADn, P)` of the `ads_count` components of associated data that `ads` lists (each an address and a length, in bytes) and the plaintext `P`, and returns 1 if it is `V`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The IVs are compared without a branch.
 ///
 /// Contract: `VG.Spec.Siv.decryptContract`. Constant time but for the result: only the pointers, `rounds`, `ads_count`, `len`, where the components are (their addresses and lengths) and whether the function returns 1 or 0 may affect timing, not the key context, the associated data, the data or `V`.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_siv_decrypt_vaes` if the CPU supports its features (`VG_AES_SIV_DECRYPT_VAES_FEATURES`); `vg_aes_siv_decrypt_aesni` if the CPU supports its features (`VG_AES_SIV_DECRYPT_AESNI_FEATURES`); or else `vg_aes_siv_decrypt`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_siv_decrypt_aesni` if the CPU supports its features (`VG_AES_SIV_DECRYPT_AESNI_FEATURES`); or else `vg_aes_siv_decrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -83,18 +124,36 @@ pub unsafe fn vg_aes_siv_encrypt_auto(ctx: *const [u64; 64], rounds: usize, ads:
 /// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the return address on the stack or the 2616 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_siv_decrypt_auto(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::aes_siv::VG_AES_SIV_DECRYPT_VAES_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_siv_decrypt_vaes`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_siv::vg_aes_siv_decrypt_vaes(ctx, rounds, ads, ads_count, data, len, siv) };
+pub unsafe fn vg_aes_siv_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32;
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::aes_siv::VG_AES_SIV_DECRYPT_AESNI_FEATURES) }
+            || cpu.contains(crate::aes_siv::VG_AES_SIV_DECRYPT_AESNI_FEATURES)
+        {
+            return crate::aes_siv::vg_aes_siv_decrypt_aesni;
+        }
+        crate::aes_siv::vg_aes_siv_decrypt
     }
-    if cpu.contains(crate::aes_siv::VG_AES_SIV_DECRYPT_AESNI_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_siv_decrypt_aesni`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_siv::vg_aes_siv_decrypt_aesni(ctx, rounds, ads, ads_count, data, len, siv) };
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(ctx, rounds, ads, ads_count, data, len, siv) }
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::aes_siv::vg_aes_siv_decrypt(ctx, rounds, ads, ads_count, data, len, siv) }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(ctx, rounds, ads, ads_count, data, len, siv) }
 }

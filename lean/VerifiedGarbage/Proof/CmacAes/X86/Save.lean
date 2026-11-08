@@ -24,8 +24,8 @@ section
 
 The artifacts' contracts are the shared ones of `Spec/Cmac/Contract.lean`,
 which imply these (`Verified.lean`). The arguments are on the stack, from
-`[esp + 4]` (cdecl). Each call of `vg_aes_ctr32` pushes its six arguments and
-the return address in the 28 bytes below `esp`, which may not overlap any
+`[esp + 4]` (cdecl). Each call of `vg_aes_ctr32_to` pushes its seven arguments and
+the return address in the 32 bytes below `esp`, which may not overlap any
 buffer.
 -/
 
@@ -46,7 +46,7 @@ def updateX86 : Contract isa where
     let scr : Region := ⟨(arg s 5).setWidth 64, 2176⟩
     let args : Region := ⟨argAddr s 0, 24⟩
     let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
-    let stack : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 28, 28⟩
+    let stack : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 32, 32⟩
     s.rd = [sched, data, args] ∧ s.wr = [state, scr] ∧
       sched.Disjoint state ∧ sched.Disjoint scr ∧ data.Disjoint state ∧ data.Disjoint scr ∧
       state.Disjoint scr ∧ args.Disjoint state ∧ args.Disjoint scr ∧
@@ -54,7 +54,7 @@ def updateX86 : Contract isa where
       stack.Disjoint sched ∧ stack.Disjoint data ∧ stack.Disjoint state ∧ stack.Disjoint scr ∧
       (arg s 0).toNat + 240 ≤ 2 ^ 32 ∧ (arg s 2).toNat + 16 ≤ 2 ^ 32 ∧
       (arg s 3).toNat + 16 * (arg s 4).toNat ≤ 2 ^ 32 ∧ (arg s 5).toNat + 2176 ≤ 2 ^ 32 ∧
-      28 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 28 ≤ 2 ^ 32 ∧
+      32 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 28 ≤ 2 ^ 32 ∧
       ((arg s 1).toNat = 10 ∨ (arg s 1).toNat = 12 ∨ (arg s 1).toNat = 14)
   post s s' :=
     Spec.Aes.bytesAt s'.mem ((arg s 2).setWidth 64) 16 =
@@ -71,13 +71,13 @@ def subkeysX86 : Contract isa where
     let scr : Region := ⟨(arg s 3).setWidth 64, 2176⟩
     let args : Region := ⟨argAddr s 0, 16⟩
     let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
-    let stack : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 28, 28⟩
+    let stack : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 32, 32⟩
     s.rd = [sched, args] ∧ s.wr = [subk, scr] ∧
       sched.Disjoint subk ∧ sched.Disjoint scr ∧ subk.Disjoint scr ∧
       args.Disjoint subk ∧ args.Disjoint scr ∧ ret.Disjoint subk ∧ ret.Disjoint scr ∧
       stack.Disjoint sched ∧ stack.Disjoint subk ∧ stack.Disjoint scr ∧
       (arg s 0).toNat + 240 ≤ 2 ^ 32 ∧ (arg s 2).toNat + 32 ≤ 2 ^ 32 ∧
-      (arg s 3).toNat + 2176 ≤ 2 ^ 32 ∧ 28 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 20 ≤ 2 ^ 32 ∧
+      (arg s 3).toNat + 2176 ≤ 2 ^ 32 ∧ 32 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 20 ≤ 2 ^ 32 ∧
       ((arg s 1).toNat = 10 ∨ (arg s 1).toNat = 12 ∨ (arg s 1).toNat = 14)
   post s s' :=
     let ks := Spec.Cmac.subkeys (ciphAt s.mem ((arg s 0).setWidth 64) (arg s 1).toNat) 16
@@ -93,7 +93,7 @@ def finalizeX86 : Contract isa where
     let scr : Region := ⟨(arg s 5).setWidth 64, 2176⟩
     let args : Region := ⟨argAddr s 0, 24⟩
     let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
-    let stack : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 28, 28⟩
+    let stack : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 32, 32⟩
     s.rd = [key, last, args] ∧ s.wr = [state, scr] ∧
       key.Disjoint state ∧ key.Disjoint scr ∧ last.Disjoint state ∧ last.Disjoint scr ∧
       state.Disjoint scr ∧ args.Disjoint state ∧ args.Disjoint scr ∧
@@ -101,7 +101,7 @@ def finalizeX86 : Contract isa where
       stack.Disjoint key ∧ stack.Disjoint last ∧ stack.Disjoint state ∧ stack.Disjoint scr ∧
       (arg s 0).toNat + 272 ≤ 2 ^ 32 ∧ (arg s 2).toNat + 16 ≤ 2 ^ 32 ∧
       (arg s 3).toNat + (arg s 4).toNat ≤ 2 ^ 32 ∧ (arg s 5).toNat + 2176 ≤ 2 ^ 32 ∧
-      28 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 28 ≤ 2 ^ 32 ∧
+      32 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 28 ≤ 2 ^ 32 ∧
       ((arg s 1).toNat = 10 ∨ (arg s 1).toNat = 12 ∨ (arg s 1).toNat = 14) ∧ (arg s 4).toNat ≤ 16
   post s s' :=
     let ciph := ciphAt s.mem ((arg s 0).setWidth 64) (arg s 1).toNat
@@ -281,14 +281,15 @@ end
 section
 
 /-!
-# AES-CMAC on x86: calling `vg_aes_ctr32` on one block
+# AES-CMAC on x86: calling `vg_aes_ctr32_to` on one block
 
-`ctr_call`: the frame that pushes `vg_aes_ctr32`'s six arguments (`eax` the
-schedule, `ecx` the rounds, `edx` the counter block `C`, `ebx` the data
-block `D` holding zeros, `edi = 1` and `ebp` the working space `S`) around
-its call: `D` then holds `CIPH_K(C)`, as bytes (`Cmac.aesWith`), and only
-`C`, `D`, `S` and the 28 bytes below `esp` change in memory. `ctr_rel`: such
-calls are constant time, by `vg_aes_ctr32`'s own proof.
+`ctr_call`: the frame that pushes `vg_aes_ctr32_to`'s seven arguments (`eax`
+the schedule, `ecx` the rounds, `edx` the counter block `C`, `ebx` the data
+block `D` holding zeros, `edi = 1`, `ebp` the working space `S`, and `ebx`
+again, the destination) around its call: `D` then holds `CIPH_K(C)`, as
+bytes (`Cmac.aesWith`), and only `C`, `D`, `S` and the 32 bytes below `esp`
+change in memory. `ctr_rel`: such
+calls are constant time, by `vg_aes_ctr32_to`'s own proof.
 -/
 
 namespace VG.Proof.CmacAes.X86
@@ -303,10 +304,11 @@ theorem ofBytes_zeros : Spec.Gcm.ofBytes (Spec.Cmac.zeros 16) = 0 := by decide
 theorem toNat_rounds {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) : (BitVec.ofNat 32 R).toNat = R := by
   rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega)
 
-/-- The registers the call pushes, as `vg_aes_ctr32`'s arguments. -/
-abbrev ctrRegs : List Reg := [.ebp, .edi, .ebx, .edx, .ecx, .eax]
+/-- The registers the call pushes, as `vg_aes_ctr32_to`'s arguments (in
+place: the destination is the data). -/
+abbrev ctrRegs : List Reg := [.ebx, .ebp, .edi, .ebx, .edx, .ecx, .eax]
 
-/-- What a call of `vg_aes_ctr32` on one block needs. -/
+/-- What a call of `vg_aes_ctr32_to` in place on one block needs. -/
 structure CtrPre (s : State) (W C D S : BitVec 32) (R : Nat) : Prop where
   eax : s.gpr .eax = W
   ecx : s.gpr .ecx = BitVec.ofNat 32 R
@@ -315,17 +317,17 @@ structure CtrPre (s : State) (W C D S : BitVec 32) (R : Nat) : Prop where
   edi : s.gpr .edi = 1
   ebp : s.gpr .ebp = S
   rounds : R = 10 ∨ R = 12 ∨ R = 14
-  esp : 28 ≤ (s.gpr .esp).toNat
+  esp : 32 ≤ (s.gpr .esp).toNat
   wc : (⟨W.setWidth 64, 240⟩ : Region).Disjoint ⟨C.setWidth 64, 16⟩
   wd : (⟨W.setWidth 64, 240⟩ : Region).Disjoint ⟨D.setWidth 64, 16⟩
   ws : (⟨W.setWidth 64, 240⟩ : Region).Disjoint ⟨S.setWidth 64, 2048⟩
   cd : (⟨C.setWidth 64, 16⟩ : Region).Disjoint ⟨D.setWidth 64, 16⟩
   cs : (⟨C.setWidth 64, 16⟩ : Region).Disjoint ⟨S.setWidth 64, 2048⟩
   ds : (⟨D.setWidth 64, 16⟩ : Region).Disjoint ⟨S.setWidth 64, 2048⟩
-  bw : (below (s.gpr .esp) 28).Disjoint ⟨W.setWidth 64, 240⟩
-  bc : (below (s.gpr .esp) 28).Disjoint ⟨C.setWidth 64, 16⟩
-  bd : (below (s.gpr .esp) 28).Disjoint ⟨D.setWidth 64, 16⟩
-  bs : (below (s.gpr .esp) 28).Disjoint ⟨S.setWidth 64, 2048⟩
+  bw : (below (s.gpr .esp) 32).Disjoint ⟨W.setWidth 64, 240⟩
+  bc : (below (s.gpr .esp) 32).Disjoint ⟨C.setWidth 64, 16⟩
+  bd : (below (s.gpr .esp) 32).Disjoint ⟨D.setWidth 64, 16⟩
+  bs : (below (s.gpr .esp) 32).Disjoint ⟨S.setWidth 64, 2048⟩
   hW : W.toNat + 240 ≤ 2 ^ 32
   hC : C.toNat + 16 ≤ 2 ^ 32
   hD : D.toNat + 16 ≤ 2 ^ 32
@@ -334,19 +336,19 @@ structure CtrPre (s : State) (W C D S : BitVec 32) (R : Nat) : Prop where
   writes : Covers [⟨C.setWidth 64, 16⟩, ⟨D.setWidth 64, 16⟩, ⟨S.setWidth 64, 2048⟩] s.wr
   zero : Spec.Aes.bytesAt s.mem (D.setWidth 64) 16 = Spec.Cmac.zeros 16
 
-/-- What a call of `vg_aes_ctr32` on one block leaves. -/
+/-- What a call of `vg_aes_ctr32_to` in place on one block leaves. -/
 structure CtrPost (s : State) (W C D S : BitVec 32) (R : Nat) (s' : State) : Prop where
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
   saved : ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r
-  frame : Frame [⟨C.setWidth 64, 16⟩, ⟨D.setWidth 64, 16⟩, ⟨S.setWidth 64, 2048⟩, below (s.gpr .esp) 28]
+  frame : Frame [⟨C.setWidth 64, 16⟩, ⟨D.setWidth 64, 16⟩, ⟨S.setWidth 64, 2048⟩, below (s.gpr .esp) 32]
     s.mem s'.mem
   out : Spec.Aes.bytesAt s'.mem (D.setWidth 64) 16 =
     Spec.Cmac.aesWith R (Spec.Aes.bytesAt s.mem (W.setWidth 64) (16 * (R + 1)))
       (Spec.Aes.bytesAt s.mem (C.setWidth 64) 16)
 
-/-- The regions `vg_aes_ctr32` is called with. -/
-abbrev ctrRd (E W : BitVec 32) : List Region := [⟨W.setWidth 64, 240⟩, ⟨(E - BitVec.ofNat 32 24).setWidth 64, 24⟩]
+/-- The regions `vg_aes_ctr32_to` is called with. -/
+abbrev ctrRd (E W : BitVec 32) : List Region := [⟨W.setWidth 64, 240⟩, ⟨(E - BitVec.ofNat 32 28).setWidth 64, 28⟩]
 abbrev ctrWr (C D S : BitVec 32) : List Region :=
   [⟨C.setWidth 64, 16⟩, ⟨D.setWidth 64, 16⟩, ⟨S.setWidth 64, 2048⟩]
 
@@ -361,32 +363,33 @@ theorem fit : 4 * ctrRegs.length + 4 ≤ (s.gpr .esp).toNat := by
 
 theorem args : arg (pushed ctrRegs s).callEntry 0 = W ∧ arg (pushed ctrRegs s).callEntry 1 = BitVec.ofNat 32 R ∧
     arg (pushed ctrRegs s).callEntry 2 = C ∧ arg (pushed ctrRegs s).callEntry 3 = D ∧
-    arg (pushed ctrRegs s).callEntry 4 = 1 ∧ arg (pushed ctrRegs s).callEntry 5 = S := by
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+    arg (pushed ctrRegs s).callEntry 4 = 1 ∧ arg (pushed ctrRegs s).callEntry 5 = S ∧
+    arg (pushed ctrRegs s).callEntry 6 = D := by
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
   rw [callEntry_arg h.fit hrs (by decide)] <;> simp [h.eax, h.ecx, h.edx, h.ebx, h.edi, h.ebp]
 
-theorem sub24 : Region.Sub (below (s.gpr .esp) 24) (below (s.gpr .esp) 28) := below_sub (by omega) h.esp
+theorem sub28 : Region.Sub (below (s.gpr .esp) 28) (below (s.gpr .esp) 32) := below_sub (by omega) h.esp
 
-theorem sub4 : Region.Sub ⟨(s.gpr .esp - BitVec.ofNat 32 28).setWidth 64, 4⟩ (below (s.gpr .esp) 28) := by
-  have := below_inner (sp := s.gpr .esp) (a := 4) (b := 28) (k := 24) (by omega) h.esp
-  rw [show s.gpr .esp - BitVec.ofNat 32 28 = s.gpr .esp - BitVec.ofNat 32 24 - BitVec.ofNat 32 4 by
+theorem sub4 : Region.Sub ⟨(s.gpr .esp - BitVec.ofNat 32 32).setWidth 64, 4⟩ (below (s.gpr .esp) 32) := by
+  have := below_inner (sp := s.gpr .esp) (a := 4) (b := 32) (k := 28) (by omega) h.esp
+  rw [show s.gpr .esp - BitVec.ofNat 32 32 = s.gpr .esp - BitVec.ofNat 32 28 - BitVec.ofNat 32 4 by
     rw [← VG.Offset.sub_add_eq]; rfl]
   exact this
 
 theorem callPre : CallPre Proof.Aes.ctr32X86 ctrRegs (ctrRd (s.gpr .esp) W) (ctrWr C D S) s := by
-  obtain ⟨a0, a1, a2, a3, a4, a5⟩ := h.args
+  obtain ⟨a0, a1, a2, a3, a4, a5, a6⟩ := h.args
   have hR := toNat_rounds h.rounds
-  have eA : argAddr (pushed ctrRegs s).callEntry 0 = (s.gpr .esp - BitVec.ofNat 32 24).setWidth 64 := by
+  have eA : argAddr (pushed ctrRegs s).callEntry 0 = (s.gpr .esp - BitVec.ofNat 32 28).setWidth 64 := by
     rw [callEntry_argAddr0]; rfl
-  have eSp : (pushed ctrRegs s).callEntry.gpr .esp = s.gpr .esp - BitVec.ofNat 32 28 := by
+  have eSp : (pushed ctrRegs s).callEntry.gpr .esp = s.gpr .esp - BitVec.ofNat 32 32 := by
     rw [callEntry_esp']; rfl
   refine ⟨?_, ?_, ?_⟩
   · simp only [Proof.Aes.ctr32X86, State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr,
-      arg_withRegions, argAddr_withRegions, a0, a1, a2, a3, a4, a5, eA, eSp, hR,
+      arg_withRegions, argAddr_withRegions, a0, a1, a2, a3, a4, a5, a6, eA, eSp, hR,
       show (1 : BitVec 32).toNat = 1 from rfl, Nat.mul_one]
-    refine ⟨trivial, trivial, h.wc, h.wd, h.ws, h.cd, h.cs, h.ds, (h.bc.sub_left h.sub24).symm.symm,
-      (h.bd.sub_left h.sub24), (h.bs.sub_left h.sub24), h.bc.sub_left h.sub4, h.bd.sub_left h.sub4,
-      h.bs.sub_left h.sub4, h.hW, h.hC, h.hD, h.hS, ?_, h.rounds⟩
+    refine ⟨trivial, trivial, h.wc, h.wd, h.ws, h.cd, h.cs, h.ds, h.bc.sub_left h.sub28,
+      h.bd.sub_left h.sub28, h.bs.sub_left h.sub28, h.bc.sub_left h.sub4, h.bd.sub_left h.sub4,
+      h.bs.sub_left h.sub4, h.hW, h.hC, h.hD, h.hS, ?_, h.rounds, trivial⟩
     rw [sub_toNat (by have := h.esp; omega)]; have := (s.gpr .esp).isLt; omega
   · intro a n ⟨r, hr, hcn⟩
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -411,11 +414,11 @@ theorem ctr_call {s : State} {W C D S : BitVec 32} {R : Nat} (h : CtrPre s W C D
   refine WP.callWith (rs := ctrRegs) (k := Proof.Aes.ctr32X86) v.ok v.nosp (by decide) hrs
     (by rw [v.stack]; have := h.esp; simp only [List.length_cons, List.length_nil]; omega) h.callPre
     fun s' rd' wr' cs' f' ⟨s₂, m₂, post⟩ => ?_
-  obtain ⟨a0, a1, a2, a3, a4, a5⟩ := h.args
+  obtain ⟨a0, a1, a2, a3, a4, a5, -⟩ := h.args
   rw [v.stack] at f'
   have fE := callEntry_frame h.fit hrs
-  rw [show 4 * ctrRegs.length + 4 = 28 from rfl] at fE
-  have keep : ∀ {p : BitVec 32} {n k : Nat}, (below (s.gpr .esp) 28).Disjoint ⟨p.setWidth 64, n⟩ → k ≤ n →
+  rw [show 4 * ctrRegs.length + 4 = 32 from rfl] at fE
+  have keep : ∀ {p : BitVec 32} {n k : Nat}, (below (s.gpr .esp) 32).Disjoint ⟨p.setWidth 64, n⟩ → k ≤ n →
       n ≤ 240 →
       Spec.Aes.bytesAt (pushed ctrRegs s).callEntry.mem (p.setWidth 64) k = Spec.Aes.bytesAt s.mem (p.setWidth 64) k :=
     fun hd hk hn => Proof.Cmac.bytesAt_frame fE (fun r hr => by
@@ -434,7 +437,7 @@ theorem ctr_call {s : State} {W C D S : BitVec 32} {R : Nat} (h : CtrPre s W C D
   · rw [Proof.Cmac.bytesAt_blockAt, hdata.1, Spec.Gcm.blockAt, keep h.bw hR' (Nat.le_refl _), keep h.bc (Nat.le_refl _) (by decide),
       Proof.Cmac.aesWith_bytes _ _ (Proof.Cmac.bytesAt_length _ _ _)]
 
-/-- Calls of `vg_aes_ctr32` on one block, with the same arguments and stack
+/-- Calls of `vg_aes_ctr32_to` in place on one block, with the same arguments and stack
 pointer in both runs, are constant time. -/
 theorem ctr_rel {W C D S E : BitVec 32} {R : Nat} {P : State → State → Prop}
     (h : ∀ s₁ s₂, P s₁ s₂ → CtrPre s₁ W C D S R ∧ CtrPre s₂ W C D S R ∧ s₁.gpr .esp = E ∧ s₂.gpr .esp = E) :
@@ -447,17 +450,19 @@ theorem ctr_rel {W C D S E : BitVec 32} {R : Nat} {P : State → State → Prop}
   rw [e₁] at p₁
   rw [e₂] at p₂
   refine ⟨p₁, p₂, e₁.trans e₂.symm, ?_⟩
-  obtain ⟨a0, a1, a2, a3, a4, a5⟩ := h₁.args
-  obtain ⟨b0, b1, b2, b3, b4, b5⟩ := h₂.args
+  obtain ⟨a0, a1, a2, a3, a4, a5, a6⟩ := h₁.args
+  obtain ⟨b0, b1, b2, b3, b4, b5, b6⟩ := h₂.args
   refine ⟨by simp only [State.withRegions_gpr, callEntry_esp', e₁, e₂], fun i hi => ?_⟩
   simp only [arg_withRegions]
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5) with rfl | rfl | rfl | rfl | rfl | rfl
+  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6) with
+    rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · rw [a0, b0]
   · rw [a1, b1]
   · rw [a2, b2]
   · rw [a3, b3]
   · rw [a4, b4]
   · rw [a5, b5]
+  · rw [a6, b6]
 
 end VG.Proof.CmacAes.X86
 

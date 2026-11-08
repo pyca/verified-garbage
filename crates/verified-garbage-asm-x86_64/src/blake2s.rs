@@ -15,7 +15,7 @@
 /// * `state` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `state` nor `key` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_blake2s_init(state: *mut [u8; 96], outlen: usize, key: *const u8, keylen: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_blake2s_init(state: *mut [u8; 96], outlen: usize, key: *const u8, keylen: usize) {
     core::arch::naked_asm!(
         r#".base64 "uIWuZ7uJRwS4cvNuPIlHCLg69U+liUcMuH9SDlGJRxC4jGgFm4lHFLir2YMfiUcYuBnN4FuJRxy4Z+YIa0mJyEHByBhEMcAx8IkHSIXJ"
 je 20f
@@ -47,7 +47,7 @@ pub const VG_BLAKE2S_UPDATE_AVX_FEATURES: verified_garbage_cpu::Features = verif
 /// * Neither `state` nor `data` may overlap the return address on the stack or the 592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` target feature.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_blake2s_update_avx(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_blake2s_update_avx(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJLj9//9JieBJg8AISYmYAAIAAEmJqAgCAABNiaAQAgAATYmoGAIAAE2JsCACAABNibgoAgAASIn7TYnHSInVSYnMSYn2TYn1SYPtAUmD5T9Jg8UBTYX2"
 je 20f
@@ -127,7 +127,7 @@ pub const VG_BLAKE2S_FINALIZE_AVX_FEATURES: verified_garbage_cpu::Features = ver
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` target feature.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_blake2s_finalize_avx(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
+pub(crate) unsafe extern "sysv64" fn vg_blake2s_finalize_avx(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJLj9//9IieFIg8EISImZAAIAAEiJqQgCAABMiaEQAgAATImpGAIAAEyJsSACAABMibkoAgAASIn7SYnPSInVSYn2TYn1SYPtAUmD5T9Jg8UBTYX2"
 je 20f
@@ -163,7 +163,7 @@ call {vg_blake2s_compress_avx}
 /// * `state` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the return address on the stack or the 592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_blake2s_update(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_blake2s_update(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJLj9//9JieBJg8AISYmYAAIAAEmJqAgCAABNiaAQAgAATYmoGAIAAE2JsCACAABNibgoAgAASIn7TYnHSInVSYnMSYn2TYn1SYPtAUmD5T9Jg8UBTYX2"
 je 20f
@@ -239,7 +239,7 @@ jmp 23f
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_blake2s_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
+pub(crate) unsafe extern "sysv64" fn vg_blake2s_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJLj9//9IieFIg8EISImZAAIAAEiJqQgCAABMiaEQAgAATImpGAIAAEyJsSACAABMibkoAgAASIn7SYnPSInVSYn2TYn1SYPtAUmD5T9Jg8UBTYX2"
 je 20f

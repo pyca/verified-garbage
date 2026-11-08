@@ -16,7 +16,7 @@
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the 3408 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_camellia_cfb128_encrypt(schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
+pub(crate) unsafe extern "C" fn vg_camellia_cfb128_encrypt(schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r#".base64 "sfIh+CAAATkgDYj7eCOcfHgrpHx4M8V8eDvmfHhDB32mAgh8CA0H+PAMp/v4DMf7AA3n+3gjnXx4M958eCOffHgrpnx4O+V8AAAfgRANBZEEAB+BFA0FkQgAH4EYDQWRDAAfgRwNBZF4M998eCumfHjjhH8AAKA4eOupf3jzyn94++t/eBtsfHjjgH94M8h8gAvI+YgL6PmQCwj6mAso+qALSPqoC2j6sAuI+rgLqPrAC8j6yAvo+tALCPvYCyj74AtI++gLaPvwC4j7+Auo+wAMyPsIDOj7/wDAPv8A1mLGB9Z6/wDWZv8A1mKAAcj6AP/APgD/1mLGB9Z6AP/WZgD/1mKIAcj6/wDAPgD/1mLGB9Z6AADWZgAA1mKQAcj6AADAPgAA1mLGB9Z6/wDWZgD/1mKYAcj6AADAPv8A1mLGB9Z6AP/WZgAA1mKgAcj67v/EOgAAJSg="
 beq %cr0, 20f
@@ -74,7 +74,7 @@ b 29f
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the 3408 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_camellia_cfb128_decrypt(schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
+pub(crate) unsafe extern "C" fn vg_camellia_cfb128_decrypt(schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r#".base64 "sfIh+CAAATkgDYj7eCOcfHgrpHx4M8V8eDvmfHhDB32mAgh8CA0H+PAMp/v4DMf7AA3n+3gjnXx4M958eCOffHgrpnx4O+V8AAAfgRANBZEEAB+BFA0FkQgAH4EYDQWRDAAfgRwNBZF4M998eCumfHjjhH8AAKA4eOupf3jzyn94++t/eBtsfHjjgH94M8h8gAvI+YgL6PmQCwj6mAso+qALSPqoC2j6sAuI+rgLqPrAC8j6yAvo+tALCPvYCyj74AtI++gLaPvwC4j7+Auo+wAMyPsIDOj7/wDAPv8A1mLGB9Z6/wDWZv8A1mKAAcj6AP/APgD/1mLGB9Z6AP/WZgD/1mKIAcj6/wDAPgD/1mLGB9Z6AADWZgAA1mKQAcj6AADAPgAA1mLGB9Z6/wDWZgD/1mKYAcj6AADAPv8A1mLGB9Z6AP/WZgAA1mKgAcj67v/EOgAAJSg="
 beq %cr0, 20f
@@ -132,7 +132,7 @@ b 29f
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the 3408 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_camellia_cfb128_encrypt_final(schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_camellia_cfb128_encrypt_final(schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "sfIh+CAAATkgDYj7eCOcfHgrpHx4M8V8eDvmfHhDB32mAgh8CA0H+PAMp/v4DMf7AA3n+3gjnXx4M958eCOffHgrpnx4O+V8AAAfgRANBZEEAB+BFA0FkQgAH4EYDQWRDAAfgRwNBZF4M998eCumfHjjhH8AAKA4eOupf3jzyn94++t/eBtsfHjjgH94M8h8gAvI+YgL6PmQCwj6mAso+qALSPqoC2j6sAuI+rgLqPrAC8j6yAvo+tALCPvYCyj74AtI++gLaPvwC4j7+Auo+wAMyPsIDOj7/wDAPv8A1mLGB9Z6/wDWZv8A1mKAAcj6AP/APgD/1mLGB9Z6AP/WZgD/1mKIAcj6/wDAPgD/1mLGB9Z6AADWZgAA1mKQAcj6AADAPgAA1mLGB9Z6/wDWZgD/1mKYAcj6AADAPv8A1mLGB9Z6AP/WZgAA1mKgAcj67v/EOgAAJSg="
 beq %cr0, 20f
@@ -200,7 +200,7 @@ b 29f
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the 3408 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_camellia_cfb128_decrypt_final(schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_camellia_cfb128_decrypt_final(schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "sfIh+CAAATkgDYj7eCOcfHgrpHx4M8V8eDvmfHhDB32mAgh8CA0H+PAMp/v4DMf7AA3n+3gjnXx4M958eCOffHgrpnx4O+V8AAAfgRANBZEEAB+BFA0FkQgAH4EYDQWRDAAfgRwNBZF4M998eCumfHjjhH8AAKA4eOupf3jzyn94++t/eBtsfHjjgH94M8h8gAvI+YgL6PmQCwj6mAso+qALSPqoC2j6sAuI+rgLqPrAC8j6yAvo+tALCPvYCyj74AtI++gLaPvwC4j7+Auo+wAMyPsIDOj7/wDAPv8A1mLGB9Z6/wDWZv8A1mKAAcj6AP/APgD/1mLGB9Z6AP/WZgD/1mKIAcj6/wDAPgD/1mLGB9Z6AADWZgAA1mKQAcj6AADAPgAA1mLGB9Z6/wDWZgD/1mKYAcj6AADAPv8A1mLGB9Z6AP/WZgAA1mKgAcj67v/EOgAAJSg="
 beq %cr0, 20f

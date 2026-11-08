@@ -15,7 +15,7 @@
 /// * `out` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
 /// * None of `out`, `seed` and `scratch` may overlap the 240 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ed448_public_key(out: *mut [u8; 57], seed: *const [u8; 57], scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "C" fn vg_ed448_public_key(out: *mut [u8; 57], seed: *const [u8; 57], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "Qf8h+CAAwTimAgh8eACm+oAAxvqIAOb6kAAG+5gABvgAAKM6AADEOgAA5ToAAAY7AAAAOAAAF/gIABf4EAAX+BgAF/ggABf4KAAX+DAAF/g4ABf4QAAX+EgAF/hQABf4WAAX+GAAF/hoABf4cAAX+HgAF/iAABf4iAAX+JAAF/iYABf4oAAX+KgAF/iwABf4uAAX+MAAF/gAAKA4AAB3OIgAgDgAANY4OQDgOMgAFzk="
 bl {vg_keccak_absorb_scratch}
@@ -50,7 +50,7 @@ bl {vg_ed448_scalar_base}
 /// * `out` and `scratch` must not overlap each other, `seed`, `pk`, `context` or `message` (distinct Rust objects never do).
 /// * None of `out`, `seed`, `pk`, `context`, `message` and `scratch` may overlap the 624 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ed448_sign_cached(out: *mut [u8; 114], seed: *const [u8; 57], pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "C" fn vg_ed448_sign_cached(out: *mut [u8; 114], seed: *const [u8; 57], pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "wf0h+AAAgTloAAw4YAAM+AAAgTlgAIzppgIIfIABjPqIAcz6kAHs+pgBDPugASz7qAGM+7ABrPu4Acz7wAGs+sgBDPgAAIM6AADKOgAA5DoAAAU7AAAmOwAAhzsAAKg7AADJOwAArDo0OAA9ZDQIYcYHCHlnRQhlU2kIYQAAFfkAAAA5CAAVmQkAlZsAAAA4AAAW+AgAFvgQABb4GAAW+CAAFvgoABb4MAAW+DgAFvhAABb4SAAW+FAAFvhYABb4YAAW+GgAFvhwABb4eAAW+IAAFviIABb4kAAW+JgAFvigABb4qAAW+LAAFvi4ABb4wAAW+AAAoDgAAHY4iACAOAAA1zg5AOA4yAAWOQ=="
 bl {vg_keccak_absorb_scratch}
@@ -115,7 +115,7 @@ bl {vg_ed448_scalar_mul_add}
 /// * `scratch` must not overlap `pk`, `context`, `message` or `signature` (distinct Rust objects never do).
 /// * None of `pk`, `context`, `message`, `signature` and `scratch` may overlap the 352 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ed448_verify(pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, signature: *const [u8; 114], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ed448_verify(pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, signature: *const [u8; 114], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "0f4h+CAAQTkCwqt4AAArKA=="
 beq %cr0, 20f

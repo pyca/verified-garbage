@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.RsaKeyGen.keySearchContract`. Timing may depend on the pointers, the lengths, `state`, the status and consumption it returns, and, for each prime's search, its rejected candidates and the octets its accepted candidate's tests read, and each key's status. Not on the primes or the key.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_rsa_generate_ifma` if the CPU supports its features (`VG_RSA_GENERATE_IFMA_FEATURES`); `vg_rsa_generate_adx` if the CPU supports its features (`VG_RSA_GENERATE_ADX_FEATURES`); or else `vg_rsa_generate`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_rsa_generate_ifma` if the CPU supports its features (`VG_RSA_GENERATE_IFMA_FEATURES`); `vg_rsa_generate_adx` if the CPU supports its features (`VG_RSA_GENERATE_ADX_FEATURES`); or else `vg_rsa_generate`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -24,24 +24,60 @@
 /// * None of `key`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 552 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_rsa_generate_auto(key: *mut u8, key_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 7]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::rsa_keygen::VG_RSA_GENERATE_IFMA_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_rsa_generate_ifma`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::rsa_keygen::vg_rsa_generate_ifma(key, key_len, used, rand, rand_len, scratch, scratch_len, state) };
+pub unsafe fn vg_rsa_generate_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *mut u8, key_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 7]) -> u32 {
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(key: *mut u8, key_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 7]) -> u32;
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::rsa_keygen::VG_RSA_GENERATE_IFMA_FEATURES) }
+            || cpu.contains(crate::rsa_keygen::VG_RSA_GENERATE_IFMA_FEATURES)
+        {
+            return crate::rsa_keygen::vg_rsa_generate_ifma;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::rsa_keygen::VG_RSA_GENERATE_ADX_FEATURES) }
+            || cpu.contains(crate::rsa_keygen::VG_RSA_GENERATE_ADX_FEATURES)
+        {
+            return crate::rsa_keygen::vg_rsa_generate_adx;
+        }
+        crate::rsa_keygen::vg_rsa_generate
     }
-    if cpu.contains(crate::rsa_keygen::VG_RSA_GENERATE_ADX_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_rsa_generate_adx`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::rsa_keygen::vg_rsa_generate_adx(key, key_len, used, rand, rand_len, scratch, scratch_len, state) };
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(key: *mut u8, key_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 7]) -> u32 {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(key, key_len, used, rand, rand_len, scratch, scratch_len, state) }
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::rsa_keygen::vg_rsa_generate(key, key_len, used, rand, rand_len, scratch, scratch_len, state) }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(key, key_len, used, rand, rand_len, scratch, scratch_len, state) }
 }
 
-/// `vg_rsa_generate_init`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::rsa_keygen::vg_rsa_generate_init as vg_rsa_generate_init_auto;
+/// Start generating an RSA key, as BoringSSL's `RSA_generate_key_ex` (FIPS 186-5 Appendix A.1.3), with a modulus of `bits` bits rounded down to a multiple of 128, and the public exponent `e` (`e_len` octets, most significant first, with any number of leading zeros). Returns 0 if `e` is not odd from 3 to `2^32 - 1`, or 2 if `bits` is above 8192 or, rounded down, below 512, and writes zeros to `state`. Otherwise returns 1 and writes the search's seven public words to `state`: the rejected candidates the first prime's search allows, the primes' length in octets (`nlen / 16`), the entropy budget, the length of the first random tape to give `vg_rsa_generate`, the phase (0), the generations allowed (4), and the exponent's eight octets, most significant first.
+///
+/// Contract: `VG.Spec.RsaKeyGen.keyInitContract`. Timing may depend on `bits` and `e`.
+///
+/// It runs `vg_rsa_generate_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 56 bytes.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `state` must not overlap `e` (distinct Rust objects never do).
+/// * Neither `state` nor `e` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_rsa_generate_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 7], bits: usize, e: *const u8, e_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::rsa_keygen::vg_rsa_generate_init(state, bits, e, e_len) }
+}

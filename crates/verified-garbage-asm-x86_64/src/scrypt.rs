@@ -20,7 +20,7 @@
 /// * `b`, `v`, `scratch` and `out` must not overlap each other, `password`, `salt` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `password`, `salt`, `b`, `v`, `scratch` and `out` may overlap the return address on the stack or the 88 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_scrypt(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_scrypt(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "QVFBUFZXUFBQSItEJEBIwcg5TItEJFhIiQQkTIlEJAhBuAEAAAA="
 call {vg_pbkdf2_hmac_sha256_scratch}
@@ -60,7 +60,7 @@ pub const VG_SCRYPT_AVX2_FEATURES: verified_garbage_cpu::Features = verified_gar
 /// * None of `password`, `salt`, `b`, `v`, `scratch` and `out` may overlap the return address on the stack or the 88 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_scrypt_avx2(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_scrypt_avx2(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "QVFBUFZXUFBQSItEJEBIwcg5TItEJFhIiQQkTIlEJAhBuAEAAAA="
 call {vg_pbkdf2_hmac_sha256_scratch_avx2}
@@ -100,7 +100,7 @@ pub const VG_SCRYPT_SHANI_FEATURES: verified_garbage_cpu::Features = verified_ga
 /// * None of `password`, `salt`, `b`, `v`, `scratch` and `out` may overlap the return address on the stack or the 88 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_scrypt_shani(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_scrypt_shani(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "QVFBUFZXUFBQSItEJEBIwcg5TItEJFhIiQQkTIlEJAhBuAEAAAA="
 call {vg_pbkdf2_hmac_sha256_scratch_shani}

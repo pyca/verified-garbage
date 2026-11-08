@@ -72,15 +72,6 @@ def privateFrom (a : Parameters) (y x : Nat) : Option PrivateKey := do
   let k ← publicFrom a y
   if privateValid a x && powMod a.g x a.p == y then some ⟨k, x⟩ else none
 
-/-- Uniform scalar sampling; invalid samples and degenerate public keys retry. -/
-def generate (a : Parameters) : List Nat → Option PrivateKey
-  | [] => none
-  | x :: xs =>
-    if !parametersValid a then none else
-    match privateFrom a (powMod a.g x a.p) x with
-    | some k => some k
-    | none => generate a xs
-
 /-- Parameter equality prevents exchanging across domains. Reject degenerate
 shared values as well as invalid peers. No KDF is applied. -/
 def exchange (k : PrivateKey) (peer : PublicKey) : Option (List Byte) :=
@@ -127,10 +118,11 @@ any extension of a tape that sufficed. -/
 /-- The bound a private scalar is below: q, or p-1 without q. -/
 def scalarBound (a : Parameters) : Nat := a.q.getD (a.p - 1)
 
-/-- The scalar of one key-generation attempt (an element of `generate`'s
-list) from random octets: their integer cut to the bit length of
-`scalarBound`. A value outside [1, bound-1] fails `privateValid`, and
-`generate` goes on to the next attempt. -/
+/-- The scalar x of one key-generation attempt from random octets: their
+integer cut to the bit length of `scalarBound`. An attempt gives the key
+`privateFrom` of `g^x mod p` and x, if any; a value outside [1, bound-1]
+fails `privateValid`, and key generation goes on to the next attempt, as
+it does for a degenerate public value. -/
 def scalarOfOctets (a : Parameters) (r : List Byte) : Nat :=
   os2ip r % 2 ^ bitLength (scalarBound a)
 

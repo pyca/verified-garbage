@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 # AES-SIV on x86: where everything is
 
 Untrusted: everything here is checked by Lean. The key context (512 bytes
-at `C`), the working space (2576 bytes at `W`) and the 56 bytes of stack
+at `C`), the working space (2576 bytes at `W`) and the 60 bytes of stack
 below `SP` that the calls use (`Lay`); what a state may access (`Perm`); the
 registers holding `W` and the stack pointer (`Env`); and the public values
 the entry keeps in `W` (`Slots`). The pieces write only the parts of `W`
@@ -38,10 +38,10 @@ open VG.Proof.AesGcm.X86 (w64 toNat_ofNat32 toNat_add32 w64_add covers_off in_of
 structure Lay (C W SP : BitVec 32) : Prop where
   fc : C.toNat + 512 ≤ 2 ^ 32
   fw : W.toNat + 2576 ≤ 2 ^ 32
-  sp : 56 ≤ SP.toNat
+  sp : 60 ≤ SP.toNat
   c_w : (⟨w64 C, 512⟩ : Region).Disjoint ⟨w64 W, 2576⟩
-  stk_c : (below SP 56).Disjoint ⟨w64 C, 512⟩
-  stk_w : (below SP 56).Disjoint ⟨w64 W, 2576⟩
+  stk_c : (below SP 60).Disjoint ⟨w64 C, 512⟩
+  stk_w : (below SP 60).Disjoint ⟨w64 W, 2576⟩
 
 /-- What a state may access. -/
 structure Perm (C W : BitVec 32) (s : State) : Prop where
@@ -83,10 +83,10 @@ theorem c_w' {a n d k : Nat} (ha : a + n ≤ 512) (hd : d + k ≤ 2576) :
     (⟨w64 C + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 d, k⟩ :=
   (L.c_w.sub_left (cSub ha)).sub_right (wSub hd)
 
-theorem stk_w' {a n : Nat} (ha : a + n ≤ 2576) : (below SP 56).Disjoint ⟨w64 W + BitVec.ofNat 64 a, n⟩ :=
+theorem stk_w' {a n : Nat} (ha : a + n ≤ 2576) : (below SP 60).Disjoint ⟨w64 W + BitVec.ofNat 64 a, n⟩ :=
   L.stk_w.sub_right (wSub ha)
 
-theorem stk_c' {a n : Nat} (ha : a + n ≤ 512) : (below SP 56).Disjoint ⟨w64 C + BitVec.ofNat 64 a, n⟩ :=
+theorem stk_c' {a n : Nat} (ha : a + n ≤ 512) : (below SP 60).Disjoint ⟨w64 C + BitVec.ofNat 64 a, n⟩ :=
   L.stk_c.sub_right (cSub ha)
 
 theorem aW {o : Nat} (ho : o < 2576) : w64 (W + BitVec.ofNat 32 o) = w64 W + BitVec.ofNat 64 o :=
@@ -134,7 +134,7 @@ structure Buf (W SP : BitVec 32) (s : State) (D : BitVec 32) (n : Nat) : Prop wh
   rd : Covers [⟨w64 D, n⟩] (s.rd ++ s.wr)
   wrap : D.toNat + n ≤ 2 ^ 32
   w : (⟨w64 D, n⟩ : Region).Disjoint ⟨w64 W, 2576⟩
-  stk : (below SP 56).Disjoint ⟨w64 D, n⟩
+  stk : (below SP 60).Disjoint ⟨w64 D, n⟩
 
 namespace Buf
 

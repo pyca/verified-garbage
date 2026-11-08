@@ -358,7 +358,7 @@ vg_ed25519_verify:
 	ret
 	.p2align 6
 
-vg_ed25519_key_pair_sha3:
+vg_ed25519_key_pair_sha512:
 	str x30, [sp, #-16]!
 	sub sp, sp, #32
 	str x0, [sp, #0]
@@ -367,7 +367,7 @@ vg_ed25519_key_pair_sha3:
 	add x0, x2, #0
 	add x2, x1, #0
 	movz x1, #32, lsl #0
-	bl {vg_sha512_digest_sha3}
+	bl {vg_sha512_digest_sha512}
 	ldr x0, [sp, #0]
 	ldr x1, [sp, #8]
 	ldr x2, [sp, #16]
@@ -377,7 +377,7 @@ vg_ed25519_key_pair_sha3:
 	ret
 	.p2align 6
 
-vg_ed25519_sign_expanded_sha3:
+vg_ed25519_sign_expanded_sha512:
 	str x30, [sp, #-16]!
 	sub sp, sp, #320
 	add x15, sp, #256
@@ -457,7 +457,7 @@ vg_ed25519_sign_expanded_sha3:
 	movz x3, #32, lsl #0
 	ldr x4, [sp, #296]
 	add x4, x4, #192
-	bl {vg_sha512_update_scratch_sha3}
+	bl {vg_sha512_update_scratch_sha512}
 	ldr x0, [sp, #296]
 	add x0, x0, #0
 	movz x1, #32, lsl #0
@@ -467,7 +467,7 @@ vg_ed25519_sign_expanded_sha3:
 	add x3, x3, #0
 	ldr x4, [sp, #296]
 	add x4, x4, #192
-	bl {vg_sha512_update_scratch_sha3}
+	bl {vg_sha512_update_scratch_sha512}
 	ldr x0, [sp, #296]
 	add x0, x0, #0
 	ldr x1, [sp, #288]
@@ -475,7 +475,7 @@ vg_ed25519_sign_expanded_sha3:
 	add x2, sp, #192
 	ldr x3, [sp, #296]
 	add x3, x3, #192
-	bl {vg_sha512_finalize_scratch_sha3}
+	bl {vg_sha512_finalize_scratch_sha512}
 	add x0, sp, #96
 	add x1, sp, #192
 	ldr x2, [sp, #296]
@@ -498,7 +498,7 @@ vg_ed25519_sign_expanded_sha3:
 	movz x3, #32, lsl #0
 	ldr x4, [sp, #296]
 	add x4, x4, #192
-	bl {vg_sha512_update_scratch_sha3}
+	bl {vg_sha512_update_scratch_sha512}
 	ldr x0, [sp, #296]
 	add x0, x0, #0
 	movz x1, #32, lsl #0
@@ -507,7 +507,7 @@ vg_ed25519_sign_expanded_sha3:
 	movz x3, #32, lsl #0
 	ldr x4, [sp, #296]
 	add x4, x4, #192
-	bl {vg_sha512_update_scratch_sha3}
+	bl {vg_sha512_update_scratch_sha512}
 	ldr x0, [sp, #296]
 	add x0, x0, #0
 	movz x1, #64, lsl #0
@@ -517,7 +517,7 @@ vg_ed25519_sign_expanded_sha3:
 	add x3, x3, #0
 	ldr x4, [sp, #296]
 	add x4, x4, #192
-	bl {vg_sha512_update_scratch_sha3}
+	bl {vg_sha512_update_scratch_sha512}
 	ldr x0, [sp, #296]
 	add x0, x0, #0
 	ldr x1, [sp, #288]
@@ -525,7 +525,7 @@ vg_ed25519_sign_expanded_sha3:
 	add x2, sp, #192
 	ldr x3, [sp, #296]
 	add x3, x3, #192
-	bl {vg_sha512_finalize_scratch_sha3}
+	bl {vg_sha512_finalize_scratch_sha512}
 	add x0, sp, #128
 	add x1, sp, #192
 	ldr x2, [sp, #296]
@@ -628,7 +628,7 @@ vg_ed25519_sign_expanded_sha3:
 	ret
 	.p2align 6
 
-vg_ed25519_verify_sha3:
+vg_ed25519_verify_sha512:
 	str x30, [sp, #-16]!
 	sub sp, sp, #320
 	add x15, sp, #256
@@ -654,7 +654,7 @@ vg_ed25519_verify_sha3:
 	movz x3, #32, lsl #0
 	ldr x4, [sp, #288]
 	add x4, x4, #192
-	bl {vg_sha512_update_scratch_sha3}
+	bl {vg_sha512_update_scratch_sha512}
 	ldr x0, [sp, #288]
 	add x0, x0, #0
 	movz x1, #32, lsl #0
@@ -663,7 +663,7 @@ vg_ed25519_verify_sha3:
 	movz x3, #32, lsl #0
 	ldr x4, [sp, #288]
 	add x4, x4, #192
-	bl {vg_sha512_update_scratch_sha3}
+	bl {vg_sha512_update_scratch_sha512}
 	ldr x0, [sp, #288]
 	add x0, x0, #0
 	movz x1, #64, lsl #0
@@ -673,7 +673,7 @@ vg_ed25519_verify_sha3:
 	add x3, x3, #0
 	ldr x4, [sp, #288]
 	add x4, x4, #192
-	bl {vg_sha512_update_scratch_sha3}
+	bl {vg_sha512_update_scratch_sha512}
 	ldr x0, [sp, #288]
 	add x0, x0, #0
 	ldr x1, [sp, #272]
@@ -681,7 +681,7 @@ vg_ed25519_verify_sha3:
 	add x2, sp, #192
 	ldr x3, [sp, #288]
 	add x3, x3, #192
-	bl {vg_sha512_finalize_scratch_sha3}
+	bl {vg_sha512_finalize_scratch_sha512}
 	add x0, sp, #128
 	add x1, sp, #192
 	ldr x2, [sp, #288]

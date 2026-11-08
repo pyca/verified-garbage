@@ -15,7 +15,7 @@
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the 1520 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm4_cfb128_encrypt(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
+pub(crate) unsafe extern "C" fn vg_sm4_cfb128_encrypt(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r"sub sp, sp, #1520
 add r12, sp, #0
@@ -2526,7 +2526,7 @@ bx lr",
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the 1520 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm4_cfb128_decrypt(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
+pub(crate) unsafe extern "C" fn vg_sm4_cfb128_decrypt(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r"sub sp, sp, #1520
 add r12, sp, #0
@@ -5034,7 +5034,7 @@ bx lr",
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the 1560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm4_cfb128_encrypt_final(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_sm4_cfb128_encrypt_final(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r"sub sp, sp, #80
 add r12, sp, #0
@@ -5173,7 +5173,7 @@ bx lr",
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the 1560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm4_cfb128_decrypt_final(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_sm4_cfb128_decrypt_final(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r"sub sp, sp, #80
 add r12, sp, #0

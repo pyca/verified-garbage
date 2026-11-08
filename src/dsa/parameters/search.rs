@@ -27,10 +27,10 @@ struct Searcher {
 }
 
 impl Searcher {
-    fn new(p_len: usize, q_len: usize) -> Self {
+    fn new(dit: crate::dit::Dit<'_>, p_len: usize, q_len: usize) -> Self {
         let mut state = [0u64; 4];
         // SAFETY: `state` is four writable words of its own.
-        let ok = unsafe { vg_dsa_parameter_search_init_auto(&mut state, p_len) };
+        let ok = unsafe { vg_dsa_parameter_search_init_auto(dit, &mut state, p_len) };
         // The caller chose one of the three supported widths.
         assert_eq!(ok, 1);
         Self {
@@ -41,7 +41,7 @@ impl Searcher {
     }
 
     /// One call on `tape`: the status and the octets consumed.
-    fn run(&mut self, tape: &[u8]) -> (u32, usize) {
+    fn run(&mut self, dit: crate::dit::Dit<'_>, tape: &[u8]) -> (u32, usize) {
         assert!(tape.len() <= self.state[2] as usize);
         let mut used = [0u64; 1];
         // SAFETY: `state` came from `vg_dsa_parameter_search_init` or the
@@ -51,6 +51,7 @@ impl Searcher {
         // dispatcher calls only an implementation the CPU has the features of.
         let status = unsafe {
             vg_dsa_parameter_search_auto(
+                dit,
                 self.packed.as_mut_ptr(),
                 self.packed.len(),
                 &mut used,
@@ -68,13 +69,14 @@ impl Searcher {
 /// `p || q || g` for the widths `p_len` and `q_len`, from the random octets
 /// `random` supplies, refilled as the search asks.
 pub(super) fn generate(
+    dit: crate::dit::Dit<'_>,
     p_len: usize,
     q_len: usize,
     random: impl FnMut(&mut [u8]) -> Result<(), Error>,
 ) -> Result<Vec<u8>, Error> {
-    let mut searcher = Searcher::new(p_len, q_len);
+    let mut searcher = Searcher::new(dit, p_len, q_len);
     entropy::serve(searcher.state[3] as usize, random, |tape| {
-        match searcher.run(tape) {
+        match searcher.run(dit, tape) {
             (1, _) => Step::Done,
             (0, used) => Step::More {
                 used,

@@ -12,7 +12,7 @@
 /// * `state` must be valid for reads and writes of 84 bytes.
 /// * `state` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha1_init(state: *mut [u8; 84]) {
+pub(crate) unsafe extern "C" fn vg_sha1_init(state: *mut [u8; 84]) {
     core::arch::naked_asm!(
         r".inst 0x52846029,0x72ace8a9,0xb9000009,0x52957129,0x72bdf9a9,0xb9000409,0x529b9fc9,0x72b31749
 .inst 0xb9000809,0x528a8ec9,0x72a20649,0xb9000c09,0x529c3e09,0x72b87a49,0xb9001009,0xd65f03c0
@@ -31,7 +31,7 @@ pub unsafe extern "C" fn vg_sha1_init(state: *mut [u8; 84]) {
 /// * `state` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha1_update(state: *mut [u8; 84], count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_sha1_update(state: *mut [u8; 84], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd10283ff,0x910003e4,0xf81f0ffe,0xf9003893,0xf9003c94,0xf9004095,0xf9004496,0xf9004897
 .inst 0xf9004c98,0x91000013,0x91000094,0x91000055,0x91000076,0xd28007e9,0x8a090037
@@ -141,7 +141,7 @@ b 21f
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha1_finalize(state: *mut [u8; 84], count: u64, out: *mut [u8; 20]) {
+pub(crate) unsafe extern "C" fn vg_sha1_finalize(state: *mut [u8; 84], count: u64, out: *mut [u8; 20]) {
     core::arch::naked_asm!(
         r".inst 0xd10283ff,0x910003e3,0xf81f0ffe,0xf9003873,0xf9003c74,0xf9004075,0xf9004476,0xf9004877
 .inst 0xf9004c78,0x91000013,0x91000074,0x91000055,0x91000036,0xd28007e9,0x8a0902d7,0xd2801009
@@ -196,7 +196,7 @@ cbz x24, 20b
 /// * `out` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `data` nor `out` may overlap the 272 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha1_digest(data: *const u8, len: usize, out: *mut [u8; 20]) {
+pub(crate) unsafe extern "C" fn vg_sha1_digest(data: *const u8, len: usize, out: *mut [u8; 20]) {
     core::arch::naked_asm!(
         r".inst 0xd10443ff,0x910343ea,0xa9005553,0xa9016556,0xa9026d5a,0xa903795c,0x91000039,0x9100005a
 .inst 0x9100001b,0x910003e0,0x52846029,0x72ace8a9,0xb9000009,0x52957129,0x72bdf9a9,0xb9000409
@@ -271,7 +271,7 @@ pub const VG_SHA1_UPDATE_SHA2_FEATURES: verified_garbage_cpu::Features = verifie
 /// * Neither `state` nor `data` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha2` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha1_update_sha2(state: *mut [u8; 84], count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_sha1_update_sha2(state: *mut [u8; 84], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd10283ff,0x910003e4,0xf81f0ffe,0xf9003893,0xf9003c94,0xf9004095,0xf9004496,0xf9004897
 .inst 0xf9004c98,0x91000013,0x91000094,0x91000055,0x91000076,0xd28007e9,0x8a090037
@@ -385,7 +385,7 @@ pub const VG_SHA1_FINALIZE_SHA2_FEATURES: verified_garbage_cpu::Features = verif
 /// * Neither `state` nor `out` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha2` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha1_finalize_sha2(state: *mut [u8; 84], count: u64, out: *mut [u8; 20]) {
+pub(crate) unsafe extern "C" fn vg_sha1_finalize_sha2(state: *mut [u8; 84], count: u64, out: *mut [u8; 20]) {
     core::arch::naked_asm!(
         r".inst 0xd10283ff,0x910003e3,0xf81f0ffe,0xf9003873,0xf9003c74,0xf9004075,0xf9004476,0xf9004877
 .inst 0xf9004c78,0x91000013,0x91000074,0x91000055,0x91000036,0xd28007e9,0x8a0902d7,0xd2801009
@@ -444,7 +444,7 @@ pub const VG_SHA1_DIGEST_SHA2_FEATURES: verified_garbage_cpu::Features = verifie
 /// * Neither `data` nor `out` may overlap the 272 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha2` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha1_digest_sha2(data: *const u8, len: usize, out: *mut [u8; 20]) {
+pub(crate) unsafe extern "C" fn vg_sha1_digest_sha2(data: *const u8, len: usize, out: *mut [u8; 20]) {
     core::arch::naked_asm!(
         r".inst 0xd10443ff,0x910343ea,0xa9005553,0xa9016556,0xa9026d5a,0xa903795c,0x91000039,0x9100005a
 .inst 0x9100001b,0x910003e0,0x52846029,0x72ace8a9,0xb9000009,0x52957129,0x72bdf9a9,0xb9000409

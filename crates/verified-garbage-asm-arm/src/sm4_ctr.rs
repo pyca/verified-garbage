@@ -15,7 +15,7 @@
 /// * `ctr` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `ctr` and `data` may overlap the 1520 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm4_ctr(schedule: *const [u8; 128], ctr: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
+pub(crate) unsafe extern "C" fn vg_sm4_ctr(schedule: *const [u8; 128], ctr: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r"sub sp, sp, #1520
 add r12, sp, #0
@@ -2384,7 +2384,7 @@ bx lr",
 /// * `ctr` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `ctr` and `data` may overlap the 1584 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm4_ctr_final(schedule: *const [u8; 128], ctr: *mut [u8; 16], data: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_sm4_ctr_final(schedule: *const [u8; 128], ctr: *mut [u8; 16], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r"sub sp, sp, #64
 add r12, sp, #0

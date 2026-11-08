@@ -19,6 +19,8 @@
 
 use alloc::vec::Vec;
 
+use crate::align::CacheAligned;
+
 use crate::arch::dispatch::argon2::vg_argon2_auto;
 use crate::error::PasswordHashError;
 
@@ -96,13 +98,14 @@ pub fn derive_keyed(
     max_memory: usize,
     out: &mut [u8],
 ) -> Result<(), PasswordHashError> {
+    crate::dit::enter!(dit);
     let inputs = Inputs {
         password,
         salt,
         secret,
         associated_data,
     };
-    Derivation::new(params, inputs, max_memory, out.len())?.run(out);
+    Derivation::new(params, inputs, max_memory, out.len())?.run(dit, out);
     Ok(())
 }
 
@@ -155,6 +158,7 @@ pub fn verify_keyed<const N: usize>(
     max_memory: usize,
     expected: &[u8; N],
 ) -> Result<(), PasswordHashError> {
+    crate::dit::enter!(dit);
     crate::ct::assert_verify_len!(N);
     let inputs = Inputs {
         password,
@@ -164,8 +168,8 @@ pub fn verify_keyed<const N: usize>(
     };
     let mut derivation = Derivation::new(params, inputs, max_memory, N)?;
     let mut key = [0u8; N];
-    derivation.run(&mut key);
-    let matches = crate::ct::eq(&key, expected);
+    derivation.run(dit, &mut key);
+    let matches = crate::ct::eq(dit, &key, expected);
     crate::zeroize::zeroize(&mut key);
     if matches {
         Ok(())
@@ -193,17 +197,21 @@ struct Derivation<'a> {
     /// The other inputs.
     inputs: Inputs<'a>,
     /// The memory matrix, of `1024 · blocks` bytes.
-    matrix: Vec<[u64; 128]>,
+    matrix: Vec<CacheAligned<[u64; 128]>>,
     /// 16 KiB of working space.
-    scratch: Vec<[u64; 2048]>,
+    scratch: Vec<CacheAligned<[u64; 2048]>>,
     /// The length of the key to derive.
     len: usize,
 }
 
 impl Drop for Derivation<'_> {
     fn drop(&mut self) {
-        crate::zeroize::zeroize(self.matrix.as_flattened_mut());
-        crate::zeroize::zeroize(self.scratch.as_flattened_mut());
+        for block in &mut self.matrix {
+            crate::zeroize::zeroize(&mut block.0);
+        }
+        for block in &mut self.scratch {
+            crate::zeroize::zeroize(&mut block.0);
+        }
     }
 }
 
@@ -248,14 +256,14 @@ impl<'a> Derivation<'a> {
         Ok(Derivation {
             params: *params,
             inputs,
-            matrix: allocate(blocks, [0; 128])?,
-            scratch: allocate(1, [0; 2048])?,
+            matrix: allocate(blocks, CacheAligned([0; 128]))?,
+            scratch: allocate(1, CacheAligned([0; 2048]))?,
             len,
         })
     }
 
     /// Fills `out`, of the length checked, with the key.
-    fn run(&mut self, out: &mut [u8]) {
+    fn run(&mut self, dit: crate::dit::Dit<'_>, out: &mut [u8]) {
         assert_eq!(out.len(), self.len);
         let Params {
             variant,
@@ -281,6 +289,7 @@ impl<'a> Derivation<'a> {
         // calls only an implementation the CPU has the features of.
         unsafe {
             vg_argon2_auto(
+                dit,
                 variant as u32,
                 password.as_ptr(),
                 password.len(),
@@ -298,9 +307,9 @@ impl<'a> Derivation<'a> {
                 secret.len(),
                 associated_data.as_ptr(),
                 associated_data.len(),
-                self.matrix.as_mut_ptr(),
+                self.matrix.as_mut_ptr().cast(),
                 self.matrix.len(),
-                self.scratch.as_mut_ptr(),
+                self.scratch.as_mut_ptr().cast(),
                 out.as_mut_ptr(),
                 out.len(),
             )

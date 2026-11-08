@@ -10,8 +10,9 @@
     target_arch = "riscv64"
 ))]
 
-use crate::arch::blowfish::{
-    vg_blowfish_ecb_decrypt, vg_blowfish_ecb_encrypt, vg_blowfish_expand_key,
+use crate::align::CacheAligned;
+use crate::arch::dispatch::blowfish::{
+    vg_blowfish_ecb_decrypt_auto, vg_blowfish_ecb_encrypt_auto, vg_blowfish_expand_key_auto,
 };
 use crate::error::{IncompleteBlock, InvalidKeyLength, OutputTooSmall};
 use crate::zeroize::zeroize;
@@ -20,7 +21,7 @@ use crate::zeroize::zeroize;
 /// which [`BlowfishEcbEncryptor`] and [`BlowfishEcbDecryptor`] wrap.
 struct Ecb<const DECRYPT: bool> {
     /// The expanded key.
-    schedule: [u8; 4168],
+    schedule: CacheAligned<[u8; 4168]>,
     /// The bytes of a partial block, the first `pending_len` of them.
     pending: [u8; 8],
     pending_len: usize,
@@ -33,14 +34,15 @@ impl<const DECRYPT: bool> Ecb<DECRYPT> {
             return Err(InvalidKeyLength);
         }
         let mut ecb = Self {
-            schedule: [0; 4168],
+            schedule: CacheAligned([0; 4168]),
             pending: [0; 8],
             pending_len: 0,
         };
+        crate::dit::enter!(dit);
         // SAFETY: the key has a length in 4..=56; the key and the schedule
         // are separate valid objects of the lengths passed.
         unsafe {
-            vg_blowfish_expand_key(key.as_ptr(), key.len(), &mut ecb.schedule);
+            vg_blowfish_expand_key_auto(dit, key.as_ptr(), key.len(), &mut ecb.schedule.0);
         }
         Ok(ecb)
     }
@@ -73,15 +75,21 @@ impl<const DECRYPT: bool> Ecb<DECRYPT> {
         let (used, left) = input.split_at(rest.len());
         rest.copy_from_slice(used);
         let crypt = if DECRYPT {
-            vg_blowfish_ecb_decrypt
+            vg_blowfish_ecb_decrypt_auto
         } else {
-            vg_blowfish_ecb_encrypt
+            vg_blowfish_ecb_encrypt_auto
         };
+        crate::dit::enter!(dit);
         // SAFETY: `output` holds `written / 8` complete eight-byte blocks; the
         // schedule, written by key expansion, and `output` are separate valid
         // objects of the lengths passed.
         unsafe {
-            crypt(&self.schedule, output.as_mut_ptr().cast(), written / 8);
+            crypt(
+                dit,
+                &self.schedule.0,
+                output.as_mut_ptr().cast(),
+                written / 8,
+            );
         }
         self.pending[..left.len()].copy_from_slice(left);
         self.pending_len = left.len();
@@ -100,7 +108,7 @@ impl<const DECRYPT: bool> Ecb<DECRYPT> {
 
 impl<const DECRYPT: bool> Drop for Ecb<DECRYPT> {
     fn drop(&mut self) {
-        zeroize(&mut self.schedule);
+        zeroize(&mut self.schedule.0);
         zeroize(&mut self.pending);
     }
 }

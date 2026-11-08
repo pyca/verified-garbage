@@ -76,14 +76,14 @@ def artifacts (v : Proof.Aes.X86.Ctr32Impl) : List Artifact := [
   Spec.Ccm.sealApi.artifact X86.target {
     suffix := v.suffix
     code := Impl.StackScratch.X86.withStackScratch 2608 10 (Impl.AesCcm.X86.seal v.callee v.suffix)
-    stack := 2664
+    stack := 2668
     verified := Proof.AesCcm.seal_keyed (seal_framed v)
     spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (seal_spSafe v)
     features := v.features },
   Spec.Ccm.openApi.artifact X86.target {
     suffix := v.suffix
     code := Impl.StackScratch.X86.withStackScratch 2608 10 (Impl.AesCcm.X86.open v.callee v.suffix)
-    stack := 2664
+    stack := 2668
     verified := Proof.AesCcm.open_keyed (open_framed v)
     spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (open_spSafe v)
     features := v.features }]

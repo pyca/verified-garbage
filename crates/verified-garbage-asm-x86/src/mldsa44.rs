@@ -20,7 +20,7 @@
 /// * `pk`, `sk` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
 /// * None of `seed`, `pk`, `sk` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 96 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_mldsa44_keygen(seed: *const [u8; 32], pk: *mut [u8; 1312], sk: *mut [u8; 2560], scratch: *mut [u64; 9728]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_mldsa44_keygen(seed: *const [u8; 32], pk: *mut [u8; 1312], sk: *mut [u8; 2560], scratch: *mut [u64; 9728]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "U1ZXVYt0JCC4AQAAAImGhAMAALgEAAAAiIaAAwAAuAQAAACIhoEDAACJ8oPCALgAAAAAuTIAAAA="
 20:
@@ -337,7 +337,7 @@ call {vg_keccak_squeeze_scratch}
 /// * `tr` and `scratch` must not overlap each other or `pk` (distinct Rust objects never do).
 /// * None of `pk`, `tr` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_mldsa44_pk_tr(pk: *const [u8; 1312], tr: *mut [u8; 64], scratch: *mut [u64; 9728]) {
+pub(crate) unsafe extern "C" fn vg_mldsa44_pk_tr(pk: *const [u8; 1312], tr: *mut [u8; 64], scratch: *mut [u64; 9728]) {
     core::arch::naked_asm!(
         r#".base64 "U1ZXVYt0JByJ8oPCALgAAAAAuTIAAAA="
 20:
@@ -372,7 +372,7 @@ call {vg_keccak_squeeze_scratch}
 /// * `prepared` and `scratch` must not overlap each other or `pk` (distinct Rust objects never do).
 /// * None of `pk`, `prepared` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 96 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_mldsa44_prepare_verifying_key(pk: *const [u8; 1312], prepared: *mut [u8; 5408], scratch: *mut [u64; 128]) {
+pub(crate) unsafe extern "C" fn vg_mldsa44_prepare_verifying_key(pk: *const [u8; 1312], prepared: *mut [u8; 5408], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
         r#".base64 "U1ZXVYt0JByLfCQUg8cAi2wkGIPFALlIAQAA"
 20:
@@ -417,7 +417,7 @@ call {vg_mldsa_ntt}
 /// * `prepared` and `scratch` must not overlap each other or `sk` (distinct Rust objects never do).
 /// * None of `sk`, `prepared` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 96 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_mldsa44_prepare_signing_key(sk: *const [u8; 2560], prepared: *mut [u8; 14848], scratch: *mut [u64; 128]) {
+pub(crate) unsafe extern "C" fn vg_mldsa44_prepare_signing_key(sk: *const [u8; 2560], prepared: *mut [u8; 14848], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
         r#".base64 "U1ZXVYt0JByLfCQUg8cAi2wkGIPFALmAAgAA"
 20:
@@ -497,7 +497,7 @@ call {vg_mldsa_ntt}
 /// * `sig` and `scratch` must not overlap each other, `sk`, `mu` or `rnd` (distinct Rust objects never do).
 /// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 136 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_mldsa44_sign(sk: *const [u8; 2560], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9728]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_mldsa44_sign(sk: *const [u8; 2560], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9728]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "U1ZXVYt0JCS4AAAAAImGUAQAAItEJBSDwACLTCQYg8EAi1QkHIPCAItcJCCDwwCJ94PHAFdTUlFQ"
 call {vg_mldsa44_sign_core}
@@ -527,7 +527,7 @@ call {vg_mldsa44_sign_core}
 /// * `sig` and `scratch` must not overlap each other, `sk`, `msg`, `ctx` or `rnd` (distinct Rust objects never do).
 /// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 176 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_mldsa44_sign_message(sk: *const [u8; 2560], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9856]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_mldsa44_sign_message(sk: *const [u8; 2560], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9856]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "U1ZXVYtEJCQ9AAEAAA=="
 jae 20f
@@ -580,7 +580,7 @@ jmp 21f
 /// * `sig` and `scratch` must not overlap each other, `sk`, `msg`, `ctx` or `rnd` (distinct Rust objects never do).
 /// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 176 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_mldsa44_sign_message_prepared(sk: *const [u8; 14848], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9856]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_mldsa44_sign_message_prepared(sk: *const [u8; 14848], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9856]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "U1ZXVYtEJCQ9AAEAAA=="
 jae 20f
@@ -628,7 +628,7 @@ jmp 21f
 /// * `scratch` must not overlap `pk`, `mu` or `sig` (distinct Rust objects never do).
 /// * None of `pk`, `mu`, `sig` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 136 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_mldsa44_verify(pk: *const [u8; 1312], mu: *const [u8; 64], sig: *const [u8; 2420], scratch: *mut [u64; 9728]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_mldsa44_verify(pk: *const [u8; 1312], mu: *const [u8; 64], sig: *const [u8; 2420], scratch: *mut [u64; 9728]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "U1ZXVYt0JCCLRCQUg8AgifGBwQAgAQBRUA=="
 call {vg_mldsa_unpack_t1}
@@ -675,7 +675,7 @@ call {vg_mldsa44_verify_core}
 /// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig` or `tr` (distinct Rust objects never do).
 /// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the arguments on the stack, overlap the return address on the stack or the 172 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_mldsa44_verify_message_cached(pk: *const [u8; 1312], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 2420], scratch: *mut [u64; 9856], tr: *const [u8; 64]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_mldsa44_verify_message_cached(pk: *const [u8; 1312], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 2420], scratch: *mut [u64; 9856], tr: *const [u8; 64]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "U1ZXVYtEJCQ9AAEAAA=="
 jae 20f
@@ -727,7 +727,7 @@ jmp 21f
 /// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig` or `tr` (distinct Rust objects never do).
 /// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the arguments on the stack, overlap the return address on the stack or the 172 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_mldsa44_verify_message_prepared(pk: *const [u8; 5408], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 2420], scratch: *mut [u64; 9856], tr: *const [u8; 64]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_mldsa44_verify_message_prepared(pk: *const [u8; 5408], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 2420], scratch: *mut [u64; 9856], tr: *const [u8; 64]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "U1ZXVYtEJCQ9AAEAAA=="
 jae 20f

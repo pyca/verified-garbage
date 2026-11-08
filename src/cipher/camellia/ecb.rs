@@ -9,8 +9,9 @@
     target_arch = "riscv64"
 ))]
 
-use crate::arch::camellia::{
-    vg_camellia_ecb_decrypt, vg_camellia_ecb_encrypt, vg_camellia_expand_key,
+use crate::align::CacheAligned;
+use crate::arch::dispatch::camellia::{
+    vg_camellia_ecb_decrypt_auto, vg_camellia_ecb_encrypt_auto, vg_camellia_expand_key_auto,
 };
 use crate::error::{IncompleteBlock, InvalidKeyLength};
 use crate::zeroize::zeroize;
@@ -23,7 +24,7 @@ use crate::zeroize::zeroize;
 /// ECB encrypts equal blocks to equal blocks, so it reveals patterns in the
 /// data.
 pub struct CamelliaEcb {
-    schedule: [u8; 272],
+    schedule: CacheAligned<[u8; 272]>,
     rounds: usize,
 }
 
@@ -35,11 +36,12 @@ impl CamelliaEcb {
             24 | 32 => 24,
             _ => return Err(InvalidKeyLength),
         };
-        let mut schedule = [0; 272];
+        let mut schedule = CacheAligned([0; 272]);
+        crate::dit::enter!(dit);
         // SAFETY: the key has a validated length; key and schedule are separate
         // valid buffers of the required sizes.
         unsafe {
-            vg_camellia_expand_key(key.as_ptr(), key.len(), &mut schedule);
+            vg_camellia_expand_key_auto(dit, key.as_ptr(), key.len(), &mut schedule.0);
         }
         Ok(Self { schedule, rounds })
     }
@@ -61,17 +63,19 @@ impl CamelliaEcb {
             return Err(IncompleteBlock);
         }
         let f = if encrypt {
-            vg_camellia_ecb_encrypt
+            vg_camellia_ecb_encrypt_auto
         } else {
-            vg_camellia_ecb_decrypt
+            vg_camellia_ecb_decrypt_auto
         };
+        crate::dit::enter!(dit);
         // SAFETY: `rounds` is 18 for a key of 16 bytes and 24 otherwise, as
         // `new` expanded the schedule for. The buffer contains complete 16-byte
         // blocks, including zero blocks. The buffer and schedule are separate
         // valid objects and do not overlap the callee's stack.
         unsafe {
             f(
-                &self.schedule,
+                dit,
+                &self.schedule.0,
                 self.rounds,
                 buffer.as_mut_ptr().cast(),
                 buffer.len() / 16,
@@ -83,6 +87,6 @@ impl CamelliaEcb {
 
 impl Drop for CamelliaEcb {
     fn drop(&mut self) {
-        zeroize(&mut self.schedule);
+        zeroize(&mut self.schedule.0);
     }
 }

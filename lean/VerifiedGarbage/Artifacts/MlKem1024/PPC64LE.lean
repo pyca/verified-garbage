@@ -1,9 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem1024.PPC64LE.CheckEk
-public import VerifiedGarbage.Proof.MlKem1024.PPC64LE.KeyGenCT
-public import VerifiedGarbage.Proof.MlKem1024.PPC64LE.EncapsCT
-public import VerifiedGarbage.Proof.MlKem1024.PPC64LE.DecapsCT
+public import VerifiedGarbage.Proof.MlKem.PPC64LE.CallWipe
 public import VerifiedGarbage.Proof.MlKem1024.PPC64LE.CompressEncode
 public import VerifiedGarbage.Proof.MlKem1024.PPC64LE.Decompress
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -20,20 +18,20 @@ def artifacts : List Artifact := [
     code := Impl.MlKem1024.PPC64LE.checkEk1024
     verified := Proof.MlKem1024.PPC64LE.CheckEk.verified },
   Spec.MlKem1024.keyGenApi.artifact PPC64LE.target {
-    code := Impl.MlKem1024.PPC64LE.keygen1024
-    stack := 48
-    verified := Proof.MlKem1024.PPC64LE.KeyGen.verified },
+    code := Impl.MlKem.PPC64LE.Wipe.keyGen1024
+    stack := 96
+    verified := Proof.MlKem.PPC64LE.Wipe.keyGen1024_verified },
   Spec.MlKem1024.encapsApi.artifact PPC64LE.target {
-    code := Impl.MlKem1024.PPC64LE.encaps1024
-    stack := 48
-    verified := Proof.MlKem1024.PPC64LE.Encaps.verified },
+    code := Impl.MlKem.PPC64LE.Wipe.encaps1024
+    stack := 96
+    verified := Proof.MlKem.PPC64LE.Wipe.encaps1024_verified },
   Spec.MlKem1024.encapsHApi.artifact PPC64LE.target {
-    code := Impl.MlKem1024.PPC64LE.encapsH1024
-    stack := 48
-    verified := Proof.MlKem1024.PPC64LE.Encaps.verifiedH },
+    code := Impl.MlKem.PPC64LE.Wipe.encapsH1024
+    stack := 96
+    verified := Proof.MlKem.PPC64LE.Wipe.encapsH1024_verified },
   Spec.MlKem1024.decapsApi.artifact PPC64LE.target {
-    code := Impl.MlKem1024.PPC64LE.decaps1024
-    stack := 48
-    verified := Proof.MlKem1024.PPC64LE.Decaps.verified }]
+    code := Impl.MlKem.PPC64LE.Wipe.decaps1024
+    stack := 96
+    verified := Proof.MlKem.PPC64LE.Wipe.decaps1024_verified }]
 
 end VG.Artifacts.MlKem1024.PPC64LE

@@ -10,8 +10,9 @@ meta import VerifiedGarbage.Spec.Ccm
 
 NIST CAVP AES-CCM vectors, read from the vendored response files under
 `vectors/nist-cavp/ccm/` (see `vectors/sources/`) when this file is built
-and checked against `VG.Spec.Ccm.aesCcmEncrypt` and
-`VG.Spec.Ccm.aesCcmDecrypt`, so that a transcription error in the spec
+and checked against CCM with AES (`VG.Spec.Ccm.encryptWith` and
+`VG.Spec.Ccm.decryptWith` with `VG.Spec.Ccm.aes`, behind the length checks
+of `encrypt` and `decrypt` here), so that a transcription error in the spec
 fails the build. For each key length (128, 192 and 256 bits):
 
 * the encryption files, which vary one length each (`VADT` the associated
@@ -102,6 +103,25 @@ def firsts (k : Nat) (rs : List (List (String × String))) : List (List (String 
       if i < k then r :: go rs (some (key r)) (i + 1) else go rs (some (key r)) (i + 1)
   go rs none 0
 
+/-- §6.1, generation-encryption with the MAC length `t` (bytes) of the
+payload `pt` with the associated data `aad` under the nonce `nonce`: the
+ciphertext `C`, or `none` if the inputs are not valid. -/
+def encrypt (ciph : Spec.Ccm.Cipher) (t : Nat) (nonce pt aad : List Byte) : Option (List Byte) :=
+  if Spec.Ccm.valid t nonce.length aad.length pt.length then
+    let (ct, tag) := Spec.Ccm.encryptWith ciph t nonce pt aad
+    some (ct ++ tag)
+  else none
+
+/-- §6.2, decryption-verification with the MAC length `t` (bytes) of the
+ciphertext `c` with the associated data `aad` under the nonce `nonce`: the
+payload, or `none` (INVALID) if `c` is shorter than the MAC (step 1, but
+following the CAVP vectors, which expect an empty payload to be decrypted:
+see `Spec/Ccm.lean`), if `N`, `A` or `P` is not valid (step 7) or if the
+MAC is wrong (step 10). -/
+def decrypt (ciph : Spec.Ccm.Cipher) (t : Nat) (nonce c aad : List Byte) : Option (List Byte) :=
+  if c.length < t || !Spec.Ccm.valid t nonce.length aad.length (c.length - t) then none
+  else Spec.Ccm.decryptWith ciph t nonce (c.take (c.length - t)) aad (c.drop (c.length - t))
+
 private def aesCached (key : List Byte) : {c : Spec.Ccm.Cipher // c = Spec.Ccm.aes key} :=
   let nr := Spec.Aes.rounds (key.length / 4)
   let w := Spec.Aes.expandKey key
@@ -124,7 +144,7 @@ run_cmd do
         match v with
         | .error e => throwError "{name}, Count = {(get r "Count").toOption}: {e}"
         | .ok (key, nonce, aad, pt, ct, t) =>
-          unless Spec.Ccm.encrypt (aesCached key).val t nonce pt aad == some ct do
+          unless encrypt (aesCached key).val t nonce pt aad == some ct do
             throwError "{name}, Count = {(get r "Count").toOption}: encryption is wrong"
           n := n + 1
   -- One vector per length: 33 associated-data lengths, 7 nonce lengths, 25 payload lengths
@@ -149,7 +169,7 @@ run_cmd do
       match v with
       | .error e => throwError "{name}, Count = {(get r "Count").toOption}: {e}"
       | .ok (key, nonce, aad, ct, t, expected) =>
-        unless Spec.Ccm.decrypt (aesCached key).val t nonce ct aad == expected do
+        unless decrypt (aesCached key).val t nonce ct aad == expected do
           throwError "{name}, Count = {(get r "Count").toOption}: decryption-verification is wrong"
         if expected.isSome then pass := pass + 1 else fail := fail + 1
   -- 16 sections in each of 3 files.

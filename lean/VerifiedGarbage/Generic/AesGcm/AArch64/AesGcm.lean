@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Instances
 public import VerifiedGarbage.Proof.AesGcm.AArch64.OpenTo.Verified
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenTo
 public import VerifiedGarbage.Proof.AesGcm.RoundsTo
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.Instances
 public import VerifiedGarbage.Proof.AesGcm.AArch64.GhashImpls
@@ -175,18 +176,19 @@ def artifactsGather (v : GcmImpl) : List Artifact := [
     verified := Proof.AesGcm.sealGather_keyed (Proof.AesGcm.AArch64.Gather.sealGather_verified (Proof.AesGcm.AArch64.sealFn v Proof.Gcm.AArch64.Pmull.mulV_keyV))
     features := v.features }]
 
-/-- `vg_aes_gcm_open_to`, calling the instance of `vg_aes_gcm_open` of the implementations `v`. -/
+/-- `vg_aes_gcm_open_to` of the implementations `v`, in one pass. -/
 def artifactsOpenTo (v : GcmImpl) : List Artifact := [
   Spec.Gcm.openToApi.artifact AArch64.target {
     suffix := v.suffix
-    code := Impl.AesGcm.AArch64.OpenTo.openTo 2 (Proof.AesGcm.AArch64.openFn v Proof.Gcm.AArch64.Pmull.mulV_keyV).fn
-    stack := 2624
-    verified := Proof.AesGcm.openTo_keyed (Proof.AesGcm.AArch64.OpenTo.openTo_verified (Proof.AesGcm.AArch64.openFn v Proof.Gcm.AArch64.Pmull.mulV_keyV))
+    code := Impl.StackScratch.AArch64.withStackArgScratch 2608 4 (openToCode v)
+    stack := 2608
+    verified := Proof.AesGcm.openTo_keyed (openToCode_framed v Proof.Gcm.AArch64.Pmull.mulV_keyV)
     features := v.features }]
 
 /-- `vg_aes_gcm_seal_with_powers` and `vg_aes_gcm_open_with_powers`, calling
 `g` on the path for TLS records, and `vg_aes_gcm_open_to_with_powers`,
-calling that instance of `vg_aes_gcm_open_with_powers`. -/
+calling that instance of `vg_aes_gcm_open_with_powers` (and, with the
+interleaved loops, `vg_aes_gcm_open_split_with_powers` in one pass). -/
 def withPowersArtifacts (v : GcmImpl) (g : GhashWithImpl) : List Artifact :=
   [Spec.Gcm.sealWithPowersApi.artifact AArch64.target {
     suffix := v.suffix
@@ -200,14 +202,24 @@ def withPowersArtifacts (v : GcmImpl) (g : GhashWithImpl) : List Artifact :=
     stack := 2592
     verified := Proof.AesGcm.openWithPowers_keyed (openPwCode_framed v Proof.Gcm.AArch64.Pmull.mulV_keyV Proof.Gcm.AArch64.Stitch.gh8Ok g)
     features := v.stitchFeatures },
-  Spec.Gcm.openToWithPowersApi.artifact AArch64.target {
-    suffix := v.suffix
-    code := Impl.AesGcm.AArch64.OpenTo.openTo 3
-      (Proof.AesGcm.AArch64.openPwFn v g Proof.Gcm.AArch64.Pmull.mulV_keyV Proof.Gcm.AArch64.Stitch.gh8Ok).fn
-    stack := 2624
-    verified := Proof.AesGcm.openToWithPowers_keyed (Proof.AesGcm.AArch64.OpenTo.openToPw_verified
-      (Proof.AesGcm.AArch64.openPwFn v g Proof.Gcm.AArch64.Pmull.mulV_keyV Proof.Gcm.AArch64.Stitch.gh8Ok))
-    features := v.stitchFeatures }]
+  if v.stitch then
+    Spec.Gcm.openToWithPowersApi.artifact AArch64.target {
+      suffix := v.suffix
+      code := Impl.AesGcm.AArch64.OpenTo.openToSel
+        (Proof.AesGcm.AArch64.openPwFn v g Proof.Gcm.AArch64.Pmull.mulV_keyV Proof.Gcm.AArch64.Stitch.gh8Ok).fn
+        (Proof.AesGcm.AArch64.openSplitFn v g Proof.Gcm.AArch64.Pmull.mulV_keyV Proof.Gcm.AArch64.Stitch.gh8Ok).fn
+      stack := 2656
+      verified := Proof.AesGcm.openToWithPowers_keyed (Proof.AesGcm.AArch64.OpenTo.openToSel_verified
+        (Proof.AesGcm.AArch64.openPwFn v g Proof.Gcm.AArch64.Pmull.mulV_keyV Proof.Gcm.AArch64.Stitch.gh8Ok)
+        (Proof.AesGcm.AArch64.openSplitFn v g Proof.Gcm.AArch64.Pmull.mulV_keyV Proof.Gcm.AArch64.Stitch.gh8Ok))
+      features := v.stitchFeatures }
+  else
+    Spec.Gcm.openToWithPowersApi.artifact AArch64.target {
+      suffix := v.suffix
+      code := Impl.StackScratch.AArch64.withStackArgScratch 2608 5 (openToPwCode v g)
+      stack := 2608
+      verified := Proof.AesGcm.openToWithPowers_keyed (openToPwCode_framed v g Proof.Gcm.AArch64.Pmull.mulV_keyV)
+      features := v.stitchFeatures }]
 
 /-- `vg_aes_gcm_seal_with_powers` and `vg_aes_gcm_open_with_powers` of
 implementations without code that reads the powers: their `seal` and `open`. -/

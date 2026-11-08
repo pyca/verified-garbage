@@ -56,7 +56,7 @@ abbrev haR : Region := ⟨argAddr s₀ 0, 24⟩
 abbrev hH : Nat := held (countX86 s₀).toNat
 
 /-- Where the function writes: the state, `out`, the scratch buffer and the stack. -/
-abbrev HBig : List Region := [hstR s₀, hoR s₀, hscR s₀, below (hE s₀) 56]
+abbrev HBig : List Region := [hstR s₀, hoR s₀, hscR s₀, below (hE s₀) 60]
 
 end
 
@@ -73,13 +73,13 @@ structure HPre (s₀ : State) : Prop where
   ret_st : (⟨(hE s₀).setWidth 64, 4⟩ : Region).Disjoint (hstR s₀)
   ret_o : (⟨(hE s₀).setWidth 64, 4⟩ : Region).Disjoint (hoR s₀)
   ret_s : (⟨(hE s₀).setWidth 64, 4⟩ : Region).Disjoint (hscR s₀)
-  b_st' : (⟨(hE s₀).setWidth 64 - BitVec.ofNat 64 56, 56⟩ : Region).Disjoint (hstR s₀)
-  b_o' : (⟨(hE s₀).setWidth 64 - BitVec.ofNat 64 56, 56⟩ : Region).Disjoint (hoR s₀)
-  b_s' : (⟨(hE s₀).setWidth 64 - BitVec.ofNat 64 56, 56⟩ : Region).Disjoint (hscR s₀)
+  b_st' : (⟨(hE s₀).setWidth 64 - BitVec.ofNat 64 60, 60⟩ : Region).Disjoint (hstR s₀)
+  b_o' : (⟨(hE s₀).setWidth 64 - BitVec.ofNat 64 60, 60⟩ : Region).Disjoint (hoR s₀)
+  b_s' : (⟨(hE s₀).setWidth 64 - BitVec.ofNat 64 60, 60⟩ : Region).Disjoint (hscR s₀)
   fSt : (hSt s₀).toNat + 304 ≤ 2 ^ 32
   fO : (hO s₀).toNat + 16 ≤ 2 ^ 32
   fS : (hSc s₀).toNat + 2304 ≤ 2 ^ 32
-  esp56 : 56 ≤ (hE s₀).toNat
+  esp60 : 60 ≤ (hE s₀).toNat
   espfit : (hE s₀).toNat + 28 ≤ 2 ^ 32
   rounds : hR s₀ = 10 ∨ hR s₀ = 12 ∨ hR s₀ = 14
 
@@ -91,9 +91,9 @@ namespace HPre
 variable {s₀ : State} (hp : HPre s₀)
 include hp
 
-theorem b_st : (below (hE s₀) 56).Disjoint (hstR s₀) := by rw [below_eq hp.esp56]; exact hp.b_st'
-theorem b_o : (below (hE s₀) 56).Disjoint (hoR s₀) := by rw [below_eq hp.esp56]; exact hp.b_o'
-theorem b_s : (below (hE s₀) 56).Disjoint (hscR s₀) := by rw [below_eq hp.esp56]; exact hp.b_s'
+theorem b_st : (below (hE s₀) 60).Disjoint (hstR s₀) := by rw [below_eq hp.esp60]; exact hp.b_st'
+theorem b_o : (below (hE s₀) 60).Disjoint (hoR s₀) := by rw [below_eq hp.esp60]; exact hp.b_o'
+theorem b_s : (below (hE s₀) 60).Disjoint (hscR s₀) := by rw [below_eq hp.esp60]; exact hp.b_s'
 
 theorem fit : (s₀.gpr .esp).toNat + 4 + 4 * 6 ≤ 2 ^ 32 := by have := hp.espfit; omega_arith
 
@@ -109,7 +109,7 @@ theorem keep {m : Mem} (hf : Frame (HBig s₀) s₀.mem m) {i : Nat} (hi : i < 6
     · exact hp.a_st.sub_left (arg_sub hp.fit hi)
     · exact hp.a_o.sub_left (arg_sub hp.fit hi)
     · exact hp.a_s.sub_left (arg_sub hp.fit hi)
-    · exact (args_below hp.fit (by decide) hp.esp56).symm.sub_left (arg_sub hp.fit hi)
+    · exact (args_below hp.fit (by decide) hp.esp60).symm.sub_left (arg_sub hp.fit hi)
 
 theorem argsOut : ArgsOut 6 s₀ := by
   refine ⟨by have := hp.espfit; omega_arith, ?_⟩
@@ -196,7 +196,7 @@ theorem finPre_wp {s₀ : State} (hp : HPre s₀) : WP isa finPre s₀ (HMid s�
   have fO₂ : (hO s₀).toNat + 16 ≤ 2 ^ 32 := hp.fO
   have hh₂ : hH s₀ ≤ 16 := held_le _
   have fS₂ : (hSc s₀).toNat + 2304 ≤ 2 ^ 32 := hp.fS
-  have e56 := hp.esp56
+  have e60 := hp.esp60
   unfold finPre
   refine WP.seq (WP.mono (finSave_wp hp) fun s₁ h₁ => ?_)
   have p272 : ((hSt s₀ + BitVec.ofNat 32 272).setWidth 64) = (hSt s₀).setWidth 64 + BitVec.ofNat 64 272 :=
@@ -269,7 +269,7 @@ theorem finPre_wp {s₀ : State} (hp : HPre s₀) : WP isa finPre s₀ (HMid s�
     edi := u₉.gpr
     rounds := hp.rounds
     len := hh
-    esp := by rw [esp₉]; exact e56
+    esp := by rw [esp₉]; exact e60
     kst := hp.st_o.sub_left (Region.sub_prefix (by decide))
     ks := (hp.st_s.sub_left (Region.sub_prefix (by decide))).sub_right (Region.sub_prefix (by decide))
     pst := hp.st_o.sub_left cP
@@ -310,11 +310,11 @@ theorem finish_wp {s₀ : State} (h0 : finishX86.pre s₀) :
   have fO₂ : (hO s₀).toNat + 16 ≤ 2 ^ 32 := hp.fO
   have hh₂ : hH s₀ ≤ 16 := held_le _
   have fS₂ : (hSc s₀).toNat + 2304 ≤ 2 ^ 32 := hp.fS
-  have e56 := hp.esp56
+  have e60 := hp.esp60
   unfold finish
   refine WP.seq (WP.mono (finPre_wp hp) fun s₁ h₁ => ?_)
   refine WP.seq (WP.mono ((fin_call v) h₁.args) fun s₂ h₂ => ?_)
-  have f₂ : Frame [hoR s₀, ⟨(hSc s₀).setWidth 64, 2176⟩, below (hE s₀) 56] s₁.mem s₂.mem := by
+  have f₂ : Frame [hoR s₀, ⟨(hSc s₀).setWidth 64, 2176⟩, below (hE s₀) 60] s₁.mem s₂.mem := by
     have := h₂.frame; rw [h₁.esp] at this; exact this
   have F₂ : Frame (HBig s₀) s₀.mem s₂.mem := (h₁.mem ▸ hMem_frame hp).trans (f₂.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -352,7 +352,7 @@ theorem finish_wp {s₀ : State} (h0 : finishX86.pre s₀) :
     · exact hp.ret_st
     · exact hp.ret_o
     · exact hp.ret_s
-    · exact ret_below e56
+    · exact ret_below e60
   · intro key msg hr hRk hc hlen
     show Spec.Aes.bytesAt s₃.mem ((hO s₀).setWidth 64) 16 = _
     rw [m₃]

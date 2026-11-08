@@ -2,8 +2,26 @@
 //! The dispatchers of the verified `ecdh_p384` functions for `x86`
 //! (`crate::ecdh_p384`, `VG.Rust.dispatcher`).
 
-/// `vg_ecdh_p384`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::ecdh_p384::vg_ecdh_p384 as vg_ecdh_p384_auto;
+/// ECDH over P-384 (the ECC CDH primitive of SP 800-56A §5.7.1.2): validates the peer's public key at `peer` (SP 800-56A §5.6.2.3.3: the uncompressed form of SEC 1 §2.3.3, `04` then `x` and `y` in 48 bytes each, most significant first, both below `p`, on the curve), and writes the x-coordinate of `dQ` (48 bytes, most significant first) for the private key `d` at `d` (48 bytes, most significant first) to `*out`, and returns 1; or writes zeros and returns 0 if `peer` is not a valid public key, `d` is not in `[1, n-1]`, or `dQ` is the point at infinity.
+///
+/// Contract: `VG.Spec.Ecdh.Instance.exchangeContract`. Constant time but for the peer's public key: timing may depend on the pointers and the contents of `peer`, not on the private key.
+///
+/// It runs `vg_ecdh_p384`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 48 bytes.
+/// * `d` must be valid for reads of 48 bytes.
+/// * `peer` must be valid for reads of 97 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other, `d` or `peer` (distinct Rust objects never do).
+/// * None of `out`, `d`, `peer` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 28 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_ecdh_p384_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 48], d: *const [u8; 48], peer: *const [u8; 97], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::ecdh_p384::vg_ecdh_p384(out, d, peer, scratch) }
+}

@@ -10,6 +10,7 @@
     target_arch = "riscv64"
 ))]
 
+use crate::align::CacheAligned;
 use crate::arch::dispatch::aes::vg_aes_expand_key_auto;
 use crate::arch::dispatch::aes_cfb8::{vg_aes_cfb8_decrypt_auto, vg_aes_cfb8_encrypt_auto};
 use crate::error::InvalidKeyLength;
@@ -18,7 +19,7 @@ use crate::zeroize::zeroize;
 /// An expanded AES key, which serves both directions.
 struct Key {
     /// The key schedule `vg_aes_expand_key` writes.
-    schedule: [u8; 240],
+    schedule: CacheAligned<[u8; 240]>,
     /// The number of rounds of AES: 10, 12 or 14.
     rounds: usize,
 }
@@ -85,11 +86,12 @@ impl Key {
         if !matches!(key.len(), 16 | 24 | 32) {
             return Err(InvalidKeyLength);
         }
-        let mut schedule = [0; 240];
+        crate::dit::enter!(dit);
+        let mut schedule = CacheAligned([0; 240]);
         // SAFETY: the key is 16, 24 or 32 bytes long; the key and the schedule
         // are separate valid buffers of the sizes of the signature. The
         // dispatcher calls only an implementation the CPU has the features of.
-        unsafe { vg_aes_expand_key_auto(key.as_ptr(), key.len(), &mut schedule) };
+        unsafe { vg_aes_expand_key_auto(dit, key.as_ptr(), key.len(), &mut schedule.0) };
         Ok(Self {
             schedule,
             rounds: key.len() / 4 + 6,
@@ -111,7 +113,8 @@ impl Key {
     }
 
     fn crypt(&self, iv: &mut [u8; 16], buffer: &mut [u8], encrypt: bool) {
-        let mut scratch = [0; 272];
+        crate::dit::enter!(dit);
+        let mut scratch = CacheAligned([0; 272]);
         // SAFETY: `rounds` is 10, 12 or 14 and the schedule holds its key
         // schedule; `buffer`, the block at `iv`, the schedule and the scratch
         // space are separate valid objects of the sizes of the signature. The
@@ -119,32 +122,34 @@ impl Key {
         unsafe {
             if encrypt {
                 vg_aes_cfb8_encrypt_auto(
-                    &self.schedule,
+                    dit,
+                    &self.schedule.0,
                     self.rounds,
                     iv,
                     buffer.as_mut_ptr(),
                     buffer.len(),
-                    &mut scratch,
+                    &mut scratch.0,
                 );
             } else {
                 vg_aes_cfb8_decrypt_auto(
-                    &self.schedule,
+                    dit,
+                    &self.schedule.0,
                     self.rounds,
                     iv,
                     buffer.as_mut_ptr(),
                     buffer.len(),
-                    &mut scratch,
+                    &mut scratch.0,
                 );
             }
         }
         // The scratch space may hold the key schedule, the data and our
         // caller's registers.
-        zeroize(&mut scratch);
+        zeroize(&mut scratch.0);
     }
 }
 
 impl Drop for Key {
     fn drop(&mut self) {
-        zeroize(&mut self.schedule);
+        zeroize(&mut self.schedule.0);
     }
 }

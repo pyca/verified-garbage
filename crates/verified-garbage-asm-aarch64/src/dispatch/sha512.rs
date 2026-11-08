@@ -2,23 +2,45 @@
 //! The dispatchers of the verified `sha512` functions for `aarch64`
 //! (`crate::sha512`, `VG.Rust.dispatcher`).
 
-/// `vg_sha384_init`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::sha512::vg_sha384_init as vg_sha384_init_auto;
+/// Starts a SHA-384 computation: makes the SHA-512 streaming state `*state` represent the empty message, hashed from the initial hash value of SHA-384 (`VG.Spec.Sha512.H0_384`). Continue with `vg_sha512_update` and `vg_sha512_finalize`.
+///
+/// Contract: `VG.Spec.Sha512.initContract` for `VG.Spec.Sha512.H0_384`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha512.Repr`).
+///
+/// It runs `vg_sha384_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 192 bytes.
+/// * `state` must not wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_sha384_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 192]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::sha512::vg_sha384_init(state) }
+}
 
-/// `vg_sha512_init`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::sha512::vg_sha512_init as vg_sha512_init_auto;
+/// Starts a SHA-512 computation: makes the SHA-512 streaming state `*state` represent the empty message, hashed from the initial hash value of SHA-512 (`VG.Spec.Sha512.H0_512`). Continue with `vg_sha512_update` and `vg_sha512_finalize`.
+///
+/// Contract: `VG.Spec.Sha512.initContract` for `VG.Spec.Sha512.H0_512`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha512.Repr`).
+///
+/// It runs `vg_sha512_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 192 bytes.
+/// * `state` must not wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_sha512_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 192]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::sha512::vg_sha512_init(state) }
+}
 
 /// Computes the SHA-384 digest of the `len` bytes at `data` (48 bytes, `VG.Spec.Sha512.sha384`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-384 computation with that message.
 ///
 /// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha384`. Constant time: only the pointers and `len` may affect timing, not the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha384_digest_sha3` if the CPU supports its features (`VG_SHA384_DIGEST_SHA3_FEATURES`); or else `vg_sha384_digest`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha384_digest_sha512` if the CPU supports its features (`VG_SHA384_DIGEST_SHA512_FEATURES`); or else `vg_sha384_digest`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -28,22 +50,45 @@ pub use crate::sha512::vg_sha512_init as vg_sha512_init_auto;
 /// * Neither `data` nor `out` may overlap the 896 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_sha384_digest_auto(data: *const u8, len: usize, out: *mut [u8; 48]) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::sha512::VG_SHA384_DIGEST_SHA3_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_sha384_digest_sha3`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::sha512::vg_sha384_digest_sha3(data, len, out) };
+pub unsafe fn vg_sha384_digest_auto(_dit: verified_garbage_cpu::Dit<'_>, data: *const u8, len: usize, out: *mut [u8; 48]) {
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(data: *const u8, len: usize, out: *mut [u8; 48]);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::sha512::VG_SHA384_DIGEST_SHA512_FEATURES) }
+            || cpu.contains(crate::sha512::VG_SHA384_DIGEST_SHA512_FEATURES)
+        {
+            return crate::sha512::vg_sha384_digest_sha512;
+        }
+        crate::sha512::vg_sha384_digest
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::sha512::vg_sha384_digest(data, len, out) }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(data: *const u8, len: usize, out: *mut [u8; 48]) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(data, len, out) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(data, len, out) }
 }
 
 /// Absorbs data into a SHA-384, SHA-512, SHA-512/224 or SHA-512/256 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), it then represents that message followed by the `len` bytes at `data`.
 ///
 /// Contract: `VG.Spec.Sha512.updateContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha512_update_sha3` if the CPU supports its features (`VG_SHA512_UPDATE_SHA3_FEATURES`); or else `vg_sha512_update`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha512_update_sha512` if the CPU supports its features (`VG_SHA512_UPDATE_SHA512_FEATURES`); or else `vg_sha512_update`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -53,22 +98,45 @@ pub unsafe fn vg_sha384_digest_auto(data: *const u8, len: usize, out: *mut [u8; 
 /// * Neither `state` nor `data` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_sha512_update_auto(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::sha512::VG_SHA512_UPDATE_SHA3_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_sha512_update_sha3`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::sha512::vg_sha512_update_sha3(state, count, data, len) };
+pub unsafe fn vg_sha512_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(state: *mut [u8; 192], count: u64, data: *const u8, len: usize);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::sha512::VG_SHA512_UPDATE_SHA512_FEATURES) }
+            || cpu.contains(crate::sha512::VG_SHA512_UPDATE_SHA512_FEATURES)
+        {
+            return crate::sha512::vg_sha512_update_sha512;
+        }
+        crate::sha512::vg_sha512_update
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::sha512::vg_sha512_update(state, count, data, len) }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(state, count, data, len) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(state, count, data, len) }
 }
 
 /// Computes the SHA-512 digest of the `len` bytes at `data` (64 bytes, `VG.Spec.Sha512.sha512`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-512 computation with that message.
 ///
 /// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha512`. Constant time: only the pointers and `len` may affect timing, not the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha512_digest_sha3` if the CPU supports its features (`VG_SHA512_DIGEST_SHA3_FEATURES`); or else `vg_sha512_digest`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha512_digest_sha512` if the CPU supports its features (`VG_SHA512_DIGEST_SHA512_FEATURES`); or else `vg_sha512_digest`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -78,34 +146,79 @@ pub unsafe fn vg_sha512_update_auto(state: *mut [u8; 192], count: u64, data: *co
 /// * Neither `data` nor `out` may overlap the 896 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_sha512_digest_auto(data: *const u8, len: usize, out: *mut [u8; 64]) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::sha512::VG_SHA512_DIGEST_SHA3_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_sha512_digest_sha3`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::sha512::vg_sha512_digest_sha3(data, len, out) };
+pub unsafe fn vg_sha512_digest_auto(_dit: verified_garbage_cpu::Dit<'_>, data: *const u8, len: usize, out: *mut [u8; 64]) {
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(data: *const u8, len: usize, out: *mut [u8; 64]);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::sha512::VG_SHA512_DIGEST_SHA512_FEATURES) }
+            || cpu.contains(crate::sha512::VG_SHA512_DIGEST_SHA512_FEATURES)
+        {
+            return crate::sha512::vg_sha512_digest_sha512;
+        }
+        crate::sha512::vg_sha512_digest
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::sha512::vg_sha512_digest(data, len, out) }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(data: *const u8, len: usize, out: *mut [u8; 64]) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(data, len, out) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(data, len, out) }
 }
 
-/// `vg_sha512_224_init`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::sha512::vg_sha512_224_init as vg_sha512_224_init_auto;
+/// Starts a SHA-512/224 computation: makes the SHA-512 streaming state `*state` represent the empty message, hashed from the initial hash value of SHA-512/224 (`VG.Spec.Sha512.H0_512_224`). Continue with `vg_sha512_update` and `vg_sha512_finalize`.
+///
+/// Contract: `VG.Spec.Sha512.initContract` for `VG.Spec.Sha512.H0_512_224`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha512.Repr`).
+///
+/// It runs `vg_sha512_224_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 192 bytes.
+/// * `state` must not wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_sha512_224_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 192]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::sha512::vg_sha512_224_init(state) }
+}
 
-/// `vg_sha512_256_init`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::sha512::vg_sha512_256_init as vg_sha512_256_init_auto;
+/// Starts a SHA-512/256 computation: makes the SHA-512 streaming state `*state` represent the empty message, hashed from the initial hash value of SHA-512/256 (`VG.Spec.Sha512.H0_512_256`). Continue with `vg_sha512_update` and `vg_sha512_finalize`.
+///
+/// Contract: `VG.Spec.Sha512.initContract` for `VG.Spec.Sha512.H0_512_256`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha512.Repr`).
+///
+/// It runs `vg_sha512_256_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 192 bytes.
+/// * `state` must not wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_sha512_256_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 192]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::sha512::vg_sha512_256_init(state) }
+}
 
 /// Finishes a SHA-384 computation: if the streaming state `*state` represents a message of `count` bytes, hashed from the initial hash value of SHA-384 (as `vg_sha384_init` starts it), writes the SHA-384 digest of that message (48 bytes, `VG.Spec.Sha512.sha384`) to `*out`.
 ///
 /// Contract: `VG.Spec.Sha512.finalizeDigestContract` for `VG.Spec.Sha512.H0_384` and `VG.Spec.Sha512.sha384`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha384_finalize_sha3` if the CPU supports its features (`VG_SHA384_FINALIZE_SHA3_FEATURES`); or else `vg_sha384_finalize`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha384_finalize_sha512` if the CPU supports its features (`VG_SHA384_FINALIZE_SHA512_FEATURES`); or else `vg_sha384_finalize`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -117,22 +230,45 @@ pub use crate::sha512::vg_sha512_256_init as vg_sha512_256_init_auto;
 /// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_sha384_finalize_auto(state: *mut [u8; 192], count: u64, out: *mut [u8; 48]) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::sha512::VG_SHA384_FINALIZE_SHA3_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_sha384_finalize_sha3`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::sha512::vg_sha384_finalize_sha3(state, count, out) };
+pub unsafe fn vg_sha384_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 192], count: u64, out: *mut [u8; 48]) {
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(state: *mut [u8; 192], count: u64, out: *mut [u8; 48]);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::sha512::VG_SHA384_FINALIZE_SHA512_FEATURES) }
+            || cpu.contains(crate::sha512::VG_SHA384_FINALIZE_SHA512_FEATURES)
+        {
+            return crate::sha512::vg_sha384_finalize_sha512;
+        }
+        crate::sha512::vg_sha384_finalize
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::sha512::vg_sha384_finalize(state, count, out) }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(state: *mut [u8; 192], count: u64, out: *mut [u8; 48]) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(state, count, out) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(state, count, out) }
 }
 
 /// Finishes a SHA-384, SHA-512, SHA-512/224 or SHA-512/256 computation: if the streaming state `*state` represents a message of `count` bytes, hashed from an initial hash value, writes the final hash value `H⁽ᴺ⁾` of that message (64 bytes) to `*out`. The SHA-512 digest is all of it; the SHA-384, SHA-512/224 and SHA-512/256 digests are its first 48, 28 and 32 bytes.
 ///
 /// Contract: `VG.Spec.Sha512.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha512_finalize_sha3` if the CPU supports its features (`VG_SHA512_FINALIZE_SHA3_FEATURES`); or else `vg_sha512_finalize`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha512_finalize_sha512` if the CPU supports its features (`VG_SHA512_FINALIZE_SHA512_FEATURES`); or else `vg_sha512_finalize`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -144,22 +280,45 @@ pub unsafe fn vg_sha384_finalize_auto(state: *mut [u8; 192], count: u64, out: *m
 /// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_sha512_finalize_auto(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::sha512::VG_SHA512_FINALIZE_SHA3_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_sha512_finalize_sha3`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::sha512::vg_sha512_finalize_sha3(state, count, out) };
+pub unsafe fn vg_sha512_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::sha512::VG_SHA512_FINALIZE_SHA512_FEATURES) }
+            || cpu.contains(crate::sha512::VG_SHA512_FINALIZE_SHA512_FEATURES)
+        {
+            return crate::sha512::vg_sha512_finalize_sha512;
+        }
+        crate::sha512::vg_sha512_finalize
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::sha512::vg_sha512_finalize(state, count, out) }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(state, count, out) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(state, count, out) }
 }
 
 /// Computes the SHA-512/224 digest of the `len` bytes at `data` (28 bytes, `VG.Spec.Sha512.sha512_224`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-512/224 computation with that message.
 ///
 /// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha512_224`. Constant time: only the pointers and `len` may affect timing, not the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha512_224_digest_sha3` if the CPU supports its features (`VG_SHA512_224_DIGEST_SHA3_FEATURES`); or else `vg_sha512_224_digest`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha512_224_digest_sha512` if the CPU supports its features (`VG_SHA512_224_DIGEST_SHA512_FEATURES`); or else `vg_sha512_224_digest`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -169,22 +328,45 @@ pub unsafe fn vg_sha512_finalize_auto(state: *mut [u8; 192], count: u64, out: *m
 /// * Neither `data` nor `out` may overlap the 896 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_sha512_224_digest_auto(data: *const u8, len: usize, out: *mut [u8; 28]) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::sha512::VG_SHA512_224_DIGEST_SHA3_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_sha512_224_digest_sha3`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::sha512::vg_sha512_224_digest_sha3(data, len, out) };
+pub unsafe fn vg_sha512_224_digest_auto(_dit: verified_garbage_cpu::Dit<'_>, data: *const u8, len: usize, out: *mut [u8; 28]) {
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(data: *const u8, len: usize, out: *mut [u8; 28]);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::sha512::VG_SHA512_224_DIGEST_SHA512_FEATURES) }
+            || cpu.contains(crate::sha512::VG_SHA512_224_DIGEST_SHA512_FEATURES)
+        {
+            return crate::sha512::vg_sha512_224_digest_sha512;
+        }
+        crate::sha512::vg_sha512_224_digest
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::sha512::vg_sha512_224_digest(data, len, out) }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(data: *const u8, len: usize, out: *mut [u8; 28]) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(data, len, out) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(data, len, out) }
 }
 
 /// Computes the SHA-512/256 digest of the `len` bytes at `data` (32 bytes, `VG.Spec.Sha512.sha512_256`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-512/256 computation with that message.
 ///
 /// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha512_256`. Constant time: only the pointers and `len` may affect timing, not the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha512_256_digest_sha3` if the CPU supports its features (`VG_SHA512_256_DIGEST_SHA3_FEATURES`); or else `vg_sha512_256_digest`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha512_256_digest_sha512` if the CPU supports its features (`VG_SHA512_256_DIGEST_SHA512_FEATURES`); or else `vg_sha512_256_digest`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -194,22 +376,45 @@ pub unsafe fn vg_sha512_224_digest_auto(data: *const u8, len: usize, out: *mut [
 /// * Neither `data` nor `out` may overlap the 896 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_sha512_256_digest_auto(data: *const u8, len: usize, out: *mut [u8; 32]) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::sha512::VG_SHA512_256_DIGEST_SHA3_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_sha512_256_digest_sha3`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::sha512::vg_sha512_256_digest_sha3(data, len, out) };
+pub unsafe fn vg_sha512_256_digest_auto(_dit: verified_garbage_cpu::Dit<'_>, data: *const u8, len: usize, out: *mut [u8; 32]) {
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(data: *const u8, len: usize, out: *mut [u8; 32]);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::sha512::VG_SHA512_256_DIGEST_SHA512_FEATURES) }
+            || cpu.contains(crate::sha512::VG_SHA512_256_DIGEST_SHA512_FEATURES)
+        {
+            return crate::sha512::vg_sha512_256_digest_sha512;
+        }
+        crate::sha512::vg_sha512_256_digest
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::sha512::vg_sha512_256_digest(data, len, out) }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(data: *const u8, len: usize, out: *mut [u8; 32]) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(data, len, out) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(data, len, out) }
 }
 
 /// Finishes a SHA-512/224 computation: if the streaming state `*state` represents a message of `count` bytes, hashed from the initial hash value of SHA-512/224 (as `vg_sha512_224_init` starts it), writes the SHA-512/224 digest of that message (28 bytes, `VG.Spec.Sha512.sha512_224`) to `*out`.
 ///
 /// Contract: `VG.Spec.Sha512.finalizeDigestContract` for `VG.Spec.Sha512.H0_512_224` and `VG.Spec.Sha512.sha512_224`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha512_224_finalize_sha3` if the CPU supports its features (`VG_SHA512_224_FINALIZE_SHA3_FEATURES`); or else `vg_sha512_224_finalize`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha512_224_finalize_sha512` if the CPU supports its features (`VG_SHA512_224_FINALIZE_SHA512_FEATURES`); or else `vg_sha512_224_finalize`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -221,22 +426,45 @@ pub unsafe fn vg_sha512_256_digest_auto(data: *const u8, len: usize, out: *mut [
 /// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_sha512_224_finalize_auto(state: *mut [u8; 192], count: u64, out: *mut [u8; 28]) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::sha512::VG_SHA512_224_FINALIZE_SHA3_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_sha512_224_finalize_sha3`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::sha512::vg_sha512_224_finalize_sha3(state, count, out) };
+pub unsafe fn vg_sha512_224_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 192], count: u64, out: *mut [u8; 28]) {
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(state: *mut [u8; 192], count: u64, out: *mut [u8; 28]);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::sha512::VG_SHA512_224_FINALIZE_SHA512_FEATURES) }
+            || cpu.contains(crate::sha512::VG_SHA512_224_FINALIZE_SHA512_FEATURES)
+        {
+            return crate::sha512::vg_sha512_224_finalize_sha512;
+        }
+        crate::sha512::vg_sha512_224_finalize
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::sha512::vg_sha512_224_finalize(state, count, out) }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(state: *mut [u8; 192], count: u64, out: *mut [u8; 28]) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(state, count, out) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(state, count, out) }
 }
 
 /// Finishes a SHA-512/256 computation: if the streaming state `*state` represents a message of `count` bytes, hashed from the initial hash value of SHA-512/256 (as `vg_sha512_256_init` starts it), writes the SHA-512/256 digest of that message (32 bytes, `VG.Spec.Sha512.sha512_256`) to `*out`.
 ///
 /// Contract: `VG.Spec.Sha512.finalizeDigestContract` for `VG.Spec.Sha512.H0_512_256` and `VG.Spec.Sha512.sha512_256`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha512_256_finalize_sha3` if the CPU supports its features (`VG_SHA512_256_FINALIZE_SHA3_FEATURES`); or else `vg_sha512_256_finalize`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha512_256_finalize_sha512` if the CPU supports its features (`VG_SHA512_256_FINALIZE_SHA512_FEATURES`); or else `vg_sha512_256_finalize`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -248,13 +476,36 @@ pub unsafe fn vg_sha512_224_finalize_auto(state: *mut [u8; 192], count: u64, out
 /// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_sha512_256_finalize_auto(state: *mut [u8; 192], count: u64, out: *mut [u8; 32]) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::sha512::VG_SHA512_256_FINALIZE_SHA3_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_sha512_256_finalize_sha3`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::sha512::vg_sha512_256_finalize_sha3(state, count, out) };
+pub unsafe fn vg_sha512_256_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 192], count: u64, out: *mut [u8; 32]) {
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(state: *mut [u8; 192], count: u64, out: *mut [u8; 32]);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::sha512::VG_SHA512_256_FINALIZE_SHA512_FEATURES) }
+            || cpu.contains(crate::sha512::VG_SHA512_256_FINALIZE_SHA512_FEATURES)
+        {
+            return crate::sha512::vg_sha512_256_finalize_sha512;
+        }
+        crate::sha512::vg_sha512_256_finalize
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::sha512::vg_sha512_256_finalize(state, count, out) }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(state: *mut [u8; 192], count: u64, out: *mut [u8; 32]) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(state, count, out) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(state, count, out) }
 }

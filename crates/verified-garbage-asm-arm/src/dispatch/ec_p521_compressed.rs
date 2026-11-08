@@ -2,14 +2,44 @@
 //! The dispatchers of the verified `ec_p521_compressed` functions for `arm`
 //! (`crate::ec_p521_compressed`, `VG.Rust.dispatcher`).
 
-/// `vg_ec_p521_compress_public_key`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::ec_p521_compressed::vg_ec_p521_compress_public_key as vg_ec_p521_compress_public_key_auto;
+/// Validate and compress a P-521 public key (SEC 1 §§2.3.3–2.3.4, SP 800-56A §5.6.2.3.3): reads `04` then `x` and `y` in 66 bytes each, most significant first; checks both coordinates below the field prime and the curve equation; writes `02` for even `y` or `03` for odd `y`, then `x` in 66 bytes, and returns 1. On invalid input, writes 67 zero bytes and returns 0. Rejects infinity and hybrid encodings.
+///
+/// Contract: `VG.Spec.EcKey.Instance.compressPublicKeyContract`. The input is public: timing may depend on the pointers and the contents of `public`.
+///
+/// It runs `vg_ec_p521_compress_public_key`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 67 bytes.
+/// * `public` must be valid for reads of 133 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The contents of `scratch` on return are unspecified; the caller may reuse or destroy them.
+/// * `out` and `scratch` must not overlap each other or `public` (distinct Rust objects never do).
+/// * None of `out`, `public` and `scratch` may wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_ec_p521_compress_public_key_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 67], public: *const [u8; 133], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::ec_p521_compressed::vg_ec_p521_compress_public_key(out, public, scratch) }
+}
 
-/// `vg_ec_p521_decompress_public_key`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::ec_p521_compressed::vg_ec_p521_decompress_public_key as vg_ec_p521_decompress_public_key_auto;
+/// Validate and decompress a P-521 public key (SEC 1 §2.3.4, SP 800-56A §5.6.2.3.3): reads `02` or `03` followed by `x` in 66 bytes, most significant first; checks `x` below the field prime and recovers a coordinate `y` satisfying the curve equation with even parity for `02`, odd for `03`. Writes `04` followed by `x` and `y` in 66 bytes each and returns 1. If no such finite point exists, writes 133 zero bytes and returns 0. Rejects infinity and hybrid encodings. The curve has cofactor one, so no subgroup multiplication is required.
+///
+/// Contract: `VG.Spec.EcKey.Instance.decompressPublicKeyContract`. The input is public: timing may depend on the pointers and the contents of `public`.
+///
+/// It runs `vg_ec_p521_decompress_public_key`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 133 bytes.
+/// * `public` must be valid for reads of 67 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The contents of `scratch` on return are unspecified; the caller may reuse or destroy them.
+/// * `out` and `scratch` must not overlap each other or `public` (distinct Rust objects never do).
+/// * None of `out`, `public` and `scratch` may wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_ec_p521_decompress_public_key_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 133], public: *const [u8; 67], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::ec_p521_compressed::vg_ec_p521_decompress_public_key(out, public, scratch) }
+}

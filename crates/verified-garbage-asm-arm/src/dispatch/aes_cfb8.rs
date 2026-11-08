@@ -2,14 +2,48 @@
 //! The dispatchers of the verified `aes_cfb8` functions for `arm`
 //! (`crate::aes_cfb8`, `VG.Rust.dispatcher`).
 
-/// `vg_aes_cfb8_encrypt`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::aes_cfb8::vg_aes_cfb8_encrypt as vg_aes_cfb8_encrypt_auto;
+/// AES-CFB8 encryption (NIST SP 800-38A §6.3, with 8-bit segments), in place: replaces the `len` bytes `P#₁ … P#ₙ` at `data` with `C#ⱼ = P#ⱼ ⊕ MSB₈(CIPH_K(Iⱼ))`, where `I₁` is the block at `*iv` and `Iⱼ₊₁` is `Iⱼ` without its first byte, followed by `C#ⱼ`, and `*iv` with `Iₙ₊₁` (leaving it unchanged if `len = 0`), so that a further call continues the message. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
+///
+/// Contract: `VG.Spec.Cfb8.aesEncryptContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedule, the input block or the data.
+///
+/// It runs `vg_aes_cfb8_encrypt`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 2176 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `scratch` on return are unspecified.
+/// * `iv`, `data` and `scratch` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the 8 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_aes_cfb8_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::aes_cfb8::vg_aes_cfb8_encrypt(schedule, rounds, iv, data, len, scratch) }
+}
 
-/// `vg_aes_cfb8_decrypt`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::aes_cfb8::vg_aes_cfb8_decrypt as vg_aes_cfb8_decrypt_auto;
+/// AES-CFB8 decryption (NIST SP 800-38A §6.3, with 8-bit segments), in place: replaces the `len` bytes `C#₁ … C#ₙ` at `data` with `P#ⱼ = C#ⱼ ⊕ MSB₈(CIPH_K(Iⱼ))`, where `I₁` is the block at `*iv` and `Iⱼ₊₁` is `Iⱼ` without its first byte, followed by `C#ⱼ`, and `*iv` with `Iₙ₊₁` (leaving it unchanged if `len = 0`), so that a further call continues the message. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
+///
+/// Contract: `VG.Spec.Cfb8.aesDecryptContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedule, the input block or the data.
+///
+/// It runs `vg_aes_cfb8_decrypt`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 2176 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `scratch` on return are unspecified.
+/// * `iv`, `data` and `scratch` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the 8 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_aes_cfb8_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::aes_cfb8::vg_aes_cfb8_decrypt(schedule, rounds, iv, data, len, scratch) }
+}

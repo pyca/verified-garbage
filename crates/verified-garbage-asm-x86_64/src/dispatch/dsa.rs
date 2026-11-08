@@ -4,7 +4,7 @@
 
 /// Derive a DSA private key from big-endian p||q||g and a supplied q_len-byte scalar x, as key generation does after sampling x: checks the domain and 0 < x < q, computes y = g^x mod p and checks the key. Returns 1 with p||q||g||y||x, or 0 and zero output. Checks algebraic consistency, not primality. x must be a fresh uniform scalar the caller sampled. Timing may depend on p, q, g and success, not otherwise on x. Contract: `VG.Spec.Dsa.deriveKeyContract`.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_dsa_derive_key_adx` if the CPU supports its features (`VG_DSA_DERIVE_KEY_ADX_FEATURES`); or else `vg_dsa_derive_key`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_dsa_derive_key_adx` if the CPU supports its features (`VG_DSA_DERIVE_KEY_ADX_FEATURES`); or else `vg_dsa_derive_key`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -19,20 +19,43 @@
 /// * None of `out`, `params`, `x` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_dsa_derive_key_auto(out: *mut u8, out_len: usize, params: *const u8, params_len: usize, p_len: usize, x: *const u8, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::dsa::VG_DSA_DERIVE_KEY_ADX_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_dsa_derive_key_adx`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::dsa::vg_dsa_derive_key_adx(out, out_len, params, params_len, p_len, x, q_len, scratch, scratch_len) };
+pub unsafe fn vg_dsa_derive_key_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, params: *const u8, params_len: usize, p_len: usize, x: *const u8, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(out: *mut u8, out_len: usize, params: *const u8, params_len: usize, p_len: usize, x: *const u8, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32;
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::dsa::VG_DSA_DERIVE_KEY_ADX_FEATURES) }
+            || cpu.contains(crate::dsa::VG_DSA_DERIVE_KEY_ADX_FEATURES)
+        {
+            return crate::dsa::vg_dsa_derive_key_adx;
+        }
+        crate::dsa::vg_dsa_derive_key
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::dsa::vg_dsa_derive_key(out, out_len, params, params_len, p_len, x, q_len, scratch, scratch_len) }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(out: *mut u8, out_len: usize, params: *const u8, params_len: usize, p_len: usize, x: *const u8, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(out, out_len, params, params_len, p_len, x, q_len, scratch, scratch_len) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(out, out_len, params, params_len, p_len, x, q_len, scratch, scratch_len) }
 }
 
 /// Generate a DSA private key from p||q||g and fresh independent random bytes. Uses at most 128 rejection-sampling draws, computes y=g^x mod p, and checks algebraic consistency, not primality. Returns 1 with p||q||g||y||x, 0 for invalid input/draw limit, or 2 for insufficient randomness. Failure zeros out; used counts consumed complete draws on every return. Timing may depend on public parameters, sampling decisions, consumption and success, not otherwise on x or randomness. Contract: `VG.Spec.Dsa.generateKeyContract`.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_dsa_generate_key_adx` if the CPU supports its features (`VG_DSA_GENERATE_KEY_ADX_FEATURES`); or else `vg_dsa_generate_key`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_dsa_generate_key_adx` if the CPU supports its features (`VG_DSA_GENERATE_KEY_ADX_FEATURES`); or else `vg_dsa_generate_key`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -49,22 +72,45 @@ pub unsafe fn vg_dsa_derive_key_auto(out: *mut u8, out_len: usize, params: *cons
 /// * None of `out`, `used`, `params`, `rand` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_dsa_generate_key_auto(out: *mut u8, out_len: usize, used: *mut [u64; 1], params: *const u8, params_len: usize, p_len: usize, q_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::dsa::VG_DSA_GENERATE_KEY_ADX_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_dsa_generate_key_adx`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::dsa::vg_dsa_generate_key_adx(out, out_len, used, params, params_len, p_len, q_len, rand, rand_len, scratch, scratch_len) };
+pub unsafe fn vg_dsa_generate_key_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, used: *mut [u64; 1], params: *const u8, params_len: usize, p_len: usize, q_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(out: *mut u8, out_len: usize, used: *mut [u64; 1], params: *const u8, params_len: usize, p_len: usize, q_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32;
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::dsa::VG_DSA_GENERATE_KEY_ADX_FEATURES) }
+            || cpu.contains(crate::dsa::VG_DSA_GENERATE_KEY_ADX_FEATURES)
+        {
+            return crate::dsa::vg_dsa_generate_key_adx;
+        }
+        crate::dsa::vg_dsa_generate_key
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::dsa::vg_dsa_generate_key(out, out_len, used, params, params_len, p_len, q_len, rand, rand_len, scratch, scratch_len) }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(out: *mut u8, out_len: usize, used: *mut [u64; 1], params: *const u8, params_len: usize, p_len: usize, q_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(out, out_len, used, params, params_len, p_len, q_len, rand, rand_len, scratch, scratch_len) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(out, out_len, used, params, params_len, p_len, q_len, rand, rand_len, scratch, scratch_len) }
 }
 
 /// Search for DSA domain parameters (FIPS 186-4 A.1.1.2 and A.2.1) over the random tape `rand`, for the modulus width in `state`: each seed, its `q`, the `p` candidates from it and the generator's `h` candidates are read from `rand` in turn, with the rejected seeds counted in `state`. Returns 1 and writes `p || q || g` to `out` once parameters are found; 3 if the search is exhausted, by too many rejected seeds or by one seed needing more than the entropy budget; or 0 if the tape ran out inside a seed. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose last word is, for 0, the length of the next tape, more than the octets of `rand` after the first `used` and at most the entropy budget: keep those octets, in order, and append fresh random octets up to that length. `out` is zeros but for 1. Accepted parameters pass probable-prime tests, not primality certification.
 ///
 /// Contract: `VG.Spec.Dsa.parameterSearchContract`. Timing may depend on everything, `rand` included: these are public domain parameters.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_ifma` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_MR_IFMA_FEATURES`); `vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_adx` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_MR_ADX_FEATURES`); `vg_dsa_parameter_search_sha1_shani_sha256_shani` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_FEATURES`); `vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_ifma` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_MR_IFMA_FEATURES`); `vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_adx` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_MR_ADX_FEATURES`); `vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_FEATURES`); `vg_dsa_parameter_search_mr_ifma` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_MR_IFMA_FEATURES`); `vg_dsa_parameter_search_mr_adx` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_MR_ADX_FEATURES`); or else `vg_dsa_parameter_search`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_ifma` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_MR_IFMA_FEATURES`); `vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_adx` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_MR_ADX_FEATURES`); `vg_dsa_parameter_search_sha1_shani_sha256_shani` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_FEATURES`); `vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_ifma` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_MR_IFMA_FEATURES`); `vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_adx` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_MR_ADX_FEATURES`); `vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_FEATURES`); `vg_dsa_parameter_search_mr_ifma` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_MR_IFMA_FEATURES`); `vg_dsa_parameter_search_mr_adx` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_MR_ADX_FEATURES`); or else `vg_dsa_parameter_search`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -82,55 +128,78 @@ pub unsafe fn vg_dsa_generate_key_auto(out: *mut u8, out_len: usize, used: *mut 
 /// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_dsa_parameter_search_auto(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_MR_IFMA_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_ifma`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::dsa::vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_ifma(out, out_len, used, rand, rand_len, scratch, scratch_len, state) };
+pub unsafe fn vg_dsa_parameter_search_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32;
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_MR_IFMA_FEATURES) }
+            || cpu.contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_MR_IFMA_FEATURES)
+        {
+            return crate::dsa::vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_ifma;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_MR_ADX_FEATURES) }
+            || cpu.contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_MR_ADX_FEATURES)
+        {
+            return crate::dsa::vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_adx;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_FEATURES) }
+            || cpu.contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_FEATURES)
+        {
+            return crate::dsa::vg_dsa_parameter_search_sha1_shani_sha256_shani;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_MR_IFMA_FEATURES) }
+            || cpu.contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_MR_IFMA_FEATURES)
+        {
+            return crate::dsa::vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_ifma;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_MR_ADX_FEATURES) }
+            || cpu.contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_MR_ADX_FEATURES)
+        {
+            return crate::dsa::vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_adx;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_FEATURES) }
+            || cpu.contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_FEATURES)
+        {
+            return crate::dsa::vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_MR_IFMA_FEATURES) }
+            || cpu.contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_MR_IFMA_FEATURES)
+        {
+            return crate::dsa::vg_dsa_parameter_search_mr_ifma;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_MR_ADX_FEATURES) }
+            || cpu.contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_MR_ADX_FEATURES)
+        {
+            return crate::dsa::vg_dsa_parameter_search_mr_adx;
+        }
+        crate::dsa::vg_dsa_parameter_search
     }
-    if cpu.contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_MR_ADX_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_adx`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::dsa::vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_adx(out, out_len, used, rand, rand_len, scratch, scratch_len, state) };
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(out, out_len, used, rand, rand_len, scratch, scratch_len, state) }
     }
-    if cpu.contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_dsa_parameter_search_sha1_shani_sha256_shani`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::dsa::vg_dsa_parameter_search_sha1_shani_sha256_shani(out, out_len, used, rand, rand_len, scratch, scratch_len, state) };
-    }
-    if cpu.contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_MR_IFMA_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_ifma`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::dsa::vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_ifma(out, out_len, used, rand, rand_len, scratch, scratch_len, state) };
-    }
-    if cpu.contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_MR_ADX_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_adx`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::dsa::vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_adx(out, out_len, used, rand, rand_len, scratch, scratch_len, state) };
-    }
-    if cpu.contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::dsa::vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2(out, out_len, used, rand, rand_len, scratch, scratch_len, state) };
-    }
-    if cpu.contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_MR_IFMA_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_dsa_parameter_search_mr_ifma`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::dsa::vg_dsa_parameter_search_mr_ifma(out, out_len, used, rand, rand_len, scratch, scratch_len, state) };
-    }
-    if cpu.contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_MR_ADX_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_dsa_parameter_search_mr_adx`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::dsa::vg_dsa_parameter_search_mr_adx(out, out_len, used, rand, rand_len, scratch, scratch_len, state) };
-    }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::dsa::vg_dsa_parameter_search(out, out_len, used, rand, rand_len, scratch, scratch_len, state) }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(out, out_len, used, rand, rand_len, scratch, scratch_len, state) }
 }
 
 /// Validate packed DSA p||q||g||y, including domain consistency and both subgroup memberships. Returns 1 exactly when validation succeeds, otherwise 0. Does not test primality. The key is public; scratch contents are unspecified on return. Contract: `VG.Spec.Dsa.validatePublicKeyContract`.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_dsa_validate_public_key_adx` if the CPU supports its features (`VG_DSA_VALIDATE_PUBLIC_KEY_ADX_FEATURES`); or else `vg_dsa_validate_public_key`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_dsa_validate_public_key_adx` if the CPU supports its features (`VG_DSA_VALIDATE_PUBLIC_KEY_ADX_FEATURES`); or else `vg_dsa_validate_public_key`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -142,20 +211,43 @@ pub unsafe fn vg_dsa_parameter_search_auto(out: *mut u8, out_len: usize, used: *
 /// * Neither `key` nor `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_dsa_validate_public_key_auto(key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::dsa::VG_DSA_VALIDATE_PUBLIC_KEY_ADX_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_dsa_validate_public_key_adx`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::dsa::vg_dsa_validate_public_key_adx(key, key_len, p_len, q_len, scratch, scratch_len) };
+pub unsafe fn vg_dsa_validate_public_key_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32;
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::dsa::VG_DSA_VALIDATE_PUBLIC_KEY_ADX_FEATURES) }
+            || cpu.contains(crate::dsa::VG_DSA_VALIDATE_PUBLIC_KEY_ADX_FEATURES)
+        {
+            return crate::dsa::vg_dsa_validate_public_key_adx;
+        }
+        crate::dsa::vg_dsa_validate_public_key
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::dsa::vg_dsa_validate_public_key(key, key_len, p_len, q_len, scratch, scratch_len) }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(key, key_len, p_len, q_len, scratch, scratch_len) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(key, key_len, p_len, q_len, scratch, scratch_len) }
 }
 
 /// DSA verification of a prehashed digest, for an already validated packed public key (big-endian p||q||g||y with widths p_len, q_len, p_len, p_len; vg_dsa_validate_public_key validates it). The signature is r||s with q_len bytes each. Returns 1 if verification succeeds, otherwise 0: the result of fully checked verification (`VG.Spec.Dsa.verifyContract`), whose checks of the signature scalars and digest handling it keeps. Timing may depend on p,q,g,y and the result, not otherwise on signature or digest. Contract: `VG.Spec.Dsa.verifyPrevalidatedContract`.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_dsa_verify_prevalidated_adx` if the CPU supports its features (`VG_DSA_VERIFY_PREVALIDATED_ADX_FEATURES`); or else `vg_dsa_verify_prevalidated`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_dsa_verify_prevalidated_adx` if the CPU supports its features (`VG_DSA_VERIFY_PREVALIDATED_ADX_FEATURES`); or else `vg_dsa_verify_prevalidated`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -171,20 +263,43 @@ pub unsafe fn vg_dsa_validate_public_key_auto(key: *const u8, key_len: usize, p_
 /// * None of `key`, `signature`, `digest` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_dsa_verify_prevalidated_auto(key: *const u8, key_len: usize, p_len: usize, q_len: usize, signature: *const u8, signature_len: usize, digest: *const u8, digest_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::dsa::VG_DSA_VERIFY_PREVALIDATED_ADX_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_dsa_verify_prevalidated_adx`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::dsa::vg_dsa_verify_prevalidated_adx(key, key_len, p_len, q_len, signature, signature_len, digest, digest_len, scratch, scratch_len) };
+pub unsafe fn vg_dsa_verify_prevalidated_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, p_len: usize, q_len: usize, signature: *const u8, signature_len: usize, digest: *const u8, digest_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(key: *const u8, key_len: usize, p_len: usize, q_len: usize, signature: *const u8, signature_len: usize, digest: *const u8, digest_len: usize, scratch: *mut u64, scratch_len: usize) -> u32;
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::dsa::VG_DSA_VERIFY_PREVALIDATED_ADX_FEATURES) }
+            || cpu.contains(crate::dsa::VG_DSA_VERIFY_PREVALIDATED_ADX_FEATURES)
+        {
+            return crate::dsa::vg_dsa_verify_prevalidated_adx;
+        }
+        crate::dsa::vg_dsa_verify_prevalidated
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::dsa::vg_dsa_verify_prevalidated(key, key_len, p_len, q_len, signature, signature_len, digest, digest_len, scratch, scratch_len) }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(key: *const u8, key_len: usize, p_len: usize, q_len: usize, signature: *const u8, signature_len: usize, digest: *const u8, digest_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(key, key_len, p_len, q_len, signature, signature_len, digest, digest_len, scratch, scratch_len) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(key, key_len, p_len, q_len, signature, signature_len, digest, digest_len, scratch, scratch_len) }
 }
 
 /// Validate packed DSA p||q||g||y||x as signing checks it: domain consistency, including g^q mod p = 1, 1 < y < p, 0 < x < q and g^x mod p = y. Returns 1 exactly when validation succeeds, otherwise 0. Does not test primality. Timing may depend on p,q,g,y and the result, not otherwise on x. Scratch contents are unspecified on return and may hold secrets. Contract: `VG.Spec.Dsa.validatePrivateKeyContract`.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_dsa_validate_private_key_adx` if the CPU supports its features (`VG_DSA_VALIDATE_PRIVATE_KEY_ADX_FEATURES`); or else `vg_dsa_validate_private_key`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_dsa_validate_private_key_adx` if the CPU supports its features (`VG_DSA_VALIDATE_PRIVATE_KEY_ADX_FEATURES`); or else `vg_dsa_validate_private_key`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -196,26 +311,60 @@ pub unsafe fn vg_dsa_verify_prevalidated_auto(key: *const u8, key_len: usize, p_
 /// * Neither `key` nor `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_dsa_validate_private_key_auto(key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::dsa::VG_DSA_VALIDATE_PRIVATE_KEY_ADX_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_dsa_validate_private_key_adx`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::dsa::vg_dsa_validate_private_key_adx(key, key_len, p_len, q_len, scratch, scratch_len) };
+pub unsafe fn vg_dsa_validate_private_key_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32;
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::dsa::VG_DSA_VALIDATE_PRIVATE_KEY_ADX_FEATURES) }
+            || cpu.contains(crate::dsa::VG_DSA_VALIDATE_PRIVATE_KEY_ADX_FEATURES)
+        {
+            return crate::dsa::vg_dsa_validate_private_key_adx;
+        }
+        crate::dsa::vg_dsa_validate_private_key
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::dsa::vg_dsa_validate_private_key(key, key_len, p_len, q_len, scratch, scratch_len) }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(key, key_len, p_len, q_len, scratch, scratch_len) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(key, key_len, p_len, q_len, scratch, scratch_len) }
 }
 
-/// `vg_dsa_parameter_search_init`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::dsa::vg_dsa_parameter_search_init as vg_dsa_parameter_search_init_auto;
+/// Start a search for DSA domain parameters with a modulus of `p_len` octets (128, 256 or 384: 1024, 2048 or 3072 bits, with a subgroup of 160, 256 and 256 bits). Returns 1 and writes the search's four public words to `state`: the seeds it may still reject, `p_len`, its entropy budget, and the length of the first random tape to give `vg_dsa_parameter_search`. Returns 0 and writes zeros for any other `p_len`.
+///
+/// Contract: `VG.Spec.Dsa.parameterInitContract`.
+///
+/// It runs `vg_dsa_parameter_search_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 32 bytes.
+/// * `state` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_dsa_parameter_search_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 4], p_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::dsa::vg_dsa_parameter_search_init(state, p_len) }
+}
 
 /// Randomized DSA signing of a prehashed digest, for an already validated packed private key (big-endian p||q||g||y||x; vg_dsa_validate_private_key validates it). Up to eight signing attempts, each with 128 nonce draws. Returns 1 with fixed-width r||s, 0 for retry exhaustion, or 2 for insufficient random bytes; out is zero on failure and used counts consumed complete draws on every return. Timing may depend on public p,q,g,y, sampling decisions, signing success bits and consumption, not otherwise on secrets. Contract: `VG.Spec.Dsa.randomSignPrevalidatedContract`.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_dsa_sign_random_prevalidated_adx` if the CPU supports its features (`VG_DSA_SIGN_RANDOM_PREVALIDATED_ADX_FEATURES`); or else `vg_dsa_sign_random_prevalidated`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_dsa_sign_random_prevalidated_adx` if the CPU supports its features (`VG_DSA_SIGN_RANDOM_PREVALIDATED_ADX_FEATURES`); or else `vg_dsa_sign_random_prevalidated`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -234,13 +383,36 @@ pub use crate::dsa::vg_dsa_parameter_search_init as vg_dsa_parameter_search_init
 /// * None of `out`, `used`, `key`, `digest`, `rand` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_dsa_sign_random_prevalidated_auto(out: *mut u8, out_len: usize, used: *mut [u64; 1], key: *const u8, key_len: usize, p_len: usize, q_len: usize, digest: *const u8, digest_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::dsa::VG_DSA_SIGN_RANDOM_PREVALIDATED_ADX_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_dsa_sign_random_prevalidated_adx`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::dsa::vg_dsa_sign_random_prevalidated_adx(out, out_len, used, key, key_len, p_len, q_len, digest, digest_len, rand, rand_len, scratch, scratch_len) };
+pub unsafe fn vg_dsa_sign_random_prevalidated_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, used: *mut [u64; 1], key: *const u8, key_len: usize, p_len: usize, q_len: usize, digest: *const u8, digest_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(out: *mut u8, out_len: usize, used: *mut [u64; 1], key: *const u8, key_len: usize, p_len: usize, q_len: usize, digest: *const u8, digest_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32;
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::dsa::VG_DSA_SIGN_RANDOM_PREVALIDATED_ADX_FEATURES) }
+            || cpu.contains(crate::dsa::VG_DSA_SIGN_RANDOM_PREVALIDATED_ADX_FEATURES)
+        {
+            return crate::dsa::vg_dsa_sign_random_prevalidated_adx;
+        }
+        crate::dsa::vg_dsa_sign_random_prevalidated
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::dsa::vg_dsa_sign_random_prevalidated(out, out_len, used, key, key_len, p_len, q_len, digest, digest_len, rand, rand_len, scratch, scratch_len) }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(out: *mut u8, out_len: usize, used: *mut [u64; 1], key: *const u8, key_len: usize, p_len: usize, q_len: usize, digest: *const u8, digest_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(out, out_len, used, key, key_len, p_len, q_len, digest, digest_len, rand, rand_len, scratch, scratch_len) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(out, out_len, used, key, key_len, p_len, q_len, digest, digest_len, rand, rand_len, scratch, scratch_len) }
 }

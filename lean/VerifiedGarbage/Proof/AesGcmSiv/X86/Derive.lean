@@ -19,7 +19,7 @@ import VerifiedGarbage.Proof.AesGcm.X86.Loops
 
 Untrusted: everything here is checked by Lean. Each step of `derive` writes
 `little_endian_uint32(i) ‖ nonce` at `W + 112` and a zero block at
-`W + 224` (`derArgs_ok`), on which `vg_aes_ctr32` leaves
+`W + 224` (`derArgs_ok`), on which `vg_aes_ctr32_to` leaves
 `CIPH_K(little_endian_uint32(i) ‖ nonce)`, of which the first 8 bytes are
 kept at `W + 16 + 8 i` (`derPost_ok`): after the loop, the halves of
 `derive_keys` (`derive_ok`, `DInv.keys`).

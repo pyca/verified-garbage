@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Scrypt.scryptContract`. Not constant time in the indices: timing may depend on the pointers, the lengths, `r`, `N`, `p` and the indices `j` of step 3 of each scryptROMix, which are derived from the password and the salt and so leak information about them (as in every scrypt that indexes `V` directly), but on nothing else.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_scrypt_shani` if the CPU supports its features (`VG_SCRYPT_SHANI_FEATURES`); `vg_scrypt_avx2` if the CPU supports its features (`VG_SCRYPT_AVX2_FEATURES`); or else `vg_scrypt`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_scrypt_shani` if the CPU supports its features (`VG_SCRYPT_SHANI_FEATURES`); `vg_scrypt_avx2` if the CPU supports its features (`VG_SCRYPT_AVX2_FEATURES`); or else `vg_scrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -22,18 +22,41 @@
 /// * None of `password`, `salt`, `b`, `v`, `scratch` and `out` may overlap the return address on the stack or the 88 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_scrypt_auto(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::scrypt::VG_SCRYPT_SHANI_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_scrypt_shani`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::scrypt::vg_scrypt_shani(password, password_len, salt, salt_len, r, b, blen, v, vlen, scratch, slen, out, out_len) };
+pub unsafe fn vg_scrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::scrypt::VG_SCRYPT_SHANI_FEATURES) }
+            || cpu.contains(crate::scrypt::VG_SCRYPT_SHANI_FEATURES)
+        {
+            return crate::scrypt::vg_scrypt_shani;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::scrypt::VG_SCRYPT_AVX2_FEATURES) }
+            || cpu.contains(crate::scrypt::VG_SCRYPT_AVX2_FEATURES)
+        {
+            return crate::scrypt::vg_scrypt_avx2;
+        }
+        crate::scrypt::vg_scrypt
     }
-    if cpu.contains(crate::scrypt::VG_SCRYPT_AVX2_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_scrypt_avx2`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::scrypt::vg_scrypt_avx2(password, password_len, salt, salt_len, r, b, blen, v, vlen, scratch, slen, out, out_len) };
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(password, password_len, salt, salt_len, r, b, blen, v, vlen, scratch, slen, out, out_len) }
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::scrypt::vg_scrypt(password, password_len, salt, salt_len, r, b, blen, v, vlen, scratch, slen, out, out_len) }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(password, password_len, salt, salt_len, r, b, blen, v, vlen, scratch, slen, out, out_len) }
 }

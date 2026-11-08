@@ -18,7 +18,7 @@
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 2772 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_camellia_cbc_encrypt_chained(schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
+pub(crate) unsafe extern "C" fn vg_camellia_cbc_encrypt_chained(schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r#".base64 "jaQkPPX//4uEJMgKAACJRCQEi4QkzAoAAIlEJAiLhCTQCgAAiUQkDIuEJNQKAACJRCQQi4Qk2AoAAIlEJBSJ4IPAHIlEJBiLRCQYiZiACgAAibCECgAAibiICgAAiaiMCgAAiceLdCQMiwaJh5gKAACLRgSJh5wKAACLRgiJh6AKAACLRgyJh6QKAACLRCQIg/gS"
 je 20f
@@ -64,7 +64,7 @@ jmp 25f
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 2772 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_camellia_cbc_decrypt_chained(schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
+pub(crate) unsafe extern "C" fn vg_camellia_cbc_decrypt_chained(schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r#".base64 "jaQkPPX//4uEJMgKAACJRCQEi4QkzAoAAIlEJAiLhCTQCgAAiUQkDIuEJNQKAACJRCQQi4Qk2AoAAIlEJBSJ4IPAHIlEJBiLRCQYiZiACgAAibCECgAAibiICgAAiaiMCgAAiceLdCQMiwaJh5gKAACLRgSJh5wKAACLRgiJh6AKAACLRgyJh6QKAACLRCQIg/gS"
 je 20f

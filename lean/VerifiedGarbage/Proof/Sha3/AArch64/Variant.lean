@@ -25,6 +25,9 @@ open VG VG.AArch64
 structure Permutation where
   callee : Impl.Sha3.AArch64.Callee
   features : List String
+  /-- The `target_vendor` of the CPUs it is faster on, which callers that are
+  faster with it only there give their implementations (`Artifact.vendor`). -/
+  vendor : Option String := none
   ok : ∀ s, Proof.Sha3.permuteAArch64.pre s →
     ∃ t s', Exec isa callee.code s t s' ∧ abiPreserved s s' ∧
       Proof.Sha3.permuteAArch64.post s s'

@@ -229,31 +229,8 @@ vg_aes_gcm_open_split_prepared_vaes_vpclmul_avx512:
 	mov rcx, rax
 	and rcx, 15
 	sub rax, rcx
-	mov rsi, QWORD PTR [r15+224]
-	add rsi, rax
-	mov rdi, QWORD PTR [r15+200]
-	add rdi, rax
-	test rcx, rcx
-	je 220f
-	mov r10d, 0
-222:
-	movzx eax, BYTE PTR [rsi+r10*1]
-	mov BYTE PTR [rdi+r10*1], al
-	add r10, 1
-	cmp r10, rcx
-	jne 222b
-	jmp 221f
-220:
-221:
-	mov rax, QWORD PTR [r15+192]
-	mov rcx, rax
-	and rcx, 15
-	sub rax, rcx
-	mov rcx, QWORD PTR [r15+208]
-	mov QWORD PTR [r15+216], rcx
-	sub rcx, rax
 	mov QWORD PTR [r15+208], rcx
-	add rax, QWORD PTR [r15+200]
+	add rax, QWORD PTR [r15+224]
 	mov QWORD PTR [r15+200], rax
 	mov rbx, QWORD PTR [rsp+32]
 	mov QWORD PTR [r15+224], rbx
@@ -268,7 +245,7 @@ vg_aes_gcm_open_split_prepared_vaes_vpclmul_avx512:
 	sub rax, rbp
 	add r12, rax
 	test rcx, rcx
-	je 223f
+	je 220f
 	mov rdi, r13
 	add rdi, 240
 	mov rsi, r14
@@ -276,12 +253,12 @@ vg_aes_gcm_open_split_prepared_vaes_vpclmul_avx512:
 	mov r8, r15
 	add r8, 512
 	call {vg_ghash_vpclmul}
-	jmp 224f
-223:
-224:
+	jmp 221f
+220:
+221:
 	mov rcx, rbp
 	test rcx, rcx
-	je 225f
+	je 222f
 	mov eax, 0
 	mov QWORD PTR [r15+96], rax
 	mov QWORD PTR [r15+104], rax
@@ -289,12 +266,12 @@ vg_aes_gcm_open_split_prepared_vaes_vpclmul_avx512:
 	add rdi, 96
 	mov rsi, r12
 	mov r10d, 0
-227:
+224:
 	movzx eax, BYTE PTR [rsi+r10*1]
 	mov BYTE PTR [rdi+r10*1], al
 	add r10, 1
 	cmp r10, rcx
-	jne 227b
+	jne 224b
 	mov rdi, r13
 	add rdi, 240
 	mov rsi, r14
@@ -305,9 +282,9 @@ vg_aes_gcm_open_split_prepared_vaes_vpclmul_avx512:
 	mov r8, r15
 	add r8, 512
 	call {vg_ghash_vpclmul}
-	jmp 226f
-225:
-226:
+	jmp 223f
+222:
+223:
 	mov rbx, QWORD PTR [r15+184]
 	mov rbp, QWORD PTR [r15+192]
 	mov rax, rbx
@@ -354,6 +331,30 @@ vg_aes_gcm_open_split_prepared_vaes_vpclmul_avx512:
 	add rdi, 256
 	mov rcx, rbx
 	cmp rcx, 16
+	je 225f
+	mov r10d, 0
+227:
+	movzx eax, BYTE PTR [rsi+r10*1]
+	mov BYTE PTR [rdi+r10*1], al
+	add r10, 1
+	cmp r10, rcx
+	jne 227b
+	jmp 226f
+225:
+	mov rax, QWORD PTR [rsi]
+	mov r10, QWORD PTR [rsi+8]
+	mov QWORD PTR [rdi], rax
+	mov QWORD PTR [rdi+8], r10
+226:
+	mov eax, 0
+	mov QWORD PTR [r15+240], rax
+	mov QWORD PTR [r15+248], rax
+	mov rdi, r15
+	add rdi, 240
+	mov rsi, r15
+	add rsi, 112
+	mov rcx, rbx
+	cmp rcx, 16
 	je 228f
 	mov r10d, 0
 230:
@@ -369,30 +370,6 @@ vg_aes_gcm_open_split_prepared_vaes_vpclmul_avx512:
 	mov QWORD PTR [rdi], rax
 	mov QWORD PTR [rdi+8], r10
 229:
-	mov eax, 0
-	mov QWORD PTR [r15+240], rax
-	mov QWORD PTR [r15+248], rax
-	mov rdi, r15
-	add rdi, 240
-	mov rsi, r15
-	add rsi, 112
-	mov rcx, rbx
-	cmp rcx, 16
-	je 231f
-	mov r10d, 0
-233:
-	movzx eax, BYTE PTR [rsi+r10*1]
-	mov BYTE PTR [rdi+r10*1], al
-	add r10, 1
-	cmp r10, rcx
-	jne 233b
-	jmp 232f
-231:
-	mov rax, QWORD PTR [rsi]
-	mov r10, QWORD PTR [rsi+8]
-	mov QWORD PTR [rdi], rax
-	mov QWORD PTR [rdi+8], r10
-232:
 	mov rax, QWORD PTR [r15+240]
 	xor rax, QWORD PTR [r15+256]
 	mov rdx, QWORD PTR [r15+248]
@@ -403,31 +380,15 @@ vg_aes_gcm_open_split_prepared_vaes_vpclmul_avx512:
 	adc eax, 0
 	mov QWORD PTR [r15+216], rax
 	test rax, rax
-	je 234f
-	mov r12, QWORD PTR [r15+200]
-	mov rbp, QWORD PTR [r15+208]
-	mov ebx, 0
-	mov rcx, r12
-	mov r8, rbp
-	shr r8, 4
-	mov rax, rbp
-	and rbp, 15
-	sub rax, rbp
+	je 231f
+	mov r12, QWORD PTR [rsp+8]
+	mov rax, QWORD PTR [r15+192]
+	sub rax, QWORD PTR [r15+208]
 	add r12, rax
-	test r8, r8
-	je 236f
-	mov rdi, r13
-	mov rsi, QWORD PTR [r15+176]
-	mov rdx, r14
-	add rdx, 48
-	mov r9, r15
-	add r9, 512
-	call {vg_aes_ctr32_vaes}
-	jmp 237f
-236:
-237:
+	mov rbp, QWORD PTR [r15+208]
+	mov rbx, QWORD PTR [r15+200]
 	test rbp, rbp
-	je 238f
+	je 233f
 	mov eax, 0
 	mov QWORD PTR [r14+64], rax
 	mov QWORD PTR [r14+72], rax
@@ -446,20 +407,20 @@ vg_aes_gcm_open_split_prepared_vaes_vpclmul_avx512:
 	add rsi, 64
 	mov rcx, rbp
 	mov r10d, 0
-240:
-	movzx eax, BYTE PTR [rdi+r10*1]
+235:
+	movzx eax, BYTE PTR [rbx+r10*1]
 	movzx r11d, BYTE PTR [rsi+r10*1]
 	xor rax, r11
 	mov BYTE PTR [rdi+r10*1], al
 	add r10, 1
 	cmp r10, rcx
-	jne 240b
-	jmp 239f
-238:
-239:
-	jmp 235f
+	jne 235b
+	jmp 234f
+233:
 234:
-235:
+	jmp 232f
+231:
+232:
 	mov rax, QWORD PTR [r15+216]
 	jmp 25f
 24:

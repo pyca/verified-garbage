@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Xts.aesEncryptUnitContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedules, the tweak value or the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_xts_encrypt_unit_vaes_vpclmul_avx512` if the CPU supports its features (`VG_AES_XTS_ENCRYPT_UNIT_VAES_VPCLMUL_AVX512_FEATURES`); `vg_aes_xts_encrypt_unit_vaes_vpclmul` if the CPU supports its features (`VG_AES_XTS_ENCRYPT_UNIT_VAES_VPCLMUL_FEATURES`); `vg_aes_xts_encrypt_unit_aesni_pclmul` if the CPU supports its features (`VG_AES_XTS_ENCRYPT_UNIT_AESNI_PCLMUL_FEATURES`); `vg_aes_xts_encrypt_unit_vaes` if the CPU supports its features (`VG_AES_XTS_ENCRYPT_UNIT_VAES_FEATURES`); `vg_aes_xts_encrypt_unit_aesni` if the CPU supports its features (`VG_AES_XTS_ENCRYPT_UNIT_AESNI_FEATURES`); or else `vg_aes_xts_encrypt_unit`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_xts_encrypt_unit_vaes_vpclmul_avx512` if the CPU supports its features (`VG_AES_XTS_ENCRYPT_UNIT_VAES_VPCLMUL_AVX512_FEATURES`); `vg_aes_xts_encrypt_unit_vaes_vpclmul` if the CPU supports its features (`VG_AES_XTS_ENCRYPT_UNIT_VAES_VPCLMUL_FEATURES`); `vg_aes_xts_encrypt_unit_aesni_pclmul` if the CPU supports its features (`VG_AES_XTS_ENCRYPT_UNIT_AESNI_PCLMUL_FEATURES`); `vg_aes_xts_encrypt_unit_vaes` if the CPU supports its features (`VG_AES_XTS_ENCRYPT_UNIT_VAES_FEATURES`); `vg_aes_xts_encrypt_unit_aesni` if the CPU supports its features (`VG_AES_XTS_ENCRYPT_UNIT_AESNI_FEATURES`); or else `vg_aes_xts_encrypt_unit`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -22,42 +22,65 @@
 /// * None of `schedule`, `tweak_schedule`, `i`, `data` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_xts_encrypt_unit_auto(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_VAES_VPCLMUL_AVX512_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_xts_encrypt_unit_vaes_vpclmul_avx512`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_xts::vg_aes_xts_encrypt_unit_vaes_vpclmul_avx512(schedule, tweak_schedule, rounds, i, data, len, scratch) };
+pub unsafe fn vg_aes_xts_encrypt_unit_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_VAES_VPCLMUL_AVX512_FEATURES) }
+            || cpu.contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_VAES_VPCLMUL_AVX512_FEATURES)
+        {
+            return crate::aes_xts::vg_aes_xts_encrypt_unit_vaes_vpclmul_avx512;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_VAES_VPCLMUL_FEATURES) }
+            || cpu.contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_VAES_VPCLMUL_FEATURES)
+        {
+            return crate::aes_xts::vg_aes_xts_encrypt_unit_vaes_vpclmul;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_AESNI_PCLMUL_FEATURES) }
+            || cpu.contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_AESNI_PCLMUL_FEATURES)
+        {
+            return crate::aes_xts::vg_aes_xts_encrypt_unit_aesni_pclmul;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_VAES_FEATURES) }
+            || cpu.contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_VAES_FEATURES)
+        {
+            return crate::aes_xts::vg_aes_xts_encrypt_unit_vaes;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_AESNI_FEATURES) }
+            || cpu.contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_AESNI_FEATURES)
+        {
+            return crate::aes_xts::vg_aes_xts_encrypt_unit_aesni;
+        }
+        crate::aes_xts::vg_aes_xts_encrypt_unit
     }
-    if cpu.contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_VAES_VPCLMUL_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_xts_encrypt_unit_vaes_vpclmul`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_xts::vg_aes_xts_encrypt_unit_vaes_vpclmul(schedule, tweak_schedule, rounds, i, data, len, scratch) };
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(schedule, tweak_schedule, rounds, i, data, len, scratch) }
     }
-    if cpu.contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_AESNI_PCLMUL_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_xts_encrypt_unit_aesni_pclmul`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_xts::vg_aes_xts_encrypt_unit_aesni_pclmul(schedule, tweak_schedule, rounds, i, data, len, scratch) };
-    }
-    if cpu.contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_VAES_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_xts_encrypt_unit_vaes`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_xts::vg_aes_xts_encrypt_unit_vaes(schedule, tweak_schedule, rounds, i, data, len, scratch) };
-    }
-    if cpu.contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_AESNI_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_xts_encrypt_unit_aesni`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_xts::vg_aes_xts_encrypt_unit_aesni(schedule, tweak_schedule, rounds, i, data, len, scratch) };
-    }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::aes_xts::vg_aes_xts_encrypt_unit(schedule, tweak_schedule, rounds, i, data, len, scratch) }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(schedule, tweak_schedule, rounds, i, data, len, scratch) }
 }
 
 /// XTS-AES decryption (IEEE Std 1619-2007 §5.4.2, NIST SP 800-38E) of a whole data unit, in place: replaces the `len` bytes at `data`, at least 16 and at most 2²⁰ blocks, with their decryption under the key `Key1 ‖ Key2` with the tweak value `*i`. With `m` whole blocks `C₀ … Cₘ₋₁` and `b` bytes `Cₘ` after them, each `Cⱼ` for `j < m` (`j < m - 1` if `b > 0`) becomes `Pⱼ = AES-dec(Key1, Cⱼ ⊕ Tⱼ) ⊕ Tⱼ`, where `Tⱼ = T ⊗ αʲ` (§5.2) and `T = AES-enc(Key2, i)`. If `b > 0`, ciphertext stealing makes `Pₘ` the first `b` bytes of `PP`, the decryption of `Cₘ₋₁` with `Tₘ`, and `Pₘ₋₁` the decryption with `Tₘ₋₁` of `Cₘ` followed by the other `16 - b` bytes of `PP`. `AES-dec(Key1, ·)` is the AES inverse cipher (FIPS 197 §5.3) and `AES-enc(Key2, ·)` AES, with `rounds` rounds and the key schedules in the first `16 * (rounds + 1)` bytes of `*schedule` and `*tweak_schedule`, as `vg_aes_expand_key` writes them.
 ///
 /// Contract: `VG.Spec.Xts.aesDecryptUnitContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedules, the tweak value or the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_xts_decrypt_unit_vaes_vpclmul_avx512` if the CPU supports its features (`VG_AES_XTS_DECRYPT_UNIT_VAES_VPCLMUL_AVX512_FEATURES`); `vg_aes_xts_decrypt_unit_vaes_vpclmul` if the CPU supports its features (`VG_AES_XTS_DECRYPT_UNIT_VAES_VPCLMUL_FEATURES`); `vg_aes_xts_decrypt_unit_aesni_pclmul` if the CPU supports its features (`VG_AES_XTS_DECRYPT_UNIT_AESNI_PCLMUL_FEATURES`); `vg_aes_xts_decrypt_unit_vaes` if the CPU supports its features (`VG_AES_XTS_DECRYPT_UNIT_VAES_FEATURES`); `vg_aes_xts_decrypt_unit_aesni` if the CPU supports its features (`VG_AES_XTS_DECRYPT_UNIT_AESNI_FEATURES`); or else `vg_aes_xts_decrypt_unit`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_xts_decrypt_unit_vaes_vpclmul_avx512` if the CPU supports its features (`VG_AES_XTS_DECRYPT_UNIT_VAES_VPCLMUL_AVX512_FEATURES`); `vg_aes_xts_decrypt_unit_vaes_vpclmul` if the CPU supports its features (`VG_AES_XTS_DECRYPT_UNIT_VAES_VPCLMUL_FEATURES`); `vg_aes_xts_decrypt_unit_aesni_pclmul` if the CPU supports its features (`VG_AES_XTS_DECRYPT_UNIT_AESNI_PCLMUL_FEATURES`); `vg_aes_xts_decrypt_unit_vaes` if the CPU supports its features (`VG_AES_XTS_DECRYPT_UNIT_VAES_FEATURES`); `vg_aes_xts_decrypt_unit_aesni` if the CPU supports its features (`VG_AES_XTS_DECRYPT_UNIT_AESNI_FEATURES`); or else `vg_aes_xts_decrypt_unit`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -73,42 +96,65 @@ pub unsafe fn vg_aes_xts_encrypt_unit_auto(schedule: *const [u8; 240], tweak_sch
 /// * None of `schedule`, `tweak_schedule`, `i`, `data` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_xts_decrypt_unit_auto(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_VAES_VPCLMUL_AVX512_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_xts_decrypt_unit_vaes_vpclmul_avx512`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_xts::vg_aes_xts_decrypt_unit_vaes_vpclmul_avx512(schedule, tweak_schedule, rounds, i, data, len, scratch) };
+pub unsafe fn vg_aes_xts_decrypt_unit_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_VAES_VPCLMUL_AVX512_FEATURES) }
+            || cpu.contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_VAES_VPCLMUL_AVX512_FEATURES)
+        {
+            return crate::aes_xts::vg_aes_xts_decrypt_unit_vaes_vpclmul_avx512;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_VAES_VPCLMUL_FEATURES) }
+            || cpu.contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_VAES_VPCLMUL_FEATURES)
+        {
+            return crate::aes_xts::vg_aes_xts_decrypt_unit_vaes_vpclmul;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_AESNI_PCLMUL_FEATURES) }
+            || cpu.contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_AESNI_PCLMUL_FEATURES)
+        {
+            return crate::aes_xts::vg_aes_xts_decrypt_unit_aesni_pclmul;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_VAES_FEATURES) }
+            || cpu.contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_VAES_FEATURES)
+        {
+            return crate::aes_xts::vg_aes_xts_decrypt_unit_vaes;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_AESNI_FEATURES) }
+            || cpu.contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_AESNI_FEATURES)
+        {
+            return crate::aes_xts::vg_aes_xts_decrypt_unit_aesni;
+        }
+        crate::aes_xts::vg_aes_xts_decrypt_unit
     }
-    if cpu.contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_VAES_VPCLMUL_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_xts_decrypt_unit_vaes_vpclmul`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_xts::vg_aes_xts_decrypt_unit_vaes_vpclmul(schedule, tweak_schedule, rounds, i, data, len, scratch) };
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(schedule, tweak_schedule, rounds, i, data, len, scratch) }
     }
-    if cpu.contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_AESNI_PCLMUL_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_xts_decrypt_unit_aesni_pclmul`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_xts::vg_aes_xts_decrypt_unit_aesni_pclmul(schedule, tweak_schedule, rounds, i, data, len, scratch) };
-    }
-    if cpu.contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_VAES_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_xts_decrypt_unit_vaes`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_xts::vg_aes_xts_decrypt_unit_vaes(schedule, tweak_schedule, rounds, i, data, len, scratch) };
-    }
-    if cpu.contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_AESNI_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_xts_decrypt_unit_aesni`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_xts::vg_aes_xts_decrypt_unit_aesni(schedule, tweak_schedule, rounds, i, data, len, scratch) };
-    }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::aes_xts::vg_aes_xts_decrypt_unit(schedule, tweak_schedule, rounds, i, data, len, scratch) }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(schedule, tweak_schedule, rounds, i, data, len, scratch) }
 }
 
 /// XTS-AES encryption (IEEE Std 1619-2007 §5.3.2, NIST SP 800-38E) of a whole data unit, out of place: writes to the `dst_len = len` bytes at `dst` the encryption of the `len` bytes at `src`, at least 16 and at most 2²⁰ blocks, under the key `Key1 ‖ Key2` with the tweak value `*i`, as `vg_aes_xts_encrypt_unit` would replace them with in place (see `vg_aes_xts_encrypt_unit`). `src` is not written, and `dst` is a buffer of its own: it overlaps no other buffer, `src` included.
 ///
 /// Contract: `VG.Spec.Xts.aesEncryptUnitToContract`. Constant time: only the pointers, `rounds`, `len` and `dst_len` may affect timing, not the key schedules, the tweak value or the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_xts_encrypt_unit_to_vaes_vpclmul_avx512` if the CPU supports its features (`VG_AES_XTS_ENCRYPT_UNIT_TO_VAES_VPCLMUL_AVX512_FEATURES`); `vg_aes_xts_encrypt_unit_to_vaes_vpclmul` if the CPU supports its features (`VG_AES_XTS_ENCRYPT_UNIT_TO_VAES_VPCLMUL_FEATURES`); `vg_aes_xts_encrypt_unit_to_aesni_pclmul` if the CPU supports its features (`VG_AES_XTS_ENCRYPT_UNIT_TO_AESNI_PCLMUL_FEATURES`); `vg_aes_xts_encrypt_unit_to_vaes` if the CPU supports its features (`VG_AES_XTS_ENCRYPT_UNIT_TO_VAES_FEATURES`); `vg_aes_xts_encrypt_unit_to_aesni` if the CPU supports its features (`VG_AES_XTS_ENCRYPT_UNIT_TO_AESNI_FEATURES`); or else `vg_aes_xts_encrypt_unit_to`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_xts_encrypt_unit_to_vaes_vpclmul_avx512` if the CPU supports its features (`VG_AES_XTS_ENCRYPT_UNIT_TO_VAES_VPCLMUL_AVX512_FEATURES`); `vg_aes_xts_encrypt_unit_to_vaes_vpclmul` if the CPU supports its features (`VG_AES_XTS_ENCRYPT_UNIT_TO_VAES_VPCLMUL_FEATURES`); `vg_aes_xts_encrypt_unit_to_aesni_pclmul` if the CPU supports its features (`VG_AES_XTS_ENCRYPT_UNIT_TO_AESNI_PCLMUL_FEATURES`); `vg_aes_xts_encrypt_unit_to_vaes` if the CPU supports its features (`VG_AES_XTS_ENCRYPT_UNIT_TO_VAES_FEATURES`); `vg_aes_xts_encrypt_unit_to_aesni` if the CPU supports its features (`VG_AES_XTS_ENCRYPT_UNIT_TO_AESNI_FEATURES`); or else `vg_aes_xts_encrypt_unit_to`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -126,42 +172,65 @@ pub unsafe fn vg_aes_xts_decrypt_unit_auto(schedule: *const [u8; 240], tweak_sch
 /// * None of `schedule`, `tweak_schedule`, `i`, `src`, `dst` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_xts_encrypt_unit_to_auto(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], src: *const u8, len: usize, dst: *mut u8, dst_len: usize, scratch: *mut [u64; 304]) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_TO_VAES_VPCLMUL_AVX512_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_xts_encrypt_unit_to_vaes_vpclmul_avx512`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_xts::vg_aes_xts_encrypt_unit_to_vaes_vpclmul_avx512(schedule, tweak_schedule, rounds, i, src, len, dst, dst_len, scratch) };
+pub unsafe fn vg_aes_xts_encrypt_unit_to_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], src: *const u8, len: usize, dst: *mut u8, dst_len: usize, scratch: *mut [u64; 304]) {
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], src: *const u8, len: usize, dst: *mut u8, dst_len: usize, scratch: *mut [u64; 304]);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_TO_VAES_VPCLMUL_AVX512_FEATURES) }
+            || cpu.contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_TO_VAES_VPCLMUL_AVX512_FEATURES)
+        {
+            return crate::aes_xts::vg_aes_xts_encrypt_unit_to_vaes_vpclmul_avx512;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_TO_VAES_VPCLMUL_FEATURES) }
+            || cpu.contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_TO_VAES_VPCLMUL_FEATURES)
+        {
+            return crate::aes_xts::vg_aes_xts_encrypt_unit_to_vaes_vpclmul;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_TO_AESNI_PCLMUL_FEATURES) }
+            || cpu.contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_TO_AESNI_PCLMUL_FEATURES)
+        {
+            return crate::aes_xts::vg_aes_xts_encrypt_unit_to_aesni_pclmul;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_TO_VAES_FEATURES) }
+            || cpu.contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_TO_VAES_FEATURES)
+        {
+            return crate::aes_xts::vg_aes_xts_encrypt_unit_to_vaes;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_TO_AESNI_FEATURES) }
+            || cpu.contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_TO_AESNI_FEATURES)
+        {
+            return crate::aes_xts::vg_aes_xts_encrypt_unit_to_aesni;
+        }
+        crate::aes_xts::vg_aes_xts_encrypt_unit_to
     }
-    if cpu.contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_TO_VAES_VPCLMUL_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_xts_encrypt_unit_to_vaes_vpclmul`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_xts::vg_aes_xts_encrypt_unit_to_vaes_vpclmul(schedule, tweak_schedule, rounds, i, src, len, dst, dst_len, scratch) };
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], src: *const u8, len: usize, dst: *mut u8, dst_len: usize, scratch: *mut [u64; 304]) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(schedule, tweak_schedule, rounds, i, src, len, dst, dst_len, scratch) }
     }
-    if cpu.contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_TO_AESNI_PCLMUL_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_xts_encrypt_unit_to_aesni_pclmul`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_xts::vg_aes_xts_encrypt_unit_to_aesni_pclmul(schedule, tweak_schedule, rounds, i, src, len, dst, dst_len, scratch) };
-    }
-    if cpu.contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_TO_VAES_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_xts_encrypt_unit_to_vaes`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_xts::vg_aes_xts_encrypt_unit_to_vaes(schedule, tweak_schedule, rounds, i, src, len, dst, dst_len, scratch) };
-    }
-    if cpu.contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_TO_AESNI_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_xts_encrypt_unit_to_aesni`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_xts::vg_aes_xts_encrypt_unit_to_aesni(schedule, tweak_schedule, rounds, i, src, len, dst, dst_len, scratch) };
-    }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::aes_xts::vg_aes_xts_encrypt_unit_to(schedule, tweak_schedule, rounds, i, src, len, dst, dst_len, scratch) }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(schedule, tweak_schedule, rounds, i, src, len, dst, dst_len, scratch) }
 }
 
 /// XTS-AES decryption (IEEE Std 1619-2007 §5.4.2, NIST SP 800-38E) of a whole data unit, out of place: writes to the `dst_len = len` bytes at `dst` the decryption of the `len` bytes at `src`, at least 16 and at most 2²⁰ blocks, under the key `Key1 ‖ Key2` with the tweak value `*i`, as `vg_aes_xts_decrypt_unit` would replace them with in place (see `vg_aes_xts_decrypt_unit`). `src` is not written, and `dst` is a buffer of its own: it overlaps no other buffer, `src` included.
 ///
 /// Contract: `VG.Spec.Xts.aesDecryptUnitToContract`. Constant time: only the pointers, `rounds`, `len` and `dst_len` may affect timing, not the key schedules, the tweak value or the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_xts_decrypt_unit_to_vaes_vpclmul_avx512` if the CPU supports its features (`VG_AES_XTS_DECRYPT_UNIT_TO_VAES_VPCLMUL_AVX512_FEATURES`); `vg_aes_xts_decrypt_unit_to_vaes_vpclmul` if the CPU supports its features (`VG_AES_XTS_DECRYPT_UNIT_TO_VAES_VPCLMUL_FEATURES`); `vg_aes_xts_decrypt_unit_to_aesni_pclmul` if the CPU supports its features (`VG_AES_XTS_DECRYPT_UNIT_TO_AESNI_PCLMUL_FEATURES`); `vg_aes_xts_decrypt_unit_to_vaes` if the CPU supports its features (`VG_AES_XTS_DECRYPT_UNIT_TO_VAES_FEATURES`); `vg_aes_xts_decrypt_unit_to_aesni` if the CPU supports its features (`VG_AES_XTS_DECRYPT_UNIT_TO_AESNI_FEATURES`); or else `vg_aes_xts_decrypt_unit_to`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_xts_decrypt_unit_to_vaes_vpclmul_avx512` if the CPU supports its features (`VG_AES_XTS_DECRYPT_UNIT_TO_VAES_VPCLMUL_AVX512_FEATURES`); `vg_aes_xts_decrypt_unit_to_vaes_vpclmul` if the CPU supports its features (`VG_AES_XTS_DECRYPT_UNIT_TO_VAES_VPCLMUL_FEATURES`); `vg_aes_xts_decrypt_unit_to_aesni_pclmul` if the CPU supports its features (`VG_AES_XTS_DECRYPT_UNIT_TO_AESNI_PCLMUL_FEATURES`); `vg_aes_xts_decrypt_unit_to_vaes` if the CPU supports its features (`VG_AES_XTS_DECRYPT_UNIT_TO_VAES_FEATURES`); `vg_aes_xts_decrypt_unit_to_aesni` if the CPU supports its features (`VG_AES_XTS_DECRYPT_UNIT_TO_AESNI_FEATURES`); or else `vg_aes_xts_decrypt_unit_to`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -179,33 +248,56 @@ pub unsafe fn vg_aes_xts_encrypt_unit_to_auto(schedule: *const [u8; 240], tweak_
 /// * None of `schedule`, `tweak_schedule`, `i`, `src`, `dst` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_xts_decrypt_unit_to_auto(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], src: *const u8, len: usize, dst: *mut u8, dst_len: usize, scratch: *mut [u64; 304]) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_TO_VAES_VPCLMUL_AVX512_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_xts_decrypt_unit_to_vaes_vpclmul_avx512`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_xts::vg_aes_xts_decrypt_unit_to_vaes_vpclmul_avx512(schedule, tweak_schedule, rounds, i, src, len, dst, dst_len, scratch) };
+pub unsafe fn vg_aes_xts_decrypt_unit_to_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], src: *const u8, len: usize, dst: *mut u8, dst_len: usize, scratch: *mut [u64; 304]) {
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], src: *const u8, len: usize, dst: *mut u8, dst_len: usize, scratch: *mut [u64; 304]);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_TO_VAES_VPCLMUL_AVX512_FEATURES) }
+            || cpu.contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_TO_VAES_VPCLMUL_AVX512_FEATURES)
+        {
+            return crate::aes_xts::vg_aes_xts_decrypt_unit_to_vaes_vpclmul_avx512;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_TO_VAES_VPCLMUL_FEATURES) }
+            || cpu.contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_TO_VAES_VPCLMUL_FEATURES)
+        {
+            return crate::aes_xts::vg_aes_xts_decrypt_unit_to_vaes_vpclmul;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_TO_AESNI_PCLMUL_FEATURES) }
+            || cpu.contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_TO_AESNI_PCLMUL_FEATURES)
+        {
+            return crate::aes_xts::vg_aes_xts_decrypt_unit_to_aesni_pclmul;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_TO_VAES_FEATURES) }
+            || cpu.contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_TO_VAES_FEATURES)
+        {
+            return crate::aes_xts::vg_aes_xts_decrypt_unit_to_vaes;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_TO_AESNI_FEATURES) }
+            || cpu.contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_TO_AESNI_FEATURES)
+        {
+            return crate::aes_xts::vg_aes_xts_decrypt_unit_to_aesni;
+        }
+        crate::aes_xts::vg_aes_xts_decrypt_unit_to
     }
-    if cpu.contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_TO_VAES_VPCLMUL_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_xts_decrypt_unit_to_vaes_vpclmul`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_xts::vg_aes_xts_decrypt_unit_to_vaes_vpclmul(schedule, tweak_schedule, rounds, i, src, len, dst, dst_len, scratch) };
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], src: *const u8, len: usize, dst: *mut u8, dst_len: usize, scratch: *mut [u64; 304]) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(schedule, tweak_schedule, rounds, i, src, len, dst, dst_len, scratch) }
     }
-    if cpu.contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_TO_AESNI_PCLMUL_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_xts_decrypt_unit_to_aesni_pclmul`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_xts::vg_aes_xts_decrypt_unit_to_aesni_pclmul(schedule, tweak_schedule, rounds, i, src, len, dst, dst_len, scratch) };
-    }
-    if cpu.contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_TO_VAES_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_xts_decrypt_unit_to_vaes`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_xts::vg_aes_xts_decrypt_unit_to_vaes(schedule, tweak_schedule, rounds, i, src, len, dst, dst_len, scratch) };
-    }
-    if cpu.contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_TO_AESNI_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_xts_decrypt_unit_to_aesni`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_xts::vg_aes_xts_decrypt_unit_to_aesni(schedule, tweak_schedule, rounds, i, src, len, dst, dst_len, scratch) };
-    }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::aes_xts::vg_aes_xts_decrypt_unit_to(schedule, tweak_schedule, rounds, i, src, len, dst, dst_len, scratch) }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(schedule, tweak_schedule, rounds, i, src, len, dst, dst_len, scratch) }
 }

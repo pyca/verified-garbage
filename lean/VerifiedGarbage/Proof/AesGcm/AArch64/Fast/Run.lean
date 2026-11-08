@@ -168,7 +168,7 @@ theorem runWithPX_ok (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {w : Nat} {ext
     ⟨⟨covers_left (by rw [r₃.wr, h₂.wr, wr₁]; exact dW), hnlt, wd, ddW.sub_right sub16, ddW⟩,
       by rw [r₃.wr, h₂.wr, wr₁]; exact dW, dcd⟩
   have hCr : CrIn Ctx (W + BitVec.ofNat 64 16) W s.sp s₃.gpr R 0 D n s₃ :=
-    ⟨he₃, hk₃, x22₃, hRb, by rw [r₃.others _ (by decide), h₂.x23], x24₃, x25₃, hdat₃⟩
+    ⟨he₃, hk₃, x22₃, hRb, by rw [r₃.others _ (by decide), h₂.x23], x24₃, x25₃, hdat₃, rfl⟩
   have cb₃ : blockAt s₃.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) =
       inc32 (Spec.Gcm.j0 (ctxH s.mem Ctx) (bytesAt s.mem Np 12)) := by rw [r₃.mem]; exact h₂.cb
   generalize hJ0 : Spec.Gcm.j0 (ctxH s.mem Ctx) (bytesAt s.mem Np 12) = J0 at cb₃

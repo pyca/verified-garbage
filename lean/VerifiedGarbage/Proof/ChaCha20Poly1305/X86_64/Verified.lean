@@ -13,14 +13,16 @@ import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
 Correctness and constant time (both from `CT.lean`), and a state satisfying
 the precondition, for any implementation `v` of `vg_chacha20_xor`: of the
 code with its working space as its last argument
-(`sealScratchContract`, `openZeroScratchContract`), and then of the functions,
+(`sealScratchContract`), and then of the function,
 which allocate it in a frame on the stack and wipe it after the code
 (`Verified.stackArgScratchWipedX`): `work` is passed on the stack after `tag`,
 so the frame holds a copy of `tag` and the address of `work`, and the 1696
 bytes of `work`, with 8 bytes unused at the top that keep `work` 16-byte
 aligned, 1728 bytes in all. The wrapper zeroes the first 672 bytes of
 `work`; the code itself zeroes the keystream it keeps after them. The code's
-calls use 24 bytes below the frame.
+calls use 24 bytes below the frame. The states satisfying `open`'s
+preconditions, and the stack facts of the code's parts, are for `open`'s
+proofs (`Shared.lean`, `CallOpen.lean`).
 -/
 
 @[expose] public section
@@ -62,7 +64,7 @@ theorem blocks_spSafe (b : Impl.Poly1305.X86_64.Blocks) :
     b.code.all (fun i => !X86_64.isa.writesSp i) = true := by
   cases b <;> exact Code.all_of_allInstrs (by lit_decide)
 
-/-- `seal` and `open` never write the stack pointer. The callees' code is
+/-- `seal` never writes the stack pointer. The callees' code is
 generalized away (`P`), so that `simp` does not unfold the predicate, and the
 kernel checks the rest once for each configuration of `fold`, `pass` and
 `wide`. -/
@@ -73,18 +75,7 @@ theorem seal_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) :
   generalize hP : (fun i => !X86_64.isa.writesSp i) = P at hc hb ⊢
   rcases v.fold_poly with ⟨hf, hpass, hw, hpo⟩ | ⟨hf, hpass, hw, hpo⟩ | ⟨hf, hpass, hw, hpo | hpo⟩ <;>
     (rw [hpo] at hb ⊢
-     simp only [dataCopy, «seal», prologue, crypt, cryptBig, Code.all, hc, hb, hf, hpass, hw,
-       macPad, macPadLengths, Code.iteCold, wholeBlocks, padRest, Bool.cond_true, Bool.cond_false, padCopy, padTail, absorbLengths, Bool.and_true, Bool.true_and]
-     subst hP; lit_decide)
-
-theorem open_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) :
-    («open» v.callee v.poly).all (fun i => !X86_64.isa.writesSp i) = true := by
-  have hc := v.spSafe
-  have hb := blocks_spSafe v.poly
-  generalize hP : (fun i => !X86_64.isa.writesSp i) = P at hc hb ⊢
-  rcases v.fold_poly with ⟨hf, hpass, hw, hpo⟩ | ⟨hf, hpass, hw, hpo⟩ | ⟨hf, hpass, hw, hpo | hpo⟩ <;>
-    (rw [hpo] at hb ⊢
-     simp only [dataCopy, «open», openBody, openTail, zeroData, prologue, crypt, cryptBig, Code.all, hc, hb, hf, hpass, hw,
+     simp only [Impl.ChaCha20.X86_64.Callee.inPlace, dataCopy, «seal», prologue, crypt, cryptBig, xorKs, callX, Code.all, hc, hb, hf, hpass, hw,
        macPad, macPadLengths, Code.iteCold, wholeBlocks, padRest, Bool.cond_true, Bool.cond_false, padCopy, padTail, absorbLengths, Bool.and_true, Bool.true_and]
      subst hP; lit_decide)
 
@@ -96,14 +87,6 @@ theorem seal_ct (v : Proof.ChaCha20.X86_64.XorImpl) :
     ConstantTime isa sealX86_64.pre sealX86_64.pub («seal» v.callee v.poly) :=
   fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (seal_rel v h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
-theorem open_ok (v : Proof.ChaCha20.X86_64.XorImpl) (s : State) (hs : openX86_64.pre s) :
-    ∃ t s', Exec isa («open» v.callee v.poly) s t s' ∧ abiPreserved s s' ∧ openX86_64.post s s' :=
-  open_correct v (APre.of s hs)
-
-theorem open_ct (v : Proof.ChaCha20.X86_64.XorImpl) :
-    ConstantTime isa openX86_64.pre openX86_64.pub («open» v.callee v.poly) :=
-  fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (open_rel v h₁ h₂ hq.1 hq.2 _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
-
 theorem seal_verified (v : Proof.ChaCha20.X86_64.XorImpl) :
     Verified X86_64.target («seal» v.callee v.poly) (sealScratchContract X86_64.abi 212 24) :=
   Verified.of_correct (seal_ok v) (seal_ct v) (by
@@ -113,57 +96,14 @@ theorem seal_verified (v : Proof.ChaCha20.X86_64.XorImpl) :
       X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs]
       [sealSat] using sealSat)
 
-/-- The postconditions match on `decrypt` through different auxiliary
-functions, so the implication splits on it. -/
-theorem open_verified (v : Proof.ChaCha20.X86_64.XorImpl) :
-    Verified X86_64.target («open» v.callee v.poly) (openZeroScratchContract X86_64.abi 212 24) :=
-  Verified.of_correct (open_ok v) (open_ct v)
-    { pre := by
-        sig_implies_pre [Proof.ChaCha20Poly1305.openZeroScratchContract,
-          Proof.ChaCha20Poly1305.openScratchSig, Spec.ChaCha20Poly1305.openZeroPost,
-          Spec.ChaCha20Poly1305.openLeak, Proof.ChaCha20Poly1305.openLeakX86_64,
-          Proof.ChaCha20Poly1305.openX86_64, Proof.ChaCha20Poly1305.preX86_64,
-          Proof.ChaCha20Poly1305.pubX86_64, X86_64.abi, X86_64.stackArg, X86_64.stackArgAddr, List.getD,
-          List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs]
-      post := by
-        intro s s' _ h
-        sig_eval [Proof.ChaCha20Poly1305.openZeroScratchContract, Proof.ChaCha20Poly1305.openScratchSig,
-          Spec.ChaCha20Poly1305.openZeroPost, X86_64.abi, X86_64.stackArg, X86_64.stackArgAddr, List.getD,
-          List.range, List.range.loop, X86_64.argRegs]
-        simp only [Proof.ChaCha20Poly1305.openX86_64] at h
-        -- The two `decrypt` terms are equal only up to unfolding numerals.
-        split at h
-        next _ pt e₁ =>
-          split
-          next _ pt' e₂ =>
-            obtain rfl := Option.some.inj (e₁.symm.trans e₂)
-            exact h
-          next _ e₂ => exact absurd (e₁.symm.trans e₂) (by simp)
-        next _ e₁ =>
-          split
-          next _ pt' e₂ => exact absurd (e₁.symm.trans e₂) (by simp)
-          next _ e₂ => exact h
-      pub := by
-        sig_implies_pub [Proof.ChaCha20Poly1305.openZeroScratchContract,
-          Proof.ChaCha20Poly1305.openScratchSig, Spec.ChaCha20Poly1305.openZeroPost,
-          Spec.ChaCha20Poly1305.openLeak, Proof.ChaCha20Poly1305.openLeakX86_64,
-          Proof.ChaCha20Poly1305.openX86_64, Proof.ChaCha20Poly1305.preX86_64,
-          Proof.ChaCha20Poly1305.pubX86_64, X86_64.abi, X86_64.stackArg, X86_64.stackArgAddr, List.getD,
-          List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs]
-      sat := by
-        sig_implies_sat [Proof.ChaCha20Poly1305.openZeroScratchContract,
-          Proof.ChaCha20Poly1305.openScratchSig, Spec.ChaCha20Poly1305.openZeroPost,
-          Spec.ChaCha20Poly1305.openLeak, Proof.ChaCha20Poly1305.openLeakX86_64,
-          Proof.ChaCha20Poly1305.openX86_64, Proof.ChaCha20Poly1305.preX86_64,
-          Proof.ChaCha20Poly1305.pubX86_64, X86_64.abi, X86_64.stackArg, X86_64.stackArgAddr, List.getD,
-          List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs]
-          [openSat] using openSat }
-
 /-! ## The frame -/
 
 theorem xorBuf_xdepth (w : Nat) : (xorBufX w .r14).x86_64Depth = 0 := by
   have : (Impl.ChaCha20.X86_64.XorBuf.xorBuf .rdi .rsi).x86_64Depth = 0 := by decide
   simp only [xorBufX, Code.x86_64Depth, this, Nat.max_self]
+theorem xorBufTo_xdepth (w : Nat) : (Impl.ChaCha20.X86_64.XorBuf.xorBufXTo w .r14 .r10).x86_64Depth = 0 := by
+  have : (Impl.ChaCha20.X86_64.XorBuf.xorBufTo .rdi .r10 .rsi).x86_64Depth = 0 := by decide
+  simp only [Impl.ChaCha20.X86_64.XorBuf.xorBufXTo, Code.x86_64Depth, this, Nat.max_self]
 theorem splitM_xdepth (fold pass : Nat) : (splitM fold pass).x86_64Depth = 0 := by
   unfold splitM; split
   · rfl
@@ -194,16 +134,7 @@ theorem seal_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) : («seal» v.callee v.p
   have hb := blocks_xdepth v.poly
   have hc := padRest_xdepth (dataCopy v.poly) v.poly 2
   have ha := padSite_xdepth (dataCopy v.poly) v.poly .rbx .rbp
-  simp only [«seal», prologue, prologueA, prologueB, zeroKs, macPad, macPadLengths, Code.iteCold, wholeBlocks, padRest, padCopy, padTail, crypt, cryptBig, cryptPre, absorbLengths, finalizeTag, finalizeWith,
-    Code.x86_64Depth, xorBuf_xdepth, foldM_xdepth, init_xdepth, finalize_xdepth, Nat.max_le] at hc ha ⊢
-  omega
-
-theorem open_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) : («open» v.callee v.poly).x86_64Depth ≤ 24 := by
-  have hx := v.xdepth
-  have hb := blocks_xdepth v.poly
-  have hc := padRest_xdepth (dataCopy v.poly) v.poly 2
-  have ha := padSite_xdepth (dataCopy v.poly) v.poly .rbx .rbp
-  simp only [«open», openBody, openTail, zeroData, prologue, prologueA, prologueB, zeroKs, macPad, macPadLengths, Code.iteCold, wholeBlocks, padRest, padCopy, padTail, crypt, cryptBig, cryptPre, absorbLengths, finalizeTo, finalizeWith,
+  simp only [Impl.ChaCha20.X86_64.Callee.inPlace, «seal», prologue, prologueA, prologueB, zeroKs, macPad, macPadLengths, Code.iteCold, wholeBlocks, padRest, padCopy, padTail, crypt, cryptBig, cryptPre, xorKs, callX, Bool.cond_false, absorbLengths, finalizeTag, finalizeWith,
     Code.x86_64Depth, xorBuf_xdepth, foldM_xdepth, init_xdepth, finalize_xdepth, Nat.max_le] at hc ha ⊢
   omega
 
@@ -230,20 +161,5 @@ theorem seal_framed (v : Proof.ChaCha20.X86_64.XorImpl) :
 def openFrameSat : State :=
   { openSat with rd := [⟨0x1000, 32⟩, ⟨0x1100, 12⟩, ⟨0x2000, 0⟩, ⟨0x3000, 16⟩, ⟨0x8008, 8⟩],
                  wr := [⟨0x2100, 0⟩] }
-
-theorem openFrameSat_pre : ∃ s, (Spec.ChaCha20Poly1305.openZeroContract X86_64.abi 1752).pre s := by
-  implies_sat [Spec.ChaCha20Poly1305.openZeroContract, Spec.ChaCha20Poly1305.openSig,
-    Spec.ChaCha20Poly1305.openZeroPost, Spec.ChaCha20Poly1305.openLeak, X86_64.abi, X86_64.argRegs] [openFrameSat, openSat] using openFrameSat
-
-theorem open_framed (v : Proof.ChaCha20.X86_64.XorImpl) :
-    Verified X86_64.target
-      (Impl.StackScratch.X86_64.withStackArgScratchWipedX 1728 1 42 («open» v.callee v.poly))
-      (Spec.ChaCha20Poly1305.openZeroContract X86_64.abi 1752) :=
-  X86_64.Verified.stackArgScratchWipedX (sig := Spec.ChaCha20Poly1305.openSig) (nm := "work") (e := .u64)
-    (n := 212) (post := Spec.ChaCha20Poly1305.openZeroPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
-    (leak := some (Spec.ChaCha20Poly1305.openLeak X86_64.abi.ptrBits))
-    (bytes := 1728) (k := 42) (open_verified v) (by decide) (by decide) (by decide)
-    (open_spSafe v) (open_xdepth v) (by decide) (pre_local _ _) (openZeroPost_local _) (openZeroPost_out _)
-    openFrameSat_pre (hleak := openLeak_local _)
 
 end VG.Proof.ChaCha20Poly1305.X86_64

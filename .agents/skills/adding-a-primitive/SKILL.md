@@ -108,9 +108,9 @@ instructions in an ISA model) go in their own PR before either.
    tries its implementations in the order `Dispatch.lean` ranks their
    suffixes on the target (a suffix of several parts by the rank of each
    part's): a variant with a suffix it does not rank yet fails the
-   emitter, so rank it there, best first (`VG.Rust.Rank`: its `extra`
-   features, a `vendor`, or `skip` for one the Rust code chooses by
-   something other than the CPU).
+   emitter, so rank it there, best first (`VG.Rust.Rank`). Extra
+   features or a `vendor` it is chosen only with go in its registration
+   (`Registration.extra`, `Registration.vendor`).
    Registration files (`Artifacts/`, `Generic/`) and variant files
    (`Variants/`) are reviewed by hand, so they only bind: no theorems, no
    tactic proofs beyond the defaults (not even a `(by decide)` argument),
@@ -144,31 +144,3 @@ instructions in an ISA model) go in their own PR before either.
    `WYCHEPROOF_ROOT` to a checkout of C2SP/wycheproof). Benchmark the new
    API in `bench/benches/primitives/<alg>.rs`, next to the same operation in
    OpenSSL, at the sizes the others use.
-
-## What `ci/check_variants.py` checks
-
-`ci/check_variants.py` checks the generated code: each caller of a
-function with a variant has that variant, which calls it or does its work
-itself but never calls the baseline (a helper needs none if its callers'
-variants all do its work themselves), some implementation of each caller
-calls every implementation of its callee whose features the caller has
-but the one it calls lacks (a variant chosen by hand, such as a field
-naming the callee, still follows the features), and each variant is used by the
-Rust code outside its tests (never emit one only a test calls). A
-combination no CPU can choose is not required: if the Rust code never
-chooses an implementation `c` on a CPU with all of a set of features (it
-chooses another implementation of the same function there), list the set
-for `c` in `NEVER_WITH`, and a variant of a function that is or calls `c`
-for a callee's variant whose features, with the caller's own, include the
-set is not required. The entry must name a generated function whose own
-features do not include the set, and the Rust choice must be unit-tested so
-that it never chooses `c` with the set. Never list one to excuse a
-combination some CPU would choose. An internal
-function has no signature: its variants are the internal functions of its
-name and a suffix that is the whole suffix of a variant of a function with
-a signature on the target (`_shani`, `_avx2`, `_blake2b_avx2`, …), each
-variant of a variant adding one (`vg_keccak_f1600_x2` is not a variant of
-`vg_keccak_f1600`: no such function has a variant `_x2`), and its CPU
-features are in the `_FEATURES` constant of its file. A dispatcher
-(`<name>_auto`) is not a variant: a use of it by the Rust code is a use of
-each implementation it calls.

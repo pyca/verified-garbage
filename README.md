@@ -2830,8 +2830,8 @@ The tables are generated from the code by `ci/algorithms_table.py`.
 ### What is not verified
 
 The public APIs are Rust around the verified functions, and that Rust is
-tested, not proven. Most of it only lays out buffers and selects an
-implementation, but in some algorithms it does part of the cryptography:
+tested, not proven. Most of it only lays out buffers, but in some
+algorithms it does part of the cryptography:
 
 * **AES-GCM**: the length limits of SP 800-38D §5.2.1.1 (a nonempty
   nonce, at most `2^36 − 32` bytes of text and `2^61 − 1` of additional

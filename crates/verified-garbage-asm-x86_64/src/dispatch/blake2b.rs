@@ -2,17 +2,31 @@
 //! The dispatchers of the verified `blake2b` functions for `x86_64`
 //! (`crate::blake2b`, `VG.Rust.dispatcher`).
 
-/// `vg_blake2b_init`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::blake2b::vg_blake2b_init as vg_blake2b_init_auto;
+/// Starts a BLAKE2b computation of an `outlen`-byte digest with the `keylen`-byte key at `key` (none if `keylen` is 0): makes the streaming state `*state` represent the key padded to a block, the first block of the data (none for unkeyed hashing), hashed from the initial state for `outlen` and `keylen` (RFC 7693 §2.5, §3.3). The length of the data is then 128 if `keylen > 0` and 0 otherwise. Continue with `vg_blake2b_update` and `vg_blake2b_finalize`.
+///
+/// Contract: `VG.Spec.Blake2.initBContract`. The streaming state is the hash state followed by a buffered last block (`VG.Spec.Blake2.Repr`). Constant time: only the pointers, `outlen` and `keylen` may affect timing, not the key.
+///
+/// It runs `vg_blake2b_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 192 bytes.
+/// * `key` must be valid for reads of `keylen` bytes.
+/// * `outlen` must be between 1 and 64, and `keylen` at most 64.
+/// * `state` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `state` nor `key` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_blake2b_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 192], outlen: usize, key: *const u8, keylen: usize) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::blake2b::vg_blake2b_init(state, outlen, key, keylen) }
+}
 
 /// Absorbs data into a BLAKE2b computation: if the streaming state `*state` represents data of `count` bytes, it then represents that data followed by the `len` bytes at `data`.
 ///
 /// Contract: `VG.Spec.Blake2.updateBContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_blake2b_update_avx512` if the CPU supports its features (`VG_BLAKE2B_UPDATE_AVX512_FEATURES`); `vg_blake2b_update_avx2` if the CPU supports its features (`VG_BLAKE2B_UPDATE_AVX2_FEATURES`); or else `vg_blake2b_update`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_blake2b_update_avx512` if the CPU supports its features (`VG_BLAKE2B_UPDATE_AVX512_FEATURES`); `vg_blake2b_update_avx2` if the CPU supports its features (`VG_BLAKE2B_UPDATE_AVX2_FEATURES`); or else `vg_blake2b_update`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -23,27 +37,50 @@ pub use crate::blake2b::vg_blake2b_init as vg_blake2b_init_auto;
 /// * Neither `state` nor `data` may overlap the return address on the stack or the 592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_blake2b_update_auto(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::blake2b::VG_BLAKE2B_UPDATE_AVX512_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_blake2b_update_avx512`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::blake2b::vg_blake2b_update_avx512(state, count, data, len) };
+pub unsafe fn vg_blake2b_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(state: *mut [u8; 192], count: u64, data: *const u8, len: usize);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::blake2b::VG_BLAKE2B_UPDATE_AVX512_FEATURES) }
+            || cpu.contains(crate::blake2b::VG_BLAKE2B_UPDATE_AVX512_FEATURES)
+        {
+            return crate::blake2b::vg_blake2b_update_avx512;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::blake2b::VG_BLAKE2B_UPDATE_AVX2_FEATURES) }
+            || cpu.contains(crate::blake2b::VG_BLAKE2B_UPDATE_AVX2_FEATURES)
+        {
+            return crate::blake2b::vg_blake2b_update_avx2;
+        }
+        crate::blake2b::vg_blake2b_update
     }
-    if cpu.contains(crate::blake2b::VG_BLAKE2B_UPDATE_AVX2_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_blake2b_update_avx2`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::blake2b::vg_blake2b_update_avx2(state, count, data, len) };
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(state, count, data, len) }
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::blake2b::vg_blake2b_update(state, count, data, len) }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(state, count, data, len) }
 }
 
 /// Finishes a BLAKE2b computation: if the streaming state `*state` represents data of `count` bytes, compresses its last block and writes the final state `h[0..7]` (64 bytes) to `*out`. The digest of `outlen` bytes (`init`'s) is its first `outlen` bytes.
 ///
 /// Contract: `VG.Spec.Blake2.finalizeBContract`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_blake2b_finalize_avx512` if the CPU supports its features (`VG_BLAKE2B_FINALIZE_AVX512_FEATURES`); `vg_blake2b_finalize_avx2` if the CPU supports its features (`VG_BLAKE2B_FINALIZE_AVX2_FEATURES`); or else `vg_blake2b_finalize`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_blake2b_finalize_avx512` if the CPU supports its features (`VG_BLAKE2B_FINALIZE_AVX512_FEATURES`); `vg_blake2b_finalize_avx2` if the CPU supports its features (`VG_BLAKE2B_FINALIZE_AVX2_FEATURES`); or else `vg_blake2b_finalize`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -55,18 +92,41 @@ pub unsafe fn vg_blake2b_update_auto(state: *mut [u8; 192], count: u64, data: *c
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_blake2b_finalize_auto(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::blake2b::VG_BLAKE2B_FINALIZE_AVX512_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_blake2b_finalize_avx512`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::blake2b::vg_blake2b_finalize_avx512(state, count, out) };
+pub unsafe fn vg_blake2b_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::blake2b::VG_BLAKE2B_FINALIZE_AVX512_FEATURES) }
+            || cpu.contains(crate::blake2b::VG_BLAKE2B_FINALIZE_AVX512_FEATURES)
+        {
+            return crate::blake2b::vg_blake2b_finalize_avx512;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::blake2b::VG_BLAKE2B_FINALIZE_AVX2_FEATURES) }
+            || cpu.contains(crate::blake2b::VG_BLAKE2B_FINALIZE_AVX2_FEATURES)
+        {
+            return crate::blake2b::vg_blake2b_finalize_avx2;
+        }
+        crate::blake2b::vg_blake2b_finalize
     }
-    if cpu.contains(crate::blake2b::VG_BLAKE2B_FINALIZE_AVX2_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_blake2b_finalize_avx2`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::blake2b::vg_blake2b_finalize_avx2(state, count, out) };
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(state, count, out) }
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::blake2b::vg_blake2b_finalize(state, count, out) }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(state, count, out) }
 }

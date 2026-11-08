@@ -9,15 +9,16 @@
     target_arch = "riscv64"
 ))]
 
-use crate::arch::idea::vg_idea_expand_key;
-use crate::arch::idea_ofb::{vg_idea_ofb, vg_idea_ofb_final};
+use crate::align::CacheAligned;
+use crate::arch::dispatch::idea::vg_idea_expand_key_auto;
+use crate::arch::dispatch::idea_ofb::{vg_idea_ofb_auto, vg_idea_ofb_final_auto};
 use crate::error::{IncompleteBlock, InvalidKeyLength};
 use crate::zeroize::zeroize;
 
 /// An expanded IDEA key.
 struct Key {
     /// The encryption subkeys `vg_idea_expand_key` writes.
-    schedule: [u8; 104],
+    schedule: CacheAligned<[u8; 104]>,
 }
 
 /// IDEA-OFB of one message, whose encryption and decryption are the
@@ -76,10 +77,11 @@ impl Key {
     /// Expands a 16-byte key.
     fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
         let key: &[u8; 16] = key.try_into().map_err(|_| InvalidKeyLength)?;
-        let mut schedule = [0; 104];
+        let mut schedule = CacheAligned([0; 104]);
+        crate::dit::enter!(dit);
         // SAFETY: the key and the schedule are separate valid buffers of the
         // required sizes.
-        unsafe { vg_idea_expand_key(key, &mut schedule) };
+        unsafe { vg_idea_expand_key_auto(dit, key, &mut schedule.0) };
         Ok(Self { schedule })
     }
 
@@ -87,7 +89,8 @@ impl Key {
     /// `buffer` in place, from the block `iv`, which it replaces with the
     /// last output block (unchanged for empty input).
     fn apply_keystream(&self, iv: &mut [u8; 8], buffer: &mut [u8]) {
-        self.crypt(iv, buffer);
+        crate::dit::enter!(dit);
+        self.crypt(dit, iv, buffer);
     }
 
     /// Encrypts or decrypts (the same operation) the rest of a message, of
@@ -96,25 +99,29 @@ impl Key {
     /// the whole blocks leave in `iv`, which it replaces with the output
     /// block it used.
     fn apply_keystream_final(&self, iv: &mut [u8; 8], buffer: &mut [u8]) {
+        crate::dit::enter!(dit);
         let (blocks, rest) = buffer.split_at_mut(buffer.len() / 8 * 8);
-        self.crypt(iv, blocks);
+        self.crypt(dit, iv, blocks);
         if !rest.is_empty() {
             // SAFETY: `rest` is valid for `len` bytes, and it, the block at
             // `iv` and the schedule are separate valid objects of the sizes of
             // the signature, none of them on the callee's stack.
-            unsafe { vg_idea_ofb_final(&self.schedule, iv, rest.as_mut_ptr(), rest.len()) };
+            unsafe {
+                vg_idea_ofb_final_auto(dit, &self.schedule.0, iv, rest.as_mut_ptr(), rest.len())
+            };
         }
     }
 
     /// OFB of whole blocks.
-    fn crypt(&self, iv: &mut [u8; 8], blocks: &mut [u8]) {
+    fn crypt(&self, dit: crate::dit::Dit<'_>, iv: &mut [u8; 8], blocks: &mut [u8]) {
         // SAFETY: `blocks` holds `len / 8` whole blocks (its length is a
         // multiple of 8), and it, the block at `iv` and the schedule are
         // separate valid objects of the sizes of the signature, none of them on
         // the callee's stack.
         unsafe {
-            vg_idea_ofb(
-                &self.schedule,
+            vg_idea_ofb_auto(
+                dit,
+                &self.schedule.0,
                 iv,
                 blocks.as_mut_ptr().cast(),
                 blocks.len() / 8,
@@ -125,6 +132,6 @@ impl Key {
 
 impl Drop for Key {
     fn drop(&mut self) {
-        zeroize(&mut self.schedule);
+        zeroize(&mut self.schedule.0);
     }
 }

@@ -2,17 +2,31 @@
 //! The dispatchers of the verified `chacha20` functions for `x86`
 //! (`crate::chacha20`, `VG.Rust.dispatcher`).
 
-/// `vg_chacha20_init`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::chacha20::vg_chacha20_init as vg_chacha20_init_auto;
+/// Starts a ChaCha20 keystream (RFC 8439 §2.4): makes the streaming state `*state` hold the 32-byte key `*key` and the whole keystream for the 16-byte nonce `*nonce`, the initial block counter `c` (4 bytes, little-endian) followed by the 12-byte RFC 8439 nonce: the blocks for the counters `c` to 2³² − 1, 64 × (2³² − `c`) bytes.
+///
+/// Contract: `VG.Spec.ChaCha20.initContract`. The streaming state is opaque (`VG.Spec.ChaCha20.keyAt`, `VG.Spec.ChaCha20.restAt`). Constant time: only the pointers may affect timing, not the key or the nonce.
+///
+/// It runs `vg_chacha20_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 768 bytes.
+/// * `key` must be valid for reads of 32 bytes.
+/// * `nonce` must be valid for reads of 16 bytes.
+/// * `state` must not overlap `key`, `nonce` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `state`, `key` and `nonce` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_chacha20_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 96], key: *const [u8; 32], nonce: *const [u8; 16]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::chacha20::vg_chacha20_init(state, key, nonce) }
+}
 
 /// Applies a ChaCha20 keystream (RFC 8439 §2.4), encrypting or decrypting: if at least `len` bytes are left of the keystream that the streaming state `*state` represents, XORs the next `len` of them into the `len` bytes at `data`, keeps the rest in `*state`, and returns 1. Otherwise (the block counter would pass 2³² − 1) returns 0, and leaves the bytes at `data` and the keystream unchanged.
 ///
 /// Contract: `VG.Spec.ChaCha20.applyContract`. Constant time: only the pointers, `len` and the number of bytes of keystream left in `*state` (`VG.Spec.ChaCha20.leftAt`: 64 × (2³² − `c`) for the initial block counter `c`, less the bytes applied since) may affect timing, not the key, the nonce, the keystream or the data. The function may leak that number.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_chacha20_apply_ssse3` if the CPU supports its features (`VG_CHACHA20_APPLY_SSSE3_FEATURES`); or else `vg_chacha20_apply`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_chacha20_apply_ssse3` if the CPU supports its features (`VG_CHACHA20_APPLY_SSSE3_FEATURES`); or else `vg_chacha20_apply`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -24,19 +38,55 @@ pub use crate::chacha20::vg_chacha20_init as vg_chacha20_init_auto;
 /// * Neither `state` nor `data` may overlap the arguments on the stack, overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_chacha20_apply_auto(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::chacha20::VG_CHACHA20_APPLY_SSSE3_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_chacha20_apply_ssse3`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::chacha20::vg_chacha20_apply_ssse3(state, data, len) };
+pub unsafe fn vg_chacha20_apply_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32;
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::chacha20::VG_CHACHA20_APPLY_SSSE3_FEATURES) }
+            || cpu.contains(crate::chacha20::VG_CHACHA20_APPLY_SSSE3_FEATURES)
+        {
+            return crate::chacha20::vg_chacha20_apply_ssse3;
+        }
+        crate::chacha20::vg_chacha20_apply
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::chacha20::vg_chacha20_apply(state, data, len) }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(state, data, len) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(state, data, len) }
 }
 
-/// `vg_chacha20_set_nonce`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::chacha20::vg_chacha20_set_nonce as vg_chacha20_set_nonce_auto;
+/// Restarts a ChaCha20 keystream with the same key: makes the streaming state `*state` represent the whole keystream of its key for the 16-byte nonce `*nonce` (as `vg_chacha20_init` does), discarding what was left of the previous one.
+///
+/// Contract: `VG.Spec.ChaCha20.setNonceContract`. Constant time: only the pointers may affect timing, not the key or the nonce.
+///
+/// It runs `vg_chacha20_set_nonce`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 768 bytes.
+/// * `nonce` must be valid for reads of 16 bytes.
+/// * `state` must not overlap `nonce` or the arguments on the stack (distinct Rust objects never do).
+/// * Neither `state` nor `nonce` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_chacha20_set_nonce_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 96], nonce: *const [u8; 16]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::chacha20::vg_chacha20_set_nonce(state, nonce) }
+}

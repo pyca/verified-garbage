@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.MlKem.Scrubbed
 public import VerifiedGarbage.Proof.MlKem.Arm.KeyGen
 meta import VerifiedGarbage.Proof.MlKem.Arm.KeyGen
 import VerifiedGarbage.Proof.MlKem.Arm.RowCT
@@ -268,8 +269,8 @@ theorem outcome {K : KemLay} (hK : K.WF) (s₀ : State) :
 
 /-! ## ML-KEM-768 -/
 
-theorem pre_of {s : State} (h : (Spec.MlKem.keyGenContract Arm.abi 8).pre s) : Pre kl768 s := by
-  sig_pre [Spec.MlKem.keyGenContract, Spec.MlKem.keyGenSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+theorem pre_of {s : State} (h : (Proof.MlKem.Scrubbed.keyGenBodyContract Arm.abi 8).pre s) : Pre kl768 s := by
+  sig_pre [Proof.MlKem.Scrubbed.keyGenBodyContract, Spec.MlKem.keyGenSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val] at h
   obtain ⟨h0, -, h1, h2, d1, d2, d3, d4, d5, d6, b1, b2, b3, b4, f1, f2, f3, f4⟩ := h
   exact ⟨kl768_wf, kl768_calls, h0, h1, h2, d1, d2, d3, d4, d5, d6, b1, b2, b3, b4, f1, f2, f3, f4⟩
@@ -277,8 +278,8 @@ theorem pre_of {s : State} (h : (Spec.MlKem.keyGenContract Arm.abi 8).pre s) : P
 theorem post_of {s₀ s : State} (h0 : s.gpr .r0 = if okK kl768 s₀ kl768.k then 1 else 0)
     (hek : bytesAt s.mem (State.addr (pEk s₀)) 1184 = EK kl768 s₀)
     (hdk : bytesAt s.mem (State.addr (pDk s₀)) 2400 = DK kl768 s₀) :
-    (Spec.MlKem.keyGenContract Arm.abi 8).post s₀ s := by
-  sig_post [Spec.MlKem.keyGenContract, Spec.MlKem.keyGenSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+    (Proof.MlKem.Scrubbed.keyGenBodyContract Arm.abi 8).post s₀ s := by
+  sig_post [Proof.MlKem.Scrubbed.keyGenBodyContract, Spec.MlKem.keyGenSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val]
   rw [setWidth_append32, h0]
   have e1 : bytesAt s.mem (BitVec.setWidth 64 (s₀.gpr .r1)) 1184 = EK kl768 s₀ := hek
@@ -301,18 +302,18 @@ def satState : State where
   rd := [⟨0x1000, 64⟩]
   wr := [⟨0x2000, 1184⟩, ⟨0x3000, 2400⟩, ⟨0x10000, 32768⟩]
 
-theorem verified : Verified Arm.target Impl.MlKem.Arm.keygen (Spec.MlKem.keyGenContract Arm.abi 8) := by
+theorem verified : Verified Arm.target Impl.MlKem.Arm.keygen (Proof.MlKem.Scrubbed.keyGenBodyContract Arm.abi 8) := by
   refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, ?_⟩
   · obtain ⟨t, s', he, hpres, hsp, h0, hek, hdk⟩ := correct (pre_of hs)
     exact ⟨t, s', he, ⟨hpres, hsp⟩, post_of h0 hek hdk⟩
-  · sig_pub [Spec.MlKem.keyGenContract, Spec.MlKem.keyGenSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+  · sig_pub [Proof.MlKem.Scrubbed.keyGenBodyContract, Spec.MlKem.keyGenSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val] at hpub
     obtain ⟨hsp, hl, h0, h1, h2, h3⟩ := hpub
     have hr : ρ₀ kl768 s₁ = ρ₀ kl768 s₂ :=
       (List.map_inj_right (fun x y (e : x.toNat = y.toNat) => BitVec.eq_of_toNat_eq e)).mp hl
     exact (all_ct ⟨pre_of h₁, pre_of h₂, hsp, h0, h1, h2, h3, hr⟩ s₁ s₂ t₁ t₂ s₁' s₂' ⟨rfl, rfl⟩ e₁ e₂).1
   · refine ⟨satState, ?_⟩
-    sig_sat_check [Spec.MlKem.keyGenContract, Spec.MlKem.keyGenSig, Arm.abi, Arm.argRegs,
+    sig_sat_check [Proof.MlKem.Scrubbed.keyGenBodyContract, Spec.MlKem.keyGenSig, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val]
 
 end VG.Proof.MlKem.Arm.KeyGen

@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Cfb8.aesEncryptContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedule, the input block or the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_cfb8_encrypt_aes` if the CPU supports its features (`VG_AES_CFB8_ENCRYPT_AES_FEATURES`); or else `vg_aes_cfb8_encrypt`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_cfb8_encrypt_aes` if the CPU supports its features (`VG_AES_CFB8_ENCRYPT_AES_FEATURES`); or else `vg_aes_cfb8_encrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -20,22 +20,45 @@
 /// * None of `schedule`, `iv`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_cfb8_encrypt_auto(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::aes_cfb8::VG_AES_CFB8_ENCRYPT_AES_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_cfb8_encrypt_aes`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_cfb8::vg_aes_cfb8_encrypt_aes(schedule, rounds, iv, data, len, scratch) };
+pub unsafe fn vg_aes_cfb8_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::aes_cfb8::VG_AES_CFB8_ENCRYPT_AES_FEATURES) }
+            || cpu.contains(crate::aes_cfb8::VG_AES_CFB8_ENCRYPT_AES_FEATURES)
+        {
+            return crate::aes_cfb8::vg_aes_cfb8_encrypt_aes;
+        }
+        crate::aes_cfb8::vg_aes_cfb8_encrypt
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::aes_cfb8::vg_aes_cfb8_encrypt(schedule, rounds, iv, data, len, scratch) }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(schedule, rounds, iv, data, len, scratch) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(schedule, rounds, iv, data, len, scratch) }
 }
 
 /// AES-CFB8 decryption (NIST SP 800-38A §6.3, with 8-bit segments), in place: replaces the `len` bytes `C#₁ … C#ₙ` at `data` with `P#ⱼ = C#ⱼ ⊕ MSB₈(CIPH_K(Iⱼ))`, where `I₁` is the block at `*iv` and `Iⱼ₊₁` is `Iⱼ` without its first byte, followed by `C#ⱼ`, and `*iv` with `Iₙ₊₁` (leaving it unchanged if `len = 0`), so that a further call continues the message. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
 ///
 /// Contract: `VG.Spec.Cfb8.aesDecryptContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedule, the input block or the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_cfb8_decrypt_aes` if the CPU supports its features (`VG_AES_CFB8_DECRYPT_AES_FEATURES`); or else `vg_aes_cfb8_decrypt`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_cfb8_decrypt_aes` if the CPU supports its features (`VG_AES_CFB8_DECRYPT_AES_FEATURES`); or else `vg_aes_cfb8_decrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -49,13 +72,36 @@ pub unsafe fn vg_aes_cfb8_encrypt_auto(schedule: *const [u8; 240], rounds: usize
 /// * None of `schedule`, `iv`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_cfb8_decrypt_auto(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::aes_cfb8::VG_AES_CFB8_DECRYPT_AES_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_cfb8_decrypt_aes`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_cfb8::vg_aes_cfb8_decrypt_aes(schedule, rounds, iv, data, len, scratch) };
+pub unsafe fn vg_aes_cfb8_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::aes_cfb8::VG_AES_CFB8_DECRYPT_AES_FEATURES) }
+            || cpu.contains(crate::aes_cfb8::VG_AES_CFB8_DECRYPT_AES_FEATURES)
+        {
+            return crate::aes_cfb8::vg_aes_cfb8_decrypt_aes;
+        }
+        crate::aes_cfb8::vg_aes_cfb8_decrypt
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::aes_cfb8::vg_aes_cfb8_decrypt(schedule, rounds, iv, data, len, scratch) }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(schedule, rounds, iv, data, len, scratch) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(schedule, rounds, iv, data, len, scratch) }
 }

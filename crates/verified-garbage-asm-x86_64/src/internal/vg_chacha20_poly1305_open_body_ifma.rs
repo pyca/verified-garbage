@@ -3,9 +3,6 @@
 //! `assembly/internal/vg_chacha20_poly1305_open_body_ifma.s`.
 #![allow(dead_code)]
 
-/// The CPU features `vg_chacha20_poly1305_open_body_ifma` requires (`VG.Rust.Internal.features`).
-pub(crate) const VG_CHACHA20_POLY1305_OPEN_BODY_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX2);
-
 /// An internal function of the verified functions of this crate (`VG.Rust.Internal`): code that they call, which is not itself an artifact. It has no contract of its own: the proof of each function that calls it covers its code, which the model runs for the call (`Code.call`), and the emitter checks that every call of it is of this code.
 ///
 /// # Safety
@@ -14,7 +11,7 @@ pub(crate) const VG_CHACHA20_POLY1305_OPEN_BODY_IFMA_FEATURES: verified_garbage_
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_body_ifma() {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJED5//9Ii4QkyAYAAEiJRCQISIngSIPAGEiJRCQQSItEJBBMi1wkCEiJGEiJaAhMiWgQTIlwGEyJeCBMiWAoSYnHTYncSInTSInNTYnGTYnNSLhleHBhbmQgM0mJR0BIuDItYnl0ZSBrSYlHSEiLB0mJR1BIi0cISYlHWEiLRxBJiUdgSItHGEmJR2iLBkjB4CBJiUdwSItGBEmJR3hIuGV4cGFuZCAzSYmHYAIAAEi4Mi1ieXRlIGtJiYdoAgAASIsHSYmHcAIAAEiLRwhJiYd4AgAASItHEEmJh4ACAABIi0cYSYmHiAIAAIsGSMHgIEmJh5ACAABIi0YESYmHmAIAALoAAAAASYH9wQMAAA=="
+        r#".base64 "SItEJBBIiRhIiWgITIloEEyJcBhMiXggTIlgKEmJx02J3EiJ00iJzU2Jxk2JzUi4ZXhwYW5kIDNJiUdASLgyLWJ5dGUga0mJR0hIiwdJiUdQSItHCEmJR1hIi0cQSYlHYEiLRxhJiUdoiwZIweAgSYlHcEiLRgRJiUd4SLhleHBhbmQgM0mJh2ACAABIuDItYnl0ZSBrSYmHaAIAAEiLB0mJh3ACAABIi0cISYmHeAIAAEiLRxBJiYeAAgAASItHGEmJh4gCAACLBkjB4CBJiYeQAgAASItGBEmJh5gCAAC6AAAAAEmB/cEDAAA="
 jb 20f
 .base64 "TInqSIHi/wMAAEiDwj9Ig+LASIH6wQMAAA=="
 jb 22f
@@ -30,7 +27,7 @@ jmp 21f
 24:
 .base64 "YtF+SH+ED6ACAABIg8FASDnR"
 jb 24b
-.base64 "xfh3TIn/SIHHYAIAAEyJ/kiBxqACAABMiflIgcGAAAAA"
+.base64 "xfh3TIn/SIHHYAIAAEyJ/kiBxqACAABMiflIgcGAAAAASYnw"
 call {vg_chacha20_xor_avx512}
 .base64 "SYn3SYHvgAAAAEyJ/0iBx8ABAABMif5IgcagAgAA"
 call {vg_poly1305_init}
@@ -49,7 +46,7 @@ jmp 210f
 29:
 210:
 28:
-.base64 "SYmvUAIAAE2Jr1gCAABMif9IgcfAAQAATIn2TInqSMHqBA=="
+.base64 "SYmvUAIAAE2Jr1gCAABMif9IgcfAAQAATInmTInqSMHqBA=="
 je 219f
 call {vg_poly1305_blocks_ifma}
 .base64 "SYn/SYHvwAEAAA=="
@@ -78,18 +75,18 @@ jmp 232f
 232:
 .base64 "SIXS"
 je 235f
-.base64 "TIn+SIHG4AIAALkAAAAASInQSMHoBg=="
+.base64 "TIn+SIHG4AIAAE2J4rkAAAAASInQSMHoBg=="
 je 237f
 239:
-.base64 "YtF+SG8EDmLxfkhvDA5i8X1I78Fi0X5IfwQOSIPBQEiD6AE="
+.base64 "YtF+SG8ECmLxfkhvDA5i8X1I78Fi0X5IfwQOSIPBQEiD6AE="
 jne 239b
 jmp 238f
 237:
 238:
-.base64 "TIn3SAHPSAHOSCnKuQAAAABIidBIwegD"
+.base64 "TIn3SAHPSQHKSAHOSCnKuQAAAABIidBIwegD"
 je 240f
 242:
-.base64 "TIsED0wzBA5MiQQPSIPBCEiD6AE="
+.base64 "TYsECkwzBA5MiQQPSIPBCEiD6AE="
 jne 242b
 jmp 241f
 240:
@@ -97,7 +94,7 @@ jmp 241f
 .base64 "SDnR"
 je 243f
 245:
-.base64 "D7YED0QPtgQOTDHAiAQPSIPBAUg50Q=="
+.base64 "QQ+2BApED7YEDkwxwIgED0iDwQFIOdE="
 jne 245b
 jmp 244f
 243:
@@ -117,22 +114,22 @@ jmp 247f
 246:
 .base64 "TInq"
 247:
-.base64 "SInQSMHoBkiDwAFBiUdwTIn2SAHWTInoSCnQSInCTIn/SIPHQEyJ+UiBwYAAAAA="
+.base64 "SInQSMHoBkiDwAFBiUdwTInmSAHWTInoSCnQSInCTIn/SIPHQEyJ+UiBwYAAAABNifNNKeNNidhJAfA="
 call {vg_chacha20_xor_avx512}
 jmp 230f
 229:
-.base64 "TIn+SIHG4AIAAEyJ6rkAAAAASInQSMHoBg=="
+.base64 "TIn+SIHG4AIAAEyJ6k2J4rkAAAAASInQSMHoBg=="
 je 250f
 252:
-.base64 "YtF+SG8EDmLxfkhvDA5i8X1I78Fi0X5IfwQOSIPBQEiD6AE="
+.base64 "YtF+SG8ECmLxfkhvDA5i8X1I78Fi0X5IfwQOSIPBQEiD6AE="
 jne 252b
 jmp 251f
 250:
 251:
-.base64 "TIn3SAHPSAHOSCnKuQAAAABIidBIwegD"
+.base64 "TIn3SAHPSQHKSAHOSCnKuQAAAABIidBIwegD"
 je 253f
 255:
-.base64 "TIsED0wzBA5MiQQPSIPBCEiD6AE="
+.base64 "TYsECkwzBA5MiQQPSIPBCEiD6AE="
 jne 255b
 jmp 254f
 253:
@@ -140,7 +137,7 @@ jmp 254f
 .base64 "SDnR"
 je 256f
 258:
-.base64 "D7YED0QPtgQOTDHAiAQPSIPBAUg50Q=="
+.base64 "QQ+2BApED7YEDkwxwIgED0iDwQFIOdE="
 jne 258b
 jmp 257f
 256:
@@ -165,7 +162,7 @@ jmp 260f
 jb 263b
 .base64 "xfh3TIn/SIHHwAEAAL4AAAAATIn6SIPCMA=="
 call {vg_poly1305_finalize_scratch}
-.base64 "SIsBSTMEJEiLUQhJM1QkCEgJ0EiD+AG4AAAAAIPQAIP4AA=="
+.base64 "TItkJAhIiwFJMwQkSItRCEkzVCQISAnQSIP4AbgAAAAAg9AAg/gA"
 je 264f
 jmp 265f
 264:
@@ -178,7 +175,7 @@ jmp 267f
 266:
 267:
 265:
-.base64 "SYn/SYHvwAEAAEmLH0mLbwhNi28QTYt3GE2LZyhNi38gZg/vwPMPf0QkGPMPf0QkKPMPf0QkOPMPf0QkSPMPf0QkWPMPf0QkaPMPf0QkePMPf4QkiAAAAPMPf4QkmAAAAPMPf4QkqAAAAPMPf4QkuAAAAPMPf4QkyAAAAPMPf4Qk2AAAAPMPf4Qk6AAAAPMPf4Qk+AAAAPMPf4QkCAEAAPMPf4QkGAEAAPMPf4QkKAEAAPMPf4QkOAEAAPMPf4QkSAEAAPMPf4QkWAEAAPMPf4QkaAEAAPMPf4QkeAEAAPMPf4QkiAEAAPMPf4QkmAEAAPMPf4QkqAEAAPMPf4QkuAEAAPMPf4QkyAEAAPMPf4Qk2AEAAPMPf4Qk6AEAAPMPf4Qk+AEAAPMPf4QkCAIAAPMPf4QkGAIAAPMPf4QkKAIAAPMPf4QkOAIAAPMPf4QkSAIAAPMPf4QkWAIAAPMPf4QkaAIAAPMPf4QkeAIAAPMPf4QkiAIAAPMPf4QkmAIAAPMPf4QkqAIAAEiNpCTABgAAww=="
+.base64 "SYn/SYHvwAEAAEmLH0mLbwhNi28QTYt3GE2LZyhNi38gww=="
 27:
 jne 211f
 .base64 "SLgAAAAAAAAAAEi4AAAAAAAAAABIuAAAAAAAAAAASLgAAAAAAAAAAEi4AAAAAAAAAAC4AAAAAEiDwAE="
@@ -207,7 +204,7 @@ call {vg_poly1305_blocks_ifma}
 .base64 "SYn/SYHvwAEAAA=="
 jmp 28b
 221:
-.base64 "TInuSCnWTAH2RTHJSIP6CA=="
+.base64 "TInuSCnWTAHmRTHJSIP6CA=="
 jb 223f
 .base64 "SIsGSIPGCEiD6gg="
 je 225f

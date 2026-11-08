@@ -15,7 +15,7 @@
 /// * `inner` and `outer` must not overlap each other or `key` (distinct Rust objects never do).
 /// * None of `inner`, `outer` and `key` may overlap the 3424 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_hmac_sha384_init(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize) {
+pub(crate) unsafe extern "C" fn vg_hmac_sha384_init(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd280100a,0xd280000c,0xeb03014b,0x9a832189
 cbnz x9, 20f
@@ -130,7 +130,7 @@ b 21b
 /// * `inner` and `out` must not overlap each other or `outer` (distinct Rust objects never do).
 /// * None of `inner`, `outer` and `out` may overlap the 1888 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_hmac_sha384_finalize(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 48]) {
+pub(crate) unsafe extern "C" fn vg_hmac_sha384_finalize(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 48]) {
     core::arch::naked_asm!(
         r".inst 0xd11d43ff,0x910003e4,0xf9015893,0xf9015c94,0xf9016095,0xf9016496,0xf9016898,0xf9016c9e
 .inst 0xf9017097,0x91000013,0x91000034,0x91000075,0x91000097,0x91000041,0x910ba2e2,0x910002e3
@@ -152,8 +152,8 @@ bl {vg_sha512_compress}
     )
 }
 
-/// The CPU features `vg_hmac_sha384_init_sha3` requires (`Artifact.features`).
-pub const VG_HMAC_SHA384_INIT_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
+/// The CPU features `vg_hmac_sha384_init_sha512` requires (`Artifact.features`).
+pub const VG_HMAC_SHA384_INIT_SHA512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
 
 /// Starts an HMAC-SHA-384 computation with a key of any length: makes the SHA-384 streaming state `*inner` represent `K₀ ⊕ ipad` and `*outer` represent `K₀ ⊕ opad`, where `K₀` is the `key_len` bytes at `key` (or their SHA-384 digest, if there are more than 128) padded with zeros to 128 bytes (FIPS 198-1 §4, steps 1–3). The text is then absorbed with `vg_sha512_update` on `*inner` (its `count` starting at 128), and the MAC computed with `vg_hmac_sha384_finalize`.
 ///
@@ -168,7 +168,7 @@ pub const VG_HMAC_SHA384_INIT_SHA3_FEATURES: verified_garbage_cpu::Features = ve
 /// * None of `inner`, `outer` and `key` may overlap the 3424 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_hmac_sha384_init_sha3(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize) {
+pub(crate) unsafe extern "C" fn vg_hmac_sha384_init_sha512(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd280100a,0xd280000c,0xeb03014b,0x9a832189
 cbnz x9, 20f
@@ -202,9 +202,9 @@ b 23f
 .inst 0xb940aa69,0xca0f0129,0xb900aaa9,0xb940ae69,0xca0f0129,0xb900aea9,0xb940b269,0xca0f0129
 .inst 0xb900b2a9,0xb940b669,0xca0f0129,0xb900b6a9,0xb940ba69,0xca0f0129,0xb900baa9,0xb940be69
 .inst 0xca0f0129,0xb900bea9,0x91010261,0x91000260,0xd2800022,0x91000283
-bl {vg_sha512_compress_sha3}
+bl {vg_sha512_compress_sha512}
 .inst 0x910002b3,0x910102a1,0x91000260,0xd2800022,0x91000283
-bl {vg_sha512_compress_sha3}
+bl {vg_sha512_compress_sha512}
 .inst 0xf9415af3,0xf9415ef4,0xf94162f5,0xf94166f6,0xf9416af8,0xf9416efe,0xf94172f7,0x911d43ff
 21:
 .inst 0xd65f03c0
@@ -217,9 +217,9 @@ cbz x9, 27f
 .inst 0x912782e0
 bl {vg_sha384_init}
 .inst 0x912782e0,0xd2800001,0x91000262,0x91000283,0x910002e4
-bl {vg_sha512_update_scratch_sha3}
+bl {vg_sha512_update_scratch_sha512}
 .inst 0x912782e0,0x91000281,0x912c02e2,0x910002e3
-bl {vg_sha512_finalize_scratch_sha3}
+bl {vg_sha512_finalize_scratch_sha512}
 .inst 0x912c02e2,0xd2800603
 b 28f
 27:
@@ -230,7 +230,7 @@ b 26f
 .inst 0x91000262,0x91000283
 26:
 .inst 0x910002a0,0x910002c1,0x910002e4
-bl {vg_hmac_sha384_init_scratch_sha3}
+bl {vg_hmac_sha384_init_scratch_sha512}
 .inst 0xf943aaf3,0xf943aef4,0xf943b2f5,0xf943b6f6,0xf943baf8,0xf943befe,0xf943c2f7,0xd2800011
 .inst 0x910003f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611
 .inst 0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611
@@ -263,15 +263,15 @@ bl {vg_hmac_sha384_init_scratch_sha3}
 b 21b
 .p2align 6",
         vg_sha384_init = sym super::sha512::vg_sha384_init,
-        vg_sha512_compress_sha3 = sym super::sha512::vg_sha512_compress_sha3::vg_sha512_compress_sha3,
-        vg_sha512_update_scratch_sha3 = sym super::sha512::vg_sha512_update_scratch_sha3::vg_sha512_update_scratch_sha3,
-        vg_sha512_finalize_scratch_sha3 = sym super::sha512::vg_sha512_finalize_scratch_sha3::vg_sha512_finalize_scratch_sha3,
-        vg_hmac_sha384_init_scratch_sha3 = sym super::hmac_sha384::vg_hmac_sha384_init_scratch_sha3::vg_hmac_sha384_init_scratch_sha3,
+        vg_sha512_compress_sha512 = sym super::sha512::vg_sha512_compress_sha512::vg_sha512_compress_sha512,
+        vg_sha512_update_scratch_sha512 = sym super::sha512::vg_sha512_update_scratch_sha512::vg_sha512_update_scratch_sha512,
+        vg_sha512_finalize_scratch_sha512 = sym super::sha512::vg_sha512_finalize_scratch_sha512::vg_sha512_finalize_scratch_sha512,
+        vg_hmac_sha384_init_scratch_sha512 = sym super::hmac_sha384::vg_hmac_sha384_init_scratch_sha512::vg_hmac_sha384_init_scratch_sha512,
     )
 }
 
-/// The CPU features `vg_hmac_sha384_finalize_sha3` requires (`Artifact.features`).
-pub const VG_HMAC_SHA384_FINALIZE_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
+/// The CPU features `vg_hmac_sha384_finalize_sha512` requires (`Artifact.features`).
+pub const VG_HMAC_SHA384_FINALIZE_SHA512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
 
 /// Finishes an HMAC-SHA-384 computation: if, for a 128-byte key `K₀` and a text of fewer than 2⁶⁴ − 128 bytes, the SHA-384 streaming state `*inner` represents `(K₀ ⊕ ipad) ‖ text`, of `count` bytes, and `*outer` represents `K₀ ⊕ opad`, writes the HMAC-SHA-384 of the text under `K₀` (48 bytes) to `*out`.
 ///
@@ -287,25 +287,25 @@ pub const VG_HMAC_SHA384_FINALIZE_SHA3_FEATURES: verified_garbage_cpu::Features 
 /// * None of `inner`, `outer` and `out` may overlap the 1888 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_hmac_sha384_finalize_sha3(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 48]) {
+pub(crate) unsafe extern "C" fn vg_hmac_sha384_finalize_sha512(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 48]) {
     core::arch::naked_asm!(
         r".inst 0xd11d43ff,0x910003e4,0xf9015893,0xf9015c94,0xf9016095,0xf9016496,0xf9016898,0xf9016c9e
 .inst 0xf9017097,0x91000013,0x91000034,0x91000075,0x91000097,0x91000041,0x910ba2e2,0x910002e3
-bl {vg_sha512_finalize_scratch_sha3}
+bl {vg_sha512_finalize_scratch_sha512}
 .inst 0xa9402a89,0xa9002a69,0xa9412a89,0xa9012a69,0xa9422a89,0xa9022a69,0xa9432a89,0xa9032a69
 .inst 0xf94176e9,0xf9417aea,0xa9042a69,0xf9417ee9,0xf94182ea,0xa9052a69,0xf94186e9,0xf9418aea
 .inst 0xa9062a69,0x910002b8,0x91010275,0x910002f4,0xd2801009,0xd280000a,0xa9032aa9,0xa9042aaa
 .inst 0xa9052aaa,0xa9062aaa,0xd2801616,0xd37dfec9,0xdac00d29,0xf9005a69,0x8b1602c9,0x8b090129
 .inst 0x8b090129,0xdac00d29,0xf9005e69,0x910002a1,0x91000260,0xd2800022,0x91000283
-bl {vg_sha512_compress_sha3}
+bl {vg_sha512_compress_sha512}
 .inst 0xf9400269,0xdac00d29,0xf90002a9,0xf9400669,0xdac00d29,0xf90006a9,0xf9400a69,0xdac00d29
 .inst 0xf9000aa9,0xf9400e69,0xdac00d29,0xf9000ea9,0xf9401269,0xdac00d29,0xf90012a9,0xf9401669
 .inst 0xdac00d29,0xf90016a9,0xf9401a69,0xdac00d29,0xf9001aa9,0xf9401e69,0xdac00d29,0xf9001ea9
 .inst 0xa9402aa9,0xa9002b09,0xa9412aa9,0xa9012b09,0xa9422aa9,0xa9022b09,0xf9415af3,0xf9415ef4
 .inst 0xf94162f5,0xf94166f6,0xf9416af8,0xf9416efe,0xf94172f7,0x911d43ff,0xd65f03c0
 .p2align 6",
-        vg_sha512_finalize_scratch_sha3 = sym super::sha512::vg_sha512_finalize_scratch_sha3::vg_sha512_finalize_scratch_sha3,
-        vg_sha512_compress_sha3 = sym super::sha512::vg_sha512_compress_sha3::vg_sha512_compress_sha3,
+        vg_sha512_finalize_scratch_sha512 = sym super::sha512::vg_sha512_finalize_scratch_sha512::vg_sha512_finalize_scratch_sha512,
+        vg_sha512_compress_sha512 = sym super::sha512::vg_sha512_compress_sha512::vg_sha512_compress_sha512,
     )
 }
 
@@ -314,13 +314,13 @@ bl {vg_sha512_compress_sha3}
 pub(crate) mod vg_hmac_sha384_finalize_scratch;
 
 #[rustfmt::skip]
-#[path = "internal/vg_hmac_sha384_finalize_scratch_sha3.rs"]
-pub(crate) mod vg_hmac_sha384_finalize_scratch_sha3;
+#[path = "internal/vg_hmac_sha384_finalize_scratch_sha512.rs"]
+pub(crate) mod vg_hmac_sha384_finalize_scratch_sha512;
 
 #[rustfmt::skip]
 #[path = "internal/vg_hmac_sha384_init_scratch.rs"]
 pub(crate) mod vg_hmac_sha384_init_scratch;
 
 #[rustfmt::skip]
-#[path = "internal/vg_hmac_sha384_init_scratch_sha3.rs"]
-pub(crate) mod vg_hmac_sha384_init_scratch_sha3;
+#[path = "internal/vg_hmac_sha384_init_scratch_sha512.rs"]
+pub(crate) mod vg_hmac_sha384_init_scratch_sha512;

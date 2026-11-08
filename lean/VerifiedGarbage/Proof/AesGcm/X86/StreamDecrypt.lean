@@ -59,9 +59,9 @@ theorem streamDecrypt_pc (p : BitVec 32 × (Nat → BitVec 32)) :
       ⟨⟨h.env, h.ta, (p.2 8).isLt, (cr_dataW hc h.pre h.pub h.wr).ok⟩, rfl⟩) ?_
   -- The text, as `crypt` takes it.
   refine Pc.seq (Q := fun s₀ s₃ => ∃ s₂, (∃ s₁, CEnt p s₀ s₁ ∧
-      TaOut (p.2 0) (p.2 2) (p.2 9) p.1 28 (p.2 7) (p.2 8).toNat (p.2 3) (p.2 4) (p.2 5) (p.2 6) s₁.mem s₂ ∧
+      TaOut (p.2 0) (p.2 2) (p.2 9) p.1 32 (p.2 7) (p.2 8).toNat (p.2 3) (p.2 4) (p.2 5) (p.2 6) s₁.mem s₂ ∧
       s₂.rd = s₁.rd ∧ s₂.wr = s₁.wr) ∧
-      CrIn (p.2 0) (p.2 2) (p.2 9) p.1 28 (p.2 1).toNat (p.2 7) (p.2 8).toNat (p.2 6 ++ p.2 5).toNat s₃ ∧
+      CrIn (p.2 0) (p.2 2) (p.2 9) p.1 32 (p.2 1).toNat (p.2 7) (p.2 8).toNat (p.2 6 ++ p.2 5).toNat s₃ ∧
       Frame [pslotR (p.2 9)] s₂.mem s₃.mem ∧ s₃.rd = s₂.rd ∧ s₃.wr = s₂.wr)
     (Pc.taint [.ebp] (fun s₀ s₂ h => ?_) (fun _ _ s₁ s₂ ⟨_, _, h₁, _⟩ ⟨_, _, h₂, _⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h₁.env.ebp, h₂.env.ebp]) (by taint_decide)) ?_
@@ -81,8 +81,8 @@ theorem streamDecrypt_pc (p : BitVec 32 × (Nat → BitVec 32)) :
     (fun _ _ s₁ s₂ ⟨_, _, h₁, _⟩ ⟨_, _, h₂, _⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [(h₁ default).env.ebp, (h₂ default).env.ebp])
     (by taint_decide)
-  have hf : Frame (pslotR (p.2 9) :: crFrame (p.2 2) (p.2 9) p.1 28 (p.2 7) (p.2 8).toNat ++
-      taFrame (p.2 2) (p.2 9) p.1 28) s₁.mem s₄.mem :=
+  have hf : Frame (pslotR (p.2 9) :: crFrame (p.2 2) (p.2 9) p.1 32 (p.2 7) (p.2 8).toNat ++
+      taFrame (p.2 2) (p.2 9) p.1 32) s₁.mem s₄.mem :=
     ((ta.frame.mono fun r hr => List.mem_cons_of_mem _ (List.mem_append_right _ hr)).trans
       (fr.mono fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact List.mem_cons_self ..)).trans
       ((co default).frame.mono fun r hr => List.mem_cons_of_mem _ (List.mem_append_left _ hr))

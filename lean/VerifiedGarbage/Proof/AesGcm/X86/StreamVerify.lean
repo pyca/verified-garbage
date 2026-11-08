@@ -58,7 +58,7 @@ theorem FinIn.frameR {Ctx St W SP : BitVec 32} {R : Nat} {al ah xl xh : BitVec 3
     ⟨by rw [sl _ (by decide)]; exact h.rounds.1, h.rounds.2⟩⟩
 
 /-- The received tag, outside the regions the tag is computed in. -/
-theorem rR_tagFrame {Ctx St W SP : BitVec 32} (L : Lay Ctx St W SP 28) :
+theorem rR_tagFrame {Ctx St W SP : BitVec 32} (L : Lay Ctx St W SP 32) :
     ∀ r ∈ tagFrame St W SP 0, (rR W).Disjoint r := fun r hr => by
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl

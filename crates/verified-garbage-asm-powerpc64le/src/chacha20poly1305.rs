@@ -17,7 +17,7 @@
 /// * `data` and `tag` must not overlap each other, `key`, `nonce` or `aad` (distinct Rust objects never do).
 /// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the 848 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_chacha20_poly1305_seal(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "Uf0h+CAAQTkAAGc50AEK+9gBKvvgAUr76AFq+/ABivv4Aar7AALq+6YCCHwIAgr4AAAKOwAAJTsAAEY7AABnOwAAiDsAAKk7AADrO3BhgD1leIxhQAGYkSAzgD1uZIxhRAGYkWJ5gD0yLYxhSAGYkSBrgD10ZYxhTAGYkQAAg4FQAZiRBACDgVQBmJEIAIOBWAGYkQwAg4FcAZiREACDgWABmJEUAIOBZAGYkRgAg4FoAZiRHACDgWwBmJEAAIA5cAGYkQAAhIF0AZiRBACEgXgBmJEIAISBfAGYkUABeDgAAJg4"
 bl {vg_chacha20_block}
@@ -78,7 +78,7 @@ bl {vg_poly1305_finalize_scratch}
 /// * `data` must not overlap `key`, `nonce`, `aad` or `tag` (distinct Rust objects never do).
 /// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the 848 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_chacha20_poly1305_open(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_open(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "Uf0h+CAAQTkAAGc50AEK+9gBKvvgAUr76AFq+/ABivv4Aar7AALq+6YCCHwIAgr4AAAKOwAAJTsAAEY7AABnOwAAiDsAAKk7AADrO3BhgD1leIxhQAGYkSAzgD1uZIxhRAGYkWJ5gD0yLYxhSAGYkSBrgD10ZYxhTAGYkQAAg4FQAZiRBACDgVQBmJEIAIOBWAGYkQwAg4FcAZiREACDgWABmJEUAIOBZAGYkRgAg4FoAZiRHACDgWwBmJEAAIA5cAGYkQAAhIF0AZiRBACEgXgBmJEIAISBfAGYkUABeDgAAJg4"
 bl {vg_chacha20_block}
@@ -155,7 +155,7 @@ b 29f
 /// * `dst` must not overlap `key`, `nonce`, `aad`, `src`, `tag` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `key`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the 928 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_chacha20_poly1305_open_to(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_open_to(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "Af0h+AAAgTlgAwzoYAAM+HAADDhoAAz4AABpOQAAgTlgACzpaABM6dABCvvYASr74AFK++gBavvwAYr7+AGq+wAC6vumAgh8CAIK+AAACjsAACU7AABGOwAAZzsAAIg7AACpOwAA6ztwYYA9ZXiMYUABmJEgM4A9bmSMYUQBmJFieYA9Mi2MYUgBmJEga4A9dGWMYUwBmJEAAIOBUAGYkQQAg4FUAZiRCACDgVgBmJEMAIOBXAGYkRAAg4FgAZiRFACDgWQBmJEYAIOBaAGYkRwAg4FsAZiRAACAOXABmJEAAISBdAGYkQQAhIF4AZiRCACEgXwBmJFAAXg4AACYOA=="
 bl {vg_chacha20_block}
@@ -232,7 +232,7 @@ b 29f
 /// * `dst` and `tag` must not overlap each other, `key`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
 /// * None of `key`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the 928 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_chacha20_poly1305_seal_gather(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal_gather(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "sf8h+AAAgTkgAGz4KACM+DAArPg4AMz4QAAs+aYCCHxIAAz4sABs6QAAKCg="
 beq %cr0, 20f

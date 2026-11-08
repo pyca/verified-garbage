@@ -5,14 +5,7 @@
 // gives.
 
 vg_chacha20_poly1305_open_body_ifma:
-	lea rsp, [rsp-1728]
-	mov rax, QWORD PTR [rsp+1736]
-	mov QWORD PTR [rsp+8], rax
-	mov rax, rsp
-	add rax, 24
-	mov QWORD PTR [rsp+16], rax
 	mov rax, QWORD PTR [rsp+16]
-	mov r11, QWORD PTR [rsp+8]
 	mov QWORD PTR [rax], rbx
 	mov QWORD PTR [rax+8], rbp
 	mov QWORD PTR [rax+16], r13
@@ -91,6 +84,7 @@ vg_chacha20_poly1305_open_body_ifma:
 	add rsi, 672
 	mov rcx, r15
 	add rcx, 128
+	mov r8, rsi
 	call {vg_chacha20_xor_avx512}
 	mov r15, rsi
 	sub r15, 128
@@ -135,7 +129,7 @@ vg_chacha20_poly1305_open_body_ifma:
 	mov QWORD PTR [r15+600], r13
 	mov rdi, r15
 	add rdi, 448
-	mov rsi, r14
+	mov rsi, r12
 	mov rdx, r13
 	shr rdx, 4
 	je 219f
@@ -180,12 +174,13 @@ vg_chacha20_poly1305_open_body_ifma:
 	je 235f
 	mov rsi, r15
 	add rsi, 736
+	mov r10, r12
 	mov ecx, 0
 	mov rax, rdx
 	shr rax, 6
 	je 237f
 239:
-	vmovdqu32 zmm0, ZMMWORD PTR [r14+rcx*1]
+	vmovdqu32 zmm0, ZMMWORD PTR [r10+rcx*1]
 	vmovdqu32 zmm1, ZMMWORD PTR [rsi+rcx*1]
 	vpxord zmm0, zmm0, zmm1
 	vmovdqu32 ZMMWORD PTR [r14+rcx*1], zmm0
@@ -197,6 +192,7 @@ vg_chacha20_poly1305_open_body_ifma:
 238:
 	mov rdi, r14
 	add rdi, rcx
+	add r10, rcx
 	add rsi, rcx
 	sub rdx, rcx
 	mov ecx, 0
@@ -204,7 +200,7 @@ vg_chacha20_poly1305_open_body_ifma:
 	shr rax, 3
 	je 240f
 242:
-	mov r8, QWORD PTR [rdi+rcx*1]
+	mov r8, QWORD PTR [r10+rcx*1]
 	xor r8, QWORD PTR [rsi+rcx*1]
 	mov QWORD PTR [rdi+rcx*1], r8
 	add rcx, 8
@@ -216,7 +212,7 @@ vg_chacha20_poly1305_open_body_ifma:
 	cmp rcx, rdx
 	je 243f
 245:
-	movzx eax, BYTE PTR [rdi+rcx*1]
+	movzx eax, BYTE PTR [r10+rcx*1]
 	movzx r8d, BYTE PTR [rsi+rcx*1]
 	xor rax, r8
 	mov BYTE PTR [rdi+rcx*1], al
@@ -250,7 +246,7 @@ vg_chacha20_poly1305_open_body_ifma:
 	shr rax, 6
 	add rax, 1
 	mov DWORD PTR [r15+112], eax
-	mov rsi, r14
+	mov rsi, r12
 	add rsi, rdx
 	mov rax, r13
 	sub rax, rdx
@@ -259,18 +255,23 @@ vg_chacha20_poly1305_open_body_ifma:
 	add rdi, 64
 	mov rcx, r15
 	add rcx, 128
+	mov r11, r14
+	sub r11, r12
+	mov r8, r11
+	add r8, rsi
 	call {vg_chacha20_xor_avx512}
 	jmp 230f
 229:
 	mov rsi, r15
 	add rsi, 736
 	mov rdx, r13
+	mov r10, r12
 	mov ecx, 0
 	mov rax, rdx
 	shr rax, 6
 	je 250f
 252:
-	vmovdqu32 zmm0, ZMMWORD PTR [r14+rcx*1]
+	vmovdqu32 zmm0, ZMMWORD PTR [r10+rcx*1]
 	vmovdqu32 zmm1, ZMMWORD PTR [rsi+rcx*1]
 	vpxord zmm0, zmm0, zmm1
 	vmovdqu32 ZMMWORD PTR [r14+rcx*1], zmm0
@@ -282,6 +283,7 @@ vg_chacha20_poly1305_open_body_ifma:
 251:
 	mov rdi, r14
 	add rdi, rcx
+	add r10, rcx
 	add rsi, rcx
 	sub rdx, rcx
 	mov ecx, 0
@@ -289,7 +291,7 @@ vg_chacha20_poly1305_open_body_ifma:
 	shr rax, 3
 	je 253f
 255:
-	mov r8, QWORD PTR [rdi+rcx*1]
+	mov r8, QWORD PTR [r10+rcx*1]
 	xor r8, QWORD PTR [rsi+rcx*1]
 	mov QWORD PTR [rdi+rcx*1], r8
 	add rcx, 8
@@ -301,7 +303,7 @@ vg_chacha20_poly1305_open_body_ifma:
 	cmp rcx, rdx
 	je 256f
 258:
-	movzx eax, BYTE PTR [rdi+rcx*1]
+	movzx eax, BYTE PTR [r10+rcx*1]
 	movzx r8d, BYTE PTR [rsi+rcx*1]
 	xor rax, r8
 	mov BYTE PTR [rdi+rcx*1], al
@@ -348,6 +350,7 @@ vg_chacha20_poly1305_open_body_ifma:
 	mov rdx, r15
 	add rdx, 48
 	call {vg_poly1305_finalize_scratch}
+	mov r12, QWORD PTR [rsp+8]
 	mov rax, QWORD PTR [rcx]
 	xor rax, QWORD PTR [r12]
 	mov rdx, QWORD PTR [rcx+8]
@@ -381,50 +384,6 @@ vg_chacha20_poly1305_open_body_ifma:
 	mov r14, QWORD PTR [r15+24]
 	mov r12, QWORD PTR [r15+40]
 	mov r15, QWORD PTR [r15+32]
-	pxor xmm0, xmm0
-	movdqu XMMWORD PTR [rsp+24], xmm0
-	movdqu XMMWORD PTR [rsp+40], xmm0
-	movdqu XMMWORD PTR [rsp+56], xmm0
-	movdqu XMMWORD PTR [rsp+72], xmm0
-	movdqu XMMWORD PTR [rsp+88], xmm0
-	movdqu XMMWORD PTR [rsp+104], xmm0
-	movdqu XMMWORD PTR [rsp+120], xmm0
-	movdqu XMMWORD PTR [rsp+136], xmm0
-	movdqu XMMWORD PTR [rsp+152], xmm0
-	movdqu XMMWORD PTR [rsp+168], xmm0
-	movdqu XMMWORD PTR [rsp+184], xmm0
-	movdqu XMMWORD PTR [rsp+200], xmm0
-	movdqu XMMWORD PTR [rsp+216], xmm0
-	movdqu XMMWORD PTR [rsp+232], xmm0
-	movdqu XMMWORD PTR [rsp+248], xmm0
-	movdqu XMMWORD PTR [rsp+264], xmm0
-	movdqu XMMWORD PTR [rsp+280], xmm0
-	movdqu XMMWORD PTR [rsp+296], xmm0
-	movdqu XMMWORD PTR [rsp+312], xmm0
-	movdqu XMMWORD PTR [rsp+328], xmm0
-	movdqu XMMWORD PTR [rsp+344], xmm0
-	movdqu XMMWORD PTR [rsp+360], xmm0
-	movdqu XMMWORD PTR [rsp+376], xmm0
-	movdqu XMMWORD PTR [rsp+392], xmm0
-	movdqu XMMWORD PTR [rsp+408], xmm0
-	movdqu XMMWORD PTR [rsp+424], xmm0
-	movdqu XMMWORD PTR [rsp+440], xmm0
-	movdqu XMMWORD PTR [rsp+456], xmm0
-	movdqu XMMWORD PTR [rsp+472], xmm0
-	movdqu XMMWORD PTR [rsp+488], xmm0
-	movdqu XMMWORD PTR [rsp+504], xmm0
-	movdqu XMMWORD PTR [rsp+520], xmm0
-	movdqu XMMWORD PTR [rsp+536], xmm0
-	movdqu XMMWORD PTR [rsp+552], xmm0
-	movdqu XMMWORD PTR [rsp+568], xmm0
-	movdqu XMMWORD PTR [rsp+584], xmm0
-	movdqu XMMWORD PTR [rsp+600], xmm0
-	movdqu XMMWORD PTR [rsp+616], xmm0
-	movdqu XMMWORD PTR [rsp+632], xmm0
-	movdqu XMMWORD PTR [rsp+648], xmm0
-	movdqu XMMWORD PTR [rsp+664], xmm0
-	movdqu XMMWORD PTR [rsp+680], xmm0
-	lea rsp, [rsp+1728]
 	ret
 27:
 	jne 211f
@@ -482,7 +441,7 @@ vg_chacha20_poly1305_open_body_ifma:
 221:
 	mov rsi, r13
 	sub rsi, rdx
-	add rsi, r14
+	add rsi, r12
 	xor r9d, r9d
 	cmp rdx, 8
 	jb 223f

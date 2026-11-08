@@ -10,11 +10,12 @@
     target_arch = "riscv64"
 ))]
 
+use crate::align::CacheAligned;
+use crate::arch::dispatch::triple_des::vg_triple_des_expand_key_auto;
 use crate::arch::dispatch::triple_des_cfb::vg_triple_des_cfb64_decrypt_auto;
-use crate::arch::triple_des::vg_triple_des_expand_key;
-use crate::arch::triple_des_cfb::{
-    vg_triple_des_cfb64_decrypt_final, vg_triple_des_cfb64_encrypt,
-    vg_triple_des_cfb64_encrypt_final,
+use crate::arch::dispatch::triple_des_cfb::{
+    vg_triple_des_cfb64_decrypt_final_auto, vg_triple_des_cfb64_encrypt_auto,
+    vg_triple_des_cfb64_encrypt_final_auto,
 };
 use crate::error::{IncompleteBlock, InvalidKeyLength};
 use crate::zeroize::zeroize;
@@ -22,7 +23,7 @@ use crate::zeroize::zeroize;
 /// An expanded Triple DES key.
 struct Key {
     /// The key schedule `vg_triple_des_expand_key` writes.
-    schedule: [u8; 384],
+    schedule: CacheAligned<[u8; 384]>,
 }
 
 /// A Triple DES-CFB64 encryption of one message.
@@ -58,7 +59,8 @@ impl TripleDesCfb64Encryptor {
         if !buffer.len().is_multiple_of(8) {
             return Err(IncompleteBlock);
         }
-        self.key.blocks(&mut self.iv, buffer, false);
+        crate::dit::enter!(dit);
+        self.key.blocks(dit, &mut self.iv, buffer, false);
         Ok(())
     }
 
@@ -113,7 +115,8 @@ impl TripleDesCfb64Decryptor {
         if !buffer.len().is_multiple_of(8) {
             return Err(IncompleteBlock);
         }
-        self.key.blocks(&mut self.iv, buffer, true);
+        crate::dit::enter!(dit);
+        self.key.blocks(dit, &mut self.iv, buffer, true);
         Ok(())
     }
 
@@ -141,17 +144,18 @@ impl Key {
         if !matches!(key.len(), 16 | 24) {
             return Err(InvalidKeyLength);
         }
-        let mut schedule = [0; 384];
+        let mut schedule = CacheAligned([0; 384]);
+        crate::dit::enter!(dit);
         // SAFETY: the key has a validated length; key and schedule are separate
         // valid buffers of the required sizes.
-        unsafe { vg_triple_des_expand_key(key.as_ptr(), key.len(), &mut schedule) };
+        unsafe { vg_triple_des_expand_key_auto(dit, key.as_ptr(), key.len(), &mut schedule.0) };
         Ok(Self { schedule })
     }
 
     /// Decrypts (if `decrypt`) or encrypts the whole blocks of `blocks` in
     /// place, from the block `iv`, which it replaces with the last ciphertext
     /// block (unchanged for empty input).
-    fn blocks(&self, iv: &mut [u8; 8], blocks: &mut [u8], decrypt: bool) {
+    fn blocks(&self, dit: crate::dit::Dit<'_>, iv: &mut [u8; 8], blocks: &mut [u8], decrypt: bool) {
         let n = blocks.len() / 8;
         let data = blocks.as_mut_ptr().cast();
         // SAFETY: `blocks` holds `n` whole blocks (its length is a multiple
@@ -161,9 +165,9 @@ impl Key {
         // features of.
         unsafe {
             if decrypt {
-                vg_triple_des_cfb64_decrypt_auto(&self.schedule, iv, data, n)
+                vg_triple_des_cfb64_decrypt_auto(dit, &self.schedule.0, iv, data, n)
             } else {
-                vg_triple_des_cfb64_encrypt(&self.schedule, iv, data, n)
+                vg_triple_des_cfb64_encrypt_auto(dit, &self.schedule.0, iv, data, n)
             }
         };
     }
@@ -175,24 +179,25 @@ impl Key {
     /// `iv` with the last ciphertext block, or, after a partial last segment,
     /// with keystream, which the caller wipes.
     fn last(&self, iv: &mut [u8; 8], buffer: &mut [u8], decrypt: bool) {
+        crate::dit::enter!(dit);
         let (blocks, rest) = buffer.split_at_mut(buffer.len() / 8 * 8);
-        self.blocks(iv, blocks, decrypt);
+        self.blocks(dit, iv, blocks, decrypt);
         if !rest.is_empty() {
             let f = if decrypt {
-                vg_triple_des_cfb64_decrypt_final
+                vg_triple_des_cfb64_decrypt_final_auto
             } else {
-                vg_triple_des_cfb64_encrypt_final
+                vg_triple_des_cfb64_encrypt_final_auto
             };
             // SAFETY: `rest` is valid for `len` bytes, and it, the block at
             // `iv` and the schedule are separate valid objects of the sizes of
             // the signature, none of them on the callee's stack.
-            unsafe { f(&self.schedule, iv, rest.as_mut_ptr(), rest.len()) };
+            unsafe { f(dit, &self.schedule.0, iv, rest.as_mut_ptr(), rest.len()) };
         }
     }
 }
 
 impl Drop for Key {
     fn drop(&mut self) {
-        zeroize(&mut self.schedule);
+        zeroize(&mut self.schedule.0);
     }
 }

@@ -10,10 +10,11 @@
     target_arch = "riscv64"
 ))]
 
-use crate::arch::idea::vg_idea_expand_key;
-use crate::arch::idea_cfb::{
-    vg_idea_cfb64_decrypt, vg_idea_cfb64_decrypt_final, vg_idea_cfb64_encrypt,
-    vg_idea_cfb64_encrypt_final,
+use crate::align::CacheAligned;
+use crate::arch::dispatch::idea::vg_idea_expand_key_auto;
+use crate::arch::dispatch::idea_cfb::{
+    vg_idea_cfb64_decrypt_auto, vg_idea_cfb64_decrypt_final_auto, vg_idea_cfb64_encrypt_auto,
+    vg_idea_cfb64_encrypt_final_auto,
 };
 use crate::error::{IncompleteBlock, InvalidKeyLength};
 use crate::zeroize::zeroize;
@@ -21,7 +22,7 @@ use crate::zeroize::zeroize;
 /// An expanded IDEA key.
 struct Key {
     /// The encryption subkeys `vg_idea_expand_key` writes.
-    schedule: [u8; 104],
+    schedule: CacheAligned<[u8; 104]>,
 }
 
 /// An IDEA-CFB64 encryption of one message.
@@ -65,12 +66,7 @@ impl IdeaCfb64Encryptor {
     /// whole segments; this is the rule of its §6.4 and §6.5 for a partial
     /// last block, as other implementations extend CFB).
     pub fn encrypt_final(mut self, buffer: &mut [u8]) {
-        self.key.last(
-            &mut self.iv,
-            buffer,
-            vg_idea_cfb64_encrypt,
-            vg_idea_cfb64_encrypt_final,
-        );
+        self.key.last(&mut self.iv, buffer, true);
     }
 }
 
@@ -123,12 +119,7 @@ impl IdeaCfb64Decryptor {
     /// whole segments; this is the rule of its §6.4 and §6.5 for a partial
     /// last block, as other implementations extend CFB).
     pub fn decrypt_final(mut self, buffer: &mut [u8]) {
-        self.key.last(
-            &mut self.iv,
-            buffer,
-            vg_idea_cfb64_decrypt,
-            vg_idea_cfb64_decrypt_final,
-        );
+        self.key.last(&mut self.iv, buffer, false);
     }
 }
 
@@ -140,30 +131,15 @@ impl Drop for IdeaCfb64Decryptor {
     }
 }
 
-/// The signature of `vg_idea_cfb64_encrypt` and `vg_idea_cfb64_decrypt`.
-#[cfg(target_arch = "x86_64")]
-type Cfb = unsafe extern "sysv64" fn(*const [u8; 104], *mut [u8; 8], *mut [u8; 8], usize);
-/// The signature of `vg_idea_cfb64_encrypt` and `vg_idea_cfb64_decrypt`.
-#[cfg(not(target_arch = "x86_64"))]
-type Cfb = unsafe extern "C" fn(*const [u8; 104], *mut [u8; 8], *mut [u8; 8], usize);
-
-/// The signature of `vg_idea_cfb64_encrypt_final` and
-/// `vg_idea_cfb64_decrypt_final`.
-#[cfg(target_arch = "x86_64")]
-type CfbFinal = unsafe extern "sysv64" fn(*const [u8; 104], *mut [u8; 8], *mut u8, usize);
-/// The signature of `vg_idea_cfb64_encrypt_final` and
-/// `vg_idea_cfb64_decrypt_final`.
-#[cfg(not(target_arch = "x86_64"))]
-type CfbFinal = unsafe extern "C" fn(*const [u8; 104], *mut [u8; 8], *mut u8, usize);
-
 impl Key {
     /// Expands a 16-byte key.
     fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
         let key: &[u8; 16] = key.try_into().map_err(|_| InvalidKeyLength)?;
-        let mut schedule = [0; 104];
+        let mut schedule = CacheAligned([0; 104]);
+        crate::dit::enter!(dit);
         // SAFETY: the key and the schedule are separate valid buffers of the
         // required sizes.
-        unsafe { vg_idea_expand_key(key, &mut schedule) };
+        unsafe { vg_idea_expand_key_auto(dit, key, &mut schedule.0) };
         Ok(Self { schedule })
     }
 
@@ -171,57 +147,90 @@ impl Key {
     /// which it replaces with the last ciphertext block (unchanged for empty
     /// input).
     fn encrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) {
-        self.blocks(iv, buffer, vg_idea_cfb64_encrypt);
+        crate::dit::enter!(dit);
+        self.blocks(dit, iv, buffer, true);
     }
 
     /// Decrypts the whole blocks of `buffer` in place, from the block `iv`,
     /// which it replaces with the last ciphertext block (unchanged for empty
     /// input).
     fn decrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) {
-        self.blocks(iv, buffer, vg_idea_cfb64_decrypt);
+        crate::dit::enter!(dit);
+        self.blocks(dit, iv, buffer, false);
     }
 
-    /// `f` on whole blocks.
-    fn blocks(&self, iv: &mut [u8; 8], blocks: &mut [u8], f: Cfb) {
+    /// Encrypts (`encrypt`) or decrypts whole blocks.
+    fn blocks(&self, dit: crate::dit::Dit<'_>, iv: &mut [u8; 8], blocks: &mut [u8], encrypt: bool) {
         // SAFETY: `blocks` holds `len / 8` whole blocks (its length is a
         // multiple of 8), and it, the block at `iv` and the schedule are
         // separate valid objects of the sizes of the signature, none of them on
         // the callee's stack.
         unsafe {
-            f(
-                &self.schedule,
-                iv,
-                blocks.as_mut_ptr().cast(),
-                blocks.len() / 8,
-            )
+            if encrypt {
+                vg_idea_cfb64_encrypt_auto(
+                    dit,
+                    &self.schedule.0,
+                    iv,
+                    blocks.as_mut_ptr().cast(),
+                    blocks.len() / 8,
+                )
+            } else {
+                vg_idea_cfb64_decrypt_auto(
+                    dit,
+                    &self.schedule.0,
+                    iv,
+                    blocks.as_mut_ptr().cast(),
+                    blocks.len() / 8,
+                )
+            }
         };
     }
 
-    /// The rest of a message, of any length: its whole blocks with `whole`,
-    /// the whole-block function (which, decrypting, may decrypt several at
-    /// once), then the bytes after them, fewer than 8, with `f`, the final
-    /// function of the same direction, from the IV the whole blocks leave.
-    fn last(&self, iv: &mut [u8; 8], buffer: &mut [u8], whole: Cfb, f: CfbFinal) {
+    /// Encrypts (`encrypt`) or decrypts the rest of a message, of any
+    /// length, in place: its whole blocks (which, decrypting, may be
+    /// decrypted several at once), then the bytes after them, fewer than 8,
+    /// with the final function, from the IV the whole blocks leave.
+    fn last(&self, iv: &mut [u8; 8], buffer: &mut [u8], encrypt: bool) {
+        crate::dit::enter!(dit);
         let (blocks, rest) = buffer.split_at_mut(buffer.len() / 8 * 8);
-        self.blocks(iv, blocks, whole);
+        self.blocks(dit, iv, blocks, encrypt);
         if !rest.is_empty() {
-            self.final_(iv, rest, f);
+            self.final_(dit, iv, rest, encrypt);
         }
     }
 
-    /// `f`, a final function, on the rest of a message, of any length: it
-    /// replaces `iv` with the last ciphertext block, or, after a partial last
-    /// segment, with keystream, which the caller wipes.
-    fn final_(&self, iv: &mut [u8; 8], buffer: &mut [u8], f: CfbFinal) {
+    /// The final function that encrypts (`encrypt`) or decrypts, on the rest
+    /// of a message, of any length: it replaces `iv` with the last ciphertext
+    /// block, or, after a partial last segment, with keystream, which the
+    /// caller wipes.
+    fn final_(&self, dit: crate::dit::Dit<'_>, iv: &mut [u8; 8], buffer: &mut [u8], encrypt: bool) {
         // SAFETY: `buffer` is valid for `len` bytes, and it, the block at `iv`
         // and the schedule are separate valid objects of the sizes of the
         // signature, none of them on the callee's stack.
-        unsafe { f(&self.schedule, iv, buffer.as_mut_ptr(), buffer.len()) };
+        unsafe {
+            if encrypt {
+                vg_idea_cfb64_encrypt_final_auto(
+                    dit,
+                    &self.schedule.0,
+                    iv,
+                    buffer.as_mut_ptr(),
+                    buffer.len(),
+                )
+            } else {
+                vg_idea_cfb64_decrypt_final_auto(
+                    dit,
+                    &self.schedule.0,
+                    iv,
+                    buffer.as_mut_ptr(),
+                    buffer.len(),
+                )
+            }
+        };
     }
 }
 
 impl Drop for Key {
     fn drop(&mut self) {
-        zeroize(&mut self.schedule);
+        zeroize(&mut self.schedule.0);
     }
 }

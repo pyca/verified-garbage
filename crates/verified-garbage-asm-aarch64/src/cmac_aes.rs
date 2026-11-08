@@ -19,7 +19,7 @@ pub const VG_CMAC_AES_INIT_AES_FEATURES: verified_garbage_cpu::Features = verifi
 /// * Neither `state` nor `key` may overlap the 2304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_cmac_aes_init_aes(state: *mut [u64; 38], key: *const u8, key_len: usize) {
+pub(crate) unsafe extern "C" fn vg_cmac_aes_init_aes(state: *mut [u64; 38], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd12403ff,0x910003e3,0xf9044073,0xf9044474,0xf9044875,0xf9044c7e,0x91000013,0x91000074
 .inst 0xd342fc55,0x91001ab5,0x91000020,0x91000041,0x91000262
@@ -51,7 +51,7 @@ pub const VG_CMAC_AES_FINISH_AES_FEATURES: verified_garbage_cpu::Features = veri
 /// * Neither `state` nor `out` may overlap the 2304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_cmac_aes_finish_aes(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_cmac_aes_finish_aes(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r".inst 0xd12403ff,0x910003e4,0xf9408809,0xf9000069,0xf9408c09,0xf9000469,0xf9044093,0xf904449e
 .inst 0x91000093,0x91000085,0x91000044,0x91000062,0x91048003
@@ -79,7 +79,7 @@ bl {vg_cmac_aes_finalize_aes}
 /// * `state` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `state` nor `key` may overlap the 2304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_cmac_aes_init(state: *mut [u64; 38], key: *const u8, key_len: usize) {
+pub(crate) unsafe extern "C" fn vg_cmac_aes_init(state: *mut [u64; 38], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd12403ff,0x910003e3,0xf9044073,0xf9044474,0xf9044875,0xf9044c7e,0x91000013,0x91000074
 .inst 0xd342fc55,0x91001ab5,0x91000020,0x91000041,0x91000262
@@ -107,7 +107,7 @@ bl {vg_cmac_aes_subkeys}
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the 2304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_cmac_aes_finish(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_cmac_aes_finish(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r".inst 0xd12403ff,0x910003e4,0xf9408809,0xf9000069,0xf9408c09,0xf9000469,0xf9044093,0xf904449e
 .inst 0x91000093,0x91000085,0x91000044,0x91000062,0x91048003
@@ -139,7 +139,7 @@ pub const VG_CMAC_AES_ABSORB_AES_FEATURES: verified_garbage_cpu::Features = veri
 /// * Neither `state` nor `data` may overlap the 2304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_cmac_aes_absorb_aes(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_cmac_aes_absorb_aes(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd12403ff,0x910003e5,0xf90440b3,0xf90444b4,0xf90448b5,0xf9044cb6,0xf90450b8,0xf90454be
 .inst 0xf90458b7,0x91000013,0x91000034,0x91000075,0x91000096,0x910000b7
@@ -201,84 +201,6 @@ b 214f
     )
 }
 
-/// The CPU features `vg_cmac_aes_absorb_aes_cbc` requires (`Artifact.features`).
-pub const VG_CMAC_AES_ABSORB_AES_CBC_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
-
-/// Absorbs data into an AES-CMAC computation (NIST SP 800-38B §6.2): if the streaming state `*state` represents a message of `count` bytes under an AES key with `rounds` rounds (as `vg_cmac_aes_init` set it up), it then represents that message followed by the `len` bytes at `data`, under the same key, provided that the two together are shorter than 2⁶⁴ bytes. It chains (step 6) every block of the message but its last bytes `Mₙ*` (step 3), which it holds back in the state, since only `vg_cmac_aes_finish` knows they are the last.
-///
-/// Contract: `VG.Spec.Cmac.aesAbsorbContract`. Constant time: only the pointers, `rounds`, `count` and `len` may affect timing, not the state or the data.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 304 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `state` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the 2304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` target feature.
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_cmac_aes_absorb_aes_cbc(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
-    core::arch::naked_asm!(
-        r".inst 0xd12403ff,0x910003e5,0xf90440b3,0xf90444b4,0xf90448b5,0xf9044cb6,0xf90450b8,0xf90454be
-.inst 0xf90458b7,0x91000013,0x91000034,0x91000075,0x91000096,0x910000b7
-cbz x2, 20f
-.inst 0xd1000449,0xd28001ea,0x8a0a0129,0x91000529
-b 21f
-20:
-.inst 0xd2800009
-21:
-.inst 0xd344feca
-cbz x10, 22f
-.inst 0xd280020a
-b 23f
-22:
-.inst 0x910002ca
-23:
-.inst 0xd2800208,0xcb090108,0xcb08014b,0xd37ffd6b
-cbz x11, 24f
-.inst 0x91000148
-b 25f
-24:
-25:
-.inst 0x9100010a,0x8b090266,0x910480c6,0x910002a7
-cbz x8, 26f
-28:
-.inst 0x394000e9,0x390000c9,0x910004e7,0x910004c6,0xd1000508
-cbnz x8, 28b
-b 27f
-26:
-27:
-.inst 0x8b0a02b5,0xcb0a02d6,0xd2800004
-cbz x22, 29f
-.inst 0xd2800024
-b 210f
-29:
-210:
-.inst 0x91000260,0x91000281,0x91044262,0x91048263,0x910002e5
-bl {vg_cmac_aes_update_aes_cbc}
-.inst 0xd2800018
-cbz x22, 211f
-.inst 0xd10006d8,0xd28001e9,0x8a090309,0xcb090318
-b 212f
-211:
-212:
-.inst 0xd344ff04,0x91000260,0x91000281,0x91044262,0x910002a3,0x910002e5
-bl {vg_cmac_aes_update_aes_cbc}
-.inst 0x8b1802b5,0xcb1802d6,0x91048266,0x910002a7,0x910002c8
-cbz x8, 213f
-215:
-.inst 0x394000e9,0x390000c9,0x910004e7,0x910004c6,0xd1000508
-cbnz x8, 215b
-b 214f
-213:
-214:
-.inst 0xf94442f3,0xf94446f4,0xf9444af5,0xf9444ef6,0xf94452f8,0xf94456fe,0xf9445af7,0x912403ff
-.inst 0xd65f03c0
-.p2align 6",
-        vg_cmac_aes_update_aes_cbc = sym super::cmac_aes::vg_cmac_aes_update_aes_cbc::vg_cmac_aes_update_aes_cbc,
-    )
-}
-
 /// Absorbs data into an AES-CMAC computation (NIST SP 800-38B §6.2): if the streaming state `*state` represents a message of `count` bytes under an AES key with `rounds` rounds (as `vg_cmac_aes_init` set it up), it then represents that message followed by the `len` bytes at `data`, under the same key, provided that the two together are shorter than 2⁶⁴ bytes. It chains (step 6) every block of the message but its last bytes `Mₙ*` (step 3), which it holds back in the state, since only `vg_cmac_aes_finish` knows they are the last.
 ///
 /// Contract: `VG.Spec.Cmac.aesAbsorbContract`. Constant time: only the pointers, `rounds`, `count` and `len` may affect timing, not the state or the data.
@@ -291,7 +213,7 @@ b 214f
 /// * `state` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the 2304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_cmac_aes_absorb(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_cmac_aes_absorb(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd12403ff,0x910003e5,0xf90440b3,0xf90444b4,0xf90448b5,0xf9044cb6,0xf90450b8,0xf90454be
 .inst 0xf90458b7,0x91000013,0x91000034,0x91000075,0x91000096,0x910000b7
@@ -376,7 +298,3 @@ pub(crate) mod vg_cmac_aes_update;
 #[rustfmt::skip]
 #[path = "internal/vg_cmac_aes_update_aes.rs"]
 pub(crate) mod vg_cmac_aes_update_aes;
-
-#[rustfmt::skip]
-#[path = "internal/vg_cmac_aes_update_aes_cbc.rs"]
-pub(crate) mod vg_cmac_aes_update_aes_cbc;

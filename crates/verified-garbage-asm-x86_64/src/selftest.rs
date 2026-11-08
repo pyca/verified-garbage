@@ -8,7 +8,7 @@
 /// Contract: `VG.Spec.Selftest.addContract`. No safety requirements.
 #[allow(clippy::missing_safety_doc)]
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_selftest_add(a: u64, b: u64) -> u64 {
+pub(crate) unsafe extern "sysv64" fn vg_selftest_add(a: u64, b: u64) -> u64 {
     core::arch::naked_asm!(
         r#".base64 "SIn4SAHwww=="
 .p2align 6"#,

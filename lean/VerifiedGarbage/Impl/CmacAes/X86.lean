@@ -8,19 +8,20 @@ public import VerifiedGarbage.Impl.Aes.X86.Callee
 `vg_cmac_aes_subkeys(schedule, rounds, subkeys, scratch)`,
 `vg_cmac_aes_update(schedule, rounds, state, data, n, scratch)` and
 `vg_cmac_aes_finalize(key, rounds, state, last, last_len, scratch)`, every argument on the
-stack (cdecl), composed of calls of the verified `vg_aes_ctr32`, one block
+stack (cdecl), composed of calls of the verified `vg_aes_ctr32_to`, one block
 at a time: with a counter block `X` and a zero data block, it leaves
 `CIPH_K(X)` in the data block.
 
-Each call pushes the six arguments of `vg_aes_ctr32` (`schedule`, `rounds`,
-the counter block, the data block, `n = 1` and the working space, last to
-first) in a frame of its own, popped (into `eax`) when it returns: with the
-return address the call stores, it uses the 28 bytes below `esp`. The
+Each call pushes the seven arguments of `vg_aes_ctr32_to` (`schedule`,
+`rounds`, the counter block, the data block, `n = 1`, the working space and
+the data block again, as the destination, last to first) in a frame of its
+own, popped (into `eax`) when it returns: with the return address the call
+stores, it uses the 32 bytes below `esp`. The
 callee preserves `ebx`, `esi`, `edi` and `ebp`; our caller's values of those
 are saved in the scratch buffer.
 
 The scratch buffer (2176 bytes): `[0, 2048)` is the working space of
-`vg_aes_ctr32`, `[2048, 2064)` the counter block, and `[2064, 2080)` our
+`vg_aes_ctr32_to`, `[2048, 2064)` the counter block, and `[2064, 2080)` our
 caller's `ebx`, `esi`, `edi` and `ebp`.
 
 * `subkeys` computes `L = CIPH_K(0)` into the first block of `subkeys`, and
@@ -33,7 +34,7 @@ caller's `ebx`, `esi`, `edi` and `ebp`.
   and the state, zeroed, receives `CIPH_K(C ⊕ Mᵢ)`.
 * `finalize` forms `Mₙ` in the counter block: `Mₙ* ⊕ K1` for a complete
   block, else `Mₙ*` copied a byte at a time onto zeros, `0x80` after it, and
-  XORed with `K2`. It XORs in the chaining value and calls `vg_aes_ctr32`
+  XORed with `K2`. It XORs in the chaining value and calls `vg_aes_ctr32_to`
   last.
 
 Only the pointers, `rounds`, `n` and `last_len` can affect timing: the
@@ -64,12 +65,12 @@ def save : List Instr := saved.map fun (r, d) => .store (at_ .eax d) r
 /-- Restore them, with the scratch buffer (the stack argument `i`) loaded into `eax`. -/
 def restore (i : Nat) : List Instr := .mov .eax (argOp i) :: saved.map fun (r, d) => .mov r (.mem (at_ .eax d))
 
-/-- The call of `vg_aes_ctr32(eax, ecx, edx, ebx, edi, ebp)`, its arguments
-pushed last to first. -/
+/-- The call of `vg_aes_ctr32_to(eax, ecx, edx, ebx, edi, ebp, ebx)`, in
+place, its arguments pushed last to first. -/
 def ctrCall (c : Impl.Aes.X86.Ctr32) : Prog isa :=
-  .frame (.push [.ebp, .edi, .ebx, .edx, .ecx, .eax]) (.call c.name c.code) (.pop .eax 6)
+  .frame (.push [.ebx, .ebp, .edi, .ebx, .edx, .ecx, .eax]) (.call c.name c.code) (.pop .eax 7)
 
-/-- The arguments of `vg_aes_ctr32` but the data block (`ebx`) and the
+/-- The arguments of `vg_aes_ctr32_to` but the data block (`ebx`) and the
 working space (`ebp`): the schedule and the rounds (our stack arguments 0
 and 1), the counter block in the scratch buffer and `n = 1`. -/
 def ctrArgs : List Instr :=
@@ -91,7 +92,7 @@ def zero4 (b : Reg) (d : Nat) : List Instr :=
 
 /-- Saves the registers, keeps `subkeys` in `ebx` and the scratch buffer in
 `ebp`, zeroes the counter block and the first block of `subkeys`, and sets
-up the arguments of `vg_aes_ctr32`. -/
+up the arguments of `vg_aes_ctr32_to`. -/
 def subkeysPre : List Instr :=
   [.mov .eax (argOp 3)] ++ save ++ [.mov .ebp (.reg .eax), .mov .ebx (argOp 2)] ++ zero4 .ebp cOff ++
     zero4 .ebx 0 ++ ctrArgs
@@ -123,7 +124,7 @@ def setup : List Instr :=
   [.mov .eax (argOp 5)] ++ save ++ [.mov .esi (argOp 3), .mov .eax (argOp 4), .alu .test .eax (.reg .eax)]
 
 /-- The counter block `C ⊕ Mᵢ` (the state at `ebx`, the block at `esi`), the
-state zeroed, and the arguments of `vg_aes_ctr32`. -/
+state zeroed, and the arguments of `vg_aes_ctr32_to`. -/
 def chainIn : List Instr :=
   [.mov .ebx (argOp 2), .mov .ebp (argOp 5)] ++ xor4 .ebx .esi .ebp 0 0 cOff ++ zero4 .ebx 0 ++ ctrArgs
 
@@ -169,7 +170,7 @@ def partialBlock : Prog isa :=
   .seq (.block zero) (.seq (.ite .e (.block []) copy) (.block padK2))
 
 /-- The counter block `C ⊕ Mₙ` (the state at `ebx`), the state zeroed, and
-the arguments of `vg_aes_ctr32`. -/
+the arguments of `vg_aes_ctr32_to`. -/
 def finArgs : List Instr :=
   [.mov .ebx (argOp 2)] ++ xor4 .ebp .ebx .ebp cOff 0 cOff ++ zero4 .ebx 0 ++ ctrArgs
 

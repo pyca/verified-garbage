@@ -14,7 +14,7 @@
 /// * `state` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `state` nor `key` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_poly1305_init(state: *mut [u64; 16], key: *const [u8; 32]) {
+pub(crate) unsafe extern "sysv64" fn vg_poly1305_init(state: *mut [u64; 16], key: *const [u8; 32]) {
     core::arch::naked_asm!(
         r#".base64 "SIsGSItOCEiLVhBMi0YYSIlHGEiJTyBIiVcoTIlHMLgAAAAASIkHSIlHCEiJRxDD"
 .p2align 6"#,
@@ -33,7 +33,7 @@ pub unsafe extern "sysv64" fn vg_poly1305_init(state: *mut [u64; 16], key: *cons
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 136 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_poly1305_finalize(state: *mut [u64; 16], count: u64, out: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_poly1305_finalize(state: *mut [u64; 16], count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJHj///9IieFIg8EISInRSInySIPiD0iJX0hIiW9QTIlnWEyJb2BMiXdoTIl/cEi4////D/z//w9Mi0cYSSHASLj8//8P/P//D0yLTyBJIcFNicpJweoCTQHKTIsfSItfCEiLbxBIhdI="
 je 20f
@@ -65,7 +65,7 @@ pub const VG_POLY1305_UPDATE_AVX2_FEATURES: verified_garbage_cpu::Features = ver
 /// * Neither `state` nor `data` may overlap the return address on the stack or the 160 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_poly1305_update_avx2(state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_poly1305_update_avx2(state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJHj///9JieBJg8AISYkYSYloCE2JYBBNiWgYTYlwIE2JeChJifRJg+QPSInWTYXk"
 je 20f
@@ -128,7 +128,7 @@ pub const VG_POLY1305_UPDATE_AVX512_FEATURES: verified_garbage_cpu::Features = v
 /// * Neither `state` nor `data` may overlap the return address on the stack or the 160 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx512f` and `avx2` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_poly1305_update_avx512(state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_poly1305_update_avx512(state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJHj///9JieBJg8AISYkYSYloCE2JYBBNiWgYTYlwIE2JeChJifRJg+QPSInWTYXk"
 je 20f
@@ -191,7 +191,7 @@ pub const VG_POLY1305_UPDATE_IFMA_FEATURES: verified_garbage_cpu::Features = ver
 /// * Neither `state` nor `data` may overlap the return address on the stack or the 160 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx512f`, `avx2` and `avx512ifma` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_poly1305_update_ifma(state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_poly1305_update_ifma(state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJHj///9JieBJg8AISYkYSYloCE2JYBBNiWgYTYlwIE2JeChJifRJg+QPSInWTYXk"
 je 20f
@@ -250,7 +250,7 @@ jmp 212f
 /// * `state` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the return address on the stack or the 160 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_poly1305_update(state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_poly1305_update(state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJHj///9JieBJg8AISYkYSYloCE2JYBBNiWgYTYlwIE2JeChJifRJg+QPSInWTYXk"
 je 20f

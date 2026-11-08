@@ -41,7 +41,7 @@ open VG.Proof.ChaCha20.X86_64.Avx2Tail (IncsC cOf twoC_ok)
 open VG.Proof.ChaCha20 (CState ctr)
 open VG.Spec.ChaCha20 (stateAt keystream initState serialize)
 
-variable {e : Bool}
+variable {e : Bool} {t₁₂ : Addr}
 
 /-! ## The test -/
 
@@ -551,8 +551,8 @@ theorem mOf_xlen {pass L : Nat} (h : XPass pass) (hx : XLen L) : mOf 448 pass L 
 (`AfterF`), and the keystream of 1 to 64 bytes left at `ctx + 736`. -/
 theorem twoKsB_ok (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) {pass : Nat} (hpass : XPass pass)
     {s₀ : State} (hp : APre e s₀)
-    {s : State} (h : FArgs v.callee.fold pass s₀ s) (hl : 449 ≤ L s₀) (hF : ¬ FLen (L s₀)) :
-    WP isa (twoKsB v.callee.vl) s fun s' => AfterF v.callee.fold pass s₀ s' ∧ TailKs s₀ s'.mem := by
+    {s : State} (h : FArgsT v.callee.fold pass s₀ t₁₂ s) (hl : 449 ≤ L s₀) (hF : ¬ FLen (L s₀)) :
+    WP isa (twoKsB v.callee.vl) s fun s' => AfterFT v.callee.fold pass s₀ t₁₂ s' ∧ TailKs s₀ s'.mem := by
   have hf := (avx2_of v hv).1
   have hL9 : L s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
   have hm0 : mOf v.callee.fold pass (L s₀) = 0 := by rw [hf]; exact mOf_gt hpass hl
@@ -630,9 +630,9 @@ theorem twoKsB_ok (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) {pas
 
 
 /-- Writes of `rax` alone keep what follows the call. -/
-theorem AfterF.pad {fold pass : Nat} {s₀ s t : State} (h : AfterF fold pass s₀ s)
+theorem AfterF.pad {fold pass : Nat} {s₀ s t : State} (h : AfterFT fold pass s₀ t₁₂ s)
     (g : ∀ q, q ≠ .rax → t.gpr q = s.gpr q) (m : t.mem = s.mem) (rd : t.rd = s.rd) (wr : t.wr = s.wr) :
-    AfterF fold pass s₀ t :=
+    AfterFT fold pass s₀ t₁₂ t :=
   ⟨by rw [g _ (by decide)]; exact h.rsi, by rw [g _ (by decide)]; exact h.r14,
     by rw [g _ (by decide)]; exact h.r13, by rw [g _ (by decide)]; exact h.r12,
     by rw [g _ (by decide)]; exact h.rbx, by rw [g _ (by decide)]; exact h.rbp,
@@ -643,8 +643,8 @@ theorem AfterF.pad {fold pass : Nat} {s₀ s t : State} (h : AfterF fold pass s�
 /-- `twoKs`: `twoKsB` and its padding. -/
 theorem twoKs_ok (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) {pass : Nat} (hpass : XPass pass)
     {s₀ : State} (hp : APre e s₀)
-    {s : State} (h : FArgs v.callee.fold pass s₀ s) (hl : 449 ≤ L s₀) (hF : ¬ FLen (L s₀)) :
-    WP isa (twoKs v.callee.vl) s fun s' => AfterF v.callee.fold pass s₀ s' ∧ TailKs s₀ s'.mem :=
+    {s : State} (h : FArgsT v.callee.fold pass s₀ t₁₂ s) (hl : 449 ≤ L s₀) (hF : ¬ FLen (L s₀)) :
+    WP isa (twoKs v.callee.vl) s fun s' => AfterFT v.callee.fold pass s₀ t₁₂ s' ∧ TailKs s₀ s'.mem :=
   WP.seq (WP.mono (twoKsB_ok v hv hpass hp h hl hF) fun t ⟨a, k⟩ =>
     WP.mono (padIns_ok .rax (by decide) t) fun u p => ⟨AfterF.pad a p.gpr p.mem p.rd p.wr, by rw [p.mem]; exact k⟩)
 
@@ -653,8 +653,8 @@ theorem twoKs_ok (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) {pass
 it for 65 to 192). -/
 theorem fourKs_ok (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) {pass : Nat} (hpass : XPass pass)
     {s₀ : State} (hp : APre e s₀)
-    {s : State} (h : FArgs v.callee.fold pass s₀ s) (hx : XLen (L s₀)) :
-    WP isa (fourKs v.callee.vl) s fun s' => AfterF v.callee.fold pass s₀ s' ∧ TailKs s₀ s'.mem := by
+    {s : State} (h : FArgsT v.callee.fold pass s₀ t₁₂ s) (hx : XLen (L s₀)) :
+    WP isa (fourKs v.callee.vl) s fun s' => AfterFT v.callee.fold pass s₀ t₁₂ s' ∧ TailKs s₀ s'.mem := by
   have hf := (avx2_of v hv).1
   have hL9 : L s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
   have hm0 : mOf v.callee.fold pass (L s₀) = 0 := by rw [hf]; exact mOf_xlen hpass hx
@@ -731,11 +731,11 @@ theorem fourKs_ok (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) {pas
 /-- `prologueX`'s choice and the keystream: `twoKs`, `fourKs` or the call of
 `vg_chacha20_xor`. -/
 theorem prologueXMA_ok (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) {pass : Nat} (hpass : XPass pass)
-    {s₀ : State} (hp : APre e s₀) {s : State} (h : FArgs v.callee.fold pass s₀ s) :
-    WP isa (xselA v.callee) s fun s' => AfterF v.callee.fold pass s₀ s' ∧ TailKs s₀ s'.mem := by
+    {s₀ : State} (hp : APre e s₀) {s : State} (h : FArgsT v.callee.fold pass s₀ t₁₂ s) :
+    WP isa (xselA v.callee) s fun s' => AfterFT v.callee.fold pass s₀ t₁₂ s' ∧ TailKs s₀ s'.mem := by
   unfold xselA
   refine WP.seq (WP.mono (xTest_ok s) fun s₁ ⟨cf₁, rax₁, g₁, m₁, rd₁, wr₁, _⟩ => ?_)
-  have h₁ : FArgs v.callee.fold pass s₀ s₁ :=
+  have h₁ : FArgsT v.callee.fold pass s₀ t₁₂ s₁ :=
     ⟨by rw [g₁ _ (by decide), h.rdi], by rw [g₁ _ (by decide), h.rsi],
       by rw [g₁ _ (by decide), h.rdx], by rw [g₁ _ (by decide), h.rcx],
       by rw [g₁ _ (by decide), h.r15], by rw [g₁ _ (by decide), h.r14],
@@ -751,7 +751,7 @@ theorem prologueXMA_ok (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2)
     exact WP.mono (foldCall_ok v hp h₁) fun s' a => ⟨a, TailKs.of_xlen fun h' => by omega_using [hx', h'.1]⟩
   · have hl : 449 ≤ L s₀ := by have := of_decide_eq_false hx; omega_using [this]
     refine WP.seq (WP.mono (fTest_ok s₁) fun s₂ ⟨cf₂, g₂, m₂, rd₂, wr₂, _⟩ => ?_)
-    have h₂ : FArgs v.callee.fold pass s₀ s₂ :=
+    have h₂ : FArgsT v.callee.fold pass s₀ t₁₂ s₂ :=
       ⟨by rw [g₂ _ (by decide)]; exact h₁.rdi, by rw [g₂ _ (by decide)]; exact h₁.rsi,
         by rw [g₂ _ (by decide)]; exact h₁.rdx, by rw [g₂ _ (by decide)]; exact h₁.rcx,
         by rw [g₂ _ (by decide)]; exact h₁.r15, by rw [g₂ _ (by decide)]; exact h₁.r14,
@@ -769,11 +769,11 @@ theorem prologueXMA_ok (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2)
 /-- `prologueX`'s choice and the keystream: `twoKs`, `fourKs` or the call of
 `vg_chacha20_xor`. -/
 theorem prologueXMV_ok (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) {pass : Nat} (hpass : XPass pass)
-    {s₀ : State} (hp : APre e s₀) {s : State} (h : FArgs v.callee.fold pass s₀ s) :
-    WP isa (xselV v.callee) s fun s' => AfterF v.callee.fold pass s₀ s' ∧ TailKs s₀ s'.mem := by
+    {s₀ : State} (hp : APre e s₀) {s : State} (h : FArgsT v.callee.fold pass s₀ t₁₂ s) :
+    WP isa (xselV v.callee) s fun s' => AfterFT v.callee.fold pass s₀ t₁₂ s' ∧ TailKs s₀ s'.mem := by
   unfold xselV
   refine WP.seq (WP.mono (xTestV_ok s) fun s₁ ⟨cf₁, rax₁, g₁, m₁, rd₁, wr₁, _⟩ => ?_)
-  have h₁ : FArgs v.callee.fold pass s₀ s₁ :=
+  have h₁ : FArgsT v.callee.fold pass s₀ t₁₂ s₁ :=
     ⟨by rw [g₁ _ (by decide) (by decide), h.rdi], by rw [g₁ _ (by decide) (by decide), h.rsi],
       by rw [g₁ _ (by decide) (by decide), h.rdx], by rw [g₁ _ (by decide) (by decide), h.rcx],
       by rw [g₁ _ (by decide) (by decide), h.r15], by rw [g₁ _ (by decide) (by decide), h.r14],
@@ -787,7 +787,7 @@ theorem prologueXMV_ok (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2)
   refine WP.ite (decide (XLen (L s₀))) cf₁ (fun hx => ?_) (fun hx => ?_)
   · have hx' := of_decide_eq_true hx
     refine WP.seq (WP.mono (cmpRax64_ok s₁) fun s₂ ⟨cf₂, g₂, m₂, rd₂, wr₂, _⟩ => ?_)
-    have h₂ : FArgs v.callee.fold pass s₀ s₂ :=
+    have h₂ : FArgsT v.callee.fold pass s₀ t₁₂ s₂ :=
       ⟨by rw [g₂]; exact h₁.rdi, by rw [g₂]; exact h₁.rsi, by rw [g₂]; exact h₁.rdx, by rw [g₂]; exact h₁.rcx,
         by rw [g₂]; exact h₁.r15, by rw [g₂]; exact h₁.r14, by rw [g₂]; exact h₁.r13, by rw [g₂]; exact h₁.r12,
         by rw [g₂]; exact h₁.rbx, by rw [g₂]; exact h₁.rbp, by rw [g₂]; exact h₁.rsp, by rw [rd₂]; exact h₁.rd,
@@ -805,12 +805,12 @@ theorem prologueXMV_ok (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2)
 at `ctx + 736`. -/
 theorem prologueX_ok (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) {pass : Nat} (hpass : XPass pass)
     {s₀ : State} (hp : APre e s₀) :
-    WP isa (prologueX { v.callee with pass := pass }) (entryS s₀) fun s =>
-      PostP v.callee.fold pass s₀ s ∧ TailKs s₀ s.mem := by
+    WP isa (prologueX { v.callee with pass := pass }) (entryT s₀ t₁₂) fun s =>
+      PostPT v.callee.fold pass s₀ t₁₂ s ∧ TailKs s₀ s.mem := by
   have hP : PassOk v.callee.fold pass := by rw [(avx2_of v hv).1]; exact hpass.ok
   refine WP.seq (WP.mono (prologueA_ok v.fold_le hP (wide_of v) hp) fun s₁ h₁ => ?_)
   have hx : WP isa (xsel { v.callee with pass := pass }) s₁ fun s' =>
-      AfterF v.callee.fold pass s₀ s' ∧ TailKs s₀ s'.mem := by
+      AfterFT v.callee.fold pass s₀ t₁₂ s' ∧ TailKs s₀ s'.mem := by
     unfold xsel; split
     · exact prologueXMV_ok v hv hpass hp h₁
     · exact prologueXMA_ok v hv hpass hp h₁
@@ -826,6 +826,6 @@ theorem prologueX_mx (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) {
   obtain ⟨hf, -, hw⟩ := avx2_of v hv
   subst hpass
   rcases Bool.eq_false_or_eq_true v.callee.vl with hl | hl <;>
-    (simp only [prologueX, xsel, xselV, xselA, hl, ↓reduceIte, Bool.false_eq_true, Code.allInstrs, v.mxcsr, hf, hw]; rfl)
+    (simp only [prologueX, Impl.ChaCha20.X86_64.Callee.inPlace, xsel, xselV, xselA, hl, ↓reduceIte, Bool.false_eq_true, Code.allInstrs, v.mxcsr, hf, hw]; rfl)
 
 end VG.Proof.ChaCha20Poly1305.X86_64.Stitch

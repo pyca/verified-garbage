@@ -60,7 +60,7 @@ structure EPre (C W SP A D T : BitVec 32) (R N n : Nat) (s : State) : Prop where
   rA : Covers [argsR SP 8] (s.rd ++ s.wr)
   aw : (argsR SP 8).Disjoint ⟨w64 W, 2576⟩
   ad : (argsR SP 8).Disjoint ⟨w64 D, n⟩
-  as : (below SP 56).Disjoint (argsR SP 8)
+  as : (below SP 60).Disjoint (argsR SP 8)
   fa : SP.toNat + 4 + 4 * 8 ≤ 2 ^ 32
   ret : (⟨w64 SP, 4⟩ : Region).Disjoint ⟨w64 W, 2576⟩
   retD : (⟨w64 SP, 4⟩ : Region).Disjoint ⟨w64 D, n⟩
@@ -69,7 +69,7 @@ structure EPre (C W SP A D T : BitVec 32) (R N n : Nat) (s : State) : Prop where
   tfit : T.toNat + 16 ≤ 2 ^ 32
   t_rd : Covers [⟨w64 T, 16⟩] (s.rd ++ s.wr)
   t_w : (⟨w64 T, 16⟩ : Region).Disjoint ⟨w64 W, 2576⟩
-  t_stk : (below SP 56).Disjoint ⟨w64 T, 16⟩
+  t_stk : (below SP 60).Disjoint ⟨w64 T, 16⟩
 
 /-- The data as S2V's last string. -/
 theorem dataStr_ok {C W SP : BitVec 32} (L : Lay C W SP) {s : State} (E : Env C W SP s) {D : BitVec 32} {n : Nat}
@@ -208,7 +208,7 @@ theorem finR_wR {W SP : BitVec 32} {out : Nat} {ext : List Region}
   · exact .inl ⟨wB W, by simp, fun _ h => h⟩
   · exact .inl ⟨wS W, by simp, fun _ h => h⟩
   · exact .inl ⟨wC W, by simp, Offset.sub _ (by decide) (by decide)⟩
-  · exact .inl ⟨below SP 56, by simp, fun _ h => h⟩
+  · exact .inl ⟨below SP 60, by simp, fun _ h => h⟩
 
 theorem ctrR_wR {W SP D : BitVec 32} {n : Nat} {ext : List Region} (he : (⟨w64 D, n⟩ : Region) ∈ ext) :
     ∀ r ∈ ctrR W SP D n, (∃ r' ∈ wR W SP, Region.Sub r r') ∨ ∃ r' ∈ ext, Region.Sub r r' := by
@@ -217,7 +217,7 @@ theorem ctrR_wR {W SP D : BitVec 32} {n : Nat} {ext : List Region} (he : (⟨w64
   rcases hr with rfl | rfl | rfl | rfl
   · exact .inl ⟨wA W, by simp, Offset.sub _ (by decide) (by decide)⟩
   · exact .inl ⟨wC W, by simp, Offset.sub _ (by decide) (by decide)⟩
-  · exact .inl ⟨below SP 56, by simp, fun _ h => h⟩
+  · exact .inl ⟨below SP 60, by simp, fun _ h => h⟩
   · exact .inr ⟨_, he, fun _ h => h⟩
 
 /-- The counter block: written by `counter`, in `wA`. -/

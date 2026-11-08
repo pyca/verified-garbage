@@ -76,7 +76,7 @@ theorem Lay4.of {Ctx St W SP : BitVec 32} {K : Nat} (fc : Ctx.toNat + 256 ≤ 2 
     (kc : (below SP K).Disjoint ⟨w64 Ctx, 256⟩) (ks : (below SP K).Disjoint ⟨w64 St, 80⟩)
     (kw : (below SP K).Disjoint ⟨w64 W, 2560⟩) : Lay4 Ctx St W SP K :=
   have hb := VG.X86.below_sub (sp := SP) k28 sp
-  ⟨⟨fc, fs, fw, by decide, Nat.le_refl _, by omega, cs, cw, sa, sb, kc.sub_left hb, ks.sub_left hb,
+  ⟨⟨fc, fs, fw, by decide, by decide, by omega, cs, cw, sa, sb, kc.sub_left hb, ks.sub_left hb,
     kw.sub_left hb⟩, k28, sp, kc, ks, kw⟩
 
 /-- Data apart from the `K` bytes below `SP` is apart from the `k ≤ K`. -/
