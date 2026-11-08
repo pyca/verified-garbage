@@ -178,7 +178,7 @@ theorem openSp_ctN :
           (sp₂.trans qsp) (by rw [← e5, ← q6, ← q7]; exact f₂)
         rw [← e2] at hP₂ k₂
         rw [← q0] at k₂
-        exact pwSel_rel v g (.inr rfl) hP₁ hs₁ hP₂ hs₂ c₁ k₁ c₂ k₂ (sp₁.trans sp₂.symm))
+        exact pwSel_rel v g (.inr (.inl rfl)) hP₁ hs₁ hP₂ hs₂ c₁ k₁ c₂ k₂ (sp₁.trans sp₂.symm))
       htb₁ htb₂
       fun v₁ v₂ sp₁ sp₂ hr h15 r₁ w₁ f₁ r₂ w₂ f₂ => by
         obtain ⟨hP₁, hs₁, -⟩ := gwCallS_of p₁ (Y := stackArg σ₁ 5 + BitVec.ofNat 64 512)
@@ -289,7 +289,7 @@ include hMK gh
 theorem openSp_correctN (s : State) (hs : openSpN s) :
     ∃ t s', Exec isa (Impl.AesGcm.AArch64.Stitch.openSplitWithPw v.callees g.fn) s t s' ∧ abiPreserved s s' ∧
       splitPost s s' :=
-  WP.withPreservedV (openSp_wp v g hMK gh s hs) (stitchOpenSplit_keepsV v (pwSel_keepsV v g (.inr rfl)))
+  WP.withPreservedV (openSp_wp v g hMK gh s hs) (stitchOpenSplit_keepsV v (pwSel_keepsV v g (.inr (.inl rfl))))
 
 theorem openSp_correct (s : State) (hs : openSpAArch64.pre s) :
     ∃ t s', Exec isa (Impl.AesGcm.AArch64.Stitch.openSplitWithPw v.callees g.fn) s t s' ∧ abiPreserved s s' ∧

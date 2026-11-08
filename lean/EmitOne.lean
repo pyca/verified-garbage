@@ -59,13 +59,20 @@ def nativeTCB (names : List String) : List (String × FilePath) :=
 
 def usage : String := "usage: lake env lean --run EmitOne.lean [--check] <Alg>.<Target> …"
 
+/-- The lines of a generated file that are not indented: its items, but not
+those inside them (a dispatcher's `select`, `first` and `CHOSEN`,
+`VG.Rust.dispatcher`). -/
+def topLines (text : String) : List String :=
+  (text.splitOn "\n").filter fun l => !l.startsWith " "
+
 /-- The names of the functions a generated file defines: each line declaring
 `extern "<abi>" fn <name>(`, whatever its ABI (`"C"`, `"sysv64"`, …), each
 dispatcher, `pub unsafe fn <name>(` (`VG.Rust.dispatcher`), and each other
 name of one of them, `pub use self::<f> as <name>;` (`VG.Rust.alias`), or
-`pub use crate::<module>::<f> as <name>;` (`VG.Rust.soleDispatcher`). -/
+`pub use crate::<module>::<f> as <name>;` (`VG.Rust.soleDispatcher`), each
+not indented (`topLines`). -/
 def fnNames (text : String) : List String :=
-  (text.splitOn "\n").filterMap fun line =>
+  (topLines text).filterMap fun line =>
     match line.splitOn "extern \"" with
     | [_, rest] =>
       match rest.splitOn "\" fn " with
@@ -84,7 +91,7 @@ def fnNames (text : String) : List String :=
 does not read: then it cannot tell which functions other registration files
 emit into the file, and must not overwrite it. -/
 def unreadFns (text : String) : Bool :=
-  (fnNames text).length != ((text.splitOn "\n").filter fun l =>
+  (fnNames text).length != ((topLines text).filter fun l =>
     l.contains "fn vg_" || l.contains "use self::vg_" || l.contains "pub use crate::").length
 
 /-- Runs a process, inheriting its output; its exit code. -/

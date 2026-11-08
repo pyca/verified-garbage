@@ -12,7 +12,7 @@ pub use crate::chacha20::vg_chacha20_init as vg_chacha20_init_auto;
 ///
 /// Contract: `VG.Spec.ChaCha20.applyContract`. Constant time: only the pointers, `len` and the number of bytes of keystream left in `*state` (`VG.Spec.ChaCha20.leftAt`: 64 × (2³² − `c`) for the initial block counter `c`, less the bytes applied since) may affect timing, not the key, the nonce, the keystream or the data. The function may leak that number.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_chacha20_apply_avx512` if the CPU supports its features (`VG_CHACHA20_APPLY_AVX512_FEATURES`) and it also supports `avx512ifma`; `vg_chacha20_apply_avx512vl` if the CPU supports its features (`VG_CHACHA20_APPLY_AVX512VL_FEATURES`); `vg_chacha20_apply_avx2` if the CPU supports its features (`VG_CHACHA20_APPLY_AVX2_FEATURES`); `vg_chacha20_apply_ssse3` if the CPU supports its features (`VG_CHACHA20_APPLY_SSSE3_FEATURES`); or else `vg_chacha20_apply`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_chacha20_apply_avx512` if the CPU supports its features (`VG_CHACHA20_APPLY_AVX512_FEATURES`) and it also supports `avx512ifma`; `vg_chacha20_apply_avx512vl` if the CPU supports its features (`VG_CHACHA20_APPLY_AVX512VL_FEATURES`); `vg_chacha20_apply_avx2` if the CPU supports its features (`VG_CHACHA20_APPLY_AVX2_FEATURES`); `vg_chacha20_apply_ssse3` if the CPU supports its features (`VG_CHACHA20_APPLY_SSSE3_FEATURES`); or else `vg_chacha20_apply`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -23,29 +23,44 @@ pub use crate::chacha20::vg_chacha20_init as vg_chacha20_init_auto;
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_chacha20_apply_auto(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(verified_garbage_cpu::Features(crate::chacha20::VG_CHACHA20_APPLY_AVX512_FEATURES.0 | verified_garbage_cpu::feature::AVX512IFMA)) {
-        // SAFETY: the caller's obligations, which are `vg_chacha20_apply_avx512`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::chacha20::vg_chacha20_apply_avx512(state, data, len) };
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32;
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if cpu.contains(verified_garbage_cpu::Features(crate::chacha20::VG_CHACHA20_APPLY_AVX512_FEATURES.0 | verified_garbage_cpu::feature::AVX512IFMA)) {
+            return crate::chacha20::vg_chacha20_apply_avx512;
+        }
+        if cpu.contains(crate::chacha20::VG_CHACHA20_APPLY_AVX512VL_FEATURES) {
+            return crate::chacha20::vg_chacha20_apply_avx512vl;
+        }
+        if cpu.contains(crate::chacha20::VG_CHACHA20_APPLY_AVX2_FEATURES) {
+            return crate::chacha20::vg_chacha20_apply_avx2;
+        }
+        if cpu.contains(crate::chacha20::VG_CHACHA20_APPLY_SSSE3_FEATURES) {
+            return crate::chacha20::vg_chacha20_apply_ssse3;
+        }
+        crate::chacha20::vg_chacha20_apply
     }
-    if cpu.contains(crate::chacha20::VG_CHACHA20_APPLY_AVX512VL_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_chacha20_apply_avx512vl`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::chacha20::vg_chacha20_apply_avx512vl(state, data, len) };
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(state, data, len) }
     }
-    if cpu.contains(crate::chacha20::VG_CHACHA20_APPLY_AVX2_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_chacha20_apply_avx2`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::chacha20::vg_chacha20_apply_avx2(state, data, len) };
-    }
-    if cpu.contains(crate::chacha20::VG_CHACHA20_APPLY_SSSE3_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_chacha20_apply_ssse3`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::chacha20::vg_chacha20_apply_ssse3(state, data, len) };
-    }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::chacha20::vg_chacha20_apply(state, data, len) }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(state, data, len) }
 }
 
 /// `vg_chacha20_set_nonce`, the only implementation of it on this target, which needs no CPU feature

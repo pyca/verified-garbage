@@ -1624,20 +1624,44 @@ checks with `verified_garbage_cpu::detected()`, which detects the features
 the CPU and operating system support (`crates/verified-garbage-cpu/`), of
 which a `Features` constant names the bits (`featuresConst`):
 
+It chooses once, on its first call, and calls the implementation it chose
+from then on through a pointer to it, without choosing again: a call is a
+load and an indirect call, however many implementations the function has.
+The pointer, `CHOSEN`, starts out pointing at `first`, a function of the
+implementations' type that chooses one (`select`, which tries them in order
+as below), records it in `CHOSEN` and runs it. Threads that race to make the
+first call choose the same implementation, since `detected()` returns the
+same features to all of them, so `CHOSEN` only ever holds `first` or that
+implementation, and `Relaxed` is enough:
+
 ```rust
 /// <the base's documentation, without its CPU features>
 #[inline]
 pub unsafe fn <base>_auto(<the signature>) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::<module>::<NAME>_FEATURES) {
-        // SAFETY: …
-        return unsafe { crate::<module>::<name>(<the arguments>) };
+    type Impl = unsafe extern "<abi>" fn<the signature>;
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if cpu.contains(crate::<module>::<NAME>_FEATURES) {
+            return crate::<module>::<name>;
+        }
+        …
+        crate::<module>::<base>
     }
-    …
-    // SAFETY: the caller's obligations.
-    unsafe { crate::<module>::<base>(<the arguments>) }
+    unsafe extern "<abi>" fn first<the signature> {
+        let f = select();
+        CHOSEN.store(f as *mut (), Relaxed);
+        // SAFETY: …
+        unsafe { f(<the arguments>) }
+    }
+    static CHOSEN: AtomicPtr<()> = AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: …
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(Relaxed))(<the arguments>) }
 }
 ```
+
+Its items are inside it, so that their names are its own and its lines, from
+its first to the `}` closing it, are all of its code (as
+`ci/merge_rust_coverage.py` reads it).
 
 The dispatchers of a module's functions are in a file of their own,
 `dispatch/<module>.rs` of the crate's `codeDir` (`dispatchFile`), declared by
@@ -1933,8 +1957,21 @@ def dispatchNote (base : String) (arms : List Arm) : String :=
     | cs => s!"`{a.impl.name}` if " ++ englishList "and" cs
   s!"It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders \
     (`VG.Rust.Rank`): " ++ "; ".intercalate (arms.map item) ++
-    s!"; or else `{base}`, which needs no CPU feature. Each has this documentation but for its \
-    stack (whose requirements here are the largest) and what it writes."
+    s!"; or else `{base}`, which needs no CPU feature. It chooses on its first call, and calls \
+    the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) \
+    and what it writes."
+
+/-- The body of a function returning the implementation, of the function
+whose base is `b`, that the first of `arms` that applies names, or else the
+base (see above), each line after `ind`. -/
+def choice (ind : String) (b : Artifact) (arms : List Arm) : String :=
+  (if arms.isEmpty then "" else s!"{ind}let cpu = verified_garbage_cpu::detected();\n") ++
+  String.join (arms.map fun a =>
+    String.join (a.impl.gate.map fun p => s!"{ind}#[cfg({p})]\n") ++
+    s!"{ind}if {condOf a} " ++ "{\n" ++
+    s!"{ind}    return crate::{a.impl.module}::{a.impl.name};\n" ++
+    s!"{ind}" ++ "}\n") ++
+  s!"{ind}crate::{b.module}::{b.name}\n"
 
 /-- The dispatcher of the function `g` of the module `m` (see above), given
 its implementations' `arms`. -/
@@ -1947,7 +1984,9 @@ def dispatcher (g : Group) (arms : List Arm) : String :=
     let ns := (g.members.map (·.1)).map fun a => a.written.lookup p
     if ns.all (·.isSome) then some (p, ns.foldl (fun m o => max m (o.getD 0)) n) else none
   let args := argsOf b.sig
+  let abi := b.target.rustAbi
   let doc := fullDoc.fullDocWith b auto stack written [] [dispatchNote b.name arms]
+  let relaxed := "core::sync::atomic::Ordering::Relaxed"
   writtenConsts auto "" written ++
   docComment "" doc ++
   safetyAllow doc ++
@@ -1955,16 +1994,31 @@ def dispatcher (g : Group) (arms : List Arm) : String :=
   "#[allow(clippy::too_many_arguments)]\n" ++
   "#[inline]\n" ++
   s!"pub unsafe fn {auto}{b.sig.rust} " ++ "{\n" ++
-  (if arms.isEmpty then "" else "    let cpu = verified_garbage_cpu::detected();\n") ++
-  String.join (arms.map fun a =>
-    String.join (a.impl.gate.map fun p => s!"    #[cfg({p})]\n") ++
-    s!"    if {condOf a} " ++ "{\n" ++
-    s!"        // SAFETY: the caller's obligations, which are `{a.impl.name}`'s, and the CPU\n" ++
-    "        // has the features it needs.\n" ++
-    s!"        return unsafe " ++ "{ " ++ s!"crate::{a.impl.module}::{a.impl.name}({args})" ++ " };\n" ++
-    "    }\n") ++
-  "    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.\n" ++
-  "    unsafe { " ++ s!"crate::{b.module}::{b.name}({args})" ++ " }\n" ++
+  "    /// The type of the implementations.\n" ++
+  s!"    type Impl = unsafe extern \"{abi}\" fn{b.sig.rust};\n" ++
+  "    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only\n" ++
+  "    /// features the CPU has.\n" ++
+  "    #[cold]\n" ++
+  "    fn select() -> Impl {\n" ++
+  choice "        " b arms ++
+  "    }\n" ++
+  "    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls\n" ++
+  "    /// after it, and runs it.\n" ++
+  "    #[cold]\n" ++
+  s!"    unsafe extern \"{abi}\" fn first{b.sig.rust} " ++ "{\n" ++
+  "        let f = select();\n" ++
+  s!"        CHOSEN.store(f as *mut (), {relaxed});\n" ++
+  "        // SAFETY: the caller's obligations, which are those of every implementation, `f`\n" ++
+  "        // among them, and the CPU has the features `f` needs.\n" ++
+  s!"        unsafe " ++ "{ " ++ s!"f({args})" ++ " }\n" ++
+  "    }\n" ++
+  "    /// The function to call: `first`, until it records the implementation it chose.\n" ++
+  "    static CHOSEN: core::sync::atomic::AtomicPtr<()> =\n" ++
+  "        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());\n" ++
+  "    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,\n" ++
+  "    // or an implementation `select` returned, which needs only features the CPU has. Calling\n" ++
+  "    // either carries the caller's obligations, which are those of every implementation.\n" ++
+  s!"    unsafe " ++ "{ " ++ s!"core::mem::transmute::<*mut (), Impl>(CHOSEN.load({relaxed}))({args})" ++ " }\n" ++
   "}\n"
 
 /-- The dispatcher of the function `g` whose base is its only implementation:
@@ -2002,13 +2056,7 @@ def selector (g : Group) (arms : List Arm) : String :=
   "#[allow(clippy::type_complexity)]\n" ++
   "#[inline]\n" ++
   s!"pub fn {selectName b.name}() -> {ty} " ++ "{\n" ++
-  (if arms.isEmpty then "" else "    let cpu = verified_garbage_cpu::detected();\n") ++
-  String.join (arms.map fun a =>
-    String.join (a.impl.gate.map fun p => s!"    #[cfg({p})]\n") ++
-    s!"    if {condOf a} " ++ "{\n" ++
-    s!"        return crate::{a.impl.module}::{a.impl.name};\n" ++
-    "    }\n") ++
-  s!"    crate::{b.module}::{b.name}\n" ++
+  choice "    " b arms ++
   "}\n"
 
 /-- Whether `v` is a vendor of lowercase ASCII letters, digits and
