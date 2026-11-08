@@ -29,6 +29,8 @@
     target_arch = "riscv64"
 ))]
 
+#[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+use crate::arch::dispatch::gcm::vg_aes_gcm_wipe_prepared_auto;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::gcm::VG_AES_GCM_SEAL_WITH_POWERS_AES_SHA3_FEATURES;
 use crate::arch::gcm::vg_aes_gcm_open_to;
@@ -43,7 +45,7 @@ use crate::arch::gcm::{
     vg_aes_gcm_stream_decrypt_prepared_aesni_pclmul_avx,
     vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul,
     vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul_avx,
-    vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul, vg_aes_gcm_wipe_prepared,
+    vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul,
 };
 #[cfg(target_arch = "aarch64")]
 use crate::arch::gcm::{
@@ -972,8 +974,8 @@ impl Drop for AesGcm {
             // SAFETY: `self.ctx` is valid for reads and writes of 1032 bytes,
             // and overlaps nothing on the stack; `new` wrote the count of the
             // powers at byte 1024 (`AesGcm::prepare`), which is all
-            // `vg_aes_gcm_wipe_prepared` reads, and it needs no CPU feature.
-            unsafe { vg_aes_gcm_wipe_prepared(self.ctx.as_mut_ptr()) };
+            // `vg_aes_gcm_wipe_prepared` reads.
+            unsafe { vg_aes_gcm_wipe_prepared_auto(self.ctx.as_mut_ptr()) };
             return;
         }
         // SAFETY: `self.ctx` is valid for writes of the 256 bytes of the key
@@ -2420,7 +2422,7 @@ mod tests {
                 if self.fns.prepare.is_some() {
                     let key = *k.key();
                     // SAFETY: as in `drop`.
-                    unsafe { super::vg_aes_gcm_wipe_prepared(k.ctx.as_mut_ptr()) };
+                    unsafe { super::vg_aes_gcm_wipe_prepared_auto(k.ctx.as_mut_ptr()) };
                     // SAFETY: `k.ctx` is valid for writes of 256 bytes.
                     unsafe { k.ctx.as_mut_ptr().cast::<[u64; 32]>().write(key) };
                 }
