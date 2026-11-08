@@ -34,5 +34,5 @@ def roMixDirectWith (bm : Prog isa) : Prog isa :=
   .seq (fillWith bm) <| .seq (.block rmMid) <|
   .seq (.loop (step3 bm) .ne) (.block rmEpilogue)
 
-def roMixDirect : Prog isa := roMixDirectWith blockMixFused
+def roMixDirect : Prog isa := roMixDirectWith Packed.blockMix
 end VG.Impl.Scrypt.X86_64

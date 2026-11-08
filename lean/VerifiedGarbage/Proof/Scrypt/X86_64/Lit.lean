@@ -23,6 +23,7 @@ namespace VG
 materialize_code Impl.Scrypt.X86_64.salsa
 materialize_code Impl.Scrypt.X86_64.blockMix
 materialize_code Impl.Scrypt.X86_64.blockMixFused
+materialize_code Impl.Scrypt.X86_64.Packed.blockMix
 materialize_code Impl.Scrypt.X86_64.roMix
 
 materialize_code Impl.Scrypt.X86_64.roMixDirect
