@@ -65,15 +65,19 @@ omit L in
 theorem hz_mod (o : Nat) (ho : o < 16) : (Spec.Gcm.zeros o).length % 16 = o := by
   rw [Proof.Gcm.length_zeros]; exact Nat.mod_eq_of_lt ho
 
-/-- `fo`, `flush` and `textArgs` in two runs, and what each leaves. -/
-theorem padArgs_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {R n P : Nat} {D : Addr} {a₁ a₂ c₁ c₂ : List Byte}
-    {H₁ H₂ : Block} {σ₁ σ₂ : State} (h₁ : BodyIn Ctx St W SP k₁ R n P D a₁ c₁ H₁ σ₁)
-    (h₂ : BodyIn Ctx St W SP k₂ R n P D a₂ c₂ H₂ σ₂) (hq : a₁.length % 16 = a₂.length % 16)
+/-- `fo`, `flush` and `textArgs` in two runs, and what each leaves, with the
+text in place or only read (`to`). -/
+theorem padArgs_relG (v : GcmImpl) {to : Bool} {k₁ k₂ : Reg → BitVec 64} {R n P : Nat} {D : Addr}
+    {a₁ a₂ c₁ c₂ : List Byte} {H₁ H₂ : Block} {σ₁ σ₂ : State} (h₁ : BodyInG to Ctx St W SP k₁ R n P D a₁ c₁ H₁ σ₁)
+    (h₂ : BodyInG to Ctx St W SP k₂ R n P D a₂ c₂ H₂ σ₂) (hq : a₁.length % 16 = a₂.length % 16)
     {rest : Prog isa}
-    (hr : ∀ τ₁ τ₂, CrIn Ctx St W SP k₁ R P D n τ₁ → CrIn Ctx St W SP k₂ R P D n τ₂ →
+    (hr : ∀ τ₁ τ₂, Env Ctx St W SP τ₁ → Env Ctx St W SP τ₂ → Kept k₁ τ₁ → Kept k₂ τ₂ →
+      τ₁.gpr .x23 = D → τ₂.gpr .x23 = D → τ₁.gpr .x24 = BitVec.ofNat 64 n → τ₂.gpr .x24 = BitVec.ofNat 64 n →
+      τ₁.gpr .x25 = BitVec.ofNat 64 (P % 16) → τ₂.gpr .x25 = BitVec.ofNat 64 (P % 16) →
+      cond to (DataOk St W τ₁ D n) (DataW Ctx St W τ₁ D n) → cond to (DataOk St W τ₂ D n) (DataW Ctx St W τ₂ D n) →
       RelCT isa (Eq2 τ₁ τ₂) rest TT) :
     RelCT isa (Eq2 σ₁ σ₂) (.seq fo (.seq (flush v.callees 16) (.seq (.block textArgs) rest))) TT := by
-  have hn := h₁.data.ok.lt
+  have hn := (dataOk_of h₁.data).lt
   have k26₁ : k₁ .x26 = BitVec.ofNat 64 n := (h₁.kept .x26 (by decide)).symm.trans h₁.x26
   have k27₁ : k₁ .x27 = BitVec.ofNat 64 P := (h₁.kept .x27 (by decide)).symm.trans h₁.x27
   have k28₁ : k₁ .x28 = D := (h₁.kept .x28 (by decide)).symm.trans h₁.x28
@@ -104,11 +108,23 @@ theorem padArgs_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {R n P : Nat} 
   have ge₂ := fe₂.of_regs ra₂
   have gk₁ := fk₁.of_others ra₁.others
   have gk₂ := fk₂.of_others ra₂.others
-  exact hr τ₁ τ₂
-    ⟨ge₁, gk₁, (gk₁ .x22 (by decide)).trans k22₁, h₁.rounds, a23₁, a24₁, a25₁,
-      h₁.data.of_eq (by rw [ra₁.rd, frd₁, r₁.rd]) (by rw [ra₁.wr, fwr₁, r₁.wr]), rfl⟩
-    ⟨ge₂, gk₂, (gk₂ .x22 (by decide)).trans k22₂, h₂.rounds, a23₂, a24₂, a25₂,
-      h₂.data.of_eq (by rw [ra₂.rd, frd₂, r₂.rd]) (by rw [ra₂.wr, fwr₂, r₂.wr]), rfl⟩
+  exact hr τ₁ τ₂ ge₁ ge₂ gk₁ gk₂ a23₁ a23₂ a24₁ a24₂ a25₁ a25₂
+    (data_of_eq h₁.data (by rw [ra₁.rd, frd₁, r₁.rd]) (by rw [ra₁.wr, fwr₁, r₁.wr]))
+    (data_of_eq h₂.data (by rw [ra₂.rd, frd₂, r₂.rd]) (by rw [ra₂.wr, fwr₂, r₂.wr]))
+
+/-- `padArgs_relG` in place, with what `crypt` needs. -/
+theorem padArgs_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {R n P : Nat} {D : Addr} {a₁ a₂ c₁ c₂ : List Byte}
+    {H₁ H₂ : Block} {σ₁ σ₂ : State} (h₁ : BodyIn Ctx St W SP k₁ R n P D a₁ c₁ H₁ σ₁)
+    (h₂ : BodyIn Ctx St W SP k₂ R n P D a₂ c₂ H₂ σ₂) (hq : a₁.length % 16 = a₂.length % 16)
+    {rest : Prog isa}
+    (hr : ∀ τ₁ τ₂, CrIn Ctx St W SP k₁ R P D n τ₁ → CrIn Ctx St W SP k₂ R P D n τ₂ →
+      RelCT isa (Eq2 τ₁ τ₂) rest TT) :
+    RelCT isa (Eq2 σ₁ σ₂) (.seq fo (.seq (flush v.callees 16) (.seq (.block textArgs) rest))) TT := by
+  have k22₁ : k₁ .x22 = BitVec.ofNat 64 R := (h₁.kept .x22 (by decide)).symm.trans h₁.x22
+  have k22₂ : k₂ .x22 = BitVec.ofNat 64 R := (h₂.kept .x22 (by decide)).symm.trans h₂.x22
+  exact padArgs_relG L v h₁ h₂ hq fun τ₁ τ₂ e₁ e₂ g₁ g₂ a23₁ a23₂ a24₁ a24₂ a25₁ a25₂ d₁ d₂ =>
+    hr τ₁ τ₂ ⟨e₁, g₁, (g₁ .x22 (by decide)).trans k22₁, h₁.rounds, a23₁, a24₁, a25₁, d₁, rfl⟩
+      ⟨e₂, g₂, (g₂ .x22 (by decide)).trans k22₂, h₂.rounds, a23₂, a24₂, a25₂, d₂, rfl⟩
 
 /-- `textAbs` in two runs. -/
 theorem textAbs_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {n P : Nat} {D : Addr} {σ₁ σ₂ : State}
