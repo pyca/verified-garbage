@@ -2735,6 +2735,25 @@ mod tests {
     /// functions read alike, and on AArch64 next to it; a key whose backend
     /// has none does not. Either encrypts and decrypts every length,
     /// one-shot, out of place and streaming, as the baseline does, and a
+    /// `drop`'s wipe of a prepared key context zeroes what was written: a
+    /// key context prepared by `vg_aes_gcm_prepare_auto`, whose powers (none
+    /// where it computes none) and count the wipe reads.
+    #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+    #[test]
+    fn wipe_prepared() {
+        let k = AesGcm::new(&[0x5a; 16]).unwrap();
+        let mut ctx: super::Ctx = [0; 129];
+        ctx[..32].copy_from_slice(k.key());
+        // SAFETY: `ctx` is valid for reads and writes of 1032 bytes, and its
+        // first 256 bytes are a key context of `vg_aes_gcm_init`.
+        unsafe { crate::arch::dispatch::gcm::vg_aes_gcm_prepare_auto(&mut ctx) };
+        let count = ctx[128] as usize;
+        assert!(ctx[..32] != [0; 32]);
+        // SAFETY: as above, and `ctx` holds the count `prepare` wrote.
+        unsafe { crate::arch::dispatch::gcm::vg_aes_gcm_wipe_prepared_auto(&mut ctx) };
+        assert!(ctx[..32 + 2 * count].iter().all(|&w| w == 0));
+    }
+
     /// clone keeps the powers.
     #[cfg(any(
         all(target_arch = "x86_64", feature = "alloc"),
