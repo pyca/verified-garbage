@@ -29,9 +29,8 @@ for key generation, encapsulation and decapsulation (a frame of 28 bytes,
 padded: four or five arguments and the result), 136 for encapsulation with
 `H(ek)` (44 bytes: six arguments and the result, padded); and with `scratch`
 left scrubbed (`*_scrubbed`, the contracts of `Proof/MlKem/Scrubbed.lean`),
-since every byte of it is zero (`Scrubbed.keyGen_wiped`, …). `*_verified`
-are those weakened to the contracts of `Spec/MlKem/`, which do not state it
-yet.
+since every byte of it is zero (`Scrubbed.keyGen_wiped`, …). `*_verified` state them as the contracts of
+`Spec/MlKem/`.
 -/
 
 @[expose] public section
@@ -587,7 +586,7 @@ theorem keyGen_scrubbed :
 
 theorem keyGen_verified :
     Verified target Impl.MlKem.X86.Wipe.keyGen (Spec.MlKem.keyGenContract abi 120) :=
-  Scrubbed.Verified.keyGen_of_scrubbed keyGen_scrubbed
+  keyGen_scrubbed
 
 theorem encapsH_scrubbed :
     Verified target Impl.MlKem.X86.Wipe.encapsH (Scrubbed.encapsHContract abi 136) :=
@@ -595,7 +594,7 @@ theorem encapsH_scrubbed :
 
 theorem encapsH_verified :
     Verified target Impl.MlKem.X86.Wipe.encapsH (Spec.MlKem.encapsHContract abi 136) :=
-  Scrubbed.Verified.encapsH_of_scrubbed encapsH_scrubbed
+  encapsH_scrubbed
 
 theorem encaps_scrubbed :
     Verified target Impl.MlKem.X86.Wipe.encaps (Scrubbed.encapsContract abi 120) :=
@@ -603,7 +602,7 @@ theorem encaps_scrubbed :
 
 theorem encaps_verified :
     Verified target Impl.MlKem.X86.Wipe.encaps (Spec.MlKem.encapsContract abi 120) :=
-  Scrubbed.Verified.encaps_of_scrubbed encaps_scrubbed
+  encaps_scrubbed
 
 theorem decaps_scrubbed :
     Verified target Impl.MlKem.X86.Wipe.decaps (Scrubbed.decapsContract abi 120) :=
@@ -611,7 +610,7 @@ theorem decaps_scrubbed :
 
 theorem decaps_verified :
     Verified target Impl.MlKem.X86.Wipe.decaps (Spec.MlKem.decapsContract abi 120) :=
-  Scrubbed.Verified.decaps_of_scrubbed decaps_scrubbed
+  decaps_scrubbed
 
 theorem keyGen1024_scrubbed :
     Verified target Impl.MlKem.X86.Wipe.keyGen1024 (Scrubbed.keyGen1024Contract abi 120) :=
@@ -619,7 +618,7 @@ theorem keyGen1024_scrubbed :
 
 theorem keyGen1024_verified :
     Verified target Impl.MlKem.X86.Wipe.keyGen1024 (Spec.MlKem1024.keyGenContract abi 120) :=
-  Scrubbed.Verified.keyGen1024_of_scrubbed keyGen1024_scrubbed
+  keyGen1024_scrubbed
 
 theorem encapsH1024_scrubbed :
     Verified target Impl.MlKem.X86.Wipe.encapsH1024 (Scrubbed.encapsH1024Contract abi 136) :=
@@ -627,7 +626,7 @@ theorem encapsH1024_scrubbed :
 
 theorem encapsH1024_verified :
     Verified target Impl.MlKem.X86.Wipe.encapsH1024 (Spec.MlKem1024.encapsHContract abi 136) :=
-  Scrubbed.Verified.encapsH1024_of_scrubbed encapsH1024_scrubbed
+  encapsH1024_scrubbed
 
 theorem encaps1024_scrubbed :
     Verified target Impl.MlKem.X86.Wipe.encaps1024 (Scrubbed.encaps1024Contract abi 120) :=
@@ -635,7 +634,7 @@ theorem encaps1024_scrubbed :
 
 theorem encaps1024_verified :
     Verified target Impl.MlKem.X86.Wipe.encaps1024 (Spec.MlKem1024.encapsContract abi 120) :=
-  Scrubbed.Verified.encaps1024_of_scrubbed encaps1024_scrubbed
+  encaps1024_scrubbed
 
 theorem decaps1024_scrubbed :
     Verified target Impl.MlKem.X86.Wipe.decaps1024 (Scrubbed.decaps1024Contract abi 120) :=
@@ -643,6 +642,6 @@ theorem decaps1024_scrubbed :
 
 theorem decaps1024_verified :
     Verified target Impl.MlKem.X86.Wipe.decaps1024 (Spec.MlKem1024.decapsContract abi 120) :=
-  Scrubbed.Verified.decaps1024_of_scrubbed decaps1024_scrubbed
+  decaps1024_scrubbed
 
 end VG.Proof.MlKem.X86.Wipe
