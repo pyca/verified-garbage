@@ -1833,9 +1833,5 @@ pub(crate) mod vg_p256_add_mod_n;
 pub(crate) mod vg_p256_mul_mod_n;
 
 #[rustfmt::skip]
-#[path = "internal/vg_p256_point_double.rs"]
-pub(crate) mod vg_p256_point_double;
-
-#[rustfmt::skip]
 #[path = "internal/vg_p256_sub_mod_n.rs"]
 pub(crate) mod vg_p256_sub_mod_n;
