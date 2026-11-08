@@ -127,7 +127,7 @@ theorem mulCall_ok {S : Impl.Weierstrass.Mont.Modulus} (hM : ModOk S.k S.m) {s :
   have := own_lt S.k
   exact callOp_ok (V := fun m m' => wordsVal m' base o S.k < S.m ∧
       wordsVal m' base o S.k * 2 ^ (64 * S.k) % S.m = wordsVal m base a S.k * wordsVal m base b S.k % S.m)
-    rfl hw (by omega) (by omega) (by omega) fun t _ h2 h3 h4 h5 h6 h7 => by
+    (mulFn_noFrames _ _) hw (by omega) (by omega) (by omega) fun t _ h2 h3 h4 h5 h6 h7 => by
       obtain ⟨tr, t', he, A, G, V, C, K⟩ := mulFn_ok hM (pre_of_call hw.nowrap ho ha hb h2 h3 h4 h5 h6)
         (by rw [h3, h6, h7]; exact hB)
       rw [h3, h4, h5, h6] at *

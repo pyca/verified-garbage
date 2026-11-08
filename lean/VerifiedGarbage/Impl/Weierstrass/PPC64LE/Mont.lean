@@ -15,7 +15,8 @@ words, with the operations of `Impl/Mont/PPC64LE.lean` on the working space
    high half of a 32-bit argument unspecified), and `r4`, `r5` and `r6`
    point to `[o]`, `[a]` and `[b]`; the modulus is stored in the function's
    own working space (`setConst`);
-2. the operation (`rmul`, `add` or `sub`) reads `[a]` and `[b]` and writes
+2. the operation (`rmulSel`, which is `rmul4` for at most four words and
+   `rmul` for more, `add` or `sub`) reads `[a]` and `[b]` and writes
    `[o]` through the pointers, and the function returns.
 
 The functions write only the volatile registers `r0` and `r4`–`r12` (and
@@ -66,7 +67,7 @@ entry, then `op`. -/
 def fn (n m : Nat) (op : Prog isa) : Prog isa := .seq (.block zext) (.seq (.block (entry n m)) op)
 
 /-- `vg_<curve>_mul_mod_<p|n>`. -/
-def mulFn (n m : Nat) : Prog isa := fn n m (rmul (mod n m) (own n))
+def mulFn (n m : Nat) : Prog isa := fn n m (rmulSel (mod n m) (own n))
 
 /-- `vg_<curve>_add_mod_<p|n>`. -/
 def addFn (n m : Nat) : Prog isa := fn n m (.block (add (mod n m) (own n)))
