@@ -247,15 +247,15 @@ theorem endTail_ok {Ctx W SP : Addr} {H : Block} {u : State} (he : Env Ctx (W + 
 /-- `tagP ks` with a prepared key context: what `oneTag 112` does, and `K[1]`
 the keystream of the counter block. -/
 theorem tagP_okP (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) : TagOkP (CtxMode.preparedN np hpn) KOk (tagP ks) := by
-  intro Ctx W SP L R D n N al H x s hx he hH hR hdat hlen hn16 htl hN hal hd hDW hCD X
+  intro Ctx W SP L R D n N al H x s hx he hH hR hdat hlen hn16 htl hN hal hd hDW X
   -- `H'` and `H'²`.
-  have hX : VG.Proof.Gcm.X86_64.Stitch.PowersN np s.mem Ctx := X.ok
+  have hX : VG.Proof.Gcm.X86_64.Stitch.PowersN np s.mem Ctx := X.1
   have p0 := hX 0 (by have := hpn.1; omega_arith)
   simp only [Nat.mul_zero, Nat.add_zero, Nat.zero_add] at p0
   rw [show ctxH s.mem Ctx = H by rw [ctxH_eq, hH]] at p0
   unfold tagP Impl.AesGcm.X86_64.FastOpen.lenTest
-  refine WP.seq (WP.mono (Fast.finPowP_ok hF s he.r13 (in_off X.cov (show 272 + 16 ≤ 1024 by decide) (by exact (by decide : (1024 : Nat) < 2 ^ 64)))
-    (in_off X.cov (show 256 + 16 ≤ 1024 by decide) (by exact (by decide : (1024 : Nat) < 2 ^ 64))) p0.2 p0.1) fun s₁ ⟨x0, x1, h1, h2, o₁⟩ => ?_)
+  refine WP.seq (WP.mono (Fast.finPowP_ok hF s he.r13 (in_off X.2 (show 272 + 16 ≤ 1024 by decide) (by exact (by decide : (1024 : Nat) < 2 ^ 64)))
+    (in_off X.2 (show 256 + 16 ≤ 1024 by decide) (by exact (by decide : (1024 : Nat) < 2 ^ 64))) p0.2 p0.1) fun s₁ ⟨x0, x1, h1, h2, o₁⟩ => ?_)
   have he₁ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₁ := he.keep (fun g hg => o₁.gpr _ (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hg
     rcases hg with rfl | rfl | rfl | rfl <;> decide)) o₁.rd o₁.wr

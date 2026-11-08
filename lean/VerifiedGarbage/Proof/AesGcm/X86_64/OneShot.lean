@@ -592,34 +592,108 @@ section
 variable (v : GcmImpl) {Ctx W SP : Addr} (L : Lay Ctx (W + BitVec.ofNat 64 16) W SP)
 include L
 
+/-- Where `oneCryptG` reads the `n` bytes it writes at `D`: in place, `D`
+(`Q = D`); out of place (`to`), fewer than 16 at `Q`, readable and apart from
+`D`, which is as many bytes before the end of `dst` (`[SP + 8]`, of the total
+length at `W + 192`). -/
+def CryptSrc (to : Bool) (W SP : Addr) (s : State) (D Q : Addr) (n : Nat) : Prop :=
+  if to then n < 16 ∧ InRegions (s.rd ++ s.wr) (SP + BitVec.ofNat 64 8) 8 ∧
+    s.mem.readW (SP + BitVec.ofNat 64 8) 64 + (s.mem.readW (W + BitVec.ofNat 64 192) 64 - BitVec.ofNat 64 n) = D ∧
+    DataOk (W + BitVec.ofNat 64 16) W SP s Q n ∧ (⟨Q, n⟩ : Region).Disjoint ⟨D, n⟩
+  else Q = D
+
+omit L in
+/-- `oneCryptG`'s first block out of place: the end of `dst` in `r12`, the
+length in `rbp` and the data in `rbx`, what `cryptTailG` needs from the
+start of a keystream block. -/
+theorem oneCryptBlkTo_ok {R : Nat} {icb : Block} {P : Nat} (hP : P % 16 = 0) {D Q : Addr} {n : Nat}
+    {s : State} (he : Env Ctx (W + BitVec.ofNat 64 16) W SP s) (hR : RoundsAt s.mem W R)
+    (hdat : s.mem.readW (W + BitVec.ofNat 64 200) 64 = Q) (hlen : s.mem.readW (W + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 n)
+    (hd : DataW Ctx (W + BitVec.ofNat 64 16) W SP s D n) (hsrc : CryptSrc true W SP s D Q n) :
+    WP isa (.block (oneCryptBlk true)) s fun s₁ => CrMid Ctx (W + BitVec.ofNat 64 16) W SP R icb P D n s₁.mem 0 s₁ ∧
+      TailSrc true (W + BitVec.ofNat 64 16) W SP s₁ s₁.mem D 0 n Q ∧ s₁.mem = s.mem ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
+  have q₁ := he.perm.wR (show 200 + 8 ≤ 2560 by decide)
+  have q₂ := he.perm.wR (show 208 + 8 ≤ 2560 by decide)
+  have q₃ := he.perm.wR (show 192 + 8 ≤ 2560 by decide)
+  simp only [CryptSrc, ↓reduceIte] at hsrc
+  obtain ⟨hn16, q₄, hD, hQ, hQD⟩ := hsrc
+  obtain ⟨s₁, run₁, h12, hbp, hbx, hg₁, hm₁, hrd₁, hwr₁⟩ : ∃ s₁, runBlock isa [.mov .r12 (.mem (at_ .rsp 8)),
+      .mov .rax (.mem (at_ .r15 tlenO)), .alu .sub .rax (.mem (at_ .r15 lenO)), .alu .add .r12 (.reg .rax),
+      .mov .rbp (.mem (at_ .r15 lenO)), .mov .rbx (.mem (at_ .r15 dataO))] s = some s₁ ∧
+      s₁.gpr .r12 = D ∧ s₁.gpr .rbp = BitVec.ofNat 64 n ∧ s₁.gpr .rbx = Q ∧
+      (∀ r, r ≠ .r12 → r ≠ .rbp → r ≠ .rbx → r ≠ .rax → s₁.gpr r = s.gpr r) ∧ s₁.mem = s.mem ∧ s₁.rd = s.rd ∧
+      s₁.wr = s.wr := by
+    refine ⟨_, by xrun [he.r15, he.rsp, q₁, q₂, q₃, q₄], ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · simp [gpr_setReg, hlen, ← hD]
+    · simp [gpr_setReg, hlen]
+    · simp [gpr_setReg, hdat]
+    · intro r a b c d; simp [gpr_setReg, a, b, c, d]
+    all_goals rfl
+  simp only [oneCryptBlk, ↓reduceIte]
+  refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
+  have he₁ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₁ := he.keep (fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl <;> exact hg₁ _ (by decide) (by decide) (by decide) (by decide)) hrd₁ hwr₁
+  refine ⟨⟨he₁, Nat.zero_le _, by rw [h12]; simp, by rw [hbp, Nat.sub_zero], hd.of_eq hrd₁ hwr₁, by rw [hm₁]; exact hR,
+    fun hc₀ => by simpa using hc₀, fun _ => by simp [bytesAt]; rfl, rfl, .inr (by omega_arith), Frame.refl _ _⟩,
+    ?_, hm₁, hrd₁, hwr₁⟩
+  simp only [TailSrc, ↓reduceIte, Nat.sub_zero]
+  exact ⟨hbx, hQ.of_eq hrd₁ hwr₁, by simpa using hQD, trivial⟩
+
+/-- `oneCryptG`: counter mode over the `n` bytes kept at `W + 200` (`Q`), from
+the first counter block, into `D` (`CryptSrc`: in place, `Q` itself). -/
+theorem oneCryptG_ok (to : Bool) {R : Nat} {icb : Block} {P : Nat} (hP : P % 16 = 0) {D Q : Addr} {n : Nat}
+    {s : State} (he : Env Ctx (W + BitVec.ofNat 64 16) W SP s) (hR : RoundsAt s.mem W R)
+    (hdat : s.mem.readW (W + BitVec.ofNat 64 200) 64 = Q) (hlen : s.mem.readW (W + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 n)
+    (hd : DataW Ctx (W + BitVec.ofNat 64 16) W SP s D n) (hsrc : CryptSrc to W SP s D Q n) :
+    WP isa (oneCryptG v.callees to) s fun s' => CrOutQ Ctx (W + BitVec.ofNat 64 16) W SP R icb P D n s.mem Q 0 s' ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr := by
+  have q₁ := he.perm.wR (show 200 + 8 ≤ 2560 by decide)
+  have q₂ := he.perm.wR (show 208 + 8 ≤ 2560 by decide)
+  have q₃ := he.perm.wR (show 192 + 8 ≤ 2560 by decide)
+  cases to
+  · simp only [CryptSrc, Bool.false_eq_true, ↓reduceIte] at hsrc
+    subst hsrc
+    simp only [oneCryptG, oneCryptBlk, Bool.false_eq_true, ↓reduceIte]
+    obtain ⟨s₁, run₁, h12, hbp, hbx, hg₁, hm₁, hrd₁, hwr₁⟩ : ∃ s₁, runBlock isa [.mov .r12 (.mem (at_ .r15 dataO)),
+        .mov .rbp (.mem (at_ .r15 lenO)), .mov32 .rbx (imm 0)] s = some s₁ ∧
+        s₁.gpr .r12 = Q ∧ s₁.gpr .rbp = BitVec.ofNat 64 n ∧ s₁.gpr .rbx = BitVec.ofNat 64 (P % 16) ∧
+        (∀ r, r ≠ .r12 → r ≠ .rbp → r ≠ .rbx → s₁.gpr r = s.gpr r) ∧ s₁.mem = s.mem ∧ s₁.rd = s.rd ∧
+        s₁.wr = s.wr := by
+      refine ⟨_, by xrun [he.r15, q₁, q₂], ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+      · simp [gpr_setReg, hdat]
+      · simp [gpr_setReg, hlen]
+      · simp [gpr_setReg, hP]
+      · intro r a b c; simp [gpr_setReg, a, b, c]
+      all_goals rfl
+    refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
+    have he₁ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₁ := he.keep (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl <;> exact hg₁ _ (by decide) (by decide) (by decide)) hrd₁ hwr₁
+    have := WP.with_rdwr (cryptAl_ok v L (R := R) (icb := icb) (P := P)
+      ⟨he₁, h12, hbp, hbx, hd.of_eq hrd₁ hwr₁, by rw [hm₁]; exact hR⟩ hP)
+    rw [hm₁] at this
+    exact WP.mono this fun s' ⟨o, a, b⟩ => ⟨⟨o.env, o.rounds, o.ctr, fun hc => by
+      rw [o.out hc, show bytesAt s.mem Q 0 = [] by simp [bytesAt], List.nil_append, Nat.sub_zero], o.frame⟩,
+      a.trans hrd₁, b.trans hwr₁⟩
+  · simp only [oneCryptG, ↓reduceIte]
+    refine WP.seq (WP.mono (oneCryptBlkTo_ok (R := R) (icb := icb) hP he hR hdat hlen hd hsrc)
+      fun s₁ ⟨hmid, hts, hm₁, hrd₁, hwr₁⟩ => ?_)
+    have hn16 : n < 16 := by simp only [CryptSrc, ↓reduceIte] at hsrc; exact hsrc.1
+    have := WP.with_rdwr (cryptTailG_ok v L true hmid (by omega_arith) rfl hts)
+    rw [hm₁] at this
+    exact WP.mono this fun s' ⟨o, a, b⟩ => ⟨o, a.trans hrd₁, b.trans hwr₁⟩
+
 /-- `oneCrypt`: counter mode over the data, from the first counter block. -/
 theorem oneCrypt_ok {R : Nat} {icb : Block} {P : Nat} (hP : P % 16 = 0) {D : Addr} {n : Nat} {s : State}
     (he : Env Ctx (W + BitVec.ofNat 64 16) W SP s) (hR : RoundsAt s.mem W R)
     (hdat : s.mem.readW (W + BitVec.ofNat 64 200) 64 = D) (hlen : s.mem.readW (W + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 n)
     (hd : DataW Ctx (W + BitVec.ofNat 64 16) W SP s D n) :
     WP isa (oneCrypt v.callees) s fun s' => CrOut Ctx (W + BitVec.ofNat 64 16) W SP R icb P D n s.mem s' ∧
-      s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have q₁ := he.perm.wR (show 200 + 8 ≤ 2560 by decide)
-  have q₂ := he.perm.wR (show 208 + 8 ≤ 2560 by decide)
-  obtain ⟨s₁, run₁, h12, hbp, hbx, hg₁, hm₁, hrd₁, hwr₁⟩ : ∃ s₁, runBlock isa [.mov .r12 (.mem (at_ .r15 dataO)),
-      .mov .rbp (.mem (at_ .r15 lenO)), .mov32 .rbx (imm 0)] s = some s₁ ∧
-      s₁.gpr .r12 = D ∧ s₁.gpr .rbp = BitVec.ofNat 64 n ∧ s₁.gpr .rbx = BitVec.ofNat 64 (P % 16) ∧
-      (∀ r, r ≠ .r12 → r ≠ .rbp → r ≠ .rbx → s₁.gpr r = s.gpr r) ∧ s₁.mem = s.mem ∧ s₁.rd = s.rd ∧
-      s₁.wr = s.wr := by
-    refine ⟨_, by xrun [he.r15, q₁, q₂], ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-    · simp [gpr_setReg, hdat]
-    · simp [gpr_setReg, hlen]
-    · simp [gpr_setReg, hP]
-    · intro r a b c; simp [gpr_setReg, a, b, c]
-    all_goals rfl
-  refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
-  have he₁ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₁ := he.keep (fun r hr => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl <;> exact hg₁ _ (by decide) (by decide) (by decide)) hrd₁ hwr₁
-  have := WP.with_rdwr (cryptAl_ok v L (R := R) (icb := icb) (P := P)
-    ⟨he₁, h12, hbp, hbx, hd.of_eq hrd₁ hwr₁, by rw [hm₁]; exact hR⟩ hP)
-  rw [hm₁] at this
-  exact WP.mono this fun s' ⟨h, a, b⟩ => ⟨h, a.trans hrd₁, b.trans hwr₁⟩
+      s'.rd = s.rd ∧ s'.wr = s.wr :=
+  WP.mono (oneCryptG_ok v L false hP he hR hdat hlen hd (by simp [CryptSrc])) fun _ ⟨o, a, b⟩ =>
+    ⟨⟨o.env, o.rounds, o.ctr, fun hc => by
+      rw [o.out hc, show bytesAt s.mem D 0 = [] by simp [bytesAt], List.nil_append, Nat.sub_zero], o.frame⟩, a, b⟩
 
 end
 
@@ -645,8 +719,7 @@ theorem oneTag_ok {o R : Nat} (ho : o = 0 ∨ o = 112) {D : Addr} {n N al : Nat}
     (hlen : s.mem.readW (W + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 n)
     (htl : s.mem.readW (W + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 N) (hN : N < 2 ^ 64)
     (hal : s.mem.readW (W + BitVec.ofNat 64 184) 64 = BitVec.ofNat 64 al)
-    (hd : DataOk (W + BitVec.ofNat 64 16) W SP s D n) (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩)
-    (hCD : (⟨Ctx, 256⟩ : Region).Disjoint ⟨D, n⟩) :
+    (hd : DataOk (W + BitVec.ofNat 64 16) W SP s D n) (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩) :
     WP isa (oneTag v.callees o) s fun s' => Env Ctx (W + BitVec.ofNat 64 16) W SP s' ∧
       Frame (⟨W + BitVec.ofNat 64 o, 16⟩ :: wFrame W SP) s.mem s'.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       blockAt s'.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) = blockAt s.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) ∧
@@ -707,14 +780,13 @@ theorem oneTag_ok {o R : Nat} (ho : o = 0 ∨ o = 112) {D : Addr} {n N al : Nat}
   have g₅ : Frame (wFrame W SP) s.mem s₅.mem := by rw [hm₅]; exact g₂.trans g₄
   have f₅ : Frame (oneFrame W D SP n) s.mem s₅.mem := wFrame_one (o := 0) (.inl rfl) (wFrame_cons g₅)
   have hR₅ : RoundsAt s₅.mem W R := ⟨by rw [kp f₅ 176 (.inl ⟨by decide, by decide⟩)]; exact hR.1, hR.2⟩
-  have dC : ∀ r ∈ oneFrame W D SP n, (⟨Ctx, 256⟩ : Region).Disjoint r := by
+  have dC : ∀ r ∈ wFrame W SP, (⟨Ctx, 256⟩ : Region).Disjoint r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl
-    · exact L.cw'.sub_right (Offset.sub_base W (show 0 + 128 ≤ 2560 by decide) |> fun h => by simpa using h)
+    rcases hr with rfl | rfl | rfl | rfl
     · exact L.cw'.sub_right (Lay.wSub (by decide))
     · exact L.cw'.sub_right (Lay.wSub (by decide))
-    · exact hCD
+    · exact L.cw'.sub_right (Lay.wSub (by decide))
     · exact L.kc.symm
   have dS0 : ∀ r ∈ absFrame (W + BitVec.ofNat 64 16) W SP 16, (⟨W + BitVec.ofNat 64 16, 16⟩ : Region).Disjoint r := by
     intro r hr
@@ -769,7 +841,7 @@ theorem oneTag_ok {o R : Nat} (ho : o = 0 ∨ o = 112) {D : Addr} {n N al : Nat}
     rw [blockAt_frame ht.frame d48, hm₅, blockAt_frame ft d48t, blockAt_frame fa d48a]
   have hw := (hf.abs hab).whole_eq (by
     simp only [List.length_append, Proof.Gcm.length_zeros]; exact Proof.Gcm.length_pad_mod _)
-  rw [ht.out, ciph_frame f₅ dC hR.2, hbx₅, hbp₅, toNat_ofNat_of_lt hN, BitVec.toNat_ofNat, lensBlock_mod_left,
+  rw [ht.out, ciph_frame g₅ dC hR.2, hbx₅, hbp₅, toNat_ofNat_of_lt hN, BitVec.toNat_ofNat, lensBlock_mod_left,
     hm₅, hw]
 
 end

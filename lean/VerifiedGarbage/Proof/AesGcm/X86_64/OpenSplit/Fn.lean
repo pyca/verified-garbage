@@ -34,9 +34,9 @@ theorem openSplit_mx :
     (OpenSplit.openSplit (v.withBlk B) T.fn).allInstrs (fun i => !loadsMxcsr i) = true := by
   have e := B.encMx
   have d := B.decMx
-  simp only [e, d, T.mx, OpenSplit.openSplit, OpenSplit.entry, OpenSplit.tagLen, SealSplit.«prefix», oneAad, oneTag,
-    oneCrypt, recv, Impl.AesGcm.X86_64.cmp, tagLenOk, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail,
-    flush, lens, cryptHead, cryptWhole, cryptTail, crypt, cryptAl, tag, j0hash, j0, ghash1, firstFlush, finTag,
+  simp only [e, d, T.mx, OpenSplit.openSplit, openBody, OpenSplit.entry, OpenSplit.tagLen, OpenSplit.«prefix», OpenSplit.rest, oneAad, oneTag,
+    oneCrypt, oneCryptG, oneCryptBlk, ↓reduceIte, Bool.false_eq_true, recv, Impl.AesGcm.X86_64.cmp, tagLenOk, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail,
+    flush, lens, cryptHead, cryptWhole, cryptTail, cryptTailG, crypt, cryptAl, tag, j0hash, j0, ghash1, firstFlush, finTag,
     Code.allInstrs, GcmImpl.withBlk, GcmImpl.callees, v.ctr.mxcsr, v.key.mxcsr, v.gh.mxcsr, Bool.true_and,
     Bool.and_true]
   decide +kernel
@@ -45,9 +45,9 @@ theorem openSplit_spAll :
     (OpenSplit.openSplit (v.withBlk B) T.fn).all (fun i => !X86_64.isa.writesSp i) = true := by
   have e := B.encSp
   have d := B.decSp
-  simp only [e, d, T.spAll, OpenSplit.openSplit, OpenSplit.entry, OpenSplit.tagLen, SealSplit.«prefix», oneAad,
-    oneTag, oneCrypt, recv, Impl.AesGcm.X86_64.cmp, tagLenOk, absorbHead, absorbWhole, absorbTail, absorb, absorbPad,
-    padTail, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, cryptAl, tag, j0hash, j0, ghash1, firstFlush,
+  simp only [e, d, T.spAll, OpenSplit.openSplit, openBody, OpenSplit.entry, OpenSplit.tagLen, OpenSplit.«prefix», OpenSplit.rest, oneAad,
+    oneTag, oneCrypt, oneCryptG, oneCryptBlk, ↓reduceIte, Bool.false_eq_true, recv, Impl.AesGcm.X86_64.cmp, tagLenOk, absorbHead, absorbWhole, absorbTail, absorb, absorbPad,
+    padTail, flush, lens, cryptHead, cryptWhole, cryptTail, cryptTailG, crypt, cryptAl, tag, j0hash, j0, ghash1, firstFlush,
     finTag, Code.all, GcmImpl.withBlk, GcmImpl.callees, v.ctr.spSafe, v.key.spSafe, v.gh.spSafe, Bool.true_and,
     Bool.and_true]
   decide +kernel
@@ -56,10 +56,10 @@ theorem openSplit_xdepth : (OpenSplit.openSplit (v.withBlk B) T.fn).x86_64Depth 
   have e := B.encXd
   have d := B.decXd
   have t := T.xd
-  simp only [OpenSplit.openSplit, OpenSplit.entry, OpenSplit.tagLen, SealSplit.«prefix», oneAad, oneTag, oneCrypt,
-    recv, Impl.AesGcm.X86_64.cmp, tagLenOk, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush,
-    lens, cryptHead, cryptWhole, cryptTail, crypt, cryptAl, tag, j0hash, j0, ghash1, firstFlush, finTag, copyTag,
-    copyLoop, xorLoop, minLen, j012, initState, Code.x86_64Depth, X86_64.Instr.frameBytes, List.length_cons,
+  simp only [OpenSplit.openSplit, openBody, OpenSplit.entry, OpenSplit.tagLen, OpenSplit.«prefix», OpenSplit.rest, oneAad, oneTag, oneCrypt,
+    oneCryptG, oneCryptBlk, recv, Impl.AesGcm.X86_64.cmp, tagLenOk, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush,
+    lens, cryptHead, cryptWhole, cryptTail, cryptTailG, crypt, cryptAl, tag, j0hash, j0, ghash1, firstFlush, finTag, copyTag,
+    copyLoop, xorLoop, xorLoopG, minLen, j012, initState, Code.x86_64Depth, X86_64.Instr.frameBytes, List.length_cons,
     List.length_nil, GcmImpl.withBlk, GcmImpl.callees, v.ctr.noStack, v.key.noStack, v.gh.noStack, Nat.max_le,
     ↓reduceIte, Bool.false_eq_true]
   omega
