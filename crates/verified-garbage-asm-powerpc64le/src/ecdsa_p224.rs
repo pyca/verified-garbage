@@ -190,7 +190,7 @@ bl {vg_p224_sub_mod_n}
         vg_p224_add_mod_p = sym super::ec_p224::vg_p224_add_mod_p::vg_p224_add_mod_p,
         vg_p224_sub_mod_p = sym super::ec_p224::vg_p224_sub_mod_p::vg_p224_sub_mod_p,
         vg_p224_mul_mod_n = sym super::ecdsa_p224::vg_p224_mul_mod_n::vg_p224_mul_mod_n,
-        vg_p224_mul = sym super::ec_p224::vg_p224_mul::vg_p224_mul,
+        vg_p224_mul = sym super::ecdh_p224::vg_p224_mul::vg_p224_mul,
         vg_p224_sub_mod_n = sym super::ecdsa_p224::vg_p224_sub_mod_n::vg_p224_sub_mod_n,
     )
 }
