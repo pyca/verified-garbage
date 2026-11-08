@@ -36,6 +36,7 @@ public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Arguments
 public import VerifiedGarbage.Proof.Dsa.X86_64.ParametersCT
 public import VerifiedGarbage.Spec.Dsa.Derive
 public import VerifiedGarbage.Proof.Dsa.Contract
+public import VerifiedGarbage.Proof.Framework.QualifiedName
 
 -- separate module: its proofs build in parallel with the constant-time ones, `RefillCT`
 
@@ -265,7 +266,7 @@ def body (h : MdHash) (v : RoundImpl) (p : Nat) : Prog isa :=
 
 /-- The name the function for width `p` is emitted as, its hash tagged `tag`. -/
 def name (tag : String) (h : MdHash) (v : RoundImpl) (p : Nat) : String :=
-  s!"vg_dsa_parameter_search_{8 * p}" ++ Emit.qualifiedName "" [(tag, h.suffix), ("mr", v.suffix)]
+  s!"vg_dsa_parameter_search_{8 * p}" ++ qualifiedName "" [(tag, h.suffix), ("mr", v.suffix)]
 
 /-- `vg_dsa_parameter_search` with the hashes `v1` (width 128) and `v256`
 (256 and 384) and Miller–Rabin `v`. -/

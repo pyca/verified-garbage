@@ -14,6 +14,7 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RefillVerified
 public import VerifiedGarbage.TCB.Emit
 public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
 public import VerifiedGarbage.Proof.Variants.MillerRabin.X86_64
+public import VerifiedGarbage.Proof.Framework.QualifiedName
 
 /-! # DSA parameter search on x86-64 -/
 
@@ -95,7 +96,7 @@ def artifacts (v1 v256 : Proof.Pbkdf2.Md.X86_64.MdHash) (v : RoundImpl) : List A
     if h256 : v256.mgf.G.rust = "sha256" then
       let hashes := v1.features ++ v256.features.filter (!v1.features.contains ·)
       [Spec.Dsa.parameterSearchApi.artifact X86_64.target {
-        suffix := Emit.qualifiedName "" [("sha1", v1.suffix), ("sha256", v256.suffix), ("mr", v.suffix)]
+        suffix := qualifiedName "" [("sha1", v1.suffix), ("sha256", v256.suffix), ("mr", v.suffix)]
         stack := 632
         code := searchCode v1 v256 v
         verified := search_verified v1 v256 v h1 h256

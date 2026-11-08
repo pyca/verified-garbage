@@ -44,6 +44,7 @@ public import VerifiedGarbage.Proof.Sha256.Stream
 public import VerifiedGarbage.TCB.X86_64.Print
 public import VerifiedGarbage.Proof.Variants.Blake2b.X86_64
 public import VerifiedGarbage.Proof.Variants.Argon2Compress.X86_64
+public import VerifiedGarbage.Proof.Framework.QualifiedName
 
 /-! # Argon2 on x86-64, for each BLAKE2b backend with the implementation of G for the same CPUs -/
 
@@ -62,7 +63,7 @@ def artifactsFor (v : Proof.Blake2.X86_64.Backend) (c : Proof.Argon2.X86_64.Comp
   have : Proof.Argon2.X86_64.CompressImpl := c
   if !(v.suffix == c.suffix || (v.suffix == "_avx2" && c.suffix == "_avx512")) then [] else
   [Spec.Argon2.deriveApi.artifact VG.X86_64.target {
-    suffix := Emit.qualifiedName "" [("blake2b", v.suffix), ("g", c.suffix)]
+    suffix := qualifiedName "" [("blake2b", v.suffix), ("g", c.suffix)]
     code := Impl.Argon2.X86_64.Derive.code ("vg_argon2_hprime" ++ v.suffix)
       (Proof.Argon2.X86_64.HPrime.hash v)
     stack := 344

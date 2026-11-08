@@ -22,6 +22,7 @@ public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.RndCT
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.AArch64.Random
 public import VerifiedGarbage.Spec.RsaPkcs1Enc.Random
 public import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.AArch64
+public import VerifiedGarbage.Proof.Framework.QualifiedName
 
 /-! # RSAES-PKCS1-v1_5 decryption with implicit rejection on AArch64 -/
 
@@ -35,7 +36,7 @@ open VG.Proof.RsaPkcs1Enc.AArch64.Dec (HH decStack dec_verified)
 def artifacts (h : Proof.Sha256.AArch64.Compress) (c : Proof.Rsa.AArch64.CrtImpl) : List Artifact :=
   [
     Spec.RsaPkcs1Enc.decryptApi.artifact AArch64.target {
-      suffix := Emit.qualifiedName "" [("sha256", h.suffix), ("crt", c.suffix)]
+      suffix := qualifiedName "" [("sha256", h.suffix), ("crt", c.suffix)]
       code := Impl.RsaPkcs1Enc.AArch64.Decrypt.code (HH h) (privOf c).name (privOf c).code
       stack := decStack (privOf c)
       verified := dec_verified h (privOf c) (dec_sat c)

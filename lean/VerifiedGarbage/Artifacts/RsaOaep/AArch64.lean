@@ -25,6 +25,7 @@ public import VerifiedGarbage.TCB.AArch64.Print
 public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.AArch64
 public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
 public import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.AArch64
+public import VerifiedGarbage.Proof.Framework.QualifiedName
 
 /-! # RSAES-OAEP decryption on AArch64, with both hash functions as tables -/
 
@@ -40,7 +41,7 @@ open VG.Proof.HashTable.AArch64 (tables fnsOf)
 def artifacts (c : Proof.Rsa.AArch64.CrtImpl) (vs : List Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact :=
   if h : OK vs then [
     Spec.RsaOaep.decryptTablesApi.artifact AArch64.target {
-      suffix := Emit.qualifiedName "" [("crt", c.suffix)]
+      suffix := qualifiedName "" [("crt", c.suffix)]
       tables := [("hash", tables vs), ("mgf1", tables vs)]
       code := Impl.RsaOaep.AArch64.decrypt (fnsOf vs) (privOf c).name (privOf c).code
       stack := decStack (privOf c)
@@ -61,7 +62,7 @@ open VG.Proof.HashTable.AArch64 (tables fnsOf)
 def artifacts (c : Proof.Rsa.AArch64.PublicImpl) (vs : List Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact :=
   if h : OK vs then [
     Spec.RsaOaep.encryptTablesApi.artifact AArch64.target {
-      suffix := Emit.qualifiedName "" [("rsa", c.suffix)]
+      suffix := qualifiedName "" [("rsa", c.suffix)]
       tables := [("hash", tables vs), ("mgf1", tables vs)]
       code := Impl.RsaOaep.AArch64.Precomputed.encrypt (fnsOf vs) (pdOf c).name (pdOf c).code
       stack := encStack (pdOf c)

@@ -13,6 +13,7 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.RefillVerified
 public import VerifiedGarbage.TCB.Emit
 public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
 public import VerifiedGarbage.Proof.Variants.MillerRabin.AArch64
+public import VerifiedGarbage.Proof.Framework.QualifiedName
 
 /-! # DSA parameter search on AArch64 -/
 
@@ -94,7 +95,7 @@ def artifacts (v1 v256 : Proof.Pbkdf2.Md.AArch64.MdHash) (v : RoundImpl) : List 
     if h256 : v256.mgf.G.rust = "sha256" then
       let hashes := v1.features ++ v256.features.filter (!v1.features.contains ·)
       [Spec.Dsa.parameterSearchApi.artifact AArch64.target {
-        suffix := Emit.qualifiedName "" [("sha1", v1.suffix), ("sha256", v256.suffix), ("mr", v.suffix)]
+        suffix := qualifiedName "" [("sha1", v1.suffix), ("sha256", v256.suffix), ("mr", v.suffix)]
         stack := 768
         code := Impl.Dsa.AArch64.Generation.code v1.H v256.H (Proof.Dsa.AArch64.Generator.generatorStage v).run
           (Proof.Dsa.AArch64.ProbablePrime.primeTest v).run

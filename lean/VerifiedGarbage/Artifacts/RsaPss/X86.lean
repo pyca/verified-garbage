@@ -7,6 +7,7 @@ public import VerifiedGarbage.TCB.X86.Print
 public import VerifiedGarbage.Proof.Variants.Sha1.X86
 public import VerifiedGarbage.Proof.Variants.Sha256.X86
 public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.X86
+public import VerifiedGarbage.Proof.Framework.QualifiedName
 
 /-! # RSASSA-PSS verification on x86 with a precomputed key, with the hash functions as tables -/
 
@@ -21,7 +22,7 @@ def artifacts (vs1 : List Proof.Sha1.X86.Variants.Backend) (vs256 : List Proof.S
     List Artifact :=
   if h : Proof.RsaPss.X86.Sg.OK (mvars vs1 vs256) (vars vs1 vs256) then [
     Spec.RsaPss.verifyPrecomputedTableApi.artifact X86.target {
-      suffix := Emit.qualifiedName "" []
+      suffix := qualifiedName "" []
       tables := [("hash", Proof.MdHashTable.X86.tables (mvars vs1 vs256)),
         ("mgf1", Proof.HashTable.X86.tables (vars vs1 vs256))]
       code := Proof.RsaPss.X86.Vf.verifyCode (mvars vs1 vs256) (vars vs1 vs256) Proof.RsaPkcs1Sig.X86.Ver.baseline
@@ -43,7 +44,7 @@ def artifacts (c : Proof.Rsa.X86.PrivChecked.CrtImpl) (vs1 : List Proof.Sha1.X86
     (vs256 : List Proof.Sha256.X86.Variants.Backend) : List Artifact :=
   if h : Proof.RsaPss.X86.Sg.OK (mvars vs1 vs256) (vars vs1 vs256) then [
     Spec.RsaPss.signTableApi.artifact X86.target {
-      suffix := Emit.qualifiedName "" [("crt", c.suffix)]
+      suffix := qualifiedName "" [("crt", c.suffix)]
       tables := [("hash", Proof.MdHashTable.X86.tables (mvars vs1 vs256)),
         ("mgf1", Proof.HashTable.X86.tables (vars vs1 vs256))]
       code := Proof.RsaPss.X86.Sg.signCode (mvars vs1 vs256) (vars vs1 vs256) c
