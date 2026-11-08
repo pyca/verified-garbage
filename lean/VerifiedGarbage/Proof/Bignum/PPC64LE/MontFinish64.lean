@@ -30,34 +30,58 @@ open VG VG.PPC64LE VG.PPC64LE.RegUpd VG.Proof.Mont VG.Impl.Bignum.PPC64LE
 
 /-! ## Zeroing the accumulator -/
 
-/-- `zeroAcc`, with `n = 2 w` in `r11` and the accumulator at `dA`: its
-first `w + 1` words 0 and `w` in `r4`. -/
-theorem zeroAcc_ok {s : State} {B : Addr} {Z dA w : Nat} (hs : Scr s B Z)
+theorem ofNat_shl2' (a : Nat) : BitVec.ofNat 64 a <<< 2 = BitVec.ofNat 64 (4 * a) := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
+  omega_arith
+
+/-- `mPrime`: `m' = (m₀ y + 2) y` (`y` in `r12`) into `r22` and the
+accumulator's word `w + 1`. -/
+theorem mPrime_ok {s : State} {B : Addr} {Z dA dM w : Nat} (hs : Scr s B Z) (h8 : s.gpr .r8 = off B dA)
+    (h10 : s.gpr .r10 = off B dM) (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w)) (_hw' : w < 2 ^ 31)
+    (hA : dA + 8 * (w + 2) ≤ Z) (hM : dM + 8 ≤ Z) :
+    WP isa (.block mPrime) s fun t =>
+      (t.gpr .r22 = (Mont.word s.mem B dM * s.gpr .r12 + BitVec.ofNat 64 2) * s.gpr .r12 ∧
+        t.mem = s.mem.writeW (off B (dA + 8 * (w + 1))) ((Mont.word s.mem B dM * s.gpr .r12 + BitVec.ofNat 64 2) *
+          s.gpr .r12)) ∧ Keep [.r3, .r14, .r22] s t := by
+  have hnw := hs.nowrap
+  refine WP.keep _ ?_ (by decide)
+  have a1 : BitVec.ofNat 64 (4 * (2 * w)) + off B dA = off B (dA + 4 * (2 * w)) := by
+    rw [BitVec.add_comm, off_add]
+  have a2 : Mont.off B (dA + 4 * (2 * w) + 8) = off B (dA + 8 * (w + 1)) := by
+    simp only [Mont.off, off]; congr 2; omega_arith
+  unfold mPrime
+  prun [h8, h10, h11, ofNat_shl2', BitVec.add_zero, a1, a2, hs.ld hM,
+    hs.st (show dA + 8 * (w + 1) + 8 ≤ Z by omega_arith)]
+
+/-- The zeroing in `zeroAcc`, with `n = 2 w` in `r11` and the accumulator at
+`dA`: its first `w + 1` words 0 and `w` in `r4`. -/
+theorem zeroLoop_ok {s : State} {B : Addr} {Z dA w : Nat} (hs : Scr s B Z)
     (h8 : s.gpr .r8 = off B dA) (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w))
     (hw : w < 2 ^ 31) (hA : dA + 8 * (w + 1) ≤ Z) :
-    WP isa zeroAcc s fun s' =>
+    WP isa (.seq (.block zeroAccPre) (countLoop .r17 [.store .d .r3 .r14 0, .addi .r14 .r14 8])) s fun s' =>
       wordsVal s'.mem B dA (w + 1) = 0 ∧ Outside B dA (8 * (w + 1)) s.mem s'.mem ∧
-        s'.gpr .r4 = BitVec.ofNat 64 w ∧ Keep [.r4, .r14, .r17, .r22] s s' := by
+        s'.gpr .r4 = BitVec.ofNat 64 w ∧ Keep [.r3, .r4, .r14, .r17] s s' := by
   have hnw := hs.nowrap
-  unfold zeroAcc
   refine WP.seq ?_
-  have hpre : WP isa (.block [.lsr .d .r4 .r11 1, .addi .r14 .r8 0, .addi .r17 .r4 1, .li .r22 0]) s
+  have hpre : WP isa (.block zeroAccPre) s
       fun s₁ => (s₁.gpr .r4 = BitVec.ofNat 64 w ∧ s₁.gpr .r14 = off B dA ∧
-        s₁.gpr .r17 = BitVec.ofNat 64 (w + 1) ∧ s₁.gpr .r22 = 0 ∧ s₁.mem = s.mem) ∧
-        Keep [.r4, .r14, .r17, .r22] s s₁ := by
+        s₁.gpr .r17 = BitVec.ofNat 64 (w + 1) ∧ s₁.gpr .r3 = 0 ∧ s₁.mem = s.mem) ∧
+        Keep [.r3, .r4, .r14, .r17] s s₁ := by
     refine WP.keep _ ?_ (by decide)
+    unfold zeroAccPre
     prun [h8, h11, BitVec.add_zero, mont_ofNat_shr1 (show w < 2 ^ 63 by omega_arith)]
     exact ⟨(BitVec.ofNat_add _ _).symm, rfl⟩
   refine WP.mono hpre fun s₁ ⟨⟨i4, i14, i17, i22, im⟩, k₁⟩ => ?_
   let Inv : Nat → State → Prop := fun i t =>
-    t.gpr .r14 = off B (dA + 8 * i) ∧ t.gpr .r22 = 0 ∧ Outside B dA (8 * i) s.mem t.mem ∧
+    t.gpr .r14 = off B (dA + 8 * i) ∧ t.gpr .r3 = 0 ∧ Outside B dA (8 * i) s.mem t.mem ∧
       wordsVal t.mem B dA i = 0 ∧ Keep [.r14, .r17] s₁ t
-  refine WP.mono (wp_countdown (body := .block ([.store .d .r22 .r14 0, .addi .r14 .r14 8] ++
+  refine WP.mono (wp_countdown (body := .block ([.store .d .r3 .r14 0, .addi .r14 .r14 8] ++
       ([.subi .r17 .r17 1] : List Instr))) (cnt := .r17) (N := w + 1) (by omega_arith) (by omega_arith) Inv
     (fun i hi t ⟨j14, j0, jout, jz, jk⟩ hc => ?_)
     ⟨by rw [i14]; rfl, i22, by rw [← im]; exact Outside.refl _ _ _ _, rfl, Keep.refl _ _⟩ i17)
     fun t ⟨_, _, tout, tz, tk⟩ => ⟨tz, tout, by rw [tk.gpr _ (by decide)]; exact i4, (k₁.trans tk).mono⟩
-  have hst : WP isa (.block [.store .d .r22 .r14 0, .addi .r14 .r14 8, .subi .r17 .r17 1]) t
+  have hst : WP isa (.block [.store .d .r3 .r14 0, .addi .r14 .r14 8, .subi .r17 .r17 1]) t
       fun t' => t' = ((({ t with mem := t.mem.writeW (off B (dA + 8 * i)) (0 : BitVec 64) } : State).write
         .r14 (off B (dA + 8 * i + 8))).write .r17 (t.gpr .r17 - BitVec.ofNat 64 1)) := by
     prun [j14, j0, (hs.congr (k₁.trans jk).wr).st (show dA + 8 * i + 8 ≤ Z by omega_arith)]
@@ -72,6 +96,32 @@ theorem zeroAcc_ok {s : State} {B : Addr} {Z dA w : Nat} (hs : Scr s B Z)
     rw [fios_wordsVal_write_top _ _ _ _ _ (by omega_arith), jz]
     rfl
   · exact jk.trans' ((((Keep.mem _ _).trans (Keep.write _ _ _)).trans (Keep.write _ _ _)).mono)
+
+/-- `zeroAcc`: `mPrime` (`m' = (m₀ y + 2) y` for `y` in `r12`, into `r22` and
+the accumulator's word `w + 1`), then its first `w + 1` words 0 and `w` in
+`r4`. -/
+theorem zeroAcc_ok {s : State} {B : Addr} {Z dA dM w : Nat} (hs : Scr s B Z)
+    (h8 : s.gpr .r8 = off B dA) (h10 : s.gpr .r10 = off B dM) (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w))
+    (hw : w < 2 ^ 31) (hA : dA + 8 * (w + 2) ≤ Z) (hM : dM + 8 ≤ Z) :
+    WP isa zeroAcc s fun s' =>
+      wordsVal s'.mem B dA (w + 1) = 0 ∧ Outside B dA (8 * (w + 2)) s.mem s'.mem ∧
+        s'.gpr .r4 = BitVec.ofNat 64 w ∧
+        s'.gpr .r22 = (Mont.word s.mem B dM * s.gpr .r12 + BitVec.ofNat 64 2) * s.gpr .r12 ∧
+        Mont.word s'.mem B (dA + 8 * (w + 1)) = s'.gpr .r22 ∧ Keep [.r3, .r4, .r14, .r17, .r22] s s' := by
+  have hnw := hs.nowrap
+  unfold zeroAcc
+  rw [WP.seq_iff, WP.block_append_iff]
+  refine WP.mono (mPrime_ok hs h8 h10 h11 hw hA hM) fun s₀ ⟨⟨a22, m0⟩, k0⟩ => ?_
+  rw [← WP.seq_iff]
+  have wo := writeW_outside s.mem B (d := dA + 8 * (w + 1))
+    ((Mont.word s.mem B dM * s.gpr .r12 + BitVec.ofNat 64 2) * s.gpr .r12) (by omega_arith)
+  rw [← m0] at wo
+  refine WP.mono (zeroLoop_ok (hs.congr k0.wr) ((k0.gpr .r8 (by decide)).trans h8)
+    ((k0.gpr .r11 (by decide)).trans h11) hw (by omega_arith)) fun t ⟨tz, tout, t4, tk⟩ => ?_
+  have t22 : t.gpr .r22 = s₀.gpr .r22 := tk.gpr .r22 (by decide)
+  refine ⟨tz, (wo.mono (by omega_arith) (by omega_arith)).trans (tout.mono (Nat.le_refl _) (by omega_arith)),
+    t4, by rw [t22, a22], ?_, (k0.trans tk).mono⟩
+  rw [Mont.Outside.word tout (by omega_arith) (by omega_arith), m0, Mont.word_writeW_self, t22, a22]
 
 /-! ## The subtraction of `m` -/
 
