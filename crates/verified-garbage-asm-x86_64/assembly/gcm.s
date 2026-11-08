@@ -18286,7 +18286,7 @@ vg_aes_gcm_open_to_prepared_aesni_pclmul_avx:
 	mov QWORD PTR [rsp+16], rax
 	mov rax, QWORD PTR [rsp+136]
 	mov QWORD PTR [rsp+24], rax
-	call {vg_aes_gcm_open_prepared16_aesni_pclmul_avx}
+	call {vg_aes_gcm_open_prepared_aesni_pclmul_avx}
 	test eax, eax
 	je 239f
 	jmp 240f
@@ -21205,7 +21205,7 @@ vg_aes_gcm_seal_gather_prepared_aesni_pclmul_avx:
 	push rax
 	push r10
 	push r11
-	call {vg_aes_gcm_seal_prepared16_aesni_pclmul_avx}
+	call {vg_aes_gcm_seal_prepared_aesni_pclmul_avx}
 	pop rax
 	pop rax
 	pop rax
@@ -21298,7 +21298,7 @@ vg_aes_gcm_seal_gather_prepared_aesni_pclmul_avx:
 	push rax
 	push r10
 	push r11
-	call {vg_aes_gcm_seal_prepared16_aesni_pclmul_avx}
+	call {vg_aes_gcm_seal_prepared_aesni_pclmul_avx}
 	pop rax
 	pop rax
 	pop rax
@@ -48361,7 +48361,7 @@ vg_aes_gcm_open_to_prepared_vaes_vpclmul:
 	mov QWORD PTR [rsp+16], rax
 	mov rax, QWORD PTR [rsp+136]
 	mov QWORD PTR [rsp+24], rax
-	call {vg_aes_gcm_open_prepared16_vaes_vpclmul}
+	call {vg_aes_gcm_open_prepared_vaes_vpclmul}
 	test eax, eax
 	je 241f
 	jmp 242f
@@ -51356,7 +51356,7 @@ vg_aes_gcm_seal_gather_prepared_vaes_vpclmul:
 	push rax
 	push r10
 	push r11
-	call {vg_aes_gcm_seal_prepared16_vaes_vpclmul}
+	call {vg_aes_gcm_seal_prepared_vaes_vpclmul}
 	pop rax
 	pop rax
 	pop rax
@@ -51449,7 +51449,7 @@ vg_aes_gcm_seal_gather_prepared_vaes_vpclmul:
 	push rax
 	push r10
 	push r11
-	call {vg_aes_gcm_seal_prepared16_vaes_vpclmul}
+	call {vg_aes_gcm_seal_prepared_vaes_vpclmul}
 	pop rax
 	pop rax
 	pop rax
