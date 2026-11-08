@@ -128,7 +128,7 @@ LOGS = "logs.json.gz"
 
 def leantar(tool=None):
     """`tool`, or the project's leantar (`ci/leantar_release.py`)."""
-    return tool or str(leantar_release.fetch())
+    return tool or str(leantar_release.fetch(token=os.environ.get("GH_TOKEN")))
 
 
 def build_dirs(lean, roots):
