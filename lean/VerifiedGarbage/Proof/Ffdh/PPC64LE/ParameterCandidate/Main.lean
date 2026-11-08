@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.TestsFn
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Residue
-public import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Trial
+public import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Product
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Shape
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Halve
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
@@ -205,7 +205,7 @@ theorem main_ok (R : RoundImpl) {p : PP} {T : Addr} {s : State} (h : St p s) (ht
     refine reject M₄.st M₄.u (Bool.eq_false_iff.mpr fun ht' => ?_)
     have h0 : word t₃.mem p.B 200 = 0#64 := M₃.bad.mpr (hsh.mpr ht').1
     simp [h0] at hz
-  refine WP.seq (WP.mono (trialSieveN_ok M₄ (by decide) (by decide)) fun t₅ M₅ => ?_)
+  refine WP.seq (WP.mono (prodSieveN_ok M₄ (by decide) (by decide) (by decide)) fun t₅ M₅ => ?_)
   refine WP.seq (WP.mono M₅.badLoad fun t₆ ⟨M₆, z₁⟩ => ?_)
   refine WP.ite (word t₅.mem p.B 200 == 0) (by rw [eval_zero, z₁]) (fun hz₁ => ?_) (fun hz₁ => ?_)
   rotate_left
@@ -216,7 +216,7 @@ theorem main_ok (R : RoundImpl) {p : PP} {T : Addr} {s : State} (h : St p s) (ht
     simp [h0] at hz₁
   unfold mainQ
   refine WP.seq (WP.mono M₆.halve fun t₇ M₇ => ?_)
-  refine WP.seq (WP.mono (trialSieve_ok M₇) fun t₈ M₈ => ?_)
+  refine WP.seq (WP.mono (prodSieve_ok M₇) fun t₈ M₈ => ?_)
   refine WP.seq (WP.mono M₈.badLoad fun t₉ ⟨M₉, z₂⟩ => ?_)
   refine WP.ite (word t₈.mem p.B 200 == 0) (by rw [eval_zero, z₂]) (fun hz₂ => ?_) (fun hz₂ => ?_)
   rotate_left
@@ -228,7 +228,7 @@ theorem main_ok (R : RoundImpl) {p : PP} {T : Addr} {s : State} (h : St p s) (ht
   unfold mainP
   refine WP.seq (WP.mono (M₉.reshape hL) fun t₁₀ M₁₀ => ?_)
   rw [← hc'] at M₁₀
-  refine WP.seq (WP.mono (trialSieve_ok M₁₀) fun t₁₁ M₁₁ => ?_)
+  refine WP.seq (WP.mono (prodSieve_ok M₁₀) fun t₁₁ M₁₁ => ?_)
   refine WP.seq (WP.mono M₁₁.badLoad fun t₁₂ ⟨M₁₂, z₃⟩ => ?_)
   have hall : word t₁₁.mem p.B (8 * hBad) = 0#64 ↔
       goodRes p.g c ∧ VG.Proof.RsaKeyGen.trialPrefix c (trialN p.bits) = false ∧ c / 2 % 2 = 1 ∧

@@ -32,8 +32,10 @@ Miller–Rabin proofs, has it). The algorithm is AArch64's
    a multiplication by the divisor's reciprocal (`mulhdu`; the model has no
    division). Then RSA's trial division by the first 512 entries of its
    table (1024 above 1024 bits), whose first 53 are the odd primes below 256
-   that `Spec.Ffdh.primeShape` sieves by, stopping at the first divisor:
-   first by the table's first 16 entries (`firstEntries`), then, with `q =
+   that `Spec.Ffdh.primeShape` sieves by, four entries at a time (the value
+   reduced once modulo their product by Montgomery's reduction by `2⁶⁴`,
+   then each entry's test on that residue, as x86-64's), stopping at the
+   first group with a divisor: first by the table's first 16 entries (`firstEntries`), then, with `q =
    (p − 1) / 2` in place, q's oddness and its trial division, and last, with
    p loaded again, p's whole trial division (so that a q with a small factor
    is rejected before p's whole division). The result is 2 if any of them
@@ -185,16 +187,6 @@ generator 2, 3 or 7 (mod 10) for 5. -/
 def residue : Prog isa :=
   .seq (.block [ldh .r3 hGen, .subi .r3 .r3 2]) (.ite (.zero .d .r3) residue2 residue5)
 
-/-- RSA's trial division (`Spec.RsaKeyGen.obviouslyComposite`): `hBad |=`
-the flag of one of the first 512 entries of `VG_RSA_KEYGEN_TRIAL32` (1024
-above 1024 bits) dividing array 0, the count `1024 − 512 [bits ≤ 1024]` in
-`hTrialN`. -/
-def trialSieve : Prog isa :=
-  .seq (.block [ldh .r3 hBits, .subi .r3 .r3 1025, .lsr .d .r3 .r3 63, .lsl .r3 .r3 9, .li .r4 1024,
-      .sub .r3 .r4 .r3, sth .r3 hTrialN])
-    (.seq (VG.Impl.RsaKeyGen.PPC64LE.Trial.trial hTrialN)
-      (.block [ldh .r5 hBad, .logic .or .r5 .r5 .r22, sth .r5 hBad]))
-
 /-- `q := p / 2` in place over the `w` words of array 0, and `hBad |= ` its
 evenness. -/
 def halveQ : Prog isa :=
@@ -248,12 +240,74 @@ def tests (name : String) (roundCode : Prog isa) : Prog isa :=
   .seq (test false firstCheck name roundCode) (.seq (.block [ldh .r3 hStat, .subi .r3 .r3 1])
     (.ite (.zero .d .r3) (testQ name roundCode) qResult))
 
-/-- Trial division by the first `n` entries of the table only (`n` below
-`2^15`): `hBad |=` the flag of one of them dividing array 0. -/
-def trialSieveN (n : Nat) : Prog isa :=
-  .seq (.block [.li .r3 n, sth .r3 hTrialN])
-    (.seq (VG.Impl.RsaKeyGen.PPC64LE.Trial.trial hTrialN)
-      (.block [ldh .r5 hBad, .logic .or .r5 .r5 .r22, sth .r5 hBad]))
+/-! ## Trial division by products of four entries
+
+As x86-64's: the candidate is reduced once modulo the product `M` of four
+consecutive entries of RSA's table, then each entry's test is on that
+residue alone. -/
+
+/-- `r0 := M`, the product of the four entries at `r23` (each below
+`2^13`, so `M < 2^52`). -/
+def prodLoad : List Instr :=
+  [.load .w .r0 .r23 0, .load .w .r9 .r23 8, .mul .r0 .r0 .r9, .load .w .r9 .r23 16, .mul .r0 .r0 .r9,
+    .load .w .r9 .r23 24, .mul .r0 .r0 .r9]
+
+/-- One step of Newton's iteration for `M⁻¹ mod 2⁶⁴`, `M` in `r0`, `x` in
+`r12`: `x := x (2 − M x)`. -/
+def newtonStep : List Instr := [.mul .r3 .r0 .r12, .li .r4 2, .sub .r3 .r4 .r3, .mul .r12 .r12 .r3]
+
+/-- `r12 := −M⁻¹ mod 2⁶⁴` (five steps from `x = M`: 3, 6, 12, 24, 48, 96
+bits), and `M` into `r8`. -/
+def prodInv : List Instr :=
+  [.logic .or .r12 .r0 .r0] ++ newtonStep ++ newtonStep ++ newtonStep ++ newtonStep ++ newtonStep ++
+    [.li .r3 0, .sub .r12 .r3 .r12, .logic .or .r8 .r0 .r0]
+
+/-- One word `x` of the candidate (at `r5`) into `acc` (`r7`): Montgomery
+reduction by `2⁶⁴` modulo `M` (`r8`, `−M⁻¹` in `r12`) of `X = acc + x`,
+whose carry is `r9`: `q = X mod 2⁶⁴ · (−M⁻¹)`, `acc := (X + q M) / 2⁶⁴`. -/
+def prodWord : List Instr :=
+  [.load .d .r0 .r5 0, .addc .r0 .r7 .r0, .addze .r9 .r14, .mul .r3 .r0 .r12, .mul .r4 .r3 .r8,
+    .mulhu .r7 .r3 .r8, .addc .r4 .r4 .r0, .adde .r7 .r7 .r9, .addi .r5 .r5 8]
+
+/-- `acc` (`r7`, below `M + 2`) over the `w` words of array 0, least
+significant first: `acc 2^(64 w) ≡` the candidate `(mod M)`. -/
+def prodReduce : Prog isa :=
+  .seq (.block [.addi .r5 .r10 0, .lsr .d .r6 .r11 1, .li .r7 0, .li .r14 0]) (countLoop .r6 prodWord)
+
+/-- Entry `j` of the four at `r23`, tested on `acc` (stored in header word
+`hTrialN`) by RSA's digits (`Trial.digit`): `r25 |=` its flag of dividing
+`acc`. -/
+def prodEntry (j : Nat) : Prog isa :=
+  .seq (.block [.load .d .r8 .r23 (8 * j), .lsr .d .r9 .r8 32, .lsl .r8 .r8 32, .lsr .d .r8 .r8 32, .li .r3 0,
+      .addi .r5 .r31 (8 * hTrialN), .li .r4 2])
+    (.seq (countLoop .r4 VG.Impl.RsaKeyGen.PPC64LE.Trial.digit)
+      (.block [.subi .r6 .r3 1, .lsr .d .r6 .r6 63, .logic .xor .r7 .r3 .r8, .subi .r7 .r7 1, .lsr .d .r7 .r7 63,
+        .logic .or .r6 .r6 .r7, .logic .or .r25 .r25 .r6]))
+
+/-- The four entries at `r23`: `r22 :=` 1 if one divides array 0, else 0;
+`r23` to the next four, `r24` four fewer, or 0 on a hit. -/
+def prodGroup : Prog isa :=
+  .seq (.block (prodLoad ++ prodInv)) (.seq prodReduce (.seq (.block [sth .r7 hTrialN, .li .r25 0])
+    (.seq (prodEntry 0) (.seq (prodEntry 1) (.seq (prodEntry 2) (.seq (prodEntry 3)
+      (.block [.logic .or .r22 .r25 .r25, .addi .r23 .r23 32, .subi .r24 .r24 4, .subi .r6 .r22 1,
+        .logic .and .r24 .r24 .r6])))))))
+
+/-- The groups from `r23`, `r24` entries (a multiple of 4, at least 4), until
+one divides. -/
+def prodLoop : Prog isa := .loop prodGroup (.nonzero .d .r24)
+
+/-- Trial division by the first `n` entries (a multiple of 4 below `2^15`)
+by products of four: `hBad |=` the flag of one dividing array 0. -/
+def prodSieveN (n : Nat) : Prog isa :=
+  .seq (.block [.adrSym .r23 VG.Impl.RsaKeyGen.TrialTable32.symbol, .li .r24 n])
+    (.seq prodLoop (.block [ldh .r5 hBad, .logic .or .r5 .r5 .r22, sth .r5 hBad]))
+
+/-- Trial division by the first `1024 − 512 [bits ≤ 1024]` entries by
+products of four. -/
+def prodSieve : Prog isa :=
+  .seq (.block [.adrSym .r23 VG.Impl.RsaKeyGen.TrialTable32.symbol, ldh .r3 hBits, .subi .r3 .r3 1025,
+      .lsr .d .r3 .r3 63, .lsl .r3 .r3 9, .li .r4 1024, .sub .r24 .r4 .r3])
+    (.seq prodLoop (.block [ldh .r5 hBad, .logic .or .r5 .r5 .r22, sth .r5 hBad]))
 
 /-- The entries p is divided by before q's trial division: most of p's
 small factors, at a fraction of the whole division's cost. -/
@@ -262,14 +316,14 @@ def firstEntries : Nat := 16
 /-- After q passed: p again in array 0, its whole trial division, and the
 tests. -/
 def mainP (name : String) (roundCode : Prog isa) : Prog isa :=
-  .seq shapeP (.seq trialSieve (.seq (.block [ldh .r5 hBad])
+  .seq shapeP (.seq prodSieve (.seq (.block [ldh .r5 hBad])
     (.ite (.zero .d .r5) (tests name roundCode) (.block (finish 2)))))
 
 /-- After p's congruence and its first entries passed: q from p, its
 oddness and whole trial division, then `mainP`. A q with a small factor
 is rejected before p's whole division. -/
 def mainQ (name : String) (roundCode : Prog isa) : Prog isa :=
-  .seq halveQ (.seq trialSieve (.seq (.block [ldh .r5 hBad])
+  .seq halveQ (.seq prodSieve (.seq (.block [ldh .r5 hBad])
     (.ite (.zero .d .r5) (mainP name roundCode) (.block (finish 2)))))
 
 /-- Once `rand` holds the candidate's octets: p, its congruence, rejected
@@ -279,7 +333,7 @@ tests. -/
 def main (name : String) (roundCode : Prog isa) : Prog isa :=
   .seq (phase false) (.seq shapeP (.seq residue (.seq (.block [ldh .r5 hBad])
     (.ite (.zero .d .r5)
-      (.seq (trialSieveN firstEntries) (.seq (.block [ldh .r5 hBad])
+      (.seq (prodSieveN firstEntries) (.seq (.block [ldh .r5 hBad])
         (.ite (.zero .d .r5) (mainQ name roundCode) (.block (finish 2)))))
       (.block (finish 2))))))
 
