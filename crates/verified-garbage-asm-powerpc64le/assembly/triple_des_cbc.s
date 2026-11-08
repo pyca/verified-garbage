@@ -1459,11 +1459,8 @@ vg_triple_des_cbc_decrypt_chained:
 	stw %r8, 1024(%r5)
 	lwz %r8, 4(%r31)
 	stw %r8, 1028(%r5)
-	or %r6, %r5, %r5
 	addi %r4, %r5, 1024
-	bl {vg_triple_des_ecb64_decrypt}
-	or %r5, %r10, %r10
-	or %r3, %r7, %r7
+	bl {vg_triple_des_decrypt_block}
 	lwz %r8, 1024(%r5)
 	lwz %r9, 1568(%r5)
 	xor %r8, %r8, %r9

@@ -1207,11 +1207,8 @@ vg_triple_des_cfb64_decrypt:
 	stw %r8, 1568(%r5)
 	lwz %r8, 4(%r31)
 	stw %r8, 1572(%r5)
-	or %r6, %r5, %r5
 	addi %r4, %r5, 1024
-	bl {vg_triple_des_ecb64_encrypt}
-	or %r5, %r10, %r10
-	or %r3, %r7, %r7
+	bl {vg_triple_des_encrypt_block}
 	lwz %r8, 0(%r31)
 	lwz %r9, 1024(%r5)
 	xor %r8, %r8, %r9
