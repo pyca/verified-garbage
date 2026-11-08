@@ -18,6 +18,8 @@ meta import VerifiedGarbage.Proof.Rc4.PPC64LE.Lit
 meta import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
+import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
 public import VerifiedGarbage.Impl.Rc4.PPC64LE
 public import VerifiedGarbage.Proof.Rc4.PPC64LE.Lookup
 public import VerifiedGarbage.Spec.Rc4
@@ -70,7 +72,7 @@ theorem init_correct (s : State) (hs : initX.pre s) :
   | error e => cases e; intro hpost; rw [hpost]; rfl
 
 theorem init_ct : ConstantTime isa initX.pre initX.pub init := by
-  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5]) ?_ (by taint_decide)
+  refine VG.Taint.constantTime (A := vectorTaint) (Taint.ofRegs [.r3, .r4, .r5]) ?_ (by taint_decide)
   intro s₁ s₂ _ _ h
   refine ⟨h.2.2.2, fun r hr => ?_⟩
   simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -138,12 +140,13 @@ def ReadValid (s : State) : Prop := InRegions (s.rd ++ s.wr) (s.gpr .r3) 258
 def startBlock : List Instr := [.lbz .r6 .r3 256, .lbz .r7 .r3 257, .li .r8 0]
 
 /-- The PRGA index `i` is loaded from the context, where the taint analysis
-takes it for secret: it may leak, so it is public. -/
+takes it for secret: it may leak, so it is public; and `r8` is zero. -/
 theorem apply_start_ct : RelCT isa (fun a b => ReadValid a ∧ ReadValid b ∧ EntryAgree a b)
-    (.block startBlock) fun a b => PPC64LE.Taint.Agree (PPC64LE.Taint.ofRegs [.r3, .r4, .r5, .r6]) a b := by
+    (.block startBlock) fun a b =>
+      PPC64LE.Taint.Agree (PPC64LE.Taint.ofRegs [.r3, .r4, .r5, .r6, .r8]) a b := by
   intro a b tr tr' a' b' ⟨hpa, hpb, hab⟩ ea eb
   have hct : RelCT isa (fun a b => EntryAgree a b) (.block startBlock) fun _ _ => True :=
-    RelCT.taint (A := taint) (Taint.ofRegs [.r3, .r4, .r5]) (fun a b h => by
+    RelCT.taint (A := vectorTaint) (Taint.ofRegs [.r3, .r4, .r5]) (fun a b h => by
       refine ⟨h.sp, fun r hr => ?_⟩
       simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
@@ -155,15 +158,16 @@ theorem apply_start_ct : RelCT isa (fun a b => ReadValid a ∧ ReadValid b ∧ E
   obtain ⟨_, rfl⟩ := Exec.det eu ea
   obtain ⟨_, v, ev, hbv⟩ := apply_start b hpb
   obtain ⟨_, rfl⟩ := Exec.det ev eb
-  obtain ⟨_, _, _, ha0, ha1, ha2, ha6, _, _⟩ := hau
-  obtain ⟨_, _, _, hb0, hb1, hb2, hb6, _, _⟩ := hbv
+  obtain ⟨_, _, _, ha0, ha1, ha2, ha6, _, ha8⟩ := hau
+  obtain ⟨_, _, _, hb0, hb1, hb2, hb6, _, hb8⟩ := hbv
   refine ⟨htrace, ⟨(Exec.sp eu).trans (hab.sp.trans (Exec.sp ev).symm), fun r hr => ?_⟩⟩
   simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl | rfl
   · exact ha0.trans (hab.p.trans hb0.symm)
   · exact ha1.trans (hab.data.trans hb1.symm)
   · exact ha2.trans (hab.len.trans hb2.symm)
   · rw [ha6, hb6, hab.i]
+  · rw [ha8, hb8]
 
 theorem apply_ct : ConstantTime isa ReadValid EntryAgree apply := by
   apply RelCT.constantTime (Q := fun _ _ => True)
@@ -171,9 +175,9 @@ theorem apply_ct : ConstantTime isa ReadValid EntryAgree apply := by
   refine RelCT.seq apply_start_ct (RelCT.ite ?_ ?_ ?_)
   · intro a b h
     simp only [eval, State.read, h.2 .r5 (by simp [PPC64LE.Taint.mem_ofRegs])]
-  · exact RelCT.taint (A := taint) (Taint.ofRegs []) (fun _ _ h => ⟨h.1.1, by simp⟩)
+  · exact RelCT.taint (A := vectorTaint) (Taint.ofRegs []) (fun _ _ h => ⟨h.1.1, by simp⟩)
       (by taint_decide)
-  · exact RelCT.taint (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6]) (fun _ _ h => h.1)
+  · exact RelCT.taint (A := vectorTaint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r8]) (fun _ _ h => h.1)
       (by taint_decide)
 
 theorem apply_ct' : ConstantTime isa applyX.pre applyX.pub apply := by
