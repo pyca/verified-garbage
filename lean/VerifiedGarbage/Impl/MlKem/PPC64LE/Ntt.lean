@@ -249,7 +249,8 @@ def nttInv : Prog isa :=
     (.seq (.loop (.block vibfly2Body) (.nonzero .d .r10))
     (.seq (.block [.li .r7 504, .li .r9 16])
     (.seq (.loop vilayerCode (.nonzero .d .r0))
-    (.seq (.block (vconst .v4 fVec ++ vconst .v5 fpVec ++ ([.li .r5 0, .li .r10 64] : List Instr)))
+    (.seq (.block ([.vop (.splatImm true .v14 0)] ++ vconst .v4 fVec ++ vconst .v5 fpVec ++
+        ([.li .r5 0, .li .r10 64] : List Instr)))
       (.loop (.block vscaleBody) (.nonzero .d .r10))))))
 
 /-! ## `multiplyNTTs` -/

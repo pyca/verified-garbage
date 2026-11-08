@@ -652,30 +652,42 @@ theorem pstep {s₀ : State} (hp : Pre s₀) {m₁ : Mem} (hm : VSetup s₀ m₁
 
 /-! ## The vector NTT: setup and the end -/
 
-theorem setup_ok {s₀ : State} (hp : Pre s₀) :
-    WP isa (.block (ztable .r4 ++ vconsts ++ ([.li .r7 8, .li .r9 512] : List Instr))) s₀
-      fun s => VSetup s₀ s.mem ∧ LInv s₀ s.mem 0 s := by
+/-- What every loop keeps survives a write of a register no loop keeps. -/
+theorem VEnv.write {s₀ : State} {m₁ : Mem} {s : State} (h : VEnv s₀ m₁ s) {r : Reg} (hr : r ∉ preserved)
+    (h3 : r ≠ .r3) (h4 : r ≠ .r4) (v : BitVec 64) : VEnv s₀ m₁ (s.write r v) :=
+  ⟨by rw [RegUpd.gpr_write_of_ne _ _ (Ne.symm h3)]; exact h.r3,
+    by rw [RegUpd.gpr_write_of_ne _ _ (Ne.symm h4)]; exact h.r4,
+    fun r' hr' => by
+      rw [RegUpd.gpr_write_of_ne _ _ (fun e : r' = r => hr (e ▸ hr'))]; exact h.kept r' hr',
+    h.c.write r v, h.lr, h.rd, h.wr, h.sp, h.frame⟩
+
+/-- The table stored and the constant vectors built. -/
+theorem vsetup_ok {s₀ : State} (hp : Pre s₀) :
+    WP isa (.block (ztable .r4 ++ vconsts)) s₀ fun s => VSetup s₀ s.mem ∧ VEnv s₀ s.mem s := by
   have fS := hp.fitS
-  rw [List.append_assoc, WP.block_append_iff]
+  rw [WP.block_append_iff]
   refine WP.mono (ztable_ok (b := .r4) (by decide) (by decide) rfl fun o ho => by
     rw [hp.wr]; exact ⟨polyRegion (S s₀), by simp, Offset.contains_base _ ho (by omega)⟩) fun s₁ hz => ?_
-  rw [WP.block_append_iff]
   refine WP.mono vconsts_ok fun s₂ ⟨hc, vc⟩ => ?_
-  refine WP.cons (exec_li (by decide)) (WP.cons (exec_li (by decide)) (wp_nil ?_))
-  have g : ∀ r, r ≠ .r7 → r ≠ .r9 → r ≠ .r11 → r ≠ .r12 →
-      ((s₂.write .r7 (BitVec.ofNat 64 8)).write .r9 (BitVec.ofNat 64 512)).gpr r = s₀.gpr r :=
-    fun r h7 h9 h11 h12 => by
-      rw [RegUpd.gpr_write_of_ne _ _ h9, RegUpd.gpr_write_of_ne _ _ h7, vc.g r h11 h12, hz.gpr r h12]
+  have g : ∀ r, r ≠ .r11 → r ≠ .r12 → s₂.gpr r = s₀.gpr r :=
+    fun r h11 h12 => by rw [vc.g r h11 h12, hz.gpr r h12]
   have hm : VSetup s₀ s₂.mem := by
     rw [vc.mem]
     refine ⟨hz.tab, polyIs_frame hz.frame (fun r hr => by
       rw [List.mem_singleton] at hr; subst hr; exact hp.disj) ⟨hp.red, rfl⟩⟩
-  refine ⟨hm, ⟨⟨g _ (by decide) (by decide) (by decide) (by decide), g _ (by decide) (by decide) (by decide)
-    (by decide), fun r hr => ?_, ?_, vc.lr.trans hz.lr, vc.rd.trans hz.rd, vc.wr.trans hz.wr,
-    vc.sp.trans hz.sp, Frame.refl _ _⟩, rfl, rfl, hm.poly⟩⟩
-  · obtain ⟨-, -, -, n7, n9, -, n11, n12⟩ := pres_ne r hr
-    exact g r n7 n9 n11 n12
-  · exact ⟨hc.v0, hc.v1, hc.v2, hc.v3, hc.v12, hc.v13⟩
+  refine ⟨hm, ⟨g _ (by decide) (by decide), g _ (by decide) (by decide), fun r hr => ?_, hc,
+    vc.lr.trans hz.lr, vc.rd.trans hz.rd, vc.wr.trans hz.wr, vc.sp.trans hz.sp, Frame.refl _ _⟩⟩
+  obtain ⟨-, -, -, -, -, -, n11, n12⟩ := pres_ne r hr
+  exact g r n11 n12
+
+theorem setup_ok {s₀ : State} (hp : Pre s₀) :
+    WP isa (.block (ztable .r4 ++ vconsts ++ ([.li .r7 8, .li .r9 512] : List Instr))) s₀
+      fun s => VSetup s₀ s.mem ∧ LInv s₀ s.mem 0 s := by
+  rw [WP.block_append_iff]
+  refine WP.mono (vsetup_ok hp) fun s₂ ⟨hm, he⟩ => ?_
+  refine WP.cons (exec_li (by decide)) (WP.cons (exec_li (by decide)) (wp_nil ?_))
+  exact ⟨hm, ⟨(he.write (by decide) (by decide) (by decide) _).write (by decide) (by decide) (by decide) _,
+    rfl, rfl, hm.poly⟩⟩
 
 theorem correct {s₀ : State} (hp : Pre s₀) :
     WP isa ntt s₀ fun s => (∀ r ∈ preserved, s.gpr r = s₀.gpr r) ∧ s.sp = s₀.sp ∧ s.lr = s₀.lr ∧
