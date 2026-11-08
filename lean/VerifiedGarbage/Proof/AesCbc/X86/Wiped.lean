@@ -26,7 +26,7 @@ meta import VerifiedGarbage.Proof.Framework.Lit
 for each implementation `v` of the blocks functions (`BlocksImpl`): the CBC
 code around it, which zeroes what it saves in `scratch` and so leaves each
 byte of `scratch` from offset `v.encWritten` (`v.decWritten`) on unchanged
-or zero (`tailPost`); where that is 0, the CBC code itself, which leaves
+or zero (`tailZPost`); where that is 0, the CBC code itself, which leaves
 `scratch` scrubbed (`encrypt_free`, with 24 bytes of stack); otherwise a call
 of it, then of `vg_zeroize` on the first `v.encWritten` bytes
 (`encrypt_scrubbed`: `Verified.callWipeTail'`, with the side conditions of
@@ -133,15 +133,15 @@ theorem tail_of {s s' : State} {w : Nat}
 
 theorem encrypt_tail (v : BlocksImpl) :
     Verified X86.target (Impl.AesCbc.X86.encryptZ v.enc)
-      (Spec.Cbc.aesSig.contract X86.abi (pre 32) (tailPost 32 (encPost 32) v.encWritten) false 24 none) :=
-  Verified.tail_of (Proof.AesCbc.encrypt_keyed (Proof.AesCbc.X86.encryptZ_verified v))
+      (Spec.Cbc.aesSig.contract X86.abi (pre 32) (tailZPost 32 (encPost 32) v.encWritten) false 24 none) :=
+  Verified.tailZ_of (Proof.AesCbc.encrypt_keyed (Proof.AesCbc.X86.encryptZ_verified v))
     (fun s t s' hs he => tail_of (Proof.AesCbc.X86.encryptZ_tail v s (Proof.AesCbc.X86.enc_implies.pre s hs) t s' he))
     args_length
 
 theorem decrypt_tail (v : BlocksImpl) :
     Verified X86.target (Impl.AesCbc.X86.decryptZ v.dec)
-      (Spec.Cbc.aesSig.contract X86.abi (pre 32) (tailPost 32 (decPost 32) v.decWritten) false 24 none) :=
-  Verified.tail_of (Proof.AesCbc.decrypt_keyed (Proof.AesCbc.X86.decryptZ_verified v))
+      (Spec.Cbc.aesSig.contract X86.abi (pre 32) (tailZPost 32 (decPost 32) v.decWritten) false 24 none) :=
+  Verified.tailZ_of (Proof.AesCbc.decrypt_keyed (Proof.AesCbc.X86.decryptZ_verified v))
     (fun s t s' hs he => tail_of (Proof.AesCbc.X86.decryptZ_tail v s (Proof.AesCbc.X86.dec_implies.pre s hs) t s' he))
     args_length
 
@@ -149,37 +149,37 @@ theorem decrypt_tail (v : BlocksImpl) :
 `scratch`: the CBC code, which leaves `scratch` scrubbed. -/
 theorem encrypt_free (v : BlocksImpl) (h : v.encWritten = 0) :
     Verified X86.target (Impl.AesCbc.X86.encryptZ v.enc) (Spec.Cbc.aesEncryptContract X86.abi 24) :=
-  Verified.of_scrubbed ((h ▸ encrypt_tail v).post_mono (tailPost_zero 32 _))
+  Verified.of_scrubbed ((h ▸ encrypt_tail v).post_mono (tailZPost_zero 32 _))
 
 theorem decrypt_free (v : BlocksImpl) (h : v.decWritten = 0) :
     Verified X86.target (Impl.AesCbc.X86.decryptZ v.dec) (Spec.Cbc.aesDecryptContract X86.abi 24) :=
-  Verified.of_scrubbed ((h ▸ decrypt_tail v).post_mono (tailPost_zero 32 _))
+  Verified.of_scrubbed ((h ▸ decrypt_tail v).post_mono (tailZPost_zero 32 _))
 
 theorem encrypt_scrubbed (v : BlocksImpl) :
     Verified X86.target (Impl.AesCbc.X86.Wiped.encrypt v.enc v.suffix v.encWritten)
       (Spec.Cbc.aesSig.contract X86.abi (pre 32) (scrubbedPost 32 (encPost 32)) false 72 none) :=
   Verified.callWipeTail' (sig := Spec.Cbc.aesSig) (stack := 24) (zst := 0)
-    (pre := pre 32) (post := tailPost 32 (encPost 32) v.encWritten)
+    (pre := pre 32) (post := tailZPost 32 (encPost 32) v.encWritten)
     (ps₁ := [("schedule", .array false .u8 240), ("rounds", .int .usize true),
       ("iv", .array true .u8 16), ("data", .slice true (.array .u8 16) "n")]) (ps₂ := []) (i := 5) (j := 5)
     (encrypt_tail v) Proof.Zeroize.X86.verified
     (by decide) rfl rfl (by decide) (Nat.le_trans v.encWrittenLe (by decide)) (by have := v.encWrittenLe; omega)
     (by decide) (encrypt_noSp _ v.encNosp) (encrypt_stack _ v.encStack) zeroize_noSp zeroize_stack (by decide)
-    (pre_local 32) (tailPost_local 32 _ (encPost_local 32))
-    (tailPost_out 32 (Nat.le_trans v.encWrittenLe (by decide)) (encPost_out 32)) (wipedTail 32 _ _) (sat _)
+    (pre_local 32) (tailZPost_local 32 _ (encPost_local 32))
+    (tailZPost_out 32 (Nat.le_trans v.encWrittenLe (by decide)) (encPost_out 32)) (wipedTailZ 32 _ _) (sat _)
 
 theorem decrypt_scrubbed (v : BlocksImpl) :
     Verified X86.target (Impl.AesCbc.X86.Wiped.decrypt v.dec v.suffix v.decWritten)
       (Spec.Cbc.aesSig.contract X86.abi (pre 32) (scrubbedPost 32 (decPost 32)) false 72 none) :=
   Verified.callWipeTail' (sig := Spec.Cbc.aesSig) (stack := 24) (zst := 0)
-    (pre := pre 32) (post := tailPost 32 (decPost 32) v.decWritten)
+    (pre := pre 32) (post := tailZPost 32 (decPost 32) v.decWritten)
     (ps₁ := [("schedule", .array false .u8 240), ("rounds", .int .usize true),
       ("iv", .array true .u8 16), ("data", .slice true (.array .u8 16) "n")]) (ps₂ := []) (i := 5) (j := 5)
     (decrypt_tail v) Proof.Zeroize.X86.verified
     (by decide) rfl rfl (by decide) (Nat.le_trans v.decWrittenLe (by decide)) (by have := v.decWrittenLe; omega)
     (by decide) (decrypt_noSp _ v.decNosp) (decrypt_stack _ v.decStack) zeroize_noSp zeroize_stack (by decide)
-    (pre_local 32) (tailPost_local 32 _ (decPost_local 32))
-    (tailPost_out 32 (Nat.le_trans v.decWrittenLe (by decide)) (decPost_out 32)) (wipedTail 32 _ _) (sat _)
+    (pre_local 32) (tailZPost_local 32 _ (decPost_local 32))
+    (tailZPost_out 32 (Nat.le_trans v.decWrittenLe (by decide)) (decPost_out 32)) (wipedTailZ 32 _ _) (sat _)
 
 theorem encrypt_verified (v : BlocksImpl) :
     Verified X86.target (Impl.AesCbc.X86.Wiped.encrypt v.enc v.suffix v.encWritten)
