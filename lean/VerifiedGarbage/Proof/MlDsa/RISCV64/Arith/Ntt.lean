@@ -35,7 +35,7 @@ public import VerifiedGarbage.TCB.RISCV64.Target
 # ML-DSA on RISC-V: `vg_mldsa_ntt`
 
 As ML-KEM's on RISC-V (`Proof/MlKem/RISCV64/Ntt.lean`), with ML-DSA's eight
-layers (`Proof/MlDsa/PPC64LE/Arith/Ntt.lean`), and lazy butterflies
+layers (`Proof/MlDsa/Arith/Ntt.lean`), and lazy butterflies
 (`Lazy.lean`): the table of the zetas stored (`setup_ok`); then the three
 nested loops of `layerB`, `layF` and `blockN` on words
 (`Proof/MlDsa/Arith/Lazy.lean`), with an invariant each (`LInv`, `BInv`,

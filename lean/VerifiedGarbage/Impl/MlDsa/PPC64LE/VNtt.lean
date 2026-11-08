@@ -70,9 +70,11 @@ def scrV (p : Nat) : Nat := shoup (zeta (scrK p))
 def loadImm (r : Reg) (v : Nat) : List Instr :=
   [.lis r (BitVec.ofNat 16 (v / 65536)), .ori r r (BitVec.ofNat 16 (v % 65536))]
 
-/-- Positions 1 … 255 of `scratch`. -/
-def fill : List Instr :=
-  (List.range 255).flatMap fun i => loadImm .r12 (scrV (i + 1)) ++ [.store .w .r12 .r4 (4 * (i + 1))]
+/-- Positions 1 … 255 of `scratch`, position `p` with `z'` of zeta `K p`. -/
+def fillK (K : Nat → Nat) : List Instr :=
+  (List.range 255).flatMap fun i => loadImm .r12 (shoup (zeta (K (i + 1)))) ++ [.store .w .r12 .r4 (4 * (i + 1))]
+
+def fill : List Instr := fillK scrK
 
 /-- `d ← hi || lo`, through `r11`, `r12`, `v6` and `v7`. -/
 def vconst (d : VReg) (hi lo : Nat) : List Instr :=

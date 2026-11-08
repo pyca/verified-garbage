@@ -267,7 +267,7 @@ theorem polyIs_store4 {m : Mem} {p : Addr} {P R : Poly} (hP : PolyIs m p P) {j :
 /-! ## A group's arithmetic -/
 
 /-- What a group's arithmetic needs of the state. -/
-structure CEnv (s₀ : State) (u : State) : Prop where
+structure CEnvK (K : Nat → Nat) (s₀ : State) (u : State) : Prop where
   v4 : ∀ i < 4, (vword (u.vpr .v4) i).toNat = Spec.MlDsa.q
   v5 : u.vpr .v5 = hiC
   v16 : u.vpr .v16 = caC
@@ -276,26 +276,29 @@ structure CEnv (s₀ : State) (u : State) : Prop where
   v19 : u.vpr .v19 = cdC
   rd : u.rd = s₀.rd
   wr : u.wr = s₀.wr
-  tab : Tab (S s₀) u.mem
+  tab : Tab K (S s₀) u.mem
 
-theorem CEnv.fr {s₀ u t : State} (h : CEnv s₀ u) {vs : List VReg} {gs : List Reg} (hf : Fr vs gs u t)
-    (hv : ∀ r ∈ vs, r ≠ .v4 ∧ r ≠ .v5 ∧ r ≠ .v16 ∧ r ≠ .v17 ∧ r ≠ .v18 ∧ r ≠ .v19) : CEnv s₀ t :=
+abbrev CEnv := CEnvK scrK
+
+theorem CEnvK.fr {K : Nat → Nat} {s₀ u t : State} (h : CEnvK K s₀ u) {vs : List VReg} {gs : List Reg}
+    (hf : Fr vs gs u t) (hv : ∀ r ∈ vs, r ≠ .v4 ∧ r ≠ .v5 ∧ r ≠ .v16 ∧ r ≠ .v17 ∧ r ≠ .v18 ∧ r ≠ .v19) :
+    CEnvK K s₀ t :=
   ⟨fun i hi => by rw [hf.v _ fun e => (hv _ e).1 rfl]; exact h.v4 i hi,
    by rw [hf.v _ fun e => (hv _ e).2.1 rfl, h.v5],
    by rw [hf.v _ fun e => (hv _ e).2.2.1 rfl, h.v16], by rw [hf.v _ fun e => (hv _ e).2.2.2.1 rfl, h.v17],
    by rw [hf.v _ fun e => (hv _ e).2.2.2.2.1 rfl, h.v18], by rw [hf.v _ fun e => (hv _ e).2.2.2.2.2 rfl, h.v19],
    by rw [hf.rd, h.rd], by rw [hf.wr, h.wr], by rw [hf.mem]; exact h.tab⟩
 
-theorem CEnv.of_env {s₀ s : State} (h : Env s₀ s) : CEnv s₀ s :=
+theorem CEnvK.of_env {K : Nat → Nat} {s₀ s : State} (h : EnvK K s₀ s) : CEnvK K s₀ s :=
   ⟨h.v4, h.v5, h.v16, h.v17, h.v18, h.v19, h.rd, h.wr, h.tab⟩
 
 /-- Lanes of a vector as values of `ℤ_q`. -/
 def Lanes (x : BitVec 128) (f : Nat → Zq) : Prop := ∀ r < 4, (vword x r).toNat = (f r).val
 
 /-- Four `z'` loaded from `S + 4P`, and their `z`. -/
-theorem zl_run {s₀ : State} (hp : Pre s₀) (u : State) (hc : CEnv s₀ u) {a b : Reg} (ha : a ≠ .r0) {P : Nat}
+theorem zl_run {K : Nat → Nat} {s₀ : State} (hp : Pre s₀) (u : State) (hc : CEnvK K s₀ u) {a b : Reg} (ha : a ≠ .r0) {P : Nat}
     (hP0 : 0 < P) (hP : P + 4 ≤ 256) (hab : u.gpr a + u.gpr b = S s₀ + BitVec.ofNat 64 (4 * P))
-    {z : Nat → Zq} (hz : ∀ e < 4, zeta (scrK (P + swap1 e)) = (z e).val) :
+    {z : Nat → Zq} (hz : ∀ e < 4, zeta (K (P + swap1 e)) = (z e).val) :
     WP isa (.block (.lxvd2x .v3 a b :: zcalc)) u fun t =>
       Lanes (t.vpr .v2) z ∧ (∀ r < 4, (vword (t.vpr .v3) r).toNat = (z r).val * 2 ^ 32 / Spec.MlDsa.q) ∧
       Fr [.v2, .v3, .v6, .v7] [] u t := by
@@ -304,10 +307,10 @@ theorem zl_run {s₀ : State} (hp : Pre s₀) (u : State) (hc : CEnv s₀ u) {a 
     exact ⟨polyRegion (S s₀), by simp, VG.Offset.contains_base (k := 1024) _ (by omega) (by omega)⟩
   refine WP.cons (exec_lxvd2x .v3 a b u ha ia) ?_
   have h3 : ∀ e < 4, (vword ((u.writeV .v3 (swapDwords (u.mem.read (u.gpr a + u.gpr b) 16))).vpr .v3) e).toNat =
-      shoup (zeta (scrK (P + swap1 e))) := fun e he => by
+      shoup (zeta (K (P + swap1 e))) := fun e he => by
     simp only [vpr_writeV, ite_true]
     rw [hab, vword_load _ _ he, BitVec.add_assoc, ← BitVec.ofNat_add, ← Nat.mul_add,
-      hc.tab _ (by omega) (by have := xor1_lt he; omega), BitVec.toNat_ofNat, Nat.mod_eq_of_lt (scrV_lt _), scrV,
+      hc.tab _ (by omega) (by have := xor1_lt he; omega), BitVec.toNat_ofNat, Nat.mod_eq_of_lt (shoup_lt (zeta_lt _)),
       flip_eq he]
   refine WP.mono (zcalc_run _ (fun i hi => by simp only [vpr_writeV, reduceCtorEq, ite_false]; exact hc.v4 i hi)
     (by simp only [vpr_writeV, reduceCtorEq, ite_false]; exact hc.v5) (fun _ _ => zeta_lt _) (fun _ _ => zeta_nz _) h3)
@@ -316,7 +319,8 @@ theorem zl_run {s₀ : State} (hp : Pre s₀) (u : State) (hc : CEnv s₀ u) {a 
   · exact (Fr.writeV [.v2, .v3, .v6, .v7] [] u (by decide) _).trans' ((Fr.of_vonly vo sy).mono (by decide) (by simp))
 
 /-- A butterfly whose operands' lanes are known. -/
-theorem bfly_lanesV {s₀ u t : State} {a b : VReg} {x y : Nat → Zq} {z : Nat → Zq} (hc : CEnv s₀ u)
+theorem bfly_lanesV {K : Nat → Nat} {s₀ u t : State} {a b : VReg} {x y : Nat → Zq} {z : Nat → Zq}
+    (hc : CEnvK K s₀ u)
     (hz : Lanes (u.vpr .v2) z) (hzp : ∀ r < 4, (vword (u.vpr .v3) r).toNat = (z r).val * 2 ^ 32 / Spec.MlDsa.q)
     (ha : Lanes (u.vpr a) x) (hb : Lanes (u.vpr b) y)
     (hta : t.vpr a = bflyA (u.vpr a) (u.vpr b) (u.vpr .v2) (u.vpr .v3) (u.vpr .v4) (u.vpr .v5))
@@ -491,7 +495,7 @@ theorem group_ok {s₀ : State} (hp : Pre s₀) {W : Poly} {g : Nat} (hg : g < 1
   refine WP.mono (loads4_run s h.r5 h.r9 h.r8 h.r11 h.r12 (h.env.inR hp (by omega))
     (by rw [e16]; exact h.env.inR hp (by omega)) (by rw [e32]; exact h.env.inR hp (by omega))
     (by rw [e48]; exact h.env.inR hp (by omega))) fun u₁ ⟨l₁, f₁⟩ => ?_
-  have c₁ : CEnv s₀ u₁ := (CEnv.of_env h.env).fr f₁ (by decide)
+  have c₁ : CEnv s₀ u₁ := (CEnvK.of_env h.env).fr f₁ (by decide)
   have hin : ∀ r < 4, Lanes (u₁.vpr (tv r)) (fun e => W[16 * g + 4 * r + (e ^^^ 1)]!) := fun r hr e he => by
     have hx := xor1_lt he
     rw [l₁ r hr, show 16 * r = 4 * (4 * r) by omega, ea, vword_loadC _ _ _ he, polyIs_toNat h.poly (by show _ < 256; omega),

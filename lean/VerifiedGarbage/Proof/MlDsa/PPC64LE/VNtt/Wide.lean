@@ -68,11 +68,12 @@ structure Pre (s₀ : State) : Prop where
 /-- The registers the code writes. -/
 def written : List Reg := [.r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12]
 
-/-- The table of `z'` in `scratch`, at `S`. -/
-def Tab (S : Addr) (m : Mem) : Prop :=
-  ∀ p, 0 < p → p < 256 → m.readW (S + BitVec.ofNat 64 (4 * p)) 32 = BitVec.ofNat 32 (scrV p)
+/-- The table of `z'` in `scratch`, at `S`: position `p` with zeta `K p`. -/
+def Tab (K : Nat → Nat) (S : Addr) (m : Mem) : Prop :=
+  ∀ p, 0 < p → p < 256 → m.readW (S + BitVec.ofNat 64 (4 * p)) 32 = BitVec.ofNat 32 (shoup (zeta (K p)))
 
-structure Env (s₀ : State) (s : State) : Prop where
+/-- What every layer keeps, with the table of `K`. -/
+structure EnvK (K : Nat → Nat) (s₀ : State) (s : State) : Prop where
   r3 : s.gpr .r3 = F s₀
   v4 : ∀ i < 4, (vword (s.vpr .v4) i).toNat = Spec.MlDsa.q
   v5 : s.vpr .v5 = hiC
@@ -86,30 +87,33 @@ structure Env (s₀ : State) (s : State) : Prop where
   sp : s.sp = s₀.sp
   lr : s.lr = s₀.lr
   frame : Frame [polyRegion (F s₀), polyRegion (S s₀)] s₀.mem s.mem
-  tab : Tab (S s₀) s.mem
+  tab : Tab K (S s₀) s.mem
 
-theorem Env.inRS {s₀ s : State} (hp : Pre s₀) (h : Env s₀ s) {b : Nat} (hb : b + 4 ≤ 256) :
+/-- The forward transform's. -/
+abbrev Env := EnvK scrK
+
+theorem EnvK.inRS {K : Nat → Nat} {s₀ s : State} (hp : Pre s₀) (h : EnvK K s₀ s) {b : Nat} (hb : b + 4 ≤ 256) :
     InRegions (s.rd ++ s.wr) (S s₀ + BitVec.ofNat 64 (4 * b)) 16 := by
   rw [h.rd, h.wr, hp.rd, hp.wr]
   exact ⟨polyRegion (S s₀), by simp, VG.Offset.contains_base (k := 1024) _ (by omega) (by omega)⟩
 
-theorem Env.inR {s₀ s : State} (hp : Pre s₀) (h : Env s₀ s) {j : Nat} (hj : j + 4 ≤ 256) :
+theorem EnvK.inR {K : Nat → Nat} {s₀ s : State} (hp : Pre s₀) (h : EnvK K s₀ s) {j : Nat} (hj : j + 4 ≤ 256) :
     InRegions (s.rd ++ s.wr) (coeffAddr (F s₀) j) 16 := by
   rw [h.rd, h.wr, hp.rd, hp.wr]; exact ⟨_, by simp, vector_contains _ hj⟩
 
-theorem Env.inW {s₀ s : State} (hp : Pre s₀) (h : Env s₀ s) {j : Nat} (hj : j + 4 ≤ 256) :
+theorem EnvK.inW {K : Nat → Nat} {s₀ s : State} (hp : Pre s₀) (h : EnvK K s₀ s) {j : Nat} (hj : j + 4 ≤ 256) :
     InRegions s.wr (coeffAddr (F s₀) j) 16 := by
   rw [h.wr, hp.wr]; exact ⟨_, by simp, vector_contains _ hj⟩
 
-theorem Env.write {s₀ s : State} (h : Env s₀ s) {r : Reg} (hr : r ∈ written) (h3 : r ≠ .r3)
-    (x : BitVec 64) : Env s₀ (s.write r x) :=
+theorem EnvK.write {K : Nat → Nat} {s₀ s : State} (h : EnvK K s₀ s) {r : Reg} (hr : r ∈ written) (h3 : r ≠ .r3)
+    (x : BitVec 64) : EnvK K s₀ (s.write r x) :=
   { h with
     r3 := by simp only [State.write, Ne.symm h3, ite_false]; exact h.r3
     keep := fun r' hr' => by
       simp only [State.write, show r' ≠ r from fun e => hr' (e ▸ hr), ite_false]; exact h.keep r' hr' }
 
-theorem Env.of_vonly {s₀ s t : State} (h : Env s₀ s) {vs : List VReg} (hv : VOnly vs s t)
-    (hd : ∀ r ∈ vs, r ∉ [.v4, .v5, .v16, .v17, .v18, .v19]) : Env s₀ t :=
+theorem EnvK.of_vonly {K : Nat → Nat} {s₀ s t : State} (h : EnvK K s₀ s) {vs : List VReg} (hv : VOnly vs s t)
+    (hd : ∀ r ∈ vs, r ∉ [.v4, .v5, .v16, .v17, .v18, .v19]) : EnvK K s₀ t :=
   { h with
     r3 := by rw [hv.gpr]; exact h.r3
     v4 := by rw [hv.v _ fun e => hd _ e (by decide)]; exact h.v4
@@ -126,8 +130,8 @@ theorem Env.of_vonly {s₀ s t : State} (h : Env s₀ s) {vs : List VReg} (hv : 
     frame := by rw [hv.mem]; exact h.frame
     tab := by rw [hv.mem]; exact h.tab }
 
-theorem Env.writeV {s₀ s : State} (h : Env s₀ s) {d : VReg} (hd : d ∉ [.v4, .v5, .v16, .v17, .v18, .v19])
-    (x : BitVec 128) : Env s₀ (s.writeV d x) := by
+theorem EnvK.writeV {K : Nat → Nat} {s₀ s : State} (h : EnvK K s₀ s) {d : VReg} (hd : d ∉ [.v4, .v5, .v16, .v17, .v18, .v19])
+    (x : BitVec 128) : EnvK K s₀ (s.writeV d x) := by
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hd
   obtain ⟨d4, d5, d16, d17, d18, d19⟩ := hd
   exact { h with
@@ -146,19 +150,19 @@ theorem eval_splat0 (v : VReg → BitVec 128) (d n : VReg) :
     VOp.eval v (.splat true d n 0) = some (d, ofVWords fun _ => vword (v n) 0) := rfl
 
 /-- A store of 16 bytes to the polynomial leaves the table. -/
-theorem tab_write {s₀ : State} (hp : Pre s₀) {m : Mem} (h : Tab (S s₀) m) {j : Nat} (hj : j + 4 ≤ 256)
-    (v : BitVec 128) : Tab (S s₀) (m.write (coeffAddr (F s₀) j) 16 v) := fun p hp0 hp1 => by
+theorem tab_write {K : Nat → Nat} {s₀ : State} (hp : Pre s₀) {m : Mem} (h : Tab K (S s₀) m) {j : Nat}
+    (hj : j + 4 ≤ 256) (v : BitVec 128) : Tab K (S s₀) (m.write (coeffAddr (F s₀) j) 16 v) := fun p hp0 hp1 => by
   rw [← h p hp0 hp1]
   simp only [Mem.readW]
   rw [Mem.read_write_sep (Region.Disjoint.sep hp.disj.symm (Offset.contains_base _ (by omega) (by omega))
     (vector_contains _ hj)) (by decide)]
 
 /-- `z'` of a block of `len ≥ 4`, in lane 0 of a load from `S + 4(k - 1)`. -/
-theorem vword_wide {s₀ : State} {m : Mem} (h : Tab (S s₀) m) {k : Nat} (hk1 : 1 ≤ k) (hk : k < 64) :
+theorem vword_wide {s₀ : State} {m : Mem} (h : Tab scrK (S s₀) m) {k : Nat} (hk1 : 1 ≤ k) (hk : k < 64) :
     (vword (swapDwords (m.read (S s₀ + BitVec.ofNat 64 (4 * (k - 1))) 16)) 0).toNat = shoup (zeta k) := by
   rw [vword_load _ _ (by decide), show (0 : Nat) ^^^ 1 = 1 from rfl, BitVec.add_assoc, ← BitVec.ofNat_add,
     show 4 * (k - 1) + 4 * 1 = 4 * k by omega, h k (by omega) (by omega), BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (scrV_lt _), scrV, scrK_wide hk]
+    Nat.mod_eq_of_lt (shoup_lt (zeta_lt _)), scrK_wide hk]
 
 /-! ## Four butterflies -/
 

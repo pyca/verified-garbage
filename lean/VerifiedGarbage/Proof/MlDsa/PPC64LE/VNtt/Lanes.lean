@@ -205,4 +205,31 @@ theorem bfly_lane (a b hi qv zv zpv : BitVec 32) (x y z : Zq) (hqv : qv.toNat = 
   · rw [minu_add_lane hq hq2 hax htx, val_add', ha, ht, hqv]
   · rw [minu_sub_lane hq2 hax htx, val_sub', ha, ht, hqv]
 
+/-- One lane of the inverse butterfly: `a + b`, and `z·(b − a)` with
+`d = b − a` reduced first. -/
+theorem ibfly_lane (a b hi qv zv zpv : BitVec 32) (x y z : Zq) (hqv : qv.toNat = q)
+    (hzv : zv.toNat = z.val) (hzp : zpv.toNat = z.val * 2^32 / q) (ha : a.toNat = x.val) (hb : b.toNat = y.val)
+    (hhi : hi.toNat = (minu32 (b - a) (b - a + qv)).toNat * zpv.toNat / 2^32) :
+    (minu32 (a + b) (a + b - qv)).toNat = (x + y).val ∧
+    (minu32 (minu32 (b - a) (b - a + qv) * zv - hi * qv) (minu32 (b - a) (b - a + qv) * zv - hi * qv - qv)).toNat =
+      (z * (y - x)).val := by
+  have hq : 0 < qv.toNat := by rw [hqv]; decide
+  have hq2 : 2 * qv.toNat ≤ 2^32 := by rw [hqv]; decide
+  have hax : a.toNat < qv.toNat := by rw [ha, hqv]; exact x.isLt
+  have hbx : b.toNat < qv.toNat := by rw [hb, hqv]; exact y.isLt
+  have hd : (minu32 (b - a) (b - a + qv)).toNat = (y - x).val := by
+    rw [minu_sub_lane hq2 hbx hax, val_sub', ha, hb, hqv]
+  constructor
+  · rw [minu_add_lane hq hq2 hax hbx, val_add', ha, hb, hqv]
+  · rw [shoup_lane _ hi qv zv zpv hq hq2 (by rw [hzp, hzv, hqv]) hhi, val_mul, hd, hzv, hqv, Nat.mul_comm]
+
+/-- One lane of a product by `z`: Shoup's, reduced. -/
+theorem smul_lane (a hi qv zv zpv : BitVec 32) (x z : Zq) (hqv : qv.toNat = q)
+    (hzv : zv.toNat = z.val) (hzp : zpv.toNat = z.val * 2^32 / q) (ha : a.toNat = x.val)
+    (hhi : hi.toNat = a.toNat * zpv.toNat / 2^32) :
+    (minu32 (a * zv - hi * qv) (a * zv - hi * qv - qv)).toNat = (z * x).val := by
+  have hq : 0 < qv.toNat := by rw [hqv]; decide
+  have hq2 : 2 * qv.toNat ≤ 2^32 := by rw [hqv]; decide
+  rw [shoup_lane _ hi qv zv zpv hq hq2 (by rw [hzp, hzv, hqv]) hhi, val_mul, ha, hzv, hqv, Nat.mul_comm]
+
 end VG.Proof.MlDsa.PPC64LE.VNtt

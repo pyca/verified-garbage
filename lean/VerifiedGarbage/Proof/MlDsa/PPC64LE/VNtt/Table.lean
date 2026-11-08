@@ -240,7 +240,7 @@ theorem loadImm_lo {v : Nat} (hv : v < 2 ^ 32) :
 theorem scrV_lt (p : Nat) : scrV p < 2 ^ 32 := shoup_lt (zeta_lt _)
 
 /-- After positions `1 … k` of the table at `r4`. -/
-structure FillInv (s₀ : State) (k : Nat) (s : State) : Prop where
+structure FillInv (K : Nat → Nat) (s₀ : State) (k : Nat) (s : State) : Prop where
   gpr : ∀ r, r ≠ .r12 → s.gpr r = s₀.gpr r
   vpr : s.vpr = s₀.vpr
   rd : s.rd = s₀.rd
@@ -249,22 +249,22 @@ structure FillInv (s₀ : State) (k : Nat) (s : State) : Prop where
   lr : s.lr = s₀.lr
   syms : s.syms = s₀.syms
   frame : Frame [⟨s₀.gpr .r4, 1024⟩] s₀.mem s.mem
-  tab : ∀ p, 0 < p → p ≤ k → s.mem.readW (s₀.gpr .r4 + BitVec.ofNat 64 (4 * p)) 32 = BitVec.ofNat 32 (scrV p)
+  tab : ∀ p, 0 < p → p ≤ k → s.mem.readW (s₀.gpr .r4 + BitVec.ofNat 64 (4 * p)) 32 = BitVec.ofNat 32 (shoup (zeta (K p)))
 
-theorem fill_ok {s₀ : State} (hwr : ∀ p < 256, InRegions s₀.wr (s₀.gpr .r4 + BitVec.ofNat 64 (4 * p)) 4) :
-    WP isa (.block fill) s₀ (FillInv s₀ 255) := by
-  refine wp_range_flatMap (M := isa) (FillInv s₀) (fun k s hk h => ?_) 255 (Nat.le_refl _) s₀
+theorem fill_ok (K : Nat → Nat) {s₀ : State} (hwr : ∀ p < 256, InRegions s₀.wr (s₀.gpr .r4 + BitVec.ofNat 64 (4 * p)) 4) :
+    WP isa (.block (fillK K)) s₀ (FillInv K s₀ 255) := by
+  refine wp_range_flatMap (M := isa) (FillInv K s₀) (fun k s hk h => ?_) 255 (Nat.le_refl _) s₀
     ⟨fun _ _ => rfl, rfl, rfl, rfl, rfl, rfl, rfl, Frame.refl _ _, fun p hp hp' => absurd hp' (by omega)⟩
-  have hv := scrV_lt (k + 1)
-  let s₁ := s.write .r12 ((BitVec.ofNat 16 (scrV (k + 1) / 65536) ++ (0 : BitVec 16)).signExtend 64)
-  let s₂ := s₁.write .r12 (s₁.gpr .r12 ||| (BitVec.ofNat 16 (scrV (k + 1) % 65536)).setWidth 64)
-  have v2 : (s₂.gpr .r12).setWidth 32 = BitVec.ofNat 32 (scrV (k + 1)) := by
+  have hv := shoup_lt (zeta_lt (K (k + 1)))
+  let s₁ := s.write .r12 ((BitVec.ofNat 16 (shoup (zeta (K (k + 1))) / 65536) ++ (0 : BitVec 16)).signExtend 64)
+  let s₂ := s₁.write .r12 (s₁.gpr .r12 ||| (BitVec.ofNat 16 (shoup (zeta (K (k + 1))) % 65536)).setWidth 64)
+  have v2 : (s₂.gpr .r12).setWidth 32 = BitVec.ofNat 32 (shoup (zeta (K (k + 1)))) := by
     simp only [s₂, s₁, State.write, ite_true]; exact loadImm_lo hv
   have e : s₂.gpr .r4 + BitVec.ofNat 64 (4 * (k + 1)) = s₀.gpr .r4 + BitVec.ofNat 64 (4 * (k + 1)) := by
     simp only [s₂, s₁, State.write, reduceCtorEq, ite_false, h.gpr .r4 (by decide)]
   refine WP.cons exec_lis (WP.cons exec_ori (WP.cons (exec_store_w (by decide) (show 4 * (k + 1) < 2 ^ 15 by omega)
     (by show InRegions s₂.wr _ 4; rw [e]; exact h.wr ▸ hwr (k + 1) (by omega))) (wp_nil ?_)))
-  show FillInv s₀ (k + 1)
+  show FillInv K s₀ (k + 1)
     { s₂ with mem := (s₂.mem.writeW (s₂.gpr .r4 + BitVec.ofNat 64 (4 * (k + 1))) ((s₂.gpr .r12).setWidth 32)) }
   rw [e, v2]
   refine ⟨fun r hr => ?_, h.vpr, h.rd, h.wr, h.sp, h.lr, h.syms, ?_, fun p hp hp' => ?_⟩
