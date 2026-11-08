@@ -1331,7 +1331,6 @@ jobs:
           python3 "$RUNNER_TEMP/ci_metrics.py" summary "$RUNNER_TEMP/ci-metrics.json" >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: ${{ !cancelled() && steps.metrics.outcome == 'success' }}
-        # Metrics upload failures must not fail the build.
         continue-on-error: true
         timeout-minutes: 1
         with:
