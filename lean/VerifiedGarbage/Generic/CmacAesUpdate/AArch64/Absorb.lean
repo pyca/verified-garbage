@@ -14,17 +14,6 @@ public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Gcm.Spec
 public import VerifiedGarbage.TCB.AArch64.Print
-import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.CmacAes.AArch64.UpdateCorrect
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Gcm.Spec
 
 /-! # Streaming CMAC absorb on AArch64, for each CMAC update -/
 

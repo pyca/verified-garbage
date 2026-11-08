@@ -14,15 +14,6 @@ public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.SealCT
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Setup
 public import VerifiedGarbage.Proof.Ocb.Spec
 public import VerifiedGarbage.TCB.X86_64.Print
-import VerifiedGarbage.Proof.Aes.X86_64.Decrypt
-import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Dec
-import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Fn
-import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Keys
-import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Ctr
-import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Gh
-import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.SealCT
-import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Setup
-import VerifiedGarbage.Proof.Ocb.Spec
 
 /-! # AES-GCM-SIV (RFC 8452) on x86-64 -/
 

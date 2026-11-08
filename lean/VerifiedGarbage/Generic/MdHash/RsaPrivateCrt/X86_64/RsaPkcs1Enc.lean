@@ -1,12 +1,11 @@
 module
 
 public import VerifiedGarbage.TCB.Emit
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT5
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT5
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Callees
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecHash
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT5
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
 import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
@@ -27,14 +26,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtRedc
 import VerifiedGarbage.Proof.Bignum.X86_64.FoldedPublic
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Poly1305.Limbs64
-import VerifiedGarbage.Proof.RsaPkcs1Enc.Decrypt
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT2
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT3
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCorrect
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecResult
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncCorrect
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncEM
-import VerifiedGarbage.Proof.RsaPkcs1Sig.Octets
 
 /-! # RSAES-PKCS1-v1_5 decryption with implicit rejection on x86-64 -/
 

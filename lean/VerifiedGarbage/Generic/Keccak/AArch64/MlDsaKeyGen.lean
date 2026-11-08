@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Inst
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedVerified
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedPrims
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Lit
@@ -12,12 +12,11 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Samp
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLit
 import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Depth
-public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedVerified
 public import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackFields
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+public import VerifiedGarbage.Proof.MlKem.AArch64.Shared
 import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 import VerifiedGarbage.Proof.MlKem.AArch64.Common
 import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
@@ -216,7 +215,6 @@ public import VerifiedGarbage.Proof.MlDsa.Sign.Mem
 public import VerifiedGarbage.Proof.MlDsa.Verify.Bounds
 public import VerifiedGarbage.Proof.MlDsa.Verify.Final
 public import VerifiedGarbage.Proof.MlDsa.Verify.Mem
-public import VerifiedGarbage.Proof.MlKem.AArch64.Shared
 public import VerifiedGarbage.Proof.MlKem.Compress
 public import VerifiedGarbage.Proof.MlKem.Encode
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Load
@@ -233,216 +231,6 @@ public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
 public import VerifiedGarbage.Proof.Sha3.Arith
 public import VerifiedGarbage.TCB.Axioms
 public import VerifiedGarbage.TCB.AArch64.Print
-import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import VerifiedGarbage.Proof.Framework.AArch64.Simd
-import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
-import VerifiedGarbage.Proof.Framework.AArch64.Syms
-import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Layers
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Ntt
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.NttInv
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.PackedLayer
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.PackedSpec
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.PackedStep
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Pro
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Scale
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Step
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Vec
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Ntt
-import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
-import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Inline
-import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Round
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Blocks
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Call4
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Main
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Mask4
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedDepth
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedEntry
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedPrims
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedSat
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedSecretCall
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedSecretCopy
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedSecretMath
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedSecretTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedSecrets
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.RestRow
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Samp4
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.AddSubVerified
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallCorrect
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallFirst
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallFrame
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallLoop
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallSelected
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallTry
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Batch
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourInit
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMaskMemory
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourOuterTaint
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourParse
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourSpec
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourSqueezePast
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourStore
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourVerified
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Butterfly
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.FiveInit
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.FiveTraversal
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackCall
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackCoefficients
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackDigits
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackEncode
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackLoop
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackVec
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackVerified
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Indexed
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseRoots
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSpecPre
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableConstants
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableWords
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVec
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVerified
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackFourBytes
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackFourContracts
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackVec
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackVerified
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackWritten
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Layout
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryBank
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryOuterPass
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemorySchedule
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryTraversal
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallee
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttOutVerified
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentAbsorb
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentAbsorbWord
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentBytes
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskBytes
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskCall
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskVerified
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentParse
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejAccept
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejAdaptive
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejAdvance
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejBodyTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejBytes
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejEnvTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejEpi
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFlagValue
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFourLoop
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFourLoopTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejGuard
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejParse
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejPhase
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejPro
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejRowStep
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejScalarLoop
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejScalarStep
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejSegmentLayout
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejSelected
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejSqueeze
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejSqueezeSetup
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejStart
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTail
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailLoop
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailReadyTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejVerified
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejWideLoop
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejWideLoopTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRestoreG
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentStream
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseAdd
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseMath
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.SliceFrame
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.StaticCore
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Table
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TableDecode
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TableWords
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TailBank
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TraversalChecked
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TraversalCorrect
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Vec
-import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.HintPack
-import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.HintUnpack
-import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.SimpleBitPack
-import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Unpack
-import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Bits
-import VerifiedGarbage.Proof.MlDsa.AArch64.Round.MakeHint
-import VerifiedGarbage.Proof.MlDsa.AArch64.Round.NormLt
-import VerifiedGarbage.Proof.MlDsa.AArch64.Round.UseHint
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Depth
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.ExpandMask
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Absorb
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.AbsorbArgs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.AbsorbPair
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.AbsorbWord
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Advance
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.CT
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.CTLoop
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.CTTop
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Depth
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Env
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Epi
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Init
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Pad
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.PadMem
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.PadStore
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Pro
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.ProArgs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.RestoreG
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.RestoreV
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.SaveG
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.SeedFrame
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Setup
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.SqAdvance
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.SqFrame
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.SqPair
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Squeeze
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Tail
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Verified
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Zero
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejBoundedCT
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Zero
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseA4CT
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseCCTBase
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseKCT
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseOCT
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.SignCT
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Cmp
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Final
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Samp4
-import VerifiedGarbage.Proof.MlDsa.DecideAt
-import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
-import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
-import VerifiedGarbage.Proof.MlDsa.Pack.Arith
-import VerifiedGarbage.Proof.MlDsa.Pack.HintMem
-import VerifiedGarbage.Proof.MlDsa.Pack.Stream
-import VerifiedGarbage.Proof.MlDsa.Sample.LeNat
-import VerifiedGarbage.Proof.MlDsa.Sample.LeWord
-import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
-import VerifiedGarbage.Proof.MlDsa.Sign.Mem
-import VerifiedGarbage.Proof.MlDsa.Verify.Bounds
-import VerifiedGarbage.Proof.MlDsa.Verify.Final
-import VerifiedGarbage.Proof.MlDsa.Verify.Mem
-import VerifiedGarbage.Proof.MlKem.Compress
-import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Load
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Resident
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentBulk
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentControl
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentMath
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentSelect
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Restore
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Rounds
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Save
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Store
-import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
-import VerifiedGarbage.Proof.Sha3.Arith
-import VerifiedGarbage.TCB.Axioms
 
 /-! # ML-DSA (FIPS 204) key generation on AArch64 -/
 

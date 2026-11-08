@@ -43,45 +43,6 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Compare
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCT
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCorrect
 public import VerifiedGarbage.TCB.X86_64.Print
-import VerifiedGarbage.Proof.Bignum.LazyMath
-import VerifiedGarbage.Proof.Bignum.Octets
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
-import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
-import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
-import VerifiedGarbage.Proof.Bignum.X86_64.Copy
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtContract
-import VerifiedGarbage.Proof.Bignum.X86_64.Csub
-import VerifiedGarbage.Proof.Bignum.X86_64.Double
-import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-import VerifiedGarbage.Proof.Bignum.X86_64.MulAdd
-import VerifiedGarbage.Proof.Bignum.X86_64.PcMain
-import VerifiedGarbage.Proof.Bignum.X86_64.PdExp
-import VerifiedGarbage.Proof.Bignum.X86_64.PubFail
-import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
-import VerifiedGarbage.Proof.Bignum.X86_64.R2aStep
-import VerifiedGarbage.Proof.Bignum.X86_64.R2aSub
-import VerifiedGarbage.Proof.Bignum.X86_64.R2aWord
-import VerifiedGarbage.Proof.Bignum.X86_64.R2wAdd
-import VerifiedGarbage.Proof.Bignum.X86_64.R2wStep
-import VerifiedGarbage.Proof.Bignum.X86_64.Reduce
-import VerifiedGarbage.Proof.Bignum.X86_64.Rounds
-import VerifiedGarbage.Proof.Bignum.X86_64.Row
-import VerifiedGarbage.Proof.Bignum.X86_64.Setup
-import VerifiedGarbage.Proof.Bignum.X86_64.Store
-import VerifiedGarbage.Proof.Bignum.X86_64.Valid
-import VerifiedGarbage.Proof.Framework.RegSetOrder
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.X86_64.Frame
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Proof.Rsa.X86_64.ExpCheck
-import VerifiedGarbage.Proof.Rsa.X86_64.PrivFrame
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncEM
-import VerifiedGarbage.Proof.RsaPkcs1Sig.Recover
-import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Compare
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCT
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCorrect
 
 /-! # PKCS #1 v1.5 verification and recovery over precomputed RSA public variants -/
 

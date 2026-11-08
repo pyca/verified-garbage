@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Zeroize.X86
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Zeroize.Common32
 public import VerifiedGarbage.TCB.X86.Print
-import VerifiedGarbage.Proof.Zeroize.Common32
 
 @[expose] public section
 

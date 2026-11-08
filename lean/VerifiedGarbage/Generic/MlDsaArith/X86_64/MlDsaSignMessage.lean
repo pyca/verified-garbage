@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.MlDsa.X86_64.Message.SignFn
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.SignFn
 import Mathlib.Tactic.Conv
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.MlDsa.X86_64.PreparedKey.Sat
@@ -9,10 +9,8 @@ public import VerifiedGarbage.Proof.MlDsa.PreparedKeyContract
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Message
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Sign.Sign
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Inst
-import VerifiedGarbage.Proof.MlDsa.X86_64.Message.SignVerified
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Verified
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.SignFn
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.SignVerified
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Verified
 public import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
@@ -27,23 +25,9 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseDCT
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseKCT
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseOCT
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.SignCT
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Verified
 public import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
 public import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
 public import VerifiedGarbage.TCB.X86_64.Print
-import VerifiedGarbage.Proof.MlDsa.Pack.Arith
-import VerifiedGarbage.Proof.MlDsa.Pack.Stream
-import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
-import VerifiedGarbage.Proof.MlDsa.X86_64.Message.HashCT
-import VerifiedGarbage.Proof.MlDsa.X86_64.Message.SignCT
-import VerifiedGarbage.Proof.MlDsa.X86_64.Message.SignCorrect
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseCCT
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseDCT
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseKCT
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseOCT
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.SignCT
-import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
-import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
 
 /-! # ML-DSA (FIPS 204) on x86-64: signing messages -/
 

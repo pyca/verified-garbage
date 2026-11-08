@@ -23,26 +23,6 @@ public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Gcm.Stream
 public import VerifiedGarbage.TCB.AArch64.Print
-import VerifiedGarbage.Proof.AesCcm.Mac
-import VerifiedGarbage.Proof.AesSiv.AArch64.Call
-import VerifiedGarbage.Proof.AesSiv.AArch64.Finish
-import VerifiedGarbage.Proof.AesSiv.AArch64.FinishLong
-import VerifiedGarbage.Proof.AesSiv.AArch64.Open
-import VerifiedGarbage.Proof.AesSiv.AArch64.S2vAd
-import VerifiedGarbage.Proof.AesSiv.Ctr32
-import VerifiedGarbage.Proof.AesSiv.Key
-import VerifiedGarbage.Proof.Cmac.Dbl32
-import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.CmacAes.AArch64.UpdateCorrect
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Gcm.Stream
 
 /-! # AES-SIV (RFC 5297) key setup on AArch64 -/
 

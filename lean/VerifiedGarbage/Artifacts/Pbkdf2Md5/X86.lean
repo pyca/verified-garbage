@@ -1,15 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Md5
-import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Instances
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Instances
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Lit
-public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Instances
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Sha256.X86.Stream.Variant
 public import VerifiedGarbage.TCB.X86.Print
-import VerifiedGarbage.Proof.Sha256.X86.Stream.Variant
 
 /-! # PBKDF2-HMAC-MD5 (RFC 8018) on x86: the iteration and the whole derivation -/
 

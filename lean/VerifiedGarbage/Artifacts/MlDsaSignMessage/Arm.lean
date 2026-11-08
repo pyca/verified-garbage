@@ -1,12 +1,11 @@
 module
 
-import VerifiedGarbage.Proof.MlDsa.Arm.Message.Verified
+public import VerifiedGarbage.Proof.MlDsa.Arm.Message.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Impl.MlDsa.Arm.Message
 public import VerifiedGarbage.Impl.MlDsa.Arm.Sign.Sign
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Inst
 public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Lay
-public import VerifiedGarbage.Proof.MlDsa.Arm.Message.Verified
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.MlDsa.Arm.Message.HashCT
@@ -30,27 +29,6 @@ public import VerifiedGarbage.Proof.MlDsa.Pack.Arith
 public import VerifiedGarbage.Proof.MlDsa.Pack.Stream
 public import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
 public import VerifiedGarbage.TCB.Arm.Print
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.MlDsa.Arm.Message.HashCT
-import VerifiedGarbage.Proof.MlDsa.Arm.Message.SignCT
-import VerifiedGarbage.Proof.MlDsa.Arm.Message.VerifyCT
-import VerifiedGarbage.Proof.MlDsa.Arm.Message.VerifyCorrect
-import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Ball
-import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Pro
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.BlockTr
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseCCT
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseDCT
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseKCT
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseOCT
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.SignCT
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Verified
-import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Control
-import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Inst
-import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Row
-import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Top
-import VerifiedGarbage.Proof.MlDsa.Pack.Arith
-import VerifiedGarbage.Proof.MlDsa.Pack.Stream
-import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
 
 /-! # ML-DSA (FIPS 204) on 32-bit ARM: signing messages -/
 

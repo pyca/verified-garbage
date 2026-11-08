@@ -19,21 +19,6 @@ public import VerifiedGarbage.Proof.Framework.X86.RelCT
 public import VerifiedGarbage.Proof.Framework.X86.StackScratch
 public import VerifiedGarbage.Proof.Sha256.Stream
 public import VerifiedGarbage.TCB.X86.Print
-import VerifiedGarbage.Proof.Aes.Blocks
-import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Cmac.Mem
-import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.CmacAes.Stream.X86.Absorb
-import VerifiedGarbage.Proof.CmacAes.X86.UpdateCT
-import VerifiedGarbage.Proof.CmacAes.X86.UpdateCorrect
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Framework.X86.RelCT
-import VerifiedGarbage.Proof.Framework.X86.StackScratch
-import VerifiedGarbage.Proof.Sha256.Stream
 
 /-! # AES-CMAC (NIST SP 800-38B) on x86 -/
 
