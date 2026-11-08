@@ -23,6 +23,8 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.SigEval
 import VerifiedGarbage.Proof.MlKem.X86_64.EkTop
+import VerifiedGarbage.Proof.MlKem1024.X86_64.Written
+public import VerifiedGarbage.Proof.MlKem.Scrubbed
 meta import VerifiedGarbage.Proof.Framework.SigEval
 meta import VerifiedGarbage.Proof.Framework.Sig
 
@@ -33,7 +35,13 @@ Each of ML-KEM-768's and ML-KEM-1024's functions taking `scratch` is
 `callWipe` (`Impl/CallWipe/X86_64.lean`) of its code, which zeroes the bytes
 of `scratch` that code may write once it returns, with an implementation of
 `vg_zeroize` (`ZeroizeImpl`), and is verified against the same contract with
-24 more bytes of stack (`Verified.callWipe`).
+24 more bytes of stack and `scratch` left scrubbed (`*_scrubbed`, the
+contracts of `Proof/MlKem/Scrubbed.lean`): ML-KEM-768's zeroes all of it
+(`Verified.callWipe'`, `Scrubbed.keyGen_wiped`, …), and ML-KEM-1024's all of
+it or, with 16-bit polynomials, the first `scr16` bytes, the others of which
+its code leaves unchanged (`Verified.callWipeTail'`, `keyGen1024_tail`, …).
+`*_verified` are those weakened to the contracts of `Spec/MlKem/`, which do
+not state it yet.
 -/
 
 @[expose] public section
@@ -252,12 +260,333 @@ theorem pw_disj {l : List (Region × Bool)} (h : l.Pairwise (fun a b => (a.2 || 
     {i j : Nat} (hij : i < j) (hj : j < l.length) (hw : (l[i].2 || l[j].2) = true) : l[i].1.Disjoint l[j].1 :=
   List.pairwise_iff_getElem.mp h i j (by omega) hj hij hw
 
+/-! ## Wiping only what the code writes
+
+With 16-bit polynomials, ML-KEM-1024's code writes only the first `scr16`
+bytes of `scratch` (`Proof/MlKem1024/X86_64/Written.lean`), and `callWipe`
+zeroes only those (`wiped1024`, `wipedEnc1024`). Its postcondition with the
+other bytes unchanged (`tail4`, `tail5`, `tail6`: `scratch` is the last
+argument) is then the one `Verified.callWipeTail'` takes, which reads the
+memory on return only apart from the bytes zeroed (`tail4_out`, …), and
+with those zero, `scratch` is scrubbed (`wipedTail4`, …). -/
+
+open VG.Proof.MlKem.Scrubbed (Post4 Post5 Post6 scrub4 scrub5 scrub6 scrubbed_of_prefix)
+
+/-- A proof against `sig.contract abi pre P …` of code that changes no byte
+of the arrays `ws` names past their bounds is one against
+`sig.contract abi pre P' …`, for `P'` that `P` and those bytes unchanged
+imply. -/
+theorem Verified.tail_of_written {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)}
+    {P P' : sig.Post abi.ptrBits} {wa : Bool} {stack : Nat}
+    {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))} {c : Prog isa}
+    {ws : List (String × Nat)}
+    (h : Verified X86_64.target c (sig.contract abi pre P wa stack leak))
+    (hk : (sig.words abi.ptrBits).length ≤ 6)
+    (hw : ∀ s t s', (sig.contract abi pre P wa stack leak).pre s → Exec isa c s t s' →
+      Sig.writtenWithin (abi.withConsts []) sig ws s s')
+    (hP : ∀ vs m m' x, vs.length = (sig.words abi.ptrBits).length →
+      Curry.apply (sig.words abi.ptrBits) P vs m m' x →
+      (∀ y ∈ ws, ∀ b ∈ Sig.arrays sig.params vs, b.1 = y.1 → ∀ i, y.2 ≤ i → i < b.2.len →
+        m' (b.2.base + BitVec.ofNat 64 i) = m (b.2.base + BitVec.ofNat 64 i)) →
+      Curry.apply (sig.words abi.ptrBits) P' vs m m' x) :
+    Verified X86_64.target c (sig.contract abi pre P' wa stack leak) := by
+  obtain ⟨hc, hct, hsat⟩ := h
+  refine ⟨fun s hs => ?_, hct, hsat⟩
+  obtain ⟨t, s', he, ha, hq⟩ := hc s hs
+  refine ⟨t, s', he, ha, ?_⟩
+  have hW := hw s t s' hs he
+  rw [post_regs hk] at hq ⊢
+  refine hP _ _ _ _ (regArgs_length sig s hk) hq fun y hy => ?_
+  have hk' : (sig.words 64).length ≤ VG.X86_64.argRegs.length := Nat.le_trans hk (by decide)
+  cases ws with
+  | nil => cases hy
+  | cons y₀ ws =>
+    simp only [Sig.writtenWithin, Abi.withConsts, abi, List.length_map, hk', ite_true] at hW
+    exact hW y hy
+
+/-- `P`, and the bytes of the last argument, `scratch` of `len` bytes, at
+offset `w` and beyond unchanged. -/
+def tail4 (w len : Nat) (P : Post4) : Post4 := fun a b c d m m' r =>
+  P a b c d m m' r ∧ ∀ i, w ≤ i → i < len → m' (d + BitVec.ofNat 64 i) = m (d + BitVec.ofNat 64 i)
+
+/-- `tail4`, of five arguments. -/
+def tail5 (w len : Nat) (P : Post5) : Post5 := fun a b c d e m m' r =>
+  P a b c d e m m' r ∧ ∀ i, w ≤ i → i < len → m' (e + BitVec.ofNat 64 i) = m (e + BitVec.ofNat 64 i)
+
+/-- `tail4`, of six arguments. -/
+def tail6 (w len : Nat) (P : Post6) : Post6 := fun a b c d e f m m' r =>
+  P a b c d e f m m' r ∧ ∀ i, w ≤ i → i < len → m' (f + BitVec.ofNat 64 i) = m (f + BitVec.ofNat 64 i)
+
+/-- The bytes of `scratch` from `w` on are unchanged: `w` is its length, or
+the bound the code writes within. -/
+theorem tail_bytes {m m' : Mem} {p : Addr} {w len : Nat} {ws : List (String × Nat)} {arrs : List (String × Region)}
+    (harr : ("scratch", (⟨p, len⟩ : Region)) ∈ arrs) (hw : w = len ∨ ("scratch", w) ∈ ws)
+    (hW : ∀ y ∈ ws, ∀ b ∈ arrs, b.1 = y.1 → ∀ i, y.2 ≤ i → i < b.2.len →
+      m' (b.2.base + BitVec.ofNat 64 i) = m (b.2.base + BitVec.ofNat 64 i)) :
+    ∀ i, w ≤ i → i < len → m' (p + BitVec.ofNat 64 i) = m (p + BitVec.ofNat 64 i) := by
+  intro i h1 h2
+  rcases hw with rfl | hy
+  · omega
+  · exact hW _ hy _ harr rfl i h1 h2
+
+theorem tail4_of {P : Post4} {w len : Nat} {ws : List (String × Nat)} (params : List (String × Param))
+    (harr : ∀ a b c d, ("scratch", (⟨d, len⟩ : Region)) ∈ Sig.arrays params [a, b, c, d])
+    (hw : w = len ∨ ("scratch", w) ∈ ws) :
+    ∀ vs m m' x, vs.length = 4 → Curry.apply [.addr, .addr, .addr, .addr] P vs m m' x →
+      (∀ y ∈ ws, ∀ b ∈ Sig.arrays params vs, b.1 = y.1 → ∀ i, y.2 ≤ i → i < b.2.len →
+        m' (b.2.base + BitVec.ofNat 64 i) = m (b.2.base + BitVec.ofNat 64 i)) →
+      Curry.apply [.addr, .addr, .addr, .addr] (tail4 w len P) vs m m' x := by
+  intro vs m m' x hl h hW
+  obtain ⟨a, b, c, d, rfl⟩ := vs4 hl
+  have ht := tail_bytes (harr a b c d) hw hW
+  exact ⟨h, ht⟩
+
+theorem tail5_of {P : Post5} {w len : Nat} {ws : List (String × Nat)} (params : List (String × Param))
+    (harr : ∀ a b c d e, ("scratch", (⟨e, len⟩ : Region)) ∈ Sig.arrays params [a, b, c, d, e])
+    (hw : w = len ∨ ("scratch", w) ∈ ws) :
+    ∀ vs m m' x, vs.length = 5 → Curry.apply [.addr, .addr, .addr, .addr, .addr] P vs m m' x →
+      (∀ y ∈ ws, ∀ b ∈ Sig.arrays params vs, b.1 = y.1 → ∀ i, y.2 ≤ i → i < b.2.len →
+        m' (b.2.base + BitVec.ofNat 64 i) = m (b.2.base + BitVec.ofNat 64 i)) →
+      Curry.apply [.addr, .addr, .addr, .addr, .addr] (tail5 w len P) vs m m' x := by
+  intro vs m m' x hl h hW
+  obtain ⟨a, b, c, d, e, rfl⟩ := vs5 hl
+  have ht := tail_bytes (harr a b c d e) hw hW
+  exact ⟨h, ht⟩
+
+theorem tail6_of {P : Post6} {w len : Nat} {ws : List (String × Nat)} (params : List (String × Param))
+    (harr : ∀ a b c d e f, ("scratch", (⟨f, len⟩ : Region)) ∈ Sig.arrays params [a, b, c, d, e, f])
+    (hw : w = len ∨ ("scratch", w) ∈ ws) :
+    ∀ vs m m' x, vs.length = 6 → Curry.apply [.addr, .addr, .addr, .addr, .addr, .addr] P vs m m' x →
+      (∀ y ∈ ws, ∀ b ∈ Sig.arrays params vs, b.1 = y.1 → ∀ i, y.2 ≤ i → i < b.2.len →
+        m' (b.2.base + BitVec.ofNat 64 i) = m (b.2.base + BitVec.ofNat 64 i)) →
+      Curry.apply [.addr, .addr, .addr, .addr, .addr, .addr] (tail6 w len P) vs m m' x := by
+  intro vs m m' x hl h hW
+  obtain ⟨a, b, c, d, e, f, rfl⟩ := vs6 hl
+  have ht := tail_bytes (harr a b c d e f) hw hW
+  exact ⟨h, ht⟩
+
+/-- Memories agreeing on `scratch`, of `len` bytes at `p`, agree on its
+bytes from `w` on, and so on whether they are unchanged. -/
+theorem tail_local {m₁ m₂ m' : Mem} {p : Addr} {w len : Nat} (hlen : len < 2 ^ 64)
+    (hb : ∀ a, (⟨p, len⟩ : Region).Contains a 1 → m₁ a = m₂ a)
+    (h : ∀ i, w ≤ i → i < len → m' (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i)) :
+    ∀ i, w ≤ i → i < len → m' (p + BitVec.ofNat 64 i) = m₂ (p + BitVec.ofNat 64 i) := by
+  intro i h1 h2
+  rw [h i h1 h2]
+  exact hb _ (Offset.contains_base _ (by omega) (by omega))
+
+theorem tail4_local {P : Post4} {w len : Nat} (params : List (String × Param))
+    (hbuf : ∀ a b c d, ((⟨d, len⟩ : Region), true) ∈ Sig.bufs params [a, b, c, d]) (hlen : len < 2 ^ 64)
+    (hP : ∀ vs m₁ m₂ m' x, vs.length = 4 → (∀ b ∈ Sig.bufs params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply [.addr, .addr, .addr, .addr] P vs m₁ m' x → Curry.apply [.addr, .addr, .addr, .addr] P vs m₂ m' x) :
+    ∀ vs m₁ m₂ m' x, vs.length = 4 → (∀ b ∈ Sig.bufs params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply [.addr, .addr, .addr, .addr] (tail4 w len P) vs m₁ m' x →
+        Curry.apply [.addr, .addr, .addr, .addr] (tail4 w len P) vs m₂ m' x := by
+  intro vs m₁ m₂ m' x hl hb h
+  have hP' := hP vs m₁ m₂ m' x hl hb
+  obtain ⟨a, b, c, d, rfl⟩ := vs4 hl
+  have ht := tail_local hlen (hb _ (hbuf a b c d)) h.2
+  exact ⟨hP' h.1, ht⟩
+
+theorem tail5_local {P : Post5} {w len : Nat} (params : List (String × Param))
+    (hbuf : ∀ a b c d e, ((⟨e, len⟩ : Region), true) ∈ Sig.bufs params [a, b, c, d, e]) (hlen : len < 2 ^ 64)
+    (hP : ∀ vs m₁ m₂ m' x, vs.length = 5 → (∀ b ∈ Sig.bufs params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply [.addr, .addr, .addr, .addr, .addr] P vs m₁ m' x →
+        Curry.apply [.addr, .addr, .addr, .addr, .addr] P vs m₂ m' x) :
+    ∀ vs m₁ m₂ m' x, vs.length = 5 → (∀ b ∈ Sig.bufs params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply [.addr, .addr, .addr, .addr, .addr] (tail5 w len P) vs m₁ m' x →
+        Curry.apply [.addr, .addr, .addr, .addr, .addr] (tail5 w len P) vs m₂ m' x := by
+  intro vs m₁ m₂ m' x hl hb h
+  have hP' := hP vs m₁ m₂ m' x hl hb
+  obtain ⟨a, b, c, d, e, rfl⟩ := vs5 hl
+  have ht := tail_local hlen (hb _ (hbuf a b c d e)) h.2
+  exact ⟨hP' h.1, ht⟩
+
+theorem tail6_local {P : Post6} {w len : Nat} (params : List (String × Param))
+    (hbuf : ∀ a b c d e f, ((⟨f, len⟩ : Region), true) ∈ Sig.bufs params [a, b, c, d, e, f])
+    (hlen : len < 2 ^ 64)
+    (hP : ∀ vs m₁ m₂ m' x, vs.length = 6 → (∀ b ∈ Sig.bufs params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply [.addr, .addr, .addr, .addr, .addr, .addr] P vs m₁ m' x →
+        Curry.apply [.addr, .addr, .addr, .addr, .addr, .addr] P vs m₂ m' x) :
+    ∀ vs m₁ m₂ m' x, vs.length = 6 → (∀ b ∈ Sig.bufs params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply [.addr, .addr, .addr, .addr, .addr, .addr] (tail6 w len P) vs m₁ m' x →
+        Curry.apply [.addr, .addr, .addr, .addr, .addr, .addr] (tail6 w len P) vs m₂ m' x := by
+  intro vs m₁ m₂ m' x hl hb h
+  have hP' := hP vs m₁ m₂ m' x hl hb
+  obtain ⟨a, b, c, d, e, f, rfl⟩ := vs6 hl
+  have ht := tail_local hlen (hb _ (hbuf a b c d e f)) h.2
+  exact ⟨hP' h.1, ht⟩
+
+/-- Memories on return agreeing on `scratch`, of `len` bytes at `p`, but its
+first `w`, agree on whether its bytes from `w` on are unchanged. -/
+theorem tail_out {m m₁ m₂ : Mem} {p : Addr} {w len : Nat} (hlen : len < 2 ^ 64)
+    (hb : ∀ a, (⟨p, len⟩ : Region).Contains a 1 → ¬(⟨p, w⟩ : Region).Contains a 1 → m₁ a = m₂ a)
+    (h : ∀ i, w ≤ i → i < len → m₁ (p + BitVec.ofNat 64 i) = m (p + BitVec.ofNat 64 i)) :
+    ∀ i, w ≤ i → i < len → m₂ (p + BitVec.ofNat 64 i) = m (p + BitVec.ofNat 64 i) := by
+  intro i h1 h2
+  rw [← h i h1 h2]
+  refine (hb _ (Offset.contains_base _ (by omega) (by omega)) fun hc => ?_).symm
+  simp only [Region.Contains] at hc
+  rw [Mem.sub_ofNat_toNat p (by omega)] at hc
+  omega
+
+theorem tail4_out {P : Post4} {w len : Nat} (params : List (String × Param))
+    (hbuf : ∀ a b c d, ((⟨d, len⟩ : Region), true) ∈ Sig.bufs params [a, b, c, d]) (hwl : w ≤ len)
+    (hlen : len < 2 ^ 64)
+    (hP : ∀ vs m m₁ m₂ x, vs.length = 4 →
+      (Sig.bufs params vs).Pairwise (fun a b => (a.2 || b.2) → a.1.Disjoint b.1) →
+      (∀ b ∈ Sig.bufs params vs, b.1.Disjoint ⟨vs.getD 3 0, len⟩ → ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply [.addr, .addr, .addr, .addr] P vs m m₁ x → Curry.apply [.addr, .addr, .addr, .addr] P vs m m₂ x) :
+    ∀ vs m m₁ m₂ x, vs.length = 4 →
+      (Sig.bufs params vs).Pairwise (fun a b => (a.2 || b.2) → a.1.Disjoint b.1) →
+      (∀ b ∈ Sig.bufs params vs, ∀ a, b.1.Contains a 1 → ¬(⟨vs.getD 3 0, w⟩ : Region).Contains a 1 →
+        m₁ a = m₂ a) →
+      Curry.apply [.addr, .addr, .addr, .addr] (tail4 w len P) vs m m₁ x →
+        Curry.apply [.addr, .addr, .addr, .addr] (tail4 w len P) vs m m₂ x := by
+  intro vs m m₁ m₂ x hl hpw hag h
+  have hP' := hP vs m m₁ m₂ x hl hpw fun b hb hbA a ha =>
+    hag b hb a ha fun hp => hbA a ha (Region.sub_prefix hwl a hp)
+  obtain ⟨a, b, c, d, rfl⟩ := vs4 hl
+  have ht := tail_out hlen (hag _ (hbuf a b c d)) h.2
+  exact ⟨hP' h.1, ht⟩
+
+theorem tail5_out {P : Post5} {w len : Nat} (params : List (String × Param))
+    (hbuf : ∀ a b c d e, ((⟨e, len⟩ : Region), true) ∈ Sig.bufs params [a, b, c, d, e]) (hwl : w ≤ len)
+    (hlen : len < 2 ^ 64)
+    (hP : ∀ vs m m₁ m₂ x, vs.length = 5 →
+      (Sig.bufs params vs).Pairwise (fun a b => (a.2 || b.2) → a.1.Disjoint b.1) →
+      (∀ b ∈ Sig.bufs params vs, b.1.Disjoint ⟨vs.getD 4 0, len⟩ → ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply [.addr, .addr, .addr, .addr, .addr] P vs m m₁ x →
+        Curry.apply [.addr, .addr, .addr, .addr, .addr] P vs m m₂ x) :
+    ∀ vs m m₁ m₂ x, vs.length = 5 →
+      (Sig.bufs params vs).Pairwise (fun a b => (a.2 || b.2) → a.1.Disjoint b.1) →
+      (∀ b ∈ Sig.bufs params vs, ∀ a, b.1.Contains a 1 → ¬(⟨vs.getD 4 0, w⟩ : Region).Contains a 1 →
+        m₁ a = m₂ a) →
+      Curry.apply [.addr, .addr, .addr, .addr, .addr] (tail5 w len P) vs m m₁ x →
+        Curry.apply [.addr, .addr, .addr, .addr, .addr] (tail5 w len P) vs m m₂ x := by
+  intro vs m m₁ m₂ x hl hpw hag h
+  have hP' := hP vs m m₁ m₂ x hl hpw fun b hb hbA a ha =>
+    hag b hb a ha fun hp => hbA a ha (Region.sub_prefix hwl a hp)
+  obtain ⟨a, b, c, d, e, rfl⟩ := vs5 hl
+  have ht := tail_out hlen (hag _ (hbuf a b c d e)) h.2
+  exact ⟨hP' h.1, ht⟩
+
+theorem tail6_out {P : Post6} {w len : Nat} (params : List (String × Param))
+    (hbuf : ∀ a b c d e f, ((⟨f, len⟩ : Region), true) ∈ Sig.bufs params [a, b, c, d, e, f]) (hwl : w ≤ len)
+    (hlen : len < 2 ^ 64)
+    (hP : ∀ vs m m₁ m₂ x, vs.length = 6 →
+      (Sig.bufs params vs).Pairwise (fun a b => (a.2 || b.2) → a.1.Disjoint b.1) →
+      (∀ b ∈ Sig.bufs params vs, b.1.Disjoint ⟨vs.getD 5 0, len⟩ → ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply [.addr, .addr, .addr, .addr, .addr, .addr] P vs m m₁ x →
+        Curry.apply [.addr, .addr, .addr, .addr, .addr, .addr] P vs m m₂ x) :
+    ∀ vs m m₁ m₂ x, vs.length = 6 →
+      (Sig.bufs params vs).Pairwise (fun a b => (a.2 || b.2) → a.1.Disjoint b.1) →
+      (∀ b ∈ Sig.bufs params vs, ∀ a, b.1.Contains a 1 → ¬(⟨vs.getD 5 0, w⟩ : Region).Contains a 1 →
+        m₁ a = m₂ a) →
+      Curry.apply [.addr, .addr, .addr, .addr, .addr, .addr] (tail6 w len P) vs m m₁ x →
+        Curry.apply [.addr, .addr, .addr, .addr, .addr, .addr] (tail6 w len P) vs m m₂ x := by
+  intro vs m m₁ m₂ x hl hpw hag h
+  have hP' := hP vs m m₁ m₂ x hl hpw fun b hb hbA a ha =>
+    hag b hb a ha fun hp => hbA a ha (Region.sub_prefix hwl a hp)
+  obtain ⟨a, b, c, d, e, f, rfl⟩ := vs6 hl
+  have ht := tail_out hlen (hag _ (hbuf a b c d e f)) h.2
+  exact ⟨hP' h.1, ht⟩
+
+/-- With the first `w` bytes of `scratch` zero on return, `scrub4`. -/
+theorem wipedTail4 (w len : Nat) (P : Post4) : ∀ vs m m' x, vs.length = 4 →
+    Curry.apply [.addr, .addr, .addr, .addr] (tail4 w len P) vs m m' x →
+    Spec.Zeroize.bytesAt m' (vs.getD 3 0) w = Spec.Zeroize.zeros w →
+      Curry.apply [.addr, .addr, .addr, .addr] (scrub4 len P) vs m m' x := by
+  intro vs m m' x hl h hz
+  obtain ⟨a, b, c, d, rfl⟩ := vs4 hl
+  have ht := scrubbed_of_prefix hz h.2
+  exact ⟨h.1, ht⟩
+
+/-- With the first `w` bytes of `scratch` zero on return, `scrub5`. -/
+theorem wipedTail5 (w len : Nat) (P : Post5) : ∀ vs m m' x, vs.length = 5 →
+    Curry.apply [.addr, .addr, .addr, .addr, .addr] (tail5 w len P) vs m m' x →
+    Spec.Zeroize.bytesAt m' (vs.getD 4 0) w = Spec.Zeroize.zeros w →
+      Curry.apply [.addr, .addr, .addr, .addr, .addr] (scrub5 len P) vs m m' x := by
+  intro vs m m' x hl h hz
+  obtain ⟨a, b, c, d, e, rfl⟩ := vs5 hl
+  have ht := scrubbed_of_prefix hz h.2
+  exact ⟨h.1, ht⟩
+
+/-- With the first `w` bytes of `scratch` zero on return, `scrub6`. -/
+theorem wipedTail6 (w len : Nat) (P : Post6) : ∀ vs m m' x, vs.length = 6 →
+    Curry.apply [.addr, .addr, .addr, .addr, .addr, .addr] (tail6 w len P) vs m m' x →
+    Spec.Zeroize.bytesAt m' (vs.getD 5 0) w = Spec.Zeroize.zeros w →
+      Curry.apply [.addr, .addr, .addr, .addr, .addr, .addr] (scrub6 len P) vs m m' x := by
+  intro vs m m' x hl h hz
+  obtain ⟨a, b, c, d, e, f, rfl⟩ := vs6 hl
+  have ht := scrubbed_of_prefix hz h.2
+  exact ⟨h.1, ht⟩
+
+theorem wiped1024_le (c : Callee4) : wiped1024 c ≤ 49152 := by unfold wiped1024; split <;> decide
+
+theorem wipedEnc1024_le (c : Callee4) : wipedEnc1024 c ≤ 49152 := by unfold wipedEnc1024; split <;> decide
+
+/-! ### ML-KEM-1024's code, with the bytes of `scratch` it does not write unchanged -/
+
+theorem keyGen1024_tail (v : Sample4Impl) :
+    Verified X86_64.target (keyGen1024 v.callee) (Spec.MlKem1024.keyGenSig.contract abi
+      (post := tail4 (wiped1024 v.callee) 49152 (Scrubbed.keyGen1024Post abi.ptrBits)) (writeArgs := true)
+      (stack := 32) (leak := some fun seed _ek _dk _scratch m =>
+        Spec.MlKem.leakRho (Spec.MlKem.keyGenRho Spec.MlKem.mlKem1024 (Spec.Sha3.bytesAt m seed 32)))) :=
+  Verified.tail_of_written (Proof.MlKem1024.X86_64.keyGen1024_verified v) (by decide)
+    (Proof.MlKem1024.X86_64.keyGen1024_written v)
+    (tail4_of _ (fun _ _ _ _ => by simp [Spec.MlKem1024.keyGenSig, Sig.arrays, Elem.size])
+      (by
+        by_cases hc : v.callee.s16.isSome <;>
+          simp [wiped1024, Proof.MlKem1024.X86_64.written, hc]))
+
+theorem encapsH1024_tail (v : Sample4Impl) :
+    Verified X86_64.target (encapsH1024 v.callee) (Spec.MlKem1024.encapsHSig.contract abi
+      (pre := fun ek h _msg _key _ct _scratch m =>
+        Spec.Sha3.bytesAt m h 32 = Spec.MlKem.H (Spec.Sha3.bytesAt m ek 1568))
+      (post := tail6 (wiped1024 v.callee) 49152 (Scrubbed.encapsH1024Post abi.ptrBits)) (writeArgs := true)
+      (stack := 32) (leak := some fun ek _h _msg _key _ct _scratch m =>
+        Spec.MlKem.leakRho (Spec.MlKem.ekRho Spec.MlKem.mlKem1024 (Spec.Sha3.bytesAt m ek 1568)))) :=
+  Verified.tail_of_written (Proof.MlKem1024.X86_64.encapsH1024_verified v) (by decide)
+    (Proof.MlKem1024.X86_64.encapsH1024_written v)
+    (tail6_of _ (fun _ _ _ _ _ _ => by
+        simp [Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, Sig.arrays, Elem.size])
+      (by
+        by_cases hc : v.callee.s16.isSome <;>
+          simp [wiped1024, Proof.MlKem1024.X86_64.written, hc]))
+
+theorem encaps1024_tail (v : Sample4Impl) :
+    Verified X86_64.target (encaps1024 v.callee) (Spec.MlKem1024.encapsSig.contract abi
+      (post := tail5 (wipedEnc1024 v.callee) 49152 (Scrubbed.encaps1024Post abi.ptrBits)) (writeArgs := true)
+      (stack := 32) (leak := some fun ek _msg _key _ct _scratch m =>
+        Spec.MlKem.leakRho (Spec.MlKem.ekRho Spec.MlKem.mlKem1024 (Spec.Sha3.bytesAt m ek 1568)))) :=
+  Verified.tail_of_written (Proof.MlKem1024.X86_64.encaps1024_verified v) (by decide)
+    (Proof.MlKem1024.X86_64.encaps1024_written v)
+    (tail5_of _ (fun _ _ _ _ _ => by simp [Spec.MlKem1024.encapsSig, Sig.arrays, Elem.size])
+      (by
+        by_cases hc : (v.callee.s16.isSome && v.callee.batchH16.isSome) = true <;>
+          simp only [wipedEnc1024, Proof.MlKem1024.X86_64.writtenEnc, hc, ite_true, ite_false,
+            List.mem_singleton, List.not_mem_nil, or_true, or_false, Bool.false_eq_true]))
+
+theorem decaps1024_tail (v : Sample4Impl) :
+    Verified X86_64.target (decaps1024 v.callee) (Spec.MlKem1024.decapsSig.contract abi
+      (post := tail4 (wipedEnc1024 v.callee) 49152 (Scrubbed.decaps1024Post abi.ptrBits)) (writeArgs := true)
+      (stack := 32) (leak := some fun dk _ct _key _scratch m =>
+        Spec.MlKem.leakRho (Spec.MlKem.dkRho Spec.MlKem.mlKem1024 (Spec.Sha3.bytesAt m dk 3168)))) :=
+  Verified.tail_of_written (Proof.MlKem1024.X86_64.decaps1024_verified v) (by decide)
+    (Proof.MlKem1024.X86_64.decaps1024_written v)
+    (tail4_of _ (fun _ _ _ _ => by simp [Spec.MlKem1024.decapsSig, Sig.arrays, Elem.size])
+      (by
+        by_cases hc : (v.callee.s16.isSome && v.callee.batchH16.isSome) = true <;>
+          simp only [wipedEnc1024, Proof.MlKem1024.X86_64.writtenEnc, hc, ite_true, ite_false,
+            List.mem_singleton, List.not_mem_nil, or_true, or_false, Bool.false_eq_true]))
+
 /-! ## The functions -/
 
 /-- `vg_mlkem768_keygen`. -/
-theorem keyGenW_verified (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
-    Verified X86_64.target (keyGenW v.callee v.suffix z.name z.code) (Spec.MlKem.keyGenContract X86_64.abi 56) :=
-  Verified.callWipe (ps₁ := Spec.MlKem.keyGenSig.params.dropLast) (ps₂ := []) (i := 3) (keyGen_verified v) z.verified
+theorem keyGenW_scrubbed (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
+    Verified X86_64.target (keyGenW v.callee v.suffix z.name z.code) (Scrubbed.keyGenContract X86_64.abi 56) :=
+  Verified.callWipe' (ps₁ := Spec.MlKem.keyGenSig.params.dropLast) (ps₂ := []) (i := 3) (keyGen_verified v) z.verified
     (by decide) (by decide) rfl rfl (by decide) (by decide) (by decide) (keyGen_spSafe v) (keyGen_xd v)
     z.spSafe (by rw [z.xd]) (by decide)
     (by
@@ -286,6 +615,7 @@ theorem keyGenW_verified (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl
       rw [← bytesAt_agree0 (hb.2.1 (pw_disj hpw (i := 1) (j := 3) (by decide) (Nat.lt_succ_self _) rfl)) (by decide) (n := 1184) (by decide),
         ← bytesAt_agree0 (hb.2.2.1 (pw_disj hpw (i := 2) (j := 3) (by decide) (Nat.lt_succ_self _) rfl)) (by decide) (n := 2400) (by decide)]
       exact h)
+    (Scrubbed.keyGen_wiped _)
     ⟨keyGenSat, by
       sig_pre [Spec.MlKem.keyGenSig, X86_64.abi, VG.X86_64.argRegs]
       sig_and_intros
@@ -300,10 +630,14 @@ theorem keyGenW_verified (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl
       dsimp only [Curry.apply, ArgWord.ofRaw]
       rw [bytesAt_agree0 hb.1 (by decide) (n := 32) (by decide)])
 
+theorem keyGenW_verified (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
+    Verified X86_64.target (keyGenW v.callee v.suffix z.name z.code) (Spec.MlKem.keyGenContract X86_64.abi 56) :=
+  Scrubbed.Verified.keyGen_of_scrubbed (keyGenW_scrubbed v z)
+
 /-- `vg_mlkem768_encaps_h`. -/
-theorem encapsHW_verified (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
-    Verified X86_64.target (encapsHW v.callee v.suffix z.name z.code) (Spec.MlKem.encapsHContract X86_64.abi 56) :=
-  Verified.callWipe (ps₁ := Spec.MlKem.encapsHSig.params.dropLast) (ps₂ := []) (i := 5) (encapsH_verified v) z.verified
+theorem encapsHW_scrubbed (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
+    Verified X86_64.target (encapsHW v.callee v.suffix z.name z.code) (Scrubbed.encapsHContract X86_64.abi 56) :=
+  Verified.callWipe' (ps₁ := Spec.MlKem.encapsHSig.params.dropLast) (ps₂ := []) (i := 5) (encapsH_verified v) z.verified
     (by decide) (by decide) rfl rfl (by decide) (by decide) (by decide) (encapsH_spSafe v) (encapsH_xd v)
     z.spSafe (by rw [z.xd]) (by decide)
     (by
@@ -339,6 +673,7 @@ theorem encapsHW_verified (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImp
       rw [← bytesAt_agree0 (hb.2.2.2.1 (pw_disj hpw (i := 3) (j := 5) (by decide) (Nat.lt_succ_self _) rfl)) (by decide) (n := 32) (by decide),
         ← bytesAt_agree0 (hb.2.2.2.2.1 (pw_disj hpw (i := 4) (j := 5) (by decide) (Nat.lt_succ_self _) rfl)) (by decide) (n := 1088) (by decide)]
       exact h)
+    (Scrubbed.encapsH_wiped _)
     ⟨encapsHSat 1184 1088 32768, by
       sig_pre [Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, X86_64.abi, VG.X86_64.argRegs]
       sig_and_intros
@@ -353,10 +688,14 @@ theorem encapsHW_verified (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImp
       dsimp only [Curry.apply, ArgWord.ofRaw]
       rw [bytesAt_agree0 hb.1 (by decide) (n := 1184) (by decide)])
 
+theorem encapsHW_verified (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
+    Verified X86_64.target (encapsHW v.callee v.suffix z.name z.code) (Spec.MlKem.encapsHContract X86_64.abi 56) :=
+  Scrubbed.Verified.encapsH_of_scrubbed (encapsHW_scrubbed v z)
+
 /-- `vg_mlkem768_encaps`. -/
-theorem encapsW_verified (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
-    Verified X86_64.target (encapsW v.callee v.suffix z.name z.code) (Spec.MlKem.encapsContract X86_64.abi 56) :=
-  Verified.callWipe (ps₁ := Spec.MlKem.encapsSig.params.dropLast) (ps₂ := []) (i := 4) (encaps_verified v) z.verified
+theorem encapsW_scrubbed (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
+    Verified X86_64.target (encapsW v.callee v.suffix z.name z.code) (Scrubbed.encapsContract X86_64.abi 56) :=
+  Verified.callWipe' (ps₁ := Spec.MlKem.encapsSig.params.dropLast) (ps₂ := []) (i := 4) (encaps_verified v) z.verified
     (by decide) (by decide) rfl rfl (by decide) (by decide) (by decide) (encaps_spSafe v) (encaps_xd v)
     z.spSafe (by rw [z.xd]) (by decide)
     (by
@@ -384,6 +723,7 @@ theorem encapsW_verified (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl
       rw [← bytesAt_agree0 (hb.2.2.1 (pw_disj hpw (i := 2) (j := 4) (by decide) (Nat.lt_succ_self _) rfl)) (by decide) (n := 32) (by decide),
         ← bytesAt_agree0 (hb.2.2.2.1 (pw_disj hpw (i := 3) (j := 4) (by decide) (Nat.lt_succ_self _) rfl)) (by decide) (n := 1088) (by decide)]
       exact h)
+    (Scrubbed.encaps_wiped _)
     ⟨encapsSat 1184 1088 32768, by
       sig_pre [Spec.MlKem.encapsSig, X86_64.abi, VG.X86_64.argRegs]
       sig_and_intros
@@ -398,10 +738,14 @@ theorem encapsW_verified (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl
       dsimp only [Curry.apply, ArgWord.ofRaw]
       rw [bytesAt_agree0 hb.1 (by decide) (n := 1184) (by decide)])
 
+theorem encapsW_verified (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
+    Verified X86_64.target (encapsW v.callee v.suffix z.name z.code) (Spec.MlKem.encapsContract X86_64.abi 56) :=
+  Scrubbed.Verified.encaps_of_scrubbed (encapsW_scrubbed v z)
+
 /-- `vg_mlkem768_decaps`. -/
-theorem decapsW_verified (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
-    Verified X86_64.target (decapsW v.callee v.suffix z.name z.code) (Spec.MlKem.decapsContract X86_64.abi 56) :=
-  Verified.callWipe (ps₁ := Spec.MlKem.decapsSig.params.dropLast) (ps₂ := []) (i := 3) (decaps_verified v) z.verified
+theorem decapsW_scrubbed (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
+    Verified X86_64.target (decapsW v.callee v.suffix z.name z.code) (Scrubbed.decapsContract X86_64.abi 56) :=
+  Verified.callWipe' (ps₁ := Spec.MlKem.decapsSig.params.dropLast) (ps₂ := []) (i := 3) (decaps_verified v) z.verified
     (by decide) (by decide) rfl rfl (by decide) (by decide) (by decide) (decaps_spSafe v) (decaps_xd v)
     z.spSafe (by rw [z.xd]) (by decide)
     (by
@@ -428,6 +772,7 @@ theorem decapsW_verified (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl
       dsimp only [Curry.apply, ArgWord.ofRaw] at h ⊢
       rw [← bytesAt_agree0 (hb.2.2.1 (pw_disj hpw (i := 2) (j := 3) (by decide) (Nat.lt_succ_self _) rfl)) (by decide) (n := 32) (by decide)]
       exact h)
+    (Scrubbed.decaps_wiped _)
     ⟨decapsSat, by
       sig_pre [Spec.MlKem.decapsSig, X86_64.abi, VG.X86_64.argRegs]
       sig_and_intros
@@ -442,38 +787,45 @@ theorem decapsW_verified (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl
       dsimp only [Curry.apply, ArgWord.ofRaw]
       rw [bytesAt_agree0 hb.1 (by decide) (n := 2400) (by decide)])
 
+theorem decapsW_verified (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
+    Verified X86_64.target (decapsW v.callee v.suffix z.name z.code) (Spec.MlKem.decapsContract X86_64.abi 56) :=
+  Scrubbed.Verified.decaps_of_scrubbed (decapsW_scrubbed v z)
+
 /-- `vg_mlkem1024_keygen`. -/
-theorem keyGen1024W_verified (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
-    Verified X86_64.target (keyGen1024W v.callee v.suffix z.name z.code) (Spec.MlKem1024.keyGenContract X86_64.abi 56) :=
-  Verified.callWipe (ps₁ := Spec.MlKem1024.keyGenSig.params.dropLast) (ps₂ := []) (i := 3) (Proof.MlKem1024.X86_64.keyGen1024_verified v) z.verified
+theorem keyGen1024W_scrubbed (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
+    Verified X86_64.target (keyGen1024W v.callee v.suffix z.name z.code) (Scrubbed.keyGen1024Contract X86_64.abi 56) :=
+  Verified.callWipeTail' (ps₁ := Spec.MlKem1024.keyGenSig.params.dropLast) (ps₂ := []) (i := 3) (keyGen1024_tail v) z.verified
     (by decide) (by decide) rfl rfl (by unfold wiped1024; split <;> decide) (by unfold wiped1024; split <;> decide) (by decide) (keyGen1024_spSafe v) (keyGen1024_xd v)
     z.spSafe (by rw [z.xd]) (by decide)
     (by
       intro vs m₁ m₂ _ _ h
       rw [Curry.apply_const] at h ⊢; exact h)
-    (by
-      intro vs m₁ m₂ m' x hlen hb h
-      obtain ⟨a, b, c, d, rfl⟩ := vs4 hlen
-      simp only [Spec.MlKem1024.keyGenSig, Sig.bufs_array, Sig.bufs_nil, List.mem_cons, List.not_mem_nil, or_false,
-        forall_eq_or_imp, forall_eq, Elem.size, Nat.reduceMul] at hb
-      change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr] _ _ m₁ m' x at h
-      change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr] _ _ m₂ m' x
-      dsimp only [Curry.apply, ArgWord.ofRaw] at h ⊢
-      rw [← bytesAt_agree0 hb.1 (by decide) (n := 32) (by decide),
-        show a + 32 = a + BitVec.ofNat 64 32 from rfl,
-        ← bytesAt_agree hb.1 (by decide) (o := 32) (n := 32) (by decide)]
-      exact h)
-    (by
-      intro vs m m₁ m₂ x hlen hpw hb h
-      obtain ⟨a, b, c, d, rfl⟩ := vs4 hlen
-      simp only [Spec.MlKem1024.keyGenSig, Sig.bufs_array, Sig.bufs_nil, List.mem_cons, List.not_mem_nil, or_false,
-        forall_eq_or_imp, forall_eq, Elem.size, Nat.reduceMul, List.getD_cons_succ, List.getD_cons_zero] at hb
-      change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr] _ _ m m₁ x at h
-      change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr] _ _ m m₂ x
-      dsimp only [Curry.apply, ArgWord.ofRaw] at h ⊢
-      rw [← bytesAt_agree0 (hb.2.1 (pw_disj hpw (i := 1) (j := 3) (by decide) (Nat.lt_succ_self _) rfl)) (by decide) (n := 1568) (by decide),
-        ← bytesAt_agree0 (hb.2.2.1 (pw_disj hpw (i := 2) (j := 3) (by decide) (Nat.lt_succ_self _) rfl)) (by decide) (n := 3168) (by decide)]
-      exact h)
+    (tail4_local _ (fun _ _ _ _ => by simp [Spec.MlKem1024.keyGenSig, Sig.bufs_array, Sig.bufs_nil, Elem.size]) (by decide)
+      (by
+        intro vs m₁ m₂ m' x hlen hb h
+        obtain ⟨a, b, c, d, rfl⟩ := vs4 hlen
+        simp only [Spec.MlKem1024.keyGenSig, Sig.bufs_array, Sig.bufs_nil, List.mem_cons, List.not_mem_nil, or_false,
+          forall_eq_or_imp, forall_eq, Elem.size, Nat.reduceMul] at hb
+        change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr] _ _ m₁ m' x at h
+        change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr] _ _ m₂ m' x
+        dsimp only [Curry.apply, ArgWord.ofRaw, Scrubbed.keyGen1024Post] at h ⊢
+        rw [← bytesAt_agree0 hb.1 (by decide) (n := 32) (by decide),
+          show a + 32 = a + BitVec.ofNat 64 32 from rfl,
+          ← bytesAt_agree hb.1 (by decide) (o := 32) (n := 32) (by decide)]
+        exact h))
+    (tail4_out _ (fun _ _ _ _ => by simp [Spec.MlKem1024.keyGenSig, Sig.bufs_array, Sig.bufs_nil, Elem.size]) (wiped1024_le _) (by decide)
+      (by
+        intro vs m m₁ m₂ x hlen hpw hb h
+        obtain ⟨a, b, c, d, rfl⟩ := vs4 hlen
+        simp only [Spec.MlKem1024.keyGenSig, Sig.bufs_array, Sig.bufs_nil, List.mem_cons, List.not_mem_nil, or_false,
+          forall_eq_or_imp, forall_eq, Elem.size, Nat.reduceMul, List.getD_cons_succ, List.getD_cons_zero] at hb
+        change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr] _ _ m m₁ x at h
+        change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr] _ _ m m₂ x
+        dsimp only [Curry.apply, ArgWord.ofRaw, Scrubbed.keyGen1024Post] at h ⊢
+        rw [← bytesAt_agree0 (hb.2.1 (pw_disj hpw (i := 1) (j := 3) (by decide) (Nat.lt_succ_self _) rfl)) (by decide) (n := 1568) (by decide),
+          ← bytesAt_agree0 (hb.2.2.1 (pw_disj hpw (i := 2) (j := 3) (by decide) (Nat.lt_succ_self _) rfl)) (by decide) (n := 3168) (by decide)]
+        exact h))
+    (wipedTail4 _ _ _)
     ⟨MlKem1024.X86_64.keyGen1024Sat, by
       sig_pre [Spec.MlKem1024.keyGenSig, X86_64.abi, VG.X86_64.argRegs]
       sig_and_intros
@@ -488,10 +840,14 @@ theorem keyGen1024W_verified (v : Sample4Impl) (z : Proof.Zeroize.X86_64.Zeroize
       dsimp only [Curry.apply, ArgWord.ofRaw]
       rw [bytesAt_agree0 hb.1 (by decide) (n := 32) (by decide)])
 
+theorem keyGen1024W_verified (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
+    Verified X86_64.target (keyGen1024W v.callee v.suffix z.name z.code) (Spec.MlKem1024.keyGenContract X86_64.abi 56) :=
+  Scrubbed.Verified.keyGen1024_of_scrubbed (keyGen1024W_scrubbed v z)
+
 /-- `vg_mlkem1024_encaps_h`. -/
-theorem encapsH1024W_verified (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
-    Verified X86_64.target (encapsH1024W v.callee v.suffix z.name z.code) (Spec.MlKem1024.encapsHContract X86_64.abi 56) :=
-  Verified.callWipe (ps₁ := Spec.MlKem1024.encapsHSig.params.dropLast) (ps₂ := []) (i := 5) (Proof.MlKem1024.X86_64.encapsH1024_verified v) z.verified
+theorem encapsH1024W_scrubbed (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
+    Verified X86_64.target (encapsH1024W v.callee v.suffix z.name z.code) (Scrubbed.encapsH1024Contract X86_64.abi 56) :=
+  Verified.callWipeTail' (ps₁ := Spec.MlKem1024.encapsHSig.params.dropLast) (ps₂ := []) (i := 5) (encapsH1024_tail v) z.verified
     (by decide) (by decide) rfl rfl (by unfold wiped1024; split <;> decide) (by unfold wiped1024; split <;> decide) (by decide) (encapsH1024_spSafe v) (encapsH1024_xd v)
     z.spSafe (by rw [z.xd]) (by decide)
     (by
@@ -505,28 +861,31 @@ theorem encapsH1024W_verified (v : Sample4Impl) (z : Proof.Zeroize.X86_64.Zeroiz
       rw [← bytesAt_agree0 hb.2.1 (by decide) (n := 32) (by decide),
         ← bytesAt_agree0 hb.1 (by decide) (n := 1568) (by decide)]
       exact h)
-    (by
-      intro vs m₁ m₂ m' x hlen hb h
-      obtain ⟨a, b, c, d, e, f, rfl⟩ := vs6 hlen
-      simp only [Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, Sig.bufs_array, Sig.bufs_nil, List.mem_cons, List.not_mem_nil, or_false,
-        forall_eq_or_imp, forall_eq, Elem.size, Nat.reduceMul] at hb
-      change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr, .addr, .addr] _ _ m₁ m' x at h
-      change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr, .addr, .addr] _ _ m₂ m' x
-      dsimp only [Curry.apply, ArgWord.ofRaw] at h ⊢
-      rw [← bytesAt_agree0 hb.1 (by decide) (n := 1568) (by decide),
-        ← bytesAt_agree0 hb.2.2.1 (by decide) (n := 32) (by decide)]
-      exact h)
-    (by
-      intro vs m m₁ m₂ x hlen hpw hb h
-      obtain ⟨a, b, c, d, e, f, rfl⟩ := vs6 hlen
-      simp only [Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, Sig.bufs_array, Sig.bufs_nil, List.mem_cons, List.not_mem_nil, or_false,
-        forall_eq_or_imp, forall_eq, Elem.size, Nat.reduceMul, List.getD_cons_succ, List.getD_cons_zero] at hb
-      change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr, .addr, .addr] _ _ m m₁ x at h
-      change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr, .addr, .addr] _ _ m m₂ x
-      dsimp only [Curry.apply, ArgWord.ofRaw] at h ⊢
-      rw [← bytesAt_agree0 (hb.2.2.2.1 (pw_disj hpw (i := 3) (j := 5) (by decide) (Nat.lt_succ_self _) rfl)) (by decide) (n := 32) (by decide),
-        ← bytesAt_agree0 (hb.2.2.2.2.1 (pw_disj hpw (i := 4) (j := 5) (by decide) (Nat.lt_succ_self _) rfl)) (by decide) (n := 1568) (by decide)]
-      exact h)
+    (tail6_local _ (fun _ _ _ _ _ _ => by simp [Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, Sig.bufs_array, Sig.bufs_nil, Elem.size]) (by decide)
+      (by
+        intro vs m₁ m₂ m' x hlen hb h
+        obtain ⟨a, b, c, d, e, f, rfl⟩ := vs6 hlen
+        simp only [Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, Sig.bufs_array, Sig.bufs_nil, List.mem_cons, List.not_mem_nil, or_false,
+          forall_eq_or_imp, forall_eq, Elem.size, Nat.reduceMul] at hb
+        change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr, .addr, .addr] _ _ m₁ m' x at h
+        change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr, .addr, .addr] _ _ m₂ m' x
+        dsimp only [Curry.apply, ArgWord.ofRaw, Scrubbed.encapsH1024Post] at h ⊢
+        rw [← bytesAt_agree0 hb.1 (by decide) (n := 1568) (by decide),
+          ← bytesAt_agree0 hb.2.2.1 (by decide) (n := 32) (by decide)]
+        exact h))
+    (tail6_out _ (fun _ _ _ _ _ _ => by simp [Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, Sig.bufs_array, Sig.bufs_nil, Elem.size]) (wiped1024_le _) (by decide)
+      (by
+        intro vs m m₁ m₂ x hlen hpw hb h
+        obtain ⟨a, b, c, d, e, f, rfl⟩ := vs6 hlen
+        simp only [Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, Sig.bufs_array, Sig.bufs_nil, List.mem_cons, List.not_mem_nil, or_false,
+          forall_eq_or_imp, forall_eq, Elem.size, Nat.reduceMul, List.getD_cons_succ, List.getD_cons_zero] at hb
+        change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr, .addr, .addr] _ _ m m₁ x at h
+        change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr, .addr, .addr] _ _ m m₂ x
+        dsimp only [Curry.apply, ArgWord.ofRaw, Scrubbed.encapsH1024Post] at h ⊢
+        rw [← bytesAt_agree0 (hb.2.2.2.1 (pw_disj hpw (i := 3) (j := 5) (by decide) (Nat.lt_succ_self _) rfl)) (by decide) (n := 32) (by decide),
+          ← bytesAt_agree0 (hb.2.2.2.2.1 (pw_disj hpw (i := 4) (j := 5) (by decide) (Nat.lt_succ_self _) rfl)) (by decide) (n := 1568) (by decide)]
+        exact h))
+    (wipedTail6 _ _ _)
     ⟨encapsHSat 1568 1568 49152, by
       sig_pre [Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, X86_64.abi, VG.X86_64.argRegs]
       sig_and_intros
@@ -541,37 +900,44 @@ theorem encapsH1024W_verified (v : Sample4Impl) (z : Proof.Zeroize.X86_64.Zeroiz
       dsimp only [Curry.apply, ArgWord.ofRaw]
       rw [bytesAt_agree0 hb.1 (by decide) (n := 1568) (by decide)])
 
+theorem encapsH1024W_verified (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
+    Verified X86_64.target (encapsH1024W v.callee v.suffix z.name z.code) (Spec.MlKem1024.encapsHContract X86_64.abi 56) :=
+  Scrubbed.Verified.encapsH1024_of_scrubbed (encapsH1024W_scrubbed v z)
+
 /-- `vg_mlkem1024_encaps`. -/
-theorem encaps1024W_verified (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
-    Verified X86_64.target (encaps1024W v.callee v.suffix z.name z.code) (Spec.MlKem1024.encapsContract X86_64.abi 56) :=
-  Verified.callWipe (ps₁ := Spec.MlKem1024.encapsSig.params.dropLast) (ps₂ := []) (i := 4) (Proof.MlKem1024.X86_64.encaps1024_verified v) z.verified
+theorem encaps1024W_scrubbed (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
+    Verified X86_64.target (encaps1024W v.callee v.suffix z.name z.code) (Scrubbed.encaps1024Contract X86_64.abi 56) :=
+  Verified.callWipeTail' (ps₁ := Spec.MlKem1024.encapsSig.params.dropLast) (ps₂ := []) (i := 4) (encaps1024_tail v) z.verified
     (by decide) (by decide) rfl rfl (by unfold wipedEnc1024; split <;> decide) (by unfold wipedEnc1024; split <;> decide) (by decide) (encaps1024_spSafe v) (encaps1024_xd v)
     z.spSafe (by rw [z.xd]) (by decide)
     (by
       intro vs m₁ m₂ _ _ h
       rw [Curry.apply_const] at h ⊢; exact h)
-    (by
-      intro vs m₁ m₂ m' x hlen hb h
-      obtain ⟨a, b, c, d, e, rfl⟩ := vs5 hlen
-      simp only [Spec.MlKem1024.encapsSig, Sig.bufs_array, Sig.bufs_nil, List.mem_cons, List.not_mem_nil, or_false,
-        forall_eq_or_imp, forall_eq, Elem.size, Nat.reduceMul] at hb
-      change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr, .addr] _ _ m₁ m' x at h
-      change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr, .addr] _ _ m₂ m' x
-      dsimp only [Curry.apply, ArgWord.ofRaw] at h ⊢
-      rw [← bytesAt_agree0 hb.1 (by decide) (n := 1568) (by decide),
-        ← bytesAt_agree0 hb.2.1 (by decide) (n := 32) (by decide)]
-      exact h)
-    (by
-      intro vs m m₁ m₂ x hlen hpw hb h
-      obtain ⟨a, b, c, d, e, rfl⟩ := vs5 hlen
-      simp only [Spec.MlKem1024.encapsSig, Sig.bufs_array, Sig.bufs_nil, List.mem_cons, List.not_mem_nil, or_false,
-        forall_eq_or_imp, forall_eq, Elem.size, Nat.reduceMul, List.getD_cons_succ, List.getD_cons_zero] at hb
-      change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr, .addr] _ _ m m₁ x at h
-      change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr, .addr] _ _ m m₂ x
-      dsimp only [Curry.apply, ArgWord.ofRaw] at h ⊢
-      rw [← bytesAt_agree0 (hb.2.2.1 (pw_disj hpw (i := 2) (j := 4) (by decide) (Nat.lt_succ_self _) rfl)) (by decide) (n := 32) (by decide),
-        ← bytesAt_agree0 (hb.2.2.2.1 (pw_disj hpw (i := 3) (j := 4) (by decide) (Nat.lt_succ_self _) rfl)) (by decide) (n := 1568) (by decide)]
-      exact h)
+    (tail5_local _ (fun _ _ _ _ _ => by simp [Spec.MlKem1024.encapsSig, Sig.bufs_array, Sig.bufs_nil, Elem.size]) (by decide)
+      (by
+        intro vs m₁ m₂ m' x hlen hb h
+        obtain ⟨a, b, c, d, e, rfl⟩ := vs5 hlen
+        simp only [Spec.MlKem1024.encapsSig, Sig.bufs_array, Sig.bufs_nil, List.mem_cons, List.not_mem_nil, or_false,
+          forall_eq_or_imp, forall_eq, Elem.size, Nat.reduceMul] at hb
+        change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr, .addr] _ _ m₁ m' x at h
+        change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr, .addr] _ _ m₂ m' x
+        dsimp only [Curry.apply, ArgWord.ofRaw, Scrubbed.encaps1024Post] at h ⊢
+        rw [← bytesAt_agree0 hb.1 (by decide) (n := 1568) (by decide),
+          ← bytesAt_agree0 hb.2.1 (by decide) (n := 32) (by decide)]
+        exact h))
+    (tail5_out _ (fun _ _ _ _ _ => by simp [Spec.MlKem1024.encapsSig, Sig.bufs_array, Sig.bufs_nil, Elem.size]) (wipedEnc1024_le _) (by decide)
+      (by
+        intro vs m m₁ m₂ x hlen hpw hb h
+        obtain ⟨a, b, c, d, e, rfl⟩ := vs5 hlen
+        simp only [Spec.MlKem1024.encapsSig, Sig.bufs_array, Sig.bufs_nil, List.mem_cons, List.not_mem_nil, or_false,
+          forall_eq_or_imp, forall_eq, Elem.size, Nat.reduceMul, List.getD_cons_succ, List.getD_cons_zero] at hb
+        change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr, .addr] _ _ m m₁ x at h
+        change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr, .addr] _ _ m m₂ x
+        dsimp only [Curry.apply, ArgWord.ofRaw, Scrubbed.encaps1024Post] at h ⊢
+        rw [← bytesAt_agree0 (hb.2.2.1 (pw_disj hpw (i := 2) (j := 4) (by decide) (Nat.lt_succ_self _) rfl)) (by decide) (n := 32) (by decide),
+          ← bytesAt_agree0 (hb.2.2.2.1 (pw_disj hpw (i := 3) (j := 4) (by decide) (Nat.lt_succ_self _) rfl)) (by decide) (n := 1568) (by decide)]
+        exact h))
+    (wipedTail5 _ _ _)
     ⟨encapsSat 1568 1568 49152, by
       sig_pre [Spec.MlKem1024.encapsSig, X86_64.abi, VG.X86_64.argRegs]
       sig_and_intros
@@ -586,36 +952,43 @@ theorem encaps1024W_verified (v : Sample4Impl) (z : Proof.Zeroize.X86_64.Zeroize
       dsimp only [Curry.apply, ArgWord.ofRaw]
       rw [bytesAt_agree0 hb.1 (by decide) (n := 1568) (by decide)])
 
+theorem encaps1024W_verified (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
+    Verified X86_64.target (encaps1024W v.callee v.suffix z.name z.code) (Spec.MlKem1024.encapsContract X86_64.abi 56) :=
+  Scrubbed.Verified.encaps1024_of_scrubbed (encaps1024W_scrubbed v z)
+
 /-- `vg_mlkem1024_decaps`. -/
-theorem decaps1024W_verified (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
-    Verified X86_64.target (decaps1024W v.callee v.suffix z.name z.code) (Spec.MlKem1024.decapsContract X86_64.abi 56) :=
-  Verified.callWipe (ps₁ := Spec.MlKem1024.decapsSig.params.dropLast) (ps₂ := []) (i := 3) (Proof.MlKem1024.X86_64.decaps1024_verified v) z.verified
+theorem decaps1024W_scrubbed (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
+    Verified X86_64.target (decaps1024W v.callee v.suffix z.name z.code) (Scrubbed.decaps1024Contract X86_64.abi 56) :=
+  Verified.callWipeTail' (ps₁ := Spec.MlKem1024.decapsSig.params.dropLast) (ps₂ := []) (i := 3) (decaps1024_tail v) z.verified
     (by decide) (by decide) rfl rfl (by unfold wipedEnc1024; split <;> decide) (by unfold wipedEnc1024; split <;> decide) (by decide) (decaps1024_spSafe v) (decaps1024_xd v)
     z.spSafe (by rw [z.xd]) (by decide)
     (by
       intro vs m₁ m₂ _ _ h
       rw [Curry.apply_const] at h ⊢; exact h)
-    (by
-      intro vs m₁ m₂ m' x hlen hb h
-      obtain ⟨a, b, c, d, rfl⟩ := vs4 hlen
-      simp only [Spec.MlKem1024.decapsSig, Sig.bufs_array, Sig.bufs_nil, List.mem_cons, List.not_mem_nil, or_false,
-        forall_eq_or_imp, forall_eq, Elem.size, Nat.reduceMul] at hb
-      change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr] _ _ m₁ m' x at h
-      change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr] _ _ m₂ m' x
-      dsimp only [Curry.apply, ArgWord.ofRaw] at h ⊢
-      rw [← bytesAt_agree0 hb.1 (by decide) (n := 3168) (by decide),
-        ← bytesAt_agree0 hb.2.1 (by decide) (n := 1568) (by decide)]
-      exact h)
-    (by
-      intro vs m m₁ m₂ x hlen hpw hb h
-      obtain ⟨a, b, c, d, rfl⟩ := vs4 hlen
-      simp only [Spec.MlKem1024.decapsSig, Sig.bufs_array, Sig.bufs_nil, List.mem_cons, List.not_mem_nil, or_false,
-        forall_eq_or_imp, forall_eq, Elem.size, Nat.reduceMul, List.getD_cons_succ, List.getD_cons_zero] at hb
-      change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr] _ _ m m₁ x at h
-      change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr] _ _ m m₂ x
-      dsimp only [Curry.apply, ArgWord.ofRaw] at h ⊢
-      rw [← bytesAt_agree0 (hb.2.2.1 (pw_disj hpw (i := 2) (j := 3) (by decide) (Nat.lt_succ_self _) rfl)) (by decide) (n := 32) (by decide)]
-      exact h)
+    (tail4_local _ (fun _ _ _ _ => by simp [Spec.MlKem1024.decapsSig, Sig.bufs_array, Sig.bufs_nil, Elem.size]) (by decide)
+      (by
+        intro vs m₁ m₂ m' x hlen hb h
+        obtain ⟨a, b, c, d, rfl⟩ := vs4 hlen
+        simp only [Spec.MlKem1024.decapsSig, Sig.bufs_array, Sig.bufs_nil, List.mem_cons, List.not_mem_nil, or_false,
+          forall_eq_or_imp, forall_eq, Elem.size, Nat.reduceMul] at hb
+        change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr] _ _ m₁ m' x at h
+        change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr] _ _ m₂ m' x
+        dsimp only [Curry.apply, ArgWord.ofRaw, Scrubbed.decaps1024Post] at h ⊢
+        rw [← bytesAt_agree0 hb.1 (by decide) (n := 3168) (by decide),
+          ← bytesAt_agree0 hb.2.1 (by decide) (n := 1568) (by decide)]
+        exact h))
+    (tail4_out _ (fun _ _ _ _ => by simp [Spec.MlKem1024.decapsSig, Sig.bufs_array, Sig.bufs_nil, Elem.size]) (wipedEnc1024_le _) (by decide)
+      (by
+        intro vs m m₁ m₂ x hlen hpw hb h
+        obtain ⟨a, b, c, d, rfl⟩ := vs4 hlen
+        simp only [Spec.MlKem1024.decapsSig, Sig.bufs_array, Sig.bufs_nil, List.mem_cons, List.not_mem_nil, or_false,
+          forall_eq_or_imp, forall_eq, Elem.size, Nat.reduceMul, List.getD_cons_succ, List.getD_cons_zero] at hb
+        change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr] _ _ m m₁ x at h
+        change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr] _ _ m m₂ x
+        dsimp only [Curry.apply, ArgWord.ofRaw, Scrubbed.decaps1024Post] at h ⊢
+        rw [← bytesAt_agree0 (hb.2.2.1 (pw_disj hpw (i := 2) (j := 3) (by decide) (Nat.lt_succ_self _) rfl)) (by decide) (n := 32) (by decide)]
+        exact h))
+    (wipedTail4 _ _ _)
     ⟨MlKem1024.X86_64.decaps1024Sat, by
       sig_pre [Spec.MlKem1024.decapsSig, X86_64.abi, VG.X86_64.argRegs]
       sig_and_intros
@@ -629,6 +1002,10 @@ theorem decaps1024W_verified (v : Sample4Impl) (z : Proof.Zeroize.X86_64.Zeroize
         Curry.apply (α := Mem → List Nat) [.addr, .addr, .addr, .addr] _ _ m₂
       dsimp only [Curry.apply, ArgWord.ofRaw]
       rw [bytesAt_agree0 hb.1 (by decide) (n := 3168) (by decide)])
+
+theorem decaps1024W_verified (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
+    Verified X86_64.target (decaps1024W v.callee v.suffix z.name z.code) (Spec.MlKem1024.decapsContract X86_64.abi 56) :=
+  Scrubbed.Verified.decaps1024_of_scrubbed (decaps1024W_scrubbed v z)
 
 
 /-! ## The stack pointer -/

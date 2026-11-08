@@ -20,6 +20,7 @@ import VerifiedGarbage.Proof.MlKem.AArch64.PrimCall
 import VerifiedGarbage.Proof.Framework.AArch64.DepthFill
 import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.Zeroize.AArch64Wide
+public import VerifiedGarbage.Proof.MlKem.Scrubbed
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Sig
@@ -37,9 +38,13 @@ public meta import Lean.Elab.Tactic.ElabTerm
 Each of ML-KEM-768's and ML-KEM-1024's functions taking `scratch` is
 `callWipe` (`Impl/CallWipe/AArch64.lean`) of its code, which zeroes all of
 `scratch` with `vg_zeroize` once that code returns, and is verified against
-the same contract with 32 more bytes of stack: `Verified.callWipe` for the
-instances over the sponge functions, under `abi`, and `Verified.callWipeC`
-for the paired instances, under `abi.withConsts constants`.
+the same contract with 32 more bytes of stack and `scratch` left scrubbed
+(`*_scrubbed`, the contracts of `Proof/MlKem/Scrubbed.lean`), since every
+byte of it is zero (`Scrubbed.keyGen_wiped`, …): `Verified.callWipe'` for
+the instances over the sponge functions, under `abi`, and
+`Verified.callWipeC'` for the paired instances, under
+`abi.withConsts constants`. `*_verified` are those weakened to the contracts
+of `Spec/MlKem/`, which do not state it yet.
 -/
 
 @[expose] public section
@@ -52,10 +57,11 @@ open VG.Proof.MlKem.AArch64.FixedHash (fixedHash prfW hole)
 /-! ## `callWipe` of `vg_zeroize` -/
 
 /-- Under the calling convention `A`, `callWipe` of code verified against a
-contract, with `vg_zeroize`, is verified against the same contract with 32
-more bytes of stack, given `Verified.callWipe`'s hypotheses. -/
+contract, with `vg_zeroize`, is verified against the contract whose
+postcondition `post'` follows from the code's and the zeroed bytes, with 32
+more bytes of stack, given `Verified.callWipe'`'s hypotheses. -/
 def CallWipeOk (A : Abi isa) : Prop :=
-  ∀ {sig : Sig} {pre : Curry (sig.words A.ptrBits) (Mem → Prop)} {post : sig.Post A.ptrBits}
+  ∀ {sig : Sig} {pre : Curry (sig.words A.ptrBits) (Mem → Prop)} {post post' : sig.Post A.ptrBits}
     {wa : Bool} {stack : Nat} {leak : Option (Curry (sig.words A.ptrBits) (Mem → List Nat))}
     {name : String} {body : Prog isa} {ps₁ ps₂ : List (String × Param)} {nm : String} {e : Elem}
     {k n i : Nat},
@@ -76,26 +82,30 @@ def CallWipeOk (A : Abi isa) : Prop :=
         ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
       Curry.apply (sig.words A.ptrBits) post vs m m₁ x →
         Curry.apply (sig.words A.ptrBits) post vs m m₂ x) →
-    (∃ s, (sig.contract A pre post wa (stack + 32) leak).pre s) →
+    (∀ vs m m' x, vs.length = (sig.words A.ptrBits).length →
+      Curry.apply (sig.words A.ptrBits) post vs m m' x →
+      Spec.Zeroize.bytesAt m' (vs.getD i 0) n = Spec.Zeroize.zeros n →
+        Curry.apply (sig.words A.ptrBits) post' vs m m' x) →
+    (∃ s, (sig.contract A pre post' wa (stack + 32) leak).pre s) →
     Sig.LeakLocal A.ptrBits sig leak →
     Verified target (Impl.CallWipe.AArch64.callWipe (argRegs.getD i .x0) n name body "vg_zeroize"
-      Impl.Zeroize.AArch64.zeroizeWide) (sig.contract A pre post wa (stack + 32) leak)
+      Impl.Zeroize.AArch64.zeroizeWide) (sig.contract A pre post' wa (stack + 32) leak)
 
 theorem zeroize_depth : 16 * Impl.Zeroize.AArch64.zeroizeWide.aarch64Depth ≤ 0 := by
   rw [Proof.Sha3.AArch64.fdepth_of_noFrames (by decide)]
 
-/-- `Verified.callWipe`, under `abi`. -/
+/-- `Verified.callWipe'`, under `abi`. -/
 theorem callWipeOk_abi : CallWipeOk abi :=
-  fun h hk hl hps hi hn hn16 hd hpre hpost hpostOut hsat hleak =>
-    Verified.callWipe h Proof.Zeroize.AArch64.wideVerified hk hl hps hi hn hn16 hd zeroize_depth
-      (Nat.zero_le _) hpre hpost hpostOut hsat hleak
+  fun h hk hl hps hi hn hn16 hd hpre hpost hpostOut hwiped hsat hleak =>
+    Verified.callWipe' h Proof.Zeroize.AArch64.wideVerified hk hl hps hi hn hn16 hd zeroize_depth
+      (Nat.zero_le _) hpre hpost hpostOut hwiped hsat hleak
 
-/-- `Verified.callWipeC`, under `abi.withConsts`. -/
+/-- `Verified.callWipeC'`, under `abi.withConsts`. -/
 theorem callWipeOk_consts {c₀ : String × List (BitVec 64)} {cs : List (String × List (BitVec 64))} :
     CallWipeOk (abi.withConsts (c₀ :: cs)) :=
-  fun h hk hl hps hi hn hn16 hd hpre hpost hpostOut hsat hleak =>
-    Verified.callWipeC h Proof.Zeroize.AArch64.wideVerified hk hl hps hi hn hn16 hd zeroize_depth
-      (Nat.zero_le _) hpre hpost hpostOut hsat hleak
+  fun h hk hl hps hi hn hn16 hd hpre hpost hpostOut hwiped hsat hleak =>
+    Verified.callWipeC' h Proof.Zeroize.AArch64.wideVerified hk hl hps hi hn hn16 hd zeroize_depth
+      (Nat.zero_le _) hpre hpost hpostOut hwiped hsat hleak
 
 /-! ## What the contracts read of the memory -/
 
@@ -137,7 +147,7 @@ theorem pw_disj {l : List (Region × Bool)} (h : l.Pairwise (fun a b => (a.2 || 
 theorem keyGen_wipe {A : Abi isa} (hA : CallWipeOk A) (sfx : String) {body : Prog isa} {st : Nat}
     (h : Verified target body (Spec.MlKem.keyGenContract A st)) (hd : 16 * body.aarch64Depth ≤ st)
     (hsat : ∃ s, (Spec.MlKem.keyGenContract A (st + 32)).pre s) :
-    Verified target (Impl.MlKem.AArch64.Wipe.keyGen sfx body) (Spec.MlKem.keyGenContract A (st + 32)) :=
+    Verified target (Impl.MlKem.AArch64.Wipe.keyGen sfx body) (Scrubbed.keyGenContract A (st + 32)) :=
   hA (ps₁ := Spec.MlKem.keyGenSig.params.dropLast) (ps₂ := []) (i := 3) h (Nat.le_of_ble_eq_true rfl) (by decide) rfl rfl
     (by decide) (by decide) hd
     (by
@@ -168,6 +178,7 @@ theorem keyGen_wipe {A : Abi isa} (hA : CallWipeOk A) (sfx : String) {body : Pro
         ← bytesAt_agree0 (hb.2.2.1 (pw_disj hpw (i := 2) (j := 3) (by decide) (Nat.lt_succ_self _) rfl)) (by decide)
           (n := 2400) (by decide)]
       exact h)
+    (Scrubbed.keyGen_wiped _)
     hsat
     (by
       intro vs m₁ m₂ hlen hb
@@ -182,7 +193,7 @@ theorem keyGen_wipe {A : Abi isa} (hA : CallWipeOk A) (sfx : String) {body : Pro
 theorem encapsH_wipe {A : Abi isa} (hA : CallWipeOk A) (sfx : String) {body : Prog isa} {st : Nat}
     (h : Verified target body (Spec.MlKem.encapsHContract A st)) (hd : 16 * body.aarch64Depth ≤ st)
     (hsat : ∃ s, (Spec.MlKem.encapsHContract A (st + 32)).pre s) :
-    Verified target (Impl.MlKem.AArch64.Wipe.encapsH sfx body) (Spec.MlKem.encapsHContract A (st + 32)) :=
+    Verified target (Impl.MlKem.AArch64.Wipe.encapsH sfx body) (Scrubbed.encapsHContract A (st + 32)) :=
   hA (ps₁ := Spec.MlKem.encapsHSig.params.dropLast) (ps₂ := []) (i := 5) h (Nat.le_of_ble_eq_true rfl) (by decide) rfl rfl
     (by decide) (by decide) hd
     (by
@@ -220,6 +231,7 @@ theorem encapsH_wipe {A : Abi isa} (hA : CallWipeOk A) (sfx : String) {body : Pr
         ← bytesAt_agree0 (hb.2.2.2.2.1 (pw_disj hpw (i := 4) (j := 5) (by decide) (Nat.lt_succ_self _) rfl)) (by decide)
           (n := 1088) (by decide)]
       exact h)
+    (Scrubbed.encapsH_wiped _)
     hsat
     (by
       intro vs m₁ m₂ hlen hb
@@ -234,7 +246,7 @@ theorem encapsH_wipe {A : Abi isa} (hA : CallWipeOk A) (sfx : String) {body : Pr
 theorem encaps_wipe {A : Abi isa} (hA : CallWipeOk A) (sfx : String) {body : Prog isa} {st : Nat}
     (h : Verified target body (Spec.MlKem.encapsContract A st)) (hd : 16 * body.aarch64Depth ≤ st)
     (hsat : ∃ s, (Spec.MlKem.encapsContract A (st + 32)).pre s) :
-    Verified target (Impl.MlKem.AArch64.Wipe.encaps sfx body) (Spec.MlKem.encapsContract A (st + 32)) :=
+    Verified target (Impl.MlKem.AArch64.Wipe.encaps sfx body) (Scrubbed.encapsContract A (st + 32)) :=
   hA (ps₁ := Spec.MlKem.encapsSig.params.dropLast) (ps₂ := []) (i := 4) h (Nat.le_of_ble_eq_true rfl) (by decide) rfl rfl
     (by decide) (by decide) hd
     (by
@@ -264,6 +276,7 @@ theorem encaps_wipe {A : Abi isa} (hA : CallWipeOk A) (sfx : String) {body : Pro
         ← bytesAt_agree0 (hb.2.2.2.1 (pw_disj hpw (i := 3) (j := 4) (by decide) (Nat.lt_succ_self _) rfl)) (by decide)
           (n := 1088) (by decide)]
       exact h)
+    (Scrubbed.encaps_wiped _)
     hsat
     (by
       intro vs m₁ m₂ hlen hb
@@ -278,7 +291,7 @@ theorem encaps_wipe {A : Abi isa} (hA : CallWipeOk A) (sfx : String) {body : Pro
 theorem decaps_wipe {A : Abi isa} (hA : CallWipeOk A) (sfx : String) {body : Prog isa} {st : Nat}
     (h : Verified target body (Spec.MlKem.decapsContract A st)) (hd : 16 * body.aarch64Depth ≤ st)
     (hsat : ∃ s, (Spec.MlKem.decapsContract A (st + 32)).pre s) :
-    Verified target (Impl.MlKem.AArch64.Wipe.decaps sfx body) (Spec.MlKem.decapsContract A (st + 32)) :=
+    Verified target (Impl.MlKem.AArch64.Wipe.decaps sfx body) (Scrubbed.decapsContract A (st + 32)) :=
   hA (ps₁ := Spec.MlKem.decapsSig.params.dropLast) (ps₂ := []) (i := 3) h (Nat.le_of_ble_eq_true rfl) (by decide) rfl rfl
     (by decide) (by decide) hd
     (by
@@ -306,6 +319,7 @@ theorem decaps_wipe {A : Abi isa} (hA : CallWipeOk A) (sfx : String) {body : Pro
       rw [← bytesAt_agree0 (hb.2.2.1 (pw_disj hpw (i := 2) (j := 3) (by decide) (Nat.lt_succ_self _) rfl)) (by decide)
           (n := 32) (by decide)]
       exact h)
+    (Scrubbed.decaps_wiped _)
     hsat
     (by
       intro vs m₁ m₂ hlen hb
@@ -320,7 +334,7 @@ theorem decaps_wipe {A : Abi isa} (hA : CallWipeOk A) (sfx : String) {body : Pro
 theorem keyGen1024_wipe {A : Abi isa} (hA : CallWipeOk A) (sfx : String) {body : Prog isa} {st : Nat}
     (h : Verified target body (Spec.MlKem1024.keyGenContract A st)) (hd : 16 * body.aarch64Depth ≤ st)
     (hsat : ∃ s, (Spec.MlKem1024.keyGenContract A (st + 32)).pre s) :
-    Verified target (Impl.MlKem.AArch64.Wipe.keyGen1024 sfx body) (Spec.MlKem1024.keyGenContract A (st + 32)) :=
+    Verified target (Impl.MlKem.AArch64.Wipe.keyGen1024 sfx body) (Scrubbed.keyGen1024Contract A (st + 32)) :=
   hA (ps₁ := Spec.MlKem1024.keyGenSig.params.dropLast) (ps₂ := []) (i := 3) h (Nat.le_of_ble_eq_true rfl) (by decide) rfl rfl
     (by decide) (by decide) hd
     (by
@@ -351,6 +365,7 @@ theorem keyGen1024_wipe {A : Abi isa} (hA : CallWipeOk A) (sfx : String) {body :
         ← bytesAt_agree0 (hb.2.2.1 (pw_disj hpw (i := 2) (j := 3) (by decide) (Nat.lt_succ_self _) rfl)) (by decide)
           (n := 3168) (by decide)]
       exact h)
+    (Scrubbed.keyGen1024_wiped _)
     hsat
     (by
       intro vs m₁ m₂ hlen hb
@@ -365,7 +380,7 @@ theorem keyGen1024_wipe {A : Abi isa} (hA : CallWipeOk A) (sfx : String) {body :
 theorem encapsH1024_wipe {A : Abi isa} (hA : CallWipeOk A) (sfx : String) {body : Prog isa} {st : Nat}
     (h : Verified target body (Spec.MlKem1024.encapsHContract A st)) (hd : 16 * body.aarch64Depth ≤ st)
     (hsat : ∃ s, (Spec.MlKem1024.encapsHContract A (st + 32)).pre s) :
-    Verified target (Impl.MlKem.AArch64.Wipe.encapsH1024 sfx body) (Spec.MlKem1024.encapsHContract A (st + 32)) :=
+    Verified target (Impl.MlKem.AArch64.Wipe.encapsH1024 sfx body) (Scrubbed.encapsH1024Contract A (st + 32)) :=
   hA (ps₁ := Spec.MlKem1024.encapsHSig.params.dropLast) (ps₂ := []) (i := 5) h (Nat.le_of_ble_eq_true rfl) (by decide) rfl rfl
     (by decide) (by decide) hd
     (by
@@ -403,6 +418,7 @@ theorem encapsH1024_wipe {A : Abi isa} (hA : CallWipeOk A) (sfx : String) {body 
         ← bytesAt_agree0 (hb.2.2.2.2.1 (pw_disj hpw (i := 4) (j := 5) (by decide) (Nat.lt_succ_self _) rfl)) (by decide)
           (n := 1568) (by decide)]
       exact h)
+    (Scrubbed.encapsH1024_wiped _)
     hsat
     (by
       intro vs m₁ m₂ hlen hb
@@ -417,7 +433,7 @@ theorem encapsH1024_wipe {A : Abi isa} (hA : CallWipeOk A) (sfx : String) {body 
 theorem encaps1024_wipe {A : Abi isa} (hA : CallWipeOk A) (sfx : String) {body : Prog isa} {st : Nat}
     (h : Verified target body (Spec.MlKem1024.encapsContract A st)) (hd : 16 * body.aarch64Depth ≤ st)
     (hsat : ∃ s, (Spec.MlKem1024.encapsContract A (st + 32)).pre s) :
-    Verified target (Impl.MlKem.AArch64.Wipe.encaps1024 sfx body) (Spec.MlKem1024.encapsContract A (st + 32)) :=
+    Verified target (Impl.MlKem.AArch64.Wipe.encaps1024 sfx body) (Scrubbed.encaps1024Contract A (st + 32)) :=
   hA (ps₁ := Spec.MlKem1024.encapsSig.params.dropLast) (ps₂ := []) (i := 4) h (Nat.le_of_ble_eq_true rfl) (by decide) rfl rfl
     (by decide) (by decide) hd
     (by
@@ -447,6 +463,7 @@ theorem encaps1024_wipe {A : Abi isa} (hA : CallWipeOk A) (sfx : String) {body :
         ← bytesAt_agree0 (hb.2.2.2.1 (pw_disj hpw (i := 3) (j := 4) (by decide) (Nat.lt_succ_self _) rfl)) (by decide)
           (n := 1568) (by decide)]
       exact h)
+    (Scrubbed.encaps1024_wiped _)
     hsat
     (by
       intro vs m₁ m₂ hlen hb
@@ -461,7 +478,7 @@ theorem encaps1024_wipe {A : Abi isa} (hA : CallWipeOk A) (sfx : String) {body :
 theorem decaps1024_wipe {A : Abi isa} (hA : CallWipeOk A) (sfx : String) {body : Prog isa} {st : Nat}
     (h : Verified target body (Spec.MlKem1024.decapsContract A st)) (hd : 16 * body.aarch64Depth ≤ st)
     (hsat : ∃ s, (Spec.MlKem1024.decapsContract A (st + 32)).pre s) :
-    Verified target (Impl.MlKem.AArch64.Wipe.decaps1024 sfx body) (Spec.MlKem1024.decapsContract A (st + 32)) :=
+    Verified target (Impl.MlKem.AArch64.Wipe.decaps1024 sfx body) (Scrubbed.decaps1024Contract A (st + 32)) :=
   hA (ps₁ := Spec.MlKem1024.decapsSig.params.dropLast) (ps₂ := []) (i := 3) h (Nat.le_of_ble_eq_true rfl) (by decide) rfl rfl
     (by decide) (by decide) hd
     (by
@@ -489,6 +506,7 @@ theorem decaps1024_wipe {A : Abi isa} (hA : CallWipeOk A) (sfx : String) {body :
       rw [← bytesAt_agree0 (hb.2.2.1 (pw_disj hpw (i := 2) (j := 3) (by decide) (Nat.lt_succ_self _) rfl)) (by decide)
           (n := 32) (by decide)]
       exact h)
+    (Scrubbed.decaps1024_wiped _)
     hsat
     (by
       intro vs m₁ m₂ hlen hb
@@ -863,87 +881,167 @@ variable (v : Proof.Sha3.AArch64.Permutation)
 
 /-! Over the sponge functions of `v`, with 48 bytes of stack. -/
 
+theorem keyGenS768_scrubbed :
+    Verified target (Impl.MlKem.AArch64.Wipe.keyGen v.callee.suffix (Impl.MlKem.AArch64.keyGenWith v.callee))
+      (Scrubbed.keyGenContract abi 48) :=
+  keyGen_wipe callWipeOk_abi _ (Proof.MlKem.AArch64.KeyGen.keyGen_verifiedWith (keccak := v)) (keyGenS768_depth v) keyGenS768_sat
+
 theorem keyGenS768_verified :
     Verified target (Impl.MlKem.AArch64.Wipe.keyGen v.callee.suffix (Impl.MlKem.AArch64.keyGenWith v.callee))
       (Spec.MlKem.keyGenContract abi 48) :=
-  keyGen_wipe callWipeOk_abi _ (Proof.MlKem.AArch64.KeyGen.keyGen_verifiedWith (keccak := v)) (keyGenS768_depth v) keyGenS768_sat
+  Scrubbed.Verified.keyGen_of_scrubbed (keyGenS768_scrubbed v)
+
+theorem encapsHS768_scrubbed :
+    Verified target (Impl.MlKem.AArch64.Wipe.encapsH v.callee.suffix (Impl.MlKem.AArch64.encapsHWith v.callee))
+      (Scrubbed.encapsHContract abi 48) :=
+  encapsH_wipe callWipeOk_abi _ (Proof.MlKem.AArch64.EncapsH.encapsH_verifiedWith (keccak := v)) (encapsHS768_depth v) encapsHS768_sat
 
 theorem encapsHS768_verified :
     Verified target (Impl.MlKem.AArch64.Wipe.encapsH v.callee.suffix (Impl.MlKem.AArch64.encapsHWith v.callee))
       (Spec.MlKem.encapsHContract abi 48) :=
-  encapsH_wipe callWipeOk_abi _ (Proof.MlKem.AArch64.EncapsH.encapsH_verifiedWith (keccak := v)) (encapsHS768_depth v) encapsHS768_sat
+  Scrubbed.Verified.encapsH_of_scrubbed (encapsHS768_scrubbed v)
+
+theorem encapsS768_scrubbed :
+    Verified target (Impl.MlKem.AArch64.Wipe.encaps v.callee.suffix (Impl.MlKem.AArch64.encapsWith v.callee))
+      (Scrubbed.encapsContract abi 48) :=
+  encaps_wipe callWipeOk_abi _ (Proof.MlKem.AArch64.Encaps.encaps_verifiedWith (keccak := v)) (encapsS768_depth v) encapsS768_sat
 
 theorem encapsS768_verified :
     Verified target (Impl.MlKem.AArch64.Wipe.encaps v.callee.suffix (Impl.MlKem.AArch64.encapsWith v.callee))
       (Spec.MlKem.encapsContract abi 48) :=
-  encaps_wipe callWipeOk_abi _ (Proof.MlKem.AArch64.Encaps.encaps_verifiedWith (keccak := v)) (encapsS768_depth v) encapsS768_sat
+  Scrubbed.Verified.encaps_of_scrubbed (encapsS768_scrubbed v)
+
+theorem decapsS768_scrubbed :
+    Verified target (Impl.MlKem.AArch64.Wipe.decaps v.callee.suffix (Impl.MlKem.AArch64.decapsWith v.callee))
+      (Scrubbed.decapsContract abi 48) :=
+  decaps_wipe callWipeOk_abi _ (Proof.MlKem.AArch64.Decaps.decaps_verifiedWith (keccak := v)) (decapsS768_depth v) decapsS768_sat
 
 theorem decapsS768_verified :
     Verified target (Impl.MlKem.AArch64.Wipe.decaps v.callee.suffix (Impl.MlKem.AArch64.decapsWith v.callee))
       (Spec.MlKem.decapsContract abi 48) :=
-  decaps_wipe callWipeOk_abi _ (Proof.MlKem.AArch64.Decaps.decaps_verifiedWith (keccak := v)) (decapsS768_depth v) decapsS768_sat
+  Scrubbed.Verified.decaps_of_scrubbed (decapsS768_scrubbed v)
+
+theorem keyGenS1024_scrubbed :
+    Verified target (Impl.MlKem.AArch64.Wipe.keyGen1024 v.callee.suffix (Impl.MlKem1024.AArch64.keyGenWith v.callee))
+      (Scrubbed.keyGen1024Contract abi 48) :=
+  keyGen1024_wipe callWipeOk_abi _ (Proof.MlKem1024.AArch64.KeyGen.keyGen_verifiedWith (keccak := v)) (keyGenS1024_depth v) keyGenS1024_sat
 
 theorem keyGenS1024_verified :
     Verified target (Impl.MlKem.AArch64.Wipe.keyGen1024 v.callee.suffix (Impl.MlKem1024.AArch64.keyGenWith v.callee))
       (Spec.MlKem1024.keyGenContract abi 48) :=
-  keyGen1024_wipe callWipeOk_abi _ (Proof.MlKem1024.AArch64.KeyGen.keyGen_verifiedWith (keccak := v)) (keyGenS1024_depth v) keyGenS1024_sat
+  Scrubbed.Verified.keyGen1024_of_scrubbed (keyGenS1024_scrubbed v)
+
+theorem encapsHS1024_scrubbed :
+    Verified target (Impl.MlKem.AArch64.Wipe.encapsH1024 v.callee.suffix (Impl.MlKem1024.AArch64.encapsHWith v.callee))
+      (Scrubbed.encapsH1024Contract abi 48) :=
+  encapsH1024_wipe callWipeOk_abi _ (Proof.MlKem.AArch64.EncapsH.encapsH1024_verifiedWith (keccak := v)) (encapsHS1024_depth v) encapsHS1024_sat
 
 theorem encapsHS1024_verified :
     Verified target (Impl.MlKem.AArch64.Wipe.encapsH1024 v.callee.suffix (Impl.MlKem1024.AArch64.encapsHWith v.callee))
       (Spec.MlKem1024.encapsHContract abi 48) :=
-  encapsH1024_wipe callWipeOk_abi _ (Proof.MlKem.AArch64.EncapsH.encapsH1024_verifiedWith (keccak := v)) (encapsHS1024_depth v) encapsHS1024_sat
+  Scrubbed.Verified.encapsH1024_of_scrubbed (encapsHS1024_scrubbed v)
+
+theorem encapsS1024_scrubbed :
+    Verified target (Impl.MlKem.AArch64.Wipe.encaps1024 v.callee.suffix (Impl.MlKem1024.AArch64.encapsWith v.callee))
+      (Scrubbed.encaps1024Contract abi 48) :=
+  encaps1024_wipe callWipeOk_abi _ (Proof.MlKem1024.AArch64.Encaps.encaps_verifiedWith (keccak := v)) (encapsS1024_depth v) encapsS1024_sat
 
 theorem encapsS1024_verified :
     Verified target (Impl.MlKem.AArch64.Wipe.encaps1024 v.callee.suffix (Impl.MlKem1024.AArch64.encapsWith v.callee))
       (Spec.MlKem1024.encapsContract abi 48) :=
-  encaps1024_wipe callWipeOk_abi _ (Proof.MlKem1024.AArch64.Encaps.encaps_verifiedWith (keccak := v)) (encapsS1024_depth v) encapsS1024_sat
+  Scrubbed.Verified.encaps1024_of_scrubbed (encapsS1024_scrubbed v)
+
+theorem decapsS1024_scrubbed :
+    Verified target (Impl.MlKem.AArch64.Wipe.decaps1024 v.callee.suffix (Impl.MlKem1024.AArch64.decapsWith v.callee))
+      (Scrubbed.decaps1024Contract abi 48) :=
+  decaps1024_wipe callWipeOk_abi _ (Proof.MlKem1024.AArch64.Decaps.decaps_verifiedWith (keccak := v)) (decapsS1024_depth v) decapsS1024_sat
 
 theorem decapsS1024_verified :
     Verified target (Impl.MlKem.AArch64.Wipe.decaps1024 v.callee.suffix (Impl.MlKem1024.AArch64.decapsWith v.callee))
       (Spec.MlKem1024.decapsContract abi 48) :=
-  decaps1024_wipe callWipeOk_abi _ (Proof.MlKem1024.AArch64.Decaps.decaps_verifiedWith (keccak := v)) (decapsS1024_depth v) decapsS1024_sat
+  Scrubbed.Verified.decaps1024_of_scrubbed (decapsS1024_scrubbed v)
 
 /-! The paired instances, named `sfx`, with 160 bytes of stack. -/
+
+theorem keyGenP768_scrubbed (sfx : String) :
+    Verified target (Impl.MlKem.AArch64.Wipe.keyGen sfx (Impl.MlKem.AArch64.Kem16P.keyGen (fixedHash v.callee) v.callee Impl.MlKem.AArch64.lay768))
+      (Scrubbed.keyGenContract (abi.withConsts Optimized.constants) 160) :=
+  keyGen_wipe callWipeOk_consts sfx (Proof.MlKem.AArch64.KeyGen.keyGenP768_verified v) (keyGenP768_depth v) keyGenP768_sat
 
 theorem keyGenP768_verified (sfx : String) :
     Verified target (Impl.MlKem.AArch64.Wipe.keyGen sfx (Impl.MlKem.AArch64.Kem16P.keyGen (fixedHash v.callee) v.callee Impl.MlKem.AArch64.lay768))
       (Spec.MlKem.keyGenContract (abi.withConsts Optimized.constants) 160) :=
-  keyGen_wipe callWipeOk_consts sfx (Proof.MlKem.AArch64.KeyGen.keyGenP768_verified v) (keyGenP768_depth v) keyGenP768_sat
+  Scrubbed.Verified.keyGen_of_scrubbed (keyGenP768_scrubbed v sfx)
+
+theorem encapsHP768_scrubbed (sfx : String) :
+    Verified target (Impl.MlKem.AArch64.Wipe.encapsH sfx (Impl.MlKem.AArch64.Kem16P.encapsH (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768))
+      (Scrubbed.encapsHContract (abi.withConsts Optimized.constants) 160) :=
+  encapsH_wipe callWipeOk_consts sfx (Proof.MlKem.AArch64.EncapsH.encapsHP768_verified v) (encapsHP768_depth v) encapsHP768_sat
 
 theorem encapsHP768_verified (sfx : String) :
     Verified target (Impl.MlKem.AArch64.Wipe.encapsH sfx (Impl.MlKem.AArch64.Kem16P.encapsH (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768))
       (Spec.MlKem.encapsHContract (abi.withConsts Optimized.constants) 160) :=
-  encapsH_wipe callWipeOk_consts sfx (Proof.MlKem.AArch64.EncapsH.encapsHP768_verified v) (encapsHP768_depth v) encapsHP768_sat
+  Scrubbed.Verified.encapsH_of_scrubbed (encapsHP768_scrubbed v sfx)
+
+theorem encapsP768_scrubbed (sfx : String) :
+    Verified target (Impl.MlKem.AArch64.Wipe.encaps sfx (Impl.MlKem.AArch64.Kem16P.encaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768))
+      (Scrubbed.encapsContract (abi.withConsts Optimized.constants) 160) :=
+  encaps_wipe callWipeOk_consts sfx (Proof.MlKem.AArch64.Kem16P.encapsP768_verified v) (encapsP768_depth v) encapsP768_sat
 
 theorem encapsP768_verified (sfx : String) :
     Verified target (Impl.MlKem.AArch64.Wipe.encaps sfx (Impl.MlKem.AArch64.Kem16P.encaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768))
       (Spec.MlKem.encapsContract (abi.withConsts Optimized.constants) 160) :=
-  encaps_wipe callWipeOk_consts sfx (Proof.MlKem.AArch64.Kem16P.encapsP768_verified v) (encapsP768_depth v) encapsP768_sat
+  Scrubbed.Verified.encaps_of_scrubbed (encapsP768_scrubbed v sfx)
+
+theorem decapsP768_scrubbed (sfx : String) :
+    Verified target (Impl.MlKem.AArch64.Wipe.decaps sfx (Impl.MlKem.AArch64.Kem16P.decaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768))
+      (Scrubbed.decapsContract (abi.withConsts Optimized.constants) 160) :=
+  decaps_wipe callWipeOk_consts sfx (Proof.MlKem.AArch64.Kem16P.decapsP768_verified v) (decapsP768_depth v) decapsP768_sat
 
 theorem decapsP768_verified (sfx : String) :
     Verified target (Impl.MlKem.AArch64.Wipe.decaps sfx (Impl.MlKem.AArch64.Kem16P.decaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768))
       (Spec.MlKem.decapsContract (abi.withConsts Optimized.constants) 160) :=
-  decaps_wipe callWipeOk_consts sfx (Proof.MlKem.AArch64.Kem16P.decapsP768_verified v) (decapsP768_depth v) decapsP768_sat
+  Scrubbed.Verified.decaps_of_scrubbed (decapsP768_scrubbed v sfx)
+
+theorem keyGenP1024_scrubbed (sfx : String) :
+    Verified target (Impl.MlKem.AArch64.Wipe.keyGen1024 sfx (Impl.MlKem.AArch64.Kem16P.keyGen (fixedHash v.callee) v.callee Impl.MlKem1024.AArch64.lay1024))
+      (Scrubbed.keyGen1024Contract (abi.withConsts Optimized.constants) 160) :=
+  keyGen1024_wipe callWipeOk_consts sfx (Proof.MlKem.AArch64.KeyGen.keyGenP1024_verified v) (keyGenP1024_depth v) keyGenP1024_sat
 
 theorem keyGenP1024_verified (sfx : String) :
     Verified target (Impl.MlKem.AArch64.Wipe.keyGen1024 sfx (Impl.MlKem.AArch64.Kem16P.keyGen (fixedHash v.callee) v.callee Impl.MlKem1024.AArch64.lay1024))
       (Spec.MlKem1024.keyGenContract (abi.withConsts Optimized.constants) 160) :=
-  keyGen1024_wipe callWipeOk_consts sfx (Proof.MlKem.AArch64.KeyGen.keyGenP1024_verified v) (keyGenP1024_depth v) keyGenP1024_sat
+  Scrubbed.Verified.keyGen1024_of_scrubbed (keyGenP1024_scrubbed v sfx)
+
+theorem encapsHP1024_scrubbed (sfx : String) :
+    Verified target (Impl.MlKem.AArch64.Wipe.encapsH1024 sfx (Impl.MlKem.AArch64.Kem16P.encapsH (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024))
+      (Scrubbed.encapsH1024Contract (abi.withConsts Optimized.constants) 160) :=
+  encapsH1024_wipe callWipeOk_consts sfx (Proof.MlKem.AArch64.EncapsH.encapsHP1024_verified v) (encapsHP1024_depth v) encapsHP1024_sat
 
 theorem encapsHP1024_verified (sfx : String) :
     Verified target (Impl.MlKem.AArch64.Wipe.encapsH1024 sfx (Impl.MlKem.AArch64.Kem16P.encapsH (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024))
       (Spec.MlKem1024.encapsHContract (abi.withConsts Optimized.constants) 160) :=
-  encapsH1024_wipe callWipeOk_consts sfx (Proof.MlKem.AArch64.EncapsH.encapsHP1024_verified v) (encapsHP1024_depth v) encapsHP1024_sat
+  Scrubbed.Verified.encapsH1024_of_scrubbed (encapsHP1024_scrubbed v sfx)
+
+theorem encapsP1024_scrubbed (sfx : String) :
+    Verified target (Impl.MlKem.AArch64.Wipe.encaps1024 sfx (Impl.MlKem.AArch64.Kem16P.encaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024))
+      (Scrubbed.encaps1024Contract (abi.withConsts Optimized.constants) 160) :=
+  encaps1024_wipe callWipeOk_consts sfx (Proof.MlKem.AArch64.Kem16P.encapsP1024_verified v) (encapsP1024_depth v) encapsP1024_sat
 
 theorem encapsP1024_verified (sfx : String) :
     Verified target (Impl.MlKem.AArch64.Wipe.encaps1024 sfx (Impl.MlKem.AArch64.Kem16P.encaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024))
       (Spec.MlKem1024.encapsContract (abi.withConsts Optimized.constants) 160) :=
-  encaps1024_wipe callWipeOk_consts sfx (Proof.MlKem.AArch64.Kem16P.encapsP1024_verified v) (encapsP1024_depth v) encapsP1024_sat
+  Scrubbed.Verified.encaps1024_of_scrubbed (encapsP1024_scrubbed v sfx)
+
+theorem decapsP1024_scrubbed (sfx : String) :
+    Verified target (Impl.MlKem.AArch64.Wipe.decaps1024 sfx (Impl.MlKem.AArch64.Kem16P.decaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024))
+      (Scrubbed.decaps1024Contract (abi.withConsts Optimized.constants) 160) :=
+  decaps1024_wipe callWipeOk_consts sfx (Proof.MlKem.AArch64.Kem16P.decapsP1024_verified v) (decapsP1024_depth v) decapsP1024_sat
 
 theorem decapsP1024_verified (sfx : String) :
     Verified target (Impl.MlKem.AArch64.Wipe.decaps1024 sfx (Impl.MlKem.AArch64.Kem16P.decaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024))
       (Spec.MlKem1024.decapsContract (abi.withConsts Optimized.constants) 160) :=
-  decaps1024_wipe callWipeOk_consts sfx (Proof.MlKem.AArch64.Kem16P.decapsP1024_verified v) (decapsP1024_depth v) decapsP1024_sat
+  Scrubbed.Verified.decaps1024_of_scrubbed (decapsP1024_scrubbed v sfx)
 
 end
 
