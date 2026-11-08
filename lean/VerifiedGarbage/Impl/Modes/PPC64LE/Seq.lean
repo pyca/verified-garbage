@@ -136,11 +136,18 @@ def restore : List Instr :=
   (List.range 3).map (fun i => .load .d (savedRegs.getD i .r29) sb (8 * c.savedSlot i)) ++
     [.load .d .r0 sb (8 * c.lrSlot), .mtlr .r0]
 
-/-- The whole function. -/
-def seq (m : Mode) : Prog isa :=
+/-- The whole function, around the code `loops` that takes the steps: the
+entry, the key, `loops`, the chaining value back to the IV if `ivOut`, and
+the registers back. -/
+def seqWith (loops : Prog isa) (ivOut : Bool) : Prog isa :=
   .seq (.block (c.entry ++ c.ivIn)) (.seq c.prepare
-    (.seq (.ite (.zero .d .r30) (.block []) (.loop (c.body m) (.nonzero .d .r30)))
-      (.block ((if m.ivOut then c.ivBack else []) ++ c.restore))))
+    (.seq loops (.block ((if ivOut then c.ivBack else []) ++ c.restore))))
+
+/-- The steps, while any are left. -/
+def steps (m : Mode) : Prog isa := .ite (.zero .d .r30) (.block []) (.loop (c.body m) (.nonzero .d .r30))
+
+/-- The whole function. -/
+def seq (m : Mode) : Prog isa := c.seqWith (c.steps m) m.ivOut
 
 end Core
 
