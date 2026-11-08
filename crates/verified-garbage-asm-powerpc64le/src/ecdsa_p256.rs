@@ -1829,10 +1829,6 @@ pub(crate) mod vg_ecdsa_p256_sign_k;
 pub(crate) mod vg_p256_add_mod_n;
 
 #[rustfmt::skip]
-#[path = "internal/vg_p256_mul.rs"]
-pub(crate) mod vg_p256_mul;
-
-#[rustfmt::skip]
 #[path = "internal/vg_p256_mul_mod_n.rs"]
 pub(crate) mod vg_p256_mul_mod_n;
 
