@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.Bitslice.Vars
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Straight
 public import VerifiedGarbage.Impl.TripleDes.PPC64LE.Bitsliced
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
 
 /-!
 # The machine state of the bitsliced ECB code on PPC64LE
@@ -31,18 +32,26 @@ def words (s : State) : Nat → BitVec 64 := sl s
 /-- The scratch buffer. -/
 def frameR (s : State) : Region := ⟨s.gpr .r10, 1024⟩
 
+/-- The `n` bytes at `B`, within one of the regions, as a region. -/
+theorem covers_of_in {rs : List Region} {B : Addr} {n : Nat} (h : InRegions rs B n) :
+    Covers [⟨B, n⟩] rs :=
+  Covers.of_sub fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr
+    obtain ⟨R, hR, hc⟩ := h
+    exact ⟨R, hR, (B - R.base).toNat, by rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel], hc⟩
+
 /-- The scratch buffer is writable. -/
 structure Room (s : State) : Prop where
-  frame : frameR s ∈ s.wr
+  frame : InRegions s.wr (s.gpr .r10) 1024
 
 theorem Room.congr {s s' : State} (h : Room s) (hb : s'.gpr .r10 = s.gpr .r10) (hw : s'.wr = s.wr) :
     Room s' where
-  frame := by simp only [frameR, hb, hw]; exact h.frame
+  frame := by rw [hb, hw]; exact h.frame
 
 /-- A word of the buffer, at slot `k < 128`. -/
 theorem slot_in {s : State} (h : Room s) {k : Nat} (hk : k < 128) :
     InRegions s.wr (wordAddr (s.gpr .r10) k) 8 :=
-  ⟨frameR s, h.frame, slot_contains (s.gpr .r10) (n := 128) hk (by decide)⟩
+  covers_of_in h.frame _ _ ⟨_, List.mem_singleton_self _, slot_contains (s.gpr .r10) (n := 128) hk (by decide)⟩
 
 /-! ## Blocks over the variable domain -/
 

@@ -37,12 +37,12 @@ open VG.PPC64LE.Straight (wordAddr)
 
 /-- The schedule at `r7`: readable, and apart from the scratch buffer. -/
 structure Sched (s : State) : Prop where
-  rd : (⟨s.gpr .r7, 384⟩ : Region) ∈ s.rd
+  rd : InRegions (s.rd ++ s.wr) (s.gpr .r7) 384
   sep : (⟨s.gpr .r7, 384⟩ : Region).Disjoint (frameR s)
 
 theorem Sched.congr {s s' : State} (h : Sched s) (h7 : s'.gpr .r7 = s.gpr .r7)
-    (h10 : s'.gpr .r10 = s.gpr .r10) (hrd : s'.rd = s.rd) : Sched s' where
-  rd := by rw [h7, hrd]; exact h.rd
+    (h10 : s'.gpr .r10 = s.gpr .r10) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : Sched s' where
+  rd := by rw [h7, hrd, hwr]; exact h.rd
   sep := by simp only [frameR, h7, h10]; exact h.sep
 
 /-- The ones register holds all ones. -/
@@ -62,7 +62,7 @@ theorem keyAt_rd {s : State} (h : Sched s) {A : Addr} (hk : KeyAt s A) :
     InRegions (s.rd ++ s.wr) (A + BitVec.ofNat 64 0) 8 := by
   obtain ⟨i, hi, rfl⟩ := hk
   rw [BitVec.add_zero]
-  exact ⟨_, List.mem_append_left _ h.rd, Offset.contains_base _ (by omega) (by omega)⟩
+  exact covers_of_in h.rd _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base _ (by omega) (by omega)⟩
 
 /-- Round keys are apart from the state words. -/
 theorem keyAt_apart {s : State} (h : Sched s) {A : Addr} (hk : KeyAt s A) :
@@ -200,7 +200,7 @@ theorem roundPair_ok (d : Direction) {s : State} (h : Room s) (hs : Sched s) (ho
   have g11 : s₁.gpr .r11 = s.gpr .r11 := k₁ _ (by decide)
   have h₁ := h.congr g0 wr₁
   obtain ⟨s₂, run₂, w₂, p₂, k₂, rd₂, wr₂, sp₂, lr₂, f₂⟩ :=
-    round_ok d .ab h₁ (hs.congr g7 g0 rd₁) (by rw [Ones, g11]; exact hones) p₁ (hk₂.congr g7)
+    round_ok d .ab h₁ (hs.congr g7 g0 rd₁ wr₁) (by rw [Ones, g11]; exact hones) p₁ (hk₂.congr g7)
   have e₃ := exec_subi (s := s₂) (d := .r5) (n := .r5) (imm := 1) (by decide) (by decide)
   have g5 : s₂.gpr .r5 = s.gpr .r5 := by rw [k₂ _ (by decide), k₁ _ (by decide)]
   refine ⟨s₂.write .r5 (s₂.gpr .r5 - BitVec.ofNat 64 1), ?_, fun x hx => ?_, ?_, ?_, fun r hr => ?_,
@@ -297,7 +297,7 @@ theorem pair_step {s₀ : State} (h₀ : Room s₀) (hs₀ : Sched s₀) (ho₀ 
   have g10 := I.kept .r10 (by decide)
   have g7 := I.kept .r7 (by decide)
   have h : Room s := h₀.congr g10 I.wr
-  have hs : Sched s := hs₀.congr g7 g10 I.rd
+  have hs : Sched s := hs₀.congr g7 g10 I.rd I.wr
   have ho : Ones s := by rw [Ones, I.kept .r11 (by decide)]; exact ho₀
   have hk₁ := (passKeyAt (s := s₀) hc d (r := 2 * m) (by omega)).congr g7
   have hk₂ := (passKeyAt (s := s₀) hc d (r := 2 * m + 1) (by omega)).congr g7
@@ -407,14 +407,14 @@ theorem passes_ok (d : Direction) {s : State} (h : Room s) (hs : Sched s) (ho : 
     have g₁ : u₁.gpr .r10 = s.gpr .r10 := k₁ _ (by decide)
     have g₁7 : u₁.gpr .r7 = s.gpr .r7 := k₁ _ (by decide)
     have h₁ : Room u₁ := h.congr g₁ wr₁
-    have hs₁ : Sched u₁ := hs.congr g₁7 g₁ rd₁
+    have hs₁ : Sched u₁ := hs.congr g₁7 g₁ rd₁ wr₁
     have ho₁ : Ones u₁ := by rw [Ones, k₁ _ (by decide)]; exact ho
     apply WP.seq
     refine step _ (by decide) _ h₁ hs₁ ho₁ g₁7 f₁ fun u₂ w₂ k₂ rd₂ wr₂ sp₂ lr₂ f₂ => ?_
     have g₂ : u₂.gpr .r10 = s.gpr .r10 := (k₂ _ (by decide)).trans g₁
     have g₂7 : u₂.gpr .r7 = s.gpr .r7 := (k₂ _ (by decide)).trans g₁7
     have h₂ : Room u₂ := h.congr g₂ (wr₂.trans wr₁)
-    have hs₂ : Sched u₂ := hs.congr g₂7 g₂ (rd₂.trans rd₁)
+    have hs₂ : Sched u₂ := hs.congr g₂7 g₂ (rd₂.trans rd₁) (wr₂.trans wr₁)
     have ho₂ : Ones u₂ := by rw [Ones, k₂ _ (by decide), k₁ _ (by decide)]; exact ho
     have f₁₂ : Frame [stR s] s.mem u₂.mem := f₁.trans (by rw [← stR_congr g₁]; exact f₂)
     refine step _ (by decide) _ h₂ hs₂ ho₂ g₂7 f₁₂
