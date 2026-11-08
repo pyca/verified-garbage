@@ -10,7 +10,7 @@ Long inputs use an eight-block loop with powers of H. Adjacent blocks
 share both lanes of each polynomial multiply, and all products are XORed
 before one reduction. Inputs shorter than sixteen blocks, and what the
 eight-block loop leaves, are hashed two blocks at a time with `H²` and one
-reduction, and the last block, if any, by the single-block loop. All vector
+reduction (from four blocks, or two after the eight-block loop), and the last block, if any, by the single-block loop. All vector
 registers are volatile.
 -/
 
@@ -169,16 +169,17 @@ def pairLoop : Prog isa :=
 /-- `H²`, the packed `H²` and `H`, then pairs of blocks. -/
 def paired : Prog isa := .seq (.block (preparePowers 2 ++ packKeyStep 3)) pairLoop
 
-/-- Pairs of blocks, if at least two are left. -/
-def pairsIf (pairs : Prog isa) : Prog isa :=
-  .seq (.block [.lsr .d .r10 .r6 1]) (.ite (.zero .d .r10) (.block []) pairs)
+/-- Pairs of blocks, if at least `2^sh` (at least two) are left. -/
+def pairsIf (sh : Nat) (pairs : Prog isa) : Prog isa :=
+  .seq (.block [.lsr .d .r10 .r6 sh]) (.ite (.zero .d .r10) (.block []) pairs)
 
-/-- Fewer than sixteen blocks: in pairs, then the last one if any. -/
-def short : Prog isa := .seq (pairsIf paired) finish
+/-- Fewer than sixteen blocks: in pairs if at least four (below that, `H²`
+costs more than it saves), then the last one if any. -/
+def short : Prog isa := .seq (pairsIf 2 paired) finish
 
 def ghash : Prog isa :=
   .ite (.zero .d .r6) (.block [])
     (.seq (.block (prologue ++ [.lsr .d .r10 .r6 4]))
-      (.ite (.zero .d .r10) short (.seq bulk (.seq (pairsIf pairLoop) finish))))
+      (.ite (.zero .d .r10) short (.seq bulk (.seq (pairsIf 1 pairLoop) finish))))
 
 end VG.Impl.Gcm.PPC64LE.Vpmsum

@@ -374,7 +374,7 @@ vg_ghash:
 	stxvd2x 39, %r4, %r0
 	b 23f
 22:
-	rldicl %r10, %r6, 63, 1
+	rldicl %r10, %r6, 62, 2
 	cmpldi %cr0, %r10, 0
 	beq %cr0, 211f
 	vsldoi %v6, %v16, %v16, 8
