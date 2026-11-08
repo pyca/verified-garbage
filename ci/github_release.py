@@ -10,7 +10,8 @@ now and then degrades only unauthenticated traffic (its status page on
 failed CI's downloads of elan and leantar. The token is sent only to
 api.github.com: the asset's bytes come from the host the API redirects to,
 which a header added with `add_unredirected_header` does not reach. Without a
-token, the download goes to the release's public URL.
+token, or when the API refuses it (its rate limit is spent), the download
+goes to the release's public URL.
 
 Either way, a request that fails with a 5xx, a 429 or a dropped connection
 is tried again, after 2, 4, 8 and 16 seconds.
@@ -31,6 +32,8 @@ from pathlib import Path
 API = "https://api.github.com"
 # Seconds to wait before each retry of a request that failed transiently.
 BACKOFF = (2, 4, 8, 16)
+# The API's answers to a token whose rate limit is spent.
+REFUSED = (403, 429)
 # Seconds a connection may stay silent before an attempt is given up.
 TIMEOUT = 30
 
@@ -70,11 +73,21 @@ def api_request(url, token, accept):
 
 def download(repo, tag, name, token=None, opener=urlopen, sleep=time.sleep):
     """The bytes of the file `name` of `repo`'s release `tag` (or `latest`)."""
-    if not token:
-        where = "latest/download" if tag == "latest" else f"download/{urllib.parse.quote(tag, safe='')}"
-        url = f"https://github.com/{repo}/releases/{where}/{name}"
-        print(f"Downloading {url}", file=sys.stderr)
-        return read(urllib.request.Request(url), opener, sleep)
+    if token:
+        try:
+            return download_api(repo, tag, name, token, opener, sleep)
+        except urllib.error.HTTPError as e:
+            if e.code not in REFUSED:
+                raise
+            print(f"The API refused the download ({e}): downloading it without the API", file=sys.stderr)
+    where = "latest/download" if tag == "latest" else f"download/{urllib.parse.quote(tag, safe='')}"
+    url = f"https://github.com/{repo}/releases/{where}/{name}"
+    print(f"Downloading {url}", file=sys.stderr)
+    return read(urllib.request.Request(url), opener, sleep)
+
+
+def download_api(repo, tag, name, token, opener, sleep):
+    """`download` through the REST API, authenticated with `token`."""
     which = "latest" if tag == "latest" else f"tags/{urllib.parse.quote(tag, safe='')}"
     release = json.loads(read(api_request(f"{API}/repos/{repo}/releases/{which}", token,
                                           "application/vnd.github+json"), opener, sleep))

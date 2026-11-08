@@ -108,6 +108,14 @@ class Download(unittest.TestCase):
         self.assertEqual(len(server.requests), 1)
         self.assertEqual(self.slept, [])
 
+    def test_refused_token_downloads_publicly(self):
+        # A spent rate limit: the release's public URL, without the token.
+        server = Server([http_error(403)])
+        self.assertEqual(self.download(server, token="secret"), b"data")
+        public = server.requests[-1]
+        self.assertEqual(public.full_url, "https://github.com/owner/repo/releases/download/v1/tool.tar.gz")
+        self.assertNotIn("Authorization", public.unredirected_hdrs)
+
     def test_other_error_not_retried(self):
         with self.assertRaises(ValueError):
             self.download(Server([ValueError("bad")]))
