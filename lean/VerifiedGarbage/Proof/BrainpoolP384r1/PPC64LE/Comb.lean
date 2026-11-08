@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.BrainpoolP384r1.Comb7Shape
 public import VerifiedGarbage.Proof.Framework.ConstMem
 
 /-!
-# brainpoolBrainpoolP384r1r1's seven-bit comb on PPC64LE
+# brainpoolP384r1's seven-bit comb on PPC64LE
 
 The configuration the comb's proof takes (on the signature's layout: the
 ladder's `R`, `a`, `3b` and table of bits, zero at `ZERO`, `-y` in the

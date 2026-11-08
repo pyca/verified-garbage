@@ -8,7 +8,7 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
-# ECDSA signatures over brainpoolBrainpoolP384r1r1 by the comb on PPC64LE: the code as a literal
+# ECDSA signatures over brainpoolP384r1 by the comb on PPC64LE: the code as a literal
 
 `vg_ecdsa_brainpoolp384r1_sign` with `[k]G` by the comb as a literal
 (`materialize_code`, `Proof/Framework/Lit.lean`), which its constant time

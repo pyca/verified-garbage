@@ -8,7 +8,7 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
-# brainpoolBrainpoolP384r1r1 public keys by the comb on PPC64LE: the code as a literal
+# brainpoolP384r1 public keys by the comb on PPC64LE: the code as a literal
 
 `vg_ec_brainpoolp384r1_public_key` with `[d]G` by the comb as a literal
 (`materialize_code`, `Proof/Framework/Lit.lean`), which its constant time
