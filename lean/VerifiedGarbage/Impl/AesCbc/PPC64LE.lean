@@ -27,9 +27,10 @@ a 64-bit word at a time through `r9` and `r10`.
   copied to the chaining value.
 * `decrypt`, each group of eight blocks while at least eight are left
   (`decGroup`): the chaining value and the eight `Cⱼ` saved in slots 0 to 8
-  of the scratch buffer, the eight deciphered in place by one call (which
-  runs the block function's eight-block loop), each XORed with the slot
-  before its own, and slot 8 copied to the chaining value; then each block
+  of the scratch buffer, the eight read into vector registers and
+  deciphered together by `Impl.Aes.PPC64LE.Crypto.aes`, each XORed with the
+  slot before its own and stored in place, and slot 8 copied to the
+  chaining value; then each block
   left (`decBody`): `Cⱼ` saved in the scratch buffer, deciphered in place,
   XORed with the chaining value `Cⱼ₋₁`, and the saved `Cⱼ` copied to the
   chaining value.
@@ -168,11 +169,16 @@ def batched (group one : Prog isa) : Prog isa :=
   .seq (.block (save ++ setup)) (.seq (.ite (.zero .d .r18) (.block []) (groups group one)) (.block restore))
 
 /-- Eight blocks: `Cⱼ₋₁` saved in slot `j` (the chaining value for the
-first), and the last `Cⱼ` in slot 8, deciphered in place by one call, each
-XORed with its slot, and slot 8 the chaining value. -/
+first), and the last `Cⱼ` in slot 8; the eight read into `v0`–`v7`,
+deciphered together, each XORed with its slot and stored in place; and
+slot 8 the chaining value. -/
 def decGroup : Prog isa :=
-  .seq (.block (saveSlots 8 ++ callArgs8))
-    (.seq decCall (.block (fixSlots ++ copy .r16 0 .r19 (slot 8) ++ advance8)))
+  .seq (.block (saveSlots 8 ++ vsetup ++
+      (Impl.Aes.PPC64LE.Crypto.batchRegs 8).flatMap (Impl.Aes.PPC64LE.Crypto.readBlock false) ++
+      ([.subi .r6 .r6 128] : List Instr)))
+    (.seq (Impl.Aes.PPC64LE.Crypto.aes true (Impl.Aes.PPC64LE.Crypto.batchRegs 8))
+      (.block (xorSlots ++ (Impl.Aes.PPC64LE.Crypto.batchRegs 8).flatMap
+        (fun v => Impl.Aes.PPC64LE.Crypto.storeAdvance v) ++ copy .r16 0 .r19 (slot 8) ++ advance8)))
 
 def decrypt : Prog isa := batched decGroup decBody
 
