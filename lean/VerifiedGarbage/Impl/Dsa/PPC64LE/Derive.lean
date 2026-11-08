@@ -90,7 +90,7 @@ def rangeElem : Prog isa := .seq (loadArr 4) elemRange
 /-- The check of a domain that has passed `checkParams` before: sizes,
 oddness, `p mod q = 1` and `1 < g < p`, but not `g^q mod p = 1`; then
 `rest`, or `fail`. In the P space after it, with p in array 0 and
-`R² mod p` in array 8. -/
+`R² mod p` in array 24. -/
 def checkDomain (rest fail : Prog isa) : Prog isa :=
   sizes (odds (andThen pModQ (.seq setupP (andThen (.seq (.block ptrG) rangeElem) rest fail)) fail) fail) fail
 

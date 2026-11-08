@@ -22,7 +22,7 @@ import VerifiedGarbage.Proof.Dsa.PPC64LE.Ptr
 /-!
 # DSA verification on PPC64LE: `g^u1 y^u2 mod p`
 
-`combine_ok`: into the P space (p in array 0, `R² mod p` in array 8), g and y
+`combine_ok`: into the P space (p in array 0, `R² mod p` in array 24), g and y
 into arrays 4 and 5, `R² mod p` into array 1, the joint table `g^i y^j R mod
 p` for `i, j < 4` in arrays 8–23 (`jointTable_ok`), the joint windows of the
 exponents `u1` and `u2`, the buffer's first and second `q_len` octets
@@ -559,7 +559,7 @@ def combRegs : List Reg :=
 /-- `combine`: `g^u1 y^u2 mod p` to the buffer's first `p_len` octets. -/
 theorem combine_ok {s : State} {L : Lay} {key sig dig : Addr} {p : Nat} (hL : L.Ok) (hs : ScrL s L)
     (hr : Regs s L key sig dig) (hk : Src s L key (3 * L.pl + L.ql))
-    (hp0 : arrP s.mem L 0 = p) (hp : 2 ≤ p) (hpo : p % 2 = 1) (hrr : arrP s.mem L 8 = 2 ^ (128 * L.wp) % p) :
+    (hp0 : arrP s.mem L 0 = p) (hp : 2 ≤ p) (hpo : p % 2 = 1) (hrr : arrP s.mem L 24 = 2 ^ (128 * L.wp) % p) :
     WP isa combine s fun t =>
       (Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem L.Buf L.pl) =
           gOf s.mem L key ^ Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem L.Buf L.ql) % p *
@@ -603,7 +603,7 @@ theorem combine_ok {s : State} {L : Lay} {key sig dig : Addr} {p : Nat} (hL : L.
   rw [m4] at v5 o5
   have en5 := env_keep10 en4 k5 (by decide) a10'
   -- `R² mod p` into array 1.
-  refine WP.seq (WP.mono (copy_ok en5 (o := 1) (a := 8) (by decide) (by decide) (by decide))
+  refine WP.seq (WP.mono (copy_ok en5 (o := 1) (a := 24) (by decide) (by decide) (by decide))
     fun s₆ ⟨⟨v1, o6⟩, k6⟩ => ?_)
   have en6 := en5.keep k6 (by decide)
   have k16 := (k14.trans k5).trans k6

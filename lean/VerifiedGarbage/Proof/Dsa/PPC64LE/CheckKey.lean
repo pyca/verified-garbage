@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 `checkParams_ok`: `checkParams rest fail` runs `rest` exactly when the domain
 p||q||g passes the specification's checks (`ParamsOk`: `shapeValid` and
 `parametersValid`'s algebra), in the P space with p and `R² mod p` in its
-arrays 0 and 8, q in the Q space's array 0, and q's significant octets in
+arrays 0 and 24, q in the Q space's array 0, and q's significant octets in
 `r2` (`Checked`); else `fail`, with the lengths still in `r2` (`Regs`).
 `checkKey_ok`: `checkKey rest fail`, which checks y after it, the same for the
 key's public part (`KeyOk`: `shapeValid` and `publicChecks`,
@@ -139,7 +139,7 @@ structure Checked (s t : State) (L : Lay) (key sig dig : Addr) (d : Nat) : Prop 
   regs : Regs t L key sig dig
   p0 : arrP t.mem L 0 = pOf s.mem L key
   ptop : word t.mem L.S (slot L.wp 0 + 8 * L.wp) = 0
-  p8 : arrP t.mem L 8 = 2 ^ (128 * L.wp) % pOf s.mem L key
+  p8 : arrP t.mem L 24 = 2 ^ (128 * L.wp) % pOf s.mem L key
   q0 : arrQ t.mem L 0 = qOf s.mem L key
   qtop : word t.mem L.Q (slot 4 0 + 32) = 0
   r2 : t.gpr .r2 = pack L.pl L.ql (Spec.Dsa.bitLength (qOf s.mem L key) / 8) d
