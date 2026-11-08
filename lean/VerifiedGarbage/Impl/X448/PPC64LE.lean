@@ -33,9 +33,11 @@ The arithmetic (registers `r4`, `r5`, `r7`–`r11`), with `2⁴⁴⁸ ≡ 2²²�
   for `lo + 2⁴⁴⁸ hi ≡ lo + hi + 2²²⁴ hi`, with `2²²⁴ hi`'s upper half folded
   once more, limb `k` of `lo + hi + hi_{k+7}` (`k < 7`) and of
   `lo + 2 hi + hi_{k-7}` (`k ≥ 7`) (`pass`), then `tail`;
-* `add`, `sub`: the limbs of `a + b` and of `a + 4p - b` (every limb of `4p`
-  is `2³⁴ - 4`, but limb 7's, `2³⁴ - 8`, so no limb is negative; `r4` holds
-  `2³⁴`), then `tail`;
+* `add`, `sub`: the seven doublewords of `a + b` (carry chain, `addc`/`adde`)
+  and of `a - b` modulo `2⁴⁴⁸` (borrow chain, `subc`/`sube`), each stored as
+  it is made, then the carry `c` added as `c + 2²²⁴ c`, or the borrow `β`
+  taken away as `β + 2²²⁴ β`, twice (a chain over the stored doublewords;
+  the second carries or borrows nothing);
 * `cswap`: with the mask `-swap` (in `r11`), as RFC 7748 §5 describes;
 * `freeze`: the full reduction of the result: `y = x + 2²²⁴ + 1` carries out
   exactly when `x ≥ p` (`x < 2⁴⁴⁸`), and is then `x - p` modulo `2⁴⁴⁸`,
@@ -107,22 +109,53 @@ def tail (o : Nat) : List Instr := fold o ++ fold o
 
 /-! ## Field arithmetic -/
 
+/-- Limb `k` of `[a] + [b]`, a source for `pass` (Ed448's scalar arithmetic
+on PPC64LE uses it). -/
 def addSrc (a b k : Nat) : List Instr :=
   [.load .w .r7 .r6 (a + 4 * k), .load .w .r5 .r6 (b + 4 * k), .add .r7 .r7 .r5]
 
-/-- `[o] = [a] + [b]`. -/
-def add (o a b : Nat) : List Instr := .li .r8 0 :: pass .r6 o (addSrc a b) ++ tail o
+/-- Step `k` of a carry chain (`addc`, then `adde`), or with `sub` of a
+borrow chain (`subc`, then `sube`), of `r7` and `src`, into `r7`. -/
+def chainOp (sub : Bool) (k : Nat) (src : Reg) : Instr :=
+  if sub then (if k = 0 then .subc .r7 .r7 src else .sube .r7 .r7 src)
+  else (if k = 0 then .addc .r7 .r7 src else .adde .r7 .r7 src)
 
-/-- Limb `k` of `4p` is `2³⁴` less `subLo k`. -/
-def subLo (k : Nat) : Nat := if k = 7 then 8 else 4
+/-- Doubleword `k` of `[x] ± [y]` by the chain, stored at `o + 8k`. -/
+def chainStep (sub : Bool) (o x y k : Nat) : List Instr :=
+  [.load .d .r7 .r6 (x + 8 * k), .load .d .r8 .r6 (y + 8 * k), chainOp sub k .r8,
+    .store .d .r7 .r6 (o + 8 * k)]
 
-def subSrc (a b k : Nat) : List Instr :=
-  [.load .w .r7 .r6 (a + 4 * k), .add .r7 .r7 .r4, .subi .r7 .r7 (subLo k), .load .w .r5 .r6 (b + 4 * k),
-    .sub .r7 .r7 .r5]
+/-- What a fold adds to (or subtracts from) doubleword `k`: `r4` to word 0,
+`r5` to word 3, `r8` (zero) to the others. -/
+def foldSrc64 (k : Nat) : Reg := if k = 0 then .r4 else if k = 3 then .r5 else .r8
 
-/-- `[o] = [a] - [b]`, as `[a] + 4p - [b]`. -/
+/-- Doubleword `k` of `[o] ± foldSrc64`, by the chain. -/
+def foldStep (sub : Bool) (o k : Nat) : List Instr :=
+  [.load .d .r7 .r6 (o + 8 * k), chainOp sub k (foldSrc64 k), .store .d .r7 .r6 (o + 8 * k)]
+
+/-- The carry `c` of a sum into `r4`, `2³² c` into `r5` and zero into `r8`:
+the fold then adds `c + 2²²⁴ c` (`2⁴⁴⁸ ≡ 2²²⁴ + 1`). -/
+def carryPrep : List Instr := [.li .r4 0, .addze .r4 .r4, .lsl .r5 .r4 32, .li .r8 0]
+
+/-- The borrow `β` of a difference (CA clear) into `r4`, `2³² β` into `r5`
+and zero into `r8`: `CA - 1` by `sube`, negated. -/
+def borrowPrep : List Instr := [.li .r8 0, .sube .r4 .r8 .r8, .sub .r4 .r8 .r4, .lsl .r5 .r4 32]
+
+/-- `[o] = [a] + [b]` (`o` may be `a` or `b`): the seven doublewords of the
+sum by the carry chain, each stored as it is made, and its carry folded in
+as `c + 2²²⁴ c`, twice (after the first, nothing carries out). -/
+def add (o a b : Nat) : List Instr :=
+  (List.range 7).flatMap (chainStep false o a b) ++
+    carryPrep ++ (List.range 7).flatMap (foldStep false o) ++
+    carryPrep ++ (List.range 7).flatMap (foldStep false o)
+
+/-- `[o] = [a] - [b]` (`o` may be `a` or `b`): the seven doublewords of the
+difference modulo `2⁴⁴⁸` by the borrow chain, and its borrow `β` taken away
+as `β + 2²²⁴ β`, twice (the second does not borrow). -/
 def sub (o a b : Nat) : List Instr :=
-  [.li .r8 0, .li .r4 1, .lsl .r4 .r4 34] ++ pass .r6 o (subSrc a b) ++ tail o
+  (List.range 7).flatMap (chainStep true o a b) ++
+    borrowPrep ++ (List.range 7).flatMap (foldStep true o) ++
+    borrowPrep ++ (List.range 7).flatMap (foldStep true o)
 
 /-- Register `r` stored into the `n` words from `o` of the working space. -/
 def storeN (r : Reg) (o n : Nat) : List Instr := (List.range n).flatMap fun k => [.store .w r .r6 (o + 4 * k)]
