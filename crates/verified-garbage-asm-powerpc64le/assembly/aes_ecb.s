@@ -5,47 +5,317 @@
 // gives.
 
 vg_aes_ecb_encrypt:
-	mflr %r0
-	stdu %r1, -48(%r1)
-	std %r0, 32(%r1)
-	addi %r12, %r1, 40
-	std %r31, 0(%r12)
-	or %r31, %r7, %r7
-	bl {vg_aes_encrypt_blocks}
-	or %r11, %r3, %r3
-	or %r3, %r31, %r31
-	li %r4, 0
-	oris %r4, %r4, 0
-	ori %r4, %r4, 2048
-	or %r31, %r11, %r11
-	bl {vg_zeroize}
-	or %r3, %r31, %r31
-	addi %r12, %r1, 40
-	ld %r31, 0(%r12)
-	ld %r0, 32(%r1)
-	addi %r1, %r1, 48
-	mtlr %r0
+	cmpldi %cr0, %r6, 0
+	beq %cr0, 20f
+	or %r7, %r6, %r6
+	or %r6, %r5, %r5
+	li %r0, 0
+	vxor %v0, %v0, %v0
+	lis %r11, 1798
+	ori %r11, %r11, 1284
+	rldicr %r11, %r11, 32, 31
+	oris %r11, %r11, 770
+	ori %r11, %r11, 256
+	lis %r12, 3854
+	ori %r12, %r12, 3340
+	rldicr %r12, %r12, 32, 31
+	oris %r12, %r12, 2826
+	ori %r12, %r12, 2312
+	mtvsrd 51, %r11
+	mtvsrd 33, %r12
+	vsldoi %v19, %v0, %v19, 8
+	vsldoi %v19, %v19, %v1, 8
+	rldicl %r12, %r7, 61, 3
+	cmpldi %cr0, %r12, 0
+	beq %cr0, 22f
+24:
+	lxvd2x 32, %r6, %r0
+	vperm %v0, %v0, %v0, %v19
+	addi %r6, %r6, 16
+	lxvd2x 33, %r6, %r0
+	vperm %v1, %v1, %v1, %v19
+	addi %r6, %r6, 16
+	lxvd2x 34, %r6, %r0
+	vperm %v2, %v2, %v2, %v19
+	addi %r6, %r6, 16
+	lxvd2x 35, %r6, %r0
+	vperm %v3, %v3, %v3, %v19
+	addi %r6, %r6, 16
+	lxvd2x 36, %r6, %r0
+	vperm %v4, %v4, %v4, %v19
+	addi %r6, %r6, 16
+	lxvd2x 37, %r6, %r0
+	vperm %v5, %v5, %v5, %v19
+	addi %r6, %r6, 16
+	lxvd2x 38, %r6, %r0
+	vperm %v6, %v6, %v6, %v19
+	addi %r6, %r6, 16
+	lxvd2x 39, %r6, %r0
+	vperm %v7, %v7, %v7, %v19
+	addi %r6, %r6, 16
+	addi %r6, %r6, -128
+	or %r9, %r3, %r3
+	lxvd2x 40, %r9, %r0
+	vperm %v8, %v8, %v8, %v19
+	vxor %v0, %v0, %v8
+	vxor %v1, %v1, %v8
+	vxor %v2, %v2, %v8
+	vxor %v3, %v3, %v8
+	vxor %v4, %v4, %v8
+	vxor %v5, %v5, %v8
+	vxor %v6, %v6, %v8
+	vxor %v7, %v7, %v8
+	addi %r9, %r9, 16
+	addi %r10, %r4, -1
+25:
+	lxvd2x 40, %r9, %r0
+	vperm %v8, %v8, %v8, %v19
+	vcipher %v0, %v0, %v8
+	vcipher %v1, %v1, %v8
+	vcipher %v2, %v2, %v8
+	vcipher %v3, %v3, %v8
+	vcipher %v4, %v4, %v8
+	vcipher %v5, %v5, %v8
+	vcipher %v6, %v6, %v8
+	vcipher %v7, %v7, %v8
+	addi %r9, %r9, 16
+	addi %r10, %r10, -1
+	cmpldi %cr0, %r10, 0
+	bne %cr0, 25b
+	lxvd2x 40, %r9, %r0
+	vperm %v8, %v8, %v8, %v19
+	vcipherlast %v0, %v0, %v8
+	vcipherlast %v1, %v1, %v8
+	vcipherlast %v2, %v2, %v8
+	vcipherlast %v3, %v3, %v8
+	vcipherlast %v4, %v4, %v8
+	vcipherlast %v5, %v5, %v8
+	vcipherlast %v6, %v6, %v8
+	vcipherlast %v7, %v7, %v8
+	vperm %v0, %v0, %v0, %v19
+	stxvd2x 32, %r6, %r0
+	addi %r6, %r6, 16
+	vperm %v1, %v1, %v1, %v19
+	stxvd2x 33, %r6, %r0
+	addi %r6, %r6, 16
+	vperm %v2, %v2, %v2, %v19
+	stxvd2x 34, %r6, %r0
+	addi %r6, %r6, 16
+	vperm %v3, %v3, %v3, %v19
+	stxvd2x 35, %r6, %r0
+	addi %r6, %r6, 16
+	vperm %v4, %v4, %v4, %v19
+	stxvd2x 36, %r6, %r0
+	addi %r6, %r6, 16
+	vperm %v5, %v5, %v5, %v19
+	stxvd2x 37, %r6, %r0
+	addi %r6, %r6, 16
+	vperm %v6, %v6, %v6, %v19
+	stxvd2x 38, %r6, %r0
+	addi %r6, %r6, 16
+	vperm %v7, %v7, %v7, %v19
+	stxvd2x 39, %r6, %r0
+	addi %r6, %r6, 16
+	addi %r7, %r7, -8
+	rldicl %r12, %r7, 61, 3
+	cmpldi %cr0, %r12, 0
+	bne %cr0, 24b
+	b 23f
+22:
+23:
+	cmpldi %cr0, %r7, 0
+	beq %cr0, 26f
+28:
+	lxvd2x 32, %r6, %r0
+	vperm %v0, %v0, %v0, %v19
+	addi %r6, %r6, 16
+	addi %r6, %r6, -16
+	or %r9, %r3, %r3
+	lxvd2x 40, %r9, %r0
+	vperm %v8, %v8, %v8, %v19
+	vxor %v0, %v0, %v8
+	addi %r9, %r9, 16
+	addi %r10, %r4, -1
+29:
+	lxvd2x 40, %r9, %r0
+	vperm %v8, %v8, %v8, %v19
+	vcipher %v0, %v0, %v8
+	addi %r9, %r9, 16
+	addi %r10, %r10, -1
+	cmpldi %cr0, %r10, 0
+	bne %cr0, 29b
+	lxvd2x 40, %r9, %r0
+	vperm %v8, %v8, %v8, %v19
+	vcipherlast %v0, %v0, %v8
+	vperm %v0, %v0, %v0, %v19
+	stxvd2x 32, %r6, %r0
+	addi %r6, %r6, 16
+	addi %r7, %r7, -1
+	cmpldi %cr0, %r7, 0
+	bne %cr0, 28b
+	b 27f
+26:
+27:
+	b 21f
+20:
+21:
 	blr
 
 vg_aes_ecb_decrypt:
-	mflr %r0
-	stdu %r1, -48(%r1)
-	std %r0, 32(%r1)
-	addi %r12, %r1, 40
-	std %r31, 0(%r12)
-	or %r31, %r7, %r7
-	bl {vg_aes_decrypt_blocks}
-	or %r11, %r3, %r3
-	or %r3, %r31, %r31
-	li %r4, 0
-	oris %r4, %r4, 0
-	ori %r4, %r4, 2048
-	or %r31, %r11, %r11
-	bl {vg_zeroize}
-	or %r3, %r31, %r31
-	addi %r12, %r1, 40
-	ld %r31, 0(%r12)
-	ld %r0, 32(%r1)
-	addi %r1, %r1, 48
-	mtlr %r0
+	cmpldi %cr0, %r6, 0
+	beq %cr0, 20f
+	or %r7, %r6, %r6
+	or %r6, %r5, %r5
+	li %r0, 0
+	vxor %v0, %v0, %v0
+	lis %r11, 1798
+	ori %r11, %r11, 1284
+	rldicr %r11, %r11, 32, 31
+	oris %r11, %r11, 770
+	ori %r11, %r11, 256
+	lis %r12, 3854
+	ori %r12, %r12, 3340
+	rldicr %r12, %r12, 32, 31
+	oris %r12, %r12, 2826
+	ori %r12, %r12, 2312
+	mtvsrd 51, %r11
+	mtvsrd 33, %r12
+	vsldoi %v19, %v0, %v19, 8
+	vsldoi %v19, %v19, %v1, 8
+	rldicl %r12, %r7, 61, 3
+	cmpldi %cr0, %r12, 0
+	beq %cr0, 22f
+24:
+	lxvd2x 32, %r6, %r0
+	vperm %v0, %v0, %v0, %v19
+	addi %r6, %r6, 16
+	lxvd2x 33, %r6, %r0
+	vperm %v1, %v1, %v1, %v19
+	addi %r6, %r6, 16
+	lxvd2x 34, %r6, %r0
+	vperm %v2, %v2, %v2, %v19
+	addi %r6, %r6, 16
+	lxvd2x 35, %r6, %r0
+	vperm %v3, %v3, %v3, %v19
+	addi %r6, %r6, 16
+	lxvd2x 36, %r6, %r0
+	vperm %v4, %v4, %v4, %v19
+	addi %r6, %r6, 16
+	lxvd2x 37, %r6, %r0
+	vperm %v5, %v5, %v5, %v19
+	addi %r6, %r6, 16
+	lxvd2x 38, %r6, %r0
+	vperm %v6, %v6, %v6, %v19
+	addi %r6, %r6, 16
+	lxvd2x 39, %r6, %r0
+	vperm %v7, %v7, %v7, %v19
+	addi %r6, %r6, 16
+	addi %r6, %r6, -128
+	rldicr %r9, %r4, 4, 59
+	add %r9, %r3, %r9
+	lxvd2x 40, %r9, %r0
+	vperm %v8, %v8, %v8, %v19
+	vxor %v0, %v0, %v8
+	vxor %v1, %v1, %v8
+	vxor %v2, %v2, %v8
+	vxor %v3, %v3, %v8
+	vxor %v4, %v4, %v8
+	vxor %v5, %v5, %v8
+	vxor %v6, %v6, %v8
+	vxor %v7, %v7, %v8
+	addi %r9, %r9, -16
+	addi %r10, %r4, -1
+25:
+	lxvd2x 40, %r9, %r0
+	vperm %v8, %v8, %v8, %v19
+	vncipher %v0, %v0, %v8
+	vncipher %v1, %v1, %v8
+	vncipher %v2, %v2, %v8
+	vncipher %v3, %v3, %v8
+	vncipher %v4, %v4, %v8
+	vncipher %v5, %v5, %v8
+	vncipher %v6, %v6, %v8
+	vncipher %v7, %v7, %v8
+	addi %r9, %r9, -16
+	addi %r10, %r10, -1
+	cmpldi %cr0, %r10, 0
+	bne %cr0, 25b
+	lxvd2x 40, %r9, %r0
+	vperm %v8, %v8, %v8, %v19
+	vncipherlast %v0, %v0, %v8
+	vncipherlast %v1, %v1, %v8
+	vncipherlast %v2, %v2, %v8
+	vncipherlast %v3, %v3, %v8
+	vncipherlast %v4, %v4, %v8
+	vncipherlast %v5, %v5, %v8
+	vncipherlast %v6, %v6, %v8
+	vncipherlast %v7, %v7, %v8
+	vperm %v0, %v0, %v0, %v19
+	stxvd2x 32, %r6, %r0
+	addi %r6, %r6, 16
+	vperm %v1, %v1, %v1, %v19
+	stxvd2x 33, %r6, %r0
+	addi %r6, %r6, 16
+	vperm %v2, %v2, %v2, %v19
+	stxvd2x 34, %r6, %r0
+	addi %r6, %r6, 16
+	vperm %v3, %v3, %v3, %v19
+	stxvd2x 35, %r6, %r0
+	addi %r6, %r6, 16
+	vperm %v4, %v4, %v4, %v19
+	stxvd2x 36, %r6, %r0
+	addi %r6, %r6, 16
+	vperm %v5, %v5, %v5, %v19
+	stxvd2x 37, %r6, %r0
+	addi %r6, %r6, 16
+	vperm %v6, %v6, %v6, %v19
+	stxvd2x 38, %r6, %r0
+	addi %r6, %r6, 16
+	vperm %v7, %v7, %v7, %v19
+	stxvd2x 39, %r6, %r0
+	addi %r6, %r6, 16
+	addi %r7, %r7, -8
+	rldicl %r12, %r7, 61, 3
+	cmpldi %cr0, %r12, 0
+	bne %cr0, 24b
+	b 23f
+22:
+23:
+	cmpldi %cr0, %r7, 0
+	beq %cr0, 26f
+28:
+	lxvd2x 32, %r6, %r0
+	vperm %v0, %v0, %v0, %v19
+	addi %r6, %r6, 16
+	addi %r6, %r6, -16
+	rldicr %r9, %r4, 4, 59
+	add %r9, %r3, %r9
+	lxvd2x 40, %r9, %r0
+	vperm %v8, %v8, %v8, %v19
+	vxor %v0, %v0, %v8
+	addi %r9, %r9, -16
+	addi %r10, %r4, -1
+29:
+	lxvd2x 40, %r9, %r0
+	vperm %v8, %v8, %v8, %v19
+	vncipher %v0, %v0, %v8
+	addi %r9, %r9, -16
+	addi %r10, %r10, -1
+	cmpldi %cr0, %r10, 0
+	bne %cr0, 29b
+	lxvd2x 40, %r9, %r0
+	vperm %v8, %v8, %v8, %v19
+	vncipherlast %v0, %v0, %v8
+	vperm %v0, %v0, %v0, %v19
+	stxvd2x 32, %r6, %r0
+	addi %r6, %r6, 16
+	addi %r7, %r7, -1
+	cmpldi %cr0, %r7, 0
+	bne %cr0, 28b
+	b 27f
+26:
+27:
+	b 21f
+20:
+21:
 	blr
