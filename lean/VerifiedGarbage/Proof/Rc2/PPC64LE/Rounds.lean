@@ -270,8 +270,8 @@ theorem mash_run {T : Addr} (u : State) (E : KeyEnv T u) {v : Spec.Rc2.State} (H
   let w := v.getD ((i + 3) % 4) 0
   have hidx : (w &&& 63#16).toNat < 64 := by
     rw [BitVec.toNat_and, show (63#16).toNat = 2 ^ 6 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]; omega
-  have hr : ∀ k < 16, InRegions (t₁.rd ++ t₁.wr) (T + BitVec.ofNat 64 (8 * k)) 8 := fun k hk => by
-    rw [k₁.2.1, k₁.2.2]; exact E.rd (8 * k) 8 (by omega)
+  have hr : ∀ o n, o + n ≤ 128 → InRegions (t₁.rd ++ t₁.wr) (T + BitVec.ofNat 64 o) n := fun o n h => by
+    rw [k₁.2.1, k₁.2.2]; exact E.rd o n h
   have h3 : t₁.gpr .r3 = T := by rw [k₁.gpr (by decide)]; exact E.r3
   have hq : t₁.gpr .r10 = BitVec.ofNat 64 (2 * (w &&& 63#16).toNat) := by rw [a₁, H.nb i 3]; exact idx_val w
   apply WP.seq

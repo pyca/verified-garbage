@@ -20,68 +20,40 @@ namespace VG.Proof.Rc2.PPC64LE
 
 open VG VG.PPC64LE VG.Impl.Rc2.PPC64LE
 
-theorem rotSum_word (q : BitVec 64) (hq : q.toNat % 2 = 0) : rotSum q [1, 2] = 8 * (q.toNat % 8) := by
-  simp only [rotSum, BitVec.getLsbD, Nat.testBit_eq_decide_div_mod_eq, decide_eq_true_eq]
-  (repeat' split) <;> omega
+/-- The chunks' region facts, from the table's. -/
+theorem chunks_in {R : List Region} {T : Addr} {len : Nat}
+    (hr : ∀ o n, o + n ≤ len → InRegions R (T + BitVec.ofNat 64 o) n) {i : Nat} (hi : 32 * i + 32 ≤ len) :
+    InRegions R (ch T i) 16 ∧ InRegions R (ch T i + 16#64) 16 := by
+  rw [ch_eq, show (16#64 : BitVec 64) = BitVec.ofNat 64 16 from rfl, Offset.add_add]
+  exact ⟨hr _ _ (by omega), hr _ _ (by omega)⟩
 
-theorem rotSum_byte (q : BitVec 64) : rotSum q [0, 1, 2] = 8 * (q.toNat % 8) := by
-  simp only [rotSum, BitVec.getLsbD, Nat.testBit_eq_decide_div_mod_eq, decide_eq_true_eq]
-  (repeat' split) <;> omega
-
-theorem rot_word16 (x : BitVec 64) {l : Nat} (hl : l ≤ 6) :
-    (x.rotateRight (8 * l)).setWidth 16 =
-      (x.extractLsb' (8 * l) 8).zeroExtend 16 ||| (x.extractLsb' (8 * (l + 1)) 8).zeroExtend 16 <<< 8 := by
-  apply BitVec.eq_of_getLsbD_eq; intro j hj
-  simp only [BitVec.getLsbD_setWidth, BitVec.getLsbD_rotateRight_of_lt (show 8 * l < 64 by omega),
-    BitVec.getLsbD_or, BitVec.getLsbD_shiftLeft, BitVec.truncate_eq_setWidth, BitVec.getLsbD_extractLsb', hj,
-    decide_true, Bool.true_and]
-  by_cases h8 : j < 8
-  · simp [h8, show j < 64 - 8 * l by omega, show 8 * l + j < 64 by omega]
-  · simp [h8, show j < 64 - 8 * l by omega, show j - 8 < 8 by omega, show j - 8 < 16 by omega]
-    congr 1; omega
-
-theorem rot_byte (x : BitVec 64) {l : Nat} (hl : l < 8) :
-    (x.rotateRight (8 * l)).setWidth 8 = x.extractLsb' (8 * l) 8 := by
-  apply BitVec.eq_of_getLsbD_eq; intro j hj
-  simp only [BitVec.getLsbD_setWidth, BitVec.getLsbD_rotateRight_of_lt (show 8 * l < 64 by omega),
-    BitVec.getLsbD_extractLsb', hj, decide_true, Bool.true_and]
-  simp [show j < 64 - 8 * l by omega, show 8 * l + j < 64 by omega]
-
-/-- Key word `idx` of the schedule at `T`, from its doubleword. -/
+/-- Key word `idx` of the schedule at `T`, from its two bytes. -/
 theorem entry_word (m : Mem) (T : Addr) {idx : Nat} (hidx : idx < 64) :
-    ((m.readW (T + BitVec.ofNat 64 (8 * ((BitVec.ofNat 64 (2 * idx)).toNat / 8))) 64).rotateRight
-      (8 * ((BitVec.ofNat 64 (2 * idx)).toNat % 8))).setWidth 16 = (Spec.Rc2.scheduleAt m T).getD idx 0 := by
-  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show 2 * idx < 2 ^ 64 by omega),
-    show 2 * idx % 8 = 2 * (idx % 4) by omega, rot_word16 _ (by omega), Proof.Rc2.read64_byte _ _ _ (by omega),
-    Proof.Rc2.read64_byte _ _ _ (by omega), Offset.add_add, Offset.add_add, Spec.Rc2.scheduleAt,
-    Proof.Rc2.getD_ofFn _ _ hidx]
-  simp only
-  rw [show 8 * (2 * idx / 8) + 2 * (idx % 4) = 2 * idx by omega,
-    show 8 * (2 * idx / 8) + (2 * (idx % 4) + 1) = 2 * idx + 1 by omega]
-
-/-- The byte at offset `q` of the table at `T`, from its doubleword. -/
-theorem entry_byte (m : Mem) (T : Addr) (q : BitVec 64) :
-    ((m.readW (T + BitVec.ofNat 64 (8 * (q.toNat / 8))) 64).rotateRight (8 * (q.toNat % 8))).setWidth 8 =
-      m (T + q) := by
-  rw [rot_byte _ (Nat.mod_lt _ (by decide)), Proof.Rc2.read64_byte _ _ _ (Nat.mod_lt _ (by decide)),
-    Offset.add_add, show 8 * (q.toNat / 8) + q.toNat % 8 = q.toNat by omega, BitVec.ofNat_toNat,
-    BitVec.setWidth_eq]
-
-theorem keyRegs : ScanRegs .r3 .r5 := ⟨by decide, by decide, by decide, by decide, by decide, by decide,
-  by decide, by decide, by decide⟩
+    (m (T + BitVec.ofNat 64 (2 * idx))).setWidth 64 ||| (m (T + BitVec.ofNat 64 (2 * idx) + 1#64)).setWidth 64 <<< 8 =
+      ((Spec.Rc2.scheduleAt m T).getD idx 0).setWidth 64 := by
+  rw [Spec.Rc2.scheduleAt, Proof.Rc2.getD_ofFn _ _ hidx, show (1#64 : BitVec 64) = BitVec.ofNat 64 1 from rfl,
+    Offset.add_add]
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  simp only [BitVec.getLsbD_or, BitVec.getLsbD_setWidth, BitVec.getLsbD_shiftLeft, BitVec.truncate_eq_setWidth]
+  by_cases h8 : i < 8
+  · simp [h8, show i < 16 by omega, hi]
+  · by_cases h16 : i < 16
+    · simp [h8, h16, hi, BitVec.getLsbD_of_ge (m (T + BitVec.ofNat 64 (2 * idx))) i (by omega),
+        show i - 8 < 16 by omega, show i - 8 < 64 by omega]
+    · simp [h16, BitVec.getLsbD_of_ge (m (T + BitVec.ofNat 64 (2 * idx))) i (by omega),
+        BitVec.getLsbD_of_ge (m (T + BitVec.ofNat 64 (2 * idx + 1))) (i - 8) (by omega)]
 
 /-- The scan of the schedule at `r3`. -/
 theorem keyLookup_run (s : State) {T : Addr} (hT : s.gpr .r3 = T) {idx : Nat} (hidx : idx < 64)
     (hq : s.gpr .r10 = BitVec.ofNat 64 (2 * idx))
-    (hr : ∀ k < 16, InRegions (s.rd ++ s.wr) (T + BitVec.ofNat 64 (8 * k)) 8) :
+    (hr : ∀ o n, o + n ≤ 128 → InRegions (s.rd ++ s.wr) (T + BitVec.ofNat 64 o) n) :
     WP isa keyLookup s fun t =>
       t.gpr .r11 = ((Spec.Rc2.scheduleAt s.mem T).getD idx 0).setWidth 64 ∧
       Keep [.r0, .r11, .r12, .r5] s t ∧ t.mem = s.mem := by
   have h2 : (BitVec.ofNat 64 (2 * idx)).toNat = 2 * idx := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  refine WP.mono (scan_run keyRegs s hT (rows := 16) (by decide) (lanes := [1, 2]) (by decide) (by decide)
-    (bits := 16) (by decide) (by rw [hq, h2]; omega) (by rw [hq]; exact rotSum_word _ (by rw [h2]; omega)) hr)
-    fun t ⟨t11, tk, tm⟩ => ⟨?_, tk, tm⟩
+  refine WP.mono (WP.keep [.r0, .r11, .r12, .r5] (keyScan_run s hT (by rw [hq, h2]; omega) (by rw [hq, h2]; omega)
+    (fun i hi => chunks_in hr (by omega))) (by decide) rfl) fun t ⟨⟨t11, tm⟩, tk⟩ => ⟨?_, tk, tm⟩
   rw [t11, hq, entry_word _ _ hidx]
 
 end VG.Proof.Rc2.PPC64LE

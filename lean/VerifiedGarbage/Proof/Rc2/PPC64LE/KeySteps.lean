@@ -20,20 +20,18 @@ namespace VG.Proof.Rc2.PPC64LE
 
 open VG VG.PPC64LE VG.Impl.Rc2.PPC64LE
 
-theorem piRegs : ScanRegs .r7 .r15 := ⟨by decide, by decide, by decide, by decide, by decide, by decide,
-  by decide, by decide, by decide⟩
-
 /-- The scan of PITABLE at `r7`. -/
 theorem piLookup_run (s : State) {W : Addr} (hW : s.gpr .r7 = W) (hq : (s.gpr .r10).toNat < 256)
-    (hr : ∀ k < 32, InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 (8 * k)) 8) (hP : Proof.Rc2.PiHeld s.mem W) :
+    (hr : ∀ o n, o + n ≤ 256 → InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 o) n)
+    (hP : Proof.Rc2.PiHeld s.mem W) :
     WP isa piLookup s fun t =>
       t.gpr .r11 = (Spec.Rc2.pi ((s.gpr .r10).setWidth 8)).setWidth 64 ∧
       Keep [.r0, .r11, .r12, .r15] s t ∧ t.mem = s.mem := by
-  refine WP.mono (scan_run piRegs s hW (rows := 32) (by decide) (lanes := [0, 1, 2]) (by decide) (by decide)
-    (bits := 8) (by decide) hq (rotSum_byte _) hr) fun t ⟨t11, tk, tm⟩ => ⟨?_, tk, tm⟩
+  refine WP.mono (WP.keep [.r0, .r11, .r12, .r15] (piScan_run s hW hq (fun i hi => chunks_in hr (by omega)))
+    (by decide) rfl) fun t ⟨⟨t11, tm⟩, tk⟩ => ⟨?_, tk, tm⟩
   have e : W + s.gpr .r10 = W + BitVec.ofNat 64 (s.gpr .r10).toNat := by
     rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  rw [t11, entry_byte, e, hP.byte hq]
+  rw [t11, e, hP.byte hq]
   refine congrArg (BitVec.setWidth 64) ?_
   simp only [Spec.Rc2.pi, BitVec.toNat_setWidth]
   rw [Nat.mod_eq_of_lt hq]
@@ -86,12 +84,12 @@ abbrev keyTemps : List Reg := [.r0, .r8, .r9, .r10, .r11, .r12, .r15]
 /-- The scan's environment: PITABLE at `W` in the working space at `r7`. -/
 structure PiEnv (W : Addr) (s : State) : Prop where
   r7 : s.gpr .r7 = W
-  rd : ∀ k < 32, InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 (8 * k)) 8
+  rd : ∀ o n, o + n ≤ 256 → InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 o) n
   held : Proof.Rc2.PiHeld s.mem W
 
 theorem PiEnv.keep {W : Addr} {s t : State} (E : PiEnv W s) {rs : List Reg} (k : Keep rs s t)
     (h7 : Reg.r7 ∉ rs) (hm : t.mem = s.mem) : PiEnv W t :=
-  ⟨by rw [k.gpr h7]; exact E.r7, fun j hj => by rw [k.2.1, k.2.2]; exact E.rd j hj, by rw [hm]; exact E.held⟩
+  ⟨by rw [k.gpr h7]; exact E.r7, fun o n h => by rw [k.2.1, k.2.2]; exact E.rd o n h, by rw [hm]; exact E.held⟩
 
 /-- A byte through the scan and into `L[i]`: the scan and `storeKey`. -/
 theorem piStore_run (s : State) {W : Addr} (E : PiEnv W s) (hq : (s.gpr .r10).toNat < 256)
