@@ -44,3 +44,21 @@ First run: https://github.com/pyca/verified-garbage/actions/runs/42477203913
 All eleven initial candidates regressed against verified assembly: permutation
 latency increased 18.7–58.1%; the selected row3/cache5 variants also regressed
 on every measured PQC operation. These are rejected, not speedup evidence.
+
+The third sweep adds `f_` integrated functions: the core is always inlined,
+8-byte-aligned input uses explicit 8-byte copies (with the same unaligned
+fallback), and these wrappers have no compiler stack protector, matching the
+verified assembly. A contiguous constants/state frame also lets the constant
+pointer terminate at the state pointer, as in the verified loop, without an
+extra loop-limit register. Uncached lanes still use volatile accesses; constants still
+come from a separate translation unit. The earlier wrappers remain controls.
+Second run: https://github.com/pyca/verified-garbage/actions/runs/42477860812
+The best volatile candidates were still 2.7–3.1% slower per permutation and
+showed no repeatable end-to-end gain. They do not satisfy the proof gate.
+
+`f_parity` carries the five full column parities across rounds. The first
+plane assigns their new values; later output planes XOR into them as lanes are
+stored. The next theta reads those scalar parities instead of reloading twenty
+lanes. All state stores remain, and lane complementing and rotation work match
+the baseline. This is an algorithmic scheduling experiment, distinct from
+caching lanes in two banks.
