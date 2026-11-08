@@ -16,6 +16,7 @@ assert len(A)==48 and len(B)==144,(len(A),len(B))
 RC=[0x1,0x8082,0x800000000000808a,0x8000000080008000,0x808b,0x80000001,0x8000000080008081,0x8000000000008009,0x8a,0x88,0x80008009,0x8000000a,0x8000808b,0x800000000000008b,0x8000000000008089,0x8000000000008003,0x8000000000008002,0x8000000000000080,0x800a,0x800000008000000a,0x8000000080008081,0x8000000000008080,0x80000001,0x8000000080008008]
 variants={'memory':[], 'row0':[0,1,2,3,4], 'row1':[5,6,7,8,9], 'row2':[10,11,12,13,14], 'row3':[15,16,17,18,19], 'cache2':[2,8], 'cache4':[2,8,14,15], 'cache5':[1,2,8,14,15]}
 reg=lambda r:'r_'+r.lstrip('.')
+variants.update({"v_"+name:cache for name,cache in list(variants.items())})
 def core(name,cache):
  lines=[f'__attribute__((noinline)) void core_{name}(uint64_t *restrict a, uint64_t *restrict b, const uint64_t *restrict rc) {{',
  'uint64_t '+','.join('r_'+r for r in ['a2','a3','a4','a5','a6','a7','t0','t1','t2','t3','t4','t5'])+';']
@@ -36,7 +37,9 @@ def core(name,cache):
  emit(A,'a','b');lines.append('r_t0 ^= rc[k];');emit(B,'a','b')
  emit(A,'b','a');lines.append('r_t0 ^= rc[k+1];');emit(B,'b','a')
  lines+=['}']+[f'a[{i}]=c_a_{i};' for i in cache]+['}']
- return '\n'.join(lines)
+ text='\n'.join(lines)
+ if name.startswith('v_'):text=text.replace('uint64_t *restrict a, uint64_t *restrict b','volatile uint64_t *restrict a, volatile uint64_t *restrict b')
+ return text
 # An independent canonical implementation with named scalar state, an in-place
 # rho/pi cycle and row-wise chi; GCC chooses its own register allocation.
 rot=[1,3,6,10,15,21,28,36,45,55,2,14,27,41,56,8,25,43,62,18,39,61,20,44]

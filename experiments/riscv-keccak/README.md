@@ -35,3 +35,12 @@ reports and the selection rule are retained as workflow artifacts.
 Run `experiments/riscv-keccak/run.sh` on a real RV64GC Linux host with GCC and
 OpenSSL development headers. `-march=rv64gc -mabi=lp64d -O3` is fixed for all C
 candidates. Host x86-64 builds check correctness only and do not establish speed.
+
+The second sweep adds `v_` variants: volatile accesses keep uncached lanes in
+memory, avoiding whole-state promotion and register spills observed in GCC 13
+in the first native run. Cached lanes remain ordinary scalar variables.
+
+First run: https://github.com/pyca/verified-garbage/actions/runs/42477203913
+All eleven initial candidates regressed against verified assembly: permutation
+latency increased 18.7–58.1%; the selected row3/cache5 variants also regressed
+on every measured PQC operation. These are rejected, not speedup evidence.
