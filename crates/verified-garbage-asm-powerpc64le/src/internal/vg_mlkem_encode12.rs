@@ -15,6 +15,7 @@ pub(crate) unsafe extern "C" fn vg_mlkem_encode12() {
 20:
 .base64 "AADDgAQA44AAAMSYAsLGeOQm6HgUQsZ8AQDEmALh53gCAOSYCABjOAMAhDj//6U4AAAlKA=="
 bne %cr0, 20b
-.base64 "IACATg==""#,
+.base64 "IACATg=="
+.space 36"#,
     )
 }

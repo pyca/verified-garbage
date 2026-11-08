@@ -139,3 +139,4 @@ vg_mlkem_decode_decompress:
 	bne %cr0, 26b
 21:
 	blr
+	.space 36

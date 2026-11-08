@@ -763,10 +763,17 @@ def bodyLines (T : EmitTarget) (lines : List Line) : List Line :=
   let (start, stop) := funcOptions T.name
   start.map .text ++ lines ++ T.printer.funcAlign.map .text ++ stop.map .text
 
+/-- DIAGNOSTIC, not for merging: 36 bytes after the end of each ML-KEM
+function (`vg_mlkem…`, API and internal) on PPC64LE, never executed, to move
+the code after it by a non-multiple of 64 bytes and measure the benchmarks'
+layout noise. -/
+def diagPad (T : EmitTarget) (name : String) : List Line :=
+  if T.name == "powerpc64le" && name.startsWith "vg_mlkem" then [.text ".space 36"] else []
+
 /-- The lines of `a`'s function, given its printed code `lines`
 (`bodyLines`). -/
 def bodyOf (a : Artifact) (lines : List Line) : List Line :=
-  bodyLines a.target lines
+  bodyLines a.target lines ++ diagPad a.target a.name
 
 /-- The `naked_asm!` of a function of the target `T` whose lines are `body`:
 its template, then the `sym` operand of each function it calls, at the path
@@ -1601,7 +1608,7 @@ def internalFile (h : Internal) (moduleOf : String → String) : String :=
   gate ++
   "#[unsafe(naked)]\n" ++
   s!"pub(crate) unsafe extern \"{T.rustAbi}\" fn {h.name}() " ++ "{\n" ++
-  asmOf T (bodyLines T h.lines) moduleOf "crate" ++ "}\n"
+  asmOf T (bodyLines T h.lines ++ diagPad T h.name) moduleOf "crate" ++ "}\n"
 
 /-! ## Dispatchers
 
@@ -2182,7 +2189,7 @@ def render (ps : List Prepared) (hs : List Internal) (moduleOf : String → Stri
       let m := s!"internal/{h.name}"
       [(s!"{src}/{m}.rs", internalFile h (moduleOf t)),
        (s!"{crateDir t}/{assemblyFile m}", assemblyHeader t m ++
-         moduleAssembly.functionAssembly h.target h.name (bodyLines h.target h.lines))]).flatMap
+         moduleAssembly.functionAssembly h.target h.name (bodyLines h.target h.lines ++ diagPad h.target h.name))]).flatMap
       Task.get ++
     -- Each module's files on a task of their own: a part (`Emit.run`) has one target.
     ((modules.map fun m => Task.spawn fun _ =>

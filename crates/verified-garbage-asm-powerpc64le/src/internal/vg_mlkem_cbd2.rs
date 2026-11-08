@@ -15,6 +15,7 @@ pub(crate) unsafe extern "C" fn vg_mlkem_cbd2() {
 20:
 .base64 "AADDiEbwxnigF8Z4QvjJeFAwyXwAAOOIxuDneKAX53hC+Ol4UDjpfFAwx3zgD8d40kHnfBQ6xnwAAMSQAADDiEbRxnigF8Z4QvjJeFAwyXwAAOOIxsHneKAX53hC+Ol4UDjpfFAwx3zgD8d40kHnfBQ6xnwEAMSQAQBjOAgAhDj//6U4AAAlKA=="
 bne %cr0, 20b
-.base64 "IACATg==""#,
+.base64 "IACATg=="
+.space 36"#,
     )
 }

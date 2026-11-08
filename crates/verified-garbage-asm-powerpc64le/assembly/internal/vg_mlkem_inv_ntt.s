@@ -336,3 +336,4 @@ vg_mlkem_inv_ntt:
 	ld %r14, 512(%r4)
 	ld %r15, 520(%r4)
 	blr
+	.space 36

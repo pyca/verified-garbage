@@ -180,3 +180,4 @@ vg_mlkem1024_compress_encode:
 	bne %cr0, 23b
 21:
 	blr
+	.space 36

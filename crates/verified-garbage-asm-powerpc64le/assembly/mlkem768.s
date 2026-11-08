@@ -309,6 +309,7 @@ vg_mlkem768_keygen:
 	ld %r30, 888(%r31)
 	ld %r31, 896(%r31)
 	blr
+	.space 36
 
 vg_mlkem768_encaps:
 	mflr %r0
@@ -713,6 +714,7 @@ vg_mlkem768_encaps:
 	ld %r30, 888(%r31)
 	ld %r31, 896(%r31)
 	blr
+	.space 36
 
 vg_mlkem768_encaps_h:
 	mflr %r0
@@ -1083,6 +1085,7 @@ vg_mlkem768_encaps_h:
 	ld %r30, 888(%r31)
 	ld %r31, 896(%r31)
 	blr
+	.space 36
 
 vg_mlkem768_decaps:
 	mflr %r0
@@ -1596,6 +1599,7 @@ vg_mlkem768_decaps:
 	ld %r30, 888(%r31)
 	ld %r31, 896(%r31)
 	blr
+	.space 36
 
 vg_mlkem768_check_ek:
 	li %r4, 384
@@ -1629,3 +1633,4 @@ vg_mlkem768_check_ek:
 	li %r3, 1
 	subf %r3, %r6, %r3
 	blr
+	.space 36

@@ -15,6 +15,7 @@ pub(crate) unsafe extern "C" fn vg_mlkem_multiply_ntts() {
 20:
 .base64 "AADkgAQAhIEAAMWBBADlgdJ5DHzCqgp40kFKfYJ0SnnSSUp9UAAKfFAACXzgDwp40klKfRRSAHwAAEaB0lEAfNJxR30UAgp8wqoKeNJBSn2CdEp50klKfVAACnxQAAl84A8KeNJJSn0UUgB8AAADkNJ5B3zScUx9FFIAfMKqCnjSQUp9gnRKedJJSn1QAAp8UAAJfOAPCnjSSUp9FFIAfAQAA5AIAGM4CACEOAgApTgEAMY4//9rOQAAKyg="
 bne %cr0, 20b
-.base64 "AADG6QgA5ukgAIBO""#,
+.base64 "AADG6QgA5ukgAIBO"
+.space 36"#,
     )
 }

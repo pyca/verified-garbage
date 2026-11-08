@@ -316,3 +316,4 @@ vg_mlkem_ntt:
 	ld %r14, 0(%r4)
 	ld %r15, 8(%r4)
 	blr
+	.space 36

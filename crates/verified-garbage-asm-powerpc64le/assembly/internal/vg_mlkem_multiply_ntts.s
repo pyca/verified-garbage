@@ -319,3 +319,4 @@ vg_mlkem_multiply_ntts:
 	ld %r14, 0(%r6)
 	ld %r15, 8(%r6)
 	blr
+	.space 36
