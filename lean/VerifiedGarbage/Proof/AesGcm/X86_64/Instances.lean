@@ -17,7 +17,7 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.GatherSeal
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.VerifiedP
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.SealFin
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.Ok
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Ok
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Ok
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Ct
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.OkP
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Ok
@@ -585,11 +585,12 @@ where
   code : (n : StitchToName) → PieceToDecR n → Option (StitchToDecCode Proof.Gcm.X86_64.Stitch.CtxMode.prepared true)
     | .vaes, q => some ⟨_, Proof.Gcm.X86_64.StitchToDec.decToR_okN powFinD 24, q.dec⟩
     | .vaesAvx512, q => some ⟨_, Proof.Gcm.X86_64.StitchZH.decToR_ok powFinZ, q.dec⟩
-    | .aesniAvx, _ => none
+    | .aesniAvx, q => some ⟨_, fun s₀ hp _ => Proof.Gcm.X86_64.StitchAvx8.decToR_okN 24 (by decide) s₀ hp (Nat.mod_one _),
+        q.dec⟩
 
 /-- The out-of-place decryption loop of a variant, for a key context of
-`vg_aes_gcm_prepare16`: the 256-bit loop's only (the 512-bit loop reads
-more powers than that context holds). -/
+`vg_aes_gcm_prepare16`: the 256-bit loop's and the eight-state AVX loop's
+(the 512-bit loop reads more powers than that context holds). -/
 def GcmVariant.stitchToDecR16 (v : GcmVariant) :
     Option (StitchToDecCode Proof.Gcm.X86_64.Stitch.CtxMode.prepared16 true) :=
   (v.stitch.bind (·.toPart)).bind fun p => p.pieceToDecR.bind (code p.name)
@@ -597,6 +598,8 @@ where
   /-- The loop named `n` and its proof. -/
   code : (n : StitchToName) → PieceToDecR n → Option (StitchToDecCode Proof.Gcm.X86_64.Stitch.CtxMode.prepared16 true)
     | .vaes, q => some ⟨_, Proof.Gcm.X86_64.StitchToDec.decToR_okN powFinD 8, q.dec⟩
+    | .aesniAvx, q => some ⟨_, fun s₀ hp _ => Proof.Gcm.X86_64.StitchAvx8.decToR_okN 8 (by decide) s₀ hp (Nat.mod_one _),
+        q.dec⟩
     | _, _ => none
 
 /-- The instance of `vg_aes_gcm_decrypt_blocks_to_prepared` of a variant. -/

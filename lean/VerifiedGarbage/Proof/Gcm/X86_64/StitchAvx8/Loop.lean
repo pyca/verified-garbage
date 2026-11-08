@@ -82,40 +82,48 @@ def lead (dec : Bool) : Nat := if dec then 0 else 16
 
 def window (s₀ : State) (dec : Bool) (g : Nat) : Nat → Block := fun i => hashBlock s₀ dec (g + i)
 
-/-- The blocks a batch at `g` hashes, from `rdx`: encrypting, the
-ciphertext of the batch before last; decrypting, the batch's own data. -/
+/-- The blocks a batch at `g` hashes: encrypting, the ciphertext of the
+batch before last, from `rdx`; decrypting, the batch's own data, where it
+reads it (`hashBase s ix`: `rdx`, or, out of place, `rdx + rbx`). -/
 theorem CoreInv.hashSrc {s₀ s : State} {ix : Bool} {P : Nat → Block} {dec : Bool} {c g : Nat}
-    (hp : SPre s₀) (h : CoreInv s₀ ix P dec c g s) (hcg : c = g + lead dec)
-    (hc : c + 8 ≤ nb s₀) (hdx : dec = true → ix = false) :
-    HashSrc s₀ (s.gpr .rdx) s.mem (window s₀ dec g) where
-  rd k hk := by rw [h.addr]; exact in_rdwr (in_sub hp.d_in (by omega))
-  sep k hk := by
-    rw [h.addr]
-    exact hp.d_p.sub_left (Offset.sub_base (dp s₀) (d := 16 * (g + k)) (n := 16) (k := 16 * nb s₀)
-      (by omega))
-  val k hk := by
-    cases dec with
-    | false =>
-      have he : g + k < c := by change c = g + 16 at hcg; omega
-      rw [h.addr, (h.data (g + k) (by omega)).1 he]
+    (hp : SPre s₀) (hS : SrcOk s₀ ix) (h : CoreInv s₀ ix P dec c g s) (hcg : c = g + lead dec)
+    (hc : c + 8 ≤ nb s₀) :
+    HashSrc s₀ (hashBase s (dec && ix)) s.mem (window s₀ dec g) := by
+  cases dec with
+  | false =>
+    have hb : ∀ k, hashBase s (false && ix) + BitVec.ofNat 64 (16 * k) = bAddr s₀ (g + k) := fun k => by
+      simp only [hashBase, Bool.false_and, Bool.false_eq_true, ↓reduceIte, BitVec.add_zero, h.addr]
+    refine ⟨fun k hk => ?_, fun k hk => ?_, fun k hk => ?_⟩
+    · rw [hb]; exact in_rdwr (in_sub hp.d_in (by change c = g + 16 at hcg; omega))
+    · rw [hb]
+      exact hp.d_p.sub_left (Offset.sub_base (dp s₀) (d := 16 * (g + k)) (n := 16) (k := 16 * nb s₀)
+        (by change c = g + 16 at hcg; omega))
+    · have he : g + k < c := by change c = g + 16 at hcg; omega
+      rw [hb, (h.data (g + k) (by change c = g + 16 at hcg; omega)).1 he]
       rfl
-    | true =>
-      have he : c ≤ g + k := by change c = g + 0 at hcg; omega
-      have hix := hdx rfl
-      subst hix
-      rw [h.addr, ← srcBlk_false, (h.data (g + k) (by omega)).2 he]
+  | true =>
+    have hcg' : c = g := hcg
+    subst hcg'
+    have ha : s.gpr .rdx + BitVec.ofNat 64 (16 * 0) = bAddr s₀ c := by rw [h.addr, Nat.add_zero]
+    have hb : ∀ k, hashBase s (true && ix) + BitVec.ofNat 64 (16 * k) = srcBlk s₀ ix (c + k) := fun k => by
+      rw [← srcAddr_eq' ix ha h.rbx k, Nat.zero_add]
+      rfl
+    refine ⟨fun k hk => ?_, fun k hk => ?_, fun k hk => ?_⟩
+    · rw [hb]; exact hS.rd _ (by omega)
+    · rw [hb]; exact hS.p _ (by omega)
+    · rw [hb, (h.data (c + k) (by omega)).2 (by omega)]
       rfl
 
 theorem CoreInv.hashBatch {s₀ s : State} {ix : Bool} {P : Nat → Block} {dec : Bool} {c g : Nat}
     (hp : SPre s₀) (hS : SrcOk s₀ ix) (h : CoreInv s₀ ix P dec c g s) (hcg : c = g + lead dec)
-    (hc : c + 8 ≤ nb s₀) (hdx : dec = true → ix = false) :
+    (hc : c + 8 ≤ nb s₀) :
     WP isa (Impl.Gcm.X86_64.StitchAvx8.batch (nr s₀) 8 (lead dec)
-      (Impl.Gcm.X86_64.StitchAvx8.q8 (nr s₀)) ix) s
+      (Impl.Gcm.X86_64.StitchAvx8.q8 (nr s₀) (dec && ix)) ix) s
       (BatchPost s₀ s ix P (window s₀ dec g) (hashPrefix s₀ dec g) c (lead dec) true) := by
   obtain ⟨hw, hwrap, hsub⟩ := h.batchBounds hp (lead dec) hcg.symm hc
   obtain ⟨hsr, hss, hsw⟩ := h.srcBounds hp hS (lead dec) hcg.symm hc
-  exact batch_ok hp ix true (lead dec) h.env h.templates h.hash h.counter hw hwrap hsub hsr hss hsw
-    (fun _ => h.hashSrc hp hcg hc hdx)
+  exact batch_ok hp ix true (dec && ix) (lead dec) h.env h.templates h.hash h.counter hw hwrap hsub hsr hss hsw
+    (fun _ => h.hashSrc hp hS hcg hc)
 
 end VG.Proof.Gcm.X86_64.StitchAvx8
 
@@ -139,16 +147,15 @@ structure LoopInv (s₀ : State) (ix : Bool) (P : Nat → Block) (dec : Bool) (g
   core : CoreInv s₀ ix P dec (g + lead dec) g s
   multiple : g % 8 = 0
   tail_le : g + tailSize dec ≤ nb s₀
-  /-- Decryption reads its data in place. -/
-  dix : dec = true → ix = false
 
 def body8 (dec : Bool) (nr : Nat) (ix : Bool) : Prog isa :=
   .seq (.block []) (.seq (Impl.Gcm.X86_64.StitchAvx8.batch nr 8 (lead dec)
-    (Impl.Gcm.X86_64.StitchAvx8.q8 nr) ix)
+    (Impl.Gcm.X86_64.StitchAvx8.q8 nr (dec && ix)) ix)
     (.block [.alu .add .rdx (.imm 128), .alu .sub .r9 (.imm 8),
       .alu .cmp .r9 (.imm (if dec then 16 else 24))]))
 
 theorem body8_enc (nr : Nat) (ix : Bool) : body8 false nr ix = Impl.Gcm.X86_64.StitchAvx8.encBody8 nr ix := rfl
+theorem body8_dec (nr : Nat) (ix : Bool) : body8 true nr ix = Impl.Gcm.X86_64.StitchAvx8.decBody8 nr ix := rfl
 theorem loopStep_ok {s₀ s : State} {ix : Bool} {P : Nat → Block} {dec : Bool} {g : Nat}
     (hp : SPre s₀) (hS : SrcOk s₀ ix) (hlaw : HashLaw s₀ P) (h : LoopInv s₀ ix P dec g s)
     (hn : g + threshold dec ≤ nb s₀) :
@@ -160,7 +167,7 @@ theorem loopStep_ok {s₀ s : State} {ix : Bool} {P : Nat → Block} {dec : Bool
   have hm := h.multiple
   have hn64 : nb s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
   refine WP.seq (WP.block_nil (WP.seq (WP.mono
-    (h.core.hashBatch hp hS rfl hc h.dix) fun u hu => ?_)))
+    (h.core.hashBatch hp hS rfl hc) fun u hu => ?_)))
   refine WP.mono (next8_ok u (if dec then 16 else 24)) fun t ⟨htD, htN, htC, htG, htX, htM, htR, htW⟩ => ?_
   have un : u.gpr .r9 = BitVec.ofNat 64 (nb s₀ - g) :=
     (hu.regs _ (by decide) (by decide)).trans h.core.remaining
@@ -173,7 +180,7 @@ theorem loopStep_ok {s₀ s : State} {ix : Bool} {P : Nat → Block} {dec : Bool
   have hDt := h.core.data.batch hp hS hc (by rw [h.core.addr]) h.core.rbx hu
   rw [hec] at hDt
   refine ⟨⟨⟨hu.env.move (fun r _ hdx _ h9 => htG r hdx h9) htM htR htW,
-    htM ▸ hDt, ?_, ?_, ?_, htN.trans un8, ?_, by omega, by omega⟩, by omega, htail, h.dix⟩, ?_⟩
+    htM ▸ hDt, ?_, ?_, ?_, htN.trans un8, ?_, by omega, by omega⟩, by omega, htail⟩, ?_⟩
   · rw [htM, ← hec]; exact hu.templates
   · rw [htG _ (by decide) (by decide), hu.counter]
     congr 2
@@ -383,19 +390,20 @@ theorem firstEnc_ok {s₀ s : State} {ix : Bool} {P : Nat → Block} (hp : SPre 
       ⟨fun i hi => by rw [ht i hi, h.base, Nat.zero_add], hf⟩))
     fun u hu => ?_)
   exact WP.mono (hu.bareBatch hp hS 8 rfl (by have := hp.nb16; omega)) fun t ht =>
-    ⟨ht, rfl, hp.nb16, fun h => Bool.noConfusion h⟩
+    ⟨ht, rfl, hp.nb16⟩
 
-theorem firstDec_ok {s₀ s : State} {P : Nat → Block} (hp : SPre s₀) (h : Ready s₀ P s) :
-    WP isa (.block []) s (LoopInv s₀ false P true 0) :=
-  WP.block_nil ⟨CoreInv.initial h.toC (h.src hp) true, rfl,
-    by have := hp.nb16; change 0 + 8 ≤ nb s₀; omega, fun _ => rfl⟩
+theorem firstDec_ok {s₀ s : State} {ix : Bool} {P : Nat → Block} (hp : SPre s₀) (h : ReadyC s₀ P s)
+    (hsrc : ∀ k < nb s₀, blockAt s.mem (srcBlk s₀ ix k) = blk s₀ k) :
+    WP isa (.block []) s (LoopInv s₀ ix P true 0) :=
+  WP.block_nil ⟨CoreInv.initial h hsrc true, rfl,
+    by have := hp.nb16; change 0 + 8 ≤ nb s₀; omega⟩
 
 theorem LoopInv.compare {s₀ s : State} {ix : Bool} {P : Nat → Block} {dec : Bool} {g : Nat}
     (h : LoopInv s₀ ix P dec g s) :
     WP isa (.block [.alu .cmp .r9 (.imm (if dec then 16 else 24))]) s fun t =>
       LoopInv s₀ ix P dec g t ∧ t.cf = some (decide (nb s₀ - g < threshold dec)) := by
   refine WP.mono (cmp8_ok s (if dec then 16 else 24)) fun t ⟨hcf, hf⟩ => ?_
-  refine ⟨⟨h.core.yframe hf (by decide), h.multiple, h.tail_le, h.dix⟩, ?_⟩
+  refine ⟨⟨h.core.yframe hf (by decide), h.multiple, h.tail_le⟩, ?_⟩
   have hn : nb s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
   have he : ((if dec then 16 else 24 : BitVec 32).signExtend 64).toNat = threshold dec := by
     cases dec <;> rfl
