@@ -104,10 +104,15 @@ def copyLoop : Prog isa :=
   .loop (.block [.lbz .r0 .r3 0, .stb .r0 .r4 0, .addi .r3 .r3 1, .addi .r4 .r4 1, .subi .r5 .r5 1])
     (.nonzero .d .r5)
 
+/-- XORs the `r5` (at least 1) bytes at `r3` with those at `r4`, into those
+at `r4` (in place) or, with `to`, at `r7`, advancing them. -/
+def xorLoopWith (to : Bool) : Prog isa :=
+  .loop (.block ([.lbz .r0 .r4 0, .lbz .r6 .r3 0, .logic .xor .r0 .r0 .r6, .stb .r0 (if to then .r7 else .r4) 0,
+    .addi .r3 .r3 1, .addi .r4 .r4 1] ++ (if to then [.addi .r7 .r7 1] else []) ++ [.subi .r5 .r5 1]))
+    (.nonzero .d .r5)
+
 /-- XORs the `r5` (at least 1) bytes at `r3` into those at `r4`, advancing both. -/
-def xorLoop : Prog isa :=
-  .loop (.block [.lbz .r0 .r4 0, .lbz .r6 .r3 0, .logic .xor .r0 .r0 .r6, .stb .r0 .r4 0,
-    .addi .r3 .r3 1, .addi .r4 .r4 1, .subi .r5 .r5 1]) (.nonzero .d .r5)
+def xorLoop : Prog isa := xorLoopWith false
 
 /-- `r5 := min (16 - r26, r25)`: `16 - r26` if `r25 ≥ 16`, and otherwise
 whichever the sign of their difference (both being small) says. -/
@@ -199,21 +204,33 @@ space. -/
 def ctrArgs (c : Nat) : List Instr :=
   [mov .r3 .r29, mov .r4 .r28, .addi .r5 .r30 c, .addi .r8 .r31 scrO]
 
+/-- Whole blocks: `split` leaves their number in `r7`; if there are any,
+`args` and `call` on them, in place (`cryptWhole`) or to a destination
+(`Impl/AesGcm/PPC64LE/OpenTo.lean`). -/
+def wholeWith (split args : List Instr) (call : Prog isa) : Prog isa :=
+  .seq (.block split) (.ite (.zero .d .r7) (.block []) (.seq (.block args) call))
+
 /-- Whole blocks at `r24`, by `vg_aes_ctr32`. -/
-def cryptWhole : Prog isa :=
-  .seq (.block splitCtr)
-    (.ite (.zero .d .r7) (.block []) (.seq (.block (ctrArgs 48)) ctrCall))
+def cryptWhole : Prog isa := wholeWith splitCtr (ctrArgs 48) ctrCall
 
 /-- The keystream block zeroed, and the arguments of `vg_aes_ctr32` on it. -/
 def tailArgs : List Instr :=
   ([.li .r0 0, .store .d .r0 .r30 64, .store .d .r0 .r30 72, .addi .r6 .r30 64, .li .r7 1] :
     List Instr) ++ ctrArgs 48
 
-/-- The last `r25` bytes at `r24`, with a new keystream block. -/
-def cryptTail : Prog isa :=
+/-- The arguments of `xorLoopWith to` on the last bytes: the keystream
+block, the data and their number, and with `to` the destination, `r26`. -/
+def xorArgs (to : Bool) : List Instr :=
+  [.addi .r3 .r30 64, mov .r4 .r24, mov .r5 .r25] ++ if to then [mov .r7 .r26] else []
+
+/-- The last `r25` bytes at `r24`, with a new keystream block, written in
+place or, with `to`, to `r26`. -/
+def cryptTailWith (to : Bool) : Prog isa :=
   .ite (.zero .d .r25) (.block [])
-    (.seq (.seq (.block tailArgs) ctrCall)
-      (.seq (.block [.addi .r3 .r30 64, mov .r4 .r24, mov .r5 .r25]) xorLoop))
+    (.seq (.seq (.block tailArgs) ctrCall) (.seq (.block (xorArgs to)) (xorLoopWith to)))
+
+/-- The last `r25` bytes at `r24`, with a new keystream block. -/
+def cryptTail : Prog isa := cryptTailWith false
 
 /-- The rest of the keystream block first, if the text so far ends within a block. -/
 def cryptFill : Prog isa :=
