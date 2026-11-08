@@ -1,0 +1,13 @@
+#define _POSIX_C_SOURCE 200809L
+#include <stdlib.h>
+#include <stdio.h>
+#include <stdint.h>
+#include <string.h>
+#include <time.h>
+void vg_scrypt_blockmix(void *,size_t,void *,size_t,void *);
+void vg_scrypt_romix(void *,size_t,void *,size_t,void *,size_t);
+static double now(void){struct timespec ts;clock_gettime(CLOCK_MONOTONIC,&ts);return ts.tv_sec+ts.tv_nsec*1e-9;}
+static uint64_t checksum(const unsigned char *b,size_t n){uint64_t s=0;for(size_t k=0;k<n;k++)s=s*131+b[k];return s;}
+int main(int argc,char **argv){if(argc!=6)return 2;size_t n=strtoull(argv[1],0,0),r=strtoull(argv[2],0,0),iters=strtoull(argv[3],0,0),reps=strtoull(argv[4],0,0);int bm=atoi(argv[5]);size_t bytes=128*r;
+ unsigned char *b=aligned_alloc(64,bytes),*y=aligned_alloc(64,bytes),*v=aligned_alloc(64,bytes*n),*sc=aligned_alloc(64,128*(r+2));if(!b||!v||!y||!sc)return 3;memset(v,0,bytes*n);memset(sc,0,128*(r+2));memset(y,0,bytes);
+ for(size_t sample=0;sample<reps;sample++){for(size_t k=0;k<bytes;k++)b[k]=(unsigned char)(k*37+11);double t=now();for(size_t i=0;i<iters;i++){if(bm){vg_scrypt_blockmix(b,r,y,r,sc);unsigned char *tmp=b;b=y;y=tmp;}else vg_scrypt_romix(b,r,v,n*r,sc,r+2);}double elapsed=now()-t;printf("%s,%zu,%zu,%zu,%zu,%.9f,%016lx\n",bm?"blockmix":"romix",n,r,iters,sample,elapsed,(unsigned long)checksum(b,bytes));}free(b);free(y);free(v);free(sc);}

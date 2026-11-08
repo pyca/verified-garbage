@@ -1,0 +1,13 @@
+side,kind,n,r,iterations,sample,seconds,checksum
+baseline,blockmix,2,8,500000,0,0.403523207,451627aeb6eafdaf
+baseline,blockmix,2,8,500000,1,0.394377744,451627aeb6eafdaf
+baseline,blockmix,2,8,500000,2,0.410257093,451627aeb6eafdaf
+avx,blockmix,2,8,500000,0,0.429799714,451627aeb6eafdaf
+avx,blockmix,2,8,500000,1,0.423172668,451627aeb6eafdaf
+avx,blockmix,2,8,500000,2,0.425526109,451627aeb6eafdaf
+baseline,blockmix,2,8,500000,0,0.405363949,451627aeb6eafdaf
+baseline,blockmix,2,8,500000,1,0.407541654,451627aeb6eafdaf
+baseline,blockmix,2,8,500000,2,0.400493821,451627aeb6eafdaf
+avx,blockmix,2,8,500000,0,0.419578435,451627aeb6eafdaf
+avx,blockmix,2,8,500000,1,0.426762129,451627aeb6eafdaf
+avx,blockmix,2,8,500000,2,0.416619666,451627aeb6eafdaf
