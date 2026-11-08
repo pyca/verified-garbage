@@ -185,17 +185,17 @@ pub unsafe fn vg_aes_gcm_open_auto(ctx: *const [u64; 32], rounds: usize, nonce: 
     unsafe { crate::gcm::vg_aes_gcm_open(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) }
 }
 
-/// Makes the 1088-byte `*ctx`, whose first 256 bytes are a key context of `vg_aes_gcm_init`, the prepared key context of the same key, in place: keeps its first 256 bytes and either, at byte `256 + 32*k`, for `k` from 0 to 23, stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words, `H` being the hash subkey in its bytes 240–255, or stores 1 in the 64-bit word at byte 1024, saying the powers are absent. Use only the `*_prepared` APIs, or APIs that read the first 256 bytes, with this format. Contract: `VG.Spec.Gcm.prepareContract`: the first 256 bytes are kept and the context satisfies `PreparedRepr`. Constant time: only the pointer may affect timing, not the hash subkey.
+/// Makes the 1032-byte `*ctx`, whose first 256 bytes are a key context of `vg_aes_gcm_init`, the prepared key context of the same key, in place: keeps its first 256 bytes and either, at byte `256 + 32*k`, for `k` from 0 to 23, stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words, `H` being the hash subkey in its bytes 240–255, or stores 1 in the 64-bit word at byte 1024, saying the powers are absent. Use only the `*_prepared` APIs, or APIs that read the first 256 bytes, with this format. Contract: `VG.Spec.Gcm.prepareContract`: the first 256 bytes are kept and the context satisfies `PreparedRepr`. Constant time: only the pointer may affect timing, not the hash subkey.
 ///
 /// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_gcm_prepare_vpclmul_avx512` if the CPU supports its features (`VG_AES_GCM_PREPARE_VPCLMUL_AVX512_FEATURES`); `vg_aes_gcm_prepare_vpclmul` if the CPU supports its features (`VG_AES_GCM_PREPARE_VPCLMUL_FEATURES`); `vg_aes_gcm_prepare_pclmul_avx` if the CPU supports its features (`VG_AES_GCM_PREPARE_PCLMUL_AVX_FEATURES`); or else `vg_aes_gcm_prepare`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads and writes of 1088 bytes.
+/// * `ctx` must be valid for reads and writes of 1032 bytes.
 /// * `ctx` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_gcm_prepare_auto(ctx: *mut [u64; 136]) {
+pub unsafe fn vg_aes_gcm_prepare_auto(ctx: *mut [u64; 129]) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::gcm::VG_AES_GCM_PREPARE_VPCLMUL_AVX512_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_prepare_vpclmul_avx512`'s, and the CPU
@@ -436,6 +436,27 @@ pub unsafe fn vg_aes_gcm_stream_init_auto(ctx: *const [u64; 32], nonce: *const u
     unsafe { crate::gcm::vg_aes_gcm_stream_init(ctx, nonce, nonce_len, state) }
 }
 
+/// Wipes the 1032-byte `*ctx`, a prepared key context of `vg_aes_gcm_prepare`: sets to zero its first 1024 bytes, the key context and the powers, if the 64-bit word at byte 1024 is not 1, and its first 256 bytes, the key context, if it is (the powers are absent, and the bytes after the key context were not written). Contract: `VG.Spec.Gcm.wipePreparedContract`. Constant time: only the pointer and whether the powers are absent may affect timing, not the bytes wiped.
+///
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_gcm_wipe_prepared_avx` if the CPU supports its features (`VG_AES_GCM_WIPE_PREPARED_AVX_FEATURES`); or else `vg_aes_gcm_wipe_prepared`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads and writes of 1032 bytes.
+/// * `ctx` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_aes_gcm_wipe_prepared_auto(ctx: *mut [u64; 129]) {
+    let cpu = verified_garbage_cpu::detected();
+    if cpu.contains(crate::gcm::VG_AES_GCM_WIPE_PREPARED_AVX_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_aes_gcm_wipe_prepared_avx`'s, and the CPU
+        // has the features it needs.
+        return unsafe { crate::gcm::vg_aes_gcm_wipe_prepared_avx(ctx) };
+    }
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::gcm::vg_aes_gcm_wipe_prepared(ctx) }
+}
+
 /// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
 ///
 /// Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, `aad_len` and `text_len` may affect timing, not the key context or the state.
@@ -562,13 +583,13 @@ pub unsafe fn vg_aes_gcm_stream_verify_auto(ctx: *const [u64; 32], rounds: usize
     unsafe { crate::gcm::vg_aes_gcm_stream_verify(ctx, rounds, state, aad_len, text_len, tag, tag_len) }
 }
 
-/// `vg_aes_gcm_seal` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealPreparedContract`.
+/// `vg_aes_gcm_seal` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealPreparedContract`.
 ///
 /// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512` if the CPU supports its features (`VG_AES_GCM_SEAL_PREPARED_VAES_VPCLMUL_AVX512_FEATURES`); `vg_aes_gcm_seal_prepared_vaes_vpclmul` if the CPU supports its features (`VG_AES_GCM_SEAL_PREPARED_VAES_VPCLMUL_FEATURES`); `vg_aes_gcm_seal_prepared_vaes_pclmul` if the CPU supports its features (`VG_AES_GCM_SEAL_PREPARED_VAES_PCLMUL_FEATURES`); `vg_aes_gcm_seal_prepared_aesni_vpclmul` if the CPU supports its features (`VG_AES_GCM_SEAL_PREPARED_AESNI_VPCLMUL_FEATURES`); `vg_aes_gcm_seal_prepared_aesni_pclmul_avx` if the CPU supports its features (`VG_AES_GCM_SEAL_PREPARED_AESNI_PCLMUL_AVX_FEATURES`); `vg_aes_gcm_seal_prepared_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_SEAL_PREPARED_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_seal_prepared_vaes` if the CPU supports its features (`VG_AES_GCM_SEAL_PREPARED_VAES_FEATURES`); `vg_aes_gcm_seal_prepared_aesni` if the CPU supports its features (`VG_AES_GCM_SEAL_PREPARED_AESNI_FEATURES`); `vg_aes_gcm_seal_prepared_vpclmul` if the CPU supports its features (`VG_AES_GCM_SEAL_PREPARED_VPCLMUL_FEATURES`); `vg_aes_gcm_seal_prepared_pclmul` if the CPU supports its features (`VG_AES_GCM_SEAL_PREPARED_PCLMUL_FEATURES`); or else `vg_aes_gcm_seal_prepared`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1088 bytes.
+/// * `ctx` must be valid for reads of 1032 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
@@ -579,7 +600,7 @@ pub unsafe fn vg_aes_gcm_stream_verify_auto(ctx: *const [u64; 32], rounds: usize
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_gcm_seal_prepared_auto(ctx: *const [u64; 136], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe fn vg_aes_gcm_seal_prepared_auto(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::gcm::VG_AES_GCM_SEAL_PREPARED_VAES_VPCLMUL_AVX512_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512`'s, and the CPU
@@ -635,13 +656,13 @@ pub unsafe fn vg_aes_gcm_seal_prepared_auto(ctx: *const [u64; 136], rounds: usiz
     unsafe { crate::gcm::vg_aes_gcm_seal_prepared(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag) }
 }
 
-/// `vg_aes_gcm_open` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openPreparedContract`.
+/// `vg_aes_gcm_open` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openPreparedContract`.
 ///
 /// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_gcm_open_prepared_vaes_vpclmul_avx512` if the CPU supports its features (`VG_AES_GCM_OPEN_PREPARED_VAES_VPCLMUL_AVX512_FEATURES`); `vg_aes_gcm_open_prepared_vaes_vpclmul` if the CPU supports its features (`VG_AES_GCM_OPEN_PREPARED_VAES_VPCLMUL_FEATURES`); `vg_aes_gcm_open_prepared_vaes_pclmul` if the CPU supports its features (`VG_AES_GCM_OPEN_PREPARED_VAES_PCLMUL_FEATURES`); `vg_aes_gcm_open_prepared_aesni_vpclmul` if the CPU supports its features (`VG_AES_GCM_OPEN_PREPARED_AESNI_VPCLMUL_FEATURES`); `vg_aes_gcm_open_prepared_aesni_pclmul_avx` if the CPU supports its features (`VG_AES_GCM_OPEN_PREPARED_AESNI_PCLMUL_AVX_FEATURES`); `vg_aes_gcm_open_prepared_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_OPEN_PREPARED_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_open_prepared_vaes` if the CPU supports its features (`VG_AES_GCM_OPEN_PREPARED_VAES_FEATURES`); `vg_aes_gcm_open_prepared_aesni` if the CPU supports its features (`VG_AES_GCM_OPEN_PREPARED_AESNI_FEATURES`); `vg_aes_gcm_open_prepared_vpclmul` if the CPU supports its features (`VG_AES_GCM_OPEN_PREPARED_VPCLMUL_FEATURES`); `vg_aes_gcm_open_prepared_pclmul` if the CPU supports its features (`VG_AES_GCM_OPEN_PREPARED_PCLMUL_FEATURES`); or else `vg_aes_gcm_open_prepared`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1088 bytes.
+/// * `ctx` must be valid for reads of 1032 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
@@ -652,7 +673,7 @@ pub unsafe fn vg_aes_gcm_seal_prepared_auto(ctx: *const [u64; 136], rounds: usiz
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_gcm_open_prepared_auto(ctx: *const [u64; 136], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe fn vg_aes_gcm_open_prepared_auto(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::gcm::VG_AES_GCM_OPEN_PREPARED_VAES_VPCLMUL_AVX512_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_open_prepared_vaes_vpclmul_avx512`'s, and the CPU
@@ -856,13 +877,13 @@ pub unsafe fn vg_aes_gcm_stream_decrypt_auto(ctx: *const [u64; 32], rounds: usiz
     unsafe { crate::gcm::vg_aes_gcm_stream_decrypt(ctx, rounds, state, aad_len, text_len, data, len) }
 }
 
-/// `vg_aes_gcm_open_to` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToPreparedContract`.
+/// `vg_aes_gcm_open_to` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToPreparedContract`.
 ///
 /// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_gcm_open_to_prepared_vaes_vpclmul_avx512` if the CPU supports its features (`VG_AES_GCM_OPEN_TO_PREPARED_VAES_VPCLMUL_AVX512_FEATURES`); `vg_aes_gcm_open_to_prepared_vaes_vpclmul` if the CPU supports its features (`VG_AES_GCM_OPEN_TO_PREPARED_VAES_VPCLMUL_FEATURES`); `vg_aes_gcm_open_to_prepared_vaes_pclmul` if the CPU supports its features (`VG_AES_GCM_OPEN_TO_PREPARED_VAES_PCLMUL_FEATURES`); `vg_aes_gcm_open_to_prepared_aesni_vpclmul` if the CPU supports its features (`VG_AES_GCM_OPEN_TO_PREPARED_AESNI_VPCLMUL_FEATURES`); `vg_aes_gcm_open_to_prepared_aesni_pclmul_avx` if the CPU supports its features (`VG_AES_GCM_OPEN_TO_PREPARED_AESNI_PCLMUL_AVX_FEATURES`); `vg_aes_gcm_open_to_prepared_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_OPEN_TO_PREPARED_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_open_to_prepared_vaes` if the CPU supports its features (`VG_AES_GCM_OPEN_TO_PREPARED_VAES_FEATURES`); `vg_aes_gcm_open_to_prepared_aesni` if the CPU supports its features (`VG_AES_GCM_OPEN_TO_PREPARED_AESNI_FEATURES`); `vg_aes_gcm_open_to_prepared_vpclmul` if the CPU supports its features (`VG_AES_GCM_OPEN_TO_PREPARED_VPCLMUL_FEATURES`); `vg_aes_gcm_open_to_prepared_pclmul` if the CPU supports its features (`VG_AES_GCM_OPEN_TO_PREPARED_PCLMUL_FEATURES`); or else `vg_aes_gcm_open_to_prepared`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1088 bytes.
+/// * `ctx` must be valid for reads of 1032 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `src` must be valid for reads of `len` bytes.
@@ -875,7 +896,7 @@ pub unsafe fn vg_aes_gcm_stream_decrypt_auto(ctx: *const [u64; 32], rounds: usiz
 /// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2776 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_gcm_open_to_prepared_auto(ctx: *const [u64; 136], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe fn vg_aes_gcm_open_to_prepared_auto(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::gcm::VG_AES_GCM_OPEN_TO_PREPARED_VAES_VPCLMUL_AVX512_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_open_to_prepared_vaes_vpclmul_avx512`'s, and the CPU
@@ -931,13 +952,13 @@ pub unsafe fn vg_aes_gcm_open_to_prepared_auto(ctx: *const [u64; 136], rounds: u
     unsafe { crate::gcm::vg_aes_gcm_open_to_prepared(ctx, rounds, nonce, nonce_len, aad, aad_len, src, len, dst, dst_len, tag, tag_len) }
 }
 
-/// `vg_aes_gcm_seal_gather` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherPreparedContract`.
+/// `vg_aes_gcm_seal_gather` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherPreparedContract`.
 ///
 /// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_gcm_seal_gather_prepared_vaes_vpclmul_avx512` if the CPU supports its features (`VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_VPCLMUL_AVX512_FEATURES`); `vg_aes_gcm_seal_gather_prepared_vaes_vpclmul` if the CPU supports its features (`VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_VPCLMUL_FEATURES`); `vg_aes_gcm_seal_gather_prepared_vaes_pclmul` if the CPU supports its features (`VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_PCLMUL_FEATURES`); `vg_aes_gcm_seal_gather_prepared_aesni_vpclmul` if the CPU supports its features (`VG_AES_GCM_SEAL_GATHER_PREPARED_AESNI_VPCLMUL_FEATURES`); `vg_aes_gcm_seal_gather_prepared_aesni_pclmul_avx` if the CPU supports its features (`VG_AES_GCM_SEAL_GATHER_PREPARED_AESNI_PCLMUL_AVX_FEATURES`); `vg_aes_gcm_seal_gather_prepared_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_SEAL_GATHER_PREPARED_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_seal_gather_prepared_vaes` if the CPU supports its features (`VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_FEATURES`); `vg_aes_gcm_seal_gather_prepared_aesni` if the CPU supports its features (`VG_AES_GCM_SEAL_GATHER_PREPARED_AESNI_FEATURES`); `vg_aes_gcm_seal_gather_prepared_vpclmul` if the CPU supports its features (`VG_AES_GCM_SEAL_GATHER_PREPARED_VPCLMUL_FEATURES`); `vg_aes_gcm_seal_gather_prepared_pclmul` if the CPU supports its features (`VG_AES_GCM_SEAL_GATHER_PREPARED_PCLMUL_FEATURES`); or else `vg_aes_gcm_seal_gather_prepared`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1088 bytes.
+/// * `ctx` must be valid for reads of 1032 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
@@ -950,7 +971,7 @@ pub unsafe fn vg_aes_gcm_open_to_prepared_auto(ctx: *const [u64; 136], rounds: u
 /// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_gcm_seal_gather_prepared_auto(ctx: *const [u64; 136], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe fn vg_aes_gcm_seal_gather_prepared_auto(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::gcm::VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_VPCLMUL_AVX512_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_seal_gather_prepared_vaes_vpclmul_avx512`'s, and the CPU
@@ -1006,13 +1027,13 @@ pub unsafe fn vg_aes_gcm_seal_gather_prepared_auto(ctx: *const [u64; 136], round
     unsafe { crate::gcm::vg_aes_gcm_seal_gather_prepared(ctx, rounds, nonce, nonce_len, aad, aad_len, src, src_count, dst, len, tag) }
 }
 
-/// `vg_aes_gcm_stream_encrypt` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamEncryptPreparedContract`.
+/// `vg_aes_gcm_stream_encrypt` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamEncryptPreparedContract`.
 ///
 /// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512` if the CPU supports its features (`VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES`); `vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VAES_VPCLMUL_FEATURES`); `vg_aes_gcm_stream_encrypt_prepared_vaes_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VAES_PCLMUL_FEATURES`); `vg_aes_gcm_stream_encrypt_prepared_aesni_vpclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_ENCRYPT_PREPARED_AESNI_VPCLMUL_FEATURES`); `vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul_avx` if the CPU supports its features (`VG_AES_GCM_STREAM_ENCRYPT_PREPARED_AESNI_PCLMUL_AVX_FEATURES`); `vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_ENCRYPT_PREPARED_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_stream_encrypt_prepared_vaes` if the CPU supports its features (`VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VAES_FEATURES`); `vg_aes_gcm_stream_encrypt_prepared_aesni` if the CPU supports its features (`VG_AES_GCM_STREAM_ENCRYPT_PREPARED_AESNI_FEATURES`); `vg_aes_gcm_stream_encrypt_prepared_vpclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VPCLMUL_FEATURES`); `vg_aes_gcm_stream_encrypt_prepared_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_ENCRYPT_PREPARED_PCLMUL_FEATURES`); or else `vg_aes_gcm_stream_encrypt_prepared`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1088 bytes.
+/// * `ctx` must be valid for reads of 1032 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `rounds` must be 10, 12 or 14.
@@ -1021,7 +1042,7 @@ pub unsafe fn vg_aes_gcm_seal_gather_prepared_auto(ctx: *const [u64; 136], round
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_gcm_stream_encrypt_prepared_auto(ctx: *const [u64; 136], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe fn vg_aes_gcm_stream_encrypt_prepared_auto(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512`'s, and the CPU
@@ -1077,13 +1098,13 @@ pub unsafe fn vg_aes_gcm_stream_encrypt_prepared_auto(ctx: *const [u64; 136], ro
     unsafe { crate::gcm::vg_aes_gcm_stream_encrypt_prepared(ctx, rounds, state, aad_len, text_len, data, len) }
 }
 
-/// `vg_aes_gcm_stream_decrypt` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamDecryptPreparedContract`.
+/// `vg_aes_gcm_stream_decrypt` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamDecryptPreparedContract`.
 ///
 /// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul_avx512` if the CPU supports its features (`VG_AES_GCM_STREAM_DECRYPT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES`); `vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_DECRYPT_PREPARED_VAES_VPCLMUL_FEATURES`); `vg_aes_gcm_stream_decrypt_prepared_vaes_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_DECRYPT_PREPARED_VAES_PCLMUL_FEATURES`); `vg_aes_gcm_stream_decrypt_prepared_aesni_vpclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_DECRYPT_PREPARED_AESNI_VPCLMUL_FEATURES`); `vg_aes_gcm_stream_decrypt_prepared_aesni_pclmul_avx` if the CPU supports its features (`VG_AES_GCM_STREAM_DECRYPT_PREPARED_AESNI_PCLMUL_AVX_FEATURES`); `vg_aes_gcm_stream_decrypt_prepared_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_DECRYPT_PREPARED_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_stream_decrypt_prepared_vaes` if the CPU supports its features (`VG_AES_GCM_STREAM_DECRYPT_PREPARED_VAES_FEATURES`); `vg_aes_gcm_stream_decrypt_prepared_aesni` if the CPU supports its features (`VG_AES_GCM_STREAM_DECRYPT_PREPARED_AESNI_FEATURES`); `vg_aes_gcm_stream_decrypt_prepared_vpclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_DECRYPT_PREPARED_VPCLMUL_FEATURES`); `vg_aes_gcm_stream_decrypt_prepared_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_DECRYPT_PREPARED_PCLMUL_FEATURES`); or else `vg_aes_gcm_stream_decrypt_prepared`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1088 bytes.
+/// * `ctx` must be valid for reads of 1032 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `rounds` must be 10, 12 or 14.
@@ -1092,7 +1113,7 @@ pub unsafe fn vg_aes_gcm_stream_encrypt_prepared_auto(ctx: *const [u64; 136], ro
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_gcm_stream_decrypt_prepared_auto(ctx: *const [u64; 136], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe fn vg_aes_gcm_stream_decrypt_prepared_auto(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     let cpu = verified_garbage_cpu::detected();
     if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_DECRYPT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul_avx512`'s, and the CPU

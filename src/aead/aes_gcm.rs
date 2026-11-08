@@ -44,8 +44,8 @@ use crate::arch::dispatch::gcm::{
 use crate::arch::dispatch::gcm::{
     vg_aes_gcm_open_prepared_auto, vg_aes_gcm_open_to_prepared_auto, vg_aes_gcm_prepare_auto,
     vg_aes_gcm_seal_gather_prepared_auto, vg_aes_gcm_seal_prepared_auto,
-    vg_aes_gcm_wipe_prepared_auto,
     vg_aes_gcm_stream_decrypt_prepared_auto, vg_aes_gcm_stream_encrypt_prepared_auto,
+    vg_aes_gcm_wipe_prepared_auto,
 };
 #[cfg(not(target_arch = "x86_64"))]
 use crate::arch::dispatch::gcm::{

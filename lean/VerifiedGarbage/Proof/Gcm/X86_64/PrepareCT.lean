@@ -492,71 +492,100 @@ theorem flaggedAvx_ct :
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   subst hr; exact h
 
-/-! `vg_aes_gcm_wipe_prepared` (`wipe`): `onFlag` chooses between two blocks
-that zero the context 16 bytes at a time from `xmm0`, the first 1024 bytes
-where the flag word is not 1 and the first 256 where it is. Each block is
-verified against `wipePreparedContract` with the flag word's value in its
+/-! `vg_aes_gcm_wipe_prepared` (`wipe avx`): `onFlag` chooses between two
+blocks that zero the context from a zero vector register, 32 bytes at a time
+from `ymm0` with AVX and 16 from `xmm0` without, the first 1024 bytes where
+the flag word is not 1 and the first 256 where it is. Each block is verified
+against `wipePreparedContract` with the flag word's value in its
 precondition and no leak (`wipeBranch`), and `Verified.of_onFlagCtx` joins
 them. -/
 
-open VG.Impl.Gcm.X86_64.Flag (zeroStores zeroBlocks wipe)
+open VG.Impl.Gcm.X86_64.Flag (storeBytes zeroStore zeroStores zeroReg zeroBlocks wipe)
 open VG.Proof.Zeroize (Prefix prefix_writeW prefix_spec)
 
-/-- What `zeroStores k n` keeps and makes, from `s`. -/
+/-- The register `zeroStore avx` stores from is zero. -/
+def Src0 (avx : Bool) (s : State) : Prop := if avx then s.ymm .xmm0 = 0 else s.xmm .xmm0 = 0
+
+/-- What `zeroStores avx k n` keeps and makes, from `s`. -/
 def ZOk (s : State) (i : Nat) (t : State) : Prop :=
-  t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.xmm .xmm0 = s.xmm .xmm0 ∧ t.mxcsr = s.mxcsr ∧
+  t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.xmm = s.xmm ∧ t.ymmHi = s.ymmHi ∧ t.mxcsr = s.mxcsr ∧
   Prefix t.mem (s.gpr .rdi) i ∧ Frame s.wr s.mem t.mem
 
-theorem zeroStores_ok (n : Nat) : ∀ (k : Nat) (s₀ s : State),
-    s.xmm .xmm0 = 0 → 16 * (k + n) < 2 ^ 64 →
-    (∀ j < n, InRegions s₀.wr (s₀.gpr .rdi + BitVec.ofNat 64 (16 * (k + j))) 16) →
-    ZOk s₀ (16 * k) s →
-    WP isa (.block (zeroStores k n)) s (ZOk s₀ (16 * (k + n))) := by
+theorem ofInt_nat (d : Nat) : BitVec.ofInt 64 (d : Int) = BitVec.ofNat 64 d := BitVec.ofInt_natCast _ _
+
+theorem zeroStore_run (avx : Bool) (s : State) (d : Nat) (hx : Src0 avx s)
+    (hs : InRegions s.wr (s.gpr .rdi + BitVec.ofNat 64 d) (storeBytes avx)) :
+    isa.exec (zeroStore avx d) s =
+      some { s with mem := s.mem.writeW (s.gpr .rdi + BitVec.ofNat 64 d) (0 : BitVec (8 * storeBytes avx)) } := by
+  cases avx <;> simp only [Src0, storeBytes, Bool.false_eq_true, ↓reduceIte] at hx hs <;>
+    simp only [zeroStore, Bool.false_eq_true, ↓reduceIte, exec, State.store128, State.store256, State.ea,
+      ofInt_nat, hx, hs] <;> rfl
+
+theorem zeroStores_ok (avx : Bool) (n : Nat) : ∀ (k : Nat) (s₀ s : State),
+    Src0 avx s → storeBytes avx * (k + n) < 2 ^ 64 →
+    (∀ j < n, InRegions s₀.wr (s₀.gpr .rdi + BitVec.ofNat 64 (storeBytes avx * (k + j))) (storeBytes avx)) →
+    ZOk s₀ (storeBytes avx * k) s →
+    WP isa (.block (zeroStores avx k n)) s (ZOk s₀ (storeBytes avx * (k + n))) := by
+  have hb : 8 * storeBytes avx / 8 = storeBytes avx := by omega
   induction n with
   | zero => intro k s₀ s _ _ _ h; exact WP.block_nil (by simpa using h)
   | succ n ih =>
     intro k s₀ s hx hn hw h
-    obtain ⟨hg, hrd, hwr, hx0, hmx, hz, hf⟩ := h
+    obtain ⟨hg, hrd, hwr, hxm, hyh, hmx, hz, hf⟩ := h
     have hs := hw 0 (by omega)
     rw [Nat.add_zero] at hs
     have hd : s.gpr .rdi = s₀.gpr .rdi := by rw [hg]
-    let s' : State := { s with mem := s.mem.writeW (s₀.gpr .rdi + BitVec.ofNat 64 (16 * k)) (0 : BitVec 128) }
-    have e : 16 * (k + (n + 1)) = 16 * (k + 1 + n) := by omega
-    rw [e]
-    refine WP.block_cons_iff.mpr ⟨s', ?_,
-      ih (k + 1) s₀ s' hx (by omega) (fun j hj => by have := hw (j + 1) (by omega); rwa [show k + (j + 1) = k + 1 + j by omega] at this) ?_⟩
-    · have ho : BitVec.ofInt 64 (16 * (k : Int)) = BitVec.ofNat 64 (16 * k) := by
-        rw [show (16 * (k : Int)) = ((16 * k : Nat) : Int) by push_cast; rfl, BitVec.ofInt_natCast]
-      simp only [exec, State.store128, State.ea, hd, hx, ho]
-      simp only [(hwr ▸ hs : InRegions s.wr _ 16), ↓reduceIte]
-      rfl
+    let s' : State :=
+      { s with mem := s.mem.writeW (s₀.gpr .rdi + BitVec.ofNat 64 (storeBytes avx * k)) (0 : BitVec (8 * storeBytes avx)) }
+    rw [show k + (n + 1) = k + 1 + n by omega] at hn ⊢
+    have hle : storeBytes avx * (k + 1) ≤ storeBytes avx * (k + 1 + n) := Nat.mul_le_mul_left _ (by omega)
+    rw [Nat.mul_succ] at hle
+    refine WP.block_cons_iff.mpr ⟨s', ?_, ih (k + 1) s₀ s' hx hn
+      (fun j hj => by
+        have := hw (j + 1) (by omega); rwa [show k + (j + 1) = k + 1 + j by omega] at this) ?_⟩
+    · have := zeroStore_run avx s (storeBytes avx * k) hx (by rw [hd, hwr]; exact hs)
+      rw [hd] at this
+      exact this
     · obtain ⟨r, hr, hc⟩ := hs
-      have e1 : 16 * (k + 1) = 16 * k + 128 / 8 := by omega
-      rw [e1]
-      exact ⟨hg, hrd, hwr, hx0, hmx, prefix_writeW hz (by omega), hf.writeW hr _ hc⟩
+      have hp := prefix_writeW (w := 8 * storeBytes avx) hz (by rw [hb]; omega)
+      rw [hb, ← Nat.mul_succ] at hp
+      exact ⟨hg, hrd, hwr, hxm, hyh, hmx, hp, hf.writeW hr _ (by rw [hb]; exact hc)⟩
 
 
-theorem pxor_run (s : State) : ∃ s₁, isa.exec (.xop (.bin .pxor .xmm0 .xmm0)) s = some s₁ ∧
-    s₁.xmm .xmm0 = 0 ∧ s₁.gpr = s.gpr ∧ s₁.mem = s.mem ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr ∧ s₁.mxcsr = s.mxcsr := by
-  refine ⟨_, rfl, ?_⟩
-  simp only [XOp.exec, State.setXmm, XBinOp.eval, ↓reduceIte, BitVec.xor_self, and_self]
-  exact ⟨rfl, trivial⟩
+/-- The zeroing of the register the stores read: `pxor` without AVX,
+`vpxor` with. -/
+theorem zero_run (avx : Bool) (s : State) : ∃ s₁, isa.exec (zeroReg avx) s = some s₁ ∧
+    Src0 avx s₁ ∧ s₁.gpr = s.gpr ∧ s₁.mem = s.mem ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr ∧ s₁.mxcsr = s.mxcsr := by
+  cases avx <;> refine ⟨_, rfl, ?_⟩ <;> simp [Src0, XOp.exec, VOp.exec, State.setXmm, State.setV, State.ymm, State.lane,
+    XBinOp.eval, VBinOp.sse]
 
-
-/-- `zeroBlocks n` from `s₀`: the first `16 * n` bytes at `rdi` are zero, and
-nothing else the calling convention or the contract reads changed. -/
-theorem zeroBlocks_ok (n : Nat) (s₀ : State) (hn : 16 * n < 2 ^ 64)
-    (hw : ∀ j < n, InRegions s₀.wr (s₀.gpr .rdi + BitVec.ofNat 64 (16 * j)) 16) :
-    WP isa (.block (zeroBlocks n)) s₀ fun t =>
-      t.gpr = s₀.gpr ∧ t.mxcsr = s₀.mxcsr ∧ Prefix t.mem (s₀.gpr .rdi) (16 * n) ∧
+/-- `zeroBlocks avx (storeBytes avx * n)` from `s₀`: the first
+`storeBytes avx * n` bytes at `rdi` are zero, and nothing else the calling
+convention or the contract reads changed. -/
+theorem zeroBlocks_ok (avx : Bool) (n : Nat) (s₀ : State) (hn : storeBytes avx * n < 2 ^ 64)
+    (hw : ∀ j < n, InRegions s₀.wr (s₀.gpr .rdi + BitVec.ofNat 64 (storeBytes avx * j)) (storeBytes avx)) :
+    WP isa (.block (zeroBlocks avx (storeBytes avx * n))) s₀ fun t =>
+      t.gpr = s₀.gpr ∧ t.mxcsr = s₀.mxcsr ∧ Prefix t.mem (s₀.gpr .rdi) (storeBytes avx * n) ∧
         Frame s₀.wr s₀.mem t.mem := by
-  obtain ⟨s₁, he, hx, hg, hm, hrd, hwr, hmx⟩ := pxor_run s₀
-  have h0 : ZOk s₁ (16 * 0) s₁ := ⟨rfl, rfl, rfl, rfl, rfl, fun j hj => absurd hj (by omega), Frame.refl _ _⟩
-  refine WP.block_cons_iff.mpr ⟨s₁, he, WP.mono (zeroStores_ok n 0 s₁ s₁ hx (by omega)
-    (fun j hj => by rw [hg, hwr, Nat.zero_add]; exact hw j hj) h0) fun t ⟨tg, _, _, _, tmx, tz, tf⟩ => ?_⟩
-  rw [hg, Nat.zero_add] at tz
-  rw [hwr, hm] at tf
-  exact ⟨tg.trans hg, tmx.trans hmx, tz, tf⟩
+  obtain ⟨s₁, he, hx, hg, hm, hrd, hwr, hmx⟩ := zero_run avx s₀
+  have h0 : ZOk s₁ (storeBytes avx * 0) s₁ :=
+    ⟨rfl, rfl, rfl, rfl, rfl, rfl, fun j hj => absurd hj (by omega), Frame.refl _ _⟩
+  have hst := zeroStores_ok avx n 0 s₁ s₁ hx (by rw [Nat.zero_add]; exact hn)
+    (fun j hj => by rw [hg, hwr, Nat.zero_add]; exact hw j hj) h0
+  have fin (t : State) (h : ZOk s₁ (storeBytes avx * (0 + n)) t) :
+      t.gpr = s₀.gpr ∧ t.mxcsr = s₀.mxcsr ∧ Prefix t.mem (s₀.gpr .rdi) (storeBytes avx * n) ∧
+        Frame s₀.wr s₀.mem t.mem := by
+    obtain ⟨tg, _, _, _, _, tmx, tz, tf⟩ := h
+    rw [hg, Nat.zero_add] at tz
+    rw [hwr, hm] at tf
+    exact ⟨tg.trans hg, tmx.trans hmx, tz, tf⟩
+  have e : storeBytes avx * n / storeBytes avx = n := by cases avx <;> simp [storeBytes]
+  simp only [zeroBlocks, e, List.cons_append]
+  refine WP.block_cons_iff.mpr ⟨s₁, he, WP.block_append_iff.mpr (WP.mono hst fun t h => ?_)⟩
+  cases avx
+  · exact WP.block_nil (fin t h)
+  · exact WP.block_cons_iff.mpr ⟨_, rfl, WP.block_nil (fin t h)⟩
+
 
 /-- `wipe`'s contract on the registers, for the branch that runs where the
 flag word satisfies `F`. -/
@@ -567,17 +596,24 @@ def wipeX86_64 (F : BitVec 64 → Prop) : Contract isa where
     List.replicate (Spec.Gcm.wipePreparedLen s.mem (s.gpr .rdi)) 0
   pub s₁ s₂ := s₁.gpr .rdi = s₂.gpr .rdi
 
-/-- The branch of `wipe` zeroing `16 * n` bytes, where the flag word says
+/-- The branch of `wipe avx` zeroing `bytes` bytes, where the flag word says
 that is all there is to zero. -/
-theorem zeroBlocks_correct {F : BitVec 64 → Prop} (n : Nat) (hn : n ≤ 64)
-    (hF : ∀ (m : Mem) (p : Addr), F (m.readW (p + 1024) 64) → Spec.Gcm.wipePreparedLen m p = 16 * n)
+theorem zeroBlocks_correct (avx : Bool) {F : BitVec 64 → Prop} (bytes : Nat) (hb : bytes ≤ 1024)
+    (he : storeBytes avx * (bytes / storeBytes avx) = bytes)
+    (hF : ∀ (m : Mem) (p : Addr), F (m.readW (p + 1024) 64) → Spec.Gcm.wipePreparedLen m p = bytes)
     (s₀ : State) (hp : (wipeX86_64 F).pre s₀) :
-    ∃ t s', Exec isa (.block (zeroBlocks n)) s₀ t s' ∧ abiPreserved s₀ s' ∧ (wipeX86_64 F).post s₀ s' := by
-  obtain ⟨_, hwr, hb, hret, hf⟩ := hp
-  have hw : ∀ j < n, InRegions s₀.wr (s₀.gpr .rdi + BitVec.ofNat 64 (16 * j)) 16 := fun j hj =>
-    ⟨_, by rw [hwr]; exact List.mem_singleton_self _, Offset.contains_base _ (by omega) (by omega)⟩
-  obtain ⟨t, s', he, hg, hmx, hz, fr⟩ := zeroBlocks_ok n s₀ (by omega) hw
-  refine ⟨t, s', he, ⟨fun r _ => by rw [hg], ?_, by rw [hmx]⟩, ?_⟩
+    ∃ t s', Exec isa (.block (zeroBlocks avx bytes)) s₀ t s' ∧ abiPreserved s₀ s' ∧
+      (wipeX86_64 F).post s₀ s' := by
+  obtain ⟨_, hwr, hlen, hret, hf⟩ := hp
+  have hw : ∀ j < bytes / storeBytes avx,
+      InRegions s₀.wr (s₀.gpr .rdi + BitVec.ofNat 64 (storeBytes avx * j)) (storeBytes avx) := fun j hj => by
+    have : storeBytes avx * (j + 1) ≤ storeBytes avx * (bytes / storeBytes avx) := Nat.mul_le_mul_left _ hj
+    rw [Nat.mul_succ, he] at this
+    exact ⟨_, by rw [hwr]; exact List.mem_singleton_self _, Offset.contains_base _ (by omega) (by omega)⟩
+  have hz := zeroBlocks_ok avx (bytes / storeBytes avx) s₀ (by rw [he]; omega) hw
+  rw [he] at hz
+  obtain ⟨t, s', hx, hg, hmx, hz, fr⟩ := hz
+  refine ⟨t, s', hx, ⟨fun r _ => by rw [hg], ?_, by rw [hmx]⟩, ?_⟩
   · rw [hwr] at fr
     exact fr.readW (Region.contains_self _ _) (fun r hr => by
       obtain rfl := List.mem_singleton.mp hr; exact hret) (by decide)
@@ -585,23 +621,23 @@ theorem zeroBlocks_correct {F : BitVec 64 → Prop} (n : Nat) (hn : n ≤ 64)
     rw [hF _ _ hf]
     exact prefix_spec hz
 
+theorem zeroBlocks1024_ct (avx : Bool) (F : BitVec 64 → Prop) :
+    ConstantTime isa (wipeX86_64 F).pre (wipeX86_64 F).pub (.block (zeroBlocks avx 1024)) := by
+  cases avx <;>
+  · refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi]) ?_ (by taint_decide)
+    intro s₁ s₂ _ _ h
+    refine Taint.agree_ofRegs fun r hr => ?_
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    subst hr; exact h
 
-theorem zeroBlocks64_ct (F : BitVec 64 → Prop) :
-    ConstantTime isa (wipeX86_64 F).pre (wipeX86_64 F).pub (.block (zeroBlocks 64)) := by
-  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi]) ?_ (by taint_decide)
-  intro s₁ s₂ _ _ h
-  refine Taint.agree_ofRegs fun r hr => ?_
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  subst hr; exact h
-
-theorem zeroBlocks16_ct (F : BitVec 64 → Prop) :
-    ConstantTime isa (wipeX86_64 F).pre (wipeX86_64 F).pub (.block (zeroBlocks 16)) := by
-  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi]) ?_ (by taint_decide)
-  intro s₁ s₂ _ _ h
-  refine Taint.agree_ofRegs fun r hr => ?_
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  subst hr; exact h
-
+theorem zeroBlocks256_ct (avx : Bool) (F : BitVec 64 → Prop) :
+    ConstantTime isa (wipeX86_64 F).pre (wipeX86_64 F).pub (.block (zeroBlocks avx 256)) := by
+  cases avx <;>
+  · refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi]) ?_ (by taint_decide)
+    intro s₁ s₂ _ _ h
+    refine Taint.agree_ofRegs fun r hr => ?_
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    subst hr; exact h
 
 /-- `wipePreparedContract` for the branch that runs where the flag word
 satisfies `C`, with no leak. -/
@@ -625,22 +661,20 @@ theorem wipe_implies_ne : (wipeX86_64 (· ≠ 1)).Implies (wipeBranch (· ≠ 1)
   sig_implies [wipeBranch, Spec.Gcm.wipePreparedSig, Spec.Gcm.wipePreparedPost, wipeX86_64,
     X86_64.abi, X86_64.argRegs] [wipeSat] using wipeSat 0
 
-
 theorem wipe_implies_eq : (wipeX86_64 (· = 1)).Implies (wipeBranch (· = 1)) := by
   sig_implies [wipeBranch, Spec.Gcm.wipePreparedSig, Spec.Gcm.wipePreparedPost, wipeX86_64,
     X86_64.abi, X86_64.argRegs] [wipeSat] using wipeSat 1
 
-theorem wipe64_verified : Verified X86_64.target (.block (zeroBlocks 64)) (wipeBranch (· ≠ 1)) :=
-  Verified.of_correct (zeroBlocks_correct 64 (by decide)
-    (fun m p h => by simp only [Spec.Gcm.wipePreparedLen, h, ↓reduceIte])) (zeroBlocks64_ct _) wipe_implies_ne
-
-theorem wipe16_verified : Verified X86_64.target (.block (zeroBlocks 16)) (wipeBranch (· = 1)) :=
-  Verified.of_correct (zeroBlocks_correct 16 (by decide)
-    (fun m p h => by simp only [Spec.Gcm.wipePreparedLen, h, ↓reduceIte])) (zeroBlocks16_ct _) wipe_implies_eq
-
-/-- `vg_aes_gcm_wipe_prepared`. -/
-theorem wipe_verified : Verified X86_64.target wipe (Spec.Gcm.wipePreparedContract X86_64.abi) :=
-  Verified.of_onFlagCtx (by decide) wipe64_verified wipe16_verified
+/-- `vg_aes_gcm_wipe_prepared`, with AVX if `avx`. -/
+theorem wipe_verified (avx : Bool) :
+    Verified X86_64.target (wipe avx) (Spec.Gcm.wipePreparedContract X86_64.abi) :=
+  Verified.of_onFlagCtx (by decide)
+    (Verified.of_correct (zeroBlocks_correct avx 1024 (by decide) (by cases avx <;> rfl)
+      (fun m p h => by simp only [Spec.Gcm.wipePreparedLen, h, ↓reduceIte]))
+      (zeroBlocks1024_ct avx _) wipe_implies_ne)
+    (Verified.of_correct (zeroBlocks_correct avx 256 (by decide) (by cases avx <;> rfl)
+      (fun m p h => by simp only [Spec.Gcm.wipePreparedLen, h, ↓reduceIte]))
+      (zeroBlocks256_ct avx _) wipe_implies_eq)
     (fun _ _ _ h => h) (fun _ _ _ h => h) (fun _ _ => rfl)
     (by obtain ⟨s, hs⟩ := wipe_implies_ne.sat
         exact ⟨s, pre_of_rel (name := "ctx") (w := true) (N := 129) (rest := []) (ret := none)
