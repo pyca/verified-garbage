@@ -97,7 +97,7 @@ macro_rules! verified_fn {
 /// The implementations a key calls for each message: those their
 /// dispatchers would run on this CPU, which `new` chooses once with their
 /// selectors (`<function>_select`, `VG.Rust.selector`), so that no call
-/// chooses again. The Rust code names no implementation.
+/// chooses again.
 #[derive(Clone, Copy)]
 struct Fns {
     /// `vg_aes_gcm_seal` (on x86-64, `_prepared`; on AArch64, `_with_powers`).
