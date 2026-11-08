@@ -257,19 +257,9 @@ jobs:
             echo "::warning::This shard restored ${RESTORED:-no build}, not the plan's $PLANNED: another job assembles the build."
             exit 0
           fi
-          # Tried again after a refusal (the token's rate limit is shared with
-          # every job and run); an error after that only leaves the assembly
-          # to another job.
-          names=
-          for delay in 5 15 45 ""; do
-            if names=$(gh api --paginate "repos/$GH_REPO/actions/runs/$GITHUB_RUN_ID/artifacts?per_page=100" \
-                --jq '.artifacts[].name'); then
-              break
-            fi
-            names=
-            [ -n "$delay" ] || echo "::warning::Listing the run's artifacts failed: another job assembles the build."
-            sleep "${delay:-0}"
-          done
+          # An error here only leaves the assembly to another job.
+          names=$(gh api --paginate "repos/$GH_REPO/actions/runs/$GITHUB_RUN_ID/artifacts?per_page=100" \
+            --jq '.artifacts[].name' || true)
           for s in $(jq -r '.[]' <<< "$SHARDS"); do
             if ! grep -qxF "lean-build-$s" <<< "$names"; then
               echo "Shard $s's outputs are not uploaded yet: another job assembles the build."
@@ -325,29 +315,19 @@ jobs:
       && (needs.lean-shard.result == 'success' || needs.lean-shard.result == 'skipped') }}
     needs: [lean, lean-shard]
     runs-on: ubuntu-26.04
-    # To start the publisher.
+    # To list the run's artifacts, and start the publisher.
     permissions:
       actions: write
       contents: read
     steps:
-      # Only the actions it runs.
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        if: ${{ needs.lean-shard.result == 'success' }}
-        with:
-          persist-credentials: false
-          sparse-checkout-cone-mode: false
-          sparse-checkout: /.github/actions/
-      - uses: ./.github/actions/lean-assembled
-        id: assembled
-        if: ${{ needs.lean-shard.result == 'success' }}
       - name: Start the publisher
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           SHARDS: ${{ needs.lean-shard.result }}
-          ASSEMBLED: ${{ steps.assembled.outputs.assembled }}
         run: |
-          if [ "$SHARDS" = success ] && [ "$ASSEMBLED" != true ]; then
+          if [ "$SHARDS" = success ] && ! gh api --paginate "repos/$GH_REPO/actions/runs/$GITHUB_RUN_ID/artifacts?per_page=100" \
+              --jq '.artifacts[].name' | grep -q '^lean-assembled-'; then
             echo "No shard assembled the build: the next push to main publishes the cache."
             exit 0
           fi
@@ -1259,7 +1239,7 @@ jobs:
     if: ${{ always() }}
     needs: [lean, lean-shard, lean-imports, rust-arches, rust, rust-thumb, rust-lint, rust-cpu-features, coverage]
     runs-on: ubuntu-26.04
-    # For the metrics, which read the run through the API.
+    # To list the run's artifacts.
     permissions:
       actions: read
       contents: read
@@ -1280,6 +1260,8 @@ jobs:
           COVERAGE: ${{ needs.coverage.result }} ${{ needs.rust-arches.outputs.arches == '[]' }}
           # Skipped when `lean` built the proofs itself.
           SHARDS: ${{ needs.lean-shard.result }}
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
           echo "$RESULTS | $RUST | $THUMB | $LINT | $CPU | $COVERAGE | $SHARDS"
           for r in $RESULTS; do
@@ -1290,41 +1272,38 @@ jobs:
           done
           [ "$COVERAGE" = "success false" ] || [ "$COVERAGE" = "skipped true" ] || exit 1
           case "$SHARDS" in
-            skipped|success) ;;
+            skipped) ;;
+            success)
+              if gh api --paginate "repos/$GH_REPO/actions/runs/$GITHUB_RUN_ID/artifacts?per_page=100" \
+                  --jq '.artifacts[].name' | grep -q '^lean-assembled-'; then
+                echo "A shard assembled the build."
+              else
+                echo "No shard assembled the build: assembling it here."
+                echo "assemble=true" >> "$GITHUB_OUTPUT"
+              fi ;;
             *) exit 1 ;;
           esac
-      # With shards, one of them must have assembled the build. Only the
-      # actions this runs, unless it assembles the build itself.
-      - if: ${{ needs.lean-shard.result == 'success' }}
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-          sparse-checkout-cone-mode: false
-          sparse-checkout: /.github/actions/
-      - if: ${{ needs.lean-shard.result == 'success' }}
-        uses: ./.github/actions/lean-assembled
-        id: assembled
       # What `lean` does without shards, after them.
-      - if: ${{ steps.assembled.outputs.assembled == 'false' }}
+      - if: ${{ steps.check.outputs.assemble == 'true' }}
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: ./.github/actions/lean-prepare
         id: prepare
-        if: ${{ steps.assembled.outputs.assembled == 'false' }}
+        if: ${{ steps.check.outputs.assemble == 'true' }}
         with:
           key: ${{ needs.lean.outputs.build-cache }}
           restore-keys: |
             ${{ needs.lean.outputs.build-key }}
             ${{ needs.lean.outputs.build-cache-prefix }}
       - uses: ./.github/actions/download-artifact
-        if: ${{ steps.assembled.outputs.assembled == 'false' }}
+        if: ${{ steps.check.outputs.assemble == 'true' }}
         with:
           pattern: lean-build-*
           merge-multiple: true
           path: ${{ runner.temp }}/lean-build
       - uses: ./.github/actions/lean-assemble
-        if: ${{ steps.assembled.outputs.assembled == 'false' }}
+        if: ${{ steps.check.outputs.assemble == 'true' }}
         with:
           id: all-green
           cache-hit: ${{ steps.prepare.outputs.cache-hit }}
@@ -1334,8 +1313,7 @@ jobs:
       # Last, whatever the run's outcome, and never failing or holding it up
       # (each bounded, and a failure or timeout of either is ignored): what
       # the run did and how long it took, kept for later analysis
-      # (ci/ci_metrics.py, fetched alone: this job checks out at most
-      # its actions unless it assembles the build).
+      # (ci/ci_metrics.py, fetched alone: this job has no checkout).
       - name: Collect the run's metrics
         id: metrics
         if: ${{ !cancelled() }}

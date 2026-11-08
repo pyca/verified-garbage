@@ -10,10 +10,8 @@ now and then degrades only unauthenticated traffic (its status page on
 failed CI's downloads of elan and leantar. The token is sent only to
 api.github.com: the asset's bytes come from the host the API redirects to,
 which a header added with `add_unredirected_header` does not reach. Without a
-token, or when the API refuses it (a 403 or 429, as when the token's rate
-limit is spent), the download goes to the release's public URL. Either way
-the caller checks what it downloaded (`ci/leantar_release.py` against its
-pinned SHA-256), so which URL served it changes nothing it trusts.
+token, or when the API refuses it (its rate limit is spent), the download
+goes to the release's public URL.
 
 Either way, a request that fails with a 5xx, a 429 or a dropped connection
 is tried again, after 2, 4, 8 and 16 seconds.
@@ -34,9 +32,7 @@ from pathlib import Path
 API = "https://api.github.com"
 # Seconds to wait before each retry of a request that failed transiently.
 BACKOFF = (2, 4, 8, 16)
-# What the API answers when it refuses a token, as when the token's rate limit
-# is spent ("API rate limit exceeded for installation"): the download then
-# goes to the release's public URL, which that limit does not count.
+# The API's answers to a token whose rate limit is spent.
 REFUSED = (403, 429)
 # Seconds a connection may stay silent before an attempt is given up.
 TIMEOUT = 30
