@@ -159,7 +159,7 @@ theorem runWithSX_ok (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok) {
     · exact L.cs.sub_right (Lay.stSub (by decide))
     · exact dcd.sub_right hsubP'
     · exact L.cw'.sub_right (Lay.wSub (by decide))
-  have g₂' : ∀ r, r ∉ [Reg.x5, .x9, .x10, .x11, .x12, .x13, .x14] → s₂'.gpr r = s₂.gpr r := hm₂.gpr
+  have g₂' : ∀ r, r ∉ [Reg.x5, .x9, .x10, .x11, .x12, .x13, .x14, .x15] → s₂'.gpr r = s₂.gpr r := hm₂.gpr
   have slot₂' : ∀ d, 216 ≤ d → d + 8 ≤ 256 →
       s₂'.mem.readW (W + BitVec.ofNat 64 d) 64 = s₁.mem.readW (W + BitVec.ofNat 64 d) 64 := fun d h₁ h₂' => by
     rw [slot_kept hm₂.frame (fun r hr => by

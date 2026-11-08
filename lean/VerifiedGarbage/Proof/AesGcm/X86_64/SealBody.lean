@@ -112,7 +112,7 @@ theorem sealBody_ok {R : Nat} {D : Addr} {n al : Nat} {H icb : Block} {a : List 
     (by rw [kp 200 (.inl ⟨by decide, by decide⟩)]; exact P.dat)
     (by rw [kp 208 (.inl ⟨by decide, by decide⟩)]; exact hlen₃)
     (by rw [kp 192 (.inl ⟨by decide, by decide⟩)]; exact P.tlen) hlt
-    (by rw [kp 184 (.inl ⟨by decide, by decide⟩)]; exact hal₃) (hdw.ok.of_eq rd₄ wr₄) hDW' hdw.ctx)
+    (by rw [kp 184 (.inl ⟨by decide, by decide⟩)]; exact hal₃) (hdw.ok.of_eq rd₄ wr₄) hDW')
     fun s₅ ⟨he₅, f₅, rd₅, wr₅, _, _, hq⟩ => ?_
   have T := hq abs₄
   have split : ∀ m : Mem, bytesAt m D n =

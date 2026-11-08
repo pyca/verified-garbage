@@ -69,13 +69,13 @@ open VG.Emit
     []]\n\
   \n\
   #assert_standard_axioms all\n\
-  #assert_no_compiler_overrides all VG.Dispatch.ranking run\n\
+  #assert_no_compiler_overrides all VG.Dispatch.ranking VG.Dispatch.selected run\n\
   #assert_spec_origin\n\
   \n\
   end VG.Emit\n\
   \n\
   def main (args : List String) : IO UInt32 :=\n  \
-    VG.Emit.run VG.Emit.all VG.Dispatch.ranking args\n\
+    VG.Emit.run VG.Emit.all VG.Dispatch.ranking args VG.Dispatch.selected\n\
   \n\
   end\n"
 
@@ -121,13 +121,13 @@ open VG.Emit
     []]\n\
   \n\
   #assert_standard_axioms all\n\
-  #assert_no_compiler_overrides all VG.Dispatch.ranking run\n\
+  #assert_no_compiler_overrides all VG.Dispatch.ranking VG.Dispatch.selected run\n\
   #assert_spec_origin\n\
   \n\
   end VG.Emit\n\
   \n\
   def main (args : List String) : IO UInt32 :=\n  \
-    VG.Emit.run VG.Emit.all VG.Dispatch.ranking args\n\
+    VG.Emit.run VG.Emit.all VG.Dispatch.ranking args VG.Dispatch.selected\n\
   \n\
   end\n"
 
@@ -187,13 +187,13 @@ open VG.Emit
     []]\n\
   \n\
   #assert_standard_axioms all\n\
-  #assert_no_compiler_overrides all VG.Dispatch.ranking run\n\
+  #assert_no_compiler_overrides all VG.Dispatch.ranking VG.Dispatch.selected run\n\
   #assert_spec_origin\n\
   \n\
   end VG.Emit\n\
   \n\
   def main (args : List String) : IO UInt32 :=\n  \
-    VG.Emit.run VG.Emit.all VG.Dispatch.ranking args\n\
+    VG.Emit.run VG.Emit.all VG.Dispatch.ranking args VG.Dispatch.selected\n\
   \n\
   end\n"
 

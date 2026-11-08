@@ -136,6 +136,6 @@ def ctr32 : Prog isa :=
     (.ite .b AesNi.ctr32
       (.seq (.block ctrLoad)
         (.seq (.loop body16 .ae)
-          (.seq (.block [.vop .vzeroupper, .alu .cmp .r8 (.imm 8)]) ctrTail))))
+          (.seq (.block [.vop .vzeroupper, .alu .cmp .r8 (.imm 8)]) (ctrTail false)))))
 
 end VG.Impl.Aes.X86_64.Vaes

@@ -386,4 +386,127 @@ theorem wipedTail (pb : Nat) (w : Nat) (P : aesSig.Post pb) : ∀ vs m m' x,
     rw [hy'] at he
     exact he
 
+/-! ## Zeroing the part of `scratch` left written -/
+
+/-- A buffer whose first `w` bytes are zero and whose others are unchanged
+or zero holds nothing written. -/
+theorem scrubbed_of_prefix' {m m' : Mem} {p : Addr} {w len : Nat}
+    (hz : Spec.Zeroize.bytesAt m' p w = Spec.Zeroize.zeros w)
+    (ht : ∀ i, w ≤ i → i < len →
+      m' (p + BitVec.ofNat 64 i) = m (p + BitVec.ofNat 64 i) ∨ m' (p + BitVec.ofNat 64 i) = 0) :
+    Spec.Zeroize.scrubbed m m' p len := by
+  intro a ha
+  have hi : (a - p).toNat < len := by simp only [Region.Contains] at ha; omega
+  have ea : p + BitVec.ofNat 64 (a - p).toNat = a := by
+    rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
+  by_cases hw : (a - p).toNat < w
+  · right
+    have he := congrArg (·[(a - p).toNat]?) hz
+    simp only [Spec.Zeroize.bytesAt, Spec.Zeroize.zeros, List.getElem?_map, List.getElem?_range hw,
+      List.getElem?_replicate, hw, ite_true, Option.map_some, Option.some.injEq] at he
+    rwa [ea] at he
+  · have he := ht _ (Nat.le_of_not_lt hw) hi
+    rwa [ea] at he
+
+/-- `P`, with each byte of `scratch` at offset `w` and beyond unchanged or
+zero. -/
+def tailZPost (pb : Nat) (P : aesSig.Post pb) (w : Nat) : aesSig.Post pb :=
+  fun schedule rounds iv data n scratch m m' x =>
+    P schedule rounds iv data n scratch m m' x ∧ ∀ i, w ≤ i → i < 2176 →
+      m' (scratch + BitVec.ofNat 64 i) = m (scratch + BitVec.ofNat 64 i) ∨ m' (scratch + BitVec.ofNat 64 i) = 0
+
+/-- `tailZPost` reads the memory on entry only within the buffers, if `P` does. -/
+theorem tailZPost_local (pb : Nat) {P : aesSig.Post pb} (w : Nat)
+    (hP : ∀ vs m₁ m₂ m' x, vs.length = (aesSig.words pb).length →
+      (∀ b ∈ Sig.bufs aesSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (aesSig.words pb) P vs m₁ m' x → Curry.apply (aesSig.words pb) P vs m₂ m' x) :
+    ∀ vs m₁ m₂ m' x, vs.length = (aesSig.words pb).length →
+    (∀ b ∈ Sig.bufs aesSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (aesSig.words pb) (tailZPost pb P w) vs m₁ m' x →
+      Curry.apply (aesSig.words pb) (tailZPost pb P w) vs m₂ m' x := by
+  intro vs m₁ m₂ m' x hlen hb h
+  obtain ⟨a, b, c, d, e, f, rfl⟩ := vs_eq hlen
+  obtain ⟨hp, ht⟩ := h
+  refine ⟨hP [a, b, c, d, e, f] m₁ m₂ m' x hlen hb hp, fun i h1 h2 => ?_⟩
+  rw [bufs_eq] at hb
+  simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hb
+  have e₂ := (agree_of hb.2.2.2 i (by omega)).symm
+  show m' (f + BitVec.ofNat 64 i) = m₂ (f + BitVec.ofNat 64 i) ∨ m' (f + BitVec.ofNat 64 i) = 0
+  rw [← e₂]
+  exact ht i h1 h2
+
+/-- `tailZPost` reads the memory on return only within the buffers apart from
+the first `w` bytes of `scratch`, if `P` reads it only apart from `scratch`. -/
+theorem tailZPost_out (pb : Nat) {P : aesSig.Post pb} {w : Nat} (hw : w ≤ 2176)
+    (hP : ∀ vs m m₁ m₂ x, vs.length = (aesSig.words pb).length →
+      (Sig.bufs aesSig.params vs).Pairwise (fun a b => (a.2 || b.2) → a.1.Disjoint b.1) →
+      (∀ b ∈ Sig.bufs aesSig.params vs, b.1.Disjoint ⟨vs.getD 5 0, 272 * Elem.u64.size⟩ →
+        ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (aesSig.words pb) P vs m m₁ x → Curry.apply (aesSig.words pb) P vs m m₂ x) :
+    ∀ vs m m₁ m₂ x, vs.length = (aesSig.words pb).length →
+    (Sig.bufs aesSig.params vs).Pairwise (fun a b => (a.2 || b.2) → a.1.Disjoint b.1) →
+    (∀ b ∈ Sig.bufs aesSig.params vs, ∀ a, b.1.Contains a 1 →
+      ¬(⟨vs.getD 5 0, w⟩ : Region).Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (aesSig.words pb) (tailZPost pb P w) vs m m₁ x →
+      Curry.apply (aesSig.words pb) (tailZPost pb P w) vs m m₂ x := by
+  intro vs m m₁ m₂ x hlen hpw hb h
+  obtain ⟨a, b, c, d, e, f, rfl⟩ := vs_eq hlen
+  obtain ⟨hp, ht⟩ := h
+  refine ⟨hP [a, b, c, d, e, f] m m₁ m₂ x hlen hpw
+    (fun r hr hrd y hy => hb r hr y hy fun hc => hrd y hy (Region.sub_prefix hw y hc)) hp, fun i h1 h2 => ?_⟩
+  have hc : (⟨f, 2176⟩ : Region).Contains (f + BitVec.ofNat 64 i) 1 :=
+    Offset.contains_base _ (by omega) (by omega)
+  have hn : ¬ (⟨f, w⟩ : Region).Contains (f + BitVec.ofNat 64 i) 1 := by
+    simp only [Region.Contains, BitVec.add_comm f, BitVec.add_sub_cancel, BitVec.toNat_ofNat]
+    omega
+  show m₂ (f + BitVec.ofNat 64 i) = m (f + BitVec.ofNat 64 i) ∨ m₂ (f + BitVec.ofNat 64 i) = 0
+  rw [← hb (⟨f, 2176⟩, true) (by rw [bufs_eq]; simp) _ hc hn]
+  exact ht i h1 h2
+
+/-- With the first `w` bytes of `scratch` zero on return, `scrubbedPost`. -/
+theorem wipedTailZ (pb : Nat) (P : aesSig.Post pb) (w : Nat) : ∀ vs m m' x,
+    vs.length = (aesSig.words pb).length →
+    Curry.apply (aesSig.words pb) (tailZPost pb P w) vs m m' x →
+    Spec.Zeroize.bytesAt m' (vs.getD 5 0) w = Spec.Zeroize.zeros w →
+      Curry.apply (aesSig.words pb) (scrubbedPost pb P) vs m m' x := by
+  intro vs m m' x hlen h hz
+  obtain ⟨a, b, c, d, e, f, rfl⟩ := vs_eq hlen
+  exact ⟨h.1, scrubbed_of_prefix' hz h.2⟩
+
+/-- `tailZPost P 0` is `scrubbedPost P`'s. -/
+theorem tailZPost_zero (pb : Nat) (P : aesSig.Post pb) : aesSig.PostImp pb (tailZPost pb P 0) (scrubbedPost pb P) := by
+  intro schedule rounds iv data n scratch m m' x h
+  exact ⟨h.1, scrubbed_of_prefix' (w := 0) rfl h.2⟩
+
+/-- A proof of a CBC function's contract is one of `tailZPost w`'s for code
+that leaves each byte of `scratch` at offset `w` and beyond unchanged or
+zero, on a calling convention that gives each run the six arguments
+(`hlen`). -/
+theorem Verified.tailZ_of {T : Target} {c : Prog T.isa} {A : Abi T.isa} {stack w : Nat}
+    {P : aesSig.Post A.ptrBits}
+    (h : Verified T c (aesSig.contract A (pre A.ptrBits) P false stack none))
+    (hw : ∀ s t s', (aesSig.contract A (pre A.ptrBits) P false stack none).pre s → Exec T.isa c s t s' →
+      ∀ vals, A.args ((aesSig.words A.ptrBits).map (·.bits A.ptrBits)) = some vals →
+      ∀ i, w ≤ i → i < 2176 →
+        A.mem s' ((vals s).getD 5 0 + BitVec.ofNat 64 i) = A.mem s ((vals s).getD 5 0 + BitVec.ofNat 64 i) ∨
+          A.mem s' ((vals s).getD 5 0 + BitVec.ofNat 64 i) = 0)
+    (hlen : ∀ s vals, A.args ((aesSig.words A.ptrBits).map (·.bits A.ptrBits)) = some vals →
+      (vals s).length = (aesSig.words A.ptrBits).length) :
+    Verified T c (aesSig.contract A (pre A.ptrBits) (tailZPost A.ptrBits P w) false stack none) := by
+  obtain ⟨hc, hct, hsat⟩ := h
+  refine ⟨fun s hs => ?_, hct, hsat⟩
+  obtain ⟨t, s', he, ha, hq⟩ := hc s hs
+  have hW := hw s t s' hs he
+  refine ⟨t, s', he, ha, ?_⟩
+  revert hs hq hW
+  simp only [Sig.contract]
+  split
+  · intro hs; exact hs.elim
+  · rename_i vals hv
+    intro _ hq hW
+    have hW' := hW vals hv
+    obtain ⟨a, b, c, d, e, f, he'⟩ := vs_eq (hlen s vals hv)
+    rw [he'] at hq hW' ⊢
+    exact ⟨hq, hW'⟩
+
 end VG.Proof.AesCbc.Wipe

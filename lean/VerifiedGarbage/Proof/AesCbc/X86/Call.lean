@@ -193,6 +193,73 @@ theorem blk_call {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {
   · rw [bytesAt_of_statesAt post, keep h.bw hR' (Nat.le_refl _), ← ofFn_bytesAt,
       keep h.bd (Nat.le_refl _) (by decide), ofFn_bytesAt]
 
+/-- The block functions' contract, with the bytes of the working space at
+offset `w` and beyond unchanged. -/
+def blocksTailX86 (f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State) (w : Nat) : Contract isa :=
+  { Proof.Aes.blocksX86 f with
+    post := fun s s' => (Proof.Aes.blocksX86 f).post s s' ∧ ∀ i, w ≤ i → i < 2048 →
+      s'.mem ((arg s 4).setWidth 64 + BitVec.ofNat 64 i) = s.mem ((arg s 4).setWidth 64 + BitVec.ofNat 64 i) }
+
+/-- `blk_call` for a block function that writes only the first `w` bytes of
+the working space: only `D`, those bytes and the stack change. -/
+theorem blk_call_tail {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {b : Impl.Aes.X86.Blocks}
+    {w : Nat}
+    (ok : ∀ s, (Proof.Aes.blocksX86 f).pre s →
+      ∃ t s', Exec isa b.code s t s' ∧ abiPreserved s s' ∧ (Proof.Aes.blocksX86 f).post s s')
+    (wok : ∀ s, (Proof.Aes.blocksX86 f).pre s → ∀ t s', Exec isa b.code s t s' → ∀ i, w ≤ i → i < 2048 →
+      s'.mem ((arg s 4).setWidth 64 + BitVec.ofNat 64 i) = s.mem ((arg s 4).setWidth 64 + BitVec.ofNat 64 i))
+    (nosp : NoSp b.code) (stack : stackUse b.code = 0)
+    {s : State} {W D S : BitVec 32} {R : Nat} (h : BlkPre s W D S R) :
+    WP isa (Impl.AesCbc.X86.blkCall b) s fun s' => BlkPost f s W D S R s' ∧
+      Frame [⟨D.setWidth 64, 16⟩, ⟨S.setWidth 64, w⟩, below (s.gpr .esp) 24] s.mem s'.mem := by
+  have hR := toNat_rounds h.rounds
+  have hR' : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h' | h' | h' <;> omega
+  have ok' : ∀ s, (blocksTailX86 f w).pre s →
+      ∃ t s', Exec isa b.code s t s' ∧ abiPreserved s s' ∧ (blocksTailX86 f w).post s s' := fun s hs =>
+    let ⟨t, s', he, ha, hq⟩ := ok s hs
+    ⟨t, s', he, ha, hq, wok s hs t s' he⟩
+  unfold Impl.AesCbc.X86.blkCall
+  refine WP.callWith (rs := blkRegs) (k := blocksTailX86 f w) ok' nosp (by decide) hrs
+    (by rw [stack]; have := h.esp; simp only [List.length_cons, List.length_nil]; omega)
+    (let hc := h.callPre (f := f); ⟨hc.pre, hc.cov, hc.covw⟩) fun s' rd' wr' cs' f' ⟨s₂, m₂, post, tail⟩ => ?_
+  obtain ⟨a0, a1, a2, a3, a4⟩ := h.args
+  rw [stack] at f'
+  have fE := callEntry_frame h.fit hrs
+  rw [show 4 * blkRegs.length + 4 = 24 from rfl] at fE
+  have keep : ∀ {p : BitVec 32} {n k : Nat}, (below (s.gpr .esp) 24).Disjoint ⟨p.setWidth 64, n⟩ → k ≤ n →
+      n ≤ 240 → bytesAt (pushed blkRegs s).callEntry.mem (p.setWidth 64) k = bytesAt s.mem (p.setWidth 64) k :=
+    fun hd hk hn => Proof.Cmac.bytesAt_frame fE (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact (hd.sub_right (Region.sub_prefix hk)).symm) (by omega)
+  simp only [Proof.Aes.blocksX86, arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, hR,
+    show (1 : BitVec 32).toNat = 1 from rfl, m₂] at post
+  simp only [arg_withRegions, State.withRegions_mem, a4, m₂] at tail
+  have hS := h.hS
+  refine ⟨⟨rd', wr', cs', ?_, ?_⟩, fun x hx => ?_⟩
+  · exact f'.mono fun r hr => by simp only [List.cons_append, List.nil_append] at hr; simpa using hr
+  · rw [bytesAt_of_statesAt post, keep h.bw hR' (Nat.le_refl _), ← ofFn_bytesAt,
+      keep h.bd (Nat.le_refl _) (by decide), ofFn_bytesAt]
+  · by_cases hc : (⟨S.setWidth 64, 2048⟩ : Region).Contains x 1
+    · have hi : (x - S.setWidth 64).toNat < 2048 := by simp only [Region.Contains] at hc; omega
+      have ex : S.setWidth 64 + BitVec.ofNat 64 (x - S.setWidth 64).toNat = x := by
+        rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
+      have hw : w ≤ (x - S.setWidth 64).toNat := by
+        have := hx ⟨S.setWidth 64, w⟩ (by simp)
+        simp only [Region.Contains] at this
+        omega
+      have t := tail _ hw hi
+      rw [ex] at t
+      rw [t]
+      exact fE x fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact fun hb => h.bs x hb hc
+    · exact f' x fun r hr => by
+        simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl
+        · exact hx ⟨D.setWidth 64, 16⟩ (by simp)
+        · exact hc
+        · exact hx (below (s.gpr .esp) 24) (by simp)
+
 /-- Calls of a block function on one block, with the same arguments and
 stack pointer in both runs, are constant time. -/
 theorem blk_rel {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {b : Impl.Aes.X86.Blocks}

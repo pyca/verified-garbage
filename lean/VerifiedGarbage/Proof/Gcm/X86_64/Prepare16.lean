@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.PreparedPowers
 public import VerifiedGarbage.Proof.Gcm.X86_64.PrepareAvx.Step
 public import VerifiedGarbage.Proof.Gcm.X86_64.PrepareCT
 public import VerifiedGarbage.Impl.Gcm.X86_64.Prepare16
@@ -31,7 +32,7 @@ namespace VG.Proof.Gcm.X86_64.Prepare16
 open VG VG.X86_64 VG.Proof.Gcm.Poly
 open VG.Impl.Aes.X86_64.AesNi (at_)
 open VG.Impl.Gcm.X86_64.Pclmul (poly)
-open VG.Impl.Gcm.X86_64.Prepare16 (Op plan plan48 setup mulD fold prepare16 prepare)
+open VG.Impl.Gcm.X86_64.Prepare16 (Op plan setup mulD fold prepare16)
 open VG.Impl.Gcm.X86_64.Stitch (storesK)
 open VG.Impl.Gcm.X86_64.PrepareAvx (sqS mulDS)
 open VG.Proof.Gcm.X86_64.PrepareAvx (sqS_ok mulDS_ok scratch not_scratch)
@@ -396,8 +397,8 @@ theorem prepare16_ok {s₀ : State} (hw : InRegions s₀.wr (s₀.gpr .rdi) 1024
 
 /-- It writes none of the context from byte 512 on. -/
 theorem prepare16_written (s : State) (t : List Leak) (s' : State)
-    (hs : (Spec.Gcm.prepare16Contract X86_64.abi).pre s) (he : Exec isa prepare16 s t s') :
-    Sig.writtenWithin (X86_64.abi.withConsts []) Spec.Gcm.prepareSig [("ctx", 512)] s s' :=
+    (hs : (Proof.Gcm.prepare16Contract X86_64.abi).pre s) (he : Exec isa prepare16 s t s') :
+    Sig.writtenWithin (X86_64.abi.withConsts []) Proof.Gcm.prepare16Sig [("ctx", 512)] s s' :=
   written16 (fun _ hw hwrap => WP.mono (prepare16_ok hw hwrap) fun _ h => h.2.1) s t s' hs he
 
 theorem correct16 {s₀ : State} (hp : prepare16X86_64.pre s₀) :
@@ -435,38 +436,14 @@ theorem prepare16_correct (s : State) (hs : prepare16X86_64.pre s) :
   exact ⟨t, s', he, abiPreserved_of_exec (by decide +kernel) he h.1, h.2⟩
 
 theorem prepare16_verified :
-    Verified X86_64.target prepare16 (Spec.Gcm.prepare16Contract X86_64.abi) :=
+    Verified X86_64.target prepare16 (Proof.Gcm.prepare16Contract X86_64.abi) :=
   Verified.of_correct prepare16_correct prepare16_ct (by
-    sig_implies [Spec.Gcm.prepare16Contract, Spec.Gcm.prepareSig, Spec.Gcm.prepare16Post, prepare16X86_64,
+    sig_implies [Proof.Gcm.prepare16Contract, Proof.Gcm.prepare16Sig, Proof.Gcm.prepare16Post, prepare16X86_64,
       X86_64.abi, X86_64.argRegs] [satState] using satState)
-
-/-! ## `vg_aes_gcm_prepare`: the 48 powers -/
-
-theorem plan48_valid : valid 24 [(.xmm3, some 1, none)] plan48 = true := by decide
-
-theorem plan48_stored : ∀ k < 24, k ∈ storedAfter [] plan48 := by decide
-
-/-- `prepare`: the 48 prepared powers of the hash subkey at `C + 240` into
-pairs 0–23 of the context at `C`, nothing else written. -/
-theorem prepare_ok {s₀ : State} (hw : InRegions s₀.wr (s₀.gpr .rdi) 1024)
-    (hwrap : (s₀.gpr .rdi).toNat + 1024 ≤ 2 ^ 64) :
-    WP isa prepare s₀ (Prepare.PrepOk s₀) := by
-  simp only [prepare]
-  rw [WP.block_append_iff, WP.block_append_iff]
-  refine WP.mono (setup_ok (N := 24) (by decide) s₀ hw hwrap) fun t₁ ⟨hi₁, g₁, rd₁, wr₁⟩ => ?_
-  refine WP.mono (plan_ok plan48 _ _ t₁ plan48_valid hi₁) fun t₂ ⟨⟨_, hi₂⟩, g₂, rd₂, wr₂⟩ => ?_
-  refine WP.mono (Prepare.vzu_ok t₂) fun s ⟨g, m, rd, wr⟩ =>
-    ⟨fun k hk l hl => ?_, by rw [m]; exact hi₂.fr, fun r hr _ => by rw [g, g₂ r hr, g₁ r hr],
-      by rw [rd, rd₂, rd₁], by rw [wr, wr₂, wr₁]⟩
-  rw [m]; exact (hi₂.st k (plan48_stored k hk)).2 l hl
-
-theorem prepare_verified : Verified X86_64.target prepare (Spec.Gcm.prepareContract X86_64.abi) :=
-  Prepare.verified_of prepare (fun _ hw hwrap => prepare_ok hw hwrap) (by decide +kernel)
-    Prepare16.prepare_ct
 
 /-- `prepare16` after setting the count to 16, on the prepared key context. -/
 theorem prepareFlagged_verified :
-    Verified X86_64.target (Impl.Gcm.X86_64.Flag.prepareFlagged 16 prepare16) (Proof.AesGcm.Flag.prepareContract X86_64.abi) :=
+    Verified X86_64.target (Impl.Gcm.X86_64.Flag.prepareFlagged 16 prepare16) (Spec.Gcm.prepareContract X86_64.abi) :=
   Prepare.flagged_verified (Or.inl rfl) prepare16
     (fun _ hw hwrap => WP.mono (prepare16_ok hw hwrap) fun _ h => ⟨h.1, Frame.sub h.2.1 fun r hr => by
         obtain rfl := List.mem_singleton.mp hr

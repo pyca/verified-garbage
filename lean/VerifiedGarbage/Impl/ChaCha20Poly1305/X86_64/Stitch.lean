@@ -907,6 +907,12 @@ offset. -/
 def openStitched (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Prog isa :=
   .seq (.block (srcIn ++ padIns .rax 5)) (.seq (openStitchedBody x b) openTail)
 
+/-- `openStitched` after its entry, from `open`'s entry state with the
+ciphertext's address in `r11`: what `open_to` runs after its own entry, as
+`openShared` is for `open`. -/
+def openStitchedShared (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Prog isa :=
+  .seq (openStitchedBody x b) openTail
+
 /-- `openSmall`'s limit, as `smallLim` is `sealSmall`'s: on Cascade Lake,
 `open`'s AVX2 code with AVX-512VL's rounds (`vl`) is the faster below 768
 bytes, from 3.8% to 8.5% from 640 on, and from 768 the AVX-512 code is;

@@ -98,13 +98,13 @@ def sealSplitFlaggedContract (t : Nat) {M : ISA} (A : Abi M) (stack : Nat := 0) 
     (post := Proof.Gcm.sealSplitPost A.ptrBits)
     (writeArgs := true) (stack := stack)
 
-def sealGatherFlaggedPre (t pb : Nat) : Curry (sealGatherSig.words pb) (Mem → Prop) :=
+def sealGatherFlaggedPre (t pb : Nat) : Curry (sealGatherPreparedSig.words pb) (Mem → Prop) :=
   fun ctx rounds _nonce _nonceLen _aad _aadLen src srcCount _dst len _tag m =>
     (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧
       gatheredLen pb m src srcCount.toNat = len.toNat ∧ FlaggedPowers t m ctx
 
 def sealGatherFlaggedRoundsContract (t : Nat) {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  sealGatherSig.contract A (pre := sealGatherFlaggedPre t A.ptrBits)
+  sealGatherPreparedSig.contract A (pre := sealGatherFlaggedPre t A.ptrBits)
     (post := AesGcm.sealGatherRoundsPost A.ptrBits)
     (writeArgs := true) (stack := stack)
 
@@ -189,11 +189,11 @@ theorem streamEncryptToFlaggedPost_local : ∀ vs m₁ m₂ m' r, vs.length = (s
   rw [ctxCiph_congr hn' fun i hi => hc i (by omega), ctxH_congr fun i hi => hc i (by omega)] at hr
   exact h hn iv a p (streamRepr_congr (fun i hi => (hs i (by omega)).symm) hr) hl ht
 
-theorem sealGatherFlaggedPre_local : ∀ vs m₁ m₂, vs.length = (sealGatherSig.words pb).length →
-    (∀ b ∈ Sig.bufs sealGatherSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    (∀ r ∈ Sig.lists pb m₁ sealGatherSig.params vs, ∀ a, r.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (sealGatherSig.words pb) (sealGatherFlaggedPre t pb) vs m₁ →
-      Curry.apply (sealGatherSig.words pb) (sealGatherFlaggedPre t pb) vs m₂ := by
+theorem sealGatherFlaggedPre_local : ∀ vs m₁ m₂, vs.length = (sealGatherPreparedSig.words pb).length →
+    (∀ b ∈ Sig.bufs sealGatherPreparedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    (∀ r ∈ Sig.lists pb m₁ sealGatherPreparedSig.params vs, ∀ a, r.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (sealGatherPreparedSig.words pb) (sealGatherFlaggedPre t pb) vs m₁ →
+      Curry.apply (sealGatherPreparedSig.words pb) (sealGatherFlaggedPre t pb) vs m₂ := by
   intro vs m₁ m₂ hlen hb hl h
   obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 10) hlen
   replace hlen := Nat.succ.inj hlen
@@ -208,9 +208,9 @@ theorem sealGatherFlaggedPre_local : ∀ vs m₁ m₂, vs.length = (sealGatherSi
     obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
     replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [sealGatherSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+  simp only [sealGatherPreparedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
-  simp only [sealGatherSig, Sig.lists, List.append_nil] at hl
+  simp only [sealGatherPreparedSig, Sig.lists, List.append_nil] at hl
   have hc := AesGcm.agree_of hb.1
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
     ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
@@ -224,11 +224,11 @@ theorem sealGatherFlaggedPre_local : ∀ vs m₁ m₂, vs.length = (sealGatherSi
   exact ⟨h.1, h.2.1, flaggedPowers_congr hc h.2.2⟩
 
 theorem sealGatherFlaggedPost_local : ∀ vs m₁ m₂ m' r,
-    vs.length = (sealGatherSig.words pb).length →
-    (∀ b ∈ Sig.bufs sealGatherSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    (∀ r ∈ Sig.lists pb m₁ sealGatherSig.params vs, ∀ a, r.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (sealGatherSig.words pb) (AesGcm.sealGatherRoundsPost pb) vs m₁ m' r →
-      Curry.apply (sealGatherSig.words pb) (AesGcm.sealGatherRoundsPost pb) vs m₂ m' r := by
+    vs.length = (sealGatherPreparedSig.words pb).length →
+    (∀ b ∈ Sig.bufs sealGatherPreparedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    (∀ r ∈ Sig.lists pb m₁ sealGatherPreparedSig.params vs, ∀ a, r.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (sealGatherPreparedSig.words pb) (AesGcm.sealGatherRoundsPost pb) vs m₁ m' r →
+      Curry.apply (sealGatherPreparedSig.words pb) (AesGcm.sealGatherRoundsPost pb) vs m₂ m' r := by
   intro vs m₁ m₂ m' r hlen hb hl h
   obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 10) hlen
   replace hlen := Nat.succ.inj hlen
@@ -253,9 +253,9 @@ theorem sealGatherFlaggedPost_local : ∀ vs m₁ m₂ m' r,
   obtain ⟨tag, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [sealGatherSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+  simp only [sealGatherPreparedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
-  simp only [sealGatherSig, Sig.lists, List.append_nil] at hl
+  simp only [sealGatherPreparedSig, Sig.lists, List.append_nil] at hl
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
     ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
     (AesGcm.sealGatherRoundsPost pb) _ m₁ m' r at h
@@ -280,15 +280,15 @@ theorem encSpecF_pre {t : Nat} {s : State} (h : encCallPre (CtxMode.flaggedT t) 
   rename_i a₁ a₂ a₃ a₄ a₅ a₆ a₇ a₈ a₉ a₁₀ a₁₁ a₁₂ a₁₃ a₁₄ a₁₅ a₁₆ a₁₇ a₁₈ a₁₉ a₂₀ a₂₁ b₁ b₂
   have a₂₂ := h
   clear h
-  sig_pre [Proof.AesGcm.Flag.streamEncryptRoundsContractB, Proof.AesGcm.Flag.streamCryptSig, Proof.AesGcm.Flag.streamCryptSig,
-    Proof.AesGcm.Flag.streamCryptPre, X86_64.abi, X86_64.argRegs]
-  sig_reduce [Proof.AesGcm.Flag.streamEncryptRoundsContractB, Proof.AesGcm.Flag.streamCryptSig, Proof.AesGcm.Flag.streamCryptSig,
-    Proof.AesGcm.Flag.streamCryptPre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.arg, Proof.AesGcm.args,
+  sig_pre [Proof.AesGcm.Flag.streamEncryptRoundsContractB, Spec.Gcm.streamCryptPreparedSig, Spec.Gcm.streamCryptPreparedSig,
+    Spec.Gcm.streamCryptPreparedPre, X86_64.abi, X86_64.argRegs]
+  sig_reduce [Proof.AesGcm.Flag.streamEncryptRoundsContractB, Spec.Gcm.streamCryptPreparedSig, Spec.Gcm.streamCryptPreparedSig,
+    Spec.Gcm.streamCryptPreparedPre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.arg, Proof.AesGcm.args,
     Proof.AesGcm.ret, X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop,
     VG.X86_64.below]
   sig_and_intros
   all_goals simp only [Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg, X86_64.stackArgAddr,
-    VG.X86_64.below, Nat.mul_one, Proof.AesGcm.rounds, CtxMode.flaggedT, Proof.AesGcm.Flag.FlaggedPowers, Proof.AesGcm.Flag.powerCount, Proof.AesGcm.Flag.PreparedRepr, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr, Spec.Gcm.PreparedPowers16Repr] at *
+    VG.X86_64.below, Nat.mul_one, Proof.AesGcm.rounds, CtxMode.flaggedT, Proof.AesGcm.Flag.FlaggedPowers, Spec.Gcm.powerCount, Spec.Gcm.PreparedRepr, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr, Spec.Gcm.PreparedPowers16Repr] at *
   all_goals first
     | with_reducible assumption
     | exact ⟨by assumption, by assumption⟩
@@ -296,9 +296,9 @@ theorem encSpecF_pre {t : Nat} {s : State} (h : encCallPre (CtxMode.flaggedT t) 
 theorem encSpecF_post {t : Nat} {s s' : State} (hR : Proof.AesGcm.rounds s)
     (h : (Proof.AesGcm.Flag.streamEncryptRoundsContractB t X86_64.abi 2608).post s s') :
     Proof.AesGcm.streamEncryptX86_64.post s s' := by
-  sig_post [Proof.AesGcm.Flag.streamEncryptRoundsContractB, Proof.AesGcm.Flag.streamCryptSig, Proof.AesGcm.Flag.streamCryptSig,
-    Proof.AesGcm.Flag.streamCryptPre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.streamEncryptRoundsPost] at h
-  sig_reduce [Proof.AesGcm.Flag.streamEncryptRoundsContractB, Proof.AesGcm.Flag.streamCryptSig, Proof.AesGcm.Flag.streamCryptSig, X86_64.abi,
+  sig_post [Proof.AesGcm.Flag.streamEncryptRoundsContractB, Spec.Gcm.streamCryptPreparedSig, Spec.Gcm.streamCryptPreparedSig,
+    Spec.Gcm.streamCryptPreparedPre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.streamEncryptRoundsPost] at h
+  sig_reduce [Proof.AesGcm.Flag.streamEncryptRoundsContractB, Spec.Gcm.streamCryptPreparedSig, Spec.Gcm.streamCryptPreparedSig, X86_64.abi,
     X86_64.argRegs, X86_64.stackArg, X86_64.stackArgAddr, List.range, List.range.loop] at h
   exact h hR
 
@@ -308,9 +308,9 @@ theorem encSpecF_pub {t : Nat} {s₁ s₂ : State} (h : encCallPub s₁ s₂)
   have f₁ : Proof.AesGcm.Flag.flagBit t s₁.mem (s₁.gpr .rdi) = 1 := Proof.AesGcm.Flag.flagBit_of_le o₁.1
   have f₂ : Proof.AesGcm.Flag.flagBit t s₂.mem (s₂.gpr .rdi) = 1 := Proof.AesGcm.Flag.flagBit_of_le o₂.1
   obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈⟩ := h
-  sig_pub [Proof.AesGcm.Flag.streamEncryptRoundsContractB, Proof.AesGcm.Flag.streamCryptSig, Proof.AesGcm.Flag.streamCryptSig, Proof.AesGcm.Flag.streamCryptLeakB, X86_64.abi,
+  sig_pub [Proof.AesGcm.Flag.streamEncryptRoundsContractB, Spec.Gcm.streamCryptPreparedSig, Spec.Gcm.streamCryptPreparedSig, Proof.AesGcm.Flag.streamCryptLeakB, X86_64.abi,
     X86_64.argRegs]
-  sig_reduce [Proof.AesGcm.Flag.streamEncryptRoundsContractB, Proof.AesGcm.Flag.streamCryptSig, Proof.AesGcm.Flag.streamCryptSig, X86_64.abi,
+  sig_reduce [Proof.AesGcm.Flag.streamEncryptRoundsContractB, Spec.Gcm.streamCryptPreparedSig, Spec.Gcm.streamCryptPreparedSig, X86_64.abi,
     X86_64.argRegs, X86_64.stackArg, X86_64.stackArgAddr, List.range, List.range.loop, Proof.AesGcm.arg, Proof.AesGcm.Flag.streamCryptLeakB]
   simp only [Proof.AesGcm.arg, X86_64.stackArg, X86_64.stackArgAddr] at a₈
   sig_and_intros
@@ -350,14 +350,14 @@ theorem sealSpecF_pre {t : Nat} {s : State} (h : sealPreK (CtxMode.flaggedT t) s
     a₂₈ a₂₉ a₃₀ a₃₁ b₁ b₂
   have a₃₂ := h
   clear h
-  sig_pre [Proof.AesGcm.Flag.sealRoundsContractB, Proof.AesGcm.Flag.sealSig, Proof.AesGcm.Flag.sealSig, Proof.AesGcm.Flag.sealPre,
+  sig_pre [Proof.AesGcm.Flag.sealRoundsContractB, Spec.Gcm.sealPreparedSig, Spec.Gcm.sealPreparedSig, Spec.Gcm.sealPreparedPre,
     X86_64.abi, X86_64.argRegs]
-  sig_reduce [Proof.AesGcm.Flag.sealRoundsContractB, Proof.AesGcm.Flag.sealSig, Proof.AesGcm.Flag.sealSig, Proof.AesGcm.Flag.sealPre,
+  sig_reduce [Proof.AesGcm.Flag.sealRoundsContractB, Spec.Gcm.sealPreparedSig, Spec.Gcm.sealPreparedSig, Spec.Gcm.sealPreparedPre,
     X86_64.abi, X86_64.argRegs, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg,
     X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below]
   sig_and_intros
   all_goals simp only [Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg,
-    X86_64.stackArgAddr, VG.X86_64.below, Nat.mul_one, Proof.AesGcm.rounds, CtxMode.flaggedT, Proof.AesGcm.Flag.FlaggedPowers, Proof.AesGcm.Flag.powerCount, Proof.AesGcm.Flag.PreparedRepr, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr, Spec.Gcm.PreparedPowers16Repr] at *
+    X86_64.stackArgAddr, VG.X86_64.below, Nat.mul_one, Proof.AesGcm.rounds, CtxMode.flaggedT, Proof.AesGcm.Flag.FlaggedPowers, Spec.Gcm.powerCount, Spec.Gcm.PreparedRepr, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr, Spec.Gcm.PreparedPowers16Repr] at *
   all_goals first
     | with_reducible assumption
     | exact ⟨by assumption, by assumption⟩
@@ -365,9 +365,9 @@ theorem sealSpecF_pre {t : Nat} {s : State} (h : sealPreK (CtxMode.flaggedT t) s
 theorem sealSpecF_post {t : Nat} {s s' : State} (hR : rounds s)
     (h : (Proof.AesGcm.Flag.sealRoundsContractB t X86_64.abi 2624).post s s') :
     Proof.AesGcm.sealX86_64.post s s' := by
-  sig_post [Proof.AesGcm.Flag.sealRoundsContractB, Proof.AesGcm.Flag.sealSig, Proof.AesGcm.Flag.sealSig, Proof.AesGcm.Flag.sealPre,
+  sig_post [Proof.AesGcm.Flag.sealRoundsContractB, Spec.Gcm.sealPreparedSig, Spec.Gcm.sealPreparedSig, Spec.Gcm.sealPreparedPre,
     X86_64.abi, X86_64.argRegs, Proof.AesGcm.sealRoundsPost] at h
-  sig_reduce [Proof.AesGcm.Flag.sealRoundsContractB, Proof.AesGcm.Flag.sealSig, Proof.AesGcm.Flag.sealSig, X86_64.abi, X86_64.argRegs,
+  sig_reduce [Proof.AesGcm.Flag.sealRoundsContractB, Spec.Gcm.sealPreparedSig, Spec.Gcm.sealPreparedSig, X86_64.abi, X86_64.argRegs,
     X86_64.stackArg, X86_64.stackArgAddr, List.range, List.range.loop] at h
   exact h hR
 
@@ -377,8 +377,8 @@ theorem sealSpecF_pub {t : Nat} {s₁ s₂ : State} (h : sealPubK s₁ s₂)
   have f₁ : Proof.AesGcm.Flag.flagBit t s₁.mem (s₁.gpr .rdi) = 1 := Proof.AesGcm.Flag.flagBit_of_le o₁.1
   have f₂ : Proof.AesGcm.Flag.flagBit t s₂.mem (s₂.gpr .rdi) = 1 := Proof.AesGcm.Flag.flagBit_of_le o₂.1
   obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀⟩ := h
-  sig_pub [Proof.AesGcm.Flag.sealRoundsContractB, Proof.AesGcm.Flag.sealSig, Proof.AesGcm.Flag.sealLeakB, X86_64.abi, X86_64.argRegs]
-  sig_reduce [Proof.AesGcm.Flag.sealRoundsContractB, Proof.AesGcm.Flag.sealSig, Proof.AesGcm.Flag.sealSig, X86_64.abi, X86_64.argRegs,
+  sig_pub [Proof.AesGcm.Flag.sealRoundsContractB, Spec.Gcm.sealPreparedSig, Proof.AesGcm.Flag.sealLeakB, X86_64.abi, X86_64.argRegs]
+  sig_reduce [Proof.AesGcm.Flag.sealRoundsContractB, Spec.Gcm.sealPreparedSig, Spec.Gcm.sealPreparedSig, X86_64.abi, X86_64.argRegs,
     X86_64.stackArg, X86_64.stackArgAddr, List.range, List.range.loop, Proof.AesGcm.arg, Proof.AesGcm.Flag.sealLeakB]
   simp only [Proof.AesGcm.arg, X86_64.stackArg, X86_64.stackArgAddr] at a₈ a₉ a₁₀
   sig_and_intros
@@ -415,7 +415,7 @@ theorem splitSpecF_pre {t : Nat} {s : State} (h : splitPreK (CtxMode.flaggedT t)
     VG.X86_64.below]
   sig_and_intros
   all_goals simp only [Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg,
-    X86_64.stackArgAddr, VG.X86_64.below, Nat.mul_one, Proof.AesGcm.rounds, CtxMode.flaggedT, Proof.AesGcm.Flag.FlaggedPowers, Proof.AesGcm.Flag.powerCount, Proof.AesGcm.Flag.PreparedRepr, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr,
+    X86_64.stackArgAddr, VG.X86_64.below, Nat.mul_one, Proof.AesGcm.rounds, CtxMode.flaggedT, Proof.AesGcm.Flag.FlaggedPowers, Spec.Gcm.powerCount, Spec.Gcm.PreparedRepr, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr,
     Spec.Gcm.PreparedPowers16Repr, BitVec.setWidth_eq] at *
   all_goals first
     | with_reducible assumption
@@ -467,7 +467,7 @@ theorem toSpecF_pre {t : Nat} {s : State} (h : toPre (CtxMode.flaggedT t) s) :
     VG.X86_64.below]
   sig_and_intros
   all_goals simp only [Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg,
-    X86_64.stackArgAddr, VG.X86_64.below, Nat.mul_one, Proof.AesGcm.rounds, CtxMode.flaggedT, Proof.AesGcm.Flag.FlaggedPowers, Proof.AesGcm.Flag.powerCount, Proof.AesGcm.Flag.PreparedRepr, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr, Spec.Gcm.PreparedPowers16Repr] at *
+    X86_64.stackArgAddr, VG.X86_64.below, Nat.mul_one, Proof.AesGcm.rounds, CtxMode.flaggedT, Proof.AesGcm.Flag.FlaggedPowers, Spec.Gcm.powerCount, Spec.Gcm.PreparedRepr, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr, Spec.Gcm.PreparedPowers16Repr] at *
   all_goals first
     | with_reducible assumption
     | omega
@@ -529,24 +529,24 @@ theorem streamToFlagged_implies {t : Nat} (ht : t ≤ 48) : (Proof.AesGcm.stream
       Proof.AesGcm.streamToPreM, Proof.AesGcm.streamToPost, Proof.AesGcm.streamToPub, X86_64.abi,
       Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stkS, Proof.AesGcm.ret, Proof.AesGcm.rounds,
       X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
-      X86_64.argRegs, CtxMode.flaggedT, Proof.AesGcm.Flag.FlaggedPowers, Proof.AesGcm.Flag.powerCount, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr,
-      Proof.AesGcm.Flag.PreparedRepr, Spec.Gcm.PreparedPowers16Repr]
+      X86_64.argRegs, CtxMode.flaggedT, Proof.AesGcm.Flag.FlaggedPowers, Spec.Gcm.powerCount, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr,
+      Spec.Gcm.PreparedRepr, Spec.Gcm.PreparedPowers16Repr]
           post := by sig_implies_post [Proof.AesGcm.Flag.streamEncryptToFlaggedScratchContract,
       Proof.AesGcm.Flag.streamEncryptToFlaggedScratchSig, Proof.AesGcm.Flag.streamEncryptToFlaggedPre,
       Proof.Gcm.streamEncryptToPost, Proof.AesGcm.streamEncryptToX86_64M,
       Proof.AesGcm.streamToPreM, Proof.AesGcm.streamToPost, Proof.AesGcm.streamToPub, X86_64.abi,
       Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stkS, Proof.AesGcm.ret, Proof.AesGcm.rounds,
       X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
-      X86_64.argRegs, CtxMode.flaggedT, Proof.AesGcm.Flag.FlaggedPowers, Proof.AesGcm.Flag.powerCount, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr,
-      Proof.AesGcm.Flag.PreparedRepr, Spec.Gcm.PreparedPowers16Repr]
+      X86_64.argRegs, CtxMode.flaggedT, Proof.AesGcm.Flag.FlaggedPowers, Spec.Gcm.powerCount, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr,
+      Spec.Gcm.PreparedRepr, Spec.Gcm.PreparedPowers16Repr]
           pub := by sig_implies_pub [Proof.AesGcm.Flag.streamEncryptToFlaggedScratchContract,
       Proof.AesGcm.Flag.streamEncryptToFlaggedScratchSig, Proof.AesGcm.Flag.streamEncryptToFlaggedPre,
       Proof.Gcm.streamEncryptToPost, Proof.AesGcm.streamEncryptToX86_64M,
       Proof.AesGcm.streamToPreM, Proof.AesGcm.streamToPost, Proof.AesGcm.streamToPub, X86_64.abi,
       Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stkS, Proof.AesGcm.ret, Proof.AesGcm.rounds,
       X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
-      X86_64.argRegs, CtxMode.flaggedT, Proof.AesGcm.Flag.FlaggedPowers, Proof.AesGcm.Flag.powerCount, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr,
-      Proof.AesGcm.Flag.PreparedRepr, Spec.Gcm.PreparedPowers16Repr]
+      X86_64.argRegs, CtxMode.flaggedT, Proof.AesGcm.Flag.FlaggedPowers, Spec.Gcm.powerCount, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr,
+      Spec.Gcm.PreparedRepr, Spec.Gcm.PreparedPowers16Repr]
           sat := ⟨streamToSatF, by
             sig_pre [Proof.AesGcm.Flag.streamEncryptToFlaggedScratchContract,
               Proof.AesGcm.Flag.streamEncryptToFlaggedScratchSig, Proof.AesGcm.Flag.streamEncryptToFlaggedPre,
@@ -682,7 +682,7 @@ theorem sealGatherFlagged_core {t : Nat} (ht : t ≤ 48) (Sh : ShortFn (CtxMode.
 
 theorem gatherFrameSatFlagged_pre {t : Nat} (ht : t ≤ 48) : ∃ s, (Proof.AesGcm.Flag.sealGatherFlaggedRoundsContract t X86_64.abi 5128).pre s := by
   refine ⟨gatherFrameSatF, ?_⟩
-  sig_pre [Proof.AesGcm.Flag.sealGatherFlaggedRoundsContract, Proof.AesGcm.Flag.sealGatherSig,
+  sig_pre [Proof.AesGcm.Flag.sealGatherFlaggedRoundsContract, Spec.Gcm.sealGatherPreparedSig,
     Proof.AesGcm.Flag.sealGatherFlaggedPre, X86_64.abi, X86_64.argRegs, stackArgs_five, List.append_eq,
     gatherFrameSatF, gatherFrameSat, gatherSat, stackArg, stackArgAddr, Mem.readW, Mem.read]
   sig_and_intros
@@ -701,7 +701,7 @@ theorem sealGatherFlagged_framed {t : Nat} (ht : t ≤ 48) (Sh : ShortFn (CtxMod
       (Impl.StackScratch.X86_64.withStackArgScratch 240 5
         (withFront long Sp.fn (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn inl)))
       (Proof.AesGcm.Flag.sealGatherFlaggedRoundsContract t X86_64.abi 5128) :=
-  X86_64.Verified.stackArgScratchL (sig := Proof.AesGcm.Flag.sealGatherSig) (nm := "scratch") (e := .u64)
+  X86_64.Verified.stackArgScratchL (sig := Spec.Gcm.sealGatherPreparedSig) (nm := "scratch") (e := .u64)
     (n := 23) (pre := Proof.AesGcm.Flag.sealGatherFlaggedPre t X86_64.abi.ptrBits)
     (post := Proof.AesGcm.sealGatherRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 4888) (bytes := 240)
     (sealGatherFlagged_core ht Sh I A T F Sp long inl) (by decide) (by decide) (by decide)

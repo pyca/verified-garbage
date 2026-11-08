@@ -5,19 +5,14 @@ public import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx8
 /-!
 # Preparing a key context's powers in place, on 128-bit registers
 
-`vg_aes_gcm_prepare16` for the backends without VPCLMULQDQ, whose eight-block
-loops read no other powers: `H'` from the hash subkey at `ctx + 240`, as
+The 16 powers `vg_aes_gcm_prepare` computes for the backends without
+VPCLMULQDQ, whose eight-block loops read no other: `H'` from the hash subkey at `ctx + 240`, as
 those loops compute it (`StitchAvx8.hInv`), then `H'²`–`H'¹⁶` in four rounds
 of independent products (`plan`), each stored as it is computed. Half of
 them are squares, which need two carry-less products rather than four, since
 the middle term of a square is zero in characteristic 2 (`sq`); the products
 go straight to the registers that sum them (`mulD`), and are reduced the
 low half first. No calls, no stack.
-
-`vg_aes_gcm_prepare` (`prepare`) computes all 48 (`plan48`): the first
-three rounds of `plan`, then `H'⁹`–`H'¹⁶` into eight registers, keeping
-`H'⁸` in `xmm15`, and four rounds of the eight times `H'⁸`: `H'¹⁷`–`H'⁴⁸`,
-eight independent products a round.
 -/
 
 @[expose] public section
@@ -78,31 +73,9 @@ no other. -/
 def prepare16 : Prog isa :=
   .block (setup ++ plan.flatMap step)
 
-/-- The registers that hold `H'⁹`–`H'¹⁶` after the fourth round of `plan48`, in
-order. -/
-def chain : List XReg := [.xmm0, .xmm4, .xmm2, .xmm7, .xmm6, .xmm3, .xmm5, .xmm12]
-
-/-- `H'²`–`H'⁴⁸` from `H'` in `xmm3`: the first three rounds of `plan`; then
-`H'⁹`–`H'¹⁶` into `chain`, each register overwritten only after its last use,
-with `H'⁸` left in `xmm15`; then four rounds of each register of `chain`
-times `H'⁸`. -/
-def plan48 : List (XReg × XReg × XReg × Nat) :=
-  plan.take 7 ++
-  [(.xmm0, .xmm15, .xmm3, 9), (.xmm2, .xmm15, .xmm5, 11), (.xmm4, .xmm12, .xmm12, 10),
-   (.xmm6, .xmm15, .xmm12, 13), (.xmm7, .xmm13, .xmm13, 12), (.xmm3, .xmm14, .xmm14, 14),
-   (.xmm5, .xmm15, .xmm14, 15), (.xmm12, .xmm15, .xmm15, 16)] ++
-  (List.range 4).flatMap fun r =>
-    (List.range 8).map fun k => (chain.getD k .xmm0, chain.getD k .xmm0, .xmm15, 17 + 8 * r + k)
-
-/-- `vg_aes_gcm_prepare`: the 48 prepared powers into pairs 0–23 of the
-context at `rdi`, from its hash subkey. -/
-def prepare : Prog isa :=
-  .block (setup ++ plan48.flatMap step)
-
 /-! ## The SSE code
 
-What the steps run on the lower lanes, on which they are proven, and the
-code of `vg_aes_gcm_prepare` for CPUs without AVX (`prepareSse`). -/
+What the steps run on the lower lanes, on which they are proven. -/
 
 /-- The SSE code of `PrepareAvx.sq d a`. -/
 def sqS (d a : XReg) : List Instr :=
@@ -135,9 +108,5 @@ def setupS : List Instr :=
   Impl.Gcm.X86_64.Pclmul.constImm .xmm1 poly ++
   [.movdquLoad .xmm7 (at_ .rdi 240), .xop (.bin .pshufb .xmm7 .xmm0)] ++ Impl.Gcm.X86_64.Pclmul.hInvImm ++
   [.movdquStore (at_ .rdi (prepOff 1)) .xmm3]
-
-/-- `vg_aes_gcm_prepare` on SSE registers: `prepare`'s SSE code. -/
-def prepareSse : Prog isa :=
-  .block (setupS ++ plan48.flatMap stepS)
 
 end VG.Impl.Gcm.X86_64.PrepareAvx

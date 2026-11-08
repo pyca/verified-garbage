@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Spec.Gcm.Prepared16
+public import VerifiedGarbage.Proof.Gcm.PreparedPowers
 public import VerifiedGarbage.Proof.Gcm.Prepared16Contract
 public import VerifiedGarbage.Proof.Gcm.PreparedContract
+
 import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksVerifiedP
 public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Callee

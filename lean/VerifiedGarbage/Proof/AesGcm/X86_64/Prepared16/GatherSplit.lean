@@ -1,9 +1,10 @@
 module
 
-public import VerifiedGarbage.Spec.Gcm.Prepared16
+public import VerifiedGarbage.Proof.Gcm.PreparedPowers
 public import VerifiedGarbage.Proof.Gcm.Prepared16Contract
 public import VerifiedGarbage.Proof.Gcm.PreparedContract
 public import VerifiedGarbage.Proof.Gcm.OutOfPlaceContract
+
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SplitCallee
 public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
 import VerifiedGarbage.Proof.Framework.Sig
