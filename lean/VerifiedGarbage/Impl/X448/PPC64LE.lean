@@ -44,9 +44,9 @@ The arithmetic (registers `r4`, `r5`, `r7`–`r11`), with `2⁴⁴⁸ ≡ 2²²�
 The ladder follows RFC 7748 §5 operation by operation (with `a24 · E` a
 multiplication by the constant element `A24`), over the bits of the scalar
 from 447 down to 0 (the counter `r12`, which indexes `BITS`; `swap` in `r0`).
-The inversion `z2^(p-2)` is square-and-multiply over the bits of `p - 2 =
-2⁴⁴⁸ - 2²²⁴ - 3` from 447 down to 0 (the counter `r12`): every bit but 224
-and 1 is 1.
+The inversion `z2^(p-2)` is an addition chain (446 squarings and 15
+multiplications, in the ladder's temporaries), its runs of squarings counted
+by `r12`.
 
 The function uses only volatile registers. The only branches are on the loop
 counters, and every address is a pointer plus a constant or a counter, so
@@ -210,21 +210,55 @@ def lastSwap : List Instr := mask ++ cswap X2 X3 ++ cswap Z2 Z3
 
 /-! ## Inversion
 
-`[R] = [Z2]^(p-2)`, square-and-multiply over the bits of `p - 2` from 447
-down to 0 (`t = r12 - 1`): `R = R²`, then `R = R · Z2` unless `t` is 224 or 1. -/
+`[R] = [Z2]^(p-2)` by the addition chain of `Proof/X448/Invert.lean`, as
+RISC-V's `R64` implementation has it. -/
 
-/-- `[R] = 1`. -/
+/-- `[R] = 1` (Ed448's verification uses it). -/
 def one : List Instr :=
   [.li .r4 1, .li .r5 0, .store .w .r4 .r6 R] ++ storeN .r5 (R + 4) 13
 
-def invStep : Prog isa :=
-  .seq (.block [.subi .r12 .r12 1]) <| .seq (mul R R R) <|
-  .seq (.block [.subi .r5 .r12 224]) <|
-  .seq (.ite (.zero .d .r5) (.block [])
-    (.seq (.block [.subi .r5 .r12 1]) (.ite (.zero .d .r5) (.block []) (mul R R Z2))))
-    (.block [])
+/-- The inversion's temporaries: the ladder's `A`, `B`, `C`, `D`, `AA`, `BB`
+and `E`, free after it. -/
+def T0 : Nat := A
+def T1 : Nat := B
+def T2 : Nat := C
+def T3 : Nat := D
+def T4 : Nat := AA
+def T5 : Nat := BB
+def T6 : Nat := E
 
-def invert : Prog isa := .seq (.block (one ++ [.li .r12 448])) (.loop invStep (.nonzero .d .r12))
+/-- A squaring of a run after its first: the counter `r12` down by one, then `[o] = [o]²`. -/
+def sqStep (o : Nat) : Prog isa := .seq (.block [.subi .r12 .r12 1]) (mul o o o)
+
+/-- `[o] = [x]^(2^n)`, the squarings after the first in a loop counted by `r12`. -/
+def sqn (o x n : Nat) : Prog isa :=
+  if n = 1 then mul o x x
+  else .seq (mul o x x) (.seq (.block [.li .r12 (n - 1)]) (.loop (sqStep o) (.nonzero .d .r12)))
+
+/-- `[R] = [z]^(2²²³ - 1)` and `[T6] = [z]^(2²²² - 1)`, through `T0`–`T5`
+(`Proof/X448/Invert.lean`'s `c223`, as RISC-V's `R64` implementation has it). -/
+def chain223 (z : Nat) : Prog isa :=
+  .seq (sqn T0 z 1) <| .seq (mul T0 T0 z) <|          -- z^(2^2 - 1)
+  .seq (sqn T1 T0 2) <| .seq (mul T1 T1 T0) <|        -- z^(2^4 - 1)
+  .seq (sqn T2 T1 4) <| .seq (mul T2 T2 T1) <|        -- z^(2^8 - 1)
+  .seq (sqn T3 T2 8) <| .seq (mul T3 T3 T2) <|        -- z^(2^16 - 1)
+  .seq (sqn T4 T3 16) <| .seq (mul T4 T4 T3) <|       -- z^(2^32 - 1)
+  .seq (sqn T5 T4 32) <| .seq (mul T5 T5 T4) <|       -- z^(2^64 - 1)
+  .seq (sqn T6 T5 64) <| .seq (mul T6 T6 T5) <|       -- z^(2^128 - 1)
+  .seq (sqn T6 T6 64) <| .seq (mul T6 T6 T5) <|       -- z^(2^192 - 1)
+  .seq (sqn T6 T6 16) <| .seq (mul T6 T6 T3) <|       -- z^(2^208 - 1)
+  .seq (sqn T6 T6 8) <| .seq (mul T6 T6 T2) <|        -- z^(2^216 - 1)
+  .seq (sqn T6 T6 4) <| .seq (mul T6 T6 T1) <|        -- z^(2^220 - 1)
+  .seq (sqn T6 T6 2) <| .seq (mul T6 T6 T0) <|        -- z^(2^222 - 1)
+  .seq (sqn R T6 1) (mul R R z)                       -- z^(2^223 - 1)
+
+/-- From `chain223 Z2`: `[R] = [Z2]^(p - 2)`. -/
+def invTail : Prog isa :=
+  .seq (sqn R R 225) <| .seq (sqn T6 T6 2) <| .seq (mul T6 T6 Z2) (mul R R T6)
+
+/-- `[R] = [Z2]^(p-2)`, by the addition chain: 446 squarings and 15
+multiplications. -/
+def invert : Prog isa := .seq (chain223 Z2) invTail
 
 /-! ## Encoding and decoding -/
 
