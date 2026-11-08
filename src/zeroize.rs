@@ -46,6 +46,10 @@ impl<T: Zeroable, const N: usize> Zeroable for [T; N] {}
 impl<T: Zeroable> sealed::Sealed for crate::align::CacheAligned<T> {}
 impl<T: Zeroable> Zeroable for crate::align::CacheAligned<T> {}
 
+// Every byte pattern, zeros included, is a valid `MaybeUninit`.
+impl<T: Copy> sealed::Sealed for core::mem::MaybeUninit<T> {}
+impl<T: Copy> Zeroable for core::mem::MaybeUninit<T> {}
+
 /// Overwrites `x` with zeros using the verified assembly primitive. Its
 /// opaque call prevents the compiler from removing the stores.
 pub(crate) fn zeroize<T: Zeroable>(x: &mut [T]) {
@@ -126,5 +130,17 @@ mod tests {
         assert_eq!(padded[1].0, [0; 3]);
         assert_eq!(padded[2].0, [0; 3]);
         assert_eq!(padded[3].0, [u64::MAX; 3]);
+    }
+
+    #[test]
+    fn zeroizes_uninitialized_memory() {
+        use crate::align::CacheAligned;
+        use core::mem::MaybeUninit;
+
+        let mut ctx = [CacheAligned(MaybeUninit::<[u8; 70]>::uninit()); 3];
+        zeroize(&mut ctx[1..]);
+        // SAFETY: zeroize wrote every byte of these two.
+        let wiped = unsafe { [ctx[1].0.assume_init(), ctx[2].0.assume_init()] };
+        assert_eq!(wiped, [[0; 70]; 2]);
     }
 }

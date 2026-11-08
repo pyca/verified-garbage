@@ -14,8 +14,8 @@ use crate::arch::dispatch::ed25519::{
     vg_ed25519_key_pair_auto, vg_ed25519_sign_expanded_auto, vg_ed25519_verify_auto,
 };
 use crate::error::InvalidSignature;
-use crate::zeroize::{zeroize, zeroize_raw};
-use core::mem::{MaybeUninit, size_of};
+use crate::zeroize::zeroize;
+use core::mem::MaybeUninit;
 
 /// An encoded Ed25519 public key.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -133,8 +133,7 @@ fn key_pair(
     // space. The dispatcher calls only an implementation the CPU has the
     // features of.
     unsafe { vg_ed25519_key_pair_auto(dit, public, expanded, seed, scratch.0.as_mut_ptr()) };
-    // SAFETY: `scratch` is writable for its whole length.
-    unsafe { zeroize_raw(scratch.0.as_mut_ptr().cast(), size_of::<[u64; 1024]>()) };
+    zeroize(core::slice::from_mut(&mut scratch));
 }
 
 fn verify_message(
@@ -159,8 +158,7 @@ fn verify_message(
             scratch.0.as_mut_ptr(),
         )
     };
-    // SAFETY: `scratch` is writable for its whole length.
-    unsafe { zeroize_raw(scratch.0.as_mut_ptr().cast(), size_of::<[u64; 1024]>()) };
+    zeroize(core::slice::from_mut(&mut scratch));
     valid
 }
 
@@ -187,7 +185,6 @@ fn sign_message(dit: crate::dit::Dit<'_>, key: &SigningKey, message: &[u8]) -> [
             scratch.0.as_mut_ptr(),
         )
     };
-    // SAFETY: `scratch` is writable for its whole length.
-    unsafe { zeroize_raw(scratch.0.as_mut_ptr().cast(), size_of::<[u64; 1024]>()) };
+    zeroize(core::slice::from_mut(&mut scratch));
     signature
 }

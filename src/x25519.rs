@@ -19,7 +19,7 @@ use crate::arch::dispatch::x25519::VG_X25519_BASE_AUTO_SCRATCH_WRITTEN;
 use crate::arch::dispatch::x25519::{vg_x25519_base_auto, vg_x25519_exchange_auto};
 use crate::error::XdhError;
 use crate::zeroize::{zeroize, zeroize_raw};
-use core::mem::{MaybeUninit, size_of};
+use core::mem::MaybeUninit;
 
 /// `X25519(scalar, u)` (RFC 7748 §5), by `vg_x25519_exchange`, which also
 /// checks it: `None` if it is all zero (§6.1).
@@ -35,8 +35,7 @@ fn exchange(dit: crate::dit::Dit<'_>, scalar: &[u8; 32], u: &[u8; 32]) -> Option
     // an implementation the CPU has the features of.
     let nonzero =
         unsafe { vg_x25519_exchange_auto(dit, &mut out, scalar, u, scratch.0.as_mut_ptr()) };
-    // SAFETY: `scratch` is writable for its whole length.
-    unsafe { zeroize_raw(scratch.0.as_mut_ptr().cast(), size_of::<[u64; 512]>()) };
+    zeroize(core::slice::from_mut(&mut scratch));
     // The contract: 0 if and only if `out` is all zero, so there is no
     // secret in it to destroy.
     (nonzero != 0).then_some(out)
@@ -59,7 +58,7 @@ fn base(dit: crate::dit::Dit<'_>, scalar: &[u8; 32]) -> [u8; 32] {
     #[cfg(target_arch = "aarch64")]
     let written = VG_X25519_BASE_AUTO_SCRATCH_WRITTEN;
     #[cfg(not(target_arch = "aarch64"))]
-    let written = size_of::<[u64; 1024]>();
+    let written = core::mem::size_of::<[u64; 1024]>();
     // SAFETY: `scratch` is writable for its whole length, which `written`
     // does not exceed.
     unsafe { zeroize_raw(scratch.0.as_mut_ptr().cast(), written) };
