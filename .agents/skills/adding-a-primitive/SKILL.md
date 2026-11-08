@@ -108,9 +108,9 @@ instructions in an ISA model) go in their own PR before either.
    tries its implementations in the order `Dispatch.lean` ranks their
    suffixes on the target (a suffix of several parts by the rank of each
    part's): a variant with a suffix it does not rank yet fails the
-   emitter, so rank it there, best first (`VG.Rust.Rank`: its `extra`
-   features, a `vendor`, or `skip` for one the Rust code chooses by
-   something other than the CPU).
+   emitter, so rank it there, best first (`VG.Rust.Rank`). Extra
+   features or a `vendor` it is chosen only with go in its registration
+   (`Registration.extra`, `Registration.vendor`).
    Registration files (`Artifacts/`, `Generic/`) and variant files
    (`Variants/`) are reviewed by hand, so they only bind: no theorems, no
    tactic proofs beyond the defaults (not even a `(by decide)` argument),

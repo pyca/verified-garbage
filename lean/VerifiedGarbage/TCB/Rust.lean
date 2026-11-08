@@ -1690,9 +1690,9 @@ states, and each is called only on a CPU with its features. So the ranking
 (`Rank`) is not trusted, and comes from outside the trusted base
 (`VerifiedGarbage/Dispatch.lean`). The dispatcher tries the implementations
 in the order it gives, each where the CPU also has the `extra` features
-that the ranking or its registration (`Artifact.extra`) gives it and, if
-either names a `vendor` (`Artifact.vendor`), only where the compilation
-target's `target_vendor` is that, or where `VG_CPU_FEATURES`
+its registration gives it (`Artifact.extra`) and, if its registration names
+a `vendor` (`Artifact.vendor`), only where the compilation target's
+`target_vendor` is that, or where `VG_CPU_FEATURES`
 names every feature the implementation needs
 (`verified_garbage_cpu::requested`, for testing it elsewhere); an
 implementation whose `cfg` (`Printer.featureCfg`) the build lacks is not
@@ -1755,16 +1755,9 @@ on), and neither does an implementation that is not a base; a table with no
 other implementation gets one, returning it. -/
 
 /-- How a dispatcher (see above) ranks an implementation of a function: one
-whose name is that of its base followed by `suffix`, in a module of
-`modules` (or any if there are none), chosen only on a CPU that also has the
-features `extra` (by their Rust `target_feature` names) and, if `vendor` is
-given, only where `target_vendor` is `vendor` or `VG_CPU_FEATURES` names every
-feature it needs. -/
+whose name is that of its base followed by `suffix`. -/
 structure Rank where
   suffix : String
-  modules : List String := []
-  extra : List String := []
-  vendor : Option String := none
 
 /-- The ranking of each target, by its name (`Target.name`): its `Rank`s,
 best first. -/
@@ -1793,23 +1786,23 @@ def groupsOf (as : List Artifact) : List Group := Id.run do
     | none => gs := gs.push ⟨a, []⟩
   return gs.toList
 
-/-- The first `Rank` of `rs` for an implementation with the suffix `s` in the
-module `m`, with its index in `rs`. -/
-def rankOf (rs : List Rank) (m s : String) : Option (Nat × Rank) :=
+/-- The first `Rank` of `rs` for an implementation with the suffix `s`, with
+its index in `rs`. -/
+def rankOf (rs : List Rank) (s : String) : Option (Nat × Rank) :=
   go rs 0
 where
   go : List Rank → Nat → Option (Nat × Rank)
     | [], _ => none
     | r :: rs, i =>
-      if r.suffix == s && (r.modules.isEmpty || r.modules.contains m) then some (i, r)
+      if r.suffix == s then some (i, r)
       else go rs (i + 1)
 
-/-- The suffix `s` of an implementation in the module `m`, as parts
+/-- The suffix `s` of an implementation, as parts
 `_<tag><suffix>` each of whose suffixes `rs` ranks (`Emit.qualifiedName`):
 each part's tag, and the index in `rs` and `Rank` of its suffix, taking the
 longest ranked suffix after each tag that leaves a suffix of parts; `none` if
 there is no such way to read it. `fuel` bounds the number of parts. -/
-def partsOf (rs : List Rank) (m : String) : Nat → String → Option (List (String × Nat × Rank))
+def partsOf (rs : List Rank) : Nat → String → Option (List (String × Nat × Rank))
   | _, "" => some []
   | 0, _ => none
   | fuel + 1, s =>
@@ -1817,14 +1810,12 @@ def partsOf (rs : List Rank) (m : String) : Nat → String → Option (List (Str
     let rest := (s.drop 1).toString
     let tag := (rest.splitOn "_").headD ""
     let after := (rest.drop tag.length).toString
-    let cands := (rs.filter fun r =>
-        (r.modules.isEmpty || r.modules.contains m) && !r.suffix.isEmpty &&
-          after.startsWith r.suffix).mergeSort
+    let cands := (rs.filter fun r => !r.suffix.isEmpty && after.startsWith r.suffix).mergeSort
       fun a b => a.suffix.length ≥ b.suffix.length
     cands.findSome? fun r =>
       let tail := (after.drop r.suffix.length).toString
       if tag.isEmpty || !(tail.isEmpty || tail.startsWith "_") then none else
-      match partsOf rs m fuel tail, rankOf rs m r.suffix with
+      match partsOf rs fuel tail, rankOf rs r.suffix with
       | some ps, some (i, r) => some ((tag, i, r) :: ps)
       | _, _ => none
 
@@ -1857,27 +1848,25 @@ def Impl.ofArtifact (a : Artifact) : Impl :=
     vendor := a.vendor }
 
 /-- An implementation a dispatcher may choose, with the `extra` features and
-`vendor`s of its registration and of its ranking (those of each of its
-suffix's parts). -/
+`vendor`s of its registration. -/
 structure Arm where
   impl : Impl
   extra : List String
   vendors : List String
 
 /-- The implementations `members` (each with its suffix) of a function or
-table of the module `m` of the target `t`, but its base, that its dispatcher
-tries, in order (see above), or why `rs` does not rank them. -/
-def armsOf (rs : List Rank) (m t : String) (members : List (Impl × String)) :
+table of the target `t`, but its base, that its dispatcher tries, in order
+(see above), or why `rs` does not rank them. -/
+def armsOf (rs : List Rank) (t : String) (members : List (Impl × String)) :
     Except String (List Arm) := do
-  let arm (a : Impl) (ranks : List Rank) : Arm :=
-    ⟨a, dedup (a.extra ++ ranks.flatMap (·.extra)), dedup (a.vendor.toList ++ ranks.filterMap (·.vendor))⟩
-  let keyed ← if members.all fun (_, s) => (rankOf rs m s).isSome then
-      pure (members.map fun (a, s) => match rankOf rs m s with
-        | some (i, r) => ([i], arm a [r])
-        | none => ([], arm a []))
+  let arm (a : Impl) : Arm := ⟨a, a.extra, a.vendor.toList⟩
+  let keyed ← if members.all fun (_, s) => (rankOf rs s).isSome then
+      pure (members.map fun (a, s) => match rankOf rs s with
+        | some (i, _) => ([i], arm a)
+        | none => ([], arm a))
     else do
       let parsed ← members.mapM fun (a, s) =>
-        match (rankOf rs m s).map (fun (i, r) => [("", i, r)]) <|> partsOf rs m s.length s with
+        match (rankOf rs s).map (fun (i, r) => [("", i, r)]) <|> partsOf rs s.length s with
         | some ps => pure (a, ps)
         | none => throw s!"{t}: {a.name}: its suffix `{s}` is not ranked \
             (`VG.Dispatch.ranking`), nor made of parts `_<tag><suffix>` whose suffixes are"
@@ -1888,8 +1877,7 @@ def armsOf (rs : List Rank) (m t : String) (members : List (Impl × String)) :
           | some i => (tags, i + 1)
           | none => (tags.insertIdx pos t, pos + 1)) |>.1
       pure (parsed.map fun (a, ps) =>
-        (tags.map fun t => ((ps.find? (·.1 == t)).map (·.2.1)).getD rs.length,
-          arm a (ps.map (·.2.2))))
+        (tags.map fun t => ((ps.find? (·.1 == t)).map (·.2.1)).getD rs.length, arm a))
   let sorted := keyed.mergeSort fun a b => lexLe a.1 b.1
   -- Leave out each implementation that can be chosen only where one before it can.
   let weaker (e l : Arm) : Bool :=
@@ -2038,19 +2026,11 @@ def vendorOk (v : String) : Bool :=
 def featureOk (f : String) : Bool :=
   !f.isEmpty && f.all fun c => c.isAlphanum || c == '.' || c == '_'
 
-/-- Each `Rank` of `rs` has a suffix starting with `_`, and its vendor, if it
-names one, and each of its `extra` features are as `vendorOk` and
-`featureOk` require. -/
+/-- Each `Rank` of `rs` has a suffix starting with `_`. -/
 def checkRanks (t : String) (rs : List Rank) : Except String Unit :=
   rs.forM fun r => do
     unless r.suffix.startsWith "_" && r.suffix.length > 1 do
       throw s!"{t}: the ranked suffix `{r.suffix}` does not start with `_`"
-    if let some v := r.vendor then
-      unless vendorOk v do
-        throw s!"{t}: the ranked suffix `{r.suffix}` names the vendor `{v}`"
-    for f in r.extra do
-      unless featureOk f do
-        throw s!"{t}: the ranked suffix `{r.suffix}` needs the feature `{f}`"
 
 /-- The artifact `a`'s vendor, if it names one, and each of its `extra`
 features are as `vendorOk` and `featureOk` require. -/
@@ -2062,11 +2042,11 @@ def checkChoice (a : Artifact) : Except String Unit := do
     unless featureOk f do
       throw s!"{a.target.name}: {a.name} needs the feature `{f}`"
 
-/-- The dispatchers of the artifacts `as` of the module `m` of a target (see
+/-- The dispatchers of the artifacts `as` of a module of a target (see
 above), as the text that follows its functions in its file; `names` are the
 names of every artifact of the target, none of which may be a
 dispatcher's. -/
-def dispatchers (rs : List Rank) (names : List String) (m : String) (as : List Artifact) :
+def dispatchers (rs : List Rank) (names : List String) (as : List Artifact) :
     Except String String := do
   let gs := (groupsOf as).filter (·.base.features.isEmpty)
   let texts ← gs.mapM fun g => do
@@ -2074,7 +2054,7 @@ def dispatchers (rs : List Rank) (names : List String) (m : String) (as : List A
     if names.contains auto then
       throw s!"{g.base.target.name}: {auto} is both an artifact and the dispatcher of {g.base.name}"
     let arms ← if g.members.isEmpty then pure [] else
-      armsOf rs m g.base.target.name (g.members.map fun (a, s) => (Impl.ofArtifact a, s))
+      armsOf rs g.base.target.name (g.members.map fun (a, s) => (Impl.ofArtifact a, s))
     return if g.members.isEmpty then soleDispatcher g else dispatcher g arms
   return String.join (texts.map ("\n" ++ ·))
 
@@ -2100,14 +2080,13 @@ def tableAutoName (name : String) : String := name.toLower ++ "_auto"
 /-- The dispatcher of the table of functions `b` of the target `t` (see
 above), whose implementations are `members` (each with its suffix), given
 the CPU features each table needs (`features`), its `cfg` predicates
-(`gate`) and the module `rankModule` of a table's first function, in which
-`rs` ranks its suffix; or why `rs` does not rank them. -/
+(`gate`); or why `rs` does not rank them. -/
 def tableDispatcher (rs : List Rank) (t : String) (features : FnTable → List String)
-    (gate : List String → List String) (rankModule : FnTable → String) (b : FnTable)
+    (gate : List String → List String) (b : FnTable)
     (members : List (FnTable × String)) : Except String String := do
   let impl (T : FnTable) : Impl :=
     { name := T.name, module := "fn_tables", features := features T, gate := gate (features T) }
-  let arms ← armsOf rs (rankModule b) t (members.map fun (T, s) => (impl T, s.toLower))
+  let arms ← armsOf rs t (members.map fun (T, s) => (impl T, s.toLower))
   let item (a : Arm) : String :=
     let needs := if a.impl.features.isEmpty then
       (if a.extra.isEmpty then ["detection reports some CPU feature"] else [])
@@ -2146,13 +2125,13 @@ above), as the text of `dispatch/fn_tables.rs` after its header; `names` are
 the names of every artifact of the target, none of which may be a
 dispatcher's. -/
 def tableDispatchers (rs : List Rank) (t : String) (names : List String) (ts : List FnTable)
-    (features : FnTable → List String) (gate : List String → List String)
-    (rankModule : FnTable → String) : Except String String := do
+    (features : FnTable → List String) (gate : List String → List String) :
+    Except String String := do
   let gs := (tableGroupsOf ts).filter fun (b, _) => (features b).isEmpty
   let texts ← gs.mapM fun (b, ms) => do
     if names.contains (tableAutoName b.name) then
       throw s!"{t}: {tableAutoName b.name} is both an artifact and the dispatcher of {b.name}"
-    tableDispatcher rs t features gate rankModule b ms
+    tableDispatcher rs t features gate b ms
   return String.join (texts.map ("\n" ++ ·))
 
 /-- The module of the dispatchers of the target `t` (`dispatch/mod.rs` of its
@@ -2280,18 +2259,12 @@ def files (as : List Artifact) (ranking : Ranking := []) :
     let arts := as.filter (·.target.name == t)
     let names := arts.map (·.name)
     let fns ← (distinct arts (·.module)).mapM fun m => do
-      return ((t, m), ← dispatchers rs names m (arts.filter (·.module == m)))
+      return ((t, m), ← dispatchers rs names (arts.filter (·.module == m)))
     let tps := ps.filter (·.art.target.name == t)
-    let rankModule (T : FnTable) : String := match T.fns.head? with
-      | none => ""
-      | some f => match arts.find? (·.name == f) with
-        | some a => a.module
-        | none => ((internal? hs t f).map (·.owner)).getD ""
     let gate (fs : List String) : List String := match arts.head? with
       | some a => fs.filterMap a.target.printer.featureCfg
       | none => []
     let tabs ← tableDispatchers rs t names (fnTables arts) (fnTableFeatures tps hs t) gate
-      rankModule
     return fns ++ (if tabs.isEmpty then [] else [((t, "fn_tables"), tabs)])
   return render ps hs (fun t n =>
     match as.find? fun b => b.target.name == t && b.name == n with
