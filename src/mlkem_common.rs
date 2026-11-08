@@ -21,8 +21,8 @@
 /// it. `from_bytes` does not compute
 /// `H(ek)` itself so that `encaps` can: on AArch64, its paired instances hash
 /// it in Keccak lanes the matrix sampling leaves idle, almost for free.
-/// On x86-64 each operation wipes what it writes of `scratch` itself;
-/// elsewhere it may write all of it, which the callers wipe.
+/// On x86-64 and AArch64 each operation wipes what it writes of `scratch`
+/// itself; elsewhere it may write all of it, which the callers wipe.
 macro_rules! ml_kem {
     (
         name: $name:literal,
@@ -141,13 +141,13 @@ macro_rules! ml_kem {
                         None => $encaps(ek, m, &mut key, &mut ct, s),
                     }
                 };
-                // On x86-64 the verified function wiped what it wrote of
-                // `scratch`. Elsewhere, wipe all of it, which the operation may
+                // On x86-64 and AArch64 the verified function wiped what it
+                // wrote of `scratch`. Elsewhere, wipe all of it, which the operation may
                 // have written, on both success and failure before inspecting
                 // the return status.
                 // SAFETY: the entire scratch allocation is writable, including
                 // bytes the operation may not have initialized.
-                #[cfg(not(target_arch = "x86_64"))]
+                #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
                 unsafe {
                     $crate::zeroize::zeroize_raw(scratch.as_mut_ptr().cast(), core::mem::size_of::<Scratch>());
                 }
@@ -212,13 +212,13 @@ macro_rules! ml_kem {
                 // the address space. The dispatcher calls only an
                 // implementation the CPU has the features of.
                 let r = unsafe { $keygen(seed, &mut key.ek.bytes, &mut key.dk, scratch.as_mut_ptr().cast()) };
-                // On x86-64 the verified function wiped what it wrote of
-                // `scratch`. Elsewhere, wipe all of it, which the operation may
+                // On x86-64 and AArch64 the verified function wiped what it
+                // wrote of `scratch`. Elsewhere, wipe all of it, which the operation may
                 // have written, on both success and failure before inspecting
                 // the return status.
                 // SAFETY: the entire scratch allocation is writable, including
                 // bytes the operation may not have initialized.
-                #[cfg(not(target_arch = "x86_64"))]
+                #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
                 unsafe {
                     $crate::zeroize::zeroize_raw(scratch.as_mut_ptr().cast(), core::mem::size_of::<Scratch>());
                 }
@@ -264,13 +264,13 @@ macro_rules! ml_kem {
                 // dispatcher calls only an implementation the CPU has the
                 // features of.
                 let r = unsafe { $decaps(&self.dk, ct, &mut key, scratch.as_mut_ptr().cast()) };
-                // On x86-64 the verified function wiped what it wrote of
-                // `scratch`. Elsewhere, wipe all of it, which the operation may
+                // On x86-64 and AArch64 the verified function wiped what it
+                // wrote of `scratch`. Elsewhere, wipe all of it, which the operation may
                 // have written, on both success and failure before inspecting
                 // the return status.
                 // SAFETY: the entire scratch allocation is writable, including
                 // bytes the operation may not have initialized.
-                #[cfg(not(target_arch = "x86_64"))]
+                #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
                 unsafe {
                     $crate::zeroize::zeroize_raw(scratch.as_mut_ptr().cast(), core::mem::size_of::<Scratch>());
                 }
