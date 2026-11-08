@@ -656,6 +656,17 @@ theorem openToCode_spAll (v : GcmVariant) :
   · exact X86_64.withStackArgScratch_spSafe (OpenToSplit.openToSplit_spAll _ (openSplitFnB v _).spAll)
   · exact OpenTo.openTo_spAll v.impl.copyW _ (openFn v.impl).spAll
 
+/-- `openToCode` against the prepared contract, for the implementations
+that read only the key context: in one pass, with 2776 bytes of stack, if the
+variant has an out-of-place counter mode, else by a copy, with 2728. -/
+theorem openToCode_keyed (v : GcmVariant) :
+    Verified X86_64.target (openToCode v) (VG.Proof.AesGcm.Flag.openToRoundsContract X86_64.abi (openToStack v)) := by
+  have h := openToCode_verified v
+  unfold openToStack at h ⊢
+  cases hc : v.ctrTo.isSome <;> simp only [hc, Bool.false_eq_true, ↓reduceIte] at h ⊢
+  · exact Flag.openTo_of_base h
+  · exact Flag.openTo_of_base2776 h
+
 /-- `vg_aes_gcm_open_to_prepared` of a variant: in one pass from
 `OpenToSplit.thr` bytes on if it has the out-of-place decryption loop
 (`stitchToDecR`), and otherwise by a copy. -/
@@ -905,21 +916,33 @@ theorem openToCodeF_spAll (v : GcmVariant) :
   · exact OpenToSplit.openToSel_spAll _ _ _ _ (openFnF v).spAll (openSplitFnF v).spAll
   · exact OpenTo.openTo_spAll _ _ (openFnF v).spAll
 
-/-- `vg_aes_gcm_open_to_prepared` of a variant whose loops read the 48
-powers: by the flag, its code calling `vg_aes_gcm_open_prepared`, or its code
-on the key context. -/
+/-- The stack `openToCodeR_onFlag` uses: the larger of its two branches'. -/
+def openToStackF (v : GcmVariant) : Nat := max (openToStackR v) (openToStack v)
+
+/-- `vg_aes_gcm_open_to_prepared` of a variant whose loops read the 48 powers: by
+the count, its code calling `vg_aes_gcm_open_prepared`, or `openToCode` on
+the key context, which decrypts in one pass if the variant has an
+out-of-place counter mode. Both branches are proven at the larger of their
+stacks. -/
 theorem openToCodeR_onFlag (v : GcmVariant) :
     Verified X86_64.target
-      (Impl.Gcm.X86_64.Flag.onFlag 48 (openToCodeF v) (Impl.AesGcm.X86_64.OpenTo.openTo v.impl.copyW (openFn v.impl).fn))
-      (VG.Proof.AesGcm.Flag.openToRoundsContract X86_64.abi (openToStackR v)) := by
+      (Impl.Gcm.X86_64.Flag.onFlag 48 (openToCodeF v) (openToCode v))
+      (VG.Proof.AesGcm.Flag.openToRoundsContract X86_64.abi (openToStackF v)) := by
   have h := openToCodeF_verified v
-  have hb := OpenTo.openTo_verified v.impl.copyW (openFn v.impl)
-  unfold openToStackR at h ⊢
-  by_cases hc : v.stitchToDecR.isSome = true
-  · simp only [hc, ↓reduceIte] at h ⊢
-    exact Flag.openTo_onFlagF2776 (Or.inr rfl) h (VG.X86_64.Verified.stack_mono (by decide) hb Flag.openTo_satK2776)
-  · simp only [hc, Bool.false_eq_true, ↓reduceIte] at h ⊢
-    exact Flag.openTo_onFlagF (Or.inr rfl) h hb
+  have hb := openToCode_verified v
+  unfold openToStackF openToStackR openToStack at *
+  cases hc : v.stitchToDecR.isSome <;> cases hd : v.ctrTo.isSome <;>
+    simp only [hc, hd, Bool.false_eq_true, ↓reduceIte] at h hb ⊢
+  · exact Flag.openTo_onFlagF (Or.inr rfl) h hb
+  · exact Flag.openTo_onFlagF2776 (Or.inr rfl) (VG.X86_64.Verified.stack_mono (by decide) h
+      (OpenToSplit.toSatF2776_pre (by decide))) hb
+  · exact Flag.openTo_onFlagF2776 (Or.inr rfl) h (VG.X86_64.Verified.stack_mono (by decide) hb Flag.openTo_satK2776)
+  · exact Flag.openTo_onFlagF2776 (Or.inr rfl) h hb
+
+theorem openToCodeR_onFlag_spAll (v : GcmVariant) :
+    (Impl.Gcm.X86_64.Flag.onFlag 48 (openToCodeF v) (openToCode v)).all
+      (fun i => !X86_64.isa.writesSp i) = true :=
+  VG.X86_64.onFlag_spSafe (openToCodeF_spAll v) (openToCode_spAll v)
 
 /-! ### `seal_gather` on a prepared key context whose powers are present
 
@@ -1224,21 +1247,33 @@ theorem openToCodeF16_spAll (v : GcmVariant) (r : R16 v) :
   · exact OpenToSplit.openToSel_spAll _ _ _ _ (openFnF16 v r).spAll (openSplitFnF16 v).spAll
   · exact OpenTo.openTo_spAll _ _ (openFnF16 v r).spAll
 
+/-- The stack `openToCodeR16_onFlag` uses: the larger of its two branches'. -/
+def openToStackF16 (v : GcmVariant) : Nat := max (openToStackR16 v) (openToStack v)
+
 /-- `vg_aes_gcm_open_to_prepared` of a variant whose loops read 16 powers: by
-the count, its code calling `vg_aes_gcm_open_prepared`, or its code on the
-key context. -/
+the count, its code calling `vg_aes_gcm_open_prepared`, or `openToCode` on
+the key context, which decrypts in one pass if the variant has an
+out-of-place counter mode. Both branches are proven at the larger of their
+stacks. -/
 theorem openToCodeR16_onFlag (v : GcmVariant) (r : R16 v) :
     Verified X86_64.target
-      (Impl.Gcm.X86_64.Flag.onFlag 16 (openToCodeF16 v r) (Impl.AesGcm.X86_64.OpenTo.openTo v.impl.copyW (openFn v.impl).fn))
-      (VG.Proof.AesGcm.Flag.openToRoundsContract X86_64.abi (openToStackR16 v)) := by
+      (Impl.Gcm.X86_64.Flag.onFlag 16 (openToCodeF16 v r) (openToCode v))
+      (VG.Proof.AesGcm.Flag.openToRoundsContract X86_64.abi (openToStackF16 v)) := by
   have h := openToCodeF16_verified v r
-  have hb := OpenTo.openTo_verified v.impl.copyW (openFn v.impl)
-  unfold openToStackR16 at h ⊢
-  by_cases hc : v.stitchToDecR16.isSome = true
-  · simp only [hc, ↓reduceIte] at h ⊢
-    exact Flag.openTo_onFlagF2776 (Or.inl rfl) h (VG.X86_64.Verified.stack_mono (by decide) hb Flag.openTo_satK2776)
-  · simp only [hc, Bool.false_eq_true, ↓reduceIte] at h ⊢
-    exact Flag.openTo_onFlagF (Or.inl rfl) h hb
+  have hb := openToCode_verified v
+  unfold openToStackF16 openToStackR16 openToStack at *
+  cases hc : v.stitchToDecR16.isSome <;> cases hd : v.ctrTo.isSome <;>
+    simp only [hc, hd, Bool.false_eq_true, ↓reduceIte] at h hb ⊢
+  · exact Flag.openTo_onFlagF (Or.inl rfl) h hb
+  · exact Flag.openTo_onFlagF2776 (Or.inl rfl) (VG.X86_64.Verified.stack_mono (by decide) h
+      (OpenToSplit.toSatF2776_pre (by decide))) hb
+  · exact Flag.openTo_onFlagF2776 (Or.inl rfl) h (VG.X86_64.Verified.stack_mono (by decide) hb Flag.openTo_satK2776)
+  · exact Flag.openTo_onFlagF2776 (Or.inl rfl) h hb
+
+theorem openToCodeR16_onFlag_spAll (v : GcmVariant) (r : R16 v) :
+    (Impl.Gcm.X86_64.Flag.onFlag 16 (openToCodeF16 v r) (openToCode v)).all
+      (fun i => !X86_64.isa.writesSp i) = true :=
+  VG.X86_64.onFlag_spSafe (openToCodeF16_spAll v r) (openToCode_spAll v)
 
 /-- `vg_aes_gcm_seal_prepared` of a variant whose loops read 16 powers: by the
 count, its code on them or its code on the key context. -/

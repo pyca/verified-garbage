@@ -1,23 +1,11 @@
-// The functions of `src/internal/vg_aes_gcm_open_pclmul.rs` of `verified-garbage-asm-x86_64`, as text: generated from
+// The functions of `src/internal/vg_aes_gcm_open_split.rs` of `verified-garbage-asm-x86_64`, as text: generated from
 // Lean (`lean/VerifiedGarbage/TCB/Rust.lean`) with them, and not compiled.
 // Each instruction the printer encodes is here as its text, and in
 // `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
 // gives.
 
-vg_aes_gcm_open_pclmul:
-	lea rsp, [rsp-2608]
-	mov rax, QWORD PTR [rsp+2616]
-	mov QWORD PTR [rsp+8], rax
-	mov rax, QWORD PTR [rsp+2624]
-	mov QWORD PTR [rsp+16], rax
-	mov rax, QWORD PTR [rsp+2632]
-	mov QWORD PTR [rsp+24], rax
-	mov rax, QWORD PTR [rsp+2640]
-	mov QWORD PTR [rsp+32], rax
-	mov rax, rsp
-	add rax, 48
-	mov QWORD PTR [rsp+40], rax
-	mov rax, QWORD PTR [rsp+40]
+vg_aes_gcm_open_split:
+	mov rax, QWORD PTR [rsp+56]
 	mov QWORD PTR [rax+128], rbx
 	mov QWORD PTR [rax+136], rbp
 	mov QWORD PTR [rax+144], r12
@@ -38,7 +26,10 @@ vg_aes_gcm_open_pclmul:
 	mov r12, rdx
 	mov rbp, rcx
 	mov rbx, QWORD PTR [rsp+32]
-	mov QWORD PTR [r15+224], rbx
+	mov rax, QWORD PTR [rsp+40]
+	mov QWORD PTR [r15+224], rax
+	mov rax, QWORD PTR [rsp+16]
+	mov QWORD PTR [r15+192], rax
 	mov ecx, 0
 	cmp rbx, 4
 	jb 20f
@@ -75,7 +66,7 @@ vg_aes_gcm_open_pclmul:
 	add rsi, 0
 	mov r8, r15
 	add r8, 512
-	call {vg_ghash_pclmul}
+	call {vg_ghash}
 	jmp 29f
 28:
 29:
@@ -104,7 +95,7 @@ vg_aes_gcm_open_pclmul:
 	mov ecx, 1
 	mov r8, r15
 	add r8, 512
-	call {vg_ghash_pclmul}
+	call {vg_ghash}
 	jmp 211f
 210:
 211:
@@ -131,7 +122,7 @@ vg_aes_gcm_open_pclmul:
 	mov ecx, 1
 	mov r8, r15
 	add r8, 512
-	call {vg_ghash_pclmul}
+	call {vg_ghash}
 	jmp 27f
 26:
 	mov eax, DWORD PTR [r12]
@@ -175,7 +166,7 @@ vg_aes_gcm_open_pclmul:
 	add rsi, 16
 	mov r8, r15
 	add r8, 512
-	call {vg_ghash_pclmul}
+	call {vg_ghash}
 	jmp 214f
 213:
 214:
@@ -204,12 +195,11 @@ vg_aes_gcm_open_pclmul:
 	mov ecx, 1
 	mov r8, r15
 	add r8, 512
-	call {vg_ghash_pclmul}
+	call {vg_ghash}
 	jmp 216f
 215:
 216:
-	mov rax, QWORD PTR [r15+208]
-	mov QWORD PTR [r15+192], rax
+	mov rax, QWORD PTR [r15+192]
 	shr rax, 4
 	test rax, rax
 	je 218f
@@ -219,23 +209,31 @@ vg_aes_gcm_open_pclmul:
 	add rdx, 48
 	mov rcx, r14
 	add rcx, 16
-	mov r8, QWORD PTR [r15+200]
+	mov r8, QWORD PTR [r15+224]
 	mov r9, rax
+	mov r10, rax
+	mov r11, QWORD PTR [r15+200]
 	mov rax, r15
 	add rax, 448
 	push rax
-	call {vg_aes_gcm_decrypt_blocks_pclmul}
+	push r10
+	push r11
+	call {vg_aes_gcm_decrypt_blocks_to}
 	pop rax
-	mov rax, QWORD PTR [r15+208]
-	mov rcx, rax
-	and rcx, 15
-	mov QWORD PTR [r15+208], rcx
-	sub rax, rcx
-	add rax, QWORD PTR [r15+200]
-	mov QWORD PTR [r15+200], rax
+	pop rax
+	pop rax
 	jmp 219f
 218:
 219:
+	mov rax, QWORD PTR [r15+192]
+	mov rcx, rax
+	and rcx, 15
+	sub rax, rcx
+	mov QWORD PTR [r15+208], rcx
+	add rax, QWORD PTR [r15+224]
+	mov QWORD PTR [r15+200], rax
+	mov rbx, QWORD PTR [rsp+32]
+	mov QWORD PTR [r15+224], rbx
 	mov r12, QWORD PTR [r15+200]
 	mov rbp, QWORD PTR [r15+208]
 	mov ebx, 0
@@ -254,7 +252,7 @@ vg_aes_gcm_open_pclmul:
 	add rsi, 16
 	mov r8, r15
 	add r8, 512
-	call {vg_ghash_pclmul}
+	call {vg_ghash}
 	jmp 221f
 220:
 221:
@@ -283,7 +281,7 @@ vg_aes_gcm_open_pclmul:
 	mov ecx, 1
 	mov r8, r15
 	add r8, 512
-	call {vg_ghash_pclmul}
+	call {vg_ghash}
 	jmp 223f
 222:
 223:
@@ -310,7 +308,7 @@ vg_aes_gcm_open_pclmul:
 	mov ecx, 1
 	mov r8, r15
 	add r8, 512
-	call {vg_ghash_pclmul}
+	call {vg_ghash}
 	mov rax, QWORD PTR [r14+16]
 	mov QWORD PTR [r15+112], rax
 	mov rax, QWORD PTR [r14+24]
@@ -383,30 +381,14 @@ vg_aes_gcm_open_pclmul:
 	mov QWORD PTR [r15+216], rax
 	test rax, rax
 	je 231f
-	mov r12, QWORD PTR [r15+200]
-	mov rbp, QWORD PTR [r15+208]
-	mov ebx, 0
-	mov rcx, r12
-	mov r8, rbp
-	shr r8, 4
-	mov rax, rbp
-	and rbp, 15
-	sub rax, rbp
+	mov r12, QWORD PTR [rsp+8]
+	mov rax, QWORD PTR [r15+192]
+	sub rax, QWORD PTR [r15+208]
 	add r12, rax
-	test r8, r8
-	je 233f
-	mov rdi, r13
-	mov rsi, QWORD PTR [r15+176]
-	mov rdx, r14
-	add rdx, 48
-	mov r9, r15
-	add r9, 512
-	call {vg_aes_ctr32}
-	jmp 234f
-233:
-234:
+	mov rbp, QWORD PTR [r15+208]
+	mov rbx, QWORD PTR [r15+200]
 	test rbp, rbp
-	je 235f
+	je 233f
 	mov eax, 0
 	mov QWORD PTR [r14+64], rax
 	mov QWORD PTR [r14+72], rax
@@ -425,38 +407,19 @@ vg_aes_gcm_open_pclmul:
 	add rsi, 64
 	mov rcx, rbp
 	mov r10d, 0
-237:
-	movzx eax, BYTE PTR [rdi+r10*1]
+235:
+	movzx eax, BYTE PTR [rbx+r10*1]
 	movzx r11d, BYTE PTR [rsi+r10*1]
 	xor rax, r11
 	mov BYTE PTR [rdi+r10*1], al
 	add r10, 1
 	cmp r10, rcx
-	jne 237b
-	jmp 236f
-235:
-236:
+	jne 235b
+	jmp 234f
+233:
+234:
 	jmp 232f
 231:
-	mov rax, QWORD PTR [r15+192]
-	mov rcx, rax
-	and rcx, 15
-	sub rax, rcx
-	mov rcx, QWORD PTR [r15+200]
-	sub rcx, rax
-	shr rax, 4
-	mov r8, rax
-	test rax, rax
-	je 238f
-	mov rdi, r13
-	mov rsi, QWORD PTR [r15+176]
-	mov rdx, r14
-	mov r9, r15
-	add r9, 512
-	call {vg_aes_ctr32}
-	jmp 239f
-238:
-239:
 232:
 	mov rax, QWORD PTR [r15+216]
 	jmp 25f
@@ -469,6 +432,5 @@ vg_aes_gcm_open_pclmul:
 	mov r13, QWORD PTR [r15+152]
 	mov r14, QWORD PTR [r15+160]
 	mov r15, QWORD PTR [r15+168]
-	lea rsp, [rsp+2608]
 	ret
 	.p2align 6

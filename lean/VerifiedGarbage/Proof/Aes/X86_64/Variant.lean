@@ -98,6 +98,21 @@ theorem expandKey_nosp : NoSp Impl.Aes.X86_64.ExpandKey.scalar.code := by
     rw [← Code.allInstrs_eq]; lit_decide
   exact fun i hi => by simpa using List.all_eq_true.mp this i hi
 
+theorem scalarTo_nosp : NoSp Impl.Aes.X86_64.Ctr32.scalarTo.code := by
+  have : ((instrs Impl.Aes.X86_64.Ctr32.scalarTo.code).all fun i => !Taint.clobbers i .rsp) = true := by
+    rw [← Code.allInstrs_eq]; lit_decide
+  exact fun i hi => by simpa using List.all_eq_true.mp this i hi
+
+/-- `vg_aes_ctr32_to`, the bitsliced implementation out of place. -/
+def scalarTo : Ctr32ToImpl where
+  callee := .scalarTo
+  depth := by lit_decide
+  ok := ctr32To_correct
+  ct := ctr32To_ct
+  nosp := scalarTo_nosp
+  mxcsr := by lit_decide
+  spSafe := Code.all_of_allInstrs (by lit_decide)
+
 /-- The bitsliced implementation, `vg_aes_ctr32`, in the baseline ISA. -/
 def scalar : Ctr32Impl where
   callee := .scalar
@@ -109,6 +124,7 @@ def scalar : Ctr32Impl where
   spSafe := Code.all_of_allInstrs (by lit_decide)
   suffix := ""
   features := []
+  ctrTo := some scalarTo
   expand := .scalar
   expandDepth := by lit_decide
   expandOk := expandKey_correct
