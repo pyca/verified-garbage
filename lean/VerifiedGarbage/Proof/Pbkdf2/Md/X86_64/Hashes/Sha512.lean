@@ -371,10 +371,9 @@ def sha512OK (v : Compress) : HashOK (sha512H v) :=
     (fun _ => (List.take_of_length_le (Nat.le_of_eq (Proof.Sha512.md.digest_length _))).symm) rfl rfl rfl
     (Or.inr (Or.inr (Or.inr rfl))) rfl
 
-/-- SHA-512 with the implementation `v` of the compression function, which it
-carries for the functions built on SHA-512 alone (`MdHash.sha512`). -/
+/-- SHA-512 with the implementation `v` of the compression function. -/
 def sha512 (v : Compress) (stream : List StreamFn := []) : MdHash :=
-  { MdHash.of (sha512OK v) sha512_coreOK (sha512K v) ⟨Spec.Mgf1.sha512, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl rfl
+  MdHash.of (sha512OK v) sha512_coreOK (sha512K v) ⟨Spec.Mgf1.sha512, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl rfl
       sha512_satI sha512_satF sha512_satT sha512_satP (by decide)
     sha512_anyOK sha512_satA (by decide) Proof.Hmac.sha512_local
     (by
@@ -388,8 +387,7 @@ def sha512 (v : Compress) (stream : List StreamFn := []) : MdHash :=
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     (by decide) sha512_satPF
-    v.suffix v.features stream with
-    sha512 := some v }
+    v.suffix v.features stream
 
 /-! ## SHA-512/224 -/
 

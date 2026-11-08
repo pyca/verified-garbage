@@ -139,13 +139,6 @@ structure MdHash where
   the compression function, when no other variant shares them (otherwise
   they are in the hash function's registration file). -/
   stream : List StreamFn := []
-  /-- SHA-512 compression backend for constructions that require this hash. -/
-  sha512 : Option Proof.Sha512.AArch64.Compress := none
-  /-- For SHA-256's variants, the implementation of the compression
-  function, from which the functions built on SHA-256 alone (scrypt's) are
-  made (`Generic/MdHash/AArch64/Scrypt.lean`); `none` for the other hash
-  functions. -/
-  sha256 : Option Proof.Sha256.AArch64.Compress := none
 
 namespace MdHash
 

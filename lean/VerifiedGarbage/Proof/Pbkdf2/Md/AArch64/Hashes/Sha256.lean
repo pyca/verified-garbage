@@ -223,7 +223,7 @@ def stream : List StreamFn := [
 
 /-- Every construction follows the registered compression backend. -/
 def variant : MdHash :=
-  { MdHash.of (ok v) coreOK ⟨Spec.Mgf1.sha256, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl rfl satI satF satT satP (by decide)
+  MdHash.of (ok v) coreOK ⟨Spec.Mgf1.sha256, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl rfl satI satF satT satP (by decide)
     anyOK satA (by decide) Proof.Hmac.sha256_local
     (by
       unfold Spec.Hmac.Instance.initAnyKeyContract Spec.Hmac.initAnyKeyContract
@@ -236,6 +236,6 @@ def variant : MdHash :=
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     (by decide) satPF
-    v.suffix v.features (stream v) with sha256 := some v }
+    v.suffix v.features (stream v)
 
 end VG.Proof.Pbkdf2.Md.AArch64.Sha256

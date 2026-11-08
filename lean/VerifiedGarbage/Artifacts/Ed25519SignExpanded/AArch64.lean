@@ -12,7 +12,7 @@ import Mathlib.Tactic.NormNum.Prime
 import Mathlib.Tactic.Positivity.Finset
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
-public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
+public import VerifiedGarbage.Proof.Variants.Sha512Compress.AArch64
 
 /-! # Ed25519 signing from the seed's SHA-512 digest on AArch64, for each SHA-512 implementation -/
 
@@ -20,10 +20,8 @@ public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
 
 namespace VG.Artifacts.Ed25519SignExpanded.AArch64
 
-def artifactsFor (h : Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact :=
-  match h.sha512 with
-  | none => []
-  | some v => [
+def artifactsFor (v : Proof.Sha512.AArch64.Compress) : List Artifact :=
+  [
   Spec.Ed25519.signExpandedApi.artifact AArch64.target {
     suffix := v.suffix
     code := Impl.Ed25519.AArch64.SignCached.codeExpanded v.code v.suffix
@@ -32,6 +30,6 @@ def artifactsFor (h : Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact :=
     features := v.features }]
 
 def artifacts : List Artifact :=
-  VG.Proof.Variants.MdHash.AArch64.variants.flatMap fun v => artifactsFor v
+  VG.Proof.Variants.Sha512Compress.AArch64.variants.flatMap fun v => artifactsFor v
 
 end VG.Artifacts.Ed25519SignExpanded.AArch64

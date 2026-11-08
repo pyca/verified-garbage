@@ -219,10 +219,9 @@ def stream : List StreamFn := [
       v.noStack
     spSafe := Proof.Sha256.X86_64.OneShot.spSafe Proof.Sha256.X86_64.OneShot.code256 Spec.Sha256.H0 v.spSafe }]
 
-/-- SHA-256 with the implementation `v` of its compression function, which it
-carries for the functions built on SHA-256 alone (`MdHash.sha256`). -/
+/-- SHA-256 with the implementation `v` of its compression function. -/
 def variant : MdHash :=
-  { MdHash.of (ok v) coreOK (callees v) ⟨Spec.Mgf1.sha256, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl rfl satI satF satT satP (by decide)
+  MdHash.of (ok v) coreOK (callees v) ⟨Spec.Mgf1.sha256, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl rfl satI satF satT satP (by decide)
     anyOK satA (by decide) Proof.Hmac.sha256_local
     (by
       unfold Spec.Hmac.Instance.initAnyKeyContract Spec.Hmac.initAnyKeyContract
@@ -235,7 +234,6 @@ def variant : MdHash :=
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     (by decide) satPF
-    v.suffix v.features (stream v) with
-    sha256 := some v }
+    v.suffix v.features (stream v)
 
 end VG.Proof.Pbkdf2.Md.X86_64.Sha256
