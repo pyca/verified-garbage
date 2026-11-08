@@ -125,11 +125,7 @@ impl Known {
 #[inline]
 pub fn known() -> Option<Known> {
     let s = DETECTED.load(Ordering::Relaxed);
-    if s & DETECTED_INIT == 0 {
-        None
-    } else {
-        Some(Known(s))
-    }
+    (s & DETECTED_INIT != 0).then_some(Known(s))
 }
 
 /// Whether `VG_CPU_FEATURES` names every feature of `f`, which is not empty:
