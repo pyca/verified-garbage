@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ecdh.PPC64LE.Validate
 public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Stages
-import VerifiedGarbage.Proof.Ecdsa.PPC64LE.LadPow
+public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.LadPow
 public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.LadderP
 public import VerifiedGarbage.Impl.Ecdh.PPC64LE
 public import VerifiedGarbage.Proof.Weierstrass.Law
@@ -32,13 +32,14 @@ to `out`, the return value and the callee-saved registers; `middle_ok`:
 `x = X Z^(p-2)` out of Montgomery's form, the masks of `d ∈ [1, n-1]` and
 `Z ≠ 0`, and the result.
 
-`exchange_ok`: `Cfg.exchange` computes the specification's shared secret of
+`exchangeWith_ok`: `Cfg.exchangeWith` computes the specification's shared secret of
 `d` and the peer's public key, for any curve the proof of the code supports
 (`CfgOk`, coordinates of 3 to 6 words) whose group law the proofs support
 (`Law`), restores the callee-saved registers and `lr`, and changes memory
 only in the working space and `out`: the signature's setup and tables
 (`stage₁`'s, with `peer` kept in `r12`), then `peer_ok`, `validate_ok`, the
-ladder and the power (`ladPow_ok`) and `middle_ok`; `exchange_eq` connects
+multiplication and the power (any that meet `MulPowOk`; `exchange_ok`: the
+ladder, `ladPow_ok`) and `middle_ok`; `exchange_eq` connects
 what they compute to the specification.
 -/
 
@@ -298,18 +299,43 @@ theorem peer_bytes (m : Mem) (p : Addr) (L : Nat) :
     BitVec.ofNat_add_ofNat]
   rfl
 
-theorem exchange_eq' (c : Cfg) : Impl.Ecdh.PPC64LE.Cfg.exchange c =
+theorem exchangeWith_eq' (c : Cfg) (mul : Prog isa) : Impl.Ecdh.PPC64LE.Cfg.exchangeWith c mul =
     .seq (.block (c.setupWith Impl.Ecdh.PPC64LE.Args.ecdh ++ [mov .r12 .r5]))
       (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
       (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n))
       (.seq (.block (Impl.Ecdh.PPC64LE.Cfg.peerAt c .r12)) (.seq (Impl.Ecdh.PPC64LE.Cfg.validate c)
-      (.seq (c.qMul PX PY) (.seq (pow c.powP c.SP) (Impl.Ecdh.PPC64LE.Cfg.middle c)))))))) :=
+      (.seq mul (.seq (pow c.powP c.SP) (Impl.Ecdh.PPC64LE.Cfg.middle c)))))))) :=
   rfl
 
-/-- `vg_ecdh_<curve>` computes the specification's shared secret and restores
-the callee-saved registers and `lr`. -/
-theorem exchange_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) {s₀ : State} (hp : EPre c s₀) :
-    WP isa (Impl.Ecdh.PPC64LE.Cfg.exchange c) s₀ fun s' => EKeep c s₀ s' ∧ EPost c s₀ s' := by
+/-- What a multiplication `[d]P`, followed by the power `Z^(p-2)`, may assume
+of the state after the checks of the peer's key (`s`, from `s₀`): what the
+stages keep, `R = O`, `d` at `K`'s slot and in the table of bits, the table
+of `p - 2`'s bits, `b R mod p` at `BP`, and `P`, on the curve, at `PX`,
+`PY` and `ONEP`; and what it leaves (`LadPost`). -/
+def MulPowOk (c : Cfg) (s₀ : State) (mul : Prog isa) : Prop :=
+  ∀ {base : Addr} {s : State}, Keep c s₀ base s → sv c base s RX = 0 → sv c base s RY = c.mont 1 →
+    sv c base s RZ = 0 → sv c base s K = dk c s₀ →
+    (∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 0 + t)) = if (dk c s₀).testBit t then 1 else 0) →
+    (∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 1 + t)) = if (c.C.p - 2).testBit t then 1 else 0) →
+    sv c base s BP = c.mont c.C.b → ∀ {P : Point c.C}, onCurve c.C P = true →
+    Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY)) (tmv c.C c.n base s (c.sl ONEP)) P →
+    sv c base s PX < c.C.p → sv c base s PY < c.C.p →
+    ∀ {rest : Prog isa} {Q : State → Prop}, (∀ s', LadPost c s₀ base (dk c s₀) P s s' → WP isa rest s' Q) →
+      WP isa (.seq mul (.seq (pow c.powP c.SP) rest)) s Q
+
+/-- The ladder (`qMul`) meets `MulPowOk`. -/
+theorem qMul_mulPowOk (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) (s₀ : State) :
+    MulPowOk c s₀ (c.qMul PX PY) := by
+  intro base s K hrx hry hrz hk ht₀ ht₁ _ P hP hG hlx hly rest Q h
+  exact ladPow_ok hc h3 hC (gx := PX) (gy := PY) (by decide) (by decide) (by decide) (by decide) K
+    (ofBytes_bytesAt_lt _ _ _) hrx hry hrz (fun _ => hk) ht₀ ht₁ hP hG hlx hly h
+
+/-- `vg_ecdh_<curve>`, with `[d]P` by any `mul` that meets `MulPowOk`,
+computes the specification's shared secret and restores the callee-saved
+registers and `lr`. -/
+theorem exchangeWith_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s₀) {mul : Prog isa}
+    (hMul : MulPowOk c s₀ mul) :
+    WP isa (Impl.Ecdh.PPC64LE.Cfg.exchangeWith c mul) s₀ fun s' => EKeep c s₀ s' ∧ EPost c s₀ s' := by
   have h0 := hc.n0
   have h7 := hc.n10
   have hlhi := hc.len_hi
@@ -317,7 +343,7 @@ theorem exchange_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) {s₀ : State
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge
   have hsz : size = 8192 := rfl
-  rw [exchange_eq']
+  rw [exchangeWith_eq']
   -- The setup, and `peer` to `r12`.
   refine WP.seq (wp_append (WP.mono (stage₀' hc hp.setup) fun s₁ ⟨S₁, kp₁⟩ =>
     wp_step exec_mov (WP.block_nil ?_)))
@@ -378,12 +404,12 @@ theorem exchange_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) {s₀ : State
     rcases hi with rfl | rfl | rfl | rfl <;>
       rw [e₄ (by decide) (by decide) (by decide), e₃ (by decide) (by decide) (by decide)]
   -- `[d]P`, then `Z^(p-2)`.
-  refine ladPow_ok hc h3 hC (gx := PX) (gy := PY) (by decide) (by decide) (by decide) (by decide) K₄ (k := dk c s₀)
-    (ofBytes_bytesAt_lt _ _ _) (by rw [r₄ (by simp)]; exact S₂.rx) (by rw [r₄ (by simp)]; exact S₂.ry)
+  refine hMul K₄ (by rw [r₄ (by simp)]; exact S₂.rx) (by rw [r₄ (by simp)]; exact S₂.ry)
     (by rw [r₄ (by simp)]; exact S₂.rz)
-    (fun _ => by rw [e₄ (by decide) (by decide) (by decide), e₃ (by decide) (by decide) (by decide), S₂.k, hkv])
+    (by rw [e₄ (by decide) (by decide) (by decide), e₃ (by decide) (by decide) (by decide), S₂.k, hkv])
     (fun t ht => by rw [t₄ (j := 0) (by decide) t ht, S₂.t₀ t ht, hkv])
     (fun t ht => by rw [t₄ (j := 1) (by decide) t ht, S₂.t₁ t ht])
+    (by rw [e₄ (by decide) (by decide) (by decide)]; exact bp₃)
     (peerPt_onCurve hc _ _ _)
     (peerPt_rep hC _ _ _ px py |> fun h => by
       show Rep c.C (toM c.C.p (2 ^ (64 * c.n)) (sv c base s₄ PX))
@@ -439,5 +465,11 @@ theorem exchange_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) {s₀ : State
       · rw [← hD₅]; exact h.1.2.2
     rw [ite_eq_right hcond]
     exact ⟨by rw [ret, hok]; rfl, by rw [bytes, hok]; rfl⟩
+
+/-- `vg_ecdh_<curve>` computes the specification's shared secret and restores
+the callee-saved registers and `lr`. -/
+theorem exchange_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) {s₀ : State} (hp : EPre c s₀) :
+    WP isa (Impl.Ecdh.PPC64LE.Cfg.exchange c) s₀ fun s' => EKeep c s₀ s' ∧ EPost c s₀ s' :=
+  exchangeWith_ok hc hC hp (qMul_mulPowOk hc h3 hC s₀)
 
 end VG.Proof.Ecdh.PPC64LE

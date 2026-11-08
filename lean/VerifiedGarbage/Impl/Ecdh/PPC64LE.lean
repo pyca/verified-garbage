@@ -21,7 +21,9 @@ uses, as on 32-bit ARM (`Impl/Ecdh/Arm.lean`):
    into the flag;
 5. the peer's point, or `G` if the flag is clear (so the ladder always runs
    on a point of the curve), to the slots the ladder takes its point from;
-6. `[d]P` by the signature's ladder, and `Z^(p-2)` by its power;
+6. `[d]P` by the signature's ladder (`exchange`), or by another
+   multiplication (`exchangeWith`: P-256's windows,
+   `Impl/Ecdsa/PPC64LE/Window.lean`), and `Z^(p-2)` by its power;
 7. `x = X Z^(p-2)`, out of Montgomery's form, and the masks of `d` in
    `[1, n-1]` and `Z ≠ 0` into the flag, which selects `x` or zeros for
    `out` (big-endian, through `r14`, where the setup keeps it) and is
@@ -132,15 +134,19 @@ def middle : Prog isa :=
     mulCall c.SP (c.sl X) (c.sl XM) (c.sl ONE),
     .block (c.checkRange (c.sl D) ++ c.checkNonzero (c.sl RZ) ++ finish c)]
 
-/-- `vg_ecdh_<curve>`. -/
-def exchange : Prog isa :=
+/-- `vg_ecdh_<curve>`, with `[d]P` by `mul` (from the point at `PX`, `PY`,
+`ONEP` and the table of `d`'s bits, into `R`). -/
+def exchangeWith (mul : Prog isa) : Prog isa :=
   .seq (.block (setup c)) <|
   .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) <|
   .seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) <|
   .seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) <|
   .seq (.block (peerAt c .r12)) <|
   .seq (validate c) <|
-  .seq (c.qMul PX PY) <| .seq (pow c.powP c.SP) (middle c)
+  .seq mul <| .seq (pow c.powP c.SP) (middle c)
+
+/-- `vg_ecdh_<curve>`, with `[d]P` by `qMul`. -/
+def exchange : Prog isa := exchangeWith c (c.qMul PX PY)
 
 end Cfg
 
