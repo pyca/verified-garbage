@@ -421,4 +421,24 @@ def ecb (d : Direction) : Prog isa :=
 def encrypt : Prog isa := ecb .encrypt
 def decrypt : Prog isa := ecb .decrypt
 
+/-! ## Exactly 64 blocks -/
+
+/-- Copy the 64 words at `src` to the 64 at `dst`, through `r0`. -/
+def copy64 (src dst : Reg) : List Instr :=
+  (List.range 64).flatMap fun j => [.load .d tmp src (8 * j), .store .d tmp dst (8 * j)]
+
+/-- The 64 blocks at `r4` into the state words, and back. -/
+def copyIn64 : List Instr := copy64 .r4 base
+def copyOut64 : List Instr := copy64 base .r4
+
+/-- ECB on exactly 64 blocks (at `r4`, with the schedule at `r3` and the
+working space at `r6`), as one batch, with the copies unrolled: every store
+is at a fixed offset from the working space or the blocks, which lets the
+modes' analysis of constant time (`SlotTaint`) see that the saved registers
+come back as they were. `r5` is ignored; `r10` and `r7` are left holding the
+working space's and the schedule's addresses, as by `ecb`. -/
+def ecb64 (d : Direction) : Prog isa :=
+  .seq (.block setup) (.seq (.block (copyIn64 ++ transpose))
+    (.seq (passes d) (.block (transpose ++ copyOut64 ++ finish))))
+
 end VG.Impl.TripleDes.PPC64LE.Bitslice

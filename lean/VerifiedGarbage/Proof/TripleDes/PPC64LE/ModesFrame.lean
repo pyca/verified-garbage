@@ -17,8 +17,10 @@ Each mode runs its code, proved with the working space as an argument, in a
 frame that allocates it and zeroes it after the code
 (`Verified.stackScratchWiped`), since it holds the data's blocks, the block
 function's saved registers and the chaining value: 608 bytes, the frame's
-32-byte header and the 576 of working space. The code uses no other stack:
-its calls keep the return address in the link register.
+32-byte header and the 576 of working space. CBC and CFB64 decryption, whose
+working space also holds 64 blocks and the bitsliced ECB's state and saved
+registers, take 1632 bytes (1600 of working space). The code uses no other
+stack: its calls keep the return address in the link register.
 -/
 
 @[expose] public section
@@ -42,6 +44,16 @@ theorem cbcFrameSat_pre (post : Spec.TripleDes.cbcChainedSig.Post PPC64LE.abi.pt
     ∃ s, (Spec.TripleDes.cbcChainedSig.contract PPC64LE.abi (post := post) (writeArgs := true)
       (stack := 0 + 608)).pre s := by
   implies_sat [Spec.TripleDes.cbcChainedSig, PPC64LE.abi, PPC64LE.argRegs] [modeFrameSat] using modeFrameSat
+
+theorem cbcFrameSatW_pre (post : Spec.TripleDes.cbcChainedSig.Post PPC64LE.abi.ptrBits) :
+    ∃ s, (Spec.TripleDes.cbcChainedSig.contract PPC64LE.abi (post := post) (writeArgs := true)
+      (stack := 0 + 1632)).pre s := by
+  implies_sat [Spec.TripleDes.cbcChainedSig, PPC64LE.abi, PPC64LE.argRegs] [modeFrameSat] using modeFrameSat
+
+theorem fbFrameSatW_pre (post : Spec.TripleDes.ofbSig.Post PPC64LE.abi.ptrBits) :
+    ∃ s, (Spec.TripleDes.ofbSig.contract PPC64LE.abi (post := post) (writeArgs := true)
+      (stack := 0 + 1632)).pre s := by
+  implies_sat [Spec.TripleDes.ofbSig, PPC64LE.abi, PPC64LE.argRegs] [modeFrameSat] using modeFrameSat
 
 theorem fbFrameSat_pre (post : Spec.TripleDes.ofbSig.Post PPC64LE.abi.ptrBits) :
     ∃ s, (Spec.TripleDes.ofbSig.contract PPC64LE.abi (post := post) (writeArgs := true)
@@ -67,14 +79,14 @@ theorem cbcEnc_framed {c : Prog isa}
 
 /-- CBC decryption updating the chaining value, in its frame. -/
 theorem cbcDec_framed {c : Prog isa}
-    (h : Verified PPC64LE.target c (Proof.TripleDes.cbcDecChainedScratchContract PPC64LE.abi 72)) :
-    Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchWiped 608 .r7 72 c)
-      (Spec.TripleDes.cbcDecryptChainedContract PPC64LE.abi 608) :=
+    (h : Verified PPC64LE.target c (Proof.TripleDes.cbcDecChainedScratchContract PPC64LE.abi 200)) :
+    Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchWiped 1632 .r7 200 c)
+      (Spec.TripleDes.cbcDecryptChainedContract PPC64LE.abi 1632) :=
   PPC64LE.Verified.stackScratchWiped (sig := Spec.TripleDes.cbcChainedSig) (nm := "scratch") (e := .u64)
-    (n := 72) (post := Proof.TripleDes.cbcDecChainedPost PPC64LE.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 608) (words := 72) h (by decide) (by decide) (by decide)
+    (n := 200) (post := Proof.TripleDes.cbcDecChainedPost PPC64LE.abi.ptrBits) (wa := true) (stack := 0)
+    (bytes := 1632) (words := 200) h (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
-    (Proof.TripleDes.cbcDecChainedPost_local _) (Proof.TripleDes.cbcDecChainedPostOut_local _) (cbcFrameSat_pre _)
+    (Proof.TripleDes.cbcDecChainedPost_local _) (Proof.TripleDes.cbcDecChainedPostOut_local _) (cbcFrameSatW_pre _)
 
 /-- OFB, in its frame. -/
 theorem ofb_framed {c : Prog isa}
@@ -100,14 +112,14 @@ theorem cfbEnc_framed {c : Prog isa}
 
 /-- CFB64 decryption, in its frame. -/
 theorem cfbDec_framed {c : Prog isa}
-    (h : Verified PPC64LE.target c (Proof.TripleDes.fbScratchContract PPC64LE.abi 72 Proof.TripleDes.cfbDecPost)) :
-    Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchWiped 608 .r7 72 c)
-      (Spec.TripleDes.cfbDecryptContract PPC64LE.abi 608) :=
+    (h : Verified PPC64LE.target c (Proof.TripleDes.fbScratchContract PPC64LE.abi 200 Proof.TripleDes.cfbDecPost)) :
+    Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchWiped 1632 .r7 200 c)
+      (Spec.TripleDes.cfbDecryptContract PPC64LE.abi 1632) :=
   PPC64LE.Verified.stackScratchWiped (sig := Spec.TripleDes.cfbSig) (nm := "scratch") (e := .u64)
-    (n := 72) (post := Proof.TripleDes.cfbDecPost PPC64LE.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 608) (words := 72) h (by decide) (by decide) (by decide)
+    (n := 200) (post := Proof.TripleDes.cfbDecPost PPC64LE.abi.ptrBits) (wa := true) (stack := 0)
+    (bytes := 1632) (words := 200) h (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
-    (Proof.TripleDes.cfbDecPost_local _) (Proof.TripleDes.cfbDecPostOut_local _) (fbFrameSat_pre _)
+    (Proof.TripleDes.cfbDecPost_local _) (Proof.TripleDes.cfbDecPostOut_local _) (fbFrameSatW_pre _)
 
 /-- CFB8 encryption, in its frame. -/
 theorem cfb8Enc_framed {c : Prog isa}

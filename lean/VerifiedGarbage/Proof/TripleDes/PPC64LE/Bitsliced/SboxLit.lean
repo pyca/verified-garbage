@@ -34,6 +34,10 @@ materialize_value transposeBody
 -- The exchange of the halves, once.
 materialize_value swapHalves
 
+-- The copies of exactly 64 blocks, once.
+materialize_value copyIn64
+materialize_value copyOut64
+
 def sbox0 : Prog isa := .block (sboxCode 0)
 def sbox1 : Prog isa := .block (sboxCode 1)
 def sbox2 : Prog isa := .block (sboxCode 2)
