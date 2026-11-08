@@ -139,9 +139,8 @@ structure TPre (s : State) : Prop where
   o_w : (eW s).toNat + 1696 ≤ 2 ^ 64
   dl : (stackArg s 1).toNat = eLn s
 
-/-- `open_to`'s result, through what it reads of the state on entry: `open`'s
-(`Stitch.openPostAt`), with the ciphertext at `src` and the plaintext at
-`dst`. -/
+/-- `open_to`'s result, through what it reads of the state on entry: `open`'s,
+with the ciphertext at `src` and the plaintext at `dst`. -/
 def toPost (s z : State) : Prop :=
   match Spec.ChaCha20Poly1305.decrypt (bytesAt s.mem (s.gpr .rdi) 32) (bytesAt s.mem (s.gpr .rsi) 12)
       (bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat) (bytesAt s.mem (eSrc s) (eLn s))

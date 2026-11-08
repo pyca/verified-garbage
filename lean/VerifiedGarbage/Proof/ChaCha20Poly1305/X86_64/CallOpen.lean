@@ -117,29 +117,82 @@ theorem inner_ct (v : XorImpl) : ConstantTime isa sharedK.pre sharedK.pub (inner
     simpa only [inner, openInner, hv, ↓reduceIte] using h
   · simpa only [inner, openInner, hv, ↓reduceIte] using shared_ct v
 
+theorem inner_avx2 (v : XorImpl) (hv : v.poly = .avx2) :
+    inner v = .seq (.block (Stitch.padIns .rax 41)) (Stitch.openStitchedShared v.callee .avx2) := by
+  simp only [inner, openInner, hv, ↓reduceIte]
+
+theorem inner_shared (v : XorImpl) (hv : ¬v.poly = .avx2) : inner v = openShared v.callee v.poly := by
+  simp only [inner, openInner, hv, ↓reduceIte]
+
+open VG.Impl.ChaCha20Poly1305.X86_64.Stitch VG.Proof.ChaCha20Poly1305.X86_64.Stitch in
+/-- The callee never writes the stack pointer. The callees' code is
+generalized away (`P`), so that `simp` does not unfold the predicate, and the
+kernel checks the rest once for each configuration of `fold`, `pass` and
+`wide`. -/
 theorem inner_spSafe (v : XorImpl) : (inner v).all (fun i => !isa.writesSp i) = true := by
   by_cases hv : v.poly = .avx2
-  · have h := Stitch.openS_spSafe v hv
-    rw [hv] at h
-    simp only [Stitch.openStitched, Code.all, Bool.and_eq_true] at h
-    simp only [inner, openInner, hv, ↓reduceIte, Stitch.openStitchedShared, Code.all, h.2.1, h.2.2,
-      Bool.and_self, Bool.and_true]
-    decide
-  · have h := open_spSafe v
-    simp only [«open», Code.all, Bool.and_eq_true] at h
-    simp only [inner, openInner, hv, ↓reduceIte, h.2]
+  · rw [inner_avx2 v hv]
+    obtain ⟨hf, hpass, hw⟩ := avx2_of v hv
+    have hc := v.spSafe
+    have ho := bulkO_spSafe v.callee.vl
+    have hk := twoKs_spSafe v.callee.vl
+    have hk4 := fourKs_spSafe v.callee.vl
+    have hwo := wholeO_spSafe v.callee.vl
+    have hkB := twoKsB_spSafe v.callee.vl
+    have hb := blocks_spSafe .avx2
+    generalize hP : (fun i => !isa.writesSp i) = P at hc hb ho hk hk4 hwo hkB ⊢
+    rcases Bool.eq_false_or_eq_true v.callee.vl with hl | hl <;> rw [hl] at ho hk hk4 hwo hkB <;>
+    simp only [Impl.ChaCha20.X86_64.Callee.inPlace, dataCopy, openStitchedShared, openStitchedBody, openTail,
+      zeroData, prologueX, xsel, xselV, xselA, hl, ↓reduceIte, Bool.false_eq_true, cryptO, decRest, xorTail,
+      xorKs, callX, Bool.cond_true, Impl.ChaCha20.X86_64.Xor.callTo, Code.all, hc, hb, ho, hk, hk4, hkB, hwo,
+      hf, hpass, hw, macPad, macPadLengths, Code.iteCold, wholeBlocks, padRest, Bool.cond_false, padCopy,
+      padTail, absorbLengths, Bool.and_true, Bool.true_and] <;>
+    subst hP <;> lit_decide
+  · rw [inner_shared v hv]
+    have hc := v.spSafe
+    have hb := blocks_spSafe v.poly
+    generalize hP : (fun i => !isa.writesSp i) = P at hc hb ⊢
+    rcases v.fold_poly with ⟨hf, hpass, hw, hpo⟩ | ⟨hf, hpass, hw, hpo⟩ | ⟨hf, hpass, hw, hpo | hpo⟩
+    · rw [hpo] at hb ⊢
+      simp only [Impl.ChaCha20.X86_64.Callee.inPlace, dataCopy, openShared, openBody, openTail, zeroData,
+        prologue, crypt, cryptBig, xorKs, callX, Code.all, hc, hb, hf, hpass, hw, macPad, macPadLengths,
+        Code.iteCold, wholeBlocks, padRest, Bool.cond_true, Bool.cond_false, padCopy, padTail, absorbLengths,
+        Bool.and_true, Bool.true_and]
+      subst hP; lit_decide
+    · exact absurd hpo hv
+    all_goals
+      rw [hpo] at hb ⊢
+      simp only [Impl.ChaCha20.X86_64.Callee.inPlace, dataCopy, openShared, openBody, openTail, zeroData,
+        prologue, crypt, cryptBig, xorKs, callX, Code.all, hc, hb, hf, hpass, hw, macPad, macPadLengths,
+        Code.iteCold, wholeBlocks, padRest, Bool.cond_true, Bool.cond_false, padCopy, padTail, absorbLengths,
+        Bool.and_true, Bool.true_and]
+      subst hP; lit_decide
 
+open VG.Impl.ChaCha20Poly1305.X86_64.Stitch VG.Proof.ChaCha20Poly1305.X86_64.Stitch in
 theorem inner_xdepth (v : XorImpl) : (inner v).x86_64Depth ≤ 24 := by
+  have hx := v.xdepth
+  have hb := blocks_xdepth v.poly
+  have hc := padRest_xdepth (dataCopy v.poly) v.poly 2
+  have ha := padSite_xdepth (dataCopy v.poly) v.poly .rbx .rbp
   by_cases hv : v.poly = .avx2
-  · have h := Stitch.openS_xdepth v
-    rw [hv] at h
-    simp only [Stitch.openStitched, Code.x86_64Depth, Nat.max_le] at h
-    simp only [inner, openInner, hv, ↓reduceIte, Stitch.openStitchedShared, Code.x86_64Depth, Nat.max_le]
-    exact ⟨Nat.zero_le _, h.2⟩
-  · have h := open_xdepth v
-    simp only [«open», Code.x86_64Depth, Nat.max_le] at h
-    simp only [inner, openInner, hv, ↓reduceIte]
-    exact h.2
+  · rw [inner_avx2 v hv]
+    rw [hv] at hb hc ha
+    rcases Bool.eq_false_or_eq_true v.callee.vl with hl | hl <;>
+    simp only [Impl.ChaCha20.X86_64.Callee.inPlace, openStitchedShared, openStitchedBody, openTail, zeroData,
+      prologueX, xsel, xselV, xselA, hl, ↓reduceIte, Bool.false_eq_true, twoKsB_xdepth, prologueA, prologueB,
+      zeroKs, macPad, macPadLengths, Code.iteCold, wholeBlocks, padRest, padCopy, padTail, cryptO, decRest,
+      xorTail, xorKs, callX, Bool.cond_true, Impl.ChaCha20.X86_64.Xor.callTo, absorbLengths, finalizeTo,
+      finalizeWith, Code.x86_64Depth, xorBufTo_xdepth, xorTail_xdepth, foldM_xdepth, wipeL_xdepth,
+      init_xdepth, finalize_xdepth, bulkO_xdepth, wholeO_xdepth, twoKs_xdepth, fourKs_xdepth,
+      Nat.max_le] at hc ha ⊢ <;>
+    omega_arith
+  · rw [inner_shared v hv]
+    simp only [Impl.ChaCha20.X86_64.Callee.inPlace, openShared, openBody, openTail, zeroData, prologue,
+      prologueA, prologueB, zeroKs, macPad, macPadLengths, Code.iteCold, wholeBlocks, padRest, padCopy,
+      padTail, crypt, cryptBig, cryptPre, xorKs, callX, Bool.cond_true, Impl.ChaCha20.X86_64.Xor.callTo,
+      absorbLengths, finalizeTo, finalizeWith, Code.x86_64Depth, xorBufTo_xdepth, foldM_xdepth, init_xdepth,
+      finalize_xdepth, Nat.max_le] at hc ha ⊢
+    omega
 
 theorem callOpen_eq (v : XorImpl) : callOpen v.callee v.poly =
     .frame (.push [.r11, .rax, .r10]) (.call (bodyName false v.callee v.poly) (inner v)) (.pop .r10 3) := rfl
