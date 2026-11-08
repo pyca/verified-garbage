@@ -22,8 +22,8 @@ vg_aes_expand_key:
 	add %r4, %r4, %r8
 	addi %r4, %r4, 28
 	li %r6, 1
-21:
 	lwz %r9, 0(%r11)
+21:
 	cmpldi %cr0, %r12, 0
 	beq %cr0, 22f
 	addi %r0, %r12, -16
