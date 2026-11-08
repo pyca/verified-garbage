@@ -7,11 +7,11 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 public import VerifiedGarbage.Proof.Gcm.PPC64LE.Vpmsum.Groups
 public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.SplitBlocks.Verified
-import VerifiedGarbage.Proof.Gcm.SplitBlocksContract
+public import VerifiedGarbage.Proof.Gcm.SplitBlocksContract
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.OneEntry
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Ghash1
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealFused
-import VerifiedGarbage.Proof.AesGcm.PPC64LE.CryptOk
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CryptOk
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Absorb
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.FinTag
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamCrypt
@@ -125,23 +125,46 @@ theorem fitOff (p : Addr) {bound off n : Nat} (hf : p.toNat + bound ≤ 2 ^ 64)
 theorem st48 (p : Addr) : p + BitVec.ofNat 64 16 + 32 = p + BitVec.ofNat 64 48 := by
   rw [BitVec.add_assoc]; rfl
 
-theorem whole_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] {R : Nat} {D : Addr}
-    {s : State} (L : Lay (V .r29) (V .r30) (V .r31)) (h : WholeIn V sp R D s) :
-    WP isa whole s (WholeOut V sp R D s) := by
-  refine WP.seq (WP.mono (wholeArgs_ok h) fun s₁ ⟨a3, a4, a5, a6, a7, a8, a9, a10, a26, g₁, k₁⟩ => ?_)
+/-- What the call reads and writes. -/
+abbrev callRd (V : Reg → BitVec 64) : List Region := [⟨V .r29, 256⟩, ⟨V .r27, Q V * 16⟩]
+abbrev callWr (V : Reg → BitVec 64) (D : Addr) : List Region :=
+  [⟨V .r30 + BitVec.ofNat 64 16, 48⟩, ⟨D, Q V * 16⟩, ⟨V .r31 + BitVec.ofNat 64 448, 2112⟩]
+
+/-- `wholeArgs`'s registers, from `s`. -/
+structure ArgsOut (V : Reg → BitVec 64) (R : Nat) (D : Addr) (s s₁ : State) : Prop where
+  r3 : s₁.gpr .r3 = V .r29
+  r4 : s₁.gpr .r4 = BitVec.ofNat 64 R
+  r5 : s₁.gpr .r5 = V .r30 + BitVec.ofNat 64 16
+  r6 : s₁.gpr .r6 = V .r27
+  r7 : s₁.gpr .r7 = BitVec.ofNat 64 (Q V)
+  r8 : s₁.gpr .r8 = D
+  r9 : s₁.gpr .r9 = BitVec.ofNat 64 (Q V)
+  r10 : s₁.gpr .r10 = V .r31 + BitVec.ofNat 64 448
+  r26 : s₁.gpr .r26 = D
+  regs : ∀ r, r ∉ argRegs → s₁.gpr r = s.gpr r
+  keeps : Keeps s s₁
+
+theorem argsOut {R : Nat} {D : Addr} {s : State} (h : WholeIn V sp R D s) :
+    WP isa (.block wholeArgs) s (ArgsOut V R D s) :=
+  WP.mono (wholeArgs_ok h) fun _ ⟨a3, a4, a5, a6, a7, a8, a9, a10, a26, g, k⟩ =>
+    ⟨a3, a4, a5, a6, a7, a8, a9, a10, a26, g, k⟩
+
+/-- The call's precondition, and its regions, after `wholeArgs`. -/
+theorem whole_call {R : Nat} {D : Addr} {s s₁ : State} (L : Lay (V .r29) (V .r30) (V .r31))
+    (h : WholeIn V sp R D s) (a : ArgsOut V R D s s₁) :
+    (Proof.Gcm.decryptBlocksToContract PPC64LE.abi).pre (s₁.callEntry.withRegions (callRd V) (callWr V D)) ∧
+    Covers (callRd V ++ callWr V D) (s₁.rd ++ s₁.wr) ∧ Covers (callWr V D) s₁.wr := by
   have hq : Q V < 2 ^ 64 := by show (V .r23).toNat / 16 < 2 ^ 64; have := (V .r23).isLt; omega
   have hle : Q V * 16 ≤ (V .r23).toNat := by show (V .r23).toNat / 16 * 16 ≤ _; exact Nat.div_mul_le_self _ _
   have hR : R < 2 ^ 64 := by rcases h.rounds with e | e | e <;> omega
   have he := h.env
-  have he₁ : Env V sp s₁ := he.keep (fun r hr => g₁ r (by revert r; decide)) k₁.sp k₁.rd k₁.wr
   have hsrc := h.src
   have hdst := h.dst
-  refine WP.call (k := Proof.Gcm.decryptBlocksToContract PPC64LE.abi) SplitBlocks.decryptTo_correct
-    (rd := [⟨V .r29, 256⟩, ⟨V .r27, Q V * 16⟩])
-    (wr := [⟨V .r30 + BitVec.ofNat 64 16, 48⟩, ⟨D, Q V * 16⟩, ⟨V .r31 + BitVec.ofNat 64 448, 2112⟩]) ?_ ?_ ?_ ?_
+  have k₁ := a.keeps
+  refine ⟨?_, ?_, ?_⟩
   · sig_eval [Proof.Gcm.decryptBlocksToContract, Proof.Gcm.decryptBlocksToSig, Proof.Gcm.decryptBlocksToPre,
       PPC64LE.abi, PPC64LE.argRegs]
-    simp only [a3, a4, a5, a6, a7, a8, a9, a10, toNat64 hq, toNat64 hR]
+    simp only [a.r3, a.r4, a.r5, a.r6, a.r7, a.r8, a.r9, a.r10, toNat64 hq, toNat64 hR]
     refine ⟨trivial, trivial, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, L.cw, fitOff _ L.sw (by decide) (by decide),
       by have := hsrc.fit; omega, by have := hdst.ok.fit; omega, fitOff _ L.ww (by decide) (by decide),
       h.rounds, trivial⟩
@@ -164,13 +187,25 @@ theorem whole_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.Fo
   · rw [k₁.wr]
     exact Covers.cons (he.perm.stC (d := 16) (n := 48) (by decide)) (Covers.cons (covers_prefix hdst.wr hle)
       (Covers.cons (he.perm.wC (d := 448) (n := 2112) (by decide)) Covers.nil))
-  · intro t hrd hwr hsp hf hcs _ hp
-    sig_eval [Proof.Gcm.decryptBlocksToContract, Proof.Gcm.decryptBlocksToSig, Proof.Gcm.decryptBlocksToPost,
-      PPC64LE.abi, PPC64LE.argRegs] at hp
-    simp only [a3, a4, a5, a6, a7, a8, toNat64 hq, toNat64 hR, st48, k₁.mem] at hp
-    rw [k₁.mem] at hf
-    exact ⟨he₁.of_saved hcs hsp hrd hwr, hrd.trans k₁.rd, hwr.trans k₁.wr, (hcs _ (by decide)).trans a26,
-      hp.1, hp.2.1, hp.2.2, hf⟩
+
+theorem whole_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] {R : Nat} {D : Addr}
+    {s : State} (L : Lay (V .r29) (V .r30) (V .r31)) (h : WholeIn V sp R D s) :
+    WP isa whole s (WholeOut V sp R D s) := by
+  refine WP.seq (WP.mono (argsOut h) fun s₁ a => ?_)
+  have hq : Q V < 2 ^ 64 := by show (V .r23).toNat / 16 < 2 ^ 64; have := (V .r23).isLt; omega
+  have hR : R < 2 ^ 64 := by rcases h.rounds with e | e | e <;> omega
+  have k₁ := a.keeps
+  have he₁ : Env V sp s₁ := h.env.keep (fun r hr => a.regs r (by revert r; decide)) k₁.sp k₁.rd k₁.wr
+  obtain ⟨hpre, hrd', hwr'⟩ := whole_call L h a
+  refine WP.call (k := Proof.Gcm.decryptBlocksToContract PPC64LE.abi) SplitBlocks.decryptTo_correct
+    (rd := callRd V) (wr := callWr V D) hpre hrd' hwr' ?_
+  intro t hrd hwr hsp hf hcs _ hp
+  sig_eval [Proof.Gcm.decryptBlocksToContract, Proof.Gcm.decryptBlocksToSig, Proof.Gcm.decryptBlocksToPost,
+    PPC64LE.abi, PPC64LE.argRegs] at hp
+  simp only [a.r3, a.r4, a.r5, a.r6, a.r7, a.r8, toNat64 hq, toNat64 hR, st48, k₁.mem] at hp
+  rw [k₁.mem] at hf
+  exact ⟨he₁.of_saved hcs hsp hrd hwr, hrd.trans k₁.rd, hwr.trans k₁.wr, (hcs _ (by decide)).trans a.r26,
+    hp.1, hp.2.1, hp.2.2, hf⟩
 
 /-- The last bytes' arguments, from the destination `D` in `r26`. -/
 theorem partArgs_ok {s : State} {D : Addr} (he : Env V sp s) (h26 : s.gpr .r26 = D) :
@@ -189,6 +224,49 @@ theorem partArgs_ok {s : State} {D : Addr} (he : Env V sp s) (h26 : s.gpr .r26 =
   simp only [partArgs]
   crun [h23, h27, hand, hsub, h26]
   exact ⟨fun r a b c d e => by simp [a, b, c, d, e], ⟨rfl, rfl, rfl, rfl, rfl⟩⟩
+
+/-- `partArgs`'s registers, from `s₁`. -/
+structure PartOut (V : Reg → BitVec 64) (D : Addr) (s₁ s₂ : State) : Prop where
+  r24 : s₂.gpr .r24 = V .r27 + BitVec.ofNat 64 (16 * Q V)
+  r25 : s₂.gpr .r25 = BitVec.ofNat 64 ((V .r23).toNat % 16)
+  r26 : s₂.gpr .r26 = D + BitVec.ofNat 64 (16 * Q V)
+  regs : ∀ r, r ≠ .r0 → r ≠ .r12 → r ≠ .r24 → r ≠ .r25 → r ≠ .r26 → s₂.gpr r = s₁.gpr r
+  keeps : Keeps s₁ s₂
+
+/-- After `whole` and `partArgs`, from `s`: the last bytes, for `cryptTailWith`. -/
+theorem tail_in {R : Nat} {D : Addr} {s s₁ s₂ : State} (L : Lay (V .r29) (V .r30) (V .r31))
+    (h : WholeIn V sp R D s) (hw : WholeOut V sp R D s s₁) (p : PartOut V D s₁ s₂) :
+    TailIn true V sp R (blockAt s.mem (V .r30 + BitVec.ofNat 64 48)) (16 * Q V)
+      (V .r27 + BitVec.ofNat 64 (16 * Q V)) (D + BitVec.ofNat 64 (16 * Q V)) ((V .r23).toNat - 16 * Q V)
+      (ctxCiph s.mem (V .r29) R)
+      (blockAt s.mem (V .r30 + BitVec.ofNat 64 48) = blockAt s.mem (V .r30 + BitVec.ofNat 64 48)) s₂ := by
+  have hn := h.src.lt
+  have h16 : 16 * Q V ≤ (V .r23).toNat := by show 16 * ((V .r23).toNat / 16) ≤ _; omega
+  have hk : (V .r23).toNat % 16 = (V .r23).toNat - 16 * Q V := by show _ = _ - 16 * ((V .r23).toNat / 16); omega
+  have hR := h.rounds
+  have hdst := h.dst
+  have k₂ := p.keeps
+  have dCw : ∀ r ∈ [(⟨V .r30 + BitVec.ofNat 64 16, 48⟩ : Region), ⟨D, Q V * 16⟩,
+      ⟨V .r31 + BitVec.ofNat 64 448, 2112⟩], (⟨V .r29, 256⟩ : Region).Disjoint r := by
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact L.cs.sub_right (Lay.stSub (by decide))
+    · exact hdst.ctx.sub_right (Region.sub_prefix (by omega))
+    · exact L.cw'.sub_right (Lay.wSub (by decide))
+  have he₂ : Env V sp s₂ := hw.env.keep (fun r hr => p.regs r (by revert r; decide) (by revert r; decide)
+    (by revert r; decide) (by revert r; decide) (by revert r; decide)) k₂.sp k₂.rd k₂.wr
+  have rd₂ : s₂.rd = s.rd := k₂.rd.trans hw.rd
+  have wr₂ : s₂.wr = s.wr := k₂.wr.trans hw.wr
+  refine ⟨he₂, p.r24, by rw [p.r25, hk], fun _ => p.r26, h.r28, hR, .inr (by omega),
+    (h.src.of_eq rd₂ wr₂).drop h16, (hdst.of_eq rd₂ wr₂).drop h16, (fun h => nomatch h),
+    .inr ((h.sd.sub_left (Offset.sub_base _ (by omega))).sub_right (Offset.sub_base _ (by omega))),
+    ?_, fun hcb => ?_⟩
+  · rw [k₂.mem]; exact ciph_frame hw.frame dCw hR
+  · have := (Proof.Gcm.ctr_wholeTo (Proof.Gcm.ctr_zero s.mem (V .r30 + BitVec.ofNat 64 48)
+      (V .r30 + BitVec.ofNat 64 64) (ctxCiph s.mem (V .r29) R) hcb) (by decide) hw.out hw.cb).2
+    rw [Nat.zero_add] at this
+    rw [k₂.mem]; exact this
 
 /-- What the data's pass and its tag write. -/
 abbrev passFrame (V : Reg → BitVec 64) (D : Addr) : List Region :=
