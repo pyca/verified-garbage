@@ -5,7 +5,7 @@ public import VerifiedGarbage.Spec.Gcm.OutOfPlace
 /-!
 # AES-GCM with prepared GHASH powers
 
-**Trusted.** A separate 1088-byte key-context format for implementations that
+**Trusted.** A separate 1032-byte key-context format for implementations that
 consume powers directly in a carry-less multiplication representation.
 The first 256 bytes are the existing `KeyRepr`; the next 768 bytes hold
 24 pairs, with the even power first and the odd power second, each encoded
@@ -56,9 +56,9 @@ def PreparedRepr (m : Mem) (p : Addr) : Prop :=
 whether its powers are absent. -/
 def flagLeak (m : Mem) (p : Addr) : Nat := if m.readW (p + 1024) 64 = 1 then 1 else 0
 
-/-- A 1088-byte context, whose first 256 bytes are a key context. -/
+/-- A 1032-byte context, whose first 256 bytes are a key context. -/
 def prepareSig : Sig where
-  params := [("ctx", .array true .u64 136)]
+  params := [("ctx", .array true .u64 129)]
 
 /-- Keeps the first 256 bytes, and makes the context a prepared key context of
 the hash subkey in its bytes 240–255 (`ctxH`): either writes its 48 prepared
@@ -80,7 +80,7 @@ def prepareApi : Api where
   sig := prepareSig
   writeArgs := true
   contracts := some fun A stack => prepareContract A stack
-  summary := "Makes the 1088-byte `*ctx`, whose first 256 bytes are a key context of \
+  summary := "Makes the 1032-byte `*ctx`, whose first 256 bytes are a key context of \
     `vg_aes_gcm_init`, the prepared key context of the same key, in place: keeps its first \
     256 bytes and either, at byte `256 + 32*k`, for `k` from 0 to 23, stores \
     `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian \
@@ -92,21 +92,58 @@ def prepareApi : Api where
     the hash subkey."
   safety := []
 
+/-- `vg_aes_gcm_wipe_prepared(ctx: *mut [u64; 129])`. -/
+def wipePreparedSig : Sig where
+  params := [("ctx", .array true .u64 129)]
+
+/-- How many bytes of the prepared key context at `p` hold secrets: the key
+context and the powers (1024) if the flag word is not 1, the key context
+alone (256) if it is. -/
+def wipePreparedLen (m : Mem) (p : Addr) : Nat := if m.readW (p + 1024) 64 = 1 then 256 else 1024
+
+/-- Zeroes the first `wipePreparedLen` bytes, as the flag word was on entry. -/
+def wipePreparedPost (pb : Nat) : wipePreparedSig.Post pb := fun ctx m m' _ =>
+  Aes.bytesAt m' ctx (wipePreparedLen m ctx) = List.replicate (wipePreparedLen m ctx) 0
+
+/-- What `wipe` may leak: whether the powers are absent. -/
+def wipePreparedLeak (pb : Nat) : Curry (wipePreparedSig.words pb) (Mem → List Nat) :=
+  fun ctx m => [flagLeak m ctx]
+
+/-- No precondition: the flag word says how much to zero, whatever it is. -/
+def wipePreparedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  wipePreparedSig.contract A (post := wipePreparedPost A.ptrBits) (writeArgs := true)
+    (stack := stack) (leak := some (wipePreparedLeak A.ptrBits))
+
+/-- Wipes a prepared key context on any target. -/
+def wipePreparedApi : Api where
+  module := "gcm"
+  name := "vg_aes_gcm_wipe_prepared"
+  sig := wipePreparedSig
+  writeArgs := true
+  contracts := some fun A stack => wipePreparedContract A stack
+  summary := "Wipes the 1032-byte `*ctx`, a prepared key context of `vg_aes_gcm_prepare`: \
+    sets to zero its first 1024 bytes, the key context and the powers, if the 64-bit word \
+    at byte 1024 is not 1, and its first 256 bytes, the key context, if it is (the powers \
+    are absent, and the bytes after the key context were not written). \
+    Contract: `VG.Spec.Gcm.wipePreparedContract`. Constant time: only the pointer and \
+    whether the powers are absent may affect timing, not the bytes wiped."
+  safety := []
+
 /-- Prepared-context validity, in addition to each API's existing safety requirements. -/
 def preparedSafety : String :=
   "`*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`)."
 
 /-- Common documentation for the prepared APIs. -/
 def preparedSummary (name contract : String) : String :=
-  "`" ++ name ++ "` with a 1088-byte context from `vg_aes_gcm_prepare`. " ++
+  "`" ++ name ++ "` with a 1032-byte context from `vg_aes_gcm_prepare`. " ++
   "Computes the same result, using the AES key schedule and hash subkey in its first " ++
   "256 bytes, and may read the 48 prepared powers if they are present. The powers remain " ++
   "secret; whether they are absent may affect timing; all other memory, aliasing and " ++
   "constant-time requirements are unchanged. Contract: `VG.Spec.Gcm." ++ contract ++ "`."
 
-/-- The existing signature with a prepared 1088-byte context. -/
+/-- The existing signature with a prepared 1032-byte context. -/
 def sealPreparedSig : Sig where
-  params := [("ctx", .array false .u64 136), ("rounds", .int .usize true),
+  params := [("ctx", .array false .u64 129), ("rounds", .int .usize true),
     ("nonce", .slice false .u8 "nonce_len"), ("aad", .slice false .u8 "aad_len"),
     ("data", .slice true .u8 "len"), ("tag", .array true .u8 16)]
 
@@ -116,9 +153,9 @@ def sealPreparedPre (pb : Nat) : Curry (sealPreparedSig.words pb) (Mem → Prop)
     (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧
       PreparedRepr m ctx
 
-/-- The existing signature with a prepared 1088-byte context. -/
+/-- The existing signature with a prepared 1032-byte context. -/
 def openPreparedSig : Sig where
-  params := [("ctx", .array false .u64 136), ("rounds", .int .usize true),
+  params := [("ctx", .array false .u64 129), ("rounds", .int .usize true),
     ("nonce", .slice false .u8 "nonce_len"), ("aad", .slice false .u8 "aad_len"),
     ("data", .slice true .u8 "len"), ("tag", .slice false .u8 "tag_len")]
   ret := some .u32
@@ -129,9 +166,9 @@ def openPreparedPre (pb : Nat) : Curry (openPreparedSig.words pb) (Mem → Prop)
     (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧
       PreparedRepr m ctx
 
-/-- The existing signature with a prepared 1088-byte context. -/
+/-- The existing signature with a prepared 1032-byte context. -/
 def streamCryptPreparedSig : Sig where
-  params := [("ctx", .array false .u64 136), ("rounds", .int .usize true),
+  params := [("ctx", .array false .u64 129), ("rounds", .int .usize true),
     ("state", .array true .u64 10), ("aad_len", .int .u64 true), ("text_len", .int .u64 true),
     ("data", .slice true .u8 "len")]
 
@@ -141,9 +178,9 @@ def streamCryptPreparedPre (pb : Nat) : Curry (streamCryptPreparedSig.words pb) 
     (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧
       PreparedRepr m ctx
 
-/-- The existing signature with a prepared 1088-byte context. -/
+/-- The existing signature with a prepared 1032-byte context. -/
 def sealGatherPreparedSig : Sig where
-  params := [("ctx", .array false .u64 136), ("rounds", .int .usize true),
+  params := [("ctx", .array false .u64 129), ("rounds", .int .usize true),
     ("nonce", .slice false .u8 "nonce_len"), ("aad", .slice false .u8 "aad_len"),
     ("src", .slices .u8 "src_count"), ("dst", .slice true .u8 "len"),
     ("tag", .array true .u8 16)]
@@ -154,9 +191,9 @@ def sealGatherPreparedPre (pb : Nat) : Curry (sealGatherPreparedSig.words pb) (M
     (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧
       gatheredLen pb m src srcCount.toNat = len.toNat ∧ PreparedRepr m ctx
 
-/-- The existing signature with a prepared 1088-byte context. -/
+/-- The existing signature with a prepared 1032-byte context. -/
 def openToPreparedSig : Sig where
-  params := [("ctx", .array false .u64 136), ("rounds", .int .usize true),
+  params := [("ctx", .array false .u64 129), ("rounds", .int .usize true),
     ("nonce", .slice false .u8 "nonce_len"), ("aad", .slice false .u8 "aad_len"),
     ("src", .slice false .u8 "len"), ("dst", .slice true .u8 "dst_len"),
     ("tag", .slice false .u8 "tag_len")]

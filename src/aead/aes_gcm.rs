@@ -45,6 +45,7 @@ use crate::arch::dispatch::gcm::{
     vg_aes_gcm_open_prepared_auto, vg_aes_gcm_open_to_prepared_auto, vg_aes_gcm_prepare_auto,
     vg_aes_gcm_seal_gather_prepared_auto, vg_aes_gcm_seal_prepared_auto,
     vg_aes_gcm_stream_decrypt_prepared_auto, vg_aes_gcm_stream_encrypt_prepared_auto,
+    vg_aes_gcm_wipe_prepared_auto,
 };
 #[cfg(not(target_arch = "x86_64"))]
 use crate::arch::dispatch::gcm::{
@@ -58,19 +59,20 @@ use crate::arch::dispatch::gcm::{
 use crate::error::InvalidKeyLength;
 #[cfg(target_arch = "aarch64")]
 use crate::zeroize::zeroize;
+#[cfg(not(target_arch = "x86_64"))]
 use crate::zeroize::zeroize_raw;
 use core::mem::MaybeUninit;
 
 /// A 16-byte block.
 type Block = [u8; 16];
 
-/// What a key keeps of its key context: on x86-64, the 1088-byte prepared key
+/// What a key keeps of its key context: on x86-64, the 1032-byte prepared key
 /// context of `vg_aes_gcm_prepare` (`VG.Spec.Gcm.PreparedRepr`), whose first
 /// 256 bytes are the key context of `vg_aes_gcm_init` (`AesGcm::key`),
 /// followed by the powers of its hash subkey and a word saying whether they
 /// are there; elsewhere, the key context of `vg_aes_gcm_init` alone.
 #[cfg(target_arch = "x86_64")]
-type KeyCtx = [u64; 136];
+type KeyCtx = [u64; 129];
 #[cfg(not(target_arch = "x86_64"))]
 type KeyCtx = [u64; 32];
 
@@ -182,9 +184,20 @@ pub struct AesGcm {
 impl Drop for AesGcm {
     /// Wipes the key context, with the powers.
     fn drop(&mut self) {
+        // SAFETY: `self.ctx` is a prepared key context (`new`), valid for
+        // reads and writes of 1032 bytes, and overlaps nothing on the stack;
+        // `vg_aes_gcm_wipe_prepared` zeroes all of it that `new` wrote but the
+        // flag word (`VG.Spec.Gcm.wipePreparedContract`).
+        #[cfg(target_arch = "x86_64")]
+        unsafe {
+            vg_aes_gcm_wipe_prepared_auto(self.ctx.as_mut_ptr())
+        };
         // SAFETY: `self.ctx` is valid for writes of `size_of::<KeyCtx>()`
         // bytes, and lies outside `zeroize_raw`'s frame.
-        unsafe { zeroize_raw(self.ctx.as_mut_ptr().cast(), size_of::<KeyCtx>()) };
+        #[cfg(not(target_arch = "x86_64"))]
+        unsafe {
+            zeroize_raw(self.ctx.as_mut_ptr().cast(), size_of::<KeyCtx>())
+        };
         #[cfg(target_arch = "aarch64")]
         zeroize(&mut self.powers);
     }
@@ -215,7 +228,7 @@ impl AesGcm {
         // are distinct objects, so they do not overlap each other or anything
         // on the stack, or wrap around the end of the address space.
         unsafe { vg_aes_gcm_init_auto(key.as_ptr(), key.len(), k.ctx.as_mut_ptr().cast()) };
-        // SAFETY: `k.ctx` is valid for reads and writes of 1088 bytes, and
+        // SAFETY: `k.ctx` is valid for reads and writes of 1032 bytes, and
         // overlaps nothing on the stack; its first 256 bytes are the key
         // context of `vg_aes_gcm_init` (`VG.Spec.Gcm.KeyRepr`), which
         // `vg_aes_gcm_prepare` keeps, making the rest a prepared key context
@@ -274,7 +287,7 @@ impl AesGcm {
         // SAFETY: `self.ctx` is the key context `vg_aes_gcm_init` wrote for
         // `self.rounds` (10, 12 or 14) rounds, valid for reads of 256 bytes,
         // followed on x86-64 by the powers `vg_aes_gcm_prepare` wrote for the
-        // same key (`AesGcm::new`), valid for reads of 1088 bytes in all,
+        // same key (`AesGcm::new`), valid for reads of 1032 bytes in all,
         // and on AArch64 next to the powers `vg_aes_gcm_store_powers` wrote
         // (`self.powers`, 128 bytes); `nonce` and `aad` are valid for reads
         // and `data` for reads and writes of their lengths, and `tag` (a
