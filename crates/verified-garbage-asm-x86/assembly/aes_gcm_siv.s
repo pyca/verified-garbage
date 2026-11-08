@@ -72,13 +72,15 @@ vg_aes_gcm_siv_seal_aesni:
 	add ebx, 224
 	mov edi, 1
 	add ebp, 768
+	push ebx
 	push ebp
 	push edi
 	push ebx
 	push edx
 	push ecx
 	push eax
-	call {vg_aes_ctr32_aesni}
+	call {vg_aes_ctr32_to_aesni}
+	pop eax
 	pop eax
 	pop eax
 	pop eax
@@ -594,13 +596,15 @@ vg_aes_gcm_siv_seal_aesni:
 	add ebx, 0
 	mov edi, 1
 	add ebp, 768
+	push ebx
 	push ebp
 	push edi
 	push ebx
 	push edx
 	push ecx
 	push eax
-	call {vg_aes_ctr32_aesni}
+	call {vg_aes_ctr32_to_aesni}
+	pop eax
 	pop eax
 	pop eax
 	pop eax
@@ -641,13 +645,15 @@ vg_aes_gcm_siv_seal_aesni:
 	mov ebx, esi
 	mov edi, 1
 	add ebp, 768
+	push ebx
 	push ebp
 	push edi
 	push ebx
 	push edx
 	push ecx
 	push eax
-	call {vg_aes_ctr32_aesni}
+	call {vg_aes_ctr32_to_aesni}
+	pop eax
 	pop eax
 	pop eax
 	pop eax
@@ -694,13 +700,15 @@ vg_aes_gcm_siv_seal_aesni:
 	add ebx, 224
 	mov edi, 1
 	add ebp, 768
+	push ebx
 	push ebp
 	push edi
 	push ebx
 	push edx
 	push ecx
 	push eax
-	call {vg_aes_ctr32_aesni}
+	call {vg_aes_ctr32_to_aesni}
+	pop eax
 	pop eax
 	pop eax
 	pop eax
@@ -818,13 +826,15 @@ vg_aes_gcm_siv_open_aesni:
 	add ebx, 224
 	mov edi, 1
 	add ebp, 768
+	push ebx
 	push ebp
 	push edi
 	push ebx
 	push edx
 	push ecx
 	push eax
-	call {vg_aes_ctr32_aesni}
+	call {vg_aes_ctr32_to_aesni}
+	pop eax
 	pop eax
 	pop eax
 	pop eax
@@ -940,13 +950,15 @@ vg_aes_gcm_siv_open_aesni:
 	mov ebx, esi
 	mov edi, 1
 	add ebp, 768
+	push ebx
 	push ebp
 	push edi
 	push ebx
 	push edx
 	push ecx
 	push eax
-	call {vg_aes_ctr32_aesni}
+	call {vg_aes_ctr32_to_aesni}
+	pop eax
 	pop eax
 	pop eax
 	pop eax
@@ -993,13 +1005,15 @@ vg_aes_gcm_siv_open_aesni:
 	add ebx, 224
 	mov edi, 1
 	add ebp, 768
+	push ebx
 	push ebp
 	push edi
 	push ebx
 	push edx
 	push ecx
 	push eax
-	call {vg_aes_ctr32_aesni}
+	call {vg_aes_ctr32_to_aesni}
+	pop eax
 	pop eax
 	pop eax
 	pop eax
@@ -1456,13 +1470,15 @@ vg_aes_gcm_siv_open_aesni:
 	add ebx, 240
 	mov edi, 1
 	add ebp, 768
+	push ebx
 	push ebp
 	push edi
 	push ebx
 	push edx
 	push ecx
 	push eax
-	call {vg_aes_ctr32_aesni}
+	call {vg_aes_ctr32_to_aesni}
+	pop eax
 	pop eax
 	pop eax
 	pop eax
@@ -1576,13 +1592,15 @@ vg_aes_gcm_siv_seal_aesni_pclmul:
 	add ebx, 224
 	mov edi, 1
 	add ebp, 768
+	push ebx
 	push ebp
 	push edi
 	push ebx
 	push edx
 	push ecx
 	push eax
-	call {vg_aes_ctr32_aesni}
+	call {vg_aes_ctr32_to_aesni}
+	pop eax
 	pop eax
 	pop eax
 	pop eax
@@ -2098,13 +2116,15 @@ vg_aes_gcm_siv_seal_aesni_pclmul:
 	add ebx, 0
 	mov edi, 1
 	add ebp, 768
+	push ebx
 	push ebp
 	push edi
 	push ebx
 	push edx
 	push ecx
 	push eax
-	call {vg_aes_ctr32_aesni}
+	call {vg_aes_ctr32_to_aesni}
+	pop eax
 	pop eax
 	pop eax
 	pop eax
@@ -2145,13 +2165,15 @@ vg_aes_gcm_siv_seal_aesni_pclmul:
 	mov ebx, esi
 	mov edi, 1
 	add ebp, 768
+	push ebx
 	push ebp
 	push edi
 	push ebx
 	push edx
 	push ecx
 	push eax
-	call {vg_aes_ctr32_aesni}
+	call {vg_aes_ctr32_to_aesni}
+	pop eax
 	pop eax
 	pop eax
 	pop eax
@@ -2198,13 +2220,15 @@ vg_aes_gcm_siv_seal_aesni_pclmul:
 	add ebx, 224
 	mov edi, 1
 	add ebp, 768
+	push ebx
 	push ebp
 	push edi
 	push ebx
 	push edx
 	push ecx
 	push eax
-	call {vg_aes_ctr32_aesni}
+	call {vg_aes_ctr32_to_aesni}
+	pop eax
 	pop eax
 	pop eax
 	pop eax
@@ -2322,13 +2346,15 @@ vg_aes_gcm_siv_open_aesni_pclmul:
 	add ebx, 224
 	mov edi, 1
 	add ebp, 768
+	push ebx
 	push ebp
 	push edi
 	push ebx
 	push edx
 	push ecx
 	push eax
-	call {vg_aes_ctr32_aesni}
+	call {vg_aes_ctr32_to_aesni}
+	pop eax
 	pop eax
 	pop eax
 	pop eax
@@ -2444,13 +2470,15 @@ vg_aes_gcm_siv_open_aesni_pclmul:
 	mov ebx, esi
 	mov edi, 1
 	add ebp, 768
+	push ebx
 	push ebp
 	push edi
 	push ebx
 	push edx
 	push ecx
 	push eax
-	call {vg_aes_ctr32_aesni}
+	call {vg_aes_ctr32_to_aesni}
+	pop eax
 	pop eax
 	pop eax
 	pop eax
@@ -2497,13 +2525,15 @@ vg_aes_gcm_siv_open_aesni_pclmul:
 	add ebx, 224
 	mov edi, 1
 	add ebp, 768
+	push ebx
 	push ebp
 	push edi
 	push ebx
 	push edx
 	push ecx
 	push eax
-	call {vg_aes_ctr32_aesni}
+	call {vg_aes_ctr32_to_aesni}
+	pop eax
 	pop eax
 	pop eax
 	pop eax
@@ -2960,13 +2990,15 @@ vg_aes_gcm_siv_open_aesni_pclmul:
 	add ebx, 240
 	mov edi, 1
 	add ebp, 768
+	push ebx
 	push ebp
 	push edi
 	push ebx
 	push edx
 	push ecx
 	push eax
-	call {vg_aes_ctr32_aesni}
+	call {vg_aes_ctr32_to_aesni}
+	pop eax
 	pop eax
 	pop eax
 	pop eax
@@ -3080,13 +3112,15 @@ vg_aes_gcm_siv_seal_pclmul:
 	add ebx, 224
 	mov edi, 1
 	add ebp, 768
+	push ebx
 	push ebp
 	push edi
 	push ebx
 	push edx
 	push ecx
 	push eax
-	call {vg_aes_ctr32}
+	call {vg_aes_ctr32_to}
+	pop eax
 	pop eax
 	pop eax
 	pop eax
@@ -3602,13 +3636,15 @@ vg_aes_gcm_siv_seal_pclmul:
 	add ebx, 0
 	mov edi, 1
 	add ebp, 768
+	push ebx
 	push ebp
 	push edi
 	push ebx
 	push edx
 	push ecx
 	push eax
-	call {vg_aes_ctr32}
+	call {vg_aes_ctr32_to}
+	pop eax
 	pop eax
 	pop eax
 	pop eax
@@ -3649,13 +3685,15 @@ vg_aes_gcm_siv_seal_pclmul:
 	mov ebx, esi
 	mov edi, 1
 	add ebp, 768
+	push ebx
 	push ebp
 	push edi
 	push ebx
 	push edx
 	push ecx
 	push eax
-	call {vg_aes_ctr32}
+	call {vg_aes_ctr32_to}
+	pop eax
 	pop eax
 	pop eax
 	pop eax
@@ -3702,13 +3740,15 @@ vg_aes_gcm_siv_seal_pclmul:
 	add ebx, 224
 	mov edi, 1
 	add ebp, 768
+	push ebx
 	push ebp
 	push edi
 	push ebx
 	push edx
 	push ecx
 	push eax
-	call {vg_aes_ctr32}
+	call {vg_aes_ctr32_to}
+	pop eax
 	pop eax
 	pop eax
 	pop eax
@@ -3826,13 +3866,15 @@ vg_aes_gcm_siv_open_pclmul:
 	add ebx, 224
 	mov edi, 1
 	add ebp, 768
+	push ebx
 	push ebp
 	push edi
 	push ebx
 	push edx
 	push ecx
 	push eax
-	call {vg_aes_ctr32}
+	call {vg_aes_ctr32_to}
+	pop eax
 	pop eax
 	pop eax
 	pop eax
@@ -3948,13 +3990,15 @@ vg_aes_gcm_siv_open_pclmul:
 	mov ebx, esi
 	mov edi, 1
 	add ebp, 768
+	push ebx
 	push ebp
 	push edi
 	push ebx
 	push edx
 	push ecx
 	push eax
-	call {vg_aes_ctr32}
+	call {vg_aes_ctr32_to}
+	pop eax
 	pop eax
 	pop eax
 	pop eax
@@ -4001,13 +4045,15 @@ vg_aes_gcm_siv_open_pclmul:
 	add ebx, 224
 	mov edi, 1
 	add ebp, 768
+	push ebx
 	push ebp
 	push edi
 	push ebx
 	push edx
 	push ecx
 	push eax
-	call {vg_aes_ctr32}
+	call {vg_aes_ctr32_to}
+	pop eax
 	pop eax
 	pop eax
 	pop eax
@@ -4464,13 +4510,15 @@ vg_aes_gcm_siv_open_pclmul:
 	add ebx, 240
 	mov edi, 1
 	add ebp, 768
+	push ebx
 	push ebp
 	push edi
 	push ebx
 	push edx
 	push ecx
 	push eax
-	call {vg_aes_ctr32}
+	call {vg_aes_ctr32_to}
+	pop eax
 	pop eax
 	pop eax
 	pop eax
@@ -4584,13 +4632,15 @@ vg_aes_gcm_siv_seal:
 	add ebx, 224
 	mov edi, 1
 	add ebp, 768
+	push ebx
 	push ebp
 	push edi
 	push ebx
 	push edx
 	push ecx
 	push eax
-	call {vg_aes_ctr32}
+	call {vg_aes_ctr32_to}
+	pop eax
 	pop eax
 	pop eax
 	pop eax
@@ -5106,13 +5156,15 @@ vg_aes_gcm_siv_seal:
 	add ebx, 0
 	mov edi, 1
 	add ebp, 768
+	push ebx
 	push ebp
 	push edi
 	push ebx
 	push edx
 	push ecx
 	push eax
-	call {vg_aes_ctr32}
+	call {vg_aes_ctr32_to}
+	pop eax
 	pop eax
 	pop eax
 	pop eax
@@ -5153,13 +5205,15 @@ vg_aes_gcm_siv_seal:
 	mov ebx, esi
 	mov edi, 1
 	add ebp, 768
+	push ebx
 	push ebp
 	push edi
 	push ebx
 	push edx
 	push ecx
 	push eax
-	call {vg_aes_ctr32}
+	call {vg_aes_ctr32_to}
+	pop eax
 	pop eax
 	pop eax
 	pop eax
@@ -5206,13 +5260,15 @@ vg_aes_gcm_siv_seal:
 	add ebx, 224
 	mov edi, 1
 	add ebp, 768
+	push ebx
 	push ebp
 	push edi
 	push ebx
 	push edx
 	push ecx
 	push eax
-	call {vg_aes_ctr32}
+	call {vg_aes_ctr32_to}
+	pop eax
 	pop eax
 	pop eax
 	pop eax
@@ -5330,13 +5386,15 @@ vg_aes_gcm_siv_open:
 	add ebx, 224
 	mov edi, 1
 	add ebp, 768
+	push ebx
 	push ebp
 	push edi
 	push ebx
 	push edx
 	push ecx
 	push eax
-	call {vg_aes_ctr32}
+	call {vg_aes_ctr32_to}
+	pop eax
 	pop eax
 	pop eax
 	pop eax
@@ -5452,13 +5510,15 @@ vg_aes_gcm_siv_open:
 	mov ebx, esi
 	mov edi, 1
 	add ebp, 768
+	push ebx
 	push ebp
 	push edi
 	push ebx
 	push edx
 	push ecx
 	push eax
-	call {vg_aes_ctr32}
+	call {vg_aes_ctr32_to}
+	pop eax
 	pop eax
 	pop eax
 	pop eax
@@ -5505,13 +5565,15 @@ vg_aes_gcm_siv_open:
 	add ebx, 224
 	mov edi, 1
 	add ebp, 768
+	push ebx
 	push ebp
 	push edi
 	push ebx
 	push edx
 	push ecx
 	push eax
-	call {vg_aes_ctr32}
+	call {vg_aes_ctr32_to}
+	pop eax
 	pop eax
 	pop eax
 	pop eax
@@ -5968,13 +6030,15 @@ vg_aes_gcm_siv_open:
 	add ebx, 240
 	mov edi, 1
 	add ebp, 768
+	push ebx
 	push ebp
 	push edi
 	push ebx
 	push edx
 	push ecx
 	push eax
-	call {vg_aes_ctr32}
+	call {vg_aes_ctr32_to}
+	pop eax
 	pop eax
 	pop eax
 	pop eax

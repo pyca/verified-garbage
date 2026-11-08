@@ -14,15 +14,15 @@ pub(crate) unsafe extern "C" fn vg_cmac_aes_update_aesni() {
         r#".base64 "i0QkGImYEAgAAImwFAgAAIm4GAgAAImoHAgAAIt0JBCLRCQUhcA="
 je 20f
 22:
-.base64 "i1wkDItsJBiLA4sOMciJhQAIAACLQwSLTgQxyImFBAgAAItDCItOCDHIiYUICAAAi0MMi04MMciJhQwIAAC4AAAAAIkDiUMEiUMIiUMMi0QkBItMJAiJ6oHCAAgAAL8BAAAAVVdTUlFQ"
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYg8YQi0QkFAHAAcABwAHAA0QkEDnG"
+.base64 "i1wkDItsJBiLA4sOMciJhQAIAACLQwSLTgQxyImFBAgAAItDCItOCDHIiYUICAAAi0MMi04MMciJhQwIAAC4AAAAAIkDiUMEiUMIiUMMi0QkBItMJAiJ6oHCAAgAAL8BAAAAU1VXU1JRUA=="
+call {vg_aes_ctr32_to_aesni}
+.base64 "WFhYWFhYWIPGEItEJBQBwAHAAcABwANEJBA5xg=="
 jne 22b
 jmp 21f
 20:
 21:
 .base64 "i0QkGIuYEAgAAIuwFAgAAIu4GAgAAIuoHAgAAMM="
 .p2align 6"#,
-        vg_aes_ctr32_aesni = sym crate::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_ctr32_to_aesni = sym crate::aes::vg_aes_ctr32_to_aesni::vg_aes_ctr32_to_aesni,
     )
 }

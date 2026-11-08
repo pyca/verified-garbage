@@ -18,7 +18,7 @@ pub const VG_AES_SIV_INIT_AESNI_FEATURES: verified_garbage_cpu::Features = verif
 /// * `ctx` must be valid for reads and writes of 512 bytes.
 /// * `key_len` must be 32, 48 or 64.
 /// * `ctx` must not overlap `key` (distinct Rust objects never do).
-/// * Neither `key` nor `ctx` may overlap the arguments on the stack, overlap the return address on the stack or the 2628 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `key` nor `ctx` may overlap the arguments on the stack, overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_siv_init_aesni(key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
@@ -53,7 +53,7 @@ pub const VG_AES_SIV_ENCRYPT_AESNI_FEATURES: verified_garbage_cpu::Features = ve
 /// * `siv` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `data` and `siv` must not overlap each other, `ctx`, `ads` or the slices `ads` lists (distinct Rust objects never do).
-/// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the arguments on the stack, overlap the return address on the stack or the 2668 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the arguments on the stack, overlap the return address on the stack or the 2672 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_siv_encrypt_aesni(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
@@ -119,17 +119,17 @@ call {vg_cmac_aes_finalize_aesni}
 26:
 .base64 "i0UAiUVgi0UEiUVki0UIJX////+JRWiLRQwlf////4lFbIu9xAAAAMHvBIX/"
 je 215f
-.base64 "i4WwAAAABRABAACLjbQAAACJ6oPCYIudwAAAAIHFAAEAAFVXU1JRUA=="
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge0AAQAA"
+.base64 "i4WwAAAABRABAACLjbQAAACJ6oPCYIudwAAAAIHFAAEAAFNVV1NSUVA="
+call {vg_aes_ctr32_to_aesni}
+.base64 "WFhYWFhYWIHtAAEAAA=="
 jmp 216f
 215:
 216:
 .base64 "i43EAAAAg+EP"
 je 217f
-.base64 "uAAAAACJRVCJRVSJRViJRVyLhbAAAAAFEAEAAIuNtAAAAInqg8JgieuDw1C/AQAAAIHFAAEAAFVXU1JRUA=="
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge0AAQAAi43EAAAAg+EPieqDwlCLvcAAAAADvcQAAAApzw=="
+.base64 "uAAAAACJRVCJRVSJRViJRVyLhbAAAAAFEAEAAIuNtAAAAInqg8JgieuDw1C/AQAAAIHFAAEAAFNVV1NSUVA="
+call {vg_aes_ctr32_to_aesni}
+.base64 "WFhYWFhYWIHtAAEAAIuNxAAAAIPhD4nqg8JQi73AAAAAA73EAAAAKc8="
 219:
 .base64 "D7YCD7YfMdiIB4PHAYPCAYPpAQ=="
 jne 219b
@@ -140,7 +140,7 @@ jmp 218f
 .p2align 6"#,
         vg_cmac_aes_finalize_aesni = sym super::cmac_aes::vg_cmac_aes_finalize_aesni::vg_cmac_aes_finalize_aesni,
         vg_cmac_aes_update_aesni = sym super::cmac_aes::vg_cmac_aes_update_aesni::vg_cmac_aes_update_aesni,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_ctr32_to_aesni = sym super::aes::vg_aes_ctr32_to_aesni::vg_aes_ctr32_to_aesni,
     )
 }
 
@@ -161,7 +161,7 @@ pub const VG_AES_SIV_DECRYPT_AESNI_FEATURES: verified_garbage_cpu::Features = ve
 /// * `siv` must be valid for reads of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `data` must not overlap `ctx`, `ads`, the slices `ads` lists or `siv` (distinct Rust objects never do).
-/// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the arguments on the stack, overlap the return address on the stack or the 2668 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the arguments on the stack, overlap the return address on the stack or the 2672 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_siv_decrypt_aesni(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {
@@ -188,17 +188,17 @@ jmp 21f
 21:
 .base64 "i4XAAAAAiYXIAAAAi4XEAAAAiYXMAAAAi3wkHIsHi08Ei1cIi18MiUUAiU0EiVUIiV0Mi0UAiUVgi0UEiUVki0UIJX////+JRWiLRQwlf////4lFbIu9xAAAAMHvBIX/"
 je 25f
-.base64 "i4WwAAAABRABAACLjbQAAACJ6oPCYIudwAAAAIHFAAEAAFVXU1JRUA=="
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge0AAQAA"
+.base64 "i4WwAAAABRABAACLjbQAAACJ6oPCYIudwAAAAIHFAAEAAFNVV1NSUVA="
+call {vg_aes_ctr32_to_aesni}
+.base64 "WFhYWFhYWIHtAAEAAA=="
 jmp 26f
 25:
 26:
 .base64 "i43EAAAAg+EP"
 je 27f
-.base64 "uAAAAACJRVCJRVSJRViJRVyLhbAAAAAFEAEAAIuNtAAAAInqg8JgieuDw1C/AQAAAIHFAAEAAFVXU1JRUA=="
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge0AAQAAi43EAAAAg+EPieqDwlCLvcAAAAADvcQAAAApzw=="
+.base64 "uAAAAACJRVCJRVSJRViJRVyLhbAAAAAFEAEAAIuNtAAAAInqg8JgieuDw1C/AQAAAIHFAAEAAFNVV1NSUVA="
+call {vg_aes_ctr32_to_aesni}
+.base64 "WFhYWFhYWIHtAAEAAIuNxAAAAIPhD4nqg8JQi73AAAAAA73EAAAAKc8="
 29:
 .base64 "D7YCD7YfMdiIB4PHAYPCAYPpAQ=="
 jne 29b
@@ -257,7 +257,7 @@ jmp 221f
 .p2align 6"#,
         vg_cmac_aes_finalize_aesni = sym super::cmac_aes::vg_cmac_aes_finalize_aesni::vg_cmac_aes_finalize_aesni,
         vg_cmac_aes_update_aesni = sym super::cmac_aes::vg_cmac_aes_update_aesni::vg_cmac_aes_update_aesni,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_ctr32_to_aesni = sym super::aes::vg_aes_ctr32_to_aesni::vg_aes_ctr32_to_aesni,
     )
 }
 
@@ -273,7 +273,7 @@ jmp 221f
 /// * `ctx` must be valid for reads and writes of 512 bytes.
 /// * `key_len` must be 32, 48 or 64.
 /// * `ctx` must not overlap `key` (distinct Rust objects never do).
-/// * Neither `key` nor `ctx` may overlap the arguments on the stack, overlap the return address on the stack or the 2628 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `key` nor `ctx` may overlap the arguments on the stack, overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_siv_init(key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
     core::arch::naked_asm!(
@@ -304,7 +304,7 @@ call {vg_aes_expand_key_scratch}
 /// * `siv` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `data` and `siv` must not overlap each other, `ctx`, `ads` or the slices `ads` lists (distinct Rust objects never do).
-/// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the arguments on the stack, overlap the return address on the stack or the 2668 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the arguments on the stack, overlap the return address on the stack or the 2672 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_siv_encrypt(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
     core::arch::naked_asm!(
@@ -369,17 +369,17 @@ call {vg_cmac_aes_finalize}
 26:
 .base64 "i0UAiUVgi0UEiUVki0UIJX////+JRWiLRQwlf////4lFbIu9xAAAAMHvBIX/"
 je 215f
-.base64 "i4WwAAAABRABAACLjbQAAACJ6oPCYIudwAAAAIHFAAEAAFVXU1JRUA=="
-call {vg_aes_ctr32}
-.base64 "WFhYWFhYge0AAQAA"
+.base64 "i4WwAAAABRABAACLjbQAAACJ6oPCYIudwAAAAIHFAAEAAFNVV1NSUVA="
+call {vg_aes_ctr32_to}
+.base64 "WFhYWFhYWIHtAAEAAA=="
 jmp 216f
 215:
 216:
 .base64 "i43EAAAAg+EP"
 je 217f
-.base64 "uAAAAACJRVCJRVSJRViJRVyLhbAAAAAFEAEAAIuNtAAAAInqg8JgieuDw1C/AQAAAIHFAAEAAFVXU1JRUA=="
-call {vg_aes_ctr32}
-.base64 "WFhYWFhYge0AAQAAi43EAAAAg+EPieqDwlCLvcAAAAADvcQAAAApzw=="
+.base64 "uAAAAACJRVCJRVSJRViJRVyLhbAAAAAFEAEAAIuNtAAAAInqg8JgieuDw1C/AQAAAIHFAAEAAFNVV1NSUVA="
+call {vg_aes_ctr32_to}
+.base64 "WFhYWFhYWIHtAAEAAIuNxAAAAIPhD4nqg8JQi73AAAAAA73EAAAAKc8="
 219:
 .base64 "D7YCD7YfMdiIB4PHAYPCAYPpAQ=="
 jne 219b
@@ -390,7 +390,7 @@ jmp 218f
 .p2align 6"#,
         vg_cmac_aes_finalize = sym super::cmac_aes::vg_cmac_aes_finalize::vg_cmac_aes_finalize,
         vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
     )
 }
 
@@ -408,7 +408,7 @@ jmp 218f
 /// * `siv` must be valid for reads of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `data` must not overlap `ctx`, `ads`, the slices `ads` lists or `siv` (distinct Rust objects never do).
-/// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the arguments on the stack, overlap the return address on the stack or the 2668 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the arguments on the stack, overlap the return address on the stack or the 2672 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_siv_decrypt(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
@@ -434,17 +434,17 @@ jmp 21f
 21:
 .base64 "i4XAAAAAiYXIAAAAi4XEAAAAiYXMAAAAi3wkHIsHi08Ei1cIi18MiUUAiU0EiVUIiV0Mi0UAiUVgi0UEiUVki0UIJX////+JRWiLRQwlf////4lFbIu9xAAAAMHvBIX/"
 je 25f
-.base64 "i4WwAAAABRABAACLjbQAAACJ6oPCYIudwAAAAIHFAAEAAFVXU1JRUA=="
-call {vg_aes_ctr32}
-.base64 "WFhYWFhYge0AAQAA"
+.base64 "i4WwAAAABRABAACLjbQAAACJ6oPCYIudwAAAAIHFAAEAAFNVV1NSUVA="
+call {vg_aes_ctr32_to}
+.base64 "WFhYWFhYWIHtAAEAAA=="
 jmp 26f
 25:
 26:
 .base64 "i43EAAAAg+EP"
 je 27f
-.base64 "uAAAAACJRVCJRVSJRViJRVyLhbAAAAAFEAEAAIuNtAAAAInqg8JgieuDw1C/AQAAAIHFAAEAAFVXU1JRUA=="
-call {vg_aes_ctr32}
-.base64 "WFhYWFhYge0AAQAAi43EAAAAg+EPieqDwlCLvcAAAAADvcQAAAApzw=="
+.base64 "uAAAAACJRVCJRVSJRViJRVyLhbAAAAAFEAEAAIuNtAAAAInqg8JgieuDw1C/AQAAAIHFAAEAAFNVV1NSUVA="
+call {vg_aes_ctr32_to}
+.base64 "WFhYWFhYWIHtAAEAAIuNxAAAAIPhD4nqg8JQi73AAAAAA73EAAAAKc8="
 29:
 .base64 "D7YCD7YfMdiIB4PHAYPCAYPpAQ=="
 jne 29b
@@ -503,6 +503,6 @@ jmp 221f
 .p2align 6"#,
         vg_cmac_aes_finalize = sym super::cmac_aes::vg_cmac_aes_finalize::vg_cmac_aes_finalize,
         vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
     )
 }

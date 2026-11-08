@@ -43,13 +43,15 @@ vg_cmac_aes_update_aesni:
 	mov edx, ebp
 	add edx, 2048
 	mov edi, 1
+	push ebx
 	push ebp
 	push edi
 	push ebx
 	push edx
 	push ecx
 	push eax
-	call {vg_aes_ctr32_aesni}
+	call {vg_aes_ctr32_to_aesni}
+	pop eax
 	pop eax
 	pop eax
 	pop eax
