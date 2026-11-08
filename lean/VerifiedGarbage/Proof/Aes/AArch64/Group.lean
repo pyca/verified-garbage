@@ -881,7 +881,18 @@ theorem xs_step (hp : XPre to m₀ D O n g ks s₃) {k : Nat} (hk : k < 4) (hkn 
     fun s' d f o rd wr => h s' ⟨d, hs.frame.trans f,
       fun r hr hr' => (o r hr hr').trans (hs.keep r hr hr'), rd.trans hs.rd, wr.trans hs.wr⟩
 
-theorem advance_ok (to : Bool) (s : State) :
+theorem advance_ok (s : State) :
+    ∃ s', runBlock isa [.addImm .x .x3 .x3 64, .subImm .x .x4 .x4 4] s = some s' ∧
+      s'.gpr .x3 = s.gpr .x3 + 64 ∧ s'.gpr .x4 = s.gpr .x4 - 4 ∧
+      (∀ r, r ≠ .x3 → r ≠ .x4 → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧
+      s'.wr = s.wr := by
+  refine ⟨_, by rw [runBlock_cons, exec_addImm_x (by decide), runStep_some, runBlock_cons,
+    exec_subImm_x (by decide), runStep_some, runBlock_nil], ?_⟩
+  exact ⟨by simp [State.write, State.read], by simp [State.write, State.read],
+    fun r h1 h2 => by simp [State.write, h1, h2], rfl, rfl, rfl⟩
+
+/-- `advance_ok`, with the output's pointer advanced too out of place. -/
+theorem advanceG_ok (to : Bool) (s : State) :
     ∃ s', runBlock isa (([.addImm .x .x3 .x3 64, .subImm .x .x4 .x4 4] : List Instr) ++
         cond to [.addImm .x .x30 .x30 64] []) s = some s' ∧
       s'.gpr .x3 = s.gpr .x3 + 64 ∧ s'.gpr .x4 = s.gpr .x4 - 4 ∧
@@ -974,7 +985,7 @@ theorem xorPhase_wp (hp : XPre to m₀ D O n g ks s₃) :
     refine xs_step hp (k := 1) (by omega_arith) (by omega_arith) x₅ fun s₆ x₆ => ?_
     refine xs_step hp (k := 2) (by omega_arith) (by omega_arith) x₆ fun s₇ x₇ => ?_
     refine xs_step hp (k := 3) (by omega_arith) (by omega_arith) x₇ fun s₈ x₈ => ?_
-    obtain ⟨s₉, hs₉, d₉, r₉, o₉, k₉, m₉, rd₉, wr₉⟩ := advance_ok to s₈
+    obtain ⟨s₉, hs₉, d₉, r₉, o₉, k₉, m₉, rd₉, wr₉⟩ := advanceG_ok to s₈
     refine WP.of_runBlock ⟨s₉, hs₉, ?_⟩
     have e₁ : s₈.gpr .x3 = D + BitVec.ofNat 64 (64 * g) := (x₈.keep _ (by decide) (by decide)).trans hp.x3
     have e₂ : s₈.gpr .x4 = BitVec.ofNat 64 (n - 4 * g) := (x₈.keep _ (by decide) (by decide)).trans hp.x4

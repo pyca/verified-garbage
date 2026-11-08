@@ -62,12 +62,6 @@ def callArgs (n : Nat) : List Instr := [.ldrSp .x6 (frameBytes n)]
 def wipeArgs (n : Nat) : List Instr :=
   [.ldrSp .x9 (frameBytes n), .ldrSp .x10 (frameBytes n + 8), .movz .x .x11 0 0]
 
-/-- The `x10` bytes at `x9` zeroed, a byte at a time. -/
-def wipeLoop : Prog isa :=
-  .ite (.zero .x .x10) (.block [])
-    (.loop (.block [.strb .x11 .x9 0, .addImm .x .x9 .x9 1, .subImm .x .x10 .x10 1])
-      (.nonzero .x .x10))
-
 /-- The `len` bytes at `dst` zeroed. -/
 def wipe (n : Nat) : Prog isa := .seq (.block (wipeArgs n)) wipeLoop
 

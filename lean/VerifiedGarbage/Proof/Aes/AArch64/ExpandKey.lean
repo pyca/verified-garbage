@@ -872,7 +872,7 @@ theorem ek_correct {s₀ : State} (hp : Proof.Aes.expandKeyAArch64.pre s₀) :
         exact Frame.writeW h₂.frame (r := ⟨B, 512⟩) (by simp) _ (c_off B (by omega_arith) (by omega_arith)) }
   refine WP.seq (WP.mono (words_ok ws wi) fun s₄ h₄ => ?_)
   refine WP.mono (restore_ok (s := s₄) (b := B) (n := 512)
-    (by rw [h₄.wr]; exact hs.scr) h₄.x5 (by decide) h₄.saved) fun s₅ ⟨rg₅, f₅⟩ => ⟨rg₅, ?_⟩
+    (by rw [h₄.wr]; exact hs.scr) h₄.x5 (by decide) h₄.saved) fun s₅ ⟨rg₅, m₅, _⟩ => ⟨rg₅, ?_⟩
   show Spec.Aes.bytesAt s₅.mem (s₀.gpr .x2) (16 * (Spec.Aes.rounds ((s₀.gpr .x1).toNat / 4) + 1)) =
     Spec.Aes.expandKey (Spec.Aes.bytesAt s₀.mem (s₀.gpr .x0) (s₀.gpr .x1).toNat)
   rw [hS, hP, hK']
@@ -881,10 +881,8 @@ theorem ek_correct {s₀ : State} (hp : Proof.Aes.expandKeyAArch64.pre s₀) :
   rw [lhs, Spec.Aes.expandKey, hlen, Spec.Aes.rounds,
     show 16 * (K / 4 + 6 + 1) = 4 * (4 * (K / 4 + 6 + 1)) by omega_arith]
   refine flatten_expandWords ws.len (by omega_arith) _ _ fun k hk => ?_
-  exact (f₅.bytes (R := ⟨S, 240⟩) (fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr
-    exact dSB.sub_right (Region.sub_prefix (by decide))) (by simp) (show k < 240 by omega_arith)).trans
-    (h₄.sched k (by omega_arith))
+  rw [m₅]
+  exact h₄.sched k (by omega_arith)
 
 /-- A state satisfying the precondition. -/
 def ekSatState : State where
