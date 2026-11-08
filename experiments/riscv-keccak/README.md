@@ -62,3 +62,22 @@ stored. The next theta reads those scalar parities instead of reloading twenty
 lanes. All state stores remain, and lane complementing and rotation work match
 the baseline. This is an algorithmic scheduling experiment, distinct from
 caching lanes in two banks.
+
+Third run: https://github.com/pyca/verified-garbage/actions/runs/42478478614
+Carried parity reduced isolated permutation median 3.49% (1.516 to 1.463 us),
+but short SHAKE regressed 4.5–4.8%. Selected lane-cache candidates showed no
+convincing PQC improvement. These have not passed the end-to-end speed gate.
+
+`f_leaf_` variants remove the constants helper call. They initialize constants
+through volatile stores and use volatile loads, preventing constant folding of
+the round schedule while allowing the entire permutation to remain a leaf,
+like the verified assembly. Earlier variants remain controls.
+A small alignment guard tail-calls a separate aligned leaf or the existing
+unaligned-safe implementation, so cold memcpy calls do not constrain the leaf
+register allocator. Both branches are covered by the offset differential checks.
+
+`dparity` carries theta corrections instead of raw column parities. It frees
+the old D working registers to accumulate the next parities, reuses D registers
+in place for the last plane, and computes the next corrections directly into
+the carry registers. This removes five parity-to-D moves per round, at the
+cost of reloading lane 24 once. Both helper and leaf versions are measured.

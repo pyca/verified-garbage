@@ -19,10 +19,15 @@ reg=lambda r:'r_'+r.lstrip('.')
 variants.update({"v_"+name:cache for name,cache in list(variants.items())})
 variants.update({"f_"+name:cache for name,cache in list(variants.items()) if not name.startswith("v_")})
 variants['f_parity']=[]
+variants['f_dparity']=[]
+variants.update({'f_leaf_'+n:variants['f_'+n] for n in ('memory','row0','row2','parity','dparity')})
 def core(name,cache):
+ dparity=name.endswith('dparity')
+ reg=lambda r:('d_' if dparity and r in ['.a2','.a3','.a4','.a5','.a6'] else 'r_')+r.lstrip('.')
  lines=[f'__attribute__((noinline)) void core_{name}(uint64_t *restrict a, uint64_t *restrict b, const uint64_t *restrict rc) {{',
  'uint64_t '+','.join('r_'+r for r in ['a2','a3','a4','a5','a6','a7','t0','t1','t2','t3','t4','t5'])+';']
- if name=='f_parity':lines += ['uint64_t '+','.join(f'p{x}='+ '^'.join(f'a[{x+5*y}]' for y in range(5)) for x in range(5))+';']
+ if name.endswith('parity'):lines += ['uint64_t '+','.join(f'p{x}='+ '^'.join(f'a[{x+5*y}]' for y in range(5)) for x in range(5))+';']
+ if dparity:lines += ['uint64_t '+','.join(f'd_a{x+2}=rol64(p{x},1)^p{(x+3)%5}' for x in range(5))+';']
  for bank in ['a','b']:
   for i in cache:lines.append(f'uint64_t c_{bank}_{i}'+(f'={bank}[{i}]' if bank=='a' else '')+';')
  lines+=['r_a2=a[20];r_a3=a[21];r_a4=a[22];r_a5=a[23];r_a6=a[24];','for(unsigned k=0;k<24;k+=2){']
@@ -33,25 +38,32 @@ def core(name,cache):
     r,_,i=args;lines.append(f'{reg(r)} {"=" if op=="ld" else "^="} {mem(src,i)};')
    elif op=='st':
     _,i,r=args;lines.append(f'{mem(dst,i)}={reg(r)};')
-    if name=='f_parity':lines.append(f'p{int(i)%5} '+('=' if int(i)<5 else '^=')+f' {reg(r)};')
+    if name.endswith('parity'):lines.append((f'r_a{int(i)%5+2}' if dparity else f'p{int(i)%5}')+' '+('=' if int(i)<5 else '^=')+f' {reg(r)};')
    elif op=='nt':lines.append(f'{reg(args[0])}=~{reg(args[0])};')
    elif op=='rol':lines.append(f'{reg(args[0])}=rol64({reg(args[0])},{args[1]});')
    else:
     r,q=args;lines.append(f'{reg(r)} '+{'mv':'=','xr':'^=','an':'&=','orr':'|='}[op]+f' {reg(q)};')
  def first(src,dst):
-  if name=='f_parity':
+  if dparity:
+   emit(A[:4]+[('ld',['.t3','s','24'])],src,dst)
+   emit(A[36:],src,dst)
+  elif name.endswith('parity'):
    emit(A[:4]+[A[10]],src,dst)
    lines.extend(f'r_a{x+2}=p{y};' for x,y in enumerate([0,1,2,3,4]))
    emit([op for i,op in enumerate(A) if i>=22 and i not in (25,28,31)],src,dst)
   else:emit(A,src,dst)
- first('a','b');lines.append('r_t0 ^= rc[k];');emit(B,'a','b')
- first('b','a');lines.append('r_t0 ^= rc[k+1];');emit(B,'b','a')
+ def rest(src,dst):
+  emit(B[:-2] if dparity else B,src,dst)
+  if dparity:lines.extend(f'd_a{x+2}=rol64(r_a{x+2},1)^r_a{(x+3)%5+2};' for x in range(5))
+ first('a','b');lines.append('r_t0 ^= rc[k];');rest('a','b')
+ first('b','a');lines.append('r_t0 ^= rc[k+1];');rest('b','a')
  lines+=['}']+[f'a[{i}]=c_a_{i};' for i in cache]+['}']
  text='\n'.join(lines)
  if name.startswith(('v_', 'f_')):text=text.replace('uint64_t *restrict a, uint64_t *restrict b','volatile uint64_t *restrict a, volatile uint64_t *restrict b')
  if name.startswith('f_'):
   text=text.replace('__attribute__((noinline)) void', 'static __attribute__((always_inline)) inline void')
   text=text.replace('for(unsigned k=0;k<24;k+=2){', 'for(const uint64_t *p=rc;p<(const uint64_t *)a;p+=2){').replace('rc[k+1]', 'p[1]').replace('rc[k]', 'p[0]')
+ if name.startswith('f_leaf_'):text=text.replace('const uint64_t *restrict rc','const volatile uint64_t *restrict rc').replace('const uint64_t *p=rc','const volatile uint64_t *p=rc')
  return text
 # An independent canonical implementation with named scalar state, an in-place
 # rho/pi cycle and row-wise chi; GCC chooses its own register allocation.
@@ -79,23 +91,29 @@ code += ['void fill_round_constants(uint64_t *);']
 for name in [*variants,'scalar1','scalar2','scalar4']:
  comp=not name.startswith('scalar')
  fused=name.startswith('f_')
+ leaf=name.startswith('f_leaf_')
  attr='__attribute__((no_stack_protector)) ' if fused else ''
  buffers='uint64_t frame[74],*rc=frame,*a=frame+24,*b=frame+49;' if fused else 'uint64_t a[25],b[25],rc[24];'
- code += [f'{attr}void candidate_{name}(void *state,void *scratch){{{buffers}(void)scratch;']
+ symbol=f'aligned_{name}' if leaf else f'candidate_{name}'
+ if leaf:attr='static __attribute__((noinline,no_stack_protector)) '
+ code += [f'{attr}void {symbol}(void *state,void *scratch){{{buffers}(void)scratch;']
  if fused:
-  code += ['if(!((uintptr_t)state&7)){const unsigned char *in=__builtin_assume_aligned(state,8);']
+  code += [('{' if leaf else 'if(!((uintptr_t)state&7)){')+'const unsigned char *in=__builtin_assume_aligned(state,8);']
   code += [f'__builtin_memcpy(a+{i},in+{8*i},8);' for i in range(25)]
-  code += ['}else memcpy(a,state,200);']
+  code += ['}' if leaf else '}else memcpy(a,state,200);']
  else:code += ['memcpy(a,state,200);']
- code += ['fill_round_constants(rc);']
+ if name.startswith('f_leaf_'):
+  code += [f'((volatile uint64_t *)rc)[{i}]={hex(v)}ULL;' for i,v in enumerate(RC)]
+ else:code += ['fill_round_constants(rc);']
  if comp:code += [f'a[{i}]=~a[{i}];' for i in (1,2,8,12,17,20)]
  code += [f'core_{name}(a,b,rc);']
  if comp:code += [f'a[{i}]=~a[{i}];' for i in (1,2,8,12,17,20)]
  if fused:
-  code += ['if(!((uintptr_t)state&7)){unsigned char *out=__builtin_assume_aligned(state,8);']
+  code += [('{' if leaf else 'if(!((uintptr_t)state&7)){')+'unsigned char *out=__builtin_assume_aligned(state,8);']
   code += [f'__builtin_memcpy(out+{8*i},a+{i},8);' for i in range(25)]
-  code += ['}else memcpy(state,a,200);}']
+  code += ['}}' if leaf else '}else memcpy(state,a,200);}']
  else:code += ['memcpy(state,a,200);}']
+ if leaf:code += [f'void candidate_{name}(void *state,void *scratch){{if((uintptr_t)state&7)candidate_f_{name[7:]}(state,scratch);else aligned_{name}(state,scratch);}}']
 (OUT/'candidates.c').write_text('\n'.join(code)+'\n')
 (OUT/'constants.c').write_text('#include <stdint.h>\n#include <string.h>\nvoid fill_round_constants(uint64_t *out){static const uint64_t rc[24]={'+','.join(hex(v)+'ULL' for v in RC)+'};memcpy(out,rc,sizeof(rc));}\n')
 # These are only ELF/linkage directives and name substitutions around the exact
