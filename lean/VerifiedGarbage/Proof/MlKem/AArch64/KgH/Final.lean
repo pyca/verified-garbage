@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.MlKem.Scrubbed
 public import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Top
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Hole
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.VectorSymbolsMono
@@ -31,7 +32,7 @@ meta import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Correct
 
 /-! # `vg_mlkem768_keygen` and `vg_mlkem1024_keygen` hashing `ek` during the matrix
 
-`Kem16P.keyGen` meets `Spec.MlKem.keyGenContract` with 128 bytes of stack, for
+`Kem16P.keyGen` meets `Proof.MlKem.Scrubbed.keyGenBodyContract` with 128 bytes of stack, for
 the `x3` calls: the contract (as `Hybrid/Final.lean` for encapsulation), the
 taint analyses of its pieces, decided on each parameter set, and `Verified`
 (`keyGenP768_verified`, `keyGenP1024_verified`). -/
@@ -99,28 +100,28 @@ theorem kgPre1024_depth : (Kem16P.kgPre Impl.MlKem1024.AArch64.lay1024).aarch64D
 
 /-! ## ML-KEM-768 -/
 
-theorem keyGenS768_base : (keyGenAArch64S lay768).Implies (Spec.MlKem.keyGenContract abi 128) := by
-  mlkem_implies [Spec.MlKem.keyGenContract, Spec.MlKem.keyGenSig, keyGenAArch64S, keyGenAArch64, lay768,
+theorem keyGenS768_base : (keyGenAArch64S lay768).Implies (Proof.MlKem.Scrubbed.keyGenBodyContract abi 128) := by
+  mlkem_implies [Proof.MlKem.Scrubbed.keyGenBodyContract, Spec.MlKem.keyGenSig, keyGenAArch64S, keyGenAArch64, lay768,
       KemLay.params, Spec.MlKem.mlKem768, KemLay.ekLen, KemLay.dkLen, AArch64.abi, AArch64.argRegs]
       [VG.Proof.MlKem.AArch64.KeyGen.sat] using VG.Proof.MlKem.AArch64.KeyGen.sat
 
-def keyGenH768Contract := Spec.MlKem.keyGenContract (abi.withConsts constants) 128
+def keyGenH768Contract := Proof.MlKem.Scrubbed.keyGenBodyContract (abi.withConsts constants) 128
 
 theorem keyGenH768_entry {s : State} (h : keyGenH768Contract.pre s) :
     (entryContractS (keyGenAArch64S lay768)).pre s := by
-  unfold keyGenH768Contract Spec.MlKem.keyGenContract constants at h
+  unfold keyGenH768Contract Proof.MlKem.Scrubbed.keyGenBodyContract constants at h
   have hp := pre_consts.mp h
   exact ⟨keyGenS768_base.pre _ hp.1, hp.2⟩
 
 theorem keyGenH768_post {s t : State} (h : keyGenH768Contract.pre s)
     (hp : (keyGenAArch64S lay768).post s t) : keyGenH768Contract.post s t := by
-  unfold keyGenH768Contract Spec.MlKem.keyGenContract constants at h ⊢
+  unfold keyGenH768Contract Proof.MlKem.Scrubbed.keyGenBodyContract constants at h ⊢
   have hh := pre_consts.mp h
   exact keyGenS768_base.post (stripConsts constants s) t hh.1 hp
 
 theorem keyGenH768_pub {s t : State} (hs : keyGenH768Contract.pre s) (ht : keyGenH768Contract.pre t)
     (hp : keyGenH768Contract.pub s t) : (entryContractS (keyGenAArch64S lay768)).pub s t := by
-  unfold keyGenH768Contract Spec.MlKem.keyGenContract constants at hs ht hp
+  unfold keyGenH768Contract Proof.MlKem.Scrubbed.keyGenBodyContract constants at hs ht hp
   have hsp := pre_consts.mp hs
   have htp := pre_consts.mp ht
   have hpp := pub_consts.mp hp
@@ -128,10 +129,10 @@ theorem keyGenH768_pub {s t : State} (hs : keyGenH768Contract.pre s) (ht : keyGe
 
 theorem keyGenH768_sat : ∃ s, keyGenH768Contract.pre s := by
   refine ⟨addTables VG.Proof.MlKem.AArch64.KeyGen.sat, ?_⟩
-  unfold keyGenH768Contract Spec.MlKem.keyGenContract constants
+  unfold keyGenH768Contract Proof.MlKem.Scrubbed.keyGenBodyContract constants
   apply pre_consts.mpr
   constructor
-  · change (Spec.MlKem.keyGenContract abi 128).pre
+  · change (Proof.MlKem.Scrubbed.keyGenBodyContract abi 128).pre
       (stripConsts constants (addTables VG.Proof.MlKem.AArch64.KeyGen.sat))
     rw [strip_addTables]
     sig_pre [Spec.MlKem.keyGenSig, abi, argRegs]
@@ -178,28 +179,28 @@ theorem keyGenP768_verified (v : Proof.Sha3.AArch64.Permutation) :
 
 /-! ## ML-KEM-1024 -/
 
-theorem keyGenS1024_base : (keyGenAArch64S Impl.MlKem1024.AArch64.lay1024).Implies (Spec.MlKem1024.keyGenContract abi 128) := by
-  mlkem_implies [Spec.MlKem1024.keyGenContract, Spec.MlKem1024.keyGenSig, keyGenAArch64S, keyGenAArch64, Impl.MlKem1024.AArch64.lay1024,
+theorem keyGenS1024_base : (keyGenAArch64S Impl.MlKem1024.AArch64.lay1024).Implies (Proof.MlKem.Scrubbed.keyGen1024BodyContract abi 128) := by
+  mlkem_implies [Proof.MlKem.Scrubbed.keyGen1024BodyContract, Spec.MlKem1024.keyGenSig, keyGenAArch64S, keyGenAArch64, Impl.MlKem1024.AArch64.lay1024,
       KemLay.params, Spec.MlKem.mlKem1024, KemLay.ekLen, KemLay.dkLen, AArch64.abi, AArch64.argRegs]
       [VG.Proof.MlKem1024.AArch64.KeyGen.sat] using VG.Proof.MlKem1024.AArch64.KeyGen.sat
 
-def keyGenH1024Contract := Spec.MlKem1024.keyGenContract (abi.withConsts constants) 128
+def keyGenH1024Contract := Proof.MlKem.Scrubbed.keyGen1024BodyContract (abi.withConsts constants) 128
 
 theorem keyGenH1024_entry {s : State} (h : keyGenH1024Contract.pre s) :
     (entryContractS (keyGenAArch64S Impl.MlKem1024.AArch64.lay1024)).pre s := by
-  unfold keyGenH1024Contract Spec.MlKem1024.keyGenContract constants at h
+  unfold keyGenH1024Contract Proof.MlKem.Scrubbed.keyGen1024BodyContract constants at h
   have hp := pre_consts.mp h
   exact ⟨keyGenS1024_base.pre _ hp.1, hp.2⟩
 
 theorem keyGenH1024_post {s t : State} (h : keyGenH1024Contract.pre s)
     (hp : (keyGenAArch64S Impl.MlKem1024.AArch64.lay1024).post s t) : keyGenH1024Contract.post s t := by
-  unfold keyGenH1024Contract Spec.MlKem1024.keyGenContract constants at h ⊢
+  unfold keyGenH1024Contract Proof.MlKem.Scrubbed.keyGen1024BodyContract constants at h ⊢
   have hh := pre_consts.mp h
   exact keyGenS1024_base.post (stripConsts constants s) t hh.1 hp
 
 theorem keyGenH1024_pub {s t : State} (hs : keyGenH1024Contract.pre s) (ht : keyGenH1024Contract.pre t)
     (hp : keyGenH1024Contract.pub s t) : (entryContractS (keyGenAArch64S Impl.MlKem1024.AArch64.lay1024)).pub s t := by
-  unfold keyGenH1024Contract Spec.MlKem1024.keyGenContract constants at hs ht hp
+  unfold keyGenH1024Contract Proof.MlKem.Scrubbed.keyGen1024BodyContract constants at hs ht hp
   have hsp := pre_consts.mp hs
   have htp := pre_consts.mp ht
   have hpp := pub_consts.mp hp
@@ -207,10 +208,10 @@ theorem keyGenH1024_pub {s t : State} (hs : keyGenH1024Contract.pre s) (ht : key
 
 theorem keyGenH1024_sat : ∃ s, keyGenH1024Contract.pre s := by
   refine ⟨addTables VG.Proof.MlKem1024.AArch64.KeyGen.sat, ?_⟩
-  unfold keyGenH1024Contract Spec.MlKem1024.keyGenContract constants
+  unfold keyGenH1024Contract Proof.MlKem.Scrubbed.keyGen1024BodyContract constants
   apply pre_consts.mpr
   constructor
-  · change (Spec.MlKem1024.keyGenContract abi 128).pre
+  · change (Proof.MlKem.Scrubbed.keyGen1024BodyContract abi 128).pre
       (stripConsts constants (addTables VG.Proof.MlKem1024.AArch64.KeyGen.sat))
     rw [strip_addTables]
     sig_pre [Spec.MlKem1024.keyGenSig, abi, argRegs]

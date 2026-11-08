@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.MlKem.Scrubbed
 public import VerifiedGarbage.Proof.MlKem.Arm.Encaps
 public import VerifiedGarbage.Impl.MlKem1024.Arm.Top
 public import VerifiedGarbage.Spec.MlKem.Contract1024
@@ -28,9 +29,9 @@ open VG.Proof.MlKem VG.Proof.MlKem.Arm VG.Proof.MlKem1024.Arm
 open VG.Proof.MlKem.Arm.Enc
 open VG.Proof.MlKem.Arm.Encaps hiding pre_of post_of satState verified pre_ofH post_ofH verifiedH
 
-theorem pre_of {s : State} (h : (Spec.MlKem1024.encapsContract Arm.abi 8).pre s) :
+theorem pre_of {s : State} (h : (Proof.MlKem.Scrubbed.encaps1024BodyContract Arm.abi 8).pre s) :
     Pre kl1024 (withR12 s (stackArg s 0)) ∧ InRegions (s.rd ++ s.wr) (stackArgAddr s 0) 4 := by
-  sig_pre [Spec.MlKem1024.encapsContract, Spec.MlKem1024.encapsSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+  sig_pre [Proof.MlKem.Scrubbed.encaps1024BodyContract, Spec.MlKem1024.encapsSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val] at h
   obtain ⟨h0, -, h2, h3, d1, d2, d3, d4, d5, d6, d7, d8, -, d10, -, -, b1, b2, b3, b4, b5, -,
     f1, f2, f3, f4, f5⟩ := h
@@ -44,8 +45,8 @@ theorem post_of {s₀ s : State}
     (hkey : bytesAt s.mem (State.addr (pKey s₀)) 32 = KK kl1024 s₀)
     (hct : bytesAt s.mem (State.addr (pCt s₀)) 1568 = VG.Proof.MlKem.KPke.ct kl1024.p
       (aEnc (ekRho kl1024.p (EK kl1024 s₀)) (RR kl1024 s₀)) (EK kl1024 s₀) (M kl1024 s₀) (RR kl1024 s₀)) :
-    (Spec.MlKem1024.encapsContract Arm.abi 8).post s₀ s := by
-  sig_post [Spec.MlKem1024.encapsContract, Spec.MlKem1024.encapsSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+    (Proof.MlKem.Scrubbed.encaps1024BodyContract Arm.abi 8).post s₀ s := by
+  sig_post [Proof.MlKem.Scrubbed.encaps1024BodyContract, Spec.MlKem1024.encapsSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val]
   rw [setWidth_append32, h0]
   have e0 : bytesAt s₀.mem (BitVec.setWidth 64 (s₀.gpr .r0)) 1568 = EK kl1024 s₀ := (EK_eq kl1024 s₀).symm
@@ -69,11 +70,11 @@ def satState : State where
   wr := [⟨0x3000, 32⟩, ⟨0x4000, 1568⟩, ⟨0x10000, 49152⟩]
 
 theorem verified :
-    Verified Arm.target Impl.MlKem1024.Arm.encaps1024 (Spec.MlKem1024.encapsContract Arm.abi 8) := by
+    Verified Arm.target Impl.MlKem1024.Arm.encaps1024 (Proof.MlKem.Scrubbed.encaps1024BodyContract Arm.abi 8) := by
   refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, ?_⟩
   · obtain ⟨t, s', he, hpres, hsp, h0, hkey, hct⟩ := entry_correct (pre_of hs).1 (pre_of hs).2
     exact ⟨t, s', he, ⟨preserved_withR12 hpres, hsp⟩, post_of h0 hkey hct⟩
-  · sig_pub [Spec.MlKem1024.encapsContract, Spec.MlKem1024.encapsSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+  · sig_pub [Proof.MlKem.Scrubbed.encaps1024BodyContract, Spec.MlKem1024.encapsSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val] at hpub
     obtain ⟨hsp, hl, h0, h1, h2, h3, hs⟩ := hpub
     have hr : ekRho kl1024.p (EK kl1024 s₁) = ekRho kl1024.p (EK kl1024 s₂) := by
@@ -83,13 +84,13 @@ theorem verified :
     exact (entry_ct ⟨(pre_of h₁).1, (pre_of h₂).1, hsp, h0, h1, h2, h3, hs, hr⟩ (pre_of h₁).2 (pre_of h₂).2
       s₁ s₂ t₁ t₂ s₁' s₂' ⟨rfl, rfl⟩ e₁ e₂).1
   · refine ⟨satState, ?_⟩
-    sig_sat_check [Spec.MlKem1024.encapsContract, Spec.MlKem1024.encapsSig, Arm.abi, Arm.argRegs,
+    sig_sat_check [Proof.MlKem.Scrubbed.encaps1024BodyContract, Spec.MlKem1024.encapsSig, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val]
 
 /-! ## `encapsH` -/
 
-theorem pre_ofH {s : State} (h : (Spec.MlKem1024.encapsHContract Arm.abi 8).pre s) : PreH kl1024 s := by
-  sig_pre [Spec.MlKem1024.encapsHContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, Arm.abi, Arm.argRegs,
+theorem pre_ofH {s : State} (h : (Proof.MlKem.Scrubbed.encapsH1024BodyContract Arm.abi 8).pre s) : PreH kl1024 s := by
+  sig_pre [Proof.MlKem.Scrubbed.encapsH1024BodyContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, Arm.abi, Arm.argRegs,
     Arm.reduceClassify, Arm.Loc.val] at h
   obtain ⟨h0, h1, h2, h3, d1, d2, d3, -, -, dh3, d4, d5, d6, d7, d8, -, d10, -, d12, b1, bh, b2, b3, b4, b5, -,
     f1, fh, f2, f3, f4, f5, hh⟩ := h
@@ -112,8 +113,8 @@ theorem post_ofH {s₀ s : State}
     (hct : bytesAt s.mem (State.addr (pCt (args s₀))) 1568 = VG.Proof.MlKem.KPke.ct kl1024.p
       (aEnc (ekRho kl1024.p (EK kl1024 (args s₀))) (RR kl1024 (args s₀))) (EK kl1024 (args s₀)) (M kl1024 (args s₀))
       (RR kl1024 (args s₀))) :
-    (Spec.MlKem1024.encapsHContract Arm.abi 8).post s₀ s := by
-  sig_post [Spec.MlKem1024.encapsHContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, Arm.abi, Arm.argRegs,
+    (Proof.MlKem.Scrubbed.encapsH1024BodyContract Arm.abi 8).post s₀ s := by
+  sig_post [Proof.MlKem.Scrubbed.encapsH1024BodyContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, Arm.abi, Arm.argRegs,
     Arm.reduceClassify, Arm.Loc.val]
   rw [setWidth_append32, h0]
   have e0 : bytesAt s₀.mem (BitVec.setWidth 64 (s₀.gpr .r0)) 1568 = EK kl1024 (args s₀) :=
@@ -126,11 +127,11 @@ theorem post_ofH {s₀ s : State}
   rw [e0, e1, e2, e3]
   exact outcome kl1024_wf (args s₀)
 
-theorem verifiedH : Verified Arm.target Impl.MlKem1024.Arm.encapsH1024 (Spec.MlKem1024.encapsHContract Arm.abi 8) := by
+theorem verifiedH : Verified Arm.target Impl.MlKem1024.Arm.encapsH1024 (Proof.MlKem.Scrubbed.encapsH1024BodyContract Arm.abi 8) := by
   refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, ?_⟩
   · obtain ⟨t, s', he, hpres, hsp, h0, hkey, hct⟩ := entryH_correct (pre_ofH hs)
     exact ⟨t, s', he, ⟨fun r hr => (hpres r hr).trans (args_preserved s r hr), hsp⟩, post_ofH h0 hkey hct⟩
-  · sig_pub [Spec.MlKem1024.encapsHContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, Arm.abi, Arm.argRegs,
+  · sig_pub [Proof.MlKem.Scrubbed.encapsH1024BodyContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val] at hpub
     obtain ⟨hsp, hl, g0, g1, g2, g3, gc, gs⟩ := hpub
     have hr : ekRho kl1024.p (EK kl1024 (args s₁)) = ekRho kl1024.p (EK kl1024 (args s₂)) := by
@@ -142,7 +143,7 @@ theorem verifiedH : Verified Arm.target Impl.MlKem1024.Arm.encapsH1024 (Spec.MlK
   · refine ⟨VG.Proof.MlKem.Arm.Encaps.satStateH 1568 1568 49152, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlKem1024.encapsHContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, Arm.abi,
+    · sig_reduce [Proof.MlKem.Scrubbed.encapsH1024BodyContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, Arm.abi,
         Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
       sig_and_intros
       all_goals first

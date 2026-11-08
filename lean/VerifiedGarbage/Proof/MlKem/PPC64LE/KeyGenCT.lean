@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.MlKem.Scrubbed
 public import VerifiedGarbage.Proof.MlKem.PPC64LE.KeyGen
 import VerifiedGarbage.Proof.MlKem.PPC64LE.RowCT
 
@@ -275,16 +276,16 @@ theorem outcome {K : KemLay} (hK : K.WF) (s₀ : State) :
 
 /-! ## ML-KEM-768 -/
 
-theorem pre_of {s : State} (h : (Spec.MlKem.keyGenContract PPC64LE.abi 48).pre s) : Pre kl768 s := by
-  sig_pre [Spec.MlKem.keyGenContract, Spec.MlKem.keyGenSig, PPC64LE.abi, PPC64LE.argRegs] at h
+theorem pre_of {s : State} (h : (Proof.MlKem.Scrubbed.keyGenBodyContract PPC64LE.abi 48).pre s) : Pre kl768 s := by
+  sig_pre [Proof.MlKem.Scrubbed.keyGenBodyContract, Spec.MlKem.keyGenSig, PPC64LE.abi, PPC64LE.argRegs] at h
   obtain ⟨h0, h1, h2, d1, d2, d3, d4, d5, d6, b1, b2, b3, b4, f1, f2, f3, f4⟩ := h
   exact ⟨kl768_wf, kl768_calls, h0, h1, h2, d1, d2, d3, d4, d5, d6, b1, b2, b3, b4, f1, f2, f3, f4⟩
 
 theorem post_of {s₀ s : State} (h3 : s.gpr .r3 = if okK kl768 s₀ kl768.k then 1 else 0)
     (hek : bytesAt s.mem (pEk s₀) 1184 = EK kl768 s₀)
     (hdk : bytesAt s.mem (pDk s₀) 2400 = DK kl768 s₀) :
-    (Spec.MlKem.keyGenContract PPC64LE.abi 48).post s₀ s := by
-  sig_post [Spec.MlKem.keyGenContract, Spec.MlKem.keyGenSig, PPC64LE.abi, PPC64LE.argRegs]
+    (Proof.MlKem.Scrubbed.keyGenBodyContract PPC64LE.abi 48).post s₀ s := by
+  sig_post [Proof.MlKem.Scrubbed.keyGenBodyContract, Spec.MlKem.keyGenSig, PPC64LE.abi, PPC64LE.argRegs]
   have e : BitVec.setWidth 32 (if okK kl768 s₀ kl768.k then (1 : BitVec 64) else 0) =
       if okK kl768 s₀ kl768.k then 1 else 0 := by
     cases okK kl768 s₀ kl768.k <;> rfl
@@ -302,13 +303,13 @@ def satState : State where
   wr := [⟨0x2000, 1184⟩, ⟨0x3000, 2400⟩, ⟨0x10000, 32768⟩]
 
 theorem verified :
-    Verified PPC64LE.target Impl.MlKem.PPC64LE.keygen (Spec.MlKem.keyGenContract PPC64LE.abi 48) := by
+    Verified PPC64LE.target Impl.MlKem.PPC64LE.keygen (Proof.MlKem.Scrubbed.keyGenBodyContract PPC64LE.abi 48) := by
   refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, ?_⟩
   · obtain ⟨t, s', he, hpres, hsp, hlr, h3, hek, hdk⟩ := correct (pre_of hs)
     exact ⟨t, s', he, ⟨hpres, hsp, hlr⟩, post_of h3 hek hdk⟩
   · have hp₁ := pre_of h₁
     have hp₂ := pre_of h₂
-    sig_pub [Spec.MlKem.keyGenContract, Spec.MlKem.keyGenSig, PPC64LE.abi, PPC64LE.argRegs] at hpub
+    sig_pub [Proof.MlKem.Scrubbed.keyGenBodyContract, Spec.MlKem.keyGenSig, PPC64LE.abi, PPC64LE.argRegs] at hpub
     obtain ⟨hsp, hl, g3, g4, g5, g6⟩ := hpub
     have hr : ρ₀ kl768 s₁ = ρ₀ kl768 s₂ :=
       (List.map_inj_right (fun x y (e : x.toNat = y.toNat) => BitVec.eq_of_toNat_eq e)).mp hl
@@ -316,7 +317,7 @@ theorem verified :
   · refine ⟨satState, ?_⟩
     sig_apply_check
     · decide +kernel
-    · sig_reduce [Spec.MlKem.keyGenContract, Spec.MlKem.keyGenSig, PPC64LE.abi, PPC64LE.argRegs]
+    · sig_reduce [Proof.MlKem.Scrubbed.keyGenBodyContract, Spec.MlKem.keyGenSig, PPC64LE.abi, PPC64LE.argRegs]
       sig_and_intros
       all_goals first
         | trivial
