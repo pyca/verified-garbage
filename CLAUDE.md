@@ -129,13 +129,16 @@ own changes are rebuilt either way, on top of the restored build.
   implementation of a function for CPU features (or, where no feature
   tells apart the CPUs it is faster on, for a compilation target; see
   below) is a *variant*: named `<function>_<suffix>` (`_shani`, `_avx2`),
-  with the same signature and contract. Every function that calls a
-  function with variants is generic over them (step 4 of the
-  `adding-a-primitive` skill), so a new variant is emitted for its callers
-  too, and their callers, without anyone listing it, and their dispatchers
-  (below) run it: the Rust code calls only dispatchers, names no variant
-  and chooses nothing, so a new variant needs no Rust change. Never add a
-  caller that calls only the baseline implementation.
+  with the same signature and contract. The variants of a function that
+  others call are one list, best first
+  (`Proof/Variants/<Iface>/<Target>.lean`), and every function that calls
+  it is generic over them, its registration mapping over that list (step 4
+  of the `adding-a-primitive` skill): so a new variant, an element of the
+  list, is emitted for its callers too, and their callers, without editing
+  them, and their dispatchers (below) run it: the Rust code calls only
+  dispatchers, names no variant and chooses nothing, so a new variant needs
+  no Rust change. Never add a caller that calls only the baseline
+  implementation.
   The emitter writes each function's *dispatcher*, `<function>_auto`
   (`crate::arch::dispatch::<module>`, `Rust.dispatcher` in
   `lean/VerifiedGarbage/TCB/Rust.lean`), which runs
@@ -241,6 +244,9 @@ they only bind (`ci/check_registrations.py` checks it). The
 
 Many PRs are in flight at once, so adding an algorithm or an architecture
 should add files, not edit lists that every other PR edits too.
+A new variant is the exception: it is an element of its interface's list
+(`Proof/Variants/<Iface>/<Target>.lean`), placed where it ranks, which only
+the PRs about that one function's implementations edit.
 
 * A Rust module states the architectures it supports in its own file, as an
   inner `#![cfg(...)]` after its `//!` docs; the parent only says
@@ -437,10 +443,7 @@ lake env lean --run EmitOne.lean Md5.X86_64
 lake env lean --run EmitOne.lean --check Md5.X86_64
 ```
 
-Name a generic group (`<Iface>.<Target>`, e.g. `Sha256Compress.AArch64`, or
-`<Iface₁>.….<Ifaceₙ>.<Target>`, e.g. `Blake2b.Argon2Compress.X86_64`) to
-emit its generic callers for each variant (or combination of variants). It
-refuses a file that is new or that other registration files also emit into
+It refuses a file that is new or that other registration files also emit into
 (each table of constants has a file of its own, `consts/<name>.rs`, which it
 writes like any other); the full emitter handles those, and the checks below
 still run everything before pushing.
