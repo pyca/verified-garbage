@@ -42,28 +42,28 @@ def workRegs : List XReg := .xmm1 :: .xmm2 :: ghRegs
 
 /-- The three schedules have the same abstract steps: eight products,
 then one reduction, with idle slots in the longer AES schedules. -/
-theorem schedule_cases : ∀ nr < 15, nr = 10 ∨ nr = 12 ∨ nr = 14 → ∀ j < 15,
+theorem schedule_cases (hs : Bool) : ∀ nr < 15, nr = 10 ∨ nr = 12 ∨ nr = 14 → ∀ j < 15,
     1 ≤ j → j < nr →
     (hashCount nr j < 8 ∧ hashCount nr (j + 1) = hashCount nr j + 1 ∧
-      j + 1 < nr ∧ q8 nr j = gh8 0 ((hashCount nr j + 1) % 8)) ∨
+      j + 1 < nr ∧ q8 nr hs j = gh8 0 ((hashCount nr j + 1) % 8) hs) ∨
     (hashCount nr j = 8 ∧ hashCount nr (j + 1) = 8 ∧ j + 1 = nr ∧
-      q8 nr j = reduceFinal) ∨
-    (hashCount nr (j + 1) = hashCount nr j ∧ j + 1 < nr ∧ q8 nr j = []) := by
+      q8 nr hs j = reduceFinal) ∨
+    (hashCount nr (j + 1) = hashCount nr j ∧ j + 1 < nr ∧ q8 nr hs j = []) := by
   intro nr _ hn j _ hj hjn
   rcases hn with rfl | rfl | rfl <;> interval_cases j <;> simp [hashCount, q8]
 
 theorem q8_ok {s₀ start s : State} {P X : Nat → Block} {y : Block}
     {c nc : Nat} (hp : SPre s₀) (j : Nat) (hj : 1 ≤ j) (hjn : j < nr s₀)
-    (h : StageInv s₀ start P X y c nc (hashCount (nr s₀) j) false s)
-    (hx : HashSrc s₀ (start.gpr .rdx) start.mem X) :
-    WP isa (.block (q8 (nr s₀) j)) s fun t =>
+    (h : StageInv s₀ start P X y c nc (hashCount (nr s₀) j) false s) (hs : Bool)
+    (hx : HashSrc s₀ (hashBase start hs) start.mem X) :
+    WP isa (.block (q8 (nr s₀) hs j)) s fun t =>
       StageInv s₀ start P X y c nc (hashCount (nr s₀) (j + 1))
         (decide (nr s₀ ≤ j + 1)) t ∧ FlowFrame workRegs s t := by
   have hn : nr s₀ < 15 := by rcases hp.rounds with h | h | h <;> omega_arith
-  rcases schedule_cases _ hn hp.rounds j (by omega_arith) hj hjn with
+  rcases schedule_cases hs _ hn hp.rounds j (by omega_arith) hj hjn with
     ⟨h8, hnext, hlt, hc⟩ | ⟨h8, hnext, he, hc⟩ | ⟨hnext, hlt, hc⟩
   · rw [hc, hnext, show decide (nr s₀ ≤ j + 1) = false from decide_eq_false (by omega_arith)]
-    exact WP.mono (h.hashStep hp h8 hx) fun t ⟨ht, hf⟩ =>
+    exact WP.mono (h.hashStep hp h8 hs hx) fun t ⟨ht, hf⟩ =>
       ⟨ht, hf.mono (by decide)⟩
   · rw [hc, hnext, he, show decide (nr s₀ ≤ nr s₀) = true from decide_eq_true (Nat.le_refl _)]
     rw [h8] at h
@@ -116,8 +116,8 @@ open VG.Impl.Gcm.X86_64.StitchAvx8 (aregs q8 aesFixed)
 open VG.Spec.Gcm (Block)
 
 /-- The first two encryption batches omit hashing while filling the pipeline. -/
-def roundWork (nr : Nat) (hashing : Bool) (j : Nat) : List Instr :=
-  (if hashing then q8 nr j else []) ++ counterWork j
+def roundWork (nr : Nat) (hashing hs : Bool) (j : Nat) : List Instr :=
+  (if hashing then q8 nr hs j else []) ++ counterWork j
 
 def RoundInv (s₀ start : State) (P X : Nat → Block) (y : Block) (c : Nat)
     (hashing : Bool) (j : Nat) (s : State) : Prop :=
@@ -125,11 +125,11 @@ def RoundInv (s₀ start : State) (P X : Nat → Block) (y : Block) (c : Nat)
     (if hashing then hashCount (nr s₀) j else 0) (hashing && decide (nr s₀ ≤ j)) s
 
 theorem roundWork_ok {s₀ start s : State} {P X : Nat → Block} {y : Block}
-    {c : Nat} (hp : SPre s₀) (hashing : Bool) (j : Nat)
+    {c : Nat} (hp : SPre s₀) (hashing hs : Bool) (j : Nat)
     (hj : 1 ≤ j) (hjn : j < nr s₀) (h : RoundInv s₀ start P X y c hashing j s)
     (hv : (start.gpr .r8).setWidth 32 = (cb s₀).extractLsb' 0 32 + BitVec.ofNat 32 (c + 8))
-    (hx : hashing = true → HashSrc s₀ (start.gpr .rdx) start.mem X) :
-    WP isa (.block (roundWork (nr s₀) hashing j)) s fun t =>
+    (hx : hashing = true → HashSrc s₀ (hashBase start hs) start.mem X) :
+    WP isa (.block (roundWork (nr s₀) hashing hs j)) s fun t =>
       RoundInv s₀ start P X y c hashing (j + 1) t ∧ FlowFrame workRegs s t := by
   cases hashing with
   | false => exact counters_ok hp j hj h hv
@@ -138,26 +138,26 @@ theorem roundWork_ok {s₀ start s : State} {P X : Nat → Block} {y : Block}
       simpa only [RoundInv, Bool.true_eq, ite_true, Bool.true_and,
         show decide (nr s₀ ≤ j) = false from decide_eq_false (by omega_arith)] using h
     rw [roundWork, ite_eq_left rfl, WP.block_append_iff]
-    refine WP.mono (q8_ok hp j hj hjn hh (hx rfl))
+    refine WP.mono (q8_ok hp j hj hjn hh hs (hx rfl))
       fun t ⟨ht, hf⟩ => ?_
     exact WP.mono (counters_ok hp j hj ht hv) fun u ⟨hu, hfu⟩ => ⟨hu, hf.trans hfu⟩
 
 theorem aesPipeline_ok {s₀ start s : State} {P X : Nat → Block} {y : Block}
-    {c : Nat} (hp : SPre s₀) (hashing : Bool)
+    {c : Nat} (hp : SPre s₀) (hashing hs : Bool)
     (h : RoundInv s₀ start P X y c hashing 1 s)
     (hv : (start.gpr .r8).setWidth 32 = (cb s₀).extractLsb' 0 32 + BitVec.ofNat 32 (c + 8))
-    (hx : hashing = true → HashSrc s₀ (start.gpr .rdx) start.mem X) :
-    WP isa (aesFixed (nr s₀) aregs (roundWork (nr s₀) hashing)) s fun t =>
+    (hx : hashing = true → HashSrc s₀ (hashBase start hs) start.mem X) :
+    WP isa (aesFixed (nr s₀) aregs (roundWork (nr s₀) hashing hs)) s fun t =>
       (∀ b ∈ aregs, VG.Proof.Aes.X86_64.AesNi.st (t.lane b 0) =
         Spec.Aes.cipher (nr s₀) (sch s₀) (VG.Proof.Aes.X86_64.AesNi.st (s.lane b 0))) ∧
       RoundInv s₀ start P X y c hashing (nr s₀) t := by
   have hpos : 0 < nr s₀ := by rcases hp.rounds with h | h | h <;> omega_arith
   refine WP.mono (aesFixed_ok (nr s₀) hpos aregs (by decide) (by decide)
-    (roundWork (nr s₀) hashing) (RoundInv s₀ start P X y c hashing)
+    (roundWork (nr s₀) hashing hs) (RoundInv s₀ start P X y c hashing)
     (fun _ _ h => h.env.keys hp) (fun j hj hjn s h => ?_)
     (fun _ _ _ h hf => h.yframe hf) (fun s h => ?_) s h)
     fun t ⟨ha, hq⟩ => ⟨fun b hb => ha b hb 0 (by decide), hq⟩
-  · refine WP.mono (roundWork_ok hp hashing j hj hjn h hv hx)
+  · refine WP.mono (roundWork_ok hp hashing hs j hj hjn h hv hx)
       fun t ⟨ht, hf⟩ => ⟨ht, fun b hb l hl => ?_⟩
     exact hf.lane b ((by decide : ∀ r ∈ aregs, r ∉ workRegs) b hb) l (by
       change l < 1 at hl; omega_arith)
@@ -242,20 +242,20 @@ theorem loads_ok {s₀ s : State} {P : Nat → Block} {c : Nat} (hp : SPre s₀)
 /-- The first two phases of `batchL ld`: the counters from `ld`, then encrypt them
 while refreshing the next counters and, optionally, hashing eight inputs. -/
 theorem cipherBatch_ok {s₀ s : State} {P X : Nat → Block} {y : Block} {c : Nat}
-    (hp : SPre s₀) (hashing : Bool) (hE : Env s₀ P s) {ld : List Instr}
+    (hp : SPre s₀) (hashing hs : Bool) (hE : Env s₀ P s) {ld : List Instr}
     (hld : WP isa (.block ld) s (CountersIn s₀ c s))
     (hT : Templates s₀ c 0 s.mem) (hy : s.lane .xmm2 0 = y)
     (hv : (s.gpr .r8).setWidth 32 = (cb s₀).extractLsb' 0 32 + BitVec.ofNat 32 (c + 8))
-    (hx : hashing = true → HashSrc s₀ (s.gpr .rdx) s.mem X) :
+    (hx : hashing = true → HashSrc s₀ (hashBase s hs) s.mem X) :
     WP isa (.seq (.block ld)
-      (aesFixed (nr s₀) aregs (roundWork (nr s₀) hashing))) s fun t =>
+      (aesFixed (nr s₀) aregs (roundWork (nr s₀) hashing hs))) s fun t =>
       (∀ i < 8, XBinOp.eval .pshufb (t.lane (aregs.getD i .xmm3) 0) revMask =
         ciph s₀ (Nat.repeat inc32 (c + i) (cb s₀))) ∧
       StageInv s₀ s P X y c 8 (if hashing then 8 else 0) hashing t := by
   have h0 : StageInv s₀ s P X y c 0 0 false s :=
     ⟨hE, hT, hy, fun _ h => (h rfl).elim, fun _ _ => rfl, Frame.refl _ _⟩
   refine WP.seq (WP.mono hld fun t ⟨ht, hf⟩ => ?_)
-  refine WP.mono (aesPipeline_ok hp hashing (RoundInv.first hp hashing
+  refine WP.mono (aesPipeline_ok hp hashing hs (RoundInv.first hp hashing
     (h0.ldframe hf)) hv hx) fun u ⟨hu, hQ⟩ => ?_
   refine ⟨fun i hi => ?_, hQ.last hp⟩
   apply Eq.symm
@@ -299,7 +299,7 @@ private theorem seq_assoc {a b c : Prog isa} {s : State} {Q : State → Prop}
   WP.seq (WP.mono (WP.seq_iff.mp (WP.seq_iff.mp h)) fun _ h => WP.seq h)
 
 theorem batchL_ok {s₀ s : State} {P X : Nat → Block} {y : Block} {c : Nat}
-    (hp : SPre s₀) (ix hashing : Bool) (j : Nat) (hE : Env s₀ P s)
+    (hp : SPre s₀) (ix hashing hs : Bool) (j : Nat) (hE : Env s₀ P s)
     (hT : Templates s₀ c 0 s.mem) (hy : s.lane .xmm2 0 = y)
     (hv : (s.gpr .r8).setWidth 32 = (cb s₀).extractLsb' 0 32 + BitVec.ofNat 32 (c + 8))
     {ld : List Instr} (hld : WP isa (.block ld) s (CountersIn s₀ c s))
@@ -310,14 +310,14 @@ theorem batchL_ok {s₀ s : State} {P X : Nat → Block} {y : Block} {c : Nat}
     (hss : ∀ a b, a < b → b < 8 → Region.Disjoint
       ⟨s.gpr .rdx + BitVec.ofNat 64 (16 * (j + a)), 16⟩ ⟨srcAddr s ix (16 * (j + b)), 16⟩)
     (hsw : ∀ k < 8, Region.Disjoint ⟨srcAddr s ix (16 * (j + k)), 16⟩ (pR s₀))
-    (hx : hashing = true → HashSrc s₀ (s.gpr .rdx) s.mem X) :
+    (hx : hashing = true → HashSrc s₀ (hashBase s hs) s.mem X) :
     WP isa (batchL ld (nr s₀) 8 j (fun r => if hashing then
-      VG.Impl.Gcm.X86_64.StitchAvx8.q8 (nr s₀) r else []) ix) s
+      VG.Impl.Gcm.X86_64.StitchAvx8.q8 (nr s₀) hs r else []) ix) s
       (BatchPost s₀ s ix P X y c j hashing) := by
   have hsep : (batchR s j).Disjoint (pR s₀) := hp.d_p.sub_left hsub
   simp only [batchL, show aregs.take 8 = aregs from rfl]
   apply seq_assoc
-  refine WP.seq (WP.mono (cipherBatch_ok hp hashing hE hld hT hy hv hx)
+  refine WP.seq (WP.mono (cipherBatch_ok hp hashing hs hE hld hT hy hv hx)
     fun t ⟨hks, ht⟩ => ?_)
   rw [WP.block_append_iff]
   have hrdx : t.gpr .rdx = s.gpr .rdx := ht.regs _ (by decide)
@@ -364,7 +364,7 @@ theorem batchL_ok {s₀ s : State} {P X : Nat → Block} {y : Block} {c : Nat}
 
 
 theorem batch_ok {s₀ s : State} {P X : Nat → Block} {y : Block} {c : Nat}
-    (hp : SPre s₀) (ix hashing : Bool) (j : Nat) (hE : Env s₀ P s)
+    (hp : SPre s₀) (ix hashing hs : Bool) (j : Nat) (hE : Env s₀ P s)
     (hT : Templates s₀ c 0 s.mem) (hy : s.lane .xmm2 0 = y)
     (hv : (s.gpr .r8).setWidth 32 = (cb s₀).extractLsb' 0 32 + BitVec.ofNat 32 (c + 8))
     (hw : ∀ k < 8, InRegions s₀.wr (s.gpr .rdx + BitVec.ofNat 64 (16 * (j + k))) 16)
@@ -374,11 +374,11 @@ theorem batch_ok {s₀ s : State} {P X : Nat → Block} {y : Block} {c : Nat}
     (hss : ∀ a b, a < b → b < 8 → Region.Disjoint
       ⟨s.gpr .rdx + BitVec.ofNat 64 (16 * (j + a)), 16⟩ ⟨srcAddr s ix (16 * (j + b)), 16⟩)
     (hsw : ∀ k < 8, Region.Disjoint ⟨srcAddr s ix (16 * (j + k)), 16⟩ (pR s₀))
-    (hx : hashing = true → HashSrc s₀ (s.gpr .rdx) s.mem X) :
+    (hx : hashing = true → HashSrc s₀ (hashBase s hs) s.mem X) :
     WP isa (batch (nr s₀) 8 j (fun r => if hashing then
-      VG.Impl.Gcm.X86_64.StitchAvx8.q8 (nr s₀) r else []) ix) s
+      VG.Impl.Gcm.X86_64.StitchAvx8.q8 (nr s₀) hs r else []) ix) s
       (BatchPost s₀ s ix P X y c j hashing) :=
-  batchL_ok hp ix hashing j hE hT hy hv (loads_ok hp hE hT) hw hwrap hsub hsr hss hsw hx
+  batchL_ok hp ix hashing hs j hE hT hy hv (loads_ok hp hE hT) hw hwrap hsub hsr hss hsw hx
 end VG.Proof.Gcm.X86_64.StitchAvx8
 
 end
@@ -642,7 +642,7 @@ theorem CoreInv.bareBatchL {s₀ s : State} {ix : Bool} {P : Nat → Block} {dec
       (CoreInv s₀ ix P dec (c + 8) g) := by
   obtain ⟨hw, hwrap, hsub⟩ := h.batchBounds hp j hj hc
   obtain ⟨hsr, hss, hsw⟩ := h.srcBounds hp hS j hj hc
-  refine WP.mono (batchL_ok hp ix false j h.env h.templates (X := fun _ => 0) h.hash h.counter hld
+  refine WP.mono (batchL_ok hp ix false false j h.env h.templates (X := fun _ => 0) h.hash h.counter hld
     hw hwrap hsub hsr hss hsw (fun he => Bool.noConfusion he)) fun t ht => ?_
   refine ⟨ht.env, h.data.batch hp hS hc (by rw [h.addr, hj]) h.rbx ht, ht.templates, ?_,
     (ht.regs _ (by decide) (by decide)).trans h.cursor,

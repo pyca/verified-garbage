@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Load
 public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
 import VerifiedGarbage.Proof.Gcm.Powers
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecTo
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecToDec
 public import VerifiedGarbage.Proof.Framework.X86_64.Lane0
 public import VerifiedGarbage.Proof.Gcm.Poly
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Tail
@@ -442,18 +443,24 @@ theorem encRest_ok {s₀ s : State} (hp : SPre s₀) {P : Nat → Block} (hR : R
     WP isa (encRest (nr s₀)) s (EPost s₀) :=
   WP.mono (encRestI_ok (ix := false) hp (SrcOk.inplace hp) hR.toC (hR.src hp) hP) fun _ h => h.1
 
-/-- Decryption, after a setup that leaves what `setup` does: of any number
-of blocks from 16 on with `rem`, and of a multiple of 16 without it. -/
-theorem decRest_ok {s₀ s : State} (hp : SPre s₀) {rem : Bool} (hm : rem = false → nb s₀ % 16 = 0)
-    {P : Nat → Block} (hR : Ready s₀ P s) (hP : ∀ k < 8, x * φ (P k) = φ (hk s₀) ^ (8 - k)) :
-    WP isa (decRest (nr s₀) rem) s (DPost s₀) := by
-  rw [decRest]
+/-- Decryption, from a state `s` (`s₀` itself in place) where the setup
+has left what `setup` does of `s₀`, with the data where the loop reads and
+hashes it (`srcBlk s₀ ix`): of any number of blocks from 16 on with `rem`,
+and of a multiple of 16 without it; the 8 bytes at `scratch + 816` as in
+`s₀`. -/
+theorem decRestI_ok {s₀ s : State} {ix : Bool} (hp : SPre s₀) (hS : SrcOk s₀ ix) {rem : Bool}
+    (hm : rem = false → nb s₀ % 16 = 0) {P : Nat → Block} (hR : ReadyC s₀ P s)
+    (hsrc : ∀ k < nb s₀, Spec.Gcm.blockAt s.mem (srcBlk s₀ ix k) = blk s₀ k)
+    (hP : ∀ k < 8, x * φ (P k) = φ (hk s₀) ^ (8 - k)) :
+    WP isa (decRest (nr s₀) rem ix) s fun t =>
+      DPost s₀ t ∧ t.mem.readW (pp s₀ + 816) 64 = s₀.mem.readW (pp s₀ + 816) 64 := by
+  rw [decRest, ← body8_dec]
   have hlaw : HashLaw s₀ P := fun X y => finishHash X P (hk s₀) y hP
-  refine WP.seq (WP.mono (firstDec_ok hp hR) fun t hI => ?_)
-  have hl := loopRun_ok hp (SrcOk.inplace hp) hlaw hI hp.nb16
+  refine WP.seq (WP.mono (firstDec_ok hp hR hsrc) fun t hI => ?_)
+  have hl := loopRun_ok hp hS hlaw hI hp.nb16
   refine WP.seq (WP.mono hl fun u ⟨g, hg, hu⟩ => ?_)
   simp only [threshold, ite_true] at hg
-  refine WP.seq (WP.block_nil (WP.seq (WP.mono (finalDec_ok hp hlaw hu hg) fun w hw => ?_)))
+  refine WP.seq (WP.block_nil (WP.seq (WP.mono (finalDec_ok hp hS hlaw hu hg) fun w hw => ?_)))
   cases rem with
   | false =>
     have h8 := hu.multiple
@@ -461,7 +468,14 @@ theorem decRest_ok {s₀ s : State} (hp : SPre s₀) {rem : Bool} (hm : rem = fa
     have h16 := hm rfl
     simp only [tailSize, ite_true] at ht
     exact WP.seq (WP.block_nil (tailNone_ok hp hw (by omega_arith)))
-  | true => exact tailD_ok hp (tailLaw hP) hw
+  | true => exact tailD_ok hp hS (tailLaw hP) hw
+
+/-- Decryption in place, after a setup that leaves what `setup` does: of any
+number of blocks from 16 on with `rem`, and of a multiple of 16 without it. -/
+theorem decRest_ok {s₀ s : State} (hp : SPre s₀) {rem : Bool} (hm : rem = false → nb s₀ % 16 = 0)
+    {P : Nat → Block} (hR : Ready s₀ P s) (hP : ∀ k < 8, x * φ (P k) = φ (hk s₀) ^ (8 - k)) :
+    WP isa (decRest (nr s₀) rem) s (DPost s₀) :=
+  WP.mono (decRestI_ok (ix := false) hp (SrcOk.inplace hp) hm hR.toC (hR.src hp) hP) fun _ h => h.1
 
 /-- The setup leaves the end of the key schedule, which `dispatch` compares. -/
 theorem ready_rounds {s₀ s : State} {P : Nat → Block} (h : Ready s₀ P s) :
@@ -983,12 +997,23 @@ theorem Start.blk_view (k : Nat) (hk : k < nb s₀) :
       Start.slotR)
 
 /-- What the in-place proof concludes of the view, once `rbx` is restored,
-is `EPostTo` of `s₀`. -/
-theorem epostTo_of_view {w x : State} (hw : EPost (view t) w)
+is `EPostTo` of `s₀` (encrypting), or `DPostTo` (decrypting, `dec`). -/
+theorem postTo_of_view {dec : Bool} {w x : State} (hw : Post (view t) dec w)
     (hs : w.mem.readW (pp (view t) + 816) 64 = (view t).mem.readW (pp (view t) + 816) 64)
     (hx : x.gpr .rbx = w.mem.readW (w.gpr .r11 + BitVec.ofNat 64 816) 64)
     (hg : ∀ r, r ≠ .rbx → x.gpr r = w.gpr r) (hm : x.mem = w.mem) (hrd : x.rd = w.rd) (hwr : x.wr = w.wr) :
-    EPostTo s₀ x := by
+    if dec then DPostTo s₀ x else EPostTo s₀ x := by
+  -- What `EPost` and `DPost` both state.
+  have hw' : blocksAt w.mem (dp (view t)) (nb (view t)) =
+        Spec.Gcm.ctr32 (ciph (view t)) (cb (view t)) (blocksAt (view t).mem (dp (view t)) (nb (view t))) ∧
+      blockAt w.mem (cp (view t)) = Nat.repeat Spec.Gcm.inc32 (nb (view t)) (cb (view t)) ∧
+      Frame [cR (view t), yR (view t), dR (view t), pR (view t)] (view t).mem w.mem ∧
+      (∀ r, r ≠ .rax → r ≠ .rdx → r ≠ .r9 → r ≠ .r10 → w.gpr r = (view t).gpr r) ∧
+      w.rd = (view t).rd ∧ w.wr = (view t).wr := by
+    cases dec with
+    | false => exact ⟨hw.data, hw.ctr, hw.frame, hw.gpr, hw.rd, hw.wr⟩
+    | true => exact ⟨hw.data, hw.ctr, hw.frame, hw.gpr, hw.rd, hw.wr⟩
+  obtain ⟨wdata, wctr, wframe, wgpr, wrd, wwr⟩ := hw'
   have hp := h.pre
   have hv := spre_view h.spre
   have hkp : kp (view t) = kp s₀ := h.kp_eq
@@ -1023,12 +1048,13 @@ theorem epostTo_of_view {w x : State} (hw : EPost (view t) w)
     have hk'' := List.mem_range.mp hk'
     exact h.blk_view k hk''
   have hr11 : w.gpr .r11 = pp s₀ :=
-    (hw.gpr _ (by decide) (by decide) (by decide) (by decide)).trans hpp
-  refine ⟨?_, ?_, ?_, ?_, fun r h1 h2 h3 h4 h5 => ?_, hrd.trans (hw.rd.trans h.rd), hwr.trans (hw.wr.trans h.wr)⟩
-  · rw [hm, ← hd, ← hb, hw.data, hci, hcb, hsrc, hb]
-  · rw [hm, ← hc, hw.ctr, hb, hcb]
-  · rw [hm, ← hy, hw.y, hhk, hy₀, hd, hb]
-  · refine (h.frameV.sub fun r hr => ?_).trans (hw.frame.sub fun r hr => ?_) |>.trans (hm ▸ Frame.refl _ _)
+    (wgpr _ (by decide) (by decide) (by decide) (by decide)).trans hpp
+  have hdata : blocksAt x.mem (op s₀) (nb s₀) = Spec.Gcm.ctr32 (ciph s₀) (cb s₀) (blocksAt s₀.mem (sp s₀) (nb s₀)) := by
+    rw [hm, ← hd, ← hb, wdata, hci, hcb, hsrc, hb]
+  have hctr : blockAt x.mem (cp s₀) = Nat.repeat Spec.Gcm.inc32 (nb s₀) (cb s₀) := by
+    rw [hm, ← hc, wctr, hb, hcb]
+  have hframe : Frame [cR s₀, yR s₀, oR s₀, pR s₀] s₀.mem x.mem := by
+    refine (h.frameV.sub fun r hr => ?_).trans (wframe.sub fun r hr => ?_) |>.trans (hm ▸ Frame.refl _ _)
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact ⟨oR s₀, by simp, fun _ h => h⟩
@@ -1039,7 +1065,9 @@ theorem epostTo_of_view {w x : State} (hw : EPost (view t) w)
       · exact ⟨yR s₀, by simp, by simp only [Stitch.yR, hy]; exact fun _ h => h⟩
       · exact ⟨oR s₀, by simp, by simp only [Stitch.dR, Stitch.oR, hd, hb]; exact fun _ h => h⟩
       · exact ⟨pR s₀, by simp, by simp only [Stitch.pR, hpp]; exact fun _ h => h⟩
-  · by_cases hbx : r = .rbx
+  have hgpr : ∀ r, r ≠ .rax → r ≠ .rdx → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → x.gpr r = s₀.gpr r := by
+    intro r h1 h2 h3 h4 h5
+    by_cases hbx : r = .rbx
     · subst hbx
       have hs' : w.mem.readW (pp (view t) + BitVec.ofNat 64 816) 64 =
           (view t).mem.readW (pp (view t) + BitVec.ofNat 64 816) 64 := hs
@@ -1052,41 +1080,72 @@ theorem epostTo_of_view {w x : State} (hw : EPost (view t) w)
           exact hp.o_p.symm.sub_left Start.slotR) (by decide) |>.symm
       rw [e, h.mem]
       exact Mem.readW_writeW_self64 _ _ _
-    · rw [hg r hbx, hw.gpr r h1 h2 h4 h5]
+    · rw [hg r hbx, wgpr r h1 h2 h4 h5]
       exact h.gpr r hbx h3
+  have hrd' : x.rd = s₀.rd := hrd.trans (wrd.trans h.rd)
+  have hwr' : x.wr = s₀.wr := hwr.trans (wwr.trans h.wr)
+  cases dec with
+  | false =>
+    refine ⟨hdata, hctr, ?_, hframe, hgpr, hrd', hwr'⟩
+    rw [hm, ← hy, hw.y, hhk, hy₀, hd, hb]
+  | true =>
+    refine ⟨hdata, hctr, ?_, hframe, hgpr, hrd', hwr'⟩
+    rw [hm, ← hy, hw.y, hhk, hy₀, hsrc]
 
 end
 
-/-- The out-of-place loop after the setup `su` (`setup`, `setupR`), for a
-key context of kind `M`, of any number of blocks from 16 on. -/
-theorem encToWith_ok (M : CtxMode) {su : List Instr}
+/-- Out of place, after the setup `su` (`setup`, `setupR`), for a key
+context of kind `M`, of any number of blocks from 16 on: `rest nr`, which
+encrypts (decrypts, `dec`) as the in-place proof says of the view
+(`encRestI_ok`, `decRestI_ok`). -/
+theorem toWith_ok (M : CtxMode) (dec : Bool) {su : List Instr} {rest : Nat → Prog isa}
     (hsu : ∀ t, SPreM M t → WP isa (.block su) t fun u => ∃ P : Nat → Block, Ready t P u ∧
-      ∀ k < 8, x * φ (P k) = φ (hk t) ^ (8 - k)) :
-    StitchToOkM M (encToWith su) 1 := by
-  intro s₀ hp _
-  rw [encToWith]
+      ∀ k < 8, x * φ (P k) = φ (hk t) ^ (8 - k))
+    (hrest : ∀ {v s : State} {P : Nat → Block}, SPre v → SrcOk v true → ReadyC v P s →
+      (∀ k < nb v, blockAt s.mem (srcBlk v true k) = blk v k) →
+      (∀ k < 8, x * φ (P k) = φ (hk v) ^ (8 - k)) →
+      WP isa (rest (nr v)) s fun w => Post v dec w ∧ w.mem.readW (pp v + 816) 64 = v.mem.readW (pp v + 816) 64)
+    (s₀ : State) (hp : SPreTo M s₀) :
+    WP isa (Impl.Gcm.X86_64.StitchAvx8.toWith su rest) s₀ fun x =>
+      if dec then DPostTo s₀ x else EPostTo s₀ x := by
+  rw [Impl.Gcm.X86_64.StitchAvx8.toWith]
   refine WP.seq (WP.mono (toEntry_ok s₀ (in_sub hp.p_in (off := 816) (by decide)))
     fun s₁ ⟨m₁, b₁, r8₁, g₁, rd₁, wr₁⟩ => ?_)
   have st₁ : Start M s₀ s₁ := ⟨hp, b₁, r8₁, g₁, m₁, rd₁, wr₁⟩
-  let Q : State → Prop := fun w => EPost (view s₁) w ∧
+  let Q : State → Prop := fun w => Post (view s₁) dec w ∧
     w.mem.readW (pp (view s₁) + 816) 64 = (view s₁).mem.readW (pp (view s₁) + 816) 64
   let R : State → Prop := fun u => ∃ P : Nat → Block, Ready s₁ P u ∧ ∀ k < 8, x * φ (P k) = φ (hk s₁) ^ (8 - k)
-  have branch : ∀ n, ∀ u t, R u → RaxStep u t → nr s₁ = n → WP isa (encRest n true) t Q := by
+  have branch : ∀ n, ∀ u t, R u → RaxStep u t → nr s₁ = n → WP isa (rest n) t Q := by
     intro n u t ⟨P, hR, hP⟩ ht hn
     have hR' := hR.rax ht
-    have e := encRestI_ok (s₀ := view s₁) (s := t) (ix := true) (spre_view st₁.spre) st₁.srcOk
+    have e := hrest (v := view s₁) (s := t) (spre_view st₁.spre) st₁.srcOk
       (st₁.readyC hR') (st₁.src hR') (by rw [st₁.hk_view]; exact hP)
     have hnr : nr (view s₁) = n := hn
     rw [hnr] at e
     exact e
   refine WP.seq (WP.mono (dispatch_ok st₁.spre (hsu s₁ st₁.spreM) (fun s ⟨P, hR, _⟩ => ready_rounds hR)
     (branch 10) (branch 12) (branch 14)) fun w ⟨hw, hs⟩ => ?_)
-  have hr11 : w.gpr .r11 = pp s₀ :=
-    (hw.gpr _ (by decide) (by decide) (by decide) (by decide)).trans st₁.pp_eq
+  have hr11 : w.gpr .r11 = pp s₀ := by
+    have hg : ∀ r, r ≠ .rax → r ≠ .rdx → r ≠ .r9 → r ≠ .r10 → w.gpr r = (view s₁).gpr r := by
+      cases dec with
+      | false => exact hw.gpr
+      | true => exact hw.gpr
+    exact (hg _ (by decide) (by decide) (by decide) (by decide)).trans st₁.pp_eq
+  have hrdwr : w.rd = (view s₁).rd ∧ w.wr = (view s₁).wr := by
+    cases dec with
+    | false => exact ⟨hw.rd, hw.wr⟩
+    | true => exact ⟨hw.rd, hw.wr⟩
   refine WP.mono (toExit_ok w (by
-    rw [hw.rd, hw.wr, view_rd, view_wr, st₁.rd, st₁.wr, hr11]
+    rw [hrdwr.1, hrdwr.2, view_rd, view_wr, st₁.rd, st₁.wr, hr11]
     exact in_rdwr (in_sub hp.p_in (off := 816) (by decide))))
-    fun x ⟨hx, hg, hm, hrd, hwr⟩ => epostTo_of_view st₁ hw hs hx hg hm hrd hwr
+    fun x ⟨hx, hg, hm, hrd, hwr⟩ => postTo_of_view st₁ hw hs hx hg hm hrd hwr
+
+/-- The out-of-place encryption loop after the setup `su`. -/
+theorem encToWith_ok (M : CtxMode) {su : List Instr}
+    (hsu : ∀ t, SPreM M t → WP isa (.block su) t fun u => ∃ P : Nat → Block, Ready t P u ∧
+      ∀ k < 8, x * φ (P k) = φ (hk t) ^ (8 - k)) :
+    StitchToOkM M (encToWith su) 1 := fun s₀ hp _ =>
+  toWith_ok M false hsu (fun hv hS hR hsrc hP => encRestI_ok hv hS hR hsrc hP) s₀ hp
 
 /-- Out of place, the setup computing the powers, for any key context. -/
 theorem stitchTo_ok (M : CtxMode) : StitchToOkM M encTo 1 :=
@@ -1098,5 +1157,12 @@ theorem stitchToR_okN (np : Nat) (hn : 8 ≤ np ∧ np ≤ 24 := by decide) :
   encToWith_ok (CtxMode.preparedN np hn) fun _ hp => setupR_ok hp.toPrepared hn.1
 
 theorem stitchToR_ok : StitchToOkM CtxMode.prepared encToR 1 := stitchToR_okN 24
+
+/-- Decryption out of place with a prepared key context, of any number of
+blocks from 16 on. -/
+theorem decToR_okN (np : Nat) (hn : 8 ≤ np ∧ np ≤ 24 := by decide) :
+    StitchToDecOkM (CtxMode.preparedN np hn) Impl.Gcm.X86_64.StitchAvx8.decToR 1 := fun s₀ hp _ =>
+  toWith_ok (CtxMode.preparedN np hn) true (fun _ hp => setupR_ok hp.toPrepared hn.1)
+    (fun hv hS hR hsrc hP => decRestI_ok (rem := true) hv hS (fun h => Bool.noConfusion h) hR hsrc hP) s₀ hp
 
 end VG.Proof.Gcm.X86_64.StitchAvx8

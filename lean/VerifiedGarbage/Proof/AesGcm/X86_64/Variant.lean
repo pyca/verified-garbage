@@ -225,7 +225,7 @@ the in-place loop's, out of place. -/
 def decToR : StitchToName → Prog isa
   | .vaes => Impl.Gcm.X86_64.StitchToDec.decToR
   | .vaesAvx512 => Impl.Gcm.X86_64.StitchZH.decToR
-  | .aesniAvx => Impl.Gcm.X86_64.StitchToDec.decToR
+  | .aesniAvx => Impl.Gcm.X86_64.StitchAvx8.decToR
 
 end StitchToName
 
