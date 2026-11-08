@@ -10,7 +10,7 @@ public import VerifiedGarbage.Impl.EcKey.PPC64LE
 
 The comb of `Impl/Weierstrass/PPC64LE/TComb.lean` with P-256's tables
 (`Impl/P256/CombTable7.lean`, the other targets'), and public keys with it in
-place of the ladder for `[d]G`. -/
+place of the ladder for `[d]G`, and signatures with it for `[k]G`. -/
 
 @[expose] public section
 
@@ -43,3 +43,10 @@ def publicKeyP256Comb : Prog VG.PPC64LE.isa :=
   Cfg.publicKeyWith Impl.Ecdsa.PPC64LE.p256 Weierstrass.PPC64LE.mulGeneratorP256
 
 end VG.Impl.EcKey.PPC64LE
+
+namespace VG.Impl.Ecdsa.PPC64LE
+
+/-- `vg_ecdsa_p256_sign`, with `[k]G` by the comb. -/
+def signP256Comb : Prog VG.PPC64LE.isa := p256.signWith Weierstrass.PPC64LE.mulGeneratorP256
+
+end VG.Impl.Ecdsa.PPC64LE

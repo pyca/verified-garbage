@@ -29,6 +29,7 @@ open VG VG.PPC64LE
 /-- `vg_ecdsa_secp256k1_sign`, with secp256k1's group law `hL`. -/
 def secp256k1Core (hL : Weierstrass.Law Spec.Secp256k1.curve) : Core where
   E := Spec.Ecdsa.Secp256k1.inst
+  cs := []
   C := Impl.Ecdsa.PPC64LE.signSecp256k1
   N := "vg_ecdsa_secp256k1_sign_k"
   V := (Proof.Ecdsa.PPC64LE.Secp256k1.sign_verified hL).1
@@ -64,7 +65,7 @@ def secp256k1R (hL : Weierstrass.Law Spec.Secp256k1.curve) : RfcCurve where
 theorem secp256k1T_verified (hL : Weierstrass.Law Spec.Secp256k1.curve) (vs : List Proof.HmacTable.PPC64LE.HVar)
     (hv : OK vs) :
     Verified PPC64LE.target (signCodeT (secp256k1R hL) Spec.Ecdsa.Rfc6979.Curves.secp256k1.tries vs)
-      (specK Spec.Ecdsa.Rfc6979.Curves.secp256k1 vs) :=
-  signT_verified ⟨rfl, by decide, by decide⟩ secp256k1_blk rfl hv (by decide)
+      (specK Spec.Ecdsa.Rfc6979.Curves.secp256k1 [] vs) :=
+  signT_verified ⟨rfl, by decide, by decide⟩ secp256k1_blk rfl hv (sat_nil hv (by decide) rfl)
 
 end VG.Proof.Ecdsa.Rfc6979.PPC64LE

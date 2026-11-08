@@ -3,15 +3,17 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Table
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 public import VerifiedGarbage.Proof.Weierstrass.Law
-public import VerifiedGarbage.Impl.Ecdsa.P256.PPC64LE
+public import VerifiedGarbage.Impl.Ecdsa.P256.PPC64LEComb
 public import VerifiedGarbage.Spec.Ecdsa.P256
-public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Verified
+public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P256Comb
+import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P256CombLit
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Table
 meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 meta import VerifiedGarbage.Proof.Weierstrass.Law
-meta import VerifiedGarbage.Impl.Ecdsa.P256.PPC64LE
+meta import VerifiedGarbage.Impl.Ecdsa.P256.PPC64LEComb
 meta import VerifiedGarbage.Spec.Ecdsa.P256
-meta import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P256Comb
+meta import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P256CombLit
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 
 /-! # Deterministic ECDSA on PPC64LE: P-256
@@ -26,14 +28,15 @@ namespace VG.Proof.Ecdsa.Rfc6979.PPC64LE
 
 open VG VG.PPC64LE
 
-/-- `vg_ecdsa_p256_sign`, with P-256's group law `hL`. -/
+/-- `vg_ecdsa_p256_sign`, with `[k]G` by the comb, and P-256's group law `hL`. -/
 def p256Core (hL : Weierstrass.Law Spec.P256.curve) : Core where
   E := Spec.Ecdsa.P256.inst
-  C := Impl.Ecdsa.PPC64LE.signP256
+  cs := Impl.Weierstrass.PPC64LE.p256CombConsts
+  C := Impl.Ecdsa.PPC64LE.signP256Comb
   N := "vg_ecdsa_p256_sign_k"
-  V := (Proof.Ecdsa.PPC64LE.sign_verified hL).1
-  ct := (Proof.Ecdsa.PPC64LE.sign_verified hL).2.1
-  d := by decide +kernel
+  V := (Proof.Ecdsa.PPC64LE.combSign_verified hL).1
+  ct := (Proof.Ecdsa.PPC64LE.combSign_verified hL).2.1
+  d := by lit_decide
 
 theorem p256_nBits : Spec.Ecdsa.nBits Spec.P256.curve = 256 := by
   show Spec.P256.curve.n.log2 + 1 = 256
@@ -62,9 +65,11 @@ def p256R (hL : Weierstrass.Law Spec.P256.curve) : RfcCurve where
 
 /-- `vg_ecdsa_p256_sign`, with the tables of `vs`, meets `TableInstance.signContract`. -/
 theorem p256T_verified (hL : Weierstrass.Law Spec.P256.curve) (vs : List Proof.HmacTable.PPC64LE.HVar)
-    (hv : OK vs) :
+    (hv : OK vs ∧ "VG_P256_COMB" ∉ Proof.HmacTable.PPC64LE.names vs) :
     Verified PPC64LE.target (signCodeT (p256R hL) Spec.Ecdsa.Rfc6979.Curves.p256.tries vs)
-      (specK Spec.Ecdsa.Rfc6979.Curves.p256 vs) :=
-  signT_verified ⟨rfl, by decide, by decide⟩ p256_blk rfl hv (by decide)
+      (specK Spec.Ecdsa.Rfc6979.Curves.p256 Impl.Weierstrass.PPC64LE.p256CombConsts vs) :=
+  signT_verified ⟨rfl, by decide, by decide⟩ p256_blk rfl hv.1
+    (sat_one hv.1 Proof.P256.PPC64LE.combSatMem hv.2
+      (by rw [Proof.P256.PPC64LE.comb_words_length]; decide) Proof.P256.PPC64LE.combSatMem_held (by decide) rfl)
 
 end VG.Proof.Ecdsa.Rfc6979.PPC64LE

@@ -415,7 +415,7 @@ theorem hmacKB_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g lr m₀ 
     · exact hL.low_scr (by omega) |>.symm
 
 /-- What the steps need of the layout: the scalars' bytes, and the table of `P`. -/
-def HOk (P : RfcHash) (L : Lay dn) : Prop := L.q = P.Q ∧ TabL P L
+def HOk (P : RfcHash) (L : Lay dn) : Prop := L.q = P.Q ∧ TabL P L ∧ L.cs = P.R.C.cs
 
 /-- `K = HMAC_K(V ‖ m)`, then `V = HMAC_K(V)`, for the message `m = b (‖ d ‖ h)`
 (of `mlen P full` bytes), `d ‖ h` written if `wr`, and kept since if not. -/
@@ -429,7 +429,7 @@ theorem rekey_gen (hL : L.Ok) (hq : HOk P L) {t : State} (hc : Ctx L g lr m₀ t
             else [])) ∧
         vOf P L t'.mem = P.mac (kOf P L t'.mem) (vOf P L t.mem) ∧ SavedK P L t'.mem (kOf P L t'.mem) ∧
         tailOf P L t'.mem = (if wr then Spec.Sha256.bytesAt t.mem L.d P.Q ++ hOf P L t.mem else tailOf P L t.mem) := by
-  have hT := hq.2
+  have hT := hq.2.1
   refine WP.seq (WP.mono (msgPtrs_ok hL hc) fun p ⟨hcp, hmp, _, h11, h9, h10⟩ => ?_)
   rw [← hmp] at hS ⊢
   refine WP.seq (WP.mono (msg_ok (P := P) hL hq.1 hcp h11 h9 h10 hb wr) fun u ⟨hcu, hfu, hbu, htu⟩ => ?_)

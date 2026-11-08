@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Contract
 public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Hash
 public import VerifiedGarbage.Proof.Framework.PPC64LE.CallAny
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Consts
 public import VerifiedGarbage.Spec.Hmac.Generic
 public import VerifiedGarbage.Spec.Ecdsa.Generic
 public import VerifiedGarbage.Proof.Ecdsa.Contract
@@ -200,17 +201,30 @@ theorem finCall (P : Kit) {n : String} {s : State} {inner outer out scr : Addr}
     exact hQ s' h₁ h₂ h₃ (Frame.below_mono h₄ (by have := P.dF; omega_arith) (by omega_arith)) hcs hpost
 
 /-- The signature with a given `k`, as the code calls it: the curve's
-contract, its code and its name. -/
+contract, with its tables of constants `cs` (none for most curves), its code
+and its name. -/
 structure Core where
   E : Spec.Ecdsa.Instance
   C : Prog isa
   N : String
-  V : ∀ s, (Proof.Ecdsa.Instance.signContract E PPC64LE.abi).pre s → ∃ t s', Exec isa C s t s' ∧ abiPreserved s s' ∧
-    (Proof.Ecdsa.Instance.signContract E PPC64LE.abi).post s s'
-  ct : ConstantTime isa (Proof.Ecdsa.Instance.signContract E PPC64LE.abi).pre (Proof.Ecdsa.Instance.signContract E PPC64LE.abi).pub C
+  cs : List (String × List (BitVec 64)) := []
+  V : ∀ s, (Proof.Ecdsa.Instance.signContract E (PPC64LE.abi.withConsts cs)).pre s → ∃ t s', Exec isa C s t s' ∧
+    abiPreserved s s' ∧ (Proof.Ecdsa.Instance.signContract E (PPC64LE.abi.withConsts cs)).post s s'
+  ct : ConstantTime isa (Proof.Ecdsa.Instance.signContract E (PPC64LE.abi.withConsts cs)).pre
+    (Proof.Ecdsa.Instance.signContract E (PPC64LE.abi.withConsts cs)).pub C
   d : sdepth C ≤ 96
 
-theorem corePre (R : Core) {s : State} {out d dg k scr : Addr}
+/-- What `core`'s tables need of the caller: their words, and their regions
+apart from `out` and `scratch` and aligned. -/
+def CoreTables (cs : List (String × List (BitVec 64))) (s : State) (out : Region) (scr : Addr) : Prop :=
+  Abi.constsHeld s.mem s.syms cs ∧
+    ∀ T ∈ Abi.constRegions s.syms cs, T.base.toNat + T.len ≤ 2 ^ 64 ∧ T.Disjoint out ∧
+      T.Disjoint ⟨scr, 8192⟩ ∧ T.base.toNat % 64 = 0
+
+theorem constRegions_length (f : String → Addr) (cs : List (String × List (BitVec 64))) :
+    (Abi.constRegions f cs).length = cs.length := List.length_map _
+
+theorem corePre0 (R : Core) {s : State} {out d dg k scr : Addr}
     (h3 : s.gpr .r3 = out) (h4 : s.gpr .r4 = d) (h5 : s.gpr .r5 = dg) (h6 : s.gpr .r6 = k)
     (h7 : s.gpr .r7 = scr)
     (o₁ : Region.Disjoint ⟨out, 2 * R.E.curve.len⟩ ⟨d, R.E.curve.len⟩)
@@ -229,6 +243,68 @@ theorem corePre (R : Core) {s : State} {out d dg k scr : Addr}
   simp only [h3, h4, h5, h6, h7]
   exact ⟨trivial, trivial, o₁, o₂, o₃, o₄, c₁, c₂, c₃, n₁, n₂, n₃, n₄, n₅⟩
 
+theorem corePre (R : Core) {s : State} {out d dg k scr : Addr}
+    (h3 : s.gpr .r3 = out) (h4 : s.gpr .r4 = d) (h5 : s.gpr .r5 = dg) (h6 : s.gpr .r6 = k)
+    (h7 : s.gpr .r7 = scr)
+    (o₁ : Region.Disjoint ⟨out, 2 * R.E.curve.len⟩ ⟨d, R.E.curve.len⟩)
+    (o₂ : Region.Disjoint ⟨out, 2 * R.E.curve.len⟩ ⟨dg, R.E.curve.len⟩)
+    (o₃ : Region.Disjoint ⟨out, 2 * R.E.curve.len⟩ ⟨k, R.E.curve.len⟩)
+    (o₄ : Region.Disjoint ⟨out, 2 * R.E.curve.len⟩ ⟨scr, 8192⟩)
+    (c₁ : Region.Disjoint ⟨d, R.E.curve.len⟩ ⟨scr, 8192⟩) (c₂ : Region.Disjoint ⟨dg, R.E.curve.len⟩ ⟨scr, 8192⟩)
+    (c₃ : Region.Disjoint ⟨k, R.E.curve.len⟩ ⟨scr, 8192⟩)
+    (n₁ : out.toNat + 2 * R.E.curve.len ≤ 2 ^ 64) (n₂ : d.toNat + R.E.curve.len ≤ 2 ^ 64)
+    (n₃ : dg.toNat + R.E.curve.len ≤ 2 ^ 64) (n₄ : k.toNat + R.E.curve.len ≤ 2 ^ 64)
+    (n₅ : scr.toNat + 8192 ≤ 2 ^ 64) (ht : CoreTables R.cs s ⟨out, 2 * R.E.curve.len⟩ scr)
+    : (Proof.Ecdsa.Instance.signContract R.E (PPC64LE.abi.withConsts R.cs)).pre (s.callEntry.withRegions
+      ([⟨d, R.E.curve.len⟩, ⟨dg, R.E.curve.len⟩, ⟨k, R.E.curve.len⟩] ++ Abi.constRegions s.syms R.cs)
+        [⟨out, 2 * R.E.curve.len⟩, ⟨scr, 8192⟩]) := by
+  have base := corePre0 R h3 h4 h5 h6 h7 o₁ o₂ o₃ o₄ c₁ c₂ c₃ n₁ n₂ n₃ n₄ n₅
+  have csy : s.callEntry.syms = s.syms := rfl
+  revert ht base
+  generalize R.cs = cs
+  intro ht base
+  cases cs with
+  | nil =>
+    rw [show Abi.constRegions s.syms [] = [] from rfl, List.append_nil]
+    exact base
+  | cons c₀ cs =>
+    refine pre_consts.mpr ⟨?_, ?_⟩
+    · have tk : List.take ((([⟨d, R.E.curve.len⟩, ⟨dg, R.E.curve.len⟩, ⟨k, R.E.curve.len⟩] : List Region) ++
+          Abi.constRegions s.syms (c₀ :: cs)).length - (c₀ :: cs).length)
+          (([⟨d, R.E.curve.len⟩, ⟨dg, R.E.curve.len⟩, ⟨k, R.E.curve.len⟩] : List Region) ++ Abi.constRegions s.syms (c₀ :: cs)) =
+          ([⟨d, R.E.curve.len⟩, ⟨dg, R.E.curve.len⟩, ⟨k, R.E.curve.len⟩] : List Region) := by
+        rw [show ((([⟨d, R.E.curve.len⟩, ⟨dg, R.E.curve.len⟩, ⟨k, R.E.curve.len⟩] : List Region) ++
+          Abi.constRegions s.syms (c₀ :: cs)).length - (c₀ :: cs).length) = 3 by
+            simp only [List.length_append, constRegions_length, List.length_cons, List.length_nil]; omega]
+        rfl
+      show (Proof.Ecdsa.Instance.signContract R.E PPC64LE.abi).pre (s.callEntry.withRegions
+        (List.take ((([⟨d, R.E.curve.len⟩, ⟨dg, R.E.curve.len⟩, ⟨k, R.E.curve.len⟩] : List Region) ++
+          Abi.constRegions s.syms (c₀ :: cs)).length - (c₀ :: cs).length)
+          (([⟨d, R.E.curve.len⟩, ⟨dg, R.E.curve.len⟩, ⟨k, R.E.curve.len⟩] : List Region) ++ Abi.constRegions s.syms (c₀ :: cs)))
+        [⟨out, 2 * R.E.curve.len⟩, ⟨scr, 8192⟩])
+      rw [tk]; exact base
+    · obtain ⟨held, tbl⟩ := ht
+      refine ⟨?_, ?_, ?_, ?_⟩
+      · show List.drop ((([⟨d, R.E.curve.len⟩, ⟨dg, R.E.curve.len⟩, ⟨k, R.E.curve.len⟩] : List Region) ++
+          Abi.constRegions s.syms (c₀ :: cs)).length - (c₀ :: cs).length)
+          (([⟨d, R.E.curve.len⟩, ⟨dg, R.E.curve.len⟩, ⟨k, R.E.curve.len⟩] : List Region) ++ Abi.constRegions s.syms (c₀ :: cs)) =
+          Abi.constRegions s.syms (c₀ :: cs)
+        rw [show ((([⟨d, R.E.curve.len⟩, ⟨dg, R.E.curve.len⟩, ⟨k, R.E.curve.len⟩] : List Region) ++
+          Abi.constRegions s.syms (c₀ :: cs)).length - (c₀ :: cs).length) = 3 by
+            simp only [List.length_append, constRegions_length, List.length_cons, List.length_nil]; omega]
+        rfl
+      · exact held
+      · intro T hT
+        obtain ⟨t1, t2, t3, -⟩ := tbl T hT
+        refine ⟨t1, fun r hr => ?_, fun r hr => ?_⟩
+        · simp only [State.withRegions_wr, List.mem_cons, List.not_mem_nil, or_false] at hr
+          rcases hr with rfl | rfl
+          · exact t2
+          · exact t3
+        · simp [PPC64LE.abi, stackBelow] at hr
+      · intro T hT
+        exact (tbl T hT).2.2.2
+
 /-- The call of the signature with `k`: `out` of `2 Q` bytes, `d`, the
 digest and `k` of `Q` each, the working space at `scr`. -/
 theorem coreCall (R : Core) {s : State} {out d dg k scr : Addr}
@@ -242,9 +318,9 @@ theorem coreCall (R : Core) {s : State} {out d dg k scr : Addr}
     (c₃ : Region.Disjoint ⟨k, R.E.curve.len⟩ ⟨scr, 8192⟩)
     (n₁ : out.toNat + 2 * R.E.curve.len ≤ 2 ^ 64) (n₂ : d.toNat + R.E.curve.len ≤ 2 ^ 64)
     (n₃ : dg.toNat + R.E.curve.len ≤ 2 ^ 64) (n₄ : k.toNat + R.E.curve.len ≤ 2 ^ 64)
-    (n₅ : scr.toNat + 8192 ≤ 2 ^ 64)
+    (n₅ : scr.toNat + 8192 ≤ 2 ^ 64) (ht : CoreTables R.cs s ⟨out, 2 * R.E.curve.len⟩ scr)
     (hc : Covers ([⟨d, R.E.curve.len⟩, ⟨dg, R.E.curve.len⟩, ⟨k, R.E.curve.len⟩] ++
-      [⟨out, 2 * R.E.curve.len⟩, ⟨scr, 8192⟩]) (s.rd ++ s.wr))
+      Abi.constRegions s.syms R.cs ++ [⟨out, 2 * R.E.curve.len⟩, ⟨scr, 8192⟩]) (s.rd ++ s.wr))
     (hw : Covers [⟨out, 2 * R.E.curve.len⟩, ⟨scr, 8192⟩] s.wr) {Q : State → Prop}
     (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →
       Frame ([⟨out, 2 * R.E.curve.len⟩, ⟨scr, 8192⟩] ++ [below s.sp 96]) s.mem s'.mem →
@@ -258,14 +334,20 @@ theorem coreCall (R : Core) {s : State} {out d dg k scr : Addr}
             Spec.Ecdsa.bytesAt s'.mem out (2 * R.E.curve.len) = List.replicate (2 * R.E.curve.len) 0) →
       Q s') :
     WP isa (.call R.N R.C) s Q := by
-  refine WP.callAny (k := Proof.Ecdsa.Instance.signContract R.E PPC64LE.abi) R.V
-    (rd := [⟨d, R.E.curve.len⟩, ⟨dg, R.E.curve.len⟩, ⟨k, R.E.curve.len⟩])
+  refine WP.callAny (k := Proof.Ecdsa.Instance.signContract R.E (PPC64LE.abi.withConsts R.cs)) R.V
+    (rd := [⟨d, R.E.curve.len⟩, ⟨dg, R.E.curve.len⟩, ⟨k, R.E.curve.len⟩] ++ Abi.constRegions s.syms R.cs)
     (wr := [⟨out, 2 * R.E.curve.len⟩, ⟨scr, 8192⟩])
-    (corePre R h3 h4 h5 h6 h7 o₁ o₂ o₃ o₄ c₁ c₂ c₃ n₁ n₂ n₃ n₄ n₅) hc hw ?_ (by have := R.d; omega_arith)
+    (corePre R h3 h4 h5 h6 h7 o₁ o₂ o₃ o₄ c₁ c₂ c₃ n₁ n₂ n₃ n₄ n₅ ht) hc hw ?_ (by have := R.d; omega_arith)
   · intro s' h₁ h₂ h₃ h₄ hcs hpost
+    have hpost' : (Proof.Ecdsa.Instance.signContract R.E PPC64LE.abi).post
+        (s.callEntry.withRegions ([⟨d, R.E.curve.len⟩, ⟨dg, R.E.curve.len⟩, ⟨k, R.E.curve.len⟩] ++
+          Abi.constRegions s.syms R.cs) [⟨out, 2 * R.E.curve.len⟩, ⟨scr, 8192⟩]) s' := by
+      revert hpost; generalize R.cs = cs; cases cs with
+      | nil => exact id
+      | cons c₀ cs => exact post_consts.mp
     sig_post [Proof.Ecdsa.Instance.signContract, Proof.Ecdsa.Instance.signSig, Spec.Ecdsa.scratchWords,
-      PPC64LE.abi, PPC64LE.argRegs, stackBelow] at hpost
-    simp only [h3, h4, h5, h6] at hpost
-    exact hQ s' h₁ h₂ h₃ (Frame.below_mono h₄ (by have := R.d; omega_arith) (by omega_arith)) hcs hpost
+      PPC64LE.abi, PPC64LE.argRegs, stackBelow] at hpost'
+    simp only [h3, h4, h5, h6] at hpost'
+    exact hQ s' h₁ h₂ h₃ (Frame.below_mono h₄ (by have := R.d; omega_arith) (by omega_arith)) hcs hpost'
 
 end VG.Proof.Ecdsa.Rfc6979.PPC64LE

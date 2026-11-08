@@ -324,17 +324,17 @@ def TabFn (P : RfcHash) (j : Nat) (n : String) (c : Prog isa) (ts : List (String
 
 theorem tfn_init : TabFn P 0 P.v.initN P.v.H.init P.f.init := fun L _ _ _ _ _ hq hc => by
   have hok := hc.tabOk; have htm := hc.tabMem; have hf := hc.fsy
-  rw [hq.2.1, hq.2.2] at hok; rw [hq.2.1] at htm hf
+  rw [hq.2.1.1, hq.2.1.2] at hok; rw [hq.2.1.1] at htm hf
   exact ⟨htm.1, hok.i, hf _ (by simp)⟩
 
 theorem tfn_upd : TabFn P 1 P.v.H.updN P.v.H.updC P.f.upd := fun L _ _ _ _ _ hq hc => by
   have hok := hc.tabOk; have htm := hc.tabMem; have hf := hc.fsy
-  rw [hq.2.1, hq.2.2] at hok; rw [hq.2.1] at htm hf
+  rw [hq.2.1.1, hq.2.1.2] at hok; rw [hq.2.1.1] at htm hf
   exact ⟨htm.2.1, hok.u, hf _ (by simp)⟩
 
 theorem tfn_fin : TabFn P 2 P.v.finN P.v.H.finalize P.f.fin := fun L _ _ _ _ _ hq hc => by
   have hok := hc.tabOk; have htm := hc.tabMem; have hf := hc.fsy
-  rw [hq.2.1, hq.2.2] at hok; rw [hq.2.1] at htm hf
+  rw [hq.2.1.1, hq.2.1.2] at hok; rw [hq.2.1.1] at htm hf
   exact ⟨htm.2.2, hok.f, hf _ (by simp)⟩
 
 /-- What only `r12` changing keeps. -/
@@ -613,20 +613,20 @@ theorem finR_taint : TaintOk [] (Cfg.finArgs 1 fK) := ⟨_, by taint_decide⟩
 /-- HMAC's states for `K`. -/
 theorem initK_ct {Φ : Pred P} : RelCT isa (Two P Φ) (cfgOf P).initK fun _ _ => True :=
   (two_wp (Ψ := IA P) (two_blk initArgs_taint) fun _ _ _ _ _ hL hq hc _ =>
-    WP.mono (initArgs_ok hL hq.2 hc) fun _ ⟨c, _, _, a⟩ => ⟨c, a⟩).seq
+    WP.mono (initArgs_ok hL hq.2.1 hc) fun _ ⟨c, _, _, a⟩ => ⟨c, a⟩).seq
     (tcall_ct (by decide) tw0 tfn_init r12_ia (fun _ _ _ _ _ h => h.2.2.2.2.2) init_call_ct)
 
 /-- The inner state updated with `V`. -/
 theorem updV_ct {Φ : Pred P} : RelCT isa (Two P Φ) (cfgOf P).updV fun _ _ => True :=
   (two_wp (Ψ := UA P P.v.H.B (fun L => L.B + BitVec.ofNat 64 192) P.v.H.D) (two_blk updVArgs_taint)
-    fun _ _ _ _ _ hL hq hc _ => WP.mono (updVArgs_ok hL hq.2 hc) fun _ ⟨c, _, _, a⟩ => ⟨c, a⟩).seq
+    fun _ _ _ _ _ hL hq hc _ => WP.mono (updVArgs_ok hL hq.2.1 hc) fun _ ⟨c, _, _, a⟩ => ⟨c, a⟩).seq
     (tcall_ct (by decide) tw1 tfn_upd r12_ua (fun _ _ _ _ _ h => h.2.2.2.2.2) (upd_call_ct fun L _ => .inl ⟨192, rfl, by omega, by nums⟩))
 
 /-- The inner state updated with the message's `len` bytes. -/
 theorem updM_ct {Φ : Pred P} {len : Nat} (hlen : len ≤ 256) :
     RelCT isa (Two P Φ) ((cfgOf P).updM len) fun _ _ => True :=
   (two_wp (Ψ := UA P (P.v.H.B + P.v.H.D) (fun L => L.scr + BitVec.ofNat 64 sMsg) len) (two_blk (updMArgs_taint len))
-    fun _ _ _ _ _ hL hq hc _ => WP.mono (updMArgs_ok hL hq.2 hc (len := len) (by omega))
+    fun _ _ _ _ _ hL hq hc _ => WP.mono (updMArgs_ok hL hq.2.1 hc (len := len) (by omega))
       fun _ ⟨c, _, _, a⟩ => ⟨c, a⟩).seq
     (tcall_ct (by decide) tw1 tfn_upd r12_ua (fun _ _ _ _ _ h => h.2.2.2.2.2)
       (upd_call_ct fun L _ => .inr ⟨sMsg, rfl, by decide, by simp only [sMsg]; omega⟩))
@@ -636,7 +636,7 @@ theorem fin_ct {Φ : Pred P} {len dst : Nat} (hlen : len < 2 ^ 14) (hdst : 32 �
     (ht : TaintOk [] (Cfg.finArgs len dst)) :
     RelCT isa (Two P Φ) ((cfgOf P).fin len dst) fun _ _ => True :=
   (two_wp (Ψ := FA P (P.v.H.B + P.v.H.D + len) dst) (two_blk ht) fun _ _ _ _ _ hL hq hc _ =>
-    WP.mono (finArgs_ok hL hq.2 hc (len := len) (dst := dst) (by omega) (by omega))
+    WP.mono (finArgs_ok hL hq.2.1 hc (len := len) (dst := dst) (by omega) (by omega))
       fun _ ⟨c, _, _, a⟩ => ⟨c, a⟩).seq
     (tcall_ct (by decide) tw2 tfn_fin r12_fa (fun _ _ _ _ _ h => h.2.2.2.2.2) (fin_call_ct hdst))
 
@@ -697,13 +697,13 @@ def StN (P : RfcHash) (n : Nat) : Pred P := fun L g lr m₀ u => ∃ k0 text, St
 theorem hmacVS_ct {Φ : Pred P} : RelCT isa (Two P Φ) (cfgOf P).hmacVS fun _ _ => True := by
   unfold Cfg.hmacVS
   refine (two_wp (Ψ := StN P 0) initK_ct fun L g lr m₀ t hL hq hc _ =>
-    WP.mono (init_step hL hq.2 hc) fun u ⟨hu, _⟩ => ⟨hu.ctx, _, _, hu, rfl⟩).seq ?_
+    WP.mono (init_step hL hq.2.1 hc) fun u ⟨hu, _⟩ => ⟨hu.ctx, _, _, hu, rfl⟩).seq ?_
   refine (two_wp (Ψ := StN P 0) save_ct fun L g lr m₀ t hL hq hc ⟨k0, text, hu, hl⟩ => by
     obtain rfl := List.eq_nil_of_length_eq_zero hl
     exact WP.mono (save_ok hL hu) fun u ⟨hu', _⟩ => ⟨hu'.ctx, _, _, hu', rfl⟩).seq ?_
   refine (two_wp (Ψ := StN P P.v.H.D) updV_ct fun L g lr m₀ t hL hq hc ⟨k0, text, hu, hl⟩ => by
     obtain rfl := List.eq_nil_of_length_eq_zero hl
-    exact WP.mono (updV_step hL hq.2 hu) fun u ⟨hu', _⟩ => ⟨hu'.ctx, _, _, hu', length_bytesAt _ _ _⟩).seq ?_
+    exact WP.mono (updV_step hL hq.2.1 hu) fun u ⟨hu', _⟩ => ⟨hu'.ctx, _, _, hu', length_bytesAt _ _ _⟩).seq ?_
   exact fin_ct (by decide) (by simp only [fV]; omega) finV_taint
 
 /-- `V = HMAC_K(V)`, from the saved states for `K`. -/
@@ -715,7 +715,7 @@ theorem hmacVR_ct :
       ⟨hu.ctx, _, _, hu, rfl⟩).seq ?_
   refine (two_wp (Ψ := StN P P.v.H.D) updV_ct fun L g lr m₀ t hL hq hc ⟨k0, text, hu, hl⟩ => by
     obtain rfl := List.eq_nil_of_length_eq_zero hl
-    exact WP.mono (updV_step hL hq.2 hu) fun u ⟨hu', _⟩ => ⟨hu'.ctx, _, _, hu', length_bytesAt _ _ _⟩).seq ?_
+    exact WP.mono (updV_step hL hq.2.1 hu) fun u ⟨hu', _⟩ => ⟨hu'.ctx, _, _, hu', length_bytesAt _ _ _⟩).seq ?_
   exact fin_ct (by decide) (by simp only [fV]; omega) finV_taint
 
 /-- `K = HMAC_K(V ‖ m)`, for the message's `len` bytes, from the states for
@@ -730,12 +730,12 @@ theorem hmacK_ct {len : Nat} (hlen : len ≤ 256) (fresh : Bool) (ht : TaintOk [
         WP.mono (restore_ok hL hc (hS rfl) (blockKey_length (keyOf_length _))) fun u ⟨hu, _⟩ =>
           ⟨hu.ctx, _, _, hu, rfl⟩
     · exact two_wp initK_ct fun L g lr m₀ t hL hq hc _ =>
-        WP.mono (init_step hL hq.2 hc) fun u ⟨hu, _⟩ => ⟨hu.ctx, _, _, hu, rfl⟩
+        WP.mono (init_step hL hq.2.1 hc) fun u ⟨hu, _⟩ => ⟨hu.ctx, _, _, hu, rfl⟩
   refine (two_wp (Ψ := StN P P.v.H.D) updV_ct fun L g lr m₀ t hL hq hc ⟨k0, text, hu, hl⟩ => by
     obtain rfl := List.eq_nil_of_length_eq_zero hl
-    exact WP.mono (updV_step hL hq.2 hu) fun u ⟨hu', _⟩ => ⟨hu'.ctx, _, _, hu', length_bytesAt _ _ _⟩).seq ?_
+    exact WP.mono (updV_step hL hq.2.1 hu) fun u ⟨hu', _⟩ => ⟨hu'.ctx, _, _, hu', length_bytesAt _ _ _⟩).seq ?_
   refine (two_wp (Ψ := StN P (P.v.H.D + len)) (updM_ct hlen) fun L g lr m₀ t hL hq hc ⟨k0, text, hu, hl⟩ =>
-    WP.mono (updM_step hL hq.2 hu hl hlen) fun u ⟨hu', _⟩ =>
+    WP.mono (updM_step hL hq.2.1 hu hl hlen) fun u ⟨hu', _⟩ =>
       ⟨hu'.ctx, _, _, hu', by rw [List.length_append, hl, length_bytesAt]⟩).seq ?_
   exact fin_ct (by omega) (by simp only [fK]; omega) ht
 
@@ -782,7 +782,7 @@ theorem rekey_gen_ct {b : Nat} (hb : b < 2 ^ 15) {wr full : Bool} (fresh : Bool)
     fun L g lr m₀ t hL hq hc ⟨hS, hr⟩ => WP.mono (msg_ok hL hq.1 hc (hr .r11 (by simp)) (hr .r9 (by simp))
       (hr .r10 (by simp)) hb wr) fun u ⟨c, hf, _⟩ => ⟨c, msg_keeps hL hf hS⟩).seq ?_
   refine (two_wp (Ψ := Tt P) (hmacK_ct hl fresh ht) fun L g lr m₀ t hL hq hc hS =>
-    WP.mono (hmacKB_ok hL hq.2 hc hl fresh hS) fun _ h => ⟨h.1, trivial⟩).seq ?_
+    WP.mono (hmacKB_ok hL hq.2.1 hc hl fresh hS) fun _ h => ⟨h.1, trivial⟩).seq ?_
   exact hmacVS_ct
 
 theorem msgF_taint (B : RfcT (cfgP P)) (b : Nat) : TaintOk [.r9, .r10, .r11] ((cfgOf P).msg b true) :=
@@ -849,7 +849,7 @@ theorem candStep_trace {j : Nat} (hj : (j + 1) * P.v.H.D ≤ 136) :
     two_wp (hmacVR_ct.mono (fun _ _ => Two.mono fun _ _ _ _ _ ⟨_, _, _, hI⟩ => by
       rw [hI.k]; exact hI.saved) fun _ _ h => h) fun L g lr m₀ t hL hq hc ⟨_, _, _, hI⟩ => by
     have hS : SavedK P L t.mem (kOf P L t.mem) := by rw [hI.k]; exact hI.saved
-    refine WP.mono (hmacVR_ok hL hq.2 hc hS) fun u ⟨hc₁, hf₁, _⟩ => ⟨hc₁, ?_⟩
+    refine WP.mono (hmacVR_ok hL hq.2.1 hc hS) fun u ⟨hc₁, hf₁, _⟩ => ⟨hc₁, ?_⟩
     show tlen L u.mem = _
     rw [← hI.len]
     have := hL.nB
@@ -863,7 +863,7 @@ theorem candStep_trace {j : Nat} (hj : (j + 1) * P.v.H.D ≤ 136) :
   refine (two_wp (Ψ := fun L g lr m₀ u => CpA P (fun L => L.B + BitVec.ofNat 64 (96 + fT + j * P.v.H.D))
       (fun L => L.B + BitVec.ofNat 64 (96 + fV)) P.v.H.D L g lr m₀ u ∧ TL P j L g lr m₀ u)
     (two_blk (by simpa using keepArgs_taint)) fun L g lr m₀ t hL hq hc hl =>
-      WP.of_syms (keepArgs_ok hq.2 hc hl fun u k hm h4 h5 h6 => wp_nil fun hsy =>
+      WP.of_syms (keepArgs_ok hq.2.1 hc hl fun u k hm h4 h5 h6 => wp_nil fun hsy =>
         ⟨hc.kp hL k hm hsy, ⟨h4, h5, h6⟩, by show tlen L u.mem = _; rw [hm]; exact hl⟩)).seq ?_
   refine (two_wp (Ψ := TL P j) (cp_ct fun _ _ _ _ _ h => h.1) fun L g lr m₀ t hL hq hc ⟨⟨h4, h5, h6⟩, hl⟩ => ?_).seq
     (two_blk (tStep_taint _))
@@ -902,7 +902,7 @@ theorem candLoop_ct :
         Nat.le_trans (Nat.mul_le_mul (show P.nV - n + 1 ≤ P.nV by omega) (Nat.le_refl P.v.H.D)) (by omega)
       obtain ⟨ht, hq⟩ := (two_wp (Ψ := fun L g lr m₀ u => CJ P (P.nV - n + 1) L g lr m₀ u ∧
           isa.eval (.nonzero .d .r12) u = some (decide ((P.nV - n + 1) * P.v.H.D < P.Q))) (candStep_trace hb)
-        fun L g lr m₀ t hL hq hc ⟨t₀, K, V₀, hI⟩ => WP.mono (step_ok hL hq.2 hb hI)
+        fun L g lr m₀ t hL hq hc ⟨t₀, K, V₀, hI⟩ => WP.mono (step_ok hL hq.2.1 hb hI)
           fun u ⟨hI', hcf⟩ => ⟨hI'.ctx, ⟨t₀, K, V₀, hI'⟩, hcf⟩) s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
       refine ⟨ht, ?_, ?_, ?_⟩
       · obtain ⟨_, _, _, _, _, _, _, t⟩ := hq
@@ -948,13 +948,13 @@ theorem cand_ct (B : RfcT (cfgP P)) :
 /-! ## One candidate -/
 
 abbrev coreRd (P : RfcHash) (L : Lay P.I.hashLen) : List Region :=
-  [⟨L.d, P.R.C.E.curve.len⟩, ⟨dgArg P L, P.R.C.E.curve.len⟩, ⟨kArg P L, P.R.C.E.curve.len⟩]
+  [⟨L.d, P.R.C.E.curve.len⟩, ⟨dgArg P L, P.R.C.E.curve.len⟩, ⟨kArg P L, P.R.C.E.curve.len⟩] ++ L.TBLs
 abbrev coreWr (P : RfcHash) (L : Lay P.I.hashLen) : List Region :=
   [⟨L.out, 2 * P.R.C.E.curve.len⟩, ⟨L.scr, 8192⟩]
 
-theorem coreAt {L : Lay P.I.hashLen} (hL : L.Ok) (hq : L.q = P.Q) {u : State} (hc : Ctx L g lr m₀ u)
-    (ha : Args P L u) :
-    (Proof.Ecdsa.Instance.signContract P.R.C.E PPC64LE.abi).pre (u.callEntry.withRegions (coreRd P L) (coreWr P L)) ∧
+theorem coreAt {L : Lay P.I.hashLen} (hL : L.Ok) (hq : L.q = P.Q) (hcs : L.cs = P.R.C.cs) {u : State}
+    (hc : Ctx L g lr m₀ u) (ha : Args P L u) :
+    (Proof.Ecdsa.Instance.signContract P.R.C.E (PPC64LE.abi.withConsts P.R.C.cs)).pre (u.callEntry.withRegions (coreRd P L) (coreWr P L)) ∧
       Covers (coreRd P L ++ coreWr P L) (u.rd ++ u.wr) ∧ Covers (coreWr P L) u.wr := by
   have hnB := hL.nB
   have hQ := Q_le P
@@ -973,18 +973,22 @@ theorem coreAt {L : Lay P.I.hashLen} (hL : L.Ok) (hq : L.q = P.Q) {u : State} (h
   rw [← hkk] at kn ko ks kw
   have eO : (⟨L.out, 2 * P.R.C.E.curve.len⟩ : Region) = L.OUT := by rw [eQ]
   have eD : (⟨L.d, P.R.C.E.curve.len⟩ : Region) = L.D := by rw [eQ]
-  refine ⟨corePre P.R.C ha.r3 ha.r4 ha.r5 ha.r6 ha.r7 (by rw [eO, eD]; exact hL.od) (by rw [eO]; exact go)
+  have hpre := corePre P.R.C ha.r3 ha.r4 ha.r5 ha.r6 ha.r7 (by rw [eO, eD]; exact hL.od) (by rw [eO]; exact go)
     (by rw [eO]; exact ko) (by rw [eO]; exact hL.oc) (by rw [eD]; exact hL.dc) gs ks
-    (by rw [eQ]; exact hL.no) (by rw [eQ]; exact hL.nd) gn kn hL.nc, ?_, ?_⟩
+    (by rw [eQ]; exact hL.no) (by rw [eQ]; exact hL.nd) gn kn hL.nc (core_tables hL hq hcs hc)
+  rw [← hcs, hc.tbls] at hpre
+  rw [hcs] at hpre
+  refine ⟨hpre, ?_, ?_⟩
   · simp only [coreRd, coreWr, eO, eD]
-    refine hc.covers fun r hr => ?_
-    simp only [List.mem_cons, List.not_mem_nil, or_false, List.cons_append, List.nil_append] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl
-    · exact ⟨L.D, by simp, within_base _ (Nat.le_refl _)⟩
-    · exact gw
-    · exact kw
-    · exact ⟨L.OUT, by simp, within_base _ (Nat.le_refl _)⟩
-    · exact ⟨L.SCR, by simp, within_base _ (Nat.le_refl _)⟩
+    refine hc.coversT fun r hr => ?_
+    simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with ((rfl | rfl | rfl) | hT) | (rfl | rfl)
+    · exact .inl ⟨L.D, by simp, within_base _ (Nat.le_refl _)⟩
+    · exact .inl gw
+    · exact .inl kw
+    · exact .inr hT
+    · exact .inl ⟨L.OUT, by simp, within_base _ (Nat.le_refl _)⟩
+    · exact .inl ⟨L.SCR, by simp, within_base _ (Nat.le_refl _)⟩
   · simp only [coreWr, eO]
     refine hc.coversW fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -995,14 +999,26 @@ theorem coreAt {L : Lay P.I.hashLen} (hL : L.Ok) (hq : L.q = P.Q) {u : State} (h
 theorem core_ct {i : Nat} :
     RelCT isa (Two P fun L _ _ m₀ u => P₁ P L m₀ i u ∧ Args P L u) (.call (cfgOf P).coreN (cfgOf P).coreC)
       fun _ _ => True :=
-  two_call P.R.C.V P.R.C.ct (coreRd P) (coreWr P) (fun _ _ _ _ _ hL hq hc ha => coreAt hL hq.1 hc ha.2)
-    fun _ _ _ _ _ _ _ u₁ u₂ h => by
+  two_call P.R.C.V P.R.C.ct (coreRd P) (coreWr P) (fun _ _ _ _ _ hL hq hc ha => coreAt hL hq.1 hq.2.2 hc ha.2)
+    fun L _ _ _ _ _ _ u₁ u₂ h => by
       obtain ⟨-, a⟩ := h.f₁
       obtain ⟨-, b⟩ := h.f₂
-      sig_pub [Proof.Ecdsa.Instance.signContract, Proof.Ecdsa.Instance.signSig, Spec.Ecdsa.scratchWords,
-        PPC64LE.abi, PPC64LE.argRegs, stackBelow]
-      exact ⟨by rw [h.c₁.sp, h.c₂.sp], by rw [a.r3, b.r3], by rw [a.r4, b.r4], by rw [a.r5, b.r5],
-        by rw [a.r6, b.r6], by rw [a.r7, b.r7]⟩
+      have hold : (Proof.Ecdsa.Instance.signContract P.R.C.E PPC64LE.abi).pub
+          (u₁.callEntry.withRegions (coreRd P L) (coreWr P L)) (u₂.callEntry.withRegions (coreRd P L) (coreWr P L)) := by
+        sig_pub [Proof.Ecdsa.Instance.signContract, Proof.Ecdsa.Instance.signSig, Spec.Ecdsa.scratchWords,
+          PPC64LE.abi, PPC64LE.argRegs, stackBelow]
+        exact ⟨by rw [h.c₁.sp, h.c₂.sp], by rw [a.r3, b.r3], by rw [a.r4, b.r4], by rw [a.r5, b.r5],
+          by rw [a.r6, b.r6], by rw [a.r7, b.r7]⟩
+      have hsy : ∀ c ∈ P.R.C.cs, (u₁.callEntry.withRegions (coreRd P L) (coreWr P L)).syms c.1 =
+          (u₂.callEntry.withRegions (coreRd P L) (coreWr P L)).syms c.1 := fun c hc => by
+        have hc' : c ∈ L.cs := by rw [h.q.2.2]; exact hc
+        show u₁.syms c.1 = u₂.syms c.1
+        rw [h.c₁.csy c hc', h.c₂.csy c hc']
+      revert hsy
+      generalize P.R.C.cs = cs
+      cases cs with
+      | nil => exact fun _ => hold
+      | cons c₀ cs => exact fun hsy => pub_consts.mpr ⟨hold, hsy⟩
 
 /-- After a candidate: whether to go on, and what the next piece needs. -/
 def After (P : RfcHash) (i : Nat) : Pred P := fun L _ _ m₀ t =>
@@ -1023,7 +1039,7 @@ theorem tryOne_ct (B : RfcT (cfgP P)) {i : Nat} :
     refine (two_wp (Ψ := fun L _ _ m₀ u => P₁ P L m₀ i u ∧ Args P L u) (two_blk (by exact B.coreArgs))
       fun L g lr m₀ t hL hq hc hi => WP.mono (try₂_ok hL hc hi) fun u ⟨c, p, a⟩ => ⟨c, p, a⟩).seq ?_
     refine (two_wp (Ψ := fun L _ _ m₀ u => P₃ P L m₀ i u) core_ct
-      fun L g lr m₀ t hL hq hc hi => try₃_ok hL hq.1 hc hi.1 hi.2).seq ?_
+      fun L g lr m₀ t hL hq hc hi => try₃_ok hL hq.1 hq.2.2 hc hi.1 hi.2).seq ?_
     refine (two_wp (Ψ := fun L _ _ m₀ u => Mid P L m₀ i u) (two_blk goOn_taint)
       fun L g lr m₀ t hL hq hc hi => try₄_ok hL hq.1 hc hi).seq ?_
     refine RelCT.ite (fun s₁ s₂ ⟨L, g₁, g₂, lr₁, lr₂, m₁, m₂, h⟩ => ?_) ?_ ?_
@@ -1098,7 +1114,7 @@ theorem prepX_ct (B : RfcT (cfgP P)) :
   unfold Cfg.prepX
   exact (two_wp (Ψ := CpA P (fun L => L.B + BitVec.ofNat 64 (96 + fX + (P.Q - min P.v.H.D P.Q))) (fun L => L.dg)
       (min P.v.H.D P.Q)) (two_blk (by exact B.xArgs)) fun L g lr m₀ t hL hq hc _ =>
-    WP.mono (xArgs_ok hL hq.2 hc) fun _ ⟨c, _, _, h6, h5, h4⟩ => ⟨c, h4, h5, h6⟩).seq (cp_ct fun _ _ _ _ _ h => h)
+    WP.mono (xArgs_ok hL hq.2.1 hc) fun _ ⟨c, _, _, h6, h5, h4⟩ => ⟨c, h4, h5, h6⟩).seq (cp_ct fun _ _ _ _ _ h => h)
 
 /-- If `big`: the copy of the digest for `core` keeps `Ctx`. -/
 theorem xcCopy_ok {L : Lay P.I.hashLen} (hL : L.Ok) (hW : P.R.big = true) {t : State} (hc : Ctx L g lr m₀ t)
@@ -1130,7 +1146,7 @@ theorem prepH_ct (B : RfcT (cfgP P)) :
       simp only [Cfg.prepH, show (cfgOf P).big = true from hb, ite_true], Cfg.prepC]
     exact (two_wp (Ψ := CpA P (fun L => L.B + BitVec.ofNat 64 (96 + fXc + (P.Q - 1 - P.v.H.D))) (fun L => L.dg)
         P.v.H.D) (two_blk (by exact B.xcArgs hb)) fun L g lr m₀ t hL hq hc _ =>
-      WP.mono (xcArgs_ok hL hq.2 hb hc) fun _ ⟨c, _, _, h6, h5, h4⟩ => ⟨c, h4, h5, h6⟩).seq
+      WP.mono (xcArgs_ok hL hq.2.1 hb hc) fun _ ⟨c, _, _, h6, h5, h4⟩ => ⟨c, h4, h5, h6⟩).seq
       ((two_wp (Ψ := Tt P) (cp_ct fun _ _ _ _ _ h => h) fun L g lr m₀ t hL hq hc ⟨h4, h5, h6⟩ =>
         WP.mono (xcCopy_ok hL hb hc h4 h5 h6) fun _ h => ⟨h, trivial⟩).seq (conv_ct (by exact B.convC hb)))
 
@@ -1165,13 +1181,20 @@ def Entered (P : RfcHash) (ns : List String) (a b : State) : Prop :=
 
 theorem lay_eq {ns : List String} (hns : ∀ n ∈ [P.v.initN, P.v.H.updN, P.v.finN], n ∈ ns) {σ₁ σ₂ : State}
     (h : Pre2 P ns σ₁ σ₂) : layOf P σ₁ = layOf P σ₂ := by
-  obtain ⟨-, -, hsp, h3, h4, h5, h7, h8, -, hsy⟩ := h
+  obtain ⟨-, -, hsp, h3, h4, h5, h7, h8, -, hsy, hcs⟩ := h
+  have hcy : csSyms P.R.C.cs σ₁.syms = csSyms P.R.C.cs σ₂.syms := funext fun n => by
+    unfold csSyms
+    split
+    · next hn =>
+      obtain ⟨c, hc, rfl⟩ := List.mem_map.mp hn
+      exact hcs c hc
+    · rfl
   have hfa : (fun n => if n ∈ [P.v.initN, P.v.H.updN, P.v.finN] then σ₁.syms n else 0) =
       fun n => if n ∈ [P.v.initN, P.v.H.updN, P.v.finN] then σ₂.syms n else 0 := funext fun n => by
     split
     · next hn => exact hsy n (hns n hn)
     · rfl
-  simp only [layOf, lay, hsp, h3, h4, h5, h7, h8, hfa]
+  simp only [layOf, lay, hsp, h3, h4, h5, h7, h8, hfa, hcy]
 
 theorem saveArgs_taint : TaintOk [.r8] Cfg.saveArgs := ⟨_, by taint_decide⟩
 
