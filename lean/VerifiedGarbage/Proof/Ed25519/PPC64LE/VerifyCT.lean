@@ -21,12 +21,14 @@ meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.Decode
 meta import VerifiedGarbage.Proof.Ed25519.PPC64LE.Decode
+import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 
 /-!
 # `vg_ed25519_verify_equation` on PPC64LE leaks only its inputs
 
-Two runs with the same pointers, stack pointer and input bytes leak the same
-trace (`verify_ct`). As for a decoding (`DecodeCT.lean`), the taint analysis
+Two runs with the same pointers, stack pointer, input bytes and static leak
+the same trace (`verify_ct`), given the windows' constant time (`RhsCT`). As for a decoding (`DecodeCT.lean`), the taint analysis
 checks the code between the branches, and each branch on a value loaded from
 memory (`S < L`, both points decoded, the comparison) is related by
 correctness: both runs take it on the same fact about the inputs.
@@ -159,7 +161,7 @@ end
 /-! ## The body -/
 
 section
-variable {b sp pk sig ch : Addr} {PK SG CH : List Byte}
+variable {b sp pk sig ch T : Addr} {PK SG CH : List Byte}
 
 /-- The verification's inputs, `PK`, `SG` and `CH`. -/
 def VCT (b sp pk sig ch : Addr) (PK SG CH : List Byte) (s : State) : Prop :=
@@ -173,22 +175,26 @@ theorem VCT.frame {s t : State} (h : VCT b sp pk sig ch PK SG CH s) {R : List Re
   · rw [bytesAt_ws hf hs h.1.sigD (by decide), h.2.2.2.1]
   · rw [bytesAt_ws hf hs h.1.chD (by decide), h.2.2.2.2]
 
+/-- `VCT`, with the static of `-[1]B … -[15]B` at `T`. -/
+def VCS (b sp pk sig ch T : Addr) (PK SG CH : List Byte) (s : State) : Prop :=
+  VCT b sp pk sig ch PK SG CH s ∧ BStat b T s ∧ s.syms bSym = T
+
 /-- After both decodings. -/
-def D2 (b sp pk sig ch : Addr) (PK SG CH : List Byte) (t : State) : Prop :=
-  ∃ s0, DecInv s0 b pk sig ch 2 t ∧ VCT b sp pk sig ch PK SG CH s0
+def D2 (b sp pk sig ch T : Addr) (PK SG CH : List Byte) (t : State) : Prop :=
+  ∃ s0, DecInv s0 b pk sig ch 2 t ∧ VCS b sp pk sig ch T PK SG CH s0 ∧ t.syms = s0.syms
 
-theorem D2.sp_eq {t : State} (h : D2 b sp pk sig ch PK SG CH t) : t.sp = sp := by
-  obtain ⟨s0, d, v⟩ := h; rw [d.rest.sp, v.2.1]
+theorem D2.sp_eq {t : State} (h : D2 b sp pk sig ch T PK SG CH t) : t.sp = sp := by
+  obtain ⟨s0, d, ⟨v, _⟩, _⟩ := h; rw [d.rest.sp, v.2.1]
 
-theorem D2.pin {t : State} (h : D2 b sp pk sig ch PK SG CH t) : Pin b sp t := by
+theorem D2.pin {t : State} (h : D2 b sp pk sig ch T PK SG CH t) : Pin b sp t := by
   have hsp := h.sp_eq
   obtain ⟨_, d, _⟩ := h
   exact ⟨d.ctx.ctx, hsp⟩
 
-theorem D2.r18 {t : State} (h : D2 b sp pk sig ch PK SG CH t) :
+theorem D2.r18 {t : State} (h : D2 b sp pk sig ch T PK SG CH t) :
     t.gpr .r18 = if ((Spec.Ed25519.decodePoint PK).isSome && (Spec.Ed25519.decodePoint (SG.take 32)).isSome)
       then 1 else 0 := by
-  obtain ⟨s0, d, v⟩ := h
+  obtain ⟨s0, d, ⟨v, _⟩, _⟩ := h
   have e : decOk s0.mem pk sig 2 = ((Spec.Ed25519.decodePoint (bytesAt s0.mem pk 32)).isSome &&
       (Spec.Ed25519.decodePoint (bytesAt s0.mem sig 32)).isSome) := by
     show (true && (Spec.Ed25519.decodePoint (bytesAt s0.mem (if 0 = 0 then pk else sig) 32)).isSome &&
@@ -197,7 +203,7 @@ theorem D2.r18 {t : State} (h : D2 b sp pk sig ch PK SG CH t) :
   rw [d.r18, e, v.2.2.1, ← Proof.Ed25519.signatureBytes_take, v.2.2.2.1]
 
 theorem decodeBoth_ct :
-    RelCT isa (Both (VCT b sp pk sig ch PK SG CH)) decodeBoth (Both (D2 b sp pk sig ch PK SG CH)) := by
+    RelCT isa (Both (VCS b sp pk sig ch T PK SG CH)) decodeBoth (Both (D2 b sp pk sig ch T PK SG CH)) := by
   have h := RelCT.seq (ctBoth (ctRegs [.r6, .r29] (A := VCT b sp pk sig ch PK SG CH) (c := .block decodeStart)
     (fun _ _ h₁ h₂ => ⟨h₁.2.1.trans h₂.2.1.symm, fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -207,73 +213,60 @@ theorem decodeBoth_ct :
     (B := DecCT b sp pk sig ch PK (SG.take 32) 0) fun s h => WP.mono (decodeStart_ok h.1) fun t d =>
       ⟨s, d, by rw [d.rest.sp, h.2.1], h.2.2.1, by rw [← Proof.Ed25519.signatureBytes_take, h.2.2.2.1]⟩)
     (decodeLoop_ct (b := b) (sp := sp) (pk := pk) (sig := sig) (ch := ch) (PK := PK) (RS := SG.take 32))
-  refine ctBoth (h.mono (fun _ _ h => h) fun _ _ _ => trivial) fun s hs => ?_
+  refine ctBoth ((h.mono (fun _ _ h => ⟨h.1.1, h.2.1⟩) fun _ _ _ => trivial)) fun s hs => ?_
   unfold decodeBoth at *
-  exact WP.mono (decodeBoth_ok hs.1) fun t d => ⟨s, d, hs⟩
+  exact WP.mono_syms (decodeBoth_ok hs.1.1) fun t d sy => ⟨s, d, hs, sy⟩
 
-/-- `[S] B` leaves the tables of `A` and `R`. -/
-theorem sideW_tables {o : Nat} (ho : 7776 ≤ o) (ho' : o + 128 ≤ 8032) :
-    ∀ r ∈ sideW b 8032, Region.Disjoint ⟨b + BitVec.ofNat 64 o, 128⟩ r := by
-  intro r hr
-  have hB : BITSB = 32 := rfl
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl
-  · exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)
-  · exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
-  · exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
-  · exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
-  · exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
+theorem bytesAt_getD (m : Mem) (p : Addr) {n i : Nat} (hi : i < n) :
+    (bytesAt m p n).getD i 0 = m (p + BitVec.ofNat 64 i) := by
+  simp [Spec.Ed25519.bytesAt, hi]
+
+end
+
+/-- `verifyRhs`'s precondition: the inputs, the static at `T`, the decoded `a` and `r` in the
+tables at 7776 and 7904, and the bytes `CH` of the challenge and `SS` of `S`. -/
+def RhsPre (b sp pk sig ch T : Addr) (a r : Spec.Ed25519.Point) (CH SS : List Byte) (t : State) : Prop :=
+  VCtx b pk sig ch t ∧ t.sp = sp ∧ BStat b T t ∧ t.syms bSym = T ∧ tableAt t.mem b 7776 = a ∧
+    tableAt t.mem b 7904 = r ∧ bytesAt t.mem ch 64 = CH ∧ bytesAt t.mem (sig + BitVec.ofNat 64 32) 32 = SS
+
+/-- **`verifyRhs` leaks only its inputs**, for decoded `a` and `r`: what the windows' proof gives
+(`Proof/Ed25519/PPC64LE/WindowCT.lean`, `rhs_ct`). -/
+def RhsCT : Prop := ∀ {b sp pk sig ch T : Addr} {PK RS CH SS : List Byte} {a r : Spec.Ed25519.Point},
+  Spec.Ed25519.decodePoint PK = some a → Spec.Ed25519.decodePoint RS = some r →
+  RelCT isa (Both (RhsPre b sp pk sig ch T a r CH SS)) verifyRhs fun _ _ => True
+
+section
+variable {b sp pk sig ch T : Addr} {PK SG CH : List Byte}
+
+theorem D2.rhs {t : State} {a r : Spec.Ed25519.Point} (h : D2 b sp pk sig ch T PK SG CH t)
+    (ha : Spec.Ed25519.decodePoint PK = some a) (hr : Spec.Ed25519.decodePoint (SG.take 32) = some r) :
+    RhsPre b sp pk sig ch T a r CH (SG.drop 32) t := by
+  have hsp := h.sp_eq
+  obtain ⟨s0, d, ⟨v, hB, hT⟩, sy⟩ := h
+  refine ⟨d.ctx, hsp, hB.of_frame d.rest.rd d.frame decW_sub, by rw [sy, hT], ?_, ?_, ?_, ?_⟩
+  · exact d.tables 0 (by decide) a (by rw [show inPtr pk sig 0 = pk from rfl, v.2.2.1]; exact ha)
+  · exact d.tables 1 (by decide) r (by
+      rw [show inPtr pk sig 1 = sig from rfl, ← Proof.Ed25519.signatureBytes_take, v.2.2.2.1]; exact hr)
+  · rw [bytesAt_ws d.frame decW_sub d.ctx.chD (by decide), v.2.2.2.2]
+  · rw [bytesAt_ws d.frame decW_sub (d.ctx.sigD.sub_left (Offset.sub_base sig (d := 32) (n := 32) (by decide)))
+      (by decide), ← Proof.Ed25519.signatureBytes_drop, v.2.2.2.1]
 
 /-- The equation, for the decoded points `a` and `r`. -/
-theorem verifyEquationPoints_ct {a r : Spec.Ed25519.Point} (ha : Spec.Ed25519.decodePoint PK = some a)
-    (hr : Spec.Ed25519.decodePoint (SG.take 32) = some r) :
-    RelCT isa (Both (D2 b sp pk sig ch PK SG CH)) verifyEquationPoints fun _ _ => True := by
-  let lhs := Spec.Ed25519.pointMul (decodeLE (SG.drop 32)) Spec.Ed25519.basePoint
-  let L1 (t : State) : Prop := VCtx b pk sig ch t ∧ t.sp = sp ∧ tableAt t.mem b 8032 = lhs ∧
-    tableAt t.mem b 7776 = a ∧ tableAt t.mem b 7904 = r ∧ bytesAt t.mem ch 64 = CH
-  have h1 := ctBoth (ctRegs [.r6, .r30] (A := D2 b sp pk sig ch PK SG CH) (c := verifyLhs)
-    (fun _ _ h₁ h₂ => ⟨h₁.sp_eq.trans h₂.sp_eq.symm, fun x hx => by
-      obtain ⟨_, d₁, _⟩ := h₁
-      obtain ⟨_, d₂, _⟩ := h₂
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-      rcases hx with rfl | rfl
-      · rw [d₁.ctx.ctx.r6, d₂.ctx.ctx.r6]
-      · rw [d₁.ctx.r30, d₂.ctx.r30]⟩) (by taint_decide)) (B := L1) fun s hs => by
-    have hsp := hs.sp_eq
-    obtain ⟨s0, d, v⟩ := hs
-    have hS : bytesAt s.mem (sig + BitVec.ofNat 64 32) 32 = SG.drop 32 := by
-      rw [bytesAt_ws d.frame decW_sub (d.ctx.sigD.sub_left (Offset.sub_base sig (d := 32) (n := 32) (by decide)))
-        (by decide), ← Proof.Ed25519.signatureBytes_drop, v.2.2.2.1]
-    refine WP.mono (verifyLhs_ok d.ctx) fun t ⟨rt, ft, tt⟩ => ⟨d.ctx.of_rest rt (by decide), by rw [rt.sp, hsp],
-      by rw [tt, hS], ?_, ?_, ?_⟩
-    · rw [tableAt_keep ft (sideW_tables (by decide) (by decide))]
-      exact d.tables 0 (by decide) a (by rw [show inPtr pk sig 0 = pk from rfl, v.2.2.1]; exact ha)
-    · rw [tableAt_keep ft (sideW_tables (by decide) (by decide))]
-      exact d.tables 1 (by decide) r (by
-        rw [show inPtr pk sig 1 = sig from rfl, ← Proof.Ed25519.signatureBytes_take, v.2.2.2.1]; exact hr)
-    · rw [bytesAt_ws ft (sideW_sub (by decide)) d.ctx.chD (by decide),
-        bytesAt_ws d.frame decW_sub d.ctx.chD (by decide), v.2.2.2.2]
-  let sum := Spec.Ed25519.pointAdd r (Spec.Ed25519.pointMul (decodeLE CH) a)
-  have hpre := ctBoth (ctRegs [.r6, .r31] (A := L1)
-    (c := .seq (.seq (.block (pointTableRead 7776 ++ ([.addi .r14 .r31 0] : List Instr))) (pointFromScalar 32)) verifyCombine)
-    (fun _ _ h₁ h₂ => ⟨h₁.2.1.trans h₂.2.1.symm, fun x hx => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-      rcases hx with rfl | rfl
-      · rw [h₁.1.ctx.r6, h₂.1.ctx.r6]
-      · rw [h₁.1.r31, h₂.1.r31]⟩) (by taint_decide)) (B := EqPre b sp lhs sum) fun s h =>
-      WP.mono (verifyRhsPre_ok' h.1) fun t ⟨rt, _, ct, pt, qt⟩ =>
-        ⟨⟨ct, by rw [rt.sp, h.2.1]⟩, by rw [pt, h.2.2.1], by rw [qt, h.2.2.2.1, h.2.2.2.2.1, h.2.2.2.2.2]⟩
-  unfold verifyEquationPoints verifyRhs
-  exact RelCT.seq h1 (RelCT.assoc (RelCT.assoc (RelCT.seq hpre (pointEqual_ct lhs sum))))
+theorem verifyEquationPoints_ct (hRC : RhsCT) {a r : Spec.Ed25519.Point}
+    (ha : Spec.Ed25519.decodePoint PK = some a) (hr : Spec.Ed25519.decodePoint (SG.take 32) = some r) :
+    RelCT isa (Both (D2 b sp pk sig ch T PK SG CH)) verifyEquationPoints fun _ _ => True := by
+  unfold verifyEquationPoints
+  exact (hRC (CH := CH) (SS := SG.drop 32) ha hr).mono (fun _ _ h => ⟨h.1.rhs ha hr, h.2.rhs ha hr⟩)
+    fun _ _ h => h
 
-theorem verifyDecode_ct :
-    RelCT isa (Both (VCT b sp pk sig ch PK SG CH)) verifyDecode fun _ _ => True := by
+theorem verifyDecode_ct (hRC : RhsCT) :
+    RelCT isa (Both (VCS b sp pk sig ch T PK SG CH)) verifyDecode fun _ _ => True := by
   unfold verifyDecode
   refine RelCT.seq decodeBoth_ct (RelCT.ite (fun _ _ h => by rw [eval_nonzero, eval_nonzero, h.1.r18, h.2.r18]) ?_ ?_)
   · cases ha : Spec.Ed25519.decodePoint PK with
     | some a =>
       cases hr : Spec.Ed25519.decodePoint (SG.take 32) with
-      | some r => exact (verifyEquationPoints_ct ha hr).mono (fun _ _ h => h.1) fun _ _ h => h
+      | some r => exact (verifyEquationPoints_ct hRC ha hr).mono (fun _ _ h => h.1) fun _ _ h => h
       | none =>
         refine RelCT.of_false fun _ _ h => ?_
         have e := h.1.1.r18
@@ -290,60 +283,65 @@ theorem verifyDecode_ct :
       simp at this
   · exact recoverInvalid_ct.mono (fun _ _ h => ⟨h.1.1.pin, h.1.2.pin⟩) fun _ _ h => h
 
-theorem verifyBody_ct :
-    RelCT isa (Both (VCT b sp pk sig ch PK SG CH)) verifyBody fun _ _ => True := by
+theorem verifyBody_ct (hRC : RhsCT) :
+    RelCT isa (Both (VCS b sp pk sig ch T PK SG CH)) verifyBody fun _ _ => True := by
   unfold verifyBody
   have hFA : ∀ r ∈ [FA b], Region.Sub r ⟨b, 8192⟩ := fun r hr => by
     rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by omega)
-  have h1 := ctBoth (ctRegs [.r6, .r30] (A := VCT b sp pk sig ch PK SG CH) (c := .block verifyScalar)
-    (fun _ _ h₁ h₂ => ⟨h₁.2.1.trans h₂.2.1.symm, fun x hx => by
+  have h1 := ctBoth (ctRegs [.r6, .r30] (A := VCS b sp pk sig ch T PK SG CH) (c := .block verifyScalar)
+    (fun _ _ h₁ h₂ => ⟨h₁.1.2.1.trans h₂.1.2.1.symm, fun x hx => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
       rcases hx with rfl | rfl
-      · rw [h₁.1.ctx.r6, h₂.1.ctx.r6]
-      · rw [h₁.1.r30, h₂.1.r30]⟩) (by taint_decide))
-    (B := fun t => VCT b sp pk sig ch PK SG CH t ∧ (t.gpr .r8 = 0 ↔ decodeLE (SG.drop 32) < Spec.Ed25519.L))
-    fun s h => WP.mono (verifyScalar_ok h.1) fun t ⟨rt, ft, et⟩ =>
-      ⟨h.frame rt (by decide) ft hFA, by rw [et, ← Proof.Ed25519.signatureBytes_drop, h.2.2.2.1]⟩
+      · rw [h₁.1.1.ctx.r6, h₂.1.1.ctx.r6]
+      · rw [h₁.1.1.r30, h₂.1.1.r30]⟩) (by taint_decide))
+    (B := fun t => VCS b sp pk sig ch T PK SG CH t ∧
+      (t.gpr .r8 = 0 ↔ decodeLE (SG.drop 32) < Spec.Ed25519.L))
+    fun s h => WP.mono_syms (verifyScalar_ok h.1.1) fun t ⟨rt, ft, et⟩ sy =>
+      ⟨⟨h.1.frame rt (by decide) ft hFA, h.2.1.of_frame rt.rd ft hFA, by rw [sy]; exact h.2.2⟩,
+        by rw [et, ← Proof.Ed25519.signatureBytes_drop, h.1.2.2.2.1]⟩
   refine RelCT.seq h1 (RelCT.ite (fun _ _ h => eval_zero_agree h.1.2 h.2.2) ?_ ?_)
-  · have h2 := ctBoth (ctRegs [.r6] (A := VCT b sp pk sig ch PK SG CH) (c := .block initFields)
-      (fun _ _ h₁ h₂ => ⟨h₁.2.1.trans h₂.2.1.symm, fun x hx => by
-        rw [List.mem_singleton.mp hx, h₁.1.ctx.r6, h₂.1.ctx.r6]⟩) (by taint_decide))
-      (B := VCT b sp pk sig ch PK SG CH) fun s h => WP.mono (initFields_ok h.1.ctx.ctx) fun t ⟨rt, ft⟩ =>
-        h.frame rt (by decide) ft hFA
-    exact RelCT.seq (h2.mono (fun _ _ h => ⟨h.1.1.1, h.1.2.1⟩) fun _ _ h => h) verifyDecode_ct
-  · exact recoverInvalid_ct.mono (fun _ _ h => ⟨⟨h.1.1.1.1.ctx, h.1.1.1.2.1⟩, ⟨h.1.2.1.1.ctx, h.1.2.1.2.1⟩⟩)
+  · have h2 := ctBoth (ctRegs [.r6] (A := VCS b sp pk sig ch T PK SG CH) (c := .block initFields)
+      (fun _ _ h₁ h₂ => ⟨h₁.1.2.1.trans h₂.1.2.1.symm, fun x hx => by
+        rw [List.mem_singleton.mp hx, h₁.1.1.ctx.r6, h₂.1.1.ctx.r6]⟩) (by taint_decide))
+      (B := VCS b sp pk sig ch T PK SG CH) fun s h => WP.mono_syms (initFields_ok h.1.1.ctx.ctx)
+        fun t ⟨rt, ft⟩ sy => ⟨h.1.frame rt (by decide) ft hFA, h.2.1.of_frame rt.rd ft hFA, by rw [sy]; exact h.2.2⟩
+    exact RelCT.seq (h2.mono (fun _ _ h => ⟨h.1.1.1, h.1.2.1⟩) fun _ _ h => h) (verifyDecode_ct hRC)
+  · exact recoverInvalid_ct.mono (fun _ _ h => ⟨⟨h.1.1.1.1.1.ctx, h.1.1.1.1.2.1⟩, ⟨h.1.2.1.1.1.ctx, h.1.2.1.1.2.1⟩⟩)
       fun _ _ h => h
 
 /-- The function's precondition, with its public values. -/
-def VTop (b sp pk sig ch : Addr) (PK SG CH : List Byte) (s : State) : Prop :=
-  VerifyPre s ∧ s.gpr .r3 = pk ∧ s.gpr .r4 = sig ∧ s.gpr .r5 = ch ∧ s.gpr .r6 = b ∧ s.sp = sp ∧
+def VTop (b sp pk sig ch T : Addr) (PK SG CH : List Byte) (s : State) : Prop :=
+  VerifyPre s ∧ s.syms bSym = T ∧ s.gpr .r3 = pk ∧ s.gpr .r4 = sig ∧ s.gpr .r5 = ch ∧ s.gpr .r6 = b ∧ s.sp = sp ∧
     bytesAt s.mem pk 32 = PK ∧ bytesAt s.mem sig 64 = SG ∧ bytesAt s.mem ch 64 = CH
 
-theorem verifyEquation_rel :
-    RelCT isa (Both (VTop b sp pk sig ch PK SG CH)) Impl.Ed25519.PPC64LE.verifyEquation fun _ _ => True := by
+theorem verifyEquation_rel (hR : RhsOk) (hRC : RhsCT) :
+    RelCT isa (Both (VTop b sp pk sig ch T PK SG CH)) Impl.Ed25519.PPC64LE.verifyEquation fun _ _ => True := by
   unfold Impl.Ed25519.PPC64LE.verifyEquation
-  have h1 := ctBoth (ctRegs [.r3, .r4, .r5, .r6] (A := VTop b sp pk sig ch PK SG CH) (c := .block verifySetup)
-    (fun _ _ h₁ h₂ => ⟨h₁.2.2.2.2.2.1.trans h₂.2.2.2.2.2.1.symm, fun x hx => by
+  have h1 := ctBoth (ctRegs [.r3, .r4, .r5, .r6] (A := VTop b sp pk sig ch T PK SG CH) (c := .block verifySetup)
+    (fun _ _ h₁ h₂ => ⟨h₁.2.2.2.2.2.2.1.trans h₂.2.2.2.2.2.2.1.symm, fun x hx => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
       rcases hx with rfl | rfl | rfl | rfl
-      · rw [h₁.2.1, h₂.2.1]
       · rw [h₁.2.2.1, h₂.2.2.1]
       · rw [h₁.2.2.2.1, h₂.2.2.2.1]
-      · rw [h₁.2.2.2.2.1, h₂.2.2.2.2.1]⟩) (by taint_decide))
-    (B := VCT b sp pk sig ch PK SG CH) fun s h => by
-      obtain ⟨hp, e3, e4, e5, e6, hsp, hpk, hsg, hch⟩ := h
-      refine WP.mono (verifySetup_ok hp) fun t ⟨vt, rt, _, ft, _⟩ => ?_
+      · rw [h₁.2.2.2.2.1, h₂.2.2.2.2.1]
+      · rw [h₁.2.2.2.2.2.1, h₂.2.2.2.2.2.1]⟩) (by taint_decide))
+    (B := VCS b sp pk sig ch T PK SG CH) fun s h => by
+      obtain ⟨hp, hT, e3, e4, e5, e6, hsp, hpk, hsg, hch⟩ := h
+      refine WP.mono_syms (verifySetup_ok hp) fun t ⟨vt, rt, _, ft, _⟩ sy => ?_
+      have hB := hp.bs
+      rw [e6, hT] at hB
       rw [e3, e4, e5, e6] at vt
       rw [e6] at ft
       have hs : ∀ r ∈ [(⟨b, 8192⟩ : Region)], Region.Sub r ⟨b, 8192⟩ := fun r hr => by
         rw [List.mem_singleton.mp hr]; exact fun _ h => h
-      refine ⟨vt, by rw [rt.sp, hsp], ?_, ?_, ?_⟩
+      refine ⟨⟨vt, by rw [rt.sp, hsp], ?_, ?_, ?_⟩, hB.of_frame rt.rd ft hs, by rw [sy, hT]⟩
       · rw [bytesAt_ws ft hs vt.pkD (by decide), hpk]
       · rw [bytesAt_ws ft hs vt.sigD (by decide), hsg]
       · rw [bytesAt_ws ft hs vt.chD (by decide), hch]
-  have h2 := ctBoth (verifyBody_ct (b := b) (sp := sp) (pk := pk) (sig := sig) (ch := ch) (PK := PK) (SG := SG)
-    (CH := CH)) (B := Pin b sp) fun s h => WP.mono (verifyBody_ok h.1) fun t ⟨rt, _, _⟩ =>
-      Pin.of_rest ⟨h.1.ctx, h.2.1⟩ rt (by decide)
+  have h2 := ctBoth (verifyBody_ct (b := b) (sp := sp) (pk := pk) (sig := sig) (ch := ch) (T := T) (PK := PK)
+    (SG := SG) (CH := CH) hRC) (B := Pin b sp) fun s h =>
+      WP.mono (verifyBody_ok hR h.1.1 (by rw [h.2.2]; exact h.2.1)) fun t ⟨rt, _, _⟩ =>
+        Pin.of_rest ⟨h.1.1.ctx, h.1.2.1⟩ rt (by decide)
   exact RelCT.seq h1 (RelCT.seq h2 (ctRegs [.r6] (A := Pin b sp) (fun _ _ h₁ h₂ => h₁.regs h₂) (by taint_decide)))
 
 end

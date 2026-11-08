@@ -19,6 +19,10 @@ mod vg_ed25519_comb;
 pub use vg_ed25519_comb::VG_ED25519_COMB;
 
 #[rustfmt::skip]
+mod vg_ed25519_verify_neg_base;
+pub use vg_ed25519_verify_neg_base::VG_ED25519_VERIFY_NEG_BASE;
+
+#[rustfmt::skip]
 mod vg_ffdh_vetted_groups_ppc;
 pub use vg_ffdh_vetted_groups_ppc::VG_FFDH_VETTED_GROUPS_PPC;
 

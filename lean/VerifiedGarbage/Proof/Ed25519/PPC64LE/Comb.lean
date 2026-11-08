@@ -3,6 +3,7 @@ module
 -- separate module: its proofs build in parallel with `Encode`'s, which `ScalarBase` also imports
 
 public import VerifiedGarbage.Impl.Ed25519.PPC64LE.Comb
+public import VerifiedGarbage.Proof.Ed25519.PPC64LE.WindowDigit
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.BaseContract
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.FieldProg
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointOps
@@ -82,10 +83,6 @@ theorem comb_adrSym {d : Reg} {name : String} (hd : d ≠ .r0)
 end
 
 /-! ## The digits -/
-
-/-- Digit `i`'s nibble of the scalar at `p`. -/
-def nibAt (m : Mem) (p : Addr) (i : Nat) : Nat :=
-  (m (p + BitVec.ofNat 64 (i / 2))).toNat / 16 ^ (i % 2) % 16
 
 /-- Byte `i` of the scalar's nibbles in the working space at `b`. -/
 def nibC (m : Mem) (b : Addr) (i : Nat) : Nat := (m (b + BitVec.ofNat 64 (SCAL + i))).toNat
