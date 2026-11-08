@@ -67,6 +67,24 @@ theorem slot_ok (j : Nat) : slot j < 2 ^ 15 := by
 /-- The address of `W[j mod 16]`. -/
 abbrev slotAddr (scr : Addr) (j : Nat) : Addr := scr + BitVec.ofNat 64 (slot j)
 
+/-- `TT1`, in the order the iteration adds its terms (`D + W'_j + FF_j`
+first, then `SS2`, with `E + (T_j <<< j)` added first in `SS1`). -/
+theorem tt1_eqR (d x f r t e : Word) :
+    d + x + f + (r ^^^ (r + (t + e)).rotateRight 25) = f + d + ((r + e + t).rotateRight 25 ^^^ r) + x := by
+  rw [show r + (t + e) = r + e + t by simp only [ac]]
+  simp only [ac]
+
+/-- `P_0(TT2)`, in the order the iteration adds its terms (`H + W_j + GG_j`
+first, then `SS1`). -/
+theorem tt2_eqR (h w g r t e : Word) :
+    (h + w + g + (r + (t + e)).rotateRight 25 ^^^ (h + w + g + (r + (t + e)).rotateRight 25).rotateRight 23) ^^^
+      (h + w + g + (r + (t + e)).rotateRight 25).rotateRight 15 =
+      p0 (g + h + (r + e + t).rotateRight 25 + w) := by
+  rw [show r + (t + e) = r + e + t by simp only [ac]]
+  generalize (r + e + t).rotateRight 25 = s
+  rw [show h + w + g + s = h + s + w + g by simp only [ac]]
+  exact tt2_eq h s w g
+
 /-- The symbolic execution of an iteration, of either shape (`t < 16` or
 not), for any registers `A … H` (which `round_nodup` says are different
 from each other and the others). -/
@@ -126,7 +144,7 @@ theorem round_ok (t : Nat) (s : State) (v : HashValue) (w w₄ : Word) (scr : Ad
       simp only [roundW_0, roundW_1, roundW_2, roundW_3, roundW_4, roundW_5, roundW_6, roundW_7,
         Spec.Sm3.ff, Spec.Sm3.gg, ht, ite_true, ite_false, maj_eq, ch_eq, tj, rotl9,
         rotl12, rotl7, rotl19] <;>
-      first | exact tt1_eq _ _ _ _ _ | exact tt2_eq _ _ _ _)
+      first | exact tt1_eqR _ _ _ _ _ _ | exact tt2_eqR _ _ _ _ _ _)
 
 theorem expand_ok (i : Nat) (s : State) (M : Block) (bp scr : Addr)
     (hr4 : s.gpr .r4 = bp) (hr6 : s.gpr .r6 = scr)
