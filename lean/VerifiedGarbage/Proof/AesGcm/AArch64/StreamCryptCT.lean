@@ -68,16 +68,23 @@ section
 variable {Ctx St W SP : Addr} (L : Lay Ctx St W)
 include L
 
+/-- `decAbs` in two runs, with the text in place or only read (`to`). -/
+theorem decAbs_relG (v : GcmImpl) {to : Bool} {k₁ k₂ : Reg → BitVec 64} {R n P : Nat} {D : Addr}
+    {a₁ a₂ c₁ c₂ : List Byte} {H₁ H₂ : Block} {σ₁ σ₂ : State} (h₁ : BodyInG to Ctx St W SP k₁ R n P D a₁ c₁ H₁ σ₁)
+    (h₂ : BodyInG to Ctx St W SP k₂ R n P D a₂ c₂ H₂ σ₂) (hq : a₁.length % 16 = a₂.length % 16) :
+    RelCT isa (Eq2 σ₁ σ₂) (decAbs v.callees) TT := by
+  have k26₁ : k₁ .x26 = BitVec.ofNat 64 n := (h₁.kept .x26 (by decide)).symm.trans h₁.x26
+  have k26₂ : k₂ .x26 = BitVec.ofNat 64 n := (h₂.kept .x26 (by decide)).symm.trans h₂.x26
+  exact padArgs_relG L v h₁ h₂ hq fun τ₁ τ₂ e₁ e₂ g₁ g₂ a23₁ a23₂ a24₁ a24₂ a25₁ a25₂ d₁ d₂ =>
+    textAbs_rel L v e₁ e₂ g₁ g₂ a23₁ a23₂ a24₁ a24₂ a25₁ a25₂
+      ((g₁ .x26 (by decide)).trans k26₁) ((g₂ .x26 (by decide)).trans k26₂) (dataOk_of d₁) (dataOk_of d₂)
+
 /-- `decAbs` in two runs. -/
 theorem decAbs_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {R n P : Nat} {D : Addr} {a₁ a₂ c₁ c₂ : List Byte}
     {H₁ H₂ : Block} {σ₁ σ₂ : State} (h₁ : BodyIn Ctx St W SP k₁ R n P D a₁ c₁ H₁ σ₁)
     (h₂ : BodyIn Ctx St W SP k₂ R n P D a₂ c₂ H₂ σ₂) (hq : a₁.length % 16 = a₂.length % 16) :
-    RelCT isa (Eq2 σ₁ σ₂) (decAbs v.callees) TT := by
-  have k26₁ : k₁ .x26 = BitVec.ofNat 64 n := (h₁.kept .x26 (by decide)).symm.trans h₁.x26
-  have k26₂ : k₂ .x26 = BitVec.ofNat 64 n := (h₂.kept .x26 (by decide)).symm.trans h₂.x26
-  exact padArgs_rel L v h₁ h₂ hq fun τ₁ τ₂ c₁ c₂ =>
-    textAbs_rel L v c₁.env c₂.env c₁.kept c₂.kept c₁.x23 c₂.x23 c₁.x24 c₂.x24 c₁.x25 c₂.x25
-      ((c₁.kept .x26 (by decide)).trans k26₁) ((c₂.kept .x26 (by decide)).trans k26₂) c₁.data.ok c₂.data.ok
+    RelCT isa (Eq2 σ₁ σ₂) (decAbs v.callees) TT :=
+  decAbs_relG L v h₁ h₂ hq
 
 /-- `decBody` in two runs. -/
 theorem decBody_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {R n P : Nat} {D : Addr} {a₁ a₂ c₁ c₂ : List Byte}
@@ -100,9 +107,9 @@ theorem decBody_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {R n P : Nat} 
   have pk₂ := kk₂.of_others rp₂.others
   exact crypt_rel L v
     ⟨e₁.of_regs rp₁, pk₁, (pk₁ .x22 (by decide)).trans k22₁, h₁.rounds, p23₁, p24₁,
-      by rw [rp₁.others _ (by decide), x25₁], h₁.data.of_eq (by rw [rp₁.rd, rd₁]) (by rw [rp₁.wr, wr₁])⟩
+      by rw [rp₁.others _ (by decide), x25₁], h₁.data.of_eq (by rw [rp₁.rd, rd₁]) (by rw [rp₁.wr, wr₁]), rfl⟩
     ⟨e₂.of_regs rp₂, pk₂, (pk₂ .x22 (by decide)).trans k22₂, h₂.rounds, p23₂, p24₂,
-      by rw [rp₂.others _ (by decide), x25₂], h₂.data.of_eq (by rw [rp₂.rd, rd₂]) (by rw [rp₂.wr, wr₂])⟩
+      by rw [rp₂.others _ (by decide), x25₂], h₂.data.of_eq (by rw [rp₂.rd, rd₂]) (by rw [rp₂.wr, wr₂]), rfl⟩
 
 end
 

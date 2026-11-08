@@ -397,7 +397,7 @@ theorem failCr_ok {fr : List Region} {s s₇ : State} (hR : R = 10 ∨ R = 12 �
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> decide)) sp₈ rd₈ wr₈
   exact ⟨s₈, run₈, ⟨he₈, fun _ _ => rfl, by rw [og₈ _ (by decide), mo.x22], hR, x23₈, x24₈, x25₈,
-    (mo.data.take hPn).of_eq rd₈ wr₈⟩, og₈ _ (by decide), x26₈⟩
+    (mo.data.take hPn).of_eq rd₈ wr₈, rfl⟩, og₈ _ (by decide), x26₈⟩
 
 /-- The arguments of `okB`'s `cryptAl`: the rest. -/
 theorem okCr_ok {fr : List Region} {s s₇ : State} (hR : R = 10 ∨ R = 12 ∨ R = 14)
@@ -409,7 +409,7 @@ theorem okCr_ok {fr : List Region} {s s₇ : State} (hR : R = 10 ∨ R = 12 ∨ 
   have hPn : P ≤ n := mo.hP ▸ Nat.mul_div_le n 128
   obtain ⟨s₈, run₈, x23₈, x24₈, x25₈, x26₈, r₈⟩ := okArgs_ok mo
   exact ⟨s₈, run₈, ⟨mo.env.of_regs r₈, fun _ _ => rfl, by rw [r₈.others _ (by decide), mo.x22], hR, x23₈, x24₈,
-    x25₈, (mo.data.drop hPn).of_eq r₈.rd r₈.wr⟩, r₈.others _ (by decide), x26₈, r₈.wr⟩
+    x25₈, (mo.data.drop hPn).of_eq r₈.rd r₈.wr, rfl⟩, r₈.others _ (by decide), x26₈, r₈.wr⟩
 
 /-- `omBS` in two runs whose tags compare alike. -/
 theorem omBS_rel (v : GcmImpl) (L : Lay Ctx (W + BitVec.ofNat 64 16) W) {fr fr' : List Region}

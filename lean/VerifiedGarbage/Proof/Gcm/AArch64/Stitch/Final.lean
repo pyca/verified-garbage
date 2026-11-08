@@ -29,7 +29,7 @@ namespace VG.Proof.Gcm.AArch64.Stitch
 open VG VG.AArch64
 open VG.AArch64.RegUpd (v_setV_self v_setV_of_ne gpr_setV mem_setV rd_setV wr_setV sp_setV v_write
   gpr_write gpr_write_self gpr_write_of_ne mem_write rd_write wr_write sp_write)
-open VG.Proof.Aes.AArch64 (DataInv keyStream)
+open VG.Proof.Aes.AArch64 (DataInv DataInvM dataInvM_self dataInvM_frame dataInvM_store1 ctr32_of_dataInvM keyStream)
 open VG.Proof.Aes.AArch64.Aese (sw32)
 open VG.Proof.Gcm.AArch64.Pmull (ext8 VOnly blockAt_store ext8_ext8)
 open VG.Spec.Gcm (Block blockAt blocksAt inc32 aesWith ghashFrom ctr32)
@@ -136,27 +136,6 @@ theorem finish_ok {s₀ : State} {to : Bool} (hp : KPreM s₀ to) {hb : Nat → 
     dsimp only
     rw [gpr_write_of_ne _ _ _ hk.2.2.2.1, hI.gpr r hr]
 
-/-- The blocks of the output, once all are written. -/
-theorem ctr32_of_dataInvM {m₀ m : Mem} {D O : Addr} {n R : Nat} {w : List Byte}
-    {icb : Block} (h : DataInvM m₀ m D O n n (keyStream R w icb)) :
-    blocksAt m O n = ctr32 (aesWith R w) icb (blocksAt m₀ D n) := by
-  unfold Spec.Gcm.ctr32 Spec.Gcm.keystream Spec.Gcm.blocksAt
-  apply List.ext_getElem (by simp)
-  intro i h1 h2
-  simp only [List.getElem_map, List.getElem_range, List.getElem_zipWith, List.length_map,
-    List.length_range]
-  simp only [List.length_map, List.length_range] at h1
-  refine Proof.Aes.block_ext fun k hk => ?_
-  rw [Proof.Aes.toBytes_xor _ _ hk, Proof.Aes.toBytes_blockAt _ _ hk, Proof.Aes.toBytes_blockAt _ _ hk,
-    BitVec.add_assoc, ← BitVec.ofNat_add, BitVec.add_assoc, ← BitVec.ofNat_add, h _ (by omega_arith),
-    ite_eq_left (by omega_arith)]
-  refine congrArg (_ ^^^ ·) ?_
-  unfold Spec.Gcm.aesWith
-  rw [Proof.Aes.toBytes_ofBytes (by simp) hk, keyStream, show (16 * i + k) / 16 = i by omega_arith,
-    show (16 * i + k) % 16 = k by omega_arith, Proof.Aes.getD_eq _ hk, List.getD_eq_getElem?_getD,
-    Vector.getElem?_toList, Vector.getElem?_eq_getElem hk, Option.getD_some]
-  rfl
-
 /-! ## The loops -/
 
 theorem enc_ok {s₀ : State} (hp : KPre s₀) (gh : Gh8Ok) : WP isa enc s₀ (EPost s₀) := by
@@ -165,8 +144,8 @@ theorem enc_ok {s₀ : State} (hp : KPre s₀) (gh : Gh8Ok) : WP isa enc s₀ (E
   refine WP.seq (WP.mono (setup_ok hm (blockC s₀)) fun s₁ hI₁ => ?_)
   refine WP.seq (WP.mono (byRounds_ok hm (f := encLoop) hI₁ fun s hI => encLoop_ok hm gh hI) fun s₂ hI₂ => ?_)
   refine WP.mono (finish_ok hm hI₂) fun s' h =>
-    ⟨Proof.Aes.AArch64.ctr32_of_dataInv (dataInvM_self.mp h.data), h.ctr, ?_, h.frame, h.gpr, h.sp, h.rd, h.wr⟩
-  rw [h.y, Proof.Aes.AArch64.ctr32_of_dataInv (dataInvM_self.mp h.data), ctr32_eq_map]
+    ⟨ctr32_of_dataInvM (O := dp s₀) h.data, h.ctr, ?_, h.frame, h.gpr, h.sp, h.rd, h.wr⟩
+  rw [h.y, ctr32_of_dataInvM (O := dp s₀) h.data, ctr32_eq_map]
 
 /-- The decryption to `op s₀ to`: over the text, or out of place. -/
 theorem decM_ok {s₀ : State} {to : Bool} (hp : KPreM s₀ to) (gh : Gh8Ok) :
