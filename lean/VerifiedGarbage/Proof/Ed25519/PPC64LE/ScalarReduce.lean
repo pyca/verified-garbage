@@ -125,8 +125,8 @@ theorem reduce_ok {s : State} (hp : ReducePre s) :
     intro i hi
     exact hf1 _ fun r hr => by rw [List.mem_singleton.mp hr]; exact hwb i (List.mem_range.mp hi)
   refine WP.seq (WP.mono (engine_ok hc4 e14
-    (fun i hi => by rw [hr4.rd, hr4.wr]; exact in_base (List.mem_append_left _ hwide) (by omega_arith) (by omega_arith))
-    (fun i hi => not_in_ws (by omega_arith) (hwb i hi))) fun s5 ⟨hr5, hf5, hv5⟩ => ?_)
+    (fun i hi => by rw [hr4.rd, hr4.wr]; exact in_base (List.mem_append_left _ hwide) (by omega_arith) (by omega_arith)))
+    fun s5 ⟨hr5, hf5, hv5⟩ => ?_)
   rw [hb1] at hv5
   have hc5 : Ctx (s.gpr .r5) s5 := hc4.of_rest hr5 (by decide)
   -- The copy to `out`, and the restores.
@@ -166,7 +166,7 @@ theorem reduce_ok {s : State} (hp : ReducePre s) :
       rw [saveList_regs] at hm
       have h1 : r ∉ ([.r7] : List Reg) := by revert hr hm; cases r <;> decide
       have h2 : r ∉ ([.r14] : List Reg) := by revert hr hm; cases r <;> decide
-      have h3 : r ∉ ([.r5, .r7, .r8, .r11, .r15, .r16] : List Reg) := by revert hr hm; cases r <;> decide
+      have h3 : r ∉ engClob := by revert hr hm; cases r <;> decide
       have h4 : r ∉ ([.r6, .r14, .r27] : List Reg) := by revert hr hm; cases r <;> decide
       rw [hp7.rest.gpr _ h1, u6.other _ (by simpa using h2), hr5.gpr _ h3, hr4.gpr _ h4]
   · rw [h8.sp, hp7.rest.sp, u6.sp, hr5.sp, hr4.sp]
