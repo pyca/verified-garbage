@@ -165,7 +165,7 @@ theorem mulFn_ok {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n s)
     rw [show (mod n m).minv = BitVec.ofNat 64 (minv m) from rfl, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (minv_lt m)]
     exact hM.inv
   have en : (mod n m).n = n := rfl
-  refine WP.mono (mul_ok P (lay hM hp) hinv hbu) fun v ⟨V, C, O₂, K₂⟩ => ⟨abi_of_kp (K₁.trans (K₂.mono (by decide))), (K₁.trans (K₂.mono (by decide))).gpr,
+  refine WP.mono (rmul_ok P (lay hM hp) hM.n9 hinv hbu) fun v ⟨V, C, O₂, K₂⟩ => ⟨abi_of_kp (K₁.trans (K₂.mono (by decide))), (K₁.trans (K₂.mono (by decide))).gpr,
     by rw [en] at V; exact V, ?_, kept_of hM O₁ O₂⟩
   rw [en] at C
   rw [C]

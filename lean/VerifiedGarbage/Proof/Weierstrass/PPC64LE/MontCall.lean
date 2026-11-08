@@ -113,7 +113,10 @@ theorem pre_of_call {n : Nat} {base : Addr} (hn : base.toNat + 8192 ≤ 2 ^ 64) 
     (h6 : lo t .r6 = b) : Pre n t :=
   ⟨by rw [h2, h3], by rw [h3]; exact hn, by rw [h4]; exact ho, by rw [h5]; exact ha, by rw [h6]; exact hb⟩
 
-/-- `[o] = [a] [b] R⁻¹ mod m` by a call of `vg_<curve>_mul_mod_<p|n>`. -/
+/-- `[o] = [a] [b] R⁻¹ mod m` by a call of `vg_<curve>_mul_mod_<p|n>`.
+It keeps every register but `fnClob`, but the constant-time analysis takes
+`r15`–`r(15 + n)` as secret after it (`Impl/Weierstrass/PPC64LE/Call.lean`):
+keep public values in `r14` or `r25`–`r31`. -/
 theorem mulCall_ok {S : Impl.Weierstrass.Mont.Modulus} (hM : ModOk S.k S.m) {s : State} {base : Addr}
     (hw : WsReg s base) {o a b : Nat} (ho : o + 8 * S.k ≤ own S.k)
     (ha : a + 8 * S.k ≤ own S.k) (hb : b + 8 * S.k ≤ own S.k) (hB : wordsVal s.mem base b S.k < S.m) :
