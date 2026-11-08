@@ -77,4 +77,10 @@ def ranking : Rust.Ranking := [
   ("arm", [
     { suffix := "_umaal" }])]
 
+/-- The functions that also get a selector, `<base>_select`, which returns
+the implementation their dispatcher would run instead of running it
+(`VG.Rust.selector`), for each target by its name: their bases' names. Like
+the ranking, it is not trusted: it only says which functions get one. -/
+def selected : Rust.Selected := []
+
 end VG.Dispatch

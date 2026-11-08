@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.PreparedPowers
 public import VerifiedGarbage.Proof.Gcm.X86_64.PrepareCT
 public import VerifiedGarbage.Impl.Gcm.X86_64.PrepareZ
 public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
@@ -23,7 +24,7 @@ table (`StitchZ.table_ok`, with `r11` at pair 0) multiplies pairs 0–7, lane
 by lane, by the power it broadcasts (`H'¹⁶`, then `H'³²`, which the first
 table stored), and a reduced product of two prepared powers is the prepared
 power of their sum (`prod_prepared`). `prepare_verified`:
-`Spec.Gcm.prepareContract`, with the constant time of `PrepareCT.lean`.
+`Proof.Gcm.preparePowersContract`, with the constant time of `PrepareCT.lean`.
 -/
 
 @[expose] public section
@@ -197,12 +198,12 @@ theorem prepare_ok {s₀ : State} (hw : InRegions s₀.wr (s₀.gpr .rdi) 1024)
   · rw [rd, rd₆, rd₅, rd₄, f₃.rd, rd₂, rd₁]
   · rw [wr, wr₆, wr₅, wr₄']
 
-theorem prepare_verified : Verified X86_64.target prepare (Spec.Gcm.prepareContract X86_64.abi) :=
+theorem prepare_verified : Verified X86_64.target prepare (Proof.Gcm.preparePowersContract X86_64.abi) :=
   verified_of prepare (fun _ hw hwrap => prepare_ok hw hwrap) (by decide +kernel) Prepare.prepareZ_ct
 
 /-- `prepare` after setting the count to 48, on the prepared key context. -/
 theorem prepareFlagged_verified :
-    Verified X86_64.target (Impl.Gcm.X86_64.Flag.prepareFlagged 48 prepare) (Proof.AesGcm.Flag.prepareContract X86_64.abi) :=
+    Verified X86_64.target (Impl.Gcm.X86_64.Flag.prepareFlagged 48 prepare) (Spec.Gcm.prepareContract X86_64.abi) :=
   Prepare.flagged_verified (Or.inr rfl) prepare (fun _ hw hwrap => prepare_ok hw hwrap) (by decide +kernel)
     Prepare.flaggedZ_ct
 

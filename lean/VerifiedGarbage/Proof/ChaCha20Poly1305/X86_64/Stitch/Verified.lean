@@ -9,7 +9,7 @@ public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Pad
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Verified
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.OpenTail
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.OpenTail
 import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratchWipe
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Prefix
 import VerifiedGarbage.Proof.ChaCha20.X86_64.XorBufX
@@ -4305,14 +4305,18 @@ theorem inSP_pre {s₀ : State} (hp : APre false s₀) : APre false (inSP s₀) 
   exact ⟨⟨more, h1⟩, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20,
     h21, h22, h23, h24, h25, h26, h27, h28, h29⟩
 
+theorem stitchedShared_correct (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) {s₀ : State}
+    (hp : SPreO s₀) :
+    WP isa (openStitchedShared v.callee v.poly) s₀ fun s' => abiPreserved s₀ s' ∧ openSPost s₀ s' :=
+  WP.seq (WP.mono (openStitchedBody_ok v hv hp.1 hp.2) fun _ h => tail_ok hp.1 h)
+
 theorem openStitched_correct (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) {s₀ : State}
     (hp : APre false s₀) :
     WP isa (openStitched v.callee v.poly) s₀ fun s' => abiPreserved s₀ s' ∧ openX86_64.post s₀ s' := by
   refine WP.seq (WP.mono_mx (by decide) (srcInP_ok s₀) fun s₁ e₁ mx₁ => ?_)
   subst e₁
-  refine WP.seq (WP.mono (openStitchedBody_ok v hv (inSP_pre hp) (srcIO_dp (inSP_pre hp))) fun _ h =>
-    WP.mono (tail_ok (inSP_pre hp) h)
-    fun s' ⟨ab, hpost⟩ => ⟨⟨fun r hr => ?_, ab.2.1, ab.2.2⟩, hpost⟩)
+  refine WP.mono (stitchedShared_correct v hv ⟨inSP_pre hp, srcIO_dp (inSP_pre hp)⟩)
+    fun s' ⟨ab, hpost⟩ => ⟨⟨fun r hr => ?_, ab.2.1, ab.2.2⟩, hpost⟩
   have hne : r ≠ .rax ∧ r ≠ .r11 := by
     simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
@@ -5227,6 +5231,15 @@ theorem bodyS_rel (hp : APre false s₀) (hp' : APre false s₀') (hq : pubX86_6
   have := (entryO_rel hp hp' hq).seq (pA.seq ((xsel_rel v hv hX hp hp' hq).seq (mid.seq (ite.seq post))))
   exact RelCT.of_exec openS_exec this
 
+theorem stitchedShared_rel (hp : SPreO s₀) (hp' : SPreO s₀') (hq : sharedPub s₀ s₀') :
+    RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (openStitchedShared v.callee v.poly) fun _ _ => True :=
+  RelCT.seq (R := fun x y => TailIn s₀ (sp s₀) x ∧ TailIn s₀' (sp s₀') y)
+    (RelCT.mono ((bodyS_rel v hv hp.1 hp'.1 hq.1 hq.2.1 hp.2 hp'.2).wp fun x y ⟨ex, ey⟩ => by
+      subst ex; subst ey
+      exact ⟨openStitchedBody_ok v hv hp.1 hp.2, openStitchedBody_ok v hv hp'.1 hp'.2⟩)
+      (fun _ _ h => h) fun _ _ h => h.2)
+    (tail_rel hp.1 hp'.1 hq.1 hq.2.2)
+
 theorem openS_rel (h₀ : preX86_64 false s₀) (h₀' : preX86_64 false s₀') (hq : pubX86_64 s₀ s₀')
     (hl : openLeakX86_64 s₀ = openLeakX86_64 s₀') :
     RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (openStitched v.callee v.poly) fun _ _ => True := by
@@ -5237,12 +5250,7 @@ theorem openS_rel (h₀ : preX86_64 false s₀) (h₀' : preX86_64 false s₀') 
   refine RelCT.seq (R := fun x y => x = inSP s₀ ∧ y = inSP s₀')
     (RelCT.mono ((taintRel [] (fun _ _ _ r hr => by simp at hr) (by taint_decide)).wp fun x y h =>
       ⟨by rw [h.1]; exact srcInP_ok s₀, by rw [h.2]; exact srcInP_ok s₀'⟩) (fun _ _ h => h) fun _ _ h => h.2) ?_
-  refine RelCT.seq (R := fun x y => TailIn (inSP s₀) (sp (inSP s₀)) x ∧ TailIn (inSP s₀') (sp (inSP s₀')) y)
-    (RelCT.mono ((bodyS_rel v hv hp hp' hq' hs (srcIO_dp hp) (srcIO_dp hp')).wp fun x y ⟨ex, ey⟩ => by
-      subst ex; subst ey
-      exact ⟨openStitchedBody_ok v hv hp (srcIO_dp hp), openStitchedBody_ok v hv hp' (srcIO_dp hp')⟩)
-      (fun _ _ h => h) fun _ _ h => h.2)
-    (tail_rel hp hp' hq' hl)
+  exact stitchedShared_rel v hv ⟨hp, srcIO_dp hp⟩ ⟨hp', srcIO_dp hp'⟩ ⟨hq', hs, hl⟩
 
 end
 end VG.Proof.ChaCha20Poly1305.X86_64.Stitch
@@ -5296,6 +5304,15 @@ theorem openS_ok (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) (s : 
 theorem openS_ct (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) :
     ConstantTime isa openX86_64.pre openX86_64.pub (openStitched v.callee v.poly) :=
   fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (openS_rel v hv h₁ h₂ hq.1 hq.2 _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
+
+theorem stitchedShared_ok (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) (s : State)
+    (hs : sharedK.pre s) :
+    ∃ t s', Exec isa (openStitchedShared v.callee v.poly) s t s' ∧ abiPreserved s s' ∧ sharedK.post s s' :=
+  let ⟨t, s', e, a, p⟩ := stitchedShared_correct v hv hs; ⟨t, s', e, a, p⟩
+
+theorem stitchedShared_ct (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) :
+    ConstantTime isa sharedK.pre sharedK.pub (openStitchedShared v.callee v.poly) :=
+  fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (stitchedShared_rel v hv h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
 /-- The postconditions match on `decrypt` through different auxiliary
 functions, so the implication splits on it. -/

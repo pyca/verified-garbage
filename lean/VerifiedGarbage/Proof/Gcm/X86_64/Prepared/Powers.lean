@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.Gcm.Prepared16
+public import VerifiedGarbage.Proof.Gcm.PreparedPowers
 
 /-!
 # The first `n` pairs of a prepared key context
