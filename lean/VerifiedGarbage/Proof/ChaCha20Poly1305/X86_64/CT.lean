@@ -619,8 +619,8 @@ abbrev N : List Byte := bytesAt s₀.mem (np s₀) 12
 abbrev A : List Byte := bytesAt s₀.mem (ad s₀) (AL s₀)
 abbrev D : List Byte := bytesAt s₀.mem (dp s₀) (L s₀)
 abbrev T0 : List Byte := bytesAt s₀.mem (tp s₀) 16
-/-- The ciphertext's address in `open`'s body, `r11` (`srcIn`, `open_to`'s
-entry), which `moves` keeps in `r12`; the destination is `dp`. -/
+/-- The ciphertext's address in `open`'s body, `r11` (from the caller of
+`open`'s body), which `moves` keeps in `r12`; the destination is `dp`. -/
 abbrev sp : Addr := s₀.gpr .r11
 /-- The ciphertext on entry to `open`'s body. -/
 abbrev C : List Byte := bytesAt s₀.mem (sp s₀) (L s₀)
@@ -680,14 +680,6 @@ theorem APre.of {enc : Bool} (s₀ : State) (h : preX86_64 enc s₀) : APre enc 
   exact ⟨⟨[], by rw [List.append_nil]; exact h1⟩, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22, h23, h24, h25, h26, h27, h28, h29⟩
 
 theorem APre.a_d {enc : Bool} {s₀ : State} (hp : APre enc s₀) : (aR s₀).Disjoint (dR s₀) := hp.d_a.symm
-
-/-- `APre` does not depend on `r11`. -/
-theorem APre.setR11 {enc : Bool} {s₀ : State} (hp : APre enc s₀) (v : BitVec 64) :
-    APre enc (s₀.setReg .r11 v) := by
-  obtain ⟨⟨more, h1⟩, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20,
-    h21, h22, h23, h24, h25, h26, h27, h28, h29⟩ := hp
-  exact ⟨⟨more, h1⟩, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20,
-    h21, h22, h23, h24, h25, h26, h27, h28, h29⟩
 
 variable {e : Bool} {t₁₂ : Addr}
 
@@ -4612,9 +4604,6 @@ theorem srcA {s₀ : State} (hp : APre e s₀) : Src s₀ (ad s₀) (AL s₀) :=
 theorem srcD {s₀ : State} (hp : APre e s₀) : Src s₀ (dp s₀) (L s₀) :=
   ⟨(s₀.gpr .r9).isLt, hp.wrap_d, hp.c_d, hp.stk_d, fun a n ⟨r, hr, hc⟩ => ⟨r, by
     simp only [List.mem_singleton] at hr; subst hr; simp [hp.d_wr], hc⟩⟩
-
-/-- In place, the data is the ciphertext. -/
-theorem srcIO_dp {s₀ : State} (hp : APre e s₀) : SrcIO s₀ (dp s₀) := ⟨srcD hp, .inl rfl⟩
 
 theorem length_encrypt (key nonce m : List Byte) : (Spec.ChaCha20.encrypt key 1 nonce m).length = m.length := by
   rw [encrypt_eq, List.length_zipWith, VG.Proof.ChaCha20.length_keystream, Nat.min_self]

@@ -15,6 +15,7 @@ use crate::arch::dispatch::aes::vg_aes_expand_key_auto;
 use crate::arch::dispatch::aes_cbc::{vg_aes_cbc_decrypt_auto, vg_aes_cbc_encrypt_auto};
 use crate::error::{IncompleteBlock, InvalidKeyLength};
 use crate::zeroize::zeroize;
+use core::mem::MaybeUninit;
 
 /// An expanded AES key, which serves both directions. Every implementation
 /// of `vg_aes_expand_key` writes the same schedule (`Spec.Aes.KeySchedule`),
@@ -130,7 +131,9 @@ impl Key {
         if !buffer.len().is_multiple_of(16) {
             return Err(IncompleteBlock);
         }
-        let mut scratch = CacheAligned([0; 272]);
+        // The contracts hold whatever the working space holds, so it need
+        // not be initialized.
+        let mut scratch = CacheAligned(MaybeUninit::<[u64; 272]>::uninit());
         let data = buffer.as_mut_ptr().cast();
         let n = buffer.len() / 16;
         // SAFETY: `rounds` is 10, 12 or 14 and the schedule holds its key
@@ -139,9 +142,23 @@ impl Key {
         // objects of the sizes of the signature.
         unsafe {
             if encrypt {
-                vg_aes_cbc_encrypt_auto(&self.schedule.0, self.rounds, iv, data, n, &mut scratch.0);
+                vg_aes_cbc_encrypt_auto(
+                    &self.schedule.0,
+                    self.rounds,
+                    iv,
+                    data,
+                    n,
+                    scratch.0.as_mut_ptr(),
+                );
             } else {
-                vg_aes_cbc_decrypt_auto(&self.schedule.0, self.rounds, iv, data, n, &mut scratch.0);
+                vg_aes_cbc_decrypt_auto(
+                    &self.schedule.0,
+                    self.rounds,
+                    iv,
+                    data,
+                    n,
+                    scratch.0.as_mut_ptr(),
+                );
             }
         }
         Ok(())

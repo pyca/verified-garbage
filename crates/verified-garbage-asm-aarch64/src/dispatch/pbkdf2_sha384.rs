@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Hmac.Instance.pbkdf2Contract` of `VG.Spec.Hmac.sha384I`. Constant time: only the pointers, the lengths and `c` may affect timing, not the password, the salt or the key.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_pbkdf2_hmac_sha384_sha3` if the CPU supports its features (`VG_PBKDF2_HMAC_SHA384_SHA3_FEATURES`); or else `vg_pbkdf2_hmac_sha384`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_pbkdf2_hmac_sha384_sha512` if the CPU supports its features (`VG_PBKDF2_HMAC_SHA384_SHA512_FEATURES`); or else `vg_pbkdf2_hmac_sha384`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -26,8 +26,8 @@ pub unsafe fn vg_pbkdf2_hmac_sha384_auto(password: *const u8, password_len: usiz
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::pbkdf2_sha384::VG_PBKDF2_HMAC_SHA384_SHA3_FEATURES) {
-            return crate::pbkdf2_sha384::vg_pbkdf2_hmac_sha384_sha3;
+        if cpu.contains(crate::pbkdf2_sha384::VG_PBKDF2_HMAC_SHA384_SHA512_FEATURES) {
+            return crate::pbkdf2_sha384::vg_pbkdf2_hmac_sha384_sha512;
         }
         crate::pbkdf2_sha384::vg_pbkdf2_hmac_sha384
     }

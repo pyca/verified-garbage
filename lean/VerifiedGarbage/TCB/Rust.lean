@@ -1661,8 +1661,7 @@ pub unsafe fn <base>_auto(<the signature>) {
 
 Its items are inside it, so that their names are its own and its lines, from
 its first to the `}` closing it, are all of its code (as
-`ci/merge_rust_coverage.py` reads it). One whose implementations the ranking
-leaves out but its base calls the base.
+`ci/merge_rust_coverage.py` reads it).
 
 The dispatchers of a module's functions are in a file of their own,
 `dispatch/<module>.rs` of the crate's `codeDir` (`dispatchFile`), declared by
@@ -1695,9 +1694,7 @@ having the tag `""`), and the implementations are ordered by the
 rank of their part for the first tag, then for the next, and so on (a
 missing part being the baseline, ranked last), which chooses the best variant
 of each interface in turn. An implementation that can be chosen only where
-one ranked before it can is left out (it would never run), and so is one
-whose ranking says to (`Rank.skip`, for an implementation the Rust code
-chooses by something other than the CPU and calls itself).
+one ranked before it can is left out (it would never run).
 
 A function whose base is its only implementation gets a dispatcher too, as
 another name of it, so that the Rust code calling the dispatcher is the same
@@ -1770,15 +1767,12 @@ whose name is that of its base followed by `suffix`, in a module of
 `modules` (or any if there are none), chosen only on a CPU that also has the
 features `extra` (by their Rust `target_feature` names) and, if `vendor` is
 given, only where `target_vendor` is `vendor` or `VG_CPU_FEATURES` names every
-feature it needs; or, if `skip`, never chosen by a dispatcher (as one the
-Rust code chooses by something other than the CPU, such as the length of
-its input, and calls itself). -/
+feature it needs. -/
 structure Rank where
   suffix : String
   modules : List String := []
   extra : List String := []
   vendor : Option String := none
-  skip : Bool := false
 
 /-- The ranking of each target, by its name (`Target.name`): its `Rank`s,
 best first. -/
@@ -1870,8 +1864,6 @@ structure Arm where
   impl : Impl
   extra : List String
   vendors : List String
-  /-- Whether the ranking leaves it out (`Rank.skip`). -/
-  skip : Bool
 
 /-- The implementations `members` (each with its suffix) of a function or
 table of the module `m` of the target `t`, but its base, that its dispatcher
@@ -1879,8 +1871,7 @@ tries, in order (see above), or why `rs` does not rank them. -/
 def armsOf (rs : List Rank) (m t : String) (members : List (Impl × String)) :
     Except String (List Arm) := do
   let arm (a : Impl) (ranks : List Rank) : Arm :=
-    ⟨a, dedup (ranks.flatMap (·.extra)), dedup (ranks.filterMap (·.vendor)),
-      ranks.any (·.skip)⟩
+    ⟨a, dedup (ranks.flatMap (·.extra)), dedup (ranks.filterMap (·.vendor))⟩
   let keyed ← if members.all fun (_, s) => (rankOf rs m s).isSome then
       pure (members.map fun (a, s) => match rankOf rs m s with
         | some (i, r) => ([i], arm a [r])
@@ -1900,7 +1891,6 @@ def armsOf (rs : List Rank) (m t : String) (members : List (Impl × String)) :
       pure (parsed.map fun (a, ps) =>
         (tags.map fun t => ((ps.find? (·.1 == t)).map (·.2.1)).getD rs.length,
           arm a (ps.map (·.2.2))))
-  let keyed := keyed.filter fun (_, a) => !a.skip
   let sorted := keyed.mergeSort fun a b => lexLe a.1 b.1
   -- Leave out each implementation that can be chosen only where one before it can.
   let weaker (e l : Arm) : Bool :=
@@ -1959,10 +1949,8 @@ def dispatchNote (base : String) (arms : List Arm) : String :=
     | cs => s!"`{a.impl.name}` if " ++ englishList "and" cs
   s!"It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders \
     (`VG.Rust.Rank`): " ++ "; ".intercalate (arms.map item) ++
-    s!"; or else `{base}`, which needs no CPU feature. " ++
-    (if arms.isEmpty then "" else "It chooses on its first call, and calls the one it chose from \
-      then on without choosing again. ") ++
-    "Each has this documentation but for its stack (whose requirements here are the largest) \
+    s!"; or else `{base}`, which needs no CPU feature. It chooses on its first call, and calls \
+    the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) \
     and what it writes."
 
 /-- The body of a function returning the implementation, of the function
@@ -1998,35 +1986,31 @@ def dispatcher (g : Group) (arms : List Arm) : String :=
   "#[allow(clippy::too_many_arguments)]\n" ++
   "#[inline]\n" ++
   s!"pub unsafe fn {auto}{b.sig.rust} " ++ "{\n" ++
-  (if arms.isEmpty then
-    "    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.\n" ++
-    "    unsafe { " ++ s!"crate::{b.module}::{b.name}({args})" ++ " }\n"
-  else
-    "    /// The type of the implementations.\n" ++
-    s!"    type Impl = unsafe extern \"{abi}\" fn{b.sig.rust};\n" ++
-    "    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only\n" ++
-    "    /// features the CPU has.\n" ++
-    "    #[cold]\n" ++
-    "    fn select() -> Impl {\n" ++
-    choice "        " b arms ++
-    "    }\n" ++
-    "    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls\n" ++
-    "    /// after it, and runs it.\n" ++
-    "    #[cold]\n" ++
-    s!"    unsafe extern \"{abi}\" fn first{b.sig.rust} " ++ "{\n" ++
-    "        let f = select();\n" ++
-    s!"        CHOSEN.store(f as *mut (), {relaxed});\n" ++
-    "        // SAFETY: the caller's obligations, which are those of every implementation, `f`\n" ++
-    "        // among them, and the CPU has the features `f` needs.\n" ++
-    s!"        unsafe " ++ "{ " ++ s!"f({args})" ++ " }\n" ++
-    "    }\n" ++
-    "    /// The function to call: `first`, until it records the implementation it chose.\n" ++
-    "    static CHOSEN: core::sync::atomic::AtomicPtr<()> =\n" ++
-    "        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());\n" ++
-    "    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,\n" ++
-    "    // or an implementation `select` returned, which needs only features the CPU has. Calling\n" ++
-    "    // either carries the caller's obligations, which are those of every implementation.\n" ++
-    s!"    unsafe " ++ "{ " ++ s!"core::mem::transmute::<*mut (), Impl>(CHOSEN.load({relaxed}))({args})" ++ " }\n") ++
+  "    /// The type of the implementations.\n" ++
+  s!"    type Impl = unsafe extern \"{abi}\" fn{b.sig.rust};\n" ++
+  "    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only\n" ++
+  "    /// features the CPU has.\n" ++
+  "    #[cold]\n" ++
+  "    fn select() -> Impl {\n" ++
+  choice "        " b arms ++
+  "    }\n" ++
+  "    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls\n" ++
+  "    /// after it, and runs it.\n" ++
+  "    #[cold]\n" ++
+  s!"    unsafe extern \"{abi}\" fn first{b.sig.rust} " ++ "{\n" ++
+  "        let f = select();\n" ++
+  s!"        CHOSEN.store(f as *mut (), {relaxed});\n" ++
+  "        // SAFETY: the caller's obligations, which are those of every implementation, `f`\n" ++
+  "        // among them, and the CPU has the features `f` needs.\n" ++
+  s!"        unsafe " ++ "{ " ++ s!"f({args})" ++ " }\n" ++
+  "    }\n" ++
+  "    /// The function to call: `first`, until it records the implementation it chose.\n" ++
+  "    static CHOSEN: core::sync::atomic::AtomicPtr<()> =\n" ++
+  "        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());\n" ++
+  "    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,\n" ++
+  "    // or an implementation `select` returned, which needs only features the CPU has. Calling\n" ++
+  "    // either carries the caller's obligations, which are those of every implementation.\n" ++
+  s!"    unsafe " ++ "{ " ++ s!"core::mem::transmute::<*mut (), Impl>(CHOSEN.load({relaxed}))({args})" ++ " }\n" ++
   "}\n"
 
 /-- The dispatcher of the function `g` whose base is its only implementation:

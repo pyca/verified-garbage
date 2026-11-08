@@ -51,13 +51,13 @@ impl Cast5Ecb {
     /// Encrypts complete eight-byte blocks in place. Empty input is valid.
     /// Returns an error without changing the buffer if its length is invalid.
     pub fn encrypt(&self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
-        self.crypt(buffer, vg_cast5_ecb_encrypt_auto)
+        self.crypt(buffer, true)
     }
 
     /// Decrypts complete eight-byte blocks in place. Empty input is valid.
     /// Returns an error without changing the buffer if its length is invalid.
     pub fn decrypt(&self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
-        self.crypt(buffer, vg_cast5_ecb_decrypt_auto)
+        self.crypt(buffer, false)
     }
 
     /// The subkeys, for the other modes of CAST5.
@@ -70,7 +70,8 @@ impl Cast5Ecb {
         self.rounds
     }
 
-    fn crypt(&self, buffer: &mut [u8], f: Ecb) -> Result<(), IncompleteBlock> {
+    /// Encrypts (`encrypt`) or decrypts the blocks of `buffer` in place.
+    fn crypt(&self, buffer: &mut [u8], encrypt: bool) -> Result<(), IncompleteBlock> {
         if !buffer.len().is_multiple_of(8) {
             return Err(IncompleteBlock);
         }
@@ -80,13 +81,23 @@ impl Cast5Ecb {
         // blocks, and it, the schedule and the scratch space are separate
         // valid objects of the sizes of the signature.
         unsafe {
-            f(
-                &self.schedule.0,
-                self.rounds,
-                buffer.as_mut_ptr().cast(),
-                buffer.len() / 8,
-                &mut scratch.0,
-            );
+            if encrypt {
+                vg_cast5_ecb_encrypt_auto(
+                    &self.schedule.0,
+                    self.rounds,
+                    buffer.as_mut_ptr().cast(),
+                    buffer.len() / 8,
+                    &mut scratch.0,
+                );
+            } else {
+                vg_cast5_ecb_decrypt_auto(
+                    &self.schedule.0,
+                    self.rounds,
+                    buffer.as_mut_ptr().cast(),
+                    buffer.len() / 8,
+                    &mut scratch.0,
+                );
+            }
         }
         // The scratch space may hold the subkeys, the data and our caller's
         // registers.
@@ -94,19 +105,6 @@ impl Cast5Ecb {
         Ok(())
     }
 }
-
-/// The signature of `vg_cast5_ecb_encrypt` and `vg_cast5_ecb_decrypt`.
-#[cfg(target_arch = "x86_64")]
-type Ecb = unsafe extern "sysv64" fn(*const [u8; 128], usize, *mut [u8; 8], usize, *mut [u64; 32]);
-/// The signature of `vg_cast5_ecb_encrypt` and `vg_cast5_ecb_decrypt`.
-#[cfg(any(
-    target_arch = "aarch64",
-    target_arch = "x86",
-    target_arch = "arm",
-    all(target_arch = "powerpc64", target_endian = "little"),
-    target_arch = "riscv64"
-))]
-type Ecb = unsafe extern "C" fn(*const [u8; 128], usize, *mut [u8; 8], usize, *mut [u64; 32]);
 
 impl Drop for Cast5Ecb {
     fn drop(&mut self) {

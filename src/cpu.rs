@@ -1,15 +1,11 @@
 //! CPU features, for choosing among implementations of a primitive: their
 //! detection is the crate `verified_garbage_cpu`'s
 //! (`crates/verified-garbage-cpu/src/detect.rs`), which the generated
-//! dispatchers ask too, and its tests are here, which CI runs with the
+//! dispatchers ask, and its tests are here, which CI runs with the
 //! library's.
 
 #[cfg(test)]
-pub(crate) use verified_garbage_cpu::detected;
-
-#[cfg(test)]
 mod tests {
-    use super::detected;
     #[cfg(all(
         feature = "cpu-features-env",
         any(target_arch = "x86", target_arch = "x86_64")
@@ -20,7 +16,7 @@ mod tests {
     use verified_garbage_cpu::detect::{NAMES, allowed, runtime};
     #[cfg(feature = "cpu-features-env")]
     use verified_garbage_cpu::detect::{allowed_by, named_by, parse};
-    use verified_garbage_cpu::{Features, feature, requested};
+    use verified_garbage_cpu::{Features, detected, feature, requested};
 
     /// Each name's bit is its index in `NAMES`, and no name is there twice.
     #[test]

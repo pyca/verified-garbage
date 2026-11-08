@@ -18,7 +18,7 @@ pub use crate::sha512::vg_sha512_init as vg_sha512_init_auto;
 ///
 /// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha384`. Constant time: only the pointers and `len` may affect timing, not the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha384_digest_sha3` if the CPU supports its features (`VG_SHA384_DIGEST_SHA3_FEATURES`); or else `vg_sha384_digest`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha384_digest_sha512` if the CPU supports its features (`VG_SHA384_DIGEST_SHA512_FEATURES`); or else `vg_sha384_digest`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -36,8 +36,8 @@ pub unsafe fn vg_sha384_digest_auto(data: *const u8, len: usize, out: *mut [u8; 
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::sha512::VG_SHA384_DIGEST_SHA3_FEATURES) {
-            return crate::sha512::vg_sha384_digest_sha3;
+        if cpu.contains(crate::sha512::VG_SHA384_DIGEST_SHA512_FEATURES) {
+            return crate::sha512::vg_sha384_digest_sha512;
         }
         crate::sha512::vg_sha384_digest
     }
@@ -64,7 +64,7 @@ pub unsafe fn vg_sha384_digest_auto(data: *const u8, len: usize, out: *mut [u8; 
 ///
 /// Contract: `VG.Spec.Sha512.updateContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha512_update_sha3` if the CPU supports its features (`VG_SHA512_UPDATE_SHA3_FEATURES`); or else `vg_sha512_update`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha512_update_sha512` if the CPU supports its features (`VG_SHA512_UPDATE_SHA512_FEATURES`); or else `vg_sha512_update`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -82,8 +82,8 @@ pub unsafe fn vg_sha512_update_auto(state: *mut [u8; 192], count: u64, data: *co
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::sha512::VG_SHA512_UPDATE_SHA3_FEATURES) {
-            return crate::sha512::vg_sha512_update_sha3;
+        if cpu.contains(crate::sha512::VG_SHA512_UPDATE_SHA512_FEATURES) {
+            return crate::sha512::vg_sha512_update_sha512;
         }
         crate::sha512::vg_sha512_update
     }
@@ -110,7 +110,7 @@ pub unsafe fn vg_sha512_update_auto(state: *mut [u8; 192], count: u64, data: *co
 ///
 /// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha512`. Constant time: only the pointers and `len` may affect timing, not the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha512_digest_sha3` if the CPU supports its features (`VG_SHA512_DIGEST_SHA3_FEATURES`); or else `vg_sha512_digest`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha512_digest_sha512` if the CPU supports its features (`VG_SHA512_DIGEST_SHA512_FEATURES`); or else `vg_sha512_digest`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -128,8 +128,8 @@ pub unsafe fn vg_sha512_digest_auto(data: *const u8, len: usize, out: *mut [u8; 
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::sha512::VG_SHA512_DIGEST_SHA3_FEATURES) {
-            return crate::sha512::vg_sha512_digest_sha3;
+        if cpu.contains(crate::sha512::VG_SHA512_DIGEST_SHA512_FEATURES) {
+            return crate::sha512::vg_sha512_digest_sha512;
         }
         crate::sha512::vg_sha512_digest
     }
@@ -168,7 +168,7 @@ pub use crate::sha512::vg_sha512_256_init as vg_sha512_256_init_auto;
 ///
 /// Contract: `VG.Spec.Sha512.finalizeDigestContract` for `VG.Spec.Sha512.H0_384` and `VG.Spec.Sha512.sha384`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha384_finalize_sha3` if the CPU supports its features (`VG_SHA384_FINALIZE_SHA3_FEATURES`); or else `vg_sha384_finalize`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha384_finalize_sha512` if the CPU supports its features (`VG_SHA384_FINALIZE_SHA512_FEATURES`); or else `vg_sha384_finalize`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -188,8 +188,8 @@ pub unsafe fn vg_sha384_finalize_auto(state: *mut [u8; 192], count: u64, out: *m
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::sha512::VG_SHA384_FINALIZE_SHA3_FEATURES) {
-            return crate::sha512::vg_sha384_finalize_sha3;
+        if cpu.contains(crate::sha512::VG_SHA384_FINALIZE_SHA512_FEATURES) {
+            return crate::sha512::vg_sha384_finalize_sha512;
         }
         crate::sha512::vg_sha384_finalize
     }
@@ -216,7 +216,7 @@ pub unsafe fn vg_sha384_finalize_auto(state: *mut [u8; 192], count: u64, out: *m
 ///
 /// Contract: `VG.Spec.Sha512.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha512_finalize_sha3` if the CPU supports its features (`VG_SHA512_FINALIZE_SHA3_FEATURES`); or else `vg_sha512_finalize`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha512_finalize_sha512` if the CPU supports its features (`VG_SHA512_FINALIZE_SHA512_FEATURES`); or else `vg_sha512_finalize`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -236,8 +236,8 @@ pub unsafe fn vg_sha512_finalize_auto(state: *mut [u8; 192], count: u64, out: *m
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::sha512::VG_SHA512_FINALIZE_SHA3_FEATURES) {
-            return crate::sha512::vg_sha512_finalize_sha3;
+        if cpu.contains(crate::sha512::VG_SHA512_FINALIZE_SHA512_FEATURES) {
+            return crate::sha512::vg_sha512_finalize_sha512;
         }
         crate::sha512::vg_sha512_finalize
     }
@@ -264,7 +264,7 @@ pub unsafe fn vg_sha512_finalize_auto(state: *mut [u8; 192], count: u64, out: *m
 ///
 /// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha512_224`. Constant time: only the pointers and `len` may affect timing, not the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha512_224_digest_sha3` if the CPU supports its features (`VG_SHA512_224_DIGEST_SHA3_FEATURES`); or else `vg_sha512_224_digest`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha512_224_digest_sha512` if the CPU supports its features (`VG_SHA512_224_DIGEST_SHA512_FEATURES`); or else `vg_sha512_224_digest`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -282,8 +282,8 @@ pub unsafe fn vg_sha512_224_digest_auto(data: *const u8, len: usize, out: *mut [
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::sha512::VG_SHA512_224_DIGEST_SHA3_FEATURES) {
-            return crate::sha512::vg_sha512_224_digest_sha3;
+        if cpu.contains(crate::sha512::VG_SHA512_224_DIGEST_SHA512_FEATURES) {
+            return crate::sha512::vg_sha512_224_digest_sha512;
         }
         crate::sha512::vg_sha512_224_digest
     }
@@ -310,7 +310,7 @@ pub unsafe fn vg_sha512_224_digest_auto(data: *const u8, len: usize, out: *mut [
 ///
 /// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha512_256`. Constant time: only the pointers and `len` may affect timing, not the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha512_256_digest_sha3` if the CPU supports its features (`VG_SHA512_256_DIGEST_SHA3_FEATURES`); or else `vg_sha512_256_digest`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha512_256_digest_sha512` if the CPU supports its features (`VG_SHA512_256_DIGEST_SHA512_FEATURES`); or else `vg_sha512_256_digest`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -328,8 +328,8 @@ pub unsafe fn vg_sha512_256_digest_auto(data: *const u8, len: usize, out: *mut [
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::sha512::VG_SHA512_256_DIGEST_SHA3_FEATURES) {
-            return crate::sha512::vg_sha512_256_digest_sha3;
+        if cpu.contains(crate::sha512::VG_SHA512_256_DIGEST_SHA512_FEATURES) {
+            return crate::sha512::vg_sha512_256_digest_sha512;
         }
         crate::sha512::vg_sha512_256_digest
     }
@@ -356,7 +356,7 @@ pub unsafe fn vg_sha512_256_digest_auto(data: *const u8, len: usize, out: *mut [
 ///
 /// Contract: `VG.Spec.Sha512.finalizeDigestContract` for `VG.Spec.Sha512.H0_512_224` and `VG.Spec.Sha512.sha512_224`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha512_224_finalize_sha3` if the CPU supports its features (`VG_SHA512_224_FINALIZE_SHA3_FEATURES`); or else `vg_sha512_224_finalize`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha512_224_finalize_sha512` if the CPU supports its features (`VG_SHA512_224_FINALIZE_SHA512_FEATURES`); or else `vg_sha512_224_finalize`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -376,8 +376,8 @@ pub unsafe fn vg_sha512_224_finalize_auto(state: *mut [u8; 192], count: u64, out
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::sha512::VG_SHA512_224_FINALIZE_SHA3_FEATURES) {
-            return crate::sha512::vg_sha512_224_finalize_sha3;
+        if cpu.contains(crate::sha512::VG_SHA512_224_FINALIZE_SHA512_FEATURES) {
+            return crate::sha512::vg_sha512_224_finalize_sha512;
         }
         crate::sha512::vg_sha512_224_finalize
     }
@@ -404,7 +404,7 @@ pub unsafe fn vg_sha512_224_finalize_auto(state: *mut [u8; 192], count: u64, out
 ///
 /// Contract: `VG.Spec.Sha512.finalizeDigestContract` for `VG.Spec.Sha512.H0_512_256` and `VG.Spec.Sha512.sha512_256`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha512_256_finalize_sha3` if the CPU supports its features (`VG_SHA512_256_FINALIZE_SHA3_FEATURES`); or else `vg_sha512_256_finalize`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha512_256_finalize_sha512` if the CPU supports its features (`VG_SHA512_256_FINALIZE_SHA512_FEATURES`); or else `vg_sha512_256_finalize`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -424,8 +424,8 @@ pub unsafe fn vg_sha512_256_finalize_auto(state: *mut [u8; 192], count: u64, out
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::sha512::VG_SHA512_256_FINALIZE_SHA3_FEATURES) {
-            return crate::sha512::vg_sha512_256_finalize_sha3;
+        if cpu.contains(crate::sha512::VG_SHA512_256_FINALIZE_SHA512_FEATURES) {
+            return crate::sha512::vg_sha512_256_finalize_sha512;
         }
         crate::sha512::vg_sha512_256_finalize
     }
