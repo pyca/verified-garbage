@@ -34,8 +34,8 @@ of calls of the verified `vg_aes_ctr32`, `vg_aes_expand_key_scratch` and
 * `seal` copies the tag from `W` to `tag` at the end (`tagOut`); `open`
   copies the received tag from `tag` to `W` first (`recv`), decrypts,
   computes the tag of the plaintext at `W + 240` and compares the two
-  without a branch (`cmp`), then ANDs every byte of the data with `0 − ok`
-  (`mask`).
+  without a branch (`cmp`), then ANDs every byte of the data with `0 − ok`,
+  a doubleword at a time and then the last bytes (`mask`).
 
 A call (`bl`) stores nothing in memory and the callees use no stack.
 
@@ -277,14 +277,21 @@ def cmp : List Instr :=
     .load .d .r5 .r14 (bO + 8), .logic .xor .r4 .r4 .r5, .logic .or .r3 .r3 .r4, .li .r4 0, .sub .r4 .r4 .r3,
     .logic .or .r3 .r3 .r4, .lsr .d .r3 .r3 63, .li .r25 1, .sub .r25 .r25 .r3]
 
+/-- One doubleword of the data ANDed with the mask `r9`. -/
+def maskD : List Instr :=
+  [.load .d .r0 .r3 0, .logic .and .r0 .r0 .r9, .store .d .r0 .r3 0, .addi .r3 .r3 8, .subi .r4 .r4 1]
+
 /-- One byte of the data ANDed with the mask `r9`. -/
 def maskBody : List Instr :=
-  [.lbz .r0 .r3 0, .logic .and .r0 .r0 .r9, .stb .r0 .r3 0, .addi .r3 .r3 1, .subi .r4 .r4 1]
+  [.lbz .r0 .r3 0, .logic .and .r0 .r0 .r9, .stb .r0 .r3 0, .addi .r3 .r3 1, .subi .r5 .r5 1]
 
-/-- Every byte of the data ANDed with `0 − r25`. -/
+/-- Every byte of the data ANDed with `0 − r25`: eight at a time (`r4`
+counting the doublewords), then the last `len mod 8` one at a time (`r5`). -/
 def mask : Prog isa :=
-  .seq (.block [.li .r9 0, .sub .r9 .r9 .r25, mov .r3 .r20, mov .r4 .r21])
-    (.ite (.zero .d .r4) (.block []) (.loop (.block maskBody) (.nonzero .d .r4)))
+  .seq (.block [.li .r9 0, .sub .r9 .r9 .r25, mov .r3 .r20, .lsr .d .r4 .r21 3, .lsl .r5 .r4 3,
+      .sub .r5 .r21 .r5])
+    (.seq (.ite (.zero .d .r4) (.block []) (.loop (.block maskD) (.nonzero .d .r4)))
+      (.ite (.zero .d .r5) (.block []) (.loop (.block maskBody) (.nonzero .d .r5))))
 
 /-! ## The functions -/
 

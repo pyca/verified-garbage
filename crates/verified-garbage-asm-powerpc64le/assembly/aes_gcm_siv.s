@@ -853,20 +853,35 @@ vg_aes_gcm_siv_open:
 	li %r9, 0
 	subf %r9, %r25, %r9
 	or %r3, %r20, %r20
-	or %r4, %r21, %r21
+	rldicl %r4, %r21, 61, 3
+	rldicr %r5, %r4, 3, 60
+	subf %r5, %r5, %r21
 	cmpldi %cr0, %r4, 0
 	beq %cr0, 234f
 236:
-	lbz %r0, 0(%r3)
+	ld %r0, 0(%r3)
 	and %r0, %r0, %r9
-	stb %r0, 0(%r3)
-	addi %r3, %r3, 1
+	std %r0, 0(%r3)
+	addi %r3, %r3, 8
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 236b
 	b 235f
 234:
 235:
+	cmpldi %cr0, %r5, 0
+	beq %cr0, 237f
+239:
+	lbz %r0, 0(%r3)
+	and %r0, %r0, %r9
+	stb %r0, 0(%r3)
+	addi %r3, %r3, 1
+	addi %r5, %r5, -1
+	cmpldi %cr0, %r5, 0
+	bne %cr0, 239b
+	b 238f
+237:
+238:
 	or %r3, %r25, %r25
 	ld %r0, 224(%r14)
 	mtlr %r0
