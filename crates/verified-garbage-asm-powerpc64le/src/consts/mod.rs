@@ -23,6 +23,10 @@ mod vg_ffdh_vetted_groups_ppc;
 pub use vg_ffdh_vetted_groups_ppc::VG_FFDH_VETTED_GROUPS_PPC;
 
 #[rustfmt::skip]
+mod vg_p256_comb;
+pub use vg_p256_comb::VG_P256_COMB;
+
+#[rustfmt::skip]
 mod vg_rsa_keygen_trial32;
 pub use vg_rsa_keygen_trial32::VG_RSA_KEYGEN_TRIAL32;
 

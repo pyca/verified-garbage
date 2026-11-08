@@ -190,7 +190,7 @@ bl {vg_p256_sub_mod_n}
         vg_p256_add_mod_p = sym super::ec_p256::vg_p256_add_mod_p::vg_p256_add_mod_p,
         vg_p256_sub_mod_p = sym super::ec_p256::vg_p256_sub_mod_p::vg_p256_sub_mod_p,
         vg_p256_mul_mod_n = sym super::ecdsa_p256::vg_p256_mul_mod_n::vg_p256_mul_mod_n,
-        vg_p256_mul = sym super::ec_p256::vg_p256_mul::vg_p256_mul,
+        vg_p256_mul = sym super::ecdh_p256::vg_p256_mul::vg_p256_mul,
         vg_p256_sub_mod_n = sym super::ecdsa_p256::vg_p256_sub_mod_n::vg_p256_sub_mod_n,
     )
 }
