@@ -41,8 +41,12 @@ macro_rules! ml_kem {
         use $crate::error::{InvalidKey, MlKemError};
         use $crate::zeroize::zeroize;
 
-        /// The working space of the assembly functions.
-        type Scratch = [u64; $scratch];
+        /// The working space of the assembly functions, aligned to a cache line:
+        /// their vector loads and stores of it are then never split across
+        /// two (wherever the stack frame puts it, which made the instances
+        /// up to about 5% slower).
+        #[repr(C, align(64))]
+        struct Scratch([u64; $scratch]);
 
         #[doc = concat!("An ", $name, " encapsulation key, which passed the check of FIPS 203 §7.2.")]
         #[derive(Clone)]
@@ -131,7 +135,7 @@ macro_rules! ml_kem {
                 // dispatchers call only an implementation the CPU has the
                 // features of.
                 let r = unsafe {
-                    let (ek, s) = (&self.bytes, scratch.as_mut_ptr());
+                    let (ek, s) = (&self.bytes, scratch.as_mut_ptr().cast());
                     match &self.h {
                         Some(h) => $encaps_h(ek, h, m, &mut key, &mut ct, s),
                         None => $encaps(ek, m, &mut key, &mut ct, s),
@@ -207,7 +211,7 @@ macro_rules! ml_kem {
                 // overlap each other or the stack, or wrap around the end of
                 // the address space. The dispatcher calls only an
                 // implementation the CPU has the features of.
-                let r = unsafe { $keygen(seed, &mut key.ek.bytes, &mut key.dk, scratch.as_mut_ptr()) };
+                let r = unsafe { $keygen(seed, &mut key.ek.bytes, &mut key.dk, scratch.as_mut_ptr().cast()) };
                 // On x86-64 the verified function wiped what it wrote of
                 // `scratch`. Elsewhere, wipe all of it, which the operation may
                 // have written, on both success and failure before inspecting
@@ -259,7 +263,7 @@ macro_rules! ml_kem {
                 // space. `self.dk` was written by the key generation. The
                 // dispatcher calls only an implementation the CPU has the
                 // features of.
-                let r = unsafe { $decaps(&self.dk, ct, &mut key, scratch.as_mut_ptr()) };
+                let r = unsafe { $decaps(&self.dk, ct, &mut key, scratch.as_mut_ptr().cast()) };
                 // On x86-64 the verified function wiped what it wrote of
                 // `scratch`. Elsewhere, wipe all of it, which the operation may
                 // have written, on both success and failure before inspecting
