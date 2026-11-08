@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTBase
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Crypt
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Absorb
-import VerifiedGarbage.Proof.AesGcm.PPC64LE.CryptOk
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CryptOk
 import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTBase
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Crypt
@@ -59,6 +59,11 @@ theorem wholeWith_ct {split args : List Instr} {call : Prog isa} {nb : Nat} {I J
   CT.seq (J := J₁) hs hsw (CT.ite (decide (nb = 0)) (fun s hs => eval_zero (h7 s hs).1 (h7 s hs).2)
     (fun _ => CT.skip) fun hb => CT.seq (J := J₂) ha haw (hc (by simpa using hb)))
 
+/-- Before `cryptTailWith to`, the source `S`, the destination `E` and the
+number of bytes `k` being the same in both runs. -/
+def TailI (to : Bool) (c st w sp : Addr) (R : Nat) (S E : Addr) (k : Nat) (s : State) : Prop :=
+  ∃ V icb Q cph X, V .r29 = c ∧ V .r30 = st ∧ V .r31 = w ∧ TailIn to V sp R icb Q S E k cph X s
+
 section
 variable {c st w sp : Addr} (L : Lay c st w)
 include L
@@ -111,23 +116,22 @@ theorem cryptWhole_ct {R : Nat} {D : Addr} {n q j : Nat} :
     rw [b29, b30, b31] at g₂
     exact ⟨_, _, _, _, _, _, g₁, g₂, he₁.sp.trans he₂.sp.symm⟩
 
-theorem cryptTail_ct {R : Nat} {D : Addr} {n q j : Nat} :
-    CT (CrM c st w sp R D n q j) cryptTail := by
-  refine CT.ite (decide (n - j = 0)) (fun s ⟨_, _, _, _, _, _, _, _, hs⟩ =>
-    eval_zero hs.r25 (by have := hs.data.ok.lt; omega_arith)) (fun _ => CT.skip) fun _ => ?_
+theorem cryptTailWith_ct {to : Bool} {R : Nat} {S E : Addr} {k : Nat} :
+    CT (TailI to c st w sp R S E k) (cryptTailWith to) := by
+  refine CT.ite (decide (k = 0)) (fun s ⟨_, _, _, _, _, _, _, _, hs⟩ => eval_zero hs.r25 hs.src.lt)
+    (fun _ => CT.skip) fun _ => ?_
   let J₁ : State → Prop := fun s => ∃ V : Reg → BitVec 64, V .r29 = c ∧ V .r30 = st ∧ V .r31 = w ∧
     Env V sp s ∧ (R = 10 ∨ R = 12 ∨ R = 14) ∧ s.gpr .r3 = V .r29 ∧ s.gpr .r4 = BitVec.ofNat 64 R ∧
     s.gpr .r5 = V .r30 + BitVec.ofNat 64 48 ∧ s.gpr .r6 = V .r30 + BitVec.ofNat 64 64 ∧
     s.gpr .r7 = BitVec.ofNat 64 1 ∧ s.gpr .r8 = V .r31 + BitVec.ofNat 64 512
-  let J₂ : State → Prop := fun s => ∃ V icb P m₀ s₀, V .r29 = c ∧ V .r30 = st ∧ V .r31 = w ∧
-    TailKs V sp R icb P D n m₀ j s₀ s
-  refine CT.seq (J := J₂) (CT.seq (J := J₁) ?_ (fun s ⟨V, icb, P, m₀, h29, h30, h31, hP, hs⟩ => ?_) ?_)
-    (fun s ⟨V, icb, P, m₀, h29, h30, h31, hP, hs⟩ =>
-      WP.mono (tailKs_ok (L.v h29 h30 h31) hs (hs.ciph (L.v h29 h30 h31))) fun s' h =>
-        ⟨V, icb, P, m₀, s, h29, h30, h31, h⟩) ?_
+  let J₂ : State → Prop := fun s => ∃ V s₀ cph, V .r29 = c ∧ V .r30 = st ∧ V .r31 = w ∧
+    (to → s₀.gpr .r26 = E) ∧ TailKs V sp S k cph s₀ s
+  refine CT.seq (J := J₂) (CT.seq (J := J₁) ?_ (fun s ⟨V, icb, Q, cph, X, h29, h30, h31, hs⟩ => ?_) ?_)
+    (fun s ⟨V, icb, Q, cph, X, h29, h30, h31, hs⟩ =>
+      WP.mono (tailKs_ok (L.v h29 h30 h31) hs) fun s' h => ⟨V, s, cph, h29, h30, h31, hs.r26, h⟩) ?_
   · obtain ⟨_, hc⟩ : ∃ h, (VG.Taint.check VG.PPC64LE.taint (Taint.ofRegs [.r28, .r29, .r30, .r31])
         (.block tailArgs) h).isSome = true := ⟨_, by taint_decide⟩
-    exact CT.taint _ (fun s₁ s₂ ⟨_, _, _, _, a29, a30, a31, _, h₁⟩ ⟨_, _, _, _, b29, b30, b31, _, h₂⟩ =>
+    exact CT.taint _ (fun s₁ s₂ ⟨_, _, _, _, _, a29, a30, a31, h₁⟩ ⟨_, _, _, _, _, b29, b30, b31, h₂⟩ =>
       ⟨h₁.env.sp.trans h₂.env.sp.symm, fun r hr => pinK h₁.env h₂.env (h₁.r28.trans h₂.r28.symm)
         (a29.trans b29.symm) (a30.trans b30.symm) (a31.trans b31.symm) hr⟩) hc
   · refine WP.mono (tailArgs_ok hs.env hs.r28) fun s₂ ⟨_, a3, a4, a5, a6, a7, a8, hg₂, hk₂⟩ => ?_
@@ -141,16 +145,32 @@ theorem cryptTail_ct {R : Nat} {D : Addr} {n q j : Nat} :
       rw [a29, a30, a31] at g₁
       rw [b29, b30, b31] at g₂
       exact ⟨_, _, _, _, _, _, g₁, g₂, he₁.sp.trans he₂.sp.symm⟩
-  · obtain ⟨_, hc⟩ : ∃ h, (VG.Taint.check VG.PPC64LE.taint (Taint.ofRegs [.r24, .r25, .r30])
-        (.seq (.block [.addi .r3 .r30 64, mov .r4 .r24, mov .r5 .r25]) xorLoop) h).isSome = true :=
-      ⟨_, by taint_decide⟩
-    refine CT.taint _ (fun s₁ s₂ ⟨_, _, _, _, _, _, a30, _, h₁⟩ ⟨_, _, _, _, _, _, b30, _, h₂⟩ =>
-      ⟨h₁.env.sp.trans h₂.env.sp.symm, fun r hr => ?_⟩) hc
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
-    · rw [h₁.r24, h₂.r24]
-    · rw [h₁.r25, h₂.r25]
-    · rw [h₁.env.r30, h₂.env.r30, a30, b30]
+  · cases to
+    · obtain ⟨_, hc⟩ : ∃ h, (VG.Taint.check VG.PPC64LE.taint (Taint.ofRegs [.r24, .r25, .r30])
+          (.seq (.block (xorArgs false)) (xorLoopWith false)) h).isSome = true := ⟨_, by taint_decide⟩
+      refine CT.taint _ (fun s₁ s₂ ⟨_, _, _, _, a30, _, _, h₁⟩ ⟨_, _, _, _, b30, _, _, h₂⟩ =>
+        ⟨h₁.env.sp.trans h₂.env.sp.symm, fun r hr => ?_⟩) hc
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · rw [h₁.r24, h₂.r24]
+      · rw [h₁.r25, h₂.r25]
+      · rw [h₁.env.r30, h₂.env.r30, a30, b30]
+    · obtain ⟨_, hc⟩ : ∃ h, (VG.Taint.check VG.PPC64LE.taint (Taint.ofRegs [.r24, .r25, .r26, .r30])
+          (.seq (.block (xorArgs true)) (xorLoopWith true)) h).isSome = true := ⟨_, by taint_decide⟩
+      refine CT.taint _ (fun s₁ s₂ ⟨_, _, _, _, a30, _, e₁, h₁⟩ ⟨_, _, _, _, b30, _, e₂, h₂⟩ =>
+        ⟨h₁.env.sp.trans h₂.env.sp.symm, fun r hr => ?_⟩) hc
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl
+      · rw [h₁.r24, h₂.r24]
+      · rw [h₁.r25, h₂.r25]
+      · rw [h₁.r26, h₂.r26, e₁ rfl, e₂ rfl]
+      · rw [h₁.env.r30, h₂.env.r30, a30, b30]
+
+theorem cryptTail_ct {R : Nat} {D : Addr} {n q j : Nat} :
+    CT (CrM c st w sp R D n q j) cryptTail :=
+  (cryptTailWith_ct L (to := false) (S := D + BitVec.ofNat 64 j) (E := D + BitVec.ofNat 64 j) (k := n - j)).mono
+    fun _ ⟨V, icb, _, _, h29, h30, h31, _, hs⟩ =>
+      ⟨V, icb, _, _, _, h29, h30, h31, hs.tailIn (hs.ciph (L.v h29 h30 h31))⟩
 
 theorem crypt_ct {R : Nat} {D : Addr} {n q : Nat} :
     CT (CrI c st w sp R D n q) crypt := by

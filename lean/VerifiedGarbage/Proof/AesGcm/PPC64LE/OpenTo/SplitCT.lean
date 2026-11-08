@@ -29,7 +29,7 @@ stack, at a public address, and the destination apart from the source.
 addresses are then on the source, the destination and the length
 (`oneCryptTo_ct`): the whole blocks by a call of `vg_aes_ctr32_to` with the
 same arguments in both runs (`to_rel`), the copy of the last bytes by the
-taint analysis, and the last bytes by `open`'s `cryptTail_ct`.
+taint analysis, and the last bytes by `open`'s tail (`cryptTailWith_ct`).
 -/
 
 @[expose] public section
@@ -105,18 +105,9 @@ theorem cryptTo_ct (L : Lay c st w) : CT (ToI c st w sp R S D n) cryptTo := by
     ToIn V sp R S D n s₀ ∧ WholeOut V sp R S D n s₀ s
   refine CT.seq (J := W₁) wholeTo_ct (fun s ⟨V, h29, h30, h31, hs⟩ =>
     WP.mono (wholeTo_ok hs) fun s' h => ⟨V, s, h29, h30, h31, hs, h⟩) ?_
-  refine CT.seq (J := CrM c st w sp R D n 0 (16 * (n / 16))) ?_ (fun s ⟨V, s₀, h29, h30, h31, hs, hw⟩ =>
-    WP.mono (copyTail_ok hs hw) fun s' hc =>
-      ⟨V, 0, 0, virt s₀.mem S D n, h29, h30, h31, rfl, copied_mid hs hw hc⟩) (cryptTail_ct L)
-  obtain ⟨_, hc⟩ : ∃ h, (VG.Taint.check VG.PPC64LE.taint (Taint.ofRegs [.r24, .r25, .r26]) copyTail
-      h).isSome = true := ⟨_, by taint_decide⟩
-  refine CT.taint _ (fun s₁ s₂ ⟨_, _, _, _, _, _, h₁⟩ ⟨_, _, _, _, _, _, h₂⟩ =>
-    ⟨h₁.env.sp.trans h₂.env.sp.symm, fun r hr => ?_⟩) hc
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
-  · rw [h₁.r24, h₂.r24]
-  · rw [h₁.r25, h₂.r25]
-  · rw [h₁.r26, h₂.r26]
+  exact (cryptTailWith_ct L (to := true) (S := S + BitVec.ofNat 64 (16 * (n / 16)))
+    (E := D + BitVec.ofNat 64 (16 * (n / 16))) (k := n - 16 * (n / 16))).mono
+    fun _ ⟨V, s₀, h29, h30, h31, hs, hw⟩ => ⟨V, 0, _, _, _, h29, h30, h31, whole_tail (L.v h29 h30 h31) hs hw⟩
 
 /-- Before `oneCryptTo`: the source (`r27`) and its length (`r23`), the
 destination at `sp + 120`. -/

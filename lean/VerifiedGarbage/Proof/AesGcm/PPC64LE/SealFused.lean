@@ -263,13 +263,8 @@ theorem tailSetup_ok {V : Reg → BitVec 64} {sp : Addr} {s : State} (he : Env V
 
 /-- A suffix may be empty when the text ends on a block boundary. -/
 theorem data_suffix {c st w : Addr} {s : State} {D : Addr} {n j : Nat}
-    (h : DataW c st w s D n) (hj : j≤n) : DataW c st w s (D+BitVec.ofNat 64 j) (n-j) := by
-  have hs : Region.Sub ⟨D+BitVec.ofNat 64 j,n-j⟩ ⟨D,n⟩ := Offset.sub_base _ (by omega)
-  refine ⟨⟨covers_off h.ok.rd (by omega) h.ok.lt,by have := h.ok.lt; omega,?_,
-    h.ok.st.sub_left hs,h.ok.w.sub_left hs⟩,covers_off h.wr (by omega) h.ok.lt,h.ctx.sub_right hs⟩
-  by_cases hz : n-j=0
-  · rw [hz,Nat.add_zero]; exact Nat.le_of_lt (D+BitVec.ofNat 64 j).isLt
-  · rw [h.ok.toNat_add (by omega)]; have := h.ok.fit; omega
+    (h : DataW c st w s D n) (hj : j≤n) : DataW c st w s (D+BitVec.ofNat 64 j) (n-j) :=
+  h.drop hj
 
 theorem WholeOutWith.rest {V : Reg → BitVec 64} {sp : Addr} {R : Nat} {s t : State} {plaintext : List Spec.Gcm.Block}
     (h : WholeOutWith V sp R s.mem plaintext t)
@@ -329,13 +324,14 @@ theorem tail_ok {V : Reg → BitVec 64} {sp : Addr} {R : Nat} {s : State} {icb :
       · intro _; simp only [hz',Spec.Aes.bytesAt,List.range_zero,List.map_nil,Proof.Gcm.xorKs_nil]
     exact WP.block_nil ⟨ho,h24,h25,h26⟩
   · have hz' : (V .r23).toNat%16-0≠0 := by simpa using hz
-    refine WP.seq (WP.mono (tailKs_ok L mid (by rw [hk.mem])) fun v hv => ?_)
-    have hx := tailXor_ok hv (by omega) hz'
+    have ti := mid.tailIn (by rw [hk.mem])
+    refine WP.seq (WP.mono (tailKs_ok L ti) fun v hv => ?_)
+    have hx := tailXor_ok ti hv (by omega) hz'
     have hx24 := WP.gpr hx (r := .r24) (by decide +kernel)
     have hx25 := WP.gpr hx24 (r := .r25) (by decide +kernel)
     have hx26 := WP.gpr hx25 (r := .r26) (by decide +kernel)
     refine WP.mono hx26 fun u ⟨⟨⟨ho,h24'⟩,h25'⟩,h26'⟩ => ?_
-    refine ⟨ho,?_,?_,?_⟩
+    refine ⟨mid.crOut ho,?_,?_,?_⟩
     · rw [h24',hv.r24,BitVec.add_zero]
     · simpa only [Nat.sub_zero] using h25'.trans hv.r25
     · rw [h26',hv.r26,h26]

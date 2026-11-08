@@ -21,8 +21,8 @@ dst = [sp + 120])`: `open`'s arguments, the data being the source, with the
 destination after them. `oneCryptTo` decrypts the `len` bytes at `src`
 (`r24`) to `dst` (`r26`, loaded from the stack): the whole blocks by
 `vg_aes_ctr32_to`, from the source to the destination (`wholeTo`), then
-the last bytes copied to the destination (`copyTail`) and decrypted there
-by `open`'s own `cryptTail`. If the tag is wrong, `dst` is left as it was.
+the last bytes by `open`'s own tail, `cryptTailWith`, writing to the
+destination. Nothing is copied. If the tag is wrong, `dst` is left as it was.
 
 ## `vg_aes_gcm_open_to`
 
@@ -62,15 +62,10 @@ def toArgs : List Instr := [mov .r3 .r29, mov .r4 .r28, .addi .r5 .r30 48, mov .
 /-- The whole blocks at `r24`, decrypted to `r26`. -/
 def wholeTo : Prog isa := wholeWith splitTo toArgs ctrToCall
 
-/-- The last `r25` bytes at `r24` copied to `r26`, which is then the data
-(`r24`). -/
-def copyTail : Prog isa :=
-  .seq (.block [mov .r3 .r24, mov .r4 .r26, mov .r5 .r25, mov .r24 .r26])
-    (.ite (.zero .d .r5) (.block []) copyLoop)
-
-/-- The `r25` bytes at `r24` decrypted to `r26`, from the first counter block. -/
+/-- The `r25` bytes at `r24` decrypted to `r26`, from the first counter block:
+the whole blocks, then the last bytes. -/
 def cryptTo : Prog isa :=
-  .ite (.zero .d .r25) (.block []) (.seq wholeTo (.seq copyTail cryptTail))
+  .ite (.zero .d .r25) (.block []) (.seq wholeTo (cryptTailWith true))
 
 /-- The data, its length and the destination (`[sp + 120]`). -/
 def dataTo : List Instr := [mov .r24 .r27, mov .r25 .r23, .addSp .r12 0, .load .d .r26 .r12 120]
