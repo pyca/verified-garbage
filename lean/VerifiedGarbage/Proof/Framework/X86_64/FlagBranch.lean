@@ -547,4 +547,11 @@ theorem Verified.leak_flag {c : Prog isa}
 
 end
 
+/-- `onFlag` writes `rsp` nowhere if neither branch does (`Artifact.spSafe`). -/
+theorem onFlag_spSafe {c₁ c₂ : Prog isa}
+    (h₁ : c₁.all (fun i => !isa.writesSp i) = true) (h₂ : c₂.all (fun i => !isa.writesSp i) = true) :
+    (Impl.Gcm.X86_64.Flag.onFlag c₁ c₂).all (fun i => !isa.writesSp i) = true := by
+  simp only [Impl.Gcm.X86_64.Flag.onFlag, Code.iteCold, Code.all, h₁, h₂, Bool.and_true]
+  rfl
+
 end VG.X86_64

@@ -695,6 +695,13 @@ theorem openTo_satbase2776 : ∃ s, (AesGcm.Flag.openToSig.contract abi (Spec.Gc
     | exact Region.disjoint_of_sep (by decide)
 
 
+/-- `open_to` on the key context, with the larger stack of the prepared
+code that splits. -/
+theorem openTo_satK2776 : ∃ s, (Proof.AesGcm.openToRoundsContract abi 2776).pre s := by
+  sig_implies_sat [Proof.AesGcm.openToRoundsContract, Spec.Gcm.openToSig, Spec.Gcm.openToPre, X86_64.abi,
+    X86_64.argRegs, OpenTo.stackArgs_six, List.append_eq] [OpenTo.toSat, stackArg, stackArgAddr, Mem.readW,
+    Mem.read] using OpenTo.toSat
+
 /-- From the key context. -/
 theorem openTo_of_base2776 {c : Prog isa}
     (h : Verified target c (Proof.AesGcm.openToRoundsContract abi 2776)) :

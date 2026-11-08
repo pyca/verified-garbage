@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Flag
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.StreamCallee
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.GatherCallee
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.GatherSplit
@@ -811,5 +812,37 @@ theorem openToCodeR16_prepared (v : GcmVariant) (r : R16 v) :
   unfold openToStackR16; split
   · exact OpenToSplit.toSatP2776_pre
   · exact OpenTo.toSatP_pre
+
+/-! ## The prepared functions, by the flag -/
+
+/-- `vg_aes_gcm_open_to_prepared` of a variant whose loops read the 48
+powers: by the flag, its prepared code or its code on the key context. -/
+theorem openToCodeR_onFlag (v : GcmVariant) :
+    Verified X86_64.target
+      (Impl.Gcm.X86_64.Flag.onFlag (openToCodeR v) (Impl.AesGcm.X86_64.OpenTo.openTo v.impl.copyW (openFn v.impl).fn))
+      (VG.Proof.AesGcm.Flag.openToRoundsContract X86_64.abi (openToStackR v)) := by
+  have h := openToCodeR_verified v
+  have hb := OpenTo.openTo_verified v.impl.copyW (openFn v.impl)
+  unfold openToStackR at h ⊢
+  by_cases hc : v.stitchToDecR.isSome = true
+  · simp only [hc, ↓reduceIte] at h ⊢
+    exact Flag.openTo_onFlag2776 h (VG.X86_64.Verified.stack_mono (by decide) hb Flag.openTo_satK2776)
+  · simp only [hc, Bool.false_eq_true, ↓reduceIte] at h ⊢
+    exact Flag.openTo_onFlag h hb
+
+/-- `vg_aes_gcm_open_to_prepared` of a variant whose loops read 16 powers:
+by the flag, its prepared code or its code on the key context. -/
+theorem openToCodeR16_onFlag (v : GcmVariant) (r : R16 v) :
+    Verified X86_64.target
+      (Impl.Gcm.X86_64.Flag.onFlag (openToCodeR16 v r) (Impl.AesGcm.X86_64.OpenTo.openTo v.impl.copyW (openFn v.impl).fn))
+      (VG.Proof.AesGcm.Flag.openToRoundsContract X86_64.abi (openToStackR16 v)) := by
+  have h := openToCodeR16_verified v r
+  have hb := OpenTo.openTo_verified v.impl.copyW (openFn v.impl)
+  unfold openToStackR16 at h ⊢
+  by_cases hc : v.stitchToDecR16.isSome = true
+  · simp only [hc, ↓reduceIte] at h ⊢
+    exact Flag.openTo_onFlag162776 h (VG.X86_64.Verified.stack_mono (by decide) hb Flag.openTo_satK2776)
+  · simp only [hc, Bool.false_eq_true, ↓reduceIte] at h ⊢
+    exact Flag.openTo_onFlag16 h hb
 
 end VG.Proof.AesGcm.X86_64
