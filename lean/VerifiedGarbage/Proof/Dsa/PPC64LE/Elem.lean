@@ -9,7 +9,8 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Eq
 import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Table
 import VerifiedGarbage.Proof.Bignum.PPC64LE.ModArithReduce
-import VerifiedGarbage.Proof.Bignum.PPC64LE.PreR2
+import VerifiedGarbage.Proof.Bignum.PPC64LE.PreR2Prime
+import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMinv
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubPower
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Range
@@ -22,7 +23,8 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 # DSA on PPC64LE: `p mod q`, the P space, and the checks of g and y
 
 * `setupQ_ok`: q into the Q space's array 0; `pModQ_ok`: the same, and
-  `r0 = 0` exactly when `p mod q = 1`;
+* `setupP_ok`: p into the P space's array 0 and `R² mod p` into its array 24
+  (`Pre.r2Prime_ok`, for an odd p);
 * `setupP_ok`: p into the P space's array 0 and `R² mod p` into its array 8;
 * `checkElem_ok`: a number of `p_len` octets into the P space's array 4, and
   `r0 = 0` exactly when it is above 1, below p, and its q-th power modulo p
@@ -128,13 +130,14 @@ theorem pModQ_ok {s : State} {L : Lay} {key sig dig : Addr} (hL : L.Ok) (hs : Sc
 
 /-- The registers `setupP` writes. -/
 def setupPRegs : List Reg :=
-  [.r0, .r3, .r4, .r5, .r6, .r8, .r9, .r10, .r11, .r12, .r14, .r15, .r16, .r17, .r20, .r23, .r29, .r31]
+  [.r0, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .r14, .r15, .r16, .r17, .r18, .r19, .r20, .r22,
+    .r23, .r24, .r29, .r31]
 
 /-- `setupP`: into the P space, p into its array 0 (word `w` zero) and
 `R² mod p` (`R = 2^(64 w)`) into its array 24. -/
 theorem setupP_ok {s : State} {L : Lay} {key sig dig : Addr} (hL : L.Ok) (hs : ScrL s L)
     (hr : Regs s L key sig dig) (hk : Src s L key (2 * L.pl + L.ql))
-    (hp : 2 ≤ pOf s.mem L key) :
+    (hp : 2 ≤ pOf s.mem L key) (hpo : pOf s.mem L key % 2 = 1) :
     WP isa setupP s fun t =>
       (InP t L ∧ arrP t.mem L 0 = pOf s.mem L key ∧ word t.mem L.S (slot L.wp 0 + 8 * L.wp) = 0 ∧
         arrP t.mem L 24 = 2 ^ (128 * L.wp) % pOf s.mem L key ∧ PBody L s.mem t.mem) ∧
@@ -158,22 +161,35 @@ theorem setupP_ok {s : State} {L : Lay} {key sig dig : Addr} (hL : L.Ok) (hs : S
   have k13 := k12.trans k3
   have en3 : Env s₃ L.S L.qOff L.wp := env_keep10 (p1.env.keep k2 (by decide)) k3 (by decide) a10
   refine WP.seq ?_
-  rw [WP.block_append_iff, WP.block_append_iff]
-  refine WP.mono (en3.base (rd := .r5) (by decide) (by decide) 1) fun s₄ ⟨⟨a5, m4⟩, k4⟩ => ?_
-  have en4 := en3.keep k4 (by decide)
+  rw [WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
+  -- `-p⁻¹ mod 2³²`.
+  have hlow : (word s₃.mem L.S (slot L.wp 0)).toNat % 2 = 1 := by
+    have v0p : val32 s₃.mem L.S (slot L.wp 0) (2 * L.wp) = pOf s.mem L key := v0
+    have h1 := word_eq_w32 s₃.mem L.S (slot L.wp 0)
+    have h2 : val32 s₃.mem L.S (slot L.wp 0) (2 * L.wp - 1 + 1) =
+        w32 s₃.mem L.S (slot L.wp 0) + 2 ^ 32 * val32 s₃.mem L.S (slot L.wp 0 + 4) (2 * L.wp - 1) := rfl
+    rw [Nat.sub_add_cancel (by omega_arith : 1 ≤ 2 * L.wp), v0p] at h2
+    omega_arith
+  refine WP.mono (Pub.minv_ok en3.hs en3.h10 (by omega_arith) hlow) fun s₃' ⟨⟨r12lt, r12inv, m3'⟩, k3'⟩ => ?_
+  have en3' := en3.keep k3' (by decide)
+  refine WP.mono (en3'.base (rd := .r5) (by decide) (by decide) 1) fun s₄ ⟨⟨a5, m4⟩, k4⟩ => ?_
+  have en4 := en3'.keep k4 (by decide)
   refine WP.mono (en4.base (rd := .r8) (by decide) (by decide) 2) fun s₅ ⟨⟨a8, m5⟩, k5⟩ => ?_
   have en5 := en4.keep k5 (by decide)
   refine WP.mono (en5.base (rd := .r9) (by decide) (by decide) 3) fun s₆ ⟨⟨a9, m6⟩, k6⟩ => ?_
   have en6 := en5.keep k6 (by decide)
-  have hm6 : s₆.mem = s₃.mem := by rw [m6, m5, m4]
+  have hm6 : s₆.mem = s₃.mem := by rw [m6, m5, m4, m3']
   have v0' : val32 s₆.mem L.S (slot L.wp 0) (2 * L.wp) = pOf s.mem L key := by rw [hm6]; exact v0
-  refine WP.seq (WP.mono (r2_ok en6.hs ((k6.gpr .r8 (by decide)).trans a8) a9 en6.h10
+  have k46 := (k4.trans k5).trans k6
+  refine WP.seq (WP.mono (Pre.r2Prime_ok en6.hs ((k6.gpr .r8 (by decide)).trans a8) a9 en6.h10
     ((k6.gpr .r5 (by decide)).trans ((k5.gpr .r5 (by decide)).trans a5)) en6.h11 (by omega_arith) (by omega_arith)
-    (by omega_arith) (by rw [v0']; exact hp)) fun s₇ ⟨hr2, o7, k7⟩ => ?_)
+    (by omega_arith) (by rw [k46.gpr .r12 (by decide)]; exact r12lt)
+    (by rw [k46.gpr .r12 (by decide), hm6]; exact r12inv)
+    (by rw [v0']; exact hp) (by rw [v0']; exact hpo)) fun s₇ ⟨hr2, o7, k7⟩ => ?_)
   rw [v0'] at hr2
   have en7 := en6.keep k7 (by decide)
   refine WP.mono (copy_ok en7 (o := 24) (a := 1) (by decide) (by decide) (by decide)) fun t ⟨⟨v8, o8⟩, kt⟩ => ?_
-  have k4t := ((((k4.trans k5).trans k6).trans k7).trans kt)
+  have k4t := (((((k3'.trans k4).trans k5).trans k6).trans k7).trans kt)
   refine ⟨⟨⟨en7.keep kt (by decide), ((k2.trans k3).trans k4t).gpr .r21 (by decide) |>.trans p1.h21,
     ((k2.trans k3).trans k4t).gpr .r23 (by decide) |>.trans p1.h23⟩, ?_, ?_, ?_, ?_⟩,
     (k13.trans k4t).mono (by decide)⟩

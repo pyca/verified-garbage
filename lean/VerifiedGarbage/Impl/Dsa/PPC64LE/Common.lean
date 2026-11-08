@@ -199,10 +199,13 @@ def pModQ : Prog isa :=
     (.seq (.block ([.addi .r30 .r27 0] ++ getP .r31)) (.seq ModArith.reduce
       (.seq (.block [.addi .r31 .r23 0]) (.seq PublicChecked.one (.seq (eqMask .r3 1 7) (.block unmask))))))
 
-/-- In the P space: p into array 0, `R² mod p` into array 24 (and array 1). -/
+/-- In the P space: p into array 0, `R² mod p` into array 24 (and array 1),
+by `Precompute.r2Prime` (`65 w` doublings and six Montgomery squares, for any
+odd p), after `-p⁻¹ mod 2³²` into `r12`. -/
 def setupP : Prog isa :=
   .seq (.block enterP) (.seq (.seq (.block ptrP) (loadArr 0))
-    (.seq (.block (base .r5 1 ++ base .r8 2 ++ base .r9 3)) (.seq Precompute.r2 (copy 24 1))))
+    (.seq (.block (PublicChecked.minv ++ base .r5 1 ++ base .r8 2 ++ base .r9 3))
+      (.seq Precompute.r2Prime (copy 24 1))))
 
 /-- `r20 &= ¬r19`. -/
 def clear19 : List Instr := [.logic .or .r20 .r20 .r19, .logic .xor .r20 .r20 .r19]

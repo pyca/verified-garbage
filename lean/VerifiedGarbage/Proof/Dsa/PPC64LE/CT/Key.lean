@@ -175,7 +175,8 @@ satisfying `K`. -/
 theorem w_setupP {K : VD → Prop} (hK : ∀ v, K v → KO v) {v : VD} {s : State} (B : Base v s)
     (r2 : s.gpr .r2 = pack v.L.pl v.L.ql v.qb v.d) (qf : QF v s) (kv : K v) : WP isa setupP s (PP K v) := by
   have bd := (hK v kv).bounds
-  refine WP.mono (setupP_ok B.ok B.scr B.regs (B.hk.take B.kn) (by rw [B.p]; exact bd.1))
+  refine WP.mono (setupP_ok B.ok B.scr B.regs (B.hk.take B.kn) (by rw [B.p]; exact bd.1)
+      (by rw [B.p]; exact (hK v kv).2.1))
     fun t ⟨⟨ip, p0, ptop, p8, pb⟩, k⟩ => ⟨B.step k (pb.body B.ok), ?_, envP_of ip,
       ⟨ip, ?_, ptop, ?_, (pb.arrQ B.ok 0 (by decide)).trans qf.1, (pb.qtop B.ok).trans qf.2⟩, kv⟩
   · rw [k.gpr .r2 (by decide), r2]
