@@ -6,34 +6,30 @@ public import VerifiedGarbage.Impl.Blowfish.Table
 /-!
 # Blowfish on PPC64LE
 
-One block at a time in general-purpose registers, as on ARMv7
-(`Impl/Blowfish/Arm.lean`), whose 32-bit scan this follows: an S-box lookup
-reads every entry of the S-box's four byte planes, a row of four entries of
-each plane (a word, `lwz`) at a time. A row's mask is all ones in the byte
-lane of the index's entry if the row holds it (`q - 4k < 4` for the index
-`q`, as unsigned doublewords, so `(q - 4k) >> 2` is zero), else zero, made
-without a comparison as RC4's are (`Impl/Rc4/PPC64LE.lean`): `0 - (((v - 1)
->> 63)` is all ones exactly when `v < 2 ^ 63` is zero. The masked words are
-ORed into one accumulator, plane `b`'s rotated left by `8b` (`rotrwi`).
-Every address and branch is a public counter or pointer; the index is only
-ever an operand of the masks' arithmetic. The accumulator then holds byte
-`b` of the entry in lane `L + b` (mod 4), for the index's lane `L`, and
-rotating it right by `8L`, by two rotations selected by masks of `L`'s bits,
-gives the entry.
+One block at a time, the halves and F in general-purpose registers. An
+S-box lookup reads every entry of the S-box's four byte planes
+(`Spec.Blowfish.scheduleAt`), 32 entries of each (a *row*, two vectors,
+`lxvd2x`) at a time, and keeps each plane's row under a mask that is all
+ones exactly if the row holds the index `q` (`vsel`). The mask is byte
+`q >> 5` of a one-hot vector whose one byte of ones moves on a byte each row
+(`vperm`, `vsldoi`). Once every row is read, `vperm` picks byte `q mod 32`
+of each plane's kept row, and the four bytes make the entry. Every address
+and branch is a public counter or pointer; the index is only ever in the
+masks' and `vperm`'s operands, whose time does not depend on their values.
 
-The halves, F and the accumulator are 32-bit values in the low words of
-their registers; their high words are whatever the arithmetic leaves, which
+The halves, F and the entry are 32-bit values in the low words of their
+registers; their high words are whatever the arithmetic leaves, which
 nothing reads: word rotations and shifts read the low word, `stw` stores it,
 and the index is taken from it.
 
 Registers: zero in `r0`, the schedule at `r3` (`sch`), the halves in `r4`
 (xL) and `r5` (xR), F in `r7`, the P-array pointer in `r8`; during a lookup,
-the index less four times the rows read so far in `r9` (`q`), the
-accumulator in `r10`, the row's mask in `r11`, a temporary in `r12`, the
-index's lane mask in `r14` and the row pointer in `r15`. ECB keeps the data
-pointer in `r16` and the blocks left in `r17`; key expansion, the pointer to
-the next entries in `r16` and the encryptions left in `r17`. The caller's
-`r14`–`r17` are kept in the working space, at `r6`.
+the index in `r9` (`q`), then the offset 272, the entry in `r10`, the
+offsets 16 and 256 in `r11` and `r14`, a temporary in `r12` and the row
+pointer in `r15`, with `v0`–`v17`. ECB keeps the data pointer in `r16` and
+the blocks left in `r17`; key expansion, the pointer to the next entries in
+`r16` and the encryptions left in `r17`. The caller's `r14`–`r17` are kept
+in the working space, at `r6`.
 -/
 
 @[expose] public section
@@ -50,9 +46,7 @@ def fReg : Reg := .r7
 def pPtr : Reg := .r8
 def qReg : Reg := .r9
 def acc : Reg := .r10
-def mReg : Reg := .r11
 def tmp : Reg := .r12
-def lane : Reg := .r14
 def rowPtr : Reg := .r15
 def ptr : Reg := .r16
 def cnt : Reg := .r17
@@ -69,45 +63,76 @@ def pOff : Nat := 4096
 the top of the doubleword and back. -/
 def index (j : Nat) : List Instr := [.lsl qReg xL (32 + 8 * j), .lsr .d qReg qReg 56]
 
-/-- `mReg` := all ones if bit `c` of `q` is set, else zero. -/
-def bitMask (c : Nat) : List Instr := [.lsl mReg qReg (63 - c), .lsr .d mReg mReg 63, .sub mReg zero mReg]
+/-- The registers of a lookup's loop: the offsets 16, 256 and 272 from the
+row pointer, in `r11`, `r14` and `r9` (`q`'s, once the vectors that need it
+are made). -/
+def o16 : Reg := .r11
+def o256 : Reg := .r14
+def o272 : Reg := .r9
 
-/-- `x` rotated right by `a` (as a word) if bit `c` of `q` is set:
-`x := x XOR ((rotr x a XOR x) AND m)`. -/
-def condRot (x : Reg) (c a : Nat) : List Instr :=
-  bitMask c ++ ([.rotr .w tmp x a, .logic .xor tmp tmp x, .logic .and tmp tmp mReg,
-    .logic .xor x x tmp] : List Instr)
+/-- The vector registers of a lookup: zero, the index (XORed with 7) and
+its chunk (`q >> 5`) in every byte, the chunk's one-hot byte, the mask, a
+loaded vector, the selected chunk of each plane (two vectors each), and
+the entry's bytes. -/
+def vZero : VReg := .v0
+def vIdx : VReg := .v1
+def vChunk : VReg := .v2
+def vHot : VReg := .v3
+def vMask : VReg := .v4
+def vLoad : VReg := .v5
+def vSel (k : Nat) : VReg := [.v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13].getD k .v6
+def vByte (b : Nat) : VReg := [.v14, .v15, .v16, .v17].getD b .v14
 
-/-- The lane mask `0xFF <<< 8L` for the index's lane `L`, the accumulator
-and the row pointer. -/
-def lookupStart : List Instr :=
-  [.li lane 255] ++ condRot lane 0 24 ++ condRot lane 1 16 ++
-    [.li acc 0, .logic .or rowPtr sch sch]
+/-- `vperm d n m c`. -/
+def vperm (d n m c : VReg) : Instr := .vop (.perm d n m c)
 
-/-- Plane `b`'s word of the row, masked, into the accumulator, rotated left
-by `8b`. -/
-def plane (j b : Nat) : List Instr :=
-  if b = 0 then [.load .w tmp rowPtr (planeOff j b), .logic .and tmp tmp mReg, .logic .or acc acc tmp]
-  else [.load .w tmp rowPtr (planeOff j b), .logic .and tmp tmp mReg, .rotr .w tmp tmp (32 - 8 * b),
-    .logic .or acc acc tmp]
+/-- `v := x` in every byte, from `x << 56` in `tmp`. -/
+def splat (v : VReg) : List Instr := [.lsl tmp tmp 56, .mtvsrd v tmp, vperm v v v vZero]
 
-/-- The row's mask: all ones in the index's lane if `q >> 2` is zero. -/
-def rowMask : List Instr :=
-  [.lsr .d mReg qReg 2, .subi mReg mReg 1, .lsr .d mReg mReg 63, .sub mReg zero mReg,
-   .logic .and mReg mReg lane, .subi qReg qReg 4]
+/-- The lookup's vectors and registers: zero; `q XOR 7` in every byte (the
+byte `vperm` takes for `q`'s byte of 32 that `lxvd2x` loaded, whose bytes it
+numbers `XOR 7`); `q >> 5` in every byte; `0xFF` in byte 0 of the one-hot
+vector and zero in bytes 1–7; the row pointer at the S-box; and the
+offsets. -/
+def lookupStart (j : Nat) : List Instr :=
+  [.vop (.logic .xor vZero vZero vZero), .li tmp 7, .logic .xor tmp qReg tmp] ++ splat vIdx ++
+    [.lsr .d tmp qReg 5] ++ splat vChunk ++
+    [.li tmp 255, .lsl tmp tmp 56, .mtvsrd vHot tmp, .addi rowPtr sch (1024 * j), .li o16 16,
+      .li o256 256, .li o272 272]
 
-/-- One row of S-box `j`: the mask, the four planes, and the next row;
-`tmp` is zero after the last. -/
+/-- The offset register of half `h` of plane `b` (planes 2 and 3 are read
+512 bytes further on). -/
+def offReg (b h : Nat) : Reg :=
+  if b % 2 = 0 then (if h = 0 then zero else o16) else (if h = 0 then o256 else o272)
+
+/-- Half `h` of plane `b`'s 32 bytes of the row, kept if the mask is set. -/
+def selLoad (b h : Nat) : List Instr :=
+  [.lxvd2x vLoad rowPtr (offReg b h), .vop (.sel (vSel (2 * b + h)) (vSel (2 * b + h)) vLoad vMask)]
+
+/-- Row `i` of S-box `j`: 32 entries, each plane's 32 bytes of them kept
+(all ones) if the row holds the index (`i = q >> 5`: byte `q >> 5` of the
+one-hot vector, which then moves on a byte), and the next row; `tmp` is
+zero after the last. -/
 def row (j : Nat) : List Instr :=
-  rowMask ++ plane j 0 ++ plane j 1 ++ plane j 2 ++ plane j 3 ++
-    [.addi rowPtr rowPtr 4, .sub tmp rowPtr sch, .subi tmp tmp 256]
+  [vperm vMask vHot vHot vChunk, .vop (.sldoi vHot vZero vHot 15)] ++
+    selLoad 0 0 ++ selLoad 0 1 ++ selLoad 1 0 ++ selLoad 1 1 ++ [.addi rowPtr rowPtr 512] ++
+    selLoad 2 0 ++ selLoad 2 1 ++ selLoad 3 0 ++ selLoad 3 1 ++
+    [.subi rowPtr rowPtr 480, .sub tmp rowPtr sch, .subi tmp tmp (1024 * j + 256)]
 
-/-- The accumulator rotated right by `8L`. -/
-def lookupEnd : List Instr := condRot acc 0 8 ++ condRot acc 1 16
+/-- Byte `b` of the entry, from plane `b`'s row, into the accumulator. -/
+def entryByte (b : Nat) : List Instr :=
+  if b = 0 then [.mfvsrd acc (vByte 0), .lsr .d acc acc 56]
+  else [.mfvsrd tmp (vByte b), .lsr .d tmp tmp 56, .lsl tmp tmp (8 * b), .logic .or acc acc tmp]
 
-/-- S-box `j` of xL's byte `3 - j`, into the accumulator's low word. -/
+/-- The entry: each plane's byte `q mod 32` of its row, in every byte of
+`vByte b` (`vperm`), then into the accumulator. -/
+def lookupEnd : List Instr :=
+  (List.range 4).map (fun b => vperm (vByte b) (vSel (2 * b)) (vSel (2 * b + 1)) vIdx) ++
+    entryByte 0 ++ entryByte 1 ++ entryByte 2 ++ entryByte 3
+
+/-- S-box `j` of xL's byte `3 - j`, into the accumulator. -/
 def lookup (j : Nat) : Prog isa :=
-  .seq (.block (index j ++ lookupStart))
+  .seq (.block (index j ++ lookupStart j))
     (.seq (.loop (.block (row j)) (.nonzero .d tmp)) (.block lookupEnd))
 
 /-- F's accumulation of S-box `j`: S₁, then + S₂, XOR S₃, + S₄. -/
