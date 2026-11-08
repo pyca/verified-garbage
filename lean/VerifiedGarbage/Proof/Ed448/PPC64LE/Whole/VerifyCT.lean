@@ -31,13 +31,14 @@ public import VerifiedGarbage.TCB.PPC64LE.Isa
 # `vg_ed448_verify` on PPC64LE in constant time
 
 Two runs from states that satisfy `VerPre` and agree on the arguments in
-registers and the stack pointer (`VPub`) leak the same trace
+registers, the stack pointer and the inputs (`VPubB`) leak the same trace
 (`verifyMessage_ct`): the length check and the branch on it from `ctxlen`,
 the setup from the arguments, the challenge by `hash_then` (the hash, then
 the reduction and the arguments of `verify_equation` from `r20`–`r23`), the
-call of `verify_equation` by its own constant time, which needs only its
-pointers to agree (`veqK`, `RelCT.callEx`), and the restores from `F` in
-`r23`.
+call of `verify_equation` by its own constant time, which needs its pointers
+and the bytes they point at, the public key, the signature and the
+challenge, to agree (`veqK`, `RelCT.callEx`): the same inputs give the same
+challenge (`vB_eq`). Then the restores from `F` in `r23`.
 -/
 
 @[expose] public section
@@ -68,11 +69,30 @@ theorem vinv_regs {s₁ s₂ a b : State} (hp : VPub s₁ s₂) (ha : VInv s₁ 
 theorem vinv_sp {s₁ s₂ a b : State} (hp : VPub s₁ s₂) (ha : VInv s₁ a) (hb : VInv s₂ b) : a.sp = b.sp :=
   ha.sp.trans (hp.2.2.2.2.2.2.2.2.trans hb.sp.symm)
 
-/-- `verify_equation`'s contract with only its pointers and the stack pointer public, which is all its constant
-time needs. -/
-def veqK : Contract isa :=
-  { Proof.Ed448.PPC64LE.verifyPPC with
-    pub := fun s₁ s₂ => s₁.sp = s₂.sp ∧ ∀ r ∈ [Reg.r3, .r4, .r5, .r6], s₁.gpr r = s₂.gpr r }
+/-- `verify_equation`'s contract. -/
+abbrev veqK : Contract isa := Proof.Ed448.PPC64LE.verifyPPC
+
+/-- What two runs agree on: the arguments, the stack pointer and the inputs. -/
+def VPubB (s₁ s₂ : State) : Prop :=
+  VPub s₁ s₂ ∧ (vpkB s₁ ++ vctxB s₁ ++ vmsgB s₁ ++ vsigB s₁).map (·.toNat) =
+    (vpkB s₂ ++ vctxB s₂ ++ vmsgB s₂ ++ vsigB s₂).map (·.toNat)
+
+/-- The inputs, so `k`, agree. -/
+theorem vB_eq {s₁ s₂ : State} (hp : VPubB s₁ s₂) : vpkB s₁ = vpkB s₂ ∧ vsigB s₁ = vsigB s₂ ∧ vkB s₁ = vkB s₂ := by
+  obtain ⟨⟨p3, p4, p5, p6, p7, p8, -, -, -⟩, hb⟩ := hp
+  have hi : Function.Injective (fun x : Byte => x.toNat) := fun x y hxy => BitVec.eq_of_toNat_eq hxy
+  have e := List.map_injective_iff.mpr hi hb
+  have l1 : (vpkB s₁).length = (vpkB s₂).length := by simp [bytesAt]
+  have l2 : (vctxB s₁).length = (vctxB s₂).length := by simp [bytesAt, p5]
+  have l3 : (vmsgB s₁).length = (vmsgB s₂).length := by simp [bytesAt, p7]
+  obtain ⟨e1, e4⟩ := List.append_inj e (by simp [l1, l2, l3])
+  obtain ⟨e1, e3⟩ := List.append_inj e1 (by simp [l1, l2])
+  obtain ⟨e1, e2⟩ := List.append_inj e1 l1
+  refine ⟨e1, e4, ?_⟩
+  have t : ∀ s : State, bytesAt s.mem (s.gpr .r8) 57 = (vsigB s).take 57 := fun s =>
+    (Proof.Ed448.PPC64LE.bytes_take s.mem _).symm
+  simp only [vkB]
+  rw [t s₁, t s₂, e4, e2, e1, e3]
 
 /-- The narrowed state `verify_equation` starts in, and its regions' cover. -/
 theorem veq_pre {s t : State} (hp : VerPre s) (h : VArgs s t) :
@@ -101,15 +121,17 @@ theorem veq_pre {s t : State} (hp : VerPre s) (h : VArgs s t) :
 /-- The state after the length check. -/
 abbrev vLen (s : State) : State := s.write .r11 (s.gpr .r5 >>> 8)
 
-theorem verifyMessage_ct (hR : Proof.Ed448.RecoverOk) (hV : Proof.Ed448.VerifyEq4Ok) :
-    ConstantTime isa VerPre VPub verifyMessage := by
+theorem verifyMessage_ct (hR : Proof.Ed448.RecoverOk) :
+    ConstantTime isa VerPre VPubB verifyMessage := by
   refine RelCT.constantTime (Q := fun _ _ => True) ?_
   refine RelCT.mono (P := fun a b => ∃ x : State × State, a = x.1 ∧ b = x.2 ∧ VerPre x.1 ∧ VerPre x.2 ∧
-    VPub x.1 x.2) (RelCT.exists_ fun ⟨s₁, s₂⟩ => ?_) (fun a b h => ⟨(a, b), rfl, rfl, h⟩) (fun _ _ h => h)
-  by_cases hH : VerPre s₁ ∧ VerPre s₂ ∧ VPub s₁ s₂
+    VPubB x.1 x.2) (RelCT.exists_ fun ⟨s₁, s₂⟩ => ?_) (fun a b h => ⟨(a, b), rfl, rfl, h⟩) (fun _ _ h => h)
+  by_cases hH : VerPre s₁ ∧ VerPre s₂ ∧ VPubB s₁ s₂
   swap
   · exact RelCT.of_false fun a b h => hH h.2.2
-  obtain ⟨hp₁, hp₂, hpub⟩ := hH
+  obtain ⟨hp₁, hp₂, hpubB⟩ := hH
+  obtain ⟨ek, es, ec⟩ := vB_eq hpubB
+  have hpub := hpubB.1
   refine RelCT.mono (P := fun a b => a = s₁ ∧ b = s₂) ?_ (fun a b h => ⟨h.1, h.2.1⟩) (fun _ _ h => h)
   have pub := hpub
   obtain ⟨p3, p4, p5, p6, p7, p8, p9, p10, psp⟩ := pub
@@ -145,23 +167,29 @@ theorem verifyMessage_ct (hR : Proof.Ed448.RecoverOk) (hV : Proof.Ed448.VerifyEq
         (by taint_decide)) fun a b hab => ⟨verHash_ok hp₁ hab.1, verHash_ok hp₂ hab.2⟩
     -- The call of `verify_equation`, then the restores.
     refine RelCT.seq (R := fun a b => VInv s₁ a ∧ VInv s₂ b)
-      (relct_wp (RelCT.callEx (k := veqK) (Proof.Ed448.PPC64LE.verifyEquation_ok hR hV)
-        (Proof.Ed448.PPC64LE.verifyEquation_ct fun _ _ _ _ h => h) fun t₁ t₂ ⟨a₁, a₂⟩ => ?_) fun t₁ t₂ ⟨a₁, a₂⟩ =>
-        ⟨WP.mono (verCall_ok hR hV hp₁ a₁) fun _ h => h.1, WP.mono (verCall_ok hR hV hp₂ a₂) fun _ h => h.1⟩)
+      (relct_wp (RelCT.callEx (k := veqK) (Proof.Ed448.PPC64LE.verifyEquation_ok hR)
+        (Proof.Ed448.PPC64LE.verifyEquation_ct hR) fun t₁ t₂ ⟨a₁, a₂⟩ => ?_) fun t₁ t₂ ⟨a₁, a₂⟩ =>
+        ⟨WP.mono (verCall_ok hR hp₁ a₁) fun _ h => h.1, WP.mono (verCall_ok hR hp₂ a₂) fun _ h => h.1⟩)
       (ct_prog [.r23] (fun a b hab => vinv_sp hpub hab.1 hab.2)
         (fun a b hab r hr => by rw [List.mem_singleton.mp hr]; exact vinv_regs hpub hab.1 hab.2 _ (by decide))
         (by taint_decide))
     obtain ⟨q₁, c₁, w₁⟩ := veq_pre hp₁ a₁
     obtain ⟨q₂, c₂, w₂⟩ := veq_pre hp₂ a₂
-    refine ⟨_, _, _, _, q₁, q₂, ⟨?_, fun r hr => ?_⟩, c₁, w₁, c₂, w₂⟩
+    have k₁ : bytesAt t₁.mem (s₁.gpr .r3) 57 = vpkB s₁ := ver_keep hp₁ a₁.inv (.inl rfl)
+    have k₂ : bytesAt t₂.mem (s₂.gpr .r3) 57 = vpkB s₂ := ver_keep hp₂ a₂.inv (.inl rfl)
+    have g₁ : bytesAt t₁.mem (s₁.gpr .r8) 114 = vsigB s₁ := ver_keep hp₁ a₁.inv (.inr (.inr (.inr rfl)))
+    have g₂ : bytesAt t₂.mem (s₂.gpr .r8) 114 = vsigB s₂ := ver_keep hp₂ a₂.inv (.inr (.inr (.inr rfl)))
+    refine ⟨_, _, _, _, q₁, q₂, ⟨?_, ?_, ?_, ?_, ?_, ?_⟩, c₁, w₁, c₂, w₂⟩
+    · rw [ce_gpr _ _ _ (by decide), ce_gpr _ _ _ (by decide), a₁.r3, a₂.r3, p3]
+    · rw [ce_gpr _ _ _ (by decide), ce_gpr _ _ _ (by decide), a₁.r4, a₂.r4, p8]
+    · rw [ce_gpr _ _ _ (by decide), ce_gpr _ _ _ (by decide), a₁.r5, a₂.r5, p10]
+    · rw [ce_gpr _ _ _ (by decide), ce_gpr _ _ _ (by decide), a₁.r6, a₂.r6, p9]
     · rw [State.withRegions_sp, State.withRegions_sp, State.callEntry_sp, State.callEntry_sp, a₁.inv.sp,
         a₂.inv.sp, psp]
-    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl
-      · rw [ce_gpr _ _ _ (by decide), ce_gpr _ _ _ (by decide), a₁.r3, a₂.r3, p3]
-      · rw [ce_gpr _ _ _ (by decide), ce_gpr _ _ _ (by decide), a₁.r4, a₂.r4, p8]
-      · rw [ce_gpr _ _ _ (by decide), ce_gpr _ _ _ (by decide), a₁.r5, a₂.r5, p10]
-      · rw [ce_gpr _ _ _ (by decide), ce_gpr _ _ _ (by decide), a₁.r6, a₂.r6, p9]
+    · simp only [State.withRegions_mem, State.callEntry_mem]
+      rw [ce_gpr _ _ _ (by decide), ce_gpr _ _ _ (by decide), ce_gpr _ _ _ (by decide), ce_gpr _ _ _ (by decide),
+        ce_gpr _ _ _ (by decide), ce_gpr _ _ _ (by decide), a₁.r3, a₂.r3, a₁.r4, a₂.r4, a₁.r5, a₂.r5, k₁, k₂,
+        g₁, g₂, a₁.ch, a₂.ch, ek, es, ec]
   · -- `ctxlen ≥ 256`.
     exact ct_prog [] (fun a b hab => by rw [hab.1.1, hab.1.2, (VG.Proof.X25519.PPC64LE.Upd.write _ _ _).sp, (VG.Proof.X25519.PPC64LE.Upd.write _ _ _).sp, psp])
       (fun _ _ _ r hr => absurd hr List.not_mem_nil) (by taint_decide)
