@@ -58,6 +58,9 @@ structure TCombCfg where
   one : Nat
   zero : Nat
   neg : Nat
+  /-- Where the entry is selected to: the point functions' `Q`, for curves
+  whose coordinates fit them, else three slots of the inlined addition. -/
+  qBase : Nat := Impl.Weierstrass.Point.qAt L.M.n
 
 namespace TCombCfg
 
@@ -68,7 +71,7 @@ def H : Nat := 2 ^ (K.w - 1)
 
 /-- The point functions' points. -/
 def P : Pt := ptAt K.L.M.n (Impl.Weierstrass.Point.pAt K.L.M.n)
-def Q : Pt := ptAt K.L.M.n (Impl.Weierstrass.Point.qAt K.L.M.n)
+def Q : Pt := ptAt K.L.M.n K.qBase
 def O : Pt := ptAt K.L.M.n (Impl.Weierstrass.Point.oAt K.L.M.n)
 
 /-- `r9 = Σ_{i<k} 2^i [r4 + bits + d + i]`, through `r5`. -/
