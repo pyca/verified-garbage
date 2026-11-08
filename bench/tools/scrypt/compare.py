@@ -16,6 +16,7 @@ def main():
     parser.add_argument("--samples", type=int, default=7)
     parser.add_argument("--profile", choices=["release", "debug"], default="release")
     parser.add_argument("--phases-only", action="store_true")
+    parser.add_argument("--baseline-wipe", choices=["chunks", "bulk"], default="chunks")
     parser.add_argument("--candidate-wipe", choices=["chunks", "bulk"], default="bulk")
     args = parser.parse_args()
     if args.samples < 1:
@@ -48,7 +49,7 @@ def main():
                 order = ["baseline", "candidate"] if sample % 2 == 0 else ["candidate", "baseline"]
                 for side in order:
                     env = os.environ.copy()
-                    env["SCRYPT_WIPE_MODE"] = args.candidate_wipe if side == "candidate" else "chunks"
+                    env["SCRYPT_WIPE_MODE"] = args.candidate_wipe if side == "candidate" else args.baseline_wipe
                     env["LLVM_PROFILE_FILE"] = str(args.output.resolve() / f"{side}-%p.profraw")
                     command = [str(roots[side] / f"target/{args.profile}/phases"), str(n), str(r), str(p), "1"]
                     row = next(csv.reader(subprocess.check_output(command, env=env, text=True).splitlines()))

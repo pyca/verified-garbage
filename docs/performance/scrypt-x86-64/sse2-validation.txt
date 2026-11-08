@@ -1,0 +1,49 @@
+Final SSE2 validation, 2026-11-08
+
+Full Lean build
+	tactic execution 28.3ms
+	type checking 13ms
+	typeclass inference 0.404ms
+Build completed successfully (28693 jobs).
+
+RFC suite, no optional features
+test rfc7914::verify_keys ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 291 filtered out; finished in 4.44s
+
+
+RFC suite, AVX/AVX2 PBKDF2
+test rfc7914::verify_keys ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 291 filtered out; finished in 2.65s
+
+
+RFC suite, SHA-NI PBKDF2
+test rfc7914::verify_keys ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 291 filtered out; finished in 2.61s
+
+
+Clippy
+    Checking verified-garbage-asm-x86_64 v0.0.0 (/workspace/scrypt-opt/crates/verified-garbage-asm-x86_64)
+    Checking verified-garbage v0.0.0 (/workspace/scrypt-opt)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.99s
+
+Public imports
+[   0.8 s] lake shake: 8 of 13 modules changed since their last analysis
+[   0.8 s] lake shake on 8 modules
+[   4.9 s] reading 4 modules' effects uses
+Imports OK (13 modules)
+
+Formatting: cargo fmt --check passed.
+CI static commands passed; 630 Python tests passed.
+The single-importer check was rerun after consolidating proof modules and passed.
+
+Official all-x86-64 emitter driver:
+  lake env lean --setup .lake/emit/One.json --run .lake/emit/One.lean OUTPUT
+Exit 0, with unchanged standard-axiom/compiler-override/specification-origin audits.
+Both generated BlockMix files compare byte-for-byte equal to the driver output.
+
+EmitOne copy stage: known pre-existing parse failures for dispatch/fn_tables.rs
+and dispatch/gcm.rs. Full Emit --check remains blocked by vm.max_map_count,
+as in the earlier report; no trusted checker was changed.

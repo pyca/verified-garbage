@@ -1,5 +1,7 @@
 # x86-64 scrypt investigation, 2026-11-08
 
+Follow-up: [baseline SSE2 Salsa20/8](SSE2.md) replaces the scalar kernel without adding CPU variants. The results below preserve the earlier scalar investigation.
+
 The clearest improvement is batching the Rust destructor's wipes: for the
 1 GiB case, the isolated, unoptimized coverage build's median public API time
 fell from **2.691 s to 2.490 s (7.5%)**. Its measured wipe phase fell from
