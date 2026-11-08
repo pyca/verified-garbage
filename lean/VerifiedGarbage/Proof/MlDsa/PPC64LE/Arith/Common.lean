@@ -15,8 +15,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 
 The values the pieces of `Impl/MlDsa/PPC64LE/Arith.lean` compute:
 
-* `loadImm r v` leaves `v < 2³¹` in `r` (`loadImm_val`), and `consts` leaves
-  `⌊2⁶⁴ / q⌋` in `r8` and `q` in `r9` (`consts_r8`);
+* `loadImm r v` leaves `v < 2³¹` in `r` (`loadImm_val`);
 * `fixup` leaves `fixd u`: `u + q` if `u` is negative, `u` otherwise, which
   reduces a sum or a difference of reduced values (`fixd_add`, `fixd_sub`);
 * `reduce` leaves `red x = x mod q` for every 64-bit `x` (`red_toNat`),
@@ -60,14 +59,6 @@ theorem loadImm_val {v : Nat} (hv : v < 2 ^ 31) :
       rw [← BitVec.getLsbD_eq_getElem, BitVec.getLsbD_ofNat, hd]; simp [h31]
     simp [h16, h32, hi, this, BitVec.msb_eq_getLsbD_last, h15]
 
-/-- The four instructions of `consts` that build `⌊2⁶⁴ / q⌋`. -/
-theorem consts_r8 :
-    (((0x200 : BitVec 16) ++ (0 : BitVec 16)).signExtend 64 ||| (0x801C : BitVec 16).setWidth 64) <<< 16 |||
-      (0x0601 : BitVec 16).setWidth 64 = M := by
-  decide
-
-theorem M_toNat : M.toNat = barrettM := rfl
-
 /-! ## Reduction modulo `q` -/
 
 /-- What `fixup` leaves: `u + q` if `u` is negative, `u` otherwise. -/
@@ -104,6 +95,9 @@ def bar (x : BitVec 64) : BitVec 64 := x - BitVec.ofNat 64 (x.toNat * M.toNat / 
 
 /-- What `reduce` leaves. -/
 def red (x : BitVec 64) : BitVec 64 := fixd (bar x - 8380417)
+
+
+theorem M_toNat : M.toNat = barrettM := rfl
 
 theorem bar_toNat (x : BitVec 64) : (bar x).toNat = barrett x.toNat := by
   obtain ⟨b1, b2⟩ := barrett_bounds x.isLt

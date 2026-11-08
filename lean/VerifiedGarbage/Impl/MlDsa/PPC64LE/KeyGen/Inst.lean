@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.PPC64LE.KeyGen.KeyGen
 public import VerifiedGarbage.Impl.MlDsa.PPC64LE.Arith
-public import VerifiedGarbage.Impl.MlDsa.PPC64LE.VNttInv
+public import VerifiedGarbage.Impl.MlDsa.PPC64LE.VMul
 public import VerifiedGarbage.Impl.MlDsa.PPC64LE.Round
 public import VerifiedGarbage.Impl.MlDsa.PPC64LE.Pack.Encode
 public import VerifiedGarbage.Impl.MlDsa.PPC64LE.Sample.RejNtt
@@ -25,8 +25,8 @@ open VG.PPC64LE
 def prims : Prims where
   ntt := VNtt.ntt
   invNtt := VNtt.nttInv
-  mul := Arith.mul
-  mulAdd := Arith.mulAdd
+  mul := VNtt.vmul
+  mulAdd := VNtt.vmulAdd
   add := Arith.add
   rejNtt := Sample.rejNTT
   rejBounded := Sample.rejBounded

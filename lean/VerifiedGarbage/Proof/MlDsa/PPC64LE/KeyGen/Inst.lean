@@ -5,7 +5,7 @@ public import VerifiedGarbage.Impl.MlDsa.PPC64LE.KeyGen.Inst
 public import VerifiedGarbage.Proof.MlDsa.PPC64LE.KeyGen.Samp
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.VNtt.Verified
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.VNttInv.Verified
-import VerifiedGarbage.Proof.MlDsa.PPC64LE.Arith.Mul
+import VerifiedGarbage.Proof.MlDsa.PPC64LE.VMul
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.Arith.AddSub
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.Sample.RejNttCT
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.Sample.RejBounded
@@ -32,8 +32,8 @@ open VG.Impl.MlDsa.PPC64LE.KeyGen
 theorem prims_ok : PrimsOk prims 96 where
   ntt := ⟨⟨96, by decide, VNtt.verified⟩, by decide +kernel⟩
   invNtt := ⟨⟨96, by decide, VNtt.iverified⟩, by decide +kernel⟩
-  mul := ⟨⟨0, by decide, Arith.Mul.mul_verified⟩, by decide +kernel⟩
-  mulAdd := ⟨⟨0, by decide, Arith.Mul.mulAdd_verified⟩, by decide +kernel⟩
+  mul := ⟨⟨0, by decide, VNtt.vmul_verified⟩, by decide +kernel⟩
+  mulAdd := ⟨⟨0, by decide, VNtt.vmulAdd_verified⟩, by decide +kernel⟩
   add := ⟨⟨0, by decide, Arith.AddSub.add_verified⟩, by decide +kernel⟩
   rejNtt := ⟨⟨48, by decide, Sample.rejNTT_verified⟩, by decide +kernel⟩
   rejBounded := ⟨⟨48, by decide, Sample.rejBounded_verified⟩, by decide +kernel⟩

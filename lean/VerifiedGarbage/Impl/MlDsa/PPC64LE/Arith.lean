@@ -14,16 +14,14 @@ bits. A product of two reduced values has up to 46 bits, and is reduced by
 `x`, `x - ⌊x · ⌊2⁶⁴ / q⌋ / 2⁶⁴⌋ · q` (the high half of the product by
 `mulhdu`), which leaves a value less than `2q` congruent to `x`, then a
 subtraction of `q` and a `fixup` (`Impl/MlKem/PPC64LE/Poly.lean`).
-`r8 = ⌊2⁶⁴ / q⌋` and `r9 = q` throughout (`consts`). `mulld` and `mulhdu`
+`r8 = ⌊2⁶⁴ / q⌋` and `r9 = q` (`reduce`). `mulld` and `mulhdu`
 are the model's only multiplications, and their timing does not depend on
 their operands (see `TCB/PPC64LE/Isa.lean`).
 
-`vg_mldsa_ntt` and `vg_mldsa_inv_ntt` are vector code (`VNtt.lean`,
-`VNttInv.lean`); `saving` saves `r14` and `r15` for the callers' frames.
+`vg_mldsa_ntt`, `vg_mldsa_inv_ntt`, `vg_mldsa_multiply_ntt` and
+`vg_mldsa_multiply_add_ntt` are vector code (`VNtt.lean`, `VNttInv.lean`,
+`VMul.lean`); `saving` saves `r14` and `r15` for the callers' frames.
 
-* `vg_mldsa_multiply_ntt(h = r3, f = r4, g = r5)`: `h[i] = f[i] · g[i]`,
-  reduced, counted by `r6`; `vg_mldsa_multiply_add_ntt` adds `h[i]` to the
-  product before reducing it.
 * `vg_mldsa_add(f = r3, g = r4)`, `vg_mldsa_sub(f = r3, g = r4)`: ML-KEM's
   loops (`Impl.MlKem.PPC64LE.addBody`, `subBody`) with `q = 8380417` in `r8`.
 
@@ -45,10 +43,6 @@ def loadImm (r : Reg) (v : Nat) : List Instr :=
 /-- `r ← q = 0x7FE001`. -/
 def loadQ (r : Reg) : List Instr := loadImm r 8380417
 
-/-- `r8 = ⌊2⁶⁴ / q⌋ = 0x200801C0601`, `r9 = q`. -/
-def consts : List Instr :=
-  [.lis .r8 0x200, .ori .r8 .r8 0x801C, .lsl .r8 .r8 16, .ori .r8 .r8 0x0601] ++ loadQ .r9
-
 /-- `d ← d mod q`, for any `d`, with `⌊2⁶⁴ / q⌋` in `r8`, `q` in `r9` and
 `t` a temporary. -/
 def reduce (d t : Reg) : List Instr :=
@@ -64,24 +58,6 @@ def table (T : Nat → Nat) (b : Reg) : List Instr := (List.range 256).flatMap (
 /-- `body`, with `r14` and `r15` saved in a frame each around it. -/
 def saving (body : Prog isa) : Prog isa :=
   .frame (.push .r14) (.frame (.push .r15) body (.pop .r15)) (.pop .r14)
-
-/-! ## `multiplyNTT` and `multiplyAddNTT` -/
-
-/-- `r7 = f[i] · g[i]`, then `r10 = h[i]` added for `multiplyAddNTT`. -/
-def mulHead : List Instr := [.load .w .r7 .r4 0, .load .w .r10 .r5 0, .mul .r7 .r7 .r10]
-
-/-- The reduced value stored to `h[i]`, and on to the next coefficient. -/
-def mulTail : List Instr :=
-  reduce .r7 .r10 ++ [.store .w .r7 .r3 0, .addi .r3 .r3 4, .addi .r4 .r4 4, .addi .r5 .r5 4, .subi .r6 .r6 1]
-
-def mulBody : List Instr := mulHead ++ mulTail
-
-def mulAddBody : List Instr := mulHead ++ ([.load .w .r10 .r3 0, .add .r7 .r7 .r10] : List Instr) ++ mulTail
-
-def mul : Prog isa := .seq (.block (consts ++ ([.li .r6 256] : List Instr))) (.loop (.block mulBody) (.nonzero .d .r6))
-
-def mulAdd : Prog isa :=
-  .seq (.block (consts ++ ([.li .r6 256] : List Instr))) (.loop (.block mulAddBody) (.nonzero .d .r6))
 
 /-! ## `add` and `sub` -/
 
