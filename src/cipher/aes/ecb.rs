@@ -65,8 +65,7 @@ impl AesEcb {
             return Err(IncompleteBlock);
         }
         // The contracts hold whatever the working space holds, so it need
-        // not be initialized; each function leaves each byte of it unchanged
-        // or zero (`Spec.AesEcb`), so it need not be wiped.
+        // not be initialized.
         let mut scratch = CacheAligned(MaybeUninit::<[u64; 256]>::uninit());
         let data = buffer.as_mut_ptr().cast();
         let n = buffer.len() / 16;
