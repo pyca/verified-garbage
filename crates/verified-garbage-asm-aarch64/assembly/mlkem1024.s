@@ -4,11 +4,11 @@
 // `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
 // gives.
 
-vg_mlkem1024_keygen:
+vg_mlkem1024_keygen_x2_sha3_keccak_sha3:
 	sub sp, sp, #32
 	str x30, [sp, #0]
 	str x3, [sp, #8]
-	bl {vg_mlkem1024_keygen_body}
+	bl {vg_mlkem1024_keygen_body_x2_sha3_keccak_sha3}
 	str x0, [sp, #16]
 	ldr x0, [sp, #8]
 	movz x1, #49152, lsl #0
@@ -19,11 +19,11 @@ vg_mlkem1024_keygen:
 	ret
 	.p2align 6
 
-vg_mlkem1024_encaps:
+vg_mlkem1024_encaps_x2_sha3_keccak_sha3:
 	sub sp, sp, #32
 	str x30, [sp, #0]
 	str x4, [sp, #8]
-	bl {vg_mlkem1024_encaps_body}
+	bl {vg_mlkem1024_encaps_body_x2_sha3_keccak_sha3}
 	str x0, [sp, #16]
 	ldr x0, [sp, #8]
 	movz x1, #49152, lsl #0
@@ -34,11 +34,11 @@ vg_mlkem1024_encaps:
 	ret
 	.p2align 6
 
-vg_mlkem1024_encaps_h:
+vg_mlkem1024_encaps_h_x2_sha3_keccak_sha3:
 	sub sp, sp, #32
 	str x30, [sp, #0]
 	str x5, [sp, #8]
-	bl {vg_mlkem1024_encaps_h_body}
+	bl {vg_mlkem1024_encaps_h_body_x2_sha3_keccak_sha3}
 	str x0, [sp, #16]
 	ldr x0, [sp, #8]
 	movz x1, #49152, lsl #0
@@ -49,11 +49,11 @@ vg_mlkem1024_encaps_h:
 	ret
 	.p2align 6
 
-vg_mlkem1024_decaps:
+vg_mlkem1024_decaps_x2_sha3_keccak_sha3:
 	sub sp, sp, #32
 	str x30, [sp, #0]
 	str x3, [sp, #8]
-	bl {vg_mlkem1024_decaps_body}
+	bl {vg_mlkem1024_decaps_body_x2_sha3_keccak_sha3}
 	str x0, [sp, #16]
 	ldr x0, [sp, #8]
 	movz x1, #49152, lsl #0
@@ -124,11 +124,11 @@ vg_mlkem1024_decaps_x2_sha3:
 	ret
 	.p2align 6
 
-vg_mlkem1024_keygen_x2_sha3_keccak_sha3:
+vg_mlkem1024_keygen:
 	sub sp, sp, #32
 	str x30, [sp, #0]
 	str x3, [sp, #8]
-	bl {vg_mlkem1024_keygen_body_x2_sha3_keccak_sha3}
+	bl {vg_mlkem1024_keygen_body}
 	str x0, [sp, #16]
 	ldr x0, [sp, #8]
 	movz x1, #49152, lsl #0
@@ -139,11 +139,11 @@ vg_mlkem1024_keygen_x2_sha3_keccak_sha3:
 	ret
 	.p2align 6
 
-vg_mlkem1024_encaps_x2_sha3_keccak_sha3:
+vg_mlkem1024_encaps:
 	sub sp, sp, #32
 	str x30, [sp, #0]
 	str x4, [sp, #8]
-	bl {vg_mlkem1024_encaps_body_x2_sha3_keccak_sha3}
+	bl {vg_mlkem1024_encaps_body}
 	str x0, [sp, #16]
 	ldr x0, [sp, #8]
 	movz x1, #49152, lsl #0
@@ -154,11 +154,11 @@ vg_mlkem1024_encaps_x2_sha3_keccak_sha3:
 	ret
 	.p2align 6
 
-vg_mlkem1024_encaps_h_x2_sha3_keccak_sha3:
+vg_mlkem1024_encaps_h:
 	sub sp, sp, #32
 	str x30, [sp, #0]
 	str x5, [sp, #8]
-	bl {vg_mlkem1024_encaps_h_body_x2_sha3_keccak_sha3}
+	bl {vg_mlkem1024_encaps_h_body}
 	str x0, [sp, #16]
 	ldr x0, [sp, #8]
 	movz x1, #49152, lsl #0
@@ -169,11 +169,11 @@ vg_mlkem1024_encaps_h_x2_sha3_keccak_sha3:
 	ret
 	.p2align 6
 
-vg_mlkem1024_decaps_x2_sha3_keccak_sha3:
+vg_mlkem1024_decaps:
 	sub sp, sp, #32
 	str x30, [sp, #0]
 	str x3, [sp, #8]
-	bl {vg_mlkem1024_decaps_body_x2_sha3_keccak_sha3}
+	bl {vg_mlkem1024_decaps_body}
 	str x0, [sp, #16]
 	ldr x0, [sp, #8]
 	movz x1, #49152, lsl #0

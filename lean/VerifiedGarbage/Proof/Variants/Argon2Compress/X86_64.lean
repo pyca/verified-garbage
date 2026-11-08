@@ -19,8 +19,8 @@ open VG VG.X86_64 VG.Proof.Argon2.X86_64 in
 open VG VG.X86_64 VG.Proof.Argon2.X86_64 in
 @[instance_reducible] def scalar : CompressImpl := Proof.Variants.Argon2Compress.X86_64.Scalar.variant
 
-/-- Every implementation, which each function generic over them is emitted
-with (the registration files that import this). -/
-def variants := [avx2, avx512, scalar]
+/-- Every implementation, best first: each function generic over them is
+emitted with each (the registration files that import this). -/
+def variants := [avx512, avx2, scalar]
 
 end VG.Proof.Variants.Argon2Compress.X86_64

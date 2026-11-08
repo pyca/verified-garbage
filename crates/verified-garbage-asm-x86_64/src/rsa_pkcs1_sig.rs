@@ -3,6 +3,224 @@
 //! `assembly/rsa_pkcs1_sig.s`.
 #![allow(dead_code)]
 
+/// The CPU features `vg_rsa_pkcs1_sign_ifma` requires (`Artifact.features`).
+pub const VG_RSA_PKCS1_SIGN_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// RSASSA-PKCS1-v1_5 signature generation (RFC 8017 §8.2.1) of a hash value, as BoringSSL's `RSA_sign` does it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits) and the private key `(p, q, dP, dQ, qInv)` (as `vg_rsa_private_checked` takes it), encodes `digest` with EMSA-PKCS1-v1_5 (RFC 8017 §9.2: `0x00 0x01`, bytes `0xff`, `0x00` and the DER encoding of its `DigestInfo`) to `n_len` bytes and computes the signature from it as `vg_rsa_private_checked` does: writes it to `out` (`n_len` bytes, most significant first) and returns 1; writes zeros and returns 0 if `hash` names no hash function, `digest` is not as long as its values, `n_len` is less than the encoding's 11 bytes more than the `DigestInfo`, or `vg_rsa_private_checked` refuses the key; and writes zeros and returns 2 (an internal error) if the signature fails the check against `e`, which is the case for no hash value if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. A signature it writes is one `vg_rsa_pkcs1_verify` accepts. `hash` names the hash function: 0 MD5, 1 SHA-1, 2 SHA-224, 3 SHA-256, 4 SHA-384, 5 SHA-512, 6 SHA-512/224, 7 SHA-512/256, 8 SHA3-224, 9 SHA3-256, 10 SHA3-384, 11 SHA3-512 (`VG.Spec.RsaPkcs1Sig.Hash.ofId`).
+///
+/// Contract: `VG.Spec.RsaPkcs1Sig.signContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, `hash` and the contents of `n` and `e`, not on `digest` or the private key.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `n` must be valid for reads of `n_len` bytes.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `digest` must be valid for reads of `digest_len` bytes.
+/// * `p` must be valid for reads of `p_len` bytes.
+/// * `q` must be valid for reads of `q_len` bytes.
+/// * `dp` must be valid for reads of `dp_len` bytes.
+/// * `dq` must be valid for reads of `dq_len` bytes.
+/// * `qinv` must be valid for reads of `qinv_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `n_len` must be in 64..=1024.
+/// * `out_len` must be `n_len`.
+/// * `e_len` must be in 1..=`n_len`.
+/// * `p_len` and `q_len` must be in 1..`n_len`.
+/// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
+/// * `scratch_len` must be at least `16 * n_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other, `n`, `e`, `digest`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `n`, `e`, `digest`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the return address on the stack or the 4456 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_sign_ifma(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, digest: *const u8, digest_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJFj7//9IiXwkcEiJdCR4SImUJIAAAABIiYwkiAAAAEyJhCSQAAAATImMJJgAAABJieBJgcCgAAAASIuUJLAEAACJ0kiLtCS4BAAATIuMJMAEAACD+gA="
+je 20f
+.base64 "g/oB"
+je 22f
+.base64 "g/oC"
+je 24f
+.base64 "g/oD"
+je 26f
+.base64 "g/oE"
+je 28f
+.base64 "g/oF"
+je 210f
+.base64 "g/oG"
+je 212f
+.base64 "g/oH"
+je 214f
+.base64 "g/oI"
+je 216f
+.base64 "g/oJ"
+je 218f
+.base64 "g/oK"
+je 220f
+.base64 "g/oL"
+je 222f
+.base64 "QboACAAAQbsAAAAA"
+jmp 223f
+222:
+.base64 "QbpTAAAAQbtAAAAA"
+223:
+jmp 221f
+220:
+.base64 "QbpDAAAAQbswAAAA"
+221:
+jmp 219f
+218:
+.base64 "QbozAAAAQbsgAAAA"
+219:
+jmp 217f
+216:
+.base64 "QbovAAAAQbscAAAA"
+217:
+jmp 215f
+214:
+.base64 "QbozAAAAQbsgAAAA"
+215:
+jmp 213f
+212:
+.base64 "QbovAAAAQbscAAAA"
+213:
+jmp 211f
+210:
+.base64 "QbpTAAAAQbtAAAAA"
+211:
+jmp 29f
+28:
+.base64 "QbpDAAAAQbswAAAA"
+29:
+jmp 27f
+26:
+.base64 "QbozAAAAQbsgAAAA"
+27:
+jmp 25f
+24:
+.base64 "QbovAAAAQbscAAAA"
+25:
+jmp 23f
+22:
+.base64 "QbojAAAAQbsUAAAA"
+23:
+jmp 21f
+20:
+.base64 "QboiAAAAQbsQAAAA"
+21:
+.base64 "TTnZ"
+jne 224f
+.base64 "TInQSIPAC0g5wQ=="
+jb 226f
+.base64 "TInHuAAAAACIB0iDxwG4AQAAAIgHSIPHAUiJyEwp0EiD6ANJicK4/wAAAA=="
+228:
+.base64 "iAdIg8cBSYPqAQ=="
+jne 228b
+.base64 "uAAAAACIB0iDxwGD+gA="
+je 229f
+.base64 "g/oB"
+je 231f
+.base64 "g/oC"
+je 233f
+.base64 "g/oD"
+je 235f
+.base64 "g/oE"
+je 237f
+.base64 "g/oF"
+je 239f
+.base64 "g/oG"
+je 241f
+.base64 "g/oH"
+je 243f
+.base64 "g/oI"
+je 245f
+.base64 "g/oJ"
+je 247f
+.base64 "g/oK"
+je 249f
+.base64 "g/oL"
+je 251f
+jmp 252f
+251:
+.base64 "uDAAAACIB0iDxwG4UQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgKAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuEAAAACIB0iDxwE="
+252:
+jmp 250f
+249:
+.base64 "uDAAAACIB0iDxwG4QQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgJAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuDAAAACIB0iDxwE="
+250:
+jmp 248f
+247:
+.base64 "uDAAAACIB0iDxwG4MQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgIAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuCAAAACIB0iDxwE="
+248:
+jmp 246f
+245:
+.base64 "uDAAAACIB0iDxwG4LQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgHAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuBwAAACIB0iDxwE="
+246:
+jmp 244f
+243:
+.base64 "uDAAAACIB0iDxwG4MQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgGAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuCAAAACIB0iDxwE="
+244:
+jmp 242f
+241:
+.base64 "uDAAAACIB0iDxwG4LQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgFAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuBwAAACIB0iDxwE="
+242:
+jmp 240f
+239:
+.base64 "uDAAAACIB0iDxwG4UQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgDAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuEAAAACIB0iDxwE="
+240:
+jmp 238f
+237:
+.base64 "uDAAAACIB0iDxwG4QQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgCAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuDAAAACIB0iDxwE="
+238:
+jmp 236f
+235:
+.base64 "uDAAAACIB0iDxwG4MQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgBAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuCAAAACIB0iDxwE="
+236:
+jmp 234f
+233:
+.base64 "uDAAAACIB0iDxwG4LQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgEAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuBwAAACIB0iDxwE="
+234:
+jmp 232f
+231:
+.base64 "uDAAAACIB0iDxwG4IQAAAIgHSIPHAbgwAAAAiAdIg8cBuAkAAACIB0iDxwG4BgAAAIgHSIPHAbgFAAAAiAdIg8cBuCsAAACIB0iDxwG4DgAAAIgHSIPHAbgDAAAAiAdIg8cBuAIAAACIB0iDxwG4GgAAAIgHSIPHAbgFAAAAiAdIg8cBuAAAAACIB0iDxwG4BAAAAIgHSIPHAbgUAAAAiAdIg8cB"
+232:
+jmp 230f
+229:
+.base64 "uDAAAACIB0iDxwG4IAAAAIgHSIPHAbgwAAAAiAdIg8cBuAwAAACIB0iDxwG4BgAAAIgHSIPHAbgIAAAAiAdIg8cBuCoAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuIYAAACIB0iDxwG49wAAAIgHSIPHAbgNAAAAiAdIg8cBuAIAAACIB0iDxwG4BQAAAIgHSIPHAbgFAAAAiAdIg8cBuAAAAACIB0iDxwG4BAAAAIgHSIPHAbgQAAAAiAdIg8cB"
+230:
+253:
+.base64 "D7YGiAdIg8YBSIPHAUmD6QE="
+jne 253b
+.base64 "uAEAAAA="
+jmp 227f
+226:
+.base64 "uAAAAAA="
+227:
+jmp 225f
+224:
+.base64 "uAAAAAA="
+225:
+.base64 "g/gA"
+je 254f
+.base64 "SIt8JHBIi3QkeEiLlCSAAAAASIuMJIgAAABMi4QkkAAAAEyLjCSYAAAASIngSAWgAAAASIkEJEiJTCQISIuEJMgEAABIiUQkEEiLhCTQBAAASIlEJBhIi4Qk2AQAAEiJRCQgSIuEJOAEAABIiUQkKEiLhCToBAAASIlEJDBIi4Qk8AQAAEiJRCQ4SIuEJPgEAABIiUQkQEiLhCQABQAASIlEJEhIi4QkCAUAAEiJRCRQSIuEJBAFAABIiUQkWEiLhCQYBQAASIlEJGBIi4QkIAUAAEiJRCRo"
+call {vg_rsa_private_checked_ifma}
+.base64 "TIucJIgAAAC6AAAAAEmJ4kmBwqAAAAA="
+256:
+.base64 "QYgSSYPCAUmD6wE="
+jne 256b
+jmp 255f
+254:
+.base64 "SIt8JHBIi3QkeEmJ+EmJ8rgAAAAA"
+257:
+.base64 "iAdIg8cBSYPqAQ=="
+jne 257b
+255:
+.base64 "SI2kJKgEAADD"
+.p2align 6"#,
+        vg_rsa_private_checked_ifma = sym super::rsa::vg_rsa_private_checked_ifma::vg_rsa_private_checked_ifma,
+    )
+}
+
 /// The CPU features `vg_rsa_pkcs1_sign_adx` requires (`Artifact.features`).
 pub const VG_RSA_PKCS1_SIGN_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
@@ -435,70 +653,83 @@ jne 257b
     )
 }
 
-/// The CPU features `vg_rsa_pkcs1_sign_ifma` requires (`Artifact.features`).
-pub const VG_RSA_PKCS1_SIGN_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+/// The CPU features `vg_rsa_pkcs1_verify_precomputed_ifma` requires (`Artifact.features`).
+pub const VG_RSA_PKCS1_VERIFY_PRECOMPUTED_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
-/// RSASSA-PKCS1-v1_5 signature generation (RFC 8017 §8.2.1) of a hash value, as BoringSSL's `RSA_sign` does it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits) and the private key `(p, q, dP, dQ, qInv)` (as `vg_rsa_private_checked` takes it), encodes `digest` with EMSA-PKCS1-v1_5 (RFC 8017 §9.2: `0x00 0x01`, bytes `0xff`, `0x00` and the DER encoding of its `DigestInfo`) to `n_len` bytes and computes the signature from it as `vg_rsa_private_checked` does: writes it to `out` (`n_len` bytes, most significant first) and returns 1; writes zeros and returns 0 if `hash` names no hash function, `digest` is not as long as its values, `n_len` is less than the encoding's 11 bytes more than the `DigestInfo`, or `vg_rsa_private_checked` refuses the key; and writes zeros and returns 2 (an internal error) if the signature fails the check against `e`, which is the case for no hash value if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. A signature it writes is one `vg_rsa_pkcs1_verify` accepts. `hash` names the hash function: 0 MD5, 1 SHA-1, 2 SHA-224, 3 SHA-256, 4 SHA-384, 5 SHA-512, 6 SHA-512/224, 7 SHA-512/256, 8 SHA3-224, 9 SHA3-256, 10 SHA3-384, 11 SHA3-512 (`VG.Spec.RsaPkcs1Sig.Hash.ofId`).
+/// RSASSA-PKCS1-v1_5 signature verification (RFC 8017 §8.2.2) of a hash value, as BoringSSL's `RSA_verify` does it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), returns 1 if `sig` is `n_len` bytes, the integer `s` of `sig` (most significant byte first) is below `n`, and `s^e mod n` (as `n_len` bytes) is `0x00 0x01`, at least 8 bytes `0xff`, `0x00` and then exactly the DER encoding of the `DigestInfo` of `digest` (RFC 8017 §9.2 note 1), which must be as long as the hash function's values; and 0 otherwise, or if `n` or `e` is not such a number or `hash` names no hash function. That is, exactly when `s^e mod n` is EMSA-PKCS1-v1_5's encoding of `digest`: the signed `DigestInfo` is compared, never parsed. `hash` names the hash function: 0 MD5, 1 SHA-1, 2 SHA-224, 3 SHA-256, 4 SHA-384, 5 SHA-512, 6 SHA-512/224, 7 SHA-512/256, 8 SHA3-224, 9 SHA3-256, 10 SHA3-384, 11 SHA3-512 (`VG.Spec.RsaPkcs1Sig.Hash.ofId`).
 ///
-/// Contract: `VG.Spec.RsaPkcs1Sig.signContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, `hash` and the contents of `n` and `e`, not on `digest` or the private key.
+/// Contract: `VG.Spec.RsaPkcs1Sig.verifyContract`. Not constant time: timing may depend on the pointers, the lengths, `hash` and the contents of `n`, `e`, `digest` and `sig`.
+///
+/// This entry point also takes `pre`, the `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1). With those values, it returns exactly the result specified above. If `pre` does not hold those values, the result is unspecified; memory safety and the timing guarantee still apply. Timing may additionally depend on the contents of `pre`.
+///
+/// Contract: `VG.Spec.RsaPkcs1Sig.verifyPrecomputedContract`.
 ///
 /// # Safety
 ///
-/// * `out` must be valid for reads and writes of `out_len` bytes.
 /// * `n` must be valid for reads of `n_len` bytes.
 /// * `e` must be valid for reads of `e_len` bytes.
 /// * `digest` must be valid for reads of `digest_len` bytes.
-/// * `p` must be valid for reads of `p_len` bytes.
-/// * `q` must be valid for reads of `q_len` bytes.
-/// * `dp` must be valid for reads of `dp_len` bytes.
-/// * `dq` must be valid for reads of `dq_len` bytes.
-/// * `qinv` must be valid for reads of `qinv_len` bytes.
+/// * `sig` must be valid for reads of `sig_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes.
 /// * `n_len` must be in 64..=1024.
-/// * `out_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
-/// * `p_len` and `q_len` must be in 1..`n_len`.
-/// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
-/// * `scratch_len` must be at least `16 * n_len + 32`.
+/// * `scratch_len` must be at least `8 * ⌈n_len / 8⌉ + 48`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other, `n`, `e`, `digest`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `n`, `e`, `digest`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the return address on the stack or the 4456 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
+/// * For the result to be signature verification's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
+/// * `scratch` must not overlap `n`, `e`, `digest`, `sig`, `pre` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the return address on the stack or the 2144 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_sign_ifma(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, digest: *const u8, digest_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_verify_precomputed_ifma(n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, digest: *const u8, digest_len: usize, sig: *const u8, sig_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJFj7//9IiXwkcEiJdCR4SImUJIAAAABIiYwkiAAAAEyJhCSQAAAATImMJJgAAABJieBJgcCgAAAASIuUJLAEAACJ0kiLtCS4BAAATIuMJMAEAACD+gA="
-je 20f
-.base64 "g/oB"
+        r#".base64 "SItEJBhIOfA="
+jne 20f
+.base64 "SI2kJKj3//9IiXwkIEiJdCQoSIlUJDBIiUwkOEyJRCRATIlMJEhIi4QkaAgAAEyLlCR4CAAATIucJIAIAABIiQQkSIl0JAhMiVQkEEyJXCQYSYnQSYnJSIn6SInxSInnSIPHUEiLlCSICAAASIuMJJAIAAA="
+call {vg_rsa_public_precomputed_checked_ifma}
+.base64 "SIkEJLgBAAAAg/gA"
 je 22f
-.base64 "g/oC"
+.base64 "SYngSYHAUAQAAEiLTCQoSItUJECJ0kiLdCRITIuMJGAIAACD+gA="
 je 24f
-.base64 "g/oD"
+.base64 "g/oB"
 je 26f
-.base64 "g/oE"
+.base64 "g/oC"
 je 28f
-.base64 "g/oF"
+.base64 "g/oD"
 je 210f
-.base64 "g/oG"
+.base64 "g/oE"
 je 212f
-.base64 "g/oH"
+.base64 "g/oF"
 je 214f
-.base64 "g/oI"
+.base64 "g/oG"
 je 216f
-.base64 "g/oJ"
+.base64 "g/oH"
 je 218f
-.base64 "g/oK"
+.base64 "g/oI"
 je 220f
-.base64 "g/oL"
+.base64 "g/oJ"
 je 222f
+.base64 "g/oK"
+je 224f
+.base64 "g/oL"
+je 226f
 .base64 "QboACAAAQbsAAAAA"
+jmp 227f
+226:
+.base64 "QbpTAAAAQbtAAAAA"
+227:
+jmp 225f
+224:
+.base64 "QbpDAAAAQbswAAAA"
+225:
 jmp 223f
 222:
-.base64 "QbpTAAAAQbtAAAAA"
+.base64 "QbozAAAAQbsgAAAA"
 223:
 jmp 221f
 220:
-.base64 "QbpDAAAAQbswAAAA"
+.base64 "QbovAAAAQbscAAAA"
 221:
 jmp 219f
 218:
@@ -510,146 +741,394 @@ jmp 217f
 217:
 jmp 215f
 214:
-.base64 "QbozAAAAQbsgAAAA"
+.base64 "QbpTAAAAQbtAAAAA"
 215:
 jmp 213f
 212:
-.base64 "QbovAAAAQbscAAAA"
+.base64 "QbpDAAAAQbswAAAA"
 213:
 jmp 211f
 210:
-.base64 "QbpTAAAAQbtAAAAA"
+.base64 "QbozAAAAQbsgAAAA"
 211:
 jmp 29f
 28:
-.base64 "QbpDAAAAQbswAAAA"
+.base64 "QbovAAAAQbscAAAA"
 29:
 jmp 27f
 26:
-.base64 "QbozAAAAQbsgAAAA"
+.base64 "QbojAAAAQbsUAAAA"
 27:
 jmp 25f
 24:
-.base64 "QbovAAAAQbscAAAA"
-25:
-jmp 23f
-22:
-.base64 "QbojAAAAQbsUAAAA"
-23:
-jmp 21f
-20:
 .base64 "QboiAAAAQbsQAAAA"
-21:
+25:
 .base64 "TTnZ"
-jne 224f
+jne 228f
 .base64 "TInQSIPAC0g5wQ=="
-jb 226f
+jb 230f
 .base64 "TInHuAAAAACIB0iDxwG4AQAAAIgHSIPHAUiJyEwp0EiD6ANJicK4/wAAAA=="
-228:
+232:
 .base64 "iAdIg8cBSYPqAQ=="
-jne 228b
+jne 232b
 .base64 "uAAAAACIB0iDxwGD+gA="
-je 229f
-.base64 "g/oB"
-je 231f
-.base64 "g/oC"
 je 233f
-.base64 "g/oD"
+.base64 "g/oB"
 je 235f
-.base64 "g/oE"
+.base64 "g/oC"
 je 237f
-.base64 "g/oF"
+.base64 "g/oD"
 je 239f
-.base64 "g/oG"
+.base64 "g/oE"
 je 241f
-.base64 "g/oH"
+.base64 "g/oF"
 je 243f
-.base64 "g/oI"
+.base64 "g/oG"
 je 245f
-.base64 "g/oJ"
+.base64 "g/oH"
 je 247f
-.base64 "g/oK"
+.base64 "g/oI"
 je 249f
-.base64 "g/oL"
+.base64 "g/oJ"
 je 251f
+.base64 "g/oK"
+je 253f
+.base64 "g/oL"
+je 255f
+jmp 256f
+255:
+.base64 "uDAAAACIB0iDxwG4UQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgKAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuEAAAACIB0iDxwE="
+256:
+jmp 254f
+253:
+.base64 "uDAAAACIB0iDxwG4QQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgJAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuDAAAACIB0iDxwE="
+254:
 jmp 252f
 251:
-.base64 "uDAAAACIB0iDxwG4UQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgKAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuEAAAACIB0iDxwE="
+.base64 "uDAAAACIB0iDxwG4MQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgIAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuCAAAACIB0iDxwE="
 252:
 jmp 250f
 249:
-.base64 "uDAAAACIB0iDxwG4QQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgJAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuDAAAACIB0iDxwE="
+.base64 "uDAAAACIB0iDxwG4LQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgHAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuBwAAACIB0iDxwE="
 250:
 jmp 248f
 247:
-.base64 "uDAAAACIB0iDxwG4MQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgIAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuCAAAACIB0iDxwE="
+.base64 "uDAAAACIB0iDxwG4MQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgGAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuCAAAACIB0iDxwE="
 248:
 jmp 246f
 245:
-.base64 "uDAAAACIB0iDxwG4LQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgHAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuBwAAACIB0iDxwE="
+.base64 "uDAAAACIB0iDxwG4LQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgFAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuBwAAACIB0iDxwE="
 246:
 jmp 244f
 243:
-.base64 "uDAAAACIB0iDxwG4MQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgGAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuCAAAACIB0iDxwE="
+.base64 "uDAAAACIB0iDxwG4UQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgDAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuEAAAACIB0iDxwE="
 244:
 jmp 242f
 241:
-.base64 "uDAAAACIB0iDxwG4LQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgFAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuBwAAACIB0iDxwE="
+.base64 "uDAAAACIB0iDxwG4QQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgCAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuDAAAACIB0iDxwE="
 242:
 jmp 240f
 239:
-.base64 "uDAAAACIB0iDxwG4UQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgDAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuEAAAACIB0iDxwE="
+.base64 "uDAAAACIB0iDxwG4MQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgBAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuCAAAACIB0iDxwE="
 240:
 jmp 238f
 237:
-.base64 "uDAAAACIB0iDxwG4QQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgCAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuDAAAACIB0iDxwE="
+.base64 "uDAAAACIB0iDxwG4LQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgEAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuBwAAACIB0iDxwE="
 238:
 jmp 236f
 235:
-.base64 "uDAAAACIB0iDxwG4MQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgBAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuCAAAACIB0iDxwE="
+.base64 "uDAAAACIB0iDxwG4IQAAAIgHSIPHAbgwAAAAiAdIg8cBuAkAAACIB0iDxwG4BgAAAIgHSIPHAbgFAAAAiAdIg8cBuCsAAACIB0iDxwG4DgAAAIgHSIPHAbgDAAAAiAdIg8cBuAIAAACIB0iDxwG4GgAAAIgHSIPHAbgFAAAAiAdIg8cBuAAAAACIB0iDxwG4BAAAAIgHSIPHAbgUAAAAiAdIg8cB"
 236:
 jmp 234f
 233:
+.base64 "uDAAAACIB0iDxwG4IAAAAIgHSIPHAbgwAAAAiAdIg8cBuAwAAACIB0iDxwG4BgAAAIgHSIPHAbgIAAAAiAdIg8cBuCoAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuIYAAACIB0iDxwG49wAAAIgHSIPHAbgNAAAAiAdIg8cBuAIAAACIB0iDxwG4BQAAAIgHSIPHAbgFAAAAiAdIg8cBuAAAAACIB0iDxwG4BAAAAIgHSIPHAbgQAAAAiAdIg8cB"
+234:
+257:
+.base64 "D7YGiAdIg8YBSIPHAUmD6QE="
+jne 257b
+.base64 "uAEAAAA="
+jmp 231f
+230:
+.base64 "uAAAAAA="
+231:
+jmp 229f
+228:
+.base64 "uAAAAAA="
+229:
+.base64 "g/gA"
+je 258f
+.base64 "SInnSIPHUEiJ5kiBxlAEAABBuwAAAAC6AAAAAEiJyEiD4Ac="
+je 260f
+262:
+.base64 "Qg+2BB9GD7YUHkwx0EgJwkmDwwFJOcs="
+jne 262b
+jmp 261f
+260:
+263:
+.base64 "SosEH0ozBB5ICcJJg8MISTnL"
+jne 263b
+261:
+.base64 "SIP6AUgZwEiD4AE="
+jmp 259f
+258:
+.base64 "uAAAAAA="
+259:
+jmp 23f
+22:
+.base64 "uAAAAAA="
+23:
+.base64 "SIsMJCHISI2kJFgIAAA="
+jmp 21f
+20:
+.base64 "uAAAAAA="
+21:
+.base64 "ww=="
+.p2align 6"#,
+        vg_rsa_public_precomputed_checked_ifma = sym super::rsa::vg_rsa_public_precomputed_checked_ifma::vg_rsa_public_precomputed_checked_ifma,
+    )
+}
+
+/// The CPU features `vg_rsa_pkcs1_recover_precomputed_ifma` requires (`Artifact.features`).
+pub const VG_RSA_PKCS1_RECOVER_PRECOMPUTED_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// The hash value an RSASSA-PKCS1-v1_5 signature signs, as BoringSSL's `EVP_PKEY_verify_recover` returns it for an RSA key with PKCS #1 v1.5 padding and a hash function set. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), if `sig` is `n_len` bytes, the integer `s` of `sig` (most significant byte first) is below `n`, and `s^e mod n` (as `n_len` bytes) is `0x00 0x01`, at least 8 bytes `0xff`, `0x00` and then the DER encoding of the hash function's `DigestInfo` prefix (RFC 8017 §9.2 note 1) followed by exactly `out_len` bytes, writes those bytes to `out` and returns 1; otherwise, or if `n` or `e` is not such a number, writes zeros and returns 0. It writes a value exactly when `vg_rsa_pkcs1_verify` accepts the signature for it. `hash` names the hash function: 0 MD5, 1 SHA-1, 2 SHA-224, 3 SHA-256, 4 SHA-384, 5 SHA-512, 6 SHA-512/224, 7 SHA-512/256, 8 SHA3-224, 9 SHA3-256, 10 SHA3-384, 11 SHA3-512 (`VG.Spec.RsaPkcs1Sig.Hash.ofId`).
+///
+/// Contract: `VG.Spec.RsaPkcs1Sig.recoverContract`. Not constant time: timing may depend on the pointers, the lengths, `hash` and the contents of `n`, `e` and `sig`.
+///
+/// This entry point also takes `pre`, the `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1). With those values, it writes and returns exactly what is specified above. If `pre` does not hold those values, what it writes and returns is unspecified; memory safety still applies.
+///
+/// Contract: `VG.Spec.RsaPkcs1Sig.recoverPrecomputedContract`.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `n` must be valid for reads of `n_len` bytes.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `sig` must be valid for reads of `sig_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes.
+/// * `n_len` must be in 64..=1024.
+/// * `e_len` must be in 1..=`n_len`.
+/// * `hash` must be in 0..=11, and `out_len` the length of its hash function's values.
+/// * `scratch_len` must be at least `8 * ⌈n_len / 8⌉ + 48`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
+/// * For the result to be recovery's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
+/// * `out` and `scratch` must not overlap each other, `n`, `e`, `sig`, `pre` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `n`, `e`, `sig`, `scratch` and `pre` may overlap the return address on the stack or the 2144 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_recover_precomputed_ifma(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, sig: *const u8, sig_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SItEJBhIOcg="
+jne 20f
+.base64 "SI2kJKj3//9IiXwkIEiJdCQoSIlUJDBIiUwkOEyJRCRATIlMJEhIi4QkaAgAAEyLlCR4CAAATIucJIAIAABIiQQkSIlMJAhMiVQkEEyJXCQYSInOSInnSIPHUEiLlCSICAAASIuMJJAIAAA="
+call {vg_rsa_public_precomputed_checked_ifma}
+.base64 "SIkEJEmJ4EmBwFAEAABIi0wkOEiLlCRgCAAAidJMi0wkKEiJ5kiDxlBIAc5MKc6D+gA="
+je 22f
+.base64 "g/oB"
+je 24f
+.base64 "g/oC"
+je 26f
+.base64 "g/oD"
+je 28f
+.base64 "g/oE"
+je 210f
+.base64 "g/oF"
+je 212f
+.base64 "g/oG"
+je 214f
+.base64 "g/oH"
+je 216f
+.base64 "g/oI"
+je 218f
+.base64 "g/oJ"
+je 220f
+.base64 "g/oK"
+je 222f
+.base64 "g/oL"
+je 224f
+.base64 "QboACAAAQbsAAAAA"
+jmp 225f
+224:
+.base64 "QbpTAAAAQbtAAAAA"
+225:
+jmp 223f
+222:
+.base64 "QbpDAAAAQbswAAAA"
+223:
+jmp 221f
+220:
+.base64 "QbozAAAAQbsgAAAA"
+221:
+jmp 219f
+218:
+.base64 "QbovAAAAQbscAAAA"
+219:
+jmp 217f
+216:
+.base64 "QbozAAAAQbsgAAAA"
+217:
+jmp 215f
+214:
+.base64 "QbovAAAAQbscAAAA"
+215:
+jmp 213f
+212:
+.base64 "QbpTAAAAQbtAAAAA"
+213:
+jmp 211f
+210:
+.base64 "QbpDAAAAQbswAAAA"
+211:
+jmp 29f
+28:
+.base64 "QbozAAAAQbsgAAAA"
+29:
+jmp 27f
+26:
+.base64 "QbovAAAAQbscAAAA"
+27:
+jmp 25f
+24:
+.base64 "QbojAAAAQbsUAAAA"
+25:
+jmp 23f
+22:
+.base64 "QboiAAAAQbsQAAAA"
+23:
+.base64 "TTnZ"
+jne 226f
+.base64 "TInQSIPAC0g5wQ=="
+jb 228f
+.base64 "TInHuAAAAACIB0iDxwG4AQAAAIgHSIPHAUiJyEwp0EiD6ANJicK4/wAAAA=="
+230:
+.base64 "iAdIg8cBSYPqAQ=="
+jne 230b
+.base64 "uAAAAACIB0iDxwGD+gA="
+je 231f
+.base64 "g/oB"
+je 233f
+.base64 "g/oC"
+je 235f
+.base64 "g/oD"
+je 237f
+.base64 "g/oE"
+je 239f
+.base64 "g/oF"
+je 241f
+.base64 "g/oG"
+je 243f
+.base64 "g/oH"
+je 245f
+.base64 "g/oI"
+je 247f
+.base64 "g/oJ"
+je 249f
+.base64 "g/oK"
+je 251f
+.base64 "g/oL"
+je 253f
+jmp 254f
+253:
+.base64 "uDAAAACIB0iDxwG4UQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgKAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuEAAAACIB0iDxwE="
+254:
+jmp 252f
+251:
+.base64 "uDAAAACIB0iDxwG4QQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgJAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuDAAAACIB0iDxwE="
+252:
+jmp 250f
+249:
+.base64 "uDAAAACIB0iDxwG4MQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgIAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuCAAAACIB0iDxwE="
+250:
+jmp 248f
+247:
+.base64 "uDAAAACIB0iDxwG4LQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgHAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuBwAAACIB0iDxwE="
+248:
+jmp 246f
+245:
+.base64 "uDAAAACIB0iDxwG4MQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgGAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuCAAAACIB0iDxwE="
+246:
+jmp 244f
+243:
+.base64 "uDAAAACIB0iDxwG4LQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgFAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuBwAAACIB0iDxwE="
+244:
+jmp 242f
+241:
+.base64 "uDAAAACIB0iDxwG4UQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgDAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuEAAAACIB0iDxwE="
+242:
+jmp 240f
+239:
+.base64 "uDAAAACIB0iDxwG4QQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgCAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuDAAAACIB0iDxwE="
+240:
+jmp 238f
+237:
+.base64 "uDAAAACIB0iDxwG4MQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgBAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuCAAAACIB0iDxwE="
+238:
+jmp 236f
+235:
 .base64 "uDAAAACIB0iDxwG4LQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgEAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuBwAAACIB0iDxwE="
+236:
+jmp 234f
+233:
+.base64 "uDAAAACIB0iDxwG4IQAAAIgHSIPHAbgwAAAAiAdIg8cBuAkAAACIB0iDxwG4BgAAAIgHSIPHAbgFAAAAiAdIg8cBuCsAAACIB0iDxwG4DgAAAIgHSIPHAbgDAAAAiAdIg8cBuAIAAACIB0iDxwG4GgAAAIgHSIPHAbgFAAAAiAdIg8cBuAAAAACIB0iDxwG4BAAAAIgHSIPHAbgUAAAAiAdIg8cB"
 234:
 jmp 232f
 231:
-.base64 "uDAAAACIB0iDxwG4IQAAAIgHSIPHAbgwAAAAiAdIg8cBuAkAAACIB0iDxwG4BgAAAIgHSIPHAbgFAAAAiAdIg8cBuCsAAACIB0iDxwG4DgAAAIgHSIPHAbgDAAAAiAdIg8cBuAIAAACIB0iDxwG4GgAAAIgHSIPHAbgFAAAAiAdIg8cBuAAAAACIB0iDxwG4BAAAAIgHSIPHAbgUAAAAiAdIg8cB"
-232:
-jmp 230f
-229:
 .base64 "uDAAAACIB0iDxwG4IAAAAIgHSIPHAbgwAAAAiAdIg8cBuAwAAACIB0iDxwG4BgAAAIgHSIPHAbgIAAAAiAdIg8cBuCoAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuIYAAACIB0iDxwG49wAAAIgHSIPHAbgNAAAAiAdIg8cBuAIAAACIB0iDxwG4BQAAAIgHSIPHAbgFAAAAiAdIg8cBuAAAAACIB0iDxwG4BAAAAIgHSIPHAbgQAAAAiAdIg8cB"
-230:
-253:
+232:
+255:
 .base64 "D7YGiAdIg8YBSIPHAUmD6QE="
-jne 253b
+jne 255b
 .base64 "uAEAAAA="
+jmp 229f
+228:
+.base64 "uAAAAAA="
+229:
 jmp 227f
 226:
 .base64 "uAAAAAA="
 227:
-jmp 225f
-224:
-.base64 "uAAAAAA="
-225:
 .base64 "g/gA"
-je 254f
-.base64 "SIt8JHBIi3QkeEiLlCSAAAAASIuMJIgAAABMi4QkkAAAAEyLjCSYAAAASIngSAWgAAAASIkEJEiJTCQISIuEJMgEAABIiUQkEEiLhCTQBAAASIlEJBhIi4Qk2AQAAEiJRCQgSIuEJOAEAABIiUQkKEiLhCToBAAASIlEJDBIi4Qk8AQAAEiJRCQ4SIuEJPgEAABIiUQkQEiLhCQABQAASIlEJEhIi4QkCAUAAEiJRCRQSIuEJBAFAABIiUQkWEiLhCQYBQAASIlEJGBIi4QkIAUAAEiJRCRo"
-call {vg_rsa_private_checked_ifma}
-.base64 "TIucJIgAAAC6AAAAAEmJ4kmBwqAAAAA="
+je 256f
+.base64 "SInnSIPHUEiJ5kiBxlAEAABBuwAAAAC6AAAAAEiJyEiD4Ac="
+je 258f
+260:
+.base64 "Qg+2BB9GD7YUHkwx0EgJwkmDwwFJOcs="
+jne 260b
+jmp 259f
+258:
+261:
+.base64 "SosEH0ozBB5ICcJJg8MISTnL"
+jne 261b
+259:
+.base64 "SIP6AUgZ0kiLBCSD+AFIGcBIg/D/SCHCSIlUJAhMi0QkIEyJx0yLTCQoSInmSIPGUEgBzkwpzg=="
+262:
+.base64 "D7YGiAdIg8YBSIPHAUmD6QE="
+jne 262b
+.base64 "uAEAAABIi3wkIEiLTCQoSItUJAhBugAAAAA="
+263:
+.base64 "Qg+2BBdIIdBCiAQXuAAAAABCiEQUUEmDwgFJOco="
+jne 263b
+.base64 "SInQSIPgAQ=="
+jmp 257f
 256:
-.base64 "QYgSSYPCAUmD6wE="
-jne 256b
-jmp 255f
-254:
-.base64 "SIt8JHBIi3QkeEmJ+EmJ8rgAAAAA"
-257:
+.base64 "SIt8JCBIi3QkKEmJ+EmJ8rgAAAAA"
+264:
 .base64 "iAdIg8cBSYPqAQ=="
-jne 257b
-255:
-.base64 "SI2kJKgEAADD"
+jne 264b
+257:
+.base64 "SI2kJFgIAAA="
+jmp 21f
+20:
+.base64 "SYn4SYnyuAAAAAA="
+265:
+.base64 "iAdIg8cBSYPqAQ=="
+jne 265b
+21:
+.base64 "ww=="
 .p2align 6"#,
-        vg_rsa_private_checked_ifma = sym super::rsa::vg_rsa_private_checked_ifma::vg_rsa_private_checked_ifma,
+        vg_rsa_public_precomputed_checked_ifma = sym super::rsa::vg_rsa_public_precomputed_checked_ifma::vg_rsa_public_precomputed_checked_ifma,
     )
 }
 
@@ -1600,484 +2079,5 @@ jne 265b
 .base64 "ww=="
 .p2align 6"#,
         vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked::vg_rsa_public_precomputed_checked,
-    )
-}
-
-/// The CPU features `vg_rsa_pkcs1_verify_precomputed_ifma` requires (`Artifact.features`).
-pub const VG_RSA_PKCS1_VERIFY_PRECOMPUTED_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
-
-/// RSASSA-PKCS1-v1_5 signature verification (RFC 8017 §8.2.2) of a hash value, as BoringSSL's `RSA_verify` does it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), returns 1 if `sig` is `n_len` bytes, the integer `s` of `sig` (most significant byte first) is below `n`, and `s^e mod n` (as `n_len` bytes) is `0x00 0x01`, at least 8 bytes `0xff`, `0x00` and then exactly the DER encoding of the `DigestInfo` of `digest` (RFC 8017 §9.2 note 1), which must be as long as the hash function's values; and 0 otherwise, or if `n` or `e` is not such a number or `hash` names no hash function. That is, exactly when `s^e mod n` is EMSA-PKCS1-v1_5's encoding of `digest`: the signed `DigestInfo` is compared, never parsed. `hash` names the hash function: 0 MD5, 1 SHA-1, 2 SHA-224, 3 SHA-256, 4 SHA-384, 5 SHA-512, 6 SHA-512/224, 7 SHA-512/256, 8 SHA3-224, 9 SHA3-256, 10 SHA3-384, 11 SHA3-512 (`VG.Spec.RsaPkcs1Sig.Hash.ofId`).
-///
-/// Contract: `VG.Spec.RsaPkcs1Sig.verifyContract`. Not constant time: timing may depend on the pointers, the lengths, `hash` and the contents of `n`, `e`, `digest` and `sig`.
-///
-/// This entry point also takes `pre`, the `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1). With those values, it returns exactly the result specified above. If `pre` does not hold those values, the result is unspecified; memory safety and the timing guarantee still apply. Timing may additionally depend on the contents of `pre`.
-///
-/// Contract: `VG.Spec.RsaPkcs1Sig.verifyPrecomputedContract`.
-///
-/// # Safety
-///
-/// * `n` must be valid for reads of `n_len` bytes.
-/// * `e` must be valid for reads of `e_len` bytes.
-/// * `digest` must be valid for reads of `digest_len` bytes.
-/// * `sig` must be valid for reads of `sig_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `pre` must be valid for reads of `8 * pre_len` bytes.
-/// * `n_len` must be in 64..=1024.
-/// * `e_len` must be in 1..=`n_len`.
-/// * `scratch_len` must be at least `8 * ⌈n_len / 8⌉ + 48`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
-/// * For the result to be signature verification's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
-/// * `scratch` must not overlap `n`, `e`, `digest`, `sig`, `pre` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the return address on the stack or the 2144 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_verify_precomputed_ifma(n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, digest: *const u8, digest_len: usize, sig: *const u8, sig_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "SItEJBhIOfA="
-jne 20f
-.base64 "SI2kJKj3//9IiXwkIEiJdCQoSIlUJDBIiUwkOEyJRCRATIlMJEhIi4QkaAgAAEyLlCR4CAAATIucJIAIAABIiQQkSIl0JAhMiVQkEEyJXCQYSYnQSYnJSIn6SInxSInnSIPHUEiLlCSICAAASIuMJJAIAAA="
-call {vg_rsa_public_precomputed_checked_ifma}
-.base64 "SIkEJLgBAAAAg/gA"
-je 22f
-.base64 "SYngSYHAUAQAAEiLTCQoSItUJECJ0kiLdCRITIuMJGAIAACD+gA="
-je 24f
-.base64 "g/oB"
-je 26f
-.base64 "g/oC"
-je 28f
-.base64 "g/oD"
-je 210f
-.base64 "g/oE"
-je 212f
-.base64 "g/oF"
-je 214f
-.base64 "g/oG"
-je 216f
-.base64 "g/oH"
-je 218f
-.base64 "g/oI"
-je 220f
-.base64 "g/oJ"
-je 222f
-.base64 "g/oK"
-je 224f
-.base64 "g/oL"
-je 226f
-.base64 "QboACAAAQbsAAAAA"
-jmp 227f
-226:
-.base64 "QbpTAAAAQbtAAAAA"
-227:
-jmp 225f
-224:
-.base64 "QbpDAAAAQbswAAAA"
-225:
-jmp 223f
-222:
-.base64 "QbozAAAAQbsgAAAA"
-223:
-jmp 221f
-220:
-.base64 "QbovAAAAQbscAAAA"
-221:
-jmp 219f
-218:
-.base64 "QbozAAAAQbsgAAAA"
-219:
-jmp 217f
-216:
-.base64 "QbovAAAAQbscAAAA"
-217:
-jmp 215f
-214:
-.base64 "QbpTAAAAQbtAAAAA"
-215:
-jmp 213f
-212:
-.base64 "QbpDAAAAQbswAAAA"
-213:
-jmp 211f
-210:
-.base64 "QbozAAAAQbsgAAAA"
-211:
-jmp 29f
-28:
-.base64 "QbovAAAAQbscAAAA"
-29:
-jmp 27f
-26:
-.base64 "QbojAAAAQbsUAAAA"
-27:
-jmp 25f
-24:
-.base64 "QboiAAAAQbsQAAAA"
-25:
-.base64 "TTnZ"
-jne 228f
-.base64 "TInQSIPAC0g5wQ=="
-jb 230f
-.base64 "TInHuAAAAACIB0iDxwG4AQAAAIgHSIPHAUiJyEwp0EiD6ANJicK4/wAAAA=="
-232:
-.base64 "iAdIg8cBSYPqAQ=="
-jne 232b
-.base64 "uAAAAACIB0iDxwGD+gA="
-je 233f
-.base64 "g/oB"
-je 235f
-.base64 "g/oC"
-je 237f
-.base64 "g/oD"
-je 239f
-.base64 "g/oE"
-je 241f
-.base64 "g/oF"
-je 243f
-.base64 "g/oG"
-je 245f
-.base64 "g/oH"
-je 247f
-.base64 "g/oI"
-je 249f
-.base64 "g/oJ"
-je 251f
-.base64 "g/oK"
-je 253f
-.base64 "g/oL"
-je 255f
-jmp 256f
-255:
-.base64 "uDAAAACIB0iDxwG4UQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgKAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuEAAAACIB0iDxwE="
-256:
-jmp 254f
-253:
-.base64 "uDAAAACIB0iDxwG4QQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgJAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuDAAAACIB0iDxwE="
-254:
-jmp 252f
-251:
-.base64 "uDAAAACIB0iDxwG4MQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgIAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuCAAAACIB0iDxwE="
-252:
-jmp 250f
-249:
-.base64 "uDAAAACIB0iDxwG4LQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgHAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuBwAAACIB0iDxwE="
-250:
-jmp 248f
-247:
-.base64 "uDAAAACIB0iDxwG4MQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgGAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuCAAAACIB0iDxwE="
-248:
-jmp 246f
-245:
-.base64 "uDAAAACIB0iDxwG4LQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgFAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuBwAAACIB0iDxwE="
-246:
-jmp 244f
-243:
-.base64 "uDAAAACIB0iDxwG4UQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgDAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuEAAAACIB0iDxwE="
-244:
-jmp 242f
-241:
-.base64 "uDAAAACIB0iDxwG4QQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgCAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuDAAAACIB0iDxwE="
-242:
-jmp 240f
-239:
-.base64 "uDAAAACIB0iDxwG4MQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgBAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuCAAAACIB0iDxwE="
-240:
-jmp 238f
-237:
-.base64 "uDAAAACIB0iDxwG4LQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgEAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuBwAAACIB0iDxwE="
-238:
-jmp 236f
-235:
-.base64 "uDAAAACIB0iDxwG4IQAAAIgHSIPHAbgwAAAAiAdIg8cBuAkAAACIB0iDxwG4BgAAAIgHSIPHAbgFAAAAiAdIg8cBuCsAAACIB0iDxwG4DgAAAIgHSIPHAbgDAAAAiAdIg8cBuAIAAACIB0iDxwG4GgAAAIgHSIPHAbgFAAAAiAdIg8cBuAAAAACIB0iDxwG4BAAAAIgHSIPHAbgUAAAAiAdIg8cB"
-236:
-jmp 234f
-233:
-.base64 "uDAAAACIB0iDxwG4IAAAAIgHSIPHAbgwAAAAiAdIg8cBuAwAAACIB0iDxwG4BgAAAIgHSIPHAbgIAAAAiAdIg8cBuCoAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuIYAAACIB0iDxwG49wAAAIgHSIPHAbgNAAAAiAdIg8cBuAIAAACIB0iDxwG4BQAAAIgHSIPHAbgFAAAAiAdIg8cBuAAAAACIB0iDxwG4BAAAAIgHSIPHAbgQAAAAiAdIg8cB"
-234:
-257:
-.base64 "D7YGiAdIg8YBSIPHAUmD6QE="
-jne 257b
-.base64 "uAEAAAA="
-jmp 231f
-230:
-.base64 "uAAAAAA="
-231:
-jmp 229f
-228:
-.base64 "uAAAAAA="
-229:
-.base64 "g/gA"
-je 258f
-.base64 "SInnSIPHUEiJ5kiBxlAEAABBuwAAAAC6AAAAAEiJyEiD4Ac="
-je 260f
-262:
-.base64 "Qg+2BB9GD7YUHkwx0EgJwkmDwwFJOcs="
-jne 262b
-jmp 261f
-260:
-263:
-.base64 "SosEH0ozBB5ICcJJg8MISTnL"
-jne 263b
-261:
-.base64 "SIP6AUgZwEiD4AE="
-jmp 259f
-258:
-.base64 "uAAAAAA="
-259:
-jmp 23f
-22:
-.base64 "uAAAAAA="
-23:
-.base64 "SIsMJCHISI2kJFgIAAA="
-jmp 21f
-20:
-.base64 "uAAAAAA="
-21:
-.base64 "ww=="
-.p2align 6"#,
-        vg_rsa_public_precomputed_checked_ifma = sym super::rsa::vg_rsa_public_precomputed_checked_ifma::vg_rsa_public_precomputed_checked_ifma,
-    )
-}
-
-/// The CPU features `vg_rsa_pkcs1_recover_precomputed_ifma` requires (`Artifact.features`).
-pub const VG_RSA_PKCS1_RECOVER_PRECOMPUTED_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
-
-/// The hash value an RSASSA-PKCS1-v1_5 signature signs, as BoringSSL's `EVP_PKEY_verify_recover` returns it for an RSA key with PKCS #1 v1.5 padding and a hash function set. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), if `sig` is `n_len` bytes, the integer `s` of `sig` (most significant byte first) is below `n`, and `s^e mod n` (as `n_len` bytes) is `0x00 0x01`, at least 8 bytes `0xff`, `0x00` and then the DER encoding of the hash function's `DigestInfo` prefix (RFC 8017 §9.2 note 1) followed by exactly `out_len` bytes, writes those bytes to `out` and returns 1; otherwise, or if `n` or `e` is not such a number, writes zeros and returns 0. It writes a value exactly when `vg_rsa_pkcs1_verify` accepts the signature for it. `hash` names the hash function: 0 MD5, 1 SHA-1, 2 SHA-224, 3 SHA-256, 4 SHA-384, 5 SHA-512, 6 SHA-512/224, 7 SHA-512/256, 8 SHA3-224, 9 SHA3-256, 10 SHA3-384, 11 SHA3-512 (`VG.Spec.RsaPkcs1Sig.Hash.ofId`).
-///
-/// Contract: `VG.Spec.RsaPkcs1Sig.recoverContract`. Not constant time: timing may depend on the pointers, the lengths, `hash` and the contents of `n`, `e` and `sig`.
-///
-/// This entry point also takes `pre`, the `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1). With those values, it writes and returns exactly what is specified above. If `pre` does not hold those values, what it writes and returns is unspecified; memory safety still applies.
-///
-/// Contract: `VG.Spec.RsaPkcs1Sig.recoverPrecomputedContract`.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `n` must be valid for reads of `n_len` bytes.
-/// * `e` must be valid for reads of `e_len` bytes.
-/// * `sig` must be valid for reads of `sig_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `pre` must be valid for reads of `8 * pre_len` bytes.
-/// * `n_len` must be in 64..=1024.
-/// * `e_len` must be in 1..=`n_len`.
-/// * `hash` must be in 0..=11, and `out_len` the length of its hash function's values.
-/// * `scratch_len` must be at least `8 * ⌈n_len / 8⌉ + 48`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
-/// * For the result to be recovery's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
-/// * `out` and `scratch` must not overlap each other, `n`, `e`, `sig`, `pre` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `n`, `e`, `sig`, `scratch` and `pre` may overlap the return address on the stack or the 2144 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_recover_precomputed_ifma(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, sig: *const u8, sig_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "SItEJBhIOcg="
-jne 20f
-.base64 "SI2kJKj3//9IiXwkIEiJdCQoSIlUJDBIiUwkOEyJRCRATIlMJEhIi4QkaAgAAEyLlCR4CAAATIucJIAIAABIiQQkSIlMJAhMiVQkEEyJXCQYSInOSInnSIPHUEiLlCSICAAASIuMJJAIAAA="
-call {vg_rsa_public_precomputed_checked_ifma}
-.base64 "SIkEJEmJ4EmBwFAEAABIi0wkOEiLlCRgCAAAidJMi0wkKEiJ5kiDxlBIAc5MKc6D+gA="
-je 22f
-.base64 "g/oB"
-je 24f
-.base64 "g/oC"
-je 26f
-.base64 "g/oD"
-je 28f
-.base64 "g/oE"
-je 210f
-.base64 "g/oF"
-je 212f
-.base64 "g/oG"
-je 214f
-.base64 "g/oH"
-je 216f
-.base64 "g/oI"
-je 218f
-.base64 "g/oJ"
-je 220f
-.base64 "g/oK"
-je 222f
-.base64 "g/oL"
-je 224f
-.base64 "QboACAAAQbsAAAAA"
-jmp 225f
-224:
-.base64 "QbpTAAAAQbtAAAAA"
-225:
-jmp 223f
-222:
-.base64 "QbpDAAAAQbswAAAA"
-223:
-jmp 221f
-220:
-.base64 "QbozAAAAQbsgAAAA"
-221:
-jmp 219f
-218:
-.base64 "QbovAAAAQbscAAAA"
-219:
-jmp 217f
-216:
-.base64 "QbozAAAAQbsgAAAA"
-217:
-jmp 215f
-214:
-.base64 "QbovAAAAQbscAAAA"
-215:
-jmp 213f
-212:
-.base64 "QbpTAAAAQbtAAAAA"
-213:
-jmp 211f
-210:
-.base64 "QbpDAAAAQbswAAAA"
-211:
-jmp 29f
-28:
-.base64 "QbozAAAAQbsgAAAA"
-29:
-jmp 27f
-26:
-.base64 "QbovAAAAQbscAAAA"
-27:
-jmp 25f
-24:
-.base64 "QbojAAAAQbsUAAAA"
-25:
-jmp 23f
-22:
-.base64 "QboiAAAAQbsQAAAA"
-23:
-.base64 "TTnZ"
-jne 226f
-.base64 "TInQSIPAC0g5wQ=="
-jb 228f
-.base64 "TInHuAAAAACIB0iDxwG4AQAAAIgHSIPHAUiJyEwp0EiD6ANJicK4/wAAAA=="
-230:
-.base64 "iAdIg8cBSYPqAQ=="
-jne 230b
-.base64 "uAAAAACIB0iDxwGD+gA="
-je 231f
-.base64 "g/oB"
-je 233f
-.base64 "g/oC"
-je 235f
-.base64 "g/oD"
-je 237f
-.base64 "g/oE"
-je 239f
-.base64 "g/oF"
-je 241f
-.base64 "g/oG"
-je 243f
-.base64 "g/oH"
-je 245f
-.base64 "g/oI"
-je 247f
-.base64 "g/oJ"
-je 249f
-.base64 "g/oK"
-je 251f
-.base64 "g/oL"
-je 253f
-jmp 254f
-253:
-.base64 "uDAAAACIB0iDxwG4UQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgKAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuEAAAACIB0iDxwE="
-254:
-jmp 252f
-251:
-.base64 "uDAAAACIB0iDxwG4QQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgJAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuDAAAACIB0iDxwE="
-252:
-jmp 250f
-249:
-.base64 "uDAAAACIB0iDxwG4MQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgIAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuCAAAACIB0iDxwE="
-250:
-jmp 248f
-247:
-.base64 "uDAAAACIB0iDxwG4LQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgHAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuBwAAACIB0iDxwE="
-248:
-jmp 246f
-245:
-.base64 "uDAAAACIB0iDxwG4MQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgGAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuCAAAACIB0iDxwE="
-246:
-jmp 244f
-243:
-.base64 "uDAAAACIB0iDxwG4LQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgFAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuBwAAACIB0iDxwE="
-244:
-jmp 242f
-241:
-.base64 "uDAAAACIB0iDxwG4UQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgDAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuEAAAACIB0iDxwE="
-242:
-jmp 240f
-239:
-.base64 "uDAAAACIB0iDxwG4QQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgCAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuDAAAACIB0iDxwE="
-240:
-jmp 238f
-237:
-.base64 "uDAAAACIB0iDxwG4MQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgBAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuCAAAACIB0iDxwE="
-238:
-jmp 236f
-235:
-.base64 "uDAAAACIB0iDxwG4LQAAAIgHSIPHAbgwAAAAiAdIg8cBuA0AAACIB0iDxwG4BgAAAIgHSIPHAbgJAAAAiAdIg8cBuGAAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuAEAAACIB0iDxwG4ZQAAAIgHSIPHAbgDAAAAiAdIg8cBuAQAAACIB0iDxwG4AgAAAIgHSIPHAbgEAAAAiAdIg8cBuAUAAACIB0iDxwG4AAAAAIgHSIPHAbgEAAAAiAdIg8cBuBwAAACIB0iDxwE="
-236:
-jmp 234f
-233:
-.base64 "uDAAAACIB0iDxwG4IQAAAIgHSIPHAbgwAAAAiAdIg8cBuAkAAACIB0iDxwG4BgAAAIgHSIPHAbgFAAAAiAdIg8cBuCsAAACIB0iDxwG4DgAAAIgHSIPHAbgDAAAAiAdIg8cBuAIAAACIB0iDxwG4GgAAAIgHSIPHAbgFAAAAiAdIg8cBuAAAAACIB0iDxwG4BAAAAIgHSIPHAbgUAAAAiAdIg8cB"
-234:
-jmp 232f
-231:
-.base64 "uDAAAACIB0iDxwG4IAAAAIgHSIPHAbgwAAAAiAdIg8cBuAwAAACIB0iDxwG4BgAAAIgHSIPHAbgIAAAAiAdIg8cBuCoAAACIB0iDxwG4hgAAAIgHSIPHAbhIAAAAiAdIg8cBuIYAAACIB0iDxwG49wAAAIgHSIPHAbgNAAAAiAdIg8cBuAIAAACIB0iDxwG4BQAAAIgHSIPHAbgFAAAAiAdIg8cBuAAAAACIB0iDxwG4BAAAAIgHSIPHAbgQAAAAiAdIg8cB"
-232:
-255:
-.base64 "D7YGiAdIg8YBSIPHAUmD6QE="
-jne 255b
-.base64 "uAEAAAA="
-jmp 229f
-228:
-.base64 "uAAAAAA="
-229:
-jmp 227f
-226:
-.base64 "uAAAAAA="
-227:
-.base64 "g/gA"
-je 256f
-.base64 "SInnSIPHUEiJ5kiBxlAEAABBuwAAAAC6AAAAAEiJyEiD4Ac="
-je 258f
-260:
-.base64 "Qg+2BB9GD7YUHkwx0EgJwkmDwwFJOcs="
-jne 260b
-jmp 259f
-258:
-261:
-.base64 "SosEH0ozBB5ICcJJg8MISTnL"
-jne 261b
-259:
-.base64 "SIP6AUgZ0kiLBCSD+AFIGcBIg/D/SCHCSIlUJAhMi0QkIEyJx0yLTCQoSInmSIPGUEgBzkwpzg=="
-262:
-.base64 "D7YGiAdIg8YBSIPHAUmD6QE="
-jne 262b
-.base64 "uAEAAABIi3wkIEiLTCQoSItUJAhBugAAAAA="
-263:
-.base64 "Qg+2BBdIIdBCiAQXuAAAAABCiEQUUEmDwgFJOco="
-jne 263b
-.base64 "SInQSIPgAQ=="
-jmp 257f
-256:
-.base64 "SIt8JCBIi3QkKEmJ+EmJ8rgAAAAA"
-264:
-.base64 "iAdIg8cBSYPqAQ=="
-jne 264b
-257:
-.base64 "SI2kJFgIAAA="
-jmp 21f
-20:
-.base64 "SYn4SYnyuAAAAAA="
-265:
-.base64 "iAdIg8cBSYPqAQ=="
-jne 265b
-21:
-.base64 "ww=="
-.p2align 6"#,
-        vg_rsa_public_precomputed_checked_ifma = sym super::rsa::vg_rsa_public_precomputed_checked_ifma::vg_rsa_public_precomputed_checked_ifma,
     )
 }

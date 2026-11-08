@@ -3,45 +3,6 @@
 //! `assembly/scrypt.s`.
 #![allow(dead_code)]
 
-/// scrypt (RFC 7914 §6) with block size parameter `r`, cost parameter `N = vlen / r` and parallelization parameter `p = blen / r`: writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` to `out`.
-///
-/// Contract: `VG.Spec.Scrypt.scryptContract`. Not constant time in the indices: timing may depend on the pointers, the lengths, `r`, `N`, `p` and the indices `j` of step 3 of each scryptROMix, which are derived from the password and the salt and so leak information about them (as in every scrypt that indexes `V` directly), but on nothing else.
-///
-/// # Safety
-///
-/// * `password` must be valid for reads of `password_len` bytes.
-/// * `salt` must be valid for reads of `salt_len` bytes.
-/// * `b` must be valid for reads and writes of `128 * blen` bytes.
-/// * `v` must be valid for reads and writes of `128 * vlen` bytes.
-/// * `scratch` must be valid for reads and writes of `128 * slen` bytes.
-/// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `r` must be positive, `blen` must be `p * r` and `vlen` must be `N * r` for parameters that RFC 7914 §6 accepts (`N` a power of two greater than 1 and less than `2^(16 r)`, `0 < p ≤ (2^32 - 1) * 32 / (128 r)`, `0 < out_len ≤ (2^32 - 1) * 32`), and `slen` must be `r + 16`.
-/// * `b`, `v` and `scratch` are working space: their contents on return are unspecified.
-/// * `b`, `v`, `scratch` and `out` must not overlap each other, `password`, `salt` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `password`, `salt`, `b`, `v`, `scratch` and `out` may overlap the 96 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_scrypt(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
-    core::arch::naked_asm!(
-        r".inst 0xf81f0ffe,0xd10103ff,0x910003ef,0xf90005e0,0xf90009e1,0xf9000de4,0xf90011e5,0xf90015e6
-.inst 0xf90019e7,0xd2800024,0xd379e0c6,0xf9402fe7
-bl {vg_pbkdf2_hmac_sha256_scratch}
-.inst 0xf94013e9,0x910003ef,0xf90001e9
-20:
-.inst 0xf94003e0,0xf9400fe1,0xf9401be2,0xf9402be3,0xf9402fe4,0x91000825
-bl {vg_scrypt_romix}
-.inst 0xf94003e9,0xf9400fea,0xd379e14a,0x8b0a0129,0xf94013eb,0xf94017ec,0xd379e18c,0x8b0c016b
-.inst 0xcb09016b,0x910003ef,0xf90001e9
-cbnz x11, 20b
-.inst 0xf94007e0,0xf9400be1,0xf94013e2,0xf94017e3,0xd379e063,0xd2800024,0xf94037e5,0xf9403be6
-.inst 0xf9402fe7
-bl {vg_pbkdf2_hmac_sha256_scratch}
-.inst 0x910103ff,0xf84107fe,0xd65f03c0
-.p2align 6",
-        vg_pbkdf2_hmac_sha256_scratch = sym super::scrypt::vg_pbkdf2_hmac_sha256_scratch::vg_pbkdf2_hmac_sha256_scratch,
-        vg_scrypt_romix = sym super::scrypt::vg_scrypt_romix::vg_scrypt_romix,
-    )
-}
-
 /// The CPU features `vg_scrypt_sha2` requires (`Artifact.features`).
 pub const VG_SCRYPT_SHA2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA2);
 
@@ -81,6 +42,45 @@ bl {vg_pbkdf2_hmac_sha256_scratch_sha2}
 .inst 0x910103ff,0xf84107fe,0xd65f03c0
 .p2align 6",
         vg_pbkdf2_hmac_sha256_scratch_sha2 = sym super::scrypt::vg_pbkdf2_hmac_sha256_scratch_sha2::vg_pbkdf2_hmac_sha256_scratch_sha2,
+        vg_scrypt_romix = sym super::scrypt::vg_scrypt_romix::vg_scrypt_romix,
+    )
+}
+
+/// scrypt (RFC 7914 §6) with block size parameter `r`, cost parameter `N = vlen / r` and parallelization parameter `p = blen / r`: writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` to `out`.
+///
+/// Contract: `VG.Spec.Scrypt.scryptContract`. Not constant time in the indices: timing may depend on the pointers, the lengths, `r`, `N`, `p` and the indices `j` of step 3 of each scryptROMix, which are derived from the password and the salt and so leak information about them (as in every scrypt that indexes `V` directly), but on nothing else.
+///
+/// # Safety
+///
+/// * `password` must be valid for reads of `password_len` bytes.
+/// * `salt` must be valid for reads of `salt_len` bytes.
+/// * `b` must be valid for reads and writes of `128 * blen` bytes.
+/// * `v` must be valid for reads and writes of `128 * vlen` bytes.
+/// * `scratch` must be valid for reads and writes of `128 * slen` bytes.
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `r` must be positive, `blen` must be `p * r` and `vlen` must be `N * r` for parameters that RFC 7914 §6 accepts (`N` a power of two greater than 1 and less than `2^(16 r)`, `0 < p ≤ (2^32 - 1) * 32 / (128 r)`, `0 < out_len ≤ (2^32 - 1) * 32`), and `slen` must be `r + 16`.
+/// * `b`, `v` and `scratch` are working space: their contents on return are unspecified.
+/// * `b`, `v`, `scratch` and `out` must not overlap each other, `password`, `salt` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `password`, `salt`, `b`, `v`, `scratch` and `out` may overlap the 96 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_scrypt(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
+    core::arch::naked_asm!(
+        r".inst 0xf81f0ffe,0xd10103ff,0x910003ef,0xf90005e0,0xf90009e1,0xf9000de4,0xf90011e5,0xf90015e6
+.inst 0xf90019e7,0xd2800024,0xd379e0c6,0xf9402fe7
+bl {vg_pbkdf2_hmac_sha256_scratch}
+.inst 0xf94013e9,0x910003ef,0xf90001e9
+20:
+.inst 0xf94003e0,0xf9400fe1,0xf9401be2,0xf9402be3,0xf9402fe4,0x91000825
+bl {vg_scrypt_romix}
+.inst 0xf94003e9,0xf9400fea,0xd379e14a,0x8b0a0129,0xf94013eb,0xf94017ec,0xd379e18c,0x8b0c016b
+.inst 0xcb09016b,0x910003ef,0xf90001e9
+cbnz x11, 20b
+.inst 0xf94007e0,0xf9400be1,0xf94013e2,0xf94017e3,0xd379e063,0xd2800024,0xf94037e5,0xf9403be6
+.inst 0xf9402fe7
+bl {vg_pbkdf2_hmac_sha256_scratch}
+.inst 0x910103ff,0xf84107fe,0xd65f03c0
+.p2align 6",
+        vg_pbkdf2_hmac_sha256_scratch = sym super::scrypt::vg_pbkdf2_hmac_sha256_scratch::vg_pbkdf2_hmac_sha256_scratch,
         vg_scrypt_romix = sym super::scrypt::vg_scrypt_romix::vg_scrypt_romix,
     )
 }

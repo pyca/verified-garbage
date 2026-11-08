@@ -35,6 +35,9 @@ pub(crate) unsafe extern "sysv64" fn vg_sha256_init(state: *mut [u8; 96]) {
     )
 }
 
+/// The CPU features `vg_sha224_finalize_shani` requires (`Artifact.features`).
+pub const VG_SHA224_FINALIZE_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
+
 /// Finishes a SHA-224 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), hashed from the initial hash value of SHA-224 (as `vg_sha224_init` starts it), writes the SHA-224 digest of that message (28 bytes, `VG.Spec.Sha256.sha224`) to `*out`.
 ///
 /// Contract: `VG.Spec.Sha256.finalize224Contract`. Constant time: only the pointers and `count` may affect timing, not the state.
@@ -46,8 +49,9 @@ pub(crate) unsafe extern "sysv64" fn vg_sha256_init(state: *mut [u8; 96]) {
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha224_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 28]) {
+pub(crate) unsafe extern "sysv64" fn vg_sha224_finalize_shani(state: *mut [u8; 96], count: u64, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJJj9//9IieFIg8EISImZMAIAAEiJqTgCAABMiaFAAgAATImpSAIAAEyJsVACAABMiblYAgAASIn7SYnPSInVSYn0SYn1SYPlP0G5gAAAAEG+AAAAAEmD/Tg="
 jae 20f
@@ -105,14 +109,17 @@ jmp 219f
 .base64 "8w9/Q1A="
 24:
 .base64 "SIneSIPGIEiJ37oBAAAATIn5"
-call {vg_sha256_compress}
+call {vg_sha256_compress_shani}
 .base64 "SIn7SYnPQb0AAAAAQbkAAAAASYPuAQ=="
 je 22b
 .base64 "iwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGEmLnzACAABJi684AgAATYunQAIAAE2Lr0gCAABNi7dQAgAATYu/WAIAAEiNpCRoAgAAww=="
 .p2align 6"#,
-        vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
+        vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani::vg_sha256_compress_shani,
     )
 }
+
+/// The CPU features `vg_sha224_digest_shani` requires (`Artifact.features`).
+pub const VG_SHA224_DIGEST_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
 
 /// Computes the SHA-224 digest of the `len` bytes at `data` (28 bytes, `VG.Spec.Sha256.sha224`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-224 computation with that message.
 ///
@@ -124,13 +131,14 @@ je 22b
 /// * `out` must be valid for reads and writes of 28 bytes.
 /// * `out` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `data` nor `out` may overlap the return address on the stack or the 736 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha224_digest(data: *const u8, len: usize, out: *mut [u8; 28]) {
+pub(crate) unsafe extern "sysv64" fn vg_sha224_digest_shani(data: *const u8, len: usize, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJCj9//9IieFIg8EISIPBYEiJmTACAABIiak4AgAATImhQAIAAEyJqUgCAABMibFQAgAATIm5WAIAAEmJz0iJy0iD62BJif1JifRIidVIid9IuNieBcEH1Xw2ZkgPbsBIuBfdcDA5WQ73ZkgPbshmD2zB8w9/B0i4MQvA/xEVWGhmSA9uwEi4p4/5ZKRP+r5mSA9uyGYPbMHzD39HEE2J5knB7gZNhfY="
 je 20f
 .base64 "TInuSInfTInyTIn5"
-call {vg_sha256_compress}
+call {vg_sha256_compress_shani}
 .base64 "SIn7SYnPTInwSMHgBkkBxQ=="
 jmp 21f
 20:
@@ -175,14 +183,14 @@ jae 214f
 jmp 215f
 214:
 .base64 "SIneSIPGIEiJ37oBAAAATIn5"
-call {vg_sha256_compress}
+call {vg_sha256_compress_shani}
 .base64 "SIn7SYnPZg/vwPMPf0Mg8w9/QzDzD39DQPMPf0NQ"
 215:
 .base64 "TIngSAHASAHASAHASA/IZkgPbvhmD3P/CPMPb0NQZg/rx/MPf0NQSIneSIPGIEiJ37oBAAAATIn5"
-call {vg_sha256_compress}
+call {vg_sha256_compress_shani}
 .base64 "SIn7SYnPiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGGYP78DzD38D8w9/QxDzD39DIPMPf0Mw8w9/Q0DzD39DUEmLnzACAABJi684AgAATYunQAIAAE2Lr0gCAABNi7dQAgAATYu/WAIAAEiNpCTYAgAAww=="
 .p2align 6"#,
-        vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
+        vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani::vg_sha256_compress_shani,
     )
 }
 
@@ -345,9 +353,6 @@ call {vg_sha256_compress_avx2}
     )
 }
 
-/// The CPU features `vg_sha224_finalize_shani` requires (`Artifact.features`).
-pub const VG_SHA224_FINALIZE_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
-
 /// Finishes a SHA-224 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), hashed from the initial hash value of SHA-224 (as `vg_sha224_init` starts it), writes the SHA-224 digest of that message (28 bytes, `VG.Spec.Sha256.sha224`) to `*out`.
 ///
 /// Contract: `VG.Spec.Sha256.finalize224Contract`. Constant time: only the pointers and `count` may affect timing, not the state.
@@ -359,9 +364,8 @@ pub const VG_SHA224_FINALIZE_SHANI_FEATURES: verified_garbage_cpu::Features = ve
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha224_finalize_shani(state: *mut [u8; 96], count: u64, out: *mut [u8; 28]) {
+pub(crate) unsafe extern "sysv64" fn vg_sha224_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJJj9//9IieFIg8EISImZMAIAAEiJqTgCAABMiaFAAgAATImpSAIAAEyJsVACAABMiblYAgAASIn7SYnPSInVSYn0SYn1SYPlP0G5gAAAAEG+AAAAAEmD/Tg="
 jae 20f
@@ -419,17 +423,14 @@ jmp 219f
 .base64 "8w9/Q1A="
 24:
 .base64 "SIneSIPGIEiJ37oBAAAATIn5"
-call {vg_sha256_compress_shani}
+call {vg_sha256_compress}
 .base64 "SIn7SYnPQb0AAAAAQbkAAAAASYPuAQ=="
 je 22b
 .base64 "iwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGEmLnzACAABJi684AgAATYunQAIAAE2Lr0gCAABNi7dQAgAATYu/WAIAAEiNpCRoAgAAww=="
 .p2align 6"#,
-        vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani::vg_sha256_compress_shani,
+        vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
     )
 }
-
-/// The CPU features `vg_sha224_digest_shani` requires (`Artifact.features`).
-pub const VG_SHA224_DIGEST_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
 
 /// Computes the SHA-224 digest of the `len` bytes at `data` (28 bytes, `VG.Spec.Sha256.sha224`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-224 computation with that message.
 ///
@@ -441,14 +442,13 @@ pub const VG_SHA224_DIGEST_SHANI_FEATURES: verified_garbage_cpu::Features = veri
 /// * `out` must be valid for reads and writes of 28 bytes.
 /// * `out` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `data` nor `out` may overlap the return address on the stack or the 736 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha224_digest_shani(data: *const u8, len: usize, out: *mut [u8; 28]) {
+pub(crate) unsafe extern "sysv64" fn vg_sha224_digest(data: *const u8, len: usize, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJCj9//9IieFIg8EISIPBYEiJmTACAABIiak4AgAATImhQAIAAEyJqUgCAABMibFQAgAATIm5WAIAAEmJz0iJy0iD62BJif1JifRIidVIid9IuNieBcEH1Xw2ZkgPbsBIuBfdcDA5WQ73ZkgPbshmD2zB8w9/B0i4MQvA/xEVWGhmSA9uwEi4p4/5ZKRP+r5mSA9uyGYPbMHzD39HEE2J5knB7gZNhfY="
 je 20f
 .base64 "TInuSInfTInyTIn5"
-call {vg_sha256_compress_shani}
+call {vg_sha256_compress}
 .base64 "SIn7SYnPTInwSMHgBkkBxQ=="
 jmp 21f
 20:
@@ -493,16 +493,19 @@ jae 214f
 jmp 215f
 214:
 .base64 "SIneSIPGIEiJ37oBAAAATIn5"
-call {vg_sha256_compress_shani}
+call {vg_sha256_compress}
 .base64 "SIn7SYnPZg/vwPMPf0Mg8w9/QzDzD39DQPMPf0NQ"
 215:
 .base64 "TIngSAHASAHASAHASA/IZkgPbvhmD3P/CPMPb0NQZg/rx/MPf0NQSIneSIPGIEiJ37oBAAAATIn5"
-call {vg_sha256_compress_shani}
+call {vg_sha256_compress}
 .base64 "SIn7SYnPiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGGYP78DzD38D8w9/QxDzD39DIPMPf0Mw8w9/Q0DzD39DUEmLnzACAABJi684AgAATYunQAIAAE2Lr0gCAABNi7dQAgAATYu/WAIAAEiNpCTYAgAAww=="
 .p2align 6"#,
-        vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani::vg_sha256_compress_shani,
+        vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
     )
 }
+
+/// The CPU features `vg_sha256_update_shani` requires (`Artifact.features`).
+pub const VG_SHA256_UPDATE_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
 
 /// Absorbs data into a SHA-224 or SHA-256 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), it then represents that message followed by the `len` bytes at `data`.
 ///
@@ -514,8 +517,9 @@ call {vg_sha256_compress_shani}
 /// * `data` must be valid for reads of `len` bytes.
 /// * `state` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the return address on the stack or the 624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha256_update(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_sha256_update_shani(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJJj9//9JieBJg8AISYmYMAIAAEmJqDgCAABNiaBAAgAATYmoSAIAAE2JsFACAABNibhYAgAASIn7TYnHSInVSYnMSYn1SYPlPw=="
 20:
@@ -591,16 +595,19 @@ jne 225f
 jmp 226f
 225:
 .base64 "SInfTInyTIn5"
-call {vg_sha256_compress}
+call {vg_sha256_compress_shani}
 .base64 "SIn7SYnP"
 226:
 .base64 "TYX2"
 jne 20b
 .base64 "SYufMAIAAEmLrzgCAABNi6dAAgAATYuvSAIAAE2Lt1ACAABNi79YAgAASI2kJGgCAADD"
 .p2align 6"#,
-        vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
+        vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani::vg_sha256_compress_shani,
     )
 }
+
+/// The CPU features `vg_sha256_finalize_shani` requires (`Artifact.features`).
+pub const VG_SHA256_FINALIZE_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
 
 /// Finishes a SHA-224 or SHA-256 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), hashed from an initial hash value, writes the final hash value `H⁽ᴺ⁾` of that message (32 bytes) to `*out`. The SHA-256 digest is all of it; the SHA-224 digest is its first 28 bytes.
 ///
@@ -613,8 +620,9 @@ jne 20b
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha256_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
+pub(crate) unsafe extern "sysv64" fn vg_sha256_finalize_shani(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJJj9//9IieFIg8EISImZMAIAAEiJqTgCAABMiaFAAgAATImpSAIAAEyJsVACAABMiblYAgAASIn7SYnPSInVSYn0SYn1SYPlP0G5gAAAAEG+AAAAAEmD/Tg="
 jae 20f
@@ -672,14 +680,17 @@ jmp 219f
 .base64 "8w9/Q1A="
 24:
 .base64 "SIneSIPGIEiJ37oBAAAATIn5"
-call {vg_sha256_compress}
+call {vg_sha256_compress_shani}
 .base64 "SIn7SYnPQb0AAAAAQbkAAAAASYPuAQ=="
 je 22b
 .base64 "iwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGItDHA/IiUUcSYufMAIAAEmLrzgCAABNi6dAAgAATYuvSAIAAE2Lt1ACAABNi79YAgAASI2kJGgCAADD"
 .p2align 6"#,
-        vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
+        vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani::vg_sha256_compress_shani,
     )
 }
+
+/// The CPU features `vg_sha256_digest_shani` requires (`Artifact.features`).
+pub const VG_SHA256_DIGEST_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
 
 /// Computes the SHA-256 digest of the `len` bytes at `data` (32 bytes, `VG.Spec.Sha256.hash`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-256 computation with that message.
 ///
@@ -691,13 +702,14 @@ je 22b
 /// * `out` must be valid for reads and writes of 32 bytes.
 /// * `out` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `data` nor `out` may overlap the return address on the stack or the 736 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha256_digest(data: *const u8, len: usize, out: *mut [u8; 32]) {
+pub(crate) unsafe extern "sysv64" fn vg_sha256_digest_shani(data: *const u8, len: usize, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJCj9//9IieFIg8EISIPBYEiJmTACAABIiak4AgAATImhQAIAAEyJqUgCAABMibFQAgAATIm5WAIAAEmJz0iJy0iD62BJif1JifRIidVIid9IuGfmCWqFrme7ZkgPbsBIuHLzbjw69U+lZkgPbshmD2zB8w9/B0i4f1IOUYxoBZtmSA9uwEi4q9mDHxnN4FtmSA9uyGYPbMHzD39HEE2J5knB7gZNhfY="
 je 20f
 .base64 "TInuSInfTInyTIn5"
-call {vg_sha256_compress}
+call {vg_sha256_compress_shani}
 .base64 "SIn7SYnPTInwSMHgBkkBxQ=="
 jmp 21f
 20:
@@ -742,14 +754,14 @@ jae 214f
 jmp 215f
 214:
 .base64 "SIneSIPGIEiJ37oBAAAATIn5"
-call {vg_sha256_compress}
+call {vg_sha256_compress_shani}
 .base64 "SIn7SYnPZg/vwPMPf0Mg8w9/QzDzD39DQPMPf0NQ"
 215:
 .base64 "TIngSAHASAHASAHASA/IZkgPbvhmD3P/CPMPb0NQZg/rx/MPf0NQSIneSIPGIEiJ37oBAAAATIn5"
-call {vg_sha256_compress}
+call {vg_sha256_compress_shani}
 .base64 "SIn7SYnPiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGItDHA/IiUUcZg/vwPMPfwPzD39DEPMPf0Mg8w9/QzDzD39DQPMPf0NQSYufMAIAAEmLrzgCAABNi6dAAgAATYuvSAIAAE2Lt1ACAABNi79YAgAASI2kJNgCAADD"
 .p2align 6"#,
-        vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
+        vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani::vg_sha256_compress_shani,
     )
 }
 
@@ -1014,9 +1026,6 @@ call {vg_sha256_compress_avx2}
     )
 }
 
-/// The CPU features `vg_sha256_update_shani` requires (`Artifact.features`).
-pub const VG_SHA256_UPDATE_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
-
 /// Absorbs data into a SHA-224 or SHA-256 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), it then represents that message followed by the `len` bytes at `data`.
 ///
 /// Contract: `VG.Spec.Sha256.updateContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
@@ -1027,9 +1036,8 @@ pub const VG_SHA256_UPDATE_SHANI_FEATURES: verified_garbage_cpu::Features = veri
 /// * `data` must be valid for reads of `len` bytes.
 /// * `state` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the return address on the stack or the 624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha256_update_shani(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_sha256_update(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJJj9//9JieBJg8AISYmYMAIAAEmJqDgCAABNiaBAAgAATYmoSAIAAE2JsFACAABNibhYAgAASIn7TYnHSInVSYnMSYn1SYPlPw=="
 20:
@@ -1105,19 +1113,16 @@ jne 225f
 jmp 226f
 225:
 .base64 "SInfTInyTIn5"
-call {vg_sha256_compress_shani}
+call {vg_sha256_compress}
 .base64 "SIn7SYnP"
 226:
 .base64 "TYX2"
 jne 20b
 .base64 "SYufMAIAAEmLrzgCAABNi6dAAgAATYuvSAIAAE2Lt1ACAABNi79YAgAASI2kJGgCAADD"
 .p2align 6"#,
-        vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani::vg_sha256_compress_shani,
+        vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
     )
 }
-
-/// The CPU features `vg_sha256_finalize_shani` requires (`Artifact.features`).
-pub const VG_SHA256_FINALIZE_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
 
 /// Finishes a SHA-224 or SHA-256 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), hashed from an initial hash value, writes the final hash value `H⁽ᴺ⁾` of that message (32 bytes) to `*out`. The SHA-256 digest is all of it; the SHA-224 digest is its first 28 bytes.
 ///
@@ -1130,9 +1135,8 @@ pub const VG_SHA256_FINALIZE_SHANI_FEATURES: verified_garbage_cpu::Features = ve
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha256_finalize_shani(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
+pub(crate) unsafe extern "sysv64" fn vg_sha256_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJJj9//9IieFIg8EISImZMAIAAEiJqTgCAABMiaFAAgAATImpSAIAAEyJsVACAABMiblYAgAASIn7SYnPSInVSYn0SYn1SYPlP0G5gAAAAEG+AAAAAEmD/Tg="
 jae 20f
@@ -1190,17 +1194,14 @@ jmp 219f
 .base64 "8w9/Q1A="
 24:
 .base64 "SIneSIPGIEiJ37oBAAAATIn5"
-call {vg_sha256_compress_shani}
+call {vg_sha256_compress}
 .base64 "SIn7SYnPQb0AAAAAQbkAAAAASYPuAQ=="
 je 22b
 .base64 "iwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGItDHA/IiUUcSYufMAIAAEmLrzgCAABNi6dAAgAATYuvSAIAAE2Lt1ACAABNi79YAgAASI2kJGgCAADD"
 .p2align 6"#,
-        vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani::vg_sha256_compress_shani,
+        vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
     )
 }
-
-/// The CPU features `vg_sha256_digest_shani` requires (`Artifact.features`).
-pub const VG_SHA256_DIGEST_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
 
 /// Computes the SHA-256 digest of the `len` bytes at `data` (32 bytes, `VG.Spec.Sha256.hash`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-256 computation with that message.
 ///
@@ -1212,14 +1213,13 @@ pub const VG_SHA256_DIGEST_SHANI_FEATURES: verified_garbage_cpu::Features = veri
 /// * `out` must be valid for reads and writes of 32 bytes.
 /// * `out` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `data` nor `out` may overlap the return address on the stack or the 736 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha256_digest_shani(data: *const u8, len: usize, out: *mut [u8; 32]) {
+pub(crate) unsafe extern "sysv64" fn vg_sha256_digest(data: *const u8, len: usize, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJCj9//9IieFIg8EISIPBYEiJmTACAABIiak4AgAATImhQAIAAEyJqUgCAABMibFQAgAATIm5WAIAAEmJz0iJy0iD62BJif1JifRIidVIid9IuGfmCWqFrme7ZkgPbsBIuHLzbjw69U+lZkgPbshmD2zB8w9/B0i4f1IOUYxoBZtmSA9uwEi4q9mDHxnN4FtmSA9uyGYPbMHzD39HEE2J5knB7gZNhfY="
 je 20f
 .base64 "TInuSInfTInyTIn5"
-call {vg_sha256_compress_shani}
+call {vg_sha256_compress}
 .base64 "SIn7SYnPTInwSMHgBkkBxQ=="
 jmp 21f
 20:
@@ -1264,14 +1264,14 @@ jae 214f
 jmp 215f
 214:
 .base64 "SIneSIPGIEiJ37oBAAAATIn5"
-call {vg_sha256_compress_shani}
+call {vg_sha256_compress}
 .base64 "SIn7SYnPZg/vwPMPf0Mg8w9/QzDzD39DQPMPf0NQ"
 215:
 .base64 "TIngSAHASAHASAHASA/IZkgPbvhmD3P/CPMPb0NQZg/rx/MPf0NQSIneSIPGIEiJ37oBAAAATIn5"
-call {vg_sha256_compress_shani}
+call {vg_sha256_compress}
 .base64 "SIn7SYnPiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGItDHA/IiUUcZg/vwPMPfwPzD39DEPMPf0Mg8w9/QzDzD39DQPMPf0NQSYufMAIAAEmLrzgCAABNi6dAAgAATYuvSAIAAE2Lt1ACAABNi79YAgAASI2kJNgCAADD"
 .p2align 6"#,
-        vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani::vg_sha256_compress_shani,
+        vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
     )
 }
 

@@ -13,8 +13,8 @@ def neon : Proof.Sha3.AArch64.X2Permutation := Proof.Variants.KeccakX2.AArch64.N
 
 def sha3 : Proof.Sha3.AArch64.X2Permutation := Proof.Variants.KeccakX2.AArch64.Sha3.variant
 
-/-- Every implementation, which each function generic over them is emitted
-with (the registration files that import this). -/
-def variants := [neon, sha3]
+/-- Every implementation, best first: each function generic over them is
+emitted with each (the registration files that import this). -/
+def variants := [sha3, neon]
 
 end VG.Proof.Variants.KeccakX2.AArch64

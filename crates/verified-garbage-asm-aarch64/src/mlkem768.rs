@@ -25,6 +25,9 @@ cbnz x11, 20b
     )
 }
 
+/// The CPU features `vg_mlkem768_keygen_x2_sha3_keccak_sha3` requires (`Artifact.features`).
+pub const VG_MLKEM768_KEYGEN_X2_SHA3_KECCAK_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
+
 /// ML-KEM-768 key generation from a seed, `ML-KEM.KeyGen_internal(d, z)` (FIPS 203 Algorithm 16): with `d` in bytes 0–31 of `*seed` and `z` in bytes 32–63, writes the encapsulation key to `*ek` and the decapsulation key to `*dk`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem.keyGenContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of the encapsulation key), but not on anything else of the seed or the keys.
@@ -38,20 +41,24 @@ cbnz x11, 20b
 /// * `seed` must be random bytes from an approved RBG (FIPS 203 §3.3), or a seed so generated before.
 /// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `ek`, `dk` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
-/// * None of `seed`, `ek`, `dk` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `seed`, `ek`, `dk` and `scratch` may overlap the 160 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mlkem768_keygen(seed: *const [u8; 64], ek: *mut [u8; 1184], dk: *mut [u8; 2400], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_mlkem768_keygen_x2_sha3_keccak_sha3(seed: *const [u8; 64], ek: *mut [u8; 1184], dk: *mut [u8; 2400], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd10083ff,0xf90003fe,0xf90007e3
-bl {vg_mlkem768_keygen_body}
+bl {vg_mlkem768_keygen_body_x2_sha3_keccak_sha3}
 .inst 0xf9000be0,0xf94007e0,0xd2900001
 bl {vg_zeroize}
 .inst 0xf9400be0,0xf94003fe,0x910083ff,0xd65f03c0
 .p2align 6",
-        vg_mlkem768_keygen_body = sym super::mlkem768::vg_mlkem768_keygen_body::vg_mlkem768_keygen_body,
+        vg_mlkem768_keygen_body_x2_sha3_keccak_sha3 = sym super::mlkem768::vg_mlkem768_keygen_body_x2_sha3_keccak_sha3::vg_mlkem768_keygen_body_x2_sha3_keccak_sha3,
         vg_zeroize = sym super::zeroize::vg_zeroize,
     )
 }
+
+/// The CPU features `vg_mlkem768_encaps_x2_sha3_keccak_sha3` requires (`Artifact.features`).
+pub const VG_MLKEM768_ENCAPS_X2_SHA3_KECCAK_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
 
 /// ML-KEM-768 encapsulation with given randomness, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
@@ -68,20 +75,24 @@ bl {vg_zeroize}
 /// * `m` must be fresh random bytes from an approved RBG (FIPS 203 §3.3).
 /// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `key`, `ct` and `scratch` must not overlap each other, `ek` or `m` (distinct Rust objects never do).
-/// * None of `ek`, `m`, `key`, `ct` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ek`, `m`, `key`, `ct` and `scratch` may overlap the 160 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mlkem768_encaps(ek: *const [u8; 1184], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_mlkem768_encaps_x2_sha3_keccak_sha3(ek: *const [u8; 1184], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd10083ff,0xf90003fe,0xf90007e4
-bl {vg_mlkem768_encaps_body}
+bl {vg_mlkem768_encaps_body_x2_sha3_keccak_sha3}
 .inst 0xf9000be0,0xf94007e0,0xd2900001
 bl {vg_zeroize}
 .inst 0xf9400be0,0xf94003fe,0x910083ff,0xd65f03c0
 .p2align 6",
-        vg_mlkem768_encaps_body = sym super::mlkem768::vg_mlkem768_encaps_body::vg_mlkem768_encaps_body,
+        vg_mlkem768_encaps_body_x2_sha3_keccak_sha3 = sym super::mlkem768::vg_mlkem768_encaps_body_x2_sha3_keccak_sha3::vg_mlkem768_encaps_body_x2_sha3_keccak_sha3,
         vg_zeroize = sym super::zeroize::vg_zeroize,
     )
 }
+
+/// The CPU features `vg_mlkem768_encaps_h_x2_sha3_keccak_sha3` requires (`Artifact.features`).
+pub const VG_MLKEM768_ENCAPS_H_X2_SHA3_KECCAK_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
 
 /// ML-KEM-768 encapsulation with given randomness and the hash of the key, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek`, its hash `H(ek)` in `*h` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`, as `vg_mlkem768_encaps` does, using `*h` instead of hashing `*ek`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
@@ -100,20 +111,24 @@ bl {vg_zeroize}
 /// * `m` must be fresh random bytes from an approved RBG (FIPS 203 §3.3).
 /// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `key`, `ct` and `scratch` must not overlap each other, `ek`, `h` or `m` (distinct Rust objects never do).
-/// * None of `ek`, `h`, `m`, `key`, `ct` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ek`, `h`, `m`, `key`, `ct` and `scratch` may overlap the 160 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mlkem768_encaps_h(ek: *const [u8; 1184], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_mlkem768_encaps_h_x2_sha3_keccak_sha3(ek: *const [u8; 1184], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd10083ff,0xf90003fe,0xf90007e5
-bl {vg_mlkem768_encaps_h_body}
+bl {vg_mlkem768_encaps_h_body_x2_sha3_keccak_sha3}
 .inst 0xf9000be0,0xf94007e0,0xd2900001
 bl {vg_zeroize}
 .inst 0xf9400be0,0xf94003fe,0x910083ff,0xd65f03c0
 .p2align 6",
-        vg_mlkem768_encaps_h_body = sym super::mlkem768::vg_mlkem768_encaps_h_body::vg_mlkem768_encaps_h_body,
+        vg_mlkem768_encaps_h_body_x2_sha3_keccak_sha3 = sym super::mlkem768::vg_mlkem768_encaps_h_body_x2_sha3_keccak_sha3::vg_mlkem768_encaps_h_body_x2_sha3_keccak_sha3,
         vg_zeroize = sym super::zeroize::vg_zeroize,
     )
 }
+
+/// The CPU features `vg_mlkem768_decaps_x2_sha3_keccak_sha3` requires (`Artifact.features`).
+pub const VG_MLKEM768_DECAPS_X2_SHA3_KECCAK_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
 
 /// ML-KEM-768 decapsulation, `ML-KEM.Decaps_internal(dk, c)` (FIPS 203 Algorithm 18): with the decapsulation key `*dk` and the ciphertext `*ct`, writes the shared secret key to `*key`, which is the implicit rejection key `J(z ‖ c)` if the ciphertext does not re-encrypt to itself. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
@@ -128,17 +143,18 @@ bl {vg_zeroize}
 /// * `dk` must have been written by `vg_mlkem768_keygen` (so that it passes the checks of FIPS 203 §7.3).
 /// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `key` and `scratch` must not overlap each other, `dk` or `ct` (distinct Rust objects never do).
-/// * None of `dk`, `ct`, `key` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `dk`, `ct`, `key` and `scratch` may overlap the 160 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mlkem768_decaps(dk: *const [u8; 2400], ct: *const [u8; 1088], key: *mut [u8; 32], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_mlkem768_decaps_x2_sha3_keccak_sha3(dk: *const [u8; 2400], ct: *const [u8; 1088], key: *mut [u8; 32], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd10083ff,0xf90003fe,0xf90007e3
-bl {vg_mlkem768_decaps_body}
+bl {vg_mlkem768_decaps_body_x2_sha3_keccak_sha3}
 .inst 0xf9000be0,0xf94007e0,0xd2900001
 bl {vg_zeroize}
 .inst 0xf9400be0,0xf94003fe,0x910083ff,0xd65f03c0
 .p2align 6",
-        vg_mlkem768_decaps_body = sym super::mlkem768::vg_mlkem768_decaps_body::vg_mlkem768_decaps_body,
+        vg_mlkem768_decaps_body_x2_sha3_keccak_sha3 = sym super::mlkem768::vg_mlkem768_decaps_body_x2_sha3_keccak_sha3::vg_mlkem768_decaps_body_x2_sha3_keccak_sha3,
         vg_zeroize = sym super::zeroize::vg_zeroize,
     )
 }
@@ -277,9 +293,6 @@ bl {vg_zeroize}
     )
 }
 
-/// The CPU features `vg_mlkem768_keygen_x2_sha3_keccak_sha3` requires (`Artifact.features`).
-pub const VG_MLKEM768_KEYGEN_X2_SHA3_KECCAK_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
-
 /// ML-KEM-768 key generation from a seed, `ML-KEM.KeyGen_internal(d, z)` (FIPS 203 Algorithm 16): with `d` in bytes 0–31 of `*seed` and `z` in bytes 32–63, writes the encapsulation key to `*ek` and the decapsulation key to `*dk`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem.keyGenContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of the encapsulation key), but not on anything else of the seed or the keys.
@@ -293,24 +306,20 @@ pub const VG_MLKEM768_KEYGEN_X2_SHA3_KECCAK_SHA3_FEATURES: verified_garbage_cpu:
 /// * `seed` must be random bytes from an approved RBG (FIPS 203 §3.3), or a seed so generated before.
 /// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `ek`, `dk` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
-/// * None of `seed`, `ek`, `dk` and `scratch` may overlap the 160 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha3` target feature.
+/// * None of `seed`, `ek`, `dk` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mlkem768_keygen_x2_sha3_keccak_sha3(seed: *const [u8; 64], ek: *mut [u8; 1184], dk: *mut [u8; 2400], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_mlkem768_keygen(seed: *const [u8; 64], ek: *mut [u8; 1184], dk: *mut [u8; 2400], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd10083ff,0xf90003fe,0xf90007e3
-bl {vg_mlkem768_keygen_body_x2_sha3_keccak_sha3}
+bl {vg_mlkem768_keygen_body}
 .inst 0xf9000be0,0xf94007e0,0xd2900001
 bl {vg_zeroize}
 .inst 0xf9400be0,0xf94003fe,0x910083ff,0xd65f03c0
 .p2align 6",
-        vg_mlkem768_keygen_body_x2_sha3_keccak_sha3 = sym super::mlkem768::vg_mlkem768_keygen_body_x2_sha3_keccak_sha3::vg_mlkem768_keygen_body_x2_sha3_keccak_sha3,
+        vg_mlkem768_keygen_body = sym super::mlkem768::vg_mlkem768_keygen_body::vg_mlkem768_keygen_body,
         vg_zeroize = sym super::zeroize::vg_zeroize,
     )
 }
-
-/// The CPU features `vg_mlkem768_encaps_x2_sha3_keccak_sha3` requires (`Artifact.features`).
-pub const VG_MLKEM768_ENCAPS_X2_SHA3_KECCAK_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
 
 /// ML-KEM-768 encapsulation with given randomness, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
@@ -327,24 +336,20 @@ pub const VG_MLKEM768_ENCAPS_X2_SHA3_KECCAK_SHA3_FEATURES: verified_garbage_cpu:
 /// * `m` must be fresh random bytes from an approved RBG (FIPS 203 §3.3).
 /// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `key`, `ct` and `scratch` must not overlap each other, `ek` or `m` (distinct Rust objects never do).
-/// * None of `ek`, `m`, `key`, `ct` and `scratch` may overlap the 160 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha3` target feature.
+/// * None of `ek`, `m`, `key`, `ct` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mlkem768_encaps_x2_sha3_keccak_sha3(ek: *const [u8; 1184], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_mlkem768_encaps(ek: *const [u8; 1184], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd10083ff,0xf90003fe,0xf90007e4
-bl {vg_mlkem768_encaps_body_x2_sha3_keccak_sha3}
+bl {vg_mlkem768_encaps_body}
 .inst 0xf9000be0,0xf94007e0,0xd2900001
 bl {vg_zeroize}
 .inst 0xf9400be0,0xf94003fe,0x910083ff,0xd65f03c0
 .p2align 6",
-        vg_mlkem768_encaps_body_x2_sha3_keccak_sha3 = sym super::mlkem768::vg_mlkem768_encaps_body_x2_sha3_keccak_sha3::vg_mlkem768_encaps_body_x2_sha3_keccak_sha3,
+        vg_mlkem768_encaps_body = sym super::mlkem768::vg_mlkem768_encaps_body::vg_mlkem768_encaps_body,
         vg_zeroize = sym super::zeroize::vg_zeroize,
     )
 }
-
-/// The CPU features `vg_mlkem768_encaps_h_x2_sha3_keccak_sha3` requires (`Artifact.features`).
-pub const VG_MLKEM768_ENCAPS_H_X2_SHA3_KECCAK_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
 
 /// ML-KEM-768 encapsulation with given randomness and the hash of the key, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek`, its hash `H(ek)` in `*h` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`, as `vg_mlkem768_encaps` does, using `*h` instead of hashing `*ek`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
@@ -363,24 +368,20 @@ pub const VG_MLKEM768_ENCAPS_H_X2_SHA3_KECCAK_SHA3_FEATURES: verified_garbage_cp
 /// * `m` must be fresh random bytes from an approved RBG (FIPS 203 §3.3).
 /// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `key`, `ct` and `scratch` must not overlap each other, `ek`, `h` or `m` (distinct Rust objects never do).
-/// * None of `ek`, `h`, `m`, `key`, `ct` and `scratch` may overlap the 160 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha3` target feature.
+/// * None of `ek`, `h`, `m`, `key`, `ct` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mlkem768_encaps_h_x2_sha3_keccak_sha3(ek: *const [u8; 1184], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_mlkem768_encaps_h(ek: *const [u8; 1184], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd10083ff,0xf90003fe,0xf90007e5
-bl {vg_mlkem768_encaps_h_body_x2_sha3_keccak_sha3}
+bl {vg_mlkem768_encaps_h_body}
 .inst 0xf9000be0,0xf94007e0,0xd2900001
 bl {vg_zeroize}
 .inst 0xf9400be0,0xf94003fe,0x910083ff,0xd65f03c0
 .p2align 6",
-        vg_mlkem768_encaps_h_body_x2_sha3_keccak_sha3 = sym super::mlkem768::vg_mlkem768_encaps_h_body_x2_sha3_keccak_sha3::vg_mlkem768_encaps_h_body_x2_sha3_keccak_sha3,
+        vg_mlkem768_encaps_h_body = sym super::mlkem768::vg_mlkem768_encaps_h_body::vg_mlkem768_encaps_h_body,
         vg_zeroize = sym super::zeroize::vg_zeroize,
     )
 }
-
-/// The CPU features `vg_mlkem768_decaps_x2_sha3_keccak_sha3` requires (`Artifact.features`).
-pub const VG_MLKEM768_DECAPS_X2_SHA3_KECCAK_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
 
 /// ML-KEM-768 decapsulation, `ML-KEM.Decaps_internal(dk, c)` (FIPS 203 Algorithm 18): with the decapsulation key `*dk` and the ciphertext `*ct`, writes the shared secret key to `*key`, which is the implicit rejection key `J(z ‖ c)` if the ciphertext does not re-encrypt to itself. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
@@ -395,18 +396,17 @@ pub const VG_MLKEM768_DECAPS_X2_SHA3_KECCAK_SHA3_FEATURES: verified_garbage_cpu:
 /// * `dk` must have been written by `vg_mlkem768_keygen` (so that it passes the checks of FIPS 203 §7.3).
 /// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `key` and `scratch` must not overlap each other, `dk` or `ct` (distinct Rust objects never do).
-/// * None of `dk`, `ct`, `key` and `scratch` may overlap the 160 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha3` target feature.
+/// * None of `dk`, `ct`, `key` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mlkem768_decaps_x2_sha3_keccak_sha3(dk: *const [u8; 2400], ct: *const [u8; 1088], key: *mut [u8; 32], scratch: *mut [u64; 4096]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_mlkem768_decaps(dk: *const [u8; 2400], ct: *const [u8; 1088], key: *mut [u8; 32], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd10083ff,0xf90003fe,0xf90007e3
-bl {vg_mlkem768_decaps_body_x2_sha3_keccak_sha3}
+bl {vg_mlkem768_decaps_body}
 .inst 0xf9000be0,0xf94007e0,0xd2900001
 bl {vg_zeroize}
 .inst 0xf9400be0,0xf94003fe,0x910083ff,0xd65f03c0
 .p2align 6",
-        vg_mlkem768_decaps_body_x2_sha3_keccak_sha3 = sym super::mlkem768::vg_mlkem768_decaps_body_x2_sha3_keccak_sha3::vg_mlkem768_decaps_body_x2_sha3_keccak_sha3,
+        vg_mlkem768_decaps_body = sym super::mlkem768::vg_mlkem768_decaps_body::vg_mlkem768_decaps_body,
         vg_zeroize = sym super::zeroize::vg_zeroize,
     )
 }

@@ -3,6 +3,37 @@
 //! `assembly/aes_siv.s`.
 #![allow(dead_code)]
 
+/// The CPU features `vg_aes_siv_init_vaes` requires (`Artifact.features`).
+pub const VG_AES_SIV_INIT_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VAES);
+
+/// The AES-SIV key setup (RFC 5297 §2.6): writes the key context of the `key_len`-byte key `K = K1 ‖ K2` at `key` (the halves of `key_len / 2` bytes) to `*ctx`: the key schedule of `K1` for `Nr = key_len / 8 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, its CMAC subkeys (NIST SP 800-38B §6.1) in bytes 240–271, and the key schedule of `K2` in the `16 * (Nr + 1)` bytes from byte 272. The other bytes are unspecified. The other `vg_aes_siv_*` functions read it, with `Nr` as their `rounds`.
+///
+/// Contract: `VG.Spec.Siv.initContract`. The key context is `VG.Spec.Siv.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `ctx` must be valid for reads and writes of 512 bytes.
+/// * `key_len` must be 32, 48 or 64.
+/// * `ctx` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2584 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes`, `avx`, `avx2`, `ssse3` and `vaes` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_siv_init_vaes(key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJPj1//9IieFIg8EISImZoAAAAEiJqagAAABMiaGwAAAATImpuAAAAEyJscAAAABIiftIifVI0e1JidRJic1JifZJwe4DSYPGBkiJ7kiBwQABAAA="
+call {vg_aes_expand_key_scratch_aesni}
+.base64 "TInnTIn2TIniSIHC8AAAAEyJ6UiBwQABAAA="
+call {vg_cmac_aes_subkeys_vaes}
+.base64 "SInfSAHvSInuTIniSIHCEAEAAEyJ6UiBwQABAAA="
+call {vg_aes_expand_key_scratch_aesni}
+.base64 "SYudoAAAAEmLragAAABNi6WwAAAATYu1wAAAAE2LrbgAAABIjaQkCAoAAMM="
+.p2align 6"#,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_cmac_aes_subkeys_vaes = sym super::cmac_aes::vg_cmac_aes_subkeys_vaes::vg_cmac_aes_subkeys_vaes,
+    )
+}
+
 /// The CPU features `vg_aes_siv_init_aesni` requires (`Artifact.features`).
 pub const VG_AES_SIV_INIT_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::SSSE3);
 
@@ -58,37 +89,6 @@ call {vg_aes_expand_key_scratch}
 .p2align 6"#,
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_cmac_aes_subkeys = sym super::cmac_aes::vg_cmac_aes_subkeys::vg_cmac_aes_subkeys,
-    )
-}
-
-/// The CPU features `vg_aes_siv_init_vaes` requires (`Artifact.features`).
-pub const VG_AES_SIV_INIT_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VAES);
-
-/// The AES-SIV key setup (RFC 5297 §2.6): writes the key context of the `key_len`-byte key `K = K1 ‖ K2` at `key` (the halves of `key_len / 2` bytes) to `*ctx`: the key schedule of `K1` for `Nr = key_len / 8 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, its CMAC subkeys (NIST SP 800-38B §6.1) in bytes 240–271, and the key schedule of `K2` in the `16 * (Nr + 1)` bytes from byte 272. The other bytes are unspecified. The other `vg_aes_siv_*` functions read it, with `Nr` as their `rounds`.
-///
-/// Contract: `VG.Spec.Siv.initContract`. The key context is `VG.Spec.Siv.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `ctx` must be valid for reads and writes of 512 bytes.
-/// * `key_len` must be 32, 48 or 64.
-/// * `ctx` must not overlap `key` (distinct Rust objects never do).
-/// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2584 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes`, `avx`, `avx2`, `ssse3` and `vaes` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_siv_init_vaes(key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJPj1//9IieFIg8EISImZoAAAAEiJqagAAABMiaGwAAAATImpuAAAAEyJscAAAABIiftIifVI0e1JidRJic1JifZJwe4DSYPGBkiJ7kiBwQABAAA="
-call {vg_aes_expand_key_scratch_aesni}
-.base64 "TInnTIn2TIniSIHC8AAAAEyJ6UiBwQABAAA="
-call {vg_cmac_aes_subkeys_vaes}
-.base64 "SInfSAHvSInuTIniSIHCEAEAAEyJ6UiBwQABAAA="
-call {vg_aes_expand_key_scratch_aesni}
-.base64 "SYudoAAAAEmLragAAABNi6WwAAAATYu1wAAAAE2LrbgAAABIjaQkCAoAAMM="
-.p2align 6"#,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_cmac_aes_subkeys_vaes = sym super::cmac_aes::vg_cmac_aes_subkeys_vaes::vg_cmac_aes_subkeys_vaes,
     )
 }
 

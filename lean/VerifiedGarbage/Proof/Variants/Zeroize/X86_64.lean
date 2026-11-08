@@ -12,8 +12,8 @@ def avx : Proof.Zeroize.X86_64.ZeroizeImpl := .avx
 
 def scalar : Proof.Zeroize.X86_64.ZeroizeImpl := .scalar
 
-/-- Every implementation, which each function generic over them is emitted
-with (the registration files that import this). -/
+/-- Every implementation, best first: each function generic over them is
+emitted with each (the registration files that import this). -/
 def variants := [avx, scalar]
 
 end VG.Proof.Variants.Zeroize.X86_64

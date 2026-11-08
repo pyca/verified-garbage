@@ -3,8 +3,8 @@
 //! `assembly/rsa_pkcs1_enc.s`.
 #![allow(dead_code)]
 
-/// The CPU features `vg_rsa_pkcs1_decrypt_crt_adx` requires (`Artifact.features`).
-pub const VG_RSA_PKCS1_DECRYPT_CRT_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+/// The CPU features `vg_rsa_pkcs1_decrypt_sha256_shani_crt_ifma` requires (`Artifact.features`).
+pub const VG_RSA_PKCS1_DECRYPT_SHA256_SHANI_CRT_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// RSAES-PKCS1-v1_5 decryption with implicit rejection: RSAES-PKCS1-V1_5-DECRYPT (RFC 8017 §7.2.2) as draft-irtf-cfrg-rsa-guidance-10 §7.2 implements it, with the private key `(n, e, d, p, q, dP, dQ, qInv)`. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), computes the encoded message `EM` of the ciphertext `input` (`n_len` bytes, most significant first) with RSADP as `vg_rsa_private_checked` does. If its padding is valid (`0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M`, `PS` at least 8 nonzero bytes), the message is `M`; otherwise it is a message derived from `d` and the ciphertext (the draft's §7.1 PRF keyed with HMAC-SHA-256 of the ciphertext under the SHA-256 digest of `d`), of at most `n_len - 11` bytes, which is the same every time the same key decrypts the same ciphertext. Writes the message at the end of `out` (`n_len` bytes), after zeros, and its length to `*msg_len`, and returns 1. Writes zeros to both and returns 0 if `n` or `e` is not such a number, the ciphertext is not below `n`, `p q ≠ n`, or `qInv ≥ p`; and returns 2 (an internal error) if RSADP's result fails its check against `e`, which is the case for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. An invalid padding is never an error. `d` is used as given, never recomputed. `p`, `dp` and `qinv` are `p_len` bytes, `q` and `dq` are `q_len` bytes, and `d` is `d_len` bytes, all most significant first.
 ///
@@ -33,211 +33,9 @@ pub const VG_RSA_PKCS1_DECRYPT_CRT_ADX_FEATURES: verified_garbage_cpu::Features 
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the return address on the stack or the 3480 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `bmi2` and `adx` target features.
+/// * The CPU must support the `sha`, `ssse3`, `avx`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_decrypt_crt_adx(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJCj///9IiXwkcEiJVCR4SImMJIAAAABMiYQkiAAAAEyJjCSQAAAASIuEJOAAAABIiYQkmAAAAEiLhCToAAAASImEJKAAAABIi4Qk8AAAAEiJhCSoAAAASIuEJPgAAABIiYQksAAAAEiLhCRYAQAASImEJLgAAABIi4Qk+AAAAEiJBCRIi4QkAAEAAEiJRCQISIuEJAgBAABIiUQkEEiLhCQQAQAASIlEJBhIi4QkGAEAAEiJRCQgSIuEJCABAABIiUQkKEiLhCQoAQAASIlEJDBIi4QkMAEAAEiJRCQ4SIuEJDgBAABIiUQkQEiLhCRAAQAASIlEJEhIi4QkSAEAAEiJRCRQSIuEJFABAABIiUQkWEiLhCRYAQAASIlEJGBIi4QkYAEAAEiJRCRoTInGSInKTInBTYnITIuMJJgAAAA="
-call {vg_rsa_private_checked_adx}
-.base64 "SImEJMAAAABIi7wkuAAAAEiLjCSIAAAAQboAAAAAuAAAAAA="
-20:
-.base64 "QoiEF3AJAABJg8IBSTnK"
-jne 20b
-.base64 "SIu0JKAAAABIi4wkqAAAAEiLvCS4AAAASAO8JIgAAABIKc9BugAAAAA="
-21:
-.base64 "Qg+2BBZCiIQXcAkAAEmDwgFJOco="
-jne 21b
-.base64 "SIu8JLgAAAA="
-call {vg_sha256_init}
-.base64 "SIu8JLgAAAC+AAAAAEiLlCS4AAAASIHCcAkAAEiLjCSIAAAATIuEJLgAAABJgcDAAAAA"
-call {vg_sha256_update_scratch}
-.base64 "SIu8JLgAAABIi7QkiAAAAEiLlCS4AAAASIHCEAQAAEiLjCS4AAAASIHBwAAAAA=="
-call {vg_sha256_finalize_scratch}
-.base64 "SIu8JLgAAABIi7QkuAAAAEiDxmBIi5QkuAAAAEiBwhAEAAC5IAAAAEyLhCS4AAAASYHAwAAAAA=="
-call {vg_hmac_sha256_init_scratch}
-.base64 "SIu8JLgAAAC+QAAAAEiLlCSwAAAASIuMJIgAAABMi4QkuAAAAEmBwMAAAAA="
-call {vg_sha256_update_scratch}
-.base64 "SIu8JLgAAABIi7QkuAAAAEiDxmBIi5QkiAAAAEiDwkBIi4wkuAAAAEiBwVAEAABMi4QkuAAAAEmBwMAAAAA="
-call {vg_hmac_sha256_finalize_scratch}
-.base64 "uAAAAABIiYQkyAAAAEiLhCSIAAAASIPAH0jB6AVIiYQk0AAAAA=="
-22:
-.base64 "SIu8JLgAAABIi4QkyAAAAEyLjCSIAAAAugAAAACIlwAEAACIhwEEAAC6bAAAAIiXAgQAALplAAAAiJcDBAAAum4AAACIlwQEAAC6ZwAAAIiXBQQAALp0AAAAiJcGBAAAumgAAACIlwcEAAC6CAAAAIiXCAQAALoAAAAAiJcJBAAASIu8JLgAAABIi7QkuAAAAEiDxmBIi5QkuAAAAEiBwlAEAAC5IAAAAEyLhCS4AAAASYHAwAAAAA=="
-call {vg_hmac_sha256_init_scratch}
-.base64 "SIu8JLgAAAC+QAAAAEiLlCS4AAAASIHCAAQAALkKAAAATIuEJLgAAABJgcDAAAAA"
-call {vg_sha256_update_scratch}
-.base64 "SIu8JLgAAABIi7QkuAAAAEiDxmC6SgAAAEiLjCTIAAAASAHJSAHJSAHJSAHJSAHJSAOMJLgAAABIgcFwBAAATIuEJLgAAABJgcDAAAAA"
-call {vg_hmac_sha256_finalize_scratch}
-.base64 "SIuEJMgAAABIg8ABSImEJMgAAABIg/gI"
-jne 22b
-.base64 "uAAAAABIiYQkyAAAAA=="
-23:
-.base64 "SIu8JLgAAABIi4QkyAAAAEyLjCSIAAAAugAAAACIlwAEAACIhwEEAAC6bQAAAIiXAgQAALplAAAAiJcDBAAAunMAAACIlwQEAAC6cwAAAIiXBQQAALphAAAAiJcGBAAAumcAAACIlwcEAAC6ZQAAAIiXCAQAAEyJykgB0kgB0kgB0oiXCgQAAEjB6giIlwkEAABIi7wkuAAAAEiLtCS4AAAASIPGYEiLlCS4AAAASIHCUAQAALkgAAAATIuEJLgAAABJgcDAAAAA"
-call {vg_hmac_sha256_init_scratch}
-.base64 "SIu8JLgAAAC+QAAAAEiLlCS4AAAASIHCAAQAALkLAAAATIuEJLgAAABJgcDAAAAA"
-call {vg_sha256_update_scratch}
-.base64 "SIu8JLgAAABIi7QkuAAAAEiDxmC6SwAAAEiLjCTIAAAASAHJSAHJSAHJSAHJSAHJSAOMJLgAAABIgcFwBQAATIuEJLgAAABJgcDAAAAA"
-call {vg_hmac_sha256_finalize_scratch}
-.base64 "SIuEJMgAAABIg8ABSImEJMgAAABIO4Qk0AAAAA=="
-jne 23b
-.base64 "TIuMJIgAAABJg+kLQbgAAAAA"
-24:
-.base64 "TQHASYPAAU05yA=="
-jb 24b
-.base64 "SIu0JLgAAABIgcZwBAAAuQAAAABBuwAAAAA="
-25:
-.base64 "D7YEDkgBwEgBwEgBwEgBwEgBwEgBwEgBwEgBwA+2VA4BSAHQTCHATInKSDnCSBnSSTHDSSHTSTHDSIPBAkiB+QABAAA="
-jne 25b
-.base64 "SIt8JHBMi4wkiAAAALkCAAAAugAAAABBugAAAAA="
-26:
-.base64 "D7YED0iD+AFIGcBIidZIg/b/SCHGSCHOSQnySAnCSIPBAUw5yQ=="
-jne 26b
-.base64 "D7YHSIP4AUgZwA+2dwFIg/YCSIP+AUgZ9kgh8Egh0EyJ1kiD/gpIGfZIg/b/SCHwTInOTCnWSIPuAUyJ2kgx8kghwkwx2kmJwkyLnCTAAAAARYnbSYPzAUmD+wFNGdtMic5IKdZMIdpMi0QkeEiLjCS4AAAASIHBcAUAAEmJEEiJ8kiJzrkAAAAA"
-27:
-.base64 "D7YED0QPtgQOTDHATCHQTDHASYnISTnQTRnASYPw/00h2EwhwIgED0iDwQFMOck="
-jne 27b
-.base64 "SIuEJMAAAABIjaQk2AAAAMM="
-.p2align 6"#,
-        vg_rsa_private_checked_adx = sym super::rsa::vg_rsa_private_checked_adx::vg_rsa_private_checked_adx,
-        vg_sha256_init = sym super::sha256::vg_sha256_init,
-        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
-        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
-        vg_hmac_sha256_init_scratch = sym super::hmac_sha256::vg_hmac_sha256_init_scratch::vg_hmac_sha256_init_scratch,
-        vg_hmac_sha256_finalize_scratch = sym super::hmac_sha256::vg_hmac_sha256_finalize_scratch::vg_hmac_sha256_finalize_scratch,
-    )
-}
-
-/// RSAES-PKCS1-v1_5 decryption with implicit rejection: RSAES-PKCS1-V1_5-DECRYPT (RFC 8017 §7.2.2) as draft-irtf-cfrg-rsa-guidance-10 §7.2 implements it, with the private key `(n, e, d, p, q, dP, dQ, qInv)`. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), computes the encoded message `EM` of the ciphertext `input` (`n_len` bytes, most significant first) with RSADP as `vg_rsa_private_checked` does. If its padding is valid (`0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M`, `PS` at least 8 nonzero bytes), the message is `M`; otherwise it is a message derived from `d` and the ciphertext (the draft's §7.1 PRF keyed with HMAC-SHA-256 of the ciphertext under the SHA-256 digest of `d`), of at most `n_len - 11` bytes, which is the same every time the same key decrypts the same ciphertext. Writes the message at the end of `out` (`n_len` bytes), after zeros, and its length to `*msg_len`, and returns 1. Writes zeros to both and returns 0 if `n` or `e` is not such a number, the ciphertext is not below `n`, `p q ≠ n`, or `qInv ≥ p`; and returns 2 (an internal error) if RSADP's result fails its check against `e`, which is the case for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. An invalid padding is never an error. `d` is used as given, never recomputed. `p`, `dp` and `qinv` are `p_len` bytes, `q` and `dq` are `q_len` bytes, and `d` is `d_len` bytes, all most significant first.
-///
-/// Contract: `VG.Spec.RsaPkcs1Enc.decryptContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the ciphertext, the private key, the validity of the padding, the length of the message or which message is returned.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `msg_len` must be valid for reads and writes of 8 bytes.
-/// * `n` must be valid for reads of `n_len` bytes.
-/// * `e` must be valid for reads of `e_len` bytes.
-/// * `d` must be valid for reads of `d_len` bytes.
-/// * `input` must be valid for reads of `input_len` bytes.
-/// * `p` must be valid for reads of `p_len` bytes.
-/// * `q` must be valid for reads of `q_len` bytes.
-/// * `dp` must be valid for reads of `dp_len` bytes.
-/// * `dq` must be valid for reads of `dq_len` bytes.
-/// * `qinv` must be valid for reads of `qinv_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `n_len` must be in 64..=1024.
-/// * `out_len` and `input_len` must be `n_len`.
-/// * `e_len` and `d_len` must be in 1..=`n_len`.
-/// * `p_len` and `q_len` must be in 1..`n_len`.
-/// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
-/// * `scratch_len` must be at least `16 * n_len + 32`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the return address on the stack or the 3480 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_decrypt(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJCj///9IiXwkcEiJVCR4SImMJIAAAABMiYQkiAAAAEyJjCSQAAAASIuEJOAAAABIiYQkmAAAAEiLhCToAAAASImEJKAAAABIi4Qk8AAAAEiJhCSoAAAASIuEJPgAAABIiYQksAAAAEiLhCRYAQAASImEJLgAAABIi4Qk+AAAAEiJBCRIi4QkAAEAAEiJRCQISIuEJAgBAABIiUQkEEiLhCQQAQAASIlEJBhIi4QkGAEAAEiJRCQgSIuEJCABAABIiUQkKEiLhCQoAQAASIlEJDBIi4QkMAEAAEiJRCQ4SIuEJDgBAABIiUQkQEiLhCRAAQAASIlEJEhIi4QkSAEAAEiJRCRQSIuEJFABAABIiUQkWEiLhCRYAQAASIlEJGBIi4QkYAEAAEiJRCRoTInGSInKTInBTYnITIuMJJgAAAA="
-call {vg_rsa_private_checked}
-.base64 "SImEJMAAAABIi7wkuAAAAEiLjCSIAAAAQboAAAAAuAAAAAA="
-20:
-.base64 "QoiEF3AJAABJg8IBSTnK"
-jne 20b
-.base64 "SIu0JKAAAABIi4wkqAAAAEiLvCS4AAAASAO8JIgAAABIKc9BugAAAAA="
-21:
-.base64 "Qg+2BBZCiIQXcAkAAEmDwgFJOco="
-jne 21b
-.base64 "SIu8JLgAAAA="
-call {vg_sha256_init}
-.base64 "SIu8JLgAAAC+AAAAAEiLlCS4AAAASIHCcAkAAEiLjCSIAAAATIuEJLgAAABJgcDAAAAA"
-call {vg_sha256_update_scratch}
-.base64 "SIu8JLgAAABIi7QkiAAAAEiLlCS4AAAASIHCEAQAAEiLjCS4AAAASIHBwAAAAA=="
-call {vg_sha256_finalize_scratch}
-.base64 "SIu8JLgAAABIi7QkuAAAAEiDxmBIi5QkuAAAAEiBwhAEAAC5IAAAAEyLhCS4AAAASYHAwAAAAA=="
-call {vg_hmac_sha256_init_scratch}
-.base64 "SIu8JLgAAAC+QAAAAEiLlCSwAAAASIuMJIgAAABMi4QkuAAAAEmBwMAAAAA="
-call {vg_sha256_update_scratch}
-.base64 "SIu8JLgAAABIi7QkuAAAAEiDxmBIi5QkiAAAAEiDwkBIi4wkuAAAAEiBwVAEAABMi4QkuAAAAEmBwMAAAAA="
-call {vg_hmac_sha256_finalize_scratch}
-.base64 "uAAAAABIiYQkyAAAAEiLhCSIAAAASIPAH0jB6AVIiYQk0AAAAA=="
-22:
-.base64 "SIu8JLgAAABIi4QkyAAAAEyLjCSIAAAAugAAAACIlwAEAACIhwEEAAC6bAAAAIiXAgQAALplAAAAiJcDBAAAum4AAACIlwQEAAC6ZwAAAIiXBQQAALp0AAAAiJcGBAAAumgAAACIlwcEAAC6CAAAAIiXCAQAALoAAAAAiJcJBAAASIu8JLgAAABIi7QkuAAAAEiDxmBIi5QkuAAAAEiBwlAEAAC5IAAAAEyLhCS4AAAASYHAwAAAAA=="
-call {vg_hmac_sha256_init_scratch}
-.base64 "SIu8JLgAAAC+QAAAAEiLlCS4AAAASIHCAAQAALkKAAAATIuEJLgAAABJgcDAAAAA"
-call {vg_sha256_update_scratch}
-.base64 "SIu8JLgAAABIi7QkuAAAAEiDxmC6SgAAAEiLjCTIAAAASAHJSAHJSAHJSAHJSAHJSAOMJLgAAABIgcFwBAAATIuEJLgAAABJgcDAAAAA"
-call {vg_hmac_sha256_finalize_scratch}
-.base64 "SIuEJMgAAABIg8ABSImEJMgAAABIg/gI"
-jne 22b
-.base64 "uAAAAABIiYQkyAAAAA=="
-23:
-.base64 "SIu8JLgAAABIi4QkyAAAAEyLjCSIAAAAugAAAACIlwAEAACIhwEEAAC6bQAAAIiXAgQAALplAAAAiJcDBAAAunMAAACIlwQEAAC6cwAAAIiXBQQAALphAAAAiJcGBAAAumcAAACIlwcEAAC6ZQAAAIiXCAQAAEyJykgB0kgB0kgB0oiXCgQAAEjB6giIlwkEAABIi7wkuAAAAEiLtCS4AAAASIPGYEiLlCS4AAAASIHCUAQAALkgAAAATIuEJLgAAABJgcDAAAAA"
-call {vg_hmac_sha256_init_scratch}
-.base64 "SIu8JLgAAAC+QAAAAEiLlCS4AAAASIHCAAQAALkLAAAATIuEJLgAAABJgcDAAAAA"
-call {vg_sha256_update_scratch}
-.base64 "SIu8JLgAAABIi7QkuAAAAEiDxmC6SwAAAEiLjCTIAAAASAHJSAHJSAHJSAHJSAHJSAOMJLgAAABIgcFwBQAATIuEJLgAAABJgcDAAAAA"
-call {vg_hmac_sha256_finalize_scratch}
-.base64 "SIuEJMgAAABIg8ABSImEJMgAAABIO4Qk0AAAAA=="
-jne 23b
-.base64 "TIuMJIgAAABJg+kLQbgAAAAA"
-24:
-.base64 "TQHASYPAAU05yA=="
-jb 24b
-.base64 "SIu0JLgAAABIgcZwBAAAuQAAAABBuwAAAAA="
-25:
-.base64 "D7YEDkgBwEgBwEgBwEgBwEgBwEgBwEgBwEgBwA+2VA4BSAHQTCHATInKSDnCSBnSSTHDSSHTSTHDSIPBAkiB+QABAAA="
-jne 25b
-.base64 "SIt8JHBMi4wkiAAAALkCAAAAugAAAABBugAAAAA="
-26:
-.base64 "D7YED0iD+AFIGcBIidZIg/b/SCHGSCHOSQnySAnCSIPBAUw5yQ=="
-jne 26b
-.base64 "D7YHSIP4AUgZwA+2dwFIg/YCSIP+AUgZ9kgh8Egh0EyJ1kiD/gpIGfZIg/b/SCHwTInOTCnWSIPuAUyJ2kgx8kghwkwx2kmJwkyLnCTAAAAARYnbSYPzAUmD+wFNGdtMic5IKdZMIdpMi0QkeEiLjCS4AAAASIHBcAUAAEmJEEiJ8kiJzrkAAAAA"
-27:
-.base64 "D7YED0QPtgQOTDHATCHQTDHASYnISTnQTRnASYPw/00h2EwhwIgED0iDwQFMOck="
-jne 27b
-.base64 "SIuEJMAAAABIjaQk2AAAAMM="
-.p2align 6"#,
-        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked::vg_rsa_private_checked,
-        vg_sha256_init = sym super::sha256::vg_sha256_init,
-        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
-        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
-        vg_hmac_sha256_init_scratch = sym super::hmac_sha256::vg_hmac_sha256_init_scratch::vg_hmac_sha256_init_scratch,
-        vg_hmac_sha256_finalize_scratch = sym super::hmac_sha256::vg_hmac_sha256_finalize_scratch::vg_hmac_sha256_finalize_scratch,
-    )
-}
-
-/// The CPU features `vg_rsa_pkcs1_decrypt_crt_ifma` requires (`Artifact.features`).
-pub const VG_RSA_PKCS1_DECRYPT_CRT_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
-
-/// RSAES-PKCS1-v1_5 decryption with implicit rejection: RSAES-PKCS1-V1_5-DECRYPT (RFC 8017 §7.2.2) as draft-irtf-cfrg-rsa-guidance-10 §7.2 implements it, with the private key `(n, e, d, p, q, dP, dQ, qInv)`. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), computes the encoded message `EM` of the ciphertext `input` (`n_len` bytes, most significant first) with RSADP as `vg_rsa_private_checked` does. If its padding is valid (`0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M`, `PS` at least 8 nonzero bytes), the message is `M`; otherwise it is a message derived from `d` and the ciphertext (the draft's §7.1 PRF keyed with HMAC-SHA-256 of the ciphertext under the SHA-256 digest of `d`), of at most `n_len - 11` bytes, which is the same every time the same key decrypts the same ciphertext. Writes the message at the end of `out` (`n_len` bytes), after zeros, and its length to `*msg_len`, and returns 1. Writes zeros to both and returns 0 if `n` or `e` is not such a number, the ciphertext is not below `n`, `p q ≠ n`, or `qInv ≥ p`; and returns 2 (an internal error) if RSADP's result fails its check against `e`, which is the case for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. An invalid padding is never an error. `d` is used as given, never recomputed. `p`, `dp` and `qinv` are `p_len` bytes, `q` and `dq` are `q_len` bytes, and `d` is `d_len` bytes, all most significant first.
-///
-/// Contract: `VG.Spec.RsaPkcs1Enc.decryptContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the ciphertext, the private key, the validity of the padding, the length of the message or which message is returned.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `msg_len` must be valid for reads and writes of 8 bytes.
-/// * `n` must be valid for reads of `n_len` bytes.
-/// * `e` must be valid for reads of `e_len` bytes.
-/// * `d` must be valid for reads of `d_len` bytes.
-/// * `input` must be valid for reads of `input_len` bytes.
-/// * `p` must be valid for reads of `p_len` bytes.
-/// * `q` must be valid for reads of `q_len` bytes.
-/// * `dp` must be valid for reads of `dp_len` bytes.
-/// * `dq` must be valid for reads of `dq_len` bytes.
-/// * `qinv` must be valid for reads of `qinv_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `n_len` must be in 64..=1024.
-/// * `out_len` and `input_len` must be `n_len`.
-/// * `e_len` and `d_len` must be in 1..=`n_len`.
-/// * `p_len` and `q_len` must be in 1..`n_len`.
-/// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
-/// * `scratch_len` must be at least `16 * n_len + 32`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the return address on the stack or the 3480 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_decrypt_crt_ifma(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_decrypt_sha256_shani_crt_ifma(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJCj///9IiXwkcEiJVCR4SImMJIAAAABMiYQkiAAAAEyJjCSQAAAASIuEJOAAAABIiYQkmAAAAEiLhCToAAAASImEJKAAAABIi4Qk8AAAAEiJhCSoAAAASIuEJPgAAABIiYQksAAAAEiLhCRYAQAASImEJLgAAABIi4Qk+AAAAEiJBCRIi4QkAAEAAEiJRCQISIuEJAgBAABIiUQkEEiLhCQQAQAASIlEJBhIi4QkGAEAAEiJRCQgSIuEJCABAABIiUQkKEiLhCQoAQAASIlEJDBIi4QkMAEAAEiJRCQ4SIuEJDgBAABIiUQkQEiLhCRAAQAASIlEJEhIi4QkSAEAAEiJRCRQSIuEJFABAABIiUQkWEiLhCRYAQAASIlEJGBIi4QkYAEAAEiJRCRoTInGSInKTInBTYnITIuMJJgAAAA="
 call {vg_rsa_private_checked_ifma}
@@ -252,33 +50,33 @@ jne 21b
 .base64 "SIu8JLgAAAA="
 call {vg_sha256_init}
 .base64 "SIu8JLgAAAC+AAAAAEiLlCS4AAAASIHCcAkAAEiLjCSIAAAATIuEJLgAAABJgcDAAAAA"
-call {vg_sha256_update_scratch}
+call {vg_sha256_update_scratch_shani}
 .base64 "SIu8JLgAAABIi7QkiAAAAEiLlCS4AAAASIHCEAQAAEiLjCS4AAAASIHBwAAAAA=="
-call {vg_sha256_finalize_scratch}
+call {vg_sha256_finalize_scratch_shani}
 .base64 "SIu8JLgAAABIi7QkuAAAAEiDxmBIi5QkuAAAAEiBwhAEAAC5IAAAAEyLhCS4AAAASYHAwAAAAA=="
-call {vg_hmac_sha256_init_scratch}
+call {vg_hmac_sha256_init_scratch_shani}
 .base64 "SIu8JLgAAAC+QAAAAEiLlCSwAAAASIuMJIgAAABMi4QkuAAAAEmBwMAAAAA="
-call {vg_sha256_update_scratch}
+call {vg_sha256_update_scratch_shani}
 .base64 "SIu8JLgAAABIi7QkuAAAAEiDxmBIi5QkiAAAAEiDwkBIi4wkuAAAAEiBwVAEAABMi4QkuAAAAEmBwMAAAAA="
-call {vg_hmac_sha256_finalize_scratch}
+call {vg_hmac_sha256_finalize_scratch_shani}
 .base64 "uAAAAABIiYQkyAAAAEiLhCSIAAAASIPAH0jB6AVIiYQk0AAAAA=="
 22:
 .base64 "SIu8JLgAAABIi4QkyAAAAEyLjCSIAAAAugAAAACIlwAEAACIhwEEAAC6bAAAAIiXAgQAALplAAAAiJcDBAAAum4AAACIlwQEAAC6ZwAAAIiXBQQAALp0AAAAiJcGBAAAumgAAACIlwcEAAC6CAAAAIiXCAQAALoAAAAAiJcJBAAASIu8JLgAAABIi7QkuAAAAEiDxmBIi5QkuAAAAEiBwlAEAAC5IAAAAEyLhCS4AAAASYHAwAAAAA=="
-call {vg_hmac_sha256_init_scratch}
+call {vg_hmac_sha256_init_scratch_shani}
 .base64 "SIu8JLgAAAC+QAAAAEiLlCS4AAAASIHCAAQAALkKAAAATIuEJLgAAABJgcDAAAAA"
-call {vg_sha256_update_scratch}
+call {vg_sha256_update_scratch_shani}
 .base64 "SIu8JLgAAABIi7QkuAAAAEiDxmC6SgAAAEiLjCTIAAAASAHJSAHJSAHJSAHJSAHJSAOMJLgAAABIgcFwBAAATIuEJLgAAABJgcDAAAAA"
-call {vg_hmac_sha256_finalize_scratch}
+call {vg_hmac_sha256_finalize_scratch_shani}
 .base64 "SIuEJMgAAABIg8ABSImEJMgAAABIg/gI"
 jne 22b
 .base64 "uAAAAABIiYQkyAAAAA=="
 23:
 .base64 "SIu8JLgAAABIi4QkyAAAAEyLjCSIAAAAugAAAACIlwAEAACIhwEEAAC6bQAAAIiXAgQAALplAAAAiJcDBAAAunMAAACIlwQEAAC6cwAAAIiXBQQAALphAAAAiJcGBAAAumcAAACIlwcEAAC6ZQAAAIiXCAQAAEyJykgB0kgB0kgB0oiXCgQAAEjB6giIlwkEAABIi7wkuAAAAEiLtCS4AAAASIPGYEiLlCS4AAAASIHCUAQAALkgAAAATIuEJLgAAABJgcDAAAAA"
-call {vg_hmac_sha256_init_scratch}
+call {vg_hmac_sha256_init_scratch_shani}
 .base64 "SIu8JLgAAAC+QAAAAEiLlCS4AAAASIHCAAQAALkLAAAATIuEJLgAAABJgcDAAAAA"
-call {vg_sha256_update_scratch}
+call {vg_sha256_update_scratch_shani}
 .base64 "SIu8JLgAAABIi7QkuAAAAEiDxmC6SwAAAEiLjCTIAAAASAHJSAHJSAHJSAHJSAHJSAOMJLgAAABIgcFwBQAATIuEJLgAAABJgcDAAAAA"
-call {vg_hmac_sha256_finalize_scratch}
+call {vg_hmac_sha256_finalize_scratch_shani}
 .base64 "SIuEJMgAAABIg8ABSImEJMgAAABIO4Qk0AAAAA=="
 jne 23b
 .base64 "TIuMJIgAAABJg+kLQbgAAAAA"
@@ -301,319 +99,10 @@ jne 27b
 .p2align 6"#,
         vg_rsa_private_checked_ifma = sym super::rsa::vg_rsa_private_checked_ifma::vg_rsa_private_checked_ifma,
         vg_sha256_init = sym super::sha256::vg_sha256_init,
-        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
-        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
-        vg_hmac_sha256_init_scratch = sym super::hmac_sha256::vg_hmac_sha256_init_scratch::vg_hmac_sha256_init_scratch,
-        vg_hmac_sha256_finalize_scratch = sym super::hmac_sha256::vg_hmac_sha256_finalize_scratch::vg_hmac_sha256_finalize_scratch,
-    )
-}
-
-/// The CPU features `vg_rsa_pkcs1_decrypt_sha256_avx2_crt_adx` requires (`Artifact.features`).
-pub const VG_RSA_PKCS1_DECRYPT_SHA256_AVX2_CRT_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
-
-/// RSAES-PKCS1-v1_5 decryption with implicit rejection: RSAES-PKCS1-V1_5-DECRYPT (RFC 8017 §7.2.2) as draft-irtf-cfrg-rsa-guidance-10 §7.2 implements it, with the private key `(n, e, d, p, q, dP, dQ, qInv)`. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), computes the encoded message `EM` of the ciphertext `input` (`n_len` bytes, most significant first) with RSADP as `vg_rsa_private_checked` does. If its padding is valid (`0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M`, `PS` at least 8 nonzero bytes), the message is `M`; otherwise it is a message derived from `d` and the ciphertext (the draft's §7.1 PRF keyed with HMAC-SHA-256 of the ciphertext under the SHA-256 digest of `d`), of at most `n_len - 11` bytes, which is the same every time the same key decrypts the same ciphertext. Writes the message at the end of `out` (`n_len` bytes), after zeros, and its length to `*msg_len`, and returns 1. Writes zeros to both and returns 0 if `n` or `e` is not such a number, the ciphertext is not below `n`, `p q ≠ n`, or `qInv ≥ p`; and returns 2 (an internal error) if RSADP's result fails its check against `e`, which is the case for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. An invalid padding is never an error. `d` is used as given, never recomputed. `p`, `dp` and `qinv` are `p_len` bytes, `q` and `dq` are `q_len` bytes, and `d` is `d_len` bytes, all most significant first.
-///
-/// Contract: `VG.Spec.RsaPkcs1Enc.decryptContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the ciphertext, the private key, the validity of the padding, the length of the message or which message is returned.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `msg_len` must be valid for reads and writes of 8 bytes.
-/// * `n` must be valid for reads of `n_len` bytes.
-/// * `e` must be valid for reads of `e_len` bytes.
-/// * `d` must be valid for reads of `d_len` bytes.
-/// * `input` must be valid for reads of `input_len` bytes.
-/// * `p` must be valid for reads of `p_len` bytes.
-/// * `q` must be valid for reads of `q_len` bytes.
-/// * `dp` must be valid for reads of `dp_len` bytes.
-/// * `dq` must be valid for reads of `dq_len` bytes.
-/// * `qinv` must be valid for reads of `qinv_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `n_len` must be in 64..=1024.
-/// * `out_len` and `input_len` must be `n_len`.
-/// * `e_len` and `d_len` must be in 1..=`n_len`.
-/// * `p_len` and `q_len` must be in 1..`n_len`.
-/// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
-/// * `scratch_len` must be at least `16 * n_len + 32`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the return address on the stack or the 3480 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2` and `adx` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_decrypt_sha256_avx2_crt_adx(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJCj///9IiXwkcEiJVCR4SImMJIAAAABMiYQkiAAAAEyJjCSQAAAASIuEJOAAAABIiYQkmAAAAEiLhCToAAAASImEJKAAAABIi4Qk8AAAAEiJhCSoAAAASIuEJPgAAABIiYQksAAAAEiLhCRYAQAASImEJLgAAABIi4Qk+AAAAEiJBCRIi4QkAAEAAEiJRCQISIuEJAgBAABIiUQkEEiLhCQQAQAASIlEJBhIi4QkGAEAAEiJRCQgSIuEJCABAABIiUQkKEiLhCQoAQAASIlEJDBIi4QkMAEAAEiJRCQ4SIuEJDgBAABIiUQkQEiLhCRAAQAASIlEJEhIi4QkSAEAAEiJRCRQSIuEJFABAABIiUQkWEiLhCRYAQAASIlEJGBIi4QkYAEAAEiJRCRoTInGSInKTInBTYnITIuMJJgAAAA="
-call {vg_rsa_private_checked_adx}
-.base64 "SImEJMAAAABIi7wkuAAAAEiLjCSIAAAAQboAAAAAuAAAAAA="
-20:
-.base64 "QoiEF3AJAABJg8IBSTnK"
-jne 20b
-.base64 "SIu0JKAAAABIi4wkqAAAAEiLvCS4AAAASAO8JIgAAABIKc9BugAAAAA="
-21:
-.base64 "Qg+2BBZCiIQXcAkAAEmDwgFJOco="
-jne 21b
-.base64 "SIu8JLgAAAA="
-call {vg_sha256_init}
-.base64 "SIu8JLgAAAC+AAAAAEiLlCS4AAAASIHCcAkAAEiLjCSIAAAATIuEJLgAAABJgcDAAAAA"
-call {vg_sha256_update_scratch_avx2}
-.base64 "SIu8JLgAAABIi7QkiAAAAEiLlCS4AAAASIHCEAQAAEiLjCS4AAAASIHBwAAAAA=="
-call {vg_sha256_finalize_scratch_avx2}
-.base64 "SIu8JLgAAABIi7QkuAAAAEiDxmBIi5QkuAAAAEiBwhAEAAC5IAAAAEyLhCS4AAAASYHAwAAAAA=="
-call {vg_hmac_sha256_init_scratch_avx2}
-.base64 "SIu8JLgAAAC+QAAAAEiLlCSwAAAASIuMJIgAAABMi4QkuAAAAEmBwMAAAAA="
-call {vg_sha256_update_scratch_avx2}
-.base64 "SIu8JLgAAABIi7QkuAAAAEiDxmBIi5QkiAAAAEiDwkBIi4wkuAAAAEiBwVAEAABMi4QkuAAAAEmBwMAAAAA="
-call {vg_hmac_sha256_finalize_scratch_avx2}
-.base64 "uAAAAABIiYQkyAAAAEiLhCSIAAAASIPAH0jB6AVIiYQk0AAAAA=="
-22:
-.base64 "SIu8JLgAAABIi4QkyAAAAEyLjCSIAAAAugAAAACIlwAEAACIhwEEAAC6bAAAAIiXAgQAALplAAAAiJcDBAAAum4AAACIlwQEAAC6ZwAAAIiXBQQAALp0AAAAiJcGBAAAumgAAACIlwcEAAC6CAAAAIiXCAQAALoAAAAAiJcJBAAASIu8JLgAAABIi7QkuAAAAEiDxmBIi5QkuAAAAEiBwlAEAAC5IAAAAEyLhCS4AAAASYHAwAAAAA=="
-call {vg_hmac_sha256_init_scratch_avx2}
-.base64 "SIu8JLgAAAC+QAAAAEiLlCS4AAAASIHCAAQAALkKAAAATIuEJLgAAABJgcDAAAAA"
-call {vg_sha256_update_scratch_avx2}
-.base64 "SIu8JLgAAABIi7QkuAAAAEiDxmC6SgAAAEiLjCTIAAAASAHJSAHJSAHJSAHJSAHJSAOMJLgAAABIgcFwBAAATIuEJLgAAABJgcDAAAAA"
-call {vg_hmac_sha256_finalize_scratch_avx2}
-.base64 "SIuEJMgAAABIg8ABSImEJMgAAABIg/gI"
-jne 22b
-.base64 "uAAAAABIiYQkyAAAAA=="
-23:
-.base64 "SIu8JLgAAABIi4QkyAAAAEyLjCSIAAAAugAAAACIlwAEAACIhwEEAAC6bQAAAIiXAgQAALplAAAAiJcDBAAAunMAAACIlwQEAAC6cwAAAIiXBQQAALphAAAAiJcGBAAAumcAAACIlwcEAAC6ZQAAAIiXCAQAAEyJykgB0kgB0kgB0oiXCgQAAEjB6giIlwkEAABIi7wkuAAAAEiLtCS4AAAASIPGYEiLlCS4AAAASIHCUAQAALkgAAAATIuEJLgAAABJgcDAAAAA"
-call {vg_hmac_sha256_init_scratch_avx2}
-.base64 "SIu8JLgAAAC+QAAAAEiLlCS4AAAASIHCAAQAALkLAAAATIuEJLgAAABJgcDAAAAA"
-call {vg_sha256_update_scratch_avx2}
-.base64 "SIu8JLgAAABIi7QkuAAAAEiDxmC6SwAAAEiLjCTIAAAASAHJSAHJSAHJSAHJSAHJSAOMJLgAAABIgcFwBQAATIuEJLgAAABJgcDAAAAA"
-call {vg_hmac_sha256_finalize_scratch_avx2}
-.base64 "SIuEJMgAAABIg8ABSImEJMgAAABIO4Qk0AAAAA=="
-jne 23b
-.base64 "TIuMJIgAAABJg+kLQbgAAAAA"
-24:
-.base64 "TQHASYPAAU05yA=="
-jb 24b
-.base64 "SIu0JLgAAABIgcZwBAAAuQAAAABBuwAAAAA="
-25:
-.base64 "D7YEDkgBwEgBwEgBwEgBwEgBwEgBwEgBwEgBwA+2VA4BSAHQTCHATInKSDnCSBnSSTHDSSHTSTHDSIPBAkiB+QABAAA="
-jne 25b
-.base64 "SIt8JHBMi4wkiAAAALkCAAAAugAAAABBugAAAAA="
-26:
-.base64 "D7YED0iD+AFIGcBIidZIg/b/SCHGSCHOSQnySAnCSIPBAUw5yQ=="
-jne 26b
-.base64 "D7YHSIP4AUgZwA+2dwFIg/YCSIP+AUgZ9kgh8Egh0EyJ1kiD/gpIGfZIg/b/SCHwTInOTCnWSIPuAUyJ2kgx8kghwkwx2kmJwkyLnCTAAAAARYnbSYPzAUmD+wFNGdtMic5IKdZMIdpMi0QkeEiLjCS4AAAASIHBcAUAAEmJEEiJ8kiJzrkAAAAA"
-27:
-.base64 "D7YED0QPtgQOTDHATCHQTDHASYnISTnQTRnASYPw/00h2EwhwIgED0iDwQFMOck="
-jne 27b
-.base64 "SIuEJMAAAABIjaQk2AAAAMM="
-.p2align 6"#,
-        vg_rsa_private_checked_adx = sym super::rsa::vg_rsa_private_checked_adx::vg_rsa_private_checked_adx,
-        vg_sha256_init = sym super::sha256::vg_sha256_init,
-        vg_sha256_update_scratch_avx2 = sym super::sha256::vg_sha256_update_scratch_avx2::vg_sha256_update_scratch_avx2,
-        vg_sha256_finalize_scratch_avx2 = sym super::sha256::vg_sha256_finalize_scratch_avx2::vg_sha256_finalize_scratch_avx2,
-        vg_hmac_sha256_init_scratch_avx2 = sym super::hmac_sha256::vg_hmac_sha256_init_scratch_avx2::vg_hmac_sha256_init_scratch_avx2,
-        vg_hmac_sha256_finalize_scratch_avx2 = sym super::hmac_sha256::vg_hmac_sha256_finalize_scratch_avx2::vg_hmac_sha256_finalize_scratch_avx2,
-    )
-}
-
-/// The CPU features `vg_rsa_pkcs1_decrypt_sha256_avx2` requires (`Artifact.features`).
-pub const VG_RSA_PKCS1_DECRYPT_SHA256_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2);
-
-/// RSAES-PKCS1-v1_5 decryption with implicit rejection: RSAES-PKCS1-V1_5-DECRYPT (RFC 8017 §7.2.2) as draft-irtf-cfrg-rsa-guidance-10 §7.2 implements it, with the private key `(n, e, d, p, q, dP, dQ, qInv)`. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), computes the encoded message `EM` of the ciphertext `input` (`n_len` bytes, most significant first) with RSADP as `vg_rsa_private_checked` does. If its padding is valid (`0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M`, `PS` at least 8 nonzero bytes), the message is `M`; otherwise it is a message derived from `d` and the ciphertext (the draft's §7.1 PRF keyed with HMAC-SHA-256 of the ciphertext under the SHA-256 digest of `d`), of at most `n_len - 11` bytes, which is the same every time the same key decrypts the same ciphertext. Writes the message at the end of `out` (`n_len` bytes), after zeros, and its length to `*msg_len`, and returns 1. Writes zeros to both and returns 0 if `n` or `e` is not such a number, the ciphertext is not below `n`, `p q ≠ n`, or `qInv ≥ p`; and returns 2 (an internal error) if RSADP's result fails its check against `e`, which is the case for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. An invalid padding is never an error. `d` is used as given, never recomputed. `p`, `dp` and `qinv` are `p_len` bytes, `q` and `dq` are `q_len` bytes, and `d` is `d_len` bytes, all most significant first.
-///
-/// Contract: `VG.Spec.RsaPkcs1Enc.decryptContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the ciphertext, the private key, the validity of the padding, the length of the message or which message is returned.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `msg_len` must be valid for reads and writes of 8 bytes.
-/// * `n` must be valid for reads of `n_len` bytes.
-/// * `e` must be valid for reads of `e_len` bytes.
-/// * `d` must be valid for reads of `d_len` bytes.
-/// * `input` must be valid for reads of `input_len` bytes.
-/// * `p` must be valid for reads of `p_len` bytes.
-/// * `q` must be valid for reads of `q_len` bytes.
-/// * `dp` must be valid for reads of `dp_len` bytes.
-/// * `dq` must be valid for reads of `dq_len` bytes.
-/// * `qinv` must be valid for reads of `qinv_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `n_len` must be in 64..=1024.
-/// * `out_len` and `input_len` must be `n_len`.
-/// * `e_len` and `d_len` must be in 1..=`n_len`.
-/// * `p_len` and `q_len` must be in 1..`n_len`.
-/// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
-/// * `scratch_len` must be at least `16 * n_len + 32`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the return address on the stack or the 3480 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_decrypt_sha256_avx2(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJCj///9IiXwkcEiJVCR4SImMJIAAAABMiYQkiAAAAEyJjCSQAAAASIuEJOAAAABIiYQkmAAAAEiLhCToAAAASImEJKAAAABIi4Qk8AAAAEiJhCSoAAAASIuEJPgAAABIiYQksAAAAEiLhCRYAQAASImEJLgAAABIi4Qk+AAAAEiJBCRIi4QkAAEAAEiJRCQISIuEJAgBAABIiUQkEEiLhCQQAQAASIlEJBhIi4QkGAEAAEiJRCQgSIuEJCABAABIiUQkKEiLhCQoAQAASIlEJDBIi4QkMAEAAEiJRCQ4SIuEJDgBAABIiUQkQEiLhCRAAQAASIlEJEhIi4QkSAEAAEiJRCRQSIuEJFABAABIiUQkWEiLhCRYAQAASIlEJGBIi4QkYAEAAEiJRCRoTInGSInKTInBTYnITIuMJJgAAAA="
-call {vg_rsa_private_checked}
-.base64 "SImEJMAAAABIi7wkuAAAAEiLjCSIAAAAQboAAAAAuAAAAAA="
-20:
-.base64 "QoiEF3AJAABJg8IBSTnK"
-jne 20b
-.base64 "SIu0JKAAAABIi4wkqAAAAEiLvCS4AAAASAO8JIgAAABIKc9BugAAAAA="
-21:
-.base64 "Qg+2BBZCiIQXcAkAAEmDwgFJOco="
-jne 21b
-.base64 "SIu8JLgAAAA="
-call {vg_sha256_init}
-.base64 "SIu8JLgAAAC+AAAAAEiLlCS4AAAASIHCcAkAAEiLjCSIAAAATIuEJLgAAABJgcDAAAAA"
-call {vg_sha256_update_scratch_avx2}
-.base64 "SIu8JLgAAABIi7QkiAAAAEiLlCS4AAAASIHCEAQAAEiLjCS4AAAASIHBwAAAAA=="
-call {vg_sha256_finalize_scratch_avx2}
-.base64 "SIu8JLgAAABIi7QkuAAAAEiDxmBIi5QkuAAAAEiBwhAEAAC5IAAAAEyLhCS4AAAASYHAwAAAAA=="
-call {vg_hmac_sha256_init_scratch_avx2}
-.base64 "SIu8JLgAAAC+QAAAAEiLlCSwAAAASIuMJIgAAABMi4QkuAAAAEmBwMAAAAA="
-call {vg_sha256_update_scratch_avx2}
-.base64 "SIu8JLgAAABIi7QkuAAAAEiDxmBIi5QkiAAAAEiDwkBIi4wkuAAAAEiBwVAEAABMi4QkuAAAAEmBwMAAAAA="
-call {vg_hmac_sha256_finalize_scratch_avx2}
-.base64 "uAAAAABIiYQkyAAAAEiLhCSIAAAASIPAH0jB6AVIiYQk0AAAAA=="
-22:
-.base64 "SIu8JLgAAABIi4QkyAAAAEyLjCSIAAAAugAAAACIlwAEAACIhwEEAAC6bAAAAIiXAgQAALplAAAAiJcDBAAAum4AAACIlwQEAAC6ZwAAAIiXBQQAALp0AAAAiJcGBAAAumgAAACIlwcEAAC6CAAAAIiXCAQAALoAAAAAiJcJBAAASIu8JLgAAABIi7QkuAAAAEiDxmBIi5QkuAAAAEiBwlAEAAC5IAAAAEyLhCS4AAAASYHAwAAAAA=="
-call {vg_hmac_sha256_init_scratch_avx2}
-.base64 "SIu8JLgAAAC+QAAAAEiLlCS4AAAASIHCAAQAALkKAAAATIuEJLgAAABJgcDAAAAA"
-call {vg_sha256_update_scratch_avx2}
-.base64 "SIu8JLgAAABIi7QkuAAAAEiDxmC6SgAAAEiLjCTIAAAASAHJSAHJSAHJSAHJSAHJSAOMJLgAAABIgcFwBAAATIuEJLgAAABJgcDAAAAA"
-call {vg_hmac_sha256_finalize_scratch_avx2}
-.base64 "SIuEJMgAAABIg8ABSImEJMgAAABIg/gI"
-jne 22b
-.base64 "uAAAAABIiYQkyAAAAA=="
-23:
-.base64 "SIu8JLgAAABIi4QkyAAAAEyLjCSIAAAAugAAAACIlwAEAACIhwEEAAC6bQAAAIiXAgQAALplAAAAiJcDBAAAunMAAACIlwQEAAC6cwAAAIiXBQQAALphAAAAiJcGBAAAumcAAACIlwcEAAC6ZQAAAIiXCAQAAEyJykgB0kgB0kgB0oiXCgQAAEjB6giIlwkEAABIi7wkuAAAAEiLtCS4AAAASIPGYEiLlCS4AAAASIHCUAQAALkgAAAATIuEJLgAAABJgcDAAAAA"
-call {vg_hmac_sha256_init_scratch_avx2}
-.base64 "SIu8JLgAAAC+QAAAAEiLlCS4AAAASIHCAAQAALkLAAAATIuEJLgAAABJgcDAAAAA"
-call {vg_sha256_update_scratch_avx2}
-.base64 "SIu8JLgAAABIi7QkuAAAAEiDxmC6SwAAAEiLjCTIAAAASAHJSAHJSAHJSAHJSAHJSAOMJLgAAABIgcFwBQAATIuEJLgAAABJgcDAAAAA"
-call {vg_hmac_sha256_finalize_scratch_avx2}
-.base64 "SIuEJMgAAABIg8ABSImEJMgAAABIO4Qk0AAAAA=="
-jne 23b
-.base64 "TIuMJIgAAABJg+kLQbgAAAAA"
-24:
-.base64 "TQHASYPAAU05yA=="
-jb 24b
-.base64 "SIu0JLgAAABIgcZwBAAAuQAAAABBuwAAAAA="
-25:
-.base64 "D7YEDkgBwEgBwEgBwEgBwEgBwEgBwEgBwEgBwA+2VA4BSAHQTCHATInKSDnCSBnSSTHDSSHTSTHDSIPBAkiB+QABAAA="
-jne 25b
-.base64 "SIt8JHBMi4wkiAAAALkCAAAAugAAAABBugAAAAA="
-26:
-.base64 "D7YED0iD+AFIGcBIidZIg/b/SCHGSCHOSQnySAnCSIPBAUw5yQ=="
-jne 26b
-.base64 "D7YHSIP4AUgZwA+2dwFIg/YCSIP+AUgZ9kgh8Egh0EyJ1kiD/gpIGfZIg/b/SCHwTInOTCnWSIPuAUyJ2kgx8kghwkwx2kmJwkyLnCTAAAAARYnbSYPzAUmD+wFNGdtMic5IKdZMIdpMi0QkeEiLjCS4AAAASIHBcAUAAEmJEEiJ8kiJzrkAAAAA"
-27:
-.base64 "D7YED0QPtgQOTDHATCHQTDHASYnISTnQTRnASYPw/00h2EwhwIgED0iDwQFMOck="
-jne 27b
-.base64 "SIuEJMAAAABIjaQk2AAAAMM="
-.p2align 6"#,
-        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked::vg_rsa_private_checked,
-        vg_sha256_init = sym super::sha256::vg_sha256_init,
-        vg_sha256_update_scratch_avx2 = sym super::sha256::vg_sha256_update_scratch_avx2::vg_sha256_update_scratch_avx2,
-        vg_sha256_finalize_scratch_avx2 = sym super::sha256::vg_sha256_finalize_scratch_avx2::vg_sha256_finalize_scratch_avx2,
-        vg_hmac_sha256_init_scratch_avx2 = sym super::hmac_sha256::vg_hmac_sha256_init_scratch_avx2::vg_hmac_sha256_init_scratch_avx2,
-        vg_hmac_sha256_finalize_scratch_avx2 = sym super::hmac_sha256::vg_hmac_sha256_finalize_scratch_avx2::vg_hmac_sha256_finalize_scratch_avx2,
-    )
-}
-
-/// The CPU features `vg_rsa_pkcs1_decrypt_sha256_avx2_crt_ifma` requires (`Artifact.features`).
-pub const VG_RSA_PKCS1_DECRYPT_SHA256_AVX2_CRT_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::ADX);
-
-/// RSAES-PKCS1-v1_5 decryption with implicit rejection: RSAES-PKCS1-V1_5-DECRYPT (RFC 8017 §7.2.2) as draft-irtf-cfrg-rsa-guidance-10 §7.2 implements it, with the private key `(n, e, d, p, q, dP, dQ, qInv)`. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), computes the encoded message `EM` of the ciphertext `input` (`n_len` bytes, most significant first) with RSADP as `vg_rsa_private_checked` does. If its padding is valid (`0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M`, `PS` at least 8 nonzero bytes), the message is `M`; otherwise it is a message derived from `d` and the ciphertext (the draft's §7.1 PRF keyed with HMAC-SHA-256 of the ciphertext under the SHA-256 digest of `d`), of at most `n_len - 11` bytes, which is the same every time the same key decrypts the same ciphertext. Writes the message at the end of `out` (`n_len` bytes), after zeros, and its length to `*msg_len`, and returns 1. Writes zeros to both and returns 0 if `n` or `e` is not such a number, the ciphertext is not below `n`, `p q ≠ n`, or `qInv ≥ p`; and returns 2 (an internal error) if RSADP's result fails its check against `e`, which is the case for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. An invalid padding is never an error. `d` is used as given, never recomputed. `p`, `dp` and `qinv` are `p_len` bytes, `q` and `dq` are `q_len` bytes, and `d` is `d_len` bytes, all most significant first.
-///
-/// Contract: `VG.Spec.RsaPkcs1Enc.decryptContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the ciphertext, the private key, the validity of the padding, the length of the message or which message is returned.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `msg_len` must be valid for reads and writes of 8 bytes.
-/// * `n` must be valid for reads of `n_len` bytes.
-/// * `e` must be valid for reads of `e_len` bytes.
-/// * `d` must be valid for reads of `d_len` bytes.
-/// * `input` must be valid for reads of `input_len` bytes.
-/// * `p` must be valid for reads of `p_len` bytes.
-/// * `q` must be valid for reads of `q_len` bytes.
-/// * `dp` must be valid for reads of `dp_len` bytes.
-/// * `dq` must be valid for reads of `dq_len` bytes.
-/// * `qinv` must be valid for reads of `qinv_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `n_len` must be in 64..=1024.
-/// * `out_len` and `input_len` must be `n_len`.
-/// * `e_len` and `d_len` must be in 1..=`n_len`.
-/// * `p_len` and `q_len` must be in 1..`n_len`.
-/// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
-/// * `scratch_len` must be at least `16 * n_len + 32`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the return address on the stack or the 3480 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2`, `avx512f`, `avx512ifma`, `avx512vl` and `adx` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_decrypt_sha256_avx2_crt_ifma(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJCj///9IiXwkcEiJVCR4SImMJIAAAABMiYQkiAAAAEyJjCSQAAAASIuEJOAAAABIiYQkmAAAAEiLhCToAAAASImEJKAAAABIi4Qk8AAAAEiJhCSoAAAASIuEJPgAAABIiYQksAAAAEiLhCRYAQAASImEJLgAAABIi4Qk+AAAAEiJBCRIi4QkAAEAAEiJRCQISIuEJAgBAABIiUQkEEiLhCQQAQAASIlEJBhIi4QkGAEAAEiJRCQgSIuEJCABAABIiUQkKEiLhCQoAQAASIlEJDBIi4QkMAEAAEiJRCQ4SIuEJDgBAABIiUQkQEiLhCRAAQAASIlEJEhIi4QkSAEAAEiJRCRQSIuEJFABAABIiUQkWEiLhCRYAQAASIlEJGBIi4QkYAEAAEiJRCRoTInGSInKTInBTYnITIuMJJgAAAA="
-call {vg_rsa_private_checked_ifma}
-.base64 "SImEJMAAAABIi7wkuAAAAEiLjCSIAAAAQboAAAAAuAAAAAA="
-20:
-.base64 "QoiEF3AJAABJg8IBSTnK"
-jne 20b
-.base64 "SIu0JKAAAABIi4wkqAAAAEiLvCS4AAAASAO8JIgAAABIKc9BugAAAAA="
-21:
-.base64 "Qg+2BBZCiIQXcAkAAEmDwgFJOco="
-jne 21b
-.base64 "SIu8JLgAAAA="
-call {vg_sha256_init}
-.base64 "SIu8JLgAAAC+AAAAAEiLlCS4AAAASIHCcAkAAEiLjCSIAAAATIuEJLgAAABJgcDAAAAA"
-call {vg_sha256_update_scratch_avx2}
-.base64 "SIu8JLgAAABIi7QkiAAAAEiLlCS4AAAASIHCEAQAAEiLjCS4AAAASIHBwAAAAA=="
-call {vg_sha256_finalize_scratch_avx2}
-.base64 "SIu8JLgAAABIi7QkuAAAAEiDxmBIi5QkuAAAAEiBwhAEAAC5IAAAAEyLhCS4AAAASYHAwAAAAA=="
-call {vg_hmac_sha256_init_scratch_avx2}
-.base64 "SIu8JLgAAAC+QAAAAEiLlCSwAAAASIuMJIgAAABMi4QkuAAAAEmBwMAAAAA="
-call {vg_sha256_update_scratch_avx2}
-.base64 "SIu8JLgAAABIi7QkuAAAAEiDxmBIi5QkiAAAAEiDwkBIi4wkuAAAAEiBwVAEAABMi4QkuAAAAEmBwMAAAAA="
-call {vg_hmac_sha256_finalize_scratch_avx2}
-.base64 "uAAAAABIiYQkyAAAAEiLhCSIAAAASIPAH0jB6AVIiYQk0AAAAA=="
-22:
-.base64 "SIu8JLgAAABIi4QkyAAAAEyLjCSIAAAAugAAAACIlwAEAACIhwEEAAC6bAAAAIiXAgQAALplAAAAiJcDBAAAum4AAACIlwQEAAC6ZwAAAIiXBQQAALp0AAAAiJcGBAAAumgAAACIlwcEAAC6CAAAAIiXCAQAALoAAAAAiJcJBAAASIu8JLgAAABIi7QkuAAAAEiDxmBIi5QkuAAAAEiBwlAEAAC5IAAAAEyLhCS4AAAASYHAwAAAAA=="
-call {vg_hmac_sha256_init_scratch_avx2}
-.base64 "SIu8JLgAAAC+QAAAAEiLlCS4AAAASIHCAAQAALkKAAAATIuEJLgAAABJgcDAAAAA"
-call {vg_sha256_update_scratch_avx2}
-.base64 "SIu8JLgAAABIi7QkuAAAAEiDxmC6SgAAAEiLjCTIAAAASAHJSAHJSAHJSAHJSAHJSAOMJLgAAABIgcFwBAAATIuEJLgAAABJgcDAAAAA"
-call {vg_hmac_sha256_finalize_scratch_avx2}
-.base64 "SIuEJMgAAABIg8ABSImEJMgAAABIg/gI"
-jne 22b
-.base64 "uAAAAABIiYQkyAAAAA=="
-23:
-.base64 "SIu8JLgAAABIi4QkyAAAAEyLjCSIAAAAugAAAACIlwAEAACIhwEEAAC6bQAAAIiXAgQAALplAAAAiJcDBAAAunMAAACIlwQEAAC6cwAAAIiXBQQAALphAAAAiJcGBAAAumcAAACIlwcEAAC6ZQAAAIiXCAQAAEyJykgB0kgB0kgB0oiXCgQAAEjB6giIlwkEAABIi7wkuAAAAEiLtCS4AAAASIPGYEiLlCS4AAAASIHCUAQAALkgAAAATIuEJLgAAABJgcDAAAAA"
-call {vg_hmac_sha256_init_scratch_avx2}
-.base64 "SIu8JLgAAAC+QAAAAEiLlCS4AAAASIHCAAQAALkLAAAATIuEJLgAAABJgcDAAAAA"
-call {vg_sha256_update_scratch_avx2}
-.base64 "SIu8JLgAAABIi7QkuAAAAEiDxmC6SwAAAEiLjCTIAAAASAHJSAHJSAHJSAHJSAHJSAOMJLgAAABIgcFwBQAATIuEJLgAAABJgcDAAAAA"
-call {vg_hmac_sha256_finalize_scratch_avx2}
-.base64 "SIuEJMgAAABIg8ABSImEJMgAAABIO4Qk0AAAAA=="
-jne 23b
-.base64 "TIuMJIgAAABJg+kLQbgAAAAA"
-24:
-.base64 "TQHASYPAAU05yA=="
-jb 24b
-.base64 "SIu0JLgAAABIgcZwBAAAuQAAAABBuwAAAAA="
-25:
-.base64 "D7YEDkgBwEgBwEgBwEgBwEgBwEgBwEgBwEgBwA+2VA4BSAHQTCHATInKSDnCSBnSSTHDSSHTSTHDSIPBAkiB+QABAAA="
-jne 25b
-.base64 "SIt8JHBMi4wkiAAAALkCAAAAugAAAABBugAAAAA="
-26:
-.base64 "D7YED0iD+AFIGcBIidZIg/b/SCHGSCHOSQnySAnCSIPBAUw5yQ=="
-jne 26b
-.base64 "D7YHSIP4AUgZwA+2dwFIg/YCSIP+AUgZ9kgh8Egh0EyJ1kiD/gpIGfZIg/b/SCHwTInOTCnWSIPuAUyJ2kgx8kghwkwx2kmJwkyLnCTAAAAARYnbSYPzAUmD+wFNGdtMic5IKdZMIdpMi0QkeEiLjCS4AAAASIHBcAUAAEmJEEiJ8kiJzrkAAAAA"
-27:
-.base64 "D7YED0QPtgQOTDHATCHQTDHASYnISTnQTRnASYPw/00h2EwhwIgED0iDwQFMOck="
-jne 27b
-.base64 "SIuEJMAAAABIjaQk2AAAAMM="
-.p2align 6"#,
-        vg_rsa_private_checked_ifma = sym super::rsa::vg_rsa_private_checked_ifma::vg_rsa_private_checked_ifma,
-        vg_sha256_init = sym super::sha256::vg_sha256_init,
-        vg_sha256_update_scratch_avx2 = sym super::sha256::vg_sha256_update_scratch_avx2::vg_sha256_update_scratch_avx2,
-        vg_sha256_finalize_scratch_avx2 = sym super::sha256::vg_sha256_finalize_scratch_avx2::vg_sha256_finalize_scratch_avx2,
-        vg_hmac_sha256_init_scratch_avx2 = sym super::hmac_sha256::vg_hmac_sha256_init_scratch_avx2::vg_hmac_sha256_init_scratch_avx2,
-        vg_hmac_sha256_finalize_scratch_avx2 = sym super::hmac_sha256::vg_hmac_sha256_finalize_scratch_avx2::vg_hmac_sha256_finalize_scratch_avx2,
+        vg_sha256_update_scratch_shani = sym super::sha256::vg_sha256_update_scratch_shani::vg_sha256_update_scratch_shani,
+        vg_sha256_finalize_scratch_shani = sym super::sha256::vg_sha256_finalize_scratch_shani::vg_sha256_finalize_scratch_shani,
+        vg_hmac_sha256_init_scratch_shani = sym super::hmac_sha256::vg_hmac_sha256_init_scratch_shani::vg_hmac_sha256_init_scratch_shani,
+        vg_hmac_sha256_finalize_scratch_shani = sym super::hmac_sha256::vg_hmac_sha256_finalize_scratch_shani::vg_hmac_sha256_finalize_scratch_shani,
     )
 }
 
@@ -823,8 +312,8 @@ jne 27b
     )
 }
 
-/// The CPU features `vg_rsa_pkcs1_decrypt_sha256_shani_crt_ifma` requires (`Artifact.features`).
-pub const VG_RSA_PKCS1_DECRYPT_SHA256_SHANI_CRT_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+/// The CPU features `vg_rsa_pkcs1_decrypt_sha256_avx2_crt_ifma` requires (`Artifact.features`).
+pub const VG_RSA_PKCS1_DECRYPT_SHA256_AVX2_CRT_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::ADX);
 
 /// RSAES-PKCS1-v1_5 decryption with implicit rejection: RSAES-PKCS1-V1_5-DECRYPT (RFC 8017 §7.2.2) as draft-irtf-cfrg-rsa-guidance-10 §7.2 implements it, with the private key `(n, e, d, p, q, dP, dQ, qInv)`. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), computes the encoded message `EM` of the ciphertext `input` (`n_len` bytes, most significant first) with RSADP as `vg_rsa_private_checked` does. If its padding is valid (`0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M`, `PS` at least 8 nonzero bytes), the message is `M`; otherwise it is a message derived from `d` and the ciphertext (the draft's §7.1 PRF keyed with HMAC-SHA-256 of the ciphertext under the SHA-256 digest of `d`), of at most `n_len - 11` bytes, which is the same every time the same key decrypts the same ciphertext. Writes the message at the end of `out` (`n_len` bytes), after zeros, and its length to `*msg_len`, and returns 1. Writes zeros to both and returns 0 if `n` or `e` is not such a number, the ciphertext is not below `n`, `p q ≠ n`, or `qInv ≥ p`; and returns 2 (an internal error) if RSADP's result fails its check against `e`, which is the case for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. An invalid padding is never an error. `d` is used as given, never recomputed. `p`, `dp` and `qinv` are `p_len` bytes, `q` and `dq` are `q_len` bytes, and `d` is `d_len` bytes, all most significant first.
 ///
@@ -853,9 +342,9 @@ pub const VG_RSA_PKCS1_DECRYPT_SHA256_SHANI_CRT_IFMA_FEATURES: verified_garbage_
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the return address on the stack or the 3480 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha`, `ssse3`, `avx`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
+/// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2`, `avx512f`, `avx512ifma`, `avx512vl` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_decrypt_sha256_shani_crt_ifma(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_decrypt_sha256_avx2_crt_ifma(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJCj///9IiXwkcEiJVCR4SImMJIAAAABMiYQkiAAAAEyJjCSQAAAASIuEJOAAAABIiYQkmAAAAEiLhCToAAAASImEJKAAAABIi4Qk8AAAAEiJhCSoAAAASIuEJPgAAABIiYQksAAAAEiLhCRYAQAASImEJLgAAABIi4Qk+AAAAEiJBCRIi4QkAAEAAEiJRCQISIuEJAgBAABIiUQkEEiLhCQQAQAASIlEJBhIi4QkGAEAAEiJRCQgSIuEJCABAABIiUQkKEiLhCQoAQAASIlEJDBIi4QkMAEAAEiJRCQ4SIuEJDgBAABIiUQkQEiLhCRAAQAASIlEJEhIi4QkSAEAAEiJRCRQSIuEJFABAABIiUQkWEiLhCRYAQAASIlEJGBIi4QkYAEAAEiJRCRoTInGSInKTInBTYnITIuMJJgAAAA="
 call {vg_rsa_private_checked_ifma}
@@ -870,33 +359,33 @@ jne 21b
 .base64 "SIu8JLgAAAA="
 call {vg_sha256_init}
 .base64 "SIu8JLgAAAC+AAAAAEiLlCS4AAAASIHCcAkAAEiLjCSIAAAATIuEJLgAAABJgcDAAAAA"
-call {vg_sha256_update_scratch_shani}
+call {vg_sha256_update_scratch_avx2}
 .base64 "SIu8JLgAAABIi7QkiAAAAEiLlCS4AAAASIHCEAQAAEiLjCS4AAAASIHBwAAAAA=="
-call {vg_sha256_finalize_scratch_shani}
+call {vg_sha256_finalize_scratch_avx2}
 .base64 "SIu8JLgAAABIi7QkuAAAAEiDxmBIi5QkuAAAAEiBwhAEAAC5IAAAAEyLhCS4AAAASYHAwAAAAA=="
-call {vg_hmac_sha256_init_scratch_shani}
+call {vg_hmac_sha256_init_scratch_avx2}
 .base64 "SIu8JLgAAAC+QAAAAEiLlCSwAAAASIuMJIgAAABMi4QkuAAAAEmBwMAAAAA="
-call {vg_sha256_update_scratch_shani}
+call {vg_sha256_update_scratch_avx2}
 .base64 "SIu8JLgAAABIi7QkuAAAAEiDxmBIi5QkiAAAAEiDwkBIi4wkuAAAAEiBwVAEAABMi4QkuAAAAEmBwMAAAAA="
-call {vg_hmac_sha256_finalize_scratch_shani}
+call {vg_hmac_sha256_finalize_scratch_avx2}
 .base64 "uAAAAABIiYQkyAAAAEiLhCSIAAAASIPAH0jB6AVIiYQk0AAAAA=="
 22:
 .base64 "SIu8JLgAAABIi4QkyAAAAEyLjCSIAAAAugAAAACIlwAEAACIhwEEAAC6bAAAAIiXAgQAALplAAAAiJcDBAAAum4AAACIlwQEAAC6ZwAAAIiXBQQAALp0AAAAiJcGBAAAumgAAACIlwcEAAC6CAAAAIiXCAQAALoAAAAAiJcJBAAASIu8JLgAAABIi7QkuAAAAEiDxmBIi5QkuAAAAEiBwlAEAAC5IAAAAEyLhCS4AAAASYHAwAAAAA=="
-call {vg_hmac_sha256_init_scratch_shani}
+call {vg_hmac_sha256_init_scratch_avx2}
 .base64 "SIu8JLgAAAC+QAAAAEiLlCS4AAAASIHCAAQAALkKAAAATIuEJLgAAABJgcDAAAAA"
-call {vg_sha256_update_scratch_shani}
+call {vg_sha256_update_scratch_avx2}
 .base64 "SIu8JLgAAABIi7QkuAAAAEiDxmC6SgAAAEiLjCTIAAAASAHJSAHJSAHJSAHJSAHJSAOMJLgAAABIgcFwBAAATIuEJLgAAABJgcDAAAAA"
-call {vg_hmac_sha256_finalize_scratch_shani}
+call {vg_hmac_sha256_finalize_scratch_avx2}
 .base64 "SIuEJMgAAABIg8ABSImEJMgAAABIg/gI"
 jne 22b
 .base64 "uAAAAABIiYQkyAAAAA=="
 23:
 .base64 "SIu8JLgAAABIi4QkyAAAAEyLjCSIAAAAugAAAACIlwAEAACIhwEEAAC6bQAAAIiXAgQAALplAAAAiJcDBAAAunMAAACIlwQEAAC6cwAAAIiXBQQAALphAAAAiJcGBAAAumcAAACIlwcEAAC6ZQAAAIiXCAQAAEyJykgB0kgB0kgB0oiXCgQAAEjB6giIlwkEAABIi7wkuAAAAEiLtCS4AAAASIPGYEiLlCS4AAAASIHCUAQAALkgAAAATIuEJLgAAABJgcDAAAAA"
-call {vg_hmac_sha256_init_scratch_shani}
+call {vg_hmac_sha256_init_scratch_avx2}
 .base64 "SIu8JLgAAAC+QAAAAEiLlCS4AAAASIHCAAQAALkLAAAATIuEJLgAAABJgcDAAAAA"
-call {vg_sha256_update_scratch_shani}
+call {vg_sha256_update_scratch_avx2}
 .base64 "SIu8JLgAAABIi7QkuAAAAEiDxmC6SwAAAEiLjCTIAAAASAHJSAHJSAHJSAHJSAHJSAOMJLgAAABIgcFwBQAATIuEJLgAAABJgcDAAAAA"
-call {vg_hmac_sha256_finalize_scratch_shani}
+call {vg_hmac_sha256_finalize_scratch_avx2}
 .base64 "SIuEJMgAAABIg8ABSImEJMgAAABIO4Qk0AAAAA=="
 jne 23b
 .base64 "TIuMJIgAAABJg+kLQbgAAAAA"
@@ -919,10 +408,611 @@ jne 27b
 .p2align 6"#,
         vg_rsa_private_checked_ifma = sym super::rsa::vg_rsa_private_checked_ifma::vg_rsa_private_checked_ifma,
         vg_sha256_init = sym super::sha256::vg_sha256_init,
-        vg_sha256_update_scratch_shani = sym super::sha256::vg_sha256_update_scratch_shani::vg_sha256_update_scratch_shani,
-        vg_sha256_finalize_scratch_shani = sym super::sha256::vg_sha256_finalize_scratch_shani::vg_sha256_finalize_scratch_shani,
-        vg_hmac_sha256_init_scratch_shani = sym super::hmac_sha256::vg_hmac_sha256_init_scratch_shani::vg_hmac_sha256_init_scratch_shani,
-        vg_hmac_sha256_finalize_scratch_shani = sym super::hmac_sha256::vg_hmac_sha256_finalize_scratch_shani::vg_hmac_sha256_finalize_scratch_shani,
+        vg_sha256_update_scratch_avx2 = sym super::sha256::vg_sha256_update_scratch_avx2::vg_sha256_update_scratch_avx2,
+        vg_sha256_finalize_scratch_avx2 = sym super::sha256::vg_sha256_finalize_scratch_avx2::vg_sha256_finalize_scratch_avx2,
+        vg_hmac_sha256_init_scratch_avx2 = sym super::hmac_sha256::vg_hmac_sha256_init_scratch_avx2::vg_hmac_sha256_init_scratch_avx2,
+        vg_hmac_sha256_finalize_scratch_avx2 = sym super::hmac_sha256::vg_hmac_sha256_finalize_scratch_avx2::vg_hmac_sha256_finalize_scratch_avx2,
+    )
+}
+
+/// The CPU features `vg_rsa_pkcs1_decrypt_sha256_avx2_crt_adx` requires (`Artifact.features`).
+pub const VG_RSA_PKCS1_DECRYPT_SHA256_AVX2_CRT_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// RSAES-PKCS1-v1_5 decryption with implicit rejection: RSAES-PKCS1-V1_5-DECRYPT (RFC 8017 §7.2.2) as draft-irtf-cfrg-rsa-guidance-10 §7.2 implements it, with the private key `(n, e, d, p, q, dP, dQ, qInv)`. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), computes the encoded message `EM` of the ciphertext `input` (`n_len` bytes, most significant first) with RSADP as `vg_rsa_private_checked` does. If its padding is valid (`0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M`, `PS` at least 8 nonzero bytes), the message is `M`; otherwise it is a message derived from `d` and the ciphertext (the draft's §7.1 PRF keyed with HMAC-SHA-256 of the ciphertext under the SHA-256 digest of `d`), of at most `n_len - 11` bytes, which is the same every time the same key decrypts the same ciphertext. Writes the message at the end of `out` (`n_len` bytes), after zeros, and its length to `*msg_len`, and returns 1. Writes zeros to both and returns 0 if `n` or `e` is not such a number, the ciphertext is not below `n`, `p q ≠ n`, or `qInv ≥ p`; and returns 2 (an internal error) if RSADP's result fails its check against `e`, which is the case for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. An invalid padding is never an error. `d` is used as given, never recomputed. `p`, `dp` and `qinv` are `p_len` bytes, `q` and `dq` are `q_len` bytes, and `d` is `d_len` bytes, all most significant first.
+///
+/// Contract: `VG.Spec.RsaPkcs1Enc.decryptContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the ciphertext, the private key, the validity of the padding, the length of the message or which message is returned.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `msg_len` must be valid for reads and writes of 8 bytes.
+/// * `n` must be valid for reads of `n_len` bytes.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `d` must be valid for reads of `d_len` bytes.
+/// * `input` must be valid for reads of `input_len` bytes.
+/// * `p` must be valid for reads of `p_len` bytes.
+/// * `q` must be valid for reads of `q_len` bytes.
+/// * `dp` must be valid for reads of `dp_len` bytes.
+/// * `dq` must be valid for reads of `dq_len` bytes.
+/// * `qinv` must be valid for reads of `qinv_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `n_len` must be in 64..=1024.
+/// * `out_len` and `input_len` must be `n_len`.
+/// * `e_len` and `d_len` must be in 1..=`n_len`.
+/// * `p_len` and `q_len` must be in 1..`n_len`.
+/// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
+/// * `scratch_len` must be at least `16 * n_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the return address on the stack or the 3480 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2` and `adx` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_decrypt_sha256_avx2_crt_adx(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJCj///9IiXwkcEiJVCR4SImMJIAAAABMiYQkiAAAAEyJjCSQAAAASIuEJOAAAABIiYQkmAAAAEiLhCToAAAASImEJKAAAABIi4Qk8AAAAEiJhCSoAAAASIuEJPgAAABIiYQksAAAAEiLhCRYAQAASImEJLgAAABIi4Qk+AAAAEiJBCRIi4QkAAEAAEiJRCQISIuEJAgBAABIiUQkEEiLhCQQAQAASIlEJBhIi4QkGAEAAEiJRCQgSIuEJCABAABIiUQkKEiLhCQoAQAASIlEJDBIi4QkMAEAAEiJRCQ4SIuEJDgBAABIiUQkQEiLhCRAAQAASIlEJEhIi4QkSAEAAEiJRCRQSIuEJFABAABIiUQkWEiLhCRYAQAASIlEJGBIi4QkYAEAAEiJRCRoTInGSInKTInBTYnITIuMJJgAAAA="
+call {vg_rsa_private_checked_adx}
+.base64 "SImEJMAAAABIi7wkuAAAAEiLjCSIAAAAQboAAAAAuAAAAAA="
+20:
+.base64 "QoiEF3AJAABJg8IBSTnK"
+jne 20b
+.base64 "SIu0JKAAAABIi4wkqAAAAEiLvCS4AAAASAO8JIgAAABIKc9BugAAAAA="
+21:
+.base64 "Qg+2BBZCiIQXcAkAAEmDwgFJOco="
+jne 21b
+.base64 "SIu8JLgAAAA="
+call {vg_sha256_init}
+.base64 "SIu8JLgAAAC+AAAAAEiLlCS4AAAASIHCcAkAAEiLjCSIAAAATIuEJLgAAABJgcDAAAAA"
+call {vg_sha256_update_scratch_avx2}
+.base64 "SIu8JLgAAABIi7QkiAAAAEiLlCS4AAAASIHCEAQAAEiLjCS4AAAASIHBwAAAAA=="
+call {vg_sha256_finalize_scratch_avx2}
+.base64 "SIu8JLgAAABIi7QkuAAAAEiDxmBIi5QkuAAAAEiBwhAEAAC5IAAAAEyLhCS4AAAASYHAwAAAAA=="
+call {vg_hmac_sha256_init_scratch_avx2}
+.base64 "SIu8JLgAAAC+QAAAAEiLlCSwAAAASIuMJIgAAABMi4QkuAAAAEmBwMAAAAA="
+call {vg_sha256_update_scratch_avx2}
+.base64 "SIu8JLgAAABIi7QkuAAAAEiDxmBIi5QkiAAAAEiDwkBIi4wkuAAAAEiBwVAEAABMi4QkuAAAAEmBwMAAAAA="
+call {vg_hmac_sha256_finalize_scratch_avx2}
+.base64 "uAAAAABIiYQkyAAAAEiLhCSIAAAASIPAH0jB6AVIiYQk0AAAAA=="
+22:
+.base64 "SIu8JLgAAABIi4QkyAAAAEyLjCSIAAAAugAAAACIlwAEAACIhwEEAAC6bAAAAIiXAgQAALplAAAAiJcDBAAAum4AAACIlwQEAAC6ZwAAAIiXBQQAALp0AAAAiJcGBAAAumgAAACIlwcEAAC6CAAAAIiXCAQAALoAAAAAiJcJBAAASIu8JLgAAABIi7QkuAAAAEiDxmBIi5QkuAAAAEiBwlAEAAC5IAAAAEyLhCS4AAAASYHAwAAAAA=="
+call {vg_hmac_sha256_init_scratch_avx2}
+.base64 "SIu8JLgAAAC+QAAAAEiLlCS4AAAASIHCAAQAALkKAAAATIuEJLgAAABJgcDAAAAA"
+call {vg_sha256_update_scratch_avx2}
+.base64 "SIu8JLgAAABIi7QkuAAAAEiDxmC6SgAAAEiLjCTIAAAASAHJSAHJSAHJSAHJSAHJSAOMJLgAAABIgcFwBAAATIuEJLgAAABJgcDAAAAA"
+call {vg_hmac_sha256_finalize_scratch_avx2}
+.base64 "SIuEJMgAAABIg8ABSImEJMgAAABIg/gI"
+jne 22b
+.base64 "uAAAAABIiYQkyAAAAA=="
+23:
+.base64 "SIu8JLgAAABIi4QkyAAAAEyLjCSIAAAAugAAAACIlwAEAACIhwEEAAC6bQAAAIiXAgQAALplAAAAiJcDBAAAunMAAACIlwQEAAC6cwAAAIiXBQQAALphAAAAiJcGBAAAumcAAACIlwcEAAC6ZQAAAIiXCAQAAEyJykgB0kgB0kgB0oiXCgQAAEjB6giIlwkEAABIi7wkuAAAAEiLtCS4AAAASIPGYEiLlCS4AAAASIHCUAQAALkgAAAATIuEJLgAAABJgcDAAAAA"
+call {vg_hmac_sha256_init_scratch_avx2}
+.base64 "SIu8JLgAAAC+QAAAAEiLlCS4AAAASIHCAAQAALkLAAAATIuEJLgAAABJgcDAAAAA"
+call {vg_sha256_update_scratch_avx2}
+.base64 "SIu8JLgAAABIi7QkuAAAAEiDxmC6SwAAAEiLjCTIAAAASAHJSAHJSAHJSAHJSAHJSAOMJLgAAABIgcFwBQAATIuEJLgAAABJgcDAAAAA"
+call {vg_hmac_sha256_finalize_scratch_avx2}
+.base64 "SIuEJMgAAABIg8ABSImEJMgAAABIO4Qk0AAAAA=="
+jne 23b
+.base64 "TIuMJIgAAABJg+kLQbgAAAAA"
+24:
+.base64 "TQHASYPAAU05yA=="
+jb 24b
+.base64 "SIu0JLgAAABIgcZwBAAAuQAAAABBuwAAAAA="
+25:
+.base64 "D7YEDkgBwEgBwEgBwEgBwEgBwEgBwEgBwEgBwA+2VA4BSAHQTCHATInKSDnCSBnSSTHDSSHTSTHDSIPBAkiB+QABAAA="
+jne 25b
+.base64 "SIt8JHBMi4wkiAAAALkCAAAAugAAAABBugAAAAA="
+26:
+.base64 "D7YED0iD+AFIGcBIidZIg/b/SCHGSCHOSQnySAnCSIPBAUw5yQ=="
+jne 26b
+.base64 "D7YHSIP4AUgZwA+2dwFIg/YCSIP+AUgZ9kgh8Egh0EyJ1kiD/gpIGfZIg/b/SCHwTInOTCnWSIPuAUyJ2kgx8kghwkwx2kmJwkyLnCTAAAAARYnbSYPzAUmD+wFNGdtMic5IKdZMIdpMi0QkeEiLjCS4AAAASIHBcAUAAEmJEEiJ8kiJzrkAAAAA"
+27:
+.base64 "D7YED0QPtgQOTDHATCHQTDHASYnISTnQTRnASYPw/00h2EwhwIgED0iDwQFMOck="
+jne 27b
+.base64 "SIuEJMAAAABIjaQk2AAAAMM="
+.p2align 6"#,
+        vg_rsa_private_checked_adx = sym super::rsa::vg_rsa_private_checked_adx::vg_rsa_private_checked_adx,
+        vg_sha256_init = sym super::sha256::vg_sha256_init,
+        vg_sha256_update_scratch_avx2 = sym super::sha256::vg_sha256_update_scratch_avx2::vg_sha256_update_scratch_avx2,
+        vg_sha256_finalize_scratch_avx2 = sym super::sha256::vg_sha256_finalize_scratch_avx2::vg_sha256_finalize_scratch_avx2,
+        vg_hmac_sha256_init_scratch_avx2 = sym super::hmac_sha256::vg_hmac_sha256_init_scratch_avx2::vg_hmac_sha256_init_scratch_avx2,
+        vg_hmac_sha256_finalize_scratch_avx2 = sym super::hmac_sha256::vg_hmac_sha256_finalize_scratch_avx2::vg_hmac_sha256_finalize_scratch_avx2,
+    )
+}
+
+/// The CPU features `vg_rsa_pkcs1_decrypt_sha256_avx2` requires (`Artifact.features`).
+pub const VG_RSA_PKCS1_DECRYPT_SHA256_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2);
+
+/// RSAES-PKCS1-v1_5 decryption with implicit rejection: RSAES-PKCS1-V1_5-DECRYPT (RFC 8017 §7.2.2) as draft-irtf-cfrg-rsa-guidance-10 §7.2 implements it, with the private key `(n, e, d, p, q, dP, dQ, qInv)`. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), computes the encoded message `EM` of the ciphertext `input` (`n_len` bytes, most significant first) with RSADP as `vg_rsa_private_checked` does. If its padding is valid (`0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M`, `PS` at least 8 nonzero bytes), the message is `M`; otherwise it is a message derived from `d` and the ciphertext (the draft's §7.1 PRF keyed with HMAC-SHA-256 of the ciphertext under the SHA-256 digest of `d`), of at most `n_len - 11` bytes, which is the same every time the same key decrypts the same ciphertext. Writes the message at the end of `out` (`n_len` bytes), after zeros, and its length to `*msg_len`, and returns 1. Writes zeros to both and returns 0 if `n` or `e` is not such a number, the ciphertext is not below `n`, `p q ≠ n`, or `qInv ≥ p`; and returns 2 (an internal error) if RSADP's result fails its check against `e`, which is the case for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. An invalid padding is never an error. `d` is used as given, never recomputed. `p`, `dp` and `qinv` are `p_len` bytes, `q` and `dq` are `q_len` bytes, and `d` is `d_len` bytes, all most significant first.
+///
+/// Contract: `VG.Spec.RsaPkcs1Enc.decryptContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the ciphertext, the private key, the validity of the padding, the length of the message or which message is returned.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `msg_len` must be valid for reads and writes of 8 bytes.
+/// * `n` must be valid for reads of `n_len` bytes.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `d` must be valid for reads of `d_len` bytes.
+/// * `input` must be valid for reads of `input_len` bytes.
+/// * `p` must be valid for reads of `p_len` bytes.
+/// * `q` must be valid for reads of `q_len` bytes.
+/// * `dp` must be valid for reads of `dp_len` bytes.
+/// * `dq` must be valid for reads of `dq_len` bytes.
+/// * `qinv` must be valid for reads of `qinv_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `n_len` must be in 64..=1024.
+/// * `out_len` and `input_len` must be `n_len`.
+/// * `e_len` and `d_len` must be in 1..=`n_len`.
+/// * `p_len` and `q_len` must be in 1..`n_len`.
+/// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
+/// * `scratch_len` must be at least `16 * n_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the return address on the stack or the 3480 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_decrypt_sha256_avx2(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJCj///9IiXwkcEiJVCR4SImMJIAAAABMiYQkiAAAAEyJjCSQAAAASIuEJOAAAABIiYQkmAAAAEiLhCToAAAASImEJKAAAABIi4Qk8AAAAEiJhCSoAAAASIuEJPgAAABIiYQksAAAAEiLhCRYAQAASImEJLgAAABIi4Qk+AAAAEiJBCRIi4QkAAEAAEiJRCQISIuEJAgBAABIiUQkEEiLhCQQAQAASIlEJBhIi4QkGAEAAEiJRCQgSIuEJCABAABIiUQkKEiLhCQoAQAASIlEJDBIi4QkMAEAAEiJRCQ4SIuEJDgBAABIiUQkQEiLhCRAAQAASIlEJEhIi4QkSAEAAEiJRCRQSIuEJFABAABIiUQkWEiLhCRYAQAASIlEJGBIi4QkYAEAAEiJRCRoTInGSInKTInBTYnITIuMJJgAAAA="
+call {vg_rsa_private_checked}
+.base64 "SImEJMAAAABIi7wkuAAAAEiLjCSIAAAAQboAAAAAuAAAAAA="
+20:
+.base64 "QoiEF3AJAABJg8IBSTnK"
+jne 20b
+.base64 "SIu0JKAAAABIi4wkqAAAAEiLvCS4AAAASAO8JIgAAABIKc9BugAAAAA="
+21:
+.base64 "Qg+2BBZCiIQXcAkAAEmDwgFJOco="
+jne 21b
+.base64 "SIu8JLgAAAA="
+call {vg_sha256_init}
+.base64 "SIu8JLgAAAC+AAAAAEiLlCS4AAAASIHCcAkAAEiLjCSIAAAATIuEJLgAAABJgcDAAAAA"
+call {vg_sha256_update_scratch_avx2}
+.base64 "SIu8JLgAAABIi7QkiAAAAEiLlCS4AAAASIHCEAQAAEiLjCS4AAAASIHBwAAAAA=="
+call {vg_sha256_finalize_scratch_avx2}
+.base64 "SIu8JLgAAABIi7QkuAAAAEiDxmBIi5QkuAAAAEiBwhAEAAC5IAAAAEyLhCS4AAAASYHAwAAAAA=="
+call {vg_hmac_sha256_init_scratch_avx2}
+.base64 "SIu8JLgAAAC+QAAAAEiLlCSwAAAASIuMJIgAAABMi4QkuAAAAEmBwMAAAAA="
+call {vg_sha256_update_scratch_avx2}
+.base64 "SIu8JLgAAABIi7QkuAAAAEiDxmBIi5QkiAAAAEiDwkBIi4wkuAAAAEiBwVAEAABMi4QkuAAAAEmBwMAAAAA="
+call {vg_hmac_sha256_finalize_scratch_avx2}
+.base64 "uAAAAABIiYQkyAAAAEiLhCSIAAAASIPAH0jB6AVIiYQk0AAAAA=="
+22:
+.base64 "SIu8JLgAAABIi4QkyAAAAEyLjCSIAAAAugAAAACIlwAEAACIhwEEAAC6bAAAAIiXAgQAALplAAAAiJcDBAAAum4AAACIlwQEAAC6ZwAAAIiXBQQAALp0AAAAiJcGBAAAumgAAACIlwcEAAC6CAAAAIiXCAQAALoAAAAAiJcJBAAASIu8JLgAAABIi7QkuAAAAEiDxmBIi5QkuAAAAEiBwlAEAAC5IAAAAEyLhCS4AAAASYHAwAAAAA=="
+call {vg_hmac_sha256_init_scratch_avx2}
+.base64 "SIu8JLgAAAC+QAAAAEiLlCS4AAAASIHCAAQAALkKAAAATIuEJLgAAABJgcDAAAAA"
+call {vg_sha256_update_scratch_avx2}
+.base64 "SIu8JLgAAABIi7QkuAAAAEiDxmC6SgAAAEiLjCTIAAAASAHJSAHJSAHJSAHJSAHJSAOMJLgAAABIgcFwBAAATIuEJLgAAABJgcDAAAAA"
+call {vg_hmac_sha256_finalize_scratch_avx2}
+.base64 "SIuEJMgAAABIg8ABSImEJMgAAABIg/gI"
+jne 22b
+.base64 "uAAAAABIiYQkyAAAAA=="
+23:
+.base64 "SIu8JLgAAABIi4QkyAAAAEyLjCSIAAAAugAAAACIlwAEAACIhwEEAAC6bQAAAIiXAgQAALplAAAAiJcDBAAAunMAAACIlwQEAAC6cwAAAIiXBQQAALphAAAAiJcGBAAAumcAAACIlwcEAAC6ZQAAAIiXCAQAAEyJykgB0kgB0kgB0oiXCgQAAEjB6giIlwkEAABIi7wkuAAAAEiLtCS4AAAASIPGYEiLlCS4AAAASIHCUAQAALkgAAAATIuEJLgAAABJgcDAAAAA"
+call {vg_hmac_sha256_init_scratch_avx2}
+.base64 "SIu8JLgAAAC+QAAAAEiLlCS4AAAASIHCAAQAALkLAAAATIuEJLgAAABJgcDAAAAA"
+call {vg_sha256_update_scratch_avx2}
+.base64 "SIu8JLgAAABIi7QkuAAAAEiDxmC6SwAAAEiLjCTIAAAASAHJSAHJSAHJSAHJSAHJSAOMJLgAAABIgcFwBQAATIuEJLgAAABJgcDAAAAA"
+call {vg_hmac_sha256_finalize_scratch_avx2}
+.base64 "SIuEJMgAAABIg8ABSImEJMgAAABIO4Qk0AAAAA=="
+jne 23b
+.base64 "TIuMJIgAAABJg+kLQbgAAAAA"
+24:
+.base64 "TQHASYPAAU05yA=="
+jb 24b
+.base64 "SIu0JLgAAABIgcZwBAAAuQAAAABBuwAAAAA="
+25:
+.base64 "D7YEDkgBwEgBwEgBwEgBwEgBwEgBwEgBwEgBwA+2VA4BSAHQTCHATInKSDnCSBnSSTHDSSHTSTHDSIPBAkiB+QABAAA="
+jne 25b
+.base64 "SIt8JHBMi4wkiAAAALkCAAAAugAAAABBugAAAAA="
+26:
+.base64 "D7YED0iD+AFIGcBIidZIg/b/SCHGSCHOSQnySAnCSIPBAUw5yQ=="
+jne 26b
+.base64 "D7YHSIP4AUgZwA+2dwFIg/YCSIP+AUgZ9kgh8Egh0EyJ1kiD/gpIGfZIg/b/SCHwTInOTCnWSIPuAUyJ2kgx8kghwkwx2kmJwkyLnCTAAAAARYnbSYPzAUmD+wFNGdtMic5IKdZMIdpMi0QkeEiLjCS4AAAASIHBcAUAAEmJEEiJ8kiJzrkAAAAA"
+27:
+.base64 "D7YED0QPtgQOTDHATCHQTDHASYnISTnQTRnASYPw/00h2EwhwIgED0iDwQFMOck="
+jne 27b
+.base64 "SIuEJMAAAABIjaQk2AAAAMM="
+.p2align 6"#,
+        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked::vg_rsa_private_checked,
+        vg_sha256_init = sym super::sha256::vg_sha256_init,
+        vg_sha256_update_scratch_avx2 = sym super::sha256::vg_sha256_update_scratch_avx2::vg_sha256_update_scratch_avx2,
+        vg_sha256_finalize_scratch_avx2 = sym super::sha256::vg_sha256_finalize_scratch_avx2::vg_sha256_finalize_scratch_avx2,
+        vg_hmac_sha256_init_scratch_avx2 = sym super::hmac_sha256::vg_hmac_sha256_init_scratch_avx2::vg_hmac_sha256_init_scratch_avx2,
+        vg_hmac_sha256_finalize_scratch_avx2 = sym super::hmac_sha256::vg_hmac_sha256_finalize_scratch_avx2::vg_hmac_sha256_finalize_scratch_avx2,
+    )
+}
+
+/// The CPU features `vg_rsa_pkcs1_decrypt_crt_ifma` requires (`Artifact.features`).
+pub const VG_RSA_PKCS1_DECRYPT_CRT_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// RSAES-PKCS1-v1_5 decryption with implicit rejection: RSAES-PKCS1-V1_5-DECRYPT (RFC 8017 §7.2.2) as draft-irtf-cfrg-rsa-guidance-10 §7.2 implements it, with the private key `(n, e, d, p, q, dP, dQ, qInv)`. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), computes the encoded message `EM` of the ciphertext `input` (`n_len` bytes, most significant first) with RSADP as `vg_rsa_private_checked` does. If its padding is valid (`0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M`, `PS` at least 8 nonzero bytes), the message is `M`; otherwise it is a message derived from `d` and the ciphertext (the draft's §7.1 PRF keyed with HMAC-SHA-256 of the ciphertext under the SHA-256 digest of `d`), of at most `n_len - 11` bytes, which is the same every time the same key decrypts the same ciphertext. Writes the message at the end of `out` (`n_len` bytes), after zeros, and its length to `*msg_len`, and returns 1. Writes zeros to both and returns 0 if `n` or `e` is not such a number, the ciphertext is not below `n`, `p q ≠ n`, or `qInv ≥ p`; and returns 2 (an internal error) if RSADP's result fails its check against `e`, which is the case for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. An invalid padding is never an error. `d` is used as given, never recomputed. `p`, `dp` and `qinv` are `p_len` bytes, `q` and `dq` are `q_len` bytes, and `d` is `d_len` bytes, all most significant first.
+///
+/// Contract: `VG.Spec.RsaPkcs1Enc.decryptContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the ciphertext, the private key, the validity of the padding, the length of the message or which message is returned.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `msg_len` must be valid for reads and writes of 8 bytes.
+/// * `n` must be valid for reads of `n_len` bytes.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `d` must be valid for reads of `d_len` bytes.
+/// * `input` must be valid for reads of `input_len` bytes.
+/// * `p` must be valid for reads of `p_len` bytes.
+/// * `q` must be valid for reads of `q_len` bytes.
+/// * `dp` must be valid for reads of `dp_len` bytes.
+/// * `dq` must be valid for reads of `dq_len` bytes.
+/// * `qinv` must be valid for reads of `qinv_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `n_len` must be in 64..=1024.
+/// * `out_len` and `input_len` must be `n_len`.
+/// * `e_len` and `d_len` must be in 1..=`n_len`.
+/// * `p_len` and `q_len` must be in 1..`n_len`.
+/// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
+/// * `scratch_len` must be at least `16 * n_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the return address on the stack or the 3480 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_decrypt_crt_ifma(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJCj///9IiXwkcEiJVCR4SImMJIAAAABMiYQkiAAAAEyJjCSQAAAASIuEJOAAAABIiYQkmAAAAEiLhCToAAAASImEJKAAAABIi4Qk8AAAAEiJhCSoAAAASIuEJPgAAABIiYQksAAAAEiLhCRYAQAASImEJLgAAABIi4Qk+AAAAEiJBCRIi4QkAAEAAEiJRCQISIuEJAgBAABIiUQkEEiLhCQQAQAASIlEJBhIi4QkGAEAAEiJRCQgSIuEJCABAABIiUQkKEiLhCQoAQAASIlEJDBIi4QkMAEAAEiJRCQ4SIuEJDgBAABIiUQkQEiLhCRAAQAASIlEJEhIi4QkSAEAAEiJRCRQSIuEJFABAABIiUQkWEiLhCRYAQAASIlEJGBIi4QkYAEAAEiJRCRoTInGSInKTInBTYnITIuMJJgAAAA="
+call {vg_rsa_private_checked_ifma}
+.base64 "SImEJMAAAABIi7wkuAAAAEiLjCSIAAAAQboAAAAAuAAAAAA="
+20:
+.base64 "QoiEF3AJAABJg8IBSTnK"
+jne 20b
+.base64 "SIu0JKAAAABIi4wkqAAAAEiLvCS4AAAASAO8JIgAAABIKc9BugAAAAA="
+21:
+.base64 "Qg+2BBZCiIQXcAkAAEmDwgFJOco="
+jne 21b
+.base64 "SIu8JLgAAAA="
+call {vg_sha256_init}
+.base64 "SIu8JLgAAAC+AAAAAEiLlCS4AAAASIHCcAkAAEiLjCSIAAAATIuEJLgAAABJgcDAAAAA"
+call {vg_sha256_update_scratch}
+.base64 "SIu8JLgAAABIi7QkiAAAAEiLlCS4AAAASIHCEAQAAEiLjCS4AAAASIHBwAAAAA=="
+call {vg_sha256_finalize_scratch}
+.base64 "SIu8JLgAAABIi7QkuAAAAEiDxmBIi5QkuAAAAEiBwhAEAAC5IAAAAEyLhCS4AAAASYHAwAAAAA=="
+call {vg_hmac_sha256_init_scratch}
+.base64 "SIu8JLgAAAC+QAAAAEiLlCSwAAAASIuMJIgAAABMi4QkuAAAAEmBwMAAAAA="
+call {vg_sha256_update_scratch}
+.base64 "SIu8JLgAAABIi7QkuAAAAEiDxmBIi5QkiAAAAEiDwkBIi4wkuAAAAEiBwVAEAABMi4QkuAAAAEmBwMAAAAA="
+call {vg_hmac_sha256_finalize_scratch}
+.base64 "uAAAAABIiYQkyAAAAEiLhCSIAAAASIPAH0jB6AVIiYQk0AAAAA=="
+22:
+.base64 "SIu8JLgAAABIi4QkyAAAAEyLjCSIAAAAugAAAACIlwAEAACIhwEEAAC6bAAAAIiXAgQAALplAAAAiJcDBAAAum4AAACIlwQEAAC6ZwAAAIiXBQQAALp0AAAAiJcGBAAAumgAAACIlwcEAAC6CAAAAIiXCAQAALoAAAAAiJcJBAAASIu8JLgAAABIi7QkuAAAAEiDxmBIi5QkuAAAAEiBwlAEAAC5IAAAAEyLhCS4AAAASYHAwAAAAA=="
+call {vg_hmac_sha256_init_scratch}
+.base64 "SIu8JLgAAAC+QAAAAEiLlCS4AAAASIHCAAQAALkKAAAATIuEJLgAAABJgcDAAAAA"
+call {vg_sha256_update_scratch}
+.base64 "SIu8JLgAAABIi7QkuAAAAEiDxmC6SgAAAEiLjCTIAAAASAHJSAHJSAHJSAHJSAHJSAOMJLgAAABIgcFwBAAATIuEJLgAAABJgcDAAAAA"
+call {vg_hmac_sha256_finalize_scratch}
+.base64 "SIuEJMgAAABIg8ABSImEJMgAAABIg/gI"
+jne 22b
+.base64 "uAAAAABIiYQkyAAAAA=="
+23:
+.base64 "SIu8JLgAAABIi4QkyAAAAEyLjCSIAAAAugAAAACIlwAEAACIhwEEAAC6bQAAAIiXAgQAALplAAAAiJcDBAAAunMAAACIlwQEAAC6cwAAAIiXBQQAALphAAAAiJcGBAAAumcAAACIlwcEAAC6ZQAAAIiXCAQAAEyJykgB0kgB0kgB0oiXCgQAAEjB6giIlwkEAABIi7wkuAAAAEiLtCS4AAAASIPGYEiLlCS4AAAASIHCUAQAALkgAAAATIuEJLgAAABJgcDAAAAA"
+call {vg_hmac_sha256_init_scratch}
+.base64 "SIu8JLgAAAC+QAAAAEiLlCS4AAAASIHCAAQAALkLAAAATIuEJLgAAABJgcDAAAAA"
+call {vg_sha256_update_scratch}
+.base64 "SIu8JLgAAABIi7QkuAAAAEiDxmC6SwAAAEiLjCTIAAAASAHJSAHJSAHJSAHJSAHJSAOMJLgAAABIgcFwBQAATIuEJLgAAABJgcDAAAAA"
+call {vg_hmac_sha256_finalize_scratch}
+.base64 "SIuEJMgAAABIg8ABSImEJMgAAABIO4Qk0AAAAA=="
+jne 23b
+.base64 "TIuMJIgAAABJg+kLQbgAAAAA"
+24:
+.base64 "TQHASYPAAU05yA=="
+jb 24b
+.base64 "SIu0JLgAAABIgcZwBAAAuQAAAABBuwAAAAA="
+25:
+.base64 "D7YEDkgBwEgBwEgBwEgBwEgBwEgBwEgBwEgBwA+2VA4BSAHQTCHATInKSDnCSBnSSTHDSSHTSTHDSIPBAkiB+QABAAA="
+jne 25b
+.base64 "SIt8JHBMi4wkiAAAALkCAAAAugAAAABBugAAAAA="
+26:
+.base64 "D7YED0iD+AFIGcBIidZIg/b/SCHGSCHOSQnySAnCSIPBAUw5yQ=="
+jne 26b
+.base64 "D7YHSIP4AUgZwA+2dwFIg/YCSIP+AUgZ9kgh8Egh0EyJ1kiD/gpIGfZIg/b/SCHwTInOTCnWSIPuAUyJ2kgx8kghwkwx2kmJwkyLnCTAAAAARYnbSYPzAUmD+wFNGdtMic5IKdZMIdpMi0QkeEiLjCS4AAAASIHBcAUAAEmJEEiJ8kiJzrkAAAAA"
+27:
+.base64 "D7YED0QPtgQOTDHATCHQTDHASYnISTnQTRnASYPw/00h2EwhwIgED0iDwQFMOck="
+jne 27b
+.base64 "SIuEJMAAAABIjaQk2AAAAMM="
+.p2align 6"#,
+        vg_rsa_private_checked_ifma = sym super::rsa::vg_rsa_private_checked_ifma::vg_rsa_private_checked_ifma,
+        vg_sha256_init = sym super::sha256::vg_sha256_init,
+        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
+        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
+        vg_hmac_sha256_init_scratch = sym super::hmac_sha256::vg_hmac_sha256_init_scratch::vg_hmac_sha256_init_scratch,
+        vg_hmac_sha256_finalize_scratch = sym super::hmac_sha256::vg_hmac_sha256_finalize_scratch::vg_hmac_sha256_finalize_scratch,
+    )
+}
+
+/// The CPU features `vg_rsa_pkcs1_decrypt_crt_adx` requires (`Artifact.features`).
+pub const VG_RSA_PKCS1_DECRYPT_CRT_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// RSAES-PKCS1-v1_5 decryption with implicit rejection: RSAES-PKCS1-V1_5-DECRYPT (RFC 8017 §7.2.2) as draft-irtf-cfrg-rsa-guidance-10 §7.2 implements it, with the private key `(n, e, d, p, q, dP, dQ, qInv)`. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), computes the encoded message `EM` of the ciphertext `input` (`n_len` bytes, most significant first) with RSADP as `vg_rsa_private_checked` does. If its padding is valid (`0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M`, `PS` at least 8 nonzero bytes), the message is `M`; otherwise it is a message derived from `d` and the ciphertext (the draft's §7.1 PRF keyed with HMAC-SHA-256 of the ciphertext under the SHA-256 digest of `d`), of at most `n_len - 11` bytes, which is the same every time the same key decrypts the same ciphertext. Writes the message at the end of `out` (`n_len` bytes), after zeros, and its length to `*msg_len`, and returns 1. Writes zeros to both and returns 0 if `n` or `e` is not such a number, the ciphertext is not below `n`, `p q ≠ n`, or `qInv ≥ p`; and returns 2 (an internal error) if RSADP's result fails its check against `e`, which is the case for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. An invalid padding is never an error. `d` is used as given, never recomputed. `p`, `dp` and `qinv` are `p_len` bytes, `q` and `dq` are `q_len` bytes, and `d` is `d_len` bytes, all most significant first.
+///
+/// Contract: `VG.Spec.RsaPkcs1Enc.decryptContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the ciphertext, the private key, the validity of the padding, the length of the message or which message is returned.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `msg_len` must be valid for reads and writes of 8 bytes.
+/// * `n` must be valid for reads of `n_len` bytes.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `d` must be valid for reads of `d_len` bytes.
+/// * `input` must be valid for reads of `input_len` bytes.
+/// * `p` must be valid for reads of `p_len` bytes.
+/// * `q` must be valid for reads of `q_len` bytes.
+/// * `dp` must be valid for reads of `dp_len` bytes.
+/// * `dq` must be valid for reads of `dq_len` bytes.
+/// * `qinv` must be valid for reads of `qinv_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `n_len` must be in 64..=1024.
+/// * `out_len` and `input_len` must be `n_len`.
+/// * `e_len` and `d_len` must be in 1..=`n_len`.
+/// * `p_len` and `q_len` must be in 1..`n_len`.
+/// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
+/// * `scratch_len` must be at least `16 * n_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the return address on the stack or the 3480 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `bmi2` and `adx` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_decrypt_crt_adx(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJCj///9IiXwkcEiJVCR4SImMJIAAAABMiYQkiAAAAEyJjCSQAAAASIuEJOAAAABIiYQkmAAAAEiLhCToAAAASImEJKAAAABIi4Qk8AAAAEiJhCSoAAAASIuEJPgAAABIiYQksAAAAEiLhCRYAQAASImEJLgAAABIi4Qk+AAAAEiJBCRIi4QkAAEAAEiJRCQISIuEJAgBAABIiUQkEEiLhCQQAQAASIlEJBhIi4QkGAEAAEiJRCQgSIuEJCABAABIiUQkKEiLhCQoAQAASIlEJDBIi4QkMAEAAEiJRCQ4SIuEJDgBAABIiUQkQEiLhCRAAQAASIlEJEhIi4QkSAEAAEiJRCRQSIuEJFABAABIiUQkWEiLhCRYAQAASIlEJGBIi4QkYAEAAEiJRCRoTInGSInKTInBTYnITIuMJJgAAAA="
+call {vg_rsa_private_checked_adx}
+.base64 "SImEJMAAAABIi7wkuAAAAEiLjCSIAAAAQboAAAAAuAAAAAA="
+20:
+.base64 "QoiEF3AJAABJg8IBSTnK"
+jne 20b
+.base64 "SIu0JKAAAABIi4wkqAAAAEiLvCS4AAAASAO8JIgAAABIKc9BugAAAAA="
+21:
+.base64 "Qg+2BBZCiIQXcAkAAEmDwgFJOco="
+jne 21b
+.base64 "SIu8JLgAAAA="
+call {vg_sha256_init}
+.base64 "SIu8JLgAAAC+AAAAAEiLlCS4AAAASIHCcAkAAEiLjCSIAAAATIuEJLgAAABJgcDAAAAA"
+call {vg_sha256_update_scratch}
+.base64 "SIu8JLgAAABIi7QkiAAAAEiLlCS4AAAASIHCEAQAAEiLjCS4AAAASIHBwAAAAA=="
+call {vg_sha256_finalize_scratch}
+.base64 "SIu8JLgAAABIi7QkuAAAAEiDxmBIi5QkuAAAAEiBwhAEAAC5IAAAAEyLhCS4AAAASYHAwAAAAA=="
+call {vg_hmac_sha256_init_scratch}
+.base64 "SIu8JLgAAAC+QAAAAEiLlCSwAAAASIuMJIgAAABMi4QkuAAAAEmBwMAAAAA="
+call {vg_sha256_update_scratch}
+.base64 "SIu8JLgAAABIi7QkuAAAAEiDxmBIi5QkiAAAAEiDwkBIi4wkuAAAAEiBwVAEAABMi4QkuAAAAEmBwMAAAAA="
+call {vg_hmac_sha256_finalize_scratch}
+.base64 "uAAAAABIiYQkyAAAAEiLhCSIAAAASIPAH0jB6AVIiYQk0AAAAA=="
+22:
+.base64 "SIu8JLgAAABIi4QkyAAAAEyLjCSIAAAAugAAAACIlwAEAACIhwEEAAC6bAAAAIiXAgQAALplAAAAiJcDBAAAum4AAACIlwQEAAC6ZwAAAIiXBQQAALp0AAAAiJcGBAAAumgAAACIlwcEAAC6CAAAAIiXCAQAALoAAAAAiJcJBAAASIu8JLgAAABIi7QkuAAAAEiDxmBIi5QkuAAAAEiBwlAEAAC5IAAAAEyLhCS4AAAASYHAwAAAAA=="
+call {vg_hmac_sha256_init_scratch}
+.base64 "SIu8JLgAAAC+QAAAAEiLlCS4AAAASIHCAAQAALkKAAAATIuEJLgAAABJgcDAAAAA"
+call {vg_sha256_update_scratch}
+.base64 "SIu8JLgAAABIi7QkuAAAAEiDxmC6SgAAAEiLjCTIAAAASAHJSAHJSAHJSAHJSAHJSAOMJLgAAABIgcFwBAAATIuEJLgAAABJgcDAAAAA"
+call {vg_hmac_sha256_finalize_scratch}
+.base64 "SIuEJMgAAABIg8ABSImEJMgAAABIg/gI"
+jne 22b
+.base64 "uAAAAABIiYQkyAAAAA=="
+23:
+.base64 "SIu8JLgAAABIi4QkyAAAAEyLjCSIAAAAugAAAACIlwAEAACIhwEEAAC6bQAAAIiXAgQAALplAAAAiJcDBAAAunMAAACIlwQEAAC6cwAAAIiXBQQAALphAAAAiJcGBAAAumcAAACIlwcEAAC6ZQAAAIiXCAQAAEyJykgB0kgB0kgB0oiXCgQAAEjB6giIlwkEAABIi7wkuAAAAEiLtCS4AAAASIPGYEiLlCS4AAAASIHCUAQAALkgAAAATIuEJLgAAABJgcDAAAAA"
+call {vg_hmac_sha256_init_scratch}
+.base64 "SIu8JLgAAAC+QAAAAEiLlCS4AAAASIHCAAQAALkLAAAATIuEJLgAAABJgcDAAAAA"
+call {vg_sha256_update_scratch}
+.base64 "SIu8JLgAAABIi7QkuAAAAEiDxmC6SwAAAEiLjCTIAAAASAHJSAHJSAHJSAHJSAHJSAOMJLgAAABIgcFwBQAATIuEJLgAAABJgcDAAAAA"
+call {vg_hmac_sha256_finalize_scratch}
+.base64 "SIuEJMgAAABIg8ABSImEJMgAAABIO4Qk0AAAAA=="
+jne 23b
+.base64 "TIuMJIgAAABJg+kLQbgAAAAA"
+24:
+.base64 "TQHASYPAAU05yA=="
+jb 24b
+.base64 "SIu0JLgAAABIgcZwBAAAuQAAAABBuwAAAAA="
+25:
+.base64 "D7YEDkgBwEgBwEgBwEgBwEgBwEgBwEgBwEgBwA+2VA4BSAHQTCHATInKSDnCSBnSSTHDSSHTSTHDSIPBAkiB+QABAAA="
+jne 25b
+.base64 "SIt8JHBMi4wkiAAAALkCAAAAugAAAABBugAAAAA="
+26:
+.base64 "D7YED0iD+AFIGcBIidZIg/b/SCHGSCHOSQnySAnCSIPBAUw5yQ=="
+jne 26b
+.base64 "D7YHSIP4AUgZwA+2dwFIg/YCSIP+AUgZ9kgh8Egh0EyJ1kiD/gpIGfZIg/b/SCHwTInOTCnWSIPuAUyJ2kgx8kghwkwx2kmJwkyLnCTAAAAARYnbSYPzAUmD+wFNGdtMic5IKdZMIdpMi0QkeEiLjCS4AAAASIHBcAUAAEmJEEiJ8kiJzrkAAAAA"
+27:
+.base64 "D7YED0QPtgQOTDHATCHQTDHASYnISTnQTRnASYPw/00h2EwhwIgED0iDwQFMOck="
+jne 27b
+.base64 "SIuEJMAAAABIjaQk2AAAAMM="
+.p2align 6"#,
+        vg_rsa_private_checked_adx = sym super::rsa::vg_rsa_private_checked_adx::vg_rsa_private_checked_adx,
+        vg_sha256_init = sym super::sha256::vg_sha256_init,
+        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
+        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
+        vg_hmac_sha256_init_scratch = sym super::hmac_sha256::vg_hmac_sha256_init_scratch::vg_hmac_sha256_init_scratch,
+        vg_hmac_sha256_finalize_scratch = sym super::hmac_sha256::vg_hmac_sha256_finalize_scratch::vg_hmac_sha256_finalize_scratch,
+    )
+}
+
+/// RSAES-PKCS1-v1_5 decryption with implicit rejection: RSAES-PKCS1-V1_5-DECRYPT (RFC 8017 §7.2.2) as draft-irtf-cfrg-rsa-guidance-10 §7.2 implements it, with the private key `(n, e, d, p, q, dP, dQ, qInv)`. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), computes the encoded message `EM` of the ciphertext `input` (`n_len` bytes, most significant first) with RSADP as `vg_rsa_private_checked` does. If its padding is valid (`0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M`, `PS` at least 8 nonzero bytes), the message is `M`; otherwise it is a message derived from `d` and the ciphertext (the draft's §7.1 PRF keyed with HMAC-SHA-256 of the ciphertext under the SHA-256 digest of `d`), of at most `n_len - 11` bytes, which is the same every time the same key decrypts the same ciphertext. Writes the message at the end of `out` (`n_len` bytes), after zeros, and its length to `*msg_len`, and returns 1. Writes zeros to both and returns 0 if `n` or `e` is not such a number, the ciphertext is not below `n`, `p q ≠ n`, or `qInv ≥ p`; and returns 2 (an internal error) if RSADP's result fails its check against `e`, which is the case for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. An invalid padding is never an error. `d` is used as given, never recomputed. `p`, `dp` and `qinv` are `p_len` bytes, `q` and `dq` are `q_len` bytes, and `d` is `d_len` bytes, all most significant first.
+///
+/// Contract: `VG.Spec.RsaPkcs1Enc.decryptContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the ciphertext, the private key, the validity of the padding, the length of the message or which message is returned.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `msg_len` must be valid for reads and writes of 8 bytes.
+/// * `n` must be valid for reads of `n_len` bytes.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `d` must be valid for reads of `d_len` bytes.
+/// * `input` must be valid for reads of `input_len` bytes.
+/// * `p` must be valid for reads of `p_len` bytes.
+/// * `q` must be valid for reads of `q_len` bytes.
+/// * `dp` must be valid for reads of `dp_len` bytes.
+/// * `dq` must be valid for reads of `dq_len` bytes.
+/// * `qinv` must be valid for reads of `qinv_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `n_len` must be in 64..=1024.
+/// * `out_len` and `input_len` must be `n_len`.
+/// * `e_len` and `d_len` must be in 1..=`n_len`.
+/// * `p_len` and `q_len` must be in 1..`n_len`.
+/// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
+/// * `scratch_len` must be at least `16 * n_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the return address on the stack or the 3480 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_decrypt(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJCj///9IiXwkcEiJVCR4SImMJIAAAABMiYQkiAAAAEyJjCSQAAAASIuEJOAAAABIiYQkmAAAAEiLhCToAAAASImEJKAAAABIi4Qk8AAAAEiJhCSoAAAASIuEJPgAAABIiYQksAAAAEiLhCRYAQAASImEJLgAAABIi4Qk+AAAAEiJBCRIi4QkAAEAAEiJRCQISIuEJAgBAABIiUQkEEiLhCQQAQAASIlEJBhIi4QkGAEAAEiJRCQgSIuEJCABAABIiUQkKEiLhCQoAQAASIlEJDBIi4QkMAEAAEiJRCQ4SIuEJDgBAABIiUQkQEiLhCRAAQAASIlEJEhIi4QkSAEAAEiJRCRQSIuEJFABAABIiUQkWEiLhCRYAQAASIlEJGBIi4QkYAEAAEiJRCRoTInGSInKTInBTYnITIuMJJgAAAA="
+call {vg_rsa_private_checked}
+.base64 "SImEJMAAAABIi7wkuAAAAEiLjCSIAAAAQboAAAAAuAAAAAA="
+20:
+.base64 "QoiEF3AJAABJg8IBSTnK"
+jne 20b
+.base64 "SIu0JKAAAABIi4wkqAAAAEiLvCS4AAAASAO8JIgAAABIKc9BugAAAAA="
+21:
+.base64 "Qg+2BBZCiIQXcAkAAEmDwgFJOco="
+jne 21b
+.base64 "SIu8JLgAAAA="
+call {vg_sha256_init}
+.base64 "SIu8JLgAAAC+AAAAAEiLlCS4AAAASIHCcAkAAEiLjCSIAAAATIuEJLgAAABJgcDAAAAA"
+call {vg_sha256_update_scratch}
+.base64 "SIu8JLgAAABIi7QkiAAAAEiLlCS4AAAASIHCEAQAAEiLjCS4AAAASIHBwAAAAA=="
+call {vg_sha256_finalize_scratch}
+.base64 "SIu8JLgAAABIi7QkuAAAAEiDxmBIi5QkuAAAAEiBwhAEAAC5IAAAAEyLhCS4AAAASYHAwAAAAA=="
+call {vg_hmac_sha256_init_scratch}
+.base64 "SIu8JLgAAAC+QAAAAEiLlCSwAAAASIuMJIgAAABMi4QkuAAAAEmBwMAAAAA="
+call {vg_sha256_update_scratch}
+.base64 "SIu8JLgAAABIi7QkuAAAAEiDxmBIi5QkiAAAAEiDwkBIi4wkuAAAAEiBwVAEAABMi4QkuAAAAEmBwMAAAAA="
+call {vg_hmac_sha256_finalize_scratch}
+.base64 "uAAAAABIiYQkyAAAAEiLhCSIAAAASIPAH0jB6AVIiYQk0AAAAA=="
+22:
+.base64 "SIu8JLgAAABIi4QkyAAAAEyLjCSIAAAAugAAAACIlwAEAACIhwEEAAC6bAAAAIiXAgQAALplAAAAiJcDBAAAum4AAACIlwQEAAC6ZwAAAIiXBQQAALp0AAAAiJcGBAAAumgAAACIlwcEAAC6CAAAAIiXCAQAALoAAAAAiJcJBAAASIu8JLgAAABIi7QkuAAAAEiDxmBIi5QkuAAAAEiBwlAEAAC5IAAAAEyLhCS4AAAASYHAwAAAAA=="
+call {vg_hmac_sha256_init_scratch}
+.base64 "SIu8JLgAAAC+QAAAAEiLlCS4AAAASIHCAAQAALkKAAAATIuEJLgAAABJgcDAAAAA"
+call {vg_sha256_update_scratch}
+.base64 "SIu8JLgAAABIi7QkuAAAAEiDxmC6SgAAAEiLjCTIAAAASAHJSAHJSAHJSAHJSAHJSAOMJLgAAABIgcFwBAAATIuEJLgAAABJgcDAAAAA"
+call {vg_hmac_sha256_finalize_scratch}
+.base64 "SIuEJMgAAABIg8ABSImEJMgAAABIg/gI"
+jne 22b
+.base64 "uAAAAABIiYQkyAAAAA=="
+23:
+.base64 "SIu8JLgAAABIi4QkyAAAAEyLjCSIAAAAugAAAACIlwAEAACIhwEEAAC6bQAAAIiXAgQAALplAAAAiJcDBAAAunMAAACIlwQEAAC6cwAAAIiXBQQAALphAAAAiJcGBAAAumcAAACIlwcEAAC6ZQAAAIiXCAQAAEyJykgB0kgB0kgB0oiXCgQAAEjB6giIlwkEAABIi7wkuAAAAEiLtCS4AAAASIPGYEiLlCS4AAAASIHCUAQAALkgAAAATIuEJLgAAABJgcDAAAAA"
+call {vg_hmac_sha256_init_scratch}
+.base64 "SIu8JLgAAAC+QAAAAEiLlCS4AAAASIHCAAQAALkLAAAATIuEJLgAAABJgcDAAAAA"
+call {vg_sha256_update_scratch}
+.base64 "SIu8JLgAAABIi7QkuAAAAEiDxmC6SwAAAEiLjCTIAAAASAHJSAHJSAHJSAHJSAHJSAOMJLgAAABIgcFwBQAATIuEJLgAAABJgcDAAAAA"
+call {vg_hmac_sha256_finalize_scratch}
+.base64 "SIuEJMgAAABIg8ABSImEJMgAAABIO4Qk0AAAAA=="
+jne 23b
+.base64 "TIuMJIgAAABJg+kLQbgAAAAA"
+24:
+.base64 "TQHASYPAAU05yA=="
+jb 24b
+.base64 "SIu0JLgAAABIgcZwBAAAuQAAAABBuwAAAAA="
+25:
+.base64 "D7YEDkgBwEgBwEgBwEgBwEgBwEgBwEgBwEgBwA+2VA4BSAHQTCHATInKSDnCSBnSSTHDSSHTSTHDSIPBAkiB+QABAAA="
+jne 25b
+.base64 "SIt8JHBMi4wkiAAAALkCAAAAugAAAABBugAAAAA="
+26:
+.base64 "D7YED0iD+AFIGcBIidZIg/b/SCHGSCHOSQnySAnCSIPBAUw5yQ=="
+jne 26b
+.base64 "D7YHSIP4AUgZwA+2dwFIg/YCSIP+AUgZ9kgh8Egh0EyJ1kiD/gpIGfZIg/b/SCHwTInOTCnWSIPuAUyJ2kgx8kghwkwx2kmJwkyLnCTAAAAARYnbSYPzAUmD+wFNGdtMic5IKdZMIdpMi0QkeEiLjCS4AAAASIHBcAUAAEmJEEiJ8kiJzrkAAAAA"
+27:
+.base64 "D7YED0QPtgQOTDHATCHQTDHASYnISTnQTRnASYPw/00h2EwhwIgED0iDwQFMOck="
+jne 27b
+.base64 "SIuEJMAAAABIjaQk2AAAAMM="
+.p2align 6"#,
+        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked::vg_rsa_private_checked,
+        vg_sha256_init = sym super::sha256::vg_sha256_init,
+        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
+        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
+        vg_hmac_sha256_init_scratch = sym super::hmac_sha256::vg_hmac_sha256_init_scratch::vg_hmac_sha256_init_scratch,
+        vg_hmac_sha256_finalize_scratch = sym super::hmac_sha256::vg_hmac_sha256_finalize_scratch::vg_hmac_sha256_finalize_scratch,
+    )
+}
+
+/// The CPU features `vg_rsa_pkcs1_encrypt_random_ifma` requires (`Artifact.features`).
+pub const VG_RSA_PKCS1_ENCRYPT_RANDOM_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// RSAES-PKCS1-v1_5 encryption: RSAES-PKCS1-V1_5-ENCRYPT (RFC 8017 §7.2.1), with the padding string drawn from the random tape `rand` (`rand_len` bytes). With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), and `pre`, the `pre_len` words `vg_rsa_public_precompute` wrote for `n`, takes as the padding string `PS` the first `n_len - msg_len - 3` nonzero bytes of `rand`, encrypts the encoded message `0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M`, for the message `M` (`msg_len` bytes), with RSAEP, writes the ciphertext (`n_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 2 if `n` or `e` is not such a number. Writes to `tape[0]` the bytes of `rand` it consumed, up to the last byte of `PS`. If `rand` has fewer nonzero bytes, writes zeros to `out` and: if `rand_len` is the entropy budget, `n_len - msg_len + 125` bytes, returns 3 (which only a broken random number generator makes likely); otherwise consumes none of `rand`, writes to `tape[1]` the length of the next tape, more than `rand_len` and at most the budget, and returns 0: keep `rand`, append fresh random bytes up to that length, and call again. `tape[1]` is 0 but for 0. If `pre` does not hold the values for `n`, what it writes to `out` and returns once it has drawn `PS` is unspecified; memory safety, `tape` and the timing guarantee still apply.
+///
+/// Contract: `VG.Spec.RsaPkcs1Enc.encryptRandomContract`. Constant time but for the public key and the tape's zero bytes: timing may depend on the pointers, the lengths, the contents of `n`, `e` and `pre`, and which bytes of `rand` are zero, not on the message or the other bytes of `rand`.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `tape` must be valid for reads and writes of 16 bytes.
+/// * `n` must be valid for reads of `n_len` bytes.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `msg` must be valid for reads of `msg_len` bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes.
+/// * `n_len` must be in 64..=1024.
+/// * `out_len` must be `n_len`.
+/// * `e_len` must be in 1..=`n_len`.
+/// * `msg_len + 11` must be at most `n_len`.
+/// * `rand_len` must be at most `n_len - msg_len + 125`.
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
+/// * For the result to be encryption's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
+/// * `rand` must hold independent uniform random bytes, fresh for this encryption, extended only as `tape[1]` asks; never reuse them for another encryption.
+/// * `scratch_len` must be at least `8 * ⌈n_len / 8⌉ + 48`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out`, `tape` and `scratch` must not overlap each other, `n`, `e`, `msg`, `rand`, `pre` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `tape`, `n`, `e`, `msg`, `rand`, `scratch` and `pre` may overlap the return address on the stack or the 2288 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_encrypt_random_ifma(out: *mut u8, out_len: usize, tape: *mut [u64; 2], n: *const u8, n_len: usize, e: *const u8, e_len: usize, msg: *const u8, msg_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJHj7//9MicBIK4QkoAQAAEiD6ANIi7QkqAQAAEyLnCSwBAAASIl8JEBIiVQkSEiJTCRQTIlEJFhMiUwkYEiJRCRoSInnSIHHgAAAALkAAAAAugAAAABNhds="
+jne 20f
+jmp 21f
+20:
+22:
+.base64 "D7YEDkiDwQFIhcA="
+jne 23f
+jmp 24f
+23:
+.base64 "iAQXSIPCAQ=="
+24:
+.base64 "SDtUJGg="
+je 25f
+.base64 "TInYSCnI"
+jmp 26f
+25:
+.base64 "uAAAAABIhcA="
+26:
+jne 22b
+21:
+.base64 "SDtUJGg="
+je 27f
+.base64 "SIt8JEBMi1QkWLgAAAAA"
+29:
+.base64 "iAdIg8cBSYPqAQ=="
+jne 29b
+.base64 "SInnSIHHgAAAAEG6AAAAAEiJ0UiF0g=="
+jne 210f
+jmp 211f
+210:
+212:
+.base64 "QogEF0mDwgFJOco="
+jne 212b
+211:
+.base64 "TItUJGhJgcKAAAAATItEJEhNOdM="
+jae 213f
+.base64 "uAAAAABJiQBMi0wkaE0B2Ukp0U05yk0PQspNiUgI"
+jmp 214f
+213:
+.base64 "TYkYuAAAAABJiUAIuAMAAAA="
+214:
+jmp 28f
+27:
+.base64 "SItEJEhIiQhBugAAAABMiVAISIuEJJgEAABIiQQkSIuEJKAEAABIiUQkCEiJfCQQSItEJGhIiUQkGEiLhCS4BAAASIlEJCBIi4QkwAQAAEiJRCQoSIuEJMgEAABIiUQkMEiLhCTQBAAASIlEJDhIi3wkQEiLdCRYSItUJFBIi0wkWEyLRCRgTIuMJJAEAAA="
+call {vg_rsa_pkcs1_encrypt_precomputed_ifma}
+.base64 "QbsCAAAAQSnDSInnSIHHgAAAAEiLTCRoQboAAAAAuAAAAAA="
+215:
+.base64 "QogEF0mDwgFJOco="
+jne 215b
+.base64 "RInY"
+28:
+.base64 "SI2kJIgEAADD"
+.p2align 6"#,
+        vg_rsa_pkcs1_encrypt_precomputed_ifma = sym super::rsa::vg_rsa_pkcs1_encrypt_precomputed_ifma::vg_rsa_pkcs1_encrypt_precomputed_ifma,
     )
 }
 
@@ -1099,95 +1189,5 @@ jne 215b
 .base64 "SI2kJIgEAADD"
 .p2align 6"#,
         vg_rsa_pkcs1_encrypt_precomputed = sym super::rsa::vg_rsa_pkcs1_encrypt_precomputed::vg_rsa_pkcs1_encrypt_precomputed,
-    )
-}
-
-/// The CPU features `vg_rsa_pkcs1_encrypt_random_ifma` requires (`Artifact.features`).
-pub const VG_RSA_PKCS1_ENCRYPT_RANDOM_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
-
-/// RSAES-PKCS1-v1_5 encryption: RSAES-PKCS1-V1_5-ENCRYPT (RFC 8017 §7.2.1), with the padding string drawn from the random tape `rand` (`rand_len` bytes). With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), and `pre`, the `pre_len` words `vg_rsa_public_precompute` wrote for `n`, takes as the padding string `PS` the first `n_len - msg_len - 3` nonzero bytes of `rand`, encrypts the encoded message `0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M`, for the message `M` (`msg_len` bytes), with RSAEP, writes the ciphertext (`n_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 2 if `n` or `e` is not such a number. Writes to `tape[0]` the bytes of `rand` it consumed, up to the last byte of `PS`. If `rand` has fewer nonzero bytes, writes zeros to `out` and: if `rand_len` is the entropy budget, `n_len - msg_len + 125` bytes, returns 3 (which only a broken random number generator makes likely); otherwise consumes none of `rand`, writes to `tape[1]` the length of the next tape, more than `rand_len` and at most the budget, and returns 0: keep `rand`, append fresh random bytes up to that length, and call again. `tape[1]` is 0 but for 0. If `pre` does not hold the values for `n`, what it writes to `out` and returns once it has drawn `PS` is unspecified; memory safety, `tape` and the timing guarantee still apply.
-///
-/// Contract: `VG.Spec.RsaPkcs1Enc.encryptRandomContract`. Constant time but for the public key and the tape's zero bytes: timing may depend on the pointers, the lengths, the contents of `n`, `e` and `pre`, and which bytes of `rand` are zero, not on the message or the other bytes of `rand`.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `tape` must be valid for reads and writes of 16 bytes.
-/// * `n` must be valid for reads of `n_len` bytes.
-/// * `e` must be valid for reads of `e_len` bytes.
-/// * `msg` must be valid for reads of `msg_len` bytes.
-/// * `rand` must be valid for reads of `rand_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `pre` must be valid for reads of `8 * pre_len` bytes.
-/// * `n_len` must be in 64..=1024.
-/// * `out_len` must be `n_len`.
-/// * `e_len` must be in 1..=`n_len`.
-/// * `msg_len + 11` must be at most `n_len`.
-/// * `rand_len` must be at most `n_len - msg_len + 125`.
-/// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
-/// * For the result to be encryption's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
-/// * `rand` must hold independent uniform random bytes, fresh for this encryption, extended only as `tape[1]` asks; never reuse them for another encryption.
-/// * `scratch_len` must be at least `8 * ⌈n_len / 8⌉ + 48`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out`, `tape` and `scratch` must not overlap each other, `n`, `e`, `msg`, `rand`, `pre` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `tape`, `n`, `e`, `msg`, `rand`, `scratch` and `pre` may overlap the return address on the stack or the 2288 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_encrypt_random_ifma(out: *mut u8, out_len: usize, tape: *mut [u64; 2], n: *const u8, n_len: usize, e: *const u8, e_len: usize, msg: *const u8, msg_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJHj7//9MicBIK4QkoAQAAEiD6ANIi7QkqAQAAEyLnCSwBAAASIl8JEBIiVQkSEiJTCRQTIlEJFhMiUwkYEiJRCRoSInnSIHHgAAAALkAAAAAugAAAABNhds="
-jne 20f
-jmp 21f
-20:
-22:
-.base64 "D7YEDkiDwQFIhcA="
-jne 23f
-jmp 24f
-23:
-.base64 "iAQXSIPCAQ=="
-24:
-.base64 "SDtUJGg="
-je 25f
-.base64 "TInYSCnI"
-jmp 26f
-25:
-.base64 "uAAAAABIhcA="
-26:
-jne 22b
-21:
-.base64 "SDtUJGg="
-je 27f
-.base64 "SIt8JEBMi1QkWLgAAAAA"
-29:
-.base64 "iAdIg8cBSYPqAQ=="
-jne 29b
-.base64 "SInnSIHHgAAAAEG6AAAAAEiJ0UiF0g=="
-jne 210f
-jmp 211f
-210:
-212:
-.base64 "QogEF0mDwgFJOco="
-jne 212b
-211:
-.base64 "TItUJGhJgcKAAAAATItEJEhNOdM="
-jae 213f
-.base64 "uAAAAABJiQBMi0wkaE0B2Ukp0U05yk0PQspNiUgI"
-jmp 214f
-213:
-.base64 "TYkYuAAAAABJiUAIuAMAAAA="
-214:
-jmp 28f
-27:
-.base64 "SItEJEhIiQhBugAAAABMiVAISIuEJJgEAABIiQQkSIuEJKAEAABIiUQkCEiJfCQQSItEJGhIiUQkGEiLhCS4BAAASIlEJCBIi4QkwAQAAEiJRCQoSIuEJMgEAABIiUQkMEiLhCTQBAAASIlEJDhIi3wkQEiLdCRYSItUJFBIi0wkWEyLRCRgTIuMJJAEAAA="
-call {vg_rsa_pkcs1_encrypt_precomputed_ifma}
-.base64 "QbsCAAAAQSnDSInnSIHHgAAAAEiLTCRoQboAAAAAuAAAAAA="
-215:
-.base64 "QogEF0mDwgFJOco="
-jne 215b
-.base64 "RInY"
-28:
-.base64 "SI2kJIgEAADD"
-.p2align 6"#,
-        vg_rsa_pkcs1_encrypt_precomputed_ifma = sym super::rsa::vg_rsa_pkcs1_encrypt_precomputed_ifma::vg_rsa_pkcs1_encrypt_precomputed_ifma,
     )
 }

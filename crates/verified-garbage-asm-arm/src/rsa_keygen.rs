@@ -101,274 +101,6 @@ bx lr",
     )
 }
 
-/// Generate an RSA key, as BoringSSL's `RSA_generate_key_ex` (FIPS 186-5 Appendix A.1.3), over the random tape `rand`, from the state `state` that `vg_rsa_generate_init` started: the search for `p`, then for `q` not too close to `p`, each over candidates of `p_len` octets with their top two bits and bottom bit set, rejected by trial division, a common factor of `p − 1` and `e` or Miller–Rabin, up to BoringSSL's limit of rejected candidates; then the key, `d = e⁻¹ mod lcm(p − 1, q − 1)`, `dP`, `dQ` and `qInv`, with `p` the larger prime, checked as BoringSSL's `RSA_check_key` checks it, drawing both primes again if `d` is too small; a generation whose prime's search is exhausted is started again, up to four in all. Returns 1 and writes the key to `key` (`key_len` is `9 p_len`, for the primes' length `p_len = state[1]`): `n` and `d` (`2 p_len` octets each), then `p`, `q`, `dP`, `dQ` and `qInv` (`p_len` each), all most significant first; 2 if the key failed a check; 3 if every generation was exhausted; or 0 if the tape ran out inside a candidate. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose fourth word is, for 0, the length of the next tape, more than the octets of `rand` after the first `used` and at most the entropy budget: keep those octets, in order, and append fresh random octets up to that length. For 0, `key` holds the search's `p` once it is found, which the next call reads: pass it back unchanged. `key` is otherwise zeros but for 1.
-///
-/// Contract: `VG.Spec.RsaKeyGen.keySearchContract`. Timing may depend on the pointers, the lengths, `state`, the status and consumption it returns, and, for each prime's search, its rejected candidates and the octets its accepted candidate's tests read, and each key's status. Not on the primes or the key.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads and writes of `key_len` bytes.
-/// * `used` must be valid for reads and writes of 8 bytes.
-/// * `rand` must be valid for reads of `rand_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `state` must be valid for reads and writes of 56 bytes.
-/// * `state` must come from `vg_rsa_generate_init`, or from the last call of this function, with the same `key`, that returned 0.
-/// * `key_len` must be `9 * state[1]`.
-/// * `rand_len` must be at most the entropy budget, `state[2]`.
-/// * `scratch_len` must be at least `32 * state[1] + 32`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets, and `rand` and `key` hold secrets; the caller must destroy them after use.
-/// * `key`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `key`, `used`, `rand`, `scratch` and `state` may overlap the 256 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_generate(key: *mut u8, key_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 7]) -> u32 {
-    core::arch::naked_asm!(
-        r"push {{r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}}
-ldr r9, [sp, #52]
-mov r4, r0
-mov r6, r2
-mov r7, r3
-ldr r5, [r9, #8]
-mov r8, #0
-mov r11, #4
-ldr r0, [r9, #48]
-ldr r1, [r9, #52]
-eor r1, r1, #50331648
-orr r0, r0, r1
-subs r0, r0, #1
-mov r0, #0
-adc r0, r0, #0
-lsl r1, r5, #3
-add r1, r1, r5, lsl #4
-mul r0, r0, r1
-lsl r10, r5, #6
-sub r10, r10, r0
-mov r0, r4
-lsl lr, r5, #2
-mov r2, #0
-20:
-strb r2, [r0, #0]
-add r0, r0, #1
-subs lr, lr, #1
-bne 20b
-add r0, r4, r5, lsl #2
-add r0, r0, r5
-lsl lr, r5, #2
-mov r2, #0
-21:
-strb r2, [r0, #0]
-add r0, r0, #1
-subs lr, lr, #1
-bne 21b
-22:
-sub sp, sp, #32
-add lr, sp, #0
-mov r12, #8
-str r12, [lr, #0]
-ldr r12, [lr, #72]
-sub r12, r12, #1
-cmp r12, r8
-mov r0, #0
-adc r0, r0, #0
-mul r12, r0, r8
-add r12, r7, r12
-str r12, [lr, #12]
-ldr r12, [lr, #72]
-sub r12, r12, r8
-str r12, [lr, #16]
-ldr r12, [lr, #76]
-str r12, [lr, #20]
-ldr r12, [lr, #80]
-str r12, [lr, #24]
-str r9, [lr, #28]
-add r0, r4, r5, lsl #2
-str r0, [lr, #4]
-ldr r12, [r9, #32]
-mul r12, r12, r5
-str r12, [lr, #8]
-add r0, r0, r12
-mov r1, r5
-mov r2, r6
-add r3, r9, #48
-bl {vg_rsa_prime_search}
-add sp, sp, #32
-ldr r12, [r6, #0]
-add r8, r8, r12
-cmp r0, #0
-beq 23f
-cmp r0, #3
-beq 25f
-cmp r12, #0
-beq 27f
-ldr r12, [r9, #32]
-cmp r12, #0
-beq 29f
-sub sp, sp, #56
-add lr, sp, #0
-mov r0, r4
-lsl r1, r5, #1
-add r2, r0, r1
-mov r3, r1
-add r12, r2, r1
-str r12, [lr, #0]
-str r5, [lr, #4]
-add r12, r12, r5
-str r12, [lr, #8]
-str r5, [lr, #12]
-add r12, r12, r5
-str r12, [lr, #16]
-str r5, [lr, #20]
-add r12, r12, r5
-str r12, [lr, #24]
-str r5, [lr, #28]
-add r12, r12, r5
-str r12, [lr, #32]
-str r5, [lr, #36]
-add r12, r9, #48
-str r12, [lr, #40]
-mov r12, #8
-str r12, [lr, #44]
-ldr r12, [lr, #100]
-str r12, [lr, #48]
-ldr r12, [lr, #104]
-str r12, [lr, #52]
-bl {vg_rsa_keygen_key}
-add sp, sp, #56
-cmp r0, #1
-beq 211f
-cmp r0, #2
-beq 213f
-mov r0, r4
-lsl lr, r5, #3
-add lr, lr, r5
-mov r2, #0
-215:
-strb r2, [r0, #0]
-add r0, r0, #1
-subs lr, lr, #1
-bne 215b
-mov r12, #0
-str r12, [r9, #32]
-str r12, [r9, #36]
-str r12, [r9, #40]
-str r12, [r9, #44]
-mov r11, #2
-b 214f
-213:
-mov r12, #0
-str r10, [r9, #0]
-str r12, [r9, #4]
-str r12, [r9, #36]
-mov r12, #0
-str r12, [r9, #32]
-mov r11, #4
-214:
-b 212f
-211:
-mov r12, #0
-str r12, [r9, #32]
-str r12, [r9, #36]
-str r12, [r9, #40]
-str r12, [r9, #44]
-mov r11, #1
-212:
-b 210f
-29:
-mov r12, #0
-str r10, [r9, #0]
-str r12, [r9, #4]
-str r12, [r9, #36]
-mov r12, #1
-str r12, [r9, #32]
-mov r11, #4
-210:
-b 28f
-27:
-mov r0, r4
-lsl lr, r5, #3
-add lr, lr, r5
-mov r2, #0
-216:
-strb r2, [r0, #0]
-add r0, r0, #1
-subs lr, lr, #1
-bne 216b
-mov r12, #0
-str r12, [r9, #32]
-str r12, [r9, #36]
-str r12, [r9, #40]
-str r12, [r9, #44]
-mov r11, #3
-28:
-b 26f
-25:
-ldr r0, [r9, #40]
-ldr r1, [r9, #44]
-cmp r0, #2
-mov r0, #0
-adc r0, r0, #0
-orr r0, r0, r1
-cmp r0, #0
-beq 217f
-ldr r0, [r9, #40]
-ldr r1, [r9, #44]
-subs r0, r0, #1
-mov r2, #0
-adc r2, r2, #0
-add r1, r1, r2
-sub r1, r1, #1
-str r0, [r9, #40]
-str r1, [r9, #44]
-mov r12, #0
-str r10, [r9, #0]
-str r12, [r9, #4]
-str r12, [r9, #36]
-mov r12, #0
-str r12, [r9, #32]
-mov r11, #4
-b 218f
-217:
-mov r0, r4
-lsl lr, r5, #3
-add lr, lr, r5
-mov r2, #0
-219:
-strb r2, [r0, #0]
-add r0, r0, #1
-subs lr, lr, #1
-bne 219b
-mov r12, #0
-str r12, [r9, #32]
-str r12, [r9, #36]
-str r12, [r9, #40]
-str r12, [r9, #44]
-mov r11, #3
-218:
-26:
-b 24f
-23:
-mov r11, #0
-24:
-cmp r11, #4
-beq 22b
-str r8, [r6, #0]
-mov r0, #0
-str r0, [r6, #4]
-mov r0, r11
-ldr r5, [sp, #4]
-ldr r6, [sp, #8]
-ldr r7, [sp, #12]
-ldr r8, [sp, #16]
-ldr r9, [sp, #20]
-ldr r10, [sp, #24]
-ldr r11, [sp, #28]
-ldr lr, [sp, #36]
-ldr r4, [sp], #40
-bx lr",
-        vg_rsa_prime_search = sym super::rsa::vg_rsa_prime_search::vg_rsa_prime_search,
-        vg_rsa_keygen_key = sym super::rsa_keygen::vg_rsa_keygen_key::vg_rsa_keygen_key,
-    )
-}
-
 /// The CPU features `vg_rsa_generate_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
 pub const VG_RSA_GENERATE_UMAAL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::UMAAL);
@@ -639,6 +371,274 @@ ldr lr, [sp, #36]
 ldr r4, [sp], #40
 bx lr",
         vg_rsa_prime_search_umaal = sym super::rsa::vg_rsa_prime_search_umaal::vg_rsa_prime_search_umaal,
+        vg_rsa_keygen_key = sym super::rsa_keygen::vg_rsa_keygen_key::vg_rsa_keygen_key,
+    )
+}
+
+/// Generate an RSA key, as BoringSSL's `RSA_generate_key_ex` (FIPS 186-5 Appendix A.1.3), over the random tape `rand`, from the state `state` that `vg_rsa_generate_init` started: the search for `p`, then for `q` not too close to `p`, each over candidates of `p_len` octets with their top two bits and bottom bit set, rejected by trial division, a common factor of `p − 1` and `e` or Miller–Rabin, up to BoringSSL's limit of rejected candidates; then the key, `d = e⁻¹ mod lcm(p − 1, q − 1)`, `dP`, `dQ` and `qInv`, with `p` the larger prime, checked as BoringSSL's `RSA_check_key` checks it, drawing both primes again if `d` is too small; a generation whose prime's search is exhausted is started again, up to four in all. Returns 1 and writes the key to `key` (`key_len` is `9 p_len`, for the primes' length `p_len = state[1]`): `n` and `d` (`2 p_len` octets each), then `p`, `q`, `dP`, `dQ` and `qInv` (`p_len` each), all most significant first; 2 if the key failed a check; 3 if every generation was exhausted; or 0 if the tape ran out inside a candidate. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose fourth word is, for 0, the length of the next tape, more than the octets of `rand` after the first `used` and at most the entropy budget: keep those octets, in order, and append fresh random octets up to that length. For 0, `key` holds the search's `p` once it is found, which the next call reads: pass it back unchanged. `key` is otherwise zeros but for 1.
+///
+/// Contract: `VG.Spec.RsaKeyGen.keySearchContract`. Timing may depend on the pointers, the lengths, `state`, the status and consumption it returns, and, for each prime's search, its rejected candidates and the octets its accepted candidate's tests read, and each key's status. Not on the primes or the key.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads and writes of `key_len` bytes.
+/// * `used` must be valid for reads and writes of 8 bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `state` must be valid for reads and writes of 56 bytes.
+/// * `state` must come from `vg_rsa_generate_init`, or from the last call of this function, with the same `key`, that returned 0.
+/// * `key_len` must be `9 * state[1]`.
+/// * `rand_len` must be at most the entropy budget, `state[2]`.
+/// * `scratch_len` must be at least `32 * state[1] + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets, and `rand` and `key` hold secrets; the caller must destroy them after use.
+/// * `key`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `key`, `used`, `rand`, `scratch` and `state` may overlap the 256 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_rsa_generate(key: *mut u8, key_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 7]) -> u32 {
+    core::arch::naked_asm!(
+        r"push {{r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}}
+ldr r9, [sp, #52]
+mov r4, r0
+mov r6, r2
+mov r7, r3
+ldr r5, [r9, #8]
+mov r8, #0
+mov r11, #4
+ldr r0, [r9, #48]
+ldr r1, [r9, #52]
+eor r1, r1, #50331648
+orr r0, r0, r1
+subs r0, r0, #1
+mov r0, #0
+adc r0, r0, #0
+lsl r1, r5, #3
+add r1, r1, r5, lsl #4
+mul r0, r0, r1
+lsl r10, r5, #6
+sub r10, r10, r0
+mov r0, r4
+lsl lr, r5, #2
+mov r2, #0
+20:
+strb r2, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 20b
+add r0, r4, r5, lsl #2
+add r0, r0, r5
+lsl lr, r5, #2
+mov r2, #0
+21:
+strb r2, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 21b
+22:
+sub sp, sp, #32
+add lr, sp, #0
+mov r12, #8
+str r12, [lr, #0]
+ldr r12, [lr, #72]
+sub r12, r12, #1
+cmp r12, r8
+mov r0, #0
+adc r0, r0, #0
+mul r12, r0, r8
+add r12, r7, r12
+str r12, [lr, #12]
+ldr r12, [lr, #72]
+sub r12, r12, r8
+str r12, [lr, #16]
+ldr r12, [lr, #76]
+str r12, [lr, #20]
+ldr r12, [lr, #80]
+str r12, [lr, #24]
+str r9, [lr, #28]
+add r0, r4, r5, lsl #2
+str r0, [lr, #4]
+ldr r12, [r9, #32]
+mul r12, r12, r5
+str r12, [lr, #8]
+add r0, r0, r12
+mov r1, r5
+mov r2, r6
+add r3, r9, #48
+bl {vg_rsa_prime_search}
+add sp, sp, #32
+ldr r12, [r6, #0]
+add r8, r8, r12
+cmp r0, #0
+beq 23f
+cmp r0, #3
+beq 25f
+cmp r12, #0
+beq 27f
+ldr r12, [r9, #32]
+cmp r12, #0
+beq 29f
+sub sp, sp, #56
+add lr, sp, #0
+mov r0, r4
+lsl r1, r5, #1
+add r2, r0, r1
+mov r3, r1
+add r12, r2, r1
+str r12, [lr, #0]
+str r5, [lr, #4]
+add r12, r12, r5
+str r12, [lr, #8]
+str r5, [lr, #12]
+add r12, r12, r5
+str r12, [lr, #16]
+str r5, [lr, #20]
+add r12, r12, r5
+str r12, [lr, #24]
+str r5, [lr, #28]
+add r12, r12, r5
+str r12, [lr, #32]
+str r5, [lr, #36]
+add r12, r9, #48
+str r12, [lr, #40]
+mov r12, #8
+str r12, [lr, #44]
+ldr r12, [lr, #100]
+str r12, [lr, #48]
+ldr r12, [lr, #104]
+str r12, [lr, #52]
+bl {vg_rsa_keygen_key}
+add sp, sp, #56
+cmp r0, #1
+beq 211f
+cmp r0, #2
+beq 213f
+mov r0, r4
+lsl lr, r5, #3
+add lr, lr, r5
+mov r2, #0
+215:
+strb r2, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 215b
+mov r12, #0
+str r12, [r9, #32]
+str r12, [r9, #36]
+str r12, [r9, #40]
+str r12, [r9, #44]
+mov r11, #2
+b 214f
+213:
+mov r12, #0
+str r10, [r9, #0]
+str r12, [r9, #4]
+str r12, [r9, #36]
+mov r12, #0
+str r12, [r9, #32]
+mov r11, #4
+214:
+b 212f
+211:
+mov r12, #0
+str r12, [r9, #32]
+str r12, [r9, #36]
+str r12, [r9, #40]
+str r12, [r9, #44]
+mov r11, #1
+212:
+b 210f
+29:
+mov r12, #0
+str r10, [r9, #0]
+str r12, [r9, #4]
+str r12, [r9, #36]
+mov r12, #1
+str r12, [r9, #32]
+mov r11, #4
+210:
+b 28f
+27:
+mov r0, r4
+lsl lr, r5, #3
+add lr, lr, r5
+mov r2, #0
+216:
+strb r2, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 216b
+mov r12, #0
+str r12, [r9, #32]
+str r12, [r9, #36]
+str r12, [r9, #40]
+str r12, [r9, #44]
+mov r11, #3
+28:
+b 26f
+25:
+ldr r0, [r9, #40]
+ldr r1, [r9, #44]
+cmp r0, #2
+mov r0, #0
+adc r0, r0, #0
+orr r0, r0, r1
+cmp r0, #0
+beq 217f
+ldr r0, [r9, #40]
+ldr r1, [r9, #44]
+subs r0, r0, #1
+mov r2, #0
+adc r2, r2, #0
+add r1, r1, r2
+sub r1, r1, #1
+str r0, [r9, #40]
+str r1, [r9, #44]
+mov r12, #0
+str r10, [r9, #0]
+str r12, [r9, #4]
+str r12, [r9, #36]
+mov r12, #0
+str r12, [r9, #32]
+mov r11, #4
+b 218f
+217:
+mov r0, r4
+lsl lr, r5, #3
+add lr, lr, r5
+mov r2, #0
+219:
+strb r2, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 219b
+mov r12, #0
+str r12, [r9, #32]
+str r12, [r9, #36]
+str r12, [r9, #40]
+str r12, [r9, #44]
+mov r11, #3
+218:
+26:
+b 24f
+23:
+mov r11, #0
+24:
+cmp r11, #4
+beq 22b
+str r8, [r6, #0]
+mov r0, #0
+str r0, [r6, #4]
+mov r0, r11
+ldr r5, [sp, #4]
+ldr r6, [sp, #8]
+ldr r7, [sp, #12]
+ldr r8, [sp, #16]
+ldr r9, [sp, #20]
+ldr r10, [sp, #24]
+ldr r11, [sp, #28]
+ldr lr, [sp, #36]
+ldr r4, [sp], #40
+bx lr",
+        vg_rsa_prime_search = sym super::rsa::vg_rsa_prime_search::vg_rsa_prime_search,
         vg_rsa_keygen_key = sym super::rsa_keygen::vg_rsa_keygen_key::vg_rsa_keygen_key,
     )
 }

@@ -3,127 +3,8 @@
 //! `assembly/ed25519.s`.
 #![allow(dead_code)]
 
-/// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
-///
-/// # Safety
-///
-/// * `pk` must be valid for reads of 32 bytes.
-/// * `message` must be valid for reads of `len` bytes.
-/// * `signature` must be valid for reads of 64 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `scratch` must not overlap `pk`, `message` or `signature` (distinct Rust objects never do).
-/// * None of `pk`, `message`, `signature` and `scratch` may overlap the return address on the stack or the 184 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "V1ZSUUFQUFBQUFBQUFBQUFBQUFBQUEiLvCSAAAAA"
-call {vg_sha512_init}
-.base64 "SIu8JIAAAAC+AAAAAEiLlCSIAAAAuSAAAABMi4QkgAAAAEmBwMAAAAA="
-call {vg_sha512_update_scratch}
-.base64 "SIu8JIAAAAC+IAAAAEiLlCSgAAAAuSAAAABMi4QkgAAAAEmBwMAAAAA="
-call {vg_sha512_update_scratch}
-.base64 "SIu8JIAAAAC+QAAAAEiLlCSYAAAASIuMJJAAAABMi4QkgAAAAEmBwMAAAAA="
-call {vg_sha512_update_scratch}
-.base64 "SIu8JIAAAABIi7QkkAAAAEiDxkBIieJIg8JASIuMJIAAAABIgcHAAAAA"
-call {vg_sha512_finalize_scratch}
-.base64 "SInnSInmSIPGQEiLlCSAAAAA"
-call {vg_ed25519_scalar_reduce}
-.base64 "McBIiUQkIEiJRCQoSIlEJDBIiUQkOEiLvCSgAAAASIu0JIgAAABIieJIi4wkgAAAAA=="
-call {vg_ed25519_verify_equation}
-.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0Fbww=="
-.p2align 6"#,
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
-        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
-        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
-        vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
-        vg_ed25519_verify_equation = sym super::ed25519::vg_ed25519_verify_equation::vg_ed25519_verify_equation,
-    )
-}
-
-/// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 64 bytes.
-/// * `expanded` must be valid for reads of 64 bytes.
-/// * `pk` must be valid for reads of 32 bytes.
-/// * `message` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The 64 bytes at `expanded` must equal the SHA-512 digest (`VG.Spec.Sha512.sha512`) of a 32-byte seed, and the 32 bytes at `pk` the public key derived from that seed by RFC 8032 §5.1.5 (`VG.Spec.Ed25519.publicKey`).
-/// * The seed must originate from a cryptographically secure random generator.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other, `expanded`, `pk` or `message` (distinct Rust objects never do).
-/// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
-    core::arch::naked_asm!(
-        r#".base64 "V1ZSUUFQQVFQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQSIuEJOgAAABIiwhIiYwkgAAAAEiLSAhIiYwkiAAAAEiLSBBIiYwkkAAAAEiLSBhIiYwkmAAAAEiLSCBIiYwkoAAAAEiLSChIiYwkqAAAAEiLSDBIiYwksAAAAEiLSDhIiYwkuAAAAEyLhCSAAAAATIuMJIgAAABMi5QkkAAAAEyLnCSYAAAASYPg+Ei5/////////z9JIctIuQAAAAAAAABASQnLTIkEJEyJTCQITIlUJBBMiVwkGEyLhCSgAAAATIuMJKgAAABMi5QksAAAAEyLnCS4AAAATIlEJCBMiUwkKEyJVCQwTIlcJDhIi7wkyAAAAA=="
-call {vg_sha512_init}
-.base64 "SIu8JMgAAAC+AAAAAEiJ4kiDwiC5IAAAAEyLhCTIAAAASYHAwAAAAA=="
-call {vg_sha512_update_scratch}
-.base64 "SIu8JMgAAAC+IAAAAEiLlCTYAAAASIuMJNAAAABMi4QkyAAAAEmBwMAAAAA="
-call {vg_sha512_update_scratch}
-.base64 "SIu8JMgAAABIi7Qk0AAAAEiDxiBIieJIgcKAAAAASIuMJMgAAABIgcHAAAAA"
-call {vg_sha512_finalize_scratch}
-.base64 "SInnSIPHQEiJ5kiBxoAAAABIi5QkyAAAAA=="
-call {vg_ed25519_scalar_reduce}
-.base64 "SIu8JPAAAABIieZIg8ZASIuUJMgAAAA="
-call {vg_ed25519_scalar_base}
-.base64 "SIu8JMgAAAA="
-call {vg_sha512_init}
-.base64 "SIu8JMgAAAC+AAAAAEiLlCTwAAAAuSAAAABMi4QkyAAAAEmBwMAAAAA="
-call {vg_sha512_update_scratch}
-.base64 "SIu8JMgAAAC+IAAAAEiLlCTgAAAAuSAAAABMi4QkyAAAAEmBwMAAAAA="
-call {vg_sha512_update_scratch}
-.base64 "SIu8JMgAAAC+QAAAAEiLlCTYAAAASIuMJNAAAABMi4QkyAAAAEmBwMAAAAA="
-call {vg_sha512_update_scratch}
-.base64 "SIu8JMgAAABIi7Qk0AAAAEiDxkBIieJIgcKAAAAASIuMJMgAAABIgcHAAAAA"
-call {vg_sha512_finalize_scratch}
-.base64 "SInnSIPHYEiJ5kiBxoAAAABIi5QkyAAAAA=="
-call {vg_ed25519_scalar_reduce}
-.base64 "SIu8JPAAAABIg8cgSInmSIPGQEiJ4kiDwmBIieFIg8EATIuEJMgAAAA="
-call {vg_ed25519_scalar_mul_add}
-.base64 "McBIiQQkSIlEJAhIiUQkEEiJRCQYSIlEJCBIiUQkKEiJRCQwSIlEJDhIiUQkQEiJRCRISIlEJFBIiUQkWEiJRCRgSIlEJGhIiUQkcEiJRCR4SImEJIAAAABIiYQkiAAAAEiJhCSQAAAASImEJJgAAABIiYQkoAAAAEiJhCSoAAAASImEJLAAAABIiYQkuAAAAFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFjD"
-.p2align 6"#,
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
-        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
-        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
-        vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
-        vg_ed25519_scalar_base = sym super::ed25519::vg_ed25519_scalar_base::vg_ed25519_scalar_base,
-        vg_ed25519_scalar_mul_add = sym super::ed25519::vg_ed25519_scalar_mul_add::vg_ed25519_scalar_mul_add,
-    )
-}
-
-/// Ed25519 key-pair derivation (RFC 8032 §5.1.5): for the 32-byte private seed at `seed`, writes its 64-byte SHA-512 digest (§5.1.5, step 1) to `*expanded` and its 32-byte public key to `*out`, including pruning: the digest and public key that `vg_ed25519_sign_expanded` takes. Contract: `VG.Spec.Ed25519.keyPairContract`. Constant time: only pointers may affect timing.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 32 bytes.
-/// * `expanded` must be valid for reads and writes of 64 bytes.
-/// * `seed` must be valid for reads of 32 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The seed must originate from a cryptographically secure random generator.
-/// * The 64 bytes written to `expanded` are secret: the caller must destroy them after use.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out`, `expanded` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
-/// * None of `out`, `expanded`, `seed` and `scratch` may overlap the return address on the stack or the 1632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_key_pair(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
-    core::arch::naked_asm!(
-        r#".base64 "V1ZRSInXSInyviAAAAA="
-call {vg_sha512_digest}
-.base64 "SIt8JBBIi3QkCEiLFCQ="
-call {vg_ed25519_public_key_expanded}
-.base64 "WFhYww=="
-.p2align 6"#,
-        vg_sha512_digest = sym super::sha512::vg_sha512_digest,
-        vg_ed25519_public_key_expanded = sym super::ed25519::vg_ed25519_public_key_expanded::vg_ed25519_public_key_expanded,
-    )
-}
-
-/// The CPU features `vg_ed25519_verify_adx` requires (`Artifact.features`).
-pub const VG_ED25519_VERIFY_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+/// The CPU features `vg_ed25519_verify_shani_ifma` requires (`Artifact.features`).
+pub const VG_ED25519_VERIFY_SHANI_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SHA512 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
 
 /// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
 ///
@@ -136,664 +17,9 @@ pub const VG_ED25519_VERIFY_ADX_FEATURES: verified_garbage_cpu::Features = verif
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `scratch` must not overlap `pk`, `message` or `signature` (distinct Rust objects never do).
 /// * None of `pk`, `message`, `signature` and `scratch` may overlap the return address on the stack or the 184 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `bmi2` and `adx` target features.
+/// * The CPU must support the `avx`, `avx2`, `sha512`, `bmi2`, `adx`, `avx512ifma` and `avx512vl` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_adx(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "V1ZSUUFQUFBQUFBQUFBQUFBQUFBQUEiLvCSAAAAA"
-call {vg_sha512_init}
-.base64 "SIu8JIAAAAC+AAAAAEiLlCSIAAAAuSAAAABMi4QkgAAAAEmBwMAAAAA="
-call {vg_sha512_update_scratch}
-.base64 "SIu8JIAAAAC+IAAAAEiLlCSgAAAAuSAAAABMi4QkgAAAAEmBwMAAAAA="
-call {vg_sha512_update_scratch}
-.base64 "SIu8JIAAAAC+QAAAAEiLlCSYAAAASIuMJJAAAABMi4QkgAAAAEmBwMAAAAA="
-call {vg_sha512_update_scratch}
-.base64 "SIu8JIAAAABIi7QkkAAAAEiDxkBIieJIg8JASIuMJIAAAABIgcHAAAAA"
-call {vg_sha512_finalize_scratch}
-.base64 "SInnSInmSIPGQEiLlCSAAAAA"
-call {vg_ed25519_scalar_reduce}
-.base64 "McBIiUQkIEiJRCQoSIlEJDBIiUQkOEiLvCSgAAAASIu0JIgAAABIieJIi4wkgAAAAA=="
-call {vg_ed25519_verify_equation_adx}
-.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0Fbww=="
-.p2align 6"#,
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
-        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
-        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
-        vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
-        vg_ed25519_verify_equation_adx = sym super::ed25519::vg_ed25519_verify_equation_adx::vg_ed25519_verify_equation_adx,
-    )
-}
-
-/// The CPU features `vg_ed25519_sign_expanded_adx` requires (`Artifact.features`).
-pub const VG_ED25519_SIGN_EXPANDED_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
-
-/// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 64 bytes.
-/// * `expanded` must be valid for reads of 64 bytes.
-/// * `pk` must be valid for reads of 32 bytes.
-/// * `message` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The 64 bytes at `expanded` must equal the SHA-512 digest (`VG.Spec.Sha512.sha512`) of a 32-byte seed, and the 32 bytes at `pk` the public key derived from that seed by RFC 8032 §5.1.5 (`VG.Spec.Ed25519.publicKey`).
-/// * The seed must originate from a cryptographically secure random generator.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other, `expanded`, `pk` or `message` (distinct Rust objects never do).
-/// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `bmi2` and `adx` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded_adx(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
-    core::arch::naked_asm!(
-        r#".base64 "V1ZSUUFQQVFQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQSIuEJOgAAABIiwhIiYwkgAAAAEiLSAhIiYwkiAAAAEiLSBBIiYwkkAAAAEiLSBhIiYwkmAAAAEiLSCBIiYwkoAAAAEiLSChIiYwkqAAAAEiLSDBIiYwksAAAAEiLSDhIiYwkuAAAAEyLhCSAAAAATIuMJIgAAABMi5QkkAAAAEyLnCSYAAAASYPg+Ei5/////////z9JIctIuQAAAAAAAABASQnLTIkEJEyJTCQITIlUJBBMiVwkGEyLhCSgAAAATIuMJKgAAABMi5QksAAAAEyLnCS4AAAATIlEJCBMiUwkKEyJVCQwTIlcJDhIi7wkyAAAAA=="
-call {vg_sha512_init}
-.base64 "SIu8JMgAAAC+AAAAAEiJ4kiDwiC5IAAAAEyLhCTIAAAASYHAwAAAAA=="
-call {vg_sha512_update_scratch}
-.base64 "SIu8JMgAAAC+IAAAAEiLlCTYAAAASIuMJNAAAABMi4QkyAAAAEmBwMAAAAA="
-call {vg_sha512_update_scratch}
-.base64 "SIu8JMgAAABIi7Qk0AAAAEiDxiBIieJIgcKAAAAASIuMJMgAAABIgcHAAAAA"
-call {vg_sha512_finalize_scratch}
-.base64 "SInnSIPHQEiJ5kiBxoAAAABIi5QkyAAAAA=="
-call {vg_ed25519_scalar_reduce}
-.base64 "SIu8JPAAAABIieZIg8ZASIuUJMgAAAA="
-call {vg_ed25519_scalar_base_adx}
-.base64 "SIu8JMgAAAA="
-call {vg_sha512_init}
-.base64 "SIu8JMgAAAC+AAAAAEiLlCTwAAAAuSAAAABMi4QkyAAAAEmBwMAAAAA="
-call {vg_sha512_update_scratch}
-.base64 "SIu8JMgAAAC+IAAAAEiLlCTgAAAAuSAAAABMi4QkyAAAAEmBwMAAAAA="
-call {vg_sha512_update_scratch}
-.base64 "SIu8JMgAAAC+QAAAAEiLlCTYAAAASIuMJNAAAABMi4QkyAAAAEmBwMAAAAA="
-call {vg_sha512_update_scratch}
-.base64 "SIu8JMgAAABIi7Qk0AAAAEiDxkBIieJIgcKAAAAASIuMJMgAAABIgcHAAAAA"
-call {vg_sha512_finalize_scratch}
-.base64 "SInnSIPHYEiJ5kiBxoAAAABIi5QkyAAAAA=="
-call {vg_ed25519_scalar_reduce}
-.base64 "SIu8JPAAAABIg8cgSInmSIPGQEiJ4kiDwmBIieFIg8EATIuEJMgAAAA="
-call {vg_ed25519_scalar_mul_add}
-.base64 "McBIiQQkSIlEJAhIiUQkEEiJRCQYSIlEJCBIiUQkKEiJRCQwSIlEJDhIiUQkQEiJRCRISIlEJFBIiUQkWEiJRCRgSIlEJGhIiUQkcEiJRCR4SImEJIAAAABIiYQkiAAAAEiJhCSQAAAASImEJJgAAABIiYQkoAAAAEiJhCSoAAAASImEJLAAAABIiYQkuAAAAFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFjD"
-.p2align 6"#,
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
-        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
-        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
-        vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
-        vg_ed25519_scalar_base_adx = sym super::ed25519::vg_ed25519_scalar_base_adx::vg_ed25519_scalar_base_adx,
-        vg_ed25519_scalar_mul_add = sym super::ed25519::vg_ed25519_scalar_mul_add::vg_ed25519_scalar_mul_add,
-    )
-}
-
-/// The CPU features `vg_ed25519_key_pair_adx` requires (`Artifact.features`).
-pub const VG_ED25519_KEY_PAIR_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
-
-/// Ed25519 key-pair derivation (RFC 8032 §5.1.5): for the 32-byte private seed at `seed`, writes its 64-byte SHA-512 digest (§5.1.5, step 1) to `*expanded` and its 32-byte public key to `*out`, including pruning: the digest and public key that `vg_ed25519_sign_expanded` takes. Contract: `VG.Spec.Ed25519.keyPairContract`. Constant time: only pointers may affect timing.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 32 bytes.
-/// * `expanded` must be valid for reads and writes of 64 bytes.
-/// * `seed` must be valid for reads of 32 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The seed must originate from a cryptographically secure random generator.
-/// * The 64 bytes written to `expanded` are secret: the caller must destroy them after use.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out`, `expanded` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
-/// * None of `out`, `expanded`, `seed` and `scratch` may overlap the return address on the stack or the 1632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `bmi2` and `adx` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_key_pair_adx(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
-    core::arch::naked_asm!(
-        r#".base64 "V1ZRSInXSInyviAAAAA="
-call {vg_sha512_digest}
-.base64 "SIt8JBBIi3QkCEiLFCQ="
-call {vg_ed25519_public_key_expanded_adx}
-.base64 "WFhYww=="
-.p2align 6"#,
-        vg_sha512_digest = sym super::sha512::vg_sha512_digest,
-        vg_ed25519_public_key_expanded_adx = sym super::ed25519::vg_ed25519_public_key_expanded_adx::vg_ed25519_public_key_expanded_adx,
-    )
-}
-
-/// The CPU features `vg_ed25519_verify_ifma` requires (`Artifact.features`).
-pub const VG_ED25519_VERIFY_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
-
-/// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
-///
-/// # Safety
-///
-/// * `pk` must be valid for reads of 32 bytes.
-/// * `message` must be valid for reads of `len` bytes.
-/// * `signature` must be valid for reads of 64 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `scratch` must not overlap `pk`, `message` or `signature` (distinct Rust objects never do).
-/// * None of `pk`, `message`, `signature` and `scratch` may overlap the return address on the stack or the 184 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `bmi2`, `adx`, `avx512ifma` and `avx512vl` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_ifma(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "V1ZSUUFQUFBQUFBQUFBQUFBQUFBQUEiLvCSAAAAA"
-call {vg_sha512_init}
-.base64 "SIu8JIAAAAC+AAAAAEiLlCSIAAAAuSAAAABMi4QkgAAAAEmBwMAAAAA="
-call {vg_sha512_update_scratch}
-.base64 "SIu8JIAAAAC+IAAAAEiLlCSgAAAAuSAAAABMi4QkgAAAAEmBwMAAAAA="
-call {vg_sha512_update_scratch}
-.base64 "SIu8JIAAAAC+QAAAAEiLlCSYAAAASIuMJJAAAABMi4QkgAAAAEmBwMAAAAA="
-call {vg_sha512_update_scratch}
-.base64 "SIu8JIAAAABIi7QkkAAAAEiDxkBIieJIg8JASIuMJIAAAABIgcHAAAAA"
-call {vg_sha512_finalize_scratch}
-.base64 "SInnSInmSIPGQEiLlCSAAAAA"
-call {vg_ed25519_scalar_reduce}
-.base64 "McBIiUQkIEiJRCQoSIlEJDBIiUQkOEiLvCSgAAAASIu0JIgAAABIieJIi4wkgAAAAA=="
-call {vg_ed25519_verify_equation_ifma}
-.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0Fbww=="
-.p2align 6"#,
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
-        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
-        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
-        vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
-        vg_ed25519_verify_equation_ifma = sym super::ed25519::vg_ed25519_verify_equation_ifma::vg_ed25519_verify_equation_ifma,
-    )
-}
-
-/// The CPU features `vg_ed25519_sign_expanded_ifma` requires (`Artifact.features`).
-pub const VG_ED25519_SIGN_EXPANDED_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
-
-/// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 64 bytes.
-/// * `expanded` must be valid for reads of 64 bytes.
-/// * `pk` must be valid for reads of 32 bytes.
-/// * `message` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The 64 bytes at `expanded` must equal the SHA-512 digest (`VG.Spec.Sha512.sha512`) of a 32-byte seed, and the 32 bytes at `pk` the public key derived from that seed by RFC 8032 §5.1.5 (`VG.Spec.Ed25519.publicKey`).
-/// * The seed must originate from a cryptographically secure random generator.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other, `expanded`, `pk` or `message` (distinct Rust objects never do).
-/// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `bmi2`, `adx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded_ifma(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
-    core::arch::naked_asm!(
-        r#".base64 "V1ZSUUFQQVFQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQSIuEJOgAAABIiwhIiYwkgAAAAEiLSAhIiYwkiAAAAEiLSBBIiYwkkAAAAEiLSBhIiYwkmAAAAEiLSCBIiYwkoAAAAEiLSChIiYwkqAAAAEiLSDBIiYwksAAAAEiLSDhIiYwkuAAAAEyLhCSAAAAATIuMJIgAAABMi5QkkAAAAEyLnCSYAAAASYPg+Ei5/////////z9JIctIuQAAAAAAAABASQnLTIkEJEyJTCQITIlUJBBMiVwkGEyLhCSgAAAATIuMJKgAAABMi5QksAAAAEyLnCS4AAAATIlEJCBMiUwkKEyJVCQwTIlcJDhIi7wkyAAAAA=="
-call {vg_sha512_init}
-.base64 "SIu8JMgAAAC+AAAAAEiJ4kiDwiC5IAAAAEyLhCTIAAAASYHAwAAAAA=="
-call {vg_sha512_update_scratch}
-.base64 "SIu8JMgAAAC+IAAAAEiLlCTYAAAASIuMJNAAAABMi4QkyAAAAEmBwMAAAAA="
-call {vg_sha512_update_scratch}
-.base64 "SIu8JMgAAABIi7Qk0AAAAEiDxiBIieJIgcKAAAAASIuMJMgAAABIgcHAAAAA"
-call {vg_sha512_finalize_scratch}
-.base64 "SInnSIPHQEiJ5kiBxoAAAABIi5QkyAAAAA=="
-call {vg_ed25519_scalar_reduce}
-.base64 "SIu8JPAAAABIieZIg8ZASIuUJMgAAAA="
-call {vg_ed25519_scalar_base_ifma}
-.base64 "SIu8JMgAAAA="
-call {vg_sha512_init}
-.base64 "SIu8JMgAAAC+AAAAAEiLlCTwAAAAuSAAAABMi4QkyAAAAEmBwMAAAAA="
-call {vg_sha512_update_scratch}
-.base64 "SIu8JMgAAAC+IAAAAEiLlCTgAAAAuSAAAABMi4QkyAAAAEmBwMAAAAA="
-call {vg_sha512_update_scratch}
-.base64 "SIu8JMgAAAC+QAAAAEiLlCTYAAAASIuMJNAAAABMi4QkyAAAAEmBwMAAAAA="
-call {vg_sha512_update_scratch}
-.base64 "SIu8JMgAAABIi7Qk0AAAAEiDxkBIieJIgcKAAAAASIuMJMgAAABIgcHAAAAA"
-call {vg_sha512_finalize_scratch}
-.base64 "SInnSIPHYEiJ5kiBxoAAAABIi5QkyAAAAA=="
-call {vg_ed25519_scalar_reduce}
-.base64 "SIu8JPAAAABIg8cgSInmSIPGQEiJ4kiDwmBIieFIg8EATIuEJMgAAAA="
-call {vg_ed25519_scalar_mul_add}
-.base64 "McBIiQQkSIlEJAhIiUQkEEiJRCQYSIlEJCBIiUQkKEiJRCQwSIlEJDhIiUQkQEiJRCRISIlEJFBIiUQkWEiJRCRgSIlEJGhIiUQkcEiJRCR4SImEJIAAAABIiYQkiAAAAEiJhCSQAAAASImEJJgAAABIiYQkoAAAAEiJhCSoAAAASImEJLAAAABIiYQkuAAAAFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFjD"
-.p2align 6"#,
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
-        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
-        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
-        vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
-        vg_ed25519_scalar_base_ifma = sym super::ed25519::vg_ed25519_scalar_base_ifma::vg_ed25519_scalar_base_ifma,
-        vg_ed25519_scalar_mul_add = sym super::ed25519::vg_ed25519_scalar_mul_add::vg_ed25519_scalar_mul_add,
-    )
-}
-
-/// The CPU features `vg_ed25519_key_pair_ifma` requires (`Artifact.features`).
-pub const VG_ED25519_KEY_PAIR_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
-
-/// Ed25519 key-pair derivation (RFC 8032 §5.1.5): for the 32-byte private seed at `seed`, writes its 64-byte SHA-512 digest (§5.1.5, step 1) to `*expanded` and its 32-byte public key to `*out`, including pruning: the digest and public key that `vg_ed25519_sign_expanded` takes. Contract: `VG.Spec.Ed25519.keyPairContract`. Constant time: only pointers may affect timing.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 32 bytes.
-/// * `expanded` must be valid for reads and writes of 64 bytes.
-/// * `seed` must be valid for reads of 32 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The seed must originate from a cryptographically secure random generator.
-/// * The 64 bytes written to `expanded` are secret: the caller must destroy them after use.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out`, `expanded` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
-/// * None of `out`, `expanded`, `seed` and `scratch` may overlap the return address on the stack or the 1632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `bmi2`, `adx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_key_pair_ifma(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
-    core::arch::naked_asm!(
-        r#".base64 "V1ZRSInXSInyviAAAAA="
-call {vg_sha512_digest}
-.base64 "SIt8JBBIi3QkCEiLFCQ="
-call {vg_ed25519_public_key_expanded_ifma}
-.base64 "WFhYww=="
-.p2align 6"#,
-        vg_sha512_digest = sym super::sha512::vg_sha512_digest,
-        vg_ed25519_public_key_expanded_ifma = sym super::ed25519::vg_ed25519_public_key_expanded_ifma::vg_ed25519_public_key_expanded_ifma,
-    )
-}
-
-/// The CPU features `vg_ed25519_verify_avx2` requires (`Artifact.features`).
-pub const VG_ED25519_VERIFY_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2);
-
-/// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
-///
-/// # Safety
-///
-/// * `pk` must be valid for reads of 32 bytes.
-/// * `message` must be valid for reads of `len` bytes.
-/// * `signature` must be valid for reads of 64 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `scratch` must not overlap `pk`, `message` or `signature` (distinct Rust objects never do).
-/// * None of `pk`, `message`, `signature` and `scratch` may overlap the return address on the stack or the 184 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_avx2(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "V1ZSUUFQUFBQUFBQUFBQUFBQUFBQUEiLvCSAAAAA"
-call {vg_sha512_init}
-.base64 "SIu8JIAAAAC+AAAAAEiLlCSIAAAAuSAAAABMi4QkgAAAAEmBwMAAAAA="
-call {vg_sha512_update_scratch_avx2}
-.base64 "SIu8JIAAAAC+IAAAAEiLlCSgAAAAuSAAAABMi4QkgAAAAEmBwMAAAAA="
-call {vg_sha512_update_scratch_avx2}
-.base64 "SIu8JIAAAAC+QAAAAEiLlCSYAAAASIuMJJAAAABMi4QkgAAAAEmBwMAAAAA="
-call {vg_sha512_update_scratch_avx2}
-.base64 "SIu8JIAAAABIi7QkkAAAAEiDxkBIieJIg8JASIuMJIAAAABIgcHAAAAA"
-call {vg_sha512_finalize_scratch_avx2}
-.base64 "SInnSInmSIPGQEiLlCSAAAAA"
-call {vg_ed25519_scalar_reduce}
-.base64 "McBIiUQkIEiJRCQoSIlEJDBIiUQkOEiLvCSgAAAASIu0JIgAAABIieJIi4wkgAAAAA=="
-call {vg_ed25519_verify_equation}
-.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0Fbww=="
-.p2align 6"#,
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
-        vg_sha512_update_scratch_avx2 = sym super::sha512::vg_sha512_update_scratch_avx2::vg_sha512_update_scratch_avx2,
-        vg_sha512_finalize_scratch_avx2 = sym super::sha512::vg_sha512_finalize_scratch_avx2::vg_sha512_finalize_scratch_avx2,
-        vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
-        vg_ed25519_verify_equation = sym super::ed25519::vg_ed25519_verify_equation::vg_ed25519_verify_equation,
-    )
-}
-
-/// The CPU features `vg_ed25519_sign_expanded_avx2` requires (`Artifact.features`).
-pub const VG_ED25519_SIGN_EXPANDED_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2);
-
-/// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 64 bytes.
-/// * `expanded` must be valid for reads of 64 bytes.
-/// * `pk` must be valid for reads of 32 bytes.
-/// * `message` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The 64 bytes at `expanded` must equal the SHA-512 digest (`VG.Spec.Sha512.sha512`) of a 32-byte seed, and the 32 bytes at `pk` the public key derived from that seed by RFC 8032 §5.1.5 (`VG.Spec.Ed25519.publicKey`).
-/// * The seed must originate from a cryptographically secure random generator.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other, `expanded`, `pk` or `message` (distinct Rust objects never do).
-/// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded_avx2(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
-    core::arch::naked_asm!(
-        r#".base64 "V1ZSUUFQQVFQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQSIuEJOgAAABIiwhIiYwkgAAAAEiLSAhIiYwkiAAAAEiLSBBIiYwkkAAAAEiLSBhIiYwkmAAAAEiLSCBIiYwkoAAAAEiLSChIiYwkqAAAAEiLSDBIiYwksAAAAEiLSDhIiYwkuAAAAEyLhCSAAAAATIuMJIgAAABMi5QkkAAAAEyLnCSYAAAASYPg+Ei5/////////z9JIctIuQAAAAAAAABASQnLTIkEJEyJTCQITIlUJBBMiVwkGEyLhCSgAAAATIuMJKgAAABMi5QksAAAAEyLnCS4AAAATIlEJCBMiUwkKEyJVCQwTIlcJDhIi7wkyAAAAA=="
-call {vg_sha512_init}
-.base64 "SIu8JMgAAAC+AAAAAEiJ4kiDwiC5IAAAAEyLhCTIAAAASYHAwAAAAA=="
-call {vg_sha512_update_scratch_avx2}
-.base64 "SIu8JMgAAAC+IAAAAEiLlCTYAAAASIuMJNAAAABMi4QkyAAAAEmBwMAAAAA="
-call {vg_sha512_update_scratch_avx2}
-.base64 "SIu8JMgAAABIi7Qk0AAAAEiDxiBIieJIgcKAAAAASIuMJMgAAABIgcHAAAAA"
-call {vg_sha512_finalize_scratch_avx2}
-.base64 "SInnSIPHQEiJ5kiBxoAAAABIi5QkyAAAAA=="
-call {vg_ed25519_scalar_reduce}
-.base64 "SIu8JPAAAABIieZIg8ZASIuUJMgAAAA="
-call {vg_ed25519_scalar_base}
-.base64 "SIu8JMgAAAA="
-call {vg_sha512_init}
-.base64 "SIu8JMgAAAC+AAAAAEiLlCTwAAAAuSAAAABMi4QkyAAAAEmBwMAAAAA="
-call {vg_sha512_update_scratch_avx2}
-.base64 "SIu8JMgAAAC+IAAAAEiLlCTgAAAAuSAAAABMi4QkyAAAAEmBwMAAAAA="
-call {vg_sha512_update_scratch_avx2}
-.base64 "SIu8JMgAAAC+QAAAAEiLlCTYAAAASIuMJNAAAABMi4QkyAAAAEmBwMAAAAA="
-call {vg_sha512_update_scratch_avx2}
-.base64 "SIu8JMgAAABIi7Qk0AAAAEiDxkBIieJIgcKAAAAASIuMJMgAAABIgcHAAAAA"
-call {vg_sha512_finalize_scratch_avx2}
-.base64 "SInnSIPHYEiJ5kiBxoAAAABIi5QkyAAAAA=="
-call {vg_ed25519_scalar_reduce}
-.base64 "SIu8JPAAAABIg8cgSInmSIPGQEiJ4kiDwmBIieFIg8EATIuEJMgAAAA="
-call {vg_ed25519_scalar_mul_add}
-.base64 "McBIiQQkSIlEJAhIiUQkEEiJRCQYSIlEJCBIiUQkKEiJRCQwSIlEJDhIiUQkQEiJRCRISIlEJFBIiUQkWEiJRCRgSIlEJGhIiUQkcEiJRCR4SImEJIAAAABIiYQkiAAAAEiJhCSQAAAASImEJJgAAABIiYQkoAAAAEiJhCSoAAAASImEJLAAAABIiYQkuAAAAFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFjD"
-.p2align 6"#,
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
-        vg_sha512_update_scratch_avx2 = sym super::sha512::vg_sha512_update_scratch_avx2::vg_sha512_update_scratch_avx2,
-        vg_sha512_finalize_scratch_avx2 = sym super::sha512::vg_sha512_finalize_scratch_avx2::vg_sha512_finalize_scratch_avx2,
-        vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
-        vg_ed25519_scalar_base = sym super::ed25519::vg_ed25519_scalar_base::vg_ed25519_scalar_base,
-        vg_ed25519_scalar_mul_add = sym super::ed25519::vg_ed25519_scalar_mul_add::vg_ed25519_scalar_mul_add,
-    )
-}
-
-/// The CPU features `vg_ed25519_key_pair_avx2` requires (`Artifact.features`).
-pub const VG_ED25519_KEY_PAIR_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2);
-
-/// Ed25519 key-pair derivation (RFC 8032 §5.1.5): for the 32-byte private seed at `seed`, writes its 64-byte SHA-512 digest (§5.1.5, step 1) to `*expanded` and its 32-byte public key to `*out`, including pruning: the digest and public key that `vg_ed25519_sign_expanded` takes. Contract: `VG.Spec.Ed25519.keyPairContract`. Constant time: only pointers may affect timing.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 32 bytes.
-/// * `expanded` must be valid for reads and writes of 64 bytes.
-/// * `seed` must be valid for reads of 32 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The seed must originate from a cryptographically secure random generator.
-/// * The 64 bytes written to `expanded` are secret: the caller must destroy them after use.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out`, `expanded` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
-/// * None of `out`, `expanded`, `seed` and `scratch` may overlap the return address on the stack or the 1632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_key_pair_avx2(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
-    core::arch::naked_asm!(
-        r#".base64 "V1ZRSInXSInyviAAAAA="
-call {vg_sha512_digest_avx2}
-.base64 "SIt8JBBIi3QkCEiLFCQ="
-call {vg_ed25519_public_key_expanded}
-.base64 "WFhYww=="
-.p2align 6"#,
-        vg_sha512_digest_avx2 = sym super::sha512::vg_sha512_digest_avx2,
-        vg_ed25519_public_key_expanded = sym super::ed25519::vg_ed25519_public_key_expanded::vg_ed25519_public_key_expanded,
-    )
-}
-
-/// The CPU features `vg_ed25519_verify_avx2_adx` requires (`Artifact.features`).
-pub const VG_ED25519_VERIFY_AVX2_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
-
-/// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
-///
-/// # Safety
-///
-/// * `pk` must be valid for reads of 32 bytes.
-/// * `message` must be valid for reads of `len` bytes.
-/// * `signature` must be valid for reads of 64 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `scratch` must not overlap `pk`, `message` or `signature` (distinct Rust objects never do).
-/// * None of `pk`, `message`, `signature` and `scratch` may overlap the return address on the stack or the 184 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2` and `adx` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_avx2_adx(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "V1ZSUUFQUFBQUFBQUFBQUFBQUFBQUEiLvCSAAAAA"
-call {vg_sha512_init}
-.base64 "SIu8JIAAAAC+AAAAAEiLlCSIAAAAuSAAAABMi4QkgAAAAEmBwMAAAAA="
-call {vg_sha512_update_scratch_avx2}
-.base64 "SIu8JIAAAAC+IAAAAEiLlCSgAAAAuSAAAABMi4QkgAAAAEmBwMAAAAA="
-call {vg_sha512_update_scratch_avx2}
-.base64 "SIu8JIAAAAC+QAAAAEiLlCSYAAAASIuMJJAAAABMi4QkgAAAAEmBwMAAAAA="
-call {vg_sha512_update_scratch_avx2}
-.base64 "SIu8JIAAAABIi7QkkAAAAEiDxkBIieJIg8JASIuMJIAAAABIgcHAAAAA"
-call {vg_sha512_finalize_scratch_avx2}
-.base64 "SInnSInmSIPGQEiLlCSAAAAA"
-call {vg_ed25519_scalar_reduce}
-.base64 "McBIiUQkIEiJRCQoSIlEJDBIiUQkOEiLvCSgAAAASIu0JIgAAABIieJIi4wkgAAAAA=="
-call {vg_ed25519_verify_equation_adx}
-.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0Fbww=="
-.p2align 6"#,
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
-        vg_sha512_update_scratch_avx2 = sym super::sha512::vg_sha512_update_scratch_avx2::vg_sha512_update_scratch_avx2,
-        vg_sha512_finalize_scratch_avx2 = sym super::sha512::vg_sha512_finalize_scratch_avx2::vg_sha512_finalize_scratch_avx2,
-        vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
-        vg_ed25519_verify_equation_adx = sym super::ed25519::vg_ed25519_verify_equation_adx::vg_ed25519_verify_equation_adx,
-    )
-}
-
-/// The CPU features `vg_ed25519_sign_expanded_avx2_adx` requires (`Artifact.features`).
-pub const VG_ED25519_SIGN_EXPANDED_AVX2_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
-
-/// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 64 bytes.
-/// * `expanded` must be valid for reads of 64 bytes.
-/// * `pk` must be valid for reads of 32 bytes.
-/// * `message` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The 64 bytes at `expanded` must equal the SHA-512 digest (`VG.Spec.Sha512.sha512`) of a 32-byte seed, and the 32 bytes at `pk` the public key derived from that seed by RFC 8032 §5.1.5 (`VG.Spec.Ed25519.publicKey`).
-/// * The seed must originate from a cryptographically secure random generator.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other, `expanded`, `pk` or `message` (distinct Rust objects never do).
-/// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2` and `adx` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded_avx2_adx(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
-    core::arch::naked_asm!(
-        r#".base64 "V1ZSUUFQQVFQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQSIuEJOgAAABIiwhIiYwkgAAAAEiLSAhIiYwkiAAAAEiLSBBIiYwkkAAAAEiLSBhIiYwkmAAAAEiLSCBIiYwkoAAAAEiLSChIiYwkqAAAAEiLSDBIiYwksAAAAEiLSDhIiYwkuAAAAEyLhCSAAAAATIuMJIgAAABMi5QkkAAAAEyLnCSYAAAASYPg+Ei5/////////z9JIctIuQAAAAAAAABASQnLTIkEJEyJTCQITIlUJBBMiVwkGEyLhCSgAAAATIuMJKgAAABMi5QksAAAAEyLnCS4AAAATIlEJCBMiUwkKEyJVCQwTIlcJDhIi7wkyAAAAA=="
-call {vg_sha512_init}
-.base64 "SIu8JMgAAAC+AAAAAEiJ4kiDwiC5IAAAAEyLhCTIAAAASYHAwAAAAA=="
-call {vg_sha512_update_scratch_avx2}
-.base64 "SIu8JMgAAAC+IAAAAEiLlCTYAAAASIuMJNAAAABMi4QkyAAAAEmBwMAAAAA="
-call {vg_sha512_update_scratch_avx2}
-.base64 "SIu8JMgAAABIi7Qk0AAAAEiDxiBIieJIgcKAAAAASIuMJMgAAABIgcHAAAAA"
-call {vg_sha512_finalize_scratch_avx2}
-.base64 "SInnSIPHQEiJ5kiBxoAAAABIi5QkyAAAAA=="
-call {vg_ed25519_scalar_reduce}
-.base64 "SIu8JPAAAABIieZIg8ZASIuUJMgAAAA="
-call {vg_ed25519_scalar_base_adx}
-.base64 "SIu8JMgAAAA="
-call {vg_sha512_init}
-.base64 "SIu8JMgAAAC+AAAAAEiLlCTwAAAAuSAAAABMi4QkyAAAAEmBwMAAAAA="
-call {vg_sha512_update_scratch_avx2}
-.base64 "SIu8JMgAAAC+IAAAAEiLlCTgAAAAuSAAAABMi4QkyAAAAEmBwMAAAAA="
-call {vg_sha512_update_scratch_avx2}
-.base64 "SIu8JMgAAAC+QAAAAEiLlCTYAAAASIuMJNAAAABMi4QkyAAAAEmBwMAAAAA="
-call {vg_sha512_update_scratch_avx2}
-.base64 "SIu8JMgAAABIi7Qk0AAAAEiDxkBIieJIgcKAAAAASIuMJMgAAABIgcHAAAAA"
-call {vg_sha512_finalize_scratch_avx2}
-.base64 "SInnSIPHYEiJ5kiBxoAAAABIi5QkyAAAAA=="
-call {vg_ed25519_scalar_reduce}
-.base64 "SIu8JPAAAABIg8cgSInmSIPGQEiJ4kiDwmBIieFIg8EATIuEJMgAAAA="
-call {vg_ed25519_scalar_mul_add}
-.base64 "McBIiQQkSIlEJAhIiUQkEEiJRCQYSIlEJCBIiUQkKEiJRCQwSIlEJDhIiUQkQEiJRCRISIlEJFBIiUQkWEiJRCRgSIlEJGhIiUQkcEiJRCR4SImEJIAAAABIiYQkiAAAAEiJhCSQAAAASImEJJgAAABIiYQkoAAAAEiJhCSoAAAASImEJLAAAABIiYQkuAAAAFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFjD"
-.p2align 6"#,
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
-        vg_sha512_update_scratch_avx2 = sym super::sha512::vg_sha512_update_scratch_avx2::vg_sha512_update_scratch_avx2,
-        vg_sha512_finalize_scratch_avx2 = sym super::sha512::vg_sha512_finalize_scratch_avx2::vg_sha512_finalize_scratch_avx2,
-        vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
-        vg_ed25519_scalar_base_adx = sym super::ed25519::vg_ed25519_scalar_base_adx::vg_ed25519_scalar_base_adx,
-        vg_ed25519_scalar_mul_add = sym super::ed25519::vg_ed25519_scalar_mul_add::vg_ed25519_scalar_mul_add,
-    )
-}
-
-/// The CPU features `vg_ed25519_key_pair_avx2_adx` requires (`Artifact.features`).
-pub const VG_ED25519_KEY_PAIR_AVX2_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
-
-/// Ed25519 key-pair derivation (RFC 8032 §5.1.5): for the 32-byte private seed at `seed`, writes its 64-byte SHA-512 digest (§5.1.5, step 1) to `*expanded` and its 32-byte public key to `*out`, including pruning: the digest and public key that `vg_ed25519_sign_expanded` takes. Contract: `VG.Spec.Ed25519.keyPairContract`. Constant time: only pointers may affect timing.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 32 bytes.
-/// * `expanded` must be valid for reads and writes of 64 bytes.
-/// * `seed` must be valid for reads of 32 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The seed must originate from a cryptographically secure random generator.
-/// * The 64 bytes written to `expanded` are secret: the caller must destroy them after use.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out`, `expanded` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
-/// * None of `out`, `expanded`, `seed` and `scratch` may overlap the return address on the stack or the 1632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2` and `adx` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_key_pair_avx2_adx(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
-    core::arch::naked_asm!(
-        r#".base64 "V1ZRSInXSInyviAAAAA="
-call {vg_sha512_digest_avx2}
-.base64 "SIt8JBBIi3QkCEiLFCQ="
-call {vg_ed25519_public_key_expanded_adx}
-.base64 "WFhYww=="
-.p2align 6"#,
-        vg_sha512_digest_avx2 = sym super::sha512::vg_sha512_digest_avx2,
-        vg_ed25519_public_key_expanded_adx = sym super::ed25519::vg_ed25519_public_key_expanded_adx::vg_ed25519_public_key_expanded_adx,
-    )
-}
-
-/// The CPU features `vg_ed25519_verify_avx2_ifma` requires (`Artifact.features`).
-pub const VG_ED25519_VERIFY_AVX2_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
-
-/// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
-///
-/// # Safety
-///
-/// * `pk` must be valid for reads of 32 bytes.
-/// * `message` must be valid for reads of `len` bytes.
-/// * `signature` must be valid for reads of 64 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `scratch` must not overlap `pk`, `message` or `signature` (distinct Rust objects never do).
-/// * None of `pk`, `message`, `signature` and `scratch` may overlap the return address on the stack or the 184 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2`, `adx`, `avx512ifma` and `avx512vl` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_avx2_ifma(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "V1ZSUUFQUFBQUFBQUFBQUFBQUFBQUEiLvCSAAAAA"
-call {vg_sha512_init}
-.base64 "SIu8JIAAAAC+AAAAAEiLlCSIAAAAuSAAAABMi4QkgAAAAEmBwMAAAAA="
-call {vg_sha512_update_scratch_avx2}
-.base64 "SIu8JIAAAAC+IAAAAEiLlCSgAAAAuSAAAABMi4QkgAAAAEmBwMAAAAA="
-call {vg_sha512_update_scratch_avx2}
-.base64 "SIu8JIAAAAC+QAAAAEiLlCSYAAAASIuMJJAAAABMi4QkgAAAAEmBwMAAAAA="
-call {vg_sha512_update_scratch_avx2}
-.base64 "SIu8JIAAAABIi7QkkAAAAEiDxkBIieJIg8JASIuMJIAAAABIgcHAAAAA"
-call {vg_sha512_finalize_scratch_avx2}
-.base64 "SInnSInmSIPGQEiLlCSAAAAA"
-call {vg_ed25519_scalar_reduce}
-.base64 "McBIiUQkIEiJRCQoSIlEJDBIiUQkOEiLvCSgAAAASIu0JIgAAABIieJIi4wkgAAAAA=="
-call {vg_ed25519_verify_equation_ifma}
-.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0Fbww=="
-.p2align 6"#,
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
-        vg_sha512_update_scratch_avx2 = sym super::sha512::vg_sha512_update_scratch_avx2::vg_sha512_update_scratch_avx2,
-        vg_sha512_finalize_scratch_avx2 = sym super::sha512::vg_sha512_finalize_scratch_avx2::vg_sha512_finalize_scratch_avx2,
-        vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
-        vg_ed25519_verify_equation_ifma = sym super::ed25519::vg_ed25519_verify_equation_ifma::vg_ed25519_verify_equation_ifma,
-    )
-}
-
-/// The CPU features `vg_ed25519_sign_expanded_avx2_ifma` requires (`Artifact.features`).
-pub const VG_ED25519_SIGN_EXPANDED_AVX2_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
-
-/// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 64 bytes.
-/// * `expanded` must be valid for reads of 64 bytes.
-/// * `pk` must be valid for reads of 32 bytes.
-/// * `message` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The 64 bytes at `expanded` must equal the SHA-512 digest (`VG.Spec.Sha512.sha512`) of a 32-byte seed, and the 32 bytes at `pk` the public key derived from that seed by RFC 8032 §5.1.5 (`VG.Spec.Ed25519.publicKey`).
-/// * The seed must originate from a cryptographically secure random generator.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other, `expanded`, `pk` or `message` (distinct Rust objects never do).
-/// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2`, `adx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded_avx2_ifma(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
-    core::arch::naked_asm!(
-        r#".base64 "V1ZSUUFQQVFQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQSIuEJOgAAABIiwhIiYwkgAAAAEiLSAhIiYwkiAAAAEiLSBBIiYwkkAAAAEiLSBhIiYwkmAAAAEiLSCBIiYwkoAAAAEiLSChIiYwkqAAAAEiLSDBIiYwksAAAAEiLSDhIiYwkuAAAAEyLhCSAAAAATIuMJIgAAABMi5QkkAAAAEyLnCSYAAAASYPg+Ei5/////////z9JIctIuQAAAAAAAABASQnLTIkEJEyJTCQITIlUJBBMiVwkGEyLhCSgAAAATIuMJKgAAABMi5QksAAAAEyLnCS4AAAATIlEJCBMiUwkKEyJVCQwTIlcJDhIi7wkyAAAAA=="
-call {vg_sha512_init}
-.base64 "SIu8JMgAAAC+AAAAAEiJ4kiDwiC5IAAAAEyLhCTIAAAASYHAwAAAAA=="
-call {vg_sha512_update_scratch_avx2}
-.base64 "SIu8JMgAAAC+IAAAAEiLlCTYAAAASIuMJNAAAABMi4QkyAAAAEmBwMAAAAA="
-call {vg_sha512_update_scratch_avx2}
-.base64 "SIu8JMgAAABIi7Qk0AAAAEiDxiBIieJIgcKAAAAASIuMJMgAAABIgcHAAAAA"
-call {vg_sha512_finalize_scratch_avx2}
-.base64 "SInnSIPHQEiJ5kiBxoAAAABIi5QkyAAAAA=="
-call {vg_ed25519_scalar_reduce}
-.base64 "SIu8JPAAAABIieZIg8ZASIuUJMgAAAA="
-call {vg_ed25519_scalar_base_ifma}
-.base64 "SIu8JMgAAAA="
-call {vg_sha512_init}
-.base64 "SIu8JMgAAAC+AAAAAEiLlCTwAAAAuSAAAABMi4QkyAAAAEmBwMAAAAA="
-call {vg_sha512_update_scratch_avx2}
-.base64 "SIu8JMgAAAC+IAAAAEiLlCTgAAAAuSAAAABMi4QkyAAAAEmBwMAAAAA="
-call {vg_sha512_update_scratch_avx2}
-.base64 "SIu8JMgAAAC+QAAAAEiLlCTYAAAASIuMJNAAAABMi4QkyAAAAEmBwMAAAAA="
-call {vg_sha512_update_scratch_avx2}
-.base64 "SIu8JMgAAABIi7Qk0AAAAEiDxkBIieJIgcKAAAAASIuMJMgAAABIgcHAAAAA"
-call {vg_sha512_finalize_scratch_avx2}
-.base64 "SInnSIPHYEiJ5kiBxoAAAABIi5QkyAAAAA=="
-call {vg_ed25519_scalar_reduce}
-.base64 "SIu8JPAAAABIg8cgSInmSIPGQEiJ4kiDwmBIieFIg8EATIuEJMgAAAA="
-call {vg_ed25519_scalar_mul_add}
-.base64 "McBIiQQkSIlEJAhIiUQkEEiJRCQYSIlEJCBIiUQkKEiJRCQwSIlEJDhIiUQkQEiJRCRISIlEJFBIiUQkWEiJRCRgSIlEJGhIiUQkcEiJRCR4SImEJIAAAABIiYQkiAAAAEiJhCSQAAAASImEJJgAAABIiYQkoAAAAEiJhCSoAAAASImEJLAAAABIiYQkuAAAAFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFjD"
-.p2align 6"#,
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
-        vg_sha512_update_scratch_avx2 = sym super::sha512::vg_sha512_update_scratch_avx2::vg_sha512_update_scratch_avx2,
-        vg_sha512_finalize_scratch_avx2 = sym super::sha512::vg_sha512_finalize_scratch_avx2::vg_sha512_finalize_scratch_avx2,
-        vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
-        vg_ed25519_scalar_base_ifma = sym super::ed25519::vg_ed25519_scalar_base_ifma::vg_ed25519_scalar_base_ifma,
-        vg_ed25519_scalar_mul_add = sym super::ed25519::vg_ed25519_scalar_mul_add::vg_ed25519_scalar_mul_add,
-    )
-}
-
-/// The CPU features `vg_ed25519_key_pair_avx2_ifma` requires (`Artifact.features`).
-pub const VG_ED25519_KEY_PAIR_AVX2_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
-
-/// Ed25519 key-pair derivation (RFC 8032 §5.1.5): for the 32-byte private seed at `seed`, writes its 64-byte SHA-512 digest (§5.1.5, step 1) to `*expanded` and its 32-byte public key to `*out`, including pruning: the digest and public key that `vg_ed25519_sign_expanded` takes. Contract: `VG.Spec.Ed25519.keyPairContract`. Constant time: only pointers may affect timing.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 32 bytes.
-/// * `expanded` must be valid for reads and writes of 64 bytes.
-/// * `seed` must be valid for reads of 32 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The seed must originate from a cryptographically secure random generator.
-/// * The 64 bytes written to `expanded` are secret: the caller must destroy them after use.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out`, `expanded` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
-/// * None of `out`, `expanded`, `seed` and `scratch` may overlap the return address on the stack or the 1632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2`, `adx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_key_pair_avx2_ifma(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
-    core::arch::naked_asm!(
-        r#".base64 "V1ZRSInXSInyviAAAAA="
-call {vg_sha512_digest_avx2}
-.base64 "SIt8JBBIi3QkCEiLFCQ="
-call {vg_ed25519_public_key_expanded_ifma}
-.base64 "WFhYww=="
-.p2align 6"#,
-        vg_sha512_digest_avx2 = sym super::sha512::vg_sha512_digest_avx2,
-        vg_ed25519_public_key_expanded_ifma = sym super::ed25519::vg_ed25519_public_key_expanded_ifma::vg_ed25519_public_key_expanded_ifma,
-    )
-}
-
-/// The CPU features `vg_ed25519_verify_shani` requires (`Artifact.features`).
-pub const VG_ED25519_VERIFY_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SHA512);
-
-/// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
-///
-/// # Safety
-///
-/// * `pk` must be valid for reads of 32 bytes.
-/// * `message` must be valid for reads of `len` bytes.
-/// * `signature` must be valid for reads of 64 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `scratch` must not overlap `pk`, `message` or `signature` (distinct Rust objects never do).
-/// * None of `pk`, `message`, `signature` and `scratch` may overlap the return address on the stack or the 184 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2` and `sha512` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_shani(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_shani_ifma(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQUFBQUFBQUFBQUFBQUFBQUEiLvCSAAAAA"
 call {vg_sha512_init}
@@ -808,19 +34,19 @@ call {vg_sha512_finalize_scratch_shani}
 .base64 "SInnSInmSIPGQEiLlCSAAAAA"
 call {vg_ed25519_scalar_reduce}
 .base64 "McBIiUQkIEiJRCQoSIlEJDBIiUQkOEiLvCSgAAAASIu0JIgAAABIieJIi4wkgAAAAA=="
-call {vg_ed25519_verify_equation}
+call {vg_ed25519_verify_equation_ifma}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0Fbww=="
 .p2align 6"#,
         vg_sha512_init = sym super::sha512::vg_sha512_init,
         vg_sha512_update_scratch_shani = sym super::sha512::vg_sha512_update_scratch_shani::vg_sha512_update_scratch_shani,
         vg_sha512_finalize_scratch_shani = sym super::sha512::vg_sha512_finalize_scratch_shani::vg_sha512_finalize_scratch_shani,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
-        vg_ed25519_verify_equation = sym super::ed25519::vg_ed25519_verify_equation::vg_ed25519_verify_equation,
+        vg_ed25519_verify_equation_ifma = sym super::ed25519::vg_ed25519_verify_equation_ifma::vg_ed25519_verify_equation_ifma,
     )
 }
 
-/// The CPU features `vg_ed25519_sign_expanded_shani` requires (`Artifact.features`).
-pub const VG_ED25519_SIGN_EXPANDED_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SHA512);
+/// The CPU features `vg_ed25519_sign_expanded_shani_ifma` requires (`Artifact.features`).
+pub const VG_ED25519_SIGN_EXPANDED_SHANI_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SHA512 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
 
 /// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
 ///
@@ -836,9 +62,9 @@ pub const VG_ED25519_SIGN_EXPANDED_SHANI_FEATURES: verified_garbage_cpu::Feature
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `expanded`, `pk` or `message` (distinct Rust objects never do).
 /// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2` and `sha512` target features.
+/// * The CPU must support the `avx`, `avx2`, `sha512`, `bmi2`, `adx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded_shani(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded_shani_ifma(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQQVFQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQSIuEJOgAAABIiwhIiYwkgAAAAEiLSAhIiYwkiAAAAEiLSBBIiYwkkAAAAEiLSBhIiYwkmAAAAEiLSCBIiYwkoAAAAEiLSChIiYwkqAAAAEiLSDBIiYwksAAAAEiLSDhIiYwkuAAAAEyLhCSAAAAATIuMJIgAAABMi5QkkAAAAEyLnCSYAAAASYPg+Ei5/////////z9JIctIuQAAAAAAAABASQnLTIkEJEyJTCQITIlUJBBMiVwkGEyLhCSgAAAATIuMJKgAAABMi5QksAAAAEyLnCS4AAAATIlEJCBMiUwkKEyJVCQwTIlcJDhIi7wkyAAAAA=="
 call {vg_sha512_init}
@@ -851,7 +77,7 @@ call {vg_sha512_finalize_scratch_shani}
 .base64 "SInnSIPHQEiJ5kiBxoAAAABIi5QkyAAAAA=="
 call {vg_ed25519_scalar_reduce}
 .base64 "SIu8JPAAAABIieZIg8ZASIuUJMgAAAA="
-call {vg_ed25519_scalar_base}
+call {vg_ed25519_scalar_base_ifma}
 .base64 "SIu8JMgAAAA="
 call {vg_sha512_init}
 .base64 "SIu8JMgAAAC+AAAAAEiLlCTwAAAAuSAAAABMi4QkyAAAAEmBwMAAAAA="
@@ -872,13 +98,13 @@ call {vg_ed25519_scalar_mul_add}
         vg_sha512_update_scratch_shani = sym super::sha512::vg_sha512_update_scratch_shani::vg_sha512_update_scratch_shani,
         vg_sha512_finalize_scratch_shani = sym super::sha512::vg_sha512_finalize_scratch_shani::vg_sha512_finalize_scratch_shani,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
-        vg_ed25519_scalar_base = sym super::ed25519::vg_ed25519_scalar_base::vg_ed25519_scalar_base,
+        vg_ed25519_scalar_base_ifma = sym super::ed25519::vg_ed25519_scalar_base_ifma::vg_ed25519_scalar_base_ifma,
         vg_ed25519_scalar_mul_add = sym super::ed25519::vg_ed25519_scalar_mul_add::vg_ed25519_scalar_mul_add,
     )
 }
 
-/// The CPU features `vg_ed25519_key_pair_shani` requires (`Artifact.features`).
-pub const VG_ED25519_KEY_PAIR_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SHA512);
+/// The CPU features `vg_ed25519_key_pair_shani_ifma` requires (`Artifact.features`).
+pub const VG_ED25519_KEY_PAIR_SHANI_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SHA512 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
 
 /// Ed25519 key-pair derivation (RFC 8032 §5.1.5): for the 32-byte private seed at `seed`, writes its 64-byte SHA-512 digest (§5.1.5, step 1) to `*expanded` and its 32-byte public key to `*out`, including pruning: the digest and public key that `vg_ed25519_sign_expanded` takes. Contract: `VG.Spec.Ed25519.keyPairContract`. Constant time: only pointers may affect timing.
 ///
@@ -893,18 +119,18 @@ pub const VG_ED25519_KEY_PAIR_SHANI_FEATURES: verified_garbage_cpu::Features = v
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out`, `expanded` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
 /// * None of `out`, `expanded`, `seed` and `scratch` may overlap the return address on the stack or the 1632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2` and `sha512` target features.
+/// * The CPU must support the `avx`, `avx2`, `sha512`, `bmi2`, `adx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_key_pair_shani(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_key_pair_shani_ifma(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "V1ZRSInXSInyviAAAAA="
 call {vg_sha512_digest_shani}
 .base64 "SIt8JBBIi3QkCEiLFCQ="
-call {vg_ed25519_public_key_expanded}
+call {vg_ed25519_public_key_expanded_ifma}
 .base64 "WFhYww=="
 .p2align 6"#,
         vg_sha512_digest_shani = sym super::sha512::vg_sha512_digest_shani,
-        vg_ed25519_public_key_expanded = sym super::ed25519::vg_ed25519_public_key_expanded::vg_ed25519_public_key_expanded,
+        vg_ed25519_public_key_expanded_ifma = sym super::ed25519::vg_ed25519_public_key_expanded_ifma::vg_ed25519_public_key_expanded_ifma,
     )
 }
 
@@ -1039,8 +265,8 @@ call {vg_ed25519_public_key_expanded_adx}
     )
 }
 
-/// The CPU features `vg_ed25519_verify_shani_ifma` requires (`Artifact.features`).
-pub const VG_ED25519_VERIFY_SHANI_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SHA512 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
+/// The CPU features `vg_ed25519_verify_shani` requires (`Artifact.features`).
+pub const VG_ED25519_VERIFY_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SHA512);
 
 /// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
 ///
@@ -1053,9 +279,9 @@ pub const VG_ED25519_VERIFY_SHANI_IFMA_FEATURES: verified_garbage_cpu::Features 
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `scratch` must not overlap `pk`, `message` or `signature` (distinct Rust objects never do).
 /// * None of `pk`, `message`, `signature` and `scratch` may overlap the return address on the stack or the 184 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `sha512`, `bmi2`, `adx`, `avx512ifma` and `avx512vl` target features.
+/// * The CPU must support the `avx`, `avx2` and `sha512` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_shani_ifma(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_shani(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQUFBQUFBQUFBQUFBQUFBQUEiLvCSAAAAA"
 call {vg_sha512_init}
@@ -1070,19 +296,19 @@ call {vg_sha512_finalize_scratch_shani}
 .base64 "SInnSInmSIPGQEiLlCSAAAAA"
 call {vg_ed25519_scalar_reduce}
 .base64 "McBIiUQkIEiJRCQoSIlEJDBIiUQkOEiLvCSgAAAASIu0JIgAAABIieJIi4wkgAAAAA=="
-call {vg_ed25519_verify_equation_ifma}
+call {vg_ed25519_verify_equation}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0Fbww=="
 .p2align 6"#,
         vg_sha512_init = sym super::sha512::vg_sha512_init,
         vg_sha512_update_scratch_shani = sym super::sha512::vg_sha512_update_scratch_shani::vg_sha512_update_scratch_shani,
         vg_sha512_finalize_scratch_shani = sym super::sha512::vg_sha512_finalize_scratch_shani::vg_sha512_finalize_scratch_shani,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
-        vg_ed25519_verify_equation_ifma = sym super::ed25519::vg_ed25519_verify_equation_ifma::vg_ed25519_verify_equation_ifma,
+        vg_ed25519_verify_equation = sym super::ed25519::vg_ed25519_verify_equation::vg_ed25519_verify_equation,
     )
 }
 
-/// The CPU features `vg_ed25519_sign_expanded_shani_ifma` requires (`Artifact.features`).
-pub const VG_ED25519_SIGN_EXPANDED_SHANI_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SHA512 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
+/// The CPU features `vg_ed25519_sign_expanded_shani` requires (`Artifact.features`).
+pub const VG_ED25519_SIGN_EXPANDED_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SHA512);
 
 /// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
 ///
@@ -1098,9 +324,9 @@ pub const VG_ED25519_SIGN_EXPANDED_SHANI_IFMA_FEATURES: verified_garbage_cpu::Fe
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `expanded`, `pk` or `message` (distinct Rust objects never do).
 /// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `sha512`, `bmi2`, `adx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
+/// * The CPU must support the `avx`, `avx2` and `sha512` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded_shani_ifma(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded_shani(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQQVFQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQSIuEJOgAAABIiwhIiYwkgAAAAEiLSAhIiYwkiAAAAEiLSBBIiYwkkAAAAEiLSBhIiYwkmAAAAEiLSCBIiYwkoAAAAEiLSChIiYwkqAAAAEiLSDBIiYwksAAAAEiLSDhIiYwkuAAAAEyLhCSAAAAATIuMJIgAAABMi5QkkAAAAEyLnCSYAAAASYPg+Ei5/////////z9JIctIuQAAAAAAAABASQnLTIkEJEyJTCQITIlUJBBMiVwkGEyLhCSgAAAATIuMJKgAAABMi5QksAAAAEyLnCS4AAAATIlEJCBMiUwkKEyJVCQwTIlcJDhIi7wkyAAAAA=="
 call {vg_sha512_init}
@@ -1113,7 +339,7 @@ call {vg_sha512_finalize_scratch_shani}
 .base64 "SInnSIPHQEiJ5kiBxoAAAABIi5QkyAAAAA=="
 call {vg_ed25519_scalar_reduce}
 .base64 "SIu8JPAAAABIieZIg8ZASIuUJMgAAAA="
-call {vg_ed25519_scalar_base_ifma}
+call {vg_ed25519_scalar_base}
 .base64 "SIu8JMgAAAA="
 call {vg_sha512_init}
 .base64 "SIu8JMgAAAC+AAAAAEiLlCTwAAAAuSAAAABMi4QkyAAAAEmBwMAAAAA="
@@ -1134,13 +360,13 @@ call {vg_ed25519_scalar_mul_add}
         vg_sha512_update_scratch_shani = sym super::sha512::vg_sha512_update_scratch_shani::vg_sha512_update_scratch_shani,
         vg_sha512_finalize_scratch_shani = sym super::sha512::vg_sha512_finalize_scratch_shani::vg_sha512_finalize_scratch_shani,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
-        vg_ed25519_scalar_base_ifma = sym super::ed25519::vg_ed25519_scalar_base_ifma::vg_ed25519_scalar_base_ifma,
+        vg_ed25519_scalar_base = sym super::ed25519::vg_ed25519_scalar_base::vg_ed25519_scalar_base,
         vg_ed25519_scalar_mul_add = sym super::ed25519::vg_ed25519_scalar_mul_add::vg_ed25519_scalar_mul_add,
     )
 }
 
-/// The CPU features `vg_ed25519_key_pair_shani_ifma` requires (`Artifact.features`).
-pub const VG_ED25519_KEY_PAIR_SHANI_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SHA512 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
+/// The CPU features `vg_ed25519_key_pair_shani` requires (`Artifact.features`).
+pub const VG_ED25519_KEY_PAIR_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SHA512);
 
 /// Ed25519 key-pair derivation (RFC 8032 §5.1.5): for the 32-byte private seed at `seed`, writes its 64-byte SHA-512 digest (§5.1.5, step 1) to `*expanded` and its 32-byte public key to `*out`, including pruning: the digest and public key that `vg_ed25519_sign_expanded` takes. Contract: `VG.Spec.Ed25519.keyPairContract`. Constant time: only pointers may affect timing.
 ///
@@ -1155,18 +381,792 @@ pub const VG_ED25519_KEY_PAIR_SHANI_IFMA_FEATURES: verified_garbage_cpu::Feature
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out`, `expanded` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
 /// * None of `out`, `expanded`, `seed` and `scratch` may overlap the return address on the stack or the 1632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `sha512`, `bmi2`, `adx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
+/// * The CPU must support the `avx`, `avx2` and `sha512` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_key_pair_shani_ifma(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_key_pair_shani(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "V1ZRSInXSInyviAAAAA="
 call {vg_sha512_digest_shani}
 .base64 "SIt8JBBIi3QkCEiLFCQ="
-call {vg_ed25519_public_key_expanded_ifma}
+call {vg_ed25519_public_key_expanded}
 .base64 "WFhYww=="
 .p2align 6"#,
         vg_sha512_digest_shani = sym super::sha512::vg_sha512_digest_shani,
+        vg_ed25519_public_key_expanded = sym super::ed25519::vg_ed25519_public_key_expanded::vg_ed25519_public_key_expanded,
+    )
+}
+
+/// The CPU features `vg_ed25519_verify_avx2_ifma` requires (`Artifact.features`).
+pub const VG_ED25519_VERIFY_AVX2_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
+
+/// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 32 bytes.
+/// * `message` must be valid for reads of `len` bytes.
+/// * `signature` must be valid for reads of 64 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `scratch` must not overlap `pk`, `message` or `signature` (distinct Rust objects never do).
+/// * None of `pk`, `message`, `signature` and `scratch` may overlap the return address on the stack or the 184 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2`, `adx`, `avx512ifma` and `avx512vl` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_avx2_ifma(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "V1ZSUUFQUFBQUFBQUFBQUFBQUFBQUEiLvCSAAAAA"
+call {vg_sha512_init}
+.base64 "SIu8JIAAAAC+AAAAAEiLlCSIAAAAuSAAAABMi4QkgAAAAEmBwMAAAAA="
+call {vg_sha512_update_scratch_avx2}
+.base64 "SIu8JIAAAAC+IAAAAEiLlCSgAAAAuSAAAABMi4QkgAAAAEmBwMAAAAA="
+call {vg_sha512_update_scratch_avx2}
+.base64 "SIu8JIAAAAC+QAAAAEiLlCSYAAAASIuMJJAAAABMi4QkgAAAAEmBwMAAAAA="
+call {vg_sha512_update_scratch_avx2}
+.base64 "SIu8JIAAAABIi7QkkAAAAEiDxkBIieJIg8JASIuMJIAAAABIgcHAAAAA"
+call {vg_sha512_finalize_scratch_avx2}
+.base64 "SInnSInmSIPGQEiLlCSAAAAA"
+call {vg_ed25519_scalar_reduce}
+.base64 "McBIiUQkIEiJRCQoSIlEJDBIiUQkOEiLvCSgAAAASIu0JIgAAABIieJIi4wkgAAAAA=="
+call {vg_ed25519_verify_equation_ifma}
+.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0Fbww=="
+.p2align 6"#,
+        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_update_scratch_avx2 = sym super::sha512::vg_sha512_update_scratch_avx2::vg_sha512_update_scratch_avx2,
+        vg_sha512_finalize_scratch_avx2 = sym super::sha512::vg_sha512_finalize_scratch_avx2::vg_sha512_finalize_scratch_avx2,
+        vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
+        vg_ed25519_verify_equation_ifma = sym super::ed25519::vg_ed25519_verify_equation_ifma::vg_ed25519_verify_equation_ifma,
+    )
+}
+
+/// The CPU features `vg_ed25519_sign_expanded_avx2_ifma` requires (`Artifact.features`).
+pub const VG_ED25519_SIGN_EXPANDED_AVX2_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
+
+/// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 64 bytes.
+/// * `expanded` must be valid for reads of 64 bytes.
+/// * `pk` must be valid for reads of 32 bytes.
+/// * `message` must be valid for reads of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The 64 bytes at `expanded` must equal the SHA-512 digest (`VG.Spec.Sha512.sha512`) of a 32-byte seed, and the 32 bytes at `pk` the public key derived from that seed by RFC 8032 §5.1.5 (`VG.Spec.Ed25519.publicKey`).
+/// * The seed must originate from a cryptographically secure random generator.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other, `expanded`, `pk` or `message` (distinct Rust objects never do).
+/// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2`, `adx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded_avx2_ifma(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+    core::arch::naked_asm!(
+        r#".base64 "V1ZSUUFQQVFQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQSIuEJOgAAABIiwhIiYwkgAAAAEiLSAhIiYwkiAAAAEiLSBBIiYwkkAAAAEiLSBhIiYwkmAAAAEiLSCBIiYwkoAAAAEiLSChIiYwkqAAAAEiLSDBIiYwksAAAAEiLSDhIiYwkuAAAAEyLhCSAAAAATIuMJIgAAABMi5QkkAAAAEyLnCSYAAAASYPg+Ei5/////////z9JIctIuQAAAAAAAABASQnLTIkEJEyJTCQITIlUJBBMiVwkGEyLhCSgAAAATIuMJKgAAABMi5QksAAAAEyLnCS4AAAATIlEJCBMiUwkKEyJVCQwTIlcJDhIi7wkyAAAAA=="
+call {vg_sha512_init}
+.base64 "SIu8JMgAAAC+AAAAAEiJ4kiDwiC5IAAAAEyLhCTIAAAASYHAwAAAAA=="
+call {vg_sha512_update_scratch_avx2}
+.base64 "SIu8JMgAAAC+IAAAAEiLlCTYAAAASIuMJNAAAABMi4QkyAAAAEmBwMAAAAA="
+call {vg_sha512_update_scratch_avx2}
+.base64 "SIu8JMgAAABIi7Qk0AAAAEiDxiBIieJIgcKAAAAASIuMJMgAAABIgcHAAAAA"
+call {vg_sha512_finalize_scratch_avx2}
+.base64 "SInnSIPHQEiJ5kiBxoAAAABIi5QkyAAAAA=="
+call {vg_ed25519_scalar_reduce}
+.base64 "SIu8JPAAAABIieZIg8ZASIuUJMgAAAA="
+call {vg_ed25519_scalar_base_ifma}
+.base64 "SIu8JMgAAAA="
+call {vg_sha512_init}
+.base64 "SIu8JMgAAAC+AAAAAEiLlCTwAAAAuSAAAABMi4QkyAAAAEmBwMAAAAA="
+call {vg_sha512_update_scratch_avx2}
+.base64 "SIu8JMgAAAC+IAAAAEiLlCTgAAAAuSAAAABMi4QkyAAAAEmBwMAAAAA="
+call {vg_sha512_update_scratch_avx2}
+.base64 "SIu8JMgAAAC+QAAAAEiLlCTYAAAASIuMJNAAAABMi4QkyAAAAEmBwMAAAAA="
+call {vg_sha512_update_scratch_avx2}
+.base64 "SIu8JMgAAABIi7Qk0AAAAEiDxkBIieJIgcKAAAAASIuMJMgAAABIgcHAAAAA"
+call {vg_sha512_finalize_scratch_avx2}
+.base64 "SInnSIPHYEiJ5kiBxoAAAABIi5QkyAAAAA=="
+call {vg_ed25519_scalar_reduce}
+.base64 "SIu8JPAAAABIg8cgSInmSIPGQEiJ4kiDwmBIieFIg8EATIuEJMgAAAA="
+call {vg_ed25519_scalar_mul_add}
+.base64 "McBIiQQkSIlEJAhIiUQkEEiJRCQYSIlEJCBIiUQkKEiJRCQwSIlEJDhIiUQkQEiJRCRISIlEJFBIiUQkWEiJRCRgSIlEJGhIiUQkcEiJRCR4SImEJIAAAABIiYQkiAAAAEiJhCSQAAAASImEJJgAAABIiYQkoAAAAEiJhCSoAAAASImEJLAAAABIiYQkuAAAAFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFjD"
+.p2align 6"#,
+        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_update_scratch_avx2 = sym super::sha512::vg_sha512_update_scratch_avx2::vg_sha512_update_scratch_avx2,
+        vg_sha512_finalize_scratch_avx2 = sym super::sha512::vg_sha512_finalize_scratch_avx2::vg_sha512_finalize_scratch_avx2,
+        vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
+        vg_ed25519_scalar_base_ifma = sym super::ed25519::vg_ed25519_scalar_base_ifma::vg_ed25519_scalar_base_ifma,
+        vg_ed25519_scalar_mul_add = sym super::ed25519::vg_ed25519_scalar_mul_add::vg_ed25519_scalar_mul_add,
+    )
+}
+
+/// The CPU features `vg_ed25519_key_pair_avx2_ifma` requires (`Artifact.features`).
+pub const VG_ED25519_KEY_PAIR_AVX2_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
+
+/// Ed25519 key-pair derivation (RFC 8032 §5.1.5): for the 32-byte private seed at `seed`, writes its 64-byte SHA-512 digest (§5.1.5, step 1) to `*expanded` and its 32-byte public key to `*out`, including pruning: the digest and public key that `vg_ed25519_sign_expanded` takes. Contract: `VG.Spec.Ed25519.keyPairContract`. Constant time: only pointers may affect timing.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 32 bytes.
+/// * `expanded` must be valid for reads and writes of 64 bytes.
+/// * `seed` must be valid for reads of 32 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The seed must originate from a cryptographically secure random generator.
+/// * The 64 bytes written to `expanded` are secret: the caller must destroy them after use.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out`, `expanded` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
+/// * None of `out`, `expanded`, `seed` and `scratch` may overlap the return address on the stack or the 1632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2`, `adx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_key_pair_avx2_ifma(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
+    core::arch::naked_asm!(
+        r#".base64 "V1ZRSInXSInyviAAAAA="
+call {vg_sha512_digest_avx2}
+.base64 "SIt8JBBIi3QkCEiLFCQ="
+call {vg_ed25519_public_key_expanded_ifma}
+.base64 "WFhYww=="
+.p2align 6"#,
+        vg_sha512_digest_avx2 = sym super::sha512::vg_sha512_digest_avx2,
         vg_ed25519_public_key_expanded_ifma = sym super::ed25519::vg_ed25519_public_key_expanded_ifma::vg_ed25519_public_key_expanded_ifma,
+    )
+}
+
+/// The CPU features `vg_ed25519_verify_avx2_adx` requires (`Artifact.features`).
+pub const VG_ED25519_VERIFY_AVX2_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 32 bytes.
+/// * `message` must be valid for reads of `len` bytes.
+/// * `signature` must be valid for reads of 64 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `scratch` must not overlap `pk`, `message` or `signature` (distinct Rust objects never do).
+/// * None of `pk`, `message`, `signature` and `scratch` may overlap the return address on the stack or the 184 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2` and `adx` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_avx2_adx(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "V1ZSUUFQUFBQUFBQUFBQUFBQUFBQUEiLvCSAAAAA"
+call {vg_sha512_init}
+.base64 "SIu8JIAAAAC+AAAAAEiLlCSIAAAAuSAAAABMi4QkgAAAAEmBwMAAAAA="
+call {vg_sha512_update_scratch_avx2}
+.base64 "SIu8JIAAAAC+IAAAAEiLlCSgAAAAuSAAAABMi4QkgAAAAEmBwMAAAAA="
+call {vg_sha512_update_scratch_avx2}
+.base64 "SIu8JIAAAAC+QAAAAEiLlCSYAAAASIuMJJAAAABMi4QkgAAAAEmBwMAAAAA="
+call {vg_sha512_update_scratch_avx2}
+.base64 "SIu8JIAAAABIi7QkkAAAAEiDxkBIieJIg8JASIuMJIAAAABIgcHAAAAA"
+call {vg_sha512_finalize_scratch_avx2}
+.base64 "SInnSInmSIPGQEiLlCSAAAAA"
+call {vg_ed25519_scalar_reduce}
+.base64 "McBIiUQkIEiJRCQoSIlEJDBIiUQkOEiLvCSgAAAASIu0JIgAAABIieJIi4wkgAAAAA=="
+call {vg_ed25519_verify_equation_adx}
+.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0Fbww=="
+.p2align 6"#,
+        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_update_scratch_avx2 = sym super::sha512::vg_sha512_update_scratch_avx2::vg_sha512_update_scratch_avx2,
+        vg_sha512_finalize_scratch_avx2 = sym super::sha512::vg_sha512_finalize_scratch_avx2::vg_sha512_finalize_scratch_avx2,
+        vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
+        vg_ed25519_verify_equation_adx = sym super::ed25519::vg_ed25519_verify_equation_adx::vg_ed25519_verify_equation_adx,
+    )
+}
+
+/// The CPU features `vg_ed25519_sign_expanded_avx2_adx` requires (`Artifact.features`).
+pub const VG_ED25519_SIGN_EXPANDED_AVX2_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 64 bytes.
+/// * `expanded` must be valid for reads of 64 bytes.
+/// * `pk` must be valid for reads of 32 bytes.
+/// * `message` must be valid for reads of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The 64 bytes at `expanded` must equal the SHA-512 digest (`VG.Spec.Sha512.sha512`) of a 32-byte seed, and the 32 bytes at `pk` the public key derived from that seed by RFC 8032 §5.1.5 (`VG.Spec.Ed25519.publicKey`).
+/// * The seed must originate from a cryptographically secure random generator.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other, `expanded`, `pk` or `message` (distinct Rust objects never do).
+/// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2` and `adx` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded_avx2_adx(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+    core::arch::naked_asm!(
+        r#".base64 "V1ZSUUFQQVFQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQSIuEJOgAAABIiwhIiYwkgAAAAEiLSAhIiYwkiAAAAEiLSBBIiYwkkAAAAEiLSBhIiYwkmAAAAEiLSCBIiYwkoAAAAEiLSChIiYwkqAAAAEiLSDBIiYwksAAAAEiLSDhIiYwkuAAAAEyLhCSAAAAATIuMJIgAAABMi5QkkAAAAEyLnCSYAAAASYPg+Ei5/////////z9JIctIuQAAAAAAAABASQnLTIkEJEyJTCQITIlUJBBMiVwkGEyLhCSgAAAATIuMJKgAAABMi5QksAAAAEyLnCS4AAAATIlEJCBMiUwkKEyJVCQwTIlcJDhIi7wkyAAAAA=="
+call {vg_sha512_init}
+.base64 "SIu8JMgAAAC+AAAAAEiJ4kiDwiC5IAAAAEyLhCTIAAAASYHAwAAAAA=="
+call {vg_sha512_update_scratch_avx2}
+.base64 "SIu8JMgAAAC+IAAAAEiLlCTYAAAASIuMJNAAAABMi4QkyAAAAEmBwMAAAAA="
+call {vg_sha512_update_scratch_avx2}
+.base64 "SIu8JMgAAABIi7Qk0AAAAEiDxiBIieJIgcKAAAAASIuMJMgAAABIgcHAAAAA"
+call {vg_sha512_finalize_scratch_avx2}
+.base64 "SInnSIPHQEiJ5kiBxoAAAABIi5QkyAAAAA=="
+call {vg_ed25519_scalar_reduce}
+.base64 "SIu8JPAAAABIieZIg8ZASIuUJMgAAAA="
+call {vg_ed25519_scalar_base_adx}
+.base64 "SIu8JMgAAAA="
+call {vg_sha512_init}
+.base64 "SIu8JMgAAAC+AAAAAEiLlCTwAAAAuSAAAABMi4QkyAAAAEmBwMAAAAA="
+call {vg_sha512_update_scratch_avx2}
+.base64 "SIu8JMgAAAC+IAAAAEiLlCTgAAAAuSAAAABMi4QkyAAAAEmBwMAAAAA="
+call {vg_sha512_update_scratch_avx2}
+.base64 "SIu8JMgAAAC+QAAAAEiLlCTYAAAASIuMJNAAAABMi4QkyAAAAEmBwMAAAAA="
+call {vg_sha512_update_scratch_avx2}
+.base64 "SIu8JMgAAABIi7Qk0AAAAEiDxkBIieJIgcKAAAAASIuMJMgAAABIgcHAAAAA"
+call {vg_sha512_finalize_scratch_avx2}
+.base64 "SInnSIPHYEiJ5kiBxoAAAABIi5QkyAAAAA=="
+call {vg_ed25519_scalar_reduce}
+.base64 "SIu8JPAAAABIg8cgSInmSIPGQEiJ4kiDwmBIieFIg8EATIuEJMgAAAA="
+call {vg_ed25519_scalar_mul_add}
+.base64 "McBIiQQkSIlEJAhIiUQkEEiJRCQYSIlEJCBIiUQkKEiJRCQwSIlEJDhIiUQkQEiJRCRISIlEJFBIiUQkWEiJRCRgSIlEJGhIiUQkcEiJRCR4SImEJIAAAABIiYQkiAAAAEiJhCSQAAAASImEJJgAAABIiYQkoAAAAEiJhCSoAAAASImEJLAAAABIiYQkuAAAAFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFjD"
+.p2align 6"#,
+        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_update_scratch_avx2 = sym super::sha512::vg_sha512_update_scratch_avx2::vg_sha512_update_scratch_avx2,
+        vg_sha512_finalize_scratch_avx2 = sym super::sha512::vg_sha512_finalize_scratch_avx2::vg_sha512_finalize_scratch_avx2,
+        vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
+        vg_ed25519_scalar_base_adx = sym super::ed25519::vg_ed25519_scalar_base_adx::vg_ed25519_scalar_base_adx,
+        vg_ed25519_scalar_mul_add = sym super::ed25519::vg_ed25519_scalar_mul_add::vg_ed25519_scalar_mul_add,
+    )
+}
+
+/// The CPU features `vg_ed25519_key_pair_avx2_adx` requires (`Artifact.features`).
+pub const VG_ED25519_KEY_PAIR_AVX2_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// Ed25519 key-pair derivation (RFC 8032 §5.1.5): for the 32-byte private seed at `seed`, writes its 64-byte SHA-512 digest (§5.1.5, step 1) to `*expanded` and its 32-byte public key to `*out`, including pruning: the digest and public key that `vg_ed25519_sign_expanded` takes. Contract: `VG.Spec.Ed25519.keyPairContract`. Constant time: only pointers may affect timing.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 32 bytes.
+/// * `expanded` must be valid for reads and writes of 64 bytes.
+/// * `seed` must be valid for reads of 32 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The seed must originate from a cryptographically secure random generator.
+/// * The 64 bytes written to `expanded` are secret: the caller must destroy them after use.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out`, `expanded` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
+/// * None of `out`, `expanded`, `seed` and `scratch` may overlap the return address on the stack or the 1632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2` and `adx` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_key_pair_avx2_adx(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
+    core::arch::naked_asm!(
+        r#".base64 "V1ZRSInXSInyviAAAAA="
+call {vg_sha512_digest_avx2}
+.base64 "SIt8JBBIi3QkCEiLFCQ="
+call {vg_ed25519_public_key_expanded_adx}
+.base64 "WFhYww=="
+.p2align 6"#,
+        vg_sha512_digest_avx2 = sym super::sha512::vg_sha512_digest_avx2,
+        vg_ed25519_public_key_expanded_adx = sym super::ed25519::vg_ed25519_public_key_expanded_adx::vg_ed25519_public_key_expanded_adx,
+    )
+}
+
+/// The CPU features `vg_ed25519_verify_avx2` requires (`Artifact.features`).
+pub const VG_ED25519_VERIFY_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2);
+
+/// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 32 bytes.
+/// * `message` must be valid for reads of `len` bytes.
+/// * `signature` must be valid for reads of 64 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `scratch` must not overlap `pk`, `message` or `signature` (distinct Rust objects never do).
+/// * None of `pk`, `message`, `signature` and `scratch` may overlap the return address on the stack or the 184 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_avx2(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "V1ZSUUFQUFBQUFBQUFBQUFBQUFBQUEiLvCSAAAAA"
+call {vg_sha512_init}
+.base64 "SIu8JIAAAAC+AAAAAEiLlCSIAAAAuSAAAABMi4QkgAAAAEmBwMAAAAA="
+call {vg_sha512_update_scratch_avx2}
+.base64 "SIu8JIAAAAC+IAAAAEiLlCSgAAAAuSAAAABMi4QkgAAAAEmBwMAAAAA="
+call {vg_sha512_update_scratch_avx2}
+.base64 "SIu8JIAAAAC+QAAAAEiLlCSYAAAASIuMJJAAAABMi4QkgAAAAEmBwMAAAAA="
+call {vg_sha512_update_scratch_avx2}
+.base64 "SIu8JIAAAABIi7QkkAAAAEiDxkBIieJIg8JASIuMJIAAAABIgcHAAAAA"
+call {vg_sha512_finalize_scratch_avx2}
+.base64 "SInnSInmSIPGQEiLlCSAAAAA"
+call {vg_ed25519_scalar_reduce}
+.base64 "McBIiUQkIEiJRCQoSIlEJDBIiUQkOEiLvCSgAAAASIu0JIgAAABIieJIi4wkgAAAAA=="
+call {vg_ed25519_verify_equation}
+.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0Fbww=="
+.p2align 6"#,
+        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_update_scratch_avx2 = sym super::sha512::vg_sha512_update_scratch_avx2::vg_sha512_update_scratch_avx2,
+        vg_sha512_finalize_scratch_avx2 = sym super::sha512::vg_sha512_finalize_scratch_avx2::vg_sha512_finalize_scratch_avx2,
+        vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
+        vg_ed25519_verify_equation = sym super::ed25519::vg_ed25519_verify_equation::vg_ed25519_verify_equation,
+    )
+}
+
+/// The CPU features `vg_ed25519_sign_expanded_avx2` requires (`Artifact.features`).
+pub const VG_ED25519_SIGN_EXPANDED_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2);
+
+/// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 64 bytes.
+/// * `expanded` must be valid for reads of 64 bytes.
+/// * `pk` must be valid for reads of 32 bytes.
+/// * `message` must be valid for reads of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The 64 bytes at `expanded` must equal the SHA-512 digest (`VG.Spec.Sha512.sha512`) of a 32-byte seed, and the 32 bytes at `pk` the public key derived from that seed by RFC 8032 §5.1.5 (`VG.Spec.Ed25519.publicKey`).
+/// * The seed must originate from a cryptographically secure random generator.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other, `expanded`, `pk` or `message` (distinct Rust objects never do).
+/// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded_avx2(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+    core::arch::naked_asm!(
+        r#".base64 "V1ZSUUFQQVFQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQSIuEJOgAAABIiwhIiYwkgAAAAEiLSAhIiYwkiAAAAEiLSBBIiYwkkAAAAEiLSBhIiYwkmAAAAEiLSCBIiYwkoAAAAEiLSChIiYwkqAAAAEiLSDBIiYwksAAAAEiLSDhIiYwkuAAAAEyLhCSAAAAATIuMJIgAAABMi5QkkAAAAEyLnCSYAAAASYPg+Ei5/////////z9JIctIuQAAAAAAAABASQnLTIkEJEyJTCQITIlUJBBMiVwkGEyLhCSgAAAATIuMJKgAAABMi5QksAAAAEyLnCS4AAAATIlEJCBMiUwkKEyJVCQwTIlcJDhIi7wkyAAAAA=="
+call {vg_sha512_init}
+.base64 "SIu8JMgAAAC+AAAAAEiJ4kiDwiC5IAAAAEyLhCTIAAAASYHAwAAAAA=="
+call {vg_sha512_update_scratch_avx2}
+.base64 "SIu8JMgAAAC+IAAAAEiLlCTYAAAASIuMJNAAAABMi4QkyAAAAEmBwMAAAAA="
+call {vg_sha512_update_scratch_avx2}
+.base64 "SIu8JMgAAABIi7Qk0AAAAEiDxiBIieJIgcKAAAAASIuMJMgAAABIgcHAAAAA"
+call {vg_sha512_finalize_scratch_avx2}
+.base64 "SInnSIPHQEiJ5kiBxoAAAABIi5QkyAAAAA=="
+call {vg_ed25519_scalar_reduce}
+.base64 "SIu8JPAAAABIieZIg8ZASIuUJMgAAAA="
+call {vg_ed25519_scalar_base}
+.base64 "SIu8JMgAAAA="
+call {vg_sha512_init}
+.base64 "SIu8JMgAAAC+AAAAAEiLlCTwAAAAuSAAAABMi4QkyAAAAEmBwMAAAAA="
+call {vg_sha512_update_scratch_avx2}
+.base64 "SIu8JMgAAAC+IAAAAEiLlCTgAAAAuSAAAABMi4QkyAAAAEmBwMAAAAA="
+call {vg_sha512_update_scratch_avx2}
+.base64 "SIu8JMgAAAC+QAAAAEiLlCTYAAAASIuMJNAAAABMi4QkyAAAAEmBwMAAAAA="
+call {vg_sha512_update_scratch_avx2}
+.base64 "SIu8JMgAAABIi7Qk0AAAAEiDxkBIieJIgcKAAAAASIuMJMgAAABIgcHAAAAA"
+call {vg_sha512_finalize_scratch_avx2}
+.base64 "SInnSIPHYEiJ5kiBxoAAAABIi5QkyAAAAA=="
+call {vg_ed25519_scalar_reduce}
+.base64 "SIu8JPAAAABIg8cgSInmSIPGQEiJ4kiDwmBIieFIg8EATIuEJMgAAAA="
+call {vg_ed25519_scalar_mul_add}
+.base64 "McBIiQQkSIlEJAhIiUQkEEiJRCQYSIlEJCBIiUQkKEiJRCQwSIlEJDhIiUQkQEiJRCRISIlEJFBIiUQkWEiJRCRgSIlEJGhIiUQkcEiJRCR4SImEJIAAAABIiYQkiAAAAEiJhCSQAAAASImEJJgAAABIiYQkoAAAAEiJhCSoAAAASImEJLAAAABIiYQkuAAAAFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFjD"
+.p2align 6"#,
+        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_update_scratch_avx2 = sym super::sha512::vg_sha512_update_scratch_avx2::vg_sha512_update_scratch_avx2,
+        vg_sha512_finalize_scratch_avx2 = sym super::sha512::vg_sha512_finalize_scratch_avx2::vg_sha512_finalize_scratch_avx2,
+        vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
+        vg_ed25519_scalar_base = sym super::ed25519::vg_ed25519_scalar_base::vg_ed25519_scalar_base,
+        vg_ed25519_scalar_mul_add = sym super::ed25519::vg_ed25519_scalar_mul_add::vg_ed25519_scalar_mul_add,
+    )
+}
+
+/// The CPU features `vg_ed25519_key_pair_avx2` requires (`Artifact.features`).
+pub const VG_ED25519_KEY_PAIR_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2);
+
+/// Ed25519 key-pair derivation (RFC 8032 §5.1.5): for the 32-byte private seed at `seed`, writes its 64-byte SHA-512 digest (§5.1.5, step 1) to `*expanded` and its 32-byte public key to `*out`, including pruning: the digest and public key that `vg_ed25519_sign_expanded` takes. Contract: `VG.Spec.Ed25519.keyPairContract`. Constant time: only pointers may affect timing.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 32 bytes.
+/// * `expanded` must be valid for reads and writes of 64 bytes.
+/// * `seed` must be valid for reads of 32 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The seed must originate from a cryptographically secure random generator.
+/// * The 64 bytes written to `expanded` are secret: the caller must destroy them after use.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out`, `expanded` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
+/// * None of `out`, `expanded`, `seed` and `scratch` may overlap the return address on the stack or the 1632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_key_pair_avx2(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
+    core::arch::naked_asm!(
+        r#".base64 "V1ZRSInXSInyviAAAAA="
+call {vg_sha512_digest_avx2}
+.base64 "SIt8JBBIi3QkCEiLFCQ="
+call {vg_ed25519_public_key_expanded}
+.base64 "WFhYww=="
+.p2align 6"#,
+        vg_sha512_digest_avx2 = sym super::sha512::vg_sha512_digest_avx2,
+        vg_ed25519_public_key_expanded = sym super::ed25519::vg_ed25519_public_key_expanded::vg_ed25519_public_key_expanded,
+    )
+}
+
+/// The CPU features `vg_ed25519_verify_ifma` requires (`Artifact.features`).
+pub const VG_ED25519_VERIFY_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
+
+/// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 32 bytes.
+/// * `message` must be valid for reads of `len` bytes.
+/// * `signature` must be valid for reads of 64 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `scratch` must not overlap `pk`, `message` or `signature` (distinct Rust objects never do).
+/// * None of `pk`, `message`, `signature` and `scratch` may overlap the return address on the stack or the 184 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `bmi2`, `adx`, `avx512ifma` and `avx512vl` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_ifma(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "V1ZSUUFQUFBQUFBQUFBQUFBQUFBQUEiLvCSAAAAA"
+call {vg_sha512_init}
+.base64 "SIu8JIAAAAC+AAAAAEiLlCSIAAAAuSAAAABMi4QkgAAAAEmBwMAAAAA="
+call {vg_sha512_update_scratch}
+.base64 "SIu8JIAAAAC+IAAAAEiLlCSgAAAAuSAAAABMi4QkgAAAAEmBwMAAAAA="
+call {vg_sha512_update_scratch}
+.base64 "SIu8JIAAAAC+QAAAAEiLlCSYAAAASIuMJJAAAABMi4QkgAAAAEmBwMAAAAA="
+call {vg_sha512_update_scratch}
+.base64 "SIu8JIAAAABIi7QkkAAAAEiDxkBIieJIg8JASIuMJIAAAABIgcHAAAAA"
+call {vg_sha512_finalize_scratch}
+.base64 "SInnSInmSIPGQEiLlCSAAAAA"
+call {vg_ed25519_scalar_reduce}
+.base64 "McBIiUQkIEiJRCQoSIlEJDBIiUQkOEiLvCSgAAAASIu0JIgAAABIieJIi4wkgAAAAA=="
+call {vg_ed25519_verify_equation_ifma}
+.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0Fbww=="
+.p2align 6"#,
+        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
+        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
+        vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
+        vg_ed25519_verify_equation_ifma = sym super::ed25519::vg_ed25519_verify_equation_ifma::vg_ed25519_verify_equation_ifma,
+    )
+}
+
+/// The CPU features `vg_ed25519_sign_expanded_ifma` requires (`Artifact.features`).
+pub const VG_ED25519_SIGN_EXPANDED_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
+
+/// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 64 bytes.
+/// * `expanded` must be valid for reads of 64 bytes.
+/// * `pk` must be valid for reads of 32 bytes.
+/// * `message` must be valid for reads of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The 64 bytes at `expanded` must equal the SHA-512 digest (`VG.Spec.Sha512.sha512`) of a 32-byte seed, and the 32 bytes at `pk` the public key derived from that seed by RFC 8032 §5.1.5 (`VG.Spec.Ed25519.publicKey`).
+/// * The seed must originate from a cryptographically secure random generator.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other, `expanded`, `pk` or `message` (distinct Rust objects never do).
+/// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `bmi2`, `adx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded_ifma(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+    core::arch::naked_asm!(
+        r#".base64 "V1ZSUUFQQVFQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQSIuEJOgAAABIiwhIiYwkgAAAAEiLSAhIiYwkiAAAAEiLSBBIiYwkkAAAAEiLSBhIiYwkmAAAAEiLSCBIiYwkoAAAAEiLSChIiYwkqAAAAEiLSDBIiYwksAAAAEiLSDhIiYwkuAAAAEyLhCSAAAAATIuMJIgAAABMi5QkkAAAAEyLnCSYAAAASYPg+Ei5/////////z9JIctIuQAAAAAAAABASQnLTIkEJEyJTCQITIlUJBBMiVwkGEyLhCSgAAAATIuMJKgAAABMi5QksAAAAEyLnCS4AAAATIlEJCBMiUwkKEyJVCQwTIlcJDhIi7wkyAAAAA=="
+call {vg_sha512_init}
+.base64 "SIu8JMgAAAC+AAAAAEiJ4kiDwiC5IAAAAEyLhCTIAAAASYHAwAAAAA=="
+call {vg_sha512_update_scratch}
+.base64 "SIu8JMgAAAC+IAAAAEiLlCTYAAAASIuMJNAAAABMi4QkyAAAAEmBwMAAAAA="
+call {vg_sha512_update_scratch}
+.base64 "SIu8JMgAAABIi7Qk0AAAAEiDxiBIieJIgcKAAAAASIuMJMgAAABIgcHAAAAA"
+call {vg_sha512_finalize_scratch}
+.base64 "SInnSIPHQEiJ5kiBxoAAAABIi5QkyAAAAA=="
+call {vg_ed25519_scalar_reduce}
+.base64 "SIu8JPAAAABIieZIg8ZASIuUJMgAAAA="
+call {vg_ed25519_scalar_base_ifma}
+.base64 "SIu8JMgAAAA="
+call {vg_sha512_init}
+.base64 "SIu8JMgAAAC+AAAAAEiLlCTwAAAAuSAAAABMi4QkyAAAAEmBwMAAAAA="
+call {vg_sha512_update_scratch}
+.base64 "SIu8JMgAAAC+IAAAAEiLlCTgAAAAuSAAAABMi4QkyAAAAEmBwMAAAAA="
+call {vg_sha512_update_scratch}
+.base64 "SIu8JMgAAAC+QAAAAEiLlCTYAAAASIuMJNAAAABMi4QkyAAAAEmBwMAAAAA="
+call {vg_sha512_update_scratch}
+.base64 "SIu8JMgAAABIi7Qk0AAAAEiDxkBIieJIgcKAAAAASIuMJMgAAABIgcHAAAAA"
+call {vg_sha512_finalize_scratch}
+.base64 "SInnSIPHYEiJ5kiBxoAAAABIi5QkyAAAAA=="
+call {vg_ed25519_scalar_reduce}
+.base64 "SIu8JPAAAABIg8cgSInmSIPGQEiJ4kiDwmBIieFIg8EATIuEJMgAAAA="
+call {vg_ed25519_scalar_mul_add}
+.base64 "McBIiQQkSIlEJAhIiUQkEEiJRCQYSIlEJCBIiUQkKEiJRCQwSIlEJDhIiUQkQEiJRCRISIlEJFBIiUQkWEiJRCRgSIlEJGhIiUQkcEiJRCR4SImEJIAAAABIiYQkiAAAAEiJhCSQAAAASImEJJgAAABIiYQkoAAAAEiJhCSoAAAASImEJLAAAABIiYQkuAAAAFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFjD"
+.p2align 6"#,
+        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
+        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
+        vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
+        vg_ed25519_scalar_base_ifma = sym super::ed25519::vg_ed25519_scalar_base_ifma::vg_ed25519_scalar_base_ifma,
+        vg_ed25519_scalar_mul_add = sym super::ed25519::vg_ed25519_scalar_mul_add::vg_ed25519_scalar_mul_add,
+    )
+}
+
+/// The CPU features `vg_ed25519_key_pair_ifma` requires (`Artifact.features`).
+pub const VG_ED25519_KEY_PAIR_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
+
+/// Ed25519 key-pair derivation (RFC 8032 §5.1.5): for the 32-byte private seed at `seed`, writes its 64-byte SHA-512 digest (§5.1.5, step 1) to `*expanded` and its 32-byte public key to `*out`, including pruning: the digest and public key that `vg_ed25519_sign_expanded` takes. Contract: `VG.Spec.Ed25519.keyPairContract`. Constant time: only pointers may affect timing.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 32 bytes.
+/// * `expanded` must be valid for reads and writes of 64 bytes.
+/// * `seed` must be valid for reads of 32 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The seed must originate from a cryptographically secure random generator.
+/// * The 64 bytes written to `expanded` are secret: the caller must destroy them after use.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out`, `expanded` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
+/// * None of `out`, `expanded`, `seed` and `scratch` may overlap the return address on the stack or the 1632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `bmi2`, `adx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_key_pair_ifma(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
+    core::arch::naked_asm!(
+        r#".base64 "V1ZRSInXSInyviAAAAA="
+call {vg_sha512_digest}
+.base64 "SIt8JBBIi3QkCEiLFCQ="
+call {vg_ed25519_public_key_expanded_ifma}
+.base64 "WFhYww=="
+.p2align 6"#,
+        vg_sha512_digest = sym super::sha512::vg_sha512_digest,
+        vg_ed25519_public_key_expanded_ifma = sym super::ed25519::vg_ed25519_public_key_expanded_ifma::vg_ed25519_public_key_expanded_ifma,
+    )
+}
+
+/// The CPU features `vg_ed25519_verify_adx` requires (`Artifact.features`).
+pub const VG_ED25519_VERIFY_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 32 bytes.
+/// * `message` must be valid for reads of `len` bytes.
+/// * `signature` must be valid for reads of 64 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `scratch` must not overlap `pk`, `message` or `signature` (distinct Rust objects never do).
+/// * None of `pk`, `message`, `signature` and `scratch` may overlap the return address on the stack or the 184 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `bmi2` and `adx` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_adx(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "V1ZSUUFQUFBQUFBQUFBQUFBQUFBQUEiLvCSAAAAA"
+call {vg_sha512_init}
+.base64 "SIu8JIAAAAC+AAAAAEiLlCSIAAAAuSAAAABMi4QkgAAAAEmBwMAAAAA="
+call {vg_sha512_update_scratch}
+.base64 "SIu8JIAAAAC+IAAAAEiLlCSgAAAAuSAAAABMi4QkgAAAAEmBwMAAAAA="
+call {vg_sha512_update_scratch}
+.base64 "SIu8JIAAAAC+QAAAAEiLlCSYAAAASIuMJJAAAABMi4QkgAAAAEmBwMAAAAA="
+call {vg_sha512_update_scratch}
+.base64 "SIu8JIAAAABIi7QkkAAAAEiDxkBIieJIg8JASIuMJIAAAABIgcHAAAAA"
+call {vg_sha512_finalize_scratch}
+.base64 "SInnSInmSIPGQEiLlCSAAAAA"
+call {vg_ed25519_scalar_reduce}
+.base64 "McBIiUQkIEiJRCQoSIlEJDBIiUQkOEiLvCSgAAAASIu0JIgAAABIieJIi4wkgAAAAA=="
+call {vg_ed25519_verify_equation_adx}
+.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0Fbww=="
+.p2align 6"#,
+        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
+        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
+        vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
+        vg_ed25519_verify_equation_adx = sym super::ed25519::vg_ed25519_verify_equation_adx::vg_ed25519_verify_equation_adx,
+    )
+}
+
+/// The CPU features `vg_ed25519_sign_expanded_adx` requires (`Artifact.features`).
+pub const VG_ED25519_SIGN_EXPANDED_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 64 bytes.
+/// * `expanded` must be valid for reads of 64 bytes.
+/// * `pk` must be valid for reads of 32 bytes.
+/// * `message` must be valid for reads of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The 64 bytes at `expanded` must equal the SHA-512 digest (`VG.Spec.Sha512.sha512`) of a 32-byte seed, and the 32 bytes at `pk` the public key derived from that seed by RFC 8032 §5.1.5 (`VG.Spec.Ed25519.publicKey`).
+/// * The seed must originate from a cryptographically secure random generator.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other, `expanded`, `pk` or `message` (distinct Rust objects never do).
+/// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `bmi2` and `adx` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded_adx(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+    core::arch::naked_asm!(
+        r#".base64 "V1ZSUUFQQVFQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQSIuEJOgAAABIiwhIiYwkgAAAAEiLSAhIiYwkiAAAAEiLSBBIiYwkkAAAAEiLSBhIiYwkmAAAAEiLSCBIiYwkoAAAAEiLSChIiYwkqAAAAEiLSDBIiYwksAAAAEiLSDhIiYwkuAAAAEyLhCSAAAAATIuMJIgAAABMi5QkkAAAAEyLnCSYAAAASYPg+Ei5/////////z9JIctIuQAAAAAAAABASQnLTIkEJEyJTCQITIlUJBBMiVwkGEyLhCSgAAAATIuMJKgAAABMi5QksAAAAEyLnCS4AAAATIlEJCBMiUwkKEyJVCQwTIlcJDhIi7wkyAAAAA=="
+call {vg_sha512_init}
+.base64 "SIu8JMgAAAC+AAAAAEiJ4kiDwiC5IAAAAEyLhCTIAAAASYHAwAAAAA=="
+call {vg_sha512_update_scratch}
+.base64 "SIu8JMgAAAC+IAAAAEiLlCTYAAAASIuMJNAAAABMi4QkyAAAAEmBwMAAAAA="
+call {vg_sha512_update_scratch}
+.base64 "SIu8JMgAAABIi7Qk0AAAAEiDxiBIieJIgcKAAAAASIuMJMgAAABIgcHAAAAA"
+call {vg_sha512_finalize_scratch}
+.base64 "SInnSIPHQEiJ5kiBxoAAAABIi5QkyAAAAA=="
+call {vg_ed25519_scalar_reduce}
+.base64 "SIu8JPAAAABIieZIg8ZASIuUJMgAAAA="
+call {vg_ed25519_scalar_base_adx}
+.base64 "SIu8JMgAAAA="
+call {vg_sha512_init}
+.base64 "SIu8JMgAAAC+AAAAAEiLlCTwAAAAuSAAAABMi4QkyAAAAEmBwMAAAAA="
+call {vg_sha512_update_scratch}
+.base64 "SIu8JMgAAAC+IAAAAEiLlCTgAAAAuSAAAABMi4QkyAAAAEmBwMAAAAA="
+call {vg_sha512_update_scratch}
+.base64 "SIu8JMgAAAC+QAAAAEiLlCTYAAAASIuMJNAAAABMi4QkyAAAAEmBwMAAAAA="
+call {vg_sha512_update_scratch}
+.base64 "SIu8JMgAAABIi7Qk0AAAAEiDxkBIieJIgcKAAAAASIuMJMgAAABIgcHAAAAA"
+call {vg_sha512_finalize_scratch}
+.base64 "SInnSIPHYEiJ5kiBxoAAAABIi5QkyAAAAA=="
+call {vg_ed25519_scalar_reduce}
+.base64 "SIu8JPAAAABIg8cgSInmSIPGQEiJ4kiDwmBIieFIg8EATIuEJMgAAAA="
+call {vg_ed25519_scalar_mul_add}
+.base64 "McBIiQQkSIlEJAhIiUQkEEiJRCQYSIlEJCBIiUQkKEiJRCQwSIlEJDhIiUQkQEiJRCRISIlEJFBIiUQkWEiJRCRgSIlEJGhIiUQkcEiJRCR4SImEJIAAAABIiYQkiAAAAEiJhCSQAAAASImEJJgAAABIiYQkoAAAAEiJhCSoAAAASImEJLAAAABIiYQkuAAAAFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFjD"
+.p2align 6"#,
+        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
+        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
+        vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
+        vg_ed25519_scalar_base_adx = sym super::ed25519::vg_ed25519_scalar_base_adx::vg_ed25519_scalar_base_adx,
+        vg_ed25519_scalar_mul_add = sym super::ed25519::vg_ed25519_scalar_mul_add::vg_ed25519_scalar_mul_add,
+    )
+}
+
+/// The CPU features `vg_ed25519_key_pair_adx` requires (`Artifact.features`).
+pub const VG_ED25519_KEY_PAIR_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// Ed25519 key-pair derivation (RFC 8032 §5.1.5): for the 32-byte private seed at `seed`, writes its 64-byte SHA-512 digest (§5.1.5, step 1) to `*expanded` and its 32-byte public key to `*out`, including pruning: the digest and public key that `vg_ed25519_sign_expanded` takes. Contract: `VG.Spec.Ed25519.keyPairContract`. Constant time: only pointers may affect timing.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 32 bytes.
+/// * `expanded` must be valid for reads and writes of 64 bytes.
+/// * `seed` must be valid for reads of 32 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The seed must originate from a cryptographically secure random generator.
+/// * The 64 bytes written to `expanded` are secret: the caller must destroy them after use.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out`, `expanded` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
+/// * None of `out`, `expanded`, `seed` and `scratch` may overlap the return address on the stack or the 1632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `bmi2` and `adx` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_key_pair_adx(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
+    core::arch::naked_asm!(
+        r#".base64 "V1ZRSInXSInyviAAAAA="
+call {vg_sha512_digest}
+.base64 "SIt8JBBIi3QkCEiLFCQ="
+call {vg_ed25519_public_key_expanded_adx}
+.base64 "WFhYww=="
+.p2align 6"#,
+        vg_sha512_digest = sym super::sha512::vg_sha512_digest,
+        vg_ed25519_public_key_expanded_adx = sym super::ed25519::vg_ed25519_public_key_expanded_adx::vg_ed25519_public_key_expanded_adx,
+    )
+}
+
+/// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 32 bytes.
+/// * `message` must be valid for reads of `len` bytes.
+/// * `signature` must be valid for reads of 64 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `scratch` must not overlap `pk`, `message` or `signature` (distinct Rust objects never do).
+/// * None of `pk`, `message`, `signature` and `scratch` may overlap the return address on the stack or the 184 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "V1ZSUUFQUFBQUFBQUFBQUFBQUFBQUEiLvCSAAAAA"
+call {vg_sha512_init}
+.base64 "SIu8JIAAAAC+AAAAAEiLlCSIAAAAuSAAAABMi4QkgAAAAEmBwMAAAAA="
+call {vg_sha512_update_scratch}
+.base64 "SIu8JIAAAAC+IAAAAEiLlCSgAAAAuSAAAABMi4QkgAAAAEmBwMAAAAA="
+call {vg_sha512_update_scratch}
+.base64 "SIu8JIAAAAC+QAAAAEiLlCSYAAAASIuMJJAAAABMi4QkgAAAAEmBwMAAAAA="
+call {vg_sha512_update_scratch}
+.base64 "SIu8JIAAAABIi7QkkAAAAEiDxkBIieJIg8JASIuMJIAAAABIgcHAAAAA"
+call {vg_sha512_finalize_scratch}
+.base64 "SInnSInmSIPGQEiLlCSAAAAA"
+call {vg_ed25519_scalar_reduce}
+.base64 "McBIiUQkIEiJRCQoSIlEJDBIiUQkOEiLvCSgAAAASIu0JIgAAABIieJIi4wkgAAAAA=="
+call {vg_ed25519_verify_equation}
+.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0Fbww=="
+.p2align 6"#,
+        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
+        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
+        vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
+        vg_ed25519_verify_equation = sym super::ed25519::vg_ed25519_verify_equation::vg_ed25519_verify_equation,
+    )
+}
+
+/// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 64 bytes.
+/// * `expanded` must be valid for reads of 64 bytes.
+/// * `pk` must be valid for reads of 32 bytes.
+/// * `message` must be valid for reads of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The 64 bytes at `expanded` must equal the SHA-512 digest (`VG.Spec.Sha512.sha512`) of a 32-byte seed, and the 32 bytes at `pk` the public key derived from that seed by RFC 8032 §5.1.5 (`VG.Spec.Ed25519.publicKey`).
+/// * The seed must originate from a cryptographically secure random generator.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other, `expanded`, `pk` or `message` (distinct Rust objects never do).
+/// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+    core::arch::naked_asm!(
+        r#".base64 "V1ZSUUFQQVFQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQSIuEJOgAAABIiwhIiYwkgAAAAEiLSAhIiYwkiAAAAEiLSBBIiYwkkAAAAEiLSBhIiYwkmAAAAEiLSCBIiYwkoAAAAEiLSChIiYwkqAAAAEiLSDBIiYwksAAAAEiLSDhIiYwkuAAAAEyLhCSAAAAATIuMJIgAAABMi5QkkAAAAEyLnCSYAAAASYPg+Ei5/////////z9JIctIuQAAAAAAAABASQnLTIkEJEyJTCQITIlUJBBMiVwkGEyLhCSgAAAATIuMJKgAAABMi5QksAAAAEyLnCS4AAAATIlEJCBMiUwkKEyJVCQwTIlcJDhIi7wkyAAAAA=="
+call {vg_sha512_init}
+.base64 "SIu8JMgAAAC+AAAAAEiJ4kiDwiC5IAAAAEyLhCTIAAAASYHAwAAAAA=="
+call {vg_sha512_update_scratch}
+.base64 "SIu8JMgAAAC+IAAAAEiLlCTYAAAASIuMJNAAAABMi4QkyAAAAEmBwMAAAAA="
+call {vg_sha512_update_scratch}
+.base64 "SIu8JMgAAABIi7Qk0AAAAEiDxiBIieJIgcKAAAAASIuMJMgAAABIgcHAAAAA"
+call {vg_sha512_finalize_scratch}
+.base64 "SInnSIPHQEiJ5kiBxoAAAABIi5QkyAAAAA=="
+call {vg_ed25519_scalar_reduce}
+.base64 "SIu8JPAAAABIieZIg8ZASIuUJMgAAAA="
+call {vg_ed25519_scalar_base}
+.base64 "SIu8JMgAAAA="
+call {vg_sha512_init}
+.base64 "SIu8JMgAAAC+AAAAAEiLlCTwAAAAuSAAAABMi4QkyAAAAEmBwMAAAAA="
+call {vg_sha512_update_scratch}
+.base64 "SIu8JMgAAAC+IAAAAEiLlCTgAAAAuSAAAABMi4QkyAAAAEmBwMAAAAA="
+call {vg_sha512_update_scratch}
+.base64 "SIu8JMgAAAC+QAAAAEiLlCTYAAAASIuMJNAAAABMi4QkyAAAAEmBwMAAAAA="
+call {vg_sha512_update_scratch}
+.base64 "SIu8JMgAAABIi7Qk0AAAAEiDxkBIieJIgcKAAAAASIuMJMgAAABIgcHAAAAA"
+call {vg_sha512_finalize_scratch}
+.base64 "SInnSIPHYEiJ5kiBxoAAAABIi5QkyAAAAA=="
+call {vg_ed25519_scalar_reduce}
+.base64 "SIu8JPAAAABIg8cgSInmSIPGQEiJ4kiDwmBIieFIg8EATIuEJMgAAAA="
+call {vg_ed25519_scalar_mul_add}
+.base64 "McBIiQQkSIlEJAhIiUQkEEiJRCQYSIlEJCBIiUQkKEiJRCQwSIlEJDhIiUQkQEiJRCRISIlEJFBIiUQkWEiJRCRgSIlEJGhIiUQkcEiJRCR4SImEJIAAAABIiYQkiAAAAEiJhCSQAAAASImEJJgAAABIiYQkoAAAAEiJhCSoAAAASImEJLAAAABIiYQkuAAAAFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFjD"
+.p2align 6"#,
+        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
+        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
+        vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
+        vg_ed25519_scalar_base = sym super::ed25519::vg_ed25519_scalar_base::vg_ed25519_scalar_base,
+        vg_ed25519_scalar_mul_add = sym super::ed25519::vg_ed25519_scalar_mul_add::vg_ed25519_scalar_mul_add,
+    )
+}
+
+/// Ed25519 key-pair derivation (RFC 8032 §5.1.5): for the 32-byte private seed at `seed`, writes its 64-byte SHA-512 digest (§5.1.5, step 1) to `*expanded` and its 32-byte public key to `*out`, including pruning: the digest and public key that `vg_ed25519_sign_expanded` takes. Contract: `VG.Spec.Ed25519.keyPairContract`. Constant time: only pointers may affect timing.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 32 bytes.
+/// * `expanded` must be valid for reads and writes of 64 bytes.
+/// * `seed` must be valid for reads of 32 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The seed must originate from a cryptographically secure random generator.
+/// * The 64 bytes written to `expanded` are secret: the caller must destroy them after use.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out`, `expanded` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
+/// * None of `out`, `expanded`, `seed` and `scratch` may overlap the return address on the stack or the 1632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_key_pair(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
+    core::arch::naked_asm!(
+        r#".base64 "V1ZRSInXSInyviAAAAA="
+call {vg_sha512_digest}
+.base64 "SIt8JBBIi3QkCEiLFCQ="
+call {vg_ed25519_public_key_expanded}
+.base64 "WFhYww=="
+.p2align 6"#,
+        vg_sha512_digest = sym super::sha512::vg_sha512_digest,
+        vg_ed25519_public_key_expanded = sym super::ed25519::vg_ed25519_public_key_expanded::vg_ed25519_public_key_expanded,
     )
 }
 

@@ -4,7 +4,7 @@
 // `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
 // gives.
 
-vg_pbkdf2_hmac_sha256:
+vg_pbkdf2_hmac_sha256_shani:
 	lea rsp, [rsp-1624]
 	mov rax, QWORD PTR [rsp+1632]
 	mov QWORD PTR [rsp+8], rax
@@ -43,14 +43,14 @@ vg_pbkdf2_hmac_sha256:
 	mov rdx, rbx
 	mov rcx, rbp
 	mov r8, r15
-	call {vg_sha256_update_scratch}
+	call {vg_sha256_update_scratch_shani}
 	mov rdi, r15
 	add rdi, 1184
 	mov rsi, rbp
 	mov rdx, r15
 	add rdx, 1344
 	mov rcx, r15
-	call {vg_sha256_finalize_scratch}
+	call {vg_sha256_finalize_scratch_shani}
 	mov rdx, r15
 	add rdx, 1344
 	mov ecx, 32
@@ -60,7 +60,7 @@ vg_pbkdf2_hmac_sha256:
 	mov rsi, r15
 	add rsi, 992
 	mov r8, r15
-	call {vg_hmac_sha256_init_scratch}
+	call {vg_hmac_sha256_init_scratch_shani}
 	mov r14d, 0
 22:
 	movzx eax, BYTE PTR [r15+r14*1+896]
@@ -74,7 +74,7 @@ vg_pbkdf2_hmac_sha256:
 	mov rdx, r12
 	mov rcx, r13
 	mov r8, r15
-	call {vg_sha256_update_scratch}
+	call {vg_sha256_update_scratch_shani}
 	mov rbp, r13
 	mov r13, QWORD PTR [r15+880]
 	mov r12, QWORD PTR [rsp+8]
@@ -100,7 +100,7 @@ vg_pbkdf2_hmac_sha256:
 	add rdx, 1376
 	mov ecx, 4
 	mov r8, r15
-	call {vg_sha256_update_scratch}
+	call {vg_sha256_update_scratch_shani}
 	mov rdi, r15
 	add rdi, 1184
 	mov rsi, r15
@@ -110,7 +110,7 @@ vg_pbkdf2_hmac_sha256:
 	mov rcx, r15
 	add rcx, 1280
 	mov r8, r15
-	call {vg_hmac_sha256_finalize_scratch}
+	call {vg_hmac_sha256_finalize_scratch_shani}
 	mov r14d, 0
 27:
 	movzx eax, BYTE PTR [r15+r14*1+1280]
@@ -126,7 +126,7 @@ vg_pbkdf2_hmac_sha256:
 	mov rcx, r15
 	add rcx, 1312
 	mov r8, r15
-	call {vg_pbkdf2_hmac_sha256_iterate}
+	call {vg_pbkdf2_hmac_sha256_iterate_shani}
 	mov ecx, 32
 	cmp r12, rcx
 	jb 28f
@@ -312,7 +312,7 @@ vg_pbkdf2_hmac_sha256_avx2:
 	ret
 	.p2align 6
 
-vg_pbkdf2_hmac_sha256_shani:
+vg_pbkdf2_hmac_sha256:
 	lea rsp, [rsp-1624]
 	mov rax, QWORD PTR [rsp+1632]
 	mov QWORD PTR [rsp+8], rax
@@ -351,14 +351,14 @@ vg_pbkdf2_hmac_sha256_shani:
 	mov rdx, rbx
 	mov rcx, rbp
 	mov r8, r15
-	call {vg_sha256_update_scratch_shani}
+	call {vg_sha256_update_scratch}
 	mov rdi, r15
 	add rdi, 1184
 	mov rsi, rbp
 	mov rdx, r15
 	add rdx, 1344
 	mov rcx, r15
-	call {vg_sha256_finalize_scratch_shani}
+	call {vg_sha256_finalize_scratch}
 	mov rdx, r15
 	add rdx, 1344
 	mov ecx, 32
@@ -368,7 +368,7 @@ vg_pbkdf2_hmac_sha256_shani:
 	mov rsi, r15
 	add rsi, 992
 	mov r8, r15
-	call {vg_hmac_sha256_init_scratch_shani}
+	call {vg_hmac_sha256_init_scratch}
 	mov r14d, 0
 22:
 	movzx eax, BYTE PTR [r15+r14*1+896]
@@ -382,7 +382,7 @@ vg_pbkdf2_hmac_sha256_shani:
 	mov rdx, r12
 	mov rcx, r13
 	mov r8, r15
-	call {vg_sha256_update_scratch_shani}
+	call {vg_sha256_update_scratch}
 	mov rbp, r13
 	mov r13, QWORD PTR [r15+880]
 	mov r12, QWORD PTR [rsp+8]
@@ -408,7 +408,7 @@ vg_pbkdf2_hmac_sha256_shani:
 	add rdx, 1376
 	mov ecx, 4
 	mov r8, r15
-	call {vg_sha256_update_scratch_shani}
+	call {vg_sha256_update_scratch}
 	mov rdi, r15
 	add rdi, 1184
 	mov rsi, r15
@@ -418,7 +418,7 @@ vg_pbkdf2_hmac_sha256_shani:
 	mov rcx, r15
 	add rcx, 1280
 	mov r8, r15
-	call {vg_hmac_sha256_finalize_scratch_shani}
+	call {vg_hmac_sha256_finalize_scratch}
 	mov r14d, 0
 27:
 	movzx eax, BYTE PTR [r15+r14*1+1280]
@@ -434,7 +434,7 @@ vg_pbkdf2_hmac_sha256_shani:
 	mov rcx, r15
 	add rcx, 1312
 	mov r8, r15
-	call {vg_pbkdf2_hmac_sha256_iterate_shani}
+	call {vg_pbkdf2_hmac_sha256_iterate}
 	mov ecx, 32
 	cmp r12, rcx
 	jb 28f

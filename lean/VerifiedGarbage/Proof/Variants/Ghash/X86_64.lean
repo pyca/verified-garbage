@@ -14,8 +14,8 @@ def scalar : Proof.AesGcm.X86_64.GhashName := .scalar
 
 def vpclmul : Proof.AesGcm.X86_64.GhashName := .vpclmul
 
-/-- Every implementation, which each function generic over them is emitted
-with (the registration files that import this). -/
-def variants := [pclmul, scalar, vpclmul]
+/-- Every implementation, best first: each function generic over them is
+emitted with each (the registration files that import this). -/
+def variants := [vpclmul, pclmul, scalar]
 
 end VG.Proof.Variants.Ghash.X86_64
