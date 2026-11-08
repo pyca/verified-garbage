@@ -15,6 +15,13 @@ use crate::arch::dispatch::aes_cbc::{vg_aes_cbc_decrypt_auto, vg_aes_cbc_encrypt
 use crate::error::{IncompleteBlock, InvalidKeyLength};
 use crate::zeroize::zeroize;
 
+/// The scratch space of the CBC functions, aligned to a cache line: the
+/// VAES implementations read the round keys they keep there in every
+/// iteration, and at the 8 bytes' alignment of `[u64; 272]` some of those
+/// reads would cross cache lines, depending on the caller's stack.
+#[repr(C, align(64))]
+struct Scratch([u64; 272]);
+
 /// An expanded AES key, which serves both directions. Every implementation
 /// of `vg_aes_expand_key` writes the same schedule (`Spec.Aes.KeySchedule`),
 /// which every implementation of the CBC functions reads.
@@ -129,7 +136,7 @@ impl Key {
         if !buffer.len().is_multiple_of(16) {
             return Err(IncompleteBlock);
         }
-        let mut scratch = [0; 272];
+        let mut scratch = Scratch([0; 272]);
         let data = buffer.as_mut_ptr().cast();
         let n = buffer.len() / 16;
         // SAFETY: `rounds` is 10, 12 or 14 and the schedule holds its key
@@ -138,9 +145,9 @@ impl Key {
         // objects of the sizes of the signature.
         unsafe {
             if encrypt {
-                vg_aes_cbc_encrypt_auto(&self.schedule, self.rounds, iv, data, n, &mut scratch);
+                vg_aes_cbc_encrypt_auto(&self.schedule, self.rounds, iv, data, n, &mut scratch.0);
             } else {
-                vg_aes_cbc_decrypt_auto(&self.schedule, self.rounds, iv, data, n, &mut scratch);
+                vg_aes_cbc_decrypt_auto(&self.schedule, self.rounds, iv, data, n, &mut scratch.0);
             }
         }
         // The scratch space may hold the key schedule, the data and our
@@ -148,7 +155,7 @@ impl Key {
         // leaves each byte of it unchanged or zero
         // (`Proof/AesCbc/<ISA>/Wiped.lean`); elsewhere, wipe it.
         #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
-        zeroize(&mut scratch);
+        zeroize(&mut scratch.0);
         #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
         let _ = &mut scratch;
         Ok(())
