@@ -105,7 +105,7 @@ def openToFlaggedRoundsContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contr
 
 /-- `open_to` on the prepared key context with `work: *mut [u64; 320]`. -/
 def openToFlaggedScratchSig : Sig where
-  params := [("ctx", .array false .u64 136), ("rounds", .int .usize true),
+  params := [("ctx", .array false .u64 129), ("rounds", .int .usize true),
     ("nonce", .slice false .u8 "nonce_len"), ("aad", .slice false .u8 "aad_len"),
     ("src", .slice false .u8 "len"), ("dst", .slice true .u8 "dst_len"),
     ("tag", .slice false .u8 "tag_len"), ("work", .array true .u64 320)]
@@ -124,7 +124,7 @@ def openToFlaggedScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Cont
 
 /-- `FlaggedPowers` depends only on bytes within the context. -/
 theorem flaggedPowers_congr {m₁ m₂ : Mem} {p : Addr}
-    (h : ∀ i < 136 * 8, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i))
+    (h : ∀ i < 129 * 8, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i))
     (hr : FlaggedPowers m₁ p) : FlaggedPowers m₂ p := by
   refine ⟨?_, AesGcm.preparedPowersRepr_congr (fun i hi => h i (by omega)) hr.2⟩
   have e : m₂.readW (p + BitVec.ofNat 64 1024) 64 = m₁.readW (p + BitVec.ofNat 64 1024) 64 := by
@@ -136,7 +136,7 @@ theorem flaggedPowers_congr {m₁ m₂ : Mem} {p : Addr}
   exact hr.1
 
 /-- A context of zeros has the powers, and its flag word is 0. -/
-theorem flaggedPowers_of_zeroMem {m : Mem} {p : Addr} (h : ∀ i < 136 * 8, m (p + BitVec.ofNat 64 i) = 0) :
+theorem flaggedPowers_of_zeroMem {m : Mem} {p : Addr} (h : ∀ i < 129 * 8, m (p + BitVec.ofNat 64 i) = 0) :
     FlaggedPowers m p :=
   flaggedPowers_congr (m₁ := fun _ => 0) h
     ⟨by simp [Mem.readW, Mem.read], AesGcm.preparedPowersRepr_zeroMem p⟩

@@ -645,7 +645,7 @@ impl Backend {
             Backend::VaesVpclmul => or_prepared(&FNS_VAES_VPCLMUL, &FNS_VAES_VPCLMUL_PREPARED),
             #[cfg(all(target_arch = "x86_64", not(feature = "alloc")))]
             Backend::VaesVpclmul => &FNS_VAES_VPCLMUL,
-            // Its `_prepared` instances take the 1088-byte prepared key
+            // Its `_prepared` instances take the 1032-byte prepared key
             // context of `vg_aes_gcm_prepare`, which this code does not lay out.
             #[cfg(target_arch = "x86_64")]
             Backend::VaesVpclmulAvx512 => &FNS_VAES_VPCLMUL_AVX512,
