@@ -48,19 +48,35 @@ abbrev CtxMode.prepared : CtxMode := CtxMode.preparedN 24
 abbrev CtxMode.prepared16 : CtxMode := CtxMode.preparedN 8
 
 /-- The 1032-byte prepared key context of `vg_aes_gcm_prepare`
-(`Proof.AesGcm.Flag.PreparedRepr`) whose 48 powers are present: its count is at least
-48, and it holds all 24 pairs. -/
-def CtxMode.flagged : CtxMode where
+(`Proof.AesGcm.Flag.PreparedRepr`) whose count is at least `t`: it holds the first 8
+pairs if the count is at least 16 and all 24 if it is at least 48. -/
+def CtxMode.flaggedT (t : Nat) : CtxMode where
   len := 1032
-  ok m p := 48 ≤ (m.readW (p + 1024) 64).toNat ∧ PowersN 24 m p
+  ok m p := t ≤ (m.readW (p + 1024) 64).toNat ∧ (16 ≤ (m.readW (p + 1024) 64).toNat → PowersN 8 m p) ∧
+    (48 ≤ (m.readW (p + 1024) 64).toNat → PowersN 24 m p)
   ge := by decide
   le := by decide
   frame {rs m m' p} hf hd hw h := by
-    refine ⟨?_, CtxMode.prepared.frame hf (fun r hr => (hd r hr).sub_left (Region.sub_prefix (by decide)))
-      (by show p.toNat + 1024 ≤ 2 ^ 64; omega) h.2⟩
-    rw [show (p + 1024 : Addr) = p + BitVec.ofNat 64 1024 from rfl,
-      hf.readW (r := ⟨p, 1032⟩) (Offset.contains_base _ (by decide) (by omega)) hd (by decide)]
-    exact h.1
+    have hd' : ∀ r ∈ rs, (⟨p, 1024⟩ : Region).Disjoint r :=
+      fun r hr => (hd r hr).sub_left (Region.sub_prefix (by decide))
+    have hw' : p.toNat + 1024 ≤ 2 ^ 64 := by show p.toNat + 1024 ≤ 2 ^ 64; omega
+    have hc : m'.readW (p + 1024) 64 = m.readW (p + 1024) 64 := by
+      rw [show (p + 1024 : Addr) = p + BitVec.ofNat 64 1024 from rfl,
+        hf.readW (r := ⟨p, 1032⟩) (Offset.contains_base _ (by decide) (by omega)) hd (by decide)]
+    rw [hc]
+    exact ⟨h.1, fun h16 => CtxMode.prepared16.frame hf hd' hw' (h.2.1 h16),
+      fun h48 => CtxMode.prepared.frame hf hd' hw' (h.2.2 h48)⟩
+
+/-- The pairs of a context whose count is at least 16 or 48: the first 8 or
+all 24. -/
+theorem CtxMode.flaggedT_pow {t : Nat} (ht : t = 16 ∨ t = 48) {m : Mem} {p : Addr}
+    (h : (CtxMode.flaggedT t).ok m p) : PowersN (t / 2) m p := by
+  rcases ht with rfl | rfl
+  · exact h.2.1 h.1
+  · exact h.2.2 h.1
+
+/-- `CtxMode.flaggedT` of the 48 powers. -/
+abbrev CtxMode.flagged : CtxMode := CtxMode.flaggedT 48
 
 /-- The interleaved-loop precondition, with prepared powers. -/
 structure SPrePrepared (s₀ : State) (lo : Nat := 16) (n : Nat := 24) : Prop where
