@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.TripleDes.PPC64LE.ModesConstantTime
 public import VerifiedGarbage.Proof.TripleDes.CbcScratch
 public import VerifiedGarbage.Proof.TripleDes.FbScratch
 public import VerifiedGarbage.Proof.TripleDes.PPC64LE.ModeCore
+public import VerifiedGarbage.Proof.TripleDes.PPC64LE.ModeCoreWide
+import VerifiedGarbage.Proof.Modes.PPC64LE.Wide
 import VerifiedGarbage.Proof.Modes.PPC64LE.Modes
 public import VerifiedGarbage.Proof.Modes.PPC64LE.Seq
 public import VerifiedGarbage.Proof.Modes.Steps
@@ -21,7 +23,9 @@ meta import VerifiedGarbage.Proof.TripleDes.PPC64LE.FunctionsLit
 working space as the fifth argument (`modeContract`, whose data is `st`
 bytes a step: 8, or 1 for CFB8), meet the contracts with a scratch buffer of
 72 words (`Proof.TripleDes.cbcEncChainedScratchContract`,
-`fbScratchContract`, `cfb8ScratchContract`).
+`fbScratchContract`, `cfb8ScratchContract`). CBC and CFB64 decryption run
+over the core on 64 blocks (`Mode.wideCoreSpec`), 64 blocks a step, then
+one, with a scratch buffer of 200 words.
 -/
 
 @[expose] public section
@@ -30,7 +34,7 @@ namespace VG.Proof.TripleDes.PPC64LE.Modes
 
 open VG VG.PPC64LE VG.Impl.TripleDes.PPC64LE VG.Impl.Modes
 open VG.Proof.Modes.PPC64LE (SeqPre ivR scrRegion S)
-open VG.Proof.TripleDes.PPC64LE.Mode (dirCoreSpec KeyArgs layout)
+open VG.Proof.TripleDes.PPC64LE.Mode (dirCoreSpec wideCoreSpec KeyArgs layout layoutW)
 
 /-- Triple DES under the schedule at `r3`, and its inverse. -/
 abbrev ciph (s : State) : Spec.Cbc.Cipher := Spec.TripleDes.cipher (Spec.TripleDes.scheduleAt s.mem (s.gpr .r3))
@@ -66,21 +70,24 @@ def cfb8DecPost (s s' : State) : Prop :=
   bytesOf s'.mem s = Spec.Cfb8.decrypt (ciph s) (ivAt s.mem s) (bytesOf s.mem s) ∧
     ivAt s'.mem s = Spec.Cfb8.next (ivAt s.mem s) (bytesOf s.mem s)
 
-/-- A mode's function on PPC64LE with its working space as the fifth
-argument, `st` bytes of data a step, and the postcondition `post`. -/
-def modeContract (st : Nat) (post : State → State → Prop) : Contract isa where
+/-- A mode's function on PPC64LE with its working space of `w` words as the
+fifth argument, `st` bytes of data a step, and the postcondition `post`. -/
+def modeContractW (w st : Nat) (post : State → State → Prop) : Contract isa where
   pre s :=
     let key : Region := ⟨s.gpr .r3, 384⟩
     let iv : Region := ⟨s.gpr .r4, 8⟩
     let data : Region := ⟨s.gpr .r5, st * (s.gpr .r6).toNat⟩
-    let scratch : Region := ⟨s.gpr .r7, 8 * 72⟩
+    let scratch : Region := ⟨s.gpr .r7, 8 * w⟩
     s.rd = [key] ∧ s.wr = [iv, data, scratch] ∧
       key.Disjoint iv ∧ key.Disjoint data ∧ key.Disjoint scratch ∧ iv.Disjoint data ∧
       iv.Disjoint scratch ∧ data.Disjoint scratch ∧
       (s.gpr .r4).toNat + 8 ≤ 2 ^ 64 ∧ (s.gpr .r5).toNat + st * (s.gpr .r6).toNat ≤ 2 ^ 64 ∧
-      (s.gpr .r7).toNat + 8 * 72 ≤ 2 ^ 64
+      (s.gpr .r7).toNat + 8 * w ≤ 2 ^ 64
   post := post
   pub := modePub
+
+/-- `modeContractW` with the 72 words of the core on one block. -/
+abbrev modeContract (st : Nat) (post : State → State → Prop) : Contract isa := modeContractW 72 st post
 
 /-- `modeContract`'s precondition gives the modes'. -/
 theorem seqPre_of {st : Nat} {post : State → State → Prop} {M : Mode} (d : Spec.TripleDes.Direction)
@@ -107,6 +114,32 @@ theorem keyArgs_of {st : Nat} {post : State → State → Prop} {M : Mode} (d : 
     rw [hstep]; exact dKD
   · exact dKS
 
+/-- `modeContractW`'s precondition, with 200 words, gives the modes' over the
+core on 64 blocks. -/
+theorem seqPreW_of {st : Nat} {post : State → State → Prop} {M : Mode} (d : Spec.TripleDes.Direction)
+    (hstep : M.step = st) (hst : 0 < st) (hst8 : st ≤ 8) {s : State} (h : (modeContractW 200 st post).pre s) :
+    SeqPre (wideCore d) M s := by
+  obtain ⟨hrd, hwr, -, -, -, dVD, dVS, dDS, fV, fD, fS⟩ := h
+  have e8 : 4 * (wideCore d).bw = 8 := rfl
+  have eS : scrRegion (wideCore d) (S s) = ⟨s.gpr .r7, 8 * 200⟩ := rfl
+  have eV : ivR s (wideCore d) = ⟨s.gpr .r4, 8⟩ := rfl
+  refine ⟨⟨by rw [hwr]; simp [wideCore, wideBuf], fS⟩, by rw [eV, hwr]; simp, fun _ => by rw [eV, hwr]; simp,
+    by rw [e8]; exact fV, by rw [hwr, hstep]; simp, by rw [hstep]; exact fD, by rw [hstep, eS]; exact dDS,
+    by rw [eV, eS]; exact dVS, fun _ => by rw [eV, hstep]; exact dVD, ⟨by omega, by rw [e8]; omega⟩, layoutW d⟩
+
+theorem keyArgsW_of {st : Nat} {post : State → State → Prop} {M : Mode} (d : Spec.TripleDes.Direction)
+    (hstep : M.step = st) {s : State} (h : (modeContractW 200 st post).pre s) :
+    KeyArgs s (Proof.Modes.PPC64LE.wrs0 (wideCore d) M s) (Spec.TripleDes.scheduleAt s.mem (s.gpr .r3)) := by
+  obtain ⟨hrd, -, -, dKD, dKS, -, -, -, -, -, -⟩ := h
+  refine ⟨rfl, ⟨_, by rw [hrd]; exact List.mem_append_left _ (List.mem_singleton_self _),
+    Region.contains_self _ _⟩, fun r hr => ?_⟩
+  simp only [Proof.Modes.PPC64LE.wrs0, Proof.Modes.PPC64LE.wrs, List.mem_cons, List.not_mem_nil,
+    or_false] at hr
+  rcases hr with rfl | rfl
+  · show (Region.mk (s.gpr .r3) 384).Disjoint ⟨s.gpr .r5, M.step * (s.gpr .r6).toNat⟩
+    rw [hstep]; exact dKD
+  · exact dKS
+
 /-- The data in blocks, as the modes' steps. -/
 theorem cbcBlocksAt_eq (m : Mem) (p : Addr) (n : Nat) :
     Spec.TripleDes.cbcBlocksAt m p n = Proof.Modes.chunksAt 8 m p n := by
@@ -123,12 +156,12 @@ theorem cbcEncryptChained_correct (s : State) (hs : (modeContract 8 cbcEncPost).
     fun _ ⟨h1, h2, h3⟩ => ⟨h1, by rw [dataAt, dataAt, cbcBlocksAt_eq, cbcBlocksAt_eq]; exact h2,
       by rw [dataAt, cbcBlocksAt_eq]; exact h3⟩
 
-theorem cbcDecryptChained_correct (s : State) (hs : (modeContract 8 cbcDecPost).pre s) :
-    ∃ t s', Exec isa cbcDecryptChained s t s' ∧ abiPreserved s s' ∧ (modeContract 8 cbcDecPost).post s s' :=
-  WP.mono (Proof.Modes.PPC64LE.cbcDecChained_wp (dirCoreSpec .decrypt)
-    (seqPre_of .decrypt (M := Mode.cbcDecChained 2) rfl (by decide) (by decide) hs)
-    (keyArgs_of .decrypt (M := Mode.cbcDecChained 2) rfl hs))
-    fun _ ⟨h1, h2, h3⟩ => ⟨h1, by rw [dataAt, dataAt, cbcBlocksAt_eq, cbcBlocksAt_eq]; exact h2,
+theorem cbcDecryptChained_correct (s : State) (hs : (modeContractW 200 8 cbcDecPost).pre s) :
+    ∃ t s', Exec isa cbcDecryptChained s t s' ∧ abiPreserved s s' ∧ (modeContractW 200 8 cbcDecPost).post s s' :=
+  WP.mono (Proof.Modes.PPC64LE.cbcDecWide_wp (wideCoreSpec .decrypt) (lg := 6) (by decide) (by decide) (by decide)
+    (seqPreW_of .decrypt (M := Mode.cbcDecChained 2) rfl (by decide) (by decide) hs)
+    (keyArgsW_of .decrypt (M := Mode.cbcDecChained 2) rfl hs))
+    fun _ ⟨h1, h2, h3, _⟩ => ⟨h1, by rw [dataAt, dataAt, cbcBlocksAt_eq, cbcBlocksAt_eq]; exact h2,
       by rw [dataAt, cbcBlocksAt_eq]; exact h3⟩
 
 theorem ofb_correct (s : State) (hs : (modeContract 8 ofbPost).pre s) :
@@ -146,12 +179,12 @@ theorem cfbEncrypt_correct (s : State) (hs : (modeContract 8 cfbEncPost).pre s) 
     fun _ ⟨h1, h2, h3⟩ => ⟨h1, by rw [dataAt, dataAt, cbcBlocksAt_eq, cbcBlocksAt_eq]; exact h2,
       by rw [dataAt, cbcBlocksAt_eq]; exact h3⟩
 
-theorem cfbDecrypt_correct (s : State) (hs : (modeContract 8 cfbDecPost).pre s) :
-    ∃ t s', Exec isa cfbDecrypt s t s' ∧ abiPreserved s s' ∧ (modeContract 8 cfbDecPost).post s s' :=
-  WP.mono (Proof.Modes.PPC64LE.cfbDec_wp (dirCoreSpec .encrypt)
-    (seqPre_of .encrypt (M := Mode.cfbDec 2) rfl (by decide) (by decide) hs)
-    (keyArgs_of .encrypt (M := Mode.cfbDec 2) rfl hs))
-    fun _ ⟨h1, h2, h3⟩ => ⟨h1, by rw [dataAt, dataAt, cbcBlocksAt_eq, cbcBlocksAt_eq]; exact h2,
+theorem cfbDecrypt_correct (s : State) (hs : (modeContractW 200 8 cfbDecPost).pre s) :
+    ∃ t s', Exec isa cfbDecrypt s t s' ∧ abiPreserved s s' ∧ (modeContractW 200 8 cfbDecPost).post s s' :=
+  WP.mono (Proof.Modes.PPC64LE.cfbDecWide_wp (wideCoreSpec .encrypt) (lg := 6) (by decide) (by decide) (by decide)
+    (seqPreW_of .encrypt (M := Mode.cfbDecEarly 2) rfl (by decide) (by decide) hs)
+    (keyArgsW_of .encrypt (M := Mode.cfbDecEarly 2) rfl hs))
+    fun _ ⟨h1, h2, h3, _⟩ => ⟨h1, by rw [dataAt, dataAt, cbcBlocksAt_eq, cbcBlocksAt_eq]; exact h2,
       by rw [dataAt, cbcBlocksAt_eq]; exact h3⟩
 
 theorem cfb8Encrypt_correct (s : State) (hs : (modeContract 1 cfb8EncPost).pre s) :
@@ -168,6 +201,12 @@ theorem cfb8Decrypt_correct (s : State) (hs : (modeContract 1 cfb8DecPost).pre s
     (keyArgs_of .encrypt (M := Mode.cfb8Dec 2) rfl hs))
     fun _ ⟨h1, h2, h3⟩ => ⟨h1, h2, h3⟩
 
+/-- The regions of `modeContractW 200`, for the analysis of constant time. -/
+theorem widePre_of {post : State → State → Prop} {s : State} (h : (modeContractW 200 8 post).pre s) :
+    WidePre s := by
+  obtain ⟨-, hwr, -, -, -, dVD, dVS, dDS, -, fD, -⟩ := h
+  exact ⟨hwr, dVD, dVS, dDS, fD⟩
+
 /-! ## The contracts -/
 
 /-- A state satisfying the modes' precondition: the schedule at `0x1000`,
@@ -181,6 +220,9 @@ def modeSat : State where
   rd := [⟨0x1000, 384⟩]
   wr := [⟨0x2000, 8⟩, ⟨0x3000, 0⟩, ⟨0x4000, 576⟩]
 
+/-- `modeSat`, with the working space of the core on 64 blocks. -/
+def modeSatW : State := { modeSat with wr := [⟨0x2000, 8⟩, ⟨0x3000, 0⟩, ⟨0x4000, 1600⟩] }
+
 theorem modePub_iff (s₁ s₂ : State) : modePub s₁ s₂ ↔
     s₁.sp = s₂.sp ∧ s₁.gpr .r3 = s₂.gpr .r3 ∧ s₁.gpr .r4 = s₂.gpr .r4 ∧ s₁.gpr .r5 = s₂.gpr .r5 ∧
       s₁.gpr .r6 = s₂.gpr .r6 ∧ s₁.gpr .r7 = s₂.gpr .r7 := by
@@ -190,44 +232,45 @@ theorem cbcEncryptChained_verified :
     Verified target cbcEncryptChained (Proof.TripleDes.cbcEncChainedScratchContract abi 72) := by
   refine Verified.of_correct cbcEncryptChained_correct (cbcEncryptChained_constantTime _) ?_
   sig_implies [Proof.TripleDes.cbcEncChainedScratchContract, Proof.TripleDes.cbcChainedScratchSig,
-    Spec.TripleDes.cbcChainedSig, Proof.TripleDes.cbcEncChainedPost, abi, argRegs, modeContract, cbcEncPost,
+    Spec.TripleDes.cbcChainedSig, Proof.TripleDes.cbcEncChainedPost, abi, argRegs, modeContract, modeContractW, cbcEncPost,
     modePub_iff] [modeSat] using modeSat
 
 theorem cbcDecryptChained_verified :
-    Verified target cbcDecryptChained (Proof.TripleDes.cbcDecChainedScratchContract abi 72) := by
-  refine Verified.of_correct cbcDecryptChained_correct (cbcDecryptChained_constantTime _) ?_
+    Verified target cbcDecryptChained (Proof.TripleDes.cbcDecChainedScratchContract abi 200) := by
+  refine Verified.of_correct cbcDecryptChained_correct (cbcDecryptChained_constantTime _ fun _ h => widePre_of h) ?_
   sig_implies [Proof.TripleDes.cbcDecChainedScratchContract, Proof.TripleDes.cbcChainedScratchSig,
-    Spec.TripleDes.cbcChainedSig, Proof.TripleDes.cbcDecChainedPost, abi, argRegs, modeContract, cbcDecPost,
-    modePub_iff] [modeSat] using modeSat
+    Spec.TripleDes.cbcChainedSig, Proof.TripleDes.cbcDecChainedPost, abi, argRegs, modeContractW, cbcDecPost,
+    modePub_iff] [modeSatW, modeSat] using modeSatW
 
 theorem ofb_verified :
     Verified target ofb (Proof.TripleDes.fbScratchContract abi 72 Proof.TripleDes.ofbPost) := by
   refine Verified.of_correct ofb_correct (ofb_constantTime _) ?_
   sig_implies [Proof.TripleDes.fbScratchContract, Proof.TripleDes.fbScratchSig, Spec.TripleDes.ofbSig,
-    Proof.TripleDes.ofbPost, abi, argRegs, modeContract, ofbPost, modePub_iff] [modeSat] using modeSat
+    Proof.TripleDes.ofbPost, abi, argRegs, modeContract, modeContractW, ofbPost, modePub_iff] [modeSat] using modeSat
 
 theorem cfbEncrypt_verified :
     Verified target cfbEncrypt (Proof.TripleDes.fbScratchContract abi 72 Proof.TripleDes.cfbEncPost) := by
   refine Verified.of_correct cfbEncrypt_correct (cfbEncrypt_constantTime _) ?_
   sig_implies [Proof.TripleDes.fbScratchContract, Proof.TripleDes.fbScratchSig, Spec.TripleDes.ofbSig,
-    Proof.TripleDes.cfbEncPost, abi, argRegs, modeContract, cfbEncPost, modePub_iff] [modeSat] using modeSat
+    Proof.TripleDes.cfbEncPost, abi, argRegs, modeContract, modeContractW, cfbEncPost, modePub_iff] [modeSat] using modeSat
 
 theorem cfbDecrypt_verified :
-    Verified target cfbDecrypt (Proof.TripleDes.fbScratchContract abi 72 Proof.TripleDes.cfbDecPost) := by
-  refine Verified.of_correct cfbDecrypt_correct (cfbDecrypt_constantTime _) ?_
+    Verified target cfbDecrypt (Proof.TripleDes.fbScratchContract abi 200 Proof.TripleDes.cfbDecPost) := by
+  refine Verified.of_correct cfbDecrypt_correct (cfbDecrypt_constantTime _ fun _ h => widePre_of h) ?_
   sig_implies [Proof.TripleDes.fbScratchContract, Proof.TripleDes.fbScratchSig, Spec.TripleDes.ofbSig,
-    Proof.TripleDes.cfbDecPost, abi, argRegs, modeContract, cfbDecPost, modePub_iff] [modeSat] using modeSat
+    Proof.TripleDes.cfbDecPost, abi, argRegs, modeContractW, cfbDecPost, modePub_iff] [modeSatW, modeSat]
+    using modeSatW
 
 theorem cfb8Encrypt_verified :
     Verified target cfb8Encrypt (Proof.TripleDes.cfb8ScratchContract abi 72 Proof.TripleDes.cfb8EncPost) := by
   refine Verified.of_correct cfb8Encrypt_correct (cfb8Encrypt_constantTime _) ?_
   sig_implies [Proof.TripleDes.cfb8ScratchContract, Proof.TripleDes.cfb8ScratchSig, Spec.TripleDes.cfb8Sig,
-    Proof.TripleDes.cfb8EncPost, abi, argRegs, modeContract, cfb8EncPost, modePub_iff, Nat.one_mul] [modeSat] using modeSat
+    Proof.TripleDes.cfb8EncPost, abi, argRegs, modeContract, modeContractW, cfb8EncPost, modePub_iff, Nat.one_mul] [modeSat] using modeSat
 
 theorem cfb8Decrypt_verified :
     Verified target cfb8Decrypt (Proof.TripleDes.cfb8ScratchContract abi 72 Proof.TripleDes.cfb8DecPost) := by
   refine Verified.of_correct cfb8Decrypt_correct (cfb8Decrypt_constantTime _) ?_
   sig_implies [Proof.TripleDes.cfb8ScratchContract, Proof.TripleDes.cfb8ScratchSig, Spec.TripleDes.cfb8Sig,
-    Proof.TripleDes.cfb8DecPost, abi, argRegs, modeContract, cfb8DecPost, modePub_iff, Nat.one_mul] [modeSat] using modeSat
+    Proof.TripleDes.cfb8DecPost, abi, argRegs, modeContract, modeContractW, cfb8DecPost, modePub_iff, Nat.one_mul] [modeSat] using modeSat
 
 end VG.Proof.TripleDes.PPC64LE.Modes
