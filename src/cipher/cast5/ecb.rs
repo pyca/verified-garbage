@@ -11,7 +11,9 @@
 ))]
 
 use crate::align::CacheAligned;
-use crate::arch::cast5::{vg_cast5_ecb_decrypt, vg_cast5_ecb_encrypt, vg_cast5_expand_key};
+use crate::arch::dispatch::cast5::{
+    vg_cast5_ecb_decrypt_auto, vg_cast5_ecb_encrypt_auto, vg_cast5_expand_key_auto,
+};
 use crate::error::{IncompleteBlock, InvalidKeyLength};
 use crate::zeroize::zeroize;
 
@@ -36,7 +38,7 @@ impl Cast5Ecb {
         // scratch space are separate valid objects of the sizes of the
         // signature.
         unsafe {
-            vg_cast5_expand_key(key.as_ptr(), key.len(), &mut schedule.0, &mut scratch.0);
+            vg_cast5_expand_key_auto(key.as_ptr(), key.len(), &mut schedule.0, &mut scratch.0);
         }
         // The scratch space holds the intermediate values of key expansion.
         zeroize(&mut scratch.0);
@@ -49,13 +51,13 @@ impl Cast5Ecb {
     /// Encrypts complete eight-byte blocks in place. Empty input is valid.
     /// Returns an error without changing the buffer if its length is invalid.
     pub fn encrypt(&self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
-        self.crypt(buffer, vg_cast5_ecb_encrypt)
+        self.crypt(buffer, vg_cast5_ecb_encrypt_auto)
     }
 
     /// Decrypts complete eight-byte blocks in place. Empty input is valid.
     /// Returns an error without changing the buffer if its length is invalid.
     pub fn decrypt(&self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
-        self.crypt(buffer, vg_cast5_ecb_decrypt)
+        self.crypt(buffer, vg_cast5_ecb_decrypt_auto)
     }
 
     /// The subkeys, for the other modes of CAST5.

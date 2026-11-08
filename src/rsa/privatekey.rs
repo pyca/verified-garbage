@@ -15,7 +15,9 @@ use alloc::vec::Vec;
 use core::fmt;
 
 use super::{BigUint, Error, MAX_MODULUS_LEN, MIN_MODULUS_LEN, exponent, scratch_words, trim};
-use crate::arch::rsa::{vg_rsa_check_key, vg_rsa_crt_values, vg_rsa_recover_primes_det};
+use crate::arch::dispatch::rsa::{
+    vg_rsa_check_key_auto, vg_rsa_crt_values_auto, vg_rsa_recover_primes_det_auto,
+};
 
 /// The secret `x` (big-endian) in exactly `len` bytes, a public width, if it
 /// fits: the bytes before its last `len` must be zero, which the verified
@@ -72,7 +74,7 @@ unsafe fn recover(
     // distinct Rust slices; the caller gives the lengths, and the function
     // needs no CPU feature.
     let r = unsafe {
-        vg_rsa_recover_primes_det(
+        vg_rsa_recover_primes_det_auto(
             p.as_mut_ptr(),
             p.len(),
             q.as_mut_ptr(),
@@ -269,7 +271,7 @@ impl PrivateKey {
         // `dp_len = qinv_len = p_len`, `dq_len = q_len`, and
         // `scratch_len = 16 n_len + 32`.
         let r = unsafe {
-            vg_rsa_check_key(
+            vg_rsa_check_key_auto(
                 self.n.as_ptr(),
                 k,
                 self.e.as_ptr(),
@@ -322,7 +324,7 @@ impl PrivateKey {
         // and `d_len = n_len`, and `dp_len = qinv_len = p_len`,
         // `dq_len = q_len` and `scratch_len = 16 n_len + 32`.
         let r = unsafe {
-            vg_rsa_crt_values(
+            vg_rsa_crt_values_auto(
                 dp.as_mut_ptr(),
                 dp.len(),
                 dq.as_mut_ptr(),

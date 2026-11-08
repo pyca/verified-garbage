@@ -10,8 +10,8 @@
 ))]
 
 use crate::align::CacheAligned;
-use crate::arch::camellia::{
-    vg_camellia_ecb_decrypt, vg_camellia_ecb_encrypt, vg_camellia_expand_key,
+use crate::arch::dispatch::camellia::{
+    vg_camellia_ecb_decrypt_auto, vg_camellia_ecb_encrypt_auto, vg_camellia_expand_key_auto,
 };
 use crate::error::{IncompleteBlock, InvalidKeyLength};
 use crate::zeroize::zeroize;
@@ -40,7 +40,7 @@ impl CamelliaEcb {
         // SAFETY: the key has a validated length; key and schedule are separate
         // valid buffers of the required sizes.
         unsafe {
-            vg_camellia_expand_key(key.as_ptr(), key.len(), &mut schedule.0);
+            vg_camellia_expand_key_auto(key.as_ptr(), key.len(), &mut schedule.0);
         }
         Ok(Self { schedule, rounds })
     }
@@ -62,9 +62,9 @@ impl CamelliaEcb {
             return Err(IncompleteBlock);
         }
         let f = if encrypt {
-            vg_camellia_ecb_encrypt
+            vg_camellia_ecb_encrypt_auto
         } else {
-            vg_camellia_ecb_decrypt
+            vg_camellia_ecb_decrypt_auto
         };
         // SAFETY: `rounds` is 18 for a key of 16 bytes and 24 otherwise, as
         // `new` expanded the schedule for. The buffer contains complete 16-byte

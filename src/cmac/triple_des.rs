@@ -14,8 +14,9 @@
 ))]
 
 use crate::align::CacheAligned;
-use crate::arch::cmac_triple_des::{
-    vg_cmac_triple_des_absorb, vg_cmac_triple_des_finish, vg_cmac_triple_des_stream_init,
+use crate::arch::dispatch::cmac_triple_des::{
+    vg_cmac_triple_des_absorb_auto, vg_cmac_triple_des_finish_auto,
+    vg_cmac_triple_des_stream_init_auto,
 };
 use crate::error::{InvalidKeyLength, InvalidMac};
 use crate::zeroize::zeroize;
@@ -66,7 +67,7 @@ impl TripleDesCmac {
         // return address (on x86-64 and x86), the arguments on the stack (on
         // 32-bit ARM and x86) or the stack below them that the function uses,
         // and neither wraps around the end of the address space.
-        unsafe { vg_cmac_triple_des_stream_init(&mut c.state.0, key.as_ptr(), key.len()) };
+        unsafe { vg_cmac_triple_des_stream_init_auto(&mut c.state.0, key.as_ptr(), key.len()) };
         Ok(c)
     }
 
@@ -90,7 +91,7 @@ impl TripleDesCmac {
         // `data` is shorter than 2⁶⁴ bytes, as the contract's postcondition
         // requires.
         unsafe {
-            vg_cmac_triple_des_absorb(&mut self.state.0, self.count, data.as_ptr(), data.len())
+            vg_cmac_triple_des_absorb_auto(&mut self.state.0, self.count, data.as_ptr(), data.len())
         };
         self.count = count;
     }
@@ -105,7 +106,7 @@ impl TripleDesCmac {
         // stack below them that the function uses, and neither wraps around
         // the end of the address space. The state represents a message of
         // `self.count` bytes, as the contract's postcondition requires.
-        unsafe { vg_cmac_triple_des_finish(&mut self.state.0, self.count, &mut mac) };
+        unsafe { vg_cmac_triple_des_finish_auto(&mut self.state.0, self.count, &mut mac) };
         mac
     }
 

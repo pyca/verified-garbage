@@ -11,8 +11,8 @@
 ))]
 
 use crate::align::CacheAligned;
-use crate::arch::camellia::vg_camellia_expand_key;
-use crate::arch::camellia_ofb::{vg_camellia_ofb, vg_camellia_ofb_final};
+use crate::arch::dispatch::camellia::vg_camellia_expand_key_auto;
+use crate::arch::dispatch::camellia_ofb::{vg_camellia_ofb_auto, vg_camellia_ofb_final_auto};
 use crate::error::{IncompleteBlock, InvalidKeyLength};
 use crate::zeroize::zeroize;
 
@@ -88,7 +88,7 @@ impl Key {
         let mut schedule = CacheAligned([0; 272]);
         // SAFETY: the key has a validated length; key and schedule are separate
         // valid buffers of the required sizes.
-        unsafe { vg_camellia_expand_key(key.as_ptr(), key.len(), &mut schedule.0) };
+        unsafe { vg_camellia_expand_key_auto(key.as_ptr(), key.len(), &mut schedule.0) };
         Ok(Self { schedule, rounds })
     }
 
@@ -112,7 +112,7 @@ impl Key {
             // `iv` and the schedule are separate valid objects of the sizes of
             // the signature, none of them on the callee's stack.
             unsafe {
-                vg_camellia_ofb_final(
+                vg_camellia_ofb_final_auto(
                     &self.schedule.0,
                     self.rounds,
                     iv,
@@ -131,7 +131,7 @@ impl Key {
         // separate valid objects of the sizes of the signature, none of them on
         // the callee's stack.
         unsafe {
-            vg_camellia_ofb(
+            vg_camellia_ofb_auto(
                 &self.schedule.0,
                 self.rounds,
                 iv,

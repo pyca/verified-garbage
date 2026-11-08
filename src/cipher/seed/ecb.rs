@@ -10,7 +10,9 @@
 ))]
 
 use crate::align::CacheAligned;
-use crate::arch::seed::{vg_seed_ecb_decrypt, vg_seed_ecb_encrypt, vg_seed_expand_key};
+use crate::arch::dispatch::seed::{
+    vg_seed_ecb_decrypt_auto, vg_seed_ecb_encrypt_auto, vg_seed_expand_key_auto,
+};
 use crate::error::IncompleteBlock;
 use crate::zeroize::zeroize;
 
@@ -31,7 +33,7 @@ impl SeedEcb {
         // SAFETY: key and schedule are separate valid buffers of the required
         // sizes.
         unsafe {
-            vg_seed_expand_key(key, &mut schedule.0);
+            vg_seed_expand_key_auto(key, &mut schedule.0);
         }
         Self { schedule }
     }
@@ -53,9 +55,9 @@ impl SeedEcb {
             return Err(IncompleteBlock);
         }
         let f = if encrypt {
-            vg_seed_ecb_encrypt
+            vg_seed_ecb_encrypt_auto
         } else {
-            vg_seed_ecb_decrypt
+            vg_seed_ecb_decrypt_auto
         };
         // SAFETY: buffer contains complete 16-byte blocks, including zero
         // blocks. The buffer and schedule are separate valid objects and do not
