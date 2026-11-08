@@ -69,7 +69,9 @@ their calls (`Rust.Internal`).
 (`registrations`, `grouped`, `genericGroups`), writes a program that
 imports them all and the ranking of the dispatchers of every target
 (`VerifiedGarbage/Dispatch.lean`, `VG.Dispatch.ranking`, which only orders
-the implementations a dispatcher tries: see `Rust.Rank`), checks that the whole list depends only on the standard
+the implementations a dispatcher tries: see `Rust.Rank`, and
+`VG.Dispatch.selected`, the functions that also get a selector:
+`Rust.Selected`), checks that the whole list depends only on the standard
 axioms, that what it runs is what the kernel checked and that the `Spec/`
 names it uses come from `Spec/` (`TCB/Audit.lean`), and emits it
 (`driver`), and runs that program, whose `main` is `run`.
@@ -209,8 +211,8 @@ each variant of its interface and target in `vars` (each combination of
 variants of its interfaces). It fails to elaborate unless each module defines its list
 (or variant), with types that agree, unless everything emitted depends
 only on the standard axioms (`#assert_standard_axioms`), unless the compiled
-code of everything emitted, of the ranking of the dispatchers
-(`VerifiedGarbage/Dispatch.lean`, `Rust.Rank`) and of `run` is what the kernel checked
+code of everything emitted, of the ranking of the dispatchers and the list of
+selectors (`VerifiedGarbage/Dispatch.lean`, `Rust.Rank`, `Rust.Selected`) and of `run` is what the kernel checked
 (`#assert_no_compiler_overrides`) and unless every `VG.Spec` definition is
 declared in `Spec/` (`#assert_spec_origin`). It is a module, which does not load
 the private data (`.olean.private`) of what it imports: run with Lake's setup for it
@@ -233,10 +235,10 @@ def driver (mods : List String) (gens : List (List String × List String) := [])
   String.join (groups.map fun (gs, vs) => s!"  {instances gs vs},\n") ++
   "  []]\n\n" ++
   "#assert_standard_axioms all\n" ++
-  "#assert_no_compiler_overrides all VG.Dispatch.ranking run\n" ++
+  "#assert_no_compiler_overrides all VG.Dispatch.ranking VG.Dispatch.selected run\n" ++
   "#assert_spec_origin\n\n" ++
   "end VG.Emit\n\n" ++
-  "def main (args : List String) : IO UInt32 :=\n  VG.Emit.run VG.Emit.all VG.Dispatch.ranking args\n\nend\n"
+  "def main (args : List String) : IO UInt32 :=\n  VG.Emit.run VG.Emit.all VG.Dispatch.ranking args VG.Dispatch.selected\n\nend\n"
 
 /-- The target directory a registration, generic or variant module's path
 names: `X86_64` for `VerifiedGarbage.Artifacts.Sha3.X86_64`,
@@ -346,7 +348,7 @@ def codeDirs (dir : FilePath) : IO (List String) := do
   return (ds.qsort (· < ·)).toList
 
 /-- Writes the files generated from `as` (with the dispatchers that `ranking`
-orders, `Rust.Rank`) under the directory in `args` (by
+orders, `Rust.Rank`, and the selectors `selected` asks for, `Rust.Selected`) under the directory in `args` (by
 default `../crates`), deleting any other generated file in the directories of
 generated files of a crate of generated code there (`codeDirs`, and nothing
 else: the rest of those crates, and the other crates, are not the emitter's);
@@ -357,9 +359,10 @@ With `--part FILE`, `as` are the artifacts of a part (`parts`): only the
 files of their targets' crates are written or checked, and the other generated
 files in those crates' directories of generated files; then `FILE` gets their targets, for `finish`, which
 checks the rest. -/
-def run (as : List Artifact) (ranking : Rust.Ranking) (args : List String) : IO UInt32 := do
+def run (as : List Artifact) (ranking : Rust.Ranking) (args : List String)
+    (selected : Rust.Selected := []) : IO UInt32 := do
   let some (check, part, dir) := parseArgs args | do IO.eprintln usage; return 2
-  let files ← match Rust.files as ranking with
+  let files ← match Rust.files as ranking selected with
     | .ok files => pure files
     | .error e => do IO.eprintln e; return 1
   let targets := Rust.targetsOf as
