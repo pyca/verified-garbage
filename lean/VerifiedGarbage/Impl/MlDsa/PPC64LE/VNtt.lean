@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.TCB.PPC64LE.Isa
+public import VerifiedGarbage.Impl.Vector.PPC64LE
 public import VerifiedGarbage.Spec.MlDsa
 
 /-!
@@ -24,12 +25,15 @@ lanes of the vector registers (Power ISA 2.07):
   lane `r` holds the four coefficients of block `r` of `len = 2`; each lane
   then has its own zeta (`narrow`).
 
-The table `zetaWords` (static `tblSym`) holds `q`, the controls of the
-`vperm`s, then the splatted `z` and `z'` of the 63 blocks of `len ≥ 4`, and
-the lane zetas of the sixteen groups. `scratch` is unused. Every address is
-a pointer plus a constant or a counter, every branch depends on a counter or
-a pointer, and the coefficients only reach the vector arithmetic (whose
-timing does not depend on its operands, see `TCB/PPC64LE/Isa.lean`).
+The `scratch` space holds `z'` of each zeta (`fill`), at `scrK`'s positions:
+a block of `len ≥ 4` loads its own and splats it (`vspltw`), a group of
+`len = 2` and `len = 1` loads the four of each of its three vectors in lane
+order. Since no zeta is 0 modulo `q`, `z = ⌊z' · q / 2³²⌋ + 1` (`zcalc`).
+The constants (`q`, the controls of the `vperm`s) are built from immediates
+(`consts`). Every address is a pointer plus a constant or a counter, every
+branch depends on a counter or a pointer, and the coefficients only reach
+the vector arithmetic (whose timing does not depend on its operands, see
+`TCB/PPC64LE/Isa.lean`).
 -/
 
 @[expose] public section
@@ -38,7 +42,7 @@ namespace VG.Impl.MlDsa.PPC64LE.VNtt
 
 open VG.PPC64LE
 
-/-! ## The table -/
+/-! ## The zetas -/
 
 def q : Nat := 8380417
 
@@ -48,40 +52,50 @@ def zeta (m : Nat) : Nat := 1753 ^ Spec.MlDsa.bitRev8 m % q
 /-- Shoup's constant of `z`. -/
 def shoup (z : Nat) : Nat := z * 2 ^ 32 / q
 
-/-- The doubleword of two words, the first the high one. -/
-def dw (a b : Nat) : BitVec 64 := BitVec.ofNat 64 (a * 2 ^ 32 + b)
+/-- `p XOR 1`. -/
+def swap1 (p : Nat) : Nat := if p % 2 = 0 then p + 1 else p - 1
 
-/-- A vector of four word lanes, `[a, b, c, d]` from lane 0, as two
-doublewords. -/
-def vec4 (a b c d : Nat) : List (BitVec 64) := [dw a b, dw c d]
+/-- The zeta whose `z'` is at position `p` of `scratch`: block `p` of
+`len ≥ 4` at `p`; lane `r` of group `g` at `64 + 4g + (r XOR 1)` (`len = 2`),
+`128 + 8g + (r XOR 1)` and `132 + 8g + (r XOR 1)` (`len = 1`, even and odd
+pairs). -/
+def scrK (p : Nat) : Nat :=
+  if p < 64 then p else if p < 128 then swap1 p else
+    if (p - 128) % 8 < 4 then 128 + 8 * ((p - 128) / 8) + 2 * swap1 ((p - 128) % 8)
+    else 128 + 8 * ((p - 128) / 8) + 2 * swap1 ((p - 128) % 8 - 4) + 1
 
-def splat (x : Nat) : List (BitVec 64) := vec4 x x x x
+def scrV (p : Nat) : Nat := shoup (zeta (scrK p))
 
-/-- `vperm` controls: lane `i` of the result is word `k i` of `VA || VB`. -/
-def ctl (k₀ k₁ k₂ k₃ : Nat) : List (BitVec 64) :=
-  let b := fun k => (4 * k) * 2 ^ 24 + (4 * k + 1) * 2 ^ 16 + (4 * k + 2) * 2 ^ 8 + (4 * k + 3)
-  vec4 (b k₀) (b k₁) (b k₂) (b k₃)
+/-- `r ← v`, its low 32 bits, by `lis` and `ori`. -/
+def loadImm (r : Reg) (v : Nat) : List Instr :=
+  [.lis r (BitVec.ofNat 16 (v / 65536)), .ori r r (BitVec.ofNat 16 (v % 65536))]
 
-/-- The words of the static `tblSym`, by vector (two doublewords each):
-0 `q`; 1 the high words of the even and odd products; 2–5 the transpose
-(`ca`, `cb`, `cc`, `cd`); `6 + 2(k−1)` and `7 + 2(k−1)` the splatted `z` and
-`z'` of block `k ∈ [1, 64)`; `132 + 6g + …` the lane zetas of group `g`:
-`len = 2` (`z`, `z'`), `len = 1` of the even pairs and of the odd. -/
-def zetaWords : List (BitVec 64) :=
-  splat q ++ ctl 0 4 2 6 ++ ctl 0 4 1 5 ++ ctl 2 6 3 7 ++ ctl 0 1 4 5 ++ ctl 2 3 6 7 ++
-  (List.range 63).flatMap (fun k => splat (zeta (k + 1)) ++ splat (shoup (zeta (k + 1)))) ++
-  (List.range 16).flatMap fun g =>
-    let z2 := fun r => zeta (64 + 4 * g + r)
-    let za := fun r => zeta (128 + 8 * g + 2 * r)
-    let zb := fun r => zeta (128 + 8 * g + 2 * r + 1)
-    vec4 (z2 0) (z2 1) (z2 2) (z2 3) ++ vec4 (shoup (z2 0)) (shoup (z2 1)) (shoup (z2 2)) (shoup (z2 3)) ++
-    vec4 (za 0) (za 1) (za 2) (za 3) ++ vec4 (shoup (za 0)) (shoup (za 1)) (shoup (za 2)) (shoup (za 3)) ++
-    vec4 (zb 0) (zb 1) (zb 2) (zb 3) ++ vec4 (shoup (zb 0)) (shoup (zb 1)) (shoup (zb 2)) (shoup (zb 3))
+/-- Positions 1 … 255 of `scratch`. -/
+def fill : List Instr :=
+  (List.range 255).flatMap fun i => loadImm .r12 (scrV (i + 1)) ++ [.store .w .r12 .r4 (4 * (i + 1))]
 
-def tblSym : String := "VG_MLDSA_PPC64LE_NTT_ZETAS"
+/-- `d ← hi || lo`, through `r11`, `r12`, `v6` and `v7`. -/
+def vconst (d : VReg) (hi lo : Nat) : List Instr :=
+  Impl.Vector.PPC64LE.const64 .r12 (BitVec.ofNat 64 hi) ++ Impl.Vector.PPC64LE.const64 .r11 (BitVec.ofNat 64 lo) ++
+    [.mtvsrd .v6 .r12, .mtvsrd .v7 .r11, .vop (.sldoi d .v6 .v6 8), .vop (.sldoi d d .v7 8)]
 
-/-- The next vector of the table, at `r6 + r7`, into `d`; `r7` advances. -/
-def ld (d : VReg) : List Instr := [.lxvd2xTbl d .r6 .r7 tblSym zetaWords, .addi .r7 .r7 16]
+/-- The word of a `vperm` control selecting word `k` of `VA || VB`. -/
+def ctlW (k : Nat) : Nat := (4 * k) * 2 ^ 24 + (4 * k + 1) * 2 ^ 16 + (4 * k + 2) * 2 ^ 8 + (4 * k + 3)
+
+/-- A control selecting words `k₀ k₁ k₂ k₃`, into `d`. -/
+def ctl (d : VReg) (k₀ k₁ k₂ k₃ : Nat) : List Instr :=
+  vconst d (ctlW k₀ * 2 ^ 32 + ctlW k₁) (ctlW k₂ * 2 ^ 32 + ctlW k₃)
+
+/-- `q` in each lane of `v4`; the controls: the high words of the even and
+odd products (`v5`), the transpose (`v16 … v19`). -/
+def consts : List Instr :=
+  loadImm .r12 q ++ [.mtvsrd .v4 .r12, .vop (.splat true .v4 .v4 1)] ++
+  ctl .v5 0 4 2 6 ++ ctl .v16 0 4 1 5 ++ ctl .v17 2 6 3 7 ++ ctl .v18 0 1 4 5 ++ ctl .v19 2 3 6 7
+
+/-- `v2 ← z = ⌊z' · q / 2³²⌋ + 1` from `v3 = z'`, lane by lane. -/
+def zcalc : List Instr :=
+  [.vop (.mulu false true .v6 .v3 .v4), .vop (.mulu true true .v7 .v3 .v4), .vop (.perm .v6 .v6 .v7 .v5),
+   .vop (.splatImm true .v7 1), .vop (.add false .v2 .v6 .v7)]
 
 /-! ## The butterfly -/
 
@@ -102,9 +116,11 @@ def stepBody : List Instr :=
   [.lxvd2x .v0 .r5 .r9, .lxvd2x .v1 .r5 .r8] ++ bfly .v0 .v1 .v2 .v3 ++
   [.stxvd2x .v0 .r5 .r9, .stxvd2x .v1 .r5 .r8, .addi .r5 .r5 16, .subi .r10 .r10 1]
 
-/-- A block: its `z` and `z'`, then `len / 4` steps, then past its upper half. -/
+/-- A block: its `z'` (lane 0 of `[r7]`) and `z`, then `len / 4` steps, then
+past its upper half. -/
 def blockCode : Prog isa :=
-  .seq (.block (ld .v2 ++ ld .v3 ++ [.lsr .d .r10 .r8 4]))
+  .seq (.block ([.lxvd2x .v3 .r7 .r9, .vop (.splat true .v3 .v3 0), .addi .r7 .r7 4] ++ zcalc ++
+      [.lsr .d .r10 .r8 4]))
     (.seq (.loop (.block stepBody) (.nonzero .d .r10))
       (.block [.add .r5 .r5 .r8, .sub .r12 .r5 .r11]))
 
@@ -115,7 +131,7 @@ def layerCode : Prog isa :=
 
 /-- The six layers of `len = 128 … 4`. -/
 def wideLayers : Prog isa :=
-  .seq (.block [.li .r8 512, .addi .r11 .r3 1024, .li .r9 0])
+  .seq (.block [.li .r8 512, .addi .r11 .r3 1024, .li .r9 0, .addi .r7 .r4 0])
     (.loop layerCode (.nonzero .d .r12))
 
 /-! ## `len = 2` and `len = 1` -/
@@ -130,28 +146,25 @@ def transpose : List Instr :=
 
 /-- Sixteen coefficients at `r5`: `[r5 + r9]`, `[r5 + r8]`, `[r5 + r11]`,
 `[r5 + r12]` (`0`, `16`, `32`, `48`). Transposed, `v9`, `v8`, `v11`, `v10`
-hold coefficients `4r`, `4r+1`, `4r+2`, `4r+3` of the group in lane `r`. -/
+hold coefficients `4r`, `4r+1`, `4r+2`, `4r+3` of the group in lane `r`. The
+`z'` of `len = 2` are at `[r6]`, of `len = 1` at `[r7]` and `[r7 + 16]`. -/
 def groupBody : List Instr :=
   [.lxvd2x .v8 .r5 .r9, .lxvd2x .v9 .r5 .r8, .lxvd2x .v10 .r5 .r11, .lxvd2x .v11 .r5 .r12] ++
   transpose ++
-  ld .v2 ++ ld .v3 ++ bfly .v9 .v11 .v2 .v3 ++ bfly .v8 .v10 .v2 .v3 ++
-  ld .v2 ++ ld .v3 ++ bfly .v9 .v8 .v2 .v3 ++
-  ld .v2 ++ ld .v3 ++ bfly .v11 .v10 .v2 .v3 ++
+  [.lxvd2x .v3 .r6 .r9] ++ zcalc ++ bfly .v9 .v11 .v2 .v3 ++ bfly .v8 .v10 .v2 .v3 ++
+  [.lxvd2x .v3 .r7 .r9] ++ zcalc ++ bfly .v9 .v8 .v2 .v3 ++
+  [.lxvd2x .v3 .r7 .r8, .addi .r6 .r6 16, .addi .r7 .r7 32] ++ zcalc ++ bfly .v11 .v10 .v2 .v3 ++
   transpose ++
   [.stxvd2x .v8 .r5 .r9, .stxvd2x .v9 .r5 .r8, .stxvd2x .v10 .r5 .r11, .stxvd2x .v11 .r5 .r12,
    .addi .r5 .r5 64, .subi .r10 .r10 1]
 
 def narrowLayers : Prog isa :=
-  .seq (.block [.addi .r5 .r3 0, .li .r8 16, .li .r11 32, .li .r12 48, .li .r10 16])
+  .seq (.block [.addi .r5 .r3 0, .li .r8 16, .li .r11 32, .li .r12 48, .li .r10 16, .addi .r6 .r4 256,
+      .addi .r7 .r4 512])
     (.loop (.block groupBody) (.nonzero .d .r10))
 
 /-! ## `vg_mldsa_ntt` -/
 
-/-- The table's address in `r6` (saving `LR` in `r0`), `q`, the controls. -/
-def setup : List Instr :=
-  [.mflr .r0, .adrSym .r6 tblSym, .mtlr .r0, .li .r7 0] ++
-  ld .v4 ++ ld .v5 ++ ld .v16 ++ ld .v17 ++ ld .v18 ++ ld .v19
-
-def ntt : Prog isa := .seq (.block setup) (.seq wideLayers narrowLayers)
+def ntt : Prog isa := .seq (.block (fill ++ consts)) (.seq wideLayers narrowLayers)
 
 end VG.Impl.MlDsa.PPC64LE.VNtt
