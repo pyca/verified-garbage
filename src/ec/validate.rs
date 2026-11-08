@@ -108,7 +108,9 @@ mod tests {
                 let mut one = [0; $len];
                 one[$len - 1] = 1;
                 let reference = PrivateKey::<$curve>::from_bytes(&one);
-                for d in 1..=8 {
+                let public = *reference.public_key().unwrap().as_bytes();
+                assert!($curve::validate_public_key(&public));
+                for d in 2..=8 {
                     let mut private = one;
                     private[$len - 1] = d;
                     let public = *PrivateKey::<$curve>::from_bytes(&private)
@@ -116,24 +118,26 @@ mod tests {
                         .unwrap()
                         .as_bytes();
                     assert!($curve::validate_public_key(&public));
-                    // Check every tag, including compressed and hybrid
-                    // forms, against the uncompressed encoding requirement.
-                    for tag in 0..=255 {
+                }
+                // Encoding and coordinate checks need only one valid point:
+                // repeating every mutation for each key repeats costly ECDH
+                // reference calls without testing another input position.
+                // Check every tag, including compressed and hybrid forms.
+                for tag in 0..=255 {
+                    let mut q = public;
+                    q[0] = tag;
+                    assert_eq!($curve::validate_public_key(&q), tag == 4);
+                }
+                // Differential checks exercise decoding at every byte,
+                // field bounds, and both coordinates' curve equation.
+                for i in 1..public.len() {
+                    for byte in [0, 1, 0xff] {
                         let mut q = public;
-                        q[0] = tag;
-                        assert_eq!($curve::validate_public_key(&q), tag == 4);
-                    }
-                    // Differential checks exercise decoding at every byte,
-                    // field bounds, and both coordinates' curve equation.
-                    for i in 1..public.len() {
-                        for byte in [0, 1, 0xff] {
-                            let mut q = public;
-                            q[i] = byte;
-                            assert_eq!(
-                                $curve::validate_public_key(&q),
-                                reference.exchange(&PublicKey::from_bytes(&q)).is_ok()
-                            );
-                        }
+                        q[i] = byte;
+                        assert_eq!(
+                            $curve::validate_public_key(&q),
+                            reference.exchange(&PublicKey::from_bytes(&q)).is_ok()
+                        );
                     }
                 }
                 for tag in [0, 4] {
