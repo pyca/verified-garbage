@@ -150,39 +150,39 @@ mod tests {
     }
 
     /// Detection returns the CPU's features, restricted as
-    /// `VG_CPU_FEATURES` says.
+    /// `VG_CPU_FEATURES` says, but for those the compilation target enables,
+    /// which it cannot remove.
     #[test]
     fn detected_is_allowed() {
-        assert_eq!(detected(), Features(runtime() & allowed(runtime())));
+        assert_eq!(
+            detected(),
+            Features(runtime() & allowed(runtime()) | COMPILED.0)
+        );
     }
 
     /// The CPU has every feature the compilation target enables, and
-    /// detection reports each; with `cpu-features-env`, which lets
-    /// `VG_CPU_FEATURES` remove any, it enables none.
+    /// detection reports each, whatever `VG_CPU_FEATURES` says; neither
+    /// AArch64's `neon` nor ARMv7's `umaal` is one of them, so that
+    /// `VG_CPU_FEATURES` can still turn off the code that names them.
     #[test]
     fn compiled_is_detected() {
         assert!(Features(runtime()).contains(COMPILED));
-        #[cfg(not(feature = "cpu-features-env"))]
         assert!(detected().contains(COMPILED));
-        #[cfg(feature = "cpu-features-env")]
-        assert_eq!(COMPILED, Features(0));
+        assert!(!COMPILED.contains(Features(feature::NEON)));
+        assert!(!COMPILED.contains(Features(feature::UMAAL)));
     }
 
     /// The features of `aarch64-apple-darwin`'s baseline (Apple's M1),
     /// which `target_contains` answers for without detecting.
-    #[cfg(all(
-        not(feature = "cpu-features-env"),
-        target_arch = "aarch64",
-        target_vendor = "apple"
-    ))]
+    #[cfg(all(target_arch = "aarch64", target_vendor = "apple"))]
     #[test]
     fn compiled_apple() {
-        let m1 = feature::NEON | feature::AES | feature::SHA2 | feature::SHA3 | feature::DIT;
+        let m1 = feature::AES | feature::SHA2 | feature::SHA3 | feature::DIT;
         assert!(COMPILED.contains(Features(m1)));
     }
 
     /// `target_contains` holds only where detection reports the same
-    /// features, and with `cpu-features-env` never but for the empty set.
+    /// features.
     #[test]
     fn target_contains_is_detected() {
         assert!(target_contains(Features(0)));
@@ -190,8 +190,6 @@ mod tests {
             let f = Features(bit);
             assert_eq!(target_contains(f), COMPILED.contains(f), "{name}");
             assert!(!target_contains(f) || detected().contains(f), "{name}");
-            #[cfg(feature = "cpu-features-env")]
-            assert!(!target_contains(f), "{name}");
         }
         assert!(target_contains(COMPILED));
     }
