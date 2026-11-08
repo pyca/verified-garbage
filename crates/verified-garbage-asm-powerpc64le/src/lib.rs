@@ -65,6 +65,10 @@ pub mod aes_ctr;
 
 #[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
 #[rustfmt::skip]
+pub mod aes_ecb;
+
+#[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
+#[rustfmt::skip]
 pub mod aes_gcm_siv;
 
 #[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
