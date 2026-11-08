@@ -12,8 +12,8 @@ def aese : Proof.Aes.AArch64.Ctr32Impl := .aese
 
 def scalar : Proof.Aes.AArch64.Ctr32Impl := .scalar
 
-/-- Every implementation, which each function generic over them is emitted
-with (the registration files that import this). -/
+/-- Every implementation, best first: each function generic over them is
+emitted with each (the registration files that import this). -/
 def variants := [aese, scalar]
 
 end VG.Proof.Variants.AesCtr32.AArch64

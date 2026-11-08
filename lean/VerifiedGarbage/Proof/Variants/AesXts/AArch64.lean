@@ -12,8 +12,8 @@ def aes : Proof.AesXts.AArch64.XtsImpl := .aes
 
 def scalar : Proof.AesXts.AArch64.XtsImpl := .blocks .scalar
 
-/-- Every implementation, which each function generic over them is emitted
-with (the registration files that import this). -/
+/-- Every implementation, best first: each function generic over them is
+emitted with each (the registration files that import this). -/
 def variants := [aes, scalar]
 
 end VG.Proof.Variants.AesXts.AArch64

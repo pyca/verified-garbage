@@ -14,8 +14,8 @@ def scalar : Proof.ChaCha20.AArch64.XorImpl := .scalar
 
 def sve2 : Proof.ChaCha20.AArch64.XorImpl := .sve2
 
-/-- Every implementation, which each function generic over them is emitted
-with (the registration files that import this). -/
-def variants := [neon, scalar, sve2]
+/-- Every implementation, best first: each function generic over them is
+emitted with each (the registration files that import this). -/
+def variants := [sve2, neon, scalar]
 
 end VG.Proof.Variants.ChaCha20Xor.AArch64

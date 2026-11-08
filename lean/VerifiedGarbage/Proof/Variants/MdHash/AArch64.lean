@@ -54,8 +54,8 @@ def sha512_256 : Proof.Pbkdf2.Md.AArch64.MdHash := Proof.Pbkdf2.Md.AArch64.Sha51
 
 def sha512_256Sha3 : Proof.Pbkdf2.Md.AArch64.MdHash := Proof.Pbkdf2.Md.AArch64.Sha512.sha512_256 Proof.Sha512.AArch64.Sha3.backend
 
-/-- Every implementation, which each function generic over them is emitted
-with (the registration files that import this). -/
-def variants := [md5, sha1, sha1Sha2, sha224, sha224Sha2, sha256, sha256Sha2, sha384, sha384Sha3, sha512, sha512Sha3, sha512_224, sha512_224Sha3, sha512_256, sha512_256Sha3]
+/-- Every implementation, best first: each function generic over them is
+emitted with each (the registration files that import this). -/
+def variants := [md5, sha1Sha2, sha1, sha224Sha2, sha224, sha256Sha2, sha256, sha384Sha3, sha384, sha512Sha3, sha512, sha512_224Sha3, sha512_224, sha512_256Sha3, sha512_256]
 
 end VG.Proof.Variants.MdHash.AArch64

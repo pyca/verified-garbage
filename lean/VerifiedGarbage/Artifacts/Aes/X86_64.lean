@@ -35,32 +35,14 @@ namespace VG.Artifacts.Aes.X86_64
 
 def artifacts : List Artifact := [
   Spec.Aes.expandKeyApi.artifact X86_64.target {
-    code := Impl.StackScratch.X86_64.withStackScratchWiped 520 .rcx 64 Impl.Aes.X86_64.expandKey
-    stack := 520
-    verified := Proof.Aes.X86_64.scalar_expandKey_framed },
-  Spec.Aes.expandKeyApi.artifact X86_64.target {
     suffix := "_aesni"
     code := Impl.Aes.X86_64.AesNi.expandKey
     verified := Proof.Aes.X86_64.AesNi.Key.expandKey3_verified
     features := ["aes"] },
-  Spec.Aes.encryptBlocksApi.artifact X86_64.target {
-    code := Impl.Aes.X86_64.encryptBlocks
-    verified := Proof.Aes.encryptBlocks_keyed Proof.Aes.X86_64.encryptBlocks_verified },
-  Spec.Aes.decryptBlocksApi.artifact X86_64.target {
-    code := Impl.Aes.X86_64.decryptBlocks
-    verified := Proof.Aes.decryptBlocks_keyed Proof.Aes.X86_64.decryptBlocks_verified },
-  Spec.Aes.encryptBlocksApi.artifact X86_64.target {
-    suffix := "_aesni"
-    written := [("scratch", 0)]
-    code := Impl.Aes.X86_64.AesNi.encryptBlocks
-    verified := Proof.Aes.encryptBlocks_keyed Proof.Aes.X86_64.AesNi.encryptBlocks_verified
-    writtenOk := Proof.Aes.X86_64.AesNi.encryptBlocks_written
-    features := ["aes"] },
-  Spec.Aes.decryptBlocksApi.artifact X86_64.target {
-    suffix := "_aesni"
-    code := Impl.Aes.X86_64.AesNi.decryptBlocks
-    verified := Proof.Aes.decryptBlocks_keyed Proof.Aes.X86_64.AesNi.decryptBlocks_verified
-    features := ["aes"] },
+  Spec.Aes.expandKeyApi.artifact X86_64.target {
+    code := Impl.StackScratch.X86_64.withStackScratchWiped 520 .rcx 64 Impl.Aes.X86_64.expandKey
+    stack := 520
+    verified := Proof.Aes.X86_64.scalar_expandKey_framed },
   Spec.Aes.encryptBlocksApi.artifact X86_64.target {
     suffix := "_vaes"
     written := [("scratch", 0)]
@@ -68,10 +50,28 @@ def artifacts : List Artifact := [
     verified := Proof.Aes.encryptBlocks_keyed Proof.Aes.X86_64.VaesBlocks.encryptBlocks_verified
     writtenOk := Proof.Aes.X86_64.VaesBlocks.encryptBlocks_written
     features := ["aes", "avx", "avx2", "vaes"] },
+  Spec.Aes.encryptBlocksApi.artifact X86_64.target {
+    suffix := "_aesni"
+    written := [("scratch", 0)]
+    code := Impl.Aes.X86_64.AesNi.encryptBlocks
+    verified := Proof.Aes.encryptBlocks_keyed Proof.Aes.X86_64.AesNi.encryptBlocks_verified
+    writtenOk := Proof.Aes.X86_64.AesNi.encryptBlocks_written
+    features := ["aes"] },
+  Spec.Aes.encryptBlocksApi.artifact X86_64.target {
+    code := Impl.Aes.X86_64.encryptBlocks
+    verified := Proof.Aes.encryptBlocks_keyed Proof.Aes.X86_64.encryptBlocks_verified },
   Spec.Aes.decryptBlocksApi.artifact X86_64.target {
     suffix := "_vaes"
     code := Impl.Aes.X86_64.VaesBlocks.decryptBlocks
     verified := Proof.Aes.decryptBlocks_keyed Proof.Aes.X86_64.VaesBlocks.decryptBlocks_verified
-    features := ["aes", "avx", "avx2", "vaes"] }]
+    features := ["aes", "avx", "avx2", "vaes"] },
+  Spec.Aes.decryptBlocksApi.artifact X86_64.target {
+    suffix := "_aesni"
+    code := Impl.Aes.X86_64.AesNi.decryptBlocks
+    verified := Proof.Aes.decryptBlocks_keyed Proof.Aes.X86_64.AesNi.decryptBlocks_verified
+    features := ["aes"] },
+  Spec.Aes.decryptBlocksApi.artifact X86_64.target {
+    code := Impl.Aes.X86_64.decryptBlocks
+    verified := Proof.Aes.decryptBlocks_keyed Proof.Aes.X86_64.decryptBlocks_verified }]
 
 end VG.Artifacts.Aes.X86_64

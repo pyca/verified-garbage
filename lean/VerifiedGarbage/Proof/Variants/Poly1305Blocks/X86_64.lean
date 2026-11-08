@@ -21,8 +21,8 @@ def ifma : Proof.Poly1305.X86_64.BlocksImpl := .ifma
 
 def scalar : Proof.Poly1305.X86_64.BlocksImpl := .scalar
 
-/-- Every implementation, which each function generic over them is emitted
-with (the registration files that import this). -/
-def variants := [avx2, avx512, ifma, scalar]
+/-- Every implementation, best first: each function generic over them is
+emitted with each (the registration files that import this). -/
+def variants := [ifma, avx512, avx2, scalar]
 
 end VG.Proof.Variants.Poly1305Blocks.X86_64

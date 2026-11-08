@@ -12,8 +12,8 @@ def aesNi : Proof.Aes.X86.Ctr32Impl := .aesni
 
 def scalar : Proof.Aes.X86.Ctr32Impl := .scalar
 
-/-- Every implementation, which each function generic over them is emitted
-with (the registration files that import this). -/
+/-- Every implementation, best first: each function generic over them is
+emitted with each (the registration files that import this). -/
 def variants := [aesNi, scalar]
 
 end VG.Proof.Variants.AesCtr32.X86

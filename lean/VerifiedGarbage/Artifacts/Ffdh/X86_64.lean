@@ -92,7 +92,8 @@ namespace VG.Artifacts.Ffdh.X86_64
 
 def artifacts : List Artifact :=
   direct ++
-  (VG.Proof.Variants.MillerRabin.X86_64.variants.flatMap fun v => VG.Proof.Variants.FfdhExp.X86_64.variants.flatMap fun v2 => MillerRabinFfdhExp.artifacts v v2) ++
+  (VG.Proof.Variants.FfdhExp.X86_64.variants.flatMap fun v2 =>
+    VG.Proof.Variants.MillerRabin.X86_64.variants.flatMap fun v => MillerRabinFfdhExp.artifacts v v2) ++
   (VG.Proof.Variants.MillerRabin.X86_64.variants.flatMap fun v => MillerRabin.artifacts v)
 
 end VG.Artifacts.Ffdh.X86_64

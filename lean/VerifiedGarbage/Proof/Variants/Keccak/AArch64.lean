@@ -21,8 +21,8 @@ def scalar : Proof.Sha3.AArch64.Permutation := Proof.Sha3.AArch64.Scalar.Lazy.Re
 def sha3 : Proof.Sha3.AArch64.Permutation :=
   { Proof.Sha3.AArch64.Sha3.ResidentBackend.backend with vendor := some "apple" }
 
-/-- Every implementation, which each function generic over them is emitted
-with (the registration files that import this). -/
-def variants := [scalar, sha3]
+/-- Every implementation, best first: each function generic over them is
+emitted with each (the registration files that import this). -/
+def variants := [sha3, scalar]
 
 end VG.Proof.Variants.Keccak.AArch64
