@@ -189,20 +189,9 @@ impl Memory {
 
 impl Drop for Memory {
     fn drop(&mut self) {
-        fn bytes(chunks: &mut [CacheAligned<[u8; 128]>]) -> &mut [u8] {
-            // SAFETY: each chunk is 128 initialized bytes with no padding.
-            // The byte slice covers the same memory and borrows it exclusively.
-            unsafe {
-                core::slice::from_raw_parts_mut(
-                    chunks.as_mut_ptr().cast(),
-                    core::mem::size_of_val(chunks),
-                )
-            }
-        }
-
-        crate::zeroize::zeroize(bytes(&mut self.b));
-        crate::zeroize::zeroize(bytes(&mut self.v));
-        crate::zeroize::zeroize(bytes(&mut self.scratch));
+        crate::zeroize::zeroize(&mut self.b);
+        crate::zeroize::zeroize(&mut self.v);
+        crate::zeroize::zeroize(&mut self.scratch);
     }
 }
 

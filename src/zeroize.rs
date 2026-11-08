@@ -27,22 +27,32 @@ mod sealed {
     pub trait Sealed {}
 }
 
+/// A type for which all-zero bytes are a valid value.
+pub(crate) trait Zeroable: Copy + sealed::Sealed {}
+
 /// An integer type: the value whose bytes are all zero is 0.
-pub(crate) trait Int: Copy + sealed::Sealed {}
+pub(crate) trait Int: Zeroable {}
 
 macro_rules! int {
     ($($t:ty),*) => {
         $(
             impl sealed::Sealed for $t {}
+            impl Zeroable for $t {}
             impl Int for $t {}
         )*
     };
 }
 int!(u8, u16, u32, u64, i16, i32, i64);
 
+impl<T: Zeroable, const N: usize> sealed::Sealed for [T; N] {}
+impl<T: Zeroable, const N: usize> Zeroable for [T; N] {}
+
+impl<T: Zeroable> sealed::Sealed for crate::align::CacheAligned<T> {}
+impl<T: Zeroable> Zeroable for crate::align::CacheAligned<T> {}
+
 /// Overwrites `x` with zeros using the verified assembly primitive. Its
 /// opaque call prevents the compiler from removing the stores.
-pub(crate) fn zeroize<T: Int>(x: &mut [T]) {
+pub(crate) fn zeroize<T: Zeroable>(x: &mut [T]) {
     // SAFETY: `x` is writable for its entire byte length, cannot wrap, and
     // lies outside the callee’s stack frame. All-zero bytes are valid for T.
     unsafe { zeroize_raw(x.as_mut_ptr().cast::<u8>(), core::mem::size_of_val(x)) };
@@ -94,5 +104,29 @@ mod tests {
         let mut z = [-1i16; 5];
         zeroize(&mut z);
         assert_eq!(z, [0; 5]);
+    }
+
+    #[test]
+    fn zeroizes_arrays_and_aligned_buffers() {
+        use crate::align::CacheAligned;
+
+        let mut arrays = [[-1i16; 3]; 2];
+        zeroize(&mut arrays);
+        assert_eq!(arrays, [[0; 3]; 2]);
+
+        let mut chunks = [CacheAligned([u8::MAX; 128]); 4];
+        zeroize(&mut chunks[1..3]);
+        assert_eq!(chunks[0].0, [u8::MAX; 128]);
+        assert_eq!(chunks[1].0, [0; 128]);
+        assert_eq!(chunks[2].0, [0; 128]);
+        assert_eq!(chunks[3].0, [u8::MAX; 128]);
+
+        // Include alignment padding between the arrays.
+        let mut padded = [CacheAligned([u64::MAX; 3]); 4];
+        zeroize(&mut padded[1..3]);
+        assert_eq!(padded[0].0, [u64::MAX; 3]);
+        assert_eq!(padded[1].0, [0; 3]);
+        assert_eq!(padded[2].0, [0; 3]);
+        assert_eq!(padded[3].0, [u64::MAX; 3]);
     }
 }
