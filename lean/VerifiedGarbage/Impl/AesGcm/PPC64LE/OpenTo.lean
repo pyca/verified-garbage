@@ -74,32 +74,31 @@ def dataTo : List Instr := [mov .r24 .r27, mov .r25 .r23, .addSp .r12 0, .load .
 /-- The data decrypted to the destination. -/
 def oneCryptTo : Prog isa := .seq (.block dataTo) cryptTo
 
-/-- The arguments of `vg_aes_gcm_decrypt_blocks_to` on the whole blocks of
-the data: the key schedule, the rounds, the state from its accumulator (at
-`r30 + 16`, the counter block 32 bytes after it), the source and their
-number, the destination (`[sp + 120]`) and their number again, and the
-working space. -/
+/-- The destination (`[sp + 120]`) into `r26`, which the call keeps, and the
+arguments of `vg_aes_gcm_decrypt_blocks_to` on the whole blocks of the data:
+the key schedule, the rounds, the state from its accumulator (at `r30 + 16`,
+the counter block 32 bytes after it), the source and their number, the
+destination and their number again, and the working space. -/
 def wholeArgs : List Instr :=
-  [mov .r3 .r29, mov .r4 .r28, .addi .r5 .r30 16, mov .r6 .r27, .lsr .d .r7 .r23 4,
-   .addSp .r12 0, .load .d .r8 .r12 120, mov .r9 .r7, .addi .r10 .r31 448]
+  [.addSp .r12 0, .load .d .r26 .r12 120, mov .r3 .r29, mov .r4 .r28, .addi .r5 .r30 16, mov .r6 .r27,
+   .lsr .d .r7 .r23 4, mov .r8 .r26, mov .r9 .r7, .addi .r10 .r31 448]
 
 /-- The whole blocks decrypted from the source to the destination, and hashed. -/
 def whole : Prog isa :=
   .seq (.block wholeArgs) (.call "vg_aes_gcm_decrypt_blocks_to" Impl.AesGcm.PPC64LE.SplitBlocks.decryptTo)
 
 /-- The last `len mod 16` bytes: their number in `r25`, their address in the
-source in `r24` and in the destination in `r26`. -/
+source in `r24` and in the destination in `r26` (from the destination in it). -/
 def partArgs : List Instr :=
-  [.li .r0 15, .logic .and .r25 .r23 .r0, .sub .r12 .r23 .r25, .add .r24 .r27 .r12,
-   .addSp .r11 0, .load .d .r26 .r11 120, .add .r26 .r26 .r12]
+  [.li .r0 15, .logic .and .r25 .r23 .r0, .sub .r12 .r23 .r25, .add .r24 .r27 .r12, .add .r26 .r26 .r12]
 
 /-- The data decrypted to the destination and hashed, in one pass: the whole
-blocks, then the last bytes decrypted (`cryptTailWith`) and buffered for
-GHASH (`absorb`). -/
+blocks, then the last bytes decrypted (`cryptTailWith`) and, with seal's
+arguments for them (`SealFused.tailSetup`), buffered for GHASH (`absorb`). -/
 def passData : Prog isa :=
   .seq whole
   (.seq (.seq (.block partArgs) (cryptTailWith true))
-  (.seq (.block [.li .r26 0]) (absorb 16)))
+  (.seq (.block SealFused.tailSetup) (absorb 16)))
 
 /-- `open` once the tag length is allowed, in one pass: the nonce's length
 back in `r25`, the data decrypted to the destination while its tag is
