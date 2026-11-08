@@ -145,14 +145,15 @@ own changes are rebuilt either way, on top of the restored build.
   `crate::arch::dispatch::fn_tables`, `Rust.tableDispatcher`), which
   returns the best of the tables of its interface and data.
   Which is best is not trusted: `lean/VerifiedGarbage/Dispatch.lean` ranks
-  the suffixes of each target (with a variant's `extra` features, and its
-  `vendor` for a choice by compilation target), and the emitter fails on
-  a suffix it does not rank.
+  the suffixes of each target, and the emitter fails on a suffix it does
+  not rank. A choice that only some algorithms' implementations need is
+  their registration's (`Registration.extra` features, and its `vendor`
+  for a choice by compilation target), never the ranking's.
   A variant is chosen by the CPU's features; only when no feature tells
   apart the CPUs it is faster on may the choice also depend on the
   compilation target (`vg_poly1305_update_neon`, faster on Apple's cores and
   slower on Neoverse N2, is chosen for `target_vendor = "apple"`). Then the
-  dispatcher, ranked with that `vendor`, chooses it for that target, and
+  dispatcher, with that `vendor`, chooses it for that target, and
   elsewhere where `VG_CPU_FEATURES` names its features
   (`verified_garbage_cpu::requested`), so that every CI runner of the
   architecture can test it.
