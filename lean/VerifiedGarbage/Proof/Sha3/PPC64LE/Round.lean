@@ -4,34 +4,35 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.Straight
 public import VerifiedGarbage.Proof.Sha3.Compl
 public import VerifiedGarbage.Impl.Sha3.PPC64LE
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+import VerifiedGarbage.Proof.Framework.PPC64LE.MovImm
+import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
+import VerifiedGarbage.Proof.MdStream.PPC64LE.Basic
 import VerifiedGarbage.Proof.Framework.Lit
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Straight
 meta import VerifiedGarbage.Proof.Sha3.Compl
 meta import VerifiedGarbage.Impl.Sha3.PPC64LE
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.MovImm
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
+meta import VerifiedGarbage.Proof.MdStream.PPC64LE.Basic
 meta import VerifiedGarbage.Proof.Framework.Lit
-meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Keccak-f[1600] on PPC64LE: a round, by evaluation
 
-As on x86-64 (`Proof/Sha3/X86_64/Round.lean`): a round (`round s d k`) is
-checked by evaluating its code over the ANF domain (`Bitslice.Anf`, with
-`Straight.eval`): the lanes of the state at `s`, as stored (complemented,
-`Compl.cmpl`), are atoms `0–24`, row 4 of it is in `rowReg` on entry, and
-`ONES` holds all ones (the constant `one`). ι's load of the round constant
-(`8k(r19)`, a third memory area) splits the round in two: it loads atom 25
-into `r0` and XORs it into `r11`. `check` then compares what the round
-stores at `d`, and leaves in `rowReg`, with the round computed from the
-specification (`Compl.specP`), and `round_ok` turns that into a statement
-about the machine. The two rounds of an iteration (`check₀`, `check₁`) are
-each checked once.
+A round's θ, ρ, π and χ (`core`) are checked by evaluating their code over
+the ANF domain (`Bitslice.Anf`, with `Straight.eval`): the lanes of the
+state, as kept (complemented, `Compl.cmpl`), are atoms `0–24` in their
+registers (`lane`), and the scratch space is four slots, the three spilled
+lanes and all ones (the constant `one`). `check` compares the registers'
+values after it with the round computed from the specification
+(`Compl.specP`), lane 0 before ι, whose round constant is atom `25`; and
+`core_ok` turns that into a statement about the machine. ι (`iota`), the
+round constant built from immediates, is run symbolically (`round_ok`).
 
-The prologue and the epilogue complement the lanes `complLanes` in place
-(`complement`), which is checked the same way (`slots_ok`).
+The prologue's and the epilogue's loads and stores of the lanes, with the
+lanes `complLanes` complemented, are checked the same way (`load_ok`,
+`store_ok`).
 -/
 
 @[expose] public section
@@ -39,182 +40,52 @@ The prologue and the epilogue complement the lanes `complLanes` in place
 namespace VG.Proof.Sha3.PPC64LE.Round
 
 open VG VG.PPC64LE VG.PPC64LE.Straight VG.Bitslice.Anf VG.Impl.Sha3.PPC64LE
-open VG.Proof.Sha3.Compl (specP)
-
-/-- The registers of row 4 between rounds. -/
-def rowReg (x : Nat) : Reg := [Reg.r5, .r6, .r7, .r8, .r9].getD x .r5
-
-/-- The output state at `d` (slots), the input state at `s` (external words). -/
-def cfg (s d : Reg) : Cfg := { base := d, slots := 25, ext := s, exts := 25 }
-
-def ext (k : Nat) : Option Poly := some (atom k)
-
-/-- On entry, row 4 of the input in `rowReg`, and all ones in `ONES`. -/
-def env₀ : Straight.Env Poly :=
-  { reg := fun r => if r = .r5 then some (atom 20) else if r = .r6 then some (atom 21)
-      else if r = .r7 then some (atom 22) else if r = .r8 then some (atom 23)
-      else if r = .r9 then some (atom 24) else if r = .r18 then some one else none
-    slot := fun _ => none }
-
-/-- The output, and row 4 of it in `rowReg`. -/
-def post (e : Straight.Env Poly) : Bool :=
-  (List.range 25).all (fun j => e.slot j == some (specP j)) &&
-    (List.range 5).all fun x => e.reg (rowReg x) == some (specP (20 + x))
-
-/-- The round from `s` to `d`, with ι (the round constant, atom 25, loaded into
-`r0` and XORed into `r11`) between `roundA` and `roundB`. -/
-def check (s d : Reg) : Bool :=
-  match Straight.eval anf (cfg s d) ext (roundA s) env₀ with
-  | none => false
-  | some e₁ => match e₁.reg .r11 with
-    | none => false
-    | some a => Straight.check anf (cfg s d) ext (roundB s d)
-        ((e₁.setReg .r0 (atom 25)).setReg .r11 (pxor a (atom 25))) post
-
-theorem of_check {s d : Reg} (h : check s d = true) :
-    ∃ e₁ a, Straight.eval anf (cfg s d) ext (roundA s) env₀ = some e₁ ∧ e₁.reg .r11 = some a ∧
-      Straight.check anf (cfg s d) ext (roundB s d)
-        ((e₁.setReg .r0 (atom 25)).setReg .r11 (pxor a (atom 25))) post = true := by
-  unfold check at h
-  split at h
-  · cases h
-  · rename_i e₁ he₁
-    split at h
-    · cases h
-    · rename_i a ha
-      exact ⟨e₁, a, he₁, ha, h⟩
-
-/-- The registers a round keeps: the pointers, `ONES`, the loop's registers,
-and the nonvolatile registers it does not use. -/
-def kept : List Reg :=
-  [.r3, .r4, .r18, .r19, .r20, .r2, .r21, .r22, .r23, .r24, .r25, .r26, .r27, .r28, .r29, .r30, .r31]
-
-/-- The round's instructions write none of `kept`. -/
-def keeps (s d : Reg) : Bool :=
-  (roundA s ++ roundB s d).all fun i => kept.all fun r => Straight.dst i != some r
-
-theorem env₀_reg {r : Reg} {a : Poly} (h : env₀.reg r = some a) :
-    (∃ x < 5, r = rowReg x ∧ a = atom (20 + x)) ∨ (r = .r18 ∧ a = one) := by
-  simp only [env₀] at h
-  cases r <;> simp at h <;> subst h
-  · exact .inl ⟨0, by decide, rfl, rfl⟩
-  · exact .inl ⟨1, by decide, rfl, rfl⟩
-  · exact .inl ⟨2, by decide, rfl, rfl⟩
-  · exact .inl ⟨3, by decide, rfl, rfl⟩
-  · exact .inl ⟨4, by decide, rfl, rfl⟩
-  · exact .inr ⟨rfl, rfl⟩
-
-open VG.Proof.Sha3 (Lanes laneAddr outState)
-open VG.Proof.Sha3.Compl (cmpl msk maskP eval_specP)
+open VG.Proof.Sha3.Compl (specP cmpl msk maskP eval_specP)
 
 abbrev KState := Spec.Sha3.State
 abbrev Lane := Spec.Sha3.Lane
 
-theorem cmpl_get (A : KState) {i : Nat} (hi : i < 25) : (cmpl A)[i] = A[i] ^^^ msk i := by
-  simp [cmpl]
+/-- The lane a register holds (`lane`, inverted). -/
+def laneOf : Reg → Option Nat
+  | .r2 => some 0 | .r7 => some 1 | .r8 => some 2 | .r9 => some 3 | .r10 => some 4
+  | .r11 => some 5 | .r12 => some 6 | .r14 => some 7 | .r15 => some 8 | .r16 => some 9
+  | .r17 => some 10 | .r18 => some 11 | .r19 => some 12 | .r20 => some 13 | .r21 => some 14
+  | .r22 => some 15 | .r23 => some 16 | .r24 => some 17 | .r25 => some 18 | .r26 => some 19
+  | .r27 => some 20 | .r28 => some 21 | .r29 => some 22 | .r30 => some 23 | .r31 => some 24
+  | _ => none
 
-/-- A round from the state at `s` to the state at `d`: on lanes kept
-complemented (`cmpl`), with row 4 in `rowReg` before and after. -/
-theorem round_ok {sR dR : Reg} (hc : check sR dR = true) (hk : keeps sR dR = true)
-    (hsk : sR ∈ kept) (hdk : dR ∈ kept) (k : Nat) (hk8 : 8 * k < 2 ^ 15 ∧ 8 * k % 4 = 0)
-    {s : State} {A : KState} {rc : Lane} {src dst : Addr}
-    (hs : s.gpr sR = src) (hd : s.gpr dR = dst) (hs0 : sR ≠ .r0) (hd0 : dR ≠ .r0)
-    (he : Proof.Sha3.Env s.rd s.wr src dst (s.gpr .r19 + BitVec.ofNat 64 (8 * k)))
-    (hA : Lanes s.mem src (cmpl A))
-    (hrow : ∀ x (hx : x < 5), s.gpr (rowReg x) = (cmpl A)[20 + x])
-    (hones : s.gpr .r18 = BitVec.allOnes 64)
-    (hrc : s.mem.readW (s.gpr .r19 + BitVec.ofNat 64 (8 * k)) 64 = rc) :
-    WP isa (.block (round sR dR k)) s fun s' =>
-      Lanes s'.mem dst (cmpl (outState A rc)) ∧
-      (∀ x (hx : x < 5), s'.gpr (rowReg x) = (cmpl (outState A rc))[20 + x]) ∧
-      Frame [⟨dst, 200⟩] s.mem s'.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧
-      s'.lr = s.lr ∧ ∀ r ∈ kept, s'.gpr r = s.gpr r := by
-  obtain ⟨e₁, a, he₁, ha, hchk⟩ := of_check hc
-  obtain ⟨e₃, he₃, hpost⟩ := Straight.of_check _ _ _ hchk
-  let V : Nat → Lane := fun i => if i = 25 then rc else s.mem.readW (wordAddr src i) 64
-  have hV : ∀ i (hi : i < 25), V i = A[i] ^^^ msk i := fun i hi => by
-    simp only [V, show i ≠ 25 by omega, ite_false]
-    rw [← cmpl_get A hi]; exact hA i hi
-  have hV25 : V 25 = rc := by simp [V]
-  have hok : Ok (cfg sR dR) s :=
-    { slotIn := fun j hj => by simp only [cfg] at hj ⊢; rw [hd]; exact he.dst_out j hj
-      extIn := fun j hj => by simp only [cfg] at hj ⊢; rw [hs]; exact he.src_in j hj
-      slots := by simp only [cfg]; decide
-      sep := fun j hj i hi => by
-        simp only [cfg] at hj hi ⊢; rw [hd, hs]
-        exact Region.Disjoint.sep he.dst_src (Proof.Sha3.lane_contains dst hj)
-          (Proof.Sha3.lane_contains src hi) }
-  have hrel : Rel (AnfRel V) (cfg sR dR) ext env₀ s :=
-    { reg := fun r a h => by
-        rcases env₀_reg h with ⟨x, hx, rfl, rfl⟩ | ⟨rfl, rfl⟩
-        · simp only [AnfRel, eval_atom, V, show 20 + x ≠ 25 by omega, ite_false]
-          rw [hrow x hx]; exact hA _ (by omega)
-        · simp only [AnfRel, eval_one, hones]
-      slot := fun _ _ _ h => by cases h
-      ext := fun j a hj h => by
-        simp only [ext, Option.some.injEq] at h; subst h
-        simp only [cfg] at hj ⊢
-        simp only [AnfRel, eval_atom, V, show j ≠ 25 by omega, ite_false, hs] }
-  obtain ⟨s₁, hs₁, p₁⟩ := Straight.run (anf_sound V) hok hrel he₁
-  have hk' : ∀ r ∈ kept, (roundA sR).all (fun i => Straight.dst i != some r) = true ∧
-      (roundB sR dR).all (fun i => Straight.dst i != some r) = true := fun r hr => by
-    simp only [keeps, List.all_append, Bool.and_eq_true, List.all_eq_true] at hk
-    exact ⟨List.all_eq_true.mpr fun i hi => hk.1 i hi r hr, List.all_eq_true.mpr fun i hi => hk.2 i hi r hr⟩
-  have k₁ : ∀ r ∈ kept, s₁.gpr r = s.gpr r := fun r hr =>
-    p₁.other r (by rw [(hk' r hr).1]; decide)
-  -- ι
-  have hrcp : s₁.gpr .r19 + BitVec.ofNat 64 (8 * k) = s.gpr .r19 + BitVec.ofNat 64 (8 * k) := by
-    rw [k₁ .r19 (by decide)]
-  have hrc₁ : s₁.mem.readW (s.gpr .r19 + BitVec.ofNat 64 (8 * k)) 64 = rc := by
-    rw [p₁.frame.readW (Region.contains_self _ _) ?_ (by decide), hrc]
-    simp only [slotRegion, cfg, List.mem_singleton, forall_eq, hd]
-    exact he.dst_rc.symm
-  have hin₁ : InRegions (s₁.rd ++ s₁.wr) (s.gpr .r19 + BitVec.ofNat 64 (8 * k)) 8 := by
-    rw [p₁.rd, p₁.wr]; exact he.rc_in
-  let s₂ := s₁.write .r0 rc
-  let s₃ := s₂.write .r11 (s₂.gpr .r11 ^^^ s₂.gpr .r0)
-  have hexec : runBlock isa (iota k) s₁ = some s₃ := by
-    simp only [iota, runBlock_cons, runStep_some, runBlock_nil, isa,
-      exec_load_d (show Reg.r19 ≠ .r0 by decide) hk8 (by rw [hrcp]; exact hin₁), hrcp, hrc₁, exec_logic]
-    rfl
-  have h11 : s₃.gpr .r11 = s₁.gpr .r11 ^^^ rc := by simp [s₃, s₂, State.write]
-  have hr0 : AnfRel V (atom 25) rc := by simp only [AnfRel, eval_atom, hV25]
-  have hr11 : AnfRel V (pxor a (atom 25)) (s₁.gpr .r11 ^^^ rc) := by
-    simp only [AnfRel, eval_pxor, eval_atom, hV25]; rw [p₁.rel.reg _ _ ha]
-  have hb₁ : ∀ r, r = Reg.r0 ∨ r = .r11 → r ≠ (cfg sR dR).base ∧ r ≠ (cfg sR dR).ext := by
-    rintro r (rfl | rfl) <;> simp only [cfg] <;> refine ⟨fun h => ?_, fun h => ?_⟩ <;> subst h <;>
-      simp_all [kept]
-  have p₂ := post_write p₁.ok p₁.rel hr0 (hb₁ .r0 (.inl rfl)).1 (hb₁ .r0 (.inl rfl)).2
-  have p₂' := post_write p₂.ok p₂.rel (v := s₂.gpr .r11 ^^^ s₂.gpr .r0) (by
-      simp only [s₂, State.write, show Reg.r11 ≠ .r0 by decide, ite_false, ite_true]; exact hr11)
-    (hb₁ .r11 (.inr rfl)).1 (hb₁ .r11 (.inr rfl)).2
-  obtain ⟨s₄, hs₄, p₄⟩ := Straight.run (anf_sound V) p₂'.ok p₂'.rel he₃
-  have hbase : s₄.gpr dR = dst := by
-    have := p₄.base.trans (p₂'.base.trans (p₂.base.trans p₁.base))
-    simp only [cfg] at this; rw [this, hd]
-  unfold round
-  rw [WP.block_append_iff, WP.block_append_iff]
-  refine WP.of_runBlock ⟨s₁, hs₁, WP.of_runBlock ⟨s₃, hexec, WP.of_runBlock ⟨s₄, hs₄, ?_⟩⟩⟩
-  simp only [post, Bool.and_eq_true, List.all_eq_true, List.mem_range, beq_iff_eq] at hpost
-  refine ⟨fun i hi => ?_, fun x hx => ?_, ?_, p₄.rd.trans (p₂'.rd.trans (p₂.rd.trans p₁.rd)),
-    p₄.wr.trans (p₂'.wr.trans (p₂.wr.trans p₁.wr)), p₄.sp.trans (p₂'.sp.trans (p₂.sp.trans p₁.sp)),
-    p₄.lr.trans (p₂'.lr.trans (p₂.lr.trans p₁.lr)), fun r hr => ?_⟩
-  · have h := p₄.rel.slot i _ (by simp only [cfg]; exact hi) (hpost.1 i hi)
-    simp only [AnfRel, eval_specP hV hV25 hi, cfg, hbase] at h
-    exact h.symm
-  · have h := p₄.rel.reg _ _ (hpost.2 x hx)
-    simp only [AnfRel, eval_specP hV hV25 (show 20 + x < 25 by omega)] at h
-    exact h.symm
-  · have f₁ := p₁.frame
-    have f₄ := p₄.frame
-    have hb₂ : s₃.gpr dR = dst := by
-      have := p₂'.base.trans (p₂.base.trans p₁.base); simp only [cfg] at this; rw [this, hd]
-    simp only [slotRegion, cfg, hd] at f₁ f₄
-    rw [hb₂] at f₄
-    exact f₁.trans f₄
-  · have h0 : r ≠ .r0 := fun h => by subst h; simp [kept] at hr
-    have h11 : r ≠ .r11 := fun h => by subst h; simp [kept] at hr
-    rw [p₄.other r (by rw [(hk' r hr).2]; decide), p₂'.other r h11, p₂.other r h0, k₁ r hr]
+theorem laneOf_lane : ∀ i < 25, laneOf (lane i) = some i := by decide
+
+theorem laneOf_some {r : Reg} {i : Nat} (h : laneOf r = some i) : r = lane i ∧ i < 25 := by
+  cases r <;> simp only [laneOf, Option.some.injEq, reduceCtorEq] at h <;> subst h <;>
+    exact ⟨rfl, by decide⟩
+
+/-- The lanes are in distinct registers, none of them a pointer or a temporary. -/
+theorem lane_inj : ∀ i < 25, ∀ j < 25, lane i = lane j → i = j := by decide
+
+theorem lane_ne : ∀ i < 25, lane i ≠ .r0 ∧ lane i ≠ .r3 ∧ lane i ≠ .r4 ∧ lane i ≠ .r5 ∧ lane i ≠ .r6 := by
+  decide
+
+/-! ## θ, ρ, π and χ -/
+
+/-- The scratch space: slots 0–2 the spilled lanes, slot 3 all ones. -/
+def cfg : Cfg := { base := .r4, slots := 4, ext := .r3, exts := 0 }
+
+/-- The lanes, as kept, in their registers, and all ones in slot 3. -/
+def env₀ : Straight.Env Poly :=
+  { reg := fun r => (laneOf r).map atom
+    slot := fun k => if k = 3 then some one else none }
+
+/-- The round's output in the lanes' registers, lane 0 before ι, and slot 3
+unchanged. -/
+def post (e : Straight.Env Poly) : Bool :=
+  (match e.reg (lane 0) with
+    | some a => pxor a (atom 25) == specP 0
+    | none => false) &&
+  (List.range 24).all (fun j => e.reg (lane (j + 1)) == some (specP (j + 1))) &&
+  e.slot 3 == some one
+
+def check : Bool := Straight.check anf cfg (fun _ => none) core env₀ post
 
 deriving instance Lean.ToExpr for Poly
 
@@ -224,94 +95,252 @@ materialize_table Compl.sD 5
 materialize_table Compl.sB 5 5
 materialize_table specP 25
 
-theorem check₀ : check .r3 .r4 = true := by lit_decide
-theorem check₁ : check .r4 .r3 = true := by lit_decide
-theorem keeps₀ : keeps .r3 .r4 = true := by decide +kernel
-theorem keeps₁ : keeps .r4 .r3 = true := by decide +kernel
+theorem check_eq : check = true := by lit_decide
 
-/-! ## Complementing the lanes -/
+theorem cmpl_get (A : KState) {i : Nat} (hi : i < 25) : (cmpl A)[i] = A[i] ^^^ msk i := by
+  simp [cmpl]
 
-/-- The state at `r3` (slots). -/
-def sCfg : Cfg := { base := .r3, slots := 25, ext := .r3, exts := 0 }
+/-- What `core` leaves in the registers and the scratch space. -/
+structure CoreOut (A : KState) (rc : Lane) (P : Addr) (s s' : State) : Prop where
+  lanes : ∀ i (hi : i < 25), i ≠ 0 → s'.gpr (lane i) = (cmpl (Proof.Sha3.outState A rc))[i]
+  lane0 : s'.gpr (lane 0) ^^^ rc = (cmpl (Proof.Sha3.outState A rc))[0]
+  ones : s'.mem.readW (P + BitVec.ofNat 64 24) 64 = BitVec.allOnes 64
+  frame : Frame [⟨P, 32⟩] s.mem s'.mem
+  rd : s'.rd = s.rd
+  wr : s'.wr = s.wr
+  sp : s'.sp = s.sp
+  lr : s'.lr = s.lr
+  r3 : s'.gpr .r3 = s.gpr .r3
+  r4 : s'.gpr .r4 = s.gpr .r4
 
-/-- Lane `i` of the state is atom `i`, and `ONES` holds all ones. -/
-def sEnv : Straight.Env Poly :=
-  { reg := fun r => if r = .r18 then some one else none, slot := fun i => some (atom i) }
-
-/-- The lanes `complLanes` complemented. -/
-def cPost (e : Straight.Env Poly) : Bool :=
-  (List.range 25).all fun i => e.slot i == some (pxor (atom i) (maskP i))
-
-/-- And row 4 of the result in `rowReg`. -/
-def rPost (e : Straight.Env Poly) : Bool :=
-  cPost e && (List.range 5).all fun x => e.reg (rowReg x) == some (pxor (atom (20 + x)) (maskP (20 + x)))
-
-theorem complement_check : Straight.check anf sCfg (fun _ => none) complement sEnv cPost = true := by
-  decide +kernel
-
-theorem complementRow_check :
-    Straight.check anf sCfg (fun _ => none) (complement ++ loadRow) sEnv rPost = true := by
-  decide +kernel
-
-theorem complement_writes : ∀ r ∈ kept, (complement ++ loadRow).all (fun i => Straight.dst i != some r) = true := by
-  decide +kernel
-
-theorem complement_writes' : ∀ r ∈ kept, complement.all (fun i => Straight.dst i != some r) = true := by
-  decide +kernel
-
-theorem eval_compl (M : KState) {i : Nat} (hi : i < 25) :
-    Bitslice.Anf.eval (fun j => M[j]!) (pxor (atom i) (maskP i)) = (cmpl M)[i] := by
-  rw [eval_pxor, eval_atom, Compl.eval_maskP, cmpl_get M hi, Proof.Sha3.getElem!_eq _ hi]
-
-/-- A block that complements the lanes `complLanes` of the state at `r3`. -/
-theorem slots_ok {is : List Instr} {post : Straight.Env Poly → Bool}
-    (hchk : Straight.check anf sCfg (fun _ => none) is sEnv post = true) (hpost : ∀ e, post e = true → cPost e = true)
-    (hw : ∀ r ∈ kept, is.all (fun i => Straight.dst i != some r) = true)
-    {s : State} {st : Addr} {M : KState} (hr3 : s.gpr .r3 = st) (hst : (⟨st, 200⟩ : Region) ∈ s.wr)
-    (hones : s.gpr .r18 = BitVec.allOnes 64) (hM : Lanes s.mem st M) :
-    ∃ s' e', runBlock isa is s = some s' ∧ post e' = true ∧
-      Rel (AnfRel fun i => M[i]!) sCfg (fun _ => none) e' s' ∧
-      Lanes s'.mem st (cmpl M) ∧ Frame [⟨st, 200⟩] s.mem s'.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
-      s'.sp = s.sp ∧ s'.lr = s.lr ∧ ∀ r ∈ kept, s'.gpr r = s.gpr r := by
-  obtain ⟨e', he', hp⟩ := Straight.of_check _ _ _ hchk
-  have hok : Ok sCfg s := Ok.of_region hst (by simp [sCfg, hr3]) (by simp [sCfg]) (by decide) rfl
-  have hrel : Rel (AnfRel fun i => M[i]!) sCfg (fun _ => none) sEnv s :=
+/-- θ, ρ, π and χ, on the lanes kept complemented (`cmpl`) in their registers,
+with the scratch space at `P` (all ones at `P + 24`). -/
+theorem core_ok {s : State} {A : KState} {P : Addr} (rc : Lane) (hP : s.gpr .r4 = P)
+    (hin : ∀ k < 4, InRegions s.wr (P + BitVec.ofNat 64 (8 * k)) 8)
+    (hones : s.mem.readW (P + BitVec.ofNat 64 24) 64 = BitVec.allOnes 64)
+    (hA : ∀ i (hi : i < 25), s.gpr (lane i) = (cmpl A)[i]) :
+    ∃ s', runBlock isa core s = some s' ∧ CoreOut A rc P s s' := by
+  obtain ⟨e', he', hpost⟩ := Straight.of_check _ _ _ check_eq
+  let V : Nat → Lane := fun i => if i = 25 then rc else s.gpr (lane i)
+  have hV : ∀ i (hi : i < 25), V i = A[i] ^^^ msk i := fun i hi => by
+    simp only [V, show i ≠ 25 by omega, ite_false]
+    rw [← cmpl_get A hi]; exact hA i hi
+  have hV25 : V 25 = rc := by simp [V]
+  have hok : Ok cfg s :=
+    { slotIn := fun k hk => by simp only [cfg] at hk ⊢; rw [hP]; exact hin k hk
+      extIn := fun k hk => by simp [cfg] at hk
+      slots := by simp only [cfg]; decide
+      sep := fun _ _ j hj => by simp [cfg] at hj }
+  have hrel : Rel (AnfRel V) cfg (fun _ => none) env₀ s :=
     { reg := fun r a h => by
-        simp only [sEnv] at h
+        simp only [env₀, Option.map_eq_some_iff] at h
+        obtain ⟨i, hi, rfl⟩ := h
+        obtain ⟨rfl, hi25⟩ := laneOf_some hi
+        simp only [AnfRel, eval_atom, V, show i ≠ 25 by omega, ite_false]
+      slot := fun k a _ h => by
+        simp only [env₀] at h
         split at h
-        · rename_i hr; subst hr; cases h
-          simp only [AnfRel, eval_one, hones]
+        · rename_i hk; subst hk; cases h
+          simp only [AnfRel, eval_one, cfg, hP]; exact hones.symm
         · cases h
-      slot := fun k a hk h => by
-        simp only [sEnv, Option.some.injEq] at h; subst h
-        simp only [sCfg] at hk ⊢
-        simp only [AnfRel, eval_atom, hr3, Proof.Sha3.getElem!_eq _ hk]
-        exact (hM k hk).symm
       ext := fun _ _ _ h => by cases h }
-  obtain ⟨s', hs', p⟩ := Straight.run (anf_sound _) hok hrel he'
-  have hc := hpost e' hp
-  simp only [cPost, List.all_eq_true, List.mem_range, beq_iff_eq] at hc
-  refine ⟨s', e', hs', hp, p.rel, fun i hi => ?_, ?_, p.rd, p.wr, p.sp, p.lr,
-    fun r hr => p.other r (by rw [hw r hr]; decide)⟩
-  · have hb : s'.gpr .r3 = st := p.base.trans hr3
-    have h := p.rel.slot i _ (by simp only [sCfg]; exact hi) (hc i hi)
-    simp only [AnfRel, eval_compl M hi, sCfg, hb] at h
+  obtain ⟨s', hs', p⟩ := Straight.run (anf_sound V) hok hrel he'
+  simp only [post, Bool.and_eq_true, List.all_eq_true, List.mem_range, beq_iff_eq] at hpost
+  obtain ⟨⟨h0, hl⟩, h3⟩ := hpost
+  have hb : s'.gpr .r4 = P := by have := p.base; simp only [cfg] at this; rw [this, hP]
+  refine ⟨s', hs', ⟨fun i hi hi0 => ?_, ?_, ?_, ?_, p.rd, p.wr, p.sp, p.lr,
+    by have := p.ext; simpa [cfg] using this, by have := p.base; simpa [cfg] using this⟩⟩
+  · obtain ⟨j, rfl⟩ : ∃ j, i = j + 1 := ⟨i - 1, by omega⟩
+    have h := p.rel.reg _ _ (hl j (by omega))
+    simp only [AnfRel, eval_specP hV hV25 hi] at h
+    exact h.symm
+  · split at h0
+    · rename_i a ha
+      have h := p.rel.reg _ _ ha
+      simp only [beq_iff_eq] at h0
+      have e := congrArg (eval V) h0
+      rw [eval_pxor, eval_atom, hV25, eval_specP hV hV25 (by decide), h] at e
+      exact e
+    · cases h0
+  · have h := p.rel.slot 3 _ (by decide) h3
+    simp only [AnfRel, eval_one, cfg, hb] at h
     exact h.symm
   · have f := p.frame
-    simp only [slotRegion, sCfg, hr3] at f
+    simp only [slotRegion, cfg, hP] at f
     exact f
 
-theorem rows_of {e : Straight.Env Poly} {s : State} {M : KState}
-    (hr : Rel (AnfRel fun i => M[i]!) sCfg (fun _ => none) e s) (hp : rPost e = true) :
-    ∀ x (hx : x < 5), s.gpr (rowReg x) = (cmpl M)[20 + x] := by
-  intro x hx
-  simp only [rPost, Bool.and_eq_true, List.all_eq_true, List.mem_range, beq_iff_eq] at hp
-  have h := hr.reg _ _ (hp.2 x hx)
-  simp only [AnfRel, eval_compl M (show 20 + x < 25 by omega)] at h
-  exact h.symm
+/-! ## ι -/
+
+/-- ι of round `r`: lane 0 XORed with its round constant, `T1` overwritten. -/
+theorem iota_ok (r : Nat) {s : State} {Q : State → Prop}
+    (k : ∀ s', (∀ i, i < 25 → i ≠ 0 → s'.gpr (lane i) = s.gpr (lane i)) →
+      s'.gpr (lane 0) = s.gpr (lane 0) ^^^ Spec.Sha3.RC r → s'.mem = s.mem → s'.rd = s.rd →
+      s'.wr = s.wr → s'.sp = s.sp → s'.lr = s.lr → s'.gpr .r3 = s.gpr .r3 →
+      s'.gpr .r4 = s.gpr .r4 → Q s') :
+    WP isa (.block (iota r)) s Q := by
+  simp only [iota, movImm64, List.cons_append, List.nil_append]
+  refine MdStream.PPC64LE.WP.cons exec_lis (MdStream.PPC64LE.WP.cons exec_ori
+    (MdStream.PPC64LE.WP.cons (exec_lsl (by decide)) (MdStream.PPC64LE.WP.cons exec_oris
+    (MdStream.PPC64LE.WP.cons exec_ori (MdStream.PPC64LE.WP.cons exec_logic (WP.block_nil ?_))))))
+  have l0 : lane 0 ≠ T1 := (lane_ne 0 (by decide)).2.2.2.1
+  refine k _ (fun i hi hi0 => ?_) ?_ rfl rfl rfl rfl rfl ?_ ?_
+  · have hne : lane i ≠ lane 0 := fun h => hi0 (lane_inj i hi 0 (by decide) h)
+    have h5 : lane i ≠ T1 := (lane_ne i hi).2.2.2.1
+    simp only [RegUpd.gpr_write_of_ne _ _ hne, RegUpd.gpr_write_of_ne _ _ h5]
+  · simp only [RegUpd.gpr_write_self, RegUpd.gpr_write_of_ne _ _ l0]
+    rw [movImm64_eq]
+  · simp only [RegUpd.gpr_write_of_ne _ _ (show Reg.r3 ≠ lane 0 by decide),
+      RegUpd.gpr_write_of_ne _ _ (show Reg.r3 ≠ T1 by decide)]
+  · simp only [RegUpd.gpr_write_of_ne _ _ (show Reg.r4 ≠ lane 0 by decide),
+      RegUpd.gpr_write_of_ne _ _ (show Reg.r4 ≠ T1 by decide)]
+
+/-- Round `r`, on the lanes kept complemented (`cmpl`) in their registers. -/
+theorem round_ok (r : Nat) {s : State} {A : KState} {P : Addr} (hP : s.gpr .r4 = P)
+    (hin : ∀ k < 4, InRegions s.wr (P + BitVec.ofNat 64 (8 * k)) 8)
+    (hones : s.mem.readW (P + BitVec.ofNat 64 24) 64 = BitVec.allOnes 64)
+    (hA : ∀ i (hi : i < 25), s.gpr (lane i) = (cmpl A)[i]) :
+    WP isa (.block (round r)) s fun s' =>
+      (∀ i (hi : i < 25), s'.gpr (lane i) = (cmpl (Spec.Sha3.rnd A r))[i]) ∧
+      s'.mem.readW (P + BitVec.ofNat 64 24) 64 = BitVec.allOnes 64 ∧
+      Frame [⟨P, 32⟩] s.mem s'.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ s'.lr = s.lr ∧
+      s'.gpr .r3 = s.gpr .r3 ∧ s'.gpr .r4 = s.gpr .r4 := by
+  obtain ⟨s₁, hs₁, c⟩ := core_ok (Spec.Sha3.RC r) hP hin hones hA
+  rw [← Proof.Sha3.outState_eq]
+  unfold round
+  rw [WP.block_append_iff]
+  refine WP.of_runBlock ⟨s₁, hs₁, iota_ok r fun s' hl hl0 hm hrd hwr hsp hlr h3 h4 => ?_⟩
+  refine ⟨fun i hi => ?_, by rw [hm]; exact c.ones, by rw [hm]; exact c.frame,
+    by rw [hrd, c.rd], by rw [hwr, c.wr], by rw [hsp, c.sp], by rw [hlr, c.lr],
+    by rw [h3, c.r3], by rw [h4, c.r4]⟩
+  by_cases hi0 : i = 0
+  · subst hi0; rw [hl0]; exact c.lane0
+  · rw [hl i hi hi0]; exact c.lanes i hi hi0
+
+/-! ## Loading and storing the lanes -/
+
+open VG.Proof.Sha3 (Lanes laneAddr)
+
+/-- Loading the lanes from the state at `r3`, with all ones in `T0`. -/
+def lCfg : Cfg := { base := .r4, slots := 0, ext := .r3, exts := 25 }
+
+def lEnv : Straight.Env Poly := { reg := fun r => if r = T0 then some one else none, slot := fun _ => none }
+
+def lPost (e : Straight.Env Poly) : Bool :=
+  (List.range 25).all fun i => e.reg (lane i) == some (pxor (atom i) (maskP i))
+
+theorem load_check : Straight.check anf lCfg (fun k => some (atom k)) loadLanes lEnv lPost = true := by
+  lit_decide
+
+/-- Storing the lanes to the state at `r3`, with all ones at scratch offset
+24 (external word 3). -/
+def sCfg : Cfg := { base := .r3, slots := 25, ext := .r4, exts := 4 }
+
+def sEnv : Straight.Env Poly := { reg := fun r => (laneOf r).map atom, slot := fun _ => none }
+
+def sExt (k : Nat) : Option Poly := if k = 3 then some one else none
+
+def sPost (e : Straight.Env Poly) : Bool :=
+  (List.range 25).all fun i => e.slot i == some (pxor (atom i) (maskP i))
+
+theorem store_check : Straight.check anf sCfg sExt storeLanes sEnv sPost = true := by
+  lit_decide
+
+theorem eval_compl (V : Nat → Lane) (M : KState) (hV : ∀ i (hi : i < 25), V i = M[i]) {i : Nat} (hi : i < 25) :
+    Bitslice.Anf.eval V (pxor (atom i) (maskP i)) = (cmpl M)[i] := by
+  rw [eval_pxor, eval_atom, Compl.eval_maskP, cmpl_get M hi, hV i hi]
 
 theorem cmpl_cmpl (A : KState) : cmpl (cmpl A) = A := by
   apply Vector.ext; intro i hi
   rw [cmpl_get _ hi, cmpl_get _ hi, BitVec.xor_assoc, BitVec.xor_self, BitVec.xor_zero]
+
+/-- The prologue's loads: the lanes of the state at `r3` (`M`), complemented. -/
+theorem load_ok {s : State} {M : KState} (hones : s.gpr T0 = BitVec.allOnes 64)
+    (hin : ∀ i < 25, InRegions (s.rd ++ s.wr) (laneAddr (s.gpr .r3) i) 8)
+    (hM : Lanes s.mem (s.gpr .r3) M) :
+    ∃ s', runBlock isa loadLanes s = some s' ∧
+      (∀ i (hi : i < 25), s'.gpr (lane i) = (cmpl M)[i]) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧
+      s'.wr = s.wr ∧ s'.sp = s.sp ∧ s'.lr = s.lr ∧ s'.gpr .r3 = s.gpr .r3 ∧ s'.gpr .r4 = s.gpr .r4 := by
+  obtain ⟨e', he', hp⟩ := Straight.of_check _ _ _ load_check
+  let V : Nat → Lane := fun i => M[i]!
+  have hV : ∀ i (hi : i < 25), V i = M[i] := fun i hi => Proof.Sha3.getElem!_eq _ hi
+  have hok : Ok lCfg s :=
+    { slotIn := fun k hk => by simp [lCfg] at hk
+      extIn := fun k hk => by simp only [lCfg] at hk ⊢; exact hin k hk
+      slots := by decide
+      sep := fun k hk _ _ => by simp [lCfg] at hk }
+  have hrel : Rel (AnfRel V) lCfg (fun k => some (atom k)) lEnv s :=
+    { reg := fun r a h => by
+        simp only [lEnv] at h
+        split at h
+        · rename_i hr; subst hr; cases h
+          simp only [AnfRel, eval_one, hones]
+        · cases h
+      slot := fun _ _ _ h => by cases h
+      ext := fun k a hk h => by
+        simp only [Option.some.injEq] at h; subst h
+        simp only [lCfg] at hk ⊢
+        simp only [AnfRel, eval_atom, hV k hk]
+        exact (hM k hk).symm }
+  obtain ⟨s', hs', p⟩ := Straight.run (anf_sound V) hok hrel he'
+  simp only [lPost, List.all_eq_true, List.mem_range, beq_iff_eq] at hp
+  have hf := p.frame
+  simp only [slotRegion, lCfg, Nat.mul_zero] at hf
+  refine ⟨s', hs', fun i hi => ?_, ?_, p.rd, p.wr, p.sp, p.lr,
+    by have := p.ext; simpa [lCfg] using this, by have := p.base; simpa [lCfg] using this⟩
+  · have h := p.rel.reg _ _ (hp i hi)
+    simp only [AnfRel, eval_compl V M hV hi] at h
+    exact h.symm
+  · funext a
+    refine hf a fun r hr hc => ?_
+    simp only [List.mem_singleton] at hr; subst hr; simp [Region.Contains] at hc
+
+/-- The epilogue's stores: the lanes (`cmpl M` in their registers),
+complemented back, to the state at `r3`, with all ones at `r4 + 24`. -/
+theorem store_ok {s : State} {M : KState} {st : Addr} (h3 : s.gpr .r3 = st)
+    (hones : s.mem.readW (s.gpr .r4 + BitVec.ofNat 64 24) 64 = BitVec.allOnes 64)
+    (hst : (⟨st, 200⟩ : Region) ∈ s.wr)
+    (hin : ∀ k < 4, InRegions (s.rd ++ s.wr) (s.gpr .r4 + BitVec.ofNat 64 (8 * k)) 8)
+    (hsep : Region.Disjoint ⟨st, 200⟩ ⟨s.gpr .r4, 32⟩)
+    (hA : ∀ i (hi : i < 25), s.gpr (lane i) = (cmpl M)[i]) :
+    ∃ s', runBlock isa storeLanes s = some s' ∧ Lanes s'.mem st M ∧
+      Frame [⟨st, 200⟩] s.mem s'.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧
+      s'.lr = s.lr ∧ s'.gpr .r3 = s.gpr .r3 ∧ s'.gpr .r4 = s.gpr .r4 := by
+  obtain ⟨e', he', hp⟩ := Straight.of_check _ _ _ store_check
+  let V : Nat → Lane := fun i => s.gpr (lane i)
+  have hV : ∀ i (hi : i < 25), V i = (cmpl M)[i] := fun i hi => hA i hi
+  have hok : Ok sCfg s :=
+    { slotIn := fun k hk => ⟨_, hst, by
+        have := slot_contains st hk (n := 25) (by decide)
+        simp only [sCfg, h3] at this ⊢; exact this⟩
+      extIn := fun k hk => by simp only [sCfg] at hk ⊢; exact hin k hk
+      slots := by decide
+      sep := fun k hk j hj => by
+        simp only [sCfg, h3] at hk hj ⊢
+        exact Region.Disjoint.sep hsep (Proof.Sha3.lane_contains st hk)
+          (slot_contains (s.gpr .r4) hj (by decide)) }
+  have hrel : Rel (AnfRel V) sCfg sExt sEnv s :=
+    { reg := fun r a h => by
+        simp only [sEnv, Option.map_eq_some_iff] at h
+        obtain ⟨i, hi, rfl⟩ := h
+        obtain ⟨rfl, hi25⟩ := laneOf_some hi
+        simp only [AnfRel, eval_atom, V]
+      slot := fun _ _ _ h => by cases h
+      ext := fun k a _ h => by
+        simp only [sExt] at h
+        split at h
+        · rename_i hk; subst hk; cases h
+          simp only [AnfRel, eval_one, sCfg]; exact hones.symm
+        · cases h }
+  obtain ⟨s', hs', p⟩ := Straight.run (anf_sound V) hok hrel he'
+  simp only [sPost, List.all_eq_true, List.mem_range, beq_iff_eq] at hp
+  have hb : s'.gpr .r3 = st := by have := p.base; simp only [sCfg] at this; rw [this, h3]
+  refine ⟨s', hs', fun i hi => ?_, ?_, p.rd, p.wr, p.sp, p.lr,
+    by have := p.base; simpa [sCfg] using this, by have := p.ext; simpa [sCfg] using this⟩
+  · have h := p.rel.slot i _ (by simp only [sCfg]; exact hi) (hp i hi)
+    simp only [AnfRel, eval_compl V (cmpl M) hV hi, cmpl_cmpl, sCfg, hb] at h
+    exact h.symm
+  · have f := p.frame
+    simp only [slotRegion, sCfg, h3] at f
+    exact f
 
 end VG.Proof.Sha3.PPC64LE.Round

@@ -26,11 +26,14 @@ registers renamed. The streaming state is the Keccak state (`[u64; 25]` at
   needed, and returns the position after them.
 
 The permutation is called (`vg_keccak_f1600`, `Impl.Sha3.PPC64LE.permute`)
-with the first 512 bytes of `scratch` as its scratch space. It never writes
-`r21`–`r31`, so `absorb` and `squeeze` keep their variables in `r26`–`r31`
-(`r26` = `state`, `r27` = `scratch`, `r28` = `rate`, `r29` = the position in
-the block, `r30` = `data` or `out`, `r31` = bytes of it left), and save
-their caller's values of those registers in `scratch[512..560)`. Our return
+with the first 512 bytes of `scratch` as its scratch space. It keeps the
+nonvolatile registers, and leaves its pointers in `r3` and `r4`, so `absorb`
+and `squeeze` keep their variables in `r26`–`r31` (`r26` = `state`, `r27` =
+`scratch`, `r28` = `rate`, `r29` = the position in the block, `r30` = `data`
+or `out`, `r31` = bytes of it left), taking `r26` and `r27` back from `r3`
+and `r4` after each call (the permutation restores them from memory, which
+the constant-time analysis does not relate to the pointers), and save their
+caller's values of those registers in `scratch[512..560)`. Our return
 address (the link register), which each call replaces, is moved to `r0` and
 saved in a stack frame around the whole function.
 
@@ -62,9 +65,11 @@ def restore : List Instr :=
   [.load .d .r26 .r27 512, .load .d .r28 .r27 528, .load .d .r29 .r27 536,
     .load .d .r30 .r27 544, .load .d .r31 .r27 552, .load .d .r27 .r27 520]
 
-/-- Permute the state at `r26`, with scratch space `r27`. -/
+/-- Permute the state at `r26`, with scratch space `r27`, which are then taken
+back from the pointers the permutation leaves in `r3` and `r4`. -/
 def permuteAt : Prog isa :=
-  .seq (.block [mov .r3 .r26, mov .r4 .r27]) (.call "vg_keccak_f1600" Impl.Sha3.PPC64LE.permute)
+  .seq (.block [mov .r3 .r26, mov .r4 .r27])
+    (.seq (.call "vg_keccak_f1600" Impl.Sha3.PPC64LE.permute) (.block [mov .r26 .r3, mov .r27 .r4]))
 
 /-- Save registers and set up ours. -/
 def setup : List Instr :=
