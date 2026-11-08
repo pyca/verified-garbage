@@ -46,18 +46,25 @@ theorem pwRestDec_rel {u₁ u₂ : State} (hsp : u₁.sp = u₂.sp) (hr : ∀ r 
     RelCT isa (Eq2 u₁ u₂) (.seq (.block pwRest) Impl.Gcm.AArch64.Stitch.dec) TT :=
   rel_taint (.x5 :: stRegs) hsp hr ⟨_, by taint_decide⟩
 
+/-- The table from `pw`, then the interleaved loop out of place, from the
+registers it reads. -/
+theorem pwRestDecTo_rel {u₁ u₂ : State} (hsp : u₁.sp = u₂.sp)
+    (hr : ∀ r ∈ Reg.x5 :: Reg.x15 :: stRegs, u₁.gpr r = u₂.gpr r) :
+    RelCT isa (Eq2 u₁ u₂) (.seq (.block pwRest) (Impl.Gcm.AArch64.Stitch.dec true)) TT :=
+  rel_taint (.x5 :: .x15 :: stRegs) hsp hr ⟨_, by taint_decide⟩
+
 /-- `pwTbl k` then `l`, in two runs that agree on the registers `rs` and find the
 same `pw` at `[sp + k]`. -/
-theorem pwTbl_relR (rs : List Reg) {k : Nat} (hk : k = 8 ∨ k = 16) {l : Prog isa}
+theorem pwTbl_relR (rs : List Reg) {k : Nat} (hk : k = 8 ∨ k = 16 ∨ k = 32) {l : Prog isa}
     (hl : ∀ {u₁ u₂ : State}, u₁.sp = u₂.sp → (∀ r ∈ Reg.x5 :: rs, u₁.gpr r = u₂.gpr r) →
       RelCT isa (Eq2 u₁ u₂) (.seq (.block pwRest) l) TT)
     {v₁ v₂ : State} (hsp : v₁.sp = v₂.sp) (hr : ∀ r ∈ rs, v₁.gpr r = v₂.gpr r) {P : Addr}
     (hP₁ : v₁.mem.readW (v₁.sp + BitVec.ofNat 64 k) 64 = P) (hsl₁ : InRegions (v₁.rd ++ v₁.wr) (v₁.sp + BitVec.ofNat 64 k) 8)
     (hP₂ : v₂.mem.readW (v₂.sp + BitVec.ofNat 64 k) 64 = P) (hsl₂ : InRegions (v₂.rd ++ v₂.wr) (v₂.sp + BitVec.ofNat 64 k) 8) :
     RelCT isa (Eq2 v₁ v₂) (.seq (.block (Impl.AesGcm.AArch64.Stitch.pwTbl k)) l) TT := by
-  have hk' : k % 8 = 0 ∧ k < 32768 := by rcases hk with rfl | rfl <;> decide
+  have hk' : k % 8 = 0 ∧ k < 32768 := by rcases hk with rfl | rfl | rfl <;> decide
   have t : ∃ h, (taint.check (Taint.ofRegs []) (.block [.ldrSp .x5 k]) h).isSome = true := by
-    rcases hk with rfl | rfl <;> exact ⟨_, by taint_decide⟩
+    rcases hk with rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩
   unfold Impl.AesGcm.AArch64.Stitch.pwTbl
   rw [List.append_assoc]
   refine RelCT.seq_block_append ?_
@@ -73,7 +80,7 @@ theorem pwTbl_relR (rs : List Reg) {k : Nat} (hk : k = 8 ∨ k = 16) {l : Prog i
 
 /-- `pwTbl k` then `l`, in two runs that agree on the arguments and find the
 same `pw` at `[sp + k]`. -/
-theorem pwTbl_rel {k : Nat} (hk : k = 8 ∨ k = 16) {l : Prog isa}
+theorem pwTbl_rel {k : Nat} (hk : k = 8 ∨ k = 16 ∨ k = 32) {l : Prog isa}
     (hl : ∀ {u₁ u₂ : State}, u₁.sp = u₂.sp → (∀ r ∈ Reg.x5 :: stRegs, u₁.gpr r = u₂.gpr r) →
       RelCT isa (Eq2 u₁ u₂) (.seq (.block pwRest) l) TT)
     {v₁ v₂ : State} (hsp : v₁.sp = v₂.sp) (hr : ∀ r ∈ stRegs, v₁.gpr r = v₂.gpr r) {P : Addr}
