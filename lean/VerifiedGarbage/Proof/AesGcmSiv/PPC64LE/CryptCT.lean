@@ -2,6 +2,9 @@ module
 
 import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Rel
 import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Crypt
+import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Absorb
+import VerifiedGarbage.Proof.Aes.PPC64LE.Blocks
+import VerifiedGarbage.Proof.AesOcb.PPC64LE.Callee
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Cmac.Spec
 meta import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Rel
@@ -28,10 +31,11 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 
 Untrusted: everything here is checked by Lean. `tag o` and `crypt`, run from
 two states in the same environment, leak the same: the code between calls
-by the taint analysis (`rel_env`), from the pointer `r23` and the count
-`r24`, which are public in both runs, and each call of `vg_aes_ctr32` by its
-proof (`rel_ctr`). The loop of blocks relates two runs after the same number
-of blocks, which the correctness proofs describe (`BlocksPost`).
+by the taint analysis (`rel_env`), from the pointer `r23`, the count `r24`
+and a chunk's number of blocks `r25`, which are public in both runs, and
+each call of `vg_aes_ctr32` or `vg_aes_encrypt_blocks` by its proof
+(`rel_ctr`, `rel_enc`). The loop of chunks relates two runs after the same
+number of blocks, which the correctness proofs describe (`BlocksPost`).
 -/
 
 @[expose] public section
@@ -57,24 +61,53 @@ theorem tag_rel {c : Cx} (L : Lay c) {σ₁ σ₂ : State} (E₁ : Env c σ₁) 
     (Runs.of_wp (tagArgs_wp L E₂ ho)) fun τ₁ τ₂ ⟨pk₁, _, C₁, _⟩ ⟨pk₂, _, C₂, _⟩ =>
       rel_ctr C₁ C₂ (by rw [pk₁.sp, pk₂.sp, hsp])
 
-/-- One block, from two runs after the same number `j` of blocks. -/
-theorem cryptBlock_rel {c : Cx} (L : Lay c) {σ₁ σ₂ : State} (E₁ : Env c σ₁) (E₂ : Env c σ₂)
-    (hsp : σ₁.sp = σ₂.sp) {j : Nat} (hj : 16 * (j + 1) ≤ c.n)
+private theorem rel_enc {σ₁ σ₂ : State} {K D S : Addr} {R n : Nat} (h₁ : Proof.AesOcb.PPC64LE.BCall σ₁ K D S R n)
+    (h₂ : Proof.AesOcb.PPC64LE.BCall σ₂ K D S R n) (hsp : σ₁.sp = σ₂.sp) :
+    RelCT isa (Eq2 σ₁ σ₂) encCall TT :=
+  Proof.AesOcb.PPC64LE.blk_rel Proof.Aes.PPC64LE.encryptBlocks_correct Proof.Aes.PPC64LE.encryptBlocks_ct
+    fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact ⟨K, D, S, R, n, h₁, h₂, hsp⟩
+
+private theorem enc_runs {c : Cx} {s : State} {K D S : Addr} {R n : Nat} (E : Env c s)
+    (h : Proof.AesOcb.PPC64LE.BCall s K D S R n) : Runs encCall s (Kept c s) :=
+  Runs.of_wp (WP.mono (Proof.AesOcb.PPC64LE.blk_call Proof.Aes.PPC64LE.encryptBlocks_correct
+    Proof.AesOcb.PPC64LE.encryptBlocks_noFrames h) fun _ U => kept_saved E U.rd U.wr U.sp U.saved)
+
+/-- One chunk, from two runs after the same number `j` of blocks. -/
+private theorem cryptChunk_rel {c : Cx} (L : Lay c) {σ₁ σ₂ : State} (E₁ : Env c σ₁) (E₂ : Env c σ₂)
+    (hsp : σ₁.sp = σ₂.sp) {j : Nat} (hj : j < c.n / 16) {icb₁ icb₂ : List Byte}
+    (C₁ : CtrSt c.W icb₁ j σ₁.mem) (C₂ : CtrSt c.W icb₂ j σ₂.mem)
     (h23₁ : σ₁.gpr .r23 = c.D + BitVec.ofNat 64 (16 * j)) (h23₂ : σ₂.gpr .r23 = c.D + BitVec.ofNat 64 (16 * j))
     (h24₁ : σ₁.gpr .r24 = BitVec.ofNat 64 (c.n - 16 * j)) (h24₂ : σ₂.gpr .r24 = BitVec.ofNat 64 (c.n - 16 * j)) :
-    RelCT isa (Eq2 σ₁ σ₂) cryptBlock TT := by
-  unfold cryptBlock
-  refine rel_seqR (rel_env [.r23] E₁ E₂ hsp (by simp [h23₁, h23₂]) ⟨_, by taint_decide⟩)
-    (Runs.of_wp (blkArgs_wp L E₁ hj h23₁)) (Runs.of_wp (blkArgs_wp L E₂ hj h23₂))
-    fun τ₁ τ₂ ⟨pk₁, _, C₁, r23₁, r24₁⟩ ⟨pk₂, _, C₂, r23₂, r24₂⟩ => ?_
-  have hsp₁ : τ₁.sp = τ₂.sp := by rw [pk₁.sp, pk₂.sp, hsp]
-  refine rel_seqR (rel_ctr C₁ C₂ hsp₁) (ctr_runs (E₁.of_pk pk₁) C₁) (ctr_runs (E₂.of_pk pk₂) C₂)
-    fun ω₁ ω₂ G₁ G₂ => ?_
-  refine rel_env [.r23, .r24] G₁.1 G₂.1 (by rw [G₁.2.1, G₂.2.1, hsp₁]) (fun r hr => ?_) ⟨_, by taint_decide⟩
+    RelCT isa (Eq2 σ₁ σ₂) cryptChunk TT := by
+  have hn := L.n_lt
+  generalize hkd : min ((c.n - 16 * j) / 16) 64 = k
+  have hk1 : 1 ≤ k := by omega
+  have hk : k ≤ 64 := by omega
+  unfold cryptChunk
+  refine rel_seqR (rel_env [.r24] E₁ E₂ hsp (by simp [h24₁, h24₂]) ⟨_, by taint_decide⟩)
+    (Runs.of_wp (chunkLen_wp (m := c.n - 16 * j) (by omega) h24₁))
+    (Runs.of_wp (chunkLen_wp (m := c.n - 16 * j) (by omega) h24₂)) fun τ₁ τ₂ u₁ u₂ => ?_
+  rw [hkd] at u₁ u₂
+  have F₁ := E₁.of_pk (PK.ofUpd u₁)
+  have F₂ := E₂.of_pk (PK.ofUpd u₂)
+  have hsp₁ : τ₁.sp = τ₂.sp := by rw [u₁.sp, u₂.sp, hsp]
+  refine rel_seqR (rel_env [.r25] F₁ F₂ hsp₁ (by simp [u₁.gpr, u₂.gpr]) ⟨_, by taint_decide⟩)
+    (Runs.of_wp (ctrBuild_wp L F₁ hk1 hk (by rw [u₁.mem]; exact C₁) u₁.gpr))
+    (Runs.of_wp (ctrBuild_wp L F₂ hk1 hk (by rw [u₂.mem]; exact C₂) u₂.gpr)) fun ρ₁ ρ₂ G₁ G₂ => ?_
+  have hsp₂ : ρ₁.sp = ρ₂.sp := by rw [G₁.pk.sp, G₂.pk.sp, hsp₁]
+  refine rel_seqR (rel_env [] G₁.env G₂.env hsp₂ (by simp) ⟨_, by taint_decide⟩)
+    (Runs.of_wp (encArgs_wp L G₁.env hk G₁.r25)) (Runs.of_wp (encArgs_wp L G₂.env hk G₂.r25))
+    fun ω₁ ω₂ ⟨pk₁, _, k₁, B₁⟩ ⟨pk₂, _, k₂, B₂⟩ => ?_
+  have hsp₃ : ω₁.sp = ω₂.sp := by rw [pk₁.sp, pk₂.sp, hsp₂]
+  refine rel_seqR (rel_enc B₁ B₂ hsp₃) (enc_runs (G₁.env.of_pk pk₁) B₁) (enc_runs (G₂.env.of_pk pk₂) B₂)
+    fun χ₁ χ₂ K₁ K₂ => ?_
+  refine rel_env [.r23, .r24, .r25] K₁.1 K₂.1 (by rw [K₁.2.1, K₂.2.1, hsp₃]) (fun r hr => ?_) ⟨_, by taint_decide⟩
+  rw [K₁.2.2 r hr, K₂.2.2 r hr, k₁ r hr, k₂ r hr]
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl
-  · rw [G₁.2.2 .r23 (by simp), G₂.2.2 .r23 (by simp), r23₁, r23₂, h23₁, h23₂]
-  · rw [G₁.2.2 .r24 (by simp), G₂.2.2 .r24 (by simp), r24₁, r24₂, h24₁, h24₂]
+  rcases hr with rfl | rfl | rfl
+  · rw [G₁.r23, G₂.r23, u₁.other _ (by decide), u₂.other _ (by decide), h23₁, h23₂]
+  · rw [G₁.r24, G₂.r24, u₁.other _ (by decide), u₂.other _ (by decide), h24₁, h24₂]
+  · rw [G₁.r25, G₂.r25]
 
 /-- `crypt`. -/
 theorem crypt_rel {c : Cx} (L : Lay c) {σ₁ σ₂ : State} (E₁ : Env c σ₁) (E₂ : Env c σ₂) (hsp : σ₁.sp = σ₂.sp) :
@@ -90,7 +123,7 @@ theorem crypt_rel {c : Cx} (L : Lay c) {σ₁ σ₂ : State} (E₁ : Env c σ₁
   have hxl₂ : (bytesAt σ₂.mem c.D c.n).length = c.n := Proof.Cmac.bytesAt_length _ _ _
   -- What the whole blocks leave in each run, from the correctness proofs.
   have mid : ∀ {σ τ : State}, Env c σ → HeadPost c σ τ → Runs (.ite (.zero .d .r11) (.block [])
-      (.loop cryptBlock (.nonzero .d .r11))) τ fun ρ => PK τ ρ ∧ ρ.gpr .r23 = c.D + BitVec.ofNat 64 (16 * (c.n / 16)) ∧
+      (.loop cryptChunk (.nonzero .d .r11))) τ fun ρ => PK τ ρ ∧ ρ.gpr .r23 = c.D + BitVec.ofNat 64 (16 * (c.n / 16)) ∧
         ρ.gpr .r24 = BitVec.ofNat 64 (c.n - 16 * (c.n / 16)) := fun {σ τ} E H => by
     refine Runs.of_wp (WP.ite (decide (c.n / 16 = 0)) (eval_zero H.r11 (by omega)) (fun ht => ?_) (fun hf => ?_))
     · have h0 : c.n / 16 = 0 := by simpa using ht
@@ -123,16 +156,15 @@ theorem crypt_rel {c : Cx} (L : Lay c) {σ₁ σ₂ : State} (E₁ : Env c σ₁
         Spec.GcmSiv.ctxCiph σ₂.mem (c.W + BitVec.ofNat 64 256) c.R := by rw [ciph_cryR L P₂.frame, H₂.ciph]
     have G₁ := F₁.of_pk P₁.pk
     have G₂ := F₂.of_pk P₂.pk
-    refine (rel_post (cryptBlock_rel L G₁ G₂ (by rw [P₁.pk.sp, P₂.pk.sp, hsp₁]) (j := j) (by omega)
+    refine (rel_post (cryptChunk_rel L G₁ G₂ (by rw [P₁.pk.sp, P₂.pk.sp, hsp₁]) hj P₁.ctr P₂.ctr
         P₁.r23 P₂.r23 P₁.r24 P₂.r24)
-      (Runs.of_wp (cryptBlock_wp L G₁ hxl₁ (j := j) (by omega) P₁.r23 P₁.r24 P₁.ctr P₁.data hc₁))
-      (Runs.of_wp (cryptBlock_wp L G₂ hxl₂ (j := j) (by omega) P₂.r23 P₂.r24 P₂.ctr P₂.data hc₂))).mono
-      (fun _ _ h => h) fun a' b' ⟨Q₁, Q₂⟩ => ?_
-    have ev₁ := eval_nonzero Q₁.r11 (by omega)
-    have ev₂ := eval_nonzero Q₂.r11 (by omega)
-    refine ⟨by rw [ev₁, ev₂], fun _ => trivial, fun ht => ⟨c.n / 16 - (j + 1), ?_, j + 1, rfl, ?_,
-      ⟨P₁.pk.trans Q₁.pk, Q₁.r23, Q₁.r24, Q₁.ctr, Q₁.data, P₁.frame.trans Q₁.frame⟩,
-      ⟨P₂.pk.trans Q₂.pk, Q₂.r23, Q₂.r24, Q₂.ctr, Q₂.data, P₂.frame.trans Q₂.frame⟩⟩⟩
+      (Runs.of_wp (cryptChunk_wp L hxl₁ hj G₁ P₁ hc₁))
+      (Runs.of_wp (cryptChunk_wp L hxl₂ hj G₂ P₂ hc₂))).mono
+      (fun _ _ h => h) fun a' b' ⟨⟨Q₁, r11₁⟩, ⟨Q₂, r11₂⟩⟩ => ?_
+    have ev₁ := eval_nonzero r11₁ (by omega)
+    have ev₂ := eval_nonzero r11₂ (by omega)
+    refine ⟨by rw [ev₁, ev₂], fun _ => trivial, fun ht => ⟨c.n / 16 - (j + min ((c.n - 16 * j) / 16) 64), ?_,
+      j + min ((c.n - 16 * j) / 16) 64, rfl, ?_, Q₁, Q₂⟩⟩
     · rw [ev₁] at ht; simp at ht; omega
     · rw [ev₁] at ht; simp at ht; omega
   · have G₁ := F₁.of_pk pk₁

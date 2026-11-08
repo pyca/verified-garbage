@@ -57,8 +57,9 @@ theorem wRs_mut {c : Cx} {rs : List (Nat × Nat)} (h : ∀ q ∈ rs, q.1 + q.2 �
 theorem cryR_mut (c : Cx) : ∀ r ∈ cryR c.W c.D c.n, ∃ r' ∈ mutR c, Region.Sub r r' := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl | rfl
   · exact sub_lo (by decide)
+  · exact sub_hi (by decide) (by decide)
   · exact sub_hi (by decide) (by decide)
   · exact sub_hi (by decide) (by decide)
   · exact sub_data
@@ -161,7 +162,8 @@ theorem seal_wp' [VG.Proof.Gcm.PPC64LE.GhashLaw] (hti : TagInputEq) {c : Cx} {s 
   have t₅ : bytesAt s₅.mem (c.W + BitVec.ofNat 64 0) 16 = bytesAt s₄.mem (c.W + BitVec.ofNat 64 0) 16 :=
     bytesAt_keep Cr.frame (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl
+      rcases hr with rfl | rfl | rfl | rfl | rfl
+      · exact L.w_w (.inl (by decide)) (by decide) (by decide)
       · exact L.w_w (.inl (by decide)) (by decide) (by decide)
       · exact L.w_w (.inl (by decide)) (by decide) (by decide)
       · exact L.w_w (.inl (by decide)) (by decide) (by decide)

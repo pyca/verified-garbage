@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.AesGcm.PPC64LE
+public import VerifiedGarbage.Impl.Aes.PPC64LE.Blocks
 
 /-!
 # AES-GCM-SIV: PPC64LE implementation
@@ -8,8 +9,10 @@ public import VerifiedGarbage.Impl.AesGcm.PPC64LE
 `vg_aes_gcm_siv_seal` and `vg_aes_gcm_siv_open` (`Spec/GcmSiv/Contract.lean`),
 with the working space `work` as a last argument, which a frame on the
 stack allocates (`Impl.StackScratch.PPC64LE.withStackScratchArgs`), composed
-of calls of the verified `vg_aes_ctr32`, `vg_aes_expand_key_scratch` and
-`vg_ghash`, as on ARMv7 (`Impl/AesGcmSiv/Arm.lean`):
+of calls of the verified `vg_aes_ctr32`, `vg_aes_encrypt_blocks`,
+`vg_aes_expand_key_scratch` and `vg_ghash`, as on ARMv7
+(`Impl/AesGcmSiv/Arm.lean`) but for counter mode, which is RISC-V's
+(`Impl/AesGcmSiv/RISCV64.lean`):
 
 * The message keys (RFC 8452 §4): `CIPH_K(little_endian_uint32(i) ‖ nonce)`
   for `i` from 0 to `rounds / 2 - 2` (3 for 10 rounds, 5 for 14), each by
@@ -27,10 +30,12 @@ of calls of the verified `vg_aes_ctr32`, `vg_aes_expand_key_scratch` and
 * The tag is `vg_aes_ctr32` of the tag input on a zero block (`tag`).
 * Counter mode (§4) increments the first 4 bytes of the counter block, as a
   little-endian number, which `vg_aes_ctr32` (which increments the last 4,
-  big-endian) does not: each block is encrypted by a call of its own from a
-  copy of the counter block, which is then incremented (`cryptBlock`); the
-  last bytes are XORed with a keystream block computed as a tag is
-  (`cryptTail`).
+  big-endian) does not: up to 64 whole blocks at a time, their counter
+  blocks are written to `W + 496`, the counter block incremented after each
+  (`ctrBuild`), encrypted in place by one call of `vg_aes_encrypt_blocks`
+  and XORed into the data a doubleword at a time (`xorDLoop`,
+  `cryptChunk`); the last bytes are XORed with a keystream block computed
+  as a tag is (`cryptTail`).
 * `seal` copies the tag from `W` to `tag` at the end (`tagOut`); `open`
   copies the received tag from `tag` to `W` first (`recv`), decrypts,
   computes the tag of the plaintext at `W + 240` and compares the two
@@ -48,8 +53,9 @@ A call (`bl`) stores nothing in memory and the callees use no stack.
   `[128, 224)`: our caller's `r14`–`r25`, and `[224, 232)` our return
   address; `[240, 256)`: a block (and the tag `open` computes);
 * `[256, 496)`: the encryption key's schedule; `[496, 1520)`: the reversed
-  blocks; `[1520, 1776)`: `vg_ghash`'s working space; `[1776, 3824)`:
-  `vg_aes_ctr32`'s, and `vg_aes_expand_key_scratch`'s at its start.
+  blocks (or the counter blocks); `[1520, 1776)`: `vg_ghash`'s working
+  space; `[1776, 3824)`: `vg_aes_ctr32`'s and `vg_aes_encrypt_blocks`'s, and
+  `vg_aes_expand_key_scratch`'s at its start.
 
 ## Registers
 
@@ -58,9 +64,9 @@ len = r9, tag = r10, work = [sp + 96])`. The entry keeps `W` in `r14` and
 the arguments in `r15`–`r22` (`nonce`, `schedule`, `rounds`, `aad`,
 `aad_len`, `data`, `len`, `tag`), which the functions called preserve. The
 pieces take a pointer in `r23` and a number of bytes in `r24`, which the
-callees also preserve, and `derive` and `chunk` a count in `r25`; `open`
-keeps the result of the comparison there. `r0` and `r3`–`r12` are
-temporaries.
+callees also preserve, and `derive`, `chunk` and `cryptChunk` a count in
+`r25`; `open` keeps the result of the comparison there. `r0` and `r3`–`r12`
+are temporaries.
 
 The model has no indexed byte access and branches only on whether a
 register is zero: the bytes are copied, XORed and masked through advancing
@@ -242,18 +248,45 @@ def cryptHead : List Instr :=
     .lsl .r5 .r5 63, .logic .or .r4 .r4 .r5, .store .d .r3 .r14 cbO, .store .d .r4 .r14 (cbO + 8)] :
     List Instr) ++ wholeLeft
 
-/-- After a block: the counter block's first word incremented, `r23` and
-`r24` past the block, and `r11` zero if no whole block is left. -/
-def blockNext : List Instr :=
-  ([.load .w .r3 .r14 cbO, .addi .r3 .r3 1, .store .w .r3 .r14 cbO, .addi .r23 .r23 16, .subi .r24 .r24 16] :
-    List Instr) ++ wholeLeft
+/-- `vg_aes_encrypt_blocks`. -/
+def encCall : Prog isa := .call "vg_aes_encrypt_blocks" Impl.Aes.PPC64LE.encryptBlocks
 
-/-- One block at `r23` encrypted in place from the counter block, which is
-then incremented; `r23` and `r24` past it, and `r11` zero if no whole block
-is left. -/
-def cryptBlock : Prog isa :=
-  .seq (.block (copy16 cbO ccO ++ ctrArgs ++ ([mov .r6 .r23, .li .r7 1] : List Instr)))
-    (.seq ctrCall (.block blockNext))
+/-- The counter block copied to `r4`, then its first word incremented,
+advancing `r4`. -/
+def ctrBody : List Instr :=
+  [.load .d .r5 .r14 cbO, .load .d .r6 .r14 (cbO + 8), .store .d .r5 .r4 0, .store .d .r6 .r4 8,
+    .load .w .r5 .r14 cbO, .addi .r5 .r5 1, .store .w .r5 .r14 cbO, .addi .r4 .r4 16, .subi .r3 .r3 1]
+
+/-- `r25` (at least 1) counter blocks at `W + 496`, the counter block
+incremented after each. -/
+def ctrBuild : Prog isa :=
+  .seq (.block [.addi .r4 .r14 revO, mov .r3 .r25]) (.loop (.block ctrBody) (.nonzero .d .r3))
+
+/-- The arguments of `vg_aes_encrypt_blocks` on the `r25` counter blocks
+with the encryption key's schedule. -/
+def chunkEncArgs : List Instr :=
+  [.addi .r3 .r14 skO, mov .r4 .r17, .addi .r5 .r14 revO, mov .r6 .r25, .addi .r7 .r14 scrO]
+
+/-- The `r5` (at least 1) doublewords at `r3` XORed into those at `r4`,
+advancing both. -/
+def xorDLoop : Prog isa :=
+  .loop (.block [.load .d .r0 .r4 0, .load .d .r6 .r3 0, .logic .xor .r0 .r0 .r6, .store .d .r0 .r4 0,
+    .addi .r3 .r3 8, .addi .r4 .r4 8, .subi .r5 .r5 1]) (.nonzero .d .r5)
+
+/-- The arguments of the XOR of the `r25` keystream blocks into the data at
+`r23`: two doublewords a block. -/
+def ksArgs : List Instr := [.addi .r3 .r14 revO, mov .r4 .r23, .lsl .r5 .r25 1]
+
+/-- After the XOR: `r23` and `r24` past the blocks, and `r11` zero if no
+whole block is left. -/
+def chunkNext : List Instr := [mov .r23 .r4, .lsl .r5 .r25 4, .sub .r24 .r24 .r5] ++ wholeLeft
+
+/-- Up to 64 whole blocks at `r23` encrypted in place from the counter
+block, which is incremented after each; `r23` and `r24` past them, and `r11`
+zero if no whole block is left. -/
+def cryptChunk : Prog isa :=
+  .seq chunkLen (.seq ctrBuild (.seq (.block chunkEncArgs) (.seq encCall
+    (.seq (.block ksArgs) (.seq xorDLoop (.block chunkNext))))))
 
 /-- The last `r24` (1 to 15) bytes at `r23` XORed with a keystream block,
 computed at `W + 240`. -/
@@ -264,7 +297,7 @@ def cryptTail : Prog isa :=
 top bit of its last byte set. -/
 def crypt : Prog isa :=
   .seq (.block cryptHead)
-  (.seq (.ite (.zero .d .r11) (.block []) (.loop cryptBlock (.nonzero .d .r11)))
+  (.seq (.ite (.zero .d .r11) (.block []) (.loop cryptChunk (.nonzero .d .r11)))
     (.ite (.zero .d .r24) (.block []) cryptTail))
 
 /-! ## Comparing tags and masking -/

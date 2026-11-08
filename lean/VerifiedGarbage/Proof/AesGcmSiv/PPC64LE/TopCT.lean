@@ -147,7 +147,8 @@ theorem open_rel [VG.Proof.Gcm.PPC64LE.GhashLaw] {c : Cx} {σ₁ σ₂ : State} 
     have dC : ∀ {d : Nat}, d + 16 ≤ 96 → ∀ r ∈ cryR c.W c.D c.n,
         (⟨c.W + BitVec.ofNat 64 d, 16⟩ : Region).Disjoint r := fun hd r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl
+      rcases hr with rfl | rfl | rfl | rfl | rfl
+      · exact L.w_w (.inl (by omega)) (by omega) (by decide)
       · exact L.w_w (.inl (by omega)) (by omega) (by decide)
       · exact L.w_w (.inl (by omega)) (by omega) (by decide)
       · exact L.w_w (.inl (by omega)) (by omega) (by decide)
