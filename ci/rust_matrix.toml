@@ -312,10 +312,9 @@ avx,avx2,sha512,sha,ssse3 | rsa_oaep_pairs cpu
 # `_ifma` instances of Poly1305, ChaCha20 and ChaCha20-Poly1305); VAES,
 # VPCLMULQDQ and AVX512BW, for vg_aes_ctr32_vaes, vg_ghash_vpclmul
 # and the AES-GCM and AES-CMAC instances calling them (AES-GCM's
-# with its 512-bit loops), and XTS's 512-bit one-pass instances; and AES-GCM's instances with VAES or
-# VPCLMULQDQ alone or paired with the other's 128-bit instruction,
-# which no chip has without the other, and with both in 256-bit
-# registers alone, which a chip with AVX512BW never chooses; and
+# with its 512-bit loops), and XTS's 512-bit one-pass instances; and
+# AES-GCM's instances with both in 256-bit registers alone, which a
+# chip with AVX512BW never chooses; and
 # RSAES-PKCS1-v1_5 decryption and RSASSA-PSS signing with
 # vg_rsa_private_checked_ifma and each hash function's
 # implementations (and RSAES-OAEP decryption with SHA-1's SHA
@@ -350,11 +349,7 @@ avx,avx2,avx512f,avx512ifma,avx512vl | ffdh cpu
 avx,avx2,avx512f,bmi2,adx,avx512ifma,avx512vl | ed25519 dsa_parameters_dispatch rsa_pkcs1_hashes rsa_pss_hashes rsa_oaep_pairs message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
 avx,avx2,avx512f,bmi1,bmi2,adx,avx512ifma,avx512vl | dsa_parameters_dispatch rsa_pkcs1_hashes rsa_pss_hashes rsa_oaep_pairs cpu
 avx,avx2,avx512f,bmi2,adx,avx512ifma,avx512vl,sha,ssse3 | rsa_oaep_pairs cpu
-aes,avx,avx2,ssse3,vaes | aes_gcm cpu
 aes,avx,avx2,avx512f,ssse3,vaes | aes_cbc cpu
-avx,avx2,pclmulqdq,ssse3,vpclmulqdq | aes_gcm cpu
-aes,avx,avx2,pclmulqdq,ssse3,vaes | aes_gcm cpu
-aes,avx,avx2,pclmulqdq,ssse3,vpclmulqdq | aes_gcm cpu
 aes,avx,avx2,pclmulqdq,ssse3,vaes,vpclmulqdq | aes_gcm cpu
 """
 

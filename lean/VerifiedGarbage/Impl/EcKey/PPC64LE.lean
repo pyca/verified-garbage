@@ -47,14 +47,18 @@ namespace Cfg
 
 variable (c : Impl.Ecdsa.PPC64LE.Cfg)
 
-/-- The signature's code up to `Z^(p-2)`, with the public key's arguments. -/
-def upToPow : Prog isa :=
+/-- The signature's code up to `Z^(p-2)`, with the public key's arguments
+and `R = [d]G` by `generator`. -/
+def upToPowWith (generator : Prog isa) : Prog isa :=
   .seq (.block (c.setupWith Args.publicKey)) <|
   .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) <|
   .seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) <|
   .seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) <|
-  .seq c.gen <|
+  .seq generator <|
   .seq (pow c.powP c.SP) (.block [])
+
+/-- `upToPowWith` by `gen`. -/
+def upToPow : Prog isa := upToPowWith c c.gen
 
 /-- `04 ‖ x ‖ y` (or zeros), from the slots `x` and `y`, to `out` (in `r14`),
 the flag's low bit to `r3`, and the callee-saved registers restored. -/
@@ -75,8 +79,11 @@ def middle : Prog isa :=
     mulCall c.SP (c.sl Y) (c.sl YM) (c.sl ONE),
     .block (c.checkRange (c.sl D) ++ c.checkNonzero (c.sl RZ) ++ finish c)]
 
+/-- `vg_ec_<curve>_public_key`, with `R = [d]G` by `generator`. -/
+def publicKeyWith (generator : Prog isa) : Prog isa := .seq (upToPowWith c generator) (middle c)
+
 /-- `vg_ec_<curve>_public_key`. -/
-def publicKey : Prog isa := .seq (upToPow c) (middle c)
+def publicKey : Prog isa := publicKeyWith c c.gen
 
 end Cfg
 

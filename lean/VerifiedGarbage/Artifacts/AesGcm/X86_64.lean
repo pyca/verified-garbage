@@ -27,7 +27,7 @@ open VG.Proof.AesGcm.X86_64
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
 
 /-- The artifacts calling the implementation `c` of `vg_aes_ctr32` and `n` of
-`vg_ghash`. -/
+`vg_ghash`, a pair that a variant of AES-GCM calls (`streamPairs`). -/
 def artifacts (c : Ctr32Impl) (n : GhashName) : List Artifact :=
   let v : GcmImpl :=
     { ctr := c, key := if c.features.isEmpty then KeyImpl.scalar else KeyImpl.aesni,
@@ -284,7 +284,8 @@ end VG.Artifacts.AesGcm.X86_64.Ghash
 namespace VG.Artifacts.AesGcm.X86_64
 
 def artifacts : List Artifact :=
-  (VG.Proof.Variants.AesCtr32.X86_64.variants.flatMap fun v => VG.Proof.Variants.Ghash.X86_64.variants.flatMap fun v2 => AesCtr32Ghash.artifacts v v2) ++
+  ((Proof.AesGcm.X86_64.streamPairs VG.Proof.Variants.AesGcm.X86_64.variants).flatMap fun (c, n) =>
+    AesCtr32Ghash.artifacts c n) ++
   (VG.Proof.Variants.AesCtr32.X86_64.variants.flatMap fun v => AesCtr32.artifacts v) ++
   (VG.Proof.Variants.AesGcm.X86_64.variants.flatMap fun v => AesGcm.artifacts v) ++
   (VG.Proof.Variants.Ghash.X86_64.variants.flatMap fun v => Ghash.artifacts v)

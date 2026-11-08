@@ -133,6 +133,14 @@ def GcmVariant.impl (v : GcmVariant) : GcmImpl :=
   ⟨v.ctr, v.key, v.gh.impl, v.stitch.map StitchPart.impl, v.stitch.bind StitchPart.implP,
     v.stitch.any (·.name.short), v.stitch.any (·.name.fin), v.stitch.bind (·.name.onePass)⟩
 
+/-- The implementations of AES's CTR mode and of GHASH that the variants `vs`
+call, each pair once (by their suffixes), in their order: those AES-GCM's
+streaming functions, which call no interleaved loops, are emitted with. -/
+def streamPairs (vs : List GcmVariant) : List (Proof.Aes.X86_64.Ctr32Impl × GhashName) :=
+  vs.foldl (init := []) fun acc v =>
+    if acc.any fun (c, n) => c.suffix ++ n.impl.suffix == v.ctr.suffix ++ v.gh.impl.suffix then acc
+    else acc ++ [(v.ctr, v.gh)]
+
 /-- Prepared-context versions of each named interleaved loop (encrypting any
 number of blocks from 16 on if `fullR`). -/
 theorem StitchName.okR : (n : StitchName) →

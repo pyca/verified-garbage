@@ -61,17 +61,6 @@ theorem tag_rel {c : Cx} (L : Lay c) {σ₁ σ₂ : State} (E₁ : Env c σ₁) 
     (Runs.of_wp (tagArgs_wp L E₂ ho)) fun τ₁ τ₂ ⟨pk₁, _, C₁, _⟩ ⟨pk₂, _, C₂, _⟩ =>
       rel_ctr C₁ C₂ (by rw [pk₁.sp, pk₂.sp, hsp])
 
-private theorem rel_enc {σ₁ σ₂ : State} {K D S : Addr} {R n : Nat} (h₁ : Proof.AesOcb.PPC64LE.BCall σ₁ K D S R n)
-    (h₂ : Proof.AesOcb.PPC64LE.BCall σ₂ K D S R n) (hsp : σ₁.sp = σ₂.sp) :
-    RelCT isa (Eq2 σ₁ σ₂) encCall TT :=
-  Proof.AesOcb.PPC64LE.blk_rel Proof.Aes.PPC64LE.encryptBlocks_correct Proof.Aes.PPC64LE.encryptBlocks_ct
-    fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact ⟨K, D, S, R, n, h₁, h₂, hsp⟩
-
-private theorem enc_runs {c : Cx} {s : State} {K D S : Addr} {R n : Nat} (E : Env c s)
-    (h : Proof.AesOcb.PPC64LE.BCall s K D S R n) : Runs encCall s (Kept c s) :=
-  Runs.of_wp (WP.mono (Proof.AesOcb.PPC64LE.blk_call Proof.Aes.PPC64LE.encryptBlocks_correct
-    Proof.AesOcb.PPC64LE.encryptBlocks_noFrames h) fun _ U => kept_saved E U.rd U.wr U.sp U.saved)
-
 /-- One chunk, from two runs after the same number `j` of blocks. -/
 private theorem cryptChunk_rel {c : Cx} (L : Lay c) {σ₁ σ₂ : State} (E₁ : Env c σ₁) (E₂ : Env c σ₂)
     (hsp : σ₁.sp = σ₂.sp) {j : Nat} (hj : j < c.n / 16) {icb₁ icb₂ : List Byte}

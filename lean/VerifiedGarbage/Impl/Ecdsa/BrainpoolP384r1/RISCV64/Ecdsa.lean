@@ -22,6 +22,6 @@ def signBrainpoolP384r1 : Prog isa := Sign.Cfg.sign brainpoolp384r1 brainpoolp38
 
 /-- `vg_ecdsa_brainpoolp384r1_verify`. -/
 def verifyBrainpoolP384r1 : Prog isa :=
-  VerifyJ.Cfg.verify brainpoolp384r1 WindowA.dblJa brainpoolp384r1Order "vg_brainpoolp384r1_check_point" Ecdh.RISCV64.checkBrainpoolP384r1
+  VerifyJ.Cfg.verify brainpoolp384r1 Impl.Weierstrass.dblJa brainpoolp384r1Order "vg_brainpoolp384r1_check_point" Ecdh.RISCV64.checkBrainpoolP384r1
 
 end VG.Impl.Ecdsa.RISCV64

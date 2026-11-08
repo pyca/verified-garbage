@@ -1,6 +1,8 @@
 module
 
 import VerifiedGarbage.Proof.TripleDes.PPC64LE.FunctionsLit
+import VerifiedGarbage.Proof.TripleDes.PPC64LE.Bitsliced.SboxLit
+meta import VerifiedGarbage.Proof.TripleDes.PPC64LE.Bitsliced.SboxLit
 public import VerifiedGarbage.Impl.TripleDes.PPC64LE.Modes
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Taint
