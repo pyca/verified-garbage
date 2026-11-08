@@ -36,6 +36,7 @@ theorem comb_layout : Layout p256Comb where
   al := by decide
   negApart := by decide
   zeroApart := by decide
+  qAt := rfl
 
 theorem comb_config (hC : Law Spec.P256.curve) :
     Config p256Comb Spec.P256.curve p256Comb7 p256Comb7Start where
