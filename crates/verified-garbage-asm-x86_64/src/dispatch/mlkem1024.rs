@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.MlKem1024.keyGenContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of the encapsulation key), but not on anything else of the seed or the keys.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mlkem1024_keygen_avx512` if the CPU supports its features (`VG_MLKEM1024_KEYGEN_AVX512_FEATURES`); `vg_mlkem1024_keygen_avx2` if the CPU supports its features (`VG_MLKEM1024_KEYGEN_AVX2_FEATURES`); or else `vg_mlkem1024_keygen`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mlkem1024_keygen_avx512` if the CPU supports its features (`VG_MLKEM1024_KEYGEN_AVX512_FEATURES`); `vg_mlkem1024_keygen_avx2` if the CPU supports its features (`VG_MLKEM1024_KEYGEN_AVX2_FEATURES`); `vg_mlkem1024_keygen_avx` if the CPU supports its features (`VG_MLKEM1024_KEYGEN_AVX_FEATURES`); or else `vg_mlkem1024_keygen`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -17,7 +17,7 @@
 /// * `seed` must be random bytes from an approved RBG (FIPS 203 §3.3), or a seed so generated before.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
 /// * `ek`, `dk` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
-/// * None of `seed`, `ek`, `dk` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `seed`, `ek`, `dk` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mlkem1024_keygen_auto(seed: *const [u8; 64], ek: *mut [u8; 1568], dk: *mut [u8; 3168], scratch: *mut [u64; 6144]) -> u32 {
@@ -32,6 +32,11 @@ pub unsafe fn vg_mlkem1024_keygen_auto(seed: *const [u8; 64], ek: *mut [u8; 1568
         // has the features it needs.
         return unsafe { crate::mlkem1024::vg_mlkem1024_keygen_avx2(seed, ek, dk, scratch) };
     }
+    if cpu.contains(crate::mlkem1024::VG_MLKEM1024_KEYGEN_AVX_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_mlkem1024_keygen_avx`'s, and the CPU
+        // has the features it needs.
+        return unsafe { crate::mlkem1024::vg_mlkem1024_keygen_avx(seed, ek, dk, scratch) };
+    }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { crate::mlkem1024::vg_mlkem1024_keygen(seed, ek, dk, scratch) }
 }
@@ -40,7 +45,7 @@ pub unsafe fn vg_mlkem1024_keygen_auto(seed: *const [u8; 64], ek: *mut [u8; 1568
 ///
 /// Contract: `VG.Spec.MlKem1024.encapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on the randomness or on the outputs.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mlkem1024_encaps_avx512` if the CPU supports its features (`VG_MLKEM1024_ENCAPS_AVX512_FEATURES`); `vg_mlkem1024_encaps_avx2` if the CPU supports its features (`VG_MLKEM1024_ENCAPS_AVX2_FEATURES`); or else `vg_mlkem1024_encaps`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mlkem1024_encaps_avx512` if the CPU supports its features (`VG_MLKEM1024_ENCAPS_AVX512_FEATURES`); `vg_mlkem1024_encaps_avx2` if the CPU supports its features (`VG_MLKEM1024_ENCAPS_AVX2_FEATURES`); `vg_mlkem1024_encaps_avx` if the CPU supports its features (`VG_MLKEM1024_ENCAPS_AVX_FEATURES`); or else `vg_mlkem1024_encaps`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -53,7 +58,7 @@ pub unsafe fn vg_mlkem1024_keygen_auto(seed: *const [u8; 64], ek: *mut [u8; 1568
 /// * `m` must be fresh random bytes from an approved RBG (FIPS 203 §3.3).
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
 /// * `key`, `ct` and `scratch` must not overlap each other, `ek` or `m` (distinct Rust objects never do).
-/// * None of `ek`, `m`, `key`, `ct` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ek`, `m`, `key`, `ct` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mlkem1024_encaps_auto(ek: *const [u8; 1568], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1568], scratch: *mut [u64; 6144]) -> u32 {
@@ -68,6 +73,11 @@ pub unsafe fn vg_mlkem1024_encaps_auto(ek: *const [u8; 1568], m: *const [u8; 32]
         // has the features it needs.
         return unsafe { crate::mlkem1024::vg_mlkem1024_encaps_avx2(ek, m, key, ct, scratch) };
     }
+    if cpu.contains(crate::mlkem1024::VG_MLKEM1024_ENCAPS_AVX_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_mlkem1024_encaps_avx`'s, and the CPU
+        // has the features it needs.
+        return unsafe { crate::mlkem1024::vg_mlkem1024_encaps_avx(ek, m, key, ct, scratch) };
+    }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { crate::mlkem1024::vg_mlkem1024_encaps(ek, m, key, ct, scratch) }
 }
@@ -76,7 +86,7 @@ pub unsafe fn vg_mlkem1024_encaps_auto(ek: *const [u8; 1568], m: *const [u8; 32]
 ///
 /// Contract: `VG.Spec.MlKem1024.decapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (bytes 3072–3103 of `*dk`), but not on anything else of the key, on the ciphertext, or on whether it was rejected.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mlkem1024_decaps_avx512` if the CPU supports its features (`VG_MLKEM1024_DECAPS_AVX512_FEATURES`); `vg_mlkem1024_decaps_avx2` if the CPU supports its features (`VG_MLKEM1024_DECAPS_AVX2_FEATURES`); or else `vg_mlkem1024_decaps`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mlkem1024_decaps_avx512` if the CPU supports its features (`VG_MLKEM1024_DECAPS_AVX512_FEATURES`); `vg_mlkem1024_decaps_avx2` if the CPU supports its features (`VG_MLKEM1024_DECAPS_AVX2_FEATURES`); `vg_mlkem1024_decaps_avx` if the CPU supports its features (`VG_MLKEM1024_DECAPS_AVX_FEATURES`); or else `vg_mlkem1024_decaps`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -87,7 +97,7 @@ pub unsafe fn vg_mlkem1024_encaps_auto(ek: *const [u8; 1568], m: *const [u8; 32]
 /// * `dk` must have been written by `vg_mlkem1024_keygen` (so that it passes the checks of FIPS 203 §7.3).
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
 /// * `key` and `scratch` must not overlap each other, `dk` or `ct` (distinct Rust objects never do).
-/// * None of `dk`, `ct`, `key` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `dk`, `ct`, `key` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mlkem1024_decaps_auto(dk: *const [u8; 3168], ct: *const [u8; 1568], key: *mut [u8; 32], scratch: *mut [u64; 6144]) -> u32 {
@@ -101,6 +111,11 @@ pub unsafe fn vg_mlkem1024_decaps_auto(dk: *const [u8; 3168], ct: *const [u8; 15
         // SAFETY: the caller's obligations, which are `vg_mlkem1024_decaps_avx2`'s, and the CPU
         // has the features it needs.
         return unsafe { crate::mlkem1024::vg_mlkem1024_decaps_avx2(dk, ct, key, scratch) };
+    }
+    if cpu.contains(crate::mlkem1024::VG_MLKEM1024_DECAPS_AVX_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_mlkem1024_decaps_avx`'s, and the CPU
+        // has the features it needs.
+        return unsafe { crate::mlkem1024::vg_mlkem1024_decaps_avx(dk, ct, key, scratch) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { crate::mlkem1024::vg_mlkem1024_decaps(dk, ct, key, scratch) }
@@ -133,7 +148,7 @@ pub unsafe fn vg_mlkem1024_check_ek_auto(ek: *const [u8; 1568]) -> u32 {
 ///
 /// Contract: `VG.Spec.MlKem1024.encapsHContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on its hash, on the randomness or on the outputs.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mlkem1024_encaps_h_avx512` if the CPU supports its features (`VG_MLKEM1024_ENCAPS_H_AVX512_FEATURES`); `vg_mlkem1024_encaps_h_avx2` if the CPU supports its features (`VG_MLKEM1024_ENCAPS_H_AVX2_FEATURES`); or else `vg_mlkem1024_encaps_h`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mlkem1024_encaps_h_avx512` if the CPU supports its features (`VG_MLKEM1024_ENCAPS_H_AVX512_FEATURES`); `vg_mlkem1024_encaps_h_avx2` if the CPU supports its features (`VG_MLKEM1024_ENCAPS_H_AVX2_FEATURES`); `vg_mlkem1024_encaps_h_avx` if the CPU supports its features (`VG_MLKEM1024_ENCAPS_H_AVX_FEATURES`); or else `vg_mlkem1024_encaps_h`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -148,7 +163,7 @@ pub unsafe fn vg_mlkem1024_check_ek_auto(ek: *const [u8; 1568]) -> u32 {
 /// * `m` must be fresh random bytes from an approved RBG (FIPS 203 §3.3).
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
 /// * `key`, `ct` and `scratch` must not overlap each other, `ek`, `h` or `m` (distinct Rust objects never do).
-/// * None of `ek`, `h`, `m`, `key`, `ct` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ek`, `h`, `m`, `key`, `ct` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mlkem1024_encaps_h_auto(ek: *const [u8; 1568], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1568], scratch: *mut [u64; 6144]) -> u32 {
@@ -162,6 +177,11 @@ pub unsafe fn vg_mlkem1024_encaps_h_auto(ek: *const [u8; 1568], h: *const [u8; 3
         // SAFETY: the caller's obligations, which are `vg_mlkem1024_encaps_h_avx2`'s, and the CPU
         // has the features it needs.
         return unsafe { crate::mlkem1024::vg_mlkem1024_encaps_h_avx2(ek, h, m, key, ct, scratch) };
+    }
+    if cpu.contains(crate::mlkem1024::VG_MLKEM1024_ENCAPS_H_AVX_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_mlkem1024_encaps_h_avx`'s, and the CPU
+        // has the features it needs.
+        return unsafe { crate::mlkem1024::vg_mlkem1024_encaps_h_avx(ek, h, m, key, ct, scratch) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { crate::mlkem1024::vg_mlkem1024_encaps_h(ek, h, m, key, ct, scratch) }
