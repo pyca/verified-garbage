@@ -4430,7 +4430,7 @@ pub const VG_AES_GCM_OPEN_TO_WITH_POWERS_AES_FEATURES: verified_garbage_cpu::Fea
 /// * None of `ctx`, `nonce`, `aad`, `src`, `dst`, `tag` and `pw` may overlap the 2608 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_open_to_with_powers_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize, pw: *const [u64; 16]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_open_to_with_powers_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize, pw: *const [u64; 16]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd128c3ff,0x910003f0,0xf9451bf1,0xf9000211,0xf9451ff1,0xf9000611,0xf94523f1,0xf9000a11
 .inst 0xf94527f1,0xf9000e11,0xf9452bf1,0xf9001211,0x9100c3f1,0xf9001611,0xf94017e9,0xf9004534
@@ -8366,7 +8366,7 @@ pub const VG_AES_GCM_OPEN_TO_WITH_POWERS_AES_SHA3_FEATURES: verified_garbage_cpu
 /// * None of `ctx`, `nonce`, `aad`, `src`, `dst`, `tag` and `pw` may overlap the 2608 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `sha3` target features.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_open_to_with_powers_aes_sha3(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize, pw: *const [u64; 16]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_open_to_with_powers_aes_sha3(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize, pw: *const [u64; 16]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd128c3ff,0x910003f0,0xf9451bf1,0xf9000211,0xf9451ff1,0xf9000611,0xf94523f1,0xf9000a11
 .inst 0xf94527f1,0xf9000e11,0xf9452bf1,0xf9001211,0x9100c3f1,0xf9001611,0xf94017e9,0xf9004534
@@ -13051,6 +13051,456 @@ b 21f
 .p2align 6",
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+    )
+}
+
+/// `vg_aes_gcm_open_to` with the 8 prepared powers of the hash subkey of the key context at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Computes the same result as `vg_aes_gcm_open_to`. The powers are secret, as the key context is: they may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToWithPowersContract`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `len` bytes.
+/// * `dst` must be valid for reads and writes of `dst_len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `pw` must be valid for reads of 128 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `dst_len` must equal `len`.
+/// * `*pw` must be what a `*_store_powers` function wrote for the same key context (the contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and its hash subkey).
+/// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src`, `tag`, `pw` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst`, `tag` and `pw` may overlap the 2608 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_open_to_with_powers(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize, pw: *const [u64; 16]) -> u32 {
+    core::arch::naked_asm!(
+        r".inst 0xd128c3ff,0x910003f0,0xf9451bf1,0xf9000211,0xf9451ff1,0xf9000611,0xf94523f1,0xf9000a11
+.inst 0xf94527f1,0xf9000e11,0x9100c3f1,0xf9001211,0xf94013e9,0xf9004534,0xf9004935,0xf9004d36
+.inst 0xf9005137,0xf9005538,0xf9005939,0xf9005d3a,0xf900613b,0xf900653c,0xf900693e,0xf9004133
+.inst 0x91000133,0x91004274,0x91000015,0x91000036,0xf9006e64,0xf9007265,0xf9007666,0xf9007a67
+.inst 0x91000057,0x91000078,0x9100007a,0xd280001b,0xf94003ea,0xf900a26a,0xf9400fea,0xf9007e6a
+.inst 0x9100015c,0xf9400bec,0xd100138a,0xd28001a9,0xeb09014a,0xd2800009,0xd280002a,0x9a8a2129
+cbz x9, 20f
+.inst 0xd344ff8d
+cbz x13, 22f
+.inst 0x3dc00180,0x3d800260
+b 23f
+22:
+.inst 0x9100026b,0x9100038d
+cbz x13, 24f
+26:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 26b
+b 25f
+24:
+25:
+23:
+.inst 0xd1003309
+cbz x9, 27f
+.inst 0xd2800009,0xf9000289,0xf9000689,0xd344ff03,0x910002e2,0x9103c2a0,0x91000281,0x91080264
+.inst 0xd37cec69,0x8b0902f7,0xd28001ea,0x8a0a0319
+bl {vg_ghash}
+.inst 0x910002ec,0xd2800009,0xf9003269,0xf9003669,0x9101826b,0x9100032d
+cbz x13, 29f
+.inst 0xd342fdae
+cbz x14, 211f
+.inst 0xd343fdae
+cbz x14, 213f
+215:
+.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
+cbnz x14, 215b
+b 214f
+213:
+214:
+.inst 0xd342fdae
+cbz x14, 216f
+.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
+b 217f
+216:
+217:
+cbz x13, 218f
+220:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 220b
+b 219f
+218:
+219:
+b 212f
+211:
+221:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 221b
+212:
+b 210f
+29:
+210:
+cbz x25, 222f
+.inst 0xd2800023
+b 223f
+222:
+.inst 0xd2800003
+223:
+.inst 0x9103c2a0,0x91000281,0x91080264,0x91018262
+bl {vg_ghash}
+.inst 0xd37df369,0xdac00d29,0xf9003269,0xd37df349,0xdac00d29,0xf9003669,0xd2800023,0x9103c2a0
+.inst 0x91000281,0x91080264,0x91018262
+bl {vg_ghash}
+b 28f
+27:
+.inst 0xb94002e9,0xb94006ea,0xb9400aeb,0x52a0200c,0xb9000289,0xb900068a,0xb9000a8b,0xb9000e8c
+28:
+.inst 0xb9400289,0xb940068a,0xb9400a8b,0xb9400e8c,0x5ac0098c,0x1100058c,0x5ac0098c,0xb9003289
+.inst 0xb900368a,0xb9003a8b,0xb9003e8c,0xd2800009,0xf9000a89,0xf9000e89,0xf9406e77,0xf9407278
+.inst 0xd2800019,0xd344ff03,0x910002e2,0x9103c2a0,0x91004281,0x91080264,0xd37cec69,0x8b0902f7
+.inst 0xcb090318
+bl {vg_ghash}
+.inst 0x9100828b,0x910002ec,0x9100030d
+cbz x13, 224f
+.inst 0xd342fdae
+cbz x14, 226f
+.inst 0xd343fdae
+cbz x14, 228f
+230:
+.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
+cbnz x14, 230b
+b 229f
+228:
+229:
+.inst 0xd342fdae
+cbz x14, 231f
+.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
+b 232f
+231:
+232:
+cbz x13, 233f
+235:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 235b
+b 234f
+233:
+234:
+b 227f
+226:
+236:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 236b
+227:
+b 225f
+224:
+225:
+.inst 0xf9407269,0xd28001ea,0x8a0a0139,0xf9407a7a,0xd280001b,0xf940767c
+cbz x26, 237f
+cbz x27, 239f
+.inst 0xd2800019
+b 240f
+239:
+240:
+b 238f
+237:
+.inst 0xd2800019
+238:
+.inst 0x9100828c,0xd2800009,0xf9003269,0xf9003669,0x9101826b,0x9100032d
+cbz x13, 241f
+.inst 0xd342fdae
+cbz x14, 243f
+.inst 0xd343fdae
+cbz x14, 245f
+247:
+.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
+cbnz x14, 247b
+b 246f
+245:
+246:
+.inst 0xd342fdae
+cbz x14, 248f
+.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
+b 249f
+248:
+249:
+cbz x13, 250f
+252:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 252b
+b 251f
+250:
+251:
+b 244f
+243:
+253:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 253b
+244:
+b 242f
+241:
+242:
+cbz x25, 254f
+.inst 0xd2800023
+b 255f
+254:
+.inst 0xd2800003
+255:
+.inst 0x9103c2a0,0x91004281,0x91080264,0x91018262
+bl {vg_ghash}
+.inst 0xd28001e9,0x8a090379,0x91000397,0x91000358
+cbz x26, 256f
+.inst 0xd2800209,0xcb190129,0xd344ff0a
+cbnz x10, 258f
+.inst 0xcb18012b,0xd37ffd6b
+cbz x11, 260f
+.inst 0x9100012a
+b 261f
+260:
+.inst 0x9100030a
+261:
+b 259f
+258:
+.inst 0x9100012a
+259:
+.inst 0x8b19028b,0x9100816b,0x910002ec,0x9100014d
+cbz x13, 262f
+264:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 264b
+b 263f
+262:
+263:
+.inst 0x8b0a02f7,0xcb0a0318,0x8b0a0329,0xd1004129
+cbz x9, 265f
+.inst 0xd2800003
+b 266f
+265:
+.inst 0xd2800023
+266:
+.inst 0x9103c2a0,0x91004281,0x91080264,0x91008282
+bl {vg_ghash}
+.inst 0xd344ff03,0x910002e2,0x9103c2a0,0x91004281,0x91080264,0xd37cec69,0x8b0902f7,0xcb090318
+bl {vg_ghash}
+.inst 0x9100828b,0x910002ec,0x9100030d
+cbz x13, 267f
+.inst 0xd342fdae
+cbz x14, 269f
+.inst 0xd343fdae
+cbz x14, 271f
+273:
+.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
+cbnz x14, 273b
+b 272f
+271:
+272:
+.inst 0xd342fdae
+cbz x14, 274f
+.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
+b 275f
+274:
+275:
+cbz x13, 276f
+278:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 278b
+b 277f
+276:
+277:
+b 270f
+269:
+279:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 279b
+270:
+b 268f
+267:
+268:
+b 257f
+256:
+257:
+.inst 0xf940727a,0xf9407a7b
+cbz x27, 280f
+.inst 0xd28001e9,0x8a090379
+b 281f
+280:
+.inst 0xd28001e9,0x8a090359
+281:
+.inst 0x9100828c,0xd2800009,0xf9003269,0xf9003669,0x9101826b,0x9100032d
+cbz x13, 282f
+.inst 0xd342fdae
+cbz x14, 284f
+.inst 0xd343fdae
+cbz x14, 286f
+288:
+.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
+cbnz x14, 288b
+b 287f
+286:
+287:
+.inst 0xd342fdae
+cbz x14, 289f
+.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
+b 290f
+289:
+290:
+cbz x13, 291f
+293:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 293b
+b 292f
+291:
+292:
+b 285f
+284:
+294:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 294b
+285:
+b 283f
+282:
+283:
+cbz x25, 295f
+.inst 0xd2800023
+b 296f
+295:
+.inst 0xd2800003
+296:
+.inst 0x9103c2a0,0x91004281,0x91080264,0x91018262
+bl {vg_ghash}
+.inst 0xd37df349,0xdac00d29,0xf9003269,0xd37df369,0xdac00d29,0xf9003669,0xd2800023,0x9103c2a0
+.inst 0x91004281,0x91080264,0x91018262
+bl {vg_ghash}
+.inst 0xf9400a89,0xf9003a69,0xf9400e89,0xf9003e69,0x910002a0,0x910002c1,0x91000282,0x9101c263
+.inst 0xd2800024,0x91080265
+bl {vg_aes_ctr32}
+.inst 0xf9407e7c,0xd344ff89
+cbz x9, 297f
+.inst 0xf9403a69,0xf940026a,0xca0a0129,0xf9403e6a,0xf940066b,0xca0b014a,0xaa0a0129,0xd280000b
+.inst 0xd100056c,0xab0c0129,0xba0b016a
+b 298f
+297:
+.inst 0xd2800009,0xf9008269,0xf9008669,0xf9008a69,0xf9008e69,0x9104426b,0x9100026c,0x9100038d
+cbz x13, 299f
+2101:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 2101b
+b 2100f
+299:
+2100:
+.inst 0x9104026b,0x9101c26c,0x9100038d
+cbz x13, 2102f
+2104:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 2104b
+b 2103f
+2102:
+2103:
+.inst 0xf9408269,0xf9408a6a,0xca0a0129,0xf940866a,0xf9408e6b,0xca0b014a,0xaa0a0129,0xd280000b
+.inst 0xd100056c,0xab0c0129,0xba0b016a
+298:
+.inst 0xd280003b,0xcb0a037b
+cbz x27, 2105f
+.inst 0xf9407677,0xf9407a78,0xd2800019,0xf940a27a,0xd344ff04,0x910002e3,0x910002a0,0x910002c1
+.inst 0x9100c282,0x91080265,0xd37cec89,0x8b0902f7,0xcb090318,0x91000346,0x8b09035a
+bl {vg_aes_ctr32_to}
+cbz x24, 2107f
+.inst 0xd2800024,0xd2800009,0xf9002289,0xf9002689
+b 2108f
+2107:
+.inst 0xd2800004
+2108:
+.inst 0x910002a0,0x910002c1,0x9100c282,0x91080265,0x91010283
+bl {vg_aes_ctr32}
+.inst 0x9101028c,0x910002eb,0x9100030d
+cbz x13, 2109f
+.inst 0xd342fdae
+cbz x14, 2111f
+.inst 0xd343fdae
+cbz x14, 2113f
+2115:
+.inst 0xf940018e,0xf940016f,0xca0f01ce,0xf900018e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
+cbnz x14, 2115b
+b 2114f
+2113:
+2114:
+.inst 0xd342fdae
+cbz x14, 2116f
+.inst 0xb940018e,0xb940016f,0x4a0f01ce,0xb900018e,0x9100118c,0x9100116b,0xd10011ad
+b 2117f
+2116:
+2117:
+cbz x13, 2118f
+2120:
+.inst 0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 2120b
+b 2119f
+2118:
+2119:
+b 2112f
+2111:
+2121:
+.inst 0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 2121b
+2112:
+b 2110f
+2109:
+2110:
+.inst 0x9100034b,0x9101028c,0x9100030d
+cbz x13, 2122f
+.inst 0xd342fdae
+cbz x14, 2124f
+.inst 0xd343fdae
+cbz x14, 2126f
+2128:
+.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
+cbnz x14, 2128b
+b 2127f
+2126:
+2127:
+.inst 0xd342fdae
+cbz x14, 2129f
+.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
+b 2130f
+2129:
+2130:
+cbz x13, 2131f
+2133:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 2133b
+b 2132f
+2131:
+2132:
+b 2125f
+2124:
+2134:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 2134b
+2125:
+b 2123f
+2122:
+2123:
+b 2106f
+2105:
+.inst 0xf940a269,0xf9407a6a,0xd280000b
+cbz x10, 2135f
+2137:
+.inst 0x3900012b,0x91000529,0xd100054a
+cbnz x10, 2137b
+b 2136f
+2135:
+2136:
+2106:
+.inst 0x91000360
+b 21f
+20:
+.inst 0xd2800000,0xf940a269,0xf9407a6a,0xd280000b
+cbz x10, 2138f
+2140:
+.inst 0x3900012b,0x91000529,0xd100054a
+cbnz x10, 2140b
+b 2139f
+2138:
+2139:
+21:
+.inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
+.inst 0xf940667c,0xf9406a7e,0xf9404273,0x9128c3ff,0xd65f03c0
+.p2align 6",
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
     )
 }
 
