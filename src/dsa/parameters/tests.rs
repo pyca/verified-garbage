@@ -65,21 +65,41 @@ fn fill_known_answer(v: &Vector, tape: usize, buf: &mut [u8]) {
 
 const KNOWN_ANSWER_FILLS: usize = 1;
 
+fn generation_vectors(host_without_ifma: bool, uses_ifma: bool) -> Vec<Vector> {
+    prime_vectors()
+        .into_iter()
+        .filter(|v| !(host_without_ifma && uses_ifma && v.bits == 3072))
+        .collect()
+}
+
+#[test]
+fn generation_widths() {
+    for (host_without_ifma, uses_ifma, expected) in [
+        (false, true, &[1024, 2048, 3072][..]),
+        (true, false, &[1024, 2048, 3072][..]),
+        (true, true, &[1024, 2048][..]),
+    ] {
+        let widths: Vec<_> = generation_vectors(host_without_ifma, uses_ifma)
+            .into_iter()
+            .map(|v| v.bits)
+            .collect();
+        assert_eq!(widths, expected);
+    }
+}
+
 #[test]
 fn cavp_generated_parameters() {
     // As with RSA's large private-key operations, do not repeat 3072-bit
     // generation under emulated IFMA. 1024 and 2048 bits retain the SHA-1
     // and SHA-256 answers; native IFMA and every other backend run all sizes.
     #[cfg(all(target_arch = "x86_64", feature = "cpu-features-env"))]
-    let emulated_ifma = std::env::var_os("VG_TEST_HOST_WITHOUT_IFMA").is_some()
-        && verified_garbage_cpu::detected()
-            .contains(crate::arch::dsa::VG_DSA_PARAMETER_SEARCH_MR_IFMA_FEATURES);
+    let host_without_ifma = std::env::var_os("VG_TEST_HOST_WITHOUT_IFMA").is_some();
+    #[cfg(all(target_arch = "x86_64", feature = "cpu-features-env"))]
+    let uses_ifma = verified_garbage_cpu::detected()
+        .contains(crate::arch::dsa::VG_DSA_PARAMETER_SEARCH_MR_IFMA_FEATURES);
     #[cfg(not(all(target_arch = "x86_64", feature = "cpu-features-env")))]
-    let emulated_ifma = false;
-    for v in prime_vectors() {
-        if emulated_ifma && v.bits == 3072 {
-            continue;
-        }
+    let (host_without_ifma, uses_ifma) = (false, false);
+    for v in generation_vectors(host_without_ifma, uses_ifma) {
         let mut tape = 0;
         let parameters = Parameters::generate_from(v.bits, |buf| {
             fill_known_answer(&v, tape, buf);
