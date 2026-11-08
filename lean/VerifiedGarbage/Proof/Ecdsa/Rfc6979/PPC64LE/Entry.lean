@@ -42,36 +42,40 @@ theorem Ctx.kp (hL : L.Ok) {t t' : State} (hc : Ctx L g lr m₀ t) {rs : List Re
   hc.regs hL k.rd k.wr hm k.sp (fun r hr => k.gpr r fun h => hrs r h hr) hsy
 
 /-- The arguments saved in the frame: `Ctx` holds. -/
-theorem entry_ok {I : Proof.Ecdsa.Rfc6979.Instance} {w : HVar} {f : Fns} {ns : List String} {s : State}
-    (h : (rfcPPC I 736 (tabFacts w f) ns).pre s) :
+theorem entry_ok {I : Proof.Ecdsa.Rfc6979.Instance} {w : HVar} {f : Fns} {ns : List String}
+    {cs : List (String × List (BitVec 64))} {s : State}
+    (h : (rfcPPC I 736 (tabFacts w f) ns cs).pre s) :
     WP isa (.block Impl.Ecdsa.Rfc6979.PPC64LE.Cfg.saveArgs) (entered s)
-      (Ctx (lay I.hashLen I.ecdsa.curve.len w f s) s.gpr s.lr s.mem) := by
+      (Ctx (lay I.hashLen I.ecdsa.curve.len w f s cs) s.gpr s.lr s.mem) := by
   have hL := lay_ok h
-  have hsp := entered_sp I.hashLen I.ecdsa.curve.len w f s
-  have hwr := entered_wr I.hashLen I.ecdsa.curve.len w f s
-  have hm := entered_mem I.hashLen I.ecdsa.curve.len w f s
-  have hrd : (entered s).rd = [(lay I.hashLen I.ecdsa.curve.len w f s).D, (lay I.hashLen I.ecdsa.curve.len w f s).DG,
-      (lay I.hashLen I.ecdsa.curve.len w f s).TAB] := by
-    rw [entered_rd]; exact h.1
-  have hw₀ : s.wr = [(lay I.hashLen I.ecdsa.curve.len w f s).OUT, (lay I.hashLen I.ecdsa.curve.len w f s).SCR] :=
+  have hsp := entered_sp I.hashLen I.ecdsa.curve.len w f s cs
+  have hwr := entered_wr I.hashLen I.ecdsa.curve.len w f s cs
+  have hm := entered_mem I.hashLen I.ecdsa.curve.len w f s cs
+  have hrd : (entered s).rd = [(lay I.hashLen I.ecdsa.curve.len w f s cs).D, (lay I.hashLen I.ecdsa.curve.len w f s cs).DG,
+      (lay I.hashLen I.ecdsa.curve.len w f s cs).TAB] ++ (lay I.hashLen I.ecdsa.curve.len w f s cs).TBLs := by
+    rw [entered_rd, h.1]; exact congrArg (_ ++ ·) (constRegions_csSyms cs s.syms).symm
+  have hw₀ : s.wr = [(lay I.hashLen I.ecdsa.curve.len w f s cs).OUT, (lay I.hashLen I.ecdsa.curve.len w f s cs).SCR] :=
     h.2.1
-  have htf : tabFacts w f s := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
+  have htf : tabFacts w f s := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
+  have hheld : Abi.constsHeld s.mem s.syms cs := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
   have hg : ∀ r, r ≠ .r0 → (entered s).gpr r = s.gpr r := fun r hr => entered_gpr s hr
-  have hspS : s.sp = (lay I.hashLen I.ecdsa.curve.len w f s).B + BitVec.ofNat 64 736 := by
+  have hspS : s.sp = (lay I.hashLen I.ecdsa.curve.len w f s cs).B + BitVec.ofNat 64 736 := by
     show s.sp = s.sp - BitVec.ofNat 64 736 + BitVec.ofNat 64 736; bv_omega
-  have hlr : (lay I.hashLen I.ecdsa.curve.len w f s).B + BitVec.ofNat 64 720 = s.sp - 16 := by
+  have hlr : (lay I.hashLen I.ecdsa.curve.len w f s cs).B + BitVec.ofNat 64 720 = s.sp - 16 := by
     rw [hspS]; bv_omega
-  have eOut : (lay I.hashLen I.ecdsa.curve.len w f s).out = s.gpr .r3 := rfl
-  have eD : (lay I.hashLen I.ecdsa.curve.len w f s).d = s.gpr .r4 := rfl
-  have eDg : (lay I.hashLen I.ecdsa.curve.len w f s).dg = s.gpr .r5 := rfl
-  have eScr : (lay I.hashLen I.ecdsa.curve.len w f s).scr = s.gpr .r7 := rfl
-  have eTab : (lay I.hashLen I.ecdsa.curve.len w f s).tab = s.gpr .r8 := rfl
-  have eW : (lay I.hashLen I.ecdsa.curve.len w f s).w = w := rfl
-  have eF : (lay I.hashLen I.ecdsa.curve.len w f s).f = f := rfl
-  have eFa : (lay I.hashLen I.ecdsa.curve.len w f s).fa =
+  have eOut : (lay I.hashLen I.ecdsa.curve.len w f s cs).out = s.gpr .r3 := rfl
+  have eD : (lay I.hashLen I.ecdsa.curve.len w f s cs).d = s.gpr .r4 := rfl
+  have eDg : (lay I.hashLen I.ecdsa.curve.len w f s cs).dg = s.gpr .r5 := rfl
+  have eScr : (lay I.hashLen I.ecdsa.curve.len w f s cs).scr = s.gpr .r7 := rfl
+  have eTab : (lay I.hashLen I.ecdsa.curve.len w f s cs).tab = s.gpr .r8 := rfl
+  have eW : (lay I.hashLen I.ecdsa.curve.len w f s cs).w = w := rfl
+  have eF : (lay I.hashLen I.ecdsa.curve.len w f s cs).f = f := rfl
+  have eFa : (lay I.hashLen I.ecdsa.curve.len w f s cs).fa =
       fun n => if n ∈ [w.initN, w.H.updN, w.finN] then s.syms n else 0 := rfl
-  obtain ⟨L, hl⟩ : ∃ L, lay I.hashLen I.ecdsa.curve.len w f s = L := ⟨_, rfl⟩
-  rw [hl] at hL hsp hwr hm hrd hw₀ hspS hlr eOut eD eDg eScr eTab eW eF eFa ⊢
+  have eSy : (lay I.hashLen I.ecdsa.curve.len w f s cs).sy = csSyms cs s.syms := rfl
+  have eCs : (lay I.hashLen I.ecdsa.curve.len w f s cs).cs = cs := rfl
+  obtain ⟨L, hl⟩ : ∃ L, lay I.hashLen I.ecdsa.curve.len w f s cs = L := ⟨_, rfl⟩
+  rw [hl] at hL hsp hwr hm hrd hw₀ hspS hlr eOut eD eDg eScr eTab eW eF eFa eSy eCs ⊢
   have hnB := hL.nB
   have hnt := hL.nt
   have hw : ∀ d, 128 ≤ d → d + 8 ≤ 688 → InRegions (entered s).wr (L.B + BitVec.ofNat 64 d) 8 :=
@@ -154,7 +158,8 @@ theorem entry_ok {I : Proof.Ecdsa.Rfc6979.Instance} {w : HVar} {f : Fns} {ns : L
     fun y v m m' hy f => f.writeW (r := L.STK) (by simp) _ (Offset.contains_base _ hy (by omega))
   have hsy : t₁₀.syms = s.syms := by rw [hsy', entered_syms]
   refine ⟨by rw [K.rd, hrd], by rw [K.wr, hwr, hw₀], by rw [K.sp, hsp], fun r hr => ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
-    ?_, ?_, ?_, ?_, ?_⟩
+    ?_, ?_, ?_, ?_, ?_, fun c hc' => by rw [hsy, eSy, csSyms_eq (by rw [eCs] at hc'; exact hc')], by
+      rw [eSy, eCs]; exact constsHeld_csSyms hheld⟩
   · have h₁ : r ≠ .r11 := fun e => by subst e; simp [preserved] at hr
     have h₂ : r ≠ .r9 := fun e => by subst e; simp [preserved] at hr
     have h₀ : r ≠ .r0 := fun e => by subst e; simp [preserved] at hr
