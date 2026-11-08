@@ -29,6 +29,7 @@ open VG VG.PPC64LE
 /-- `vg_ecdsa_brainpoolp256r1_sign`, with brainpoolP256r1's group law `hL`. -/
 def brainpoolp256r1Core (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) : Core where
   E := Spec.Ecdsa.BrainpoolP256r1.inst
+  cs := []
   C := Impl.Ecdsa.PPC64LE.signBrainpoolP256r1
   N := "vg_ecdsa_brainpoolp256r1_sign_k"
   V := (Proof.Ecdsa.PPC64LE.BrainpoolP256r1.sign_verified hL).1
@@ -64,7 +65,7 @@ def brainpoolp256r1R (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) : RfcCurv
 theorem brainpoolp256r1T_verified (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) (vs : List Proof.HmacTable.PPC64LE.HVar)
     (hv : OK vs) :
     Verified PPC64LE.target (signCodeT (brainpoolp256r1R hL) Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1.tries vs)
-      (specK Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1 vs) :=
-  signT_verified ⟨rfl, by decide, by decide⟩ brainpoolp256r1_blk rfl hv (by decide)
+      (specK Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1 [] vs) :=
+  signT_verified ⟨rfl, by decide, by decide⟩ brainpoolp256r1_blk rfl hv (sat_nil hv (by decide) rfl)
 
 end VG.Proof.Ecdsa.Rfc6979.PPC64LE

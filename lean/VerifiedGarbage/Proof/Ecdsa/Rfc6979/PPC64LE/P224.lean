@@ -29,6 +29,7 @@ open VG VG.PPC64LE
 /-- `vg_ecdsa_p224_sign`, with P-224's group law `hL`. -/
 def p224Core (hL : Weierstrass.Law Spec.P224.curve) : Core where
   E := Spec.Ecdsa.P224.inst
+  cs := []
   C := Impl.Ecdsa.PPC64LE.signP224
   N := "vg_ecdsa_p224_sign_k"
   V := (Proof.Ecdsa.PPC64LE.P224.sign_verified hL).1
@@ -64,7 +65,7 @@ def p224R (hL : Weierstrass.Law Spec.P224.curve) : RfcCurve where
 theorem p224T_verified (hL : Weierstrass.Law Spec.P224.curve) (vs : List Proof.HmacTable.PPC64LE.HVar)
     (hv : OK vs) :
     Verified PPC64LE.target (signCodeT (p224R hL) Spec.Ecdsa.Rfc6979.Curves.p224.tries vs)
-      (specK Spec.Ecdsa.Rfc6979.Curves.p224 vs) :=
-  signT_verified ⟨rfl, by decide, by decide⟩ p224_blk rfl hv (by decide)
+      (specK Spec.Ecdsa.Rfc6979.Curves.p224 [] vs) :=
+  signT_verified ⟨rfl, by decide, by decide⟩ p224_blk rfl hv (sat_nil hv (by decide) rfl)
 
 end VG.Proof.Ecdsa.Rfc6979.PPC64LE
