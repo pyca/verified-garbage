@@ -40,7 +40,7 @@ open VG.Proof.Ecdsa.RISCV64.BrainpoolP384r1.Joint (PtOk addPt_ok keepU JPre JTab
 open VG.Proof.Ecdsa.RISCV64.BrainpoolP384r1.Window (c wSl wLay wShort S quadW quadWl KC dblStep_ok toJStep_ok
   dbl_apart_DT dbl_apart_TD)
 open VG.Proof.Ecdsa.RISCV64.WindowA (d2)
-open VG.Impl.Ecdsa.RISCV64.WindowA (dblJa)
+open VG.Impl.Weierstrass (dblJa)
 open VG.Proof.X25519.RISCV64 (Rest)
 open VG.Spec.Weierstrass (Point Fe mul onCurve)
 

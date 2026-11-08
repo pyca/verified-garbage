@@ -35,6 +35,6 @@ def brainpoolp384r1 : Cfg :=
 
 /-- `vg_brainpoolp384r1_mul`, by four-bit windows with the Jacobian doubling for
 any `a` (`Impl/Ecdsa/RISCV64/WindowA.lean`). -/
-def mulBrainpoolP384r1 : Prog isa := WindowA.Cfg.mulFn brainpoolp384r1 WindowA.dblJa
+def mulBrainpoolP384r1 : Prog isa := WindowA.Cfg.mulFn brainpoolp384r1 Impl.Weierstrass.dblJa
 
 end VG.Impl.Ecdsa.RISCV64

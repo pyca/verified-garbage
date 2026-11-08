@@ -12,7 +12,7 @@ Algorithm 1's double of `(XZ : Y : Z³)` (`dblAF_cross`), so it doubles a
 Jacobian triple of a point of the curve (`InvJ.dblA`), the point at
 infinity and points of order two included: their double has
 `Z' = 2YZ = 0`. Every target's code of this doubling reads `a` from a slot
-and computes `dblAF` of it: RISC-V's `WindowA.dblJa` (`JacDblA.lean`) and
+and computes `dblAF` of it: `dblJa` (`JacDblA.lean`) and
 x86-64's `WinCfg.dblJGen` (`X86_64/WindowGeneral.lean`).
 -/
 
