@@ -170,3 +170,4 @@ vg_p192_point_double:
 	ld %r0, 3696(%r3)
 	mtlr %r0
 	blr
+	.p2align 6

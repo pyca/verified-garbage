@@ -23,7 +23,8 @@ bl {vg_p384_point_double}
 bl {vg_p384_point_add}
 .base64 "FPqDfAAQhIgAAKA4UChEfaALg+gQC6PoeCKlfDhQpXx4KoR84AKD+KgLg+gYC6PoeCKlfDhQpXx4KoR86AKD+LALg+ggC6PoeCKlfDhQpXx4KoR88AKD+LgLg+goC6PoeCKlfDhQpXx4KoR8+AKD+MALg+gwC6PoeCKlfDhQpXx4KoR8AAOD+MgLg+g4C6PoeCKlfDhQpXx4KoR8CAOD+NALg+hAC6PoeCKlfDhQpXx4KoR8EAOD+NgLg+hIC6PoeCKlfDhQpXx4KoR8GAOD+OALg+hQC6PoeCKlfDhQpXx4KoR8IAOD+OgLg+hYC6PoeCKlfDhQpXx4KoR8KAOD+PALg+hgC6PoeCKlfDhQpXx4KoR8MAOD+PgLg+hoC6PoeCKlfDhQpXx4KoR8OAOD+AAMg+hwC6PoeCKlfDhQpXx4KoR8QAOD+AgMg+h4C6PoeCKlfDhQpXx4KoR8SAOD+BAMg+iAC6PoeCKlfDhQpXx4KoR8UAOD+BgMg+iIC6PoeCKlfDhQpXx4KoR8WAOD+CAMg+iQC6PoeCKlfDhQpXx4KoR8YAOD+CgMg+iYC6PoeCKlfDhQpXx4KoR8aAOD+AAAPyg="
 bne %cr0, 21b
-.base64 "uAgD6KYDCHywCOPrIACATg==""#,
+.base64 "uAgD6KYDCHywCOPrIACATg=="
+.p2align 6"#,
         vg_p384_point_double = sym crate::ec_p384::vg_p384_point_double::vg_p384_point_double,
         vg_p384_point_add = sym crate::ec_p384::vg_p384_point_add::vg_p384_point_add,
     )

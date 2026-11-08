@@ -1693,6 +1693,7 @@ vg_ecdsa_p192_verify:
 	or %r3, %r4, %r4
 	addi %r1, %r1, 112
 	blr
+	.p2align 6
 
 vg_ecdsa_p192_sign:
 	mflr %r0
@@ -2302,3 +2303,4 @@ vg_ecdsa_p192_sign:
 	addi %r1, %r1, 48
 	mtlr %r0
 	blr
+	.p2align 6

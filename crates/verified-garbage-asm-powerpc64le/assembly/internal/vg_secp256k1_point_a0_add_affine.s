@@ -114,3 +114,4 @@ vg_secp256k1_point_a0_add_affine:
 	ld %r0, 3584(%r3)
 	mtlr %r0
 	blr
+	.p2align 6

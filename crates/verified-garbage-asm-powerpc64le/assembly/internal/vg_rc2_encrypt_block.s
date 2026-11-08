@@ -1222,3 +1222,4 @@ vg_rc2_encrypt_block:
 	or %r11, %r11, %r12
 	std %r11, 0(%r4)
 	blr
+	.p2align 6

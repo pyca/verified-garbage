@@ -8537,3 +8537,4 @@ vg_ed448_scalar_base:
 	stw %r5, 52(%r3)
 	stb %r12, 56(%r3)
 	blr
+	.p2align 6

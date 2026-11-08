@@ -15,3 +15,4 @@ vg_mldsa44_verify_prepared:
 	addi %r1, %r1, 48
 	mtlr %r0
 	blr
+	.p2align 6

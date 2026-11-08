@@ -19,6 +19,7 @@ bne %cr0, 22b
 b 21f
 20:
 21:
-.base64 "AADI6QgA6OkQAAjqGAAo6iAASOooAGjqMACI6jgAqOpAAMjqSADo6iAAgE4=""#,
+.base64 "AADI6QgA6OkQAAjqGAAo6iAASOooAGjqMACI6jgAqOpAAMjqSADo6iAAgE4="
+.p2align 6"#,
     )
 }

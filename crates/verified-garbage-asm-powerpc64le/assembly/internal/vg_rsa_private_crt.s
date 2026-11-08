@@ -11237,3 +11237,4 @@ vg_rsa_private_crt:
 	ld %r31, 240(%r23)
 	ld %r23, 248(%r23)
 	blr
+	.p2align 6

@@ -79,3 +79,4 @@ vg_ed25519_public_key_expanded:
 	std %r11, 128(%r12)
 	addi %r1, %r1, 176
 	blr
+	.p2align 6

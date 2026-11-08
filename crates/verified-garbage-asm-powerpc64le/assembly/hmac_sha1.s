@@ -217,6 +217,7 @@ vg_hmac_sha1_init:
 	std %r11, 352(%r12)
 	addi %r1, %r1, 432
 	b 21b
+	.p2align 6
 
 vg_hmac_sha1_finalize:
 	stdu %r1, -480(%r1)
@@ -280,3 +281,4 @@ vg_hmac_sha1_finalize:
 	mtlr %r0
 	addi %r1, %r1, 480
 	blr
+	.p2align 6

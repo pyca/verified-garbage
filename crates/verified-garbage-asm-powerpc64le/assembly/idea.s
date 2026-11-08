@@ -564,6 +564,7 @@ vg_idea_expand_key:
 	xor %r10, %r10, %r12
 	std %r10, 96(%r4)
 	blr
+	.p2align 6
 
 vg_idea_invert_key:
 	li %r0, 0
@@ -1552,6 +1553,7 @@ vg_idea_invert_key:
 	or %r8, %r8, %r12
 	std %r8, 96(%r4)
 	blr
+	.p2align 6
 
 vg_idea_ecb:
 	li %r0, 0
@@ -2334,3 +2336,4 @@ vg_idea_ecb:
 20:
 21:
 	blr
+	.p2align 6

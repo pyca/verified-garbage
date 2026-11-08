@@ -1042,6 +1042,7 @@ vg_cast5_expand_key:
 	ld %r0, 200(%r6)
 	mtlr %r0
 	blr
+	.p2align 6
 
 vg_cast5_ecb_encrypt:
 	mflr %r0
@@ -1244,6 +1245,7 @@ vg_cast5_ecb_encrypt:
 	ld %r0, 200(%r7)
 	mtlr %r0
 	blr
+	.p2align 6
 
 vg_cast5_ecb_decrypt:
 	mflr %r0
@@ -1448,3 +1450,4 @@ vg_cast5_ecb_decrypt:
 	ld %r0, 200(%r7)
 	mtlr %r0
 	blr
+	.p2align 6

@@ -170,3 +170,4 @@ vg_p384_point_add:
 	ld %r0, 3360(%r3)
 	mtlr %r0
 	blr
+	.p2align 6

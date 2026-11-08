@@ -1538,3 +1538,4 @@ vg_dsa_probable_prime_1024:
 253:
 254:
 	blr
+	.p2align 6

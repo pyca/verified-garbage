@@ -150,3 +150,4 @@ vg_pbkdf2_hmac_sha1:
 	mtlr %r0
 	addi %r1, %r1, 1152
 	blr
+	.p2align 6

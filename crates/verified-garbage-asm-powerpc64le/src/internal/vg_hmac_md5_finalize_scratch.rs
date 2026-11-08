@@ -17,7 +17,8 @@ bl {vg_md5_finalize_scratch}
 bl {vg_md5_update_scratch}
 .base64 "AAB0OFAAgDigALU4AADVOA=="
 bl {vg_md5_finalize_scratch}
-.base64 "oAAVgQAAF5GkABWBBAAXkagAFYEIABeRrAAVgQwAF5FwAJXqgADV6ogA9eqQABXrmAA163gAteogAAHoMAAhOKYDCHwgAIBO""#,
+.base64 "oAAVgQAAF5GkABWBBAAXkagAFYEIABeRrAAVgQwAF5FwAJXqgADV6ogA9eqQABXrmAA163gAteogAAHoMAAhOKYDCHwgAIBO"
+.p2align 6"#,
         vg_md5_finalize_scratch = sym crate::md5::vg_md5_finalize_scratch::vg_md5_finalize_scratch,
         vg_md5_update_scratch = sym crate::md5::vg_md5_update_scratch::vg_md5_update_scratch,
     )

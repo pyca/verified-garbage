@@ -428,6 +428,7 @@ vg_aes_gcm_siv_seal:
 	ld %r14, 128(%r14)
 	addi %r1, %r1, 3936
 	blr
+	.p2align 6
 
 vg_aes_gcm_siv_open:
 	stdu %r1, -3936(%r1)
@@ -884,3 +885,4 @@ vg_aes_gcm_siv_open:
 	ld %r14, 128(%r14)
 	addi %r1, %r1, 3936
 	blr
+	.p2align 6

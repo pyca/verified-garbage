@@ -65,6 +65,7 @@ vg_ffdh_parameter_generation_init:
 23:
 21:
 	blr
+	.p2align 6
 
 vg_ffdh_key_generation_init:
 	rldicl %r12, %r4, 53, 11
@@ -104,6 +105,7 @@ vg_ffdh_key_generation_init:
 23:
 21:
 	blr
+	.p2align 6
 
 vg_ffdh_check_public:
 	std %r14, 112(%r8)
@@ -1764,6 +1766,7 @@ vg_ffdh_check_public:
 	ld %r31, 240(%r23)
 	ld %r23, 248(%r23)
 	blr
+	.p2align 6
 
 vg_ffdh_check_domain:
 	mflr %r12
@@ -4443,6 +4446,7 @@ vg_ffdh_check_domain:
 	li %r3, 1
 251:
 	blr
+	.p2align 6
 
 vg_ffdh_exchange:
 	addi %r11, %r1, 104
@@ -6027,6 +6031,7 @@ vg_ffdh_exchange:
 	ld %r31, 240(%r23)
 	ld %r23, 248(%r23)
 	blr
+	.p2align 6
 
 vg_ffdh_derive_public:
 	std %r14, 112(%r10)
@@ -7857,6 +7862,7 @@ vg_ffdh_derive_public:
 	ld %r31, 240(%r23)
 	ld %r23, 248(%r23)
 	blr
+	.p2align 6
 
 vg_ffdh_check_private:
 	std %r14, 112(%r10)
@@ -9705,6 +9711,7 @@ vg_ffdh_check_private:
 	ld %r31, 240(%r23)
 	ld %r23, 248(%r23)
 	blr
+	.p2align 6
 
 vg_ffdh_generate_key_precompute:
 	std %r14, 112(%r8)
@@ -11458,6 +11465,7 @@ vg_ffdh_generate_key_precompute:
 	ld %r31, 240(%r23)
 	ld %r23, 248(%r23)
 	blr
+	.p2align 6
 
 vg_ffdh_generate_key_cached:
 	addi %r11, %r1, 104
@@ -13327,6 +13335,7 @@ vg_ffdh_generate_key_cached:
 	ld %r31, 240(%r23)
 	ld %r23, 248(%r23)
 	blr
+	.p2align 6
 
 vg_ffdh_generate_key_search_cached:
 	addi %r11, %r1, 96
@@ -13553,6 +13562,7 @@ vg_ffdh_generate_key_search_cached:
 	std %r5, 0(%r4)
 	ld %r31, 32(%r31)
 	blr
+	.p2align 6
 
 vg_ffdh_generate_parameters:
 	addi %r11, %r1, 96
@@ -13706,3 +13716,4 @@ vg_ffdh_generate_parameters:
 	std %r5, 0(%r4)
 	ld %r31, 32(%r31)
 	blr
+	.p2align 6

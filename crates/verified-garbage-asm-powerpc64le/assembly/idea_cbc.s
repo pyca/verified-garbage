@@ -840,6 +840,7 @@ vg_idea_cbc_encrypt_chained:
 	std %r11, 56(%r12)
 	addi %r1, %r1, 96
 	blr
+	.p2align 6
 
 vg_idea_cbc_decrypt_chained:
 	stdu %r1, -96(%r1)
@@ -1681,3 +1682,4 @@ vg_idea_cbc_decrypt_chained:
 	std %r11, 56(%r12)
 	addi %r1, %r1, 96
 	blr
+	.p2align 6

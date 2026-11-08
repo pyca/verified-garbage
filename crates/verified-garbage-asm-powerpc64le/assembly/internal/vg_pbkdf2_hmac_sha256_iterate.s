@@ -191,3 +191,4 @@ vg_pbkdf2_hmac_sha256_iterate:
 	ld %r27, 120(%r27)
 	mtlr %r0
 	blr
+	.p2align 6

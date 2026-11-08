@@ -205,7 +205,8 @@ bl {vg_secp256k1_mul_mod_p}
 bl {vg_secp256k1_mul_mod_n}
 .base64 "QAWAOAAFoDggBcA4"
 bl {vg_secp256k1_sub_mod_n}
-.base64 "QAKj6EgCg+h4I6V8UAKD6HgjpXxYAoPoeCOlfAAAgDhQIIV8eCuEfOAPhHgAAKA4UCikfMAFg+g4KIR8wAWD+EAFo+hIBYPoeCOlfFAFg+h4I6V8WAWD6HgjpXwAAIA4UCCFfHgrhHzgD4R4AACgOFAopHwAAIA4UCClfP//pTjABYPoOCiEfMAFg/jABUPpAQCAODggRH0QAAPopgMIfAAAw+kIAOPreCODfHAAITggAIBO""#,
+.base64 "QAKj6EgCg+h4I6V8UAKD6HgjpXxYAoPoeCOlfAAAgDhQIIV8eCuEfOAPhHgAAKA4UCikfMAFg+g4KIR8wAWD+EAFo+hIBYPoeCOlfFAFg+h4I6V8WAWD6HgjpXwAAIA4UCCFfHgrhHzgD4R4AACgOFAopHwAAIA4UCClfP//pTjABYPoOCiEfMAFg/jABUPpAQCAODggRH0QAAPopgMIfAAAw+kIAOPreCODfHAAITggAIBO"
+.p2align 6"#,
         vg_secp256k1_mul_mod_p = sym super::ec_secp256k1::vg_secp256k1_mul_mod_p::vg_secp256k1_mul_mod_p,
         vg_secp256k1_add_mod_p = sym super::ec_secp256k1::vg_secp256k1_add_mod_p::vg_secp256k1_add_mod_p,
         vg_secp256k1_sub_mod_p = sym super::ec_secp256k1::vg_secp256k1_sub_mod_p::vg_secp256k1_sub_mod_p,
@@ -297,7 +298,8 @@ bne %cr0, 213b
 214:
 .base64 "AADEmAEAhDj//6U4AAAlKA=="
 bne %cr0, 214b
-.base64 "UAIhOCAAAegwACE4pgMIfCAAgE4=""#,
+.base64 "UAIhOCAAAegwACE4pgMIfCAAgE4="
+.p2align 6"#,
         vg_ecdsa_secp256k1_sign_k = sym super::ecdsa_secp256k1::vg_ecdsa_secp256k1_sign_k::vg_ecdsa_secp256k1_sign_k,
     )
 }

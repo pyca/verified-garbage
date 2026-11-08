@@ -407,3 +407,4 @@ vg_mlkem768_encaps_body:
 	ld %r30, 888(%r31)
 	ld %r31, 896(%r31)
 	blr
+	.p2align 6

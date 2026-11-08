@@ -134,3 +134,4 @@ vg_p384_sub_mod_p:
 	xor %r11, %r11, %r12
 	std %r11, 40(%r4)
 	blr
+	.p2align 6

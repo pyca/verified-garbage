@@ -41,6 +41,7 @@ b 27f
 b 21f
 20:
 21:
-.base64 "IACATg==""#,
+.base64 "IACATg=="
+.p2align 6"#,
     )
 }

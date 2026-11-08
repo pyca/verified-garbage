@@ -357,3 +357,4 @@ vg_p521_mul_mod_p:
 	xor %r11, %r11, %r12
 	std %r11, 64(%r4)
 	blr
+	.p2align 6

@@ -18,7 +18,8 @@ pub unsafe extern "C" fn vg_mlkem1024_check_ek(ek: *const [u8; 1568]) -> u32 {
 20:
 .base64 "AQDDiMbgxnggZcZ4AADjiBQ6xnwADeA4UDjmfOAP53gUOqV8AQDDiALhxngCAOOI5CbneBQ6xnwADeA4UDjmfOAP53gUOqV8AwBjOP//hDgAACQo"
 bne %cr0, 20b
-.base64 "AADAOFAwxXzgD8Z4AQBgOFAYZnwgAIBO""#,
+.base64 "AADAOFAwxXzgD8Z4AQBgOFAYZnwgAIBO"
+.p2align 6"#,
     )
 }
 
@@ -43,7 +44,8 @@ pub unsafe extern "C" fn vg_mlkem1024_keygen(seed: *const [u8; 64], ek: *mut [u8
 bl {vg_mlkem1024_keygen_body}
 .base64 "eBtrfHj7438AAIA4AACEZADAhGB4W399"
 bl {vg_zeroize}
-.base64 "ePvjfygAgTkAAOzrIAAB6DAAITimAwh8IACATg==""#,
+.base64 "ePvjfygAgTkAAOzrIAAB6DAAITimAwh8IACATg=="
+.p2align 6"#,
         vg_mlkem1024_keygen_body = sym super::mlkem1024::vg_mlkem1024_keygen_body::vg_mlkem1024_keygen_body,
         vg_zeroize = sym super::zeroize::vg_zeroize,
     )
@@ -72,7 +74,8 @@ pub unsafe extern "C" fn vg_mlkem1024_encaps(ek: *const [u8; 1568], m: *const [u
 bl {vg_mlkem1024_encaps_body}
 .base64 "eBtrfHj7438AAIA4AACEZADAhGB4W399"
 bl {vg_zeroize}
-.base64 "ePvjfygAgTkAAOzrIAAB6DAAITimAwh8IACATg==""#,
+.base64 "ePvjfygAgTkAAOzrIAAB6DAAITimAwh8IACATg=="
+.p2align 6"#,
         vg_mlkem1024_encaps_body = sym super::mlkem1024::vg_mlkem1024_encaps_body::vg_mlkem1024_encaps_body,
         vg_zeroize = sym super::zeroize::vg_zeroize,
     )
@@ -103,7 +106,8 @@ pub unsafe extern "C" fn vg_mlkem1024_encaps_h(ek: *const [u8; 1568], h: *const 
 bl {vg_mlkem1024_encaps_h_body}
 .base64 "eBtrfHj7438AAIA4AACEZADAhGB4W399"
 bl {vg_zeroize}
-.base64 "ePvjfygAgTkAAOzrIAAB6DAAITimAwh8IACATg==""#,
+.base64 "ePvjfygAgTkAAOzrIAAB6DAAITimAwh8IACATg=="
+.p2align 6"#,
         vg_mlkem1024_encaps_h_body = sym super::mlkem1024::vg_mlkem1024_encaps_h_body::vg_mlkem1024_encaps_h_body,
         vg_zeroize = sym super::zeroize::vg_zeroize,
     )
@@ -130,7 +134,8 @@ pub unsafe extern "C" fn vg_mlkem1024_decaps(dk: *const [u8; 3168], ct: *const [
 bl {vg_mlkem1024_decaps_body}
 .base64 "eBtrfHj7438AAIA4AACEZADAhGB4W399"
 bl {vg_zeroize}
-.base64 "ePvjfygAgTkAAOzrIAAB6DAAITimAwh8IACATg==""#,
+.base64 "ePvjfygAgTkAAOzrIAAB6DAAITimAwh8IACATg=="
+.p2align 6"#,
         vg_mlkem1024_decaps_body = sym super::mlkem1024::vg_mlkem1024_decaps_body::vg_mlkem1024_decaps_body,
         vg_zeroize = sym super::zeroize::vg_zeroize,
     )

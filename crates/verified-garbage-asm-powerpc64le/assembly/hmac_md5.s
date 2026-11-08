@@ -210,6 +210,7 @@ vg_hmac_md5_init:
 	std %r11, 296(%r12)
 	addi %r1, %r1, 368
 	b 21b
+	.p2align 6
 
 vg_hmac_md5_finalize:
 	stdu %r1, -416(%r1)
@@ -269,3 +270,4 @@ vg_hmac_md5_finalize:
 	mtlr %r0
 	addi %r1, %r1, 416
 	blr
+	.p2align 6

@@ -2857,6 +2857,7 @@ vg_camellia_expand_key:
 	std %r11, 3304(%r12)
 	addi %r1, %r1, 3344
 	blr
+	.p2align 6
 
 vg_camellia_ecb_encrypt:
 	stdu %r1, -3344(%r1)
@@ -5615,6 +5616,7 @@ vg_camellia_ecb_encrypt:
 	std %r11, 3304(%r12)
 	addi %r1, %r1, 3344
 	blr
+	.p2align 6
 
 vg_camellia_ecb_decrypt:
 	stdu %r1, -3344(%r1)
@@ -9217,3 +9219,4 @@ vg_camellia_ecb_decrypt:
 	std %r11, 3304(%r12)
 	addi %r1, %r1, 3344
 	blr
+	.p2align 6

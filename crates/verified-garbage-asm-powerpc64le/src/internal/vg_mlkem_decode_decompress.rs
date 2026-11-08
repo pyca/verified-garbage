@@ -33,6 +33,7 @@ b 21f
 .base64 "AAADiQb4B3ngD+d40knnfAEA5zhC+Od4AADmkEbwB3ngD+d40knnfAEA5zhC+Od4BADmkIboB3ngD+d40knnfAEA5zhC+Od4CADmkMbgB3ngD+d40knnfAEA5zhC+Od4DADmkAbZB3ngD+d40knnfAEA5zhC+Od4EADmkEbRB3ngD+d40knnfAEA5zhC+Od4FADmkIbJB3ngD+d40knnfAEA5zhC+Od4GADmkMbBB3ngD+d40knnfAEA5zhC+Od4HADmkAEAYzggAMY4//9rOQAAKyg="
 bne %cr0, 26b
 21:
-.base64 "IACATg==""#,
+.base64 "IACATg=="
+.p2align 6"#,
     )
 }

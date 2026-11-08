@@ -60,6 +60,7 @@ vg_aes_ocb_init:
 	ld %r31, 232(%r12)
 	addi %r1, %r1, 2592
 	blr
+	.p2align 6
 
 vg_aes_ocb_seal:
 	stdu %r1, -2688(%r1)
@@ -764,6 +765,7 @@ vg_aes_ocb_seal:
 	ld %r31, 232(%r12)
 	addi %r1, %r1, 2688
 	blr
+	.p2align 6
 
 vg_aes_ocb_open:
 	stdu %r1, -2688(%r1)
@@ -1515,3 +1517,4 @@ vg_aes_ocb_open:
 	ld %r31, 232(%r12)
 	addi %r1, %r1, 2688
 	blr
+	.p2align 6

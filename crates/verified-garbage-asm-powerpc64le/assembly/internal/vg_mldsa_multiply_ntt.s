@@ -31,3 +31,4 @@ vg_mldsa_multiply_ntt:
 	cmpldi %cr0, %r6, 0
 	bne %cr0, 20b
 	blr
+	.p2align 6

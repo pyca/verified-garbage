@@ -2408,3 +2408,4 @@ vg_dsa_derive_key_checked:
 	ld %r2, 240(%r21)
 	ld %r21, 248(%r21)
 	blr
+	.p2align 6

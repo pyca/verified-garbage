@@ -36,3 +36,4 @@ vg_sha256_state_digest:
 	addi %r26, %r9, 0
 	addi %r28, %r10, 0
 	blr
+	.p2align 6

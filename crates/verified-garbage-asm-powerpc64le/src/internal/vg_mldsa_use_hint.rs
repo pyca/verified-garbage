@@ -24,6 +24,7 @@ b 21f
 .base64 "AAAEgQAAJIF/ACk5wskpedJRKX0UWil9glUpedIpCXxQAAh84A8AeKQPAHgAAAOB//8IOeAPCHkUAil90kEAfFBIIH0UQil9//8pOeAPKHnSYQh9FEIpffD/KTngDyh50mEIfRRCKX0AACaRBABjOAQAhDgEAMY4///nOAAAJyg="
 bne %cr0, 23b
 21:
-.base64 "IACATg==""#,
+.base64 "IACATg=="
+.p2align 6"#,
     )
 }

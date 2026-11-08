@@ -110,3 +110,4 @@ vg_mlkem_sample_ntt:
 	ld %r30, 1688(%r31)
 	ld %r31, 1696(%r31)
 	blr
+	.p2align 6

@@ -13,7 +13,8 @@ pub(crate) unsafe extern "C" fn vg_ed25519_public_key_expanded() {
     core::arch::naked_asm!(
         r#".base64 "Uf8h+CAAwTimAgh8YACG+mgApvpwAMb6eADm+oAABvgAAIM6AACkOgAAxToAAOY6AAAV6QAAF/kIABXpCAAX+RAAFekQABf5GAAV6RgAF/kgABXpIAAX+SgAFekoABf5MAAV6TAAF/k4ABXpOAAX+QAAF+nC6Ah5JB8IeUAAF/kIABfpSAAX+RAAF+lQABf5GAAX6WQXCHmC8Ah5AEAgPcYHKXl4Swh9WAAX+QAAdDhAAJc4AAC2OA=="
 bl {vg_ed25519_scalar_base}
-.base64 "gAAX6GAAl+poALfqcADX6ngA9+qmAwh8IACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPl4AGz5gABs+bAAITggAIBO""#,
+.base64 "gAAX6GAAl+poALfqcADX6ngA9+qmAwh8IACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPl4AGz5gABs+bAAITggAIBO"
+.p2align 6"#,
         vg_ed25519_scalar_base = sym crate::ed25519::vg_ed25519_scalar_base::vg_ed25519_scalar_base,
     )
 }

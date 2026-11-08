@@ -72,7 +72,8 @@ bl {vg_sha256_finalize_scratch}
 .base64 "AAB2OAAAlzgwAbU4HADAOAAA9ThQAZXqYAHV6mgB9epwARXreAE161gBteo="
 bl {vg_hmac_sha224_init_scratch}
 .base64 "IAAB6DAAITimAwh8IACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPl4AGz5gABs+YgAbPmQAGz5mABs+aAAbPmoAGz5sABs+bgAbPnAAGz5yABs+dAAbPnYAGz54ABs+egAbPnwAGz5+ABs+QABbPkIAWz5EAFs+RgBbPkgAWz5KAFs+TABbPk4AWz5QAFs+UgBbPlQAWz5WAFs+WABbPloAWz5cAFs+XgBbPkwAyE4"
-b 21b"#,
+b 21b
+.p2align 6"#,
         vg_sha224_init = sym super::sha256::vg_sha224_init,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
@@ -101,7 +102,8 @@ bl {vg_sha256_finalize_scratch}
 bl {vg_sha256_update_scratch}
 .base64 "AAB0OFwAgDjQALU4AADVOA=="
 bl {vg_sha256_finalize_scratch}
-.base64 "0AAVgQAAF5HUABWBBAAXkdgAFYEIABeR3AAVgQwAF5HgABWBEAAXkeQAFYEUABeR6AAVgRgAF5GgAJXqsADV6rgA9erAABXryAA166gAteogAAHoMAAhOKYDCHxgAyE4IACATg==""#,
+.base64 "0AAVgQAAF5HUABWBBAAXkdgAFYEIABeR3AAVgQwAF5HgABWBEAAXkeQAFYEUABeR6AAVgRgAF5GgAJXqsADV6rgA9erAABXryAA166gAteogAAHoMAAhOKYDCHxgAyE4IACATg=="
+.p2align 6"#,
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
     )

@@ -26,6 +26,7 @@ vg_ed25519_key_pair:
 	mtlr %r0
 	addi %r1, %r1, 64
 	blr
+	.p2align 6
 
 vg_ed25519_sign_expanded:
 	stdu %r1, -320(%r1)
@@ -193,6 +194,7 @@ vg_ed25519_sign_expanded:
 	std %r11, 216(%r12)
 	addi %r1, %r1, 320
 	blr
+	.p2align 6
 
 vg_ed25519_verify:
 	stdu %r1, -224(%r1)
@@ -260,3 +262,4 @@ vg_ed25519_verify:
 	mtlr %r0
 	addi %r1, %r1, 224
 	blr
+	.p2align 6

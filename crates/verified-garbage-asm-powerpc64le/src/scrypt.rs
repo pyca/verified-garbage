@@ -32,7 +32,8 @@ bl {vg_scrypt_romix}
 bne %cr0, 20b
 .base64 "MAB+6DgAnuhIAL7oUADe6CQ+xngBAOA46AAe6fAAPunYAF7p"
 bl {vg_pbkdf2_hmac_sha256_scratch}
-.base64 "IAAe6KYDCHwoAN7rcAAhOCAAgE4=""#,
+.base64 "IAAe6KYDCHwoAN7rcAAhOCAAgE4="
+.p2align 6"#,
         vg_pbkdf2_hmac_sha256_scratch = sym super::scrypt::vg_pbkdf2_hmac_sha256_scratch::vg_pbkdf2_hmac_sha256_scratch,
         vg_scrypt_romix = sym super::scrypt::vg_scrypt_romix::vg_scrypt_romix,
     )

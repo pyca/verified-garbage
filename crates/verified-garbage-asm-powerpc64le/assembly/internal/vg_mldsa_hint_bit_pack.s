@@ -43,3 +43,4 @@ vg_mldsa_hint_bit_pack:
 	cmpldi %cr0, %r9, 0
 	bne %cr0, 21b
 	blr
+	.p2align 6

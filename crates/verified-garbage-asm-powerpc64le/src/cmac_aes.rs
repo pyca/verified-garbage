@@ -21,7 +21,8 @@ pub unsafe extern "C" fn vg_cmac_aes_init(state: *mut [u64; 38], key: *const u8,
 bl {vg_aes_expand_key_scratch}
 .base64 "eHPDfXiDBH7wAK44eHvmfQ=="
 bl {vg_cmac_aes_subkeys}
-.base64 "AAAgORABLvkYAS75mAgP6IAIz+mQCA/qiAjv6aYDCHwgCSE4IACATg==""#,
+.base64 "AAAgORABLvkYAS75mAgP6IAIz+mQCA/qiAjv6aYDCHwgCSE4IACATg=="
+.p2align 6"#,
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_cmac_aes_subkeys = sym super::cmac_aes::vg_cmac_aes_subkeys::vg_cmac_aes_subkeys,
     )
@@ -93,7 +94,8 @@ bne %cr0, 215b
 b 214f
 213:
 214:
-.base64 "gAgT6IgI0+mQCPPpmAgT6qAIM+qoCFPqsAhz6qYDCHwgCSE4IACATg==""#,
+.base64 "gAgT6IgI0+mQCPPpmAgT6qAIM+qoCFPqsAhz6qYDCHwgCSE4IACATg=="
+.p2align 6"#,
         vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,
     )
 }
@@ -120,7 +122,8 @@ b 21f
 20:
 21:
 bl {vg_cmac_aes_finalize}
-.base64 "iAgO6IAIzummAwh8IAkhOCAAgE4=""#,
+.base64 "iAgO6IAIzummAwh8IAkhOCAAgE4="
+.p2align 6"#,
         vg_cmac_aes_finalize = sym super::cmac_aes::vg_cmac_aes_finalize::vg_cmac_aes_finalize,
     )
 }

@@ -2516,3 +2516,4 @@ vg_ed25519_r32_point_add:
 	add %r7, %r7, %r8
 	stw %r7, 160(%r6)
 	blr
+	.p2align 6

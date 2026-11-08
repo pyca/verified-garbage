@@ -134,3 +134,4 @@ vg_rsa_private_checked:
 	ld %r29, 216(%r12)
 	addi %r1, %r1, 3328
 	blr
+	.p2align 6

@@ -114,3 +114,4 @@ vg_mldsa_make_hint:
 	or %r3, %r0, %r0
 21:
 	blr
+	.p2align 6

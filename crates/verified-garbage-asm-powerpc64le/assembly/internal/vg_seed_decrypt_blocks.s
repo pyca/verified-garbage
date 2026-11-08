@@ -2614,3 +2614,4 @@ vg_seed_decrypt_blocks:
 20:
 21:
 	blr
+	.p2align 6

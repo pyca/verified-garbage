@@ -215,7 +215,8 @@ b 242f
 240:
 228:
 21:
-.base64 "YATm6KYD6HwAAHE4AATG6QgE5ukQBAbqGAQm6iAERuooBGbqMARG6zgEZutABIbrSASm61AExutYBObrIACATg==""#,
+.base64 "YATm6KYD6HwAAHE4AATG6QgE5ukQBAbqGAQm6iAERuooBGbqMARG6zgEZutABIbrSASm61AExutYBObrIACATg=="
+.p2align 6"#,
         vg_gf25519_r32_mul = sym crate::ed25519::vg_gf25519_r32_mul::vg_gf25519_r32_mul,
         vg_gf25519_r32_pow250 = sym crate::ed25519::vg_gf25519_r32_pow250::vg_gf25519_r32_pow250,
         vg_ed25519_r32_point_add = sym crate::ed25519::vg_ed25519_r32_point_add::vg_ed25519_r32_point_add,

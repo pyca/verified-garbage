@@ -2042,3 +2042,4 @@ vg_camellia_crypt_prepared:
 	ld %r30, 3072(%r8)
 	ld %r31, 3080(%r8)
 	blr
+	.p2align 6

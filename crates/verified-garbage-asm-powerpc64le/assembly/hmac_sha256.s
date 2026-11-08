@@ -220,6 +220,7 @@ vg_hmac_sha256_init:
 	std %r11, 376(%r12)
 	addi %r1, %r1, 816
 	b 21b
+	.p2align 6
 
 vg_hmac_sha256_finalize:
 	stdu %r1, -864(%r1)
@@ -295,3 +296,4 @@ vg_hmac_sha256_finalize:
 	mtlr %r0
 	addi %r1, %r1, 864
 	blr
+	.p2align 6

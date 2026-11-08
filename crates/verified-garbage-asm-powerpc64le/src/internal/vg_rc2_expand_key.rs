@@ -85,6 +85,7 @@ bne %cr0, 222b
 b 221f
 220:
 221:
-.base64 "AAHH6QgB5+kgAIBO""#,
+.base64 "AAHH6QgB5+kgAIBO"
+.p2align 6"#,
     )
 }

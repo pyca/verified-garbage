@@ -722,7 +722,8 @@ bne %cr0, 286b
 .base64 "//+MOeAPjHk4YBh/"
 23:
 21:
-.base64 "AAB4OIgDH+imAwh8SAMf61ADP+tYA1/rYAN/62gDn+twA7/reAPf64AD/+sgAOHpMAAhOCAAwekwACE4IACATg==""#,
+.base64 "AAB4OIgDH+imAwh8SAMf61ADP+tYA1/rYAN/62gDn+twA7/reAPf64AD/+sgAOHpMAAhOCAAwekwACE4IACATg=="
+.p2align 6"#,
         vg_mldsa_hint_bit_unpack = sym crate::mldsa44::vg_mldsa_hint_bit_unpack::vg_mldsa_hint_bit_unpack,
         vg_mldsa_bit_unpack = sym crate::mldsa44::vg_mldsa_bit_unpack::vg_mldsa_bit_unpack,
         vg_mldsa_norm_lt = sym crate::mldsa44::vg_mldsa_norm_lt::vg_mldsa_norm_lt,

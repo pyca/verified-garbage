@@ -17,7 +17,8 @@
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_chacha20_init(state: *mut [u64; 96], key: *const [u8; 32], nonce: *const [u8; 16]) {
     core::arch::naked_asm!(
-        r#".base64 "AAAk6QgAROkQAGTpGACE6RAAI/kYAEP5IABj+SgAg/kAAIU4AAAkgQQARIEIAGSBDACEgTAAI5E0AEOROABjkTwAg5FwYUA9ZXhKYQAAQ5EgM0A9bmRKYQQAQ5FieUA9Mi1KYQgAQ5Ega0A9dGVKYQwAQ5EBAIA5xgeMeVBgiX1kNox5gACD+SAAgE4=""#,
+        r#".base64 "AAAk6QgAROkQAGTpGACE6RAAI/kYAEP5IABj+SgAg/kAAIU4AAAkgQQARIEIAGSBDACEgTAAI5E0AEOROABjkTwAg5FwYUA9ZXhKYQAAQ5EgM0A9bmRKYQQAQ5FieUA9Mi1KYQgAQ5Ega0A9dGVKYQwAQ5EBAIA5xgeMeVBgiX1kNox5gACD+SAAgE4="
+.p2align 6"#,
     )
 }
 
@@ -34,7 +35,8 @@ pub unsafe extern "C" fn vg_chacha20_init(state: *mut [u64; 96], key: *const [u8
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_chacha20_set_nonce(state: *mut [u64; 96], nonce: *const [u8; 16]) {
     core::arch::naked_asm!(
-        r#".base64 "AAAkgQQARIEIAGSBDACEgTAAI5E0AEOROABjkTwAg5FwYUA9ZXhKYQAAQ5EgM0A9bmRKYQQAQ5FieUA9Mi1KYQgAQ5Ega0A9dGVKYQwAQ5EBAIA5xgeMeVBgiX1kNox5gACD+SAAgE4=""#,
+        r#".base64 "AAAkgQQARIEIAGSBDACEgTAAI5E0AEOROABjkTwAg5FwYUA9ZXhKYQAAQ5EgM0A9bmRKYQQAQ5FieUA9Mi1KYQgAQ5Ega0A9dGVKYQwAQ5EBAIA5xgeMeVBgiX1kNox5gACD+SAAgE4="
+.p2align 6"#,
     )
 }
 
@@ -94,7 +96,8 @@ b 21f
 20:
 .base64 "AABgOA=="
 21:
-.base64 "IACATg==""#,
+.base64 "IACATg=="
+.p2align 6"#,
         vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor::vg_chacha20_xor,
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
     )

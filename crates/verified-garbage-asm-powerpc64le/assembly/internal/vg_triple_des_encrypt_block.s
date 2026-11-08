@@ -1874,3 +1874,4 @@ vg_triple_des_encrypt_block:
 	ld %r27, 104(%r5)
 	ld %r28, 112(%r5)
 	blr
+	.p2align 6

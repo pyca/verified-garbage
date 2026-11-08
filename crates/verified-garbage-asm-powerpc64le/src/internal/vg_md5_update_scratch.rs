@@ -103,7 +103,8 @@ bne %cr0, 22b
 b 21f
 20:
 21:
-.base64 "QABb61AAm+tYALvrYADb62gA++tIAHvrIAAB6DAAITimAwh8IACATg==""#,
+.base64 "QABb61AAm+tYALvrYADb62gA++tIAHvrIAAB6DAAITimAwh8IACATg=="
+.p2align 6"#,
         vg_md5_compress = sym crate::md5::vg_md5_compress::vg_md5_compress,
     )
 }

@@ -127,6 +127,8 @@ def printer : Printer isa where
   jump l := s!"b {l}"
   ret := ["// blr", longLine retWord]
   call := "bl"
+  -- DIAGNOSTIC, not for merging: every function's entry on a 64-byte boundary.
+  funcAlign := [".p2align 6"]
   -- Label 2 is private to `adrSym`, the `mflr` after its `bcl`: structured
   -- control flow uses 20, 21, …; repeated sequences use the nearest 2b.
   symLines

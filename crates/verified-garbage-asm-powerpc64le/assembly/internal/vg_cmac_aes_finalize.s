@@ -67,3 +67,4 @@ vg_cmac_aes_finalize:
 	ld %r14, 2072(%r14)
 	mtlr %r0
 	blr
+	.p2align 6

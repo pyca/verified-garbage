@@ -11,6 +11,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_state_digest() {
     core::arch::naked_asm!(
-        r#".base64 "AAA6OQAAXDkAAEM7AACEOwAAGukAAGA5KF0cfQgAGukIAGA5KF0cfRAAGukQAGA5KF0cfRgAGukYAGA5KF0cfSAAGukgAGA5KF0cfSgAGukoAGA5KF0cfTAAGukwAGA5KF0cfTgAGuk4AGA5KF0cfQAASTsAAIo7IACATg==""#,
+        r#".base64 "AAA6OQAAXDkAAEM7AACEOwAAGukAAGA5KF0cfQgAGukIAGA5KF0cfRAAGukQAGA5KF0cfRgAGukYAGA5KF0cfSAAGukgAGA5KF0cfSgAGukoAGA5KF0cfTAAGukwAGA5KF0cfTgAGuk4AGA5KF0cfQAASTsAAIo7IACATg=="
+.p2align 6"#,
     )
 }

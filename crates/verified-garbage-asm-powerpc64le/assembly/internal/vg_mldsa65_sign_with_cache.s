@@ -2954,3 +2954,4 @@ vg_mldsa65_sign_with_cache:
 	ld %r14, 32(%r1)
 	addi %r1, %r1, 48
 	blr
+	.p2align 6

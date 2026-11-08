@@ -1676,3 +1676,4 @@ vg_blake2b_compress:
 	ld %r22, 64(%r8)
 	ld %r23, 72(%r8)
 	blr
+	.p2align 6

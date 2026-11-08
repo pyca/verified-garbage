@@ -1473,6 +1473,7 @@ vg_rsa_public_precompute:
 	ld %r22, 184(%r21)
 	ld %r21, 192(%r21)
 	blr
+	.p2align 6
 
 vg_rsa_crt_values:
 	addi %r11, %r1, 144
@@ -4962,6 +4963,7 @@ vg_rsa_crt_values:
 	ld %r30, 96(%r31)
 	ld %r31, 104(%r31)
 	blr
+	.p2align 6
 
 vg_rsa_check_key:
 	addi %r11, %r1, 160
@@ -8569,6 +8571,7 @@ vg_rsa_check_key:
 	ld %r30, 104(%r31)
 	ld %r31, 112(%r31)
 	blr
+	.p2align 6
 
 vg_rsa_recover_primes_det:
 	addi %r11, %r1, 112
@@ -15045,3 +15048,4 @@ vg_rsa_recover_primes_det:
 	ld %r30, 128(%r11)
 	ld %r31, 136(%r11)
 	blr
+	.p2align 6

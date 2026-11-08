@@ -920,3 +920,4 @@ vg_ecdsa_p224_sign_k:
 	ld %r31, 8(%r3)
 	or %r3, %r4, %r4
 	blr
+	.p2align 6

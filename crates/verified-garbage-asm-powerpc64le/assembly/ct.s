@@ -33,3 +33,4 @@ vg_ct_eq:
 	rldicl %r3, %r7, 1, 63
 21:
 	blr
+	.p2align 6

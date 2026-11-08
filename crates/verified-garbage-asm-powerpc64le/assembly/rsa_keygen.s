@@ -88,6 +88,7 @@ vg_rsa_generate_init:
 	stdbrx %r6, %r3, %r7
 	addi %r3, %r12, 0
 	blr
+	.p2align 6
 
 vg_rsa_generate:
 	stdu %r1, -144(%r1)
@@ -380,3 +381,4 @@ vg_rsa_generate:
 	ld %r31, 72(%r31)
 	addi %r1, %r1, 144
 	blr
+	.p2align 6

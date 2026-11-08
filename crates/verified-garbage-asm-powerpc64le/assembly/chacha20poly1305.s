@@ -261,6 +261,7 @@ vg_chacha20_poly1305_seal:
 	std %r11, 648(%r12)
 	addi %r1, %r1, 688
 	blr
+	.p2align 6
 
 vg_chacha20_poly1305_open:
 	stdu %r1, -688(%r1)
@@ -550,6 +551,7 @@ vg_chacha20_poly1305_open:
 	std %r11, 648(%r12)
 	addi %r1, %r1, 688
 	blr
+	.p2align 6
 
 vg_chacha20_poly1305_open_to:
 	stdu %r1, -768(%r1)
@@ -846,6 +848,7 @@ vg_chacha20_poly1305_open_to:
 	std %r11, 648(%r12)
 	addi %r1, %r1, 768
 	blr
+	.p2align 6
 
 vg_chacha20_poly1305_seal_gather:
 	stdu %r1, -80(%r1)
@@ -912,3 +915,4 @@ vg_chacha20_poly1305_seal_gather:
 	mtlr %r0
 	addi %r1, %r1, 80
 	blr
+	.p2align 6

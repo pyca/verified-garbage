@@ -74,3 +74,4 @@ vg_aes_xts_decrypt:
 	ld %r19, 2104(%r19)
 	mtlr %r0
 	blr
+	.p2align 6

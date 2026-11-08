@@ -26,7 +26,8 @@ bne %cr0, 22b
 b 21f
 20:
 21:
-.base64 "IACATg==""#,
+.base64 "IACATg=="
+.p2align 6"#,
     )
 }
 
@@ -104,7 +105,8 @@ b 216f
 b 23f
 22:
 23:
-.base64 "AAJb6xACm+sYArvrIALb6ygC++sIAnvrIAAB6DAAITimAwh8YAIhOCAAgE4=""#,
+.base64 "AAJb6xACm+sYArvrIALb6ygC++sIAnvrIAAB6DAAITimAwh8YAIhOCAAgE4="
+.p2align 6"#,
         vg_blake2s_compress = sym super::blake2s::vg_blake2s_compress::vg_blake2s_compress,
     )
 }
@@ -140,7 +142,8 @@ b 23f
 23:
 .base64 "AAB6OCAAmjgBAKA4AADfOAEA4DgAABs5"
 bl {vg_blake2s_compress}
-.base64 "AAA66QAAPPkIADrpCAA8+RAAOukQADz5GAA66RgAPPkAAlvrEAKb6xgCu+sgAtvrKAL76wgCe+sgAAHoMAAhOKYDCHxgAiE4IACATg==""#,
+.base64 "AAA66QAAPPkIADrpCAA8+RAAOukQADz5GAA66RgAPPkAAlvrEAKb6xgCu+sgAtvrKAL76wgCe+sgAAHoMAAhOKYDCHxgAiE4IACATg=="
+.p2align 6"#,
         vg_blake2s_compress = sym super::blake2s::vg_blake2s_compress::vg_blake2s_compress,
     )
 }

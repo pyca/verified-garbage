@@ -23,6 +23,7 @@ bne %cr0, 22b
 bne %cr0, 21b
 .base64 "QvhKef7/CjgAACAo"
 bne %cr0, 20b
-.base64 "IADh6TAAITggAMHpMAAhOCAAgE4=""#,
+.base64 "IADh6TAAITggAMHpMAAhOCAAgE4="
+.p2align 6"#,
     )
 }

@@ -18,6 +18,7 @@ vg_md5_init:
 	ori %r8, %r8, 21622
 	stw %r8, 12(%r3)
 	blr
+	.p2align 6
 
 vg_md5_update:
 	stdu %r1, -144(%r1)
@@ -194,6 +195,7 @@ vg_md5_update:
 	mtlr %r0
 	addi %r1, %r1, 144
 	blr
+	.p2align 6
 
 vg_md5_finalize:
 	stdu %r1, -144(%r1)
@@ -292,3 +294,4 @@ vg_md5_finalize:
 	mtlr %r0
 	addi %r1, %r1, 144
 	blr
+	.p2align 6

@@ -91,7 +91,8 @@ bl {vg_brainpoolp384r1_mul_mod_p}
 bl {vg_brainpoolp384r1_mul_mod_p}
 .base64 "cAuAOHALoDhgDcA4"
 bl {vg_brainpoolp384r1_add_mod_p}
-.base64 "IA0D6KYDCHwgAIBO""#,
+.base64 "IA0D6KYDCHwgAIBO"
+.p2align 6"#,
         vg_brainpoolp384r1_mul_mod_p = sym crate::ec_brainpoolp384r1::vg_brainpoolp384r1_mul_mod_p::vg_brainpoolp384r1_mul_mod_p,
         vg_brainpoolp384r1_add_mod_p = sym crate::ec_brainpoolp384r1::vg_brainpoolp384r1_add_mod_p::vg_brainpoolp384r1_add_mod_p,
         vg_brainpoolp384r1_sub_mod_p = sym crate::ec_brainpoolp384r1::vg_brainpoolp384r1_sub_mod_p::vg_brainpoolp384r1_sub_mod_p,

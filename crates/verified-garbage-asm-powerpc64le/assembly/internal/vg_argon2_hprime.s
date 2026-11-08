@@ -139,3 +139,4 @@ vg_argon2_hprime:
 	ld %r30, 864(%r31)
 	ld %r31, 872(%r31)
 	blr
+	.p2align 6

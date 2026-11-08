@@ -26,7 +26,8 @@ bne %cr0, 22b
 b 21f
 20:
 21:
-.base64 "IACATg==""#,
+.base64 "IACATg=="
+.p2align 6"#,
     )
 }
 
@@ -104,7 +105,8 @@ b 216f
 b 23f
 22:
 23:
-.base64 "AAJb6xACm+sYArvrIALb6ygC++sIAnvrIAAB6DAAITimAwh8YAIhOCAAgE4=""#,
+.base64 "AAJb6xACm+sYArvrIALb6ygC++sIAnvrIAAB6DAAITimAwh8YAIhOCAAgE4="
+.p2align 6"#,
         vg_blake2b_compress = sym super::blake2b::vg_blake2b_compress::vg_blake2b_compress,
     )
 }
@@ -140,7 +142,8 @@ b 23f
 23:
 .base64 "AAB6OEAAmjgBAKA4AADfOAEA4DgAABs5"
 bl {vg_blake2b_compress}
-.base64 "AAA66QAAPPkIADrpCAA8+RAAOukQADz5GAA66RgAPPkgADrpIAA8+SgAOukoADz5MAA66TAAPPk4ADrpOAA8+QACW+sQApvrGAK76yAC2+soAvvrCAJ76yAAAegwACE4pgMIfGACITggAIBO""#,
+.base64 "AAA66QAAPPkIADrpCAA8+RAAOukQADz5GAA66RgAPPkgADrpIAA8+SgAOukoADz5MAA66TAAPPk4ADrpOAA8+QACW+sQApvrGAK76yAC2+soAvvrCAJ76yAAAegwACE4pgMIfGACITggAIBO"
+.p2align 6"#,
         vg_blake2b_compress = sym super::blake2b::vg_blake2b_compress::vg_blake2b_compress,
     )
 }

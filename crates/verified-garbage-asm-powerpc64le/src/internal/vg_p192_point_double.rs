@@ -91,7 +91,8 @@ bl {vg_p192_mul_mod_p}
 bl {vg_p192_mul_mod_p}
 .base64 "mA2AOJgNoDiwDsA4"
 bl {vg_p192_add_mod_p}
-.base64 "cA4D6KYDCHwgAIBO""#,
+.base64 "cA4D6KYDCHwgAIBO"
+.p2align 6"#,
         vg_p192_mul_mod_p = sym crate::ec_p192::vg_p192_mul_mod_p::vg_p192_mul_mod_p,
         vg_p192_add_mod_p = sym crate::ec_p192::vg_p192_add_mod_p::vg_p192_add_mod_p,
         vg_p192_sub_mod_p = sym crate::ec_p192::vg_p192_sub_mod_p::vg_p192_sub_mod_p,

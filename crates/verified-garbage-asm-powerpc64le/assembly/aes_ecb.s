@@ -26,6 +26,7 @@ vg_aes_ecb_encrypt:
 	addi %r1, %r1, 48
 	mtlr %r0
 	blr
+	.p2align 6
 
 vg_aes_ecb_decrypt:
 	mflr %r0
@@ -49,3 +50,4 @@ vg_aes_ecb_decrypt:
 	addi %r1, %r1, 48
 	mtlr %r0
 	blr
+	.p2align 6

@@ -101,6 +101,7 @@ vg_ed448_public_key:
 	std %r11, 112(%r12)
 	addi %r1, %r1, 192
 	blr
+	.p2align 6
 
 vg_ed448_sign_cached:
 	stdu %r1, -576(%r1)
@@ -412,6 +413,7 @@ vg_ed448_sign_cached:
 	mtlr %r0
 	addi %r1, %r1, 576
 	blr
+	.p2align 6
 
 vg_ed448_verify:
 	stdu %r1, -304(%r1)
@@ -545,3 +547,4 @@ vg_ed448_verify:
 21:
 	addi %r1, %r1, 304
 	blr
+	.p2align 6

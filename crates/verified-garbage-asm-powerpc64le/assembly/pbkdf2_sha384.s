@@ -218,3 +218,4 @@ vg_pbkdf2_hmac_sha384:
 	mtlr %r0
 	addi %r1, %r1, 3440
 	blr
+	.p2align 6

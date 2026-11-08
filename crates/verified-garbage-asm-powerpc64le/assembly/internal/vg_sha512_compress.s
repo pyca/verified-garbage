@@ -696,3 +696,4 @@ vg_sha512_compress:
 	ld %r19, 160(%r6)
 	ld %r18, 8(%r6)
 	blr
+	.p2align 6

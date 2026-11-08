@@ -518,6 +518,7 @@ vg_cast5_cfb64_encrypt:
 	std %r11, 168(%r12)
 	addi %r1, %r1, 208
 	blr
+	.p2align 6
 
 vg_cast5_cfb64_decrypt:
 	stdu %r1, -208(%r1)
@@ -1033,6 +1034,7 @@ vg_cast5_cfb64_decrypt:
 	std %r11, 168(%r12)
 	addi %r1, %r1, 208
 	blr
+	.p2align 6
 
 vg_cast5_cfb64_encrypt_final:
 	stdu %r1, -208(%r1)
@@ -1590,6 +1592,7 @@ vg_cast5_cfb64_encrypt_final:
 	std %r11, 168(%r12)
 	addi %r1, %r1, 208
 	blr
+	.p2align 6
 
 vg_cast5_cfb64_decrypt_final:
 	stdu %r1, -208(%r1)
@@ -2147,3 +2150,4 @@ vg_cast5_cfb64_decrypt_final:
 	std %r11, 168(%r12)
 	addi %r1, %r1, 208
 	blr
+	.p2align 6

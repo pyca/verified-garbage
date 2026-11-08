@@ -1312,3 +1312,4 @@ vg_sha1_compress:
 	ld %r16, 80(%r6)
 	ld %r17, 88(%r6)
 	blr
+	.p2align 6

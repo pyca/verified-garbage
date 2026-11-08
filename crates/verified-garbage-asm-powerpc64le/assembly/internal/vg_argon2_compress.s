@@ -5784,3 +5784,4 @@ vg_argon2_compress:
 	ld %r21, 2104(%r6)
 	ld %r22, 2112(%r6)
 	blr
+	.p2align 6

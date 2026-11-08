@@ -1046,3 +1046,4 @@ vg_chacha20_block:
 	ld %r20, 112(%r4)
 	ld %r21, 120(%r4)
 	blr
+	.p2align 6

@@ -174,3 +174,4 @@ vg_brainpoolp512r1_sub_mod_n:
 	xor %r11, %r11, %r12
 	std %r11, 56(%r4)
 	blr
+	.p2align 6

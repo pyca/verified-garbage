@@ -86,6 +86,7 @@ vg_x25519_exchange:
 	addi %r1, %r1, 48
 	mtlr %r0
 	blr
+	.p2align 6
 
 vg_x25519_base:
 	std %r14, 1024(%r5)
@@ -3640,3 +3641,4 @@ vg_x25519_base:
 	ld %r30, 1104(%r6)
 	ld %r31, 1112(%r6)
 	blr
+	.p2align 6

@@ -18,6 +18,7 @@ vg_poly1305_init:
 	std %r5, 8(%r3)
 	std %r5, 16(%r3)
 	blr
+	.p2align 6
 
 vg_poly1305_update:
 	stdu %r1, -160(%r1)
@@ -450,6 +451,7 @@ vg_poly1305_update:
 	ld %r21, 56(%r21)
 	addi %r1, %r1, 160
 	blr
+	.p2align 6
 
 vg_poly1305_finalize:
 	stdu %r1, -160(%r1)
@@ -745,3 +747,4 @@ vg_poly1305_finalize:
 	ld %r21, 56(%r21)
 	addi %r1, %r1, 160
 	blr
+	.p2align 6

@@ -58,3 +58,4 @@ vg_scrypt:
 	ld %r30, 40(%r30)
 	addi %r1, %r1, 112
 	blr
+	.p2align 6

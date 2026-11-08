@@ -162,7 +162,8 @@ bne %cr0, 216b
 217:
 .base64 "AADDiAAA5Ih4OsZ8OGDGfHg6xnwAAMWYAQBjOAEAhDgBAKU4//9aOwAAOig="
 bne %cr0, 217b
-.base64 "AAB4OIgDH+imAwh8SAMf61ADP+tYA1/rYAN/62gDn+twA7/reAPf64AD/+sgAIBO""#,
+.base64 "AAB4OIgDH+imAwh8SAMf61ADP+tYA1/rYAN/62gDn+twA7/reAPf64AD/+sgAIBO"
+.p2align 6"#,
         vg_mlkem_decode_decompress = sym crate::mlkem1024::vg_mlkem_decode_decompress::vg_mlkem_decode_decompress,
         vg_mlkem_ntt = sym crate::mlkem1024::vg_mlkem_ntt::vg_mlkem_ntt,
         vg_mlkem_decode12 = sym crate::mlkem1024::vg_mlkem_decode12::vg_mlkem_decode12,

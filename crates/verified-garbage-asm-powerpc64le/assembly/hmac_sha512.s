@@ -244,6 +244,7 @@ vg_hmac_sha512_init:
 	std %r11, 568(%r12)
 	addi %r1, %r1, 1856
 	b 21b
+	.p2align 6
 
 vg_hmac_sha512_finalize:
 	stdu %r1, -1904(%r1)
@@ -351,3 +352,4 @@ vg_hmac_sha512_finalize:
 	mtlr %r0
 	addi %r1, %r1, 1904
 	blr
+	.p2align 6

@@ -308,3 +308,4 @@ vg_mldsa_bit_pack:
 	bne %cr0, 212b
 21:
 	blr
+	.p2align 6

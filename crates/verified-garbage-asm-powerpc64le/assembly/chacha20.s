@@ -40,6 +40,7 @@ vg_chacha20_init:
 	rldicr %r12, %r12, 6, 57
 	std %r12, 128(%r3)
 	blr
+	.p2align 6
 
 vg_chacha20_set_nonce:
 	lwz %r9, 0(%r4)
@@ -68,6 +69,7 @@ vg_chacha20_set_nonce:
 	rldicr %r12, %r12, 6, 57
 	std %r12, 128(%r3)
 	blr
+	.p2align 6
 
 vg_chacha20_apply:
 	ld %r9, 128(%r3)
@@ -204,3 +206,4 @@ vg_chacha20_apply:
 	li %r3, 0
 21:
 	blr
+	.p2align 6

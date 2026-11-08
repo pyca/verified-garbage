@@ -1523,6 +1523,7 @@ vg_triple_des_expand_key:
 	std %r8, 376(%r5)
 215:
 	blr
+	.p2align 6
 
 vg_triple_des_ecb_encrypt:
 	stdu %r1, -1056(%r1)
@@ -1678,6 +1679,7 @@ vg_triple_des_ecb_encrypt:
 	std %r11, 1016(%r12)
 	addi %r1, %r1, 1056
 	blr
+	.p2align 6
 
 vg_triple_des_ecb_decrypt:
 	stdu %r1, -1056(%r1)
@@ -1833,3 +1835,4 @@ vg_triple_des_ecb_decrypt:
 	std %r11, 1016(%r12)
 	addi %r1, %r1, 1056
 	blr
+	.p2align 6

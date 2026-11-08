@@ -693,3 +693,4 @@ vg_sha256_compress:
 	ld %r19, 96(%r6)
 	ld %r18, 8(%r6)
 	blr
+	.p2align 6

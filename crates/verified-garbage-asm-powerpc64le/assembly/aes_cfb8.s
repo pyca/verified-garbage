@@ -62,6 +62,7 @@ vg_aes_cfb8_encrypt:
 	ld %r19, 2104(%r19)
 	mtlr %r0
 	blr
+	.p2align 6
 
 vg_aes_cfb8_decrypt:
 	mflr %r0
@@ -121,3 +122,4 @@ vg_aes_cfb8_decrypt:
 	ld %r19, 2104(%r19)
 	mtlr %r0
 	blr
+	.p2align 6

@@ -23,7 +23,8 @@ bne %cr0, 22b
 b 21f
 20:
 21:
-.base64 "oAAb6HAAW+uAAJvriAC765AA2+uYAPvreAB766YDCHwgAIBO""#,
+.base64 "oAAb6HAAW+uAAJvriAC765AA2+uYAPvreAB766YDCHwgAIBO"
+.p2align 6"#,
         vg_sha256_compress = sym crate::sha256::vg_sha256_compress::vg_sha256_compress,
     )
 }

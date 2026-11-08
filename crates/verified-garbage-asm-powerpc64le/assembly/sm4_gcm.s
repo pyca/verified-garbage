@@ -4795,6 +4795,7 @@ vg_sm4_gcm_init:
 	addi %r1, %r1, 3296
 	addi %r1, %r1, 2592
 	blr
+	.p2align 6
 
 vg_sm4_gcm_seal:
 	stdu %r1, -2672(%r1)
@@ -5600,6 +5601,7 @@ vg_sm4_gcm_seal:
 	addi %r1, %r1, 3376
 	addi %r1, %r1, 2672
 	blr
+	.p2align 6
 
 vg_sm4_gcm_open:
 	stdu %r1, -2672(%r1)
@@ -6483,6 +6485,7 @@ vg_sm4_gcm_open:
 	addi %r1, %r1, 3392
 	addi %r1, %r1, 2672
 	blr
+	.p2align 6
 
 vg_sm4_gcm_stream_init:
 	stdu %r1, -2592(%r1)
@@ -6686,6 +6689,7 @@ vg_sm4_gcm_stream_init:
 	ld %r31, 232(%r12)
 	addi %r1, %r1, 2592
 	blr
+	.p2align 6
 
 vg_sm4_gcm_stream_aad:
 	stdu %r1, -2592(%r1)
@@ -6816,6 +6820,7 @@ vg_sm4_gcm_stream_aad:
 	ld %r31, 232(%r12)
 	addi %r1, %r1, 2592
 	blr
+	.p2align 6
 
 vg_sm4_gcm_stream_encrypt:
 	stdu %r1, -2592(%r1)
@@ -7239,6 +7244,7 @@ vg_sm4_gcm_stream_encrypt:
 	addi %r1, %r1, 3296
 	addi %r1, %r1, 2592
 	blr
+	.p2align 6
 
 vg_sm4_gcm_stream_decrypt:
 	stdu %r1, -2592(%r1)
@@ -7662,6 +7668,7 @@ vg_sm4_gcm_stream_decrypt:
 	addi %r1, %r1, 3296
 	addi %r1, %r1, 2592
 	blr
+	.p2align 6
 
 vg_sm4_gcm_stream_finish:
 	stdu %r1, -2592(%r1)
@@ -7854,6 +7861,7 @@ vg_sm4_gcm_stream_finish:
 	addi %r1, %r1, 3296
 	addi %r1, %r1, 2592
 	blr
+	.p2align 6
 
 vg_sm4_gcm_stream_verify:
 	stdu %r1, -2592(%r1)
@@ -8111,3 +8119,4 @@ vg_sm4_gcm_stream_verify:
 	addi %r1, %r1, 3296
 	addi %r1, %r1, 2592
 	blr
+	.p2align 6

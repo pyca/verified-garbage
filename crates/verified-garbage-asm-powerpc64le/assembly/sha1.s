@@ -21,6 +21,7 @@ vg_sha1_init:
 	ori %r8, %r8, 57840
 	stw %r8, 16(%r3)
 	blr
+	.p2align 6
 
 vg_sha1_update:
 	stdu %r1, -192(%r1)
@@ -197,6 +198,7 @@ vg_sha1_update:
 	mtlr %r0
 	addi %r1, %r1, 192
 	blr
+	.p2align 6
 
 vg_sha1_finalize:
 	stdu %r1, -192(%r1)
@@ -303,6 +305,7 @@ vg_sha1_finalize:
 	mtlr %r0
 	addi %r1, %r1, 192
 	blr
+	.p2align 6
 
 vg_sha1_digest:
 	stdu %r1, -400(%r1)
@@ -402,3 +405,4 @@ vg_sha1_digest:
 	std %r11, 352(%r12)
 	addi %r1, %r1, 400
 	blr
+	.p2align 6

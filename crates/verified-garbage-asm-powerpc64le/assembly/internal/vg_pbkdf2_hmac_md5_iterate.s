@@ -122,3 +122,4 @@ vg_pbkdf2_hmac_md5_iterate:
 	ld %r27, 72(%r27)
 	mtlr %r0
 	blr
+	.p2align 6

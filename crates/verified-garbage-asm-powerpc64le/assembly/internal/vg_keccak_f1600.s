@@ -643,3 +643,4 @@ vg_keccak_f1600:
 	ld %r19, 432(%r4)
 	ld %r20, 440(%r4)
 	blr
+	.p2align 6

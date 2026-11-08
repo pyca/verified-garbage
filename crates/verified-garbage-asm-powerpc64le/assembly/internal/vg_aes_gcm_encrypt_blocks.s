@@ -672,3 +672,4 @@ vg_aes_gcm_encrypt_blocks:
 20:
 21:
 	blr
+	.p2align 6

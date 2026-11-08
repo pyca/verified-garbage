@@ -13,7 +13,8 @@ pub(crate) unsafe extern "C" fn vg_mldsa44_verify_prepared() {
     core::arch::naked_asm!(
         r#".base64 "pgIIfNH/IfggAAH4IAXjOAAQADk="
 bl {vg_mldsa44_verify_with_cache}
-.base64 "IAAB6DAAITimAwh8IACATg==""#,
+.base64 "IAAB6DAAITimAwh8IACATg=="
+.p2align 6"#,
         vg_mldsa44_verify_with_cache = sym crate::mldsa44::vg_mldsa44_verify_with_cache::vg_mldsa44_verify_with_cache,
     )
 }

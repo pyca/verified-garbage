@@ -787,3 +787,4 @@ vg_sha512_finalize_scratch:
 	ld %r31, 216(%r27)
 	ld %r27, 184(%r27)
 	blr
+	.p2align 6

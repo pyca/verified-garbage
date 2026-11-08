@@ -75,6 +75,7 @@ vg_aes_xts_encrypt_unit:
 	ld %r19, 2248(%r19)
 	mtlr %r0
 	blr
+	.p2align 6
 
 vg_aes_xts_decrypt_unit:
 	mflr %r0
@@ -188,3 +189,4 @@ vg_aes_xts_decrypt_unit:
 	ld %r19, 2248(%r19)
 	mtlr %r0
 	blr
+	.p2align 6

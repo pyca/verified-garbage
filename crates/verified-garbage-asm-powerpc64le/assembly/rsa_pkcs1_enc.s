@@ -407,6 +407,7 @@ vg_rsa_pkcs1_decrypt:
 	mtlr %r0
 	addi %r1, %r1, 304
 	blr
+	.p2align 6
 
 vg_rsa_pkcs1_encrypt_random:
 	stdu %r1, -1216(%r1)
@@ -555,3 +556,4 @@ vg_rsa_pkcs1_encrypt_random:
 	ld %r31, 168(%r12)
 	addi %r1, %r1, 1216
 	blr
+	.p2align 6

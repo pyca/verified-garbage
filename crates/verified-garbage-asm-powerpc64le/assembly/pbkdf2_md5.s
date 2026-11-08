@@ -146,3 +146,4 @@ vg_pbkdf2_hmac_md5:
 	mtlr %r0
 	addi %r1, %r1, 1056
 	blr
+	.p2align 6

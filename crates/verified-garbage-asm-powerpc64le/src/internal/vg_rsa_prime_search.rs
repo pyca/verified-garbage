@@ -62,7 +62,8 @@ bne %cr0, 215b
 22:
 .base64 "iAA/6fz/KTkAACko"
 beq %cr0, 20b
-.base64 "IAAB6DAAITimAwh8kAAf6QAAP+kIAF/pEAB/6RgAn+k4AP/ogADf6IgAf+ggAP/rAAAo+QgASPkQAGj5GACI+QAAx/jAACE4IACATg==""#,
+.base64 "IAAB6DAAITimAwh8kAAf6QAAP+kIAF/pEAB/6RgAn+k4AP/ogADf6IgAf+ggAP/rAAAo+QgASPkQAGj5GACI+QAAx/jAACE4IACATg=="
+.p2align 6"#,
         vg_rsa_keygen_candidate = sym crate::rsa_keygen::vg_rsa_keygen_candidate::vg_rsa_keygen_candidate,
     )
 }

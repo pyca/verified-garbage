@@ -5068,6 +5068,7 @@ vg_sm4_expand_key:
 	std %r11, 3208(%r12)
 	addi %r1, %r1, 3248
 	blr
+	.p2align 6
 
 vg_sm4_ecb_encrypt:
 	stdu %r1, -3248(%r1)
@@ -12221,6 +12222,7 @@ vg_sm4_ecb_encrypt:
 	std %r11, 3208(%r12)
 	addi %r1, %r1, 3248
 	blr
+	.p2align 6
 
 vg_sm4_ecb_decrypt:
 	stdu %r1, -3248(%r1)
@@ -19374,3 +19376,4 @@ vg_sm4_ecb_decrypt:
 	std %r11, 3208(%r12)
 	addi %r1, %r1, 3248
 	blr
+	.p2align 6

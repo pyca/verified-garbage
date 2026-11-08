@@ -260,3 +260,4 @@ vg_poly1305_blocks:
 	ld %r21, 56(%r21)
 	addi %r1, %r1, 160
 	blr
+	.p2align 6

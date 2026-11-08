@@ -41,7 +41,8 @@ bne %cr0, 22b
 b 21f
 20:
 21:
-.base64 "AAB9OAACW+sQApvrGAK76yAC2+soAvvrCAJ76yAAAegwACE4pgMIfCAAgE4=""#,
+.base64 "AAB9OAACW+sQApvrGAK76yAC2+soAvvrCAJ76yAAAegwACE4pgMIfCAAgE4="
+.p2align 6"#,
         vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
 }
@@ -65,7 +66,8 @@ pub unsafe extern "C" fn vg_sha3_224_finalize(state: *mut [u64; 25], pos: usize,
 bl {vg_keccak_pad_scratch}
 .base64 "AAB9OJAAgDgAAKA4AADeOBwA4DgAAB85"
 bl {vg_keccak_squeeze_scratch}
-.base64 "mAIf6KYDCHyAAr/riALf65AC/+vAAiE4IACATg==""#,
+.base64 "mAIf6KYDCHyAAr/riALf65AC/+vAAiE4IACATg=="
+.p2align 6"#,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
     )
@@ -109,7 +111,8 @@ bne %cr0, 22b
 b 21f
 20:
 21:
-.base64 "AAB9OAACW+sQApvrGAK76yAC2+soAvvrCAJ76yAAAegwACE4pgMIfCAAgE4=""#,
+.base64 "AAB9OAACW+sQApvrGAK76yAC2+soAvvrCAJ76yAAAegwACE4pgMIfCAAgE4="
+.p2align 6"#,
         vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
 }
@@ -133,7 +136,8 @@ pub unsafe extern "C" fn vg_sha3_256_finalize(state: *mut [u64; 25], pos: usize,
 bl {vg_keccak_pad_scratch}
 .base64 "AAB9OIgAgDgAAKA4AADeOCAA4DgAAB85"
 bl {vg_keccak_squeeze_scratch}
-.base64 "mAIf6KYDCHyAAr/riALf65AC/+vAAiE4IACATg==""#,
+.base64 "mAIf6KYDCHyAAr/riALf65AC/+vAAiE4IACATg=="
+.p2align 6"#,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
     )
@@ -177,7 +181,8 @@ bne %cr0, 22b
 b 21f
 20:
 21:
-.base64 "AAB9OAACW+sQApvrGAK76yAC2+soAvvrCAJ76yAAAegwACE4pgMIfCAAgE4=""#,
+.base64 "AAB9OAACW+sQApvrGAK76yAC2+soAvvrCAJ76yAAAegwACE4pgMIfCAAgE4="
+.p2align 6"#,
         vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
 }
@@ -201,7 +206,8 @@ pub unsafe extern "C" fn vg_sha3_384_finalize(state: *mut [u64; 25], pos: usize,
 bl {vg_keccak_pad_scratch}
 .base64 "AAB9OGgAgDgAAKA4AADeODAA4DgAAB85"
 bl {vg_keccak_squeeze_scratch}
-.base64 "mAIf6KYDCHyAAr/riALf65AC/+vAAiE4IACATg==""#,
+.base64 "mAIf6KYDCHyAAr/riALf65AC/+vAAiE4IACATg=="
+.p2align 6"#,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
     )
@@ -245,7 +251,8 @@ bne %cr0, 22b
 b 21f
 20:
 21:
-.base64 "AAB9OAACW+sQApvrGAK76yAC2+soAvvrCAJ76yAAAegwACE4pgMIfCAAgE4=""#,
+.base64 "AAB9OAACW+sQApvrGAK76yAC2+soAvvrCAJ76yAAAegwACE4pgMIfCAAgE4="
+.p2align 6"#,
         vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
 }
@@ -269,7 +276,8 @@ pub unsafe extern "C" fn vg_sha3_512_finalize(state: *mut [u64; 25], pos: usize,
 bl {vg_keccak_pad_scratch}
 .base64 "AAB9OEgAgDgAAKA4AADeOEAA4DgAAB85"
 bl {vg_keccak_squeeze_scratch}
-.base64 "mAIf6KYDCHyAAr/riALf65AC/+vAAiE4IACATg==""#,
+.base64 "mAIf6KYDCHyAAr/riALf65AC/+vAAiE4IACATg=="
+.p2align 6"#,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
     )
@@ -313,7 +321,8 @@ bne %cr0, 22b
 b 21f
 20:
 21:
-.base64 "AAB9OAACW+sQApvrGAK76yAC2+soAvvrCAJ76yAAAegwACE4pgMIfCAAgE4=""#,
+.base64 "AAB9OAACW+sQApvrGAK76yAC2+soAvvrCAJ76yAAAegwACE4pgMIfCAAgE4="
+.p2align 6"#,
         vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
 }
@@ -332,7 +341,8 @@ pub unsafe extern "C" fn vg_shake128_finalize(state: *mut [u64; 25], pos: usize)
     core::arch::naked_asm!(
         r#".base64 "Yf0h+CAAoTgAAOU4AACkOKgAgDgfAMA4pgIIfNH/IfggAAH4FCojfQAASYl4Mkp9AABJmRQiI33//yk5AABJiYAAYDl4Wkp9AABJmQAAhzg="
 bl {vg_keccak_f1600}
-.base64 "IAAB6DAAITimAwh8oAIhOCAAgE4=""#,
+.base64 "IAAB6DAAITimAwh8oAIhOCAAgE4="
+.p2align 6"#,
         vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
 }
@@ -373,7 +383,8 @@ bne %cr0, 22b
 b 21f
 20:
 21:
-.base64 "AAB9OAACW+sQApvrGAK76yAC2+soAvvrCAJ76yAAAegwACE4pgMIfKACITggAIBO""#,
+.base64 "AAB9OAACW+sQApvrGAK76yAC2+soAvvrCAJ76yAAAegwACE4pgMIfKACITggAIBO"
+.p2align 6"#,
         vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
 }
@@ -392,7 +403,8 @@ pub unsafe extern "C" fn vg_shake256_finalize(state: *mut [u64; 25], pos: usize)
     core::arch::naked_asm!(
         r#".base64 "Yf0h+CAAoTgAAOU4AACkOIgAgDgfAMA4pgIIfNH/IfggAAH4FCojfQAASYl4Mkp9AABJmRQiI33//yk5AABJiYAAYDl4Wkp9AABJmQAAhzg="
 bl {vg_keccak_f1600}
-.base64 "IAAB6DAAITimAwh8oAIhOCAAgE4=""#,
+.base64 "IAAB6DAAITimAwh8oAIhOCAAgE4="
+.p2align 6"#,
         vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
 }
@@ -433,7 +445,8 @@ bne %cr0, 22b
 b 21f
 20:
 21:
-.base64 "AAB9OAACW+sQApvrGAK76yAC2+soAvvrCAJ76yAAAegwACE4pgMIfKACITggAIBO""#,
+.base64 "AAB9OAACW+sQApvrGAK76yAC2+soAvvrCAJ76yAAAegwACE4pgMIfKACITggAIBO"
+.p2align 6"#,
         vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
 }

@@ -14980,3 +14980,4 @@ vg_rsa_keygen_key:
 	ld %r30, 96(%r31)
 	ld %r31, 104(%r31)
 	blr
+	.p2align 6

@@ -60,6 +60,7 @@ vg_aes_gcm_init:
 	ld %r31, 232(%r12)
 	addi %r1, %r1, 2592
 	blr
+	.p2align 6
 
 vg_aes_gcm_stream_init:
 	stdu %r1, -2592(%r1)
@@ -263,6 +264,7 @@ vg_aes_gcm_stream_init:
 	ld %r31, 232(%r12)
 	addi %r1, %r1, 2592
 	blr
+	.p2align 6
 
 vg_aes_gcm_stream_aad:
 	stdu %r1, -2592(%r1)
@@ -393,6 +395,7 @@ vg_aes_gcm_stream_aad:
 	ld %r31, 232(%r12)
 	addi %r1, %r1, 2592
 	blr
+	.p2align 6
 
 vg_aes_gcm_stream_encrypt:
 	stdu %r1, -2592(%r1)
@@ -655,6 +658,7 @@ vg_aes_gcm_stream_encrypt:
 	ld %r31, 232(%r12)
 	addi %r1, %r1, 2592
 	blr
+	.p2align 6
 
 vg_aes_gcm_stream_decrypt:
 	stdu %r1, -2592(%r1)
@@ -917,6 +921,7 @@ vg_aes_gcm_stream_decrypt:
 	ld %r31, 232(%r12)
 	addi %r1, %r1, 2592
 	blr
+	.p2align 6
 
 vg_aes_gcm_stream_finish:
 	stdu %r1, -2592(%r1)
@@ -1027,6 +1032,7 @@ vg_aes_gcm_stream_finish:
 	ld %r31, 232(%r12)
 	addi %r1, %r1, 2592
 	blr
+	.p2align 6
 
 vg_aes_gcm_stream_verify:
 	stdu %r1, -2592(%r1)
@@ -1202,6 +1208,7 @@ vg_aes_gcm_stream_verify:
 	ld %r31, 232(%r12)
 	addi %r1, %r1, 2592
 	blr
+	.p2align 6
 
 vg_aes_gcm_seal:
 	stdu %r1, -2672(%r1)
@@ -1956,6 +1963,7 @@ vg_aes_gcm_seal:
 	ld %r31, 232(%r12)
 	addi %r1, %r1, 2672
 	blr
+	.p2align 6
 
 vg_aes_gcm_open:
 	stdu %r1, -2688(%r1)
@@ -2594,6 +2602,7 @@ vg_aes_gcm_open:
 	ld %r31, 232(%r12)
 	addi %r1, %r1, 2688
 	blr
+	.p2align 6
 
 vg_aes_gcm_seal_gather:
 	stdu %r1, -160(%r1)
@@ -2738,6 +2747,7 @@ vg_aes_gcm_seal_gather:
 21:
 	addi %r1, %r1, 160
 	blr
+	.p2align 6
 
 vg_aes_gcm_open_to:
 	stdu %r1, -2720(%r1)
@@ -2778,3 +2788,4 @@ vg_aes_gcm_open_to:
 	mtlr %r0
 	addi %r1, %r1, 2720
 	blr
+	.p2align 6

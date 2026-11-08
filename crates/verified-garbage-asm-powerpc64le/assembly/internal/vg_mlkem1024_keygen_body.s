@@ -309,3 +309,4 @@ vg_mlkem1024_keygen_body:
 	ld %r30, 888(%r31)
 	ld %r31, 896(%r31)
 	blr
+	.p2align 6

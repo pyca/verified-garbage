@@ -69,7 +69,8 @@ bl {vg_p192_add_mod_n}
 bl {vg_p192_mul_mod_n}
 .base64 "SASAODAEoDigAMA4"
 bl {vg_p192_mul_mod_n}
-.base64 "SASj6FAEg+h4I6V8WASD6HgjpXwAAIA4UCCFfHgrhHzgD4R4AACgOFAopHxgBIPoOCiEfGAEg/hgBEPpoAOD6DhQhHwQAMA4KDWOfKgDg+g4UIR8CADAOCg1jnywA4PoOFCEfAAAwDgoNY58SASD6DhQhHwoAMA4KDWOfFAEg+g4UIR8IADAOCg1jnxYBIPoOFCEfBgAwDgoNY58AQCAODggRH0QAAPopgMIfAAAw+kIAOPreCODfCAAgE4=""#,
+.base64 "SASj6FAEg+h4I6V8WASD6HgjpXwAAIA4UCCFfHgrhHzgD4R4AACgOFAopHxgBIPoOCiEfGAEg/hgBEPpoAOD6DhQhHwQAMA4KDWOfKgDg+g4UIR8CADAOCg1jnywA4PoOFCEfAAAwDgoNY58SASD6DhQhHwoAMA4KDWOfFAEg+g4UIR8IADAOCg1jnxYBIPoOFCEfBgAwDgoNY58AQCAODggRH0QAAPopgMIfAAAw+kIAOPreCODfCAAgE4="
+.p2align 6"#,
         vg_p192_point_double = sym crate::ec_p192::vg_p192_point_double::vg_p192_point_double,
         vg_p192_point_add = sym crate::ec_p192::vg_p192_point_add::vg_p192_point_add,
         vg_p192_mul_mod_p = sym crate::ec_p192::vg_p192_mul_mod_p::vg_p192_mul_mod_p,

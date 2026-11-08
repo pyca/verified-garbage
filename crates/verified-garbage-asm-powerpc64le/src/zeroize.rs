@@ -30,6 +30,7 @@ bne %cr0, 25b
 b 24f
 23:
 24:
-.base64 "IACATg==""#,
+.base64 "IACATg=="
+.p2align 6"#,
     )
 }

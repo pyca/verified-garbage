@@ -270,7 +270,8 @@ bne %cr0, 275b
 bne %cr0, 276b
 .base64 "AQBgOA=="
 27:
-.base64 "gADV6YgA9emQABXqmAA16qAAVeqoAHXqsACV6rgA1erAALXqIACATg==""#,
+.base64 "gADV6YgA9emQABXqmAA16qAAVeqoAHXqsACV6rgA1erAALXqIACATg=="
+.p2align 6"#,
     )
 }
 
@@ -839,7 +840,8 @@ bne %cr0, 2147b
 bne %cr0, 2148b
 .base64 "mAB/gA=="
 25:
-.base64 "AADf6QgA/+kQAB/qGAA/6iAAX+ooAH/qMACf6jgAv+pAAN/qSAD/6lAAH+tYAL/rYADf62gA/+sgAIBO""#,
+.base64 "AADf6QgA/+kQAB/qGAA/6iAAX+ooAH/qMACf6jgAv+pAAN/qSAD/6lAAH+tYAL/rYADf62gA/+sgAIBO"
+.p2align 6"#,
     )
 }
 
@@ -1921,7 +1923,8 @@ b 22f
 21:
 .base64 "AABgOA=="
 22:
-.base64 "AADf6QgA/+kQAB/qGAA/6iAAX+ooAH/qMACf6jgAv+pAAN/qSAD/6lAAH+tYAF/rYAC/62gA3+twAP/rIACATg==""#,
+.base64 "AADf6QgA/+kQAB/qGAA/6iAAX+ooAH/qMACf6jgAv+pAAN/qSAD/6lAAH+tYAF/rYAC/62gA3+twAP/rIACATg=="
+.p2align 6"#,
     )
 }
 
@@ -3405,7 +3408,8 @@ bne %cr0, 2423b
 bne %cr0, 2424b
 .base64 "mAB/gA=="
 25:
-.base64 "LABgOdLxa30U+mt9oABrOQAAy+kIAOvpEAAL6hgAK+ogAEvqKABr6jAAi+o4AKvqQADL6kgA6+pQAAvrWAAr62AAS+toAGvrcACL63gAq+uAAMvriADr6yAAgE4=""#,
+.base64 "LABgOdLxa30U+mt9oABrOQAAy+kIAOvpEAAL6hgAK+ogAEvqKABr6jAAi+o4AKvqQADL6kgA6+pQAAvrWAAr62AAS+toAGvrcACL63gAq+uAAMvriADr6yAAgE4="
+.p2align 6"#,
     )
 }
 

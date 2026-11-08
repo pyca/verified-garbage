@@ -3775,6 +3775,7 @@ vg_blowfish_expand_key:
 	std %r11, 24(%r12)
 	addi %r1, %r1, 64
 	blr
+	.p2align 6
 
 vg_blowfish_ecb_encrypt:
 	stdu %r1, -288(%r1)
@@ -4076,6 +4077,7 @@ vg_blowfish_ecb_encrypt:
 	std %r11, 24(%r12)
 	addi %r1, %r1, 288
 	blr
+	.p2align 6
 
 vg_blowfish_ecb_decrypt:
 	stdu %r1, -288(%r1)
@@ -4377,3 +4379,4 @@ vg_blowfish_ecb_decrypt:
 	std %r11, 24(%r12)
 	addi %r1, %r1, 288
 	blr
+	.p2align 6

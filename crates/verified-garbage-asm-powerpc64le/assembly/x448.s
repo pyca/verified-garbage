@@ -134,6 +134,7 @@ vg_x448_exchange:
 	addi %r1, %r1, 48
 	mtlr %r0
 	blr
+	.p2align 6
 
 vg_x448_base:
 	addi %r6, %r5, 0
@@ -7301,3 +7302,4 @@ vg_x448_base:
 	xor %r5, %r5, %r7
 	stw %r5, 52(%r3)
 	blr
+	.p2align 6

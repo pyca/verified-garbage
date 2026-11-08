@@ -63,7 +63,8 @@ bl {vg_secp256k1_mul_mod_p}
 bl {vg_secp256k1_mul_mod_p}
 .base64 "4AyAOOAMoDhADsA4"
 bl {vg_secp256k1_add_mod_p}
-.base64 "AA4D6KYDCHwgAIBO""#,
+.base64 "AA4D6KYDCHwgAIBO"
+.p2align 6"#,
         vg_secp256k1_mul_mod_p = sym crate::ec_secp256k1::vg_secp256k1_mul_mod_p::vg_secp256k1_mul_mod_p,
         vg_secp256k1_add_mod_p = sym crate::ec_secp256k1::vg_secp256k1_add_mod_p::vg_secp256k1_add_mod_p,
         vg_secp256k1_sub_mod_p = sym crate::ec_secp256k1::vg_secp256k1_sub_mod_p::vg_secp256k1_sub_mod_p,

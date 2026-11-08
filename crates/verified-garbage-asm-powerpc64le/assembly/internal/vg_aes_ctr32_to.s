@@ -205,3 +205,4 @@ vg_aes_ctr32_to:
 20:
 21:
 	blr
+	.p2align 6

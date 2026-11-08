@@ -14,7 +14,8 @@
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_md5_init(state: *mut [u8; 80]) {
     core::arch::naked_asm!(
-        r#".base64 "RWcAPQEjCGEAAAORze8APYmrCGEEAAORupgAPf7cCGEIAAORMhAAPXZUCGEMAAORIACATg==""#,
+        r#".base64 "RWcAPQEjCGEAAAORze8APYmrCGEEAAORupgAPf7cCGEIAAORMhAAPXZUCGEMAAORIACATg=="
+.p2align 6"#,
     )
 }
 
@@ -123,7 +124,8 @@ bne %cr0, 22b
 b 21f
 20:
 21:
-.base64 "QABb61AAm+tYALvrYADb62gA++tIAHvrIAAB6DAAITimAwh8kAAhOCAAgE4=""#,
+.base64 "QABb61AAm+tYALvrYADb62gA++tIAHvrIAAB6DAAITimAwh8kAAhOCAAgE4="
+.p2align 6"#,
         vg_md5_compress = sym super::md5::vg_md5_compress::vg_md5_compress,
     )
 }
@@ -176,7 +178,8 @@ b 210f
 bl {vg_md5_compress}
 .base64 "AADAO////zsAAD8o"
 beq %cr0, 20b
-.base64 "AAAagQAAHJEEABqBBAAckQgAGoEIAByRDAAagQwAHJFAAFvrUACb61gAu+tgANvraAD760gAe+sgAAHoMAAhOKYDCHyQACE4IACATg==""#,
+.base64 "AAAagQAAHJEEABqBBAAckQgAGoEIAByRDAAagQwAHJFAAFvrUACb61gAu+tgANvraAD760gAe+sgAAHoMAAhOKYDCHyQACE4IACATg=="
+.p2align 6"#,
         vg_md5_compress = sym super::md5::vg_md5_compress::vg_md5_compress,
     )
 }

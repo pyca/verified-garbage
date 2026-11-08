@@ -49,6 +49,7 @@ vg_cmac_triple_des_stream_init:
 	mtlr %r0
 	addi %r1, %r1, 672
 	blr
+	.p2align 6
 
 vg_cmac_triple_des_absorb:
 	stdu %r1, -720(%r1)
@@ -168,6 +169,7 @@ vg_cmac_triple_des_absorb:
 	mtlr %r0
 	addi %r1, %r1, 720
 	blr
+	.p2align 6
 
 vg_cmac_triple_des_finish:
 	stdu %r1, -672(%r1)
@@ -234,3 +236,4 @@ vg_cmac_triple_des_finish:
 	mtlr %r0
 	addi %r1, %r1, 672
 	blr
+	.p2align 6

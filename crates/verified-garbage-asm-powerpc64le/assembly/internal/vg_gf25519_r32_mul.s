@@ -183,3 +183,4 @@ vg_gf25519_r32_mul:
 	add %r7, %r7, %r8
 	stw %r7, 0(%r12)
 	blr
+	.p2align 6

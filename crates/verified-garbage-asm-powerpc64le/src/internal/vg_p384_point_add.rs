@@ -91,7 +91,8 @@ bl {vg_p384_mul_mod_p}
 bl {vg_p384_mul_mod_p}
 .base64 "cAuAOHALoDhgDcA4"
 bl {vg_p384_add_mod_p}
-.base64 "IA0D6KYDCHwgAIBO""#,
+.base64 "IA0D6KYDCHwgAIBO"
+.p2align 6"#,
         vg_p384_mul_mod_p = sym crate::ec_p384::vg_p384_mul_mod_p::vg_p384_mul_mod_p,
         vg_p384_add_mod_p = sym crate::ec_p384::vg_p384_add_mod_p::vg_p384_add_mod_p,
         vg_p384_sub_mod_p = sym crate::ec_p384::vg_p384_sub_mod_p::vg_p384_sub_mod_p,

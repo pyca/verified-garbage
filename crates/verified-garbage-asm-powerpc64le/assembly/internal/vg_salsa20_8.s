@@ -470,3 +470,4 @@ vg_salsa20_8:
 	ld %r20, 48(%r4)
 	ld %r21, 56(%r4)
 	blr
+	.p2align 6

@@ -32,7 +32,8 @@ b 21f
 20:
 .base64 "AQBgOA=="
 21:
-.base64 "IACATg==""#,
+.base64 "IACATg=="
+.p2align 6"#,
     )
 }
 
@@ -58,6 +59,7 @@ bne %cr0, 22b
 b 21f
 20:
 21:
-.base64 "IACATg==""#,
+.base64 "IACATg=="
+.p2align 6"#,
     )
 }

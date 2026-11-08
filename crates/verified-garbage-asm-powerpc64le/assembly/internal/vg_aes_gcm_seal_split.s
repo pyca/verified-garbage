@@ -794,3 +794,4 @@ vg_aes_gcm_seal_split:
 	addi %r1, %r1, 112
 	addi %r1, %r1, 2688
 	blr
+	.p2align 6

@@ -96,7 +96,8 @@ bne %cr0, 22b
 b 21f
 20:
 21:
-.base64 "sABb68AAm+vIALvr0ADb69gA++u4AHvrIACATg==""#,
+.base64 "sABb68AAm+vIALvr0ADb69gA++u4AHvrIACATg=="
+.p2align 6"#,
         VG_SHA512_PPC64LE_K = sym crate::consts::VG_SHA512_PPC64LE_K,
     )
 }

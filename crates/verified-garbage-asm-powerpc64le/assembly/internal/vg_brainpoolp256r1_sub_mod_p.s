@@ -94,3 +94,4 @@ vg_brainpoolp256r1_sub_mod_p:
 	xor %r11, %r11, %r12
 	std %r11, 24(%r4)
 	blr
+	.p2align 6

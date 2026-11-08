@@ -3158,3 +3158,4 @@ vg_sm4_crypt_prepared:
 	ld %r30, 3200(%r8)
 	ld %r31, 3208(%r8)
 	blr
+	.p2align 6

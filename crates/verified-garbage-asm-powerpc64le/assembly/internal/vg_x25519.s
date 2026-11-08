@@ -3550,3 +3550,4 @@ vg_x25519:
 	xor %r5, %r5, %r7
 	stw %r5, 28(%r3)
 	blr
+	.p2align 6

@@ -601,3 +601,4 @@ vg_aes_gcm_open_split:
 	ld %r30, 224(%r12)
 	ld %r31, 232(%r12)
 	blr
+	.p2align 6

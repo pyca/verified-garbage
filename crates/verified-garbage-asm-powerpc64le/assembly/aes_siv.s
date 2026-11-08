@@ -38,6 +38,7 @@ vg_aes_siv_init:
 	mtlr %r0
 	addi %r1, %r1, 2592
 	blr
+	.p2align 6
 
 vg_aes_siv_encrypt:
 	stdu %r1, -2608(%r1)
@@ -383,6 +384,7 @@ vg_aes_siv_encrypt:
 	ld %r14, 128(%r14)
 	addi %r1, %r1, 2608
 	blr
+	.p2align 6
 
 vg_aes_siv_decrypt:
 	stdu %r1, -2608(%r1)
@@ -761,3 +763,4 @@ vg_aes_siv_decrypt:
 	ld %r14, 128(%r14)
 	addi %r1, %r1, 2608
 	blr
+	.p2align 6

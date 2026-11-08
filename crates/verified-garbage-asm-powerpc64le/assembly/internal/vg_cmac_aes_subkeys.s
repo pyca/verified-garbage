@@ -59,3 +59,4 @@ vg_cmac_aes_subkeys:
 	ld %r15, 2072(%r15)
 	mtlr %r0
 	blr
+	.p2align 6

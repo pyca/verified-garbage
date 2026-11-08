@@ -30,6 +30,7 @@ vg_sm3_init:
 	ori %r8, %r8, 3662
 	stw %r8, 28(%r3)
 	blr
+	.p2align 6
 
 vg_sm3_update:
 	stdu %r1, -192(%r1)
@@ -206,6 +207,7 @@ vg_sm3_update:
 	mtlr %r0
 	addi %r1, %r1, 192
 	blr
+	.p2align 6
 
 vg_sm3_finalize:
 	stdu %r1, -192(%r1)
@@ -321,3 +323,4 @@ vg_sm3_finalize:
 	mtlr %r0
 	addi %r1, %r1, 192
 	blr
+	.p2align 6

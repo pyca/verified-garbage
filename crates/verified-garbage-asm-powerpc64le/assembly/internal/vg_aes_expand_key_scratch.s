@@ -77,3 +77,4 @@ vg_aes_expand_key_scratch:
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 21b
 	blr
+	.p2align 6

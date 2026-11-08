@@ -30,6 +30,7 @@ b 23f
 23:
 .base64 "///nOOAP43g="
 21:
-.base64 "IACATg==""#,
+.base64 "IACATg=="
+.p2align 6"#,
     )
 }

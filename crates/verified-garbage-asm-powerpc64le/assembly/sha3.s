@@ -81,6 +81,7 @@ vg_sha3_224_update:
 	addi %r1, %r1, 48
 	mtlr %r0
 	blr
+	.p2align 6
 
 vg_sha3_224_finalize:
 	stdu %r1, -704(%r1)
@@ -112,6 +113,7 @@ vg_sha3_224_finalize:
 	ld %r31, 656(%r31)
 	addi %r1, %r1, 704
 	blr
+	.p2align 6
 
 vg_sha3_256_update:
 	addi %r8, %r7, 0
@@ -190,6 +192,7 @@ vg_sha3_256_update:
 	addi %r1, %r1, 48
 	mtlr %r0
 	blr
+	.p2align 6
 
 vg_sha3_256_finalize:
 	stdu %r1, -704(%r1)
@@ -221,6 +224,7 @@ vg_sha3_256_finalize:
 	ld %r31, 656(%r31)
 	addi %r1, %r1, 704
 	blr
+	.p2align 6
 
 vg_sha3_384_update:
 	addi %r8, %r7, 0
@@ -299,6 +303,7 @@ vg_sha3_384_update:
 	addi %r1, %r1, 48
 	mtlr %r0
 	blr
+	.p2align 6
 
 vg_sha3_384_finalize:
 	stdu %r1, -704(%r1)
@@ -330,6 +335,7 @@ vg_sha3_384_finalize:
 	ld %r31, 656(%r31)
 	addi %r1, %r1, 704
 	blr
+	.p2align 6
 
 vg_sha3_512_update:
 	addi %r8, %r7, 0
@@ -408,6 +414,7 @@ vg_sha3_512_update:
 	addi %r1, %r1, 48
 	mtlr %r0
 	blr
+	.p2align 6
 
 vg_sha3_512_finalize:
 	stdu %r1, -704(%r1)
@@ -439,6 +446,7 @@ vg_sha3_512_finalize:
 	ld %r31, 656(%r31)
 	addi %r1, %r1, 704
 	blr
+	.p2align 6
 
 vg_shake128_update:
 	addi %r8, %r7, 0
@@ -517,6 +525,7 @@ vg_shake128_update:
 	addi %r1, %r1, 48
 	mtlr %r0
 	blr
+	.p2align 6
 
 vg_shake128_finalize:
 	stdu %r1, -672(%r1)
@@ -545,6 +554,7 @@ vg_shake128_finalize:
 	mtlr %r0
 	addi %r1, %r1, 672
 	blr
+	.p2align 6
 
 vg_shake128_squeeze:
 	stdu %r1, -672(%r1)
@@ -621,6 +631,7 @@ vg_shake128_squeeze:
 	mtlr %r0
 	addi %r1, %r1, 672
 	blr
+	.p2align 6
 
 vg_shake256_finalize:
 	stdu %r1, -672(%r1)
@@ -649,6 +660,7 @@ vg_shake256_finalize:
 	mtlr %r0
 	addi %r1, %r1, 672
 	blr
+	.p2align 6
 
 vg_shake256_squeeze:
 	stdu %r1, -672(%r1)
@@ -725,3 +737,4 @@ vg_shake256_squeeze:
 	mtlr %r0
 	addi %r1, %r1, 672
 	blr
+	.p2align 6

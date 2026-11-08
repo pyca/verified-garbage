@@ -35,7 +35,8 @@ bne %cr0, 24b
 bl {vg_scrypt_blockmix}
 .base64 "//+cOwAAPCg="
 bne %cr0, 23b
-.base64 "qAAb6KYDCHyAABvriAA765AAW+uYAJvroAC767AAe+sgAIBO""#,
+.base64 "qAAb6KYDCHyAABvriAA765AAW+uYAJvroAC767AAe+sgAIBO"
+.p2align 6"#,
         vg_scrypt_blockmix = sym crate::scrypt::vg_scrypt_blockmix::vg_scrypt_blockmix,
     )
 }

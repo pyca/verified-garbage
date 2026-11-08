@@ -205,7 +205,8 @@ bl {vg_brainpoolp384r1_mul_mod_p}
 bl {vg_brainpoolp384r1_mul_mod_n}
 .base64 "wAeAOGAHoDiQB8A4"
 bl {vg_brainpoolp384r1_sub_mod_n}
-.base64 "QAOj6EgDg+h4I6V8UAOD6HgjpXxYA4PoeCOlfGADg+h4I6V8aAOD6HgjpXwAAIA4UCCFfHgrhHzgD4R4AACgOFAopHyACIPoOCiEfIAIg/jAB6PoyAeD6HgjpXzQB4PoeCOlfNgHg+h4I6V84AeD6HgjpXzoB4PoeCOlfAAAgDhQIIV8eCuEfOAPhHgAAKA4UCikfAAAgDhQIKV8//+lOIAIg+g4KIR8gAiD+IAIQ+kBAIA4OCBEfRAAA+imAwh8AADD6QgA4+t4I4N8cAAhOCAAgE4=""#,
+.base64 "QAOj6EgDg+h4I6V8UAOD6HgjpXxYA4PoeCOlfGADg+h4I6V8aAOD6HgjpXwAAIA4UCCFfHgrhHzgD4R4AACgOFAopHyACIPoOCiEfIAIg/jAB6PoyAeD6HgjpXzQB4PoeCOlfNgHg+h4I6V84AeD6HgjpXzoB4PoeCOlfAAAgDhQIIV8eCuEfOAPhHgAAKA4UCikfAAAgDhQIKV8//+lOIAIg+g4KIR8gAiD+IAIQ+kBAIA4OCBEfRAAA+imAwh8AADD6QgA4+t4I4N8cAAhOCAAgE4="
+.p2align 6"#,
         vg_brainpoolp384r1_mul_mod_p = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_mul_mod_p::vg_brainpoolp384r1_mul_mod_p,
         vg_brainpoolp384r1_add_mod_p = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_add_mod_p::vg_brainpoolp384r1_add_mod_p,
         vg_brainpoolp384r1_sub_mod_p = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_sub_mod_p::vg_brainpoolp384r1_sub_mod_p,
@@ -297,7 +298,8 @@ bne %cr0, 213b
 214:
 .base64 "AADEmAEAhDj//6U4AAAlKA=="
 bne %cr0, 214b
-.base64 "UAIhOCAAAegwACE4pgMIfCAAgE4=""#,
+.base64 "UAIhOCAAAegwACE4pgMIfCAAgE4="
+.p2align 6"#,
         vg_ecdsa_brainpoolp384r1_sign_k = sym super::ecdsa_brainpoolp384r1::vg_ecdsa_brainpoolp384r1_sign_k::vg_ecdsa_brainpoolp384r1_sign_k,
     )
 }

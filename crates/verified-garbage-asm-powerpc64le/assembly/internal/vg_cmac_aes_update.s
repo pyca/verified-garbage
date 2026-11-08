@@ -52,3 +52,4 @@ vg_cmac_aes_update:
 	ld %r19, 2104(%r19)
 	mtlr %r0
 	blr
+	.p2align 6

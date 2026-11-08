@@ -299,6 +299,7 @@ bne %cr0, 289b
 290:
 .base64 "AAAPiDjQAHwAABCYAQAQOv//7zn//zE6AAAxKA=="
 bne %cr0, 290b
-.base64 "AQBgODjQY3yAANfpiAD36ZAAF+qYADfqoABX6qgAd+qwAJfquAC36sAA1+rIABfr0AA369gAV+vgAHfr6ACX6/AAt+v4APfqIACATg==""#,
+.base64 "AQBgODjQY3yAANfpiAD36ZAAF+qYADfqoABX6qgAd+qwAJfquAC36sAA1+rIABfr0AA369gAV+vgAHfr6ACX6/AAt+v4APfqIACATg=="
+.p2align 6"#,
     )
 }

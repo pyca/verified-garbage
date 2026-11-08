@@ -4830,3 +4830,4 @@ vg_gf25519_r32_pow250:
 	add %r7, %r7, %r8
 	stw %r7, 544(%r6)
 	blr
+	.p2align 6

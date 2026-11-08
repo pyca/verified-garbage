@@ -22,7 +22,8 @@ pub unsafe extern "C" fn vg_aes_ecb_encrypt(schedule: *const [u8; 240], rounds: 
 bl {vg_aes_encrypt_blocks}
 .base64 "eBtrfHj7438AAIA4AACEZAAIhGB4W399"
 bl {vg_zeroize}
-.base64 "ePvjfygAgTkAAOzrIAAB6DAAITimAwh8IACATg==""#,
+.base64 "ePvjfygAgTkAAOzrIAAB6DAAITimAwh8IACATg=="
+.p2align 6"#,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
         vg_zeroize = sym super::zeroize::vg_zeroize,
     )
@@ -47,7 +48,8 @@ pub unsafe extern "C" fn vg_aes_ecb_decrypt(schedule: *const [u8; 240], rounds: 
 bl {vg_aes_decrypt_blocks}
 .base64 "eBtrfHj7438AAIA4AACEZAAIhGB4W399"
 bl {vg_zeroize}
-.base64 "ePvjfygAgTkAAOzrIAAB6DAAITimAwh8IACATg==""#,
+.base64 "ePvjfygAgTkAAOzrIAAB6DAAITimAwh8IACATg=="
+.p2align 6"#,
         vg_aes_decrypt_blocks = sym super::aes::vg_aes_decrypt_blocks,
         vg_zeroize = sym super::zeroize::vg_zeroize,
     )

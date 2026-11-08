@@ -13,7 +13,8 @@ pub(crate) unsafe extern "C" fn vg_keccak_pad_scratch() {
     core::arch::naked_asm!(
         r#".base64 "pgIIfNH/IfggAAH4FCojfQAASYl4Mkp9AABJmRQiI33//yk5AABJiYAAYDl4Wkp9AABJmQAAhzg="
 bl {vg_keccak_f1600}
-.base64 "IAAB6DAAITimAwh8IACATg==""#,
+.base64 "IAAB6DAAITimAwh8IACATg=="
+.p2align 6"#,
         vg_keccak_f1600 = sym crate::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
 }

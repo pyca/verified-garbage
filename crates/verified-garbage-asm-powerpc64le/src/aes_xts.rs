@@ -37,7 +37,8 @@ bl {vg_aes_xts_encrypt}
 b 21f
 20:
 21:
-.base64 "0AgT6KAI0+moCPPpsAgT6rgIM+rACFPqyAhz6qYDCHwgAIBO""#,
+.base64 "0AgT6KAI0+moCPPpsAgT6rgIM+rACFPqyAhz6qYDCHwgAIBO"
+.p2align 6"#,
         vg_aes_xts_encrypt = sym super::aes_xts::vg_aes_xts_encrypt::vg_aes_xts_encrypt,
     )
 }
@@ -80,7 +81,8 @@ b 21f
 .base64 "eHPDfXh75H2ACLM4eIsmfgLhR3p4m2h+"
 bl {vg_aes_xts_decrypt}
 21:
-.base64 "0AgT6KAI0+moCPPpsAgT6rgIM+rACFPqyAhz6qYDCHwgAIBO""#,
+.base64 "0AgT6KAI0+moCPPpsAgT6rgIM+rACFPqyAhz6qYDCHwgAIBO"
+.p2align 6"#,
         vg_aes_xts_encrypt = sym super::aes_xts::vg_aes_xts_encrypt::vg_aes_xts_encrypt,
         vg_aes_xts_decrypt = sym super::aes_xts::vg_aes_xts_decrypt::vg_aes_xts_decrypt,
     )

@@ -23,7 +23,8 @@ pub unsafe extern "C" fn vg_ed25519_key_pair(out: *mut [u8; 32], expanded: *mut 
 bl {vg_sha512_digest}
 .base64 "IACBOQgAbOgQAIzoGACs6A=="
 bl {vg_ed25519_public_key_expanded}
-.base64 "IACBOQAADOimAwh8QAAhOCAAgE4=""#,
+.base64 "IACBOQAADOimAwh8QAAhOCAAgE4="
+.p2align 6"#,
         vg_sha512_digest = sym super::sha512::vg_sha512_digest,
         vg_ed25519_public_key_expanded = sym super::ed25519::vg_ed25519_public_key_expanded::vg_ed25519_public_key_expanded,
     )
@@ -72,7 +73,8 @@ bl {vg_sha512_finalize_scratch}
 bl {vg_ed25519_scalar_reduce}
 .base64 "IAB0OEAAmThgALk4AADZOAAA+Dg="
 bl {vg_ed25519_scalar_mul_add}
-.base64 "EAEZ6OAAmeroALnq8ADZ6vgA+eoAARnrCAE566YDCHwgAIE5AABgOQAAbPkIAGz5EABs+RgAbPkgAGz5KABs+TAAbPk4AGz5QABs+UgAbPlQAGz5WABs+WAAbPloAGz5cABs+XgAbPmAAGz5iABs+ZAAbPmYAGz5oABs+agAbPmwAGz5uABs+cAAbPnIAGz50ABs+dgAbPlAASE4IACATg==""#,
+.base64 "EAEZ6OAAmeroALnq8ADZ6vgA+eoAARnrCAE566YDCHwgAIE5AABgOQAAbPkIAGz5EABs+RgAbPkgAGz5KABs+TAAbPk4AGz5QABs+UgAbPlQAGz5WABs+WAAbPloAGz5cABs+XgAbPmAAGz5iABs+ZAAbPmYAGz5oABs+agAbPmwAGz5uABs+cAAbPnIAGz50ABs+dgAbPlAASE4IACATg=="
+.p2align 6"#,
         vg_sha512_init = sym super::sha512::vg_sha512_init,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
@@ -110,7 +112,8 @@ bl {vg_sha512_finalize_scratch}
 bl {vg_ed25519_scalar_reduce}
 .base64 "AAAAOSAAGfkoABn5MAAZ+TgAGfkAAHQ4AACXOAAAuTgAANg4"
 bl {vg_ed25519_verify_equation}
-.base64 "sAAZ6IAAmeqIALnqkADZ6pgA+eqgABnrqAA566YDCHzgACE4IACATg==""#,
+.base64 "sAAZ6IAAmeqIALnqkADZ6pgA+eqgABnrqAA566YDCHzgACE4IACATg=="
+.p2align 6"#,
         vg_sha512_init = sym super::sha512::vg_sha512_init,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,

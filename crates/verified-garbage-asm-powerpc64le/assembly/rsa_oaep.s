@@ -2169,6 +2169,7 @@ vg_rsa_oaep_decrypt:
 	ld %r29, 232(%r12)
 	addi %r1, %r1, 256
 	blr
+	.p2align 6
 
 vg_rsa_oaep_encrypt_precomputed:
 	stdu %r1, -256(%r1)
@@ -4016,3 +4017,4 @@ vg_rsa_oaep_encrypt_precomputed:
 	ld %r29, 232(%r12)
 	addi %r1, %r1, 256
 	blr
+	.p2align 6

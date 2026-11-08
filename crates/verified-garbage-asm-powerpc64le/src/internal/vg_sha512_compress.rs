@@ -29,7 +29,8 @@ bne %cr0, 22b
 b 21f
 20:
 21:
-.base64 "gADG6YgA5umQAAbqmAAm6qAAZuoIAEbqIACATg==""#,
+.base64 "gADG6YgA5umQAAbqmAAm6qAAZuoIAEbqIACATg=="
+.p2align 6"#,
         VG_SHA512_PPC64LE_K = sym crate::consts::VG_SHA512_PPC64LE_K,
     )
 }

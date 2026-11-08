@@ -91,7 +91,8 @@ bl {vg_p256_mul_mod_p}
 bl {vg_p256_mul_mod_p}
 .base64 "4AyAOOAMoDhADsA4"
 bl {vg_p256_add_mod_p}
-.base64 "AA4D6KYDCHwgAIBO""#,
+.base64 "AA4D6KYDCHwgAIBO"
+.p2align 6"#,
         vg_p256_mul_mod_p = sym crate::ec_p256::vg_p256_mul_mod_p::vg_p256_mul_mod_p,
         vg_p256_add_mod_p = sym crate::ec_p256::vg_p256_add_mod_p::vg_p256_add_mod_p,
         vg_p256_sub_mod_p = sym crate::ec_p256::vg_p256_sub_mod_p::vg_p256_sub_mod_p,

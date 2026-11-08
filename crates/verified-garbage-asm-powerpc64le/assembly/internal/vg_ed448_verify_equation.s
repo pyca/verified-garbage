@@ -22068,3 +22068,4 @@ vg_ed448_verify_equation:
 	li %r3, 1
 	subf %r3, %r9, %r3
 	blr
+	.p2align 6

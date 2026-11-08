@@ -50,3 +50,4 @@ vg_mldsa_unpack_t1:
 	cmpldi %cr0, %r12, 0
 	bne %cr0, 20b
 	blr
+	.p2align 6

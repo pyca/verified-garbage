@@ -99,7 +99,8 @@ b 222f
 222:
 .base64 "//8xOgAAMSg="
 bne %cr0, 215b
-.base64 "AADG6QgA5ukQAAbqGAAm6iAAgTkAAGA5AABs+QgAbPkQAGz5GABs+UAAITggAIBO""#,
+.base64 "AADG6QgA5ukQAAbqGAAm6iAAgTkAAGA5AABs+QgAbPkQAGz5GABs+UAAITggAIBO"
+.p2align 6"#,
     )
 }
 
@@ -144,7 +145,8 @@ bne %cr0, 22b
 b 21f
 20:
 21:
-.base64 "AADG6QgA5ukQAAbqGAAm6iAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SABITggAIBO""#,
+.base64 "AADG6QgA5ukQAAbqGAAm6iAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SABITggAIBO"
+.p2align 6"#,
     )
 }
 
@@ -189,6 +191,7 @@ bne %cr0, 22b
 b 21f
 20:
 21:
-.base64 "AADG6QgA5ukQAAbqGAAm6iAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SABITggAIBO""#,
+.base64 "AADG6QgA5ukQAAbqGAAm6iAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SABITggAIBO"
+.p2align 6"#,
     )
 }

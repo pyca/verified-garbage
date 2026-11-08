@@ -70,3 +70,4 @@ vg_chacha20_xor:
 	ld %r23, 264(%r4)
 	ld %r30, 280(%r4)
 	blr
+	.p2align 6

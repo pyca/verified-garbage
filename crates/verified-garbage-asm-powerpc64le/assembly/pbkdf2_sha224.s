@@ -160,3 +160,4 @@ vg_pbkdf2_hmac_sha224:
 	mtlr %r0
 	addi %r1, %r1, 1632
 	blr
+	.p2align 6

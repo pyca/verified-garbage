@@ -103,3 +103,4 @@ vg_mldsa_rej_ntt_poly:
 	ld %r30, 2024(%r31)
 	ld %r31, 2032(%r31)
 	blr
+	.p2align 6

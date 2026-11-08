@@ -46,7 +46,8 @@ bne %cr0, 22b
 b 21f
 20:
 21:
-.base64 "AACV6hAA1eoYAPXqIAAV6ygANesIALXqIAAB6DAAITimAwh8IAQhOCAAgE4=""#,
+.base64 "AACV6hAA1eoYAPXqIAAV6ygANesIALXqIAAB6DAAITimAwh8IAQhOCAAgE4="
+.p2align 6"#,
         vg_hmac_md5_init = sym super::hmac_md5::vg_hmac_md5_init,
         vg_md5_update_scratch = sym super::md5::vg_md5_update_scratch::vg_md5_update_scratch,
         vg_hmac_md5_finalize_scratch = sym super::hmac_md5::vg_hmac_md5_finalize_scratch::vg_hmac_md5_finalize_scratch,

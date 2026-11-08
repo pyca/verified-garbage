@@ -203,3 +203,4 @@ vg_rsa_prime_search:
 	std %r6, 0(%r7)
 	addi %r1, %r1, 192
 	blr
+	.p2align 6

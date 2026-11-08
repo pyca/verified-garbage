@@ -36,6 +36,7 @@ vg_mlkem1024_check_ek:
 	li %r3, 1
 	subf %r3, %r6, %r3
 	blr
+	.p2align 6
 
 vg_mlkem1024_keygen:
 	mflr %r0
@@ -59,6 +60,7 @@ vg_mlkem1024_keygen:
 	addi %r1, %r1, 48
 	mtlr %r0
 	blr
+	.p2align 6
 
 vg_mlkem1024_encaps:
 	mflr %r0
@@ -82,6 +84,7 @@ vg_mlkem1024_encaps:
 	addi %r1, %r1, 48
 	mtlr %r0
 	blr
+	.p2align 6
 
 vg_mlkem1024_encaps_h:
 	mflr %r0
@@ -105,6 +108,7 @@ vg_mlkem1024_encaps_h:
 	addi %r1, %r1, 48
 	mtlr %r0
 	blr
+	.p2align 6
 
 vg_mlkem1024_decaps:
 	mflr %r0
@@ -128,3 +132,4 @@ vg_mlkem1024_decaps:
 	addi %r1, %r1, 48
 	mtlr %r0
 	blr
+	.p2align 6

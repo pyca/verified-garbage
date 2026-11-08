@@ -49,7 +49,8 @@ b 29f
 29:
 .base64 "//+EOAAAJCg="
 bne %cr0, 21b
-.base64 "IACATg==""#,
+.base64 "IACATg=="
+.p2align 6"#,
     )
 }
 
@@ -98,7 +99,8 @@ b 27f
 b 21f
 20:
 21:
-.base64 "IACATg==""#,
+.base64 "IACATg=="
+.p2align 6"#,
     )
 }
 
@@ -147,7 +149,8 @@ b 27f
 b 21f
 20:
 21:
-.base64 "IACATg==""#,
+.base64 "IACATg=="
+.p2align 6"#,
     )
 }
 

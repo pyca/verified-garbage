@@ -1005,7 +1005,8 @@ b 2239f
 2239:
 .base64 "AACBOfAADOimAwh8cADM6XgA7OmAAAzqiAAs6pAATOqYAGzqoACM6qgArOqwAMzquADs6sAADOvIACzr0ABM69gAbOvgAIzr6ACs6w=="
 21:
-.base64 "AAEhOCAAgE4=""#,
+.base64 "AAEhOCAAgE4="
+.p2align 6"#,
         vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked::vg_rsa_public_precomputed_checked,
     )
 }
@@ -1673,7 +1674,8 @@ bne %cr0, 2181b
 2162:
 .base64 "AACBOfAADOimAwh8cADM6XgA7OmAAAzqiAAs6pAATOqYAGzqoACM6qgArOqwAMzquADs6sAADOvIACzr0ABM69gAbOvgAIzr6ACs6w=="
 21:
-.base64 "AAEhOCAAgE4=""#,
+.base64 "AAEhOCAAgE4="
+.p2align 6"#,
         vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked::vg_rsa_private_checked,
     )
 }

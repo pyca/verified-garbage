@@ -47,3 +47,4 @@ vg_rc2_cbc_encrypt:
 	ld %r30, 288(%r30)
 	mtlr %r0
 	blr
+	.p2align 6

@@ -132,7 +132,8 @@ b 235f
 b 21f
 20:
 21:
-.base64 "IACATg==""#,
+.base64 "IACATg=="
+.p2align 6"#,
         vg_aes_ctr32 = sym crate::aes::vg_aes_ctr32::vg_aes_ctr32,
         vg_ghash = sym crate::aes_gcm_siv::vg_ghash::vg_ghash,
     )

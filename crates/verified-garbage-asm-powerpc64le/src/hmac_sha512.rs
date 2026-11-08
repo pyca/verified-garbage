@@ -72,7 +72,8 @@ bl {vg_sha512_finalize_scratch}
 .base64 "AAB2OAAAlzjQAbU4QADAOAAA9TgQApXqIALV6igC9eowAhXrOAI16xgCteo="
 bl {vg_hmac_sha512_init_scratch}
 .base64 "IAAB6DAAITimAwh8IACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPl4AGz5gABs+YgAbPmQAGz5mABs+aAAbPmoAGz5sABs+bgAbPnAAGz5yABs+dAAbPnYAGz54ABs+egAbPnwAGz5+ABs+QABbPkIAWz5EAFs+RgBbPkgAWz5KAFs+TABbPk4AWz5QAFs+UgBbPlQAWz5WAFs+WABbPloAWz5cAFs+XgBbPmAAWz5iAFs+ZABbPmYAWz5oAFs+agBbPmwAWz5uAFs+cABbPnIAWz50AFs+dgBbPngAWz56AFs+fABbPn4AWz5AAJs+QgCbPkQAmz5GAJs+SACbPkoAmz5MAJs+TgCbPlAByE4"
-b 21b"#,
+b 21b
+.p2align 6"#,
         vg_sha512_init = sym super::sha512::vg_sha512_init,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
@@ -101,7 +102,8 @@ bl {vg_sha512_finalize_scratch}
 bl {vg_sha512_update_scratch}
 .base64 "AAB0OMAAgDgQAbU4AADVOA=="
 bl {vg_sha512_finalize_scratch}
-.base64 "EAEVgQAAF5EUARWBBAAXkRgBFYEIABeRHAEVgQwAF5EgARWBEAAXkSQBFYEUABeRKAEVgRgAF5EsARWBHAAXkTABFYEgABeRNAEVgSQAF5E4ARWBKAAXkTwBFYEsABeRQAEVgTAAF5FEARWBNAAXkUgBFYE4ABeRTAEVgTwAF5HgAJXq8ADV6vgA9eoAARXrCAE16+gAteogAAHoMAAhOKYDCHxwByE4IACATg==""#,
+.base64 "EAEVgQAAF5EUARWBBAAXkRgBFYEIABeRHAEVgQwAF5EgARWBEAAXkSQBFYEUABeRKAEVgRgAF5EsARWBHAAXkTABFYEgABeRNAEVgSQAF5E4ARWBKAAXkTwBFYEsABeRQAEVgTAAF5FEARWBNAAXkUgBFYE4ABeRTAEVgTwAF5HgAJXq8ADV6vgA9eoAARXrCAE16+gAteogAAHoMAAhOKYDCHxwByE4IACATg=="
+.p2align 6"#,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
     )

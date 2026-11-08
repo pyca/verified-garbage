@@ -56,3 +56,4 @@ vg_aes_cbc_encrypt_unwiped:
 	ld %r19, 2104(%r19)
 	mtlr %r0
 	blr
+	.p2align 6

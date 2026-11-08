@@ -103,3 +103,4 @@ vg_rsa_pkcs1_encrypt_precomputed:
 	ld %r31, 136(%r12)
 	addi %r1, %r1, 2224
 	blr
+	.p2align 6

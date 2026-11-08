@@ -434,3 +434,4 @@ vg_rc2_expand_key:
 	ld %r14, 256(%r7)
 	ld %r15, 264(%r7)
 	blr
+	.p2align 6

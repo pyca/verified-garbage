@@ -27,7 +27,8 @@ b 22f
 22:
 .base64 "AwBjOP//xjgAACYo"
 bne %cr0, 20b
-.base64 "AsKjePgHH+imAwh80Ad/69gHn+vgB7/r6Aff6/AH/+sgAIBO""#,
+.base64 "AsKjePgHH+imAwh80Ad/69gHn+vgB7/r6Aff6/AH/+sgAIBO"
+.p2align 6"#,
         vg_keccak_absorb_scratch = sym crate::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym crate::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym crate::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,

@@ -91,7 +91,8 @@ bne %cr0, 26b
 27:
 .base64 "AADLiAAAiol4YsZ8OCjGfHhixnxQSIN94A+MeVAAjH14Qox9OCCMfThgxnwAAMuYAQApOQEAazkBAEo5///nOAAAJyg="
 bne %cr0, 27b
-.base64 "AACBORABbOgoAQzopgMIfDABITggAIBO""#,
+.base64 "AACBORABbOgoAQzopgMIfDABITggAIBO"
+.p2align 6"#,
         vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked::vg_rsa_private_checked,
         vg_sha256_init = sym super::sha256::vg_sha256_init,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
@@ -188,7 +189,8 @@ bl {vg_rsa_pkcs1_encrypt_precomputed}
 bne %cr0, 217b
 .base64 "eCujfA=="
 28:
-.base64 "AACBObAADOimAwh8kACM65gArOugAMzrqADs68AEITggAIBO""#,
+.base64 "AACBObAADOimAwh8kACM65gArOugAMzrqADs68AEITggAIBO"
+.p2align 6"#,
         vg_rsa_pkcs1_encrypt_precomputed = sym super::rsa::vg_rsa_pkcs1_encrypt_precomputed::vg_rsa_pkcs1_encrypt_precomputed,
     )
 }

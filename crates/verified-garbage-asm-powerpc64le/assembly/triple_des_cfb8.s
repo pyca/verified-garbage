@@ -144,6 +144,7 @@ vg_triple_des_cfb8_encrypt:
 	std %r11, 568(%r12)
 	addi %r1, %r1, 608
 	blr
+	.p2align 6
 
 vg_triple_des_cfb8_decrypt:
 	stdu %r1, -608(%r1)
@@ -285,3 +286,4 @@ vg_triple_des_cfb8_decrypt:
 	std %r11, 568(%r12)
 	addi %r1, %r1, 608
 	blr
+	.p2align 6

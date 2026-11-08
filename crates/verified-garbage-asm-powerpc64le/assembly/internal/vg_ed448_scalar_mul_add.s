@@ -10045,3 +10045,4 @@ vg_ed448_scalar_mul_add:
 	ld %r30, 1144(%r6)
 	ld %r31, 1152(%r6)
 	blr
+	.p2align 6

@@ -170,3 +170,4 @@ vg_brainpoolp256r1_point_add:
 	ld %r0, 3584(%r3)
 	mtlr %r0
 	blr
+	.p2align 6

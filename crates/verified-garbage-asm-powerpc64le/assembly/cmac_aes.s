@@ -35,6 +35,7 @@ vg_cmac_aes_init:
 	mtlr %r0
 	addi %r1, %r1, 2336
 	blr
+	.p2align 6
 
 vg_cmac_aes_absorb:
 	stdu %r1, -2336(%r1)
@@ -157,6 +158,7 @@ vg_cmac_aes_absorb:
 	mtlr %r0
 	addi %r1, %r1, 2336
 	blr
+	.p2align 6
 
 vg_cmac_aes_finish:
 	stdu %r1, -2336(%r1)
@@ -188,3 +190,4 @@ vg_cmac_aes_finish:
 	mtlr %r0
 	addi %r1, %r1, 2336
 	blr
+	.p2align 6

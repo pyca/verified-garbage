@@ -30,7 +30,8 @@ b 21f
 .base64 "AAAAOQAAKokUSgh9AQAqieRFKXkUSgh9AgAqieSDKXkUSgh9RnQJeaCTKXmCdAh5UCApfeAPIHnSOQB8FAIpfQAAK5EDACqJZDYpeRRKCH0EACqJZHQpeRRKCH1GdAl5oJMpeYJ0CHlQICl94A8gedI5AHwUAil9BAArkQUAKonkJil5FEoIfQYAKonkZCl5FEoIfUZ0CXmgkyl5gnQIeVAgKX3gDyB50jkAfBQCKX0IACuRBwAqiWQXKXkUSgh9CAAqiWRVKXkUSgh9RnQJeaCTKXmCdAh5UCApfeAPIHnSOQB8FAIpfQwAK5EJAEo5EABrOf//jDkAACwo"
 bne %cr0, 23b
 21:
-.base64 "+Acf6KYDCHzQB3/r2Aef6+AHv+voB9/r8Af/6yAAgE4=""#,
+.base64 "+Acf6KYDCHzQB3/r2Aef6+AHv+voB9/r8Af/6yAAgE4="
+.p2align 6"#,
         vg_keccak_absorb_scratch = sym crate::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym crate::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym crate::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,

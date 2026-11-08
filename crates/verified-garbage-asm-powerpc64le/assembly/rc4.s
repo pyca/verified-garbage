@@ -835,6 +835,7 @@ vg_rc4_init:
 	li %r3, 1
 21:
 	blr
+	.p2align 6
 
 vg_rc4_apply:
 	lbz %r6, 256(%r3)
@@ -2022,3 +2023,4 @@ vg_rc4_apply:
 20:
 21:
 	blr
+	.p2align 6

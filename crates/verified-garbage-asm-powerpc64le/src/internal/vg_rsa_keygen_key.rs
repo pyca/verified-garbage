@@ -2448,6 +2448,7 @@ bne %cr0, 2688b
 2689:
 .base64 "AAAGiDhIAHwAAAWYAQClOP//xjj//wg5AAAoKA=="
 bne %cr0, 2689b
-.base64 "mAB/gKQPY3icAB+AFAJjfAAA3+kIAP/pEAAf6hgAP+ogAF/qKAB/6jAAn+o4AL/qQADf6kgA/+pQAB/rWAC/62AA3+toAP/rIACATg==""#,
+.base64 "mAB/gKQPY3icAB+AFAJjfAAA3+kIAP/pEAAf6hgAP+ogAF/qKAB/6jAAn+o4AL/qQADf6kgA/+pQAB/rWAC/62AA3+toAP/rIACATg=="
+.p2align 6"#,
     )
 }

@@ -45,7 +45,8 @@ b 210f
 bl {vg_md5_compress}
 .base64 "AADAO////zsAAD8o"
 beq %cr0, 20b
-.base64 "AAAagQAAHJEEABqBBAAckQgAGoEIAByRDAAagQwAHJFAAFvrUACb61gAu+tgANvraAD760gAe+sgAAHoMAAhOKYDCHwgAIBO""#,
+.base64 "AAAagQAAHJEEABqBBAAckQgAGoEIAByRDAAagQwAHJFAAFvrUACb61gAu+tgANvraAD760gAe+sgAAHoMAAhOKYDCHwgAIBO"
+.p2align 6"#,
         vg_md5_compress = sym crate::md5::vg_md5_compress::vg_md5_compress,
     )
 }

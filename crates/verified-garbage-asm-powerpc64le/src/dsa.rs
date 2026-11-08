@@ -664,7 +664,8 @@ bne %cr0, 2190b
 223:
 210:
 24:
-.base64 "aADV6XAA9el4ABXqgAA16ogAVeqQAHXqmACV6qAA1eqoAPXqsAAV67gANevAAFXryAB169AAlevYALXr4ADV6+gA9evwAFXo+AC16iAAgE4=""#,
+.base64 "aADV6XAA9el4ABXqgAA16ogAVeqQAHXqmACV6qAA1eqoAPXqsAAV67gANevAAFXryAB169AAlevYALXr4ADV6+gA9evwAFXo+AC16iAAgE4="
+.p2align 6"#,
     )
 }
 
@@ -760,7 +761,8 @@ bne %cr0, 221b
 b 220f
 219:
 220:
-.base64 "AACBOQAAADh4AAz4gAAM+IgADPiQAAz4AAA++wAAfzgAAIE5KAEM6KYDCHyYAMzpoADs6agADOqwACzquABM6sAAbOrIAIzq0ACs6tgAzOrgAOzq6AAM6/AALOv4AEzrAAFs6wgBjOsQAazrGAHM6yAB7OswASE4IACATg==""#,
+.base64 "AACBOQAAADh4AAz4gAAM+IgADPiQAAz4AAA++wAAfzgAAIE5KAEM6KYDCHyYAMzpoADs6agADOqwACzquABM6sAAbOrIAIzq0ACs6tgAzOrgAOzq6AAM6/AALOv4AEzrAAFs6wgBjOsQAazrGAHM6yAB7OswASE4IACATg=="
+.p2align 6"#,
         vg_dsa_sign_prevalidated = sym super::dsa::vg_dsa_sign_prevalidated::vg_dsa_sign_prevalidated,
     )
 }
@@ -854,7 +856,8 @@ bne %cr0, 220b
 b 219f
 218:
 219:
-.base64 "AACBOQAAADh4AAz4gAAM+IgADPiQAAz4AAA++wAAfzgAAIE5KAEM6KYDCHyYAMzpoADs6agADOqwACzquABM6sAAbOrIAIzq0ACs6tgAzOrgAOzq6AAM6/AALOv4AEzrAAFs6wgBjOsQAazrGAHM6yAB7OswASE4IACATg==""#,
+.base64 "AACBOQAAADh4AAz4gAAM+IgADPiQAAz4AAA++wAAfzgAAIE5KAEM6KYDCHyYAMzpoADs6agADOqwACzquABM6sAAbOrIAIzq0ACs6tgAzOrgAOzq6AAM6/AALOv4AEzrAAFs6wgBjOsQAazrGAHM6yAB7OswASE4IACATg=="
+.p2align 6"#,
         vg_dsa_check_parameters = sym super::dsa::vg_dsa_check_parameters::vg_dsa_check_parameters,
         vg_dsa_derive_key_checked = sym super::dsa::vg_dsa_derive_key_checked::vg_dsa_derive_key_checked,
     )
@@ -1478,7 +1481,8 @@ b 2181f
 221:
 29:
 24:
-.base64 "aADV6XAA9el4ABXqgAA16ogAVeqQAHXqmACV6qAA1eqoAPXqsAAV67gANevAAFXryAB169AAlevYALXr4ADV6+gA9evwAFXo+AC16iAAgE4=""#,
+.base64 "aADV6XAA9el4ABXqgAA16ogAVeqQAHXqmACV6qAA1eqoAPXqsAAV67gANevAAFXryAB169AAlevYALXr4ADV6+gA9evwAFXo+AC16iAAgE4="
+.p2align 6"#,
     )
 }
 
@@ -2314,7 +2318,8 @@ bne %cr0, 2246b
 221:
 29:
 24:
-.base64 "aADV6XAA9el4ABXqgAA16ogAVeqQAHXqmACV6qAA1eqoAPXqsAAV67gANevAAFXryAB169AAlevYALXr4ADV6+gA9evwAFXo+AC16iAAgE4=""#,
+.base64 "aADV6XAA9el4ABXqgAA16ogAVeqQAHXqmACV6qAA1eqoAPXqsAAV67gANevAAFXryAB169AAlevYALXr4ADV6+gA9evwAFXo+AC16iAAgE4="
+.p2align 6"#,
     )
 }
 
@@ -3350,7 +3355,8 @@ bne %cr0, 2306b
 221:
 29:
 24:
-.base64 "aADV6XAA9el4ABXqgAA16ogAVeqQAHXqmACV6qAA1eqoAPXqsAAV67gANevAAFXryAB169AAlevYALXr4ADV6+gA9evwAFXo+AC16iAAgE4=""#,
+.base64 "aADV6XAA9el4ABXqgAA16ogAVeqQAHXqmACV6qAA1eqoAPXqsAAV67gANevAAFXryAB169AAlevYALXr4ADV6+gA9evwAFXo+AC16iAAgE4="
+.p2align 6"#,
     )
 }
 
@@ -3384,7 +3390,8 @@ b 21f
 20:
 .base64 "ABCgOAAAo/gIAIP4JHyFeBQipXwQAKP4pE2FeBgAo/gBAGA4"
 21:
-.base64 "IACATg==""#,
+.base64 "IACATg=="
+.p2align 6"#,
     )
 }
 
@@ -5639,7 +5646,8 @@ bne %cr0, 2642b
 2640:
 .base64 "mAB86LAAnOgAAIP4uACc6BgAg/iQAHzoqACc6AAAg/jAAHzo"
 21:
-.base64 "eAAc6KYDCHzIAFzo0ADc6dgA/OngABzq6AA86vAAXOr4AHzqAAGc6ggBvOoQAdzqGAH86iABHOsoATzrMAFc6zgBfOtAAbzrSAHc61AB/OtYAZzrIACATg==""#,
+.base64 "eAAc6KYDCHzIAFzo0ADc6dgA/OngABzq6AA86vAAXOr4AHzqAAGc6ggBvOoQAdzqGAH86iABHOsoATzrMAFc6zgBfOtAAbzrSAHc61AB/OtYAZzrIACATg=="
+.p2align 6"#,
         vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
         vg_dsa_probable_prime_256 = sym super::dsa::vg_dsa_probable_prime_256::vg_dsa_probable_prime_256,
         vg_dsa_probable_prime_3072 = sym super::dsa::vg_dsa_probable_prime_3072::vg_dsa_probable_prime_3072,

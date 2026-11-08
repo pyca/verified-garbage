@@ -504,6 +504,7 @@ vg_sm4_ofb:
 	std %r11, 3256(%r12)
 	addi %r1, %r1, 3296
 	blr
+	.p2align 6
 
 vg_sm4_ofb_final:
 	stdu %r1, -3296(%r1)
@@ -1030,3 +1031,4 @@ vg_sm4_ofb_final:
 	std %r11, 3256(%r12)
 	addi %r1, %r1, 3296
 	blr
+	.p2align 6

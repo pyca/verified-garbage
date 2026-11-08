@@ -236,6 +236,7 @@ vg_seed_cfb128_encrypt:
 	std %r11, 1144(%r12)
 	addi %r1, %r1, 1184
 	blr
+	.p2align 6
 
 vg_seed_cfb128_decrypt:
 	stdu %r1, -1184(%r1)
@@ -469,6 +470,7 @@ vg_seed_cfb128_decrypt:
 	std %r11, 1144(%r12)
 	addi %r1, %r1, 1184
 	blr
+	.p2align 6
 
 vg_seed_cfb128_encrypt_final:
 	stdu %r1, -1184(%r1)
@@ -727,6 +729,7 @@ vg_seed_cfb128_encrypt_final:
 	std %r11, 1144(%r12)
 	addi %r1, %r1, 1184
 	blr
+	.p2align 6
 
 vg_seed_cfb128_decrypt_final:
 	stdu %r1, -1184(%r1)
@@ -985,3 +988,4 @@ vg_seed_cfb128_decrypt_final:
 	std %r11, 1144(%r12)
 	addi %r1, %r1, 1184
 	blr
+	.p2align 6

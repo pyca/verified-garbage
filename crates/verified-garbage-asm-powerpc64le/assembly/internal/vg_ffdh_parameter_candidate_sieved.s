@@ -7757,3 +7757,4 @@ vg_ffdh_parameter_candidate_sieved:
 	ld %r30, 128(%r11)
 	ld %r31, 136(%r11)
 	blr
+	.p2align 6

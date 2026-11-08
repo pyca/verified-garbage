@@ -2894,3 +2894,4 @@ vg_argon2:
 	ld %r30, 128(%r30)
 	addi %r1, %r1, 336
 	blr
+	.p2align 6

@@ -25,3 +25,4 @@ vg_mldsa_norm_lt:
 	bne %cr0, 20b
 	or %r3, %r9, %r9
 	blr
+	.p2align 6

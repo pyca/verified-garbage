@@ -52,6 +52,7 @@ vg_aes_ofb:
 	ld %r19, 2104(%r19)
 	mtlr %r0
 	blr
+	.p2align 6
 
 vg_aes_ofb_final:
 	stdu %r1, -96(%r1)
@@ -119,3 +120,4 @@ vg_aes_ofb_final:
 	std %r11, 56(%r12)
 	addi %r1, %r1, 96
 	blr
+	.p2align 6

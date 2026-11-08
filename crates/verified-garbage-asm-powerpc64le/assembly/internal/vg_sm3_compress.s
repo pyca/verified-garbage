@@ -2748,3 +2748,4 @@ vg_sm3_compress:
 	ld %r18, 96(%r6)
 	ld %r19, 104(%r6)
 	blr
+	.p2align 6

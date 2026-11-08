@@ -15,6 +15,7 @@ pub(crate) unsafe extern "C" fn vg_mldsa_add() {
 20:
 .base64 "AADDgAAA5IAUOsZ8UDDIfOAPx3jSQed8FDrGfAAAw5AEAGM4BACEOP//pTgAACUo"
 bne %cr0, 20b
-.base64 "IACATg==""#,
+.base64 "IACATg=="
+.p2align 6"#,
     )
 }

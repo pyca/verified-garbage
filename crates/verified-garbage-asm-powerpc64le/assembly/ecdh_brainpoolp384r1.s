@@ -1632,3 +1632,4 @@ vg_ecdh_brainpoolp384r1:
 	ld %r31, 8(%r3)
 	or %r3, %r4, %r4
 	blr
+	.p2align 6

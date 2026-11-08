@@ -3727,3 +3727,4 @@ vg_rsa_keygen_candidate:
 	addi %r1, %r1, 48
 	mtlr %r0
 	blr
+	.p2align 6

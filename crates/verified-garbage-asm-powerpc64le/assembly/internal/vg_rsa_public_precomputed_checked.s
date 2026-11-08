@@ -1883,3 +1883,4 @@ vg_rsa_public_precomputed_checked:
 	ld %r29, 240(%r23)
 	ld %r23, 248(%r23)
 	blr
+	.p2align 6

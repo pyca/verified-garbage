@@ -210,7 +210,8 @@ beq %cr0, 253f
 b 254f
 253:
 254:
-.base64 "IACATg==""#,
+.base64 "IACATg=="
+.p2align 6"#,
         vg_miller_rabin_round = sym crate::dsa::vg_miller_rabin_round::vg_miller_rabin_round,
         VG_RSA_KEYGEN_TRIAL32 = sym crate::consts::VG_RSA_KEYGEN_TRIAL32,
     )

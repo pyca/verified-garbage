@@ -54,6 +54,7 @@ vg_sha384_init:
 	ori %r8, %r8, 20388
 	std %r8, 56(%r3)
 	blr
+	.p2align 6
 
 vg_sha512_init:
 	lis %r8, 27145
@@ -105,6 +106,7 @@ vg_sha512_init:
 	ori %r8, %r8, 8569
 	std %r8, 56(%r3)
 	blr
+	.p2align 6
 
 vg_sha512_224_init:
 	lis %r8, -29635
@@ -156,6 +158,7 @@ vg_sha512_224_init:
 	ori %r8, %r8, 37537
 	std %r8, 56(%r3)
 	blr
+	.p2align 6
 
 vg_sha512_256_init:
 	lis %r8, 8753
@@ -207,6 +210,7 @@ vg_sha512_256_init:
 	ori %r8, %r8, 11426
 	std %r8, 56(%r3)
 	blr
+	.p2align 6
 
 vg_sha512_update:
 	stdu %r1, -1408(%r1)
@@ -1023,6 +1027,7 @@ vg_sha512_update:
 	ld %r27, 184(%r27)
 	addi %r1, %r1, 1408
 	blr
+	.p2align 6
 
 vg_sha512_finalize:
 	stdu %r1, -1408(%r1)
@@ -1810,6 +1815,7 @@ vg_sha512_finalize:
 	ld %r27, 184(%r27)
 	addi %r1, %r1, 1408
 	blr
+	.p2align 6
 
 vg_sha384_finalize:
 	stdu %r1, -1408(%r1)
@@ -2591,6 +2597,7 @@ vg_sha384_finalize:
 	ld %r27, 184(%r27)
 	addi %r1, %r1, 1408
 	blr
+	.p2align 6
 
 vg_sha512_256_finalize:
 	stdu %r1, -1408(%r1)
@@ -3366,6 +3373,7 @@ vg_sha512_256_finalize:
 	ld %r27, 184(%r27)
 	addi %r1, %r1, 1408
 	blr
+	.p2align 6
 
 vg_sha512_224_finalize:
 	stdu %r1, -1408(%r1)
@@ -4141,6 +4149,7 @@ vg_sha512_224_finalize:
 	ld %r27, 184(%r27)
 	addi %r1, %r1, 1408
 	blr
+	.p2align 6
 
 vg_sha384_digest:
 	stdu %r1, -608(%r1)
@@ -4281,6 +4290,7 @@ vg_sha384_digest:
 	std %r11, 568(%r12)
 	addi %r1, %r1, 608
 	blr
+	.p2align 6
 
 vg_sha512_digest:
 	stdu %r1, -608(%r1)
@@ -4429,6 +4439,7 @@ vg_sha512_digest:
 	std %r11, 568(%r12)
 	addi %r1, %r1, 608
 	blr
+	.p2align 6
 
 vg_sha512_224_digest:
 	stdu %r1, -608(%r1)
@@ -4559,6 +4570,7 @@ vg_sha512_224_digest:
 	std %r11, 568(%r12)
 	addi %r1, %r1, 608
 	blr
+	.p2align 6
 
 vg_sha512_256_digest:
 	stdu %r1, -608(%r1)
@@ -4691,3 +4703,4 @@ vg_sha512_256_digest:
 	std %r11, 568(%r12)
 	addi %r1, %r1, 608
 	blr
+	.p2align 6

@@ -356,6 +356,7 @@ vg_blowfish_ofb:
 	std %r11, 88(%r12)
 	addi %r1, %r1, 128
 	blr
+	.p2align 6
 
 vg_blowfish_ofb_final:
 	stdu %r1, -128(%r1)
@@ -730,3 +731,4 @@ vg_blowfish_ofb_final:
 	std %r11, 88(%r12)
 	addi %r1, %r1, 128
 	blr
+	.p2align 6

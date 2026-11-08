@@ -93,3 +93,4 @@ vg_scrypt_romix:
 	ld %r29, 160(%r27)
 	ld %r27, 176(%r27)
 	blr
+	.p2align 6

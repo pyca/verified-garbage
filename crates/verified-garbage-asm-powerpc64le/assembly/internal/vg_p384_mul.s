@@ -356,3 +356,4 @@ vg_p384_mul:
 	mtlr %r0
 	ld %r31, 2224(%r3)
 	blr
+	.p2align 6

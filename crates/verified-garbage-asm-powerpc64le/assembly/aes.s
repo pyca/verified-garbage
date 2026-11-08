@@ -77,6 +77,7 @@ vg_aes_expand_key:
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 21b
 	blr
+	.p2align 6
 
 vg_aes_encrypt_blocks:
 	cmpldi %cr0, %r6, 0
@@ -234,6 +235,7 @@ vg_aes_encrypt_blocks:
 20:
 21:
 	blr
+	.p2align 6
 
 vg_aes_decrypt_blocks:
 	cmpldi %cr0, %r6, 0
@@ -393,3 +395,4 @@ vg_aes_decrypt_blocks:
 20:
 21:
 	blr
+	.p2align 6

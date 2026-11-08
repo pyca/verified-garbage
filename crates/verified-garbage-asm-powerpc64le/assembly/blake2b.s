@@ -88,6 +88,7 @@ vg_blake2b_init:
 20:
 21:
 	blr
+	.p2align 6
 
 vg_blake2b_update:
 	stdu %r1, -608(%r1)
@@ -221,6 +222,7 @@ vg_blake2b_update:
 	mtlr %r0
 	addi %r1, %r1, 608
 	blr
+	.p2align 6
 
 vg_blake2b_finalize:
 	stdu %r1, -608(%r1)
@@ -297,3 +299,4 @@ vg_blake2b_finalize:
 	mtlr %r0
 	addi %r1, %r1, 608
 	blr
+	.p2align 6

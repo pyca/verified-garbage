@@ -19,7 +19,8 @@ bl {vg_salsa20_8}
 bl {vg_salsa20_8}
 .base64 "AAC6O0AAGDtAADk7QABaO///nDsAADwo"
 bne %cr0, 20b
-.base64 "QAAb60gAO+tQAFvrWACb62AAu+toAHvrIAAB6DAAITimAwh8IACATg==""#,
+.base64 "QAAb60gAO+tQAFvrWACb62AAu+toAHvrIAAB6DAAITimAwh8IACATg=="
+.p2align 6"#,
         vg_salsa20_8 = sym crate::scrypt::vg_salsa20_8::vg_salsa20_8,
     )
 }

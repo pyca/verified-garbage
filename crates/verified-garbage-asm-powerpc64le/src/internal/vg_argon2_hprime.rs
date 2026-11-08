@@ -62,7 +62,8 @@ b 23f
 29:
 .base64 "AADFiAAA3ZgBAKU4AQC9O///KTkAACko"
 bne %cr0, 29b
-.base64 "cAMf6KYDCHxIA3/rUAOf61gDv+tgA9/raAP/6yAAgE4=""#,
+.base64 "cAMf6KYDCHxIA3/rUAOf61gDv+tgA9/raAP/6yAAgE4="
+.p2align 6"#,
         vg_blake2b_init = sym crate::blake2b::vg_blake2b_init,
         vg_blake2b_update_scratch = sym crate::blake2b::vg_blake2b_update_scratch::vg_blake2b_update_scratch,
         vg_blake2b_finalize_scratch = sym crate::blake2b::vg_blake2b_finalize_scratch::vg_blake2b_finalize_scratch,

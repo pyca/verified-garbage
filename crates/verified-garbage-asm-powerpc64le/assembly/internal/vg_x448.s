@@ -7181,3 +7181,4 @@ vg_x448:
 	xor %r5, %r5, %r7
 	stw %r5, 52(%r3)
 	blr
+	.p2align 6

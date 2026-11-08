@@ -147,3 +147,4 @@ vg_p192_mul_mod_n:
 	xor %r11, %r11, %r12
 	std %r11, 16(%r4)
 	blr
+	.p2align 6

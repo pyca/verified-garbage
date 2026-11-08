@@ -367,3 +367,4 @@ vg_ghash:
 20:
 21:
 	blr
+	.p2align 6

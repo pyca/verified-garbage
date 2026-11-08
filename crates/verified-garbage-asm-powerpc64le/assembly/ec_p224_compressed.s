@@ -776,6 +776,7 @@ vg_ec_p224_compress_public_key:
 	ld %r31, 8(%r3)
 	or %r3, %r4, %r4
 	blr
+	.p2align 6
 
 vg_ec_p224_decompress_public_key:
 	or %r12, %r4, %r4
@@ -1856,3 +1857,4 @@ vg_ec_p224_decompress_public_key:
 	ld %r31, 8(%r3)
 	or %r3, %r4, %r4
 	blr
+	.p2align 6

@@ -2814,3 +2814,4 @@ vg_miller_rabin_round:
 	ld %r21, 136(%r21)
 	addi %r1, %r1, 176
 	blr
+	.p2align 6

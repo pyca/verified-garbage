@@ -30,7 +30,8 @@ bne %cr0, 22b
 b 21f
 20:
 21:
-.base64 "QAgT6BAI0+kYCPPpIAgT6igIM+owCFPqOAhz6qYDCHwgAIBO""#,
+.base64 "QAgT6BAI0+kYCPPpIAgT6igIM+owCFPqOAhz6qYDCHwgAIBO"
+.p2align 6"#,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
     )
 }
@@ -65,7 +66,8 @@ bne %cr0, 22b
 b 21f
 20:
 21:
-.base64 "AAAU6AgA1OkQAPTpGAAU6iAAdOooANTrMAD06zgAlOqmAwh8IACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+WAAITggAIBO""#,
+.base64 "AAAU6AgA1OkQAPTpGAAU6iAAdOooANTrMAD06zgAlOqmAwh8IACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+WAAITggAIBO"
+.p2align 6"#,
         vg_aes_ofb = sym super::aes_ofb::vg_aes_ofb,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
     )

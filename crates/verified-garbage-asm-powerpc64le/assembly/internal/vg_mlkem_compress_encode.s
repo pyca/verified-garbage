@@ -160,3 +160,4 @@ vg_mlkem_compress_encode:
 	bne %cr0, 26b
 21:
 	blr
+	.p2align 6

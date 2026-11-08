@@ -1110,6 +1110,7 @@ vg_seed_expand_key:
 	std %r11, 1032(%r12)
 	addi %r1, %r1, 1072
 	blr
+	.p2align 6
 
 vg_seed_ecb_encrypt:
 	stdu %r1, -1120(%r1)
@@ -1261,6 +1262,7 @@ vg_seed_ecb_encrypt:
 	std %r11, 1080(%r12)
 	addi %r1, %r1, 1120
 	blr
+	.p2align 6
 
 vg_seed_ecb_decrypt:
 	stdu %r1, -1120(%r1)
@@ -1412,3 +1414,4 @@ vg_seed_ecb_decrypt:
 	std %r11, 1080(%r12)
 	addi %r1, %r1, 1120
 	blr
+	.p2align 6

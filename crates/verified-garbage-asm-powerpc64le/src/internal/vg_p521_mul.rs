@@ -179,7 +179,8 @@ bl {vg_p521_mul_mod_p}
 bl {vg_p521_add_mod_p}
 .base64 "FPqDfAAQhIgAAKA4UChEfQgFg+jgBaPoeCKlfDhQpXx4KoR8MASD+BAFg+joBaPoeCKlfDhQpXx4KoR8OASD+BgFg+jwBaPoeCKlfDhQpXx4KoR8QASD+CAFg+j4BaPoeCKlfDhQpXx4KoR8SASD+CgFg+gABqPoeCKlfDhQpXx4KoR8UASD+DAFg+gIBqPoeCKlfDhQpXx4KoR8WASD+DgFg+gQBqPoeCKlfDhQpXx4KoR8YASD+EAFg+gYBqPoeCKlfDhQpXx4KoR8aASD+EgFg+ggBqPoeCKlfDhQpXx4KoR8cASD+FAFg+goBqPoeCKlfDhQpXx4KoR8eASD+FgFg+gwBqPoeCKlfDhQpXx4KoR8gASD+GAFg+g4BqPoeCKlfDhQpXx4KoR8iASD+GgFg+hABqPoeCKlfDhQpXx4KoR8kASD+HAFg+hIBqPoeCKlfDhQpXx4KoR8mASD+HgFg+hQBqPoeCKlfDhQpXx4KoR8oASD+IAFg+hYBqPoeCKlfDhQpXx4KoR8qASD+IgFg+hgBqPoeCKlfDhQpXx4KoR8sASD+JAFg+hoBqPoeCKlfDhQpXx4KoR8uASD+JgFg+hwBqPoeCKlfDhQpXx4KoR8wASD+KAFg+h4BqPoeCKlfDhQpXx4KoR8yASD+KgFg+iABqPoeCKlfDhQpXx4KoR80ASD+LAFg+iIBqPoeCKlfDhQpXx4KoR82ASD+LgFg+iQBqPoeCKlfDhQpXx4KoR84ASD+MAFg+iYBqPoeCKlfDhQpXx4KoR86ASD+MgFg+igBqPoeCKlfDhQpXx4KoR88ASD+NAFg+ioBqPoeCKlfDhQpXx4KoR8+ASD+NgFg+iwBqPoeCKlfDhQpXx4KoR8AAWD+AAAPyg="
 bne %cr0, 21b
-.base64 "8AwD6KYDCHzoDOPrIACATg==""#,
+.base64 "8AwD6KYDCHzoDOPrIACATg=="
+.p2align 6"#,
         vg_p521_mul_mod_p = sym crate::ec_p521::vg_p521_mul_mod_p::vg_p521_mul_mod_p,
         vg_p521_add_mod_p = sym crate::ec_p521::vg_p521_add_mod_p::vg_p521_add_mod_p,
         vg_p521_sub_mod_p = sym crate::ec_p521::vg_p521_sub_mod_p::vg_p521_sub_mod_p,

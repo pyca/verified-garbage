@@ -521,7 +521,8 @@ b 285f
 bne %cr0, 22b
 .base64 "QAClOP//jDkAACwo"
 bne %cr0, 21b
-.base64 "QADG6UgA5ulQAAbqWAAm6mAARupoAGbqcACG6ngApuqAAMbqiADm6pAABuuYACbroABG66gAZuuwAIbruACm68AAxuvIAAbopgMIfCAAgE4=""#,
+.base64 "QADG6UgA5ulQAAbqWAAm6mAARupoAGbqcACG6ngApuqAAMbqiADm6pAABuuYACbroABG66gAZuuwAIbruACm68AAxuvIAAbopgMIfCAAgE4="
+.p2align 6"#,
         VG_CAST5_S5678 = sym super::consts::VG_CAST5_S5678,
     )
 }
@@ -597,7 +598,8 @@ bne %cr0, 22b
 b 21f
 20:
 21:
-.base64 "QADH6UgA5+lQAAfqWAAn6mAAR+poAGfqcACH6ngAp+qAAMfqiADn6pAAB+uYACfroABH66gAZ+uwAIfruACn68AAx+vIAAfopgMIfCAAgE4=""#,
+.base64 "QADH6UgA5+lQAAfqWAAn6mAAR+poAGfqcACH6ngAp+qAAMfqiADn6pAAB+uYACfroABH66gAZ+uwAIfruACn68AAx+vIAAfopgMIfCAAgE4="
+.p2align 6"#,
         VG_CAST5_S1234 = sym super::consts::VG_CAST5_S1234,
     )
 }
@@ -673,7 +675,8 @@ bne %cr0, 22b
 b 21f
 20:
 21:
-.base64 "QADH6UgA5+lQAAfqWAAn6mAAR+poAGfqcACH6ngAp+qAAMfqiADn6pAAB+uYACfroABH66gAZ+uwAIfruACn68AAx+vIAAfopgMIfCAAgE4=""#,
+.base64 "QADH6UgA5+lQAAfqWAAn6mAAR+poAGfqcACH6ngAp+qAAMfqiADn6pAAB+uYACfroABH66gAZ+uwAIfruACn68AAx+vIAAfopgMIfCAAgE4="
+.p2align 6"#,
         VG_CAST5_S1234 = sym super::consts::VG_CAST5_S1234,
     )
 }

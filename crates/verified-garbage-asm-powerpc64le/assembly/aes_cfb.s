@@ -56,6 +56,7 @@ vg_aes_cfb128_encrypt:
 	ld %r19, 2104(%r19)
 	mtlr %r0
 	blr
+	.p2align 6
 
 vg_aes_cfb128_decrypt:
 	mflr %r0
@@ -113,6 +114,7 @@ vg_aes_cfb128_decrypt:
 	ld %r19, 2104(%r19)
 	mtlr %r0
 	blr
+	.p2align 6
 
 vg_aes_cfb128_encrypt_final:
 	stdu %r1, -96(%r1)
@@ -180,6 +182,7 @@ vg_aes_cfb128_encrypt_final:
 	std %r11, 56(%r12)
 	addi %r1, %r1, 96
 	blr
+	.p2align 6
 
 vg_aes_cfb128_decrypt_final:
 	stdu %r1, -96(%r1)
@@ -247,3 +250,4 @@ vg_aes_cfb128_decrypt_final:
 	std %r11, 56(%r12)
 	addi %r1, %r1, 96
 	blr
+	.p2align 6

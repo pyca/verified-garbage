@@ -13,7 +13,8 @@ pub(crate) unsafe extern "C" fn vg_mldsa87_sign_prepared() {
     core::arch::naked_asm!(
         r#".base64 "pgIIfNH/IfggAAH4IBMDOQBcIDk="
 bl {vg_mldsa87_sign_with_cache}
-.base64 "IAAB6DAAITimAwh8IACATg==""#,
+.base64 "IAAB6DAAITimAwh8IACATg=="
+.p2align 6"#,
         vg_mldsa87_sign_with_cache = sym crate::mldsa87::vg_mldsa87_sign_with_cache::vg_mldsa87_sign_with_cache,
     )
 }

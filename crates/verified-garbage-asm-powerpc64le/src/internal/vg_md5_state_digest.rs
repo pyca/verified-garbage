@@ -11,6 +11,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_md5_state_digest() {
     core::arch::naked_asm!(
-        r#".base64 "AAA6OQAAXDkAAEM7AACEOwAAGoEAAByRBAAagQQAHJEIABqBCAAckQwAGoEMAByRAABJOwAAijsgAIBO""#,
+        r#".base64 "AAA6OQAAXDkAAEM7AACEOwAAGoEAAByRBAAagQQAHJEIABqBCAAckQwAGoEMAByRAABJOwAAijsgAIBO"
+.p2align 6"#,
     )
 }

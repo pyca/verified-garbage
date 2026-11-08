@@ -510,6 +510,7 @@ vg_sm4_ctr:
 	std %r11, 3256(%r12)
 	addi %r1, %r1, 3296
 	blr
+	.p2align 6
 
 vg_sm4_ctr_final:
 	stdu %r1, -112(%r1)
@@ -579,3 +580,4 @@ vg_sm4_ctr_final:
 	std %r11, 72(%r12)
 	addi %r1, %r1, 112
 	blr
+	.p2align 6

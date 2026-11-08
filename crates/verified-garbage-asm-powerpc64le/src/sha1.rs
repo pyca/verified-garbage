@@ -14,7 +14,8 @@
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_sha1_init(state: *mut [u8; 84]) {
     core::arch::naked_asm!(
-        r#".base64 "RWcAPQEjCGEAAAORze8APYmrCGEEAAORupgAPf7cCGEIAAORMhAAPXZUCGEMAAOR0sMAPfDhCGEQAAORIACATg==""#,
+        r#".base64 "RWcAPQEjCGEAAAORze8APYmrCGEEAAORupgAPf7cCGEIAAORMhAAPXZUCGEMAAOR0sMAPfDhCGEQAAORIACATg=="
+.p2align 6"#,
     )
 }
 
@@ -123,7 +124,8 @@ bne %cr0, 22b
 b 21f
 20:
 21:
-.base64 "cABb64AAm+uIALvrkADb65gA++t4AHvrIAAB6DAAITimAwh8wAAhOCAAgE4=""#,
+.base64 "cABb64AAm+uIALvrkADb65gA++t4AHvrIAAB6DAAITimAwh8wAAhOCAAgE4="
+.p2align 6"#,
         vg_sha1_compress = sym super::sha1::vg_sha1_compress::vg_sha1_compress,
     )
 }
@@ -176,7 +178,8 @@ b 210f
 bl {vg_sha1_compress}
 .base64 "AADAO////zsAAD8o"
 beq %cr0, 20b
-.base64 "AAAagQAAYDksXRx9BAAagQQAYDksXRx9CAAagQgAYDksXRx9DAAagQwAYDksXRx9EAAagRAAYDksXRx9cABb64AAm+uIALvrkADb65gA++t4AHvrIAAB6DAAITimAwh8wAAhOCAAgE4=""#,
+.base64 "AAAagQAAYDksXRx9BAAagQQAYDksXRx9CAAagQgAYDksXRx9DAAagQwAYDksXRx9EAAagRAAYDksXRx9cABb64AAm+uIALvrkADb65gA++t4AHvrIAAB6DAAITimAwh8wAAhOCAAgE4="
+.p2align 6"#,
         vg_sha1_compress = sym super::sha1::vg_sha1_compress::vg_sha1_compress,
     )
 }
@@ -200,7 +203,8 @@ bl {vg_sha1_init}
 bl {vg_sha1_update_scratch}
 .base64 "AAB0OAAAmDgkAbU4AADVOA=="
 bl {vg_sha1_finalize_scratch}
-.base64 "JAEVgQAAFpEoARWBBAAWkSwBFYEIABaRMAEVgQwAFpE0ARWBEAAWkTgBlepIAdXqUAH16lgBFetgATXrQAG16iAAAegwACE4pgMIfCAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlAAGz5SABs+VAAbPlYAGz5YABs+WgAbPlwAGz5eABs+YAAbPmIAGz5kABs+ZgAbPmgAGz5qABs+bAAbPm4AGz5wABs+cgAbPnQAGz52ABs+eAAbPnoAGz58ABs+fgAbPkAAWz5CAFs+RABbPkYAWz5IAFs+SgBbPkwAWz5OAFs+UABbPlIAWz5UAFs+VgBbPlgAWz5kAEhOCAAgE4=""#,
+.base64 "JAEVgQAAFpEoARWBBAAWkSwBFYEIABaRMAEVgQwAFpE0ARWBEAAWkTgBlepIAdXqUAH16lgBFetgATXrQAG16iAAAegwACE4pgMIfCAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlAAGz5SABs+VAAbPlYAGz5YABs+WgAbPlwAGz5eABs+YAAbPmIAGz5kABs+ZgAbPmgAGz5qABs+bAAbPm4AGz5wABs+cgAbPnQAGz52ABs+eAAbPnoAGz58ABs+fgAbPkAAWz5CAFs+RABbPkYAWz5IAFs+SgBbPkwAWz5OAFs+UABbPlIAWz5UAFs+VgBbPlgAWz5kAEhOCAAgE4="
+.p2align 6"#,
         vg_sha1_init = sym super::sha1::vg_sha1_init,
         vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch::vg_sha1_update_scratch,
         vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch::vg_sha1_finalize_scratch,

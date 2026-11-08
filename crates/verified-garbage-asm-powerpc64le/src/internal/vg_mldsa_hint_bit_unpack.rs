@@ -71,6 +71,7 @@ bne %cr0, 217b
 b 216f
 215:
 216:
-.base64 "UCgLfOAPAHgBAGA4UBhgfCAAgE4=""#,
+.base64 "UCgLfOAPAHgBAGA4UBhgfCAAgE4="
+.p2align 6"#,
     )
 }

@@ -14,7 +14,8 @@
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_sha224_init(state: *mut [u8; 96]) {
     core::arch::naked_asm!(
-        r#".base64 "BcEAPdieCGEAAAORfDYAPQfVCGEEAAORcDAAPRfdCGEIAAORDvcAPTlZCGEMAAORwP8APTELCGEQAAORWGgAPREVCGEUAAOR+WQAPaePCGEYAAOR+r4APaRPCGEcAAORIACATg==""#,
+        r#".base64 "BcEAPdieCGEAAAORfDYAPQfVCGEEAAORcDAAPRfdCGEIAAORDvcAPTlZCGEMAAORwP8APTELCGEQAAORWGgAPREVCGEUAAOR+WQAPaePCGEYAAOR+r4APaRPCGEcAAORIACATg=="
+.p2align 6"#,
     )
 }
 
@@ -58,7 +59,8 @@ b 27f
 bl {vg_sha256_compress}
 .base64 "AADAO////zsAAD8o"
 beq %cr0, 20b
-.base64 "AAAagQAAYDksXRx9BAAagQQAYDksXRx9CAAagQgAYDksXRx9DAAagQwAYDksXRx9EAAagRAAYDksXRx9FAAagRQAYDksXRx9GAAagRgAYDksXRx9cABb64AAm+uIALvrkADb65gA++t4AHvrIAAB6DAAITimAwh8gAIhOCAAgE4=""#,
+.base64 "AAAagQAAYDksXRx9BAAagQQAYDksXRx9CAAagQgAYDksXRx9DAAagQwAYDksXRx9EAAagRAAYDksXRx9FAAagRQAYDksXRx9GAAagRgAYDksXRx9cABb64AAm+uIALvrkADb65gA++t4AHvrIAAB6DAAITimAwh8gAIhOCAAgE4="
+.p2align 6"#,
         vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
     )
 }
@@ -82,7 +84,8 @@ bl {vg_sha224_init}
 bl {vg_sha256_update_scratch}
 .base64 "AAB0OAAAmDgwAbU4AADVOA=="
 bl {vg_sha256_finalize_scratch}
-.base64 "MAEVgQAAFpE0ARWBBAAWkTgBFYEIABaRPAEVgQwAFpFAARWBEAAWkUQBFYEUABaRSAEVgRgAFpFQAZXqYAHV6mgB9epwARXreAE161gBteogAAHoMAAhOKYDCHwgAIE5AABgOQAAbPkIAGz5EABs+RgAbPkgAGz5KABs+TAAbPk4AGz5QABs+UgAbPlQAGz5WABs+WAAbPloAGz5cABs+XgAbPmAAGz5iABs+ZAAbPmYAGz5oABs+agAbPmwAGz5uABs+cAAbPnIAGz50ABs+dgAbPngAGz56ABs+fAAbPn4AGz5AAFs+QgBbPkQAWz5GAFs+SABbPkoAWz5MAFs+TgBbPlAAWz5SAFs+VABbPlYAWz5YAFs+WgBbPlwAWz5eAFs+aABITggAIBO""#,
+.base64 "MAEVgQAAFpE0ARWBBAAWkTgBFYEIABaRPAEVgQwAFpFAARWBEAAWkUQBFYEUABaRSAEVgRgAFpFQAZXqYAHV6mgB9epwARXreAE161gBteogAAHoMAAhOKYDCHwgAIE5AABgOQAAbPkIAGz5EABs+RgAbPkgAGz5KABs+TAAbPk4AGz5QABs+UgAbPlQAGz5WABs+WAAbPloAGz5cABs+XgAbPmAAGz5iABs+ZAAbPmYAGz5oABs+agAbPmwAGz5uABs+cAAbPnIAGz50ABs+dgAbPngAGz56ABs+fAAbPn4AGz5AAFs+QgBbPkQAWz5GAFs+SABbPkoAWz5MAFs+TgBbPlAAWz5SAFs+VABbPlYAWz5YAFs+WgBbPlwAWz5eAFs+aABITggAIBO"
+.p2align 6"#,
         vg_sha224_init = sym super::sha256::vg_sha224_init,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
@@ -100,7 +103,8 @@ bl {vg_sha256_finalize_scratch}
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_sha256_init(state: *mut [u8; 96]) {
     core::arch::naked_asm!(
-        r#".base64 "CWoAPWfmCGEAAAORZ7sAPYWuCGEEAAORbjwAPXLzCGEIAAORT6UAPTr1CGEMAAORDlEAPX9SCGEQAAORBZsAPYxoCGEUAAORgx8APavZCGEYAAOR4FsAPRnNCGEcAAORIACATg==""#,
+        r#".base64 "CWoAPWfmCGEAAAORZ7sAPYWuCGEEAAORbjwAPXLzCGEIAAORT6UAPTr1CGEMAAORDlEAPX9SCGEQAAORBZsAPYxoCGEUAAORgx8APavZCGEYAAOR4FsAPRnNCGEcAAORIACATg=="
+.p2align 6"#,
     )
 }
 
@@ -185,7 +189,8 @@ bne %cr0, 22b
 b 21f
 20:
 21:
-.base64 "cABb64AAm+uIALvrkADb65gA++t4AHvrIAAB6DAAITimAwh8gAIhOCAAgE4=""#,
+.base64 "cABb64AAm+uIALvrkADb65gA++t4AHvrIAAB6DAAITimAwh8gAIhOCAAgE4="
+.p2align 6"#,
         vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
     )
 }
@@ -230,7 +235,8 @@ b 27f
 bl {vg_sha256_compress}
 .base64 "AADAO////zsAAD8o"
 beq %cr0, 20b
-.base64 "AAAagQAAYDksXRx9BAAagQQAYDksXRx9CAAagQgAYDksXRx9DAAagQwAYDksXRx9EAAagRAAYDksXRx9FAAagRQAYDksXRx9GAAagRgAYDksXRx9HAAagRwAYDksXRx9cABb64AAm+uIALvrkADb65gA++t4AHvrIAAB6DAAITimAwh8gAIhOCAAgE4=""#,
+.base64 "AAAagQAAYDksXRx9BAAagQQAYDksXRx9CAAagQgAYDksXRx9DAAagQwAYDksXRx9EAAagRAAYDksXRx9FAAagRQAYDksXRx9GAAagRgAYDksXRx9HAAagRwAYDksXRx9cABb64AAm+uIALvrkADb65gA++t4AHvrIAAB6DAAITimAwh8gAIhOCAAgE4="
+.p2align 6"#,
         vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
     )
 }
@@ -254,7 +260,8 @@ bl {vg_sha256_init}
 bl {vg_sha256_update_scratch}
 .base64 "AAB0OAAAmDgwAbU4AADVOA=="
 bl {vg_sha256_finalize_scratch}
-.base64 "MAEVgQAAFpE0ARWBBAAWkTgBFYEIABaRPAEVgQwAFpFAARWBEAAWkUQBFYEUABaRSAEVgRgAFpFMARWBHAAWkVABlepgAdXqaAH16nABFet4ATXrWAG16iAAAegwACE4pgMIfCAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlAAGz5SABs+VAAbPlYAGz5YABs+WgAbPlwAGz5eABs+YAAbPmIAGz5kABs+ZgAbPmgAGz5qABs+bAAbPm4AGz5wABs+cgAbPnQAGz52ABs+eAAbPnoAGz58ABs+fgAbPkAAWz5CAFs+RABbPkYAWz5IAFs+SgBbPkwAWz5OAFs+UABbPlIAWz5UAFs+VgBbPlgAWz5aAFs+XABbPl4AWz5oAEhOCAAgE4=""#,
+.base64 "MAEVgQAAFpE0ARWBBAAWkTgBFYEIABaRPAEVgQwAFpFAARWBEAAWkUQBFYEUABaRSAEVgRgAFpFMARWBHAAWkVABlepgAdXqaAH16nABFet4ATXrWAG16iAAAegwACE4pgMIfCAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlAAGz5SABs+VAAbPlYAGz5YABs+WgAbPlwAGz5eABs+YAAbPmIAGz5kABs+ZgAbPmgAGz5qABs+bAAbPm4AGz5wABs+cgAbPnQAGz52ABs+eAAbPnoAGz58ABs+fgAbPkAAWz5CAFs+RABbPkYAWz5IAFs+SgBbPkwAWz5OAFs+UABbPlIAWz5UAFs+VgBbPlgAWz5aAFs+XABbPl4AWz5oAEhOCAAgE4="
+.p2align 6"#,
         vg_sha256_init = sym super::sha256::vg_sha256_init,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,

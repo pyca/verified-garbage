@@ -4264,6 +4264,7 @@ vg_rsa_pss_verify_precomputed:
 21:
 	addi %r1, %r1, 256
 	blr
+	.p2align 6
 
 vg_rsa_pss_sign:
 	stdu %r1, -256(%r1)
@@ -7242,3 +7243,4 @@ vg_rsa_pss_sign:
 21:
 	addi %r1, %r1, 256
 	blr
+	.p2align 6

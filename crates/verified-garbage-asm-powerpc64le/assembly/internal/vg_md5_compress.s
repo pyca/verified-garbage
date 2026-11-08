@@ -738,3 +738,4 @@ vg_md5_compress:
 20:
 21:
 	blr
+	.p2align 6

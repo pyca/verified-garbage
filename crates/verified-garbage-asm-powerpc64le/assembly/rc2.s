@@ -124,6 +124,7 @@ vg_rc2_cbc_init:
 	std %r11, 568(%r12)
 	addi %r1, %r1, 608
 	blr
+	.p2align 6
 
 vg_rc2_cbc_encrypt_update:
 	stdu %r1, -608(%r1)
@@ -281,6 +282,7 @@ vg_rc2_cbc_encrypt_update:
 	std %r11, 568(%r12)
 	addi %r1, %r1, 608
 	blr
+	.p2align 6
 
 vg_rc2_cbc_decrypt_update:
 	stdu %r1, -608(%r1)
@@ -438,3 +440,4 @@ vg_rc2_cbc_decrypt_update:
 	std %r11, 568(%r12)
 	addi %r1, %r1, 608
 	blr
+	.p2align 6

@@ -3510,6 +3510,7 @@ vg_mldsa87_keygen:
 	ld %r30, 888(%r31)
 	ld %r31, 896(%r31)
 	blr
+	.p2align 6
 
 vg_mldsa87_pk_tr:
 	addi %r6, %r5, 0
@@ -3586,6 +3587,7 @@ vg_mldsa87_pk_tr:
 	ld %r30, 888(%r31)
 	ld %r31, 896(%r31)
 	blr
+	.p2align 6
 
 vg_mldsa87_prepare_verifying_key:
 	mflr %r0
@@ -3727,6 +3729,7 @@ vg_mldsa87_prepare_verifying_key:
 	addi %r1, %r1, 48
 	mtlr %r0
 	blr
+	.p2align 6
 
 vg_mldsa87_prepare_signing_key:
 	mflr %r0
@@ -4216,6 +4219,7 @@ vg_mldsa87_prepare_signing_key:
 	addi %r1, %r1, 48
 	mtlr %r0
 	blr
+	.p2align 6
 
 vg_mldsa87_sign:
 	mflr %r0
@@ -4228,6 +4232,7 @@ vg_mldsa87_sign:
 	addi %r1, %r1, 48
 	mtlr %r0
 	blr
+	.p2align 6
 
 vg_mldsa87_sign_message:
 	rldicl %r11, %r7, 56, 8
@@ -4348,6 +4353,7 @@ vg_mldsa87_sign_message:
 	mtlr %r0
 21:
 	blr
+	.p2align 6
 
 vg_mldsa87_sign_message_prepared:
 	rldicl %r11, %r7, 56, 8
@@ -4468,6 +4474,7 @@ vg_mldsa87_sign_message_prepared:
 	mtlr %r0
 21:
 	blr
+	.p2align 6
 
 vg_mldsa87_verify:
 	mflr %r0
@@ -4480,6 +4487,7 @@ vg_mldsa87_verify:
 	addi %r1, %r1, 48
 	mtlr %r0
 	blr
+	.p2align 6
 
 vg_mldsa87_verify_message_cached:
 	rldicl %r11, %r7, 56, 8
@@ -4599,6 +4607,7 @@ vg_mldsa87_verify_message_cached:
 	mtlr %r0
 21:
 	blr
+	.p2align 6
 
 vg_mldsa87_verify_message_prepared:
 	rldicl %r11, %r7, 56, 8
@@ -4718,3 +4727,4 @@ vg_mldsa87_verify_message_prepared:
 	mtlr %r0
 21:
 	blr
+	.p2align 6

@@ -21,7 +21,8 @@ bne %cr0, 22b
 b 21f
 20:
 21:
-.base64 "AAFe6wgBfusQAZ7rGAG+6ygB/uswAR7oIAHe66YDCHwgAIBO""#,
+.base64 "AAFe6wgBfusQAZ7rGAG+6ygB/uswAR7oIAHe66YDCHwgAIBO"
+.p2align 6"#,
         vg_rc2_decrypt_block = sym crate::rc2::vg_rc2_decrypt_block::vg_rc2_decrypt_block,
     )
 }

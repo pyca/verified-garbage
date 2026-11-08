@@ -37,7 +37,8 @@ bne %cr0, 22b
 b 21f
 20:
 21:
-.base64 "EAEE6KYDCHwAAcTqCAHk6hgBxOsgAIBO""#,
+.base64 "EAEE6KYDCHwAAcTqCAHk6hgBxOsgAIBO"
+.p2align 6"#,
         vg_chacha20_block = sym crate::chacha20::vg_chacha20_block::vg_chacha20_block,
     )
 }

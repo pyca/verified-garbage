@@ -60,3 +60,4 @@ vg_mldsa_high_bits:
 	bne %cr0, 23b
 21:
 	blr
+	.p2align 6

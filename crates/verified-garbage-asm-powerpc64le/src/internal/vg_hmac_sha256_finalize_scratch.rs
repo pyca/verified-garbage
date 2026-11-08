@@ -17,7 +17,8 @@ bl {vg_sha256_finalize_scratch}
 bl {vg_sha256_update_scratch}
 .base64 "AAB0OGAAgDjQALU4AADVOA=="
 bl {vg_sha256_finalize_scratch}
-.base64 "0AAVgQAAF5HUABWBBAAXkdgAFYEIABeR3AAVgQwAF5HgABWBEAAXkeQAFYEUABeR6AAVgRgAF5HsABWBHAAXkaAAleqwANXquAD16sAAFevIADXrqAC16iAAAegwACE4pgMIfCAAgE4=""#,
+.base64 "0AAVgQAAF5HUABWBBAAXkdgAFYEIABeR3AAVgQwAF5HgABWBEAAXkeQAFYEUABeR6AAVgRgAF5HsABWBHAAXkaAAleqwANXquAD16sAAFevIADXrqAC16iAAAegwACE4pgMIfCAAgE4="
+.p2align 6"#,
         vg_sha256_finalize_scratch = sym crate::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
         vg_sha256_update_scratch = sym crate::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
     )

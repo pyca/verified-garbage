@@ -962,6 +962,7 @@ vg_rsa_pkcs1_verify_precomputed:
 	li %r3, 0
 21:
 	blr
+	.p2align 6
 
 vg_rsa_pkcs1_recover_precomputed:
 	addi %r12, %r1, 0
@@ -1974,6 +1975,7 @@ vg_rsa_pkcs1_recover_precomputed:
 	li %r3, 0
 21:
 	blr
+	.p2align 6
 
 vg_rsa_pkcs1_sign:
 	stdu %r1, -1264(%r1)
@@ -2945,3 +2947,4 @@ vg_rsa_pkcs1_sign:
 	ld %r30, 224(%r12)
 	addi %r1, %r1, 1264
 	blr
+	.p2align 6

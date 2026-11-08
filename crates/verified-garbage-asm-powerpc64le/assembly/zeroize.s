@@ -33,3 +33,4 @@ vg_zeroize:
 23:
 24:
 	blr
+	.p2align 6

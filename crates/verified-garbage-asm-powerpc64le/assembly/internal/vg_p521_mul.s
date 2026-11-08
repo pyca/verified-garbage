@@ -626,3 +626,4 @@ vg_p521_mul:
 	mtlr %r0
 	ld %r31, 3304(%r3)
 	blr
+	.p2align 6

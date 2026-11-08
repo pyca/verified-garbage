@@ -26,6 +26,7 @@ b 21f
 bne %cr0, 23b
 .base64 "eAMDfA=="
 21:
-.base64 "IACATg==""#,
+.base64 "IACATg=="
+.p2align 6"#,
     )
 }

@@ -30,6 +30,7 @@ vg_sha224_init:
 	ori %r8, %r8, 20388
 	stw %r8, 28(%r3)
 	blr
+	.p2align 6
 
 vg_sha224_finalize:
 	stdu %r1, -640(%r1)
@@ -128,6 +129,7 @@ vg_sha224_finalize:
 	mtlr %r0
 	addi %r1, %r1, 640
 	blr
+	.p2align 6
 
 vg_sha224_digest:
 	stdu %r1, -416(%r1)
@@ -234,6 +236,7 @@ vg_sha224_digest:
 	std %r11, 376(%r12)
 	addi %r1, %r1, 416
 	blr
+	.p2align 6
 
 vg_sha256_init:
 	lis %r8, 27145
@@ -261,6 +264,7 @@ vg_sha256_init:
 	ori %r8, %r8, 52505
 	stw %r8, 28(%r3)
 	blr
+	.p2align 6
 
 vg_sha256_update:
 	stdu %r1, -640(%r1)
@@ -394,6 +398,7 @@ vg_sha256_update:
 	mtlr %r0
 	addi %r1, %r1, 640
 	blr
+	.p2align 6
 
 vg_sha256_finalize:
 	stdu %r1, -640(%r1)
@@ -495,6 +500,7 @@ vg_sha256_finalize:
 	mtlr %r0
 	addi %r1, %r1, 640
 	blr
+	.p2align 6
 
 vg_sha256_digest:
 	stdu %r1, -416(%r1)
@@ -603,3 +609,4 @@ vg_sha256_digest:
 	std %r11, 376(%r12)
 	addi %r1, %r1, 416
 	blr
+	.p2align 6

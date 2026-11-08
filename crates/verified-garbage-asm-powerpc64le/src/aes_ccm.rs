@@ -132,7 +132,8 @@ b 226f
 228:
 .base64 "AAADiAAACZgBAGM4AQApOf//hDgAACQo"
 bne %cr0, 228b
-.base64 "0AAO6KYDCHyIAO7pkAAO6pgALuqgAE7qqABu6rAAjuq4AK7qwADO6sgA7uqAAM7pgAohOCAAgE4=""#,
+.base64 "0AAO6KYDCHyIAO7pkAAO6pgALuqgAE7qqABu6rAAjuq4AK7qwADO6sgA7uqAAM7pgAohOCAAgE4="
+.p2align 6"#,
         vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
@@ -279,7 +280,8 @@ bne %cr0, 232b
 b 231f
 230:
 231:
-.base64 "eKujftAADuimAwh8iADu6ZAADuqYAC7qoABO6qgAbuqwAI7quACu6sAAzurIAO7qgADO6YAKITggAIBO""#,
+.base64 "eKujftAADuimAwh8iADu6ZAADuqYAC7qoABO6qgAbuqwAI7quACu6sAAzurIAO7qgADO6YAKITggAIBO"
+.p2align 6"#,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
         vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,
     )

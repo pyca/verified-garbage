@@ -25,7 +25,8 @@ b 23f
 .base64 "AAAgOQAAI/kIACP5EAAj+RgAI/kAAGA4"
 23:
 21:
-.base64 "IACATg==""#,
+.base64 "IACATg=="
+.p2align 6"#,
     )
 }
 
@@ -51,7 +52,8 @@ b 23f
 .base64 "AAAgOQAAI/kIACP5EAAj+RgAI/kAAGA4"
 23:
 21:
-.base64 "IACATg==""#,
+.base64 "IACATg=="
+.p2align 6"#,
     )
 }
 
@@ -348,7 +350,8 @@ b 218f
 .base64 "AABgOA=="
 218:
 27:
-.base64 "cADX6XgA9+mAABfqiAA36pAAV+qYAHfqoACX6qgAt+qwANfquAAX68AAN+vIAFfr0AB369gAl+vgALfr6ADX6/AA9+v4APfqIACATg==""#,
+.base64 "cADX6XgA9+mAABfqiAA36pAAV+qYAHfqoACX6qgAt+qwANfquAAX68AAN+vIAFfr0AB369gAl+vgALfr6ADX6/AA9+v4APfqIACATg=="
+.p2align 6"#,
     )
 }
 
@@ -992,7 +995,8 @@ b 251f
 250:
 .base64 "AQBgOA=="
 251:
-.base64 "IACATg==""#,
+.base64 "IACATg=="
+.p2align 6"#,
         VG_FFDH_VETTED_GROUPS_PPC = sym super::consts::VG_FFDH_VETTED_GROUPS_PPC,
     )
 }
@@ -1274,7 +1278,8 @@ bne %cr0, 274b
 bne %cr0, 275b
 .base64 "AQBgODjQY3w="
 27:
-.base64 "cADX6XgA9+mAABfqiAA36pAAV+qYAHfqoACX6qgAt+qwANfquAAX68AAN+vIAFfr0AB369gAl+vgALfr6ADX6/AA9+v4APfqIACATg==""#,
+.base64 "cADX6XgA9+mAABfqiAA36pAAV+qYAHfqoACX6qgAt+qwANfquAAX68AAN+vIAFfr0AB369gAl+vgALfr6ADX6/AA9+v4APfqIACATg=="
+.p2align 6"#,
     )
 }
 
@@ -1605,7 +1610,8 @@ bne %cr0, 289b
 .base64 "AQBgODjQY3wCAGA4"
 220:
 27:
-.base64 "cADX6XgA9+mAABfqiAA36pAAV+qYAHfqoACX6qgAt+qwANfquAAX68AAN+vIAFfr0AB369gAl+vgALfr6ADX6/AA9+v4APfqIACATg==""#,
+.base64 "cADX6XgA9+mAABfqiAA36pAAV+qYAHfqoACX6qgAt+qwANfquAAX68AAN+vIAFfr0AB369gAl+vgALfr6ADX6/AA9+v4APfqIACATg=="
+.p2align 6"#,
     )
 }
 
@@ -1940,7 +1946,8 @@ b 220f
 .base64 "AgBgOA=="
 220:
 27:
-.base64 "cADX6XgA9+mAABfqiAA36pAAV+qYAHfqoACX6qgAt+qwANfquAAX68AAN+vIAFfr0AB369gAl+vgALfr6ADX6/AA9+v4APfqIACATg==""#,
+.base64 "cADX6XgA9+mAABfqiAA36pAAV+qYAHfqoACX6qgAt+qwANfquAAX68AAN+vIAFfr0AB369gAl+vgALfr6ADX6/AA9+v4APfqIACATg=="
+.p2align 6"#,
     )
 }
 
@@ -2430,7 +2437,8 @@ bne %cr0, 2113b
 bne %cr0, 2100b
 .base64 "AQBgOA=="
 257:
-.base64 "cADX6XgA9+mAABfqiAA36pAAV+qYAHfqoACX6qgAt+qwANfquAAX68AAN+vIAFfr0AB369gAl+vgALfr6ADX6/AA9+v4APfqIACATg==""#,
+.base64 "cADX6XgA9+mAABfqiAA36pAAV+qYAHfqoACX6qgAt+qwANfquAAX68AAN+vIAFfr0AB369gAl+vgALfr6ADX6/AA9+v4APfqIACATg=="
+.p2align 6"#,
         VG_FFDH_VETTED_GROUPS_PPC = sym super::consts::VG_FFDH_VETTED_GROUPS_PPC,
     )
 }
@@ -2815,7 +2823,8 @@ bne %cr0, 2106b
 .base64 "AAAZijiIEH4AABmaAQA5O///xjgAACYo"
 bne %cr0, 2107b
 27:
-.base64 "cADX6XgA9+mAABfqiAA36pAAV+qYAHfqoACX6qgAt+qwANfquAAX68AAN+vIAFfr0AB369gAl+vgALfr6ADX6/AA9+v4APfqIACATg==""#,
+.base64 "cADX6XgA9+mAABfqiAA36pAAV+qYAHfqoACX6qgAt+qwANfquAAX68AAN+vIAFfr0AB369gAl+vgALfr6ADX6/AA9+v4APfqIACATg=="
+.p2align 6"#,
     )
 }
 
@@ -2915,7 +2924,8 @@ bne %cr0, 220b
 22:
 .base64 "cAA/6fz/KTkAACko"
 beq %cr0, 20b
-.base64 "IAAB6DAAITimAwh8eACf6FgAv+hwAH/oAACk+CAA/+sgAIBO""#,
+.base64 "IAAB6DAAITimAwh8eACf6FgAv+hwAH/oAACk+CAA/+sgAIBO"
+.p2align 6"#,
         vg_ffdh_generate_key_cached = sym super::ffdh::vg_ffdh_generate_key_cached,
     )
 }
@@ -2975,7 +2985,8 @@ bne %cr0, 210b
 22:
 .base64 "cAA/6fz/KTkAACko"
 beq %cr0, 20b
-.base64 "IAAB6DAAITimAwh8OACf6GAAv+hwAH/oAACk+CAA/+sgAIBO""#,
+.base64 "IAAB6DAAITimAwh8OACf6GAAv+hwAH/oAACk+CAA/+sgAIBO"
+.p2align 6"#,
         vg_ffdh_parameter_candidate_sieved = sym super::ffdh::vg_ffdh_parameter_candidate_sieved::vg_ffdh_parameter_candidate_sieved,
     )
 }

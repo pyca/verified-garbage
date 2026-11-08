@@ -91,3 +91,4 @@ vg_mldsa_simple_bit_pack:
 	bne %cr0, 26b
 21:
 	blr
+	.p2align 6

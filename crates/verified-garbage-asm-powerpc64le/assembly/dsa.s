@@ -3682,6 +3682,7 @@ vg_dsa_derive_key:
 	ld %r2, 240(%r21)
 	ld %r21, 248(%r21)
 	blr
+	.p2align 6
 
 vg_dsa_sign_random_prevalidated:
 	stdu %r1, -304(%r1)
@@ -3922,6 +3923,7 @@ vg_dsa_sign_random_prevalidated:
 	ld %r31, 288(%r12)
 	addi %r1, %r1, 304
 	blr
+	.p2align 6
 
 vg_dsa_generate_key:
 	stdu %r1, -304(%r1)
@@ -4165,6 +4167,7 @@ vg_dsa_generate_key:
 	ld %r31, 288(%r12)
 	addi %r1, %r1, 304
 	blr
+	.p2align 6
 
 vg_dsa_validate_public_key:
 	addi %r11, %r7, 0
@@ -7632,6 +7635,7 @@ vg_dsa_validate_public_key:
 	ld %r2, 240(%r21)
 	ld %r21, 248(%r21)
 	blr
+	.p2align 6
 
 vg_dsa_validate_private_key:
 	addi %r11, %r7, 0
@@ -12564,6 +12568,7 @@ vg_dsa_validate_private_key:
 	ld %r2, 240(%r21)
 	ld %r21, 248(%r21)
 	blr
+	.p2align 6
 
 vg_dsa_verify_prevalidated:
 	addi %r11, %r1, 96
@@ -19053,6 +19058,7 @@ vg_dsa_verify_prevalidated:
 	ld %r2, 240(%r21)
 	ld %r21, 248(%r21)
 	blr
+	.p2align 6
 
 vg_dsa_parameter_search_init:
 	addi %r0, %r4, -128
@@ -19107,6 +19113,7 @@ vg_dsa_parameter_search_init:
 	li %r3, 1
 21:
 	blr
+	.p2align 6
 
 vg_dsa_parameter_search:
 	mflr %r0
@@ -29475,3 +29482,4 @@ vg_dsa_parameter_search:
 	ld %r31, 336(%r28)
 	ld %r28, 344(%r28)
 	blr
+	.p2align 6

@@ -28,7 +28,8 @@ b 21f
 21:
 .base64 "AAAl6QAISOl4Uil9AAAl+QgAJekICEjpeFIpfQgAJfl4Qw59AQDAOHhzx30="
 bl {vg_aes_encrypt_blocks}
-.base64 "EAgO6BgIzummAwh8IACATg==""#,
+.base64 "EAgO6BgIzummAwh8IACATg=="
+.p2align 6"#,
         vg_aes_encrypt_blocks = sym crate::aes::vg_aes_encrypt_blocks,
     )
 }

@@ -1510,7 +1510,8 @@ b 22f
 21:
 .base64 "IACf6AAAoDgAAKT4AABgOA=="
 22:
-.base64 "AAB/6SQfa3kUWn99YP9rOZAAC+imAwh8AADL6QgA6+kQAAvqGAAr6iAAS+ooAGvqMACL6jgAq+pAAMvqSADr6lAAC+tYACvrYABL62gAa+twAIvreACr64AAy+uIAOvrIACATg==""#,
+.base64 "AAB/6SQfa3kUWn99YP9rOZAAC+imAwh8AADL6QgA6+kQAAvqGAAr6iAAS+ooAGvqMACL6jgAq+pAAMvqSADr6lAAC+tYACvrYABL62gAa+twAIvreACr64AAy+uIAOvrIACATg=="
+.p2align 6"#,
         vg_miller_rabin_round = sym crate::dsa::vg_miller_rabin_round::vg_miller_rabin_round,
         VG_RSA_KEYGEN_TRIAL32 = sym crate::consts::VG_RSA_KEYGEN_TRIAL32,
     )

@@ -155,7 +155,8 @@ bne %cr0, 22b
 bne %cr0, 228b
 .base64 "2AF+6AAEgDjwAb7o+AHe6AAA/zg="
 bl {vg_argon2_hprime}
-.base64 "aAAe6KYDCHxwAJ7reAC+64gA/uuAAN7rUAEhOCAAgE4=""#,
+.base64 "aAAe6KYDCHxwAJ7reAC+64gA/uuAAN7rUAEhOCAAgE4="
+.p2align 6"#,
         vg_blake2b_init = sym super::blake2b::vg_blake2b_init,
         vg_blake2b_update_scratch = sym super::blake2b::vg_blake2b_update_scratch::vg_blake2b_update_scratch,
         vg_blake2b_finalize_scratch = sym super::blake2b::vg_blake2b_finalize_scratch::vg_blake2b_finalize_scratch,

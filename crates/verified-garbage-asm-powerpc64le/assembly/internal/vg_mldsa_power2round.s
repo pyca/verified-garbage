@@ -27,3 +27,4 @@ vg_mldsa_power2round:
 	cmpldi %cr0, %r6, 0
 	bne %cr0, 20b
 	blr
+	.p2align 6

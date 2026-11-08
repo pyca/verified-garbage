@@ -22,3 +22,4 @@ vg_mldsa_sub:
 	cmpldi %cr0, %r5, 0
 	bne %cr0, 20b
 	blr
+	.p2align 6

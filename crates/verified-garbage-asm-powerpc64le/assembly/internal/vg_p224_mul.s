@@ -256,3 +256,4 @@ vg_p224_mul:
 	mtlr %r0
 	ld %r31, 1504(%r3)
 	blr
+	.p2align 6

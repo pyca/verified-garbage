@@ -295,3 +295,4 @@ vg_poly1305_finalize_scratch:
 	ld %r20, 48(%r21)
 	ld %r21, 56(%r21)
 	blr
+	.p2align 6

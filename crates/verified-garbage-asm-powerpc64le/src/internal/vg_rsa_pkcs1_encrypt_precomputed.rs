@@ -34,7 +34,8 @@ bne %cr0, 24b
 25:
 .base64 "AAAEmAEAhDj//2s5AAArKA=="
 bne %cr0, 25b
-.base64 "AACBOZAADOimAwh8cACM63gArOuAAMzriADs67AIITggAIBO""#,
+.base64 "AACBOZAADOimAwh8cACM63gArOuAAMzriADs67AIITggAIBO"
+.p2align 6"#,
         vg_rsa_public_precomputed_checked = sym crate::rsa::vg_rsa_public_precomputed_checked::vg_rsa_public_precomputed_checked,
     )
 }

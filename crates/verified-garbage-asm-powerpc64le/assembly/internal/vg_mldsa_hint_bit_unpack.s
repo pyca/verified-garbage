@@ -120,3 +120,4 @@ vg_mldsa_hint_bit_unpack:
 	li %r3, 1
 	subf %r3, %r0, %r3
 	blr
+	.p2align 6

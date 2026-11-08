@@ -248,3 +248,4 @@ vg_pbkdf2_hmac_sha384_iterate:
 	ld %r27, 184(%r27)
 	mtlr %r0
 	blr
+	.p2align 6

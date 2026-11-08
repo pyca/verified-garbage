@@ -518,6 +518,7 @@ vg_cast5_ofb:
 	std %r11, 168(%r12)
 	addi %r1, %r1, 208
 	blr
+	.p2align 6
 
 vg_cast5_ofb_final:
 	stdu %r1, -208(%r1)
@@ -1075,3 +1076,4 @@ vg_cast5_ofb_final:
 	std %r11, 168(%r12)
 	addi %r1, %r1, 208
 	blr
+	.p2align 6
