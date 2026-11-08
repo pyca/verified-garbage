@@ -22,6 +22,8 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
 public import VerifiedGarbage.Proof.Framework.PPC64LE.TaintSym
 public import VerifiedGarbage.Spec.Cast5.Contract
+import VerifiedGarbage.Proof.Framework.PPC64LE.VectorTaintSym
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.VectorTaintSym
 
 /-!
 # CAST5 key expansion on PPC64LE: verified
@@ -108,7 +110,7 @@ theorem key_agree : ∀ s₁ s₂, keyPC.pre s₁ → keyPC.pre s₂ → keyPC.p
   · exact h.2.2.2.1
 
 theorem expandKey_ct : ConstantTime isa keyPC.pre keyPC.pub expandKey :=
-  VG.Taint.constantTime (A := taintSym [s5678Sym]) (Taint.ofRegs [.r3, .r4, .r5, .r6]) key_agree
+  VG.Taint.constantTime (A := vectorTaintSym [s5678Sym]) (Taint.ofRegs [.r3, .r4, .r5, .r6]) key_agree
     (by taint_decide)
 
 /-- A state satisfying the precondition without the table: a key of five bytes. -/

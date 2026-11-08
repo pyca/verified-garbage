@@ -24,6 +24,8 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
+import VerifiedGarbage.Proof.Framework.PPC64LE.VectorTaintSym
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.VectorTaintSym
 
 /-!
 # CAST5 ECB on PPC64LE: verified
@@ -145,11 +147,11 @@ theorem ecb_agree (up : Bool) : ∀ s₁ s₂, (ecbPC up).pre s₁ → (ecbPC up
   · exact h.2.2.2.2.1
 
 theorem ecbEncrypt_ct : ConstantTime isa (ecbPC true).pre (ecbPC true).pub ecbEncrypt :=
-  VG.Taint.constantTime (A := taintSym [s1234Sym]) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7])
+  VG.Taint.constantTime (A := vectorTaintSym [s1234Sym]) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7])
     (ecb_agree true) (by taint_decide)
 
 theorem ecbDecrypt_ct : ConstantTime isa (ecbPC false).pre (ecbPC false).pub ecbDecrypt :=
-  VG.Taint.constantTime (A := taintSym [s1234Sym]) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7])
+  VG.Taint.constantTime (A := vectorTaintSym [s1234Sym]) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7])
     (ecb_agree false) (by taint_decide)
 
 /-- A state satisfying the precondition without the table: no blocks. -/

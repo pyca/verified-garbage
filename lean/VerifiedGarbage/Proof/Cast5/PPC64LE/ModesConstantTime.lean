@@ -9,6 +9,8 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.TaintSym
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Lit
 meta import VerifiedGarbage.Impl.Cast5.PPC64LE.Modes
 meta import VerifiedGarbage.Proof.Framework.RegSet
+import VerifiedGarbage.Proof.Framework.PPC64LE.VectorTaintSym
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.VectorTaintSym
 
 /-!
 # Constant-time CAST5 modes on PPC64LE
@@ -38,24 +40,24 @@ theorem modes_agree (s₁ s₂ : State) (h : modePub s₁ s₂) :
 
 theorem cbcEncryptChained_constantTime (pre : State → Prop) :
     ConstantTime isa pre modePub cbcEncryptChained :=
-  VG.Taint.constantTime (A := taintSym [s1234Sym]) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7, .r8])
+  VG.Taint.constantTime (A := vectorTaintSym [s1234Sym]) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7, .r8])
     (fun _ _ _ _ hp => modes_agree _ _ hp) (by taint_decide)
 
 theorem cbcDecryptChained_constantTime (pre : State → Prop) :
     ConstantTime isa pre modePub cbcDecryptChained :=
-  VG.Taint.constantTime (A := taintSym [s1234Sym]) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7, .r8])
+  VG.Taint.constantTime (A := vectorTaintSym [s1234Sym]) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7, .r8])
     (fun _ _ _ _ hp => modes_agree _ _ hp) (by taint_decide)
 
 theorem ofb_constantTime (pre : State → Prop) : ConstantTime isa pre modePub ofb :=
-  VG.Taint.constantTime (A := taintSym [s1234Sym]) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7, .r8])
+  VG.Taint.constantTime (A := vectorTaintSym [s1234Sym]) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7, .r8])
     (fun _ _ _ _ hp => modes_agree _ _ hp) (by taint_decide)
 
 theorem cfbEncrypt_constantTime (pre : State → Prop) : ConstantTime isa pre modePub cfbEncrypt :=
-  VG.Taint.constantTime (A := taintSym [s1234Sym]) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7, .r8])
+  VG.Taint.constantTime (A := vectorTaintSym [s1234Sym]) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7, .r8])
     (fun _ _ _ _ hp => modes_agree _ _ hp) (by taint_decide)
 
 theorem cfbDecrypt_constantTime (pre : State → Prop) : ConstantTime isa pre modePub cfbDecrypt :=
-  VG.Taint.constantTime (A := taintSym [s1234Sym]) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7, .r8])
+  VG.Taint.constantTime (A := vectorTaintSym [s1234Sym]) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7, .r8])
     (fun _ _ _ _ hp => modes_agree _ _ hp) (by taint_decide)
 
 end VG.Proof.Cast5.PPC64LE
