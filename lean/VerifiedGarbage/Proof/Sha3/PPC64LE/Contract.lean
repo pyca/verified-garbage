@@ -24,14 +24,16 @@ open VG.PPC64LE in
 [u64; 64])`: applies Keccak-f[1600] to the state at `state`.
 
 The code may read and write `state` (200 bytes) and `scratch` (512 bytes,
-whose contents on exit are unspecified), which may not overlap. The pointers
-are public; the state is secret. -/
+whose contents on exit are unspecified), which may not overlap, and leaves
+the two pointers in `r3` and `r4`. The pointers are public; the state is
+secret. -/
 def permutePPC64LE : Contract PPC64LE.isa where
   pre s :=
     let state : Region := ⟨s.gpr .r3, 200⟩
     let scratch : Region := ⟨s.gpr .r4, 512⟩
     s.rd = [] ∧ s.wr = [state, scratch] ∧ state.Disjoint scratch
-  post s s' := stateAt s'.mem (s.gpr .r3) = keccakF (stateAt s.mem (s.gpr .r3))
+  post s s' := stateAt s'.mem (s.gpr .r3) = keccakF (stateAt s.mem (s.gpr .r3)) ∧
+    s'.gpr .r3 = s.gpr .r3 ∧ s'.gpr .r4 = s.gpr .r4
   pub s₁ s₂ := s₁.gpr .r3 = s₂.gpr .r3 ∧ s₁.gpr .r4 = s₂.gpr .r4 ∧ s₁.sp = s₂.sp
 
 open VG.PPC64LE in

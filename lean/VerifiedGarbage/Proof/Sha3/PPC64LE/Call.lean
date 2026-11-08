@@ -20,14 +20,14 @@ open VG VG.PPC64LE VG.Impl.Sha3.PPC64LE.Stream
 open VG.Spec.Sha3 (stateAt keccakF)
 
 /-- Calling `vg_keccak_f1600` on the state at `r3`, with scratch space at
-`r4`: the callee-saved registers are kept. -/
-theorem call_ok {s : State} {st scr : Addr} (h3 : s.gpr .r3 = st) (h4 : s.gpr .r4 = scr)
+`r4`: the callee-saved registers are kept, and so are `r3` and `r4`. -/
+theorem call_ok' {s : State} {st scr : Addr} (h3 : s.gpr .r3 = st) (h4 : s.gpr .r4 = scr)
     (d₁ : Region.Disjoint ⟨st, 200⟩ ⟨scr, 512⟩)
     (hw : PPC64LE.Covers [⟨st, 200⟩, ⟨scr, 512⟩] s.wr) {Q : State → Prop}
     (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →
       (∀ r ∈ preserved, s'.gpr r = s.gpr r) →
       Frame [⟨st, 200⟩, ⟨scr, 512⟩] s.mem s'.mem →
-      stateAt s'.mem st = keccakF (stateAt s.mem st) → Q s') :
+      stateAt s'.mem st = keccakF (stateAt s.mem st) → s'.gpr .r3 = st → s'.gpr .r4 = scr → Q s') :
     WP isa (.call "vg_keccak_f1600" Impl.Sha3.PPC64LE.permute) s Q := by
   have c3 : s.callEntry.gpr .r3 = st := (State.callEntry_gpr _ (by decide)).trans h3
   have c4 : s.callEntry.gpr .r4 = scr := (State.callEntry_gpr _ (by decide)).trans h4
@@ -41,13 +41,25 @@ theorem call_ok {s : State} {st scr : Addr} (h3 : s.gpr .r3 = st) (h4 : s.gpr .r
     exact ⟨r, List.mem_append_right _ hr, hc⟩
   · intro s' hrd hwr hsp hf hcs _ hpost
     simp only [Proof.Sha3.permutePPC64LE, State.withRegions_gpr, State.withRegions_mem,
-      State.callEntry_mem, c3] at hpost
-    exact hQ s' hrd hwr hsp hcs hf hpost
+      State.callEntry_mem, c3, c4] at hpost
+    exact hQ s' hrd hwr hsp hcs hf hpost.1 hpost.2.1 hpost.2.2
+
+/-- Calling `vg_keccak_f1600` on the state at `r3`, with scratch space at
+`r4`: the callee-saved registers are kept. -/
+theorem call_ok {s : State} {st scr : Addr} (h3 : s.gpr .r3 = st) (h4 : s.gpr .r4 = scr)
+    (d₁ : Region.Disjoint ⟨st, 200⟩ ⟨scr, 512⟩)
+    (hw : PPC64LE.Covers [⟨st, 200⟩, ⟨scr, 512⟩] s.wr) {Q : State → Prop}
+    (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →
+      (∀ r ∈ preserved, s'.gpr r = s.gpr r) →
+      Frame [⟨st, 200⟩, ⟨scr, 512⟩] s.mem s'.mem →
+      stateAt s'.mem st = keccakF (stateAt s.mem st) → Q s') :
+    WP isa (.call "vg_keccak_f1600" Impl.Sha3.PPC64LE.permute) s Q :=
+  call_ok' h3 h4 d₁ hw fun s' hrd hwr hsp hcs hf he _ _ => hQ s' hrd hwr hsp hcs hf he
 
 theorem preserved_r3_r4 : ∀ r ∈ preserved, r ≠ .r3 ∧ r ≠ .r4 := by decide
 
 /-- `permuteAt`: calling `vg_keccak_f1600` on the state at `r26`, with
-scratch space at `r27`. -/
+scratch space at `r27`, which are then taken back from `r3` and `r4`. -/
 theorem permuteAt_ok {s : State} {st scr : Addr} (h26 : s.gpr .r26 = st) (h27 : s.gpr .r27 = scr)
     (d₁ : Region.Disjoint ⟨st, 200⟩ ⟨scr, 512⟩)
     (hw : PPC64LE.Covers [⟨st, 200⟩, ⟨scr, 512⟩] s.wr) {Q : State → Prop}
@@ -61,14 +73,24 @@ theorem permuteAt_ok {s : State} {st scr : Addr} (h26 : s.gpr .r26 = st) (h27 : 
     MdStream.PPC64LE.wp_addi (by decide) fun s₂ u₂ => WP.block_nil ?_)
   have g : ∀ r, r ≠ .r3 → r ≠ .r4 → s₂.gpr r = s.gpr r := fun r h3 h4 => by
     rw [u₂.other r h4, u₁.other r h3]
-  refine call_ok (st := st) (scr := scr)
+  refine WP.seq (call_ok' (st := st) (scr := scr)
     (by rw [u₂.other _ (by decide), u₁.gpr, h26]; exact BitVec.add_zero _)
     (by rw [u₂.gpr, u₁.other _ (by decide), h27]; exact BitVec.add_zero _)
-    d₁ (by rw [u₂.wr, u₁.wr]; exact hw) fun s' rd' wr' sp' cs' f' e' => ?_
+    d₁ (by rw [u₂.wr, u₁.wr]; exact hw) fun s' rd' wr' sp' cs' f' e' r3' r4' => ?_)
+  refine MdStream.PPC64LE.wp_addi (by decide) fun s₃ u₃ =>
+    MdStream.PPC64LE.wp_addi (by decide) fun s₄ u₄ => WP.block_nil ?_
   have hm : s₂.mem = s.mem := by rw [u₂.mem, u₁.mem]
-  refine hQ s' (by rw [rd', u₂.rd, u₁.rd]) (by rw [wr', u₂.wr, u₁.wr]) (by rw [sp', u₂.sp, u₁.sp])
-    (fun r hr => ?_) (hm ▸ f') (by rw [e', hm])
-  rw [cs' r hr, g r (preserved_r3_r4 r hr).1 (preserved_r3_r4 r hr).2]
+  have hm' : s₄.mem = s'.mem := by rw [u₄.mem, u₃.mem]
+  refine hQ s₄ (by rw [u₄.rd, u₃.rd, rd', u₂.rd, u₁.rd]) (by rw [u₄.wr, u₃.wr, wr', u₂.wr, u₁.wr])
+    (by rw [u₄.sp, u₃.sp, sp', u₂.sp, u₁.sp]) (fun r hr => ?_) (by rw [hm', ← hm]; exact f')
+    (by rw [hm', e', hm])
+  by_cases e26 : r = .r26
+  · subst e26
+    rw [u₄.other _ (by decide), u₃.gpr, r3', BitVec.add_zero, h26]
+  by_cases e27 : r = .r27
+  · subst e27
+    rw [u₄.gpr, u₃.other _ (by decide), r4', BitVec.add_zero, h27]
+  rw [u₄.other r e27, u₃.other r e26, cs' r hr, g r (preserved_r3_r4 r hr).1 (preserved_r3_r4 r hr).2]
 
 end VG.Proof.Sha3.PPC64LE
 

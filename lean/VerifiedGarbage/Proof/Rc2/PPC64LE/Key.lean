@@ -123,6 +123,8 @@ theorem expandKey_wp {s : State} (h : KeyPre s) : WP isa expandKey s (KeyPost s)
   have R : KRegions K S W len := ⟨⟨hv.1, hv.2.1⟩, h.kS, h.SW⟩
   have wW : ∀ d, d + 8 ≤ 512 → InRegions s.wr (W + BitVec.ofNat 64 d) 8 := fun d hd => by
     rw [h.wr]; exact ⟨⟨W, 512⟩, by simp [W], Offset.contains_base _ hd (by omega_arith)⟩
+  have wW' : ∀ d n, d + n ≤ 512 → InRegions s.wr (W + BitVec.ofNat 64 d) n := fun d n hd => by
+    rw [h.wr]; exact ⟨⟨W, 512⟩, by simp [W], Offset.contains_base _ hd (by omega_arith)⟩
   unfold expandKey
   apply WP.seq
   rw [List.append_assoc, keySave_eq]
@@ -139,10 +141,10 @@ theorem expandKey_wp {s : State} (h : KeyPre s) : WP isa expandKey s (KeyPost s)
   have E₀ : KEnv K S W len bits key s.gpr t₀ := by
     refine ⟨k01.gpr (by decide), by rw [k01.gpr (by decide)]; exact (BitVec.ofNat_toNat _ _).trans (BitVec.setWidth_eq _) |>.symm,
       by rw [k01.gpr (by decide)]; exact (BitVec.ofNat_toNat _ _).trans (BitVec.setWidth_eq _) |>.symm,
-      k01.gpr (by decide), ⟨k01.gpr (by decide), fun j hj => ?_, by rw [m₀]; exact held⟩,
+      k01.gpr (by decide), ⟨k01.gpr (by decide), fun o n ho => ?_, by rw [m₀]; exact held⟩,
       by rw [k01.2.1]; exact h.rd, by rw [k01.2.2]; exact h.wr, fun c hc => ?_, ?_⟩
     · rw [k01.2.1, k01.2.2]
-      obtain ⟨r, hr, hc⟩ := wW (8 * j) (by omega_arith)
+      obtain ⟨r, hr, hc⟩ := wW' o n (by omega_arith)
       exact ⟨r, List.mem_append_right _ hr, hc⟩
     · rw [m₀, F₁.bytes (R := ⟨K, len⟩) (by simpa using h.kW.sub_right (Region.sub_prefix (show 256 ≤ 512 by decide)))
         (by simp; omega_arith) hc]

@@ -1,16 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Rc2.PPC64LE.Run
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Impl.Rc2.PPC64LE.Lookup
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 
 /-!
-# RC2 on PPC64LE: the table scan
+# RC2 on PPC64LE: the scan of a table
 
-`scan_run`: `scan base rp rows lanes bits` leaves in `r11` the doubleword
-of the table at `base` that holds byte offset `q` (in `r10`), rotated right
-by `q`'s byte offset in it and kept to `bits` bits: the entry at `q`.
+`vscan_run`: the scan of a table of four or eight 32-byte chunks leaves in
+`r11` its byte, or two bytes, at the offset in `r10`. Vectors are reasoned
+about a byte at a time (`vbyte`).
 -/
 
 @[expose] public section
@@ -19,147 +20,57 @@ namespace VG.Proof.Rc2.PPC64LE
 
 open VG VG.PPC64LE VG.Impl.Rc2.PPC64LE
 
-/-! ## The rows -/
+theorem read_sixteen (m : Mem) (a : Addr) : m.read a 16 = m.readW a 128 := by
+  simp only [Mem.readW, BitVec.setWidth_eq]
 
-/-- Row `k` holds offset `q` exactly when `(q XOR 8k) >> 3` is zero. -/
-theorem row_hit (q : BitVec 64) {k : Nat} (hk : k < 2 ^ 58) :
-    ((q ^^^ BitVec.ofNat 64 (8 * k)) >>> 3).toNat = 0 ↔ q.toNat / 8 = k := by
-  rw [BitVec.toNat_ushiftRight, BitVec.toNat_xor, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (show 8 * k < 2 ^ 64 by omega_arith), Nat.shiftRight_xor_distrib]
-  have e : (8 * k) >>> 3 = k := by rw [Nat.shiftRight_eq_div_pow]; omega_arith
-  rw [e, Nat.shiftRight_eq_div_pow, show 2 ^ 3 = 8 from rfl]
-  constructor
-  · intro h
-    apply Nat.eq_of_testBit_eq
-    intro i
-    have := congrArg (fun n => n.testBit i) h
-    simp only [Nat.testBit_xor, Nat.zero_testBit] at this
-    cases a : (q.toNat / 8).testBit i <;> cases b : k.testBit i <;> simp_all
-  · intro h; rw [h, Nat.xor_self]
+/-- The address of chunk `i` of the table at `T`, as the code makes it. -/
+def ch (T : Addr) : Nat → Addr
+  | 0 => T
+  | i + 1 => ch T i + 32#64
 
-/-- The row's mask: zero if the row holds the entry, else all ones. -/
-theorem rowMask_eq (v : BitVec 64) (h : v.toNat < 2 ^ 63) :
-    ((v - 1#64) >>> 63) - 1#64 = if v.toNat = 0 then 0#64 else BitVec.allOnes 64 := by
-  by_cases e : v.toNat = 0
-  · have : v = 0#64 := BitVec.eq_of_toNat_eq (by simp [e])
-    subst this; decide
-  · rw [ite_eq_right e]
-    have : (v - 1#64) >>> 63 = 0#64 := by
-      apply BitVec.eq_of_toNat_eq
-      rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub]
-      simp only [BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-      omega_arith
-    rw [this]; decide
+theorem ch_eq (T : Addr) : ∀ i, ch T i = T + BitVec.ofNat 64 (32 * i)
+  | 0 => by simp [ch]
+  | i + 1 => by
+    rw [ch, ch_eq T i, show (32#64 : BitVec 64) = BitVec.ofNat 64 32 from rfl, Offset.add_add]; congr 2
 
-theorem keep_row (d : BitVec 64) (c : Prop) [Decidable c] :
-    d ^^^ (d &&& (if c then 0#64 else BitVec.allOnes 64)) = if c then d else 0#64 := by
-  by_cases h : c
-  · rw [ite_eq_left h, ite_eq_left h, BitVec.and_zero, BitVec.xor_zero]
-  · rw [ite_eq_right h, ite_eq_right h, BitVec.and_allOnes, BitVec.xor_self]
+/-! ## Bytes -/
 
-/-- The scan's start, row and lanes need these of their registers. -/
-structure ScanRegs (base rp : Reg) : Prop where
-  b0 : base ≠ .r0
-  b10 : base ≠ .r10
-  b11 : base ≠ .r11
-  b12 : base ≠ .r12
-  p0 : rp ≠ .r0
-  p10 : rp ≠ .r10
-  p11 : rp ≠ .r11
-  p12 : rp ≠ .r12
-  pb : rp ≠ base
+theorem vbyte_and (a b : BitVec 128) (i : Nat) : vbyte (a &&& b) i = vbyte a i &&& vbyte b i := by
+  apply BitVec.eq_of_getLsbD_eq; intro r hr; simp [vbyte, hr]
 
-/-- One row, `k`: the doubleword at `rp = T + 8k`, kept if it holds `q`. -/
-theorem row_run {base rp : Reg} (R : ScanRegs base rp) (u : State) {T : Addr} {k : Nat} (hk : k < 32)
-    (hT : u.gpr base = T) (hp : u.gpr rp = T + BitVec.ofNat 64 (8 * k))
-    (hr : InRegions (u.rd ++ u.wr) (T + BitVec.ofNat 64 (8 * k)) 8) :
-    WP isa (.block (scanRow base rp)) u fun t =>
-      t.gpr .r11 = u.gpr .r11 ||| (if (u.gpr .r10).toNat / 8 = k then
-        u.mem.readW (T + BitVec.ofNat 64 (8 * k)) 64 else 0#64) ∧
-      t.gpr .r0 = BitVec.ofNat 64 (8 * k) ∧ t.gpr rp = T + BitVec.ofNat 64 (8 * k) - 8#64 ∧
-      t.mem = u.mem := by
-  have hv : (((u.gpr .r10) ^^^ BitVec.ofNat 64 (8 * k)) >>> 3).toNat < 2 ^ 63 := by
-    rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
-    have := ((u.gpr .r10) ^^^ BitVec.ofNat 64 (8 * k)).isLt; omega_arith
-  have e : T + BitVec.ofNat 64 (8 * k) - T = BitVec.ofNat 64 (8 * k) := Offset.add_sub_cancel_left _ _
-  have b0 := R.b0; have b10 := R.b10; have b11 := R.b11; have b12 := R.b12
-  have p0 := R.p0; have p10 := R.p10; have p11 := R.p11; have p12 := R.p12; have pb := R.pb
-  unfold scanRow
-  rrun [hT, hp, hr, e, b0, b10, b11, b12, p0, p10, p11, p12, pb, Ne.symm b0, Ne.symm b10, Ne.symm b11,
-    Ne.symm b12, Ne.symm p0, Ne.symm p10, Ne.symm p11, Ne.symm p12, Ne.symm pb]
-  rw [rowMask_eq _ hv, keep_row]
-  by_cases h : (u.gpr .r10).toNat / 8 = k
-  · rw [ite_eq_left ((row_hit _ (by omega_arith)).mpr h), ite_eq_left h]
-  · rw [ite_eq_right (fun h' => h ((row_hit _ (by omega_arith)).mp h')), ite_eq_right h]
+theorem vbyte_or (a b : BitVec 128) (i : Nat) : vbyte (a ||| b) i = vbyte a i ||| vbyte b i := by
+  apply BitVec.eq_of_getLsbD_eq; intro r hr; simp [vbyte, hr]
 
-/-- Before row `k`, the rows above it scanned. -/
-structure RowInv (base rp : Reg) (s₀ : State) (T : Addr) (k : Nat) (u : State) : Prop where
-  acc : u.gpr .r11 = if k < (s₀.gpr .r10).toNat / 8 then
-    s₀.mem.readW (T + BitVec.ofNat 64 (8 * ((s₀.gpr .r10).toNat / 8))) 64 else 0#64
-  ptr : u.gpr rp = T + BitVec.ofNat 64 (8 * k)
-  keep : Keep [.r0, .r11, .r12, rp] s₀ u
-  mem : u.mem = s₀.mem
+theorem vbyte_not0 (a : BitVec 128) : vbyte (~~~a) 0 = ~~~vbyte a 0 := by
+  apply BitVec.eq_of_getLsbD_eq; intro r hr
+  simp [vbyte, hr, show 8 * (15 - 0) + r < 128 by omega]
 
-/-- The rows from `k` down: `r11` is the doubleword holding `q`. -/
-theorem rows_run {base rp : Reg} (R : ScanRegs base rp) {s₀ : State} {T : Addr} (hT : s₀.gpr base = T)
-    {rows : Nat} (hrows : rows ≤ 32) (_hq : (s₀.gpr .r10).toNat < 8 * rows)
-    (hr : ∀ k < rows, InRegions (s₀.rd ++ s₀.wr) (T + BitVec.ofNat 64 (8 * k)) 8) :
-    ∀ k < rows, ∀ u, RowInv base rp s₀ T k u →
-      WP isa (.loop (.block (scanRow base rp)) (.nonzero .d .r0)) u fun t =>
-        t.gpr .r11 = s₀.mem.readW (T + BitVec.ofNat 64 (8 * ((s₀.gpr .r10).toNat / 8))) 64 ∧
-        Keep [.r0, .r11, .r12, rp] s₀ t ∧ t.mem = s₀.mem := by
-  intro k hk u I
-  refine WP.loop (M := isa) (fun n v => n < rows ∧ RowInv base rp s₀ T n v) (fun n v ⟨hn, J⟩ => ?_) k u ⟨hk, I⟩
-  have nb : base ∉ [Reg.r0, .r11, .r12, rp] := by
-    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
-    exact ⟨R.b0, R.b11, R.b12, Ne.symm R.pb⟩
-  have n10 : Reg.r10 ∉ [Reg.r0, .r11, .r12, rp] := by
-    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
-    exact ⟨by decide, by decide, by decide, Ne.symm R.p10⟩
-  have hb : v.gpr base = T := by rw [J.keep.gpr nb]; exact hT
-  have q : v.gpr .r10 = s₀.gpr .r10 := J.keep.gpr n10
-  refine WP.mono (WP.keep [.r0, .r11, .r12, rp] (row_run R v (k := n) (by omega_arith) hb J.ptr
-    (by rw [J.keep.2.1, J.keep.2.2]; exact hr n hn)) (by
-      simp [writesOnly, Code.allInstrs_eq, instrs, scanRow, dstOf]) rfl) fun w ⟨⟨w11, w0, wp, wm⟩, wk⟩ => ?_
-  have acc' : w.gpr .r11 = if n ≤ (s₀.gpr .r10).toNat / 8 then
-      s₀.mem.readW (T + BitVec.ofNat 64 (8 * ((s₀.gpr .r10).toNat / 8))) 64 else 0#64 := by
-    rw [w11, J.acc, q, J.mem]
-    by_cases h1 : (s₀.gpr .r10).toNat / 8 = n
-    · rw [ite_eq_right (by omega_arith), ite_eq_left h1, ite_eq_left (by omega_arith), h1, BitVec.zero_or]
-    · by_cases h2 : n < (s₀.gpr .r10).toNat / 8
-      · rw [ite_eq_left h2, ite_eq_right h1, ite_eq_left (by omega_arith), BitVec.or_zero]
-      · rw [ite_eq_right h2, ite_eq_right h1, ite_eq_right (by omega_arith), BitVec.or_zero]
-  rw [eval_nonzero, w0, ofNat_bne_zero (by omega_arith)]
-  by_cases h0 : n = 0
-  · subst h0
-    left
-    refine ⟨by simp, ?_, (J.keep.trans wk).mono (by simp), wm.trans J.mem⟩
-    rw [acc', ite_eq_left (Nat.zero_le _)]
-  · right
-    refine ⟨by simp; omega_arith, n - 1, by omega_arith, by omega_arith, ⟨?_, ?_, (J.keep.trans wk).mono (by simp), wm.trans J.mem⟩⟩
-    · rw [acc']
-      by_cases h : n ≤ (s₀.gpr .r10).toNat / 8
-      · rw [ite_eq_left h, ite_eq_left (by omega_arith)]
-      · rw [ite_eq_right h, ite_eq_right (by omega_arith)]
-    · rw [wp, show 8 * n = 8 * (n - 1) + 8 by omega_arith, ← Offset.add_add,
-        show (8#64 : BitVec 64) = BitVec.ofNat 64 8 from rfl, BitVec.add_sub_cancel]
+theorem vbyte_not1 (a : BitVec 128) : vbyte (~~~a) 1 = ~~~vbyte a 1 := by
+  apply BitVec.eq_of_getLsbD_eq; intro r hr
+  simp [vbyte, hr, show 8 * (15 - 1) + r < 128 by omega]
 
-/-! ## The lane -/
+/-- Byte `i` (of the first eight) of a vector, from its first doubleword. -/
+theorem vbyte_hi (x u : BitVec 64) {i : Nat} (hi : i < 8) : vbyte (x ++ u) i = x.extractLsb' (8 * (7 - i)) 8 := by
+  apply BitVec.eq_of_getLsbD_eq; intro r hr
+  simp only [vbyte, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hr, decide_true, Bool.true_and,
+    show ¬ 8 * (15 - i) + r < 64 by omega, ite_false]
+  exact congrArg x.getLsbD (by omega)
 
+/-- `0 - ((q << (63 - c)) >> 63)`: all ones if bit `c` of `q` is set. -/
 theorem bitMask_eq (q : BitVec 64) {c : Nat} (hc : c < 64) :
-    (q <<< (63 - c)) >>> 63 - 1#64 = if q.getLsbD c then 0#64 else BitVec.allOnes 64 := by
+    0#64 - (q <<< (63 - c)) >>> 63 = if q.getLsbD c then BitVec.allOnes 64 else 0 := by
   have e : (q <<< (63 - c)) >>> 63 = if q.getLsbD c then 1#64 else 0#64 := by
     apply BitVec.eq_of_getLsbD_eq; intro i hi
     by_cases h0 : i = 0
     · subst h0
       simp only [BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft,
         show (63 : Nat) < 64 by decide, decide_true, Bool.true_and,
-        show ¬ (63 < 63 - c) by omega_arith, decide_false, Bool.not_false,
-        show 63 - (63 - c) = c by omega_arith]
+        show ¬ (63 < 63 - c) by omega, decide_false, Bool.not_false,
+        show 63 - (63 - c) = c by omega]
       cases q.getLsbD c <;> rfl
     · have : (q <<< (63 - c) >>> 63).getLsbD i = false := by
         simp only [BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft]
-        simp only [show ¬ (63 + i < 64) by omega_arith, decide_false, Bool.false_and]
+        simp only [show ¬ (63 + i < 64) by omega, decide_false, Bool.false_and]
       rw [this]
       cases q.getLsbD c
       · simp
@@ -167,110 +78,187 @@ theorem bitMask_eq (q : BitVec 64) {c : Nat} (hc : c < 64) :
   rw [e]
   cases q.getLsbD c <;> decide
 
-theorem select_eq (x r : BitVec 64) (b : Bool) :
-    ((x ^^^ r) &&& (if b then 0#64 else BitVec.allOnes 64)) ^^^ r = if b then r else x := by
-  cases b
-  · simp only [Bool.false_eq_true, ite_false, BitVec.and_allOnes]
-    rw [BitVec.xor_assoc, BitVec.xor_self, BitVec.xor_zero]
+/-- A mask's bytes. -/
+theorem vbyte_mask (q u : BitVec 64) {c i : Nat} (hc : c < 64) (hi : i < 8) :
+    vbyte ((0#64 - (q <<< (63 - c)) >>> 63) ++ u) i = if q.getLsbD c then 255#8 else 0#8 := by
+  rw [vbyte_hi _ _ hi, bitMask_eq _ hc]
+  cases q.getLsbD c
   · simp
+  · have : ∀ i < 8, (BitVec.allOnes 64).extractLsb' (8 * (7 - i)) 8 = 255#8 := by decide
+    exact this i hi
 
-theorem condRot_run (u : State) {c : Nat} (hc : c < 3) :
-    WP isa (.block (condRot c)) u fun t =>
-      t.gpr .r11 = (if (u.gpr .r10).getLsbD c then (u.gpr .r11).rotateRight (8 * 2 ^ c) else u.gpr .r11) ∧
-        t.mem = u.mem := by
-  unfold condRot
-  rrun [show 63 - c < 64 by omega_arith, show 8 * 2 ^ c < 64 by
-    rcases (by omega_arith : c = 0 ∨ c = 1 ∨ c = 2) with rfl | rfl | rfl <;> decide]
-  rw [bitMask_eq _ (by omega_arith), select_eq]
+theorem sel8 (a b : Byte) (c : Bool) :
+    (a &&& ~~~(if c then 255#8 else 0#8)) ||| (b &&& (if c then 255#8 else 0#8)) = if c then b else a := by
+  cases c
+  · simp only [Bool.false_eq_true, ite_false, show ~~~(0#8 : Byte) = BitVec.allOnes 8 by decide,
+      BitVec.and_allOnes, BitVec.and_zero, BitVec.or_zero]
+  · simp only [ite_true, show (255#8 : Byte) = BitVec.allOnes 8 by decide, BitVec.not_allOnes, BitVec.and_zero,
+      BitVec.zero_or, BitVec.and_allOnes]
 
-theorem ror_ror (x : BitVec 64) {a b : Nat} (h : a + b < 64) :
-    (x.rotateRight a).rotateRight b = x.rotateRight (a + b) := by
+theorem vbyte_load (m : Mem) (a : Addr) {k : Nat} (hk : k < 16) :
+    vbyte (swapDwords (m.readW a 128)) k = m (a + BitVec.ofNat 64 (k ^^^ 7)) := by
+  have e : ∀ k < 16, 15 - (if k < 8 then k + 8 else k - 8) = k ^^^ 7 := by decide
+  rw [vbyte_swapDwords _ hk, vbyte, Mem.readW, BitVec.setWidth_eq, ← e k hk]
+  exact Mem.extractLsb'_read m a (n := 16) (by split <;> omega)
+
+/-- `vperm`'s byte `x XOR 7` of a 32-byte chunk loaded by `lxvd2x`: its byte
+`x`. -/
+theorem pick (m : Mem) (a : Addr) {x : Nat} (hx : x < 32) :
+    (if (x ^^^ 7) < 16 then vbyte (swapDwords (m.readW a 128)) (x ^^^ 7)
+      else vbyte (swapDwords (m.readW (a + 16#64) 128)) ((x ^^^ 7) - 16)) = m (a + BitVec.ofNat 64 x) := by
+  have lo : ∀ x < 16, (x ^^^ 7) < 16 ∧ (x ^^^ 7) ^^^ 7 = x := by decide
+  have hi : ∀ x < 32, 16 ≤ x → ¬ (x ^^^ 7) < 16 ∧ (x ^^^ 7) - 16 < 16 ∧ 16 + (((x ^^^ 7) - 16) ^^^ 7) = x := by
+    decide
+  by_cases h : x < 16
+  · obtain ⟨l1, l2⟩ := lo x h
+    rw [ite_eq_left l1, vbyte_load _ _ l1, l2]
+  · obtain ⟨l1, l2, l3⟩ := hi x hx (by omega)
+    rw [ite_eq_right l1, vbyte_load _ _ l2, show (16#64 : BitVec 64) = BitVec.ofNat 64 16 from rfl, Offset.add_add, l3]
+
+/-- Bytes 0 and 1 of a vector, from the GPR `mfvsrd` makes of it. -/
+theorem top0 (X : BitVec 128) : vdword X 0 >>> 56 = (vbyte X 0).setWidth 64 := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
-  simp only [BitVec.getLsbD_rotateRight_of_lt (show b < 64 by omega_arith),
-    BitVec.getLsbD_rotateRight_of_lt (show a < 64 by omega_arith), BitVec.getLsbD_rotateRight_of_lt h]
-  have d : ∀ n, n < 64 → decide (n < 64) = true := fun n hn => decide_eq_true hn
-  split <;> split <;> (try split) <;>
-    first
-    | omega_arith
-    | (congr 1; omega_arith)
-    | (rw [d _ (by omega_arith), Bool.true_and]; congr 1; omega_arith)
-    | (rw [d _ (by omega_arith), Bool.true_and, d _ (by omega_arith), Bool.true_and]; congr 1; omega_arith)
+  simp only [vdword, vbyte, BitVec.getLsbD_ushiftRight, BitVec.getLsbD_extractLsb', BitVec.getLsbD_setWidth]
+  by_cases h : i < 8
+  · simp [h, show 56 + i < 64 by omega, show i < 64 by omega]; congr 1; omega
+  · simp [h, show ¬ 56 + i < 64 by omega]
 
-/-- The rotation the lanes `ls` select for `q`. -/
-def rotSum (q : BitVec 64) : List Nat → Nat
-  | [] => 0
-  | c :: ls => (if q.getLsbD c then 8 * 2 ^ c else 0) + rotSum q ls
-
-theorem rotateRight_zero (x : BitVec 64) : x.rotateRight 0 = x := by
-  apply BitVec.eq_of_getLsbD_eq; intro i hi; simp [hi]
-
-theorem lanes_run (ls : List Nat) (hl : ∀ c ∈ ls, c < 3) (hd : ls.Nodup) :
-    ∀ (u : State) (x : BitVec 64) (a : Nat), u.gpr .r11 = x.rotateRight a →
-      a + rotSum (u.gpr .r10) ls < 64 →
-      WP isa (.block (ls.flatMap condRot)) u fun t =>
-        t.gpr .r11 = x.rotateRight (a + rotSum (u.gpr .r10) ls) ∧ t.gpr .r10 = u.gpr .r10 ∧
-          t.mem = u.mem ∧ Keep [.r0, .r11, .r12] u t := by
-  induction ls with
-  | nil => intro u x a h _; exact WP.block_nil ⟨by simpa [rotSum] using h, rfl, rfl, Keep.refl _ _⟩
-  | cons c ls ih =>
-    intro u x a h ha
-    rw [List.flatMap_cons, WP.block_append_iff]
-    have hc : c < 3 := hl c List.mem_cons_self
-    refine WP.mono (WP.keep [.r0, .r11, .r12] (condRot_run u hc) (by
-      rfl) rfl) fun v ⟨⟨v11, vm⟩, vk⟩ => ?_
-    have q : v.gpr .r10 = u.gpr .r10 := vk.gpr (by decide)
-    have e : v.gpr .r11 = x.rotateRight (a + (if (u.gpr .r10).getLsbD c then 8 * 2 ^ c else 0)) := by
-      rw [v11, h]
-      simp only [rotSum] at ha
-      by_cases hb : (u.gpr .r10).getLsbD c
-      · simp only [hb, ite_true] at ha ⊢; exact ror_ror _ (by omega_arith)
-      · simp only [hb, Bool.false_eq_true, ite_false, Nat.add_zero]
-    refine WP.mono (ih (fun c' h' => hl c' (List.mem_cons_of_mem _ h')) (List.nodup_cons.mp hd).2 v x _ e
-      (by rw [q]; simp only [rotSum] at ha; omega_arith)) fun t ⟨t11, t10, tm, tk⟩ => ⟨?_, by rw [t10, q], by
-        rw [tm, vm], (vk.trans tk).mono (by decide)⟩
-    rw [t11, q]; simp only [rotSum]; congr 1; omega_arith
-
-theorem shl_shr (x : BitVec 64) {n : Nat} (hn : n ≤ 64) :
-    (x <<< (64 - n)) >>> (64 - n) = (x.setWidth n).setWidth 64 := by
+theorem top1 (X : BitVec 128) : (vdword X 0 <<< 8) >>> 56 = (vbyte X 1).setWidth 64 := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
-  simp only [BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_setWidth]
-  by_cases h : i < n
-  · simp [h, hi]; intro _; omega_arith
-  · simp [h]; intro _; omega_arith
+  simp only [vdword, vbyte, BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_extractLsb',
+    BitVec.getLsbD_setWidth]
+  by_cases h : i < 8
+  · simp [h, show 56 + i < 64 by omega, show ¬ 56 + i < 8 by omega, show i < 64 by omega]
+    rw [decide_eq_true (show 56 + i - 8 < 64 by omega), Bool.true_and]
+    exact congrArg X.getLsbD (by omega)
+  · simp [h, show ¬ 56 + i < 64 by omega]
 
-/-- The whole scan. -/
-theorem scan_run {base rp : Reg} (R : ScanRegs base rp) (s : State) {T : Addr} (hT : s.gpr base = T)
-    {rows : Nat} (hrows : 1 ≤ rows ∧ rows ≤ 32) {lanes : List Nat} (hl : ∀ c ∈ lanes, c < 3)
-    (hd : lanes.Nodup) {bits : Nat} (hbits : 1 ≤ bits ∧ bits ≤ 64)
-    (hq : (s.gpr .r10).toNat < 8 * rows)
-    (hsum : rotSum (s.gpr .r10) lanes = 8 * ((s.gpr .r10).toNat % 8))
-    (hr : ∀ k < rows, InRegions (s.rd ++ s.wr) (T + BitVec.ofNat 64 (8 * k)) 8) :
-    WP isa (scan base rp rows lanes bits) s fun t =>
-      t.gpr .r11 = (((s.mem.readW (T + BitVec.ofNat 64 (8 * ((s.gpr .r10).toNat / 8))) 64).rotateRight
-        (8 * ((s.gpr .r10).toNat % 8))).setWidth bits).setWidth 64 ∧
-      Keep [.r0, .r11, .r12, rp] s t ∧ t.mem = s.mem := by
-  have b11 := R.b11; have p11 := R.p11; have pb := R.pb
-  unfold scan
-  apply WP.seq
-  refine WP.mono (WP.keep [.r11, rp] (Q := fun t => t.gpr .r11 = 0#64 ∧
-      t.gpr rp = T + BitVec.ofNat 64 (8 * (rows - 1)) ∧ t.mem = s.mem) (by
-        unfold scanStart
-        rrun [hT, R.b0, b11, p11, Ne.symm p11, show 8 * (rows - 1) < 32768 by omega_arith]) (by
-      simp [writesOnly, Code.allInstrs_eq, instrs, scanStart, dstOf]) rfl) fun u ⟨⟨u11, up, um⟩, uk⟩ => ?_
-  apply WP.seq
-  refine WP.mono (rows_run R hT hrows.2 hq hr (rows - 1) (by omega_arith) u
-    ⟨by rw [u11, ite_eq_right (by omega_arith)], up, uk.mono (by simp), um⟩) fun v ⟨v11, vk, vm⟩ => ?_
-  have q : v.gpr .r10 = s.gpr .r10 := vk.gpr (by
-    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
-    exact ⟨by decide, by decide, by decide, Ne.symm R.p10⟩)
-  rw [WP.block_append_iff]
-  refine WP.mono (lanes_run lanes hl hd v
-    (s.mem.readW (T + BitVec.ofNat 64 (8 * ((s.gpr .r10).toNat / 8))) 64) 0 (by rw [rotateRight_zero]; exact v11)
-    (by rw [q, hsum]; omega_arith)) fun w ⟨w11, w10, wm, wk⟩ => ?_
-  refine WP.mono (WP.keep [.r11] (Q := fun t => t.gpr .r11 = ((w.gpr .r11).setWidth bits).setWidth 64 ∧
-      t.mem = w.mem) (by unfold mask; rrun [show 64 - bits < 64 by omega_arith]; exact shl_shr _ hbits.2)
-    (by rfl) rfl) fun t ⟨⟨t11, tm⟩, tk⟩ =>
-      ⟨?_, ((vk.trans wk).trans tk).mono (by simp), by rw [tm, wm, vm]⟩
-  rw [t11, w11, q, hsum, Nat.zero_add]
+theorem xor7_mod (x : Byte) : (x ^^^ 7#8).toNat % 32 = (x.toNat % 32) ^^^ 7 := by
+  have : ∀ x : Byte, (x ^^^ 7#8).toNat % 32 = (x.toNat % 32) ^^^ 7 := by decide
+  exact this x
+
+theorem ctl0 (x : BitVec 64) : (x <<< 56).extractLsb' (8 * (7 - 0)) 8 = x.setWidth 8 := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  simp [hi, show 56 + i < 64 by omega, show i < 64 by omega]
+
+/-- The chunk the bits 5, 6 and 7 of `q` name. -/
+theorem tree_sel {α : Type} (e : Nat → α) (q : BitVec 64) :
+    (if q.getLsbD 7 then (if q.getLsbD 6 then (if q.getLsbD 5 then e 7 else e 6) else
+        (if q.getLsbD 5 then e 5 else e 4)) else
+      (if q.getLsbD 6 then (if q.getLsbD 5 then e 3 else e 2) else (if q.getLsbD 5 then e 1 else e 0))) =
+      e (q.toNat / 32 % 8) := by
+  have tb : ∀ b < 3, q.getLsbD (5 + b) = (q.toNat / 32 % 8).testBit b := fun b hb => by
+    rw [BitVec.getLsbD, show (8 : Nat) = 2 ^ 3 from rfl, Nat.testBit_mod_two_pow, show (32 : Nat) = 2 ^ 5 from rfl,
+      Nat.testBit_div_two_pow]
+    simp [hb, Nat.add_comm]
+  rw [show (7 : Nat) = 5 + 2 from rfl, show (6 : Nat) = 5 + 1 from rfl, show (5 : Nat) = 5 + 0 from rfl,
+    tb 0 (by decide), tb 1 (by decide), tb 2 (by decide)]
+  have : q.toNat / 32 % 8 < 8 := Nat.mod_lt _ (by decide)
+  generalize q.toNat / 32 % 8 = r at this ⊢
+  rcases (by omega : r = 0 ∨ r = 1 ∨ r = 2 ∨ r = 3 ∨ r = 4 ∨ r = 5 ∨ r = 6 ∨ r = 7) with
+    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
+
+theorem tree_sel4 {α : Type} (e : Nat → α) (q : BitVec 64) :
+    (if q.getLsbD 6 then (if q.getLsbD 5 then e 3 else e 2) else (if q.getLsbD 5 then e 1 else e 0)) =
+      e (q.toNat / 32 % 4) := by
+  have tb : ∀ b < 2, q.getLsbD (5 + b) = (q.toNat / 32 % 4).testBit b := fun b hb => by
+    rw [BitVec.getLsbD, show (4 : Nat) = 2 ^ 2 from rfl, Nat.testBit_mod_two_pow, show (32 : Nat) = 2 ^ 5 from rfl,
+      Nat.testBit_div_two_pow]
+    simp [hb, Nat.add_comm]
+  rw [show (6 : Nat) = 5 + 1 from rfl, show (5 : Nat) = 5 + 0 from rfl, tb 0 (by decide), tb 1 (by decide)]
+  have : q.toNat / 32 % 4 < 4 := Nat.mod_lt _ (by decide)
+  generalize q.toNat / 32 % 4 = r at this ⊢
+  rcases (by omega : r = 0 ∨ r = 1 ∨ r = 2 ∨ r = 3) with rfl | rfl | rfl | rfl <;> rfl
+
+/-! ## The scans -/
+
+/-- The byte scan of PITABLE (eight chunks). -/
+theorem piScan_run (s : State) {T : Addr} (h7 : s.gpr .r7 = T) (hq : (s.gpr .r10).toNat < 256)
+    (hr : ∀ i < 8, InRegions (s.rd ++ s.wr) (ch T i) 16 ∧ InRegions (s.rd ++ s.wr) (ch T i + 16#64) 16) :
+    WP isa (.block (vscan .r7 .r15 true false)) s fun t =>
+      t.gpr .r11 = (s.mem (T + s.gpr .r10)).setWidth 64 ∧ t.mem = s.mem := by
+  have a0 := hr 0 (by decide); have a1 := hr 1 (by decide); have a2 := hr 2 (by decide)
+  have a3 := hr 3 (by decide); have a4 := hr 4 (by decide); have a5 := hr 5 (by decide)
+  have a6 := hr 6 (by decide); have a7 := hr 7 (by decide)
+  simp only [ch] at a0 a1 a2 a3 a4 a5 a6 a7
+  unfold vscan ctl bitMask chunk choose
+  rrun [reduceVOpEval, vCtl, vBit, vLo, vHi, vPick, vpr_writeV, gpr_writeV, mem_writeV, rd_writeV, wr_writeV,
+    ↓read_sixteen, addrX, BitVec.or_self, h7, a0.1, a0.2, a1.1, a1.2, a2.1, a2.2, a3.1, a3.2, a4.1, a4.2,
+    a5.1, a5.2, a6.1, a6.2, a7.1, a7.2]
+  generalize hx : (s.gpr .r10).toNat = x at hq
+  have hc : ((s.gpr .r10 ^^^ 7#64).setWidth 8).toNat % 32 = (x % 32) ^^^ 7 := by
+    rw [show (s.gpr .r10 ^^^ 7#64).setWidth 8 = (s.gpr .r10).setWidth 8 ^^^ 7#8 by
+      apply BitVec.eq_of_getLsbD_eq; intro i hi; simp [hi], xor7_mod, BitVec.toNat_setWidth, hx,
+      Nat.mod_eq_of_lt (show x < 2 ^ 8 by omega)]
+  rw [top0]
+  simp only [vbyte_or, vbyte_and, vbyte_not0, vbyte_mask _ _ (show 5 < 64 by decide) (show 0 < 8 by decide),
+    vbyte_mask _ _ (show 6 < 64 by decide) (show 0 < 8 by decide),
+    vbyte_mask _ _ (show 7 < 64 by decide) (show 0 < 8 by decide), sel8, vbyte_packed _ (show 0 < 16 by decide),
+    vbyte_hi _ _ (show 0 < 8 by decide), ctl0, hc]
+  have hx32 : x % 32 < 32 := Nat.mod_lt _ (by decide)
+  refine (congrArg (BitVec.setWidth 64) (tree_sel (fun t =>
+    if x % 32 ^^^ 7 < 16 then vbyte (swapDwords (s.mem.readW (ch T t) 128)) (x % 32 ^^^ 7)
+    else vbyte (swapDwords (s.mem.readW (ch T t + 16#64) 128)) ((x % 32 ^^^ 7) - 16)) (s.gpr .r10))).trans ?_
+  rw [pick _ _ hx32, ch_eq, Offset.add_add, hx, show 32 * (x / 32 % 8) + x % 32 = x by omega,
+    ← hx, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+
+theorem ctl_lo (x y : BitVec 64) :
+    (x <<< 56 ||| y <<< 56 >>> 8).extractLsb' (8 * (7 - 0)) 8 = x.setWidth 8 := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  simp [hi, show 56 + i < 64 by omega, show i < 64 by omega, show ¬ 56 + i < 56 by omega]
+  intro _; omega
+
+theorem ctl_hi (x y : BitVec 64) :
+    (x <<< 56 ||| y <<< 56 >>> 8).extractLsb' (8 * (7 - 1)) 8 = y.setWidth 8 := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  simp [hi, show 48 + i < 64 by omega, show i < 64 by omega, show 48 + i < 56 by omega,
+    show 8 + (48 + i) < 64 by omega, show 8 + (48 + i) - 56 = i by omega]
+  intro _; omega
+
+/-- The two-byte scan of the schedule (four chunks), at an even offset. -/
+theorem keyScan_run (s : State) {T : Addr} (h3 : s.gpr .r3 = T) (hq : (s.gpr .r10).toNat < 128)
+    (he : (s.gpr .r10).toNat % 2 = 0)
+    (hr : ∀ i < 4, InRegions (s.rd ++ s.wr) (ch T i) 16 ∧ InRegions (s.rd ++ s.wr) (ch T i + 16#64) 16) :
+    WP isa (.block (vscan .r3 .r5 false true)) s fun t =>
+      t.gpr .r11 = (s.mem (T + s.gpr .r10)).setWidth 64 |||
+        (s.mem (T + s.gpr .r10 + 1#64)).setWidth 64 <<< 8 ∧ t.mem = s.mem := by
+  have a0 := hr 0 (by decide); have a1 := hr 1 (by decide); have a2 := hr 2 (by decide)
+  have a3 := hr 3 (by decide)
+  simp only [ch] at a0 a1 a2 a3
+  unfold vscan ctl bitMask chunk choose
+  rrun [reduceVOpEval, vCtl, vBit, vLo, vHi, vPick, vpr_writeV, gpr_writeV, mem_writeV, rd_writeV, wr_writeV,
+    ↓read_sixteen, addrX, BitVec.or_self, h3, a0.1, a0.2, a1.1, a1.2, a2.1, a2.2, a3.1, a3.2]
+  generalize hx : (s.gpr .r10).toNat = x at hq he
+  have x7 : ∀ y : BitVec 64, ∀ z : Nat, y.toNat = z → z < 256 → ((y ^^^ 7#64).setWidth 8).toNat % 32 = (z % 32) ^^^ 7 :=
+    fun y z hy hz => by
+      rw [show (y ^^^ 7#64).setWidth 8 = y.setWidth 8 ^^^ 7#8 by
+        apply BitVec.eq_of_getLsbD_eq; intro i hi; simp [hi], xor7_mod, BitVec.toNat_setWidth, hy,
+        Nat.mod_eq_of_lt (show z < 2 ^ 8 by omega)]
+  have h1 : (s.gpr .r10 + 1#64).toNat = x + 1 := by
+    rw [BitVec.toNat_add, hx]; simp; omega
+  rw [top0, top1]
+  simp only [vbyte_or, vbyte_and, vbyte_not0, vbyte_not1,
+    vbyte_mask _ _ (show 5 < 64 by decide) (show 0 < 8 by decide),
+    vbyte_mask _ _ (show 6 < 64 by decide) (show 0 < 8 by decide),
+    vbyte_mask _ _ (show 5 < 64 by decide) (show 1 < 8 by decide),
+    vbyte_mask _ _ (show 6 < 64 by decide) (show 1 < 8 by decide), sel8,
+    vbyte_packed _ (show 0 < 16 by decide), vbyte_packed _ (show 1 < 16 by decide),
+    vbyte_hi _ _ (show 0 < 8 by decide), vbyte_hi _ _ (show 1 < 8 by decide), ctl_lo, ctl_hi,
+    x7 _ _ hx (by omega), x7 _ _ h1 (by omega)]
+  have hx32 : x % 32 < 32 := Nat.mod_lt _ (by decide)
+  have hx1 : (x + 1) % 32 = x % 32 + 1 := by omega
+  rw [hx1]
+  have hl : x / 32 % 4 = x / 32 := by omega
+  have t0 := tree_sel4 (fun t =>
+    if x % 32 ^^^ 7 < 16 then vbyte (swapDwords (s.mem.readW (ch T t) 128)) (x % 32 ^^^ 7)
+    else vbyte (swapDwords (s.mem.readW (ch T t + 16#64) 128)) ((x % 32 ^^^ 7) - 16)) (s.gpr .r10)
+  have t1 := tree_sel4 (fun t =>
+    if (x % 32 + 1) ^^^ 7 < 16 then vbyte (swapDwords (s.mem.readW (ch T t) 128)) ((x % 32 + 1) ^^^ 7)
+    else vbyte (swapDwords (s.mem.readW (ch T t + 16#64) 128)) (((x % 32 + 1) ^^^ 7) - 16)) (s.gpr .r10)
+  simp only [ch] at t0 t1
+  rw [t0, t1, pick _ _ hx32, pick _ _ (show x % 32 + 1 < 32 by omega), ch_eq, Offset.add_add, Offset.add_add, hx, hl,
+    show 32 * (x / 32) + x % 32 = x by omega, show 32 * (x / 32) + (x % 32 + 1) = x + 1 by omega]
+  have e : s.gpr .r10 = BitVec.ofNat 64 x := by rw [← hx, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  rw [e, show (1#64 : BitVec 64) = BitVec.ofNat 64 1 from rfl, Offset.add_add]
 
 end VG.Proof.Rc2.PPC64LE
