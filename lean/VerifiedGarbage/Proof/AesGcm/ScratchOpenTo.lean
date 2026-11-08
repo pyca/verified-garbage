@@ -15,8 +15,8 @@ import VerifiedGarbage.Proof.Framework.Mem
 /-!
 # AES-GCM `open_to` with its working space as an argument
 
-Untrusted: everything here is checked by Lean. `vg_aes_gcm_open_to_prepared`
-and `vg_aes_gcm_open_to_prepared16` decrypt long inputs in one pass in a frame
+Untrusted: everything here is checked by Lean. `vg_aes_gcm_open_to`,
+`vg_aes_gcm_open_to_prepared` and `vg_aes_gcm_open_to_prepared16` decrypt long inputs in one pass in a frame
 of their own holding their working space (`Verified.stackArgScratch`), around
 code proved with it as an argument: the contracts of
 `Proof/AesGcm/RoundsTo.lean`, with a 2560-byte `work` buffer appended,
@@ -40,6 +40,25 @@ def openToPreparedScratchSig : Sig where
     ("src", .slice false .u8 "len"), ("dst", .slice true .u8 "dst_len"),
     ("tag", .slice false .u8 "tag_len"), ("work", .array true .u64 320)]
   ret := some .u32
+
+/-- `vg_aes_gcm_open_to` with `work: *mut [u64; 320]`. -/
+def openToScratchSig : Sig where
+  params := [("ctx", .array false .u64 32), ("rounds", .int .usize true),
+    ("nonce", .slice false .u8 "nonce_len"), ("aad", .slice false .u8 "aad_len"),
+    ("src", .slice false .u8 "len"), ("dst", .slice true .u8 "dst_len"),
+    ("tag", .slice false .u8 "tag_len"), ("work", .array true .u64 320)]
+  ret := some .u32
+
+/-- `openToRoundsContract`, whatever `work` is. -/
+def openToScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  openToScratchSig.contract A
+    (pre := fun ctx rounds nonce nonceLen aad aadLen src len dst dstLen tag tagLen _work =>
+      openToPre A.ptrBits ctx rounds nonce nonceLen aad aadLen src len dst dstLen tag tagLen)
+    (post := fun ctx rounds nonce nonceLen aad aadLen src len dst dstLen tag tagLen _work =>
+      openToRoundsPost A.ptrBits ctx rounds nonce nonceLen aad aadLen src len dst dstLen tag tagLen)
+    (writeArgs := true) (stack := stack)
+    (leak := some fun ctx rounds nonce nonceLen aad aadLen src len dst dstLen tag tagLen _work =>
+      openToLeak A.ptrBits ctx rounds nonce nonceLen aad aadLen src len dst dstLen tag tagLen)
 
 /-- `openToPreparedRoundsContract`, whatever `work` is. -/
 def openToPreparedScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
@@ -115,7 +134,7 @@ theorem openToPrepared16Pre_local : ∀ vs m₁ m₂, vs.length = (Spec.Gcm.open
 where they agree on the buffers it reads. -/
 theorem openToResult_local {m₁ m₂ : Mem} {ctx rd nonce nl aad al src len tag tl : BitVec 64}
     (hr : (rd.setWidth pb).toNat = 10 ∨ (rd.setWidth pb).toNat = 12 ∨ (rd.setWidth pb).toNat = 14)
-    (hc : ∀ i < 1024, m₂ (ctx + BitVec.ofNat 64 i) = m₁ (ctx + BitVec.ofNat 64 i))
+    (hc : ∀ i < 256, m₂ (ctx + BitVec.ofNat 64 i) = m₁ (ctx + BitVec.ofNat 64 i))
     (hn : ∀ i < nl.toNat, m₂ (nonce + BitVec.ofNat 64 i) = m₁ (nonce + BitVec.ofNat 64 i))
     (ha : ∀ i < al.toNat, m₂ (aad + BitVec.ofNat 64 i) = m₁ (aad + BitVec.ofNat 64 i))
     (hs : ∀ i < len.toNat, m₂ (src + BitVec.ofNat 64 i) = m₁ (src + BitVec.ofNat 64 i))
@@ -180,7 +199,7 @@ theorem openToRoundsPost_local : ∀ vs m₁ m₂ m' r, vs.length = (Spec.Gcm.op
     (openToRoundsPost pb) _ m₂ m' r
   dsimp only [Curry.apply, openToRoundsPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
   intro hr
-  rw [openToResult_local pb hr (agree_of hb.1) (agree_of hb.2.1) (agree_of hb.2.2.1) (agree_of hb.2.2.2.1)
+  rw [openToResult_local pb hr (fun i hi => agree_of hb.1 i (by omega)) (agree_of hb.2.1) (agree_of hb.2.2.1) (agree_of hb.2.2.2.1)
     (agree_of hb.2.2.2.2.2)]
   exact h hr
 
@@ -225,7 +244,111 @@ theorem openToLeak_local : ∀ vs m₁ m₂, vs.length = (Spec.Gcm.openToPrecomp
   dsimp only [Curry.apply, openToLeak, ArgWord.ofRaw, IntTy.bits]
   by_cases hr : (rd.setWidth pb).toNat = 10 ∨ (rd.setWidth pb).toNat = 12 ∨ (rd.setWidth pb).toNat = 14
   · simp only [hr, not_true_eq_false, ↓reduceIte]
-    simp only [openToResult_local pb hr (agree_of hb.1) (agree_of hb.2.1) (agree_of hb.2.2.1) (agree_of hb.2.2.2.1)
+    simp only [openToResult_local pb hr (fun i hi => agree_of hb.1 i (by omega)) (agree_of hb.2.1) (agree_of hb.2.2.1) (agree_of hb.2.2.2.1)
+      (agree_of hb.2.2.2.2.2)]
+    rfl
+  · simp only [hr, not_false_eq_true, ↓reduceIte]
+
+/-- `openToPre` reads no memory. -/
+theorem openToPre_local : ∀ vs m₁ m₂, vs.length = (openToSig.words pb).length →
+    (∀ b ∈ Sig.bufs openToSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (openToSig.words pb) (openToPre pb) vs m₁ →
+      Curry.apply (openToSig.words pb) (openToPre pb) vs m₂ := by
+  intro vs m₁ m₂ hlen _ h
+  obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 11) hlen
+  replace hlen := Nat.succ.inj hlen
+  iterate 11
+    obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  exact h
+
+theorem openToRoundsPostBase_local : ∀ vs m₁ m₂ m' r, vs.length = (openToSig.words pb).length →
+    (∀ b ∈ Sig.bufs openToSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (openToSig.words pb) (openToRoundsPost pb) vs m₁ m' r →
+      Curry.apply (openToSig.words pb) (openToRoundsPost pb) vs m₂ m' r := by
+  intro vs m₁ m₂ m' r hlen hb h
+  obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 11) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨rd, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨nonce, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨nl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨aad, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨al, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨src, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨len, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨dst, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨dl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨tag, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨tl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [openToSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+    forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb]
+    (openToRoundsPost pb) _ m₁ m' r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb]
+    (openToRoundsPost pb) _ m₂ m' r
+  dsimp only [Curry.apply, openToRoundsPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
+  intro hr
+  rw [openToResult_local pb hr (fun i hi => agree_of hb.1 i (by omega)) (agree_of hb.2.1) (agree_of hb.2.2.1) (agree_of hb.2.2.2.1)
+    (agree_of hb.2.2.2.2.2)]
+  exact h hr
+
+theorem openToLeakBase_local : ∀ vs m₁ m₂, vs.length = (openToSig.words pb).length →
+    (∀ b ∈ Sig.bufs openToSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (openToSig.words pb) (openToLeak pb) vs m₁ =
+      Curry.apply (openToSig.words pb) (openToLeak pb) vs m₂ := by
+  intro vs m₁ m₂ hlen hb
+  obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 11) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨rd, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨nonce, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨nl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨aad, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨al, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨src, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨len, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨dst, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨dl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨tag, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨tl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [openToSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+    forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb]
+    (openToLeak pb) _ m₁ =
+    Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb]
+      (openToLeak pb) _ m₂
+  dsimp only [Curry.apply, openToLeak, ArgWord.ofRaw, IntTy.bits]
+  by_cases hr : (rd.setWidth pb).toNat = 10 ∨ (rd.setWidth pb).toNat = 12 ∨ (rd.setWidth pb).toNat = 14
+  · simp only [hr, not_true_eq_false, ↓reduceIte]
+    simp only [openToResult_local pb hr (fun i hi => agree_of hb.1 i (by omega)) (agree_of hb.2.1) (agree_of hb.2.2.1) (agree_of hb.2.2.2.1)
       (agree_of hb.2.2.2.2.2)]
     rfl
   · simp only [hr, not_false_eq_true, ↓reduceIte]

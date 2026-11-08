@@ -17,19 +17,55 @@ pub const VG_AES_ECB_ENCRYPT_AESNI_FEATURES: verified_garbage_cpu::Features = ve
 /// * `scratch` must be valid for reads and writes of 2048 bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `data` and `scratch` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_ecb_encrypt_aesni(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
-        r#".base64 "jWQk5ItEJCCJBCSLRCQkiUQkBItEJCiJRCQIi0QkLIlEJAyLRCQwiUQkEA=="
-call {vg_aes_encrypt_blocks_aesni}
-.base64 "iUQkFIlUJBiLRCQwiQQkuAAIAACJRCQE"
-call {vg_zeroize}
-.base64 "i0QkFItUJBiNZCQcww=="
+        r#".base64 "i0QkBItUJAyLRCQMidEpwcHpBIPBBYtEJBA5wYtMJAiLRCQE"
+jae 20f
+22:
+.base64 "8w9vAvMPb0oQ8w9vUiDzD29aMPMPb2JA8w9valDzD28wZg/vxmYP785mD+/WZg/v3mYP7+ZmD+/u8w9vcBBmDzjcxmYPONzOZg843NZmDzjc3mYPONzmZg843O7zD29wIGYPONzGZg843M5mDzjc1mYPONzeZg843OZmDzjc7vMPb3AwZg843MZmDzjczmYPONzWZg843N5mDzjc5mYPONzu8w9vcEBmDzjcxmYPONzOZg843NZmDzjc3mYPONzmZg843O7zD29wUGYPONzGZg843M5mDzjc1mYPONzeZg843OZmDzjc7vMPb3BgZg843MZmDzjczmYPONzWZg843N5mDzjc5mYPONzu8w9vcHBmDzjcxmYPONzOZg843NZmDzjc3mYPONzmZg843O7zD2+wgAAAAGYPONzGZg843M5mDzjc1mYPONzeZg843OZmDzjc7vMPb7CQAAAAZg843MZmDzjczmYPONzWZg843N5mDzjc5mYPONzug/kK"
+je 23f
+.base64 "8w9vsKAAAABmDzjcxmYPONzOZg843NZmDzjc3mYPONzmZg843O7zD2+wsAAAAGYPONzGZg843M5mDzjc1mYPONzeZg843OZmDzjc7oP5DA=="
+je 25f
+.base64 "8w9vsMAAAABmDzjcxmYPONzOZg843NZmDzjc3mYPONzmZg843O7zD2+w0AAAAGYPONzGZg843M5mDzjc1mYPONzeZg843OZmDzjc7vMPb7DgAAAAZg843cZmDzjdzmYPON3WZg843d5mDzjd5mYPON3u"
+jmp 26f
+25:
+.base64 "8w9vsMAAAABmDzjdxmYPON3OZg843dZmDzjd3mYPON3mZg843e4="
+26:
+jmp 24f
+23:
+.base64 "8w9vsKAAAABmDzjdxmYPON3OZg843dZmDzjd3mYPON3mZg843e4="
+24:
+.base64 "8w9/AvMPf0oQ8w9/UiDzD39aMPMPf2JA8w9/alCDwmCLRCQMidEpwcHpBIPBBYtEJBA5wYtMJAiLRCQE"
+jb 22b
+jmp 21f
+20:
+21:
+.base64 "i0QkDInRKcHB6QSDwQCLRCQQOcGLTCQIi0QkBA=="
+jae 27f
+29:
+.base64 "8w9vAvMPbzBmD+/G8w9vcBBmDzjcxvMPb3AgZg843MbzD29wMGYPONzG8w9vcEBmDzjcxvMPb3BQZg843MbzD29wYGYPONzG8w9vcHBmDzjcxvMPb7CAAAAAZg843MbzD2+wkAAAAGYPONzGg/kK"
+je 210f
+.base64 "8w9vsKAAAABmDzjcxvMPb7CwAAAAZg843MaD+Qw="
+je 212f
+.base64 "8w9vsMAAAABmDzjcxvMPb7DQAAAAZg843MbzD2+w4AAAAGYPON3G"
+jmp 213f
+212:
+.base64 "8w9vsMAAAABmDzjdxg=="
+213:
+jmp 211f
+210:
+.base64 "8w9vsKAAAABmDzjdxg=="
+211:
+.base64 "8w9/AoPCEItEJAyJ0SnBwekEg8EAi0QkEDnBi0wkCItEJAQ="
+jb 29b
+jmp 28f
+27:
+28:
+.base64 "ww=="
 .p2align 6"#,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
-        vg_zeroize = sym super::zeroize::vg_zeroize,
     )
 }
 
@@ -54,7 +90,7 @@ pub unsafe extern "C" fn vg_aes_ecb_decrypt_aesni(schedule: *const [u8; 240], ro
     core::arch::naked_asm!(
         r#".base64 "jWQk5ItEJCCJBCSLRCQkiUQkBItEJCiJRCQIi0QkLIlEJAyLRCQwiUQkEA=="
 call {vg_aes_decrypt_blocks_aesni}
-.base64 "iUQkFIlUJBiLRCQwiQQkuAAIAACJRCQE"
+.base64 "iUQkFIlUJBiLRCQwiQQkuPAAAACJRCQE"
 call {vg_zeroize}
 .base64 "i0QkFItUJBiNZCQcww=="
 .p2align 6"#,

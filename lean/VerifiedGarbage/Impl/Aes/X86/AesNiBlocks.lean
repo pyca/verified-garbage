@@ -19,6 +19,13 @@ of rounds, `edx` the scratch buffer, `esi` the data and `edi` the number
 of blocks left; `esi` and `edi`, which are callee-saved, are saved in the
 scratch buffer's first eight bytes.
 
+Encryption needs no scratch buffer, and keeps to the registers it may
+change, so that it writes neither the scratch buffer nor the stack: `edx`
+holds the data, and after each group of blocks `ecx` is set to the number
+of blocks done, from `edx` and the data's address, and compared with `n`
+(the stack arguments, which it reads again each time, into `eax`), then
+`ecx` and `eax` are reloaded with `rounds` and the schedule (`encTest`).
+
 Decryption runs FIPS 197's equivalent inverse cipher (§5.3.5), which is
 what `aesdec` computes: the middle rounds take `InvMixColumns` of the round
 keys (`aesimc`), which are computed once, into `scratch + 16 j` for round
@@ -35,15 +42,15 @@ namespace VG.Impl.Aes.X86.AesNi
 
 open VG.X86
 
-/-- Load the data blocks `esi + 16 (j + i)` into the block registers. -/
-def loadData : List XReg → Nat → List Instr
+/-- Load the data blocks `p + 16 (j + i)` into the block registers. -/
+def loadData (p : Reg) : List XReg → Nat → List Instr
   | [], _ => []
-  | b :: bs, j => .movdquLoad b (at_ .esi (16 * j)) :: loadData bs (j + 1)
+  | b :: bs, j => .movdquLoad b (at_ p (16 * j)) :: loadData p bs (j + 1)
 
-/-- Store the block registers to the data blocks `esi + 16 (j + i)`. -/
-def storeData : List XReg → Nat → List Instr
+/-- Store the block registers to the data blocks `p + 16 (j + i)`. -/
+def storeData (p : Reg) : List XReg → Nat → List Instr
   | [], _ => []
-  | b :: bs, j => .movdquStore (at_ .esi (16 * j)) b :: storeData bs (j + 1)
+  | b :: bs, j => .movdquStore (at_ p (16 * j)) b :: storeData p bs (j + 1)
 
 /-- Save `esi` and `edi` in the scratch buffer (argument 4), and load the
 arguments; then `cmp edi, 6`. -/
@@ -59,24 +66,46 @@ def blocksRestore : List Instr := [.mov .esi (.mem (at_ .edx 0)), .mov .edi (.me
 
 /-- Six blocks through `f`. -/
 def blocks6 (f : List XReg → Prog isa) : Prog isa :=
-  .seq (.block (loadData regs6 0))
+  .seq (.block (loadData .esi regs6 0))
     (.seq (f regs6)
-      (.block (storeData regs6 0 ++ ([.alu .add .esi (.imm 96), .alu .sub .edi (.imm 6),
+      (.block (storeData .esi regs6 0 ++ ([.alu .add .esi (.imm 96), .alu .sub .edi (.imm 6),
         .alu .cmp .edi (.imm 6)] : List Instr))))
 
 /-- One block through `f`. -/
 def blocks1 (f : List XReg → Prog isa) : Prog isa :=
-  .seq (.block (loadData [.xmm0] 0))
+  .seq (.block (loadData .esi [.xmm0] 0))
     (.seq (f [.xmm0])
-      (.block (storeData [.xmm0] 0 ++ ([.alu .add .esi (.imm 16), .alu .sub .edi (.imm 1)] : List Instr))))
+      (.block (storeData .esi [.xmm0] 0 ++ ([.alu .add .esi (.imm 16), .alu .sub .edi (.imm 1)] : List Instr))))
 
 /-- The blocks, six and then one at a time, after `cmp edi, 6`. -/
 def blocksTail (f : List XReg → Prog isa) : Prog isa :=
   .seq (.ite .b (.block []) (.loop (blocks6 f) .ae))
     (.seq (.block [.alu .test .edi (.reg .edi)]) (.ite .e (.block []) (.loop (blocks1 f) .ne)))
 
+/-- `mov eax, data; mov ecx, edx; sub ecx, eax; shr ecx, 4; add ecx, k; mov
+eax, n; cmp ecx, eax; mov ecx, rounds; mov eax, schedule`: with `edx` at
+block `c` of the data, CF is set if `c + k < n`, and `eax` and `ecx` hold
+the schedule and `rounds` again. -/
+def encTest (k : Nat) : List Instr :=
+  [.mov .eax (.mem (argOp 2)), .mov .ecx (.reg .edx), .alu .sub .ecx (.reg .eax), .shift .shr .ecx 4,
+   .alu .add .ecx (.imm (BitVec.ofNat 32 k)), .mov .eax (.mem (argOp 3)), .alu .cmp .ecx (.reg .eax),
+   .mov .ecx (.mem (argOp 1)), .mov .eax (.mem (argOp 0))]
+
+/-- `rs.length` blocks at `edx` through `aes`, then on to the next, and
+`encTest k`. -/
+def encBlocks (rs : List XReg) (k : Nat) : Prog isa :=
+  .seq (.block (loadData .edx rs 0))
+    (.seq (aes rs)
+      (.block (storeData .edx rs 0 ++ (.alu .add .edx (.imm (BitVec.ofNat 32 (16 * rs.length))) :: encTest k))))
+
+/-- The schedule in `eax`, the data in `edx`, and `encTest 5`. -/
+def encPrologue : List Instr := [.mov .eax (.mem (argOp 0)), .mov .edx (.mem (argOp 2))] ++ encTest 5
+
+/-- Six blocks at a time while six are left, then one at a time. -/
 def encryptBlocks : Prog isa :=
-  .seq (.block (blocksPrologue ++ blocksCmp)) (.seq (blocksTail aes) (.block blocksRestore))
+  .seq (.block encPrologue)
+    (.seq (.ite .ae (.block []) (.loop (encBlocks regs6 5) .b))
+      (.seq (.block (encTest 0)) (.ite .ae (.block []) (.loop (encBlocks [.xmm0] 0) .b))))
 
 /-- `InvMixColumns` of round key `j` into `scratch + 16 j`. -/
 def imcKey (j : Nat) : List Instr :=

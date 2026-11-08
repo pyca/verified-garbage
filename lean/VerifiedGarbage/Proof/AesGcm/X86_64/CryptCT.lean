@@ -105,7 +105,7 @@ theorem ctTailArgs_ok {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat} {m�
         ptr .rcx .r14 64 ++ ([.mov32 .r8 (imm 1)] : List Instr) ++ ptr .r9 .r15 scrO)) s fun s₂ =>
       Env Ctx St W SP s₂ ∧
       CtrCall s₂ Ctx (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (W + BitVec.ofNat 64 512) R 1 ∧
-      s₂.gpr .r12 = D + BitVec.ofNat 64 j ∧ s₂.gpr .rbp = BitVec.ofNat 64 (n - j) := by
+      s₂.gpr .r12 = D + BitVec.ofNat 64 j ∧ s₂.gpr .rbp = BitVec.ofNat 64 (n - j) ∧ s₂.gpr .rbx = s.gpr .rbx := by
   have he := h.env
   have h13 := he.r13; have h14 := he.r14; have h15 := he.r15
   have r₁ := he.perm.wR (show 176 + 8 ≤ 2560 by decide)
@@ -145,7 +145,8 @@ theorem ctTailArgs_ok {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat} {m�
       exact hg₂ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)) hrd₂ hwr₂
   have hk := he₂.rsp
   refine ⟨he₂, ?_, by rw [hg₂ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide),
-    h.r12], by rw [hg₂ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h.rbp]⟩
+    h.r12], by rw [hg₂ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h.rbp],
+    hg₂ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)⟩
   refine ⟨hdi, hsi, hdx, hcx, h8, h9, h.rounds.2, by have := L.sw; rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega,
     (L.cs.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.stSub (by decide)),
     (L.cs.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.stSub (by decide)),
@@ -164,53 +165,87 @@ theorem ctTailArgs_ok {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat} {m�
   · exact covers_cons (he₂.perm.stC (by decide)) (covers_cons (he₂.perm.stC (by decide))
       (he₂.perm.wC (by decide)))
 
-/-- The last bytes, with a new keystream block. -/
-theorem cryptTail_rel {R : Nat} {icb₁ icb₂ : Block} {P₁ P₂ : Nat} {D : Addr} {n : Nat} {m₁ m₂ : Mem} {j : Nat} :
-    RelCT isa (fun s₁ s₂ => CrMid Ctx St W SP R icb₁ P₁ D n m₁ j s₁ ∧ CrMid Ctx St W SP R icb₂ P₂ D n m₂ j s₂)
-      (cryptTail v.callees) fun _ _ => True := by
-  have hT : ∀ {icb : Block} {P : Nat} {m : Mem} (s : State), CrMid Ctx St W SP R icb P D n m j s →
-      WP isa (.block [.alu .test .rbp (.reg .rbp)]) s (CrMid Ctx St W SP R icb P D n m j) := fun s h => by
+/-- The last bytes, with a new keystream block, read at the same `Q` in `rbx`
+in both runs out of place (`to`). -/
+theorem cryptTailG_rel (to : Bool) {Q : Addr} {R : Nat} {icb₁ icb₂ : Block} {P₁ P₂ : Nat} {D : Addr} {n : Nat}
+    {m₁ m₂ : Mem} {j : Nat} :
+    RelCT isa (fun s₁ s₂ => (CrMid Ctx St W SP R icb₁ P₁ D n m₁ j s₁ ∧ (to = true → s₁.gpr .rbx = Q)) ∧
+        CrMid Ctx St W SP R icb₂ P₂ D n m₂ j s₂ ∧ (to = true → s₂.gpr .rbx = Q))
+      (cryptTailG v.callees to) fun _ _ => True := by
+  have hT : ∀ {icb : Block} {P : Nat} {m : Mem} (s : State),
+      CrMid Ctx St W SP R icb P D n m j s ∧ (to = true → s.gpr .rbx = Q) →
+      WP isa (.block [.alu .test .rbp (.reg .rbp)]) s
+        (fun s' => CrMid Ctx St W SP R icb P D n m j s' ∧ (to = true → s'.gpr .rbx = Q)) := fun s ⟨h, hb⟩ => by
     obtain ⟨s₁, run₁, -, hg₁, hm₁, hrd₁, hwr₁⟩ := test_ok s .rbp h.rbp (by have := h.data.ok.lt; omega)
-    refine WP.of_runBlock ⟨s₁, run₁, h.env.keep (fun r _ => by rw [hg₁]) hrd₁ hwr₁, h.le, by rw [hg₁]; exact h.r12,
+    refine WP.of_runBlock ⟨s₁, run₁, ⟨h.env.keep (fun r _ => by rw [hg₁]) hrd₁ hwr₁, h.le, by rw [hg₁]; exact h.r12,
       by rw [hg₁]; exact h.rbp, h.data.of_eq hrd₁ hwr₁, by rw [hm₁]; exact h.rounds, fun hc => by rw [hm₁]; exact h.ctr hc,
-      fun hc => by rw [hm₁]; exact h.done hc, by rw [hm₁]; exact h.rest, h.whole, by rw [hm₁]; exact h.frame⟩
-  have t := rel_wp (rel_regs (P := fun s₁ s₂ => CrMid Ctx St W SP R icb₁ P₁ D n m₁ j s₁ ∧
-      CrMid Ctx St W SP R icb₂ P₂ D n m₂ j s₂) [.r12, .rbp, .r13, .r14, .r15, .rsp] [] true
-    (fun _ _ h => CrMid.agree h.1 h.2) ⟨_, by taint_decide⟩)
+      fun hc => by rw [hm₁]; exact h.done hc, by rw [hm₁]; exact h.rest, h.whole, by rw [hm₁]; exact h.frame⟩,
+      fun ht => by rw [hg₁]; exact hb ht⟩
+  have t := rel_wp (rel_regs (P := fun s₁ s₂ => (CrMid Ctx St W SP R icb₁ P₁ D n m₁ j s₁ ∧
+      (to = true → s₁.gpr .rbx = Q)) ∧ CrMid Ctx St W SP R icb₂ P₂ D n m₂ j s₂ ∧ (to = true → s₂.gpr .rbx = Q))
+      [.r12, .rbp, .r13, .r14, .r15, .rsp] [] true
+    (fun _ _ h => CrMid.agree h.1.1 h.2.1) ⟨_, by taint_decide⟩)
     (fun _ _ h => h) (fun s h => hT s h) (fun s h => hT s h)
   refine RelCT.seq t (rel_ite_e (fun _ _ h => (h.1.2 rfl).2.1) (RelCT.block_nil fun _ _ _ => trivial) ?_)
   -- The arguments of the call, and what it keeps.
   let G : State → Prop := fun s₂ => Env Ctx St W SP s₂ ∧
     CtrCall s₂ Ctx (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (W + BitVec.ofNat 64 512) R 1 ∧
-    s₂.gpr .r12 = D + BitVec.ofNat 64 j ∧ s₂.gpr .rbp = BitVec.ofNat 64 (n - j)
+    s₂.gpr .r12 = D + BitVec.ofNat 64 j ∧ s₂.gpr .rbp = BitVec.ofNat 64 (n - j) ∧ (to = true → s₂.gpr .rbx = Q)
   let K : State → Prop := fun s₃ => Env Ctx St W SP s₃ ∧
-    s₃.gpr .r12 = D + BitVec.ofNat 64 j ∧ s₃.gpr .rbp = BitVec.ofNat 64 (n - j)
+    s₃.gpr .r12 = D + BitVec.ofNat 64 j ∧ s₃.gpr .rbp = BitVec.ofNat 64 (n - j) ∧ (to = true → s₃.gpr .rbx = Q)
+  have hA : ∀ {icb : Block} {P : Nat} {m : Mem} (s : State),
+      CrMid Ctx St W SP R icb P D n m j s ∧ (to = true → s.gpr .rbx = Q) →
+      WP isa (.block (([.mov32 .rax (imm 0), .store (at_ .r14 64) .rax, .store (at_ .r14 72) .rax,
+        .mov .rdi (.reg .r13), .mov .rsi (.mem (at_ .r15 roundsO))] : List Instr) ++ ptr .rdx .r14 48 ++
+        ptr .rcx .r14 64 ++ ([.mov32 .r8 (imm 1)] : List Instr) ++ ptr .r9 .r15 scrO)) s G := fun s ⟨h, hb⟩ =>
+    WP.mono (ctTailArgs_ok L h) fun _ ⟨a, b, c, d, e⟩ => ⟨a, b, c, d, fun ht => by rw [e]; exact hb ht⟩
   have a := rel_wp (rel_taint (P := fun s₁ s₂ => ((((∀ r ∈ ([] : List Reg), s₁.gpr r = s₂.gpr r) ∧
       (true = true → s₁.cf = s₂.cf ∧ s₁.zf = s₂.zf ∧ s₁.sf = s₂.sf ∧ s₁.of = s₂.of)) ∧
-      CrMid Ctx St W SP R icb₁ P₁ D n m₁ j s₁ ∧ CrMid Ctx St W SP R icb₂ P₂ D n m₂ j s₂) ∧ s₁.zf = some false))
+      (CrMid Ctx St W SP R icb₁ P₁ D n m₁ j s₁ ∧ (to = true → s₁.gpr .rbx = Q)) ∧
+      CrMid Ctx St W SP R icb₂ P₂ D n m₂ j s₂ ∧ (to = true → s₂.gpr .rbx = Q)) ∧ s₁.zf = some false))
     [.r13, .r14, .r15, .rsp]
-    (fun _ _ h r hr => CrMid.agree h.1.2.1 h.1.2.2 r (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hr))) ⟨_, by taint_decide⟩)
-    (fun _ _ h => ⟨h.1.2.1, h.1.2.2⟩) (G₁ := G) (G₂ := G) (fun s h => ctTailArgs_ok L h)
-    (fun s h => ctTailArgs_ok L h)
-  have hK : ∀ s, G s → WP isa (.call v.ctr.callee.name v.ctr.callee.code) s K := fun s ⟨he, hc, h12, hbp⟩ =>
+    (fun _ _ h r hr => CrMid.agree h.1.2.1.1 h.1.2.2.1 r (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hr)))
+    ⟨_, by taint_decide⟩)
+    (fun _ _ h => ⟨h.1.2.1, h.1.2.2⟩) (G₁ := G) (G₂ := G) (fun s h => hA s h) (fun s h => hA s h)
+  have hK : ∀ s, G s → WP isa (.call v.ctr.callee.name v.ctr.callee.code) s K := fun s ⟨he, hc, h12, hbp, hbx⟩ =>
     WP.mono (ctr_call v.ctr hc) fun _ g => ⟨he.of_saved g.saved g.rd g.wr,
-      by rw [g.saved _ (by decide), h12], by rw [g.saved _ (by decide), hbp]⟩
+      by rw [g.saved _ (by decide), h12], by rw [g.saved _ (by decide), hbp],
+      fun ht => by rw [g.saved _ (by decide), hbx ht]⟩
   have c := rel_wp (ctr_rel v.ctr (P := fun s₁ s₂ => True ∧ G s₁ ∧ G s₂) fun s₁ s₂ h =>
       ⟨_, _, _, _, _, _, h.2.1.2.1, h.2.2.2.1, by rw [h.2.1.1.rsp, h.2.2.1.rsp]⟩)
     (fun _ _ h => ⟨h.2.1, h.2.2⟩) hK hK
-  have d := rel_taint (P := fun s₁ s₂ => True ∧ K s₁ ∧ K s₂)
-    (c := .seq (.block ([.mov .rdi (.reg .r12)] ++ ptr .rsi .r14 64 ++ [.mov .rcx (.reg .rbp)])) xorLoop)
-    [.r12, .rbp, .r13, .r14, .r15, .rsp]
-    (fun _ _ h r hr => by
+  have hag : ∀ s₁ s₂, True ∧ K s₁ ∧ K s₂ → ∀ r ∈ [Reg.r12, .rbp, .r13, .r14, .r15, .rsp], s₁.gpr r = s₂.gpr r :=
+    fun _ _ h r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
       · rw [h.2.1.2.1, h.2.2.2.1]
-      · rw [h.2.1.2.2, h.2.2.2.2]
+      · rw [h.2.1.2.2.1, h.2.2.2.2.1]
       · rw [h.2.1.1.r13, h.2.2.1.r13]
       · rw [h.2.1.1.r14, h.2.2.1.r14]
       · rw [h.2.1.1.r15, h.2.2.1.r15]
-      · rw [h.2.1.1.rsp, h.2.2.1.rsp]) ⟨_, by taint_decide⟩
+      · rw [h.2.1.1.rsp, h.2.2.1.rsp]
+  have d : RelCT isa (fun s₁ s₂ => True ∧ K s₁ ∧ K s₂)
+      (.seq (.block (([.mov .rdi (.reg .r12)] : List Instr) ++ ptr .rsi .r14 64 ++
+        ([.mov .rcx (.reg .rbp)] : List Instr))) (xorLoopG to)) fun _ _ => True := by
+    cases to
+    · exact rel_taint [.r12, .rbp, .r13, .r14, .r15, .rsp] hag ⟨_, by taint_decide⟩
+    · exact rel_taint [.r12, .rbp, .r13, .r14, .r15, .rsp, .rbx] (fun s₁ s₂ h r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with hr | hr | hr | hr | hr | hr | rfl
+        · exact hag _ _ h r (by simp [hr])
+        · exact hag _ _ h r (by simp [hr])
+        · exact hag _ _ h r (by simp [hr])
+        · exact hag _ _ h r (by simp [hr])
+        · exact hag _ _ h r (by simp [hr])
+        · exact hag _ _ h r (by simp [hr])
+        · rw [h.2.1.2.2.2 rfl, h.2.2.2.2.2 rfl]) ⟨_, by taint_decide⟩
   exact RelCT.seq a (RelCT.seq c d)
+
+/-- The last bytes, with a new keystream block. -/
+theorem cryptTail_rel {R : Nat} {icb₁ icb₂ : Block} {P₁ P₂ : Nat} {D : Addr} {n : Nat} {m₁ m₂ : Mem} {j : Nat} :
+    RelCT isa (fun s₁ s₂ => CrMid Ctx St W SP R icb₁ P₁ D n m₁ j s₁ ∧ CrMid Ctx St W SP R icb₂ P₂ D n m₂ j s₂)
+      (cryptTail v.callees) fun _ _ => True :=
+  (cryptTailG_rel v L false (Q := 0)).mono (fun _ _ h => ⟨⟨h.1, nofun⟩, h.2, nofun⟩) fun _ _ h => h
 
 /-- `crypt`, over data at the same address, of the same length, after the
 same number of bytes modulo 16, with the same number of rounds. -/

@@ -102,6 +102,27 @@ structure CrOut (Ctx St W SP : Addr) (R : Nat) (icb : Block) (P : Nat) (D : Addr
     bytesAt s.mem D n = xorKs (ciphOf m₀ Ctx R) icb P (bytesAt m₀ D n)
   frame : Frame (crFrame St W SP D n) m₀ s.mem
 
+/-- After `cryptTailG` from `CrMid` with `j` bytes done: the `n - j` bytes
+left read at `Q` (`D + j` in place), the keystream XORed into them and
+stored after the `j` at `D`. -/
+structure CrOutQ (Ctx St W SP : Addr) (R : Nat) (icb : Block) (P : Nat) (D : Addr) (n : Nat) (m₀ : Mem)
+    (Q : Addr) (j : Nat) (s : State) : Prop where
+  env : Env Ctx St W SP s
+  rounds : RoundsAt s.mem W R
+  ctr : Ctr m₀ (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf m₀ Ctx R) icb P →
+    Ctr s.mem (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf m₀ Ctx R) icb (P + n)
+  out : Ctr m₀ (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf m₀ Ctx R) icb P →
+    bytesAt s.mem D n = xorKs (ciphOf m₀ Ctx R) icb P (bytesAt m₀ D j ++ bytesAt m₀ Q (n - j))
+  frame : Frame (crFrame St W SP D n) m₀ s.mem
+
+/-- Where `cryptTailG` reads the `n - j` bytes left after `j` at `D`: in
+place there (`Q = D + j`), out of place (`to`) at `Q`, in `rbx`, readable,
+apart from what is written and as they were in `m₀`. -/
+def TailSrc (to : Bool) (St W SP : Addr) (s : State) (m₀ : Mem) (D : Addr) (j n : Nat) (Q : Addr) : Prop :=
+  if to then s.gpr .rbx = Q ∧ DataOk St W SP s Q (n - j) ∧
+    (⟨Q, n - j⟩ : Region).Disjoint ⟨D + BitVec.ofNat 64 j, n - j⟩ ∧ bytesAt s.mem Q (n - j) = bytesAt m₀ Q (n - j)
+  else Q = D + BitVec.ofNat 64 j
+
 section
 variable {Ctx St W SP : Addr} (L : Lay Ctx St W SP)
 include L
