@@ -288,7 +288,8 @@ theorem opCp {sL s : State} {n : Nat} (h : JS b sL n s) {rs : Reg} {so o ps : Na
 /-- The slot `x` negated, as `(x - x) - x` through `tmp`, if the mask in `r12` is all ones. -/
 theorem negSlot_ok {sL s : State} {n : Nat} (h : JS b sL n s) {tmp x : Nat} {qs : List Nat}
     (hq1 : Sep1 tmp (x :: qs) = true) (hq2 : Sep1 x (tmp :: x :: qs) = true) (ht : tmp + 56 ≤ ACC)
-    (hx : x + 56 ≤ ACC) (hqs : ∀ q ∈ qs, q ≠ tmp ∧ q ≠ x) (htx : tmp ≠ x) (neg : Bool)
+    (hx : x + 56 ≤ ACC) (hqs : ∀ q ∈ qs, q ≠ tmp ∧ q ≠ x) (htx : tmp ≠ x) (ht4 : tmp % 4 = 0)
+    (hx4 : x % 4 = 0) (neg : Bool)
     (h12 : s.gpr .r12 = if neg then BitVec.allOnes 64 else 0) :
     WP isa (.ite (.nonzero .d .r12) (.block (Impl.X448.PPC64LE.sub tmp x x ++ Impl.X448.PPC64LE.sub x tmp x))
       (.block [])) s fun t => JS b sL n t ∧
@@ -299,10 +300,10 @@ theorem negSlot_ok {sL s : State} {n : Nat} (h : JS b sL n s) {tmp x : Nat} {qs 
       (fun _ => WP.block_nil ⟨h, by simp, fun _ _ => rfl⟩)
   · refine WP.ite true (by rw [eval_nonzero, h12]; rfl) (fun _ => ?_) (fun h => absurd h (by decide))
     refine WP.append (subS (o := tmp) (x := x) (y := x) hq1 ht (List.mem_cons_self ..) (List.mem_cons_self ..)
-      h.ctx.ctx (v := FS s.mem b) fun _ _ => rfl) fun s6 ⟨r6, f6, S6⟩ => ?_
+      ht4 hx4 hx4 h.ctx.ctx (v := FS s.mem b) fun _ _ => rfl) fun s6 ⟨r6, f6, S6⟩ => ?_
     have h6 : JS b sL n s6 := h.next r6 (by decide) f6
     refine WP.mono (subS (o := x) (x := tmp) (y := x) hq2 hx (List.mem_cons_self ..)
-      (List.mem_cons_of_mem _ (List.mem_cons_self ..)) h6.ctx.ctx S6) fun s7 ⟨r7, f7, S7⟩ =>
+      (List.mem_cons_of_mem _ (List.mem_cons_self ..)) hx4 ht4 hx4 h6.ctx.ctx S6) fun s7 ⟨r7, f7, S7⟩ =>
       ⟨h6.next r7 (by decide) f7, ?_, fun q hq => ?_⟩
     · rw [S7 x (List.mem_cons_self ..), upd_self, upd_self, upd_of_ne _ _ (Ne.symm htx)]
       simp only [ite_true]
@@ -470,7 +471,8 @@ theorem addBase_ok {S K : Nat} {sL s : State} (hfx : JFix b S K sL.mem) {n : Nat
         rw [k5 _ (by decide) (by decide), k4 _ (by decide) (by decide), m3, m2, m1]
     -- The negation.
     refine WP.seq (WP.mono (negSlot_ok C5 (tmp := U0) (x := SX) (qs := [RX, RY, RZ, DK, SY]) (by decide)
-      (by decide) (by decide) (by decide) (by decide) (by decide) (decide (digitAt false S n < 0))
+      (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+      (decide (digitAt false S n < 0))
       (by rw [m12']; by_cases h : digitAt false S n < 0 <;> simp [h])) fun s6 ⟨C6, x6, k6⟩ => ?_)
     have d6 : FS s6.mem b DK = Spec.Ed448.d := by rw [k6 DK (by simp), kR5 DK (by simp), hd]
     refine WP.mono (callAdd_ok C6 d6) fun s7 ⟨C7, p7, d7⟩ => ⟨C7, by rw [d7, d6], fun a hk => ?_⟩
@@ -559,7 +561,8 @@ theorem addKey_ok {S K : Nat} {sL s : State} (hfx : JFix b S K sL.mem) {n : Nat}
         rw [k6 _ (by decide) (by decide), k5 _ (by decide) (by decide), k4 _ (by decide) (by decide), m3, m2, m1]
     -- The negation.
     refine WP.seq (WP.mono (negSlot_ok C6 (tmp := TA) (x := PX) (qs := [RX, RY, RZ, DK, PY, Impl.Ed448.PPC64LE.PZ])
-      (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (decide (digitAt false K n < 0))
+      (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+      (decide (digitAt false K n < 0))
       (by rw [m12']; by_cases h : digitAt false K n < 0 <;> simp [h])) fun s7 ⟨C7, x7, k7⟩ => ?_)
     have d7 : FS s7.mem b DK = Spec.Ed448.d := by rw [k7 DK (by simp), kR6 DK (by simp), hd]
     refine WP.seq (WP.mono (callProj_ok C7 d7) fun s8 ⟨C8, tx8, ty8, tz8, d8, _, _, _⟩ => ?_)
