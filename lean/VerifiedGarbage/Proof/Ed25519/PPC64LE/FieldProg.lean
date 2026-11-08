@@ -205,7 +205,9 @@ theorem fieldOp_ok {b : Addr} {s : State} (hc : Ctx b s) (op : FieldOp) :
     have ho := slot_range o
     have ha := slot_range a
     have hb := slot_range c
-    refine WP.mono (mul_ok (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) hc) fun t ⟨hr, hf, hv⟩ => ?_
+    have := slot_al o; have := slot_al a; have := slot_al c
+    refine WP.mono (mul_ok (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
+      (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) hc) fun t ⟨hr, hf, hv⟩ => ?_
     exact field_finish o (hr.mono (by decide)) hf (Proof.X25519.toFe_mul hv)
   | mulc o a c => exact mulCall_ok hc o a c
   | add o a c =>
@@ -255,7 +257,9 @@ theorem fieldOpW_ok {b : Addr} {s : State} (hc : Ctx b s) (op : FieldOp) (hi : o
     have ho := slot_range o
     have ha := slot_range a
     have hb := slot_range c
-    refine WP.mono (mul_ok (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) hc) fun t ⟨hr, hf, hv⟩ =>
+    have := slot_al o; have := slot_al a; have := slot_al c
+    refine WP.mono (mul_ok (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
+      (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) hc) fun t ⟨hr, hf, hv⟩ =>
       ⟨hr, hf, ?_⟩
     rw [field_update o hf]; exact congrArg _ (Proof.X25519.toFe_mul hv)
   | mulc => simp [FieldOp.inline] at hi

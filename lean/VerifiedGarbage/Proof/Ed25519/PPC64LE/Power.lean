@@ -64,7 +64,9 @@ theorem mulP_ok {b : Addr} {s : State} (hc : Ctx b s) (o x y : Slot) (ho : 14 �
   have h1 := slot_range o
   have h2 := slot_range x
   have h3 := slot_range y
-  refine WP.mono (mul_ok (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) hc) fun t ⟨hr, hf, hv⟩ =>
+  have := slot_al o; have := slot_al x; have := slot_al y
+  refine WP.mono (mul_ok (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
+    (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) hc) fun t ⟨hr, hf, hv⟩ =>
     ⟨hr, frame_PR ho hf, ?_⟩
   rw [field_update o hf]
   exact congrArg _ (Proof.X25519.toFe_mul hv)
