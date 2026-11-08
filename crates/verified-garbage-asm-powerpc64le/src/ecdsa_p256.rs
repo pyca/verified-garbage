@@ -190,7 +190,7 @@ bl {vg_p256_sub_mod_n}
         vg_p256_add_mod_p = sym super::ec_p256::vg_p256_add_mod_p::vg_p256_add_mod_p,
         vg_p256_sub_mod_p = sym super::ec_p256::vg_p256_sub_mod_p::vg_p256_sub_mod_p,
         vg_p256_mul_mod_n = sym super::ecdsa_p256::vg_p256_mul_mod_n::vg_p256_mul_mod_n,
-        vg_p256_mul = sym super::ecdh_p256::vg_p256_mul::vg_p256_mul,
+        vg_p256_mul = sym super::ecdsa_p256::vg_p256_mul::vg_p256_mul,
         vg_p256_sub_mod_n = sym super::ecdsa_p256::vg_p256_sub_mod_n::vg_p256_sub_mod_n,
     )
 }
@@ -290,8 +290,16 @@ pub(crate) mod vg_ecdsa_p256_sign_k;
 pub(crate) mod vg_p256_add_mod_n;
 
 #[rustfmt::skip]
+#[path = "internal/vg_p256_mul.rs"]
+pub(crate) mod vg_p256_mul;
+
+#[rustfmt::skip]
 #[path = "internal/vg_p256_mul_mod_n.rs"]
 pub(crate) mod vg_p256_mul_mod_n;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p256_point_double.rs"]
+pub(crate) mod vg_p256_point_double;
 
 #[rustfmt::skip]
 #[path = "internal/vg_p256_sub_mod_n.rs"]
