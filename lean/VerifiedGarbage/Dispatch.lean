@@ -91,7 +91,7 @@ def selected : Rust.Selected :=
   [("x86_64", gcm (plain.map (· ++ "_prepared"))),
    -- AArch64's `encrypt` copies its pieces and seals them (`AesGcm::seal_pieces`).
    ("aarch64", gcm ((plain.erase "seal_gather").map fun f =>
-      if f == "seal" || f == "open" then f ++ "_with_powers" else f))] ++
+      if f == "seal" || f == "open" || f == "open_to" then f ++ "_with_powers" else f))] ++
   (["x86", "arm", "powerpc64le", "riscv64"].map fun t => (t, gcm plain))
 
 end VG.Dispatch

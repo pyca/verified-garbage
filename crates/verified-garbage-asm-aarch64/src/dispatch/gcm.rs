@@ -123,21 +123,6 @@ pub unsafe fn vg_aes_gcm_open_to_auto(ctx: *const [u64; 32], rounds: usize, nonc
     unsafe { crate::gcm::vg_aes_gcm_open_to(ctx, rounds, nonce, nonce_len, aad, aad_len, src, len, dst, dst_len, tag, tag_len) }
 }
 
-/// The implementation of `vg_aes_gcm_open_to` that `vg_aes_gcm_open_to_auto` runs on this CPU, chosen as it chooses (`VG.Rust.selector`), so that it can be called without choosing again.
-///
-/// # Safety
-///
-/// Calling the function it returns carries exactly `vg_aes_gcm_open_to_auto`'s obligations (its `# Safety` section), which are those of each implementation it may return; calling this function has none.
-#[allow(clippy::type_complexity)]
-#[inline]
-pub fn vg_aes_gcm_open_to_select() -> unsafe extern "C" fn(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::gcm::VG_AES_GCM_OPEN_TO_AES_FEATURES) {
-        return crate::gcm::vg_aes_gcm_open_to_aes;
-    }
-    crate::gcm::vg_aes_gcm_open_to
-}
-
 /// Absorbs additional data into an incremental AES-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
 ///
 /// Contract: `VG.Spec.Gcm.streamAadContract`. Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
@@ -556,4 +541,58 @@ pub fn vg_aes_gcm_open_with_powers_select() -> unsafe extern "C" fn(ctx: *const 
         return crate::gcm::vg_aes_gcm_open_with_powers_aes;
     }
     crate::gcm::vg_aes_gcm_open_with_powers
+}
+
+/// `vg_aes_gcm_open_to` with the 8 prepared powers of the hash subkey of the key context at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Computes the same result as `vg_aes_gcm_open_to`. The powers are secret, as the key context is: they may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToWithPowersContract`.
+///
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_gcm_open_to_with_powers_aes_sha3` if the CPU supports its features (`VG_AES_GCM_OPEN_TO_WITH_POWERS_AES_SHA3_FEATURES`); `vg_aes_gcm_open_to_with_powers_aes` if the CPU supports its features (`VG_AES_GCM_OPEN_TO_WITH_POWERS_AES_FEATURES`); or else `vg_aes_gcm_open_to_with_powers`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `len` bytes.
+/// * `dst` must be valid for reads and writes of `dst_len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `pw` must be valid for reads of 128 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `dst_len` must equal `len`.
+/// * `*pw` must be what a `*_store_powers` function wrote for the same key context (the contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and its hash subkey).
+/// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src`, `tag`, `pw` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst`, `tag` and `pw` may overlap the 2656 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_aes_gcm_open_to_with_powers_auto(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize, pw: *const [u64; 16]) -> u32 {
+    let cpu = verified_garbage_cpu::detected();
+    if cpu.contains(crate::gcm::VG_AES_GCM_OPEN_TO_WITH_POWERS_AES_SHA3_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_aes_gcm_open_to_with_powers_aes_sha3`'s, and the CPU
+        // has the features it needs.
+        return unsafe { crate::gcm::vg_aes_gcm_open_to_with_powers_aes_sha3(ctx, rounds, nonce, nonce_len, aad, aad_len, src, len, dst, dst_len, tag, tag_len, pw) };
+    }
+    if cpu.contains(crate::gcm::VG_AES_GCM_OPEN_TO_WITH_POWERS_AES_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_aes_gcm_open_to_with_powers_aes`'s, and the CPU
+        // has the features it needs.
+        return unsafe { crate::gcm::vg_aes_gcm_open_to_with_powers_aes(ctx, rounds, nonce, nonce_len, aad, aad_len, src, len, dst, dst_len, tag, tag_len, pw) };
+    }
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::gcm::vg_aes_gcm_open_to_with_powers(ctx, rounds, nonce, nonce_len, aad, aad_len, src, len, dst, dst_len, tag, tag_len, pw) }
+}
+
+/// The implementation of `vg_aes_gcm_open_to_with_powers` that `vg_aes_gcm_open_to_with_powers_auto` runs on this CPU, chosen as it chooses (`VG.Rust.selector`), so that it can be called without choosing again.
+///
+/// # Safety
+///
+/// Calling the function it returns carries exactly `vg_aes_gcm_open_to_with_powers_auto`'s obligations (its `# Safety` section), which are those of each implementation it may return; calling this function has none.
+#[allow(clippy::type_complexity)]
+#[inline]
+pub fn vg_aes_gcm_open_to_with_powers_select() -> unsafe extern "C" fn(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize, pw: *const [u64; 16]) -> u32 {
+    let cpu = verified_garbage_cpu::detected();
+    if cpu.contains(crate::gcm::VG_AES_GCM_OPEN_TO_WITH_POWERS_AES_SHA3_FEATURES) {
+        return crate::gcm::vg_aes_gcm_open_to_with_powers_aes_sha3;
+    }
+    if cpu.contains(crate::gcm::VG_AES_GCM_OPEN_TO_WITH_POWERS_AES_FEATURES) {
+        return crate::gcm::vg_aes_gcm_open_to_with_powers_aes;
+    }
+    crate::gcm::vg_aes_gcm_open_to_with_powers
 }

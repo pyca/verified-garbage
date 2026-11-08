@@ -37,6 +37,8 @@ use crate::arch::dispatch::gcm::{
 // it is created, which the functions below read; elsewhere the functions
 // read the key context alone.
 use crate::align::CacheAligned;
+#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+use crate::arch::dispatch::gcm::vg_aes_gcm_open_to_select;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::dispatch::gcm::{
     vg_aes_gcm_open_prepared_select, vg_aes_gcm_open_to_prepared_select, vg_aes_gcm_prepare_auto,
@@ -48,14 +50,14 @@ use crate::arch::dispatch::gcm::{
 use crate::arch::dispatch::gcm::{
     vg_aes_gcm_open_select, vg_aes_gcm_seal_gather_select, vg_aes_gcm_seal_select,
 };
-#[cfg(not(target_arch = "x86_64"))]
-use crate::arch::dispatch::gcm::{
-    vg_aes_gcm_open_to_select, vg_aes_gcm_stream_decrypt_select, vg_aes_gcm_stream_encrypt_select,
-};
 #[cfg(target_arch = "aarch64")]
 use crate::arch::dispatch::gcm::{
-    vg_aes_gcm_open_with_powers_select, vg_aes_gcm_seal_with_powers_select,
-    vg_aes_gcm_store_powers_auto,
+    vg_aes_gcm_open_to_with_powers_select, vg_aes_gcm_open_with_powers_select,
+    vg_aes_gcm_seal_with_powers_select, vg_aes_gcm_store_powers_auto,
+};
+#[cfg(not(target_arch = "x86_64"))]
+use crate::arch::dispatch::gcm::{
+    vg_aes_gcm_stream_decrypt_select, vg_aes_gcm_stream_encrypt_select,
 };
 use crate::error::InvalidKeyLength;
 #[cfg(target_arch = "aarch64")]
@@ -138,10 +140,17 @@ struct Fns {
         *const KeyCtx, usize, *const u8, usize, *const u8, usize, *mut u8, usize, *const u8, usize,
         *const Powers,
     ) -> u32),
-    /// `vg_aes_gcm_open_to` (on x86-64, `_prepared`).
+    /// `vg_aes_gcm_open_to` (on x86-64, `_prepared`; on AArch64,
+    /// `_with_powers`).
+    #[cfg(not(target_arch = "aarch64"))]
     open_to: verified_fn!((
         *const KeyCtx, usize, *const u8, usize, *const u8, usize, *const u8, usize, *mut u8, usize,
         *const u8, usize,
+    ) -> u32),
+    #[cfg(target_arch = "aarch64")]
+    open_to: verified_fn!((
+        *const KeyCtx, usize, *const u8, usize, *const u8, usize, *const u8, usize, *mut u8, usize,
+        *const u8, usize, *const Powers,
     ) -> u32),
     /// `vg_aes_gcm_seal_gather` (on x86-64, `_prepared`); AArch64's
     /// `encrypt` copies its pieces and seals them instead.
@@ -272,7 +281,9 @@ impl Fns {
             open: vg_aes_gcm_open_select(),
             #[cfg(target_arch = "x86_64")]
             open_to: vg_aes_gcm_open_to_prepared_select(),
-            #[cfg(not(target_arch = "x86_64"))]
+            #[cfg(target_arch = "aarch64")]
+            open_to: vg_aes_gcm_open_to_with_powers_select(),
+            #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
             open_to: vg_aes_gcm_open_to_select(),
             #[cfg(target_arch = "x86_64")]
             seal_gather: vg_aes_gcm_seal_gather_prepared_select(),
@@ -716,7 +727,23 @@ impl AesGcm {
                 tag.as_ptr(),
                 tag.len(),
             );
-            #[cfg(not(target_arch = "x86_64"))]
+            #[cfg(target_arch = "aarch64")]
+            let ok = (self.fns.open_to)(
+                self.key(),
+                self.rounds,
+                nonce.as_ptr(),
+                nonce.len(),
+                aad.as_ptr(),
+                aad.len(),
+                ciphertext.as_ptr(),
+                ciphertext.len(),
+                out.as_mut_ptr(),
+                out.len(),
+                tag.as_ptr(),
+                tag.len(),
+                &self.powers.0,
+            );
+            #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
             let ok = (self.fns.open_to)(
                 self.key(),
                 self.rounds,

@@ -222,8 +222,9 @@ def withPowersArtifacts (v : GcmImpl) (g : GhashWithImpl) : List Artifact :=
         (Proof.AesGcm.AArch64.openPwFn v g Proof.Gcm.AArch64.Pmull.mulV_keyV Proof.Gcm.AArch64.Stitch.gh8Ok))
       features := v.stitchFeatures }]
 
-/-- `vg_aes_gcm_seal_with_powers` and `vg_aes_gcm_open_with_powers` of
-implementations without code that reads the powers: their `seal` and `open`. -/
+/-- `vg_aes_gcm_seal_with_powers`, `vg_aes_gcm_open_with_powers` and
+`vg_aes_gcm_open_to_with_powers` of implementations without code that reads
+the powers: their `seal`, `open` and `open_to`. -/
 def basePwArtifacts (v : GcmImpl) : List Artifact :=
   [Spec.Gcm.sealWithPowersApi.artifact AArch64.target {
     suffix := v.suffix
@@ -236,6 +237,12 @@ def basePwArtifacts (v : GcmImpl) : List Artifact :=
     code := Impl.StackScratch.AArch64.withStackArgScratch 2592 2 (openCode v)
     stack := 2592
     verified := openBasePw_verified v Proof.Gcm.AArch64.Pmull.mulV_keyV
+    features := v.features },
+  Spec.Gcm.openToWithPowersApi.artifact AArch64.target {
+    suffix := v.suffix
+    code := Impl.AesGcm.AArch64.OpenTo.openTo 2 (Proof.AesGcm.AArch64.openFn v Proof.Gcm.AArch64.Pmull.mulV_keyV).fn
+    stack := 2624
+    verified := openToBasePw_verified v Proof.Gcm.AArch64.Pmull.mulV_keyV
     features := v.features }]
 
 /-- The artifacts of a variant, from the implementations it names: those that

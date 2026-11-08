@@ -9662,6 +9662,80 @@ b 21f
     )
 }
 
+/// `vg_aes_gcm_open_to` with the 8 prepared powers of the hash subkey of the key context at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Computes the same result as `vg_aes_gcm_open_to`. The powers are secret, as the key context is: they may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToWithPowersContract`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `len` bytes.
+/// * `dst` must be valid for reads and writes of `dst_len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `pw` must be valid for reads of 128 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `dst_len` must equal `len`.
+/// * `*pw` must be what a `*_store_powers` function wrote for the same key context (the contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and its hash subkey).
+/// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src`, `tag`, `pw` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst`, `tag` and `pw` may overlap the 2624 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_aes_gcm_open_to_with_powers(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize, pw: *const [u64; 16]) -> u32 {
+    core::arch::naked_asm!(
+        r".inst 0xd10083ff,0x910003f0,0xf9000a1e,0xf9401bf1,0xf9000211,0xf9401ff1,0xf9000611,0xf94013eb
+.inst 0x910000cc,0x910000ed,0xd344fdae
+cbz x14, 20f
+22:
+.inst 0x3dc00180,0x3d800160,0x9100418c,0x9100416b,0xd10005ce
+cbnz x14, 22b
+b 21f
+20:
+21:
+.inst 0xd28001ef,0x8a0f01ad
+cbz x13, 23f
+.inst 0xd343fdae
+cbz x14, 25f
+27:
+.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
+cbnz x14, 27b
+b 26f
+25:
+26:
+.inst 0xd342fdae
+cbz x14, 28f
+.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
+b 29f
+28:
+29:
+cbz x13, 210f
+212:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 212b
+b 211f
+210:
+211:
+b 24f
+23:
+24:
+.inst 0xf94013e6
+bl {vg_aes_gcm_open}
+cbz w0, 213f
+b 214f
+213:
+.inst 0xf94013e9,0xf94017ea,0xd280000b
+cbz x10, 215f
+217:
+.inst 0x3900012b,0x91000529,0xd100054a
+cbnz x10, 217b
+b 216f
+215:
+216:
+214:
+.inst 0xf9400bfe,0x910083ff,0xd65f03c0
+.p2align 6",
+        vg_aes_gcm_open = sym super::gcm::vg_aes_gcm_open,
+    )
+}
+
 #[rustfmt::skip]
 #[path = "internal/vg_ghash_with_powers_aes.rs"]
 pub(crate) mod vg_ghash_with_powers_aes;
