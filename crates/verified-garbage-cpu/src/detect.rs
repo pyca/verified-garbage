@@ -1,6 +1,7 @@
 //! Detecting the CPU features: the code that the generated dispatchers
-//! (`detected`, `requested`) and the library (`src/cpu.rs`) ask, and that the
-//! library's tests test. Only `detected` and `requested` are its interface.
+//! (`COMPILED`, `target_contains`, `detected`, `requested`) and the library
+//! (`src/cpu.rs`) ask, and that the library's tests test. Only `COMPILED`,
+//! `detected`, `requested` and `target_contains` are its interface.
 
 // A function that needs features beyond its target's baseline ISA has a
 // generated `<NAME>_FEATURES` constant of them, which Lean checks, and may only
@@ -16,12 +17,32 @@
 // enables), `VG_CPU_FEATURES` (`none`, or names from `NAMES`
 // separated by commas) restricts the features detected, so that tests and
 // benchmarks run every implementation on one machine. It can only remove
-// features, and panics on a name this library does not know or the CPU does
-// not have, rather than quietly test another configuration. On x86 and x86-64,
+// features, and not those the compilation target enables (`COMPILED`), which
+// it is limited to the others of; it panics on a name this library does not
+// know or the CPU does not have, rather than quietly test another
+// configuration. On x86 and x86-64,
 // some features are detected only with others that every CPU with them has
 // (`REPORTED_WITH`), so naming one without them panics too. On AArch64 targets
 // other than Apple's, the SHA-3 functions run FEAT_SHA3's Keccak only when it
 // names `sha3` (`hashes::sha3::Backend::detected`).
+//
+// Some features need no detecting: those the compilation target enables
+// (`COMPILED`: `-C target-cpu=x86-64-v3`, `-C target-feature=+avx2`, or a
+// target such as `aarch64-apple-darwin` whose baseline has them), which
+// every CPU running the code has, since the compiler may already have used
+// them anywhere. The dispatchers ask `target_contains`, a `const fn`, in a
+// `const` block, before what was detected
+// (`if const { target_contains(F) } || cpu.contains(F)`), so that the
+// compiler sees which implementation a dispatcher chooses where the target
+// guarantees its features, and leaves out the code of those ranked after
+// it, the baseline's among them: built for x86-64-v3, a function with an
+// AVX2 implementation links no other but those ranked before it. Every
+// feature of `COMPILED` is also detected (`detect` adds it, whatever
+// `VG_CPU_FEATURES` says), so this changes nothing a dispatcher chooses.
+// AArch64's `neon` and ARMv7's `umaal` are not in it: AdvSIMD is the
+// baseline of the verified AArch64 code, in every target, and `umaal` is no
+// target feature, so their bits only let `VG_CPU_FEATURES` turn off the code
+// that names them, to test the baseline.
 
 use core::sync::atomic::{AtomicU64, Ordering};
 
@@ -101,6 +122,72 @@ pub fn requested(f: Features) -> bool {
     f.0 != 0 && (state() >> 32) as u32 & f.0 == f.0
 }
 
+/// Whether the compilation target enables every feature of `f`
+/// ([`COMPILED`]), which every CPU running this code then has, without
+/// detecting anything. The generated dispatchers ask it in a `const` block,
+/// before what [`detected`] reports (see the comment at the top of this
+/// file), so that the compiler knows where it holds, and so which
+/// implementation they choose. (One that needs no feature they choose where
+/// `COMPILED`, or detection, has some.)
+pub const fn target_contains(f: Features) -> bool {
+    COMPILED.contains(f)
+}
+
+/// The features the compilation target enables (by their Rust
+/// `target_feature` names, as `feature` names their bits; each `cfg!` is 0
+/// or 1, as in `decode`), which every CPU
+/// running this code has: code compiled with a target feature may use it
+/// anywhere, so a CPU without it cannot run this code at all. AVX and the
+/// AVX-512 features included: the operating system must then also save
+/// their registers, as `runtime` checks (Intel SDM Vol. 1, §14.3 and
+/// §15.2), or the code compiled for them would not run either. On ARMv7,
+/// `umaal`, on the operating systems that `runtime` reports it on, which
+/// run on A-profile cores alone. Every one of them is also in `runtime()`
+/// on every CPU this code runs on (the library's tests check it), and in
+/// what `detected` reports, whatever `VG_CPU_FEATURES` says, so
+/// `target_contains` holds only where `detected` says the same.
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+pub const COMPILED: Features = Features(
+    (cfg!(target_feature = "ssse3") as u32 * feature::SSSE3)
+        | (cfg!(target_feature = "sha") as u32 * feature::SHA)
+        | (cfg!(target_feature = "aes") as u32 * feature::AES)
+        | (cfg!(target_feature = "pclmulqdq") as u32 * feature::PCLMULQDQ)
+        | (cfg!(target_feature = "avx") as u32 * feature::AVX)
+        | (cfg!(target_feature = "avx2") as u32 * feature::AVX2)
+        | (cfg!(target_feature = "bmi1") as u32 * feature::BMI1)
+        | (cfg!(target_feature = "bmi2") as u32 * feature::BMI2)
+        | (cfg!(target_feature = "avx512f") as u32 * feature::AVX512F)
+        | (cfg!(target_feature = "sha512") as u32 * feature::SHA512)
+        | (cfg!(target_feature = "adx") as u32 * feature::ADX)
+        | (cfg!(target_feature = "avx512ifma") as u32 * feature::AVX512IFMA)
+        | (cfg!(target_feature = "avx512vl") as u32 * feature::AVX512VL)
+        | (cfg!(target_feature = "vaes") as u32 * feature::VAES)
+        | (cfg!(target_feature = "vpclmulqdq") as u32 * feature::VPCLMULQDQ)
+        | (cfg!(target_feature = "avx512bw") as u32 * feature::AVX512BW),
+);
+
+/// The features the compilation target enables, which every CPU running
+/// this code has (see x86-64's): `aes` covers FEAT_AES and FEAT_PMULL,
+/// `sha2` FEAT_SHA1 and FEAT_SHA256, and `sha3` FEAT_SHA512 and FEAT_SHA3,
+/// as in `runtime`. Not `neon`, which every target but the soft-float ones
+/// enables, and whose bit only lets `VG_CPU_FEATURES` turn off the code
+/// that names it (see the comment at the top of this file).
+#[cfg(target_arch = "aarch64")]
+pub const COMPILED: Features = Features(
+    (cfg!(target_feature = "aes") as u32 * feature::AES)
+        | (cfg!(target_feature = "sha2") as u32 * feature::SHA2)
+        | (cfg!(target_feature = "sha3") as u32 * feature::SHA3)
+        | (cfg!(target_feature = "sve2") as u32 * feature::SVE2)
+        | (cfg!(target_feature = "dit") as u32 * feature::DIT),
+);
+
+/// None on the other targets: on ARMv7, `umaal` is no target feature, but
+/// what `runtime` assumes of the operating systems compiled for, and its
+/// bit only lets `VG_CPU_FEATURES` turn off the code that needs it (see the
+/// comment at the top of this file); the others detect none.
+#[cfg(not(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64")))]
+pub const COMPILED: Features = Features(0);
+
 /// `DETECTED`, detected if it was not yet.
 #[inline]
 fn state() -> u64 {
@@ -109,12 +196,14 @@ fn state() -> u64 {
 }
 
 /// Detects the features, records them for `detected` and returns them, with
-/// `DETECTED_INIT` set.
+/// `DETECTED_INIT` set: those `VG_CPU_FEATURES` allows, and every one the
+/// compilation target enables (`COMPILED`), which it cannot remove.
 #[cold]
 #[inline(never)]
 fn detect() -> u64 {
     let runtime = runtime();
-    let s = u64::from(runtime & allowed(runtime)) | DETECTED_INIT | (u64::from(named()) << 32);
+    let features = runtime & allowed(runtime) | COMPILED.0;
+    let s = u64::from(features) | DETECTED_INIT | (u64::from(named()) << 32);
     DETECTED.store(s, Ordering::Relaxed);
     s
 }
