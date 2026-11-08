@@ -54,5 +54,7 @@ theorem p384_ok : CfgOk p384 where
   fnk := rfl
   fnm := rfl
   mulNf := fun _ _ => Impl.Ecdsa.PPC64LE.mulP384_noFrames
+  chainP := .of_check (by decide +kernel)
+  chainN := .of_check (by decide +kernel)
 
 end VG.Proof.Ecdsa.PPC64LE
