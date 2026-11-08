@@ -28,7 +28,7 @@ namespace VG.Proof.AesGcm.PPC64LE.OpenTo
 open VG VG.PPC64LE VG.Impl.AesGcm.PPC64LE.OpenTo
 
 /-- `vg_aes_gcm_open_split` satisfies its contract. -/
-theorem split_correct [VG.Proof.Gcm.PPC64LE.GhashLaw] : SplitOk := fun _ hs => split_wp hs
+theorem split_correct [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] : SplitOk := fun _ hs => split_wp hs
 
 theorem openTo_correct (hv : SplitOk) (s : State) (hs : toK.pre s) :
     ∃ t s', Exec isa openTo s t s' ∧ abiPreserved s s' ∧ toK.post s s' := by
@@ -79,7 +79,7 @@ theorem to_implies : toK.Implies (Proof.AesGcm.openToRoundsContract PPC64LE.abi 
   ⟨fun _ h => toPre_of_spec h, fun _ _ _ h => toPost_of h, fun _ _ _ _ h => toPub_of h, toSat_pre⟩
 
 /-- `vg_aes_gcm_open_to`, calling `vg_aes_gcm_open_split` by its contract. -/
-theorem openTo_verified [VG.Proof.Gcm.PPC64LE.GhashLaw] :
+theorem openTo_verified [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] :
     Verified PPC64LE.target openTo (Proof.AesGcm.openToRoundsContract PPC64LE.abi 2720) :=
   Verified.of_correct (k := toK) (openTo_correct split_correct) (openTo_ct split_correct split_ct)
     to_implies

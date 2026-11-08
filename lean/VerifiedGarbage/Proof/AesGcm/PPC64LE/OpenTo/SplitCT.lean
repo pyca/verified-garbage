@@ -33,6 +33,7 @@ meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Fn
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 meta import VerifiedGarbage.Proof.Framework.Block
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-GCM on PPC64LE: `vg_aes_gcm_open_split` is constant time

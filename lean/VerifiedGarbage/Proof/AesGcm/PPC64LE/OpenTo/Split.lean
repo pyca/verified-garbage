@@ -21,13 +21,14 @@ import VerifiedGarbage.Proof.Framework.Offset
 # AES-GCM on PPC64LE: `vg_aes_gcm_open_split`
 
 Untrusted: everything here is checked by Lean. `vg_aes_gcm_open_split` is
-`open`'s body (`openWith`) with `oneCryptTo` for `oneCrypt`: its arguments
-are `open`'s, the data being the source, which it only reads, with the
-destination after them on the stack (`splitPre`). Its proof is `open`'s,
-`openWith_wp`, from `HeadPre`, with its own decryption (`split_dec`, by
-`oneCryptTo_ok`) and postcondition: if the tags are equal, the destination
-holds the plaintext, and otherwise it is as it was, which its callers then
-zero (`splitPPC64LE`).
+`open`'s body with a pass over the data in place of `oneCrypt` and the
+data's tag: its arguments are `open`'s, the data being the source, which it
+only reads, with the destination after them on the stack (`splitPre`). Its
+proof follows `open`'s, `openWith_wp`, from `HeadPre`, with the pass
+(`pass_good`, from `Pass.pass_ok`) after the received tag is copied: the
+destination holds the decryption of the source whatever the tags, and the
+result says whether they are equal; its callers zero the destination when
+they are not (`splitPPC64LE`).
 -/
 
 @[expose] public section
