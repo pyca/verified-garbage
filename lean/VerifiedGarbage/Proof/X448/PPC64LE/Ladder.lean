@@ -62,9 +62,10 @@ theorem Cur.next {s s' : State} (h : Cur b s0 a c qs v s) (hr : Rest clob s s')
     by rw [hr.gpr _ (by decide), h.r0], by rw [hr.gpr _ (by decide), h.r12], hS⟩
 
 theorem opMul {o x y : Nat} (hq : Sep1 o qs = true) (ho : o + 56 ≤ ACC) (hx : x ∈ qs)
-    (hy : y ∈ qs) (hx4 : x % 4 = 0) (hy4 : y % 4 = 0) {s : State} (h : Cur b s0 a c qs v s) :
+    (hy : y ∈ qs) (hx4 : x % 4 = 0) (hy4 : y % 4 = 0) (ho4 : o % 4 = 0) {s : State}
+    (h : Cur b s0 a c qs v s) :
     WP isa (mul o x y) s (Cur b s0 a c (o :: qs) (upd v o (v x * v y))) :=
-  WP.mono (mulS hq ho hx hy hx4 hy4 h.ctx h.slots) fun _ ⟨hr, hf, hS⟩ => h.next hr hf hS
+  WP.mono (mulS hq ho hx hy hx4 hy4 ho4 h.ctx h.slots) fun _ ⟨hr, hf, hS⟩ => h.next hr hf hS
 
 theorem opAdd {o x y : Nat} (hq : Sep1 o qs = true) (ho : o + 56 ≤ ACC) (hx : x ∈ qs)
     (hy : y ∈ qs) (ho4 : o % 4 = 0) (hx4 : x % 4 = 0) (hy4 : y % 4 = 0) {s : State} (h : Cur b s0 a c qs v s) :
@@ -134,7 +135,7 @@ theorem op_ok {b : Addr} {s0 : State} {a c : BitVec 64} {qs : List Nat} {v : Nat
     (h : Cur b s0 a c qs v s) :
     WP isa op.code s (Cur b s0 a c (op.out :: qs) (upd v op.out (op.val v))) := by
   cases op with
-  | mul o x y => exact opMul hq ho hx hy hx4 hy4 h
+  | mul o x y => exact opMul hq ho hx hy hx4 hy4 ho4 h
   | add o x y => exact opAdd hq ho hx hy ho4 hx4 hy4 h
   | sub o x y => exact opSub hq ho hx hy ho4 hx4 hy4 h
 
