@@ -9,8 +9,7 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.Proof.Framework.PPC64LE.TaintSym
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Target
-import VerifiedGarbage.Proof.EcKey.PPC64LE.Main
-public import VerifiedGarbage.Proof.EcKey.PPC64LE.Verified
+public import VerifiedGarbage.Proof.EcKey.PPC64LE.Main
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P256
 import VerifiedGarbage.Proof.P256.PPC64LE.Comb
 import VerifiedGarbage.Proof.EcKey.PPC64LE.P256CombLit
@@ -28,7 +27,6 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.TaintSym
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.TCB.PPC64LE.Target
 meta import VerifiedGarbage.Proof.EcKey.PPC64LE.Main
-meta import VerifiedGarbage.Proof.EcKey.PPC64LE.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P256
 meta import VerifiedGarbage.Proof.P256.PPC64LE.Comb
 meta import VerifiedGarbage.Proof.EcKey.PPC64LE.P256CombLit
@@ -52,6 +50,55 @@ namespace VG.Proof.EcKey.PPC64LE
 
 open VG VG.PPC64LE VG.Impl.Ecdsa.PPC64LE VG.Impl.Weierstrass.PPC64LE VG.Proof.Ecdsa.PPC64LE Spec.Weierstrass
 open VG.Proof.Weierstrass.PPC64LE.TComb
+
+theorem pre_of {s : State} (h : pkPPC.pre s) : PkPre p256 s := by
+  obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := h
+  exact ⟨h1, h2, h3, h4, h5, h6, h7⟩
+
+theorem post_of {s s' : State} (h : PkPost p256 s s') : pkPPC.post s s' := by
+  unfold PkPost at h
+  show match pk s.mem (s.gpr .r4) with
+    | some (.affine x y) => s'.gpr .r3 = 1 ∧
+        Spec.EcKey.bytesAt s'.mem (s.gpr .r3) 65 = Spec.EcKey.encodePoint (.affine x y)
+    | _ => s'.gpr .r3 = 0 ∧ Spec.EcKey.bytesAt s'.mem (s.gpr .r3) 65 = List.replicate 65 0
+  revert h
+  generalize hq : pk s.mem (s.gpr .r4) = q
+  rw [show Spec.EcKey.publicKey p256.C (dk p256 s) = pk s.mem (s.gpr .r4) from rfl, hq]
+  rcases q with _ | _ | ⟨x, y⟩ <;> exact id
+
+/-- A state satisfying the precondition (without the table). -/
+def satState : State where
+  gpr r := match r with
+    | .r3 => 0x1000 | .r4 => 0x2000 | .r5 => 0x8000 | _ => 0
+  lr := 0
+  sp := 0x20000
+  mem _ := 0
+  rd := [⟨0x2000, 32⟩]
+  wr := [⟨0x1000, 65⟩, ⟨0x8000, 8192⟩]
+
+/-- The contract as the proof states it implies the public key's (without the table). -/
+theorem pkPPC_implies : pkPPC.Implies (Spec.EcKey.P256.inst.publicKeyContract PPC64LE.abi) :=
+    { pre := by
+        sig_implies_pre [Spec.EcKey.P256.inst, Spec.EcKey.Instance.publicKeyContract,
+          Spec.EcKey.Instance.publicKeySig, Spec.P256.curve, Spec.EcKey.scratchWords, pkPPC, pk, PPC64LE.abi,
+          PPC64LE.argRegs]
+      post := by
+        intro s s' _ h
+        sig_post [Spec.EcKey.P256.inst, Spec.EcKey.Instance.publicKeyContract,
+          Spec.EcKey.Instance.publicKeySig, Spec.P256.curve, Spec.EcKey.scratchWords, pkPPC, pk, PPC64LE.abi,
+          PPC64LE.argRegs]
+        simp only [pkPPC, pk, Spec.P256.curve] at h
+        revert h
+        generalize Spec.EcKey.publicKey _ _ = q
+        rcases q with _ | _ | ⟨x, y⟩ <;> exact fun h => ⟨by rw [h.1]; rfl, h.2⟩
+      pub := by
+        sig_implies_pub [Spec.EcKey.P256.inst, Spec.EcKey.Instance.publicKeyContract,
+          Spec.EcKey.Instance.publicKeySig, Spec.P256.curve, Spec.EcKey.scratchWords, pkPPC, pk, PPC64LE.abi,
+          PPC64LE.argRegs]
+      sat := by
+        sig_implies_sat [Spec.EcKey.P256.inst, Spec.EcKey.Instance.publicKeyContract,
+          Spec.EcKey.Instance.publicKeySig, Spec.P256.curve, Spec.EcKey.scratchWords, pkPPC, pk, PPC64LE.abi,
+          PPC64LE.argRegs] [satState] using satState }
 
 /-- The public key's contract with the table, as the proof states it. -/
 def pkPC : Contract isa where
