@@ -15,8 +15,7 @@ call the CBC code, then zero the whole of `scratch` (2176 bytes, which its
 proofs do not bound) with `vg_zeroize`, leaving it scrubbed
 (`encrypt_scrubbed`, `decrypt_scrubbed`: `Verified.callWipe'`, with the side
 conditions of `Proof/AesCbc/Wipe.lean`). `encrypt_verified` and
-`decrypt_verified` are those weakened to the contracts of `Spec/Cbc/`, which
-do not state it yet.
+`decrypt_verified` state them as the contracts of `Spec/Cbc/`.
 -/
 
 @[expose] public section
@@ -50,10 +49,10 @@ theorem decrypt_scrubbed :
 
 theorem encrypt_verified :
     Verified PPC64LE.target Impl.AesCbc.PPC64LE.Wiped.encrypt (Spec.Cbc.aesEncryptContract PPC64LE.abi 48) :=
-  Verified.of_scrubbed encrypt_scrubbed
+  encrypt_scrubbed
 
 theorem decrypt_verified :
     Verified PPC64LE.target Impl.AesCbc.PPC64LE.Wiped.decrypt (Spec.Cbc.aesDecryptContract PPC64LE.abi 48) :=
-  Verified.of_scrubbed decrypt_scrubbed
+  decrypt_scrubbed
 
 end VG.Proof.AesCbc.PPC64LE.Wiped

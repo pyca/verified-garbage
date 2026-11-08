@@ -16,8 +16,7 @@ into its frame for the call, then zero the whole of `scratch` (2176 bytes,
 which the CBC proofs do not bound) with `vg_zeroize`, leaving it scrubbed
 (`encrypt_scrubbed`, `decrypt_scrubbed`), with 32 bytes of stack (the CBC
 code's 8 and `callWipeStack`'s 24). `encrypt_verified` and
-`decrypt_verified` are those weakened to the contracts of `Spec/Cbc/`, which
-do not state it yet.
+`decrypt_verified` state them as the contracts of `Spec/Cbc/`.
 -/
 
 @[expose] public section
@@ -74,9 +73,9 @@ theorem decrypt_scrubbed :
     (decPost_local 32) (decPost_out 32)
 
 theorem encrypt_verified : Verified target encrypt (Spec.Cbc.aesEncryptContract abi 32) :=
-  Verified.of_scrubbed encrypt_scrubbed
+  encrypt_scrubbed
 
 theorem decrypt_verified : Verified target decrypt (Spec.Cbc.aesDecryptContract abi 32) :=
-  Verified.of_scrubbed decrypt_scrubbed
+  decrypt_scrubbed
 
 end VG.Proof.AesCbc.Arm.Wiped
