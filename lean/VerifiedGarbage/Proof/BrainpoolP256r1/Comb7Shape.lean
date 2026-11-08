@@ -1,4 +1,5 @@
 module
+-- separate module: the tables' shape, which the kernel checks by walking every table, is target-independent, so other targets' combs can share it
 
 public import VerifiedGarbage.Impl.BrainpoolP256r1.CombTable7
 
