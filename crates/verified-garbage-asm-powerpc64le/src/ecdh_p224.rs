@@ -67,6 +67,14 @@ bl {vg_p224_mul_mod_p}
         vg_p224_mul_mod_p = sym super::ec_p224::vg_p224_mul_mod_p::vg_p224_mul_mod_p,
         vg_p224_add_mod_p = sym super::ec_p224::vg_p224_add_mod_p::vg_p224_add_mod_p,
         vg_p224_sub_mod_p = sym super::ec_p224::vg_p224_sub_mod_p::vg_p224_sub_mod_p,
-        vg_p224_mul = sym super::ec_p224::vg_p224_mul::vg_p224_mul,
+        vg_p224_mul = sym super::ecdh_p224::vg_p224_mul::vg_p224_mul,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_p224_mul.rs"]
+pub(crate) mod vg_p224_mul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p224_point_double.rs"]
+pub(crate) mod vg_p224_point_double;
