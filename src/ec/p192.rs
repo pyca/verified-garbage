@@ -9,6 +9,7 @@
     target_arch = "riscv64"
 ))]
 
+use crate::align::CacheAligned;
 use crate::arch::ec_p192::vg_ec_p192_public_key;
 use crate::zeroize::zeroize;
 
@@ -16,13 +17,13 @@ use crate::zeroize::zeroize;
 /// SEC 1 §2.3.3, or `None` if `d` is not in `[1, n − 1]`.
 pub(crate) fn public_key(d: &[u8; 24]) -> Option<[u8; 49]> {
     let mut out = [0; 49];
-    let mut scratch = [0u64; 1024];
+    let mut scratch = CacheAligned([0u64; 1024]);
     // SAFETY: `out` is valid for reads and writes of 49 bytes, `d` for reads
     // of 24 and `scratch` for reads and writes of 8192; `out` and `scratch`
     // are distinct objects from each other and `d`, so none overlaps another
     // or the call's stack frame, and, as Rust objects, none wraps around the
     // address space.
-    let ok = unsafe { vg_ec_p192_public_key(&mut out, d, &mut scratch) };
-    zeroize(&mut scratch);
+    let ok = unsafe { vg_ec_p192_public_key(&mut out, d, &mut scratch.0) };
+    zeroize(&mut scratch.0);
     (ok == 1).then_some(out)
 }

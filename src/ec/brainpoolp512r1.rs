@@ -10,6 +10,7 @@
     target_arch = "riscv64"
 ))]
 
+use crate::align::CacheAligned;
 use crate::arch::dispatch::ec_brainpoolp512r1::vg_ec_brainpoolp512r1_public_key_auto;
 use crate::zeroize::zeroize;
 
@@ -17,14 +18,14 @@ use crate::zeroize::zeroize;
 /// SEC 1 §2.3.3, or `None` if `d` is not in `[1, n − 1]`.
 pub(crate) fn public_key(d: &[u8; 64]) -> Option<[u8; 129]> {
     let mut out = [0; 129];
-    let mut scratch = [0u64; 1024];
+    let mut scratch = CacheAligned([0u64; 1024]);
     // SAFETY: `out` is valid for reads and writes of 129 bytes, `d` for reads
     // of 64 and `scratch` for reads and writes of 8192; `out` and `scratch` are
     // distinct objects from each other and `d`, so none overlaps another or the
     // call's stack frame, and, as Rust objects, none wraps around the address
     // space. The dispatcher calls only an implementation the CPU has the
     // features of.
-    let ok = unsafe { vg_ec_brainpoolp512r1_public_key_auto(&mut out, d, &mut scratch) };
-    zeroize(&mut scratch);
+    let ok = unsafe { vg_ec_brainpoolp512r1_public_key_auto(&mut out, d, &mut scratch.0) };
+    zeroize(&mut scratch.0);
     (ok == 1).then_some(out)
 }

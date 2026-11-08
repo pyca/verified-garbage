@@ -276,7 +276,7 @@ theorem one_dataOk {s₀ s : State} (h : onePre n wi s₀) (hk : ArgsKeep n s₀
   clear hdrop0 hdrop2 hdrop3 hdrop4 hdrop5 hdrop6 hdrop7 hdrop9 hdrop10 hdrop11 hdrop12 hdrop13 hdrop15
     hdrop16 hdrop17 hdrop18 hdrop20 hdrop21 hdrop22
   clear hp
-  exact ⟨by rw [hk.rd, hk.wr]; exact covers_left (covers_of_mem hwr.1), (arg s₀ 3).isLt, fD,
+  exact ⟨by rw [hk.rd, hk.wr]; exact covers_of_mem hwr.1, (arg s₀ 3).isLt, fD,
     oSt_disj h dDW, dDW, bD⟩
 
 theorem dataArgs_run {s₀ s : State} (hk : ArgsKeep n s₀ s) (hf : s₀.sp.toNat + 4 * n ≤ 2 ^ 32)
@@ -300,7 +300,8 @@ structure OC (n wi : Nat) (s₀ : State) (k7 : BitVec 32) (icb : Block) (m₀ : 
     gctr (ciphOf m₀ (State.addr (s₀.gpr .r0)) (s₀.gpr .r1).toNat) icb (bytesAt m₀ (State.addr (arg s₀ 2)) (arg s₀ 3).toNat)
   frame : Frame (crFrame (oSt s₀ wi) (arg s₀ wi) s₀.sp (arg s₀ 2) (arg s₀ 3).toNat) m₀ s.mem
 
-theorem oneCrypt_ok {s₀ s : State} (h : onePre n wi s₀) (hn : 5 ≤ n) {k7 : BitVec 32}
+theorem oneCrypt_ok {s₀ s : State} (h : onePre n wi s₀)
+    (hw : (⟨State.addr (arg s₀ 2), (arg s₀ 3).toNat⟩ : Region) ∈ s₀.wr) (hn : 5 ≤ n) {k7 : BitVec 32}
     (he : Env (s₀.gpr .r0) (oSt s₀ wi) (arg s₀ wi) s₀.sp k7 (s₀.gpr .r1) s) (hk : ArgsKeep n s₀ s) {icb : Block}
     (hcb : blockAt s.mem (State.addr (oSt s₀ wi) + BitVec.ofNat 64 48) = icb) :
     WP isa oneCrypt s (OC n wi s₀ k7 icb s.mem) := by
@@ -308,8 +309,7 @@ theorem oneCrypt_ok {s₀ s : State} (h : onePre n wi s₀) (hn : 5 ≤ n) {k7 :
   have spf := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
   have hR := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
   have hin : args s₀ n ∈ s₀.rd := h.1.2.2.2
-  have dcD := h.2.2.1
-  have hwr := h.2.1
+  have dcD := h.2.2.1 hw
   obtain ⟨s₁, run₁, h4, h5, h6, g₁, k₁⟩ := dataArgs_run hk spf hin hn
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   have he₁ := he.keep (fun r hr => by
@@ -319,7 +319,7 @@ theorem oneCrypt_ok {s₀ s : State} (h : onePre n wi s₀) (hn : 5 ≤ n) {k7 :
   have ci : CrIn (s₀.gpr .r0) (oSt s₀ wi) (arg s₀ wi) s₀.sp k7 (s₀.gpr .r1) (s₀.gpr .r1).toNat icb 0 (arg s₀ 2)
       (arg s₀ 3).toNat s₁ :=
     ⟨he₁, h4, by rw [h5]; simp, by rw [h6], by rw [he₁.r8]; simp, hR,
-      ⟨one_dataOk h hk₁, by rw [hk₁.wr]; exact covers_of_mem hwr.1, dcD⟩⟩
+      ⟨one_dataOk h hk₁, by rw [hk₁.wr]; exact covers_of_mem hw, dcD⟩⟩
   refine WP.mono (WP.with_rdwr (crypt_ok L ci)) fun s₂ hh => ?_
   obtain ⟨co, rd₂, wr₂, sp₂⟩ := hh
   have hA : ∀ r ∈ crFrame (oSt s₀ wi) (arg s₀ wi) s₀.sp (arg s₀ 2) (arg s₀ 3).toNat, (args s₀ n).Disjoint r := by
@@ -328,7 +328,7 @@ theorem oneCrypt_ok {s₀ s : State} (h : onePre n wi s₀) (hn : 5 ≤ n) {k7 :
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
-    · exact dDA.symm
+    · exact (dDA hw).symm
     · rw [hst, add_ofNat_assoc]; exact (dWA.sub_left (Lay.wSub (by decide))).symm
     · exact (dWA.sub_left (Lay.wSub (by decide))).symm
     · exact (below_args s₀ spf).symm

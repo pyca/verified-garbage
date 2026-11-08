@@ -28,4 +28,9 @@ theorem ctr32_ct : ConstantTime isa Proof.Aes.ctr32X86.pre
   VG.Taint.constantTime (A := sseTaint) Proof.Aes.X86.ctrτ₀
     (fun _ _ h₁ h₂ hp => Proof.Aes.X86.ctr_agree₀ h₁ h₂ hp) (by taint_decide)
 
+theorem ctr32To_ct : ConstantTime isa Proof.Aes.ctr32ToX86.pre
+    Proof.Aes.ctr32ToX86.pub Impl.Aes.X86.AesNi.ctr32To :=
+  VG.Taint.constantTime (A := sseTaint) Proof.Aes.X86.ctrToτ₀
+    (fun _ _ h₁ h₂ hp => Proof.Aes.X86.ctrTo_agree₀ h₁ h₂ hp) (by taint_decide)
+
 end VG.Proof.Aes.X86.AesNi

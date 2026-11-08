@@ -21,7 +21,7 @@ open VG.Spec.Gcm
 def sealPrepared16ScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   sealPreparedScratchSig.contract A
     (pre := fun ctx rounds nonce nonceLen aad aadLen data len tag _work =>
-      sealPrepared16Pre A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag)
+      Spec.Gcm.sealPrepared16Pre A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag)
     (post := fun ctx rounds nonce nonceLen aad aadLen data len tag _work =>
       sealRoundsPost A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag)
     (writeArgs := true) (stack := stack)
@@ -31,7 +31,7 @@ def sealPrepared16ScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Con
 def openPrepared16ScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   openPreparedScratchSig.contract A
     (pre := fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen _work =>
-      openPrepared16Pre A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag tagLen)
+      Spec.Gcm.openPrepared16Pre A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag tagLen)
     (post := fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen _work =>
       openRoundsPost A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag tagLen)
     (writeArgs := true) (stack := stack)
@@ -42,7 +42,7 @@ def openPrepared16ScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Con
 def streamEncryptPrepared16ScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   streamCryptPreparedScratchSig.contract A
     (pre := fun ctx rounds state aadLen textLen data len _scratch =>
-      streamCryptPrepared16Pre A.ptrBits ctx rounds state aadLen textLen data len)
+      Spec.Gcm.streamCryptPrepared16Pre A.ptrBits ctx rounds state aadLen textLen data len)
     (post := fun ctx rounds state aadLen textLen data len _scratch =>
       streamEncryptRoundsPost A.ptrBits ctx rounds state aadLen textLen data len)
     (writeArgs := true) (stack := stack)
@@ -51,7 +51,7 @@ def streamEncryptPrepared16ScratchContract {M : ISA} (A : Abi M) (stack : Nat :=
 def streamDecryptPrepared16ScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   streamCryptPreparedScratchSig.contract A
     (pre := fun ctx rounds state aadLen textLen data len _scratch =>
-      streamCryptPrepared16Pre A.ptrBits ctx rounds state aadLen textLen data len)
+      Spec.Gcm.streamCryptPrepared16Pre A.ptrBits ctx rounds state aadLen textLen data len)
     (post := fun ctx rounds state aadLen textLen data len _scratch =>
       streamDecryptRoundsPost A.ptrBits ctx rounds state aadLen textLen data len)
     (writeArgs := true) (stack := stack)
@@ -96,10 +96,10 @@ theorem sealPrepared16Pre_local : ∀ vs m₁ m₂, vs.length = (sealPreparedSig
     forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
   have hc := agree_of hb.1
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
-    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr] (sealPrepared16Pre pb) _ m₁ at h
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr] (Spec.Gcm.sealPrepared16Pre pb) _ m₁ at h
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
-    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr] (sealPrepared16Pre pb) _ m₂
-  dsimp only [Curry.apply, sealPrepared16Pre, ArgWord.ofRaw] at h ⊢
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr] (Spec.Gcm.sealPrepared16Pre pb) _ m₂
+  dsimp only [Curry.apply, Spec.Gcm.sealPrepared16Pre, ArgWord.ofRaw] at h ⊢
   exact ⟨h.1, preparedPowers16Repr_congr hc h.2⟩
 
 theorem openPrepared16Pre_local : ∀ vs m₁ m₂, vs.length = (openPreparedSig.words pb).length →
@@ -117,12 +117,12 @@ theorem openPrepared16Pre_local : ∀ vs m₁ m₂, vs.length = (openPreparedSig
     forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
   have hc := agree_of hb.1
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
-    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb] (openPrepared16Pre pb) _
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb] (Spec.Gcm.openPrepared16Pre pb) _
     m₁ at h
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
-    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb] (openPrepared16Pre pb) _
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb] (Spec.Gcm.openPrepared16Pre pb) _
     m₂
-  dsimp only [Curry.apply, openPrepared16Pre, ArgWord.ofRaw] at h ⊢
+  dsimp only [Curry.apply, Spec.Gcm.openPrepared16Pre, ArgWord.ofRaw] at h ⊢
   exact ⟨h.1, preparedPowers16Repr_congr hc h.2⟩
 
 theorem streamCryptPrepared16Pre_local : ∀ vs m₁ m₂, vs.length = (streamCryptPreparedSig.words pb).length →
@@ -140,10 +140,10 @@ theorem streamCryptPrepared16Pre_local : ∀ vs m₁ m₂, vs.length = (streamCr
     forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
   have hc := agree_of hb.1
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64,
-    ArgWord.addr, ArgWord.int pb] (streamCryptPrepared16Pre pb) _ m₁ at h
+    ArgWord.addr, ArgWord.int pb] (Spec.Gcm.streamCryptPrepared16Pre pb) _ m₁ at h
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64,
-    ArgWord.addr, ArgWord.int pb] (streamCryptPrepared16Pre pb) _ m₂
-  dsimp only [Curry.apply, streamCryptPrepared16Pre, ArgWord.ofRaw] at h ⊢
+    ArgWord.addr, ArgWord.int pb] (Spec.Gcm.streamCryptPrepared16Pre pb) _ m₂
+  dsimp only [Curry.apply, Spec.Gcm.streamCryptPrepared16Pre, ArgWord.ofRaw] at h ⊢
   exact ⟨h.1, preparedPowers16Repr_congr hc h.2⟩
 
 end VG.Proof.AesGcm

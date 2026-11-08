@@ -11,6 +11,7 @@
 
 use super::table::{HmacHash, sign_with};
 use super::{SignatureHash, sealed};
+use crate::align::CacheAligned;
 use crate::arch::dispatch::ecdsa_p521::{vg_ecdsa_p521_sign_auto, vg_ecdsa_p521_verify_auto};
 use crate::ec::P521;
 use crate::error::{InvalidKey, InvalidSignature};
@@ -21,7 +22,7 @@ fn verify_with(
     digest: &[u8],
     signature: &[u8; 132],
 ) -> Result<(), InvalidSignature> {
-    let mut scratch = [0u64; 1024];
+    let mut scratch = CacheAligned([0u64; 1024]);
     // SAFETY: `q` is valid for reads of 133 bytes, `digest` of `digest.len()`,
     // `signature` of 132 and `scratch` for reads and writes of 8192; `scratch`
     // is a distinct object from the others, so it overlaps neither them nor the
@@ -29,7 +30,7 @@ fn verify_with(
     // space. The dispatcher calls only an implementation the CPU has the
     // features of.
     let ok = unsafe {
-        vg_ecdsa_p521_verify_auto(q, digest.as_ptr(), digest.len(), signature, &mut scratch)
+        vg_ecdsa_p521_verify_auto(q, digest.as_ptr(), digest.len(), signature, &mut scratch.0)
     };
     if ok == 1 {
         Ok(())

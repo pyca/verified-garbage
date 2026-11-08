@@ -11,13 +11,14 @@
 
 use super::table::{HmacHash, sign_with};
 use super::{SignatureHash, sealed};
+use crate::align::CacheAligned;
 use crate::arch::dispatch::ecdsa_p224::{vg_ecdsa_p224_sign_auto, vg_ecdsa_p224_verify_auto};
 use crate::ec::P224;
 use crate::error::{InvalidKey, InvalidSignature};
 
 /// Whether `signature` verifies with `q` for the hash `digest`.
 fn verify_with(q: &[u8; 57], digest: &[u8], signature: &[u8; 56]) -> Result<(), InvalidSignature> {
-    let mut scratch = [0u64; 1024];
+    let mut scratch = CacheAligned([0u64; 1024]);
     // SAFETY: `q` is valid for reads of 57 bytes, `digest` of `digest.len()`,
     // `signature` of 56 and `scratch` for reads and writes of 8192; `scratch`
     // is a distinct object from the others, so it overlaps neither them nor the
@@ -25,7 +26,7 @@ fn verify_with(q: &[u8; 57], digest: &[u8], signature: &[u8; 56]) -> Result<(), 
     // space. The dispatcher calls only an implementation the CPU has the
     // features of.
     let ok = unsafe {
-        vg_ecdsa_p224_verify_auto(q, digest.as_ptr(), digest.len(), signature, &mut scratch)
+        vg_ecdsa_p224_verify_auto(q, digest.as_ptr(), digest.len(), signature, &mut scratch.0)
     };
     if ok == 1 {
         Ok(())

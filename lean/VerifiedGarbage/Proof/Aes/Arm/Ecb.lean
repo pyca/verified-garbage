@@ -462,7 +462,9 @@ theorem group_ok {crypt2 : Prog isa} {f : Nat → List Byte → Spec.Aes.State �
   have f₁ : Frame [⟨State.addr b + BitVec.ofNat 64 176, 16⟩] s.mem s₁.mem := by
     rw [m₁]; exact save_frame _ _ _ _ _
   have hf₁ : Frame (gRegions (State.addr b) (State.addr Dp) n) s₂.mem s₁.mem :=
-    hi.frame.trans (f₁.mono fun r hr => by simp at hr; simp [hr])
+    hi.frame.trans (f₁.sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨⟨State.addr b + BitVec.ofNat 64 176, 20⟩, by simp, front_sub _⟩)
   have z₁' : Arm.eval .ne s₁ = some (decide (2 ≤ n - 2 * g)) := by
     rw [z₁, hi.r11, shr1_eq _ (by omega_arith)]
   have d₁ : EcbInv m₀ s₁.mem (State.addr Dp) n (8 * g) F :=

@@ -20,6 +20,10 @@ open VG VG.X86
 /-- The region of `n` bytes at a 32-bit pointer. -/
 abbrev reg32 (b : BitVec 32) (n : Nat) : Region := ⟨b.setWidth 64, n⟩
 
+/-- The source and the destination of `n` blocks of data: the same bytes (in
+place), or apart. -/
+def SrcDst (S D : Addr) (n : Nat) : Prop := S = D ∨ Region.Disjoint ⟨S, 16 * n⟩ ⟨D, 16 * n⟩
+
 theorem addr_zero (b : BitVec 32) : addr b 0 = b.setWidth 64 := by simp [addr]
 
 theorem toNat_setWidth32 (b : BitVec 32) : (b.setWidth 64).toNat = b.toNat := by

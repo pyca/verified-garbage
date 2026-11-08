@@ -255,7 +255,7 @@ theorem stOut_of {H : Block} {iv a : List Byte} {R n : Nat} {D Tg : Addr} {ρ σ
     (hR : R = 10 ∨ R = 12 ∨ R = 14) (h28 : σ.gpr .x28 = Tg) (F₂ : Frame [workR W, ⟨D, n⟩] ρ.mem s₂.mem)
     (hrd : σ.rd = ρ.rd) (hwr : σ.wr = ρ.wr)
     (hm : Stitch.SMid Ctx (W + BitVec.ofNat 64 16) W SP H (a ++ Spec.Gcm.zeros (Spec.Gcm.padLen a.length))
-      (Spec.Gcm.inc32 (Spec.Gcm.j0 H iv)) R D n c s₂ s₃)
+      (Spec.Gcm.inc32 (Spec.Gcm.j0 H iv)) R D D n c s₂ s₃)
     (x23 : s₄.gpr .x23 = D + BitVec.ofNat 64 (Stitch.pre n))
     (x27 : s₄.gpr .x27 = D + BitVec.ofNat 64 (Stitch.pre n))
     (x24 : s₄.gpr .x24 = BitVec.ofNat 64 (n - Stitch.pre n))

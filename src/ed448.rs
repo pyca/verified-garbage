@@ -12,6 +12,7 @@
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
+use crate::align::CacheAligned;
 use crate::arch::dispatch::ed448::{
     vg_ed448_public_key_auto, vg_ed448_sign_cached_auto, vg_ed448_verify_auto,
 };
@@ -84,7 +85,7 @@ impl VerifyingKey {
         signature: &[u8],
     ) -> Result<(), InvalidSignature> {
         let signature: &[u8; 114] = signature.try_into().map_err(|_| InvalidSignature)?;
-        let mut scratch = [0u64; 1024];
+        let mut scratch = CacheAligned([0u64; 1024]);
         // SAFETY: the input references are valid for their declared lengths,
         // and scratch is a distinct writable object. No object overlaps the
         // call's stack or wraps the address space. The dispatcher calls only
@@ -97,10 +98,10 @@ impl VerifyingKey {
                 message.as_ptr(),
                 message.len(),
                 signature,
-                &mut scratch,
+                &mut scratch.0,
             )
         };
-        zeroize(&mut scratch);
+        zeroize(&mut scratch.0);
         if valid == 1 {
             Ok(())
         } else {
@@ -135,14 +136,14 @@ impl SigningKey {
     /// 57-byte private key.
     pub fn from_seed(seed: &[u8; 57]) -> Self {
         let mut public = [0u8; 57];
-        let mut scratch = [0u64; 1024];
+        let mut scratch = CacheAligned([0u64; 1024]);
         // SAFETY: the output, seed, and scratch are distinct objects valid for
         // 57, 57, and 8192 bytes, respectively, so they overlap neither each
         // other nor the call's stack, and none wraps the address space.
         // The dispatcher calls only an implementation the CPU has the
         // features of.
-        unsafe { vg_ed448_public_key_auto(&mut public, seed, &mut scratch) };
-        zeroize(&mut scratch);
+        unsafe { vg_ed448_public_key_auto(&mut public, seed, &mut scratch.0) };
+        zeroize(&mut scratch.0);
         Self {
             seed: *seed,
             public: VerifyingKey { bytes: public },
@@ -186,7 +187,7 @@ impl SigningKey {
 /// `context` must be at most 255 bytes long.
 fn sign_message(seed: &[u8; 57], pk: &[u8; 57], context: &[u8], message: &[u8]) -> [u8; 114] {
     let mut signature = [0u8; 114];
-    let mut scratch = [0u64; 1024];
+    let mut scratch = CacheAligned([0u64; 1024]);
     // SAFETY: the input references are valid for their declared lengths.
     // Signature and scratch are distinct writable objects, disjoint from the
     // inputs and the call's stack. None wraps the address space. pk is seed's
@@ -202,9 +203,9 @@ fn sign_message(seed: &[u8; 57], pk: &[u8; 57], context: &[u8], message: &[u8]) 
             context.len(),
             message.as_ptr(),
             message.len(),
-            &mut scratch,
+            &mut scratch.0,
         )
     };
-    zeroize(&mut scratch);
+    zeroize(&mut scratch.0);
     signature
 }

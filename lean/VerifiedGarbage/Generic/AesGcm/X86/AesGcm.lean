@@ -106,13 +106,13 @@ def artifactsGather (v : GcmImpl) : List Artifact := [
     spSafe := Gather.sealGather_spSafe v
     features := v.features }]
 
-/-- `vg_aes_gcm_open_to`, calling the instance of `vg_aes_gcm_open` of the implementations `v`. -/
+/-- `vg_aes_gcm_open_to`, calling `vg_aes_ctr32_to` of the implementations `v`. -/
 def artifactsOpenTo (v : GcmImpl) : List Artifact := [
   Spec.Gcm.openToApi.artifact X86.target {
     suffix := v.suffix
-    code := Impl.AesGcm.X86.OpenTo.openTo (OpenTo.openFn v).name (OpenTo.openFn v).code
-    stack := 2688
-    verified := Proof.AesGcm.openTo_keyed (OpenTo.openTo_verified (OpenTo.openFn v))
+    code := Impl.StackScratch.X86.withStackScratch 2616 12 (Impl.AesGcm.X86.Open.openTo v.callees (OpenTo.toFn v))
+    stack := 2692
+    verified := Proof.AesGcm.openTo_keyed (OpenTo.openTo_framed v)
     spSafe := OpenTo.openTo_spSafe v
     features := v.features }]
 

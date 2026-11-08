@@ -56,7 +56,7 @@ def openToPreparedScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Con
 def openToPrepared16ScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   openToPreparedScratchSig.contract A
     (pre := fun ctx rounds nonce nonceLen aad aadLen src len dst dstLen tag tagLen _work =>
-      openToPrepared16Pre A.ptrBits ctx rounds nonce nonceLen aad aadLen src len dst dstLen tag tagLen)
+      Spec.Gcm.openToPrepared16Pre A.ptrBits ctx rounds nonce nonceLen aad aadLen src len dst dstLen tag tagLen)
     (post := fun ctx rounds nonce nonceLen aad aadLen src len dst dstLen tag tagLen _work =>
       openToRoundsPost A.ptrBits ctx rounds nonce nonceLen aad aadLen src len dst dstLen tag tagLen)
     (writeArgs := true) (stack := stack)
@@ -104,11 +104,11 @@ theorem openToPrepared16Pre_local : ∀ vs m₁ m₂, vs.length = (openToPrepare
   have hc := agree_of hb.1
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
     ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb]
-    (openToPrepared16Pre pb) _ m₁ at h
+    (Spec.Gcm.openToPrepared16Pre pb) _ m₁ at h
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
     ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb]
-    (openToPrepared16Pre pb) _ m₂
-  dsimp only [Curry.apply, openToPrepared16Pre, ArgWord.ofRaw, IntTy.bits] at h ⊢
+    (Spec.Gcm.openToPrepared16Pre pb) _ m₂
+  dsimp only [Curry.apply, Spec.Gcm.openToPrepared16Pre, ArgWord.ofRaw, IntTy.bits] at h ⊢
   exact ⟨h.1, h.2.1, preparedPowers16Repr_congr hc h.2.2⟩
 
 /-- What `open` computes on the memory `m₂` is what it computes on `m₁`

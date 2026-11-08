@@ -238,25 +238,17 @@ bl {vg_aes_ctr32_to}
 b 274f
 273:
 274:
-.base64 "eMMDf3jTRH94yyV/eNNYfwAAJSg="
+.base64 "AAA5KA=="
 beq %cr0, 275f
+.base64 "AAAAOEAAHvhIAB74QADeOAEA4Dh466N/eOOEfzAAvjgAAh85"
+bl {vg_aes_ctr32}
+.base64 "QAB+OHjDBH94yyV/eNNHfw=="
 277:
-.base64 "AAADiAAABJgBAGM4AQCEOP//pTgAACUo"
+.base64 "AAAEiAAAw4h4MgB8AAAHmAEAYzgBAIQ4AQDnOP//pTgAACUo"
 bne %cr0, 277b
 b 276f
 275:
 276:
-.base64 "AAA5KA=="
-beq %cr0, 278f
-.base64 "AAAAOEAAHvhIAB74QADeOAEA4Dh466N/eOOEfzAAvjgAAh85"
-bl {vg_aes_ctr32}
-.base64 "QAB+OHjDBH94yyV/"
-280:
-.base64 "AAAEiAAAw4h4MgB8AAAEmAEAYzgBAIQ4//+lOAAAJSg="
-bne %cr0, 280b
-b 279f
-278:
-279:
 b 272f
 271:
 272:
