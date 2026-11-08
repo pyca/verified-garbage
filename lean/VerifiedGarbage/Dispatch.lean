@@ -86,21 +86,4 @@ def ranking : Rust.Ranking := [
   ("arm", [
     { suffix := "_umaal" }])]
 
-/-- The functions that also get a selector, `<base>_select`, which returns
-the implementation their dispatcher would run instead of running it
-(`VG.Rust.selector`), for each target by its name: their bases' names. Like
-the ranking, it is not trusted: it only says which functions get one. -/
-def selected : Rust.Selected :=
-  -- AES-GCM's functions that `AesGcm` calls for each message, which a key
-  -- selects when it is created (`src/aead/aes_gcm.rs`): on x86-64 those
-  -- reading its prepared key context, on AArch64 its powers where they do.
-  let stream := ["stream_init", "stream_aad", "stream_finish", "stream_verify"]
-  let plain := ["seal", "open", "open_to", "seal_gather", "stream_encrypt", "stream_decrypt"]
-  let gcm (fs : List String) : List String := (fs ++ stream).map ("vg_aes_gcm_" ++ ·)
-  [("x86_64", gcm (plain.map (· ++ "_prepared"))),
-   -- AArch64's `encrypt` copies its pieces and seals them (`AesGcm::seal_pieces`).
-   ("aarch64", gcm ((plain.erase "seal_gather").map fun f =>
-      if f == "seal" || f == "open" then f ++ "_with_powers" else f))] ++
-  (["x86", "arm", "powerpc64le", "riscv64"].map fun t => (t, gcm plain))
-
 end VG.Dispatch

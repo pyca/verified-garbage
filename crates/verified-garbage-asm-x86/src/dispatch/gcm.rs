@@ -111,27 +111,6 @@ pub unsafe fn vg_aes_gcm_seal_auto(ctx: *const [u64; 32], rounds: usize, nonce: 
     unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag) }
 }
 
-/// The implementation of `vg_aes_gcm_seal` that `vg_aes_gcm_seal_auto` runs on this CPU, chosen as it chooses (`VG.Rust.selector`), so that it can be called without choosing again.
-///
-/// # Safety
-///
-/// Calling the function it returns carries exactly `vg_aes_gcm_seal_auto`'s obligations (its `# Safety` section), which are those of each implementation it may return; calling this function has none.
-#[allow(clippy::type_complexity)]
-#[inline]
-pub fn vg_aes_gcm_seal_select() -> unsafe extern "C" fn(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::gcm::VG_AES_GCM_SEAL_AESNI_PCLMUL_FEATURES) {
-        return crate::gcm::vg_aes_gcm_seal_aesni_pclmul;
-    }
-    if cpu.contains(crate::gcm::VG_AES_GCM_SEAL_AESNI_FEATURES) {
-        return crate::gcm::vg_aes_gcm_seal_aesni;
-    }
-    if cpu.contains(crate::gcm::VG_AES_GCM_SEAL_PCLMUL_FEATURES) {
-        return crate::gcm::vg_aes_gcm_seal_pclmul;
-    }
-    crate::gcm::vg_aes_gcm_seal
-}
-
 /// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
 /// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
@@ -190,27 +169,6 @@ pub unsafe fn vg_aes_gcm_open_auto(ctx: *const [u64; 32], rounds: usize, nonce: 
     // or an implementation `select` returned, which needs only features the CPU has. Calling
     // either carries the caller's obligations, which are those of every implementation.
     unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) }
-}
-
-/// The implementation of `vg_aes_gcm_open` that `vg_aes_gcm_open_auto` runs on this CPU, chosen as it chooses (`VG.Rust.selector`), so that it can be called without choosing again.
-///
-/// # Safety
-///
-/// Calling the function it returns carries exactly `vg_aes_gcm_open_auto`'s obligations (its `# Safety` section), which are those of each implementation it may return; calling this function has none.
-#[allow(clippy::type_complexity)]
-#[inline]
-pub fn vg_aes_gcm_open_select() -> unsafe extern "C" fn(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::gcm::VG_AES_GCM_OPEN_AESNI_PCLMUL_FEATURES) {
-        return crate::gcm::vg_aes_gcm_open_aesni_pclmul;
-    }
-    if cpu.contains(crate::gcm::VG_AES_GCM_OPEN_AESNI_FEATURES) {
-        return crate::gcm::vg_aes_gcm_open_aesni;
-    }
-    if cpu.contains(crate::gcm::VG_AES_GCM_OPEN_PCLMUL_FEATURES) {
-        return crate::gcm::vg_aes_gcm_open_pclmul;
-    }
-    crate::gcm::vg_aes_gcm_open
 }
 
 /// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `src` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then written the plaintext to the `dst_len = len` bytes at `dst`; otherwise returns 0, having written zeros to them: `vg_aes_gcm_open` with the ciphertext read from `src` and the plaintext written to `dst`. `src` is not written, and `dst` is a buffer of its own: it overlaps no other buffer, `src` included. The tags are compared without a branch.
@@ -275,27 +233,6 @@ pub unsafe fn vg_aes_gcm_open_to_auto(ctx: *const [u64; 32], rounds: usize, nonc
     unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(ctx, rounds, nonce, nonce_len, aad, aad_len, src, len, dst, dst_len, tag, tag_len) }
 }
 
-/// The implementation of `vg_aes_gcm_open_to` that `vg_aes_gcm_open_to_auto` runs on this CPU, chosen as it chooses (`VG.Rust.selector`), so that it can be called without choosing again.
-///
-/// # Safety
-///
-/// Calling the function it returns carries exactly `vg_aes_gcm_open_to_auto`'s obligations (its `# Safety` section), which are those of each implementation it may return; calling this function has none.
-#[allow(clippy::type_complexity)]
-#[inline]
-pub fn vg_aes_gcm_open_to_select() -> unsafe extern "C" fn(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::gcm::VG_AES_GCM_OPEN_TO_AESNI_PCLMUL_FEATURES) {
-        return crate::gcm::vg_aes_gcm_open_to_aesni_pclmul;
-    }
-    if cpu.contains(crate::gcm::VG_AES_GCM_OPEN_TO_AESNI_FEATURES) {
-        return crate::gcm::vg_aes_gcm_open_to_aesni;
-    }
-    if cpu.contains(crate::gcm::VG_AES_GCM_OPEN_TO_PCLMUL_FEATURES) {
-        return crate::gcm::vg_aes_gcm_open_to_pclmul;
-    }
-    crate::gcm::vg_aes_gcm_open_to
-}
-
 /// Absorbs additional data into an incremental AES-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
 ///
 /// Contract: `VG.Spec.Gcm.streamAadContract`. Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
@@ -343,21 +280,6 @@ pub unsafe fn vg_aes_gcm_stream_aad_auto(ctx: *const [u64; 32], state: *mut [u64
     // or an implementation `select` returned, which needs only features the CPU has. Calling
     // either carries the caller's obligations, which are those of every implementation.
     unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(ctx, state, aad_len, data, len) }
-}
-
-/// The implementation of `vg_aes_gcm_stream_aad` that `vg_aes_gcm_stream_aad_auto` runs on this CPU, chosen as it chooses (`VG.Rust.selector`), so that it can be called without choosing again.
-///
-/// # Safety
-///
-/// Calling the function it returns carries exactly `vg_aes_gcm_stream_aad_auto`'s obligations (its `# Safety` section), which are those of each implementation it may return; calling this function has none.
-#[allow(clippy::type_complexity)]
-#[inline]
-pub fn vg_aes_gcm_stream_aad_select() -> unsafe extern "C" fn(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_AAD_PCLMUL_FEATURES) {
-        return crate::gcm::vg_aes_gcm_stream_aad_pclmul;
-    }
-    crate::gcm::vg_aes_gcm_stream_aad
 }
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
@@ -422,27 +344,6 @@ pub unsafe fn vg_aes_gcm_seal_gather_auto(ctx: *const [u64; 32], rounds: usize, 
     unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(ctx, rounds, nonce, nonce_len, aad, aad_len, src, src_count, dst, len, tag) }
 }
 
-/// The implementation of `vg_aes_gcm_seal_gather` that `vg_aes_gcm_seal_gather_auto` runs on this CPU, chosen as it chooses (`VG.Rust.selector`), so that it can be called without choosing again.
-///
-/// # Safety
-///
-/// Calling the function it returns carries exactly `vg_aes_gcm_seal_gather_auto`'s obligations (its `# Safety` section), which are those of each implementation it may return; calling this function has none.
-#[allow(clippy::type_complexity)]
-#[inline]
-pub fn vg_aes_gcm_seal_gather_select() -> unsafe extern "C" fn(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::gcm::VG_AES_GCM_SEAL_GATHER_AESNI_PCLMUL_FEATURES) {
-        return crate::gcm::vg_aes_gcm_seal_gather_aesni_pclmul;
-    }
-    if cpu.contains(crate::gcm::VG_AES_GCM_SEAL_GATHER_AESNI_FEATURES) {
-        return crate::gcm::vg_aes_gcm_seal_gather_aesni;
-    }
-    if cpu.contains(crate::gcm::VG_AES_GCM_SEAL_GATHER_PCLMUL_FEATURES) {
-        return crate::gcm::vg_aes_gcm_seal_gather_pclmul;
-    }
-    crate::gcm::vg_aes_gcm_seal_gather
-}
-
 /// Starts an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7): with the key context `*ctx` that `vg_aes_gcm_init` wrote, makes the streaming state `*state` represent the message with the IV the `nonce_len` bytes at `nonce`, and no additional data or text yet. Continue with `vg_aes_gcm_stream_aad`, then `vg_aes_gcm_stream_encrypt` or `vg_aes_gcm_stream_decrypt`, then `vg_aes_gcm_stream_finish` or `vg_aes_gcm_stream_verify`, with the same key context.
 ///
 /// The function checks no length: GCM requires a nonce of 1 to `2^61 - 1` bytes (§5.2.1.1), which the caller must check.
@@ -492,21 +393,6 @@ pub unsafe fn vg_aes_gcm_stream_init_auto(ctx: *const [u64; 32], nonce: *const u
     // or an implementation `select` returned, which needs only features the CPU has. Calling
     // either carries the caller's obligations, which are those of every implementation.
     unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(ctx, nonce, nonce_len, state) }
-}
-
-/// The implementation of `vg_aes_gcm_stream_init` that `vg_aes_gcm_stream_init_auto` runs on this CPU, chosen as it chooses (`VG.Rust.selector`), so that it can be called without choosing again.
-///
-/// # Safety
-///
-/// Calling the function it returns carries exactly `vg_aes_gcm_stream_init_auto`'s obligations (its `# Safety` section), which are those of each implementation it may return; calling this function has none.
-#[allow(clippy::type_complexity)]
-#[inline]
-pub fn vg_aes_gcm_stream_init_select() -> unsafe extern "C" fn(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_INIT_PCLMUL_FEATURES) {
-        return crate::gcm::vg_aes_gcm_stream_init_pclmul;
-    }
-    crate::gcm::vg_aes_gcm_stream_init
 }
 
 /// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
@@ -566,27 +452,6 @@ pub unsafe fn vg_aes_gcm_stream_finish_auto(ctx: *const [u64; 32], rounds: usize
     unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(ctx, rounds, state, aad_len, text_len, tag) }
 }
 
-/// The implementation of `vg_aes_gcm_stream_finish` that `vg_aes_gcm_stream_finish_auto` runs on this CPU, chosen as it chooses (`VG.Rust.selector`), so that it can be called without choosing again.
-///
-/// # Safety
-///
-/// Calling the function it returns carries exactly `vg_aes_gcm_stream_finish_auto`'s obligations (its `# Safety` section), which are those of each implementation it may return; calling this function has none.
-#[allow(clippy::type_complexity)]
-#[inline]
-pub fn vg_aes_gcm_stream_finish_select() -> unsafe extern "C" fn(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_FINISH_AESNI_PCLMUL_FEATURES) {
-        return crate::gcm::vg_aes_gcm_stream_finish_aesni_pclmul;
-    }
-    if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_FINISH_AESNI_FEATURES) {
-        return crate::gcm::vg_aes_gcm_stream_finish_aesni;
-    }
-    if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_FINISH_PCLMUL_FEATURES) {
-        return crate::gcm::vg_aes_gcm_stream_finish_pclmul;
-    }
-    crate::gcm::vg_aes_gcm_stream_finish
-}
-
 /// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
@@ -642,27 +507,6 @@ pub unsafe fn vg_aes_gcm_stream_verify_auto(ctx: *const [u64; 32], rounds: usize
     // or an implementation `select` returned, which needs only features the CPU has. Calling
     // either carries the caller's obligations, which are those of every implementation.
     unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(ctx, rounds, state, aad_len, text_len, tag, tag_len) }
-}
-
-/// The implementation of `vg_aes_gcm_stream_verify` that `vg_aes_gcm_stream_verify_auto` runs on this CPU, chosen as it chooses (`VG.Rust.selector`), so that it can be called without choosing again.
-///
-/// # Safety
-///
-/// Calling the function it returns carries exactly `vg_aes_gcm_stream_verify_auto`'s obligations (its `# Safety` section), which are those of each implementation it may return; calling this function has none.
-#[allow(clippy::type_complexity)]
-#[inline]
-pub fn vg_aes_gcm_stream_verify_select() -> unsafe extern "C" fn(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_FEATURES) {
-        return crate::gcm::vg_aes_gcm_stream_verify_aesni_pclmul;
-    }
-    if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_VERIFY_AESNI_FEATURES) {
-        return crate::gcm::vg_aes_gcm_stream_verify_aesni;
-    }
-    if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_VERIFY_PCLMUL_FEATURES) {
-        return crate::gcm::vg_aes_gcm_stream_verify_pclmul;
-    }
-    crate::gcm::vg_aes_gcm_stream_verify
 }
 
 /// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, encrypts the `len` bytes at `data` in place, as the continuation of that plaintext, and the state then represents the message with them appended.
@@ -723,27 +567,6 @@ pub unsafe fn vg_aes_gcm_stream_encrypt_auto(ctx: *const [u64; 32], rounds: usiz
     unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(ctx, rounds, state, aad_len, text_len, data, len) }
 }
 
-/// The implementation of `vg_aes_gcm_stream_encrypt` that `vg_aes_gcm_stream_encrypt_auto` runs on this CPU, chosen as it chooses (`VG.Rust.selector`), so that it can be called without choosing again.
-///
-/// # Safety
-///
-/// Calling the function it returns carries exactly `vg_aes_gcm_stream_encrypt_auto`'s obligations (its `# Safety` section), which are those of each implementation it may return; calling this function has none.
-#[allow(clippy::type_complexity)]
-#[inline]
-pub fn vg_aes_gcm_stream_encrypt_select() -> unsafe extern "C" fn(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_ENCRYPT_AESNI_PCLMUL_FEATURES) {
-        return crate::gcm::vg_aes_gcm_stream_encrypt_aesni_pclmul;
-    }
-    if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_ENCRYPT_AESNI_FEATURES) {
-        return crate::gcm::vg_aes_gcm_stream_encrypt_aesni;
-    }
-    if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_ENCRYPT_PCLMUL_FEATURES) {
-        return crate::gcm::vg_aes_gcm_stream_encrypt_pclmul;
-    }
-    crate::gcm::vg_aes_gcm_stream_encrypt
-}
-
 /// Decrypts the next piece of the text of an incremental AES-GCM decryption (NIST SP 800-38D §7.2): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext so far, decrypts the `len` bytes of ciphertext at `data` in place, as the continuation of that ciphertext, and the state then represents the message with them appended. The plaintext is not authenticated until `vg_aes_gcm_stream_verify` has returned 1.
 ///
 /// The function checks no length: GCM requires at most `2^36 - 32` bytes of text and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
@@ -800,25 +623,4 @@ pub unsafe fn vg_aes_gcm_stream_decrypt_auto(ctx: *const [u64; 32], rounds: usiz
     // or an implementation `select` returned, which needs only features the CPU has. Calling
     // either carries the caller's obligations, which are those of every implementation.
     unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(ctx, rounds, state, aad_len, text_len, data, len) }
-}
-
-/// The implementation of `vg_aes_gcm_stream_decrypt` that `vg_aes_gcm_stream_decrypt_auto` runs on this CPU, chosen as it chooses (`VG.Rust.selector`), so that it can be called without choosing again.
-///
-/// # Safety
-///
-/// Calling the function it returns carries exactly `vg_aes_gcm_stream_decrypt_auto`'s obligations (its `# Safety` section), which are those of each implementation it may return; calling this function has none.
-#[allow(clippy::type_complexity)]
-#[inline]
-pub fn vg_aes_gcm_stream_decrypt_select() -> unsafe extern "C" fn(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_DECRYPT_AESNI_PCLMUL_FEATURES) {
-        return crate::gcm::vg_aes_gcm_stream_decrypt_aesni_pclmul;
-    }
-    if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_DECRYPT_AESNI_FEATURES) {
-        return crate::gcm::vg_aes_gcm_stream_decrypt_aesni;
-    }
-    if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_DECRYPT_PCLMUL_FEATURES) {
-        return crate::gcm::vg_aes_gcm_stream_decrypt_pclmul;
-    }
-    crate::gcm::vg_aes_gcm_stream_decrypt
 }
