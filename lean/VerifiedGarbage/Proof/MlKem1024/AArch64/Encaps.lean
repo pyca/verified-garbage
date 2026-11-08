@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.MlKem.Scrubbed
 public import VerifiedGarbage.Proof.MlKem.AArch64.Encaps
 import VerifiedGarbage.Proof.MlKem1024.AArch64.KeyGen
 import VerifiedGarbage.Proof.MlKem1024.AArch64.Args
@@ -59,9 +60,9 @@ theorem encaps_correctWith (s : State) (hs : (encapsAArch64 lay1024).pre s) :
   encaps_correct KeyGen.wf1024 calls1024 hs
 
 theorem encaps_verifiedWith :
-    Verified AArch64.target (encapsWith keccak.callee) (Spec.MlKem1024.encapsContract AArch64.abi 16) :=
+    Verified AArch64.target (encapsWith keccak.callee) (Proof.MlKem.Scrubbed.encaps1024BodyContract AArch64.abi 16) :=
   Verified.of_correct (encaps_correctWith (keccak := keccak)) (ct KeyGen.wf1024 taints1024) (by
-    mlkem_implies [Spec.MlKem1024.encapsContract, Spec.MlKem1024.encapsSig, encapsAArch64, lay1024,
+    mlkem_implies [Proof.MlKem.Scrubbed.encaps1024BodyContract, Spec.MlKem1024.encapsSig, encapsAArch64, lay1024,
       KemLay.params, Spec.MlKem.mlKem1024, KemLay.ekLen, KemLay.ctLen, AArch64.abi, AArch64.argRegs] [sat]
       using sat)
 

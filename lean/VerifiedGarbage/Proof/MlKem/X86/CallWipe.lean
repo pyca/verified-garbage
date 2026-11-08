@@ -82,9 +82,9 @@ theorem pw_disj {l : List (Region × Bool)} (h : l.Pairwise (fun a b => (a.2 || 
 
 /-- `vg_mlkem768_keygen`. -/
 theorem keyGen_wipe {body : Prog isa}
-    (h : Verified target body (Spec.MlKem.keyGenContract abi 88))
+    (h : Verified target body (Proof.MlKem.Scrubbed.keyGenBodyContract abi 88))
     (hsp : NoSp body) (hd : stackUse body ≤ 88)
-    (hsat : ∃ s, (Spec.MlKem.keyGenContract abi 120).pre s) :
+    (hsat : ∃ s, (Proof.MlKem.Scrubbed.keyGenBodyContract abi 120).pre s) :
     Verified target (Impl.MlKem.X86.Wipe.wiped 4 32768 "vg_mlkem768_keygen" body)
       (Scrubbed.keyGenContract abi 120) := by
   have e : slots Spec.MlKem.keyGenSig = 4 := by decide
@@ -135,9 +135,9 @@ theorem keyGen_wipe {body : Prog isa}
 
 /-- `vg_mlkem768_encaps_h`. -/
 theorem encapsH_wipe {body : Prog isa}
-    (h : Verified target body (Spec.MlKem.encapsHContract abi 88))
+    (h : Verified target body (Proof.MlKem.Scrubbed.encapsHBodyContract abi 88))
     (hsp : NoSp body) (hd : stackUse body ≤ 88)
-    (hsat : ∃ s, (Spec.MlKem.encapsHContract abi 136).pre s) :
+    (hsat : ∃ s, (Proof.MlKem.Scrubbed.encapsHBodyContract abi 136).pre s) :
     Verified target (Impl.MlKem.X86.Wipe.wiped 6 32768 "vg_mlkem768_encaps_h" body)
       (Scrubbed.encapsHContract abi 136) := by
   have e : slots Spec.MlKem.encapsHSig = 6 := by decide
@@ -195,9 +195,9 @@ theorem encapsH_wipe {body : Prog isa}
 
 /-- `vg_mlkem768_encaps`. -/
 theorem encaps_wipe {body : Prog isa}
-    (h : Verified target body (Spec.MlKem.encapsContract abi 88))
+    (h : Verified target body (Proof.MlKem.Scrubbed.encapsBodyContract abi 88))
     (hsp : NoSp body) (hd : stackUse body ≤ 88)
-    (hsat : ∃ s, (Spec.MlKem.encapsContract abi 120).pre s) :
+    (hsat : ∃ s, (Proof.MlKem.Scrubbed.encapsBodyContract abi 120).pre s) :
     Verified target (Impl.MlKem.X86.Wipe.wiped 5 32768 "vg_mlkem768_encaps" body)
       (Scrubbed.encapsContract abi 120) := by
   have e : slots Spec.MlKem.encapsSig = 5 := by decide
@@ -247,9 +247,9 @@ theorem encaps_wipe {body : Prog isa}
 
 /-- `vg_mlkem768_decaps`. -/
 theorem decaps_wipe {body : Prog isa}
-    (h : Verified target body (Spec.MlKem.decapsContract abi 88))
+    (h : Verified target body (Proof.MlKem.Scrubbed.decapsBodyContract abi 88))
     (hsp : NoSp body) (hd : stackUse body ≤ 88)
-    (hsat : ∃ s, (Spec.MlKem.decapsContract abi 120).pre s) :
+    (hsat : ∃ s, (Proof.MlKem.Scrubbed.decapsBodyContract abi 120).pre s) :
     Verified target (Impl.MlKem.X86.Wipe.wiped 4 32768 "vg_mlkem768_decaps" body)
       (Scrubbed.decapsContract abi 120) := by
   have e : slots Spec.MlKem.decapsSig = 4 := by decide
@@ -297,9 +297,9 @@ theorem decaps_wipe {body : Prog isa}
 
 /-- `vg_mlkem1024_keygen`. -/
 theorem keyGen1024_wipe {body : Prog isa}
-    (h : Verified target body (Spec.MlKem1024.keyGenContract abi 88))
+    (h : Verified target body (Proof.MlKem.Scrubbed.keyGen1024BodyContract abi 88))
     (hsp : NoSp body) (hd : stackUse body ≤ 88)
-    (hsat : ∃ s, (Spec.MlKem1024.keyGenContract abi 120).pre s) :
+    (hsat : ∃ s, (Proof.MlKem.Scrubbed.keyGen1024BodyContract abi 120).pre s) :
     Verified target (Impl.MlKem.X86.Wipe.wiped 4 49152 "vg_mlkem1024_keygen" body)
       (Scrubbed.keyGen1024Contract abi 120) := by
   have e : slots Spec.MlKem1024.keyGenSig = 4 := by decide
@@ -350,9 +350,9 @@ theorem keyGen1024_wipe {body : Prog isa}
 
 /-- `vg_mlkem1024_encaps_h`. -/
 theorem encapsH1024_wipe {body : Prog isa}
-    (h : Verified target body (Spec.MlKem1024.encapsHContract abi 88))
+    (h : Verified target body (Proof.MlKem.Scrubbed.encapsH1024BodyContract abi 88))
     (hsp : NoSp body) (hd : stackUse body ≤ 88)
-    (hsat : ∃ s, (Spec.MlKem1024.encapsHContract abi 136).pre s) :
+    (hsat : ∃ s, (Proof.MlKem.Scrubbed.encapsH1024BodyContract abi 136).pre s) :
     Verified target (Impl.MlKem.X86.Wipe.wiped 6 49152 "vg_mlkem1024_encaps_h" body)
       (Scrubbed.encapsH1024Contract abi 136) := by
   have e : slots Spec.MlKem1024.encapsHSig = 6 := by decide
@@ -410,9 +410,9 @@ theorem encapsH1024_wipe {body : Prog isa}
 
 /-- `vg_mlkem1024_encaps`. -/
 theorem encaps1024_wipe {body : Prog isa}
-    (h : Verified target body (Spec.MlKem1024.encapsContract abi 88))
+    (h : Verified target body (Proof.MlKem.Scrubbed.encaps1024BodyContract abi 88))
     (hsp : NoSp body) (hd : stackUse body ≤ 88)
-    (hsat : ∃ s, (Spec.MlKem1024.encapsContract abi 120).pre s) :
+    (hsat : ∃ s, (Proof.MlKem.Scrubbed.encaps1024BodyContract abi 120).pre s) :
     Verified target (Impl.MlKem.X86.Wipe.wiped 5 49152 "vg_mlkem1024_encaps" body)
       (Scrubbed.encaps1024Contract abi 120) := by
   have e : slots Spec.MlKem1024.encapsSig = 5 := by decide
@@ -462,9 +462,9 @@ theorem encaps1024_wipe {body : Prog isa}
 
 /-- `vg_mlkem1024_decaps`. -/
 theorem decaps1024_wipe {body : Prog isa}
-    (h : Verified target body (Spec.MlKem1024.decapsContract abi 88))
+    (h : Verified target body (Proof.MlKem.Scrubbed.decaps1024BodyContract abi 88))
     (hsp : NoSp body) (hd : stackUse body ≤ 88)
-    (hsat : ∃ s, (Spec.MlKem1024.decapsContract abi 120).pre s) :
+    (hsat : ∃ s, (Proof.MlKem.Scrubbed.decaps1024BodyContract abi 120).pre s) :
     Verified target (Impl.MlKem.X86.Wipe.wiped 4 49152 "vg_mlkem1024_decaps" body)
       (Scrubbed.decaps1024Contract abi 120) := by
   have e : slots Spec.MlKem1024.decapsSig = 4 := by decide
@@ -523,16 +523,16 @@ theorem decaps1024_stack : stackUse Impl.MlKem1024.X86.decaps ≤ 88 := by lit_d
 
 /-! ## The states satisfying the preconditions, with the frame's bytes of stack -/
 
-theorem keyGen_sat : ∃ s, (Spec.MlKem.keyGenContract abi 120).pre s := by
+theorem keyGen_sat : ∃ s, (Proof.MlKem.Scrubbed.keyGenBodyContract abi 120).pre s := by
   refine ⟨satState KeyGen.satMem [⟨0, 64⟩]
       [⟨0x100, 1184⟩, ⟨0x1000, 2400⟩, ⟨0x10000, 32768⟩, ⟨0x5004, 16⟩], ?_⟩
-  sig_sat_check [Spec.MlKem.keyGenContract, Spec.MlKem.keyGenSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+  sig_sat_check [Proof.MlKem.Scrubbed.keyGenBodyContract, Spec.MlKem.keyGenSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
 
-theorem encapsH_sat : ∃ s, (Spec.MlKem.encapsHContract abi 136).pre s := by
+theorem encapsH_sat : ∃ s, (Proof.MlKem.Scrubbed.encapsHBodyContract abi 136).pre s := by
   refine ⟨Encaps.satStH, ?_⟩
   sig_apply_check
   · decide +kernel
-  · sig_reduce [Spec.MlKem.encapsHContract, Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, X86.abi,
+  · sig_reduce [Proof.MlKem.Scrubbed.encapsHBodyContract, Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, X86.abi,
       X86.argSlots, X86.argVal, X86.argBytes]
     sig_and_intros
     all_goals first
@@ -541,26 +541,26 @@ theorem encapsH_sat : ∃ s, (Spec.MlKem.encapsHContract abi 136).pre s := by
       | (rw [Encaps.satStH_ek, Encaps.satStH_h]
          exact VG.Proof.MlKem.hMem_h_of (by decide) Encaps.satMemH_low)
 
-theorem encaps_sat : ∃ s, (Spec.MlKem.encapsContract abi 120).pre s := by
+theorem encaps_sat : ∃ s, (Proof.MlKem.Scrubbed.encapsBodyContract abi 120).pre s := by
   refine ⟨satState Encaps.satMem [⟨0, 1184⟩, ⟨0x800, 32⟩]
       [⟨0x1000, 32⟩, ⟨0x2000, 1088⟩, ⟨0x10000, 32768⟩, ⟨0x5004, 20⟩], ?_⟩
-  sig_sat_check [Spec.MlKem.encapsContract, Spec.MlKem.encapsSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+  sig_sat_check [Proof.MlKem.Scrubbed.encapsBodyContract, Spec.MlKem.encapsSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
 
-theorem decaps_sat : ∃ s, (Spec.MlKem.decapsContract abi 120).pre s := by
+theorem decaps_sat : ∃ s, (Proof.MlKem.Scrubbed.decapsBodyContract abi 120).pre s := by
   refine ⟨satState Decaps.satMem [⟨0, 2400⟩, ⟨0x1000, 1088⟩]
       [⟨0x2000, 32⟩, ⟨0x10000, 32768⟩, ⟨0x5004, 16⟩], ?_⟩
-  sig_sat_check [Spec.MlKem.decapsContract, Spec.MlKem.decapsSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+  sig_sat_check [Proof.MlKem.Scrubbed.decapsBodyContract, Spec.MlKem.decapsSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
 
-theorem keyGen1024_sat : ∃ s, (Spec.MlKem1024.keyGenContract abi 120).pre s := by
+theorem keyGen1024_sat : ∃ s, (Proof.MlKem.Scrubbed.keyGen1024BodyContract abi 120).pre s := by
   refine ⟨satState Proof.MlKem1024.X86.KeyGen.satMem [⟨0, 64⟩]
       [⟨0x100, 1568⟩, ⟨0x1000, 3168⟩, ⟨0x10000, 49152⟩, ⟨0x5004, 16⟩], ?_⟩
-  sig_sat_check [Spec.MlKem1024.keyGenContract, Spec.MlKem1024.keyGenSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+  sig_sat_check [Proof.MlKem.Scrubbed.keyGen1024BodyContract, Spec.MlKem1024.keyGenSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
 
-theorem encapsH1024_sat : ∃ s, (Spec.MlKem1024.encapsHContract abi 136).pre s := by
+theorem encapsH1024_sat : ∃ s, (Proof.MlKem.Scrubbed.encapsH1024BodyContract abi 136).pre s := by
   refine ⟨Proof.MlKem1024.X86.Encaps.satStH1024, ?_⟩
   sig_apply_check
   · decide +kernel
-  · sig_reduce [Spec.MlKem1024.encapsHContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, X86.abi,
+  · sig_reduce [Proof.MlKem.Scrubbed.encapsH1024BodyContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, X86.abi,
       X86.argSlots, X86.argVal, X86.argBytes]
     sig_and_intros
     all_goals first
@@ -569,15 +569,15 @@ theorem encapsH1024_sat : ∃ s, (Spec.MlKem1024.encapsHContract abi 136).pre s 
       | (rw [Proof.MlKem1024.X86.Encaps.satStH1024_ek, Proof.MlKem1024.X86.Encaps.satStH1024_h]
          exact VG.Proof.MlKem.hMem_h_of (by decide) Encaps.satMemH_low)
 
-theorem encaps1024_sat : ∃ s, (Spec.MlKem1024.encapsContract abi 120).pre s := by
+theorem encaps1024_sat : ∃ s, (Proof.MlKem.Scrubbed.encaps1024BodyContract abi 120).pre s := by
   refine ⟨satState Proof.MlKem1024.X86.Encaps.satMem [⟨0, 1568⟩, ⟨0x800, 32⟩]
       [⟨0x1000, 32⟩, ⟨0x2000, 1568⟩, ⟨0x10000, 49152⟩, ⟨0x5004, 20⟩], ?_⟩
-  sig_sat_check [Spec.MlKem1024.encapsContract, Spec.MlKem1024.encapsSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+  sig_sat_check [Proof.MlKem.Scrubbed.encaps1024BodyContract, Spec.MlKem1024.encapsSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
 
-theorem decaps1024_sat : ∃ s, (Spec.MlKem1024.decapsContract abi 120).pre s := by
+theorem decaps1024_sat : ∃ s, (Proof.MlKem.Scrubbed.decaps1024BodyContract abi 120).pre s := by
   refine ⟨satState Proof.MlKem1024.X86.Decaps.satMem [⟨0, 3168⟩, ⟨0x1000, 1568⟩]
       [⟨0x2000, 32⟩, ⟨0x10000, 49152⟩, ⟨0x5004, 16⟩], ?_⟩
-  sig_sat_check [Spec.MlKem1024.decapsContract, Spec.MlKem1024.decapsSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+  sig_sat_check [Proof.MlKem.Scrubbed.decaps1024BodyContract, Spec.MlKem1024.decapsSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
 
 /-! ## The functions -/
 

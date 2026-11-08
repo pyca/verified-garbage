@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.MlKem.Scrubbed
 public import VerifiedGarbage.Proof.MlKem.AArch64.KemEnc
 public import VerifiedGarbage.Proof.MlKem.AArch64.KemB
 import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
@@ -449,9 +450,9 @@ theorem encaps_correctWith (s : State) (hs : (encapsAArch64 lay768).pre s) :
   encaps_correct KeyGen.wf768 calls768 hs
 
 theorem encaps_verifiedWith :
-    Verified AArch64.target (encapsWith keccak.callee) (Spec.MlKem.encapsContract AArch64.abi 16) :=
+    Verified AArch64.target (encapsWith keccak.callee) (Proof.MlKem.Scrubbed.encapsBodyContract AArch64.abi 16) :=
   Verified.of_correct (encaps_correctWith (keccak := keccak)) (ct KeyGen.wf768 taints768) (by
-    mlkem_implies [Spec.MlKem.encapsContract, Spec.MlKem.encapsSig, encapsAArch64, lay768, KemLay.params,
+    mlkem_implies [Proof.MlKem.Scrubbed.encapsBodyContract, Spec.MlKem.encapsSig, encapsAArch64, lay768, KemLay.params,
       Spec.MlKem.mlKem768, KemLay.ekLen, KemLay.ctLen, AArch64.abi, AArch64.argRegs] [sat] using sat)
 
 end VG.Proof.MlKem.AArch64.Encaps

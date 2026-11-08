@@ -125,6 +125,150 @@ theorem wiped6 (len : Nat) (P : Post6) : ∀ vs m m' x, vs.length = 6 →
   obtain ⟨a, b, c, d, e, f, rfl⟩ := vs6 hlen
   exact ⟨h, scrubbed_of_zeros hz⟩
 
+/-! ## The contracts of the functions' bodies
+
+Each function is its body, `vg_mlkem*_<function>_body`, an internal
+function, followed by `callWipe`. Every target's implementation of a body
+is proven against its contract here (`keyGenBodyContract`, …), which is
+that of `Spec/MlKem/` (`keyGenBody_eq`, …) but does not ask that the body
+leave `scratch` scrubbed, as it does not. -/
+
+/-- The contract of `vg_mlkem768_keygen_body`: `Spec.MlKem.keyGenContract`'s
+precondition and leak, and its postcondition without a clause on `scratch`. -/
+def keyGenBodyContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  Spec.MlKem.keyGenSig.contract A
+    (post := fun seed ek dk _scratch m m' r =>
+      Outcome (fun iters => Spec.MlKem.keyGenInternal Spec.MlKem.mlKem768 iters (bytesAt m seed 32)
+          (bytesAt m (seed + 32) 32)) r
+        (bytesAt m' ek 1184, bytesAt m' dk 2400))
+    (writeArgs := true)
+    (stack := stack)
+    (leak := some fun seed _ek _dk _scratch m =>
+      leakRho (Spec.MlKem.keyGenRho Spec.MlKem.mlKem768 (bytesAt m seed 32)))
+
+theorem keyGenBody_eq {M : ISA} (A : Abi M) (stack : Nat) :
+    keyGenBodyContract A stack = Spec.MlKem.keyGenContract A stack :=
+  rfl
+
+/-- The contract of `vg_mlkem768_encaps_h_body`: `Spec.MlKem.encapsHContract`'s
+precondition and leak, and its postcondition without a clause on `scratch`. -/
+def encapsHBodyContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  Spec.MlKem.encapsHSig.contract A
+    (pre := fun ek h _msg _key _ct _scratch m => bytesAt m h 32 = Spec.MlKem.H (bytesAt m ek 1184))
+    (post := fun ek _h msg key ct _scratch m m' r =>
+      Outcome (fun iters => Spec.MlKem.encapsInternal Spec.MlKem.mlKem768 iters (bytesAt m ek 1184)
+          (bytesAt m msg 32)) r
+        (bytesAt m' key 32, bytesAt m' ct 1088))
+    (writeArgs := true)
+    (stack := stack)
+    (leak := some fun ek _h _msg _key _ct _scratch m =>
+      leakRho (Spec.MlKem.ekRho Spec.MlKem.mlKem768 (bytesAt m ek 1184)))
+
+theorem encapsHBody_eq {M : ISA} (A : Abi M) (stack : Nat) :
+    encapsHBodyContract A stack = Spec.MlKem.encapsHContract A stack :=
+  rfl
+
+/-- The contract of `vg_mlkem768_encaps_body`: `Spec.MlKem.encapsContract`'s
+precondition and leak, and its postcondition without a clause on `scratch`. -/
+def encapsBodyContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  Spec.MlKem.encapsSig.contract A
+    (post := fun ek msg key ct _scratch m m' r =>
+      Outcome (fun iters => Spec.MlKem.encapsInternal Spec.MlKem.mlKem768 iters (bytesAt m ek 1184)
+          (bytesAt m msg 32)) r
+        (bytesAt m' key 32, bytesAt m' ct 1088))
+    (writeArgs := true)
+    (stack := stack)
+    (leak := some fun ek _msg _key _ct _scratch m =>
+      leakRho (Spec.MlKem.ekRho Spec.MlKem.mlKem768 (bytesAt m ek 1184)))
+
+theorem encapsBody_eq {M : ISA} (A : Abi M) (stack : Nat) :
+    encapsBodyContract A stack = Spec.MlKem.encapsContract A stack :=
+  rfl
+
+/-- The contract of `vg_mlkem768_decaps_body`: `Spec.MlKem.decapsContract`'s
+precondition and leak, and its postcondition without a clause on `scratch`. -/
+def decapsBodyContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  Spec.MlKem.decapsSig.contract A
+    (post := fun dk ct key _scratch m m' r =>
+      Outcome (fun iters => Spec.MlKem.decapsInternal Spec.MlKem.mlKem768 iters (bytesAt m dk 2400)
+          (bytesAt m ct 1088)) r (bytesAt m' key 32))
+    (writeArgs := true)
+    (stack := stack)
+    (leak := some fun dk _ct _key _scratch m =>
+      leakRho (Spec.MlKem.dkRho Spec.MlKem.mlKem768 (bytesAt m dk 2400)))
+
+theorem decapsBody_eq {M : ISA} (A : Abi M) (stack : Nat) :
+    decapsBodyContract A stack = Spec.MlKem.decapsContract A stack :=
+  rfl
+
+/-- The contract of `vg_mlkem1024_keygen_body`: `Spec.MlKem1024.keyGenContract`'s
+precondition and leak, and its postcondition without a clause on `scratch`. -/
+def keyGen1024BodyContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  Spec.MlKem1024.keyGenSig.contract A
+    (post := fun seed ek dk _scratch m m' r =>
+      Outcome (fun iters => Spec.MlKem.keyGenInternal Spec.MlKem.mlKem1024 iters (bytesAt m seed 32)
+          (bytesAt m (seed + 32) 32)) r
+        (bytesAt m' ek 1568, bytesAt m' dk 3168))
+    (writeArgs := true)
+    (stack := stack)
+    (leak := some fun seed _ek _dk _scratch m =>
+      leakRho (Spec.MlKem.keyGenRho Spec.MlKem.mlKem1024 (bytesAt m seed 32)))
+
+theorem keyGen1024Body_eq {M : ISA} (A : Abi M) (stack : Nat) :
+    keyGen1024BodyContract A stack = Spec.MlKem1024.keyGenContract A stack :=
+  rfl
+
+/-- The contract of `vg_mlkem1024_encaps_h_body`: `Spec.MlKem1024.encapsHContract`'s
+precondition and leak, and its postcondition without a clause on `scratch`. -/
+def encapsH1024BodyContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  Spec.MlKem1024.encapsHSig.contract A
+    (pre := fun ek h _msg _key _ct _scratch m => bytesAt m h 32 = Spec.MlKem.H (bytesAt m ek 1568))
+    (post := fun ek _h msg key ct _scratch m m' r =>
+      Outcome (fun iters => Spec.MlKem.encapsInternal Spec.MlKem.mlKem1024 iters (bytesAt m ek 1568)
+          (bytesAt m msg 32)) r
+        (bytesAt m' key 32, bytesAt m' ct 1568))
+    (writeArgs := true)
+    (stack := stack)
+    (leak := some fun ek _h _msg _key _ct _scratch m =>
+      leakRho (Spec.MlKem.ekRho Spec.MlKem.mlKem1024 (bytesAt m ek 1568)))
+
+theorem encapsH1024Body_eq {M : ISA} (A : Abi M) (stack : Nat) :
+    encapsH1024BodyContract A stack = Spec.MlKem1024.encapsHContract A stack :=
+  rfl
+
+/-- The contract of `vg_mlkem1024_encaps_body`: `Spec.MlKem1024.encapsContract`'s
+precondition and leak, and its postcondition without a clause on `scratch`. -/
+def encaps1024BodyContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  Spec.MlKem1024.encapsSig.contract A
+    (post := fun ek msg key ct _scratch m m' r =>
+      Outcome (fun iters => Spec.MlKem.encapsInternal Spec.MlKem.mlKem1024 iters (bytesAt m ek 1568)
+          (bytesAt m msg 32)) r
+        (bytesAt m' key 32, bytesAt m' ct 1568))
+    (writeArgs := true)
+    (stack := stack)
+    (leak := some fun ek _msg _key _ct _scratch m =>
+      leakRho (Spec.MlKem.ekRho Spec.MlKem.mlKem1024 (bytesAt m ek 1568)))
+
+theorem encaps1024Body_eq {M : ISA} (A : Abi M) (stack : Nat) :
+    encaps1024BodyContract A stack = Spec.MlKem1024.encapsContract A stack :=
+  rfl
+
+/-- The contract of `vg_mlkem1024_decaps_body`: `Spec.MlKem1024.decapsContract`'s
+precondition and leak, and its postcondition without a clause on `scratch`. -/
+def decaps1024BodyContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  Spec.MlKem1024.decapsSig.contract A
+    (post := fun dk ct key _scratch m m' r =>
+      Outcome (fun iters => Spec.MlKem.decapsInternal Spec.MlKem.mlKem1024 iters (bytesAt m dk 3168)
+          (bytesAt m ct 1568)) r (bytesAt m' key 32))
+    (writeArgs := true)
+    (stack := stack)
+    (leak := some fun dk _ct _key _scratch m =>
+      leakRho (Spec.MlKem.dkRho Spec.MlKem.mlKem1024 (bytesAt m dk 3168)))
+
+theorem decaps1024Body_eq {M : ISA} (A : Abi M) (stack : Nat) :
+    decaps1024BodyContract A stack = Spec.MlKem1024.decapsContract A stack :=
+  rfl
+
 /-! ## ML-KEM-768 -/
 
 /-- `Spec.MlKem.keyGenContract`'s postcondition. -/
