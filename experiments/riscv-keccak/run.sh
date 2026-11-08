@@ -16,6 +16,7 @@ mkdir -p "$out"
 } > "$out/machine.txt"
 head -n 25 "$out/machine.txt"
 python3 experiments/riscv-keccak/generate.py
+python3 experiments/riscv-keccak/schedule.py
 objects=
 while IFS= read -r src; do
  obj="${src%.S}.o"
