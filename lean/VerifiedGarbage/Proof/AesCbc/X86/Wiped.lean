@@ -27,7 +27,7 @@ for each implementation `v` of the blocks functions (`BlocksImpl`), call the
 CBC code around it, then zero the whole of `scratch` (2176 bytes, which its
 proofs do not bound) with `vg_zeroize`, leaving it scrubbed
 (`encrypt_scrubbed`, `decrypt_scrubbed`: `Verified.callWipe'`, with the side
-conditions of `Proof/AesCbc/Wipe.lean`), with 60 bytes of stack (the CBC
+conditions of `Proof/AesCbc/Wipe.lean`), with 72 bytes of stack (the CBC
 code's 24, the frame and the return address). `encrypt_verified` and
 `decrypt_verified` are those weakened to the contracts of `Spec/Cbc/`, which
 do not state it yet.
@@ -91,7 +91,7 @@ theorem decrypt_stack (b : Impl.Aes.X86.Blocks) (h : stackUse b.code = 0) :
 
 /-- A state satisfying the wrapped contracts' precondition, for any postcondition. -/
 theorem sat (P : Spec.Cbc.aesSig.Post 32) :
-    ∃ s, (Spec.Cbc.aesSig.contract X86.abi (pre 32) P false 60 none).pre s := by
+    ∃ s, (Spec.Cbc.aesSig.contract X86.abi (pre 32) P false 72 none).pre s := by
   have a0 : arg Proof.AesCbc.X86.sat 0 = 0x1000 := by decide
   have a1 : arg Proof.AesCbc.X86.sat 1 = 10 := by decide
   have a2 : arg Proof.AesCbc.X86.sat 2 = 0x2000 := by decide
@@ -105,7 +105,7 @@ theorem sat (P : Spec.Cbc.aesSig.Post 32) :
 
 theorem encrypt_scrubbed (v : BlocksImpl) :
     Verified X86.target (Impl.AesCbc.X86.Wiped.encrypt v.enc v.suffix)
-      (Spec.Cbc.aesSig.contract X86.abi (pre 32) (scrubbedPost 32 (encPost 32)) false 60 none) :=
+      (Spec.Cbc.aesSig.contract X86.abi (pre 32) (scrubbedPost 32 (encPost 32)) false 72 none) :=
   Verified.callWipe' (sig := Spec.Cbc.aesSig) (stack := 24) (zst := 0)
     (pre := pre 32) (post := encPost 32)
     (ps₁ := [("schedule", .array false .u8 240), ("rounds", .int .usize true),
@@ -117,7 +117,7 @@ theorem encrypt_scrubbed (v : BlocksImpl) :
 
 theorem decrypt_scrubbed (v : BlocksImpl) :
     Verified X86.target (Impl.AesCbc.X86.Wiped.decrypt v.dec v.suffix)
-      (Spec.Cbc.aesSig.contract X86.abi (pre 32) (scrubbedPost 32 (decPost 32)) false 60 none) :=
+      (Spec.Cbc.aesSig.contract X86.abi (pre 32) (scrubbedPost 32 (decPost 32)) false 72 none) :=
   Verified.callWipe' (sig := Spec.Cbc.aesSig) (stack := 24) (zst := 0)
     (pre := pre 32) (post := decPost 32)
     (ps₁ := [("schedule", .array false .u8 240), ("rounds", .int .usize true),
@@ -128,11 +128,11 @@ theorem decrypt_scrubbed (v : BlocksImpl) :
     (pre_local 32) (decPost_local 32) (decPost_out 32) (wiped 32 _) (sat _)
 
 theorem encrypt_verified (v : BlocksImpl) :
-    Verified X86.target (Impl.AesCbc.X86.Wiped.encrypt v.enc v.suffix) (Spec.Cbc.aesEncryptContract X86.abi 60) :=
+    Verified X86.target (Impl.AesCbc.X86.Wiped.encrypt v.enc v.suffix) (Spec.Cbc.aesEncryptContract X86.abi 72) :=
   Verified.of_scrubbed (encrypt_scrubbed v)
 
 theorem decrypt_verified (v : BlocksImpl) :
-    Verified X86.target (Impl.AesCbc.X86.Wiped.decrypt v.dec v.suffix) (Spec.Cbc.aesDecryptContract X86.abi 60) :=
+    Verified X86.target (Impl.AesCbc.X86.Wiped.decrypt v.dec v.suffix) (Spec.Cbc.aesDecryptContract X86.abi 72) :=
   Verified.of_scrubbed (decrypt_scrubbed v)
 
 /-- The wrapped code writes `esp` only in its frame and calls, if the CBC code does. -/

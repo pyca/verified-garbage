@@ -216,6 +216,15 @@ theorem sub_add_ofNat (E : BitVec 32) (b d : Nat) :
 theorem frameSize_ge (m : Nat) : 4 * m + 8 ≤ frameSize m ∧ 16 ≤ frameSize m := by
   simp only [frameSize, argWords]; omega
 
+/-- The frame holds the argument slots and the two words of the result. -/
+theorem frameSize_args (m : Nat) : 4 * argWords m + 8 ≤ frameSize m := by
+  simp only [frameSize, argWords]; omega
+
+/-- The frame and a return address take a multiple of 16 bytes, so each
+callee is entered with `esp` as aligned as `callWipe` was. -/
+theorem frameSize_align (m : Nat) : (frameSize m + 4) % 16 = 0 := by
+  simp only [frameSize, argWords]; omega
+
 /-- The arguments of `sig`, from slots that agree. -/
 theorem stackArgs_congr (sig : Sig) {s s' : State} (h : ∀ k < slots sig, arg s' k = arg s k) :
     stackArgs sig s' = stackArgs sig s := by
@@ -698,7 +707,7 @@ theorem cwZeroMem_reads {m j n : Nat} {c : State} (hj : j < m)
       (cwZeroMem m j n c).readW (addr (c.gpr .esp) (4 * argWords m + 4)) 32 = c.gpr .edx := by
   have hB := frameSize_ge m
   have hW : 2 ≤ argWords m := by simp only [argWords]; omega
-  have hFs : frameSize m = 4 * argWords m + 8 := rfl
+  have hFs : 4 * argWords m + 8 ≤ frameSize m := frameSize_args _
   have hA : ∀ d, d < frameSize m + 4 + 4 * m → addr (c.gpr .esp) d =
       (c.gpr .esp).setWidth 64 + BitVec.ofNat 64 d := fun d hd => addr_eq (by omega_using [hfit, hd])
   have sp : ∀ {a b : Nat}, a + 4 ≤ b ∨ b + 4 ≤ a → a < frameSize m + 4 + 4 * m → b < frameSize m + 4 + 4 * m →
@@ -865,7 +874,7 @@ theorem cw_zeroArgs (hl : Sig.noLists sig.params = true) {s c : State}
   obtain ⟨hin, harg⟩ := cw_in hl hs hrdc hwrc hspc
   have hE : (s.gpr .esp - BitVec.ofNat 32 (frameSize (slots sig))).toNat =
       (s.gpr .esp).toNat - frameSize (slots sig) := sub_toNat (by omega_using [hsb])
-  have hFs : frameSize (slots sig) = 4 * argWords (slots sig) + 8 := rfl
+  have hFs : 4 * argWords (slots sig) + 8 ≤ frameSize (slots sig) := frameSize_args _
   obtain ⟨hrun, hrd, hwr, hg, hm⟩ := zeroArgs_run' (n := n) (fun d hd => hin d (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hd; omega_using [hd, hFs])) (harg j hj)
   rw [hspc] at hrun
@@ -1044,7 +1053,7 @@ theorem cw_zero_wp {zname : String} {zcode : Prog isa} {zst : Nat}
     WP isa (.call zname zcode) (cwZeroSt (slots sig) j n c) (AfterZero sig post stack j n s) := by
   obtain ⟨hsb, hfit⟩ := cw_sp hl hs
   have hB := frameSize_ge (slots sig)
-  have hFs : frameSize (slots sig) = 4 * argWords (slots sig) + 8 := rfl
+  have hFs : 4 * argWords (slots sig) + 8 ≤ frameSize (slots sig) := frameSize_args _
   have hE := (s.gpr .esp).isLt
   have hEn : (s.gpr .esp - BitVec.ofNat 32 (frameSize (slots sig))).toNat =
       (s.gpr .esp).toNat - frameSize (slots sig) := sub_toNat (by omega_using [hsb])
@@ -1078,7 +1087,7 @@ theorem cw_zero_wp {zname : String} {zcode : Prog isa} {zst : Nat}
   have hgesp : g.gpr .esp = s.gpr .esp - BitVec.ofNat 32 (frameSize (slots sig)) := by
     rw [hcs .esp (by decide), hspz]
   -- The result's slots, which the zeroize function does not write.
-  have hslot : ∀ {d : Nat}, frameSize (slots sig) - 8 ≤ d → d + 4 ≤ frameSize (slots sig) →
+  have hslot : ∀ {d : Nat}, 4 * argWords (slots sig) ≤ d → d + 4 ≤ frameSize (slots sig) →
       g.mem.readW (addr (s.gpr .esp - BitVec.ofNat 32 (frameSize (slots sig))) d) 32 =
         (cwZeroSt (slots sig) j n c).mem.readW (addr (s.gpr .esp - BitVec.ofNat 32 (frameSize (slots sig))) d) 32 :=
     fun hd₁ hd₂ => by
@@ -1089,7 +1098,7 @@ theorem cw_zero_wp {zname : String} {zcode : Prog isa} {zst : Nat}
         exact (hA _ _ (by omega_using [hd₂]) (by omega_using [hd₂])).sub_right hsubA
       · simp only [List.mem_singleton] at hr; subst hr
         exact below_disjoint _ (stack + frameSize (slots sig) + 4) (by omega_using [hd₂])
-          (by omega_using [hzd, hzs]) (.inr (by omega_using [hd₁, hd₂, hzd, hzs]))
+          (by omega_using [hzd, hzs]) (.inr (by omega_using [hd₁, hd₂, hzd, hzs, hFs]))
           (by omega_using [hsb, hE]) (by omega_using [hsb, hE, hzd, hzs])
   have hsub : ∀ r ∈ [⟨(arg s j).setWidth 64, n⟩] ++ [⟨(s.gpr .esp).setWidth 64 -
       BitVec.ofNat 64 (frameSize (slots sig) + (stackUse zcode + 4)), stackUse zcode + 4⟩],
@@ -1206,7 +1215,7 @@ theorem cw_wp {name zname : String} {body zcode : Prog isa} {zst : Nat}
   refine WP.seq (WP.mono (cw_zero_wp hz hzsp hzd hzs hl hs hj harr hn hn32 hc) fun g hg => ?_)
   obtain ⟨c', hc', hrdg, hwrg, hspg, hcsg, hra, hrd', hfs, hfc, hz0⟩ := hg
   obtain ⟨hin, -⟩ := cw_in hl hs hrdg hwrg hspg
-  have hFs : frameSize (slots sig) = 4 * argWords (slots sig) + 8 := rfl
+  have hFs : 4 * argWords (slots sig) + 8 ≤ frameSize (slots sig) := frameSize_args _
   obtain ⟨w, hrun, -, -, hmw, hgw, heax, hedx⟩ := restoreRet_run (m := slots sig) (g := g) fun d hd =>
     let ⟨r, hr, hc⟩ := hin d (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hd; omega_using [hd, hFs])
     ⟨r, List.mem_append_right _ hr, hc⟩
@@ -1457,7 +1466,7 @@ theorem Verified.callWipe' {post' : sig.Post abi.ptrBits} {name zname : String}
     -- The result is restored.
     · refine RelCT.block_of fun g₁ g₂ hg => ?_
       obtain ⟨⟨_, _, r₁, w₁, e₁, _⟩, ⟨_, _, r₂, w₂, e₂, _⟩⟩ := hg
-      have hFs : frameSize (slots sig) = 4 * argWords (slots sig) + 8 := rfl
+      have hFs : 4 * argWords (slots sig) + 8 ≤ frameSize (slots sig) := frameSize_args _
       have hin : ∀ (σ g : State),
           (sig.contract abi pre post wa (stack + frameSize (slots sig) + 4) leak).pre σ →
           g.rd = σ.rd →
