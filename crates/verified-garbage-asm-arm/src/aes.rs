@@ -3113,5 +3113,9 @@ bx lr",
 pub(crate) mod vg_aes_ctr32;
 
 #[rustfmt::skip]
+#[path = "internal/vg_aes_ctr32_to.rs"]
+pub(crate) mod vg_aes_ctr32_to;
+
+#[rustfmt::skip]
 #[path = "internal/vg_aes_expand_key_scratch.rs"]
 pub(crate) mod vg_aes_expand_key_scratch;
