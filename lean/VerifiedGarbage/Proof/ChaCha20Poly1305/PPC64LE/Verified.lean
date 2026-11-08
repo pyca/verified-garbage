@@ -2,6 +2,8 @@ module
 
 import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Tail
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Tail
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Wp
 public import VerifiedGarbage.Proof.Framework.RelCT
@@ -540,7 +542,7 @@ theorem agree₀ {s₁ s₂ : State} (hpub : pubPPC64LE s₁ s₂) :
 
 theorem seal_ct : ConstantTime isa sealPPC64LE.pre sealPPC64LE.pub
     (Impl.ChaCha20Poly1305.PPC64LE.inPlace Impl.ChaCha20Poly1305.PPC64LE.«seal») :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10])
+  VG.Taint.constantTime (A := vectorTaint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10])
     (fun _ _ _ _ hp => agree₀ hp) (by taint_decide)
 
 /-! `open` branches on whether the tag is right, which its contract lets it
@@ -549,7 +551,7 @@ leak: the taint analysis checks the parts around the branch, which
 give them in both runs. Each entry then reaches that body with the same
 public data in both runs (`open_ct`, `openTo_ct`). -/
 
-theorem openBody_taint : ∃ h, (VG.Taint.check taint
+theorem openBody_taint : ∃ h, (VG.Taint.check vectorTaint
     (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11])
     Impl.ChaCha20Poly1305.PPC64LE.openBody h).isSome = true := ⟨_, by taint_decide⟩
 
@@ -578,6 +580,15 @@ theorem ct_taint {I : State → Prop} {c : Prog isa} (rs : List Reg) (v : Reg �
     (hc : (VG.Taint.check VG.PPC64LE.taint (Taint.ofRegs rs) c h).isSome = true) :
     RelCT isa (Both I) c fun _ _ => True :=
   RelCT.taint (A := VG.PPC64LE.taint) (Taint.ofRegs rs)
+    (fun _ _ hh => ⟨(hp _ hh.1).1.trans (hp _ hh.2).1.symm, fun r h' =>
+      ((hp _ hh.1).2 r (Taint.mem_ofRegs.mp h')).trans ((hp _ hh.2).2 r (Taint.mem_ofRegs.mp h')).symm⟩) hc
+
+/-- `ct_taint` for code with vector instructions. -/
+theorem ct_vtaint {I : State → Prop} {c : Prog isa} (rs : List Reg) (v : Reg → BitVec 64) (sp : Addr)
+    (hp : ∀ s, I s → s.sp = sp ∧ ∀ r ∈ rs, s.gpr r = v r) {h : VG.Taint.Hint vectorTaint.T}
+    (hc : (VG.Taint.check vectorTaint (Taint.ofRegs rs) c h).isSome = true) :
+    RelCT isa (Both I) c fun _ _ => True :=
+  RelCT.taint (A := vectorTaint) (Taint.ofRegs rs)
     (fun _ _ hh => ⟨(hp _ hh.1).1.trans (hp _ hh.2).1.symm, fun r h' =>
       ((hp _ hh.1).2 r (Taint.mem_ofRegs.mp h')).trans ((hp _ hh.2).2 r (Taint.mem_ofRegs.mp h')).symm⟩) hc
 
@@ -613,7 +624,7 @@ theorem open_rel (v : Reg → BitVec 64) (sp : Addr) (bo : Bool) :
   unfold «open»
   refine ct_seq (J := J) ?_ ?_ ?_
   · obtain ⟨_, hc⟩ := openBody_taint
-    exact ct_taint _ v sp (fun s ⟨_, e, esp, _⟩ => ⟨esp, e⟩) hc
+    exact ct_vtaint _ v sp (fun s ⟨_, e, esp, _⟩ => ⟨esp, e⟩) hc
   · intro s ⟨hp, e, esp, eok⟩
     refine WP.mono (body_ok hp) fun s' ⟨i, r3, _⟩ => ⟨by rw [i.sp, esp], ?_, ?_,
       by rw [i.regs.r31, e .r11 (by decide)], by rw [i.regs.r28, e .r8 (by decide)], s, ⟨hp, e, esp, eok⟩, i⟩

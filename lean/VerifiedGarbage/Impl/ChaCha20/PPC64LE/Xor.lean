@@ -3,11 +3,13 @@ module
 public import VerifiedGarbage.Impl.ChaCha20.PPC64LE
 
 /-!
-# ChaCha20 keystream XOR: PPC64LE implementation
+# ChaCha20 keystream XOR, a block at a time: PPC64LE implementation
 
-`vg_chacha20_xor(state = r3, src = r4, len = r5, buf = r6, dst = r7)`
-writes the `len` bytes at `src` XORed with the keystream to `dst`, which is
-either `src` itself (in place) or a buffer apart from it (out of place).
+`vg_chacha20_xor(state = r3, src = r4, len = r5, buf = r6, dst = r7)`'s
+contract, a block at a time: it writes the `len` bytes at `src` XORed with
+the keystream to `dst`, which is either `src` itself (in place) or a buffer
+apart from it (out of place). `vg_chacha20_xor` is `Vmx4.xor`, which runs
+this on what its four-block chunks leave.
 
 For each 64 bytes of data (the last piece may be shorter),
 `vg_chacha20_block(state, buf)` is called, the first `n = min(64, remaining)`
