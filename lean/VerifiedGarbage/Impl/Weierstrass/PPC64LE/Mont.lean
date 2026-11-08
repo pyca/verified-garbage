@@ -20,7 +20,7 @@ words, with the operations of `Impl/Mont/PPC64LE.lean` on the working space
 
 The functions write only the volatile registers `r0` and `r4`–`r12` (and
 neither the stack nor `LR`), so they need no frame; `r3` keeps `ws`. The
-multiplication keeps its accumulator in `r14`–`r(14 + n)`, which it saves
+multiplication keeps its accumulator in `r15`–`r(15 + n)`, which it saves
 in its own working space first and restores last.
 
 The own working space is the `64 n` bytes from `own n = 4096 - 64 n`: the

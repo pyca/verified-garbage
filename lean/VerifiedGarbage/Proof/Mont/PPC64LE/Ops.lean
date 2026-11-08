@@ -329,16 +329,16 @@ theorem mul_ok {M : Mod} {base : Addr} {size acc O A B m : Nat} {s : State} (hp 
 /-! ## The registers of the accumulator -/
 
 /-- The registers `treg` takes. -/
-def hiRegs : List Reg := [.r14, .r15, .r16, .r17, .r18, .r19, .r20, .r21, .r22, .r23, .r24]
+def hiRegs : List Reg := [.r15, .r16, .r17, .r18, .r19, .r20, .r21, .r22, .r23, .r24, .r25]
 
 theorem treg_hi (j : Nat) : treg j ∈ hiRegs := by
   unfold treg
   rw [List.getD_eq_getElem?_getD]
-  cases h : ([Reg.r14, .r15, .r16, .r17, .r18, .r19, .r20, .r21, .r22, .r23] : List Reg)[j]? with
+  cases h : ([Reg.r15, .r16, .r17, .r18, .r19, .r20, .r21, .r22, .r23, .r24] : List Reg)[j]? with
   | none => simp [hiRegs]
   | some r =>
     simp only [Option.getD_some]
-    exact (by decide : ∀ x ∈ ([Reg.r14, .r15, .r16, .r17, .r18, .r19, .r20, .r21, .r22, .r23] : List Reg),
+    exact (by decide : ∀ x ∈ ([Reg.r15, .r16, .r17, .r18, .r19, .r20, .r21, .r22, .r23, .r24] : List Reg),
       x ∈ hiRegs) r (List.mem_of_getElem? h)
 
 /-- No register of the accumulator is one the rest of the code names. -/

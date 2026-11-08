@@ -29,7 +29,7 @@ no borrow). With `R = 2^(64 n)` and `m' = -m⁻¹ mod 2⁶⁴` (`M.minv`):
   `addze`, then `t_j` the same way; the sum is below `2¹²⁸`, and its high
   word is the next carry word. `T` is then below `2m` and reduced by
   `csub`.
-* `rmul acc`: `mul` with the accumulator `T` in the registers `r14` up
+* `rmul acc`: `mul` with the accumulator `T` in the registers `r15` up
   (`treg`), which it saves at `[acc]` first and restores last, and `m'`
   above them: a step of a row adds into a register, with no load or store
   of `T`.
@@ -170,13 +170,16 @@ def sub (M : Mod) (acc : Nat) : List Instr :=
 /-! ## The multiplication with the accumulator in registers
 
 `rmul` is `mul` with the accumulator's `n + 1` words in the registers
-`treg 0`, …, `treg n` (`r14` up), saved at `[acc]` first and restored last
+`treg 0`, …, `treg n` (`r15` up), saved at `[acc]` first and restored last
 (they are the caller's): a step of a row (`rmac`) adds the product into a
 register, not a word in memory. The rows, the count and the reduction are
 `mul`'s; the difference with `m` still goes to `[M.tmp]`. -/
 
-/-- The register of the accumulator's word `j`, for `j ≤ 9` (`r14`–`r23`). -/
-def treg (j : Nat) : Reg := [Reg.r14, .r15, .r16, .r17, .r18, .r19, .r20, .r21, .r22, .r23].getD j .r24
+/-- The register of the accumulator's word `j`, for `j ≤ 9` (`r15`–`r24`).
+They are callee-saved, so `rmul` restores them; but a restored register is
+a loaded value, which the constant-time analysis takes as secret, so they
+leave out `r14` and `r25`–`r31`, which callers keep public values in. -/
+def treg (j : Nat) : Reg := [Reg.r15, .r16, .r17, .r18, .r19, .r20, .r21, .r22, .r23, .r24].getD j .r25
 
 /-- `treg (dst + j) = r9 · [rs + src + 8j] + r0 + treg (rd + j)`, its high
 word to `r0`, through `r10` and `r11`. -/
