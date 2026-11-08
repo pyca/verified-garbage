@@ -311,6 +311,103 @@ theorem ctr_rel (v : Ctr32Impl) {P : State → State → Prop}
     h₁.rdi, h₁.rsi, h₁.rdx, h₁.rcx, h₁.r8, h₁.r9, h₂.rdi, h₂.rsi, h₂.rdx, h₂.rcx, h₂.r8, h₂.r9, hsp]
   exact ⟨trivial, trivial, trivial, trivial, trivial, trivial, trivial⟩
 
+/-! ## `vg_aes_ctr32_to` -/
+
+/-- What a call of `vg_aes_ctr32_to` needs: as `CtrCall`, with the `n` blocks
+read at `D` and written to `O` (in `r11`). -/
+structure CtrToCall (s : State) (K C D O S : Addr) (R n : Nat) : Prop where
+  rdi : s.gpr .rdi = K
+  rsi : s.gpr .rsi = BitVec.ofNat 64 R
+  rdx : s.gpr .rdx = C
+  rcx : s.gpr .rcx = D
+  r8 : s.gpr .r8 = BitVec.ofNat 64 n
+  r9 : s.gpr .r9 = S
+  r11 : s.gpr .r11 = O
+  rounds : R = 10 ∨ R = 12 ∨ R = 14
+  wrap : D.toNat + 16 * n ≤ 2 ^ 64
+  wrapO : O.toNat + 16 * n ≤ 2 ^ 64
+  kc : (⟨K, 240⟩ : Region).Disjoint ⟨C, 16⟩
+  ko : (⟨K, 240⟩ : Region).Disjoint ⟨O, 16 * n⟩
+  ks : (⟨K, 240⟩ : Region).Disjoint ⟨S, 2048⟩
+  cd : (⟨C, 16⟩ : Region).Disjoint ⟨D, 16 * n⟩
+  co : (⟨C, 16⟩ : Region).Disjoint ⟨O, 16 * n⟩
+  cs : (⟨C, 16⟩ : Region).Disjoint ⟨S, 2048⟩
+  dO : (⟨D, 16 * n⟩ : Region).Disjoint ⟨O, 16 * n⟩
+  ds : (⟨D, 16 * n⟩ : Region).Disjoint ⟨S, 2048⟩
+  os : (⟨O, 16 * n⟩ : Region).Disjoint ⟨S, 2048⟩
+  stkK : (below (s.gpr .rsp) 8).Disjoint ⟨K, 240⟩
+  stkC : (below (s.gpr .rsp) 8).Disjoint ⟨C, 16⟩
+  stkD : (below (s.gpr .rsp) 8).Disjoint ⟨D, 16 * n⟩
+  stkO : (below (s.gpr .rsp) 8).Disjoint ⟨O, 16 * n⟩
+  stkS : (below (s.gpr .rsp) 8).Disjoint ⟨S, 2048⟩
+  reads : Covers ([⟨K, 240⟩, ⟨D, 16 * n⟩] ++ [⟨C, 16⟩, ⟨O, 16 * n⟩, ⟨S, 2048⟩]) (s.rd ++ s.wr)
+  writes : Covers [⟨C, 16⟩, ⟨O, 16 * n⟩, ⟨S, 2048⟩] s.wr
+
+/-- What a call of `vg_aes_ctr32_to` leaves. -/
+structure CtrToPost (s : State) (K C D O S : Addr) (R n : Nat) (s' : State) : Prop where
+  rd : s'.rd = s.rd
+  wr : s'.wr = s.wr
+  saved : ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r
+  frame : Frame [⟨C, 16⟩, ⟨O, 16 * n⟩, ⟨S, 2048⟩, below (s.gpr .rsp) 8] s.mem s'.mem
+  out : blocksAt s'.mem O n = ctr32 (aesWith R (bytesAt s.mem K (16 * (R + 1)))) (blockAt s.mem C)
+    (blocksAt s.mem D n)
+  ctr : blockAt s'.mem C = Nat.repeat Spec.Gcm.inc32 n (blockAt s.mem C)
+
+theorem CtrToCall.pre {s : State} {K C D O S : Addr} {R n : Nat} (h : CtrToCall s K C D O S R n) :
+    Proof.Aes.X86_64.AesNi.ctr32ToX86_64.pre
+      (s.callEntry.withRegions [⟨K, 240⟩, ⟨D, 16 * n⟩] [⟨C, 16⟩, ⟨O, 16 * n⟩, ⟨S, 2048⟩]) := by
+  have hR := toNat_rounds h.rounds
+  have hn := toNat_ofNat_lt (show n < 2 ^ 64 by have := h.wrap; omega)
+  simp only [Proof.Aes.X86_64.AesNi.ctr32ToX86_64, State.withRegions_gpr, State.withRegions_rd,
+    State.withRegions_wr, State.callEntry_rsp, State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp),
+    State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rdx ≠ .rsp),
+    State.callEntry_gpr s (by decide : Reg.rcx ≠ .rsp), State.callEntry_gpr s (by decide : Reg.r8 ≠ .rsp),
+    State.callEntry_gpr s (by decide : Reg.r9 ≠ .rsp), State.callEntry_gpr s (by decide : Reg.r11 ≠ .rsp),
+    h.rdi, h.rsi, h.rdx, h.rcx, h.r8, h.r9, h.r11, hR, hn]
+  exact ⟨trivial, trivial, h.kc, h.ko, h.ks, h.cd, h.co, h.cs, h.dO, h.ds, h.os, h.stkC, h.stkO, h.stkS,
+    h.wrap, h.wrapO, h.rounds⟩
+
+theorem ctrTo_call (v : Proof.Aes.X86_64.Ctr32ToImpl) {s : State} {K C D O S : Addr} {R n : Nat}
+    (h : CtrToCall s K C D O S R n) :
+    WP isa (.call v.callee.name v.callee.code) s (CtrToPost s K C D O S R n) := by
+  have hR := toNat_rounds h.rounds
+  have hn := toNat_ofNat_lt (show n < 2 ^ 64 by have := h.wrap; omega)
+  refine WP.call (k := Proof.Aes.X86_64.AesNi.ctr32ToX86_64) v.ok v.nosp (by rw [v.depth]; decide)
+    (rd := [⟨K, 240⟩, ⟨D, 16 * n⟩]) (wr := [⟨C, 16⟩, ⟨O, 16 * n⟩, ⟨S, 2048⟩]) h.pre h.reads h.writes ?_
+  intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, _, hpost⟩
+  rw [v.depth] at hf
+  obtain ⟨hdata, hctr⟩ := hpost
+  simp only [State.withRegions_gpr, State.withRegions_mem,
+    State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp),
+    State.callEntry_gpr s (by decide : Reg.rdx ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rcx ≠ .rsp),
+    State.callEntry_gpr s (by decide : Reg.r8 ≠ .rsp), State.callEntry_gpr s (by decide : Reg.r11 ≠ .rsp),
+    h.rdi, h.rsi, h.rdx, h.rcx, h.r8, h.r11, hR, hn, hm₂] at hdata hctr
+  have fE := callEntry_frame s
+  have hRb : 16 * (R + 1) ≤ 240 := by rcases h.rounds with rfl | rfl | rfl <;> decide
+  have eK := bytesAt_frame fE (p := K) (n := 16 * (R + 1))
+    (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact (h.stkK.sub_right (Region.sub_prefix hRb)).symm) (by omega)
+  rw [blockAt_frame fE (disj_below h.stkC), blocksAt_frame fE (disj_below h.stkD) (by have := h.wrap; omega),
+    eK] at hdata
+  rw [blockAt_frame fE (disj_below h.stkC)] at hctr
+  exact ⟨hrd, hwr, hcs, by simpa using hf, hdata, hctr⟩
+
+theorem ctrTo_rel (v : Proof.Aes.X86_64.Ctr32ToImpl) {P : State → State → Prop}
+    (h : ∀ s₁ s₂, P s₁ s₂ → ∃ K C D O S : Addr, ∃ R n : Nat,
+      CtrToCall s₁ K C D O S R n ∧ CtrToCall s₂ K C D O S R n ∧ s₁.gpr .rsp = s₂.gpr .rsp) :
+    RelCT isa P (.call v.callee.name v.callee.code) fun _ _ => True := by
+  refine RelCT.callEx v.ok v.ct fun s₁ s₂ hp => ?_
+  obtain ⟨K, C, D, O, S, R, n, h₁, h₂, hsp⟩ := h s₁ s₂ hp
+  refine ⟨_, _, _, _, h₁.pre, h₂.pre, ?_, h₁.reads, h₁.writes, h₂.reads, h₂.writes, hsp⟩
+  simp only [Proof.Aes.X86_64.AesNi.ctr32ToX86_64, State.withRegions_gpr,
+    State.callEntry_gpr _ (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.rsi ≠ .rsp),
+    State.callEntry_gpr _ (by decide : Reg.rdx ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.rcx ≠ .rsp),
+    State.callEntry_gpr _ (by decide : Reg.r8 ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.r9 ≠ .rsp),
+    State.callEntry_gpr _ (by decide : Reg.r11 ≠ .rsp),
+    h₁.rdi, h₁.rsi, h₁.rdx, h₁.rcx, h₁.r8, h₁.r9, h₁.r11, h₂.rdi, h₂.rsi, h₂.rdx, h₂.rcx, h₂.r8, h₂.r9, h₂.r11]
+  exact ⟨trivial, trivial, trivial, trivial, trivial, trivial, trivial⟩
+
 /-! ## `vg_aes_expand_key_scratch` -/
 
 /-- What a call of `vg_aes_expand_key_scratch` needs: the `L`-byte key at `K`, the key

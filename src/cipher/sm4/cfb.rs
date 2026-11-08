@@ -11,10 +11,10 @@
 ))]
 
 use crate::align::CacheAligned;
-use crate::arch::sm4::vg_sm4_expand_key;
-use crate::arch::sm4_cfb::{
-    vg_sm4_cfb128_decrypt, vg_sm4_cfb128_decrypt_final, vg_sm4_cfb128_encrypt,
-    vg_sm4_cfb128_encrypt_final,
+use crate::arch::dispatch::sm4::vg_sm4_expand_key_auto;
+use crate::arch::dispatch::sm4_cfb::{
+    vg_sm4_cfb128_decrypt_auto, vg_sm4_cfb128_decrypt_final_auto, vg_sm4_cfb128_encrypt_auto,
+    vg_sm4_cfb128_encrypt_final_auto,
 };
 use crate::error::IncompleteBlock;
 use crate::zeroize::zeroize;
@@ -69,8 +69,8 @@ impl Sm4Cfb128Encryptor {
         self.key.last(
             &mut self.iv,
             buffer,
-            vg_sm4_cfb128_encrypt,
-            vg_sm4_cfb128_encrypt_final,
+            vg_sm4_cfb128_encrypt_auto,
+            vg_sm4_cfb128_encrypt_final_auto,
         );
     }
 }
@@ -127,8 +127,8 @@ impl Sm4Cfb128Decryptor {
         self.key.last(
             &mut self.iv,
             buffer,
-            vg_sm4_cfb128_decrypt,
-            vg_sm4_cfb128_decrypt_final,
+            vg_sm4_cfb128_decrypt_auto,
+            vg_sm4_cfb128_decrypt_final_auto,
         );
     }
 }
@@ -173,7 +173,7 @@ impl Key {
         let mut schedule = CacheAligned([0; 128]);
         // SAFETY: key and schedule are separate valid buffers of the required
         // sizes.
-        unsafe { vg_sm4_expand_key(key, &mut schedule.0) };
+        unsafe { vg_sm4_expand_key_auto(key, &mut schedule.0) };
         Self { schedule }
     }
 
@@ -181,14 +181,14 @@ impl Key {
     /// which it replaces with the last ciphertext block (unchanged for empty
     /// input).
     fn encrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) {
-        self.blocks(iv, buffer, vg_sm4_cfb128_encrypt);
+        self.blocks(iv, buffer, vg_sm4_cfb128_encrypt_auto);
     }
 
     /// Decrypts the whole blocks of `buffer` in place, from the block `iv`,
     /// which it replaces with the last ciphertext block (unchanged for empty
     /// input).
     fn decrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) {
-        self.blocks(iv, buffer, vg_sm4_cfb128_decrypt);
+        self.blocks(iv, buffer, vg_sm4_cfb128_decrypt_auto);
     }
 
     /// `f` on whole blocks.

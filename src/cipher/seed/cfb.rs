@@ -11,10 +11,10 @@
 ))]
 
 use crate::align::CacheAligned;
-use crate::arch::seed::vg_seed_expand_key;
-use crate::arch::seed_cfb::{
-    vg_seed_cfb128_decrypt, vg_seed_cfb128_decrypt_final, vg_seed_cfb128_encrypt,
-    vg_seed_cfb128_encrypt_final,
+use crate::arch::dispatch::seed::vg_seed_expand_key_auto;
+use crate::arch::dispatch::seed_cfb::{
+    vg_seed_cfb128_decrypt_auto, vg_seed_cfb128_decrypt_final_auto, vg_seed_cfb128_encrypt_auto,
+    vg_seed_cfb128_encrypt_final_auto,
 };
 use crate::error::{IncompleteBlock, InvalidKeyLength};
 use crate::zeroize::zeroize;
@@ -69,8 +69,8 @@ impl SeedCfb128Encryptor {
         self.key.last(
             &mut self.iv,
             buffer,
-            vg_seed_cfb128_encrypt,
-            vg_seed_cfb128_encrypt_final,
+            vg_seed_cfb128_encrypt_auto,
+            vg_seed_cfb128_encrypt_final_auto,
         );
     }
 }
@@ -127,8 +127,8 @@ impl SeedCfb128Decryptor {
         self.key.last(
             &mut self.iv,
             buffer,
-            vg_seed_cfb128_decrypt,
-            vg_seed_cfb128_decrypt_final,
+            vg_seed_cfb128_decrypt_auto,
+            vg_seed_cfb128_decrypt_final_auto,
         );
     }
 }
@@ -174,7 +174,7 @@ impl Key {
         let mut schedule = CacheAligned([0; 128]);
         // SAFETY: key and schedule are separate valid buffers of the required
         // sizes.
-        unsafe { vg_seed_expand_key(key, &mut schedule.0) };
+        unsafe { vg_seed_expand_key_auto(key, &mut schedule.0) };
         Ok(Self { schedule })
     }
 
@@ -182,14 +182,14 @@ impl Key {
     /// which it replaces with the last ciphertext block (unchanged for empty
     /// input).
     fn encrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) {
-        self.blocks(iv, buffer, vg_seed_cfb128_encrypt);
+        self.blocks(iv, buffer, vg_seed_cfb128_encrypt_auto);
     }
 
     /// Decrypts the whole blocks of `buffer` in place, from the block `iv`,
     /// which it replaces with the last ciphertext block (unchanged for empty
     /// input).
     fn decrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) {
-        self.blocks(iv, buffer, vg_seed_cfb128_decrypt);
+        self.blocks(iv, buffer, vg_seed_cfb128_decrypt_auto);
     }
 
     /// `f` on whole blocks.

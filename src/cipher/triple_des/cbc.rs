@@ -11,9 +11,9 @@
 ))]
 
 use crate::align::CacheAligned;
+use crate::arch::dispatch::triple_des::vg_triple_des_expand_key_auto;
 use crate::arch::dispatch::triple_des_cbc::vg_triple_des_cbc_decrypt_chained_auto;
-use crate::arch::triple_des::vg_triple_des_expand_key;
-use crate::arch::triple_des_cbc::vg_triple_des_cbc_encrypt_chained;
+use crate::arch::dispatch::triple_des_cbc::vg_triple_des_cbc_encrypt_chained_auto;
 use crate::error::{IncompleteBlock, InvalidKeyLength};
 use crate::zeroize::zeroize;
 
@@ -97,7 +97,7 @@ impl Key {
         // SAFETY: the key has a validated length; key and schedule are separate
         // valid buffers of the required sizes.
         unsafe {
-            vg_triple_des_expand_key(key.as_ptr(), key.len(), &mut schedule.0);
+            vg_triple_des_expand_key_auto(key.as_ptr(), key.len(), &mut schedule.0);
         }
         Ok(Self { schedule })
     }
@@ -116,7 +116,7 @@ impl Key {
         // separate valid objects of the sizes of the signature, none of them on
         // the callee's stack.
         unsafe {
-            vg_triple_des_cbc_encrypt_chained(
+            vg_triple_des_cbc_encrypt_chained_auto(
                 &self.schedule.0,
                 iv,
                 buffer.as_mut_ptr().cast(),

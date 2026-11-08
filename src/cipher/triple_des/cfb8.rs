@@ -11,8 +11,10 @@
 ))]
 
 use crate::align::CacheAligned;
-use crate::arch::triple_des::vg_triple_des_expand_key;
-use crate::arch::triple_des_cfb8::{vg_triple_des_cfb8_decrypt, vg_triple_des_cfb8_encrypt};
+use crate::arch::dispatch::triple_des::vg_triple_des_expand_key_auto;
+use crate::arch::dispatch::triple_des_cfb8::{
+    vg_triple_des_cfb8_decrypt_auto, vg_triple_des_cfb8_encrypt_auto,
+};
 use crate::error::InvalidKeyLength;
 use crate::zeroize::zeroize;
 
@@ -91,7 +93,7 @@ impl Key {
         let mut schedule = CacheAligned([0; 384]);
         // SAFETY: the key has a validated length; key and schedule are separate
         // valid buffers of the required sizes.
-        unsafe { vg_triple_des_expand_key(key.as_ptr(), key.len(), &mut schedule.0) };
+        unsafe { vg_triple_des_expand_key_auto(key.as_ptr(), key.len(), &mut schedule.0) };
         Ok(Self { schedule })
     }
 
@@ -103,7 +105,7 @@ impl Key {
         // valid objects of the sizes of the signature, none of them on the
         // callee's stack.
         unsafe {
-            vg_triple_des_cfb8_encrypt(&self.schedule.0, iv, buffer.as_mut_ptr(), buffer.len())
+            vg_triple_des_cfb8_encrypt_auto(&self.schedule.0, iv, buffer.as_mut_ptr(), buffer.len())
         };
     }
 
@@ -113,7 +115,7 @@ impl Key {
     fn decrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) {
         // SAFETY: as in `encrypt`.
         unsafe {
-            vg_triple_des_cfb8_decrypt(&self.schedule.0, iv, buffer.as_mut_ptr(), buffer.len())
+            vg_triple_des_cfb8_decrypt_auto(&self.schedule.0, iv, buffer.as_mut_ptr(), buffer.len())
         };
     }
 }

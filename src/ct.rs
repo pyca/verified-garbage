@@ -9,14 +9,14 @@
     target_arch = "riscv64"
 ))]
 
-use crate::arch::ct::vg_ct_eq;
+use crate::arch::dispatch::ct::vg_ct_eq_auto;
 
 /// Whether `a` and `b` are equal. The verified comparison leaks only their
 /// pointers and lengths; it does not branch on their contents.
 pub(crate) fn eq(a: &[u8], b: &[u8]) -> bool {
     // SAFETY: both slices are readable for their lengths and cannot wrap.
     // The buffers may overlap. Live slices lie outside the callee’s stack frame.
-    unsafe { vg_ct_eq(a.as_ptr(), a.len(), b.as_ptr(), b.len()) != 0 }
+    unsafe { vg_ct_eq_auto(a.as_ptr(), a.len(), b.as_ptr(), b.len()) != 0 }
 }
 
 /// Whether every byte of `a` is zero, by the verified comparison with as many

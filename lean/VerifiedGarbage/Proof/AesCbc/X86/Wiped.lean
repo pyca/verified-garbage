@@ -32,8 +32,7 @@ of it, then of `vg_zeroize` on the first `v.encWritten` bytes
 (`encrypt_scrubbed`: `Verified.callWipeTail'`, with the side conditions of
 `Proof/AesCbc/Wipe.lean`), with 72 bytes of stack (the CBC code's 24, the
 frame and the return address). `encrypt_verified` and `decrypt_verified`
-are those weakened to the contracts of `Spec/Cbc/`, which do not state it
-yet.
+state them as the contracts of `Spec/Cbc/`.
 -/
 
 @[expose] public section
@@ -149,11 +148,11 @@ theorem decrypt_tail (v : BlocksImpl) :
 `scratch`: the CBC code, which leaves `scratch` scrubbed. -/
 theorem encrypt_free (v : BlocksImpl) (h : v.encWritten = 0) :
     Verified X86.target (Impl.AesCbc.X86.encryptZ v.enc) (Spec.Cbc.aesEncryptContract X86.abi 24) :=
-  Verified.of_scrubbed ((h ▸ encrypt_tail v).post_mono (tailZPost_zero 32 _))
+  (h ▸ encrypt_tail v).post_mono (tailZPost_zero 32 _)
 
 theorem decrypt_free (v : BlocksImpl) (h : v.decWritten = 0) :
     Verified X86.target (Impl.AesCbc.X86.decryptZ v.dec) (Spec.Cbc.aesDecryptContract X86.abi 24) :=
-  Verified.of_scrubbed ((h ▸ decrypt_tail v).post_mono (tailZPost_zero 32 _))
+  (h ▸ decrypt_tail v).post_mono (tailZPost_zero 32 _)
 
 theorem encrypt_scrubbed (v : BlocksImpl) :
     Verified X86.target (Impl.AesCbc.X86.Wiped.encrypt v.enc v.suffix v.encWritten)
@@ -184,12 +183,12 @@ theorem decrypt_scrubbed (v : BlocksImpl) :
 theorem encrypt_verified (v : BlocksImpl) :
     Verified X86.target (Impl.AesCbc.X86.Wiped.encrypt v.enc v.suffix v.encWritten)
       (Spec.Cbc.aesEncryptContract X86.abi 72) :=
-  Verified.of_scrubbed (encrypt_scrubbed v)
+  encrypt_scrubbed v
 
 theorem decrypt_verified (v : BlocksImpl) :
     Verified X86.target (Impl.AesCbc.X86.Wiped.decrypt v.dec v.suffix v.decWritten)
       (Spec.Cbc.aesDecryptContract X86.abi 72) :=
-  Verified.of_scrubbed (decrypt_scrubbed v)
+  decrypt_scrubbed v
 
 /-- The wrapped code writes `esp` only in its frame and calls, if the CBC code does. -/
 theorem wiped_spSafe {name : String} {body : Prog isa} {n : Nat} (h : body.all (fun i => !isa.writesSp i) = true) :

@@ -22,7 +22,7 @@ namespace VG.Generic.AesGcm.X86_64.AesGcm
 open VG.Proof.AesGcm.X86_64
 
 /-- The artifacts calling the implementations `v`. -/
-def artifactsOf (v : GcmImpl) : List Artifact := [
+def artifactsOf (v : GcmImpl) (openTo : Artifact) : List Artifact := [
   Spec.Gcm.sealApi.artifact X86_64.target {
     suffix := v.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.sealCode v.callees)
@@ -37,13 +37,7 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     verified := Proof.AesGcm.open_keyed (openSel_framed v Short.shortFacts)
     spSafe := X86_64.withStackArgScratch_spSafe (openCode_spSafe v v.blkB)
     features := v.features },
-  Spec.Gcm.openToApi.artifact X86_64.target {
-    suffix := v.suffix
-    code := Impl.AesGcm.X86_64.OpenTo.openTo v.copyW (openFn v).fn
-    stack := 2728
-    verified := Proof.AesGcm.openTo_keyed (OpenTo.openTo_verified v.copyW (openFn v))
-    spSafe := OpenTo.openTo_spAll v.copyW _ (openFn v).spAll
-    features := v.features },
+  openTo,
   Spec.Gcm.streamEncryptApi.artifact X86_64.target {
     suffix := v.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamEncrypt v.callees)
@@ -58,6 +52,17 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     verified := Proof.AesGcm.streamDecrypt_keyed (streamDecrypt_framed v)
     spSafe := X86_64.withStackArgScratch_spSafe (streamDecrypt_spSafe v)
     features := v.features }]
+
+/-- `vg_aes_gcm_open_to` of a variant: in one pass if it has an out-of-place
+counter mode (`openToCode`). -/
+def artifactOpenTo (v : GcmVariant) : Artifact :=
+  Spec.Gcm.openToApi.artifact X86_64.target {
+    suffix := v.impl.suffix
+    code := openToCode v
+    stack := openToStack v
+    verified := Proof.AesGcm.openTo_keyed (openToCode_verified v)
+    spSafe := openToCode_spAll v
+    features := v.impl.features }
 
 /-- The `_precomputed` artifacts calling the implementations `v`. -/
 def artifactsP (v : GcmImpl) : List Artifact := [
@@ -300,7 +305,7 @@ def artifactsR16W (v : GcmVariant) (r : R16 v) : List Artifact := [
 /-- The artifacts of a variant: those on the key context, and the prepared
 ones of every variant. -/
 def artifacts (v : GcmVariant) : List Artifact :=
-  artifactsOf v.impl ++ (if v.impl.stitchP.isSome && v.stitchR.isNone then artifactsP v.impl else []) ++
+  artifactsOf v.impl (artifactOpenTo v) ++ (if v.impl.stitchP.isSome && v.stitchR.isNone then artifactsP v.impl else []) ++
     artifactsGather v ++
     (match v.r16 with
       | some r => artifactsR16W v r.down

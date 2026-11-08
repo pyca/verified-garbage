@@ -50,6 +50,7 @@ namespace VG.Proof.AesGcm.X86_64.BlocksToDec
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesGcm.X86_64 VG.Impl.AesGcm.X86_64.BlocksTo VG.WriteBytes
 open VG.Proof.AesGcm.X86_64.BlocksTo
 open VG.Impl.AesGcm.X86_64.Blocks (argCtx argRounds argCtr argY argN)
+open VG.Impl.AesGcm.X86_64.BlocksToDec (ghArgsTo ctrArgsTo tailTo decryptTo)
 open VG.Proof.Gcm.X86_64.Stitch (CtxMode SPreTo DPostTo StitchToDecOkM)
 open VG.Spec.Gcm (Block blockAt blocksAt ctxCiph ctxH ctr32 ghashFrom inc32 aesWith)
 
@@ -558,6 +559,302 @@ theorem tail_ok (B : BlkFn M) {q : Nat} {st : State} (h : MidD s q q st) : WP is
 
 end
 
+/-! ## Out of place, with no copy -/
+
+section
+variable {M : CtxMode} {s : State} (hp : BT M s)
+include hp
+
+/-- The calls' working space, after the arguments kept. -/
+abbrev W5 (s : State) : Addr := S s + BitVec.ofNat 64 64
+
+omit hp in
+theorem w5_sub {k : Nat} (hk : k ≤ 2048) : Region.Sub ⟨W5 s, k⟩ (sR s) := Offset.sub_base _ (by omega_arith)
+
+omit hp in
+/-- A call's return address is in the stack below the arguments. -/
+theorem ret_sub : Region.Sub (below (SP s) 8) (tR s) := below_sub (by decide) (by decide)
+
+omit hp in
+theorem h_sub : Region.Sub ⟨K s + BitVec.ofNat 64 240, 16⟩ (kR M s) :=
+  Offset.sub_base _ (by have := M.ge; omega_arith)
+
+omit hp in
+theorem k_sub : Region.Sub ⟨K s, 240⟩ (kR M s) :=
+  Region.sub_prefix (by have := M.ge; omega_arith)
+
+omit hp in
+theorem src_eq : (⟨Src s, 16 * n s⟩ : Region) = srcR s := by rw [Nat.mul_comm]
+
+omit hp in
+theorem dst_eq : (⟨Dst s, 16 * n s⟩ : Region) = dR s := by rw [Nat.mul_comm]
+
+/-- The arguments of `vg_ghash` on the `n` blocks at `src`. -/
+theorem ghArgsTo_ok {st : State} (h : MidD s 0 0 st) :
+    WP isa (.block ghArgsTo) st fun st' =>
+      GhCall st' (K s + BitVec.ofNat 64 240) (Y s) (Src s) (W5 s) (n s) ∧ st'.gpr .rsp = SP s ∧
+      (∀ r ∈ calleeSaved, st'.gpr r = st.gpr r) ∧ st'.mem = st.mem ∧ st'.rd = st.rd ∧ st'.wr = st.wr := by
+  have h16 := n16_lt hp
+  have a₂ : InRegions (st.rd ++ st.wr) (st.gpr .rsp + BitVec.ofNat 64 24) 8 := by
+    rw [h.rd, h.wr, h.rsp]; exact a_in hp (i := 2) (by decide)
+  have hS : st.mem.readW (st.gpr .rsp + BitVec.ofNat 64 24) 64 = S s := by
+    rw [h.rsp, show (24 : Nat) = 8 * (2 + 1) from rfl, keep_a hp h.frame (by decide)]; rfl
+  have r₁ : InRegions (st.rd ++ st.wr) (S s + BitVec.ofNat 64 0) 8 := by rw [h.rd, h.wr]; exact s_in' hp (by decide)
+  have kc0 : st.mem.readW (S s + BitVec.ofNat 64 0) 64 = K s := by simpa using h.kept.ctx
+  have r₄ : InRegions (st.rd ++ st.wr) (S s + BitVec.ofNat 64 24) 8 := by rw [h.rd, h.wr]; exact s_in' hp (by decide)
+  have r₅ : InRegions (st.rd ++ st.wr) (S s + BitVec.ofNat 64 32) 8 := by rw [h.rd, h.wr]; exact s_in' hp (by decide)
+  have r₆ : InRegions (st.rd ++ st.wr) (S s + BitVec.ofNat 64 40) 8 := by rw [h.rd, h.wr]; exact s_in' hp (by decide)
+  have ks0 : st.mem.readW (S s + BitVec.ofNat 64 32) 64 = Src s := by simpa using h.kept.src
+  have kn0 : st.mem.readW (S s + BitVec.ofNat 64 40) 64 = BitVec.ofNat 64 (n s) := by simpa using h.kept.n
+  have s16 : Region.Sub ⟨W5 s, 256⟩ (sR s) := w5_sub (by decide)
+  have pH := h_sub (s := s) (M := M)
+  have rs := ret_sub (s := s)
+  apply WP.of_runBlock
+  refine ⟨_, by
+    simp only [ghArgsTo, argCtx, argY, argSrc, argN]
+    xrun [a₂, hS, r₁, r₄, r₅, r₆, kc0, h.kept.y, ks0, kn0], ?_⟩
+  refine ⟨⟨by simp [gpr_setReg, gpr_arithFlags], by simp [gpr_setReg], by simp [gpr_setReg],
+    by simp [gpr_setReg], by simp [gpr_setReg, gpr_arithFlags], by omega_arith,
+    hp.k_y.sub_left pH, (hp.k_s.sub_left pH).sub_right s16, by rw [src_eq]; exact hp.y_r,
+    hp.y_s.sub_right s16, by rw [src_eq]; exact hp.r_s.sub_right s16, ?_, ?_, ?_, ?_, ?_, ?_⟩,
+    by simp [gpr_setReg, gpr_arithFlags, h.rsp], fun r hr => ?_, rfl, rfl, rfl⟩
+  all_goals try simp only [gpr_setReg, gpr_arithFlags, reduceCtorEq, ↓reduceIte, h.rsp]
+  · exact (hp.b_k.sub_left rs).sub_right pH
+  · exact hp.b_y.sub_left rs
+  · rw [src_eq]; exact hp.b_r.sub_left rs
+  · exact (hp.b_s.sub_left rs).sub_right s16
+  · simp only [rd_setReg, wr_setReg, rd_arithFlags, wr_arithFlags, h.rd, h.wr, hp.rd, hp.wr]
+    refine Covers.of_sub fun r hr => ?_
+    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · exact ⟨kR M s, by simp, 240, rfl, by have := M.ge; omega_arith⟩
+    · exact ⟨srcR s, by simp, 0, by simp, by simp [Nat.mul_comm]⟩
+    · exact ⟨yR s, by simp, 0, by simp, by simp⟩
+    · exact ⟨sR s, by simp, 64, rfl, by exact (by decide : 64 + 256 ≤ 2112)⟩
+  · simp only [wr_setReg, wr_arithFlags, h.wr, hp.wr]
+    refine Covers.of_sub fun r hr => ?_
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact ⟨yR s, by simp, 0, by simp, by simp⟩
+    · exact ⟨sR s, by simp, 64, rfl, by exact (by decide : 64 + 256 ≤ 2112)⟩
+  · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [gpr_setReg, gpr_arithFlags]
+
+/-- The arguments of `vg_aes_ctr32_to` on the `n` blocks, from `src` to
+`dst`, with the arguments kept in memory `m`. -/
+theorem ctrArgsTo_ok {st : State} (hsp : st.gpr .rsp = SP s) (hrd : st.rd = s.rd) (hwr : st.wr = s.wr)
+    (hk : Kept s 0 st.mem) (ha : st.mem.readW (SP s + BitVec.ofNat 64 24) 64 = S s) :
+    WP isa (.block ctrArgsTo) st fun st' =>
+      CtrToCall st' (K s) (C s) (Src s) (Dst s) (W5 s) (R s) (n s) ∧ st'.gpr .rsp = SP s ∧
+      (∀ r ∈ calleeSaved, st'.gpr r = st.gpr r) ∧ st'.mem = st.mem ∧ st'.rd = st.rd ∧ st'.wr = st.wr := by
+  have h16 := n16_lt hp
+  have hwr' := hp.w_r
+  have hwd := hp.w_d
+  have a₂ : InRegions (st.rd ++ st.wr) (st.gpr .rsp + BitVec.ofNat 64 24) 8 := by
+    rw [hrd, hwr, hsp]; exact a_in hp (i := 2) (by decide)
+  have hS : st.mem.readW (st.gpr .rsp + BitVec.ofNat 64 24) 64 = S s := by rw [hsp, ha]
+  have r₁ : InRegions (st.rd ++ st.wr) (S s + BitVec.ofNat 64 0) 8 := by rw [hrd, hwr]; exact s_in' hp (by decide)
+  have kc0 : st.mem.readW (S s + BitVec.ofNat 64 0) 64 = K s := by simpa using hk.ctx
+  have r₂ : InRegions (st.rd ++ st.wr) (S s + BitVec.ofNat 64 8) 8 := by rw [hrd, hwr]; exact s_in' hp (by decide)
+  have r₃ : InRegions (st.rd ++ st.wr) (S s + BitVec.ofNat 64 16) 8 := by rw [hrd, hwr]; exact s_in' hp (by decide)
+  have r₅ : InRegions (st.rd ++ st.wr) (S s + BitVec.ofNat 64 32) 8 := by rw [hrd, hwr]; exact s_in' hp (by decide)
+  have r₆ : InRegions (st.rd ++ st.wr) (S s + BitVec.ofNat 64 40) 8 := by rw [hrd, hwr]; exact s_in' hp (by decide)
+  have r₇ : InRegions (st.rd ++ st.wr) (S s + BitVec.ofNat 64 48) 8 := by rw [hrd, hwr]; exact s_in' hp (by decide)
+  have ks0 : st.mem.readW (S s + BitVec.ofNat 64 32) 64 = Src s := by simpa using hk.src
+  have kn0 : st.mem.readW (S s + BitVec.ofNat 64 40) 64 = BitVec.ofNat 64 (n s) := by simpa using hk.n
+  have kd0 : st.mem.readW (S s + BitVec.ofNat 64 48) 64 = Dst s := by simpa using hk.dst
+  have s48 : Region.Sub ⟨W5 s, 2048⟩ (sR s) := w5_sub (by decide)
+  have pK : Region.Sub ⟨K s, 240⟩ (kR M s) := k_sub
+  have rs := ret_sub (s := s)
+  apply WP.of_runBlock
+  refine ⟨_, by
+    simp only [ctrArgsTo, argCtx, argRounds, argCtr, argSrc, argN, argDst]
+    xrun [a₂, hS, r₁, r₂, r₃, r₅, r₆, r₇, kc0, hk.rounds, hk.ctr, ks0, kn0, kd0], ?_⟩
+  refine ⟨⟨by simp [gpr_setReg], by simp [gpr_setReg, R], by simp [gpr_setReg], by simp [gpr_setReg],
+    by simp [gpr_setReg], by simp [gpr_setReg, gpr_arithFlags], by simp [gpr_setReg], hp.rounds,
+    by omega_arith, by omega_arith,
+    hp.k_c.sub_left pK, by rw [dst_eq]; exact hp.k_d.sub_left pK, (hp.k_s.sub_left pK).sub_right s48,
+    by rw [src_eq]; exact hp.c_r, by rw [dst_eq]; exact hp.c_d, hp.c_s.sub_right s48,
+    by rw [src_eq, dst_eq]; exact hp.r_d, by rw [src_eq]; exact hp.r_s.sub_right s48,
+    by rw [dst_eq]; exact hp.d_s.sub_right s48, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩,
+    by simp [gpr_setReg, gpr_arithFlags, hsp], fun r hr => ?_, rfl, rfl, rfl⟩
+  all_goals try simp only [gpr_setReg, gpr_arithFlags, reduceCtorEq, ↓reduceIte, hsp]
+  · exact (hp.b_k.sub_left rs).sub_right pK
+  · exact hp.b_c.sub_left rs
+  · rw [src_eq]; exact hp.b_r.sub_left rs
+  · rw [dst_eq]; exact hp.b_d.sub_left rs
+  · exact (hp.b_s.sub_left rs).sub_right s48
+  · simp only [rd_setReg, wr_setReg, rd_arithFlags, wr_arithFlags, hrd, hwr, hp.rd, hp.wr]
+    refine Covers.of_sub fun r hr => ?_
+    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl
+    · exact ⟨kR M s, by simp, 0, by simp, by show 0 + 240 ≤ M.len; have := M.ge; omega_arith⟩
+    · exact ⟨srcR s, by simp, 0, by simp, by simp [Nat.mul_comm]⟩
+    · exact ⟨cR s, by simp, 0, by simp, by simp⟩
+    · exact ⟨dR s, by simp, 0, by simp, by simp [Nat.mul_comm]⟩
+    · exact ⟨sR s, by simp, 64, rfl, by exact (by decide : 64 + 2048 ≤ 2112)⟩
+  · simp only [wr_setReg, wr_arithFlags, hwr, hp.wr]
+    refine Covers.of_sub fun r hr => ?_
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact ⟨cR s, by simp, 0, by simp, by simp⟩
+    · exact ⟨dR s, by simp, 0, by simp, by simp [Nat.mul_comm]⟩
+    · exact ⟨sR s, by simp, 64, rfl, by exact (by decide : 64 + 2048 ≤ 2112)⟩
+  · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [gpr_setReg, gpr_arithFlags]
+
+/-- After the hash of the `n` blocks at `src`: `Y` continued over them, and
+what the decryption needs (the arguments kept, the stack argument `scratch`,
+the counter and the key context through a frame of the regions written and
+the stack below the arguments). -/
+structure GD (s st : State) : Prop where
+  rsp : st.gpr .rsp = SP s
+  saved : ∀ r ∈ calleeSaved, st.gpr r = s.gpr r
+  rd : st.rd = s.rd
+  wr : st.wr = s.wr
+  kept : Kept s 0 st.mem
+  arg : st.mem.readW (SP s + BitVec.ofNat 64 24) 64 = S s
+  frame : Frame (wR s ++ [tR s]) s.mem st.mem
+  ctr : blockAt st.mem (C s) = cb s
+  y : blockAt st.mem (Y s) = ghashFrom (hk s) (y₀ s) (pt s (n s))
+
+/-- The blocks at `src` hashed: the arguments of `vg_ghash` and its call. -/
+theorem ghStep_ok (g : GhashImpl) {st : State} (h : MidD s 0 0 st) :
+    WP isa (.seq (.block ghArgsTo) (.call g.fn.name g.fn.code)) st (GD s) := by
+  have h16 := n16_lt hp
+  have hwd := hp.w_d
+  have hwr := hp.w_r
+  refine WP.seq (WP.mono (ghArgsTo_ok hp h) fun st₂ ⟨G, sp₂, cs₂, m₂, rd₂, wr₂⟩ => ?_)
+  refine WP.mono (gh_call g G) fun st₃ P₃ => ?_
+  have rs := ret_sub (s := s)
+  have s16 : Region.Sub ⟨W5 s, 256⟩ (sR s) := w5_sub (by decide)
+  have k56 : (kR' s).Disjoint ⟨W5 s, 2048⟩ :=
+    Offset.disjoint_of_le (by simp only [kR', W5]; rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := hp.w_s; omega_arith)
+      (by simp only [W5]; rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := hp.w_s; omega_arith)
+  have F₃ : Frame (wR s ++ [tR s]) s.mem st₃.mem := by
+    refine (show Frame (wR s ++ [tR s]) s.mem st₂.mem by
+      rw [m₂]; exact h.frame.mono fun r hr => List.mem_append_left _ hr).trans (P₃.frame.sub fun r hr => ?_)
+    simp only [List.mem_cons, List.not_mem_nil, or_false, sp₂] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact ⟨yR s, by simp, fun _ h => h⟩
+    · exact ⟨sR s, by simp, s16⟩
+    · exact ⟨tR s, by simp, rs⟩
+  have kept₃ : Kept s 0 st₃.mem := (m₂ ▸ h.kept).frame P₃.frame fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false, sp₂] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact (hp.y_s.sub_right kR'_sub).symm
+    · exact k56.sub_right (Region.sub_prefix (by decide))
+    · exact (hp.b_s.sub_left rs).symm.sub_left kR'_sub
+  -- The stack argument `scratch`.
+  have aS : Region.Disjoint (tR s) ⟨SP s + BitVec.ofNat 64 24, 8⟩ := by
+    have := hp.w_t; have := hp.w_sp
+    intro a h₁ h₂
+    simp only [Region.Contains, tR, below, SP] at h₁ h₂
+    bv_omega
+  have hsA : Region.Sub ⟨SP s + BitVec.ofNat 64 24, 8⟩ (aR s) := by
+    rw [show SP s + BitVec.ofNat 64 24 = SP s + BitVec.ofNat 64 8 + BitVec.ofNat 64 16 by
+      rw [BitVec.add_assoc, ← BitVec.ofNat_add]]
+    exact Offset.sub_base _ (by omega_arith)
+  have ha₃ : st₃.mem.readW (SP s + BitVec.ofNat 64 24) 64 = S s := by
+    rw [F₃.readW (r := ⟨SP s + BitVec.ofNat 64 24, 8⟩) (Region.contains_self _ _) (fun r hr => by
+      simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl
+      · exact hp.c_a.symm.sub_left hsA
+      · exact hp.y_a.symm.sub_left hsA
+      · exact hp.d_a.symm.sub_left hsA
+      · exact hp.s_a.symm.sub_left hsA
+      · exact aS.symm) (by decide)]
+    rfl
+  have hC₃ : blockAt st₃.mem (C s) = cb s := by
+    rw [blockAt_frame P₃.frame (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false, sp₂] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact hp.c_y
+      · exact hp.c_s.sub_right s16
+      · exact (hp.b_c.sub_left rs).symm), m₂, h.ctr]
+    rfl
+  have o₃ := P₃.out
+  rw [m₂, keep_h hp h.frame, h.y, blocksAt_frame h.frame (fun r hr => by rw [src_eq]; exact src_wR hp r hr)
+    (by omega_arith)] at o₃
+  exact ⟨by rw [P₃.saved _ (by decide), sp₂], fun r hr => by rw [P₃.saved r hr, cs₂ r hr, h.saved r hr],
+    by rw [P₃.rd, rd₂, h.rd], by rw [P₃.wr, wr₂, h.wr], kept₃, ha₃, F₃, hC₃, by rw [o₃]; rfl⟩
+
+/-- The blocks decrypted from `src` to `dst`: the arguments of
+`vg_aes_ctr32_to` and its call. -/
+theorem ctrStep_ok (v : Proof.Aes.X86_64.Ctr32ToImpl) {st : State} (G : GD s st) :
+    WP isa (.seq (.block ctrArgsTo) (.call v.callee.name v.callee.code)) st (DoneD s) := by
+  have h16 := n16_lt hp
+  have hwd := hp.w_d
+  have hwr := hp.w_r
+  have rs := ret_sub (s := s)
+  have s48 : Region.Sub ⟨W5 s, 2048⟩ (sR s) := w5_sub (by decide)
+  refine WP.seq (WP.mono (ctrArgsTo_ok hp G.rsp G.rd G.wr G.kept G.arg) fun st₄ ⟨T, sp₄, cs₄, m₄, _, _⟩ => ?_)
+  refine WP.mono (ctrTo_call v T) fun st₅ P₅ => ?_
+  have F₅ : Frame (wR s ++ [tR s]) s.mem st₅.mem := G.frame.trans (by
+    rw [← m₄]
+    exact P₅.frame.sub fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false, sp₄] at hr
+      rcases hr with rfl | rfl | rfl | rfl
+      · exact ⟨cR s, by simp, fun _ h => h⟩
+      · exact ⟨dR s, by simp, by rw [dst_eq]; exact fun _ h => h⟩
+      · exact ⟨sR s, by simp, s48⟩
+      · exact ⟨tR s, by simp, rs⟩)
+  -- What the call reads.
+  have hRb : 16 * (R s + 1) ≤ 240 := by rcases hp.rounds with h | h | h <;> simp only [R, h] <;> decide
+  have hK₄ : Spec.Aes.bytesAt st₄.mem (K s) (16 * (R s + 1)) = Spec.Aes.bytesAt s.mem (K s) (16 * (R s + 1)) := by
+    have hs : Region.Sub ⟨K s, 16 * (R s + 1)⟩ (kR M s) := Region.sub_prefix (by have := M.ge; omega_arith)
+    rw [m₄]
+    exact bytesAt_frame G.frame (fun r hr => by
+      simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl
+      · exact hp.k_c.sub_left hs
+      · exact hp.k_y.sub_left hs
+      · exact hp.k_d.sub_left hs
+      · exact hp.k_s.sub_left hs
+      · exact hp.b_k.symm.sub_left hs) (by omega_arith)
+  have hS : blocksAt st.mem (Src s) (n s) = blocksAt s.mem (Src s) (n s) :=
+    blocksAt_frame G.frame (fun r hr => by
+      rw [src_eq]
+      simp only [List.mem_append, List.mem_singleton] at hr
+      rcases hr with hr | rfl
+      · exact src_wR hp r hr
+      · exact hp.b_r.symm) (by omega_arith)
+  have o₁ := P₅.out
+  rw [hK₄, m₄, G.ctr, hS] at o₁
+  have o₂ := P₅.ctr
+  rw [m₄, G.ctr] at o₂
+  have hY₅ : blockAt st₅.mem (Y s) = blockAt st.mem (Y s) := by
+    rw [← m₄]
+    exact blockAt_frame P₅.frame (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false, sp₄] at hr
+      rcases hr with rfl | rfl | rfl | rfl
+      · exact hp.c_y.symm
+      · rw [dst_eq]; exact hp.y_d
+      · exact hp.y_s.sub_right s48
+      · exact (hp.b_y.sub_left rs).symm)
+  refine ⟨⟨fun r hr => by rw [P₅.saved r hr, cs₄ r hr, G.saved r hr], ?_⟩, o₁, o₂, by rw [hY₅, G.y]⟩
+  show st₅.mem.readW (SP s) 64 = s.mem.readW (SP s) 64
+  exact F₅.readW (Region.contains_self _ _) (fun r hr => by
+    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl
+    · exact hp.t_c
+    · exact hp.t_y
+    · exact hp.t_d
+    · exact hp.t_s
+    · exact Offset.base_disjoint_below (SP s) (by omega_arith)) (by decide)
+
+/-- The blocks, from `MidD s 0 0`: hashed at `src`, then decrypted from
+`src` to `dst`. -/
+theorem tailTo_ok (g : GhashImpl) (v : Proof.Aes.X86_64.Ctr32ToImpl) {st : State} (h : MidD s 0 0 st) :
+    WP isa (tailTo g.fn ⟨v.callee.name, v.callee.code⟩) st (DoneD s) := by
+  refine WP.seq (WP.mono (tailHead_ok hp h) fun st₁ ⟨M₁, hz, _, _, _⟩ => ?_)
+  refine WP.ite (decide (n s - 0 = 0)) (by simp only [eval, hz]) (fun e => ?_) (fun _ => ?_)
+  · simp only [decide_eq_true_eq] at e
+    exact WP.block_nil (done_of hp M₁ e)
+  exact WP.seq (WP.mono (ghStep_ok hp g M₁) fun _ G => ctrStep_ok hp v G)
+
+end
+
 theorem decrypt_wp {M : CtxMode} (B : BlkFn M) (aligned : Bool) (st : Option (Prog isa))
     (hst : ∀ p, st = some p → StitchToDecOkM M p) {s : State}
     (hpre : Proof.AesGcm.blocksToPreM M s) :
@@ -572,5 +869,16 @@ theorem decrypt_wp {M : CtxMode} (B : BlkFn M) (aligned : Bool) (st : Option (Pr
   | some p =>
     exact WP.seq (WP.seq (WP.mono (stitch_ok hp (hst p rfl) h11 h10 hg hk hf hrd hwr) fun st M =>
       WP.mono (rest_ok hp rfl M) fun st' M' => tail_ok hp B M'))
+
+/-- `decryptTo`: the entry, then the blocks hashed at `src` and decrypted
+from `src` to `dst`, with no copy. -/
+theorem decryptTo_wp {M : CtxMode} (g : GhashImpl) (v : Proof.Aes.X86_64.Ctr32ToImpl) {s : State}
+    (hpre : Proof.AesGcm.blocksToPreM M s) :
+    WP isa (decryptTo g.fn ⟨v.callee.name, v.callee.code⟩) s (DoneD s) := by
+  have hp := BT.ofM hpre
+  refine WP.seq (WP.mono (entry_ok hp) fun s₁ ⟨_, _, hg, hk, hf, hrd, hwr⟩ => ?_)
+  exact tailTo_ok hp g v (mid_entry hp (hg _ (by decide) (by decide))
+    (fun r hr => hg r (by rintro rfl; simp [calleeSaved] at hr) (by rintro rfl; simp [calleeSaved] at hr))
+    hk hf hrd hwr)
 
 end VG.Proof.AesGcm.X86_64.BlocksToDec

@@ -288,7 +288,7 @@ open VG.Spec.Gcm (Block blockAt blocksAt inc32 aesWith)
 
 /-- `AesNi.Inv`, and the upper lanes. -/
 structure VInv (s₀ : State) (c p : Nat) (s : State) : Prop where
-  inv : Inv s₀ c p s
+  inv : Inv false s₀ c p s
   y9 : s.lane .xmm9 1 = Nat.repeat inc32 (c + 1) (cb s₀)
   y10 : s.lane .xmm10 1 = revMask
   y12 : ∀ l < 2, s.lane .xmm12 l = two
@@ -310,7 +310,7 @@ theorem regs_ok : regs8.Nodup ∧ .xmm8 ∉ regs8 ∧ ∀ r ∈ regs8, r ≠ .xm
 
 /-- The counter blocks, AES and the XOR into the data, for the blocks
 `c … c + 15`. -/
-theorem blocks_ok {s₀ : State} (hp : Pre s₀) (tail : List Instr) {Q : State → Prop} {c : Nat}
+theorem blocks_ok {s₀ : State} (hp : Pre false s₀) (tail : List Instr) {Q : State → Prop} {c : Nat}
     (hc : c + 16 ≤ nb s₀) {s : State} (hI : VInv s₀ c c s)
     (hQ : ∀ s', VInv s₀ (c + 16) c s' → WP isa (.block tail) s' Q) :
     WP isa (.seq (.block (ctrs regs8)) (.seq (aes regs8) (.block (xorData regs8 0 ++ tail)))) s Q := by
@@ -319,18 +319,18 @@ theorem blocks_ok {s₀ : State} (hp : Pre s₀) (tail : List Instr) {Q : State 
   refine WP.seq (WP.mono (ctrs_ok .xmm9 .xmm10 .xmm12 (by decide) (by decide) regs8 s (cb s₀) c hnd (fun r h => ⟨(hx r h).1, (hx r h).2.1, (hx r h).2.2.1⟩)
     hI.x9 hI.x10 hI.y12) fun s₁ ⟨e₁, c₁, f₁⟩ => ?_)
   have hg₁ : ∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .r8 → r ≠ .r10 → s₁.gpr r = s₀.gpr r :=
-    fun r h1 h2 h3 h4 => by rw [f₁.gpr, hI.inv.gpr r h1 h2 h3 h4]
+    fun r h1 h2 h3 h4 => by rw [f₁.gpr, hI.inv.gpr r h1 h2 h3 h4 h2]
   have hK : Keys (nr s₀) (sch s₀) s₁ :=
-    ⟨by rw [f₁.mem, f₁.gpr, hI.inv.gpr .rdi (by decide) (by decide) (by decide) (by decide),
+    ⟨by rw [f₁.mem, f₁.gpr, hI.inv.gpr .rdi (by decide) (by decide) (by decide) (by decide) (by decide),
         hp.sch_frame hI.inv.frame],
       by rcases hp.rounds with h | h | h <;> omega_arith,
       fun j hj => by
         rw [f₁.rd, f₁.wr, f₁.gpr, hI.inv.rd, hI.inv.wr, hI.inv.gpr .rdi (by decide) (by decide) (by decide)
-          (by decide)]
+          (by decide) (by decide)]
         exact hp.keys j (by rcases hp.rounds with h | h | h <;> omega_arith)⟩
   refine WP.seq (WP.mono (aes_ok regs8 hnd h8 hp.rounds s₁ hK
     (by rw [hg₁ .rsi (by decide) (by decide) (by decide) (by decide)]; simp)
-    (by rw [f₁.gpr, hI.inv.r10, hI.inv.gpr .rdi (by decide) (by decide) (by decide) (by decide)]))
+    (by rw [f₁.gpr, hI.inv.r10, hI.inv.gpr .rdi (by decide) (by decide) (by decide) (by decide) (by decide)]))
     fun s₂ ⟨e₂, f₂⟩ => ?_)
   -- The keystream blocks.
   have ks : ∀ k (h : k < regs8.length), ∀ l < 2, XBinOp.eval .pshufb (s₂.lane regs8[k] l) revMask =
@@ -345,7 +345,7 @@ theorem blocks_ok {s₀ : State} (hp : Pre s₀) (tail : List Instr) {Q : State 
   rw [WP.block_append_iff]
   refine WP.mono (xorData_ok .xmm8 .rcx regs8 0 s₂ hnd h8 (fun k hk => by
       rw [ofInt_natCast, show 32 * (0 + k) = 16 * (2 * k) by omega_arith, addr, f₂.wr, f₁.wr, hI.inv.wr]
-      exact ⟨dR s₀, by simp [hp.wr], contains_offset (by simp [regs8] at hk; omega_arith) (by simp [regs8] at hk; omega_arith)⟩)
+      exact ⟨dR s₀, by rw [hp.wr]; exact List.mem_cons_of_mem _ List.mem_cons_self, contains_offset (by simp [regs8] at hk; omega_arith) (by simp [regs8] at hk; omega_arith)⟩)
       (by rw [hrcxN]; simp [regs8]; omega_arith))
     fun s₃ ⟨b₃, fr₃, g₃, rd₃, wr₃, x₃⟩ => hQ s₃ ?_
   have hm₂ : s₂.mem = s.mem := by rw [f₂.mem, f₁.mem]
@@ -358,8 +358,9 @@ theorem blocks_ok {s₀ : State} (hp : Pre s₀) (tail : List Instr) {Q : State 
   have l9 : ∀ l < 2, s₃.lane .xmm9 l = Nat.repeat inc32 (c + 16 + l) (cb s₀) := fun l hl => by
     rw [x₃ _ (by decide) (by decide) l hl, f₂.lane _ (by decide) l hl, c₁ l hl]; rfl
   refine ⟨⟨Nat.le_trans (by omega_arith) hc, by have := l9 0 (by decide); simpa [State.lane] using this, ?_, ?_,
-    fun r h1 h2 h3 h4 => by rw [g₃, f₂.gpr, hg₁ r h1 h2 h3 h4], by rw [g₃, f₂.gpr, f₁.gpr, hI.inv.r10],
-    by rw [g₃, hrcx₂], by rw [g₃, f₂.gpr, f₁.gpr, hI.inv.r8], ?_, ?_, by rw [rd₃, f₂.rd, f₁.rd, hI.inv.rd],
+    fun r h1 h2 h3 h4 _ => by rw [g₃, f₂.gpr, hg₁ r h1 h2 h3 h4], by rw [g₃, f₂.gpr, f₁.gpr, hI.inv.r10],
+    by rw [g₃, hrcx₂], by rw [g₃, f₂.gpr, f₁.gpr, hI.inv.r8], by rw [g₃]; exact hrcx₂, ?_, ?_,
+    by rw [rd₃, f₂.rd, f₁.rd, hI.inv.rd],
     by rw [wr₃, f₂.wr, f₁.wr, hI.inv.wr]⟩, l9 1 (by decide),
     by rw [kx _ (by decide) (by decide) (by decide) 1 (by decide), hI.y10],
     fun l hl => by rw [kx _ (by decide) (by decide) (by decide) l hl, hI.y12 l hl]⟩
@@ -376,7 +377,9 @@ theorem blocks_ok {s₀ : State} (hp : Pre s₀) (tail : List Instr) {Q : State 
     simp only [regs8, List.length_cons, List.length_nil] at ha
     rw [bAddr] at ha
     exact run_in hw hc (n := 16) ha
-  · intro k hk
+  · show ∀ k < nb s₀, blockAt s₃.mem (bAddr s₀ k) =
+      if k < c + 16 then blk s₀ k ^^^ ciph s₀ (Nat.repeat inc32 k (cb s₀)) else blk s₀ k
+    intro k hk
     have out : ¬ (c ≤ k ∧ k < c + 16) → blockAt s₃.mem (bAddr s₀ k) = blockAt s.mem (bAddr s₀ k) :=
       fun hn => AesNi.blockAt_frame fr₃ fun r hr => by
         simp only [List.mem_singleton] at hr
@@ -386,20 +389,20 @@ theorem blocks_ok {s₀ : State} (hp : Pre s₀) (tail : List Instr) {Q : State 
         rw [bAddr] at h₂
         exact run_sep hw hk hc hn h₁ h₂
     by_cases hlo : k < c
-    · rw [out (by omega_arith), hI.inv.blocks k hk]
+    · rw [out (by omega_arith), hI.inv.blocksIn k hk]
       simp only [hlo, show k < c + 16 by omega_arith, ite_true]
     · by_cases hhi : k < c + 16
       · obtain ⟨i, rfl⟩ : ∃ i, k = c + (2 * (i / 2) + i % 2) := ⟨k - c, by omega_arith⟩
         have hj : i / 2 < regs8.length := by simp [regs8]; omega_arith
-        rw [b₃ (i / 2) hj (i % 2) (by omega_arith), hI.inv.blocks _ hk, ks (i / 2) hj (i % 2) (by omega_arith),
+        rw [b₃ (i / 2) hj (i % 2) (by omega_arith), hI.inv.blocksIn _ hk, ks (i / 2) hj (i % 2) (by omega_arith),
           show c + 2 * (i / 2) + i % 2 = c + (2 * (i / 2) + i % 2) by omega_arith]
         simp only [hlo, hhi, ite_false, ite_true]
-      · rw [out (by omega_arith), hI.inv.blocks k hk]
+      · rw [out (by omega_arith), hI.inv.blocksIn k hk]
         simp only [hlo, hhi, ite_false]
 
 open VG.Proof.Aes.X86_64.AesNi (beq_ofNat_zero ctr32X86_64) in
 /-- The sixteen-block body. -/
-theorem body16_ok {s₀ : State} (hp : Pre s₀) {c : Nat} (hc : c + 16 ≤ nb s₀) {s : State}
+theorem body16_ok {s₀ : State} (hp : Pre false s₀) {c : Nat} (hc : c + 16 ≤ nb s₀) {s : State}
     (hI : VInv s₀ c c s) :
     WP isa body16 s fun s' => VInv s₀ (c + 16) (c + 16) s' ∧
       s'.cf = some (decide (nb s₀ - (c + 16) < 16)) := by
@@ -416,17 +419,21 @@ theorem body16_ok {s₀ : State} (hp : Pre s₀) {c : Nat} (hc : c + 16 ≤ nb s
   have hsub : BitVec.ofNat 64 (nb s₀ - c) - 16 = BitVec.ofNat 64 (nb s₀ - (c + 16)) := by
     have := (s₀.gpr .r8).isLt; bv_omega
   refine ⟨⟨{ hI₁.inv with
-    gpr := fun r h1 h2 h3 h4 => by simp [h2, h3, hI₁.inv.gpr r h1 h2 h3 h4]
+    gpr := fun r h1 h2 h3 h4 h5 => by simp [h2, h3, hI₁.inv.gpr r h1 h2 h3 h4 h5]
     r10 := by simp [hI₁.inv.r10]
     rcx := by simp only [reduceCtorEq, ↓reduceIte, bAddr]; bv_omega
-    r8 := by simp only [ite_true, reduceCtorEq, ite_false]; exact hsub }, hI₁.y9, hI₁.y10, hI₁.y12⟩, ?_⟩
+    r8 := by simp only [ite_true, reduceCtorEq, ite_false]; exact hsub
+    dst := by
+      simp only [Impl.Aes.X86_64.AesNi.dstReg, Bool.false_eq_true, reduceCtorEq, ↓reduceIte, AesNi.oAddr,
+        AesNi.dd, bAddr, dp]
+      bv_omega }, hI₁.y9, hI₁.y10, hI₁.y12⟩, ?_⟩
   simp only [hsub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show nb s₀ - (c + 16) < 2 ^ 64 by omega_arith),
     show (16 : BitVec 64).toNat = 16 from rfl]
 
 /-- `vzeroupper`, and the comparison that starts the AES-NI loops. -/
-theorem mid_ok {s₀ : State} (hp : Pre s₀) {c : Nat} {s : State} (hI : Inv s₀ c c s) :
+theorem mid_ok {s₀ : State} (hp : Pre false s₀) {c : Nat} {s : State} (hI : Inv false s₀ c c s) :
     WP isa (.block [.vop .vzeroupper, .alu .cmp .r8 (.imm 8)]) s fun s' =>
-      Inv s₀ c c s' ∧ s'.cf = some (decide (nb s₀ - c < 8)) := by
+      Inv false s₀ c c s' ∧ s'.cf = some (decide (nb s₀ - c < 8)) := by
   have hn := nb_lt hp
   have e8 : BitVec.signExtend 64 (8 : BitVec 32) = 8 := by decide
   have hr8 := hI.r8
@@ -442,7 +449,7 @@ theorem mid_ok {s₀ : State} (hp : Pre s₀) {c : Nat} {s : State} (hI : Inv s�
 theorem getLsbD_one8 : (1 : BitVec 8).getLsbD 0 = true := rfl
 
 /-- The prologue, from a state `s` with `s₀`'s registers and memory. -/
-theorem ctrLoad_ok {s₀ : State} (hp : Pre s₀) {s : State} (hg : s.gpr = s₀.gpr) (hm : s.mem = s₀.mem)
+theorem ctrLoad_ok {s₀ : State} (hp : Pre false s₀) {s : State} (hg : s.gpr = s₀.gpr) (hm : s.mem = s₀.mem)
     (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) :
     WP isa (.block ctrLoad) s fun s => VInv s₀ 0 0 s := by
   have hin : InRegions (s.rd ++ s.wr) (s.gpr .rdx + BitVec.ofInt 64 ((0 : Nat) : Int)) 16 :=
@@ -457,13 +464,14 @@ theorem ctrLoad_ok {s₀ : State} (hp : Pre s₀) {s : State} (hg : s.gpr = s₀
   have hcb : XBinOp.eval .pshufb (s.mem.readW (s.gpr .rdx + BitVec.ofInt 64 ((0 : Nat) : Int)) 128)
       revMask = cb s₀ := by
     rw [ofInt_natCast, hg, hm]; simp only [BitVec.add_zero]; exact (blockAt_eq _ _).symm
-  refine ⟨⟨Nat.zero_le _, ?_, rfl, rfl, fun r h1 h2 h3 h4 => by simp [h1, h4, hg], ?_, ?_, ?_,
+  refine ⟨⟨Nat.zero_le _, ?_, rfl, rfl, fun r h1 h2 h3 h4 _ => by simp [h1, h4, hg], ?_, ?_, ?_, ?_,
     by rw [hm]; exact Frame.refl _ _, fun k _ => by simp [hm], hrd, hwr⟩, ?_, rfl, fun l hl => ?_⟩ <;>
     try simp only [reduceCtorEq, ↓reduceIte]
   · exact hcb
   · simp only [nr, sp, hg]; bv_omega
   · simp [bAddr, hg]
   · simp [nb, hg]
+  · simp [Impl.Aes.X86_64.AesNi.dstReg, AesNi.oAddr, AesNi.dd, hg]
   · simp only [reduceCtorEq, ↓reduceIte, State.lane]
     exact (congrArg (XBinOp.eval .paddd · one) hcb).trans (AesNi.paddd_one _)
   · rcases (by omega_arith : l = 0 ∨ l = 1) with rfl | rfl <;> rfl
@@ -480,20 +488,23 @@ theorem cmp16_ok (s₀ : State) :
     readSrc, arithFlags, State.setFlags, isa, e16, Option.bind_some, Option.some.injEq, exists_eq_left']
   refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;> simp [nb]
 
-theorem correct {s₀ : State} (hp : Pre s₀) :
+theorem correct {s₀ : State} (hp : Pre false s₀) :
     WP isa ctr32 s₀ fun s' => gprPreserved s₀ s' ∧ AesNi.ctr32X86_64.post s₀ s' := by
   have hn := nb_lt hp
   refine WP.seq (WP.mono (cmp16_ok s₀) fun s₁ ⟨hg, hm, hrd, hwr, hcf⟩ => ?_)
   refine WP.ite (decide (nb s₀ < 16)) (by simp [eval, hcf]) (fun _ => ?_) (fun h => ?_)
   · -- Fewer than sixteen blocks: `vg_aes_ctr32_aesni`.
-    have hp₁ : Pre s₁ := by
-      obtain ⟨a, b, c, d, e, f, g, h', i, j, k, l, m⟩ := hp
+    have hp₁ : Pre false s₁ := by
+      obtain ⟨a, b, c, d, e, f, g, h', i, j, k, l, m, n, o⟩ := hp
       constructor <;>
-        simp only [sp, nr, cp, dp, nb, AesNi.sR, AesNi.cR, dR, AesNi.scrR, AesNi.retR, hg, hrd, hwr] at * <;>
+        simp only [sp, nr, cp, dp, nb, AesNi.sR, AesNi.cR, dR, AesNi.scrR, AesNi.retR, AesNi.ddR, AesNi.dd, hg,
+          hrd, hwr] at * <;>
         assumption
     refine WP.mono (AesNi.correct hp₁) fun s' ⟨⟨h1, h2⟩, h3⟩ => ⟨⟨fun r hr => by rw [h1 r hr, hg], ?_⟩, ?_⟩
     · rw [← hg, ← hm]; exact h2
-    · simpa only [AesNi.ctr32X86_64, hg, hm] using h3
+    · have e : AesNi.Post false s₁ s' = AesNi.Post false s₀ s' := by
+        simp only [AesNi.Post, AesNi.dd, nb, cb, ciph, sch, sp, nr, cp, dp, hg, hm]
+      rw [e] at h3; exact h3
   · refine WP.seq (WP.mono (ctrLoad_ok hp hg hm hrd hwr) fun s₂ hI₂ => ?_)
     refine WP.seq (WP.mono (Q := fun s => ∃ c, nb s₀ - c < 16 ∧ VInv s₀ c c s) ?_
       fun s₃ ⟨c, _, hI₃⟩ => WP.seq (WP.mono (mid_ok hp hI₃.inv) fun s₄ ⟨hI₄, hcf₄⟩ => tail_ok hp hI₄ hcf₄))

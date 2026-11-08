@@ -24,13 +24,13 @@ def archive(name, binary=b"\x7fELF leantar"):
 
 
 class Opener:
-    """Serves `data` for any URL, recording each."""
+    """Serves `data` for any request, recording each URL."""
 
     def __init__(self, data):
         self.data, self.urls = data, []
 
-    def __call__(self, url):
-        self.urls.append(url)
+    def __call__(self, req):
+        self.urls.append(req.full_url)
         return io.BytesIO(self.data)
 
 
@@ -54,7 +54,7 @@ class Fetch(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         self.cache = Path(self.tmp.name)
         self.data = archive(f"leantar-{TAG}-{PLAT}")
-        self.rel = {"tag": TAG, "url": "https://example.com/{tag}/{name}.tar.gz",
+        self.rel = {"tag": TAG, "repo": "owner/leangz",
                     "sha256": {PLAT: hashlib.sha256(self.data).hexdigest()}}
 
     def tearDown(self):
@@ -62,39 +62,39 @@ class Fetch(unittest.TestCase):
 
     def test_downloads_once(self):
         opener = Opener(self.data)
-        path = leantar_release.fetch(self.rel, PLAT, self.cache, opener)
+        path = leantar_release.fetch(self.rel, PLAT, self.cache, opener=opener)
         self.assertEqual(path, self.cache / TAG / PLAT / "leantar")
         self.assertEqual(path.read_bytes(), b"\x7fELF leantar")
         self.assertTrue(os.access(path, os.X_OK))
-        self.assertEqual(opener.urls, [f"https://example.com/{TAG}/leantar-{TAG}-{PLAT}.tar.gz"])
+        self.assertEqual(opener.urls, [f"https://github.com/owner/leangz/releases/download/{TAG}/"
+                                       f"leantar-{TAG}-{PLAT}.tar.gz"])
         # Kept: the next use downloads nothing.
-        self.assertEqual(leantar_release.fetch(self.rel, PLAT, self.cache, opener), path)
+        self.assertEqual(leantar_release.fetch(self.rel, PLAT, self.cache, opener=opener), path)
         self.assertEqual(len(opener.urls), 1)
 
     def test_rejects_another_archive(self):
         opener = Opener(archive(f"leantar-{TAG}-{PLAT}", b"something else"))
         with self.assertRaisesRegex(SystemExit, "SHA-256 .* but release.toml pins"):
-            leantar_release.fetch(self.rel, PLAT, self.cache, opener)
+            leantar_release.fetch(self.rel, PLAT, self.cache, opener=opener)
         self.assertFalse((self.cache / TAG).exists())
 
     def test_platform_not_pinned(self):
         with self.assertRaisesRegex(SystemExit, "pins no archive for aarch64-apple-darwin"):
-            leantar_release.fetch(self.rel, "aarch64-apple-darwin", self.cache, Opener(self.data))
+            leantar_release.fetch(self.rel, "aarch64-apple-darwin", self.cache, opener=Opener(self.data))
 
     def test_archive_without_the_binary(self):
         data = archive("another-name")
         self.rel["sha256"][PLAT] = hashlib.sha256(data).hexdigest()
         with self.assertRaises(KeyError):
-            leantar_release.fetch(self.rel, PLAT, self.cache, Opener(data))
+            leantar_release.fetch(self.rel, PLAT, self.cache, opener=Opener(data))
 
     def test_pinned_release(self):
-        # Every platform `target` names has a hash, and the URL names the archive.
+        # Every platform `target` names has a hash, and the release names its repository.
         rel = leantar_release.release()
         for system, machine in (("Linux", "x86_64"), ("Linux", "aarch64"),
                                 ("Darwin", "arm64"), ("Darwin", "x86_64")):
             self.assertRegex(rel["sha256"][leantar_release.target(system, machine)], "^[0-9a-f]{64}$")
-        self.assertIn("{tag}", rel["url"])
-        self.assertIn("{name}", rel["url"])
+        self.assertRegex(rel["repo"], "^[^/]+/[^/]+$")
 
 
 if __name__ == "__main__":

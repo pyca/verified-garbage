@@ -15,7 +15,9 @@ The fork's release workflow builds it for each platform and attaches the
 archives to the release, with their `SHA256SUMS`. `ci/leantar/release.toml`
 pins the release and the SHA-256 of each archive: a download is used only if it
 matches. It is kept in `$XDG_CACHE_HOME/verified-garbage/leantar/<tag>/`
-(`~/.cache` by default), so only the first use downloads it.
+(`~/.cache` by default), so only the first use downloads it, with
+`ci/github_release.py`: authenticated with `GH_TOKEN` if it is set, and tried
+again if it fails transiently.
 """
 
 import argparse
@@ -23,12 +25,13 @@ import hashlib
 import io
 import os
 import platform
-import sys
 import tarfile
 import tempfile
+import time
 import tomllib
-import urllib.request
 from pathlib import Path
+
+import github_release
 
 RELEASE = Path(__file__).resolve().parent / "leantar" / "release.toml"
 
@@ -64,9 +67,10 @@ def unpack_binary(data, name):
         return tar.extractfile(member).read()
 
 
-def fetch(rel=None, plat=None, cache=None, opener=urllib.request.urlopen):
+def fetch(rel=None, plat=None, cache=None, token=None, opener=github_release.urlopen,
+          sleep=time.sleep):
     """The path of the release's `leantar` for `plat`, downloaded and checked
-    once into `cache`."""
+    once into `cache`, authenticated with `token` if there is one."""
     rel = rel or release()
     plat = plat or target()
     tag = rel["tag"]
@@ -77,13 +81,10 @@ def fetch(rel=None, plat=None, cache=None, opener=urllib.request.urlopen):
     if dest.is_file():
         return dest
     name = f"leantar-{tag}-{plat}"
-    url = rel["url"].format(tag=tag, name=name)
-    print(f"Downloading {url}", file=sys.stderr)
-    with opener(url) as r:
-        data = r.read()
+    data = github_release.download(rel["repo"], tag, f"{name}.tar.gz", token, opener, sleep)
     got = hashlib.sha256(data).hexdigest()
     if got != want:
-        raise SystemExit(f"{url}: SHA-256 {got}, but {RELEASE.name} pins {want}")
+        raise SystemExit(f"{name}.tar.gz: SHA-256 {got}, but {RELEASE.name} pins {want}")
     binary = unpack_binary(data, name)
     dest.parent.mkdir(parents=True, exist_ok=True)
     # Written beside it and renamed, so that a binary there is always whole.
@@ -96,7 +97,7 @@ def fetch(rel=None, plat=None, cache=None, opener=urllib.request.urlopen):
 
 def main(argv=None):
     argparse.ArgumentParser(description=__doc__.split("\n")[0]).parse_args(argv)
-    print(fetch())
+    print(fetch(token=os.environ.get("GH_TOKEN")))
 
 
 if __name__ == "__main__":

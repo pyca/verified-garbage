@@ -16,7 +16,7 @@
 use crate::align::CacheAligned;
 use core::mem::MaybeUninit;
 
-use crate::arch::rc4::{vg_rc4_apply, vg_rc4_init};
+use crate::arch::dispatch::rc4::{vg_rc4_apply_auto, vg_rc4_init_auto};
 use crate::error::InvalidKeyLength;
 use crate::zeroize::zeroize_raw;
 
@@ -39,7 +39,7 @@ impl Rc4 {
         // before writing it and checks the key length. These distinct
         // objects do not overlap or wrap around the address space; the
         // primitive uses only baseline instructions.
-        let code = unsafe { vg_rc4_init(key.as_ptr(), key.len(), c.ctx.0.as_mut_ptr()) };
+        let code = unsafe { vg_rc4_init_auto(key.as_ptr(), key.len(), c.ctx.0.as_mut_ptr()) };
         if code == 0 {
             Ok(c)
         } else {
@@ -55,7 +55,7 @@ impl Rc4 {
         // The context and data are valid, separate objects of the lengths
         // passed, with no address-space wrapping. The target's baseline
         // includes every instruction used by the primitive.
-        unsafe { vg_rc4_apply(self.ctx.0.as_mut_ptr(), data.as_mut_ptr(), data.len()) };
+        unsafe { vg_rc4_apply_auto(self.ctx.0.as_mut_ptr(), data.as_mut_ptr(), data.len()) };
     }
 
     /// Consumes and wipes the context. Raw RC4 emits no final bytes or tag.

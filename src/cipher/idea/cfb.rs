@@ -11,10 +11,10 @@
 ))]
 
 use crate::align::CacheAligned;
-use crate::arch::idea::vg_idea_expand_key;
-use crate::arch::idea_cfb::{
-    vg_idea_cfb64_decrypt, vg_idea_cfb64_decrypt_final, vg_idea_cfb64_encrypt,
-    vg_idea_cfb64_encrypt_final,
+use crate::arch::dispatch::idea::vg_idea_expand_key_auto;
+use crate::arch::dispatch::idea_cfb::{
+    vg_idea_cfb64_decrypt_auto, vg_idea_cfb64_decrypt_final_auto, vg_idea_cfb64_encrypt_auto,
+    vg_idea_cfb64_encrypt_final_auto,
 };
 use crate::error::{IncompleteBlock, InvalidKeyLength};
 use crate::zeroize::zeroize;
@@ -69,8 +69,8 @@ impl IdeaCfb64Encryptor {
         self.key.last(
             &mut self.iv,
             buffer,
-            vg_idea_cfb64_encrypt,
-            vg_idea_cfb64_encrypt_final,
+            vg_idea_cfb64_encrypt_auto,
+            vg_idea_cfb64_encrypt_final_auto,
         );
     }
 }
@@ -127,8 +127,8 @@ impl IdeaCfb64Decryptor {
         self.key.last(
             &mut self.iv,
             buffer,
-            vg_idea_cfb64_decrypt,
-            vg_idea_cfb64_decrypt_final,
+            vg_idea_cfb64_decrypt_auto,
+            vg_idea_cfb64_decrypt_final_auto,
         );
     }
 }
@@ -164,7 +164,7 @@ impl Key {
         let mut schedule = CacheAligned([0; 104]);
         // SAFETY: the key and the schedule are separate valid buffers of the
         // required sizes.
-        unsafe { vg_idea_expand_key(key, &mut schedule.0) };
+        unsafe { vg_idea_expand_key_auto(key, &mut schedule.0) };
         Ok(Self { schedule })
     }
 
@@ -172,14 +172,14 @@ impl Key {
     /// which it replaces with the last ciphertext block (unchanged for empty
     /// input).
     fn encrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) {
-        self.blocks(iv, buffer, vg_idea_cfb64_encrypt);
+        self.blocks(iv, buffer, vg_idea_cfb64_encrypt_auto);
     }
 
     /// Decrypts the whole blocks of `buffer` in place, from the block `iv`,
     /// which it replaces with the last ciphertext block (unchanged for empty
     /// input).
     fn decrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) {
-        self.blocks(iv, buffer, vg_idea_cfb64_decrypt);
+        self.blocks(iv, buffer, vg_idea_cfb64_decrypt_auto);
     }
 
     /// `f` on whole blocks.

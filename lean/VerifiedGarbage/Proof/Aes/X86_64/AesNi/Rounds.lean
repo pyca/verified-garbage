@@ -240,6 +240,41 @@ def ctr32X86_64 : Contract X86_64.isa where
     s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧ s₁.gpr .r9 = s₂.gpr .r9
 
 open VG.X86_64 in
+/-- `ctr32X86_64` out of place, for `vg_aes_ctr32_to_aesni` and
+`vg_aes_ctr32_to` (`schedule = rdi, rounds = rsi, counter = rdx, src = rcx,
+n = r8, scratch = r9, dst = r11`): the `n` blocks at `src` XORed with the
+keystream into the `n` blocks at `dst`, with `src` only read. `src` and
+`dst` may not overlap each other, nor the other buffers (but `schedule` and
+`src`, both only read), and may not wrap around the end of the address
+space. `dst` is public too. -/
+def ctr32ToX86_64 : Contract X86_64.isa where
+  pre s :=
+    let sched : Region := ⟨s.gpr .rdi, 240⟩
+    let counter : Region := ⟨s.gpr .rdx, 16⟩
+    let src : Region := ⟨s.gpr .rcx, 16 * (s.gpr .r8).toNat⟩
+    let dst : Region := ⟨s.gpr .r11, 16 * (s.gpr .r8).toNat⟩
+    let scratch : Region := ⟨s.gpr .r9, 2048⟩
+    let ret : Region := ⟨s.gpr .rsp, 8⟩
+    s.rd = [sched, src] ∧ s.wr = [counter, dst, scratch] ∧
+    sched.Disjoint counter ∧ sched.Disjoint dst ∧ sched.Disjoint scratch ∧
+    counter.Disjoint src ∧ counter.Disjoint dst ∧ counter.Disjoint scratch ∧
+    src.Disjoint dst ∧ src.Disjoint scratch ∧ dst.Disjoint scratch ∧
+    ret.Disjoint counter ∧ ret.Disjoint dst ∧ ret.Disjoint scratch ∧
+    (s.gpr .rcx).toNat + 16 * (s.gpr .r8).toNat ≤ 2 ^ 64 ∧
+    (s.gpr .r11).toNat + 16 * (s.gpr .r8).toNat ≤ 2 ^ 64 ∧
+    ((s.gpr .rsi).toNat = 10 ∨ (s.gpr .rsi).toNat = 12 ∨ (s.gpr .rsi).toNat = 14)
+  post s s' :=
+    let ciph := aesWith (s.gpr .rsi).toNat
+      (Spec.Aes.bytesAt s.mem (s.gpr .rdi) (16 * ((s.gpr .rsi).toNat + 1)))
+    blocksAt s'.mem (s.gpr .r11) (s.gpr .r8).toNat =
+        ctr32 ciph (blockAt s.mem (s.gpr .rdx)) (blocksAt s.mem (s.gpr .rcx) (s.gpr .r8).toNat) ∧
+      blockAt s'.mem (s.gpr .rdx) = Nat.repeat inc32 (s.gpr .r8).toNat (blockAt s.mem (s.gpr .rdx))
+  pub s₁ s₂ :=
+    s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
+    s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧ s₁.gpr .r9 = s₂.gpr .r9 ∧
+    s₁.gpr .r11 = s₂.gpr .r11
+
+open VG.X86_64 in
 /-- X86-64 contract for `vg_aes_expand_key_aesni(key: *const u8, key_len: usize,
 schedule: *mut [u8; 240], scratch: *mut [u64; 64])`: for a key of 16, 24 or 32
 bytes at `key`, writes its key schedule (`16 (Nr + 1)` bytes) to `schedule`.
