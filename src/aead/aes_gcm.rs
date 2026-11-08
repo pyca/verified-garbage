@@ -524,6 +524,7 @@ impl AesGcm {
             );
             #[cfg(target_arch = "aarch64")]
             let ok = vg_aes_gcm_open_to_with_powers_auto(
+                dit,
                 self.key(),
                 self.rounds,
                 nonce.as_ptr(),

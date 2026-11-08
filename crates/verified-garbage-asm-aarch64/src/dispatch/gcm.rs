@@ -759,7 +759,7 @@ pub unsafe fn vg_aes_gcm_open_with_powers_auto(_dit: verified_garbage_cpu::Dit<'
 /// * None of `ctx`, `nonce`, `aad`, `src`, `dst`, `tag` and `pw` may overlap the 2608 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_aes_gcm_open_to_with_powers_auto(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize, pw: *const [u64; 16]) -> u32 {
+pub unsafe fn vg_aes_gcm_open_to_with_powers_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize, pw: *const [u64; 16]) -> u32 {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize, pw: *const [u64; 16]) -> u32;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -767,10 +767,14 @@ pub unsafe fn vg_aes_gcm_open_to_with_powers_auto(ctx: *const [u64; 32], rounds:
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::gcm::VG_AES_GCM_OPEN_TO_WITH_POWERS_AES_SHA3_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_OPEN_TO_WITH_POWERS_AES_SHA3_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_OPEN_TO_WITH_POWERS_AES_SHA3_FEATURES)
+        {
             return crate::gcm::vg_aes_gcm_open_to_with_powers_aes_sha3;
         }
-        if cpu.contains(crate::gcm::VG_AES_GCM_OPEN_TO_WITH_POWERS_AES_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_OPEN_TO_WITH_POWERS_AES_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_OPEN_TO_WITH_POWERS_AES_FEATURES)
+        {
             return crate::gcm::vg_aes_gcm_open_to_with_powers_aes;
         }
         crate::gcm::vg_aes_gcm_open_to_with_powers
