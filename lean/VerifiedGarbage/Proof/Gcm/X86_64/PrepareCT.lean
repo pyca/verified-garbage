@@ -346,7 +346,7 @@ theorem flagged_implies : flaggedX86_64.Implies (Spec.Gcm.prepareContract X86_64
   sig_implies [Spec.Gcm.prepareContract, Spec.Gcm.prepareSig, Spec.Gcm.preparePost,
     flaggedX86_64, X86_64.abi, X86_64.argRegs] [flaggedSat] using flaggedSat
 
-/-- `storeFlag v` from `s₀`: the flag word is `v`, and only it and `rax`
+/-- `storeFlag v` from `s₀`: the count is `v`, and only it and `rax`
 changed. -/
 theorem storeFlag_run (v : BitVec 32) (s₀ : State)
     (hw : InRegions s₀.wr (s₀.gpr .rdi + BitVec.ofNat 64 1024) 8) :

@@ -822,7 +822,7 @@ theorem openToCodeR16_prepared (v : GcmVariant) (r : R16 v) :
 `vg_aes_gcm_open_prepared` itself, which tests the flag again, so that the
 code of `open` on the powers is in one function. The loops that read the
 powers are proven for a context of 1024 bytes holding them, and so read them
-from the 1032-byte context whose flag word is not 1 (`Proof.Gcm.X86_64.Stitch.CtxMode.flagged`). -/
+from the 1032-byte context whose count is at least 48 (`Proof.Gcm.X86_64.Stitch.CtxMode.flagged`). -/
 
 open Gcm.X86_64.Stitch (SPreM SPreTo StitchOkM StitchOkSmall StitchToOkM StitchToDecOkM) in
 section

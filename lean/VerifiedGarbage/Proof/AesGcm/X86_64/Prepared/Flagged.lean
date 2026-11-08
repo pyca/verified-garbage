@@ -39,7 +39,7 @@ are present calls `vg_aes_gcm_seal_prepared` and, through its encryption
 out of place, `vg_aes_gcm_stream_encrypt_prepared` by their public names,
 whose code tests the flag again: so the code of each on the powers is in one
 function. These are the contracts of that code and of the internal functions
-it calls, on the 1032-byte prepared key context whose flag word is not 1 and
+it calls, on the 1032-byte prepared key context whose count is at least 48 and
 which holds the powers (`Proof.AesGcm.Flag.FlaggedPowers`), and their proofs
 (`CtxMode.flagged`), as `Prepared/*.lean` has them for the 1024-byte one.
 -/
