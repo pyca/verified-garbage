@@ -74,6 +74,7 @@ def pairedArtifacts (x2 : Proof.Sha3.AArch64.X2Permutation) (v : Proof.Sha3.AArc
   Spec.MlKem.keyGenApi.artifact AArch64.target {
     suffix := Emit.qualifiedName "" (parts x2 v)
     features := features x2 v
+    vendor := v.vendor
     code := Impl.MlKem.AArch64.Wipe.keyGen (Emit.qualifiedName "" (parts x2 v))
       (Impl.MlKem.AArch64.Kem16P.keyGen (fixedHash v.callee) v.callee Impl.MlKem.AArch64.lay768)
     stack := 160
@@ -81,6 +82,7 @@ def pairedArtifacts (x2 : Proof.Sha3.AArch64.X2Permutation) (v : Proof.Sha3.AArc
   Spec.MlKem.encapsApi.artifact AArch64.target {
     suffix := Emit.qualifiedName "" (parts x2 v)
     features := features x2 v
+    vendor := v.vendor
     code := Impl.MlKem.AArch64.Wipe.encaps (Emit.qualifiedName "" (parts x2 v))
       (Impl.MlKem.AArch64.Kem16P.encaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768)
     stack := 160
@@ -88,6 +90,7 @@ def pairedArtifacts (x2 : Proof.Sha3.AArch64.X2Permutation) (v : Proof.Sha3.AArc
   Spec.MlKem.encapsHApi.artifact AArch64.target {
     suffix := Emit.qualifiedName "" (parts x2 v)
     features := features x2 v
+    vendor := v.vendor
     code := Impl.MlKem.AArch64.Wipe.encapsH (Emit.qualifiedName "" (parts x2 v))
       (Impl.MlKem.AArch64.Kem16P.encapsH (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768)
     stack := 160
@@ -95,6 +98,7 @@ def pairedArtifacts (x2 : Proof.Sha3.AArch64.X2Permutation) (v : Proof.Sha3.AArc
   Spec.MlKem.decapsApi.artifact AArch64.target {
     suffix := Emit.qualifiedName "" (parts x2 v)
     features := features x2 v
+    vendor := v.vendor
     code := Impl.MlKem.AArch64.Wipe.decaps (Emit.qualifiedName "" (parts x2 v))
       (Impl.MlKem.AArch64.Kem16P.decaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768)
     stack := 160
@@ -102,6 +106,7 @@ def pairedArtifacts (x2 : Proof.Sha3.AArch64.X2Permutation) (v : Proof.Sha3.AArc
   Spec.MlKem1024.keyGenApi.artifact AArch64.target {
     suffix := Emit.qualifiedName "" (parts x2 v)
     features := features x2 v
+    vendor := v.vendor
     code := Impl.MlKem.AArch64.Wipe.keyGen1024 (Emit.qualifiedName "" (parts x2 v))
       (Impl.MlKem.AArch64.Kem16P.keyGen (fixedHash v.callee) v.callee Impl.MlKem1024.AArch64.lay1024)
     stack := 160
@@ -109,6 +114,7 @@ def pairedArtifacts (x2 : Proof.Sha3.AArch64.X2Permutation) (v : Proof.Sha3.AArc
   Spec.MlKem1024.encapsApi.artifact AArch64.target {
     suffix := Emit.qualifiedName "" (parts x2 v)
     features := features x2 v
+    vendor := v.vendor
     code := Impl.MlKem.AArch64.Wipe.encaps1024 (Emit.qualifiedName "" (parts x2 v))
       (Impl.MlKem.AArch64.Kem16P.encaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024)
     stack := 160
@@ -116,6 +122,7 @@ def pairedArtifacts (x2 : Proof.Sha3.AArch64.X2Permutation) (v : Proof.Sha3.AArc
   Spec.MlKem1024.encapsHApi.artifact AArch64.target {
     suffix := Emit.qualifiedName "" (parts x2 v)
     features := features x2 v
+    vendor := v.vendor
     code := Impl.MlKem.AArch64.Wipe.encapsH1024 (Emit.qualifiedName "" (parts x2 v))
       (Impl.MlKem.AArch64.Kem16P.encapsH (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024)
     stack := 160
@@ -123,6 +130,7 @@ def pairedArtifacts (x2 : Proof.Sha3.AArch64.X2Permutation) (v : Proof.Sha3.AArc
   Spec.MlKem1024.decapsApi.artifact AArch64.target {
     suffix := Emit.qualifiedName "" (parts x2 v)
     features := features x2 v
+    vendor := v.vendor
     code := Impl.MlKem.AArch64.Wipe.decaps1024 (Emit.qualifiedName "" (parts x2 v))
       (Impl.MlKem.AArch64.Kem16P.decaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024)
     stack := 160

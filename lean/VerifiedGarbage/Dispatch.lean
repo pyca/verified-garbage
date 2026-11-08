@@ -67,21 +67,12 @@ def ranking : Rust.Ranking := [
   ("aarch64", [
     { suffix := "_aes_sha3" },
     { suffix := "_aes" },
-    -- FEAT_SHA3's Keccak is faster on Apple's cores, and slower on Neoverse N2:
-    -- ML-KEM's, SHA-3's and Ed448's. ML-DSA's is chosen on every CPU with
-    -- FEAT_SHA3.
-    { suffix := "_x2_sha3_keccak_sha3", vendor := some "apple" },
+    { suffix := "_x2_sha3_keccak_sha3" },
     { suffix := "_x2_sha3" },
-    { suffix := "_sha3", modules := ["sha3", "ed448"], vendor := some "apple" },
     { suffix := "_sha3" },
     { suffix := "_sha512" },
     { suffix := "_sha2" },
     { suffix := "_sve2" },
-    -- Poly1305's NEON code is faster on Apple's cores (about twice as fast),
-    -- and slower on Neoverse N2. It needs no feature (AdvSIMD is part of the
-    -- AArch64 baseline): `neon`, which detection reports, lets
-    -- `VG_CPU_FEATURES=neon` choose it elsewhere for the tests.
-    { suffix := "_neon", modules := ["poly1305"], extra := ["neon"], vendor := some "apple" },
     { suffix := "_neon" }]),
   ("arm", [
     { suffix := "_umaal" }])]

@@ -22,6 +22,7 @@ def artifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
   Spec.Ed448.signCachedApi.artifact AArch64.target {
     suffix := v.callee.suffix
     features := v.features
+    vendor := v.vendor
     code := Impl.Ed448.AArch64.SignCached.signCachedWith v.callee
     stack := 352
     verified := Proof.Ed448.AArch64.SignCached.signCached_verified v Proof.Ed448.AArch64.scalarBase_baseOk }]
