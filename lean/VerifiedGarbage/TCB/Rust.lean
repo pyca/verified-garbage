@@ -1670,9 +1670,7 @@ having the tag `""`), and the implementations are ordered by the
 rank of their part for the first tag, then for the next, and so on (a
 missing part being the baseline, ranked last), which chooses the best variant
 of each interface in turn. An implementation that can be chosen only where
-one ranked before it can is left out (it would never run), and so is one
-whose ranking says to (`Rank.skip`, for an implementation the Rust code
-chooses by something other than the CPU and calls itself).
+one ranked before it can is left out (it would never run).
 
 A function whose base is its only implementation gets a dispatcher too, as
 another name of it, so that the Rust code calling the dispatcher is the same
@@ -1745,15 +1743,12 @@ whose name is that of its base followed by `suffix`, in a module of
 `modules` (or any if there are none), chosen only on a CPU that also has the
 features `extra` (by their Rust `target_feature` names) and, if `vendor` is
 given, only where `target_vendor` is `vendor` or `VG_CPU_FEATURES` names every
-feature it needs; or, if `skip`, never chosen by a dispatcher (as one the
-Rust code chooses by something other than the CPU, such as the length of
-its input, and calls itself). -/
+feature it needs. -/
 structure Rank where
   suffix : String
   modules : List String := []
   extra : List String := []
   vendor : Option String := none
-  skip : Bool := false
 
 /-- The ranking of each target, by its name (`Target.name`): its `Rank`s,
 best first. -/
@@ -1845,8 +1840,6 @@ structure Arm where
   impl : Impl
   extra : List String
   vendors : List String
-  /-- Whether the ranking leaves it out (`Rank.skip`). -/
-  skip : Bool
 
 /-- The implementations `members` (each with its suffix) of a function or
 table of the module `m` of the target `t`, but its base, that its dispatcher
@@ -1854,8 +1847,7 @@ tries, in order (see above), or why `rs` does not rank them. -/
 def armsOf (rs : List Rank) (m t : String) (members : List (Impl × String)) :
     Except String (List Arm) := do
   let arm (a : Impl) (ranks : List Rank) : Arm :=
-    ⟨a, dedup (ranks.flatMap (·.extra)), dedup (ranks.filterMap (·.vendor)),
-      ranks.any (·.skip)⟩
+    ⟨a, dedup (ranks.flatMap (·.extra)), dedup (ranks.filterMap (·.vendor))⟩
   let keyed ← if members.all fun (_, s) => (rankOf rs m s).isSome then
       pure (members.map fun (a, s) => match rankOf rs m s with
         | some (i, r) => ([i], arm a [r])
@@ -1875,7 +1867,6 @@ def armsOf (rs : List Rank) (m t : String) (members : List (Impl × String)) :
       pure (parsed.map fun (a, ps) =>
         (tags.map fun t => ((ps.find? (·.1 == t)).map (·.2.1)).getD rs.length,
           arm a (ps.map (·.2.2))))
-  let keyed := keyed.filter fun (_, a) => !a.skip
   let sorted := keyed.mergeSort fun a b => lexLe a.1 b.1
   -- Leave out each implementation that can be chosen only where one before it can.
   let weaker (e l : Arm) : Bool :=
