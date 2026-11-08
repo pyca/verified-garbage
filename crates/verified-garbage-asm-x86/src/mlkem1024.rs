@@ -36,7 +36,7 @@ jne 20b
 /// * `dk` must be valid for reads and writes of 3168 bytes.
 /// * `scratch` must be valid for reads and writes of 49152 bytes.
 /// * `seed` must be random bytes from an approved RBG (FIPS 203 §3.3), or a seed so generated before.
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
+/// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `ek`, `dk` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
 /// * None of `seed`, `ek`, `dk` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 120 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
@@ -68,7 +68,7 @@ call {vg_zeroize}
 /// * `scratch` must be valid for reads and writes of 49152 bytes.
 /// * `ek` must have passed `vg_mlkem1024_check_ek` (FIPS 203 §7.2).
 /// * `m` must be fresh random bytes from an approved RBG (FIPS 203 §3.3).
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
+/// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `key`, `ct` and `scratch` must not overlap each other, `ek` or `m` (distinct Rust objects never do).
 /// * None of `ek`, `m`, `key`, `ct` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 120 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
@@ -102,7 +102,7 @@ call {vg_zeroize}
 /// * `ek` must have passed `vg_mlkem1024_check_ek` (FIPS 203 §7.2).
 /// * `h` must hold `H(ek)`, the SHA3-256 hash of the bytes of `*ek` (FIPS 203 §4.1).
 /// * `m` must be fresh random bytes from an approved RBG (FIPS 203 §3.3).
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
+/// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `key`, `ct` and `scratch` must not overlap each other, `ek`, `h` or `m` (distinct Rust objects never do).
 /// * None of `ek`, `h`, `m`, `key`, `ct` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 136 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
@@ -132,7 +132,7 @@ call {vg_zeroize}
 /// * `key` must be valid for reads and writes of 32 bytes.
 /// * `scratch` must be valid for reads and writes of 49152 bytes.
 /// * `dk` must have been written by `vg_mlkem1024_keygen` (so that it passes the checks of FIPS 203 §7.3).
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
+/// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `key` and `scratch` must not overlap each other, `dk` or `ct` (distinct Rust objects never do).
 /// * None of `dk`, `ct`, `key` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 120 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]

@@ -43,8 +43,8 @@ the same contract with 32 more bytes of stack and `scratch` left scrubbed
 byte of it is zero (`Scrubbed.keyGen_wiped`, …): `Verified.callWipe'` for
 the instances over the sponge functions, under `abi`, and
 `Verified.callWipeC'` for the paired instances, under
-`abi.withConsts constants`. `*_verified` are those weakened to the contracts
-of `Spec/MlKem/`, which do not state it yet.
+`abi.withConsts constants`. `*_verified` state them as the contracts of
+`Spec/MlKem/`.
 -/
 
 @[expose] public section
@@ -889,7 +889,7 @@ theorem keyGenS768_scrubbed :
 theorem keyGenS768_verified :
     Verified target (Impl.MlKem.AArch64.Wipe.keyGen v.callee.suffix (Impl.MlKem.AArch64.keyGenWith v.callee))
       (Spec.MlKem.keyGenContract abi 48) :=
-  Scrubbed.Verified.keyGen_of_scrubbed (keyGenS768_scrubbed v)
+  keyGenS768_scrubbed v
 
 theorem encapsHS768_scrubbed :
     Verified target (Impl.MlKem.AArch64.Wipe.encapsH v.callee.suffix (Impl.MlKem.AArch64.encapsHWith v.callee))
@@ -899,7 +899,7 @@ theorem encapsHS768_scrubbed :
 theorem encapsHS768_verified :
     Verified target (Impl.MlKem.AArch64.Wipe.encapsH v.callee.suffix (Impl.MlKem.AArch64.encapsHWith v.callee))
       (Spec.MlKem.encapsHContract abi 48) :=
-  Scrubbed.Verified.encapsH_of_scrubbed (encapsHS768_scrubbed v)
+  encapsHS768_scrubbed v
 
 theorem encapsS768_scrubbed :
     Verified target (Impl.MlKem.AArch64.Wipe.encaps v.callee.suffix (Impl.MlKem.AArch64.encapsWith v.callee))
@@ -909,7 +909,7 @@ theorem encapsS768_scrubbed :
 theorem encapsS768_verified :
     Verified target (Impl.MlKem.AArch64.Wipe.encaps v.callee.suffix (Impl.MlKem.AArch64.encapsWith v.callee))
       (Spec.MlKem.encapsContract abi 48) :=
-  Scrubbed.Verified.encaps_of_scrubbed (encapsS768_scrubbed v)
+  encapsS768_scrubbed v
 
 theorem decapsS768_scrubbed :
     Verified target (Impl.MlKem.AArch64.Wipe.decaps v.callee.suffix (Impl.MlKem.AArch64.decapsWith v.callee))
@@ -919,7 +919,7 @@ theorem decapsS768_scrubbed :
 theorem decapsS768_verified :
     Verified target (Impl.MlKem.AArch64.Wipe.decaps v.callee.suffix (Impl.MlKem.AArch64.decapsWith v.callee))
       (Spec.MlKem.decapsContract abi 48) :=
-  Scrubbed.Verified.decaps_of_scrubbed (decapsS768_scrubbed v)
+  decapsS768_scrubbed v
 
 theorem keyGenS1024_scrubbed :
     Verified target (Impl.MlKem.AArch64.Wipe.keyGen1024 v.callee.suffix (Impl.MlKem1024.AArch64.keyGenWith v.callee))
@@ -929,7 +929,7 @@ theorem keyGenS1024_scrubbed :
 theorem keyGenS1024_verified :
     Verified target (Impl.MlKem.AArch64.Wipe.keyGen1024 v.callee.suffix (Impl.MlKem1024.AArch64.keyGenWith v.callee))
       (Spec.MlKem1024.keyGenContract abi 48) :=
-  Scrubbed.Verified.keyGen1024_of_scrubbed (keyGenS1024_scrubbed v)
+  keyGenS1024_scrubbed v
 
 theorem encapsHS1024_scrubbed :
     Verified target (Impl.MlKem.AArch64.Wipe.encapsH1024 v.callee.suffix (Impl.MlKem1024.AArch64.encapsHWith v.callee))
@@ -939,7 +939,7 @@ theorem encapsHS1024_scrubbed :
 theorem encapsHS1024_verified :
     Verified target (Impl.MlKem.AArch64.Wipe.encapsH1024 v.callee.suffix (Impl.MlKem1024.AArch64.encapsHWith v.callee))
       (Spec.MlKem1024.encapsHContract abi 48) :=
-  Scrubbed.Verified.encapsH1024_of_scrubbed (encapsHS1024_scrubbed v)
+  encapsHS1024_scrubbed v
 
 theorem encapsS1024_scrubbed :
     Verified target (Impl.MlKem.AArch64.Wipe.encaps1024 v.callee.suffix (Impl.MlKem1024.AArch64.encapsWith v.callee))
@@ -949,7 +949,7 @@ theorem encapsS1024_scrubbed :
 theorem encapsS1024_verified :
     Verified target (Impl.MlKem.AArch64.Wipe.encaps1024 v.callee.suffix (Impl.MlKem1024.AArch64.encapsWith v.callee))
       (Spec.MlKem1024.encapsContract abi 48) :=
-  Scrubbed.Verified.encaps1024_of_scrubbed (encapsS1024_scrubbed v)
+  encapsS1024_scrubbed v
 
 theorem decapsS1024_scrubbed :
     Verified target (Impl.MlKem.AArch64.Wipe.decaps1024 v.callee.suffix (Impl.MlKem1024.AArch64.decapsWith v.callee))
@@ -959,7 +959,7 @@ theorem decapsS1024_scrubbed :
 theorem decapsS1024_verified :
     Verified target (Impl.MlKem.AArch64.Wipe.decaps1024 v.callee.suffix (Impl.MlKem1024.AArch64.decapsWith v.callee))
       (Spec.MlKem1024.decapsContract abi 48) :=
-  Scrubbed.Verified.decaps1024_of_scrubbed (decapsS1024_scrubbed v)
+  decapsS1024_scrubbed v
 
 /-! The paired instances, named `sfx`, with 160 bytes of stack. -/
 
@@ -971,7 +971,7 @@ theorem keyGenP768_scrubbed (sfx : String) :
 theorem keyGenP768_verified (sfx : String) :
     Verified target (Impl.MlKem.AArch64.Wipe.keyGen sfx (Impl.MlKem.AArch64.Kem16P.keyGen (fixedHash v.callee) v.callee Impl.MlKem.AArch64.lay768))
       (Spec.MlKem.keyGenContract (abi.withConsts Optimized.constants) 160) :=
-  Scrubbed.Verified.keyGen_of_scrubbed (keyGenP768_scrubbed v sfx)
+  keyGenP768_scrubbed v sfx
 
 theorem encapsHP768_scrubbed (sfx : String) :
     Verified target (Impl.MlKem.AArch64.Wipe.encapsH sfx (Impl.MlKem.AArch64.Kem16P.encapsH (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768))
@@ -981,7 +981,7 @@ theorem encapsHP768_scrubbed (sfx : String) :
 theorem encapsHP768_verified (sfx : String) :
     Verified target (Impl.MlKem.AArch64.Wipe.encapsH sfx (Impl.MlKem.AArch64.Kem16P.encapsH (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768))
       (Spec.MlKem.encapsHContract (abi.withConsts Optimized.constants) 160) :=
-  Scrubbed.Verified.encapsH_of_scrubbed (encapsHP768_scrubbed v sfx)
+  encapsHP768_scrubbed v sfx
 
 theorem encapsP768_scrubbed (sfx : String) :
     Verified target (Impl.MlKem.AArch64.Wipe.encaps sfx (Impl.MlKem.AArch64.Kem16P.encaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768))
@@ -991,7 +991,7 @@ theorem encapsP768_scrubbed (sfx : String) :
 theorem encapsP768_verified (sfx : String) :
     Verified target (Impl.MlKem.AArch64.Wipe.encaps sfx (Impl.MlKem.AArch64.Kem16P.encaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768))
       (Spec.MlKem.encapsContract (abi.withConsts Optimized.constants) 160) :=
-  Scrubbed.Verified.encaps_of_scrubbed (encapsP768_scrubbed v sfx)
+  encapsP768_scrubbed v sfx
 
 theorem decapsP768_scrubbed (sfx : String) :
     Verified target (Impl.MlKem.AArch64.Wipe.decaps sfx (Impl.MlKem.AArch64.Kem16P.decaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768))
@@ -1001,7 +1001,7 @@ theorem decapsP768_scrubbed (sfx : String) :
 theorem decapsP768_verified (sfx : String) :
     Verified target (Impl.MlKem.AArch64.Wipe.decaps sfx (Impl.MlKem.AArch64.Kem16P.decaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768))
       (Spec.MlKem.decapsContract (abi.withConsts Optimized.constants) 160) :=
-  Scrubbed.Verified.decaps_of_scrubbed (decapsP768_scrubbed v sfx)
+  decapsP768_scrubbed v sfx
 
 theorem keyGenP1024_scrubbed (sfx : String) :
     Verified target (Impl.MlKem.AArch64.Wipe.keyGen1024 sfx (Impl.MlKem.AArch64.Kem16P.keyGen (fixedHash v.callee) v.callee Impl.MlKem1024.AArch64.lay1024))
@@ -1011,7 +1011,7 @@ theorem keyGenP1024_scrubbed (sfx : String) :
 theorem keyGenP1024_verified (sfx : String) :
     Verified target (Impl.MlKem.AArch64.Wipe.keyGen1024 sfx (Impl.MlKem.AArch64.Kem16P.keyGen (fixedHash v.callee) v.callee Impl.MlKem1024.AArch64.lay1024))
       (Spec.MlKem1024.keyGenContract (abi.withConsts Optimized.constants) 160) :=
-  Scrubbed.Verified.keyGen1024_of_scrubbed (keyGenP1024_scrubbed v sfx)
+  keyGenP1024_scrubbed v sfx
 
 theorem encapsHP1024_scrubbed (sfx : String) :
     Verified target (Impl.MlKem.AArch64.Wipe.encapsH1024 sfx (Impl.MlKem.AArch64.Kem16P.encapsH (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024))
@@ -1021,7 +1021,7 @@ theorem encapsHP1024_scrubbed (sfx : String) :
 theorem encapsHP1024_verified (sfx : String) :
     Verified target (Impl.MlKem.AArch64.Wipe.encapsH1024 sfx (Impl.MlKem.AArch64.Kem16P.encapsH (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024))
       (Spec.MlKem1024.encapsHContract (abi.withConsts Optimized.constants) 160) :=
-  Scrubbed.Verified.encapsH1024_of_scrubbed (encapsHP1024_scrubbed v sfx)
+  encapsHP1024_scrubbed v sfx
 
 theorem encapsP1024_scrubbed (sfx : String) :
     Verified target (Impl.MlKem.AArch64.Wipe.encaps1024 sfx (Impl.MlKem.AArch64.Kem16P.encaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024))
@@ -1031,7 +1031,7 @@ theorem encapsP1024_scrubbed (sfx : String) :
 theorem encapsP1024_verified (sfx : String) :
     Verified target (Impl.MlKem.AArch64.Wipe.encaps1024 sfx (Impl.MlKem.AArch64.Kem16P.encaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024))
       (Spec.MlKem1024.encapsContract (abi.withConsts Optimized.constants) 160) :=
-  Scrubbed.Verified.encaps1024_of_scrubbed (encapsP1024_scrubbed v sfx)
+  encapsP1024_scrubbed v sfx
 
 theorem decapsP1024_scrubbed (sfx : String) :
     Verified target (Impl.MlKem.AArch64.Wipe.decaps1024 sfx (Impl.MlKem.AArch64.Kem16P.decaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024))
@@ -1041,7 +1041,7 @@ theorem decapsP1024_scrubbed (sfx : String) :
 theorem decapsP1024_verified (sfx : String) :
     Verified target (Impl.MlKem.AArch64.Wipe.decaps1024 sfx (Impl.MlKem.AArch64.Kem16P.decaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024))
       (Spec.MlKem1024.decapsContract (abi.withConsts Optimized.constants) 160) :=
-  Scrubbed.Verified.decaps1024_of_scrubbed (decapsP1024_scrubbed v sfx)
+  decapsP1024_scrubbed v sfx
 
 end
 

@@ -40,8 +40,8 @@ contracts of `Proof/MlKem/Scrubbed.lean`): ML-KEM-768's zeroes all of it
 (`Verified.callWipe'`, `Scrubbed.keyGen_wiped`, …), and ML-KEM-1024's all of
 it or, with 16-bit polynomials, the first `scr16` bytes, the others of which
 its code leaves unchanged (`Verified.callWipeTail'`, `keyGen1024_tail`, …).
-`*_verified` are those weakened to the contracts of `Spec/MlKem/`, which do
-not state it yet.
+`*_verified` state them as the contracts of
+`Spec/MlKem/`.
 -/
 
 @[expose] public section
@@ -632,7 +632,7 @@ theorem keyGenW_scrubbed (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl
 
 theorem keyGenW_verified (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
     Verified X86_64.target (keyGenW v.callee v.suffix z.name z.code) (Spec.MlKem.keyGenContract X86_64.abi 56) :=
-  Scrubbed.Verified.keyGen_of_scrubbed (keyGenW_scrubbed v z)
+  keyGenW_scrubbed v z
 
 /-- `vg_mlkem768_encaps_h`. -/
 theorem encapsHW_scrubbed (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
@@ -690,7 +690,7 @@ theorem encapsHW_scrubbed (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImp
 
 theorem encapsHW_verified (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
     Verified X86_64.target (encapsHW v.callee v.suffix z.name z.code) (Spec.MlKem.encapsHContract X86_64.abi 56) :=
-  Scrubbed.Verified.encapsH_of_scrubbed (encapsHW_scrubbed v z)
+  encapsHW_scrubbed v z
 
 /-- `vg_mlkem768_encaps`. -/
 theorem encapsW_scrubbed (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
@@ -740,7 +740,7 @@ theorem encapsW_scrubbed (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl
 
 theorem encapsW_verified (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
     Verified X86_64.target (encapsW v.callee v.suffix z.name z.code) (Spec.MlKem.encapsContract X86_64.abi 56) :=
-  Scrubbed.Verified.encaps_of_scrubbed (encapsW_scrubbed v z)
+  encapsW_scrubbed v z
 
 /-- `vg_mlkem768_decaps`. -/
 theorem decapsW_scrubbed (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
@@ -789,7 +789,7 @@ theorem decapsW_scrubbed (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl
 
 theorem decapsW_verified (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
     Verified X86_64.target (decapsW v.callee v.suffix z.name z.code) (Spec.MlKem.decapsContract X86_64.abi 56) :=
-  Scrubbed.Verified.decaps_of_scrubbed (decapsW_scrubbed v z)
+  decapsW_scrubbed v z
 
 /-- `vg_mlkem1024_keygen`. -/
 theorem keyGen1024W_scrubbed (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
@@ -842,7 +842,7 @@ theorem keyGen1024W_scrubbed (v : Sample4Impl) (z : Proof.Zeroize.X86_64.Zeroize
 
 theorem keyGen1024W_verified (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
     Verified X86_64.target (keyGen1024W v.callee v.suffix z.name z.code) (Spec.MlKem1024.keyGenContract X86_64.abi 56) :=
-  Scrubbed.Verified.keyGen1024_of_scrubbed (keyGen1024W_scrubbed v z)
+  keyGen1024W_scrubbed v z
 
 /-- `vg_mlkem1024_encaps_h`. -/
 theorem encapsH1024W_scrubbed (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
@@ -902,7 +902,7 @@ theorem encapsH1024W_scrubbed (v : Sample4Impl) (z : Proof.Zeroize.X86_64.Zeroiz
 
 theorem encapsH1024W_verified (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
     Verified X86_64.target (encapsH1024W v.callee v.suffix z.name z.code) (Spec.MlKem1024.encapsHContract X86_64.abi 56) :=
-  Scrubbed.Verified.encapsH1024_of_scrubbed (encapsH1024W_scrubbed v z)
+  encapsH1024W_scrubbed v z
 
 /-- `vg_mlkem1024_encaps`. -/
 theorem encaps1024W_scrubbed (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
@@ -954,7 +954,7 @@ theorem encaps1024W_scrubbed (v : Sample4Impl) (z : Proof.Zeroize.X86_64.Zeroize
 
 theorem encaps1024W_verified (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
     Verified X86_64.target (encaps1024W v.callee v.suffix z.name z.code) (Spec.MlKem1024.encapsContract X86_64.abi 56) :=
-  Scrubbed.Verified.encaps1024_of_scrubbed (encaps1024W_scrubbed v z)
+  encaps1024W_scrubbed v z
 
 /-- `vg_mlkem1024_decaps`. -/
 theorem decaps1024W_scrubbed (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
@@ -1005,7 +1005,7 @@ theorem decaps1024W_scrubbed (v : Sample4Impl) (z : Proof.Zeroize.X86_64.Zeroize
 
 theorem decaps1024W_verified (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
     Verified X86_64.target (decaps1024W v.callee v.suffix z.name z.code) (Spec.MlKem1024.decapsContract X86_64.abi 56) :=
-  Scrubbed.Verified.decaps1024_of_scrubbed (decaps1024W_scrubbed v z)
+  decaps1024W_scrubbed v z
 
 
 /-! ## The stack pointer -/

@@ -65,7 +65,7 @@ pub const VG_MLKEM1024_KEYGEN_AVX2_FEATURES: verified_garbage_cpu::Features = ve
 /// * `dk` must be valid for reads and writes of 3168 bytes.
 /// * `scratch` must be valid for reads and writes of 49152 bytes.
 /// * `seed` must be random bytes from an approved RBG (FIPS 203 §3.3), or a seed so generated before.
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
+/// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `ek`, `dk` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
 /// * None of `seed`, `ek`, `dk` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
@@ -101,7 +101,7 @@ pub const VG_MLKEM1024_ENCAPS_H_AVX2_FEATURES: verified_garbage_cpu::Features = 
 /// * `ek` must have passed `vg_mlkem1024_check_ek` (FIPS 203 §7.2).
 /// * `h` must hold `H(ek)`, the SHA3-256 hash of the bytes of `*ek` (FIPS 203 §4.1).
 /// * `m` must be fresh random bytes from an approved RBG (FIPS 203 §3.3).
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
+/// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `key`, `ct` and `scratch` must not overlap each other, `ek`, `h` or `m` (distinct Rust objects never do).
 /// * None of `ek`, `h`, `m`, `key`, `ct` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
@@ -135,7 +135,7 @@ pub const VG_MLKEM1024_ENCAPS_AVX2_FEATURES: verified_garbage_cpu::Features = ve
 /// * `scratch` must be valid for reads and writes of 49152 bytes.
 /// * `ek` must have passed `vg_mlkem1024_check_ek` (FIPS 203 §7.2).
 /// * `m` must be fresh random bytes from an approved RBG (FIPS 203 §3.3).
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
+/// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `key`, `ct` and `scratch` must not overlap each other, `ek` or `m` (distinct Rust objects never do).
 /// * None of `ek`, `m`, `key`, `ct` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
@@ -167,7 +167,7 @@ pub const VG_MLKEM1024_DECAPS_AVX2_FEATURES: verified_garbage_cpu::Features = ve
 /// * `key` must be valid for reads and writes of 32 bytes.
 /// * `scratch` must be valid for reads and writes of 49152 bytes.
 /// * `dk` must have been written by `vg_mlkem1024_keygen` (so that it passes the checks of FIPS 203 §7.3).
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
+/// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `key` and `scratch` must not overlap each other, `dk` or `ct` (distinct Rust objects never do).
 /// * None of `dk`, `ct`, `key` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
@@ -199,7 +199,7 @@ pub const VG_MLKEM1024_KEYGEN_AVX512_FEATURES: verified_garbage_cpu::Features = 
 /// * `dk` must be valid for reads and writes of 3168 bytes.
 /// * `scratch` must be valid for reads and writes of 49152 bytes.
 /// * `seed` must be random bytes from an approved RBG (FIPS 203 §3.3), or a seed so generated before.
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
+/// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `ek`, `dk` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
 /// * None of `seed`, `ek`, `dk` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `avx512f`, `avx512vl` and `avx512bw` target features.
@@ -235,7 +235,7 @@ pub const VG_MLKEM1024_ENCAPS_H_AVX512_FEATURES: verified_garbage_cpu::Features 
 /// * `ek` must have passed `vg_mlkem1024_check_ek` (FIPS 203 §7.2).
 /// * `h` must hold `H(ek)`, the SHA3-256 hash of the bytes of `*ek` (FIPS 203 §4.1).
 /// * `m` must be fresh random bytes from an approved RBG (FIPS 203 §3.3).
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
+/// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `key`, `ct` and `scratch` must not overlap each other, `ek`, `h` or `m` (distinct Rust objects never do).
 /// * None of `ek`, `h`, `m`, `key`, `ct` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `avx512f`, `avx512vl` and `avx512bw` target features.
@@ -269,7 +269,7 @@ pub const VG_MLKEM1024_ENCAPS_AVX512_FEATURES: verified_garbage_cpu::Features = 
 /// * `scratch` must be valid for reads and writes of 49152 bytes.
 /// * `ek` must have passed `vg_mlkem1024_check_ek` (FIPS 203 §7.2).
 /// * `m` must be fresh random bytes from an approved RBG (FIPS 203 §3.3).
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
+/// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `key`, `ct` and `scratch` must not overlap each other, `ek` or `m` (distinct Rust objects never do).
 /// * None of `ek`, `m`, `key`, `ct` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `avx512f`, `avx512vl` and `avx512bw` target features.
@@ -301,7 +301,7 @@ pub const VG_MLKEM1024_DECAPS_AVX512_FEATURES: verified_garbage_cpu::Features = 
 /// * `key` must be valid for reads and writes of 32 bytes.
 /// * `scratch` must be valid for reads and writes of 49152 bytes.
 /// * `dk` must have been written by `vg_mlkem1024_keygen` (so that it passes the checks of FIPS 203 §7.3).
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
+/// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `key` and `scratch` must not overlap each other, `dk` or `ct` (distinct Rust objects never do).
 /// * None of `dk`, `ct`, `key` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `avx512f`, `avx512vl` and `avx512bw` target features.
@@ -333,7 +333,7 @@ pub const VG_MLKEM1024_KEYGEN_AVX_FEATURES: verified_garbage_cpu::Features = ver
 /// * `dk` must be valid for reads and writes of 3168 bytes.
 /// * `scratch` must be valid for reads and writes of 49152 bytes.
 /// * `seed` must be random bytes from an approved RBG (FIPS 203 §3.3), or a seed so generated before.
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
+/// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `ek`, `dk` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
 /// * None of `seed`, `ek`, `dk` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` target feature.
@@ -369,7 +369,7 @@ pub const VG_MLKEM1024_ENCAPS_H_AVX_FEATURES: verified_garbage_cpu::Features = v
 /// * `ek` must have passed `vg_mlkem1024_check_ek` (FIPS 203 §7.2).
 /// * `h` must hold `H(ek)`, the SHA3-256 hash of the bytes of `*ek` (FIPS 203 §4.1).
 /// * `m` must be fresh random bytes from an approved RBG (FIPS 203 §3.3).
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
+/// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `key`, `ct` and `scratch` must not overlap each other, `ek`, `h` or `m` (distinct Rust objects never do).
 /// * None of `ek`, `h`, `m`, `key`, `ct` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` target feature.
@@ -403,7 +403,7 @@ pub const VG_MLKEM1024_ENCAPS_AVX_FEATURES: verified_garbage_cpu::Features = ver
 /// * `scratch` must be valid for reads and writes of 49152 bytes.
 /// * `ek` must have passed `vg_mlkem1024_check_ek` (FIPS 203 §7.2).
 /// * `m` must be fresh random bytes from an approved RBG (FIPS 203 §3.3).
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
+/// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `key`, `ct` and `scratch` must not overlap each other, `ek` or `m` (distinct Rust objects never do).
 /// * None of `ek`, `m`, `key`, `ct` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` target feature.
@@ -435,7 +435,7 @@ pub const VG_MLKEM1024_DECAPS_AVX_FEATURES: verified_garbage_cpu::Features = ver
 /// * `key` must be valid for reads and writes of 32 bytes.
 /// * `scratch` must be valid for reads and writes of 49152 bytes.
 /// * `dk` must have been written by `vg_mlkem1024_keygen` (so that it passes the checks of FIPS 203 §7.3).
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
+/// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `key` and `scratch` must not overlap each other, `dk` or `ct` (distinct Rust objects never do).
 /// * None of `dk`, `ct`, `key` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` target feature.
@@ -464,7 +464,7 @@ call {vg_zeroize_avx}
 /// * `dk` must be valid for reads and writes of 3168 bytes.
 /// * `scratch` must be valid for reads and writes of 49152 bytes.
 /// * `seed` must be random bytes from an approved RBG (FIPS 203 §3.3), or a seed so generated before.
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
+/// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `ek`, `dk` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
 /// * None of `seed`, `ek`, `dk` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
@@ -496,7 +496,7 @@ call {vg_zeroize}
 /// * `ek` must have passed `vg_mlkem1024_check_ek` (FIPS 203 §7.2).
 /// * `h` must hold `H(ek)`, the SHA3-256 hash of the bytes of `*ek` (FIPS 203 §4.1).
 /// * `m` must be fresh random bytes from an approved RBG (FIPS 203 §3.3).
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
+/// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `key`, `ct` and `scratch` must not overlap each other, `ek`, `h` or `m` (distinct Rust objects never do).
 /// * None of `ek`, `h`, `m`, `key`, `ct` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
@@ -526,7 +526,7 @@ call {vg_zeroize}
 /// * `scratch` must be valid for reads and writes of 49152 bytes.
 /// * `ek` must have passed `vg_mlkem1024_check_ek` (FIPS 203 §7.2).
 /// * `m` must be fresh random bytes from an approved RBG (FIPS 203 §3.3).
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
+/// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `key`, `ct` and `scratch` must not overlap each other, `ek` or `m` (distinct Rust objects never do).
 /// * None of `ek`, `m`, `key`, `ct` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
@@ -554,7 +554,7 @@ call {vg_zeroize}
 /// * `key` must be valid for reads and writes of 32 bytes.
 /// * `scratch` must be valid for reads and writes of 49152 bytes.
 /// * `dk` must have been written by `vg_mlkem1024_keygen` (so that it passes the checks of FIPS 203 §7.3).
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
+/// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `key` and `scratch` must not overlap each other, `dk` or `ct` (distinct Rust objects never do).
 /// * None of `dk`, `ct`, `key` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
