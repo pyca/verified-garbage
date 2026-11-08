@@ -12,7 +12,7 @@ public import VerifiedGarbage.Proof.Weierstrass.Law
 # ECDSA on PPC64LE: `[k]P` and `Z^(p-2)`
 
 `ladPow_ok`: `[k]P` for the point at two numbered slots (`qMul`: a call of
-`vg_<curve>_mul`, or the ladder inline), then `Z^(p-2)` by the power, and
+`vg_<curve>_mul`, or the ladder inline), then `Z^(p-2)` by its addition chain, and
 what they keep; `stage₂`: the same after the setup and the tables.
 -/
 
@@ -56,9 +56,8 @@ def GeneratorPost (c : Cfg) (base : Addr) (k : Nat) (P : Point c.C) (s t : State
 theorem ladPowWith_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) {s₀ : State} {base : Addr} {s : State}
     (S : Keep c s₀ base s) {k : Nat} {P : Point c.C} {generator : Prog isa}
     (hMul : WP isa generator s (GeneratorPost c base k P s))
-    (ht₁ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 1 + t)) = if (c.C.p - 2).testBit t then 1 else 0)
     {rest : Prog isa} {Q : State → Prop} (h : ∀ s', LadPost c s₀ base k P s s' → WP isa rest s' Q) :
-    WP isa (.seq generator (.seq (pow c.powP c.SP) rest)) s Q := by
+    WP isa (.seq generator (.seq c.invP rest)) s Q := by
   have h7 := hc.n10
   have hn := S.ws.nowrap
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
@@ -77,41 +76,39 @@ theorem ladPowWith_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) {s₀ : State} {base : Add
   have ly₅ : sv c base s₅ RY < c.C.p := L₅ _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))
   have lz₅ : sv c base s₅ RZ < c.C.p :=
     L₅ _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))
-  refine WP.seq (WP.mono (pow_ok (P := c.powP) (S := c.SP) (e := c.C.p - 2) hc.fpk hc.fpm (modP hc) rfl
-    (powLayP hc) hpR K₅'.ws lz₅ K₅'.fixed.onep
-    (fun t ht => by
-      show s₅.mem (off base (bitsAt c.n 1 + t)) = _
-      rw [tbl_unch U₅ h7 (j := 1) (by decide) ht (tA₅ (by decide) ht)]
-      exact ht₁ t ht)
-    (show c.C.p - 2 < 2 ^ (64 * c.n) by have := hc.p_lt; omega_arith)) fun s₆ ⟨K₆, U₆, lt₆, v₆⟩ => h s₆ ?_)
-  rw [powWxP_eq] at U₆
-  have K₆' : Keep c s₀ base s₆ := K₅'.step h7 K₆ (hU := U₆) (hW := fixedOk_powWx h7) (hWs := powWx_le h7)
-  have e₆ : ∀ {i}, i < 45 → i ∉ [ACC, PT] → sv c base s₆ i = sv c base s₅ i := fun hi hr =>
-    sv_unch U₆ h7 hn hi (apart_powWx h7 hi hr)
+  refine WP.seq (WP.mono (chainPow_ok (P := c.chainP) (S := c.SP) (e := c.C.p - 2) hc.fpk hc.fpm (modP hc)
+    (chainLayP hc) hpR K₅'.ws lz₅ hc.chainP) fun s₆ ⟨K₆, U₆, lt₆, v₆⟩ => h s₆ ?_)
+  rw [chainWP_eq] at U₆
+  have K₆' : Keep c s₀ base s₆ := K₅'.step h7 K₆ (hU := U₆) (hW := fixedOk_chainW h7) (hWs := chainW_le h7)
+  have e₆ : ∀ {i}, i < 45 → i ≠ ACC → (i < DX ∨ T2 < i) → sv c base s₆ i = sv c base s₅ i := fun hi hr ht =>
+    sv_unch U₆ h7 hn hi (apart_chainW h7 hi hr ht)
   have hF := sl_le c h7 (i := FLAG) (by decide)
   have apF₅ : ∀ w ∈ ladWp (ladderAt c GX GY) ++ genX c, c.sl FLAG + 8 ≤ w.1 ∨ w.1 + w.2 ≤ c.sl FLAG := fun w hw => by
     rcases apart_append (apart_ladWp h3 h7 (i := FLAG) (gx := GX) (gy := GY) (by decide) (by decide))
       (apart_genX h7 (i := FLAG) (by decide) (by decide)) w hw with h | h
     · exact Or.inl (by omega_arith)
     · exact Or.inr h
-  have apF₆ : ∀ w ∈ [(c.sl ACC, 8 * c.n), (c.sl PT, 8 * c.n), (own c.n, 64 * c.n)],
+  have apF₆ : ∀ w ∈ [(c.sl ACC, 8 * c.n), (c.sl DX, 9 * (8 * c.n)), (own c.n, 64 * c.n)],
       c.sl FLAG + 8 ≤ w.1 ∨ w.1 + w.2 ≤ c.sl FLAG := fun w hw => by
-    rcases apart_powWx h7 (i := FLAG) (by decide) (by decide) w hw with h | h
+    rcases apart_chainW h7 (i := FLAG) (by decide) (by decide) (by decide) w hw with h | h
     · exact Or.inl (by omega_arith)
     · exact Or.inr h
   have tR : ∀ i ∈ [RX, RY, RZ], tmv c.C c.n base s₆ (c.sl i) = tmv c.C c.n base s₅ (c.sl i) := by
     intro i hi
     show toM _ _ (sv c base s₆ i) = toM _ _ (sv c base s₅ i)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
-    rcases hi with rfl | rfl | rfl <;> rw [e₆ (by decide) (by decide)]
+    rcases hi with rfl | rfl | rfl <;> rw [e₆ (by decide) (by decide) (by decide)]
   refine ⟨K₆', fun hi hl => ?_, by rw [flagW, U₆.word apF₆ (by omega_arith), U₅.word apF₅ (by omega_arith), ← flagW], ?_,
     by rw [tR RX (by simp), tR RY (by simp), tR RZ (by simp)]; exact R₅,
-    by rw [e₆ (by decide) (by decide)]; exact lx₅,
-    by rw [e₆ (by decide) (by decide)]; exact ly₅,
-    by rw [e₆ (by decide) (by decide)]; exact lz₅, lt₆, ?_⟩
-  · rw [e₆ hi (nmem_of hl (by decide)), e₅ hi hl]
+    by rw [e₆ (by decide) (by decide) (by decide)]; exact lx₅,
+    by rw [e₆ (by decide) (by decide) (by decide)]; exact ly₅,
+    by rw [e₆ (by decide) (by decide) (by decide)]; exact lz₅, lt₆, ?_⟩
+  · rw [e₆ hi (by intro h; subst h; simp at hl) (by
+      simp only [List.mem_cons, ladIx, not_or] at hl
+      simp only [DX, T2, DY, DZ, TX, TY, TZ, T0, T1] at hl ⊢
+      omega), e₅ hi hl]
   · intro t ht
-    rw [tbl_unch U₆ h7 (j := 2) (by decide) ht (tbl_apart_powWx h7 2 t),
+    rw [tbl_unch U₆ h7 (j := 2) (by decide) ht (tbl_apart_chainW h7 2 t),
       tbl_unch U₅ h7 (j := 2) (by decide) ht (tA₅ (by decide) ht)]
   · rw [tR RZ (by simp)]; exact v₆
 
@@ -173,13 +170,12 @@ theorem ladPow_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) {gx gy : Nat} (
     (hkl : k < 2 ^ (8 * c.C.len)) (hrx : sv c base s RX = 0) (hry : sv c base s RY = c.mont 1)
     (hrz : sv c base s RZ = 0) (hk : c.mul.isSome → sv c base s K = k)
     (ht₀ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 0 + t)) = if k.testBit t then 1 else 0)
-    (ht₁ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 1 + t)) = if (c.C.p - 2).testBit t then 1 else 0)
     {P : Point c.C} (hP : onCurve c.C P = true)
     (hG : Rep c.C (tmv c.C c.n base s (c.sl gx)) (tmv c.C c.n base s (c.sl gy)) (tmv c.C c.n base s (c.sl ONEP)) P)
     (hlx : sv c base s gx < c.C.p) (hly : sv c base s gy < c.C.p)
     {rest : Prog isa} {Q : State → Prop} (h : ∀ s', LadPost c s₀ base k P s s' → WP isa rest s' Q) :
-    WP isa (.seq (c.qMul gx gy) (.seq (pow c.powP c.SP) rest)) s Q :=
-  ladPowWith_ok hc h3 S (qMulPost_ok hc h3 hC hgx hgy hgw hgw' S hkl hrx hry hrz hk ht₀ hP hG hlx hly) ht₁ h
+    WP isa (.seq (c.qMul gx gy) (.seq c.invP rest)) s Q :=
+  ladPowWith_ok hc h3 S (qMulPost_ok hc h3 hC hgx hgy hgw hgw' S hkl hrx hry hrz hk ht₀ hP hG hlx hly) h
 
 /-- `gen`: `R = [k]G`, by the call or the ladder, after the setup and the tables. -/
 theorem gen_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) {s₀ : State} {base : Addr} {F : BitVec 64}
@@ -205,9 +201,9 @@ theorem stage₂ (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) {gx gy : Nat} (h
     (hG : Rep c.C (tmv c.C c.n base s (c.sl gx)) (tmv c.C c.n base s (c.sl gy)) (tmv c.C c.n base s (c.sl ONEP)) P)
     (hlx : sv c base s gx < c.C.p) (hly : sv c base s gy < c.C.p)
     {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₂ c A s₀ base F P s' → WP isa rest s' Q) :
-    WP isa (.seq (c.qMul gx gy) (.seq (pow c.powP c.SP) rest)) s Q :=
+    WP isa (.seq (c.qMul gx gy) (.seq c.invP rest)) s Q :=
   ladPow_ok hc h3 hC hgx hgy hgw hgw' S.toKeep (Nat.lt_of_le_of_lt (Nat.shiftRight_le _ _) (ofBytes_bytesAt_lt _ _ _))
-    S.rx S.ry S.rz (fun _ => S.k) S.t₀ S.t₁ hP hG hlx hly fun s' L => h s'
+    S.rx S.ry S.rz (fun _ => S.k) S.t₀ hP hG hlx hly fun s' L => h s'
       ⟨L.toKeep, by rw [L.same (by decide) (by decide), S.k], by rw [L.same (by decide) (by decide), S.d],
         by rw [L.same (by decide) (by decide), S.e], by rw [L.flag, S.flag],
         fun t ht => by rw [L.t₂ t ht, S.t₂ t ht], L.rep, L.rx_lt, L.ry_lt, L.rz_lt, L.acc_lt, L.acc⟩
@@ -218,8 +214,8 @@ theorem stage₂With (hc : CfgOk c) (h3 : 3 ≤ c.n) {s₀ : State} {base : Addr
     (S : St₁ c A s₀ base F s) {P : Point c.C} {generator : Prog isa}
     (hMul : WP isa generator s (GeneratorPost c base (kv c A s₀) P s))
     {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₂ c A s₀ base F P s' → WP isa rest s' Q) :
-    WP isa (.seq generator (.seq (pow c.powP c.SP) rest)) s Q :=
-  ladPowWith_ok hc h3 S.toKeep hMul S.t₁ fun s' L => h s'
+    WP isa (.seq generator (.seq c.invP rest)) s Q :=
+  ladPowWith_ok hc h3 S.toKeep hMul fun s' L => h s'
       ⟨L.toKeep, by rw [L.same (by decide) (by decide), S.k], by rw [L.same (by decide) (by decide), S.d],
         by rw [L.same (by decide) (by decide), S.e], by rw [L.flag, S.flag],
         fun t ht => by rw [L.t₂ t ht, S.t₂ t ht], L.rep, L.rx_lt, L.ry_lt, L.rz_lt, L.acc_lt, L.acc⟩

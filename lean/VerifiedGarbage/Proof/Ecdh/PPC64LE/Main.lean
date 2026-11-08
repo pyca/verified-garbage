@@ -304,7 +304,7 @@ theorem exchangeWith_eq' (c : Cfg) (mul : Prog isa) : Impl.Ecdh.PPC64LE.Cfg.exch
       (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
       (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n))
       (.seq (.block (Impl.Ecdh.PPC64LE.Cfg.peerAt c .r12)) (.seq (Impl.Ecdh.PPC64LE.Cfg.validate c)
-      (.seq mul (.seq (pow c.powP c.SP) (Impl.Ecdh.PPC64LE.Cfg.middle c)))))))) :=
+      (.seq mul (.seq c.invP (Impl.Ecdh.PPC64LE.Cfg.middle c)))))))) :=
   rfl
 
 /-- What a multiplication `[d]P`, followed by the power `Z^(p-2)`, may assume
@@ -321,14 +321,14 @@ def MulPowOk (c : Cfg) (s₀ : State) (mul : Prog isa) : Prop :=
     Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY)) (tmv c.C c.n base s (c.sl ONEP)) P →
     sv c base s PX < c.C.p → sv c base s PY < c.C.p →
     ∀ {rest : Prog isa} {Q : State → Prop}, (∀ s', LadPost c s₀ base (dk c s₀) P s s' → WP isa rest s' Q) →
-      WP isa (.seq mul (.seq (pow c.powP c.SP) rest)) s Q
+      WP isa (.seq mul (.seq c.invP rest)) s Q
 
 /-- The ladder (`qMul`) meets `MulPowOk`. -/
 theorem qMul_mulPowOk (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) (s₀ : State) :
     MulPowOk c s₀ (c.qMul PX PY) := by
-  intro base s K hrx hry hrz hk ht₀ ht₁ _ P hP hG hlx hly rest Q h
+  intro base s K hrx hry hrz hk ht₀ _ _ P hP hG hlx hly rest Q h
   exact ladPow_ok hc h3 hC (gx := PX) (gy := PY) (by decide) (by decide) (by decide) (by decide) K
-    (ofBytes_bytesAt_lt _ _ _) hrx hry hrz (fun _ => hk) ht₀ ht₁ hP hG hlx hly h
+    (ofBytes_bytesAt_lt _ _ _) hrx hry hrz (fun _ => hk) ht₀ hP hG hlx hly h
 
 /-- `vg_ecdh_<curve>`, with `[d]P` by any `mul` that meets `MulPowOk`,
 computes the specification's shared secret and restores the callee-saved
