@@ -16,7 +16,7 @@ mod tests {
     use verified_garbage_cpu::detect::{NAMES, allowed, runtime};
     #[cfg(feature = "cpu-features-env")]
     use verified_garbage_cpu::detect::{allowed_by, named_by, parse};
-    use verified_garbage_cpu::{COMPILED, Features, detected, feature, has, has_some, requested};
+    use verified_garbage_cpu::{COMPILED, Features, detected, feature, requested, target_contains};
 
     /// Each name's bit is its index in `NAMES`, and no name is there twice.
     #[test]
@@ -169,7 +169,7 @@ mod tests {
     }
 
     /// The features of `aarch64-apple-darwin`'s baseline (Apple's M1),
-    /// which `has` answers for without detecting.
+    /// which `target_contains` answers for without detecting.
     #[cfg(all(
         not(feature = "cpu-features-env"),
         target_arch = "aarch64",
@@ -181,21 +181,19 @@ mod tests {
         assert!(COMPILED.contains(Features(m1)));
     }
 
-    /// `has` and `has_some` answer as detection does, the former for each
-    /// feature and every set of them.
+    /// `target_contains` holds only where detection reports the same
+    /// features, and with `cpu-features-env` never but for the empty set.
     #[test]
-    fn has_is_detected() {
-        assert!(has(Features(0)));
+    fn target_contains_is_detected() {
+        assert!(target_contains(Features(0)));
         for (name, bit) in NAMES {
-            assert_eq!(
-                has(Features(bit)),
-                detected().contains(Features(bit)),
-                "{name}"
-            );
+            let f = Features(bit);
+            assert_eq!(target_contains(f), COMPILED.contains(f), "{name}");
+            assert!(!target_contains(f) || detected().contains(f), "{name}");
+            #[cfg(feature = "cpu-features-env")]
+            assert!(!target_contains(f), "{name}");
         }
-        assert!(has(detected()));
-        assert_eq!(has(Features(u32::MAX)), detected() == Features(u32::MAX));
-        assert_eq!(has_some(), detected() != Features(0));
+        assert!(target_contains(COMPILED));
     }
 
     /// `requested` says whether `VG_CPU_FEATURES` names every feature of a

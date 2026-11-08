@@ -1,7 +1,7 @@
 //! The CPU features `verified-garbage` chooses among implementations by:
-//! each feature's bit, sets of them, and their detection (`detected`, and
-//! `has`, which needs none for the features the compilation target enables,
-//! `COMPILED`). A crate of its own so that the generated code's `_FEATURES`
+//! each feature's bit, sets of them, and their detection (`detected`), and
+//! the features that need none, which the compilation target enables
+//! (`COMPILED`, `target_contains`). A crate of its own so that the generated code's `_FEATURES`
 //! constants and dispatchers, and the library (`src/cpu.rs`), name the same
 //! type and ask the same detection.
 
@@ -11,12 +11,12 @@
 extern crate std;
 
 // Public for the library's tests of it (`src/cpu.rs`), which CI runs with
-// the library's: only `COMPILED`, `detected`, `has`, `has_some` and
-// `requested` are this crate's interface.
+// the library's: only `COMPILED`, `detected`, `requested` and
+// `target_contains` are this crate's interface.
 #[doc(hidden)]
 pub mod detect;
 
-pub use detect::{COMPILED, detected, has, has_some, requested};
+pub use detect::{COMPILED, detected, requested, target_contains};
 
 /// The bit of each feature detection knows in a [`Features`], by its Rust
 /// `target_feature` name in uppercase: what the generated `_FEATURES`
