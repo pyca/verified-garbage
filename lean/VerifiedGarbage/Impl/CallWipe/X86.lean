@@ -14,7 +14,11 @@ address is in slot `j` by calling the zeroize function `zname`, whose code is
 Its frame of `frameSize m` bytes holds, at `esp`, the arguments of each
 call: first a copy of the caller's, then the buffer's address and `n`; and,
 above them, `name`'s result across the second call. It reads the buffer's
-address again from the caller's arguments, which `name` cannot write.
+address again from the caller's arguments, which `name` cannot write. The
+frame is padded so that each callee is entered with `esp` as aligned as the
+caller was: the System V i386 ABI enters a function with `esp + 4` a
+multiple of 16, so the frame and the return address of a call take a
+multiple of 16 bytes.
 -/
 
 @[expose] public section
@@ -27,8 +31,10 @@ open VG.X86
 zeroize function's two. -/
 def argWords (m : Nat) : Nat := max m 2
 
-/-- The frame: the argument slots and the two words of the result. -/
-def frameSize (m : Nat) : Nat := 4 * argWords m + 8
+/-- The frame: the argument slots and the two words of the result, padded
+so that it and a return address take a multiple of 16 bytes (`esp` keeps
+its alignment at each call). -/
+def frameSize (m : Nat) : Nat := (4 * argWords m + 8 + 4 + 15) / 16 * 16 - 4
 
 /-- `mov eax, [esp + bytes + 4 + 4k]; mov [esp + 4k], eax`: copy argument
 slot `k` from the caller's frame into this one. -/
