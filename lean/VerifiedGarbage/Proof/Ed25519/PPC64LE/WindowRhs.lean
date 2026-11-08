@@ -51,7 +51,7 @@ namespace VG.Proof.Ed25519.PPC64LE
 ## The windows' field programs on PPC64LE
 
 As on RISC-V (`Proof/Ed25519/RISCV64/WindowRhs.lean`): the doubling's
-program is `dblPoint` (`dblOps_eval`), the cached addition's is the
+program is `dblPoint` but `T` (`dblOpsXYZ_eval`, `dblOpsXYZ_ET`), the cached addition's is the
 specification's `pointAdd` of the point and the one cached (`ring`), and
 `cacheOps` is `cache` of the point saved in slots 17–20. Each keeps the
 slots it does not write: the doubling and the addition slots 16 and up, and
@@ -62,8 +62,6 @@ section
 
 open VG VG.Impl.Ed25519.PPC64LE
 open Fin.CommRing
-
-theorem dblOps_eval (e : Env) : point (evalOps dblOps e) 0 1 2 3 = dblPoint (point e 0 1 2 3) := rfl
 
 /-- Slots `ops` does not write keep their elements. -/
 theorem evalOps_keep (ops : List FieldOp) (e : Env) (i : Slot)
@@ -77,13 +75,6 @@ theorem evalOps_keep (ops : List FieldOp) (e : Env) (i : Slot)
     rw [ih _ fun op' h' => h op' (List.mem_cons_of_mem _ h')]
     have hop := h op List.mem_cons_self
     cases op <;> simp only [evalOp] at hop ⊢ <;> exact Function.update_of_ne (Ne.symm hop) _ _
-
-theorem dblOps_keep (e : Env) (i : Slot) (hi : 4 ≤ i.val ∧ i.val < 8 ∨ 15 ≤ i.val) :
-    evalOps dblOps e i = e i :=
-  evalOps_keep _ e i fun op hop => by
-    simp only [dblOps, List.mem_cons, List.not_mem_nil, or_false] at hop
-    rcases hop with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-      exact fun h => by subst h; revert hi; decide
 
 def addCachedResult (e : Env) : Spec.Ed25519.Point :=
   let a := (e 1 - e 0) * e 4
@@ -517,27 +508,104 @@ theorem dblOpsXYZ_keep (e : Env) (i : Slot) (hi : 4 ≤ i.val ∧ i.val < 8 ∨ 
 /-- A doubling reads only `X`, `Y` and `Z`. -/
 theorem dblPoint_T (p : Spec.Ed25519.Point) (t : Spec.X25519.Fe) : dblPoint { p with T := t } = dblPoint p := rfl
 
-/-- A doubling without `T` after one: the same `X`, `Y` and `Z` as two doublings. -/
-theorem dblOpsXYZ_dblOpsXYZ (e : Env) : point (evalOps dblOpsXYZ (evalOps dblOpsXYZ e)) 0 1 2 3 =
-    { dblPoint (dblPoint (point e 0 1 2 3)) with T := e 3 } := by
-  rw [dblOpsXYZ_eval, dblOpsXYZ_eval, dblPoint_T]
-  rfl
+theorem eval_nz_ofNat (s : State) (r : Reg) {k : Nat} (hk : k < 2 ^ 64)
+    (h : s.gpr r = BitVec.ofNat 64 k) : isa.eval (.nonzero .d r) s = some (decide (k ≠ 0)) := by
+  rw [eval_nonzero, h, ofNat_ne_zero hk]
 
-theorem dbl4_eval (e : Env) : point (evalOps (dblOpsXYZ ++ dblOpsXYZ ++ dblOpsXYZ ++ dblOps) e) 0 1 2 3 =
-    dblPoint (dblPoint (dblPoint (dblPoint (point e 0 1 2 3)))) := by
-  rw [evalOps_append, evalOps_append, evalOps_append, dblOps_eval, dblOpsXYZ_eval, dblPoint_T,
-    dblOpsXYZ_dblOpsXYZ]
-  rfl
+/-- `n` doublings. -/
+def dblN (p : Spec.Ed25519.Point) : Nat → Spec.Ed25519.Point
+  | 0 => p
+  | n + 1 => dblPoint (dblN p n)
 
-theorem dbl4_keep (e : Env) : evalOps (dblOpsXYZ ++ dblOpsXYZ ++ dblOpsXYZ ++ dblOps) e 16 = e 16 := by
-  rw [evalOps_append, evalOps_append, evalOps_append, dblOps_keep _ 16 (by decide),
-    dblOpsXYZ_keep _ 16 (by decide), dblOpsXYZ_keep _ 16 (by decide), dblOpsXYZ_keep _ 16 (by decide)]
+/-- After `dblOpsXYZ`, slots 11 and 14 hold the double's `E` and `H`, whose product is its `T`. -/
+theorem dblOpsXYZ_ET (e : Env) :
+    evalOps dblOpsXYZ e 11 * evalOps dblOpsXYZ e 14 = (dblPoint (point e 0 1 2 3)).T := rfl
+
+/-- `T = EH`: the point whose `X`, `Y` and `Z` slots 0–2 hold and whose `T` is `EH`. -/
+theorem mulT_eval (e : Env) {q : Spec.Ed25519.Point} {t : Spec.X25519.Fe}
+    (hq : point e 0 1 2 3 = { q with T := t }) (hT : e 11 * e 14 = q.T) :
+    point (evalOps [.mul 3 11 14] e) 0 1 2 3 = q := by
+  have hx : e 0 = q.X := congrArg Spec.Ed25519.Point.X hq
+  have hy : e 1 = q.Y := congrArg Spec.Ed25519.Point.Y hq
+  have hz : e 2 = q.Z := congrArg Spec.Ed25519.Point.Z hq
+  show (⟨e 0, e 1, e 2, e 11 * e 14⟩ : Spec.Ed25519.Point) = q
+  rw [hx, hy, hz, hT]
+
+section
+variable {b : Addr}
+
+/-- After `4 - n` of the loop's doublings from `p`, with `n` left (`r26`). -/
+structure DblInv (b : Addr) (s0 : State) (p : Spec.Ed25519.Point) (n : Nat) (t : State) : Prop where
+  lo : 1 ≤ n
+  hi : n ≤ 4
+  ctx : Ctx8 b t
+  r26 : t.gpr .r26 = BitVec.ofNat 64 n
+  rest : Rest (.r26 :: fclob) s0 t
+  frame : Frame [FA b] s0.mem t.mem
+  d : env t.mem b 16 = env s0.mem b 16
+  pt : ∃ T, point (env t.mem b) 0 1 2 3 = { dblN p (4 - n) with T := T }
+  et : n < 4 → env t.mem b 11 * env t.mem b 14 = (dblN p (4 - n)).T
+
+/-- After the loop: four doublings but `T`, and `EH`. -/
+structure DblPost (b : Addr) (s0 : State) (p : Spec.Ed25519.Point) (t : State) : Prop where
+  ctx : Ctx8 b t
+  rest : Rest (.r26 :: fclob) s0 t
+  frame : Frame [FA b] s0.mem t.mem
+  d : env t.mem b 16 = env s0.mem b 16
+  pt : ∃ T, point (env t.mem b) 0 1 2 3 = { dblN p 4 with T := T }
+  et : env t.mem b 11 * env t.mem b 14 = (dblN p 4).T
+
+theorem dblLoop_ok {s0 : State} {p : Spec.Ed25519.Point} {n : Nat} {t : State} (h : DblInv b s0 p n t) :
+    WP isa (.loop dblBody (.nonzero .d .r26)) t (DblPost b s0 p) := by
+  refine WP.loop (M := isa) (DblInv b s0 p) (fun n t h => ?_) n t h
+  unfold dblBody
+  refine WP.seq (WP.mono (fieldCode_ok _ h.ctx.ctx) fun v ⟨kv, ev⟩ => ?_)
+  refine wp_subi (imm := 1) (by decide) (by decide) fun u uu => WP.block_nil ?_
+  obtain ⟨T, pt⟩ := h.pt
+  have hn := h.lo
+  have hn4 := h.hi
+  have hk : 4 - (n - 1) = 4 - n + 1 := by omega
+  have pv : point (env u.mem b) 0 1 2 3 = { dblN p (4 - (n - 1)) with T := env t.mem b 3 } := by
+    rw [uu.mem, ev, dblOpsXYZ_eval, pt, dblPoint_T, hk]; rfl
+  have ev' : env u.mem b 11 * env u.mem b 14 = (dblN p (4 - (n - 1))).T := by
+    rw [uu.mem, ev, dblOpsXYZ_ET, pt, dblPoint_T, hk]; rfl
+  have e26 : u.gpr .r26 = BitVec.ofNat 64 (n - 1) := by
+    rw [uu.gpr, kv.rest.gpr _ (by decide), h.r26, ofNat_sub_one hn (by omega)]
+  have hcu : Ctx8 b u := (h.ctx.of_keep kv).of_rest (uu.rest (ws := [.r26]) (by decide)) (by decide)
+  have ru : Rest (.r26 :: fclob) s0 u := h.rest.trans ((kv.rest.mono (by decide)).trans (uu.rest (by decide)))
+  have fu : Frame [FA b] s0.mem u.mem := by rw [uu.mem]; exact h.frame.trans kv.frame
+  have du : env u.mem b 16 = env s0.mem b 16 := by
+    rw [uu.mem, ev, dblOpsXYZ_keep _ 16 (by decide), h.d]
+  rw [eval_nz_ofNat u .r26 (by omega) e26]
+  by_cases h1 : n = 1
+  · subst h1
+    exact .inl ⟨by simp, hcu, ru, fu, du, ⟨_, pv⟩, ev'⟩
+  · exact .inr ⟨by rw [decide_eq_true (by omega : n - 1 ≠ 0)], n - 1, by omega, by omega, by omega, hcu, e26, ru, fu, du, ⟨_, pv⟩,
+      fun _ => ev'⟩
+
+/-- **Four doublings**, by the loop and `T = EH`. -/
+theorem dbl4_ok {s : State} (hc : Ctx8 b s) :
+    WP isa dbl4 s fun t => Rest (.r26 :: fclob) s t ∧ Frame [FA b] s.mem t.mem ∧
+      point (env t.mem b) 0 1 2 3 = dblN (point (env s.mem b) 0 1 2 3) 4 ∧ env t.mem b 16 = env s.mem b 16 := by
+  unfold dbl4
+  refine WP.seq (wp_li (by decide) fun s1 u1 => WP.block_nil ?_)
+  have hc1 : Ctx8 b s1 := hc.of_rest (u1.rest (ws := [.r26]) (by decide)) (by decide)
+  refine WP.seq (WP.mono (dblLoop_ok (s0 := s) (p := point (env s.mem b) 0 1 2 3) (n := 4)
+    ⟨by decide, le_rfl, hc1, u1.gpr, u1.rest (by decide), by rw [u1.mem]; exact Frame.refl _ _, by rw [u1.mem],
+      ⟨(point (env s.mem b) 0 1 2 3).T, by rw [u1.mem]; rfl⟩, fun h => absurd h (by decide)⟩) fun v hv => ?_)
+  obtain ⟨T, pt⟩ := hv.pt
+  refine WP.mono (fieldCode_ok _ hv.ctx.ctx) fun t ⟨kt, et⟩ =>
+    ⟨hv.rest.trans (kt.rest.mono (by decide)), hv.frame.trans kt.frame, ?_, ?_⟩
+  · rw [et, mulT_eval _ pt hv.et]
+  · rw [et, show evalOps [.mul 3 11 14] (env v.mem b) 16 = env v.mem b 16 from rfl, hv.d]
+
+end
 
 theorem rep_repP {p : Spec.Ed25519.Point} {a : EPoint dZ} (h : Rep p a) : RepP p a := ⟨h.z, h.x, h.y⟩
 
 /-- Four doublings: `16 • a`. -/
 theorem dbl4_rep {p : Spec.Ed25519.Point} {a : EPoint dZ} (h : RepP p a) :
-    Rep (dblPoint (dblPoint (dblPoint (dblPoint p)))) ((16 : Nat) • a) := by
+    Rep (dblN p 4) ((16 : Nat) • a) := by
   have h1 := Proof.Ed25519.dblPoint_rep h
   rw [← two_nsmul] at h1
   have h2 := Proof.Ed25519.dblPoint_rep (rep_repP h1)
@@ -554,10 +622,6 @@ theorem sub1_fact : ∀ dg < 16, dg ≠ 0 → BitVec.ofNat 64 dg - BitVec.ofNat 
 theorem sub1_shl_fact : ∀ dg < 16, dg ≠ 0 →
     (BitVec.ofNat 64 dg - BitVec.ofNat 64 1) <<< 7 = BitVec.ofNat 64 (128 * (dg - 1)) := by
   decide
-
-theorem eval_nz_ofNat (s : State) (r : Reg) {k : Nat} (hk : k < 2 ^ 64)
-    (h : s.gpr r = BitVec.ofNat 64 k) : isa.eval (.nonzero .d r) s = some (decide (k ≠ 0)) := by
-  rw [eval_nonzero, h, ofNat_ne_zero hk]
 
 theorem lsr6_fact : ∀ c < 128, (BitVec.ofNat 64 c >>> 6 == 0) = decide (c < 64) := by
   decide
@@ -762,20 +826,20 @@ theorem windowStep_ok {s : State} (h : WCtx b pk sig ch T A K S s) (hd : env s.m
     WP isa windowStep s fun t => WCtx b pk sig ch T A K S t ∧ env t.mem b 16 = Spec.Ed25519.d ∧
       t.gpr .r15 = BitVec.ofNat 64 c ∧
       Rep (point (env t.mem b) 0 1 2 3) ((K / 16 ^ c) • Aa + (S / 16 ^ c) • (-baseAff)) ∧
-      Rest (.r14 :: .r15 :: .r16 :: fclob) s t ∧ Frame [FA b] s.mem t.mem := by
+      Rest (.r14 :: .r15 :: .r16 :: .r26 :: fclob) s t ∧ Frame [FA b] s.mem t.mem := by
   unfold windowStep
   refine WP.seq (wp_subi (imm := 1) (by decide) (by decide) fun s1 u1 => WP.block_nil ?_)
   have e1 : s1.gpr .r15 = BitVec.ofNat 64 c := by
     rw [u1.gpr, h1, BitVec.ofNat_add]; exact BitVec.add_sub_cancel _ _
   have r1 : Rest [.r15] s s1 := u1.rest (by decide)
   have h1' : WCtx b pk sig ch T A K S s1 := h.of r1 (by decide) (by decide) (by rw [u1.mem]; exact Frame.refl _ _)
-  refine WP.seq (WP.mono (fieldCode_ok _ h1'.vc.ctx.ctx) fun s2 ⟨k2, e2⟩ => ?_)
-  have h2 : WCtx b pk sig ch T A K S s2 := h1'.of k2.rest (by decide) (by decide) k2.frame
+  refine WP.seq (WP.mono (dbl4_ok h1'.vc.ctx) fun s2 ⟨k2, f2, e2, e16⟩ => ?_)
+  have h2 : WCtx b pk sig ch T A K S s2 := h1'.of k2 (by decide) (by decide) f2
   have p2 : Rep (point (env s2.mem b) 0 1 2 3)
       ((16 : Nat) • ((K / 16 ^ (c + 1)) • Aa + (S / 16 ^ (c + 1)) • (-baseAff))) := by
-    rw [e2, dbl4_eval, u1.mem]; exact dbl4_rep hv
-  have d2 : env s2.mem b 16 = Spec.Ed25519.d := by rw [e2, dbl4_keep, u1.mem, hd]
-  have e21 : s2.gpr .r15 = BitVec.ofNat 64 c := by rw [k2.rest.gpr _ (by decide), e1]
+    rw [e2, u1.mem]; exact dbl4_rep hv
+  have d2 : env s2.mem b 16 = Spec.Ed25519.d := by rw [e16, u1.mem, hd]
+  have e21 : s2.gpr .r15 = BitVec.ofNat 64 c := by rw [k2.gpr _ (by decide), e1]
   refine WP.seq (WP.mono (digitK_ok h2 hc e21) fun s3 ⟨r3, m3, e3⟩ => ?_)
   have h3 : WCtx b pk sig ch T A K S s3 := h2.of r3 (by decide) (by decide) (by rw [m3]; exact Frame.refl _ _)
   have p3 : Rep (point (env s3.mem b) 0 1 2 3)
@@ -787,23 +851,23 @@ theorem windowStep_ok {s : State} (h : WCtx b pk sig ch T A K S s) (hd : env s.m
   refine WP.mono (windowB_ok h4 hc e41 hS p4) fun t ⟨rt, ft, pt, dt⟩ =>
     ⟨h4.of rt (by decide) (by decide) ft, by rw [dt, d4, m3, d2], by rw [rt.gpr _ (by decide), e41], ?_, ?_, ?_⟩
   · rw [← Proof.Ed25519.nibble_step Aa (-baseAff) K S c]; exact pt
-  · exact (r1.mono (by decide)).trans ((k2.rest.mono (by decide)).trans ((r3.mono (by decide)).trans
+  · exact (r1.mono (by decide)).trans ((k2.mono (by decide)).trans ((r3.mono (by decide)).trans
       ((r4.mono (by decide)).trans (rt.mono (by decide)))))
   · rw [← u1.mem]
-    exact k2.frame.trans ((by rw [← m3]; exact f4 : Frame [FA b] s2.mem s4.mem).trans ft)
+    exact f2.trans ((by rw [← m3]; exact f4 : Frame [FA b] s2.mem s4.mem).trans ft)
 
 /-- **The windows**, from `W` left: `[K]A - [S]B` in slots 0–3. -/
 theorem windows_ok {W : Nat} (hW1 : 1 ≤ W) (hW : W ≤ 128) {s : State} (h : WCtx b pk sig ch T A K S s)
     (hd : env s.mem b 16 = Spec.Ed25519.d) {Aa : EPoint dZ} (hA : Rep A Aa) (hS : S < 256 ^ 32)
     (h1 : s.gpr .r15 = BitVec.ofNat 64 W)
     (hv : RepP (point (env s.mem b) 0 1 2 3) ((K / 16 ^ W) • Aa + (S / 16 ^ W) • (-baseAff))) :
-    WP isa windows s fun t => WCtx b pk sig ch T A K S t ∧ Rest (.r14 :: .r15 :: .r16 :: fclob) s t ∧
+    WP isa windows s fun t => WCtx b pk sig ch T A K S t ∧ Rest (.r14 :: .r15 :: .r16 :: .r26 :: fclob) s t ∧
       Frame [FA b] s.mem t.mem ∧ Rep (point (env t.mem b) 0 1 2 3) (K • Aa + S • (-baseAff)) := by
   unfold windows
   refine WP.loop (M := isa) (fun n t => 1 ≤ n ∧ n ≤ 128 ∧ WCtx b pk sig ch T A K S t ∧
       env t.mem b 16 = Spec.Ed25519.d ∧ t.gpr .r15 = BitVec.ofNat 64 n ∧
       RepP (point (env t.mem b) 0 1 2 3) ((K / 16 ^ n) • Aa + (S / 16 ^ n) • (-baseAff)) ∧
-      Rest (.r14 :: .r15 :: .r16 :: fclob) s t ∧ Frame [FA b] s.mem t.mem) ?_ W s
+      Rest (.r14 :: .r15 :: .r16 :: .r26 :: fclob) s t ∧ Frame [FA b] s.mem t.mem) ?_ W s
     ⟨hW1, hW, h, hd, h1, hv, Rest.refl _ _, Frame.refl _ _⟩
   rintro n t ⟨hn1, hn, ht, dt, et, vt, rt, ft⟩
   obtain ⟨c, rfl⟩ : ∃ c, n = c + 1 := ⟨n - 1, by omega⟩

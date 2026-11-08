@@ -226,9 +226,9 @@ theorem windowStep_ct {Aa : EPoint dZ} (hA : Rep A Aa) {c : Nat} (hc : c < 128) 
   refine ct_seq (B := WM b sp pk sig ch T A K S c ((16 : Nat) • v1))
     (ctRegs [.r6, .r15, .r19, .r30, .r31] (fun _ _ h₁ h₂ =>
       wregs h₁.1 h₂.1 h₁.2.1 h₂.2.1 h₁.2.2.2.1 h₂.2.2.2.1) (by taint_decide))
-    (fun s h => WP.mono (fieldCode_ok _ h.1.vc.ctx.ctx) fun t ⟨k, e⟩ =>
-      ⟨h.1.of k.rest (by decide) (by decide) k.frame, by rw [k.rest.sp, h.2.1], by rw [e, dbl4_keep, h.2.2.1],
-        by rw [k.rest.gpr _ (by decide), h.2.2.2.1], by rw [e, dbl4_eval]; exact dbl4_rep h.2.2.2.2⟩) ?_
+    (fun s h => WP.mono (dbl4_ok h.1.vc.ctx) fun t ⟨k, f, e, e16⟩ =>
+      ⟨h.1.of k (by decide) (by decide) f, by rw [k.sp, h.2.1], by rw [e16, h.2.2.1],
+        by rw [k.gpr _ (by decide), h.2.2.2.1], by rw [e]; exact dbl4_rep h.2.2.2.2⟩) ?_
   refine ct_seq (B := WD b sp pk sig ch T A K S c ((16 : Nat) • v1) (K / 16 ^ c % 16))
     (ctRegs [.r6, .r15, .r19, .r30, .r31] (fun _ _ h₁ h₂ => h₁.regs h₂) (by taint_decide))
     (fun s h => WP.mono (digitK_ok h.1 hc h.2.2.2.1) fun t ⟨rt, mt, et⟩ =>

@@ -8,7 +8,7 @@ public import VerifiedGarbage.Impl.Ed25519.PPC64LE.PointMul
 
 As on RISC-V (`Impl/Ed25519/RISCV64/VerifyWindow.lean`): verification may
 leak its inputs, so its scalars `S` and `k` are public. It computes
-`[k]A - [S]B` with one chain of doublings (`dblOps`), four per 4-bit window
+`[k]A - [S]B` with one chain of doublings (`dbl4`), four per 4-bit window
 of the scalars, from the top: each window adds `[a]A` for `k`'s digit `a`
 from a table of the cached `[1]A … [15]A` built at run time (byte `TA`), and
 `-[b]B` for `S`'s digit `b`, in the low 64 windows, from the static `bSym`'s
@@ -17,8 +17,8 @@ nothing. The digits are read from the scalars' bytes as the windows need
 them (`nibble`). The windows are 64 when the challenge is below `2^256`
 (always, from `vg_ed25519_verify`), 128 otherwise. The window counter is
 `r15`, the table index `r16`, the static's address `r19` and the digit
-`r9`; the counters and the address are nonvolatile, which the field code
-never writes.
+`r9`, and the doublings' counter `r26`; the counters and the address are
+nonvolatile, which the field code never writes.
 -/
 
 @[expose] public section
@@ -30,15 +30,11 @@ open VG.PPC64LE
 /-- The table of the cached `[1]A … [15]A`. -/
 def TA : Nat := 1632
 
-/-- Doubles slots 0–3 in place with `dbl-2008-hwcd` (for `a = -1`): `A = X²`, `B = Y²`,
-`C = 2Z²`, `E = 2XY`, `G = B - A`, `F = C - G`, `H = A + B`, and `X = EF`, `Y = GH`,
-`Z = FG`, `T = EH`, which are those of the double negated. -/
-def dblOps : List FieldOp :=
-  [.mul 8 0 0, .mul 9 1 1, .mul 10 2 2, .add 10 10 10, .mul 11 0 1, .add 11 11 11,
-    .sub 12 9 8, .sub 13 10 12, .add 14 8 9, .mul 0 11 13, .mul 1 12 14, .mul 2 13 12, .mul 3 11 14]
-
-/-- `dblOps` without `T = EH`: doubling reads only `X`, `Y` and `Z`, so a
-doubling another doubling follows need not compute `T`. -/
+/-- Doubles slots 0–3 in place with `dbl-2008-hwcd` (for `a = -1`), but `T`: `A = X²`,
+`B = Y²`, `C = 2Z²`, `E = 2XY`, `G = B - A`, `F = C - G`, `H = A + B`, and `X = EF`,
+`Y = GH`, `Z = FG`, which are those of the double negated. Doubling reads only `X`, `Y` and
+`Z`, so a doubling another doubling follows need not compute `T = EH`; `E` and `H` are left
+in slots 11 and 14 for the last. -/
 def dblOpsXYZ : List FieldOp :=
   [.mul 8 0 0, .mul 9 1 1, .mul 10 2 2, .add 10 10 10, .mul 11 0 1, .add 11 11 11,
     .sub 12 9 8, .sub 13 10 12, .add 14 8 9, .mul 0 11 13, .mul 1 12 14, .mul 2 13 12]
@@ -120,11 +116,18 @@ def windowB : Prog isa :=
   .seq (.block [.lsr .d .r7 .r15 6])
     (.ite (.zero .d .r7) (.seq (.block (nibble .r30 32)) addB) (.block []))
 
+/-- One doubling without `T`, and the doublings' counter `r26` down. -/
+def dblBody : Prog isa := .seq (fieldCode dblOpsXYZ) (.block [.subi .r26 .r26 1])
+
+/-- Four doublings: four without `T` in a loop, so that the window's loop stays within the
+reach of a conditional branch (±32 KiB), then `T = EH` of the last, whose `E` and `H` are still
+in slots 11 and 14. -/
+def dbl4 : Prog isa :=
+  .seq (.block [.li .r26 4]) (.seq (.loop dblBody (.nonzero .d .r26)) (fieldCode [.mul 3 11 14]))
+
 /-- One window: the counter down, four doublings, `k`'s digit, then `S`'s. -/
 def windowStep : Prog isa :=
-  .seq (.block [.subi .r15 .r15 1])
-    (.seq (fieldCode (dblOpsXYZ ++ dblOpsXYZ ++ dblOpsXYZ ++ dblOps))
-      (.seq (.block (nibble .r31 0)) (.seq addA windowB)))
+  .seq (.block [.subi .r15 .r15 1]) (.seq dbl4 (.seq (.block (nibble .r31 0)) (.seq addA windowB)))
 
 /-- Before the windows, for `A` in slots 0–3: `d`, the table of `A`, the static's address and
 the identity. -/
