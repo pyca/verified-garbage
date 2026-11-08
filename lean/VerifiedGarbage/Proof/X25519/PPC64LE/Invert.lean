@@ -107,7 +107,8 @@ theorem invStep_ok {sI : State} {a : BitVec 64} {v : Nat → Fe} {n : Nat} (hn :
       hcur.stp.trans (Stp.of_rest (u1.rest (ws := [.r12]) (by decide)) (by decide) u1.mem),
       by rw [u1.other _ (by decide), hcur.r0], ?_, by rw [u1.mem]; exact hcur.slots⟩
     rw [u1.gpr, hcur.r12, ofNat_sub_one hn (by omega_using [hn'])]
-  refine WP.seq (WP.mono (opMul (o := R) (x := R) (y := R) (by decide) (by decide) (by decide) (by decide) h1)
+  refine WP.seq (WP.mono (opMul (o := R) (x := R) (y := R) (by decide) (by decide) (by decide) (by decide) (by decide)
+    h1)
     fun s2 h2 => ?_)
   -- After the square.
   have hsq : ∀ q ∈ IQ, upd (invV v n) R (invV v n R * invV v n R) q =
@@ -133,7 +134,8 @@ theorem invStep_ok {sI : State} {a : BitVec 64} {v : Nat → Fe} {n : Nat} (hn :
       · subst hq; rw [upd_self, invV, upd_self, he, hb, iteT (.inr h2), Nat.add_zero]
       · rw [upd_of_ne _ _ hq, invV, upd_of_ne _ _ hq]
     · have h2 : n - 1 ≠ 2 := by simpa using hf
-      refine WP.mono (opMul (o := R) (x := R) (y := Z2) (by decide) (by decide) (by decide) (by decide) h4')
+      refine WP.mono (opMul (o := R) (x := R) (y := Z2) (by decide) (by decide) (by decide) (by decide)
+        (by decide) h4')
         fun s5 h5 => h5.congr (by decide) fun q _ => ?_
       by_cases hq : q = R
       · subst hq

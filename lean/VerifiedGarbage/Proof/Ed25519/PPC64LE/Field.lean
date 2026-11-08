@@ -29,6 +29,10 @@ theorem slot_range (o : Slot) : 64 ≤ offset o ∧ offset o + 32 ≤ 768 := by
   simp only [offset]
   omega
 
+theorem slot_al (o : Slot) : offset o % 4 = 0 := by
+  simp only [offset]
+  omega
+
 theorem slot_sep (o a : Slot) :
     offset o = offset a ∨ offset o + 32 ≤ offset a ∨ offset a + 32 ≤ offset o := by
   simp only [offset]

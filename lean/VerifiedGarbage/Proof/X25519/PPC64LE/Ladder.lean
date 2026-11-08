@@ -61,10 +61,10 @@ theorem Cur.next {s s' : State} (h : Cur b s0 a c qs v s) (hr : Rest clob s s')
   ⟨h.ctx.of_rest hr (by decide), h.stp.trans ⟨hr.mono (by decide), hf⟩,
     by rw [hr.gpr _ (by decide), h.r0], by rw [hr.gpr _ (by decide), h.r12], hS⟩
 
-theorem opMul {o x y : Nat} (hq : Sep1 o qs = true) (ho : o + 32 ≤ ACC) (hx : x ∈ qs)
+theorem opMul {o x y : Nat} (hq : Sep1 o qs = true) (hal : Al4 o qs = true) (ho : o + 32 ≤ ACC) (hx : x ∈ qs)
     (hy : y ∈ qs) {s : State} (h : Cur b s0 a c qs v s) :
     WP isa (mul o x y) s (Cur b s0 a c (o :: qs) (upd v o (v x * v y))) :=
-  WP.mono (mulS hq ho hx hy h.ctx h.slots) fun _ ⟨hr, hf, hS⟩ => h.next hr hf hS
+  WP.mono (mulS hq hal ho hx hy h.ctx h.slots) fun _ ⟨hr, hf, hS⟩ => h.next hr hf hS
 
 theorem opAdd {o x y : Nat} (hq : Sep1 o qs = true) (ho : o + 32 ≤ ACC) (hx : x ∈ qs)
     (hy : y ∈ qs) {s : State} (h : Cur b s0 a c qs v s) :
@@ -110,11 +110,11 @@ def opsCode : List FOp → Prog isa → Prog isa
   | [], k => k
   | op :: ops, k => .seq op.code (opsCode ops k)
 
-/-- Each operation's slots are separate or equal, below `ACC`, and its inputs
-known. -/
+/-- Each operation's slots are separate or equal, below `ACC`, multiples of
+4, and its inputs known. -/
 def opsOk : List FOp → List Nat → Bool
   | [], _ => true
-  | op :: ops, qs => Sep1 op.out qs && op.out + 32 ≤ ACC && qs.contains op.x &&
+  | op :: ops, qs => Sep1 op.out qs && Al4 op.out qs && op.out + 32 ≤ ACC && qs.contains op.x &&
       qs.contains op.y && opsOk ops (op.out :: qs)
 
 /-- The elements after the operations. -/
@@ -128,11 +128,11 @@ def outsQ : List FOp → List Nat → List Nat
   | op :: ops, qs => outsQ ops (op.out :: qs)
 
 theorem op_ok {b : Addr} {s0 : State} {a c : BitVec 64} {qs : List Nat} {v : Nat → Fe} (op : FOp)
-    (hq : Sep1 op.out qs = true) (ho : op.out + 32 ≤ ACC) (hx : op.x ∈ qs) (hy : op.y ∈ qs)
-    {s : State} (h : Cur b s0 a c qs v s) :
+    (hq : Sep1 op.out qs = true) (hal : Al4 op.out qs = true) (ho : op.out + 32 ≤ ACC)
+    (hx : op.x ∈ qs) (hy : op.y ∈ qs) {s : State} (h : Cur b s0 a c qs v s) :
     WP isa op.code s (Cur b s0 a c (op.out :: qs) (upd v op.out (op.val v))) := by
   cases op with
-  | mul o x y => exact opMul hq ho hx hy h
+  | mul o x y => exact opMul hq hal ho hx hy h
   | add o x y => exact opAdd hq ho hx hy h
   | sub o x y => exact opSub hq ho hx hy h
 
@@ -143,8 +143,8 @@ theorem ops_ok {b : Addr} {s0 : State} {a c : BitVec 64} {k : Prog isa} {Q : Sta
   | [], _, _, s, _, h, hk => hk s h
   | op :: ops, qs, v, s, hok, h, hk => by
     simp only [opsOk, Bool.and_eq_true, decide_eq_true_eq, List.contains_iff_mem] at hok
-    obtain ⟨⟨⟨⟨h1, h3⟩, h4⟩, h5⟩, h6⟩ := hok
-    exact WP.seq (WP.mono (op_ok op h1 h3 h4 h5 h) fun s' h' => ops_ok ops _ _ s' h6 h' hk)
+    obtain ⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩, h6⟩ := hok
+    exact WP.seq (WP.mono (op_ok op h1 h2 h3 h4 h5 h) fun s' h' => ops_ok ops _ _ s' h6 h' hk)
 
 /-! ## One iteration -/
 

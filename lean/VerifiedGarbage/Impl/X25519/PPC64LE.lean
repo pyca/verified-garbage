@@ -8,12 +8,15 @@ public import VerifiedGarbage.TCB.PPC64LE.Isa
 `vg_x25519(out = r3, scalar = r4, point = r5, scratch = r6)`.
 
 The ARMv7 implementation's algorithm (`Impl/X25519/Arm.lean`), in 64-bit
-registers, without the carry bit. Its only multiplication is `mulld` (the
-low 64 bits of a product), so a field element is eight 32-bit
-limbs `x0 + 2³² x1 + … + 2²²⁴ x7`, each in a word of the working space: a
-product of two limbs and two more limbs fits in 64 bits. Every element is any
-number below `2²⁵⁶`, standing for its residue modulo `p = 2²⁵⁵ - 19`; only
-the result is reduced fully. A limb is stored with `stw`, which keeps the low
+registers. A field element is 32 bytes in the working space: eight 32-bit
+limbs `x0 + 2³² x1 + … + 2²²⁴ x7`, which the additions, subtractions, swaps
+and final reduction use (a product of two limbs and two more limbs fits in
+64 bits), and, the same number, four 64-bit words
+`w0 + 2⁶⁴ w1 + 2¹²⁸ w2 + 2¹⁹² w3`, which the multiplication uses (`mulld`
+and `mulhdu` give the low and high words of a product of words, and `addc`,
+`adde` and `addze` add with XER's carry CA). Every element is any number
+below `2²⁵⁶`, standing for its residue modulo `p = 2²⁵⁵ - 19`; only the
+result is reduced fully. A limb is stored with `stw`, which keeps the low
 32 bits of a sum, and the carry is the sum shifted right by 32. Every element
 lives in the working space, at a constant offset from its base, which stays
 in `r6` (`out` stays in `r3`):
@@ -21,10 +24,11 @@ in `r6` (`out` stays in `r3`):
 * `x1, x2, z2, x3, z3`, the ladder's temporaries, the constant `a24`, the
   inversion's result and the final reduction's temporary, 32 bytes each
   (`X1`, …);
-* the 16 limbs of a product (`ACC`, 64 bytes) and the bits of the scalar
+* the 8 words of a product (`ACC`, 64 bytes) and the bits of the scalar
   (`BITS`, byte `t` is bit `t` of the clamped scalar).
 
-The arithmetic (registers `r4`, `r5`, `r7`–`r11`; `r10` = 38):
+The arithmetic (registers `r4`, `r5`, `r7`–`r11`; `r10` = 38 in the 32-bit
+operations):
 
 * `pass`: the limbs of a number from eight sums `c_k` (below `2⁶⁴` less a
   carry), limb `k` being `c_k` plus the carry from limb `k - 1`, modulo
@@ -33,9 +37,12 @@ The arithmetic (registers `r4`, `r5`, `r7`–`r11`; `r10` = 38):
   and carried again (`pass` of the limbs themselves); what that carries out is
   0 or 1, and if it is 1 the limbs are small, so `38` more in limb 0 stays
   below `2³²`;
-* `mul`: the 16 limbs of the product row by row (Knuth's algorithm M: each
-  step `a_i b_j + acc + carry` fits in 64 bits), then the limbs of
-  `lo + 38 hi` (`pass`), then `tail`;
+* `mul`: the eight words of the product by columns (product scanning: the
+  terms `a_i b_j` of column `k = i + j` added into a three-word accumulator,
+  `r8`–`r10` in turn, whose low word is stored when the column ends), then
+  `L + 38 H` for its halves `L` and `H` in four words `r8`–`r11` and a top
+  word `t < 40` (`r7`), folded in as `38 t` twice (`foldTop`: the first
+  carries out 0 or 1, and if 1 the words are small);
 * `add`, `sub`: the limbs of `a + b` and of `a + 4p - b` (every limb of `4p`
   is at least `2³² - 1`, so no limb is negative; `r4` holds `2³³`), then
   `tail`;
@@ -130,8 +137,8 @@ def sub (o a b : Nat) : List Instr :=
 /-- Register `r` stored into the `n` words from `o` of the working space. -/
 def storeN (r : Reg) (o n : Nat) : List Instr := (List.range n).flatMap fun k => [.store .w r .r6 (o + 4 * k)]
 
-/-! The product's 16 limbs are at an offset `acc` of the working space
-(X25519's `ACC`; Ed25519 on PPC64LE uses the same code with its own). -/
+/-! The 16 limbs of a product, row by row, at an offset `acc` of the working space
+(Ed25519's scalar arithmetic on PPC64LE uses these). -/
 
 /-- The words `acc[0, 8)` zeroed. -/
 def zeroAcc (acc : Nat) : List Instr := .li .r7 0 :: storeN .r7 acc 8
@@ -146,16 +153,71 @@ def row (acc a b : Nat) : List Instr :=
   [.load .w .r4 .r9 a, .li .r8 0] ++ pass .r9 acc (rowSrc acc b) ++
     [.store .w .r8 .r9 (acc + 32), .addi .r9 .r9 4, .subi .r11 .r11 1]
 
-/-- Limb `k` of `lo + 38 hi` for the product at `acc`, into `r7`. -/
-def mulSrc (acc k : Nat) : List Instr :=
-  [.load .w .r7 .r6 (acc + 4 * k), .load .w .r5 .r6 (acc + 32 + 4 * k), .mul .r5 .r5 .r10,
-    .add .r7 .r7 .r5]
+/-! The product is eight doublewords at an offset `acc` of the working space
+(X25519's `ACC`; Ed25519 on PPC64LE uses the same code with its own): a
+field element's 32 bytes, eight 32-bit limbs, are also four 64-bit words
+`x₀ + 2⁶⁴ x₁ + 2¹²⁸ x₂ + 2¹⁹² x₃`, which the multiplication loads with `ld`
+(so every offset is a multiple of 4). -/
+
+/-- The accumulator of column `k` of a product is `rr k, rr (k + 1),
+rr (k + 2)`: `r8`, `r9` and `r10` in turn. -/
+def rr (k : Nat) : Reg := if k % 3 = 0 then .r8 else if k % 3 = 1 then .r9 else .r10
+
+/-- The terms `(i, j)` of column `k` of a product of four words, `i`
+descending. -/
+def colPairs (k : Nat) : List (Nat × Nat) :=
+  ((List.range 4).reverse.filter fun i => i ≤ k ∧ k - i < 4).map fun i => (i, k - i)
+
+/-- A term `a_i b_j` of column `k`, both loaded (into `r4` and `r5`), added
+to the accumulator: the low word of the product (`mulld`, into `r7`) with
+`addc`, the high word (`mulhdu`, into `r4`) with `adde`, and the carry into
+the top word with `addze`. -/
+def mulTerm (a b k : Nat) (p : Nat × Nat) : List Instr :=
+  [.load .d .r4 .r6 (a + 8 * p.1), .load .d .r5 .r6 (b + 8 * p.2), .mul .r7 .r4 .r5,
+    .mulhu .r4 .r4 .r5, .addc (rr k) (rr k) .r7, .adde (rr (k + 1)) (rr (k + 1)) .r4,
+    .addze (rr (k + 2)) (rr (k + 2))]
+
+/-- The end of column `k`: its low word stored at `acc + 8k`, and the
+register zeroed, which becomes the top word of column `k + 1`'s accumulator. -/
+def colEnd (acc k : Nat) : List Instr := [.store .d (rr k) .r6 (acc + 8 * k), .li (rr k) 0]
+
+/-- Column `k` of `[a] · [b]`. -/
+def mulCol (acc a b k : Nat) : List Instr := (colPairs k).flatMap (mulTerm a b k) ++ colEnd acc k
+
+/-- The eight words of `[a] · [b]` at `acc`, by columns (product scanning). -/
+def product (acc a b : Nat) : List Instr :=
+  [.li .r8 0, .li .r9 0, .li .r10 0] ++ (List.range 8).flatMap (mulCol acc a b)
+
+/-- Word `k` of the reduced product, in `r8`–`r11`. -/
+def wreg (k : Nat) : Reg := if k = 0 then .r8 else if k = 1 then .r9 else if k = 2 then .r10 else .r11
+
+/-- Word `k` of `L + lo(38 H)` (`L`, `H` the halves of the product at `acc`;
+38 in `r5`) into `wreg k`, with the carry chain. -/
+def redLo (acc k : Nat) : List Instr :=
+  [.load .d (wreg k) .r6 (acc + 8 * k), .load .d .r4 .r6 (acc + 32 + 8 * k), .mul .r4 .r4 .r5,
+    if k = 0 then .addc (wreg k) (wreg k) .r4 else .adde (wreg k) (wreg k) .r4]
+
+/-- The high word of `38 H_k` added into word `k + 1` (into `r7`, the top
+word, for `k = 3`), with the carry chain. -/
+def redHi (acc k : Nat) : List Instr :=
+  [.load .d .r4 .r6 (acc + 32 + 8 * k), .mulhu .r4 .r4 .r5,
+    if k = 0 then .addc (wreg 1) (wreg 1) .r4 else if k = 3 then .adde .r7 .r7 .r4
+    else .adde (wreg (k + 1)) (wreg (k + 1)) .r4]
+
+/-- `r8`–`r11` plus `38 t` (`t` in `r7`, 38 in `r5`), the carry out into `r7`. -/
+def foldTop : List Instr :=
+  [.mul .r4 .r7 .r5, .addc .r8 .r8 .r4, .addze .r9 .r9, .addze .r10 .r10, .addze .r11 .r11,
+    .li .r7 0, .addze .r7 .r7]
+
+/-- The product at `acc` reduced into `[o]`: `L + 38 H` (`2²⁵⁶ ≡ 38`) in four
+words and a top word below 40, which is folded in as `38 t` twice. -/
+def reduce38 (acc o : Nat) : List Instr :=
+  .li .r5 38 :: (List.range 4).flatMap (redLo acc) ++ [.li .r7 0, .addze .r7 .r7] ++
+    (List.range 4).flatMap (redHi acc) ++ foldTop ++ foldTop ++
+    (List.range 4).map fun k => .store .d (wreg k) .r6 (o + 8 * k)
 
 /-- `[o] = [a] · [b]` (`o` may be `a` or `b`), with the product at `acc`. -/
-def mulAt (acc o a b : Nat) : Prog isa :=
-  .seq (.block (prologue ++ zeroAcc acc ++ [.addi .r9 .r6 0, .li .r11 8]))
-    (.seq (.loop (.block (row acc a b)) (.nonzero .d .r11))
-      (.block (.li .r8 0 :: pass .r6 o (mulSrc acc) ++ tail o)))
+def mulAt (acc o a b : Nat) : Prog isa := .block (product acc a b ++ reduce38 acc o)
 
 /-- `[o] = [a] · [b]`, with the product in `ACC`. -/
 abbrev mul (o a b : Nat) : Prog isa := mulAt ACC o a b
