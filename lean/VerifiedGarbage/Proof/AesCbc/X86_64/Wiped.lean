@@ -20,9 +20,8 @@ already). The loop in AES-NI registers that encrypts writes none of
 `scratch`, and is not wrapped.
 
 Each implementation meets its contract and leaves each byte of `scratch`
-unchanged or zero (`*_scrubbed`, the stronger contract the Spec will state
-once every target's implementations prove it; the registrations take its
-weakening, `*_verified`): the bytes it may write are zero
+unchanged or zero (`*_scrubbed`, the contract of `Spec/Cbc/`,
+`*_verified`): the bytes it may write are zero
 (`Verified.callWipeTail'`), and the others it did not write
 (`Verified.cbc_tail_of_written`, from its `written` bound).
 -/
@@ -141,7 +140,7 @@ theorem decrypt_scrubbed (v : BlocksImpl) (z : ZeroizeImpl) :
 
 theorem decrypt_verified (v : BlocksImpl) (z : ZeroizeImpl) :
     Verified target (decrypt v z) (Spec.Cbc.aesDecryptContract abi 32) :=
-  Verified.of_scrubbed (decrypt_scrubbed v z)
+  decrypt_scrubbed v z
 
 theorem decrypt_spSafe (v : BlocksImpl) (z : ZeroizeImpl) :
     (decrypt v z).all (fun i => !isa.writesSp i) = true :=
@@ -160,7 +159,7 @@ theorem encrypt_scrubbed (v : BlocksImpl) (z : ZeroizeImpl) :
 
 theorem encrypt_verified (v : BlocksImpl) (z : ZeroizeImpl) :
     Verified target (encrypt v z) (Spec.Cbc.aesEncryptContract abi 32) :=
-  Verified.of_scrubbed (encrypt_scrubbed v z)
+  encrypt_scrubbed v z
 
 theorem encrypt_spSafe (v : BlocksImpl) (z : ZeroizeImpl) :
     (encrypt v z).all (fun i => !isa.writesSp i) = true :=
@@ -189,7 +188,7 @@ theorem decryptVaes512_scrubbed :
 
 theorem decryptVaes512_verified :
     Verified target decryptVaes512 (Spec.Cbc.aesDecryptContract abi 32) :=
-  Verified.of_scrubbed decryptVaes512_scrubbed
+  decryptVaes512_scrubbed
 
 theorem decryptVaes512_spSafe : decryptVaes512.all (fun i => !isa.writesSp i) = true :=
   wiped_spSafe Vaes512Decrypt.spSafe
