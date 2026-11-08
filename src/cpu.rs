@@ -16,7 +16,7 @@ mod tests {
     use verified_garbage_cpu::detect::{NAMES, allowed, runtime};
     #[cfg(feature = "cpu-features-env")]
     use verified_garbage_cpu::detect::{allowed_by, named_by, parse};
-    use verified_garbage_cpu::{Features, detected, feature, requested};
+    use verified_garbage_cpu::{COMPILED, Features, detected, feature, has, has_some, requested};
 
     /// Each name's bit is its index in `NAMES`, and no name is there twice.
     #[test]
@@ -154,6 +154,48 @@ mod tests {
     #[test]
     fn detected_is_allowed() {
         assert_eq!(detected(), Features(runtime() & allowed(runtime())));
+    }
+
+    /// The CPU has every feature the compilation target enables, and
+    /// detection reports each; with `cpu-features-env`, which lets
+    /// `VG_CPU_FEATURES` remove any, it enables none.
+    #[test]
+    fn compiled_is_detected() {
+        assert!(Features(runtime()).contains(COMPILED));
+        #[cfg(not(feature = "cpu-features-env"))]
+        assert!(detected().contains(COMPILED));
+        #[cfg(feature = "cpu-features-env")]
+        assert_eq!(COMPILED, Features(0));
+    }
+
+    /// The features of `aarch64-apple-darwin`'s baseline (Apple's M1),
+    /// which `has` answers for without detecting.
+    #[cfg(all(
+        not(feature = "cpu-features-env"),
+        target_arch = "aarch64",
+        target_vendor = "apple"
+    ))]
+    #[test]
+    fn compiled_apple() {
+        let m1 = feature::NEON | feature::AES | feature::SHA2 | feature::SHA3 | feature::DIT;
+        assert!(COMPILED.contains(Features(m1)));
+    }
+
+    /// `has` and `has_some` answer as detection does, the former for each
+    /// feature and every set of them.
+    #[test]
+    fn has_is_detected() {
+        assert!(has(Features(0)));
+        for (name, bit) in NAMES {
+            assert_eq!(
+                has(Features(bit)),
+                detected().contains(Features(bit)),
+                "{name}"
+            );
+        }
+        assert!(has(detected()));
+        assert_eq!(has(Features(u32::MAX)), detected() == Features(u32::MAX));
+        assert_eq!(has_some(), detected() != Features(0));
     }
 
     /// `requested` says whether `VG_CPU_FEATURES` names every feature of a
