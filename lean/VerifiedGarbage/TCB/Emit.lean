@@ -348,8 +348,9 @@ def codeDirs (dir : FilePath) : IO (List String) := do
   return (ds.qsort (· < ·)).toList
 
 /-- Writes the files generated from `as` (with the dispatchers that `ranking`
-orders, `Rust.Rank`, and the selectors `selected` asks for, `Rust.Selected`) under the directory in `args` (by
-default `../crates`), deleting any other generated file in the directories of
+orders, `Rust.Rank`, and the selectors that `selected`, `Rust.Selected`, and
+the artifacts' `select` ask for) under the directory in `args` (by default
+`../crates`), deleting any other generated file in the directories of
 generated files of a crate of generated code there (`codeDirs`, and nothing
 else: the rest of those crates, and the other crates, are not the emitter's);
 or, if `args` starts with `--check`, writes nothing and

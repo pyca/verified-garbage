@@ -256,6 +256,13 @@ structure Artifact where
   writtenOk : ∀ s t s', contract.pre s → Exec target.isa code s t s' →
       Sig.writtenWithin target.abi sig written s s' := by
     exact fun _ _ _ _ _ => True.intro
+  /-- Whether the function this implements also gets a selector,
+  `<base>_select`, next to its dispatcher (`Rust.selector`): which
+  implementation its dispatcher would run, for the Rust code to choose once
+  and call as often as it likes. Every implementation of a function gives
+  the same (`Rust.files` checks it). Like the ranking, it is not trusted: it
+  only says which functions get one. -/
+  select : Bool := false
 
 /-- Proves `Registration.spSafe`, by default. `Proof/Framework/Registration.lean`
 implements it, with the proofs the kernel checks fastest on each ISA; how it
@@ -326,6 +333,8 @@ structure Registration (api : Api) (target : Target) where
   writtenOk : ∀ s t s', contract.pre s → Exec target.isa code s t s' →
       Sig.writtenWithin target.abi api.sig written s s' := by
     exact fun _ _ _ _ _ => True.intro
+  /-- `Artifact.select`. -/
+  select : Bool := false
 
 /-- The artifact of the implementation `r` of `api` on `target`: its module,
 signature and `writeArgs` are `api`'s, its name `api`'s followed by
@@ -358,5 +367,6 @@ def Api.artifact (api : Api) (target : Target) [Emitter target.isa] (r : Registr
   features := r.features
   written := r.written
   writtenOk := r.writtenOk
+  select := r.select
 
 end VG

@@ -113,8 +113,42 @@ def selFile : String :=
 
 -- A name that is not the base of a function with a dispatcher fails the emitter.
 #guard match selOut [("aarch64", ["vg_poly1305_update_neon"])] with
-  | .error e => has e "vg_poly1305_update_neon has a selector (`VG.Dispatch.selected`) but no dispatcher"
+  | .error e => has e "vg_poly1305_update_neon has a selector (`Artifact.select`, \
+      `VG.Dispatch.selected`) but no dispatcher"
   | .ok _ => false
+
+/-- The files of Poly1305 on AArch64 with `select` set on the artifacts named `ns`. -/
+def flagOut (ns : List String) : Except String (List (String × String)) :=
+  Rust.files (Artifacts.Poly1305.AArch64.artifacts.map fun a => { a with select := ns.contains a.name })
+    Dispatch.ranking
+
+-- An artifact's `select` asks for the same selectors as `selected`.
+#guard match flagOut ["vg_poly1305_update", "vg_poly1305_update_neon", "vg_poly1305_init"],
+    selOut [("aarch64", ["vg_poly1305_update", "vg_poly1305_init"])] with
+  | .ok fs, .ok gs => fs == gs && has (((fs.find? (·.1 ==
+      "verified-garbage-asm-aarch64/src/dispatch/poly1305.rs")).map (·.2)).getD "")
+      "vg_poly1305_update_select"
+  | _, _ => false
+
+-- So does a function that both ask for: once.
+#guard match selOut [("aarch64", ["vg_poly1305_update"])],
+    Rust.files (Artifacts.Poly1305.AArch64.artifacts.map fun a =>
+      { a with select := a.name.startsWith "vg_poly1305_update" }) Dispatch.ranking
+      [("aarch64", ["vg_poly1305_update"])] with
+  | .ok gs, .ok hs => hs == gs
+  | _, _ => false
+
+-- The implementations of a function must agree on `select`.
+#guard match flagOut ["vg_poly1305_update_neon"], flagOut ["vg_poly1305_update"] with
+  | .error e, .error e' =>
+    let m := "vg_poly1305_update_neon and vg_poly1305_update, an implementation of the same \
+      function, differ in `select`"
+    has e m && has e' m
+  | _, _ => false
+#guard match flagOut ["vg_poly1305_update", "vg_poly1305_update_neon"],
+    selOut [("aarch64", ["vg_poly1305_update"])] with
+  | .ok fs, .ok gs => fs == gs
+  | _, _ => false
 
 /-- The position of a suffix in x86-64's ranking for a module. -/
 def x86Rank (module suffix : String) : Option Nat :=

@@ -1684,13 +1684,15 @@ pub use crate::<module>::<base> as <base>_auto;
 A function whose base needs CPU features gets none (there is nothing to fall
 back on), and neither does an implementation that is not a base.
 
-A function the ranking's file lists for its target (`Selected`,
-`VerifiedGarbage/Dispatch.lean`, which is not trusted either: it only says
-which functions get one) also gets a *selector*, `<base>_select`, next to its
-dispatcher (`selector`). It tries the dispatcher's implementations in the
-same order, under the same conditions, but returns the first that applies,
-or the base, as a pointer to it instead of calling it, so that the Rust code
-can choose once and call it as often as it likes without choosing again. It
+A function whose implementations' registrations ask for one
+(`Artifact.select`, which they must all give alike), or that the ranking's
+file lists for its target (`Selected`, `VerifiedGarbage/Dispatch.lean`),
+neither of which is trusted either (they only say which functions get one),
+also gets a *selector*, `<base>_select`, next to its dispatcher
+(`selector`). It tries the dispatcher's implementations in the same order,
+under the same conditions, but returns the first that applies, or the base,
+as a pointer to it instead of calling it, so that the Rust code can choose
+once and call it as often as it likes without choosing again. It
 is safe to call, since it calls nothing but `detected()`; calling what it
 returns carries exactly the dispatcher's obligations, which are that
 function's:
@@ -2202,9 +2204,10 @@ code has an instruction its target's printer cannot encode
 `fullDoc` adds to it (`checkLayout`) or a bound on what it writes is not of a
 writable array parameter, at most its size (`checkWritten`), or `ranking`
 (each target's, by its name) does not rank an implementation a dispatcher
-calls (`dispatchers`, `checkRanks`), or `selected` names a function of a
-target that has no dispatcher there (`dispatchers`); with each module's
-dispatchers, and the selectors `selected` asks for, after its functions. Each check of
+calls (`dispatchers`, `checkRanks`), or the implementations of a function
+differ in `select`, or a function with `select`, or one `selected` names,
+has no dispatcher on its target; with each module's dispatchers, and the
+selectors `select` and `selected` ask for, after its functions. Each check of
 every artifact runs on `tasks` tasks (`forMPar`), one check after the other,
 so the error is the
 one checking them in order would give; what they read of an artifact more
@@ -2239,11 +2242,17 @@ def files (as : List Artifact) (ranking : Ranking := []) (selected : Selected :=
     checkRanks t rs
     let arts := as.filter (·.target.name == t)
     let names := arts.map (·.name)
-    let sel := (selected.lookup t).getD []
+    let gs := (distinct arts (·.module)).flatMap fun m => groupsOf (arts.filter (·.module == m))
+    for g in gs do
+      for (a, _) in g.members do
+        unless a.select == g.base.select do
+          throw s!"{t}: {a.name} and {g.base.name}, an implementation of the same function, \
+            differ in `select`"
+    let sel := (selected.lookup t).getD [] ++ (gs.filter (·.base.select)).map (·.base.name)
     for n in sel do
-      unless (distinct arts (·.module)).any (fun m => (groupsOf (arts.filter (·.module == m))).any
-          fun g => g.base.name == n && g.base.features.isEmpty) do
-        throw s!"{t}: {n} has a selector (`VG.Dispatch.selected`) but no dispatcher"
+      unless gs.any fun g => g.base.name == n && g.base.features.isEmpty do
+        throw s!"{t}: {n} has a selector (`Artifact.select`, `VG.Dispatch.selected`) but no \
+          dispatcher"
     let fns ← (distinct arts (·.module)).mapM fun m => do
       return ((t, m), ← dispatchers rs names m (arts.filter (·.module == m)) sel)
     let tps := ps.filter (·.art.target.name == t)
