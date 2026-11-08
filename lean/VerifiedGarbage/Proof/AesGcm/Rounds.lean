@@ -251,6 +251,11 @@ def sealGatherPreparedRoundsContract {M : ISA} (A : Abi M) (stack : Nat := 0) : 
     (post := sealGatherRoundsPost A.ptrBits)
     (writeArgs := true) (stack := stack)
 
+/-- A context of 24 prepared pairs holds the first 8. -/
+theorem preparedPowers16Repr_of {m : Mem} {p : Addr} (h : Spec.Gcm.PreparedPowersRepr m p) :
+    Spec.Gcm.PreparedPowers16Repr m p :=
+  fun k hk => h k (by omega)
+
 /-- The unchanged `sealRoundsContract` postcondition with 16 prepared powers. -/
 def sealPrepared16RoundsContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   sealPreparedSig.contract A (pre := sealPrepared16Pre A.ptrBits)

@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Spec.Gcm.Prepared16
-
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Verified
 import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared16.Verified
 import VerifiedGarbage.Proof.AesGcm.ScratchPreparedTo

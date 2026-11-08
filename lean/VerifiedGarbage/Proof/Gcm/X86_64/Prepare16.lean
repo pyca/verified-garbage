@@ -464,4 +464,14 @@ theorem prepare_verified : Verified X86_64.target prepare (Spec.Gcm.prepareContr
   Prepare.verified_of prepare (fun _ hw hwrap => prepare_ok hw hwrap) (by decide +kernel)
     Prepare16.prepare_ct
 
+/-- `prepare16` after setting the count to 16, on the prepared key context. -/
+theorem prepareFlagged_verified :
+    Verified X86_64.target (Impl.Gcm.X86_64.Flag.prepareFlagged 16 prepare16) (Proof.AesGcm.Flag.prepareContract X86_64.abi) :=
+  Prepare.flagged_verified (Or.inl rfl) prepare16
+    (fun _ hw hwrap => WP.mono (prepare16_ok hw hwrap) fun _ h => ⟨h.1, Frame.sub h.2.1 fun r hr => by
+        obtain rfl := List.mem_singleton.mp hr
+        exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by decide)⟩,
+      fun r h₁ _ => h.2.2.1 r h₁, h.2.2.2⟩)
+    (by decide +kernel) Prepare.flagged16_ct
+
 end VG.Proof.Gcm.X86_64.Prepare16

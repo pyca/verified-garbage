@@ -347,4 +347,12 @@ theorem prepareSse_verified :
     Verified X86_64.target Impl.Gcm.X86_64.PrepareAvx.prepareSse (Spec.Gcm.prepareContract X86_64.abi) :=
   Prepare.verified_of _ (fun _ hw _ => prepareSse_ok hw) (by decide +kernel) Prepare16.prepareSse_ct
 
+/-- `prepare16` after setting the count to 16, on the prepared key context. -/
+theorem prepareFlagged_verified :
+    Verified X86_64.target (Impl.Gcm.X86_64.Flag.prepareFlagged 16 Impl.Gcm.X86_64.PrepareAvx.prepare16)
+      (Proof.AesGcm.Flag.prepareContract X86_64.abi) :=
+  Prepare.flagged_verified (Or.inl rfl) _
+    (fun _ hw _ => WP.mono (prepare16_ok hw) fun _ h => ⟨h.1, h.2.1, fun r h₁ _ => h.2.2.1 r h₁, h.2.2.2⟩)
+    (by decide +kernel) Prepare.flaggedAvx_ct
+
 end VG.Proof.Gcm.X86_64.PrepareAvx
