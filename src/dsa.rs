@@ -30,11 +30,11 @@ use crate::arch::dispatch::dsa::{
 };
 use crate::entropy::{self, Step, Stop};
 use crate::error::InvalidSignature;
-use crate::zeroize::{Int, zeroize};
+use crate::zeroize::{Zeroable, zeroize};
 
-struct Secret<T: Int>(Vec<T>);
+struct Secret<T: Zeroable>(Vec<T>);
 
-impl<T: Int> Drop for Secret<T> {
+impl<T: Zeroable> Drop for Secret<T> {
     fn drop(&mut self) {
         zeroize(&mut self.0);
     }

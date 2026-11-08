@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Aes.PPC64LE.CodeLit
 import VerifiedGarbage.Proof.Aes.PPC64LE.Crypto.Blocks
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
+import VerifiedGarbage.Proof.Framework.Offset
 
 meta import VerifiedGarbage.Proof.Aes.PPC64LE.Base
 meta import VerifiedGarbage.Proof.Aes.PPC64LE.CodeLit
@@ -23,7 +24,7 @@ open VG.Impl.Aes.PPC64LE (encryptBlocks decryptBlocks)
 theorem encryptBlocks_correct (s : State) (hs : (Proof.Aes.blocksPPC64LE Spec.Aes.cipher).pre s) :
     ∃ t s', Exec isa encryptBlocks s t s' ∧ abiPreserved s s' ∧
       (Proof.Aes.blocksPPC64LE Spec.Aes.cipher).post s s' := by
-  obtain ⟨t, s', he, hk, hp⟩ := Crypto.blocks_ok false s hs
+  obtain ⟨t, s', he, hk, -, hp⟩ := Crypto.blocks_ok false s hs
   exact ⟨t, s', he, abiPreserved_of_keep he hk (by decide) (by lit_decide)
     (by rw [← Code.allInstrs_eq]; lit_decide), hp⟩
 
@@ -38,7 +39,7 @@ theorem encryptBlocks_ct : ConstantTime isa (Proof.Aes.blocksPPC64LE Spec.Aes.ci
 theorem decryptBlocks_correct (s : State) (hs : (Proof.Aes.blocksPPC64LE Spec.Aes.invCipher).pre s) :
     ∃ t s', Exec isa decryptBlocks s t s' ∧ abiPreserved s s' ∧
       (Proof.Aes.blocksPPC64LE Spec.Aes.invCipher).post s s' := by
-  obtain ⟨t, s', he, hk, hp⟩ := Crypto.blocks_ok true s hs
+  obtain ⟨t, s', he, hk, -, hp⟩ := Crypto.blocks_ok true s hs
   exact ⟨t, s', he, abiPreserved_of_keep he hk (by decide) (by lit_decide)
     (by rw [← Code.allInstrs_eq]; lit_decide), hp⟩
 
@@ -61,17 +62,51 @@ def blocksSat : State where
   rd := [⟨0x1000, 240⟩]
   wr := [⟨0x3000, 16⟩, ⟨0x4000, 2048⟩]
 
+theorem encryptBlocks_implies :
+    (Proof.Aes.blocksPPC64LE Spec.Aes.cipher).Implies (Proof.Aes.encryptBlocksRoundsContract PPC64LE.abi) := by
+  sig_implies [Proof.Aes.encryptBlocksRoundsContract, Spec.Aes.blocksSig, Proof.Aes.blocksPPC64LE,
+    PPC64LE.abi, PPC64LE.argRegs] [blocksSat] using blocksSat
+
+theorem decryptBlocks_implies :
+    (Proof.Aes.blocksPPC64LE Spec.Aes.invCipher).Implies (Proof.Aes.decryptBlocksRoundsContract PPC64LE.abi) := by
+  sig_implies [Proof.Aes.decryptBlocksRoundsContract, Spec.Aes.blocksSig, Proof.Aes.blocksPPC64LE,
+    PPC64LE.abi, PPC64LE.argRegs] [blocksSat] using blocksSat
+
 theorem encryptBlocks_verified :
     Verified PPC64LE.target encryptBlocks (Proof.Aes.encryptBlocksRoundsContract PPC64LE.abi) :=
-  Verified.of_correct encryptBlocks_correct encryptBlocks_ct (by
-    sig_implies [Proof.Aes.encryptBlocksRoundsContract, Spec.Aes.blocksSig, Proof.Aes.blocksPPC64LE,
-      PPC64LE.abi, PPC64LE.argRegs] [blocksSat] using blocksSat)
+  Verified.of_correct encryptBlocks_correct encryptBlocks_ct encryptBlocks_implies
 
 theorem decryptBlocks_verified :
     Verified PPC64LE.target decryptBlocks (Proof.Aes.decryptBlocksRoundsContract PPC64LE.abi) :=
-  Verified.of_correct decryptBlocks_correct decryptBlocks_ct (by
-    sig_implies [Proof.Aes.decryptBlocksRoundsContract, Spec.Aes.blocksSig, Proof.Aes.blocksPPC64LE,
-      PPC64LE.abi, PPC64LE.argRegs] [blocksSat] using blocksSat)
+  Verified.of_correct decryptBlocks_correct decryptBlocks_ct decryptBlocks_implies
+
+/-- A run of the blocks functions changes no byte of `scratch` (`r7`). -/
+theorem blocks_scratch (inverse : Bool) {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {s : State}
+    (hs : (Proof.Aes.blocksPPC64LE f).pre s) {t : List Leak} {s' : State}
+    (he : Exec isa (Impl.Aes.PPC64LE.Crypto.blocks inverse) s t s') {i : Nat} (hi : i < 2048) :
+    s'.mem (s.gpr .r7 + BitVec.ofNat 64 i) = s.mem (s.gpr .r7 + BitVec.ofNat 64 i) := by
+  obtain ⟨t', s'', he', -, hf, -⟩ := Crypto.blocks_ok inverse s hs
+  obtain ⟨-, rfl⟩ := Exec.det he he'
+  refine hf _ fun r hr hc => ?_
+  rw [List.mem_singleton] at hr
+  subst hr
+  exact hs.2.2.2.2.1 _ hc (Offset.contains_base _ (by omega) (by omega))
+
+theorem encryptBlocks_written (s : State) (t : List Leak) (s' : State)
+    (hs : (Proof.Aes.encryptBlocksRoundsContract PPC64LE.abi).pre s) (he : Exec isa encryptBlocks s t s') :
+    Sig.writtenWithin (PPC64LE.abi.withConsts []) Spec.Aes.blocksSig [("scratch", 0)] s s' := by
+  have hp := encryptBlocks_implies.pre s hs
+  simp [Sig.writtenWithin, PPC64LE.abi, PPC64LE.argRegs, Abi.withConsts, Spec.Aes.blocksSig,
+    Sig.words, Sig.arrays, Param.words, ArgWord.bits]
+  exact fun i h => blocks_scratch false hp he (by simpa [Elem.size] using h)
+
+theorem decryptBlocks_written (s : State) (t : List Leak) (s' : State)
+    (hs : (Proof.Aes.decryptBlocksRoundsContract PPC64LE.abi).pre s) (he : Exec isa decryptBlocks s t s') :
+    Sig.writtenWithin (PPC64LE.abi.withConsts []) Spec.Aes.blocksSig [("scratch", 0)] s s' := by
+  have hp := decryptBlocks_implies.pre s hs
+  simp [Sig.writtenWithin, PPC64LE.abi, PPC64LE.argRegs, Abi.withConsts, Spec.Aes.blocksSig,
+    Sig.words, Sig.arrays, Param.words, ArgWord.bits]
+  exact fun i h => blocks_scratch true hp he (by simpa [Elem.size] using h)
 
 
 end VG.Proof.Aes.PPC64LE

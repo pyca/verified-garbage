@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.Body
-public import VerifiedGarbage.Proof.Bignum.PPC64LE.ModExpPow
+public import VerifiedGarbage.Proof.Bignum.PPC64LE.WinPow
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCore
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreR2
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMinv
@@ -81,8 +81,8 @@ theorem zMask_ok {s : State} {B : Addr} {Z w : Nat} (h : Env s B Z w) (h23 : s.g
   · exact ((((((k2.trans k3).trans k4).trans k5).trans k6).trans k7).trans kt).gpr .r10 (by decide) |>.trans a10
 
 /-- The registers `exPower` writes. -/
-def exPowRegs : List Reg := ModExp.powSRegs ++ ([.r0, .r3, .r4, .r5, .r6, .r8, .r9, .r10, .r12, .r14, .r15, .r16,
-  .r17, .r20, .r30, .r31] : List Reg)
+def exPowRegs : List Reg := [.r0, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r12, .r14, .r15, .r16, .r17,
+  .r18, .r19, .r20, .r22, .r24, .r30, .r31]
 
 /-- What `exPower` leaves from `s`: `y^x mod p` in array 4, p in array 0. -/
 def exPowPost (B Y X : Addr) (w k xl : Nat) (s t : State) : Prop :=
@@ -104,7 +104,7 @@ theorem exPower_split {s : State} {B Y X : Addr} {Z w k xl : Nat} (h : Env s B Z
       (s₆.gpr .r30 = off X 0 ∧ s₆.gpr .r31 = BitVec.ofNat 64 xl ∧ s₆.gpr .r10 = off B (slot w 0) ∧
         s₆.gpr .r29 = BitVec.ofNat 64 (8 * (w + 2)) ∧ s₆.gpr .r11 = BitVec.ofNat 64 (2 * w) ∧ s₆.gpr .r23 = B ∧
         s₆.gpr .r28 = BitVec.ofNat 64 k) ∧
-      WP isa ModExp.powSecret s₆ fun t => exPowPost B Y X w k xl s t ∧ Keep exPowRegs s t := by
+      WP isa ModExp.powWin s₆ fun t => exPowPost B Y X w k xl s t ∧ Keep exPowRegs s t := by
   unfold exPowPost
   have hs := h.hs
   have hnw := hs.nowrap
@@ -112,7 +112,7 @@ theorem exPower_split {s : State} {B Y X : Addr} {Z w k xl : Nat} (h : Env s B Z
   have hw := h.hw
   have hw' := h.hw'
   have e0 := slot_eq w 0; have e1 := slot_eq w 1; have e4 := slot_eq w 4; have e8 := slot_eq w 8
-  have e28 := slot_eq w 28
+  have e24 := slot_eq w 24; have e28 := slot_eq w 28
   generalize hP : arr s.mem B w 0 = p at hp2 hodd
   unfold exPre
   refine WP.seq (WP.mono (Pub.loadX_ok hs h23 h9 h28 h.h10 h.h29 h.h11 hk hkw (by omega_arith) (by omega_arith) hrdY hsepY)
@@ -167,7 +167,7 @@ theorem exPower_split {s : State} {B Y X : Addr} {Z w k xl : Nat} (h : Env s B Z
   rw [← m5, ← m6] at hr2 p4 y4
   have b6 : Body B w s.mem s₆.mem := by rw [m6, m5]; exact b4
   refine ⟨⟨a30, a31, g10, g29, g11, (k16.gpr .r23 (by decide)).trans h23, (k16.gpr .r28 (by decide)).trans h28⟩, ?_⟩
-  refine WP.mono (ModExp.powSecret_ok (D := X) (L := xl) (hs.congr k16.wr) (by omega_arith)
+  refine WP.mono (Win.powWin_ok (D := X) (L := xl) (hs.congr k16.wr) (by omega_arith)
     (by omega_arith) (by omega_arith) g10 g29 g11
     (by rw [(k6.gpr .r12 (by decide))]; exact r12lt)
     (by rw [(k6.gpr .r12 (by decide)), m6, m5]; exact r12inv) (by rw [p4]; exact hp2) (by rw [p4]; exact hodd)
@@ -177,11 +177,11 @@ theorem exPower_split {s : State} {B Y X : Addr} {Z w k xl : Nat} (h : Env s B Z
   · rw [b6.bytesAt hZ hsepX, p4, y4] at hpow
     exact hpow (by rw [hr2, two_pow_128])
   · rw [arr, Outs.val32 o7 (fun r hr => ?_) (by omega_arith), p4]
-    simp only [Pub.powRs, List.map, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only <;> simp only [slot_eq] <;> omega_arith
+    simp only [Win.win, List.mem_cons, List.not_mem_nil, or_false] at hr
+    subst hr; dsimp only; simp only [slot_eq]; omega_arith
   · exact Outside.trans b6 (Body.of_outs o7 fun r hr => by
-      simp only [Pub.powRs, List.map, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only <;> simp only [slot_eq] <;> omega_arith)
+      simp only [Win.win, List.mem_cons, List.not_mem_nil, or_false] at hr
+      subst hr; dsimp only; simp only [slot_eq]; omega_arith)
   · exact (k7.gpr .r10 (by decide)).trans g10
 
 /-- `exPower`: y's `k` octets (at `r9`) into array 4, then `y^x mod p` there,

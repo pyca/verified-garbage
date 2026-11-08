@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Scrypt.X86_64.RoMixCT
 public import VerifiedGarbage.Impl.Scrypt.X86_64.RoMixDirect
 import VerifiedGarbage.Proof.Scrypt.Memory
 import VerifiedGarbage.Proof.Scrypt.X86_64.RoMixLoops
-import VerifiedGarbage.Proof.Scrypt.X86_64.FusedVerified
+import VerifiedGarbage.Proof.Scrypt.X86_64.PackedVerified
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import Mathlib.Tactic.DefEqTransformations
 import VerifiedGarbage.Proof.Framework.Contract
@@ -14,7 +14,7 @@ meta import VerifiedGarbage.Proof.Scrypt.X86_64.RoMixCT
 meta import VerifiedGarbage.Impl.Scrypt.X86_64.RoMixDirect
 meta import VerifiedGarbage.Proof.Scrypt.Memory
 meta import VerifiedGarbage.Proof.Scrypt.X86_64.RoMixLoops
-meta import VerifiedGarbage.Proof.Scrypt.X86_64.FusedVerified
+meta import VerifiedGarbage.Proof.Scrypt.X86_64.PackedVerified
 meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 meta import Mathlib.Tactic.DefEqTransformations
 meta import VerifiedGarbage.Proof.Framework.Contract
@@ -294,7 +294,7 @@ theorem call_pre {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < NN s₀) {s 
 
 theorem call_wp {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < NN s₀) {s : State}
     (ha : Ready s₀ i s) :
-    WP isa (.call "vg_scrypt_blockmix" Impl.Scrypt.X86_64.blockMixFused) s (KR s₀ (vAt s₀ i) (BitVec.ofNat 64 (NN s₀ - i))) := by
+    WP isa (.call "vg_scrypt_blockmix" Impl.Scrypt.X86_64.Packed.blockMix) s (KR s₀ (vAt s₀ i) (BitVec.ofNat 64 (NN s₀ - i))) := by
   have lt := r_lt hp
   exact blockMixSpec s (vAt s₀ i) (loc s₀ (i + 1)) (sc s₀) (rr s₀) ha.rdi ha.rsi ha.rdx ha.rcx ha.r8 hp.pos lt
     ((loc_sc hp (by omega_arith)).sub_right w_sub) (v_loc_disj hp (by omega_arith) (by omega_arith)) ((vAt_s hp hi).sub_right w_sub)
@@ -310,7 +310,7 @@ theorem loc_eq {s₀ s₀' : State} (hq : PubEq s₀ s₀') (i : Nat) : loc s₀
 theorem call_rel {s₀ s₀' : State} (hp : Pre s₀) (hp' : Pre s₀') (hq : PubEq s₀ s₀')
     {i : Nat} (hi : i < NN s₀) :
     RelCT isa (fun s s' => Ready s₀ i s ∧ Ready s₀' i s')
-      (.call "vg_scrypt_blockmix" Impl.Scrypt.X86_64.blockMixFused)
+      (.call "vg_scrypt_blockmix" Impl.Scrypt.X86_64.Packed.blockMix)
       fun s s' => KR s₀ (vAt s₀ i) (BitVec.ofNat 64 (NN s₀ - i)) s ∧
         KR s₀' (vAt s₀' i) (BitVec.ofNat 64 (NN s₀' - i)) s' := by
   have hi' : i < NN s₀' := hq.NN ▸ hi
@@ -319,7 +319,7 @@ theorem call_rel {s₀ s₀' : State} (hp : Pre s₀) (hp' : Pre s₀') (hq : Pu
   have es : sc s₀' = sc s₀ := hq.r8.symm
   have er := hq.rr.symm
   have call := RelCT.call (n := "vg_scrypt_blockmix") (P := fun s s' => Ready s₀ i s ∧ Ready s₀' i s')
-    BlockMix.Fused.blockMix_correct BlockMix.Fused.blockMix_ct [⟨vAt s₀ i, 128 * rr s₀⟩]
+    Packed.BM.blockMix_correct Packed.BM.blockMix_ct [⟨vAt s₀ i, 128 * rr s₀⟩]
     [⟨loc s₀ (i + 1), 128 * rr s₀⟩, ⟨sc s₀, 128⟩] fun s s' ⟨ha, ha'⟩ => by
       obtain ⟨p₁, c₁, w₁⟩ := call_pre hp hi ha
       obtain ⟨p₂, c₂, w₂⟩ := call_pre hp' hi' ha'
@@ -341,7 +341,7 @@ variable {s₀ s₀' : State} (hp : Pre s₀) (hp' : Pre s₀') (hq : PubEq s₀
 include hp hp' hq
 
 theorem body_rel {i : Nat} (hi : i < NN s₀) :
-    RelCT isa (fun s s' => Inv s₀ i s ∧ Inv s₀' i s') (fillStep Impl.Scrypt.X86_64.blockMixFused)
+    RelCT isa (fun s s' => Inv s₀ i s ∧ Inv s₀' i s') (fillStep Impl.Scrypt.X86_64.Packed.blockMix)
       fun s s' => (Inv s₀ (i + 1) s ∧ s.zf = some (decide (i + 1 = NN s₀))) ∧
         (Inv s₀' (i + 1) s' ∧ s'.zf = some (decide (i + 1 = NN s₀'))) := by
   have hi' : i < NN s₀' := hq.NN ▸ hi
@@ -364,9 +364,9 @@ theorem body_rel {i : Nat} (hi : i < NN s₀) :
     (fun _ _ h => h) fun _ _ h => h.2
 
 theorem loop_rel :
-    RelCT isa (fun s s' => Inv s₀ 0 s ∧ Inv s₀' 0 s') (.loop (fillStep Impl.Scrypt.X86_64.blockMixFused) .ne)
+    RelCT isa (fun s s' => Inv s₀ 0 s ∧ Inv s₀' 0 s') (.loop (fillStep Impl.Scrypt.X86_64.Packed.blockMix) .ne)
       fun s s' => Inv s₀ (NN s₀) s ∧ Inv s₀' (NN s₀') s' := by
-  have lp := RelCT.loop (M := isa) (body := fillStep Impl.Scrypt.X86_64.blockMixFused) (c := .ne)
+  have lp := RelCT.loop (M := isa) (body := fillStep Impl.Scrypt.X86_64.Packed.blockMix) (c := .ne)
     (Q := fun s s' => Inv s₀ (NN s₀) s ∧ Inv s₀' (NN s₀') s')
     (fun n s s' => ∃ i, n = NN s₀ - i ∧ i < NN s₀ ∧ Inv s₀ i s ∧ Inv s₀' i s') (fun n => by
       intro s s' t t' u u' ⟨i, hn, hi, h, h'⟩ e e'
@@ -382,7 +382,7 @@ theorem loop_rel :
   exact lp.mono (fun _ _ h => ⟨0, rfl, NN_pos hp, h.1, h.2⟩) fun _ _ h => h
 
 theorem fill_rel :
-    RelCT isa (fun s s' => Inv2 s₀ 0 s ∧ Inv2 s₀' 0 s') (fillWith Impl.Scrypt.X86_64.blockMixFused)
+    RelCT isa (fun s s' => Inv2 s₀ 0 s ∧ Inv2 s₀' 0 s') (fillWith Impl.Scrypt.X86_64.Packed.blockMix)
       fun s s' => Inv2 s₀ (NN s₀) s ∧ Inv2 s₀' (NN s₀') s' := by
   have a : RelCT isa (fun s s' => Inv2 s₀ 0 s ∧ Inv2 s₀' 0 s') fillInit
       (fun s s' => Inv s₀ 0 s ∧ Inv s₀' 0 s') :=
@@ -425,7 +425,7 @@ include hp hp' hq hL
 
 theorem roMix_rel :
     RelCT isa (fun s s' => s = s₀ ∧ s' = s₀') Impl.Scrypt.X86_64.roMixDirect fun _ _ => True := by
-  show RelCT isa _ (roMixDirectWith Impl.Scrypt.X86_64.blockMixFused) _
+  show RelCT isa _ (roMixDirectWith Impl.Scrypt.X86_64.Packed.blockMix) _
   unfold roMixDirectWith
   have pro : RelCT isa (fun s s' => s = s₀ ∧ s' = s₀') (.block rmPrologue)
       fun s s' => P1 s₀ s ∧ P1 s₀' s' :=

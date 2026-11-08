@@ -120,7 +120,7 @@ def V5 (d : KD) (s : State) : Prop :=
   (s.gpr .r30 = off d.X 0 ∧ s.gpr .r31 = BitVec.ofNat 64 d.xl ∧ s.gpr .r10 = off d.c.S (slot d.c.w 0) ∧
     s.gpr .r29 = BitVec.ofNat 64 (8 * (d.c.w + 2)) ∧ s.gpr .r11 = BitVec.ofNat 64 (2 * d.c.w) ∧
     s.gpr .r23 = d.c.S ∧ s.gpr .r28 = BitVec.ofNat 64 d.c.k) ∧
-  WP isa ModExp.powSecret s (V6 d)
+  WP isa ModExp.powWin s (V6 d)
 
 /-! ## Pins -/
 
