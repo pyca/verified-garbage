@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.MlKem.PPC64LE.Poly
+public import VerifiedGarbage.Impl.Vector.PPC64LE
 
 /-!
 # ML-KEM on PPC64LE: the NTT, its inverse and `MultiplyNTTs`
@@ -90,31 +91,107 @@ def saveRegs (b : Reg) (off : Nat) : List Instr := [.store .d .r14 b off, .store
 /-- Our caller's `r14` and `r15`, loaded from `[b, #off]`. -/
 def restoreRegs (b : Reg) (off : Nat) : List Instr := [.load .d .r14 b off, .load .d .r15 b (off + 8)]
 
-/-! ## `ntt` -/
+/-! ## `ntt`, four butterflies at a time
 
-/-- The butterfly on `[r5]` and `[r6]` with the zeta `r7`: `t = ζ·f[j + len]`
-in `r0`, then `f[j + len] = f[j] - t` and `f[j] = f[j] + t`. -/
-def bflyBody : List Instr :=
-  [.load .w .r12 .r5 0, .load .w .r0 .r6 0, .mul .r0 .r7 .r0] ++ reduce .r0 .r14 ++
-  [.sub .r14 .r12 .r0] ++ fixup .r14 .r15 .r9 ++ [.store .w .r14 .r6 0, .add .r12 .r12 .r0,
-    .sub .r12 .r12 .r9] ++ fixup .r12 .r15 .r9 ++
-  [.store .w .r12 .r5 0, .addi .r5 .r5 4, .addi .r6 .r6 4, .subi .r11 .r11 1]
+The coefficients, `u32`s, are in vectors of four, as `lxvd2x` loads them:
+words `1, 0, 3, 2` of a vector (most significant first) are coefficients
+`j, …, j + 3` (`swapDwords`). A product by a zeta `z` is Shoup's
+(`mulZ`): with `z' = ⌊z · 2³² / q⌋` (`zetaPrime`), `a·z - ⌊a·z' / 2³²⌋·q`
+(the high word of each product from `vmuleuw`/`vmulouw`, gathered by
+`vperm`) is less than `2q` for `a < q`, congruent to `a·z`; every sum or
+difference less than `2q` is reduced by `min(x, x - q)` (`vminuw`).
 
-/-- A block: its zeta, then `len` butterflies. -/
-def nttBlockCode : Prog isa :=
-  .seq (.block [.load .w .r7 .r4 0, .addi .r4 .r4 4, .add .r6 .r5 .r10, .lsr .d .r11 .r10 2])
-    (.seq (.loop (.block bflyBody) (.nonzero .d .r11))
-      (.block [.addi .r5 .r6 0, .sub .r0 .r5 .r3]))
+`scratch` holds the table: word `2k` is `ζ_k`, word `2k + 1` is `ζ'_k`
+(`ztable`), `k < 128`. The layers with `len ≥ 4` load a block's pair of words
+and splat them (`vspltw`); the last layer, `len = 2`, does two blocks of four
+coefficients at a time: their halves are regrouped (`vperm`, `LO` and `HI`)
+so that the butterflies' operands are in two vectors, with the two blocks'
+zetas picked from the table's vector (`PW`, `PWP`), and regrouped back.
 
-/-- A layer: its blocks. -/
-def nttLayerCode : Prog isa :=
-  .seq (.block [.subi .r5 .r3 1024])
-    (.seq (.loop nttBlockCode (.nonzero .d .r0)) (.block [.lsr .d .r10 .r10 1, .subi .r0 .r10 4]))
+The constant vectors: `q` (`v0`), the high-word gathering control (`v1`),
+the regrouping controls (`v2`, `v3`) and the zeta picking controls (`v12`,
+`v13`), built from GPRs (`pair`, through `v14`, zero). `r3` = `f` and
+`r4` = `scratch` throughout; `r5` and `r6` are the offsets of the two
+vectors of a butterfly, `r7` that of the table's next pair, `r9` is `4·len`,
+`r10` counts a block's vector butterflies. No nonvolatile register, nor the
+link register, is written. -/
+
+/-- `⌊z · 2³² / q⌋`. -/
+def zetaPrime (z : Nat) : Nat := z * 2 ^ 32 / 3329
+
+/-- The table: `ζ_k` and `ζ'_k` for each `k`, as `u32`s at `[b]`, through `r12`. -/
+def ztable (b : Reg) : List Instr :=
+  (List.range 128).flatMap fun k =>
+    let z := zetaTable.getD k 0
+    let z' := BitVec.ofNat 32 (zetaPrime z)
+    [.li .r12 z, .store .w .r12 b (8 * k),
+     .lis .r12 (z'.extractLsb' 16 16), .ori .r12 .r12 (z'.extractLsb' 0 16), .store .w .r12 b (8 * k + 4)]
+
+/-- `v8 := t = mulZ(v7)` with the zeta in `v4` and `ζ'` in `v5`. -/
+def mulZ : List Instr :=
+  [.vop (.mulu false true .v8 .v7 .v5), .vop (.mulu true true .v9 .v7 .v5),
+   .vop (.perm .v8 .v8 .v9 .v1), .vop (.muluwm .v9 .v7 .v4), .vop (.muluwm .v8 .v8 .v0),
+   .vop (.sub true .v8 .v9 .v8), .vop (.sub true .v9 .v8 .v0), .vop (.minu true .v8 .v8 .v9)]
+
+/-- The butterflies on `v6` and `v7` with the zeta in `v4` (`ζ'` in `v5`):
+`t = ζ·v7`, then `v7 = v6 - t`, `v6 = v6 + t`, reduced. -/
+def vbfly : List Instr := mulZ ++
+  [.vop (.add false .v9 .v6 .v0), .vop (.sub true .v9 .v9 .v8), .vop (.sub true .v10 .v9 .v0),
+   .vop (.minu true .v7 .v9 .v10),
+   .vop (.add false .v9 .v6 .v8), .vop (.sub true .v10 .v9 .v0), .vop (.minu true .v6 .v9 .v10)]
+
+/-- A vector butterfly of a layer with `len ≥ 4`, on `[r3 + r5]` and `[r3 + r6]`. -/
+def vbflyBody : List Instr :=
+  [.lxvd2x .v6 .r3 .r5, .lxvd2x .v7 .r3 .r6] ++ vbfly ++
+  [.stxvd2x .v6 .r3 .r5, .stxvd2x .v7 .r3 .r6, .addi .r5 .r5 16, .addi .r6 .r6 16, .subi .r10 .r10 1]
+
+/-- A block: its zeta and `ζ'` splatted, then `len / 4` vector butterflies. -/
+def vblockCode : Prog isa :=
+  .seq (.block [.lxvd2x .v11 .r4 .r7, .vop (.splat true .v4 .v11 1), .vop (.splat true .v5 .v11 0),
+      .addi .r7 .r7 8, .add .r6 .r5 .r9, .lsr .d .r10 .r9 4])
+    (.seq (.loop (.block vbflyBody) (.nonzero .d .r10))
+      (.block [.addi .r5 .r6 0, .subi .r0 .r5 1024]))
+
+/-- A layer with `len ≥ 4`: its blocks. -/
+def vlayerCode : Prog isa :=
+  .seq (.block [.li .r5 0])
+    (.seq (.loop vblockCode (.nonzero .d .r0)) (.block [.lsr .d .r9 .r9 1, .subi .r0 .r9 8]))
+
+/-- Two blocks of the layer with `len = 2`, at `[r3 + r5]` and `[r3 + r6]`,
+`r6 = r5 + 16`: regrouped, the butterflies, regrouped back. -/
+def vbfly2Body : List Instr :=
+  [.lxvd2x .v11 .r4 .r7, .vop (.perm .v4 .v11 .v11 .v12), .vop (.perm .v5 .v11 .v11 .v13),
+   .addi .r6 .r5 16, .lxvd2x .v8 .r3 .r5, .lxvd2x .v9 .r3 .r6,
+   .vop (.perm .v6 .v8 .v9 .v2), .vop (.perm .v7 .v8 .v9 .v3)] ++ vbfly ++
+  [.vop (.perm .v8 .v6 .v7 .v2), .vop (.perm .v9 .v6 .v7 .v3),
+   .stxvd2x .v8 .r3 .r5, .stxvd2x .v9 .r3 .r6, .addi .r5 .r5 32, .addi .r7 .r7 16, .subi .r10 .r10 1]
+
+/-- The `vperm` controls (most significant byte first): the high words of
+two vectors of products (`v1`); the high or the low doublewords of two
+vectors (`v2`, `v3`); words `1, 1, 3, 3` and `0, 0, 2, 2` of one (`v12`, `v13`). -/
+def ctlHi : BitVec 128 := 0x000102031011121308090a0b18191a1b
+def ctlLo : BitVec 128 := 0x00010203040506071011121314151617
+def ctlHi2 : BitVec 128 := 0x08090a0b0c0d0e0f18191a1b1c1d1e1f
+def ctlPw : BitVec 128 := 0x0405060704050607_0c0d0e0f0c0d0e0f
+def ctlPwp : BitVec 128 := 0x0001020300010203_08090a0b08090a0b
+
+/-- `d := v`, through `r11`, `r12` and `v15`, with `v14` zero. -/
+def vconst (d : VReg) (v : BitVec 128) : List Instr :=
+  Impl.Vector.PPC64LE.const64 .r11 (v.extractLsb' 64 64) ++ Impl.Vector.PPC64LE.const64 .r12 (v.extractLsb' 0 64) ++
+    Impl.Vector.PPC64LE.pair d .v15 .v14 .r11 .r12
+
+/-- `q` in every word. -/
+def qVec : BitVec 128 := 0x00000d0100000d0100000d0100000d01
+
+/-- The constants. -/
+def vconsts : List Instr :=
+  [.vop (.splatImm true .v14 0)] ++ vconst .v0 qVec ++ vconst .v1 ctlHi ++ vconst .v2 ctlLo ++
+    vconst .v3 ctlHi2 ++ vconst .v12 ctlPw ++ vconst .v13 ctlPwp
 
 def ntt : Prog isa :=
-  .seq (.block (saveRegs .r4 512 ++ table zetaTable .r4 ++ consts ++
-      ([.addi .r3 .r3 1024, .addi .r4 .r4 4, .li .r10 512] : List Instr)))
-    (.seq (.loop nttLayerCode (.nonzero .d .r0)) (.block (restoreRegs .r4 0)))
+  .seq (.block (ztable .r4 ++ vconsts ++ ([.li .r7 8, .li .r9 512] : List Instr)))
+    (.seq (.loop vlayerCode (.nonzero .d .r0))
+      (.seq (.block [.li .r5 0, .li .r10 32]) (.loop (.block vbfly2Body) (.nonzero .d .r10))))
 
 /-! ## `nttInv` -/
 
