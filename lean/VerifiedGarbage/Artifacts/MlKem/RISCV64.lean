@@ -11,9 +11,7 @@ public import VerifiedGarbage.Proof.MlKem.RISCV64.Decode12
 public import VerifiedGarbage.Proof.MlKem.RISCV64.CheckEk
 public import VerifiedGarbage.Proof.MlKem.RISCV64.CompressEncode
 public import VerifiedGarbage.Proof.MlKem.RISCV64.DecodeDecompress
-public import VerifiedGarbage.Proof.MlKem.RISCV64.KeyGenCT
-public import VerifiedGarbage.Proof.MlKem.RISCV64.EncapsCT
-public import VerifiedGarbage.Proof.MlKem.RISCV64.DecapsCT
+public import VerifiedGarbage.Proof.MlKem.RISCV64.CallWipe
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Print
 
@@ -25,21 +23,21 @@ namespace VG.Artifacts.MlKem.RISCV64
 
 def artifacts : List Artifact := [
   Spec.MlKem.keyGenApi.artifact RISCV64.target {
-    code := Impl.MlKem.RISCV64.keygen
-    stack := 1168
-    verified := Proof.MlKem.RISCV64.KeyGen.verified },
+    code := Impl.MlKem.RISCV64.Wipe.keyGen
+    stack := 1200
+    verified := Proof.MlKem.RISCV64.Wipe.keyGen_verified },
   Spec.MlKem.encapsApi.artifact RISCV64.target {
-    code := Impl.MlKem.RISCV64.encaps
-    stack := 1168
-    verified := Proof.MlKem.RISCV64.Encaps.verified },
+    code := Impl.MlKem.RISCV64.Wipe.encaps
+    stack := 1200
+    verified := Proof.MlKem.RISCV64.Wipe.encaps_verified },
   Spec.MlKem.encapsHApi.artifact RISCV64.target {
-    code := Impl.MlKem.RISCV64.encapsH
-    stack := 1168
-    verified := Proof.MlKem.RISCV64.Encaps.verifiedH },
+    code := Impl.MlKem.RISCV64.Wipe.encapsH
+    stack := 1200
+    verified := Proof.MlKem.RISCV64.Wipe.encapsH_verified },
   Spec.MlKem.decapsApi.artifact RISCV64.target {
-    code := Impl.MlKem.RISCV64.decaps
-    stack := 1168
-    verified := Proof.MlKem.RISCV64.Decaps.verified },
+    code := Impl.MlKem.RISCV64.Wipe.decaps
+    stack := 1200
+    verified := Proof.MlKem.RISCV64.Wipe.decaps_verified },
   Spec.MlKem.checkEkApi.artifact RISCV64.target {
     code := Impl.MlKem.RISCV64.checkEk
     verified := Proof.MlKem.RISCV64.CheckEk.verified }]
