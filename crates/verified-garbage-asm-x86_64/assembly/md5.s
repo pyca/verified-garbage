@@ -48,7 +48,10 @@ vg_md5_update:
 	jb 25f
 27:
 	mov r9, QWORD PTR [rbp]
-	mov QWORD PTR [rbx+r13*1+16], r9
+	mov r10d, 56
+	cmp r13, r10
+	cmovb r10, r13
+	mov QWORD PTR [rbx+r10*1+16], r9
 	add rbp, 8
 	add r13, 8
 	sub rax, 8
@@ -61,7 +64,10 @@ vg_md5_update:
 	je 28f
 210:
 	movzx r9d, BYTE PTR [rbp]
-	mov BYTE PTR [rbx+r13*1+16], r9b
+	mov r10d, 63
+	cmp r13, r10
+	cmovb r10, r13
+	mov BYTE PTR [rbx+r10*1+16], r9b
 	add rbp, 1
 	add r13, 1
 	sub rax, 1
@@ -96,7 +102,10 @@ vg_md5_update:
 	jb 217f
 219:
 	mov r9, QWORD PTR [rbp]
-	mov QWORD PTR [rbx+r13*1+16], r9
+	mov r10d, 56
+	cmp r13, r10
+	cmovb r10, r13
+	mov QWORD PTR [rbx+r10*1+16], r9
 	add rbp, 8
 	add r13, 8
 	sub rax, 8
@@ -109,7 +118,10 @@ vg_md5_update:
 	je 220f
 222:
 	movzx r9d, BYTE PTR [rbp]
-	mov BYTE PTR [rbx+r13*1+16], r9b
+	mov r10d, 63
+	cmp r13, r10
+	cmovb r10, r13
+	mov BYTE PTR [rbx+r10*1+16], r9b
 	add rbp, 1
 	add r13, 1
 	sub rax, 1
@@ -190,7 +202,10 @@ vg_md5_finalize:
 	mov rax, r13
 	and rax, 15
 	je 23f
-	mov BYTE PTR [rbx+r13*1+16], r9b
+	mov r10d, 63
+	cmp r13, r10
+	cmovb r10, r13
+	mov BYTE PTR [rbx+r10*1+16], r9b
 	add r13, 1
 	mov eax, 64
 	test r14, r14
@@ -204,7 +219,10 @@ vg_md5_finalize:
 	cmp rax, 8
 	jb 27f
 29:
-	mov QWORD PTR [rbx+r13*1+16], r9
+	mov r10d, 56
+	cmp r13, r10
+	cmovb r10, r13
+	mov QWORD PTR [rbx+r10*1+16], r9
 	add r13, 8
 	sub rax, 8
 	cmp rax, 8
@@ -215,7 +233,10 @@ vg_md5_finalize:
 	test rax, rax
 	je 210f
 212:
-	mov BYTE PTR [rbx+r13*1+16], r9b
+	mov r10d, 63
+	cmp r13, r10
+	cmovb r10, r13
+	mov BYTE PTR [rbx+r10*1+16], r9b
 	add r13, 1
 	sub rax, 1
 	jne 212b
@@ -238,7 +259,10 @@ vg_md5_finalize:
 	cmp r13, 48
 	jae 215f
 217:
-	movdqu XMMWORD PTR [rbx+r13*1+16], xmm0
+	mov r10d, 48
+	cmp r13, r10
+	cmovb r10, r13
+	movdqu XMMWORD PTR [rbx+r10*1+16], xmm0
 	pxor xmm0, xmm0
 	add r13, 16
 	cmp r13, 48

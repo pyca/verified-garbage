@@ -45,7 +45,7 @@ jmp 24f
 .base64 "SSnESIP4CA=="
 jb 25f
 27:
-.base64 "TItNAE6JTCsQSIPFCEmDxQhIg+gISIP4CA=="
+.base64 "TItNAEG6OAAAAE051U0PQtVOiUwTEEiDxQhJg8UISIPoCEiD+Ag="
 jae 27b
 jmp 26f
 25:
@@ -53,7 +53,7 @@ jmp 26f
 .base64 "SIXA"
 je 28f
 210:
-.base64 "RA+2TQBGiEwrEEiDxQFJg8UBSIPoAQ=="
+.base64 "RA+2TQBBuj8AAABNOdVND0LVRohMExBIg8UBSYPFAUiD6AE="
 jne 210b
 jmp 29f
 28:
@@ -77,7 +77,7 @@ jmp 216f
 .base64 "SSnESIP4CA=="
 jb 217f
 219:
-.base64 "TItNAE6JTCsQSIPFCEmDxQhIg+gISIP4CA=="
+.base64 "TItNAEG6OAAAAE051U0PQtVOiUwTEEiDxQhJg8UISIPoCEiD+Ag="
 jae 219b
 jmp 218f
 217:
@@ -85,7 +85,7 @@ jmp 218f
 .base64 "SIXA"
 je 220f
 222:
-.base64 "RA+2TQBGiEwrEEiDxQFJg8UBSIPoAQ=="
+.base64 "RA+2TQBBuj8AAABNOdVND0LVRohMExBIg8UBSYPFAUiD6AE="
 jne 222b
 jmp 221f
 220:
@@ -140,7 +140,7 @@ jmp 21f
 22:
 .base64 "TInoSIPgDw=="
 je 23f
-.base64 "RohMKxBJg8UBuEAAAABNhfY="
+.base64 "Qbo/AAAATTnVTQ9C1UaITBMQSYPFAbhAAAAATYX2"
 je 25f
 jmp 26f
 25:
@@ -149,7 +149,7 @@ jmp 26f
 .base64 "QbkAAAAATCnoSIP4CA=="
 jb 27f
 29:
-.base64 "TolMKxBJg8UISIPoCEiD+Ag="
+.base64 "Qbo4AAAATTnVTQ9C1U6JTBMQSYPFCEiD6AhIg/gI"
 jae 29b
 jmp 28f
 27:
@@ -157,7 +157,7 @@ jmp 28f
 .base64 "SIXA"
 je 210f
 212:
-.base64 "RohMKxBJg8UBSIPoAQ=="
+.base64 "Qbo/AAAATTnVTQ9C1UaITBMQSYPFAUiD6AE="
 jne 212b
 jmp 211f
 210:
@@ -173,7 +173,7 @@ jmp 24f
 .base64 "ZkkPbsFJg/0w"
 jae 215f
 217:
-.base64 "80IPf0QrEGYP78BJg8UQSYP9MA=="
+.base64 "QbowAAAATTnVTQ9C1fNCD39EExBmD+/ASYPFEEmD/TA="
 jb 217b
 jmp 216f
 215:
