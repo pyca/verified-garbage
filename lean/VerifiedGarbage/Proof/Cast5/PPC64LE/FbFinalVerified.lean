@@ -29,6 +29,8 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Consts
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratchConsts
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegSet
+import VerifiedGarbage.Proof.Framework.PPC64LE.VectorTaintSym
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.VectorTaintSym
 
 /-!
 # CAST5-CFB64 and CAST5-OFB of a message's last piece on PPC64LE meet their contracts
@@ -182,11 +184,11 @@ theorem cfbDecryptFinal_correct (s : State) (hs : (finalPC decPost).pre s) :
 /-! ## Constant time -/
 
 theorem cfbEncryptFinal_constantTime (pre : State → Prop) : ConstantTime isa pre modePub cfbEncryptFinal :=
-  VG.Taint.constantTime (A := taintSym [s1234Sym]) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7, .r8])
+  VG.Taint.constantTime (A := vectorTaintSym [s1234Sym]) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7, .r8])
     (fun _ _ _ _ hp => modes_agree _ _ hp) (by taint_decide)
 
 theorem cfbDecryptFinal_constantTime (pre : State → Prop) : ConstantTime isa pre modePub cfbDecryptFinal :=
-  VG.Taint.constantTime (A := taintSym [s1234Sym]) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7, .r8])
+  VG.Taint.constantTime (A := vectorTaintSym [s1234Sym]) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7, .r8])
     (fun _ _ _ _ hp => modes_agree _ _ hp) (by taint_decide)
 
 /-! ## The contracts -/
@@ -341,7 +343,7 @@ theorem ofbFinal_correct (s : State) (hs : (finalPC ofbPost).pre s) :
   exact h2
 
 theorem ofbFinal_constantTime (pre : State → Prop) : ConstantTime isa pre modePub ofbFinal :=
-  VG.Taint.constantTime (A := taintSym [s1234Sym]) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7, .r8])
+  VG.Taint.constantTime (A := vectorTaintSym [s1234Sym]) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7, .r8])
     (fun _ _ _ _ hp => modes_agree _ _ hp) (by taint_decide)
 
 /-- `finalP`'s precondition, public data and witness are the OFB scratch
