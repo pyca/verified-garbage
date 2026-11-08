@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Camellia.AArch64.Serial.Core
-public import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Pure
+public import VerifiedGarbage.Proof.Camellia.SerialPure
 public import VerifiedGarbage.Proof.Framework.AArch64.Tbl
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Simd
 namespace VG.Proof.Camellia.AArch64.Serial
 open VG VG.AArch64 VG.AArch64.RegUpd VG.AArch64.Tbl
 open VG.Impl.Camellia.AArch64.Serial
+open VG.Proof.Camellia.Serial
 
 theorem vbyte_map2 (f : (w : Nat) → BitVec w → BitVec w → BitVec w)
     (x y : BitVec 128) (e : Nat) (he : e < 16) :

@@ -12,6 +12,7 @@ import Mathlib.Tactic.IntervalCases
 namespace VG.Proof.Camellia.AArch64.Serial
 open VG VG.AArch64 VG.AArch64.RegUpd VG.AArch64.Tbl
 open VG.Impl.Camellia.AArch64.Serial
+open VG.Proof.Camellia.Serial
 
 def Constants (s : State) : Prop :=
   s.v .v4 = bc 64 ∧ s.v .v5 = bc 128 ∧ s.v .v6 = bc 192

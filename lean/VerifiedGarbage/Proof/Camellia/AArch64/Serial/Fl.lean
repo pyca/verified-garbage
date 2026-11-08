@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Camellia.AArch64.Serial.Core
-public import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Pure
+public import VerifiedGarbage.Proof.Camellia.SerialPure
 public import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Framework.Interleave
 namespace VG.Proof.Camellia.AArch64.Serial
 open VG VG.AArch64 VG.AArch64.RegUpd
 open VG.Impl.Camellia.AArch64.Serial
+open VG.Proof.Camellia.Serial
 
 theorem rotate31 (x : BitVec 32) : x.rotateRight 31 = x.rotateLeft 1 := by
   simp only [BitVec.rotateRight_def,BitVec.rotateLeft_def,Nat.reduceMod,Nat.reduceSub]
