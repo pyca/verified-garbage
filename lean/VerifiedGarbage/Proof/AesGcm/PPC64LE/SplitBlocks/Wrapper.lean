@@ -106,6 +106,11 @@ def ciphertext (base : State) (nr count len : Nat) : List Spec.Gcm.Block :=
     (Spec.Gcm.blockAt base.mem (base.gpr .r5)) (blocks base count 0 len)
 
 
+/-- What the wrapper hashes: the ciphertext it reads (`dec`) or writes. -/
+def hashed (dec : Bool) (base : State) (nr count len : Nat) : List Spec.Gcm.Block :=
+  bif dec then blocks base count 0 len else ciphertext base nr count len
+
+
 def kernelBase (base : State) : State := Blocks.bulkArgsState (Blocks.wrapperEntryState base)
 
 
@@ -159,18 +164,18 @@ theorem kernel_plain {base : State} {n count i : Nat} (lay : Layout base n count
       (Offset.sub_base _ (d := 16*i) (n := 16) (k := 16*n) (by omega))
 
 
-abbrev Mid (base : State) (n nr count k : Nat) (s : State) :=
-  Blocks.WrapperMidWith base n nr k (ciphertext base nr count)
+abbrev Mid (dec : Bool) (base : State) (n nr count k : Nat) (s : State) :=
+  Blocks.WrapperMidH base n nr k (ciphertext base nr count) (hashed dec base nr count)
     (fun j => Spec.Gcm.blocksAt base.mem (base.gpr .r7+BitVec.ofNat 64 (16*j)) (n-j)) s [.r17,.r19]
 
 
-theorem bulk_output {base u : State} {n nr count : Nat} (lay : Layout base n count) (hnr : nr<15)
+theorem bulk_output {base u : State} {n nr count : Nat} {dec : Bool} (lay : Layout base n count) (hnr : nr<15)
     (hc : Blocks.CoreResultWith (kernelBase base) (n-n%8) nr
-      (plaintext (kernelBase base) count) false (input (kernelBase base) count) u) :
+      (plaintext (kernelBase base) count) dec (input (kernelBase base) count) u) :
     Spec.Gcm.blocksAt u.mem (base.gpr .r7) (n-n%8)=ciphertext base nr count (n-n%8) ∧
     Spec.Gcm.blockAt u.mem (base.gpr .r5)=Nat.repeat Spec.Gcm.inc32 (n-n%8) (Spec.Gcm.blockAt base.mem (base.gpr .r5)) ∧
     Spec.Gcm.blockAt u.mem (base.gpr .r6)=Spec.Gcm.ghashFrom (Spec.Gcm.ctxH base.mem (base.gpr .r3))
-      (Spec.Gcm.blockAt base.mem (base.gpr .r6)) (ciphertext base nr count (n-n%8)) := by
+      (Spec.Gcm.blockAt base.mem (base.gpr .r6)) (hashed dec base nr count (n-n%8)) := by
   have hp : (List.range (n-n%8)).map (plaintext (kernelBase base) count)=blocks base count 0 (n-n%8) := by
     apply List.map_congr_left
     intro i hi
@@ -183,12 +188,20 @@ theorem bulk_output {base u : State} {n nr count : Nat} (lay : Layout base n cou
   have hctr : Spec.Gcm.blockAt u.mem (base.gpr .r5)=Nat.repeat Spec.Gcm.inc32 (n-n%8)
       (Spec.Gcm.blockAt (Blocks.wrapperHeaderMem base) (base.gpr .r5)) := hc.counter
   rw [Blocks.header_counter lay.wrapper] at hctr
-  have hy : Spec.Gcm.blockAt u.mem (base.gpr .r6)=Spec.Gcm.ghashFrom
-      (Spec.Gcm.ctxH (Blocks.wrapperHeaderMem base) (base.gpr .r3))
-      (Spec.Gcm.blockAt (Blocks.wrapperHeaderMem base) (base.gpr .r6))
-      (Spec.Gcm.blocksAt u.mem (base.gpr .r7) (n-n%8)) := hc.y
-  rw [Blocks.header_h lay.wrapper,Blocks.header_y lay.wrapper,hd] at hy
-  exact ⟨hd,hctr,hy⟩
+  refine ⟨hd,hctr,?_⟩
+  cases dec
+  · have hy : Spec.Gcm.blockAt u.mem (base.gpr .r6)=Spec.Gcm.ghashFrom
+        (Spec.Gcm.ctxH (Blocks.wrapperHeaderMem base) (base.gpr .r3))
+        (Spec.Gcm.blockAt (Blocks.wrapperHeaderMem base) (base.gpr .r6))
+        (Spec.Gcm.blocksAt u.mem (base.gpr .r7) (n-n%8)) := hc.y
+    rw [Blocks.header_h lay.wrapper,Blocks.header_y lay.wrapper,hd] at hy
+    exact hy
+  · have hy : Spec.Gcm.blockAt u.mem (base.gpr .r6)=Spec.Gcm.ghashFrom
+        (Spec.Gcm.ctxH (Blocks.wrapperHeaderMem base) (base.gpr .r3))
+        (Spec.Gcm.blockAt (Blocks.wrapperHeaderMem base) (base.gpr .r6))
+        ((List.range (n-n%8)).map (plaintext (kernelBase base) count)) := hc.y
+    rw [Blocks.header_h lay.wrapper,Blocks.header_y lay.wrapper,hp] at hy
+    exact hy
 
 
 theorem fixed_keep {base s t : State} (hf : Blocks.WrapperFixed base s) (hk : Keep coreVolatile s t) :
@@ -208,10 +221,10 @@ theorem saved_header (base : State) (g : Reg → BitVec 64)
     exact Offset.disjoint_base _ (by decide) (by decide))
 
 
-theorem saved_core {base u : State} {n nr count : Nat} (lay : Layout base n count) (g : Reg → BitVec 64)
+theorem saved_core {base u : State} {n nr count : Nat} {dec : Bool} (lay : Layout base n count) (g : Reg → BitVec 64)
     (hs : Spill.Saved (base.gpr .r9) g extraSaved base.mem)
     (hc : Blocks.CoreResultWith (kernelBase base) (n-n%8) nr
-      (plaintext (kernelBase base) count) false (input (kernelBase base) count) u) :
+      (plaintext (kernelBase base) count) dec (input (kernelBase base) count) u) :
     Spill.Saved (base.gpr .r9) g extraSaved u.mem := by
   refine (saved_header base g hs).frame_in (lo := 152) (n := 16) (by decide) hc.narrow ?_
   intro r hr
@@ -234,13 +247,13 @@ theorem saved_core {base u : State} {n nr count : Nat} (lay : Layout base n coun
       (Offset.sub_base _ (d := 152) (n := 16) (k := 2112) (by decide))
 
 
-theorem bulk_ok [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
+theorem bulk_ok [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] (dec : Bool)
     (base : State) (n nr count : Nat) (lay : Layout base n count) (hn : base.gpr .r8=BitVec.ofNat 64 n)
     (hr : base.gpr .r4=BitVec.ofNat 64 nr) (hmin : 9<nr) (hmax : nr<15) :
-    WP isa Impl.AesGcm.PPC64LE.SplitBlocks.bulk (Blocks.wrapperEntryState base) fun t =>
-      Mid base n nr count (n-n%8) t ∧ input base count (n-n%8) (t.gpr .r17) (t.gpr .r19) ∧
+    WP isa (Impl.AesGcm.PPC64LE.SplitBlocks.bulkOf dec) (Blocks.wrapperEntryState base) fun t =>
+      Mid dec base n nr count (n-n%8) t ∧ input base count (n-n%8) (t.gpr .r17) (t.gpr .r19) ∧
       ∀ g, Spill.Saved (base.gpr .r9) g extraSaved base.mem → Spill.Saved (base.gpr .r9) g extraSaved t.mem := by
-  rw [Impl.AesGcm.PPC64LE.SplitBlocks.bulk]
+  rw [Impl.AesGcm.PPC64LE.SplitBlocks.bulkOf]
   apply WP.seq
   refine WP.mono (Blocks.bulkArgs_ok (Blocks.wrapperEntryState base)) fun args hargs => ?_
   subst args
@@ -250,7 +263,7 @@ theorem bulk_ok [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
       (Blocks.bulkArgsState (Blocks.wrapperEntryState base)).gpr .r3+240#64
     rw [ha.h,ha.ctx]; rfl
   apply WP.seq
-  refine WP.mono (core_ok _ (n-n%8) nr count (Blocks.bulkEntry_layout lay.wrapper) lay.kernel
+  refine WP.mono (core_ok dec _ (n-n%8) nr count (Blocks.bulkEntry_layout lay.wrapper) lay.kernel
     ha.left (by omega) hmin hmax (ha.rounds.trans hr) hH) fun u ⟨hu,hku⟩ => ?_
   refine WP.mono (Blocks.bulkRest_ok u) fun t ht => ?_
   subst t
@@ -297,8 +310,8 @@ theorem source_frame {base s : State} {n count i : Nat} (lay : Layout base n cou
   exact (lay.disjoint r hr).sub_left (Offset.sub_base _ (d := 16*i) (n := 16) (k := 16*count) (by omega))
 
 
-theorem copy_config {base s : State} {n nr count k : Nat} (lay : Layout base n count)
-    (hs : Mid base n nr count k s) (hin : input base count k (s.gpr .r17) (s.gpr .r19)) :
+theorem copy_config {base s : State} {n nr count k : Nat} {dec : Bool} (lay : Layout base n count)
+    (hs : Mid dec base n nr count k s) (hin : input base count k (s.gpr .r17) (s.gpr .r19)) :
     Copy.Config s (n-k) (count-k) := by
   refine ⟨by have := lay.bound; omega,by have := lay.wrapper.core.size; omega,hin.2,?_,?_,?_⟩
   · intro i hi
@@ -324,41 +337,43 @@ theorem ciphertext_zero (base : State) (nr count : Nat) : ciphertext base nr cou
     List.length_nil,List.zipWith_nil_left]
 
 
-theorem mid_initial (base : State) (n nr count : Nat) (lay : Layout base n count)
-    (hn : base.gpr .r8=BitVec.ofNat 64 n) : Mid base n nr count 0 (Blocks.wrapperEntryState base) := by
+theorem mid_initial (dec : Bool) (base : State) (n nr count : Nat) (lay : Layout base n count)
+    (hn : base.gpr .r8=BitVec.ofNat 64 n) : Mid dec base n nr count 0 (Blocks.wrapperEntryState base) := by
   have hs := Blocks.wrapperMid_initial base n nr lay.wrapper hn
   refine ⟨hs.bound,hs.fixed,hs.ptr,hs.count,?_,hs.frame,?_,hs.pending,hs.counter,?_⟩
   · intro r hr hn
     exact hs.keep r hr (fun he => hn (List.mem_append_left _ he))
   · simp only [ciphertext_zero,Spec.Gcm.blocksAt,List.range_zero,List.map_nil]
-  · simpa only [ciphertext_zero,Blocks.wrapperCiphertext,Spec.Gcm.blocksAt,List.range_zero,List.map_nil,
-      Spec.Gcm.ctr32,Spec.Gcm.keystream,List.length_nil,List.zipWith_nil_left] using hs.y
+  · cases dec <;>
+    simpa only [hashed,Bool.cond_true,Bool.cond_false,blocks,ciphertext_zero,Blocks.wrapperCiphertext,Spec.Gcm.blocksAt,
+      List.range_zero,List.map_nil,Spec.Gcm.ctr32,Spec.Gcm.keystream,List.length_nil,
+      List.zipWith_nil_left] using hs.y
 
 
-theorem optional_bulk_ok [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
+theorem optional_bulk_ok [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] (dec : Bool)
     (base : State) (n nr count : Nat) (lay : Layout base n count) (hn : base.gpr .r8=BitVec.ofNat 64 n)
     (hr : base.gpr .r4=BitVec.ofNat 64 nr) (hmin : 9<nr) (hmax : nr<15) :
-    WP isa Impl.AesGcm.PPC64LE.SplitBlocks.maybeBulk (Blocks.wrapperEntryState base) fun t =>
-      ∃ k, k≤n ∧ n-k<32 ∧ Mid base n nr count k t ∧ input base count k (t.gpr .r17) (t.gpr .r19) ∧
+    WP isa (Impl.AesGcm.PPC64LE.SplitBlocks.maybeBulkOf dec) (Blocks.wrapperEntryState base) fun t =>
+      ∃ k, k≤n ∧ n-k<32 ∧ Mid dec base n nr count k t ∧ input base count k (t.gpr .r17) (t.gpr .r19) ∧
         ∀ g, Spill.Saved (base.gpr .r9) g extraSaved base.mem → Spill.Saved (base.gpr .r9) g extraSaved t.mem := by
-  rw [Impl.AesGcm.PPC64LE.SplitBlocks.maybeBulk]
+  rw [Impl.AesGcm.PPC64LE.SplitBlocks.maybeBulkOf]
   have ht := Blocks.wrapper_bulk_test base hn (by have := lay.wrapper.core.size; omega)
   by_cases hsmall : n<32
   · refine WP.ite true (by simp only [eval,State.read,Size.bits,BitVec.setWidth_eq,ht.mpr hsmall]; rfl)
-      (fun _ => WP.block_nil ⟨0,by omega,by omega,mid_initial base n nr count lay hn,?_,?_⟩) (by simp)
+      (fun _ => WP.block_nil ⟨0,by omega,by omega,mid_initial dec base n nr count lay hn,?_,?_⟩) (by simp)
     · change input base count 0 (base.gpr .r17) (base.gpr .r19)
       simp only [input,Nat.zero_min,Nat.mul_zero,BitVec.add_zero,Nat.sub_zero,lay.left,and_self]
     · exact saved_header base
   · have hne : (Blocks.wrapperEntryState base).gpr .r12≠0 := fun he => hsmall (ht.mp he)
     refine WP.ite false (by simpa only [eval,State.read,Size.bits,BitVec.setWidth_eq,
       Option.some.injEq,beq_eq_false_iff_ne] using hne) (by simp) (fun _ => ?_)
-    exact WP.mono (bulk_ok base n nr count lay hn hr hmin hmax) fun t hh =>
+    exact WP.mono (bulk_ok dec base n nr count lay hn hr hmin hmax) fun t hh =>
       ⟨n-n%8,by omega,by omega,hh⟩
 
 
 
-theorem copy_pending {base s t : State} {n nr count k : Nat} (lay : Layout base n count)
-    (hs : Mid base n nr count k s) (hin : input base count k (s.gpr .r17) (s.gpr .r19))
+theorem copy_pending {base s t : State} {n nr count k : Nat} {dec : Bool} (lay : Layout base n count)
+    (hs : Mid dec base n nr count k s) (hin : input base count k (s.gpr .r17) (s.gpr .r19))
     (ht : Copy.Result s (n-k) (count-k) t) :
     Spec.Gcm.blocksAt t.mem (base.gpr .r7+BitVec.ofNat 64 (16*k)) (n-k)=blocks base count k (n-k) := by
   unfold Spec.Gcm.blocksAt blocks
@@ -381,12 +396,12 @@ theorem copy_pending {base s t : State} {n nr count k : Nat} (lay : Layout base 
 
 
 
-abbrev Copied (base : State) (n nr count k : Nat) (s : State) :=
-  Blocks.WrapperMidWith base n nr k (ciphertext base nr count)
+abbrev Copied (dec : Bool) (base : State) (n nr count k : Nat) (s : State) :=
+  Blocks.WrapperMidH base n nr k (ciphertext base nr count) (hashed dec base nr count)
     (fun j => blocks base count j (n-j)) s [.r17,.r19]
 
 
-theorem copy_frame {base s t : State} {n nr count k : Nat} (hs : Mid base n nr count k s)
+theorem copy_frame {base s t : State} {n nr count k : Nat} {dec : Bool} (hs : Mid dec base n nr count k s)
     (ht : Copy.Result s (n-k) (count-k) t) :
     Frame (Blocks.wrapperWrites base n) s.mem t.mem := by
   refine ht.frame.sub fun r hr => ?_
@@ -397,9 +412,9 @@ theorem copy_frame {base s t : State} {n nr count k : Nat} (hs : Mid base n nr c
   exact Offset.sub_base _ (d := 16*k) (n := 16*(n-k)) (k := 16*n) (by have := hs.bound; omega)
 
 
-theorem copied {base s t : State} {n nr count k : Nat} (lay : Layout base n count)
-    (hs : Mid base n nr count k s) (hin : input base count k (s.gpr .r17) (s.gpr .r19))
-    (ht : Copy.Result s (n-k) (count-k) t) : Copied base n nr count k t := by
+theorem copied {base s t : State} {n nr count k : Nat} {dec : Bool} (lay : Layout base n count)
+    (hs : Mid dec base n nr count k s) (hin : input base count k (s.gpr .r17) (s.gpr .r19))
+    (ht : Copy.Result s (n-k) (count-k) t) : Copied dec base n nr count k t := by
   have hk : Keep coreVolatile s t := ht.keep.mono (by simp [Copy.registers,coreVolatile,Blocks.coreVolatile])
   have hf := copy_frame hs ht
   have hmem : ∀ r ∈ [Blocks.coreCounter (Blocks.wrapperView base),Blocks.coreY (Blocks.wrapperView base)],
@@ -438,8 +453,8 @@ theorem copied {base s t : State} {n nr count k : Nat} (lay : Layout base n coun
     exact Offset.base_disjoint _ (by omega) (by have := lay.wrapper.core.size; have := hs.bound; omega)
 
 
-theorem copy_saved {base s t : State} {n nr count k : Nat} (lay : Layout base n count)
-    (hs : Mid base n nr count k s) (ht : Copy.Result s (n-k) (count-k) t) (g : Reg → BitVec 64)
+theorem copy_saved {base s t : State} {n nr count k : Nat} {dec : Bool} (lay : Layout base n count)
+    (hs : Mid dec base n nr count k s) (ht : Copy.Result s (n-k) (count-k) t) (g : Reg → BitVec 64)
     (hsv : Spill.Saved (base.gpr .r9) g extraSaved s.mem) :
     Spill.Saved (base.gpr .r9) g extraSaved t.mem := by
   refine hsv.frame_in (lo := 152) (n := 16) (by decide) ht.frame ?_
@@ -475,9 +490,9 @@ theorem restored_layout {base : State} {n count : Nat} (lay : Layout base n coun
     | simpa only [restoredBase,RegUpd.gpr_write,reduceCtorEq,ite_false] using lay.wrapper.fit
 
 
-theorem restored_mid {base s t : State} {n nr count k : Nat} (hs : Copied base n nr count k s)
+theorem restored_mid {base s t : State} {n nr count k : Nat} {dec : Bool} (hs : Copied dec base n nr count k s)
     (g : Reg → BitVec 64) (ht : Spill.Restored g extraSaved s t) :
-    Blocks.WrapperMidWith (restoredBase base g) n nr k (ciphertext base nr count)
+    Blocks.WrapperMidH (restoredBase base g) n nr k (ciphertext base nr count) (hashed dec base nr count)
       (fun j => blocks base count j (n-j)) t := by
   have hk : Keep coreVolatile s t := by
     refine ⟨fun r hr => ht.other r ?_,ht.rd,ht.wr⟩
@@ -541,19 +556,19 @@ theorem slot_read {base s : State} {n count : Nat} (lay : Layout base n count)
     Offset.contains _ (d := p.2) (n := 8) (e := 64) (k := 2048) (ho p hp).1 (ho p hp).2 (by decide)⟩
 
 
-theorem body_ok [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] [VG.Proof.Gcm.PPC64LE.GhashLaw]
+theorem body_ok [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] [VG.Proof.Gcm.PPC64LE.GhashLaw] (dec : Bool)
     (base : State) (n nr count : Nat) (lay : Layout base n count) (hn : base.gpr .r8=BitVec.ofNat 64 n)
     (hr : base.gpr .r4=BitVec.ofNat 64 nr) (hv : nr=10 ∨ nr=12 ∨ nr=14) (g : Reg → BitVec 64)
     (hsv : Spill.Saved (base.gpr .r9) g extraSaved base.mem) :
-    WP isa Impl.AesGcm.PPC64LE.SplitBlocks.body base
-      (Blocks.WrapperResultWith (restoredBase base g) n nr (ciphertext base nr count n)) := by
-  rw [Impl.AesGcm.PPC64LE.SplitBlocks.body]
+    WP isa (Impl.AesGcm.PPC64LE.SplitBlocks.bodyOf dec) base
+      (Blocks.WrapperResultH (restoredBase base g) n nr (ciphertext base nr count n) (hashed dec base nr count n)) := by
+  rw [Impl.AesGcm.PPC64LE.SplitBlocks.bodyOf]
   apply WP.seq
   refine WP.mono (Blocks.wrapperEntry_ok base (fun off ho => lay.wrapper.header _ _
     ⟨⟨base.gpr .r9,64⟩,by simp,Offset.contains_base _ ho (by omega)⟩)) fun entry he => ?_
   subst entry
   apply WP.seq
-  refine WP.mono (optional_bulk_ok base n nr count lay hn hr
+  refine WP.mono (optional_bulk_ok dec base n nr count lay hn hr
     (by rcases hv with h | h | h <;> omega) (by rcases hv with h | h | h <;> omega)) fun mid hm => ?_
   obtain ⟨k,hkn,_,hm,hin,hkeepSaved⟩ := hm
   apply WP.seq
@@ -567,11 +582,19 @@ theorem body_ok [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] [VG.Proof.Gcm.PPC64LE.Ghas
     (slot_read lay hcopied.fixed.rd hcopied.fixed.wr hcopied.fixed.work)) fun restored ht => ?_
   have hmid := restored_mid hcopied g ht
   apply WP.seq
-  refine WP.mono (Blocks.wrapper_tailWith_ok (restored_layout lay g) hmid
-    (by exact hr) hv ?_) fun done hd => ?_
-  · simpa only [restoredBase,RegUpd.gpr_write,RegUpd.mem_write,reduceCtorEq,ite_false] using
-      ciphertext_split base nr count n k hkn
-  · exact Blocks.wrapper_finish (restored_layout lay g) hd
+  have hjoin := ciphertext_split base nr count n k hkn
+  have hdone : WP isa (Impl.AesGcm.PPC64LE.SplitBlocks.tailOf dec) restored
+      (Blocks.WrapperDoneH (restoredBase base g) n nr (ciphertext base nr count n) (hashed dec base nr count n)) := by
+    cases dec
+    · exact Blocks.wrapper_tailWith_ok (restored_layout lay g) hmid (by exact hr) hv (by
+        simpa only [restoredBase,RegUpd.gpr_write,RegUpd.mem_write,reduceCtorEq,ite_false] using hjoin)
+    · refine Blocks.wrapper_decTailWith_ok (restored_layout lay g) hmid (by exact hr) hv (by
+        simpa only [restoredBase,RegUpd.gpr_write,RegUpd.mem_write,reduceCtorEq,ite_false] using hjoin) ?_
+      have hb := blocks_add base count 0 k (n-k)
+      rw [show k+(n-k)=n by omega,Nat.zero_add] at hb
+      exact hb
+  refine WP.mono hdone fun done hd => ?_
+  exact Blocks.wrapper_finish (restored_layout lay g) hd
 
 
 

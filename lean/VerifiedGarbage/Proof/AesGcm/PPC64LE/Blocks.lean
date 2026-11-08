@@ -4908,8 +4908,8 @@ theorem bulk_output {s u : State} {n nr : Nat} (lay : WrapperLayout s n) (hnr : 
   exact ⟨hd,hctr,hy⟩
 
 
-theorem bulk_pending {s u : State} {n nr : Nat} {plaintext : Nat → Spec.Gcm.Block} {input : Nat → BitVec 64 → BitVec 64 → Prop} (lay : WrapperLayout s n)
-    (hc : CoreResultWith (bulkArgsState (wrapperEntryState s)) (n-n%8) nr plaintext false input u) :
+theorem bulk_pending {s u : State} {n nr : Nat} {plaintext : Nat → Spec.Gcm.Block} {hashIn : Bool} {input : Nat → BitVec 64 → BitVec 64 → Prop} (lay : WrapperLayout s n)
+    (hc : CoreResultWith (bulkArgsState (wrapperEntryState s)) (n-n%8) nr plaintext hashIn input u) :
     Spec.Gcm.blocksAt u.mem (s.gpr .r7+BitVec.ofNat 64 (16*(n-n%8))) (n-(n-n%8))=
       Spec.Gcm.blocksAt s.mem (s.gpr .r7+BitVec.ofNat 64 (16*(n-n%8))) (n-(n-n%8)) := by
   have hf : Frame [coreWork (wrapperView s),coreData (wrapperView s) (n-n%8),
@@ -4945,8 +4945,9 @@ theorem bulkRest_fixed {base s : State} (hf : WrapperFixed base s) : WrapperFixe
 theorem bulkRest_mem (s : State) : (bulkRestState s).mem=s.mem := rfl
 
 
-theorem bulk_frame {s u : State} {n nr : Nat} {plaintext : Nat → Spec.Gcm.Block} {input : Nat → BitVec 64 → BitVec 64 → Prop}
-    (hc : CoreResultWith (bulkArgsState (wrapperEntryState s)) (n-n%8) nr plaintext false input u) :
+theorem bulk_frame {s u : State} {n nr : Nat} {plaintext : Nat → Spec.Gcm.Block} {hashIn : Bool}
+    {input : Nat → BitVec 64 → BitVec 64 → Prop}
+    (hc : CoreResultWith (bulkArgsState (wrapperEntryState s)) (n-n%8) nr plaintext hashIn input u) :
     Frame (wrapperWrites s n) (wrapperHeaderMem s) u.mem := by
   have hf : Frame [coreWork (wrapperView s),coreData (wrapperView s) (n-n%8),
       coreCounter (wrapperView s),coreY (wrapperView s)] (wrapperHeaderMem s) u.mem := hc.frame

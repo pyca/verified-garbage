@@ -61,4 +61,20 @@ def encryptBlocksSplitContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contra
   encryptBlocksSplitSig.contract A (pre := encryptBlocksSplitPre A.ptrBits)
     (post := encryptBlocksSplitPost A.ptrBits) (stack := stack)
 
+/-- Decrypt the external prefix followed by the destination's original
+suffix: as `encryptBlocksSplitPost`, but GHASH continues over that input,
+the ciphertext. -/
+def decryptBlocksSplitPost (pb : Nat) : encryptBlocksSplitSig.Post pb :=
+  fun ctx rounds counter y src srcN dst n _scratch m m' _ =>
+    let c := blocksAt m src srcN.toNat ++ (blocksAt m dst n.toNat).drop srcN.toNat
+    blocksAt m' dst n.toNat = ctr32 (ctxCiph m ctx rounds.toNat) (blockAt m counter) c ∧
+      blockAt m' counter = Nat.repeat inc32 n.toNat (blockAt m counter) ∧
+      blockAt m' y = ghashFrom (ctxH m ctx) (blockAt m y) c
+
+/-- `vg_aes_gcm_decrypt_blocks_split`: the whole-block decryption contract,
+with the same arguments and precondition as encryption's. -/
+def decryptBlocksSplitContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  encryptBlocksSplitSig.contract A (pre := encryptBlocksSplitPre A.ptrBits)
+    (post := decryptBlocksSplitPost A.ptrBits) (stack := stack)
+
 end VG.Proof.Gcm

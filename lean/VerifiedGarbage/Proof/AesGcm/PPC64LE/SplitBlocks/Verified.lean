@@ -20,67 +20,107 @@ open VG VG.PPC64LE
 open Contract (prepared scratch)
 
 
+/-- The blocks the helper processes: the source prefix, then the rest of the
+destination. -/
+def inBlocks (s : State) : List Spec.Gcm.Block :=
+  Spec.Gcm.blocksAt s.mem (s.gpr .r7) (s.gpr .r8).toNat ++
+    (Spec.Gcm.blocksAt s.mem (s.gpr .r9) (s.gpr .r10).toNat).drop (s.gpr .r8).toNat
+
+def outBlocks (s : State) : List Spec.Gcm.Block :=
+  Spec.Gcm.ctr32 (Spec.Gcm.ctxCiph s.mem (s.gpr .r3) (s.gpr .r4).toNat) (Spec.Gcm.blockAt s.mem (s.gpr .r5))
+    (inBlocks s)
+
+/-- Encryption (`dec = false`) or decryption: the output at `dst`, the
+counter advanced, and GHASH over the ciphertext, the output or the input. -/
+structure CryptPost (dec : Bool) (s t : State) : Prop where
+  saved : ∀ r ∈ preserved, t.gpr r=s.gpr r
+  lr : t.lr=s.lr
+  out : Spec.Gcm.blocksAt t.mem (s.gpr .r9) (s.gpr .r10).toNat=outBlocks s
+  counter : Spec.Gcm.blockAt t.mem (s.gpr .r5)=Nat.repeat Spec.Gcm.inc32 (s.gpr .r10).toNat
+    (Spec.Gcm.blockAt s.mem (s.gpr .r5))
+  y : Spec.Gcm.blockAt t.mem (s.gpr .r6)=Spec.Gcm.ghashFrom (Spec.Gcm.ctxH s.mem (s.gpr .r3))
+    (Spec.Gcm.blockAt s.mem (s.gpr .r6)) (bif dec then inBlocks s else outBlocks s)
+
+
+theorem crypt_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] (dec : Bool)
+    (s : State) (hs : (Proof.Gcm.encryptBlocksSplitContract PPC64LE.abi).pre s) :
+    WP isa (Impl.AesGcm.PPC64LE.SplitBlocks.cryptOf dec) s (CryptPost dec s) := by
+  obtain ⟨lay,hv,hread,hwork⟩ := Contract.shared_pre s hs
+  rw [Impl.AesGcm.PPC64LE.SplitBlocks.cryptOf]
+  by_cases hz : s.gpr .r10=0
+  · have hn0 : (s.gpr .r10).toNat=0 := by rw [hz]; rfl
+    have hcount : (s.gpr .r8).toNat=0 := by
+      have hb := lay.bound
+      change (s.gpr .r8).toNat≤(s.gpr .r10).toNat at hb
+      rw [hz] at hb
+      exact Nat.eq_zero_of_le_zero hb
+    have hi : inBlocks s=[] := by
+      simp only [inBlocks,hn0,hcount,Spec.Gcm.blocksAt,List.range_zero,List.map_nil,List.drop_nil,
+        List.nil_append]
+    have ho : outBlocks s=[] := by
+      simp only [outBlocks,hi,Spec.Gcm.ctr32,Spec.Gcm.keystream,List.length_nil,List.zipWith_nil_left]
+    refine WP.ite true (by simp only [eval,State.read,Size.bits,BitVec.setWidth_eq,hz]; rfl)
+      (fun _ => WP.block_nil ⟨fun _ _ => rfl,rfl,?_,?_,?_⟩) (by simp)
+    · simp only [ho,hn0,Spec.Gcm.blocksAt,List.range_zero,List.map_nil]
+    · simp only [hn0]; rfl
+    · cases dec <;> simp only [hi,ho,Bool.cond_true,Bool.cond_false,Spec.Gcm.ghashFrom,List.foldl_nil]
+  · refine WP.ite false (by simpa only [eval,State.read,Size.bits,BitVec.setWidth_eq,
+      Option.some.injEq,beq_eq_false_iff_ne] using hz) (by simp) (fun _ => ?_)
+    apply WP.seq
+    refine WP.mono (Wrapper.head_ok s hread) fun headState hh => ?_
+    subst headState
+    rw [Impl.AesGcm.PPC64LE.SplitBlocks.restOf]
+    apply WP.seq
+    refine WP.mono (Wrapper.rest_ok (Wrapper.headState s) (by
+      intro p hp
+      have ho : ∀ p ∈ Impl.AesGcm.PPC64LE.SplitBlocks.extraSaved, p.2+8≤2112 := by decide
+      exact hwork _ _ ⟨_,List.mem_singleton_self _,Offset.contains_base _ (ho p hp) (by have := ho p hp; omega)⟩))
+      fun restState hr => ?_
+    subst restState
+    refine WP.mono (Wrapper.body_ok dec (prepared s) (s.gpr .r10).toNat (s.gpr .r4).toNat (s.gpr .r8).toNat lay
+      (by change s.gpr .r10=BitVec.ofNat 64 (s.gpr .r10).toNat; simp only [BitVec.ofNat_toNat,BitVec.setWidth_eq])
+      (by change s.gpr .r4=BitVec.ofNat 64 (s.gpr .r4).toNat; simp only [BitVec.ofNat_toNat,BitVec.setWidth_eq]) hv s.gpr (Contract.prepared_saved s)) fun t ht => ?_
+    have hnr : (s.gpr .r4).toNat<15 := by rcases hv with h | h | h <;> omega
+    have hc := ht.ciphertext
+    have hctr := ht.counter
+    have hy := ht.y
+    change Spec.Gcm.blocksAt t.mem (s.gpr .r9) (s.gpr .r10).toNat=
+      Wrapper.ciphertext (prepared s) (s.gpr .r4).toNat (s.gpr .r8).toNat (s.gpr .r10).toNat at hc
+    change Spec.Gcm.blockAt t.mem (s.gpr .r5)=Nat.repeat Spec.Gcm.inc32 (s.gpr .r10).toNat
+      (Spec.Gcm.blockAt (prepared s).mem (s.gpr .r5)) at hctr
+    change Spec.Gcm.blockAt t.mem (s.gpr .r6)=Spec.Gcm.ghashFrom
+      (Spec.Gcm.ctxH (prepared s).mem (s.gpr .r3)) (Spec.Gcm.blockAt (prepared s).mem (s.gpr .r6))
+      (Wrapper.hashed dec (prepared s) (s.gpr .r4).toNat (s.gpr .r8).toNat (s.gpr .r10).toNat) at hy
+    have hh : Wrapper.hashed dec (prepared s) (s.gpr .r4).toNat (s.gpr .r8).toNat (s.gpr .r10).toNat=
+        bif dec then inBlocks s else outBlocks s := by
+      cases dec
+      · exact Contract.prepared_ciphertext lay hnr
+      · exact Contract.prepared_blocks lay
+    rw [Contract.prepared_ciphertext lay hnr] at hc
+    rw [Contract.prepared_counter lay] at hctr
+    rw [Contract.prepared_h lay,Contract.prepared_y lay,hh] at hy
+    exact ⟨fun r hr => (ht.saved r hr).trans (Contract.prepared_preserved s r hr),ht.lr,hc,hctr,hy⟩
+
+
 theorem encrypt_correct [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
     (s : State) (hs : (Proof.Gcm.encryptBlocksSplitContract PPC64LE.abi).pre s) :
     ∃ tr t, Exec isa Impl.AesGcm.PPC64LE.SplitBlocks.encrypt s tr t ∧ abiPreserved s t ∧
       (Proof.Gcm.encryptBlocksSplitContract PPC64LE.abi).post s t := by
-  obtain ⟨lay,hv,hread,hwork⟩ := Contract.shared_pre s hs
-  have hfunc : WP isa Impl.AesGcm.PPC64LE.SplitBlocks.encrypt s fun t =>
-      (∀ r ∈ preserved, t.gpr r=s.gpr r) ∧ t.lr=s.lr ∧
-      (Proof.Gcm.encryptBlocksSplitContract PPC64LE.abi).post s t := by
-    rw [Impl.AesGcm.PPC64LE.SplitBlocks.encrypt]
-    by_cases hz : s.gpr .r10=0
-    · have hn0 : (s.gpr .r10).toNat=0 := by rw [hz]; rfl
-      have hcount : (s.gpr .r8).toNat=0 := by
-        have hb := lay.bound
-        change (s.gpr .r8).toNat≤(s.gpr .r10).toNat at hb
-        rw [hz] at hb
-        exact Nat.eq_zero_of_le_zero hb
-      refine WP.ite true (by simp only [eval,State.read,Size.bits,BitVec.setWidth_eq,hz]; rfl)
-        (fun _ => WP.block_nil ⟨fun _ _ => rfl,rfl,?_⟩) (by simp)
-      sig_eval [Proof.Gcm.encryptBlocksSplitContract,Proof.Gcm.encryptBlocksSplitSig,Proof.Gcm.encryptBlocksSplitPost,
-        PPC64LE.abi,PPC64LE.argRegs,stackArg,stackArgAddr,List.getD,List.range,List.range.loop]
-      simp only [hn0,hcount,Spec.Gcm.blocksAt,List.range_zero,List.map_nil,List.drop_nil,List.nil_append,
-        Spec.Gcm.ctr32,Spec.Gcm.keystream,List.length_nil,List.zipWith_nil_left,Spec.Gcm.ghashFrom,List.foldl_nil]
-      exact ⟨trivial,rfl,trivial⟩
-    · refine WP.ite false (by simpa only [eval,State.read,Size.bits,BitVec.setWidth_eq,
-        Option.some.injEq,beq_eq_false_iff_ne] using hz) (by simp) (fun _ => ?_)
-      apply WP.seq
-      refine WP.mono (Wrapper.head_ok s hread) fun headState hh => ?_
-      subst headState
-      rw [Impl.AesGcm.PPC64LE.SplitBlocks.rest]
-      apply WP.seq
-      refine WP.mono (Wrapper.rest_ok (Wrapper.headState s) (by
-        intro p hp
-        have ho : ∀ p ∈ Impl.AesGcm.PPC64LE.SplitBlocks.extraSaved, p.2+8≤2112 := by decide
-        exact hwork _ _ ⟨_,List.mem_singleton_self _,Offset.contains_base _ (ho p hp) (by have := ho p hp; omega)⟩))
-        fun restState hr => ?_
-      subst restState
-      refine WP.mono (Wrapper.body_ok (prepared s) (s.gpr .r10).toNat (s.gpr .r4).toNat (s.gpr .r8).toNat lay
-        (by change s.gpr .r10=BitVec.ofNat 64 (s.gpr .r10).toNat; simp only [BitVec.ofNat_toNat,BitVec.setWidth_eq])
-        (by change s.gpr .r4=BitVec.ofNat 64 (s.gpr .r4).toNat; simp only [BitVec.ofNat_toNat,BitVec.setWidth_eq]) hv s.gpr (Contract.prepared_saved s)) fun t ht => ?_
-      refine ⟨fun r hr => (ht.saved r hr).trans (Contract.prepared_preserved s r hr),ht.lr,?_⟩
-      sig_eval [Proof.Gcm.encryptBlocksSplitContract,Proof.Gcm.encryptBlocksSplitSig,Proof.Gcm.encryptBlocksSplitPost,
-        PPC64LE.abi,PPC64LE.argRegs,stackArg,stackArgAddr,List.getD,List.range,List.range.loop]
-      have hc := ht.ciphertext
-      have hctr := ht.counter
-      have hy := ht.y
-      change Spec.Gcm.blocksAt t.mem (s.gpr .r9) (s.gpr .r10).toNat=
-        Wrapper.ciphertext (prepared s) (s.gpr .r4).toNat (s.gpr .r8).toNat (s.gpr .r10).toNat at hc
-      change Spec.Gcm.blockAt t.mem (s.gpr .r5)=Nat.repeat Spec.Gcm.inc32 (s.gpr .r10).toNat
-        (Spec.Gcm.blockAt (prepared s).mem (s.gpr .r5)) at hctr
-      change Spec.Gcm.blockAt t.mem (s.gpr .r6)=Spec.Gcm.ghashFrom
-        (Spec.Gcm.ctxH (prepared s).mem (s.gpr .r3)) (Spec.Gcm.blockAt (prepared s).mem (s.gpr .r6))
-        (Wrapper.ciphertext (prepared s) (s.gpr .r4).toNat (s.gpr .r8).toNat (s.gpr .r10).toNat) at hy
-      rw [Contract.prepared_ciphertext lay (by rcases hv with h | h | h <;> omega)] at hc hy
-      rw [Contract.prepared_counter lay] at hctr
-      rw [Contract.prepared_h lay,Contract.prepared_y lay] at hy
-      exact ⟨hc,hctr,hy⟩
-  obtain ⟨tr,t,he,hg,hlr,hpost⟩ := hfunc
-  exact ⟨tr,t,he,⟨hg,Exec.sp he,hlr⟩,hpost⟩
+  obtain ⟨tr,t,he,hp⟩ := crypt_wp false s hs
+  refine ⟨tr,t,he,⟨hp.saved,Exec.sp he,hp.lr⟩,?_⟩
+  sig_eval [Proof.Gcm.encryptBlocksSplitContract,Proof.Gcm.encryptBlocksSplitSig,Proof.Gcm.encryptBlocksSplitPost,
+    PPC64LE.abi,PPC64LE.argRegs,stackArg,stackArgAddr,List.getD,List.range,List.range.loop]
+  exact ⟨hp.out,hp.counter,hp.y⟩
 
 
-
-
+theorem decrypt_correct [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
+    (s : State) (hs : (Proof.Gcm.decryptBlocksSplitContract PPC64LE.abi).pre s) :
+    ∃ tr t, Exec isa Impl.AesGcm.PPC64LE.SplitBlocks.decrypt s tr t ∧ abiPreserved s t ∧
+      (Proof.Gcm.decryptBlocksSplitContract PPC64LE.abi).post s t := by
+  obtain ⟨tr,t,he,hp⟩ := crypt_wp true s hs
+  refine ⟨tr,t,he,⟨hp.saved,Exec.sp he,hp.lr⟩,?_⟩
+  sig_eval [Proof.Gcm.decryptBlocksSplitContract,Proof.Gcm.encryptBlocksSplitSig,Proof.Gcm.decryptBlocksSplitPost,
+    PPC64LE.abi,PPC64LE.argRegs,stackArg,stackArgAddr,List.getD,List.range,List.range.loop]
+  exact ⟨hp.out,hp.counter,hp.y⟩
 
 end VG.Proof.AesGcm.PPC64LE.SplitBlocks
