@@ -2,7 +2,7 @@
 use super::Error;
 use super::Parameters;
 use crate::arch::dispatch::ffdh::vg_ffdh_generate_parameters_auto;
-use crate::arch::ffdh::vg_ffdh_parameter_generation_init;
+use crate::arch::dispatch::ffdh::vg_ffdh_parameter_generation_init_auto;
 use crate::entropy::{self, Step, Stop};
 use crate::rsa::Scratch;
 use alloc::vec;
@@ -43,7 +43,7 @@ impl Controller {
         let mut state = Self(Scratch::new(16));
         // SAFETY: `state` is 16 writable words, a Rust object of its own.
         let ok = unsafe {
-            vg_ffdh_parameter_generation_init(state.0.as_mut_ptr().cast(), bits, generator)
+            vg_ffdh_parameter_generation_init_auto(state.0.as_mut_ptr().cast(), bits, generator)
         };
         if ok == 1 {
             Ok(state)

@@ -11,8 +11,10 @@
 ))]
 
 use crate::align::CacheAligned;
-use crate::arch::blowfish::vg_blowfish_expand_key;
-use crate::arch::blowfish_cbc::{vg_blowfish_cbc_decrypt_chained, vg_blowfish_cbc_encrypt_chained};
+use crate::arch::dispatch::blowfish::vg_blowfish_expand_key_auto;
+use crate::arch::dispatch::blowfish_cbc::{
+    vg_blowfish_cbc_decrypt_chained_auto, vg_blowfish_cbc_encrypt_chained_auto,
+};
 use crate::error::{IncompleteBlock, InvalidKeyLength};
 use crate::zeroize::zeroize;
 
@@ -93,7 +95,7 @@ impl Key {
         let mut schedule = CacheAligned([0; 4168]);
         // SAFETY: the key has a length in 4..=56; the key and the schedule
         // are separate valid objects of the lengths passed.
-        unsafe { vg_blowfish_expand_key(key.as_ptr(), key.len(), &mut schedule.0) };
+        unsafe { vg_blowfish_expand_key_auto(key.as_ptr(), key.len(), &mut schedule.0) };
         Ok(Self { schedule })
     }
 
@@ -111,7 +113,7 @@ impl Key {
         // separate valid objects of the sizes of the signature, none of them on
         // the callee's stack.
         unsafe {
-            vg_blowfish_cbc_encrypt_chained(
+            vg_blowfish_cbc_encrypt_chained_auto(
                 &self.schedule.0,
                 iv,
                 buffer.as_mut_ptr().cast(),
@@ -132,7 +134,7 @@ impl Key {
         }
         // SAFETY: as in `encrypt`.
         unsafe {
-            vg_blowfish_cbc_decrypt_chained(
+            vg_blowfish_cbc_decrypt_chained_auto(
                 &self.schedule.0,
                 iv,
                 buffer.as_mut_ptr().cast(),

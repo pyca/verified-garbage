@@ -10,7 +10,7 @@
 ))]
 
 use super::Cast5Ecb;
-use crate::arch::cast5_ofb::{vg_cast5_ofb, vg_cast5_ofb_final};
+use crate::arch::dispatch::cast5_ofb::{vg_cast5_ofb_auto, vg_cast5_ofb_final_auto};
 use crate::error::{IncompleteBlock, InvalidKeyLength};
 use crate::zeroize::zeroize;
 
@@ -99,7 +99,7 @@ impl Key {
             // `iv` and the schedule are separate valid objects of the sizes of
             // the signature, none of them on the callee's stack.
             unsafe {
-                vg_cast5_ofb_final(
+                vg_cast5_ofb_final_auto(
                     self.key.schedule(),
                     self.key.rounds(),
                     iv,
@@ -118,7 +118,7 @@ impl Key {
         // objects of the sizes of the signature, none of them on the callee's
         // stack.
         unsafe {
-            vg_cast5_ofb(
+            vg_cast5_ofb_auto(
                 self.key.schedule(),
                 self.key.rounds(),
                 iv,

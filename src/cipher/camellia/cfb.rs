@@ -11,10 +11,10 @@
 ))]
 
 use crate::align::CacheAligned;
-use crate::arch::camellia::vg_camellia_expand_key;
-use crate::arch::camellia_cfb::{
-    vg_camellia_cfb128_decrypt, vg_camellia_cfb128_decrypt_final, vg_camellia_cfb128_encrypt,
-    vg_camellia_cfb128_encrypt_final,
+use crate::arch::dispatch::camellia::vg_camellia_expand_key_auto;
+use crate::arch::dispatch::camellia_cfb::{
+    vg_camellia_cfb128_decrypt_auto, vg_camellia_cfb128_decrypt_final_auto,
+    vg_camellia_cfb128_encrypt_auto, vg_camellia_cfb128_encrypt_final_auto,
 };
 use crate::error::{IncompleteBlock, InvalidKeyLength};
 use crate::zeroize::zeroize;
@@ -72,8 +72,8 @@ impl CamelliaCfb128Encryptor {
         self.key.last(
             &mut self.iv,
             buffer,
-            vg_camellia_cfb128_encrypt,
-            vg_camellia_cfb128_encrypt_final,
+            vg_camellia_cfb128_encrypt_auto,
+            vg_camellia_cfb128_encrypt_final_auto,
         );
     }
 }
@@ -131,8 +131,8 @@ impl CamelliaCfb128Decryptor {
         self.key.last(
             &mut self.iv,
             buffer,
-            vg_camellia_cfb128_decrypt,
-            vg_camellia_cfb128_decrypt_final,
+            vg_camellia_cfb128_decrypt_auto,
+            vg_camellia_cfb128_decrypt_final_auto,
         );
     }
 }
@@ -182,7 +182,7 @@ impl Key {
         let mut schedule = CacheAligned([0; 272]);
         // SAFETY: the key has a validated length; key and schedule are separate
         // valid buffers of the required sizes.
-        unsafe { vg_camellia_expand_key(key.as_ptr(), key.len(), &mut schedule.0) };
+        unsafe { vg_camellia_expand_key_auto(key.as_ptr(), key.len(), &mut schedule.0) };
         Ok(Self { schedule, rounds })
     }
 
@@ -190,14 +190,14 @@ impl Key {
     /// which it replaces with the last ciphertext block (unchanged for empty
     /// input).
     fn encrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) {
-        self.blocks(iv, buffer, vg_camellia_cfb128_encrypt);
+        self.blocks(iv, buffer, vg_camellia_cfb128_encrypt_auto);
     }
 
     /// Decrypts the whole blocks of `buffer` in place, from the block `iv`,
     /// which it replaces with the last ciphertext block (unchanged for empty
     /// input).
     fn decrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) {
-        self.blocks(iv, buffer, vg_camellia_cfb128_decrypt);
+        self.blocks(iv, buffer, vg_camellia_cfb128_decrypt_auto);
     }
 
     /// `f` on whole blocks.

@@ -11,7 +11,9 @@
 ))]
 
 use crate::align::CacheAligned;
-use crate::arch::sm4::{vg_sm4_ecb_decrypt, vg_sm4_ecb_encrypt, vg_sm4_expand_key};
+use crate::arch::dispatch::sm4::{
+    vg_sm4_ecb_decrypt_auto, vg_sm4_ecb_encrypt_auto, vg_sm4_expand_key_auto,
+};
 use crate::error::IncompleteBlock;
 use crate::zeroize::zeroize;
 
@@ -32,7 +34,7 @@ impl Sm4Ecb {
         // SAFETY: key and schedule are separate valid buffers of the required
         // sizes.
         unsafe {
-            vg_sm4_expand_key(key, &mut schedule.0);
+            vg_sm4_expand_key_auto(key, &mut schedule.0);
         }
         Self { schedule }
     }
@@ -54,9 +56,9 @@ impl Sm4Ecb {
             return Err(IncompleteBlock);
         }
         let f = if encrypt {
-            vg_sm4_ecb_encrypt
+            vg_sm4_ecb_encrypt_auto
         } else {
-            vg_sm4_ecb_decrypt
+            vg_sm4_ecb_decrypt_auto
         };
         // SAFETY: buffer contains complete 16-byte blocks, including zero
         // blocks. The buffer and schedule are separate valid objects and do not
@@ -80,7 +82,7 @@ impl Drop for Sm4Ecb {
 
 #[cfg(test)]
 mod tests {
-    use super::{Sm4Ecb, vg_sm4_ecb_decrypt, vg_sm4_ecb_encrypt};
+    use super::{Sm4Ecb, vg_sm4_ecb_decrypt_auto, vg_sm4_ecb_encrypt_auto};
 
     /// Eight-byte aligned storage for a schedule at an offset.
     #[repr(align(8))]
@@ -104,9 +106,9 @@ mod tests {
                 unsafe {
                     let schedule = storage.0.as_ptr().add(offset).cast();
                     if encrypt {
-                        vg_sm4_ecb_encrypt(schedule, output.as_mut_ptr().cast(), 4);
+                        vg_sm4_ecb_encrypt_auto(schedule, output.as_mut_ptr().cast(), 4);
                     } else {
-                        vg_sm4_ecb_decrypt(schedule, output.as_mut_ptr().cast(), 4);
+                        vg_sm4_ecb_decrypt_auto(schedule, output.as_mut_ptr().cast(), 4);
                     }
                 }
                 assert_eq!(output, expected);

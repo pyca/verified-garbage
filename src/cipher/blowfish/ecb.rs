@@ -11,8 +11,8 @@
 ))]
 
 use crate::align::CacheAligned;
-use crate::arch::blowfish::{
-    vg_blowfish_ecb_decrypt, vg_blowfish_ecb_encrypt, vg_blowfish_expand_key,
+use crate::arch::dispatch::blowfish::{
+    vg_blowfish_ecb_decrypt_auto, vg_blowfish_ecb_encrypt_auto, vg_blowfish_expand_key_auto,
 };
 use crate::error::{IncompleteBlock, InvalidKeyLength, OutputTooSmall};
 use crate::zeroize::zeroize;
@@ -41,7 +41,7 @@ impl<const DECRYPT: bool> Ecb<DECRYPT> {
         // SAFETY: the key has a length in 4..=56; the key and the schedule
         // are separate valid objects of the lengths passed.
         unsafe {
-            vg_blowfish_expand_key(key.as_ptr(), key.len(), &mut ecb.schedule.0);
+            vg_blowfish_expand_key_auto(key.as_ptr(), key.len(), &mut ecb.schedule.0);
         }
         Ok(ecb)
     }
@@ -74,9 +74,9 @@ impl<const DECRYPT: bool> Ecb<DECRYPT> {
         let (used, left) = input.split_at(rest.len());
         rest.copy_from_slice(used);
         let crypt = if DECRYPT {
-            vg_blowfish_ecb_decrypt
+            vg_blowfish_ecb_decrypt_auto
         } else {
-            vg_blowfish_ecb_encrypt
+            vg_blowfish_ecb_encrypt_auto
         };
         // SAFETY: `output` holds `written / 8` complete eight-byte blocks; the
         // schedule, written by key expansion, and `output` are separate valid

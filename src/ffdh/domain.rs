@@ -4,11 +4,11 @@
 use super::arithmetic::scalar;
 #[cfg(test)]
 use crate::arch::dispatch::ffdh::vg_ffdh_generate_key_cached_auto;
+use crate::arch::dispatch::ffdh::vg_ffdh_key_generation_init_auto;
 use crate::arch::dispatch::ffdh::{
     vg_ffdh_check_domain_auto, vg_ffdh_check_private_auto, vg_ffdh_check_public_auto,
     vg_ffdh_derive_public_auto, vg_ffdh_exchange_auto, vg_ffdh_generate_key_search_cached_auto,
 };
-use crate::arch::ffdh::vg_ffdh_key_generation_init;
 use crate::rsa::Scratch;
 
 /// The working space every function needs, `16 p_len + 32` words.
@@ -146,7 +146,7 @@ impl Domain {
     pub(super) fn key_state(&self) -> [u64; 16] {
         let mut state = [0; 16];
         // SAFETY: `state` is 16 writable words, a Rust object of its own.
-        let ok = unsafe { vg_ffdh_key_generation_init(&mut state, self.p_len) };
+        let ok = unsafe { vg_ffdh_key_generation_init_auto(&mut state, self.p_len) };
         // A checked domain's `p_len` is in 64..=1024, which init accepts.
         assert_eq!(ok, 1);
         state
