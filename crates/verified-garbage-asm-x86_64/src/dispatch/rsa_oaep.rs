@@ -40,7 +40,14 @@
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_rsa_oaep_decrypt_auto(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 5], mgf1: *const [usize; 5]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::rsa_oaep::vg_rsa_oaep_decrypt(out, out_len, msg_len, n, n_len, e, e_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, label, label_len, ct, ct_len, scratch, scratch_len, hash, mgf1) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::rsa_oaep::VG_RSA_OAEP_DECRYPT_CRT_IFMA_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_rsa_oaep_decrypt_crt_ifma`'s, and the CPU
         // has the features it needs.
@@ -90,7 +97,14 @@ pub unsafe fn vg_rsa_oaep_decrypt_auto(out: *mut u8, out_len: usize, msg_len: *m
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_rsa_oaep_encrypt_precomputed_auto(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const u8, seed_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, hash: *const [usize; 5], mgf1: *const [usize; 5]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::rsa_oaep::vg_rsa_oaep_encrypt_precomputed(out, out_len, n, n_len, e, e_len, label, label_len, msg, msg_len, seed, seed_len, scratch, scratch_len, pre, pre_len, hash, mgf1) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::rsa_oaep::VG_RSA_OAEP_ENCRYPT_PRECOMPUTED_RSA_IFMA_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_rsa_oaep_encrypt_precomputed_rsa_ifma`'s, and the CPU
         // has the features it needs.

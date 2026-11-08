@@ -23,7 +23,14 @@
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mldsa44_sign_auto(sk: *const [u8; 2560], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9728]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::mldsa44::vg_mldsa44_sign(sk, mu, rnd, sig, scratch) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::mldsa44::VG_MLDSA44_SIGN_AVX512_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_mldsa44_sign_avx512`'s, and the CPU
         // has the features it needs.
@@ -63,7 +70,14 @@ pub use crate::mldsa44::vg_mldsa44_pk_tr as vg_mldsa44_pk_tr_auto;
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mldsa44_keygen_auto(seed: *const [u8; 32], pk: *mut [u8; 1312], sk: *mut [u8; 2560], scratch: *mut [u64; 9728]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::mldsa44::vg_mldsa44_keygen(seed, pk, sk, scratch) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::mldsa44::VG_MLDSA44_KEYGEN_AVX512_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_mldsa44_keygen_avx512`'s, and the CPU
         // has the features it needs.
@@ -96,7 +110,14 @@ pub unsafe fn vg_mldsa44_keygen_auto(seed: *const [u8; 32], pk: *mut [u8; 1312],
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mldsa44_verify_auto(pk: *const [u8; 1312], mu: *const [u8; 64], sig: *const [u8; 2420], scratch: *mut [u64; 9728]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::mldsa44::vg_mldsa44_verify(pk, mu, sig, scratch) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::mldsa44::VG_MLDSA44_VERIFY_AVX512_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_mldsa44_verify_avx512`'s, and the CPU
         // has the features it needs.
@@ -133,7 +154,14 @@ pub unsafe fn vg_mldsa44_verify_auto(pk: *const [u8; 1312], mu: *const [u8; 64],
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mldsa44_sign_message_auto(sk: *const [u8; 2560], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9856]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::mldsa44::vg_mldsa44_sign_message(sk, msg, msg_len, ctx, ctx_len, rnd, sig, scratch) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::mldsa44::VG_MLDSA44_SIGN_MESSAGE_AVX512_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_mldsa44_sign_message_avx512`'s, and the CPU
         // has the features it needs.
@@ -166,7 +194,14 @@ pub unsafe fn vg_mldsa44_sign_message_auto(sk: *const [u8; 2560], msg: *const u8
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mldsa44_prepare_signing_key_auto(sk: *const [u8; 2560], prepared: *mut [u8; 14848], scratch: *mut [u64; 128]) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::mldsa44::vg_mldsa44_prepare_signing_key(sk, prepared, scratch) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::mldsa44::VG_MLDSA44_PREPARE_SIGNING_KEY_AVX2_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_mldsa44_prepare_signing_key_avx2`'s, and the CPU
         // has the features it needs.
@@ -193,7 +228,14 @@ pub unsafe fn vg_mldsa44_prepare_signing_key_auto(sk: *const [u8; 2560], prepare
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mldsa44_prepare_verifying_key_auto(pk: *const [u8; 1312], prepared: *mut [u8; 5408], scratch: *mut [u64; 128]) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::mldsa44::vg_mldsa44_prepare_verifying_key(pk, prepared, scratch) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::mldsa44::VG_MLDSA44_PREPARE_VERIFYING_KEY_AVX2_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_mldsa44_prepare_verifying_key_avx2`'s, and the CPU
         // has the features it needs.
@@ -226,7 +268,14 @@ pub unsafe fn vg_mldsa44_prepare_verifying_key_auto(pk: *const [u8; 1312], prepa
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mldsa44_sign_message_prepared_auto(sk: *const [u8; 14848], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9856]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::mldsa44::vg_mldsa44_sign_message_prepared(sk, msg, msg_len, ctx, ctx_len, rnd, sig, scratch) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::mldsa44::VG_MLDSA44_SIGN_MESSAGE_PREPARED_AVX512_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_mldsa44_sign_message_prepared_avx512`'s, and the CPU
         // has the features it needs.
@@ -262,7 +311,14 @@ pub unsafe fn vg_mldsa44_sign_message_prepared_auto(sk: *const [u8; 14848], msg:
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mldsa44_verify_message_cached_auto(pk: *const [u8; 1312], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 2420], scratch: *mut [u64; 9856], tr: *const [u8; 64]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::mldsa44::vg_mldsa44_verify_message_cached(pk, msg, msg_len, ctx, ctx_len, sig, scratch, tr) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::mldsa44::VG_MLDSA44_VERIFY_MESSAGE_CACHED_AVX512_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_mldsa44_verify_message_cached_avx512`'s, and the CPU
         // has the features it needs.
@@ -299,7 +355,14 @@ pub unsafe fn vg_mldsa44_verify_message_cached_auto(pk: *const [u8; 1312], msg: 
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mldsa44_verify_message_prepared_auto(pk: *const [u8; 5408], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 2420], scratch: *mut [u64; 9856], tr: *const [u8; 64]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::mldsa44::vg_mldsa44_verify_message_prepared(pk, msg, msg_len, ctx, ctx_len, sig, scratch, tr) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::mldsa44::VG_MLDSA44_VERIFY_MESSAGE_PREPARED_AVX512_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_mldsa44_verify_message_prepared_avx512`'s, and the CPU
         // has the features it needs.

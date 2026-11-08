@@ -23,7 +23,14 @@ pub use crate::sha1::vg_sha1_init as vg_sha1_init_auto;
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sha1_digest_auto(data: *const u8, len: usize, out: *mut [u8; 20]) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::sha1::vg_sha1_digest(data, len, out) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::sha1::VG_SHA1_DIGEST_SHANI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha1_digest_shani`'s, and the CPU
         // has the features it needs.
@@ -50,7 +57,14 @@ pub unsafe fn vg_sha1_digest_auto(data: *const u8, len: usize, out: *mut [u8; 20
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sha1_update_auto(state: *mut [u8; 84], count: u64, data: *const u8, len: usize) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::sha1::vg_sha1_update(state, count, data, len) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::sha1::VG_SHA1_UPDATE_SHANI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha1_update_shani`'s, and the CPU
         // has the features it needs.
@@ -78,7 +92,14 @@ pub unsafe fn vg_sha1_update_auto(state: *mut [u8; 84], count: u64, data: *const
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sha1_finalize_auto(state: *mut [u8; 84], count: u64, out: *mut [u8; 20]) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::sha1::vg_sha1_finalize(state, count, out) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::sha1::VG_SHA1_FINALIZE_SHANI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha1_finalize_shani`'s, and the CPU
         // has the features it needs.

@@ -20,7 +20,14 @@
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_dsa_derive_key_auto(out: *mut u8, out_len: usize, params: *const u8, params_len: usize, p_len: usize, x: *const u8, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::dsa::vg_dsa_derive_key(out, out_len, params, params_len, p_len, x, q_len, scratch, scratch_len) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::dsa::VG_DSA_DERIVE_KEY_ADX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_dsa_derive_key_adx`'s, and the CPU
         // has the features it needs.
@@ -50,7 +57,14 @@ pub unsafe fn vg_dsa_derive_key_auto(out: *mut u8, out_len: usize, params: *cons
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_dsa_generate_key_auto(out: *mut u8, out_len: usize, used: *mut [u64; 1], params: *const u8, params_len: usize, p_len: usize, q_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::dsa::vg_dsa_generate_key(out, out_len, used, params, params_len, p_len, q_len, rand, rand_len, scratch, scratch_len) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::dsa::VG_DSA_GENERATE_KEY_ADX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_dsa_generate_key_adx`'s, and the CPU
         // has the features it needs.
@@ -83,7 +97,14 @@ pub unsafe fn vg_dsa_generate_key_auto(out: *mut u8, out_len: usize, used: *mut 
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_dsa_parameter_search_auto(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::dsa::vg_dsa_parameter_search(out, out_len, used, rand, rand_len, scratch, scratch_len, state) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_MR_IFMA_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_ifma`'s, and the CPU
         // has the features it needs.
@@ -143,7 +164,14 @@ pub unsafe fn vg_dsa_parameter_search_auto(out: *mut u8, out_len: usize, used: *
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_dsa_validate_public_key_auto(key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::dsa::vg_dsa_validate_public_key(key, key_len, p_len, q_len, scratch, scratch_len) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::dsa::VG_DSA_VALIDATE_PUBLIC_KEY_ADX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_dsa_validate_public_key_adx`'s, and the CPU
         // has the features it needs.
@@ -172,7 +200,14 @@ pub unsafe fn vg_dsa_validate_public_key_auto(key: *const u8, key_len: usize, p_
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_dsa_verify_prevalidated_auto(key: *const u8, key_len: usize, p_len: usize, q_len: usize, signature: *const u8, signature_len: usize, digest: *const u8, digest_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::dsa::vg_dsa_verify_prevalidated(key, key_len, p_len, q_len, signature, signature_len, digest, digest_len, scratch, scratch_len) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::dsa::VG_DSA_VERIFY_PREVALIDATED_ADX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_dsa_verify_prevalidated_adx`'s, and the CPU
         // has the features it needs.
@@ -197,7 +232,14 @@ pub unsafe fn vg_dsa_verify_prevalidated_auto(key: *const u8, key_len: usize, p_
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_dsa_validate_private_key_auto(key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::dsa::vg_dsa_validate_private_key(key, key_len, p_len, q_len, scratch, scratch_len) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::dsa::VG_DSA_VALIDATE_PRIVATE_KEY_ADX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_dsa_validate_private_key_adx`'s, and the CPU
         // has the features it needs.
@@ -235,7 +277,14 @@ pub use crate::dsa::vg_dsa_parameter_search_init as vg_dsa_parameter_search_init
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_dsa_sign_random_prevalidated_auto(out: *mut u8, out_len: usize, used: *mut [u64; 1], key: *const u8, key_len: usize, p_len: usize, q_len: usize, digest: *const u8, digest_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::dsa::vg_dsa_sign_random_prevalidated(out, out_len, used, key, key_len, p_len, q_len, digest, digest_len, rand, rand_len, scratch, scratch_len) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::dsa::VG_DSA_SIGN_RANDOM_PREVALIDATED_ADX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_dsa_sign_random_prevalidated_adx`'s, and the CPU
         // has the features it needs.

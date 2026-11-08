@@ -28,7 +28,14 @@ pub use crate::sm4_gcm::vg_sm4_gcm_init as vg_sm4_gcm_init_auto;
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sm4_gcm_seal_auto(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::sm4_gcm::vg_sm4_gcm_seal(ctx, nonce, nonce_len, aad, aad_len, data, len, tag) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::sm4_gcm::VG_SM4_GCM_SEAL_AES_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sm4_gcm_seal_aes`'s, and the CPU
         // has the features it needs.
@@ -58,7 +65,14 @@ pub unsafe fn vg_sm4_gcm_seal_auto(ctx: *const [u64; 32], nonce: *const u8, nonc
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sm4_gcm_open_auto(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::sm4_gcm::vg_sm4_gcm_open(ctx, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::sm4_gcm::VG_SM4_GCM_OPEN_AES_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sm4_gcm_open_aes`'s, and the CPU
         // has the features it needs.
@@ -84,7 +98,14 @@ pub unsafe fn vg_sm4_gcm_open_auto(ctx: *const [u64; 32], nonce: *const u8, nonc
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sm4_gcm_stream_aad_auto(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::sm4_gcm::vg_sm4_gcm_stream_aad(ctx, state, aad_len, data, len) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_AAD_AES_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sm4_gcm_stream_aad_aes`'s, and the CPU
         // has the features it needs.
@@ -112,7 +133,14 @@ pub unsafe fn vg_sm4_gcm_stream_aad_auto(ctx: *const [u64; 32], state: *mut [u64
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sm4_gcm_stream_init_auto(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::sm4_gcm::vg_sm4_gcm_stream_init(ctx, nonce, nonce_len, state) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_INIT_AES_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sm4_gcm_stream_init_aes`'s, and the CPU
         // has the features it needs.
@@ -139,7 +167,14 @@ pub unsafe fn vg_sm4_gcm_stream_init_auto(ctx: *const [u64; 32], nonce: *const u
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sm4_gcm_stream_finish_auto(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::sm4_gcm::vg_sm4_gcm_stream_finish(ctx, state, aad_len, text_len, tag) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_FINISH_AES_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sm4_gcm_stream_finish_aes`'s, and the CPU
         // has the features it needs.
@@ -166,7 +201,14 @@ pub unsafe fn vg_sm4_gcm_stream_finish_auto(ctx: *const [u64; 32], state: *mut [
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sm4_gcm_stream_verify_auto(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::sm4_gcm::vg_sm4_gcm_stream_verify(ctx, state, aad_len, text_len, tag, tag_len) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_VERIFY_AES_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sm4_gcm_stream_verify_aes`'s, and the CPU
         // has the features it needs.
@@ -194,7 +236,14 @@ pub unsafe fn vg_sm4_gcm_stream_verify_auto(ctx: *const [u64; 32], state: *mut [
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sm4_gcm_stream_encrypt_auto(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::sm4_gcm::vg_sm4_gcm_stream_encrypt(ctx, state, aad_len, text_len, data, len) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_ENCRYPT_AES_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sm4_gcm_stream_encrypt_aes`'s, and the CPU
         // has the features it needs.
@@ -222,7 +271,14 @@ pub unsafe fn vg_sm4_gcm_stream_encrypt_auto(ctx: *const [u64; 32], state: *mut 
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sm4_gcm_stream_decrypt_auto(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::sm4_gcm::vg_sm4_gcm_stream_decrypt(ctx, state, aad_len, text_len, data, len) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::sm4_gcm::VG_SM4_GCM_STREAM_DECRYPT_AES_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sm4_gcm_stream_decrypt_aes`'s, and the CPU
         // has the features it needs.

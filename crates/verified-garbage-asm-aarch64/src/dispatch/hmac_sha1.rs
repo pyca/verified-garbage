@@ -18,7 +18,14 @@
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_hmac_sha1_init_auto(inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::hmac_sha1::vg_hmac_sha1_init(inner, outer, key, key_len) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::hmac_sha1::VG_HMAC_SHA1_INIT_SHA2_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_hmac_sha1_init_sha2`'s, and the CPU
         // has the features it needs.
@@ -45,7 +52,14 @@ pub unsafe fn vg_hmac_sha1_init_auto(inner: *mut [u8; 84], outer: *mut [u8; 84],
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_hmac_sha1_finalize_auto(inner: *mut [u8; 84], outer: *const [u8; 84], count: u64, out: *mut [u8; 20]) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::hmac_sha1::vg_hmac_sha1_finalize(inner, outer, count, out) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::hmac_sha1::VG_HMAC_SHA1_FINALIZE_SHA2_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_hmac_sha1_finalize_sha2`'s, and the CPU
         // has the features it needs.

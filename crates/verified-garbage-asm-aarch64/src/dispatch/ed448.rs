@@ -19,8 +19,15 @@
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_ed448_verify_auto(pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, signature: *const [u8; 114], scratch: *mut [u64; 1024]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
-    if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::ed448::VG_ED448_VERIFY_SHA3_FEATURES)) && cpu.contains(crate::ed448::VG_ED448_VERIFY_SHA3_FEATURES) {
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::ed448::vg_ed448_verify(pk, context, ctxlen, message, len, signature, scratch) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
+    if (cfg!(target_vendor = "apple") || s.requested(crate::ed448::VG_ED448_VERIFY_SHA3_FEATURES)) && cpu.contains(crate::ed448::VG_ED448_VERIFY_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_ed448_verify_sha3`'s, and the CPU
         // has the features it needs.
         return unsafe { crate::ed448::vg_ed448_verify_sha3(pk, context, ctxlen, message, len, signature, scratch) };
@@ -45,8 +52,15 @@ pub unsafe fn vg_ed448_verify_auto(pk: *const [u8; 57], context: *const u8, ctxl
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_ed448_public_key_auto(out: *mut [u8; 57], seed: *const [u8; 57], scratch: *mut [u64; 1024]) {
-    let cpu = verified_garbage_cpu::detected();
-    if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::ed448::VG_ED448_PUBLIC_KEY_SHA3_FEATURES)) && cpu.contains(crate::ed448::VG_ED448_PUBLIC_KEY_SHA3_FEATURES) {
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::ed448::vg_ed448_public_key(out, seed, scratch) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
+    if (cfg!(target_vendor = "apple") || s.requested(crate::ed448::VG_ED448_PUBLIC_KEY_SHA3_FEATURES)) && cpu.contains(crate::ed448::VG_ED448_PUBLIC_KEY_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_ed448_public_key_sha3`'s, and the CPU
         // has the features it needs.
         return unsafe { crate::ed448::vg_ed448_public_key_sha3(out, seed, scratch) };
@@ -76,8 +90,15 @@ pub unsafe fn vg_ed448_public_key_auto(out: *mut [u8; 57], seed: *const [u8; 57]
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_ed448_sign_cached_auto(out: *mut [u8; 114], seed: *const [u8; 57], pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
-    let cpu = verified_garbage_cpu::detected();
-    if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::ed448::VG_ED448_SIGN_CACHED_SHA3_FEATURES)) && cpu.contains(crate::ed448::VG_ED448_SIGN_CACHED_SHA3_FEATURES) {
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::ed448::vg_ed448_sign_cached(out, seed, pk, context, ctxlen, message, len, scratch) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
+    if (cfg!(target_vendor = "apple") || s.requested(crate::ed448::VG_ED448_SIGN_CACHED_SHA3_FEATURES)) && cpu.contains(crate::ed448::VG_ED448_SIGN_CACHED_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_ed448_sign_cached_sha3`'s, and the CPU
         // has the features it needs.
         return unsafe { crate::ed448::vg_ed448_sign_cached_sha3(out, seed, pk, context, ctxlen, message, len, scratch) };

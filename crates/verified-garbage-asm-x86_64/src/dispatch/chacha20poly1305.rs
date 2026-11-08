@@ -20,7 +20,14 @@
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_chacha20_poly1305_seal_auto(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::chacha20poly1305::vg_chacha20_poly1305_seal(key, nonce, aad, aad_len, data, len, tag) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_SEAL_IFMA_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_chacha20_poly1305_seal_ifma`'s, and the CPU
         // has the features it needs.
@@ -68,7 +75,14 @@ pub unsafe fn vg_chacha20_poly1305_seal_auto(key: *const [u8; 32], nonce: *const
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_chacha20_poly1305_open_auto(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::chacha20poly1305::vg_chacha20_poly1305_open(key, nonce, aad, aad_len, data, len, tag) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_OPEN_IFMA_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_chacha20_poly1305_open_ifma`'s, and the CPU
         // has the features it needs.
@@ -119,7 +133,14 @@ pub unsafe fn vg_chacha20_poly1305_open_auto(key: *const [u8; 32], nonce: *const
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_chacha20_poly1305_seal_gather_auto(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::chacha20poly1305::vg_chacha20_poly1305_seal_gather(key, nonce, aad, aad_len, src, src_count, dst, len, tag) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_SEAL_GATHER_IFMA_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_chacha20_poly1305_seal_gather_ifma`'s, and the CPU
         // has the features it needs.

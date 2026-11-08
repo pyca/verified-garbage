@@ -21,7 +21,14 @@
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_pbkdf2_hmac_sha224_auto(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::pbkdf2_sha224::vg_pbkdf2_hmac_sha224(password, password_len, salt, salt_len, c, out, out_len) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::pbkdf2_sha224::VG_PBKDF2_HMAC_SHA224_SHANI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_pbkdf2_hmac_sha224_shani`'s, and the CPU
         // has the features it needs.

@@ -34,7 +34,14 @@ pub use crate::rsa::vg_rsa_crt_values as vg_rsa_crt_values_auto;
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_rsa_public_precompute_auto(pre: *mut u64, pre_len: usize, n: *const u8, n_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::rsa::vg_rsa_public_precompute(pre, pre_len, n, n_len, scratch, scratch_len) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
     if cpu.contains(crate::rsa::VG_RSA_PUBLIC_PRECOMPUTE_UMAAL_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_rsa_public_precompute_umaal`'s, and the CPU

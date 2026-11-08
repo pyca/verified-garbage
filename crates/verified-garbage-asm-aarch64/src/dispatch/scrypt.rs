@@ -23,7 +23,14 @@
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_scrypt_auto(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::scrypt::vg_scrypt(password, password_len, salt, salt_len, r, b, blen, v, vlen, scratch, slen, out, out_len) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::scrypt::VG_SCRYPT_SHA2_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_scrypt_sha2`'s, and the CPU
         // has the features it needs.

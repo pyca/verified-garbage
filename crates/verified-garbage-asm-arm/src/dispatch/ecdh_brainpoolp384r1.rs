@@ -20,7 +20,14 @@
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_ecdh_brainpoolp384r1_auto(out: *mut [u8; 48], d: *const [u8; 48], peer: *const [u8; 97], scratch: *mut [u64; 1024]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::ecdh_brainpoolp384r1::vg_ecdh_brainpoolp384r1(out, d, peer, scratch) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
     if cpu.contains(crate::ecdh_brainpoolp384r1::VG_ECDH_BRAINPOOLP384R1_UMAAL_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_ecdh_brainpoolp384r1_umaal`'s, and the CPU

@@ -25,7 +25,14 @@ pub use crate::chacha20::vg_chacha20_init as vg_chacha20_init_auto;
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_chacha20_apply_auto(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::chacha20::vg_chacha20_apply(state, data, len) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::chacha20::VG_CHACHA20_APPLY_SSSE3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_chacha20_apply_ssse3`'s, and the CPU
         // has the features it needs.

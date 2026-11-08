@@ -23,7 +23,14 @@
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_aes_xts_encrypt_unit_auto(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::aes_xts::vg_aes_xts_encrypt_unit(schedule, tweak_schedule, rounds, i, data, len, scratch) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_AES_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_xts_encrypt_unit_aes`'s, and the CPU
         // has the features it needs.
@@ -54,7 +61,14 @@ pub unsafe fn vg_aes_xts_encrypt_unit_auto(schedule: *const [u8; 240], tweak_sch
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_aes_xts_decrypt_unit_auto(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::aes_xts::vg_aes_xts_decrypt_unit(schedule, tweak_schedule, rounds, i, data, len, scratch) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_AES_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_xts_decrypt_unit_aes`'s, and the CPU
         // has the features it needs.

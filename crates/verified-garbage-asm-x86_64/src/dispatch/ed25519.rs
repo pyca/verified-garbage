@@ -18,7 +18,14 @@
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_ed25519_verify_auto(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::ed25519::vg_ed25519_verify(pk, message, len, signature, scratch) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::ed25519::VG_ED25519_VERIFY_SHANI_IFMA_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_ed25519_verify_shani_ifma`'s, and the CPU
         // has the features it needs.
@@ -81,7 +88,14 @@ pub unsafe fn vg_ed25519_verify_auto(pk: *const [u8; 32], message: *const u8, le
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_ed25519_key_pair_auto(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::ed25519::vg_ed25519_key_pair(out, expanded, seed, scratch) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::ed25519::VG_ED25519_KEY_PAIR_SHANI_IFMA_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_ed25519_key_pair_shani_ifma`'s, and the CPU
         // has the features it needs.
@@ -145,7 +159,14 @@ pub unsafe fn vg_ed25519_key_pair_auto(out: *mut [u8; 32], expanded: *mut [u8; 6
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_ed25519_sign_expanded_auto(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::ed25519::vg_ed25519_sign_expanded(out, expanded, pk, message, len, scratch) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_SHANI_IFMA_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_ed25519_sign_expanded_shani_ifma`'s, and the CPU
         // has the features it needs.

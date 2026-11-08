@@ -20,8 +20,15 @@
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sha3_224_update_auto(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
-    let cpu = verified_garbage_cpu::detected();
-    if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHA3_224_UPDATE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHA3_224_UPDATE_SHA3_FEATURES) {
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::sha3::vg_sha3_224_update(state, pos, data, len, scratch) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
+    if (cfg!(target_vendor = "apple") || s.requested(crate::sha3::VG_SHA3_224_UPDATE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHA3_224_UPDATE_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha3_224_update_sha3`'s, and the CPU
         // has the features it needs.
         return unsafe { crate::sha3::vg_sha3_224_update_sha3(state, pos, data, len, scratch) };
@@ -48,8 +55,15 @@ pub unsafe fn vg_sha3_224_update_auto(state: *mut [u64; 25], pos: usize, data: *
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sha3_256_update_auto(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
-    let cpu = verified_garbage_cpu::detected();
-    if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHA3_256_UPDATE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHA3_256_UPDATE_SHA3_FEATURES) {
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::sha3::vg_sha3_256_update(state, pos, data, len, scratch) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
+    if (cfg!(target_vendor = "apple") || s.requested(crate::sha3::VG_SHA3_256_UPDATE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHA3_256_UPDATE_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha3_256_update_sha3`'s, and the CPU
         // has the features it needs.
         return unsafe { crate::sha3::vg_sha3_256_update_sha3(state, pos, data, len, scratch) };
@@ -76,8 +90,15 @@ pub unsafe fn vg_sha3_256_update_auto(state: *mut [u64; 25], pos: usize, data: *
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sha3_384_update_auto(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
-    let cpu = verified_garbage_cpu::detected();
-    if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHA3_384_UPDATE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHA3_384_UPDATE_SHA3_FEATURES) {
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::sha3::vg_sha3_384_update(state, pos, data, len, scratch) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
+    if (cfg!(target_vendor = "apple") || s.requested(crate::sha3::VG_SHA3_384_UPDATE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHA3_384_UPDATE_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha3_384_update_sha3`'s, and the CPU
         // has the features it needs.
         return unsafe { crate::sha3::vg_sha3_384_update_sha3(state, pos, data, len, scratch) };
@@ -104,8 +125,15 @@ pub unsafe fn vg_sha3_384_update_auto(state: *mut [u64; 25], pos: usize, data: *
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sha3_512_update_auto(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
-    let cpu = verified_garbage_cpu::detected();
-    if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHA3_512_UPDATE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHA3_512_UPDATE_SHA3_FEATURES) {
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::sha3::vg_sha3_512_update(state, pos, data, len, scratch) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
+    if (cfg!(target_vendor = "apple") || s.requested(crate::sha3::VG_SHA3_512_UPDATE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHA3_512_UPDATE_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha3_512_update_sha3`'s, and the CPU
         // has the features it needs.
         return unsafe { crate::sha3::vg_sha3_512_update_sha3(state, pos, data, len, scratch) };
@@ -132,8 +160,15 @@ pub unsafe fn vg_sha3_512_update_auto(state: *mut [u64; 25], pos: usize, data: *
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_shake128_update_auto(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
-    let cpu = verified_garbage_cpu::detected();
-    if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHAKE128_UPDATE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHAKE128_UPDATE_SHA3_FEATURES) {
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::sha3::vg_shake128_update(state, pos, data, len, scratch) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
+    if (cfg!(target_vendor = "apple") || s.requested(crate::sha3::VG_SHAKE128_UPDATE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHAKE128_UPDATE_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_shake128_update_sha3`'s, and the CPU
         // has the features it needs.
         return unsafe { crate::sha3::vg_shake128_update_sha3(state, pos, data, len, scratch) };
@@ -158,8 +193,15 @@ pub unsafe fn vg_shake128_update_auto(state: *mut [u64; 25], pos: usize, data: *
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_shake128_squeeze_auto(state: *mut [u64; 25], pos: usize, out: *mut u8, outlen: usize) -> usize {
-    let cpu = verified_garbage_cpu::detected();
-    if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHAKE128_SQUEEZE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHAKE128_SQUEEZE_SHA3_FEATURES) {
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::sha3::vg_shake128_squeeze(state, pos, out, outlen) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
+    if (cfg!(target_vendor = "apple") || s.requested(crate::sha3::VG_SHAKE128_SQUEEZE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHAKE128_SQUEEZE_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_shake128_squeeze_sha3`'s, and the CPU
         // has the features it needs.
         return unsafe { crate::sha3::vg_shake128_squeeze_sha3(state, pos, out, outlen) };
@@ -184,8 +226,15 @@ pub unsafe fn vg_shake128_squeeze_auto(state: *mut [u64; 25], pos: usize, out: *
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_shake256_squeeze_auto(state: *mut [u64; 25], pos: usize, out: *mut u8, outlen: usize) -> usize {
-    let cpu = verified_garbage_cpu::detected();
-    if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHAKE256_SQUEEZE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHAKE256_SQUEEZE_SHA3_FEATURES) {
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::sha3::vg_shake256_squeeze(state, pos, out, outlen) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
+    if (cfg!(target_vendor = "apple") || s.requested(crate::sha3::VG_SHAKE256_SQUEEZE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHAKE256_SQUEEZE_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_shake256_squeeze_sha3`'s, and the CPU
         // has the features it needs.
         return unsafe { crate::sha3::vg_shake256_squeeze_sha3(state, pos, out, outlen) };
@@ -211,8 +260,15 @@ pub unsafe fn vg_shake256_squeeze_auto(state: *mut [u64; 25], pos: usize, out: *
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sha3_224_finalize_auto(state: *mut [u64; 25], pos: usize, out: *mut [u8; 28]) {
-    let cpu = verified_garbage_cpu::detected();
-    if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHA3_224_FINALIZE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHA3_224_FINALIZE_SHA3_FEATURES) {
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::sha3::vg_sha3_224_finalize(state, pos, out) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
+    if (cfg!(target_vendor = "apple") || s.requested(crate::sha3::VG_SHA3_224_FINALIZE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHA3_224_FINALIZE_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha3_224_finalize_sha3`'s, and the CPU
         // has the features it needs.
         return unsafe { crate::sha3::vg_sha3_224_finalize_sha3(state, pos, out) };
@@ -238,8 +294,15 @@ pub unsafe fn vg_sha3_224_finalize_auto(state: *mut [u64; 25], pos: usize, out: 
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sha3_256_finalize_auto(state: *mut [u64; 25], pos: usize, out: *mut [u8; 32]) {
-    let cpu = verified_garbage_cpu::detected();
-    if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHA3_256_FINALIZE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHA3_256_FINALIZE_SHA3_FEATURES) {
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::sha3::vg_sha3_256_finalize(state, pos, out) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
+    if (cfg!(target_vendor = "apple") || s.requested(crate::sha3::VG_SHA3_256_FINALIZE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHA3_256_FINALIZE_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha3_256_finalize_sha3`'s, and the CPU
         // has the features it needs.
         return unsafe { crate::sha3::vg_sha3_256_finalize_sha3(state, pos, out) };
@@ -265,8 +328,15 @@ pub unsafe fn vg_sha3_256_finalize_auto(state: *mut [u64; 25], pos: usize, out: 
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sha3_384_finalize_auto(state: *mut [u64; 25], pos: usize, out: *mut [u8; 48]) {
-    let cpu = verified_garbage_cpu::detected();
-    if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHA3_384_FINALIZE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHA3_384_FINALIZE_SHA3_FEATURES) {
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::sha3::vg_sha3_384_finalize(state, pos, out) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
+    if (cfg!(target_vendor = "apple") || s.requested(crate::sha3::VG_SHA3_384_FINALIZE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHA3_384_FINALIZE_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha3_384_finalize_sha3`'s, and the CPU
         // has the features it needs.
         return unsafe { crate::sha3::vg_sha3_384_finalize_sha3(state, pos, out) };
@@ -292,8 +362,15 @@ pub unsafe fn vg_sha3_384_finalize_auto(state: *mut [u64; 25], pos: usize, out: 
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sha3_512_finalize_auto(state: *mut [u64; 25], pos: usize, out: *mut [u8; 64]) {
-    let cpu = verified_garbage_cpu::detected();
-    if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHA3_512_FINALIZE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHA3_512_FINALIZE_SHA3_FEATURES) {
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::sha3::vg_sha3_512_finalize(state, pos, out) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
+    if (cfg!(target_vendor = "apple") || s.requested(crate::sha3::VG_SHA3_512_FINALIZE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHA3_512_FINALIZE_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha3_512_finalize_sha3`'s, and the CPU
         // has the features it needs.
         return unsafe { crate::sha3::vg_sha3_512_finalize_sha3(state, pos, out) };
@@ -316,8 +393,15 @@ pub unsafe fn vg_sha3_512_finalize_auto(state: *mut [u64; 25], pos: usize, out: 
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_shake128_finalize_auto(state: *mut [u64; 25], pos: usize) {
-    let cpu = verified_garbage_cpu::detected();
-    if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHAKE128_FINALIZE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHAKE128_FINALIZE_SHA3_FEATURES) {
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::sha3::vg_shake128_finalize(state, pos) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
+    if (cfg!(target_vendor = "apple") || s.requested(crate::sha3::VG_SHAKE128_FINALIZE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHAKE128_FINALIZE_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_shake128_finalize_sha3`'s, and the CPU
         // has the features it needs.
         return unsafe { crate::sha3::vg_shake128_finalize_sha3(state, pos) };
@@ -340,8 +424,15 @@ pub unsafe fn vg_shake128_finalize_auto(state: *mut [u64; 25], pos: usize) {
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_shake256_finalize_auto(state: *mut [u64; 25], pos: usize) {
-    let cpu = verified_garbage_cpu::detected();
-    if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHAKE256_FINALIZE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHAKE256_FINALIZE_SHA3_FEATURES) {
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::sha3::vg_shake256_finalize(state, pos) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
+    if (cfg!(target_vendor = "apple") || s.requested(crate::sha3::VG_SHAKE256_FINALIZE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHAKE256_FINALIZE_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_shake256_finalize_sha3`'s, and the CPU
         // has the features it needs.
         return unsafe { crate::sha3::vg_shake256_finalize_sha3(state, pos) };

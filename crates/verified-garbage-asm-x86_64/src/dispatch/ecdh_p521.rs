@@ -20,7 +20,14 @@
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_ecdh_p521_auto(out: *mut [u8; 66], d: *const [u8; 66], peer: *const [u8; 133], scratch: *mut [u64; 1024]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::ecdh_p521::vg_ecdh_p521(out, d, peer, scratch) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::ecdh_p521::VG_ECDH_P521_ADX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_ecdh_p521_adx`'s, and the CPU
         // has the features it needs.

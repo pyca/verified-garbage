@@ -25,7 +25,14 @@
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_rsa_generate_auto(key: *mut u8, key_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 7]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::rsa_keygen::vg_rsa_generate(key, key_len, used, rand, rand_len, scratch, scratch_len, state) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::rsa_keygen::VG_RSA_GENERATE_IFMA_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_rsa_generate_ifma`'s, and the CPU
         // has the features it needs.

@@ -1620,15 +1620,26 @@ requirements then hold for each) and how much of its arrays it writes (the
 largest bound of each array that every implementation bounds,
 `Artifact.written`). It needs no CPU feature: it calls an implementation
 that needs features only if the CPU has them, as the generated condition
-checks with `verified_garbage_cpu::detected()`, which detects the features
-the CPU and operating system support (`crates/verified-garbage-cpu/`), of
-which a `Features` constant names the bits (`featuresConst`):
+checks with the features the CPU and operating system support, which
+`verified_garbage_cpu` detects (`crates/verified-garbage-cpu/`), of which a
+`Features` constant names the bits (`featuresConst`). It reads what that
+crate has detected (`snapshot`, one load); where it has detected nothing
+yet, it calls the base, which needs no feature, and only then detects
+(`detect_now`), so that every other call makes no call but the
+implementation's, and keeps nothing across one:
 
 ```rust
 /// <the base's documentation, without its CPU features>
 #[inline]
 pub unsafe fn <base>_auto(<the signature>) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: …
+        let r = unsafe { crate::<module>::<base>(<the arguments>) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::<module>::<NAME>_FEATURES) {
         // SAFETY: …
         return unsafe { crate::<module>::<name>(<the arguments>) };
@@ -1655,7 +1666,7 @@ in the order it gives, each where the CPU also has the ranking's `extra`
 features for it and, if the ranking names a `vendor`, only where the
 compilation target's `target_vendor` is that, or where `VG_CPU_FEATURES`
 names every feature the implementation needs
-(`verified_garbage_cpu::requested`, for testing it elsewhere); an
+(`Snapshot::requested`, for testing it elsewhere); an
 implementation whose `cfg` (`Printer.featureCfg`) the build lacks is not
 compiled, and its test is not either. An implementation that needs no
 feature is chosen only where detection reports some feature (as it does on
@@ -1871,10 +1882,11 @@ def argsOf (sig : Sig) : String :=
     | _ => [n])
 
 /-- The condition under which a dispatcher calls `a`, given the variable
-`cpu` it holds `verified_garbage_cpu::detected()` in. The features it checks are `a`'s (its constant, `featuresConst`) and
+`cpu` it holds the detected features in, and `req`, the function that says
+whether `VG_CPU_FEATURES` names features. The features it checks are `a`'s (its constant, `featuresConst`) and
 its ranking's `extra` ones; for one that needs none, that detection reports
 some feature. -/
-def condOf (a : Arm) : String :=
+def condOf (a : Arm) (req : String := "verified_garbage_cpu::requested") : String :=
   let name := s!"crate::{a.impl.module}::{a.impl.name.toUpper}"
   let bits := a.extra.map fun f => s!"verified_garbage_cpu::feature::{featureConst f}"
   let need : Option String := match a.impl.features.isEmpty, bits with
@@ -1884,7 +1896,7 @@ def condOf (a : Arm) : String :=
     | false, bs => some s!"verified_garbage_cpu::Features({name}_FEATURES.0 | {" | ".intercalate bs})"
   let vs := a.vendors.map fun v => match need with
     | none => s!"cfg!(target_vendor = \"{v}\")"
-    | some n => s!"(cfg!(target_vendor = \"{v}\") || verified_garbage_cpu::requested({n}))"
+    | some n => s!"(cfg!(target_vendor = \"{v}\") || {req}({n}))"
   -- One that needs no feature, only where detection reports some (see above).
   let has := match need with
     | none => "cpu.0 != 0"
@@ -1930,10 +1942,23 @@ def dispatcher (g : Group) (arms : List Arm) : String :=
   "#[allow(clippy::too_many_arguments)]\n" ++
   "#[inline]\n" ++
   s!"pub unsafe fn {auto}{b.sig.rust} " ++ "{\n" ++
-  (if arms.isEmpty then "" else "    let cpu = verified_garbage_cpu::detected();\n") ++
+  (if arms.isEmpty then "" else
+    "    let s = verified_garbage_cpu::snapshot();\n" ++
+    "    if !s.initialized() {\n" ++
+    "        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.\n" ++
+    (if b.sig.ret.isSome then
+      s!"        let r = unsafe " ++ "{ " ++ s!"crate::{b.module}::{b.name}({args})" ++ " };\n" ++
+      "        verified_garbage_cpu::detect_now();\n" ++
+      "        return r;\n"
+    else
+      s!"        unsafe " ++ "{ " ++ s!"crate::{b.module}::{b.name}({args})" ++ " };\n" ++
+      "        verified_garbage_cpu::detect_now();\n" ++
+      "        return;\n") ++
+    "    }\n" ++
+    "    let cpu = s.features();\n") ++
   String.join (arms.map fun a =>
     String.join (a.impl.gate.map fun p => s!"    #[cfg({p})]\n") ++
-    s!"    if {condOf a} " ++ "{\n" ++
+    s!"    if {condOf a "s.requested"} " ++ "{\n" ++
     s!"        // SAFETY: the caller's obligations, which are `{a.impl.name}`'s, and the CPU\n" ++
     "        // has the features it needs.\n" ++
     s!"        return unsafe " ++ "{ " ++ s!"crate::{a.impl.module}::{a.impl.name}({args})" ++ " };\n" ++

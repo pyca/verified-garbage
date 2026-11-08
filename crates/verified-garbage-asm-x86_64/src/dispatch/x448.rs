@@ -19,7 +19,14 @@
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_x448_base_auto(out: *mut [u8; 56], scalar: *const [u8; 56], scratch: *mut [u64; 1024]) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::x448::vg_x448_base(out, scalar, scratch) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::x448::VG_X448_BASE_ADX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_x448_base_adx`'s, and the CPU
         // has the features it needs.
@@ -47,7 +54,14 @@ pub unsafe fn vg_x448_base_auto(out: *mut [u8; 56], scalar: *const [u8; 56], scr
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_x448_exchange_auto(out: *mut [u8; 56], scalar: *const [u8; 56], point: *const [u8; 56], scratch: *mut [u64; 1024]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::x448::vg_x448_exchange(out, scalar, point, scratch) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::x448::VG_X448_EXCHANGE_ADX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_x448_exchange_adx`'s, and the CPU
         // has the features it needs.

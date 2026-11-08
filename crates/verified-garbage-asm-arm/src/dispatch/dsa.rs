@@ -37,7 +37,14 @@ pub use crate::dsa::vg_dsa_generate_key as vg_dsa_generate_key_auto;
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_dsa_parameter_search_auto(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::dsa::vg_dsa_parameter_search(out, out_len, used, rand, rand_len, scratch, scratch_len, state) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
     if cpu.contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_UMAAL_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_dsa_parameter_search_umaal`'s, and the CPU

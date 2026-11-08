@@ -21,7 +21,14 @@
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_aes_ctr_auto(schedule: *const [u8; 240], rounds: usize, ctr: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::aes_ctr::vg_aes_ctr(schedule, rounds, ctr, data, n, scratch) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::aes_ctr::VG_AES_CTR_AESNI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_ctr_aesni`'s, and the CPU
         // has the features it needs.
@@ -50,7 +57,14 @@ pub unsafe fn vg_aes_ctr_auto(schedule: *const [u8; 240], rounds: usize, ctr: *m
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_aes_ctr_final_auto(schedule: *const [u8; 240], rounds: usize, ctr: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::aes_ctr::vg_aes_ctr_final(schedule, rounds, ctr, data, len, scratch) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::aes_ctr::VG_AES_CTR_FINAL_AESNI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_ctr_final_aesni`'s, and the CPU
         // has the features it needs.

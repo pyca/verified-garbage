@@ -15,7 +15,14 @@
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_zeroize_auto(p: *mut u8, len: usize) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::zeroize::vg_zeroize(p, len) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::zeroize::VG_ZEROIZE_AVX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_zeroize_avx`'s, and the CPU
         // has the features it needs.

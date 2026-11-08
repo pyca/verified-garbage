@@ -156,10 +156,11 @@ emitter checks the declaration is exact, and the generated function's
 that calls it checks for them first, using the generated `<NAME>_FEATURES`
 constant, or calls the function's generated dispatcher, `<name>_auto`
 (`dispatch/<module>.rs` of its crate, `Rust.dispatcher`), which checks them itself with the features
-`verified_garbage_cpu::detected()` reports (`crates/verified-garbage-cpu/`),
+`verified_garbage_cpu` has detected (`crates/verified-garbage-cpu/`),
 and needs none: it calls an implementation only on a CPU with that
 implementation's features, in the order `Dispatch.lean` ranks them, and
-otherwise the baseline. The ranking is not trusted: every implementation it
+otherwise the baseline, which it also calls, before detecting, where
+nothing has been detected yet. The ranking is not trusted: every implementation it
 may choose is proven against the same contract.
 
 ## What you need to trust

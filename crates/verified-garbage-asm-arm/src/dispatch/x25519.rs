@@ -26,7 +26,14 @@ pub use crate::x25519::vg_x25519_base as vg_x25519_base_auto;
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_x25519_exchange_auto(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::x25519::vg_x25519_exchange(out, scalar, point, scratch) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
     if cpu.contains(crate::x25519::VG_X25519_EXCHANGE_UMAAL_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_x25519_exchange_umaal`'s, and the CPU

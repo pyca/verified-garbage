@@ -20,7 +20,14 @@
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_aes_siv_init_auto(key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::aes_siv::vg_aes_siv_init(key, key_len, ctx) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::aes_siv::VG_AES_SIV_INIT_AESNI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_siv_init_aesni`'s, and the CPU
         // has the features it needs.
@@ -50,7 +57,14 @@ pub unsafe fn vg_aes_siv_init_auto(key: *const u8, key_len: usize, ctx: *mut [u6
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_aes_siv_encrypt_auto(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::aes_siv::vg_aes_siv_encrypt(ctx, rounds, ads, ads_count, data, len, siv) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::aes_siv::VG_AES_SIV_ENCRYPT_AESNI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_siv_encrypt_aesni`'s, and the CPU
         // has the features it needs.
@@ -80,7 +94,14 @@ pub unsafe fn vg_aes_siv_encrypt_auto(ctx: *const [u64; 64], rounds: usize, ads:
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_aes_siv_decrypt_auto(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::aes_siv::vg_aes_siv_decrypt(ctx, rounds, ads, ads_count, data, len, siv) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::aes_siv::VG_AES_SIV_DECRYPT_AESNI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_siv_decrypt_aesni`'s, and the CPU
         // has the features it needs.

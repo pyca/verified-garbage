@@ -18,7 +18,14 @@
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_cmac_aes_init_auto(state: *mut [u64; 38], key: *const u8, key_len: usize) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::cmac_aes::vg_cmac_aes_init(state, key, key_len) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::cmac_aes::VG_CMAC_AES_INIT_AES_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_cmac_aes_init_aes`'s, and the CPU
         // has the features it needs.
@@ -45,7 +52,14 @@ pub unsafe fn vg_cmac_aes_init_auto(state: *mut [u64; 38], key: *const u8, key_l
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_cmac_aes_finish_auto(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::cmac_aes::vg_cmac_aes_finish(state, rounds, count, out) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::cmac_aes::VG_CMAC_AES_FINISH_AES_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_cmac_aes_finish_aes`'s, and the CPU
         // has the features it needs.
@@ -71,7 +85,14 @@ pub unsafe fn vg_cmac_aes_finish_auto(state: *mut [u64; 38], rounds: usize, coun
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_cmac_aes_absorb_auto(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::cmac_aes::vg_cmac_aes_absorb(state, rounds, count, data, len) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::cmac_aes::VG_CMAC_AES_ABSORB_AES_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_cmac_aes_absorb_aes`'s, and the CPU
         // has the features it needs.

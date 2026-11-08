@@ -32,7 +32,14 @@
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_rsa_pkcs1_sign_auto(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, digest: *const u8, digest_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::rsa_pkcs1_sig::vg_rsa_pkcs1_sign(out, out_len, n, n_len, e, e_len, hash, digest, digest_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, scratch, scratch_len) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
     if cpu.contains(crate::rsa_pkcs1_sig::VG_RSA_PKCS1_SIGN_UMAAL_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_rsa_pkcs1_sign_umaal`'s, and the CPU
@@ -72,7 +79,14 @@ pub unsafe fn vg_rsa_pkcs1_sign_auto(out: *mut u8, out_len: usize, n: *const u8,
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_rsa_pkcs1_verify_precomputed_auto(n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, digest: *const u8, digest_len: usize, sig: *const u8, sig_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::rsa_pkcs1_sig::vg_rsa_pkcs1_verify_precomputed(n, n_len, e, e_len, hash, digest, digest_len, sig, sig_len, scratch, scratch_len, pre, pre_len) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
     if cpu.contains(crate::rsa_pkcs1_sig::VG_RSA_PKCS1_VERIFY_PRECOMPUTED_UMAAL_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_rsa_pkcs1_verify_precomputed_umaal`'s, and the CPU
@@ -113,7 +127,14 @@ pub unsafe fn vg_rsa_pkcs1_verify_precomputed_auto(n: *const u8, n_len: usize, e
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_rsa_pkcs1_recover_precomputed_auto(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, sig: *const u8, sig_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::rsa_pkcs1_sig::vg_rsa_pkcs1_recover_precomputed(out, out_len, n, n_len, e, e_len, hash, sig, sig_len, scratch, scratch_len, pre, pre_len) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
     if cpu.contains(crate::rsa_pkcs1_sig::VG_RSA_PKCS1_RECOVER_PRECOMPUTED_UMAAL_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_rsa_pkcs1_recover_precomputed_umaal`'s, and the CPU

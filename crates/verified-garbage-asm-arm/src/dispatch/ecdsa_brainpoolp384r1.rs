@@ -24,7 +24,14 @@
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_ecdsa_brainpoolp384r1_sign_auto(out: *mut [u8; 96], d: *const [u8; 48], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::ecdsa_brainpoolp384r1::vg_ecdsa_brainpoolp384r1_sign(out, d, digest, digest_len, scratch, hmac) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
     if cpu.contains(crate::ecdsa_brainpoolp384r1::VG_ECDSA_BRAINPOOLP384R1_SIGN_UMAAL_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_ecdsa_brainpoolp384r1_sign_umaal`'s, and the CPU
@@ -53,7 +60,14 @@ pub unsafe fn vg_ecdsa_brainpoolp384r1_sign_auto(out: *mut [u8; 96], d: *const [
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_ecdsa_brainpoolp384r1_verify_auto(public: *const [u8; 97], digest: *const u8, digest_len: usize, sig: *const [u8; 96], scratch: *mut [u64; 1024]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::ecdsa_brainpoolp384r1::vg_ecdsa_brainpoolp384r1_verify(public, digest, digest_len, sig, scratch) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
     if cpu.contains(crate::ecdsa_brainpoolp384r1::VG_ECDSA_BRAINPOOLP384R1_VERIFY_UMAAL_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_ecdsa_brainpoolp384r1_verify_umaal`'s, and the CPU

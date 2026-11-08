@@ -19,7 +19,14 @@
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_ec_p256_public_key_auto(out: *mut [u8; 65], d: *const [u8; 32], scratch: *mut [u64; 1024]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::ec_p256::vg_ec_p256_public_key(out, d, scratch) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
     if cpu.contains(crate::ec_p256::VG_EC_P256_PUBLIC_KEY_UMAAL_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_ec_p256_public_key_umaal`'s, and the CPU

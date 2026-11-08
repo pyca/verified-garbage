@@ -18,7 +18,14 @@
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_aes_ocb_init_auto(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::aes_ocb::vg_aes_ocb_init(key, key_len, ctx) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::aes_ocb::VG_AES_OCB_INIT_VAES_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_ocb_init_vaes`'s, and the CPU
         // has the features it needs.
@@ -53,7 +60,14 @@ pub unsafe fn vg_aes_ocb_init_auto(key: *const u8, key_len: usize, ctx: *mut [u6
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_aes_ocb_seal_auto(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::aes_ocb::vg_aes_ocb_seal(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::aes_ocb::VG_AES_OCB_SEAL_VAES_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_ocb_seal_vaes`'s, and the CPU
         // has the features it needs.
@@ -88,7 +102,14 @@ pub unsafe fn vg_aes_ocb_seal_auto(ctx: *const [u64; 32], rounds: usize, nonce: 
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_aes_ocb_open_auto(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::aes_ocb::vg_aes_ocb_open(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::aes_ocb::VG_AES_OCB_OPEN_VAES_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_ocb_open_vaes`'s, and the CPU
         // has the features it needs.

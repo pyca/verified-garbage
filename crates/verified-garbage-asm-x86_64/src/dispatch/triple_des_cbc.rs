@@ -24,7 +24,14 @@ pub use crate::triple_des_cbc::vg_triple_des_cbc_encrypt_chained as vg_triple_de
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_triple_des_cbc_decrypt_chained_auto(schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::triple_des_cbc::vg_triple_des_cbc_decrypt_chained(schedule, iv, data, n) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::triple_des_cbc::VG_TRIPLE_DES_CBC_DECRYPT_CHAINED_AVX512_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_triple_des_cbc_decrypt_chained_avx512`'s, and the CPU
         // has the features it needs.

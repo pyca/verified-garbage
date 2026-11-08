@@ -29,7 +29,14 @@ pub use crate::sha256::vg_sha256_init as vg_sha256_init_auto;
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sha256_digest_auto(data: *const u8, len: usize, out: *mut [u8; 32]) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::sha256::vg_sha256_digest(data, len, out) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::sha256::VG_SHA256_DIGEST_SHANI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha256_digest_shani`'s, and the CPU
         // has the features it needs.
@@ -54,7 +61,14 @@ pub unsafe fn vg_sha256_digest_auto(data: *const u8, len: usize, out: *mut [u8; 
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sha224_digest_auto(data: *const u8, len: usize, out: *mut [u8; 28]) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::sha256::vg_sha224_digest(data, len, out) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::sha256::VG_SHA224_DIGEST_SHANI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha224_digest_shani`'s, and the CPU
         // has the features it needs.
@@ -81,7 +95,14 @@ pub unsafe fn vg_sha224_digest_auto(data: *const u8, len: usize, out: *mut [u8; 
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sha256_update_auto(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::sha256::vg_sha256_update(state, count, data, len) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::sha256::VG_SHA256_UPDATE_SHANI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha256_update_shani`'s, and the CPU
         // has the features it needs.
@@ -109,7 +130,14 @@ pub unsafe fn vg_sha256_update_auto(state: *mut [u8; 96], count: u64, data: *con
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sha256_finalize_auto(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::sha256::vg_sha256_finalize(state, count, out) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::sha256::VG_SHA256_FINALIZE_SHANI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha256_finalize_shani`'s, and the CPU
         // has the features it needs.
@@ -135,7 +163,14 @@ pub unsafe fn vg_sha256_finalize_auto(state: *mut [u8; 96], count: u64, out: *mu
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sha224_finalize_auto(state: *mut [u8; 96], count: u64, out: *mut [u8; 28]) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::sha256::vg_sha224_finalize(state, count, out) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::sha256::VG_SHA224_FINALIZE_SHANI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha224_finalize_shani`'s, and the CPU
         // has the features it needs.

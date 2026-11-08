@@ -23,7 +23,14 @@
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_aes_gcm_siv_seal_auto(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_seal(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AES_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_seal_aes_sha3`'s, and the CPU
         // has the features it needs.
@@ -59,7 +66,14 @@ pub unsafe fn vg_aes_gcm_siv_seal_auto(schedule: *const [u8; 240], rounds: usize
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_aes_gcm_siv_open_auto(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::aes_gcm_siv::vg_aes_gcm_siv_open(schedule, rounds, nonce, aad, aad_len, data, len, tag) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AES_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_gcm_siv_open_aes_sha3`'s, and the CPU
         // has the features it needs.

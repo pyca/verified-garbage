@@ -19,7 +19,14 @@
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_ec_p521_compress_public_key_auto(out: *mut [u8; 67], public: *const [u8; 133], scratch: *mut [u64; 1024]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::ec_p521_compressed::vg_ec_p521_compress_public_key(out, public, scratch) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::ec_p521_compressed::VG_EC_P521_COMPRESS_PUBLIC_KEY_ADX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_ec_p521_compress_public_key_adx`'s, and the CPU
         // has the features it needs.
@@ -46,7 +53,14 @@ pub unsafe fn vg_ec_p521_compress_public_key_auto(out: *mut [u8; 67], public: *c
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_ec_p521_decompress_public_key_auto(out: *mut [u8; 133], public: *const [u8; 67], scratch: *mut [u64; 1024]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::ec_p521_compressed::vg_ec_p521_decompress_public_key(out, public, scratch) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::ec_p521_compressed::VG_EC_P521_DECOMPRESS_PUBLIC_KEY_ADX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_ec_p521_decompress_public_key_adx`'s, and the CPU
         // has the features it needs.

@@ -88,7 +88,7 @@ const DETECTED_INIT: u64 = 1 << 30;
 /// itself is out of line (`detect`), so callers keep no registers for it.
 #[inline]
 pub fn detected() -> Features {
-    Features(state() as u32 & !(DETECTED_INIT as u32))
+    Snapshot(state()).features()
 }
 
 /// Whether `VG_CPU_FEATURES` names every feature of `f`, which is not empty:
@@ -98,7 +98,48 @@ pub fn detected() -> Features {
 /// it (`lean/VerifiedGarbage/TCB/Rust.lean`, `Rank.vendor`).
 #[inline]
 pub fn requested(f: Features) -> bool {
-    f.0 != 0 && (state() >> 32) as u32 & f.0 == f.0
+    Snapshot(state()).requested(f)
+}
+
+/// What has been detected, as one load of it reads it (`snapshot`): a
+/// dispatcher reads it once, runs its base where nothing has been detected
+/// yet and detects only after that call (`detect_now`), so that on every
+/// other call it makes no call but the implementation's
+/// (`lean/VerifiedGarbage/TCB/Rust.lean`, `Rust.dispatcher`).
+#[derive(Clone, Copy)]
+pub struct Snapshot(u64);
+
+impl Snapshot {
+    /// Whether detection had run.
+    #[inline]
+    pub fn initialized(self) -> bool {
+        self.0 & DETECTED_INIT != 0
+    }
+
+    /// The features `detected` returns, once detection has run.
+    #[inline]
+    pub fn features(self) -> Features {
+        Features(self.0 as u32 & !(DETECTED_INIT as u32))
+    }
+
+    /// `requested(f)`, once detection has run.
+    #[inline]
+    pub fn requested(self, f: Features) -> bool {
+        f.0 != 0 && (self.0 >> 32) as u32 & f.0 == f.0
+    }
+}
+
+/// What has been detected so far: one load, which never detects.
+#[inline]
+pub fn snapshot() -> Snapshot {
+    Snapshot(DETECTED.load(Ordering::Relaxed))
+}
+
+/// Detects the features, if that has not been done.
+#[cold]
+#[inline(never)]
+pub fn detect_now() {
+    state();
 }
 
 /// `DETECTED`, detected if it was not yet.

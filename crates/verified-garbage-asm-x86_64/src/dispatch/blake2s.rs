@@ -24,7 +24,14 @@ pub use crate::blake2s::vg_blake2s_init as vg_blake2s_init_auto;
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_blake2s_update_auto(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::blake2s::vg_blake2s_update(state, count, data, len) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::blake2s::VG_BLAKE2S_UPDATE_AVX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_blake2s_update_avx`'s, and the CPU
         // has the features it needs.
@@ -51,7 +58,14 @@ pub unsafe fn vg_blake2s_update_auto(state: *mut [u8; 96], count: u64, data: *co
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_blake2s_finalize_auto(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::blake2s::vg_blake2s_finalize(state, count, out) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::blake2s::VG_BLAKE2S_FINALIZE_AVX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_blake2s_finalize_avx`'s, and the CPU
         // has the features it needs.

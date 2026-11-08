@@ -14,7 +14,7 @@ extern crate std;
 #[doc(hidden)]
 pub mod detect;
 
-pub use detect::{detected, requested};
+pub use detect::{Snapshot, detect_now, detected, requested, snapshot};
 
 /// The bit of each feature detection knows in a [`Features`], by its Rust
 /// `target_feature` name in uppercase: what the generated `_FEATURES`

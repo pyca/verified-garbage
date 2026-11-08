@@ -40,7 +40,14 @@
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_rsa_pss_sign_auto(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const u8, digest_len: usize, salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 5]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::rsa_pss::vg_rsa_pss_sign(out, out_len, n, n_len, e, e_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, digest, digest_len, salt, salt_len, scratch, scratch_len, hash, mgf1) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::rsa_pss::VG_RSA_PSS_SIGN_CRT_IFMA_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_rsa_pss_sign_crt_ifma`'s, and the CPU
         // has the features it needs.
@@ -88,7 +95,14 @@ pub unsafe fn vg_rsa_pss_sign_auto(out: *mut u8, out_len: usize, n: *const u8, n
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_rsa_pss_verify_precomputed_auto(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const u8, digest_len: usize, sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 5]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::rsa_pss::vg_rsa_pss_verify_precomputed(n, n_len, e, e_len, digest, digest_len, sig, sig_len, salt_len, any_salt_len, scratch, scratch_len, pre, pre_len, hash, mgf1) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::rsa_pss::VG_RSA_PSS_VERIFY_PRECOMPUTED_RSA_IFMA_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_rsa_pss_verify_precomputed_rsa_ifma`'s, and the CPU
         // has the features it needs.

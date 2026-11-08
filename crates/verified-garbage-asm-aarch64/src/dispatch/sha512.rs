@@ -29,7 +29,14 @@ pub use crate::sha512::vg_sha512_init as vg_sha512_init_auto;
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sha384_digest_auto(data: *const u8, len: usize, out: *mut [u8; 48]) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::sha512::vg_sha384_digest(data, len, out) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::sha512::VG_SHA384_DIGEST_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha384_digest_sha3`'s, and the CPU
         // has the features it needs.
@@ -54,7 +61,14 @@ pub unsafe fn vg_sha384_digest_auto(data: *const u8, len: usize, out: *mut [u8; 
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sha512_update_auto(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::sha512::vg_sha512_update(state, count, data, len) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::sha512::VG_SHA512_UPDATE_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha512_update_sha3`'s, and the CPU
         // has the features it needs.
@@ -79,7 +93,14 @@ pub unsafe fn vg_sha512_update_auto(state: *mut [u8; 192], count: u64, data: *co
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sha512_digest_auto(data: *const u8, len: usize, out: *mut [u8; 64]) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::sha512::vg_sha512_digest(data, len, out) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::sha512::VG_SHA512_DIGEST_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha512_digest_sha3`'s, and the CPU
         // has the features it needs.
@@ -118,7 +139,14 @@ pub use crate::sha512::vg_sha512_256_init as vg_sha512_256_init_auto;
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sha384_finalize_auto(state: *mut [u8; 192], count: u64, out: *mut [u8; 48]) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::sha512::vg_sha384_finalize(state, count, out) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::sha512::VG_SHA384_FINALIZE_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha384_finalize_sha3`'s, and the CPU
         // has the features it needs.
@@ -145,7 +173,14 @@ pub unsafe fn vg_sha384_finalize_auto(state: *mut [u8; 192], count: u64, out: *m
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sha512_finalize_auto(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::sha512::vg_sha512_finalize(state, count, out) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::sha512::VG_SHA512_FINALIZE_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha512_finalize_sha3`'s, and the CPU
         // has the features it needs.
@@ -170,7 +205,14 @@ pub unsafe fn vg_sha512_finalize_auto(state: *mut [u8; 192], count: u64, out: *m
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sha512_224_digest_auto(data: *const u8, len: usize, out: *mut [u8; 28]) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::sha512::vg_sha512_224_digest(data, len, out) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::sha512::VG_SHA512_224_DIGEST_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha512_224_digest_sha3`'s, and the CPU
         // has the features it needs.
@@ -195,7 +237,14 @@ pub unsafe fn vg_sha512_224_digest_auto(data: *const u8, len: usize, out: *mut [
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sha512_256_digest_auto(data: *const u8, len: usize, out: *mut [u8; 32]) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::sha512::vg_sha512_256_digest(data, len, out) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::sha512::VG_SHA512_256_DIGEST_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha512_256_digest_sha3`'s, and the CPU
         // has the features it needs.
@@ -222,7 +271,14 @@ pub unsafe fn vg_sha512_256_digest_auto(data: *const u8, len: usize, out: *mut [
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sha512_224_finalize_auto(state: *mut [u8; 192], count: u64, out: *mut [u8; 28]) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::sha512::vg_sha512_224_finalize(state, count, out) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::sha512::VG_SHA512_224_FINALIZE_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha512_224_finalize_sha3`'s, and the CPU
         // has the features it needs.
@@ -249,7 +305,14 @@ pub unsafe fn vg_sha512_224_finalize_auto(state: *mut [u8; 192], count: u64, out
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sha512_256_finalize_auto(state: *mut [u8; 192], count: u64, out: *mut [u8; 32]) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::sha512::vg_sha512_256_finalize(state, count, out) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::sha512::VG_SHA512_256_FINALIZE_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_sha512_256_finalize_sha3`'s, and the CPU
         // has the features it needs.

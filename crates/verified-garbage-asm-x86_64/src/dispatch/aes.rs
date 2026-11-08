@@ -19,7 +19,14 @@
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_aes_expand_key_auto(key: *const u8, key_len: usize, schedule: *mut [u8; 240]) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::aes::vg_aes_expand_key(key, key_len, schedule) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::aes::VG_AES_EXPAND_KEY_AESNI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_expand_key_aesni`'s, and the CPU
         // has the features it needs.
@@ -47,7 +54,14 @@ pub unsafe fn vg_aes_expand_key_auto(key: *const u8, key_len: usize, schedule: *
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_aes_encrypt_blocks_auto(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::aes::vg_aes_encrypt_blocks(schedule, rounds, data, n, scratch) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::aes::VG_AES_ENCRYPT_BLOCKS_VAES_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_encrypt_blocks_vaes`'s, and the CPU
         // has the features it needs.
@@ -80,7 +94,14 @@ pub unsafe fn vg_aes_encrypt_blocks_auto(schedule: *const [u8; 240], rounds: usi
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_aes_decrypt_blocks_auto(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::aes::vg_aes_decrypt_blocks(schedule, rounds, data, n, scratch) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::aes::VG_AES_DECRYPT_BLOCKS_VAES_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_decrypt_blocks_vaes`'s, and the CPU
         // has the features it needs.

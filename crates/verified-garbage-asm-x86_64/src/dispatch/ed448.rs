@@ -19,7 +19,14 @@
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_ed448_verify_auto(pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, signature: *const [u8; 114], scratch: *mut [u64; 1024]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::ed448::vg_ed448_verify(pk, context, ctxlen, message, len, signature, scratch) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::ed448::VG_ED448_VERIFY_ADX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_ed448_verify_adx`'s, and the CPU
         // has the features it needs.
@@ -45,7 +52,14 @@ pub unsafe fn vg_ed448_verify_auto(pk: *const [u8; 57], context: *const u8, ctxl
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_ed448_public_key_auto(out: *mut [u8; 57], seed: *const [u8; 57], scratch: *mut [u64; 1024]) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::ed448::vg_ed448_public_key(out, seed, scratch) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::ed448::VG_ED448_PUBLIC_KEY_ADX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_ed448_public_key_adx`'s, and the CPU
         // has the features it needs.
@@ -76,7 +90,14 @@ pub unsafe fn vg_ed448_public_key_auto(out: *mut [u8; 57], seed: *const [u8; 57]
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_ed448_sign_cached_auto(out: *mut [u8; 114], seed: *const [u8; 57], pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::ed448::vg_ed448_sign_cached(out, seed, pk, context, ctxlen, message, len, scratch) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::ed448::VG_ED448_SIGN_CACHED_ADX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_ed448_sign_cached_adx`'s, and the CPU
         // has the features it needs.

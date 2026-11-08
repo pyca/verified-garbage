@@ -19,7 +19,14 @@
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_x25519_base_auto(out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::x25519::vg_x25519_base(out, scalar, scratch) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::x25519::VG_X25519_BASE_IFMA_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_x25519_base_ifma`'s, and the CPU
         // has the features it needs.
@@ -52,7 +59,14 @@ pub unsafe fn vg_x25519_base_auto(out: *mut [u8; 32], scalar: *const [u8; 32], s
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_x25519_exchange_auto(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::x25519::vg_x25519_exchange(out, scalar, point, scratch) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::x25519::VG_X25519_EXCHANGE_IFMA_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_x25519_exchange_ifma`'s, and the CPU
         // has the features it needs.

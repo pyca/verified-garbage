@@ -23,7 +23,14 @@
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mldsa87_sign_auto(sk: *const [u8; 4896], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::mldsa87::vg_mldsa87_sign(sk, mu, rnd, sig, scratch) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::mldsa87::VG_MLDSA87_SIGN_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_mldsa87_sign_sha3`'s, and the CPU
         // has the features it needs.
@@ -50,7 +57,14 @@ pub unsafe fn vg_mldsa87_sign_auto(sk: *const [u8; 4896], mu: *const [u8; 64], r
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mldsa87_pk_tr_auto(pk: *const [u8; 2592], tr: *mut [u8; 64], scratch: *mut [u64; 18048]) {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        unsafe { crate::mldsa87::vg_mldsa87_pk_tr(pk, tr, scratch) };
+        verified_garbage_cpu::detect_now();
+        return;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::mldsa87::VG_MLDSA87_PK_TR_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_mldsa87_pk_tr_sha3`'s, and the CPU
         // has the features it needs.
@@ -79,7 +93,14 @@ pub unsafe fn vg_mldsa87_pk_tr_auto(pk: *const [u8; 2592], tr: *mut [u8; 64], sc
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mldsa87_keygen_auto(seed: *const [u8; 32], pk: *mut [u8; 2592], sk: *mut [u8; 4896], scratch: *mut [u64; 18048]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::mldsa87::vg_mldsa87_keygen(seed, pk, sk, scratch) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::mldsa87::VG_MLDSA87_KEYGEN_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_mldsa87_keygen_sha3`'s, and the CPU
         // has the features it needs.
@@ -107,7 +128,14 @@ pub unsafe fn vg_mldsa87_keygen_auto(seed: *const [u8; 32], pk: *mut [u8; 2592],
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mldsa87_verify_auto(pk: *const [u8; 2592], mu: *const [u8; 64], sig: *const [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::mldsa87::vg_mldsa87_verify(pk, mu, sig, scratch) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::mldsa87::VG_MLDSA87_VERIFY_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_mldsa87_verify_sha3`'s, and the CPU
         // has the features it needs.
@@ -139,7 +167,14 @@ pub unsafe fn vg_mldsa87_verify_auto(pk: *const [u8; 2592], mu: *const [u8; 64],
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mldsa87_sign_message_auto(sk: *const [u8; 4896], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18176]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::mldsa87::vg_mldsa87_sign_message(sk, msg, msg_len, ctx, ctx_len, rnd, sig, scratch) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::mldsa87::VG_MLDSA87_SIGN_MESSAGE_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_mldsa87_sign_message_sha3`'s, and the CPU
         // has the features it needs.
@@ -184,7 +219,14 @@ pub use crate::mldsa87::vg_mldsa87_prepare_verifying_key as vg_mldsa87_prepare_v
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mldsa87_sign_message_prepared_auto(sk: *const [u8; 28448], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18176]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::mldsa87::vg_mldsa87_sign_message_prepared(sk, msg, msg_len, ctx, ctx_len, rnd, sig, scratch) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::mldsa87::VG_MLDSA87_SIGN_MESSAGE_PREPARED_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_mldsa87_sign_message_prepared_sha3`'s, and the CPU
         // has the features it needs.
@@ -215,7 +257,14 @@ pub unsafe fn vg_mldsa87_sign_message_prepared_auto(sk: *const [u8; 28448], msg:
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mldsa87_verify_message_cached_auto(pk: *const [u8; 2592], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176], tr: *const [u8; 64]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::mldsa87::vg_mldsa87_verify_message_cached(pk, msg, msg_len, ctx, ctx_len, sig, scratch, tr) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::mldsa87::VG_MLDSA87_VERIFY_MESSAGE_CACHED_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_mldsa87_verify_message_cached_sha3`'s, and the CPU
         // has the features it needs.
@@ -247,7 +296,14 @@ pub unsafe fn vg_mldsa87_verify_message_cached_auto(pk: *const [u8; 2592], msg: 
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mldsa87_verify_message_prepared_auto(pk: *const [u8; 10784], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176], tr: *const [u8; 64]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::mldsa87::vg_mldsa87_verify_message_prepared(pk, msg, msg_len, ctx, ctx_len, sig, scratch, tr) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::mldsa87::VG_MLDSA87_VERIFY_MESSAGE_PREPARED_SHA3_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_mldsa87_verify_message_prepared_sha3`'s, and the CPU
         // has the features it needs.

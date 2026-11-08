@@ -19,7 +19,14 @@
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_ec_brainpoolp384r1_compress_public_key_auto(out: *mut [u8; 49], public: *const [u8; 97], scratch: *mut [u64; 1024]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::ec_brainpoolp384r1_compressed::vg_ec_brainpoolp384r1_compress_public_key(out, public, scratch) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
     if cpu.contains(crate::ec_brainpoolp384r1_compressed::VG_EC_BRAINPOOLP384R1_COMPRESS_PUBLIC_KEY_UMAAL_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_ec_brainpoolp384r1_compress_public_key_umaal`'s, and the CPU
@@ -47,7 +54,14 @@ pub unsafe fn vg_ec_brainpoolp384r1_compress_public_key_auto(out: *mut [u8; 49],
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_ec_brainpoolp384r1_decompress_public_key_auto(out: *mut [u8; 97], public: *const [u8; 49], scratch: *mut [u64; 1024]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::ec_brainpoolp384r1_compressed::vg_ec_brainpoolp384r1_decompress_public_key(out, public, scratch) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
     if cpu.contains(crate::ec_brainpoolp384r1_compressed::VG_EC_BRAINPOOLP384R1_DECOMPRESS_PUBLIC_KEY_UMAAL_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_ec_brainpoolp384r1_decompress_public_key_umaal`'s, and the CPU

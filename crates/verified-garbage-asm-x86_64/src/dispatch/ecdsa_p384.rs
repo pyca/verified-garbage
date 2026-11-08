@@ -24,7 +24,14 @@
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_ecdsa_p384_sign_auto(out: *mut [u8; 96], d: *const [u8; 48], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::ecdsa_p384::vg_ecdsa_p384_sign(out, d, digest, digest_len, scratch, hmac) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::ecdsa_p384::VG_ECDSA_P384_SIGN_ADX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_ecdsa_p384_sign_adx`'s, and the CPU
         // has the features it needs.
@@ -52,7 +59,14 @@ pub unsafe fn vg_ecdsa_p384_sign_auto(out: *mut [u8; 96], d: *const [u8; 48], di
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_ecdsa_p384_verify_auto(public: *const [u8; 97], digest: *const u8, digest_len: usize, sig: *const [u8; 96], scratch: *mut [u64; 1024]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
+    let s = verified_garbage_cpu::snapshot();
+    if !s.initialized() {
+        // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+        let r = unsafe { crate::ecdsa_p384::vg_ecdsa_p384_verify(public, digest, digest_len, sig, scratch) };
+        verified_garbage_cpu::detect_now();
+        return r;
+    }
+    let cpu = s.features();
     if cpu.contains(crate::ecdsa_p384::VG_ECDSA_P384_VERIFY_ADX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_ecdsa_p384_verify_adx`'s, and the CPU
         // has the features it needs.

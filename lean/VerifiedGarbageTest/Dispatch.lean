@@ -59,8 +59,14 @@ def has (text part : String) : Bool := (text.splitOn part).length > 1
 #guard has file
   "pub unsafe fn vg_poly1305_update_auto(state: *mut [u64; 16], count: u64, data: *const u8, \
     len: usize) {\n    \
-    let cpu = verified_garbage_cpu::detected();\n    \
-    if (cfg!(target_vendor = \"apple\") || verified_garbage_cpu::requested(\
+    let s = verified_garbage_cpu::snapshot();\n    \
+    if !s.initialized() {\n        \
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.\n        \
+    unsafe { crate::poly1305::vg_poly1305_update(state, count, data, len) };\n        \
+    verified_garbage_cpu::detect_now();\n        \
+    return;\n    }\n    \
+    let cpu = s.features();\n    \
+    if (cfg!(target_vendor = \"apple\") || s.requested(\
     verified_garbage_cpu::Features(verified_garbage_cpu::feature::NEON))) && \
     cpu.contains(verified_garbage_cpu::Features(verified_garbage_cpu::feature::NEON)) {\n"
 #guard has file
