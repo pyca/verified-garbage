@@ -39,7 +39,7 @@ are present calls `vg_aes_gcm_seal_prepared` and, through its encryption
 out of place, `vg_aes_gcm_stream_encrypt_prepared` by their public names,
 whose code tests the flag again: so the code of each on the powers is in one
 function. These are the contracts of that code and of the internal functions
-it calls, on the 1088-byte prepared key context whose flag word is not 1 and
+it calls, on the 1032-byte prepared key context whose flag word is not 1 and
 which holds the powers (`Proof.AesGcm.Flag.FlaggedPowers`), and their proofs
 (`CtxMode.flagged`), as `Prepared/*.lean` has them for the 1024-byte one.
 -/
@@ -55,7 +55,7 @@ open VG.Spec.Gcm
 /-! ## The contracts -/
 
 def streamEncryptToFlaggedSig : Sig where
-  params := [("ctx", .array false .u64 136), ("rounds", .int .usize true),
+  params := [("ctx", .array false .u64 129), ("rounds", .int .usize true),
     ("state", .array true .u64 10), ("aad_len", .int .u64 true), ("text_len", .int .u64 true),
     ("src", .slice false .u8 "len"), ("dst", .slice true .u8 "dst_len")]
 
@@ -70,7 +70,7 @@ def streamEncryptToFlaggedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Co
     (writeArgs := true) (stack := stack)
 
 def streamEncryptToFlaggedScratchSig : Sig where
-  params := [("ctx", .array false .u64 136), ("rounds", .int .usize true),
+  params := [("ctx", .array false .u64 129), ("rounds", .int .usize true),
     ("state", .array true .u64 10), ("aad_len", .int .u64 true), ("text_len", .int .u64 true),
     ("src", .slice false .u8 "len"), ("dst", .slice true .u8 "dst_len"), ("scratch", .array true .u64 274)]
 
@@ -83,7 +83,7 @@ def streamEncryptToFlaggedScratchContract {M : ISA} (A : Abi M) (stack : Nat := 
     (writeArgs := true) (stack := stack)
 
 def sealSplitFlaggedSig : Sig where
-  params := [("ctx", .array false .u64 136), ("rounds", .int .usize true),
+  params := [("ctx", .array false .u64 129), ("rounds", .int .usize true),
     ("nonce", .slice false .u8 "nonce_len"), ("aad", .slice false .u8 "aad_len"),
     ("src", .slice false .u8 "src_len"), ("dst", .slice true .u8 "len"),
     ("tag", .array true .u8 16)]
@@ -109,7 +109,7 @@ def sealGatherFlaggedRoundsContract {M : ISA} (A : Abi M) (stack : Nat := 0) : C
     (writeArgs := true) (stack := stack)
 
 def sealGatherFlaggedScratchSig : Sig where
-  params := [("ctx", .array false .u64 136), ("rounds", .int .usize true),
+  params := [("ctx", .array false .u64 129), ("rounds", .int .usize true),
     ("nonce", .slice false .u8 "nonce_len"), ("aad", .slice false .u8 "aad_len"),
     ("src", .slices .u8 "src_count"), ("dst", .slice true .u8 "len"),
     ("tag", .array true .u8 16), ("scratch", .array true .u64 23)]
@@ -517,9 +517,9 @@ open Gcm.X86_64.Stitch (CtxMode)
 open VG.Proof.AesGcm (arg args rounds)
 open VG.Impl.AesGcm.X86_64.StreamTo
 
-def streamToSatF : State := { streamToSat with rd := [⟨0x1000, 1088⟩, ⟨0x4000, 0⟩, ⟨0x9008, 32⟩] }
+def streamToSatF : State := { streamToSat with rd := [⟨0x1000, 1032⟩, ⟨0x4000, 0⟩, ⟨0x9008, 32⟩] }
 
-def streamToFrameSatF : State := { streamToFrameSat with rd := [⟨0x1000, 1088⟩, ⟨0x4000, 0⟩, ⟨0x9008, 24⟩] }
+def streamToFrameSatF : State := { streamToFrameSat with rd := [⟨0x1000, 1032⟩, ⟨0x4000, 0⟩, ⟨0x9008, 24⟩] }
 
 theorem streamToFlagged_implies : (Proof.AesGcm.streamEncryptToX86_64M CtxMode.flagged).Implies
     (Proof.AesGcm.Flag.streamEncryptToFlaggedScratchContract X86_64.abi 2624) := by
@@ -594,16 +594,16 @@ open Gcm.X86_64.Stitch (CtxMode)
 open VG.Proof.AesGcm (arg args rounds)
 open VG.Impl.AesGcm.X86_64.SealGather
 
-theorem ctx_lowF {i : Nat} (hi : i < 136 * 8) : ¬ (0x9000 ≤ (0x1000 + BitVec.ofNat 64 i : Addr).toNat) := by
+theorem ctx_lowF {i : Nat} (hi : i < 129 * 8) : ¬ (0x9000 ≤ (0x1000 + BitVec.ofNat 64 i : Addr).toNat) := by
   have h : (0x1000 : Addr).toNat = 4096 := rfl
   rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := i) (by omega), h]
   omega
 
 def gatherSatF : State :=
-  { gatherSat with rd := [⟨0x1000, 1088⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x4000, 0⟩, ⟨0x9008, 48⟩] }
+  { gatherSat with rd := [⟨0x1000, 1032⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x4000, 0⟩, ⟨0x9008, 48⟩] }
 
 def gatherFrameSatF : State :=
-  { gatherFrameSat with rd := [⟨0x1000, 1088⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x4000, 0⟩, ⟨0x9008, 40⟩] }
+  { gatherFrameSat with rd := [⟨0x1000, 1032⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x4000, 0⟩, ⟨0x9008, 40⟩] }
 
 theorem gatherPreFlagged_of {s : State}
     (h : (Proof.AesGcm.Flag.sealGatherFlaggedScratchContract X86_64.abi 4888).pre s) :
@@ -709,7 +709,7 @@ theorem sealGather_onFlagF {c₁ c₂ : Prog isa}
     (h₂ : Verified target c₂ (Proof.AesGcm.sealGatherRoundsContract abi 5128)) :
     Verified target (Impl.Gcm.X86_64.Flag.onFlag c₁ c₂) (AesGcm.Flag.sealGatherRoundsContract abi 5128) :=
   Verified.of_onFlagCtx (by decide) h₁
-    (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 136) (by decide) h₂
+    (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h₂
       (fun _ _ _ _ _ _ _ _ _ _ _ _ h => h) sealGather_satbase)
     (fun _ _ _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.1, hf, h.2.2.resolve_left hf⟩)
     (fun _ _ _ _ _ _ _ _ _ _ _ _ h _ => ⟨h.1, h.2.1⟩)

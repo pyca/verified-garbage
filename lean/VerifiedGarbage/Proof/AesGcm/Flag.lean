@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.Sig
 
 The contracts that are to replace those of `Spec/Gcm/Prepared.lean`, whose
 code is proven against them first (and registered once they do): a
-prepared key context of 1088 bytes, whose word at byte 1024 is 1 when it
+prepared key context of 1032 bytes, whose word at byte 1024 is 1 when it
 holds no powers (`PreparedRepr`), which a `prepare` that computes none
 writes alone (one that computes them need not write it); the functions
 reading it may branch on whether that word is 1, which they leak
@@ -42,9 +42,9 @@ def flagLeak (m : Mem) (p : Addr) : Nat := if m.readW (p + 1024) 64 = 1 then 1 e
 
 /-! ## The key setup -/
 
-/-- `vg_aes_gcm_prepare(ctx: *mut [u64; 136])`. -/
+/-- `vg_aes_gcm_prepare(ctx: *mut [u64; 129])`. -/
 def prepareSig : Sig where
-  params := [("ctx", .array true .u64 136)]
+  params := [("ctx", .array true .u64 129)]
 
 /-- Keeps the first 256 bytes, and makes the context a prepared one of its
 hash subkey (`PreparedRepr`). -/
@@ -54,32 +54,56 @@ def preparePost (pb : Nat) : prepareSig.Post pb := fun ctx m m' _ =>
 def prepareContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   prepareSig.contract A (post := preparePost A.ptrBits) (writeArgs := true) (stack := stack)
 
+/-! ## Wiping it -/
+
+/-- `vg_aes_gcm_wipe_prepared(ctx: *mut [u64; 129])`. -/
+def wipePreparedSig : Sig where
+  params := [("ctx", .array true .u64 129)]
+
+/-- How many bytes of the prepared key context at `p` hold secrets: the key
+context and the powers (1024) if the flag word is not 1, the key context
+alone (256) if it is. -/
+def wipePreparedLen (m : Mem) (p : Addr) : Nat := if m.readW (p + 1024) 64 = 1 then 256 else 1024
+
+/-- Zeroes the first `wipePreparedLen` bytes, as the flag word was on entry. -/
+def wipePreparedPost (pb : Nat) : wipePreparedSig.Post pb := fun ctx m m' _ =>
+  Spec.Aes.bytesAt m' ctx (wipePreparedLen m ctx) = List.replicate (wipePreparedLen m ctx) 0
+
+/-- What `wipe` may leak: whether the powers are absent. -/
+def wipePreparedLeak (pb : Nat) : Curry (wipePreparedSig.words pb) (Mem → List Nat) :=
+  fun ctx m => [flagLeak m ctx]
+
+/-- No precondition: the flag word says how much to zero, whatever it is. -/
+def wipePreparedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  wipePreparedSig.contract A (post := wipePreparedPost A.ptrBits) (writeArgs := true)
+    (stack := stack) (leak := some (wipePreparedLeak A.ptrBits))
+
 /-! ## The functions on it -/
 
 def sealSig : Sig where
-  params := [("ctx", .array false .u64 136), ("rounds", .int .usize true),
+  params := [("ctx", .array false .u64 129), ("rounds", .int .usize true),
     ("nonce", .slice false .u8 "nonce_len"), ("aad", .slice false .u8 "aad_len"),
     ("data", .slice true .u8 "len"), ("tag", .array true .u8 16)]
 
 def openSig : Sig where
-  params := [("ctx", .array false .u64 136), ("rounds", .int .usize true),
+  params := [("ctx", .array false .u64 129), ("rounds", .int .usize true),
     ("nonce", .slice false .u8 "nonce_len"), ("aad", .slice false .u8 "aad_len"),
     ("data", .slice true .u8 "len"), ("tag", .slice false .u8 "tag_len")]
   ret := some .u32
 
 def streamCryptSig : Sig where
-  params := [("ctx", .array false .u64 136), ("rounds", .int .usize true),
+  params := [("ctx", .array false .u64 129), ("rounds", .int .usize true),
     ("state", .array true .u64 10), ("aad_len", .int .u64 true), ("text_len", .int .u64 true),
     ("data", .slice true .u8 "len")]
 
 def sealGatherSig : Sig where
-  params := [("ctx", .array false .u64 136), ("rounds", .int .usize true),
+  params := [("ctx", .array false .u64 129), ("rounds", .int .usize true),
     ("nonce", .slice false .u8 "nonce_len"), ("aad", .slice false .u8 "aad_len"),
     ("src", .slices .u8 "src_count"), ("dst", .slice true .u8 "len"),
     ("tag", .array true .u8 16)]
 
 def openToSig : Sig where
-  params := [("ctx", .array false .u64 136), ("rounds", .int .usize true),
+  params := [("ctx", .array false .u64 129), ("rounds", .int .usize true),
     ("nonce", .slice false .u8 "nonce_len"), ("aad", .slice false .u8 "aad_len"),
     ("src", .slice false .u8 "len"), ("dst", .slice true .u8 "dst_len"),
     ("tag", .slice false .u8 "tag_len")]
@@ -232,7 +256,7 @@ def openToFlaggedRoundsContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contr
 
 /-- `open_to` on the prepared key context with `work: *mut [u64; 320]`. -/
 def openToFlaggedScratchSig : Sig where
-  params := [("ctx", .array false .u64 136), ("rounds", .int .usize true),
+  params := [("ctx", .array false .u64 129), ("rounds", .int .usize true),
     ("nonce", .slice false .u8 "nonce_len"), ("aad", .slice false .u8 "aad_len"),
     ("src", .slice false .u8 "len"), ("dst", .slice true .u8 "dst_len"),
     ("tag", .slice false .u8 "tag_len"), ("work", .array true .u64 320)]
@@ -251,7 +275,7 @@ def openToFlaggedScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Cont
 
 /-- `FlaggedPowers` depends only on bytes within the context. -/
 theorem flaggedPowers_congr {m₁ m₂ : Mem} {p : Addr}
-    (h : ∀ i < 136 * 8, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i))
+    (h : ∀ i < 129 * 8, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i))
     (hr : FlaggedPowers m₁ p) : FlaggedPowers m₂ p := by
   refine ⟨?_, AesGcm.preparedPowersRepr_congr (fun i hi => h i (by omega)) hr.2⟩
   have e : m₂.readW (p + BitVec.ofNat 64 1024) 64 = m₁.readW (p + BitVec.ofNat 64 1024) 64 := by
@@ -263,7 +287,7 @@ theorem flaggedPowers_congr {m₁ m₂ : Mem} {p : Addr}
   exact hr.1
 
 /-- A context of zeros has the powers, and its flag word is 0. -/
-theorem flaggedPowers_of_zeroMem {m : Mem} {p : Addr} (h : ∀ i < 136 * 8, m (p + BitVec.ofNat 64 i) = 0) :
+theorem flaggedPowers_of_zeroMem {m : Mem} {p : Addr} (h : ∀ i < 129 * 8, m (p + BitVec.ofNat 64 i) = 0) :
     FlaggedPowers m p :=
   flaggedPowers_congr (m₁ := fun _ => 0) h
     ⟨by simp [Mem.readW, Mem.read], AesGcm.preparedPowersRepr_zeroMem p⟩

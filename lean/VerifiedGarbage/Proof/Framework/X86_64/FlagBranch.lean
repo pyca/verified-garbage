@@ -197,26 +197,32 @@ theorem Curry.apply_const' {α : Type} (a : α) :
   | _ :: ws, [] => Curry.apply_const' a ws []
   | _ :: ws, _ :: vs => Curry.apply_const' a ws vs
 
+/-- The signature `params` with a first array of `n` elements of `e`, named
+`name`, writable if `w`. -/
+abbrev firstArraySigB (name : String) (w : Bool) (e : Elem) (n : Nat) (rest : List (String × Param))
+    (ret : Option IntTy) : Sig :=
+  { params := (name, .array w e n) :: rest, ret := ret }
+
 section
-variable {name : String} {N : Nat} {rest : List (String × Param)} {ret : Option IntTy}
-  {post : (firstArraySig name .u64 N rest ret).Post 64} {wa : Bool} {stack : Nat}
+variable {name : String} {w : Bool} {N : Nat} {rest : List (String × Param)} {ret : Option IntTy}
+  {post : (firstArraySigB name w .u64 N rest ret).Post 64} {wa : Bool} {stack : Nat}
 
 /-- A precondition that, given the first argument and a condition `C` on it
 and memory, implies another, implies it of the states whose `rdi` and
 memory satisfy `C`. -/
 theorem pre_of_rel {C : Mem → Addr → Prop} {leakA leakB : Option (Curry
-      ((firstArraySig name .u64 N rest ret).words 64) (Mem → List Nat))}
-    {pre pre' : Curry ((firstArraySig name .u64 N rest ret).words 64) (Mem → Prop)}
+      ((firstArraySigB name w .u64 N rest ret).words 64) (Mem → List Nat))}
+    {pre pre' : Curry ((firstArraySigB name w .u64 N rest ret).words 64) (Mem → Prop)}
     (R : ∀ ctx, Curry.Forall₂ (fun p q => ∀ m, p m → C m ctx → q m) _ (pre ctx) (pre' ctx))
-    {s : State} (hs : ((firstArraySig name .u64 N rest ret).contract abi pre post wa stack leakA).pre s)
+    {s : State} (hs : ((firstArraySigB name w .u64 N rest ret).contract abi pre post wa stack leakA).pre s)
     (hc : C s.mem (s.gpr .rdi)) :
-    ((firstArraySig name .u64 N rest ret).contract abi pre' post wa stack leakB).pre s := by
+    ((firstArraySigB name w .u64 N rest ret).contract abi pre' post wa stack leakB).pre s := by
   dsimp only [Sig.contract] at hs ⊢
   split at hs
   · exact hs.elim
   rename_i vals hv
   have hne : List.map (fun x => ArgWord.bits abi.ptrBits x)
-      ((firstArraySig name .u64 N rest ret).words abi.ptrBits) ≠ [] := by
+      ((firstArraySigB name w .u64 N rest ret).words abi.ptrBits) ≠ [] := by
     simp [Sig.words, Param.words]
   obtain ⟨vs, hvs⟩ := abi_args_rdi hv hne s
   obtain ⟨a1, a2, a3, a4, a5, a6, a7⟩ := hs
@@ -226,27 +232,26 @@ theorem pre_of_rel {C : Mem → Addr → Prop} {leakA leakB : Option (Curry
   rw [hvs] at a7 ⊢
   exact (R (s.gpr .rdi)).apply vs s.mem a7 hc
 
-/-- `Verified.of_onFlag` for a first argument that is a read-only array of `N ≥ 129`
-words: the preconditions as relations between curried functions of the
+/-- `Verified.of_onFlag` for a first argument that is an array of `N ≥ 129` words: the preconditions as relations between curried functions of the
 other arguments, given the first; and `leak`, `leak₁`'s (none: nothing)
 after whether the flag word is 1. -/
 theorem Verified.of_onFlagCtx (hN : 129 ≤ N) {c₁ c₂ : Prog isa}
-    {pre pre₁ pre₂ : Curry ((firstArraySig name .u64 N rest ret).words 64) (Mem → Prop)}
-    {leak₁ : Option (Curry ((firstArraySig name .u64 N rest ret).words 64) (Mem → List Nat))}
-    {leak : Curry ((firstArraySig name .u64 N rest ret).words 64) (Mem → List Nat)}
-    (h₁ : Verified target c₁ ((firstArraySig name .u64 N rest ret).contract abi pre₁ post wa stack leak₁))
-    (h₂ : Verified target c₂ ((firstArraySig name .u64 N rest ret).contract abi pre₂ post wa stack leak₁))
+    {pre pre₁ pre₂ : Curry ((firstArraySigB name w .u64 N rest ret).words 64) (Mem → Prop)}
+    {leak₁ : Option (Curry ((firstArraySigB name w .u64 N rest ret).words 64) (Mem → List Nat))}
+    {leak : Curry ((firstArraySigB name w .u64 N rest ret).words 64) (Mem → List Nat)}
+    (h₁ : Verified target c₁ ((firstArraySigB name w .u64 N rest ret).contract abi pre₁ post wa stack leak₁))
+    (h₂ : Verified target c₂ ((firstArraySigB name w .u64 N rest ret).contract abi pre₂ post wa stack leak₁))
     (hp₁ : ∀ ctx, Curry.Forall₂ (fun p q => ∀ m, p m → m.readW (ctx + 1024) 64 ≠ 1 → q m) _
       (pre ctx) (pre₁ ctx))
     (hp₂ : ∀ ctx, Curry.Forall₂ (fun p q => ∀ m, p m → m.readW (ctx + 1024) 64 = 1 → q m) _
       (pre ctx) (pre₂ ctx))
     (hleak : ∀ ctx, Curry.Forall₂ (fun f g => ∀ m, f m = flagLeak m ctx :: g m) _
       (leak ctx) ((leak₁.getD (Curry.const (fun _ => []) _)) ctx))
-    (hsat : ∃ s, ((firstArraySig name .u64 N rest ret).contract abi pre post wa stack (some leak)).pre s) :
+    (hsat : ∃ s, ((firstArraySigB name w .u64 N rest ret).contract abi pre post wa stack (some leak)).pre s) :
     Verified target (Impl.Gcm.X86_64.Flag.onFlag c₁ c₂)
-      ((firstArraySig name .u64 N rest ret).contract abi pre post wa stack (some leak)) := by
+      ((firstArraySigB name w .u64 N rest ret).contract abi pre post wa stack (some leak)) := by
   have hne : List.map (fun x => ArgWord.bits abi.ptrBits x)
-      ((firstArraySig name .u64 N rest ret).words abi.ptrBits) ≠ [] := by
+      ((firstArraySigB name w .u64 N rest ret).words abi.ptrBits) ≠ [] := by
     simp [Sig.words, Param.words]
   refine Verified.of_onFlag h₁ h₂ ?_ ?_ ?_ ?_ hsat
   · intro s hs
@@ -255,12 +260,18 @@ theorem Verified.of_onFlagCtx (hN : 129 ≤ N) {c₁ c₂ : Prog isa}
     · exact hs.elim
     rename_i vals hv
     obtain ⟨vs, hvs⟩ := abi_args_rdi hv hne s
-    obtain ⟨-, hrd, -⟩ := hs
-    have hmem : (⟨s.gpr .rdi, N * Elem.size .u64⟩ : Region) ∈ s.rd := by
-      change _ ∈ abi.rd s
-      rw [hrd, hvs]
-      simp [firstArraySig, Sig.bufs]
-    refine ⟨_, List.mem_append_left _ hmem, ?_⟩
+    obtain ⟨-, hrd, hwr, -⟩ := hs
+    have hmem : (⟨s.gpr .rdi, N * Elem.size .u64⟩ : Region) ∈ s.rd ++ s.wr := by
+      cases w
+      · refine List.mem_append_left _ ?_
+        change _ ∈ abi.rd s
+        rw [hrd, hvs]
+        simp [Sig.bufs]
+      · refine List.mem_append_right _ ?_
+        change _ ∈ abi.wr s
+        rw [hwr, hvs]
+        simp [Sig.bufs]
+    refine ⟨_, hmem, ?_⟩
     simp only [Region.Contains]
     rw [BitVec.add_comm, BitVec.add_sub_cancel]
     have h1 : (1024 : BitVec 64).toNat = 1024 := rfl

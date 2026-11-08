@@ -295,14 +295,14 @@ theorem toPub_flagged {s₁ s₂ : State} (hp : (Proof.AesGcm.Flag.openToFlagged
   | 5, _ => exact a₅
   | n + 6, h => exact absurd h (by omega)
 
-theorem ctx_lowF {i : Nat} (hi : i < 136 * 8) : ¬ (0x9000 ≤ (0x1000 + BitVec.ofNat 64 i : Addr).toNat) := by
+theorem ctx_lowF {i : Nat} (hi : i < 129 * 8) : ¬ (0x9000 ≤ (0x1000 + BitVec.ofNat 64 i : Addr).toNat) := by
   have h : (0x1000 : Addr).toNat = 4096 := rfl
   rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := i) (by omega), h]
   omega
 
-/-- `toSat`, with a prepared key context of 1088 bytes. -/
+/-- `toSat`, with a prepared key context of 1032 bytes. -/
 def toSatF : State :=
-  { toSat with rd := [⟨0x1000, 1088⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x4000, 0⟩, ⟨0x6000, 0⟩, ⟨0x9008, 48⟩] }
+  { toSat with rd := [⟨0x1000, 1032⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x4000, 0⟩, ⟨0x6000, 0⟩, ⟨0x9008, 48⟩] }
 
 theorem toSatF_pre : ∃ s, (Proof.AesGcm.Flag.openToFlaggedRoundsContract X86_64.abi 2728).pre s := by
   refine ⟨toSatF, ?_⟩
