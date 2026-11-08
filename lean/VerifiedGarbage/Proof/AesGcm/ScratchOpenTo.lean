@@ -4,7 +4,6 @@ module
 
 public import VerifiedGarbage.Proof.Gcm.PreparedPowers
 public import VerifiedGarbage.Spec.Gcm.Prepared
-public import VerifiedGarbage.Spec.Gcm.Prepared16
 public import VerifiedGarbage.Proof.AesGcm.RoundsTo
 public import VerifiedGarbage.Proof.Framework.Scratch
 import VerifiedGarbage.Proof.AesGcm.ScratchPrepared
@@ -57,7 +56,7 @@ def openToPreparedScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Con
 def openToPrepared16ScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   openToPreparedScratchSig.contract A
     (pre := fun ctx rounds nonce nonceLen aad aadLen src len dst dstLen tag tagLen _work =>
-      openToPrepared16Pre A.ptrBits ctx rounds nonce nonceLen aad aadLen src len dst dstLen tag tagLen)
+      Proof.Gcm.openToPrepared16Pre A.ptrBits ctx rounds nonce nonceLen aad aadLen src len dst dstLen tag tagLen)
     (post := fun ctx rounds nonce nonceLen aad aadLen src len dst dstLen tag tagLen _work =>
       openToRoundsPost A.ptrBits ctx rounds nonce nonceLen aad aadLen src len dst dstLen tag tagLen)
     (writeArgs := true) (stack := stack)
@@ -91,8 +90,8 @@ theorem openToPreparedPre_local : ∀ vs m₁ m₂, vs.length = (Spec.Gcm.openTo
 
 theorem openToPrepared16Pre_local : ∀ vs m₁ m₂, vs.length = (Spec.Gcm.openToPrecomputedSig.words pb).length →
     (∀ b ∈ Sig.bufs Spec.Gcm.openToPrecomputedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (Spec.Gcm.openToPrecomputedSig.words pb) (openToPrepared16Pre pb) vs m₁ →
-      Curry.apply (Spec.Gcm.openToPrecomputedSig.words pb) (openToPrepared16Pre pb) vs m₂ := by
+    Curry.apply (Spec.Gcm.openToPrecomputedSig.words pb) (Proof.Gcm.openToPrepared16Pre pb) vs m₁ →
+      Curry.apply (Spec.Gcm.openToPrecomputedSig.words pb) (Proof.Gcm.openToPrepared16Pre pb) vs m₂ := by
   intro vs m₁ m₂ hlen hb h
   obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 11) hlen
   replace hlen := Nat.succ.inj hlen
@@ -105,11 +104,11 @@ theorem openToPrepared16Pre_local : ∀ vs m₁ m₂, vs.length = (Spec.Gcm.open
   have hc := agree_of hb.1
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
     ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb]
-    (openToPrepared16Pre pb) _ m₁ at h
+    (Proof.Gcm.openToPrepared16Pre pb) _ m₁ at h
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
     ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb]
-    (openToPrepared16Pre pb) _ m₂
-  dsimp only [Curry.apply, openToPrepared16Pre, ArgWord.ofRaw, IntTy.bits] at h ⊢
+    (Proof.Gcm.openToPrepared16Pre pb) _ m₂
+  dsimp only [Curry.apply, Proof.Gcm.openToPrepared16Pre, ArgWord.ofRaw, IntTy.bits] at h ⊢
   exact ⟨h.1, h.2.1, preparedPowers16Repr_congr hc h.2.2⟩
 
 /-- What `open` computes on the memory `m₂` is what it computes on `m₁`

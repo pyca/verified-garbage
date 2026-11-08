@@ -56,7 +56,7 @@ def openToPreparedRoundsContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Cont
 
 /-- The unchanged `openToRoundsContract` postcondition with 16 prepared powers. -/
 def openToPrepared16RoundsContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  Spec.Gcm.openToPrecomputedSig.contract A (pre := openToPrepared16Pre A.ptrBits)
+  Spec.Gcm.openToPrecomputedSig.contract A (pre := Proof.Gcm.openToPrepared16Pre A.ptrBits)
     (post := openToRoundsPost A.ptrBits)
     (writeArgs := true) (stack := stack) (leak := some (openToLeak A.ptrBits))
 
@@ -94,10 +94,10 @@ theorem openToPrepared_keyed {T : Target} {c : Prog T.isa} {A : Abi T.isa} {stac
     (h : Verified T c (openToPreparedRoundsContract A stack)) : Verified T c (Proof.Gcm.openToPowersContract A stack) :=
   h.post_mono (openToPost_imp _)
 
-/-- `Spec.Gcm.openToPrepared16Contract` from `openToPrepared16RoundsContract`. -/
+/-- `Proof.Gcm.openToPrepared16Contract` from `openToPrepared16RoundsContract`. -/
 theorem openToPrepared16_keyed {T : Target} {c : Prog T.isa} {A : Abi T.isa} {stack : Nat}
     (h : Verified T c (openToPrepared16RoundsContract A stack)) :
-    Verified T c (Spec.Gcm.openToPrepared16Contract A stack) :=
+    Verified T c (Proof.Gcm.openToPrepared16Contract A stack) :=
   h.post_mono (openToPost_imp _)
 
 theorem openToWithPowersPost_imp (pb : Nat) :

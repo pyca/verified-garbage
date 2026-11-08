@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Gcm.PreparedPowers
 public import VerifiedGarbage.Spec.Gcm.Powers8
-public import VerifiedGarbage.Spec.Gcm.Prepared16
 public import VerifiedGarbage.Proof.Framework.PostMono
 
 /-!
@@ -259,31 +258,31 @@ theorem preparedPowers16Repr_of {m : Mem} {p : Addr} (h : Spec.Gcm.PreparedPower
 
 /-- The unchanged `sealRoundsContract` postcondition with 16 prepared powers. -/
 def sealPrepared16RoundsContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  Spec.Gcm.sealPrecomputedSig.contract A (pre := sealPrepared16Pre A.ptrBits)
+  Spec.Gcm.sealPrecomputedSig.contract A (pre := Proof.Gcm.sealPrepared16Pre A.ptrBits)
     (post := sealRoundsPost A.ptrBits)
     (writeArgs := true) (stack := stack)
 
 /-- The unchanged `openRoundsContract` postcondition with 16 prepared powers. -/
 def openPrepared16RoundsContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  Spec.Gcm.openPrecomputedSig.contract A (pre := openPrepared16Pre A.ptrBits)
+  Spec.Gcm.openPrecomputedSig.contract A (pre := Proof.Gcm.openPrepared16Pre A.ptrBits)
     (post := openRoundsPost A.ptrBits)
     (writeArgs := true) (stack := stack) (leak := some (openLeak A.ptrBits))
 
 /-- The unchanged `streamEncryptRoundsContract` postcondition with 16 prepared powers. -/
 def streamEncryptPrepared16RoundsContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  Spec.Gcm.streamCryptPrecomputedSig.contract A (pre := streamCryptPrepared16Pre A.ptrBits)
+  Spec.Gcm.streamCryptPrecomputedSig.contract A (pre := Proof.Gcm.streamCryptPrepared16Pre A.ptrBits)
     (post := streamEncryptRoundsPost A.ptrBits)
     (writeArgs := true) (stack := stack)
 
 /-- The unchanged `streamDecryptRoundsContract` postcondition with 16 prepared powers. -/
 def streamDecryptPrepared16RoundsContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  Spec.Gcm.streamCryptPrecomputedSig.contract A (pre := streamCryptPrepared16Pre A.ptrBits)
+  Spec.Gcm.streamCryptPrecomputedSig.contract A (pre := Proof.Gcm.streamCryptPrepared16Pre A.ptrBits)
     (post := streamDecryptRoundsPost A.ptrBits)
     (writeArgs := true) (stack := stack)
 
 /-- The unchanged `sealGatherRoundsContract` postcondition with 16 prepared powers. -/
 def sealGatherPrepared16RoundsContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  Spec.Gcm.sealGatherPrecomputedSig.contract A (pre := sealGatherPrepared16Pre A.ptrBits)
+  Spec.Gcm.sealGatherPrecomputedSig.contract A (pre := Proof.Gcm.sealGatherPrepared16Pre A.ptrBits)
     (post := sealGatherRoundsPost A.ptrBits)
     (writeArgs := true) (stack := stack)
 
@@ -400,9 +399,9 @@ theorem openPrecomputed_keyed {T : Target} {c : Prog T.isa} {A : Abi T.isa} {sta
     (h : Verified T c (openPrecomputedRoundsContract A stack)) : Verified T c (Spec.Gcm.openPrecomputedContract A stack) :=
   h.post_mono (openPost_imp _)
 
-/-- `Spec.Gcm.openPrepared16Contract` from `openPrepared16RoundsContract`. -/
+/-- `Proof.Gcm.openPrepared16Contract` from `openPrepared16RoundsContract`. -/
 theorem openPrepared16_keyed {T : Target} {c : Prog T.isa} {A : Abi T.isa} {stack : Nat}
-    (h : Verified T c (openPrepared16RoundsContract A stack)) : Verified T c (Spec.Gcm.openPrepared16Contract A stack) :=
+    (h : Verified T c (openPrepared16RoundsContract A stack)) : Verified T c (Proof.Gcm.openPrepared16Contract A stack) :=
   h.post_mono (openPost_imp _)
 
 /-- `Proof.Gcm.openPowersContract` from `openPreparedRoundsContract`. -/
@@ -430,9 +429,9 @@ theorem sealGatherPrecomputed_keyed {T : Target} {c : Prog T.isa} {A : Abi T.isa
     (h : Verified T c (sealGatherPrecomputedRoundsContract A stack)) : Verified T c (Spec.Gcm.sealGatherPrecomputedContract A stack) :=
   h.post_mono (sealGatherPost_imp _)
 
-/-- `Spec.Gcm.sealGatherPrepared16Contract` from `sealGatherPrepared16RoundsContract`. -/
+/-- `Proof.Gcm.sealGatherPrepared16Contract` from `sealGatherPrepared16RoundsContract`. -/
 theorem sealGatherPrepared16_keyed {T : Target} {c : Prog T.isa} {A : Abi T.isa} {stack : Nat}
-    (h : Verified T c (sealGatherPrepared16RoundsContract A stack)) : Verified T c (Spec.Gcm.sealGatherPrepared16Contract A stack) :=
+    (h : Verified T c (sealGatherPrepared16RoundsContract A stack)) : Verified T c (Proof.Gcm.sealGatherPrepared16Contract A stack) :=
   h.post_mono (sealGatherPost_imp _)
 
 /-- `Proof.Gcm.sealGatherPowersContract` from `sealGatherPreparedRoundsContract`. -/
@@ -445,9 +444,9 @@ theorem sealPrecomputed_keyed {T : Target} {c : Prog T.isa} {A : Abi T.isa} {sta
     (h : Verified T c (sealPrecomputedRoundsContract A stack)) : Verified T c (Spec.Gcm.sealPrecomputedContract A stack) :=
   h.post_mono (sealPost_imp _)
 
-/-- `Spec.Gcm.sealPrepared16Contract` from `sealPrepared16RoundsContract`. -/
+/-- `Proof.Gcm.sealPrepared16Contract` from `sealPrepared16RoundsContract`. -/
 theorem sealPrepared16_keyed {T : Target} {c : Prog T.isa} {A : Abi T.isa} {stack : Nat}
-    (h : Verified T c (sealPrepared16RoundsContract A stack)) : Verified T c (Spec.Gcm.sealPrepared16Contract A stack) :=
+    (h : Verified T c (sealPrepared16RoundsContract A stack)) : Verified T c (Proof.Gcm.sealPrepared16Contract A stack) :=
   h.post_mono (sealPost_imp _)
 
 /-- `Proof.Gcm.sealPowersContract` from `sealPreparedRoundsContract`. -/
@@ -470,9 +469,9 @@ theorem streamDecryptPrecomputed_keyed {T : Target} {c : Prog T.isa} {A : Abi T.
     (h : Verified T c (streamDecryptPrecomputedRoundsContract A stack)) : Verified T c (Spec.Gcm.streamDecryptPrecomputedContract A stack) :=
   h.post_mono (streamDecryptPost_imp _)
 
-/-- `Spec.Gcm.streamDecryptPrepared16Contract` from `streamDecryptPrepared16RoundsContract`. -/
+/-- `Proof.Gcm.streamDecryptPrepared16Contract` from `streamDecryptPrepared16RoundsContract`. -/
 theorem streamDecryptPrepared16_keyed {T : Target} {c : Prog T.isa} {A : Abi T.isa} {stack : Nat}
-    (h : Verified T c (streamDecryptPrepared16RoundsContract A stack)) : Verified T c (Spec.Gcm.streamDecryptPrepared16Contract A stack) :=
+    (h : Verified T c (streamDecryptPrepared16RoundsContract A stack)) : Verified T c (Proof.Gcm.streamDecryptPrepared16Contract A stack) :=
   h.post_mono (streamDecryptPost_imp _)
 
 /-- `Proof.Gcm.streamDecryptPowersContract` from `streamDecryptPreparedRoundsContract`. -/
@@ -490,9 +489,9 @@ theorem streamEncryptPrecomputed_keyed {T : Target} {c : Prog T.isa} {A : Abi T.
     (h : Verified T c (streamEncryptPrecomputedRoundsContract A stack)) : Verified T c (Spec.Gcm.streamEncryptPrecomputedContract A stack) :=
   h.post_mono (streamEncryptPost_imp _)
 
-/-- `Spec.Gcm.streamEncryptPrepared16Contract` from `streamEncryptPrepared16RoundsContract`. -/
+/-- `Proof.Gcm.streamEncryptPrepared16Contract` from `streamEncryptPrepared16RoundsContract`. -/
 theorem streamEncryptPrepared16_keyed {T : Target} {c : Prog T.isa} {A : Abi T.isa} {stack : Nat}
-    (h : Verified T c (streamEncryptPrepared16RoundsContract A stack)) : Verified T c (Spec.Gcm.streamEncryptPrepared16Contract A stack) :=
+    (h : Verified T c (streamEncryptPrepared16RoundsContract A stack)) : Verified T c (Proof.Gcm.streamEncryptPrepared16Contract A stack) :=
   h.post_mono (streamEncryptPost_imp _)
 
 /-- `Proof.Gcm.streamEncryptPowersContract` from `streamEncryptPreparedRoundsContract`. -/

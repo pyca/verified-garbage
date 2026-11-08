@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.Gcm.OutOfPlaceContract
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Contract
 public import VerifiedGarbage.Spec.Gcm.Prepared
 public import VerifiedGarbage.Proof.Gcm.PreparedContract
-public import VerifiedGarbage.Spec.Gcm.Prepared16
+public import VerifiedGarbage.Proof.Gcm.PreparedPowers
 public import VerifiedGarbage.Proof.Gcm.Prepared16Contract
 public import VerifiedGarbage.Proof.AesGcm.ScratchPreparedTo
 import VerifiedGarbage.Proof.AesGcm.ScratchPrepared16
@@ -39,7 +39,7 @@ def streamEncryptToPrepared16ScratchContract {M : ISA} (A : Abi M) (stack : Nat 
 def sealGatherPrepared16ScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   sealGatherPreparedScratchSig.contract A
     (pre := fun ctx rounds nonce nonceLen aad aadLen src srcCount dst len tag _scratch =>
-      Spec.Gcm.sealGatherPrepared16Pre A.ptrBits ctx rounds nonce nonceLen aad aadLen src srcCount dst len tag)
+      Proof.Gcm.sealGatherPrepared16Pre A.ptrBits ctx rounds nonce nonceLen aad aadLen src srcCount dst len tag)
     (post := fun ctx rounds nonce nonceLen aad aadLen src srcCount dst len tag _scratch =>
       Proof.AesGcm.sealGatherRoundsPost A.ptrBits ctx rounds nonce nonceLen aad aadLen src srcCount dst len tag)
     (writeArgs := true) (stack := stack)
@@ -71,8 +71,8 @@ theorem streamEncryptToPrepared16Pre_local : ∀ vs m₁ m₂,
 theorem sealGatherPrepared16Pre_local : ∀ vs m₁ m₂, vs.length = (Spec.Gcm.sealGatherPrecomputedSig.words pb).length →
     (∀ b ∈ Sig.bufs Spec.Gcm.sealGatherPrecomputedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     (∀ r ∈ Sig.lists pb m₁ Spec.Gcm.sealGatherPrecomputedSig.params vs, ∀ a, r.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (Spec.Gcm.sealGatherPrecomputedSig.words pb) (sealGatherPrepared16Pre pb) vs m₁ →
-      Curry.apply (Spec.Gcm.sealGatherPrecomputedSig.words pb) (sealGatherPrepared16Pre pb) vs m₂ := by
+    Curry.apply (Spec.Gcm.sealGatherPrecomputedSig.words pb) (Proof.Gcm.sealGatherPrepared16Pre pb) vs m₁ →
+      Curry.apply (Spec.Gcm.sealGatherPrecomputedSig.words pb) (Proof.Gcm.sealGatherPrepared16Pre pb) vs m₂ := by
   intro vs m₁ m₂ hlen hb hl h
   obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 10) hlen
   replace hlen := Nat.succ.inj hlen
@@ -93,11 +93,11 @@ theorem sealGatherPrepared16Pre_local : ∀ vs m₁ m₂, vs.length = (Spec.Gcm.
   have hc := agree_of hb.1
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
     ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
-    (sealGatherPrepared16Pre pb) _ m₁ at h
+    (Proof.Gcm.sealGatherPrepared16Pre pb) _ m₁ at h
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
     ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
-    (sealGatherPrepared16Pre pb) _ m₂
-  dsimp only [Curry.apply, sealGatherPrepared16Pre, ArgWord.ofRaw] at h ⊢
+    (Proof.Gcm.sealGatherPrepared16Pre pb) _ m₂
+  dsimp only [Curry.apply, Proof.Gcm.sealGatherPrepared16Pre, ArgWord.ofRaw] at h ⊢
   have := Nat.mod_le cnt.toNat (2 ^ pb)
   rw [gatheredLen_congr_le (by rw [BitVec.toNat_setWidth]; exact this) hl]
   exact ⟨h.1, h.2.1, preparedPowers16Repr_congr hc h.2.2⟩

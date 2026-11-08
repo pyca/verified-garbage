@@ -35,16 +35,15 @@ use crate::arch::gcm::vg_aes_gcm_open_to;
 use crate::arch::gcm::vg_aes_gcm_seal_gather;
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 use crate::arch::gcm::{
-    VG_AES_GCM_PREPARE16_PCLMUL_AVX_CTX_WRITTEN, VG_AES_GCM_PREPARE16_PCLMUL_AVX_FEATURES,
-    VG_AES_GCM_PREPARE16_VPCLMUL_CTX_WRITTEN, VG_AES_GCM_PREPARE16_VPCLMUL_FEATURES,
-    vg_aes_gcm_open_prepared16_aesni_pclmul_avx, vg_aes_gcm_open_prepared16_vaes_vpclmul,
-    vg_aes_gcm_prepare16_pclmul_avx, vg_aes_gcm_prepare16_vpclmul,
-    vg_aes_gcm_seal_gather_prepared16_aesni_pclmul_avx,
-    vg_aes_gcm_seal_gather_prepared16_vaes_vpclmul, vg_aes_gcm_seal_prepared16_aesni_pclmul_avx,
-    vg_aes_gcm_seal_prepared16_vaes_vpclmul, vg_aes_gcm_stream_decrypt_prepared16_aesni_pclmul_avx,
-    vg_aes_gcm_stream_decrypt_prepared16_vaes_vpclmul,
-    vg_aes_gcm_stream_encrypt_prepared16_aesni_pclmul_avx,
-    vg_aes_gcm_stream_encrypt_prepared16_vaes_vpclmul,
+    VG_AES_GCM_PREPARE_PCLMUL_AVX_FEATURES, VG_AES_GCM_PREPARE_VPCLMUL_FEATURES,
+    vg_aes_gcm_open_prepared_aesni_pclmul_avx, vg_aes_gcm_open_prepared_vaes_vpclmul,
+    vg_aes_gcm_prepare_pclmul_avx, vg_aes_gcm_prepare_vpclmul,
+    vg_aes_gcm_seal_gather_prepared_aesni_pclmul_avx, vg_aes_gcm_seal_gather_prepared_vaes_vpclmul,
+    vg_aes_gcm_seal_prepared_aesni_pclmul_avx, vg_aes_gcm_seal_prepared_vaes_vpclmul,
+    vg_aes_gcm_stream_decrypt_prepared_aesni_pclmul_avx,
+    vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul,
+    vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul_avx,
+    vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul,
 };
 #[cfg(target_arch = "aarch64")]
 use crate::arch::gcm::{
@@ -114,7 +113,7 @@ use crate::arch::gcm::{
 };
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 use crate::arch::gcm::{
-    vg_aes_gcm_open_to_prepared16_aesni_pclmul_avx, vg_aes_gcm_open_to_prepared16_vaes_vpclmul,
+    vg_aes_gcm_open_to_prepared_aesni_pclmul_avx, vg_aes_gcm_open_to_prepared_vaes_vpclmul,
 };
 #[cfg(target_arch = "aarch64")]
 use crate::arch::gcm::{
@@ -663,9 +662,8 @@ impl Backend {
     }
 }
 
-/// The `_prepared` instances of a backend (`VG.Spec.Gcm.PreparedPowersRepr`),
-/// or its `_prepared16` ones (`VG.Spec.Gcm.PreparedPowers16Repr`), which
-/// read the powers of the hash subkey from the key context, and the CPU
+/// The `_prepared` instances of a backend (`VG.Spec.Gcm.PreparedRepr`),
+/// which read the powers of the hash subkey from the key context, and the CPU
 /// features their key setup needs; on AArch64, its `_with_powers` instances
 /// (`VG.Spec.Gcm.Powers8Repr`), which need the backend's features alone (see
 /// the tests).
@@ -757,14 +755,14 @@ mod prepared_types {
 }
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 use prepared_types::{OpenPrepared, OpenToPrepared, SealGatherPrepared, SealPrepared};
-/// The powers of the hash subkey: on x86-64, in a key context of 1024 bytes
-/// (`VG.Spec.Gcm.PreparedPowersRepr`), which the `_prepared` instances read
+/// The powers of the hash subkey: on x86-64, in a key context of 1032 bytes
+/// (`VG.Spec.Gcm.PreparedRepr`), which the `_prepared` instances read
 /// alone, and which begins with the key context of `vg_aes_gcm_init`; on
 /// AArch64, in 128 bytes (`VG.Spec.Gcm.Powers8Repr`), which the
 /// `_with_powers` instances read next to the key context of
 /// `vg_aes_gcm_init`.
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-type Ctx = [u64; 128];
+type Ctx = [u64; 129];
 #[cfg(target_arch = "aarch64")]
 type Ctx = [u64; 16];
 /// The `_with_powers` instances of `seal`, `open` and `open_to`:
@@ -816,32 +814,32 @@ type OpenToPrepared = unsafe extern "C" fn(
 
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 type StreamPrepared =
-    unsafe extern "sysv64" fn(*const [u64; 128], usize, *mut [u64; 10], u64, u64, *mut u8, usize);
+    unsafe extern "sysv64" fn(*const Ctx, usize, *mut [u64; 10], u64, u64, *mut u8, usize);
 
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 static PREPARED_VAES_VPCLMUL: Prepared = Prepared {
-    features: VG_AES_GCM_PREPARE16_VPCLMUL_FEATURES,
-    seal: vg_aes_gcm_seal_prepared16_vaes_vpclmul,
-    open: vg_aes_gcm_open_prepared16_vaes_vpclmul,
-    open_to: vg_aes_gcm_open_to_prepared16_vaes_vpclmul,
-    seal_gather: vg_aes_gcm_seal_gather_prepared16_vaes_vpclmul,
-    stream_encrypt: vg_aes_gcm_stream_encrypt_prepared16_vaes_vpclmul,
-    stream_decrypt: vg_aes_gcm_stream_decrypt_prepared16_vaes_vpclmul,
-    prepare: vg_aes_gcm_prepare16_vpclmul,
-    written: VG_AES_GCM_PREPARE16_VPCLMUL_CTX_WRITTEN,
+    features: VG_AES_GCM_PREPARE_VPCLMUL_FEATURES,
+    seal: vg_aes_gcm_seal_prepared_vaes_vpclmul,
+    open: vg_aes_gcm_open_prepared_vaes_vpclmul,
+    open_to: vg_aes_gcm_open_to_prepared_vaes_vpclmul,
+    seal_gather: vg_aes_gcm_seal_gather_prepared_vaes_vpclmul,
+    stream_encrypt: vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul,
+    stream_decrypt: vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul,
+    prepare: vg_aes_gcm_prepare_vpclmul,
+    written: size_of::<Ctx>(),
 };
 
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 static PREPARED_AESNI_PCLMUL_AVX: Prepared = Prepared {
-    features: VG_AES_GCM_PREPARE16_PCLMUL_AVX_FEATURES,
-    seal: vg_aes_gcm_seal_prepared16_aesni_pclmul_avx,
-    open: vg_aes_gcm_open_prepared16_aesni_pclmul_avx,
-    open_to: vg_aes_gcm_open_to_prepared16_aesni_pclmul_avx,
-    seal_gather: vg_aes_gcm_seal_gather_prepared16_aesni_pclmul_avx,
-    stream_encrypt: vg_aes_gcm_stream_encrypt_prepared16_aesni_pclmul_avx,
-    stream_decrypt: vg_aes_gcm_stream_decrypt_prepared16_aesni_pclmul_avx,
-    prepare: vg_aes_gcm_prepare16_pclmul_avx,
-    written: VG_AES_GCM_PREPARE16_PCLMUL_AVX_CTX_WRITTEN,
+    features: VG_AES_GCM_PREPARE_PCLMUL_AVX_FEATURES,
+    seal: vg_aes_gcm_seal_prepared_aesni_pclmul_avx,
+    open: vg_aes_gcm_open_prepared_aesni_pclmul_avx,
+    open_to: vg_aes_gcm_open_to_prepared_aesni_pclmul_avx,
+    seal_gather: vg_aes_gcm_seal_gather_prepared_aesni_pclmul_avx,
+    stream_encrypt: vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul_avx,
+    stream_decrypt: vg_aes_gcm_stream_decrypt_prepared_aesni_pclmul_avx,
+    prepare: vg_aes_gcm_prepare_pclmul_avx,
+    written: size_of::<Ctx>(),
 };
 
 #[cfg(target_arch = "aarch64")]
@@ -1010,8 +1008,8 @@ impl AesGcm {
             powers: [0; size_of::<Ctx>() / 8],
         };
         // Only the key context of `vg_aes_gcm_init` is cleared first (`key`
-        // reads it); `prepare` writes its proven `written` bytes of powers,
-        // and the bytes after them are never read.
+        // reads it); `AesGcm::prepare` writes the rest, which it zeroes before
+        // `vg_aes_gcm_prepare` writes the powers and their count.
         // SAFETY: `k.ctx` is valid for writes of at least 256 bytes.
         unsafe { k.ctx.as_mut_ptr().cast::<[u64; 32]>().write([0; 32]) };
         // Chosen from `backend` rather than read from `k.fns`: the load
@@ -1054,7 +1052,18 @@ impl AesGcm {
     /// context, with `fns.prepare`.
     #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
     fn prepare(&mut self, prepare: Prepare) {
-        // SAFETY: `self.ctx` is valid for reads and writes of 1024 bytes,
+        let key = size_of::<[u64; 32]>();
+        // The bytes after the key context that `prepare` leaves, so that
+        // `new` writes all of them (`written`).
+        // SAFETY: `self.ctx` is valid for writes of `size_of::<Ctx>()` bytes.
+        unsafe {
+            self.ctx
+                .as_mut_ptr()
+                .cast::<u8>()
+                .add(key)
+                .write_bytes(0, size_of::<Ctx>() - key)
+        };
+        // SAFETY: `self.ctx` is valid for reads and writes of 1032 bytes,
         // and overlaps nothing on the stack; its first 256 bytes are the key
         // context of `vg_aes_gcm_init` (`VG.Spec.Gcm.KeyRepr`), which
         // `vg_aes_gcm_prepare` keeps. The CPU has its features
@@ -1109,7 +1118,7 @@ impl AesGcm {
         // the same one), valid for reads of 256 bytes, followed on x86-64,
         // when `seal` is a `_prepared` instance, by the powers
         // `vg_aes_gcm_prepare` wrote for the same key (`AesGcm::new`), valid
-        // for reads of 1024 bytes in all; `nonce` and `aad` are
+        // for reads of 1032 bytes in all; `nonce` and `aad` are
         // valid for reads and `data` for reads and writes of their lengths,
         // and `tag` (a local) for reads and writes of 16 bytes. They are
         // distinct objects (`data` a unique borrow), so the writable ones
@@ -2016,30 +2025,29 @@ mod tests {
                 VG_AES_GCM_OPEN_AESNI_FEATURES, VG_AES_GCM_OPEN_AESNI_PCLMUL_AVX_FEATURES,
                 VG_AES_GCM_OPEN_AESNI_PCLMUL_FEATURES, VG_AES_GCM_OPEN_AESNI_VPCLMUL_FEATURES,
                 VG_AES_GCM_OPEN_PCLMUL_FEATURES,
+                VG_AES_GCM_OPEN_PREPARED_AESNI_PCLMUL_AVX_FEATURES,
                 VG_AES_GCM_OPEN_PREPARED_VAES_VPCLMUL_AVX512_FEATURES,
-                VG_AES_GCM_OPEN_PREPARED16_AESNI_PCLMUL_AVX_FEATURES,
-                VG_AES_GCM_OPEN_PREPARED16_VAES_VPCLMUL_FEATURES, VG_AES_GCM_OPEN_VAES_FEATURES,
+                VG_AES_GCM_OPEN_PREPARED_VAES_VPCLMUL_FEATURES, VG_AES_GCM_OPEN_VAES_FEATURES,
                 VG_AES_GCM_OPEN_VAES_PCLMUL_FEATURES, VG_AES_GCM_OPEN_VAES_VPCLMUL_AVX512_FEATURES,
                 VG_AES_GCM_OPEN_VAES_VPCLMUL_FEATURES, VG_AES_GCM_OPEN_VPCLMUL_FEATURES,
-                VG_AES_GCM_PREPARE_VPCLMUL_AVX512_FEATURES,
-                VG_AES_GCM_PREPARE16_PCLMUL_AVX_FEATURES, VG_AES_GCM_PREPARE16_VPCLMUL_FEATURES,
-                VG_AES_GCM_SEAL_AESNI_FEATURES, VG_AES_GCM_SEAL_AESNI_PCLMUL_AVX_FEATURES,
-                VG_AES_GCM_SEAL_AESNI_PCLMUL_FEATURES, VG_AES_GCM_SEAL_AESNI_VPCLMUL_FEATURES,
-                VG_AES_GCM_SEAL_GATHER_AESNI_FEATURES,
+                VG_AES_GCM_PREPARE_PCLMUL_AVX_FEATURES, VG_AES_GCM_PREPARE_VPCLMUL_AVX512_FEATURES,
+                VG_AES_GCM_PREPARE_VPCLMUL_FEATURES, VG_AES_GCM_SEAL_AESNI_FEATURES,
+                VG_AES_GCM_SEAL_AESNI_PCLMUL_AVX_FEATURES, VG_AES_GCM_SEAL_AESNI_PCLMUL_FEATURES,
+                VG_AES_GCM_SEAL_AESNI_VPCLMUL_FEATURES, VG_AES_GCM_SEAL_GATHER_AESNI_FEATURES,
                 VG_AES_GCM_SEAL_GATHER_AESNI_PCLMUL_AVX_FEATURES,
                 VG_AES_GCM_SEAL_GATHER_AESNI_PCLMUL_FEATURES,
                 VG_AES_GCM_SEAL_GATHER_AESNI_VPCLMUL_FEATURES,
                 VG_AES_GCM_SEAL_GATHER_PCLMUL_FEATURES,
+                VG_AES_GCM_SEAL_GATHER_PREPARED_AESNI_PCLMUL_AVX_FEATURES,
                 VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_VPCLMUL_AVX512_FEATURES,
-                VG_AES_GCM_SEAL_GATHER_PREPARED16_AESNI_PCLMUL_AVX_FEATURES,
-                VG_AES_GCM_SEAL_GATHER_PREPARED16_VAES_VPCLMUL_FEATURES,
+                VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_VPCLMUL_FEATURES,
                 VG_AES_GCM_SEAL_GATHER_VAES_FEATURES, VG_AES_GCM_SEAL_GATHER_VAES_PCLMUL_FEATURES,
                 VG_AES_GCM_SEAL_GATHER_VAES_VPCLMUL_AVX512_FEATURES,
                 VG_AES_GCM_SEAL_GATHER_VAES_VPCLMUL_FEATURES,
                 VG_AES_GCM_SEAL_GATHER_VPCLMUL_FEATURES, VG_AES_GCM_SEAL_PCLMUL_FEATURES,
+                VG_AES_GCM_SEAL_PREPARED_AESNI_PCLMUL_AVX_FEATURES,
                 VG_AES_GCM_SEAL_PREPARED_VAES_VPCLMUL_AVX512_FEATURES,
-                VG_AES_GCM_SEAL_PREPARED16_AESNI_PCLMUL_AVX_FEATURES,
-                VG_AES_GCM_SEAL_PREPARED16_VAES_VPCLMUL_FEATURES, VG_AES_GCM_SEAL_VAES_FEATURES,
+                VG_AES_GCM_SEAL_PREPARED_VAES_VPCLMUL_FEATURES, VG_AES_GCM_SEAL_VAES_FEATURES,
                 VG_AES_GCM_SEAL_VAES_PCLMUL_FEATURES, VG_AES_GCM_SEAL_VAES_VPCLMUL_AVX512_FEATURES,
                 VG_AES_GCM_SEAL_VAES_VPCLMUL_FEATURES, VG_AES_GCM_SEAL_VPCLMUL_FEATURES,
                 VG_AES_GCM_STREAM_AAD_PCLMUL_FEATURES, VG_AES_GCM_STREAM_AAD_VPCLMUL_FEATURES,
@@ -2048,9 +2056,9 @@ mod tests {
                 VG_AES_GCM_STREAM_DECRYPT_AESNI_PCLMUL_FEATURES,
                 VG_AES_GCM_STREAM_DECRYPT_AESNI_VPCLMUL_FEATURES,
                 VG_AES_GCM_STREAM_DECRYPT_PCLMUL_FEATURES,
+                VG_AES_GCM_STREAM_DECRYPT_PREPARED_AESNI_PCLMUL_AVX_FEATURES,
                 VG_AES_GCM_STREAM_DECRYPT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES,
-                VG_AES_GCM_STREAM_DECRYPT_PREPARED16_AESNI_PCLMUL_AVX_FEATURES,
-                VG_AES_GCM_STREAM_DECRYPT_PREPARED16_VAES_VPCLMUL_FEATURES,
+                VG_AES_GCM_STREAM_DECRYPT_PREPARED_VAES_VPCLMUL_FEATURES,
                 VG_AES_GCM_STREAM_DECRYPT_VAES_FEATURES,
                 VG_AES_GCM_STREAM_DECRYPT_VAES_PCLMUL_FEATURES,
                 VG_AES_GCM_STREAM_DECRYPT_VAES_VPCLMUL_AVX512_FEATURES,
@@ -2061,9 +2069,9 @@ mod tests {
                 VG_AES_GCM_STREAM_ENCRYPT_AESNI_PCLMUL_FEATURES,
                 VG_AES_GCM_STREAM_ENCRYPT_AESNI_VPCLMUL_FEATURES,
                 VG_AES_GCM_STREAM_ENCRYPT_PCLMUL_FEATURES,
+                VG_AES_GCM_STREAM_ENCRYPT_PREPARED_AESNI_PCLMUL_AVX_FEATURES,
                 VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES,
-                VG_AES_GCM_STREAM_ENCRYPT_PREPARED16_AESNI_PCLMUL_AVX_FEATURES,
-                VG_AES_GCM_STREAM_ENCRYPT_PREPARED16_VAES_VPCLMUL_FEATURES,
+                VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VAES_VPCLMUL_FEATURES,
                 VG_AES_GCM_STREAM_ENCRYPT_VAES_FEATURES,
                 VG_AES_GCM_STREAM_ENCRYPT_VAES_PCLMUL_FEATURES,
                 VG_AES_GCM_STREAM_ENCRYPT_VAES_VPCLMUL_AVX512_FEATURES,
@@ -2143,12 +2151,12 @@ mod tests {
                         VG_AES_GCM_STREAM_DECRYPT_AESNI_PCLMUL_AVX_FEATURES,
                         VG_AES_GCM_STREAM_FINISH_AESNI_PCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_FEATURES,
-                        VG_AES_GCM_PREPARE16_PCLMUL_AVX_FEATURES,
-                        VG_AES_GCM_SEAL_PREPARED16_AESNI_PCLMUL_AVX_FEATURES,
-                        VG_AES_GCM_OPEN_PREPARED16_AESNI_PCLMUL_AVX_FEATURES,
-                        VG_AES_GCM_STREAM_ENCRYPT_PREPARED16_AESNI_PCLMUL_AVX_FEATURES,
-                        VG_AES_GCM_SEAL_GATHER_PREPARED16_AESNI_PCLMUL_AVX_FEATURES,
-                        VG_AES_GCM_STREAM_DECRYPT_PREPARED16_AESNI_PCLMUL_AVX_FEATURES,
+                        VG_AES_GCM_PREPARE_PCLMUL_AVX_FEATURES,
+                        VG_AES_GCM_SEAL_PREPARED_AESNI_PCLMUL_AVX_FEATURES,
+                        VG_AES_GCM_OPEN_PREPARED_AESNI_PCLMUL_AVX_FEATURES,
+                        VG_AES_GCM_STREAM_ENCRYPT_PREPARED_AESNI_PCLMUL_AVX_FEATURES,
+                        VG_AES_GCM_SEAL_GATHER_PREPARED_AESNI_PCLMUL_AVX_FEATURES,
+                        VG_AES_GCM_STREAM_DECRYPT_PREPARED_AESNI_PCLMUL_AVX_FEATURES,
                     ][..],
                 ),
                 (
@@ -2216,12 +2224,12 @@ mod tests {
                         VG_AES_GCM_STREAM_DECRYPT_VAES_VPCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_FINISH_VAES_VPCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_VERIFY_VAES_VPCLMUL_FEATURES,
-                        VG_AES_GCM_PREPARE16_VPCLMUL_FEATURES,
-                        VG_AES_GCM_SEAL_PREPARED16_VAES_VPCLMUL_FEATURES,
-                        VG_AES_GCM_OPEN_PREPARED16_VAES_VPCLMUL_FEATURES,
-                        VG_AES_GCM_STREAM_ENCRYPT_PREPARED16_VAES_VPCLMUL_FEATURES,
-                        VG_AES_GCM_SEAL_GATHER_PREPARED16_VAES_VPCLMUL_FEATURES,
-                        VG_AES_GCM_STREAM_DECRYPT_PREPARED16_VAES_VPCLMUL_FEATURES,
+                        VG_AES_GCM_PREPARE_VPCLMUL_FEATURES,
+                        VG_AES_GCM_SEAL_PREPARED_VAES_VPCLMUL_FEATURES,
+                        VG_AES_GCM_OPEN_PREPARED_VAES_VPCLMUL_FEATURES,
+                        VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VAES_VPCLMUL_FEATURES,
+                        VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_VPCLMUL_FEATURES,
+                        VG_AES_GCM_STREAM_DECRYPT_PREPARED_VAES_VPCLMUL_FEATURES,
                     ][..],
                 ),
                 (
@@ -2407,9 +2415,8 @@ mod tests {
             k.fns = backend.fns(detected());
             // On x86-64, the powers `backend` computes, if the backend `new`
             // chose has no `_prepared` instances or prepares another number
-            // of them (`VG.Spec.Gcm.PreparedPowersRepr` or
-            // `PreparedPowers16Repr`): from the key context alone, as `new`
-            // would with `backend`.
+            // of them (`VG.Spec.Gcm.PreparedRepr`): from the key context
+            // alone, as `new` would with `backend`.
             #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
             if !matches!(
                 (self.fns.prepare, k.fns.prepare),
@@ -2780,7 +2787,7 @@ mod tests {
                 {
                     assert!(k.fns.prepare.is_some());
                     assert_eq!(k.clone().written_ctx(), k.written_ctx());
-                    let mut want_powers = [0; 128];
+                    let mut want_powers: super::Ctx = [0; 129];
                     want_powers[..32].copy_from_slice(base.key());
                     // SAFETY: as in `AesGcm::prepare`.
                     unsafe { (b.prepared(detected()).unwrap().prepare)(&mut want_powers) };

@@ -85,14 +85,14 @@ theorem openTo_keyed {T : Target} {c : Prog T.isa} {A : Abi T.isa} {stack : Nat}
 
 /-! ## `open_to` on a prepared key context whose powers are present
 
-The contract of the code that `vg_aes_gcm_open_to_prepared` runs, by the flag,
-when the powers are present: on the prepared key context whose flag word is
-not 1 and which holds the powers (`FlaggedPowers`), it calls
-`vg_aes_gcm_open_prepared`, which tests the flag again. -/
+The contract of the code that `vg_aes_gcm_open_to_prepared` runs, by the
+count, when the 48 powers are present: on the prepared key context whose count
+is at least 48 and which holds the powers (`FlaggedPowers`), it calls
+`vg_aes_gcm_open_prepared`, which tests the count again. -/
 
-/-- The powers are present, and the flag word says so. -/
+/-- The 48 powers are present, and the count says so. -/
 def FlaggedPowers (m : Mem) (p : Addr) : Prop :=
-  m.readW (p + 1024) 64 ≠ 1 ∧ PreparedPowersRepr m p
+  48 ≤ (m.readW (p + 1024) 64).toNat ∧ PreparedPowersRepr m p
 
 def openToFlaggedPre (pb : Nat) : Curry (openToPreparedSig.words pb) (Mem → Prop) :=
   fun ctx rounds _nonce _nonceLen _aad _aadLen _src len _dst dstLen _tag _tagLen m =>
@@ -135,11 +135,20 @@ theorem flaggedPowers_congr {m₁ m₂ : Mem} {p : Addr}
   rw [show (p + 1024 : Addr) = p + BitVec.ofNat 64 1024 from rfl, e]
   exact hr.1
 
-/-- A context of zeros has the powers, and its flag word is 0. -/
-theorem flaggedPowers_of_zeroMem {m : Mem} {p : Addr} (h : ∀ i < 129 * 8, m (p + BitVec.ofNat 64 i) = 0) :
-    FlaggedPowers m p :=
-  flaggedPowers_congr (m₁ := fun _ => 0) h
-    ⟨by simp [Mem.readW, Mem.read], AesGcm.preparedPowersRepr_zeroMem p⟩
+/-- The witnesses' contexts, at `0x1000`: none of their first 1024 bytes is the
+count's. -/
+theorem ctx_ne1024 {i : Nat} (hi : i < 128 * 8) : ¬ ((0x1000 + BitVec.ofNat 64 i : Addr) = 0x1400) := by
+  intro h
+  have := congrArg BitVec.toNat h
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := i) (by omega)] at this
+  simp at this
+  omega
+
+/-- A context whose first 1024 bytes are zeros has the powers (of the hash
+subkey 0), and a count of 48 says so. -/
+theorem flaggedPowers_of_zeroMem {m : Mem} {p : Addr} (h : ∀ i < 128 * 8, m (p + BitVec.ofNat 64 i) = 0)
+    (hc : m.readW (p + 1024) 64 = 48) : FlaggedPowers m p :=
+  ⟨by rw [hc]; decide, AesGcm.preparedPowersRepr_of_zeroMem h⟩
 
 theorem openToFlaggedPre_local (pb : Nat) : ∀ vs m₁ m₂, vs.length = (openToPreparedSig.words pb).length →
     (∀ b ∈ Sig.bufs openToPreparedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →

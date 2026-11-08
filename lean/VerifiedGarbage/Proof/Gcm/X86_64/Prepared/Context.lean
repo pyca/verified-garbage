@@ -44,16 +44,15 @@ def CtxMode.preparedN (n : Nat) (hn : 8 ≤ n ∧ n ≤ 24 := by decide) : CtxMo
 `Spec.Gcm.PreparedPowersRepr`. -/
 abbrev CtxMode.prepared : CtxMode := CtxMode.preparedN 24
 
-/-- The key context of `vg_aes_gcm_prepare16`: its first 8 pairs, which the
-256-bit loops read. -/
+/-- A prepared key context's first 8 pairs, which the 256-bit loops read. -/
 abbrev CtxMode.prepared16 : CtxMode := CtxMode.preparedN 8
 
 /-- The 1032-byte prepared key context of `vg_aes_gcm_prepare`
-(`Spec.Gcm.PreparedRepr`) whose powers are present: its flag word is not 1,
-and it holds all 24 pairs. -/
+(`Spec.Gcm.PreparedRepr`) whose 48 powers are present: its count is at least
+48, and it holds all 24 pairs. -/
 def CtxMode.flagged : CtxMode where
   len := 1032
-  ok m p := m.readW (p + 1024) 64 ≠ 1 ∧ PowersN 24 m p
+  ok m p := 48 ≤ (m.readW (p + 1024) 64).toNat ∧ PowersN 24 m p
   ge := by decide
   le := by decide
   frame {rs m m' p} hf hd hw h := by
