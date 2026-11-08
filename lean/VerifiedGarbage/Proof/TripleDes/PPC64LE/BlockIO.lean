@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.TripleDes.PPC64LE.Pass
 
 import VerifiedGarbage.Proof.TripleDes.PPC64LE.Bytes
 import VerifiedGarbage.Proof.TripleDes.PPC64LE.Initial
-import VerifiedGarbage.Proof.TripleDes.PPC64LE.Box
+import VerifiedGarbage.Proof.TripleDes.PPC64LE.Spills
 import VerifiedGarbage.Proof.TripleDes.PPC64LE.Write
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 public import VerifiedGarbage.Impl.TripleDes.PPC64LE.Block

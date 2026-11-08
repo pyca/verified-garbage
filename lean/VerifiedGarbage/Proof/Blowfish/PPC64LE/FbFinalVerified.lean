@@ -28,6 +28,8 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegSet
+import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
 
 /-!
 # Blowfish-CFB64 and Blowfish-OFB of a message's last piece on PPC64LE meet their contracts
@@ -115,11 +117,11 @@ theorem cfbDecryptFinal_correct (s : State) (hs : (finalContract decPost).pre s)
 /-! ## Constant time -/
 
 theorem cfbEncryptFinal_constantTime (pre : State → Prop) : ConstantTime isa pre modePub cfbEncryptFinal :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7])
+  VG.Taint.constantTime (A := vectorTaint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7])
     (fun _ _ _ _ hp => modes_ofRegs _ _ hp) (by taint_decide)
 
 theorem cfbDecryptFinal_constantTime (pre : State → Prop) : ConstantTime isa pre modePub cfbDecryptFinal :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7])
+  VG.Taint.constantTime (A := vectorTaint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7])
     (fun _ _ _ _ hp => modes_ofRegs _ _ hp) (by taint_decide)
 
 /-! ## The contracts -/
@@ -194,7 +196,7 @@ theorem ofbFinal_correct (s : State) (hs : (finalContract ofbPost).pre s) :
     fun _ ⟨h1, h2⟩ => ⟨h1, h2⟩
 
 theorem ofbFinal_constantTime (pre : State → Prop) : ConstantTime isa pre modePub ofbFinal :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7])
+  VG.Taint.constantTime (A := vectorTaint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7])
     (fun _ _ _ _ hp => modes_ofRegs _ _ hp) (by taint_decide)
 
 /-- The final OFB function's contract with the working space as an argument. -/

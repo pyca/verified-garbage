@@ -226,7 +226,7 @@ theorem withQ_ok {s : State} {B D : Addr} {Z w k : Nat} (h : Env s B Z w) (h23 :
     (hrd : ∀ i < 3 * k, InRegions (s.rd ++ s.wr) (off D i) 1)
     (hsep : ∀ i < 3 * k, ∀ x, ofs B x < Z → off D i ≠ x)
     (hP : arr s.mem B w 0 = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem D k)) (hp2 : 2 ≤ arr s.mem B w 0)
-    (hodd : arr s.mem B w 0 % 2 = 1) :
+    (hodd : arr s.mem B w 0 % 2 = 1) (hpt : 2 ^ (64 * (w - 1)) < arr s.mem B w 0) :
     WP isa withQ s fun t =>
       (t.gpr .r3 = BitVec.ofNat 64 (if qConds (arr s.mem B w 0)
           (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (off D (2 * k)) k))
@@ -240,7 +240,7 @@ theorem withQ_ok {s : State} {B D : Addr} {Z w k : Nat} (h : Env s B Z w) (h23 :
   have rd' : ∀ {t : State} {a}, t.rd = s.rd → t.wr = s.wr → a + k ≤ 3 * k →
       ∀ i < k, InRegions (t.rd ++ t.wr) (off (off D a) i) 1 := fun h1 h2 ha i hi => by
     rw [h1, h2, off_off']; exact hrd _ (by omega_arith)
-  generalize hp : arr s.mem B w 0 = p at hP hp2 hodd
+  generalize hp : arr s.mem B w 0 = p at hP hp2 hodd hpt
   generalize hq : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (off D (2 * k)) k) = q
   generalize hg : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (off D k) k) = g
   unfold withQ qPtr
@@ -309,7 +309,7 @@ theorem withQ_ok {s : State} {B D : Addr} {Z w k : Nat} (h : Env s B Z w) (h23 :
         (k6.gpr .r31 (by decide)).trans ((k5.gpr .r31 (by decide)).trans a31), hw, hw', hZ⟩
       refine WP.mono (subgroup_ok e6 ((k16.gpr .r23 (by decide)).trans h23) ((k16.gpr .r21 (by decide)).trans h21)
         ((k16.gpr .r28 (by decide)).trans h28) hk hk' (by rw [m6, p5]; exact hp2) (by rw [m6, p5]; exact hodd)
-        (rd' k16.rd k16.wr (by omega_arith)) (sep' (by omega_arith))) fun t ⟨⟨t3, bt⟩, kt⟩ =>
+        (by rw [m6, p5]; exact hpt) (rd' k16.rd k16.wr (by omega_arith)) (sep' (by omega_arith))) fun t ⟨⟨t3, bt⟩, kt⟩ =>
           ⟨⟨?_, Outside.trans hb6 bt⟩, (k16.trans kt).mono (by decide)⟩
       rw [t3, m6, g5, p5, Body.bytesAt (Outside.trans hb4 b5) hZ (sep' (by omega_arith)), hq]
       congr 1
@@ -352,7 +352,7 @@ theorem domainBody_ok {s : State} {B D : Addr} {Z w k L : Nat} (h : Env s B Z w)
     (hrd : ∀ i < L, InRegions (s.rd ++ s.wr) (off D i) 1)
     (hsep : ∀ i < L, ∀ x, ofs B x < Z → off D i ≠ x)
     (hP : arr s.mem B w 0 = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem D k)) (hp2 : 2 ≤ arr s.mem B w 0)
-    (hodd : arr s.mem B w 0 % 2 = 1) :
+    (hodd : arr s.mem B w 0 % 2 = 1) (hpt : 2 ^ (64 * (w - 1)) < arr s.mem B w 0) :
     WP isa domainBody s fun t =>
       (t.gpr .r3 = BitVec.ofNat 64 (if bodyCond L k (arr s.mem B w 0)
           (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (off D (2 * k)) k))
@@ -369,7 +369,8 @@ theorem domainBody_ok {s : State} {B D : Addr} {Z w k L : Nat} (h : Env s B Z w)
     subst hb
     refine WP.mono (withQ_ok e1 ((k1.gpr .r23 (by decide)).trans h23) ((k1.gpr .r21 (by decide)).trans h21)
       ((k1.gpr .r28 (by decide)).trans h28) hk hkw hk' (by rw [k1.rd, k1.wr]; exact hrd) hsep
-      (by rw [m1]; exact hP) (by rw [m1]; exact hp2) (by rw [m1]; exact hodd)) fun t ⟨⟨t3, bt⟩, kt⟩ =>
+      (by rw [m1]; exact hP) (by rw [m1]; exact hp2) (by rw [m1]; exact hodd)
+      (by rw [m1]; exact hpt)) fun t ⟨⟨t3, bt⟩, kt⟩ =>
         ⟨⟨by rw [t3, m1]; simp only [bodyCond, ↓reduceIte], by rw [← m1]; exact bt⟩, (k1.trans kt).mono (by decide)⟩
   · rw [a0, decide_eq_false_iff_not] at hb
     have h2 : L = 2 * k := by omega_arith

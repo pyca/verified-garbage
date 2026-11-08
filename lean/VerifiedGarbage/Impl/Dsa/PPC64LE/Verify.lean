@@ -114,11 +114,13 @@ def products : Prog isa :=
     (.seq (montOp 6 6 4) (.seq (montOp 6 6 1) (.seq (montOp 5 5 4) (.seq (montOp 5 5 1)
       (.seq (.block ptrBuf) (.seq (storeBE 6) (.seq (.block ptrBuf2) (storeBE 5))))))))))))
 
-/-- In the P space, the power of the number at `r12` (`p_len` octets) by the
-`q_len` octets at `r24`, into array 4. -/
+/-- In the P space, with `R² mod p` in array 24, the power of the number at
+`r12` (`p_len` octets) by the `q_len` octets at `r24`, into array 4, by
+four-bit windows (`ModExp.powWin`, constant time: its table entries are read
+by a masked scan). -/
 def powP : Prog isa :=
-  .seq (.block (getP .r6)) (.seq (loadArr 4) (.seq (copy 1 8)
-    (.seq (.block ([.addi .r30 .r24 0] ++ getQ .r31 ++ minv)) (.seq ModExp.powSecret
+  .seq (.block (getP .r6)) (.seq (loadArr 4) (.seq (copy 1 24)
+    (.seq (.block ([.addi .r30 .r24 0] ++ getQ .r31 ++ minv)) (.seq ModExp.powWin
       (.block [.addi .r31 .r23 0])))))
 
 /-- The joint table `T_(i + 4 j) = g^i y^j R mod p` for `i, j < 4`, in arrays
@@ -155,7 +157,7 @@ g into array 4 and y into array 5, `R² mod p` into array 1, u1's octets
 bytes (counted in `r31`, then the space again), then out of Montgomery
 form. -/
 def combine : Prog isa :=
-  .seq (.block (enterP ++ ptrG)) (.seq (loadArr 4) (.seq (.block ptrY) (.seq (loadArr 5) (.seq (copy 1 8)
+  .seq (.block (enterP ++ ptrG)) (.seq (loadArr 4) (.seq (.block ptrY) (.seq (loadArr 5) (.seq (copy 1 24)
     (.seq (.block (ptrBuf ++ [.addi .r30 .r12 0, .add .r25 .r12 .r6, .addi .r31 .r6 0] ++ minv))
     (.seq jointTable (.seq (.loop (.seq jointByte (.block [.subi .r31 .r31 1])) (.nonzero .d .r31))
     (.seq (.block [.addi .r31 .r23 0]) (.seq (montOp 4 6 7)

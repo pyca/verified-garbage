@@ -19,7 +19,8 @@ meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Main
 The public data are the arguments and tape, and the table's address
 (`taintSym`: the contract makes it public). p's congruence branches on the
 generator, pinned once loaded; the shape checks branch on `hBad`, which the
-candidate decides (`MB`); trial division (`trialSieve_ct`) loops while the
+candidate decides (`MB`), as does whether q's checks run; trial division
+(`trialSieve_ct`) loops while the
 entry tested, a function of the candidate and of how many are left, does
 not divide it; the tests are `tests_ct`.
 -/
@@ -131,13 +132,6 @@ theorem finMnB_ct {x : PP → Nat} {B : PP → Prop} {Φ : PP × Addr → State 
     (h : ∀ a s, Φ a s → MnB x B a s) : RelCT isa (Two Φ) (.block (finish 2)) fun _ _ => True :=
   two_map Prod.fst (fun a s hs => let ⟨⟨_, _, M⟩, _⟩ := h a s hs; M.st.fs) (finish_ct (.inr (.inr rfl)))
 
-theorem sieve_ct {x : PP → Nat} {B : PP → Prop} {Φ : PP × Addr → State → Prop}
-    (h : ∀ a s, Φ a s → MnB x B a s) :
-    RelCT isa (Two Φ) VG.Impl.Ffdh.PPC64LE.ParameterCandidate.sieve
-      (Two (MnB x fun q => B q ∧ ∀ d ∈ oddPrimes256, x q % d ≠ 0)) :=
-  two_post (two_taint _ (pins_MnB h) (by taint_decide)) fun a s hs =>
-    let ⟨⟨sv, toc, M⟩, hL⟩ := h a s hs; WP.mono M.sieve fun _ M' => ⟨⟨sv, toc, M'⟩, hL⟩
-
 theorem halve_ct {x : PP → Nat} {B : PP → Prop} :
     RelCT isa (Two (MnB x B)) halveQ (Two (MnB (fun q => x q / 2) fun q => B q ∧ x q / 2 % 2 = 1)) :=
   two_post (two_taint _ (pins_MnB fun _ _ h => h) (by taint_decide)) fun _ _ ⟨⟨sv, toc, M⟩, hL⟩ =>
@@ -233,12 +227,15 @@ theorem trialSieve_ct {x : PP → Nat} {B : PP → Prop} :
 
 /-! ## `main` -/
 
-/-- The shape checks' conjunction, after both sieves and trial divisions. -/
+/-- The congruence and p's trial division. -/
+def pOk (q : PP) : Prop :=
+  goodRes q.g (candOf q) ∧ VG.Proof.RsaKeyGen.trialPrefix (candOf q) (trialN q.bits) = false
+
+instance (q : PP) : Decidable (pOk q) := by unfold pOk; infer_instance
+
+/-- The shape checks' conjunction, after both trial divisions. -/
 def allOk (q : PP) : Prop :=
-  ((((goodRes q.g (candOf q) ∧ ∀ d ∈ oddPrimes256, candOf q % d ≠ 0) ∧
-    VG.Proof.RsaKeyGen.trialPrefix (candOf q) (trialN q.bits) = false) ∧ candOf q / 2 % 2 = 1) ∧
-    ∀ d ∈ oddPrimes256, candOf q / 2 % d ≠ 0) ∧
-    VG.Proof.RsaKeyGen.trialPrefix (candOf q / 2) (trialN q.bits) = false
+  (pOk q ∧ candOf q / 2 % 2 = 1) ∧ VG.Proof.RsaKeyGen.trialPrefix (candOf q / 2) (trialN q.bits) = false
 
 instance (q : PP) : Decidable (allOk q) := by unfold allOk; infer_instance
 
@@ -249,7 +246,15 @@ theorem ts_of {a : PP × Addr} {s : State} (h : MnB (fun q => candOf q / 2) allO
   obtain ⟨ho, _⟩ := VG.Proof.Ffdh.ParameterCandidate.candidate_shape (bits := a.1.bits) (by omega)
     (Spec.Rsa.os2ip (a.1.r.take a.1.L))
   have hq : (candOf a.1 - 1) / 2 = candOf a.1 / 2 := by unfold candOf; omega
-  exact ⟨⟨sv, toc, M.st, rfl, M.u, hL, hL⟩, by rw [hq]; exact ha.1.1.2⟩
+  exact ⟨⟨sv, toc, M.st, rfl, M.u, hL, hL⟩, by rw [hq]; exact ha.1.2⟩
+
+/-- `mainQ` leaks the same from the same arguments, tape and table. -/
+theorem mainQ_ct (R : RoundImpl) : RelCT isa (Two (MnB candOf pOk)) (mainQ R.name R.code) fun _ _ => True := by
+  unfold mainQ
+  refine RelCT.seq halve_ct (RelCT.seq trialSieve_ct (RelCT.seq (badLoad_ct (B := allOk))
+    (two_ite' (fun a => decide (allOk a.1)) (fun _ _ h => h.2) ?_ (finMnB_ct fun _ _ h => h.1.1))))
+  exact two_map (fun a => (⟨a.1, candOf a.1, a.1.L⟩ : TQD))
+    (fun _ _ ⟨⟨h, _⟩, ha⟩ => ts_of h (of_decide_eq_true ha)) (tests_ct R)
 
 /-- `main` leaks the same from the same arguments, tape and table. -/
 theorem main_ct (R : RoundImpl) : RelCT isa (Two MnI) (main R.name R.code) fun _ _ => True := by
@@ -257,10 +262,8 @@ theorem main_ct (R : RoundImpl) : RelCT isa (Two MnI) (main R.name R.code) fun _
   refine RelCT.assoc (RelCT.seq mainA_ct (RelCT.seq residue_ct (RelCT.seq badLoad_ct
     (two_ite' (fun a => decide (goodRes a.1.g (candOf a.1))) (fun _ _ h => h.2) ?_
       (finMnB_ct fun _ _ h => h.1.1)))))
-  refine RelCT.seq (sieve_ct fun _ _ h => h.1.1) (RelCT.seq trialSieve_ct (RelCT.seq halve_ct
-    (RelCT.seq (sieve_ct fun _ _ h => h) (RelCT.seq trialSieve_ct (RelCT.seq (badLoad_ct (B := allOk))
-      (two_ite' (fun a => decide (allOk a.1)) (fun _ _ h => h.2) ?_ (finMnB_ct fun _ _ h => h.1.1)))))))
-  exact two_map (fun a => (⟨a.1, candOf a.1, a.1.L⟩ : TQD))
-    (fun _ _ ⟨⟨h, _⟩, ha⟩ => ts_of h (of_decide_eq_true ha)) (tests_ct R)
+  refine RelCT.seq (two_map (fun a => a) (fun _ _ h => h.1.1) trialSieve_ct) (RelCT.seq (badLoad_ct (B := pOk))
+    (two_ite' (fun a => decide (pOk a.1)) (fun _ _ h => h.2) ?_ (finMnB_ct fun _ _ h => h.1.1)))
+  exact two_map (fun a => a) (fun _ _ h => h.1.1) (mainQ_ct R)
 
 end VG.Proof.Ffdh.PPC64LE.ParameterCandidate

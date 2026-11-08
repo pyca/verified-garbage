@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Entry
 import VerifiedGarbage.Proof.AesCcm.PPC64LE.Wp
 import VerifiedGarbage.Proof.AesCcm.Compare
 import VerifiedGarbage.Proof.AesCcm.BytesAt
+import VerifiedGarbage.Proof.AesCcm.Words
 import VerifiedGarbage.Proof.Gather.PPC64LE.Copy
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Cmac.Stream
@@ -20,6 +21,7 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
 public import VerifiedGarbage.Proof.Framework.PPC64LE.StraightK
 public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Proof.Cmac.Mem
 
 /-!
 # AES-GCM-SIV on PPC64LE: the tags in and out, the comparison and the mask
@@ -28,7 +30,7 @@ Untrusted: everything here is checked by Lean. `recv` copies the received
 tag to `W` and `tagOut` the computed one from `W` to `tag` (`recv_wp`,
 `tagOut_wp`); `cmp` leaves 1 in `r25` iff the tags at `W` and `W + 240` are
 equal, without a branch (`cmp_wp`); `mask` ANDs every byte of the data with
-`0 − r25` (`mask_wp`).
+`0 − r25`, a doubleword at a time and then the last bytes (`mask_wp`).
 -/
 
 @[expose] public section
@@ -38,8 +40,8 @@ namespace VG.Proof.AesGcmSiv.PPC64LE
 open VG VG.Impl.AesGcmSiv.PPC64LE VG.WriteBytes
 open VG.PPC64LE hiding wp_add wp_addi wp_and wp_ld wp_li wp_lsl wp_lsr wp_lwz wp_std wp_stw wp_sub wp_subi
   wp_xor
-open VG.Proof.ChaCha20Poly1305.PPC64LE (Upd Mupd wp_addi wp_subi wp_li wp_sub wp_ld wp_std wp_xor wp_or wp_lsr wp_and
-  wp_lbz wp_stb)
+open VG.Proof.ChaCha20Poly1305.PPC64LE (Upd Mupd wp_addi wp_subi wp_li wp_sub wp_ld wp_std wp_xor wp_or wp_lsr wp_lsl
+  wp_and wp_lbz wp_stb)
 open VG.Proof.AesCcm.PPC64LE (wp_mv)
 open VG.Proof.Gather.PPC64LE (eval_zero eval_nonzero)
 open VG.Spec.Aes (bytesAt)
@@ -168,6 +170,177 @@ theorem writeBytes_end (m : Mem) (q : Addr) (xs : List Byte) (h : xs.length < 2 
   rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt h]
   simp
 
+/-- The bytes just past what `writeBytes` writes are unchanged. -/
+theorem bytesAt_writeBytes_past (m : Mem) (q : Addr) (xs : List Byte) (k : Nat) (h : xs.length + k ≤ 2 ^ 64) :
+    bytesAt (writeBytes m q xs) (q + BitVec.ofNat 64 xs.length) k = bytesAt m (q + BitVec.ofNat 64 xs.length) k := by
+  simp only [bytesAt, List.map_inj_left, List.mem_range]
+  intro j hj
+  simp only [writeBytes]
+  rw [show q + BitVec.ofNat 64 xs.length + BitVec.ofNat 64 j - q = BitVec.ofNat 64 (xs.length + j) by
+      rw [BitVec.add_assoc, Offset.add_sub_cancel_left, ← BitVec.ofNat_add],
+    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  simp only [show ¬ xs.length + j < xs.length by omega, ↓reduceIte]
+
+/-- `0 − r25`, for `r25` the indicator of `P`. -/
+abbrev maskOf (P : Prop) [Decidable P] : BitVec 64 := BitVec.ofNat 64 0 - BitVec.ofNat 64 (if P then 1 else 0)
+
+/-- One doubleword ANDed with `0 − r25`: its bytes if `P`, else zeros. -/
+theorem mask_word (v : BitVec 64) (P : Prop) [Decidable P] :
+    Proof.Cmac.le8 (v &&& maskOf P) = (Proof.Cmac.le8 v).map fun b => if P then b else 0 := by
+  by_cases hP : P
+  · have e : maskOf P = BitVec.allOnes 64 := by
+      rw [maskOf, show (if P then 1 else 0 : Nat) = 1 by simp [hP]]
+      exact (by decide : BitVec.ofNat 64 0 - BitVec.ofNat 64 1 = BitVec.allOnes 64)
+    rw [e, BitVec.and_allOnes]
+    simp [hP]
+  · have e : maskOf P = 0#64 := by
+      rw [maskOf, show (if P then 1 else 0 : Nat) = 0 by simp [hP]]
+      exact (by decide : BitVec.ofNat 64 0 - BitVec.ofNat 64 0 = 0#64)
+    rw [e, BitVec.and_zero]
+    simp [hP, Proof.Cmac.le8]
+
+theorem shr3_ofNat {n : Nat} (h : n < 2 ^ 64) : BitVec.ofNat 64 n >>> 3 = BitVec.ofNat 64 (n / 8) := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
+    Nat.mod_eq_of_lt h, Nat.mod_eq_of_lt (by omega)]
+
+theorem shl3_ofNat (n : Nat) : BitVec.ofNat 64 (n / 8) <<< 3 = BitVec.ofNat 64 (8 * (n / 8)) := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, BitVec.toNat_ofNat]
+  omega_arith
+
+/-- The doublewords of the data, from `r3` at its start and `r4` their number. -/
+theorem maskWords_wp {c : Cx} (L : Lay c) {s t : State} (E : Env c s) {P : Prop} [Decidable P]
+    (pk : PK s t) (r3 : t.gpr .r3 = c.D) (r4 : t.gpr .r4 = BitVec.ofNat 64 (c.n / 8))
+    (r9 : t.gpr .r9 = maskOf P) (m : t.mem = s.mem) :
+    WP isa (.ite (.zero .d .r4) (.block []) (.loop (.block maskD) (.nonzero .d .r4))) t fun u =>
+      PK s u ∧ u.gpr .r3 = c.D + BitVec.ofNat 64 (8 * (c.n / 8)) ∧
+      (∀ r, r ≠ .r0 → r ≠ .r3 → r ≠ .r4 → u.gpr r = t.gpr r) ∧
+      u.mem = writeBytes s.mem c.D ((bytesAt s.mem c.D (8 * (c.n / 8))).map fun b => if P then b else 0) := by
+  have hn := L.n_lt
+  let f : Byte → Byte := fun b => if P then b else 0
+  refine WP.ite (decide (c.n / 8 = 0)) (eval_zero r4 (by omega)) (fun ht => ?_) (fun hf => ?_)
+  · have h0 : c.n / 8 = 0 := of_decide_eq_true ht
+    refine WP.block_nil ⟨pk, by rw [r3, h0]; exact (BitVec.add_zero _).symm, fun _ _ _ _ => rfl, ?_⟩
+    rw [m, h0]
+    simp [bytesAt, writeBytes_nil]
+  · have h0 : c.n / 8 ≠ 0 := by simpa using hf
+    refine WP.loop (M := isa)
+      (fun (w : Nat) (u : State) => ∃ k, w = c.n / 8 - k ∧ k < c.n / 8 ∧
+        u.gpr .r3 = c.D + BitVec.ofNat 64 (8 * k) ∧ u.gpr .r4 = BitVec.ofNat 64 (c.n / 8 - k) ∧
+        (∀ r, r ≠ .r0 → r ≠ .r3 → r ≠ .r4 → u.gpr r = t.gpr r) ∧
+        u.mem = writeBytes s.mem c.D ((bytesAt s.mem c.D (8 * k)).map f) ∧ PK s u) ?_ (c.n / 8 - 0) _
+      ⟨0, rfl, by omega, by rw [r3]; exact (BitVec.add_zero _).symm, by rw [r4, Nat.sub_zero],
+        fun _ _ _ _ => rfl, by rw [m]; simp [bytesAt, writeBytes_nil], pk⟩
+    rintro w u ⟨k, rfl, hk, r3u, r4u, oth, mem, pku⟩
+    have Eu := E.of_pk pku
+    have hin : 8 * k + 8 ≤ c.n := by omega
+    have hD : Covers [⟨c.D, c.n⟩] u.wr := Eu.perm.d
+    unfold maskD
+    refine wp_ld (a := c.D + BitVec.ofNat 64 (8 * k)) (by decide) (by decide)
+      (by rw [r3u]; exact BitVec.add_zero _)
+      (VG.Proof.Gather.PPC64LE.in_off (Covers.right hD) hin hn) fun t₁ u₁ => ?_
+    refine wp_and fun t₂ u₂ => ?_
+    refine wp_std (a := c.D + BitVec.ofNat 64 (8 * k)) (by decide) (by decide)
+      (by rw [u₂.other _ (by decide), u₁.other _ (by decide), r3u]; exact BitVec.add_zero _)
+      (by rw [u₂.wr, u₁.wr]; exact VG.Proof.Gather.PPC64LE.in_off hD hin hn) fun t₃ u₃ => ?_
+    refine wp_addi (by decide) (by decide) fun t₄ u₄ => wp_subi (by decide) (by decide) fun t₅ u₅ =>
+      WP.block_nil ?_
+    have pk₅ : PK s t₅ := pku.trans ((PK.ofUpd u₁).trans ((PK.ofUpd u₂).trans ((PK.ofMupd u₃).trans
+      ((PK.ofUpd u₄).trans (PK.ofUpd u₅)))))
+    have hlen : ((bytesAt s.mem c.D (8 * k)).map f).length = 8 * k := by rw [List.length_map, length_bytesAt]
+    have past := bytesAt_writeBytes_past s.mem c.D ((bytesAt s.mem c.D (8 * k)).map f) 8
+      (by rw [hlen]; omega)
+    have app := writeBytes_append s.mem c.D ((bytesAt s.mem c.D (8 * k)).map f)
+      ((bytesAt s.mem (c.D + BitVec.ofNat 64 (8 * k)) 8).map f)
+      (by rw [hlen, List.length_map, length_bytesAt]; omega)
+    rw [hlen] at past app
+    have r9u : u.gpr .r9 = maskOf P := by rw [oth _ (by decide) (by decide) (by decide), r9]
+    have hmem : t₅.mem = writeBytes s.mem c.D ((bytesAt s.mem c.D (8 * (k + 1))).map f) := by
+      rw [u₅.mem, u₄.mem, u₃.mem, u₂.gpr, u₁.gpr, u₁.other .r9 (by decide), r9u, u₂.mem, u₁.mem,
+        VG.Proof.AesCcm.writeW64_eq, mask_word, Proof.Cmac.le8_readW, mem, past, app,
+        show 8 * (k + 1) = 8 * k + 8 by omega, Proof.Cmac.Stream.bytesAt_append, List.map_append]
+    have r3' : t₅.gpr .r3 = c.D + BitVec.ofNat 64 (8 * (k + 1)) := by
+      rw [u₅.other _ (by decide), u₄.gpr, u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), r3u,
+        BitVec.add_assoc, ← BitVec.ofNat_add, show 8 * k + 8 = 8 * (k + 1) by omega]
+    have r4' : t₅.gpr .r4 = BitVec.ofNat 64 (c.n / 8 - (k + 1)) := by
+      rw [u₅.gpr, u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), r4u,
+        VG.Proof.Gather.PPC64LE.ofNat_sub_one (by omega), Nat.sub_sub]
+    have oth' : ∀ r, r ≠ .r0 → r ≠ .r3 → r ≠ .r4 → t₅.gpr r = t.gpr r := fun r h0 h3 h4 => by
+      rw [u₅.other _ h4, u₄.other _ h3, u₃.gpr, u₂.other _ h0, u₁.other _ h0, oth r h0 h3 h4]
+    have ev := eval_nonzero (r := .r4) (a := c.n / 8 - (k + 1)) r4' (by omega)
+    by_cases he : k + 1 = c.n / 8
+    · left
+      exact ⟨by rw [ev]; simp [he], pk₅, by rw [r3', he], oth', by rw [hmem, he]⟩
+    · right
+      exact ⟨by rw [ev]; simp; omega, c.n / 8 - (k + 1), by omega, k + 1, rfl, by omega, r3', r4', oth',
+        hmem, pk₅⟩
+
+/-- The bytes of the data from `i₀`, from `r3` there and `r5` their number. -/
+theorem maskBytes_wp {c : Cx} (L : Lay c) {s t : State} (E : Env c s) {P : Prop} [Decidable P] {i₀ : Nat}
+    (hi₀ : i₀ ≤ c.n) (pk : PK s t) (r3 : t.gpr .r3 = c.D + BitVec.ofNat 64 i₀)
+    (r5 : t.gpr .r5 = BitVec.ofNat 64 (c.n - i₀)) (r9 : t.gpr .r9 = maskOf P)
+    (mem : t.mem = writeBytes s.mem c.D ((bytesAt s.mem c.D i₀).map fun b => if P then b else 0)) :
+    WP isa (.ite (.zero .d .r5) (.block []) (.loop (.block maskBody) (.nonzero .d .r5))) t fun u =>
+      PK s u ∧ u.gpr .r25 = t.gpr .r25 ∧
+      u.mem = writeBytes s.mem c.D ((bytesAt s.mem c.D c.n).map fun b => if P then b else 0) := by
+  have hn := L.n_lt
+  let f : Byte → Byte := fun b => if P then b else 0
+  refine WP.ite (decide (c.n - i₀ = 0)) (eval_zero r5 (by omega)) (fun ht => ?_) (fun hf => ?_)
+  · have h0 : i₀ = c.n := by have := of_decide_eq_true ht; omega
+    refine WP.block_nil ⟨pk, rfl, by rw [mem, h0]⟩
+  · have h0 : c.n - i₀ ≠ 0 := by simpa using hf
+    refine WP.loop (M := isa)
+      (fun (w : Nat) (u : State) => ∃ i, w = c.n - i ∧ i < c.n ∧ u.gpr .r3 = c.D + BitVec.ofNat 64 i ∧
+        u.gpr .r5 = BitVec.ofNat 64 (c.n - i) ∧ u.gpr .r9 = maskOf P ∧ u.gpr .r25 = t.gpr .r25 ∧
+        u.mem = writeBytes s.mem c.D ((bytesAt s.mem c.D i).map f) ∧ PK s u) ?_ (c.n - i₀) _
+      ⟨i₀, rfl, by omega, r3, r5, r9, rfl, mem, pk⟩
+    rintro w u ⟨i, rfl, hi, r3u, r5u, r9u, r25u, memu, pku⟩
+    have Eu := E.of_pk pku
+    have hin : i + 1 ≤ c.n := by omega_arith
+    have hD : Covers [⟨c.D, c.n⟩] u.wr := Eu.perm.d
+    unfold maskBody
+    refine wp_lbz (a := c.D + BitVec.ofNat 64 i) (by decide) (by decide)
+      (by rw [r3u]; exact BitVec.add_zero _)
+      (VG.Proof.Gather.PPC64LE.in_off (Covers.right hD) hin hn) fun t₁ u₁ => ?_
+    refine wp_and fun t₂ u₂ => ?_
+    refine wp_stb (a := c.D + BitVec.ofNat 64 i) (by decide) (by decide)
+      (by rw [u₂.other _ (by decide), u₁.other _ (by decide), r3u]; exact BitVec.add_zero _)
+      (by rw [u₂.wr, u₁.wr]; exact VG.Proof.Gather.PPC64LE.in_off hD hin hn) fun t₃ u₃ => ?_
+    refine wp_addi (by decide) (by decide) fun t₄ u₄ => wp_subi (by decide) (by decide) fun t₅ u₅ =>
+      WP.block_nil ?_
+    have pk₅ : PK s t₅ := pku.trans ((PK.ofUpd u₁).trans ((PK.ofUpd u₂).trans ((PK.ofMupd u₃).trans
+      ((PK.ofUpd u₄).trans (PK.ofUpd u₅)))))
+    have hlen : ((bytesAt s.mem c.D i).map f).length = i := by rw [List.length_map, length_bytesAt]
+    have hb : u.mem (c.D + BitVec.ofNat 64 i) = s.mem (c.D + BitVec.ofNat 64 i) := by
+      rw [memu]
+      have := writeBytes_end s.mem c.D ((bytesAt s.mem c.D i).map f) (by rw [hlen]; omega_arith)
+      rwa [hlen] at this
+    have hmem : t₅.mem = writeBytes s.mem c.D ((bytesAt s.mem c.D (i + 1)).map f) := by
+      rw [u₅.mem, u₄.mem, u₃.mem, u₂.gpr, u₁.gpr, u₁.other .r9 (by decide), r9u, u₂.mem,
+        u₁.mem, mask_byte, hb, memu, Proof.Cmac.Stream.bytesAt_append, VG.Proof.Gather.PPC64LE.bytesAt_one,
+        List.map_append, List.map_singleton]
+      rw [writeBytes_snoc _ _ _ _ (by rw [hlen]; omega_arith), hlen]
+    have hstep : c.D + BitVec.ofNat 64 i + BitVec.ofNat 64 1 = c.D + BitVec.ofNat 64 (i + 1) := by
+      rw [BitVec.add_assoc, ← BitVec.ofNat_add]
+    have r3' : t₅.gpr .r3 = c.D + BitVec.ofNat 64 (i + 1) := by
+      rw [u₅.other _ (by decide), u₄.gpr, u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), r3u, hstep]
+    have r5' : t₅.gpr .r5 = BitVec.ofNat 64 (c.n - (i + 1)) := by
+      rw [u₅.gpr, u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), r5u,
+        VG.Proof.Gather.PPC64LE.ofNat_sub_one (by omega_arith), Nat.sub_sub]
+    have r9' : t₅.gpr .r9 = maskOf P := by
+      rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), r9u]
+    have r25' : t₅.gpr .r25 = t.gpr .r25 := by
+      rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide),
+        r25u]
+    have ev := eval_nonzero (r := .r5) (a := c.n - (i + 1)) r5' (by omega_arith)
+    by_cases he : i + 1 = c.n
+    · left
+      exact ⟨by rw [ev]; simp [he], pk₅, r25', by rw [hmem, he]⟩
+    · right
+      exact ⟨by rw [ev]; simp; omega_arith, c.n - (i + 1), by omega_arith, i + 1, rfl, by omega_arith, r3', r5',
+        r9', r25', hmem, pk₅⟩
+
 /-- `mask`: every byte of the data kept if `P`, zeroed if not, for `r25` the
 indicator of `P`. -/
 theorem mask_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {P : Prop} [Decidable P]
@@ -176,74 +349,32 @@ theorem mask_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {P : Prop} [Decid
       s'.mem = writeBytes s.mem c.D ((bytesAt s.mem c.D c.n).map fun b => if P then b else 0) := by
   have hn := L.n_lt
   unfold mask
-  refine WP.seq (wp_li (by decide) fun s₁ u₁ => wp_sub fun s₂ u₂ => wp_mv fun s₃ u₃ => wp_mv fun s₄ u₄ =>
-    WP.block_nil ?_)
-  have pk₄ : PK s s₄ := (PK.ofUpd u₁).trans ((PK.ofUpd u₂).trans ((PK.ofUpd u₃).trans (PK.ofUpd u₄)))
-  have m₄ : s₄.mem = s.mem := by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem]
-  have r25₄ : s₄.gpr .r25 = s.gpr .r25 := by
-    rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide)]
-  have r9₄ : s₄.gpr .r9 = BitVec.ofNat 64 0 - BitVec.ofNat 64 (if P then 1 else 0) := by
-    rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, u₁.gpr, u₁.other _ (by decide), h25]
-  have r3₄ : s₄.gpr .r3 = c.D := by
-    rw [u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), E.r20]
-  have r4₄ : s₄.gpr .r4 = BitVec.ofNat 64 c.n := by
-    rw [u₄.gpr, u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), E.r21]
-  let f : Byte → Byte := fun b => if P then b else 0
-  refine WP.ite (decide (c.n = 0)) (eval_zero r4₄ hn) (fun ht => ?_) (fun hf => ?_)
-  · have h0 : c.n = 0 := of_decide_eq_true ht
-    refine WP.block_nil ⟨pk₄, r25₄, ?_⟩
-    rw [m₄, h0]
-    simp [bytesAt, writeBytes_nil]
-  · have h0 : c.n ≠ 0 := by simpa using hf
-    refine WP.loop (M := isa)
-      (fun (w : Nat) (t : State) => ∃ i, w = c.n - i ∧ i < c.n ∧ t.gpr .r3 = c.D + BitVec.ofNat 64 i ∧
-        t.gpr .r4 = BitVec.ofNat 64 (c.n - i) ∧ t.gpr .r9 = s₄.gpr .r9 ∧ t.gpr .r25 = s.gpr .r25 ∧
-        t.mem = writeBytes s.mem c.D ((bytesAt s.mem c.D i).map f) ∧ PK s t) ?_ (c.n - 0) _
-      ⟨0, rfl, by omega_arith, by rw [r3₄]; exact (BitVec.add_zero _).symm, by rw [r4₄, Nat.sub_zero], rfl, r25₄,
-        by rw [m₄]; simp [bytesAt, writeBytes_nil], pk₄⟩
-    rintro w t ⟨i, rfl, hi, r3, r4, r9, r25, mem, pk⟩
-    have Et := E.of_pk pk
-    have hin : i + 1 ≤ c.n := by omega_arith
-    have hD : Covers [⟨c.D, c.n⟩] t.wr := Et.perm.d
-    unfold maskBody
-    refine wp_lbz (a := c.D + BitVec.ofNat 64 i) (by decide) (by decide)
-      (by rw [r3]; exact BitVec.add_zero _)
-      (VG.Proof.Gather.PPC64LE.in_off (Covers.right hD) hin hn) fun t₁ u₁ => ?_
-    refine wp_and fun t₂ u₂ => ?_
-    refine wp_stb (a := c.D + BitVec.ofNat 64 i) (by decide) (by decide)
-      (by rw [u₂.other _ (by decide), u₁.other _ (by decide), r3]; exact BitVec.add_zero _)
-      (by rw [u₂.wr, u₁.wr]; exact VG.Proof.Gather.PPC64LE.in_off hD hin hn) fun t₃ u₃ => ?_
-    refine wp_addi (by decide) (by decide) fun t₄ u₄ => wp_subi (by decide) (by decide) fun t₅ u₅ =>
-      WP.block_nil ?_
-    have pk₅ : PK s t₅ := pk.trans ((PK.ofUpd u₁).trans ((PK.ofUpd u₂).trans ((PK.ofMupd u₃).trans
-      ((PK.ofUpd u₄).trans (PK.ofUpd u₅)))))
-    have hlen : ((bytesAt s.mem c.D i).map f).length = i := by rw [List.length_map, length_bytesAt]
-    have hb : t.mem (c.D + BitVec.ofNat 64 i) = s.mem (c.D + BitVec.ofNat 64 i) := by
-      rw [mem]
-      have := writeBytes_end s.mem c.D ((bytesAt s.mem c.D i).map f) (by rw [hlen]; omega_arith)
-      rwa [hlen] at this
-    have hmem : t₅.mem = writeBytes s.mem c.D ((bytesAt s.mem c.D (i + 1)).map f) := by
-      rw [u₅.mem, u₄.mem, u₃.mem, u₂.gpr, u₁.gpr, u₁.other .r9 (by decide), r9, r9₄, u₂.mem,
-        u₁.mem, mask_byte, hb, mem, Proof.Cmac.Stream.bytesAt_append, VG.Proof.Gather.PPC64LE.bytesAt_one,
-        List.map_append, List.map_singleton]
-      rw [writeBytes_snoc _ _ _ _ (by rw [hlen]; omega_arith), hlen]
-    have hstep : c.D + BitVec.ofNat 64 i + BitVec.ofNat 64 1 = c.D + BitVec.ofNat 64 (i + 1) := by
-      rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-    have r3' : t₅.gpr .r3 = c.D + BitVec.ofNat 64 (i + 1) := by
-      rw [u₅.other _ (by decide), u₄.gpr, u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), r3, hstep]
-    have r4' : t₅.gpr .r4 = BitVec.ofNat 64 (c.n - (i + 1)) := by
-      rw [u₅.gpr, u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), r4,
-        VG.Proof.Gather.PPC64LE.ofNat_sub_one (by omega_arith), Nat.sub_sub]
-    have r9' : t₅.gpr .r9 = s₄.gpr .r9 := by
-      rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), r9]
-    have r25' : t₅.gpr .r25 = s.gpr .r25 := by
-      rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide),
-        r25]
-    have ev := eval_nonzero (r := .r4) (a := c.n - (i + 1)) r4' (by omega_arith)
-    by_cases he : i + 1 = c.n
-    · left
-      exact ⟨by rw [ev]; simp [he], pk₅, r25', by rw [hmem, he]⟩
-    · right
-      exact ⟨by rw [ev]; simp; omega_arith, c.n - (i + 1), by omega_arith, i + 1, rfl, by omega_arith, r3', r4', r9', r25', hmem, pk₅⟩
+  refine WP.seq (wp_li (by decide) fun s₁ u₁ => wp_sub fun s₂ u₂ => wp_mv fun s₃ u₃ =>
+    wp_lsr (by decide) fun s₄ u₄ => wp_lsl (by decide) fun s₅ u₅ => wp_sub fun s₆ u₆ => WP.block_nil ?_)
+  have pk₆ : PK s s₆ := (PK.ofUpd u₁).trans ((PK.ofUpd u₂).trans ((PK.ofUpd u₃).trans ((PK.ofUpd u₄).trans
+    ((PK.ofUpd u₅).trans (PK.ofUpd u₆)))))
+  have m₆ : s₆.mem = s.mem := by rw [u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
+  have r25₆ : s₆.gpr .r25 = s.gpr .r25 := by
+    rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide),
+      u₂.other _ (by decide), u₁.other _ (by decide)]
+  have r9₆ : s₆.gpr .r9 = maskOf P := by
+    rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr,
+      u₁.gpr, u₁.other _ (by decide), h25]
+  have r3₆ : s₆.gpr .r3 = c.D := by
+    rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide),
+      u₁.other _ (by decide), E.r20]
+  have r21₃ : s₃.gpr .r21 = BitVec.ofNat 64 c.n := by
+    rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), E.r21]
+  have r4₄ : s₄.gpr .r4 = BitVec.ofNat 64 (c.n / 8) := by rw [u₄.gpr, r21₃, shr3_ofNat hn]
+  have r4₆ : s₆.gpr .r4 = BitVec.ofNat 64 (c.n / 8) := by
+    rw [u₆.other _ (by decide), u₅.other _ (by decide), r4₄]
+  have r5₆ : s₆.gpr .r5 = BitVec.ofNat 64 (c.n - 8 * (c.n / 8)) := by
+    rw [u₆.gpr, u₅.other _ (by decide), u₄.other _ (by decide), r21₃, u₅.gpr, r4₄, shl3_ofNat c.n,
+      Offset.ofNat_sub_ofNat (by omega)]
+  refine WP.seq (WP.mono (maskWords_wp L E pk₆ r3₆ r4₆ r9₆ m₆) fun s₇ ⟨pk₇, r3₇, oth₇, m₇⟩ => ?_)
+  refine WP.mono (maskBytes_wp L E (i₀ := 8 * (c.n / 8)) (by omega) pk₇ r3₇
+    (by rw [oth₇ _ (by decide) (by decide) (by decide), r5₆])
+    (by rw [oth₇ _ (by decide) (by decide) (by decide), r9₆]) m₇) fun s₈ ⟨pk₈, r25₈, m₈⟩ => ⟨pk₈, ?_, m₈⟩
+  rw [r25₈, oth₇ _ (by decide) (by decide) (by decide), r25₆]
 
 end VG.Proof.AesGcmSiv.PPC64LE

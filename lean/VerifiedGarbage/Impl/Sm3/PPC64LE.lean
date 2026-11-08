@@ -92,49 +92,54 @@ def expand (i : Nat) : List Instr :=
 /-- `T_j <<< (j mod 32)`, an immediate. -/
 def tj (j : Nat) : BitVec 32 := (Spec.Sm3.T j).rotateLeft (j % 32)
 
-/-- Iteration `j`, with `W_j` and `W_{j+4}` in their slots. -/
+/-- Iteration `j`, with `W_j` and `W_{j+4}` in their slots. The terms of
+`TT1` and `TT2` that do not depend on `A` (`D + W'_j + FF_j`, `H + W_j +
+GG_j`) and `E + (T_j <<< j)` are added first, so that the chain from `A` to
+the next iteration's `A` and `E` is `A <<< 12`, `+ (E + T_j <<< j)`, `<<< 7`
+(`SS1`) and an addition (of `SS1` into `TT2`, and of `SS2 = SS1 xor (A <<< 12)`
+into `TT1`). -/
 def round (j : Nat) : List Instr :=
   let a := var j 0; let b := var j 1; let c := var j 2; let d := var j 3
   let e := var j 4; let f := var j 5; let g := var j 6; let h := var j 7
-  [ -- T0 := A <<< 12; T1 := SS1 = ((A <<< 12) + E + (T_j <<< j)) <<< 7
-    .rotr .w T0 a 20,
-    .add T1 T0 e,
+  [ -- T2 := E + (T_j <<< j)
     .lis T2 ((tj j).extractLsb' 16 16),
     .ori T2 T2 ((tj j).extractLsb' 0 16),
-    .add T1 T1 T2,
-    .rotr .w T1 T1 25,
-    -- h := H + SS1
-    .add h h T1,
-    -- d := D + SS2, SS2 = SS1 xor (A <<< 12)
-    .logic .xor T0 T0 T1,
-    .add d d T0,
-    -- h := h + W_j; d := d + W'_j, W'_j = W_j xor W_{j+4}
-    .load .w T2 .r6 (slot j),
-    .add h h T2,
-    .load .w T3 .r6 (slot (j + 4)),
-    .logic .xor T3 T2 T3,
-    .add d d T3] ++
-  -- d := d + FF_j(A, B, C), which is TT1
+    .add T2 T2 e,
+    -- h := H + W_j; d := D + W'_j, W'_j = W_j xor W_{j+4}
+    .load .w T3 .r6 (slot j),
+    .add h h T3,
+    .load .w T1 .r6 (slot (j + 4)),
+    .logic .xor T1 T3 T1,
+    .add d d T1] ++
+  -- d := d + FF_j(A, B, C)
   (if j < 16 then [
-    .logic .xor T0 a b,
-    .logic .xor T0 T0 c]
+    .logic .xor T3 a b,
+    .logic .xor T3 T3 c]
    else [
     -- (A or B) and C or (A and B)
-    .logic .or T0 a b,
-    .logic .and T0 T0 c,
+    .logic .or T3 a b,
+    .logic .and T3 T3 c,
     .logic .and T1 a b,
-    .logic .or T0 T0 T1] : List Instr) ++
-  [.add d d T0] ++
-  -- h := h + GG_j(E, F, G), which is TT2
+    .logic .or T3 T3 T1] : List Instr) ++
+  [.add d d T3] ++
+  -- h := h + GG_j(E, F, G)
   (if j < 16 then [
-    .logic .xor T0 e f,
-    .logic .xor T0 T0 g]
+    .logic .xor T3 e f,
+    .logic .xor T3 T3 g]
    else [
     -- (F xor G) and E xor G
-    .logic .xor T0 f g,
-    .logic .and T0 T0 e,
-    .logic .xor T0 T0 g] : List Instr) ++
-  [ .add h h T0,
+    .logic .xor T3 f g,
+    .logic .and T3 T3 e,
+    .logic .xor T3 T3 g] : List Instr) ++
+  [ .add h h T3,
+    -- T0 := A <<< 12; T1 := SS1 = ((A <<< 12) + E + (T_j <<< j)) <<< 7
+    .rotr .w T0 a 20,
+    .add T1 T0 T2,
+    .rotr .w T1 T1 25,
+    -- h := TT2 = h + SS1; d := TT1 = d + SS2, SS2 = SS1 xor (A <<< 12)
+    .add h h T1,
+    .logic .xor T0 T0 T1,
+    .add d d T0,
     -- C' := B <<< 9; G' := F <<< 19
     .rotr .w b b 23,
     .rotr .w f f 13,

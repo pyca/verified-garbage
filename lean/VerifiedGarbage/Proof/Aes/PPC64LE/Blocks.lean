@@ -80,6 +80,26 @@ theorem decryptBlocks_verified :
     Verified PPC64LE.target decryptBlocks (Proof.Aes.decryptBlocksRoundsContract PPC64LE.abi) :=
   Verified.of_correct decryptBlocks_correct decryptBlocks_ct decryptBlocks_implies
 
+/-- The blocks functions' contract, with the frame of their proofs: only
+the data changes. -/
+def blocksFramed (f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State) : Contract isa where
+  pre := (Proof.Aes.blocksPPC64LE f).pre
+  post s s' := (Proof.Aes.blocksPPC64LE f).post s s' ∧
+    Frame [⟨s.gpr .r5, 16 * (s.gpr .r6).toNat⟩] s.mem s'.mem
+  pub := (Proof.Aes.blocksPPC64LE f).pub
+
+theorem encryptBlocks_framed (s : State) (hs : (blocksFramed Spec.Aes.cipher).pre s) :
+    ∃ t s', Exec isa encryptBlocks s t s' ∧ abiPreserved s s' ∧ (blocksFramed Spec.Aes.cipher).post s s' := by
+  obtain ⟨t, s', he, hk, hf, hp⟩ := Crypto.blocks_ok false s hs
+  exact ⟨t, s', he, abiPreserved_of_keep he hk (by decide) (by lit_decide)
+    (by rw [← Code.allInstrs_eq]; lit_decide), hp, hf⟩
+
+theorem decryptBlocks_framed (s : State) (hs : (blocksFramed Spec.Aes.invCipher).pre s) :
+    ∃ t s', Exec isa decryptBlocks s t s' ∧ abiPreserved s s' ∧ (blocksFramed Spec.Aes.invCipher).post s s' := by
+  obtain ⟨t, s', he, hk, hf, hp⟩ := Crypto.blocks_ok true s hs
+  exact ⟨t, s', he, abiPreserved_of_keep he hk (by decide) (by lit_decide)
+    (by rw [← Code.allInstrs_eq]; lit_decide), hp, hf⟩
+
 /-- A run of the blocks functions changes no byte of `scratch` (`r7`). -/
 theorem blocks_scratch (inverse : Bool) {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {s : State}
     (hs : (Proof.Aes.blocksPPC64LE f).pre s) {t : List Leak} {s' : State}

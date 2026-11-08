@@ -16,7 +16,7 @@ of `w + 2` words), and a buffer:
   modulo p;
 * the Q space after it (at `S + slot w 28`), of `w = 4` words (q has at most
   32 octets) and 28 arrays, for arithmetic modulo q;
-* the buffer after that, of `2 p_len` octets: `ModExp.powSecret` and
+* the buffer after that, of `2 p_len` octets: `ModExp.powWin`, `ModExp.powSecret` and
   `ModArith.reduce` read their numbers as octets in memory, most significant
   first, so a number moves from one space to the other through it
   (`storeBE`, `loadArr`).
@@ -41,8 +41,8 @@ header keeps the nonvolatile registers in its words 13–31.
 * p and q are odd (their last octets);
 * `(p − 1) mod q = 0`, as `p mod q = 1` (`ModArith.reduce` in the Q space);
 * `1 < g < p` and `g^q mod p = 1`, then the same of y (`checkElem`, with
-  `ModExp.powSecret` over q's octets in the P space, R² mod p kept in
-  array 8).
+  `ModExp.powWin` over q's octets in the P space, R² mod p kept in
+  array 24, past the four-bit windows' arrays 1–23).
 -/
 
 @[expose] public section
@@ -199,10 +199,10 @@ def pModQ : Prog isa :=
     (.seq (.block ([.addi .r30 .r27 0] ++ getP .r31)) (.seq ModArith.reduce
       (.seq (.block [.addi .r31 .r23 0]) (.seq PublicChecked.one (.seq (eqMask .r3 1 7) (.block unmask))))))
 
-/-- In the P space: p into array 0, `R² mod p` into array 8 (and array 1). -/
+/-- In the P space: p into array 0, `R² mod p` into array 24 (and array 1). -/
 def setupP : Prog isa :=
   .seq (.block enterP) (.seq (.seq (.block ptrP) (loadArr 0))
-    (.seq (.block (base .r5 1 ++ base .r8 2 ++ base .r9 3)) (.seq Precompute.r2 (copy 8 1))))
+    (.seq (.block (base .r5 1 ++ base .r8 2 ++ base .r9 3)) (.seq Precompute.r2 (copy 24 1))))
 
 /-- `r20 &= ¬r19`. -/
 def clear19 : List Instr := [.logic .or .r20 .r20 .r19, .logic .xor .r20 .r20 .r19]
@@ -215,12 +215,12 @@ def elemRange : Prog isa :=
     (.seq (.block (base .r8 4 ++ base .r9 3)) (.seq subMod (.seq (eqMask .r19 4 5) (.seq (.block clear19)
       (.seq (eqMask .r19 4 7) (.block (clear19 ++ [.addi .r3 .r20 0] ++ unmask)))))))))
 
-/-- In the P space, with p in array 0 and `R² mod p` in array 8: `r0 := 0`
-exactly when array 4's q-th power modulo p is 1 (`powSecret` over q's
+/-- In the P space, with p in array 0 and `R² mod p` in array 24: `r0 := 0`
+exactly when array 4's q-th power modulo p is 1 (`powWin` over q's
 octets, compared with 1 in array 7). -/
 def elemOrder : Prog isa :=
-  .seq (copy 1 8) (.seq (.block (ptrQ ++ [.addi .r30 .r12 0, .addi .r31 .r6 0] ++ PublicChecked.minv))
-    (.seq ModExp.powSecret (.seq (.block [.addi .r31 .r23 0]) (.seq PublicChecked.one
+  .seq (copy 1 24) (.seq (.block (ptrQ ++ [.addi .r30 .r12 0, .addi .r31 .r6 0] ++ PublicChecked.minv))
+    (.seq ModExp.powWin (.seq (.block [.addi .r31 .r23 0]) (.seq PublicChecked.one
       (.seq (eqMask .r3 4 7) (.block unmask))))))
 
 /-- The number at `r12` (`p_len` octets, in `r6`) into array 4, then `r0 := 0`
@@ -229,13 +229,13 @@ def checkElem : Prog isa := .seq (loadArr 4) (andThen elemRange elemOrder (.bloc
 
 /-- The check of the domain p||q||g at `r27`: sizes, oddness, `p mod q = 1`
 and g; then `rest`, or `fail`. In the P space after it, with p in array 0 and
-`R² mod p` in array 8. -/
+`R² mod p` in array 24. -/
 def checkParams (rest fail : Prog isa) : Prog isa :=
   sizes (odds (andThen pModQ (.seq setupP (andThen (.seq (.block ptrG) checkElem) rest fail)) fail) fail) fail
 
 /-- The check of the key's public part: the domain's (`checkParams`), then y;
 then `rest`, or `fail`. In the P space after it, with p in array 0 and
-`R² mod p` in array 8. -/
+`R² mod p` in array 24. -/
 def checkKey (rest fail : Prog isa) : Prog isa :=
   checkParams (andThen (.seq (.block ptrY) checkElem) rest fail) fail
 

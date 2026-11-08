@@ -213,7 +213,7 @@ theorem body_ok {s₀ s : State} {L : Lay} {key sig dig : Addr} {d : Nat}
   -- `g^u1 y^u2 mod p`.
   refine WP.seq (WP.mono (combine_ok hL Q₆.scr Q₆.regs (hk.keep k₁₆.rd k₁₆.wr)
       ((qb₂₆.arrP hL (by decide)).trans ((pw 0 (by decide)).trans p0)) (by omega_arith) hpo
-      ((qb₂₆.arrP hL (by decide)).trans ((pw 8 (by decide)).trans p8)))
+      ((qb₂₆.arrP hL (by decide)).trans ((pw 24 (by decide)).trans p8)))
     fun s₇ ⟨⟨v₇, ip₇, B₇, Qk₇⟩, k₇⟩ => ?_)
   rw [u1₆, u2₆, eg₆, ey₆, hgg, hyy] at v₇
   have k₁₇ := k₁₆.trans k₇

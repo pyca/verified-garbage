@@ -28,11 +28,11 @@ Miller–Rabin proofs, has it). The algorithm is AArch64's
    `k = bits − 64 (w − 1)`, by a loop of `k` steps) with its top bit set,
    and its low bit set. Its residue modulo 24 (generator 2) or 10 (generator
    5) by a bit-serial remainder (`smallMod`; the model has no division), and
-   the congruence. Then the sieve of the 53 odd primes below 256 (the same
-   remainder, unrolled over the primes) and RSA's trial division by the
-   first 512 entries of its table (1024 above 1024 bits), `q = (p − 1) / 2`
-   in place, its oddness, its sieve and its trial division. The result is 2
-   if any of them fails.
+   the congruence. Then RSA's trial division by the first 512 entries of its
+   table (1024 above 1024 bits), whose first 53 are the odd primes below 256
+   that `Spec.Ffdh.primeShape` sieves by, stopping at the first divisor; if
+   none divides p, `q = (p − 1) / 2` in place, its oddness and its trial
+   division. The result is 2 if any of them fails.
 3. In the order of `Spec.Ffdh.screenedParameterWitnesses`: one witness of
    p, all of q's, then p's other `primeChecks − 1`, each modulus with its own
    word count `w = ⌈mb / 64⌉` (`mb` its bit length: `bits − 1` or `bits`):
@@ -151,10 +151,6 @@ def residue : Prog isa :=
       (.seq (.block [.li .r4 10]) (.seq smallMod (.block [.li .r4 4, .logic .or .r3 .r3 .r4, .li .r4 7,
         .logic .xor .r3 .r3 .r4, sth .r3 hBad]))))
 
-/-- The sieve: `hBad |= ` the flag of an odd prime below 256 dividing
-array 0. -/
-def sieve : Prog isa := VG.Impl.MillerRabin.PPC64LE.Search.sieve oddPrimes256
-
 /-- RSA's trial division (`Spec.RsaKeyGen.obviouslyComposite`): `hBad |=`
 the flag of one of the first 512 entries of `VG_RSA_KEYGEN_TRIAL32` (1024
 above 1024 bits) dividing array 0, the count `1024 − 512 [bits ≤ 1024]` in
@@ -218,14 +214,20 @@ def tests (name : String) (roundCode : Prog isa) : Prog isa :=
   .seq (test false firstCheck name roundCode) (.seq (.block [ldh .r3 hStat, .subi .r3 .r3 1])
     (.ite (.zero .d .r3) (testQ name roundCode) qResult))
 
+/-- After p's congruence and trial division passed: q from p, its oddness
+and trial division, and the tests. -/
+def mainQ (name : String) (roundCode : Prog isa) : Prog isa :=
+  .seq halveQ (.seq trialSieve (.seq (.block [ldh .r5 hBad])
+    (.ite (.zero .d .r5) (tests name roundCode) (.block (finish 2)))))
+
 /-- Once `rand` holds the candidate's octets: p, its congruence, rejected
-before any other check (most candidates fail it); then the sieves and trial
-divisions of p and q, and the tests. -/
+before any other check (most candidates fail it); then p's trial division,
+q's only if it passes (`mainQ`), and the tests. -/
 def main (name : String) (roundCode : Prog isa) : Prog isa :=
   .seq (phase false) (.seq shapeP (.seq residue (.seq (.block [ldh .r5 hBad])
     (.ite (.zero .d .r5)
-      (.seq sieve (.seq trialSieve (.seq halveQ (.seq sieve (.seq trialSieve (.seq (.block [ldh .r5 hBad])
-        (.ite (.zero .d .r5) (tests name roundCode) (.block (finish 2)))))))))
+      (.seq trialSieve (.seq (.block [ldh .r5 hBad])
+        (.ite (.zero .d .r5) (mainQ name roundCode) (.block (finish 2)))))
       (.block (finish 2))))))
 
 /-- `vg_ffdh_parameter_candidate_sieved`. -/

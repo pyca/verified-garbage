@@ -21,9 +21,9 @@ header's words 14–31.
   array 6 (`subMod`, array 7 the modulus), 0 into array 5; the mask of
   `y < p` is `subMod`'s, and those of `y = 0`, `y = 1` and `y = p − 1` are
   `eqMask`'s (as in the Miller–Rabin round);
-* with q: `R² mod p` into array 1 (`Precompute.r2`), `-p⁻¹ mod 2³²` into
-  `r12` (`PublicChecked.minv`), `y^q mod p` into array 4 by
-  `ModExp.powSecret` over q's `p_len` octets, and `eqMask` with 1, again in
+* with q: `-p⁻¹ mod 2³²` into `r12` (`PublicChecked.minv`), `R² mod p` into
+  array 1 (`Precompute.r2Hi`), `y^q mod p` into array 4 by
+  `ModExp.powWin` over q's `p_len` octets, and `eqMask` with 1, again in
   array 7.
 
 Everything is public, and the code branches on p's validity, y's range and
@@ -90,12 +90,13 @@ def range : Prog isa :=
 /-- `r0 := 0` exactly when `domain_len = 3 p_len`: there is q. -/
 def hasQ : List Instr := [.lsl .r0 .r28 1, .add .r0 .r0 .r28, .sub .r0 .r27 .r0]
 
-/-- `r3 := 1` if `y^q mod p = 1`, else 0: `R² mod p`, `-p⁻¹`, the power by
-q's octets (at `domain + 2 p_len`), compared with 1 in array 7. -/
+/-- `r3 := 1` if `y^q mod p = 1`, else 0: `-p⁻¹`, `R² mod p` (`Precompute.r2Hi`),
+the power by q's octets (at `domain + 2 p_len`, `ModExp.powWin`), compared
+with 1 in array 7. -/
 def subgroup : Prog isa :=
-  .seq (.block (base .r5 1 ++ base .r8 2 ++ base .r9 3)) (.seq Precompute.r2
-    (.seq (.block (PublicChecked.minv ++ [.lsl .r30 .r28 1, .add .r30 .r30 .r21, .addi .r31 .r28 0]))
-      (.seq ModExp.powSecret (.seq (.block [.addi .r31 .r23 0]) (.seq PublicChecked.one (.seq (eqMask .r3 4 7)
+  .seq (.block (base .r5 1 ++ base .r8 2 ++ base .r9 3 ++ PublicChecked.minv)) (.seq Precompute.r2Hi
+    (.seq (.block [.lsl .r30 .r28 1, .add .r30 .r30 .r21, .addi .r31 .r28 0])
+      (.seq ModExp.powWin (.seq (.block [.addi .r31 .r23 0]) (.seq PublicChecked.one (.seq (eqMask .r3 4 7)
         (.block [.li .r0 1, .logic .and .r3 .r3 .r0])))))))
 
 /-- The check of y, after p's. -/
@@ -174,11 +175,13 @@ def exFront : List Instr :=
     [.store .d .r8 .r23 64, .store .d .r9 .r23 72, .store .d .r3 .r23 80, .addi .r9 .r10 0, .addi .r3 .r5 0,
       .addi .r4 .r6 0, .addi .r5 .r7 0] ++ setup
 
-/-- y (at `r9`) into array 4, `R² mod p`, `-p⁻¹`, and x's address and
-length back from the header into `r30` and `r31`. -/
+/-- y (at `r9`) into array 4, `-p⁻¹ mod 2³²`, `R² mod p` (`Precompute.r2Hi`:
+`64 + w` doublings from `2^(64 (w - 1))`, which is below a valid p, then six
+Montgomery squares), and x's address and length back from the header into
+`r30` and `r31`. -/
 def exPre : Prog isa :=
-  .seq PublicChecked.loadX (.seq (.block (base .r5 1 ++ base .r8 2 ++ base .r9 3)) (.seq Precompute.r2
-    (.block (PublicChecked.minv ++ [.load .d .r30 .r23 64, .load .d .r31 .r23 72]))))
+  .seq PublicChecked.loadX (.seq (.block (base .r5 1 ++ base .r8 2 ++ base .r9 3 ++ PublicChecked.minv))
+    (.seq Precompute.r2Hi (.block [.load .d .r30 .r23 64, .load .d .r31 .r23 72])))
 
 /-- `z = y^x mod p` into array 4: `exPre`, then the power by x's `x_len`
 octets, by four-bit windows (`ModExp.powWin`, its table in arrays 8–23). -/

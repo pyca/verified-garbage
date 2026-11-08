@@ -151,6 +151,7 @@ theorem cpBody_ok {s : State} {B D X Yv : Addr} {Z w k L xl p x g y b : Nat} (h 
     (hrdX : ∀ i < xl, InRegions (s.rd ++ s.wr) (off X i) 1) (hsepX : ∀ i < xl, ∀ x, ofs B x < Z → off X i ≠ x)
     (hrdY : ∀ i < k, InRegions (s.rd ++ s.wr) (off Yv i) 1) (hsepY : ∀ i < k, ∀ x, ofs B x < Z → off Yv i ≠ x)
     (hP : arr s.mem B w 0 = p) (hp2 : 2 ≤ p) (hodd : p % 2 = 1)
+    (hpt : 2 ^ (64 * (w - 1)) < p)
     (hx : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem X xl) = x) (hg : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (off D k) k) = g)
     (hy : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem Yv k) = y) (hb : bnd s.mem D k L p = b) :
     WP isa cpBody s fun t =>
@@ -199,7 +200,8 @@ theorem cpBody_ok {s : State} {B D X Yv : Addr} {Z w k L xl p x g y b : Nat} (h 
       ((k2.gpr .r23 (by decide)).trans g23) a9 ((k2.gpr .r28 (by decide)).trans g28) (by omega) (by omega) hxl
       (by omega) (by rw [k12.rd, k12.wr]; exact rdG) sepG (by rw [k12.rd, k12.wr]; exact hrdX) hsepX
       (by rw [m2]; exact (hw1 64 (by omega)).trans hX) (by rw [m2]; exact (hw1 72 (by omega)).trans hXL)
-      (by rw [m2, p1]; exact hp2) (by rw [m2, p1]; exact hodd)) fun s₃ ⟨⟨z3, p3, b3, r10₃⟩, k3⟩ => ?_)
+      (by rw [m2, p1]; exact hp2) (by rw [m2, p1]; exact hodd)
+      (by rw [m2, p1]; exact hpt)) fun s₃ ⟨⟨z3, p3, b3, r10₃⟩, k3⟩ => ?_)
     rw [b12.bytesAt hZ sepG, b12.bytesAt hZ hsepX, hg, hx, m2, p1] at z3
     rw [m2, p1] at p3
     have k13 := k12.trans k3

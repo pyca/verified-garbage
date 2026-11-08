@@ -50,7 +50,7 @@ theorem headPre_of (s : State)
       (s.gpr .r3) s := by
   have inRd : ∀ {a n}, InRegions s.wr a n → InRegions (s.rd ++ s.wr) a n := fun ⟨r, h1, h2⟩ =>
     ⟨r, List.mem_append_right _ h1, h2⟩
-  have spills : Ok sboxCfg s := by
+  have scratch : Ok scratchCfg s := by
     refine ⟨scratchWrites, ?_, by decide, ?_⟩
     · intro k hk; change k < 0 at hk; omega
     · intro k hk j hj; change j < 0 at hj; omega
@@ -62,7 +62,7 @@ theorem headPre_of (s : State)
     exact Offset.sub_base _ (by omega)
   have workSub : Region.Sub (spillRegion s) ⟨s.gpr .r5, 512⟩ := Offset.sub_base _ (by decide)
   have saveSub : Region.Sub (saveRegion s) ⟨s.gpr .r5, 512⟩ := Region.sub_prefix (by decide)
-  refine ⟨spills, rfl, (fun i hi => inRd (scratchWrites i (by omega))),
+  refine ⟨scratch, rfl, (fun i hi => inRd (scratchWrites i (by omega))),
     (fun i hi => scratchWrites i (by omega)), inRd dataWrite, dataSep.sub_right saveSub, ?_, ?_, ?_, ?_⟩
   · intro c hc direction j hj
     rw [keyAddr_component]

@@ -312,14 +312,22 @@ bne %cr0, 233b
 bl {vg_ghash}
 .base64 "AuELe1gAIDkoTG58UAAgOShMjnwAAK/oeCpjfAgAr4B4KoR8pA+EeEL4hHhgAG74aACO+GAAbuhoAI7ocABu+HgAjvgAAAA48AAO+PgADvgAAW44eIskfnAArjjwBg458ADOOAEA4Dg="
 bl {vg_aes_ctr32}
-.base64 "AABu6PAAjuh4ImN8CACO6PgAruh4KoR8eCNjfAAAgDhQIIN8eCNjfOAPY3gBACA7UMgjfwAAIDlQSDl9eKODfnirpH4AACQo"
+.base64 "AABu6PAAjuh4ImN8CACO6PgAruh4KoR8eCNjfAAAgDhQIIN8eCNjfOAPY3gBACA7UMgjfwAAIDlQSDl9eKODfsLopHokH4V4UKilfAAAJCg="
 beq %cr0, 234f
 236:
-.base64 "AAADiDhIAHwAAAOYAQBjOP//hDgAACQo"
+.base64 "AAAD6DhIAHwAAAP4CABjOP//hDgAACQo"
 bne %cr0, 236b
 b 235f
 234:
 235:
+.base64 "AAAlKA=="
+beq %cr0, 237f
+239:
+.base64 "AAADiDhIAHwAAAOYAQBjOP//pTgAACUo"
+bne %cr0, 239b
+b 238f
+237:
+238:
 .base64 "eMsjf+AADuimAwh8iADu6ZAADuqYAC7qoABO6qgAbuqwAI7quACu6sAAzurIAO7q0AAO69gALuuAAM7pYA8hOCAAgE4=""#,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
