@@ -718,4 +718,32 @@ theorem openTo_onFlag162776 {c₁ c₂ : Prog isa}
     (fun _ _ _ _ _ _ _ _ _ _ _ _ _ => rfl)
     openTo_satF2776
 
+/-- By the flag: `c₁` on a context whose powers are present, `c₂` on the key
+context. -/
+theorem openTo_onFlagF {c₁ c₂ : Prog isa}
+    (h₁ : Verified target c₁ (AesGcm.Flag.openToFlaggedRoundsContract abi 2728))
+    (h₂ : Verified target c₂ (Proof.AesGcm.openToRoundsContract abi 2728)) :
+    Verified target (Impl.Gcm.X86_64.Flag.onFlag c₁ c₂) (AesGcm.Flag.openToRoundsContract abi 2728) :=
+  Verified.of_onFlagCtx (by decide) h₁
+    (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 136) (by decide) h₂
+      (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h => h) openTo_satbase)
+    (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.1, hf, h.2.2.resolve_left hf⟩)
+    (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h _ => ⟨h.1, h.2.1⟩)
+    (fun _ _ _ _ _ _ _ _ _ _ _ _ _ => rfl)
+    openTo_satF
+
+/-- By the flag: `c₁` on a context whose powers are present, `c₂` on the key
+context, with the stack of the code that splits. -/
+theorem openTo_onFlagF2776 {c₁ c₂ : Prog isa}
+    (h₁ : Verified target c₁ (AesGcm.Flag.openToFlaggedRoundsContract abi 2776))
+    (h₂ : Verified target c₂ (Proof.AesGcm.openToRoundsContract abi 2776)) :
+    Verified target (Impl.Gcm.X86_64.Flag.onFlag c₁ c₂) (AesGcm.Flag.openToRoundsContract abi 2776) :=
+  Verified.of_onFlagCtx (by decide) h₁
+    (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 136) (by decide) h₂
+      (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h => h) openTo_satbase2776)
+    (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.1, hf, h.2.2.resolve_left hf⟩)
+    (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h _ => ⟨h.1, h.2.1⟩)
+    (fun _ _ _ _ _ _ _ _ _ _ _ _ _ => rfl)
+    openTo_satF2776
+
 end VG.Proof.AesGcm.X86_64.Flag

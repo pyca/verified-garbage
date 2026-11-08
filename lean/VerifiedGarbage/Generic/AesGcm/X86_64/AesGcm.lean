@@ -149,23 +149,17 @@ def artifactsR (v : GcmVariant) : List Artifact := [
     features := v.impl.features },
   Spec.Gcm.openPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
-    code := Impl.Gcm.X86_64.Flag.onFlag
-      (Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.impl.openCodeP (v.impl.withBlk (blkR v))))
-      (Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.impl.openCode v.impl.callees))
+    code := openCodeF v
     stack := 2632
-    verified := VG.Proof.AesGcm.Flag.open_keyed (Flag.open_onFlag
-      (openSelPrepared_framed v.impl (blkR v) Short.shortFacts)
-      (openSel_framed v.impl Short.shortFacts))
-    spSafe := VG.X86_64.onFlag_spSafe
-      (X86_64.withStackArgScratch_spSafe (openCodeP_spSafe v.impl (blkR v)))
-      (X86_64.withStackArgScratch_spSafe (openCode_spSafe v.impl v.impl.blkB))
+    verified := VG.Proof.AesGcm.Flag.open_keyed (openCodeF_verified v)
+    spSafe := openCodeF_spAll v
     features := v.impl.features },
   Spec.Gcm.openToPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
-    code := Impl.Gcm.X86_64.Flag.onFlag (openToCodeR v) (Impl.AesGcm.X86_64.OpenTo.openTo v.impl.copyW (openFn v.impl).fn)
+    code := Impl.Gcm.X86_64.Flag.onFlag (openToCodeF v) (Impl.AesGcm.X86_64.OpenTo.openTo v.impl.copyW (openFn v.impl).fn)
     stack := openToStackR v
     verified := VG.Proof.AesGcm.Flag.openTo_keyed (openToCodeR_onFlag v)
-    spSafe := VG.X86_64.onFlag_spSafe (openToCodeR_spAll v) (OpenTo.openTo_spAll v.impl.copyW _ (openFn v.impl).spAll)
+    spSafe := VG.X86_64.onFlag_spSafe (openToCodeF_spAll v) (OpenTo.openTo_spAll v.impl.copyW _ (openFn v.impl).spAll)
     features := v.impl.features },
   Spec.Gcm.streamEncryptPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix

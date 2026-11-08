@@ -55,7 +55,7 @@ structure CtxMode where
   len : Nat
   ok : Mem → Addr → Prop
   ge : 256 ≤ len
-  le : len ≤ 1024
+  le : len ≤ 1088
   frame : ∀ {rs : List Region} {m m' : Mem} {p : Addr}, Frame rs m m' →
     (∀ r ∈ rs, (⟨p, len⟩ : Region).Disjoint r) → p.toNat + len ≤ 2 ^ 64 → ok m p → ok m' p
 
@@ -72,7 +72,7 @@ def CtxMode.powers : CtxMode where
   len := 1024
   ok m p := Spec.Gcm.PowersRepr m p
   ge := by decide
-  le := Nat.le_refl _
+  le := by decide
   frame {rs m m' p} hf hd hw h := by
     have kb : ∀ o, o + 16 ≤ 1024 → Spec.Gcm.blockAt m' (p + BitVec.ofNat 64 o) = Spec.Gcm.blockAt m (p + BitVec.ofNat 64 o) :=
       fun o ho => VG.Proof.Aes.X86_64.AesNi.blockAt_frame hf fun r hr =>
