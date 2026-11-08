@@ -10,9 +10,10 @@ public import VerifiedGarbage.Impl.MlKem1024.PPC64LE.Top
 
 Each function of ML-KEM-768 and ML-KEM-1024 taking `scratch` calls its code
 (`Impl.MlKem.PPC64LE.keygen`, …) as the internal function named for it,
-then `vg_zeroize` on all of `scratch` (`callWipe`): 32768 bytes for
-ML-KEM-768 and 49152 for ML-KEM-1024, with no proven smaller bound on what
-the code writes there.
+then `vg_zeroize` on all of `scratch` (`callWipe`, in a frame of 128 bytes,
+so that the code's stack pointer is the caller's modulo POWER's 128-byte
+cache line): 32768 bytes for ML-KEM-768 and 49152 for ML-KEM-1024, with no
+proven smaller bound on what the code writes there.
 -/
 
 @[expose] public section
@@ -24,7 +25,7 @@ open VG.PPC64LE VG.Impl.CallWipe.PPC64LE
 /-- A call of the code `body` of the function `fn`, then of `vg_zeroize` on
 the first `n` bytes of the buffer whose address is in `r`. -/
 def wiped (r : Reg) (n : Nat) (fn : String) (body : Prog isa) : Prog isa :=
-  callWipe r n (fn ++ "_body") body "vg_zeroize" Impl.Zeroize.PPC64LE.zeroize
+  callWipe 128 r n (fn ++ "_body") body "vg_zeroize" Impl.Zeroize.PPC64LE.zeroize
 
 /-- `vg_mlkem768_keygen`. -/
 def keyGen : Prog isa := wiped .r6 32768 "vg_mlkem768_keygen" Impl.MlKem.PPC64LE.keygen

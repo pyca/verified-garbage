@@ -39,10 +39,10 @@ vg_mlkem1024_check_ek:
 
 vg_mlkem1024_keygen:
 	mflr %r0
-	stdu %r1, -48(%r1)
-	std %r0, 32(%r1)
-	addi %r12, %r1, 40
-	std %r31, 0(%r12)
+	stdu %r1, -128(%r1)
+	addi %r12, %r1, 32
+	std %r0, 0(%r12)
+	std %r31, 8(%r12)
 	or %r31, %r6, %r6
 	bl {vg_mlkem1024_keygen_body}
 	or %r11, %r3, %r3
@@ -53,19 +53,19 @@ vg_mlkem1024_keygen:
 	or %r31, %r11, %r11
 	bl {vg_zeroize}
 	or %r3, %r31, %r31
-	addi %r12, %r1, 40
-	ld %r31, 0(%r12)
-	ld %r0, 32(%r1)
-	addi %r1, %r1, 48
+	addi %r12, %r1, 32
+	ld %r31, 8(%r12)
+	ld %r0, 0(%r12)
+	addi %r1, %r1, 128
 	mtlr %r0
 	blr
 
 vg_mlkem1024_encaps:
 	mflr %r0
-	stdu %r1, -48(%r1)
-	std %r0, 32(%r1)
-	addi %r12, %r1, 40
-	std %r31, 0(%r12)
+	stdu %r1, -128(%r1)
+	addi %r12, %r1, 32
+	std %r0, 0(%r12)
+	std %r31, 8(%r12)
 	or %r31, %r7, %r7
 	bl {vg_mlkem1024_encaps_body}
 	or %r11, %r3, %r3
@@ -76,19 +76,19 @@ vg_mlkem1024_encaps:
 	or %r31, %r11, %r11
 	bl {vg_zeroize}
 	or %r3, %r31, %r31
-	addi %r12, %r1, 40
-	ld %r31, 0(%r12)
-	ld %r0, 32(%r1)
-	addi %r1, %r1, 48
+	addi %r12, %r1, 32
+	ld %r31, 8(%r12)
+	ld %r0, 0(%r12)
+	addi %r1, %r1, 128
 	mtlr %r0
 	blr
 
 vg_mlkem1024_encaps_h:
 	mflr %r0
-	stdu %r1, -48(%r1)
-	std %r0, 32(%r1)
-	addi %r12, %r1, 40
-	std %r31, 0(%r12)
+	stdu %r1, -128(%r1)
+	addi %r12, %r1, 32
+	std %r0, 0(%r12)
+	std %r31, 8(%r12)
 	or %r31, %r8, %r8
 	bl {vg_mlkem1024_encaps_h_body}
 	or %r11, %r3, %r3
@@ -99,19 +99,19 @@ vg_mlkem1024_encaps_h:
 	or %r31, %r11, %r11
 	bl {vg_zeroize}
 	or %r3, %r31, %r31
-	addi %r12, %r1, 40
-	ld %r31, 0(%r12)
-	ld %r0, 32(%r1)
-	addi %r1, %r1, 48
+	addi %r12, %r1, 32
+	ld %r31, 8(%r12)
+	ld %r0, 0(%r12)
+	addi %r1, %r1, 128
 	mtlr %r0
 	blr
 
 vg_mlkem1024_decaps:
 	mflr %r0
-	stdu %r1, -48(%r1)
-	std %r0, 32(%r1)
-	addi %r12, %r1, 40
-	std %r31, 0(%r12)
+	stdu %r1, -128(%r1)
+	addi %r12, %r1, 32
+	std %r0, 0(%r12)
+	std %r31, 8(%r12)
 	or %r31, %r6, %r6
 	bl {vg_mlkem1024_decaps_body}
 	or %r11, %r3, %r3
@@ -122,9 +122,9 @@ vg_mlkem1024_decaps:
 	or %r31, %r11, %r11
 	bl {vg_zeroize}
 	or %r3, %r31, %r31
-	addi %r12, %r1, 40
-	ld %r31, 0(%r12)
-	ld %r0, 32(%r1)
-	addi %r1, %r1, 48
+	addi %r12, %r1, 32
+	ld %r31, 8(%r12)
+	ld %r0, 0(%r12)
+	addi %r1, %r1, 128
 	mtlr %r0
 	blr

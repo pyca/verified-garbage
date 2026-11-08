@@ -24,19 +24,19 @@ namespace VG.Artifacts.MlKem.PPC64LE
 def artifacts : List Artifact := [
   Spec.MlKem.keyGenApi.artifact PPC64LE.target {
     code := Impl.MlKem.PPC64LE.Wipe.keyGen
-    stack := 96
+    stack := 176
     verified := Proof.MlKem.PPC64LE.Wipe.keyGen_verified },
   Spec.MlKem.encapsApi.artifact PPC64LE.target {
     code := Impl.MlKem.PPC64LE.Wipe.encaps
-    stack := 96
+    stack := 176
     verified := Proof.MlKem.PPC64LE.Wipe.encaps_verified },
   Spec.MlKem.encapsHApi.artifact PPC64LE.target {
     code := Impl.MlKem.PPC64LE.Wipe.encapsH
-    stack := 96
+    stack := 176
     verified := Proof.MlKem.PPC64LE.Wipe.encapsH_verified },
   Spec.MlKem.decapsApi.artifact PPC64LE.target {
     code := Impl.MlKem.PPC64LE.Wipe.decaps
-    stack := 96
+    stack := 176
     verified := Proof.MlKem.PPC64LE.Wipe.decaps_verified },
   Spec.MlKem.checkEkApi.artifact PPC64LE.target {
     code := Impl.MlKem.PPC64LE.checkEk

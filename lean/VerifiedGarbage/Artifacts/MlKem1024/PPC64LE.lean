@@ -19,19 +19,19 @@ def artifacts : List Artifact := [
     verified := Proof.MlKem1024.PPC64LE.CheckEk.verified },
   Spec.MlKem1024.keyGenApi.artifact PPC64LE.target {
     code := Impl.MlKem.PPC64LE.Wipe.keyGen1024
-    stack := 96
+    stack := 176
     verified := Proof.MlKem.PPC64LE.Wipe.keyGen1024_verified },
   Spec.MlKem1024.encapsApi.artifact PPC64LE.target {
     code := Impl.MlKem.PPC64LE.Wipe.encaps1024
-    stack := 96
+    stack := 176
     verified := Proof.MlKem.PPC64LE.Wipe.encaps1024_verified },
   Spec.MlKem1024.encapsHApi.artifact PPC64LE.target {
     code := Impl.MlKem.PPC64LE.Wipe.encapsH1024
-    stack := 96
+    stack := 176
     verified := Proof.MlKem.PPC64LE.Wipe.encapsH1024_verified },
   Spec.MlKem1024.decapsApi.artifact PPC64LE.target {
     code := Impl.MlKem.PPC64LE.Wipe.decaps1024
-    stack := 96
+    stack := 176
     verified := Proof.MlKem.PPC64LE.Wipe.decaps1024_verified }]
 
 end VG.Artifacts.MlKem1024.PPC64LE

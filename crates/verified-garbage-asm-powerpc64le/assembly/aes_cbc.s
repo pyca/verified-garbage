@@ -7,9 +7,9 @@
 vg_aes_cbc_encrypt:
 	mflr %r0
 	stdu %r1, -48(%r1)
-	std %r0, 32(%r1)
-	addi %r12, %r1, 40
-	std %r31, 0(%r12)
+	addi %r12, %r1, 32
+	std %r0, 0(%r12)
+	std %r31, 8(%r12)
 	or %r31, %r8, %r8
 	bl {vg_aes_cbc_encrypt_unwiped}
 	or %r11, %r3, %r3
@@ -20,9 +20,9 @@ vg_aes_cbc_encrypt:
 	or %r31, %r11, %r11
 	bl {vg_zeroize}
 	or %r3, %r31, %r31
-	addi %r12, %r1, 40
-	ld %r31, 0(%r12)
-	ld %r0, 32(%r1)
+	addi %r12, %r1, 32
+	ld %r31, 8(%r12)
+	ld %r0, 0(%r12)
 	addi %r1, %r1, 48
 	mtlr %r0
 	blr
@@ -30,9 +30,9 @@ vg_aes_cbc_encrypt:
 vg_aes_cbc_decrypt:
 	mflr %r0
 	stdu %r1, -48(%r1)
-	std %r0, 32(%r1)
-	addi %r12, %r1, 40
-	std %r31, 0(%r12)
+	addi %r12, %r1, 32
+	std %r0, 0(%r12)
+	std %r31, 8(%r12)
 	or %r31, %r8, %r8
 	bl {vg_aes_cbc_decrypt_unwiped}
 	or %r11, %r3, %r3
@@ -43,9 +43,9 @@ vg_aes_cbc_decrypt:
 	or %r31, %r11, %r11
 	bl {vg_zeroize}
 	or %r3, %r31, %r31
-	addi %r12, %r1, 40
-	ld %r31, 0(%r12)
-	ld %r0, 32(%r1)
+	addi %r12, %r1, 32
+	ld %r31, 8(%r12)
+	ld %r0, 0(%r12)
 	addi %r1, %r1, 48
 	mtlr %r0
 	blr

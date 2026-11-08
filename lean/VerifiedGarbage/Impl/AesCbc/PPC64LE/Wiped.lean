@@ -23,7 +23,7 @@ open VG.PPC64LE
 /-- A call of `name`, whose code is `body`, then of `vg_zeroize` on the 2176
 bytes of `scratch`. -/
 def wiped (name : String) (body : Prog isa) : Prog isa :=
-  Impl.CallWipe.PPC64LE.callWipe .r8 2176 name body "vg_zeroize" Impl.Zeroize.PPC64LE.zeroize
+  Impl.CallWipe.PPC64LE.callWipe 48 .r8 2176 name body "vg_zeroize" Impl.Zeroize.PPC64LE.zeroize
 
 /-- `vg_aes_cbc_encrypt`. -/
 def encrypt : Prog isa := wiped "vg_aes_cbc_encrypt_unwiped" Impl.AesCbc.PPC64LE.encrypt

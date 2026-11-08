@@ -20,11 +20,11 @@
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_cbc_encrypt(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r#".base64 "pgIIfNH/IfggAAH4KACBOQAA7Pt4Qx99"
+        r#".base64 "pgIIfNH/IfggAIE5AAAM+AgA7Pt4Qx99"
 bl {vg_aes_cbc_encrypt_unwiped}
 .base64 "eBtrfHj7438AAIA4AACEZIAIhGB4W399"
 bl {vg_zeroize}
-.base64 "ePvjfygAgTkAAOzrIAAB6DAAITimAwh8IACATg==""#,
+.base64 "ePvjfyAAgTkIAOzrAAAM6DAAITimAwh8IACATg==""#,
         vg_aes_cbc_encrypt_unwiped = sym super::aes_cbc::vg_aes_cbc_encrypt_unwiped::vg_aes_cbc_encrypt_unwiped,
         vg_zeroize = sym super::zeroize::vg_zeroize,
     )
@@ -47,11 +47,11 @@ bl {vg_zeroize}
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_cbc_decrypt(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r#".base64 "pgIIfNH/IfggAAH4KACBOQAA7Pt4Qx99"
+        r#".base64 "pgIIfNH/IfggAIE5AAAM+AgA7Pt4Qx99"
 bl {vg_aes_cbc_decrypt_unwiped}
 .base64 "eBtrfHj7438AAIA4AACEZIAIhGB4W399"
 bl {vg_zeroize}
-.base64 "ePvjfygAgTkAAOzrIAAB6DAAITimAwh8IACATg==""#,
+.base64 "ePvjfyAAgTkIAOzrAAAM6DAAITimAwh8IACATg==""#,
         vg_aes_cbc_decrypt_unwiped = sym super::aes_cbc::vg_aes_cbc_decrypt_unwiped::vg_aes_cbc_decrypt_unwiped,
         vg_zeroize = sym super::zeroize::vg_zeroize,
     )
