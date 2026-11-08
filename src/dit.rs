@@ -11,14 +11,13 @@
 
 mod tests {
     use crate::arch::dit::{VG_DIT_ENTER_FEATURES, vg_dit_clear, vg_dit_enter};
-    use crate::cpu;
 
     /// Entering turns the mode on and reports what it was; clearing turns
     /// it off. This changes PSTATE.DIT of the test's thread alone, and
     /// leaves it off.
     #[test]
     fn enter_and_clear() {
-        if !cpu::detected().contains(VG_DIT_ENTER_FEATURES) {
+        if !verified_garbage_cpu::detected().contains(VG_DIT_ENTER_FEATURES) {
             return;
         }
         // SAFETY: the CPU has FEAT_DIT, as both functions require
