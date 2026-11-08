@@ -22,11 +22,30 @@ pub unsafe fn vg_chacha20_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state: 
     unsafe { crate::chacha20::vg_chacha20_init(state, key, nonce) }
 }
 
+/// Restarts a ChaCha20 keystream with the same key: makes the streaming state `*state` represent the whole keystream of its key for the 16-byte nonce `*nonce` (as `vg_chacha20_init` does), discarding what was left of the previous one.
+///
+/// Contract: `VG.Spec.ChaCha20.setNonceContract`. Constant time: only the pointers may affect timing, not the key or the nonce.
+///
+/// It runs `vg_chacha20_set_nonce`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 768 bytes.
+/// * `nonce` must be valid for reads of 16 bytes.
+/// * `state` must not overlap `nonce` or the arguments on the stack (distinct Rust objects never do).
+/// * Neither `state` nor `nonce` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_chacha20_set_nonce_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 96], nonce: *const [u8; 16]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::chacha20::vg_chacha20_set_nonce(state, nonce) }
+}
+
 /// Applies a ChaCha20 keystream (RFC 8439 §2.4), encrypting or decrypting: if at least `len` bytes are left of the keystream that the streaming state `*state` represents, XORs the next `len` of them into the `len` bytes at `data`, keeps the rest in `*state`, and returns 1. Otherwise (the block counter would pass 2³² − 1) returns 0, and leaves the bytes at `data` and the keystream unchanged.
 ///
 /// Contract: `VG.Spec.ChaCha20.applyContract`. Constant time: only the pointers, `len` and the number of bytes of keystream left in `*state` (`VG.Spec.ChaCha20.leftAt`: 64 × (2³² − `c`) for the initial block counter `c`, less the bytes applied since) may affect timing, not the key, the nonce, the keystream or the data. The function may leak that number.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_chacha20_apply_ssse3` if the CPU supports its features (`VG_CHACHA20_APPLY_SSSE3_FEATURES`); or else `vg_chacha20_apply`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_chacha20_apply_ssse3` if the CPU supports its features (`VG_CHACHA20_APPLY_SSSE3_FEATURES`); or else `vg_chacha20_apply`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -70,23 +89,4 @@ pub unsafe fn vg_chacha20_apply_auto(_dit: verified_garbage_cpu::Dit<'_>, state:
     // or an implementation `select` returned, which needs only features the CPU has. Calling
     // either carries the caller's obligations, which are those of every implementation.
     unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(state, data, len) }
-}
-
-/// Restarts a ChaCha20 keystream with the same key: makes the streaming state `*state` represent the whole keystream of its key for the 16-byte nonce `*nonce` (as `vg_chacha20_init` does), discarding what was left of the previous one.
-///
-/// Contract: `VG.Spec.ChaCha20.setNonceContract`. Constant time: only the pointers may affect timing, not the key or the nonce.
-///
-/// It runs `vg_chacha20_set_nonce`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 768 bytes.
-/// * `nonce` must be valid for reads of 16 bytes.
-/// * `state` must not overlap `nonce` or the arguments on the stack (distinct Rust objects never do).
-/// * Neither `state` nor `nonce` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
-#[allow(clippy::too_many_arguments)]
-#[inline]
-pub unsafe fn vg_chacha20_set_nonce_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 96], nonce: *const [u8; 16]) {
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::chacha20::vg_chacha20_set_nonce(state, nonce) }
 }

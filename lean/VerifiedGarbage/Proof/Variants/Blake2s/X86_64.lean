@@ -14,7 +14,8 @@ def avx : Proof.Blake2.X86_64.BackendS := Proof.Variants.Blake2s.X86_64.Avx.vari
 def scalar : Proof.Blake2.X86_64.BackendS := Proof.Variants.Blake2s.X86_64.Scalar.variant
 
 /-- Every implementation, best first: each function generic over them is
-emitted with each (the registration files that import this). -/
+emitted with each (the registration files that import this), and its
+dispatcher tries them in this order. -/
 def variants := [avx, scalar]
 
 end VG.Proof.Variants.Blake2s.X86_64

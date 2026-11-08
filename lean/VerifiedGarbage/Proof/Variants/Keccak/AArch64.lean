@@ -22,7 +22,8 @@ def sha3 : Proof.Sha3.AArch64.Permutation :=
   { Proof.Sha3.AArch64.Sha3.ResidentBackend.backend with vendor := some "apple" }
 
 /-- Every implementation, best first: each function generic over them is
-emitted with each (the registration files that import this). -/
+emitted with each (the registration files that import this), and its
+dispatcher tries them in this order. -/
 def variants := [sha3, scalar]
 
 end VG.Proof.Variants.Keccak.AArch64

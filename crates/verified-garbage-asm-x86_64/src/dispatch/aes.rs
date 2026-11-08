@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Aes.expandKeyContract`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_expand_key_aesni` if the CPU supports its features (`VG_AES_EXPAND_KEY_AESNI_FEATURES`); or else `vg_aes_expand_key`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_expand_key_aesni` if the CPU supports its features (`VG_AES_EXPAND_KEY_AESNI_FEATURES`); or else `vg_aes_expand_key`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -56,7 +56,7 @@ pub unsafe fn vg_aes_expand_key_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *
 ///
 /// Contract: `VG.Spec.Aes.encryptBlocksContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_encrypt_blocks_vaes` if the CPU supports its features (`VG_AES_ENCRYPT_BLOCKS_VAES_FEATURES`); `vg_aes_encrypt_blocks_aesni` if the CPU supports its features (`VG_AES_ENCRYPT_BLOCKS_AESNI_FEATURES`); or else `vg_aes_encrypt_blocks`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_encrypt_blocks_vaes` if the CPU supports its features (`VG_AES_ENCRYPT_BLOCKS_VAES_FEATURES`); `vg_aes_encrypt_blocks_aesni` if the CPU supports its features (`VG_AES_ENCRYPT_BLOCKS_AESNI_FEATURES`); or else `vg_aes_encrypt_blocks`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -112,7 +112,7 @@ pub unsafe fn vg_aes_encrypt_blocks_auto(_dit: verified_garbage_cpu::Dit<'_>, sc
 ///
 /// Contract: `VG.Spec.Aes.decryptBlocksContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_decrypt_blocks_vaes` if the CPU supports its features (`VG_AES_DECRYPT_BLOCKS_VAES_FEATURES`); `vg_aes_decrypt_blocks_aesni` if the CPU supports its features (`VG_AES_DECRYPT_BLOCKS_AESNI_FEATURES`); or else `vg_aes_decrypt_blocks`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_decrypt_blocks_vaes` if the CPU supports its features (`VG_AES_DECRYPT_BLOCKS_VAES_FEATURES`); `vg_aes_decrypt_blocks_aesni` if the CPU supports its features (`VG_AES_DECRYPT_BLOCKS_AESNI_FEATURES`); or else `vg_aes_decrypt_blocks`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///

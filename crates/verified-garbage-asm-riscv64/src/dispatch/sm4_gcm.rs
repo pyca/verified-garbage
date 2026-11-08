@@ -69,26 +69,6 @@ pub unsafe fn vg_sm4_gcm_open_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *co
     unsafe { crate::sm4_gcm::vg_sm4_gcm_open(ctx, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) }
 }
 
-/// Absorbs additional data into an incremental SM4-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
-///
-/// Contract: `VG.Spec.Gcm.streamAadContract` (AES-GCM's, which reads only the hash subkey of the key context). Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
-///
-/// It runs `vg_sm4_gcm_stream_aad`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes, and aligned for `u64`.
-/// * `state` must be valid for reads and writes of 80 bytes, and aligned for `u64`.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `data` may overlap the 4608 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[allow(clippy::too_many_arguments)]
-#[inline]
-pub unsafe fn vg_sm4_gcm_stream_aad_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::sm4_gcm::vg_sm4_gcm_stream_aad(ctx, state, aad_len, data, len) }
-}
-
 /// Starts an incremental SM4-GCM encryption or decryption (NIST SP 800-38D §7): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, makes the streaming state `*state` represent the message with the IV the `nonce_len` bytes at `nonce`, and no additional data or text yet. Continue with `vg_sm4_gcm_stream_aad`, then `vg_sm4_gcm_stream_encrypt` or `vg_sm4_gcm_stream_decrypt`, then `vg_sm4_gcm_stream_finish` or `vg_sm4_gcm_stream_verify`, with the same key context.
 ///
 /// The function checks no length: GCM requires a nonce of 1 to `2^61 - 1` bytes (§5.2.1.1), which the caller must check.
@@ -111,46 +91,24 @@ pub unsafe fn vg_sm4_gcm_stream_init_auto(_dit: verified_garbage_cpu::Dit<'_>, c
     unsafe { crate::sm4_gcm::vg_sm4_gcm_stream_init(ctx, nonce, nonce_len, state) }
 }
 
-/// Finishes an incremental SM4-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_sm4_gcm_stream_verify`.
+/// Absorbs additional data into an incremental SM4-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
 ///
-/// Contract: `VG.Spec.Sm4.Gcm.streamFinishContract`. Constant time: only the pointers, `aad_len` and `text_len` may affect timing, not the key context or the state.
+/// Contract: `VG.Spec.Gcm.streamAadContract` (AES-GCM's, which reads only the hash subkey of the key context). Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
 ///
-/// It runs `vg_sm4_gcm_stream_finish`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes, and aligned for `u64`.
-/// * `state` must be valid for reads and writes of 80 bytes, and aligned for `u64`.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * The contents of `state` on return are unspecified.
-/// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `tag` may overlap the 5808 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[allow(clippy::too_many_arguments)]
-#[inline]
-pub unsafe fn vg_sm4_gcm_stream_finish_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::sm4_gcm::vg_sm4_gcm_stream_finish(ctx, state, aad_len, text_len, tag) }
-}
-
-/// Finishes an incremental SM4-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_sm4_gcm_init` wrote and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
-///
-/// Contract: `VG.Spec.Sm4.Gcm.streamVerifyContract`. Constant time: only the pointers, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
-///
-/// It runs `vg_sm4_gcm_stream_verify`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+/// It runs `vg_sm4_gcm_stream_aad`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes, and aligned for `u64`.
 /// * `state` must be valid for reads and writes of 80 bytes, and aligned for `u64`.
-/// * `tag` must be valid for reads of `tag_len` bytes.
-/// * The contents of `state` on return are unspecified.
-/// * `state` must not overlap `ctx` or `tag` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `tag` may overlap the 5808 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `data` must be valid for reads of `len` bytes.
+/// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the 4608 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_sm4_gcm_stream_verify_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe fn vg_sm4_gcm_stream_aad_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::sm4_gcm::vg_sm4_gcm_stream_verify(ctx, state, aad_len, text_len, tag, tag_len) }
+    unsafe { crate::sm4_gcm::vg_sm4_gcm_stream_aad(ctx, state, aad_len, data, len) }
 }
 
 /// Encrypts the next piece of the text of an incremental SM4-GCM encryption (NIST SP 800-38D §7.1): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, encrypts the `len` bytes at `data` in place, as the continuation of that plaintext, and the state then represents the message with them appended.
@@ -195,4 +153,46 @@ pub unsafe fn vg_sm4_gcm_stream_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>
 pub unsafe fn vg_sm4_gcm_stream_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { crate::sm4_gcm::vg_sm4_gcm_stream_decrypt(ctx, state, aad_len, text_len, data, len) }
+}
+
+/// Finishes an incremental SM4-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_sm4_gcm_stream_verify`.
+///
+/// Contract: `VG.Spec.Sm4.Gcm.streamFinishContract`. Constant time: only the pointers, `aad_len` and `text_len` may affect timing, not the key context or the state.
+///
+/// It runs `vg_sm4_gcm_stream_finish`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes, and aligned for `u64`.
+/// * `state` must be valid for reads and writes of 80 bytes, and aligned for `u64`.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the 5808 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_sm4_gcm_stream_finish_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::sm4_gcm::vg_sm4_gcm_stream_finish(ctx, state, aad_len, text_len, tag) }
+}
+
+/// Finishes an incremental SM4-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_sm4_gcm_init` wrote and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
+///
+/// Contract: `VG.Spec.Sm4.Gcm.streamVerifyContract`. Constant time: only the pointers, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
+///
+/// It runs `vg_sm4_gcm_stream_verify`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes, and aligned for `u64`.
+/// * `state` must be valid for reads and writes of 80 bytes, and aligned for `u64`.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * The contents of `state` on return are unspecified.
+/// * `state` must not overlap `ctx` or `tag` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the 5808 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_sm4_gcm_stream_verify_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::sm4_gcm::vg_sm4_gcm_stream_verify(ctx, state, aad_len, text_len, tag, tag_len) }
 }

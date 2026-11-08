@@ -2,34 +2,87 @@
 //! The dispatchers of the verified `ffdh` functions for `aarch64`
 //! (`crate::ffdh`, `VG.Rust.dispatcher`).
 
-/// Finite-field Diffie–Hellman (SP 800-56A Rev. 3 §5.7.1.1, PKCS #3 §8). With `domain` as `vg_ffdh_check_domain` takes it, the private scalar x (`x_len` bytes) and the peer's public value y (`p_len` bytes), most significant first, computes `z = y^x mod p`; returns 0 and writes zeros if z is 0, 1 or `p − 1`, and otherwise returns 1 and writes z (`p_len` bytes, most significant first) to `out`. Applies no KDF.
+/// Initialize a reusable public fixed-base context for finite-field Diffie–Hellman key generation. The checked domain is p, g and optional q, each p_len bytes. Writes generationPrecompute: three public metadata words followed by RSA's modulus/R-squared values and 32 five-tooth comb entries. Returns 1. Word 0 is generationScalarBits, word 1 is its byte length and word 2 is the comb row count. The context has no pointers and is independent of the arithmetic backend. Contract: VG.Spec.Ffdh.generationPrecomputeContract. Timing may depend on the public domain, pointers and lengths.
 ///
-/// Contract: `VG.Spec.Ffdh.exchangeContract`. Timing may depend on the pointers, the lengths, the domain, y and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
-///
-/// It runs `vg_ffdh_exchange`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+/// It runs `vg_ffdh_generate_key_precompute`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
 /// # Safety
 ///
-/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `ctx` must be valid for reads and writes of `8 * ctx_len` bytes.
 /// * `domain` must be valid for reads of `domain_len` bytes.
-/// * `x` must be valid for reads of `x_len` bytes.
-/// * `peer` must be valid for reads of `peer_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
 /// * `p_len` must be in 64..=1024.
 /// * `domain_len` must be `2 * p_len` or `3 * p_len`.
-/// * `out_len` and `peer_len` must be `p_len`.
-/// * `x_len` must be in 1..=`p_len`.
-/// * For the result to be specified, `domain` must be one that `vg_ffdh_check_domain` accepted (returned 1 for); otherwise it is unspecified.
-/// * For the result to be specified, `peer` must also be a value that `vg_ffdh_check_public` accepted for this domain.
+/// * domain must be one that vg_ffdh_check_domain accepted.
+/// * ctx_len must be generationPrecomputedWords(p_len), namely 3 + 34 * ceil(p_len / 8).
 /// * `scratch_len` must be at least `16 * p_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other, `domain`, `x`, `peer` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `domain`, `x`, `peer` and `scratch` may wrap around the end of the address space (no Rust object does).
+/// * `ctx` and `scratch` must not overlap each other or `domain` (distinct Rust objects never do).
+/// * None of `ctx`, `domain` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_ffdh_exchange_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, peer: *const u8, peer_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe fn vg_ffdh_generate_key_precompute_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *mut u64, ctx_len: usize, domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::ffdh::vg_ffdh_exchange(out, out_len, domain, domain_len, p_len, x, x_len, peer, peer_len, scratch, scratch_len) }
+    unsafe { crate::ffdh::vg_ffdh_generate_key_precompute(ctx, ctx_len, domain, domain_len, p_len, scratch, scratch_len) }
+}
+
+/// One native finite-field Diffie–Hellman key-generation attempt using a reusable public five-tooth comb context. Takes p_len random bytes and implements the same vettedScalarOfOctets, keyStatus and output conventions as vg_ffdh_generate_key_vetted for checked parameters. The context's public maximum width fixes the schedule, including secret leading zeros. Contract: VG.Spec.Ffdh.cachedGenerateKeyContract. Timing may depend on the public domain, pointers, lengths and returned status, not otherwise on the random bytes or private scalar.
+///
+/// It runs `vg_ffdh_generate_key_cached`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `x` must be valid for reads and writes of `x_len` bytes.
+/// * `y` must be valid for reads and writes of `y_len` bytes.
+/// * `domain` must be valid for reads of `domain_len` bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `ctx` must be valid for reads of `8 * ctx_len` bytes.
+/// * `p_len` must be in 64..=1024.
+/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
+/// * domain must be one that vg_ffdh_check_domain accepted.
+/// * ctx_len must be generationPrecomputedWords(p_len). ctx must contain the unchanged words written by vg_ffdh_generate_key_precompute for these parameters.
+/// * x_len, y_len and rand_len must be p_len.
+/// * `scratch_len` must be at least `16 * p_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `x`, `y` and `scratch` must not overlap each other, `domain`, `rand`, `ctx` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `x`, `y`, `domain`, `rand`, `scratch` and `ctx` may wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_ffdh_generate_key_cached_auto(_dit: verified_garbage_cpu::Dit<'_>, x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, ctx: *const u64, ctx_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::ffdh::vg_ffdh_generate_key_cached(x, x_len, y, y_len, domain, domain_len, p_len, rand, rand_len, scratch, scratch_len, ctx, ctx_len) }
+}
+
+/// Generate a finite-field Diffie–Hellman key pair using a reusable public five-tooth comb context and the existing vettedKeySearch rejection policy. Returns 1 with a key pair, 3 when a budget is exhausted, or 0 to request entropy. On 0, discard used bytes, preserve the suffix and extend it to state[3] bytes before calling again. On 0 and 3 both outputs are zero. Entropy consumption, retry budgets and statuses are unchanged. Contract: VG.Spec.Ffdh.cachedKeySearchContract. Timing may depend on the public domain, pointers, lengths, controller policy and sequence of attempt statuses, not otherwise on private scalar bytes.
+///
+/// It runs `vg_ffdh_generate_key_search_cached`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `x` must be valid for reads and writes of `x_len` bytes.
+/// * `y` must be valid for reads and writes of `y_len` bytes.
+/// * `used` must be valid for reads and writes of 8 bytes.
+/// * `domain` must be valid for reads of `domain_len` bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `state` must be valid for reads and writes of 128 bytes.
+/// * `ctx` must be valid for reads of `8 * ctx_len` bytes.
+/// * `p_len` must be in 64..=1024.
+/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
+/// * domain must be one that vg_ffdh_check_domain accepted.
+/// * ctx_len must be generationPrecomputedWords(p_len). ctx must contain the unchanged words written by vg_ffdh_generate_key_precompute for these parameters.
+/// * state must be initialized by vg_ffdh_key_generation_init for p_len, or be the state returned by this routine.
+/// * x_len and y_len must be p_len.
+/// * `scratch_len` must be at least `16 * p_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `x`, `y`, `used`, `scratch` and `state` must not overlap each other, `domain`, `rand`, `ctx` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `x`, `y`, `used`, `domain`, `rand`, `scratch`, `state` and `ctx` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_ffdh_generate_key_search_cached_auto(_dit: verified_garbage_cpu::Dit<'_>, x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, used: *mut [u64; 1], domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16], ctx: *const u64, ctx_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::ffdh::vg_ffdh_generate_key_search_cached(x, x_len, y, y_len, used, domain, domain_len, p_len, rand, rand_len, scratch, scratch_len, state, ctx, ctx_len) }
 }
 
 /// Checks an imported finite-field Diffie–Hellman public value (SP 800-56A Rev. 3 §5.6.2.3.1, and §5.6.2.3.2 with q). With `domain` as `vg_ffdh_check_domain` takes it and y (`p_len` bytes, most significant first), returns 1 if `1 < y < p − 1` and, with q, `y^q mod p = 1`; otherwise 0.
@@ -79,6 +132,36 @@ pub unsafe fn vg_ffdh_check_public_auto(_dit: verified_garbage_cpu::Dit<'_>, dom
 pub unsafe fn vg_ffdh_check_domain_auto(_dit: verified_garbage_cpu::Dit<'_>, domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { crate::ffdh::vg_ffdh_check_domain(domain, domain_len, p_len, scratch, scratch_len) }
+}
+
+/// Finite-field Diffie–Hellman (SP 800-56A Rev. 3 §5.7.1.1, PKCS #3 §8). With `domain` as `vg_ffdh_check_domain` takes it, the private scalar x (`x_len` bytes) and the peer's public value y (`p_len` bytes), most significant first, computes `z = y^x mod p`; returns 0 and writes zeros if z is 0, 1 or `p − 1`, and otherwise returns 1 and writes z (`p_len` bytes, most significant first) to `out`. Applies no KDF.
+///
+/// Contract: `VG.Spec.Ffdh.exchangeContract`. Timing may depend on the pointers, the lengths, the domain, y and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
+///
+/// It runs `vg_ffdh_exchange`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `domain` must be valid for reads of `domain_len` bytes.
+/// * `x` must be valid for reads of `x_len` bytes.
+/// * `peer` must be valid for reads of `peer_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `p_len` must be in 64..=1024.
+/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
+/// * `out_len` and `peer_len` must be `p_len`.
+/// * `x_len` must be in 1..=`p_len`.
+/// * For the result to be specified, `domain` must be one that `vg_ffdh_check_domain` accepted (returned 1 for); otherwise it is unspecified.
+/// * For the result to be specified, `peer` must also be a value that `vg_ffdh_check_public` accepted for this domain.
+/// * `scratch_len` must be at least `16 * p_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other, `domain`, `x`, `peer` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `domain`, `x`, `peer` and `scratch` may wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_ffdh_exchange_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, peer: *const u8, peer_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::ffdh::vg_ffdh_exchange(out, out_len, domain, domain_len, p_len, x, x_len, peer, peer_len, scratch, scratch_len) }
 }
 
 /// Checks an imported finite-field Diffie–Hellman key pair (SP 800-56A Rev. 3 §5.6.2.1.2 and §5.6.2.1.4). With `domain` as `vg_ffdh_check_domain` takes it, y (`p_len` bytes) and x (`x_len` bytes), most significant first: returns 2 if x is not in `1..q` (`1..p − 1` without q); 1 if y is a valid public value (as `vg_ffdh_check_public` checks it) and `y = g^x mod p`; 0 otherwise.
@@ -137,32 +220,19 @@ pub unsafe fn vg_ffdh_derive_public_auto(_dit: verified_garbage_cpu::Dit<'_>, y:
     unsafe { crate::ffdh::vg_ffdh_derive_public(y, y_len, domain, domain_len, p_len, x, x_len, scratch, scratch_len) }
 }
 
-/// One native finite-field Diffie–Hellman key-generation attempt using a reusable public five-tooth comb context. Takes p_len random bytes and implements the same vettedScalarOfOctets, keyStatus and output conventions as vg_ffdh_generate_key_vetted for checked parameters. The context's public maximum width fixes the schedule, including secret leading zeros. Contract: VG.Spec.Ffdh.cachedGenerateKeyContract. Timing may depend on the public domain, pointers, lengths and returned status, not otherwise on the random bytes or private scalar.
+/// Initialize native finite-field Diffie–Hellman parameter generation. Validates 512..=8192 bits and generator 2 or 5. Returns 1 and initializes the controller's attempt limit, output width, entropy budget and first entropy request; returns 0 and clears those four words on invalid parameters. The remaining state words are private workspace. Contract: `VG.Spec.Ffdh.parameterInitContract`.
 ///
-/// It runs `vg_ffdh_generate_key_cached`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+/// It runs `vg_ffdh_parameter_generation_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
 /// # Safety
 ///
-/// * `x` must be valid for reads and writes of `x_len` bytes.
-/// * `y` must be valid for reads and writes of `y_len` bytes.
-/// * `domain` must be valid for reads of `domain_len` bytes.
-/// * `rand` must be valid for reads of `rand_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `ctx` must be valid for reads of `8 * ctx_len` bytes.
-/// * `p_len` must be in 64..=1024.
-/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
-/// * domain must be one that vg_ffdh_check_domain accepted.
-/// * ctx_len must be generationPrecomputedWords(p_len). ctx must contain the unchanged words written by vg_ffdh_generate_key_precompute for these parameters.
-/// * x_len, y_len and rand_len must be p_len.
-/// * `scratch_len` must be at least `16 * p_len + 32`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `x`, `y` and `scratch` must not overlap each other, `domain`, `rand`, `ctx` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `x`, `y`, `domain`, `rand`, `scratch` and `ctx` may wrap around the end of the address space (no Rust object does).
+/// * `state` must be valid for reads and writes of 128 bytes.
+/// * `state` must not wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_ffdh_generate_key_cached_auto(_dit: verified_garbage_cpu::Dit<'_>, x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, ctx: *const u64, ctx_len: usize) -> u32 {
+pub unsafe fn vg_ffdh_parameter_generation_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 16], bits: usize, generator: u32) -> u32 {
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::ffdh::vg_ffdh_generate_key_cached(x, x_len, y, y_len, domain, domain_len, p_len, rand, rand_len, scratch, scratch_len, ctx, ctx_len) }
+    unsafe { crate::ffdh::vg_ffdh_parameter_generation_init(state, bits, generator) }
 }
 
 /// Initialize native finite-field Diffie–Hellman key generation. Returns 1 for a domain width in 64..=1024 bytes, initializing the rejection budgets and first entropy request; returns 0 and clears the first four state words otherwise. The remaining state words are private workspace. Contract: `VG.Spec.Ffdh.keyInitContract`.
@@ -202,74 +272,4 @@ pub unsafe fn vg_ffdh_key_generation_init_auto(_dit: verified_garbage_cpu::Dit<'
 pub unsafe fn vg_ffdh_generate_parameters_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, used: *mut [u64; 1], bits: usize, generator: u32, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16]) -> u32 {
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { crate::ffdh::vg_ffdh_generate_parameters(out, out_len, used, bits, generator, rand, rand_len, scratch, scratch_len, state) }
-}
-
-/// Initialize a reusable public fixed-base context for finite-field Diffie–Hellman key generation. The checked domain is p, g and optional q, each p_len bytes. Writes generationPrecompute: three public metadata words followed by RSA's modulus/R-squared values and 32 five-tooth comb entries. Returns 1. Word 0 is generationScalarBits, word 1 is its byte length and word 2 is the comb row count. The context has no pointers and is independent of the arithmetic backend. Contract: VG.Spec.Ffdh.generationPrecomputeContract. Timing may depend on the public domain, pointers and lengths.
-///
-/// It runs `vg_ffdh_generate_key_precompute`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads and writes of `8 * ctx_len` bytes.
-/// * `domain` must be valid for reads of `domain_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `p_len` must be in 64..=1024.
-/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
-/// * domain must be one that vg_ffdh_check_domain accepted.
-/// * ctx_len must be generationPrecomputedWords(p_len), namely 3 + 34 * ceil(p_len / 8).
-/// * `scratch_len` must be at least `16 * p_len + 32`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `ctx` and `scratch` must not overlap each other or `domain` (distinct Rust objects never do).
-/// * None of `ctx`, `domain` and `scratch` may wrap around the end of the address space (no Rust object does).
-#[allow(clippy::too_many_arguments)]
-#[inline]
-pub unsafe fn vg_ffdh_generate_key_precompute_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *mut u64, ctx_len: usize, domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::ffdh::vg_ffdh_generate_key_precompute(ctx, ctx_len, domain, domain_len, p_len, scratch, scratch_len) }
-}
-
-/// Initialize native finite-field Diffie–Hellman parameter generation. Validates 512..=8192 bits and generator 2 or 5. Returns 1 and initializes the controller's attempt limit, output width, entropy budget and first entropy request; returns 0 and clears those four words on invalid parameters. The remaining state words are private workspace. Contract: `VG.Spec.Ffdh.parameterInitContract`.
-///
-/// It runs `vg_ffdh_parameter_generation_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 128 bytes.
-/// * `state` must not wrap around the end of the address space (no Rust object does).
-#[allow(clippy::too_many_arguments)]
-#[inline]
-pub unsafe fn vg_ffdh_parameter_generation_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 16], bits: usize, generator: u32) -> u32 {
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::ffdh::vg_ffdh_parameter_generation_init(state, bits, generator) }
-}
-
-/// Generate a finite-field Diffie–Hellman key pair using a reusable public five-tooth comb context and the existing vettedKeySearch rejection policy. Returns 1 with a key pair, 3 when a budget is exhausted, or 0 to request entropy. On 0, discard used bytes, preserve the suffix and extend it to state[3] bytes before calling again. On 0 and 3 both outputs are zero. Entropy consumption, retry budgets and statuses are unchanged. Contract: VG.Spec.Ffdh.cachedKeySearchContract. Timing may depend on the public domain, pointers, lengths, controller policy and sequence of attempt statuses, not otherwise on private scalar bytes.
-///
-/// It runs `vg_ffdh_generate_key_search_cached`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
-///
-/// # Safety
-///
-/// * `x` must be valid for reads and writes of `x_len` bytes.
-/// * `y` must be valid for reads and writes of `y_len` bytes.
-/// * `used` must be valid for reads and writes of 8 bytes.
-/// * `domain` must be valid for reads of `domain_len` bytes.
-/// * `rand` must be valid for reads of `rand_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `state` must be valid for reads and writes of 128 bytes.
-/// * `ctx` must be valid for reads of `8 * ctx_len` bytes.
-/// * `p_len` must be in 64..=1024.
-/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
-/// * domain must be one that vg_ffdh_check_domain accepted.
-/// * ctx_len must be generationPrecomputedWords(p_len). ctx must contain the unchanged words written by vg_ffdh_generate_key_precompute for these parameters.
-/// * state must be initialized by vg_ffdh_key_generation_init for p_len, or be the state returned by this routine.
-/// * x_len and y_len must be p_len.
-/// * `scratch_len` must be at least `16 * p_len + 32`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `x`, `y`, `used`, `scratch` and `state` must not overlap each other, `domain`, `rand`, `ctx` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `x`, `y`, `used`, `domain`, `rand`, `scratch`, `state` and `ctx` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[allow(clippy::too_many_arguments)]
-#[inline]
-pub unsafe fn vg_ffdh_generate_key_search_cached_auto(_dit: verified_garbage_cpu::Dit<'_>, x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, used: *mut [u64; 1], domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16], ctx: *const u64, ctx_len: usize) -> u32 {
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::ffdh::vg_ffdh_generate_key_search_cached(x, x_len, y, y_len, used, domain, domain_len, p_len, rand, rand_len, scratch, scratch_len, state, ctx, ctx_len) }
 }

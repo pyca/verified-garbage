@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Ccm.sealContract`. Constant time: only the pointers, `rounds`, the lengths and `tag_len` may affect timing, not the key schedule, the nonce, the associated data or the payload.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_ccm_seal_aes` if the CPU supports its features (`VG_AES_CCM_SEAL_AES_FEATURES`); or else `vg_aes_ccm_seal`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_ccm_seal_aes` if the CPU supports its features (`VG_AES_CCM_SEAL_AES_FEATURES`); or else `vg_aes_ccm_seal`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -60,7 +60,7 @@ pub unsafe fn vg_aes_ccm_seal_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule
 ///
 /// Contract: `VG.Spec.Ccm.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the associated data, the data or the tag.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_ccm_open_aes` if the CPU supports its features (`VG_AES_CCM_OPEN_AES_FEATURES`); or else `vg_aes_ccm_open`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_ccm_open_aes` if the CPU supports its features (`VG_AES_CCM_OPEN_AES_FEATURES`); or else `vg_aes_ccm_open`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///

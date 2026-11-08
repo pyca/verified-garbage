@@ -15,7 +15,8 @@ def scalar : Proof.Aes.X86_64.Ctr32Impl := .scalar
 def vaes : Proof.Aes.X86_64.Ctr32Impl := .vaes
 
 /-- Every implementation, best first: each function generic over them is
-emitted with each (the registration files that import this). -/
+emitted with each (the registration files that import this), and its
+dispatcher tries them in this order. -/
 def variants := [vaes, aesNi, scalar]
 
 end VG.Proof.Variants.AesCtr32.X86_64

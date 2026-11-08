@@ -2,32 +2,11 @@
 //! The dispatchers of the verified `x25519` functions for `arm`
 //! (`crate::x25519`, `VG.Rust.dispatcher`).
 
-/// Computes an X25519 public key (RFC 7748 §6.1): writes `X25519(k, 9)`, the X25519 function of the 32-byte scalar `k` at `scalar` and the base point's u-coordinate 9, to `*out`. The scalar is decoded (clamped).
-///
-/// Contract: `VG.Spec.X25519.x25519BaseContract`. Constant time: only the pointers may affect timing, not the scalar.
-///
-/// It runs `vg_x25519_base`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 32 bytes.
-/// * `scalar` must be valid for reads of 32 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other or `scalar` (distinct Rust objects never do).
-/// * None of `out`, `scalar` and `scratch` may wrap around the end of the address space (no Rust object does).
-#[allow(clippy::too_many_arguments)]
-#[inline]
-pub unsafe fn vg_x25519_base_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::x25519::vg_x25519_base(out, scalar, scratch) }
-}
-
 /// Computes an X25519 shared secret (RFC 7748 §6.1): writes `X25519(k, u)` to `*out`, for the 32-byte scalar `k` at `scalar` and the 32-byte u-coordinate `u` at `point`, and returns 0 if it is all zero (for a `u` of small order), 1 otherwise. The scalar is decoded (clamped) and the most significant bit of `u` masked as RFC 7748 specifies (§5).
 ///
 /// Contract: `VG.Spec.X25519.exchangeContract`. Constant time: only the pointers may affect timing, not the scalar or the u-coordinate; the return value depends on both.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_x25519_exchange_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_X25519_EXCHANGE_UMAAL_FEATURES`); or else `vg_x25519_exchange`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_x25519_exchange_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_X25519_EXCHANGE_UMAAL_FEATURES`); or else `vg_x25519_exchange`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -73,4 +52,25 @@ pub unsafe fn vg_x25519_exchange_auto(_dit: verified_garbage_cpu::Dit<'_>, out: 
     // or an implementation `select` returned, which needs only features the CPU has. Calling
     // either carries the caller's obligations, which are those of every implementation.
     unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(out, scalar, point, scratch) }
+}
+
+/// Computes an X25519 public key (RFC 7748 §6.1): writes `X25519(k, 9)`, the X25519 function of the 32-byte scalar `k` at `scalar` and the base point's u-coordinate 9, to `*out`. The scalar is decoded (clamped).
+///
+/// Contract: `VG.Spec.X25519.x25519BaseContract`. Constant time: only the pointers may affect timing, not the scalar.
+///
+/// It runs `vg_x25519_base`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 32 bytes.
+/// * `scalar` must be valid for reads of 32 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other or `scalar` (distinct Rust objects never do).
+/// * None of `out`, `scalar` and `scratch` may wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_x25519_base_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::x25519::vg_x25519_base(out, scalar, scratch) }
 }

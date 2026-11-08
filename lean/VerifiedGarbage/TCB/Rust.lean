@@ -52,25 +52,6 @@ parses all of a codegen unit's module-level assembly again each time it
 imports a function from that unit, which it does for the Rust functions it
 shares a unit with. In a crate of their own they share a unit with none.
 
-Artifacts of a module can render to the same function but for its name
-(and documentation and constants): the same `cfg` attribute, calling
-convention, signature and body, calls and tables included (`sameKey`), as
-when a generic caller's instances for two variants of an interface call
-none of what tells the variants apart. Only the one with the shortest name
-is then emitted as a function, and each other as another name of it
-(`alias`), keeping its own documentation, saying so, and its own constants:
-
-```rust
-#[allow(unused_imports)]
-pub use self::<the function's name> as <name>;
-```
-
-Calling it runs that function, whose text is the text the artifact's own
-function would have: the same machine code, which its proof verified
-against its own contract. Only artifacts of the same module are
-compared, so that every file is a function of its own artifacts alone
-(which `EmitOne.lean` relies on).
-
 A call (`Code.call name body`) is a call instruction whose operand is the
 symbol of the Rust function `name` (a `sym` operand). The model runs `body`
 for it, so `files` checks that the function emitted as `name` has printed
@@ -838,31 +819,6 @@ where
   "#[unsafe(naked)]\n" ++
   s!"{vis} unsafe extern \"{a.target.rustAbi}\" fn {a.name}" ++ code
 
-/-- What makes two functions of a module the same function: their `cfg`
-attribute, calling convention, signature and body (`gateOf`, `codeOf`),
-everything of `function`'s text but the name, the documentation and the
-constants. -/
-def sameKey (a : Artifact) (code : String) : String :=
-  gateOf a ++ "\n" ++ a.target.rustAbi ++ "\n" ++ code
-
-/-- `a`'s function as another name of the function `canon` of the same
-module, whose text but for its name, documentation and constants is the
-text `a`'s would have (`sameKey`): a `use` of it as `a`'s name, under `a`'s
-`cfg` attribute, with `a`'s documentation (saying so) and constants. -/
-def alias (a : Artifact) (canon : String) (vis : String := "pub") : String :=
-  let gate := gateOf a
-  let note := s!"The machine code of this function is that of `{canon}`, which is emitted once \
-    and named both ways: the two are the same function."
-  let doc := fullDoc a
-  let doc := if (doc.splitOn "\n\n# Safety\n\n").length > 1 then insertNotes doc [note]
-    else doc ++ "\n\n" ++ note
-  featuresConst a.name gate a.features ++
-  writtenConsts a.name gate a.written ++
-  docComment "" doc ++
-  gate ++
-  "#[allow(unused_imports)]\n" ++
-  s!"{vis} use self::{canon} as {a.name};\n"
-
 /-- The tables of constants of `a`: those its contract gives it
 (`Artifact.consts`) and those its instructions carry (`Printer.codeTables`,
 x86-64's `aluTbl`). -/
@@ -952,40 +908,23 @@ structure Prepared extends Shared where
 def Prepared.of (s : Shared) : Prepared := ⟨s, _, _, rfl, rfl⟩
 
 /-- The functions of a module, the artifacts of `ps` in order: each with the
-text of its function after its name (`codeOf`) and the name of the function
-it is emitted as: of those with the same `sameKey`, the one with the
-shortest name (the first of them, if several are as short). -/
+text of its function after its name (`codeOf`). -/
 def moduleItems (moduleOf : Artifact → String → String) (ps : List Prepared) :
-    List (Prepared × String × String) :=
-  let items := ps.map fun p =>
-    let code := codeOf p.art p.lines (moduleOf p.art)
-    let key := sameKey p.art code
-    (p, code, hash key, key)
-  -- The function each key's artifacts are emitted as.
-  let canon (h : UInt64) (key : String) : String :=
-    (items.filter fun (_, _, h', k) => h' == h && k == key).foldl (init := none)
-      (fun best (p, _) => match best with
-        | some b => if p.art.name.length < b.length then some p.art.name else some b
-        | none => some p.art.name) |>.getD ""
-  items.map fun (p, code, h, key) => (p, code, canon h key)
+    List (Prepared × String) :=
+  ps.map fun p => (p, codeOf p.art p.lines (moduleOf p.art))
 
-/-- The text of the functions of a module (`moduleItems`): each as `function`
-writes it, if it is emitted as itself, else the `alias` of the function it
-is emitted as; each with the visibility `vis` gives its name. -/
-def moduleText (items : List (Prepared × String × String))
-    (vis : String → String := fun _ => "pub") : String :=
-  String.join (items.map fun (p, code, c) =>
-    "\n" ++ if c == p.art.name then function.withCode p.art code (vis c)
-      else alias p.art c (vis p.art.name))
+/-- The text of the functions of a module (`moduleItems`), each as `function`
+writes it, with the visibility `vis` gives its name. -/
+def moduleText (items : List (Prepared × String)) (vis : String → String := fun _ => "pub") :
+    String :=
+  String.join (items.map fun (p, code) => "\n" ++ function.withCode p.art code (vis p.art.name))
 
 /-- The assembly file of the functions of a module (`moduleItems`), which the
-crate does not compile: each function emitted as itself as its name, then
-its lines (`assembly`), each indented but its labels; each other as a line
-naming the function it is. -/
-def moduleAssembly (items : List (Prepared × String × String)) : String :=
-  String.join (items.map fun (p, _, c) =>
-    if c == p.art.name then functionAssembly p.art.target p.art.name (bodyOf p.art p.lines)
-    else s!"\n// {p.art.name}: the function `{c}`\n")
+crate does not compile: each function's name, then its lines (`assembly`),
+each indented but its labels. -/
+def moduleAssembly (items : List (Prepared × String)) : String :=
+  String.join (items.map fun (p, _) =>
+    functionAssembly p.art.target p.art.name (bodyOf p.art p.lines))
 where
   /-- The function `name` of the target `T`, whose lines are `body`, in an
   assembly file: its name, then its lines (`assembly`), each indented but its
@@ -1279,10 +1218,11 @@ def checkCalls (ps : List Prepared) (hs : List Internal) (p : Prepared) : Except
 /-! ## Tables of functions -/
 
 /-- The tables of functions the artifacts `as` take (`Artifact.tables`),
-each once, in order of their names. -/
+each once, in the order they first list them: the order a table's
+dispatcher tries its implementations in (`tableDispatcher`). -/
 def fnTables (as : List Artifact) : List FnTable :=
   let all := as.flatMap fun a => a.tables.flatMap (·.2)
-  ((dedup (all.map (·.name))).mergeSort (· ≤ ·)).filterMap fun n => all.find? (·.name == n)
+  (dedup (all.map (·.name))).filterMap fun n => all.find? (·.name == n)
 
 /-- An interface's name is a Rust type's: an uppercase ASCII letter, then
 ASCII letters and digits; so it is never a keyword, and is not `Table` (the
@@ -1305,11 +1245,6 @@ def fnTableFeatures (ps : List Prepared) (hs : List Internal) (t : String) (T : 
     | some q => q.art.features
     | none => ((internal? hs t f).map (·.features)).getD [])
 
-/-- What `sameKey` compares of `p`'s artifact, with every function it calls
-in the same module (`codeOf`'s `moduleOf`): artifacts emitted as one
-function (`alias`) have the same `sameKey`, and so the same `aliasKey`. -/
-def aliasKey (p : Prepared) : String := sameKey p.art (codeOf p.art p.lines fun _ => "")
-
 /-- The tables of functions `p`'s artifact takes (`Artifact.tables`), checked
 against those of the artifacts of `ps` and the internal functions `hs`:
 its target's code can name a `static`, and has pointers of 32 or 64 bits,
@@ -1324,10 +1259,8 @@ of a name, of any artifact of the target, is the same table, and every table
 of an interface has as many functions and as many words of data; and every
 function a table names is an artifact or an internal function of the
 target, emitted with the code the model runs for each call of it
-(`checkCalls`), and, if an artifact, not one that may be emitted as another
-name of a function (`alias`, which an artifact of its module with the same
-`aliasKey` may be): `Abi.withTables` says the functions of distinct names
-are at distinct addresses, as distinct naked functions are. -/
+(`checkCalls`): `Abi.withTables` says the functions of distinct names are
+at distinct addresses, as distinct naked functions are. -/
 def checkFnTables (ps : List Prepared) (hs : List Internal) (p : Prepared) :
     Except String Unit := do
   let a := p.art
@@ -1361,16 +1294,10 @@ def checkFnTables (ps : List Prepared) (hs : List Internal) (p : Prepared) :
         throw s!"{t}: {a.name}'s table of functions {T.name} has a word of data wider than \
           its target's {w}-bit pointers"
       for f in T.fns do
-        match ps.find? fun q => q.art.target.name == t && q.art.name == f with
-        | some q =>
-          if ps.any fun q' => q'.art.target.name == t && q'.art.module == q.art.module &&
-              q'.art.name != f && aliasKey q' == aliasKey q then
-            throw s!"{t}: the table of functions {T.name} names {f}, which may be emitted as \
-              another name of a function of the same code (`alias`), at that function's address"
-        | none =>
-          unless (internal? hs t f).isSome do
-            throw s!"{t}: the table of functions {T.name} names {f}, which is neither an \
-              artifact nor an internal function"
+        unless ps.any (fun q => q.art.target.name == t && q.art.name == f) ||
+            (internal? hs t f).isSome do
+          throw s!"{t}: the table of functions {T.name} names {f}, which is neither an \
+            artifact nor an internal function"
     for U in others do
       if U.iface == T₀.iface && !names.contains U.name then
         throw s!"{t}: {a.name}'s parameter `{x}` does not list the table of functions {U.name} \
@@ -1628,10 +1555,10 @@ A function with several implementations (its baseline and its variants,
 each of which may need CPU features) gets a *dispatcher*, an ordinary Rust
 function that runs the best of them the CPU supports, so that the Rust code
 calling it never names a variant or its features. The implementations of a
-function are the artifacts of a module with the same signature and
-documentation (`Artifact.sig`, `Artifact.doc`: `Api.artifact` gives every
-artifact of an `Api` the `Api`'s) whose names are that of one of them, the
-*base*, followed by `_<suffix>` (`groupsOf`). Whichever of them it calls, the
+function are the artifacts of a module made from the same `Api`
+(`Artifact.base`, its name: `groupsOf`), of which the one with that name is
+the *base*; each has the `Api`'s signature and documentation
+(`checkGroups`). Whichever of them it calls, the
 dispatcher keeps the promise of their common documentation, which is
 therefore its own, but for what depends on the implementation: the stack
 its calls and frames use (it documents the largest, `Sig.layoutDoc`, whose
@@ -1698,17 +1625,19 @@ Where the compilation target enables every feature an implementation's
 condition asks for, its `const` block is `true`, so the compiler sees that
 `select` returns it, and nothing refers to the implementations after it,
 which are then not linked: built for `x86-64-v3`, a function with an AVX2
-implementation links neither its baseline nor anything else ranked after
-that implementation, but still detects the features of those ranked before
+implementation links neither its baseline nor anything else tried after
+that implementation, but still detects the features of those tried before
 it. This is what the dispatcher would choose anyway, as detection reports
 every feature of `COMPILED` (`VG_CPU_FEATURES` cannot remove them).
 
 Which implementation is best is a matter of speed, never of correctness or
 safety: each is proven against the contract that their common documentation
-states, and each is called only on a CPU with its features. So the ranking
-(`Rank`) is not trusted, and comes from outside the trusted base
-(`VerifiedGarbage/Dispatch.lean`). The dispatcher tries the implementations
-in the order it gives, each where the CPU also has the `extra` features
+states, and each is called only on a CPU with its features. So their order
+is not trusted: the dispatcher tries the implementations in the order their
+registration file lists them (`Emit.checkSources`: one file lists them all;
+a generic caller's instances are in the order of the variants of its
+callees, `Proof/Variants/<Iface>/<Target>.lean`), each where the CPU also
+has the `extra` features
 its registration gives it (`Artifact.extra`) and, if its registration names
 a `vendor` (`Artifact.vendor`), only where the compilation target's
 `target_vendor` is that, or where `VG_CPU_FEATURES`
@@ -1721,15 +1650,8 @@ every CPU but where `VG_CPU_FEATURES` is `none`), so that the tests run the
 base everywhere with `VG_CPU_FEATURES=none` (AArch64's `_neon` code needs
 none: AdvSIMD is part of its baseline), or where the compilation target
 enables some (`COMPILED`). It falls back on the base, which needs
-no feature. An implementation of a function generic over several interfaces
-has a suffix of several parts (`Emit.qualifiedName`, `_<tag><suffix>` for
-each interface whose variant is not the baseline): unless its whole suffix
-is ranked, each part's suffix is (a part that is all of a ranked suffix
-having the tag `""`), and the implementations are ordered by the
-rank of their part for the first tag, then for the next, and so on (a
-missing part being the baseline, ranked last), which chooses the best variant
-of each interface in turn. An implementation that can be chosen only where
-one ranked before it can is left out (it would never run).
+no feature. An implementation that can be chosen only where one before it
+can would never run, and fails the emitter (`armsOf`).
 
 A function whose base is its only implementation gets a dispatcher too, as
 another name of it, so that the Rust code calling the dispatcher is the same
@@ -1747,8 +1669,8 @@ back on), and neither does an implementation that is not a base.
 A table of functions (`FnTable`) is chosen the same way, by
 `dispatch/fn_tables.rs` (`tableDispatcher`). Its implementations are the
 tables of the same interface and the same words of data whose names are its
-own followed by `_<SUFFIX>` (`tableGroupsOf`), ranked as the suffix in
-lowercase in the module of its first function. A function taking tables
+own followed by `_<SUFFIX>` (`tableGroupsOf`), tried in the order the
+artifacts taking them list them. A function taking tables
 is proven for every table of their interface, and what it computes depends
 on which only through the table's data (`Abi.withTables`; for instance the
 index of the hash function, `Spec/HashTable.lean`), so these tables give the
@@ -1774,76 +1696,29 @@ A table that needs CPU features gets none (there is nothing to fall back
 on), and neither does an implementation that is not a base; a table with no
 other implementation gets one, returning it. -/
 
-/-- How a dispatcher (see above) ranks an implementation of a function: one
-whose name is that of its base followed by `suffix`. -/
-structure Rank where
-  suffix : String
-
-/-- The ranking of each target, by its name (`Target.name`): its `Rank`s,
-best first. -/
-abbrev Ranking := List (String × List Rank)
-
-/-- The implementations of a function of a module: its base and each other
-(with its suffix: what follows the base's name in its own). -/
+/-- The implementations of a function of a module: its base and each other. -/
 structure Group where
   base : Artifact
-  members : List (Artifact × String)
+  members : List Artifact
 
 /-- The functions of the artifacts `as` of one module and target, with their
-implementations: in order of their names' lengths, an artifact is an
-implementation of the first function found whose base has its signature and
-documentation and whose base's name, followed by `_`, starts its own, and is
-otherwise the base of a function of its own. -/
-def groupsOf (as : List Artifact) : List Group := Id.run do
-  let sorted := as.mergeSort fun a b => a.name.length ≤ b.name.length
-  let mut gs : Array Group := #[]
-  for a in sorted do
-    match gs.findIdx? fun g =>
-        a.name.startsWith (g.base.name ++ "_") && a.sig == g.base.sig && a.doc == g.base.doc with
-    | some i =>
-      gs := gs.modify i fun g =>
-        { g with members := g.members ++ [(a, (a.name.drop g.base.name.length).toString)] }
-    | none => gs := gs.push ⟨a, []⟩
-  return gs.toList
+implementations: each artifact whose name is its `base` (`Artifact.base`,
+its `Api`'s name) is the base of a function, whose other implementations are
+the other artifacts of that `base`, in the order of `as`; an artifact whose
+base is not among `as` is the base of a function of its own. -/
+def groupsOf (as : List Artifact) : List Group :=
+  let bases := as.filter fun a => a.name == a.base || !as.any (·.name == a.base)
+  bases.map fun b =>
+    ⟨b, if b.name == b.base then as.filter fun a => a.base == b.base && a.name != b.name else []⟩
 
-/-- The first `Rank` of `rs` for an implementation with the suffix `s`, with
-its index in `rs`. -/
-def rankOf (rs : List Rank) (s : String) : Option (Nat × Rank) :=
-  go rs 0
-where
-  go : List Rank → Nat → Option (Nat × Rank)
-    | [], _ => none
-    | r :: rs, i =>
-      if r.suffix == s then some (i, r)
-      else go rs (i + 1)
-
-/-- The suffix `s` of an implementation, as parts
-`_<tag><suffix>` each of whose suffixes `rs` ranks (`Emit.qualifiedName`):
-each part's tag, and the index in `rs` and `Rank` of its suffix, taking the
-longest ranked suffix after each tag that leaves a suffix of parts; `none` if
-there is no such way to read it. `fuel` bounds the number of parts. -/
-def partsOf (rs : List Rank) : Nat → String → Option (List (String × Nat × Rank))
-  | _, "" => some []
-  | 0, _ => none
-  | fuel + 1, s =>
-    if !s.startsWith "_" then none else
-    let rest := (s.drop 1).toString
-    let tag := (rest.splitOn "_").headD ""
-    let after := (rest.drop tag.length).toString
-    let cands := (rs.filter fun r => !r.suffix.isEmpty && after.startsWith r.suffix).mergeSort
-      fun a b => a.suffix.length ≥ b.suffix.length
-    cands.findSome? fun r =>
-      let tail := (after.drop r.suffix.length).toString
-      if tag.isEmpty || !(tail.isEmpty || tail.startsWith "_") then none else
-      match partsOf rs fuel tail, rankOf rs r.suffix with
-      | some ps, some (i, r) => some ((tag, i, r) :: ps)
-      | _, _ => none
-
-/-- Whether the list of numbers `a` comes before `b`, or is `b`. -/
-def lexLe : List Nat → List Nat → Bool
-  | [], _ => true
-  | _ :: _, [] => false
-  | x :: xs, y :: ys => x < y || (x == y && lexLe xs ys)
+/-- Every implementation of a function of `as` (`groupsOf`) has its base's
+signature and documentation, which are what its dispatcher documents and
+calls them with: those of their `Api` (`Api.artifact`). -/
+def checkGroups (as : List Artifact) : Except String Unit :=
+  (groupsOf as).forM fun g => g.members.forM fun a => do
+    unless a.sig == g.base.sig && a.doc == g.base.doc do
+      throw s!"{a.target.name}: {a.name}, an implementation of {g.base.name}, has another \
+        signature or documentation"
 
 /-- An implementation a dispatcher may choose: a function (`Impl.ofArtifact`)
 or a table of functions (`tableDispatcher`), by its name; the module, from
@@ -1874,37 +1749,21 @@ structure Arm where
   extra : List String
   vendors : List String
 
-/-- The implementations `members` (each with its suffix) of a function or
-table of the target `t`, but its base, that its dispatcher tries, in order
-(see above), or why `rs` does not rank them. -/
-def armsOf (rs : List Rank) (t : String) (members : List (Impl × String)) :
-    Except String (List Arm) := do
-  let arm (a : Impl) : Arm := ⟨a, a.extra, a.vendor.toList⟩
-  let keyed ← if members.all fun (_, s) => (rankOf rs s).isSome then
-      pure (members.map fun (a, s) => match rankOf rs s with
-        | some (i, _) => ([i], arm a)
-        | none => ([], arm a))
-    else do
-      let parsed ← members.mapM fun (a, s) =>
-        match (rankOf rs s).map (fun (i, r) => [("", i, r)]) <|> partsOf rs s.length s with
-        | some ps => pure (a, ps)
-        | none => throw s!"{t}: {a.name}: its suffix `{s}` is not ranked \
-            (`VG.Dispatch.ranking`), nor made of parts `_<tag><suffix>` whose suffixes are"
-      -- Each tag once, in the order of the parts of every suffix that has it.
-      let tags := parsed.foldl (init := ([] : List String)) fun tags (_, ps) =>
-        (ps.map (·.1)).foldl (init := (tags, 0)) (fun (tags, pos) t =>
-          match tags.idxOf? t with
-          | some i => (tags, i + 1)
-          | none => (tags.insertIdx pos t, pos + 1)) |>.1
-      pure (parsed.map fun (a, ps) =>
-        (tags.map fun t => ((ps.find? (·.1 == t)).map (·.2.1)).getD rs.length, arm a))
-  let sorted := keyed.mergeSort fun a b => lexLe a.1 b.1
-  -- Leave out each implementation that can be chosen only where one before it can.
+/-- The implementations `members` of a function or table of the target `t`,
+but its base, that its dispatcher tries, in their order (see above), or the
+first that it would never choose. -/
+def armsOf (t : String) (members : List Impl) : Except String (List Arm) := do
+  let arms := members.map fun a => (⟨a, a.extra, a.vendor.toList⟩ : Arm)
+  -- One that can be chosen only where one before it can would never run.
   let weaker (e l : Arm) : Bool :=
     (e.impl.features ++ e.extra).all (l.impl.features ++ l.extra).contains &&
       e.vendors.all l.vendors.contains && e.impl.gate.all l.impl.gate.contains
-  return sorted.foldl (init := []) fun acc (_, l) =>
-    if acc.any (weaker · l) then acc else acc ++ [l]
+  let _ ← arms.foldlM (init := ([] : List Arm)) fun before l => do
+    if let some e := before.find? (weaker · l) then
+      throw s!"{t}: {l.impl.name} would never run: its dispatcher tries {e.impl.name} \
+        before it, which needs nothing it does not"
+    return before ++ [l]
+  return arms
 
 /-- The token every dispatcher takes first: proof that the
 caller has seen to data independent timing on its thread (see the top of
@@ -1934,7 +1793,7 @@ def argsOf (sig : Sig) : String :=
 /-- The condition under which a dispatcher calls `a`, given the variable
 `cpu` it holds `verified_garbage_cpu::detected()` in, whose lines after its
 first start with `ind` and four spaces, as `rustfmt` would break them. The features it checks are `a`'s (its constant, `featuresConst`) and
-its ranking's `extra` ones, first, in a `const` block, among those the
+its registration's `extra` ones, first, in a `const` block, among those the
 compilation target enables (`verified_garbage_cpu::target_contains`), then
 among those detected; for one that needs none, that the target enables
 some (`COMPILED`) or detection reports some. -/
@@ -1972,8 +1831,8 @@ def dispatchNote (base : String) (arms : List Arm) : String :=
     match gate ++ vendor ++ needs ++ extra with
     | [] => s!"`{a.impl.name}`"
     | cs => s!"`{a.impl.name}` if " ++ englishList "and" cs
-  s!"It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders \
-    (`VG.Rust.Rank`): " ++ "; ".intercalate (arms.map item) ++
+  s!"It runs the first of these implementations that applies, in the order its registration \
+    file lists them: " ++ "; ".intercalate (arms.map item) ++
     s!"; or else `{base}`, which needs no CPU feature. It chooses on its first call, and calls \
     the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) \
     and what it writes."
@@ -1995,10 +1854,10 @@ its implementations' `arms`. -/
 def dispatcher (g : Group) (arms : List Arm) : String :=
   let b := g.base
   let auto := autoName b.name
-  let all := b :: g.members.map (·.1)
+  let all := b :: g.members
   let stack := all.foldl (fun n a => max n a.stack) 0
   let written := b.written.filterMap fun (p, n) =>
-    let ns := (g.members.map (·.1)).map fun a => a.written.lookup p
+    let ns := g.members.map fun a => a.written.lookup p
     if ns.all (·.isSome) then some (p, ns.foldl (fun m o => max m (o.getD 0)) n) else none
   let args := argsOf b.sig
   let abi := b.target.rustAbi
@@ -2065,12 +1924,6 @@ def vendorOk (v : String) : Bool :=
 def featureOk (f : String) : Bool :=
   !f.isEmpty && f.all fun c => c.isAlphanum || c == '.' || c == '_'
 
-/-- Each `Rank` of `rs` has a suffix starting with `_`. -/
-def checkRanks (t : String) (rs : List Rank) : Except String Unit :=
-  rs.forM fun r => do
-    unless r.suffix.startsWith "_" && r.suffix.length > 1 do
-      throw s!"{t}: the ranked suffix `{r.suffix}` does not start with `_`"
-
 /-- The artifact `a`'s vendor, if it names one, and each of its `extra`
 features are as `vendorOk` and `featureOk` require. -/
 def checkChoice (a : Artifact) : Except String Unit := do
@@ -2085,47 +1938,42 @@ def checkChoice (a : Artifact) : Except String Unit := do
 above), as the text that follows its functions in its file; `names` are the
 names of every artifact of the target, none of which may be a
 dispatcher's. -/
-def dispatchers (rs : List Rank) (names : List String) (as : List Artifact) :
+def dispatchers (names : List String) (as : List Artifact) :
     Except String String := do
   let gs := (groupsOf as).filter (·.base.features.isEmpty)
   let texts ← gs.mapM fun g => do
     let auto := autoName g.base.name
     if names.contains auto then
       throw s!"{g.base.target.name}: {auto} is both an artifact and the dispatcher of {g.base.name}"
-    let arms ← if g.members.isEmpty then pure [] else
-      armsOf rs g.base.target.name (g.members.map fun (a, s) => (Impl.ofArtifact a, s))
+    let arms ← armsOf g.base.target.name (g.members.map Impl.ofArtifact)
     return if g.members.isEmpty then soleDispatcher g else dispatcher g arms
   return String.join (texts.map ("\n" ++ ·))
 
-/-- The tables of functions `ts` of a target, with their implementations: in
-order of their names' lengths, a table is an implementation of the first
-found whose base has its interface and data and whose base's name, followed
-by `_`, starts its own, and is otherwise the base of a group of its own. -/
-def tableGroupsOf (ts : List FnTable) : List (FnTable × List (FnTable × String)) := Id.run do
-  let sorted := ts.mergeSort fun a b => a.name.length ≤ b.name.length
-  let mut gs : Array (FnTable × List (FnTable × String)) := #[]
-  for T in sorted do
-    match gs.findIdx? fun (b, _) =>
-        T.name.startsWith (b.name ++ "_") && T.iface == b.iface && T.data == b.data with
-    | some i =>
-      gs := gs.modify i fun (b, ms) => (b, ms ++ [(T, (T.name.drop b.name.length).toString)])
-    | none => gs := gs.push (T, [])
-  return gs.toList
+/-- The tables of functions `ts` of a target, with their implementations: a
+table is an implementation of the shortest other table of its interface and
+data whose name, followed by `_`, starts its own, and is otherwise the base
+of a group of its own, whose implementations are in the order of `ts`. -/
+def tableGroupsOf (ts : List FnTable) : List (FnTable × List FnTable) :=
+  let baseOf (T : FnTable) : Option FnTable :=
+    ((ts.filter fun b => T.name.startsWith (b.name ++ "_") && T.iface == b.iface &&
+      T.data == b.data).mergeSort fun a b => a.name.length ≤ b.name.length).head?
+  (ts.filter (baseOf · |>.isNone)).map fun b =>
+    (b, ts.filter fun T => (baseOf T).map (·.name) == some b.name)
 
 /-- The name of the dispatcher of the table of functions `name`: its name in
 lowercase, followed by `_auto`. -/
 def tableAutoName (name : String) : String := name.toLower ++ "_auto"
 
 /-- The dispatcher of the table of functions `b` of the target `t` (see
-above), whose implementations are `members` (each with its suffix), given
-the CPU features each table needs (`features`), its `cfg` predicates
-(`gate`); or why `rs` does not rank them. -/
-def tableDispatcher (rs : List Rank) (t : String) (features : FnTable → List String)
+above), whose implementations are `members`, given the CPU features each
+table needs (`features`), its `cfg` predicates (`gate`); or the first it
+would never choose. -/
+def tableDispatcher (t : String) (features : FnTable → List String)
     (gate : List String → List String) (b : FnTable)
-    (members : List (FnTable × String)) : Except String String := do
+    (members : List FnTable) : Except String String := do
   let impl (T : FnTable) : Impl :=
     { name := T.name, module := "fn_tables", features := features T, gate := gate (features T) }
-  let arms ← armsOf rs t (members.map fun (T, s) => (impl T, s.toLower))
+  let arms ← armsOf t (members.map impl)
   let item (a : Arm) : String :=
     let needs := if a.impl.features.isEmpty then
       (if a.extra.isEmpty then ["detection reports some CPU feature"] else [])
@@ -2144,7 +1992,7 @@ def tableDispatcher (rs : List Rank) (t : String) (features : FnTable → List S
     else
       s!"A table of functions of the interface `{b.iface}` with the data of `{b.name}`, which \
         every function taking one computes the same with (`VG.Rust.tableDispatcher`): the \
-        first of these that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): " ++
+        first of these that applies, in the order its registration file lists them: " ++
         "; ".intercalate (arms.map item) ++ s!"; or else `{b.name}`, which needs no CPU feature. \
         Its CPU features, if any, are those of the table returned, which the CPU has."
   return docComment "" doc ++
@@ -2163,14 +2011,14 @@ def tableDispatcher (rs : List Rank) (t : String) (features : FnTable → List S
 above), as the text of `dispatch/fn_tables.rs` after its header; `names` are
 the names of every artifact of the target, none of which may be a
 dispatcher's. -/
-def tableDispatchers (rs : List Rank) (t : String) (names : List String) (ts : List FnTable)
+def tableDispatchers (t : String) (names : List String) (ts : List FnTable)
     (features : FnTable → List String) (gate : List String → List String) :
     Except String String := do
   let gs := (tableGroupsOf ts).filter fun (b, _) => (features b).isEmpty
   let texts ← gs.mapM fun (b, ms) => do
     if names.contains (tableAutoName b.name) then
       throw s!"{t}: {tableAutoName b.name} is both an artifact and the dispatcher of {b.name}"
-    tableDispatcher rs t features gate b ms
+    tableDispatcher t features gate b ms
   return String.join (texts.map ("\n" ++ ·))
 
 /-- The module of the dispatchers of the target `t` (`dispatch/mod.rs` of its
@@ -2193,18 +2041,13 @@ def dispatchFile (t m text : String) : String :=
 
 /-- The visibility of each function of a module (`moduleItems`), by its
 name: `pub(crate)` if it is an implementation of a function with a
-dispatcher (whose base needs no CPU feature, `dispatchers`) and so is every
-artifact emitted as it (`alias`), so that the library calls it only through
-the dispatcher, which takes the token (see the top of this file);
-else `pub`. -/
-def visibilities (items : List (Prepared × String × String)) : String → String :=
-  let as := items.map (·.1.art)
-  let dispatched := ((groupsOf as).filter (·.base.features.isEmpty)).flatMap fun g =>
-    g.base.name :: g.members.map (·.1.name)
-  let open_ := (items.filter fun (p, _, _) => !dispatched.contains p.art.name).map (·.2.2)
-  fun n =>
-    let canon := ((items.find? (·.1.art.name == n)).map (·.2.2)).getD n
-    if dispatched.contains n && !open_.contains canon then "pub(crate)" else "pub"
+dispatcher (whose base needs no CPU feature, `dispatchers`), so that the
+library calls it only through the dispatcher, which takes the token (see the
+top of this file); else `pub`. -/
+def visibilities (items : List (Prepared × String)) : String → String :=
+  let dispatched := ((groupsOf (items.map (·.1.art))).filter (·.base.features.isEmpty)).flatMap
+    fun g => g.base.name :: g.members.map (·.name)
+  fun n => if dispatched.contains n then "pub(crate)" else "pub"
 
 /-- The generated files of the artifacts of `ps`, given the module of each
 function each artifact calls; each artifact's code as `ps` printed it
@@ -2274,15 +2117,16 @@ code has an instruction its target's printer cannot encode
 (`checkEncodable`), its doc has no `# Safety` section at its end for what
 `fullDoc` adds to it (`checkLayout`), a bound on what it writes is not of a
 writable array parameter, at most its size (`checkWritten`), or its vendor
-or `extra` features are not names (`checkChoice`), or `ranking`
-(each target's, by its name) does not rank an implementation a dispatcher
-calls (`dispatchers`, `checkRanks`); with each module's dispatchers after its
+or `extra` features are not names (`checkChoice`), an implementation of a
+function has another signature or documentation than its base's
+(`checkGroups`), or a dispatcher would never choose one of its
+implementations (`armsOf`); with each module's dispatchers after its
 functions. Each check of
 every artifact runs on `tasks` tasks (`forMPar`), one check after the other,
 so the error is the
 one checking them in order would give; what they read of an artifact more
 than once is computed once, on `tasks` tasks (`Prepared`, `prepareAll`). -/
-def files (as : List Artifact) (ranking : Ranking := []) :
+def files (as : List Artifact) :
     Except String (List (String × String)) := do
   -- The same artifacts, with equal parts the same value in memory
   -- (`ShareCommon.shareCommon'` returns its argument): the code of every call
@@ -2309,17 +2153,17 @@ def files (as : List Artifact) (ranking : Ranking := []) :
   forMPar as checkWritten
   forMPar as checkChoice
   let disp ← (targetsOf as).flatMapM fun (t, _) => do
-    let rs := (ranking.lookup t).getD []
-    checkRanks t rs
     let arts := as.filter (·.target.name == t)
     let names := arts.map (·.name)
     let fns ← (distinct arts (·.module)).mapM fun m => do
-      return ((t, m), ← dispatchers rs names (arts.filter (·.module == m)))
+      let ms := arts.filter (·.module == m)
+      checkGroups ms
+      return ((t, m), ← dispatchers names ms)
     let tps := ps.filter (·.art.target.name == t)
     let gate (fs : List String) : List String := match arts.head? with
       | some a => fs.filterMap a.target.printer.featureCfg
       | none => []
-    let tabs ← tableDispatchers rs t names (fnTables arts) (fnTableFeatures tps hs t) gate
+    let tabs ← tableDispatchers t names (fnTables arts) (fnTableFeatures tps hs t) gate
     return fns ++ (if tabs.isEmpty then [] else [((t, "fn_tables"), tabs)])
   return render ps hs (fun t n =>
     match as.find? fun b => b.target.name == t && b.name == n with

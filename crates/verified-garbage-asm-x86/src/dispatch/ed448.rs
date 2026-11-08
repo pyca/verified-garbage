@@ -2,29 +2,6 @@
 //! The dispatchers of the verified `ed448` functions for `x86`
 //! (`crate::ed448`, `VG.Rust.dispatcher`).
 
-/// Ed448 verification (RFC 8032 §5.2.7): returns 1 if the 114-byte signature at `signature` verifies for the 57-byte public key at `pk`, the `ctxlen` bytes of context at `context` and the `len` bytes at `message`, and 0 otherwise (always 0 for a context longer than 255 bytes). Uses Ed448 with a context, not Ed448ph (no prehash). Checks canonical point encodings, S < L, and the cofactored equation `[4][S]B = [4]R + [4][k]A` with the challenge k = SHAKE256(dom4(0, C) || R || A || M, 114) reduced modulo L. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed448.verifyContract`. Not constant time: timing may depend on the public key, context, message and signature.
-///
-/// It runs `vg_ed448_verify`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `pk` must be valid for reads of 57 bytes.
-/// * `context` must be valid for reads of `ctxlen` bytes.
-/// * `message` must be valid for reads of `len` bytes.
-/// * `signature` must be valid for reads of 114 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `scratch` must not overlap `pk`, `context`, `message` or `signature` (distinct Rust objects never do).
-/// * None of `pk`, `context`, `message`, `signature` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 280 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[allow(clippy::too_many_arguments)]
-#[inline]
-pub unsafe fn vg_ed448_verify_auto(_dit: verified_garbage_cpu::Dit<'_>, pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, signature: *const [u8; 114], scratch: *mut [u64; 1024]) -> u32 {
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::ed448::vg_ed448_verify(pk, context, ctxlen, message, len, signature, scratch) }
-}
-
 /// Ed448 public-key derivation (RFC 8032 §5.2.5): writes the 57-byte public key to `*out`, from the 57-byte private key at `seed`, including SHAKE256 and pruning. Contract: `VG.Spec.Ed448.publicKeyContract`. Constant time: only pointers may affect timing.
 ///
 /// It runs `vg_ed448_public_key`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
@@ -72,4 +49,27 @@ pub unsafe fn vg_ed448_public_key_auto(_dit: verified_garbage_cpu::Dit<'_>, out:
 pub unsafe fn vg_ed448_sign_cached_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 114], seed: *const [u8; 57], pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { crate::ed448::vg_ed448_sign_cached(out, seed, pk, context, ctxlen, message, len, scratch) }
+}
+
+/// Ed448 verification (RFC 8032 §5.2.7): returns 1 if the 114-byte signature at `signature` verifies for the 57-byte public key at `pk`, the `ctxlen` bytes of context at `context` and the `len` bytes at `message`, and 0 otherwise (always 0 for a context longer than 255 bytes). Uses Ed448 with a context, not Ed448ph (no prehash). Checks canonical point encodings, S < L, and the cofactored equation `[4][S]B = [4]R + [4][k]A` with the challenge k = SHAKE256(dom4(0, C) || R || A || M, 114) reduced modulo L. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed448.verifyContract`. Not constant time: timing may depend on the public key, context, message and signature.
+///
+/// It runs `vg_ed448_verify`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 57 bytes.
+/// * `context` must be valid for reads of `ctxlen` bytes.
+/// * `message` must be valid for reads of `len` bytes.
+/// * `signature` must be valid for reads of 114 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `scratch` must not overlap `pk`, `context`, `message` or `signature` (distinct Rust objects never do).
+/// * None of `pk`, `context`, `message`, `signature` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 280 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_ed448_verify_auto(_dit: verified_garbage_cpu::Dit<'_>, pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, signature: *const [u8; 114], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::ed448::vg_ed448_verify(pk, context, ctxlen, message, len, signature, scratch) }
 }

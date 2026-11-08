@@ -22,25 +22,6 @@ pub unsafe fn vg_chacha20_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state: 
     unsafe { crate::chacha20::vg_chacha20_init(state, key, nonce) }
 }
 
-/// Applies a ChaCha20 keystream (RFC 8439 §2.4), encrypting or decrypting: if at least `len` bytes are left of the keystream that the streaming state `*state` represents, XORs the next `len` of them into the `len` bytes at `data`, keeps the rest in `*state`, and returns 1. Otherwise (the block counter would pass 2³² − 1) returns 0, and leaves the bytes at `data` and the keystream unchanged.
-///
-/// Contract: `VG.Spec.ChaCha20.applyContract`. Constant time: only the pointers, `len` and the number of bytes of keystream left in `*state` (`VG.Spec.ChaCha20.leftAt`: 64 × (2³² − `c`) for the initial block counter `c`, less the bytes applied since) may affect timing, not the key, the nonce, the keystream or the data. The function may leak that number.
-///
-/// It runs `vg_chacha20_apply`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 768 bytes, and aligned for `u64`.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `state` and `data` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `data` may wrap around the end of the address space (no Rust object does).
-#[allow(clippy::too_many_arguments)]
-#[inline]
-pub unsafe fn vg_chacha20_apply_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::chacha20::vg_chacha20_apply(state, data, len) }
-}
-
 /// Restarts a ChaCha20 keystream with the same key: makes the streaming state `*state` represent the whole keystream of its key for the 16-byte nonce `*nonce` (as `vg_chacha20_init` does), discarding what was left of the previous one.
 ///
 /// Contract: `VG.Spec.ChaCha20.setNonceContract`. Constant time: only the pointers may affect timing, not the key or the nonce.
@@ -58,4 +39,23 @@ pub unsafe fn vg_chacha20_apply_auto(_dit: verified_garbage_cpu::Dit<'_>, state:
 pub unsafe fn vg_chacha20_set_nonce_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 96], nonce: *const [u8; 16]) {
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { crate::chacha20::vg_chacha20_set_nonce(state, nonce) }
+}
+
+/// Applies a ChaCha20 keystream (RFC 8439 §2.4), encrypting or decrypting: if at least `len` bytes are left of the keystream that the streaming state `*state` represents, XORs the next `len` of them into the `len` bytes at `data`, keeps the rest in `*state`, and returns 1. Otherwise (the block counter would pass 2³² − 1) returns 0, and leaves the bytes at `data` and the keystream unchanged.
+///
+/// Contract: `VG.Spec.ChaCha20.applyContract`. Constant time: only the pointers, `len` and the number of bytes of keystream left in `*state` (`VG.Spec.ChaCha20.leftAt`: 64 × (2³² − `c`) for the initial block counter `c`, less the bytes applied since) may affect timing, not the key, the nonce, the keystream or the data. The function may leak that number.
+///
+/// It runs `vg_chacha20_apply`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 768 bytes, and aligned for `u64`.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `state` and `data` must not overlap each other (distinct Rust objects never do).
+/// * Neither `state` nor `data` may wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_chacha20_apply_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::chacha20::vg_chacha20_apply(state, data, len) }
 }

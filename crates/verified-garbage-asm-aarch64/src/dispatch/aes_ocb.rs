@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Ocb.initContract`. The key context is `VG.Spec.Ocb.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_ocb_init_aes` if the CPU supports its features (`VG_AES_OCB_INIT_AES_FEATURES`); or else `vg_aes_ocb_init`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_ocb_init_aes` if the CPU supports its features (`VG_AES_OCB_INIT_AES_FEATURES`); or else `vg_aes_ocb_init`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -55,7 +55,7 @@ pub unsafe fn vg_aes_ocb_init_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *co
 ///
 /// Contract: `VG.Spec.Ocb.sealContract`. Constant time: only the pointers, `rounds`, the lengths and `tag_len` may affect timing, not the key context, the nonce, the associated data or the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_ocb_seal_aes` if the CPU supports its features (`VG_AES_OCB_SEAL_AES_FEATURES`); or else `vg_aes_ocb_seal`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_ocb_seal_aes` if the CPU supports its features (`VG_AES_OCB_SEAL_AES_FEATURES`); or else `vg_aes_ocb_seal`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -108,7 +108,7 @@ pub unsafe fn vg_aes_ocb_seal_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *co
 ///
 /// Contract: `VG.Spec.Ocb.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the associated data, the data or the tag.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_ocb_open_aes` if the CPU supports its features (`VG_AES_OCB_OPEN_AES_FEATURES`); or else `vg_aes_ocb_open`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_ocb_open_aes` if the CPU supports its features (`VG_AES_OCB_OPEN_AES_FEATURES`); or else `vg_aes_ocb_open`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///

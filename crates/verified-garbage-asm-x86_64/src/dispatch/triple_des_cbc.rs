@@ -26,7 +26,7 @@ pub unsafe fn vg_triple_des_cbc_encrypt_chained_auto(_dit: verified_garbage_cpu:
 ///
 /// Contract: `VG.Spec.TripleDes.cbcDecryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_triple_des_cbc_decrypt_chained_avx512` if the CPU supports its features (`VG_TRIPLE_DES_CBC_DECRYPT_CHAINED_AVX512_FEATURES`); `vg_triple_des_cbc_decrypt_chained_avx2` if the CPU supports its features (`VG_TRIPLE_DES_CBC_DECRYPT_CHAINED_AVX2_FEATURES`); or else `vg_triple_des_cbc_decrypt_chained`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_triple_des_cbc_decrypt_chained_avx512` if the CPU supports its features (`VG_TRIPLE_DES_CBC_DECRYPT_CHAINED_AVX512_FEATURES`); `vg_triple_des_cbc_decrypt_chained_avx2` if the CPU supports its features (`VG_TRIPLE_DES_CBC_DECRYPT_CHAINED_AVX2_FEATURES`); or else `vg_triple_des_cbc_decrypt_chained`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///

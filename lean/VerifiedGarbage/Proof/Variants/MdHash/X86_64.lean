@@ -77,7 +77,8 @@ def sha512_256ShaNi : Proof.Pbkdf2.Md.X86_64.MdHash :=
   Proof.Pbkdf2.Md.X86_64.Sha512.sha512_256 .shani (Proof.Pbkdf2.Md.X86_64.Sha512.stream512_256 .shani)
 
 /-- Every implementation, best first: each function generic over them is
-emitted with each (the registration files that import this). -/
+emitted with each (the registration files that import this), and its
+dispatcher tries them in this order. -/
 def variants := [md5, sha1ShaNi, sha1AvxBmi, sha1, sha224ShaNi, sha224Avx2, sha224, sha256ShaNi, sha256Avx2, sha256, sha384ShaNi, sha384Avx2, sha384, sha512ShaNi, sha512Avx2, sha512, sha512_224ShaNi, sha512_224Avx2, sha512_224, sha512_256ShaNi, sha512_256Avx2, sha512_256]
 
 end VG.Proof.Variants.MdHash.X86_64

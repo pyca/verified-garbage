@@ -18,7 +18,8 @@ def pclmul : Proof.AesGcm.X86.GcmVariant := ⟨.scalar, .pclmul⟩
 def scalar : Proof.AesGcm.X86.GcmVariant := ⟨.scalar, .scalar⟩
 
 /-- Every implementation, best first: each function generic over them is
-emitted with each (the registration files that import this). -/
+emitted with each (the registration files that import this), and its
+dispatcher tries them in this order. -/
 def variants := [aesNiPclmul, aesNi, pclmul, scalar]
 
 end VG.Proof.Variants.AesGcm.X86

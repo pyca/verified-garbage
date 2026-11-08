@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.EcKey.Instance.publicKeyContract`. Constant time: only the pointers may affect timing, not the private key.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_ec_p384_public_key_adx` if the CPU supports its features (`VG_EC_P384_PUBLIC_KEY_ADX_FEATURES`); or else `vg_ec_p384_public_key`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_ec_p384_public_key_adx` if the CPU supports its features (`VG_EC_P384_PUBLIC_KEY_ADX_FEATURES`); or else `vg_ec_p384_public_key`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///

@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.RsaPkcs1Sig.signContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, `hash` and the contents of `n` and `e`, not on `digest` or the private key.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_rsa_pkcs1_sign_ifma` if the CPU supports its features (`VG_RSA_PKCS1_SIGN_IFMA_FEATURES`); `vg_rsa_pkcs1_sign_adx` if the CPU supports its features (`VG_RSA_PKCS1_SIGN_ADX_FEATURES`); or else `vg_rsa_pkcs1_sign`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_rsa_pkcs1_sign_ifma` if the CPU supports its features (`VG_RSA_PKCS1_SIGN_IFMA_FEATURES`); `vg_rsa_pkcs1_sign_adx` if the CPU supports its features (`VG_RSA_PKCS1_SIGN_ADX_FEATURES`); or else `vg_rsa_pkcs1_sign`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -78,7 +78,7 @@ pub unsafe fn vg_rsa_pkcs1_sign_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *
 ///
 /// Contract: `VG.Spec.RsaPkcs1Sig.verifyPrecomputedContract`.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_rsa_pkcs1_verify_precomputed_ifma` if the CPU supports its features (`VG_RSA_PKCS1_VERIFY_PRECOMPUTED_IFMA_FEATURES`); `vg_rsa_pkcs1_verify_precomputed_adx` if the CPU supports its features (`VG_RSA_PKCS1_VERIFY_PRECOMPUTED_ADX_FEATURES`); or else `vg_rsa_pkcs1_verify_precomputed`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_rsa_pkcs1_verify_precomputed_ifma` if the CPU supports its features (`VG_RSA_PKCS1_VERIFY_PRECOMPUTED_IFMA_FEATURES`); `vg_rsa_pkcs1_verify_precomputed_adx` if the CPU supports its features (`VG_RSA_PKCS1_VERIFY_PRECOMPUTED_ADX_FEATURES`); or else `vg_rsa_pkcs1_verify_precomputed`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -145,7 +145,7 @@ pub unsafe fn vg_rsa_pkcs1_verify_precomputed_auto(_dit: verified_garbage_cpu::D
 ///
 /// Contract: `VG.Spec.RsaPkcs1Sig.recoverPrecomputedContract`.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_rsa_pkcs1_recover_precomputed_ifma` if the CPU supports its features (`VG_RSA_PKCS1_RECOVER_PRECOMPUTED_IFMA_FEATURES`); `vg_rsa_pkcs1_recover_precomputed_adx` if the CPU supports its features (`VG_RSA_PKCS1_RECOVER_PRECOMPUTED_ADX_FEATURES`); or else `vg_rsa_pkcs1_recover_precomputed`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_rsa_pkcs1_recover_precomputed_ifma` if the CPU supports its features (`VG_RSA_PKCS1_RECOVER_PRECOMPUTED_IFMA_FEATURES`); `vg_rsa_pkcs1_recover_precomputed_adx` if the CPU supports its features (`VG_RSA_PKCS1_RECOVER_PRECOMPUTED_ADX_FEATURES`); or else `vg_rsa_pkcs1_recover_precomputed`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///

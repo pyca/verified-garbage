@@ -2,6 +2,26 @@
 //! The dispatchers of the verified `cmac_triple_des` functions for `x86`
 //! (`crate::cmac_triple_des`, `VG.Rust.dispatcher`).
 
+/// Starts a TDEA-CMAC computation (NIST SP 800-38B): makes the streaming state `*state` represent the empty message under the 16- or 24-byte TDEA key at `key` (FIPS 46-3; a 16-byte key is `K1 ‖ K2` with `K3 = K1`, parity bits are ignored). The state holds the key schedule (the three DES schedules), the subkeys `K1 ‖ K2` (§6.1), the chaining value and the message's last bytes, held back (`VG.Spec.Cmac.tdesRepr`). Continue with `vg_cmac_triple_des_absorb` and `vg_cmac_triple_des_finish`.
+///
+/// Contract: `VG.Spec.Cmac.tdesStreamInitContract`. Constant time: only the pointers and `key_len` may affect timing, not the key.
+///
+/// It runs `vg_cmac_triple_des_stream_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 416 bytes.
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `key_len` must be 16 or 24.
+/// * `state` must not overlap `key` or the arguments on the stack (distinct Rust objects never do).
+/// * Neither `state` nor `key` may overlap the return address on the stack or the 680 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_cmac_triple_des_stream_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 52], key: *const u8, key_len: usize) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::cmac_triple_des::vg_cmac_triple_des_stream_init(state, key, key_len) }
+}
+
 /// Absorbs data into a TDEA-CMAC computation (NIST SP 800-38B §6.2): if the streaming state `*state` represents a message of `count` bytes under a TDEA key (as `vg_cmac_triple_des_stream_init` set it up), it then represents that message followed by the `len` bytes at `data`, under the same key, provided that the two together are shorter than 2⁶⁴ bytes. It chains (step 6) every block of the message but its last bytes `Mₙ*` (step 3), which it holds back in the state, since only `vg_cmac_triple_des_finish` knows they are the last.
 ///
 /// Contract: `VG.Spec.Cmac.tdesAbsorbContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
@@ -39,24 +59,4 @@ pub unsafe fn vg_cmac_triple_des_absorb_auto(_dit: verified_garbage_cpu::Dit<'_>
 pub unsafe fn vg_cmac_triple_des_finish_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 52], count: u64, out: *mut [u8; 8]) {
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { crate::cmac_triple_des::vg_cmac_triple_des_finish(state, count, out) }
-}
-
-/// Starts a TDEA-CMAC computation (NIST SP 800-38B): makes the streaming state `*state` represent the empty message under the 16- or 24-byte TDEA key at `key` (FIPS 46-3; a 16-byte key is `K1 ‖ K2` with `K3 = K1`, parity bits are ignored). The state holds the key schedule (the three DES schedules), the subkeys `K1 ‖ K2` (§6.1), the chaining value and the message's last bytes, held back (`VG.Spec.Cmac.tdesRepr`). Continue with `vg_cmac_triple_des_absorb` and `vg_cmac_triple_des_finish`.
-///
-/// Contract: `VG.Spec.Cmac.tdesStreamInitContract`. Constant time: only the pointers and `key_len` may affect timing, not the key.
-///
-/// It runs `vg_cmac_triple_des_stream_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 416 bytes.
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `key_len` must be 16 or 24.
-/// * `state` must not overlap `key` or the arguments on the stack (distinct Rust objects never do).
-/// * Neither `state` nor `key` may overlap the return address on the stack or the 680 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[allow(clippy::too_many_arguments)]
-#[inline]
-pub unsafe fn vg_cmac_triple_des_stream_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 52], key: *const u8, key_len: usize) {
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::cmac_triple_des::vg_cmac_triple_des_stream_init(state, key, key_len) }
 }

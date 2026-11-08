@@ -25,7 +25,7 @@ pub unsafe fn vg_poly1305_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state: 
 ///
 /// Contract: `VG.Spec.Poly1305.updateContract`. The streaming state is the accumulator, the key and the message's last bytes that do not fill a block (`VG.Spec.Poly1305.Buffered`). Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_poly1305_update_neon` if the target's vendor is `apple` (or `VG_CPU_FEATURES` names every feature it needs) and it also supports `neon`; or else `vg_poly1305_update`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_poly1305_update_neon` if the target's vendor is `apple` (or `VG_CPU_FEATURES` names every feature it needs) and it also supports `neon`; or else `vg_poly1305_update`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///

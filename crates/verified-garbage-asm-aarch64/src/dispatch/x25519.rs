@@ -2,6 +2,28 @@
 //! The dispatchers of the verified `x25519` functions for `aarch64`
 //! (`crate::x25519`, `VG.Rust.dispatcher`).
 
+/// Computes an X25519 shared secret (RFC 7748 §6.1): writes `X25519(k, u)` to `*out`, for the 32-byte scalar `k` at `scalar` and the 32-byte u-coordinate `u` at `point`, and returns 0 if it is all zero (for a `u` of small order), 1 otherwise. The scalar is decoded (clamped) and the most significant bit of `u` masked as RFC 7748 specifies (§5).
+///
+/// Contract: `VG.Spec.X25519.exchangeContract`. Constant time: only the pointers may affect timing, not the scalar or the u-coordinate; the return value depends on both.
+///
+/// It runs `vg_x25519_exchange`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 32 bytes.
+/// * `scalar` must be valid for reads of 32 bytes.
+/// * `point` must be valid for reads of 32 bytes.
+/// * `scratch` must be valid for reads and writes of 4096 bytes.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other, `scalar` or `point` (distinct Rust objects never do).
+/// * None of `out`, `scalar`, `point` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_x25519_exchange_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) -> u32 {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::x25519::vg_x25519_exchange(out, scalar, point, scratch) }
+}
+
 /// The bytes of `scratch` that `vg_x25519_base_auto` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
 pub const VG_X25519_BASE_AUTO_SCRATCH_WRITTEN: usize = 1024;
 
@@ -26,26 +48,4 @@ pub const VG_X25519_BASE_AUTO_SCRATCH_WRITTEN: usize = 1024;
 pub unsafe fn vg_x25519_base_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { crate::x25519::vg_x25519_base(out, scalar, scratch) }
-}
-
-/// Computes an X25519 shared secret (RFC 7748 §6.1): writes `X25519(k, u)` to `*out`, for the 32-byte scalar `k` at `scalar` and the 32-byte u-coordinate `u` at `point`, and returns 0 if it is all zero (for a `u` of small order), 1 otherwise. The scalar is decoded (clamped) and the most significant bit of `u` masked as RFC 7748 specifies (§5).
-///
-/// Contract: `VG.Spec.X25519.exchangeContract`. Constant time: only the pointers may affect timing, not the scalar or the u-coordinate; the return value depends on both.
-///
-/// It runs `vg_x25519_exchange`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 32 bytes.
-/// * `scalar` must be valid for reads of 32 bytes.
-/// * `point` must be valid for reads of 32 bytes.
-/// * `scratch` must be valid for reads and writes of 4096 bytes.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other, `scalar` or `point` (distinct Rust objects never do).
-/// * None of `out`, `scalar`, `point` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[allow(clippy::too_many_arguments)]
-#[inline]
-pub unsafe fn vg_x25519_exchange_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) -> u32 {
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::x25519::vg_x25519_exchange(out, scalar, point, scratch) }
 }

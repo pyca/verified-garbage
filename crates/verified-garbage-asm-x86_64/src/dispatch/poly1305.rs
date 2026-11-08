@@ -21,11 +21,31 @@ pub unsafe fn vg_poly1305_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state: 
     unsafe { crate::poly1305::vg_poly1305_init(state, key) }
 }
 
+/// Finishes a Poly1305 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴) under a key, writes the tag of that message, under that key, to `*out`.
+///
+/// Contract: `VG.Spec.Poly1305.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// It runs `vg_poly1305_finalize`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 128 bytes.
+/// * `out` must be valid for reads and writes of 16 bytes.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
+/// * Neither `state` nor `out` may overlap the return address on the stack or the 136 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_poly1305_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 16], count: u64, out: *mut [u8; 16]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::poly1305::vg_poly1305_finalize(state, count, out) }
+}
+
 /// Absorbs data into a Poly1305 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴) under a key, it then represents that message followed by the `len` bytes at `data`, under the same key.
 ///
 /// Contract: `VG.Spec.Poly1305.updateContract`. The streaming state is the accumulator, the key and the message's last bytes that do not fill a block (`VG.Spec.Poly1305.Buffered`). Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_poly1305_update_ifma` if the CPU supports its features (`VG_POLY1305_UPDATE_IFMA_FEATURES`); `vg_poly1305_update_avx512` if the CPU supports its features (`VG_POLY1305_UPDATE_AVX512_FEATURES`); `vg_poly1305_update_avx2` if the CPU supports its features (`VG_POLY1305_UPDATE_AVX2_FEATURES`); or else `vg_poly1305_update`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_poly1305_update_ifma` if the CPU supports its features (`VG_POLY1305_UPDATE_IFMA_FEATURES`); `vg_poly1305_update_avx512` if the CPU supports its features (`VG_POLY1305_UPDATE_AVX512_FEATURES`); `vg_poly1305_update_avx2` if the CPU supports its features (`VG_POLY1305_UPDATE_AVX2_FEATURES`); or else `vg_poly1305_update`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -77,24 +97,4 @@ pub unsafe fn vg_poly1305_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state
     // or an implementation `select` returned, which needs only features the CPU has. Calling
     // either carries the caller's obligations, which are those of every implementation.
     unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(state, count, data, len) }
-}
-
-/// Finishes a Poly1305 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴) under a key, writes the tag of that message, under that key, to `*out`.
-///
-/// Contract: `VG.Spec.Poly1305.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
-///
-/// It runs `vg_poly1305_finalize`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 128 bytes.
-/// * `out` must be valid for reads and writes of 16 bytes.
-/// * The contents of `state` on return are unspecified.
-/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the return address on the stack or the 136 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[allow(clippy::too_many_arguments)]
-#[inline]
-pub unsafe fn vg_poly1305_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 16], count: u64, out: *mut [u8; 16]) {
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::poly1305::vg_poly1305_finalize(state, count, out) }
 }

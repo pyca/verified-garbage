@@ -2,29 +2,11 @@
 //! The dispatchers of the verified `sha1` functions for `x86`
 //! (`crate::sha1`, `VG.Rust.dispatcher`).
 
-/// Starts a SHA-1 computation: makes the streaming state `*state` represent the empty message.
-///
-/// Contract: `VG.Spec.Sha1.initContract`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha1.Repr`).
-///
-/// It runs `vg_sha1_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 84 bytes.
-/// * `state` must not overlap the arguments on the stack (distinct Rust objects never do).
-/// * `state` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
-#[allow(clippy::too_many_arguments)]
-#[inline]
-pub unsafe fn vg_sha1_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 84]) {
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::sha1::vg_sha1_init(state) }
-}
-
 /// Computes the SHA-1 digest of the `len` bytes at `data` (20 bytes, `VG.Spec.Sha1.hash`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-1 computation with that message.
 ///
 /// Contract: `VG.Spec.Sha1.digestContract`. Constant time: only the pointers and `len` may affect timing, not the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha1_digest_shani` if the CPU supports its features (`VG_SHA1_DIGEST_SHANI_FEATURES`); or else `vg_sha1_digest`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sha1_digest_shani` if the CPU supports its features (`VG_SHA1_DIGEST_SHANI_FEATURES`); or else `vg_sha1_digest`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -68,11 +50,29 @@ pub unsafe fn vg_sha1_digest_auto(_dit: verified_garbage_cpu::Dit<'_>, data: *co
     unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(data, len, out) }
 }
 
+/// Starts a SHA-1 computation: makes the streaming state `*state` represent the empty message.
+///
+/// Contract: `VG.Spec.Sha1.initContract`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha1.Repr`).
+///
+/// It runs `vg_sha1_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 84 bytes.
+/// * `state` must not overlap the arguments on the stack (distinct Rust objects never do).
+/// * `state` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_sha1_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 84]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::sha1::vg_sha1_init(state) }
+}
+
 /// Absorbs data into a SHA-1 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), it then represents that message followed by the `len` bytes at `data`.
 ///
 /// Contract: `VG.Spec.Sha1.updateContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha1_update_shani` if the CPU supports its features (`VG_SHA1_UPDATE_SHANI_FEATURES`); or else `vg_sha1_update`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sha1_update_shani` if the CPU supports its features (`VG_SHA1_UPDATE_SHANI_FEATURES`); or else `vg_sha1_update`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -122,7 +122,7 @@ pub unsafe fn vg_sha1_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *m
 ///
 /// Contract: `VG.Spec.Sha1.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha1_finalize_shani` if the CPU supports its features (`VG_SHA1_FINALIZE_SHANI_FEATURES`); or else `vg_sha1_finalize`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sha1_finalize_shani` if the CPU supports its features (`VG_SHA1_FINALIZE_SHANI_FEATURES`); or else `vg_sha1_finalize`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///

@@ -2,16 +2,16 @@ module
 
 import VerifiedGarbage.TCB.Rust
 meta import VerifiedGarbage.TCB.Rust
-import VerifiedGarbage.Dispatch
-meta import VerifiedGarbage.Dispatch
+import VerifiedGarbage.TCB.Emit
+meta import VerifiedGarbage.TCB.Emit
 import VerifiedGarbage.Artifacts.Poly1305.AArch64
 meta import VerifiedGarbage.Artifacts.Poly1305.AArch64
 
 /-!
 # Dispatchers (`Rust.dispatcher`)
 
-How a dispatcher reads and ranks its implementations' suffixes, and what it
-is for Poly1305 on AArch64: `vg_poly1305_update` and its `_neon` variant,
+Which implementations a dispatcher tries, in what order, and what it is for
+Poly1305 on AArch64: `vg_poly1305_update` and its `_neon` variant,
 which its registration lets the dispatcher choose only on Apple's targets
 (or where `VG_CPU_FEATURES` names its features), and only where the target
 enables or detection reports the `neon` feature; `vg_poly1305_init` and
@@ -22,25 +22,8 @@ other names of them.
 namespace VG.Test.Dispatch
 open VG
 
-def rs : List Rust.Rank := [{ suffix := "_shani" }, { suffix := "_avx2" }, { suffix := "_adx" }]
-
--- The first rank of a suffix.
-#guard (Rust.rankOf rs "_avx2").map (·.1) == some 1
-#guard (Rust.rankOf rs "_aes").isNone
-
--- A suffix of parts `_<tag><suffix>` (`Emit.qualifiedName`), each ranked.
-#guard (Rust.partsOf rs 40 "_sha256_avx2_mr_adx").map (·.map fun (t, i, _) => (t, i)) ==
-  some [("sha256", 1), ("mr", 2)]
-#guard (Rust.partsOf rs 40 "_sha256_avx512").isNone
-#guard (Rust.partsOf rs 40 "_avx2").isNone
-
--- Parts compare by the first tag's rank, then the next.
-#guard Rust.lexLe [0, 4] [1, 0]
-#guard !Rust.lexLe [1, 0] [0, 4]
-#guard Rust.lexLe [1, 2] [1, 2]
-
 def out : List (String × String) :=
-  match Rust.files Artifacts.Poly1305.AArch64.artifacts Dispatch.ranking with
+  match Rust.files Artifacts.Poly1305.AArch64.artifacts with
   | .ok fs => fs
   | .error e => [("error", e)]
 
@@ -104,58 +87,68 @@ def has (text part : String) : Bool := (text.splitOn part).length > 1
 
 /-! ## A registration's `extra` features and `vendor` (`Artifact.extra`, `Artifact.vendor`) -/
 
-/-- The files of Poly1305 on AArch64 under `rk`, with `f` applied to `_neon`
-without its registration's `extra` features and `vendor`. -/
-def neonOut (rk : Rust.Ranking) (f : Artifact → Artifact) : Except String (List (String × String)) :=
+/-- The files of Poly1305 on AArch64, with `f` applied to `_neon` without its
+registration's `extra` features and `vendor`. -/
+def neonOut (f : Artifact → Artifact) : Except String (List (String × String)) :=
   Rust.files (Artifacts.Poly1305.AArch64.artifacts.map fun a =>
-    if a.name == "vg_poly1305_update_neon" then f { a with extra := [], vendor := none } else a) rk
+    if a.name == "vg_poly1305_update_neon" then f { a with extra := [], vendor := none } else a)
 
 -- The registration's choice: the same files.
-#guard match neonOut Dispatch.ranking fun a => { a with vendor := some "apple", extra := ["neon"] } with
+#guard match neonOut fun a => { a with vendor := some "apple", extra := ["neon"] } with
   | .ok fs => fs == out
   | .error _ => false
 
 -- Without either, `_neon` is chosen everywhere.
-#guard match neonOut Dispatch.ranking id with
+#guard match neonOut id with
   | .ok fs => fs != out && has (((fs.find? (·.1 ==
       "verified-garbage-asm-aarch64/src/dispatch/poly1305.rs")).map (·.2)).getD "")
       "        if const { verified_garbage_cpu::COMPILED.0 != 0 }\n            || cpu.0 != 0\n        {\n"
   | .error _ => false
 
 -- A vendor or feature that is not a name fails the emitter.
-#guard match neonOut Dispatch.ranking fun a => { a with vendor := some "Apple" } with
+#guard match neonOut fun a => { a with vendor := some "Apple" } with
   | .error e => has e "vg_poly1305_update_neon names the vendor `Apple`"
   | .ok _ => false
-#guard match neonOut Dispatch.ranking fun a => { a with extra := ["ne on"] } with
+#guard match neonOut fun a => { a with extra := ["ne on"] } with
   | .error e => has e "vg_poly1305_update_neon needs the feature `ne on`"
   | .ok _ => false
 
-/-- The position of a suffix in x86-64's ranking. -/
-def x86Rank (suffix : String) : Option Nat :=
-  (Rust.rankOf ((Dispatch.ranking.lookup "x86_64").getD []) suffix).map (·.1)
+/-! ## The order of the implementations -/
 
--- ChaCha20's and ChaCha20-Poly1305's dispatchers try `_avx2` before `_ssse3`,
--- so they never choose `_ssse3` with AVX2, and `_ssse3` without it.
-#guard match x86Rank "_avx2", x86Rank "_ssse3" with
-  | some a, some s => a < s
-  | _, _ => false
+/-- `_neon` as the registration has it (a list of it), its other
+implementations, and another name of `_neon` that any target may choose. -/
+def neon : List Artifact :=
+  Artifacts.Poly1305.AArch64.artifacts.filter (·.name == "vg_poly1305_update_neon")
+def others : List Artifact :=
+  Artifacts.Poly1305.AArch64.artifacts.filter (·.name != "vg_poly1305_update_neon")
+def neon2 : List Artifact := neon.map fun a => { a with name := "vg_poly1305_update_neon2", vendor := none }
 
--- AES-CMAC's, AES-SIV's and AES-CCM's dispatchers rank `_aesni`, which needs
--- only AES-NI and SSSE3, so they never choose the baseline with those.
-#guard (x86Rank "_aesni").isSome
+/-- The dispatchers of Poly1305 with the artifacts `as`. -/
+def dispatchOf (as : List Artifact) : String :=
+  match Rust.files as with
+  | .ok fs => ((fs.find? (·.1 == "verified-garbage-asm-aarch64/src/dispatch/poly1305.rs")).map
+      (·.2)).getD ""
+  | .error e => "error: " ++ e
 
--- AES-GCM-SIV's dispatchers try `_aesni_pclmul_avx_avx2` before `_aesni_avx2`
--- and `_pclmul_avx2`, and `_vaes_vpclmul_avx512` before `_vaes_avx2` and
--- `_vpclmul_avx2`.
-#guard [("_aesni_pclmul_avx_avx2", "_aesni_avx2"), ("_aesni_pclmul_avx_avx2", "_pclmul_avx2"),
-    ("_vaes_vpclmul_avx512", "_vaes_avx2"), ("_vaes_vpclmul_avx512", "_vpclmul_avx2")].all fun (a, b) =>
-  match x86Rank a, x86Rank b with
-  | some i, some j => i < j
-  | _, _ => false
+-- It tries them in the order the artifacts list them: `_neon`, then `_neon2`.
+#guard ((((dispatchOf (others ++ neon ++ neon2)).splitOn
+  "return crate::poly1305::vg_poly1305_update_neon;").getD 1 "").splitOn
+  "return crate::poly1305::vg_poly1305_update_neon2;").length == 2
 
--- An unranked suffix fails the emitter.
-#guard match Rust.files Artifacts.Poly1305.AArch64.artifacts [("aarch64", [])] with
-  | .error e => has e "vg_poly1305_update_neon: its suffix `_neon` is not ranked"
+-- One that it could choose only where one before it can fails the emitter.
+#guard has (dispatchOf (others ++ neon2 ++ neon)) "error: aarch64: vg_poly1305_update_neon would \
+  never run: its dispatcher tries vg_poly1305_update_neon2 before it"
+
+-- An implementation of another signature or documentation than its base's fails it.
+#guard has (dispatchOf (others ++ neon.map fun a => { a with doc := "Another function. " ++ a.doc }))
+  "vg_poly1305_update_neon, an implementation of vg_poly1305_update, has another signature or \
+  documentation"
+
+-- Every implementation of a function is in one registration file.
+#guard (Emit.checkSources [("A", Artifacts.Poly1305.AArch64.artifacts)]).toOption.isSome
+#guard match Emit.checkSources [("A", others), ("B", neon)] with
+  | .error e => has e "aarch64: the implementations of vg_poly1305_update are in two registration \
+      files, A and B"
   | .ok _ => false
 
 /-! ## Tables of functions (`Rust.tableDispatcher`) -/
@@ -173,20 +166,21 @@ def tU : FnTable := { name := "VG_U_AVX2", iface := "Fns", fns := ["vg_t_avx2"],
 def tableFeatures (T : FnTable) : List String :=
   if T.name.endsWith "_SHANI" then ["sha"] else if T.name.endsWith "_AVX2" then ["avx2"] else []
 
-def tableText (rs : List Rust.Rank) (ts : List FnTable) : String :=
-  match Rust.tableDispatchers rs "x86_64" [] ts tableFeatures
+def tableText (ts : List FnTable) : String :=
+  match Rust.tableDispatchers "x86_64" [] ts tableFeatures
       (fun fs => fs.map fun f => s!"target_feature = \"{f}\"") with
   | .ok s => s
   | .error e => "error: " ++ e
 
-def tables : String := tableText rs [tU, tAvx2, t2, tT, tShani]
+def tables : String := tableText [tU, tShani, tAvx2, t2, tT]
 
--- Implementations of `VG_T`: the tables of its interface and data named after it.
-#guard (Rust.tableGroupsOf [tU, tAvx2, t2, tT, tShani]).map (fun (b, ms) => (b.name, ms.map (·.2))) ==
-  [("VG_T", ["_AVX2", "_SHANI"]), ("VG_T_2", []), ("VG_U_AVX2", [])]
+-- Implementations of `VG_T`: the tables of its interface and data named after it,
+-- in the order of the list.
+#guard (Rust.tableGroupsOf [tU, tShani, tAvx2, t2, tT]).map (fun (b, ms) => (b.name, ms.map (·.name))) ==
+  [("VG_U_AVX2", []), ("VG_T_2", []), ("VG_T", ["VG_T_SHANI", "VG_T_AVX2"])]
 
 -- `VG_T`'s dispatcher returns `_SHANI` where the CPU has its features, then
--- `_AVX2`, as the ranking orders them, else `VG_T`.
+-- `_AVX2`, in the order of the list, else `VG_T`.
 #guard has tables
   "pub fn vg_t_auto() -> &'static crate::fn_tables::Fns {\n    \
     let cpu = verified_garbage_cpu::detected();\n    \
@@ -206,13 +200,13 @@ def tables : String := tableText rs [tU, tAvx2, t2, tT, tShani]
   &crate::fn_tables::VG_T_2\n}\n"
 #guard !has tables "vg_u_avx2_auto"
 
--- An unranked suffix fails the emitter.
-#guard tableText [] [tT, tShani] ==
-  "error: x86_64: VG_T_SHANI: its suffix `_shani` is not ranked (`VG.Dispatch.ranking`), nor \
-    made of parts `_<tag><suffix>` whose suffixes are"
+-- One that it could choose only where one before it can fails the emitter.
+#guard tableText [tT, tShani, { tShani with name := "VG_T_X_SHANI" }] ==
+  "error: x86_64: VG_T_X_SHANI would never run: its dispatcher tries VG_T_SHANI before it, \
+    which needs nothing it does not"
 
 -- A dispatcher's name may not be an artifact's.
-#guard match Rust.tableDispatchers rs "x86_64" ["vg_t_auto"] [tT] tableFeatures (fun _ => []) with
+#guard match Rust.tableDispatchers "x86_64" ["vg_t_auto"] [tT] tableFeatures (fun _ => []) with
   | .error e => has e "vg_t_auto is both an artifact and the dispatcher of VG_T"
   | .ok _ => false
 

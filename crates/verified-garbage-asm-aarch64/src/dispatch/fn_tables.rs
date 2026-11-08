@@ -2,31 +2,13 @@
 //! The dispatchers of the tables of functions for `aarch64`
 //! (`crate::fn_tables`, `VG.Rust.tableDispatcher`).
 
-/// The table of functions `VG_HASH_MD5` of the interface `Hash`, the only one with its data on this target, which needs no CPU feature (`VG.Rust.tableDispatcher`).
-#[inline]
-pub fn vg_hash_md5_auto() -> &'static crate::fn_tables::Hash {
-    &crate::fn_tables::VG_HASH_MD5
-}
-
 /// The table of functions `VG_HMAC_MD5` of the interface `Hmac`, the only one with its data on this target, which needs no CPU feature (`VG.Rust.tableDispatcher`).
 #[inline]
 pub fn vg_hmac_md5_auto() -> &'static crate::fn_tables::Hmac {
     &crate::fn_tables::VG_HMAC_MD5
 }
 
-/// A table of functions of the interface `Hash` with the data of `VG_HASH_SHA1`, which every function taking one computes the same with (`VG.Rust.tableDispatcher`): the first of these that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `VG_HASH_SHA1_SHA2` if the CPU supports its features (`VG_HASH_SHA1_SHA2_FEATURES`); or else `VG_HASH_SHA1`, which needs no CPU feature. Its CPU features, if any, are those of the table returned, which the CPU has.
-#[inline]
-pub fn vg_hash_sha1_auto() -> &'static crate::fn_tables::Hash {
-    let cpu = verified_garbage_cpu::detected();
-    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_HASH_SHA1_SHA2_FEATURES) }
-        || cpu.contains(crate::fn_tables::VG_HASH_SHA1_SHA2_FEATURES)
-    {
-        return &crate::fn_tables::VG_HASH_SHA1_SHA2;
-    }
-    &crate::fn_tables::VG_HASH_SHA1
-}
-
-/// A table of functions of the interface `Hmac` with the data of `VG_HMAC_SHA1`, which every function taking one computes the same with (`VG.Rust.tableDispatcher`): the first of these that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `VG_HMAC_SHA1_SHA2` if the CPU supports its features (`VG_HMAC_SHA1_SHA2_FEATURES`); or else `VG_HMAC_SHA1`, which needs no CPU feature. Its CPU features, if any, are those of the table returned, which the CPU has.
+/// A table of functions of the interface `Hmac` with the data of `VG_HMAC_SHA1`, which every function taking one computes the same with (`VG.Rust.tableDispatcher`): the first of these that applies, in the order its registration file lists them: `VG_HMAC_SHA1_SHA2` if the CPU supports its features (`VG_HMAC_SHA1_SHA2_FEATURES`); or else `VG_HMAC_SHA1`, which needs no CPU feature. Its CPU features, if any, are those of the table returned, which the CPU has.
 #[inline]
 pub fn vg_hmac_sha1_auto() -> &'static crate::fn_tables::Hmac {
     let cpu = verified_garbage_cpu::detected();
@@ -38,55 +20,7 @@ pub fn vg_hmac_sha1_auto() -> &'static crate::fn_tables::Hmac {
     &crate::fn_tables::VG_HMAC_SHA1
 }
 
-/// A table of functions of the interface `Hash` with the data of `VG_HASH_SHA224`, which every function taking one computes the same with (`VG.Rust.tableDispatcher`): the first of these that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `VG_HASH_SHA224_SHA2` if the CPU supports its features (`VG_HASH_SHA224_SHA2_FEATURES`); or else `VG_HASH_SHA224`, which needs no CPU feature. Its CPU features, if any, are those of the table returned, which the CPU has.
-#[inline]
-pub fn vg_hash_sha224_auto() -> &'static crate::fn_tables::Hash {
-    let cpu = verified_garbage_cpu::detected();
-    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_HASH_SHA224_SHA2_FEATURES) }
-        || cpu.contains(crate::fn_tables::VG_HASH_SHA224_SHA2_FEATURES)
-    {
-        return &crate::fn_tables::VG_HASH_SHA224_SHA2;
-    }
-    &crate::fn_tables::VG_HASH_SHA224
-}
-
-/// A table of functions of the interface `Hash` with the data of `VG_HASH_SHA256`, which every function taking one computes the same with (`VG.Rust.tableDispatcher`): the first of these that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `VG_HASH_SHA256_SHA2` if the CPU supports its features (`VG_HASH_SHA256_SHA2_FEATURES`); or else `VG_HASH_SHA256`, which needs no CPU feature. Its CPU features, if any, are those of the table returned, which the CPU has.
-#[inline]
-pub fn vg_hash_sha256_auto() -> &'static crate::fn_tables::Hash {
-    let cpu = verified_garbage_cpu::detected();
-    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_HASH_SHA256_SHA2_FEATURES) }
-        || cpu.contains(crate::fn_tables::VG_HASH_SHA256_SHA2_FEATURES)
-    {
-        return &crate::fn_tables::VG_HASH_SHA256_SHA2;
-    }
-    &crate::fn_tables::VG_HASH_SHA256
-}
-
-/// A table of functions of the interface `Hash` with the data of `VG_HASH_SHA384`, which every function taking one computes the same with (`VG.Rust.tableDispatcher`): the first of these that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `VG_HASH_SHA384_SHA512` if the CPU supports its features (`VG_HASH_SHA384_SHA512_FEATURES`); or else `VG_HASH_SHA384`, which needs no CPU feature. Its CPU features, if any, are those of the table returned, which the CPU has.
-#[inline]
-pub fn vg_hash_sha384_auto() -> &'static crate::fn_tables::Hash {
-    let cpu = verified_garbage_cpu::detected();
-    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_HASH_SHA384_SHA512_FEATURES) }
-        || cpu.contains(crate::fn_tables::VG_HASH_SHA384_SHA512_FEATURES)
-    {
-        return &crate::fn_tables::VG_HASH_SHA384_SHA512;
-    }
-    &crate::fn_tables::VG_HASH_SHA384
-}
-
-/// A table of functions of the interface `Hash` with the data of `VG_HASH_SHA512`, which every function taking one computes the same with (`VG.Rust.tableDispatcher`): the first of these that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `VG_HASH_SHA512_SHA512` if the CPU supports its features (`VG_HASH_SHA512_SHA512_FEATURES`); or else `VG_HASH_SHA512`, which needs no CPU feature. Its CPU features, if any, are those of the table returned, which the CPU has.
-#[inline]
-pub fn vg_hash_sha512_auto() -> &'static crate::fn_tables::Hash {
-    let cpu = verified_garbage_cpu::detected();
-    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_HASH_SHA512_SHA512_FEATURES) }
-        || cpu.contains(crate::fn_tables::VG_HASH_SHA512_SHA512_FEATURES)
-    {
-        return &crate::fn_tables::VG_HASH_SHA512_SHA512;
-    }
-    &crate::fn_tables::VG_HASH_SHA512
-}
-
-/// A table of functions of the interface `Hmac` with the data of `VG_HMAC_SHA224`, which every function taking one computes the same with (`VG.Rust.tableDispatcher`): the first of these that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `VG_HMAC_SHA224_SHA2` if the CPU supports its features (`VG_HMAC_SHA224_SHA2_FEATURES`); or else `VG_HMAC_SHA224`, which needs no CPU feature. Its CPU features, if any, are those of the table returned, which the CPU has.
+/// A table of functions of the interface `Hmac` with the data of `VG_HMAC_SHA224`, which every function taking one computes the same with (`VG.Rust.tableDispatcher`): the first of these that applies, in the order its registration file lists them: `VG_HMAC_SHA224_SHA2` if the CPU supports its features (`VG_HMAC_SHA224_SHA2_FEATURES`); or else `VG_HMAC_SHA224`, which needs no CPU feature. Its CPU features, if any, are those of the table returned, which the CPU has.
 #[inline]
 pub fn vg_hmac_sha224_auto() -> &'static crate::fn_tables::Hmac {
     let cpu = verified_garbage_cpu::detected();
@@ -98,7 +32,7 @@ pub fn vg_hmac_sha224_auto() -> &'static crate::fn_tables::Hmac {
     &crate::fn_tables::VG_HMAC_SHA224
 }
 
-/// A table of functions of the interface `Hmac` with the data of `VG_HMAC_SHA256`, which every function taking one computes the same with (`VG.Rust.tableDispatcher`): the first of these that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `VG_HMAC_SHA256_SHA2` if the CPU supports its features (`VG_HMAC_SHA256_SHA2_FEATURES`); or else `VG_HMAC_SHA256`, which needs no CPU feature. Its CPU features, if any, are those of the table returned, which the CPU has.
+/// A table of functions of the interface `Hmac` with the data of `VG_HMAC_SHA256`, which every function taking one computes the same with (`VG.Rust.tableDispatcher`): the first of these that applies, in the order its registration file lists them: `VG_HMAC_SHA256_SHA2` if the CPU supports its features (`VG_HMAC_SHA256_SHA2_FEATURES`); or else `VG_HMAC_SHA256`, which needs no CPU feature. Its CPU features, if any, are those of the table returned, which the CPU has.
 #[inline]
 pub fn vg_hmac_sha256_auto() -> &'static crate::fn_tables::Hmac {
     let cpu = verified_garbage_cpu::detected();
@@ -110,7 +44,7 @@ pub fn vg_hmac_sha256_auto() -> &'static crate::fn_tables::Hmac {
     &crate::fn_tables::VG_HMAC_SHA256
 }
 
-/// A table of functions of the interface `Hmac` with the data of `VG_HMAC_SHA384`, which every function taking one computes the same with (`VG.Rust.tableDispatcher`): the first of these that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `VG_HMAC_SHA384_SHA512` if the CPU supports its features (`VG_HMAC_SHA384_SHA512_FEATURES`); or else `VG_HMAC_SHA384`, which needs no CPU feature. Its CPU features, if any, are those of the table returned, which the CPU has.
+/// A table of functions of the interface `Hmac` with the data of `VG_HMAC_SHA384`, which every function taking one computes the same with (`VG.Rust.tableDispatcher`): the first of these that applies, in the order its registration file lists them: `VG_HMAC_SHA384_SHA512` if the CPU supports its features (`VG_HMAC_SHA384_SHA512_FEATURES`); or else `VG_HMAC_SHA384`, which needs no CPU feature. Its CPU features, if any, are those of the table returned, which the CPU has.
 #[inline]
 pub fn vg_hmac_sha384_auto() -> &'static crate::fn_tables::Hmac {
     let cpu = verified_garbage_cpu::detected();
@@ -122,7 +56,7 @@ pub fn vg_hmac_sha384_auto() -> &'static crate::fn_tables::Hmac {
     &crate::fn_tables::VG_HMAC_SHA384
 }
 
-/// A table of functions of the interface `Hmac` with the data of `VG_HMAC_SHA512`, which every function taking one computes the same with (`VG.Rust.tableDispatcher`): the first of these that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `VG_HMAC_SHA512_SHA512` if the CPU supports its features (`VG_HMAC_SHA512_SHA512_FEATURES`); or else `VG_HMAC_SHA512`, which needs no CPU feature. Its CPU features, if any, are those of the table returned, which the CPU has.
+/// A table of functions of the interface `Hmac` with the data of `VG_HMAC_SHA512`, which every function taking one computes the same with (`VG.Rust.tableDispatcher`): the first of these that applies, in the order its registration file lists them: `VG_HMAC_SHA512_SHA512` if the CPU supports its features (`VG_HMAC_SHA512_SHA512_FEATURES`); or else `VG_HMAC_SHA512`, which needs no CPU feature. Its CPU features, if any, are those of the table returned, which the CPU has.
 #[inline]
 pub fn vg_hmac_sha512_auto() -> &'static crate::fn_tables::Hmac {
     let cpu = verified_garbage_cpu::detected();
@@ -134,97 +68,7 @@ pub fn vg_hmac_sha512_auto() -> &'static crate::fn_tables::Hmac {
     &crate::fn_tables::VG_HMAC_SHA512
 }
 
-/// The table of functions `VG_MD_HASH_MD5` of the interface `MdHash`, the only one with its data on this target, which needs no CPU feature (`VG.Rust.tableDispatcher`).
-#[inline]
-pub fn vg_md_hash_md5_auto() -> &'static crate::fn_tables::MdHash {
-    &crate::fn_tables::VG_MD_HASH_MD5
-}
-
-/// A table of functions of the interface `MdHash` with the data of `VG_MD_HASH_SHA1`, which every function taking one computes the same with (`VG.Rust.tableDispatcher`): the first of these that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `VG_MD_HASH_SHA1_SHA2` if the CPU supports its features (`VG_MD_HASH_SHA1_SHA2_FEATURES`); or else `VG_MD_HASH_SHA1`, which needs no CPU feature. Its CPU features, if any, are those of the table returned, which the CPU has.
-#[inline]
-pub fn vg_md_hash_sha1_auto() -> &'static crate::fn_tables::MdHash {
-    let cpu = verified_garbage_cpu::detected();
-    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_MD_HASH_SHA1_SHA2_FEATURES) }
-        || cpu.contains(crate::fn_tables::VG_MD_HASH_SHA1_SHA2_FEATURES)
-    {
-        return &crate::fn_tables::VG_MD_HASH_SHA1_SHA2;
-    }
-    &crate::fn_tables::VG_MD_HASH_SHA1
-}
-
-/// A table of functions of the interface `MdHash` with the data of `VG_MD_HASH_SHA224`, which every function taking one computes the same with (`VG.Rust.tableDispatcher`): the first of these that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `VG_MD_HASH_SHA224_SHA2` if the CPU supports its features (`VG_MD_HASH_SHA224_SHA2_FEATURES`); or else `VG_MD_HASH_SHA224`, which needs no CPU feature. Its CPU features, if any, are those of the table returned, which the CPU has.
-#[inline]
-pub fn vg_md_hash_sha224_auto() -> &'static crate::fn_tables::MdHash {
-    let cpu = verified_garbage_cpu::detected();
-    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_MD_HASH_SHA224_SHA2_FEATURES) }
-        || cpu.contains(crate::fn_tables::VG_MD_HASH_SHA224_SHA2_FEATURES)
-    {
-        return &crate::fn_tables::VG_MD_HASH_SHA224_SHA2;
-    }
-    &crate::fn_tables::VG_MD_HASH_SHA224
-}
-
-/// A table of functions of the interface `MdHash` with the data of `VG_MD_HASH_SHA256`, which every function taking one computes the same with (`VG.Rust.tableDispatcher`): the first of these that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `VG_MD_HASH_SHA256_SHA2` if the CPU supports its features (`VG_MD_HASH_SHA256_SHA2_FEATURES`); or else `VG_MD_HASH_SHA256`, which needs no CPU feature. Its CPU features, if any, are those of the table returned, which the CPU has.
-#[inline]
-pub fn vg_md_hash_sha256_auto() -> &'static crate::fn_tables::MdHash {
-    let cpu = verified_garbage_cpu::detected();
-    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_MD_HASH_SHA256_SHA2_FEATURES) }
-        || cpu.contains(crate::fn_tables::VG_MD_HASH_SHA256_SHA2_FEATURES)
-    {
-        return &crate::fn_tables::VG_MD_HASH_SHA256_SHA2;
-    }
-    &crate::fn_tables::VG_MD_HASH_SHA256
-}
-
-/// A table of functions of the interface `MdHash` with the data of `VG_MD_HASH_SHA384`, which every function taking one computes the same with (`VG.Rust.tableDispatcher`): the first of these that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `VG_MD_HASH_SHA384_SHA512` if the CPU supports its features (`VG_MD_HASH_SHA384_SHA512_FEATURES`); or else `VG_MD_HASH_SHA384`, which needs no CPU feature. Its CPU features, if any, are those of the table returned, which the CPU has.
-#[inline]
-pub fn vg_md_hash_sha384_auto() -> &'static crate::fn_tables::MdHash {
-    let cpu = verified_garbage_cpu::detected();
-    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_MD_HASH_SHA384_SHA512_FEATURES) }
-        || cpu.contains(crate::fn_tables::VG_MD_HASH_SHA384_SHA512_FEATURES)
-    {
-        return &crate::fn_tables::VG_MD_HASH_SHA384_SHA512;
-    }
-    &crate::fn_tables::VG_MD_HASH_SHA384
-}
-
-/// A table of functions of the interface `MdHash` with the data of `VG_MD_HASH_SHA512`, which every function taking one computes the same with (`VG.Rust.tableDispatcher`): the first of these that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `VG_MD_HASH_SHA512_SHA512` if the CPU supports its features (`VG_MD_HASH_SHA512_SHA512_FEATURES`); or else `VG_MD_HASH_SHA512`, which needs no CPU feature. Its CPU features, if any, are those of the table returned, which the CPU has.
-#[inline]
-pub fn vg_md_hash_sha512_auto() -> &'static crate::fn_tables::MdHash {
-    let cpu = verified_garbage_cpu::detected();
-    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_MD_HASH_SHA512_SHA512_FEATURES) }
-        || cpu.contains(crate::fn_tables::VG_MD_HASH_SHA512_SHA512_FEATURES)
-    {
-        return &crate::fn_tables::VG_MD_HASH_SHA512_SHA512;
-    }
-    &crate::fn_tables::VG_MD_HASH_SHA512
-}
-
-/// A table of functions of the interface `Hash` with the data of `VG_HASH_SHA512_224`, which every function taking one computes the same with (`VG.Rust.tableDispatcher`): the first of these that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `VG_HASH_SHA512_224_SHA512` if the CPU supports its features (`VG_HASH_SHA512_224_SHA512_FEATURES`); or else `VG_HASH_SHA512_224`, which needs no CPU feature. Its CPU features, if any, are those of the table returned, which the CPU has.
-#[inline]
-pub fn vg_hash_sha512_224_auto() -> &'static crate::fn_tables::Hash {
-    let cpu = verified_garbage_cpu::detected();
-    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_HASH_SHA512_224_SHA512_FEATURES) }
-        || cpu.contains(crate::fn_tables::VG_HASH_SHA512_224_SHA512_FEATURES)
-    {
-        return &crate::fn_tables::VG_HASH_SHA512_224_SHA512;
-    }
-    &crate::fn_tables::VG_HASH_SHA512_224
-}
-
-/// A table of functions of the interface `Hash` with the data of `VG_HASH_SHA512_256`, which every function taking one computes the same with (`VG.Rust.tableDispatcher`): the first of these that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `VG_HASH_SHA512_256_SHA512` if the CPU supports its features (`VG_HASH_SHA512_256_SHA512_FEATURES`); or else `VG_HASH_SHA512_256`, which needs no CPU feature. Its CPU features, if any, are those of the table returned, which the CPU has.
-#[inline]
-pub fn vg_hash_sha512_256_auto() -> &'static crate::fn_tables::Hash {
-    let cpu = verified_garbage_cpu::detected();
-    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_HASH_SHA512_256_SHA512_FEATURES) }
-        || cpu.contains(crate::fn_tables::VG_HASH_SHA512_256_SHA512_FEATURES)
-    {
-        return &crate::fn_tables::VG_HASH_SHA512_256_SHA512;
-    }
-    &crate::fn_tables::VG_HASH_SHA512_256
-}
-
-/// A table of functions of the interface `Hmac` with the data of `VG_HMAC_SHA512_224`, which every function taking one computes the same with (`VG.Rust.tableDispatcher`): the first of these that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `VG_HMAC_SHA512_224_SHA512` if the CPU supports its features (`VG_HMAC_SHA512_224_SHA512_FEATURES`); or else `VG_HMAC_SHA512_224`, which needs no CPU feature. Its CPU features, if any, are those of the table returned, which the CPU has.
+/// A table of functions of the interface `Hmac` with the data of `VG_HMAC_SHA512_224`, which every function taking one computes the same with (`VG.Rust.tableDispatcher`): the first of these that applies, in the order its registration file lists them: `VG_HMAC_SHA512_224_SHA512` if the CPU supports its features (`VG_HMAC_SHA512_224_SHA512_FEATURES`); or else `VG_HMAC_SHA512_224`, which needs no CPU feature. Its CPU features, if any, are those of the table returned, which the CPU has.
 #[inline]
 pub fn vg_hmac_sha512_224_auto() -> &'static crate::fn_tables::Hmac {
     let cpu = verified_garbage_cpu::detected();
@@ -236,7 +80,7 @@ pub fn vg_hmac_sha512_224_auto() -> &'static crate::fn_tables::Hmac {
     &crate::fn_tables::VG_HMAC_SHA512_224
 }
 
-/// A table of functions of the interface `Hmac` with the data of `VG_HMAC_SHA512_256`, which every function taking one computes the same with (`VG.Rust.tableDispatcher`): the first of these that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `VG_HMAC_SHA512_256_SHA512` if the CPU supports its features (`VG_HMAC_SHA512_256_SHA512_FEATURES`); or else `VG_HMAC_SHA512_256`, which needs no CPU feature. Its CPU features, if any, are those of the table returned, which the CPU has.
+/// A table of functions of the interface `Hmac` with the data of `VG_HMAC_SHA512_256`, which every function taking one computes the same with (`VG.Rust.tableDispatcher`): the first of these that applies, in the order its registration file lists them: `VG_HMAC_SHA512_256_SHA512` if the CPU supports its features (`VG_HMAC_SHA512_256_SHA512_FEATURES`); or else `VG_HMAC_SHA512_256`, which needs no CPU feature. Its CPU features, if any, are those of the table returned, which the CPU has.
 #[inline]
 pub fn vg_hmac_sha512_256_auto() -> &'static crate::fn_tables::Hmac {
     let cpu = verified_garbage_cpu::detected();
@@ -248,7 +92,163 @@ pub fn vg_hmac_sha512_256_auto() -> &'static crate::fn_tables::Hmac {
     &crate::fn_tables::VG_HMAC_SHA512_256
 }
 
-/// A table of functions of the interface `MdHash` with the data of `VG_MD_HASH_SHA512_224`, which every function taking one computes the same with (`VG.Rust.tableDispatcher`): the first of these that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `VG_MD_HASH_SHA512_224_SHA512` if the CPU supports its features (`VG_MD_HASH_SHA512_224_SHA512_FEATURES`); or else `VG_MD_HASH_SHA512_224`, which needs no CPU feature. Its CPU features, if any, are those of the table returned, which the CPU has.
+/// The table of functions `VG_HASH_MD5` of the interface `Hash`, the only one with its data on this target, which needs no CPU feature (`VG.Rust.tableDispatcher`).
+#[inline]
+pub fn vg_hash_md5_auto() -> &'static crate::fn_tables::Hash {
+    &crate::fn_tables::VG_HASH_MD5
+}
+
+/// A table of functions of the interface `Hash` with the data of `VG_HASH_SHA1`, which every function taking one computes the same with (`VG.Rust.tableDispatcher`): the first of these that applies, in the order its registration file lists them: `VG_HASH_SHA1_SHA2` if the CPU supports its features (`VG_HASH_SHA1_SHA2_FEATURES`); or else `VG_HASH_SHA1`, which needs no CPU feature. Its CPU features, if any, are those of the table returned, which the CPU has.
+#[inline]
+pub fn vg_hash_sha1_auto() -> &'static crate::fn_tables::Hash {
+    let cpu = verified_garbage_cpu::detected();
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_HASH_SHA1_SHA2_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_HASH_SHA1_SHA2_FEATURES)
+    {
+        return &crate::fn_tables::VG_HASH_SHA1_SHA2;
+    }
+    &crate::fn_tables::VG_HASH_SHA1
+}
+
+/// A table of functions of the interface `Hash` with the data of `VG_HASH_SHA224`, which every function taking one computes the same with (`VG.Rust.tableDispatcher`): the first of these that applies, in the order its registration file lists them: `VG_HASH_SHA224_SHA2` if the CPU supports its features (`VG_HASH_SHA224_SHA2_FEATURES`); or else `VG_HASH_SHA224`, which needs no CPU feature. Its CPU features, if any, are those of the table returned, which the CPU has.
+#[inline]
+pub fn vg_hash_sha224_auto() -> &'static crate::fn_tables::Hash {
+    let cpu = verified_garbage_cpu::detected();
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_HASH_SHA224_SHA2_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_HASH_SHA224_SHA2_FEATURES)
+    {
+        return &crate::fn_tables::VG_HASH_SHA224_SHA2;
+    }
+    &crate::fn_tables::VG_HASH_SHA224
+}
+
+/// A table of functions of the interface `Hash` with the data of `VG_HASH_SHA256`, which every function taking one computes the same with (`VG.Rust.tableDispatcher`): the first of these that applies, in the order its registration file lists them: `VG_HASH_SHA256_SHA2` if the CPU supports its features (`VG_HASH_SHA256_SHA2_FEATURES`); or else `VG_HASH_SHA256`, which needs no CPU feature. Its CPU features, if any, are those of the table returned, which the CPU has.
+#[inline]
+pub fn vg_hash_sha256_auto() -> &'static crate::fn_tables::Hash {
+    let cpu = verified_garbage_cpu::detected();
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_HASH_SHA256_SHA2_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_HASH_SHA256_SHA2_FEATURES)
+    {
+        return &crate::fn_tables::VG_HASH_SHA256_SHA2;
+    }
+    &crate::fn_tables::VG_HASH_SHA256
+}
+
+/// A table of functions of the interface `Hash` with the data of `VG_HASH_SHA384`, which every function taking one computes the same with (`VG.Rust.tableDispatcher`): the first of these that applies, in the order its registration file lists them: `VG_HASH_SHA384_SHA512` if the CPU supports its features (`VG_HASH_SHA384_SHA512_FEATURES`); or else `VG_HASH_SHA384`, which needs no CPU feature. Its CPU features, if any, are those of the table returned, which the CPU has.
+#[inline]
+pub fn vg_hash_sha384_auto() -> &'static crate::fn_tables::Hash {
+    let cpu = verified_garbage_cpu::detected();
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_HASH_SHA384_SHA512_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_HASH_SHA384_SHA512_FEATURES)
+    {
+        return &crate::fn_tables::VG_HASH_SHA384_SHA512;
+    }
+    &crate::fn_tables::VG_HASH_SHA384
+}
+
+/// A table of functions of the interface `Hash` with the data of `VG_HASH_SHA512`, which every function taking one computes the same with (`VG.Rust.tableDispatcher`): the first of these that applies, in the order its registration file lists them: `VG_HASH_SHA512_SHA512` if the CPU supports its features (`VG_HASH_SHA512_SHA512_FEATURES`); or else `VG_HASH_SHA512`, which needs no CPU feature. Its CPU features, if any, are those of the table returned, which the CPU has.
+#[inline]
+pub fn vg_hash_sha512_auto() -> &'static crate::fn_tables::Hash {
+    let cpu = verified_garbage_cpu::detected();
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_HASH_SHA512_SHA512_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_HASH_SHA512_SHA512_FEATURES)
+    {
+        return &crate::fn_tables::VG_HASH_SHA512_SHA512;
+    }
+    &crate::fn_tables::VG_HASH_SHA512
+}
+
+/// A table of functions of the interface `Hash` with the data of `VG_HASH_SHA512_224`, which every function taking one computes the same with (`VG.Rust.tableDispatcher`): the first of these that applies, in the order its registration file lists them: `VG_HASH_SHA512_224_SHA512` if the CPU supports its features (`VG_HASH_SHA512_224_SHA512_FEATURES`); or else `VG_HASH_SHA512_224`, which needs no CPU feature. Its CPU features, if any, are those of the table returned, which the CPU has.
+#[inline]
+pub fn vg_hash_sha512_224_auto() -> &'static crate::fn_tables::Hash {
+    let cpu = verified_garbage_cpu::detected();
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_HASH_SHA512_224_SHA512_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_HASH_SHA512_224_SHA512_FEATURES)
+    {
+        return &crate::fn_tables::VG_HASH_SHA512_224_SHA512;
+    }
+    &crate::fn_tables::VG_HASH_SHA512_224
+}
+
+/// A table of functions of the interface `Hash` with the data of `VG_HASH_SHA512_256`, which every function taking one computes the same with (`VG.Rust.tableDispatcher`): the first of these that applies, in the order its registration file lists them: `VG_HASH_SHA512_256_SHA512` if the CPU supports its features (`VG_HASH_SHA512_256_SHA512_FEATURES`); or else `VG_HASH_SHA512_256`, which needs no CPU feature. Its CPU features, if any, are those of the table returned, which the CPU has.
+#[inline]
+pub fn vg_hash_sha512_256_auto() -> &'static crate::fn_tables::Hash {
+    let cpu = verified_garbage_cpu::detected();
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_HASH_SHA512_256_SHA512_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_HASH_SHA512_256_SHA512_FEATURES)
+    {
+        return &crate::fn_tables::VG_HASH_SHA512_256_SHA512;
+    }
+    &crate::fn_tables::VG_HASH_SHA512_256
+}
+
+/// The table of functions `VG_MD_HASH_MD5` of the interface `MdHash`, the only one with its data on this target, which needs no CPU feature (`VG.Rust.tableDispatcher`).
+#[inline]
+pub fn vg_md_hash_md5_auto() -> &'static crate::fn_tables::MdHash {
+    &crate::fn_tables::VG_MD_HASH_MD5
+}
+
+/// A table of functions of the interface `MdHash` with the data of `VG_MD_HASH_SHA1`, which every function taking one computes the same with (`VG.Rust.tableDispatcher`): the first of these that applies, in the order its registration file lists them: `VG_MD_HASH_SHA1_SHA2` if the CPU supports its features (`VG_MD_HASH_SHA1_SHA2_FEATURES`); or else `VG_MD_HASH_SHA1`, which needs no CPU feature. Its CPU features, if any, are those of the table returned, which the CPU has.
+#[inline]
+pub fn vg_md_hash_sha1_auto() -> &'static crate::fn_tables::MdHash {
+    let cpu = verified_garbage_cpu::detected();
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_MD_HASH_SHA1_SHA2_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_MD_HASH_SHA1_SHA2_FEATURES)
+    {
+        return &crate::fn_tables::VG_MD_HASH_SHA1_SHA2;
+    }
+    &crate::fn_tables::VG_MD_HASH_SHA1
+}
+
+/// A table of functions of the interface `MdHash` with the data of `VG_MD_HASH_SHA224`, which every function taking one computes the same with (`VG.Rust.tableDispatcher`): the first of these that applies, in the order its registration file lists them: `VG_MD_HASH_SHA224_SHA2` if the CPU supports its features (`VG_MD_HASH_SHA224_SHA2_FEATURES`); or else `VG_MD_HASH_SHA224`, which needs no CPU feature. Its CPU features, if any, are those of the table returned, which the CPU has.
+#[inline]
+pub fn vg_md_hash_sha224_auto() -> &'static crate::fn_tables::MdHash {
+    let cpu = verified_garbage_cpu::detected();
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_MD_HASH_SHA224_SHA2_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_MD_HASH_SHA224_SHA2_FEATURES)
+    {
+        return &crate::fn_tables::VG_MD_HASH_SHA224_SHA2;
+    }
+    &crate::fn_tables::VG_MD_HASH_SHA224
+}
+
+/// A table of functions of the interface `MdHash` with the data of `VG_MD_HASH_SHA256`, which every function taking one computes the same with (`VG.Rust.tableDispatcher`): the first of these that applies, in the order its registration file lists them: `VG_MD_HASH_SHA256_SHA2` if the CPU supports its features (`VG_MD_HASH_SHA256_SHA2_FEATURES`); or else `VG_MD_HASH_SHA256`, which needs no CPU feature. Its CPU features, if any, are those of the table returned, which the CPU has.
+#[inline]
+pub fn vg_md_hash_sha256_auto() -> &'static crate::fn_tables::MdHash {
+    let cpu = verified_garbage_cpu::detected();
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_MD_HASH_SHA256_SHA2_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_MD_HASH_SHA256_SHA2_FEATURES)
+    {
+        return &crate::fn_tables::VG_MD_HASH_SHA256_SHA2;
+    }
+    &crate::fn_tables::VG_MD_HASH_SHA256
+}
+
+/// A table of functions of the interface `MdHash` with the data of `VG_MD_HASH_SHA384`, which every function taking one computes the same with (`VG.Rust.tableDispatcher`): the first of these that applies, in the order its registration file lists them: `VG_MD_HASH_SHA384_SHA512` if the CPU supports its features (`VG_MD_HASH_SHA384_SHA512_FEATURES`); or else `VG_MD_HASH_SHA384`, which needs no CPU feature. Its CPU features, if any, are those of the table returned, which the CPU has.
+#[inline]
+pub fn vg_md_hash_sha384_auto() -> &'static crate::fn_tables::MdHash {
+    let cpu = verified_garbage_cpu::detected();
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_MD_HASH_SHA384_SHA512_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_MD_HASH_SHA384_SHA512_FEATURES)
+    {
+        return &crate::fn_tables::VG_MD_HASH_SHA384_SHA512;
+    }
+    &crate::fn_tables::VG_MD_HASH_SHA384
+}
+
+/// A table of functions of the interface `MdHash` with the data of `VG_MD_HASH_SHA512`, which every function taking one computes the same with (`VG.Rust.tableDispatcher`): the first of these that applies, in the order its registration file lists them: `VG_MD_HASH_SHA512_SHA512` if the CPU supports its features (`VG_MD_HASH_SHA512_SHA512_FEATURES`); or else `VG_MD_HASH_SHA512`, which needs no CPU feature. Its CPU features, if any, are those of the table returned, which the CPU has.
+#[inline]
+pub fn vg_md_hash_sha512_auto() -> &'static crate::fn_tables::MdHash {
+    let cpu = verified_garbage_cpu::detected();
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_MD_HASH_SHA512_SHA512_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_MD_HASH_SHA512_SHA512_FEATURES)
+    {
+        return &crate::fn_tables::VG_MD_HASH_SHA512_SHA512;
+    }
+    &crate::fn_tables::VG_MD_HASH_SHA512
+}
+
+/// A table of functions of the interface `MdHash` with the data of `VG_MD_HASH_SHA512_224`, which every function taking one computes the same with (`VG.Rust.tableDispatcher`): the first of these that applies, in the order its registration file lists them: `VG_MD_HASH_SHA512_224_SHA512` if the CPU supports its features (`VG_MD_HASH_SHA512_224_SHA512_FEATURES`); or else `VG_MD_HASH_SHA512_224`, which needs no CPU feature. Its CPU features, if any, are those of the table returned, which the CPU has.
 #[inline]
 pub fn vg_md_hash_sha512_224_auto() -> &'static crate::fn_tables::MdHash {
     let cpu = verified_garbage_cpu::detected();
@@ -260,7 +260,7 @@ pub fn vg_md_hash_sha512_224_auto() -> &'static crate::fn_tables::MdHash {
     &crate::fn_tables::VG_MD_HASH_SHA512_224
 }
 
-/// A table of functions of the interface `MdHash` with the data of `VG_MD_HASH_SHA512_256`, which every function taking one computes the same with (`VG.Rust.tableDispatcher`): the first of these that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `VG_MD_HASH_SHA512_256_SHA512` if the CPU supports its features (`VG_MD_HASH_SHA512_256_SHA512_FEATURES`); or else `VG_MD_HASH_SHA512_256`, which needs no CPU feature. Its CPU features, if any, are those of the table returned, which the CPU has.
+/// A table of functions of the interface `MdHash` with the data of `VG_MD_HASH_SHA512_256`, which every function taking one computes the same with (`VG.Rust.tableDispatcher`): the first of these that applies, in the order its registration file lists them: `VG_MD_HASH_SHA512_256_SHA512` if the CPU supports its features (`VG_MD_HASH_SHA512_256_SHA512_FEATURES`); or else `VG_MD_HASH_SHA512_256`, which needs no CPU feature. Its CPU features, if any, are those of the table returned, which the CPU has.
 #[inline]
 pub fn vg_md_hash_sha512_256_auto() -> &'static crate::fn_tables::MdHash {
     let cpu = verified_garbage_cpu::detected();

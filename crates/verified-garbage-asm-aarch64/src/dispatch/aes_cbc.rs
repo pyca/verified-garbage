@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Cbc.aesEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_cbc_encrypt_aes` if the CPU supports its features (`VG_AES_CBC_ENCRYPT_AES_FEATURES`); or else `vg_aes_cbc_encrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_cbc_encrypt_aes` if the CPU supports its features (`VG_AES_CBC_ENCRYPT_AES_FEATURES`); or else `vg_aes_cbc_encrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -58,7 +58,7 @@ pub unsafe fn vg_aes_cbc_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, sched
 ///
 /// Contract: `VG.Spec.Cbc.aesDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_cbc_decrypt_aes_sha3` if the CPU supports its features (`VG_AES_CBC_DECRYPT_AES_SHA3_FEATURES`); `vg_aes_cbc_decrypt_aes` if the CPU supports its features (`VG_AES_CBC_DECRYPT_AES_FEATURES`); or else `vg_aes_cbc_decrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_cbc_decrypt_aes_sha3` if the CPU supports its features (`VG_AES_CBC_DECRYPT_AES_SHA3_FEATURES`); `vg_aes_cbc_decrypt_aes` if the CPU supports its features (`VG_AES_CBC_DECRYPT_AES_FEATURES`); or else `vg_aes_cbc_decrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///

@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.sha512_224I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_hmac_sha512_224_init_shani` if the CPU supports its features (`VG_HMAC_SHA512_224_INIT_SHANI_FEATURES`); `vg_hmac_sha512_224_init_avx2` if the CPU supports its features (`VG_HMAC_SHA512_224_INIT_AVX2_FEATURES`); or else `vg_hmac_sha512_224_init`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_hmac_sha512_224_init_shani` if the CPU supports its features (`VG_HMAC_SHA512_224_INIT_SHANI_FEATURES`); `vg_hmac_sha512_224_init_avx2` if the CPU supports its features (`VG_HMAC_SHA512_224_INIT_AVX2_FEATURES`); or else `vg_hmac_sha512_224_init`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -60,7 +60,7 @@ pub unsafe fn vg_hmac_sha512_224_init_auto(_dit: verified_garbage_cpu::Dit<'_>, 
 ///
 /// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.sha512_224I`. Constant time: only the pointers and `count` may affect timing, not the states.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_hmac_sha512_224_finalize_shani` if the CPU supports its features (`VG_HMAC_SHA512_224_FINALIZE_SHANI_FEATURES`); `vg_hmac_sha512_224_finalize_avx2` if the CPU supports its features (`VG_HMAC_SHA512_224_FINALIZE_AVX2_FEATURES`); or else `vg_hmac_sha512_224_finalize`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_hmac_sha512_224_finalize_shani` if the CPU supports its features (`VG_HMAC_SHA512_224_FINALIZE_SHANI_FEATURES`); `vg_hmac_sha512_224_finalize_avx2` if the CPU supports its features (`VG_HMAC_SHA512_224_FINALIZE_AVX2_FEATURES`); or else `vg_hmac_sha512_224_finalize`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///

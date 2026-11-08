@@ -12,7 +12,8 @@ open VG.Proof.MillerRabin.AArch64 VG.Proof.Bignum.AArch64 in
 def base : RoundImpl := Proof.Variants.MillerRabin.AArch64.Base.variant
 
 /-- Every implementation, best first: each function generic over them is
-emitted with each (the registration files that import this). -/
+emitted with each (the registration files that import this), and its
+dispatcher tries them in this order. -/
 def variants := [base]
 
 end VG.Proof.Variants.MillerRabin.AArch64

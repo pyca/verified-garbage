@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Cmac.aesInitContract`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_cmac_aes_init_aesni` if the CPU supports its features (`VG_CMAC_AES_INIT_AESNI_FEATURES`); or else `vg_cmac_aes_init`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_cmac_aes_init_aesni` if the CPU supports its features (`VG_CMAC_AES_INIT_AESNI_FEATURES`); or else `vg_cmac_aes_init`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -55,7 +55,7 @@ pub unsafe fn vg_cmac_aes_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state: 
 ///
 /// Contract: `VG.Spec.Cmac.aesAbsorbContract`. Constant time: only the pointers, `rounds`, `count` and `len` may affect timing, not the state or the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_cmac_aes_absorb_aesni` if the CPU supports its features (`VG_CMAC_AES_ABSORB_AESNI_FEATURES`); or else `vg_cmac_aes_absorb`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_cmac_aes_absorb_aesni` if the CPU supports its features (`VG_CMAC_AES_ABSORB_AESNI_FEATURES`); or else `vg_cmac_aes_absorb`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -104,7 +104,7 @@ pub unsafe fn vg_cmac_aes_absorb_auto(_dit: verified_garbage_cpu::Dit<'_>, state
 ///
 /// Contract: `VG.Spec.Cmac.aesFinishContract`. Constant time: only the pointers, `rounds` and `count` may affect timing, not the state.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_cmac_aes_finish_aesni` if the CPU supports its features (`VG_CMAC_AES_FINISH_AESNI_FEATURES`); or else `vg_cmac_aes_finish`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_cmac_aes_finish_aesni` if the CPU supports its features (`VG_CMAC_AES_FINISH_AESNI_FEATURES`); or else `vg_cmac_aes_finish`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///

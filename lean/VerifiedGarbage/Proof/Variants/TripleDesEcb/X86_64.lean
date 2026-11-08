@@ -15,7 +15,8 @@ def avx512 : Proof.TripleDes.X86_64.Batch.EcbImpl := Proof.TripleDes.X86_64.Batc
 def sse2 : Proof.TripleDes.X86_64.Batch.EcbImpl := Proof.TripleDes.X86_64.Batch.sse
 
 /-- Every implementation, best first: each function generic over them is
-emitted with each (the registration files that import this). -/
+emitted with each (the registration files that import this), and its
+dispatcher tries them in this order. -/
 def variants := [avx512, avx2, sse2]
 
 end VG.Proof.Variants.TripleDesEcb.X86_64

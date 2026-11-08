@@ -16,7 +16,8 @@ open VG VG.X86_64 VG.Proof.Dsa.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64
 def base : Backend := Proof.Variants.DsaArithmetic.X86_64.Base.variant
 
 /-- Every implementation, best first: each function generic over them is
-emitted with each (the registration files that import this). -/
+emitted with each (the registration files that import this), and its
+dispatcher tries them in this order. -/
 def variants := [adx, base]
 
 end VG.Proof.Variants.DsaArithmetic.X86_64

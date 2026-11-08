@@ -38,9 +38,8 @@ VerifiedGarbage/
                     runs is what the kernel checked) and `#assert_spec_origin`
                     (`VG.Spec` definitions are declared in `Spec/`)
     Emit.lean       what is emitted (every registration file under
-                    `Artifacts/`, and every generic function under `Generic/`
-                    for every variant of its interface under `Variants/`), and
-                    writing or checking the generated crates
+                    `Artifacts/`, each function's implementations from one of
+                    them), and writing or checking the generated crates
     X86_64/         ISA model, printer, System V ABI target
     PPC64LE/        ISA model, printer, ELFv2 ABI target (64-bit little-endian PowerPC)
     RISCV64/        ISA model, printer, psABI target (64-bit RISC-V, RV64IM)
@@ -55,8 +54,6 @@ VerifiedGarbage/
                   (a function generic over a callee's implementations is
                   registered once for each element of their list,
                   `Proof/Variants/<Iface>/<Target>.lean`)
-  Dispatch.lean   The order in which each target's dispatchers try the variants, by
-                  suffix (untrusted: it only decides which proven implementation runs)
 VerifiedGarbageTest/  Golden tests for the (unverified) printers and calling conventions
 Emit.lean       Renders every artifact into `../crates/` (see `TCB/Emit.lean`)
 EmitOne.lean    The same, for the registration files named, while iterating
@@ -154,12 +151,12 @@ constant, or calls the function's generated dispatcher, `<name>_auto`
 the features the compilation target enables (`verified_garbage_cpu::target_contains`,
 in a `const` block) and those `verified_garbage_cpu::detected()` reports
 (`crates/verified-garbage-cpu/`), and needs none: it calls an implementation
-only on a CPU with that implementation's features, in the order
-`Dispatch.lean` ranks them, and otherwise the baseline. Where the
+only on a CPU with that implementation's features, in the order its
+registration file lists them, and otherwise the baseline. Where the
 compilation target enables an implementation's features (`-C
 target-cpu=x86-64-v3`), the compiler sees that it chooses that one, and the
-implementations ranked after it are not linked. The ranking is not trusted: every implementation it
-may choose is proven against the same contract.
+implementations after it are not linked. The order is not trusted: every
+implementation it may choose is proven against the same contract.
 
 ## What you need to trust
 

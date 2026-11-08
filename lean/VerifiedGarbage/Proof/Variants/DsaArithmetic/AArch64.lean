@@ -13,7 +13,8 @@ open VG VG.AArch64 VG.Proof.Dsa.AArch64 VG.Proof.Bignum.AArch64 in
 def base : Backend := Proof.Variants.DsaArithmetic.AArch64.Base.variant
 
 /-- Every implementation, best first: each function generic over them is
-emitted with each (the registration files that import this). -/
+emitted with each (the registration files that import this), and its
+dispatcher tries them in this order. -/
 def variants := [base]
 
 end VG.Proof.Variants.DsaArithmetic.AArch64

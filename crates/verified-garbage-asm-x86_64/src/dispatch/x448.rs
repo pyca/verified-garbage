@@ -2,61 +2,11 @@
 //! The dispatchers of the verified `x448` functions for `x86_64`
 //! (`crate::x448`, `VG.Rust.dispatcher`).
 
-/// Computes an X448 public key (RFC 7748 §6.2): writes `X448(k, 5)`, the X448 function of the 56-byte scalar `k` at `scalar` and the base point's u-coordinate 5, to `*out`. The scalar is decoded (clamped).
-///
-/// Contract: `VG.Spec.X448.x448BaseContract`. Constant time: only the pointers may affect timing, not the scalar.
-///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_x448_base_adx` if the CPU supports its features (`VG_X448_BASE_ADX_FEATURES`); or else `vg_x448_base`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 56 bytes.
-/// * `scalar` must be valid for reads of 56 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other or `scalar` (distinct Rust objects never do).
-/// * None of `out`, `scalar` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[allow(clippy::too_many_arguments)]
-#[inline]
-pub unsafe fn vg_x448_base_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 56], scalar: *const [u8; 56], scratch: *mut [u64; 1024]) {
-    /// The type of the implementations.
-    type Impl = unsafe extern "sysv64" fn(out: *mut [u8; 56], scalar: *const [u8; 56], scratch: *mut [u64; 1024]);
-    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
-    /// features the CPU has.
-    #[cold]
-    fn select() -> Impl {
-        let cpu = verified_garbage_cpu::detected();
-        if const { verified_garbage_cpu::target_contains(crate::x448::VG_X448_BASE_ADX_FEATURES) }
-            || cpu.contains(crate::x448::VG_X448_BASE_ADX_FEATURES)
-        {
-            return crate::x448::vg_x448_base_adx;
-        }
-        crate::x448::vg_x448_base
-    }
-    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
-    /// after it, and runs it.
-    #[cold]
-    unsafe extern "sysv64" fn first(out: *mut [u8; 56], scalar: *const [u8; 56], scratch: *mut [u64; 1024]) {
-        let f = select();
-        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
-        // SAFETY: the caller's obligations, which are those of every implementation, `f`
-        // among them, and the CPU has the features `f` needs.
-        unsafe { f(out, scalar, scratch) }
-    }
-    /// The function to call: `first`, until it records the implementation it chose.
-    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
-        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
-    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
-    // or an implementation `select` returned, which needs only features the CPU has. Calling
-    // either carries the caller's obligations, which are those of every implementation.
-    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(out, scalar, scratch) }
-}
-
 /// Computes an X448 shared secret (RFC 7748 §6.2): writes `X448(k, u)` to `*out`, for the 56-byte scalar `k` at `scalar` and the 56-byte u-coordinate `u` at `point`, and returns 0 if it is all zero (for a `u` of small order), 1 otherwise. The scalar is decoded (clamped); all 448 bits of `u` are used and noncanonical coordinates are reduced modulo the field prime (§5).
 ///
 /// Contract: `VG.Spec.X448.exchangeContract`. Constant time: only the pointers may affect timing, not the scalar or the u-coordinate; the return value depends on both.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_x448_exchange_adx` if the CPU supports its features (`VG_X448_EXCHANGE_ADX_FEATURES`); or else `vg_x448_exchange`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_x448_exchange_adx` if the CPU supports its features (`VG_X448_EXCHANGE_ADX_FEATURES`); or else `vg_x448_exchange`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -101,4 +51,54 @@ pub unsafe fn vg_x448_exchange_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *m
     // or an implementation `select` returned, which needs only features the CPU has. Calling
     // either carries the caller's obligations, which are those of every implementation.
     unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(out, scalar, point, scratch) }
+}
+
+/// Computes an X448 public key (RFC 7748 §6.2): writes `X448(k, 5)`, the X448 function of the 56-byte scalar `k` at `scalar` and the base point's u-coordinate 5, to `*out`. The scalar is decoded (clamped).
+///
+/// Contract: `VG.Spec.X448.x448BaseContract`. Constant time: only the pointers may affect timing, not the scalar.
+///
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_x448_base_adx` if the CPU supports its features (`VG_X448_BASE_ADX_FEATURES`); or else `vg_x448_base`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 56 bytes.
+/// * `scalar` must be valid for reads of 56 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other or `scalar` (distinct Rust objects never do).
+/// * None of `out`, `scalar` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_x448_base_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 56], scalar: *const [u8; 56], scratch: *mut [u64; 1024]) {
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(out: *mut [u8; 56], scalar: *const [u8; 56], scratch: *mut [u64; 1024]);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::x448::VG_X448_BASE_ADX_FEATURES) }
+            || cpu.contains(crate::x448::VG_X448_BASE_ADX_FEATURES)
+        {
+            return crate::x448::vg_x448_base_adx;
+        }
+        crate::x448::vg_x448_base
+    }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(out: *mut [u8; 56], scalar: *const [u8; 56], scratch: *mut [u64; 1024]) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(out, scalar, scratch) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(out, scalar, scratch) }
 }
