@@ -880,7 +880,7 @@ def openSplitFnF (v : GcmVariant) : OpenToSplit.OpenSplitFn Proof.Gcm.X86_64.Sti
 /-- `vg_aes_gcm_open_prepared` of a variant whose loops read the 48 powers:
 by the flag, its code on the powers or its code on the key context. -/
 def openCodeF (v : GcmVariant) : Prog VG.X86_64.isa :=
-  Impl.Gcm.X86_64.Flag.onFlag
+  Impl.Gcm.X86_64.Flag.onFlag 48
     (Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.impl.openCodeP (v.impl.withBlk (blkR v))))
     (Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.impl.openCode v.impl.callees))
 
@@ -945,7 +945,7 @@ powers: by the flag, its code calling `vg_aes_gcm_open_prepared`, or its code
 on the key context. -/
 theorem openToCodeR_onFlag (v : GcmVariant) :
     Verified X86_64.target
-      (Impl.Gcm.X86_64.Flag.onFlag (openToCodeF v) (Impl.AesGcm.X86_64.OpenTo.openTo v.impl.copyW (openFn v.impl).fn))
+      (Impl.Gcm.X86_64.Flag.onFlag 48 (openToCodeF v) (Impl.AesGcm.X86_64.OpenTo.openTo v.impl.copyW (openFn v.impl).fn))
       (VG.Proof.AesGcm.Flag.openToRoundsContract X86_64.abi (openToStackR v)) := by
   have h := openToCodeF_verified v
   have hb := OpenTo.openTo_verified v.impl.copyW (openFn v.impl)
@@ -975,7 +975,7 @@ def blkToF (v : GcmVariant) : StreamTo.BlkToFn Proof.Gcm.X86_64.Stitch.CtxMode.f
 /-- `vg_aes_gcm_seal_prepared` of a variant whose loops read the 48 powers: by
 the flag, its code on the powers or its code on the key context. -/
 def sealCodeF (v : GcmVariant) : Prog VG.X86_64.isa :=
-  Impl.Gcm.X86_64.Flag.onFlag
+  Impl.Gcm.X86_64.Flag.onFlag 48
     (Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.impl.sealCodeP (v.impl.withBlk (blkR v))))
     (Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.impl.sealCode v.impl.callees))
 
@@ -1009,7 +1009,7 @@ theorem sealCodeF_mx (v : GcmVariant) : (sealCodeF v).allInstrs (fun i => !VG.X8
 /-- `vg_aes_gcm_stream_encrypt_prepared` of a variant whose loops read the 48
 powers: by the flag, its code on the powers or its code on the key context. -/
 def streamEncryptCodeF (v : GcmVariant) : Prog VG.X86_64.isa :=
-  Impl.Gcm.X86_64.Flag.onFlag
+  Impl.Gcm.X86_64.Flag.onFlag 48
     (Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamEncrypt (v.impl.withBlk (blkR v))))
     (Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamEncrypt v.impl.callees))
 
@@ -1078,7 +1078,7 @@ theorem splitFrameSatF_pre :
     | decide
     | exact Region.disjoint_of_sep (by decide)
     | (refine VG.Proof.AesGcm.Flag.flaggedPowers_of_zeroMem (fun i hi => ?_) (by decide)
-       rw [if_neg (VG.Proof.AesGcm.Flag.ctx_ne1024 hi)]
+       simp only [VG.Proof.AesGcm.Flag.ctx_ne1024 hi, ite_false]
        split
        · next h => exfalso; bv_omega
        · rfl)
@@ -1118,7 +1118,7 @@ powers: by the flag, its code calling `vg_aes_gcm_seal_prepared` and
 `vg_aes_gcm_stream_encrypt_prepared`, or its code on the key context. -/
 theorem sealGatherR_onFlag (v : GcmVariant) :
     Verified X86_64.target
-      (Impl.Gcm.X86_64.Flag.onFlag (sealGatherCodeF v)
+      (Impl.Gcm.X86_64.Flag.onFlag 48 (sealGatherCodeF v)
         (Impl.StackScratch.X86_64.withStackArgScratch 240 5
           (Impl.AesGcm.X86_64.SealGather.sealGather (shortFn v).quick (shortFn v).fast (shortFn v).test
             (shortFn v).code (initFn v.impl).fn (aadFn v.impl).fn (toFn v).fn (finFn v.impl).fn)))
@@ -1132,7 +1132,7 @@ theorem sealGatherR_onFlag (v : GcmVariant) :
 by the flag, its prepared code or its code on the key context. -/
 theorem openToCodeR16_onFlag (v : GcmVariant) (r : R16 v) :
     Verified X86_64.target
-      (Impl.Gcm.X86_64.Flag.onFlag (openToCodeR16 v r) (Impl.AesGcm.X86_64.OpenTo.openTo v.impl.copyW (openFn v.impl).fn))
+      (Impl.Gcm.X86_64.Flag.onFlag 16 (openToCodeR16 v r) (Impl.AesGcm.X86_64.OpenTo.openTo v.impl.copyW (openFn v.impl).fn))
       (VG.Proof.AesGcm.Flag.openToRoundsContract X86_64.abi (openToStackR16 v)) := by
   have h := openToCodeR16_verified v r
   have hb := OpenTo.openTo_verified v.impl.copyW (openFn v.impl)

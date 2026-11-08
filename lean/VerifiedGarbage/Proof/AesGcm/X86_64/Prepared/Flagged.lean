@@ -721,8 +721,8 @@ context. -/
 theorem sealGather_onFlagF {c₁ c₂ : Prog isa}
     (h₁ : Verified target c₁ (AesGcm.Flag.sealGatherFlaggedRoundsContract abi 5128))
     (h₂ : Verified target c₂ (Proof.AesGcm.sealGatherRoundsContract abi 5128)) :
-    Verified target (Impl.Gcm.X86_64.Flag.onFlag c₁ c₂) (AesGcm.Flag.sealGatherRoundsContract abi 5128) :=
-  Verified.of_onFlagCtx (by decide) h₁
+    Verified target (Impl.Gcm.X86_64.Flag.onFlag 48 c₁ c₂) (AesGcm.Flag.sealGatherRoundsContract abi 5128) :=
+  Verified.of_onFlagCtx (Or.inr rfl) (by decide) h₁
     (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h₂
       (fun _ _ _ _ _ _ _ _ _ _ _ _ h => h) sealGather_satbase)
     (fun _ _ _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.1, hf, h.2.2.2 hf⟩)
