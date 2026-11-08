@@ -149,6 +149,10 @@ theorem kept_of {n m : Nat} (hM : ModOk n m) {base : Addr} {O : Nat} {m₀ m₁ 
 theorem exec_of_wp {c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa c s Q) :
     ∃ t s', Exec isa c s t s' ∧ Q s' := h
 
+/-- The multiplication pushes no frame. -/
+theorem mulFn_noFrames (n m : Nat) : (mulFn n m).noFrames = true := by
+  rfl
+
 /-- `vg_<curve>_mul_mod_<p|n>`. -/
 theorem mulFn_ok {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n s)
     (hb : wordsVal s.mem (s.gpr .r3) (lo s .r6) n < m) :
@@ -165,7 +169,21 @@ theorem mulFn_ok {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n s)
     rw [show (mod n m).minv = BitVec.ofNat 64 (minv m) from rfl, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (minv_lt m)]
     exact hM.inv
   have en : (mod n m).n = n := rfl
-  refine WP.mono (rmul_ok P (lay hM hp) hM.n9 hinv hbu) fun v ⟨V, C, O₂, K₂⟩ => ⟨abi_of_kp (K₁.trans (K₂.mono (by decide))), (K₁.trans (K₂.mono (by decide))).gpr,
+  have hop : WP isa (rmulSel (mod n m) (own n)) u fun v =>
+      wordsVal v.mem (s.gpr .r3) (lo s .r4) (mod n m).n < m ∧
+      wordsVal v.mem (s.gpr .r3) (lo s .r4) (mod n m).n * 2 ^ (64 * (mod n m).n) % m =
+        wordsVal u.mem (s.gpr .r3) (lo s .r5) (mod n m).n * wordsVal u.mem (s.gpr .r3) (lo s .r6) (mod n m).n % m ∧
+      Outs (s.gpr .r3) (opOuts (mod n m) (own n) (lo s .r4)) u.mem v.mem ∧ Kp (.r6 :: opClob) u v := by
+    rw [rmulSel_eq]
+    split
+    · rename_i h4
+      have := hp.a
+      have := hp.b
+      exact rmul4_ok P (lay hM hp) h4 (by simp only [mod, moAt, tmpAt, own, Impl.Weierstrass.Mont.ownAt,
+          Impl.Weierstrass.Mont.ownBytes]; omega)
+        (by simp only [mod, tmpAt]; omega) (by simp only [mod, tmpAt]; omega) hinv hbu
+    · exact WP.mono (rmul_ok P (lay hM hp) hM.n9 hinv hbu) fun v ⟨a, b, c, d⟩ => ⟨a, b, c, d.mono (by decide)⟩
+  refine WP.mono hop fun v ⟨V, C, O₂, K₂⟩ => ⟨abi_of_kp (K₁.trans (K₂.mono (by decide))), (K₁.trans (K₂.mono (by decide))).gpr,
     by rw [en] at V; exact V, ?_, kept_of hM O₁ O₂⟩
   rw [en] at C
   rw [C]

@@ -37,101 +37,87 @@ vg_secp256k1_mul_mod_n:
 	stw %r11, 3972(%r3)
 	lis %r11, 21896
 	ori %r11, %r11, 45375
-	stw %r11, 3880(%r3)
+	stw %r11, 3912(%r3)
 	lis %r11, 19213
 	ori %r11, %r11, 65382
-	stw %r11, 3884(%r3)
+	stw %r11, 3916(%r3)
 	std %r15, 3840(%r3)
 	std %r16, 3848(%r3)
 	std %r17, 3856(%r3)
 	std %r18, 3864(%r3)
 	std %r19, 3872(%r3)
+	std %r20, 3880(%r3)
+	std %r21, 3888(%r3)
+	std %r22, 3896(%r3)
+	std %r23, 3904(%r3)
 	li %r15, 0
 	li %r16, 0
 	li %r17, 0
 	li %r18, 0
 	li %r19, 0
-	addi %r7, %r3, 3944
+	ld %r20, 0(%r6)
+	ld %r21, 8(%r6)
+	ld %r22, 16(%r6)
+	ld %r23, 24(%r6)
+	ld %r6, 3944(%r3)
+	ld %r7, 3952(%r3)
+	ld %r10, 3960(%r3)
+	ld %r0, 3968(%r3)
 	li %r8, 4
 20:
 	ld %r9, 0(%r5)
-	li %r0, 0
-	ld %r11, 0(%r6)
-	mulhdu %r10, %r9, %r11
-	mulld %r11, %r9, %r11
-	addc %r11, %r11, %r0
-	addze %r10, %r10
-	addc %r15, %r11, %r15
-	addze %r0, %r10
-	ld %r11, 8(%r6)
-	mulhdu %r10, %r9, %r11
-	mulld %r11, %r9, %r11
-	addc %r11, %r11, %r0
-	addze %r10, %r10
-	addc %r16, %r11, %r16
-	addze %r0, %r10
-	ld %r11, 16(%r6)
-	mulhdu %r10, %r9, %r11
-	mulld %r11, %r9, %r11
-	addc %r11, %r11, %r0
-	addze %r10, %r10
-	addc %r17, %r11, %r17
-	addze %r0, %r10
-	ld %r11, 24(%r6)
-	mulhdu %r10, %r9, %r11
-	mulld %r11, %r9, %r11
-	addc %r11, %r11, %r0
-	addze %r10, %r10
-	addc %r18, %r11, %r18
-	addze %r0, %r10
-	addc %r19, %r19, %r0
+	mulld %r11, %r9, %r20
+	addc %r15, %r15, %r11
+	mulld %r11, %r9, %r21
+	adde %r16, %r16, %r11
+	mulld %r11, %r9, %r22
+	adde %r17, %r17, %r11
+	mulld %r11, %r9, %r23
+	adde %r18, %r18, %r11
+	addze %r19, %r19
 	li %r12, 0
 	addze %r12, %r12
-	ld %r10, 3880(%r3)
-	mulld %r9, %r15, %r10
-	ld %r10, 0(%r7)
-	mulhdu %r0, %r9, %r10
-	mulld %r10, %r9, %r10
-	addc %r10, %r10, %r15
-	addze %r0, %r0
-	ld %r11, 8(%r7)
-	mulhdu %r10, %r9, %r11
-	mulld %r11, %r9, %r11
-	addc %r11, %r11, %r0
-	addze %r10, %r10
-	addc %r15, %r11, %r16
-	addze %r0, %r10
-	ld %r11, 16(%r7)
-	mulhdu %r10, %r9, %r11
-	mulld %r11, %r9, %r11
-	addc %r11, %r11, %r0
-	addze %r10, %r10
-	addc %r16, %r11, %r17
-	addze %r0, %r10
-	ld %r11, 24(%r7)
-	mulhdu %r10, %r9, %r11
-	mulld %r11, %r9, %r11
-	addc %r11, %r11, %r0
-	addze %r10, %r10
-	addc %r17, %r11, %r18
-	addze %r0, %r10
-	addc %r18, %r19, %r0
+	mulhdu %r11, %r9, %r20
+	addc %r16, %r16, %r11
+	mulhdu %r11, %r9, %r21
+	adde %r17, %r17, %r11
+	mulhdu %r11, %r9, %r22
+	adde %r18, %r18, %r11
+	mulhdu %r11, %r9, %r23
+	adde %r19, %r19, %r11
+	addze %r12, %r12
+	ld %r11, 3912(%r3)
+	mulld %r9, %r15, %r11
+	mulld %r11, %r9, %r6
+	addc %r15, %r15, %r11
+	mulld %r11, %r9, %r7
+	adde %r16, %r16, %r11
+	mulld %r11, %r9, %r10
+	adde %r17, %r17, %r11
+	mulld %r11, %r9, %r0
+	adde %r18, %r18, %r11
+	addze %r19, %r19
+	addze %r12, %r12
+	mulhdu %r11, %r9, %r6
+	addc %r15, %r16, %r11
+	mulhdu %r11, %r9, %r7
+	adde %r16, %r17, %r11
+	mulhdu %r11, %r9, %r10
+	adde %r17, %r18, %r11
+	mulhdu %r11, %r9, %r0
+	adde %r18, %r19, %r11
 	addze %r19, %r12
 	addi %r5, %r5, 8
 	addi %r8, %r8, -1
 	cmpldi %cr0, %r8, 0
 	bne %cr0, 20b
-	ld %r12, 0(%r7)
-	subfc %r11, %r12, %r15
+	subfc %r11, %r6, %r15
 	std %r11, 3912(%r3)
-	ld %r12, 8(%r7)
-	subfe %r11, %r12, %r16
+	subfe %r11, %r7, %r16
 	std %r11, 3920(%r3)
-	ld %r12, 16(%r7)
-	subfe %r11, %r12, %r17
+	subfe %r11, %r10, %r17
 	std %r11, 3928(%r3)
-	ld %r12, 24(%r7)
-	subfe %r11, %r12, %r18
+	subfe %r11, %r0, %r18
 	std %r11, 3936(%r3)
 	addze %r10, %r19
 	li %r11, 0
@@ -161,4 +147,8 @@ vg_secp256k1_mul_mod_n:
 	ld %r17, 3856(%r3)
 	ld %r18, 3864(%r3)
 	ld %r19, 3872(%r3)
+	ld %r20, 3880(%r3)
+	ld %r21, 3888(%r3)
+	ld %r22, 3896(%r3)
+	ld %r23, 3904(%r3)
 	blr
