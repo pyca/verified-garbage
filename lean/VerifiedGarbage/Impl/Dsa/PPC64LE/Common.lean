@@ -199,13 +199,22 @@ def pModQ : Prog isa :=
     (.seq (.block ([.addi .r30 .r27 0] ++ getP .r31)) (.seq ModArith.reduce
       (.seq (.block [.addi .r31 .r23 0]) (.seq PublicChecked.one (.seq (eqMask .r3 1 7) (.block unmask))))))
 
-/-- In the P space: p into array 0, `R² mod p` into array 24 (and array 1),
-by `Precompute.r2Prime` (`65 w` doublings and six Montgomery squares, for any
-odd p), after `-p⁻¹ mod 2³²` into `r12`. -/
-def setupP : Prog isa :=
+/-- `r3 :=` p's top word (word `w − 1` of array 0, at `r10`; `r11 = 2 w`). -/
+def topWord : List Instr := [.lsl .r3 .r11 2, .add .r3 .r10 .r3, .subi .r3 .r3 8, .load .d .r3 .r3 0]
+
+/-- Into the P space: p into array 0, `-p⁻¹ mod 2³²` into `r12`, the bases of
+arrays 1–3 into `r5`, `r8` and `r9`, and p's top word into `r3`. -/
+def setupPre : Prog isa :=
   .seq (.block enterP) (.seq (.seq (.block ptrP) (loadArr 0))
-    (.seq (.block (PublicChecked.minv ++ base .r5 1 ++ base .r8 2 ++ base .r9 3))
-      (.seq Precompute.r2Prime (copy 24 1))))
+    (.block (PublicChecked.minv ++ base .r5 1 ++ base .r8 2 ++ base .r9 3 ++ topWord)))
+
+/-- In the P space: p into array 0, `R² mod p` into array 24 (and array 1).
+p is public, so the code branches on its top word: when it is not zero,
+`Precompute.r2Hi` (`64 + w` doublings from `2^(64 (w − 1))`, then six
+Montgomery squares); else `Precompute.r2Prime` (`65 w` doublings, for any odd
+p). -/
+def setupP : Prog isa :=
+  .seq setupPre (.ite (.zero .d .r3) (.seq Precompute.r2Prime (copy 24 1)) (.seq Precompute.r2Hi (copy 24 1)))
 
 /-- `r20 &= ¬r19`. -/
 def clear19 : List Instr := [.logic .or .r20 .r20 .r19, .logic .xor .r20 .r20 .r19]

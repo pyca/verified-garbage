@@ -54,7 +54,16 @@ theorem t2 : RelCT isa (Two (FixR (coreRegs ++ []))) (.block (ptrQ ++ odd)) fun 
   two_taint _ (pins_fixR _) (by taint_decide)
 theorem t3 : RelCT isa (Two (FixR (coreRegs ++ []))) pModQ fun _ _ => True :=
   two_taint _ (pins_fixR _) (by taint_decide)
-theorem t4 : RelCT isa (Two (FixR (coreRegs ++ []))) setupP fun _ _ => True :=
+theorem t4 : RelCT isa (Two (FixR (coreRegs ++ []))) setupPre fun _ _ => True :=
+  two_taint _ (pins_fixR _) (by taint_decide)
+/-- The registers `setupPre` leaves fixed: the P space's, and the bases of
+arrays 1–3. -/
+def preRegs : List Reg := envRegs' ++ [.r5, .r8, .r9]
+theorem t4a : RelCT isa (Two (FixR (coreRegs ++ preRegs)))
+    (.seq VG.Impl.Bignum.PPC64LE.Precompute.r2Prime (VG.Impl.MillerRabin.PPC64LE.copy 24 1)) fun _ _ => True :=
+  two_taint _ (pins_fixR _) (by taint_decide)
+theorem t4b : RelCT isa (Two (FixR (coreRegs ++ preRegs)))
+    (.seq VG.Impl.Bignum.PPC64LE.Precompute.r2Hi (VG.Impl.MillerRabin.PPC64LE.copy 24 1)) fun _ _ => True :=
   two_taint _ (pins_fixR _) (by taint_decide)
 theorem t5 : RelCT isa (Two (FixR (coreRegs ++ envRegs'))) (.seq (.seq (.block ptrG) (loadArr 4)) elemRange)
     fun _ _ => True :=
@@ -187,6 +196,56 @@ theorem w_P {v : VD} {s : State} (h : OM v s ∧ s.gpr .r0 = 0) : WP isa setupP 
   obtain ⟨⟨B, r2, -, ⟨ko, qf⟩, e0⟩, z⟩ := h
   exact w_setupP (K := KM) (fun _ h => h.1) B r2 qf ⟨ko, e0.mp z⟩
 
+/-- The P space's registers and the bases of arrays 1–3. -/
+def envPB (v : VD) : List (Reg × BitVec 64) :=
+  envP v ++ [(.r5, off v.L.S (slot v.L.wp 1)), (.r8, off v.L.S (slot v.L.wp 2)), (.r9, off v.L.S (slot v.L.wp 3))]
+
+/-- After `setupPre`: `r3` is zero exactly when p's top word is. -/
+def SPre : VD → State → Prop := Ph VD.qb fun v s =>
+  FixL (envPB v) s ∧ (s.gpr .r3 = 0 ↔ v.p / 2 ^ (64 * (v.L.wp - 1)) = 0)
+
+theorem pins_SPre : Pins SPre (coreRegs ++ preRegs) := pins_fixL _ _ fun _ => rfl
+
+/-- p's top word is its quotient by `2^(64 (w − 1))`. -/
+theorem top_div {m : Mem} {B : Addr} {d w : Nat} (hw : 1 ≤ w) :
+    (word m B (d + 8 * (w - 1))).toNat = val32 m B d (2 * w) / 2 ^ (64 * (w - 1)) := by
+  rw [val32_top m B d w hw]
+  have hlo := val32_lt m B d (2 * (w - 1))
+  rw [show 32 * (2 * (w - 1)) = 64 * (w - 1) by omega] at hlo
+  rw [Nat.add_mul_div_left _ _ (Nat.two_pow_pos _), Nat.div_eq_of_lt hlo, Nat.zero_add]
+
+theorem w_pre0 {v : VD} {s : State} (B : Base v s) (r2 : s.gpr .r2 = pack v.L.pl v.L.ql v.qb v.d)
+    (hpo : v.p % 2 = 1) : WP isa setupPre s (SPre v) := by
+  have hL := B.ok
+  have hw := hL.wp_ge
+  have hnw := hL.nowrap
+  have hqZ : v.L.qOff + 1600 ≤ v.L.Z := by have := hL.buf_end; simp only [Lay.bOff] at this; omega_arith
+  have e0 := Lay.slot_eq v.L.wp 0; have e28 := Lay.slot_eq v.L.wp 28
+  have hq28 : v.L.qOff = slot v.L.wp 28 := rfl
+  have hp : pOf s.mem v.L v.key = v.p := by rw [B.p]; rfl
+  refine WP.mono (setupPre_ok B.ok B.scr B.regs (B.hk.take B.kn) (by rw [hp]; exact hpo))
+    fun t ⟨⟨hin, a5, a8, a9, _, _, v0, _, o3, a3⟩, k⟩ => ⟨B.step k (Body.ofP hL o3 (by omega_arith) (by omega_arith)), ?_, ?_, ?_⟩
+  · rw [k.gpr .r2 (by decide), r2]
+  · have f := envP_of hin
+    simp only [FixL, envPB, envP, List.cons_append, List.nil_append, List.forall_mem_cons, List.not_mem_nil,
+      false_imp_iff, imp_true_iff, and_true] at f ⊢
+    exact ⟨f.1, f.2.1, f.2.2.1, f.2.2.2.1, f.2.2.2.2, a5, a8, a9⟩
+  · rw [a3, ← hp, ← v0, ← top_div (by omega_arith)]
+    constructor
+    · intro h; rw [h]; rfl
+    · intro h; exact BitVec.eq_of_toNat_eq (by rw [h]; rfl)
+
+/-- `setupP`, for phases that fix `coreRegs` and hold `Base`, `r2`'s lengths
+and an odd p: its branch on p's top word is the same in both runs. -/
+theorem setupP_rel {Φ : VD → State → Prop} (hpin : Pins Φ (coreRegs ++ []))
+    (hΦ : ∀ v s, Φ v s → Base v s ∧ s.gpr .r2 = pack v.L.pl v.L.ql v.qb v.d ∧ v.p % 2 = 1) :
+    RelCT isa (Two Φ) setupP fun _ _ => True := by
+  unfold setupP
+  refine RelCT.seq (two_post (rel_pins hpin t4) fun v s h =>
+    have ⟨B, r2, hpo⟩ := hΦ v s h; w_pre0 B r2 hpo) ?_
+  exact rel_ite_zero (zero_iff_agree _ fun _ _ h => h.2.2.2)
+    (rel_pins (pins_and pins_SPre) t4a) (rel_pins (pins_and pins_SPre) t4b)
+
 /-! ## An element's check -/
 
 section Elem
@@ -290,7 +349,8 @@ theorem paramsTail_rel {rest fail : Prog isa} {Q : State → State → Prop} {G 
     (rel_ite_zeroG (zero_iff_agree _ fun _ _ h => h.2.2.2.2.2) ?_ (hfail _ fun _ _ h => ⟨h.1.1.1, h.2⟩))
   refine RelCT.seq (two_postG (rel_pins (pins_and pins_O2) t3) fun _ _ h => w_OM h)
     (rel_ite_zeroG (zero_iff_agree _ fun _ _ h => h.2.2.2.2) ?_ (hfail _ fun _ _ h => ⟨h.1.1.1, h.2⟩))
-  refine RelCT.seq (two_postG (rel_pins (pins_and pins_OM) t4) fun _ _ h => w_P h) (RelCT.seq
+  refine RelCT.seq (two_postG (setupP_rel (pins_and pins_OM)
+      fun _ _ ⟨⟨B, r2, _, ⟨ko, _⟩, _⟩, _⟩ => ⟨B, r2, ko.2.1⟩) fun _ _ h => w_P h) (RelCT.seq
     hG (rel_ite_zeroG (zero_iff_agree _ fun _ _ h => h.2.2.2.2.2) ?_ (hfail _ fun _ _ h => ⟨h.1.1.1, h.2⟩)))
   exact hrest.mono (fun _ _ => two_mono fun _ _ ⟨⟨⟨B, r2, fx, pf, k, e⟩, z⟩, g⟩ =>
       ⟨⟨B, r2, fx, pf, k, e.mp z⟩, g⟩) fun _ _ h => h
