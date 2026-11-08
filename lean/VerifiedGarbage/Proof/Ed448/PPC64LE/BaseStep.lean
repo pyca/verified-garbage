@@ -270,7 +270,7 @@ theorem step_ok {k : Nat} (hbits : Bits b k sL.mem) (hQ : QOk b sL.mem) {c : Nat
   rw [baseStep_eq]
   obtain ⟨o1, o2, o3, o4⟩ := last_ok
   refine WP.seq (WP.mono (head_ok hQ hc1 hc2 h.cur) fun s1 h1 => WP.seq
-    (ops_ok addOps SQ _ s1 addOps_ok h1 fun s2 h2 => WP.mono (op_ok (.mul TZ TF TG) o1 o2 o3 o4 h2)
+    (ops_ok addOps SQ _ s1 addOps_ok h1 fun s2 h2 => WP.mono (op_ok (.mul TZ TF TG) o1 o2 o3 o4 (by decide) (by decide) h2)
       fun s3 h3 => WP.mono (swap_ok (r := Rv k c) (p := pick ((c - 1) % 2) basePoint (Rv k c)) hbits
         (by omega_arith) h3) fun s4 h4 => ?_))
   refine ⟨⟨⟨h4.ctx, h4.stp, rfl, ?_, ?_⟩⟩, ?_⟩

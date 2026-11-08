@@ -220,7 +220,7 @@ theorem vstep_ok {S K : Nat} (hT : TabIs b sL.mem (tabV S K)) (hP : PtsOk b sL.m
   rw [vStep_eq]
   obtain ⟨o1, o2, o3, o4⟩ := last_ok
   refine WP.seq (WP.mono (vhead_ok hP hc1 hc2 h.cur) fun s1 h1 => WP.seq
-    (ops_ok addOps SQ _ s1 addOps_ok h1 fun s2 h2 => WP.mono (op_ok (.mul TZ TF TG) o1 o2 o3 o4 h2)
+    (ops_ok addOps SQ _ s1 addOps_ok h1 fun s2 h2 => WP.mono (op_ok (.mul TZ TF TG) o1 o2 o3 o4 (by decide) (by decide) h2)
       fun s3 h3 => WP.mono (vswap_ok (S := S) (K := K) (q := Qv (4 * S) (4 * K) a r c)
         (p := selP (c - 1) a r (Qv (4 * S) (4 * K) a r c)) hT (by omega_arith) h3) fun s4 h4 => ?_))
   refine ⟨⟨⟨h4.ctx, h4.stp, rfl, h4.r12, ?_⟩⟩, ?_⟩
