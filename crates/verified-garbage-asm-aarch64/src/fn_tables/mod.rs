@@ -86,8 +86,8 @@ mod vg_hash_sha384;
 pub use vg_hash_sha384::VG_HASH_SHA384;
 
 #[rustfmt::skip]
-mod vg_hash_sha384_sha3;
-pub use vg_hash_sha384_sha3::{VG_HASH_SHA384_SHA3, VG_HASH_SHA384_SHA3_FEATURES};
+mod vg_hash_sha384_sha512;
+pub use vg_hash_sha384_sha512::{VG_HASH_SHA384_SHA512, VG_HASH_SHA384_SHA512_FEATURES};
 
 #[rustfmt::skip]
 mod vg_hash_sha512;
@@ -98,20 +98,20 @@ mod vg_hash_sha512_224;
 pub use vg_hash_sha512_224::VG_HASH_SHA512_224;
 
 #[rustfmt::skip]
-mod vg_hash_sha512_224_sha3;
-pub use vg_hash_sha512_224_sha3::{VG_HASH_SHA512_224_SHA3, VG_HASH_SHA512_224_SHA3_FEATURES};
+mod vg_hash_sha512_224_sha512;
+pub use vg_hash_sha512_224_sha512::{VG_HASH_SHA512_224_SHA512, VG_HASH_SHA512_224_SHA512_FEATURES};
 
 #[rustfmt::skip]
 mod vg_hash_sha512_256;
 pub use vg_hash_sha512_256::VG_HASH_SHA512_256;
 
 #[rustfmt::skip]
-mod vg_hash_sha512_256_sha3;
-pub use vg_hash_sha512_256_sha3::{VG_HASH_SHA512_256_SHA3, VG_HASH_SHA512_256_SHA3_FEATURES};
+mod vg_hash_sha512_256_sha512;
+pub use vg_hash_sha512_256_sha512::{VG_HASH_SHA512_256_SHA512, VG_HASH_SHA512_256_SHA512_FEATURES};
 
 #[rustfmt::skip]
-mod vg_hash_sha512_sha3;
-pub use vg_hash_sha512_sha3::{VG_HASH_SHA512_SHA3, VG_HASH_SHA512_SHA3_FEATURES};
+mod vg_hash_sha512_sha512;
+pub use vg_hash_sha512_sha512::{VG_HASH_SHA512_SHA512, VG_HASH_SHA512_SHA512_FEATURES};
 
 #[rustfmt::skip]
 mod vg_hmac_md5;
@@ -146,8 +146,8 @@ mod vg_hmac_sha384;
 pub use vg_hmac_sha384::VG_HMAC_SHA384;
 
 #[rustfmt::skip]
-mod vg_hmac_sha384_sha3;
-pub use vg_hmac_sha384_sha3::{VG_HMAC_SHA384_SHA3, VG_HMAC_SHA384_SHA3_FEATURES};
+mod vg_hmac_sha384_sha512;
+pub use vg_hmac_sha384_sha512::{VG_HMAC_SHA384_SHA512, VG_HMAC_SHA384_SHA512_FEATURES};
 
 #[rustfmt::skip]
 mod vg_hmac_sha512;
@@ -158,20 +158,20 @@ mod vg_hmac_sha512_224;
 pub use vg_hmac_sha512_224::VG_HMAC_SHA512_224;
 
 #[rustfmt::skip]
-mod vg_hmac_sha512_224_sha3;
-pub use vg_hmac_sha512_224_sha3::{VG_HMAC_SHA512_224_SHA3, VG_HMAC_SHA512_224_SHA3_FEATURES};
+mod vg_hmac_sha512_224_sha512;
+pub use vg_hmac_sha512_224_sha512::{VG_HMAC_SHA512_224_SHA512, VG_HMAC_SHA512_224_SHA512_FEATURES};
 
 #[rustfmt::skip]
 mod vg_hmac_sha512_256;
 pub use vg_hmac_sha512_256::VG_HMAC_SHA512_256;
 
 #[rustfmt::skip]
-mod vg_hmac_sha512_256_sha3;
-pub use vg_hmac_sha512_256_sha3::{VG_HMAC_SHA512_256_SHA3, VG_HMAC_SHA512_256_SHA3_FEATURES};
+mod vg_hmac_sha512_256_sha512;
+pub use vg_hmac_sha512_256_sha512::{VG_HMAC_SHA512_256_SHA512, VG_HMAC_SHA512_256_SHA512_FEATURES};
 
 #[rustfmt::skip]
-mod vg_hmac_sha512_sha3;
-pub use vg_hmac_sha512_sha3::{VG_HMAC_SHA512_SHA3, VG_HMAC_SHA512_SHA3_FEATURES};
+mod vg_hmac_sha512_sha512;
+pub use vg_hmac_sha512_sha512::{VG_HMAC_SHA512_SHA512, VG_HMAC_SHA512_SHA512_FEATURES};
 
 #[rustfmt::skip]
 mod vg_md_hash_md5;
@@ -206,8 +206,8 @@ mod vg_md_hash_sha384;
 pub use vg_md_hash_sha384::VG_MD_HASH_SHA384;
 
 #[rustfmt::skip]
-mod vg_md_hash_sha384_sha3;
-pub use vg_md_hash_sha384_sha3::{VG_MD_HASH_SHA384_SHA3, VG_MD_HASH_SHA384_SHA3_FEATURES};
+mod vg_md_hash_sha384_sha512;
+pub use vg_md_hash_sha384_sha512::{VG_MD_HASH_SHA384_SHA512, VG_MD_HASH_SHA384_SHA512_FEATURES};
 
 #[rustfmt::skip]
 mod vg_md_hash_sha512;
@@ -218,17 +218,17 @@ mod vg_md_hash_sha512_224;
 pub use vg_md_hash_sha512_224::VG_MD_HASH_SHA512_224;
 
 #[rustfmt::skip]
-mod vg_md_hash_sha512_224_sha3;
-pub use vg_md_hash_sha512_224_sha3::{VG_MD_HASH_SHA512_224_SHA3, VG_MD_HASH_SHA512_224_SHA3_FEATURES};
+mod vg_md_hash_sha512_224_sha512;
+pub use vg_md_hash_sha512_224_sha512::{VG_MD_HASH_SHA512_224_SHA512, VG_MD_HASH_SHA512_224_SHA512_FEATURES};
 
 #[rustfmt::skip]
 mod vg_md_hash_sha512_256;
 pub use vg_md_hash_sha512_256::VG_MD_HASH_SHA512_256;
 
 #[rustfmt::skip]
-mod vg_md_hash_sha512_256_sha3;
-pub use vg_md_hash_sha512_256_sha3::{VG_MD_HASH_SHA512_256_SHA3, VG_MD_HASH_SHA512_256_SHA3_FEATURES};
+mod vg_md_hash_sha512_256_sha512;
+pub use vg_md_hash_sha512_256_sha512::{VG_MD_HASH_SHA512_256_SHA512, VG_MD_HASH_SHA512_256_SHA512_FEATURES};
 
 #[rustfmt::skip]
-mod vg_md_hash_sha512_sha3;
-pub use vg_md_hash_sha512_sha3::{VG_MD_HASH_SHA512_SHA3, VG_MD_HASH_SHA512_SHA3_FEATURES};
+mod vg_md_hash_sha512_sha512;
+pub use vg_md_hash_sha512_sha512::{VG_MD_HASH_SHA512_SHA512, VG_MD_HASH_SHA512_SHA512_FEATURES};

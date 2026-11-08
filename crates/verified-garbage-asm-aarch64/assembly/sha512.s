@@ -491,7 +491,7 @@ vg_sha384_digest:
 	ret
 	.p2align 6
 
-vg_sha384_finalize_sha3:
+vg_sha384_finalize_sha512:
 	sub sp, sp, #1376
 	add x3, sp, #0
 	str x30, [sp, #-16]!
@@ -560,7 +560,7 @@ vg_sha384_finalize_sha3:
 	add x0, x19, #0
 	movz x2, #1, lsl #0
 	add x3, x20, #0
-	bl {vg_sha512_compress_sha3}
+	bl {vg_sha512_compress_sha512}
 	movz x23, #0, lsl #0
 	sub x24, x24, #1
 	cbz x24, 20b
@@ -593,7 +593,7 @@ vg_sha384_finalize_sha3:
 	ret
 	.p2align 6
 
-vg_sha384_digest_sha3:
+vg_sha384_digest_sha512:
 	sub sp, sp, #896
 	add x10, sp, #832
 	stp x19, x21, [x10, #0]
@@ -646,7 +646,7 @@ vg_sha384_digest_sha3:
 	add x1, x27, #0
 	add x2, x28, #0
 	add x3, sp, #192
-	bl {vg_sha512_compress_sha3}
+	bl {vg_sha512_compress_sha512}
 	lsl x9, x28, #7
 	add x27, x27, x9
 	b 21f
@@ -726,7 +726,7 @@ vg_sha384_digest_sha3:
 	add x1, sp, #64
 	movz x2, #1, lsl #0
 	add x3, sp, #192
-	bl {vg_sha512_compress_sha3}
+	bl {vg_sha512_compress_sha512}
 	movz x9, #0, lsl #0
 	add x12, sp, #64
 	stp x9, x9, [x12, #0]
@@ -758,7 +758,7 @@ vg_sha384_digest_sha3:
 	add x1, sp, #64
 	movz x2, #1, lsl #0
 	add x3, sp, #192
-	bl {vg_sha512_compress_sha3}
+	bl {vg_sha512_compress_sha512}
 	add x19, sp, #0
 	add x21, x26, #0
 	ldr x9, [x19, #0]
@@ -1279,7 +1279,7 @@ vg_sha512_digest:
 	ret
 	.p2align 6
 
-vg_sha512_update_sha3:
+vg_sha512_update_sha512:
 	sub sp, sp, #1376
 	add x4, sp, #0
 	str x30, [sp, #-16]!
@@ -1414,7 +1414,7 @@ vg_sha512_update_sha3:
 	add x0, x19, #0
 	add x2, x10, #0
 	add x3, x20, #0
-	bl {vg_sha512_compress_sha3}
+	bl {vg_sha512_compress_sha512}
 	b 232f
 231:
 232:
@@ -1433,7 +1433,7 @@ vg_sha512_update_sha3:
 	ret
 	.p2align 6
 
-vg_sha512_finalize_sha3:
+vg_sha512_finalize_sha512:
 	sub sp, sp, #1376
 	add x3, sp, #0
 	str x30, [sp, #-16]!
@@ -1502,7 +1502,7 @@ vg_sha512_finalize_sha3:
 	add x0, x19, #0
 	movz x2, #1, lsl #0
 	add x3, x20, #0
-	bl {vg_sha512_compress_sha3}
+	bl {vg_sha512_compress_sha512}
 	movz x23, #0, lsl #0
 	sub x24, x24, #1
 	cbz x24, 20b
@@ -1541,7 +1541,7 @@ vg_sha512_finalize_sha3:
 	ret
 	.p2align 6
 
-vg_sha512_digest_sha3:
+vg_sha512_digest_sha512:
 	sub sp, sp, #896
 	add x10, sp, #832
 	stp x19, x21, [x10, #0]
@@ -1594,7 +1594,7 @@ vg_sha512_digest_sha3:
 	add x1, x27, #0
 	add x2, x28, #0
 	add x3, sp, #192
-	bl {vg_sha512_compress_sha3}
+	bl {vg_sha512_compress_sha512}
 	lsl x9, x28, #7
 	add x27, x27, x9
 	b 21f
@@ -1674,7 +1674,7 @@ vg_sha512_digest_sha3:
 	add x1, sp, #64
 	movz x2, #1, lsl #0
 	add x3, sp, #192
-	bl {vg_sha512_compress_sha3}
+	bl {vg_sha512_compress_sha512}
 	movz x9, #0, lsl #0
 	add x12, sp, #64
 	stp x9, x9, [x12, #0]
@@ -1706,7 +1706,7 @@ vg_sha512_digest_sha3:
 	add x1, sp, #64
 	movz x2, #1, lsl #0
 	add x3, sp, #192
-	bl {vg_sha512_compress_sha3}
+	bl {vg_sha512_compress_sha512}
 	add x19, sp, #0
 	add x21, x26, #0
 	ldr x9, [x19, #0]
@@ -2055,7 +2055,7 @@ vg_sha512_224_digest:
 	ret
 	.p2align 6
 
-vg_sha512_224_finalize_sha3:
+vg_sha512_224_finalize_sha512:
 	sub sp, sp, #1376
 	add x3, sp, #0
 	str x30, [sp, #-16]!
@@ -2124,7 +2124,7 @@ vg_sha512_224_finalize_sha3:
 	add x0, x19, #0
 	movz x2, #1, lsl #0
 	add x3, x20, #0
-	bl {vg_sha512_compress_sha3}
+	bl {vg_sha512_compress_sha512}
 	movz x23, #0, lsl #0
 	sub x24, x24, #1
 	cbz x24, 20b
@@ -2151,7 +2151,7 @@ vg_sha512_224_finalize_sha3:
 	ret
 	.p2align 6
 
-vg_sha512_224_digest_sha3:
+vg_sha512_224_digest_sha512:
 	sub sp, sp, #896
 	add x10, sp, #832
 	stp x19, x21, [x10, #0]
@@ -2204,7 +2204,7 @@ vg_sha512_224_digest_sha3:
 	add x1, x27, #0
 	add x2, x28, #0
 	add x3, sp, #192
-	bl {vg_sha512_compress_sha3}
+	bl {vg_sha512_compress_sha512}
 	lsl x9, x28, #7
 	add x27, x27, x9
 	b 21f
@@ -2284,7 +2284,7 @@ vg_sha512_224_digest_sha3:
 	add x1, sp, #64
 	movz x2, #1, lsl #0
 	add x3, sp, #192
-	bl {vg_sha512_compress_sha3}
+	bl {vg_sha512_compress_sha512}
 	movz x9, #0, lsl #0
 	add x12, sp, #64
 	stp x9, x9, [x12, #0]
@@ -2316,7 +2316,7 @@ vg_sha512_224_digest_sha3:
 	add x1, sp, #64
 	movz x2, #1, lsl #0
 	add x3, sp, #192
-	bl {vg_sha512_compress_sha3}
+	bl {vg_sha512_compress_sha512}
 	add x19, sp, #0
 	add x21, x26, #0
 	ldr x9, [x19, #0]
@@ -2653,7 +2653,7 @@ vg_sha512_256_digest:
 	ret
 	.p2align 6
 
-vg_sha512_256_finalize_sha3:
+vg_sha512_256_finalize_sha512:
 	sub sp, sp, #1376
 	add x3, sp, #0
 	str x30, [sp, #-16]!
@@ -2722,7 +2722,7 @@ vg_sha512_256_finalize_sha3:
 	add x0, x19, #0
 	movz x2, #1, lsl #0
 	add x3, x20, #0
-	bl {vg_sha512_compress_sha3}
+	bl {vg_sha512_compress_sha512}
 	movz x23, #0, lsl #0
 	sub x24, x24, #1
 	cbz x24, 20b
@@ -2749,7 +2749,7 @@ vg_sha512_256_finalize_sha3:
 	ret
 	.p2align 6
 
-vg_sha512_256_digest_sha3:
+vg_sha512_256_digest_sha512:
 	sub sp, sp, #896
 	add x10, sp, #832
 	stp x19, x21, [x10, #0]
@@ -2802,7 +2802,7 @@ vg_sha512_256_digest_sha3:
 	add x1, x27, #0
 	add x2, x28, #0
 	add x3, sp, #192
-	bl {vg_sha512_compress_sha3}
+	bl {vg_sha512_compress_sha512}
 	lsl x9, x28, #7
 	add x27, x27, x9
 	b 21f
@@ -2882,7 +2882,7 @@ vg_sha512_256_digest_sha3:
 	add x1, sp, #64
 	movz x2, #1, lsl #0
 	add x3, sp, #192
-	bl {vg_sha512_compress_sha3}
+	bl {vg_sha512_compress_sha512}
 	movz x9, #0, lsl #0
 	add x12, sp, #64
 	stp x9, x9, [x12, #0]
@@ -2914,7 +2914,7 @@ vg_sha512_256_digest_sha3:
 	add x1, sp, #64
 	movz x2, #1, lsl #0
 	add x3, sp, #192
-	bl {vg_sha512_compress_sha3}
+	bl {vg_sha512_compress_sha512}
 	add x19, sp, #0
 	add x21, x26, #0
 	ldr x9, [x19, #0]

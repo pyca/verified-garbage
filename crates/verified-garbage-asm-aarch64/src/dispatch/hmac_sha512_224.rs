@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.sha512_224I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_hmac_sha512_224_init_sha3` if the CPU supports its features (`VG_HMAC_SHA512_224_INIT_SHA3_FEATURES`); or else `vg_hmac_sha512_224_init`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_hmac_sha512_224_init_sha512` if the CPU supports its features (`VG_HMAC_SHA512_224_INIT_SHA512_FEATURES`); or else `vg_hmac_sha512_224_init`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -19,10 +19,10 @@
 #[inline]
 pub unsafe fn vg_hmac_sha512_224_init_auto(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize) {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::hmac_sha512_224::VG_HMAC_SHA512_224_INIT_SHA3_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_hmac_sha512_224_init_sha3`'s, and the CPU
+    if cpu.contains(crate::hmac_sha512_224::VG_HMAC_SHA512_224_INIT_SHA512_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_hmac_sha512_224_init_sha512`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::hmac_sha512_224::vg_hmac_sha512_224_init_sha3(inner, outer, key, key_len) };
+        return unsafe { crate::hmac_sha512_224::vg_hmac_sha512_224_init_sha512(inner, outer, key, key_len) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { crate::hmac_sha512_224::vg_hmac_sha512_224_init(inner, outer, key, key_len) }
@@ -32,7 +32,7 @@ pub unsafe fn vg_hmac_sha512_224_init_auto(inner: *mut [u8; 192], outer: *mut [u
 ///
 /// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.sha512_224I`. Constant time: only the pointers and `count` may affect timing, not the states.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_hmac_sha512_224_finalize_sha3` if the CPU supports its features (`VG_HMAC_SHA512_224_FINALIZE_SHA3_FEATURES`); or else `vg_hmac_sha512_224_finalize`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_hmac_sha512_224_finalize_sha512` if the CPU supports its features (`VG_HMAC_SHA512_224_FINALIZE_SHA512_FEATURES`); or else `vg_hmac_sha512_224_finalize`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -46,10 +46,10 @@ pub unsafe fn vg_hmac_sha512_224_init_auto(inner: *mut [u8; 192], outer: *mut [u
 #[inline]
 pub unsafe fn vg_hmac_sha512_224_finalize_auto(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 28]) {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::hmac_sha512_224::VG_HMAC_SHA512_224_FINALIZE_SHA3_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_hmac_sha512_224_finalize_sha3`'s, and the CPU
+    if cpu.contains(crate::hmac_sha512_224::VG_HMAC_SHA512_224_FINALIZE_SHA512_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_hmac_sha512_224_finalize_sha512`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::hmac_sha512_224::vg_hmac_sha512_224_finalize_sha3(inner, outer, count, out) };
+        return unsafe { crate::hmac_sha512_224::vg_hmac_sha512_224_finalize_sha512(inner, outer, count, out) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { crate::hmac_sha512_224::vg_hmac_sha512_224_finalize(inner, outer, count, out) }
