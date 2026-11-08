@@ -12,7 +12,10 @@ import VerifiedGarbage.Proof.Framework.Lit
 namespace VG
 materialize_code Impl.AesGcm.PPC64LE.SplitBlocks.load
 materialize_code Impl.AesGcm.PPC64LE.SplitBlocks.code
+materialize_code Impl.AesGcm.PPC64LE.SplitBlocks.decCode
 materialize_code Impl.AesGcm.PPC64LE.SplitBlocks.head
 materialize_code Impl.AesGcm.PPC64LE.SplitBlocks.rest
+materialize_code Impl.AesGcm.PPC64LE.SplitBlocks.decRest
 materialize_code Impl.AesGcm.PPC64LE.SplitBlocks.encrypt
+materialize_code Impl.AesGcm.PPC64LE.SplitBlocks.decrypt
 end VG

@@ -9,7 +9,7 @@ public import VerifiedGarbage.Impl.AesGcm.PPC64LE.Blocks
 namespace VG.Impl.AesGcm.PPC64LE.SplitBlocks
 open VG.PPC64LE
 open VG.Impl.AesGcm.PPC64LE.Blocks
-open VG.Impl.Aes.PPC64LE.Crypto (mov)
+open VG.Impl.Aes.PPC64LE.Crypto (mov storePerm)
 
 -- r17 points to the unconsumed external prefix; r19 counts its blocks.
 -- Only the batch crossing its end needs a choice for each vector load.
@@ -30,9 +30,37 @@ def load : Prog isa :=
    (.seq (partialLoadsFrom 0 8)
      (.block [.lsl .r12 .r19 4,.add .r17 .r17 .r12,.li .r19 0]))))
 
-def batch : Prog isa := batchWithStore (.seq load (.block storesFinish))
+/-- Decryption's store step for block `i`, read from the source: the
+ciphertext in register order, then the plaintext (its XOR with the keystream
+in the state register) in the data register, and the ciphertext again in the
+state register, which the batch then hashes. -/
+def decMixStep (i : Nat) : List Instr :=
+ [.vop (.perm (dataReg i) (dataReg i) (dataReg i) .v19),
+  .vop (.logic .xor (dataReg i) (dataReg i) (reg i)),
+  .vop (.logic .xor (reg i) (reg i) (dataReg i))]
 
-def code : Prog isa := codeWith batch
+def decMix : List Instr := (List.range 8).flatMap decMixStep
+
+/-- Each plaintext stored at `r6`. -/
+def decWrite : List Instr :=
+ (List.range 8).flatMap (fun i => storePerm (dataReg i) (dataReg i) .r6 (dataOffset i))
+
+def decStoresFinish : List Instr := decMix ++ decWrite ++ [.addi .r6 .r6 128,.subi .r7 .r7 8]
+
+/-- The store step: encryption's (`dec = false`), which writes and hashes
+the ciphertext it makes, or decryption's, which writes the plaintext and
+hashes the ciphertext it read. -/
+def finishOf (dec : Bool) : List Instr := bif dec then decStoresFinish else storesFinish
+
+def batchOf (dec : Bool) : Prog isa := batchWithStore (.seq load (.block (finishOf dec)))
+
+def codeOf (dec : Bool) : Prog isa := codeWith (batchOf dec)
+
+def batch : Prog isa := batchOf false
+
+def code : Prog isa := codeOf false
+
+def decCode : Prog isa := codeOf true
 
 -- The kernel leaves these registers available to track the external prefix.
 -- Their caller values fit between the core's spills and its tables.
@@ -45,7 +73,9 @@ def argsConfig : List Instr :=
 
 def argsRest : List Instr := extraSaved.map (fun (r,o) => .store .d r .r11 o) ++ argsConfig
 
-def bulk : Prog isa := .seq (.block bulkArgs) (.seq code (.block bulkRest))
+def bulkOf (dec : Bool) : Prog isa := .seq (.block bulkArgs) (.seq (codeOf dec) (.block bulkRest))
+
+def bulk : Prog isa := bulkOf false
 
 -- Only short inputs, or at most seven blocks after the bulk loop, need
 -- their external prefix copied before the existing CTR/GHASH tail.
@@ -58,18 +88,42 @@ def copyPrefix : Prog isa := .ite (.zero .d .r19) (.block [])
 
 def restoreExtra : List Instr := extraSaved.map (fun (r,o) => .load .d r .r31 o)
 
-def maybeBulk : Prog isa := .ite (.zero .d .r12) (.block []) bulk
+def maybeBulkOf (dec : Bool) : Prog isa := .ite (.zero .d .r12) (.block []) (bulkOf dec)
 
-def body : Prog isa := .seq (.block wrapperEntry) (.seq maybeBulk
- (.seq copyPrefix (.seq (.block restoreExtra) (.seq tail (.block wrapperExit)))))
+def maybeBulk : Prog isa := maybeBulkOf false
+
+/-- Decryption's last blocks, in place at the destination: the ciphertext
+hashed, then decrypted (`tail` in the other order). -/
+def decTail : Prog isa := .ite (.zero .d .r25) (.block [])
+ (.seq (.block tailGhArgs)
+ (.seq (.call "vg_ghash" Impl.Gcm.PPC64LE.ghash)
+ (.seq (.block tailCtrArgs) (.call "vg_aes_ctr32" Impl.Aes.PPC64LE.ctr32))))
+
+def tailOf (dec : Bool) : Prog isa := bif dec then decTail else tail
+
+def bodyOf (dec : Bool) : Prog isa := .seq (.block wrapperEntry) (.seq (maybeBulkOf dec)
+ (.seq copyPrefix (.seq (.block restoreExtra) (.seq (tailOf dec) (.block wrapperExit)))))
+
+def body : Prog isa := bodyOf false
 
 def head : Prog isa := .block argsHead
 
-def rest : Prog isa := .seq (.block argsRest) body
+def restOf (dec : Bool) : Prog isa := .seq (.block argsRest) (bodyOf dec)
+
+def rest : Prog isa := restOf false
+
+def decRest : Prog isa := restOf true
 
 /-- Nine-argument whole-block helper; `scratch` is at the incoming `sp+96`.
 Restore the extra saves before the leaf calls reuse the core's scratch. -/
-def encrypt : Prog isa := .ite (.zero .d .r10) (.block [])
- (.seq head rest)
+def cryptOf (dec : Bool) : Prog isa := .ite (.zero .d .r10) (.block [])
+ (.seq head (restOf dec))
+
+/-- `vg_aes_gcm_encrypt_blocks_split`. -/
+def encrypt : Prog isa := cryptOf false
+
+/-- `vg_aes_gcm_decrypt_blocks_split`: the same, decrypting, and hashing
+the ciphertext it reads. -/
+def decrypt : Prog isa := cryptOf true
 
 end VG.Impl.AesGcm.PPC64LE.SplitBlocks
