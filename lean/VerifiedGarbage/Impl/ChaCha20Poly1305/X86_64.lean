@@ -93,12 +93,9 @@ def saved : List (Reg × Nat) :=
 def entry : List Instr := [.mov .rax (.mem (at_ .rsp 16)), .mov .r11 (.mem (at_ .rsp 8))]
 
 /-- `open`'s entry: `work` into `rax`; the address of the ciphertext is in
-`r11` already (`srcIn`, or `open_to`'s entry), which `moves` keeps in `r12`.
+`r11` already (from `open`'s or `open_to`'s caller), which `moves` keeps in `r12`.
 The tag is read from the stack when it is compared (`openTail`). -/
 def entryO : List Instr := [.mov .rax (.mem (at_ .rsp 16))]
-
-/-- `open`'s entry in place: the ciphertext is the data. -/
-def srcIn : List Instr := [.mov .r11 (.reg .r8)]
 
 /-- Saves the registers, with the context in `rax`. -/
 def save : List Instr := saved.map fun (r, d) => .store (at_ .rax d) r
@@ -493,8 +490,5 @@ def openBody (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Prog is
 entries. -/
 def openShared (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Prog isa :=
   .seq (openBody x b) openTail
-
-def «open» (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Prog isa :=
-  .seq (.block srcIn) (openShared x b)
 
 end VG.Impl.ChaCha20Poly1305.X86_64

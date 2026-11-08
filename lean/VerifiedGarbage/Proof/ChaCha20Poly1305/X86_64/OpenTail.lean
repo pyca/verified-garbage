@@ -23,10 +23,10 @@ meta import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64
 # ChaCha20-Poly1305 on x86-64: `open` after the tag
 
 Untrusted: everything here is checked by Lean. `openTail`, which both `open`
-and the stitched `openStitched` end with: from the state their bodies leave
-(`TailIn`), the tags compared without a branch, the data zeroed if they
-differ (`zeroData`), and the registers restored; then `open` from `openBody`
-and `openTail`. Constant time: `openBody` by its own proof (`body_rel`),
+and the stitched `openStitchedShared` end with: from the state their bodies
+leave (`TailIn`), the tags compared without a branch, the data zeroed if they
+differ (`zeroData`), and the registers restored; then `openShared` from
+`openBody` and `openTail`. Constant time: `openBody` by its own proof (`body_rel`),
 then the tail from the public data that the correctness proof gives both
 runs, the branch being on whether the tag is right, which the contract lets
 `open` leak (`openX86_64.pub`).
@@ -289,27 +289,6 @@ theorem shared_correct (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : 
     WP isa (openShared v.callee v.poly) s₀ fun s' => abiPreserved s₀ s' ∧ openSPost s₀ s' :=
   WP.seq (WP.mono (body_ok v hp.1 hp.2) fun _ h => tail_ok hp.1 h)
 
-/-- The state after `srcIn`: the ciphertext's address, the data's, in `r11`. -/
-abbrev inS (s₀ : State) : State := s₀.setReg .r11 (s₀.gpr .r8)
-
-theorem srcIn_ok (s₀ : State) : WP isa (.block srcIn) s₀ fun s => s = inS s₀ := by
-  apply WP.of_runBlock
-  simp only [srcIn, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, Option.map_some,
-    Option.some.injEq, exists_eq_left']
-
-theorem inS_pre {s₀ : State} (hp : APre false s₀) : APre false (inS s₀) := hp.setR11 _
-
-theorem open_correct (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre false s₀) :
-    WP isa («open» v.callee v.poly) s₀ fun s' => abiPreserved s₀ s' ∧ openX86_64.post s₀ s' := by
-  refine WP.seq (WP.mono_mx (by decide) (srcIn_ok s₀) fun s₁ e₁ mx₁ => ?_)
-  subst e₁
-  refine WP.mono (shared_correct v ⟨inS_pre hp, srcIO_dp (inS_pre hp)⟩)
-    fun s' ⟨ab, hpost⟩ => ⟨⟨fun r hr => ?_, ab.2.1, ab.2.2⟩, hpost⟩
-  rw [ab.1 r hr]
-  exact RegUpd.gpr_setReg_of_ne _ _ (by
-    simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
-
 /-! ## Constant time -/
 
 /-- Whether the message is authenticated, in the state on entry to `open`'s
@@ -453,17 +432,5 @@ theorem shared_ok (v : Proof.ChaCha20.X86_64.XorImpl) (s : State) (hs : sharedK.
 theorem shared_ct (v : Proof.ChaCha20.X86_64.XorImpl) :
     ConstantTime isa sharedK.pre sharedK.pub (openShared v.callee v.poly) :=
   fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (shared_rel v h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
-
-theorem open_rel (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ s₀' : State} (h₀ : preX86_64 false s₀)
-    (h₀' : preX86_64 false s₀') (hq : pubX86_64 s₀ s₀') (hl : openLeakX86_64 s₀ = openLeakX86_64 s₀') :
-    RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') («open» v.callee v.poly) fun _ _ => True := by
-  have hp := inS_pre (APre.of _ h₀)
-  have hp' := inS_pre (APre.of _ h₀')
-  have hq' : pubX86_64 (inS s₀) (inS s₀') := hq
-  have hs : sp (inS s₀) = sp (inS s₀') := hq.2.2.2.2.1
-  refine RelCT.seq (R := fun x y => x = inS s₀ ∧ y = inS s₀')
-    (RelCT.mono ((taintRel [] (fun _ _ _ r hr => by simp at hr) (by taint_decide)).wp fun x y h =>
-      ⟨by rw [h.1]; exact srcIn_ok s₀, by rw [h.2]; exact srcIn_ok s₀'⟩) (fun _ _ h => h) fun _ _ h => h.2) ?_
-  exact shared_rel v ⟨hp, srcIO_dp hp⟩ ⟨hp', srcIO_dp hp'⟩ ⟨hq', hs, hl⟩
 
 end VG.Proof.ChaCha20Poly1305.X86_64

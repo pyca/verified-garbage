@@ -890,7 +890,8 @@ def cryptO (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Prog isa 
   (.seq (wipeL x.fold 192)
   (.seq (.block [.alu .add .rdx (.imm 64)]) (zeroKs x.wide)))))
 
-/-- `openStitched` up to the tag computed. -/
+/-- `open`, with Poly1305 inside the kernel for the whole chunks, up to the
+tag computed. -/
 def openStitchedBody (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Prog isa :=
   .seq (.block entryO)
   (.seq (prologueX x)
@@ -899,37 +900,21 @@ def openStitchedBody (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) :
   (.seq (cryptO x b)
     (finalizeTo 48)))))
 
-/-- `open`, with Poly1305 inside the kernel for the whole chunks. After
-`srcIn`, 5 bytes of padding (in `rax`, which `entryO` then loads): `entryO`
-is 5 bytes shorter than `entry`, which took the tag's address when the
-chunks decrypted in place, and the padding keeps the code after it at its
-offset. -/
-def openStitched (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Prog isa :=
-  .seq (.block (srcIn ++ padIns .rax 5)) (.seq (openStitchedBody x b) openTail)
-
-/-- `openStitched` after its entry, from `open`'s entry state with the
-ciphertext's address in `r11`: what `open_to` runs after its own entry, as
-`openShared` is for `open`. -/
+/-- `open`, with Poly1305 inside the kernel for the whole chunks, from
+`open`'s entry state with the ciphertext's address in `r11`, as `openShared`
+is without it. -/
 def openStitchedShared (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Prog isa :=
   .seq (openStitchedBody x b) openTail
 
-/-- `openSmall`'s limit, as `smallLim` is `sealSmall`'s: on Cascade Lake,
+/-- `open`'s limit for the AVX2 code (`Shared.openCode`), as `smallLim` is
+`sealSmall`'s: on Cascade Lake,
 `open`'s AVX2 code with AVX-512VL's rounds (`vl`) is the faster below 768
 bytes, from 3.8% to 8.5% from 640 on, and from 768 the AVX-512 code is;
 without them, the AVX-512 code is the faster from 640 on. -/
 def openLim (vl : Bool) : Nat := if vl then 768 else 640
 
-/-- `open` for fewer than `openLim` bytes of data (`len`, in `r9`), or from `winLo`
-to `winHi - 1`, with the
-AVX2 code, `openStitched` with the implementation `small` of
-`vg_chacha20_xor` and `vg_poly1305_blocks_avx2`, which runs no 512-bit
-instruction, and for more with `big`: as `sealSmall`. -/
-def openSmall (small : ChaCha20.X86_64.Callee) (big : Prog isa) : Prog isa :=
-  .seq (.block (smallTest (openLim small.vl)))
-    (.ite .b (openStitched small .avx2) big)
-
 /-- The lengths from `ifmaLo` to `ifmaHi - 1` the IFMA instance opens with the
-AVX2 code, with AVX-512VL's rounds (`openWin`). From 449 bytes its own
+AVX2 code, with AVX-512VL's rounds (`Shared.openCode`). From 449 bytes its own
 `open` computes the one-time key's block and the data's in a pass of twelve
 blocks (`Avx512Tail.part3`), and from 448 absorbs the ciphertext with
 `vg_poly1305_blocks_ifma`, whose powers cost as much as a few hundred bytes;
@@ -946,21 +931,5 @@ def ifmaHi : Nat := 640
 def ifmaTest : List Instr :=
   [.mov .rax (.reg .r9), .alu .sub .rax (.imm (BitVec.ofNat 32 ifmaLo)),
    .alu .cmp .rax (.imm (BitVec.ofNat 32 (ifmaHi - ifmaLo)))]
-
-/-- `open` for `ifmaLo` to `ifmaHi - 1` bytes of data with the AVX2 code,
-`openStitched` with the implementation `small` of `vg_chacha20_xor` and
-`vg_poly1305_blocks_avx2`, and otherwise with `big`. -/
-def openWin (small : ChaCha20.X86_64.Callee) (big : Prog isa) : Prog isa :=
-  .seq (.block ifmaTest) (.ite .b (openStitched small .avx2) big)
-
-/-- The `open` an instance uses, as `sealFor`: with the AVX2 implementation of
-`vg_poly1305_blocks`, `openStitched`; with the AVX-512 one (without IFMA),
-`openSmall` of `open`; with the IFMA one, `openWin` of `open`, with
-`vg_chacha20_xor_avx512vl`'s rounds; otherwise `open`. -/
-def openFor (x : ChaCha20.X86_64.Callee) : Poly1305.X86_64.Blocks → Prog isa
-  | .avx2 => openStitched x .avx2
-  | .avx512 => openSmall x.small («open» x .avx512)
-  | .ifma => openWin ChaCha20.X86_64.Callee.avx512vl.small («open» x .ifma)
-  | b => «open» x b
 
 end VG.Impl.ChaCha20Poly1305.X86_64.Stitch
