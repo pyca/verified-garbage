@@ -258,7 +258,7 @@ theorem openToPrepared16_verified (w : Width) (F : OpenFn CtxMode.prepared16) :
 
 theorem toPre_flagged {t : Nat} {s : State} (h : (Proof.AesGcm.Flag.openToFlaggedRoundsContract t X86_64.abi 2728).pre s) :
     ToPre (CtxMode.flaggedT t) s := by
-  sig_pre [Proof.AesGcm.Flag.openToFlaggedRoundsContract, Spec.Gcm.openToPreparedSig, Spec.Gcm.openToPreparedSig, Proof.AesGcm.Flag.openToFlaggedPre, X86_64.abi, X86_64.argRegs,
+  sig_pre [Proof.AesGcm.Flag.openToFlaggedRoundsContract, Proof.AesGcm.Flag.openToSig, Proof.AesGcm.Flag.openToSig, Proof.AesGcm.Flag.openToFlaggedPre, X86_64.abi, X86_64.argRegs,
     stackArgs_six, List.append_eq] at h
   rw [Sig.pairFacts, Sig.pairFacts, Sig.pairFacts, pairFacts_ro _ (by simp)] at h
   simp only [List.map_append, List.filter_append, List.filter_map, List.map_map, List.filterMap_append,
@@ -275,7 +275,7 @@ theorem toPre_flagged {t : Nat} {s : State} (h : (Proof.AesGcm.Flag.openToFlagge
 
 theorem toPost_flagged {t : Nat} {s s' : State} (h : toPost s s') :
     (Proof.AesGcm.Flag.openToFlaggedRoundsContract t X86_64.abi 2728).post s s' := by
-  sig_post [Proof.AesGcm.Flag.openToFlaggedRoundsContract, Spec.Gcm.openToPreparedSig, Spec.Gcm.openToPreparedSig, Proof.AesGcm.openToRoundsPost, X86_64.abi, X86_64.argRegs,
+  sig_post [Proof.AesGcm.Flag.openToFlaggedRoundsContract, Proof.AesGcm.Flag.openToSig, Proof.AesGcm.Flag.openToSig, Proof.AesGcm.openToRoundsPost, X86_64.abi, X86_64.argRegs,
     stackArgs_six, List.append_eq]
   exact fun _ => h
 

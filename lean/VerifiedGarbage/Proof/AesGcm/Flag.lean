@@ -374,7 +374,7 @@ theorem flaggedPowers_of_zeroMem {t : Nat} (ht : t ≤ 48) {m : Mem} {p : Addr}
     fun _ => AesGcm.preparedPowersRepr_of_zeroMem h⟩
 
 theorem openToFlaggedPre_local (t pb : Nat) : ∀ vs m₁ m₂, vs.length = (openToSig.words pb).length →
-    (∀ b ∈ Sig.bufs openToPreparedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    (∀ b ∈ Sig.bufs openToSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     Curry.apply (openToSig.words pb) (openToFlaggedPre t pb) vs m₁ →
       Curry.apply (openToSig.words pb) (openToFlaggedPre t pb) vs m₂ := by
   intro vs m₁ m₂ hlen hb h

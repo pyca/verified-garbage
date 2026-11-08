@@ -271,9 +271,9 @@ theorem openSpecF_pre {t : Nat} {s : State} (h : openPreK (CtxMode.flaggedT t) s
     (Proof.AesGcm.Flag.openRoundsContractB t X86_64.abi 2632).pre s := by
   sig_split h
   sig_pre [Proof.AesGcm.Flag.openRoundsContractB, Proof.AesGcm.Flag.openSig, Proof.AesGcm.Flag.openSig,
-    Spec.Gcm.openPreparedPre, X86_64.abi, X86_64.argRegs]
+    Proof.AesGcm.Flag.openPre, X86_64.abi, X86_64.argRegs]
   sig_reduce [Proof.AesGcm.Flag.openRoundsContractB, Proof.AesGcm.Flag.openSig, Proof.AesGcm.Flag.openSig,
-    Spec.Gcm.openPreparedPre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret,
+    Proof.AesGcm.Flag.openPre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret,
     X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below]
   sig_and_intros
   all_goals simp only [Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg,
@@ -288,7 +288,7 @@ theorem openSpecF_post {t : Nat} {s s' : State} (hR : rounds s)
     (h : (Proof.AesGcm.Flag.openRoundsContractB t X86_64.abi 2632).post s s') :
     Proof.AesGcm.openX86_64.post s s' := by
   sig_post [Proof.AesGcm.Flag.openRoundsContractB, Proof.AesGcm.Flag.openSig, Proof.AesGcm.Flag.openSig,
-    Spec.Gcm.openPreparedPre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.openRoundsPost] at h
+    Proof.AesGcm.Flag.openPre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.openRoundsPost] at h
   sig_reduce [Proof.AesGcm.Flag.openRoundsContractB, Proof.AesGcm.Flag.openSig, Proof.AesGcm.Flag.openSig,
     X86_64.abi, X86_64.argRegs, X86_64.stackArg, X86_64.stackArgAddr, List.range, List.range.loop] at h
   exact h hR

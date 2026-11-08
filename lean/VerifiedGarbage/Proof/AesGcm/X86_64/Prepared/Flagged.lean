@@ -189,9 +189,9 @@ theorem streamEncryptToFlaggedPost_local : ∀ vs m₁ m₂ m' r, vs.length = (s
   rw [ctxCiph_congr hn' fun i hi => hc i (by omega), ctxH_congr fun i hi => hc i (by omega)] at hr
   exact h hn iv a p (streamRepr_congr (fun i hi => (hs i (by omega)).symm) hr) hl ht
 
-theorem sealGatherFlaggedPre_local : ∀ vs m₁ m₂, vs.length = (sealGatherPreparedSig.words pb).length →
-    (∀ b ∈ Sig.bufs sealGatherPreparedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    (∀ r ∈ Sig.lists pb m₁ sealGatherPreparedSig.params vs, ∀ a, r.Contains a 1 → m₁ a = m₂ a) →
+theorem sealGatherFlaggedPre_local : ∀ vs m₁ m₂, vs.length = (sealGatherSig.words pb).length →
+    (∀ b ∈ Sig.bufs sealGatherSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    (∀ r ∈ Sig.lists pb m₁ sealGatherSig.params vs, ∀ a, r.Contains a 1 → m₁ a = m₂ a) →
     Curry.apply (sealGatherSig.words pb) (sealGatherFlaggedPre t pb) vs m₁ →
       Curry.apply (sealGatherSig.words pb) (sealGatherFlaggedPre t pb) vs m₂ := by
   intro vs m₁ m₂ hlen hb hl h
@@ -281,9 +281,9 @@ theorem encSpecF_pre {t : Nat} {s : State} (h : encCallPre (CtxMode.flaggedT t) 
   have a₂₂ := h
   clear h
   sig_pre [Proof.AesGcm.Flag.streamEncryptRoundsContractB, Proof.AesGcm.Flag.streamCryptSig, Proof.AesGcm.Flag.streamCryptSig,
-    Spec.Gcm.streamCryptPreparedPre, X86_64.abi, X86_64.argRegs]
+    Proof.AesGcm.Flag.streamCryptPre, X86_64.abi, X86_64.argRegs]
   sig_reduce [Proof.AesGcm.Flag.streamEncryptRoundsContractB, Proof.AesGcm.Flag.streamCryptSig, Proof.AesGcm.Flag.streamCryptSig,
-    Spec.Gcm.streamCryptPreparedPre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.arg, Proof.AesGcm.args,
+    Proof.AesGcm.Flag.streamCryptPre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.arg, Proof.AesGcm.args,
     Proof.AesGcm.ret, X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop,
     VG.X86_64.below]
   sig_and_intros
@@ -297,7 +297,7 @@ theorem encSpecF_post {t : Nat} {s s' : State} (hR : Proof.AesGcm.rounds s)
     (h : (Proof.AesGcm.Flag.streamEncryptRoundsContractB t X86_64.abi 2608).post s s') :
     Proof.AesGcm.streamEncryptX86_64.post s s' := by
   sig_post [Proof.AesGcm.Flag.streamEncryptRoundsContractB, Proof.AesGcm.Flag.streamCryptSig, Proof.AesGcm.Flag.streamCryptSig,
-    Spec.Gcm.streamCryptPreparedPre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.streamEncryptRoundsPost] at h
+    Proof.AesGcm.Flag.streamCryptPre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.streamEncryptRoundsPost] at h
   sig_reduce [Proof.AesGcm.Flag.streamEncryptRoundsContractB, Proof.AesGcm.Flag.streamCryptSig, Proof.AesGcm.Flag.streamCryptSig, X86_64.abi,
     X86_64.argRegs, X86_64.stackArg, X86_64.stackArgAddr, List.range, List.range.loop] at h
   exact h hR
@@ -701,7 +701,7 @@ theorem sealGatherFlagged_framed {t : Nat} (ht : t ≤ 48) (Sh : ShortFn (CtxMod
       (Impl.StackScratch.X86_64.withStackArgScratch 240 5
         (withFront long Sp.fn (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn inl)))
       (Proof.AesGcm.Flag.sealGatherFlaggedRoundsContract t X86_64.abi 5128) :=
-  X86_64.Verified.stackArgScratchL (sig := Spec.Gcm.sealGatherPreparedSig) (nm := "scratch") (e := .u64)
+  X86_64.Verified.stackArgScratchL (sig := Proof.AesGcm.Flag.sealGatherSig) (nm := "scratch") (e := .u64)
     (n := 23) (pre := Proof.AesGcm.Flag.sealGatherFlaggedPre t X86_64.abi.ptrBits)
     (post := Proof.AesGcm.sealGatherRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 4888) (bytes := 240)
     (sealGatherFlagged_core ht Sh I A T F Sp long inl) (by decide) (by decide) (by decide)
