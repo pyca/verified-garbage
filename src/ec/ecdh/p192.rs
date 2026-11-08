@@ -10,7 +10,7 @@
 ))]
 
 use crate::align::CacheAligned;
-use crate::arch::ecdh_p192::vg_ecdh_p192;
+use crate::arch::dispatch::ecdh_p192::vg_ecdh_p192_auto;
 use crate::ec::P192;
 use crate::ec::sealed::Exchange;
 use crate::zeroize::zeroize;
@@ -25,7 +25,7 @@ impl Exchange for P192 {
         // each other and the others, so none overlaps another or the call's
         // stack frame, and, as Rust objects, none wraps around the address
         // space.
-        let ok = unsafe { vg_ecdh_p192(&mut out, d, peer, &mut scratch.0) };
+        let ok = unsafe { vg_ecdh_p192_auto(&mut out, d, peer, &mut scratch.0) };
         zeroize(&mut scratch.0);
         (ok == 1).then_some(out)
     }

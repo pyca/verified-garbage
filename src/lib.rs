@@ -146,7 +146,7 @@ mod tests {
         ];
         for (a, b) in cases {
             // SAFETY: the contract has no preconditions.
-            let r = unsafe { crate::arch::selftest::vg_selftest_add(a, b) };
+            let r = unsafe { crate::arch::dispatch::selftest::vg_selftest_add_auto(a, b) };
             assert_eq!(r, a.wrapping_add(b));
         }
     }

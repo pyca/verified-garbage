@@ -24,7 +24,7 @@ use alloc::vec;
 use core::fmt;
 
 use crate::arch::dispatch::rsa_keygen::vg_rsa_generate_auto;
-use crate::arch::rsa_keygen::vg_rsa_generate_init;
+use crate::arch::dispatch::rsa_keygen::vg_rsa_generate_init_auto;
 use crate::entropy::{Step, Stop, serve};
 use crate::rsa::{BigUint, PrivateKey};
 
@@ -107,7 +107,7 @@ fn generate_counted(
     // SAFETY: `state` is valid for writes and `public_exponent` for reads of
     // its length.
     let init = unsafe {
-        vg_rsa_generate_init(
+        vg_rsa_generate_init_auto(
             &mut state,
             bits,
             public_exponent.as_ptr(),

@@ -10,7 +10,9 @@
 ))]
 
 use crate::align::CacheAligned;
-use crate::arch::idea::{vg_idea_ecb, vg_idea_expand_key, vg_idea_invert_key};
+use crate::arch::dispatch::idea::{
+    vg_idea_ecb_auto, vg_idea_expand_key_auto, vg_idea_invert_key_auto,
+};
 use crate::error::{IncompleteBlock, InvalidKeyLength};
 use crate::zeroize::zeroize;
 
@@ -33,8 +35,8 @@ impl IdeaEcb {
         // SAFETY: the key and both schedules are separate valid buffers of
         // the required sizes.
         unsafe {
-            vg_idea_expand_key(key, &mut encrypt.0);
-            vg_idea_invert_key(&encrypt.0, &mut decrypt.0);
+            vg_idea_expand_key_auto(key, &mut encrypt.0);
+            vg_idea_invert_key_auto(&encrypt.0, &mut decrypt.0);
         }
         Ok(Self { encrypt, decrypt })
     }
@@ -60,7 +62,7 @@ fn crypt(schedule: &[u8; 104], buffer: &mut [u8]) -> Result<(), IncompleteBlock>
     // blocks. The buffer and schedule are separate valid objects and do not
     // overlap the callee's stack.
     unsafe {
-        vg_idea_ecb(schedule, buffer.as_mut_ptr().cast(), buffer.len() / 8);
+        vg_idea_ecb_auto(schedule, buffer.as_mut_ptr().cast(), buffer.len() / 8);
     }
     Ok(())
 }

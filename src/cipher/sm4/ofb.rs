@@ -11,8 +11,8 @@
 ))]
 
 use crate::align::CacheAligned;
-use crate::arch::sm4::vg_sm4_expand_key;
-use crate::arch::sm4_ofb::{vg_sm4_ofb, vg_sm4_ofb_final};
+use crate::arch::dispatch::sm4::vg_sm4_expand_key_auto;
+use crate::arch::dispatch::sm4_ofb::{vg_sm4_ofb_auto, vg_sm4_ofb_final_auto};
 use crate::error::IncompleteBlock;
 use crate::zeroize::zeroize;
 
@@ -80,7 +80,7 @@ impl Key {
         let mut schedule = CacheAligned([0; 128]);
         // SAFETY: key and schedule are separate valid buffers of the required
         // sizes.
-        unsafe { vg_sm4_expand_key(key, &mut schedule.0) };
+        unsafe { vg_sm4_expand_key_auto(key, &mut schedule.0) };
         Self { schedule }
     }
 
@@ -103,7 +103,7 @@ impl Key {
             // SAFETY: `rest` is valid for `len` bytes, and it, the block at
             // `iv` and the schedule are separate valid objects of the sizes of
             // the signature, none of them on the callee's stack.
-            unsafe { vg_sm4_ofb_final(&self.schedule.0, iv, rest.as_mut_ptr(), rest.len()) };
+            unsafe { vg_sm4_ofb_final_auto(&self.schedule.0, iv, rest.as_mut_ptr(), rest.len()) };
         }
     }
 
@@ -114,7 +114,7 @@ impl Key {
         // separate valid objects of the sizes of the signature, none of them on
         // the callee's stack.
         unsafe {
-            vg_sm4_ofb(
+            vg_sm4_ofb_auto(
                 &self.schedule.0,
                 iv,
                 blocks.as_mut_ptr().cast(),

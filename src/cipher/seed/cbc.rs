@@ -11,8 +11,10 @@
 ))]
 
 use crate::align::CacheAligned;
-use crate::arch::seed::vg_seed_expand_key;
-use crate::arch::seed_cbc::{vg_seed_cbc_decrypt_chained, vg_seed_cbc_encrypt_chained};
+use crate::arch::dispatch::seed::vg_seed_expand_key_auto;
+use crate::arch::dispatch::seed_cbc::{
+    vg_seed_cbc_decrypt_chained_auto, vg_seed_cbc_encrypt_chained_auto,
+};
 use crate::error::{IncompleteBlock, InvalidKeyLength};
 use crate::zeroize::zeroize;
 
@@ -89,7 +91,7 @@ impl Key {
         let mut schedule = CacheAligned([0; 128]);
         // SAFETY: key and schedule are separate valid buffers of the required
         // sizes.
-        unsafe { vg_seed_expand_key(key, &mut schedule.0) };
+        unsafe { vg_seed_expand_key_auto(key, &mut schedule.0) };
         Ok(Self { schedule })
     }
 
@@ -107,7 +109,7 @@ impl Key {
         // schedule are separate valid objects of the sizes of the signature,
         // none of them on the callee's stack.
         unsafe {
-            vg_seed_cbc_encrypt_chained(
+            vg_seed_cbc_encrypt_chained_auto(
                 &self.schedule.0,
                 iv,
                 buffer.as_mut_ptr().cast(),
@@ -128,7 +130,7 @@ impl Key {
         }
         // SAFETY: as in `encrypt`.
         unsafe {
-            vg_seed_cbc_decrypt_chained(
+            vg_seed_cbc_decrypt_chained_auto(
                 &self.schedule.0,
                 iv,
                 buffer.as_mut_ptr().cast(),
