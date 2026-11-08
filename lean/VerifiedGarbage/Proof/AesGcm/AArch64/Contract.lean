@@ -308,4 +308,55 @@ def openAArch64 : Contract isa where
         bytesAt s'.mem (s.gpr .x6) (s.gpr .x7).toNat = bytesAt s.mem (s.gpr .x6) (s.gpr .x7).toNat
   pub s₁ s₂ := onePub 3 s₁ s₂ ∧ openLeakOf s₁ = openLeakOf s₂
 
+/-- What `vg_aes_gcm_open_to` needs: `(ctx = x0, rounds = x1, nonce = x2,
+nonce_len = x3, aad = x4, aad_len = x5, src = x6, len = x7, dst = [sp],
+dst_len = [sp + 8], tag = [sp + 16], tag_len = [sp + 24], …)`, with `work`
+the stack argument `w` (4, or 5 after `pw`), `extra` regions also readable
+and `extraW` also writable; the buffers in the order of
+`Spec.Gcm.openToSig`'s. -/
+def openToPreXW (w : Nat) (extra : List Region) (s : State) (extraW : List Region := []) : Prop :=
+  let ctx : Region := ⟨s.gpr .x0, 256⟩
+  let nonce : Region := ⟨s.gpr .x2, (s.gpr .x3).toNat⟩
+  let aad : Region := ⟨s.gpr .x4, (s.gpr .x5).toNat⟩
+  let src : Region := ⟨s.gpr .x6, (s.gpr .x7).toNat⟩
+  let dst : Region := ⟨stackArg s 0, (stackArg s 1).toNat⟩
+  let tag : Region := ⟨stackArg s 2, (stackArg s 3).toNat⟩
+  let work : Region := ⟨stackArg s w, 2560⟩
+  s.rd = [ctx, nonce, aad, src, tag, args s (w + 1)] ++ extra ∧ s.wr = dst :: work :: extraW ∧
+    ctx.Disjoint dst ∧ ctx.Disjoint work ∧ nonce.Disjoint dst ∧ nonce.Disjoint work ∧
+    aad.Disjoint dst ∧ aad.Disjoint work ∧ src.Disjoint dst ∧ src.Disjoint work ∧
+    dst.Disjoint tag ∧ dst.Disjoint work ∧ dst.Disjoint (args s (w + 1)) ∧
+    tag.Disjoint work ∧ work.Disjoint (args s (w + 1)) ∧
+    (s.gpr .x0).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .x2).toNat + (s.gpr .x3).toNat ≤ 2 ^ 64 ∧
+    (s.gpr .x4).toNat + (s.gpr .x5).toNat ≤ 2 ^ 64 ∧ (s.gpr .x6).toNat + (s.gpr .x7).toNat ≤ 2 ^ 64 ∧
+    (stackArg s 0).toNat + (stackArg s 1).toNat ≤ 2 ^ 64 ∧
+    (stackArg s 2).toNat + (stackArg s 3).toNat ≤ 2 ^ 64 ∧
+    (stackArg s w).toNat + 2560 ≤ 2 ^ 64 ∧ s.sp.toNat + 8 * (w + 1) ≤ 2 ^ 64 ∧ rounds (s.gpr .x1) ∧
+    (stackArg s 1).toNat = (s.gpr .x7).toNat
+
+/-- What `vg_aes_gcm_open_to` computes, for the arguments of `s`: `openRes`
+with the ciphertext at `src` and the tag the stack arguments 2 and 3. -/
+def openToRes (s : State) : Option (List Byte) :=
+  openResult (ctxCiph s.mem (s.gpr .x0) (s.gpr .x1).toNat) (ctxH s.mem (s.gpr .x0)) (stackArg s 3).toNat
+    (bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat) (bytesAt s.mem (s.gpr .x6) (s.gpr .x7).toNat)
+    (bytesAt s.mem (s.gpr .x4) (s.gpr .x5).toNat) (bytesAt s.mem (stackArg s 2) (stackArg s 3).toNat)
+
+/-- What `vg_aes_gcm_open_to` leaves: the plaintext at `dst` if the tag is
+right, and zeros there if not. -/
+def openToPostOf (s s' : State) : Prop :=
+  match openToRes s with
+  | some pt => (s'.gpr .x0).setWidth 32 = 1 ∧ bytesAt s'.mem (stackArg s 0) (s.gpr .x7).toNat = pt
+  | none => (s'.gpr .x0).setWidth 32 = 0 ∧
+      bytesAt s'.mem (stackArg s 0) (s.gpr .x7).toNat = List.replicate (s.gpr .x7).toNat 0
+
+/-- What `vg_aes_gcm_open_to` may leak: whether it succeeds, for `rounds` of 10, 12 or 14. -/
+def openToLeakOf (s : State) : List Nat :=
+  if ¬rounds (s.gpr .x1) then [] else [if (openToRes s).isSome = true then 1 else 0]
+
+/-- `vg_aes_gcm_open_to`. -/
+def openToAArch64 : Contract isa where
+  pre s := openToPreXW 4 [] s
+  post := openToPostOf
+  pub s₁ s₂ := onePub 5 s₁ s₂ ∧ openToLeakOf s₁ = openToLeakOf s₂
+
 end VG.Proof.AesGcm.AArch64

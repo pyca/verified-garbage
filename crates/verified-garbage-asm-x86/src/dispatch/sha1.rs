@@ -12,7 +12,7 @@ pub use crate::sha1::vg_sha1_init as vg_sha1_init_auto;
 ///
 /// Contract: `VG.Spec.Sha1.digestContract`. Constant time: only the pointers and `len` may affect timing, not the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha1_digest_shani` if the CPU supports its features (`VG_SHA1_DIGEST_SHANI_FEATURES`); or else `vg_sha1_digest`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha1_digest_shani` if the CPU supports its features (`VG_SHA1_DIGEST_SHANI_FEATURES`); or else `vg_sha1_digest`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -23,21 +23,42 @@ pub use crate::sha1::vg_sha1_init as vg_sha1_init_auto;
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sha1_digest_auto(data: *const u8, len: usize, out: *mut [u8; 20]) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::sha1::VG_SHA1_DIGEST_SHANI_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_sha1_digest_shani`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::sha1::vg_sha1_digest_shani(data, len, out) };
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(data: *const u8, len: usize, out: *mut [u8; 20]);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if cpu.contains(crate::sha1::VG_SHA1_DIGEST_SHANI_FEATURES) {
+            return crate::sha1::vg_sha1_digest_shani;
+        }
+        crate::sha1::vg_sha1_digest
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::sha1::vg_sha1_digest(data, len, out) }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(data: *const u8, len: usize, out: *mut [u8; 20]) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(data, len, out) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(data, len, out) }
 }
 
 /// Absorbs data into a SHA-1 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), it then represents that message followed by the `len` bytes at `data`.
 ///
 /// Contract: `VG.Spec.Sha1.updateContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha1_update_shani` if the CPU supports its features (`VG_SHA1_UPDATE_SHANI_FEATURES`); or else `vg_sha1_update`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha1_update_shani` if the CPU supports its features (`VG_SHA1_UPDATE_SHANI_FEATURES`); or else `vg_sha1_update`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -50,21 +71,42 @@ pub unsafe fn vg_sha1_digest_auto(data: *const u8, len: usize, out: *mut [u8; 20
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sha1_update_auto(state: *mut [u8; 84], count: u64, data: *const u8, len: usize) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::sha1::VG_SHA1_UPDATE_SHANI_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_sha1_update_shani`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::sha1::vg_sha1_update_shani(state, count, data, len) };
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(state: *mut [u8; 84], count: u64, data: *const u8, len: usize);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if cpu.contains(crate::sha1::VG_SHA1_UPDATE_SHANI_FEATURES) {
+            return crate::sha1::vg_sha1_update_shani;
+        }
+        crate::sha1::vg_sha1_update
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::sha1::vg_sha1_update(state, count, data, len) }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(state: *mut [u8; 84], count: u64, data: *const u8, len: usize) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(state, count, data, len) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(state, count, data, len) }
 }
 
 /// Finishes a SHA-1 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), writes the SHA-1 digest of that message to `*out`.
 ///
 /// Contract: `VG.Spec.Sha1.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha1_finalize_shani` if the CPU supports its features (`VG_SHA1_FINALIZE_SHANI_FEATURES`); or else `vg_sha1_finalize`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha1_finalize_shani` if the CPU supports its features (`VG_SHA1_FINALIZE_SHANI_FEATURES`); or else `vg_sha1_finalize`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -78,12 +120,33 @@ pub unsafe fn vg_sha1_update_auto(state: *mut [u8; 84], count: u64, data: *const
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sha1_finalize_auto(state: *mut [u8; 84], count: u64, out: *mut [u8; 20]) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::sha1::VG_SHA1_FINALIZE_SHANI_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_sha1_finalize_shani`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::sha1::vg_sha1_finalize_shani(state, count, out) };
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(state: *mut [u8; 84], count: u64, out: *mut [u8; 20]);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if cpu.contains(crate::sha1::VG_SHA1_FINALIZE_SHANI_FEATURES) {
+            return crate::sha1::vg_sha1_finalize_shani;
+        }
+        crate::sha1::vg_sha1_finalize
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::sha1::vg_sha1_finalize(state, count, out) }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(state: *mut [u8; 84], count: u64, out: *mut [u8; 20]) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(state, count, out) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(state, count, out) }
 }

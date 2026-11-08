@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.RsaPkcs1Sig.signContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, `hash` and the contents of `n` and `e`, not on `digest` or the private key.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_rsa_pkcs1_sign_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_RSA_PKCS1_SIGN_UMAAL_FEATURES`); or else `vg_rsa_pkcs1_sign`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_rsa_pkcs1_sign_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_RSA_PKCS1_SIGN_UMAAL_FEATURES`); or else `vg_rsa_pkcs1_sign`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -32,15 +32,36 @@
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_rsa_pkcs1_sign_auto(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, digest: *const u8, digest_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
-    #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-    if cpu.contains(crate::rsa_pkcs1_sig::VG_RSA_PKCS1_SIGN_UMAAL_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_rsa_pkcs1_sign_umaal`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::rsa_pkcs1_sig::vg_rsa_pkcs1_sign_umaal(out, out_len, n, n_len, e, e_len, hash, digest, digest_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, scratch, scratch_len) };
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, digest: *const u8, digest_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32;
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+        if cpu.contains(crate::rsa_pkcs1_sig::VG_RSA_PKCS1_SIGN_UMAAL_FEATURES) {
+            return crate::rsa_pkcs1_sig::vg_rsa_pkcs1_sign_umaal;
+        }
+        crate::rsa_pkcs1_sig::vg_rsa_pkcs1_sign
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::rsa_pkcs1_sig::vg_rsa_pkcs1_sign(out, out_len, n, n_len, e, e_len, hash, digest, digest_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, scratch, scratch_len) }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, digest: *const u8, digest_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(out, out_len, n, n_len, e, e_len, hash, digest, digest_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, scratch, scratch_len) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(out, out_len, n, n_len, e, e_len, hash, digest, digest_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, scratch, scratch_len) }
 }
 
 /// RSASSA-PKCS1-v1_5 signature verification (RFC 8017 §8.2.2) of a hash value, as BoringSSL's `RSA_verify` does it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), returns 1 if `sig` is `n_len` bytes, the integer `s` of `sig` (most significant byte first) is below `n`, and `s^e mod n` (as `n_len` bytes) is `0x00 0x01`, at least 8 bytes `0xff`, `0x00` and then exactly the DER encoding of the `DigestInfo` of `digest` (RFC 8017 §9.2 note 1), which must be as long as the hash function's values; and 0 otherwise, or if `n` or `e` is not such a number or `hash` names no hash function. That is, exactly when `s^e mod n` is EMSA-PKCS1-v1_5's encoding of `digest`: the signed `DigestInfo` is compared, never parsed. `hash` names the hash function: 0 MD5, 1 SHA-1, 2 SHA-224, 3 SHA-256, 4 SHA-384, 5 SHA-512, 6 SHA-512/224, 7 SHA-512/256, 8 SHA3-224, 9 SHA3-256, 10 SHA3-384, 11 SHA3-512 (`VG.Spec.RsaPkcs1Sig.Hash.ofId`).
@@ -51,7 +72,7 @@ pub unsafe fn vg_rsa_pkcs1_sign_auto(out: *mut u8, out_len: usize, n: *const u8,
 ///
 /// Contract: `VG.Spec.RsaPkcs1Sig.verifyPrecomputedContract`.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_rsa_pkcs1_verify_precomputed_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_RSA_PKCS1_VERIFY_PRECOMPUTED_UMAAL_FEATURES`); or else `vg_rsa_pkcs1_verify_precomputed`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_rsa_pkcs1_verify_precomputed_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_RSA_PKCS1_VERIFY_PRECOMPUTED_UMAAL_FEATURES`); or else `vg_rsa_pkcs1_verify_precomputed`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -72,15 +93,36 @@ pub unsafe fn vg_rsa_pkcs1_sign_auto(out: *mut u8, out_len: usize, n: *const u8,
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_rsa_pkcs1_verify_precomputed_auto(n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, digest: *const u8, digest_len: usize, sig: *const u8, sig_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
-    #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-    if cpu.contains(crate::rsa_pkcs1_sig::VG_RSA_PKCS1_VERIFY_PRECOMPUTED_UMAAL_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_rsa_pkcs1_verify_precomputed_umaal`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::rsa_pkcs1_sig::vg_rsa_pkcs1_verify_precomputed_umaal(n, n_len, e, e_len, hash, digest, digest_len, sig, sig_len, scratch, scratch_len, pre, pre_len) };
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, digest: *const u8, digest_len: usize, sig: *const u8, sig_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32;
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+        if cpu.contains(crate::rsa_pkcs1_sig::VG_RSA_PKCS1_VERIFY_PRECOMPUTED_UMAAL_FEATURES) {
+            return crate::rsa_pkcs1_sig::vg_rsa_pkcs1_verify_precomputed_umaal;
+        }
+        crate::rsa_pkcs1_sig::vg_rsa_pkcs1_verify_precomputed
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::rsa_pkcs1_sig::vg_rsa_pkcs1_verify_precomputed(n, n_len, e, e_len, hash, digest, digest_len, sig, sig_len, scratch, scratch_len, pre, pre_len) }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, digest: *const u8, digest_len: usize, sig: *const u8, sig_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(n, n_len, e, e_len, hash, digest, digest_len, sig, sig_len, scratch, scratch_len, pre, pre_len) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(n, n_len, e, e_len, hash, digest, digest_len, sig, sig_len, scratch, scratch_len, pre, pre_len) }
 }
 
 /// The hash value an RSASSA-PKCS1-v1_5 signature signs, as BoringSSL's `EVP_PKEY_verify_recover` returns it for an RSA key with PKCS #1 v1.5 padding and a hash function set. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), if `sig` is `n_len` bytes, the integer `s` of `sig` (most significant byte first) is below `n`, and `s^e mod n` (as `n_len` bytes) is `0x00 0x01`, at least 8 bytes `0xff`, `0x00` and then the DER encoding of the hash function's `DigestInfo` prefix (RFC 8017 §9.2 note 1) followed by exactly `out_len` bytes, writes those bytes to `out` and returns 1; otherwise, or if `n` or `e` is not such a number, writes zeros and returns 0. It writes a value exactly when `vg_rsa_pkcs1_verify` accepts the signature for it. `hash` names the hash function: 0 MD5, 1 SHA-1, 2 SHA-224, 3 SHA-256, 4 SHA-384, 5 SHA-512, 6 SHA-512/224, 7 SHA-512/256, 8 SHA3-224, 9 SHA3-256, 10 SHA3-384, 11 SHA3-512 (`VG.Spec.RsaPkcs1Sig.Hash.ofId`).
@@ -91,7 +133,7 @@ pub unsafe fn vg_rsa_pkcs1_verify_precomputed_auto(n: *const u8, n_len: usize, e
 ///
 /// Contract: `VG.Spec.RsaPkcs1Sig.recoverPrecomputedContract`.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_rsa_pkcs1_recover_precomputed_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_RSA_PKCS1_RECOVER_PRECOMPUTED_UMAAL_FEATURES`); or else `vg_rsa_pkcs1_recover_precomputed`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_rsa_pkcs1_recover_precomputed_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_RSA_PKCS1_RECOVER_PRECOMPUTED_UMAAL_FEATURES`); or else `vg_rsa_pkcs1_recover_precomputed`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -113,13 +155,34 @@ pub unsafe fn vg_rsa_pkcs1_verify_precomputed_auto(n: *const u8, n_len: usize, e
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_rsa_pkcs1_recover_precomputed_auto(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, sig: *const u8, sig_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
-    #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-    if cpu.contains(crate::rsa_pkcs1_sig::VG_RSA_PKCS1_RECOVER_PRECOMPUTED_UMAAL_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_rsa_pkcs1_recover_precomputed_umaal`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::rsa_pkcs1_sig::vg_rsa_pkcs1_recover_precomputed_umaal(out, out_len, n, n_len, e, e_len, hash, sig, sig_len, scratch, scratch_len, pre, pre_len) };
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, sig: *const u8, sig_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32;
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+        if cpu.contains(crate::rsa_pkcs1_sig::VG_RSA_PKCS1_RECOVER_PRECOMPUTED_UMAAL_FEATURES) {
+            return crate::rsa_pkcs1_sig::vg_rsa_pkcs1_recover_precomputed_umaal;
+        }
+        crate::rsa_pkcs1_sig::vg_rsa_pkcs1_recover_precomputed
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::rsa_pkcs1_sig::vg_rsa_pkcs1_recover_precomputed(out, out_len, n, n_len, e, e_len, hash, sig, sig_len, scratch, scratch_len, pre, pre_len) }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, sig: *const u8, sig_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(out, out_len, n, n_len, e, e_len, hash, sig, sig_len, scratch, scratch_len, pre, pre_len) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(out, out_len, n, n_len, e, e_len, hash, sig, sig_len, scratch, scratch_len, pre, pre_len) }
 }

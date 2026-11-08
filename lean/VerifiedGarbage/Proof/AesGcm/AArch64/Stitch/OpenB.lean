@@ -264,7 +264,7 @@ theorem omBS_ok (v : GcmImpl) {fr : List Region} {s s₇ : State} (hR : R = 10 �
           exact (mo.data.ok.st.sub_left hE).sub_right (Lay.stSub (by decide))
       have hCr : CrIn Ctx (W + BitVec.ofNat 64 16) W SP s₈.gpr R 0 D P s₈ :=
         ⟨he₈, fun _ _ => rfl, by rw [og₈ _ (by decide), mo.x22], hR, x23₈, x24₈, x25₈,
-          (mo.data.take hPn).of_eq rd₈ wr₈⟩
+          (mo.data.take hPn).of_eq rd₈ wr₈, rfl⟩
       have hcb₈ : blockAt s₈.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) = J := by
         rw [m₈, blockAt_copy, cbs₇]
       have hc₈ : ciphOf s₈.mem Ctx R = ciphOf s.mem Ctx R := by
@@ -297,7 +297,7 @@ theorem omBS_ok (v : GcmImpl) {fr : List Region} {s s₇ : State} (hR : R = 10 �
       have he₈ := mo.env.of_regs r₈
       have hCr : CrIn Ctx (W + BitVec.ofNat 64 16) W SP s₈.gpr R P (D + BitVec.ofNat 64 P) (n - P) s₈ :=
         ⟨he₈, fun _ _ => rfl, by rw [r₈.others _ (by decide), mo.x22], hR, x23₈, x24₈, x25₈,
-          (mo.data.drop hPn).of_eq r₈.rd r₈.wr⟩
+          (mo.data.drop hPn).of_eq r₈.rd r₈.wr, rfl⟩
       have hctr : Ctr s₈.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 64)
           (ciphOf s₈.mem Ctx R) J P :=
         ⟨by rw [r₈.mem, cb₇]; congr 1; omega, fun h => absurd hP16 h⟩

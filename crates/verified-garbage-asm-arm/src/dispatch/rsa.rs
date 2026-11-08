@@ -18,7 +18,7 @@ pub use crate::rsa::vg_rsa_crt_values as vg_rsa_crt_values_auto;
 ///
 /// Contract: `VG.Spec.Rsa.publicPrecomputeContract`. Timing may depend on the pointers, the lengths and the contents of `n`.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_rsa_public_precompute_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_RSA_PUBLIC_PRECOMPUTE_UMAAL_FEATURES`); or else `vg_rsa_public_precompute`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_rsa_public_precompute_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_RSA_PUBLIC_PRECOMPUTE_UMAAL_FEATURES`); or else `vg_rsa_public_precompute`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -34,15 +34,36 @@ pub use crate::rsa::vg_rsa_crt_values as vg_rsa_crt_values_auto;
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_rsa_public_precompute_auto(pre: *mut u64, pre_len: usize, n: *const u8, n_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
-    #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-    if cpu.contains(crate::rsa::VG_RSA_PUBLIC_PRECOMPUTE_UMAAL_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_rsa_public_precompute_umaal`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::rsa::vg_rsa_public_precompute_umaal(pre, pre_len, n, n_len, scratch, scratch_len) };
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(pre: *mut u64, pre_len: usize, n: *const u8, n_len: usize, scratch: *mut u64, scratch_len: usize) -> u32;
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+        if cpu.contains(crate::rsa::VG_RSA_PUBLIC_PRECOMPUTE_UMAAL_FEATURES) {
+            return crate::rsa::vg_rsa_public_precompute_umaal;
+        }
+        crate::rsa::vg_rsa_public_precompute
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::rsa::vg_rsa_public_precompute(pre, pre_len, n, n_len, scratch, scratch_len) }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(pre: *mut u64, pre_len: usize, n: *const u8, n_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(pre, pre_len, n, n_len, scratch, scratch_len) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(pre, pre_len, n, n_len, scratch, scratch_len) }
 }
 
 /// `vg_rsa_recover_primes_det`, the only implementation of it on this target, which needs no CPU feature

@@ -55,17 +55,35 @@ def has (text part : String) : Bool := (text.splitOn part).length > 1
 #guard has file "pub use crate::poly1305::vg_poly1305_init as vg_poly1305_init_auto;\n"
 #guard has file "pub use crate::poly1305::vg_poly1305_finalize as vg_poly1305_finalize_auto;\n"
 
--- `vg_poly1305_update`: `_neon` where the ranking chooses it, else the base.
+-- `vg_poly1305_update`: `_neon` where the ranking chooses it, else the base,
+-- chosen by `select` on the first call (`first`) and called through `CHOSEN`
+-- from then on.
 #guard has file
   "pub unsafe fn vg_poly1305_update_auto(state: *mut [u64; 16], count: u64, data: *const u8, \
     len: usize) {\n    \
-    let cpu = verified_garbage_cpu::detected();\n    \
+    /// The type of the implementations.\n    \
+    type Impl = unsafe extern \"C\" fn(state: *mut [u64; 16], count: u64, data: *const u8, \
+    len: usize);\n"
+#guard has file
+  "    fn select() -> Impl {\n        \
+    let cpu = verified_garbage_cpu::detected();\n        \
     if (cfg!(target_vendor = \"apple\") || verified_garbage_cpu::requested(\
     verified_garbage_cpu::Features(verified_garbage_cpu::feature::NEON))) && \
-    cpu.contains(verified_garbage_cpu::Features(verified_garbage_cpu::feature::NEON)) {\n"
+    cpu.contains(verified_garbage_cpu::Features(verified_garbage_cpu::feature::NEON)) {\n            \
+    return crate::poly1305::vg_poly1305_update_neon;\n        }\n        \
+    crate::poly1305::vg_poly1305_update\n    }\n"
 #guard has file
-  "        return unsafe { crate::poly1305::vg_poly1305_update_neon(state, count, data, len) };\n    }\n"
-#guard has file "    unsafe { crate::poly1305::vg_poly1305_update(state, count, data, len) }\n}\n"
+  "    unsafe extern \"C\" fn first(state: *mut [u64; 16], count: u64, data: *const u8, \
+    len: usize) {\n        \
+    let f = select();\n        \
+    CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);\n"
+#guard has file "        unsafe { f(state, count, data, len) }\n    }\n"
+#guard has file
+  "    static CHOSEN: core::sync::atomic::AtomicPtr<()> =\n        \
+    core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());\n"
+#guard has file
+  "    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(\
+    core::sync::atomic::Ordering::Relaxed))(state, count, data, len) }\n}\n"
 
 -- They are a module of their own, not in the module of the functions.
 #guard ((out.find? (·.1 == "verified-garbage-asm-aarch64/src/poly1305.rs")).map
@@ -103,7 +121,7 @@ def selFile : String :=
     return crate::poly1305::vg_poly1305_update_neon;\n    }\n    \
     crate::poly1305::vg_poly1305_update\n}\n"
 #guard has selFile "/// Calling the function it returns carries exactly `vg_poly1305_update_auto`'s obligations"
-#guard has selFile "    unsafe { crate::poly1305::vg_poly1305_update(state, count, data, len) }\n}\n"
+#guard has selFile "    static CHOSEN: core::sync::atomic::AtomicPtr<()> =\n"
 
 -- A function whose base is its only implementation returns it.
 #guard has selFile

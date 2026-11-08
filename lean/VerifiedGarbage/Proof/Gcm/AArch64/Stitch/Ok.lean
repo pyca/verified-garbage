@@ -27,7 +27,7 @@ namespace VG.Proof.Gcm.AArch64.Stitch
 open VG VG.AArch64
 open VG.AArch64.RegUpd (v_setV_self v_setV_of_ne gpr_setV mem_setV rd_setV wr_setV sp_setV v_write
   gpr_write gpr_write_self gpr_write_of_ne mem_write rd_write wr_write sp_write)
-open VG.Proof.Aes.AArch64 (DataInv keyStream)
+open VG.Proof.Aes.AArch64 (DataInv DataInvM dataInvM_self dataInvM_frame dataInvM_store1 ctr32_of_dataInvM keyStream)
 open VG.Proof.Aes.AArch64.Aese (Fr vbyte_readW inRegions_wr exec_strq eval_zero eval_nonzero sw32)
 open VG.Proof.Gcm.AArch64.Pmull (ext8 VOnly rev64b_read)
 open VG.Spec.Gcm (Block blockAt blocksAt inc32 aesWith ghashFrom ctr32)

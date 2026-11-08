@@ -216,7 +216,8 @@ theorem correct_blocks {crypt4 : Prog isa} {f : Nat → List Byte → Spec.Aes.S
       · exact (scr_disj _ (by omega_arith) (by omega_arith)).symm
       · exact (dDS.sub_right (scr_sub _ (by omega_arith))).symm
   refine WP.mono (restore_ok (by rw [gd.wr, wr₅, d₄.wr, wr₃, wr₂, wr₁]; exact hwS) gd.base (by decide) sv)
-    fun s₇ ⟨rg₇, fR⟩ => ⟨rg₇, ?_⟩
+    fun s₇ ⟨rg₇, m₇, _⟩ => ⟨rg₇, ?_⟩
+  have fR : Frame [(⟨b, 8 * 59⟩ : Region)] s₆.mem s₇.mem := by rw [m₇]; exact Frame.refl _ _
   have dR : ∀ r ∈ [(⟨b, 8 * 59⟩ : Region)], Region.Disjoint ⟨D, 16 * n⟩ r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact dDS.sub_right (Region.sub_prefix (by omega_arith))

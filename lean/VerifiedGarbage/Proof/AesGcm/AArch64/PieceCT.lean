@@ -141,29 +141,55 @@ theorem crypt_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {R P : Nat} {D :
   exact rel_taint [.x20, .x23, .x24] (by rw [d₁.env.sp, d₂.env.sp])
     (by agree_tac [d₁.env.x20, d₂.env.x20, d₁.x23, d₂.x23, d₁.x24, d₂.x24]) ⟨_, by taint_decide⟩
 
-/-- `cryptAl`: `crypt` from the start of a keystream block. -/
-theorem cryptAl_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {R P : Nat} {D : Addr} {n : Nat} {σ₁ σ₂ : State}
-    (h₁ : CrIn Ctx St W SP k₁ R P D n σ₁) (h₂ : CrIn Ctx St W SP k₂ R P D n σ₂) (hP : P % 16 = 0) :
-    RelCT isa (Eq2 σ₁ σ₂) (cryptAl v.callees) TT := by
-  have hc : ∀ {σ : State} {k : Reg → BitVec 64} (h : CrIn Ctx St W SP k R P D n σ) {m' : Mem},
-      Frame (crFrame St W D n) σ.mem m' → ciphOf m' Ctx R = ciphOf σ.mem Ctx R :=
-    fun h _ hf => ciph_frame hf (ctx_crFrame L h.data) h.rounds
+/-- `cryptAlG to`: `crypt` from the start of a keystream block, in place or
+out of place, whose whole blocks out of place a call of `vg_aes_ctr32_to`
+decrypts (`ctrTo_rel`). -/
+theorem cryptAlG_rel (v : GcmImpl) (to : Bool) {k₁ k₂ : Reg → BitVec 64} {R P : Nat} {D O : Addr} {n : Nat}
+    {σ₁ σ₂ : State} (h₁ : CrInG to Ctx St W SP k₁ R P D O n σ₁) (h₂ : CrInG to Ctx St W SP k₂ R P D O n σ₂)
+    (hP : P % 16 = 0) :
+    RelCT isa (Eq2 σ₁ σ₂) (cryptAlG v.callees to) TT := by
+  have hc : ∀ {σ : State} {k : Reg → BitVec 64} (h : CrInG to Ctx St W SP k R P D O n σ) {m' : Mem},
+      Frame (crFrame St W O n) σ.mem m' → ciphOf m' Ctx R = ciphOf σ.mem Ctx R :=
+    fun h _ hf => ciph_frame hf (ctx_crFrame L (OutAt.dataW h.outAt h.data)) h.rounds
   have m₁ := h₁.mid (icb := 0) hP
   have m₂ := h₂.mid (icb := 0) hP
+  have ta : ∃ h, (taint.check (Taint.ofRegs [.x19, .x20, .x21, .x22, .x23, .x24]) (.block (crArgsG to)) h).isSome =
+      true := by
+    cases to <;> exact ⟨_, by taint_decide⟩
   refine rel_seq (rel_taint [.x19, .x20, .x21, .x22, .x23, .x24] (by rw [h₁.env.sp, h₂.env.sp])
       (by agree_tac [h₁.env.x19, h₂.env.x19, h₁.env.x20, h₂.env.x20, h₁.env.x21, h₂.env.x21, h₁.x22, h₂.x22,
-        h₁.x23, h₂.x23, h₁.x24, h₂.x24]) ⟨_, by taint_decide⟩)
-    (crArgs_ok L m₁) (crArgs_ok L m₂) fun τ₁ τ₂ a₁ a₂ => ?_
-  refine rel_seq (rel_ctr v.ctr a₁.call a₂.call (by rw [a₁.env.sp, a₂.env.sp]))
-    (ctrCall1_ok L v a₁ (hc h₁ a₁.frame)) (ctrCall1_ok L v a₂ (hc h₂ a₂.frame)) fun τ₁ τ₂ b₁ b₂ => ?_
+        h₁.x23, h₂.x23, h₁.x24, h₂.x24]) ta)
+    (crArgsG_ok L to m₁) (crArgsG_ok L to m₂) fun τ₁ τ₂ a₁ a₂ => ?_
+  refine rel_seq ?_ (ctrCallG1_ok L v a₁ (hc h₁ a₁.frame)) (ctrCallG1_ok L v a₂ (hc h₂ a₂.frame))
+    fun τ₁ τ₂ b₁ b₂ => ?_
+  · have hsp : τ₁.sp = τ₂.sp := by rw [a₁.env.sp, a₂.env.sp]
+    have c₁ := a₁.call
+    have c₂ := a₂.call
+    cases to
+    · exact rel_ctr v.ctr c₁ c₂ hsp
+    · exact ctrTo_rel v.ctr fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact ⟨_, _, _, _, _, _, _, c₁, c₂, hsp⟩
   refine rel_seq (rel_taint [.x19, .x20, .x21, .x22, .x23, .x24, .x25] (by rw [b₁.1.env.sp, b₂.1.env.sp])
       (by agree_tac [b₁.1.env.x19, b₂.1.env.x19, b₁.1.env.x20, b₂.1.env.x20, b₁.1.env.x21, b₂.1.env.x21,
         b₁.1.x22, b₂.1.x22, b₁.1.x23, b₂.1.x23, b₁.1.x24, b₂.1.x24, b₁.1.x25, b₂.1.x25]) ⟨_, by taint_decide⟩)
     (crSeg2_ok L b₁.1 b₁.2) (crSeg2_ok L b₂.1 b₂.2) fun τ₁ τ₂ c₁ c₂ => ?_
   refine rel_seq (rel_ctr v.ctr c₁.call c₂.call (by rw [c₁.env.sp, c₂.env.sp]))
     (ctrCall2_ok L v c₁ (hc h₁ c₁.frame)) (ctrCall2_ok L v c₂ (hc h₂ c₂.frame)) fun τ₁ τ₂ d₁ d₂ => ?_
-  exact rel_taint [.x20, .x23, .x24] (by rw [d₁.env.sp, d₂.env.sp])
-    (by agree_tac [d₁.env.x20, d₂.env.x20, d₁.x23, d₂.x23, d₁.x24, d₂.x24]) ⟨_, by taint_decide⟩
+  have o₁ := d₁.outAt
+  have o₂ := d₂.outAt
+  cases to
+  · exact rel_taint [.x20, .x23, .x24] (by rw [d₁.env.sp, d₂.env.sp])
+      (by agree_tac [d₁.env.x20, d₂.env.x20, d₁.x23, d₂.x23, d₁.x24, d₂.x24]) ⟨_, by taint_decide⟩
+  · obtain ⟨-, -, x26₁⟩ := o₁
+    obtain ⟨-, -, x26₂⟩ := o₂
+    exact rel_taint [.x20, .x23, .x24, .x26] (by rw [d₁.env.sp, d₂.env.sp])
+      (by agree_tac [d₁.env.x20, d₂.env.x20, d₁.x23, d₂.x23, d₁.x24, d₂.x24, x26₁, x26₂]) ⟨_, by taint_decide⟩
+
+/-- `cryptAl`: `crypt` from the start of a keystream block. -/
+theorem cryptAl_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {R P : Nat} {D : Addr} {n : Nat} {σ₁ σ₂ : State}
+    (h₁ : CrIn Ctx St W SP k₁ R P D n σ₁) (h₂ : CrIn Ctx St W SP k₂ R P D n σ₂) (hP : P % 16 = 0) :
+    RelCT isa (Eq2 σ₁ σ₂) (cryptAl v.callees) TT := by
+  rw [← cryptAlG_false]
+  exact cryptAlG_rel L v false h₁ h₂ hP
 
 /-- `lens yo ra rb`, run. -/
 theorem lens_ok (v : GcmImpl) {yo : Nat} (hyo : yo = 0 ∨ yo = 16) {ra rb : Reg} (hrb : rb ≠ .x9)

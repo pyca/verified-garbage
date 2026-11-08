@@ -301,7 +301,7 @@ theorem stOut_of {H : Block} {iv a : List Byte} {R n : Nat} {D Tg : Addr} {ρ σ
   have x22₄ : s₄.gpr .x22 = BitVec.ofNat 64 R := by rw [g _ (by simp), h₂.x22, h22]
   exact ⟨⟨he₄, x22₄, hR, by rw [g _ (by simp), h₂.x26], x27, by rw [g _ (by simp), h₂.x28, h28], hH₄, key₄, hd₄,
     F₄, by rw [r₄.rd, hm.rd, h₂.rd, hrd], by rw [r₄.wr, hm.wr, h₂.wr, hwr]⟩,
-    ⟨he₄, fun _ _ => rfl, x22₄, hR, x23, x24, x25, hd₄.drop hpn⟩⟩
+    ⟨he₄, fun _ _ => rfl, x22₄, hR, x23, x24, x25, hd₄.drop hpn, rfl⟩⟩
 
 /-- The arguments of the call on the whole blocks of the rest of the ciphertext. -/
 theorem ctCS_ok {H : Block} {R n : Nat} {D Tg : Addr} {ρ s₄ : State}

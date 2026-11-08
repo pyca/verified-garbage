@@ -32,7 +32,7 @@ namespace VG.Proof.Gcm.AArch64.Stitch
 open VG VG.AArch64
 open VG.AArch64.RegUpd (v_setV_self v_setV_of_ne gpr_setV mem_setV rd_setV wr_setV sp_setV v_write
   gpr_write_self gpr_write_of_ne mem_write rd_write wr_write sp_write)
-open VG.Proof.Aes.AArch64 (DataInv keyStream)
+open VG.Proof.Aes.AArch64 (DataInv DataInvM dataInvM_self dataInvM_frame dataInvM_store1 ctr32_of_dataInvM keyStream)
 open VG.Proof.Aes.AArch64.Aese (Fr vbyte_readW)
 open VG.Proof.Gcm.AArch64.Pmull (ext8 VOnly rev64b_read)
 open VG.Spec.Gcm (Block blockAt blocksAt inc32 aesWith ghashFrom ctr32)
@@ -53,20 +53,6 @@ abbrev yh (hb : Nat → Block) (n : Nat) : Block := ghashFrom (hk s₀) (y₀ s�
 
 end
 
-/-- The bytes at `O`: the `16 k` first, the `16 k` at `D` XORed with the
-keystream; the rest, as they were. With `O = D`, `DataInv` (`dataInvM_self`). -/
-def DataInvM (m₀ m : Mem) (D O : Addr) (n k : Nat) (ks : Nat → Byte) : Prop :=
-  ∀ i < 16 * n, m (O + BitVec.ofNat 64 i) =
-    if i < 16 * k then m₀ (D + BitVec.ofNat 64 i) ^^^ ks i else m₀ (O + BitVec.ofNat 64 i)
-
-theorem dataInvM_self {m₀ m : Mem} {D : Addr} {n k : Nat} {ks : Nat → Byte} :
-    DataInvM m₀ m D D n k ks ↔ DataInv m₀ m D n k ks := by
-  refine ⟨fun h i hi => ?_, fun h i hi => ?_⟩ <;> rw [h i hi] <;> by_cases hk : i < 16 * k
-  · rw [ite_eq_left hk, ite_eq_left hk]
-  · rw [ite_eq_right hk, ite_eq_right hk]; exact BitVec.xor_zero.symm
-  · rw [ite_eq_left hk, ite_eq_left hk]
-  · rw [ite_eq_right hk, ite_eq_right hk]; exact BitVec.xor_zero
-
 /-- The invariant of the loops, after `c` batches encrypted and `h` hashed,
 the output at `op s₀ to` (`to` only for the decryption). -/
 structure LInv (s₀ : State) (to : Bool) (hb : Nat → Block) (c h : Nat) (s : State) : Prop where
@@ -83,12 +69,6 @@ structure LInv (s₀ : State) (to : Bool) (hb : Nat → Block) (c h : Nat) (s : 
   sp : s.sp = s₀.sp
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
-
-theorem dataInvM_frame {m₀ m m' : Mem} {D O : Addr} {n k : Nat} {ks : Nat → Byte} {rs : List Region}
-    (hf : Frame rs m m') (hd : ∀ r ∈ rs, Region.Disjoint ⟨O, 16 * n⟩ r) (hn : 16 * n < 2 ^ 64)
-    (h : DataInvM m₀ m D O n k ks) : DataInvM m₀ m' D O n k ks := fun i hi => by
-  rw [← h i hi]
-  exact hf.bytes (R := ⟨O, 16 * n⟩) hd (by simp only; omega) hi
 
 /-- A register the decryption keeps, in either mode. -/
 theorem notMem_kRegsT {r : Reg} (to : Bool) (h : r ∉ Reg.x15 :: kRegs) : r ∉ kRegsT to := by

@@ -183,7 +183,7 @@ theorem runWithSX_ok (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok) {
   have hdat₃ : DataW Ctx (W + BitVec.ofNat 64 16) W s₃ D' (n - P) :=
     hD' ▸ (hdat₂.drop hPn).of_eq (by rw [r₃.rd, hm₂.rd]) (by rw [r₃.wr, hm₂.wr])
   have hCr : CrIn Ctx (W + BitVec.ofNat 64 16) W s.sp s₃.gpr R P D' (n - P) s₃ :=
-    ⟨he₃, hk₃, x22₃, hRb, x23₃, x24₃, x25₃, hdat₃⟩
+    ⟨he₃, hk₃, x22₃, hRb, x23₃, x24₃, x25₃, hdat₃, rfl⟩
   have hfull₃ : DataW Ctx (W + BitVec.ofNat 64 16) W s₃ D n :=
     hdat₂.of_eq (by rw [r₃.rd, hm₂.rd]) (by rw [r₃.wr, hm₂.wr])
   refine WP.seq (WP.mono (WP.with_rdwr (cryptAlT_ok L v (icb := inc32 J0) hCr hP16 x26₃ hnlt
