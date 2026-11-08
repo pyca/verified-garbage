@@ -91,49 +91,6 @@ def has (text part : String) : Bool := (text.splitOn part).length > 1
 #guard has (((out.find? (·.1 == "verified-garbage-asm-aarch64/src/dispatch/mod.rs")).map (·.2)).getD "")
   "pub mod poly1305;\n"
 
-/-! ## Selectors (`Rust.selector`) -/
-
-/-- The files with selectors for `vg_poly1305_update` and `vg_poly1305_init`. -/
-def selOut (sel : Rust.Selected) : Except String (List (String × String)) :=
-  Rust.files Artifacts.Poly1305.AArch64.artifacts Dispatch.ranking sel
-
-def selFile : String :=
-  match selOut [("aarch64", ["vg_poly1305_update", "vg_poly1305_init"])] with
-  | .ok fs => ((fs.find? (·.1 == "verified-garbage-asm-aarch64/src/dispatch/poly1305.rs")).map
-      (·.2)).getD ""
-  | .error e => e
-
--- None unless asked for: the files are those without.
-#guard !has file "_select"
-#guard match selOut [] with
-  | .ok fs => fs == out
-  | .error _ => false
-
--- `vg_poly1305_update_select`: the dispatcher's arms, returning the function instead of calling
--- it, then the base; its dispatcher is as it was.
-#guard has selFile
-  "pub fn vg_poly1305_update_select() -> unsafe extern \"C\" fn(state: *mut [u64; 16], count: u64, \
-    data: *const u8, len: usize) {\n    \
-    let cpu = verified_garbage_cpu::detected();\n    \
-    if (cfg!(target_vendor = \"apple\") || verified_garbage_cpu::requested(\
-    verified_garbage_cpu::Features(verified_garbage_cpu::feature::NEON))) && \
-    cpu.contains(verified_garbage_cpu::Features(verified_garbage_cpu::feature::NEON)) {\n        \
-    return crate::poly1305::vg_poly1305_update_neon;\n    }\n    \
-    crate::poly1305::vg_poly1305_update\n}\n"
-#guard has selFile "/// Calling the function it returns carries exactly `vg_poly1305_update_auto`'s obligations"
-#guard has selFile "    static CHOSEN: core::sync::atomic::AtomicPtr<()> =\n"
-
--- A function whose base is its only implementation returns it.
-#guard has selFile
-  "pub fn vg_poly1305_init_select() -> unsafe extern \"C\" fn(state: *mut [u64; 16], \
-    key: *const [u8; 32]) {\n    crate::poly1305::vg_poly1305_init\n}\n"
-#guard !has selFile "vg_poly1305_finalize_select"
-
--- A name that is not the base of a function with a dispatcher fails the emitter.
-#guard match selOut [("aarch64", ["vg_poly1305_update_neon"])] with
-  | .error e => has e "vg_poly1305_update_neon has a selector (`VG.Dispatch.selected`) but no dispatcher"
-  | .ok _ => false
-
 /-! ## A registration's `extra` features and `vendor` (`Artifact.extra`, `Artifact.vendor`) -/
 
 /-- The ranking without its rule for Poly1305's `_neon`, which ranks `_neon` alone. -/
