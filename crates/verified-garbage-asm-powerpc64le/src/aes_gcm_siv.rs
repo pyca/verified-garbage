@@ -136,28 +136,44 @@ bl {vg_aes_ctr32}
 .base64 "eKOXfniruH4AAG7oCACO6AEAoDgG+KV4eCuEfGAAbvhoAI74AuELewAAKyg="
 beq %cr0, 228f
 230:
-.base64 "YABu6GgAjuhwAG74eACO+AABbjh4iyR+cACuOPAGDjl4u+Z+AQDgOA=="
-bl {vg_aes_ctr32}
-.base64 "YABugAEAYzhgAG6QEAD3OvD/GDsC4Qt7AAArKA=="
+.base64 "grIZewAAOSg="
+beq %cr0, 231f
+.base64 "QAAgOw=="
+b 232f
+231:
+.base64 "AuEZew=="
+232:
+.base64 "8AGOOHjLI38="
+233:
+.base64 "YACu6GgAzugAAKT4CADE+GAAroABAKU4YACukBAAhDj//2M4AAAjKA=="
+bne %cr0, 233b
+.base64 "AAFuOHiLJH7wAa44eMsmf/AG7jg="
+bl {vg_aes_encrypt_blocks}
+.base64 "8AFuOHi75H6kDyV7"
+234:
+.base64 "AAAE6AAAw+h4MgB8AAAE+AgAYzgIAIQ4//+lOAAAJSg="
+bne %cr0, 234b
+.base64 "eCOXfOQmJXtQwAV/AuELewAAKyg="
 bne %cr0, 230b
 b 229f
 228:
 229:
 .base64 "AAA4KA=="
-beq %cr0, 231f
+beq %cr0, 235f
 .base64 "YABu6GgAjuhwAG74eACO+AAAADjwAA74+AAO+AABbjh4iyR+cACuOPAGDjnwAM44AQDgOA=="
 bl {vg_aes_ctr32}
 .base64 "8ABuOHi75H54wwV/"
-233:
+237:
 .base64 "AAAEiAAAw4h4MgB8AAAEmAEAYzgBAIQ4//+lOAAAJSg="
-bne %cr0, 233b
-b 232f
-231:
-232:
+bne %cr0, 237b
+b 236f
+235:
+236:
 .base64 "AABu6AgAjugAAHb4CACW+OAADuimAwh8iADu6ZAADuqYAC7qoABO6qgAbuqwAI7quACu6sAAzurIAO7q0AAO69gALuuAAM7pYA8hOCAAgE4=""#,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
     )
 }
 
@@ -191,146 +207,162 @@ bl {vg_aes_expand_key_scratch}
 .base64 "EABu6BgAjugBAKA4OChlfAAAwDhQMKV8QvhjeAb4hnh4M2N8QviEeADhwDzGB8Z4ODClfHgqhHxAAOA4KD2OfEgA4DgoPW58AAAAOFAADvhYAA74eKOXfniruH4AAG7oCACO6AEAoDgG+KV4eCuEfGAAbvhoAI74AuELewAAKyg="
 beq %cr0, 21f
 23:
-.base64 "YABu6GgAjuhwAG74eACO+AABbjh4iyR+cACuOPAGDjl4u+Z+AQDgOA=="
-bl {vg_aes_ctr32}
-.base64 "YABugAEAYzhgAG6QEAD3OvD/GDsC4Qt7AAArKA=="
+.base64 "grIZewAAOSg="
+beq %cr0, 24f
+.base64 "QAAgOw=="
+b 25f
+24:
+.base64 "AuEZew=="
+25:
+.base64 "8AGOOHjLI38="
+26:
+.base64 "YACu6GgAzugAAKT4CADE+GAAroABAKU4YACukBAAhDj//2M4AAAjKA=="
+bne %cr0, 26b
+.base64 "AAFuOHiLJH7wAa44eMsmf/AG7jg="
+bl {vg_aes_encrypt_blocks}
+.base64 "8AFuOHi75H6kDyV7"
+27:
+.base64 "AAAE6AAAw+h4MgB8AAAE+AgAYzgIAIQ4//+lOAAAJSg="
+bne %cr0, 27b
+.base64 "eCOXfOQmJXtQwAV/AuELewAAKyg="
 bne %cr0, 23b
 b 22f
 21:
 22:
 .base64 "AAA4KA=="
-beq %cr0, 24f
+beq %cr0, 28f
 .base64 "YABu6GgAjuhwAG74eACO+AAAADjwAA74+AAO+AABbjh4iyR+cACuOPAGDjnwAM44AQDgOA=="
 bl {vg_aes_ctr32}
 .base64 "8ABuOHi75H54wwV/"
-26:
-.base64 "AAAEiAAAw4h4MgB8AAAEmAEAYzgBAIQ4//+lOAAAJSg="
-bne %cr0, 26b
-b 25f
-24:
-25:
-.base64 "eJNXfnibeH4C4Qt7AAArKA=="
-beq %cr0, 27f
-29:
-.base64 "grIZewAAOSg="
-beq %cr0, 210f
-.base64 "QAAgOw=="
-b 211f
 210:
-.base64 "AuEZew=="
-211:
-.base64 "8AGOOHjLI38IACA5AABAOQ=="
-212:
-.base64 "KEy3fChU13wAAKT4CADE+BAA9zoQAIQ4//9jOAAAIyg="
-bne %cr0, 212b
-.base64 "5CYle1DABX9AAG44UACOOPABrjh4yyZ/8AXuOA=="
-bl {vg_ghash}
-.base64 "AuELewAAKyg="
-bne %cr0, 29b
-b 28f
-27:
+.base64 "AAAEiAAAw4h4MgB8AAAEmAEAYzgBAIQ4//+lOAAAJSg="
+bne %cr0, 210b
+b 29f
 28:
-.base64 "AAA4KA=="
-beq %cr0, 213f
-.base64 "AAAAOPAADvj4AA74eLvjfvAAjjh4wwV/"
-215:
-.base64 "AAADiAAABJgBAGM4AQCEOP//pTgAACUo"
-bne %cr0, 215b
-.base64 "8ADuOhAAADuCshl7AAA5KA=="
-beq %cr0, 216f
-.base64 "QAAgOw=="
-b 217f
-216:
-.base64 "AuEZew=="
-217:
-.base64 "8AGOOHjLI38IACA5AABAOQ=="
-218:
-.base64 "KEy3fChU13wAAKT4CADE+BAA9zoQAIQ4//9jOAAAIyg="
-bne %cr0, 218b
-.base64 "5CYle1DABX9AAG44UACOOPABrjh4yyZ/8AXuOA=="
-bl {vg_ghash}
-.base64 "AuELew=="
-b 214f
+29:
+.base64 "eJNXfnibeH4C4Qt7AAArKA=="
+beq %cr0, 211f
 213:
-214:
-.base64 "eKOXfniruH4C4Qt7AAArKA=="
-beq %cr0, 219f
-221:
 .base64 "grIZewAAOSg="
-beq %cr0, 222f
+beq %cr0, 214f
 .base64 "QAAgOw=="
-b 223f
-222:
+b 215f
+214:
 .base64 "AuEZew=="
-223:
+215:
 .base64 "8AGOOHjLI38IACA5AABAOQ=="
-224:
+216:
 .base64 "KEy3fChU13wAAKT4CADE+BAA9zoQAIQ4//9jOAAAIyg="
-bne %cr0, 224b
+bne %cr0, 216b
 .base64 "5CYle1DABX9AAG44UACOOPABrjh4yyZ/8AXuOA=="
 bl {vg_ghash}
 .base64 "AuELewAAKyg="
-bne %cr0, 221b
-b 220f
-219:
-220:
+bne %cr0, 213b
+b 212f
+211:
+212:
 .base64 "AAA4KA=="
-beq %cr0, 225f
+beq %cr0, 217f
 .base64 "AAAAOPAADvj4AA74eLvjfvAAjjh4wwV/"
-227:
+219:
 .base64 "AAADiAAABJgBAGM4AQCEOP//pTgAACUo"
-bne %cr0, 227b
+bne %cr0, 219b
 .base64 "8ADuOhAAADuCshl7AAA5KA=="
-beq %cr0, 228f
+beq %cr0, 220f
 .base64 "QAAgOw=="
-b 229f
-228:
+b 221f
+220:
 .base64 "AuEZew=="
-229:
+221:
 .base64 "8AGOOHjLI38IACA5AABAOQ=="
-230:
+222:
 .base64 "KEy3fChU13wAAKT4CADE+BAA9zoQAIQ4//9jOAAAIyg="
-bne %cr0, 230b
+bne %cr0, 222b
 .base64 "5CYle1DABX9AAG44UACOOPABrjh4yyZ/8AXuOA=="
 bl {vg_ghash}
 .base64 "AuELew=="
-b 226f
+b 218f
+217:
+218:
+.base64 "eKOXfniruH4C4Qt7AAArKA=="
+beq %cr0, 223f
 225:
-226:
-.base64 "JB9jevAAbvgkH6N6+ABu+PAA7joQAAA7grIZewAAOSg="
-beq %cr0, 231f
+.base64 "grIZewAAOSg="
+beq %cr0, 226f
 .base64 "QAAgOw=="
-b 232f
-231:
+b 227f
+226:
 .base64 "AuEZew=="
-232:
+227:
 .base64 "8AGOOHjLI38IACA5AABAOQ=="
-233:
+228:
 .base64 "KEy3fChU13wAAKT4CADE+BAA9zoQAIQ4//9jOAAAIyg="
-bne %cr0, 233b
+bne %cr0, 228b
+.base64 "5CYle1DABX9AAG44UACOOPABrjh4yyZ/8AXuOA=="
+bl {vg_ghash}
+.base64 "AuELewAAKyg="
+bne %cr0, 225b
+b 224f
+223:
+224:
+.base64 "AAA4KA=="
+beq %cr0, 229f
+.base64 "AAAAOPAADvj4AA74eLvjfvAAjjh4wwV/"
+231:
+.base64 "AAADiAAABJgBAGM4AQCEOP//pTgAACUo"
+bne %cr0, 231b
+.base64 "8ADuOhAAADuCshl7AAA5KA=="
+beq %cr0, 232f
+.base64 "QAAgOw=="
+b 233f
+232:
+.base64 "AuEZew=="
+233:
+.base64 "8AGOOHjLI38IACA5AABAOQ=="
+234:
+.base64 "KEy3fChU13wAAKT4CADE+BAA9zoQAIQ4//9jOAAAIyg="
+bne %cr0, 234b
+.base64 "5CYle1DABX9AAG44UACOOPABrjh4yyZ/8AXuOA=="
+bl {vg_ghash}
+.base64 "AuELew=="
+b 230f
+229:
+230:
+.base64 "JB9jevAAbvgkH6N6+ABu+PAA7joQAAA7grIZewAAOSg="
+beq %cr0, 235f
+.base64 "QAAgOw=="
+b 236f
+235:
+.base64 "AuEZew=="
+236:
+.base64 "8AGOOHjLI38IACA5AABAOQ=="
+237:
+.base64 "KEy3fChU13wAAKT4CADE+BAA9zoQAIQ4//9jOAAAIyg="
+bne %cr0, 237b
 .base64 "5CYle1DABX9AAG44UACOOPABrjh4yyZ/8AXuOA=="
 bl {vg_ghash}
 .base64 "AuELe1gAIDkoTG58UAAgOShMjnwAAK/oeCpjfAgAr4B4KoR8pA+EeEL4hHhgAG74aACO+GAAbuhoAI7ocABu+HgAjvgAAAA48AAO+PgADvgAAW44eIskfnAArjjwBg458ADOOAEA4Dg="
 bl {vg_aes_ctr32}
 .base64 "AABu6PAAjuh4ImN8CACO6PgAruh4KoR8eCNjfAAAgDhQIIN8eCNjfOAPY3gBACA7UMgjfwAAIDlQSDl9eKODfsLopHokH4V4UKilfAAAJCg="
-beq %cr0, 234f
-236:
+beq %cr0, 238f
+240:
 .base64 "AAAD6DhIAHwAAAP4CABjOP//hDgAACQo"
-bne %cr0, 236b
-b 235f
-234:
-235:
-.base64 "AAAlKA=="
-beq %cr0, 237f
-239:
-.base64 "AAADiDhIAHwAAAOYAQBjOP//pTgAACUo"
-bne %cr0, 239b
-b 238f
-237:
+bne %cr0, 240b
+b 239f
 238:
+239:
+.base64 "AAAlKA=="
+beq %cr0, 241f
+243:
+.base64 "AAADiDhIAHwAAAOYAQBjOP//pTgAACUo"
+bne %cr0, 243b
+b 242f
+241:
+242:
 .base64 "eMsjf+AADuimAwh8iADu6ZAADuqYAC7qoABO6qgAbuqwAI7quACu6sAAzurIAO7q0AAO69gALuuAAM7pYA8hOCAAgE4=""#,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
     )
 }

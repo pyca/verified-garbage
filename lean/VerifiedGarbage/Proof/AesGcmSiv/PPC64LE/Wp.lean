@@ -5,9 +5,12 @@ public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Callee
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Loops
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Gcm.Stream
 public import VerifiedGarbage.TCB.PPC64LE.Isa
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Spec.Aes
 
 /-!
 # AES-GCM-SIV on PPC64LE: arithmetic and the arguments of calls
@@ -108,5 +111,16 @@ theorem cargs {c : Cx} (L : Lay c) {s : State} (E : Env c s) {K' : Addr}
     (Covers.cons (E.perm.wCR (by decide)) (Covers.cons (Covers.right hqw) (Covers.cons (E.perm.wCR (by decide))
       Covers.nil)))
   writes := Covers.cons (E.perm.wC (by decide)) (Covers.cons hqw (Covers.cons (E.perm.wC (by decide)) Covers.nil))
+
+/-- The bytes just past what `writeBytes` writes are unchanged. -/
+theorem bytesAt_writeBytes_past (m : Mem) (q : Addr) (xs : List Byte) (k : Nat) (h : xs.length + k ≤ 2 ^ 64) :
+    Spec.Aes.bytesAt (VG.WriteBytes.writeBytes m q xs) (q + BitVec.ofNat 64 xs.length) k = Spec.Aes.bytesAt m (q + BitVec.ofNat 64 xs.length) k := by
+  simp only [Spec.Aes.bytesAt, List.map_inj_left, List.mem_range]
+  intro j hj
+  simp only [VG.WriteBytes.writeBytes]
+  rw [show q + BitVec.ofNat 64 xs.length + BitVec.ofNat 64 j - q = BitVec.ofNat 64 (xs.length + j) by
+      rw [BitVec.add_assoc, Offset.add_sub_cancel_left, ← BitVec.ofNat_add],
+    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  simp only [show ¬ xs.length + j < xs.length by omega, ↓reduceIte]
 
 end VG.Proof.AesGcmSiv.PPC64LE
