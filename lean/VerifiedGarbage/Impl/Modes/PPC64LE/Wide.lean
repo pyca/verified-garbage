@@ -16,6 +16,11 @@ from it, and the first loop goes on while `r30 >> lg` is not zero
 (computed into `r8`, which the operations use as scratch), the second
 while `r30` is not zero. Both loops branch only on `r30`, as `seq`'s does,
 which is public.
+
+`seq2With one wide narrow lg`: `seq2`, with the narrow steps on the core
+`c.withOne one` (`c` with `one` as its code, which enciphers only the
+buffer's first block), for a core whose code costs as much on one block as
+on its `G`.
 -/
 
 @[expose] public section
@@ -45,6 +50,13 @@ def loopWide (m : Mode) (lg : Nat) : Prog isa :=
 /-- The whole function: the wide steps, then the narrow ones. -/
 def seq2 (wide narrow : Mode) (lg : Nat) : Prog isa :=
   c.seqWith (.seq (c.loopWide wide lg) (c.steps narrow)) narrow.ivOut
+
+/-- The core `c` with the code `one` on the first block of its buffer. -/
+def withOne (one : Prog isa) : Core := { c with crypt := one, G := 1 }
+
+/-- `seq2`, with the narrow steps on `c.withOne one`. -/
+def seq2With (one : Prog isa) (wide narrow : Mode) (lg : Nat) : Prog isa :=
+  c.seqWith (.seq (c.loopWide wide lg) ((c.withOne one).steps narrow)) narrow.ivOut
 
 end Core
 

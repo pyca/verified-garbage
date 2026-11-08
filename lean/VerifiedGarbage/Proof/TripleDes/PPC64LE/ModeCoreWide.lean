@@ -3,12 +3,14 @@ module
 
 public import VerifiedGarbage.Proof.TripleDes.PPC64LE.ModeCore
 public import VerifiedGarbage.Proof.TripleDes.PPC64LE.Bitsliced.Ecb64
+public import VerifiedGarbage.Proof.Modes.PPC64LE.Wide
 import VerifiedGarbage.Proof.TripleDes.Schedule
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PPC64LE.Call
+import VerifiedGarbage.Proof.Framework.Covers
 
 /-!
 # Triple DES's core on 64 blocks for the modes on PPC64LE
@@ -20,6 +22,12 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 its 200 slots. ECB on 64 blocks (`Bitsliced.ecb64_wp`) runs on the buffer, with the first
 128 slots as its working space, and leaves the working space's and the
 schedule's addresses in `r10` and `r7`, from which `sb` and `r3` come back.
+
+`wideOne_ok d`: the block function on the buffer's first block
+(`Impl.TripleDes.PPC64LE.wideOne d`) enciphers it as the core does
+(`Proof.Modes.PPC64LE.OneOk`), for the blocks left after the groups of 64,
+as the core of one block's code does (`crypt_wp`), with the block at slot
+128 rather than 64.
 -/
 
 @[expose] public section
@@ -28,7 +36,7 @@ namespace VG.Proof.TripleDes.PPC64LE.Mode
 
 open VG VG.PPC64LE VG.Impl.TripleDes.PPC64LE
 open VG.Impl.Modes.PPC64LE (sb)
-open VG.Proof.Modes.PPC64LE (coreRegion blkRegion blkAddr slotA CoreSpec Layout ScrIn kept)
+open VG.Proof.Modes.PPC64LE (coreRegion blkRegion blkAddr slotA CoreSpec Layout ScrIn kept OneOk)
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.TripleDes (Direction)
 open VG.Proof.TripleDes (dirCipher bytesAt_eq scheduleAt_eq_of_frame)
@@ -173,5 +181,58 @@ def wideCoreSpec (d : Direction) : CoreSpec (wideCore d) where
   ready_frame h e r w _ f hs _ := readyW_frame h e.r3 r w f hs
   prepare_wp := prepareW_wp d
   crypt_wp := cryptW_wp d
+
+/-- The block function on the wide core's first block. -/
+theorem wideOne_ok (d : Direction) : OneOk (wideCoreSpec d) (wideOne d) := by
+  intro s B ws (k : Spec.TripleDes.Schedule) hB hS hR
+  have hfit : B.toNat + 8 * 200 ≤ 2 ^ 64 := hS.fit
+  have hW : (⟨B, 8 * 200⟩ : Region) ∈ s.wr := hS.wr
+  obtain ⟨⟨hk, hin, hd⟩, hkB⟩ := hR
+  refine WP.seq (wp_addi (n := sb) (by decide) (by decide) fun s₁ u₁ => wp_nil ?_)
+  have r4₁ : s₁.gpr .r4 = B + BitVec.ofNat 64 1024 := by rw [u₁.gpr, hB]; rfl
+  have g₁ : ∀ r, r ≠ .r4 → s₁.gpr r = s.gpr r := u₁.other
+  have m₁ : s₁.mem = s.mem := u₁.mem
+  have rd₁ : s₁.rd = s.rd := u₁.rd
+  have wr₁ : s₁.wr = s.wr := u₁.wr
+  have r3₁ : s₁.gpr .r3 = s.gpr .r3 := g₁ _ (by decide)
+  have r5₁ : s₁.gpr .r5 = B := by rw [g₁ _ (by decide)]; exact hB
+  have cw : VG.Covers [⟨s₁.gpr .r4, 8⟩, ⟨s₁.gpr .r5, 512⟩] s₁.wr := VG.Covers.of_sub fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact ⟨⟨B, 8 * 200⟩, by rw [wr₁]; exact hW, 1024, r4₁, by show 1024 + 8 ≤ 8 * 200; omega⟩
+    · exact ⟨⟨B, 8 * 200⟩, by rw [wr₁]; exact hW, 0, by simp [r5₁], by show 0 + 512 ≤ 8 * 200; omega⟩
+  have hp : Ecb.CallPre s₁ :=
+    ⟨VG.Covers.cons (by rw [r3₁, rd₁, wr₁]; exact VG.Covers.one hin) (VG.Covers.right cw), cw,
+      by rw [r3₁, r5₁]; exact hkB.sub_right (Region.sub_prefix (by decide)),
+      by rw [r4₁, r5₁]; exact VG.Offset.disjoint_base _ (by decide) (by omega_using [hfit])⟩
+  refine WP.mono (Ecb.call_ok d s₁ hp) fun s₂ h₂ => ?_
+  have g₂ : ∀ r ∈ kept, s₂.gpr r = s.gpr r := fun r hr => by
+    have h4 : r ≠ .r4 := by revert hr; decide +revert
+    rcases kept_sub r hr with h | h
+    · rw [h₂.reg r h, g₁ r h4]
+    · rw [h₂.callee r h, g₁ r h4]
+  have r3₂ : s₂.gpr .r3 = s.gpr .r3 := g₂ _ (by decide)
+  have sub₂ : ∀ r ∈ [(⟨s₁.gpr .r4, 8⟩ : Region), ⟨s₁.gpr .r5, 512⟩], Region.Sub r ⟨B, 8 * 200⟩ := fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · rw [r4₁]; exact VG.Offset.sub_base _ (by decide)
+    · rw [r5₁]; exact Region.sub_prefix (by decide)
+  have f₂ : Frame [⟨s₁.gpr .r4, 8⟩, ⟨s₁.gpr .r5, 512⟩] s.mem s₂.mem := by rw [← m₁]; exact h₂.mem
+  have sched : Spec.TripleDes.scheduleAt s₂.mem (s₂.gpr .r3) = k := by
+    rw [r3₂, scheduleAt_eq_of_frame _ f₂ fun r hr => hkB.sub_right (sub₂ r hr), hk]
+  refine ⟨by rw [show sb = .r5 from rfl, h₂.reg _ (by decide), r5₁], g₂,
+    ⟨⟨sched, by rw [h₂.rd, h₂.wr, rd₁, wr₁, r3₂]; exact hin, by rw [keyR, r3₂]; exact hd⟩,
+      by rw [keyR, r3₂]; exact hkB⟩, f₂.sub fun r hr => ?_, ?_,
+    by rw [h₂.rd, rd₁], by rw [h₂.wr, wr₁]⟩
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact ⟨_, List.mem_singleton_self _, by
+        rw [r4₁]; exact VG.Offset.sub_base _ (by show 1024 + 8 ≤ 8 * (wideBuf + 64); decide)⟩
+    · exact ⟨_, List.mem_singleton_self _, by
+        rw [r5₁]; exact Region.sub_prefix (by show 512 ≤ 8 * (wideBuf + 64); decide)⟩
+  · have e : blkAddr (wideCore d) B 0 = s₁.gpr .r4 := by
+      rw [r4₁]; simp [blkAddr, slotA, wideCore, wideBuf]
+    change bytesAt s₂.mem (blkAddr (wideCore d) B 0) 8 = dirCipher d k (bytesAt s.mem (blkAddr (wideCore d) B 0) 8)
+    rw [e, bytesAt_eq, h₂.output, dirCipher_bytes, m₁, r3₁, hk]
 
 end VG.Proof.TripleDes.PPC64LE.Mode

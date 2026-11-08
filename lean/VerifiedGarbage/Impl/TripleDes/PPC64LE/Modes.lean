@@ -27,15 +27,15 @@ deciphered independently (`Impl/Modes/PPC64LE/Wide.lean`). Its slots: ECB's
 passes ECB the schedule (in `r3`), the buffer and the working space, and
 takes `sb` and `r3` back from `r10` and `r7`, where ECB leaves them; ECB
 saves and restores the callee-saved registers it uses, among them the
-modes' `r29`–`r31`. ECB costs the same whatever the number of blocks, so the
-blocks left after the groups of 64 cost a group each, about as much as the
-block function on one.
+modes' `r29`–`r31`. ECB costs the same whatever the number of blocks, so
+the blocks left after the groups of 64 are left to `wideOne d`, the block
+function on the buffer's first block (`Core.seq2With`).
 
 `cbcEncryptChained`, `ofb`, `cfbEncrypt`, `cfb8Encrypt` and `cfb8Decrypt`
 (schedule = r3, iv = r4, data = r5, n = r6, scratch = r7) are the modes
 over `dirCore`, and `cbcDecryptChained` and `cfbDecrypt` over `wideCore`, 64
-blocks a step, then one: CBC in both directions, and the others with the
-encryption.
+blocks a step, then one by `wideOne`: CBC in both directions, and the others
+with the encryption.
 -/
 
 @[expose] public section
@@ -79,13 +79,16 @@ def wideCore (d : Direction) : Modes.PPC64LE.Core where
   G := 64
   bw := 2
 
+/-- The block function of the direction `d` on the wide core's first block. -/
+def wideOne (d : Direction) : Prog isa := .seq (.block [.addi .r4 sb (8 * wideBuf)]) (Ecb.blockCall d)
+
 /-- `vg_triple_des_cbc_encrypt_chained`, with its scratch buffer as the fifth argument. -/
 def cbcEncryptChained : Prog isa := (dirCore .encrypt).seq (Modes.Mode.cbcEncChained 2)
 
 /-- `vg_triple_des_cbc_decrypt_chained`, with its scratch buffer as the fifth
 argument: 64 blocks a step, then one. -/
 def cbcDecryptChained : Prog isa :=
-  (wideCore .decrypt).seq2 (Modes.Mode.cbcDecWide 2 64) (Modes.Mode.cbcDecChained 2) 6
+  (wideCore .decrypt).seq2With (wideOne .decrypt) (Modes.Mode.cbcDecWide 2 64) (Modes.Mode.cbcDecChained 2) 6
 
 /-- `vg_triple_des_ofb`, with its scratch buffer as the fifth argument. -/
 def ofb : Prog isa := (dirCore .encrypt).seq (Modes.Mode.ofb 2)
@@ -96,7 +99,7 @@ def cfbEncrypt : Prog isa := (dirCore .encrypt).seq (Modes.Mode.cfbEnc 2)
 /-- `vg_triple_des_cfb_decrypt`, with its scratch buffer as the fifth
 argument: 64 blocks a step, then one. -/
 def cfbDecrypt : Prog isa :=
-  (wideCore .encrypt).seq2 (Modes.Mode.cfbDecWide 2 64) (Modes.Mode.cfbDecEarly 2) 6
+  (wideCore .encrypt).seq2With (wideOne .encrypt) (Modes.Mode.cfbDecWide 2 64) (Modes.Mode.cfbDecEarly 2) 6
 
 /-- `vg_triple_des_cfb8_encrypt`, with its scratch buffer as the fifth argument. -/
 def cfb8Encrypt : Prog isa := (dirCore .encrypt).seq (Modes.Mode.cfb8Enc 2)
