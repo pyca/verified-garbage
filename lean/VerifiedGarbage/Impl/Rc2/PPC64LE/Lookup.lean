@@ -4,21 +4,19 @@ public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-! # RC2 table lookups on PPC64LE
 
-A secret-indexed lookup scans every doubleword of its table in a fixed
-order, from the last to the first, at addresses that depend only on the
-row: the schedule's 16 doublewords (four 16-bit entries each) or PITABLE's
-32 (eight bytes each, in the working space). The index is held as the
-entry's byte offset `q` in `r10`. Row `k` holds the entry exactly when
-`(q XOR 8k) >> 3` is zero, so `(((q XOR 8k) >> 3) - 1) >> 63` is 1 exactly
-then, and less one, a mask that is all ones exactly when the row does *not*
-hold it: the row's doubleword is ANDed with the mask and XORed with itself,
-leaving it or zero, and ORed into the accumulator `r11`. The entry's lane is
-then rotated to the bottom by rotations selected by masks of `q`'s low bits,
-as Blowfish's lookups do (`Impl/Blowfish/PPC64LE.lean`). The index is only
-ever an operand of the masks' arithmetic; there are no comparisons.
+A secret-indexed lookup reads every 32 bytes of its table (two vectors,
+`lxvd2x`) at addresses that depend only on the chunk: the schedule's 128
+bytes (64 16-bit entries) or PITABLE's 256 (in the working space). The index
+is held as the entry's byte offset `q` in `r10`. In each chunk `vperm` picks
+the entry's byte or two bytes at offset `q mod 32` (the control byte `q XOR
+7`, as `lxvd2x` numbers the bytes it loads `XOR 7`), into bytes 0 and 1 of a
+vector, and a tree of `vsel` by masks of `q`'s bits 5, 6 and 7 picks the
+chunk `q >> 5`. The index is only ever an operand of the masks' arithmetic
+and of `vperm`, whose time does not depend on its operands; there are no
+comparisons.
 
-Registers: the table at `base`, the row pointer in `rp`, `q` in `r10`, the
-accumulator (and result) in `r11`, the mask in `r12`, a temporary in `r0`.
+Registers: the table at `base`, the chunk pointer in `rp`, `q` in `r10`, the
+result in `r11`, temporaries `r0` and `r12`, and `v0`–`v13`.
 -/
 
 @[expose] public section
@@ -30,33 +28,51 @@ open VG.PPC64LE
 /-- Keep the low `n` bits of `r`. -/
 def mask (r : Reg) (n : Nat) : List Instr := [.lsl r r (64 - n), .lsr .d r r (64 - n)]
 
-/-- The accumulator and the row pointer at the last of `rows` rows. -/
-def scanStart (base rp : Reg) (rows : Nat) : List Instr := [.li .r11 0, .addi rp base (8 * (rows - 1))]
+/-- The vector registers: the control, the masks of bits 5, 6 and 7, the two
+halves of a chunk, and each chunk's pick. -/
+def vCtl : VReg := .v0
+def vBit : Nat → VReg
+  | 5 => .v1 | 6 => .v2 | _ => .v3
+def vLo : VReg := .v4
+def vHi : VReg := .v5
+def vPick : Nat → VReg
+  | 0 => .v6 | 1 => .v7 | 2 => .v8 | 3 => .v9 | 4 => .v10 | 5 => .v11 | 6 => .v12 | _ => .v13
 
-/-- One row: the doubleword at `rp`, kept if it holds the entry, into the
-accumulator; the previous row, and `r0` zero after the first row. -/
-def scanRow (base rp : Reg) : List Instr :=
-  [.sub .r0 rp base, .logic .xor .r12 .r10 .r0, .lsr .d .r12 .r12 3, .subi .r12 .r12 1,
-   .lsr .d .r12 .r12 63, .subi .r12 .r12 1, .load .d .r0 rp 0, .logic .and .r12 .r0 .r12,
-   .logic .xor .r0 .r0 .r12, .logic .or .r11 .r11 .r0, .sub .r0 rp base, .subi rp rp 8]
+/-- The control: `q XOR 7` in byte 0, and `(q + 1) XOR 7` in byte 1 for a
+16-bit entry. -/
+def ctl (two : Bool) : List Instr :=
+  [.li .r0 7, .logic .xor .r12 .r10 .r0, .lsl .r12 .r12 56] ++
+  (if two then [.addi .r11 .r10 1, .logic .xor .r11 .r11 .r0, .lsl .r11 .r11 56, .lsr .d .r11 .r11 8,
+    .logic .or .r12 .r12 .r11] else []) ++ [.mtvsrd vCtl .r12]
 
-/-- The accumulator rotated right by `8 * 2 ^ c` if bit `c` of `q` is set:
-`x := rot XOR ((rot XOR x) AND m)` for the mask `m` that is all ones
-exactly when the bit is clear. -/
-def condRot (c : Nat) : List Instr :=
-  [.lsl .r12 .r10 (63 - c), .lsr .d .r12 .r12 63, .subi .r12 .r12 1, .rotr .d .r0 .r11 (8 * 2 ^ c),
-   .logic .xor .r11 .r11 .r0, .logic .and .r11 .r11 .r12, .logic .xor .r11 .r11 .r0]
+/-- The mask of bit `b` of `q`: all ones if it is set, else zero, in the
+first doubleword. -/
+def bitMask (b : Nat) : List Instr :=
+  [.lsl .r12 .r10 (63 - b), .lsr .d .r12 .r12 63, .li .r0 0, .sub .r12 .r0 .r12, .mtvsrd (vBit b) .r12]
 
-/-- The entry at byte offset `q` of the table of `rows` doublewords at
-`base`, of `bits` bits, its lane selected by the bits `lanes` of `q`, into
-`r11`. -/
-def scan (base rp : Reg) (rows : Nat) (lanes : List Nat) (bits : Nat) : Prog isa :=
-  .seq (.block (scanStart base rp rows))
-    (.seq (.loop (.block (scanRow base rp)) (.nonzero .d .r0))
-      (.block (lanes.flatMap condRot ++ mask .r11 bits)))
+/-- Chunk `i`'s pick, and the chunk pointer to the next chunk. -/
+def chunk (rp : Reg) (i : Nat) : List Instr :=
+  [.lxvd2x vLo rp .r0, .lxvd2x vHi rp .r12, .vop (.perm (vPick i) vLo vHi vCtl), .addi rp rp 32]
+
+/-- `vPick d` := `vPick d` or `vPick n`, as bit `b` of `q` says. -/
+def choose (b d n : Nat) : Instr := .vop (.sel (vPick d) (vPick d) (vPick n) (vBit b))
+
+/-- The entry at byte offset `q` (in `r10`) of the table of four chunks
+(the schedule) or eight (`eight`, PITABLE), of one byte or two (`two`),
+into `r11`. -/
+def vscan (base rp : Reg) (eight two : Bool) : List Instr :=
+  ctl two ++ bitMask 5 ++ bitMask 6 ++ (if eight then bitMask 7 else []) ++
+  [.li .r0 0, .li .r12 16, .logic .or rp base base] ++
+  chunk rp 0 ++ chunk rp 1 ++ chunk rp 2 ++ chunk rp 3 ++
+  (if eight then chunk rp 4 ++ chunk rp 5 ++ chunk rp 6 ++ chunk rp 7 else []) ++
+  [choose 5 0 1, choose 5 2 3, choose 6 0 2] ++
+  (if eight then [choose 5 4 5, choose 5 6 7, choose 6 4 6, choose 7 0 4] else []) ++
+  [.mfvsrd .r11 (vPick 0)] ++
+  (if two then [.lsl .r12 .r11 8, .lsr .d .r12 .r12 56, .lsr .d .r11 .r11 56, .lsl .r12 .r12 8,
+    .logic .or .r11 .r11 .r12] else [.lsr .d .r11 .r11 56])
 
 /-- `r11 := schedule[q / 2]`, the 16-bit entry at byte offset `q` of the
-schedule at `r3`, through the row pointer `r5`. -/
-def keyLookup : Prog isa := scan .r3 .r5 16 [1, 2] 16
+schedule at `r3`, through the chunk pointer `r5`. -/
+def keyLookup : Prog isa := .block (vscan .r3 .r5 false true)
 
 end VG.Impl.Rc2.PPC64LE

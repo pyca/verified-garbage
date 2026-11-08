@@ -102,10 +102,10 @@ def envP (v : VD) : List (Reg × BitVec 64) :=
   [(.r10, off v.L.S (slot v.L.wp 0)), (.r11, BitVec.ofNat 64 (2 * v.L.wp)),
     (.r29, BitVec.ofNat 64 (8 * (v.L.wp + 2))), (.r31, v.L.S), (.r23, v.L.S)]
 
-/-- In the P space, with p and `R² mod p` in arrays 0 and 8. -/
+/-- In the P space, with p and `R² mod p` in arrays 0 and 24. -/
 def PF (v : VD) (s : State) : Prop :=
   InP s v.L ∧ arrP s.mem v.L 0 = v.p ∧ word s.mem v.L.S (slot v.L.wp 0 + 8 * v.L.wp) = 0 ∧
-    arrP s.mem v.L 8 = 2 ^ (128 * v.L.wp) % v.p ∧ QF v s
+    arrP s.mem v.L 24 = 2 ^ (128 * v.L.wp) % v.p ∧ QF v s
 
 /-- In the P space, the key satisfying `K`. -/
 def PP (K : VD → Prop) : VD → State → Prop := Ph VD.qb fun v s => FixL (envP v) s ∧ PF v s ∧ K v

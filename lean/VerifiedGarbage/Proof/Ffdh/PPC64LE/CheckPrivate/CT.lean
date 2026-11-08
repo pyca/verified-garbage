@@ -301,7 +301,8 @@ theorem KG3 {d : KD} {s : State} (h : KG2 d s) : WP isa exPre s (V5 d) := by
   have e0 := Domain.slot_eq d.c.w 0
   have e28 := Domain.slot_eq d.c.w 28
   refine WP.mono (exPower_split hb.env hb.r23 h9 hb.r28 (by omega) (by omega) he.xl1 (by omega) hb.rdY hb.sepY
-    he.rdX he.sepX he.wX he.wXL (by rw [hp]; exact hf.1) (by rw [hp]; exact hf.2))
+    he.rdX he.sepX he.wX he.wXL (by rw [hp]; exact hf.1) (by rw [hp]; exact hf.2)
+    (by rw [hp]; exact top_of_valid hv (by omega) (by omega)))
     fun s₆ ⟨⟨a30, a31, g10, g29, g11, g23, g28⟩, hw⟩ => ⟨⟨a30, a31, g10, g29, g11, g23, g28⟩, WP.mono hw
       fun t ⟨⟨_, p5, b5, r10₅⟩, k5⟩ => ?_⟩
   have k29 := (k5.gpr .r29 (by decide)).trans hb.env.h29

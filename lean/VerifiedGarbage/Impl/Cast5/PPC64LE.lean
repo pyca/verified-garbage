@@ -7,15 +7,17 @@ public import VerifiedGarbage.TCB.PPC64LE.Isa
 /-!
 # CAST5 on PPC64LE
 
-The design of ARMv7's (`Impl/Cast5/Arm.lean`). A lookup in an S-box never
-uses a secret as an address: the four lookups a round function (or a line of
-key expansion) makes are made at once by a *scan* of the static table
-`VG_CAST5_S1234` (or `VG_CAST5_S5678` in key expansion,
-`Impl/Cast5/Tables.lean`), 256 entries of four words: a loop over the
-entries `j`, in order, loading each of the entry's words `k` and keeping it
-under a mask that is all ones exactly if the index in `r14 + k` is `j`
-(`xor`, then `0 - ((x - 1) >> 63)`), ORed into `r18 + k`. No secret is an
-address or a branch condition.
+The design of ARMv7's (`Impl/Cast5/Arm.lean`), with the scan in vector
+registers. A lookup in an S-box never uses a secret as an address: the four
+lookups a round function (or a line of key expansion) makes are made at once
+by a *scan* of the static table `VG_CAST5_S1234` (or `VG_CAST5_S5678` in
+key expansion, `Impl/Cast5/Tables.lean`), 256 entries of four words, one
+lookup in each lane of a vector. The entries are loaded in order, eight at
+a time (`lxvd2x`); `vsel` picks in each lane the one of the eight that the
+low three bits of the lane's index name, by masks made from those bits
+(`vperm` of a doubleword of constants), and keeps it where the group is the
+lane's (`vperm` of a one-hot vector by the index shifted right by 3). No
+secret is an address or a branch condition.
 
 Each function has the scan once: encryption and decryption run their rounds
 in a loop whose body is one round, choosing the round's type (its number
@@ -70,28 +72,86 @@ def idxReg : Nat → Reg
 def accReg : Nat → Reg
   | 0 => .r18 | 1 => .r19 | 2 => .r20 | _ => .r21
 
-/-- Lookup `k` at the entry whose number is in `num` and whose words are at
-`ep`: `wd` := word `k` of the entry, `tmp` := the mask (all ones iff index
-`k` is the entry's number), and `wd` under it ORed into value `k`. -/
-def look (k : Nat) : List Instr :=
-  [.load .w wd ep (4 * k), .logic .xor tmp (idxReg k) num, .subi tmp tmp 1, .lsr .d tmp tmp 63,
-   .sub tmp zero tmp, .logic .and wd wd tmp, .logic .or (accReg k) (accReg k) wd]
+/-! The vector registers of a scan: zero; each lane's index's low three
+bits, and its index shifted right by 3 (its group), in every byte of the
+lane; the masks of those three bits; the 32-byte one-hot vector of the
+group (two registers); the group's mask; four temporaries for the group's
+entries; the selected entries; and three temporaries. A table entry loaded
+by `lxvd2x` holds word `k` in lane `k XOR 1`. -/
 
-/-- The four lookups at an entry. -/
-def scanEntry : List Instr := (List.range 4).flatMap look
+def zV : VReg := .v0
+def lowV : VReg := .v1
+def grpV : VReg := .v2
+def bitV : Nat → VReg
+  | 0 => .v3 | 1 => .v4 | _ => .v5
+def hotLo : VReg := .v6
+def hotHi : VReg := .v7
+def mV : VReg := .v8
+def eV : Nat → VReg
+  | 0 => .v9 | 1 => .v10 | 2 => .v11 | _ => .v12
+def accV : VReg := .v13
+def aV : VReg := .v14
+def bV : VReg := .v15
+def tV : VReg := .v16
 
-/-- An entry, then on to the next (`tmp` zero after the last, number 255). -/
+/-- `x` (below 256) in every byte of `r`'s low word, through `tmp`. -/
+def rep (r : Reg) : List Instr :=
+  [.lsl tmp r 8, .logic .or r r tmp, .lsl tmp r 16, .logic .or r r tmp]
+
+/-- `d` := `f` of index `k`, in every byte of the low word. -/
+def lane (f : Reg → Reg → List Instr) (d : Reg) (k : Nat) : List Instr := f d (idxReg k) ++ rep d
+
+/-- The vector whose lanes are `f` of indices 1, 0, 3, 2, in every byte, into
+`v`, through `r18`–`r21`, `aV` and `bV`. -/
+def lanes (f : Reg → Reg → List Instr) (v : VReg) : List Instr :=
+  lane f .r18 0 ++ lane f .r19 1 ++ [.lsl .r19 .r19 32, .logic .or .r18 .r18 .r19] ++
+  lane f .r20 2 ++ lane f .r21 3 ++ [.lsl .r21 .r21 32, .logic .or .r20 .r20 .r21] ++
+  [.mtvsrd aV .r18, .mtvsrd bV .r20, .vop (.sldoi aV aV aV 8), .vop (.sldoi v aV bV 8)]
+
+/-- The vectors of a scan, and the table's address and the offsets 16, 32
+and 48 in `ep`, `num`, `r19` and `r21`. The masks of bit `b` are the
+byte-wise lookups (`vperm`) of the low three bits in the doubleword whose
+byte `i` is all ones exactly if bit `b` of `i` is set. -/
+def scanStart : List Instr :=
+  [.li wd 7] ++ lanes (fun d x => [.logic .and d x wd]) lowV ++
+  lanes (fun d x => [.lsr .d d x 3]) grpV ++
+  [.lis tmp 0xFFFF, .ori tmp tmp 0xFFFF, .lsr .d tmp tmp 32, .mtvsrd tV tmp,
+   .vop (.perm (bitV 2) tV tV lowV), .lsl wd tmp 16, .logic .xor tmp tmp wd, .mtvsrd tV tmp,
+   .vop (.perm (bitV 1) tV tV lowV), .lsl wd tmp 8, .logic .xor tmp tmp wd, .mtvsrd tV tmp,
+   .vop (.perm (bitV 0) tV tV lowV),
+   .vop (.logic .xor zV zV zV), .li tmp 255, .lsl tmp tmp 56, .mtvsrd tV tmp,
+   .vop (.sldoi hotLo zV tV 8), .vop (.sldoi hotLo hotLo zV 8), .vop (.logic .xor hotHi hotHi hotHi),
+   mov ep tbl, .li num 16, .li .r19 32, .li .r21 48]
+
+/-- `eV d` := `eV d` or `eV n`, as bit `b` of each lane's index says. -/
+def pick (b d n : Nat) : Instr := .vop (.sel (eV d) (eV d) (eV n) (bitV b))
+
+/-- Four entries at `ep`, `ep + 16`, `ep + 32`, `ep + 48`, into `eV d`
+selected by the low two bits of each lane's index. -/
+def four (d : Nat) : List Instr :=
+  [.lxvd2x (eV d) ep zero, .lxvd2x (eV (d + 1)) ep num, pick 0 d (d + 1),
+   .lxvd2x (eV (d + 1)) ep .r19, .lxvd2x (eV (d + 2)) ep .r21, pick 0 (d + 1) (d + 2), pick 1 d (d + 1)]
+
+/-- A group of eight entries: the group's mask (the one-hot vector at each
+lane's group), the one-hot vector on a byte, the entry selected by the low
+three bits of each lane's index kept where the mask is set, and on to the
+next group (`tmp` zero after the last). -/
 def scanBody : List Instr :=
-  scanEntry ++ ([.addi ep ep 16, .addi num num 1, .subi tmp num 256] : List Instr)
+  [.vop (.perm mV hotLo hotHi grpV), .vop (.sldoi hotHi hotLo hotHi 15), .vop (.sldoi hotLo zV hotLo 15)] ++
+  four 0 ++ [.addi ep ep 64] ++ four 1 ++
+  [pick 2 0 1, .vop (.sel accV accV (eV 0) mV), .addi ep ep 64, .sub tmp ep tbl, .subi tmp tmp 4096]
+
+/-- The selected words into `r18`–`r21`, zero-extended. -/
+def scanEnd : List Instr :=
+  [.mfvsrd .r18 accV, .lsr .d .r19 .r18 32, .lsl .r18 .r18 32, .lsr .d .r18 .r18 32,
+   .vop (.sldoi tV accV accV 8), .mfvsrd .r20 tV, .lsr .d .r21 .r20 32, .lsl .r20 .r20 32,
+   .lsr .d .r20 .r20 32]
 
 /-- The scan of the table at `tbl` (256 entries of four words) at the
-indices in `r14`–`r17` (each below 256), into `r18`–`r21`: every entry in
-turn, its number in `num` and its address in `ep`. Clobbers `tmp` and
-`wd`. -/
+indices in `r14`–`r17` (each below 256), into `r18`–`r21`: every entry, in
+groups of eight. Clobbers `tmp`, `wd`, `num`, `ep` and `v0`–`v16`. -/
 def scan : Prog isa :=
-  .seq (.block [mov ep tbl, .li num 0, .li (accReg 0) 0, .li (accReg 1) 0, .li (accReg 2) 0,
-      .li (accReg 3) 0])
-    (.loop (.block scanBody) (.nonzero .d tmp))
+  .seq (.block scanStart) (.seq (.loop (.block scanBody) (.nonzero .d tmp)) (.block scanEnd))
 
 /-! ## The working space -/
 

@@ -83,7 +83,8 @@ theorem kp_correct (s : State) (h : kpContract.pre s) :
       have hf := modulus_facts hv
       refine WP.mono (cpBody_ok (Yv := s.gpr .r6) hb2.env hb2.r23 hb2.r21 hb2.r27 hb2.r28 rfl hk hk' hLk
         he2.xl1 he2.xlk he2.wX he2.wXL he2.wY hb2.rdD hb2.sepD he2.rdX he2.sepX he2.rdY he2.sepY p2 hf.1
-        hf.2 hxv hgv hyv hbv) fun t ⟨⟨t3, tw⟩, kt⟩ => ⟨fun _ => t3, tw, kt.mono (by decide)⟩
+        hf.2 (top_of_valid hv (by have : (kdOf s).c.k = (s.gpr .r5).toNat := rfl; simp only [CD.w]; omega)
+          (by have : (kdOf s).c.k = (s.gpr .r5).toNat := rfl; simp only [CD.w]; omega)) hxv hgv hyv hbv) fun t ⟨⟨t3, tw⟩, kt⟩ => ⟨fun _ => t3, tw, kt.mono (by decide)⟩
     · refine WP.mono (li_ok s₂ 0 (by decide)) fun t ⟨⟨_, tm⟩, kt⟩ =>
         ⟨fun hv => absurd (c2.mpr hv) (by simpa using hz), fun i hi => by rw [tm], kt.mono (by decide)⟩
   refine WP.seq (WP.mono hite fun t₅ ⟨tpost, tw, k5⟩ => ?_)

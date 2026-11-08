@@ -20,6 +20,7 @@ b 24f
 23:
 .base64 "AACgOwAAejgAAJs4"
 bl {vg_keccak_f1600}
+.base64 "AABDOwAAZDs="
 24:
 .base64 "BwBAOThQqn/4/3854A9reXhbSn0AACoo"
 beq %cr0, 25f

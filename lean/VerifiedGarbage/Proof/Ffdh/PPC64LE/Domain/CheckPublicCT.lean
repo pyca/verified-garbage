@@ -373,7 +373,7 @@ theorem TS {d : CD} {s : State} (h : C6 d s ∧ s.gpr .r0 = 0) : WP isa subgroup
   have hf := modulus_facts hv
   have hk := hb.k64
   refine WP.mono (subgroup_ok hb.env hb.r23 hb.r21 hb.r28 (by omega) hb.k1024 (by rw [hp]; omega)
-    (by rw [hp]; exact hf.2)
+    (by rw [hp]; exact hf.2) (by rw [hp]; exact top_of_valid hv (by simp only [CD.w]; omega) (by simp only [CD.w]; omega))
     (fun i hi => by rw [off_off']; exact hb.rdD _ (by omega))
     (fun i hi => by rw [off_off']; exact hb.sepD _ (by omega))) fun t ⟨_, k⟩ => ?_
   show t.gpr .r23 = d.S

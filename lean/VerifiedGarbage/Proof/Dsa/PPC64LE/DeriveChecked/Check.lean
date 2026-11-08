@@ -49,7 +49,7 @@ theorem rangeElem_ok {s : State} {L : Lay} {E : Addr} {p : Nat} (hL : L.Ok) (hin
     (hp0 : arrP s.mem L 0 = p) (hz0 : word s.mem L.S (slot L.wp 0 + 8 * L.wp) = 0) :
     WP isa Derive.rangeElem s fun t =>
       (InP t L ∧ arrP t.mem L 0 = p ∧ word t.mem L.S (slot L.wp 0 + 8 * L.wp) = 0 ∧
-        arrP t.mem L 8 = arrP s.mem L 8 ∧
+        arrP t.mem L 24 = arrP s.mem L 24 ∧
         (t.gpr .r0 = 0 ↔ (1 < Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem E L.pl) ∧
           Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem E L.pl) < p)) ∧
         PBody L s.mem t.mem) ∧
@@ -61,7 +61,7 @@ theorem rangeElem_ok {s : State} {L : Lay} {E : Addr} {p : Nat} (hL : L.Ok) (hin
   have hqZ : L.qOff + 1600 ≤ L.Z := by have := hL.buf_end; simp only [Lay.bOff] at this; omega_arith
   have hq28 : L.qOff = slot L.wp 28 := rfl
   have e0 := slot_eq L.wp 0; have e1 := slot_eq L.wp 1; have e3 := slot_eq L.wp 3; have e4 := slot_eq L.wp 4
-  have e8 := slot_eq L.wp 8; have e28 := slot_eq L.wp 28
+  have e8 := slot_eq L.wp 8; have e24 := slot_eq L.wp 24; have e28 := slot_eq L.wp 28
   have en := hin.env
   unfold Derive.rangeElem
   refine WP.seq (WP.mono (loadArr_ok en (j := 4) (by decide) h12 h6 (by omega_arith) (by omega_arith) he.rd
@@ -74,8 +74,8 @@ theorem rangeElem_ok {s : State} {L : Lay} {E : Addr} {p : Nat} (hL : L.Ok) (hin
   have p2 : arr s₂.mem L.S L.wp 0 = p := by rw [arr, Outside.val32 o2 (by omega_arith) (by omega_arith)]; exact p1
   have z2 : word s₂.mem L.S (slot L.wp 0 + 8 * L.wp) = 0 := by
     rw [Outside.word o2 (by omega_arith) (by omega_arith), Outside.word o1 (by omega_arith) (by omega_arith)]; exact hz0
-  have r2 : arrP s₂.mem L 8 = arrP s.mem L 8 := by
-    show val32 s₂.mem L.S (slot L.wp 8) (2 * L.wp) = _
+  have r2 : arrP s₂.mem L 24 = arrP s.mem L 24 := by
+    show val32 s₂.mem L.S (slot L.wp 24) (2 * L.wp) = _
     rw [Outside.val32 o2 (by omega_arith) (by omega_arith), Outside.val32 o1 (by omega_arith) (by omega_arith)]
   have x1 : arr s₁.mem L.S L.wp 4 = Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem E L.pl) := v4
   rw [x1, p1] at r0i

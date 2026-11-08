@@ -1,21 +1,21 @@
 module
 
 public import VerifiedGarbage.Impl.TripleDes.PPC64LE.Common
-public import VerifiedGarbage.Impl.TripleDes.PPC64LE.Sbox
+public import VerifiedGarbage.Impl.TripleDes.PPC64LE.Feistel
 public import VerifiedGarbage.Spec.TripleDes
 
 /-!
 # Scalar Triple DES blocks on PPC64LE
 
 `encryptBlock` and `decryptBlock` (schedule = r3, data = r4, scratch = r5).
-The two 32-bit Feistel halves stay in `r14` (L) and `r15` (R). S-box input
-bits are formed with fixed shifts and XORs with the round key, passed
-through Boolean circuits, and XORed directly into their P-permuted
-destinations. The three passes share IP and FP, and one loop runs them, with
-the pass's first key and its step chosen by the passes left. `r16` counts
-the rounds, `r17` points at the round key, `r18` holds the key step (8 or
-−8) and `r19` the passes left. Slots 0–14 of the scratch buffer save
-`r14`–`r28`, and slots 15–63 are the S-boxes' spills. `r29`–`r31` are never
+The two 32-bit Feistel halves stay in `r14` (L) and `r15` (R). Each round is
+`feistel` (`Feistel.lean`), which looks the eight S-boxes up at once in the
+64 lanes of a word, with words of constants that the block first stores in
+slots 15–61 of the scratch buffer (`storeConsts`). The three passes share
+IP and FP, and one loop runs them, with the pass's first key and its step
+chosen by the passes left. `r16` counts the rounds, `r17` points at the
+round key, `r18` holds the key step (8 or −8) and `r19` the passes left.
+Slots 0–14 of the scratch buffer save `r14`–`r28`. `r29`–`r31` are never
 written, so that a caller can keep public values (ECB's count of blocks, a
 mode's pointers and count) in them across a call: the taint analysis cannot
 follow a value through memory. Round counters and key addresses are public.
@@ -40,30 +40,9 @@ def blockLoad : List Instr :=
     permuteCode Spec.TripleDes.ip 64 .r8 .r7 .r9 .r10 ++
     ([.lsr .d .r14 .r8 32, .rotr .w .r15 .r8 0] : List Instr)
 
-/-- Six inputs, least significant first, for public S-box number `i`.
-The source R bit comes directly from E; the key's upper sixteen bits are
-never read as cipher bits. -/
-def sboxInputs (i : Nat) : List Instr :=
-  ([.load .d .r20 .r17 0, imm .r22 1] : List Instr) ++ (List.range 6).flatMap fun j =>
-    let k := 6 * i + 5 - j
-    shrFrom (q j) .r15 (32 - Spec.TripleDes.expansion.getD k 1) ++
-      shrFrom .r21 .r20 (47 - k) ++
-      ([.logic .xor (q j) (q j) .r21, .logic .and (q j) (q j) .r22] : List Instr)
-
-/-- Deposit each output's low bit directly into its destination in L.
-The P table contains all 32 positions, so each destination is unique. -/
-def sboxOutputs (i : Nat) : List Instr :=
-  [imm .r20 1] ++ (List.range 4).flatMap fun j =>
-    let position := 4 * i + 4 - j
-    let dst := (Spec.TripleDes.p.toList.findIdx? (· == position)).getD 0
-    ([.logic .and (q j) (q j) .r20] : List Instr) ++ placeBit (q j) (31 - dst) ++
-      ([.logic .xor .r14 .r14 (q j)] : List Instr)
-
-def box (i : Nat) : List Instr := sboxInputs i ++ sboxCode i ++ sboxOutputs i
-
 def swapHalves : List Instr := [rr .r6 .r14, rr .r14 .r15, rr .r15 .r6]
 
-def roundBody : List Instr := (List.range 8).flatMap box ++ swapHalves
+def roundBody : List Instr := feistel ++ swapHalves
 
 /-- The next round key, `r18` bytes on, and the round counted. -/
 def roundAdvance : List Instr := [.add .r17 .r17 .r18, .subi .r16 .r16 1]
@@ -107,7 +86,7 @@ def blockStore : List Instr :=
     ([.li .r7 0, .storeRev .d .r8 .r4 .r7] : List Instr)
 
 def block (d : Direction) : Prog isa :=
-  .seq (.block (blockSave ++ blockLoad))
+  .seq (.block (blockSave ++ storeConsts roundConsts constOff ++ blockLoad))
     (.seq (blockBody d) (.block (blockStore ++ blockRestore)))
 
 def encryptBlock : Prog isa := block .encrypt
