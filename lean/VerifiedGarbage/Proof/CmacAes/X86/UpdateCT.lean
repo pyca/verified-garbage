@@ -19,7 +19,7 @@ on the public arguments are related piece by piece (`RelCT`): the taint
 analysis covers the code between the calls, from `esp`, the stack arguments
 (which nothing writes, `argTaint`) and `esi` (the next block, which the
 correctness proof pins to the public arguments), and each call of
-`vg_aes_ctr32`, in its frame, is constant time by its own proof (`ctr_rel`).
+`vg_aes_ctr32_to`, in its frame, is constant time by its own proof (`ctr_rel`).
 -/
 
 @[expose] public section
@@ -111,7 +111,7 @@ structure After (s₀ : State) (k : Nat) (s : State) : Prop where
 theorem call_after {s₀ : State} (hp : UPre s₀) {k : Nat} {s : State} (h : Mid s₀ k s) :
     WP isa (ctrCall v.callee) s (After s₀ k) :=
   WP.mono (ctr_call v h.pre) fun s' hc => by
-    have hb : below (s.gpr .esp) 28 = stkR s₀ := by rw [h.pt.esp]; exact hp.below_eq
+    have hb : below (s.gpr .esp) 32 = stkR s₀ := by rw [h.pt.esp]; exact hp.below_eq
     have cA : (Cb s₀).setWidth 64 = (S s₀).setWidth 64 + BitVec.ofNat 64 2048 := hp.scrA (by decide)
     have fr := hc.frame
     rw [hb, cA] at fr

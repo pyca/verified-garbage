@@ -76,10 +76,10 @@ structure ArgsOk (s : State) : Prop where
 
 theorem lay_of {s : State} (h : onePre s) : Lay (prmOf s) := by
   obtain ⟨sd, sw, _, nd, nw, _, ad, aw, _, dt, dw, _, tw, _, _, _, _, _, rd, rt, rw, _, bs, bn, ba, bd, bt, bw, _,
-    fK, fN, fA, fD, fT, fW, sp28, _, hR⟩ := h.lay
+    fK, fN, fA, fD, fT, fW, sp32, _, hR⟩ := h.lay
   simp only [stackR] at bs bn ba bd bt bw
-  rw [show (28 : Addr) = BitVec.ofNat 64 28 from rfl, below_eq sp28] at bs bn ba bd bt bw
-  exact ⟨fK, fW, fN, fA, fD, fT, sp28, sw, sd, nw, nd, aw, ad, dw, tw, dt.symm, bs, bn, ba, bd, bw, bt, hR,
+  rw [show (32 : Addr) = BitVec.ofNat 64 32 from rfl, below_eq sp32] at bs bn ba bd bt bw
+  exact ⟨fK, fW, fN, fA, fD, fT, sp32, sw, sd, nw, nd, aw, ad, dw, tw, dt.symm, bs, bn, ba, bd, bw, bt, hR,
     BitVec.isLt _, BitVec.isLt _, rw, rd, rt⟩
 
 theorem perm_of {s : State} (h : onePre s) : Perm (prmOf s) s :=

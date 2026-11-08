@@ -79,10 +79,13 @@ theorem correct {to : Bool} {s₀ : State} (hp : GPre to s₀) :
     (by rw [g₄ _ (by decide)]; exact hI₃.ebx)) fun s' ⟨habi, hctr, hdata, _, _⟩ => ?_
   exact ⟨habi, hdata.trans (by rw [m₄]; exact hI₃.blocks_end), hctr⟩
 
+/-- `vg_aes_ctr32_to_aesni` in place. -/
 theorem ctr32_correct (s : State) (hs : Proof.Aes.ctr32X86.pre s) :
-    ∃ t s', Exec isa Impl.Aes.X86.AesNi.ctr32 s t s' ∧ abiPreserved s s' ∧
+    ∃ t s', Exec isa Impl.Aes.X86.AesNi.ctr32To s t s' ∧ abiPreserved s s' ∧
       Proof.Aes.ctr32X86.post s s' :=
-  (correct (CPre.of hs).gpre).imp fun _ ⟨s', he, h⟩ => ⟨s', he, h⟩
+  have hp := CPre.of hs
+  (correct hp.gpre).imp fun _ ⟨s', he, h, h₂, h₃⟩ =>
+    ⟨s', he, h, by simpa only [ctrPost, dstP, ↓reduceIte, hp.same] using h₂, h₃⟩
 
 theorem ctr32To_correct (s : State) (hs : Proof.Aes.ctr32ToX86.pre s) :
     ∃ t s', Exec isa Impl.Aes.X86.AesNi.ctr32To s t s' ∧ abiPreserved s s' ∧

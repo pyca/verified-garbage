@@ -12,7 +12,7 @@ public import VerifiedGarbage.Impl.StackScratch.X86
 `vg_aes_siv_decrypt` with the same arguments (see `VG.Spec.Siv.initContract`
 and the others), cdecl (every argument on the stack), composed of calls of
 the verified `vg_aes_expand_key_scratch`, `vg_cmac_aes_subkeys`,
-`vg_cmac_aes_update`, `vg_cmac_aes_finalize` and `vg_aes_ctr32`. Like those,
+`vg_cmac_aes_update`, `vg_cmac_aes_finalize` and `vg_aes_ctr32_to`. Like those,
 they are generic over the implementation of AES they call (`c`, the `e` that
 goes with it, and `sfx`, the suffix of the names of the CMAC functions made
 with it), and follow the x86-64 implementation (`Impl/AesSiv/X86_64.lean`),
@@ -40,7 +40,7 @@ caller's `ebx`, `esi`, `edi` and `ebp` saved at `scratch + 2176`.
 * `[32, 64)`: the last bytes of S2V's last string (`tail`);
 * `[64, 80)`: unused;
 * `[80, 96)`: a keystream block;
-* `[96, 112)`: the counter block passed to `vg_aes_ctr32`;
+* `[96, 112)`: the counter block passed to `vg_aes_ctr32_to`;
 * `[112, 128)`: the IV `decrypt` computes;
 * `[128, 144)`: our caller's `ebx`, `esi`, `edi`, `ebp`;
 * `[144, 160)`: a CMAC state;
@@ -56,8 +56,9 @@ caller's `ebx`, `esi`, `edi` and `ebp` saved at `scratch + 2176`.
 the functions called preserve it. Everything else is reloaded from `W`. Each
 call pushes its arguments in a frame of its own, popped into `eax`:
 `vg_cmac_aes_update`'s and `vg_cmac_aes_finalize`'s from `eax`, `ecx`,
-`edx`, `ebx`, `esi` and `edi` (streaming CMAC's `call6`), `vg_aes_ctr32`'s
-from `eax`, `ecx`, `edx`, `ebx`, `edi` and `ebp` (AES-GCM's), with its
+`edx`, `ebx`, `esi` and `edi` (streaming CMAC's `call6`), `vg_aes_ctr32_to`'s,
+in place, from `eax`, `ecx`, `edx`, `ebx`, `edi`, `ebp` and `ebx` again
+(AES-GCM's), with its
 working space, `W + 256`, in `ebp`, moved there before the frame and back
 after it.
 
@@ -81,10 +82,10 @@ As on x86-64:
 * `counter src`: the counter block is `Q`, the IV at `W + src` with bit 7
   of its bytes 8 and 12 cleared.
 * `ctr`, as on ARMv7: the whole blocks of the data in one call of
-  `vg_aes_ctr32`, which increments only the last 32 bits of the counter
+  `vg_aes_ctr32_to`, which increments only the last 32 bits of the counter
   block, as a big-endian integer; but `Q` clears their most significant bit
   and `len < 2³²` gives fewer than `2²⁸` blocks, so they never wrap around,
-  and the counter is `Q + i`. Then `vg_aes_ctr32` on a zero block with the
+  and the counter is `Q + i`. Then `vg_aes_ctr32_to` on a zero block with the
   counter it left gives the keystream of the last bytes, which are XORed
   with it.
 * `compare`, `mask`: `ok = 1` if the IVs at `W` and `W + 112` are equal,
@@ -176,12 +177,12 @@ def updCall : Prog isa :=
 def finCall : Prog isa :=
   Impl.CmacAes.Stream.X86.call6 ("vg_cmac_aes_finalize" ++ sfx) (Impl.CmacAes.X86.finalize c)
 
-/-- `vg_aes_ctr32(eax, ecx, edx, ebx, edi, W + 256)`: `ebp` moved to the
-callee's working space, the arguments pushed in a frame of their own, and
-`ebp` back. -/
+/-- `vg_aes_ctr32_to(eax, ecx, edx, ebx, edi, W + 256, ebx)`, in place:
+`ebp` moved to the callee's working space, the arguments pushed in a frame
+of their own, and `ebp` back. -/
 def ctrCall : Prog isa :=
   .seq (.block [.alu .add .ebp (imm csOff)])
-    (.seq (.frame (.push [.ebp, .edi, .ebx, .edx, .ecx, .eax]) (.call c.name c.code) (.pop .eax 6))
+    (.seq (.frame (.push [.ebx, .ebp, .edi, .ebx, .edx, .ecx, .eax]) (.call c.name c.code) (.pop .eax 7))
       (.block [.alu .sub .ebp (imm csOff)]))
 
 /-- The key context and the rounds into `eax` and `ecx`, `W + st` into
@@ -327,20 +328,20 @@ def counter (src : Nat) : List Instr :=
    .store (at_ .ebp (cbOff + 8)) .eax, .mov .eax (slot (src + 12)), .alu .and .eax (imm 0xffffff7f),
    .store (at_ .ebp (cbOff + 12)) .eax]
 
-/-- The arguments of `vg_aes_ctr32` but the data and the number of blocks:
+/-- The arguments of `vg_aes_ctr32_to` but the data and the number of blocks:
 `K2`'s schedule, the rounds and the counter block at `W + 96`. -/
 def ctrArgs : List Instr :=
   [.mov .eax (slot ctxO), .alu .add .eax (imm 272), .mov .ecx (slot roundsO), .mov .edx (.reg .ebp),
    .alu .add .edx (imm cbOff)]
 
-/-- The whole blocks of the data, by `vg_aes_ctr32` from the counter block,
+/-- The whole blocks of the data, by `vg_aes_ctr32_to` from the counter block,
 which it leaves after them. -/
 def ctrWhole : Prog isa :=
   .seq (.block [.mov .edi (slot lenO), .shift .shr .edi 4, .alu .test .edi (.reg .edi)])
     (.ite .e (.block []) (.seq (.block (ctrArgs ++ ([.mov .ebx (slot dataO)] : List Instr))) (ctrCall c)))
 
 /-- The last `len mod 16` bytes of the data, XORed with the keystream block
-of the counter block, which `vg_aes_ctr32` computes on a zero block at
+of the counter block, which `vg_aes_ctr32_to` computes on a zero block at
 `W + 80`. -/
 def ctrTail : Prog isa :=
   .seq (.block [.mov .ecx (slot lenO), .alu .and .ecx (imm 15)])

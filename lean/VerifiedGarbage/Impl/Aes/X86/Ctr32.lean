@@ -5,8 +5,9 @@ public import VerifiedGarbage.Impl.Aes.X86.Linear
 /-!
 # AES counter mode (GCM's `inc₃₂`), bitsliced, on x86 (32-bit)
 
-`vg_aes_ctr32(schedule, rounds, counter, data, n, scratch)`, cdecl: the
-arguments are at `[esp + 4]` … `[esp + 24]`.
+`vg_aes_ctr32_to(schedule, rounds, counter, src, n, scratch, dst)`, cdecl:
+the arguments are at `[esp + 4]` … `[esp + 28]`. It reads the data at `src`
+and writes the result to `dst`, the same address for callers in place.
 
 Constant-time AES in the style of BearSSL's `aes_ct` (Thomas Pornin, MIT
 licence): two blocks at a time, bitsliced in eight 32-bit words, which live
@@ -176,17 +177,13 @@ def xorGroup (to : Bool := false) : Prog isa :=
 /-- One group of (up to) two blocks. -/
 def group (to : Bool := false) : Prog isa := .seq (.block ctrBlocks) (.seq encrypt2 (xorGroup to))
 
-/-- `vg_aes_ctr32`, or out of place (`to`) `vg_aes_ctr32_to(schedule, rounds,
-counter, src, n, scratch, dst)`, which reads the data at `src` and writes the
-result to `dst`. -/
+/-- `vg_aes_ctr32_to` (`to`), or the counter mode in place with six
+arguments, which nothing emits. -/
 def ctr32With (to : Bool) : Prog isa :=
   .seq (.block (saveRegs 5 ++ ctrSetup ++ keySetup))
     (.seq (.loop (.block keyBody) .ae)
       (.seq (.block (groupSetup to))
         (.seq (.ite .e (.block []) (.loop (group to) .ne)) (.block restoreRegs))))
-
-/-- `vg_aes_ctr32`. -/
-def ctr32 : Prog isa := ctr32With false
 
 /-- `vg_aes_ctr32_to`. -/
 def ctr32To : Prog isa := ctr32With true

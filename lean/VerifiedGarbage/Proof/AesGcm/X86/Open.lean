@@ -140,7 +140,7 @@ theorem kept_woF {o n o' : Nat} (h₁ : 128 ≤ o)
 omit G in
 /-- A region apart from `W` and the stack the calls use, apart from what the pieces write. -/
 theorem t_woF {o : Nat} (ho : o + 16 ≤ 2560) {T : Region} (tw : T.Disjoint ⟨w64 (p.2 8), 2560⟩)
-    (kt : (below p.1 28).Disjoint T) : ∀ r ∈ ⟨w64 (p.2 8) + BitVec.ofNat 64 o, 16⟩ :: oF p, T.Disjoint r := by
+    (kt : (below p.1 32).Disjoint T) : ∀ r ∈ ⟨w64 (p.2 8) + BitVec.ofNat 64 o, 16⟩ :: oF p, T.Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
@@ -194,7 +194,7 @@ structure OMode (vg : GcmImpl) where
   tg : ∀ s, Pre s → Covers [⟨w64 (arg s 8), (arg s 9).toNat⟩] (s.rd ++ s.wr) ∧
     (arg s 8).toNat + (arg s 9).toNat ≤ 2 ^ 32 ∧
     (⟨w64 (arg s 8), (arg s 9).toNat⟩ : Region).Disjoint ⟨w64 (arg s 10), 2560⟩ ∧
-    (below (s.gpr .esp) 28).Disjoint ⟨w64 (arg s 8), (arg s 9).toNat⟩
+    (below (s.gpr .esp) 32).Disjoint ⟨w64 (arg s 8), (arg s 9).toNat⟩
   x : State → BitVec 32
   out : BitVec 32 × (Nat → BitVec 32) → BitVec 32 → State → List Byte
   fb : BitVec 32 × (Nat → BitVec 32) → State → List Byte

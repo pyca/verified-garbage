@@ -339,14 +339,6 @@ jmp 212f
 }
 
 #[rustfmt::skip]
-#[path = "internal/vg_aes_ctr32.rs"]
-pub(crate) mod vg_aes_ctr32;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_ctr32_aesni.rs"]
-pub(crate) mod vg_aes_ctr32_aesni;
-
-#[rustfmt::skip]
 #[path = "internal/vg_aes_ctr32_to.rs"]
 pub(crate) mod vg_aes_ctr32_to;
 

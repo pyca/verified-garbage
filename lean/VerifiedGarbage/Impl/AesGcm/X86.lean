@@ -7,7 +7,7 @@ public import VerifiedGarbage.TCB.X86.Isa
 
 The AES-GCM functions of `Spec/Gcm/Contract.lean`, cdecl (every argument on
 the stack), composed of calls of the verified `vg_aes_expand_key_scratch`,
-`vg_aes_ctr32` and `vg_ghash`, as on x86-64 (`Impl/AesGcm/X86_64.lean`),
+`vg_aes_ctr32_to` and `vg_ghash`, as on x86-64 (`Impl/AesGcm/X86_64.lean`),
 whose algorithm and pieces these follow.
 
 ## The working space
@@ -36,9 +36,9 @@ last argument):
 called preserve them. Everything else is reloaded from `W`: a piece takes
 its arguments from `W + 272` on (`dO`: a pointer, `nO`: a length, `bO`: an
 offset). Each call pushes its arguments (last to first) in a frame of its
-own, popped into `eax`: `vg_aes_ctr32` six, `vg_ghash` five and
-`vg_aes_expand_key_scratch` four, with the return address 28 bytes of stack at
-most. The working space of the callee, `W + 512`, is passed in `ebp`, which
+own, popped into `eax`: `vg_aes_ctr32_to` seven (in place, the data twice),
+`vg_ghash` five and `vg_aes_expand_key_scratch` four, with the return address
+32 bytes of stack at most. The working space of the callee, `W + 512`, is passed in `ebp`, which
 is moved there before the frame and back after it.
 
 ## The pieces
@@ -52,10 +52,10 @@ is moved there before the frame and back after it.
   are kept at `W + a`, `W + a'` (low, high) and `W + t`, `W + t'`, absorbed.
 * `crypt`: the `nO` bytes at `dO` XORed with the keystream, `bO` bytes into
   the current keystream block: the rest of that block (at `esi + 64`), then
-  whole blocks with `vg_aes_ctr32` from the counter block at `esi + 48`,
+  whole blocks with `vg_aes_ctr32_to` from the counter block at `esi + 48`,
   then a new keystream block for the last bytes.
 * `tag o …`: the lengths block absorbed, and `GHASH ⊕ CIPH_K(J₀)` written to
-  `W + o`, with `vg_aes_ctr32` on it with the counter block `J₀` (at `esi`).
+  `W + o`, with `vg_aes_ctr32_to` on it with the counter block `J₀` (at `esi`).
 * `j0`: `J₀` for the `nO`-byte nonce at `dO` (GHASH'd with `absorb`,
   `flush` and `lens` unless it is 12 bytes), and the state's accumulator and
   first counter block `inc₃₂(J₀)` (`initState`).
@@ -134,7 +134,7 @@ structure Fn where
   name : String
   code : Prog isa
 
-/-- The implementations of `vg_aes_ctr32`, `vg_aes_expand_key_scratch` and
+/-- The implementations of `vg_aes_ctr32_to`, `vg_aes_expand_key_scratch` and
 `vg_ghash` a set of AES-GCM functions calls. -/
 structure Callees where
   ctr : Fn
@@ -144,9 +144,9 @@ structure Callees where
 section
 variable (c : Callees)
 
-/-- `vg_aes_ctr32(eax, ecx, edx, ebx, edi, ebp)`. -/
+/-- `vg_aes_ctr32_to(eax, ecx, edx, ebx, edi, ebp, ebx)`: in place. -/
 def ctrCall : Prog isa :=
-  .frame (.push [.ebp, .edi, .ebx, .edx, .ecx, .eax]) (.call c.ctr.name c.ctr.code) (.pop .eax 6)
+  .frame (.push [.ebx, .ebp, .edi, .ebx, .edx, .ecx, .eax]) (.call c.ctr.name c.ctr.code) (.pop .eax 7)
 
 /-- `vg_ghash(eax, edx, ebx, edi, ebp)`. -/
 def ghCall : Prog isa :=
@@ -258,7 +258,7 @@ def lens (yo al ah tl th : Nat) : Prog isa :=
 
 /-! ## Counter mode -/
 
-/-- The arguments of `vg_aes_ctr32` but the data and their number (`ebx`,
+/-- The arguments of `vg_aes_ctr32_to` but the data and their number (`ebx`,
 `edi`): the key schedule, the rounds, the counter block at `esi + 48` and the
 working space. -/
 def ctrArgs : List Instr :=
@@ -273,13 +273,13 @@ def cryptHead : Prog isa :=
       .mov .eax (.reg .edi), .alu .add .eax (.reg .ecx), .store (at_ .ebp dO) .eax])
     xorLoop)
 
-/-- Whole blocks at `dO`, by `vg_aes_ctr32`. -/
+/-- Whole blocks at `dO`, by `vg_aes_ctr32_to`. -/
 def cryptWhole : Prog isa :=
   .seq (.block splitWhole)
     (.ite .e (.block []) (.seq (.block ctrArgs) (.seq (ctrCall c) (.block unscr))))
 
 /-- The keystream block at `esi + 64` zeroed, and the arguments of
-`vg_aes_ctr32` to encrypt it in place from the counter block. -/
+`vg_aes_ctr32_to` to encrypt it in place from the counter block. -/
 def ksArgs : List Instr :=
   ([.mov .eax (imm 0), .store (at_ .esi 64) .eax, .store (at_ .esi 68) .eax, .store (at_ .esi 72) .eax,
     .store (at_ .esi 76) .eax, .mov .ebx (.reg .esi), .alu .add .ebx (imm 64), .mov .edi (imm 1)] : List Instr) ++

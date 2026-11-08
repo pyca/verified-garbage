@@ -16,9 +16,9 @@ meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 Untrusted: everything here is checked by Lean. The calls of
 `vg_cmac_aes_update` are those of streaming AES-CMAC
-(`Proof.CmacAes.Stream.X86.upd_call`), and those of `vg_aes_ctr32` those of
+(`Proof.CmacAes.Stream.X86.upd_call`), and those of `vg_aes_ctr32_to` those of
 AES-GCM (`Proof.AesGcm.X86.ctr_call`, whose frame and call depend only on
-the implementation of `vg_aes_ctr32`), with `ebp` moved to the working space
+the implementation of `vg_aes_ctr32_to`), with `ebp` moved to the working space
 around them (`ctrCall_ok`). Their arguments are built from the
 environment: the key schedule, a block of `W` as the state or the counter
 block, the data or blocks of `W` as the data (`Src`), and the working space
@@ -41,8 +41,8 @@ open VG.Proof.AesGcm.X86 (w64 toNat_ofNat32 toNat_add32 w64_add covers_left cove
 open VG.Proof.CmacAes.Stream.X86 (UArgs UPost)
 open VG.Proof.AesGcm.X86 (CT)
 
-theorem below_sub56 {SP : BitVec 32} {k : Nat} (hk : k ≤ 56) (hs : 56 ≤ SP.toNat) :
-    Region.Sub (below SP k) (below SP 56) :=
+theorem below_sub60 {SP : BitVec 32} {k : Nat} (hk : k ≤ 60) (hs : 60 ≤ SP.toNat) :
+    Region.Sub (below SP k) (below SP 60) :=
   VG.X86.below_sub hk hs
 
 /-! ## Data for a call -/
@@ -53,7 +53,7 @@ structure Src (W SP : BitVec 32) (s : State) (Q : BitVec 32) (k : Nat) : Prop wh
   rd : Covers [⟨w64 Q, k⟩] (s.rd ++ s.wr)
   wrap : Q.toNat + k ≤ 2 ^ 32
   qs : (⟨w64 Q, k⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 384, 2176⟩
-  stk : (below SP 56).Disjoint ⟨w64 Q, k⟩
+  stk : (below SP 60).Disjoint ⟨w64 Q, k⟩
 
 /-- Bytes of `W` below 384 as data. -/
 theorem srcW {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (P : Perm K W s) {t k : Nat} (hk : t + k ≤ 384) :
@@ -118,7 +118,7 @@ theorem updCall_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} (L : Lay K W
     (edi : s.gpr .edi = W + BitVec.ofNat 32 384) :
     WP isa (updCall v.callee v.suffix) s fun s' => Env K W SP s' ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
-      Frame [⟨w64 W + BitVec.ofNat 64 y, 16⟩, ⟨w64 W + BitVec.ofNat 64 384, 2176⟩, below SP 56] s.mem s'.mem ∧
+      Frame [⟨w64 W + BitVec.ofNat 64 y, 16⟩, ⟨w64 W + BitVec.ofNat 64 384, 2176⟩, below SP 60] s.mem s'.mem ∧
       bytesAt s'.mem (w64 W + BitVec.ofNat 64 y) 16 =
         Spec.Cmac.chain (Spec.Ccm.ctxCiph s.mem (w64 K) R) (bytesAt s.mem (w64 W + BitVec.ofNat 64 y) 16)
           (Spec.Cmac.blocksAt s.mem (w64 Q) 16 n) := by
@@ -131,16 +131,17 @@ theorem updCall_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} (L : Lay K W
     rw [wAddr L (by omega_arith)] at o
     exact o
 
-/-! ## `vg_aes_ctr32` -/
+/-! ## `vg_aes_ctr32_to`, in place -/
 
-/-- The frame and call of `vg_aes_ctr32`: AES-GCM's, with any implementation
-of `vg_aes_ghash` beside it. -/
+/-- The frame and call of `vg_aes_ctr32_to` in place: AES-GCM's, with any
+implementation of `vg_aes_ghash` beside it. -/
 theorem ctrFrame_ok (v : Ctr32Impl) {s : State} {K C D S : BitVec 32} {R n : Nat} (h : CtrCall s K C D S R n) :
-    WP isa (.frame (.push [.ebp, .edi, .ebx, .edx, .ecx, .eax]) (.call v.callee.name v.callee.code) (.pop .eax 6)) s
+    WP isa (.frame (.push [.ebx, .ebp, .edi, .ebx, .edx, .ecx, .eax]) (.call v.callee.name v.callee.code)
+      (.pop .eax 7)) s
       (CtrPost s K C D S R n) :=
   Proof.AesGcm.X86.ctr_call ⟨v, .scalar⟩ h
 
-/-- A call of `vg_aes_ctr32` on `n` blocks at `Q`, from the counter block at
+/-- A call of `vg_aes_ctr32_to` on `n` blocks at `Q`, from the counter block at
 `W + c`, with its working space at `W + 384`. -/
 theorem ctrCall_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R : Nat}
     (hR : R = 10 ∨ R = 12 ∨ R = 14) {c : Nat} (hc : c + 16 ≤ 384) {Q : BitVec 32} {n : Nat}
@@ -150,12 +151,12 @@ theorem ctrCall_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} (L : Lay K W
     (ebx : s.gpr .ebx = Q) (edi : s.gpr .edi = BitVec.ofNat 32 n) :
     WP isa (ctrCall v.callee) s fun s' => Env K W SP s' ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       (∀ r ∈ [Reg.ebx, .esi, .edi], s'.gpr r = s.gpr r) ∧
-      Frame [⟨w64 W + BitVec.ofNat 64 c, 16⟩, ⟨w64 Q, 16 * n⟩, ⟨w64 W + BitVec.ofNat 64 384, 2048⟩, below SP 56]
+      Frame [⟨w64 W + BitVec.ofNat 64 c, 16⟩, ⟨w64 Q, 16 * n⟩, ⟨w64 W + BitVec.ofNat 64 384, 2048⟩, below SP 60]
         s.mem s'.mem ∧
       blocksAt s'.mem (w64 Q) n = ctr32 (aesWith R (bytesAt s.mem (w64 K) (16 * (R + 1))))
         (blockAt s.mem (w64 W + BitVec.ofNat 64 c)) (blocksAt s.mem (w64 Q) n) := by
   have hsp := L.sp
-  have b28 : Region.Sub (below SP 28) (below SP 56) := below_sub56 (by decide) hsp
+  have b32 : Region.Sub (below SP 32) (below SP 60) := below_sub60 (by decide) hsp
   -- `ebp := W + 384`.
   refine WP.seq (WP.of_runBlock ⟨_, by crun [], ?_⟩)
   -- The call.
@@ -171,10 +172,10 @@ theorem ctrCall_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} (L : Lay K W
     · rw [L.aW (o := c) (by omega_arith)]; exact hqc.symm
     · rw [L.aW (o := c) (by omega_arith), L.aW (o := 384) (by omega_arith)]; exact Lay.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
     · rw [L.aW (o := 384) (by omega_arith)]; exact hq.qs.sub_right (Region.sub_prefix (by decide))
-    · cregs [E.esp]; exact L.stk_k.sub_left b28
-    · cregs [E.esp]; rw [L.aW (o := c) (by omega_arith)]; exact (L.stk_w' (by omega_arith)).sub_left b28
-    · cregs [E.esp]; exact hq.stk.sub_left b28
-    · cregs [E.esp]; rw [L.aW (o := 384) (by omega_arith)]; exact (L.stk_w' (by decide)).sub_left b28
+    · cregs [E.esp]; exact L.stk_k.sub_left b32
+    · cregs [E.esp]; rw [L.aW (o := c) (by omega_arith)]; exact (L.stk_w' (by omega_arith)).sub_left b32
+    · cregs [E.esp]; exact hq.stk.sub_left b32
+    · cregs [E.esp]; rw [L.aW (o := 384) (by omega_arith)]; exact (L.stk_w' (by decide)).sub_left b32
     · have := L.fk; omega_arith
     · rw [L.nW (by omega_arith)]; have := L.fw; omega_arith
     · exact hq.wrap
@@ -201,9 +202,9 @@ theorem ctrCall_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} (L : Lay K W
     · exact ⟨_, by simp, fun _ h => h⟩
     · exact ⟨_, by simp, fun _ h => h⟩
     · exact ⟨_, by simp, fun _ h => h⟩
-    · refine ⟨below SP 56, by simp, ?_⟩
+    · refine ⟨below SP 60, by simp, ?_⟩
       have : (s.gpr .ebp + BitVec.ofNat 32 384).setWidth 64 = (W + BitVec.ofNat 32 384).setWidth 64 := by rw [E.ebp]
-      simpa [gpr_setReg_of_ne, E.esp] using b28
+      simpa [gpr_setReg_of_ne, E.esp] using b32
   · have o := P.out
     rw [L.aW (o := c) (by omega_arith)] at o
     cmems []
@@ -224,7 +225,7 @@ theorem updCall_ct (v : Ctr32Impl) {K W SP : BitVec 32} (L : Lay K W SP) {R : Na
     obtain ⟨E₂, q₂, y₂, a₂, c₂, d₂, b₂, i₂, j₂⟩ := hI s₂ h₂
     exact ⟨uargs L E₁ hR hy q₁ y₁ hn a₁ c₁ d₁ b₁ i₁ j₁, uargs L E₂ hR hy q₂ y₂ hn a₂ c₂ d₂ b₂ i₂ j₂, E₁.esp, E₂.esp⟩
 
-/-- Calls of `vg_aes_ctr32` with the same arguments are constant time. -/
+/-- Calls of `vg_aes_ctr32_to` in place with the same arguments are constant time. -/
 theorem ctrCall_ct (v : Ctr32Impl) {K W SP : BitVec 32} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14)
     {c : Nat} (hc : c + 16 ≤ 384) {Q : BitVec 32} {n : Nat} {I : State → Prop}
     (hI : ∀ s, I s → Env K W SP s ∧ Src W SP s Q (16 * n) ∧ Covers [⟨w64 Q, 16 * n⟩] s.wr ∧
@@ -234,7 +235,7 @@ theorem ctrCall_ct (v : Ctr32Impl) {K W SP : BitVec 32} (L : Lay K W SP) {R : Na
       s.gpr .edi = BitVec.ofNat 32 n) :
     CT I (ctrCall v.callee) := by
   have hsp := L.sp
-  have b28 : Region.Sub (below SP 28) (below SP 56) := below_sub56 (by decide) hsp
+  have b32 : Region.Sub (below SP 32) (below SP 60) := below_sub60 (by decide) hsp
   -- The state after `ebp := W + 384`, as `CtrCall` needs it.
   have call : ∀ s, I s → ∀ s', runBlock isa [.alu .add .ebp (imm scrO)] s = some s' →
       CtrCall s' K (W + BitVec.ofNat 32 c) Q (W + BitVec.ofNat 32 384) R n ∧ s'.gpr .esp = SP := by
@@ -253,10 +254,10 @@ theorem ctrCall_ct (v : Ctr32Impl) {K W SP : BitVec 32} (L : Lay K W SP) {R : Na
     · rw [L.aW (o := c) (by omega_arith)]; exact hqc.symm
     · rw [L.aW (o := c) (by omega_arith), L.aW (o := 384) (by omega_arith)]; exact Lay.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
     · rw [L.aW (o := 384) (by omega_arith)]; exact hq.qs.sub_right (Region.sub_prefix (by decide))
-    · cregs [E.esp]; exact L.stk_k.sub_left b28
-    · cregs [E.esp]; rw [L.aW (o := c) (by omega_arith)]; exact (L.stk_w' (by omega_arith)).sub_left b28
-    · cregs [E.esp]; exact hq.stk.sub_left b28
-    · cregs [E.esp]; rw [L.aW (o := 384) (by omega_arith)]; exact (L.stk_w' (by decide)).sub_left b28
+    · cregs [E.esp]; exact L.stk_k.sub_left b32
+    · cregs [E.esp]; rw [L.aW (o := c) (by omega_arith)]; exact (L.stk_w' (by omega_arith)).sub_left b32
+    · cregs [E.esp]; exact hq.stk.sub_left b32
+    · cregs [E.esp]; rw [L.aW (o := 384) (by omega_arith)]; exact (L.stk_w' (by decide)).sub_left b32
     · have := L.fk; omega_arith
     · rw [L.nW (by omega_arith)]; have := L.fw; omega_arith
     · exact hq.wrap
@@ -270,7 +271,8 @@ theorem ctrCall_ct (v : Ctr32Impl) {K W SP : BitVec 32} (L : Lay K W SP) {R : Na
     (fun s hs => WP.of_runBlock ⟨_, by crun [], s, hs, by crun []⟩) ?_
   refine CT.seq (J := fun s => s.gpr .ebp = W + BitVec.ofNat 32 384)
     ((Proof.AesGcm.X86.ctr_ct ⟨v, .scalar⟩ (E := SP) fun s ⟨s₀, h₀, run⟩ => call s₀ h₀ s run :
-      CT _ (.frame (.push [.ebp, .edi, .ebx, .edx, .ecx, .eax]) (.call v.callee.name v.callee.code) (.pop .eax 6))))
+      CT _ (.frame (.push [.ebx, .ebp, .edi, .ebx, .edx, .ecx, .eax]) (.call v.callee.name v.callee.code)
+        (.pop .eax 7))))
     (fun s ⟨s₀, h₀, run⟩ => WP.mono (ctrFrame_ok v (call s₀ h₀ s run).1) fun s₁ g => by
       rw [g.saved .ebp (by decide), (call s₀ h₀ s run).1.ebp]) ?_
   exact CT.taint [.ebp] (fun s₁ s₂ h₁ h₂ r hr => by

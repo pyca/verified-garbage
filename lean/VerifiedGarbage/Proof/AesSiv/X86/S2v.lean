@@ -90,7 +90,7 @@ theorem s2vAcc_snoc (mac : List Byte → List Byte) (xs : List (List Byte)) (x :
 /-! ## What the pieces keep -/
 
 /-- The parts of `W` the pieces write, and the stack below `SP`. -/
-abbrev wR (W SP : BitVec 32) : List Region := [wA W, wB W, wV W, wS W, wC W, below SP 56]
+abbrev wR (W SP : BitVec 32) : List Region := [wA W, wB W, wV W, wS W, wC W, below SP 60]
 
 /-- Since the entry from `s₀`: the environment, the slots and our caller's
 registers in `W`, and the memory outside `W`, the stack below `SP` and the
@@ -102,7 +102,7 @@ structure Kept (s₀ : State) (C W SP : BitVec 32) (R : Nat) (D : BitVec 32) (n 
   wr : s.wr = s₀.wr
   slots : Slots W C R D n s.mem
   saved : SavedAt s.mem W s₀
-  big : Frame ([⟨w64 W + BitVec.ofNat 64 16, 2560⟩, below SP 56] ++ ext) s₀.mem s.mem
+  big : Frame ([⟨w64 W + BitVec.ofNat 64 16, 2560⟩, below SP 60] ++ ext) s₀.mem s.mem
 
 /-- A piece that writes parts of `W` the pieces write, the stack below `SP`,
 or the regions `ext` (apart from `W`) keeps `Kept`. -/
@@ -149,7 +149,7 @@ theorem Kept.step {s₀ : State} {C W SP : BitVec 32} {R : Nat} {D : BitVec 32} 
 as on entry. -/
 theorem Kept.bytes {s₀ : State} {C W SP : BitVec 32} {R : Nat} {D : BitVec 32} {n : Nat} {ext : List Region}
     {s : State} (h : Kept s₀ C W SP R D n ext s) {p : Addr} {k : Nat}
-    (hw : (⟨p, k⟩ : Region).Disjoint ⟨w64 W, 2576⟩) (hs : (below SP 56).Disjoint ⟨p, k⟩)
+    (hw : (⟨p, k⟩ : Region).Disjoint ⟨w64 W, 2576⟩) (hs : (below SP 60).Disjoint ⟨p, k⟩)
     (he : ∀ r ∈ ext, (⟨p, k⟩ : Region).Disjoint r) (hk : k ≤ 2 ^ 64) : bytesAt s.mem p k = bytesAt s₀.mem p k :=
   Proof.AesGcm.X86.bytesAt_frame h.big (fun r hr => by
     simp only [List.cons_append, List.nil_append, List.mem_cons] at hr
@@ -236,7 +236,7 @@ theorem startPre_ok {C W SP : BitVec 32} (L : Lay C W SP) {R : Nat} {s : State} 
 /-- What `start` writes: the zero block, `D` and the working space of the
 function it calls, and the stack below `SP`. -/
 abbrev startR (W SP : BitVec 32) : List Region :=
-  [⟨w64 W + BitVec.ofNat 64 16, 16⟩, ⟨w64 W + BitVec.ofNat 64 256, 2320⟩, below SP 56]
+  [⟨w64 W + BitVec.ofNat 64 16, 16⟩, ⟨w64 W + BitVec.ofNat 64 256, 2320⟩, below SP 60]
 
 /-- `start`: `D = AES-CMAC(K1, <zero>)`, S2V's first state. -/
 theorem start_ok (v : Ctr32Impl) {s₀ : State} {C W SP : BitVec 32} {R : Nat} {D : BitVec 32} {n : Nat}
@@ -267,13 +267,13 @@ theorem start_ok (v : Ctr32Impl) {s₀ : State} {C W SP : BitVec 32} {R : Nat} {
       rcases hr with rfl | rfl | rfl
       · exact ⟨⟨w64 W + BitVec.ofNat 64 256, 2320⟩, by simp, Offset.sub _ (by decide) (by decide)⟩
       · exact ⟨⟨w64 W + BitVec.ofNat 64 256, 2320⟩, by simp, Offset.sub _ (by decide) (by decide)⟩
-      · exact ⟨below SP 56, by simp, fun _ h => h⟩
+      · exact ⟨below SP 60, by simp, fun _ h => h⟩
   refine ⟨h.step L (by simp) E₂ (by rw [rd₂, rd₁]) (by rw [wr₂, wr₁]) f₁₂ fun r hr => .inl ?_, f₁₂, ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact ⟨wA W, by simp, Region.sub_prefix (by decide)⟩
     · exact ⟨wC W, by simp, fun _ h => h⟩
-    · exact ⟨below SP 56, by simp, fun _ h => h⟩
+    · exact ⟨below SP 60, by simp, fun _ h => h⟩
   simp only [zOff, dOff] at m₁
   have fz : Frame [⟨w64 W + BitVec.ofNat 64 2560, 16⟩] (Cmac.zero4 s.mem (w64 W + BitVec.ofNat 64 16))
       s₁.mem := by rw [m₁]; exact Cmac.frame_store4 _ _ _ _ _
@@ -466,7 +466,7 @@ theorem adNext_wp {s₀ : State} {C W SP A : BitVec 32} {R N : Nat} {D : BitVec 
   -- The descriptor, as on entry.
   have dW : (⟨w64 A + BitVec.ofNat 64 (8 * i), 8⟩ : Region).Disjoint ⟨w64 W, 2576⟩ :=
     hA.desc.w.sub_left (Offset.sub_base _ (by omega_arith))
-  have dS : (below SP 56).Disjoint ⟨w64 A + BitVec.ofNat 64 (8 * i), 8⟩ :=
+  have dS : (below SP 60).Disjoint ⟨w64 A + BitVec.ofNat 64 (8 * i), 8⟩ :=
     hA.desc.stk.sub_right (Offset.sub_base _ (by omega_arith))
   have rD : Covers [⟨w64 A + BitVec.ofNat 64 (8 * i), 8⟩] (s.rd ++ s.wr) := by
     rw [K.rd, K.wr]; exact Proof.AesGcm.X86.covers_off hA.desc.rd (by omega_arith) (by have := hA.desc.lt; omega_arith)
@@ -515,7 +515,7 @@ theorem adBody_ok (v : Ctr32Impl) {s₀ : State} {C W SP A : BitVec 32} {R N : N
     · exact .inl ⟨wB W, by simp, Offset.sub _ (by decide) (by decide)⟩
     · exact .inl ⟨wS W, by simp, sub_wS (by decide) (by decide)⟩
     · exact .inl ⟨wC W, by simp, Offset.sub _ (by decide) (by decide)⟩
-    · exact .inl ⟨below SP 56, by simp, fun _ h => h⟩
+    · exact .inl ⟨below SP 60, by simp, fun _ h => h⟩
   -- The slots `adStep` reads.
   have kS : ∀ o, (176 ≤ o ∧ o + 4 ≤ 200) → slotv s₂.mem W o = slotv s.mem W o := fun o ho => by
     rw [cmacR_slot L M.frame (by omega_arith) (by omega_arith)]

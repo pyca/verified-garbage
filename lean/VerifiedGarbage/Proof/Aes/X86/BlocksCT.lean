@@ -19,7 +19,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 The taint analysis (`VG.X86.Taint`) starts with `esp` public and knows
 where the arguments are and which of them are the base addresses of the
-data and the scratch buffer. As in `vg_aes_ctr32` (`Ctr32CT.lean`), the data
+data and the scratch buffer. As in `vg_aes_ctr32_to` (`Ctr32CT.lean`), the data
 pointer and the count round-trip through public slots of the scratch
 buffer; the stores of the blocks through the data pointer forget them, and
 the code stores them again from the registers.

@@ -26,7 +26,7 @@ meta import VerifiedGarbage.TCB.X86.State
 
 Untrusted: everything here is checked by Lean. From a block boundary with
 fewer than 16 bytes left, `cryptTail` makes the next keystream block (the
-counter block encrypted onto zeros, by `vg_aes_ctr32`) and XORs it into
+counter block encrypted onto zeros, by `vg_aes_ctr32_to`) and XORs it into
 them (`cryptTail_pc`), by `Proof.Gcm.ctr_tail`. `crypt_pc`: the three
 pieces.
 -/
@@ -44,16 +44,16 @@ open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt blocksAt aesWith)
 open VG.Proof.Gcm (Ctr xorKs)
 
-/-- The regions `vg_aes_ctr32` writes for the keystream block. -/
+/-- The regions `vg_aes_ctr32_to` writes for the keystream block. -/
 abbrev ksFrame (St W SP : BitVec 32) : List Region :=
   [⟨w64 St + BitVec.ofNat 64 48, 16⟩, ⟨w64 St + BitVec.ofNat 64 64, 16 * 1⟩, ⟨w64 W + BitVec.ofNat 64 512, 2048⟩,
-    below SP 28]
+    below SP 32]
 
 section
 variable {Ctx St W SP : BitVec 32} {K : Nat} (L : Lay Ctx St W SP K)
 include L
 
-theorem ksFrame_crFrame (hK : K = 28) {D : BitVec 32} {n : Nat} {m m' : Mem} (h : Frame (ksFrame St W SP) m m') :
+theorem ksFrame_crFrame (hK : K = 32) {D : BitVec 32} {n : Nat} {m m' : Mem} (h : Frame (ksFrame St W SP) m m') :
     Frame (crFrame St W SP K D n) m m' := by
   subst hK
   exact h.sub fun r hr => by
@@ -62,7 +62,7 @@ theorem ksFrame_crFrame (hK : K = 28) {D : BitVec 32} {n : Nat} {m m' : Mem} (h 
     · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), Offset.sub _ (by decide) (by decide)⟩
     · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), Offset.sub _ (by decide) (by decide)⟩
     · exact ⟨wsR W, by simp, Offset.sub _ (by decide) (by decide)⟩
-    · exact ⟨below SP 28, by simp, fun _ h => h⟩
+    · exact ⟨below SP 32, by simp, fun _ h => h⟩
 
 omit L in
 theorem ks_crFrame {D : BitVec 32} {n : Nat} {m m' : Mem} (h : Frame [⟨w64 St + BitVec.ofNat 64 64, 16⟩] m m') :
@@ -71,7 +71,7 @@ theorem ks_crFrame {D : BitVec 32} {n : Nat} {m m' : Mem} (h : Frame [⟨w64 St 
     simp only [List.mem_singleton] at hr; subst hr
     exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), Offset.sub _ (by decide) (by decide)⟩
 
-theorem data_ksFrame (hK : K = 28) {s : State} {D : BitVec 32} {n : Nat} (hd : DataW Ctx St W SP K s D n) {a l : Nat}
+theorem data_ksFrame (hK : K = 32) {s : State} {D : BitVec 32} {n : Nat} (hd : DataW Ctx St W SP K s D n) {a l : Nat}
     (hal : a + l ≤ n) : ∀ r ∈ ksFrame St W SP, (⟨w64 D + BitVec.ofNat 64 a, l⟩ : Region).Disjoint r := by
   subst hK
   have hs : Region.Sub ⟨w64 D + BitVec.ofNat 64 a, l⟩ ⟨w64 D, n⟩ := Offset.sub_base _ hal
@@ -83,7 +83,7 @@ theorem data_ksFrame (hK : K = 28) {s : State} {D : BitVec 32} {n : Nat} (hd : D
   · exact (hd.ok.w.sub_left hs).sub_right (Lay.wSub (by decide))
   · exact (hd.ok.stk.sub_right hs).symm
 
-theorem slot_ksFrame (hK : K = 28) {o : Nat} (h₁ : 240 ≤ o) (h₂ : o + 4 ≤ 512) :
+theorem slot_ksFrame (hK : K = 32) {o : Nat} (h₁ : 240 ≤ o) (h₂ : o + 4 ≤ 512) :
     ∀ r ∈ ksFrame St W SP, (⟨w64 W + BitVec.ofNat 64 o, 4⟩ : Region).Disjoint r := by
   subst hK
   intro r hr
@@ -96,7 +96,7 @@ theorem slot_ksFrame (hK : K = 28) {o : Nat} (h₁ : 240 ≤ o) (h₂ : o + 4 �
 
 variable {R : Nat} {icb : Block} {D : BitVec 32} {n P : Nat}
 
-/-- The keystream block zeroed, and the arguments of `vg_aes_ctr32` for it. -/
+/-- The keystream block zeroed, and the arguments of `vg_aes_ctr32_to` for it. -/
 theorem tail1_ok {s : State} (he : Env Ctx St W SP s) (hR : RoundsAt s.mem W R) :
     WP isa (.block ksArgs) s fun s' =>
       s'.mem = Cmac.zero4 s.mem (w64 St + BitVec.ofNat 64 64) ∧ s'.gpr .eax = Ctx ∧
@@ -131,9 +131,9 @@ theorem tail1_ok {s : State} (he : Env Ctx St W SP s) (hR : RoundsAt s.mem W R) 
     by rw [g₂ _ (by decide) (by decide) (by decide) (by decide), he₁.esi],
     by rw [g₂ _ (by decide) (by decide) (by decide) (by decide), he₁.esp], by rw [rd₂, rd₁], by rw [wr₂, wr₁]⟩
 
-/-- `ksArgs`: the keystream block zeroed, and `vg_aes_ctr32` ready to
+/-- `ksArgs`: the keystream block zeroed, and `vg_aes_ctr32_to` ready to
 encrypt it from the counter block. -/
-theorem ksReady (hK : K = 28) {s : State} (he : Env Ctx St W SP s) (hR : RoundsAt s.mem W R) :
+theorem ksReady (hK : K = 32) {s : State} (he : Env Ctx St W SP s) (hR : RoundsAt s.mem W R) :
     WP isa (.block ksArgs) s fun s' => s'.mem = Cmac.zero4 s.mem (w64 St + BitVec.ofNat 64 64) ∧
       CtrReady Ctx St W SP R (St + BitVec.ofNat 32 48) (St + BitVec.ofNat 32 64) 1 s' ∧ s'.rd = s.rd ∧
       s'.wr = s.wr := by
@@ -159,7 +159,7 @@ theorem ksReady (hK : K = 28) {s : State} (he : Env Ctx St W SP s) (hR : RoundsA
       simp only [List.mem_singleton] at hr; subst hr; exact (L.st_w (by decide) (.inr ⟨by decide, by decide⟩)).symm)
       hR
 
-/-- The keystream block `vg_aes_ctr32` leaves for the zeroed block at `St + 64`:
+/-- The keystream block `vg_aes_ctr32_to` leaves for the zeroed block at `St + 64`:
 the cipher of the counter block, which it advances by one. -/
 theorem ksBlock_of {s₀ s₁ s₂ : State} (m₁ : s₁.mem = Cmac.zero4 s₀.mem (w64 St + BitVec.ofNat 64 64))
     (g : CtrOut Ctx St W SP R (St + BitVec.ofNat 32 48) (St + BitVec.ofNat 32 64) 1 s₁ s₂) :
@@ -205,7 +205,7 @@ structure CTail (j : Nat) (m₀ : Mem) (s : State) : Prop where
   whole : (P + j) % 16 = 0
   frame : Frame (crFrame St W SP K D n) m₀ s.mem
 
-theorem tail2 (hK : K = 28) {j : Nat} (hlt : n - j < 16) (hnz : n - j ≠ 0) {m₀ : Mem} {s₀ s₁ s₂ : State}
+theorem tail2 (hK : K = 32) {j : Nat} (hlt : n - j < 16) (hnz : n - j ≠ 0) {m₀ : Mem} {s₀ s₁ s₂ : State}
     (h : CrMid Ctx St W SP K R icb D n P m₀ j s₀) (m₁ : s₁.mem = Cmac.zero4 s₀.mem (w64 St + BitVec.ofNat 64 64))
     (rd₁ : s₁.rd = s₀.rd) (wr₁ : s₁.wr = s₀.wr)
     (g : CtrOut Ctx St W SP R (St + BitVec.ofNat 32 48) (St + BitVec.ofNat 32 64) 1 s₁ s₂) :
@@ -296,7 +296,7 @@ theorem tail3 {j : Nat} {m₀ : Mem} {s : State}
       exact h.done hc₀
     · rw [cm, e, xorBytes, h.rest]; exact t
 
-theorem cryptTail_pc (hK : K = 28) {j : Nat} (hlt : n - j < 16) :
+theorem cryptTail_pc (hK : K = 32) {j : Nat} (hlt : n - j < 16) :
     Pc (CrMid Ctx St W SP K R icb D n P · j) (cryptTail vg.callees) (CrOut Ctx St W SP K R icb D n P ·) := by
   refine Pc.seq (Q := fun m₀ s => CrMid Ctx St W SP K R icb D n P m₀ j s ∧ s.zf = some (decide (n - j = 0)))
     (Pc.taint [.ebp] (fun m₀ s h => WP.mono (test_ok L h.at_.env .eax nO (by decide) h.nO
@@ -375,7 +375,7 @@ theorem CrIn.keep {s s' : State} (h : CrIn Ctx St W SP K R D n P s) (hbp : s'.gp
   ⟨h.env.keep hbp hsi hsp hrd hwr (by rw [hm]), by rw [hm]; exact h.dO, by rw [hm]; exact h.nO,
     by rw [hm]; exact h.bO, h.nlt, h.data.of_eq hrd hwr, by rw [hm]; exact h.rounds⟩
 
-theorem crypt_pc (hK : K = 28) :
+theorem crypt_pc (hK : K = 32) :
     Pc (fun (m₀ : Mem) s => CrIn Ctx St W SP K R D n P s ∧ s.mem = m₀) (crypt vg.callees)
       (CrOut Ctx St W SP K R icb D n P ·) := by
   have hb16 : P % 16 < 16 := Nat.mod_lt _ (by decide)

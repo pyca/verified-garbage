@@ -46,7 +46,7 @@ open VG.Proof.AesGcm.X86 (w64 toNat_ofNat32 toNat_add32 slotv zero4_fold length_
 arguments of the piece running and the working space of the functions
 called) and the stack below `SP`. -/
 abbrev macR (W SP : BitVec 32) (y : Nat) : List Region :=
-  [⟨w64 W + BitVec.ofNat 64 y, 16⟩, ⟨w64 W + BitVec.ofNat 64 32, 16⟩, wC W, below SP 56]
+  [⟨w64 W + BitVec.ofNat 64 y, 16⟩, ⟨w64 W + BitVec.ofNat 64 32, 16⟩, wC W, below SP 60]
 
 theorem sub_mac {W SP : BitVec 32} {y : Nat} {r : Region} (hr : r ∈ macR W SP y) :
     ∃ r' ∈ macR W SP y, Region.Sub r r' := ⟨r, hr, fun _ h => h⟩

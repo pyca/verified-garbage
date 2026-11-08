@@ -10,7 +10,7 @@ public import VerifiedGarbage.Impl.Aes.X86.Inv
 `vg_aes_decrypt_blocks` with the same arguments (`Spec/Aes/Contract.lean`),
 cdecl: the arguments are at `[esp + 4]` … `[esp + 20]`.
 
-As `vg_aes_ctr32` (`Ctr32.lean`), two blocks at a time, with its round keys
+As `vg_aes_ctr32_to` (`Ctr32.lean`), two blocks at a time, with its round keys
 bitsliced in the scratch buffer the same way, and the callee-saved
 registers, the data pointer and the number of blocks left kept there too:
 after the round keys are bitsliced, each group of two blocks (or the last

@@ -66,13 +66,13 @@ theorem covers_nil {ts : List Region} : Covers [] ts := fun _ _ ⟨_, h, _⟩ =>
 /-! ## The layout -/
 
 /-- The regions: the context, the state and `W`, and the `K` bytes of stack
-below `SP` that the calls use (24 for `vg_ghash`, 28 for `vg_aes_ctr32`). -/
+below `SP` that the calls use (24 for `vg_ghash`, 32 for `vg_aes_ctr32_to`). -/
 structure Lay (Ctx St W SP : BitVec 32) (K : Nat) : Prop where
   fc : Ctx.toNat + 256 ≤ 2 ^ 32
   fs : St.toNat + 80 ≤ 2 ^ 32
   fw : W.toNat + 2560 ≤ 2 ^ 32
   k24 : 24 ≤ K
-  k28 : K ≤ 28
+  k32 : K ≤ 32
   sp : K ≤ SP.toNat
   cs : (⟨w64 Ctx, 256⟩ : Region).Disjoint ⟨w64 St, 80⟩
   cw : (⟨w64 Ctx, 256⟩ : Region).Disjoint ⟨w64 W, 2560⟩

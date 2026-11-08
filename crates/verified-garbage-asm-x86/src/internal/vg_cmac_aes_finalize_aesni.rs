@@ -26,10 +26,10 @@ jmp 21f
 20:
 .base64 "i1wkEItUJASLA4uK8AAAADHIiYUACAAAi0MEi4r0AAAAMciJhQQIAACLQwiLivgAAAAxyImFCAgAAItDDIuK/AAAADHIiYUMCAAA"
 21:
-.base64 "i1wkDIuFAAgAAIsLMciJhQAIAACLhQQIAACLSwQxyImFBAgAAIuFCAgAAItLCDHIiYUICAAAi4UMCAAAi0sMMciJhQwIAAC4AAAAAIkDiUMEiUMIiUMMi0QkBItMJAiJ6oHCAAgAAL8BAAAAVVdTUlFQ"
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYi0QkGIuYEAgAAIuwFAgAAIu4GAgAAIuoHAgAAMM="
+.base64 "i1wkDIuFAAgAAIsLMciJhQAIAACLhQQIAACLSwQxyImFBAgAAIuFCAgAAItLCDHIiYUICAAAi4UMCAAAi0sMMciJhQwIAAC4AAAAAIkDiUMEiUMIiUMMi0QkBItMJAiJ6oHCAAgAAL8BAAAAU1VXU1JRUA=="
+call {vg_aes_ctr32_to_aesni}
+.base64 "WFhYWFhYWItEJBiLmBAIAACLsBQIAACLuBgIAACLqBwIAADD"
 .p2align 6"#,
-        vg_aes_ctr32_aesni = sym crate::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_ctr32_to_aesni = sym crate::aes::vg_aes_ctr32_to_aesni::vg_aes_ctr32_to_aesni,
     )
 }

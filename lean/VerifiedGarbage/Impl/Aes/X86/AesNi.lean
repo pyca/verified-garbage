@@ -153,16 +153,14 @@ def restore : List Instr :=
    .mov .ebx (.mem (at_ .ebp 0)), .mov .esi (.mem (at_ .ebp 4)),
    .mov .edi (.mem (at_ .ebp 8)), .mov .ebp (.mem (at_ .ebp 12))]
 
-/-- `vg_aes_ctr32_aesni`, or out of place (`to`) `vg_aes_ctr32_to_aesni(schedule,
-rounds, counter, src, n, scratch, dst)`. -/
+/-- `vg_aes_ctr32_to_aesni(schedule, rounds, counter, src, n, scratch, dst)`
+(`to`), or the counter mode in place with six arguments, which nothing
+emits. -/
 def ctr32With (to : Bool) : Prog isa :=
   .seq (.block (prologue ++ setDst to))
     (.seq (.ite .b (.block []) (.loop (body6 to) .ae))
       (.seq (.block [.alu .test .edi (.reg .edi)])
         (.seq (.ite .e (.block []) (.loop (body1 to) .ne)) (.block (setCtr to ++ restore)))))
-
-/-- `vg_aes_ctr32_aesni`. -/
-def ctr32 : Prog isa := ctr32With false
 
 /-- `vg_aes_ctr32_to_aesni`. -/
 def ctr32To : Prog isa := ctr32With true

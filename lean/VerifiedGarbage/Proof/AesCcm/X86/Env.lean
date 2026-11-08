@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 # AES-CCM on x86: where everything is
 
 Untrusted: everything here is checked by Lean. The key schedule (240 bytes
-at `K`), the working space (2560 bytes at `W`) and the 56 bytes of stack
+at `K`), the working space (2560 bytes at `W`) and the 60 bytes of stack
 below `SP` that the calls use (`Lay`); what a state may access (`Perm`); the
 registers holding `W` and the stack pointer (`Env`); and the public values
 the entry keeps in `W` (`Slots`). The pieces write the parts of `W` in
@@ -42,10 +42,10 @@ theorem covers_of_mem {r : Region} {ts : List Region} (h : r ∈ ts) : Covers [r
 structure Lay (K W SP : BitVec 32) : Prop where
   fk : K.toNat + 240 ≤ 2 ^ 32
   fw : W.toNat + 2560 ≤ 2 ^ 32
-  sp : 56 ≤ SP.toNat
+  sp : 60 ≤ SP.toNat
   k_w : (⟨w64 K, 240⟩ : Region).Disjoint ⟨w64 W, 2560⟩
-  stk_k : (below SP 56).Disjoint ⟨w64 K, 240⟩
-  stk_w : (below SP 56).Disjoint ⟨w64 W, 2560⟩
+  stk_k : (below SP 60).Disjoint ⟨w64 K, 240⟩
+  stk_w : (below SP 60).Disjoint ⟨w64 W, 2560⟩
 
 /-- What a state may access. -/
 structure Perm (K W : BitVec 32) (s : State) : Prop where
@@ -87,7 +87,7 @@ theorem k_w' {a n d k : Nat} (ha : a + n ≤ 240) (hd : d + k ≤ 2560) :
     (⟨w64 K + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 d, k⟩ :=
   (L.k_w.sub_left (kSub ha)).sub_right (wSub hd)
 
-theorem stk_w' {a n : Nat} (ha : a + n ≤ 2560) : (below SP 56).Disjoint ⟨w64 W + BitVec.ofNat 64 a, n⟩ :=
+theorem stk_w' {a n : Nat} (ha : a + n ≤ 2560) : (below SP 60).Disjoint ⟨w64 W + BitVec.ofNat 64 a, n⟩ :=
   L.stk_w.sub_right (wSub ha)
 
 theorem aW {o : Nat} (ho : o < 2560) : w64 (W + BitVec.ofNat 32 o) = w64 W + BitVec.ofNat 64 o :=
@@ -122,7 +122,7 @@ structure Buf (W SP : BitVec 32) (s : State) (D : BitVec 32) (n : Nat) : Prop wh
   rd : Covers [⟨w64 D, n⟩] (s.rd ++ s.wr)
   wrap : D.toNat + n ≤ 2 ^ 32
   w : (⟨w64 D, n⟩ : Region).Disjoint ⟨w64 W, 2560⟩
-  stk : (below SP 56).Disjoint ⟨w64 D, n⟩
+  stk : (below SP 60).Disjoint ⟨w64 D, n⟩
 
 namespace Buf
 
@@ -186,7 +186,7 @@ abbrev wC (W : BitVec 32) : Region := ⟨w64 W + BitVec.ofNat 64 240, 2320⟩
 /-- What the pieces may change: those parts of `W`, the stack below `SP`
 and the data. -/
 abbrev mutR (W SP D : BitVec 32) (n : Nat) : List Region :=
-  [wA W, wO W, wT W, wC W, below SP 56, ⟨w64 D, n⟩]
+  [wA W, wO W, wT W, wC W, below SP 60, ⟨w64 D, n⟩]
 
 /-- The part of `W` at `[d, d + k)`, when it misses the parts the pieces write. -/
 theorem kept_mut {K W SP D : BitVec 32} {n : Nat} (L : Lay K W SP)

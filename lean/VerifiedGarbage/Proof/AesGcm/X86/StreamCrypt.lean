@@ -30,16 +30,16 @@ abbrev crKeeps : List (Nat × Nat) :=
 
 /-- The facts of the precondition about the public data `p` alone. -/
 structure CrPure (p : BitVec 32 × (Nat → BitVec 32)) : Prop where
-  lay : Lay (p.2 0) (p.2 2) (p.2 9) p.1 28
+  lay : Lay (p.2 0) (p.2 2) (p.2 9) p.1 32
   fd : (p.2 7).toNat + (p.2 8).toNat ≤ 2 ^ 32
   dctx : (⟨w64 (p.2 0), 256⟩ : Region).Disjoint ⟨w64 (p.2 7), (p.2 8).toNat⟩
   dst : (⟨w64 (p.2 7), (p.2 8).toNat⟩ : Region).Disjoint ⟨w64 (p.2 2), 80⟩
   dw : (⟨w64 (p.2 7), (p.2 8).toNat⟩ : Region).Disjoint ⟨w64 (p.2 9), 2560⟩
-  dstk : (below p.1 28).Disjoint ⟨w64 (p.2 7), (p.2 8).toNat⟩
+  dstk : (below p.1 32).Disjoint ⟨w64 (p.2 7), (p.2 8).toNat⟩
   r_s : (⟨w64 p.1, 4⟩ : Region).Disjoint ⟨w64 (p.2 2), 80⟩
   r_d : (⟨w64 p.1, 4⟩ : Region).Disjoint ⟨w64 (p.2 7), (p.2 8).toNat⟩
   r_w : (⟨w64 p.1, 4⟩ : Region).Disjoint ⟨w64 (p.2 9), 2560⟩
-  sp : 28 ≤ p.1.toNat
+  sp : 32 ≤ p.1.toNat
   rounds : (p.2 1).toNat = 10 ∨ (p.2 1).toNat = 12 ∨ (p.2 1).toNat = 14
 
 theorem crPure_of {p : BitVec 32 × (Nat → BitVec 32)} {s : State} (h : streamCryptPre s) (hp : pubOf 10 s = p) :

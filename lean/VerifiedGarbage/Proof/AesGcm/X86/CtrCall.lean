@@ -12,10 +12,10 @@ meta import VerifiedGarbage.TCB.X86.State
 
 
 /-!
-# AES-GCM on x86: calling `vg_aes_ctr32` from the pieces
+# AES-GCM on x86: calling `vg_aes_ctr32_to` from the pieces
 
 Untrusted: everything here is checked by Lean. The arguments of
-`vg_aes_ctr32` in their registers (`CtrReady`): the key schedule at the
+`vg_aes_ctr32_to` in their registers (`CtrReady`): the key schedule at the
 context, the rounds, a counter block `C`, `nb` blocks at `Dp` and the
 working space `W + 512`; the call and `ebp` back to `W` (`ctrW_ok`,
 `CtrOut`) and its constant time (`ctrW_ct`). The number of rounds is kept
@@ -67,10 +67,10 @@ theorem covers_pre {p : Addr} {k n : Nat} {rs : List Region} (h : Covers [⟨p, 
   have := covers_off (d := 0) (n := n) h (by omega) hk
   rwa [BitVec.add_zero] at this
 
-/-- The call of `vg_aes_ctr32` and `ebp` back to `W`. -/
+/-- The call of `vg_aes_ctr32_to` and `ebp` back to `W`. -/
 abbrev ctrW (vg : GcmImpl) : Prog isa := .seq (ctrCall vg.callees) (.block unscr)
 
-/-- Ready for `ctrW`: the arguments of `vg_aes_ctr32` in their registers. -/
+/-- Ready for `ctrW`: the arguments of `vg_aes_ctr32_to` in their registers. -/
 structure CtrReady (Ctx St W SP : BitVec 32) (R : Nat) (C Dp : BitVec 32) (nb : Nat) (s : State) : Prop where
   eax : s.gpr .eax = Ctx
   ecx : s.gpr .ecx = BitVec.ofNat 32 R
@@ -94,8 +94,8 @@ structure CtrReady (Ctx St W SP : BitVec 32) (R : Nat) (C Dp : BitVec 32) (nb : 
   kD : (⟨w64 Ctx, 256⟩ : Region).Disjoint ⟨w64 Dp, 16 * nb⟩
   sC : (⟨w64 C, 16⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 512, 2048⟩
   sD : (⟨w64 Dp, 16 * nb⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 512, 2048⟩
-  bC : (below SP 28).Disjoint ⟨w64 C, 16⟩
-  bD : (below SP 28).Disjoint ⟨w64 Dp, 16 * nb⟩
+  bC : (below SP 32).Disjoint ⟨w64 C, 16⟩
+  bD : (below SP 32).Disjoint ⟨w64 Dp, 16 * nb⟩
   pC : (keptR W).Disjoint ⟨w64 C, 16⟩
   pD : (keptR W).Disjoint ⟨w64 Dp, 16 * nb⟩
 
@@ -103,7 +103,7 @@ structure CtrReady (Ctx St W SP : BitVec 32) (R : Nat) (C Dp : BitVec 32) (nb : 
 structure CtrOut (Ctx St W SP : BitVec 32) (R : Nat) (C Dp : BitVec 32) (nb : Nat) (s s' : State) : Prop where
   env : Env Ctx St W SP s'
   rounds : RoundsAt s'.mem W R
-  frame : Frame [⟨w64 C, 16⟩, ⟨w64 Dp, 16 * nb⟩, ⟨w64 W + BitVec.ofNat 64 512, 2048⟩, below SP 28] s.mem s'.mem
+  frame : Frame [⟨w64 C, 16⟩, ⟨w64 Dp, 16 * nb⟩, ⟨w64 W + BitVec.ofNat 64 512, 2048⟩, below SP 32] s.mem s'.mem
   out : blocksAt s'.mem (w64 Dp) nb = ctr32 (ciphOf s.mem Ctx R) (blockAt s.mem (w64 C)) (blocksAt s.mem (w64 Dp) nb)
   ctr : blockAt s'.mem (w64 C) = Nat.repeat Spec.Gcm.inc32 nb (blockAt s.mem (w64 C))
   ebx : s'.gpr .ebx = s.gpr .ebx
@@ -112,14 +112,14 @@ structure CtrOut (Ctx St W SP : BitVec 32) (R : Nat) (C Dp : BitVec 32) (nb : Na
   wr : s'.wr = s.wr
 
 section
-variable {Ctx St W SP : BitVec 32} {K : Nat} (L : Lay Ctx St W SP K) (hK : K = 28)
+variable {Ctx St W SP : BitVec 32} {K : Nat} (L : Lay Ctx St W SP K) (hK : K = 32)
 include L hK
 
 theorem CtrReady.call {R : Nat} {C Dp : BitVec 32} {nb : Nat} {s : State}
     (h : CtrReady Ctx St W SP R C Dp nb s) :
     CtrCall s Ctx C Dp (W + BitVec.ofNat 32 512) R nb := by
   have eS := L.aW (o := 512) (by decide)
-  have hsp : below (s.gpr .esp) 28 = below SP 28 := by rw [h.esp]
+  have hsp : below (s.gpr .esp) 32 = below SP 32 := by rw [h.esp]
   refine ⟨h.eax, h.ecx, h.edx, h.ebx, h.edi, h.ebp, h.rounds.2, by rw [h.esp]; have := L.sp; omega,
     h.kC.sub_left (Region.sub_prefix (by decide)), h.kD.sub_left (Region.sub_prefix (by decide)), ?_, h.cd,
     by rw [eS]; exact h.sC, by rw [eS]; exact h.sD, by rw [hsp]; subst hK; exact L.kc.sub_right (Region.sub_prefix (by decide)),
@@ -133,7 +133,7 @@ theorem CtrReady.call {R : Nat} {C Dp : BitVec 32} {nb : Nat} {s : State}
 
 theorem CtrReady.kept {R : Nat} {C Dp : BitVec 32} {nb : Nat} {s : State}
     (h : CtrReady Ctx St W SP R C Dp nb s) :
-    ∀ r ∈ [(⟨w64 C, 16⟩ : Region), ⟨w64 Dp, 16 * nb⟩, ⟨w64 W + BitVec.ofNat 64 512, 2048⟩, below SP 28],
+    ∀ r ∈ [(⟨w64 C, 16⟩ : Region), ⟨w64 Dp, 16 * nb⟩, ⟨w64 W + BitVec.ofNat 64 512, 2048⟩, below SP 32],
       (keptR W).Disjoint r := fun r hr => by
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
@@ -148,7 +148,7 @@ theorem ctrW_ok {R : Nat} {C Dp : BitVec 32} {nb : Nat} {s : State}
   have eS := L.aW (o := 512) (by decide)
   refine WP.seq (WP.mono (ctr_call vg (h.call L hK)) fun s₁ g => ?_)
   have gf := g.frame
-  have hsp : below (s.gpr .esp) 28 = below SP 28 := by rw [h.esp]
+  have hsp : below (s.gpr .esp) 32 = below SP 32 := by rw [h.esp]
   rw [eS, hsp] at gf
   have hk := h.kept L hK
   have bp₁ : s₁.gpr .ebp = W + BitVec.ofNat 32 512 := by rw [g.saved .ebp (by decide), h.ebp]
