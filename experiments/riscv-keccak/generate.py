@@ -21,6 +21,8 @@ variants.update({"f_"+name:cache for name,cache in list(variants.items()) if not
 variants['f_parity']=[]
 variants['f_dparity']=[]
 variants.update({'f_leaf_'+n:variants['f_'+n] for n in ('memory','row0','row2','parity','dparity')})
+variants['f_row4parity'] = list(range(20,25))
+variants['f_leaf_row4parity'] = list(range(20,25))
 def core(name,cache):
  dparity=name.endswith('dparity')
  reg=lambda r:('d_' if dparity and r in ['.a2','.a3','.a4','.a5','.a6'] else 'r_')+r.lstrip('.')
@@ -59,6 +61,9 @@ def core(name,cache):
  first('b','a');lines.append('r_t0 ^= rc[k+1];');rest('b','a')
  lines+=['}']+[f'a[{i}]=c_a_{i};' for i in cache]+['}']
  text='\n'.join(lines)
+ if name.endswith('row4parity'):
+  for i in cache:
+   text=text.replace(f'uint64_t c_b_{i};','').replace(f'c_b_{i}',f'c_a_{i}')
  if name.startswith(('v_', 'f_')):text=text.replace('uint64_t *restrict a, uint64_t *restrict b','volatile uint64_t *restrict a, volatile uint64_t *restrict b')
  if name.startswith('f_'):
   text=text.replace('__attribute__((noinline)) void', 'static __attribute__((always_inline)) inline void')
