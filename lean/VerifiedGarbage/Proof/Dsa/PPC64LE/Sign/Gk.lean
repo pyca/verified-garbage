@@ -12,7 +12,7 @@ public import VerifiedGarbage.Proof.Dsa.PPC64LE.Comb.Pow
 /-!
 # DSA signing on PPC64LE: `g^k mod p`
 
-`gk_ok`: in the P space with p in array 0 and `R² mod p` in array 8, `g^k mod
+`gk_ok`: in the P space with p in array 0 and `R² mod p` in array 24, `g^k mod
 p` (k the nonce's `q_len` octets) to the buffer's first `p_len` octets.
 -/
 
@@ -35,11 +35,11 @@ only in the P space's arrays 1–7 and the buffer's first `p_len` octets. -/
 theorem gk_ok {s : State} {L : Lay} {key nonce dig : Addr} {p : Nat} (hL : L.Ok) (hs : ScrL s L)
     (hr : Regs s L key nonce dig) (hin : InP s L) (hk : Src s L key (3 * L.pl + 2 * L.ql))
     (hn : Src s L nonce L.ql)
-    (hp0 : arrP s.mem L 0 = p) (hp : 2 ≤ p) (hpo : p % 2 = 1) (hrr : arrP s.mem L 8 = 2 ^ (128 * L.wp) % p) :
+    (hp0 : arrP s.mem L 0 = p) (hp : 2 ≤ p) (hpo : p % 2 = 1) (hrr : arrP s.mem L 24 = 2 ^ (128 * L.wp) % p) :
     WP isa gk s fun t =>
       (Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem L.Buf L.pl) = gOf s.mem L key ^ kOf s.mem L nonce % p ∧
         InP t L ∧ Body L s.mem t.mem ∧ Outside L.Q 1600 (2 ^ 64 - 1600) s.mem t.mem ∧
-        arrP t.mem L 0 = arrP s.mem L 0 ∧ arrP t.mem L 8 = arrP s.mem L 8 ∧
+        arrP t.mem L 0 = arrP s.mem L 0 ∧ arrP t.mem L 24 = arrP s.mem L 24 ∧
         word t.mem L.S (slot L.wp 0 + 8 * L.wp) = word s.mem L.S (slot L.wp 0 + 8 * L.wp)) ∧
         Keep gkRegs s t := by
   have hZ := hL.z256
@@ -51,7 +51,7 @@ theorem gk_ok {s : State} {L : Lay} {key nonce dig : Addr} {p : Nat} (hL : L.Ok)
   have hbe := hL.buf_end
   have hqZ : L.qOff + 1600 ≤ L.Z := by simp only [Lay.bOff] at hbe; omega_arith
   have e0 := Lay.slot_eq L.wp 0; have e1 := Lay.slot_eq L.wp 1; have e4 := Lay.slot_eq L.wp 4
-  have e8 := Lay.slot_eq L.wp 8; have e9 := Lay.slot_eq L.wp 9; have e28 := Lay.slot_eq L.wp 28
+  have e8 := Lay.slot_eq L.wp 8; have e24 := Lay.slot_eq L.wp 24; have e9 := Lay.slot_eq L.wp 9; have e28 := Lay.slot_eq L.wp 28
   have hq28 : L.qOff = slot L.wp 28 := rfl
   unfold gk
   -- The pointers: the nonce into `r24`, g's octets into `r12`.
@@ -101,7 +101,7 @@ theorem gk_ok {s : State} {L : Lay} {key nonce dig : Addr} {p : Nat} (hL : L.Ok)
   · rw [vt, read_low (w := L.wp) _ _ (by omega_arith) (by rw [v4']; exact Nat.lt_trans (Nat.mod_lt _ (by omega_arith)) hplt), v4']
   · show val32 t.mem L.S (slot L.wp 0) (2 * L.wp) = val32 s.mem L.S (slot L.wp 0) (2 * L.wp)
     rw [Outside.val32 oP (by omega_arith) (by omega_arith), Outside.val32 o3 (by omega_arith) (by omega_arith)]
-  · show val32 t.mem L.S (slot L.wp 8) (2 * L.wp) = val32 s.mem L.S (slot L.wp 8) (2 * L.wp)
+  · show val32 t.mem L.S (slot L.wp 24) (2 * L.wp) = val32 s.mem L.S (slot L.wp 24) (2 * L.wp)
     rw [Outside.val32 oP (by omega_arith) (by omega_arith), Outside.val32 o3 (by omega_arith) (by omega_arith)]
   · rw [Outside.word oP (by omega_arith) (by omega_arith), Outside.word o3 (by omega_arith) (by omega_arith)]
 
