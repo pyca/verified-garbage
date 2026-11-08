@@ -1043,7 +1043,7 @@ theorem XS.frame_slot {k : Nat} {s s' : State} (hs : XS m₀ S D n g ks s₄ k s
 theorem q_ne_t1 : ∀ c < 8, q c ≠ t1 := by decide
 
 theorem xorPhase_wp {b : Addr} {s₃ : State} (hp : XPre to m₀ S D b n g ks s₃) :
-    WP isa (.seq (.block (dstLoad to ++ [.alu .cmp .r8 (.imm 4)])) (.ite .ae (.block (xorFullG to)) (xorTailG to)))
+    WP isa (.seq (.block (dstLoad to ++ ([.alu .cmp .r8 (.imm 4)] : List Instr))) (.ite .ae (.block (xorFullG to)) (xorTailG to)))
       s₃ (XDone to m₀ S D b n g ks s₃) := by
   have hg := hp.hg
   have hn := hp.hn

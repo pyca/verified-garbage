@@ -387,7 +387,7 @@ theorem xmm_block : ∀ {is : List Instr} {s t : State}, is.all (fun i => !KeepR
     simp only [List.all_cons, Bool.and_eq_true, Bool.not_eq_eq_eq_not, Bool.not_true] at hi
     rw [runBlock_cons] at he
     cases hs : exec i s with
-    | none => simp [hs, runStep] at he
+    | none => rw [hs] at he; cases he
     | some u =>
       rw [hs, runStep_some] at he
       exact (xmm_block hi.2 he).trans (KeepReg.exec_xmm hi.1 hs)
@@ -929,7 +929,7 @@ theorem ctr32To_ct : ConstantTime isa AesNi.ctr32ToX86_64.pre AesNi.ctr32ToX86_6
   refine ⟨⟨fun r hr => ?_, fun h => by cases h⟩, fun _ => ?_, τTo_wf h₁, τTo_wf h₂, ?_, ?_, ?_,
     VG.X86_64.Taint.noXr⟩
   · simp only [τTo, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> assumption
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
   · rw [h₁.2.1, h₂.2.1, p3, p5, p6, p7]
   · intro sl h; simp [τTo] at h
   · intro sl h; simp [τTo] at h
