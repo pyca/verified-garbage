@@ -8,79 +8,15 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # ML-DSA's vector NTT on PPC64LE: vectors of coefficients in memory
 
-`lxvd2x` puts the word at `a + 4·(e XOR 1)` in lane `e` (`vword_load`), and
-`stxvd2x` writes lane `e` there (`readW_store`). -/
+Coefficients `j … j+3` loaded by `lxvd2x` (`vword_loadC`) and stored by
+`stxvd2x` (`coeffAt_store`), from the order of `vword_load` and
+`readW_store` (`Proof/Framework/PPC64LE/VWords.lean`). -/
 
 @[expose] public section
 
 namespace VG.Proof.MlDsa.PPC64LE.VNtt
 
 open VG VG.PPC64LE
-
-/-- Bit `i` of a little-endian read is bit `i % 8` of byte `i / 8`. -/
-theorem getLsbD_read (m : Mem) (a : Addr) {n i : Nat} (hi : i < 8 * n) :
-    (m.read a n).getLsbD i = (m (a + BitVec.ofNat 64 (i / 8))).getLsbD (i % 8) := by
-  have h := congrArg (BitVec.getLsbD · (i % 8)) (Mem.extractLsb'_read m a (n := n) (j := i / 8) (by omega))
-  simp only [BitVec.getLsbD_extractLsb', show i % 8 < 8 by omega, decide_true, Bool.true_and] at h
-  rw [← h]
-  exact congrArg _ (by omega)
-
-/-- Bytes `k … k + l` of a read. -/
-theorem read_extract (m : Mem) (a : Addr) {n k l : Nat} (h : k + l ≤ n) :
-    (m.read a n).extractLsb' (8 * k) (8 * l) = m.read (a + BitVec.ofNat 64 k) l := by
-  apply BitVec.eq_of_getLsbD_eq
-  intro r hr
-  rw [BitVec.getLsbD_extractLsb', decide_eq_true hr, Bool.true_and, getLsbD_read _ _ (by omega),
-    getLsbD_read _ _ hr, BitVec.add_assoc, ← BitVec.ofNat_add, show (8 * k + r) / 8 = k + r / 8 by omega,
-    show (8 * k + r) % 8 = r % 8 by omega]
-
-
-theorem getLsbD_swap (x : BitVec 128) {p : Nat} (hp : p < 128) :
-    (swapDwords x).getLsbD p = x.getLsbD (if p < 64 then p + 64 else p - 64) := by
-  simp only [swapDwords, vdword, BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
-  by_cases h : p < 64
-  · simp only [h, ite_true, decide_true, Bool.true_and]; exact congrArg _ (by omega)
-  · simp only [h, ite_false, show p - 64 < 64 by omega, decide_true, Bool.true_and]; exact congrArg _ (by omega)
-
-theorem xor1_lt {e : Nat} (he : e < 4) : e ^^^ 1 < 4 := by
-  rcases (by omega : e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3) with rfl | rfl | rfl | rfl <;> decide
-
-/-- Lane `e` of `swapDwords x` is word `e XOR 1` of `x` from its low end. -/
-theorem vword_swap (x : BitVec 128) {e : Nat} (he : e < 4) :
-    vword (swapDwords x) e = x.extractLsb' (32 * (e ^^^ 1)) 32 := by
-  apply BitVec.eq_of_getLsbD_eq
-  intro r hr
-  simp only [vword, BitVec.getLsbD_extractLsb', hr, decide_true, Bool.true_and]
-  rw [getLsbD_swap _ (by omega)]
-  rcases (by omega : e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3) with rfl | rfl | rfl | rfl <;>
-  · simp only [Nat.reduceXor]
-    split <;> first | omega | exact congrArg _ (by omega)
-
-/-- Lane `e` of a `lxvd2x` of `[a, a + 16)`. -/
-theorem vword_load (m : Mem) (a : Addr) {e : Nat} (he : e < 4) :
-    vword (swapDwords (m.read a 16)) e = m.readW (a + BitVec.ofNat 64 (4 * (e ^^^ 1))) 32 := by
-  have hk := xor1_lt he
-  rw [vword_swap _ he, show 32 * (e ^^^ 1) = 8 * (4 * (e ^^^ 1)) by omega,
-    read_extract m a (n := 16) (k := 4 * (e ^^^ 1)) (l := 4) (by omega)]
-  simp only [Mem.readW, BitVec.setWidth_eq]
-
-/-- The word at `a + 4k` after a `stxvd2x` of `v` to `[a, a + 16)`. -/
-theorem readW_store (m : Mem) (a : Addr) (v : BitVec 128) {k : Nat} (hk : k < 4) :
-    (m.write a 16 (swapDwords v)).readW (a + BitVec.ofNat 64 (4 * k)) 32 = vword v (k ^^^ 1) := by
-  apply BitVec.eq_of_getLsbD_eq
-  intro r hr
-  simp only [Mem.readW, BitVec.setWidth_eq]
-  rw [getLsbD_read _ _ (by omega)]
-  simp only [Mem.write]
-  rw [show a + BitVec.ofNat 64 (4 * k) + BitVec.ofNat 64 (r / 8) - a = BitVec.ofNat 64 (4 * k + r / 8) by
-    rw [BitVec.add_assoc, ← BitVec.ofNat_add, Offset.add_sub_cancel_left]]
-  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  simp only [show 4 * k + r / 8 < 16 by omega, ite_true, BitVec.getLsbD_extractLsb', show r % 8 < 8 by omega,
-    decide_true, Bool.true_and, vword, hr]
-  rw [getLsbD_swap _ (by omega)]
-  rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl <;>
-  · simp only [Nat.reduceXor]
-    split <;> first | omega | exact congrArg _ (by omega)
 
 /-! ## Coefficients -/
 
@@ -107,9 +43,6 @@ theorem coeffAt_store (m : Mem) (p : Addr) {j : Nat} (hj : j + 4 ≤ 256) (v : B
       simp only [Mem.writeW, BitVec.setWidth_eq]
     rw [hw]
     exact Mem.readW_writeW_sep (Offset.sep p (by omega) (by omega) (by omega)) (by decide)
-
-theorem xor1_xor1 (e : Nat) : (e ^^^ 1) ^^^ 1 = e := by
-  rw [Nat.xor_assoc, Nat.xor_self, Nat.xor_zero]
 
 theorem vector_contains (p : Addr) {j : Nat} (hj : j + 4 ≤ 256) :
     (polyRegion p).Contains (coeffAddr p j) 16 := Offset.contains_base p (by omega) (by omega)
