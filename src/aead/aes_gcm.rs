@@ -62,7 +62,9 @@ use crate::error::InvalidKeyLength;
 use crate::zeroize::zeroize;
 #[cfg(not(target_arch = "x86_64"))]
 use crate::zeroize::zeroize_raw;
+use core::cell::UnsafeCell;
 use core::mem::MaybeUninit;
+use core::sync::atomic::{AtomicU8, Ordering};
 
 /// A 16-byte block.
 type Block = [u8; 16];
@@ -194,9 +196,56 @@ struct Fns {
     stream_verify: verified_fn!((*const [u64; 32], usize, *mut [u64; 10], u64, u64, *const u8, usize) -> u32),
 }
 
+/// The implementations every key calls (`Fns::get`): `fns`, once `state` is
+/// `READY`.
+struct Selected {
+    state: AtomicU8,
+    fns: UnsafeCell<MaybeUninit<Fns>>,
+}
+
+// SAFETY: `fns` is written only by the one thread that moves `state` from
+// `UNSET` to `WRITING`, before it stores `READY` (`Release`), and read only
+// after a load of `READY` (`Acquire`).
+unsafe impl Sync for Selected {}
+
+const UNSET: u8 = 0;
+const WRITING: u8 = 1;
+const READY: u8 = 2;
+
+static SELECTED: Selected = Selected {
+    state: AtomicU8::new(UNSET),
+    fns: UnsafeCell::new(MaybeUninit::uninit()),
+};
+
 impl Fns {
-    /// The implementations of each function that this CPU runs.
+    /// The implementations this CPU runs, selected by the first call in the
+    /// process; a call that comes while another selects them waits for it.
     #[inline]
+    fn get() -> &'static Fns {
+        loop {
+            let state = SELECTED.state.load(Ordering::Acquire);
+            if state == READY {
+                // SAFETY: `state` is `READY`, so `fns` was written (as in
+                // `Selected`'s `Sync`) and is never written again.
+                return unsafe { (*SELECTED.fns.get()).assume_init_ref() };
+            }
+            if state == UNSET
+                && SELECTED
+                    .state
+                    .compare_exchange(UNSET, WRITING, Ordering::Relaxed, Ordering::Relaxed)
+                    .is_ok()
+            {
+                // SAFETY: this thread moved `state` to `WRITING`, so it is
+                // the only one that writes `fns`, and none reads it yet.
+                unsafe { (*SELECTED.fns.get()).write(Fns::select()) };
+                SELECTED.state.store(READY, Ordering::Release);
+            }
+            core::hint::spin_loop();
+        }
+    }
+
+    /// The implementations of each function that this CPU runs.
+    #[cold]
     fn select() -> Fns {
         Fns {
             #[cfg(target_arch = "x86_64")]
@@ -330,7 +379,7 @@ pub struct AesGcm {
     ctx: CacheAligned<MaybeUninit<KeyCtx>>,
     rounds: usize,
     /// The implementations it calls for each message.
-    fns: Fns,
+    fns: &'static Fns,
     /// On AArch64, the powers of the hash subkey that `new` stores
     /// (`VG.Spec.Gcm.Powers8Repr`).
     #[cfg(target_arch = "aarch64")]
@@ -372,7 +421,7 @@ impl AesGcm {
         let mut k = AesGcm {
             ctx: CacheAligned(MaybeUninit::uninit()),
             rounds: key.len() / 4 + 6,
-            fns: Fns::select(),
+            fns: Fns::get(),
             #[cfg(target_arch = "aarch64")]
             powers: CacheAligned([0; size_of::<Powers>() / 8]),
         };
