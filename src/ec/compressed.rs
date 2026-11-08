@@ -22,12 +22,12 @@ macro_rules! codec {
             pub fn compress_public_key(public: &[u8; 2 * $len + 1]) -> Option<[u8; $len + 1]> {
                 use crate::arch::dispatch::$module::$compress;
                 let mut out = [0; $len + 1];
-                let mut ws = [0u64; 1024];
+                let mut ws = $crate::align::CacheAligned([0u64; 1024]);
                 // SAFETY: all three arrays have the contract's lengths and
                 // occupy separate Rust objects. Their ranges cannot wrap or
                 // overlap the return address. The dispatcher calls only an
                 // implementation the CPU has the features of.
-                let ok = unsafe { $compress(&mut out, public, &mut ws) };
+                let ok = unsafe { $compress(&mut out, public, &mut ws.0) };
                 (ok == 1).then_some(out)
             }
 
@@ -39,12 +39,12 @@ macro_rules! codec {
             pub fn decompress_public_key(public: &[u8; $len + 1]) -> Option<[u8; 2 * $len + 1]> {
                 use crate::arch::dispatch::$module::$decompress;
                 let mut out = [0; 2 * $len + 1];
-                let mut ws = [0u64; 1024];
+                let mut ws = $crate::align::CacheAligned([0u64; 1024]);
                 // SAFETY: all three arrays have the contract's lengths and
                 // occupy separate Rust objects. Their ranges cannot wrap or
                 // overlap the return address. The dispatcher calls only an
                 // implementation the CPU has the features of.
-                let ok = unsafe { $decompress(&mut out, public, &mut ws) };
+                let ok = unsafe { $decompress(&mut out, public, &mut ws.0) };
                 (ok == 1).then_some(out)
             }
         }

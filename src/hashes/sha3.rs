@@ -19,6 +19,7 @@
     target_arch = "riscv64"
 ))]
 
+use crate::align::CacheAligned;
 use crate::arch::dispatch::sha3::{
     vg_sha3_224_finalize_auto, vg_sha3_224_update_auto, vg_sha3_256_finalize_auto,
     vg_sha3_256_update_auto, vg_sha3_384_finalize_auto, vg_sha3_384_update_auto,
@@ -37,7 +38,7 @@ struct Scratch(MaybeUninit<[u64; 80]>);
 /// `update` returned (the message's length modulo the rate, less than it).
 #[derive(Clone)]
 struct Absorbing {
-    state: [u64; 25],
+    state: CacheAligned<[u64; 25]>,
     pos: usize,
 }
 
@@ -45,7 +46,7 @@ impl Absorbing {
     /// The empty message: the all-zero state, at position 0.
     const fn new() -> Self {
         Absorbing {
-            state: [0; 25],
+            state: CacheAligned([0; 25]),
             pos: 0,
         }
     }
@@ -53,7 +54,7 @@ impl Absorbing {
 
 impl Drop for Absorbing {
     fn drop(&mut self) {
-        crate::zeroize::zeroize(&mut self.state);
+        crate::zeroize::zeroize(&mut self.state.0);
     }
 }
 
@@ -62,13 +63,13 @@ impl Drop for Absorbing {
 /// `state` gives the rest of the output.
 #[derive(Clone)]
 struct Squeezing {
-    state: [u64; 25],
+    state: CacheAligned<[u64; 25]>,
     pos: usize,
 }
 
 impl Drop for Squeezing {
     fn drop(&mut self) {
-        crate::zeroize::zeroize(&mut self.state);
+        crate::zeroize::zeroize(&mut self.state.0);
     }
 }
 
@@ -92,7 +93,7 @@ macro_rules! absorb {
         // only an implementation the CPU has the features of.
         s.pos = unsafe {
             $update(
-                &mut s.state,
+                &mut s.state.0,
                 s.pos,
                 data.as_ptr(),
                 data.len(),
@@ -147,7 +148,7 @@ macro_rules! sha3 {
                 // 200 bytes and `digest` for writes of its size, distinct
                 // objects. The dispatcher calls only an implementation the
                 // CPU has the features of.
-                unsafe { $finalize(&mut self.0.state, self.0.pos, &mut digest) };
+                unsafe { $finalize(&mut self.0.state.0, self.0.pos, &mut digest) };
                 digest
             }
 
@@ -209,7 +210,7 @@ macro_rules! shake {
                 // each other or the stack below the stack pointer. The
                 // dispatcher calls only an implementation the CPU has the
                 // features of.
-                s.pos = unsafe { $squeeze(&mut s.state, s.pos, out.as_mut_ptr(), out.len()) };
+                s.pos = unsafe { $squeeze(&mut s.state.0, s.pos, out.as_mut_ptr(), out.len()) };
             }
         }
 
@@ -242,7 +243,7 @@ macro_rules! shake {
                 // `state` is valid for reads and writes of 200 bytes. The
                 // dispatcher calls only an implementation the CPU has the
                 // features of.
-                unsafe { $finalize(&mut state, self.0.pos) };
+                unsafe { $finalize(&mut state.0, self.0.pos) };
                 // From position 0, the padded state gives the output from its
                 // first byte on.
                 $reader(Squeezing { state, pos: 0 })

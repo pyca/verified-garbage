@@ -10,6 +10,7 @@
     target_arch = "riscv64"
 ))]
 
+use crate::align::CacheAligned;
 use crate::arch::blowfish::vg_blowfish_expand_key;
 use crate::arch::blowfish_cfb::{
     vg_blowfish_cfb64_decrypt, vg_blowfish_cfb64_decrypt_final, vg_blowfish_cfb64_encrypt,
@@ -21,7 +22,7 @@ use crate::zeroize::zeroize;
 /// An expanded Blowfish key.
 struct Key {
     /// The schedule `vg_blowfish_expand_key` writes.
-    schedule: [u8; 4168],
+    schedule: CacheAligned<[u8; 4168]>,
 }
 
 /// A Blowfish-CFB64 encryption of one message.
@@ -174,10 +175,10 @@ impl Key {
         if !(4..=56).contains(&key.len()) {
             return Err(InvalidKeyLength);
         }
-        let mut schedule = [0; 4168];
+        let mut schedule = CacheAligned([0; 4168]);
         // SAFETY: the key has a length in 4..=56; the key and the schedule
         // are separate valid objects of the lengths passed.
-        unsafe { vg_blowfish_expand_key(key.as_ptr(), key.len(), &mut schedule) };
+        unsafe { vg_blowfish_expand_key(key.as_ptr(), key.len(), &mut schedule.0) };
         Ok(Self { schedule })
     }
 
@@ -203,7 +204,7 @@ impl Key {
         // the callee's stack.
         unsafe {
             f(
-                &self.schedule,
+                &self.schedule.0,
                 iv,
                 blocks.as_mut_ptr().cast(),
                 blocks.len() / 8,
@@ -230,12 +231,12 @@ impl Key {
         // SAFETY: `buffer` is valid for `len` bytes, and it, the block
         // at `iv` and the schedule are separate valid objects of the sizes of
         // the signature, none of them on the callee's stack.
-        unsafe { f(&self.schedule, iv, buffer.as_mut_ptr(), buffer.len()) };
+        unsafe { f(&self.schedule.0, iv, buffer.as_mut_ptr(), buffer.len()) };
     }
 }
 
 impl Drop for Key {
     fn drop(&mut self) {
-        zeroize(&mut self.schedule);
+        zeroize(&mut self.schedule.0);
     }
 }
