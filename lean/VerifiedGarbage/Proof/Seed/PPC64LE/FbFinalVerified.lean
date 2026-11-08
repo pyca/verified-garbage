@@ -93,7 +93,7 @@ theorem seqPre_of {post : State → State → Prop} {s : State} (h : (finalContr
   have eV : ivR s (dirCore .encrypt) = ⟨s.gpr .r4, 16⟩ := rfl
   have eD : Proof.Modes.PPC64LE.dataRegion (s.gpr .r5) byteMode.step (s.gpr .r6).toNat =
       ⟨s.gpr .r5, (s.gpr .r6).toNat⟩ := by simp [byteMode]
-  refine ⟨⟨by rw [hwr]; simp [dirCore, bufSlot], fS⟩, by rw [eV, hwr]; simp, fun _ => by rw [eV, hwr]; simp,
+  refine ⟨⟨by rw [hwr]; simp [core, bufSlot], fS⟩, by rw [eV, hwr]; simp, fun _ => by rw [eV, hwr]; simp,
     by rw [eB]; exact fV, by rw [eD, hwr]; simp, by simp only [byteMode, Nat.one_mul]; exact fD,
     by rw [eD, eS]; exact dDS, by rw [eV, eS]; exact dVS, fun _ => by rw [eV, eD]; exact dVD,
     ⟨by decide, by rw [eB]; decide⟩, (dirCoreSpec .encrypt).layout⟩
@@ -123,7 +123,7 @@ theorem cfbDecryptFinal_correct (s : State) (hs : (finalContract decPost).pre s)
 
 theorem final_agree {post : State → State → Prop} (s₁ s₂ : State)
     (h₁ : (finalContract post).pre s₁) (h₂ : (finalContract post).pre s₂) (hp : modePub s₁ s₂) :
-    SlotTaint.Agree modeTaint s₁ s₂ := by
+    SlotTaint.Agree (modeTaint 144) s₁ s₂ := by
   obtain ⟨-, hw₁, -, -, -, dVD, dVS, dDS, fV, fD, fS⟩ := h₁
   obtain ⟨-, hw₂, -⟩ := h₂
   obtain ⟨hsp, hr⟩ := hp
@@ -155,11 +155,11 @@ theorem final_agree {post : State → State → Prop} (s₁ s₂ : State)
 
 theorem cfbEncryptFinal_constantTime {post : State → State → Prop} :
     ConstantTime isa (finalContract post).pre modePub cfbEncryptFinal :=
-  VG.Taint.constantTime_of_exists (A := slotTaint) modeTaint final_agree (by taint_decide_sum [encryptSum])
+  VG.Taint.constantTime_of_exists (A := slotTaint) (modeTaint 144) final_agree (by taint_decide_sum [encryptSum])
 
 theorem cfbDecryptFinal_constantTime {post : State → State → Prop} :
     ConstantTime isa (finalContract post).pre modePub cfbDecryptFinal :=
-  VG.Taint.constantTime_of_exists (A := slotTaint) modeTaint final_agree (by taint_decide_sum [encryptSum])
+  VG.Taint.constantTime_of_exists (A := slotTaint) (modeTaint 144) final_agree (by taint_decide_sum [encryptSum])
 
 /-! ## The contracts -/
 
@@ -234,7 +234,7 @@ theorem ofbFinal_correct (s : State) (hs : (finalContract ofbPost).pre s) :
 
 theorem ofbFinal_constantTime {post : State → State → Prop} :
     ConstantTime isa (finalContract post).pre modePub ofbFinal :=
-  VG.Taint.constantTime_of_exists (A := slotTaint) modeTaint final_agree (by taint_decide_sum [encryptSum])
+  VG.Taint.constantTime_of_exists (A := slotTaint) (modeTaint 144) final_agree (by taint_decide_sum [encryptSum])
 
 /-- The final OFB function's contract with the working space as an argument. -/
 abbrev ofbScratch : Contract isa :=

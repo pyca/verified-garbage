@@ -19,19 +19,22 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 /-!
 # SEED's core for the modes on PPC64LE
 
-`dirCoreSpec d`: SEED's core for the direction `d`
-(`Impl.Seed.PPC64LE.dirCore d`) meets what the modes need of a core
+`coreSpec d g`: SEED's core for the direction `d` on `g ≤ 16` blocks
+(`Impl.Seed.PPC64LE.core d g`) meets what the modes need of a core
 (`Proof.Modes.PPC64LE.CoreSpec`), with the key a schedule, read in place
 through `r3`, its cipher `Proof.Seed.dirCipher d`. The schedule is
 readable and apart from the regions the mode writes (`KeyArgs`), and from
 the scratch buffer (`Ready`), so nothing the mode or the core writes changes
 it.
 
-The core (`crypt_ok`) calls the blocks function on the buffer's block
+The core (`crypt_ok`) calls the blocks function on the buffer's blocks
 (`WP.call`, with ECB's code, `blocks_correct`), which restores the
 callee-saved registers, and leaves the working space's address in `r8` and
 the key pointer at the first round's key (`EcbPost`), from which the core
 takes `sb` and `r3` back.
+
+`dirCoreSpec d` and `wideCoreSpec d` are those of `dirCore d` and
+`wideCore d`, of one and sixteen blocks.
 -/
 
 @[expose] public section
@@ -50,9 +53,10 @@ abbrev keyR (s : State) : Region := ⟨s.gpr .r3, 128⟩
 def KeyArgs (s : State) (rs : List Region) (k : Spec.Seed.Schedule) : Prop :=
   Spec.Seed.scheduleAt s.mem (s.gpr .r3) = k ∧ keyR s ∈ s.rd ∧ ∀ r ∈ rs, (keyR s).Disjoint r
 
-/-- The key's arguments, apart from the scratch buffer at `B` too. -/
-def Ready (s : State) (B : Addr) (ws : List Region) (k : Spec.Seed.Schedule) : Prop :=
-  KeyArgs s ws k ∧ (keyR s).Disjoint ⟨B, 8 * (bufSlot + 8)⟩
+/-- The key's arguments, apart from the scratch buffer at `B`, of a core on
+`g` blocks, too. -/
+def Ready (g : Nat) (s : State) (B : Addr) (ws : List Region) (k : Spec.Seed.Schedule) : Prop :=
+  KeyArgs s ws k ∧ (keyR s).Disjoint ⟨B, 8 * (bufSlot + 2 * g + 6)⟩
 
 theorem keyArgs_congr {s s' : State} {rs : List Region} {k : Spec.Seed.Schedule} (h : KeyArgs s rs k)
     (e : s'.gpr .r3 = s.gpr .r3) (hrd : s'.rd = s.rd) (hf : Frame rs s.mem s'.mem) :
@@ -61,10 +65,10 @@ theorem keyArgs_congr {s s' : State} {rs : List Region} {k : Spec.Seed.Schedule}
   refine ⟨?_, by rw [hrd, keyR, e]; exact hin, by rw [keyR, e]; exact hd⟩
   rw [e, Proof.Seed.scheduleAt_frame hf hd, hk]
 
-theorem ready_frame {s s' : State} {B : Addr} {ws : List Region} {k : Spec.Seed.Schedule}
-    {rs : List Region} (h : Ready s B ws k) (e : s'.gpr .r3 = s.gpr .r3) (hrd : s'.rd = s.rd)
+theorem ready_frame {g : Nat} {s s' : State} {B : Addr} {ws : List Region} {k : Spec.Seed.Schedule}
+    {rs : List Region} (h : Ready g s B ws k) (e : s'.gpr .r3 = s.gpr .r3) (hrd : s'.rd = s.rd)
     (hf : Frame rs s.mem s'.mem) (hs : ∀ r ∈ rs, ∃ r' ∈ ws, Region.Sub r r') :
-    Ready s' B ws k := by
+    Ready g s' B ws k := by
   obtain ⟨⟨hk, hin, hd⟩, hB⟩ := h
   have hd' : ∀ r ∈ rs, (keyR s).Disjoint r := fun r hr => by
     obtain ⟨r', hr', hsub⟩ := hs r hr
@@ -73,22 +77,23 @@ theorem ready_frame {s s' : State} {B : Addr} {ws : List Region} {k : Spec.Seed.
   rw [e, Proof.Seed.scheduleAt_frame hf hd', hk]
 
 /-- The key stays ready through what the core writes, its slots. -/
-theorem ready_core {s s' : State} {B : Addr} {ws : List Region} {k : Spec.Seed.Schedule}
-    (h : Ready s B ws k) (e : s'.gpr .r3 = s.gpr .r3) (hrd : s'.rd = s.rd)
-    (hf : Frame [⟨B, 8 * (bufSlot + 2)⟩] s.mem s'.mem) : Ready s' B ws k := by
+theorem ready_core {g : Nat} {s s' : State} {B : Addr} {ws : List Region} {k : Spec.Seed.Schedule}
+    (h : Ready g s B ws k) (e : s'.gpr .r3 = s.gpr .r3) (hrd : s'.rd = s.rd)
+    (hf : Frame [⟨B, 8 * (bufSlot + 2 * g)⟩] s.mem s'.mem) : Ready g s' B ws k := by
   obtain ⟨⟨hk, hin, hd⟩, hB⟩ := h
   refine ⟨⟨?_, by rw [hrd, keyR, e]; exact hin, by rw [keyR, e]; exact hd⟩, by rw [keyR, e]; exact hB⟩
   rw [e, Proof.Seed.scheduleAt_frame hf fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact hB.sub_right (Region.sub_prefix (by omega_arith)), hk]
 
-theorem layout (d : Direction) : Layout (dirCore d) :=
-  ⟨by cases d <;> decide, .inr rfl, by cases d <;> decide, by cases d <;> decide, by cases d <;> decide⟩
+theorem layout (d : Direction) {g : Nat} (hg : 0 < g ∧ g ≤ 16) : Layout (core d g) :=
+  ⟨hg.1, .inr rfl, by simp only [core]; omega, by simp only [core]; omega,
+    by simp only [core, bufSlot]; omega⟩
 
-theorem prepare_wp (d : Direction) {s : State} {B : Addr} {rs : List Region} {k : Spec.Seed.Schedule}
-    (hB : s.gpr .r5 = B) (_hS : ScrIn s B (dirCore d).total)
-    (hm : (⟨B, 8 * (dirCore d).total⟩ : Region) ∈ rs) (hk : KeyArgs s rs k) :
-    WP isa (dirCore d).prepare s fun s' => Ready s' B rs k ∧ s'.gpr .r5 = B ∧
-      (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧ Frame [coreRegion (dirCore d) B] s.mem s'.mem ∧
+theorem prepare_wp (d : Direction) {g : Nat} {s : State} {B : Addr} {rs : List Region} {k : Spec.Seed.Schedule}
+    (hB : s.gpr .r5 = B) (_hS : ScrIn s B (core d g).total)
+    (hm : (⟨B, 8 * (core d g).total⟩ : Region) ∈ rs) (hk : KeyArgs s rs k) :
+    WP isa (core d g).prepare s fun s' => Ready g s' B rs k ∧ s'.gpr .r5 = B ∧
+      (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧ Frame [coreRegion (core d g) B] s.mem s'.mem ∧
       s'.rd = s.rd ∧ s'.wr = s.wr :=
   wp_nil ⟨⟨hk, hk.2.2 _ hm⟩, hB, fun _ _ => rfl, Frame.refl _ _, rfl, rfl⟩
 
@@ -134,23 +139,24 @@ theorem blockCall_wp (d : Direction) {s : State} {rd wr : List Region}
 
 theorem not_head : ∀ r ∈ kept, r ≠ .r3 → r ≠ .r4 ∧ r ≠ .r5 ∧ r ≠ .r6 ∧ r ∈ preserved := by decide
 
-/-- What the core does to its block, and keeps. -/
-theorem crypt_ok (d : Direction) {s : State} {B : Addr} (hB : s.gpr .r5 = B)
-    (hS : ScrIn s B (bufSlot + 8)) (hk : (keyR s).Disjoint ⟨B, 8 * (bufSlot + 8)⟩)
+/-- What the core does to its blocks, and keeps. -/
+theorem crypt_ok (d : Direction) {g : Nat} (hg : 0 < g ∧ g ≤ 16) {s : State} {B : Addr} (hB : s.gpr .r5 = B)
+    (hS : ScrIn s B (bufSlot + 2 * g + 6)) (hk : (keyR s).Disjoint ⟨B, 8 * (bufSlot + 2 * g + 6)⟩)
     (hkin : keyR s ∈ s.rd) :
-    WP isa (dirCore d).crypt s fun s' => s'.gpr .r5 = B ∧ (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧
-      Frame [⟨B, 8 * (bufSlot + 2)⟩] s.mem s'.mem ∧
-      bytesAt s'.mem (bufA B) 16 =
-        Proof.Seed.dirCipher d (Spec.Seed.scheduleAt s.mem (s.gpr .r3)) (bytesAt s.mem (bufA B) 16) ∧
+    WP isa (core d g).crypt s fun s' => s'.gpr .r5 = B ∧ (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧
+      Frame [⟨B, 8 * (bufSlot + 2 * g)⟩] s.mem s'.mem ∧
+      (∀ j < g, bytesAt s'.mem (bufA B + BitVec.ofNat 64 (16 * j)) 16 =
+        Proof.Seed.dirCipher d (Spec.Seed.scheduleAt s.mem (s.gpr .r3))
+          (bytesAt s.mem (bufA B + BitVec.ofNat 64 (16 * j)) 16)) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
   have hbs : bufSlot = 136 := rfl
-  have hfit : B.toNat + 8 * (bufSlot + 8) ≤ 2 ^ 64 := hS.fit
-  have hW : (⟨B, 8 * (bufSlot + 8)⟩ : Region) ∈ s.wr := hS.wr
+  have hfit : B.toNat + 8 * (bufSlot + 2 * g + 6) ≤ 2 ^ 64 := hS.fit
+  have hW : (⟨B, 8 * (bufSlot + 2 * g + 6)⟩ : Region) ∈ s.wr := hS.wr
   have hB' : s.gpr Impl.Modes.PPC64LE.sb = B := hB
-  show WP isa (.seq (.block cryptHead) (.seq (blockCall d) (.block (cryptTail d)))) s _
+  show WP isa (.seq (.block (cryptHead g)) (.seq (blockCall d) (.block (cryptTail d)))) s _
   -- The arguments.
   refine WP.seq (wp_addi (by decide) (by decide) fun s₁ u₁ => wp_mr fun s₂ u₂ =>
-    wp_li (by decide) fun s₃ u₃ => wp_nil ?_)
+    wp_li (by omega) fun s₃ u₃ => wp_nil ?_)
   have g₃ : ∀ r, r ≠ .r4 → r ≠ .r5 → r ≠ .r6 → s₃.gpr r = s.gpr r := fun r a b c => by
     rw [u₃.other r b, u₂.other r c, u₁.other r a]
   have r3₃ : s₃.gpr .r3 = s.gpr .r3 := g₃ _ (by decide) (by decide) (by decide)
@@ -158,17 +164,17 @@ theorem crypt_ok (d : Direction) {s : State} {B : Addr} (hB : s.gpr .r5 = B)
     rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr, hB']
   have r6₃ : s₃.gpr .r6 = B := by
     rw [u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide), hB']
-  have r5₃ : s₃.gpr .r5 = BitVec.ofNat 64 1 := u₃.gpr
+  have r5₃ : s₃.gpr .r5 = BitVec.ofNat 64 g := u₃.gpr
   have m₃ : s₃.mem = s.mem := by rw [u₃.mem, u₂.mem, u₁.mem]
   have rd₃ : s₃.rd = s.rd := by rw [u₃.rd, u₂.rd, u₁.rd]
   have wr₃ : s₃.wr = s.wr := by rw [u₃.wr, u₂.wr, u₁.wr]
-  -- The call, on the buffer's block, with the working space in the first 136 slots.
-  let wr : List Region := [⟨bufA B, 16⟩, ⟨B, 1088⟩]
+  -- The call, on the buffer's blocks, with the working space in the first 136 slots.
+  let wr : List Region := [⟨bufA B, 16 * g⟩, ⟨B, 1088⟩]
   let E := s₃.callEntry.withRegions [keyR s] wr
   have c3 : E.gpr .r3 = s.gpr .r3 := by rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide), r3₃]
   have c4 : E.gpr .r4 = bufA B := by rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide), r4₃]
-  have c5 : (E.gpr .r5).toNat = 1 := by
-    rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide), r5₃]; rfl
+  have c5 : (E.gpr .r5).toNat = g := by
+    rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide), r5₃, BitVec.toNat_ofNat]; omega
   have c6 : E.gpr .r6 = B := by rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide), r6₃]
   have cm : E.mem = s.mem := by rw [State.withRegions_mem, State.callEntry_mem, m₃]
   have hP : (bufA B).toNat = B.toNat + 8 * bufSlot := by
@@ -218,26 +224,32 @@ theorem crypt_ok (d : Direction) {s : State} {B : Addr} (hB : s.gpr .r5 = B)
     rcases hr with rfl | rfl
     · exact Offset.sub_base _ (by omega)
     · exact Region.sub_prefix (by omega)
-  · have e := hpost.done 0 (by rw [c5]; decide)
-    rw [hm', cm, c3, c4, show bufA B + BitVec.ofNat 64 (16 * 0) = bufA B from BitVec.add_zero _] at e
+  · intro j hj
+    have e := hpost.done j (by rw [c5]; exact hj)
+    rw [hm', cm, c3, c4] at e
     rw [m₅, dirCipher_bytes, Proof.Seed.bytesAt_eq, e]
 
-/-- SEED's core meets what the modes need. -/
-def dirCoreSpec (d : Direction) : CoreSpec (dirCore d) where
+/-- SEED's core on `g` blocks meets what the modes need. -/
+def coreSpec (d : Direction) (g : Nat) (hg : 0 < g ∧ g ≤ 16) : CoreSpec (core d g) where
   Key := Spec.Seed.Schedule
   cipher := Proof.Seed.dirCipher d
   KeyArgs := KeyArgs
-  Ready := Ready
-  cipher_len _ _ := by cases d <;> simp [Proof.Seed.dirCipher, Spec.Seed.cipher, Spec.Seed.invCipher, dirCore]
-  layout := layout d
+  Ready := Ready g
+  cipher_len _ _ := by cases d <;> simp [Proof.Seed.dirCipher, Spec.Seed.cipher, Spec.Seed.invCipher, core]
+  layout := layout d hg
   keyArgs_congr h e r _ _ f := keyArgs_congr h e.r3 r f
   ready_frame h e r _ _ f hs _ := ready_frame h e.r3 r f hs
   prepare_wp := prepare_wp d
   crypt_wp {s B ws k} hB hS hR := by
-    refine WP.mono (crypt_ok d hB hS hR.2 hR.1.2.1) fun s' ⟨h5, hk, hf, hb, hrd, hwr⟩ => ?_
+    refine WP.mono (crypt_ok d hg hB hS hR.2 hR.1.2.1) fun s' ⟨h5, hk, hf, hb, hrd, hwr⟩ => ?_
     refine ⟨h5, hk, ready_core hR (hk .r3 (by decide)) hrd hf, hf, fun j hj => ?_, hrd, hwr⟩
-    obtain rfl : j = 0 := by simpa [dirCore] using hj
-    have e : blkAddr (dirCore d) B 0 = bufA B := by simp [blkAddr, slotA, dirCore]
-    rw [show 4 * (dirCore d).bw = 16 from rfl, e, hb, hR.1.1]
+    have e : blkAddr (core d g) B j = bufA B + BitVec.ofNat 64 (16 * j) := rfl
+    rw [show 4 * (core d g).bw = 16 from rfl, e, hb j hj, hR.1.1]
+
+/-- The core on one block, of the serial modes. -/
+abbrev dirCoreSpec (d : Direction) : CoreSpec (dirCore d) := coreSpec d 1 (by decide)
+
+/-- The core on sixteen blocks, of CBC and CFB decryption. -/
+abbrev wideCoreSpec (d : Direction) : CoreSpec (wideCore d) := coreSpec d 16 (by decide)
 
 end VG.Proof.Seed.PPC64LE.Mode
