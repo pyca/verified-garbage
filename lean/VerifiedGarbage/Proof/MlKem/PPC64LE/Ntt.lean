@@ -26,13 +26,19 @@ import VerifiedGarbage.Proof.Framework.Range
 /-!
 # ML-KEM on PPC64LE: `vg_mlkem_ntt`
 
-As on 32-bit ARM (`Proof/MlKem/Arm/Ntt.lean`): `r14` and `r15` saved and
-the table of the zetas stored (`setup_ok`); then the three nested loops of
+The vector NTT (`Impl/MlKem/PPC64LE/Ntt.lean`): the table of `ζ` and `ζ'`
+stored (`ztable_ok`) and the constant vectors built (`vconsts_ok`,
+`setup_ok`); then the six layers with `len ≥ 4` as three nested loops of
 `nttLayer`, `nttBlock` and `nttBlockN` (`Proof/MlKem/Ntt.lean`), with an
-invariant each (`LInv`, `BInv`, `FInv`) saying which polynomial `f` holds;
-the butterfly is symbolically executed once for any pointers (`bfly_ok`),
-and writes the coefficients `bfly` writes (`polyIs_bfly`); then the
-registers restored. Layer `ℓ` has `len = 128 / 2^ℓ` and `2^ℓ` blocks.
+invariant each (`LInv`, `BInv`, `FInv`) saying which polynomial `f` holds,
+four butterflies a step (`fstep`, from `VBfly.body_ok` and
+`VBfly.group_poly`); then the last layer, `len = 2`, two blocks a step
+(`PInv`, `pstep`). Layer `ℓ` has `len = 128 / 2^ℓ` and `2^ℓ` blocks.
+
+What the inverse NTT (`Proof/MlKem/PPC64LE/NttInv.lean`) shares with the
+scalar code it replaced is here too: its precondition (`Pre`), the setup of
+its table and saved registers (`setup_base`, `Setup`), what its loops keep
+(`Env`) and its end (`restore_end`).
 -/
 
 @[expose] public section
