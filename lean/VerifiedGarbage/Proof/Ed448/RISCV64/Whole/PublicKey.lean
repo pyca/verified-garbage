@@ -65,6 +65,19 @@ theorem pkRegs_pres : ∀ r ∈ pkRegs, r ∈ preserved := by decide
 
 theorem sub_refl (r : Region) : Region.Sub r r := fun _ h => h
 
+/-- Save the caller's registers and retain the four pointer arguments. -/
+theorem publicKey_setup {s : State} (hp : PkPre s) :
+    WP isa (.block (saveRegs .a3 120 pkRegs ++ [mov .s7 .a0, mov .s8 .a1, mov .s9 .a2, mov .s10 .a3])) s (PkInv s) := by
+  have hFw : (⟨s.gpr .a3, 160⟩ : Region) ∈ s.wr := by rw [hp.wr]; simp
+  have hsS : Region.Sub (slotArea (s.gpr .a3) 120 pkRegs) ⟨s.gpr .a3, 160⟩ := Offset.sub_base _ (by decide)
+  exact (show WP isa (.block (saveRegs .a3 120 pkRegs ++
+      ([(.s7, .a0), (.s8, .a1), (.s9, .a2), (.s10, .a3)] : List (Reg × Reg)).map (fun p => mov p.1 p.2) ++ []))
+      s (PkInv s) from setup_ok hp.alF (by decide) (by decide)
+        (fun p hp' => in_base hFw (by revert p; decide) (by revert p; decide)) ⟨_, by simp, hsS⟩ rfl
+        (by decide) (by decide) (fun p hp' => by
+          simp only [List.mem_cons, List.not_mem_nil, or_false] at hp'
+          rcases hp' with rfl | rfl | rfl | rfl <;> rfl) fun u hu _ => WP.block_nil hu)
+
 theorem publicKey_wp (hl : Proof.Ed448.BaseLadder2Ok) {s : State} (hp : PkPre s) :
     WP isa publicKey s fun t => (∀ r ∈ preserved, t.gpr r = s.gpr r) ∧ t.sp = s.sp ∧ t.gpr .ra = s.gpr .ra ∧
       bytesAt t.mem (s.gpr .a0) 57 = Spec.Ed448.publicKey (bytesAt s.mem (s.gpr .a1) 57) := by
@@ -83,13 +96,7 @@ theorem publicKey_wp (hl : Proof.Ed448.BaseLadder2Ok) {s : State} (hp : PkPre s)
   have hF57 : Region.Sub ⟨s.gpr .a3, 57⟩ ⟨s.gpr .a3, 160⟩ := Region.sub_prefix (by decide)
   unfold publicKey
   -- The setup.
-  refine WP.seq (WP.mono (show WP isa (.block (saveRegs .a3 120 pkRegs ++
-      ([(.s7, .a0), (.s8, .a1), (.s9, .a2), (.s10, .a3)] : List (Reg × Reg)).map (fun p => mov p.1 p.2) ++ []))
-      s (PkInv s) from setup_ok hp.alF (by decide) (by decide)
-        (fun p hp' => in_base hFw (by revert p; decide) (by revert p; decide)) ⟨_, by simp, hsS⟩ rfl
-        (by decide) (by decide) (fun p hp' => by
-          simp only [List.mem_cons, List.not_mem_nil, or_false] at hp'
-          rcases hp' with rfl | rfl | rfl | rfl <;> rfl) fun u hu _ => WP.block_nil hu) fun t₁ h₁ => ?_)
+  refine WP.seq (WP.mono (publicKey_setup hp) fun t₁ h₁ => ?_)
   have g22x : t₁.gpr .s8 = s.gpr .a1 := h₁.regs _ (by decide)
   have g23x : t₁.gpr .s9 = s.gpr .a2 := h₁.regs _ (by decide)
   have g24x : t₁.gpr .s10 = s.gpr .a3 := h₁.regs _ (by decide)

@@ -20,6 +20,8 @@ the kernel would otherwise compute in every check that evaluates the code.
 
 namespace VG.Proof.Sha3.RISCV64
 
+materialize_value setupPrefix := Impl.Sha3.RISCV64.setupPrefix
+
 materialize_code permute := Impl.Sha3.RISCV64.permute
 
 end VG.Proof.Sha3.RISCV64

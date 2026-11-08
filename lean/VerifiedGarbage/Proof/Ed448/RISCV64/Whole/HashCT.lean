@@ -268,4 +268,45 @@ theorem hash_ct {sc f : Reg} {o : Nat} {ps : List Piece} {P : State → State �
       by rw [List.nil_append]; exact cov_right (cS h₁ hab.1.rg), cS h₁ hab.1.rg,
       by rw [esc, ef, List.nil_append]; exact cov_right (cS h₂ hab.2.rg), by rw [esc, ef]; exact cS h₂ hab.2.rg⟩
 
+/-! ## Combinators -/
+
+/-- Code the taint analysis checks from the registers `rs`, on which the runs agree. -/
+theorem ct_prog {P : State → State → Prop} {c : Prog isa} (rs : List Reg)
+    (hsp : ∀ a b, P a b → a.sp = b.sp) (hP : ∀ a b, P a b → ∀ r ∈ rs, a.gpr r = b.gpr r)
+    {hc : VG.Taint.Hint taint.T} (h : (taint.check (Taint.ofRegs rs) c hc).isSome = true) :
+    RelCT isa P c fun _ _ => True :=
+  RelCT.taint (A := taint) (Taint.ofRegs rs)
+    (fun a b hab => ⟨hsp a b hab, fun r hr => hP a b hab r (Taint.mem_ofRegs.mp hr)⟩) h
+
+/-- A hash, then code the taint analysis checks from registers `rs` that the hash keeps (callee-saved), on which
+the runs agree. -/
+theorem hash_then {sc f : Reg} {o : Nat} {ps : List Piece} {P : State → State → Prop} {c : Prog isa}
+    {hint : VG.Taint.Hint taint.T}
+    (hz : (taint.check (Taint.ofRegs [sc]) (.block (Impl.Sha3.RISCV64.zeroState sc)) hint).isSome = true)
+    (hP : ∀ a b, P a b → HashOk sc f o ps a ∧ HashOk sc f o ps b ∧ a.sp = b.sp ∧
+      ∀ r ∈ hashRegs sc f ps, a.gpr r = b.gpr r)
+    (rs : List Reg) (hrs : ∀ a b, P a b → ∀ r ∈ rs, r ∈ preserved ∧ a.gpr r = b.gpr r)
+    {hint₂ : VG.Taint.Hint taint.T} (hc : (taint.check (Taint.ofRegs rs) c hint₂).isSome = true) :
+    RelCT isa P (.seq (hash sc ps f o) c) fun _ _ => True := by
+  refine RelCT.mono (P := fun a b => ∃ x : State × State, a = x.1 ∧ b = x.2 ∧ P x.1 x.2)
+    (RelCT.exists_ fun ⟨t₁, t₂⟩ => ?_) (fun a b h => ⟨(a, b), rfl, rfl, h⟩) (fun _ _ h => h)
+  by_cases hH : P t₁ t₂
+  swap
+  · exact RelCT.of_false fun a b h => hH h.2.2
+  obtain ⟨h₁, h₂, hsp, -⟩ := hP _ _ hH
+  refine RelCT.mono (P := fun a b => a = t₁ ∧ b = t₂) ?_ (fun a b h => ⟨h.1, h.2.1⟩) (fun _ _ h => h)
+  have hP' : ∀ a b, (a = t₁ ∧ b = t₂) → HashOk sc f o ps a ∧ HashOk sc f o ps b ∧ a.sp = b.sp ∧
+      ∀ r ∈ hashRegs sc f ps, a.gpr r = b.gpr r := fun a b h => by
+    obtain ⟨rfl, rfl⟩ := h; exact hP _ _ hH
+  have hw : ∀ t, HashOk sc f o ps t → WP isa (hash sc ps f o) t (Rg t) := fun t ht =>
+    WP.mono (hash_ok ht.psc ht.pf ht.po rfl rfl ht.env ht.ne ht.ins ht.w ht.dsc ht.dsp)
+      fun _ ⟨k, _⟩ => ⟨k.rd, k.wr, k.sp, k.cs⟩
+  refine RelCT.seq (R := fun a b => Rg t₁ a ∧ Rg t₂ b)
+    (RelCT.mono (relct_wp (hash_ct hz hP') fun a b hab => ⟨by rw [hab.1]; exact hw _ h₁, by rw [hab.2]; exact hw _ h₂⟩)
+      (fun _ _ h => h) (fun _ _ h => h)) ?_
+  exact ct_prog rs (fun a b hab => hab.1.sp.trans (hsp.trans hab.2.sp.symm)) (fun a b hab r hr => by
+    obtain ⟨hp, he⟩ := hrs _ _ hH r hr
+    rw [hab.1.cs r hp, hab.2.cs r hp, he]) hc
+
+
 end VG.Proof.Ed448.RISCV64.Whole

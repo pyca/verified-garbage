@@ -23,8 +23,12 @@ which has no rotation and faults on misaligned accesses:
   16-byte aligned), which the prologue loads and the epilogue stores back:
   a doubleword at a time (`ld`, `sd`) if `state` is 8-byte aligned, as a
   Rust `[u64; 25]` is, and a byte at a time (`loadLE64`, `storeLE64`)
-  otherwise, a branch on the pointer's low bits. The rounds alternate between the copy (`a0`) and a second
-  state in the frame (`a1`): the first round of each iteration reads `a0`
+  otherwise, a branch on the pointer's low bits. Lanes 0–4 of each state
+  stay in registers: `s2`–`s6` for `a0`, `s7`–`s11` for `a1`. Their `ld`
+  and `xl` become register operations, and their `st` becomes a move. The
+  cached lanes' unused memory slots save those registers' original values,
+  so the frame does not grow. The rounds alternate between the copy (`a0`)
+  and a second state (`a1`): the first round of each iteration reads `a0`
   and writes `a1`, the second the other way round, so after the 24 rounds
   the result is back in the copy. `scratch` is not used.
 * **Lane complementing.** While the rounds run, the lanes `1, 2, 8, 12, 17,
@@ -38,8 +42,10 @@ The frame (`frameBytes`, 608 bytes) is laid out as:
 * `[0, 192)`: the 24 round constants, stored by the prologue: each is its
   low bits (an `li`), with its bits 15, 31 and 63 `or`ed in from registers
   that hold them (`rcBuild`), as `Spec.Sha3.RC` builds it;
-* `[192, 392)`: the copy of the state;
-* `[392, 592)`: the second state;
+* `[192, 232)`: the saved `s2`–`s6`;
+* `[232, 392)`: lanes 5–24 of the copy; lanes 0–4 are in `s2`–`s6`;
+* `[392, 432)`: the saved `s7`–`s11`;
+* `[432, 592)`: lanes 5–24 of the second state; lanes 0–4 are in `s7`–`s11`;
 * `[592, 608)`: the saved `s0` and `s1`.
 
 `s1` holds `state`. The round constant of round `2i + k` is at `8k(s0)`,
@@ -62,12 +68,21 @@ def T : Reg := .t6
 
 /-! ## Instructions of a round, as on PPC64LE -/
 
-/-- `r = A[i]` (lane `i` of the state at `b`). -/
-def ld (r b : Reg) (i : Nat) : List Instr := [.load .d r b (8 * i)]
-/-- `r ^= A[i]`. -/
-def xl (r b : Reg) (i : Nat) : List Instr := [.load .d T b (8 * i), .logic .xor r r T]
-/-- Lane `i` of the state at `b` is set to `r`. -/
-def st (b : Reg) (i : Nat) (r : Reg) : List Instr := [.store .d r b (8 * i)]
+/-- Lanes 0–4 of each alternating state stay in a bank of saved registers. -/
+def cacheReg (b : Reg) (i : Nat) : Reg :=
+  (if b = .a0 then [Reg.s2, .s3, .s4, .s5, .s6]
+   else [Reg.s7, .s8, .s9, .s10, .s11]).getD i .s2
+
+/-- Cached lanes use registers; other lanes retain their original offsets. -/
+def ld (r b : Reg) (i : Nat) : List Instr :=
+  if i < 5 then [.addi r (cacheReg b i) 0] else [.load .d r b (8 * i)]
+/-- `r ^= A[i]`, without a load for a cached lane. -/
+def xl (r b : Reg) (i : Nat) : List Instr :=
+  if i < 5 then [.logic .xor r r (cacheReg b i)]
+  else [.load .d T b (8 * i), .logic .xor r r T]
+/-- Write a lane into its register bank or the uncached part of the state. -/
+def st (b : Reg) (i : Nat) (r : Reg) : List Instr :=
+  if i < 5 then [.addi (cacheReg b i) r 0] else [.store .d r b (8 * i)]
 def mv (r q : Reg) : List Instr := [.addi r q 0]
 def xr (r q : Reg) : List Instr := [.logic .xor r r q]
 def an (r q : Reg) : List Instr := [.logic .and r r q]
@@ -172,13 +187,19 @@ def stOff : Nat := 192
 /-- Where in the frame the second state is. -/
 def scrOff : Nat := 392
 
-/-- The register a lane is copied in through: lanes 20–24 (row 4) through
-the registers the rounds expect them in, `a2`–`a6`. -/
+/-- Load lanes 0–4 into their cache, lanes 20–24 into the row-4 registers
+`a2`–`a6`, and other lanes through `t0`. -/
 def laneReg (i : Nat) : Reg :=
-  if i < 20 then .t0 else [Reg.a2, .a3, .a4, .a5, .a6].getD (i - 20) .a2
+  if i < 5 then cacheReg .a0 i else if i < 20 then .t0 else [Reg.a2, .a3, .a4, .a5, .a6].getD (i - 20) .a2
 
 /-- A NOT if lane `i` is kept complemented. -/
 def cmplLane (r : Reg) (i : Nat) : List Instr := if complLanes.contains i then nt r else []
+
+/-- Save the cache registers before input lanes overwrite them. -/
+def cacheSave : List Instr :=
+  (List.range 5).flatMap fun i =>
+    [.store .d (cacheReg .a0 i) .t6 (stOff + 8 * i),
+     .store .d (cacheReg .a1 i) .t6 (scrOff + 8 * i)]
 
 /-- Save `s0` and `s1`, with the frame in `t6`, and keep `state` in `s1`. -/
 def save : List Instr :=
@@ -208,10 +229,10 @@ def rcHigh : List Instr := [.lui .t3 8, .li .t4 1, .shift .sll .d .t4 .t4 31, .s
 def rcStores : List Instr :=
   rcHigh ++ (List.range 24).flatMap fun k => rcBuild k ++ ([.store .d .t0 .t6 (8 * k)] : List Instr)
 
-/-- Lane `i` of the state into the copy, complemented if in `complLanes`. -/
+/-- Lane `i` into its cache or frame slot, complemented if in `complLanes`. -/
 def copyIn (i : Nat) : List Instr :=
   loadLE64 (laneReg i) .t1 .t2 .s1 (8 * i) ++ cmplLane (laneReg i) i ++
-    ([.store .d (laneReg i) .t6 (stOff + 8 * i)] : List Instr)
+    (if i < 5 then [] else ([.store .d (laneReg i) .t6 (stOff + 8 * i)] : List Instr))
 
 /-- The pointers of the rounds: the copy, the second state, and the round
 constants. -/
@@ -220,12 +241,14 @@ def pointers : List Instr := [.addSp .a0 stOff, .addSp .a1 scrOff, .addi .s0 .t6
 /-- Lane `i` of an 8-byte aligned state into the copy, complemented if in
 `complLanes`: a doubleword load. -/
 def copyInA (i : Nat) : List Instr :=
-  ld (laneReg i) .s1 i ++ cmplLane (laneReg i) i ++
-    ([.store .d (laneReg i) .t6 (stOff + 8 * i)] : List Instr)
+  ([.load .d (laneReg i) .s1 (8 * i)] : List Instr) ++ cmplLane (laneReg i) i ++
+    (if i < 5 then [] else ([.store .d (laneReg i) .t6 (stOff + 8 * i)] : List Instr))
 
-/-- The registers saved, the round constants stored, and in `t0` the low bits
-of `state`: zero exactly when it is 8-byte aligned. -/
-def setup : List Instr := save ++ rcStores ++ ([.logicImm .and .t0 .s1 7] : List Instr)
+/-- Save the original two registers and build the round constants without changing the cache banks. -/
+def setupPrefix : List Instr := save ++ rcStores
+
+/-- Save the cache banks and test the alignment of the public state pointer. -/
+def setup : List Instr := setupPrefix ++ cacheSave ++ ([.logicImm .and .t0 .s1 7] : List Instr)
 
 /-- The copy of the state into the frame, a doubleword at a time if `state` is
 8-byte aligned and a byte at a time otherwise, then the rounds' pointers. -/
@@ -237,12 +260,19 @@ def copyIns : Prog isa :=
 def copyOut (i : Nat) : List Instr :=
   ld .t0 .a0 i ++ cmplLane .t0 i ++ storeLE64 .t0 .t1 .t2 .s1 (8 * i)
 
-/-- Restore `s0` and `s1`, from the frame at `a0 - stOff`. -/
-def restore : List Instr := [.load .d .s0 .a0 (592 - stOff), .load .d .s1 .a0 (600 - stOff)]
+/-- Restore the cache banks from their vacated physical state slots. -/
+def cacheRestore : List Instr :=
+  (List.range 5).flatMap fun i =>
+    [.load .d (cacheReg .a0 i) .a0 (8 * i),
+     .load .d (cacheReg .a1 i) .a0 (200 + 8 * i)]
+
+/-- Restore all twelve callee-saved registers after copying out the cached lanes. -/
+def restore : List Instr := cacheRestore ++
+  [.load .d .s0 .a0 (592 - stOff), .load .d .s1 .a0 (600 - stOff)]
 
 /-- Lane `i` of the copy back into an 8-byte aligned state, complemented
 back: a doubleword store. -/
-def copyOutA (i : Nat) : List Instr := ld .t0 .a0 i ++ cmplLane .t0 i ++ st .s1 i .t0
+def copyOutA (i : Nat) : List Instr := ld .t0 .a0 i ++ cmplLane .t0 i ++ ([.store .d .t0 .s1 (8 * i)] : List Instr)
 
 /-- The copy back, as `copyIns` chooses, and the registers restored. -/
 def epilogue : Prog isa :=

@@ -102,18 +102,28 @@ vg_keccak_f1600:
 	or t0, t0, t4
 	or t0, t0, t5
 	sd t0, 184(t6)
+	sd s2, 192(t6)
+	sd s7, 392(t6)
+	sd s3, 200(t6)
+	sd s8, 400(t6)
+	sd s4, 208(t6)
+	sd s9, 408(t6)
+	sd s5, 216(t6)
+	sd s10, 416(t6)
+	sd s6, 224(t6)
+	sd s11, 424(t6)
 	andi t0, s1, 7
 	beqz t0, 20f
-	lbu t0, 0(s1)
+	lbu s2, 0(s1)
 	lbu t1, 1(s1)
 	slli t1, t1, 8
-	or t0, t0, t1
+	or s2, s2, t1
 	lbu t1, 2(s1)
 	slli t1, t1, 16
-	or t0, t0, t1
+	or s2, s2, t1
 	lbu t1, 3(s1)
 	slli t1, t1, 24
-	or t0, t0, t1
+	or s2, s2, t1
 	lbu t2, 4(s1)
 	lbu t1, 5(s1)
 	slli t1, t1, 8
@@ -125,18 +135,17 @@ vg_keccak_f1600:
 	slli t1, t1, 24
 	or t2, t2, t1
 	slli t2, t2, 32
-	or t0, t0, t2
-	sd t0, 192(t6)
-	lbu t0, 8(s1)
+	or s2, s2, t2
+	lbu s3, 8(s1)
 	lbu t1, 9(s1)
 	slli t1, t1, 8
-	or t0, t0, t1
+	or s3, s3, t1
 	lbu t1, 10(s1)
 	slli t1, t1, 16
-	or t0, t0, t1
+	or s3, s3, t1
 	lbu t1, 11(s1)
 	slli t1, t1, 24
-	or t0, t0, t1
+	or s3, s3, t1
 	lbu t2, 12(s1)
 	lbu t1, 13(s1)
 	slli t1, t1, 8
@@ -148,19 +157,18 @@ vg_keccak_f1600:
 	slli t1, t1, 24
 	or t2, t2, t1
 	slli t2, t2, 32
-	or t0, t0, t2
-	xori t0, t0, -1
-	sd t0, 200(t6)
-	lbu t0, 16(s1)
+	or s3, s3, t2
+	xori s3, s3, -1
+	lbu s4, 16(s1)
 	lbu t1, 17(s1)
 	slli t1, t1, 8
-	or t0, t0, t1
+	or s4, s4, t1
 	lbu t1, 18(s1)
 	slli t1, t1, 16
-	or t0, t0, t1
+	or s4, s4, t1
 	lbu t1, 19(s1)
 	slli t1, t1, 24
-	or t0, t0, t1
+	or s4, s4, t1
 	lbu t2, 20(s1)
 	lbu t1, 21(s1)
 	slli t1, t1, 8
@@ -172,19 +180,18 @@ vg_keccak_f1600:
 	slli t1, t1, 24
 	or t2, t2, t1
 	slli t2, t2, 32
-	or t0, t0, t2
-	xori t0, t0, -1
-	sd t0, 208(t6)
-	lbu t0, 24(s1)
+	or s4, s4, t2
+	xori s4, s4, -1
+	lbu s5, 24(s1)
 	lbu t1, 25(s1)
 	slli t1, t1, 8
-	or t0, t0, t1
+	or s5, s5, t1
 	lbu t1, 26(s1)
 	slli t1, t1, 16
-	or t0, t0, t1
+	or s5, s5, t1
 	lbu t1, 27(s1)
 	slli t1, t1, 24
-	or t0, t0, t1
+	or s5, s5, t1
 	lbu t2, 28(s1)
 	lbu t1, 29(s1)
 	slli t1, t1, 8
@@ -196,18 +203,17 @@ vg_keccak_f1600:
 	slli t1, t1, 24
 	or t2, t2, t1
 	slli t2, t2, 32
-	or t0, t0, t2
-	sd t0, 216(t6)
-	lbu t0, 32(s1)
+	or s5, s5, t2
+	lbu s6, 32(s1)
 	lbu t1, 33(s1)
 	slli t1, t1, 8
-	or t0, t0, t1
+	or s6, s6, t1
 	lbu t1, 34(s1)
 	slli t1, t1, 16
-	or t0, t0, t1
+	or s6, s6, t1
 	lbu t1, 35(s1)
 	slli t1, t1, 24
-	or t0, t0, t1
+	or s6, s6, t1
 	lbu t2, 36(s1)
 	lbu t1, 37(s1)
 	slli t1, t1, 8
@@ -219,8 +225,7 @@ vg_keccak_f1600:
 	slli t1, t1, 24
 	or t2, t2, t1
 	slli t2, t2, 32
-	or t0, t0, t2
-	sd t0, 224(t6)
+	or s6, s6, t2
 	lbu t0, 40(s1)
 	lbu t1, 41(s1)
 	slli t1, t1, 8
@@ -690,18 +695,13 @@ vg_keccak_f1600:
 	addi s0, t6, 0
 	j 21f
 20:
-	ld t0, 0(s1)
-	sd t0, 192(t6)
-	ld t0, 8(s1)
-	xori t0, t0, -1
-	sd t0, 200(t6)
-	ld t0, 16(s1)
-	xori t0, t0, -1
-	sd t0, 208(t6)
-	ld t0, 24(s1)
-	sd t0, 216(t6)
-	ld t0, 32(s1)
-	sd t0, 224(t6)
+	ld s2, 0(s1)
+	ld s3, 8(s1)
+	xori s3, s3, -1
+	ld s4, 16(s1)
+	xori s4, s4, -1
+	ld s5, 24(s1)
+	ld s6, 32(s1)
 	ld t0, 40(s1)
 	sd t0, 232(t6)
 	ld t0, 48(s1)
@@ -751,24 +751,20 @@ vg_keccak_f1600:
 	addi s0, t6, 0
 21:
 22:
-	ld a7, 0(a0)
+	addi a7, s2, 0
 	ld t0, 48(a0)
 	ld t1, 96(a0)
 	ld t2, 144(a0)
-	ld t6, 16(a0)
-	xor a4, a4, t6
-	ld t6, 24(a0)
-	xor a5, a5, t6
+	xor a4, a4, s4
+	xor a5, a5, s5
 	xor a2, a2, a7
-	ld t6, 8(a0)
-	xor a3, a3, t6
+	xor a3, a3, s3
 	ld t6, 56(a0)
 	xor a4, a4, t6
 	ld t6, 40(a0)
 	xor a2, a2, t6
 	addi t3, a6, 0
-	ld t6, 32(a0)
-	xor a6, a6, t6
+	xor a6, a6, s6
 	xor a4, a4, t1
 	ld t6, 80(a0)
 	xor a2, a2, t6
@@ -837,24 +833,24 @@ vg_keccak_f1600:
 	xor t0, t0, t6
 	addi t5, t3, 0
 	and t3, t3, t2
-	sd t0, 0(a1)
+	addi s7, t0, 0
 	xor t3, t3, t1
 	xori t1, t1, -1
-	sd t3, 16(a1)
+	addi s9, t3, 0
 	or t1, t1, t2
 	ld t3, 176(a0)
 	xor t1, t1, t4
-	sd t1, 8(a1)
+	addi s8, t1, 0
 	and t4, t4, a7
 	ld t0, 72(a0)
 	xor t4, t4, t5
 	ld t1, 80(a0)
-	sd t4, 32(a1)
+	addi s11, t4, 0
 	or t5, t5, a7
-	ld a7, 24(a0)
+	addi a7, s5, 0
 	xor t5, t5, t2
 	ld t2, 128(a0)
-	sd t5, 24(a1)
+	addi s10, t5, 0
 	xor a7, a7, a6
 	xor t3, t3, a5
 	slli t6, a7, 28
@@ -881,7 +877,7 @@ vg_keccak_f1600:
 	sd a7, 64(a1)
 	addi t5, t0, 0
 	and t0, t0, t4
-	ld a7, 8(a0)
+	addi a7, s3, 0
 	xor t0, t0, t3
 	xori t3, t3, -1
 	sd t0, 72(a1)
@@ -940,7 +936,7 @@ vg_keccak_f1600:
 	xor t5, t5, t2
 	ld t2, 136(a0)
 	sd t5, 104(a1)
-	ld a7, 32(a0)
+	addi a7, s6, 0
 	xor t1, t1, a4
 	xor t2, t2, a5
 	slli t6, t1, 10
@@ -979,8 +975,7 @@ vg_keccak_f1600:
 	and a7, a7, t5
 	xor a7, a7, t2
 	sd a7, 144(a1)
-	ld t6, 16(a0)
-	xor a5, a5, t6
+	xor a5, a5, s4
 	ld t6, 64(a0)
 	xor a6, a6, t6
 	slli t6, a5, 62
@@ -1024,24 +1019,20 @@ vg_keccak_f1600:
 	sd a3, 168(a1)
 	addi a6, a5, 0
 	addi a5, t4, 0
-	ld a7, 0(a1)
+	addi a7, s7, 0
 	ld t0, 48(a1)
 	ld t1, 96(a1)
 	ld t2, 144(a1)
-	ld t6, 16(a1)
-	xor a4, a4, t6
-	ld t6, 24(a1)
-	xor a5, a5, t6
+	xor a4, a4, s9
+	xor a5, a5, s10
 	xor a2, a2, a7
-	ld t6, 8(a1)
-	xor a3, a3, t6
+	xor a3, a3, s8
 	ld t6, 56(a1)
 	xor a4, a4, t6
 	ld t6, 40(a1)
 	xor a2, a2, t6
 	addi t3, a6, 0
-	ld t6, 32(a1)
-	xor a6, a6, t6
+	xor a6, a6, s11
 	xor a4, a4, t1
 	ld t6, 80(a1)
 	xor a2, a2, t6
@@ -1110,24 +1101,24 @@ vg_keccak_f1600:
 	xor t0, t0, t6
 	addi t5, t3, 0
 	and t3, t3, t2
-	sd t0, 0(a0)
+	addi s2, t0, 0
 	xor t3, t3, t1
 	xori t1, t1, -1
-	sd t3, 16(a0)
+	addi s4, t3, 0
 	or t1, t1, t2
 	ld t3, 176(a1)
 	xor t1, t1, t4
-	sd t1, 8(a0)
+	addi s3, t1, 0
 	and t4, t4, a7
 	ld t0, 72(a1)
 	xor t4, t4, t5
 	ld t1, 80(a1)
-	sd t4, 32(a0)
+	addi s6, t4, 0
 	or t5, t5, a7
-	ld a7, 24(a1)
+	addi a7, s10, 0
 	xor t5, t5, t2
 	ld t2, 128(a1)
-	sd t5, 24(a0)
+	addi s5, t5, 0
 	xor a7, a7, a6
 	xor t3, t3, a5
 	slli t6, a7, 28
@@ -1154,7 +1145,7 @@ vg_keccak_f1600:
 	sd a7, 64(a0)
 	addi t5, t0, 0
 	and t0, t0, t4
-	ld a7, 8(a1)
+	addi a7, s8, 0
 	xor t0, t0, t3
 	xori t3, t3, -1
 	sd t0, 72(a0)
@@ -1213,7 +1204,7 @@ vg_keccak_f1600:
 	xor t5, t5, t2
 	ld t2, 136(a1)
 	sd t5, 104(a0)
-	ld a7, 32(a1)
+	addi a7, s11, 0
 	xor t1, t1, a4
 	xor t2, t2, a5
 	slli t6, t1, 10
@@ -1252,8 +1243,7 @@ vg_keccak_f1600:
 	and a7, a7, t5
 	xor a7, a7, t2
 	sd a7, 144(a0)
-	ld t6, 16(a1)
-	xor a5, a5, t6
+	xor a5, a5, s9
 	ld t6, 64(a1)
 	xor a6, a6, t6
 	slli t6, a5, 62
@@ -1301,7 +1291,7 @@ vg_keccak_f1600:
 	bne s0, a0, 22b
 	andi t0, s1, 7
 	beqz t0, 23f
-	ld t0, 0(a0)
+	addi t0, s2, 0
 	sb t0, 0(s1)
 	srli t1, t0, 8
 	sb t1, 1(s1)
@@ -1317,7 +1307,7 @@ vg_keccak_f1600:
 	sb t2, 6(s1)
 	srli t2, t1, 24
 	sb t2, 7(s1)
-	ld t0, 8(a0)
+	addi t0, s3, 0
 	xori t0, t0, -1
 	sb t0, 8(s1)
 	srli t1, t0, 8
@@ -1334,7 +1324,7 @@ vg_keccak_f1600:
 	sb t2, 14(s1)
 	srli t2, t1, 24
 	sb t2, 15(s1)
-	ld t0, 16(a0)
+	addi t0, s4, 0
 	xori t0, t0, -1
 	sb t0, 16(s1)
 	srli t1, t0, 8
@@ -1351,7 +1341,7 @@ vg_keccak_f1600:
 	sb t2, 22(s1)
 	srli t2, t1, 24
 	sb t2, 23(s1)
-	ld t0, 24(a0)
+	addi t0, s5, 0
 	sb t0, 24(s1)
 	srli t1, t0, 8
 	sb t1, 25(s1)
@@ -1367,7 +1357,7 @@ vg_keccak_f1600:
 	sb t2, 30(s1)
 	srli t2, t1, 24
 	sb t2, 31(s1)
-	ld t0, 32(a0)
+	addi t0, s6, 0
 	sb t0, 32(s1)
 	srli t1, t0, 8
 	sb t1, 33(s1)
@@ -1707,21 +1697,31 @@ vg_keccak_f1600:
 	sb t2, 198(s1)
 	srli t2, t1, 24
 	sb t2, 199(s1)
+	ld s2, 0(a0)
+	ld s7, 200(a0)
+	ld s3, 8(a0)
+	ld s8, 208(a0)
+	ld s4, 16(a0)
+	ld s9, 216(a0)
+	ld s5, 24(a0)
+	ld s10, 224(a0)
+	ld s6, 32(a0)
+	ld s11, 232(a0)
 	ld s0, 400(a0)
 	ld s1, 408(a0)
 	j 24f
 23:
-	ld t0, 0(a0)
+	addi t0, s2, 0
 	sd t0, 0(s1)
-	ld t0, 8(a0)
+	addi t0, s3, 0
 	xori t0, t0, -1
 	sd t0, 8(s1)
-	ld t0, 16(a0)
+	addi t0, s4, 0
 	xori t0, t0, -1
 	sd t0, 16(s1)
-	ld t0, 24(a0)
+	addi t0, s5, 0
 	sd t0, 24(s1)
-	ld t0, 32(a0)
+	addi t0, s6, 0
 	sd t0, 32(s1)
 	ld t0, 40(a0)
 	sd t0, 40(s1)
@@ -1767,6 +1767,16 @@ vg_keccak_f1600:
 	sd t0, 184(s1)
 	ld t0, 192(a0)
 	sd t0, 192(s1)
+	ld s2, 0(a0)
+	ld s7, 200(a0)
+	ld s3, 8(a0)
+	ld s8, 208(a0)
+	ld s4, 16(a0)
+	ld s9, 216(a0)
+	ld s5, 24(a0)
+	ld s10, 224(a0)
+	ld s6, 32(a0)
+	ld s11, 232(a0)
 	ld s0, 400(a0)
 	ld s1, 408(a0)
 24:
