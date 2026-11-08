@@ -15,23 +15,37 @@ open VG VG.AArch64
 open VG.Proof.Aes.AArch64 VG.Proof.Aes.AArch64.Aese
 open VG.Impl.AesCbc.AArch64.Decrypt
 
-theorem finish_ok (b : VReg) (j : Nat) (s : State) (hb : b ≠ .v31) (hj : j < 4096)
+theorem finish_ok (sha3 : Bool) (b : VReg) (j : Nat) (s : State) (hb : b ≠ .v31) (hj : j < 4096)
     (hin : InRegions s.wr (s.gpr .x2 + BitVec.ofNat 64 (16 * j)) 16) :
-    WP isa (.block (finish b j)) s fun t =>
+    WP isa (.block (finish sha3 b j)) s fun t =>
       t.mem = s.mem.write (s.gpr .x2 + BitVec.ofNat 64 (16 * j)) 16
         (s.v b ^^^ s.v .v16 ^^^ s.v .v31) ∧
       t.v .v31 = s.mem.readW (s.gpr .x2 + BitVec.ofNat 64 (16 * j)) 128 ∧
       t.gpr = s.gpr ∧ t.sp = s.sp ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
       (∀ r, r ≠ b → r ≠ .v31 → t.v r = s.v r) := by
-  rw [finish, WP.block_cons_iff]
-  refine ⟨_, rfl, ?_⟩
-  rw [WP.block_cons_iff]
-  refine ⟨_, exec_ldrq (by omega) (inRegions_wr hin), ?_⟩
-  rw [WP.block_cons_iff]
-  refine ⟨_, exec_strq (by omega) hin, WP.block_nil ?_⟩
-  refine ⟨?_, ?_, rfl, rfl, rfl, rfl, fun r h1 h2 => by simp [State.setV, h1, h2]⟩
-  · simp [State.setV, hb]
-  · simp [State.setV]
+  cases sha3
+  · simp only [finish, xorChain, Bool.false_eq_true, ite_false, List.cons_append, List.nil_append]
+    rw [WP.block_cons_iff]
+    refine ⟨_, rfl, ?_⟩
+    rw [WP.block_cons_iff]
+    refine ⟨_, rfl, ?_⟩
+    rw [WP.block_cons_iff]
+    refine ⟨_, exec_ldrq (by omega) (inRegions_wr hin), ?_⟩
+    rw [WP.block_cons_iff]
+    refine ⟨_, exec_strq (by omega) hin, WP.block_nil ?_⟩
+    refine ⟨?_, ?_, rfl, rfl, rfl, rfl, fun r h1 h2 => by simp [State.setV, h1, h2]⟩
+    · simp [State.setV, hb, Ne.symm hb]
+    · simp [State.setV]
+  · simp only [finish, xorChain, ite_true, List.cons_append, List.nil_append]
+    rw [WP.block_cons_iff]
+    refine ⟨_, rfl, ?_⟩
+    rw [WP.block_cons_iff]
+    refine ⟨_, exec_ldrq (by omega) (inRegions_wr hin), ?_⟩
+    rw [WP.block_cons_iff]
+    refine ⟨_, exec_strq (by omega) hin, WP.block_nil ?_⟩
+    refine ⟨?_, ?_, rfl, rfl, rfl, rfl, fun r h1 h2 => by simp [State.setV, h1, h2]⟩
+    · simp [State.setV, hb]
+    · simp [State.setV]
 
 /-- The unprocessed blocks still contain their original 128-bit ciphertext. -/
 theorem original_word {m₀ m : Mem} {D : Addr} {n k j : Nat} {F : Nat → Spec.Aes.State}
@@ -44,7 +58,7 @@ theorem original_word {m₀ m : Mem} {D : Addr} {n k j : Nat} {F : Nat → Spec.
   simpa only [vbyte_readW _ _ hi, Spec.Aes.stateAt, Vector.getElem_ofFn] using he
 
 /-- Store a group, keeping each ciphertext until the following block uses it. -/
-theorem finishData_ok {m₀ : Mem} {D : Addr} {n c : Nat} {F : Nat → Spec.Aes.State}
+theorem finishData_ok (sha3 : Bool) {m₀ : Mem} {D : Addr} {n c : Nat} {F : Nat → Spec.Aes.State}
     {chain : Nat → BitVec 128} (hn : 16*n ≤ 2^64)
     (hnext : ∀ k < n, chain (k+1) = m₀.readW (D + BitVec.ofNat 64 (16*k)) 128) :
     ∀ (regs : List VReg) (j : Nat) (s : State), regs.Nodup → .v31 ∉ regs → .v16 ∉ regs →
@@ -54,7 +68,7 @@ theorem finishData_ok {m₀ : Mem} {D : Addr} {n c : Nat} {F : Nat → Spec.Aes.
     (∀ k (h : k < regs.length), ∀ i < 16,
       vbyte (s.v regs[k] ^^^ s.v .v16) i ^^^ vbyte (chain (c+j+k)) i =
         (F (c+j+k)).getD i 0) →
-    WP isa (.block (finishData regs j)) s fun t =>
+    WP isa (.block (finishData sha3 regs j)) s fun t =>
       EcbInv m₀ t.mem D n (c+j+regs.length) F ∧
       t.v .v31 = chain (c+j+regs.length) ∧ Frame [⟨D,16*n⟩] s.mem t.mem ∧
       t.gpr = s.gpr ∧ t.sp = s.sp ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
@@ -71,7 +85,7 @@ theorem finishData_ok {m₀ : Mem} {D : Addr} {n c : Nat} {F : Nat → Spec.Aes.
     have ha : s.gpr .x2 + BitVec.ofNat 64 (16*j) = D + BitVec.ofNat 64 (16*(c+j)) := by
       rw [hx, Offset.add_add_eq D (show 16*c+16*j=16*(c+j) by omega)]
     rw [finishData, WP.block_append_iff]
-    refine WP.mono (finish_ok b j s hb31 (by omega) (by
+    refine WP.mono (finish_ok sha3 b j s hb31 (by omega) (by
       rw [ha]; exact ⟨_, hw, Offset.contains_base D (by omega) (by omega)⟩))
       fun t ⟨hm,hv,hg,hsp,hrd,hwr,ho⟩ => ?_
     rw [ha] at hm hv
@@ -85,7 +99,7 @@ theorem finishData_ok {m₀ : Mem} {D : Addr} {n c : Nat} {F : Nat → Spec.Aes.
     have hC' : t.v .v31 = chain (c+(j+1)) := by
       rw [hv, original_word hD (Nat.le_refl _) (by omega),
         ← hnext (c+j) (by omega), show c+j+1=c+(j+1) by omega]
-    refine WP.mono (finishData_ok (m₀ := m₀) (D := D) (n := n) (c := c) (F := F) (chain := chain) hn hnext bs (j+1) t (List.nodup_cons.mp hnd).2 h31' h16'
+    refine WP.mono (finishData_ok sha3 (m₀ := m₀) (D := D) (n := n) (c := c) (F := F) (chain := chain) hn hnext bs (j+1) t (List.nodup_cons.mp hnd).2 h31' h16'
       (hg ▸ hx) (by omega) (by omega) (hwr ▸ hw)
       (by rw [show c+(j+1)=c+j+1 by omega]; exact hs.1) hC' (fun k hk i hi => by
         rw [ho _ (fun h => hbs (h ▸ List.getElem_mem hk)) (fun h => h31' (h ▸ List.getElem_mem hk)),
