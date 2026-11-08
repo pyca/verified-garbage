@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Residue
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Trial
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Shape
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Halve
-import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Search.Sieve
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
@@ -14,8 +13,8 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 /-!
 # An FFDH parameter candidate on PPC64LE: once `rand` is long enough
 
-`main_ok`: p from the tape, its shape (the congruence, the sieves and RSA's
-trial division of p and q, q's parity), and the tests, against
+`main_ok`: p from the tape, its shape (the congruence, RSA's trial division
+of p, then q's parity and trial division), and the tests, against
 `Spec.Ffdh.sievedParameterCandidate`.
 -/
 
@@ -123,25 +122,6 @@ theorem MB.badLoad {p : PP} {T : Addr} {x : Nat} {B : Prop} {s : State} (h : MB 
   exact ⟨⟨st, ph, hU, by rw [tm]; exact h.n, by rw [tm]; exact h.bad,
     h.tab.step sy (rs := []) (by rw [tm]; exact Frm.refl _ _ _) (by simp) k.rd⟩, t5⟩
 
-/-- A sieve of array 0. -/
-theorem MB.sieve {p : PP} {T : Addr} {x : Nat} {B : Prop} {s : State} (h : MB p T x B s) :
-    WP isa VG.Impl.Ffdh.PPC64LE.ParameterCandidate.sieve s (MB p T x (B ∧ ∀ d ∈ oddPrimes256, x % d ≠ 0)) := by
-  have hb1 := h.st.dims.b1
-  have hb2 := h.st.dims.b2
-  have hdn := h.st.dims.n
-  have hLe : p.L = (p.bits + 7) / 8 := rfl
-  have hwe : wOf p.bits = (p.bits + 63) / 64 := rfl
-  have hZe : p.Z = 8 * p.n := rfl
-  have hsl : slot (wOf p.bits) 0 = 256 := slot_zero _
-  have hZw : slot (wOf p.bits) 0 + 8 * wOf p.bits ≤ p.Z := by rw [hsl]; omega_arith
-  refine WP.mono_syms (sieve_ok oddPrimes256 (by decide) h.st.scr h.st.r31 h.ph.r10 h.ph.r11 h.n (by omega_arith)
-    (by omega_arith) hZw (by omega_arith)) fun t ⟨⟨hb, f⟩, k⟩ sy => ?_
-  obtain ⟨st, ph, hU⟩ := shapeStep h.st h.ph h.u f (fun r hr => .inl (List.mem_singleton.mp hr)) k
-    (by decide) (by decide) (by decide) (by decide)
-  refine ⟨st, ph, hU, ?_, hb.trans (and_congr h.bad Iff.rfl), h.tab.step sy f (fun r hr => by
-    rw [List.mem_singleton.mp hr]; dsimp only; first | (simp only [hBad]; omega_arith) | omega_arith) k.rd⟩
-  rw [f.wv_eq (fun r hr => by rw [List.mem_singleton.mp hr, hsl]; exact .inr (by decide)) (by omega_arith)]; exact h.n
-
 /-- q from p. -/
 theorem MB.halve {p : PP} {T : Addr} {x : Nat} {B : Prop} {s : State} (h : MB p T x B s) :
     WP isa halveQ s (MB p T (x / 2) (B ∧ x / 2 % 2 = 1)) := by
@@ -164,6 +144,11 @@ theorem MB.halve {p : PP} {T : Addr} {x : Nat} {B : Prop} {s : State} (h : MB p 
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> dsimp only <;> first | (simp only [hBad]; omega_arith) | omega_arith) k.rd⟩
 
+/-- The spec's shape checks, of the candidate `c`. -/
+abbrev specShape (bits g c : Nat) : Bool :=
+  Spec.Ffdh.generationShape bits g c && Spec.Ffdh.primeShape c && Spec.Ffdh.primeShape ((c - 1) / 2) &&
+    !Spec.RsaKeyGen.obviouslyComposite bits c && !Spec.RsaKeyGen.obviouslyComposite bits ((c - 1) / 2)
+
 /-- `main`: p, its shape, and the tests. -/
 theorem main_ok (R : RoundImpl) {p : PP} {T : Addr} {s : State} (h : St p s) (ht : TabIn p.B p.Z T s)
     (hU : word s.mem p.B 152 = BitVec.ofNat 64 p.L) (hL : p.L ≤ p.r.length) :
@@ -173,19 +158,14 @@ theorem main_ok (R : RoundImpl) {p : PP} {T : Addr} {s : State} (h : St p s) (ht
   rw [sieved_eq hL]
   generalize hc : Spec.Ffdh.candidateOf p.bits (Spec.Rsa.os2ip (p.r.take ((p.bits + 7) / 8))) = c
   have hc' : c = Spec.Ffdh.candidateOf p.bits (Spec.Rsa.os2ip (p.r.take p.L)) := hc.symm
-  have hsh := sieved_shape_iff (x := Spec.Rsa.os2ip (p.r.take p.L)) hb1 hb2 h.dims.g
+  have hsh := trial_shape_iff (x := Spec.Rsa.os2ip (p.r.take p.L)) hb1 hb2 h.dims.g
   obtain ⟨ho, hl, hcu⟩ := VG.Proof.Ffdh.ParameterCandidate.candidate_shape (bits := p.bits) (by omega_arith)
     (Spec.Rsa.os2ip (p.r.take p.L))
   rw [← hc'] at hsh ho hl hcu
   -- A rejected shape.
   have reject : ∀ {t : State}, St p t → word t.mem p.B 152 = BitVec.ofNat 64 p.L →
-      (Spec.Ffdh.generationShape p.bits p.g c && Spec.Ffdh.primeShape c &&
-        Spec.Ffdh.primeShape ((c - 1) / 2) && !Spec.RsaKeyGen.obviouslyComposite p.bits c &&
-        !Spec.RsaKeyGen.obviouslyComposite p.bits ((c - 1) / 2)) = false →
-      WP isa (.block (finish 2)) t (CEnd p (if !(Spec.Ffdh.generationShape p.bits p.g c &&
-        Spec.Ffdh.primeShape c && Spec.Ffdh.primeShape ((c - 1) / 2) &&
-        !Spec.RsaKeyGen.obviouslyComposite p.bits c &&
-        !Spec.RsaKeyGen.obviouslyComposite p.bits ((c - 1) / 2)) then some (none, p.r.drop p.L)
+      specShape p.bits p.g c = false →
+      WP isa (.block (finish 2)) t (CEnd p (if !specShape p.bits p.g c then some (none, p.r.drop p.L)
         else sievedTests c (p.r.drop p.L))) := fun st hu hf => by
     rw [hf]
     simp only [Bool.not_false, ↓reduceIte]
@@ -203,29 +183,34 @@ theorem main_ok (R : RoundImpl) {p : PP} {T : Addr} {s : State} (h : St p s) (ht
     refine reject M₄.st M₄.u (Bool.eq_false_iff.mpr fun ht' => ?_)
     have h0 : word t₃.mem p.B 200 = 0#64 := M₃.bad.mpr (hsh.mpr ht').1
     simp [h0] at hz
-  refine WP.seq (WP.mono M₄.sieve fun t₅ M₅ => ?_)
-  refine WP.seq (WP.mono (trialSieve_ok M₅) fun t₅' M₅' => ?_)
-  refine WP.seq (WP.mono M₅'.halve fun t₆ M₆ => ?_)
-  refine WP.seq (WP.mono M₆.sieve fun t₇ M₇ => ?_)
-  refine WP.seq (WP.mono (trialSieve_ok M₇) fun t₇' M₇' => ?_)
-  refine WP.seq (WP.mono M₇'.badLoad fun t₈ ⟨M₈, t5'⟩ => ?_)
-  have hall : word t₇'.mem p.B (8 * hBad) = 0#64 ↔
-      goodRes p.g c ∧ (∀ d ∈ oddPrimes256, c % d ≠ 0) ∧
-        VG.Proof.RsaKeyGen.trialPrefix c (trialN p.bits) = false ∧ c / 2 % 2 = 1 ∧
-        (∀ d ∈ oddPrimes256, c / 2 % d ≠ 0) ∧ VG.Proof.RsaKeyGen.trialPrefix (c / 2) (trialN p.bits) = false :=
-    M₇'.bad.trans ⟨fun ⟨⟨⟨⟨⟨a, b⟩, c'⟩, d⟩, e⟩, f⟩ => ⟨a, b, c', d, e, f⟩,
-      fun ⟨a, b, c', d, e, f⟩ => ⟨⟨⟨⟨⟨a, b⟩, c'⟩, d⟩, e⟩, f⟩⟩
-  refine WP.ite (word t₇'.mem p.B 200 == 0) (by rw [eval_zero, t5']) (fun hz' => ?_) (fun hz' => ?_)
+  refine WP.seq (WP.mono (trialSieve_ok M₄) fun t₅ M₅ => ?_)
+  refine WP.seq (WP.mono M₅.badLoad fun t₆ ⟨M₆, t5'⟩ => ?_)
+  refine WP.ite (word t₅.mem p.B 200 == 0) (by rw [eval_zero, t5']) (fun hz' => ?_) (fun hz' => ?_)
+  rotate_left
+  · -- p has a small factor.
+    refine reject M₆.st M₆.u (Bool.eq_false_iff.mpr fun ht' => ?_)
+    obtain ⟨a, b, -, -⟩ := hsh.mpr ht'
+    have h0 : word t₅.mem p.B 200 = 0#64 := M₅.bad.mpr ⟨a, b⟩
+    simp [h0] at hz'
+  unfold mainQ
+  refine WP.seq (WP.mono M₆.halve fun t₇ M₇ => ?_)
+  refine WP.seq (WP.mono (trialSieve_ok M₇) fun t₈ M₈ => ?_)
+  refine WP.seq (WP.mono M₈.badLoad fun t₉ ⟨M₉, t5''⟩ => ?_)
+  have hall : word t₈.mem p.B (8 * hBad) = 0#64 ↔
+      goodRes p.g c ∧ VG.Proof.RsaKeyGen.trialPrefix c (trialN p.bits) = false ∧ c / 2 % 2 = 1 ∧
+        VG.Proof.RsaKeyGen.trialPrefix (c / 2) (trialN p.bits) = false :=
+    M₈.bad.trans ⟨fun ⟨⟨⟨a, b⟩, c'⟩, d⟩ => ⟨a, b, c', d⟩, fun ⟨a, b, c', d⟩ => ⟨⟨⟨a, b⟩, c'⟩, d⟩⟩
+  refine WP.ite (word t₈.mem p.B 200 == 0) (by rw [eval_zero, t5'']) (fun hz'' => ?_) (fun hz'' => ?_)
   · -- The shape passes: the tests.
-    have hshape := hsh.mp (hall.mp (beq_iff_eq.mp hz'))
+    have hshape := hsh.mp (hall.mp (beq_iff_eq.mp hz''))
     rw [hshape]
     simp only [Bool.not_true, Bool.false_eq_true, ↓reduceIte]
     have hq : (c - 1) / 2 = c / 2 := by omega_arith
-    obtain ⟨_, _, _, hqo, _⟩ := hall.mp (beq_iff_eq.mp hz')
+    obtain ⟨_, _, hqo, _⟩ := hall.mp (beq_iff_eq.mp hz'')
     rw [hc'] at hq hqo ⊢
-    exact tests_ok R M₈.st rfl (by rw [hq]; exact hqo) M₈.u hL
-  · refine reject M₈.st M₈.u (Bool.eq_false_iff.mpr fun ht' => ?_)
-    have h0 : word t₇'.mem p.B 200 = 0#64 := hall.mpr (hsh.mpr ht')
-    simp [h0] at hz'
+    exact tests_ok R M₉.st rfl (by rw [hq]; exact hqo) M₉.u hL
+  · refine reject M₉.st M₉.u (Bool.eq_false_iff.mpr fun ht' => ?_)
+    have h0 : word t₈.mem p.B 200 = 0#64 := hall.mpr (hsh.mpr ht')
+    simp [h0] at hz''
 
 end VG.Proof.Ffdh.PPC64LE.ParameterCandidate
