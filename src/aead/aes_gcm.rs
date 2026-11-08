@@ -30,31 +30,31 @@
 ))]
 
 use crate::arch::dispatch::gcm::{
-    vg_aes_gcm_init_auto, vg_aes_gcm_stream_aad_auto, vg_aes_gcm_stream_finish_auto,
-    vg_aes_gcm_stream_init_auto, vg_aes_gcm_stream_verify_auto,
+    vg_aes_gcm_init_auto, vg_aes_gcm_stream_aad_select, vg_aes_gcm_stream_finish_select,
+    vg_aes_gcm_stream_init_select, vg_aes_gcm_stream_verify_select,
 };
 // On AArch64 and x86-64, a key computes the powers of its hash subkey when
 // it is created, which the functions below read; elsewhere the functions
 // read the key context alone.
 use crate::align::CacheAligned;
-#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
-use crate::arch::dispatch::gcm::{
-    vg_aes_gcm_open_auto, vg_aes_gcm_seal_auto, vg_aes_gcm_seal_gather_auto,
-};
 #[cfg(target_arch = "x86_64")]
 use crate::arch::dispatch::gcm::{
-    vg_aes_gcm_open_prepared_auto, vg_aes_gcm_open_to_prepared_auto, vg_aes_gcm_prepare_auto,
-    vg_aes_gcm_seal_gather_prepared_auto, vg_aes_gcm_seal_prepared_auto,
-    vg_aes_gcm_stream_decrypt_prepared_auto, vg_aes_gcm_stream_encrypt_prepared_auto,
+    vg_aes_gcm_open_prepared_select, vg_aes_gcm_open_to_prepared_select, vg_aes_gcm_prepare_auto,
+    vg_aes_gcm_seal_gather_prepared_select, vg_aes_gcm_seal_prepared_select,
+    vg_aes_gcm_stream_decrypt_prepared_select, vg_aes_gcm_stream_encrypt_prepared_select,
     vg_aes_gcm_wipe_prepared_auto,
+};
+#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+use crate::arch::dispatch::gcm::{
+    vg_aes_gcm_open_select, vg_aes_gcm_seal_gather_select, vg_aes_gcm_seal_select,
 };
 #[cfg(not(target_arch = "x86_64"))]
 use crate::arch::dispatch::gcm::{
-    vg_aes_gcm_open_to_auto, vg_aes_gcm_stream_decrypt_auto, vg_aes_gcm_stream_encrypt_auto,
+    vg_aes_gcm_open_to_select, vg_aes_gcm_stream_decrypt_select, vg_aes_gcm_stream_encrypt_select,
 };
 #[cfg(target_arch = "aarch64")]
 use crate::arch::dispatch::gcm::{
-    vg_aes_gcm_open_with_powers_auto, vg_aes_gcm_seal_with_powers_auto,
+    vg_aes_gcm_open_with_powers_select, vg_aes_gcm_seal_with_powers_select,
     vg_aes_gcm_store_powers_auto,
 };
 use crate::error::InvalidKeyLength;
@@ -81,6 +81,159 @@ type KeyCtx = [u64; 32];
 /// functions read next to the key context (`VG.Spec.Gcm.Powers8Repr`).
 #[cfg(target_arch = "aarch64")]
 type Powers = [u64; 16];
+
+/// The type of a pointer to a verified function of the signature `$sig`
+/// (`(<parameters>) [-> <result>]`), in the calling convention of the
+/// target's verified functions, as their selectors return them.
+#[cfg(target_arch = "x86_64")]
+macro_rules! verified_fn {
+    ($($sig:tt)*) => { unsafe extern "sysv64" fn $($sig)* };
+}
+#[cfg(not(target_arch = "x86_64"))]
+macro_rules! verified_fn {
+    ($($sig:tt)*) => { unsafe extern "C" fn $($sig)* };
+}
+
+/// The implementations a key calls for each message: those their
+/// dispatchers would run on this CPU, which `new` chooses once with their
+/// selectors (`<function>_select`, `VG.Rust.selector`), so that no call
+/// chooses again. The Rust code names no implementation.
+#[derive(Clone, Copy)]
+struct Fns {
+    /// `vg_aes_gcm_seal` (on x86-64, `_prepared`; on AArch64, `_with_powers`).
+    #[cfg(not(target_arch = "aarch64"))]
+    seal: verified_fn!((
+        *const KeyCtx,
+        usize,
+        *const u8,
+        usize,
+        *const u8,
+        usize,
+        *mut u8,
+        usize,
+        *mut Block,
+    )),
+    #[cfg(target_arch = "aarch64")]
+    seal: verified_fn!((
+        *const KeyCtx,
+        usize,
+        *const u8,
+        usize,
+        *const u8,
+        usize,
+        *mut u8,
+        usize,
+        *mut Block,
+        *const Powers,
+    )),
+    /// `vg_aes_gcm_open` (on x86-64, `_prepared`; on AArch64, `_with_powers`).
+    #[cfg(not(target_arch = "aarch64"))]
+    open: verified_fn!((
+        *const KeyCtx, usize, *const u8, usize, *const u8, usize, *mut u8, usize, *const u8, usize,
+    ) -> u32),
+    #[cfg(target_arch = "aarch64")]
+    open: verified_fn!((
+        *const KeyCtx, usize, *const u8, usize, *const u8, usize, *mut u8, usize, *const u8, usize,
+        *const Powers,
+    ) -> u32),
+    /// `vg_aes_gcm_open_to` (on x86-64, `_prepared`).
+    open_to: verified_fn!((
+        *const KeyCtx, usize, *const u8, usize, *const u8, usize, *const u8, usize, *mut u8, usize,
+        *const u8, usize,
+    ) -> u32),
+    /// `vg_aes_gcm_seal_gather` (on x86-64, `_prepared`); AArch64's
+    /// `encrypt` copies its pieces and seals them instead.
+    #[cfg(not(target_arch = "aarch64"))]
+    seal_gather: verified_fn!((
+        *const KeyCtx,
+        usize,
+        *const u8,
+        usize,
+        *const u8,
+        usize,
+        *const [usize; 2],
+        usize,
+        *mut u8,
+        usize,
+        *mut Block,
+    )),
+    /// `vg_aes_gcm_stream_init`.
+    stream_init: verified_fn!((*const [u64; 32], *const u8, usize, *mut [u64; 10])),
+    /// `vg_aes_gcm_stream_aad`.
+    stream_aad: verified_fn!((*const [u64; 32], *mut [u64; 10], u64, *const u8, usize)),
+    /// `vg_aes_gcm_stream_encrypt` and `vg_aes_gcm_stream_decrypt` (on
+    /// x86-64, `_prepared`).
+    stream_encrypt: verified_fn!((
+        *const KeyCtx,
+        usize,
+        *mut [u64; 10],
+        u64,
+        u64,
+        *mut u8,
+        usize
+    )),
+    stream_decrypt: verified_fn!((
+        *const KeyCtx,
+        usize,
+        *mut [u64; 10],
+        u64,
+        u64,
+        *mut u8,
+        usize
+    )),
+    /// `vg_aes_gcm_stream_finish`.
+    stream_finish: verified_fn!((
+        *const [u64; 32],
+        usize,
+        *mut [u64; 10],
+        u64,
+        u64,
+        *mut Block
+    )),
+    /// `vg_aes_gcm_stream_verify`.
+    stream_verify: verified_fn!((*const [u64; 32], usize, *mut [u64; 10], u64, u64, *const u8, usize) -> u32),
+}
+
+impl Fns {
+    /// The implementations of each function that this CPU runs.
+    #[inline]
+    fn select() -> Fns {
+        Fns {
+            #[cfg(target_arch = "x86_64")]
+            seal: vg_aes_gcm_seal_prepared_select(),
+            #[cfg(target_arch = "aarch64")]
+            seal: vg_aes_gcm_seal_with_powers_select(),
+            #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+            seal: vg_aes_gcm_seal_select(),
+            #[cfg(target_arch = "x86_64")]
+            open: vg_aes_gcm_open_prepared_select(),
+            #[cfg(target_arch = "aarch64")]
+            open: vg_aes_gcm_open_with_powers_select(),
+            #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+            open: vg_aes_gcm_open_select(),
+            #[cfg(target_arch = "x86_64")]
+            open_to: vg_aes_gcm_open_to_prepared_select(),
+            #[cfg(not(target_arch = "x86_64"))]
+            open_to: vg_aes_gcm_open_to_select(),
+            #[cfg(target_arch = "x86_64")]
+            seal_gather: vg_aes_gcm_seal_gather_prepared_select(),
+            #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+            seal_gather: vg_aes_gcm_seal_gather_select(),
+            stream_init: vg_aes_gcm_stream_init_select(),
+            stream_aad: vg_aes_gcm_stream_aad_select(),
+            #[cfg(target_arch = "x86_64")]
+            stream_encrypt: vg_aes_gcm_stream_encrypt_prepared_select(),
+            #[cfg(not(target_arch = "x86_64"))]
+            stream_encrypt: vg_aes_gcm_stream_encrypt_select(),
+            #[cfg(target_arch = "x86_64")]
+            stream_decrypt: vg_aes_gcm_stream_decrypt_prepared_select(),
+            #[cfg(not(target_arch = "x86_64"))]
+            stream_decrypt: vg_aes_gcm_stream_decrypt_select(),
+            stream_finish: vg_aes_gcm_stream_finish_select(),
+            stream_verify: vg_aes_gcm_stream_verify_select(),
+        }
+    }
+}
 
 /// The largest plaintext (and ciphertext), in bytes: `2^39 − 256` bits
 /// (SP 800-38D §5.2.1.1).
@@ -176,6 +329,8 @@ pub struct AesGcm {
     /// (`KeyCtx`), all of which `new` writes.
     ctx: CacheAligned<MaybeUninit<KeyCtx>>,
     rounds: usize,
+    /// The implementations it calls for each message.
+    fns: Fns,
     /// On AArch64, the powers of the hash subkey that `new` stores
     /// (`VG.Spec.Gcm.Powers8Repr`).
     #[cfg(target_arch = "aarch64")]
@@ -217,6 +372,7 @@ impl AesGcm {
         let mut k = AesGcm {
             ctx: CacheAligned(MaybeUninit::uninit()),
             rounds: key.len() / 4 + 6,
+            fns: Fns::select(),
             #[cfg(target_arch = "aarch64")]
             powers: CacheAligned([0; size_of::<Powers>() / 8]),
         };
@@ -298,7 +454,7 @@ impl AesGcm {
         // the address space.
         unsafe {
             #[cfg(target_arch = "x86_64")]
-            vg_aes_gcm_seal_prepared_auto(
+            (self.fns.seal)(
                 self.ctx.0.as_ptr(),
                 self.rounds,
                 nonce.as_ptr(),
@@ -310,7 +466,7 @@ impl AesGcm {
                 &mut tag,
             );
             #[cfg(target_arch = "aarch64")]
-            vg_aes_gcm_seal_with_powers_auto(
+            (self.fns.seal)(
                 self.key(),
                 self.rounds,
                 nonce.as_ptr(),
@@ -323,7 +479,7 @@ impl AesGcm {
                 &self.powers.0,
             );
             #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
-            vg_aes_gcm_seal_auto(
+            (self.fns.seal)(
                 self.key(),
                 self.rounds,
                 nonce.as_ptr(),
@@ -395,7 +551,7 @@ impl AesGcm {
         // of its length.
         let ok = unsafe {
             #[cfg(target_arch = "x86_64")]
-            let ok = vg_aes_gcm_open_prepared_auto(
+            let ok = (self.fns.open)(
                 self.ctx.0.as_ptr(),
                 self.rounds,
                 nonce.as_ptr(),
@@ -408,7 +564,7 @@ impl AesGcm {
                 tag.len(),
             );
             #[cfg(target_arch = "aarch64")]
-            let ok = vg_aes_gcm_open_with_powers_auto(
+            let ok = (self.fns.open)(
                 self.key(),
                 self.rounds,
                 nonce.as_ptr(),
@@ -422,7 +578,7 @@ impl AesGcm {
                 &self.powers.0,
             );
             #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
-            let ok = vg_aes_gcm_open_auto(
+            let ok = (self.fns.open)(
                 self.key(),
                 self.rounds,
                 nonce.as_ptr(),
@@ -487,7 +643,7 @@ impl AesGcm {
         // overlaps neither `ciphertext` nor any other argument.
         let ok = unsafe {
             #[cfg(target_arch = "x86_64")]
-            let ok = vg_aes_gcm_open_to_prepared_auto(
+            let ok = (self.fns.open_to)(
                 self.ctx.0.as_ptr(),
                 self.rounds,
                 nonce.as_ptr(),
@@ -502,7 +658,7 @@ impl AesGcm {
                 tag.len(),
             );
             #[cfg(not(target_arch = "x86_64"))]
-            let ok = vg_aes_gcm_open_to_auto(
+            let ok = (self.fns.open_to)(
                 self.key(),
                 self.rounds,
                 nonce.as_ptr(),
@@ -598,7 +754,7 @@ impl AesGcm {
         // function uses.
         unsafe {
             #[cfg(target_arch = "x86_64")]
-            vg_aes_gcm_seal_gather_prepared_auto(
+            (self.fns.seal_gather)(
                 self.ctx.0.as_ptr(),
                 self.rounds,
                 nonce.as_ptr(),
@@ -612,7 +768,7 @@ impl AesGcm {
                 &mut tag,
             );
             #[cfg(not(target_arch = "x86_64"))]
-            vg_aes_gcm_seal_gather_auto(
+            (self.fns.seal_gather)(
                 self.key(),
                 self.rounds,
                 nonce.as_ptr(),
@@ -687,9 +843,7 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
         // `s.state` for reads and writes of 80. They are distinct objects, so
         // the writable one overlaps nothing else, nor anything on the stack,
         // and none wraps around.
-        unsafe {
-            vg_aes_gcm_stream_init_auto(key.key(), nonce.as_ptr(), nonce.len(), &mut s.state.0)
-        };
+        unsafe { (key.fns.stream_init)(key.key(), nonce.as_ptr(), nonce.len(), &mut s.state.0) };
         Ok(s)
     }
 
@@ -703,7 +857,7 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
         // SAFETY: as in `new`; `self.state` represents a message with
         // `self.aad_len` bytes of additional data and no text yet.
         unsafe {
-            vg_aes_gcm_stream_aad_auto(
+            (self.key.fns.stream_aad)(
                 self.key.key(),
                 &mut self.state.0,
                 self.aad_len,
@@ -721,24 +875,15 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
         let text_len =
             add_len(self.text_len, data.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
         self.in_text = true;
+        let f = if DECRYPT {
+            self.key.fns.stream_decrypt
+        } else {
+            self.key.fns.stream_encrypt
+        };
         #[cfg(target_arch = "x86_64")]
-        let (f, ctx) = (
-            if DECRYPT {
-                vg_aes_gcm_stream_decrypt_prepared_auto
-            } else {
-                vg_aes_gcm_stream_encrypt_prepared_auto
-            },
-            self.key.ctx.0.as_ptr(),
-        );
+        let ctx = self.key.ctx.0.as_ptr();
         #[cfg(not(target_arch = "x86_64"))]
-        let (f, ctx) = (
-            if DECRYPT {
-                vg_aes_gcm_stream_decrypt_auto
-            } else {
-                vg_aes_gcm_stream_encrypt_auto
-            },
-            self.key.key(),
-        );
+        let ctx = self.key.key();
         // SAFETY: as in `new`, with the key context as in `AesGcm::seal` and
         // `data` valid for reads and writes of `data.len()` bytes (a unique
         // borrow, so it overlaps nothing else); `self.state` represents a
@@ -768,7 +913,7 @@ impl Stream<'_, false> {
         // writes of 16 bytes. `update_aad` and `update` checked the lengths
         // (§5.2.1.1).
         unsafe {
-            vg_aes_gcm_stream_finish_auto(
+            (self.key.fns.stream_finish)(
                 self.key.key(),
                 self.key.rounds,
                 &mut self.state.0,
@@ -788,7 +933,7 @@ impl Stream<'_, true> {
         // SAFETY: as in `finish`, with the received tag `tag` valid for
         // reads of its length.
         let ok = unsafe {
-            vg_aes_gcm_stream_verify_auto(
+            (self.key.fns.stream_verify)(
                 self.key.key(),
                 self.key.rounds,
                 &mut self.state.0,

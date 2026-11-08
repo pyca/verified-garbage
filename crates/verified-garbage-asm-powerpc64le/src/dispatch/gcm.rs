@@ -14,11 +14,33 @@ pub use crate::gcm::vg_aes_gcm_init as vg_aes_gcm_init_auto;
 #[allow(unused_imports)]
 pub use crate::gcm::vg_aes_gcm_seal as vg_aes_gcm_seal_auto;
 
+/// The implementation of `vg_aes_gcm_seal` that `vg_aes_gcm_seal_auto` runs on this CPU, chosen as it chooses (`VG.Rust.selector`), so that it can be called without choosing again.
+///
+/// # Safety
+///
+/// Calling the function it returns carries exactly `vg_aes_gcm_seal_auto`'s obligations (its `# Safety` section), which are those of each implementation it may return; calling this function has none.
+#[allow(clippy::type_complexity)]
+#[inline]
+pub fn vg_aes_gcm_seal_select() -> unsafe extern "C" fn(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    crate::gcm::vg_aes_gcm_seal
+}
+
 /// `vg_aes_gcm_open`, the only implementation of it on this target, which needs no CPU feature
 /// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
 /// target.
 #[allow(unused_imports)]
 pub use crate::gcm::vg_aes_gcm_open as vg_aes_gcm_open_auto;
+
+/// The implementation of `vg_aes_gcm_open` that `vg_aes_gcm_open_auto` runs on this CPU, chosen as it chooses (`VG.Rust.selector`), so that it can be called without choosing again.
+///
+/// # Safety
+///
+/// Calling the function it returns carries exactly `vg_aes_gcm_open_auto`'s obligations (its `# Safety` section), which are those of each implementation it may return; calling this function has none.
+#[allow(clippy::type_complexity)]
+#[inline]
+pub fn vg_aes_gcm_open_select() -> unsafe extern "C" fn(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+    crate::gcm::vg_aes_gcm_open
+}
 
 /// `vg_aes_gcm_open_to`, the only implementation of it on this target, which needs no CPU feature
 /// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
@@ -26,11 +48,33 @@ pub use crate::gcm::vg_aes_gcm_open as vg_aes_gcm_open_auto;
 #[allow(unused_imports)]
 pub use crate::gcm::vg_aes_gcm_open_to as vg_aes_gcm_open_to_auto;
 
+/// The implementation of `vg_aes_gcm_open_to` that `vg_aes_gcm_open_to_auto` runs on this CPU, chosen as it chooses (`VG.Rust.selector`), so that it can be called without choosing again.
+///
+/// # Safety
+///
+/// Calling the function it returns carries exactly `vg_aes_gcm_open_to_auto`'s obligations (its `# Safety` section), which are those of each implementation it may return; calling this function has none.
+#[allow(clippy::type_complexity)]
+#[inline]
+pub fn vg_aes_gcm_open_to_select() -> unsafe extern "C" fn(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+    crate::gcm::vg_aes_gcm_open_to
+}
+
 /// `vg_aes_gcm_stream_aad`, the only implementation of it on this target, which needs no CPU feature
 /// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
 /// target.
 #[allow(unused_imports)]
 pub use crate::gcm::vg_aes_gcm_stream_aad as vg_aes_gcm_stream_aad_auto;
+
+/// The implementation of `vg_aes_gcm_stream_aad` that `vg_aes_gcm_stream_aad_auto` runs on this CPU, chosen as it chooses (`VG.Rust.selector`), so that it can be called without choosing again.
+///
+/// # Safety
+///
+/// Calling the function it returns carries exactly `vg_aes_gcm_stream_aad_auto`'s obligations (its `# Safety` section), which are those of each implementation it may return; calling this function has none.
+#[allow(clippy::type_complexity)]
+#[inline]
+pub fn vg_aes_gcm_stream_aad_select() -> unsafe extern "C" fn(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
+    crate::gcm::vg_aes_gcm_stream_aad
+}
 
 /// `vg_aes_gcm_stream_init`, the only implementation of it on this target, which needs no CPU feature
 /// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
@@ -38,11 +82,33 @@ pub use crate::gcm::vg_aes_gcm_stream_aad as vg_aes_gcm_stream_aad_auto;
 #[allow(unused_imports)]
 pub use crate::gcm::vg_aes_gcm_stream_init as vg_aes_gcm_stream_init_auto;
 
+/// The implementation of `vg_aes_gcm_stream_init` that `vg_aes_gcm_stream_init_auto` runs on this CPU, chosen as it chooses (`VG.Rust.selector`), so that it can be called without choosing again.
+///
+/// # Safety
+///
+/// Calling the function it returns carries exactly `vg_aes_gcm_stream_init_auto`'s obligations (its `# Safety` section), which are those of each implementation it may return; calling this function has none.
+#[allow(clippy::type_complexity)]
+#[inline]
+pub fn vg_aes_gcm_stream_init_select() -> unsafe extern "C" fn(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
+    crate::gcm::vg_aes_gcm_stream_init
+}
+
 /// `vg_aes_gcm_seal_gather`, the only implementation of it on this target, which needs no CPU feature
 /// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
 /// target.
 #[allow(unused_imports)]
 pub use crate::gcm::vg_aes_gcm_seal_gather as vg_aes_gcm_seal_gather_auto;
+
+/// The implementation of `vg_aes_gcm_seal_gather` that `vg_aes_gcm_seal_gather_auto` runs on this CPU, chosen as it chooses (`VG.Rust.selector`), so that it can be called without choosing again.
+///
+/// # Safety
+///
+/// Calling the function it returns carries exactly `vg_aes_gcm_seal_gather_auto`'s obligations (its `# Safety` section), which are those of each implementation it may return; calling this function has none.
+#[allow(clippy::type_complexity)]
+#[inline]
+pub fn vg_aes_gcm_seal_gather_select() -> unsafe extern "C" fn(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    crate::gcm::vg_aes_gcm_seal_gather
+}
 
 /// `vg_aes_gcm_stream_finish`, the only implementation of it on this target, which needs no CPU feature
 /// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
@@ -50,11 +116,33 @@ pub use crate::gcm::vg_aes_gcm_seal_gather as vg_aes_gcm_seal_gather_auto;
 #[allow(unused_imports)]
 pub use crate::gcm::vg_aes_gcm_stream_finish as vg_aes_gcm_stream_finish_auto;
 
+/// The implementation of `vg_aes_gcm_stream_finish` that `vg_aes_gcm_stream_finish_auto` runs on this CPU, chosen as it chooses (`VG.Rust.selector`), so that it can be called without choosing again.
+///
+/// # Safety
+///
+/// Calling the function it returns carries exactly `vg_aes_gcm_stream_finish_auto`'s obligations (its `# Safety` section), which are those of each implementation it may return; calling this function has none.
+#[allow(clippy::type_complexity)]
+#[inline]
+pub fn vg_aes_gcm_stream_finish_select() -> unsafe extern "C" fn(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
+    crate::gcm::vg_aes_gcm_stream_finish
+}
+
 /// `vg_aes_gcm_stream_verify`, the only implementation of it on this target, which needs no CPU feature
 /// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
 /// target.
 #[allow(unused_imports)]
 pub use crate::gcm::vg_aes_gcm_stream_verify as vg_aes_gcm_stream_verify_auto;
+
+/// The implementation of `vg_aes_gcm_stream_verify` that `vg_aes_gcm_stream_verify_auto` runs on this CPU, chosen as it chooses (`VG.Rust.selector`), so that it can be called without choosing again.
+///
+/// # Safety
+///
+/// Calling the function it returns carries exactly `vg_aes_gcm_stream_verify_auto`'s obligations (its `# Safety` section), which are those of each implementation it may return; calling this function has none.
+#[allow(clippy::type_complexity)]
+#[inline]
+pub fn vg_aes_gcm_stream_verify_select() -> unsafe extern "C" fn(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
+    crate::gcm::vg_aes_gcm_stream_verify
+}
 
 /// `vg_aes_gcm_stream_encrypt`, the only implementation of it on this target, which needs no CPU feature
 /// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
@@ -62,8 +150,30 @@ pub use crate::gcm::vg_aes_gcm_stream_verify as vg_aes_gcm_stream_verify_auto;
 #[allow(unused_imports)]
 pub use crate::gcm::vg_aes_gcm_stream_encrypt as vg_aes_gcm_stream_encrypt_auto;
 
+/// The implementation of `vg_aes_gcm_stream_encrypt` that `vg_aes_gcm_stream_encrypt_auto` runs on this CPU, chosen as it chooses (`VG.Rust.selector`), so that it can be called without choosing again.
+///
+/// # Safety
+///
+/// Calling the function it returns carries exactly `vg_aes_gcm_stream_encrypt_auto`'s obligations (its `# Safety` section), which are those of each implementation it may return; calling this function has none.
+#[allow(clippy::type_complexity)]
+#[inline]
+pub fn vg_aes_gcm_stream_encrypt_select() -> unsafe extern "C" fn(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+    crate::gcm::vg_aes_gcm_stream_encrypt
+}
+
 /// `vg_aes_gcm_stream_decrypt`, the only implementation of it on this target, which needs no CPU feature
 /// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
 /// target.
 #[allow(unused_imports)]
 pub use crate::gcm::vg_aes_gcm_stream_decrypt as vg_aes_gcm_stream_decrypt_auto;
+
+/// The implementation of `vg_aes_gcm_stream_decrypt` that `vg_aes_gcm_stream_decrypt_auto` runs on this CPU, chosen as it chooses (`VG.Rust.selector`), so that it can be called without choosing again.
+///
+/// # Safety
+///
+/// Calling the function it returns carries exactly `vg_aes_gcm_stream_decrypt_auto`'s obligations (its `# Safety` section), which are those of each implementation it may return; calling this function has none.
+#[allow(clippy::type_complexity)]
+#[inline]
+pub fn vg_aes_gcm_stream_decrypt_select() -> unsafe extern "C" fn(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+    crate::gcm::vg_aes_gcm_stream_decrypt
+}
