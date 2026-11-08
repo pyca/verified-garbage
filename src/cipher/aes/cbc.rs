@@ -324,7 +324,6 @@ impl Key {
         }
         // The scratch space may hold the key schedule, the data and our
         // caller's registers: wipe the bytes the function's proved write
-        // bound (`scratch_written`) allows it to write, if any. On AArch64
         // bound (`scratch_written`) allows it to write, if any. On AArch64,
         // ARMv7 and PPC64LE each implementation leaves each byte of it
         // unchanged or zero (`Proof/AesCbc/AArch64/Wiped.lean`,
