@@ -12,6 +12,8 @@ import VerifiedGarbage.Proof.Weierstrass.CombPointW
 import VerifiedGarbage.Proof.Weierstrass.Layout
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
+import VerifiedGarbage.Proof.Mont.PPC64LE.Row
+import VerifiedGarbage.Proof.Mont.PPC64LE.Step
 
 /-!
 # The comb's `[k]G` with the addition inlined, on PPC64LE
@@ -485,5 +487,171 @@ theorem addI_gen {L : LadderCfg} {C : Curve} {S : Impl.Weierstrass.Mont.Modulus}
   · show (toM _ _ _, toM _ _ _, toM _ _ _) = _
     rw [ex, ey, ez, I₂.val _ (dW _ (by simp)), I₂.val _ (dW _ (by simp)), I₂.val _ (dW _ (by simp))]
     exact t₂
+
+/-! ## An iteration, and the comb -/
+
+/-- An iteration: digit `j - 1` added to the accumulator. -/
+theorem stepI_ok (K : TCombCfg) {C : Curve} {tbl : List (List (Nat × Nat))} {start : Nat × Nat}
+    (h : ConfigI K C tbl start) (hC : Law C) (hG : onCurve C (G C) = true)
+    {s : State} {base T : Addr} {k j : Nat}
+    (i : InputsI K C tbl base T k s) (acc : Acc K C base k j s)
+    (hj : 1 ≤ j) (hJ : j ≤ K.J) (hk : k < 2 ^ K.L.nbits) (gj : s.gpr .r31 = BitVec.ofNat 64 j)
+    (hd : Region.Disjoint ⟨T, 8 * (tableWords K C tbl).length⟩ ⟨base, 8192⟩) :
+    WP isa K.stepI s fun t =>
+      Rk powClob s t ∧ Unch base (ladWx K.L) s.mem t.mem ∧
+      InputsI K C tbl base T k t ∧ Acc K C base k (j - 1) t ∧ t.gpr .r31 = BitVec.ofNat 64 (j - 1) := by
+  apply WP.of_syms
+  unfold TCombCfg.stepI
+  have hp : 0 < C.p := Nat.pos_of_ne_zero (NeZero.ne C.p)
+  refine WP.seq (wp_decCounter hj gj (WP.block_nil ?_))
+  generalize hu : s.write .r31 (BitVec.ofNat 64 (j - 1)) = u
+  have ku : Kp [.r31] s u := by rw [← hu]; exact Kp.write _ _ (by decide)
+  have gu : u.gpr .r31 = BitVec.ofNat 64 (j - 1) := by rw [← hu]; simp only [write_gpr, ite_true]
+  have mu : u.mem = s.mem := by rw [← hu]; rfl
+  have syu : u.syms = s.syms := by rw [← hu]; rfl
+  have iu : InputsI K C tbl base T k u :=
+    i.keep h.layout hd (ku.rk (rs' := [.r31])) (by decide) (by rw [mu]; exact Unch.refl _ _ _) syu
+  refine WP.seq (WP.mono_syms (entryI_ok K h hC iu (by omega) hk gu hd) fun v ⟨kv, ov, rv, lv, pv⟩ syv => ?_)
+  have iv : InputsI K C tbl base T k v := iu.keep h.layout hd kv (by decide) ov syv
+  have rlt : ∀ x ∈ [K.L.R.x, K.L.R.y, K.L.R.z], wordsVal v.mem base x K.L.M.n < C.p := by
+    intro x hx
+    rw [rv x hx, mu]
+    exact acc.lt x hx
+  have rrep : Rep C (tmv C K.L.M.n base v K.L.R.x) (tmv C K.L.M.n base v K.L.R.y)
+      (tmv C K.L.M.n base v K.L.R.z) (mul (combEW K.w k K.J j) (G C)) := by
+    show Rep C (toM _ _ _) (toM _ _ _) (toM _ _ _) _
+    rw [rv _ (by simp), rv _ (by simp), rv _ (by simp), mu]
+    exact acc.rep
+  have hlt : ∀ x ∈ rcbR K.L.S K.L.R K.Q, wordsVal v.mem base x K.L.M.n < C.p := by
+    simp only [rcbR, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
+    exact ⟨iv.coeffA ▸ Nat.mod_lt _ hp, iv.coeffB ▸ Nat.mod_lt _ hp, rlt _ (by simp), rlt _ (by simp),
+      rlt _ (by simp), lv _ (by simp), lv _ (by simp), lv _ (by simp)⟩
+  have hq : ∀ x ∈ [K.Q.x, K.Q.y, K.Q.z], x ∈ ladSlots K.L := by
+    rw [h.layout.qT]
+    intro x hx
+    exact ladPts_slots K.L x (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hx ⊢
+      rcases hx with h | h | h <;> simp [h])
+  unfold TCombCfg.addI
+  refine WP.mono_syms (addI_gen h.layout.lad (h.layout.qT ▸ h.layout.apart) hq
+    (by rw [h.fieldK, h.fieldM]; exact h.modulus) h.fieldK h.fieldM h.unit iv.wsr hlt)
+    fun t ⟨kt, ot, lt, et⟩ syt => fun syt' => ?_
+  have keep : Rk powClob s t :=
+    (ku.rk (by decide)).trans ((kv.mono (by decide)).trans (kt.mono (by decide)))
+  have unch : Unch base (ladWx K.L) s.mem t.mem := by
+    have ou : Unch base (ladWx K.L) s.mem u.mem := by rw [mu]; exact Unch.refl _ _ _
+    exact (ou.trans (ov.trans ot)).cover fun w hw' => ⟨w, by
+      simpa only [List.mem_append, or_self] using hw', Nat.le_refl _, Nat.le_refl _⟩
+  refine ⟨keep, unch, i.keep h.layout hd keep (by decide) unch syt', ⟨lt, ?_⟩,
+    by rw [kt.g, kv.g]; exact gu⟩
+  have pa : Rep C (tmv C K.L.M.n base t K.L.R.x) (tmv C K.L.M.n base t K.L.R.y)
+      (tmv C K.L.M.n base t K.L.R.z)
+      (Spec.Weierstrass.add (mul (combEW K.w k K.J j) (G C)) (signedPtW C K.w k (j - 1))) := by
+    apply hC.add (hC.onCurve_mul hG _) (by
+      unfold signedPtW combPtW
+      split
+      · exact hC.onCurve_mul hG _
+      · exact onCurve_negPt (hC.onCurve_mul hG _)) rrep pv
+    rw [et]
+    show rcbAddC C _ _ _ _ _ _ = VG.Proof.Weierstrass.rcbAdd (toM _ _ _) (toM _ _ _) _ _ _ _ _ _
+    rw [iv.coeffA, iv.coeffB, toM_mont h.unit, toM_mont h.unit]
+  have eqj : j - 1 + 1 = j := by omega
+  have sum := combW_add hC hG (w := K.w) (k := k) (j := j - 1) (J := K.J) (by omega)
+  change Spec.Weierstrass.add _ (signedPtW C K.w k (j - 1)) = _ at sum
+  rw [eqj] at sum
+  rw [sum] at pa
+  exact pa
+
+/-- `R = S`, and `r31 = J`. -/
+theorem startI_ok (K : TCombCfg) {s : State} {base : Addr} (h : LayoutI K) (hw : WsReg s base)
+    (hx : K.start.1 < 2 ^ (64 * K.L.M.n)) (hy : K.start.2 < 2 ^ (64 * K.L.M.n))
+    (hz : K.one < 2 ^ (64 * K.L.M.n)) (hJ : K.J < 2 ^ 15) :
+    WP isa (.block (Impl.Mont.PPC64LE.setConst K.L.M.n K.L.R.x K.start.1 ++
+      Impl.Mont.PPC64LE.setConst K.L.M.n K.L.R.y K.start.2 ++
+      Impl.Mont.PPC64LE.setConst K.L.M.n K.L.R.z K.one ++ ([.li .r31 K.J] : List Instr))) s fun t =>
+      Kp [.r11, .r31] s t ∧ Unch base (ladWx K.L) s.mem t.mem ∧
+      t.gpr .r31 = BitVec.ofNat 64 K.J ∧
+      wordsVal t.mem base K.L.R.x K.L.M.n = K.start.1 ∧ wordsVal t.mem base K.L.R.y K.L.M.n = K.start.2 ∧
+      wordsVal t.mem base K.L.R.z K.L.M.n = K.one := by
+  obtain ⟨hown, lo, -⟩ := h.nums
+  simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at lo
+  obtain ⟨⟨rx, -⟩, ⟨ry, -⟩, ⟨rz, -⟩, -⟩ := lo
+  have rne : ∀ x ∈ [K.L.R.x, K.L.R.y, K.L.R.z], ∀ y ∈ [K.L.R.x, K.L.R.y, K.L.R.z], x ≠ y →
+      x + 8 * K.L.M.n ≤ y ∨ y + 8 * K.L.M.n ≤ x := fun x hx y hy hne =>
+    h.lad.lay.lay.apart x y (ladPts_slots K.L x (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hx ⊢; rcases hx with h | h | h <;> simp [h]))
+      (ladPts_slots K.L y (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hy ⊢; rcases hy with h | h | h <;> simp [h])) hne
+  obtain ⟨rxy, rxz, ryz⟩ := h.lad.lay.rne
+  have axy := rne _ (by simp) _ (by simp) rxy
+  have axz := rne _ (by simp) _ (by simp) rxz
+  have ayz := rne _ (by simp) _ (by simp) ryz
+  have nowrap := hw.nowrap
+  rw [List.append_assoc, List.append_assoc]
+  refine wp_append (WP.mono (setConstW_ok hw (o := K.L.R.x) (by omega) hx) fun v ⟨ov, xv, kv⟩ => ?_)
+  have wv := hw.of_kp kv
+  refine wp_append (WP.mono (setConstW_ok wv (o := K.L.R.y) (by omega) hy) fun a ⟨oa, ya, ka⟩ => ?_)
+  have wa := wv.of_kp ka
+  refine wp_append (WP.mono (setConstW_ok wa (o := K.L.R.z) (by omega) hz) fun b ⟨ob, zb, kb⟩ => ?_)
+  refine wp_step (exec_li hJ) (WP.block_nil ?_)
+  simp only [write_gpr, write_mem, ite_true]
+  have ub : Unch base [(K.L.R.x, 8 * K.L.M.n), (K.L.R.y, 8 * K.L.M.n), (K.L.R.z, 8 * K.L.M.n)] s.mem b.mem :=
+    ov.unch.trans (oa.unch.trans ob.unch)
+  refine ⟨((kv.mono (by decide)).trans ((ka.mono (by decide)).trans (kb.mono (by decide)))).trans
+      (Kp.write _ _ (by decide)), ?_, trivial, ?_, ?_, zb⟩
+  · refine ub.cover fun w hw' => ?_
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hw'
+    rcases hw' with rfl | rfl | rfl
+    all_goals exact ⟨_, mem_ladWx (by mem_list), Nat.le_refl _, Nat.le_refl _⟩
+  · rw [ob.wordsVal (by omega) (by omega), oa.wordsVal (by omega) (by omega), xv]
+  · rw [ob.wordsVal (by omega) (by omega), ya]
+
+/-- The comb: `R = [k]G`, for the scalar `k` of `nbits` bits whose table of
+bits is at `bits`, reduced, with only the registers of `powClob` and the
+ladder's writes changed. -/
+theorem combI_ok (K : TCombCfg) {C : Curve} {tbl : List (List (Nat × Nat))} {start : Nat × Nat}
+    (h : ConfigI K C tbl start) (hC : Law C) (hG : onCurve C (G C) = true)
+    {s : State} {base T : Addr} {k : Nat} (hw : WsReg s base)
+    (ht : TableMem s T (tableWords K C tbl)) (sym : s.syms K.tsym = T)
+    (hd : Region.Disjoint ⟨T, 8 * (tableWords K C tbl).length⟩ ⟨base, 8192⟩)
+    (hk : k < 2 ^ K.L.nbits) (zero : wordsVal s.mem base K.zero K.L.M.n = 0)
+    (bits : ∀ i < K.L.nbits, s.mem (off base (K.L.bits + i)) = if k.testBit i then 1 else 0)
+    (coeffA : wordsVal s.mem base K.L.S.a K.L.M.n = C.a * 2 ^ (64 * K.L.M.n) % C.p)
+    (coeffB : wordsVal s.mem base K.L.S.b3 K.L.M.n = (3 * C.b) * 2 ^ (64 * K.L.M.n) % C.p) :
+    WP isa K.combI s fun t =>
+      Rk powClob s t ∧ Unch base (ladWx K.L) s.mem t.mem ∧
+      (∀ x ∈ [K.L.R.x, K.L.R.y, K.L.R.z], wordsVal t.mem base x K.L.M.n < C.p) ∧
+      Rep C (tmv C K.L.M.n base t K.L.R.x) (tmv C K.L.M.n base t K.L.R.y) (tmv C K.L.M.n base t K.L.R.z)
+        (mul k (G C)) := by
+  have hp : 0 < C.p := Nat.pos_of_ne_zero (NeZero.ne C.p)
+  have fit := h.modulus.m_lt
+  have sx : K.start.1 < C.p := by rw [h.startX]; exact Nat.mod_lt _ hp
+  have sy : K.start.2 < C.p := by rw [h.startY]; exact Nat.mod_lt _ hp
+  unfold TCombCfg.combI
+  refine WP.seq (WP.mono_syms (startI_ok K h.layout hw (Nat.lt_trans sx fit) (Nat.lt_trans sy fit)
+    (Nat.lt_trans h.one_lt fit) h.J15) fun u ⟨ku, ou, gu, xu, yu, zu⟩ syu => ?_)
+  have i₀ : InputsI K C tbl base T k s := ⟨hw, ht, sym, zero, bits, coeffA, coeffB⟩
+  have iu : InputsI K C tbl base T k u := i₀.keep h.layout hd (ku.rk (rs' := [.r11, .r31])) (by decide) ou syu
+  have au : Acc K C base k K.J u := by
+    refine ⟨?_, ?_⟩
+    · simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
+      rw [xu, yu, zu]
+      exact ⟨sx, sy, h.one_lt⟩
+    · show Rep C (toM _ _ _) (toM _ _ _) (toM _ _ _) _
+      rw [xu, yu, zu, h.startX, h.startY, toM_mont h.unit, toM_mont h.unit, h.one, combEW_top, h.tables.start]
+      exact rep_affine' hC _ _
+  let Inv := fun j t => InputsI K C tbl base T k t ∧ Acc K C base k j t ∧
+    t.gpr .r31 = BitVec.ofNat 64 j ∧ Rk powClob s t ∧ Unch base (ladWx K.L) s.mem t.mem
+  refine countLoop_ok (Inv := Inv) (fun j t hi => hi.2.2.1) (fun j t hj hJ hi => ?_) (fun t hi => ?_) h.J1
+    (by have := h.J15; omega) ⟨iu, au, gu, ku.rk (by decide), ou⟩
+  · obtain ⟨it, accT, gt, kt, ot⟩ := hi
+    refine WP.mono (stepI_ok K h hC hG it accT hj hJ hk gt hd) fun v ⟨kv, ov, iv, av, gv⟩ => ?_
+    refine ⟨iv, av, gv, kt.trans kv, ?_⟩
+    exact (ot.trans ov).cover fun w hw' => ⟨w, by
+      simpa only [List.mem_append, or_self] using hw', Nat.le_refl _, Nat.le_refl _⟩
+  · obtain ⟨_, accT, _, kt, ot⟩ := hi
+    refine ⟨kt, ot, accT.lt, ?_⟩
+    have hk' : k < 2 ^ (K.w * K.J) := Nat.lt_of_lt_of_le hk (Nat.pow_le_pow_right (by decide) h.coverBits)
+    simpa only [combEW_zero hk'] using accT.rep
 
 end VG.Proof.Weierstrass.PPC64LE.TComb
