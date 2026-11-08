@@ -43,7 +43,7 @@ use crate::arch::gcm::{
     vg_aes_gcm_stream_decrypt_prepared_aesni_pclmul_avx,
     vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul,
     vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul_avx,
-    vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul,
+    vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul, vg_aes_gcm_wipe_prepared,
 };
 #[cfg(target_arch = "aarch64")]
 use crate::arch::gcm::{
@@ -424,11 +424,6 @@ struct Fns {
     /// context of `vg_aes_gcm_init`, for the `_prepared` instances.
     #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
     prepare: Option<Prepare>,
-    /// The bytes of the key context `new` writes, and `drop` wipes:
-    /// `vg_aes_gcm_init`'s 256, or those `prepare` writes (its proven
-    /// `_CTX_WRITTEN`, or all of them).
-    #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-    written: usize,
     /// On AArch64, the `_with_powers` instances of `seal`, `open` and
     /// `open_to`, which read the powers `AesGcm::new` stores
     /// (`AesGcm::powers`).
@@ -539,8 +534,6 @@ impl Backend {
                 aarch64: [vg_aes_gcm_stream_verify_aes, vg_aes_gcm_stream_verify_aes]),
             #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
             prepare: None,
-            #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-            written: size_of::<[u64; 32]>(),
             #[cfg(target_arch = "aarch64")]
             powers: None,
         }
@@ -561,7 +554,6 @@ impl Fns {
             stream_encrypt: p.stream_encrypt,
             stream_decrypt: p.stream_decrypt,
             prepare: Some(p.prepare),
-            written: p.written,
             ..self
         }
     }
@@ -688,9 +680,6 @@ struct Prepared {
     /// context of `vg_aes_gcm_init`.
     #[cfg(target_arch = "x86_64")]
     prepare: Prepare,
-    /// The bytes of the key context it writes (`Fns::written`).
-    #[cfg(target_arch = "x86_64")]
-    written: usize,
 }
 
 /// `vg_aes_gcm_prepare`.
@@ -826,7 +815,6 @@ static PREPARED_VAES_VPCLMUL: Prepared = Prepared {
     stream_encrypt: vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul,
     stream_decrypt: vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul,
     prepare: vg_aes_gcm_prepare_vpclmul,
-    written: size_of::<Ctx>(),
 };
 
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
@@ -839,7 +827,6 @@ static PREPARED_AESNI_PCLMUL_AVX: Prepared = Prepared {
     stream_encrypt: vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul_avx,
     stream_decrypt: vg_aes_gcm_stream_decrypt_prepared_aesni_pclmul_avx,
     prepare: vg_aes_gcm_prepare_pclmul_avx,
-    written: size_of::<Ctx>(),
 };
 
 #[cfg(target_arch = "aarch64")]
@@ -961,8 +948,9 @@ macro_rules! assert_tag_length {
 pub struct AesGcm {
     /// The key context `vg_aes_gcm_init` writes (`VG.Spec.Gcm.KeyRepr`),
     /// with the powers of the hash subkey after it on x86-64 (`KeyCtx`):
-    /// its first `written()` bytes, which `new` writes; the rest is never
-    /// read.
+    /// its first 256 bytes, and on x86-64, if `fns` has a backend's
+    /// `_prepared` instances, the powers `vg_aes_gcm_prepare` writes and their
+    /// count; the rest is never read.
     ctx: MaybeUninit<KeyCtx>,
     rounds: usize,
     /// The functions it calls (`Backend::fns`); on x86-64, if they are a
@@ -979,9 +967,18 @@ pub struct AesGcm {
 impl Drop for AesGcm {
     /// Wipes the key context, with the powers.
     fn drop(&mut self) {
-        // SAFETY: `self.ctx` is valid for writes of its `written()` bytes (at
-        // most `size_of::<KeyCtx>()`), and lies outside `zeroize_raw`'s frame.
-        unsafe { zeroize_raw(self.ctx.as_mut_ptr().cast(), self.written()) };
+        #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+        if self.fns.prepare.is_some() {
+            // SAFETY: `self.ctx` is valid for reads and writes of 1032 bytes,
+            // and overlaps nothing on the stack; `new` wrote the count of the
+            // powers at byte 1024 (`AesGcm::prepare`), which is all
+            // `vg_aes_gcm_wipe_prepared` reads, and it needs no CPU feature.
+            unsafe { vg_aes_gcm_wipe_prepared(self.ctx.as_mut_ptr()) };
+            return;
+        }
+        // SAFETY: `self.ctx` is valid for writes of the 256 bytes of the key
+        // context, and lies outside `zeroize_raw`'s frame.
+        unsafe { zeroize_raw(self.ctx.as_mut_ptr().cast(), size_of::<[u64; 32]>()) };
         #[cfg(target_arch = "aarch64")]
         zeroize(&mut self.powers);
     }
@@ -1008,8 +1005,8 @@ impl AesGcm {
             powers: [0; size_of::<Ctx>() / 8],
         };
         // Only the key context of `vg_aes_gcm_init` is cleared first (`key`
-        // reads it); `AesGcm::prepare` writes the rest, which it zeroes before
-        // `vg_aes_gcm_prepare` writes the powers and their count.
+        // reads it); `vg_aes_gcm_prepare` writes the powers it computes and
+        // their count, and the functions read only those.
         // SAFETY: `k.ctx` is valid for writes of at least 256 bytes.
         unsafe { k.ctx.as_mut_ptr().cast::<[u64; 32]>().write([0; 32]) };
         // Chosen from `backend` rather than read from `k.fns`: the load
@@ -1039,30 +1036,10 @@ impl AesGcm {
         unsafe { &*self.ctx.as_ptr().cast::<[u64; 32]>() }
     }
 
-    /// The bytes of `self.ctx` that `new` writes, and `drop` wipes.
-    #[inline(always)]
-    fn written(&self) -> usize {
-        #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-        return self.fns.written;
-        #[cfg(not(all(target_arch = "x86_64", feature = "alloc")))]
-        return size_of::<KeyCtx>();
-    }
-
     /// Computes the powers of the hash subkey into `self.ctx`, after its key
     /// context, with `fns.prepare`.
     #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
     fn prepare(&mut self, prepare: Prepare) {
-        let key = size_of::<[u64; 32]>();
-        // The bytes after the key context that `prepare` leaves, so that
-        // `new` writes all of them (`written`).
-        // SAFETY: `self.ctx` is valid for writes of `size_of::<Ctx>()` bytes.
-        unsafe {
-            self.ctx
-                .as_mut_ptr()
-                .cast::<u8>()
-                .add(key)
-                .write_bytes(0, size_of::<Ctx>() - key)
-        };
         // SAFETY: `self.ctx` is valid for reads and writes of 1032 bytes,
         // and overlaps nothing on the stack; its first 256 bytes are the key
         // context of `vg_aes_gcm_init` (`VG.Spec.Gcm.KeyRepr`), which
@@ -2408,6 +2385,22 @@ mod tests {
         detected().contains(b.features()) && prepared
     }
 
+    /// The words of the prepared key context at `ctx` that `vg_aes_gcm_init`
+    /// and `vg_aes_gcm_prepare` wrote: the key context, the powers its count
+    /// says are present (at most 48), and the count.
+    #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+    fn prepared_words(ctx: *const u64) -> alloc::vec::Vec<u64> {
+        // SAFETY: the caller's `ctx` is such a context, of 129 words.
+        unsafe {
+            let count = ctx.add(128).read();
+            let mut w: alloc::vec::Vec<u64> = (0..32 + 2 * count as usize)
+                .map(|i| ctx.add(i).read())
+                .collect();
+            w.push(count);
+            w
+        }
+    }
+
     impl AesGcm {
         /// The same key, with `backend`'s instances.
         fn with_backend(&self, backend: Backend) -> AesGcm {
@@ -2422,16 +2415,14 @@ mod tests {
                 (self.fns.prepare, k.fns.prepare),
                 (Some(old), Some(new)) if core::ptr::fn_addr_eq(old, new)
             ) {
-                // The old powers, which `drop` wipes only up to the new
-                // backend's `written`.
-                let key = size_of::<[u64; 32]>();
-                // SAFETY: `k.ctx` is valid for writes of `self.written()`
-                // bytes, at least `key`.
-                unsafe {
-                    crate::zeroize::zeroize_raw(
-                        k.ctx.as_mut_ptr().cast::<u8>().add(key),
-                        self.written() - key,
-                    );
+                // The old powers, which the new backend's count would not
+                // cover: wiped, and the key context written back.
+                if self.fns.prepare.is_some() {
+                    let key = *k.key();
+                    // SAFETY: as in `drop`.
+                    unsafe { super::vg_aes_gcm_wipe_prepared(k.ctx.as_mut_ptr()) };
+                    // SAFETY: `k.ctx` is valid for writes of 256 bytes.
+                    unsafe { k.ctx.as_mut_ptr().cast::<[u64; 32]>().write(key) };
                 }
                 if let Some(prepare) = k.fns.prepare {
                     k.prepare(prepare);
@@ -2449,12 +2440,10 @@ mod tests {
             k
         }
 
-        /// The words of the key context that `new` wrote.
+        /// The words of its prepared key context that `new` wrote.
         #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-        fn written_ctx(&self) -> &[u64] {
-            // SAFETY: `new` wrote the first `written()` bytes of `self.ctx`,
-            // a multiple of 8.
-            unsafe { core::slice::from_raw_parts(self.ctx.as_ptr().cast(), self.written() / 8) }
+        fn written_ctx(&self) -> alloc::vec::Vec<u64> {
+            prepared_words(self.ctx.as_ptr().cast())
         }
     }
 
@@ -2763,9 +2752,6 @@ mod tests {
                     fresh.fns.prepare.is_some(),
                     fresh.fns.backend.prepared(detected()).is_some()
                 );
-                if fresh.fns.prepare.is_none() {
-                    assert_eq!(fresh.written(), size_of::<[u64; 32]>());
-                }
             }
             #[cfg(target_arch = "aarch64")]
             assert_eq!(
@@ -2791,7 +2777,7 @@ mod tests {
                     want_powers[..32].copy_from_slice(base.key());
                     // SAFETY: as in `AesGcm::prepare`.
                     unsafe { (b.prepared(detected()).unwrap().prepare)(&mut want_powers) };
-                    assert_eq!(k.written_ctx(), &want_powers[..k.written() / 8]);
+                    assert_eq!(k.written_ctx(), prepared_words(want_powers.as_ptr()));
                 }
                 // On AArch64, the powers are those `new` stores for the
                 // backend `new` chose.

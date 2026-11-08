@@ -5,7 +5,8 @@ public import VerifiedGarbage.Impl.Gcm.X86_64.Stitch
 /-!
 # Preparing a key context's powers in place, on 256-bit registers
 
-`vg_aes_gcm_prepare16`: `H'` from the hash subkey at `ctx + 240`, as the
+The 16 powers `vg_aes_gcm_prepare` computes for the backends with
+VPCLMULQDQ, whose loops read no other: `H'` from the hash subkey at `ctx + 240`, as the
 stitched loops compute it, then `H'²`–`H'¹⁶`, prepared and paired as the
 context holds them, stored as pairs 0–7 as they are computed (`plan`). The
 powers each round multiplies by, `H'²`, `H'⁴` and `H'⁸` in both lanes, are
@@ -14,10 +15,6 @@ four (the middle term of a square is zero in characteristic 2), and are
 ready no later than the pairs they multiply; the products of the pairs go
 straight to the registers that sum them (`mulD`), and are reduced the low
 half first. No calls, no stack.
-
-`vg_aes_gcm_prepare` (`prepare`) goes on (`plan48`): `H'¹⁶` in both lanes,
-and the eight pairs the registers hold times it, stored, then times it
-again, stored: pairs 8–15 and 16–23.
 -/
 
 @[expose] public section
@@ -91,24 +88,5 @@ def setup : List Instr :=
 hash subkey. -/
 def prepare16 : Prog isa :=
   .block (setup ++ plan.flatMap Op.code ++ ([.vop .vzeroupper] : List Instr))
-
-/-- The registers that hold pairs 0–7 after `plan`, in order. -/
-def pairRegs : List XReg := [.xmm12, .xmm13, .xmm14, .xmm15, .xmm6, .xmm5, .xmm4, .xmm3]
-
-/-- Each pair `pairRegs` holds times `H'¹⁶` (in both lanes of `xmm7`) and stored
-`8` pairs on: pairs `8 + j`–`15 + j` from pairs `j`–`7 + j`. -/
-def times16 (j : Nat) : List Op :=
-  (List.range 8).flatMap fun k =>
-    [.mul (pairRegs.getD k .xmm3) (pairRegs.getD k .xmm3) .xmm7, .st (pairRegs.getD k .xmm3) (j + 8 + k)]
-
-/-- `plan`, then `H'¹⁶` in both lanes of `xmm7` (the square of `H'⁸`, which
-`plan` leaves there), and the eight pairs times it twice: pairs 8–15, then
-16–23. -/
-def plan48 : List Op := plan ++ .sq .xmm7 .xmm7 :: times16 0 ++ times16 8
-
-/-- The 48 prepared powers into pairs 0–23 of the context at `rdi`, from its
-hash subkey: `vg_aes_gcm_prepare` on 256-bit registers. -/
-def prepare : Prog isa :=
-  .block (setup ++ plan48.flatMap Op.code ++ ([.vop .vzeroupper] : List Instr))
 
 end VG.Impl.Gcm.X86_64.Prepare16

@@ -204,6 +204,27 @@ theorem flagLeak_iff {t : Nat} (htv : t = 16 ∨ t = 48) {m m' : Mem} {p p' : Ad
     by_cases h16b : 16 ≤ b <;> simp only [h48a, h48b, h16a, h16b, ↓reduceIte] at h <;>
     rcases htv with rfl | rfl <;> omega
 
+/-- What the count at `ctx + 1024` leaks to code that tests it against `t`
+alone: whether it is at least `t`. -/
+abbrev flagBit (t : Nat) (m : Mem) (ctx : Addr) : Nat :=
+  if t ≤ (m.readW (ctx + 1024) 64).toNat then 1 else 0
+
+theorem flagBit_iff {t : Nat} {m m' : Mem} {p p' : Addr} (h : flagBit t m p = flagBit t m' p') :
+    t ≤ (m.readW (p + 1024) 64).toNat ↔ t ≤ (m'.readW (p' + 1024) 64).toNat := by
+  simp only [flagBit] at h
+  by_cases a : t ≤ (m.readW (p + 1024) 64).toNat <;> by_cases b : t ≤ (m'.readW (p' + 1024) 64).toNat <;>
+    simp only [a, b, ↓reduceIte] at h <;> first | exact absurd h (by decide) | simp only [a, b]
+
+/-- Two counts of the same `flagLeak` have the same `flagBit` of 16 or 48. -/
+theorem flagBit_of_flagLeak {t : Nat} (htv : t = 16 ∨ t = 48) {m m' : Mem} {p p' : Addr}
+    (h : flagLeak m p = flagLeak m' p') : flagBit t m p = flagBit t m' p' := by
+  simp only [flagBit, flagLeak_iff htv h]
+
+/-- Under a count of at least `t`, `flagBit t` is 1. -/
+theorem flagBit_of_le {t : Nat} {m : Mem} {p : Addr} (h : t ≤ (m.readW (p + 1024) 64).toNat) :
+    flagBit t m p = 1 := by
+  simp only [flagBit, h, ↓reduceIte]
+
 theorem Curry.apply_const' {α : Type} (a : α) :
     ∀ (ws : List ArgWord) (vs : List (BitVec 64)), Curry.apply ws (Curry.const a ws) vs = a
   | [], _ => rfl
@@ -248,7 +269,10 @@ theorem pre_of_rel {C : Mem → Addr → Prop} {leakA leakB : Option (Curry
 /-- `Verified.of_onFlag` for a first argument that is an array of `N ≥ 129` words: the preconditions as relations between curried functions of the
 other arguments, given the first; and `leak`, `leak₁`'s (none: nothing)
 after `flagLeak`, the class of the count, for a threshold `t` of 16 or 48. -/
-theorem Verified.of_onFlagCtx {t : Nat} (htv : t = 16 ∨ t = 48) (hN : 129 ≤ N) {c₁ c₂ : Prog isa}
+theorem Verified.of_onFlagCtxL {t : Nat} (htv : t = 16 ∨ t = 48) (L : Mem → Addr → Nat)
+    (hL : ∀ {m m' : Mem} {p p' : Addr}, L m p = L m' p' →
+      (t ≤ (m.readW (p + 1024) 64).toNat ↔ t ≤ (m'.readW (p' + 1024) 64).toNat))
+    (hN : 129 ≤ N) {c₁ c₂ : Prog isa}
     {pre pre₁ pre₂ : Curry ((firstArraySigB name w .u64 N rest ret).words 64) (Mem → Prop)}
     {leak₁ : Option (Curry ((firstArraySigB name w .u64 N rest ret).words 64) (Mem → List Nat))}
     {leak : Curry ((firstArraySigB name w .u64 N rest ret).words 64) (Mem → List Nat)}
@@ -258,7 +282,7 @@ theorem Verified.of_onFlagCtx {t : Nat} (htv : t = 16 ∨ t = 48) (hN : 129 ≤ 
       (pre ctx) (pre₁ ctx))
     (hp₂ : ∀ ctx, Curry.Forall₂ (fun p q => ∀ m, p m → ¬ t ≤ (m.readW (ctx + 1024) 64).toNat → q m) _
       (pre ctx) (pre₂ ctx))
-    (hleak : ∀ ctx, Curry.Forall₂ (fun f g => ∀ m, f m = flagLeak m ctx :: g m) _
+    (hleak : ∀ ctx, Curry.Forall₂ (fun f g => ∀ m, f m = L m ctx :: g m) _
       (leak ctx) ((leak₁.getD (Curry.const (fun _ => []) _)) ctx))
     (hsat : ∃ s, ((firstArraySigB name w .u64 N rest ret).contract abi pre post wa stack (some leak)).pre s) :
     Verified target (Impl.Gcm.X86_64.Flag.onFlag t c₁ c₂)
@@ -328,7 +352,25 @@ theorem Verified.of_onFlagCtx {t : Nat} (htv : t = 16 ∨ t = 48) (hN : 129 ≤ 
         change Curry.apply _ l (vals s) s.mem = Curry.apply _ l (vals s') s'.mem
         rw [hvs, hvs']
         exact hrest
-    exact flagLeak_iff htv hf
+    exact hL hf
+
+/-- `Verified.of_onFlagCtxL` leaking `flagLeak`, the class of the count. -/
+theorem Verified.of_onFlagCtx {t : Nat} (htv : t = 16 ∨ t = 48) (hN : 129 ≤ N) {c₁ c₂ : Prog isa}
+    {pre pre₁ pre₂ : Curry ((firstArraySigB name w .u64 N rest ret).words 64) (Mem → Prop)}
+    {leak₁ : Option (Curry ((firstArraySigB name w .u64 N rest ret).words 64) (Mem → List Nat))}
+    {leak : Curry ((firstArraySigB name w .u64 N rest ret).words 64) (Mem → List Nat)}
+    (h₁ : Verified target c₁ ((firstArraySigB name w .u64 N rest ret).contract abi pre₁ post wa stack leak₁))
+    (h₂ : Verified target c₂ ((firstArraySigB name w .u64 N rest ret).contract abi pre₂ post wa stack leak₁))
+    (hp₁ : ∀ ctx, Curry.Forall₂ (fun p q => ∀ m, p m → t ≤ (m.readW (ctx + 1024) 64).toNat → q m) _
+      (pre ctx) (pre₁ ctx))
+    (hp₂ : ∀ ctx, Curry.Forall₂ (fun p q => ∀ m, p m → ¬ t ≤ (m.readW (ctx + 1024) 64).toNat → q m) _
+      (pre ctx) (pre₂ ctx))
+    (hleak : ∀ ctx, Curry.Forall₂ (fun f g => ∀ m, f m = flagLeak m ctx :: g m) _
+      (leak ctx) ((leak₁.getD (Curry.const (fun _ => []) _)) ctx))
+    (hsat : ∃ s, ((firstArraySigB name w .u64 N rest ret).contract abi pre post wa stack (some leak)).pre s) :
+    Verified target (Impl.Gcm.X86_64.Flag.onFlag t c₁ c₂)
+      ((firstArraySigB name w .u64 N rest ret).contract abi pre post wa stack (some leak)) :=
+  Verified.of_onFlagCtxL htv flagLeak (flagLeak_iff htv) hN h₁ h₂ hp₁ hp₂ hleak hsat
 end
 
 /-! ## A longer writable first array -/
@@ -534,12 +576,12 @@ variable {name : String} {w : Bool} {N : Nat} {rest : List (String × Param)} {r
 
 /-- A proof that leaks `leak₁` (none: nothing) moved to a contract that leaks
 `flagLeak` first (`Verified.with_leak`, `Verified.leak_mono`). -/
-theorem Verified.leak_flag {c : Prog isa}
+theorem Verified.leak_flagL (L : Mem → Addr → Nat) {c : Prog isa}
     {pre : Curry ((firstArraySigB name w .u64 N rest ret).words 64) (Mem → Prop)}
     {leak₁ : Option (Curry ((firstArraySigB name w .u64 N rest ret).words 64) (Mem → List Nat))}
     {leak : Curry ((firstArraySigB name w .u64 N rest ret).words 64) (Mem → List Nat)}
     (h : Verified target c ((firstArraySigB name w .u64 N rest ret).contract abi pre post wa stack leak₁))
-    (hleak : ∀ ctx, Curry.Forall₂ (fun f g => ∀ m, f m = flagLeak m ctx :: g m) _
+    (hleak : ∀ ctx, Curry.Forall₂ (fun f g => ∀ m, f m = L m ctx :: g m) _
       (leak ctx) ((leak₁.getD (Curry.const (fun _ => []) _)) ctx)) :
     Verified target c ((firstArraySigB name w .u64 N rest ret).contract abi pre post wa stack (some leak)) := by
   cases leak₁ with
@@ -568,6 +610,50 @@ theorem Verified.leak_flag {c : Prog isa}
         have b := (hleak p').apply vs' m₂
         exact (List.cons.inj (a.symm.trans (e.trans b))).2
 
+
+/-- A proof whose leak begins with `L` moved to a contract whose leak is the
+same but begins with `L'`, which determines `L`. -/
+theorem Verified.leak_head (L L' : Mem → Addr → Nat)
+    (hL : ∀ {m m' : Mem} {p p' : Addr}, L' m p = L' m' p' → L m p = L m' p') {c : Prog isa}
+    {pre : Curry ((firstArraySigB name w .u64 N rest ret).words 64) (Mem → Prop)}
+    {f f' : Curry ((firstArraySigB name w .u64 N rest ret).words 64) (Mem → List Nat)}
+    (h : Verified target c ((firstArraySigB name w .u64 N rest ret).contract abi pre post wa stack (some f)))
+    (hrel : ∀ ctx, Curry.Forall₂ (fun a b => ∀ m, ∃ r, a m = L m ctx :: r ∧ b m = L' m ctx :: r) _
+      (f ctx) (f' ctx)) :
+    Verified target c ((firstArraySigB name w .u64 N rest ret).contract abi pre post wa stack (some f')) := by
+  refine Verified.leak_mono h fun v₁ v₂ m₁ m₂ e => ?_
+  have key (p₁ p₂ : Addr) (vs₁ vs₂ : List (BitVec 64))
+      (a₁ : Curry.apply _ f (p₁ :: vs₁) m₁ = Curry.apply _ (f p₁) vs₁ m₁)
+      (a₂ : Curry.apply _ f (p₂ :: vs₂) m₂ = Curry.apply _ (f p₂) vs₂ m₂)
+      (b₁ : Curry.apply _ f' (p₁ :: vs₁) m₁ = Curry.apply _ (f' p₁) vs₁ m₁)
+      (b₂ : Curry.apply _ f' (p₂ :: vs₂) m₂ = Curry.apply _ (f' p₂) vs₂ m₂)
+      (e : Curry.apply _ f' (p₁ :: vs₁) m₁ = Curry.apply _ f' (p₂ :: vs₂) m₂) :
+      Curry.apply _ f (p₁ :: vs₁) m₁ = Curry.apply _ f (p₂ :: vs₂) m₂ := by
+    obtain ⟨r₁, x₁, y₁⟩ := (hrel p₁).apply vs₁ m₁
+    obtain ⟨r₂, x₂, y₂⟩ := (hrel p₂).apply vs₂ m₂
+    rw [b₁, b₂, y₁, y₂] at e
+    obtain ⟨e₁, e₂⟩ := List.cons.inj e
+    rw [a₁, a₂, x₁, x₂, hL e₁, e₂]
+  cases v₁ with
+  | nil =>
+    cases v₂ with
+    | nil => exact key 0 0 [] [] rfl rfl rfl rfl e
+    | cons p vs => exact key 0 p [] vs rfl rfl rfl rfl e
+  | cons p vs =>
+    cases v₂ with
+    | nil => exact key p 0 vs [] rfl rfl rfl rfl e
+    | cons p' vs' => exact key p p' vs vs' rfl rfl rfl rfl e
+
+/-- `Verified.leak_flagL` leaking `flagLeak`. -/
+theorem Verified.leak_flag {c : Prog isa}
+    {pre : Curry ((firstArraySigB name w .u64 N rest ret).words 64) (Mem → Prop)}
+    {leak₁ : Option (Curry ((firstArraySigB name w .u64 N rest ret).words 64) (Mem → List Nat))}
+    {leak : Curry ((firstArraySigB name w .u64 N rest ret).words 64) (Mem → List Nat)}
+    (h : Verified target c ((firstArraySigB name w .u64 N rest ret).contract abi pre post wa stack leak₁))
+    (hleak : ∀ ctx, Curry.Forall₂ (fun f g => ∀ m, f m = flagLeak m ctx :: g m) _
+      (leak ctx) ((leak₁.getD (Curry.const (fun _ => []) _)) ctx)) :
+    Verified target c ((firstArraySigB name w .u64 N rest ret).contract abi pre post wa stack (some leak)) :=
+  Verified.leak_flagL flagLeak h hleak
 end
 
 /-- `onFlag` writes `rsp` nowhere if neither branch does (`Artifact.spSafe`). -/

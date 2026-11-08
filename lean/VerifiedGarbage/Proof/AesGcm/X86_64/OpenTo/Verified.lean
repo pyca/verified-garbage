@@ -257,8 +257,8 @@ theorem openToPrepared16_verified (w : Width) (F : OpenFn CtxMode.prepared16) :
 
 /-! ## On the prepared key context whose powers are present -/
 
-theorem toPre_flagged {s : State} (h : (Proof.AesGcm.Flag.openToFlaggedRoundsContract X86_64.abi 2728).pre s) :
-    ToPre CtxMode.flagged s := by
+theorem toPre_flagged {t : Nat} {s : State} (h : (Proof.AesGcm.Flag.openToFlaggedRoundsContract t X86_64.abi 2728).pre s) :
+    ToPre (CtxMode.flaggedT t) s := by
   sig_pre [Proof.AesGcm.Flag.openToFlaggedRoundsContract, Spec.Gcm.openToPreparedSig, Spec.Gcm.openToPreparedSig, Proof.AesGcm.Flag.openToFlaggedPre, X86_64.abi, X86_64.argRegs,
     stackArgs_six, List.append_eq] at h
   rw [Sig.pairFacts, Sig.pairFacts, Sig.pairFacts, pairFacts_ro _ (by simp)] at h
@@ -274,13 +274,13 @@ theorem toPre_flagged {s : State} (h : (Proof.AesGcm.Flag.openToFlaggedRoundsCon
   exact ⟨rd, wr, kd, nd, ad, sd, dt, da, rk, rn, ra, rs, rdd, rt, rarg, bk, bn, ba, bs, bd, bt, barg, wk, wn, wa,
     ws, wd, wt, w₁, w₂, ro, dl, hpw⟩
 
-theorem toPost_flagged {s s' : State} (h : toPost s s') :
-    (Proof.AesGcm.Flag.openToFlaggedRoundsContract X86_64.abi 2728).post s s' := by
+theorem toPost_flagged {t : Nat} {s s' : State} (h : toPost s s') :
+    (Proof.AesGcm.Flag.openToFlaggedRoundsContract t X86_64.abi 2728).post s s' := by
   sig_post [Proof.AesGcm.Flag.openToFlaggedRoundsContract, Spec.Gcm.openToPreparedSig, Spec.Gcm.openToPreparedSig, Proof.AesGcm.openToRoundsPost, X86_64.abi, X86_64.argRegs,
     stackArgs_six, List.append_eq]
   exact fun _ => h
 
-theorem toPub_flagged {s₁ s₂ : State} (hp : (Proof.AesGcm.Flag.openToFlaggedRoundsContract X86_64.abi 2728).pub s₁ s₂) :
+theorem toPub_flagged {t : Nat} {s₁ s₂ : State} (hp : (Proof.AesGcm.Flag.openToFlaggedRoundsContract t X86_64.abi 2728).pub s₁ s₂) :
     toPub s₁ s₂ := by
   sig_pub [Proof.AesGcm.Flag.openToFlaggedRoundsContract, Spec.Gcm.openToPreparedSig, Spec.Gcm.openToPreparedSig, Spec.Gcm.openToLeak, X86_64.abi, X86_64.argRegs,
     stackArgs_six, List.append_eq] at hp
@@ -307,7 +307,7 @@ def toSatF : State :=
     mem := fun a => if a = 0x1400 then 48 else toSat.mem a
     rd := [⟨0x1000, 1032⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x4000, 0⟩, ⟨0x6000, 0⟩, ⟨0x9008, 48⟩] }
 
-theorem toSatF_pre : ∃ s, (Proof.AesGcm.Flag.openToFlaggedRoundsContract X86_64.abi 2728).pre s := by
+theorem toSatF_pre {t : Nat} (ht : t ≤ 48) : ∃ s, (Proof.AesGcm.Flag.openToFlaggedRoundsContract t X86_64.abi 2728).pre s := by
   refine ⟨toSatF, ?_⟩
   sig_pre [Proof.AesGcm.Flag.openToFlaggedRoundsContract, Spec.Gcm.openToPreparedSig, Spec.Gcm.openToPreparedSig,
     Proof.AesGcm.Flag.openToFlaggedPre, X86_64.abi, X86_64.argRegs, stackArgs_six, List.append_eq, toSatF, toSat, stackArg,
@@ -317,18 +317,18 @@ theorem toSatF_pre : ∃ s, (Proof.AesGcm.Flag.openToFlaggedRoundsContract X86_6
     | rfl
     | decide
     | exact Region.disjoint_of_sep (by decide)
-    | exact Proof.AesGcm.Flag.flaggedPowers_of_zeroMem
+    | exact Proof.AesGcm.Flag.flaggedPowers_of_zeroMem ht
         (fun _ hi => by simp only [Proof.AesGcm.Flag.ctx_ne1024 hi, ctx_lowF (Nat.lt_of_lt_of_le hi (by decide)), ite_false])
         (by decide)
 
-theorem flagged_implies :
-    (toK CtxMode.flagged).Implies (Proof.AesGcm.Flag.openToFlaggedRoundsContract X86_64.abi 2728) :=
-  ⟨fun _ h => toPre_flagged h, fun _ _ _ h => toPost_flagged h, fun _ _ _ _ h => toPub_flagged h, toSatF_pre⟩
+theorem flagged_implies {t : Nat} (ht : t ≤ 48) :
+    (toK (CtxMode.flaggedT t)).Implies (Proof.AesGcm.Flag.openToFlaggedRoundsContract t X86_64.abi 2728) :=
+  ⟨fun _ h => toPre_flagged h, fun _ _ _ h => toPost_flagged h, fun _ _ _ _ h => toPub_flagged h, toSatF_pre ht⟩
 
 /-- `vg_aes_gcm_open_to_prepared`'s code on a context whose powers are present,
 calling `vg_aes_gcm_open_prepared`. -/
-theorem openToFlagged_verified (w : Width) (F : OpenFn CtxMode.flagged) :
-    Verified X86_64.target (openTo w F.fn) (Proof.AesGcm.Flag.openToFlaggedRoundsContract X86_64.abi 2728) :=
-  Verified.of_correct (k := toK CtxMode.flagged) (fun _ hs => by obtain ⟨t, s', he, ha, hp⟩ := openTo_wp w F hs; exact ⟨t, s', he, ha, hp⟩) (openTo_ct w F) flagged_implies
+theorem openToFlagged_verified {t : Nat} (ht : t ≤ 48) (w : Width) (F : OpenFn (CtxMode.flaggedT t)) :
+    Verified X86_64.target (openTo w F.fn) (Proof.AesGcm.Flag.openToFlaggedRoundsContract t X86_64.abi 2728) :=
+  Verified.of_correct (k := toK (CtxMode.flaggedT t)) (fun _ hs => by obtain ⟨t, s', he, ha, hp⟩ := openTo_wp w F hs; exact ⟨t, s', he, ha, hp⟩) (openTo_ct w F) (flagged_implies ht)
 
 end VG.Proof.AesGcm.X86_64.OpenTo
