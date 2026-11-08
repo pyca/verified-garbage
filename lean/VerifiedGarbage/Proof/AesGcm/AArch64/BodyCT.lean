@@ -106,9 +106,9 @@ theorem padArgs_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {R n P : Nat} 
   have gk₂ := fk₂.of_others ra₂.others
   exact hr τ₁ τ₂
     ⟨ge₁, gk₁, (gk₁ .x22 (by decide)).trans k22₁, h₁.rounds, a23₁, a24₁, a25₁,
-      h₁.data.of_eq (by rw [ra₁.rd, frd₁, r₁.rd]) (by rw [ra₁.wr, fwr₁, r₁.wr])⟩
+      h₁.data.of_eq (by rw [ra₁.rd, frd₁, r₁.rd]) (by rw [ra₁.wr, fwr₁, r₁.wr]), rfl⟩
     ⟨ge₂, gk₂, (gk₂ .x22 (by decide)).trans k22₂, h₂.rounds, a23₂, a24₂, a25₂,
-      h₂.data.of_eq (by rw [ra₂.rd, frd₂, r₂.rd]) (by rw [ra₂.wr, fwr₂, r₂.wr])⟩
+      h₂.data.of_eq (by rw [ra₂.rd, frd₂, r₂.rd]) (by rw [ra₂.wr, fwr₂, r₂.wr]), rfl⟩
 
 /-- `textAbs` in two runs. -/
 theorem textAbs_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {n P : Nat} {D : Addr} {σ₁ σ₂ : State}

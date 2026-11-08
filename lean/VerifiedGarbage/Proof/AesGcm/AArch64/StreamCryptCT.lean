@@ -100,9 +100,9 @@ theorem decBody_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {R n P : Nat} 
   have pk₂ := kk₂.of_others rp₂.others
   exact crypt_rel L v
     ⟨e₁.of_regs rp₁, pk₁, (pk₁ .x22 (by decide)).trans k22₁, h₁.rounds, p23₁, p24₁,
-      by rw [rp₁.others _ (by decide), x25₁], h₁.data.of_eq (by rw [rp₁.rd, rd₁]) (by rw [rp₁.wr, wr₁])⟩
+      by rw [rp₁.others _ (by decide), x25₁], h₁.data.of_eq (by rw [rp₁.rd, rd₁]) (by rw [rp₁.wr, wr₁]), rfl⟩
     ⟨e₂.of_regs rp₂, pk₂, (pk₂ .x22 (by decide)).trans k22₂, h₂.rounds, p23₂, p24₂,
-      by rw [rp₂.others _ (by decide), x25₂], h₂.data.of_eq (by rw [rp₂.rd, rd₂]) (by rw [rp₂.wr, wr₂])⟩
+      by rw [rp₂.others _ (by decide), x25₂], h₂.data.of_eq (by rw [rp₂.rd, rd₂]) (by rw [rp₂.wr, wr₂]), rfl⟩
 
 end
 

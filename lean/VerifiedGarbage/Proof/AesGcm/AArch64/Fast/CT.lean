@@ -204,7 +204,7 @@ theorem ctA_ok (hMK : MulKey) {k : Reg → BitVec 64} {H : Block} {Np A D Tg : A
   exact ⟨⟨he₃, x22₃, hR, by rw [r₃.others _ (by decide), h₂.x26], x27₃, by rw [r₃.others _ (by decide), h₂.x28, h28],
     by rw [r₃.mem]; exact h₂.hH, by rw [r₃.mem]; exact h₂.key, hd₃, fr₃, by rw [r₃.rd, h₂.rd, hrd],
     by rw [r₃.wr, h₂.wr, hwr]⟩, ⟨he₃, fun _ _ => rfl, x22₃, hR,
-    by rw [r₃.others _ (by decide), h₂.x23], x24₃, x25₃, hd₃⟩⟩
+    by rw [r₃.others _ (by decide), h₂.x23], x24₃, x25₃, hd₃, rfl⟩⟩
 
 /-- The arguments of the call on the whole blocks of the ciphertext. -/
 theorem ctC_ok {H : Block} {R n : Nat} {D Tg : Addr} {ρ s₄ : State} (h : Mid Ctx W SP H R n D Tg D ρ s₄)

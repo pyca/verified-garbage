@@ -208,7 +208,7 @@ theorem encBody_ok (v : GcmImpl) {k : Reg → BitVec 64} {R n P : Nat} {D : Addr
   have hk₃ := hk₂.of_others r₃.others
   have hd₃ : DataW Ctx St W s₃ D n := h.data.of_eq (by rw [r₃.rd, rd₂]) (by rw [r₃.wr, wr₂])
   have hCr : CrIn Ctx St W SP k R P D n s₃ :=
-    ⟨he₃, hk₃, (hk₃ .x22 (by decide)).trans k22, h.rounds, x23₃, x24₃, x25₃, hd₃⟩
+    ⟨he₃, hk₃, (hk₃ .x22 (by decide)).trans k22, h.rounds, x23₃, x24₃, x25₃, hd₃, rfl⟩
   refine WP.seq (WP.mono (WP.with_rdwr (crypt_ok L v (icb := icb) hCr)) fun s₄ ⟨h₄, rd₄, wr₄⟩ => ?_)
   refine WP.seq (WP.mono (textPiece_ok h₄.kept k26 k28) fun s₅ ⟨x23₅, x24₅, r₅⟩ => ?_)
   have he₅ := h₄.env.of_regs r₅
@@ -304,7 +304,7 @@ theorem decBody_ok (v : GcmImpl) {k : Reg → BitVec 64} {R n P : Nat} {D : Addr
   have hd₅ : DataW Ctx St W s₅ D n := h.data.of_eq (by rw [r₅.rd, rd₄]) (by rw [r₅.wr, wr₄])
   have hCr : CrIn Ctx St W SP k R P D n s₅ :=
     ⟨he₅, hk₅, (hk₅ .x22 (by decide)).trans k22, h.rounds, x23₅, x24₅,
-      by rw [r₅.others _ (by decide), x25₄], hd₅⟩
+      by rw [r₅.others _ (by decide), x25₄], hd₅, rfl⟩
   have ctxF : ∀ r ∈ tFrame St W 16 ++ absFrame St W 16, (⟨Ctx, 256⟩ : Region).Disjoint r := by
     intro r hr
     rcases List.mem_append.mp hr with hr | hr

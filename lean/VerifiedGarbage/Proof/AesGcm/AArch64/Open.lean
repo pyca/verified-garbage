@@ -416,7 +416,7 @@ theorem oc_in {Ctx W SP D Np A : Addr} {R nl al n tl : Nat}
         s₈.gpr .x25 = BitVec.ofNat 64 (0 % 16) ∧ Regs [.x23, .x24, .x25] s₇ s₈) :
     CrIn Ctx (W + BitVec.ofNat 64 16) W SP s₈.gpr R 0 D n s₈ :=
   ⟨mo.env.of_regs h.2.2.2, fun _ _ => rfl, by rw [h.2.2.2.others _ (by decide), mo.x22], hR, h.1, h.2.1, h.2.2.1,
-    mo.data.of_eq h.2.2.2.rd h.2.2.2.wr⟩
+    mo.data.of_eq h.2.2.2.rd h.2.2.2.wr, rfl⟩
 
 theorem omIteWith_ok (cr : Prog isa) {Ctx W SP D Np A : Addr} {R nl al n tl : Nat}
     {fr : List Region} {s s₇ : State} (hR : R = 10 ∨ R = 12 ∨ R = 14)
